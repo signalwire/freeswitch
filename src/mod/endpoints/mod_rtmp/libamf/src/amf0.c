@@ -851,7 +851,9 @@ amf0_data * amf0_object_get(amf0_data * data, const char * name) {
                 return (node != NULL) ? node->data : NULL;
             }
             /* we have to skip the element data to reach the next name */
-            node = node->next->next;
+	    if ( node != NULL && node->next != NULL ) {
+	      node = node->next->next;
+	    }
         }
     }
     return NULL;
@@ -870,7 +872,9 @@ amf0_data * amf0_object_set(amf0_data * data, const char * name, amf0_data * ele
                 }
             }
             /* we have to skip the element data to reach the next name */
-            node = node->next->next;
+	    if ( node != NULL && node->next != NULL ) {
+	      node = node->next->next;
+	    }
         }
     }
     return NULL;
