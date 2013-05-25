@@ -7,7 +7,7 @@ conf_dir="../conf"
 lang_dir="../conf/vanilla/lang"
 fs_description="FreeSWITCH is a scalable open source cross-platform telephony platform designed to route and interconnect popular communication protocols using audio, video, text or any other form of media."
 mod_build_depends="."
-supported_distros="squeeze wheezy sid"
+supported_distros="squeeze wheezy jessie sid"
 avoid_mods=(
   applications/mod_limit
   applications/mod_mongo
@@ -36,6 +36,8 @@ avoid_mods=(
   xml_int/mod_xml_radius
 )
 avoid_mods_sid=(
+)
+avoid_mods_jessie=(
 )
 avoid_mods_wheezy=(
 )
