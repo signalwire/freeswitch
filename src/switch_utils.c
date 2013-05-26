@@ -920,11 +920,17 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 	if (zstr(from)) {
 		from = "freeswitch";
 	}
+
+	{
+		char *to_arg = switch_util_quote_shell_arg(to);
+		char *from_arg = switch_util_quote_shell_arg(from);
 #ifdef WIN32
-	switch_snprintf(buf, B64BUFFLEN, "\"\"%s\" -f %s %s %s < \"%s\"\"", runtime.mailer_app, from, runtime.mailer_app_args, to, filename);
+		switch_snprintf(buf, B64BUFFLEN, "\"\"%s\" -f %s %s %s < \"%s\"\"", runtime.mailer_app, from_arg, runtime.mailer_app_args, to_arg, filename);
 #else
-	switch_snprintf(buf, B64BUFFLEN, "/bin/cat %s | %s -f %s %s %s", filename, runtime.mailer_app, from, runtime.mailer_app_args, to);
+		switch_snprintf(buf, B64BUFFLEN, "/bin/cat %s | %s -f %s %s %s", filename, runtime.mailer_app, from_arg, runtime.mailer_app_args, to_arg);
 #endif
+		switch_safe_free(to_arg); switch_safe_free(from_arg);
+	}
 	if (switch_system(buf, SWITCH_TRUE) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to execute command: %s\n", buf);
 		err = "execute error";
