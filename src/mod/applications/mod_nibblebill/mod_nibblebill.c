@@ -355,7 +355,7 @@ static void transfer_call(switch_core_session_t *session, char *destination)
 static switch_bool_t bill_event(double billamount, const char *billaccount, switch_channel_t *channel)
 {
 	char *sql = NULL, *dsql = NULL;
-	switch_status_t status = SWITCH_FALSE;
+	switch_bool_t status = SWITCH_FALSE;
 
 	if (globals.custom_sql_save) {
 		if (switch_string_var_check_const(globals.custom_sql_save) || switch_string_has_escaped_data(globals.custom_sql_save)) {
