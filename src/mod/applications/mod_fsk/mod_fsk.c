@@ -370,7 +370,7 @@ SWITCH_STANDARD_APP(fsk_display_function)
 	const char *cid_name, *cid_num;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_core_session_message_t *msg;
-	switch_core_session_t *psession, *usession = NULL;
+	switch_core_session_t *psession = NULL, *usession = NULL;
 	char *flags = (char *) data;
 
 	cid_name = switch_channel_get_variable(channel, "fsk_phone_name");
