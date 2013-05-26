@@ -334,7 +334,7 @@ build_all () {
   done
   shift $(($OPTIND-1))
   [ -n "$archs" ] || archs="amd64 i386"
-  [ -n "$distros" ] || distros="sid jesse wheezy squeeze"
+  [ -n "$distros" ] || distros="sid jessie wheezy squeeze"
   [ -n "$orig" ] || orig="$(create_orig $orig_opts HEAD | tail -n1)"
   mkdir -p ../log
   > ../log/changes
