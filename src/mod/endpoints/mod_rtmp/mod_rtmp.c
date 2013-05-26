@@ -1230,7 +1230,7 @@ switch_status_t rtmp_session_login(rtmp_session_t *rsession, const char *user, c
 
 switch_status_t rtmp_session_logout(rtmp_session_t *rsession, const char *user, const char *domain)
 {
-	rtmp_account_t *account, *prev = NULL;
+	rtmp_account_t *account;
 	switch_event_t *event;
 	
 	switch_thread_rwlock_wrlock(rsession->account_rwlock);
