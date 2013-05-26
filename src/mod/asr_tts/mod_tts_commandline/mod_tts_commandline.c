@@ -130,7 +130,8 @@ static switch_status_t tts_commandline_speech_close(switch_speech_handle_t *sh, 
 
 static switch_status_t tts_commandline_speech_feed_tts(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags)
 {
-	char *message, *tmp, *rate;
+	switch_status_t ret=SWITCH_STATUS_SUCCESS;
+	char *message, *tmp, *mtmp, *rate;
 	tts_commandline_t *info = (tts_commandline_t *) sh->private_info;
 
 	assert(info != NULL);
@@ -140,37 +141,41 @@ static switch_status_t tts_commandline_speech_feed_tts(switch_speech_handle_t *s
 		unlink(info->file);
 	}
 
-	message = switch_core_strdup(sh->memory_pool, globals.command);
-
 	tmp = switch_util_quote_shell_arg(text);
-	message = switch_string_replace(message, "${text}", tmp);
+	message = switch_string_replace(globals.command, "${text}", tmp);
+	switch_safe_free(tmp); mtmp=message;
 
 	tmp = switch_util_quote_shell_arg(info->voice_name);
-	message = switch_string_replace(message, "${voice}", tmp);
+	message = switch_string_replace(mtmp, "${voice}", tmp);
+	switch_safe_free(tmp); switch_safe_free(mtmp); mtmp=message;
 
 	rate = switch_core_sprintf(sh->memory_pool, "%d", info->rate);
-	message = switch_string_replace(message, "${rate}", rate);
+	message = switch_string_replace(mtmp, "${rate}", rate);
+	switch_safe_free(mtmp); mtmp=message;
 
 	tmp = switch_util_quote_shell_arg(info->file);
-	message = switch_string_replace(message, "${file}", tmp);
+	message = switch_string_replace(mtmp, "${file}", tmp);
+	switch_safe_free(tmp); switch_safe_free(mtmp); mtmp=message;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Executing: %s\n", message);
 
 	if (switch_system(message, SWITCH_TRUE) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to execute command: %s\n", message);
-		return SWITCH_STATUS_FALSE;
+		ret = SWITCH_STATUS_FALSE; goto done;
 	}
 
 	if (switch_core_file_open(info->fh, info->file, 0,	//number_of_channels,
 							  info->rate,	//samples_per_second,
 							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open file: %s\n", info->file);
-		return SWITCH_STATUS_FALSE;
+		ret = SWITCH_STATUS_FALSE; goto done;
 	}
 
 	sh->private_info = info;
 
-	return SWITCH_STATUS_SUCCESS;
+ done:
+	switch_safe_free(mtmp);
+	return ret;
 }
 
 static switch_status_t tts_commandline_speech_read_tts(switch_speech_handle_t *sh, void *data, size_t *datalen, switch_speech_flag_t *flags)
