@@ -81,7 +81,7 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 
 	if (b) {
 		if (b > 1) {
-			if ((method == SSM_COUNTED)) {
+			if (method == SSM_COUNTED) {
 				if (gender == SSG_MASCULINE)
 					switch_say_file(sh, "digits/%d0_pm", b);
 				else if (gender == SSG_FEMININE)
@@ -92,7 +92,7 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 				switch_say_file(sh, "digits/%d0", b);
 			}
 		} else {
-			if ((method == SSM_COUNTED)) {
+			if (method == SSM_COUNTED) {
 				if (gender == SSG_MASCULINE)
 					switch_say_file(sh, "digits/%d%d_pm", b, c);
 				else if (gender == SSG_FEMININE)
