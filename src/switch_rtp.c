@@ -961,7 +961,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 	}
 
 	if (ok || !ice->rready) {
-		if ((packet->header.type == SWITCH_STUN_BINDING_RESPONSE)) {
+		if (packet->header.type == SWITCH_STUN_BINDING_RESPONSE) {
 
 			if (!ice->rready) {
 				if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
@@ -973,7 +973,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 				switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 			}
-		} else if ((packet->header.type == SWITCH_STUN_BINDING_REQUEST)) {
+		} else if (packet->header.type == SWITCH_STUN_BINDING_REQUEST) {
 			uint8_t stunbuf[512];
 			switch_stun_packet_t *rpacket;
 			const char *remote_ip;
