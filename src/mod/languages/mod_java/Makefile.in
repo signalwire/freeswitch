@@ -5,7 +5,7 @@
 
 JAVA_FLAGS=@JAVA_FLAGS@
 # Without -fno-strict-aliasing, g++ generates invalid code for Java_org_freeswitch_freeswitchJNI_SWIGJavaSessionUpcast, which segfaults
-LOCAL_CFLAGS=$(JAVA_FLAGS) -fno-strict-aliasing
+LOCAL_CFLAGS=$(JAVA_FLAGS) -fno-strict-aliasing -I/usr/lib/jvm/java-gcj/include -I/usr/lib/jvm/java-gcj/include/linux
 LOCAL_OBJS=freeswitch_java.o switch_swig_wrap.o modjava.o
 CLASSES=src/org/freeswitch/Launcher.java \
 	src/org/freeswitch/HangupHook.java \
