@@ -1640,6 +1640,7 @@ int main(int argc, char *argv[])
 	el_end(el);
 #endif
 	esl_disconnect(&handle);
+	global_handle = NULL;
 	thread_running = 0;
 	return 0;
 }
