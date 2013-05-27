@@ -1406,8 +1406,6 @@ int main(int argc, char *argv[])
 				print_banner(stdout, is_color);
 				usage(argv[0]);
 				return 0;
-			default:
-				opt = 0;
 		}
 	}
 	if (argv_error) {
