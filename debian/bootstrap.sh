@@ -536,6 +536,7 @@ Architecture: any
 Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-amr (= \${binary:Version}),
  freeswitch-mod-amrwb (= \${binary:Version}),
+ freeswitch-mod-b64 (= \${binary:Version}),
  freeswitch-mod-bv (= \${binary:Version}),
  freeswitch-mod-celt (= \${binary:Version}),
  freeswitch-mod-codec2 (= \${binary:Version}),
