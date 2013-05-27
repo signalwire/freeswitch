@@ -822,7 +822,7 @@ STFU_DECLARE(int32_t) stfu_n_copy_next_frame(stfu_instance_t *jb, uint32_t times
 	uint32_t target_ts = 0;
 
 #ifdef WIN32
-	seq = seq;
+	UNREFERENCED_PARAMETER(seq);
 #endif
 	if (!next_frame) return 0;
 
