@@ -1068,10 +1068,23 @@ genmodctl_mod () {
   echo
 }
 
+set_modules_non_dfsg () {
+  local len=${#avoid_mods}
+  for ((i=0; i<len; i++)); do
+    case "${avoid_mods[$i]}" in
+      codecs/mod_siren|codecs/mod_ilbc)
+        unset avoid_mods[$i]
+        ;;
+    esac
+  done
+}
+
 codename="sid"
-while getopts "c:" o; do
+modulelist_opt=""
+while getopts "c:m:" o; do
   case "$o" in
     c) codename="$OPTARG" ;;
+    m) modulelist_opt="$OPTARG" ;;
   esac
 done
 shift $(($OPTIND-1))
@@ -1079,6 +1092,8 @@ shift $(($OPTIND-1))
 echo "Bootstrapping debian/ for ${codename}" >&2
 echo >&2
 echo "Please wait, this takes a few seconds..." >&2
+
+test -z "$modulelist_opt" || set_modules_${modulelist_opt/-/_}
 
 echo "Adding any new modules to control-modules..." >&2
 parse_dir=control-modules.parse
