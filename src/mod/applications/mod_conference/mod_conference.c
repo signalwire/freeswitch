@@ -6362,6 +6362,12 @@ static switch_status_t conf_api_sub_get(conference_obj_t *conference,
 		} else if (strcasecmp(argv[2], "endconf_grace_time") == 0) {
 			stream->write_function(stream, "%d",
 					conference->endconf_grace_time);
+		} else if (strcasecmp(argv[2], "uuid") == 0) {
+			stream->write_function(stream, "%s",
+					conference->uuid_str);
+		} else if (strcasecmp(argv[2], "wait_mod") == 0) {
+			stream->write_function(stream, "%s",
+					switch_test_flag(conference, CFLAG_WAIT_MOD) ? "true" : "");
 		} else {
 			ret_status = SWITCH_STATUS_FALSE;
 		}
