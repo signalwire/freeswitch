@@ -932,9 +932,11 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 							if (channel) {
 								switch_channel_set_variable(channel, "remote_media_ip_reported", switch_channel_get_variable(channel, "remote_media_ip"));
 								switch_channel_set_variable(channel, "remote_media_ip", host);
+								switch_channel_set_variable(channel, "rtp_auto_adjust_ip", host);
 								switch_snprintf(adj_port, sizeof(adj_port), "%u", port);
 								switch_channel_set_variable(channel, "remote_media_port_reported", switch_channel_get_variable(channel, "remote_media_port"));
 								switch_channel_set_variable(channel, "remote_media_port", adj_port);
+								switch_channel_set_variable(channel, "rtp_auto_adjust_port", adj_port);
 								switch_channel_set_variable(channel, "rtp_auto_candidate_adjust", "true");
 							}
 							rtp_session->auto_adj_used = 1;
