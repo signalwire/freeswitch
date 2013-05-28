@@ -1246,7 +1246,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 			revent->event_id = ESL_EVENT_SOCKET_DATA;
 			esl_event_add_header_string(revent, ESL_STACK_BOTTOM, "Event-Name", "SOCKET_DATA");
 			
-			hname = p = data;
+			p = data;
 
 			while(p) {
 				hname = p;
