@@ -153,10 +153,11 @@ create_orig () {
   {
     set -e
     local OPTIND OPTARG
-    local uver="" hrev="" bundle_deps=false zl=9e
-    while getopts 'bnv:z:' o "$@"; do
+    local uver="" hrev="" bundle_deps=false modules_list="" zl=9e
+    while getopts 'bm:nv:z:' o "$@"; do
       case "$o" in
         b) bundle_deps=true;;
+        m) modules_list="$OPTARG";;
         n) uver="nightly";;
         v) uver="$OPTARG";;
         z) zl="$OPTARG";;
@@ -173,9 +174,9 @@ create_orig () {
     check_repo_clean
     git reset --hard "$treeish"
     mv .gitattributes .gitattributes.orig
-    grep .gitattributes.orig \
-      -e '\bdebian-ignore\b' \
-      -e '\bdfsg-nonfree\b' \
+    local -a args=(-e '\bdebian-ignore\b')
+    test "$modules_list" = "non-dfsg" || args+=(-e '\bdfsg-nonfree\b')
+    grep .gitattributes.orig "${args[@]}" \
       | while xread l; do
       echo "$l export-ignore" >> .gitattributes
     done
@@ -226,10 +227,13 @@ create_dsc () {
     if [ -n "$modules_conf" ]; then
       cp $modules_conf debian/modules.conf
     fi
+    local bootstrap_args=""
     if [ -n "$modules_list" ]; then
-      set_modules_${modules_list}
+      if [ "$modules_list" = "non-dfsg" ]; then
+        bootstrap_args="-mnon-dfsg"
+      else set_modules_${modules_list}; fi
     fi
-    (cd debian && ./bootstrap.sh -c $distro)
+    (cd debian && ./bootstrap.sh -c $distro $bootstrap_args)
     case "$speed" in
       paranoid) sed -i ./debian/rules \
         -e '/\.stamp-bootstrap:/{:l2 n; /\.\/bootstrap.sh -j/{s/ -j//; :l3 n; b l3}; b l2};' ;;
@@ -238,7 +242,8 @@ create_dsc () {
     esac
     [ "$zl" -ge "1" ] || zl=1
     git add debian/rules
-    git rm -rf --ignore-unmatch libs/libg722_1 libs/ilbc
+    [ "$modules_list" = "non-dfsg" ] \
+      || git rm -rf --ignore-unmatch libs/libg722_1 libs/ilbc
     dch -b -m -v "$dver" --force-distribution -D "$suite" "Nightly build."
     git add debian/changelog && git commit -m "nightly v$orig_ver"
     dpkg-source -i.* -Zxz -z${zl} -b .
@@ -324,7 +329,7 @@ build_all () {
       d) deb_opts="$deb_opts -d";;
       f) dsc_opts="$dsc_opts -f$OPTARG";;
       j) par=true;;
-      m) dsc_opts="$dsc_opts -m$OPTARG";;
+      m) orig_opts="$orig_opts -m$OPTARG"; dsc_opts="$dsc_opts -m$OPTARG";;
       n) orig_opts="$orig_opts -n";;
       o) orig="$OPTARG";;
       s) dsc_opts="$dsc_opts -s$OPTARG";;
@@ -390,7 +395,7 @@ commands:
     -f <modules.conf>
       Build only modules listed in this file
     -j Build debs in parallel
-    -m [ quicktest ]
+    -m [ quicktest | non-dfsg ]
       Choose custom list of modules to build
     -n Nightly build
     -o <orig-file>
@@ -414,7 +419,7 @@ commands:
 
     -f <modules.conf>
       Build only modules listed in this file
-    -m [ quicktest ]
+    -m [ quicktest | non-dfsg ]
       Choose custom list of modules to build
     -s [ paranoid | reckless ]
       Set FS bootstrap/build -j flags
@@ -423,6 +428,8 @@ commands:
   create-orig <treeish>
 
     -b Bundle downloaded libraries in source package
+    -m [ quicktest | non-dfsg ]
+      Choose custom list of modules to build
     -n Nightly build
     -v Set version
     -z Set compression level
