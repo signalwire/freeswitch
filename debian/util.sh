@@ -242,8 +242,6 @@ create_dsc () {
     esac
     [ "$zl" -ge "1" ] || zl=1
     git add debian/rules
-    [ "$modules_list" = "non-dfsg" ] \
-      || git rm -rf --ignore-unmatch libs/libg722_1 libs/ilbc
     dch -b -m -v "$dver" --force-distribution -D "$suite" "Nightly build."
     git add debian/changelog && git commit -m "nightly v$orig_ver"
     dpkg-source -i.* -Zxz -z${zl} -b .
