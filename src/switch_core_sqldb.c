@@ -1676,7 +1676,7 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 		switch_cache_db_execute_sql_real(qm->event_db, qm->pre_trans_execute, &errmsg);
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL PRE TRANS EXEC %s [%s]\n", qm->pre_trans_execute, errmsg);
-			free(errmsg);
+			free(errmsg); errmsg = NULL;
 		}
 	}
 
