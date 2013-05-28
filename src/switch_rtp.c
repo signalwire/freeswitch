@@ -3690,10 +3690,12 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 					if (channel) {
 						switch_channel_set_variable(channel, "remote_media_ip_reported", switch_channel_get_variable(channel, "remote_media_ip"));
+						switch_channel_set_variable(channel, "rtp_auto_adjust_ip", tx_host);
 						switch_channel_set_variable(channel, "remote_media_ip", tx_host);
 						switch_snprintf(adj_port, sizeof(adj_port), "%u", switch_sockaddr_get_port(rtp_session->from_addr));
 						switch_channel_set_variable(channel, "remote_media_port_reported", switch_channel_get_variable(channel, "remote_media_port"));
 						switch_channel_set_variable(channel, "remote_media_port", adj_port);
+						switch_channel_set_variable(channel, "rtp_auto_adjust_port", adj_port);
 						switch_channel_set_variable(channel, "rtp_auto_adjust", "true");
 					}
 					rtp_session->auto_adj_used = 1;
