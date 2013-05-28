@@ -275,7 +275,7 @@ ESL_DECLARE(char *) esl_event_get_header_idx(esl_event_t *event, const char *hea
 		}
 
 		return hp->value;
-	} else if (!strcmp(header_name, "_body")) {
+	} else if (header_name && !strcmp(header_name, "_body")) {
 		return event->body;
 	}		
 
