@@ -1040,16 +1040,29 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_profile_var(switch_channel_t 
 		channel->caller_profile->chan_name = v;
 	} else {
 		profile_node_t *pn, *n = switch_core_alloc(channel->caller_profile->pool, sizeof(*n));
-		
+		int var_found;
+
 		n->var = switch_core_strdup(channel->caller_profile->pool, name);
 		n->val = v;
 
 		if (!channel->caller_profile->soft) {
 			channel->caller_profile->soft = n;
 		} else {
-			for(pn = channel->caller_profile->soft; pn && pn->next; pn = pn->next);
+			var_found = 0;
 			
-			if (pn) {
+			for(pn = channel->caller_profile->soft; pn ; pn = pn->next) {
+				if (!strcasecmp(pn->var,n->var)) {
+					pn->val = n->val;
+					var_found = 1;
+					break;
+				}
+
+				if(!pn->next) {
+					break;
+				}
+			}
+			
+			if (pn && !pn->next && !var_found) {
 				pn->next = n;
 			}
 		}
