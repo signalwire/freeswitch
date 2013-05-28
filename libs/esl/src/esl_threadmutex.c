@@ -163,6 +163,7 @@ ESL_DECLARE(esl_status_t) esl_mutex_create(esl_mutex_t **mutex)
 
  fail:
 	pthread_mutexattr_destroy(&attr);
+	free(check);
 	goto done;
 
  success:
