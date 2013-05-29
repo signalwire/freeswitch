@@ -60,8 +60,8 @@
 #include "config.h"
 #endif
 
-#include <stdlib.h>
 #include <inttypes.h>
+#include <stdlib.h>
 #include <limits.h>
 #include <stdio.h>
 #include <fcntl.h>

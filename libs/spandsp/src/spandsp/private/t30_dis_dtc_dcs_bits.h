@@ -70,6 +70,14 @@
 #define T30_DCS_BIT_RECEIVE_FAX_DOCUMENT                    10
 
 /* Bits 11, 12, 13, 14 - modem type */
+#define T30_DIS_BIT_MODEM_TYPE_1                            11
+#define T30_DCS_BIT_MODEM_TYPE_1                            11
+#define T30_DIS_BIT_MODEM_TYPE_2                            12
+#define T30_DCS_BIT_MODEM_TYPE_2                            12
+#define T30_DIS_BIT_MODEM_TYPE_3                            13
+#define T30_DCS_BIT_MODEM_TYPE_3                            13
+#define T30_DIS_BIT_MODEM_TYPE_4                            14
+#define T30_DCS_BIT_MODEM_TYPE_4                            14
 
 #define T30_DIS_BIT_200_200_CAPABLE                         15
 #define T30_DCS_BIT_200_200                                 15

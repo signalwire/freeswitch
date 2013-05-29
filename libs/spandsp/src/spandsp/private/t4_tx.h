@@ -58,13 +58,15 @@ typedef struct
     int row;
 
     /*! \brief Width of the image in the file. */
-    int image_width;
+    uint32_t image_width;
     /*! \brief Length of the image in the file. */
-    int image_length;
+    uint32_t image_length;
     /*! \brief Column-to-column (X) resolution in pixels per metre of the image in the file. */
     int image_x_resolution;
     /*! \brief Row-to-row (Y) resolution in pixels per metre of the image in the file. */
     int image_y_resolution;
+    /*! \brief Code for the combined X and Y resolution of the image in the file. */
+    int resolution_code;
 
     /*! \brief Row counter used when the image is resized or dithered flat. */
     int raw_row;
@@ -78,14 +80,23 @@ typedef struct
 */
 typedef struct
 {
+    /*! \brief The type of compression used on the wire. */
+    int compression;
+    /*! \brief Image type - bi-level, gray, colour, etc. */
+    int image_type;
+    /*! \brief The width code for the image on the line side. */
+    int width_code;
+
+    /*! \brief The width of the current page on the wire, in pixels. */
+    uint32_t image_width;
+    /*! \brief The length of the current page on the wire, in pixels. */
+    uint32_t image_length;
     /*! \brief Column-to-column (X) resolution in pixels per metre on the wire. */
     int x_resolution;
     /*! \brief Row-to-row (Y) resolution in pixels per metre on the wire. */
     int y_resolution;
-    /*! \brief Code for the combined X and Y resolution of the image in the file. */
+    /*! \brief Code for the combined X and Y resolution on the wire. */
     int resolution_code;
-    /*! \brief Image type - bi-level, gray, colour, etc. */
-    int image_type;
 } t4_tx_metadata_t;
 
 /*!
@@ -99,18 +110,10 @@ struct t4_tx_state_s
     /*! \brief Opaque pointer passed to row_read_handler. */
     void *row_handler_user_data;
 
-    /*! \brief The type of compression used between the FAX machines. */
-    int line_encoding;
-
     /*! \brief When superfine and fine resolution images need to be squahed vertically
                to a lower resolution, this value sets the number of source rows which
                must be squashed to form each row on the wire. */
     int row_squashing_ratio;
-
-    /*! \brief The width of the current page, in pixels. */
-    uint32_t image_width;
-    /*! \brief The length of the current page, in pixels. */
-    uint32_t image_length;
 
     /*! \brief The size of the compressed image on the line side, in bits. */
     int line_image_size;

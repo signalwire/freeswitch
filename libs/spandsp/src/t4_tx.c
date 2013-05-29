@@ -347,11 +347,11 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
     parm32 = 0;
     TIFFGetField(t->tiff_file, TIFFTAG_IMAGEWIDTH, &parm32);
     t->image_width =
-    s->image_width = parm32;
+    s->metadata.image_width = parm32;
     parm32 = 0;
     TIFFGetField(t->tiff_file, TIFFTAG_IMAGELENGTH, &parm32);
     t->image_length =
-    s->image_length = parm32;
+    s->metadata.image_length = parm32;
     x_resolution = 0.0f;
     TIFFGetField(t->tiff_file, TIFFTAG_XRESOLUTION, &x_resolution);
     y_resolution = 0.0f;
@@ -387,8 +387,8 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
 
     s->metadata.resolution_code = resolution_map[best_y_entry][best_x_entry];
 
-    t4_tx_set_image_width(s, s->image_width);
-    t4_tx_set_image_length(s, s->image_length);
+    t4_tx_set_image_width(s, s->metadata.image_width);
+    t4_tx_set_image_length(s, s->metadata.image_length);
     t4_tx_set_max_2d_rows_per_1d_row(s, -s->metadata.y_resolution);
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
     if (TIFFGetField(t->tiff_file, TIFFTAG_PROFILETYPE, &parm32))
@@ -484,7 +484,7 @@ static int test_tiff_directory_info(t4_tx_state_t *s)
 
     parm32 = 0;
     TIFFGetField(t->tiff_file, TIFFTAG_IMAGEWIDTH, &parm32);
-    if (s->image_width != (int) parm32)
+    if (s->metadata.image_width != (int) parm32)
         return 1;
     x_resolution = 0.0f;
     TIFFGetField(t->tiff_file, TIFFTAG_XRESOLUTION, &x_resolution);
@@ -540,16 +540,16 @@ static int tiff_row_read_handler(void *user_data, uint8_t buf[], size_t len)
     int j;
 
     s = (t4_tx_state_t *) user_data;
-    if (s->tiff.row >= s->image_length)
+    if (s->tiff.row >= s->metadata.image_length)
         return 0;
     memcpy(buf, &s->tiff.image_buffer[s->tiff.row*len], len);
     s->tiff.row++;
 
     /* If this is a bi-level image which has more vertical resolution than the
        far end will accept, we need to squash it down to size. */
-    for (i = 1;  i < s->row_squashing_ratio  &&  s->tiff.row < s->image_length;  i++)
+    for (i = 1;  i < s->row_squashing_ratio  &&  s->tiff.row < s->metadata.image_length;  i++)
     {
-        for (j = 0;  j < s->image_width/8;  j++)
+        for (j = 0;  j < s->metadata.image_width/8;  j++)
             buf[j] |= s->tiff.image_buffer[s->tiff.row*len + j];
         s->tiff.row++;
     }
@@ -624,7 +624,7 @@ static int read_tiff_t85_image(t4_tx_state_t *s)
     if ((raw_data = malloc(biggest)) == NULL)
         return -1;
 
-    s->tiff.image_size = s->image_length*((s->image_width + 7)/8);
+    s->tiff.image_size = s->metadata.image_length*((s->metadata.image_width + 7)/8);
     if (s->tiff.image_size >= s->tiff.image_buffer_size)
     {
         if ((t = realloc(s->tiff.image_buffer, s->tiff.image_size)) == NULL)
@@ -657,7 +657,7 @@ static int read_tiff_t85_image(t4_tx_state_t *s)
         result = t85_decode_put(&t85, NULL, 0);
 
     len = t85_decode_get_compressed_image_size(&t85);
-    span_log(&s->logging, SPAN_LOG_WARNING, "Compressed image is %d bytes, %d rows\n", len/8, s->image_length);
+    span_log(&s->logging, SPAN_LOG_WARNING, "Compressed image is %d bytes, %d rows\n", len/8, s->metadata.image_length);
     t85_decode_release(&t85);
     free(raw_data);
     return 0;
@@ -700,7 +700,7 @@ static int read_tiff_t43_image(t4_tx_state_t *s, uint8_t **buf)
     logging = t43_decode_get_logging_state(&t43);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
 
-    image_size = 3*s->image_length*s->image_width;
+    image_size = 3*s->metadata.image_length*s->metadata.image_width;
     if ((*buf = malloc(image_size)) == NULL)
         return -1;
 
@@ -762,7 +762,7 @@ static int read_tiff_t42_t81_image(t4_tx_state_t *s, uint8_t **buf)
     if (total_len != total_image_len)
         span_log(&s->logging, SPAN_LOG_FLOW, "Size mismatch %d %d\n", (int) total_len, (int) total_image_len);
 
-    image_size = 3*s->image_length*s->image_width;
+    image_size = 3*s->metadata.image_length*s->metadata.image_width;
     if ((*buf = malloc(image_size)) == NULL)
         return -1;
 
@@ -788,7 +788,7 @@ static int read_tiff_decompressed_image(t4_tx_state_t *s)
 
     /* Decode the whole image into a buffer */
     /* Let libtiff handle the decompression */
-    s->tiff.image_size = s->image_length*TIFFScanlineSize(s->tiff.tiff_file);
+    s->tiff.image_size = s->metadata.image_length*TIFFScanlineSize(s->tiff.tiff_file);
     if (s->tiff.image_size >= s->tiff.image_buffer_size)
     {
         if ((t = realloc(s->tiff.image_buffer, s->tiff.image_size)) == NULL)
@@ -834,14 +834,14 @@ static int read_tiff_image(t4_tx_state_t *s)
     {
         /* We need to dither this image down to pure black and white, possibly resizing it
            along the way. */
-        if ((translator = image_translate_init(NULL, T4_IMAGE_TYPE_BILEVEL, 1728, -1, s->tiff.image_type, s->image_width, s->image_length, row_read, s)) == NULL)
+        if ((translator = image_translate_init(NULL, T4_IMAGE_TYPE_BILEVEL, 1728, -1, s->tiff.image_type, s->metadata.image_width, s->metadata.image_length, row_read, s)) == NULL)
             return -1;
-        s->image_width = image_translate_get_output_width(translator);
-        s->image_length = image_translate_get_output_length(translator);
+        s->metadata.image_width = image_translate_get_output_width(translator);
+        s->metadata.image_length = image_translate_get_output_length(translator);
         s->metadata.x_resolution = T4_X_RESOLUTION_R8;
         s->metadata.y_resolution = T4_Y_RESOLUTION_FINE;
         s->metadata.resolution_code = T4_RESOLUTION_R8_FINE;
-        s->tiff.image_size = (s->image_width*s->image_length + 7)/8;
+        s->tiff.image_size = (s->metadata.image_width*s->metadata.image_length + 7)/8;
         if (s->tiff.image_size >= s->tiff.image_buffer_size)
         {
             if ((t = realloc(s->tiff.image_buffer, s->tiff.image_size)) == NULL)
@@ -868,8 +868,8 @@ static int read_tiff_image(t4_tx_state_t *s)
             break;
         }
         total_len = 0;
-        for (i = 0;  i < s->image_length;  i++)
-            total_len += image_translate_row(translator, &s->tiff.image_buffer[total_len], s->image_width/8);
+        for (i = 0;  i < s->metadata.image_length;  i++)
+            total_len += image_translate_row(translator, &s->tiff.image_buffer[total_len], s->metadata.image_width/8);
         image_translate_free(translator);
     }
     else
@@ -897,7 +897,7 @@ static int read_tiff_image(t4_tx_state_t *s)
         }
     }
     s->tiff.row = 0;
-    return s->image_length;
+    return s->metadata.image_length;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -923,7 +923,7 @@ static void tiff_tx_release(t4_tx_state_t *s)
 
 static int set_row_read_handler(t4_tx_state_t *s, t4_row_read_handler_t handler, void *user_data)
 {
-    switch (s->line_encoding)
+    switch (s->metadata.compression)
     {
     case T4_COMPRESSION_T4_1D:
     case T4_COMPRESSION_T4_2D:
@@ -1096,83 +1096,83 @@ SPAN_DECLARE(int) t4_tx_set_tx_encoding(t4_tx_state_t *s, int encoding)
         case T4_COMPRESSION_T4_1D:
         case T4_COMPRESSION_T4_2D:
         case T4_COMPRESSION_T6:
-            switch (s->line_encoding)
+            switch (s->metadata.compression)
             {
             case T4_COMPRESSION_T4_1D:
             case T4_COMPRESSION_T4_2D:
             case T4_COMPRESSION_T6:
                 break;
             default:
-                t4_t6_encode_init(&s->encoder.t4_t6, encoding, s->image_width, s->row_handler, s->row_handler_user_data);
+                t4_t6_encode_init(&s->encoder.t4_t6, encoding, s->metadata.image_width, s->row_handler, s->row_handler_user_data);
                 t4_t6_encode_set_max_2d_rows_per_1d_row(&s->encoder.t4_t6, -s->metadata.y_resolution);
                 break;
             }
-            s->line_encoding = encoding;
+            s->metadata.compression = encoding;
             if (t4_t6_encode_set_encoding(&s->encoder.t4_t6, encoding))
                 return -1;
-            return s->line_encoding;
+            return s->metadata.compression;
         case T4_COMPRESSION_T85:
         case T4_COMPRESSION_T85_L0:
-            switch (s->line_encoding)
+            switch (s->metadata.compression)
             {
             case T4_COMPRESSION_T85:
             case T4_COMPRESSION_T85_L0:
                 break;
             default:
-                t85_encode_init(&s->encoder.t85, s->image_width, s->image_length, s->row_handler, s->row_handler_user_data);
+                t85_encode_init(&s->encoder.t85, s->metadata.image_width, s->metadata.image_length, s->row_handler, s->row_handler_user_data);
                 break;
             }
-            s->line_encoding = encoding;
-            return s->line_encoding;
+            s->metadata.compression = encoding;
+            return s->metadata.compression;
 #if defined(SPANDSP_SUPPORT_T88)
         case T4_COMPRESSION_T88:
-            switch (s->line_encoding)
+            switch (s->metadata.compression)
             {
             case T4_COMPRESSION_T88:
                 break;
             default:
                 break;
             }
-            s->line_encoding = encoding;
-            return s->line_encoding;
+            s->metadata.compression = encoding;
+            return s->metadata.compression;
 #endif
         case T4_COMPRESSION_T42_T81:
         case T4_COMPRESSION_SYCC_T81:
-            switch (s->line_encoding)
+            switch (s->metadata.compression)
             {
             case T4_COMPRESSION_T42_T81:
             case T4_COMPRESSION_SYCC_T81:
                 break;
             default:
-                t42_encode_init(&s->encoder.t42, s->image_width, s->image_length, s->row_handler, s->row_handler_user_data);
+                t42_encode_init(&s->encoder.t42, s->metadata.image_width, s->metadata.image_length, s->row_handler, s->row_handler_user_data);
                 break;
             }
-            s->line_encoding = encoding;
-            return s->line_encoding;
+            s->metadata.compression = encoding;
+            return s->metadata.compression;
 #if defined(SPANDSP_SUPPORT_T43)
         case T4_COMPRESSION_T43:
-            switch (s->line_encoding)
+            switch (s->metadata.compression)
             {
             case T4_COMPRESSION_T43:
                 break;
             default:
-                t43_encode_init(&s->encoder.t43, s->image_width, s->image_length, s->row_handler, s->row_handler_user_data);
+                t43_encode_init(&s->encoder.t43, s->metadata.image_width, s->metadata.image_length, s->row_handler, s->row_handler_user_data);
                 break;
             }
-            s->line_encoding = encoding;
-            return s->line_encoding;
+            s->metadata.compression = encoding;
+            return s->metadata.compression;
 #endif
 #if defined(SPANDSP_SUPPORT_T45)
         case T4_COMPRESSION_T45:
-            switch (s->line_encoding)
+            switch (s->metadata.compression)
             {
             case T4_COMPRESSION_T45:
                 break;
             default:
                 break;
             }
-            s->line_encoding = encoding;
-            return s->line_encoding;
+            s->metadata.compression = encoding;
+            return s->metadata.compression;
 #endif
         }
     }
@@ -1182,7 +1182,7 @@ SPAN_DECLARE(int) t4_tx_set_tx_encoding(t4_tx_state_t *s, int encoding)
 
 SPAN_DECLARE(void) t4_tx_set_min_bits_per_row(t4_tx_state_t *s, int bits)
 {
-    switch (s->line_encoding)
+    switch (s->metadata.compression)
     {
     case T4_COMPRESSION_T4_1D:
     case T4_COMPRESSION_T4_2D:
@@ -1195,8 +1195,8 @@ SPAN_DECLARE(void) t4_tx_set_min_bits_per_row(t4_tx_state_t *s, int bits)
 
 SPAN_DECLARE(void) t4_tx_set_image_width(t4_tx_state_t *s, int image_width)
 {
-    s->image_width = image_width;
-    switch (s->line_encoding)
+    s->metadata.image_width = image_width;
+    switch (s->metadata.compression)
     {
     case T4_COMPRESSION_T4_1D:
     case T4_COMPRESSION_T4_2D:
@@ -1230,8 +1230,8 @@ SPAN_DECLARE(void) t4_tx_set_image_width(t4_tx_state_t *s, int image_width)
 
 static void t4_tx_set_image_length(t4_tx_state_t *s, int image_length)
 {
-    s->image_length = image_length;
-    switch (s->line_encoding)
+    s->metadata.image_length = image_length;
+    switch (s->metadata.compression)
     {
     case T4_COMPRESSION_T85:
     case T4_COMPRESSION_T85_L0:
@@ -1260,7 +1260,7 @@ static void t4_tx_set_image_length(t4_tx_state_t *s, int image_length)
 
 SPAN_DECLARE(void) t4_tx_set_max_2d_rows_per_1d_row(t4_tx_state_t *s, int max)
 {
-    switch (s->line_encoding)
+    switch (s->metadata.compression)
     {
     case T4_COMPRESSION_T4_1D:
     case T4_COMPRESSION_T4_2D:
@@ -1273,7 +1273,7 @@ SPAN_DECLARE(void) t4_tx_set_max_2d_rows_per_1d_row(t4_tx_state_t *s, int max)
 
 SPAN_DECLARE(int) t4_tx_get_image_width(t4_tx_state_t *s)
 {
-    return s->image_width;
+    return s->metadata.image_width;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1359,8 +1359,8 @@ SPAN_DECLARE(void) t4_tx_get_transfer_statistics(t4_tx_state_t *s, t4_stats_t *t
 
     t->x_resolution = s->metadata.x_resolution;
     t->y_resolution = s->metadata.y_resolution/s->row_squashing_ratio;
-    t->encoding = s->line_encoding;
-    switch (s->line_encoding)
+    t->encoding = s->metadata.compression;
+    switch (s->metadata.compression)
     {
     case T4_COMPRESSION_T4_1D:
     case T4_COMPRESSION_T4_2D:
@@ -1406,7 +1406,7 @@ SPAN_DECLARE(void) t4_tx_get_transfer_statistics(t4_tx_state_t *s, t4_stats_t *t
 
 SPAN_DECLARE(int) t4_tx_image_complete(t4_tx_state_t *s)
 {
-    switch (s->line_encoding)
+    switch (s->metadata.compression)
     {
     case T4_COMPRESSION_T4_1D:
     case T4_COMPRESSION_T4_2D:
@@ -1444,7 +1444,7 @@ SPAN_DECLARE(int) t4_tx_get_bit(t4_tx_state_t *s)
 
 SPAN_DECLARE(int) t4_tx_get(t4_tx_state_t *s, uint8_t buf[], size_t max_len)
 {
-    switch (s->line_encoding)
+    switch (s->metadata.compression)
     {
     case T4_COMPRESSION_T4_1D:
     case T4_COMPRESSION_T4_2D:
@@ -1475,7 +1475,7 @@ SPAN_DECLARE(int) t4_tx_get(t4_tx_state_t *s, uint8_t buf[], size_t max_len)
 
 SPAN_DECLARE(int) t4_tx_start_page(t4_tx_state_t *s)
 {
-    span_log(&s->logging, SPAN_LOG_FLOW, "Start tx page %d - compression %s\n", s->current_page, t4_encoding_to_str(s->line_encoding));
+    span_log(&s->logging, SPAN_LOG_FLOW, "Start tx page %d - compression %s\n", s->current_page, t4_encoding_to_str(s->metadata.compression));
     if (s->current_page > s->stop_page)
         return -1;
     if (s->tiff.file)
@@ -1488,19 +1488,19 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_tx_state_t *s)
     }
     else
     {
-        s->image_length = UINT32_MAX;
+        s->metadata.image_length = UINT32_MAX;
     }
 
-    switch (s->line_encoding)
+    switch (s->metadata.compression)
     {
     case T4_COMPRESSION_T4_1D:
     case T4_COMPRESSION_T4_2D:
     case T4_COMPRESSION_T6:
-        t4_t6_encode_restart(&s->encoder.t4_t6, s->image_width);
+        t4_t6_encode_restart(&s->encoder.t4_t6, s->metadata.image_width);
         break;
     case T4_COMPRESSION_T85:
     case T4_COMPRESSION_T85_L0:
-        t85_encode_restart(&s->encoder.t85, s->image_width, s->image_length);
+        t85_encode_restart(&s->encoder.t85, s->metadata.image_width, s->metadata.image_length);
         break;
 #if defined(SPANDSP_SUPPORT_T88)
     case T4_COMPRESSION_T88:
@@ -1508,11 +1508,11 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_tx_state_t *s)
 #endif
     case T4_COMPRESSION_T42_T81:
     case T4_COMPRESSION_SYCC_T81:
-        t42_encode_restart(&s->encoder.t42, s->image_width, s->image_length);
+        t42_encode_restart(&s->encoder.t42, s->metadata.image_width, s->metadata.image_length);
         break;
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_T43:
-        t43_encode_restart(&s->encoder.t43, s->image_width, s->image_length);
+        t43_encode_restart(&s->encoder.t43, s->metadata.image_width, s->metadata.image_length);
         break;
 #endif
 #if defined(SPANDSP_SUPPORT_T45)
@@ -1578,7 +1578,7 @@ SPAN_DECLARE(t4_tx_state_t *) t4_tx_init(t4_tx_state_t *s, const char *file, int
     s->current_page =
     s->start_page = (start_page >= 0)  ?  start_page  :  0;
     s->stop_page = (stop_page >= 0)  ?  stop_page  :  INT_MAX;
-    s->line_encoding = T4_COMPRESSION_NONE;
+    s->metadata.compression = T4_COMPRESSION_NONE;
 
     s->row_handler = tiff_row_read_handler;
     s->row_handler_user_data = (void *) s;
@@ -1623,7 +1623,7 @@ SPAN_DECLARE(int) t4_tx_release(t4_tx_state_t *s)
         free(s->colour_map);
         s->colour_map = NULL;
     }
-    switch (s->line_encoding)
+    switch (s->metadata.compression)
     {
     case T4_COMPRESSION_T4_1D:
     case T4_COMPRESSION_T4_2D:

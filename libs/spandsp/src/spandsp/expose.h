@@ -31,6 +31,8 @@
 #if !defined(_SPANDSP_EXPOSE_H_)
 #define _SPANDSP_EXPOSE_H_
 
+#include <jpeglib.h>
+
 #include <spandsp/private/logging.h>
 #include <spandsp/private/schedule.h>
 #include <spandsp/private/bitstream.h>

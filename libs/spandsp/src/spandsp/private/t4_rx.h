@@ -39,7 +39,7 @@ typedef struct
     /*! Image type - bilevel, gray, colour */
     int image_type;
     /*! \brief The compression type for output to the TIFF file. */
-    int output_encoding;
+    int compression;
     /*! \brief The TIFF photometric setting for the current page. */
     uint16_t photo_metric;
     /*! \brief The TIFF fill order setting for the current page. */
@@ -65,6 +65,12 @@ typedef struct
 */
 typedef struct
 {
+    /*! \brief The type of compression used on the wire. */
+    int compression;
+    /*! \brief The width of the current page, in pixels. */
+    uint32_t image_width;
+    /*! \brief The length of the current page, in pixels. */
+    uint32_t image_length;
     /*! \brief Column-to-column (X) resolution in pixels per metre. */
     int x_resolution;
     /*! \brief Row-to-row (Y) resolution in pixels per metre. */
@@ -103,14 +109,6 @@ struct t4_rx_state_s
 
     /*! \brief The size of the compressed image on the line side, in bits. */
     int line_image_size;
-
-    /*! \brief The type of compression used between the FAX machines. */
-    int line_encoding;
-
-    /*! \brief The width of the current page, in pixels. */
-    uint32_t image_width;
-    /*! \brief The length of the current page, in pixels. */
-    uint32_t image_length;
 
     union
     {

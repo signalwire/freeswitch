@@ -26,6 +26,9 @@
 #if !defined(_SPANDSP_PRIVATE_T42_H_)
 #define _SPANDSP_PRIVATE_T42_H_
 
+#include <setjmp.h>
+#include <jpeglib.h>
+
 struct lab_params_s
 {
     /* Lab gamut */
@@ -50,11 +53,39 @@ struct t42_encode_state_s
     t4_row_read_handler_t row_read_handler;
     /*! \brief Opaque pointer passed to row_read_handler. */
     void *row_read_user_data;
+    uint32_t image_width;
+    uint32_t image_length;
+    uint16_t samples_per_pixel;
+    int image_type;
+    int no_subsampling;
+    int itu_ycc;
+    int quality;
 
-    lab_params_t lab_params;
+    /* The X or Y direction resolution, in pixels per inch */
+    int spatial_resolution;
+
+    lab_params_t lab;
+
+    uint8_t illuminant_code[4];
+    int illuminant_colour_temperature;
 
     /*! \brief The size of the compressed image, in bytes. */
     int compressed_image_size;
+    int compressed_image_ptr;
+
+    int buf_size;
+    uint8_t *compressed_buf;
+
+    FILE *out;
+#if defined(HAVE_OPEN_MEMSTREAM)
+    size_t outsize;
+#endif
+    jmp_buf escape;
+    char error_message[JMSG_LENGTH_MAX];
+    struct jpeg_compress_struct compressor;
+
+    JSAMPROW scan_line_out;
+    JSAMPROW scan_line_in;
 
     /*! \brief Error and flow logging control */
     logging_state_t logging;
@@ -73,8 +104,19 @@ struct t42_decode_state_s
     void *comment_user_data;
     /*! The maximum length of comment to be passed to the comment handler */
     uint32_t max_comment_len;
+    uint32_t image_width;
+    uint32_t image_length;
+    uint16_t samples_per_pixel;
+    int image_type;
+    int itu_ycc;
 
-    lab_params_t lab_params;
+    /* The X or Y direction resolution, in pixels per inch */
+    int spatial_resolution;
+
+    lab_params_t lab;
+
+    uint8_t illuminant_code[4];
+    int illuminant_colour_temperature;
 
     /*! The contents for a COMMENT marker segment, to be added to the
         image at the next opportunity. This is set to NULL when nothing is
@@ -88,6 +130,17 @@ struct t42_decode_state_s
 
     int buf_size;
     uint8_t *compressed_buf;
+
+    FILE *in;
+    jmp_buf escape;
+    char error_message[JMSG_LENGTH_MAX];
+    struct jpeg_decompress_struct decompressor;
+
+    /*! Flag that the data to be decoded has run out. */
+    int end_of_data;
+
+    JSAMPROW scan_line_out;
+    JSAMPROW scan_line_in;
 
     /*! \brief Error and flow logging control */
     logging_state_t logging;

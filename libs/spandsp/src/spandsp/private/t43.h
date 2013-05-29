@@ -37,17 +37,21 @@ struct t43_encode_state_s
     struct lab_params_s lab;
     struct t85_encode_state_s t85;
 
+    int image_type;
     int bit_planes[4];
 
     int colour_map_entries;
     uint8_t colour_map[3*256];
 
+    uint8_t illuminant_code[4];
+    int illuminant_colour_temperature;
+
     /*! The width of the full image, in pixels */
     uint32_t xd;
     /*! The height of the full image, in pixels */
     uint32_t yd;
-    int x_resolution;
-    int y_resolution;
+    /* The X or Y direction resolution, in pixels per inch */
+    int spatial_resolution;
 
     /*! \brief Error and flow logging control */
     logging_state_t logging;
@@ -64,6 +68,7 @@ struct t43_decode_state_s
     struct lab_params_s lab;
     struct t85_decode_state_s t85;
 
+    int image_type;
     int bit_planes[4];
     uint8_t bit_plane_mask;
     int current_bit_plane;
@@ -72,8 +77,12 @@ struct t43_decode_state_s
     int colour_map_entries;
     uint8_t colour_map[3*256];
 
-    int x_resolution;
-    int y_resolution;
+    uint8_t illuminant_code[4];
+    int illuminant_colour_temperature;
+
+    /* The X or Y direction resolution, in pixels per inch */
+    int spatial_resolution;
+    int samples_per_pixel;
 
     uint8_t *buf;
     int ptr;

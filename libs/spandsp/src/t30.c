@@ -525,7 +525,7 @@ static int rx_start_page(t30_state_t *s)
     t4_rx_set_vendor(&s->t4.rx, s->vendor);
     t4_rx_set_model(&s->t4.rx, s->model);
 
-    t4_rx_set_rx_encoding(&s->t4.rx, s->line_encoding);
+    t4_rx_set_rx_encoding(&s->t4.rx, s->line_compression);
     t4_rx_set_x_resolution(&s->t4.rx, s->x_resolution);
     t4_rx_set_y_resolution(&s->t4.rx, s->y_resolution);
 
@@ -1455,7 +1455,7 @@ static int build_dcs(t30_state_t *s)
 
     /* Select the compression to use. */
     use_bilevel = TRUE;
-    switch (s->line_encoding)
+    switch (s->line_compression)
     {
     case T4_COMPRESSION_T4_1D:
         /* There is nothing to set to select this encoding. */
@@ -2053,7 +2053,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
     s->x_resolution = -1;
     s->y_resolution = -1;
     s->current_page_resolution = 0;
-    s->line_encoding = -1;
+    s->line_compression = -1;
     x = -1;
     if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T81_MODE)
         ||
@@ -2157,22 +2157,22 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T81_MODE))
         {
             if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T42_T81))
-                s->line_encoding = T4_COMPRESSION_T42_T81;
+                s->line_compression = T4_COMPRESSION_T42_T81;
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T43_MODE))
         {
             if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T43))
-                s->line_encoding = T4_COMPRESSION_T43;
+                s->line_compression = T4_COMPRESSION_T43;
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T45_MODE))
         {
             if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T45))
-                s->line_encoding = T4_COMPRESSION_T45;
+                s->line_compression = T4_COMPRESSION_T45;
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_SYCC_T81_MODE))
         {
             if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_SYCC_T81))
-                s->line_encoding = T4_COMPRESSION_SYCC_T81;
+                s->line_compression = T4_COMPRESSION_SYCC_T81;
         }
     }
     else
@@ -2333,41 +2333,41 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
             test_ctrl_bit(dcs_frame, T30_DCS_BIT_T88_MODE_3))
         {
             if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T88))
-                s->line_encoding = T4_COMPRESSION_T88;
+                s->line_compression = T4_COMPRESSION_T88;
         }
         if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T85_L0_MODE))
         {
             if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T85_L0))
-                s->line_encoding = T4_COMPRESSION_T85_L0;
+                s->line_compression = T4_COMPRESSION_T85_L0;
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T85_MODE))
         {
             if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T85))
-                s->line_encoding = T4_COMPRESSION_T85;
+                s->line_compression = T4_COMPRESSION_T85;
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T6_MODE))
         {
             if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T6))
-                s->line_encoding = T4_COMPRESSION_T6;
+                s->line_compression = T4_COMPRESSION_T6;
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_2D_MODE))
         {
             if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T4_2D))
-                s->line_encoding = T4_COMPRESSION_T4_2D;
+                s->line_compression = T4_COMPRESSION_T4_2D;
         }
         else
         {
             if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T4_1D))
-                s->line_encoding = T4_COMPRESSION_T4_1D;
+                s->line_compression = T4_COMPRESSION_T4_1D;
         }
     }
 
-    if (s->line_encoding == -1)
+    if (s->line_compression == -1)
     {
         t30_set_status(s, T30_ERR_INCOMPATIBLE);
         return -1;
     }
-    span_log(&s->logging, SPAN_LOG_FLOW, "Far end selected compression %s (%d)\n", t4_encoding_to_str(s->line_encoding), s->line_encoding);
+    span_log(&s->logging, SPAN_LOG_FLOW, "Far end selected compression %s (%d)\n", t4_encoding_to_str(s->line_compression), s->line_compression);
 
     if (x < 0)
     {
@@ -2678,7 +2678,7 @@ static int start_sending_document(t30_state_t *s)
     }
     s->operation_in_progress = OPERATION_IN_PROGRESS_T4_TX;
     t4_tx_get_pages_in_file(&s->t4.tx);
-    t4_tx_set_tx_encoding(&s->t4.tx, s->line_encoding);
+    t4_tx_set_tx_encoding(&s->t4.tx, s->line_compression);
     t4_tx_set_local_ident(&s->t4.tx, s->tx_info.ident);
     t4_tx_set_header_info(&s->t4.tx, s->header_info);
     if (s->use_own_tz)
@@ -2778,17 +2778,17 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
 
     /* Choose a compression scheme from amongst those mutually available */
     if ((s->mutual_compressions & T4_SUPPORT_COMPRESSION_T85_L0))
-        s->line_encoding = T4_COMPRESSION_T85_L0;
+        s->line_compression = T4_COMPRESSION_T85_L0;
     else if ((s->mutual_compressions & T4_SUPPORT_COMPRESSION_T85))
-        s->line_encoding = T4_COMPRESSION_T85;
+        s->line_compression = T4_COMPRESSION_T85;
     else if ((s->mutual_compressions & T4_SUPPORT_COMPRESSION_T6))
-        s->line_encoding = T4_COMPRESSION_T6;
+        s->line_compression = T4_COMPRESSION_T6;
     else if ((s->mutual_compressions & T4_SUPPORT_COMPRESSION_T4_2D))
-        s->line_encoding = T4_COMPRESSION_T4_2D;
+        s->line_compression = T4_COMPRESSION_T4_2D;
     else
-        s->line_encoding = T4_COMPRESSION_T4_1D;
+        s->line_compression = T4_COMPRESSION_T4_1D;
 
-    span_log(&s->logging, SPAN_LOG_FLOW, "Choose compression %s (%d)\n", t4_encoding_to_str(s->line_encoding), s->line_encoding);
+    span_log(&s->logging, SPAN_LOG_FLOW, "Choose compression %s (%d)\n", t4_encoding_to_str(s->line_compression), s->line_compression);
 
     if (s->phase_b_handler)
     {

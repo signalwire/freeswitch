@@ -48,7 +48,6 @@
 #include <math.h>
 #endif
 #include "floating_fudge.h"
-#include <jpeglib.h>
 #include <tiffio.h>
 #include <assert.h>
 

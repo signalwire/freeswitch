@@ -231,7 +231,11 @@ struct t30_state_s
     /*! \brief The common group of supported image sizes. */
     int mutual_image_sizes;
     /*! \brief The image coding being used on the line. */
-    int line_encoding;
+    int line_compression;
+    /*! \brief The image type being used on the line. */
+    int line_image_type;
+    /*! \brief The width code for the image on the line. */
+    int line_width_code;
     /*! \brief The current DCS message minimum scan time code. */
     uint8_t min_scan_time_code;
     /*! \brief The X direction resolution of the current image, in pixels per metre. */

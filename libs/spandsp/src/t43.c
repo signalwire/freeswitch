@@ -146,7 +146,7 @@ SPAN_DECLARE(int) t43_create_header(t43_decode_state_t *s, uint8_t data[], size_
     pos += 6;
     unpack_16(&data[pos], 1997);
     pos += 2;
-    unpack_16(&data[pos], s->x_resolution);
+    unpack_16(&data[pos], s->spatial_resolution);
     pos += 2;
     /* JBIG coding method (0) is the only possible value here */
     data[pos] = 0;
@@ -523,7 +523,7 @@ static int t43_analyse_header(t43_decode_state_t *s, const uint8_t data[], size_
                     if (seg >= 6 + 10)
                     {
                         val[0] = pack_16(&data[pos + 6 + 0]);
-                        s->x_resolution = pack_16(&data[pos + 6 + 2]);
+                        s->spatial_resolution = pack_16(&data[pos + 6 + 2]);
                         val[2] = data[pos + 6 + 4];
                         val[3] = data[pos + 6 + 5];
                         s->bit_planes[0] = data[pos + 6 + 6];
@@ -534,7 +534,7 @@ static int t43_analyse_header(t43_decode_state_t *s, const uint8_t data[], size_
                                  SPAN_LOG_FLOW,
                                  "Version %d, resolution %.2fdpi, coding method %d, type %s (%d), bit planes %d,%d,%d,%d\n",
                                  val[0],
-                                 s->x_resolution/100.0f,
+                                 s->spatial_resolution/100.0f,
                                  val[2],
                                  t43_image_type_to_str(val[3]),
                                  val[3],
