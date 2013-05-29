@@ -29,8 +29,8 @@
 #include "config.h"
 #endif
 
-#include <stdlib.h>
 #include <inttypes.h>
+#include <stdlib.h>
 #include <limits.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -91,6 +91,7 @@ typedef struct
     uint8_t *buf;
     int ptr;
     int row;
+    int size;
     int bit_mask;
 } packer_t;
 
@@ -100,7 +101,7 @@ typedef struct
     int code;
 } res_table_t;
 
-static void t4_tx_set_image_length(t4_tx_state_t *s, int image_length);
+static void t4_tx_set_image_length(t4_tx_state_t *s, uint32_t image_length);
 
 static const res_table_t x_res_table[] =
 {
@@ -1102,7 +1103,7 @@ SPAN_DECLARE(int) t4_tx_set_tx_encoding(t4_tx_state_t *s, int encoding)
             case T4_COMPRESSION_T6:
                 break;
             default:
-                t4_t6_encode_init(&s->encoder.t4_t6, encoding, s->metadata.image_width, s->row_handler, s->row_handler_user_data);
+                t4_t6_encode_init(&s->encoder.t4_t6, encoding, s->metadata.image_width, s->metadata.image_length, s->row_handler, s->row_handler_user_data);
                 t4_t6_encode_set_max_2d_rows_per_1d_row(&s->encoder.t4_t6, -s->metadata.y_resolution);
                 break;
             }
@@ -1227,7 +1228,7 @@ SPAN_DECLARE(void) t4_tx_set_image_width(t4_tx_state_t *s, int image_width)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void t4_tx_set_image_length(t4_tx_state_t *s, int image_length)
+static void t4_tx_set_image_length(t4_tx_state_t *s, uint32_t image_length)
 {
     s->metadata.image_length = image_length;
     switch (s->metadata.compression)
@@ -1495,7 +1496,7 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_tx_state_t *s)
     case T4_COMPRESSION_T4_1D:
     case T4_COMPRESSION_T4_2D:
     case T4_COMPRESSION_T6:
-        t4_t6_encode_restart(&s->encoder.t4_t6, s->metadata.image_width);
+        t4_t6_encode_restart(&s->encoder.t4_t6, s->metadata.image_width, s->metadata.image_length);
         break;
     case T4_COMPRESSION_T85:
     case T4_COMPRESSION_T85_L0:

@@ -110,9 +110,9 @@ SPAN_DECLARE(const char *) t4_compression_to_str(int compression)
     case T4_COMPRESSION_T88:
         return "T.88";
     case T4_COMPRESSION_T42_T81:
-        return "T.81";
+        return "T.81+T.42";
     case T4_COMPRESSION_SYCC_T81:
-        return "sYCC T.81";
+        return "T.81+sYCC";
     case T4_COMPRESSION_T43:
         return "T.43";
     case T4_COMPRESSION_T45:
@@ -130,14 +130,20 @@ SPAN_DECLARE(const char *) t4_image_type_to_str(int type)
         return "bi-level";
     case T4_IMAGE_TYPE_COLOUR_BILEVEL:
         return "bi-level colour";
+    case T4_IMAGE_TYPE_4COLOUR_BILEVEL:
+        return "CMYK bi-level colour";
     case T4_IMAGE_TYPE_GRAY_8BIT:
         return "8-bit gray scale";
     case T4_IMAGE_TYPE_GRAY_12BIT:
         return "12-bit gray scale";
     case T4_IMAGE_TYPE_COLOUR_8BIT:
         return "8-bit colour";
+    case T4_IMAGE_TYPE_4COLOUR_8BIT:
+        return "CMYK 8-bit colour";
     case T4_IMAGE_TYPE_COLOUR_12BIT:
         return "12-bit colour";
+    case T4_IMAGE_TYPE_4COLOUR_12BIT:
+        return "CMYK 12-bit colour";
     }
     return "???";
 }
@@ -751,9 +757,9 @@ static void select_tiff_compression(t4_rx_state_t *s, int output_image_type)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int encoding)
+SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int compression)
 {
-    switch (encoding)
+    switch (compression)
     {
     case T4_COMPRESSION_T4_1D:
     case T4_COMPRESSION_T4_2D:
@@ -765,12 +771,12 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int encoding)
         case T4_COMPRESSION_T6:
             break;
         default:
-            t4_t6_decode_init(&s->decoder.t4_t6, encoding, s->metadata.image_width, s->row_handler, s->row_handler_user_data);
+            t4_t6_decode_init(&s->decoder.t4_t6, compression, s->metadata.image_width, s->row_handler, s->row_handler_user_data);
             break;
         }
-        s->metadata.compression = encoding;
+        s->metadata.compression = compression;
         select_tiff_compression(s, T4_IMAGE_TYPE_BILEVEL);
-        return t4_t6_decode_set_encoding(&s->decoder.t4_t6, encoding);
+        return t4_t6_decode_set_encoding(&s->decoder.t4_t6, compression);
     case T4_COMPRESSION_T85:
     case T4_COMPRESSION_T85_L0:
         switch (s->metadata.compression)
@@ -787,7 +793,7 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int encoding)
             break;
         }
         select_tiff_compression(s, T4_IMAGE_TYPE_BILEVEL);
-        s->metadata.compression = encoding;
+        s->metadata.compression = compression;
         return 0;
 #if defined(SPANDSP_SUPPORT_T88)
     case T4_COMPRESSION_T88:
@@ -799,7 +805,7 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int encoding)
             break;
         }
         select_tiff_compression(s, T4_IMAGE_TYPE_BILEVEL);
-        s->metadata.compression = encoding;
+        s->metadata.compression = compression;
         return 0;
 #endif
     case T4_COMPRESSION_T42_T81:
@@ -817,7 +823,7 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int encoding)
             t42_decode_set_image_size_constraints(&s->decoder.t42, T4_WIDTH_1200_A3, 0);
             break;
         }
-        s->metadata.compression = encoding;
+        s->metadata.compression = compression;
         select_tiff_compression(s, T4_IMAGE_TYPE_COLOUR_8BIT);
         return 0;
 #if defined(SPANDSP_SUPPORT_T43)
@@ -834,7 +840,7 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int encoding)
             t43_decode_set_image_size_constraints(&s->decoder.t43, T4_WIDTH_1200_A3, 0);
             break;
         }
-        s->metadata.compression = encoding;
+        s->metadata.compression = compression;
         select_tiff_compression(s, T4_IMAGE_TYPE_COLOUR_8BIT);
         return 0;
 #endif
@@ -847,7 +853,7 @@ SPAN_DECLARE(int) t4_rx_set_rx_encoding(t4_rx_state_t *s, int encoding)
         default:
             break;
         }
-        s->metadata.compression = encoding;
+        s->metadata.compression = compression;
         select_tiff_compression(s, T4_IMAGE_TYPE_COLOUR_8BIT);
         return 0;
 #endif

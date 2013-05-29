@@ -57,8 +57,8 @@
 #include "config.h"
 #endif
 
-#include <stdlib.h>
 #include <inttypes.h>
+#include <stdlib.h>
 #include <limits.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -983,13 +983,15 @@ SPAN_DECLARE(int) t4_t6_encode_set_encoding(t4_t6_encode_state_t *s, int encodin
     switch (encoding)
     {
     case T4_COMPRESSION_T6:
+        s->min_bits_per_row = 0;
+        /* Fall through */
     case T4_COMPRESSION_T4_2D:
     case T4_COMPRESSION_T4_1D:
         s->encoding = encoding;
         /* Set this to the default value for the lowest resolution in the T.4 spec. */
         s->max_rows_to_next_1d_row = 2;
         s->rows_to_next_1d_row = s->max_rows_to_next_1d_row - 1;
-        s->row_is_2d = FALSE;
+        s->row_is_2d = (s->encoding == T4_COMPRESSION_T6);
         return 0;
     }
     return -1;
@@ -998,7 +1000,16 @@ SPAN_DECLARE(int) t4_t6_encode_set_encoding(t4_t6_encode_state_t *s, int encodin
 
 SPAN_DECLARE(void) t4_t6_encode_set_min_bits_per_row(t4_t6_encode_state_t *s, int bits)
 {
-    s->min_bits_per_row = bits;
+    switch (s->encoding)
+    {
+    case T4_COMPRESSION_T6:
+        s->min_bits_per_row = 0;
+        break;
+    case T4_COMPRESSION_T4_2D:
+    case T4_COMPRESSION_T4_1D:
+        s->min_bits_per_row = bits;
+        break;
+    }
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1056,9 +1067,12 @@ SPAN_DECLARE(void) t4_t6_encode_set_max_2d_rows_per_1d_row(t4_t6_encode_state_t 
     } y_res_table[] =
     {
         {T4_Y_RESOLUTION_STANDARD, 2},
+        {T4_Y_RESOLUTION_100, 2},
         {T4_Y_RESOLUTION_FINE, 4},
+        {T4_Y_RESOLUTION_200, 4},
         {T4_Y_RESOLUTION_300, 6},
         {T4_Y_RESOLUTION_SUPERFINE, 8},
+        {T4_Y_RESOLUTION_400, 8},
         {T4_Y_RESOLUTION_600, 12},
         {T4_Y_RESOLUTION_800, 16},
         {T4_Y_RESOLUTION_1200, 24},
@@ -1094,7 +1108,7 @@ SPAN_DECLARE(logging_state_t *) t4_t6_encode_get_logging_state(t4_t6_encode_stat
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t4_t6_encode_restart(t4_t6_encode_state_t *s, int image_width)
+SPAN_DECLARE(int) t4_t6_encode_restart(t4_t6_encode_state_t *s, int image_width, int image_length)
 {
     /* Allow for pages being of different width. */
     t4_t6_encode_set_image_width(s, image_width);
@@ -1125,6 +1139,7 @@ SPAN_DECLARE(int) t4_t6_encode_restart(t4_t6_encode_state_t *s, int image_width)
 SPAN_DECLARE(t4_t6_encode_state_t *) t4_t6_encode_init(t4_t6_encode_state_t *s,
                                                        int encoding,
                                                        int image_width,
+                                                       int image_length,
                                                        t4_row_read_handler_t handler,
                                                        void *user_data)
 {
@@ -1142,7 +1157,7 @@ SPAN_DECLARE(t4_t6_encode_state_t *) t4_t6_encode_init(t4_t6_encode_state_t *s,
     s->row_read_user_data = user_data;
 
     s->max_rows_to_next_1d_row = 2;
-    t4_t6_encode_restart(s, image_width);
+    t4_t6_encode_restart(s, image_width, image_length);
 
     return s;
 }

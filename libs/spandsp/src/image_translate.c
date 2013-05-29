@@ -253,6 +253,7 @@ static int get_and_scrunch_row(image_translate_state_t *s, uint8_t buf[])
         case T4_IMAGE_TYPE_COLOUR_12BIT:
             image_gray16_to_colour16_row((uint16_t *) buf, (uint16_t *) buf, s->input_width);
             break;
+        case T4_IMAGE_TYPE_COLOUR_BILEVEL:
         case T4_IMAGE_TYPE_COLOUR_8BIT:
             image_gray16_to_colour8_row(buf, (uint16_t *) buf, s->input_width);
             break;
@@ -267,6 +268,7 @@ static int get_and_scrunch_row(image_translate_state_t *s, uint8_t buf[])
         case T4_IMAGE_TYPE_COLOUR_12BIT:
             image_gray8_to_colour16_row((uint16_t *) buf, buf, s->input_width);
             break;
+        case T4_IMAGE_TYPE_COLOUR_BILEVEL:
         case T4_IMAGE_TYPE_COLOUR_8BIT:
             image_gray8_to_colour8_row(buf, buf, s->input_width);
             break;
@@ -282,11 +284,13 @@ static int get_and_scrunch_row(image_translate_state_t *s, uint8_t buf[])
         case T4_IMAGE_TYPE_GRAY_8BIT:
             image_colour16_to_gray8_row(buf, (uint16_t *) buf, s->input_width);
             break;
+        case T4_IMAGE_TYPE_COLOUR_BILEVEL:
         case T4_IMAGE_TYPE_COLOUR_8BIT:
             image_colour16_to_colour8_row(buf, (uint16_t *) buf, s->input_width);
             break;
         }
         break;
+    case T4_IMAGE_TYPE_COLOUR_BILEVEL:
     case T4_IMAGE_TYPE_COLOUR_8BIT:
         switch (s->output_format)
         {
@@ -374,6 +378,7 @@ static int image_resize_row(image_translate_state_t *s, uint8_t buf[])
 
     switch (s->output_format)
     {
+    case T4_IMAGE_TYPE_COLOUR_BILEVEL:
     case T4_IMAGE_TYPE_COLOUR_8BIT:
         row8[0] = s->raw_pixel_row[0];
         row8[1] = s->raw_pixel_row[1];
@@ -611,12 +616,14 @@ SPAN_DECLARE(int) image_translate_row(image_translate_state_t *s, uint8_t buf[],
 
     if (s->output_row < 0)
         return 0;
-    if (s->output_format == T4_IMAGE_TYPE_BILEVEL)
+    switch (s->output_format)
     {
+    case T4_IMAGE_TYPE_BILEVEL:
+    case T4_IMAGE_TYPE_COLOUR_BILEVEL:
+    case T4_IMAGE_TYPE_4COLOUR_BILEVEL:
         i = floyd_steinberg_dither_row(s, buf);
-    }
-    else
-    {
+        break;
+    default:
         s->output_row++;
         if (s->resize)
         {
@@ -631,6 +638,7 @@ SPAN_DECLARE(int) image_translate_row(image_translate_state_t *s, uint8_t buf[],
         if (s->output_row < 0)
             return 0;
         i = s->output_width*s->output_bytes_per_pixel;
+        break;
     }
     return i;
 }
@@ -656,84 +664,42 @@ SPAN_DECLARE(int) image_translate_set_row_read_handler(image_translate_state_t *
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(image_translate_state_t *) image_translate_init(image_translate_state_t *s,
-                                                             int output_format,
-                                                             int output_width,
-                                                             int output_length,
-                                                             int input_format,
-                                                             int input_width,
-                                                             int input_length,
-                                                             t4_row_read_handler_t row_read_handler,
-                                                             void *row_read_user_data)
+static int image_format_to_bytes_per_pixel(int image_format)
+{
+    switch (image_format)
+    {
+    default:
+    case T4_IMAGE_TYPE_BILEVEL:
+    case T4_IMAGE_TYPE_GRAY_8BIT:
+        return 1;
+    case T4_IMAGE_TYPE_GRAY_12BIT:
+        return 2;
+    case T4_IMAGE_TYPE_COLOUR_BILEVEL:
+    case T4_IMAGE_TYPE_COLOUR_8BIT:
+        return 3;
+    case T4_IMAGE_TYPE_4COLOUR_BILEVEL:
+    case T4_IMAGE_TYPE_4COLOUR_8BIT:
+        return 4;
+    case T4_IMAGE_TYPE_COLOUR_12BIT:
+        return 6;
+    case T4_IMAGE_TYPE_4COLOUR_12BIT:
+        return 8;
+    }
+    return 1;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) image_translate_restart(image_translate_state_t *s, int input_length)
 {
     int i;
     int raw_row_size;
     int row_size;
 
-    if (s == NULL)
-    {
-        if ((s = (image_translate_state_t *) malloc(sizeof(*s))) == NULL)
-            return NULL;
-    }
-    memset(s, 0, sizeof(*s));
-
-    s->input_format = input_format;
-    s->input_width = input_width;
     s->input_length = input_length;
-
-    s->output_format = output_format;
-
-    if ((s->resize = (output_width > 0)))
-    {
-        s->output_width = output_width;
-        if (output_length > 0)
-            s->output_length = output_length;
-        else
-            s->output_length = (s->input_length*s->output_width)/s->input_width;
-    }
+    if (s->resize)
+        s->output_length = (s->input_length*s->output_width)/s->input_width;
     else
-    {
-        s->output_width = s->input_width;
         s->output_length = s->input_length;
-    }
-
-    switch (s->input_format)
-    {
-    case T4_IMAGE_TYPE_GRAY_8BIT:
-        s->input_bytes_per_pixel = 1;
-        break;
-    case T4_IMAGE_TYPE_GRAY_12BIT:
-        s->input_bytes_per_pixel = 2;
-        break;
-    case T4_IMAGE_TYPE_COLOUR_8BIT:
-        s->input_bytes_per_pixel = 3;
-        break;
-    case T4_IMAGE_TYPE_COLOUR_12BIT:
-        s->input_bytes_per_pixel = 6;
-        break;
-    default:
-        s->input_bytes_per_pixel = 1;
-        break;
-    }
-
-    switch (s->output_format)
-    {
-    case T4_IMAGE_TYPE_GRAY_8BIT:
-        s->output_bytes_per_pixel = 1;
-        break;
-    case T4_IMAGE_TYPE_GRAY_12BIT:
-        s->output_bytes_per_pixel = 2;
-        break;
-    case T4_IMAGE_TYPE_COLOUR_8BIT:
-        s->output_bytes_per_pixel = 3;
-        break;
-    case T4_IMAGE_TYPE_COLOUR_12BIT:
-        s->output_bytes_per_pixel = 6;
-        break;
-    default:
-        s->output_bytes_per_pixel = 1;
-        break;
-    }
 
     /* Allocate the two row buffers we need, using the space requirements we now have */
     raw_row_size = s->input_width*s->input_bytes_per_pixel;
@@ -744,29 +710,77 @@ SPAN_DECLARE(image_translate_state_t *) image_translate_init(image_translate_sta
     {
         for (i = 0;  i < 2;  i++)
         {
-            if ((s->raw_pixel_row[i] = (uint8_t *) malloc(raw_row_size)) == NULL)
-                return NULL;
+            if (s->raw_pixel_row[i] == NULL)
+            {
+                if ((s->raw_pixel_row[i] = (uint8_t *) malloc(raw_row_size)) == NULL)
+                    return -1;
+            }
             memset(s->raw_pixel_row[i], 0, raw_row_size);
         }
     }
-    if (s->output_format == T4_IMAGE_TYPE_BILEVEL)
+    switch (s->output_format)
     {
+    case T4_IMAGE_TYPE_BILEVEL:
+    case T4_IMAGE_TYPE_COLOUR_BILEVEL:
+    case T4_IMAGE_TYPE_4COLOUR_BILEVEL:
         if (s->resize)
             raw_row_size = row_size;
         for (i = 0;  i < 2;  i++)
         {
-            if ((s->pixel_row[i] = (uint8_t *) malloc(raw_row_size)) == NULL)
-                return NULL;
+            if (s->pixel_row[i] == NULL)
+            {
+                if ((s->pixel_row[i] = (uint8_t *) malloc(raw_row_size)) == NULL)
+                    return -1;
+            }
             memset(s->pixel_row[i], 0, raw_row_size);
         }
+        break;
     }
-
-    s->row_read_handler = row_read_handler;
-    s->row_read_user_data = row_read_user_data;
 
     s->raw_input_row = 0;
     s->raw_output_row = 0;
     s->output_row = 0;
+
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(image_translate_state_t *) image_translate_init(image_translate_state_t *s,
+                                                             int output_format,
+                                                             int output_width,
+                                                             int output_length,
+                                                             int input_format,
+                                                             int input_width,
+                                                             int input_length,
+                                                             t4_row_read_handler_t row_read_handler,
+                                                             void *row_read_user_data)
+{
+    if (s == NULL)
+    {
+        if ((s = (image_translate_state_t *) malloc(sizeof(*s))) == NULL)
+            return NULL;
+    }
+    memset(s, 0, sizeof(*s));
+
+    s->row_read_handler = row_read_handler;
+    s->row_read_user_data = row_read_user_data;
+
+    s->input_format = input_format;
+    s->input_width = input_width;
+    s->input_length = input_length;
+    s->input_bytes_per_pixel = image_format_to_bytes_per_pixel(s->input_format);
+
+    s->output_format = output_format;
+    s->output_bytes_per_pixel = image_format_to_bytes_per_pixel(s->output_format);
+
+    s->resize = (output_width > 0);
+    if (s->resize)
+        s->output_width = output_width;
+    else
+        s->output_width = s->input_width;
+
+    if (image_translate_restart(s, input_length))
+        return NULL;
 
     return s;
 }

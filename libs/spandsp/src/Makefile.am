@@ -52,6 +52,7 @@ EXTRA_DIST = floating_fudge.h \
              make_cielab_luts.c \
              make_math_fixed_tables.c \
              make_modem_filter.c \
+             make_t43_gray_code_tables.c \
              msvc/config.h \
              msvc/Download_TIFF.2005.vcproj \
              msvc/Download_TIFF.2008.vcproj \
@@ -356,6 +357,9 @@ make_math_fixed_tables$(EXEEXT): $(top_srcdir)/src/make_math_fixed_tables.c
 make_modem_filter$(EXEEXT): $(top_srcdir)/src/make_modem_filter.c $(top_srcdir)/src/filter_tools.c
 	$(CC_FOR_BUILD) -o make_modem_filter$(EXEEXT) $(top_srcdir)/src/make_modem_filter.c $(top_srcdir)/src/filter_tools.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
 
+make_t43_gray_code_tables$(EXEEXT): $(top_srcdir)/src/make_t43_gray_code_tables.c
+	$(CC_FOR_BUILD) -o make_t43_gray_code_tables$(EXEEXT) $(top_srcdir)/src/make_t43_gray_code_tables.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
+
 # We need to run make_at_dictionary, so it generates the
 # at_interpreter_dictionary.h file
 
@@ -383,6 +387,11 @@ t42.lo: cielab_luts.h
 
 cielab_luts.h: make_cielab_luts$(EXEEXT)
 	./make_cielab_luts$(EXEEXT) >cielab_luts.h
+
+t43.lo: t43_gray_code_tables.h
+
+t43_gray_code_tables.h: make_t43_gray_code_tables$(EXEEXT)
+	./make_t43_gray_code_tables$(EXEEXT) >t43_gray_code_tables.h
 
 V17_V32BIS_RX_INCL = v17_v32bis_rx_rrc.h
 

@@ -114,20 +114,23 @@ SPAN_DECLARE(logging_state_t *) t4_t6_encode_get_logging_state(t4_t6_encode_stat
 
 /*! \brief Restart a T.4 or T.6 encode context.
     \param s The T.4/T.6 context.
-    \param image width The image width, in pixels.
+    \param image_width The image width, in pixels.
+    \param image_length The image length, in pixels. This can be set to -1, if the length is not known.
     \return 0 for success, otherwise -1. */
-SPAN_DECLARE(int) t4_t6_encode_restart(t4_t6_encode_state_t *s, int image_width);
+SPAN_DECLARE(int) t4_t6_encode_restart(t4_t6_encode_state_t *s, int image_width, int image_length);
 
 /*! \brief Prepare to encode an image in T.4 or T.6 format.
     \param s The T.4/T.6 context.
     \param encoding The encoding mode.
-    \param image width The image width, in pixels.
+    \param image_width The image width, in pixels.
+    \param image_length The image length, in pixels. This can be set to -1, if the length is not known.
     \param handler A callback routine to handle decoded image rows.
     \param user_data An opaque pointer passed to handler.
     \return A pointer to the context, or NULL if there was a problem. */
 SPAN_DECLARE(t4_t6_encode_state_t *) t4_t6_encode_init(t4_t6_encode_state_t *s,
                                                        int encoding,
                                                        int image_width,
+                                                       int image_length,
                                                        t4_row_read_handler_t handler,
                                                        void *user_data);
 

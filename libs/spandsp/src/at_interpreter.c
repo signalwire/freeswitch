@@ -5527,6 +5527,9 @@ SPAN_DECLARE(void) at_interpreter(at_state_t *s, const char *cmd, int len)
                     {
                         if ((entry = command_search(t, &matched)) <= 0)
                             break;
+                        /* The following test shouldn't be needed, but let's keep it here for completeness. */
+                        if (entry > sizeof(at_commands)/sizeof(at_commands[0]))
+                            break;
                         if ((t = at_commands[entry - 1](s, t)) == NULL)
                             break;
                         if (t == (const char *) -1)

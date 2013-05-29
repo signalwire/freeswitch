@@ -751,10 +751,12 @@ static uint8_t check_next_tx_step(t30_state_t *s)
         more = FALSE;
     if (more)
     {
+        span_log(&s->logging, SPAN_LOG_FLOW, "Another document to send\n");
         //if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_MULTIPLE_SELECTIVE_POLLING_CAPABLE))
         //    return T30_EOS;
         return (s->local_interrupt_pending)  ?  T30_PRI_EOM  :  T30_EOM;
     }
+    span_log(&s->logging, SPAN_LOG_FLOW, "No more pages to send\n");
     return (s->local_interrupt_pending)  ?  T30_PRI_EOP  :  T30_EOP;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1169,9 +1171,9 @@ int t30_build_dis_or_dtc(t30_state_t *s)
     /* Ready to receive a fax will be determined separately, and this message edited. */
     /* With no modems set we are actually selecting V.27ter fallback at 2400bps */
     if ((s->supported_modems & T30_SUPPORT_V27TER))
-        set_ctrl_bit(s->local_dis_dtc_frame, 12);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_MODEM_TYPE_2);
     if ((s->supported_modems & T30_SUPPORT_V29))
-        set_ctrl_bit(s->local_dis_dtc_frame, 11);
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_MODEM_TYPE_1);
     /* V.17 is only valid when combined with V.29 and V.27ter, so if we enable V.17 we force the others too. */
     if ((s->supported_modems & T30_SUPPORT_V17))
         s->local_dis_dtc_frame[4] |= (DISBIT6 | DISBIT4 | DISBIT3);
@@ -1359,9 +1361,11 @@ int t30_build_dis_or_dtc(t30_state_t *s)
 
     /* No double sided printing (alternate mode) */
     /* No double sided printing (continuous mode) */
+
     /* No black and white mixed raster content profile */
     /* No shared data memory */
     /* No T.44 colour space */
+
     if ((s->iaf & T30_IAF_MODE_FLOW_CONTROL))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T38_FLOW_CONTROL_CAPABLE);
     /* No k > 4 */
@@ -1455,27 +1459,23 @@ static int build_dcs(t30_state_t *s)
 
     /* Select the compression to use. */
     use_bilevel = TRUE;
+    set_ctrl_bits(s->dcs_frame, s->min_scan_time_code, T30_DCS_BIT_MIN_SCAN_LINE_TIME_1);
     switch (s->line_compression)
     {
     case T4_COMPRESSION_T4_1D:
         /* There is nothing to set to select this encoding. */
-        set_ctrl_bits(s->dcs_frame, s->min_scan_time_code, T30_DCS_BIT_MIN_SCAN_LINE_TIME_1);
         break;
     case T4_COMPRESSION_T4_2D:
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_2D_MODE);
-        set_ctrl_bits(s->dcs_frame, s->min_scan_time_code, T30_DCS_BIT_MIN_SCAN_LINE_TIME_1);
         break;
     case T4_COMPRESSION_T6:
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T6_MODE);
-        set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, T30_DCS_BIT_MIN_SCAN_LINE_TIME_1);
         break;
     case T4_COMPRESSION_T85:
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T85_MODE);
-        set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, T30_DCS_BIT_MIN_SCAN_LINE_TIME_1);
         break;
     case T4_COMPRESSION_T85_L0:
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T85_L0_MODE);
-        set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, T30_DCS_BIT_MIN_SCAN_LINE_TIME_1);
         break;
 #if defined(SPANDSP_SUPPORT_T88)
     case T4_COMPRESSION_T88:
@@ -1487,7 +1487,7 @@ static int build_dcs(t30_state_t *s)
             set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE);
         if (image_type == T4_IMAGE_TYPE_GRAY_12BIT  ||  image_type == T4_IMAGE_TYPE_COLOUR_12BIT)
             set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_12BIT_COMPONENT);
-        //if (???????? & T4_COMPRESSION_?????))
+        //if (???????? & T4_COMPRESSION_NO_SUBSAMPLING))
         //    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_NO_SUBSAMPLING);
         //if (???????? & T4_COMPRESSION_?????))
         //    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_PREFERRED_HUFFMAN_TABLES);
@@ -1501,7 +1501,7 @@ static int build_dcs(t30_state_t *s)
             set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE);
         if (image_type == T4_IMAGE_TYPE_GRAY_12BIT  ||  image_type == T4_IMAGE_TYPE_COLOUR_12BIT)
             set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_12BIT_COMPONENT);
-        //if (???????? & T4_COMPRESSION_?????))
+        //if (???????? & T4_COMPRESSION_NO_SUBSAMPLING))
         //    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_NO_SUBSAMPLING);
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, T30_DCS_BIT_MIN_SCAN_LINE_TIME_1);
         use_bilevel = FALSE;
@@ -1684,7 +1684,7 @@ static int build_dcs(t30_state_t *s)
         ||
         ((s->image_width == T4_WIDTH_1200_A4)  &&  (s->x_resolution == T4_X_RESOLUTION_1200)))
     {
-        span_log(&s->logging, SPAN_LOG_FLOW, "Image width is A4\n");
+        span_log(&s->logging, SPAN_LOG_FLOW, "Image width is A4 at %ddpi x %ddpi\n", s->x_resolution, s->y_resolution);
         /* No width related bits need to be set. */
     }
     else if (((s->image_width == T4_WIDTH_200_B4)  &&  (s->x_resolution == T4_X_RESOLUTION_200  ||  s->x_resolution == T4_X_RESOLUTION_R8))
@@ -1699,7 +1699,7 @@ static int build_dcs(t30_state_t *s)
     {
         if ((s->mutual_image_sizes & T4_SUPPORT_WIDTH_255MM))
         {
-            span_log(&s->logging, SPAN_LOG_FLOW, "Image width is B4\n");
+            span_log(&s->logging, SPAN_LOG_FLOW, "Image width is B4 at %ddpi x %ddpi\n", s->x_resolution, s->y_resolution);
             set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_255MM_WIDTH);
         }
         else
@@ -1720,7 +1720,7 @@ static int build_dcs(t30_state_t *s)
     {
         if ((s->mutual_image_sizes & T4_SUPPORT_WIDTH_303MM))
         {
-            span_log(&s->logging, SPAN_LOG_FLOW, "Image width is A3\n");
+            span_log(&s->logging, SPAN_LOG_FLOW, "Image width is A3 at %ddpi x %ddpi\n", s->x_resolution, s->y_resolution);
             set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_303MM_WIDTH);
         }
         else
@@ -1747,7 +1747,7 @@ static int build_dcs(t30_state_t *s)
         return -1;
     }
 
-    /* Deal with the image length */
+    /* Set the image length */
     /* If the other end supports unlimited length, then use that. Otherwise, if the other end supports
        B4 use that, as its longer than the default A4 length. */
     if ((s->mutual_image_sizes & T4_SUPPORT_LENGTH_UNLIMITED))
@@ -1768,10 +1768,10 @@ static int build_dcs(t30_state_t *s)
     if ((s->iaf & T30_IAF_MODE_CONTINUOUS_FLOW)  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T38_FAX_CAPABLE))
     {
         /* Clear the modem type bits, in accordance with note 77 of Table 2/T.30 */
-        clr_ctrl_bit(s->local_dis_dtc_frame, 11);
-        clr_ctrl_bit(s->local_dis_dtc_frame, 12);
-        clr_ctrl_bit(s->local_dis_dtc_frame, 13);
-        clr_ctrl_bit(s->local_dis_dtc_frame, 14);
+        clr_ctrl_bit(s->local_dis_dtc_frame, T30_DCS_BIT_MODEM_TYPE_1);
+        clr_ctrl_bit(s->local_dis_dtc_frame, T30_DCS_BIT_MODEM_TYPE_2);
+        clr_ctrl_bit(s->local_dis_dtc_frame, T30_DCS_BIT_MODEM_TYPE_3);
+        clr_ctrl_bit(s->local_dis_dtc_frame, T30_DCS_BIT_MODEM_TYPE_4);
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T38_FAX_MODE);
     }
     s->dcs_len = 19;
@@ -2013,14 +2013,16 @@ static int analyze_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
 
 static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
 {
+    /* The following treats a width field of 11 like 10, which does what note 6 of Table 2/T.30
+       says we should do with the invalid value 11. */
     static const int widths[6][4] =
     {
-        { T4_WIDTH_100_A4,  T4_WIDTH_100_B4,  T4_WIDTH_100_A3, -1}, /* 100/inch */
-        { T4_WIDTH_200_A4,  T4_WIDTH_200_B4,  T4_WIDTH_200_A3, -1}, /* 200/inch / R8 resolution */
-        { T4_WIDTH_300_A4,  T4_WIDTH_300_B4,  T4_WIDTH_300_A3, -1}, /* 300/inch resolution */
-        { T4_WIDTH_400_A4,  T4_WIDTH_400_B4,  T4_WIDTH_400_A3, -1}, /* 400/inch / R16 resolution */
-        { T4_WIDTH_600_A4,  T4_WIDTH_600_B4,  T4_WIDTH_600_A3, -1}, /* 600/inch resolution */
-        {T4_WIDTH_1200_A4, T4_WIDTH_1200_B4, T4_WIDTH_1200_A3, -1}  /* 1200/inch resolution */
+        { T4_WIDTH_100_A4,  T4_WIDTH_100_B4,  T4_WIDTH_100_A3,  T4_WIDTH_100_A3}, /* 100/inch */
+        { T4_WIDTH_200_A4,  T4_WIDTH_200_B4,  T4_WIDTH_200_A3,  T4_WIDTH_200_A3}, /* 200/inch / R8 resolution */
+        { T4_WIDTH_300_A4,  T4_WIDTH_300_B4,  T4_WIDTH_300_A3,  T4_WIDTH_300_A3}, /* 300/inch resolution */
+        { T4_WIDTH_400_A4,  T4_WIDTH_400_B4,  T4_WIDTH_400_A3,  T4_WIDTH_400_A3}, /* 400/inch / R16 resolution */
+        { T4_WIDTH_600_A4,  T4_WIDTH_600_B4,  T4_WIDTH_600_A3,  T4_WIDTH_600_A3}, /* 600/inch resolution */
+        {T4_WIDTH_1200_A4, T4_WIDTH_1200_B4, T4_WIDTH_1200_A3, T4_WIDTH_1200_A3}  /* 1200/inch resolution */
     };
     uint8_t dcs_frame[T30_MAX_DIS_DTC_DCS_LEN];
     int i;
@@ -2588,7 +2590,28 @@ static int send_cfr_sequence(t30_state_t *s, int start)
     /* (CSA) CFR */
     /* CFR is usually a simple frame, but can become a sequence with Internet
        FAXing. */
-    send_simple_frame(s, T30_CFR);
+    if (start)
+    {
+        s->step = 0;
+    }
+    switch (s->step)
+    {
+    case 0:
+        s->step++;
+        if (send_csa_frame(s))
+            break;
+        /* Fall through */
+    case 1:
+        s->step++;
+        send_simple_frame(s, T30_CFR);
+        break;
+    case 2:
+        s->step++;
+        shut_down_hdlc_tx(s);
+        break;
+    default:
+        return -1;
+    }
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -6291,12 +6314,7 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
             }
             break;
         case T30_STATE_F_CFR:
-            if (s->step == 0)
-            {
-                shut_down_hdlc_tx(s);
-                s->step++;
-            }
-            else
+            if (send_cfr_sequence(s, FALSE))
             {
                 if (s->error_correcting_mode)
                 {

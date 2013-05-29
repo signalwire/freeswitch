@@ -68,9 +68,9 @@ SPAN_DECLARE(int) t43_encode_set_image_width(t43_encode_state_t *s, uint32_t ima
 
 SPAN_DECLARE(int) t43_encode_set_image_length(t43_encode_state_t *s, uint32_t length);
 
-SPAN_DECLARE(void) t43_encode_abort(t43_encode_state_t *s);
-
 SPAN_DECLARE(int) t43_encode_set_image_type(t43_encode_state_t *s, int image_type);
+
+SPAN_DECLARE(void) t43_encode_abort(t43_encode_state_t *s);
 
 SPAN_DECLARE(void) t43_encode_comment(t43_encode_state_t *s, const uint8_t comment[], size_t len);
 

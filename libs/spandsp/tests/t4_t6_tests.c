@@ -331,7 +331,7 @@ int main(int argc, char *argv[])
 #if 1
     printf("Testing image_function->compress->decompress->image_function\n");
     /* Send end gets image from a function */
-    if ((send_state = t4_t6_encode_init(NULL, compression, 1728, row_read_handler, NULL)) == NULL)
+    if ((send_state = t4_t6_encode_init(NULL, compression, 1728, -1, row_read_handler, NULL)) == NULL)
     {
         printf("Failed to init T.4/T.6 encoder\n");
         exit(2);
@@ -364,7 +364,7 @@ int main(int argc, char *argv[])
         t4_t6_encode_set_encoding(send_state, compression);
         t4_t6_decode_set_encoding(receive_state, compression);
 
-        if (t4_t6_encode_restart(send_state, 1728))
+        if (t4_t6_encode_restart(send_state, 1728, -1))
             break;
         if (t4_t6_decode_restart(receive_state, 1728))
             break;

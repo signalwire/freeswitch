@@ -48,8 +48,24 @@ extern "C"
 {
 #endif
 
+/*! \brief Convert an X0, Y0, Z0 coordinate to a colour tempature */
+SPAN_DECLARE(int) xyz_to_corrected_color_temp(float *temp, float xyz[3]);
+
+/*! \brief Convert a colour temperature to an X0, Y0, Z0 coordinate */
+SPAN_DECLARE(int) colour_temp_to_xyz(float xyz[3], float temp);
+
+/*! \brief Convert a row of 8 bit pixels from Lab to sRGB
+    \param s The Lab parameters context.
+    \param lab The output pixels
+    \param srgb The input pixels
+    \param pixel The number of pixels in the row. */
 SPAN_DECLARE(void) srgb_to_lab(lab_params_t *s, uint8_t lab[], const uint8_t srgb[], int pixels);
 
+/*! \brief Convert a row of 8 bit pixels from sRGB to Lab
+    \param s The Lab parameters context.
+    \param srgb The output pixels
+    \param lab The input pixels
+    \param pixel The number of pixels in the row. */
 SPAN_DECLARE(void) lab_to_srgb(lab_params_t *s, uint8_t srgb[], const uint8_t lab[], int pixels);
 
 SPAN_DECLARE(void) set_lab_illuminant(lab_params_t *s, float new_xn, float new_yn, float new_zn);
@@ -57,6 +73,8 @@ SPAN_DECLARE(void) set_lab_illuminant(lab_params_t *s, float new_xn, float new_y
 SPAN_DECLARE(void) set_lab_gamut(lab_params_t *s, int L_min, int L_max, int a_min, int a_max, int b_min, int b_max, int ab_are_signed);
 
 SPAN_DECLARE(void) set_lab_gamut2(lab_params_t *s, int L_P, int L_Q, int a_P, int a_Q, int b_P, int b_Q);
+
+SPAN_DECLARE(void) get_lab_gamut2(lab_params_t *s, int *L_P, int *L_Q, int *a_P, int *a_Q, int *b_P, int *b_Q);
 
 SPAN_DECLARE(int) t42_itulab_to_itulab(logging_state_t *logging, tdata_t *dst, tsize_t *dstlen, tdata_t src, tsize_t srclen, uint32_t width, uint32_t height);
 
@@ -68,14 +86,13 @@ SPAN_DECLARE(int) t42_srgb_to_itulab(logging_state_t *logging, lab_params_t *s, 
 
 SPAN_DECLARE(int) t42_itulab_to_srgb(logging_state_t *logging, lab_params_t *s, tdata_t dst, tsize_t *dstlen, tdata_t src, tsize_t srclen, uint32_t *width, uint32_t *height);
 
-SPAN_DECLARE(void) t42_encode_set_options(t42_encode_state_t *s,
-                                          uint32_t l0,
-                                          int mx,
-                                          int options);
+SPAN_DECLARE(void) t42_encode_set_options(t42_encode_state_t *s, uint32_t l0, int quality, int options);
 
 SPAN_DECLARE(int) t42_encode_set_image_width(t42_encode_state_t *s, uint32_t image_width);
 
 SPAN_DECLARE(int) t42_encode_set_image_length(t42_encode_state_t *s, uint32_t length);
+
+SPAN_DECLARE(int) t42_encode_set_image_type(t42_encode_state_t *s, int image_type);
 
 SPAN_DECLARE(void) t42_encode_abort(t42_encode_state_t *s);
 
@@ -92,11 +109,12 @@ SPAN_DECLARE(uint32_t) t42_encode_get_image_width(t42_encode_state_t *s);
 
 SPAN_DECLARE(uint32_t) t42_encode_get_image_length(t42_encode_state_t *s);
 
+/*! \brief Get the size of the compressed image in bits.
+    \param s The T.42 context.
+    \return The size of the image, in bits. */
 SPAN_DECLARE(int) t42_encode_get_compressed_image_size(t42_encode_state_t *s);
 
-SPAN_DECLARE(int) t42_encode_set_row_read_handler(t42_encode_state_t *s,
-                                                  t4_row_read_handler_t handler,
-                                                  void *user_data);
+SPAN_DECLARE(int) t42_encode_set_row_read_handler(t42_encode_state_t *s, t4_row_read_handler_t handler, void *user_data);
 
 /*! Get the logging context associated with a T.42 encode context.
     \brief Get the logging context associated with a T.42 encode context.
@@ -163,6 +181,14 @@ SPAN_DECLARE(int) t42_decode_set_comment_handler(t42_decode_state_t *s,
                                                  t4_row_write_handler_t handler,
                                                  void *user_data);
 
+/*! A maliciously constructed T.42 image could consume too much memory, and constitute
+    a denial of service attack on the system. This function allows constraints to be
+    applied.
+    \brief Set constraints on the received image size.
+    \param s The T.42 context.
+    \param max_xd The maximum permitted width of the full image, in pixels
+    \param max_yd The maximum permitted height of the full image, in pixels
+    \return 0 for OK */
 SPAN_DECLARE(int) t42_decode_set_image_size_constraints(t42_decode_state_t *s,
                                                         uint32_t max_xd,
                                                         uint32_t max_yd);
@@ -177,6 +203,9 @@ SPAN_DECLARE(uint32_t) t42_decode_get_image_width(t42_decode_state_t *s);
     \return The length of the image, in pixels. */
 SPAN_DECLARE(uint32_t) t42_decode_get_image_length(t42_decode_state_t *s);
 
+/*! \brief Get the size of the compressed image in bits.
+    \param s The T.42 context.
+    \return The size of the image, in bits. */
 SPAN_DECLARE(int) t42_decode_get_compressed_image_size(t42_decode_state_t *s);
 
 /*! Get the logging context associated with a T.42 decode context.
@@ -185,6 +214,8 @@ SPAN_DECLARE(int) t42_decode_get_compressed_image_size(t42_decode_state_t *s);
     \return A pointer to the logging context */
 SPAN_DECLARE(logging_state_t *) t42_decode_get_logging_state(t42_decode_state_t *s);
 
+/*! \brief Restart a T.42 decode context.
+    \param s The T.42 context. */
 SPAN_DECLARE(int) t42_decode_restart(t42_decode_state_t *s);
 
 /*! \brief Prepare to decode an image in T.42 format.

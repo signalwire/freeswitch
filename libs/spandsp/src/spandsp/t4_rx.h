@@ -537,7 +537,7 @@ SPAN_DECLARE(void) t4_rx_get_transfer_statistics(t4_rx_state_t *s, t4_stats_t *t
 
 /*! Get the short text name of a compression format.
     \brief Get the short text name of an encoding format.
-    \param encoding The encoding type.
+    \param compression The compression type.
     \return A pointer to the string. */
 SPAN_DECLARE(const char *) t4_compression_to_str(int compression);
 
