@@ -1111,7 +1111,6 @@ static int send_isp_frame(t30_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-#if 0
 static int send_csa_frame(t30_state_t *s)
 {
 #if 0
@@ -1124,7 +1123,6 @@ static int send_csa_frame(t30_state_t *s)
     return FALSE;
 }
 /*- End of function --------------------------------------------------------*/
-#endif
 
 static int send_pps_frame(t30_state_t *s)
 {
