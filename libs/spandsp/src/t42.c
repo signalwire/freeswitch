@@ -719,11 +719,15 @@ static void jpg_encode_error_exit(j_common_ptr cinfo)
 /*- End of function --------------------------------------------------------*/
 
 /* This is the error catcher */
+#ifndef WIN32
 static struct jpeg_error_mgr encode_error_handler =
 {
     .error_exit = jpg_encode_error_exit,
     .output_message = jpg_encode_error_exit
 };
+#else
+static struct jpeg_error_mgr encode_error_handler = {jpg_encode_error_exit,0,jpg_encode_error_exit};
+#endif
 
 static int t42_srgb_to_itulab_jpeg(t42_encode_state_t *s)
 {
@@ -1028,11 +1032,15 @@ static void jpg_decode_error_exit(j_common_ptr cinfo)
 /*- End of function --------------------------------------------------------*/
 
 /* This is the error catcher */
+#ifndef WIN32
 static struct jpeg_error_mgr decode_error_handler =
 {
     .error_exit = jpg_decode_error_exit,
     .output_message = jpg_decode_error_exit
 };
+#else
+static struct jpeg_error_mgr decode_error_handler = {jpg_decode_error_exit,0,jpg_decode_error_exit};
+#endif
 
 static int t42_itulab_jpeg_to_srgb(t42_decode_state_t *s)
 {
