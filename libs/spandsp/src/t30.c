@@ -563,7 +563,7 @@ static void report_rx_ecm_page_result(t30_state_t *s)
     span_log(&s->logging, SPAN_LOG_FLOW, "Page no = %d\n", stats.pages_transferred);
     span_log(&s->logging, SPAN_LOG_FLOW, "Image size = %d x %d pixels\n", stats.width, stats.length);
     span_log(&s->logging, SPAN_LOG_FLOW, "Image resolution = %d/m x %d/m\n", stats.x_resolution, stats.y_resolution);
-    span_log(&s->logging, SPAN_LOG_FLOW, "Compression = %s (%d)\n", t4_encoding_to_str(stats.encoding), stats.encoding);
+    span_log(&s->logging, SPAN_LOG_FLOW, "Compression = %s (%d)\n", t4_compression_to_str(stats.compression), stats.compression);
     span_log(&s->logging, SPAN_LOG_FLOW, "Compressed image size = %d bytes\n", stats.line_image_size);
 }
 /*- End of function --------------------------------------------------------*/
@@ -587,7 +587,7 @@ static int copy_quality(t30_state_t *s)
     span_log(&s->logging, SPAN_LOG_FLOW, "Page no = %d\n", stats.pages_transferred + 1);
     span_log(&s->logging, SPAN_LOG_FLOW, "Image size = %d x %d pixels\n", stats.width, stats.length);
     span_log(&s->logging, SPAN_LOG_FLOW, "Image resolution = %d/m x %d/m\n", stats.x_resolution, stats.y_resolution);
-    span_log(&s->logging, SPAN_LOG_FLOW, "Compression = %s (%d)\n", t4_encoding_to_str(stats.encoding), stats.encoding);
+    span_log(&s->logging, SPAN_LOG_FLOW, "Compression = %s (%d)\n", t4_compression_to_str(stats.compression), stats.compression);
     span_log(&s->logging, SPAN_LOG_FLOW, "Compressed image size = %d bytes\n", stats.line_image_size);
     span_log(&s->logging, SPAN_LOG_FLOW, "Bad rows = %d\n", stats.bad_rows);
     span_log(&s->logging, SPAN_LOG_FLOW, "Longest bad row run = %d\n", stats.longest_bad_row_run);
@@ -2367,7 +2367,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         t30_set_status(s, T30_ERR_INCOMPATIBLE);
         return -1;
     }
-    span_log(&s->logging, SPAN_LOG_FLOW, "Far end selected compression %s (%d)\n", t4_encoding_to_str(s->line_compression), s->line_compression);
+    span_log(&s->logging, SPAN_LOG_FLOW, "Far end selected compression %s (%d)\n", t4_compression_to_str(s->line_compression), s->line_compression);
 
     if (x < 0)
     {
@@ -2788,7 +2788,7 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
     else
         s->line_compression = T4_COMPRESSION_T4_1D;
 
-    span_log(&s->logging, SPAN_LOG_FLOW, "Choose compression %s (%d)\n", t4_encoding_to_str(s->line_compression), s->line_compression);
+    span_log(&s->logging, SPAN_LOG_FLOW, "Choose compression %s (%d)\n", t4_compression_to_str(s->line_compression), s->line_compression);
 
     if (s->phase_b_handler)
     {
@@ -6704,7 +6704,7 @@ SPAN_DECLARE(void) t30_get_transfer_statistics(t30_state_t *s, t30_stats_t *t)
     t->width = stats.width;
     t->length = stats.length;
 
-    t->compression = stats.encoding;
+    t->compression = stats.compression;
     t->image_size = stats.line_image_size;
     t->current_status = s->current_status;
     t->rtn_events = s->rtn_events;

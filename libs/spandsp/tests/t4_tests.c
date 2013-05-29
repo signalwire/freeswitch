@@ -128,7 +128,7 @@ static void display_page_stats(t4_rx_state_t *s)
 
     t4_rx_get_transfer_statistics(s, &stats);
     printf("Pages = %d\n", stats.pages_transferred);
-    printf("Compression = %s\n", t4_encoding_to_str(stats.encoding));
+    printf("Compression = %s\n", t4_compression_to_str(stats.compression));
     printf("Compressed size = %d\n", stats.line_image_size);
     printf("Raw image size = %d pels x %d pels\n", stats.image_width, stats.image_length);
     printf("Image size = %d pels x %d pels\n", stats.width, stats.length);

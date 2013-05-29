@@ -91,9 +91,9 @@ typedef struct
 extern TIFFFieldArray tiff_fx_field_array;
 #endif
 
-SPAN_DECLARE(const char *) t4_encoding_to_str(int encoding)
+SPAN_DECLARE(const char *) t4_compression_to_str(int compression)
 {
-    switch (encoding)
+    switch (compression)
     {
     case T4_COMPRESSION_NONE:
         return "None";
@@ -905,7 +905,7 @@ SPAN_DECLARE(void) t4_rx_get_transfer_statistics(t4_rx_state_t *s, t4_stats_t *t
     t->image_y_resolution = s->metadata.y_resolution;
     t->x_resolution = s->metadata.x_resolution;
     t->y_resolution = s->metadata.y_resolution;
-    t->encoding = s->metadata.compression;
+    t->compression = s->metadata.compression;
     switch (s->metadata.compression)
     {
     case T4_COMPRESSION_T4_1D:
@@ -965,7 +965,7 @@ SPAN_DECLARE(void) t4_rx_get_transfer_statistics(t4_rx_state_t *s, t4_stats_t *t
 
 SPAN_DECLARE(int) t4_rx_start_page(t4_rx_state_t *s)
 {
-    span_log(&s->logging, SPAN_LOG_FLOW, "Start rx page %d - compression %s\n", s->current_page, t4_encoding_to_str(s->metadata.compression));
+    span_log(&s->logging, SPAN_LOG_FLOW, "Start rx page %d - compression %s\n", s->current_page, t4_compression_to_str(s->metadata.compression));
 
     switch (s->metadata.compression)
     {

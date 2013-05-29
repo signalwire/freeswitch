@@ -1358,7 +1358,7 @@ SPAN_DECLARE(void) t4_tx_get_transfer_statistics(t4_tx_state_t *s, t4_stats_t *t
 
     t->x_resolution = s->metadata.x_resolution;
     t->y_resolution = s->metadata.y_resolution/s->row_squashing_ratio;
-    t->encoding = s->metadata.compression;
+    t->compression = s->metadata.compression;
     switch (s->metadata.compression)
     {
     case T4_COMPRESSION_T4_1D:
@@ -1474,7 +1474,7 @@ SPAN_DECLARE(int) t4_tx_get(t4_tx_state_t *s, uint8_t buf[], size_t max_len)
 
 SPAN_DECLARE(int) t4_tx_start_page(t4_tx_state_t *s)
 {
-    span_log(&s->logging, SPAN_LOG_FLOW, "Start tx page %d - compression %s\n", s->current_page, t4_encoding_to_str(s->metadata.compression));
+    span_log(&s->logging, SPAN_LOG_FLOW, "Start tx page %d - compression %s\n", s->current_page, t4_compression_to_str(s->metadata.compression));
     if (s->current_page > s->stop_page)
         return -1;
     if (s->tiff.file)
