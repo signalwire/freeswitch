@@ -74,6 +74,8 @@ SPAN_DECLARE(int) image_translate_get_output_length(image_translate_state_t *s);
     \return 0 for success, else -1. */
 SPAN_DECLARE(int) image_translate_set_row_read_handler(image_translate_state_t *s, t4_row_read_handler_t row_read_handler, void *row_read_user_data);
 
+SPAN_DECLARE(int) image_translate_restart(image_translate_state_t *s, int input_length);
+
 /*! \brief Initialise an image translation context for rescaling and squashing a gray scale
            or colour image to a bi-level FAX type image.
     \param s The image translation context.

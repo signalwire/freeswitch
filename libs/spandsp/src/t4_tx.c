@@ -112,7 +112,6 @@ static const res_table_t x_res_table[] =
     { 400.0f/CM_PER_INCH, T4_X_RESOLUTION_400},
     { 408.0f/CM_PER_INCH, T4_X_RESOLUTION_R16},
     { 600.0f/CM_PER_INCH, T4_X_RESOLUTION_600},
-    { 800.0f/CM_PER_INCH, T4_X_RESOLUTION_800},
     {1200.0f/CM_PER_INCH, T4_X_RESOLUTION_1200},
     {             -1.00f, -1}
 };

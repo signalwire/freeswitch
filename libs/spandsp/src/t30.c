@@ -6704,7 +6704,7 @@ SPAN_DECLARE(void) t30_get_transfer_statistics(t30_state_t *s, t30_stats_t *t)
     t->width = stats.width;
     t->length = stats.length;
 
-    t->encoding = stats.encoding;
+    t->compression = stats.encoding;
     t->image_size = stats.line_image_size;
     t->current_status = s->current_status;
     t->rtn_events = s->rtn_events;

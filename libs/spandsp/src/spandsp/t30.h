@@ -479,7 +479,7 @@ typedef struct
     /*! \brief The size of the image, in bytes */
     int image_size;
     /*! \brief The type of compression used between the FAX machines */
-    int encoding;
+    int compression;
     /*! \brief The number of bad pixel rows in the most recent page. */
     int bad_rows;
     /*! \brief The largest number of bad pixel rows in a block in the most recent page. */

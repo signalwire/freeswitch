@@ -163,6 +163,10 @@ struct t4_tx_state_s
     } encoder;
 
     image_translate_state_t translator;
+    uint8_t *pack_buf;
+    int pack_ptr;
+    int pack_row;
+    int pack_bit_mask;
 
     int apply_lab;
     lab_params_t lab_params;

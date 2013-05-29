@@ -41,6 +41,17 @@ typedef struct t43_encode_state_s t43_encode_state_t;
 /*! State of a working instance of the T.43 decoder */
 typedef struct t43_decode_state_s t43_decode_state_t;
 
+enum
+{
+    T43_IMAGE_TYPE_RGB_BILEVEL = 0,
+    T43_IMAGE_TYPE_CMY_BILEVEL = 1,
+    T43_IMAGE_TYPE_CMYK_BILEVEL = 2,
+    T43_IMAGE_TYPE_8BIT_COLOUR_PALETTE = 16,
+    T43_IMAGE_TYPE_12BIT_COLOUR_PALETTE = 17,
+    T43_IMAGE_TYPE_GRAY = 32,
+    T43_IMAGE_TYPE_COLOUR = 48
+};
+
 #if defined(__cplusplus)
 extern "C"
 {
@@ -58,6 +69,8 @@ SPAN_DECLARE(int) t43_encode_set_image_width(t43_encode_state_t *s, uint32_t ima
 SPAN_DECLARE(int) t43_encode_set_image_length(t43_encode_state_t *s, uint32_t length);
 
 SPAN_DECLARE(void) t43_encode_abort(t43_encode_state_t *s);
+
+SPAN_DECLARE(int) t43_encode_set_image_type(t43_encode_state_t *s, int image_type);
 
 SPAN_DECLARE(void) t43_encode_comment(t43_encode_state_t *s, const uint8_t comment[], size_t len);
 
@@ -113,8 +126,6 @@ SPAN_DECLARE(int) t43_encode_release(t43_encode_state_t *s);
     \param s The T.43 encode context.
     \return 0 for OK, else -1. */
 SPAN_DECLARE(int) t43_encode_free(t43_encode_state_t *s);
-
-SPAN_DECLARE(int) t43_create_header(t43_decode_state_t *s, uint8_t data[], size_t len);
 
 SPAN_DECLARE(void) t43_decode_rx_status(t43_decode_state_t *s, int status);
 
