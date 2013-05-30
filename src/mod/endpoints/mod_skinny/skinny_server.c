@@ -161,7 +161,7 @@ switch_status_t skinny_create_incoming_session(listener_t *listener, uint32_t *l
 	send_set_lamp(listener, SKINNY_BUTTON_LINE, *line_instance_p, SKINNY_LAMP_ON);
 	skinny_line_set_state(listener, *line_instance_p, tech_pvt->call_id, SKINNY_OFF_HOOK);
 	send_select_soft_keys(listener, *line_instance_p, tech_pvt->call_id, SKINNY_KEY_SET_OFF_HOOK, 0xffff);
-	send_display_prompt_status(listener, 0, "\200\000",
+	send_display_prompt_status(listener, 0, SKINNY_DISP_ENTER_NUMBER,
 			*line_instance_p, tech_pvt->call_id);
 	send_activate_call_plane(listener, *line_instance_p);
 	if (switch_channel_get_state(channel) == CS_NEW) {
