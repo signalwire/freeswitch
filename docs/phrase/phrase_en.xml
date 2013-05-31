@@ -643,6 +643,13 @@
       <prompt phrase="Join us each Wednesday at 1PM eastern time on the public FreeSWITCH conference." filename="misc-join_us_each_wed.wav"/>
       <prompt phrase="More information is available online at wiki dot FreeSWITCH dot org." filename="misc-more_info_wiki.wav"/>
       <prompt phrase="Welcome to the FreeSWITCH community conference call!" filename="misc-welcome_freeswitch_conf_call.wav"/>
+      <prompt phrase="E one sixty-four dot org." filename="misc-e164_dot_org.wav"/>
+      <prompt phrase="Your verification PIN is..." filename="ivr-Your_verification_PIN_is.wav"/>
+      <prompt phrase="" filename=""/>
+      <prompt phrase="" filename=""/>
+      <prompt phrase="" filename=""/>
+      <prompt phrase="" filename=""/>
+
     </ivr>
     <misc>
       <prompt phrase="This call has been secured" filename="call_secured.wav"/>
