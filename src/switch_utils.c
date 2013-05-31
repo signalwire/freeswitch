@@ -2382,8 +2382,8 @@ SWITCH_DECLARE(char *) switch_util_quote_shell_arg_pool(const char *string, swit
 		switch (string[i]) {
 #ifndef WIN32
 		case '\'':
-			/* We replace ' by sq dq sq dq sq, so need 4 additional bytes */
-			dest_len += 4;
+			/* We replace ' by sq backslace sq sq, so need 3 additional bytes */
+			dest_len += 3;
 			break;
 #endif
 		}
@@ -2391,7 +2391,7 @@ SWITCH_DECLARE(char *) switch_util_quote_shell_arg_pool(const char *string, swit
 	dest_len += 1; /* closing quote */
 
 	/* if we're given a pool, allocate from it, otherwise use malloc */
-	if ( pool ) {
+	if (pool) {
 		dest = switch_core_alloc(pool, sizeof(char) * dest_len);
 	} else {
 		dest = (char *) malloc(sizeof(char) * dest_len);
@@ -2413,11 +2413,10 @@ SWITCH_DECLARE(char *) switch_util_quote_shell_arg_pool(const char *string, swit
 			break;
 #else
 		case '\'':
-			/* We replace ' by sq dq sq dq sq */
+			/* We replace ' by sq backslash sq sq */
 			dest[n++] = '\'';
-			dest[n++] = '"';
+			dest[n++] = '\\';
 			dest[n++] = '\'';
-			dest[n++] = '"';
 			dest[n++] = '\'';
 			break;
 #endif
