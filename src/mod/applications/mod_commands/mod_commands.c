@@ -5530,6 +5530,22 @@ SWITCH_STANDARD_API(escape_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(quote_shell_arg_function)
+{
+	switch_memory_pool_t *pool;
+
+	if (zstr(cmd)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	switch_core_new_memory_pool(&pool);
+
+	stream->write_function(stream, "%s", switch_util_quote_shell_arg_pool(cmd, pool));
+
+	switch_core_destroy_memory_pool(&pool);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define UUID_LOGLEVEL_SYNTAX "<uuid> <level>"
 SWITCH_STANDARD_API(uuid_loglevel)
 {
@@ -5999,6 +6015,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "nat_map", "Manage NAT", nat_map_function, "[status|republish|reinit] | [add|del] <port> [tcp|udp] [static]");
 	SWITCH_ADD_API(commands_api_interface, "originate", "Originate a call", originate_function, ORIGINATE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "pause", "Pause media on a channel", pause_function, PAUSE_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "quote_shell_arg", "Quote/escape a string for use on shell command line", quote_shell_arg_function, "<data>");
 	SWITCH_ADD_API(commands_api_interface, "regex", "Evaluate a regex", regex_function, "<data>|<pattern>[|<subst string>]");
 	SWITCH_ADD_API(commands_api_interface, "reloadacl", "Reload XML", reload_acl_function, "");
 	SWITCH_ADD_API(commands_api_interface, "reload", "Reload module", reload_function, UNLOAD_SYNTAX);

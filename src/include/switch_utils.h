@@ -913,9 +913,18 @@ SWITCH_DECLARE(int) switch_strcasecmp_any(const char *str, ...);
 /*!
   \brief Quote shell argument
   \param string the string to quote (example: a ' b"' c)
-  \return the quoted string (gives: 'a '\'' b"'\'' c' for unices, "a ' b ' c" for MS Windows)
+  \return the quoted string (gives: 'a '\'' b"'\'' c' for unices, "a ' b ' c" for MS Windows), should be freed
 */
 SWITCH_DECLARE(char *) switch_util_quote_shell_arg(const char *string);
+
+/*!
+  \brief Quote shell argument, allocating from pool if provided
+  \param string the string to quote (example: a ' b"' c)
+  \param pool a memory pool to use
+  \return the quoted string (gives: 'a '\'' b"'\'' c' for unices, "a ' b ' c" for MS Windows), if pool not provided, returned value should be freed
+*/
+SWITCH_DECLARE(char *) switch_util_quote_shell_arg_pool(const char *string, switch_memory_pool_t *pool);
+
 
 #define SWITCH_READ_ACCEPTABLE(status) (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK)
 SWITCH_DECLARE(char *) switch_url_encode(const char *url, char *buf, size_t len);

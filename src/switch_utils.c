@@ -2364,13 +2364,38 @@ SWITCH_DECLARE(char *) switch_string_replace(const char *string, const char *sea
 
 SWITCH_DECLARE(char *) switch_util_quote_shell_arg(const char *string)
 {
+	return switch_util_quote_shell_arg_pool(string, NULL);
+}
+
+SWITCH_DECLARE(char *) switch_util_quote_shell_arg_pool(const char *string, switch_memory_pool_t *pool)
+{
 	size_t string_len = strlen(string);
 	size_t i;
 	size_t n = 0;
-	size_t dest_len = string_len + 1;	/* +1 for the opening quote  */
-	char *dest, *tmp;
+	size_t dest_len = 0;
+	char *dest;
 
-	dest = (char *) malloc(sizeof(char) * dest_len);
+	/* first pass through, figure out how large to make the allocation */
+	dest_len = strlen(string) + 1; /* string + null */
+	dest_len += 1; /* opening quote */
+	for (i = 0; i < string_len; i++) {
+		switch (string[i]) {
+#ifndef WIN32
+		case '\'':
+			/* We replace ' by sq dq sq dq sq, so need 4 additional bytes */
+			dest_len += 4;
+			break;
+#endif
+		}
+	}
+	dest_len += 1; /* closing quote */
+
+	/* if we're given a pool, allocate from it, otherwise use malloc */
+	if ( pool ) {
+		dest = switch_core_alloc(pool, sizeof(char) * dest_len);
+	} else {
+		dest = (char *) malloc(sizeof(char) * dest_len);
+	}
 	switch_assert(dest);
 
 #ifdef WIN32
@@ -2388,14 +2413,11 @@ SWITCH_DECLARE(char *) switch_util_quote_shell_arg(const char *string)
 			break;
 #else
 		case '\'':
-			/* We replace ' by '\'' */
-			dest_len += 3;
-			tmp = (char *) realloc(dest, sizeof(char) * (dest_len));
-			switch_assert(tmp);
-			dest = tmp;
+			/* We replace ' by sq dq sq dq sq */
 			dest[n++] = '\'';
-			dest[n++] = '\\';
+			dest[n++] = '"';
 			dest[n++] = '\'';
+			dest[n++] = '"';
 			dest[n++] = '\'';
 			break;
 #endif
@@ -2404,10 +2426,6 @@ SWITCH_DECLARE(char *) switch_util_quote_shell_arg(const char *string)
 		}
 	}
 
-	dest_len += 2;				/* +2 for the closing quote and the null character */
-	tmp = (char *) realloc(dest, sizeof(char) * (dest_len));
-	switch_assert(tmp);
-	dest = tmp;
 #ifdef WIN32
 	dest[n++] = '"';
 #else
