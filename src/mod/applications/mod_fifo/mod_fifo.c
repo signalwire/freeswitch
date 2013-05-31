@@ -1854,7 +1854,8 @@ static void *SWITCH_THREAD_FUNC node_thread_run(switch_thread_t *thread, void *o
 			node = node->next;
 
 			if (this_node->ready == 0) {
-				
+				switch_core_hash_delete(globals.fifo_hash, this_node->name);
+
 				for (x = 0; x < MAX_PRI; x++) {
 					while (fifo_queue_pop(this_node->fifo_list[x], &pop, 2) == SWITCH_STATUS_SUCCESS) {
 						const char *caller_uuid = switch_event_get_header(pop, "unique-id");
