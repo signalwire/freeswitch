@@ -4522,10 +4522,6 @@ FT_DECLARE(ftdm_status_t) ftdm_iterator_free(ftdm_iterator_t *iter)
 	return FTDM_SUCCESS;
 }
 
-static struct {
-	ftdm_io_interface_t *pika_interface;
-} interfaces;
-
 static void print_channels_by_flag(ftdm_stream_handle_t *stream, ftdm_span_t *inspan, uint32_t inchan_id, unsigned long long flagval, int not, int *count)
 {
 	ftdm_hash_iterator_t *i = NULL;
@@ -6276,7 +6272,6 @@ FT_DECLARE(ftdm_status_t) ftdm_global_init(void)
 	
 	ftdm_thread_override_default_stacksize(FTDM_THREAD_STACKSIZE);
 
-	memset(&interfaces, 0, sizeof(interfaces));
 	globals.interface_hash = create_hashtable(16, ftdm_hash_hashfromstring, ftdm_hash_equalkeys);
 	globals.module_hash = create_hashtable(16, ftdm_hash_hashfromstring, ftdm_hash_equalkeys);
 	globals.span_hash = create_hashtable(16, ftdm_hash_hashfromstring, ftdm_hash_equalkeys);
