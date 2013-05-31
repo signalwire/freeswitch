@@ -1357,7 +1357,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			}
 
 			if (profile->server_rport_level == 3 && sip->sip_user_agent &&
-				sip->sip_user_agent->g_string && !strncasecmp(sip->sip_user_agent->g_string, "Polycom", 7)) {
+				sip->sip_user_agent->g_string &&
+				( !strncasecmp(sip->sip_user_agent->g_string, "Polycom", 7) || !strncasecmp(sip->sip_user_agent->g_string, "KIRK Wireless Server", 20) )) {
 				if (sip && sip->sip_via) {
 					const char *host = sip->sip_via->v_host;
 					const char *c_port = sip->sip_via->v_port;
