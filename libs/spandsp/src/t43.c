@@ -41,7 +41,6 @@
 #endif
 #include <time.h>
 #include "floating_fudge.h"
-#include <jpeglib.h>
 #include <setjmp.h>
 
 #include "spandsp/telephony.h"

@@ -690,9 +690,24 @@ SPAN_DECLARE(int) t30_set_supported_compressions(t30_state_t *s, int supported_c
                             | T4_SUPPORT_COMPRESSION_T6
                             | T4_SUPPORT_COMPRESSION_T85
                             | T4_SUPPORT_COMPRESSION_T85_L0
+#if defined(SPANDSP_SUPPORT_T88)
+                            | T4_SUPPORT_COMPRESSION_T88
+#endif
                             //| T4_SUPPORT_COMPRESSION_T81
 #if defined(SPANDSP_SUPPORT_T43)
                             | T4_SUPPORT_COMPRESSION_T43
+#endif
+#if defined(SPANDSP_SUPPORT_T45)
+                            | T4_SUPPORT_COMPRESSION_T45
+#endif
+#if 0
+                            | T4_SUPPORT_COMPRESSION_GRAYSCALE
+                            | T4_SUPPORT_COMPRESSION_COLOUR
+                            | T4_SUPPORT_COMPRESSION_12BIT
+                            | T4_SUPPORT_COMPRESSION_COLOUR_TO_GRAY
+                            | T4_SUPPORT_COMPRESSION_GRAY_TO_BILEVEL
+                            | T4_SUPPORT_COMPRESSION_COLOUR_TO_BILEVEL
+                            | T4_SUPPORT_COMPRESSION_RESCALING
 #endif
                             | 0;
     s->supported_compressions = supported_compressions;

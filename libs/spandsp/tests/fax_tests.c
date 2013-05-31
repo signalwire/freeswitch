@@ -490,6 +490,7 @@ int main(int argc, char *argv[])
     int noise_level;
     int code_to_look_up;
     int scan_line_time;
+    int colour_enabled;
     t38_stats_t t38_stats;
     t30_stats_t t30_stats;
     logging_state_t *logging;
@@ -528,13 +529,17 @@ int main(int argc, char *argv[])
     scan_line_time = 0;
     decode_file_name = NULL;
     code_to_look_up = -1;
+    colour_enabled = FALSE;
     t38_transport = T38_TRANSPORT_UDPTL;
-    while ((opt = getopt(argc, argv, "c:d:D:efFgH:i:Ilm:M:n:p:s:S:tT:u:v:z:")) != -1)
+    while ((opt = getopt(argc, argv, "c:Cd:D:efFgH:i:Ilm:M:n:p:s:S:tT:u:v:z:")) != -1)
     {
         switch (opt)
         {
         case 'c':
             code_to_look_up = atoi(optarg);
+            break;
+        case 'C':
+            colour_enabled = TRUE;
             break;
         case 'd':
             decode_file_name = optarg;
@@ -845,7 +850,7 @@ int main(int argc, char *argv[])
                                     | T4_SUPPORT_LENGTH_US_LETTER
                                     | T4_SUPPORT_LENGTH_US_LEGAL
                                     | T4_SUPPORT_LENGTH_UNLIMITED);
-#if 0
+#if 1
         t30_set_supported_bilevel_resolutions(t30_state[i],
                                               T4_SUPPORT_RESOLUTION_R8_STANDARD
                                             | T4_SUPPORT_RESOLUTION_R8_FINE
@@ -880,17 +885,20 @@ int main(int argc, char *argv[])
                                             | T4_SUPPORT_RESOLUTION_600_1200
                                             | T4_SUPPORT_RESOLUTION_1200_1200);
 #endif
-#if 1
-        t30_set_supported_colour_resolutions(t30_state[i], 0);
-#else
-        t30_set_supported_colour_resolutions(t30_state[i],
-                                             T4_SUPPORT_RESOLUTION_100_100
-                                           | T4_SUPPORT_RESOLUTION_200_200
-                                           | T4_SUPPORT_RESOLUTION_300_300
-                                           | T4_SUPPORT_RESOLUTION_400_400
-                                           | T4_SUPPORT_RESOLUTION_600_600
-                                           | T4_SUPPORT_RESOLUTION_1200_1200);
-#endif
+        if (colour_enabled)
+        {
+            t30_set_supported_colour_resolutions(t30_state[i],
+                                                 T4_SUPPORT_RESOLUTION_100_100
+                                               | T4_SUPPORT_RESOLUTION_200_200
+                                               | T4_SUPPORT_RESOLUTION_300_300
+                                               | T4_SUPPORT_RESOLUTION_400_400
+                                               | T4_SUPPORT_RESOLUTION_600_600
+                                               | T4_SUPPORT_RESOLUTION_1200_1200);
+        }
+        else
+        {
+            t30_set_supported_colour_resolutions(t30_state[i], 0);
+        }
         t30_set_supported_output_compressions(t30_state[i], T4_SUPPORT_COMPRESSION_T4_2D);
         t30_set_ecm_capability(t30_state[i], use_ecm);
         t30_set_supported_compressions(t30_state[i],

@@ -37,8 +37,12 @@
 
 #include "udptl.h"
 
+#if !defined(FALSE)
 #define FALSE 0
+#endif
+#if !defined(TRUE)
 #define TRUE (!FALSE)
+#endif
 
 static int decode_length(const uint8_t *buf, int limit, int *len, int *pvalue)
 {
@@ -58,7 +62,7 @@ static int decode_length(const uint8_t *buf, int limit, int *len, int *pvalue)
         return 0;
     }
     *pvalue = (buf[(*len)++] & 0x3F) << 14;
-    /* Indicate we have a fragment */
+    /* Indicate that we have a fragment */
     return 1;
 }
 /*- End of function --------------------------------------------------------*/
@@ -66,11 +70,13 @@ static int decode_length(const uint8_t *buf, int limit, int *len, int *pvalue)
 static int decode_open_type(const uint8_t *buf, int limit, int *len, const uint8_t **p_object, int *p_num_octets)
 {
     int octet_cnt;
+#if 0
     int octet_idx;
     int stat;
     const uint8_t **pbuf;
 
-    for (octet_idx = 0, *p_num_octets = 0;  ;  octet_idx += octet_cnt)
+    *p_num_octets = 0;
+    for (octet_idx = 0;  ;  octet_idx += octet_cnt)
     {
         if ((stat = decode_length(buf, limit, len, &octet_cnt)) < 0)
             return -1;
@@ -89,6 +95,21 @@ static int decode_open_type(const uint8_t *buf, int limit, int *len, const uint8
         if (stat == 0)
             break;
     }
+#else
+    /* We do not deal with fragments, so there is no point in looping through them. Just say that something
+       fragmented is bad. */
+    if (decode_length(buf, limit, len, &octet_cnt) != 0)
+        return -1;
+    *p_num_octets = octet_cnt;
+    if (octet_cnt > 0)
+    {
+        /* Make sure the buffer contains at least the number of bits requested */
+        if ((*len + octet_cnt) > limit)
+            return -1;
+        *p_object = &buf[*len];
+        *len += octet_cnt;
+    }
+#endif
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -153,7 +174,6 @@ static int encode_open_type(uint8_t *buf, int *len, const uint8_t *data, int num
 int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
 {
     int stat;
-    int stat2;
     int i;
     int j;
     int k;
@@ -216,16 +236,16 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
         total_count = 0;
         do
         {
-            if ((stat2 = decode_length(buf, len, &ptr, &count)) < 0)
+            if ((stat = decode_length(buf, len, &ptr, &count)) < 0)
                 return -1;
             for (i = 0;  i < count;  i++)
             {
-                if ((stat = decode_open_type(buf, len, &ptr, &bufs[total_count + i], &lengths[total_count + i])) != 0)
+                if (decode_open_type(buf, len, &ptr, &bufs[total_count + i], &lengths[total_count + i]) != 0)
                     return -1;
             }
             total_count += count;
         }
-        while (stat2 > 0);
+        while (stat > 0);
         /* We should now be exactly at the end of the packet. If not, this is a fault. */
         if (ptr != len)
             return -1;
@@ -246,7 +266,8 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
                     /* Save the new packet. Redundancy mode won't use this, but some systems will switch into
                        FEC mode after sending some redundant packets, and this may then be important. */
                     x = (seq_no - i) & UDPTL_BUF_MASK;
-                    memcpy(s->rx[x].buf, bufs[i - 1], lengths[i - 1]);
+                    if (lengths[i - 1] > 0)
+                        memcpy(s->rx[x].buf, bufs[i - 1], lengths[i - 1]);
                     s->rx[x].buf_len = lengths[i - 1];
                     s->rx[x].fec_len[0] = 0;
                     s->rx[x].fec_span = 0;

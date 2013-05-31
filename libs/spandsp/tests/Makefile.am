@@ -112,6 +112,7 @@ noinst_PROGRAMS =   ademco_contactid_tests \
                     t4_tests \
                     t4_t6_tests \
                     t42_tests \
+                    t43_tests \
                     t81_t82_arith_coding_tests \
                     t85_tests \
                     time_scale_tests \
@@ -324,6 +325,9 @@ t4_t6_tests_LDADD = $(LIBDIR) -lspandsp
 
 t42_tests_SOURCES = t42_tests.c
 t42_tests_LDADD = $(LIBDIR) -lspandsp
+
+t43_tests_SOURCES = t43_tests.c
+t43_tests_LDADD = $(LIBDIR) -lspandsp
 
 t81_t82_arith_coding_tests_SOURCES = t81_t82_arith_coding_tests.c
 t81_t82_arith_coding_tests_LDADD = $(LIBDIR) -lspandsp
