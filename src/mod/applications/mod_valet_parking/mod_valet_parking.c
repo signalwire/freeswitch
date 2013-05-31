@@ -555,7 +555,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 						token->timeout = 0;
 						token->bridged = 1;
 						
-						switch_ivr_uuid_bridge(switch_core_session_get_uuid(session), token->uuid);
+						switch_ivr_uuid_bridge(token->uuid, switch_core_session_get_uuid(session));
 
 						return;
 					}
