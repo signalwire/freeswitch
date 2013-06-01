@@ -4536,202 +4536,179 @@ FT_DECLARE(ftdm_status_t) ftdm_iterator_free(ftdm_iterator_t *iter)
 	return FTDM_SUCCESS;
 }
 
-static void print_channels_by_flag(ftdm_stream_handle_t *stream, ftdm_span_t *inspan, uint32_t inchan_id, unsigned long long flagval, int not, int *count)
+
+static const char *print_neg_char[] = { "", "!" };
+static const char *print_flag_state[] = { "OFF", "ON" };
+
+static void print_channels_by_flag(ftdm_stream_handle_t *stream, ftdm_span_t *inspan, uint32_t inchan_id, uint64_t flagval, int not, int *count)
 {
-	ftdm_hash_iterator_t *i = NULL;
-	ftdm_span_t *span;
-	ftdm_channel_t *fchan = NULL;
-	ftdm_iterator_t *citer = NULL;
-	ftdm_iterator_t *curr = NULL;
-	const void *key = NULL;
-	void *val = NULL;
-	uint32_t flag = (1 << flagval);
+	ftdm_bool_t neg = !!not;
+	const char *negind = print_neg_char[neg];
+	const char *flagname;
+	uint64_t flag = (1 << flagval);
 	int mycount = 0;
 
-	*count = 0;
+	flagname = ftdm_val2str(flag, channel_flag_strs, ftdm_array_len(channel_flag_strs), "invalid");
 
 	ftdm_mutex_lock(globals.mutex);
 
 	if (inspan) {
-		citer = ftdm_span_get_chan_iterator(inspan, NULL);
-		if (!citer) {
-			goto end;
-		}
-		for (curr = citer ; curr; curr = ftdm_iterator_next(curr)) {
-			fchan = ftdm_iterator_current(curr);
-			if (!inchan_id || inchan_id == fchan->chan_id) {
-				if (not) {
-					if (!ftdm_test_flag(fchan, flag)) {
-						stream->write_function(stream, "[s%dc%d][%d:%d] flag !%d(!%s) ON \n",
-												fchan->span_id, fchan->chan_id,
-												fchan->physical_span_id, fchan->physical_chan_id,
-												flagval, ftdm_val2str(flag, channel_flag_strs, ftdm_array_len(channel_flag_strs), "invalid"));
+		ftdm_iterator_t *c_iter, *c_cur;
 
-						mycount++;
-					} else {
-						stream->write_function(stream, "[s%dc%d][%d:%d] flag !%d(!%s) OFF \n",
-												fchan->span_id, fchan->chan_id,
-												fchan->physical_span_id, fchan->physical_chan_id,
-												flagval, ftdm_val2str(flag, channel_flag_strs, ftdm_array_len(channel_flag_strs), "invalid"));
-					}
-				} else {
-					if (ftdm_test_flag(fchan, flag)) {
-						stream->write_function(stream, "[s%dc%d][%d:%d] flag %d(%s) ON\n",
-												fchan->span_id, fchan->chan_id,
-												fchan->physical_span_id, fchan->physical_chan_id,
-												flagval, ftdm_val2str(flag, channel_flag_strs, ftdm_array_len(channel_flag_strs), "invalid"));
+		c_iter = ftdm_span_get_chan_iterator(inspan, NULL);
 
-						mycount++;
-					} else {
-						stream->write_function(stream, "[s%dc%d][%d:%d] flag %d(%s) OFF \n",
-												fchan->span_id, fchan->chan_id,
-												fchan->physical_span_id, fchan->physical_chan_id,
-												flagval, ftdm_val2str(flag, channel_flag_strs, ftdm_array_len(channel_flag_strs), "invalid"));
-					}
-				}
-			}
-		}
-		ftdm_iterator_free(citer);
+		for (c_cur = c_iter; c_cur; c_cur = ftdm_iterator_next(c_cur)) {
+			ftdm_channel_t *fchan;
+			ftdm_bool_t cond;
 
-	} else {
-		for (i = hashtable_first(globals.span_hash); i; i = hashtable_next(i)) {
-			hashtable_this(i, &key, NULL, &val);
-			if (!key || !val) {
-				break;
-			}
-			span = val;
-			citer = ftdm_span_get_chan_iterator(span, NULL);
-			if (!citer) {
+			fchan = ftdm_iterator_current(c_cur);
+			if (inchan_id && inchan_id != fchan->chan_id) {
 				continue;
 			}
-			for (curr = citer ; curr; curr = ftdm_iterator_next(curr)) {
-				fchan = ftdm_iterator_current(curr);
-				if (not && !ftdm_test_flag(fchan, flag)) {
-					stream->write_function(stream, "[s%dc%d][%d:%d] flag !%d(!%s)\n",
-							fchan->span_id, fchan->chan_id, 
-							fchan->physical_span_id, fchan->physical_chan_id, 
-							flagval, ftdm_val2str(flag, channel_flag_strs, ftdm_array_len(channel_flag_strs), "invalid"));
-					mycount++;
-				} else if (!not && ftdm_test_flag(fchan, flag)) {
-					stream->write_function(stream, "[s%dc%d][%d:%d] flag %d(%s)\n",
-							fchan->span_id, fchan->chan_id, 
-							fchan->physical_span_id, fchan->physical_chan_id, 
-							flagval, ftdm_val2str(flag, channel_flag_strs, ftdm_array_len(channel_flag_strs), "invalid"));
+
+			cond = !!ftdm_test_flag(fchan, flag);
+			if (neg ^ cond) {
+				mycount++;
+			}
+
+			stream->write_function(stream, "[s%dc%d][%d:%d] flag %s%"FTDM_UINT64_FMT"(%s%s) %s\n",
+							fchan->span_id, fchan->chan_id,
+							fchan->physical_span_id, fchan->physical_chan_id,
+							negind, flagval, negind, flagname,
+							print_flag_state[cond]);
+		}
+
+		ftdm_iterator_free(c_iter);
+
+	} else {
+		ftdm_iterator_t *s_iter, *s_cur;
+
+		s_iter = ftdm_get_span_iterator(NULL);
+
+		for (s_cur = s_iter; s_cur; s_cur = ftdm_iterator_next(s_cur)) {
+			ftdm_iterator_t *c_iter, *c_cur;
+			ftdm_span_t *span;
+
+			span = ftdm_iterator_current(s_cur);
+			if (!span) {
+				break;
+			}
+
+			c_iter = ftdm_span_get_chan_iterator(span, NULL);
+
+			for (c_cur = c_iter; c_cur; c_cur = ftdm_iterator_next(c_cur)) {
+				ftdm_channel_t *fchan;
+
+				fchan = ftdm_iterator_current(c_cur);
+
+				if (neg ^ !!ftdm_test_flag(fchan, flag)) {
+					stream->write_function(stream, "[s%dc%d][%d:%d] flag %s%"FTDM_UINT64_FMT"(%s%s)\n",
+									fchan->span_id, fchan->chan_id,
+									fchan->physical_span_id, fchan->physical_chan_id,
+									negind, flagval, negind, flagname);
 					mycount++;
 				}
 			}
-			ftdm_iterator_free(citer);
+
+			ftdm_iterator_free(c_iter);
 		}
+
+		ftdm_iterator_free(s_iter);
 	}
+
 	*count = mycount;
-end:
 	ftdm_mutex_unlock(globals.mutex);
 }
 
-static void print_spans_by_flag(ftdm_stream_handle_t *stream, ftdm_span_t *inspan, unsigned long long flagval, int not, int *count)
+static void print_spans_by_flag(ftdm_stream_handle_t *stream, ftdm_span_t *inspan, uint64_t flagval, int not, int *count)
 {
-	ftdm_hash_iterator_t *i = NULL;
-	ftdm_span_t *span;
-	const void *key = NULL;
-	void *val = NULL;
-	uint32_t flag = (1 << flagval);
+	ftdm_bool_t neg = !!not;
+	const char *negind = print_neg_char[neg];
+	const char *flagname;
+	uint64_t flag = (1 << flagval);
 	int mycount = 0;
 
-	*count = 0;
+	flagname = ftdm_val2str(flag, span_flag_strs, ftdm_array_len(span_flag_strs), "invalid");
 
 	ftdm_mutex_lock(globals.mutex);
 
 	if (inspan) {
-		if (not) {
-			if (!ftdm_test_flag(inspan, flag)) {
-				stream->write_function(stream, "[s%d] flag !%d(!%s) ON \n",
-										inspan->span_id,
-										flagval, ftdm_val2str(flag, span_flag_strs, ftdm_array_len(span_flag_strs), "invalid"));
+		ftdm_bool_t cond;
 
-				mycount++;
-			} else {
-				stream->write_function(stream, "[s%d] flag !%d(!%s) OFF \n",
-										inspan->span_id,
-										flagval, ftdm_val2str(flag, span_flag_strs, ftdm_array_len(span_flag_strs), "invalid"));
-			}
-		} else {
-			if (ftdm_test_flag(inspan, flag)) {
-				stream->write_function(stream, "[s%d] flag %d(%s) ON \n",
-										inspan->span_id,
-										flagval, ftdm_val2str(flag, span_flag_strs, ftdm_array_len(span_flag_strs), "invalid"));
-				mycount++;
-			} else {
-				stream->write_function(stream, "[s%d] flag %d(%s) OFF \n",
-										inspan->span_id,
-										flagval, ftdm_val2str(flag, span_flag_strs, ftdm_array_len(span_flag_strs), "invalid"));
-			}
+		cond = !!ftdm_test_flag(inspan, flag);
+		if (neg ^ cond) {
+			mycount++;
 		}
+
+		stream->write_function(stream, "[s%d] flag %s%"FTDM_UINT64_FMT"(%s%s) %s\n",
+						inspan->span_id, negind, flagval, negind, flagname,
+						print_flag_state[cond]);
 	} else {
-		for (i = hashtable_first(globals.span_hash); i; i = hashtable_next(i)) {
-			hashtable_this(i, &key, NULL, &val);
-			if (!key || !val) {
+		ftdm_iterator_t *s_iter, *s_cur;
+
+		s_iter = ftdm_get_span_iterator(NULL);
+
+		for (s_cur = s_iter; s_cur; s_cur = ftdm_iterator_next(s_cur)) {
+			ftdm_span_t *span;
+
+			span = ftdm_iterator_current(s_cur);
+			if (!span) {
 				break;
 			}
-			span = val;
-			if (not && !ftdm_test_flag(span, flag)) {
-				stream->write_function(stream, "[s%d] flag !%d(!%s)\n",
-										span->span_id,
-										flagval, ftdm_val2str(flag, span_flag_strs, ftdm_array_len(span_flag_strs), "invalid"));
-				mycount++;
-			} else if (!not && ftdm_test_flag(span, flag)) {
-				stream->write_function(stream, "[s%d] flag %d(%s)\n",
-									    span->span_id,
-										flagval, ftdm_val2str(flag, span_flag_strs, ftdm_array_len(span_flag_strs), "invalid"));
+
+			if (neg ^ !!ftdm_test_flag(span, flag)) {
+				stream->write_function(stream, "[s%d] flag %s%"FTDM_UINT64_FMT"(%s%s)\n",
+								span->span_id, negind, flagval, negind, flagname);
 				mycount++;
 			}
 		}
+
+		ftdm_iterator_free(s_iter);
 	}
+
 	*count = mycount;
 	ftdm_mutex_unlock(globals.mutex);
 }
 
 static void print_channels_by_state(ftdm_stream_handle_t *stream, ftdm_channel_state_t state, int not, int *count)
 {
-	ftdm_hash_iterator_t *i = NULL;
-	ftdm_span_t *span;
-	ftdm_channel_t *fchan = NULL;
-	ftdm_iterator_t *citer = NULL;
-	ftdm_iterator_t *curr = NULL;
-	const void *key = NULL;
-	void *val = NULL;
+	ftdm_iterator_t *s_iter, *s_cur;
+	ftdm_bool_t neg = !!not;
+	int mycount = 0;
 
-	*count = 0;
+	s_iter = ftdm_get_span_iterator(NULL);
 
 	ftdm_mutex_lock(globals.mutex);
 
-	for (i = hashtable_first(globals.span_hash); i; i = hashtable_next(i)) {
-		hashtable_this(i, &key, NULL, &val);
-		if (!key || !val) {
+	for (s_cur = s_iter; s_cur; s_cur = ftdm_iterator_next(s_cur)) {
+		ftdm_iterator_t *c_iter, *c_cur;
+		ftdm_span_t *span;
+
+		span = ftdm_iterator_current(s_cur);
+		if (!span) {
 			break;
 		}
-		span = val;
-		citer = ftdm_span_get_chan_iterator(span, NULL);
-		if (!citer) {
-			continue;
-		}
-		for (curr = citer ; curr; curr = ftdm_iterator_next(curr)) {
-			fchan = ftdm_iterator_current(curr);
-			if (not && (fchan->state != state)) {
-				stream->write_function(stream, "[s%dc%d][%d:%d] in state %s\n", 
-						fchan->span_id, fchan->chan_id, 
+
+		c_iter = ftdm_span_get_chan_iterator(span, NULL);
+
+		for (c_cur = c_iter ; c_cur; c_cur = ftdm_iterator_next(c_cur)) {
+			ftdm_channel_t *fchan = ftdm_iterator_current(c_cur);
+
+			if (neg ^ (fchan->state == state)) {
+				stream->write_function(stream, "[s%dc%d][%d:%d] in state %s\n",
+						fchan->span_id, fchan->chan_id,
 						fchan->physical_span_id, fchan->physical_chan_id, ftdm_channel_state2str(fchan->state));
-				(*count)++;
-			} else if (!not && (fchan->state == state)) {
-				stream->write_function(stream, "[s%dc%d][%d:%d] in state %s\n", 
-						fchan->span_id, fchan->chan_id, 
-						fchan->physical_span_id, fchan->physical_chan_id, ftdm_channel_state2str(fchan->state));
-				(*count)++;
+				mycount++;
 			}
 		}
-		ftdm_iterator_free(citer);
+
+		ftdm_iterator_free(c_iter);
 	}
 
+	*count = mycount;
 	ftdm_mutex_unlock(globals.mutex);
+
+	ftdm_iterator_free(s_iter);
 }
 
 static void print_core_usage(ftdm_stream_handle_t *stream)
