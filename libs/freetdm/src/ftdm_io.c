@@ -4761,6 +4761,26 @@ static void print_span_flag_values(ftdm_stream_handle_t *stream)
 	}
 }
 
+/**
+ * Compute log2 of 64bit integer v
+ *
+ * Bit Twiddling Hacks
+ * http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog
+ */
+static int ftdm_log2_64(uint64_t v)
+{
+	unsigned int shift;
+	uint64_t r;
+
+	r =     (v > 0xFFFFFFFF) << 5; v >>= r;
+	shift = (v > 0xFFFF    ) << 4; v >>= shift; r |= shift;
+	shift = (v > 0xFF      ) << 3; v >>= shift; r |= shift;
+	shift = (v > 0xF       ) << 2; v >>= shift; r |= shift;
+	shift = (v > 0x3       ) << 1; v >>= shift; r |= shift;
+
+	return (r | (v >> 1));
+}
+
 static char *handle_core_command(const char *cmd)
 {
 	char *mycmd = NULL;
@@ -4835,7 +4855,7 @@ static char *handle_core_command(const char *cmd)
 				print_channel_flag_values(&stream);
 				goto done;
 			}
-			flagval = flagval >> 1;
+			flagval = ftdm_log2_64(flagval);
 		} else {
 			flagval = atoi(flag);
 		}
@@ -4880,7 +4900,7 @@ static char *handle_core_command(const char *cmd)
 				print_span_flag_values(&stream);
 				goto done;
 			}
-			flagval = flagval >> 1;
+			flagval = ftdm_log2_64(flagval);
 		} else {
 			flagval = atoi(flag);
 		}
