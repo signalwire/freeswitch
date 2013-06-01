@@ -1701,7 +1701,7 @@ out:
  */
 static ftdm_channel_t *find_channel_by_cref(ftdm_span_t *span, const int cref)
 {
-	ftdm_iterator_t *iter = NULL;
+	ftdm_iterator_t *c_iter, *c_cur;
 	ftdm_channel_t *chan = NULL;
 
 	if (!span || cref <= 0)
@@ -1709,9 +1709,11 @@ static ftdm_channel_t *find_channel_by_cref(ftdm_span_t *span, const int cref)
 
 	ftdm_mutex_lock(span->mutex);
 
+	c_iter = ftdm_span_get_chan_iterator(span, NULL);
+
 	/* Iterate over all channels on this span */
-	for (iter = ftdm_span_get_chan_iterator(span, NULL); iter; iter = ftdm_iterator_next(iter)) {
-		ftdm_channel_t *cur = ftdm_iterator_current(iter);
+	for (c_cur = c_iter; c_cur; c_cur = ftdm_iterator_next(c_cur)) {
+		ftdm_channel_t *cur = ftdm_iterator_current(c_cur);
 		ftdm_caller_data_t *caller_data = NULL;
 
 		if (ftdm_channel_get_type(cur) != FTDM_CHAN_TYPE_B)
@@ -1725,7 +1727,7 @@ static ftdm_channel_t *find_channel_by_cref(ftdm_span_t *span, const int cref)
 		}
 	}
 
-	ftdm_iterator_free(iter);
+	ftdm_iterator_free(c_iter);
 	ftdm_mutex_unlock(span->mutex);
 	return chan;
 }
@@ -1743,8 +1745,8 @@ static ftdm_channel_t *find_channel_by_cref(ftdm_span_t *span, const int cref)
  */
 static ftdm_status_t hunt_channel(ftdm_span_t *span, const int hint, const ftdm_bool_t excl, ftdm_channel_t **chan)
 {
-	ftdm_iterator_t *iter = NULL;
-	ftdm_channel_t  *tmp  = NULL;
+	ftdm_iterator_t *c_iter, *c_cur;
+	ftdm_channel_t *tmp = NULL;
 	int ret = FTDM_FAIL;
 
 	/* lock span */
@@ -1771,9 +1773,11 @@ static ftdm_status_t hunt_channel(ftdm_span_t *span, const int hint, const ftdm_
 		}
 	}
 
+	c_iter = ftdm_span_get_chan_iterator(span, NULL);
+
 	/* Iterate over all channels on this span */
-	for (iter = ftdm_span_get_chan_iterator(span, NULL); iter; iter = ftdm_iterator_next(iter)) {
-		tmp = ftdm_iterator_current(iter);
+	for (c_cur = c_iter; c_cur; c_cur = ftdm_iterator_next(c_cur)) {
+		tmp = ftdm_iterator_current(c_cur);
 
 		if (ftdm_channel_get_type(tmp) != FTDM_CHAN_TYPE_B)
 			continue;
@@ -1786,7 +1790,7 @@ static ftdm_status_t hunt_channel(ftdm_span_t *span, const int hint, const ftdm_
 		}
 	}
 
-	ftdm_iterator_free(iter);
+	ftdm_iterator_free(c_iter);
 out:
 	ftdm_mutex_unlock(span->mutex);
 	return ret;
@@ -2007,14 +2011,16 @@ static int on_timeout_t3xx(struct lpwrap_pri *spri, struct lpwrap_timer *timer)
 {
 	ftdm_span_t *span = spri->span;
 	ftdm_libpri_data_t *isdn_data = span->signal_data;
-	ftdm_iterator_t *iter = NULL;
+	ftdm_iterator_t *c_iter, *c_cur;
 
 	ftdm_log_chan_msg(isdn_data->dchan, FTDM_LOG_INFO, "-- T3xx timed out, restarting idle b-channels\n");
 	ftdm_mutex_lock(span->mutex);
 
+	c_iter = ftdm_span_get_chan_iterator(span, NULL);
+
 	/* Iterate b-channels */
-	for (iter = ftdm_span_get_chan_iterator(span, NULL); iter; iter = ftdm_iterator_next(iter)) {
-		ftdm_channel_t *cur = ftdm_iterator_current(iter);
+	for (c_cur = c_iter; c_cur; c_cur = ftdm_iterator_next(c_cur)) {
+		ftdm_channel_t *cur = ftdm_iterator_current(c_cur);
 		/* Skip non-b-channels */
 		if (ftdm_channel_get_type(cur) != FTDM_CHAN_TYPE_B)
 			continue;
@@ -2023,7 +2029,7 @@ static int on_timeout_t3xx(struct lpwrap_pri *spri, struct lpwrap_timer *timer)
 			ftdm_set_state_locked(cur, FTDM_CHANNEL_STATE_RESTART);
 		}
 	}
-	ftdm_iterator_free(iter);
+	ftdm_iterator_free(c_iter);
 	ftdm_mutex_unlock(span->mutex);
 
 	/* Start timer again */
