@@ -4438,6 +4438,16 @@ FT_DECLARE(ftdm_iterator_t *) ftdm_get_iterator(ftdm_iterator_type_t type, ftdm_
 	return iter;
 }
 
+FT_DECLARE(ftdm_iterator_t *) ftdm_get_span_iterator(ftdm_iterator_t *iter)
+{
+	if (!(iter = ftdm_get_iterator(FTDM_ITERATOR_SPANS, iter))) {
+		return NULL;
+	}
+
+	iter->pvt.hashiter = hashtable_first(globals.span_hash);
+	return iter;
+}
+
 FT_DECLARE(ftdm_iterator_t *) ftdm_span_get_chan_iterator(const ftdm_span_t *span, ftdm_iterator_t *iter)
 {
 	if (!span->chan_count) {
@@ -4457,6 +4467,7 @@ FT_DECLARE(ftdm_iterator_t *) ftdm_iterator_next(ftdm_iterator_t *iter)
 
 	switch (iter->type) {
 	case FTDM_ITERATOR_VARS:
+	case FTDM_ITERATOR_SPANS:
 		if (!iter->pvt.hashiter) {
 			return NULL;
 		}
@@ -4492,6 +4503,9 @@ FT_DECLARE(void *) ftdm_iterator_current(ftdm_iterator_t *iter)
 		hashtable_this(iter->pvt.hashiter, &key, NULL, &val);
 		/* I decided to return the key instead of the value since the value can be retrieved using the key */
 		return (void *)key;
+	case FTDM_ITERATOR_SPANS:
+		hashtable_this(iter->pvt.hashiter, &key, NULL, &val);
+		return (void *)val;
 	case FTDM_ITERATOR_CHANS:
 		ftdm_assert_return(iter->pvt.chaniter.index, NULL, "channel iterator index cannot be zero!\n");
 		ftdm_assert_return(iter->pvt.chaniter.index <= iter->pvt.chaniter.span->chan_count, NULL, "channel iterator index bigger than span chan count!\n");
