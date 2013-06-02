@@ -2817,7 +2817,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 				if (!strcasecmp((char *) mmap->rm_encoding, "opus")) {
 					if (a_engine->codec_params.channels == 1) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invald SDP for opus.  Don't ask.. but it needs a /2\n");
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invalid SDP for opus.  Don't ask.. but it needs a /2\n");
 						a_engine->codec_params.adv_channels = 1;
 					} else {
 						a_engine->codec_params.adv_channels = 2; /* IKR ???*/
