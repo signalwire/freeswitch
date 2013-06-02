@@ -1711,6 +1711,16 @@ FT_DECLARE(ftdm_status_t) ftdm_span_stop(ftdm_span_t *span);
  */
 FT_DECLARE(ftdm_status_t) ftdm_global_add_io_interface(ftdm_io_interface_t *io_interface);
 
+/**
+ * Get I/O interface by name
+ *
+ * \param iotype    Name of interface
+ * \param autoload  Try to load missing plugins
+ * \retval I/O interface handle on success
+ * \retval NULL on failure
+ */
+FT_DECLARE(ftdm_io_interface_t *) ftdm_global_get_io_interface(const char *iotype, ftdm_bool_t autoload);
+
 /*! \brief Find a span by name */
 FT_DECLARE(ftdm_status_t) ftdm_span_find_by_name(const char *name, ftdm_span_t **span);
 

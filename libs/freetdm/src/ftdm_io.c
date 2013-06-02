@@ -854,15 +854,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_create(const char *iotype, const char *name,
 	
 	*span = NULL;
 
-	ftdm_mutex_lock(globals.mutex);
-	if (!(fio = (ftdm_io_interface_t *) hashtable_search(globals.interface_hash, (void *)iotype))) {
-		ftdm_load_module_assume(iotype);
-		if ((fio = (ftdm_io_interface_t *) hashtable_search(globals.interface_hash, (void *)iotype))) {
-			ftdm_log(FTDM_LOG_INFO, "Auto-loaded I/O module '%s'\n", iotype);
-		}
-	}
-	ftdm_mutex_unlock(globals.mutex);
-
+	fio = ftdm_global_get_io_interface(iotype, FTDM_TRUE);
 	if (!fio) {
 		ftdm_log(FTDM_LOG_CRIT, "failure creating span, no such I/O type '%s'\n", iotype);
 		return FTDM_FAIL;
@@ -4968,22 +4960,14 @@ FT_DECLARE(char *) ftdm_api_execute(const char *cmd)
 	if (!strcasecmp(type, "core")) {
 		return handle_core_command(cmd);
 	}
-	
-	ftdm_mutex_lock(globals.mutex);
-	if (!(fio = (ftdm_io_interface_t *) hashtable_search(globals.interface_hash, (void *)type))) {
-		ftdm_load_module_assume(type);
-		if ((fio = (ftdm_io_interface_t *) hashtable_search(globals.interface_hash, (void *)type))) {
-			ftdm_log(FTDM_LOG_INFO, "auto-loaded '%s'\n", type);
-		}
-	}
-	ftdm_mutex_unlock(globals.mutex);
 
+	fio = ftdm_global_get_io_interface(type, FTDM_TRUE);
 	if (fio && fio->api) {
 		ftdm_stream_handle_t stream = { 0 };
 		ftdm_status_t status;
 		FTDM_STANDARD_STREAM(stream);
+
 		status = fio->api(&stream, cmd);
-		
 		if (status != FTDM_SUCCESS) {
 			ftdm_safe_free(stream.data);
 		} else {
@@ -4992,7 +4976,7 @@ FT_DECLARE(char *) ftdm_api_execute(const char *cmd)
 	}
 
 	ftdm_safe_free(dup);
-	
+
 	return rval;
 }
 
@@ -5472,6 +5456,25 @@ FT_DECLARE(ftdm_status_t) ftdm_global_add_io_interface(ftdm_io_interface_t *inte
 	}
 	ftdm_mutex_unlock(globals.mutex);
 	return ret;
+}
+
+FT_DECLARE(ftdm_io_interface_t *) ftdm_global_get_io_interface(const char *iotype, ftdm_bool_t autoload)
+{
+	ftdm_io_interface_t *fio = NULL;
+
+	ftdm_mutex_lock(globals.mutex);
+
+	fio = (ftdm_io_interface_t *) hashtable_search(globals.interface_hash, (void *)iotype);
+	if (!fio && autoload) {
+		ftdm_load_module_assume(iotype);
+		fio = (ftdm_io_interface_t *) hashtable_search(globals.interface_hash, (void *)iotype);
+		if (fio) {
+			ftdm_log(FTDM_LOG_INFO, "Auto-loaded I/O module '%s'\n", iotype);
+		}
+	}
+
+	ftdm_mutex_unlock(globals.mutex);
+	return fio;
 }
 
 FT_DECLARE(int) ftdm_load_module(const char *name)
