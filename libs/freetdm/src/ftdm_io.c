@@ -4780,21 +4780,17 @@ static char *handle_core_command(const char *cmd)
 	int count = 0;
 	int not = 0;
 	char *argv[10] = { 0 };
-	char *state = NULL;
 	char *flag = NULL;
-	unsigned long long flagval = 0;
-	uint32_t current_call_id = 0;
-	ftdm_caller_data_t *calldata = NULL;
+	uint64_t flagval = 0;
 	ftdm_channel_t *fchan = NULL;
-	ftdm_channel_state_t i = FTDM_CHANNEL_STATE_INVALID;
 	ftdm_span_t *fspan = NULL;
 	ftdm_stream_handle_t stream = { 0 };
 
 	FTDM_STANDARD_STREAM(stream);
 
-	if (cmd && strlen(cmd)) {
+	if (!ftdm_strlen_zero(cmd)) {
 		mycmd = ftdm_strdup(cmd);
-		argc = ftdm_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		argc = ftdm_separate_string(mycmd, ' ', argv, ftdm_array_len(argv));
 	} else {
 		print_core_usage(&stream);
 		goto done;
@@ -4806,44 +4802,52 @@ static char *handle_core_command(const char *cmd)
 	}
 
 	if (!strcasecmp(argv[0], "state")) {
+		ftdm_channel_state_t st = FTDM_CHANNEL_STATE_INVALID;
+		char *state = NULL;
+
 		if (argc < 2) {
 			stream.write_function(&stream, "core state command requires an argument\n");
 			print_core_usage(&stream);
 			goto done;
 		}
+
 		state = argv[1];
-		if (argv[1][0] == '!') {
+		if (state[0] == '!') {
 			not = 1;
 			state++;
 		}
-		for (i = FTDM_CHANNEL_STATE_DOWN; i < FTDM_CHANNEL_STATE_INVALID; i++) {
-			if (!strcasecmp(state, ftdm_channel_state2str(i))) {
+
+		for (st = FTDM_CHANNEL_STATE_DOWN; st < FTDM_CHANNEL_STATE_INVALID; st++) {
+			if (!strcasecmp(state, ftdm_channel_state2str(st))) {
 				break;
 			}
 		}
-		if (i == FTDM_CHANNEL_STATE_INVALID) {
+		if (st == FTDM_CHANNEL_STATE_INVALID) {
 			stream.write_function(&stream, "invalid state %s\n", state);
 			goto done;
 		}
-		print_channels_by_state(&stream, i, not, &count);
-		stream.write_function(&stream, "\nTotal channels %s %s: %d\n", not ? "not in state" : "in state", ftdm_channel_state2str(i), count);
+		print_channels_by_state(&stream, st, not, &count);
+		stream.write_function(&stream, "\nTotal channels %s state %s: %d\n",
+						not ? "not in" : "in", ftdm_channel_state2str(st), count);
 	} else if (!strcasecmp(argv[0], "flag")) {
 		uint32_t chan_id = 0;
+
 		if (argc < 2) {
 			stream.write_function(&stream, "core flag command requires an argument\n");
 			print_core_usage(&stream);
 			goto done;
 		}
+
 		flag = argv[1];
-		if (argv[1][0] == '!') {
+		if (flag[0] == '!') {
 			not = 1;
 			flag++;
 		}
-		
+
 		if (isalpha(flag[0])) {
 			flagval = ftdm_str2val(flag, channel_flag_strs, ftdm_array_len(channel_flag_strs), FTDM_CHANNEL_MAX_FLAG);
 			if (flagval == FTDM_CHANNEL_MAX_FLAG) {
-				stream.write_function(&stream, "\nInvalid channel flag value. Possible channel flags\n");
+				stream.write_function(&stream, "\nInvalid channel flag value. Possible channel flags:\n");
 				print_channel_flag_values(&stream);
 				goto done;
 			}
@@ -4864,14 +4868,14 @@ static char *handle_core_command(const char *cmd)
 		/* Specific channel specified */
 		if (argv[3]) {
 			chan_id = atoi(argv[3]);
-			if (chan_id >= ftdm_span_get_chan_count(fspan)) {
-				stream.write_function(&stream, "-ERR invalid channel %d\n", chan_id);
+			if (chan_id == 0 || chan_id >= ftdm_span_get_chan_count(fspan)) {
+				stream.write_function(&stream, "-ERR invalid channel %u\n", chan_id);
 				goto done;
 			}
 		}
 
 		print_channels_by_flag(&stream, fspan, chan_id, flagval, not, &count);
-		stream.write_function(&stream, "\nTotal channels %s %d: %d\n", not ? "without flag" : "with flag", flagval, count);
+		stream.write_function(&stream, "\nTotal channels %s flag %"FTDM_UINT64_FMT": %d\n", not ? "without" : "with", flagval, count);
 	} else if (!strcasecmp(argv[0], "spanflag")) {
 		if (argc < 2) {
 			stream.write_function(&stream, "core spanflag command requires an argument\n");
@@ -4880,7 +4884,7 @@ static char *handle_core_command(const char *cmd)
 		}
 
 		flag = argv[1];
-		if (argv[1][0] == '!') {
+		if (flag[0] == '!') {
 			not = 1;
 			flag++;
 		}
@@ -4908,22 +4912,26 @@ static char *handle_core_command(const char *cmd)
 
 		print_spans_by_flag(&stream, fspan, flagval, not, &count);
 		if (!fspan) {
-			stream.write_function(&stream, "\nTotal spans %s %d: %d\n", not ? "without flag" : "with flag", flagval, count);
+			stream.write_function(&stream, "\nTotal spans %s flag %"FTDM_UINT64_FMT": %d\n", not ? "without" : "with", flagval, count);
 		}
 	} else if (!strcasecmp(argv[0], "calls")) {
+		uint32_t current_call_id = 0;
+
 		ftdm_mutex_lock(globals.call_id_mutex);
-		current_call_id = globals.last_call_id;
 		for (current_call_id = 0; current_call_id <= MAX_CALLIDS; current_call_id++) {
+			ftdm_caller_data_t *calldata = NULL;
+
 			if (!globals.call_ids[current_call_id]) {
 				continue;
 			}
+
 			calldata = globals.call_ids[current_call_id];
 			fchan = calldata->fchan;
 			if (fchan) {
-				stream.write_function(&stream, "Call %d on channel %d:%d\n", current_call_id, 
+				stream.write_function(&stream, "Call %u on channel %d:%d\n", current_call_id,
 						fchan->span_id, fchan->chan_id);
 			} else {
-				stream.write_function(&stream, "Call %d without a channel?\n", current_call_id);
+				stream.write_function(&stream, "Call %u without a channel?\n", current_call_id);
 			}
 			count++;
 		}
