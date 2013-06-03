@@ -2752,7 +2752,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	if (!zstr(vm_storage_dir)) {
 		/* check for absolute or relative path */
 		if (switch_is_file_path(vm_storage_dir)) {
-			dir_path = switch_core_strdup(pool, vm_storage_dir);
+			dir_path = strdup(vm_storage_dir);
 		} else {
 			dir_path = switch_mprintf("%s%svoicemail%s%s", SWITCH_GLOBAL_dirs.storage_dir,
 												   SWITCH_PATH_SEPARATOR, SWITCH_PATH_SEPARATOR, vm_storage_dir);
