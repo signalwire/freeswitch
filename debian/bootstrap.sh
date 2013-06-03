@@ -747,7 +747,7 @@ print_mod_control () {
 Package: freeswitch-${module_name//_/-}
 Section: ${m_section}
 Architecture: any
-$(debian_wrap "Depends: \${shlibs:Depends}, \${misc:Depends}, freeswitch, ${depends}")
+$(debian_wrap "Depends: \${shlibs:Depends}, \${misc:Depends}, libfreeswitch1 (= \${binary:Version}), ${depends}")
 $(debian_wrap "Recommends: ${recommends}")
 $(debian_wrap "Suggests: freeswitch-${module_name//_/-}-dbg, ${suggests}")
 Description: ${description} for FreeSWITCH
