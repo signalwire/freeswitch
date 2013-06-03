@@ -4537,7 +4537,7 @@ static void print_channels_by_flag(ftdm_stream_handle_t *stream, ftdm_span_t *in
 	ftdm_bool_t neg = !!not;
 	const char *negind = print_neg_char[neg];
 	const char *flagname;
-	uint64_t flag = (1 << flagval);
+	uint64_t flag = ((uint64_t)1 << flagval);
 	int mycount = 0;
 
 	flagname = ftdm_val2str(flag, channel_flag_strs, ftdm_array_len(channel_flag_strs), "invalid");
@@ -4617,7 +4617,7 @@ static void print_spans_by_flag(ftdm_stream_handle_t *stream, ftdm_span_t *inspa
 	ftdm_bool_t neg = !!not;
 	const char *negind = print_neg_char[neg];
 	const char *flagname;
-	uint64_t flag = (1 << flagval);
+	uint64_t flag = ((uint64_t)1 << flagval);
 	int mycount = 0;
 
 	flagname = ftdm_val2str(flag, span_flag_strs, ftdm_array_len(span_flag_strs), "invalid");
@@ -4770,7 +4770,7 @@ static int ftdm_log2_64(uint64_t v)
 	shift = (v > 0xF       ) << 2; v >>= shift; r |= shift;
 	shift = (v > 0x3       ) << 1; v >>= shift; r |= shift;
 
-	return (r | (v >> 1));
+	return ((int)(r | (v >> 1)));
 }
 
 static char *handle_core_command(const char *cmd)
