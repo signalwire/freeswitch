@@ -471,7 +471,9 @@
 
 	<script type="text/javascript">
 
-	var socket = new WebSocket("ws://localhost:8086/socket", "websocket");
+	var port = document.location.port;
+	// var port = 8081; // for test
+	var socket = new WebSocket("ws://" + document.location.hostname + ":" + port + "/socket", "websocket");
 
 	try {
 		socket.onopen = function() {
