@@ -142,6 +142,12 @@ App.ShowChatsRoute = Ember.Route.extend({
 	}
 });
 
+App.ShowInterfacesRoute = Ember.Route.extend({
+	setupController: function(controller) {
+		App.showInterfacesController.load();
+	}
+});
+
 App.ShowTasksRoute = Ember.Route.extend({
 	setupController: function(controller) {
 		App.showTasksController.load();
