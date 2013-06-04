@@ -136,6 +136,12 @@ App.ShowAliasesRoute = Ember.Route.extend({
 	}
 });
 
+App.ShowCompletesRoute = Ember.Route.extend({
+	setupController: function(controller) {
+		App.showCompletesController.load();
+	}
+});
+
 App.ShowManagementsRoute = Ember.Route.extend({
 	setupController: function(controller) {
 		App.showManagementsController.load();
@@ -195,6 +201,7 @@ App.Router.map(function(){
 	this.route("showFiles");
 	this.route("showAPIs");
 	this.route("showAliases");
+	this.route("showCompletes");
 	this.route("showManagements");
 	this.route("showSays");
 	this.route("showChats");
@@ -499,6 +506,23 @@ App.showAliasesController = Ember.ArrayController.create({
 	load: function() {
 		var me = this;
 		$.getJSON("/txtapi/show?aliases%20as%20json", function(data){
+			me.set('total', data.row_count);
+			me.content.clear();
+			if (data.row_count == 0) return;
+
+			me.pushObjects(data.rows);
+
+		});
+	}
+});
+
+App.showCompletesController = Ember.ArrayController.create({
+	content: [],
+	init: function(){
+	},
+	load: function() {
+		var me = this;
+		$.getJSON("/txtapi/show?complete%20as%20json", function(data){
 			me.set('total', data.row_count);
 			me.content.clear();
 			if (data.row_count == 0) return;
