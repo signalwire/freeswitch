@@ -341,7 +341,7 @@ static void ftdm_sangoma_isdn_wakeup_phy(ftdm_channel_t *dchan)
 
 static void *ftdm_sangoma_isdn_io_run(ftdm_thread_t *me, void *obj)
 {
-	uint8_t data[1000];
+	uint8_t data[8192];
 	unsigned i = 0;
 	ftdm_status_t status = FTDM_SUCCESS;
 	ftdm_span_t *span = (ftdm_span_t*) obj;
