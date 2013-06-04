@@ -277,6 +277,48 @@
 		</div>
 	</script>
 
+	<script type="text/x-handlebars" data-template-name="showAliases">
+		<h1>Aliases</h1>
+		<div>
+			<table class="table">
+			<tr>
+				<th>Sticky</th>
+				<th>Alias</th>
+				<th>Command</th>
+				<th>Hostname</th>
+			</tr>
+			{{#each App.showAliasesController.content}}
+			<tr>
+				<td>{{ sticky }}</td>
+				<td>{{ alias }}</td>
+				<td>{{ command }}</td>
+				<td>{{ hostname }}</td>
+			</tr>
+			{{/each}}
+			</table>
+		</div>
+	</script>
+
+	<script type="text/x-handlebars" data-template-name="showManagements">
+		<h1>Say</h1>
+		<div>
+			<table class="table">
+			<tr>
+				<th>Type</th>
+				<th>Name</th>
+				<th>iKey</th>
+			</tr>
+			{{#each App.showManagementsController.content}}
+			<tr>
+				<td>{{ type }}</td>
+				<td>{{ name }}</td>
+				<td>{{ ikey }}</td>
+			</tr>
+			{{/each}}
+			</table>
+		</div>
+	</script>
+
 	<script type="text/x-handlebars" data-template-name="showSays">
 		<h1>Say</h1>
 		<div>
@@ -297,7 +339,7 @@
 		</div>
 	</script>
 
-		<script type="text/x-handlebars" data-template-name="showChats">
+	<script type="text/x-handlebars" data-template-name="showChats">
 		<h1>Chat</h1>
 		<div>
 			<table class="table">
@@ -331,6 +373,24 @@
 				<td>{{ type }}</td>
 				<td>{{ name }}</td>
 				<td>{{ ikey }}</td>
+			</tr>
+			{{/each}}
+			</table>
+		</div>
+	</script>
+
+	<script type="text/x-handlebars" data-template-name="showInterfaceTypes">
+		<h1>Interface Types</h1>
+		<div>
+			<table class="table">
+			<tr>
+				<th>Type</th>
+				<th>Total</th>
+			</tr>
+			{{#each App.showInterfaceTypesController.content}}
+			<tr>
+				<td>{{ type }}</td>
+				<td>{{ total }}</td>
 			</tr>
 			{{/each}}
 			</table>
@@ -390,15 +450,15 @@
 		{{#linkTo "showCodecs"}} Codecs {{/linkTo}} |
 		{{#linkTo "showFiles"}} Files {{/linkTo}} |
 		{{#linkTo "showAPIs"}} APIs {{/linkTo}} |
+		{{#linkTo "showAliases"}} Aliases {{/linkTo}} |
 
-		Aliases |
 		Complete |
 		{{#linkTo "showChats"}} Chat {{/linkTo}} |
-		Management |
+		{{#linkTo "showManagements"}} Management {{/linkTo}} |
 		Nat_map |
 		{{#linkTo "showSays"}} Say {{/linkTo}} |
 		{{#linkTo "showInterfaces"}} Interfaces {{/linkTo}} |
-		Interface_types |
+		{{#linkTo "showInterfaceTypes"}} InterfaceTypes {{/linkTo}} |
 		{{#linkTo "showTasks"}} Tasks {{/linkTo}} |
 		{{#linkTo "showLimits"}} Limits {{/linkTo}}
 
