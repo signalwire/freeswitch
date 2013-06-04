@@ -299,6 +299,44 @@
 		</div>
 	</script>
 
+	<script type="text/x-handlebars" data-template-name="showCompletes">
+		<h1>Aliases</h1>
+		<div>
+			<table class="table">
+			<tr>
+				<th>Sticky</th>
+				<th>A1</th>
+				<th>A2</th>
+				<th>A3</th>
+				<th>A4</th>
+				<th>A5</th>
+				<th>A6</th>
+				<th>A7</th>
+				<th>A8</th>
+				<th>A9</th>
+				<th>A10</th>
+				<th>Hostname</th>
+			</tr>
+			{{#each App.showCompletesController.content}}
+			<tr>
+				<td>{{ sticky }}</td>
+				<td>{{ a1 }}</td>
+				<td>{{ a2 }}</td>
+				<td>{{ a3 }}</td>
+				<td>{{ a4 }}</td>
+				<td>{{ a5 }}</td>
+				<td>{{ a6 }}</td>
+				<td>{{ a7 }}</td>
+				<td>{{ a8 }}</td>
+				<td>{{ a9 }}</td>
+				<td>{{ a10 }}</td>
+				<td>{{ hostname }}</td>
+			</tr>
+			{{/each}}
+			</table>
+		</div>
+	</script>
+
 	<script type="text/x-handlebars" data-template-name="showManagements">
 		<h1>Say</h1>
 		<div>
@@ -451,8 +489,7 @@
 		{{#linkTo "showFiles"}} Files {{/linkTo}} |
 		{{#linkTo "showAPIs"}} APIs {{/linkTo}} |
 		{{#linkTo "showAliases"}} Aliases {{/linkTo}} |
-
-		Complete |
+		{{#linkTo "showCompletes"}} Complete {{/linkTo}} |
 		{{#linkTo "showChats"}} Chat {{/linkTo}} |
 		{{#linkTo "showManagements"}} Management {{/linkTo}} |
 		Nat_map |
