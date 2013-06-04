@@ -337,6 +337,30 @@
 		</div>
 	</script>
 
+	<script type="text/x-handlebars" data-template-name="showTasks">
+		<h1>Tasks</h1>
+		<div>
+			<table class="table">
+			<tr>
+				<th>ID</th>
+				<th>Description</th>
+				<th>Group</th>
+				<th>SQL Manager</th>
+				<th>Hostname</th>
+			</tr>
+			{{#each App.showTasksController.content}}
+			<tr>
+				<td>{{ task_id }}</td>
+				<td>{{ task_desc }}</td>
+				<td>{{ task_group }}</td>
+				<td>{{ task_sql_manager }}</td>
+				<td>{{ hostname }}</td>
+			</tr>
+			{{/each}}
+			</table>
+		</div>
+	</script>
+
 	<script type="text/x-handlebars" data-template-name="showLimits">
 		<h1>Limits</h1>
 		<div>
@@ -375,7 +399,7 @@
 		{{#linkTo "showSays"}} Say {{/linkTo}} |
 		{{#linkTo "showInterfaces"}} Interfaces {{/linkTo}} |
 		Interface_types |
-		Tasks |
+		{{#linkTo "showTasks"}} Taskss {{/linkTo}} |
 		{{#linkTo "showLimits"}} Limits {{/linkTo}}
 
 	</script>

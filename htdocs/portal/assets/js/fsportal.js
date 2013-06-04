@@ -142,6 +142,12 @@ App.ShowChatsRoute = Ember.Route.extend({
 	}
 });
 
+App.ShowTasksRoute = Ember.Route.extend({
+	setupController: function(controller) {
+		App.showTasksController.load();
+	}
+});
+
 App.ShowLimitsRoute = Ember.Route.extend({
 	setupController: function(controller) {
 		App.showLimitsController.load();
@@ -167,6 +173,7 @@ App.Router.map(function(){
 	this.route("showSays");
 	this.route("showChats");
 	this.route("showInterfaces");
+	this.route("showTasks");
 	this.route("showLimits");
 	this.route("show");
 	this.route("users");
@@ -499,6 +506,23 @@ App.showInterfacesController = Ember.ArrayController.create({
 	load: function() {
 		var me = this;
 		$.getJSON("/txtapi/show?interfaces%20as%20json", function(data){
+			me.set('total', data.row_count);
+			me.content.clear();
+			if (data.row_count == 0) return;
+
+			me.pushObjects(data.rows);
+
+		});
+	}
+});
+
+App.showTasksController = Ember.ArrayController.create({
+	content: [],
+	init: function(){
+	},
+	load: function() {
+		var me = this;
+		$.getJSON("/txtapi/show?tasks%20as%20json", function(data){
 			me.set('total', data.row_count);
 			me.content.clear();
 			if (data.row_count == 0) return;
