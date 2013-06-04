@@ -67,7 +67,6 @@ App.ChannelsRoute = Ember.Route.extend({
   	// }
 });
 
-
 App.ShowRegistrationsRoute = Ember.Route.extend({
 	setupController: function(controller) {
 		// Set the Controller's `title`
@@ -131,10 +130,28 @@ App.ShowAPIsRoute = Ember.Route.extend({
   	}
 });
 
+App.ShowSaysRoute = Ember.Route.extend({
+	setupController: function(controller) {
+		App.showSaysController.load();
+	}
+});
+
+App.ShowChatsRoute = Ember.Route.extend({
+	setupController: function(controller) {
+		App.showChatsController.load();
+	}
+});
+
+App.ShowLimitsRoute = Ember.Route.extend({
+	setupController: function(controller) {
+		App.showLimitsController.load();
+	}
+});
+
 App.UsersRoute = Ember.Route.extend({
 	setupController: function(controller) {
 		App.usersController.load();
-  	}
+	}
 });
 
 App.Router.map(function(){
@@ -147,6 +164,10 @@ App.Router.map(function(){
 	this.route("showCodecs");
 	this.route("showFiles");
 	this.route("showAPIs");
+	this.route("showSays");
+	this.route("showChats");
+	this.route("showInterfaces");
+	this.route("showLimits");
 	this.route("show");
 	this.route("users");
 	this.route("about", { path: "/about" });
@@ -436,6 +457,75 @@ App.showModulesController = Ember.ArrayController.create({
 		});
 	}
 });
+
+App.showSaysController = Ember.ArrayController.create({
+	content: [],
+	init: function(){
+	},
+	load: function() {
+		var me = this;
+		$.getJSON("/txtapi/show?say%20as%20json", function(data){
+			me.set('total', data.row_count);
+			me.content.clear();
+			if (data.row_count == 0) return;
+
+			me.pushObjects(data.rows);
+
+		});
+	}
+});
+
+App.showChatsController = Ember.ArrayController.create({
+	content: [],
+	init: function(){
+	},
+	load: function() {
+		var me = this;
+		$.getJSON("/txtapi/show?chat%20as%20json", function(data){
+			me.set('total', data.row_count);
+			me.content.clear();
+			if (data.row_count == 0) return;
+
+			me.pushObjects(data.rows);
+
+		});
+	}
+});
+
+App.showInterfacesController = Ember.ArrayController.create({
+	content: [],
+	init: function(){
+	},
+	load: function() {
+		var me = this;
+		$.getJSON("/txtapi/show?interfaces%20as%20json", function(data){
+			me.set('total', data.row_count);
+			me.content.clear();
+			if (data.row_count == 0) return;
+
+			me.pushObjects(data.rows);
+
+		});
+	}
+});
+
+App.showLimitsController = Ember.ArrayController.create({
+	content: [],
+	init: function(){
+	},
+	load: function() {
+		var me = this;
+		$.getJSON("/txtapi/show?limit%20as%20json", function(data){
+			me.set('total', data.row_count);
+			me.content.clear();
+			if (data.row_count == 0) return;
+
+			me.pushObjects(data.rows);
+
+		});
+	}
+});
+
 
 App.usersController = Ember.ArrayController.create({
 	content: [],
