@@ -127,7 +127,19 @@ App.ShowFilesRoute = Ember.Route.extend({
 App.ShowAPIsRoute = Ember.Route.extend({
 	setupController: function(controller) {
 		App.showAPIsController.load();
-  	}
+	}
+});
+
+App.ShowAliasesRoute = Ember.Route.extend({
+	setupController: function(controller) {
+		App.showAliasesController.load();
+	}
+});
+
+App.ShowManagementsRoute = Ember.Route.extend({
+	setupController: function(controller) {
+		App.showManagementsController.load();
+	}
 });
 
 App.ShowSaysRoute = Ember.Route.extend({
@@ -145,6 +157,12 @@ App.ShowChatsRoute = Ember.Route.extend({
 App.ShowInterfacesRoute = Ember.Route.extend({
 	setupController: function(controller) {
 		App.showInterfacesController.load();
+	}
+});
+
+App.ShowInterfaceTypesRoute = Ember.Route.extend({
+	setupController: function(controller) {
+		App.showInterfaceTypesController.load();
 	}
 });
 
@@ -176,9 +194,12 @@ App.Router.map(function(){
 	this.route("showCodecs");
 	this.route("showFiles");
 	this.route("showAPIs");
+	this.route("showAliases");
+	this.route("showManagements");
 	this.route("showSays");
 	this.route("showChats");
 	this.route("showInterfaces");
+	this.route("showInterfaceTypes");
 	this.route("showTasks");
 	this.route("showLimits");
 	this.route("show");
@@ -471,6 +492,40 @@ App.showModulesController = Ember.ArrayController.create({
 	}
 });
 
+App.showAliasesController = Ember.ArrayController.create({
+	content: [],
+	init: function(){
+	},
+	load: function() {
+		var me = this;
+		$.getJSON("/txtapi/show?aliases%20as%20json", function(data){
+			me.set('total', data.row_count);
+			me.content.clear();
+			if (data.row_count == 0) return;
+
+			me.pushObjects(data.rows);
+
+		});
+	}
+});
+
+App.showManagementsController = Ember.ArrayController.create({
+	content: [],
+	init: function(){
+	},
+	load: function() {
+		var me = this;
+		$.getJSON("/txtapi/show?management%20as%20json", function(data){
+			me.set('total', data.row_count);
+			me.content.clear();
+			if (data.row_count == 0) return;
+
+			me.pushObjects(data.rows);
+
+		});
+	}
+});
+
 App.showSaysController = Ember.ArrayController.create({
 	content: [],
 	init: function(){
@@ -512,6 +567,23 @@ App.showInterfacesController = Ember.ArrayController.create({
 	load: function() {
 		var me = this;
 		$.getJSON("/txtapi/show?interfaces%20as%20json", function(data){
+			me.set('total', data.row_count);
+			me.content.clear();
+			if (data.row_count == 0) return;
+
+			me.pushObjects(data.rows);
+
+		});
+	}
+});
+
+App.showInterfaceTypesController = Ember.ArrayController.create({
+	content: [],
+	init: function(){
+	},
+	load: function() {
+		var me = this;
+		$.getJSON("/txtapi/show?interface_types%20as%20json", function(data){
 			me.set('total', data.row_count);
 			me.content.clear();
 			if (data.row_count == 0) return;
