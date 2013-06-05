@@ -1644,6 +1644,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	switch_console_init(runtime.memory_pool);
 	switch_event_init(runtime.memory_pool);
+	switch_channel_global_init(runtime.memory_pool);
 
 	if (switch_xml_init(runtime.memory_pool, err) != SWITCH_STATUS_SUCCESS) {
 		apr_terminate();
@@ -2553,6 +2554,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_xml_destroy();
 	switch_core_session_uninit();
 	switch_console_shutdown();
+	switch_channel_global_uninit();
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Closing Event Engine.\n");
 	switch_event_shutdown();
