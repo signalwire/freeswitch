@@ -577,6 +577,8 @@ SWITCH_DECLARE(void) switch_core_session_destroy_state(switch_core_session_t *se
 
 	STATE_MACRO(destroy, "DESTROY");
 
+	switch_channel_clear_device_record(session->channel);
+
 	return;
 }
 

@@ -61,6 +61,11 @@ struct switch_app_log {
 	struct switch_app_log *next;
 };
 
+typedef struct switch_thread_data_s {
+	switch_thread_start_t func;
+	void *obj;
+	int alloc;
+} switch_thread_data_t;
 
 typedef struct switch_hold_record_s {
 	switch_time_t on;
@@ -69,12 +74,42 @@ typedef struct switch_hold_record_s {
 	struct switch_hold_record_s *next;
 } switch_hold_record_t;
 
+typedef struct device_uuid_node_s {
+	char *uuid;
+	switch_xml_t xml_cdr;
+	switch_event_t *event;
+	switch_channel_callstate_t callstate;
+	switch_hold_record_t *hold_record;
+	switch_caller_profile_t *hup_profile;
+	struct switch_device_record_s *parent;
+	struct device_uuid_node_s *next;
+} switch_device_node_t;
 
-typedef struct switch_thread_data_s {
-	switch_thread_start_t func;
-	void *obj;
-	int alloc;
-} switch_thread_data_t;
+typedef struct switch_device_stats_s {
+	uint32_t total; 
+	uint32_t offhook;
+	uint32_t active;
+	uint32_t held;
+	uint32_t hup;
+} switch_device_stats_t;
+
+
+typedef struct switch_device_record_s {
+	char *device_id;
+	char *uuid;
+	int refs;
+	switch_device_stats_t stats;
+	switch_device_state_t state;
+	switch_device_state_t last_state;
+	switch_time_t active_start;
+	switch_time_t active_stop;
+	struct device_uuid_node_s *uuid_list;
+	struct device_uuid_node_s *uuid_tail;
+	switch_mutex_t *mutex;
+	switch_memory_pool_t *pool;
+} switch_device_record_t;
+
+typedef void(*switch_device_state_function_t)(switch_core_session_t *session, switch_channel_callstate_t callstate, switch_device_record_t *drec);
 
 
 #define DTLS_SRTP_FNAME "dtls-srtp"

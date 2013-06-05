@@ -1111,8 +1111,18 @@ typedef enum {
 	CCS_EARLY,
 	CCS_ACTIVE,
 	CCS_HELD,
-	CCS_HANGUP
+	CCS_HANGUP,
+	CCS_UNHOLD
 } switch_channel_callstate_t;
+
+typedef enum {
+	SDS_DOWN,
+	SDS_ACTIVE,
+	SDS_ACTIVE_MULTI,
+	SDS_HELD,
+	SDS_HANGUP
+} switch_device_state_t;
+
 
 /*!
   \enum switch_channel_state_t
@@ -1279,6 +1289,8 @@ typedef enum {
 	CF_ZRTP_PASSTHRU,
 	CF_ZRTP_HASH,
 	CF_CHANNEL_SWAP,
+	CF_DEVICE_LEG,
+	CF_FINAL_DEVICE_LEG,
 	CF_PICKUP,
 	CF_CONFIRM_BLIND_TRANSFER,
 	CF_NO_PRESENCE,
@@ -1751,6 +1763,8 @@ typedef enum {
 	SWITCH_EVENT_CONFERENCE_DATA,
 	SWITCH_EVENT_CALL_SETUP_REQ,
 	SWITCH_EVENT_CALL_SETUP_RESULT,
+	SWITCH_EVENT_CALL_DETAIL,
+	SWITCH_EVENT_DEVICE_STATE,
 	SWITCH_EVENT_ALL
 } switch_event_types_t;
 

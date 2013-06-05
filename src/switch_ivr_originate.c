@@ -2689,6 +2689,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 				
 
+				if (local_var_event) {
+					const char *device_id = switch_event_get_header(local_var_event, "device_id");
+					switch_channel_set_profile_var(originate_status[i].peer_channel, "device_id", device_id);
+				}
+
 				if ((lc = switch_event_get_header(var_event, "local_var_clobber"))) {
 					local_clobber = switch_true(lc);
 				}
