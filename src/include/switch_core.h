@@ -103,6 +103,7 @@ typedef struct switch_device_record_s {
 	switch_device_state_t last_state;
 	switch_time_t active_start;
 	switch_time_t active_stop;
+	switch_time_t last_call_time;
 	struct device_uuid_node_s *uuid_list;
 	struct device_uuid_node_s *uuid_tail;
 	switch_mutex_t *mutex;
