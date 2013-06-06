@@ -1,0 +1,74 @@
+<configuration name="modules.conf" description="Modules">
+  <modules>
+    <!-- Loggers -->
+    <load module="mod_console"/>
+    <load module="mod_logfile"/>
+
+    <!-- Event Handlers -->
+    <load module="mod_cdr_csv"/>
+    <load module="mod_event_socket"/>
+    <load module="mod_rayo"/>
+
+    <!-- Endpoints -->
+    <load module="mod_sofia"/>
+    <load module="mod_loopback"/>
+
+    <!-- Applications -->
+    <load module="mod_commands"/>
+    <load module="mod_conference"/>
+    <load module="mod_dptools"/>
+    <load module="mod_expr"/>
+    <load module="mod_hash"/>
+    <!--<load module="mod_distributor"/>-->
+    <load module="mod_esf"/>
+    <load module="mod_fsv"/>
+    <load module="mod_http_cache"/>
+
+    <!-- Dialplan Interfaces -->
+    <load module="mod_dialplan_xml"/>
+
+    <!-- Codec Interfaces -->
+    <load module="mod_spandsp"/>
+    <load module="mod_celt"/>
+    <load module="mod_speex"/>
+    <load module="mod_opus"/>
+    <load module="mod_ilbc"/>
+
+    <!-- File Format Interfaces -->
+    <load module="mod_sndfile"/>
+    <load module="mod_native_file"/>
+    <load module="mod_shell_stream"/>
+    <!--For icecast/mp3 streams/files-->
+    <load module="mod_shout"/>
+    <!--For local streams (play all the files in a directory)-->
+    <load module="mod_local_stream"/>
+    <load module="mod_tone_stream"/>
+    <load module="mod_ssml"/>
+
+    <!-- Languages -->
+    <load module="mod_lua"/>
+
+    <!-- ASR /TTS -->
+    <load module="mod_flite"/>
+    <load module="mod_pocketsphinx"/>
+    <!-- <load module="mod_tts_commandline"/> -->
+
+    <!-- Say -->
+    <!--load module="mod_say_de"/-->
+    <!--load module="mod_say_es"/-->
+    <!--load module="mod_say_fr"/-->
+    <!--load module="mod_say_hr"/-->
+    <!--load module="mod_say_it"/-->
+    <!--load module="mod_say_nl"/-->
+    <!--load module="mod_say_ru"/-->
+    <!--load module="mod_say_zh"/-->
+    <load module="mod_say_en"/>
+    <!--load module="mod_say_fa"/-->
+    <!--load module="mod_say_he"/-->
+    <!--load module="mod_say_hu"/-->
+    <!--load module="mod_say_ja"/-->
+    <!--load module="mod_say_pt"/-->
+    <!--load module="mod_say_th"/-->
+
+  </modules>
+</configuration>

@@ -1,0 +1,74 @@
+<include>
+  <X-PRE-PROCESS cmd="set" data="sound_prefix=$${sounds_dir}/en/us/callie"/>
+
+  <!--
+      This setting is what sets the default domain FreeSWITCH will use if all else fails.
+      
+      FreeSWICH will default to $${local_ip_v4} unless changed.  Changing this setting does 
+      affect the sip authentication.  Please review conf/directory/default.xml for more
+      information on this topic.
+  -->
+  <X-PRE-PROCESS cmd="set" data="domain=$${local_ip_v4}"/>
+  <X-PRE-PROCESS cmd="set" data="domain_name=$${domain}"/>
+  <X-PRE-PROCESS cmd="set" data="hold_music=local_stream://moh"/>
+  <X-PRE-PROCESS cmd="set" data="use_profile=external"/>
+
+  <!--
+      Enable ZRTP globally you can override this on a per channel basis
+      
+      http://wiki.freeswitch.org/wiki/ZRTP (on how to enable zrtp)
+  -->
+  <X-PRE-PROCESS cmd="set" data="zrtp_secure_media=true"/>
+
+  <X-PRE-PROCESS cmd="set" data="global_codec_prefs=PCMU,PCMA"/>
+  <X-PRE-PROCESS cmd="set" data="outbound_codec_prefs=PCMU,PCMA"/>
+
+  <!-- 
+       THIS IS ONLY USED FOR DINGALING
+
+       bind_server_ip
+
+       Can be an ip address, a dns name, or "auto". 
+       This determines an ip address available on this host to bind.
+       If you are separating RTP and SIP traffic, you will want to have
+       use different addresses where this variable appears.
+       Used by: dingaling.conf.xml
+  -->
+  <X-PRE-PROCESS cmd="set" data="bind_server_ip=auto"/>
+
+  <!-- unroll-loops
+       Used to turn on sip loopback unrolling.
+  --> 
+  <X-PRE-PROCESS cmd="set" data="unroll_loops=true"/>
+
+  <X-PRE-PROCESS cmd="set" data="outbound_caller_name=FreeSWITCH"/>
+  <X-PRE-PROCESS cmd="set" data="outbound_caller_id=0000000000"/>
+
+  <!-- various debug and defaults -->
+  <X-PRE-PROCESS cmd="set" data="call_debug=false"/>
+  <X-PRE-PROCESS cmd="set" data="console_loglevel=info"/>
+  <X-PRE-PROCESS cmd="set" data="default_areacode=617"/>
+  <X-PRE-PROCESS cmd="set" data="default_country=US"/>
+
+  <!-- if false or undefined, the destination number is included in presence NOTIFY dm:note.
+       if true, the destination number is not included -->
+  <X-PRE-PROCESS cmd="set" data="presence_privacy=false"/>
+
+  <!--
+      SIP and TLS settings. http://wiki.freeswitch.org/wiki/Tls
+  -->
+  <X-PRE-PROCESS cmd="set" data="sip_tls_version=tlsv1"/>
+
+  <!-- Rayo -->
+  <X-PRE-PROCESS cmd="set" data="rayo_ip=$${local_ip_v4}"/>
+  <X-PRE-PROCESS cmd="set" data="rayo_domain_name=$${rayo_ip}"/>
+
+  <!-- External SIP Profile -->
+  <X-PRE-PROCESS cmd="set" data="external_rtp_ip=$${local_ip_v4}"/>
+  <X-PRE-PROCESS cmd="set" data="external_sip_ip=$${local_ip_v4}"/>
+  <X-PRE-PROCESS cmd="set" data="external_sip_port=5060"/>
+  <X-PRE-PROCESS cmd="set" data="external_tls_port=5061"/>
+  <X-PRE-PROCESS cmd="set" data="external_tls_enable=false"/>
+  <X-PRE-PROCESS cmd="set" data="external_tls_dir=$${base_dir}/conf/ssl"/>
+  <X-PRE-PROCESS cmd="set" data="external_auth_calls=false"/>
+</include>
