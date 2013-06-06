@@ -1,0 +1,21 @@
+<include>
+  <user id="userb">
+    <!-- Outbound Registrations Related to this user -->
+    <gateways>
+    </gateways>
+    <params>
+      <!-- omit password for authless registration -->
+      <param name="password" value="1"/>
+    </params>
+    <variables>
+      <!--all variables here will be set on all inbound calls that originate from this user -->
+      <variable name="user_context" value="public"/>
+      <variable name="effective_caller_id_name" value="User B"/>
+      <variable name="effective_caller_id_number" value="9009093733"/>
+    </variables>
+
+    <vcard>
+      <!-- insert optional compliant vcard xml here-->
+    </vcard>
+  </user>
+</include>

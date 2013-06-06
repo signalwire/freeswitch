@@ -1,0 +1,24 @@
+# Still a work in progress...
+
+# Compile on CentOS 6.4
+erlc -I /usr/lib64/ejabberd/include mod_rayo_gateway.erl
+
+# Install in ejabberd
+cp mod_rayo_gateway.beam /usr/lib64/ejabberd/ebin/
+
+vi /etc/ejabberd/ejabberd.cfg
+      %%
+      %% Modules enabled in all ejabberd virtual hosts
+      %%
+      {modules,
+       [
+        ...
+	{mod_rayo_gateway,[]},
+        ...
+       ]}.
+
+ejabberdctl debug
+(ejabberd@jabber)1> l(mod_rayo_gateway).
+{module,mod_rayo_gateway}
+(ejabberd@jabber)2>
+
