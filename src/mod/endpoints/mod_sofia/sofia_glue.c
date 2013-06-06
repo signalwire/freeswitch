@@ -5297,6 +5297,8 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					te = tech_pvt->te = (switch_payload_t) best_te;
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf send payload to %u\n", best_te);
 					if (tech_pvt->rtp_session) {
+						switch_channel_set_variable(tech_pvt->channel, "dtmf_type", "rfc2833");
+						tech_pvt->dtmf_type = DTMF_2833;
 						switch_rtp_set_telephony_event(tech_pvt->rtp_session, (switch_payload_t) best_te);
 						switch_channel_set_variable_printf(tech_pvt->channel, "sip_2833_send_payload", "%d", best_te);
 					}
@@ -5304,6 +5306,8 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					te = tech_pvt->recv_te = tech_pvt->te = (switch_payload_t) best_te;
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf send/recv payload to %u\n", te);
 					if (tech_pvt->rtp_session) {
+						switch_channel_set_variable(tech_pvt->channel, "dtmf_type", "rfc2833");
+						tech_pvt->dtmf_type = DTMF_2833;
 						switch_rtp_set_telephony_event(tech_pvt->rtp_session, te);
 						switch_channel_set_variable_printf(tech_pvt->channel, "sip_2833_send_payload", "%d", te);
 						switch_rtp_set_telephony_recv_event(tech_pvt->rtp_session, te);
