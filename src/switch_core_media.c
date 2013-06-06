@@ -2874,6 +2874,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 					te = smh->mparams->te = (switch_payload_t) best_te;
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf send payload to %u\n", best_te);
+					switch_channel_set_variable(tech_pvt->channel, "dtmf_type", "rfc2833");
+					tech_pvt->dtmf_type = DTMF_2833;
 					if (a_engine->rtp_session) {
 						switch_rtp_set_telephony_event(a_engine->rtp_session, (switch_payload_t) best_te);
 						switch_channel_set_variable_printf(session->channel, "rtp_2833_send_payload", "%d", best_te);
@@ -2881,6 +2883,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				} else {
 					te = smh->mparams->recv_te = smh->mparams->te = (switch_payload_t) best_te;
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set 2833 dtmf send/recv payload to %u\n", te);
+					switch_channel_set_variable(tech_pvt->channel, "dtmf_type", "rfc2833");
+					tech_pvt->dtmf_type = DTMF_2833;
 					if (a_engine->rtp_session) {
 						switch_rtp_set_telephony_event(a_engine->rtp_session, te);
 						switch_channel_set_variable_printf(session->channel, "rtp_2833_send_payload", "%d", te);
