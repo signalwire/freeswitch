@@ -100,6 +100,7 @@ formats/mod_native_file
 #formats/mod_shell_stream
 #formats/mod_shout
 formats/mod_sndfile
+#formats/mod_ssml
 formats/mod_tone_stream
 #formats/mod_vlc
 #languages/mod_java
