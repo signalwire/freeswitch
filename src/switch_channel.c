@@ -4810,6 +4810,8 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 		}
 	}
 
+	drec->last_call_time = switch_micro_time_now();
+
 	drec->last_state = drec->state;
 
 	switch_mutex_unlock(drec->mutex);
