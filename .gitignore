@@ -137,7 +137,7 @@ Release/
 /libs/libcodec2/unittest/Makefile
 /libs/libcodec2/unittest/Makefile.in
 /libs/mpg123-1.13.2/
-
+/libs/spandsp/src/cielab_luts.h
 /scripts/fsxs
 /scripts/gentls_cert
 
