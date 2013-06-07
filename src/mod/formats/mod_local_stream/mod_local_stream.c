@@ -85,6 +85,7 @@ struct local_stream_source {
 	switch_memory_pool_t *pool;
 	int shuffle;
 	switch_thread_rwlock_t *rwlock;
+	int hup;
 	int ready;
 	int stopped;
 	int part_reload;
@@ -260,6 +261,23 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 			  retry:
 
 				is_open = switch_test_flag(use_fh, SWITCH_FILE_OPEN);
+
+				if (source->hup) {
+					source->hup = 0;
+					if (is_open) {
+						is_open = 0;
+
+						switch_core_file_close(use_fh);
+						if (use_fh == &source->chime_fh) {
+							source->chime_counter = source->rate * source->chime_freq;
+							use_fh = &fh;
+							goto retry;
+							switch_core_file_close(&fh);
+						}
+					}
+				}
+
+
 
 				if (is_open) {
 					if (switch_core_file_read(use_fh, abuf, &olen) != SWITCH_STATUS_SUCCESS || !olen) {
@@ -579,6 +597,7 @@ static void launch_thread(const char *name, const char *path, switch_xml_t direc
 	source->timer_name = "soft";
 	source->prebuf = DEFAULT_PREBUFFER_SIZE;
 	source->stopped = 0;
+	source->hup = 0;
 	source->chime_freq = 30;
 	for (param = switch_xml_child(directory, "param"); param; param = param->next) {
 		char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -901,6 +920,49 @@ SWITCH_STANDARD_API(start_local_stream_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define HUP_LOCAL_STREAM_SYNTAX "<local_stream_name>"
+SWITCH_STANDARD_API(hup_local_stream_function)
+{
+	local_stream_source_t *source = NULL;
+	char *mycmd = NULL, *argv[8] = { 0 };
+	char *local_stream_name = NULL;
+	int argc = 0;
+
+	if (zstr(cmd)) {
+		goto usage;
+	}
+
+	if (!(mycmd = strdup(cmd))) {
+		goto usage;
+	}
+
+	if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) < 1) {
+		goto usage;
+	}
+
+	local_stream_name = argv[0];
+
+	switch_mutex_lock(globals.mutex);
+	source = switch_core_hash_find(globals.source_hash, local_stream_name);
+	switch_mutex_unlock(globals.mutex);
+
+	if (source) {
+		source->hup = 1;
+		stream->write_function(stream, "+OK hup stream: %s", source->name);
+		goto done;
+	}
+
+	goto done;
+
+  usage:
+	stream->write_function(stream, "-USAGE: %s\n", START_LOCAL_STREAM_SYNTAX);
+
+  done:
+
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_local_stream_load)
 {
 	switch_api_interface_t *commands_api_interface;
@@ -924,6 +986,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_local_stream_load)
 	switch_core_hash_init(&globals.source_hash, pool);
 	launch_streams(NULL);
 
+	SWITCH_ADD_API(commands_api_interface, "hup_local_stream", "Skip to next file in local_stream", hup_local_stream_function, RELOAD_LOCAL_STREAM_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "reload_local_stream", "Reloads a local_stream", reload_local_stream_function, RELOAD_LOCAL_STREAM_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "stop_local_stream", "Stops and unloads a local_stream", stop_local_stream_function, STOP_LOCAL_STREAM_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "start_local_stream", "Starts a new local_stream", start_local_stream_function, START_LOCAL_STREAM_SYNTAX);
