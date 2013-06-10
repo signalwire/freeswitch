@@ -4639,7 +4639,8 @@ SWITCH_DECLARE(void) switch_channel_clear_device_record(switch_channel_t *channe
 		int x = 0;
 		char prefix[80] = "";
 
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "device");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Type", "device");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Device-ID", channel->device_node->parent->device_id);
 
 		switch_mutex_lock(channel->device_node->parent->mutex);
 		for(np = channel->device_node->parent->uuid_list; np; np = np->next) {
@@ -4769,6 +4770,7 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 	}
 
 	if (switch_event_create(&event, SWITCH_EVENT_DEVICE_STATE) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Device-State-Name", drec->device_id);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Last-Device-State", switch_channel_device_state2str(drec->last_state));
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Device-State", switch_channel_device_state2str(drec->state));
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Device-Call-State", switch_channel_callstate2str(callstate));
