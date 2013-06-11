@@ -4611,7 +4611,7 @@ static void fetch_device_stats(switch_device_record_t *drec)
 					drec->stats.early++;
 				} else if (np->callstate == CCS_RINGING) {
 					drec->stats.ringing++;
-				} else {
+				} else if (np->callstate != CCS_DOWN) {
 					drec->stats.active++;
 				}
 			}
@@ -4764,6 +4764,12 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 		} else {
 			drec->state = SDS_ACTIVE_MULTI;
 		}
+	}
+
+	if (drec->state == SDS_DOWN && drec->last_state == SDS_DOWN) {
+		switch_mutex_unlock(drec->mutex);
+		switch_mutex_unlock(globals.device_mutex);
+		return;
 	}
 
 	switch(drec->state) {
