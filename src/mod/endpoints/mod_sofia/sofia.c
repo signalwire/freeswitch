@@ -3852,15 +3852,15 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "renegotiate-codec-on-hold")) {
 						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_RENEG_ON_HOLD);
+							sofia_set_media_flag(profile, SCMF_RENEG_ON_HOLD);
 						} else {
-							sofia_clear_pflag(profile, PFLAG_RENEG_ON_HOLD);
+							sofia_clear_media_flag(profile, SCMF_RENEG_ON_HOLD);
 						}
 					} else if (!strcasecmp(var, "renegotiate-codec-on-reinvite")) {
 						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_RENEG_ON_REINVITE);
+							sofia_set_media_flag(profile, SCMF_RENEG_ON_REINVITE);
 						} else {
-							sofia_clear_pflag(profile, PFLAG_RENEG_ON_REINVITE);
+							sofia_clear_media_flag(profile, SCMF_RENEG_ON_REINVITE);
 						}
 					} else if (!strcasecmp(var, "presence-probe-on-register")) {
 						if (switch_true(val)) {
