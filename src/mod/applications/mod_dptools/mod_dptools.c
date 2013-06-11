@@ -3099,17 +3099,16 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 		return;
 	} else {
 
+		switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
+		if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE)) ||
+			switch_true(switch_channel_get_variable(peer_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE))) {
+			switch_channel_set_flag(caller_channel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
+		}
+
 		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
-			switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
-			if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE)) ||
-				switch_true(switch_channel_get_variable(peer_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE))) {
-				switch_channel_set_flag(caller_channel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
-			}
 			switch_ivr_signal_bridge(session, peer_session);
 		} else {
-			switch_channel_t *channel = switch_core_session_get_channel(session);
-			switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
-			char *a_key = (char *) switch_channel_get_variable(channel, "bridge_terminate_key");
+			char *a_key = (char *) switch_channel_get_variable(caller_channel, "bridge_terminate_key");
 			char *b_key = (char *) switch_channel_get_variable(peer_channel, "bridge_terminate_key");
 			int ok = 0;
 			switch_input_callback_function_t func = NULL;
@@ -3127,11 +3126,6 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 			} else {
 				a_key = NULL;
 				b_key = NULL;
-			}
-
-			if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE)) ||
-				switch_true(switch_channel_get_variable(peer_channel, SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE))) {
-				switch_channel_set_flag(caller_channel, CF_BYPASS_MEDIA_AFTER_BRIDGE);
 			}
 
 			switch_ivr_multi_threaded_bridge(session, peer_session, func, a_key, b_key);
