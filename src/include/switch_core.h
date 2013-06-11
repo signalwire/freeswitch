@@ -91,6 +91,8 @@ typedef struct switch_device_stats_s {
 	uint32_t active;
 	uint32_t held;
 	uint32_t hup;
+	uint32_t ringing;
+	uint32_t early;
 } switch_device_stats_t;
 
 

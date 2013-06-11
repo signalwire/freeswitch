@@ -1115,6 +1115,7 @@ typedef enum {
 
 typedef enum {
 	SDS_DOWN,
+	SDS_RINGING,
 	SDS_ACTIVE,
 	SDS_ACTIVE_MULTI,
 	SDS_HELD,
