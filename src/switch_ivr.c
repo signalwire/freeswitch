@@ -3233,6 +3233,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *sessi
 		}
 	}
 
+	if ((x_params = switch_xml_child(x_domain, "profile-variables"))) {
+		for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
+			const char *var = switch_xml_attr(x_param, "name");
+			const char *val = switch_xml_attr(x_param, "value");
+
+			if (var && val) {
+				switch_channel_set_profile_var(channel, get_prefixed_str(prefix_buffer, buffer_size, prefix, prefix_size, var), val);
+			}
+		}
+	}
+
 	if (x_group && (x_params = switch_xml_child(x_group, "variables"))) {
 		for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
 			const char *var = switch_xml_attr(x_param, "name");
@@ -3244,6 +3255,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *sessi
 		}
 	}
 
+	if ((x_params = switch_xml_child(x_group, "profile-variables"))) {
+		for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
+			const char *var = switch_xml_attr(x_param, "name");
+			const char *val = switch_xml_attr(x_param, "value");
+
+			if (var && val) {
+				switch_channel_set_profile_var(channel, get_prefixed_str(prefix_buffer, buffer_size, prefix, prefix_size, var), val);
+			}
+		}
+	}
+
 	if ((x_params = switch_xml_child(x_user, "variables"))) {
 		for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
 			const char *var = switch_xml_attr(x_param, "name");
@@ -3251,6 +3273,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *sessi
 
 			if (var && val) {
 				switch_channel_set_variable(channel, get_prefixed_str(prefix_buffer, buffer_size, prefix, prefix_size, var), val);
+			}
+		}
+	}
+
+	if ((x_params = switch_xml_child(x_user, "profile-variables"))) {
+		for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
+			const char *var = switch_xml_attr(x_param, "name");
+			const char *val = switch_xml_attr(x_param, "value");
+
+			if (var && val) {
+				switch_channel_set_profile_var(channel, get_prefixed_str(prefix_buffer, buffer_size, prefix, prefix_size, var), val);
 			}
 		}
 	}
