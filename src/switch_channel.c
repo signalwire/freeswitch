@@ -251,6 +251,7 @@ struct switch_device_state_table {
 };
 static struct switch_device_state_table DEVICE_STATE_CHART[] = {
     {"DOWN", SDS_DOWN},
+    {"RINGING", SDS_RINGING},
     {"ACTIVE", SDS_ACTIVE},
     {"ACTIVE_MULTI", SDS_ACTIVE_MULTI},
     {"HELD", SDS_HELD},
@@ -274,6 +275,8 @@ SWITCH_DECLARE(void) switch_channel_perform_set_callstate(switch_channel_t *chan
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, switch_channel_get_uuid(channel), SWITCH_LOG_DEBUG,
 					  "(%s) Callstate Change %s -> %s\n", channel->name, 
 					  switch_channel_callstate2str(o_callstate), switch_channel_callstate2str(callstate));
+
+	switch_channel_check_device_state(channel, channel->callstate);
 	
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_CALLSTATE) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Original-Channel-Call-State", switch_channel_callstate2str(o_callstate));
@@ -1741,7 +1744,6 @@ SWITCH_DECLARE(void) switch_channel_set_flag_value(switch_channel_t *channel, sw
 		const char *brto = switch_channel_get_partner_uuid(channel);
 
 		switch_channel_set_callstate(channel, CCS_HELD);
-		switch_channel_check_device_state(channel, CCS_HELD);
 		switch_mutex_lock(channel->profile_mutex);
 		channel->caller_profile->times->last_hold = switch_time_now();
 
@@ -1900,8 +1902,7 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 	switch_mutex_unlock(channel->flag_mutex);
 
 	if (ACTIVE) {
-		switch_channel_set_callstate(channel, CCS_ACTIVE);
-		switch_channel_check_device_state(channel, CCS_UNHOLD);
+		switch_channel_set_callstate(channel, CCS_UNHOLD);
 		switch_mutex_lock(channel->profile_mutex);
 		if (channel->caller_profile->times->last_hold) {
 			channel->caller_profile->times->hold_accum += (switch_time_now() - channel->caller_profile->times->last_hold);
@@ -4606,7 +4607,13 @@ static void fetch_device_stats(switch_device_record_t *drec)
 			if (np->callstate == CCS_HELD) {
 				drec->stats.held++;
 			} else {
-				drec->stats.active++;
+				if (np->callstate == CCS_EARLY) {
+					drec->stats.early++;
+				} else if (np->callstate == CCS_RINGING) {
+					drec->stats.ringing++;
+				} else {
+					drec->stats.active++;
+				}
 			}
 		} else {
 			drec->stats.hup++;
@@ -4716,8 +4723,6 @@ static void process_device_hup(switch_channel_t *channel)
 		switch_channel_set_flag(channel, CF_FINAL_DEVICE_LEG);
 	}
 
-	switch_channel_check_device_state(channel, CCS_HANGUP);
-
 	channel->device_node->parent->refs--;
 
 	switch_mutex_unlock(globals.device_mutex);
@@ -4744,8 +4749,16 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 	if (drec->stats.offhook == 0) {
 		drec->state = SDS_HANGUP;
 	} else {
-		if (drec->stats.active == 0 && drec->stats.held > 0) {
-			drec->state = SDS_HELD;
+		if (drec->stats.active == 0) {
+			if ((drec->stats.ringing + drec->stats.early) > 0) {
+				drec->state = SDS_RINGING;
+			} else {
+				if (drec->stats.held > 0) {
+					drec->state = SDS_HELD;
+				} else {
+					drec->state = SDS_DOWN;
+				}
+			}
 		} else if (drec->stats.active == 1) {
 			drec->state = SDS_ACTIVE;
 		} else {
@@ -4787,7 +4800,7 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, 
-					  "%s device: %s\nState: %s Dev State: %s/%s Total:%u Offhook:%u Active:%u Held:%u Hungup:%u Dur: %u %s\n", 
+					  "%s device: %s\nState: %s Dev State: %s/%s Total:%u Offhook:%u Ringing:%u Early:%u Active:%u Held:%u Hungup:%u Dur: %u %s\n", 
 					  switch_channel_get_name(channel),
 					  drec->device_id,
 					  switch_channel_callstate2str(callstate),
@@ -4795,6 +4808,8 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 					  switch_channel_device_state2str(drec->state),
 					  drec->stats.total,
 					  drec->stats.offhook,
+					  drec->stats.ringing,
+					  drec->stats.early,
 					  drec->stats.active,
 					  drec->stats.held,
 					  drec->stats.hup,
@@ -4838,6 +4853,7 @@ static void add_uuid(switch_device_record_t *drec, switch_channel_t *channel)
 
 	node->uuid = switch_core_strdup(drec->pool, switch_core_session_get_uuid(channel->session));
 	node->parent = drec;
+	node->callstate = channel->callstate;
 	channel->device_node = node;
 
 	if (!drec->uuid_list) {
@@ -4893,8 +4909,8 @@ SWITCH_DECLARE(const char *) switch_channel_set_device_id(switch_channel_t *chan
 
 	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Setting DEVICE ID to [%s]\n", device_id);
 	
-	switch_channel_check_device_state(channel, CCS_ACTIVE);
-
+	switch_channel_check_device_state(channel, channel->callstate);
+	
 	return device_id;
 }
 
