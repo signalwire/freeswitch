@@ -259,6 +259,7 @@
       <prompt phrase="Please choose a password that does not contain all repeating or all consecutive digits." filename="vm-choose_password.wav"/>
       <prompt phrase="Remember that your voicemail password is also your Web interface password." filename="vm-voicemail_password_is_web_password.wav"/>
       <prompt phrase="Message from..." filename="vm-message_from.wav"/>
+      <prompt phrase="Nobody is currently leaving a message in this voicemail box." filename="vm-nobody_leaving_message.wav"/>
     </voicemail>
     <directory>
       <prompt phrase="Please enter the first few letters of the persons" filename="dir-enter_person.wav"/>
@@ -623,7 +624,6 @@
       <prompt phrase="Your next billing cycle begins on..." filename="ivr-next_billing_cycle.wav"/> 
       <prompt phrase="Nothing." filename="ivr-nothing.wav"/>
       <prompt phrase="To skip..." filename="ivr-to_skip.wav"/>
-      <!-- The following phrases still need to be recorded -->
       <prompt phrase="Please hold while we connect you to a live operator." filename="ivr_connect_live_operator.wav"/>
       <prompt phrase="Please hold while we connect you to an actual *human being*." filename="ivr-connect_actual_human_being.wav"/>
       <prompt phrase="The system is going down for maintenance." filename="ivr-system_down_for_maintenance.wav"/>
@@ -635,17 +635,12 @@
       <prompt phrase="If the smoke got you, press..." filename="ivr-smoke_got_you.wav"/>
       <prompt phrase="If you got bronchitis, press..." filename="ivr-got_bronchitis.wav"/>
       <prompt phrase="If ain't nobody got time for that, press..." filename="ivr-nobody_got_time_for_that.wav"/>
-      <prompt phrase="Nobody is currently leaving a message in this voicemail box." filename="vm-nobody_leaving_message.wav"/>
       <prompt phrase="This is a call from..." filename="ivr-call_from.wav"/>
       <prompt phrase="This is a reminder for..." filename="ivr-reminder_for.wav"/>
       <prompt phrase="You have an appointment scheduled for..." filename="ivr-appointment_schedule_for.wav"/>
-      <prompt phrase="Would you like to speak live with other members of the FreeSWITCH community?" filename="misc-speak_live_with_community.wav"/>
-      <prompt phrase="Join us each Wednesday at 1PM eastern time on the public FreeSWITCH conference." filename="misc-join_us_each_wed.wav"/>
-      <prompt phrase="More information is available online at wiki dot FreeSWITCH dot org." filename="misc-more_info_wiki.wav"/>
-      <prompt phrase="Welcome to the FreeSWITCH community conference call!" filename="misc-welcome_freeswitch_conf_call.wav"/>
-      <prompt phrase="E one sixty-four dot org." filename="misc-e164_dot_org.wav"/>
       <prompt phrase="Your verification PIN is..." filename="ivr-Your_verification_PIN_is.wav"/>
-      <prompt phrase="" filename=""/>
+      <!-- The following phrases still need to be recorded -->
+      <prompt phrase="You have reached the maximum number of channels." filename="ivr-maximum_number_of_channels.wav"/>
       <prompt phrase="" filename=""/>
       <prompt phrase="" filename=""/>
       <prompt phrase="" filename=""/>
@@ -690,6 +685,11 @@
       <prompt phrase="We have a network of FreeSWITCH experts that includes the core FreeSWITCH development team." filename="misc-fss_network_of_experts.wav"/>
       <prompt phrase="Contact us at W-W-W dot freeswitchsolutions dot com to see how we can help you take your FreeSWITCH experience to the next level." filename="misc-fss_contact_us.wav"/>
       <prompt phrase="It's totally soccer mom shit!" filename="misc-soccer_mom.wav"/>
+      <prompt phrase="Would you like to speak live with other members of the FreeSWITCH community?" filename="misc-speak_live_with_community.wav"/>
+      <prompt phrase="Join us each Wednesday at 1PM eastern time on the public FreeSWITCH conference." filename="misc-join_us_each_wed.wav"/>
+      <prompt phrase="More information is available online at wiki dot FreeSWITCH dot org." filename="misc-more_info_wiki.wav"/>
+      <prompt phrase="Welcome to the FreeSWITCH community conference call!" filename="misc-welcome_freeswitch_conf_call.wav"/>
+      <prompt phrase="E one sixty-four dot org." filename="misc-e164_dot_org.wav"/>
     </misc>
     <zrtp>
       <!-- base256 prompts for SAS -->
