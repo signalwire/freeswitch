@@ -1096,6 +1096,8 @@ JSObject *new_js_event(switch_event_t *event, char *name, JSContext * cx, JSObje
 		if ((Event = JS_DefineObject(cx, obj, name, &event_class, NULL, 0))) {
 			if ((JS_SetPrivate(cx, Event, eo) && JS_DefineProperties(cx, Event, event_props) && JS_DefineFunctions(cx, Event, event_methods))) {
 			}
+		} else {
+			free(eo);
 		}
 	}
 	return Event;
