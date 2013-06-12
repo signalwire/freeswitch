@@ -4795,6 +4795,8 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Device-Call-State", switch_channel_callstate2str(callstate));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Device-Total-Legs", "%u", drec->stats.total);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Device-Legs-Offhook", "%u", drec->stats.offhook);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Device-Legs-Ringing", "%u", drec->stats.ringing);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Device-Legs-Early", "%u", drec->stats.early);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Device-Legs-Active", "%u", drec->stats.active);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Device-Legs-Held", "%u", drec->stats.held);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Device-Legs-Hup", "%u", drec->stats.hup);
