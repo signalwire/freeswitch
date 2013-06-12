@@ -1112,6 +1112,8 @@ JSObject *new_js_dtmf(switch_dtmf_t *dtmf, char *name, JSContext * cx, JSObject 
 			JS_SetPrivate(cx, DTMF, ddtmf);
 			JS_DefineProperties(cx, DTMF, dtmf_props);
 			JS_DefineFunctions(cx, DTMF, dtmf_methods);
+		} else {
+			free(ddtmf);
 		}
 	}
 	return DTMF;
