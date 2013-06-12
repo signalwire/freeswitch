@@ -13,6 +13,7 @@ static void test_string_to_sign(void)
 	ASSERT_STRING_EQUALS("GET\nc8fdb181845a4ca6b8fec737b3581d76\naudio/mpeg\nThu, 17 Nov 2005 18:49:58 GMT\n/foo/man.chu", aws_s3_string_to_sign("GET", "foo", "man.chu", "audio/mpeg", "c8fdb181845a4ca6b8fec737b3581d76", "Thu, 17 Nov 2005 18:49:58 GMT"));
 	ASSERT_STRING_EQUALS("\n\n\n\n//", aws_s3_string_to_sign("", "", "", "", "", ""));
 	ASSERT_STRING_EQUALS("\n\n\n\n//", aws_s3_string_to_sign(NULL, NULL, NULL, NULL, NULL, NULL));
+	ASSERT_STRING_EQUALS("PUT\n\naudio/wav\nWed, 12 Jun 2013 13:16:58 GMT\n/bucket/voicemails/recording.wav", aws_s3_string_to_sign("PUT", "bucket", "voicemails/recording.wav", "audio/wav", "", "Wed, 12 Jun 2013 13:16:58 GMT"));
 }
 
 /**
@@ -98,6 +99,10 @@ static void test_parse_url(void)
 	aws_s3_parse_url(NULL, &bucket, &object);
 	ASSERT_NULL(bucket);
 	ASSERT_NULL(object);
+
+	aws_s3_parse_url(strdup("http://bucket.s3.amazonaws.com/voicemails/recording.wav"), &bucket, &object);
+	ASSERT_STRING_EQUALS("bucket", bucket);
+	ASSERT_STRING_EQUALS("voicemails/recording.wav", object);
 }
 
 /**

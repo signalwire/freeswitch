@@ -146,11 +146,6 @@ void aws_s3_parse_url(char *url, char **bucket, char **object)
 	}
 	object_start++;
 
-	if (strchr(object_start, '/')) {
-		/* invalid URL */
-		return;
-	}
-
 	if (zstr(bucket_start) || zstr(object_start)) {
 		/* invalid URL */
 		return;
