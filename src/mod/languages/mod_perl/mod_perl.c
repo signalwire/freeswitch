@@ -339,6 +339,7 @@ SWITCH_STANDARD_API(perl_api_function)
 	po.stream = stream;
 	po.session = session;
 	perl_thread_run(NULL, &po);
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_xml_t perl_fetch(const char *section,
