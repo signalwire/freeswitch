@@ -33,11 +33,9 @@
 
 #define MAX_DTMF 64
 
-#define INPUT_INITIAL_TIMEOUT "initial-timeout", RAYO_INPUT_COMPLETE_NS
-#define INPUT_INTER_DIGIT_TIMEOUT "inter-digit-timeout", RAYO_INPUT_COMPLETE_NS
-#define INPUT_MAX_SILENCE "max-silence", RAYO_INPUT_COMPLETE_NS
-#define INPUT_MIN_CONFIDENCE "min-confidence", RAYO_INPUT_COMPLETE_NS
-#define INPUT_MATCH "match", RAYO_INPUT_COMPLETE_NS
+#define INPUT_MATCH_TAG "match"
+#define INPUT_MATCH INPUT_MATCH_TAG, RAYO_INPUT_COMPLETE_NS
+#define INPUT_NOINPUT "noinput", RAYO_INPUT_COMPLETE_NS
 #define INPUT_NOMATCH "nomatch", RAYO_INPUT_COMPLETE_NS
 
 #define RAYO_INPUT_COMPONENT_PRIVATE_VAR "__rayo_input_component"
@@ -167,6 +165,18 @@ static int digit_mask_set_from_digits(int digit_mask, const char *digits)
 }
 
 /**
+ * Send match event to client
+ */
+static void send_match_event(struct rayo_component *component, iks *result)
+{
+	iks *event = rayo_component_create_complete_event_with_metadata(RAYO_COMPONENT(component), INPUT_MATCH, result, 0);
+	/* add content-type to <match>... */
+	iks *match = iks_find(iks_find(event, "complete"), INPUT_MATCH_TAG);
+	iks_insert_attrib(match, "content-type", "application/nlsml+xml");
+	rayo_component_send_complete_event(component, event);
+}
+
+/**
  * Send barge-in event to client
  */
 static void send_barge_event(struct rayo_component *component)
@@ -242,7 +252,7 @@ static switch_status_t input_component_on_dtmf(switch_core_session_t *session, c
 				handler->component = NULL;
 				switch_core_media_bug_remove(session, &handler->bug);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "MATCH = %s\n", component->digits);
-				rayo_component_send_complete_with_metadata(RAYO_COMPONENT(component), INPUT_MATCH, result, 0);
+				send_match_event(RAYO_COMPONENT(component), result);
 				iks_delete(result);
 				break;
 			}
@@ -284,16 +294,16 @@ static switch_bool_t input_component_bug_callback(switch_media_bug_t *bug, void 
 						iks *result = nlsml_create_dtmf_match(component->digits);
 						/* notify of match */
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "MATCH = %s\n", component->digits);
-						rayo_component_send_complete_with_metadata(RAYO_COMPONENT(component), INPUT_MATCH, result, 0);
+						send_match_event(RAYO_COMPONENT(component), result);
 						iks_delete(result);
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "inter-digit-timeout\n");
-						rayo_component_send_complete(RAYO_COMPONENT(component), INPUT_INTER_DIGIT_TIMEOUT);
+						rayo_component_send_complete(RAYO_COMPONENT(component), INPUT_NOMATCH);
 					}
 				} else if (!component->num_digits && component->initial_timeout > 0 && elapsed_ms > component->initial_timeout) {
 					handler->component = NULL;
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "initial-timeout\n");
-					rayo_component_send_complete(RAYO_COMPONENT(component), INPUT_INITIAL_TIMEOUT);
+					rayo_component_send_complete(RAYO_COMPONENT(component), INPUT_NOINPUT);
 				}
 			}
 			switch_core_media_bug_set_read_replace_frame(bug, rframe);
@@ -387,7 +397,10 @@ static iks *start_call_input(struct input_component *component, switch_core_sess
 	component->min_confidence = (int)ceil(iks_find_decimal_attrib(input, "min-confidence") * 100.0);
 	component->barge_event = iks_find_bool_attrib(input, "barge-event");
 	component->start_timers = iks_find_bool_attrib(input, "start-timers");
+	/* TODO this should just be a single digit terminator? */
 	component->term_digit_mask = digit_mask_set_from_digits(0, iks_find_attrib_soft(input, "terminator"));
+	/* TODO recognizer ignored */
+	/* TODO language ignored */
 	component->handler = handler;
 
 	/* parse the grammar */
@@ -543,11 +556,11 @@ static void on_detected_speech_event(switch_event_t *event)
 				enum nlsml_match_type match_type = nlsml_parse(result, uuid);
 				switch (match_type) {
 				case NMT_NOINPUT:
-					rayo_component_send_complete(component, INPUT_INITIAL_TIMEOUT);
+					rayo_component_send_complete(component, INPUT_NOINPUT);
 					break;
 				case NMT_MATCH: {
 					iks *result_xml = nlsml_normalize(result);
-					rayo_component_send_complete_with_metadata(component, INPUT_MATCH, result_xml, 0);
+					send_match_event(RAYO_COMPONENT(component), result_xml);
 					iks_delete(result_xml);
 					break;
 				}
