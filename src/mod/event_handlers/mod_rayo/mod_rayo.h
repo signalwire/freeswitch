@@ -39,6 +39,11 @@
 
 #define RAYO_NS RAYO_BASE RAYO_VERSION
 #define RAYO_CLIENT_NS RAYO_BASE "client:" RAYO_VERSION
+#define RAYO_CALL_NS RAYO_BASE "call:" RAYO_VERSION
+#define RAYO_MIXER_NS RAYO_BASE "mixer:" RAYO_VERSION
+
+/* this is to support punchblock.. undefine once punchblock is fixed */
+#define RAYO_UUID_IN_REF_URI
 
 struct rayo_actor;
 struct rayo_call;

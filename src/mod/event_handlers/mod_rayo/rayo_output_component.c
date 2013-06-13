@@ -352,7 +352,7 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 
 	/* done? */
 	if (!context->cur_doc) {
-		if (++context->play_count < output->repeat_times) {
+		if (output->repeat_times == 0 || ++context->play_count < output->repeat_times) {
 			/* repeat all document(s) */
 			if (!output->repeat_interval) {
 				goto top;

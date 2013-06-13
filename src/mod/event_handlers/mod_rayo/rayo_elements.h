@@ -35,14 +35,17 @@
  * <input> component validation
  */
 ELEMENT(RAYO_INPUT)
-	STRING_ATTRIB(mode, any, "any,dtmf,speech");
+	STRING_ATTRIB(mode, any, "any,dtmf,voice")
 	ATTRIB(terminator,, any)
-	ATTRIB(recognizer, en-US, any)
+	ATTRIB(recognizer,, any)
+	ATTRIB(language, en-US, any)
 	ATTRIB(initial-timeout, -1, positive_or_neg_one)
 	ATTRIB(inter-digit-timeout, -1, positive_or_neg_one)
 	ATTRIB(sensitivity, 0.5, decimal_between_zero_and_one)
 	ATTRIB(min-confidence, 0, decimal_between_zero_and_one)
 	ATTRIB(max-silence, -1, positive_or_neg_one)
+	/* for now, only NLSML */
+	STRING_ATTRIB(match-content-type, application/nlsml+xml, "application/nlsml+xml")
 	/* internal attribs for prompt support */
 	ATTRIB(barge-event, false, bool)
 	ATTRIB(start-timers, true, bool)
@@ -55,16 +58,17 @@ ELEMENT(RAYO_OUTPUT)
 	ATTRIB(start-offset, 0, not_negative)
 	ATTRIB(start-paused, false, bool)
 	ATTRIB(repeat-interval, 0, not_negative)
-	ATTRIB(repeat-times, 1, positive)
+	ATTRIB(repeat-times, 1, not_negative)
 	ATTRIB(max-time, -1, positive_or_neg_one)
 	ATTRIB(renderer,, any)
+	ATTRIB(voice,, any)
 ELEMENT_END
 
 /**
  * <output><seek> validation
  */
 ELEMENT(RAYO_OUTPUT_SEEK)
-	STRING_ATTRIB(direction,, "forward,back");
+	STRING_ATTRIB(direction,, "forward,back")
 	ATTRIB(amount,-1, positive)
 ELEMENT_END
 
@@ -86,7 +90,7 @@ ELEMENT(RAYO_RECORD)
 	ATTRIB(max-duration, -1, positive_or_neg_one)
 	ATTRIB(initial-timeout, -1, positive_or_neg_one)
 	ATTRIB(final-timeout, -1, positive_or_neg_one)
-	STRING_ATTRIB(direction, duplex, "duplex,send,recv");
+	STRING_ATTRIB(direction, duplex, "duplex,send,recv")
 	ATTRIB(mix, false, bool)
 ELEMENT_END
 
@@ -98,7 +102,7 @@ ELEMENT(RAYO_JOIN)
 	STRING_ATTRIB(direction, duplex, "send,recv,duplex"); */
 	STRING_ATTRIB(direction, duplex, "duplex")
 	STRING_ATTRIB(media, bridge, "bridge,direct")
-	ATTRIB(call-id,, any)
+	ATTRIB(call-uri,, any)
 	ATTRIB(mixer-name,, any)
 ELEMENT_END
 
