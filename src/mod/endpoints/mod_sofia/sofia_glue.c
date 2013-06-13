@@ -6104,7 +6104,7 @@ int sofia_recover_callback(switch_core_session_t *session)
 
 			if (switch_rtp_ready(tech_pvt->video_rtp_session)) {
 				if ((tmp = switch_channel_get_variable(channel, "sip_video_recv_pt"))) {
-					switch_rtp_set_recv_pt(tech_pvt->rtp_session, (switch_payload_t)atoi(tmp));
+					switch_rtp_set_recv_pt(tech_pvt->video_rtp_session, (switch_payload_t)atoi(tmp));
 				}
 			}
 
