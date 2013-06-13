@@ -169,11 +169,15 @@ static int digit_mask_set_from_digits(int digit_mask, const char *digits)
  */
 static void send_match_event(struct rayo_component *component, iks *result)
 {
-	iks *event = rayo_component_create_complete_event_with_metadata(RAYO_COMPONENT(component), INPUT_MATCH, result, 0);
-	/* add content-type to <match>... */
+#ifdef RAYO_INPUT_COMPLETE_WITHOUT_CONTENT_TYPE
+	rayo_component_send_complete_with_metadata(RAYO_COMPONENT(component), INPUT_MATCH, result, 0);
+#else
+	iks *event = rayo_component_create_complete_event(RAYO_COMPONENT(component), INPUT_MATCH);
 	iks *match = iks_find(iks_find(event, "complete"), INPUT_MATCH_TAG);
 	iks_insert_attrib(match, "content-type", "application/nlsml+xml");
+	iks_insert_cdata(match, iks_string(iks_stack(result), result), 0);
 	rayo_component_send_complete_event(component, event);
+#endif
 }
 
 /**
