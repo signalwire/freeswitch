@@ -2982,9 +2982,6 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				switch_channel_answer(channel);
 
-				originator_cp = switch_channel_get_caller_profile(channel);
-				originatee_cp = switch_channel_get_caller_profile(other_channel);
-
 				if (switch_channel_inbound_display(other_channel)) {
 					if (switch_channel_direction(other_channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 						switch_channel_set_flag(other_channel, CF_BLEG);
