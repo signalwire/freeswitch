@@ -2989,7 +2989,7 @@ void agent_recv_request(nta_agent_t *agent,
   url->url_params = NULL;
   agent_aliases(agent, url, tport); /* canonize urls */
 
-  if ((leg = leg_find(agent,
+  if (method != sip_method_subscribe && (leg = leg_find(agent,
 		      method_name, url,
 		      sip->sip_call_id,
 		      sip->sip_from->a_tag,
