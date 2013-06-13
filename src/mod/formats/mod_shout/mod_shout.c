@@ -1072,8 +1072,8 @@ static switch_status_t shout_file_set_string(switch_file_handle_t *handle, switc
 			id3tag_set_year(context->gfp, string);
 			break;
 		case SWITCH_AUDIO_COL_STR_SOFTWARE:
-			break;
 			id3tag_set_album(context->gfp, string);
+			break;
 		case SWITCH_AUDIO_COL_STR_COPYRIGHT:
 			id3tag_set_genre(context->gfp, string);
 			break;
