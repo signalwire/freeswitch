@@ -766,6 +766,10 @@ static switch_status_t handle_msg_sendevent(listener_t *listener, int arity, ei_
 					ei_x_encode_atom(rbuf, "ok");
 				}
 			}
+			/* If the event wasn't successfully fired, or failed for any other reason, then make sure not to leak it. */
+			if ( event ) {
+				switch_event_destroy(&event)
+			}
 		}
 	}
 	return SWITCH_STATUS_SUCCESS;
