@@ -213,12 +213,11 @@ int exprValListGetAddress(exprValList * vlist, char *name, EXPRTYPE ** addr)
 	exprVal *cur;
 	int result;
 
-	/* Not found yet */
-	*addr = NULL;
-
 	if (vlist == NULL || addr == NULL)
 		return EXPR_ERROR_NULLPOINTER;
 
+	/* Not found yet */
+	*addr = NULL;
 
 	if (name == NULL || name[0] == '\0')
 		return EXPR_ERROR_NOTFOUND;
