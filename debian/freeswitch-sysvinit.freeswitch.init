@@ -19,6 +19,7 @@ DAEMON=/usr/bin/freeswitch
 DAEMON_ARGS="-u freeswitch -g freeswitch -nc"
 USER=freeswitch
 GROUP=freeswitch
+CONFDIR=/etc/$NAME
 RUNDIR=/var/run/$NAME
 PIDFILE=$RUNDIR/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
@@ -30,6 +31,12 @@ WORKDIR=/var/lib/$NAME
 . /lib/lsb/init-functions
 
 do_start() {
+  if ! [ -f $CONFDIR/freeswitch.xml ]; then
+    echo "$NAME is not configured so not starting.">&2
+    echo "Please review /usr/share/doc/$NAME/README.Debian">&2
+    return 3
+  fi
+
   # Directory in /var/run may disappear on reboot (e.g. when tmpfs used for /var/run).
   mkdir -p $RUNDIR
   chown -R $USER:$GROUP $RUNDIR
