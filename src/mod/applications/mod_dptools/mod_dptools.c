@@ -3596,8 +3596,6 @@ SWITCH_STANDARD_APP(pickup_function)
 			caller_profile->callee_id_name = name;
 			caller_profile->callee_id_number = num;
 			
-			switch_channel_flip_cid(channel);
-
 			if (switch_event_create(&event, SWITCH_EVENT_CALL_UPDATE) == SWITCH_STATUS_SUCCESS) {
 				const char *uuid = switch_channel_get_partner_uuid(channel);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Direction", "RECV");
