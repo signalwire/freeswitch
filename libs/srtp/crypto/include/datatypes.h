@@ -393,7 +393,7 @@ octet_string_set_to_zero(uint8_t *s, int len);
 # define be64_to_cpu(x)	bswap_64((x))
 #else
 
-#if defined(__GNUC__) && defined(HAVE_X86)
+#if defined(__GNUC__) && defined(HAVE_X86) && !defined(__FreeBSD__)
 /* Fall back. */
 static inline uint32_t be32_to_cpu(uint32_t v) {
    /* optimized for x86. */
