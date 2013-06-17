@@ -4751,7 +4751,7 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 		}
 	}
 
-	if (drec->state == SDS_DOWN && drec->last_state == SDS_DOWN) {
+	if ((drec->state == SDS_DOWN && drec->last_state == SDS_DOWN) || (drec->state == SDS_HANGUP && drec->last_state == SDS_HANGUP)) {
 		switch_mutex_unlock(drec->mutex);
 		switch_mutex_unlock(globals.device_mutex);
 		return;
