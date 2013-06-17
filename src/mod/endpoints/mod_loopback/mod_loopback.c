@@ -432,17 +432,14 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 	if ((bowout = switch_channel_get_variable(tech_pvt->channel, "loopback_bowout_on_execute")) && switch_true(bowout)) {
 		/* loopback_bowout_on_execute variable is set */
 		bow = 1;
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "WILL BOW\n");
 	} else if ((exten = switch_channel_get_caller_extension(channel))) {
 		/* check for bowout flag */
 		switch_caller_application_t *app_p;
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "CHEKCING APPS\n");
 
 		for (app_p = exten->applications; app_p; app_p = app_p->next) {
 			int32_t flags;
 
 			switch_core_session_get_app_flags(app_p->application_name, &flags);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "CHECK %s %d\n", app_p->application_name, (flags & SAF_NO_LOOPBACK));
 
 			if ((flags & SAF_NO_LOOPBACK)) {
 				bow = 1;
@@ -455,7 +452,6 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 		switch_core_session_t *other_session = NULL;
 		switch_caller_profile_t *cp, *clone;
 		const char *other_uuid = NULL;
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "BOWING\n");
 		switch_set_flag(tech_pvt, TFLAG_BOWOUT);
 
 		if ((find_non_loopback_bridge(tech_pvt->other_session, &other_session, &other_uuid) == SWITCH_STATUS_SUCCESS)) {
@@ -1038,13 +1034,10 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 		break;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "done:%d pass:%d running:%d\n", done, pass, switch_test_flag(tech_pvt, TFLAG_RUNNING_APP));
-
 	if (!done && tech_pvt->other_session && (pass || switch_test_flag(tech_pvt, TFLAG_RUNNING_APP))) {
 		switch_status_t r = SWITCH_STATUS_FALSE;
 		
 		if (switch_core_session_get_partner(tech_pvt->other_session, &other_session) == SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "PASS TO %s\n", switch_core_session_get_name(other_session));
 			r = switch_core_session_receive_message(other_session, msg);
 			switch_core_session_rwunlock(other_session);
 		}
