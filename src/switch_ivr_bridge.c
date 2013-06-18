@@ -286,7 +286,13 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	}
 
 	if (bypass_media_after_bridge) {
-		if (switch_stristr("loopback", switch_channel_get_name(chan_a)) || switch_stristr("loopback", switch_channel_get_name(chan_b))) {
+		const char *source_a = switch_channel_get_variable(chan_a, "source");
+		const char *source_b = switch_channel_get_variable(chan_b, "source");
+
+		if (!source_a) source_a = "";
+		if (!source_b) source_b = "";
+
+		if (switch_stristr("loopback", source_a) || switch_stristr("loopback", source_b)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_WARNING, "Cannot bypass media while bridged to a loopback address.\n");
 			bypass_media_after_bridge = 0;
 		}
