@@ -1900,6 +1900,40 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			}
 		}
 		break;
+
+	case SWITCH_MESSAGE_INDICATE_NOMEDIA:
+		{
+			const char *uuid;
+			switch_core_session_t *other_session;
+			switch_channel_t *other_channel;
+			const char *ip = NULL, *port = NULL;
+
+			switch_channel_set_flag(channel, CF_PROXY_MODE);
+			if (tech_pvt->rm_encoding) {
+				tech_pvt->rm_encoding = NULL;
+			}
+			sofia_glue_tech_set_local_sdp(tech_pvt, NULL, SWITCH_FALSE);
+
+			if ((uuid = switch_channel_get_partner_uuid(channel))
+				&& (other_session = switch_core_session_locate(uuid))) {
+				other_channel = switch_core_session_get_channel(other_session);
+				ip = switch_channel_get_variable(other_channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE);
+				port = switch_channel_get_variable(other_channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE);
+				switch_core_session_rwunlock(other_session);
+				if (ip && port) {
+					sofia_glue_set_local_sdp(tech_pvt, ip, (switch_port_t)atoi(port), NULL, 1);
+				}
+			}
+
+
+			if (!tech_pvt->local_sdp_str) {
+				sofia_glue_tech_absorb_sdp(tech_pvt);
+			}
+
+			sofia_glue_do_invite(session);
+		}
+		break;
+
 	default:
 		break;
 	}
@@ -1987,38 +2021,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				}
 				switch_channel_mark_answered(channel);
 			}
-		}
-		break;
-	case SWITCH_MESSAGE_INDICATE_NOMEDIA:
-		{
-			const char *uuid;
-			switch_core_session_t *other_session;
-			switch_channel_t *other_channel;
-			const char *ip = NULL, *port = NULL;
-
-			switch_channel_set_flag(channel, CF_PROXY_MODE);
-			if (tech_pvt->rm_encoding) {
-				tech_pvt->rm_encoding = NULL;
-			}
-			sofia_glue_tech_set_local_sdp(tech_pvt, NULL, SWITCH_FALSE);
-
-			if ((uuid = switch_channel_get_partner_uuid(channel))
-				&& (other_session = switch_core_session_locate(uuid))) {
-				other_channel = switch_core_session_get_channel(other_session);
-				ip = switch_channel_get_variable(other_channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE);
-				port = switch_channel_get_variable(other_channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE);
-				switch_core_session_rwunlock(other_session);
-				if (ip && port) {
-					sofia_glue_set_local_sdp(tech_pvt, ip, (switch_port_t)atoi(port), NULL, 1);
-				}
-			}
-
-
-			if (!tech_pvt->local_sdp_str) {
-				sofia_glue_tech_absorb_sdp(tech_pvt);
-			}
-
-			sofia_glue_do_invite(session);
 		}
 		break;
 
