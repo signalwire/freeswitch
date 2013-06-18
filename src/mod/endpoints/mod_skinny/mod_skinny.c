@@ -1378,7 +1378,7 @@ static void close_socket(switch_socket_t **sock, skinny_profile_t *profile)
 	switch_mutex_unlock(profile->sock_mutex);
 }
 
-static switch_status_t kill_listener(listener_t *listener, void *pvt)
+switch_status_t kill_listener(listener_t *listener, void *pvt)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Killing listener %s:%d.\n",
 			listener->device_name, listener->device_instance);
