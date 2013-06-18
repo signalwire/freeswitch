@@ -336,7 +336,6 @@ static void daemonize(int *fds)
 	if (fds) {
 		setsid();
 	}
-	return;
 	/* redirect std* to null */
 	fd = open("/dev/null", O_RDONLY);
 	if (fd != 0) {
@@ -355,6 +354,7 @@ static void daemonize(int *fds)
 		dup2(fd, 2);
 		close(fd);
 	}
+	return;
 }
 
 #endif
