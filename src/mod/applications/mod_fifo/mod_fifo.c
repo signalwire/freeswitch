@@ -4178,7 +4178,7 @@ static switch_status_t load_config(int reload, int del_all)
 				node = create_node(name, imp, globals.sql_mutex);
 			}
 
-			if ((val = switch_xml_attr(fifo, "outbound_name")) && !zstr(val)) {
+			if ((val = switch_xml_attr(fifo, "outbound_name"))) {
 				node->outbound_name = switch_core_strdup(node->pool, val);
 			}
 
