@@ -32,6 +32,7 @@
  */
 
 #ifndef WIN32
+#undef HAVE_STDLIB_H
 #include "switch_private.h"
 #endif
 #if defined(HAVE_OPENPTY) || defined(HAVE_DEV_PTMX) || defined(HAVE_POSIX_OPENPT) || WIN32
