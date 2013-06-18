@@ -6574,6 +6574,39 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 		}
 		goto end;
 
+	case SWITCH_MESSAGE_INDICATE_NOMEDIA:
+		{
+			const char *uuid;
+			switch_core_session_t *other_session;
+			switch_channel_t *other_channel;
+			const char *ip = NULL, *port = NULL;
+
+			switch_channel_set_flag(session->channel, CF_PROXY_MODE);
+			if (a_engine->codec_params.rm_encoding) {
+				a_engine->codec_params.rm_encoding = NULL;
+			}
+			switch_core_media_set_local_sdp(session, NULL, SWITCH_FALSE);
+
+			if ((uuid = switch_channel_get_partner_uuid(session->channel))
+				&& (other_session = switch_core_session_locate(uuid))) {
+				other_channel = switch_core_session_get_channel(other_session);
+				ip = switch_channel_get_variable(other_channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE);
+				port = switch_channel_get_variable(other_channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE);
+				switch_core_session_rwunlock(other_session);
+				if (ip && port) {
+					switch_core_media_gen_local_sdp(session, ip, (switch_port_t)atoi(port), NULL, 1);
+				}
+			}
+
+
+			if (!smh->mparams->local_sdp_str) {
+				switch_core_media_absorb_sdp(session);
+			}
+
+		}
+		break;
+
+
 	default:
 		break;
 	}
@@ -6623,37 +6656,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 
 		}
 		break;
-	case SWITCH_MESSAGE_INDICATE_NOMEDIA:
-		{
-			const char *uuid;
-			switch_core_session_t *other_session;
-			switch_channel_t *other_channel;
-			const char *ip = NULL, *port = NULL;
 
-			switch_channel_set_flag(session->channel, CF_PROXY_MODE);
-			if (a_engine->codec_params.rm_encoding) {
-				a_engine->codec_params.rm_encoding = NULL;
-			}
-			switch_core_media_set_local_sdp(session, NULL, SWITCH_FALSE);
-
-			if ((uuid = switch_channel_get_partner_uuid(session->channel))
-				&& (other_session = switch_core_session_locate(uuid))) {
-				other_channel = switch_core_session_get_channel(other_session);
-				ip = switch_channel_get_variable(other_channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE);
-				port = switch_channel_get_variable(other_channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE);
-				switch_core_session_rwunlock(other_session);
-				if (ip && port) {
-					switch_core_media_gen_local_sdp(session, ip, (switch_port_t)atoi(port), NULL, 1);
-				}
-			}
-
-
-			if (!smh->mparams->local_sdp_str) {
-				switch_core_media_absorb_sdp(session);
-			}
-
-		}
-		break;
 	case SWITCH_MESSAGE_INDICATE_AUDIO_DATA:
 		{
 			if (switch_rtp_ready(a_engine->rtp_session)) {
