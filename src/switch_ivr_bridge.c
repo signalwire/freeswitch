@@ -55,7 +55,6 @@ static void *SWITCH_THREAD_FUNC video_bridge_thread(switch_thread_t *thread, voi
 	switch_frame_t *read_frame;
 	const char *source = switch_channel_get_variable(channel, "source");
 	const char *b_source = switch_channel_get_variable(b_channel, "source");
-	switch_core_session_message_t msg = { 0 };
 
 	vh->up = 1;
 
@@ -67,10 +66,8 @@ static void *SWITCH_THREAD_FUNC video_bridge_thread(switch_thread_t *thread, voi
 		switch_channel_set_flag(b_channel, CF_VIDEO_PASSIVE);
 	}
 
-	msg.from = __FILE__;
-	msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
-	switch_core_session_receive_message(vh->session_a, &msg);
-	switch_core_session_receive_message(vh->session_b, &msg);
+	switch_core_session_refresh_video(vh->session_a);
+	switch_core_session_refresh_video(vh->session_b);
 
 	while (switch_channel_up_nosig(channel) && switch_channel_up_nosig(b_channel) && vh->up == 1) {
 
@@ -101,6 +98,9 @@ static void *SWITCH_THREAD_FUNC video_bridge_thread(switch_thread_t *thread, voi
 
 	switch_core_session_kill_channel(vh->session_b, SWITCH_SIG_BREAK);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(vh->session_a), SWITCH_LOG_DEBUG, "%s video thread ended.\n", switch_channel_get_name(channel));
+
+	switch_core_session_refresh_video(vh->session_a);
+	switch_core_session_refresh_video(vh->session_b);
 
 	switch_core_session_rwunlock(vh->session_a);
 	switch_core_session_rwunlock(vh->session_b);
