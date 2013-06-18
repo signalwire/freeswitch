@@ -53,24 +53,57 @@ static void *SWITCH_THREAD_FUNC video_bridge_thread(switch_thread_t *thread, voi
 	switch_channel_t *b_channel = switch_core_session_get_channel(vh->session_b);
 	switch_status_t status;
 	switch_frame_t *read_frame;
+	const char *source = switch_channel_get_variable(channel, "source");
+	const char *b_source = switch_channel_get_variable(b_channel, "source");
+	switch_core_session_message_t msg = { 0 };
 
 	vh->up = 1;
-	while (switch_channel_ready(channel) && switch_channel_ready(b_channel) && vh->up == 1) {
-		status = switch_core_session_read_video_frame(vh->session_a, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-		if (!SWITCH_READ_ACCEPTABLE(status)) {
-			break;
+
+	switch_core_session_read_lock(vh->session_a);
+	switch_core_session_read_lock(vh->session_b);
+
+	if (!switch_stristr("loopback", source) && !switch_stristr("loopback", b_source)) {
+		switch_channel_set_flag(channel, CF_VIDEO_PASSIVE);
+		switch_channel_set_flag(b_channel, CF_VIDEO_PASSIVE);
+	}
+
+	msg.from = __FILE__;
+	msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
+	switch_core_session_receive_message(vh->session_a, &msg);
+	switch_core_session_receive_message(vh->session_b, &msg);
+
+	while (switch_channel_up_nosig(channel) && switch_channel_up_nosig(b_channel) && vh->up == 1) {
+
+		if (switch_channel_media_up(channel)) {
+			status = switch_core_session_read_video_frame(vh->session_a, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+			
+			if (!SWITCH_READ_ACCEPTABLE(status)) {
+				switch_cond_next();
+				continue;
+			}
 		}
 
-		if (!switch_test_flag(read_frame, SFF_CNG)) {
+		if (switch_test_flag(read_frame, SFF_CNG)) {
+			continue;
+		}
+
+		if (switch_channel_media_up(b_channel)) {
 			if (switch_core_session_write_video_frame(vh->session_b, read_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
-				break;
+				switch_cond_next();
+				continue;
 			}
 		}
 
 	}
 
+	switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
+	switch_channel_clear_flag(b_channel, CF_VIDEO_PASSIVE);
+
 	switch_core_session_kill_channel(vh->session_b, SWITCH_SIG_BREAK);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(vh->session_a), SWITCH_LOG_DEBUG, "%s video thread ended.\n", switch_channel_get_name(channel));
+
+	switch_core_session_rwunlock(vh->session_a);
+	switch_core_session_rwunlock(vh->session_b);
 
 	vh->up = 0;
 	return NULL;

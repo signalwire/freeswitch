@@ -116,6 +116,8 @@ SWITCH_STANDARD_APP(record_fsv_function)
 	int count = 0, sanity = 30;
 	switch_core_session_message_t msg = { 0 };
 
+	switch_channel_set_flag(channel, CF_VIDEO_PASSIVE);
+
 	/* Tell the channel to request a fresh vid frame */
 	msg.from = __FILE__;
 	msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
@@ -138,7 +140,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s timeout waiting for video.\n", 
 								  switch_channel_get_name(channel));
 				switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Got timeout while waiting for video");
-				return;
+				goto done;
 			}
 		}
 	}
@@ -146,13 +148,13 @@ SWITCH_STANDARD_APP(record_fsv_function)
 	if (!switch_channel_ready(channel)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s not ready.\n", switch_channel_get_name(channel));
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Channel not ready");
-		return;
+		goto done;
 	}
 
 	if ((fd = open((char *) data, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR)) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Error opening file %s\n", (char *) data);
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Got error while opening file");
-		return;
+		goto done;
 	}
 
 	if (switch_core_codec_init(&codec,
@@ -284,6 +286,10 @@ SWITCH_STANDARD_APP(record_fsv_function)
 	switch_core_session_set_read_codec(session, NULL);
 	switch_core_codec_destroy(&codec);
 
+ done:
+
+	switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
+
 }
 
 SWITCH_STANDARD_APP(play_fsv_function)
@@ -306,6 +312,8 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_core_session_message_t msg = { 0 };
 
+	switch_channel_set_flag(channel, CF_VIDEO_PASSIVE);
+
 	/* Tell the channel to request a fresh vid frame */
 	msg.from = __FILE__;
 	msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
@@ -322,7 +330,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	if ((fd = open((char *) data, O_RDONLY | O_BINARY)) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Error opening file %s\n", (char *) data);
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Got error while opening file");
-		return;
+		goto done;
 	}
 
 	if (read(fd, &h, sizeof(h)) != sizeof(h)) {
@@ -504,6 +512,9 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	if (fd > -1) {
 		close(fd);
 	}
+
+ done:
+	switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
 }
 
 struct fsv_file_context {

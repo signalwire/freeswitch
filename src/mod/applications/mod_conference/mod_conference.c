@@ -1443,7 +1443,10 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 
 		conference_send_presence(conference);
 
+
+
 		channel = switch_core_session_get_channel(member->session);
+		switch_channel_set_flag(channel, CF_VIDEO_PASSIVE);
 		switch_channel_set_variable_printf(channel, "conference_member_id", "%d", member->id);
 		switch_channel_set_variable_printf(channel, "conference_moderator", "%s", switch_test_flag(member, MFLAG_MOD) ? "true" : "false");
 		switch_channel_set_variable(channel, "conference_recording", conference->record_filename);
@@ -1670,6 +1673,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 			}
 		}
 
+		switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
 
 		conference_send_presence(conference);
 		switch_channel_set_variable(channel, "conference_call_key", NULL);

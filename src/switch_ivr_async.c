@@ -625,52 +625,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_clear(switch_ivr_dmachine_t 
 }
 
 
-#ifdef SWITCH_VIDEO_IN_THREADS
-struct echo_helper {
-	switch_core_session_t *session;
-	int up;
-};
-
-static void *SWITCH_THREAD_FUNC echo_video_thread(switch_thread_t *thread, void *obj)
-{
-	struct echo_helper *eh = obj;
-	switch_core_session_t *session = eh->session;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_status_t status;
-	switch_frame_t *read_frame;
-	switch_core_session_message_t msg = { 0 };
-
-
-	msg.from = __FILE__;
-	msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
-	
-	switch_core_session_receive_message(session, &msg);
-
-	eh->up = 1;
-	while (switch_channel_ready(channel)) {
-		status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-
-
-		if (switch_channel_test_flag(channel, CF_VIDEO_REFRESH_REQ)) {
-			switch_core_session_receive_message(session, &msg);
-			switch_channel_clear_flag(channel, CF_VIDEO_REFRESH_REQ);
-		}
-
-		if (!SWITCH_READ_ACCEPTABLE(status)) {
-			break;
-		}
-
-		if (switch_test_flag(read_frame, SFF_CNG)) {
-			continue;
-		}
-
-		switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
-
-	}
-	eh->up = 0;
-	return NULL;
-}
-#endif
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *session, switch_input_args_t *args)
 {
@@ -679,12 +633,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	int orig_vid = switch_channel_test_flag(channel, CF_VIDEO);
 
-#ifdef SWITCH_VIDEO_IN_THREADS
-	struct echo_helper eh = { 0 };
-	switch_thread_t *thread;
-	switch_threadattr_t *thd_attr = NULL;
-#endif
-
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -692,16 +640,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 	arg_recursion_check_start(args);
 
  restart:
-
-#ifdef SWITCH_VIDEO_IN_THREADS
-	if (switch_channel_test_flag(channel, CF_VIDEO)) {
-		eh.session = session;
-		switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
-		switch_threadattr_detach_set(thd_attr, 1);
-		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		switch_thread_create(&thread, thd_attr, echo_video_thread, &eh, switch_core_session_get_pool(session));
-	}
-#endif
 
 	while (switch_channel_ready(channel)) {
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
@@ -774,14 +712,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 			break;
 		}
 	}
-
-#ifdef SWITCH_VIDEO_IN_THREADS
-	if (eh.up) {
-		while (eh.up) {
-			switch_cond_next();
-		}
-	}
-#endif
 
 	return SWITCH_STATUS_SUCCESS;
 }

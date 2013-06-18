@@ -2867,6 +2867,22 @@ SWITCH_DECLARE(switch_log_level_t) switch_core_session_get_loglevel(switch_core_
 	return session->loglevel;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_refresh_video(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if (switch_channel_test_flag(channel, CF_VIDEO)) {
+		switch_core_session_message_t msg = { 0 };
+		msg.from = __FILE__;
+		msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
+		switch_core_session_receive_message(session, &msg);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c

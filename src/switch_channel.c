@@ -1922,6 +1922,11 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 	if (flag == CF_RECOVERED) {
 		switch_channel_set_variable(channel, "recovered", NULL);
 	}
+
+	if (flag == CF_VIDEO_PASSIVE) {
+		switch_core_session_wake_video_thread(channel->session);
+	}
+
 }
 
 

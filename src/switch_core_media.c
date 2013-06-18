@@ -98,6 +98,13 @@ typedef struct codec_params_s {
 
 } codec_params_t;
 
+struct media_helper {
+	switch_core_session_t *session;
+	switch_thread_cond_t *cond;
+	switch_mutex_t *cond_mutex;
+	int up;
+};
+
 typedef struct switch_rtp_engine_s {
 	switch_secure_settings_t ssec;
 	switch_media_type_t type;
@@ -147,7 +154,8 @@ typedef struct switch_rtp_engine_s {
 	char *remote_rtcp_ice_addr;
 	switch_port_t remote_rtcp_ice_port;
 
-
+	struct media_helper mh;
+	switch_thread_t *media_thread;
 
 } switch_rtp_engine_t;
 
@@ -508,7 +516,6 @@ SWITCH_DECLARE(const char *) switch_core_session_local_crypto_key(switch_core_se
 	}
 
 	return session->media_handle->engines[type].ssec.local_crypto_key;
-
 }
 
 
@@ -2133,6 +2140,7 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_NOTICE, 
 						  "setting remote %s ice addr to %s:%d based on candidate\n", type2str(type),
 						  engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_addr, engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_port);
+		engine->ice_in.cands[engine->ice_in.chosen[0]][0].ready++;
 
 		engine->remote_rtp_ice_port = (switch_port_t) engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_port;
 		engine->remote_rtp_ice_addr = switch_core_session_strdup(smh->session, engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_addr);
@@ -2157,7 +2165,7 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 	}
 
 
-	if (!got_rtcp_mux) {
+	if (m && !got_rtcp_mux) {
 		engine->rtcp_mux = -1;
 	}
 
@@ -2179,8 +2187,8 @@ SWITCH_DECLARE(void) switch_core_session_set_ice(switch_core_session_t *session)
 	switch_channel_set_flag(session->channel, CF_VERBOSE_SDP);
 	switch_channel_set_flag(session->channel, CF_WEBRTC);
 	switch_channel_set_flag(session->channel, CF_ICE);
-	smh->mparams->rtcp_audio_interval_msec = "5000";
-	smh->mparams->rtcp_video_interval_msec = "5000";
+	smh->mparams->rtcp_audio_interval_msec = "10000";
+	smh->mparams->rtcp_video_interval_msec = "10000";
 }
 
 //?
@@ -2376,6 +2384,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	switch_core_media_pass_zrtp_hash(session);
 
 	check_ice(smh, SWITCH_MEDIA_TYPE_AUDIO, sdp, NULL);
+	check_ice(smh, SWITCH_MEDIA_TYPE_VIDEO, sdp, NULL);
 
 	for (m = sdp->sdp_media; m; m = m->m_next) {
 		sdp_connection_t *connection;
@@ -2945,7 +2954,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					if (!strcasecmp(attr->a_name, "framerate") && attr->a_value) {
 						//framerate = atoi(attr->a_value);
 					}
-					if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value) {
+					if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value && !strcmp(attr->a_value, "1")) {
 						switch_channel_set_variable(session->channel, "rtp_remote_video_rtcp_port", attr->a_value);
 						v_engine->remote_rtcp_port = (switch_port_t)atoi(attr->a_value);
 					} else if (!got_video_crypto && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) {
@@ -3038,7 +3047,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						if (!match && vmatch) match = 1;
 
 						check_ice(smh, SWITCH_MEDIA_TYPE_VIDEO, sdp, m);
-						check_ice(smh, SWITCH_MEDIA_TYPE_VIDEO, sdp, NULL);
+						//check_ice(smh, SWITCH_MEDIA_TYPE_VIDEO, sdp, NULL);
 						break;
 					} else {
 						vmatch = 0;
@@ -3562,6 +3571,14 @@ SWITCH_DECLARE(void) switch_core_media_deactivate_rtp(switch_core_session_t *ses
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 
+	if (v_engine->media_thread) {
+		switch_status_t st;
+		switch_channel_clear_flag(session->channel, CF_VIDEO_PASSIVE);
+		
+		v_engine->mh.up = 0;
+		switch_thread_join(&st, v_engine->media_thread);
+		v_engine->media_thread = NULL;
+	}
 
 	if (v_engine->rtp_session) {
 		switch_rtp_destroy(&v_engine->rtp_session);
@@ -3608,7 +3625,7 @@ static void gen_ice(switch_core_session_t *session, switch_media_type_t type, co
 	engine = &smh->engines[type];
 
 #ifdef RTCP_MUX
-	if (!engine->rtcp_mux && type == SWITCH_MEDIA_TYPE_AUDIO) {
+	if (!engine->rtcp_mux) {//  && type == SWITCH_MEDIA_TYPE_AUDIO) {
 		engine->rtcp_mux = SWITCH_TRUE;
 	}
 #endif
@@ -3664,6 +3681,100 @@ static void gen_ice(switch_core_session_t *session, switch_media_type_t type, co
 
 
 }
+
+SWITCH_DECLARE(void) switch_core_session_wake_video_thread(switch_core_session_t *session)
+{
+	switch_media_handle_t *smh;
+	switch_rtp_engine_t *v_engine; 
+
+	if (!(smh = session->media_handle)) {
+		return;
+	}
+
+	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
+
+	if (!v_engine->rtp_session) {
+		return;
+	}
+
+	if (switch_mutex_trylock(v_engine->mh.cond_mutex) == SWITCH_STATUS_SUCCESS) {
+		switch_thread_cond_broadcast(v_engine->mh.cond);
+		switch_mutex_unlock(v_engine->mh.cond_mutex);
+	}
+}
+
+static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, void *obj)
+{
+	struct media_helper *mh = obj;
+	switch_core_session_t *session = mh->session;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_status_t status;
+	switch_frame_t *read_frame;
+	switch_media_handle_t *smh;
+
+	if (!(smh = session->media_handle)) {
+		return NULL;
+	}
+
+	switch_core_session_read_lock(session);
+
+	mh->up = 1;
+	switch_mutex_lock(mh->cond_mutex);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Video thread started\n", switch_channel_get_name(session->channel));
+	switch_core_session_refresh_video(session);
+	
+	while (switch_channel_up_nosig(channel)) {
+
+		if (switch_channel_test_flag(channel, CF_VIDEO_PASSIVE)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Video thread paused\n", switch_channel_get_name(session->channel));
+			switch_thread_cond_wait(mh->cond, mh->cond_mutex);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Video thread resumed\n", switch_channel_get_name(session->channel));
+			switch_core_session_refresh_video(session);
+		}
+
+		if (switch_channel_test_flag(channel, CF_VIDEO_PASSIVE)) {
+			continue;
+		}
+
+		if (!switch_channel_media_up(session->channel)) {
+			switch_yield(10000);
+			continue;
+		}
+
+		
+		status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+		
+		
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			switch_cond_next();
+			continue;
+		}
+		
+
+		if (switch_channel_test_flag(channel, CF_VIDEO_REFRESH_REQ)) {
+			switch_core_session_refresh_video(session);
+			switch_channel_clear_flag(channel, CF_VIDEO_REFRESH_REQ);
+		}
+
+		if (switch_test_flag(read_frame, SFF_CNG)) {
+			continue;
+		}
+
+		switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
+
+	}
+
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Video thread ended\n", switch_channel_get_name(session->channel));
+
+	switch_mutex_unlock(mh->cond_mutex);
+	switch_core_session_rwunlock(session);
+
+	mh->up = 0;
+	return NULL;
+}
+
 
 
 
@@ -3902,7 +4013,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		uint8_t vad_in = (smh->mparams->vflags & VAD_IN);
 		uint8_t vad_out = (smh->mparams->vflags & VAD_OUT);
 		uint8_t inb = switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND;
-		uint32_t stun_ping = 0;
 		const char *ssrc;
 
 		//switch_core_media_set_rtp_session(session, SWITCH_MEDIA_TYPE_AUDIO, a_engine->rtp_session);
@@ -3934,17 +4044,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			vad_out = 0;
 		}
 
-		if ((smh->mparams->stun_flags & STUN_FLAG_SET) && (val = switch_channel_get_variable(session->channel, "rtp_stun_ping"))) {
-			int ival = atoi(val);
-
-			if (ival <= 0) {
-				if (switch_true(val)) {
-					ival = 6;
-				}
-			}
-
-			stun_ping = (ival * a_engine->read_impl.samples_per_second) / a_engine->read_impl.samples_per_packet;
-		}
 
 		a_engine->ssrc = switch_rtp_get_ssrc(a_engine->rtp_session);
 		switch_channel_set_variable_printf(session->channel, "rtp_use_ssrc", "%u", a_engine->ssrc);
@@ -3968,14 +4067,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 							  switch_channel_get_name(switch_core_session_get_channel(session)), vad_in ? "in" : "", vad_out ? "out" : "");
 		}
 
-		if (stun_ping) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setting stun ping to %s:%d\n", smh->mparams->stun_ip, stun_ping);
-							  
-			switch_rtp_activate_stun_ping(a_engine->rtp_session, smh->mparams->stun_ip, smh->mparams->stun_port, stun_ping,
-										  (smh->mparams->stun_flags & STUN_FLAG_FUNNY) ? 1 : 0);
-		}
-
-
 		
 		if (a_engine->ice_in.cands[a_engine->ice_in.chosen[0]][0].ready) {
 			
@@ -3991,10 +4082,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 									IPR_RTP,
 #ifdef GOOGLE_ICE
 									ICE_GOOGLE_JINGLE,
-									NULL,
+									NULL
 #else
 									switch_channel_direction(session->channel) == 
-									SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : ICE_VANILLA | ICE_CONTROLLED,
+									SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
 									&a_engine->ice_in
 #endif
 									);
@@ -4018,36 +4109,42 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				switch_rtp_activate_rtcp(a_engine->rtp_session, -1, remote_rtcp_port, a_engine->rtcp_mux > 0);
 			} else {
 				int interval = atoi(val);
-				if (interval < 100 || interval > 5000) {
+				if (interval < 100 || interval > 500000) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
-									  "Invalid rtcp interval spec [%d] must be between 100 and 5000\n", interval);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating RTCP PORT %d\n", remote_rtcp_port);
-					switch_rtp_activate_rtcp(a_engine->rtp_session, interval, remote_rtcp_port, a_engine->rtcp_mux > 0);
+									  "Invalid rtcp interval spec [%d] must be between 100 and 500000\n", interval);
+					interval = 10000;
 				}
-			}
 
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating RTCP PORT %d\n", remote_rtcp_port);
+				switch_rtp_activate_rtcp(a_engine->rtp_session, interval, remote_rtcp_port, a_engine->rtcp_mux > 0);
+				
+			}
 
 			if (a_engine->ice_in.cands[a_engine->ice_in.chosen[1]][1].ready) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating RTCP ICE\n");
+				if (!strcmp(a_engine->ice_in.cands[a_engine->ice_in.chosen[1]][1].con_addr, a_engine->ice_in.cands[a_engine->ice_in.chosen[0]][0].con_addr)
+					&& a_engine->ice_in.cands[a_engine->ice_in.chosen[1]][1].con_port == a_engine->ice_in.cands[a_engine->ice_in.chosen[0]][0].con_port) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Skipping RTCP ICE (Same as RTP)\n");
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating RTCP ICE\n");
 				
-				switch_rtp_activate_ice(a_engine->rtp_session, 
-										a_engine->ice_in.ufrag,
-										a_engine->ice_out.ufrag,
-										a_engine->ice_out.pwd,
-										a_engine->ice_in.pwd,
-										IPR_RTCP,
+					switch_rtp_activate_ice(a_engine->rtp_session, 
+											a_engine->ice_in.ufrag,
+											a_engine->ice_out.ufrag,
+											a_engine->ice_out.pwd,
+											a_engine->ice_in.pwd,
+											IPR_RTCP,
 #ifdef GOOGLE_ICE
-										ICE_GOOGLE_JINGLE,
-										NULL
+											ICE_GOOGLE_JINGLE,
+											NULL
 #else
-										switch_channel_direction(session->channel) == 
-										SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : ICE_VANILLA | ICE_CONTROLLED,
-										&a_engine->ice_in
+											switch_channel_direction(session->channel) == 
+											SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
+											&a_engine->ice_in
 #endif
 										);
+				}
+				
 			}
-
 		}
 
 		if (!zstr(a_engine->local_dtls_fingerprint.str) && switch_rtp_has_dtls() && dtls_ok(smh->session)) {
@@ -4364,8 +4461,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 
 			if (switch_rtp_ready(v_engine->rtp_session)) {
+				switch_threadattr_t *thd_attr = NULL;
+				switch_memory_pool_t *pool = switch_core_session_get_pool(session);
+
 				switch_rtp_set_default_payload(v_engine->rtp_session, v_engine->codec_params.agreed_pt);
-				//switch_core_media_set_rtp_session(session, SWITCH_MEDIA_TYPE_VIDEO, v_engine->rtp_session);
+				v_engine->mh.session = session;
+				switch_threadattr_create(&thd_attr, pool);
+				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+
+				switch_thread_cond_create(&v_engine->mh.cond, pool);
+				switch_mutex_init(&v_engine->mh.cond_mutex, SWITCH_MUTEX_NESTED, pool);
+				switch_thread_create(&v_engine->media_thread, thd_attr, video_helper_thread, &v_engine->mh, switch_core_session_get_pool(session));
 			}
 
 			if (switch_rtp_ready(v_engine->rtp_session)) {
@@ -4378,14 +4484,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				} else {
 					switch_rtp_set_ssrc(v_engine->rtp_session, v_engine->ssrc);
 				}
-
-
+				
 				if (v_engine->ice_in.cands[v_engine->ice_in.chosen[0]][0].ready) {
 					
 					gen_ice(session, SWITCH_MEDIA_TYPE_VIDEO, NULL, 0);
-					
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating Video ICE\n");
 
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating Video ICE\n");
+						
 					switch_rtp_activate_ice(v_engine->rtp_session, 
 											v_engine->ice_in.ufrag,
 											v_engine->ice_out.ufrag,
@@ -4396,17 +4501,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 											ICE_GOOGLE_JINGLE,
 											NULL
 #else
-											ICE_VANILLA | ICE_CONTROLLED,
+											switch_channel_direction(session->channel) == 
+											SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
 											&v_engine->ice_in
 #endif
 											);
+						
 					
 				}
-
 
 				if ((val = switch_channel_get_variable(session->channel, "rtcp_video_interval_msec")) || (val = smh->mparams->rtcp_video_interval_msec)) {
 					const char *rport = switch_channel_get_variable(session->channel, "rtp_remote_video_rtcp_port");
 					switch_port_t remote_port = v_engine->remote_rtcp_port;
+
 					if (rport) {
 						remote_port = (switch_port_t)atoi(rport);
 					}
@@ -4415,40 +4522,49 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 						switch_rtp_activate_rtcp(v_engine->rtp_session, -1, remote_port, v_engine->rtcp_mux > 0);
 					} else {
 						int interval = atoi(val);
-						if (interval < 100 || interval > 5000) {
+						if (interval < 100 || interval > 500000) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
-											  "Invalid rtcp interval spec [%d] must be between 100 and 5000\n", interval);
-						} else {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating VIDEO RTCP PORT %d\n", remote_port);
-							switch_rtp_activate_rtcp(v_engine->rtp_session, interval, remote_port, v_engine->rtcp_mux > 0);
+											  "Invalid rtcp interval spec [%d] must be between 100 and 500000\n", interval);
 						}
+						interval = 10000;
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating VIDEO RTCP PORT %d mux %d\n", remote_port, v_engine->rtcp_mux);
+						switch_rtp_activate_rtcp(v_engine->rtp_session, interval, remote_port, v_engine->rtcp_mux > 0);
+							
 					}
 					
 
 					if (v_engine->ice_in.cands[v_engine->ice_in.chosen[1]][1].ready) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating VIDEO RTCP ICE\n");
-						switch_rtp_activate_ice(v_engine->rtp_session, 
-												v_engine->ice_in.ufrag,
-												v_engine->ice_out.ufrag,
-												v_engine->ice_out.pwd,
-												v_engine->ice_in.pwd,
-												IPR_RTCP,
-#ifdef GOOGLE_ICE
-												ICE_GOOGLE_JINGLE,
-												NULL
-#else
-												switch_channel_direction(session->channel) == 
-												SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : ICE_VANILLA | ICE_CONTROLLED,
-												
-												&v_engine->ice_in
-#endif
-												);
-					}
-					
-				
-				}
-					
 
+						if (!strcmp(v_engine->ice_in.cands[v_engine->ice_in.chosen[1]][1].con_addr, v_engine->ice_in.cands[v_engine->ice_in.chosen[0]][0].con_addr)
+							&& v_engine->ice_in.cands[v_engine->ice_in.chosen[1]][1].con_port == v_engine->ice_in.cands[v_engine->ice_in.chosen[0]][0].con_port) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Skipping VIDEO RTCP ICE (Same as VIDEO RTP)\n");
+						} else {
+
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating VIDEO RTCP ICE\n");
+							switch_rtp_activate_ice(v_engine->rtp_session, 
+													v_engine->ice_in.ufrag,
+													v_engine->ice_out.ufrag,
+													v_engine->ice_out.pwd,
+													v_engine->ice_in.pwd,
+													IPR_RTCP,
+#ifdef GOOGLE_ICE
+													ICE_GOOGLE_JINGLE,
+													NULL
+#else
+													switch_channel_direction(session->channel) == 
+													SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
+													
+													&v_engine->ice_in
+#endif
+													);
+						
+						
+						
+						}
+				
+					}
+				}
+				
 				if (!zstr(v_engine->local_dtls_fingerprint.str) && switch_rtp_has_dtls() && dtls_ok(smh->session)) {
 					dtls_type_t xtype, 
 						dtype = switch_channel_direction(smh->session->channel) == SWITCH_CALL_DIRECTION_INBOUND ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
@@ -4711,8 +4827,8 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 		char tmp2[11] = "";
 		uint32_t c1 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 1);
 		uint32_t c2 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 2);
-		uint32_t c3 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 1);
-		uint32_t c4 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 2);
+		//uint32_t c3 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 1);
+		//uint32_t c4 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 2);
 		ice_t *ice_out;
 
 		tmp1[10] = '\0';
@@ -4744,7 +4860,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 			&& a_engine->codec_params.local_sdp_port != ice_out->cands[0][0].con_port) {
 
 			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ srflx raddr %s rport %d generation 0\n", 
-							tmp2, ice_out->cands[0][0].transport, c3,
+							tmp2, ice_out->cands[0][0].transport, c2,
 							ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port,
 							a_engine->codec_params.local_sdp_ip, a_engine->codec_params.local_sdp_port
 							);
@@ -4754,7 +4870,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 			
 
 			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\n", 
-							tmp1, ice_out->cands[0][0].transport, c2,
+							tmp1, ice_out->cands[0][0].transport, c1,
 							ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port + (a_engine->rtcp_mux > 0 ? 0 : 1)
 							);
 			
@@ -4763,7 +4879,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 				&& a_engine->codec_params.local_sdp_port != ice_out->cands[0][1].con_port) {
 				
 				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ srflx raddr %s rport %d generation 0\n", 
-								tmp2, ice_out->cands[0][0].transport, c4,
+								tmp2, ice_out->cands[0][0].transport, c2,
 								ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port + (a_engine->rtcp_mux > 0 ? 0 : 1),
 								a_engine->codec_params.local_sdp_ip, a_engine->codec_params.local_sdp_port + (a_engine->rtcp_mux > 0 ? 0 : 1)
 								);
@@ -4927,6 +5043,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	const char *pass_fmtp = switch_channel_get_variable(session->channel, "rtp_video_fmtp");
 	const char *ov_fmtp = switch_channel_get_variable(session->channel, "rtp_force_video_fmtp");
 	const char *append_audio = switch_channel_get_variable(session->channel, "rtp_append_audio_sdp");
+	const char *append_video = switch_channel_get_variable(session->channel, "rtp_append_video_sdp");
 	char srbuf[128] = "";
 	const char *var_val;
 	const char *username;
@@ -4941,6 +5058,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	switch_rtp_engine_t *a_engine, *v_engine;
 	switch_media_handle_t *smh;
 	ice_t *ice_out;
+
 
 	switch_assert(session);
 
@@ -5466,6 +5584,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 				if (pass_fmtp) {
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fmtp:%d %s\n", v_engine->codec_params.pt, pass_fmtp);
+				}
+
+				if (append_video) {
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "%s%s", append_video, end_of(append_video) == '\n' ? "" : "\n");
 				}
 
 			} else if (smh->mparams->num_codecs) {
@@ -6210,6 +6332,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 
 	switch (msg->message_id) {
+
+	case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
+		{
+			if (v_engine->rtp_session) {
+				switch_rtp_video_refresh(v_engine->rtp_session);
+			}
+		}
+
+		break;
 
 	case SWITCH_MESSAGE_INDICATE_PROXY_MEDIA:
 		{
