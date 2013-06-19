@@ -1838,6 +1838,7 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 	iks *response = NULL;
 	const char *dcp_jid = iks_find_attrib(iq, "from");
 	const char *dial_to = iks_find_attrib(dial, "to");
+	char *dial_to_dup = NULL;
 	const char *dial_from = iks_find_attrib(dial, "from");
 	const char *dial_timeout_ms = iks_find_attrib(dial, "timeout");
 	struct dial_gateway *gateway = NULL;
@@ -1854,6 +1855,24 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 	/* set rayo channel variables so channel originate event can be identified as coming from Rayo */
 	stream.write_function(&stream, "{origination_uuid=%s,rayo_dcp_jid=%s,rayo_call_jid=%s",
 		rayo_call_get_uuid(call), dcp_jid, RAYO_JID(call));
+
+	/* parse optional params from dialstring and append to  */
+	if (*dial_to == '{') {
+		switch_event_t *params = NULL;
+		dial_to_dup = strdup(dial_to);
+		switch_event_create_brackets(dial_to_dup, '{', '}', ',', &params, (char **)&dial_to, SWITCH_FALSE);
+		if (params) {
+			switch_event_header_t *param;
+			for(param = params->headers; param; param = param->next) {
+				if (strchr(param->value, ',')) {
+					stream.write_function(&stream, ",%s=\\'%s\\'", param->name, param->value);
+				} else {
+					stream.write_function(&stream, ",%s=%s", param->name, param->value);
+				}
+			}
+			switch_event_destroy(&params);
+		}
+	}
 
 	/* set originate channel variables */
 	if (!zstr(dial_from)) {
@@ -1976,6 +1995,7 @@ done:
 
 	iks_delete(dial);
 	switch_safe_free(stream.data);
+	switch_safe_free(dial_to_dup);
 
 	return NULL;
 }
@@ -1993,8 +2013,13 @@ static iks *on_rayo_dial(struct rayo_actor *client, struct rayo_actor *server, i
 	switch_threadattr_t *thd_attr = NULL;
 	iks *dial = iks_find(node, "dial");
 	iks *response = NULL;
+	const char *dial_to = iks_find_attrib(dial, "to");
 
-	if (!zstr(iks_find_attrib(dial, "to"))) {
+	if (zstr(dial_to)) {
+		response = iks_new_error_detailed(node, STANZA_ERROR_BAD_REQUEST, "missing dial to attribute");
+	} else if (strchr(dial_to, ' ')) {
+		response = iks_new_error_detailed(node, STANZA_ERROR_BAD_REQUEST, "malformed dial string");
+	} else {
 		iks *node_dup = iks_copy(node);
 		iks_insert_attrib(node_dup, "from", RAYO_JID(rclient)); /* save DCP jid in case it isn't specified */
 
@@ -2003,8 +2028,6 @@ static iks *on_rayo_dial(struct rayo_actor *client, struct rayo_actor *server, i
 		switch_threadattr_detach_set(thd_attr, 1);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 		switch_thread_create(&thread, thd_attr, rayo_dial_thread, node_dup, RAYO_POOL(rclient));
-	} else {
-		response = iks_new_error_detailed(node, STANZA_ERROR_BAD_REQUEST, "missing dial to attribute");
 	}
 
 	return response;
