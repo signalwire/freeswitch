@@ -1126,7 +1126,7 @@ static switch_bool_t is_silence_frame(switch_frame_t *frame, int silence_thresho
 			energy += abs(fdata[j]);
 			j += codec_impl->number_of_channels;
 		}
-		is_silence &= (uint32_t) (energy / (samples / divisor)) < silence_threshold;
+		is_silence &= (uint32_t) ((energy / (samples / divisor)) < silence_threshold);
 	}
 
 	return is_silence;
@@ -1329,7 +1329,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 							rh->silence_time = switch_micro_time_now();
 						} else {
 							/* continuing silence */
-							int duration_ms = (switch_micro_time_now() - rh->silence_time) / 1000;
+							int duration_ms = (int)((switch_micro_time_now() - rh->silence_time) / 1000);
 							if (rh->silence_timeout_ms > 0 && duration_ms >= rh->silence_timeout_ms) {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Recording file %s timeout: %i >= %i\n", rh->file, duration_ms, rh->silence_timeout_ms);
 								switch_core_media_bug_set_flag(bug, SMBF_PRUNE);

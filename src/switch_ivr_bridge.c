@@ -52,7 +52,7 @@ static void *SWITCH_THREAD_FUNC video_bridge_thread(switch_thread_t *thread, voi
 	switch_channel_t *channel = switch_core_session_get_channel(vh->session_a);
 	switch_channel_t *b_channel = switch_core_session_get_channel(vh->session_b);
 	switch_status_t status;
-	switch_frame_t *read_frame;
+	switch_frame_t *read_frame = 0;
 	switch_core_session_message_t msg = { 0 };
 
 	vh->up = 1;
