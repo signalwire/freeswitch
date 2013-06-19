@@ -226,7 +226,7 @@ int tport_recv_stream_ws(tport_t *self)
 	  return 2;
   }
 
-  if (N == -1000) {
+  if ((N == -1000) ||(N == 0)) {
     if (self->tp_msg)
       msg_recv_commit(self->tp_msg, 0, 1);
     return 0;    /* End of stream */
