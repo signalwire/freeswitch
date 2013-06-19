@@ -291,6 +291,15 @@
     <!--all inbound reg will stored in the db using this domain -->
     <param name="force-register-db-domain" value="$${domain}"/>
 
+
+    <!-- uncomment for sip over websocket support -->
+    <!--<param name="ws-binding"  value=":5066"/>-->
+
+    <!-- uncomment for sip over secure websocket support -->
+    <!-- You need wss.pem in /usr/local/freeswitch/certs for wss -->
+    <!--<param name="wss-binding" value=":7443"/>-->
+    
+
     <!--<param name="delete-subs-on-register" value="false"/>-->
 
     <!-- launch a new thread to process each new inbound register when using heavier backends -->
