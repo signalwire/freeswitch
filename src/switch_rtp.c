@@ -1335,7 +1335,7 @@ static void send_fir(switch_rtp_t *rtp_session)
 		rtp_session->rtcp_ext_send_msg.header.recv_ssrc = htonl(rtp_session->stats.rtcp.peer_ssrc);
 
 		fir->ssrc = htonl(rtp_session->stats.rtcp.peer_ssrc);
-		fir->seq = htonl(rtp_session->fir_seq++);
+		fir->seq = (uint8_t) htonl(rtp_session->fir_seq++);
 		
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "Sending RTCP FIR %d\n", rtp_session->fir_seq);
 		
