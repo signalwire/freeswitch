@@ -174,7 +174,7 @@ struct switch_media_handle_s {
 	int payload_space;
 	char *origin;
 
-
+	switch_mutex_t *mutex;
 
 	const switch_codec_implementation_t *negotiated_codecs[SWITCH_MAX_CODECS];
 	int num_negotiated_codecs;
@@ -1035,6 +1035,8 @@ SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO].read_frame.buflen = SWITCH_RTP_MAX_BUF_LEN;
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].read_frame.buflen = SWITCH_RTP_MAX_BUF_LEN;
 		session->media_handle->mparams = params;
+
+		switch_mutex_init(&session->media_handle->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO].ssrc = 
 			(uint32_t) ((intptr_t) &session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO] + (uint32_t) time(NULL));
@@ -5022,10 +5024,10 @@ SWITCH_DECLARE(void)switch_core_media_set_local_sdp(switch_core_session_t *sessi
 		return;
 	}
 
-	if (smh->mparams->mutex) switch_mutex_lock(smh->mparams->mutex);
+	if (smh->mutex) switch_mutex_lock(smh->mutex);
 	smh->mparams->local_sdp_str = dup ? switch_core_session_strdup(session, sdp_str) : (char *) sdp_str;
 	switch_channel_set_variable(session->channel, "rtp_local_sdp_str", smh->mparams->local_sdp_str);
-	if (smh->mparams->mutex) switch_mutex_unlock(smh->mparams->mutex);
+	if (smh->mutex) switch_mutex_unlock(smh->mutex);
 }
 
 
@@ -6612,7 +6614,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 	}
 
 
-	if (smh->mparams->mutex) switch_mutex_lock(smh->mparams->mutex);
+	if (smh->mutex) switch_mutex_lock(smh->mutex);
 
 
 	if (switch_channel_down(session->channel)) {
@@ -6698,7 +6700,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 
  end_lock:
 
-	if (smh->mparams->mutex) switch_mutex_unlock(smh->mparams->mutex);
+	if (smh->mutex) switch_mutex_unlock(smh->mutex);
 
  end:
 

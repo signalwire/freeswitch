@@ -144,8 +144,6 @@ typedef struct switch_core_media_params_s {
 
 	char *sdp_username;
 
-	switch_mutex_t *mutex;
-
 	switch_payload_t te;
 	switch_payload_t recv_te;
 

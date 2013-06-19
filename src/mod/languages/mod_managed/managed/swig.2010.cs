@@ -3127,6 +3127,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_status_t switch_core_session_refresh_video(SWIGTYPE_p_switch_core_session session) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_refresh_video(SWIGTYPE_p_switch_core_session.getCPtr(session));
+    return ret;
+  }
+
   public static switch_status_t switch_loadable_module_init(switch_bool_t autoload) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_loadable_module_init((int)autoload);
     return ret;
@@ -6042,11 +6047,6 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_rtp_activate_stun_ping(SWIGTYPE_p_switch_rtp rtp_session, string stun_ip, ushort stun_port, uint packet_count, switch_bool_t funny) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_activate_stun_ping(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), stun_ip, stun_port, packet_count, (int)funny);
-    return ret;
-  }
-
   public static void switch_rtp_intentional_bugs(SWIGTYPE_p_switch_rtp rtp_session, switch_rtp_bug_flag_t bugs) {
     freeswitchPINVOKE.switch_rtp_intentional_bugs(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), (int)bugs);
   }
@@ -6074,6 +6074,10 @@ public class freeswitch {
   public static int switch_rtp_has_dtls() {
     int ret = freeswitchPINVOKE.switch_rtp_has_dtls();
     return ret;
+  }
+
+  public static void switch_rtp_video_refresh(SWIGTYPE_p_switch_rtp rtp_session) {
+    freeswitchPINVOKE.switch_rtp_video_refresh(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session));
   }
 
   public static switch_status_t switch_log_init(SWIGTYPE_p_apr_pool_t pool, switch_bool_t colorize) {
@@ -10338,6 +10342,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_cert_verify")]
   public static extern int switch_core_cert_verify(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_refresh_video")]
+  public static extern int switch_core_session_refresh_video(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_module_name_set")]
   public static extern void switch_loadable_module_interface_module_name_set(HandleRef jarg1, string jarg2);
@@ -15463,9 +15470,6 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_get_private")]
   public static extern IntPtr switch_rtp_get_private(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_activate_stun_ping")]
-  public static extern int switch_rtp_activate_stun_ping(HandleRef jarg1, string jarg2, ushort jarg3, uint jarg4, int jarg5);
-
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_intentional_bugs")]
   public static extern void switch_rtp_intentional_bugs(HandleRef jarg1, int jarg2);
 
@@ -15483,6 +15487,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_has_dtls")]
   public static extern int switch_rtp_has_dtls();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_video_refresh")]
+  public static extern void switch_rtp_video_refresh(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_log_node_t_data_set")]
   public static extern void switch_log_node_t_data_set(HandleRef jarg1, string jarg2);
@@ -25819,6 +25826,7 @@ public enum switch_channel_flag_t {
   CF_DTLS,
   CF_VERBOSE_SDP,
   CF_DTLS_OK,
+  CF_VIDEO_PASSIVE,
   CF_FLAG_MAX
 }
 

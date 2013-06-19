@@ -13563,6 +13563,18 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_cert_verify(void * jarg1) {
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_refresh_video(void * jarg1) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  result = (switch_status_t)switch_core_session_refresh_video(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_module_name_set(void * jarg1, char * jarg2) {
   switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -35218,26 +35230,6 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_rtp_get_private(void * jarg1) {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_activate_stun_ping(void * jarg1, char * jarg2, unsigned short jarg3, unsigned long jarg4, int jarg5) {
-  int jresult ;
-  switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
-  char *arg2 = (char *) 0 ;
-  switch_port_t arg3 ;
-  uint32_t arg4 ;
-  switch_bool_t arg5 ;
-  switch_status_t result;
-  
-  arg1 = (switch_rtp_t *)jarg1; 
-  arg2 = (char *)jarg2; 
-  arg3 = (switch_port_t)jarg3; 
-  arg4 = (uint32_t)jarg4; 
-  arg5 = (switch_bool_t)jarg5; 
-  result = (switch_status_t)switch_rtp_activate_stun_ping(arg1,(char const *)arg2,arg3,arg4,arg5);
-  jresult = result; 
-  return jresult;
-}
-
-
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_intentional_bugs(void * jarg1, int jarg2) {
   switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
   switch_rtp_bug_flag_t arg2 ;
@@ -35309,6 +35301,14 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_has_dtls() {
   result = (int)switch_rtp_has_dtls();
   jresult = result; 
   return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_video_refresh(void * jarg1) {
+  switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
+  
+  arg1 = (switch_rtp_t *)jarg1; 
+  switch_rtp_video_refresh(arg1);
 }
 
 
