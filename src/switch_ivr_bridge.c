@@ -53,17 +53,37 @@ static void *SWITCH_THREAD_FUNC video_bridge_thread(switch_thread_t *thread, voi
 	switch_channel_t *b_channel = switch_core_session_get_channel(vh->session_b);
 	switch_status_t status;
 	switch_frame_t *read_frame;
+	switch_core_session_message_t msg = { 0 };
 
 	vh->up = 1;
-	while (switch_channel_ready(channel) && switch_channel_ready(b_channel) && vh->up == 1) {
-		status = switch_core_session_read_video_frame(vh->session_a, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-		if (!SWITCH_READ_ACCEPTABLE(status)) {
-			break;
+
+	switch_core_session_read_lock(vh->session_a);
+	switch_core_session_read_lock(vh->session_b);
+
+	msg.from = __FILE__;
+	msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
+	switch_core_session_receive_message(vh->session_a, &msg);
+	switch_core_session_receive_message(vh->session_b, &msg);
+
+	while (switch_channel_up_nosig(channel) && switch_channel_up_nosig(b_channel) && vh->up == 1) {
+		
+		if (switch_channel_media_up(channel)) {
+			status = switch_core_session_read_video_frame(vh->session_a, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+			
+			if (!SWITCH_READ_ACCEPTABLE(status)) {
+				switch_cond_next();
+				continue;
+			}
 		}
 
-		if (!switch_test_flag(read_frame, SFF_CNG)) {
+		if (switch_test_flag(read_frame, SFF_CNG)) {
+			continue;
+		}
+
+		if (switch_channel_media_up(b_channel)) {
 			if (switch_core_session_write_video_frame(vh->session_b, read_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
-				break;
+				switch_cond_next();
+				continue;
 			}
 		}
 
@@ -72,9 +92,13 @@ static void *SWITCH_THREAD_FUNC video_bridge_thread(switch_thread_t *thread, voi
 	switch_core_session_kill_channel(vh->session_b, SWITCH_SIG_BREAK);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(vh->session_a), SWITCH_LOG_DEBUG, "%s video thread ended.\n", switch_channel_get_name(channel));
 
+	switch_core_session_rwunlock(vh->session_a);
+	switch_core_session_rwunlock(vh->session_b);
+
 	vh->up = 0;
 	return NULL;
 }
+
 
 static switch_thread_t *launch_video(struct vid_helper *vh)
 {
@@ -253,7 +277,13 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	}
 
 	if (bypass_media_after_bridge) {
-		if (switch_stristr("loopback", switch_channel_get_name(chan_a)) || switch_stristr("loopback", switch_channel_get_name(chan_b))) {
+		const char *source_a = switch_channel_get_variable(chan_a, "source");
+		const char *source_b = switch_channel_get_variable(chan_b, "source");
+
+		if (!source_a) source_a = "";
+		if (!source_b) source_b = "";
+
+		if (switch_stristr("loopback", source_a) || switch_stristr("loopback", source_b)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_WARNING, "Cannot bypass media while bridged to a loopback address.\n");
 			bypass_media_after_bridge = 0;
 		}

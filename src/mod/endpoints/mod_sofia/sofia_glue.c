@@ -1958,10 +1958,10 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 
 void sofia_glue_tech_set_local_sdp(private_object_t *tech_pvt, const char *sdp_str, switch_bool_t dup)
 {
-	switch_mutex_lock(tech_pvt->sofia_mutex);
+	switch_mutex_lock(tech_pvt->flag_mutex);
 	tech_pvt->local_sdp_str = dup ? switch_core_session_strdup(tech_pvt->session, sdp_str) : (char *) sdp_str;
 	switch_channel_set_variable(tech_pvt->channel, "sip_local_sdp_str", tech_pvt->local_sdp_str);
-	switch_mutex_unlock(tech_pvt->sofia_mutex);
+	switch_mutex_unlock(tech_pvt->flag_mutex);
 }
 
 char *sofia_glue_get_multipart(switch_core_session_t *session, const char *prefix, const char *sdp, char **mp_type)

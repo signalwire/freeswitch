@@ -268,6 +268,40 @@ static switch_status_t skinny_api_cmd_status_profile_device(const char *profile_
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t skinny_api_cmd_profile_device_kill(const char *profile_name, const char *device_name, switch_stream_handle_t *stream)
+{
+	skinny_profile_t *profile;
+
+	if ((profile = skinny_find_profile(profile_name))) {
+		listener_t *listener = NULL;
+		skinny_profile_find_listener_by_device_name(profile, device_name, &listener);
+		if(listener) {
+			kill_listener(listener, NULL);
+			stream->write_function(stream, "+OK\n");
+		} else {
+			stream->write_function(stream, "Listener not found!\n");
+		}
+	} else {
+		stream->write_function(stream, "Profile not found!\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t skinny_api_cmd_profile_kill_all(const char *profile_name, switch_stream_handle_t *stream)
+{
+	skinny_profile_t *profile;
+
+	if ((profile = skinny_find_profile(profile_name))) {
+		profile_walk_listeners(profile, kill_listener, NULL);
+		stream->write_function(stream, "+OK\n");
+	} else {
+		stream->write_function(stream, "Profile not found!\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t skinny_api_cmd_profile_device_send_ringer_message(const char *profile_name, const char *device_name, const char *ring_type, const char *ring_mode, switch_stream_handle_t *stream)
 {
 	skinny_profile_t *profile;
@@ -488,9 +522,15 @@ SWITCH_STANDARD_API(skinny_function)
 	} else if (argc == 3 && !strcasecmp(argv[0], "status") && !strcasecmp(argv[1], "profile")) {
 		/* skinny status profile <profile_name> */
 		status = skinny_api_cmd_status_profile(argv[2], stream);
+	} else if (argc == 3 && !strcasecmp(argv[0], "profile") && !strcasecmp(argv[2], "kill_all")) {
+		/* skinny profile <profile_name> kill_all */
+		status = skinny_api_cmd_profile_kill_all(argv[1],stream);
 	} else if (argc == 5 && !strcasecmp(argv[0], "status") && !strcasecmp(argv[1], "profile") && !strcasecmp(argv[3], "device")) {
 		/* skinny status profile <profile_name> device <device_name> */
 		status = skinny_api_cmd_status_profile_device(argv[2], argv[4], stream);
+	} else if (argc == 5 && !strcasecmp(argv[0], "profile") && !strcasecmp(argv[2], "device") && !strcasecmp(argv[4], "kill")) {
+		/* skinny profile <profile_name> device <device_name> kill */
+		status = skinny_api_cmd_profile_device_kill(argv[1],argv[3],stream);
 	} else if (argc >= 6 && !strcasecmp(argv[0], "profile") && !strcasecmp(argv[2], "device") && !strcasecmp(argv[4], "send")) {
 		/* skinny profile <profile_name> device <device_name> send ... */
 		switch(skinny_str2message_type(argv[5])) {
@@ -558,6 +598,10 @@ switch_status_t skinny_api_register(switch_loadable_module_interface_t **module_
 
 	switch_console_set_complete("add skinny status profile ::skinny::list_profiles");
 	switch_console_set_complete("add skinny status profile ::skinny::list_profiles device ::skinny::list_devices");
+
+	switch_console_set_complete("add skinny profile ::skinny::list_profiles kill_all");
+
+	switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices kill");
 
 	switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send ResetMessage ::skinny::list_reset_types");
 	switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send SetRingerMessage ::skinny::list_ring_types ::skinny::list_ring_modes");

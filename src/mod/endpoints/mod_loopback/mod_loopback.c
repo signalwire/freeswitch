@@ -429,10 +429,7 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL EXECUTE\n", switch_channel_get_name(channel));
 
-
-	if (switch_test_flag(tech_pvt, TFLAG_BOWOUT) || switch_test_flag(tech_pvt, TFLAG_BLEG)) {
-		bow = 0;
-	} else if ((bowout = switch_channel_get_variable(tech_pvt->channel, "loopback_bowout_on_execute")) && switch_true(bowout)) {
+	if ((bowout = switch_channel_get_variable(tech_pvt->channel, "loopback_bowout_on_execute")) && switch_true(bowout)) {
 		/* loopback_bowout_on_execute variable is set */
 		bow = 1;
 	} else if ((exten = switch_channel_get_caller_extension(channel))) {
@@ -455,14 +452,15 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 		switch_core_session_t *other_session = NULL;
 		switch_caller_profile_t *cp, *clone;
 		const char *other_uuid = NULL;
-
 		switch_set_flag(tech_pvt, TFLAG_BOWOUT);
 
 		if ((find_non_loopback_bridge(tech_pvt->other_session, &other_session, &other_uuid) == SWITCH_STATUS_SUCCESS)) {
 			switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
 
-			/* Wait for real channel to be exchanging media */
-			switch_channel_wait_for_state(other_channel, channel, CS_EXCHANGE_MEDIA);
+			if (switch_channel_test_flag(other_channel, CF_BRIDGED)) {
+				/* Wait for real channel to be exchanging media */
+				switch_channel_wait_for_state(other_channel, channel, CS_EXCHANGE_MEDIA);
+			}
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_INFO, "BOWOUT Replacing loopback channel with real channel: %s\n",
 							  switch_channel_get_name(other_channel));
@@ -929,6 +927,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	switch_channel_t *channel;
 	loopback_private_t *tech_pvt;
 	int done = 1, pass = 0;
+	switch_core_session_t *other_session;
 	
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -1011,14 +1010,32 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 			pass = 1;
 		}
 		break;
+	case SWITCH_MESSAGE_INDICATE_DEFLECT:
+		{
+			pass = 0;
+
+			if (!zstr(msg->string_arg) && switch_core_session_get_partner(tech_pvt->other_session, &other_session) == SWITCH_STATUS_SUCCESS) {
+				char *ext = switch_core_session_strdup(other_session, msg->string_arg);
+				char *context = NULL, *dp = NULL;
+				
+				if ((context = strchr(ext, ' '))) {
+					*context++ = '\0';
+					
+					if ((dp = strchr(context, ' '))) {
+						*dp++ = '\0';
+					}
+				}
+				switch_ivr_session_transfer(other_session, ext, context, dp);
+				switch_core_session_rwunlock(other_session);
+			}
+		}
+		break;
 	default:
 		break;
 	}
 
-
 	if (!done && tech_pvt->other_session && (pass || switch_test_flag(tech_pvt, TFLAG_RUNNING_APP))) {
 		switch_status_t r = SWITCH_STATUS_FALSE;
-		switch_core_session_t *other_session;
 		
 		if (switch_core_session_get_partner(tech_pvt->other_session, &other_session) == SWITCH_STATUS_SUCCESS) {
 			r = switch_core_session_receive_message(other_session, msg);
