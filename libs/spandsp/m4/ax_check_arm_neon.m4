@@ -23,19 +23,21 @@ gnu)
     CFLAGS="${CFLAGS} -mfpu=neon"
     AC_COMPILE_IFELSE(
         [AC_LANG_PROGRAM(
-            [#include <arm_neon.h>
-            int32x4_t testfunc(int16_t *a, int16_t *b)
-            {
-                return vmull_s16(vld1_s16(a), vld1_s16(b));
-            }
-            int main(int argc, char *argv[])
-            {
+            [
+                #include <inttypes.h>
+                #include <arm_neon.h>
+
+                int32x4_t testfunc(int16_t *a, int16_t *b)
+                {
+                    return vmull_s16(vld1_s16(a), vld1_s16(b));
+                }
+            ],
+            [
                 int32x4_t z;
-                int16_t x[8];
-                int16_t y[8];
+                int16_t x[[8]];
+                int16_t y[[8]];
                 z = testfunc(x, y);
-            }],
-            [;]
+            ]
         )],
 
         [AC_MSG_RESULT([yes])
