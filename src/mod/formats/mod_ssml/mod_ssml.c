@@ -458,8 +458,8 @@ static int process_xml_lang(struct ssml_parser *parsed_data, char **atts)
 		while (atts[i]) {
 			if (!strcmp("xml:lang", atts[i])) {
 				if (!zstr(atts[i + 1])) {
-				strncpy(cur_node->language, atts[i + 1], LANGUAGE_LEN);
-				cur_node->language[LANGUAGE_LEN - 1] = '\0';
+					strncpy(cur_node->language, atts[i + 1], LANGUAGE_LEN);
+					cur_node->language[LANGUAGE_LEN - 1] = '\0';
 				}
 			}
 			i += 2;
@@ -573,11 +573,19 @@ static int process_audio(struct ssml_parser *parsed_data, char **atts)
 		while (atts[i]) {
 			if (!strcmp("src", atts[i])) {
 				char *src = atts[i + 1];
+				ikstack *stack = NULL;
 				if (!zstr(src) && parsed_data->num_files < parsed_data->max_files) {
 					/* get the URI */
+					if (strchr(src, '&')) {
+						stack = iks_stack_new(256, 0);
+						src = iks_unescape(stack, src, strlen(src));
+					}
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding <audio>: \"%s\"\n", src);
 					parsed_data->files[parsed_data->num_files].name = switch_core_strdup(parsed_data->pool, src);
 					parsed_data->files[parsed_data->num_files++].prefix = NULL;
+					if (stack) {
+						iks_stack_delete(&stack);
+					}
 				}
 				return IKS_OK;
 			}
