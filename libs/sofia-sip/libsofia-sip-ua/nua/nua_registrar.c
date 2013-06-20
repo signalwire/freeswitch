@@ -226,8 +226,10 @@ nua_registrar_server_preprocess(nua_server_request_t *sr)
 
   tport = nta_incoming_transport(nh->nh_nua->nua_nta, sr->sr_irq, sr->sr_request.msg);
 
-  if (!tport_is_tcp(tport))
-    return 0;
+  if (!tport_is_tcp(tport)) {
+	  tport_unref(tport);
+	  return 0;
+  }
 
   du = nua_dialog_usage_get(ds, nua_registrar_usage, NULL);
   if (du == NULL)
@@ -243,7 +245,7 @@ nua_registrar_server_preprocess(nua_server_request_t *sr)
     tport_unref(ru->tport), ru->tport = NULL;
   }
 
-  ru->tport = tport_ref(tport);
+  ru->tport = tport;
   ru->pending = tport_pend(tport, NULL, registrar_tport_error, nh);
 
   tport_set_params(tport,
