@@ -1301,7 +1301,9 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 			switch_copy_string(interface_name, outbound_profile->destination_number, 255);
 			slash = strrchr(interface_name, '/');
-			*slash = '\0';
+			if(slash != NULL){
+				*slash = '\0';
+			}
 
 			switch_mutex_lock(globals.mutex);
 			if (strncmp("ANY", interface_name, strlen(interface_name)) == 0 || strncmp("RR", interface_name, strlen(interface_name)) == 0) {

@@ -185,6 +185,7 @@ tport_vtable_t const tport_wss_client_vtable =
 static void tport_ws_deinit_primary(tport_primary_t *pri)
 {
   tport_ws_primary_t *wspri = (tport_ws_primary_t *)pri;
+
   if ( wspri->ssl_ctx ) {
 	  SSL_CTX_free(wspri->ssl_ctx);
 	  wspri->ssl_ctx = NULL;
@@ -211,7 +212,9 @@ int tport_recv_stream_ws(tport_t *self)
   uint8_t *data;
   ws_opcode_t oc;
 
-  if ( !wstp->ws_initialized ) {
+  if (wstp->ws_initialized < 0) {
+	  return -1;
+  } else if (wstp->ws_initialized == 0) {
 	  if (ws_init(ws, self->tp_socket, 65336, wstp->ws_secure ? wspri->ssl_ctx : NULL, 0) == -2) {
 		  return 2;
 	  }
@@ -226,16 +229,17 @@ int tport_recv_stream_ws(tport_t *self)
 	  return 2;
   }
 
-  if ((N == -1000) ||(N == 0)) {
-    if (self->tp_msg)
-      msg_recv_commit(self->tp_msg, 0, 1);
-    return 0;    /* End of stream */
+  if ((N == -1000) || (N == 0)) {
+	  if (self->tp_msg) {
+		  msg_recv_commit(self->tp_msg, 0, 1);
+	  }
+	  return 0;    /* End of stream */
   }
   if (N < 0) {
-	  err = su_errno();
+	  err = errno = EHOSTDOWN;
 	  SU_DEBUG_1(("%s(%p): su_getmsgsize(): %s (%d)\n", __func__, (void *)self,
 				  su_strerror(err), err));
-	  return 0;;
+	  return 0;
   }
 
   veclen = tport_recv_iovec(self, &self->tp_msg, iovec, N, 0);
@@ -455,10 +459,12 @@ int tport_ws_init_secondary(tport_t *self, int socket, int accepted,
 static void tport_ws_deinit_secondary(tport_t *self)
 {
 	tport_ws_t *wstp = (tport_ws_t *)self;
-  
-	if (wstp->ws_initialized ) {
-		ws_close(wstp->ws, WS_NONE);
-		wstp->ws_initialized = 0;
+
+	if (wstp->ws_initialized == 1) {
+		wsh_t *wsh = wstp->ws;
+		SU_DEBUG_1(("%p destroy ws%s transport %p.\n", (void *) self, wstp->ws_secure ? "s" : "", (void *) wsh));
+		ws_destroy(&wsh);
+		wstp->ws_initialized = -1;
 	}
 }
 

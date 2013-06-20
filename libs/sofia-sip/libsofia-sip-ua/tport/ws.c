@@ -402,23 +402,26 @@ int ws_init(wsh_t *wsh, ws_socket_t sock, size_t buflen, SSL_CTX *ssl_ctx, int c
 	return 0;
 }
 
-issize_t ws_close(wsh_t *wsh, int16_t reason) 
+void ws_destroy(wsh_t **wshp)
 {
+	wsh_t *wsh;
+
+	if (!wshp || ! *wshp) {
+		return;
+	}
+
+	wsh = *wshp;
+	*wshp = NULL;
 	
-	if (wsh->down) {
-		return -1;
-	}
-	wsh->down++;
-
-	if (reason) {
-		uint16_t *u16;
-		uint8_t fr[4] = {WSOC_CLOSE | 0x80, 2, 0};
-
-		u16 = (uint16_t *) &fr[2];
-		*u16 = htons((int16_t)reason);
-		ws_raw_write(wsh, fr, 4);
+	if (!wsh->down) {
+		ws_close(wsh, WS_NONE);
 	}
 
+	if (wsh->down > 1) {
+		return;
+	}
+	
+	wsh->down = 2;
 
 	if (wsh->ssl) {
 		int code;
@@ -430,12 +433,6 @@ issize_t ws_close(wsh_t *wsh, int16_t reason)
 		wsh->ssl = NULL;
 	}
 
-	if (wsh->close_sock) {
-		close(wsh->sock);
-	}
-
-	wsh->sock = ws_sock_invalid;
-
 	if (wsh->buffer) {
 		free(wsh->buffer);
 		wsh->buffer = NULL;
@@ -445,7 +442,31 @@ issize_t ws_close(wsh_t *wsh, int16_t reason)
 		free(wsh->wbuffer);
 		wsh->wbuffer = NULL;
 	}
+}
 
+issize_t ws_close(wsh_t *wsh, int16_t reason) 
+{
+	
+	if (wsh->down) {
+		return -1;
+	}
+
+	wsh->down = 1;
+	
+	if (reason && wsh->sock != ws_sock_invalid) {
+		uint16_t *u16;
+		uint8_t fr[4] = {WSOC_CLOSE | 0x80, 2, 0};
+
+		u16 = (uint16_t *) &fr[2];
+		*u16 = htons((int16_t)reason);
+		ws_raw_write(wsh, fr, 4);
+	}
+
+	if (wsh->close_sock) {
+		close(wsh->sock);
+	}
+
+	wsh->sock = ws_sock_invalid;
 
 	return reason * -1;
 	
