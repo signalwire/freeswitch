@@ -3054,7 +3054,7 @@ int sms_incoming(private_t *tech_pvt)
 		return -1;
 	}
 	//DEBUGA_GSMOPEN("received SMS on interface %s: %s\n", GSMOPEN_P_LOG, tech_pvt->name, tech_pvt->sms_message);
-	DEBUGA_GSMOPEN("received SMS on interface %s: DATE=%s, SENDER=%s, BODY=%s|\n", GSMOPEN_P_LOG, tech_pvt->name, tech_pvt->sms_date, tech_pvt->sms_sender,
+	NOTICA("received SMS on interface %s: DATE=%s, SENDER=%s, BODY=|%s|\n", GSMOPEN_P_LOG, tech_pvt->name, tech_pvt->sms_date, tech_pvt->sms_sender,
 					tech_pvt->sms_body);
 #ifdef NOTDEF
 	if (!zstr(tech_pvt->session_uuid_str)) {
@@ -3158,6 +3158,12 @@ int sms_incoming(private_t *tech_pvt)
 	}
 	/* mod_sms end */
 
+	memset(tech_pvt->sms_message, '\0', sizeof(tech_pvt->sms_message));
+	memset(tech_pvt->sms_sender, '\0', sizeof(tech_pvt->sms_sender));
+	memset(tech_pvt->sms_date, '\0', sizeof(tech_pvt->sms_date));
+	memset(tech_pvt->sms_body, '\0', sizeof(tech_pvt->sms_body));
+	memset(tech_pvt->sms_datacodingscheme, '\0', sizeof(tech_pvt->sms_datacodingscheme));
+	memset(tech_pvt->sms_servicecentreaddress, '\0', sizeof(tech_pvt->sms_servicecentreaddress));
 
 	//memset(&tech_pvt->chatmessages[which], '\0', sizeof(&tech_pvt->chatmessages[which]) );
 	//memset(tech_pvt->sms_message, '\0', sizeof(tech_pvt->sms_message));

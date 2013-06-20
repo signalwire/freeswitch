@@ -1736,7 +1736,13 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 							//Timestamp servicecentretimestamp;
 							//Address sender_recipient_address;
 
-							sms = SMSMessage::decode(tech_pvt->line_array.result[i]);	// dataCodingScheme = 8 , text=ciao 123 belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大
+							try {
+								sms = SMSMessage::decode(tech_pvt->line_array.result[i]);	// dataCodingScheme = 8 , text=ciao 123 belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大
+							}
+							catch(...) {
+								ERRORA("GsmException\n", GSMOPEN_P_LOG);
+								return -1;
+							}
 
 							DEBUGA_GSMOPEN("SMS=\n%s\n", GSMOPEN_P_LOG, sms->toString().c_str());
 
@@ -1775,8 +1781,9 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 							//sender_recipient_address = sms->address();
 
 						}
-						catch(GsmException & ge) {
-							ERRORA("GsmException= |||%s|||\n", GSMOPEN_P_LOG, ge.what());
+							catch(...) {
+								ERRORA("GsmException\n", GSMOPEN_P_LOG);
+								return -1;
 						}
 
 
@@ -2487,7 +2494,7 @@ int utf8_to_iso_8859_1(private_t *tech_pvt, char *utf8_in, size_t inbytesleft, c
 	iconv_res = iconv(iconv_format, &inbuf, &inbytesleft, &outbuf, &outbytesleft);
 #endif // WIN32
 	if (iconv_res == (size_t) -1) {
-		DEBUGA_GSMOPEN("cannot translate in iso_8859_1 error: %s %d\n", GSMOPEN_P_LOG, strerror(errno), errno);
+		DEBUGA_GSMOPEN("cannot translate in iso_8859_1 error: %s (errno: %d)\n", GSMOPEN_P_LOG, strerror(errno), errno);
 		return -1;
 	}
 	DEBUGA_GSMOPEN
@@ -2854,10 +2861,16 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 
 					tech_pvt->no_ucs2 = 0;
 					tech_pvt->sms_pdu_not_supported = 1;
+
 					ok = gsmopen_sendsms(tech_pvt, dest, text);
+
 					tech_pvt->no_ucs2 = 1;
 					tech_pvt->sms_pdu_not_supported = 0;
 
+					err = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CMGF=0");
+					if (err) {
+						ERRORA("AT+CMGF=0 (set message sending to PDU (as opposed to TEXT)  didn't get OK from the phone\n", GSMOPEN_P_LOG);
+					}
 					return ok;
 				}
 
