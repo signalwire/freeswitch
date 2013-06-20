@@ -41467,6 +41467,18 @@ SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_check_hangup_hook(void * jarg1) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_consoleLog(void * jarg1, char * jarg2, char * jarg3) {
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  
+  arg1 = (CoreSession *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  (arg1)->consoleLog(arg2,arg3);
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_console_log(char * jarg1, char * jarg2) {
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
