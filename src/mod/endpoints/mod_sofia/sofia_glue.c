@@ -674,8 +674,8 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 						continue;
 					}
 
-					if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND &&
-						switch_channel_test_flag(session->channel, CF_NOVIDEO)) {
+					if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND &&
+						switch_channel_test_flag(tech_pvt->channel, CF_NOVIDEO)) {
 						continue;
 					}
 
