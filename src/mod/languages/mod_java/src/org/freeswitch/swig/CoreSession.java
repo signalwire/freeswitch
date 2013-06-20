@@ -313,4 +313,8 @@ public class CoreSession {
     return new SWIGTYPE_p_switch_status_t(freeswitchJNI.CoreSession_run_dtmf_callback(swigCPtr, this, SWIGTYPE_p_void.getCPtr(input), SWIGTYPE_p_switch_input_type_t.getCPtr(itype)), true);
   }
 
+  public void consoleLog(String level_str, String msg) {
+    freeswitchJNI.CoreSession_consoleLog(swigCPtr, this, level_str, msg);
+  }
+
 }

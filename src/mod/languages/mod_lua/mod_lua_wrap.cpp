@@ -6140,6 +6140,36 @@ fail:
 }
 
 
+static int _wrap_CoreSession_consoleLog(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  
+  SWIG_check_num_args("consoleLog",3,3)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("consoleLog",1,"CoreSession *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("consoleLog",2,"char *");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("consoleLog",3,"char *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_consoleLog",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3 = (char *)lua_tostring(L, 3);
+  (arg1)->consoleLog(arg2,arg3);
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static void swig_delete_CoreSession(void *obj) {
 CoreSession *arg1 = (CoreSession *) obj;
 delete arg1;
@@ -6192,6 +6222,7 @@ static swig_lua_method swig_CoreSession_methods[] = {
     {"get_cb_args", _wrap_CoreSession_get_cb_args}, 
     {"check_hangup_hook", _wrap_CoreSession_check_hangup_hook}, 
     {"run_dtmf_callback", _wrap_CoreSession_run_dtmf_callback}, 
+    {"consoleLog", _wrap_CoreSession_consoleLog}, 
     {0,0}
 };
 static swig_lua_attribute swig_CoreSession_attributes[] = {

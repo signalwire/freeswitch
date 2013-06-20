@@ -8040,6 +8040,55 @@ XS(_wrap_CoreSession_run_dtmf_callback) {
 }
 
 
+XS(_wrap_CoreSession_consoleLog) {
+  {
+    CoreSession *arg1 = (CoreSession *) 0 ;
+    char *arg2 = (char *) 0 ;
+    char *arg3 = (char *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int res3 ;
+    char *buf3 = 0 ;
+    int alloc3 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 3) || (items > 3)) {
+      SWIG_croak("Usage: CoreSession_consoleLog(self,level_str,msg);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_consoleLog" "', argument " "1"" of type '" "CoreSession *""'"); 
+    }
+    arg1 = reinterpret_cast< CoreSession * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_consoleLog" "', argument " "2"" of type '" "char *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "CoreSession_consoleLog" "', argument " "3"" of type '" "char *""'");
+    }
+    arg3 = reinterpret_cast< char * >(buf3);
+    (arg1)->consoleLog(arg2,arg3);
+    
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_console_log) {
   {
     char *arg1 = (char *) 0 ;
@@ -9873,6 +9922,7 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::CoreSession_get_cb_args", _wrap_CoreSession_get_cb_args},
 {"freeswitchc::CoreSession_check_hangup_hook", _wrap_CoreSession_check_hangup_hook},
 {"freeswitchc::CoreSession_run_dtmf_callback", _wrap_CoreSession_run_dtmf_callback},
+{"freeswitchc::CoreSession_consoleLog", _wrap_CoreSession_consoleLog},
 {"freeswitchc::console_log", _wrap_console_log},
 {"freeswitchc::console_clean_log", _wrap_console_clean_log},
 {"freeswitchc::msleep", _wrap_msleep},

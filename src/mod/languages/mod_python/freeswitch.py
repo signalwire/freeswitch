@@ -317,6 +317,7 @@ class CoreSession(_object):
     def get_cb_args(*args): return _freeswitch.CoreSession_get_cb_args(*args)
     def check_hangup_hook(*args): return _freeswitch.CoreSession_check_hangup_hook(*args)
     def run_dtmf_callback(*args): return _freeswitch.CoreSession_run_dtmf_callback(*args)
+    def consoleLog(*args): return _freeswitch.CoreSession_consoleLog(*args)
 CoreSession_swigregister = _freeswitch.CoreSession_swigregister
 CoreSession_swigregister(CoreSession)
 

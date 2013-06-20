@@ -416,6 +416,10 @@ public class CoreSession : IDisposable {
     freeswitchPINVOKE.CoreSession_check_hangup_hook(swigCPtr);
   }
 
+  public void consoleLog(string level_str, string msg) {
+    freeswitchPINVOKE.CoreSession_consoleLog(swigCPtr, level_str, msg);
+  }
+
 }
 
 }
@@ -22047,6 +22051,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_check_hangup_hook")]
   public static extern void CoreSession_check_hangup_hook(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_consoleLog")]
+  public static extern void CoreSession_consoleLog(HandleRef jarg1, string jarg2, string jarg3);
+
   [DllImport("mod_managed", EntryPoint="CSharp_console_log")]
   public static extern void console_log(string jarg1, string jarg2);
 
@@ -25004,6 +25011,7 @@ public enum switch_channel_flag_t {
   CF_EARLY_OK,
   CF_MEDIA_TRANS,
   CF_HOLD_ON_BRIDGE,
+  CF_NOVIDEO,
   CF_FLAG_MAX
 }
 
