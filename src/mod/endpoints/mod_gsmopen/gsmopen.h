@@ -72,14 +72,9 @@
 #include <sys/ioctl.h>
 #include <iconv.h>
 #endif //WIN32
-//#include <libteletone.h>
 
-//#include "celliax_spandsp.h"
 #ifndef WIN32
 #include <sys/time.h>
-//#include <X11/Xlib.h>
-//#include <X11/Xlibint.h>
-//#include <X11/Xatom.h>
 #endif //WIN32
 
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -97,14 +92,9 @@
 #define 	PROTOCOL_FBUS2   1
 #define 	PROTOCOL_NO_SERIAL   3
 
-//FIXME FIXME FIXME #define AT_MESG_MAX_LENGTH 2048 /* much more than 10 SMSs */
 #define AT_MESG_MAX_LENGTH 2048	/* much more than 10 SMSs */
 #define		AT_BUFSIZ AT_MESG_MAX_LENGTH
-//FIXME FIXME FIXME #define AT_MESG_MAX_LINES 256   /* 256 lines, so it can contains the results of AT+CLAC, that gives all the AT commands the phone supports */
 #define AT_MESG_MAX_LINES 20	/* 256 lines, so it can contains the results of AT+CLAC, that gives all the AT commands the phone supports */
-
-//#define SAMPLERATE_GSMOPEN 16000
-//#define SAMPLES_PER_FRAME SAMPLERATE_GSMOPEN/50
 
 #ifdef GSMOPEN_C_VER
 #ifdef MODGSMOPEN_C_VER
@@ -209,9 +199,6 @@ typedef enum {
 
 #ifndef WIN32
 struct GSMopenHandles {
-	//Window gsmopen_win;
-	//Display *disp;
-	//Window win;
 	int currentuserhandle;
 	int api_connected;
 	int fdesc[2];
@@ -305,17 +292,6 @@ struct private_object {
 	switch_thread_t *tcp_cli_thread;
 	switch_thread_t *gsmopen_signaling_thread;
 	switch_thread_t *gsmopen_api_thread;
-	//short audiobuf[SAMPLES_PER_FRAME];
-	//int audiobuf_is_loaded;
-
-	//int phonebook_listing;
-	//int phonebook_querying;
-	//int phonebook_listing_received_calls;
-
-	//int phonebook_first_entry;
-	//int phonebook_last_entry;
-	//int phonebook_number_lenght;
-	//int phonebook_text_lenght;
 	int gsmopen_dir_entry_extension_prefix;
 	char gsmopen_user[256];
 	char gsmopen_password[256];
@@ -335,7 +311,6 @@ struct private_object {
 	int controldevprotocol;		/*!< \brief which protocol is used for serial control of this interface */
 	char controldevprotocolname[50];	/*!< \brief name of the serial device controlling protocol, one of "at" "fbus2" "no_serial" "alsa_voicemodem" */
 	int controldevfd;			/*!< \brief serial controlling file descriptor for this interface */
-	//pthread_t controldev_thread;  /*!< \brief serial control thread for this interface, running during the call */
 #ifdef WIN32
 	int controldevice_speed;
 #else
@@ -428,7 +403,6 @@ struct private_object {
 	int sms_messagetype;
 	int sms_cnmi_not_supported;
 	int sms_pdu_not_supported;
-	//char sms_receiving_program[256];
 
 	struct timeval call_incoming_time;
 	switch_mutex_t *controldev_lock;
@@ -505,7 +479,6 @@ int dtmf_received(private_t *tech_pvt, char *value);
 int start_audio_threads(private_t *tech_pvt);
 int new_inbound_channel(private_t *tech_pvt);
 int outbound_channel_answered(private_t *tech_pvt);
-//int gsmopen_signaling_write(private_t * tech_pvt, char *msg_to_gsmopen);
 #if defined(WIN32) && !defined(__CYGWIN__)
 int gsmopen_pipe_read(switch_file_t *pipe, short *buf, int howmany);
 int gsmopen_pipe_write(switch_file_t *pipe, short *buf, int howmany);
@@ -519,18 +492,10 @@ int gsmopen_close_socket(unsigned int fd);
 private_t *find_available_gsmopen_interface_rr(private_t *tech_pvt_calling);
 int remote_party_is_ringing(private_t *tech_pvt);
 int remote_party_is_early_media(private_t *tech_pvt);
-//int gsmopen_answer(private_t * tech_pvt, char *id, char *value);
-#if 0
-int gsmopen_transfer(private_t *tech_pvt, char *id, char *value);
-#endif //0
 int gsmopen_socket_create_and_bind(private_t *tech_pvt, int *which_port);
 
 void *gsmopen_do_controldev_thread(void *data);
-//#ifdef WIN32
 int gsmopen_serial_init(private_t *tech_pvt, int controldevice_speed);
-//#else
-//int gsmopen_serial_init(private_t * tech_pvt, speed_t controldevice_speed);
-//#endif //WIN32
 int gsmopen_serial_monitor(private_t *tech_pvt);
 int gsmopen_serial_sync(private_t *tech_pvt);
 int gsmopen_serial_sync_AT(private_t *tech_pvt);
@@ -540,9 +505,6 @@ int gsmopen_serial_config_AT(private_t *tech_pvt);
 #define gsmopen_serial_write_AT_expect(P, D, S) gsmopen_serial_write_AT_expect1(P, D, S, 1, 0)
 #define gsmopen_serial_write_AT_expect_noexpcr(P, D, S) gsmopen_serial_write_AT_expect1(P, D, S, 0, 0)
 #define gsmopen_serial_write_AT_expect_noexpcr_tout(P, D, S, T) gsmopen_serial_write_AT_expect1(P, D, S, 0, T)
-// 20.5 sec timeout, used for querying the SIM and sending SMSs
-//#define gsmopen_serial_write_AT_expect_longtime(P, D, S) gsmopen_serial_write_AT_expect1(P, D, S, 1, 20)
-//#define gsmopen_serial_write_AT_expect_longtime_noexpcr(P, D, S) gsmopen_serial_write_AT_expect1(P, D, S, 0, 20)
 #define gsmopen_serial_write_AT_expect_longtime(P, D, S) gsmopen_serial_write_AT_expect1(P, D, S, 1, 5)
 #define gsmopen_serial_write_AT_expect_longtime_noexpcr(P, D, S) gsmopen_serial_write_AT_expect1(P, D, S, 0, 5)
 int gsmopen_serial_write_AT(private_t *tech_pvt, const char *data);
@@ -554,29 +516,15 @@ int gsmopen_serial_write_AT_expect1(private_t *tech_pvt, const char *data, const
 int gsmopen_serial_AT_expect(private_t *tech_pvt, const char *expected_string, int expect_crlf, int seconds);
 int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_usec, int timeout_sec, const char *expected_string, int expect_crlf);
 int gsmopen_serial_read(private_t *tech_pvt);
-#ifdef NOTDEF
-int gsmopen_serial_getstatus(private_t *tech_pvt);
-int gsmopen_serial_hangup(private_t *tech_pvt);
-int gsmopen_serial_answer(private_t *tech_pvt);
-int gsmopen_serial_answer_AT(private_t *tech_pvt);
-int gsmopen_serial_hangup_AT(private_t *tech_pvt);
-int gsmopen_serial_call_AT(private_t *tech_pvt, char *dstr);
-int gsmopen_serial_getstatus_AT(private_t *tech_pvt);
-#endif // NOTDEF
 #define RESULT_FAILURE 0
 #define RESULT_SUCCESS 1
 int utf8_to_ucs2(private_t *tech_pvt, char *utf8_in, size_t inbytesleft, char *ucs2_out, size_t outbytesleft);
 int ucs2_to_utf8(private_t *tech_pvt, char *ucs2_in, char *utf8_out, size_t outbytesleft);
 int utf8_to_iso_8859_1(private_t *tech_pvt, char *utf8_in, size_t inbytesleft, char *iso_8859_1_out, size_t outbytesleft);
-//#define PUSHA_UNLOCKA(x)    pthread_cleanup_push(gsmopen_unlocka_log, (void *) x);
-//#define POPPA_UNLOCKA(x)    pthread_cleanup_pop(0);
-
 #define PUSHA_UNLOCKA(x)    if(option_debug > 100) ERRORA("PUSHA_UNLOCKA: %p\n", GSMOPEN_P_LOG, (void *)x);
 #define POPPA_UNLOCKA(x)    if(option_debug > 100) ERRORA("POPPA_UNLOCKA: %p\n", GSMOPEN_P_LOG, (void *)x);
-//#define LOKKA(x)    if(option_debug > 100) ERRORA("LOKKA: %p\n", GSMOPEN_P_LOG, (void *)x);
 #define LOKKA(x)    switch_mutex_lock(x);
 #define UNLOCKA(x)  switch_mutex_unlock(x);
-//#define UNLOCKA(x)    if(option_debug > 100) ERRORA("UNLOCKA: %p\n", GSMOPEN_P_LOG, (void *)x);
 
 #define gsmopen_queue_control(x, y) ERRORA("gsmopen_queue_control: %p, %d\n", GSMOPEN_P_LOG, (void *)x, y);
 
