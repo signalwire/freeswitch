@@ -674,6 +674,11 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 						continue;
 					}
 
+					if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND &&
+						switch_channel_test_flag(session->channel, CF_NOVIDEO)) {
+						continue;
+					}
+
 					if (tech_pvt->ianacodes[i] < 128) {
 						if (already_did[tech_pvt->ianacodes[i]]) {
 							continue;
