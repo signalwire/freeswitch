@@ -5521,13 +5521,16 @@ void sofia_glue_pass_sdp(private_object_t *tech_pvt, char *sdp)
 		&& (other_session = switch_core_session_locate(val))) {
 		other_channel = switch_core_session_get_channel(other_session);
 		switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, sdp);
-
+		
+#if 0
 		if (!sofia_test_flag(tech_pvt, TFLAG_CHANGE_MEDIA) && !switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING) &&
 			(switch_channel_direction(other_channel) == SWITCH_CALL_DIRECTION_OUTBOUND &&
- switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_OUTBOUND && switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE))) {
+			 switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_OUTBOUND && switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE))) {
 			switch_ivr_nomedia(val, SMF_FORCE);
 			sofia_set_flag_locked(tech_pvt, TFLAG_CHANGE_MEDIA);
 		}
+#endif
+
 		switch_core_session_rwunlock(other_session);
 	}
 }
