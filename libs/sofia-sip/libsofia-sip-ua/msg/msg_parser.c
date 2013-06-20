@@ -2481,16 +2481,16 @@ msg_hclass_offset(msg_mclass_t const *mc, msg_pub_t const *mo, msg_hclass_t *hc)
       if (mc->mc_hash[j].hr_class == hc) {
 	return (msg_header_t **)((char *)mo + mc->mc_hash[j].hr_offset);
       }
-  }
-  else
+  } else {
     /* Header has no name. */
-  if (hc->hc_hash == mc->mc_request[0].hr_class->hc_hash) return (msg_header_t **)((char *)mo + mc->mc_request[0].hr_offset);
-  if (hc->hc_hash == mc->mc_status[0].hr_class->hc_hash) return (msg_header_t **)((char *)mo + mc->mc_status[0].hr_offset);
-  if (hc->hc_hash == mc->mc_separator[0].hr_class->hc_hash) return (msg_header_t **)((char *)mo + mc->mc_separator[0].hr_offset);
-  if (hc->hc_hash == mc->mc_payload[0].hr_class->hc_hash) return (msg_header_t **)((char *)mo + mc->mc_payload[0].hr_offset);
-  if (hc->hc_hash == mc->mc_unknown[0].hr_class->hc_hash) return (msg_header_t **)((char *)mo + mc->mc_unknown[0].hr_offset);
-  if (hc->hc_hash == mc->mc_error[0].hr_class->hc_hash) return (msg_header_t **)((char *)mo + mc->mc_error[0].hr_offset);
-  if (hc->hc_hash == mc->mc_multipart[0].hr_class->hc_hash) return (msg_header_t **)((char *)mo + mc->mc_multipart[0].hr_offset);
+    if (hc->hc_hash == mc->mc_request[0].hr_class->hc_hash) return (msg_header_t **)((char *)mo + mc->mc_request[0].hr_offset);
+    if (hc->hc_hash == mc->mc_status[0].hr_class->hc_hash) return (msg_header_t **)((char *)mo + mc->mc_status[0].hr_offset);
+    if (hc->hc_hash == mc->mc_separator[0].hr_class->hc_hash) return (msg_header_t **)((char *)mo + mc->mc_separator[0].hr_offset);
+    if (hc->hc_hash == mc->mc_payload[0].hr_class->hc_hash) return (msg_header_t **)((char *)mo + mc->mc_payload[0].hr_offset);
+    if (hc->hc_hash == mc->mc_unknown[0].hr_class->hc_hash) return (msg_header_t **)((char *)mo + mc->mc_unknown[0].hr_offset);
+    if (hc->hc_hash == mc->mc_error[0].hr_class->hc_hash) return (msg_header_t **)((char *)mo + mc->mc_error[0].hr_offset);
+    if (hc->hc_hash == mc->mc_multipart[0].hr_class->hc_hash) return (msg_header_t **)((char *)mo + mc->mc_multipart[0].hr_offset);
+  }
 
   return NULL;
 }
