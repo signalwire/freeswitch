@@ -2725,13 +2725,6 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 				ERRORA("AT+CMGF=1 (set message sending to TEXT (as opposed to PDU)  didn't get OK from the phone\n", GSMOPEN_P_LOG);
 			}
 
-/*
-			err = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSCS=\"UCS2\"");
-			if (err) {
-				ERRORA("AT+CSCS=\"UCS2\" (set TE messages to ucs2)  didn't get OK from the phone\n", GSMOPEN_P_LOG);
-			}
-*/
-
 			memset(dest2, '\0', sizeof(dest2));
 			utf8_to_ucs2(tech_pvt, dest, strlen(dest), dest2, sizeof(dest2));
 			sprintf(smscommand, "AT+CMGS=\"%s\"", dest2);

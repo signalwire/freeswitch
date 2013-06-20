@@ -1400,7 +1400,6 @@ static switch_status_t load_config(int reload_type)
 
 			}
 
-			/* BEGIN: Changes here */
 			if (reload_type == SOFT_RELOAD) {
 				char the_interface[256];
 				sprintf(the_interface, "#%s", name);
@@ -1409,7 +1408,6 @@ static switch_status_t load_config(int reload_type)
 					continue;
 				}
 			}
-			/* END: Changes here */
 
 			if (!id) {
 				ERRORA("interface missing REQUIRED param 'id'\n", GSMOPEN_P_LOG);
