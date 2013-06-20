@@ -3045,10 +3045,6 @@ int alarm_event(private_t *tech_pvt, int alarm_code, const char *alarm_message)
 int sms_incoming(private_t *tech_pvt)
 {
 	switch_event_t *event;
-#ifdef NOTDEF
-	switch_core_session_t *session = NULL;
-	int event_sent_to_esl = 0;
-#endif
 
 	if (!tech_pvt) {
 		return -1;
@@ -3056,78 +3052,6 @@ int sms_incoming(private_t *tech_pvt)
 	//DEBUGA_GSMOPEN("received SMS on interface %s: %s\n", GSMOPEN_P_LOG, tech_pvt->name, tech_pvt->sms_message);
 	NOTICA("received SMS on interface %s: DATE=%s, SENDER=%s, BODY=|%s|\n", GSMOPEN_P_LOG, tech_pvt->name, tech_pvt->sms_date, tech_pvt->sms_sender,
 					tech_pvt->sms_body);
-#ifdef NOTDEF
-	if (!zstr(tech_pvt->session_uuid_str)) {
-		session = switch_core_session_locate(tech_pvt->session_uuid_str);
-	}
-	if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", GSMOPEN_CHAT_PROTO);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
-		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->chatmessages[which].from_dispname);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", tech_pvt->sms_sender);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "date", tech_pvt->sms_date);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "datacodingscheme", tech_pvt->sms_datacodingscheme);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "servicecentreaddress", tech_pvt->sms_servicecentreaddress);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "messagetype", "%d", tech_pvt->sms_messagetype);
-		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "chatname", tech_pvt->chatmessages[which].chatname);
-		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "id", tech_pvt->chatmessages[which].id);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", tech_pvt->name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_proto", GSMOPEN_CHAT_PROTO);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_user", tech_pvt->sms_sender);
-		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_host", "from_host");
-		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_full", "from_full");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_user", tech_pvt->name);
-		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_host", "to_host");
-		switch_event_add_body(event, "%s\n", tech_pvt->sms_body);
-		if (session) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "during-call", "true");
-			if (switch_core_session_queue_event(session, &event) != SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
-				switch_event_fire(&event);
-			}
-		} else {				//no session
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "during-call", "false");
-			switch_event_fire(&event);
-			event_sent_to_esl = 1;
-		}
-
-	} else {
-		ERRORA("cannot create event on interface %s. WHY?????\n", GSMOPEN_P_LOG, tech_pvt->name);
-	}
-
-	if (!event_sent_to_esl) {
-
-		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", GSMOPEN_CHAT_PROTO);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
-			//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->chatmessages[which].from_dispname);
-			//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", tech_pvt->chatmessages[which].from_handle);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", tech_pvt->sms_sender);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "date", tech_pvt->sms_date);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "datacodingscheme", tech_pvt->sms_datacodingscheme);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "servicecentreaddress", tech_pvt->sms_servicecentreaddress);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "messagetype", "%d", tech_pvt->sms_messagetype);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
-			//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "chatname", tech_pvt->chatmessages[which].chatname);
-			//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "id", tech_pvt->chatmessages[which].id);
-			switch_event_add_body(event, "%s\n", tech_pvt->sms_body);
-			if (session) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "during-call", "true");
-			} else {			//no session
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "during-call", "false");
-			}
-			switch_event_fire(&event);
-		} else {
-			ERRORA("cannot create event on interface %s. WHY?????\n", GSMOPEN_P_LOG, tech_pvt->name);
-		}
-	}
-
-	if (session) {
-		switch_core_session_rwunlock(session);
-	}
-#endif //NOTDEF
 	/* mod_sms begin */
 	if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", GSMOPEN_CHAT_PROTO);
@@ -3169,101 +3093,6 @@ int sms_incoming(private_t *tech_pvt)
 	//memset(tech_pvt->sms_message, '\0', sizeof(tech_pvt->sms_message));
 	return 0;
 }
-
-#ifdef NOTDEF
-SWITCH_STANDARD_API(gsmopen_chat_function)
-{
-	char *mycmd = NULL, *argv[10] = { 0 };
-	int argc = 0;
-	private_t *tech_pvt = NULL;
-	//int tried =0;
-	int i;
-	int found = 0;
-	//char skype_msg[1024];
-
-	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
-		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-	}
-
-	if (!argc) {
-		stream->write_function(stream, "ERROR, usage: %s", GSMOPEN_CHAT_SYNTAX);
-		goto end;
-	}
-
-	if (argc < 3) {
-		stream->write_function(stream, "ERROR, usage: %s", GSMOPEN_CHAT_SYNTAX);
-		goto end;
-	}
-
-	if (argv[0]) {
-		for (i = 0; !found && i < GSMOPEN_MAX_INTERFACES; i++) {
-			/* we've been asked for a normal interface name, or we have not found idle interfaces to serve as the "ANY" interface */
-			if (strlen(globals.GSMOPEN_INTERFACES[i].name)
-				&& (strncmp(globals.GSMOPEN_INTERFACES[i].name, argv[0], strlen(argv[0])) == 0)) {
-				tech_pvt = &globals.GSMOPEN_INTERFACES[i];
-				stream->write_function(stream, "Using interface: globals.GSMOPEN_INTERFACES[%d].name=|||%s|||\n", i, globals.GSMOPEN_INTERFACES[i].name);
-				found = 1;
-				break;
-			}
-
-		}
-		if (!found) {
-			stream->write_function(stream, "ERROR: A GSMopen interface with name='%s' was not found\n", argv[0]);
-			goto end;
-		} else {
-
-			//chat_send(const char *proto, const char *from, const char *to, const char *subject, const char *body, const char *type, const char *hint);
-			//chat_send(p*roto, const char *from, const char *to, const char *subject, const char *body, const char *type, const char *hint);
-			//chat_send(GSMOPEN_CHAT_PROTO, tech_pvt->skype_user, argv[1], "SIMPLE MESSAGE", switch_str_nil((char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]), NULL, hint);
-
-			NOTICA("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=NULL, hint=%s)\n", GSMOPEN_P_LOG, GSMOPEN_CHAT_PROTO,
-				   tech_pvt->skype_user, argv[1], "SIMPLE MESSAGE", switch_str_nil((char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]),
-				   tech_pvt->name);
-
-			chat_send(GSMOPEN_CHAT_PROTO, tech_pvt->skype_user, argv[1], "SIMPLE MESSAGE",
-					  switch_str_nil((char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]), NULL, tech_pvt->name);
-
-			//NOTICA("TEXT is: %s\n", GSMOPEN_P_LOG, (char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1] );
-			//snprintf(skype_msg, sizeof(skype_msg), "CHAT CREATE %s", argv[1]);
-			//gsmopen_signaling_write(tech_pvt, skype_msg);
-			//switch_sleep(100);
-		}
-	} else {
-		stream->write_function(stream, "ERROR, usage: %s", GSMOPEN_CHAT_SYNTAX);
-		goto end;
-	}
-
-#ifdef NOTDEF
-
-	found = 0;
-
-	while (!found) {
-		for (i = 0; i < MAX_CHATS; i++) {
-			if (!strcmp(tech_pvt->chats[i].dialog_partner, argv[1])) {
-				snprintf(skype_msg, sizeof(skype_msg), "CHATMESSAGE %s %s", tech_pvt->chats[i].chatname,
-						 (char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]);
-				gsmopen_signaling_write(tech_pvt, skype_msg);
-				found = 1;
-				break;
-			}
-		}
-		if (found) {
-			break;
-		}
-		if (tried > 1000) {
-			stream->write_function(stream, "ERROR: no chat with dialog_partner='%s' was found\n", argv[1]);
-			break;
-		}
-		switch_sleep(1000);
-	}
-#endif //NOTDEF
-
-  end:
-	switch_safe_free(mycmd);
-
-	return SWITCH_STATUS_SUCCESS;
-}
-#endif // NOTDEF
 
 /* For Emacs:
  * Local Variables:

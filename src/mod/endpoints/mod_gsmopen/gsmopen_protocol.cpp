@@ -470,30 +470,6 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 	}
 	tech_pvt->sms_pdu_not_supported = 0;
 	tech_pvt->no_ucs2 = 1;
-#ifdef NOTDEF					//GSMLIB? XXX
-	if (tech_pvt->no_ucs2) {
-		res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSCS=\"GSM\"");
-		if (res) {
-			WARNINGA("AT+CSCS=\"GSM\" (set TE messages to GSM)  didn't get OK from the phone\n", GSMOPEN_P_LOG);
-		}
-		//res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSMP=17,167,0,16"); //"flash", class 0  sms 7 bit
-		res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSMP=17,167,0,0");	//normal, 7 bit message
-		if (res) {
-			WARNINGA("AT+CSMP didn't get OK from the phone, continuing\n", GSMOPEN_P_LOG);
-		}
-	}
-#endif // NOTDEF                 //GSMLIB? XXX
-
-#ifdef NOTDEF					//GSMLIB? XXX
-
-	else {
-		//res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSMP=17,167,0,20"); //"flash", class 0 sms 16 bit unicode
-		res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSMP=17,167,0,8");	//unicode, 16 bit message
-		if (res) {
-			WARNINGA("AT+CSMP didn't get OK from the phone, continuing\n", GSMOPEN_P_LOG);
-		}
-	}
-#endif // NOTDEF
 
 	/* is the unsolicited reporting of mobile equipment event supported? */
 	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CMER=?");
