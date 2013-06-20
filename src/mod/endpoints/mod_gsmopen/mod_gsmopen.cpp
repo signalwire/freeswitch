@@ -86,7 +86,7 @@ SWITCH_MODULE_DEFINITION(mod_gsmopen, mod_gsmopen_load, mod_gsmopen_shutdown, NU
 SWITCH_END_EXTERN_C
 #define GSMOPEN_CHAT_PROTO "sms"
 #if 1
-					  SWITCH_STANDARD_API(gsm_function);
+SWITCH_STANDARD_API(gsm_function);
 /* BEGIN: Changes here */
 #define GSM_SYNTAX "list [full] || console || AT_command || remove < interface_name | interface_id > || reload"
 /* END: Changes heres */
@@ -391,7 +391,7 @@ static switch_status_t remove_interface(char *the_interface)
 		goto end;
 	}
 
-		LOKKA(tech_pvt->controldev_lock);
+	LOKKA(tech_pvt->controldev_lock);
 
 	globals.GSMOPEN_INTERFACES[interface_id].running = 0;
 
@@ -473,7 +473,7 @@ static switch_status_t remove_interface(char *the_interface)
 	close(tech_pvt->GSMopenHandles.fdesc[1]);
 #endif /* WIN32 */
 
-		UNLOCKA(tech_pvt->controldev_lock);
+	UNLOCKA(tech_pvt->controldev_lock);
 	switch_mutex_lock(globals.mutex);
 	if (globals.gsm_console == &globals.GSMOPEN_INTERFACES[interface_id]) {
 		DEBUGA_GSMOPEN("interface '%s' no more console\n", GSMOPEN_P_LOG, the_interface);
@@ -496,8 +496,8 @@ static switch_status_t remove_interface(char *the_interface)
 
 /* END: Changes here */
 
-/* 
-   State methods they get called when the state changes to the specific state 
+/*
+   State methods that get called when the state changes to the specific state
    returning SWITCH_STATUS_SUCCESS tells the core to execute the standard state method next
    so if you fully implement the state you can return SWITCH_STATUS_FALSE to skip it.
 */
@@ -508,6 +508,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
+
+	memset(tech_pvt->buffer2, 0, sizeof(tech_pvt->buffer2));
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -559,6 +561,7 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 		if (tech_pvt->phone_callflow == CALLFLOW_STATUS_FINISHED) {
 			tech_pvt->phone_callflow = CALLFLOW_CALL_IDLE;
 		}
+		memset(tech_pvt->buffer2, 0, sizeof(tech_pvt->buffer2));
 		switch_core_session_set_private(session, NULL);
 	} else {
 		DEBUGA_GSMOPEN("!!!!!!NO tech_pvt!!!! CHANNEL DESTROY %s\n", GSMOPEN_P_LOG, switch_core_session_get_uuid(session));
@@ -689,7 +692,9 @@ static switch_status_t channel_on_consume_media(switch_core_session_t *session)
 
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 
-	DEBUGA_GSMOPEN("%s CHANNEL CONSUME_MEDIA\n", GSMOPEN_P_LOG, tech_pvt->name);
+	if (tech_pvt) {
+		DEBUGA_GSMOPEN("%s CHANNEL CONSUME_MEDIA\n", GSMOPEN_P_LOG, tech_pvt->name);
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -697,7 +702,9 @@ static switch_status_t channel_on_exchange_media(switch_core_session_t *session)
 {
 	private_t *tech_pvt = NULL;
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
-	DEBUGA_GSMOPEN("%s CHANNEL EXCHANGE_MEDIA\n", GSMOPEN_P_LOG, tech_pvt->name);
+	if (tech_pvt) {
+		DEBUGA_GSMOPEN("%s CHANNEL EXCHANGE_MEDIA\n", GSMOPEN_P_LOG, tech_pvt->name);
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -705,7 +712,9 @@ static switch_status_t channel_on_soft_execute(switch_core_session_t *session)
 {
 	private_t *tech_pvt = NULL;
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
-	DEBUGA_GSMOPEN("%s CHANNEL SOFT_EXECUTE\n", GSMOPEN_P_LOG, tech_pvt->name);
+	if (tech_pvt) {
+		DEBUGA_GSMOPEN("%s CHANNEL SOFT_EXECUTE\n", GSMOPEN_P_LOG, tech_pvt->name);
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -729,7 +738,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	switch_byte_t *data;
 
 	int samples;
-	int samples2;
 	char digit_str[256];
 	char buffer2[640];
 
@@ -757,6 +765,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	if (tech_pvt->no_sound) {
 		goto cng;
 	}
+	memset(buffer2, 0, sizeof(buffer2));
 	samples = tech_pvt->serialPort_serial_audio->Read(buffer2, 640);
 
 	if (samples >= 320) {
@@ -778,6 +787,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			tech_pvt->buffer2_full = 0;
 			samples = 320;
 			DEBUGA_GSMOPEN("samples=%d FROM BUFFER\n", GSMOPEN_P_LOG, samples);
+			memset(tech_pvt->buffer2, 0, sizeof(tech_pvt->buffer2));
 		}
 
 	}
@@ -793,6 +803,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	switch_mutex_unlock(tech_pvt->flag_mutex);
 
 	if (samples != 320) {
+		memset(tech_pvt->buffer2, 0, sizeof(tech_pvt->buffer2));
 		if (samples != 0) {
 			DEBUGA_GSMOPEN("samples=%d, goto cng\n", GSMOPEN_P_LOG, samples);
 		}
@@ -809,7 +820,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		switch_time_t new_dtmf_timestamp = switch_time_now();
 		if ((new_dtmf_timestamp - tech_pvt->old_dtmf_timestamp) > 350000) {	//FIXME: make it configurable
 			char *p = digit_str;
-			switch_channel_t *channel = switch_core_session_get_channel(session);
 
 			while (p && *p) {
 				switch_dtmf_t dtmf = { 0 };
@@ -907,7 +917,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		sent = tech_pvt->serialPort_serial_audio->Write((char *) frame->data, (int) (frame->datalen));
 
 		if (sent && sent != frame->datalen && sent != -1) {
-			DEBUGA_GSMOPEN("sent %d\n", GSMOPEN_P_LOG, sent);
+			DEBUGA_GSMOPEN("sent %u\n", GSMOPEN_P_LOG, sent);
 		}
 	}
 	return SWITCH_STATUS_SUCCESS;
@@ -1056,7 +1066,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	private_t *tech_pvt = NULL;
 	int result;
 
-		if ((*new_session = switch_core_session_request_uuid(gsmopen_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool, switch_event_get_header(var_event, "origination_uuid"))) != 0) {
+	if ((*new_session = switch_core_session_request_uuid(gsmopen_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, flags, pool, switch_event_get_header(var_event, "origination_uuid"))) != 0) {
 
 		switch_channel_t *channel = NULL;
 		switch_caller_profile_t *caller_profile;
@@ -1198,12 +1208,12 @@ static switch_status_t load_config(int reload_type)
 	private_t *tech_pvt = NULL;
 
 #ifdef WIN32
-	DEBUGA_GSMOPEN("Windows CODEPAGE Input =%d\n", GSMOPEN_P_LOG, GetConsoleCP());
+	DEBUGA_GSMOPEN("Windows CODEPAGE Input =%u\n", GSMOPEN_P_LOG, GetConsoleCP());
 	SetConsoleCP(65001);
-	DEBUGA_GSMOPEN("Windows CODEPAGE Input =%d\n", GSMOPEN_P_LOG, GetConsoleCP());
-	DEBUGA_GSMOPEN("Windows CODEPAGE Output =%d\n", GSMOPEN_P_LOG, GetConsoleOutputCP());
+	DEBUGA_GSMOPEN("Windows CODEPAGE Input =%u\n", GSMOPEN_P_LOG, GetConsoleCP());
+	DEBUGA_GSMOPEN("Windows CODEPAGE Output =%u\n", GSMOPEN_P_LOG, GetConsoleOutputCP());
 	SetConsoleOutputCP(65001);
-	DEBUGA_GSMOPEN("Windows CODEPAGE Output =%d\n", GSMOPEN_P_LOG, GetConsoleOutputCP());
+	DEBUGA_GSMOPEN("Windows CODEPAGE Output =%u\n", GSMOPEN_P_LOG, GetConsoleOutputCP());
 	//let's hope to have unicode in console now. You need to use Lucida Console or, much better, Courier New font for the command prompt to show unicode
 #endif // WIN32
 	NOTICA("GSMOPEN Charset Output Test 0 %s\n", GSMOPEN_P_LOG, "èéòàù");
@@ -1664,7 +1674,7 @@ static switch_status_t load_config(int reload_type)
 				globals.GSMOPEN_INTERFACES[interface_id].controldevprotocol = controldevprotocol;	//FIXME
 				globals.GSMOPEN_INTERFACES[interface_id].running = running;	//FIXME
 
-				WARNINGA("STARTING interface_id=%d\n", GSMOPEN_P_LOG, interface_id);
+				WARNINGA("STARTING interface_id=%u\n", GSMOPEN_P_LOG, interface_id);
 				DEBUGA_GSMOPEN("id=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].id);
 				DEBUGA_GSMOPEN("name=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].name);
 				DEBUGA_GSMOPEN("hold-music=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].hold_music);
@@ -1681,8 +1691,7 @@ static switch_status_t load_config(int reload_type)
 					globals.GSMOPEN_INTERFACES[interface_id].controldevfd =
 						gsmopen_serial_init(&globals.GSMOPEN_INTERFACES[interface_id], globals.GSMOPEN_INTERFACES[interface_id].controldevice_speed);
 					if (globals.GSMOPEN_INTERFACES[interface_id].controldevfd == -1) {
-						ERRORA("gsmopen_serial_init failed\n", GSMOPEN_P_LOG);
-						ERRORA("STARTING interface_id=%d FAILED\n", GSMOPEN_P_LOG, interface_id);
+						ERRORA("STARTING interface_id=%u FAILED: gsmopen_serial_init failed\n", GSMOPEN_P_LOG, interface_id);
 						//return SWITCH_STATUS_FALSE;
 						globals.GSMOPEN_INTERFACES[interface_id].running = 0;
 						alarm_event(&globals.GSMOPEN_INTERFACES[interface_id], ALARM_FAILED_INTERFACE, "gsmopen_serial_init failed");
@@ -1707,7 +1716,7 @@ static switch_status_t load_config(int reload_type)
 							}
 						}
 						if (res) {
-							ERRORA("STARTING interface_id=%d FAILED\n", GSMOPEN_P_LOG, interface_id);
+							ERRORA("STARTING interface_id=%u FAILED\n", GSMOPEN_P_LOG, interface_id);
 							//return SWITCH_STATUS_FALSE;
 							globals.GSMOPEN_INTERFACES[interface_id].running = 0;
 							alarm_event(&globals.GSMOPEN_INTERFACES[interface_id], ALARM_FAILED_INTERFACE, "gsmopen_serial_config failed");
@@ -1721,7 +1730,7 @@ static switch_status_t load_config(int reload_type)
 				if (globals.GSMOPEN_INTERFACES[interface_id].no_sound == 0) {
 					if (serial_audio_init(&globals.GSMOPEN_INTERFACES[interface_id])) {
 						ERRORA("serial_audio_init failed\n", GSMOPEN_P_LOG);
-						ERRORA("STARTING interface_id=%d FAILED\n", GSMOPEN_P_LOG, interface_id);
+						ERRORA("STARTING interface_id=%u FAILED\n", GSMOPEN_P_LOG, interface_id);
 						//return SWITCH_STATUS_FALSE;
 						globals.GSMOPEN_INTERFACES[interface_id].running = 0;
 						alarm_event(&globals.GSMOPEN_INTERFACES[interface_id], ALARM_FAILED_INTERFACE, "serial_audio_init failed");
@@ -1733,7 +1742,7 @@ static switch_status_t load_config(int reload_type)
 
 					if (serial_audio_shutdown(&globals.GSMOPEN_INTERFACES[interface_id])) {
 						ERRORA("serial_audio_shutdown failed\n", GSMOPEN_P_LOG);
-						ERRORA("STARTING interface_id=%d FAILED\n", GSMOPEN_P_LOG, interface_id);
+						ERRORA("STARTING interface_id=%u FAILED\n", GSMOPEN_P_LOG, interface_id);
 						//return SWITCH_STATUS_FALSE;
 						globals.GSMOPEN_INTERFACES[interface_id].running = 0;
 						alarm_event(&globals.GSMOPEN_INTERFACES[interface_id], ALARM_FAILED_INTERFACE, "serial_audio_shutdown failed");
@@ -1759,10 +1768,10 @@ static switch_status_t load_config(int reload_type)
 									 &globals.GSMOPEN_INTERFACES[interface_id], gsmopen_module_pool);
 
 				switch_sleep(100000);
-				WARNINGA("STARTED interface_id=%d\n", GSMOPEN_P_LOG, interface_id);
+				WARNINGA("STARTED interface_id=%u\n", GSMOPEN_P_LOG, interface_id);
 
 			} else {
-				ERRORA("interface id %d is higher than GSMOPEN_MAX_INTERFACES (%d)\n", GSMOPEN_P_LOG, interface_id, GSMOPEN_MAX_INTERFACES);
+				ERRORA("interface id %u is higher than GSMOPEN_MAX_INTERFACES (%d)\n", GSMOPEN_P_LOG, interface_id, GSMOPEN_MAX_INTERFACES);
 				alarm_event(&globals.GSMOPEN_INTERFACES[interface_id], ALARM_FAILED_INTERFACE, "interface id is higher than GSMOPEN_MAX_INTERFACES");
 				continue;
 			}
@@ -2020,11 +2029,15 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_gsmopen_shutdown)
 				DEBUGA_GSMOPEN("SHUTDOWN tech_pvt->controldevfd=%d\n", GSMOPEN_P_LOG, tech_pvt->controldevfd);
 			}
 
-			serial_audio_shutdown(tech_pvt);
+			if (!globals.GSMOPEN_INTERFACES[interface_id].no_sound) {
+				serial_audio_shutdown(tech_pvt);
+			}
 
-			int res;
-			res = tech_pvt->serialPort_serial_control->Close();
-			DEBUGA_GSMOPEN("serial_shutdown res=%d (controldevfd is %d)\n", GSMOPEN_P_LOG, res, tech_pvt->controldevfd);
+			if (tech_pvt->serialPort_serial_control) {
+				int res;
+				res = tech_pvt->serialPort_serial_control->Close();
+				DEBUGA_GSMOPEN("serial_shutdown res=%d (controldevfd is %d)\n", GSMOPEN_P_LOG, res, tech_pvt->controldevfd);
+			}
 
 #ifndef WIN32
 			shutdown(tech_pvt->audiogsmopenpipe[0], 2);
@@ -2238,13 +2251,13 @@ private_t *find_available_gsmopen_interface_rr(private_t *tech_pvt_calling)
 {
 	private_t *tech_pvt = NULL;
 	int i;
-	//int num_interfaces = GSMOPEN_MAX_INTERFACES; 
+	//int num_interfaces = GSMOPEN_MAX_INTERFACES;
 	//int num_interfaces = globals.real_interfaces;
 
 	switch_mutex_lock(globals.mutex);
 
 	/* Fact is the real interface start from 1 */
-	//XXX no, is just a convention, but you can have it start from 0. I do not, for aestetic reasons :-)  
+	//XXX no, is just a convention, but you can have it start from 0. I do not, for aestetic reasons :-)
 	//if (globals.next_interface == 0) globals.next_interface = 1;
 
 	for (i = 0; i < GSMOPEN_MAX_INTERFACES; i++) {
@@ -2267,7 +2280,7 @@ private_t *find_available_gsmopen_interface_rr(private_t *tech_pvt_calling)
 				DEBUGA_GSMOPEN("returning as available gsmopen interface name: %s, state: %d callflow: %d\n", GSMOPEN_P_LOG, tech_pvt->name, gsmopen_state,
 							   tech_pvt->phone_callflow);
 				/*set to Dialing state to avoid other thread fint it, don't know if it is safe */
-				//XXX no, it's not safe 
+				//XXX no, it's not safe
 				if (tech_pvt_calling == NULL) {
 					tech_pvt->interface_state = GSMOPEN_STATE_SELECTED;
 				}
@@ -2475,9 +2488,9 @@ SWITCH_STANDARD_API(gsmopen_dump_function)
 		stream->write_function(stream, "ERROR, usage: %s", GSMOPEN_DUMP_SYNTAX);
 		goto end;
 	}
-	if (argc == 1) {
-		int i;
+	if (argc == 1 && argv[0]) {
 		int found = 0;
+		int i = 0;
 
 		for (i = 0; !found && i < GSMOPEN_MAX_INTERFACES; i++) {
 			/* we've been asked for a normal interface name, or we have not found idle interfaces to serve as the "ANY" interface */
@@ -2491,7 +2504,6 @@ SWITCH_STANDARD_API(gsmopen_dump_function)
 
 		}
 		if (!found && (strcmp("list", argv[0]) == 0)) {
-			int i;
 			stream->write_function(stream, "gsmopen_dump LIST\n\n");
 			for (i = 0; i < GSMOPEN_MAX_INTERFACES; i++) {
 				if (strlen(globals.GSMOPEN_INTERFACES[i].name)) {
@@ -2628,7 +2640,7 @@ SWITCH_STANDARD_API(gsmopen_boost_audio_function)
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (argc == 1 || argc == 3) {
+	if ((argc == 1 || argc == 3) && argv[0]) {
 		int i;
 		int found = 0;
 
@@ -2811,8 +2823,8 @@ void *gsmopen_do_gsmopenapi_thread_func(void *obj)
 	private_t *tech_pvt = (private_t *) obj;
 	time_t now_timestamp;
 
-	//if (gsmopen_present(GSMopenHandles)) 
-	while (running && tech_pvt->running) {
+	//if (gsmopen_present(GSMopenHandles))
+	while (running && tech_pvt && tech_pvt->running) {
 		int res;
 		//gsmopen_sleep(1000000); //1 sec
 		//DEBUGA_GSMOPEN("ciao!\n", GSMOPEN_P_LOG);
@@ -2933,6 +2945,9 @@ int dump_event_full(private_t *tech_pvt, int is_alarm, int alarm_code, const cha
 	switch_channel_t *channel = NULL;
 	switch_status_t status;
 
+	if (!tech_pvt) {
+		return -1;
+	}
 	session = switch_core_session_locate(tech_pvt->session_uuid_str);
 	if (session) {
 		channel = switch_core_session_get_channel(session);
@@ -3030,13 +3045,17 @@ int alarm_event(private_t *tech_pvt, int alarm_code, const char *alarm_message)
 int sms_incoming(private_t *tech_pvt)
 {
 	switch_event_t *event;
+#ifdef NOTDEF
 	switch_core_session_t *session = NULL;
 	int event_sent_to_esl = 0;
+#endif
 
+	if (!tech_pvt) {
+		return -1;
+	}
 	//DEBUGA_GSMOPEN("received SMS on interface %s: %s\n", GSMOPEN_P_LOG, tech_pvt->name, tech_pvt->sms_message);
 	DEBUGA_GSMOPEN("received SMS on interface %s: DATE=%s, SENDER=%s, BODY=%s|\n", GSMOPEN_P_LOG, tech_pvt->name, tech_pvt->sms_date, tech_pvt->sms_sender,
-				   tech_pvt->sms_body);
-
+					tech_pvt->sms_body);
 #ifdef NOTDEF
 	if (!zstr(tech_pvt->session_uuid_str)) {
 		session = switch_core_session_locate(tech_pvt->session_uuid_str);
