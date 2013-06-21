@@ -3612,6 +3612,19 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 		switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 	}
 
+
+	if (switch_core_session_in_thread(channel->session)) {
+		const char *delay;
+
+		if ((delay = switch_channel_get_variable(channel, "answer_delay"))) {
+			long msec = atol(delay);
+			
+			if (msec) {
+				switch_ivr_sleep(channel->session, msec, SWITCH_TRUE, NULL);
+			}
+		}
+	}
+
 	return status;
 }
 
