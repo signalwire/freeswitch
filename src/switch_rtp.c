@@ -876,7 +876,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		if (!zstr(username)) {
 			if (!strcmp(username, ice->user_ice)) {
 				ok = 1;
-			} else if(!strcmp(username, rtp_session->rtcp_ice.user_ice)) {
+			} else if(!zstr(rtp_session->rtcp_ice.user_ice) && !strcmp(username, rtp_session->rtcp_ice.user_ice)) {
 				ice = &rtp_session->rtcp_ice;
 				ok = 1;
 			}
@@ -891,7 +891,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			char *host = NULL;
 
 			ice->missed_count++;
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_CRIT, "missed %d\n", ice->missed_count);
+			//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_CRIT, "missed %d\n", ice->missed_count);
 
 			if (elapsed > 20000 && pri) {
 				int i, j;
@@ -971,6 +971,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 	if (ice->missed_count > 5) {
 		ice->rready = 0;
+		ok = 1;
 	}
 
 	if (ok) {

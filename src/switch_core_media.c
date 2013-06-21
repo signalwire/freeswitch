@@ -1934,7 +1934,7 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 	sdp_attribute_t *attr;
 	int i = 0, got_rtcp_mux = 0;
 
-	if (engine->ice_in.chosen[0] && engine->ice_in.chosen[1]) {
+	if (engine->ice_in.chosen[0] && engine->ice_in.chosen[1] && !switch_channel_test_flag(smh->session->channel, CF_REINVITE)) {
 		return;
 	}
 
@@ -2175,6 +2175,62 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 		engine->rtcp_mux = -1;
 	}
 
+
+	
+	if (switch_channel_test_flag(smh->session->channel, CF_REINVITE)) {
+		if (switch_rtp_ready(engine->rtp_session) && engine->ice_in.cands[engine->ice_in.chosen[0]][0].ready) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_INFO, "RE-Activating %s ICE\n", type2str(type));
+
+			switch_rtp_activate_ice(engine->rtp_session, 
+									engine->ice_in.ufrag,
+									engine->ice_out.ufrag,
+									engine->ice_out.pwd,
+									engine->ice_in.pwd,
+									IPR_RTP,
+#ifdef GOOGLE_ICE
+									ICE_GOOGLE_JINGLE,
+									NULL
+#else
+									switch_channel_direction(smh->session->channel) == 
+									SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
+									&engine->ice_in
+#endif
+									);
+
+		
+			
+		}
+		
+
+
+		if (engine->ice_in.cands[engine->ice_in.chosen[1]][1].ready) {
+			if (!strcmp(engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_addr, engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_addr)
+				&& engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_port == engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_port) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_INFO, "Skipping %s RTCP ICE (Same as RTP)\n", type2str(type));
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_INFO, "Activating %s RTCP ICE\n", type2str(type));
+				
+				switch_rtp_activate_ice(engine->rtp_session, 
+										engine->ice_in.ufrag,
+										engine->ice_out.ufrag,
+										engine->ice_out.pwd,
+										engine->ice_in.pwd,
+										IPR_RTCP,
+#ifdef GOOGLE_ICE
+										ICE_GOOGLE_JINGLE,
+										NULL
+#else
+										switch_channel_direction(smh->session->channel) == 
+										SWITCH_CALL_DIRECTION_OUTBOUND ? ICE_VANILLA : (ICE_VANILLA | ICE_CONTROLLED),
+										&engine->ice_in
+#endif
+										);
+			}
+			
+		}
+		
+	}
+	
 }
 #ifdef _MSC_VER
 #pragma warning(pop)
