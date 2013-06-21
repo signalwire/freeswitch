@@ -1793,7 +1793,7 @@ SWITCH_STANDARD_API(regex_function)
 	switch_regex_t *re = NULL;
 	int ovector[30];
 	int argc;
-	char *mydata = NULL, *argv[3];
+	char *mydata = NULL, *argv[4];
 	size_t len = 0;
 	char *substituted = NULL;
 	int proceed = 0;
@@ -1834,6 +1834,12 @@ SWITCH_STANDARD_API(regex_function)
 	proceed = switch_regex_perform(argv[0], argv[1], &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
 
 	if (argc > 2) {
+		char *flags = "";
+
+		if (argc > 3) {
+			flags = argv[3];
+		}
+
 		if (proceed) {
 			len = (strlen(argv[0]) + strlen(argv[2]) + 10) * proceed;
 			substituted = malloc(len);
@@ -1845,7 +1851,13 @@ SWITCH_STANDARD_API(regex_function)
 			stream->write_function(stream, "%s", substituted);
 			free(substituted);
 		} else {
-			stream->write_function(stream, "%s", argv[0]);
+			if (strchr(flags, 'n')) {
+				stream->write_function(stream, "%s", "");
+			} else if (strchr(flags, 'b')) {
+				stream->write_function(stream, "%s", "false");
+			} else {
+				stream->write_function(stream, "%s", argv[0]);
+			}
 		}
 	} else {
 		stream->write_function(stream, proceed ? "true" : "false");
@@ -6016,7 +6028,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "originate", "Originate a call", originate_function, ORIGINATE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "pause", "Pause media on a channel", pause_function, PAUSE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "quote_shell_arg", "Quote/escape a string for use on shell command line", quote_shell_arg_function, "<data>");
-	SWITCH_ADD_API(commands_api_interface, "regex", "Evaluate a regex", regex_function, "<data>|<pattern>[|<subst string>]");
+	SWITCH_ADD_API(commands_api_interface, "regex", "Evaluate a regex", regex_function, "<data>|<pattern>[|<subst string>][n|b]");
 	SWITCH_ADD_API(commands_api_interface, "reloadacl", "Reload XML", reload_acl_function, "");
 	SWITCH_ADD_API(commands_api_interface, "reload", "Reload module", reload_function, UNLOAD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "reloadxml", "Reload XML", reload_xml_function, "");
