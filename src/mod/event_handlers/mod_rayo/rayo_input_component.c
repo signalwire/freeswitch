@@ -208,7 +208,14 @@ static switch_status_t input_component_on_dtmf(switch_core_session_t *session, c
 		enum srgs_match_type match;
 
 		switch_mutex_lock(handler->mutex);
+
 		component = handler->component;
+		/* additional paranoia check */
+		if (!component) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Received DTMF without active input component\n");
+			switch_mutex_unlock(handler->mutex);
+			return SWITCH_STATUS_SUCCESS;
+		}
 
 		is_term_digit = digit_mask_test(component->term_digit_mask, dtmf->digit);
 
@@ -280,6 +287,7 @@ static switch_bool_t input_component_bug_callback(switch_media_bug_t *bug, void 
 
 	switch(type) {
 		case SWITCH_ABC_TYPE_INIT: {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Adding DTMF callback\n");
 			switch_core_event_hook_add_recv_dtmf(session, input_component_on_dtmf);
 			break;
 		}
@@ -291,6 +299,7 @@ static switch_bool_t input_component_bug_callback(switch_media_bug_t *bug, void 
 				if (component->num_digits && component->inter_digit_timeout > 0 && elapsed_ms > component->inter_digit_timeout) {
 					enum srgs_match_type match;
 					handler->component = NULL;
+					switch_core_media_bug_set_flag(bug, SMBF_PRUNE);
 
 					/* we got some input, check for match */
 					match = srgs_grammar_match(component->grammar, component->digits);
@@ -306,6 +315,7 @@ static switch_bool_t input_component_bug_callback(switch_media_bug_t *bug, void 
 					}
 				} else if (!component->num_digits && component->initial_timeout > 0 && elapsed_ms > component->initial_timeout) {
 					handler->component = NULL;
+					switch_core_media_bug_set_flag(bug, SMBF_PRUNE);
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "initial-timeout\n");
 					rayo_component_send_complete(RAYO_COMPONENT(component), INPUT_NOINPUT);
 				}
@@ -324,6 +334,7 @@ static switch_bool_t input_component_bug_callback(switch_media_bug_t *bug, void 
 					rayo_component_send_complete(RAYO_COMPONENT(component), COMPONENT_COMPLETE_HANGUP);
 				}
 			}
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Removing DTMF callback\n");
 			switch_core_event_hook_remove_recv_dtmf(session, input_component_on_dtmf);
 			break;
 		default:
