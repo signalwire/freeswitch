@@ -1090,12 +1090,19 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 	case SWITCH_ABC_TYPE_TAP_NATIVE_READ:
 		{
 			rh->rready = 1;
+
+			nframe = switch_core_media_bug_get_native_read_frame(bug);
+			len = nframe->datalen;
 			
-			if (rh->rready && rh->wready) {
+			if (!rh->wready) {
+				unsigned char fill_data[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
+				switch_size_t fill_len = len;
+
+				switch_core_gen_encoded_silence(fill_data, &rh->read_impl, len);
+				switch_core_file_write(&rh->out_fh, fill_data, &fill_len);
+			} else {
 				switch_time_t now = switch_micro_time_now();
 				switch_time_t diff;
-				nframe = switch_core_media_bug_get_native_read_frame(bug);
-				len = nframe->datalen;
 				
 				if (rh->last_read_time && rh->last_read_time < now) {
 					diff = ((now - rh->last_read_time) + 3000 ) / rh->read_impl.microseconds_per_packet;
@@ -1111,17 +1118,23 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 						}
 					}
 				}
-				
-				switch_core_file_write(&rh->in_fh, mask ? null_data : nframe->data, &len);
-				rh->last_read_time = now;
 			}
+
+			switch_core_file_write(&rh->in_fh, mask ? null_data : nframe->data, &len);
+			rh->last_read_time = now;
+			
 		}
 		break;
 	case SWITCH_ABC_TYPE_TAP_NATIVE_WRITE:
 		{
 			rh->wready = 1;
 			
-			if (rh->rready && rh->wready) {
+			if (!rh->rready) {
+				unsigned char fill_data[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
+				switch_size_t fill_len = len;
+				switch_core_gen_encoded_silence(fill_data, &rh->read_impl, len);
+				switch_core_file_write(&rh->in_fh, fill_data, &fill_len);
+			} else {
 				switch_time_t now = switch_micro_time_now();
 				switch_time_t diff;
 
@@ -1143,10 +1156,11 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 						}
 					}
 				}
-			
-				switch_core_file_write(&rh->out_fh, mask ? null_data : nframe->data, &len);
-				rh->last_write_time = now;
 			}
+
+			switch_core_file_write(&rh->out_fh, mask ? null_data : nframe->data, &len);
+			rh->last_write_time = now;
+			
 		}
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:

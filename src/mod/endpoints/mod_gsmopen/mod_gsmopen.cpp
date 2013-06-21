@@ -33,66 +33,15 @@
 
 #include "gsmopen.h"
 
-#if 0
-#ifdef WIN32
-/***************/
-// from http://www.openasthra.com/c-tidbits/gettimeofday-function-for-windows/
-
-#include <time.h>
-
-#if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
-#define DELTA_EPOCH_IN_MICROSECS  11644473600000000Ui64
-#else /*  */
-#define DELTA_EPOCH_IN_MICROSECS  11644473600000000ULL
-#endif /*  */
-struct sk_timezone {
-	int tz_minuteswest;			/* minutes W of Greenwich */
-	int tz_dsttime;				/* type of dst correction */
-};
-int gettimeofday(struct timeval *tv, struct sk_timezone *tz)
-{
-	FILETIME ft;
-	unsigned __int64 tmpres = 0;
-	static int tzflag;
-	if (NULL != tv) {
-		GetSystemTimeAsFileTime(&ft);
-		tmpres |= ft.dwHighDateTime;
-		tmpres <<= 32;
-		tmpres |= ft.dwLowDateTime;
-
-		/*converting file time to unix epoch */
-		tmpres /= 10;			/*convert into microseconds */
-		tmpres -= DELTA_EPOCH_IN_MICROSECS;
-		tv->tv_sec = (long) (tmpres / 1000000UL);
-		tv->tv_usec = (long) (tmpres % 1000000UL);
-	}
-	if (NULL != tz) {
-		if (!tzflag) {
-			_tzset();
-			tzflag++;
-		}
-		tz->tz_minuteswest = _timezone / 60;
-		tz->tz_dsttime = _daylight;
-	}
-	return 0;
-}
-
-/***************/
-#endif /* WIN32 */
-#endif //0
 SWITCH_BEGIN_EXTERN_C SWITCH_MODULE_LOAD_FUNCTION(mod_gsmopen_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_gsmopen_shutdown);
 SWITCH_MODULE_DEFINITION(mod_gsmopen, mod_gsmopen_load, mod_gsmopen_shutdown, NULL);
 SWITCH_END_EXTERN_C
 #define GSMOPEN_CHAT_PROTO "sms"
-#if 1
 SWITCH_STANDARD_API(gsm_function);
-/* BEGIN: Changes here */
 #define GSM_SYNTAX "list [full] || console || AT_command || remove < interface_name | interface_id > || reload"
-/* END: Changes heres */
 SWITCH_STANDARD_API(gsmopen_function);
 #define GSMOPEN_SYNTAX "interface_name AT_command"
-#endif //0
 
 SWITCH_STANDARD_API(gsmopen_boost_audio_function);
 #define GSMOPEN_BOOST_AUDIO_SYNTAX "interface_name [<play|capt> <in decibels: -40 ... 0 ... +40>]"
@@ -100,10 +49,8 @@ SWITCH_STANDARD_API(sendsms_function);
 #define SENDSMS_SYNTAX "gsmopen_sendsms interface_name destination_number SMS_text"
 SWITCH_STANDARD_API(gsmopen_dump_function);
 #define GSMOPEN_DUMP_SYNTAX "gsmopen_dump <interface_name|list>"
-/* BEGIN: Changes here */
 #define FULL_RELOAD 0
 #define SOFT_RELOAD 1
-/* END: Changes heres */
 
 const char *interface_status[] = {	/* should match GSMOPEN_STATE_xxx in gsmopen.h */
 	"IDLE",
@@ -181,15 +128,9 @@ int running = 0;
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_context, globals.context);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_destination, globals.destination);
-//SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string);
-//SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string);
 
-/* BEGIN: Changes here */
 static switch_status_t interface_exists(char *the_interface);
-#if 1
 static switch_status_t remove_interface(char *the_interface);
-#endif //0
-/* END: Changes here */
 
 static switch_status_t channel_on_init(switch_core_session_t *session);
 static switch_status_t channel_on_hangup(switch_core_session_t *session);
@@ -264,8 +205,6 @@ switch_status_t gsmopen_tech_init(private_t *tech_pvt, switch_core_session_t *se
 		ERRORA("gsmopen_codec FAILED\n", GSMOPEN_P_LOG);
 		return SWITCH_STATUS_FALSE;
 	}
-	//teletone_dtmf_detect_init(&tech_pvt->dtmf_detect, tech_pvt->read_codec.implementation->actual_samples_per_second);
-	//teletone_dtmf_detect_init(&tech_pvt->dtmf_detect, 8000);
 	dtmf_rx_init(&tech_pvt->dtmf_state, NULL, NULL);
 	dtmf_rx_parms(&tech_pvt->dtmf_state, 0, 10, 10, -99);
 
@@ -300,7 +239,6 @@ switch_status_t gsmopen_tech_init(private_t *tech_pvt, switch_core_session_t *se
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/* BEGIN: Changes here */
 static switch_status_t interface_exists(char *the_interface)
 {
 	int i;
@@ -338,7 +276,6 @@ static switch_status_t interface_exists(char *the_interface)
 	return SWITCH_STATUS_FALSE;
 }
 
-#if 1
 static switch_status_t remove_interface(char *the_interface)
 {
 	int x = 10;
@@ -353,10 +290,7 @@ static switch_status_t remove_interface(char *the_interface)
 	private_t *tech_pvt = NULL;
 	switch_status_t status;
 
-	//running = 0;
 
-	//XXX if (*the_interface == '#') {  /* remove by interface id or interface name */
-	//XXX the_interface++;
 	switch_assert(the_interface);
 	interface_id = atoi(the_interface);
 
@@ -372,14 +306,6 @@ static switch_status_t remove_interface(char *the_interface)
 			}
 		}
 	}
-	//XXX } //else {                    /* remove by gsmopen_user */
-	//for (interface_id = 0; interface_id < GSMOPEN_MAX_INTERFACES; interface_id++) {
-	//if (strcmp(globals.GSMOPEN_INTERFACES[interface_id].gsmopen_user, the_interface) == 0) {
-	//tech_pvt = &globals.GSMOPEN_INTERFACES[interface_id];
-	//break;
-	//}
-	//}
-	//}
 
 	if (!tech_pvt) {
 		DEBUGA_GSMOPEN("interface '%s' does not exist\n", GSMOPEN_P_LOG, the_interface);
@@ -396,38 +322,15 @@ static switch_status_t remove_interface(char *the_interface)
 	globals.GSMOPEN_INTERFACES[interface_id].running = 0;
 
 	if (globals.GSMOPEN_INTERFACES[interface_id].gsmopen_signaling_thread) {
-#if 1
 #ifdef WIN32
 		switch_file_write(tech_pvt->GSMopenHandles.fdesc[1], "sciutati", &howmany);	// let's the controldev_thread die
 #else /* WIN32 */
 		howmany = write(tech_pvt->GSMopenHandles.fdesc[1], "sciutati", howmany);
 #endif /* WIN32 */
-#endif //0
 		DEBUGA_GSMOPEN("HERE will shutdown gsmopen_signaling_thread of '%s'\n", GSMOPEN_P_LOG, the_interface);
 	}
 
 	if (globals.GSMOPEN_INTERFACES[interface_id].gsmopen_api_thread) {
-#if 0
-#ifdef WIN32
-		if (SendMessage(tech_pvt->GSMopenHandles.win32_hInit_MainWindowHandle, WM_DESTROY, 0, 0) == FALSE) {	// let's the gsmopen_api_thread_func die
-			DEBUGA_GSMOPEN("got FALSE here, thread probably was already dead. GetLastError returned: %d\n", GSMOPEN_P_LOG, GetLastError());
-			globals.GSMOPEN_INTERFACES[interface_id].gsmopen_api_thread = NULL;
-		}
-#else
-		XEvent e;
-		Atom atom1 = XInternAtom(tech_pvt->GSMopenHandles.disp, "GSMOPENCONTROLAPI_MESSAGE_BEGIN", False);
-		memset(&e, 0, sizeof(e));
-		e.xclient.type = ClientMessage;
-		e.xclient.message_type = atom1;	/*  leading message */
-		e.xclient.display = tech_pvt->GSMopenHandles.disp;
-		e.xclient.window = tech_pvt->GSMopenHandles.gsmopen_win;
-		e.xclient.format = 8;
-
-		XSendEvent(tech_pvt->GSMopenHandles.disp, tech_pvt->GSMopenHandles.win, False, 0, &e);
-		XSync(tech_pvt->GSMopenHandles.disp, False);
-#endif //WIN32
-#endif //0
-
 		DEBUGA_GSMOPEN("HERE will shutdown gsmopen_api_thread of '%s'\n", GSMOPEN_P_LOG, the_interface);
 	}
 
@@ -445,9 +348,7 @@ static switch_status_t remove_interface(char *the_interface)
 	}
 
 	fd = tech_pvt->controldevfd;
-	//DEBUGA_GSMOPEN("SHUTDOWN tech_pvt->controldevfd=%d\n", GSMOPEN_P_LOG, tech_pvt->controldevfd);
 	if (fd) {
-		//close(fd);
 		tech_pvt->controldevfd = -1;
 		DEBUGA_GSMOPEN("SHUTDOWN tech_pvt->controldevfd=%d\n", GSMOPEN_P_LOG, tech_pvt->controldevfd);
 	}
@@ -489,12 +390,8 @@ static switch_status_t remove_interface(char *the_interface)
 	globals.GSMOPEN_INTERFACES[interface_id].running = 1;
 
   end:
-	//running = 1;
 	return SWITCH_STATUS_SUCCESS;
 }
-#endif //0
-
-/* END: Changes here */
 
 /*
    State methods that get called when the state changes to the specific state
@@ -513,7 +410,6 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
-	//ERRORA("%s CHANNEL INIT\n", GSMOPEN_P_LOG, tech_pvt->name);
 	switch_mutex_lock(tech_pvt->flag_mutex);
 	switch_set_flag(tech_pvt, TFLAG_IO);
 	switch_mutex_unlock(tech_pvt->flag_mutex);
@@ -610,9 +506,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	}
 
 	tech_pvt->interface_state = GSMOPEN_STATE_IDLE;
-	//FIXME if (tech_pvt->phone_callflow == CALLFLOW_STATUS_FINISHED) {
 	tech_pvt->phone_callflow = CALLFLOW_CALL_IDLE;
-	//FIXME }
 	switch_mutex_unlock(globals.mutex);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -674,7 +568,6 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 		break;
 	case SWITCH_SIG_BREAK:
 		DEBUGA_GSMOPEN("%s CHANNEL got SWITCH_SIG_BREAK\n", GSMOPEN_P_LOG, switch_channel_get_name(channel));
-		//switch_set_flag(tech_pvt, TFLAG_BREAK);
 		switch_mutex_lock(tech_pvt->flag_mutex);
 		switch_set_flag(tech_pvt, TFLAG_BREAK);
 		switch_mutex_unlock(tech_pvt->flag_mutex);
@@ -861,7 +754,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 				switch_swap_linear((int16_t *) (*frame)->data, (int) (*frame)->datalen / 2);
 			}
 #endif
-			//DEBUGA_GSMOPEN("HERE\n", GSMOPEN_P_LOG);
 			return SWITCH_STATUS_SUCCESS;
 		}
 
@@ -911,7 +803,6 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	}
 #endif
 
-	//switch_core_timer_next(&tech_pvt->timer_write);
 	gsmopen_sound_boost(frame->data, frame->samples, tech_pvt->playback_boost);
 	if (!tech_pvt->no_sound) {
 		sent = tech_pvt->serialPort_serial_audio->Write((char *) frame->data, (int) (frame->datalen));
@@ -934,7 +825,6 @@ static switch_status_t channel_answer_channel(switch_core_session_t *session)
 	tech_pvt = (private_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
-	//ERRORA("%s CHANNEL INIT\n", GSMOPEN_P_LOG, tech_pvt->name);
 	switch_mutex_lock(tech_pvt->flag_mutex);
 	switch_set_flag(tech_pvt, TFLAG_IO);
 	switch_mutex_unlock(tech_pvt->flag_mutex);
@@ -1088,11 +978,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			switch_mutex_lock(globals.mutex);
 			if (strncmp("ANY", interface_name, strlen(interface_name)) == 0 || strncmp("RR", interface_name, strlen(interface_name)) == 0) {
 				/* we've been asked for the "ANY" interface, let's find the first idle interface */
-				//DEBUGA_GSMOPEN("Finding one available gsmopen interface\n", GSMOPEN_P_LOG);
-				//tech_pvt = find_available_gsmopen_interface(NULL);
-				//if (tech_pvt)
-				//found = 1;
-				//} else if (strncmp("RR", interface_name, strlen(interface_name)) == 0) {
 				/* Find the first idle interface using Round Robin */
 				DEBUGA_GSMOPEN("Finding one available gsmopen interface RR\n", GSMOPEN_P_LOG);
 				tech_pvt = find_available_gsmopen_interface_rr(NULL);
@@ -1135,7 +1020,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			DEBUGA_GSMOPEN("2 SESSION_DESTROY %s\n", GSMOPEN_P_LOG, switch_core_session_get_uuid(*new_session));
 			switch_core_session_destroy(new_session);
 			switch_mutex_unlock(globals.mutex);
-			//return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 			return SWITCH_CAUSE_NORMAL_CIRCUIT_CONGESTION;
 		}
 
@@ -1157,7 +1041,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			char name[128];
 
 			snprintf(name, sizeof(name), "gsmopen/%s", outbound_profile->destination_number);
-			//snprintf(name, sizeof(name), "gsmopen/%s", tech_pvt->name);
 			switch_channel_set_name(channel, name);
 			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 			switch_channel_set_caller_profile(channel, caller_profile);
@@ -1174,7 +1057,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		rdest = strchr(caller_profile->destination_number, '/');
 		*rdest++ = '\0';
 
-		//gsmopen_call(tech_pvt, rdest, 30);
 
 		switch_copy_string(tech_pvt->session_uuid_str, switch_core_session_get_uuid(*new_session), sizeof(tech_pvt->session_uuid_str));
 		caller_profile = tech_pvt->caller_profile;
@@ -1335,7 +1217,6 @@ static switch_status_t load_config(int reload_type)
 			const char *at_indicator_callsetupincoming_string = "CIEV: 6;1";
 			const char *at_indicator_callsetupoutgoing_string = "CIEV: 6;2";
 			const char *at_indicator_callsetupremoteringing_string = "CIEV: 6;3";
-			//const char *sms_receiving_program = "/usr/local/bin/ciapalo";
 			const char *at_early_audio = "0";
 			const char *at_after_preinit_pause = "500000";
 			const char *at_initial_pause = "500000";
@@ -1487,8 +1368,6 @@ static switch_status_t load_config(int reload_type)
 					at_indicator_callsetupoutgoing_string = val;
 				} else if (!strcasecmp(var, "at_indicator_callsetupremoteringing_string")) {
 					at_indicator_callsetupremoteringing_string = val;
-					//} else if (!strcasecmp(var, "sms_receiving_program")) {
-					//sms_receiving_program = val;
 				} else if (!strcasecmp(var, "portaudiocindex")) {
 					portaudiocindex = val;
 				} else if (!strcasecmp(var, "portaudiopindex")) {
@@ -1521,7 +1400,6 @@ static switch_status_t load_config(int reload_type)
 
 			}
 
-			/* BEGIN: Changes here */
 			if (reload_type == SOFT_RELOAD) {
 				char the_interface[256];
 				sprintf(the_interface, "#%s", name);
@@ -1530,7 +1408,6 @@ static switch_status_t load_config(int reload_type)
 					continue;
 				}
 			}
-			/* END: Changes here */
 
 			if (!id) {
 				ERRORA("interface missing REQUIRED param 'id'\n", GSMOPEN_P_LOG);
@@ -1659,7 +1536,6 @@ static switch_status_t load_config(int reload_type)
 				switch_set_string(globals.GSMOPEN_INTERFACES[interface_id].at_indicator_callsetupoutgoing_string, at_indicator_callsetupoutgoing_string);
 				switch_set_string(globals.GSMOPEN_INTERFACES[interface_id].at_indicator_callsetupremoteringing_string,
 								  at_indicator_callsetupremoteringing_string);
-				//switch_set_string(globals.GSMOPEN_INTERFACES[interface_id].sms_receiving_program, sms_receiving_program);
 				globals.GSMOPEN_INTERFACES[interface_id].at_early_audio = atoi(at_early_audio);
 				globals.GSMOPEN_INTERFACES[interface_id].at_after_preinit_pause = atoi(at_after_preinit_pause);
 				globals.GSMOPEN_INTERFACES[interface_id].at_initial_pause = atoi(at_initial_pause);
@@ -1692,7 +1568,6 @@ static switch_status_t load_config(int reload_type)
 						gsmopen_serial_init(&globals.GSMOPEN_INTERFACES[interface_id], globals.GSMOPEN_INTERFACES[interface_id].controldevice_speed);
 					if (globals.GSMOPEN_INTERFACES[interface_id].controldevfd == -1) {
 						ERRORA("STARTING interface_id=%u FAILED: gsmopen_serial_init failed\n", GSMOPEN_P_LOG, interface_id);
-						//return SWITCH_STATUS_FALSE;
 						globals.GSMOPEN_INTERFACES[interface_id].running = 0;
 						alarm_event(&globals.GSMOPEN_INTERFACES[interface_id], ALARM_FAILED_INTERFACE, "gsmopen_serial_init failed");
 						globals.GSMOPEN_INTERFACES[interface_id].active = 0;
@@ -1717,7 +1592,6 @@ static switch_status_t load_config(int reload_type)
 						}
 						if (res) {
 							ERRORA("STARTING interface_id=%u FAILED\n", GSMOPEN_P_LOG, interface_id);
-							//return SWITCH_STATUS_FALSE;
 							globals.GSMOPEN_INTERFACES[interface_id].running = 0;
 							alarm_event(&globals.GSMOPEN_INTERFACES[interface_id], ALARM_FAILED_INTERFACE, "gsmopen_serial_config failed");
 							globals.GSMOPEN_INTERFACES[interface_id].active = 0;
@@ -1731,7 +1605,6 @@ static switch_status_t load_config(int reload_type)
 					if (serial_audio_init(&globals.GSMOPEN_INTERFACES[interface_id])) {
 						ERRORA("serial_audio_init failed\n", GSMOPEN_P_LOG);
 						ERRORA("STARTING interface_id=%u FAILED\n", GSMOPEN_P_LOG, interface_id);
-						//return SWITCH_STATUS_FALSE;
 						globals.GSMOPEN_INTERFACES[interface_id].running = 0;
 						alarm_event(&globals.GSMOPEN_INTERFACES[interface_id], ALARM_FAILED_INTERFACE, "serial_audio_init failed");
 						globals.GSMOPEN_INTERFACES[interface_id].active = 0;
@@ -1743,7 +1616,6 @@ static switch_status_t load_config(int reload_type)
 					if (serial_audio_shutdown(&globals.GSMOPEN_INTERFACES[interface_id])) {
 						ERRORA("serial_audio_shutdown failed\n", GSMOPEN_P_LOG);
 						ERRORA("STARTING interface_id=%u FAILED\n", GSMOPEN_P_LOG, interface_id);
-						//return SWITCH_STATUS_FALSE;
 						globals.GSMOPEN_INTERFACES[interface_id].running = 0;
 						alarm_event(&globals.GSMOPEN_INTERFACES[interface_id], ALARM_FAILED_INTERFACE, "serial_audio_shutdown failed");
 						globals.GSMOPEN_INTERFACES[interface_id].active = 0;
@@ -1756,8 +1628,6 @@ static switch_status_t load_config(int reload_type)
 
 				globals.GSMOPEN_INTERFACES[interface_id].active = 1;
 
-				//gsmopen_store_boost((char *)"5", &globals.GSMOPEN_INTERFACES[interface_id].capture_boost);    //FIXME
-				//gsmopen_store_boost((char *)"10", &globals.GSMOPEN_INTERFACES[interface_id].playback_boost);  //FIXME
 				gsmopen_store_boost((char *) capture_boost, &globals.GSMOPEN_INTERFACES[interface_id].capture_boost);	//FIXME
 				gsmopen_store_boost((char *) playback_boost, &globals.GSMOPEN_INTERFACES[interface_id].playback_boost);	//FIXME
 
@@ -1804,7 +1674,6 @@ static switch_status_t load_config(int reload_type)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-//static switch_status_t chat_send(const char *proto, const char *from, const char *to, const char *subject, const char *body, const char *type, const char *hint)
 static switch_status_t chat_send(switch_event_t *message_event)
 {
 	char *user, *host, *f_user = NULL, *f_host = NULL, *f_resource = NULL;
@@ -1816,7 +1685,6 @@ static switch_status_t chat_send(switch_event_t *message_event)
 	const char *to;
 	const char *subject;
 	const char *body;
-	//const char *type;
 	const char *hint;
 
 	proto = switch_event_get_header(message_event, "proto");
@@ -1824,7 +1692,6 @@ static switch_status_t chat_send(switch_event_t *message_event)
 	to = switch_event_get_header(message_event, "to");
 	subject = switch_event_get_header(message_event, "subject");
 	body = switch_event_get_body(message_event);
-	//type = switch_event_get_header(message_event, "type");
 	hint = switch_event_get_header(message_event, "hint");
 
 	switch_assert(proto != NULL);
@@ -1876,19 +1743,7 @@ static switch_status_t chat_send(switch_event_t *message_event)
 					break;
 				}
 			}
-		}						/* FIXME add a tech_pvt member for the SIM telephone number //else {
-								   //we have no a predefined interface name to use (hint is NULL), so let's choose an interface from the username (from)
-								   for (i = 0; !found && i < GSMOPEN_MAX_INTERFACES; i++) {
-								   if (strlen(globals.GSMOPEN_INTERFACES[i].name)
-								   && (strncmp(globals.GSMOPEN_INTERFACES[i].skype_user, from, strlen(from)) == 0)) {
-								   tech_pvt = &globals.GSMOPEN_INTERFACES[i];
-								   DEBUGA_GSMOPEN("Using interface: globals.GSMOPEN_INTERFACES[%d].name=|||%s|||\n", GSMOPEN_P_LOG, i, globals.GSMOPEN_INTERFACES[i].name);
-								   found = 1;
-								   break;
-								   }
-								   }
-								   }
-								 */
+		}
 		if (!found) {
 			ERRORA("ERROR: A GSMopen interface with name='%s' or one with SIM_number='%s' was not found\n", GSMOPEN_P_LOG, hint ? hint : "NULL",
 				   from ? from : "NULL");
@@ -1959,10 +1814,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_gsmopen_load)
 
 	if (running) {
 
-#if 1
 		SWITCH_ADD_API(commands_api_interface, "gsm", "gsm console AT_command", gsm_function, GSM_SYNTAX);
 		SWITCH_ADD_API(commands_api_interface, "gsmopen", "gsmopen interface AT_command", gsmopen_function, GSMOPEN_SYNTAX);
-#endif //0
 		SWITCH_ADD_API(commands_api_interface, "gsmopen_boost_audio", "gsmopen_boost_audio interface AT_command", gsmopen_boost_audio_function,
 					   GSMOPEN_BOOST_AUDIO_SYNTAX);
 		SWITCH_ADD_API(commands_api_interface, "gsmopen_dump", "gsmopen_dump interface", gsmopen_dump_function, GSMOPEN_DUMP_SYNTAX);
@@ -2022,9 +1875,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_gsmopen_shutdown)
 				switch_yield(50000);
 			}
 			fd = tech_pvt->controldevfd;
-			//DEBUGA_GSMOPEN("SHUTDOWN tech_pvt->controldevfd=%d\n", GSMOPEN_P_LOG, tech_pvt->controldevfd);
 			if (fd) {
-				//close(fd);
 				tech_pvt->controldevfd = -1;
 				DEBUGA_GSMOPEN("SHUTDOWN tech_pvt->controldevfd=%d\n", GSMOPEN_P_LOG, tech_pvt->controldevfd);
 			}
@@ -2131,7 +1982,6 @@ int new_inbound_channel(private_t *tech_pvt)
 									   tech_pvt->dialplan, tech_pvt->callid_name,
 									   tech_pvt->callid_number, NULL, NULL, NULL, NULL, "mod_gsmopen", tech_pvt->context, tech_pvt->destination)) != 0) {
 			char name[128];
-			//switch_snprintf(name, sizeof(name), "gsmopen/%s/%s", tech_pvt->name, tech_pvt->caller_profile->destination_number);
 			switch_snprintf(name, sizeof(name), "gsmopen/%s", tech_pvt->name);
 			switch_channel_set_name(channel, name);
 			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
@@ -2234,7 +2084,6 @@ int outbound_channel_answered(private_t *tech_pvt)
 		switch_channel_mark_answered(channel);
 		tech_pvt->phone_callflow = GSMOPEN_STATE_UP;
 		tech_pvt->interface_state = GSMOPEN_STATE_UP;
-		//DEBUGA_GSMOPEN("gsmopen_call: %s, answered\n", GSMOPEN_P_LOG, id);
 	} else {
 		ERRORA("No channel???\n", GSMOPEN_P_LOG);
 	}
@@ -2251,20 +2100,16 @@ private_t *find_available_gsmopen_interface_rr(private_t *tech_pvt_calling)
 {
 	private_t *tech_pvt = NULL;
 	int i;
-	//int num_interfaces = GSMOPEN_MAX_INTERFACES;
-	//int num_interfaces = globals.real_interfaces;
 
 	switch_mutex_lock(globals.mutex);
 
 	/* Fact is the real interface start from 1 */
 	//XXX no, is just a convention, but you can have it start from 0. I do not, for aestetic reasons :-)
-	//if (globals.next_interface == 0) globals.next_interface = 1;
 
 	for (i = 0; i < GSMOPEN_MAX_INTERFACES; i++) {
 		int interface_id;
 
 		interface_id = globals.next_interface;
-		//interface_id = interface_id < GSMOPEN_MAX_INTERFACES ? interface_id : interface_id - GSMOPEN_MAX_INTERFACES + 1;
 		globals.next_interface = interface_id + 1 < GSMOPEN_MAX_INTERFACES ? interface_id + 1 : 0;
 
 		if (strlen(globals.GSMOPEN_INTERFACES[interface_id].name)) {
@@ -2279,8 +2124,6 @@ private_t *find_available_gsmopen_interface_rr(private_t *tech_pvt_calling)
 																				   || 0 == tech_pvt->phone_callflow)) {
 				DEBUGA_GSMOPEN("returning as available gsmopen interface name: %s, state: %d callflow: %d\n", GSMOPEN_P_LOG, tech_pvt->name, gsmopen_state,
 							   tech_pvt->phone_callflow);
-				/*set to Dialing state to avoid other thread fint it, don't know if it is safe */
-				//XXX no, it's not safe
 				if (tech_pvt_calling == NULL) {
 					tech_pvt->interface_state = GSMOPEN_STATE_SELECTED;
 				}
@@ -2288,16 +2131,13 @@ private_t *find_available_gsmopen_interface_rr(private_t *tech_pvt_calling)
 				switch_mutex_unlock(globals.mutex);
 				return tech_pvt;
 			}
-		}						// else {
-		//DEBUGA_GSMOPEN("GSM interface: %d blank!! A hole here means we cannot hunt the last interface.\n", GSMOPEN_P_LOG, interface_id);
-		//}
+		}						
 	}
 
 	switch_mutex_unlock(globals.mutex);
 	return NULL;
 }
 
-#if 1
 SWITCH_STANDARD_API(gsm_function)
 {
 	char *mycmd = NULL, *argv[10] = { 0 };
@@ -2339,7 +2179,6 @@ SWITCH_STANDARD_API(gsm_function)
 
 
 				stream->write_function(stream,
-						//"%c %d\t[%s]\t%3ld/%ld\t%6ld/%ld\t%s\t%s\t%s\n",
 						"%c %d\t[%6s]\t%3u/%u\t%6u/%u\t%s\t%s\t%s\n",
 						next_flag_char,
 						i, globals.GSMOPEN_INTERFACES[i].name,
@@ -2351,11 +2190,9 @@ SWITCH_STANDARD_API(gsm_function)
 						phone_callflow[globals.GSMOPEN_INTERFACES[i].phone_callflow], globals.GSMOPEN_INTERFACES[i].session_uuid_str);
 			} else if (argc > 1 && !strcasecmp(argv[1], "full")) {
 				stream->write_function(stream, "%c %d\n", next_flag_char, i);
-				//stream->write_function(stream, "%c\t%d\n", next_flag_char, i);
 			}
 
 		}
-		//stream->write_function(stream, "\nTotal: %d\n", globals.real_interfaces - 1);
 		stream->write_function(stream, "\nTotal Interfaces: %d  IB Calls(Failed/Total): %u/%u  OB Calls(Failed/Total): %u/%u\n",
 							   globals.real_interfaces > 0 ? globals.real_interfaces - 1 : 0, ib_failed, ib, ob_failed, ob);
 
@@ -2387,7 +2224,6 @@ SWITCH_STANDARD_API(gsm_function)
 
 	} else if (!strcasecmp(argv[0], "ciapalino")) {
 
-/* BEGIN: Changes heres */
 	} else if (!strcasecmp(argv[0], "reload")) {
 		if (load_config(SOFT_RELOAD) != SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "gsm reload failed\n");
@@ -2407,7 +2243,6 @@ SWITCH_STANDARD_API(gsm_function)
 			stream->write_function(stream, "-ERR Usage: gsm remove interface_name\n");
 			goto end;
 		}
-/* END: Changes heres */
 
 	} else {
 		if (globals.gsm_console)
@@ -2472,7 +2307,6 @@ SWITCH_STANDARD_API(gsmopen_function)
 
 	return SWITCH_STATUS_SUCCESS;
 }
-#endif //0
 SWITCH_STANDARD_API(gsmopen_dump_function)
 {
 	char *mycmd = NULL, *argv[10] = { 0 };
@@ -2497,7 +2331,6 @@ SWITCH_STANDARD_API(gsmopen_dump_function)
 			if (strlen(globals.GSMOPEN_INTERFACES[i].name)
 				&& (strncmp(globals.GSMOPEN_INTERFACES[i].name, argv[0], strlen(argv[0])) == 0)) {
 				tech_pvt = &globals.GSMOPEN_INTERFACES[i];
-				//stream->write_function(stream, "Using interface: globals.GSMOPEN_INTERFACES[%d].name=|||%s|||\n", i, globals.GSMOPEN_INTERFACES[i].name);
 				found = 1;
 				break;
 			}
@@ -2695,139 +2528,14 @@ SWITCH_STANDARD_API(gsmopen_boost_audio_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#if 0
-int gsmopen_transfer(private_t *tech_pvt, char *id, char *value)
-{
-	char msg_to_gsmopen[1024];
-	int i;
-	int found = 0;
-	private_t *giovatech;
-	struct timeval timenow;
-
-	switch_mutex_lock(globals.mutex);
-
-	gettimeofday(&timenow, NULL);
-	for (i = 0; !found && i < GSMOPEN_MAX_INTERFACES; i++) {
-		if (strlen(globals.GSMOPEN_INTERFACES[i].name)) {
-
-			giovatech = &globals.GSMOPEN_INTERFACES[i];
-			//NOTICA("gsmopen interface: %d, name: %s, state: %d, value=%s, giovatech->callid_number=%s, giovatech->gsmopen_user=%s\n", GSMOPEN_P_LOG, i, giovatech->name, giovatech->interface_state, value, giovatech->callid_number, giovatech->gsmopen_user);
-			//FIXME check a timestamp here
-			if (strlen(giovatech->gsmopen_call_id) && (giovatech->interface_state != GSMOPEN_STATE_DOWN) && (!strcmp(giovatech->gsmopen_user, tech_pvt->gsmopen_user)) && (!strcmp(giovatech->callid_number, value)) && ((((timenow.tv_sec - giovatech->answer_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->answer_time.tv_usec)) < 500000)) {	//0.5sec
-				found = 1;
-				DEBUGA_GSMOPEN
-					("FOUND  (name=%s, giovatech->interface_state=%d != GSMOPEN_STATE_DOWN) && (giovatech->gsmopen_user=%s == tech_pvt->gsmopen_user=%s) && (giovatech->callid_number=%s == value=%s)\n",
-					 GSMOPEN_P_LOG, giovatech->name, giovatech->interface_state, giovatech->gsmopen_user, tech_pvt->gsmopen_user, giovatech->callid_number,
-					 value)
-					break;
-			}
-		}
-	}
-
-	if (found) {
-		//tech_pvt->callid_number[0]='\0';
-		//sprintf(msg_to_gsmopen, "ALTER CALL %s END HANGUP", id);
-		//gsmopen_signaling_write(tech_pvt, msg_to_gsmopen);
-		switch_mutex_unlock(globals.mutex);
-		return 0;
-	}
-	DEBUGA_GSMOPEN("NOT FOUND\n", GSMOPEN_P_LOG);
-
-	if (!tech_pvt || !tech_pvt->gsmopen_call_id || !strlen(tech_pvt->gsmopen_call_id)) {
-		/* we are not inside an active call */
-		DEBUGA_GSMOPEN("We're NO MORE in a call now %s\n", GSMOPEN_P_LOG, (tech_pvt && tech_pvt->gsmopen_call_id) ? tech_pvt->gsmopen_call_id : "");
-		switch_mutex_unlock(globals.mutex);
-
-	} else {
-
-		/* we're owned, we're in a call, let's try to transfer */
-		/************************** TODO
-		  Checking here if it is possible to transfer this call to Test2
-		  -> GET CALL 288 CAN_TRANSFER Test2
-		  <- CALL 288 CAN_TRANSFER test2 TRUE
-		 **********************************/
-
-		private_t *available_gsmopen_interface = NULL;
-
-		gettimeofday(&timenow, NULL);
-		for (i = 0; !found && i < GSMOPEN_MAX_INTERFACES; i++) {
-			if (strlen(globals.GSMOPEN_INTERFACES[i].name)) {
-
-				giovatech = &globals.GSMOPEN_INTERFACES[i];
-				//NOTICA("gsmopen interface: %d, name: %s, state: %d, value=%s, giovatech->callid_number=%s, giovatech->gsmopen_user=%s\n", GSMOPEN_P_LOG, i, giovatech->name, giovatech->interface_state, value, giovatech->callid_number, giovatech->gsmopen_user);
-				//FIXME check a timestamp here
-				if (strlen(giovatech->gsmopen_transfer_call_id) && (giovatech->interface_state != GSMOPEN_STATE_DOWN) && (!strcmp(giovatech->gsmopen_user, tech_pvt->gsmopen_user)) && (!strcmp(giovatech->transfer_callid_number, value)) && ((((timenow.tv_sec - giovatech->transfer_time.tv_sec) * 1000000) + (timenow.tv_usec - giovatech->transfer_time.tv_usec)) < 1000000)) {	//1.0 sec
-					found = 1;
-					DEBUGA_GSMOPEN
-						("FOUND  (name=%s, giovatech->interface_state=%d != GSMOPEN_STATE_DOWN) && (giovatech->gsmopen_user=%s == tech_pvt->gsmopen_user=%s) && (giovatech->transfer_callid_number=%s == value=%s)\n",
-						 GSMOPEN_P_LOG, giovatech->name, giovatech->interface_state,
-						 giovatech->gsmopen_user, tech_pvt->gsmopen_user, giovatech->transfer_callid_number, value)
-						break;
-				}
-			}
-		}
-
-		if (found) {
-			//tech_pvt->callid_number[0]='\0';
-			//sprintf(msg_to_gsmopen, "ALTER CALL %s END HANGUP", id);
-			//gsmopen_signaling_write(tech_pvt, msg_to_gsmopen);
-			switch_mutex_unlock(globals.mutex);
-			return 0;
-		}
-		DEBUGA_GSMOPEN("NOT FOUND\n", GSMOPEN_P_LOG);
-
-		available_gsmopen_interface = find_available_gsmopen_interface_rr(tech_pvt);
-		if (available_gsmopen_interface) {
-			/* there is a gsmopen interface idle, let's transfer the call to it */
-
-			//FIXME write a timestamp here
-			gettimeofday(&tech_pvt->transfer_time, NULL);
-			switch_copy_string(tech_pvt->gsmopen_transfer_call_id, id, sizeof(tech_pvt->gsmopen_transfer_call_id) - 1);
-
-			switch_copy_string(tech_pvt->transfer_callid_number, value, sizeof(tech_pvt->transfer_callid_number) - 1);
-
-			DEBUGA_GSMOPEN
-				("Let's transfer the gsmopen_call %s to %s interface (with gsmopen_user: %s), because we are already in a gsmopen call(%s)\n",
-				 GSMOPEN_P_LOG, tech_pvt->gsmopen_call_id, available_gsmopen_interface->name, available_gsmopen_interface->gsmopen_user, id);
-
-			//FIXME why this? the inbound call will come, eventually, on that other interface
-			//available_gsmopen_interface->ib_calls++;
-
-			sprintf(msg_to_gsmopen, "ALTER CALL %s TRANSFER %s", id, available_gsmopen_interface->gsmopen_user);
-			//gsmopen_signaling_write(tech_pvt, msg_to_gsmopen);
-			if (tech_pvt->interface_state == GSMOPEN_STATE_SELECTED) {
-				tech_pvt->interface_state = GSMOPEN_STATE_IDLE;	//we marked it GSMOPEN_STATE_SELECTED just in case it has to make an outbound call
-			}
-		} else {
-			/* no gsmopen interfaces idle, do nothing */
-			DEBUGA_GSMOPEN
-				("Not answering the gsmopen_call %s, because we are already in a gsmopen call(%s) and not transferring, because no other gsmopen interfaces are available\n",
-				 GSMOPEN_P_LOG, id, tech_pvt->gsmopen_call_id);
-			sprintf(msg_to_gsmopen, "ALTER CALL %s END HANGUP", id);
-			//gsmopen_signaling_write(tech_pvt, msg_to_gsmopen);
-		}
-		switch_sleep(10000);
-		DEBUGA_GSMOPEN
-			("We have NOT answered a GSM RING from gsmopen_call %s, because we are already in a gsmopen call (%s)\n",
-			 GSMOPEN_P_LOG, id, tech_pvt->gsmopen_call_id);
-
-		switch_mutex_unlock(globals.mutex);
-	}
-	return 0;
-}
-#endif //0
-
 void *gsmopen_do_gsmopenapi_thread_func(void *obj)
 {
 
 	private_t *tech_pvt = (private_t *) obj;
 	time_t now_timestamp;
 
-	//if (gsmopen_present(GSMopenHandles))
 	while (running && tech_pvt && tech_pvt->running) {
 		int res;
-		//gsmopen_sleep(1000000); //1 sec
-		//DEBUGA_GSMOPEN("ciao!\n", GSMOPEN_P_LOG);
 		res = gsmopen_serial_read(tech_pvt);
 		if (res == -1) {		//manage the graceful interface shutdown
 			tech_pvt->controldev_dead = 1;
@@ -2840,32 +2548,17 @@ void *gsmopen_do_gsmopenapi_thread_func(void *obj)
 			switch_sleep(1000000);
 		} else if (tech_pvt->controldevprotocol != PROTOCOL_NO_SERIAL && tech_pvt->interface_state == GSMOPEN_STATE_RING
 				   && tech_pvt->phone_callflow != CALLFLOW_CALL_HANGUP_REQUESTED) {
-			//WARNINGA("INCOMING RING\n", GSMOPEN_P_LOG);
 
 			gsmopen_ring(tech_pvt);
-
-			//FIXME gsmopen_answer(tech_pvt);
-			//new_inbound_channel(tech_pvt);
-			//FIXME if (!gsmopen_new(p, AST_STATE_RING, tech_pvt->context)) {
-			//FIXME ERRORA("gsmopen_new failed! BAD BAD BAD\n", GSMOPEN_P_LOG);
-			//FIXME }
 
 		} else if (tech_pvt->controldevprotocol != PROTOCOL_NO_SERIAL && tech_pvt->interface_state == GSMOPEN_STATE_DIALING) {
 			DEBUGA_GSMOPEN("WE'RE DIALING, let's take the earlymedia\n", GSMOPEN_P_LOG);
 			tech_pvt->interface_state = CALLFLOW_STATUS_EARLYMEDIA;
 			remote_party_is_early_media(tech_pvt);
-			//new_inbound_channel(tech_pvt);
-			//FIXME if (!gsmopen_new(p, AST_STATE_RING, tech_pvt->context)) {
-			//FIXME ERRORA("gsmopen_new failed! BAD BAD BAD\n", GSMOPEN_P_LOG);
-			//FIXME }
 
 		} else if (tech_pvt->interface_state == CALLFLOW_CALL_REMOTEANSWER) {
 			DEBUGA_GSMOPEN("REMOTE PARTY ANSWERED\n", GSMOPEN_P_LOG);
 			outbound_channel_answered(tech_pvt);
-			//new_inbound_channel(tech_pvt);
-			//FIXME if (!gsmopen_new(p, AST_STATE_RING, tech_pvt->context)) {
-			//FIXME ERRORA("gsmopen_new failed! BAD BAD BAD\n", GSMOPEN_P_LOG);
-			//FIXME }
 		}
 		switch_sleep(100);		//give other threads a chance
 		time(&now_timestamp);
@@ -2876,7 +2569,6 @@ void *gsmopen_do_gsmopenapi_thread_func(void *obj)
 		}
 	}
 	DEBUGA_GSMOPEN("EXIT\n", GSMOPEN_P_LOG);
-	//running = 0;
 	return NULL;
 
 }
@@ -2922,7 +2614,6 @@ SWITCH_STANDARD_API(sendsms_function)
 
 			return SWITCH_STATUS_SUCCESS;
 		} else {
-			//gsmopen_sendsms(tech_pvt, (char *) argv[1], (char *) argv[2]);
 			NOTICA("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=NULL, hint=%s)\n", GSMOPEN_P_LOG, GSMOPEN_CHAT_PROTO, tech_pvt->name,
 				   argv[1], "SIMPLE MESSAGE", switch_str_nil(argv[2]), tech_pvt->name);
 
@@ -3045,219 +2736,42 @@ int alarm_event(private_t *tech_pvt, int alarm_code, const char *alarm_message)
 int sms_incoming(private_t *tech_pvt)
 {
 	switch_event_t *event;
-#ifdef NOTDEF
-	switch_core_session_t *session = NULL;
-	int event_sent_to_esl = 0;
-#endif
 
 	if (!tech_pvt) {
 		return -1;
 	}
-	//DEBUGA_GSMOPEN("received SMS on interface %s: %s\n", GSMOPEN_P_LOG, tech_pvt->name, tech_pvt->sms_message);
-	DEBUGA_GSMOPEN("received SMS on interface %s: DATE=%s, SENDER=%s, BODY=%s|\n", GSMOPEN_P_LOG, tech_pvt->name, tech_pvt->sms_date, tech_pvt->sms_sender,
+	NOTICA("received SMS on interface %s: DATE=%s, SENDER=%s, BODY=|%s|\n", GSMOPEN_P_LOG, tech_pvt->name, tech_pvt->sms_date, tech_pvt->sms_sender,
 					tech_pvt->sms_body);
-#ifdef NOTDEF
-	if (!zstr(tech_pvt->session_uuid_str)) {
-		session = switch_core_session_locate(tech_pvt->session_uuid_str);
-	}
 	if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", GSMOPEN_CHAT_PROTO);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
-		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->chatmessages[which].from_dispname);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", tech_pvt->sms_sender);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "date", tech_pvt->sms_date);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "datacodingscheme", tech_pvt->sms_datacodingscheme);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "servicecentreaddress", tech_pvt->sms_servicecentreaddress);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "messagetype", "%d", tech_pvt->sms_messagetype);
-		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "chatname", tech_pvt->chatmessages[which].chatname);
-		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "id", tech_pvt->chatmessages[which].id);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", tech_pvt->name);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->name);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_proto", GSMOPEN_CHAT_PROTO);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_user", tech_pvt->sms_sender);
-		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_host", "from_host");
-		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_full", "from_full");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_user", tech_pvt->name);
-		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_host", "to_host");
 		switch_event_add_body(event, "%s\n", tech_pvt->sms_body);
-		if (session) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "during-call", "true");
-			if (switch_core_session_queue_event(session, &event) != SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
-				switch_event_fire(&event);
-			}
-		} else {				//no session
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "during-call", "false");
-			switch_event_fire(&event);
-			event_sent_to_esl = 1;
-		}
-
-	} else {
-		ERRORA("cannot create event on interface %s. WHY?????\n", GSMOPEN_P_LOG, tech_pvt->name);
-	}
-
-	if (!event_sent_to_esl) {
-
-		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", GSMOPEN_CHAT_PROTO);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
-			//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->chatmessages[which].from_dispname);
-			//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", tech_pvt->chatmessages[which].from_handle);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", tech_pvt->sms_sender);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "date", tech_pvt->sms_date);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "datacodingscheme", tech_pvt->sms_datacodingscheme);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "servicecentreaddress", tech_pvt->sms_servicecentreaddress);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "messagetype", "%d", tech_pvt->sms_messagetype);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
-			//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "chatname", tech_pvt->chatmessages[which].chatname);
-			//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "id", tech_pvt->chatmessages[which].id);
-			switch_event_add_body(event, "%s\n", tech_pvt->sms_body);
-			if (session) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "during-call", "true");
-			} else {			//no session
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "during-call", "false");
-			}
-			switch_event_fire(&event);
-		} else {
-			ERRORA("cannot create event on interface %s. WHY?????\n", GSMOPEN_P_LOG, tech_pvt->name);
-		}
-	}
-
-	if (session) {
-		switch_core_session_rwunlock(session);
-	}
-#endif //NOTDEF
-	/* mod_sms begin */
-	if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", GSMOPEN_CHAT_PROTO);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
-		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->chatmessages[which].from_dispname);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", tech_pvt->sms_sender);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "date", tech_pvt->sms_date);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "datacodingscheme", tech_pvt->sms_datacodingscheme);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "servicecentreaddress", tech_pvt->sms_servicecentreaddress);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "messagetype", "%d", tech_pvt->sms_messagetype);
-		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "chatname", tech_pvt->chatmessages[which].chatname);
-		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "id", tech_pvt->chatmessages[which].id);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", tech_pvt->name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_proto", GSMOPEN_CHAT_PROTO);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_user", tech_pvt->sms_sender);
-		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_host", "from_host");
-		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_full", "from_full");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_user", tech_pvt->name);
-		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_host", "to_host");
-		switch_event_add_body(event, "%s\n", tech_pvt->sms_body);
-		//switch_core_chat_send("GLOBAL", event); /* mod_sms */
 		switch_core_chat_send("GLOBAL", event);	/* mod_sms */
 	} else {
 
 		ERRORA("cannot create event on interface %s. WHY?????\n", GSMOPEN_P_LOG, tech_pvt->name);
 	}
-	/* mod_sms end */
 
+	memset(tech_pvt->sms_message, '\0', sizeof(tech_pvt->sms_message));
+	memset(tech_pvt->sms_sender, '\0', sizeof(tech_pvt->sms_sender));
+	memset(tech_pvt->sms_date, '\0', sizeof(tech_pvt->sms_date));
+	memset(tech_pvt->sms_body, '\0', sizeof(tech_pvt->sms_body));
+	memset(tech_pvt->sms_datacodingscheme, '\0', sizeof(tech_pvt->sms_datacodingscheme));
+	memset(tech_pvt->sms_servicecentreaddress, '\0', sizeof(tech_pvt->sms_servicecentreaddress));
 
-	//memset(&tech_pvt->chatmessages[which], '\0', sizeof(&tech_pvt->chatmessages[which]) );
-	//memset(tech_pvt->sms_message, '\0', sizeof(tech_pvt->sms_message));
 	return 0;
 }
-
-#ifdef NOTDEF
-SWITCH_STANDARD_API(gsmopen_chat_function)
-{
-	char *mycmd = NULL, *argv[10] = { 0 };
-	int argc = 0;
-	private_t *tech_pvt = NULL;
-	//int tried =0;
-	int i;
-	int found = 0;
-	//char skype_msg[1024];
-
-	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
-		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-	}
-
-	if (!argc) {
-		stream->write_function(stream, "ERROR, usage: %s", GSMOPEN_CHAT_SYNTAX);
-		goto end;
-	}
-
-	if (argc < 3) {
-		stream->write_function(stream, "ERROR, usage: %s", GSMOPEN_CHAT_SYNTAX);
-		goto end;
-	}
-
-	if (argv[0]) {
-		for (i = 0; !found && i < GSMOPEN_MAX_INTERFACES; i++) {
-			/* we've been asked for a normal interface name, or we have not found idle interfaces to serve as the "ANY" interface */
-			if (strlen(globals.GSMOPEN_INTERFACES[i].name)
-				&& (strncmp(globals.GSMOPEN_INTERFACES[i].name, argv[0], strlen(argv[0])) == 0)) {
-				tech_pvt = &globals.GSMOPEN_INTERFACES[i];
-				stream->write_function(stream, "Using interface: globals.GSMOPEN_INTERFACES[%d].name=|||%s|||\n", i, globals.GSMOPEN_INTERFACES[i].name);
-				found = 1;
-				break;
-			}
-
-		}
-		if (!found) {
-			stream->write_function(stream, "ERROR: A GSMopen interface with name='%s' was not found\n", argv[0]);
-			goto end;
-		} else {
-
-			//chat_send(const char *proto, const char *from, const char *to, const char *subject, const char *body, const char *type, const char *hint);
-			//chat_send(p*roto, const char *from, const char *to, const char *subject, const char *body, const char *type, const char *hint);
-			//chat_send(GSMOPEN_CHAT_PROTO, tech_pvt->skype_user, argv[1], "SIMPLE MESSAGE", switch_str_nil((char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]), NULL, hint);
-
-			NOTICA("chat_send(proto=%s, from=%s, to=%s, subject=%s, body=%s, type=NULL, hint=%s)\n", GSMOPEN_P_LOG, GSMOPEN_CHAT_PROTO,
-				   tech_pvt->skype_user, argv[1], "SIMPLE MESSAGE", switch_str_nil((char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]),
-				   tech_pvt->name);
-
-			chat_send(GSMOPEN_CHAT_PROTO, tech_pvt->skype_user, argv[1], "SIMPLE MESSAGE",
-					  switch_str_nil((char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]), NULL, tech_pvt->name);
-
-			//NOTICA("TEXT is: %s\n", GSMOPEN_P_LOG, (char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1] );
-			//snprintf(skype_msg, sizeof(skype_msg), "CHAT CREATE %s", argv[1]);
-			//gsmopen_signaling_write(tech_pvt, skype_msg);
-			//switch_sleep(100);
-		}
-	} else {
-		stream->write_function(stream, "ERROR, usage: %s", GSMOPEN_CHAT_SYNTAX);
-		goto end;
-	}
-
-#ifdef NOTDEF
-
-	found = 0;
-
-	while (!found) {
-		for (i = 0; i < MAX_CHATS; i++) {
-			if (!strcmp(tech_pvt->chats[i].dialog_partner, argv[1])) {
-				snprintf(skype_msg, sizeof(skype_msg), "CHATMESSAGE %s %s", tech_pvt->chats[i].chatname,
-						 (char *) &cmd[strlen(argv[0]) + 1 + strlen(argv[1]) + 1]);
-				gsmopen_signaling_write(tech_pvt, skype_msg);
-				found = 1;
-				break;
-			}
-		}
-		if (found) {
-			break;
-		}
-		if (tried > 1000) {
-			stream->write_function(stream, "ERROR: no chat with dialog_partner='%s' was found\n", argv[1]);
-			break;
-		}
-		switch_sleep(1000);
-	}
-#endif //NOTDEF
-
-  end:
-	switch_safe_free(mycmd);
-
-	return SWITCH_STATUS_SUCCESS;
-}
-#endif // NOTDEF
 
 /* For Emacs:
  * Local Variables:

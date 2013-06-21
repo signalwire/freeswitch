@@ -1221,6 +1221,18 @@ SWITCH_DECLARE(void) CoreSession::setHangupHook(void *hangup_func) {
     switch_core_event_hook_add_state_change(session, hanguphook);
 }
 
+SWITCH_DECLARE(void) CoreSession::consoleLog(char *level_str, char *msg)
+{
+	switch_log_level_t level = SWITCH_LOG_DEBUG;
+	if (level_str) {
+		level = switch_log_str2level(level_str);
+		if (level == SWITCH_LOG_INVALID) {
+			level = SWITCH_LOG_DEBUG;
+		}
+	}
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), level, "%s", switch_str_nil(msg));
+}
+
 /* ---- methods not bound to CoreSession instance ---- */
 
 

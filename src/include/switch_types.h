@@ -1325,6 +1325,7 @@ typedef enum {
 	CF_VERBOSE_SDP,
 	CF_DTLS_OK,
 	CF_VIDEO_PASSIVE,
+	CF_NOVIDEO,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
 	CF_FLAG_MAX

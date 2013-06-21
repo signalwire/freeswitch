@@ -1890,6 +1890,10 @@ SWITCH_DECLARE(void) switch_core_media_check_video_codecs(switch_core_session_t 
 		for (i = 0; i < smh->mparams->num_codecs; i++) {
 			
 			if (smh->codecs[i]->codec_type == SWITCH_CODEC_TYPE_VIDEO) {
+				if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND &&
+					switch_channel_test_flag(session->channel, CF_NOVIDEO)) {
+					continue;
+				}
 				smh->video_count++;
 			}
 		}
@@ -2993,7 +2997,12 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				for (i = 0; i < total_codecs; i++) {
 					const switch_codec_implementation_t *imp = codec_array[i];
 
-					if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
+					if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) { 
+						continue;
+					}
+
+					if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND &&
+						switch_channel_test_flag(session->channel, CF_NOVIDEO)) {
 						continue;
 					}
 
@@ -5540,6 +5549,11 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 						continue;
 					}
 
+					if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND &&
+						switch_channel_test_flag(session->channel, CF_NOVIDEO)) {
+						continue;
+					}
+
 					if (smh->ianacodes[i] < 128) {
 						if (already_did[smh->ianacodes[i]]) {
 							continue;
@@ -5603,6 +5617,11 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					int channels;
 
 					if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
+						continue;
+					}
+
+					if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND &&
+						switch_channel_test_flag(session->channel, CF_NOVIDEO)) {
 						continue;
 					}
 
@@ -7160,9 +7179,16 @@ SWITCH_DECLARE(void) switch_core_media_set_r_sdp_codec_string(switch_core_sessio
 			}
 			for (i = 0; i < num_codecs; i++) {
 				const switch_codec_implementation_t *imp = codecs[i];
+
 				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO || imp->ianacode > 127 || already_did[imp->ianacode]) {
 					continue;
 				}
+
+				if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND &&
+					switch_channel_test_flag(session->channel, CF_NOVIDEO)) {
+					continue;
+				}
+
 				for (map = m->m_rtpmaps; map; map = map->rm_next) {
 					if (map->rm_pt > 127 || already_did[map->rm_pt]) {
 						continue;
