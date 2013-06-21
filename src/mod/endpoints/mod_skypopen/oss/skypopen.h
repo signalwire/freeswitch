@@ -66,6 +66,7 @@ struct skypopen_dev {
 #endif// WANT_HRTIMER 
 	int timer_inq_started;
 	int timer_outq_started;
+	int opened;
 };
 
 

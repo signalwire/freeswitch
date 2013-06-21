@@ -203,6 +203,9 @@ static int skypopen_c_open(struct inode *inode, struct file *filp)
 	/* look for a skypopenc device in the list */
 	spin_lock(&skypopen_c_lock);
 	dev = skypopen_c_lookfor_device(key);
+	if (dev){
+		dev->opened++;
+	}
 	spin_unlock(&skypopen_c_lock);
 
 	if (!dev)
@@ -215,10 +218,30 @@ static int skypopen_c_open(struct inode *inode, struct file *filp)
 
 static int skypopen_c_release(struct inode *inode, struct file *filp)
 {
-	/*
-	 * Nothing to do, because the device is persistent.
-	 * A `real' cloned device should be freed on last close
-	 */
+	dev_t key;
+	struct skypopen_dev *dev = filp->private_data;
+	int ret;
+
+	key = current->tgid;
+
+	spin_lock(&skypopen_c_lock);
+	dev->opened--;
+	spin_unlock(&skypopen_c_lock);
+
+	if(!dev->opened){
+#ifdef WANT_HRTIMER
+		if(dev->timer_inq_started){
+			ret = hrtimer_cancel( &dev->timer_inq );
+			//printk( "Stopped skypopen OSS driver read HRtimer skype client:(%d) ret=%d\n", key, ret);
+			dev->timer_inq_started=0;
+		}
+		if(dev->timer_outq_started){
+			ret = hrtimer_cancel( &dev->timer_outq );
+			//printk( "Stopped skypopen OSS driver write HRtimer skype client:(%d) ret=%d\n", key, ret);
+			dev->timer_outq_started=0;
+		}
+#endif// WANT_HRTIMER
+	}
 	return 0;
 }
 
@@ -231,6 +254,9 @@ static ssize_t skypopen_read(struct file *filp, char __user *buf, size_t count,
 {
 	DEFINE_WAIT(wait);
 	struct skypopen_dev *dev = filp->private_data;
+	dev_t key;
+
+	key = current->tgid;
 
 	if(unload)
 		return -1;
@@ -244,6 +270,7 @@ static ssize_t skypopen_read(struct file *filp, char __user *buf, size_t count,
 		dev->timer_inq.function = &my_hrtimer_callback_inq;
 		hrtimer_start( &dev->timer_inq, ktime_inq, HRTIMER_MODE_REL );
 		dev->timer_inq_started = 1;
+		//printk( "Started skypopen OSS driver read HRtimer skype client:(%d) \n", key);
 	}
 #endif// WANT_HRTIMER
 
@@ -259,6 +286,9 @@ static ssize_t skypopen_write(struct file *filp, const char __user *buf, size_t 
 {
 	DEFINE_WAIT(wait);
 	struct skypopen_dev *dev = filp->private_data;
+	dev_t key;
+
+	key = current->tgid;
 
 	if(unload)
 		return -1;
@@ -272,6 +302,7 @@ static ssize_t skypopen_write(struct file *filp, const char __user *buf, size_t 
 		dev->timer_outq.function = &my_hrtimer_callback_outq;
 		hrtimer_start( &dev->timer_outq, ktime_outq, HRTIMER_MODE_REL );
 		dev->timer_outq_started = 1;
+		//printk( "Started skypopen OSS driver write HRtimer skype client:(%d) \n", key);
 	}
 #endif// WANT_HRTIMER
 
