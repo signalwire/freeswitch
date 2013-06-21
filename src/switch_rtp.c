@@ -697,7 +697,7 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 		if (elapsed > 30000) {
 			
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "No stun for a long time (PUNT!)\n");
-			status = SWITCH_STATUS_FALSE;
+			status = SWITCH_STATUS_GENERR;
 			goto end;
 		}
 	}
@@ -1569,7 +1569,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 	}
 	
 	if (rtp_session->ice.ice_user) {
-		if (ice_out(rtp_session, &rtp_session->ice) != SWITCH_STATUS_SUCCESS) {
+		if (ice_out(rtp_session, &rtp_session->ice) == SWITCH_STATUS_GENERR) {
 			ret = -1;
 			goto end;
 		}
@@ -1577,7 +1577,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 	if (!rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) {
 		if (rtp_session->rtcp_ice.ice_user) {
-			if (ice_out(rtp_session, &rtp_session->rtcp_ice) != SWITCH_STATUS_SUCCESS) {
+			if (ice_out(rtp_session, &rtp_session->rtcp_ice) == SWITCH_STATUS_GENERR) {
 				ret = -1;
 				goto end;
 			}
@@ -3830,7 +3830,9 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 	status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, bytes);
 
-	check_rtcp_and_ice(rtp_session);
+	if (check_rtcp_and_ice(rtp_session) == -1) {
+		return SWITCH_STATUS_GENERR;
+	}
 	
 	if (rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
 		goto udptl;
@@ -4524,7 +4526,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 
 			if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {				
-				check_rtcp_and_ice(rtp_session);
+				if (check_rtcp_and_ice(rtp_session) == -1) {
+					ret = -1;
+					goto end;
+				}
 
 			} else if ((!(io_flags & SWITCH_IO_FLAG_NOBLOCK)) && 
 					   (rtp_session->dtmf_data.out_digit_dur == 0)) {
