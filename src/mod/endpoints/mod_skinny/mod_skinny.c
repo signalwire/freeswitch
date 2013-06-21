@@ -802,7 +802,10 @@ int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnN
 		send_select_soft_keys(listener, line_instance, call_id, SKINNY_KEY_SET_ON_HOOK, 0xffff);
 		send_define_current_time_date(listener);
 		if((call_state == SKINNY_PROCEED) || (call_state == SKINNY_RING_OUT) || (call_state == SKINNY_CONNECTED)) { /* calling parties */
-			send_set_speaker_mode(listener, SKINNY_SPEAKER_OFF);
+			// This is NOT correct, but results in slightly better behavior than before
+			// leaving note here to revisit.
+
+			//send_set_speaker_mode(listener, SKINNY_SPEAKER_OFF);
 		}
 		send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, call_id);
 	}
