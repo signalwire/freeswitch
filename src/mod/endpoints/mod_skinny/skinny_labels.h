@@ -46,7 +46,7 @@
 #define SKINNY_DISP_RESUME                                		"\200\12"
 #define SKINNY_DISP_ANSWER                                		"\200\13"
 #define SKINNY_DISP_INFO                                  		"\200\14"
-#define SKINNY_DISP_CONFRM                                		"\200\15"
+#define SKINNY_DISP_CONF                                		"\200\15"
 #define SKINNY_DISP_PARK                                  		"\200\16"
 #define SKINNY_DISP_JOIN                                  		"\200\17"
 #define SKINNY_DISP_MEETME                                		"\200\20"
