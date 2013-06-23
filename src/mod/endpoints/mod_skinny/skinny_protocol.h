@@ -797,6 +797,10 @@ switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *re
 /*****************************************************************************/
 /* SKINNY MESSAGE HELPER */
 /*****************************************************************************/
+switch_status_t perform_send_keep_alive_ack(listener_t *listener,
+		const char *file, const char *func, int line);
+#define send_keep_alive_ack(listener) perform_send_keep_alive_ack(listener, __FILE__, __SWITCH_FUNC__, __LINE__);
+
 switch_status_t perform_send_register_ack(listener_t *listener,
 		const char *file, const char *func, int line,
 		uint32_t keep_alive,
