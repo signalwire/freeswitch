@@ -925,6 +925,8 @@ switch_status_t perform_send_display_prompt_status(listener_t *listener,
 		uint32_t call_id)
 {
 	skinny_message_t *message;
+	char *tmp;
+
 	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.display_prompt_status));
 	message->type = DISPLAY_PROMPT_STATUS_MESSAGE;
 	message->length = 4 + sizeof(message->data.display_prompt_status);
@@ -933,9 +935,13 @@ switch_status_t perform_send_display_prompt_status(listener_t *listener,
 	message->data.display_prompt_status.line_instance = line_instance;
 	message->data.display_prompt_status.call_id = call_id;
 
+	tmp = skinny_expand_textid(display);
+
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 		"Send Display Prompt Status with Timeout (%d), Display (%s), Line Instance (%d), Call ID (%d)\n", 
-		timeout, display, line_instance, call_id);
+		timeout, tmp, line_instance, call_id);
+
+	switch_safe_free(tmp);
 
 	return skinny_send_reply_quiet(listener, message);
 }

@@ -301,9 +301,10 @@ switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
 switch_endpoint_interface_t *skinny_get_endpoint_interface();
 
 /*****************************************************************************/
-/* MODULE FUNCTIONS */
+/* TEXT FUNCTIONS */
 /*****************************************************************************/
 #define skinny_textid2raw(label) (label > 0 ? switch_mprintf("\200%c", label) : switch_mprintf(""))
+char *skinny_expand_textid(const char *str);
 
 #endif /* _MOD_SKINNY_H */
 

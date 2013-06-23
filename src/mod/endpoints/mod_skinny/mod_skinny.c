@@ -103,6 +103,44 @@ static char active_lines_sql[] =
 ");\n";
 
 /*****************************************************************************/
+/* TEXT FUNCTIONS */
+/*****************************************************************************/
+char *skinny_expand_textid(const char *str)
+{
+	char *tmp;
+	int i;
+
+	/* Look for \200, if found, next character indicates string id */
+	char match = (char) 128;
+	
+	tmp = switch_mprintf("");
+
+	if (zstr(str)) {
+		return tmp;
+	}
+
+	for (i=0; i<strlen(str); i++)
+	{
+		char *old = tmp;
+
+		if ( str[i] == match ) {
+			if ( tmp[0] ) {
+				tmp = switch_mprintf("%s [%s] ", old, skinny_textid2str(str[i+1]));
+			} else {
+				tmp = switch_mprintf("[%s] ", skinny_textid2str(str[i+1]));
+			}
+			switch_safe_free(old);
+			i++;
+		} else {
+			tmp = switch_mprintf("%s%c", old, str[i]);
+			switch_safe_free(old);
+		}
+	}
+
+	return tmp;
+}
+
+/*****************************************************************************/
 /* PROFILES FUNCTIONS */
 /*****************************************************************************/
 switch_status_t skinny_profile_dump(const skinny_profile_t *profile, switch_stream_handle_t *stream)
