@@ -119,12 +119,12 @@ switch_status_t skinny_create_incoming_session(listener_t *listener, uint32_t *l
 
 	if (!(nsession = switch_core_session_request(skinny_get_endpoint_interface(),
 					SWITCH_CALL_DIRECTION_INBOUND, SOF_NONE, NULL))) {
-		skinny_log_l(listener, SWITCH_LOG_CRIT, "Error Creating Session\n", NULL);
+		skinny_log_l_msg(listener, SWITCH_LOG_CRIT, "Error Creating Session\n");
 		goto error;
 	}
 
 	if (!(tech_pvt = (struct private_object *) switch_core_session_alloc(nsession, sizeof(*tech_pvt)))) {
-		skinny_log_ls(listener, nsession, SWITCH_LOG_CRIT, "Error Creating Session private object\n", NULL);
+		skinny_log_ls_msg(listener, nsession, SWITCH_LOG_CRIT, "Error Creating Session private object\n");
 		goto error;
 	}
 
@@ -139,11 +139,11 @@ switch_status_t skinny_create_incoming_session(listener_t *listener, uint32_t *l
 	switch_channel_set_name(channel, name);
 
 	if (switch_core_session_thread_launch(nsession) != SWITCH_STATUS_SUCCESS) {
-		skinny_log_ls(listener, nsession, SWITCH_LOG_CRIT, "Error Creating Session thread\n", NULL);
+		skinny_log_ls_msg(listener, nsession, SWITCH_LOG_CRIT, "Error Creating Session thread\n");
 		goto error;
 	}
 	if (switch_core_session_read_lock(nsession) != SWITCH_STATUS_SUCCESS) {
-		skinny_log_ls(listener, nsession, SWITCH_LOG_CRIT, "Error Locking Session\n", NULL);
+		skinny_log_ls_msg(listener, nsession, SWITCH_LOG_CRIT, "Error Locking Session\n");
 		goto error;
 	}
 	/* First create the caller profile in the patterns Dialplan */
@@ -154,7 +154,7 @@ switch_status_t skinny_create_incoming_session(listener_t *listener, uint32_t *l
 					"skinny" /* modname */,
 					listener->profile->patterns_context, 
 					"")) != 0) {
-		skinny_log_ls(listener, nsession, SWITCH_LOG_CRIT, "Error Creating Session caller profile\n", NULL);
+		skinny_log_ls_msg(listener, nsession, SWITCH_LOG_CRIT, "Error Creating Session caller profile\n");
 		goto error;
 	}
 
@@ -185,8 +185,8 @@ switch_status_t skinny_create_incoming_session(listener_t *listener, uint32_t *l
 	if (switch_channel_get_state(channel) == CS_NEW) {
 		switch_channel_set_state(channel, CS_HIBERNATE);
 	} else {
-		skinny_log_ls(listener, nsession, SWITCH_LOG_CRIT, 
-			"Wow! this channel should be in CS_NEW state, but it is not!\n", NULL);
+		skinny_log_ls_msg(listener, nsession, SWITCH_LOG_CRIT, 
+			"Wow! this channel should be in CS_NEW state, but it is not!\n");
 	}
 
 	goto done;
@@ -642,7 +642,6 @@ int skinny_session_answer_callback(void *pArg, int argc, char **argv, char **col
 {
 	struct skinny_session_answer_helper *helper = pArg;
 	listener_t *listener = NULL;
-	char *label;
 
 	char *device_name = argv[0];
 	uint32_t device_instance = atoi(argv[1]);
@@ -933,8 +932,6 @@ switch_status_t skinny_hold_active_calls(listener_t *listener)
 /*****************************************************************************/
 switch_status_t skinny_handle_keep_alive_message(listener_t *listener, skinny_message_t *request)
 {
-	skinny_message_t *message;
-
 	keepalive_listener(listener, NULL);
 
 	send_keep_alive_ack(listener);
@@ -1434,7 +1431,7 @@ switch_status_t skinny_handle_speed_dial_stat_request(listener_t *listener, skin
 
 	memcpy(&message->data.speed_dial_res, button, sizeof(struct speed_dial_stat_res_message));
 
-	skinny_log_l(listener, SWITCH_LOG_DEBUG, "Handle Speed Dial Stat Request\n", NULL);
+	skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Handle Speed Dial Stat Request\n");
 	skinny_send_reply_quiet(listener, message);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1856,7 +1853,7 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 	}
 
 	skinny_log_l(listener, SWITCH_LOG_DEBUG, "Soft Key Event (%s) with Line Instance (%d), Call ID (%d)\n",
-		request->data.soft_key_event.event, line_instance, call_id);
+		skinny_soft_key_event2str(request->data.soft_key_event.event), line_instance, call_id);
 
 	switch(request->data.soft_key_event.event) {
 		case SOFTKEY_REDIAL:
@@ -1980,7 +1977,7 @@ switch_status_t skinny_handle_soft_key_template_request(listener_t *listener, sk
 		message->data.soft_key_template.soft_key[i].soft_key_event = soft_key_template_default_events[i];
 	}
 		
-	skinny_log_l(listener, SWITCH_LOG_DEBUG, "Handle Soft Key Template Request with Default Template\n", NULL);
+	skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Handle Soft Key Template Request with Default Template\n");
 
 	skinny_send_reply_quiet(listener, message);
 
@@ -2013,7 +2010,7 @@ switch_status_t skinny_handle_register_available_lines_message(listener_t *liste
 {
 	skinny_check_data_length(request, sizeof(request->data.reg_lines));
 
-	skinny_log_l(listener, SWITCH_LOG_DEBUG, "Handle Register Available Lines\n", NULL);
+	skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Handle Register Available Lines\n");
 
 	/* Do nothing */
 	return SWITCH_STATUS_SUCCESS;
