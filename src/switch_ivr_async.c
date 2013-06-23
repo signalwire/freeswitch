@@ -1070,7 +1070,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 	struct record_helper *rh = (struct record_helper *) user_data;
 	switch_event_t *event;
 	switch_frame_t *nframe;
-	switch_size_t len;
+	switch_size_t len = 0;
 	int mask = switch_core_media_bug_test_flag(bug, SMBF_MASK);
 	unsigned char null_data[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
 
