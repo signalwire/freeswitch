@@ -1440,7 +1440,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_socket_timeout_set(listener->sock, 5000000);
 #endif
 	if (listener->profile->debug > 0) {
-		skinny_log_l(listener, SWITCH_LOG_DEBUG, "Connection Open%s\n", "");
+		skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Connection Open\n");
 	}
 
 	switch_set_flag_locked(listener, LFLAG_RUNNING);
@@ -1454,7 +1454,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		if (status != SWITCH_STATUS_SUCCESS) {
 			switch(status) {
 				case SWITCH_STATUS_TIMEOUT:
-					skinny_log_l(listener, SWITCH_LOG_DEBUG, "Communication Time Out%s\n", "");
+					skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Communication Time Out\n");
 
 					if(listener->expire_time < switch_epoch_time_now(NULL)) {
 						switch_event_t *event = NULL;
@@ -1464,7 +1464,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 					}
 					break;
 				default: 
-					skinny_log_l(listener, SWITCH_LOG_DEBUG, "Communication Error%s\n", "");
+					skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Communication Error\n");
 			}
 			switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			break;
@@ -1487,7 +1487,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	remove_listener(listener);
 
 	if (listener->profile->debug > 0) {
-		skinny_log_l(listener, SWITCH_LOG_DEBUG, "Communication Complete%s\n", "");
+		skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Communication Complete\n");
 	}
 
 	switch_thread_rwlock_wrlock(listener->rwlock);
@@ -1500,7 +1500,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_thread_rwlock_unlock(listener->rwlock);
 
 	if (listener->profile->debug > 0) {
-		skinny_log_l(listener, SWITCH_LOG_DEBUG, "Communication Closed%s\n", "");
+		skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Communication Closed\n");
 	}
 
 	if(destroy_pool == 0) {

@@ -754,9 +754,6 @@ switch_status_t perform_send_define_current_time_date(listener_t *listener,
 	ts = switch_micro_time_now();
 	switch_time_exp_lt(&tm, ts);
 
-	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
-		"Send Define Current Time Date with Timestamp (%d)\n", (uint32_t) ts / 1000000);
-
 	return send_define_time_date(listener,
 			tm.tm_year + 1900,
 			tm.tm_mon + 1,
