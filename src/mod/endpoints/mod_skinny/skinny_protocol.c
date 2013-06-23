@@ -459,6 +459,22 @@ void skinny_feature_get(listener_t *listener, uint32_t instance, struct feature_
 /*****************************************************************************/
 /* SKINNY MESSAGE SENDER */
 /*****************************************************************************/
+switch_status_t perform_send_keep_alive_ack(listener_t *listener,
+		const char *file, const char *func, int line)
+{
+	skinny_message_t *message;
+	message = switch_core_alloc(listener->pool, 12);
+	message->type = KEEP_ALIVE_ACK_MESSAGE;
+	message->length = 4;
+
+	if ( listener->profile->debug >= 10 ) {
+		skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
+			"Sending Keep Alive Ack\n", NULL);
+	}
+
+	return skinny_send_reply_quiet(listener, message);
+}
+
 switch_status_t perform_send_register_ack(listener_t *listener,
 		const char *file, const char *func, int line,
 		uint32_t keep_alive,
