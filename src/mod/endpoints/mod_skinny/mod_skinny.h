@@ -36,6 +36,24 @@
 #include <switch.h>
 
 /*****************************************************************************/
+/* LOGGING FUNCTIONS */
+/*****************************************************************************/
+#define skinny_undef_str(x) (zstr(x) ? "_undef_" : x)
+
+#define skinny_log_l(listener, level, _fmt, ...) switch_log_printf(SWITCH_CHANNEL_LOG, level, \
+    "[%s:%d @ %s:%d] " _fmt, skinny_undef_str(listener->device_name), listener->device_instance, skinny_undef_str(listener->remote_ip), \
+    listener->remote_port, __VA_ARGS__)
+
+#define skinny_log_l_ffl(listener, file, func, line, level, _fmt, ...) switch_log_printf( \
+	SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, level, \
+    "[%s:%d @ %s:%d] " _fmt, skinny_undef_str(listener->device_name), listener->device_instance, skinny_undef_str(listener->remote_ip), \
+    listener->remote_port, __VA_ARGS__)
+
+#define skinny_log_ls(listener, session, level, _fmt, ...) switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), level, \
+    "[%s:%d @ %s:%d] " _fmt, skinny_undef_str(listener->device_name), listener->device_instance, skinny_undef_str(listener->remote_ip), \
+    listener->remote_port, __VA_ARGS__)
+
+/*****************************************************************************/
 /* MODULE TYPES */
 /*****************************************************************************/
 #define SKINNY_EVENT_REGISTER "skinny::register"
@@ -273,6 +291,11 @@ switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
 /* MODULE FUNCTIONS */
 /*****************************************************************************/
 switch_endpoint_interface_t *skinny_get_endpoint_interface();
+
+/*****************************************************************************/
+/* MODULE FUNCTIONS */
+/*****************************************************************************/
+#define skinny_textid2raw(label) (label > 0 ? switch_mprintf("\200%c", label) : switch_mprintf(""))
 
 #endif /* _MOD_SKINNY_H */
 
