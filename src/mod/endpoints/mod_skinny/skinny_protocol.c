@@ -469,7 +469,7 @@ switch_status_t perform_send_keep_alive_ack(listener_t *listener,
 
 	if ( listener->profile->debug >= 10 ) {
 		skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
-			"Sending Keep Alive Ack\n", NULL);
+			"Sending Keep Alive Ack%s\n", "");
 	}
 
 	return skinny_send_reply_quiet(listener, message);
@@ -653,7 +653,7 @@ switch_status_t perform_send_stop_media_transmission(listener_t *listener,
 	/* ... */
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
-		"Send Stop Media Transmission with Conf ID (%d), Passthrough Party ID (%d), Conf ID2\n", 
+		"Send Stop Media Transmission with Conf ID (%d), Passthrough Party ID (%d), Conf ID2 (%d)\n", 
 		conference_id, pass_thru_party_id, conference_id2);
 
 	return skinny_send_reply_quiet(listener, message);
@@ -708,7 +708,7 @@ switch_status_t perform_send_call_info(listener_t *listener,
 	message->data.call_info.party_pi_restriction_bits = party_pi_restriction_bits;
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
-		"Send Call Info with ...\n", NULL);
+		"Send Call Info with Line Instance (%d)...\n", line_instance);
 
 	return skinny_send_reply_quiet(listener, message);
 }
@@ -755,7 +755,7 @@ switch_status_t perform_send_define_current_time_date(listener_t *listener,
 	switch_time_exp_lt(&tm, ts);
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
-		"Send Define Current Time Date with Timestamp (%d)\n", ts / 1000000);
+		"Send Define Current Time Date with Timestamp (%d)\n", (uint32_t) ts / 1000000);
 
 	return send_define_time_date(listener,
 			tm.tm_year + 1900,
@@ -778,7 +778,7 @@ switch_status_t perform_send_capabilities_req(listener_t *listener,
 	message->length = 4;
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
-		"Send Capabilities Req\n", NULL);
+		"Send Capabilities Req%s\n", "");
 
 	return skinny_send_reply_quiet(listener, message);
 }
