@@ -1953,6 +1953,7 @@ switch_status_t skinny_handle_unregister(listener_t *listener, skinny_message_t 
 
 switch_status_t skinny_handle_soft_key_template_request(listener_t *listener, skinny_message_t *request)
 {
+	int i;
 	skinny_message_t *message;
 
 	switch_assert(listener->profile);
@@ -1967,7 +1968,7 @@ switch_status_t skinny_handle_soft_key_template_request(listener_t *listener, sk
 	message->data.soft_key_template.total_soft_key_count = 21;
 
 	memset(message->data.soft_key_template.soft_key, 0, sizeof(message->data.soft_key_template));
-	for (int i=0; i<sizeof(soft_key_template_default_textids); i++) {
+	for (i=0; i<sizeof(soft_key_template_default_textids); i++) {
 		char *label = skinny_textid2raw(soft_key_template_default_textids[i]);
 		strcpy(message->data.soft_key_template.soft_key[i].soft_key_label, skinny_textid2raw(soft_key_template_default_textids[i]));
 		switch_safe_free(label);
