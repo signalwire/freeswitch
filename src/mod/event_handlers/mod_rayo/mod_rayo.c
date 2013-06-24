@@ -67,9 +67,9 @@ struct rayo_call;
  * Function pointer wrapper for the handlers hash
  */
 struct rayo_xmpp_handler {
-	enum rayo_actor_type from_type;
+	const char *from_type;
 	const char *from_subtype;
-	enum rayo_actor_type to_type;
+	const char *to_type;
 	const char *to_subtype;
 	rayo_actor_xmpp_handler fn;
 };
@@ -102,8 +102,6 @@ struct rayo_client {
 	struct rayo_actor base;
 	/** availability */
 	enum presence_status availability;
-	/** true if superuser */
-	int is_admin;
 	/** set if reachable via s2s */
 	struct rayo_peer_server *peer_server;
 	/** domain or full JID to route to */
@@ -215,15 +213,24 @@ struct dial_gateway {
 	int strip;
 };
 
-static void rayo_call_send(struct rayo_actor *client, struct rayo_actor *call, struct rayo_message *msg, const char *file, int line);
-static void rayo_server_send(struct rayo_actor *client, struct rayo_actor *server, struct rayo_message *msg, const char *file, int line);
-static void rayo_mixer_send(struct rayo_actor *client, struct rayo_actor *mixer, struct rayo_message *msg, const char *file, int line);
-static void rayo_component_send(struct rayo_actor *client, struct rayo_actor *component, struct rayo_message *msg, const char *file, int line);
-static void rayo_client_send(struct rayo_actor *from, struct rayo_actor *client, struct rayo_message *msg, const char *file, int line);
-static void rayo_console_client_send(struct rayo_actor *from, struct rayo_actor *client, struct rayo_message *msg, const char *file, int line);
+static void rayo_call_send(struct rayo_actor *call, struct rayo_message *msg, const char *file, int line);
+static void rayo_server_send(struct rayo_actor *server, struct rayo_message *msg, const char *file, int line);
+static void rayo_mixer_send(struct rayo_actor *mixer, struct rayo_message *msg, const char *file, int line);
+static void rayo_component_send(struct rayo_actor *component, struct rayo_message *msg, const char *file, int line);
+static void rayo_client_send(struct rayo_actor *client, struct rayo_message *msg, const char *file, int line);
+static void rayo_console_client_send(struct rayo_actor *client, struct rayo_message *msg, const char *file, int line);
 
 static void on_client_presence(struct rayo_client *rclient, iks *node);
 
+
+/**
+ * @param jid to check
+ * @return true if jid is admin client (console)
+ */
+static int is_admin_client(const char *jid)
+{
+	return !zstr(jid) && !strcmp(RAYO_JID(globals.console), jid);
+}
 
 /**
  * Presence status
@@ -237,25 +244,6 @@ static const char *presence_status_to_string(enum presence_status status)
 		case PS_ONLINE: return "ONLINE";
 		case PS_UNKNOWN:
 		default: return "UNKNOWN";
-	}
-	return "UNKNOWN";
-}
-
-/**
- * Convert Rayo actor type to string
- * @param type the Rayo actor type
- * @return the string value of type or "UNKNOWN"
- */
-static const char *rayo_actor_type_to_string(enum rayo_actor_type type)
-{
-	switch(type) {
-		case RAT_PEER_SERVER: return "PEER_SERVER";
-		case RAT_CLIENT: return "CLIENT";
-		case RAT_CALL: return "CALL";
-		case RAT_CALL_COMPONENT: return "CALL_COMPONENT";
-		case RAT_MIXER: return "MIXER";
-		case RAT_MIXER_COMPONENT: return "MIXER_COMPONENT";
-		case RAT_SERVER: return "SERVER";
 	}
 	return "UNKNOWN";
 }
@@ -436,7 +424,7 @@ static void rayo_command_handler_add(const char *name, struct rayo_xmpp_handler 
 {
 	char full_name[1024];
 	full_name[1023] = '\0';
-	snprintf(full_name, sizeof(full_name) - 1, "%i:%s:%s", handler->to_type, handler->to_subtype, name);
+	snprintf(full_name, sizeof(full_name) - 1, "%s:%s:%s", handler->to_type, handler->to_subtype, name);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding command: %s\n", full_name);
 	switch_core_hash_insert(globals.command_handlers, full_name, handler);
 }
@@ -448,10 +436,10 @@ static void rayo_command_handler_add(const char *name, struct rayo_xmpp_handler 
  * @param name the command name
  * @param fn the command callback function
  */
-void rayo_actor_command_handler_add(enum rayo_actor_type type, const char *subtype, const char *name, rayo_actor_xmpp_handler fn)
+void rayo_actor_command_handler_add(const char *type, const char *subtype, const char *name, rayo_actor_xmpp_handler fn)
 {
 	struct rayo_xmpp_handler *handler = switch_core_alloc(globals.pool, sizeof (*handler));
-	handler->to_type = type;
+	handler->to_type = zstr(type) ? "" : switch_core_strdup(globals.pool, type);
 	handler->to_subtype = zstr(subtype) ? "" : switch_core_strdup(globals.pool, subtype);
 	handler->fn = fn;
 	rayo_command_handler_add(name, handler);
@@ -460,11 +448,12 @@ void rayo_actor_command_handler_add(enum rayo_actor_type type, const char *subty
 /**
  * Get command handler function from hash
  * @param hash the hash to search
- * @param iq
+ * @param msg the command
  * @return the command handler function or NULL
  */
-rayo_actor_xmpp_handler rayo_actor_command_handler_find(struct rayo_actor *actor, iks *iq)
+rayo_actor_xmpp_handler rayo_actor_command_handler_find(struct rayo_actor *actor, struct rayo_message *msg)
 {
+	iks *iq = msg->payload;
 	const char *iq_type = iks_find_attrib_soft(iq, "type");
 	iks *command = iks_first_tag(iq);
 	const char *name = "";
@@ -481,7 +470,7 @@ rayo_actor_xmpp_handler rayo_actor_command_handler_find(struct rayo_actor *actor
 		}
 	}
 
-	snprintf(full_name, sizeof(full_name) - 1, "%i:%s:%s:%s:%s", actor->type, actor->subtype, iq_type, namespace, name);
+	snprintf(full_name, sizeof(full_name) - 1, "%s:%s:%s:%s:%s", actor->type, actor->subtype, iq_type, namespace, name);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, looking for %s command\n", RAYO_JID(actor), full_name);
 	handler = (struct rayo_xmpp_handler *)switch_core_hash_find(globals.command_handlers, full_name);
 	if (handler) {
@@ -500,7 +489,7 @@ static void rayo_event_handler_add(const char *name, struct rayo_xmpp_handler *h
 {
 	char full_name[1024];
 	full_name[1023] = '\0';
-	snprintf(full_name, sizeof(full_name) - 1, "%i:%s:%i:%s:%s", handler->from_type, handler->from_subtype, handler->to_type, handler->to_subtype, name);
+	snprintf(full_name, sizeof(full_name) - 1, "%s:%s:%s:%s:%s", handler->from_type, handler->from_subtype, handler->to_type, handler->to_subtype, name);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding event: %s\n", full_name);
 	switch_core_hash_insert(globals.event_handlers, full_name, handler);
 }
@@ -514,12 +503,12 @@ static void rayo_event_handler_add(const char *name, struct rayo_xmpp_handler *h
  * @param name the event name
  * @param fn the event callback function
  */
-void rayo_actor_event_handler_add(enum rayo_actor_type from_type, const char *from_subtype, enum rayo_actor_type to_type, const char *to_subtype, const char *name, rayo_actor_xmpp_handler fn)
+void rayo_actor_event_handler_add(const char *from_type, const char *from_subtype, const char *to_type, const char *to_subtype, const char *name, rayo_actor_xmpp_handler fn)
 {
 	struct rayo_xmpp_handler *handler = switch_core_alloc(globals.pool, sizeof (*handler));
-	handler->from_type = from_type;
+	handler->from_type = zstr(from_type) ? "" : switch_core_strdup(globals.pool, from_type);
 	handler->from_subtype = zstr(from_subtype) ? "" : switch_core_strdup(globals.pool, from_subtype);
-	handler->to_type = to_type;
+	handler->to_type = zstr(to_type) ? "" : switch_core_strdup(globals.pool, to_type);
 	handler->to_subtype = zstr(to_subtype) ? "" : switch_core_strdup(globals.pool, to_subtype);
 	handler->fn = fn;
 	rayo_event_handler_add(name, handler);
@@ -527,13 +516,13 @@ void rayo_actor_event_handler_add(enum rayo_actor_type from_type, const char *fr
 
 /**
  * Get event handler function from hash
- * @param from the event source
  * @param actor the event destination
- * @param presence the event
+ * @param msg the event
  * @return the event handler function or NULL
  */
-rayo_actor_xmpp_handler rayo_actor_event_handler_find(struct rayo_actor *from, struct rayo_actor *actor, iks *presence)
+rayo_actor_xmpp_handler rayo_actor_event_handler_find(struct rayo_actor *actor, struct rayo_message *msg)
 {
+	iks *presence = msg->payload;
 	iks *event = iks_first_tag(presence);
 	if (event) {
 		struct rayo_xmpp_handler *handler = NULL;
@@ -545,39 +534,38 @@ rayo_actor_xmpp_handler rayo_actor_event_handler_find(struct rayo_actor *from, s
 		if (zstr(event_name)) {
 			return NULL;
 		}
-		snprintf(full_name, sizeof(full_name) - 1, "%i:%s:%i:%s:%s:%s:%s", from->type, from->subtype, actor->type, actor->subtype, presence_type, event_namespace, event_name);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s => %s, looking for %s event handler\n", RAYO_JID(from), RAYO_JID(actor), full_name);
+		snprintf(full_name, sizeof(full_name) - 1, "%s:%s:%s:%s:%s:%s:%s", msg->from_type, msg->from_subtype, actor->type, actor->subtype, presence_type, event_namespace, event_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s => %s, looking for %s event handler\n", msg->from_jid, RAYO_JID(actor), full_name);
 		handler = (struct rayo_xmpp_handler *)switch_core_hash_find(globals.event_handlers, full_name);
 		if (handler) {
 			return handler->fn;
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s => %s, event missing child element\n", RAYO_JID(from), RAYO_JID(actor));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s => %s, event missing child element\n", msg->from_jid, RAYO_JID(actor));
 	}
 	return NULL;
 }
 
 /**
  * Create a new xml message for delivery to an actor.
+ * @param from actor creating this message
  * @param xml to create message from.  This value will be freed upon message delivery.
+ * @param dup true if duplicate payload
+ * @param reply true if a reply (error or result)
  * @return the message
  */
-struct rayo_message *rayo_message_create(iks *xml)
+struct rayo_message *rayo_message_create(struct rayo_actor *from, iks *xml, int dup, int reply)
 {
 	struct rayo_message *msg = malloc(sizeof(*msg));
-	msg->payload = xml;
-	return msg;
-}
-
-/**
- * Create a new xml message for delivery to an actor.  The XML is duplicated before delivery.
- * @param xml to create message from.  This value will not be freed.
- * @return the message
- */
-struct rayo_message *rayo_message_create_dup(iks *xml)
-{
-	struct rayo_message *msg = malloc(sizeof(*msg));
-	msg->payload = iks_copy(xml);
+	if (dup) {
+		msg->payload = iks_copy(xml);
+	} else {
+		msg->payload = xml;
+	}
+	msg->is_reply = reply;
+	msg->from_jid = strdup(RAYO_JID(from));
+	msg->from_type = strdup(zstr(from->type) ? "" : from->type);
+	msg->from_subtype = strdup(zstr(from->subtype) ? "" : from->subtype);
 	return msg;
 }
 
@@ -591,6 +579,9 @@ void rayo_message_destroy(struct rayo_message *msg)
 		if (msg->payload) {
 			iks_delete(msg->payload);
 		}
+		switch_safe_free(msg->from_jid);
+		switch_safe_free(msg->from_type);
+		switch_safe_free(msg->from_subtype);
 		free(msg);
 	}
 }
@@ -606,16 +597,16 @@ iks *rayo_message_remove_payload(struct rayo_message *msg)
 }
 
 /**
- * Send message to actor
+ * Deliver message to actor
  */
-void rayo_actor_send(struct rayo_actor *from, struct rayo_actor *actor, struct rayo_message *msg, const char *file, int line)
+static void rayo_actor_deliver(struct rayo_actor *actor, struct rayo_message *msg, const char *file, int line)
 {
 	iks *payload = msg->payload;
 	char *msg_str = iks_string(iks_stack(payload), payload);
 
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, "", SWITCH_LOG_DEBUG, "%s, %s\n", RAYO_JID(from), msg_str);
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, "", SWITCH_LOG_DEBUG, "%s, %s\n", msg->from_jid, msg_str);
 	switch_mutex_lock(actor->mutex);
-	actor->send_fn(from, actor, msg, file, line);
+	actor->send_fn(actor, msg, file, line);
 	switch_mutex_unlock(actor->mutex);
 
 	rayo_message_destroy(msg);
@@ -624,14 +615,19 @@ void rayo_actor_send(struct rayo_actor *from, struct rayo_actor *actor, struct r
 /**
  * Send message to actor addressed by JID
  */
-void rayo_actor_send_by_jid(struct rayo_actor *from, const char *jid, struct rayo_message *msg, const char *file, int line)
+void rayo_actor_send(const char *jid, struct rayo_message *msg, const char *file, int line)
 {
 	struct rayo_actor *actor = RAYO_LOCATE(jid);
 	if (actor) {
-		rayo_actor_send(from, actor, msg, file, line);
+		/* TODO queue to thread pool */
+		rayo_actor_deliver(actor, msg, file, line);
 		RAYO_UNLOCK(actor);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, "", SWITCH_LOG_DEBUG, "%s, failed to locate %s.\n", RAYO_JID(from), jid);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, "", SWITCH_LOG_DEBUG, "%s, failed to locate %s.\n", msg->from_jid, jid);
+		if (!msg->is_reply) {
+			/* don't reply to replies to prevent infinite loops */
+			RAYO_SEND(msg->from_jid, RAYO_REPLY_CREATE(globals.server, iks_new_error(msg->payload, STANZA_ERROR_ITEM_NOT_FOUND)));
+		}
 		rayo_message_destroy(msg);
 	}
 }
@@ -698,11 +694,15 @@ void rayo_actor_destroy(struct rayo_actor *actor, const char *file, int line)
 	}
 	actor->destroy = 1;
 	if (actor->ref_count <= 0) {
+		struct rayo_message *msg;
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, "", SWITCH_LOG_DEBUG, "Destroying %s\n", RAYO_JID(actor));
 		if (actor->cleanup_fn) {
 			actor->cleanup_fn(actor);
 		}
 		switch_core_hash_delete(globals.destroy_actors, RAYO_JID(actor));
+		while (switch_queue_trypop(actor->msg_queue, (void *)&msg) == SWITCH_STATUS_SUCCESS) {
+			rayo_message_destroy(msg);
+		}
 		switch_core_destroy_memory_pool(&pool);
 	} else {
 		switch_core_hash_insert(globals.destroy_actors, RAYO_JID(actor), actor);
@@ -760,7 +760,7 @@ int rayo_actor_seq_next(struct rayo_actor *actor)
 static struct rayo_call *rayo_call_locate(const char *call_uuid, const char *file, int line)
 {
 	struct rayo_actor *actor = rayo_actor_locate_by_id(call_uuid, file, line);
-	if (actor && actor->type == RAT_CALL) {
+	if (actor && !strcmp(RAT_CALL, actor->type)) {
 		return RAYO_CALL(actor);
 	} else if (actor) {
 		RAYO_UNLOCK(actor);
@@ -834,14 +834,14 @@ static void rayo_call_cleanup(struct rayo_actor *actor)
 		switch_assert(client_jid);
 		iks_insert_attrib(revent, "to", client_jid);
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "Sending <end> to offered client %s\n", client_jid);
-		RAYO_SEND_BY_JID(actor, client_jid, rayo_message_create_dup(revent));
+		RAYO_SEND(client_jid, RAYO_MESSAGE_CREATE_DUP(actor, revent));
 		no_offered_clients = 0;
 	}
 
 	if (no_offered_clients) {
 		/* send to DCP only */
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "Sending <end> to DCP %s\n", rayo_call_get_dcp_jid(call));
-		RAYO_SEND_BY_JID(actor, rayo_call_get_dcp_jid(call), rayo_message_create_dup(revent));
+		RAYO_SEND(rayo_call_get_dcp_jid(call), RAYO_MESSAGE_CREATE_DUP(actor, revent));
 	}
 
 	iks_delete(revent);
@@ -875,7 +875,7 @@ static int rayo_call_is_joined(struct rayo_call *call)
 static struct rayo_mixer *rayo_mixer_locate(const char *mixer_name, const char *file, int line)
 {
 	struct rayo_actor *actor = rayo_actor_locate_by_id(mixer_name, file, line);
-	if (actor && actor->type == RAT_MIXER) {
+	if (actor && !strcmp(RAT_MIXER, actor->type)) {
 		return RAYO_MIXER(actor);
 	} else if (actor) {
 		RAYO_UNLOCK(actor);
@@ -886,9 +886,9 @@ static struct rayo_mixer *rayo_mixer_locate(const char *mixer_name, const char *
 /**
  * Default message handler - drops messages
  */
-void rayo_actor_send_ignore(struct rayo_actor *from, struct rayo_actor *to, struct rayo_message *msg, const char *file, int line)
+void rayo_actor_send_ignore(struct rayo_actor *to, struct rayo_message *msg, const char *file, int line)
 {
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, "", SWITCH_LOG_WARNING, "%s, dropping unexpected message to %s.\n", RAYO_JID(from), RAYO_JID(to));
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, "", SWITCH_LOG_WARNING, "%s, dropping unexpected message to %s.\n", msg->from_jid, RAYO_JID(to));
 }
 
 #define RAYO_ACTOR_INIT(actor, pool, type, subtype, id, jid, cleanup, send) rayo_actor_init(actor, pool, type, subtype, id, jid, cleanup, send, __FILE__, __LINE__)
@@ -901,14 +901,15 @@ void rayo_actor_send_ignore(struct rayo_actor *from, struct rayo_actor *to, stru
  * @param id internal ID
  * @param jid external ID
  * @param cleanup function
+ * @param send sent message handler
  * @param file that called this function
  * @param line that called this function
  * @return the actor
  */
-static struct rayo_actor *rayo_actor_init(struct rayo_actor *actor, switch_memory_pool_t *pool, enum rayo_actor_type type, const char *subtype, const char *id, const char *jid, rayo_actor_cleanup_fn cleanup, rayo_actor_send_fn send, const char *file, int line)
+static struct rayo_actor *rayo_actor_init(struct rayo_actor *actor, switch_memory_pool_t *pool, const char *type, const char *subtype, const char *id, const char *jid, rayo_actor_cleanup_fn cleanup, rayo_actor_send_fn send, const char *file, int line)
 {
 	char *domain;
-	actor->type = type;
+	actor->type = switch_core_strdup(pool, type);
 	actor->subtype = switch_core_strdup(pool, subtype);
 	actor->pool = pool;
 	if (!zstr(id)) {
@@ -938,6 +939,7 @@ static struct rayo_actor *rayo_actor_init(struct rayo_actor *actor, switch_memor
 	} else {
 		actor->send_fn = send;
 	}
+	switch_queue_create(&actor->msg_queue, 20, pool);
 
 	/* add to hash of actors, so commands can route to call */
 	switch_mutex_lock(globals.actors_mutex);
@@ -1036,30 +1038,21 @@ static void rayo_component_cleanup(struct rayo_actor *actor)
 /**
  * Initialize Rayo component
  * @param type of this component
+ * @param subtype of this component
  * @param id internal ID of this component
  * @param parent the parent that owns this component
  * @param client_jid the client that created this component
  * @return the component
  */
-struct rayo_component *_rayo_component_init(struct rayo_component *component, switch_memory_pool_t *pool, const char *type, const char *id, struct rayo_actor *parent, const char *client_jid, const char *file, int line)
+struct rayo_component *_rayo_component_init(struct rayo_component *component, switch_memory_pool_t *pool, const char *type, const char *subtype, const char *id, struct rayo_actor *parent, const char *client_jid, const char *file, int line)
 {
-	enum rayo_actor_type actor_type;
 	char *ref = switch_mprintf("%s-%d", type, rayo_actor_seq_next(parent));
 	char *jid = switch_mprintf("%s/%s", RAYO_JID(parent), ref);
 	if (zstr(id)) {
 		id = jid;
 	}
-	if (parent->type == RAT_CALL || parent->type == RAT_CALL_COMPONENT) {
-		actor_type = RAT_CALL_COMPONENT;
-	} else if (parent->type == RAT_MIXER) {
-		actor_type = RAT_MIXER_COMPONENT;
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Created component with parent %s, type (%s)\n",
-			RAYO_JID(parent), rayo_actor_type_to_string(parent->type));
-		return NULL;
-	}
 
-	rayo_actor_init(RAYO_ACTOR(component), pool, actor_type, type, id, jid, rayo_component_cleanup, rayo_component_send, file, line);
+	rayo_actor_init(RAYO_ACTOR(component), pool, type, subtype, id, jid, rayo_component_cleanup, rayo_component_send, file, line);
 
 	RAYO_RDLOCK(parent);
 	component->client_jid = switch_core_strdup(pool, client_jid);
@@ -1074,7 +1067,7 @@ struct rayo_component *_rayo_component_init(struct rayo_component *component, sw
 /**
  * Send XMPP message to client
  */
-void rayo_client_send(struct rayo_actor *from, struct rayo_actor *client, struct rayo_message *msg, const char *file, int line)
+void rayo_client_send(struct rayo_actor *client, struct rayo_message *msg, const char *file, int line)
 {
 	xmpp_stream_context_send(globals.xmpp_context, RAYO_CLIENT(client)->route, msg->payload);
 }
@@ -1103,14 +1096,12 @@ static void rayo_client_cleanup(struct rayo_actor *actor)
  * @param route to this client
  * @param availability of client
  * @param send message transmission function
- * @param is_admin true if admin client
  * @param peer_server NULL if locally connected client
  * @return the new client
  */
-static struct rayo_client *rayo_client_init(struct rayo_client *client, switch_memory_pool_t *pool, const char *jid, const char *route, enum presence_status availability, rayo_actor_send_fn send, int is_admin, struct rayo_peer_server *peer_server)
+static struct rayo_client *rayo_client_init(struct rayo_client *client, switch_memory_pool_t *pool, const char *jid, const char *route, enum presence_status availability, rayo_actor_send_fn send, struct rayo_peer_server *peer_server)
 {
 	RAYO_ACTOR_INIT(RAYO_ACTOR(client), pool, RAT_CLIENT, "", jid, jid, rayo_client_cleanup, send);
-	client->is_admin = is_admin;
 	client->availability = availability;
 	client->peer_server = peer_server;
 	client->last_probe = 0;
@@ -1136,11 +1127,10 @@ static struct rayo_client *rayo_client_init(struct rayo_client *client, switch_m
  * @param route to this client
  * @param availability of client
  * @param send message transmission function
- * @param is_admin true if admin client
  * @param peer_server NULL if locally connected client
  * @return the new client or NULL
  */
-static struct rayo_client *rayo_client_create(const char *jid, const char *route, enum presence_status availability, rayo_actor_send_fn send, int is_admin, struct rayo_peer_server *peer_server)
+static struct rayo_client *rayo_client_create(const char *jid, const char *route, enum presence_status availability, rayo_actor_send_fn send, struct rayo_peer_server *peer_server)
 {
 	switch_memory_pool_t *pool;
 	struct rayo_client *rclient = NULL;
@@ -1150,13 +1140,13 @@ static struct rayo_client *rayo_client_create(const char *jid, const char *route
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error\n");
 		return NULL;
 	}
-	return rayo_client_init(rclient, pool, jid, route, availability, send, is_admin, peer_server);
+	return rayo_client_init(rclient, pool, jid, route, availability, send, peer_server);
 }
 
 /**
  * Send XMPP message to peer server
  */
-void rayo_peer_server_send(struct rayo_actor *from, struct rayo_actor *server, struct rayo_message *msg, const char *file, int line)
+void rayo_peer_server_send(struct rayo_actor *server, struct rayo_message *msg, const char *file, int line)
 {
 	xmpp_stream_context_send(globals.xmpp_context, RAYO_JID(server), msg->payload);
 }
@@ -1217,11 +1207,11 @@ static struct rayo_peer_server *rayo_peer_server_create(const char *jid)
  * @param call_uuid the internal call UUID
  * @return 1 if session has call control
  */
-static int rayo_client_has_call_control(struct rayo_client *rclient, struct rayo_call *call, switch_core_session_t *session)
+static int rayo_client_has_call_control(const char *rclient, struct rayo_call *call, switch_core_session_t *session)
 {
 	int control = 0;
 
-	if (zstr(RAYO_JID(rclient))) {
+	if (zstr(rclient)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Null client JID!!\n");
 		return 0;
 	}
@@ -1229,19 +1219,19 @@ static int rayo_client_has_call_control(struct rayo_client *rclient, struct rayo
 	/* nobody in charge */
 	if (zstr(call->dcp_jid)) {
 		/* was offered to this session? */
-		if (switch_core_hash_find(call->pcps, RAYO_JID(rclient))) {
+		if (switch_core_hash_find(call->pcps, rclient)) {
 			/* take charge */
-			call->dcp_jid = switch_core_strdup(RAYO_POOL(call), RAYO_JID(rclient));
+			call->dcp_jid = switch_core_strdup(RAYO_POOL(call), rclient);
 			switch_channel_set_variable(switch_core_session_get_channel(session), "rayo_dcp_jid", rayo_call_get_dcp_jid(call));
 			control = 1;
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_INFO, "%s has control of call\n", rayo_call_get_dcp_jid(call));
 		}
-	} else if (rclient->is_admin || !strcmp(rayo_call_get_dcp_jid(call), RAYO_JID(rclient))) {
+	} else if (is_admin_client(rclient) || !strcmp(rayo_call_get_dcp_jid(call), rclient)) {
 		control = 1;
 	}
 
 	if (!control) {
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_INFO, "%s does not have control of call\n", RAYO_JID(rclient));
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_INFO, "%s does not have control of call\n", rclient);
 	}
 
 	return control;
@@ -1249,21 +1239,18 @@ static int rayo_client_has_call_control(struct rayo_client *rclient, struct rayo
 
 /**
  * Check Rayo server command for errors.
- * @param rclient the Rayo client
- * @param node the <iq> node
+ * @param server the server
+ * @param msg the command
  * @return 1 if OK
  */
-static iks *rayo_server_command_ok(struct rayo_actor *rclient, struct rayo_actor *server, iks *node)
+static iks *rayo_server_command_ok(struct rayo_actor *server, struct rayo_message *msg)
 {
+	iks *node = msg->payload;
 	iks *response = NULL;
 	int bad = zstr(iks_find_attrib(node, "id"));
 
 	if (bad) {
 		response = iks_new_error(node, STANZA_ERROR_BAD_REQUEST);
-	} else if (rclient->type != RAT_CLIENT) {
-		/* not a rayo client request */
-		response = iks_new_error(node, STANZA_ERROR_NOT_ALLOWED);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, %s not a client\n", RAYO_JID(rclient), RAYO_JID(server));
 	}
 
 	return response;
@@ -1271,36 +1258,22 @@ static iks *rayo_server_command_ok(struct rayo_actor *rclient, struct rayo_actor
 
 /**
  * Check Rayo call command for errors.
- * @param rclient the Rayo client
  * @param call the Rayo call
  * @param session the session
- * @param node the <iq> node
+ * @param msg the command
  * @return 1 if OK
  */
-static iks *rayo_call_command_ok(struct rayo_actor *rclient, struct rayo_call *call, switch_core_session_t *session, iks *node)
+static iks *rayo_call_command_ok(struct rayo_call *call, switch_core_session_t *session, struct rayo_message *msg)
 {
+	iks *node = msg->payload;
 	iks *response = NULL;
 	int bad = zstr(iks_find_attrib(node, "id"));
 
 	if (bad) {
 		response = iks_new_error(node, STANZA_ERROR_BAD_REQUEST);
-	} else if (rclient->type == RAT_CALL_COMPONENT) {
-		struct rayo_actor *client = RAYO_LOCATE(RAYO_COMPONENT(rclient)->client_jid);
-		if (client) {
-	 		iks *response = rayo_call_command_ok(client, call, session, node);
-			RAYO_UNLOCK(client);
-			return response;
-		}
-		/* not a client request */
-		response = iks_new_error(node, STANZA_ERROR_NOT_ALLOWED);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, %s call component client is gone\n", RAYO_JID(rclient), RAYO_JID(call));
-	} else if (rclient->type != RAT_CLIENT) {
-		/* not a client request */
-		response = iks_new_error(node, STANZA_ERROR_NOT_ALLOWED);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, %s not a client request\n", RAYO_JID(rclient), RAYO_JID(call));
-	} else if (!rayo_client_has_call_control(RAYO_CLIENT(rclient), call, session)) {
+	} else if (!rayo_client_has_call_control(msg->from_jid, call, session)) {
 		response = iks_new_error(node, STANZA_ERROR_CONFLICT);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, %s conflict\n", RAYO_JID(rclient), RAYO_JID(call));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, %s conflict\n", msg->from_jid, RAYO_JID(call));
 	}
 
 	return response;
@@ -1308,27 +1281,24 @@ static iks *rayo_call_command_ok(struct rayo_actor *rclient, struct rayo_call *c
 
 /**
  * Check Rayo component command for errors.
- * @param rclient the client
  * @param component the component
- * @param node the <iq> node
+ * @param msg the command
  * @return 0 if error
  */
-static iks *rayo_component_command_ok(struct rayo_actor *rclient, struct rayo_component *component, iks *node)
+static iks *rayo_component_command_ok(struct rayo_component *component, struct rayo_message *msg)
 {
+	iks *node = msg->payload;
 	iks *response = NULL;
 	char *from = iks_find_attrib(node, "from");
 	int bad = zstr(iks_find_attrib(node, "id"));
 
 	if (bad) {
 		response = iks_new_error(node, STANZA_ERROR_BAD_REQUEST);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, %s bad request\n", RAYO_JID(rclient), RAYO_JID(component));
-	} else if (rclient->type != RAT_CLIENT) {
-		/* internal message is ok */
-		return NULL;
-	} else if (!RAYO_CLIENT(rclient)->is_admin && strcmp(component->client_jid, from)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, %s bad request\n", msg->from_jid, RAYO_JID(component));
+	} else if (!is_admin_client(msg->from_jid) && strcmp(component->client_jid, from)) {
 		/* does not have control of this component */
 		response = iks_new_error(node, STANZA_ERROR_CONFLICT);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, %s conflict\n", RAYO_JID(rclient), RAYO_JID(component));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, %s conflict\n", msg->from_jid, RAYO_JID(component));
 	}
 
 	return response;
@@ -1337,39 +1307,46 @@ static iks *rayo_component_command_ok(struct rayo_actor *rclient, struct rayo_co
 /**
  * Handle server message
  */
-void rayo_server_send(struct rayo_actor *client, struct rayo_actor *server, struct rayo_message *msg, const char *file, int line)
+void rayo_server_send(struct rayo_actor *server, struct rayo_message *msg, const char *file, int line)
 {
 	iks *response = NULL;
 	rayo_actor_xmpp_handler handler = NULL;
 	iks *iq = msg->payload;
 
 	if (!strcmp("presence", iks_name(iq))) {
-		on_client_presence(RAYO_CLIENT(client), iq);
+		/* this is a hack - message from internal console */
+		struct rayo_actor *client = RAYO_LOCATE(msg->from_jid);
+		if (client) {
+			if (!strcmp(RAT_CLIENT, client->type)) {
+				on_client_presence(RAYO_CLIENT(client), iq);
+			}
+			RAYO_UNLOCK(client);
+		}
 		return;
 	}
 
 	/* is this a command a server supports? */
-	handler = rayo_actor_command_handler_find(server, iq);
+	handler = rayo_actor_command_handler_find(server, msg);
 	if (!handler) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, no handler function for command to %s\n", RAYO_JID(client), RAYO_JID(server));
-		RAYO_SEND(server, client, rayo_message_create(iks_new_error(iq, STANZA_ERROR_FEATURE_NOT_IMPLEMENTED)));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, no handler function for command to %s\n", msg->from_jid, RAYO_JID(server));
+		RAYO_SEND(msg->from_jid, RAYO_REPLY_CREATE(server, iks_new_error(iq, STANZA_ERROR_FEATURE_NOT_IMPLEMENTED)));
 		return;
 	}
 
 	/* is the command valid? */
-	if (!(response = rayo_server_command_ok(client, server, iq))) {
-		response = handler(client, server, iq, NULL);
+	if (!(response = rayo_server_command_ok(server, msg))) {
+		response = handler(server, msg, NULL);
 	}
 
 	if (response) {
-		RAYO_SEND(server, client, rayo_message_create(response));
+		RAYO_SEND(msg->from_jid, RAYO_REPLY_CREATE(server, response));
 	}
 }
 
 /**
  * Handle call message
  */
-void rayo_call_send(struct rayo_actor *client, struct rayo_actor *call, struct rayo_message *msg, const char *file, int line)
+void rayo_call_send(struct rayo_actor *call, struct rayo_message *msg, const char *file, int line)
 {
 	rayo_actor_xmpp_handler handler = NULL;
 	iks *iq = msg->payload;
@@ -1377,10 +1354,10 @@ void rayo_call_send(struct rayo_actor *client, struct rayo_actor *call, struct r
 	iks *response = NULL;
 
 	/* is this a command a call supports? */
-	handler = rayo_actor_command_handler_find(call, iq);
+	handler = rayo_actor_command_handler_find(call, msg);
 	if (!handler) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, no handler function for command\n", RAYO_JID(call));
-		RAYO_SEND(call, client, rayo_message_create(iks_new_error(iq, STANZA_ERROR_FEATURE_NOT_IMPLEMENTED)));
+		RAYO_SEND(msg->from_jid, RAYO_REPLY_CREATE(call, iks_new_error(iq, STANZA_ERROR_FEATURE_NOT_IMPLEMENTED)));
 		return;
 	}
 
@@ -1388,52 +1365,52 @@ void rayo_call_send(struct rayo_actor *client, struct rayo_actor *call, struct r
 	session = switch_core_session_locate(rayo_call_get_uuid(RAYO_CALL(call)));
 	if (!session) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, session not found\n", RAYO_JID(call));
-		RAYO_SEND(call, client, rayo_message_create(iks_new_error(iq, STANZA_ERROR_SERVICE_UNAVAILABLE)));
+		RAYO_SEND(msg->from_jid, RAYO_REPLY_CREATE(call, iks_new_error(iq, STANZA_ERROR_SERVICE_UNAVAILABLE)));
 		return;
 	}
 
 	/* is the command valid? */
-	if (!(response = rayo_call_command_ok(client, RAYO_CALL(call), session, iq))) {
+	if (!(response = rayo_call_command_ok(RAYO_CALL(call), session, msg))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, executing command\n", RAYO_JID(call));
-		response = handler(client, call, iq, session);
+		response = handler(call, msg, session);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, done executing command\n", RAYO_JID(call));
 		RAYO_CALL(call)->idle_start_time = switch_micro_time_now();
 	}
 	switch_core_session_rwunlock(session);
 
 	if (response) {
-		RAYO_SEND(call, client, rayo_message_create(response));
+		RAYO_SEND(msg->from_jid, RAYO_REPLY_CREATE(call, response));
 	}
 }
 
 /**
  * Handle mixer message
  */
-void rayo_mixer_send(struct rayo_actor *client, struct rayo_actor *mixer, struct rayo_message *msg, const char *file, int line)
+void rayo_mixer_send(struct rayo_actor *mixer, struct rayo_message *msg, const char *file, int line)
 {
 	rayo_actor_xmpp_handler handler = NULL;
 	iks *iq = msg->payload;
 	iks *response = NULL;
 
 	/* is this a command a mixer supports? */
-	handler = rayo_actor_command_handler_find(mixer, iq);
+	handler = rayo_actor_command_handler_find(mixer, msg);
 	if (!handler) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, no handler function for command\n", RAYO_JID(mixer));
-		RAYO_SEND(mixer, client, rayo_message_create(iks_new_error(iq, STANZA_ERROR_FEATURE_NOT_IMPLEMENTED)));
+		RAYO_SEND(msg->from_jid, RAYO_REPLY_CREATE(mixer, iks_new_error(iq, STANZA_ERROR_FEATURE_NOT_IMPLEMENTED)));
 		return;
 	}
 
 	/* execute the command */
-	response = handler(client, mixer, iq, NULL);
+	response = handler(mixer, msg, NULL);
 	if (response) {
-		RAYO_SEND(mixer, client, rayo_message_create(response));
+		RAYO_SEND(msg->from_jid, RAYO_REPLY_CREATE(mixer, response));
 	}
 }
 
 /**
  * Handle mixer message
  */
-void rayo_component_send(struct rayo_actor *client, struct rayo_actor *component, struct rayo_message *msg, const char *file, int line)
+void rayo_component_send(struct rayo_actor *component, struct rayo_message *msg, const char *file, int line)
 {
 	rayo_actor_xmpp_handler handler = NULL;
 	iks *xml_msg = msg->payload;
@@ -1441,27 +1418,27 @@ void rayo_component_send(struct rayo_actor *client, struct rayo_actor *component
 
 	if (!strcmp("iq", iks_name(xml_msg))) {
 		/* is this a command a component supports? */
-		handler = rayo_actor_command_handler_find(component, xml_msg);
+		handler = rayo_actor_command_handler_find(component, msg);
 		if (!handler) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, no component handler function for command\n", RAYO_JID(component));
-			RAYO_SEND(component, client, rayo_message_create(iks_new_error(xml_msg, STANZA_ERROR_FEATURE_NOT_IMPLEMENTED)));
+			RAYO_SEND(msg->from_jid, RAYO_REPLY_CREATE(component, iks_new_error(xml_msg, STANZA_ERROR_FEATURE_NOT_IMPLEMENTED)));
 			return;
 		}
 
 		/* is the command valid? */
-		if (!(response = rayo_component_command_ok(client, RAYO_COMPONENT(component), xml_msg))) {
+		if (!(response = rayo_component_command_ok(RAYO_COMPONENT(component), msg))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, executing command\n", RAYO_JID(component));
-			response = handler(client, component, xml_msg, NULL);
+			response = handler(component, msg, NULL);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, done executing command\n", RAYO_JID(component));
 		}
 
 		if (response) {
-			RAYO_SEND(component, client, rayo_message_create(response));
+			RAYO_SEND(msg->from_jid, RAYO_REPLY_CREATE(component, response));
 			return;
 		}
 	} else if (!strcmp("presence", iks_name(xml_msg))) {
 		/* is this an event the component wants? */
-		handler = rayo_actor_event_handler_find(client, component, xml_msg);
+		handler = rayo_actor_event_handler_find(component, msg);
 		if (!handler) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, no component handler function for event\n", RAYO_JID(component));
 			return;
@@ -1469,7 +1446,10 @@ void rayo_component_send(struct rayo_actor *client, struct rayo_actor *component
 
 		/* forward the event */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, forwarding event\n", RAYO_JID(component));
-		handler(client, component, xml_msg, NULL);
+		response = handler(component, msg, NULL);
+		if (response) {
+			RAYO_SEND(msg->from_jid, RAYO_REPLY_CREATE(component, response));
+		}
 	}
 }
 
@@ -1501,8 +1481,9 @@ static void add_signaling_headers(switch_core_session_t *session, iks *iq_cmd, c
  * @param session the session
  * @param node the <iq> node
  */
-static iks *on_rayo_accept(struct rayo_actor *client, struct rayo_actor *call, iks *node, void *session_data)
+static iks *on_rayo_accept(struct rayo_actor *call, struct rayo_message *msg, void *session_data)
 {
+	iks *node = msg->payload;
 	switch_core_session_t *session = (switch_core_session_t *)session_data;
 	iks *response = NULL;
 
@@ -1519,8 +1500,9 @@ static iks *on_rayo_accept(struct rayo_actor *client, struct rayo_actor *call, i
  * @param session the session
  * @param node the <iq> node
  */
-static iks *on_rayo_answer(struct rayo_actor *client, struct rayo_actor *call, iks *node, void *session_data)
+static iks *on_rayo_answer(struct rayo_actor *call, struct rayo_message *msg, void *session_data)
 {
+	iks *node = msg->payload;
 	switch_core_session_t *session = (switch_core_session_t *)session_data;
 	iks *response = NULL;
 
@@ -1537,8 +1519,9 @@ static iks *on_rayo_answer(struct rayo_actor *client, struct rayo_actor *call, i
  * @param session the session
  * @param node the <iq> node
  */
-static iks *on_rayo_redirect(struct rayo_actor *client, struct rayo_actor *call, iks *node, void *session_data)
+static iks *on_rayo_redirect(struct rayo_actor *call, struct rayo_message *msg, void *session_data)
 {
+	iks *node = msg->payload;
 	switch_core_session_t *session = (switch_core_session_t *)session_data;
 	iks *response = NULL;
 	iks *redirect = iks_find(node, "redirect");
@@ -1566,8 +1549,9 @@ static iks *on_rayo_redirect(struct rayo_actor *client, struct rayo_actor *call,
  * @param session the session
  * @param node the <iq> node
  */
-static iks *on_rayo_hangup(struct rayo_actor *client, struct rayo_actor *call, iks *node, void *session_data)
+static iks *on_rayo_hangup(struct rayo_actor *call, struct rayo_message *msg, void *session_data)
 {
+	iks *node = msg->payload;
 	switch_core_session_t *session = (switch_core_session_t *)session_data;
 	iks *response = NULL;
 	iks *hangup = iks_first_tag(node);
@@ -1673,8 +1657,9 @@ static iks *join_mixer(struct rayo_call *call, switch_core_session_t *session, i
  * @param session the session
  * @param node the <iq> node
  */
-static iks *on_rayo_join(struct rayo_actor *client, struct rayo_actor *call, iks *node, void *session_data)
+static iks *on_rayo_join(struct rayo_actor *call, struct rayo_message *msg, void *session_data)
 {
+	iks *node = msg->payload;
 	switch_core_session_t *session = (switch_core_session_t *)session_data;
 	iks *response = NULL;
 	iks *join = iks_find(node, "join");
@@ -1728,7 +1713,7 @@ done:
  * @param call_id the b-leg uuid
  * @return the response
  */
-static iks *unjoin_call(struct rayo_actor *client, struct rayo_call *call, switch_core_session_t *session, iks *node, const char *call_id)
+static iks *unjoin_call(struct rayo_call *call, switch_core_session_t *session, iks *node, const char *call_id)
 {
 	iks *response = NULL;
 	const char *bleg = switch_channel_get_variable(switch_core_session_get_channel(session), SWITCH_BRIDGE_UUID_VARIABLE);
@@ -1754,7 +1739,7 @@ static iks *unjoin_call(struct rayo_actor *client, struct rayo_call *call, switc
  * @param mixer_name the mixer name
  * @return the response
  */
-static iks *unjoin_mixer(struct rayo_actor *client, struct rayo_call *call, switch_core_session_t *session, iks *node, const char *mixer_name)
+static iks *unjoin_mixer(struct rayo_call *call, switch_core_session_t *session, iks *node, const char *mixer_name)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *conf_member_id = switch_channel_get_variable(channel, "conference_member_id");
@@ -1793,8 +1778,9 @@ done:
  * @param session the session
  * @param node the <iq> node
  */
-static iks *on_rayo_unjoin(struct rayo_actor *client, struct rayo_actor *call, iks *node, void *session_data)
+static iks *on_rayo_unjoin(struct rayo_actor *call, struct rayo_message *msg, void *session_data)
 {
+	iks *node = msg->payload;
 	switch_core_session_t *session = (switch_core_session_t *)session_data;
 	iks *response = NULL;
 	iks *unjoin = iks_find(node, "unjoin");
@@ -1807,9 +1793,9 @@ static iks *on_rayo_unjoin(struct rayo_actor *client, struct rayo_actor *call, i
 		/* not joined to anything */
 		response = iks_new_error(node, STANZA_ERROR_SERVICE_UNAVAILABLE);
 	} else if (!zstr(call_id)) {
-		response = unjoin_call(client, RAYO_CALL(call), session, node, call_id);
+		response = unjoin_call(RAYO_CALL(call), session, node, call_id);
 	} else if (!zstr(mixer_name)) {
-		response = unjoin_mixer(client, RAYO_CALL(call), session, node, mixer_name);
+		response = unjoin_mixer(RAYO_CALL(call), session, node, mixer_name);
 	} else {
 		/* missing mixer or call */
 		response = iks_new_error(node, STANZA_ERROR_BAD_REQUEST);
@@ -1818,15 +1804,22 @@ static iks *on_rayo_unjoin(struct rayo_actor *client, struct rayo_actor *call, i
 	return response;
 }
 
+struct dial_thread_data {
+	switch_memory_pool_t *pool;
+	iks *node;
+};
+
+
 /**
  * Thread that handles originating new calls
  * @param thread this thread
  * @param obj the Rayo client
  * @return NULL
  */
-static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *node)
+static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *user)
 {
-	iks *iq = (iks *)node;
+	struct dial_thread_data *dtdata = (struct dial_thread_data *)user;
+	iks *iq = dtdata->node;
 	iks *dial = iks_find(iq, "dial");
 	iks *response = NULL;
 	const char *dcp_jid = iks_find_attrib(iq, "from");
@@ -1977,7 +1970,7 @@ done:
 	/* response when error */
 	if (response) {
 		/* send response to client */
-		RAYO_SEND_BY_JID(call, iks_find_attrib(response, "to"), rayo_message_create(response));
+		RAYO_SEND(iks_find_attrib(response, "to"), RAYO_REPLY_CREATE(call, response));
 
 		/* destroy call */
 		if (call) {
@@ -1990,8 +1983,14 @@ done:
 	switch_safe_free(stream.data);
 	switch_safe_free(dial_to_dup);
 
+	{
+		switch_memory_pool_t *pool = dtdata->pool;
+		switch_core_destroy_memory_pool(&pool);
+	}
+
 	return NULL;
 }
+
 
 /**
  * Dial a new call
@@ -1999,9 +1998,9 @@ done:
  * @param server handling the call
  * @param node the request
  */
-static iks *on_rayo_dial(struct rayo_actor *client, struct rayo_actor *server, iks *node, void *data)
+static iks *on_rayo_dial(struct rayo_actor *server, struct rayo_message *msg, void *data)
 {
-	struct rayo_client *rclient = RAYO_CLIENT(client);
+	iks *node = msg->payload;
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 	iks *dial = iks_find(node, "dial");
@@ -2013,14 +2012,20 @@ static iks *on_rayo_dial(struct rayo_actor *client, struct rayo_actor *server, i
 	} else if (strchr(dial_to, ' ')) {
 		response = iks_new_error_detailed(node, STANZA_ERROR_BAD_REQUEST, "malformed dial string");
 	} else {
-		iks *node_dup = iks_copy(node);
-		iks_insert_attrib(node_dup, "from", RAYO_JID(rclient)); /* save DCP jid in case it isn't specified */
+		switch_memory_pool_t *pool;
+		struct dial_thread_data *dtdata = NULL;
+		switch_core_new_memory_pool(&pool);
+		dtdata = switch_core_alloc(pool, sizeof(*dtdata));
+		dtdata->pool = pool;	
+		dtdata->node = iks_copy(node);
+
+		iks_insert_attrib(dtdata->node, "from", msg->from_jid); /* save DCP jid in case it isn't specified */
 
 		/* start dial thread */
-		switch_threadattr_create(&thd_attr, RAYO_POOL(rclient));
+		switch_threadattr_create(&thd_attr, pool);
 		switch_threadattr_detach_set(thd_attr, 1);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		switch_thread_create(&thread, thd_attr, rayo_dial_thread, node_dup, RAYO_POOL(rclient));
+		switch_thread_create(&thread, thd_attr, rayo_dial_thread, dtdata, pool);
 	}
 
 	return response;
@@ -2033,14 +2038,15 @@ static iks *on_rayo_dial(struct rayo_actor *client, struct rayo_actor *server, i
  * @param node the <iq> node
  * @return NULL
  */
-static iks *on_iq_xmpp_ping(struct rayo_actor *rclient, struct rayo_actor *server, iks *node, void *data)
+static iks *on_iq_xmpp_ping(struct rayo_actor *server, struct rayo_message *msg, void *data)
 {
+	iks *node = msg->payload;
 	iks *pong = iks_new("iq");
 	char *from = iks_find_attrib(node, "from");
 	char *to = iks_find_attrib(node, "to");
 
 	if (zstr(from)) {
-		from = RAYO_JID(rclient);
+		from = msg->from_jid;
 	}
 
 	if (zstr(to)) {
@@ -2062,8 +2068,9 @@ static iks *on_iq_xmpp_ping(struct rayo_actor *rclient, struct rayo_actor *serve
  * @param node the <iq> node
  * @return NULL
  */
-static iks *on_iq_get_xmpp_disco(struct rayo_actor *rclient, struct rayo_actor *server, iks *node, void *data)
+static iks *on_iq_get_xmpp_disco(struct rayo_actor *server, struct rayo_message *msg, void *data)
 {
+	iks *node = msg->payload;
 	iks *response = NULL;
 	iks *x;
 	response = iks_new_iq_result(node);
@@ -2087,7 +2094,6 @@ static iks *on_iq_get_xmpp_disco(struct rayo_actor *rclient, struct rayo_actor *
 static void on_client_message(struct rayo_client *rclient, iks *message)
 {
 	const char *to = iks_find_attrib(message, "to");
-	struct rayo_actor *actor;
 
 	/* must be directed to a client */
 	if (zstr(to)) {
@@ -2101,11 +2107,7 @@ static void on_client_message(struct rayo_client *rclient, iks *message)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, recv message, availability = %s\n", RAYO_JID(rclient), presence_status_to_string(rclient->availability));
 
-	actor = RAYO_LOCATE(to);
-	if (actor && actor->type == RAT_CLIENT) {
-		RAYO_SEND(rclient, actor, rayo_message_create_dup(message));
-	}
-	RAYO_UNLOCK(actor);
+	RAYO_SEND(to, RAYO_MESSAGE_CREATE_DUP(rclient, message));
 }
 
 /**
@@ -2171,11 +2173,10 @@ static void on_client_presence(struct rayo_client *rclient, iks *node)
 	}
 
 	/* destroy if not a local client (connected via peer_server) and is OFFLINE */
-	/* TODO rethink this */
-	//if (rclient->peer_server && rclient->availability == PS_OFFLINE) {
-	//	RAYO_DESTROY(rclient);
-	//	RAYO_UNLOCK(rclient);
-	//}
+	if (rclient->peer_server && rclient->availability == PS_OFFLINE) {
+		RAYO_DESTROY(rclient);
+		RAYO_UNLOCK(rclient);
+	}
 }
 
 /**
@@ -2201,19 +2202,10 @@ static void rayo_client_command_recv(struct rayo_client *rclient, iks *iq)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, recv iq, availability = %s\n", RAYO_JID(rclient), presence_status_to_string(rclient->availability));
 
-	if (rclient->availability == PS_UNKNOWN) {
-	}
-
 	if (command) {
-		struct rayo_actor *actor = RAYO_LOCATE(to);
-		if (actor) {
-			RAYO_SEND(rclient, actor, rayo_message_create_dup(iq));
-			RAYO_UNLOCK(actor);
-		} else {
-			RAYO_SEND(globals.server, rclient, rayo_message_create(iks_new_error(iq, STANZA_ERROR_ITEM_NOT_FOUND)));
-		}
+		RAYO_SEND(to, RAYO_MESSAGE_CREATE_DUP(rclient, iq));
 	} else {
-		RAYO_SEND(globals.server, rclient, rayo_message_create(iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "empty IQ request")));
+		RAYO_SEND(RAYO_JID(rclient), RAYO_REPLY_CREATE(globals.server, iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "empty IQ request")));
 	}
 }
 
@@ -2233,7 +2225,7 @@ static void broadcast_mixer_event(struct rayo_mixer *mixer, iks *rayo_event)
 		subscriber = (struct rayo_mixer_subscriber *)val;
 		switch_assert(subscriber);
 		iks_insert_attrib(rayo_event, "to", subscriber->jid);
-		RAYO_SEND_BY_JID(mixer, subscriber->jid, rayo_message_create_dup(rayo_event));
+		RAYO_SEND(subscriber->jid, RAYO_MESSAGE_CREATE_DUP(mixer, rayo_event));
 	}
 }
 
@@ -2272,7 +2264,7 @@ static void on_mixer_delete_member_event(struct rayo_mixer *mixer, switch_event_
 	delete_member_event = iks_new_presence("unjoined", RAYO_NS, member->jid, member->dcp_jid);
 	x = iks_find(delete_member_event, "unjoined");
 	iks_insert_attrib(x, "mixer-name", rayo_mixer_get_name(mixer));
-	RAYO_SEND_BY_JID(mixer, member->dcp_jid, rayo_message_create(delete_member_event));
+	RAYO_SEND(member->dcp_jid, RAYO_MESSAGE_CREATE(mixer, delete_member_event));
 
 	/* broadcast member unjoined event to subscribers */
 	delete_member_event = iks_new_presence("unjoined", RAYO_NS, RAYO_JID(mixer), "");
@@ -2346,7 +2338,7 @@ static void on_mixer_add_member_event(struct rayo_mixer *mixer, switch_event_t *
 		add_member_event = iks_new_presence("joined", RAYO_NS, RAYO_JID(call), call->dcp_jid);
 		x = iks_find(add_member_event, "joined");
 		iks_insert_attrib(x, "mixer-name", rayo_mixer_get_name(mixer));
-		RAYO_SEND_BY_JID(call, call->dcp_jid, rayo_message_create(add_member_event));
+		RAYO_SEND(call->dcp_jid, RAYO_MESSAGE_CREATE(call, add_member_event));
 
 		RAYO_UNLOCK(call);
 	}
@@ -2418,11 +2410,11 @@ static void on_call_originate_event(struct rayo_client *rclient, switch_event_t 
 		iks_insert_attrib(ref, "xmlns", RAYO_NS);
 
 #ifdef RAYO_UUID_IN_REF_URI
-	iks_insert_attrib(ref, "uri", uuid);
+		iks_insert_attrib(ref, "uri", uuid);
 #else
-	iks_insert_attrib_printf(ref, "uri", "xmpp:%s", RAYO_JID(call));
+		iks_insert_attrib_printf(ref, "uri", "xmpp:%s", RAYO_JID(call));
 #endif
-		RAYO_SEND(call, rclient, rayo_message_create(response));
+		RAYO_SEND(RAYO_JID(rclient), RAYO_MESSAGE_CREATE(call, response));
 		call->dial_id = NULL;
 	}
 	RAYO_UNLOCK(call);
@@ -2463,7 +2455,7 @@ static void on_call_answer_event(struct rayo_client *rclient, switch_event_t *ev
 		iks *revent = iks_new_presence("answered", RAYO_NS,
 			switch_event_get_header(event, "variable_rayo_call_jid"),
 			switch_event_get_header(event, "variable_rayo_dcp_jid"));
-		RAYO_SEND(call, rclient, rayo_message_create(revent));
+		RAYO_SEND(RAYO_JID(rclient), RAYO_MESSAGE_CREATE(call, revent));
 		RAYO_UNLOCK(call);
 	}
 }
@@ -2480,7 +2472,7 @@ static void on_call_ringing_event(struct rayo_client *rclient, switch_event_t *e
 		iks *revent = iks_new_presence("ringing", RAYO_NS,
 			switch_event_get_header(event, "variable_rayo_call_jid"),
 			switch_event_get_header(event, "variable_rayo_dcp_jid"));
-		RAYO_SEND(call, rclient, rayo_message_create(revent));
+		RAYO_SEND(RAYO_JID(rclient), RAYO_MESSAGE_CREATE(call, revent));
 		RAYO_UNLOCK(call);
 	}
 }
@@ -2507,7 +2499,7 @@ static void on_call_bridge_event(struct rayo_client *rclient, switch_event_t *ev
 
 		call->joined = 1;
 
-		RAYO_SEND(call, rclient, rayo_message_create(revent));
+		RAYO_SEND(RAYO_JID(rclient), RAYO_MESSAGE_CREATE(call, revent));
 
 		/* send B-leg event */
 		b_call = RAYO_CALL_LOCATE(b_uuid);
@@ -2518,7 +2510,7 @@ static void on_call_bridge_event(struct rayo_client *rclient, switch_event_t *ev
 
 			b_call->joined = 1;
 
-			RAYO_SEND_BY_JID(b_call, rayo_call_get_dcp_jid(b_call), rayo_message_create(revent));
+			RAYO_SEND(rayo_call_get_dcp_jid(b_call), RAYO_MESSAGE_CREATE(b_call, revent));
 			RAYO_UNLOCK(b_call);
 		}
 		RAYO_UNLOCK(call);
@@ -2544,7 +2536,7 @@ static void on_call_unbridge_event(struct rayo_client *rclient, switch_event_t *
 			switch_event_get_header(event, "variable_rayo_dcp_jid"));
 		iks *joined = iks_find(revent, "unjoined");
 		iks_insert_attrib(joined, "call-uri", b_uuid);
-		RAYO_SEND(call, rclient, rayo_message_create(revent));
+		RAYO_SEND(RAYO_JID(rclient), RAYO_MESSAGE_CREATE(call, revent));
 
 		call->joined = 0;
 
@@ -2554,7 +2546,7 @@ static void on_call_unbridge_event(struct rayo_client *rclient, switch_event_t *
 			revent = iks_new_presence("unjoined", RAYO_NS, RAYO_JID(b_call), rayo_call_get_dcp_jid(b_call));
 			joined = iks_find(revent, "unjoined");
 			iks_insert_attrib(joined, "call-uri", a_uuid);
-			RAYO_SEND_BY_JID(b_call, rayo_call_get_dcp_jid(b_call), rayo_message_create(revent));
+			RAYO_SEND(rayo_call_get_dcp_jid(b_call), RAYO_MESSAGE_CREATE(b_call, revent));
 
 			b_call->joined = 0;
 			RAYO_UNLOCK(b_call);
@@ -2613,13 +2605,9 @@ static void route_call_event(switch_event_t *event)
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "%s rayo event %s\n", dcp_jid, switch_event_name(event->event_id));
 
 		actor = RAYO_LOCATE(dcp_jid);
-		if (actor && actor->type == RAT_CLIENT) {
-			if (RAYO_CLIENT(actor)->is_admin) {
-				/* FIXME ignore? */
-			} else {
-				/* process event and route to client */
-				rayo_client_handle_event(RAYO_CLIENT(actor), event);
-			}
+		if (actor && !strcmp(RAT_CLIENT, actor->type)) {
+			/* route to client */
+			rayo_client_handle_event(RAYO_CLIENT(actor), event);
 		} else {
 			/* TODO orphaned call... maybe allow events to queue so they can be delivered on reconnect? */
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "Orphaned call event %s to %s\n", switch_event_name(event->event_id), dcp_jid);
@@ -2771,7 +2759,7 @@ SWITCH_STANDARD_APP(rayo_app)
 				ok = 1;
 				switch_core_hash_insert(call->pcps, RAYO_JID(rclient), "1");
 				iks_insert_attrib(offer, "to", RAYO_JID(rclient));
-				RAYO_SEND_BY_JID(call, RAYO_JID(rclient), rayo_message_create_dup(offer));
+				RAYO_SEND(RAYO_JID(rclient), RAYO_MESSAGE_CREATE_DUP(call, offer));
 			}
 		}
 		iks_delete(offer);
@@ -2811,9 +2799,9 @@ static struct rayo_actor *xmpp_stream_client_locate(struct xmpp_stream *stream, 
 		if (!actor) {
 			/* previously unknown client - add it */
 			struct rayo_peer_server *rserver = RAYO_PEER_SERVER(xmpp_stream_get_private(stream));
-			actor = RAYO_ACTOR(rayo_client_create(jid, xmpp_stream_get_jid(stream), PS_UNKNOWN, rayo_client_send, 0, rserver));
+			actor = RAYO_ACTOR(rayo_client_create(jid, xmpp_stream_get_jid(stream), PS_UNKNOWN, rayo_client_send, rserver));
 			RAYO_RDLOCK(actor);
-		} else if (actor->type != RAT_CLIENT) {
+		} else if (!strcmp(RAT_CLIENT, actor->type)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, not a client: %s\n", xmpp_stream_get_jid(stream), jid);
 			RAYO_UNLOCK(actor);
 			actor = NULL;
@@ -2845,11 +2833,11 @@ static void on_xmpp_stream_ready(struct xmpp_stream *stream)
 			iks_insert_attrib(presence, "to", xmpp_stream_get_jid(stream));
 			x = iks_insert(presence, "show");
 			iks_insert_cdata(x, "chat", 4);
-			RAYO_SEND_BY_JID(globals.server, xmpp_stream_get_jid(stream), rayo_message_create(presence));
+			RAYO_SEND(xmpp_stream_get_jid(stream), RAYO_MESSAGE_CREATE(globals.server, presence));
 		}
 	} else {
 		/* client belongs to stream */
-		xmpp_stream_set_private(stream, rayo_client_create(xmpp_stream_get_jid(stream), xmpp_stream_get_jid(stream), PS_OFFLINE, rayo_client_send, 0, NULL));
+		xmpp_stream_set_private(stream, rayo_client_create(xmpp_stream_get_jid(stream), xmpp_stream_get_jid(stream), PS_OFFLINE, rayo_client_send, NULL));
 	}
 }
 
@@ -2862,22 +2850,6 @@ static void rayo_client_presence_check(struct rayo_client *rclient)
 	if (rclient->availability == PS_UNKNOWN) {
 		/* for now, set online */
 		rclient->availability = PS_ONLINE;
-#if 0
-		/* send probe */
-		switch_time_t now = switch_micro_time_now();
-
-		/* throttle probes... */
-		if (now - rclient->last_probe > 1000 * 1000 * 10) {
-			iks *probe = iks_new("presence");
-			rclient->last_probe = now;
-			iks_insert_attrib(probe, "type", "probe");
-			iks_insert_attrib(probe, "from", RAYO_JID(globals.server));
-			iks_insert_attrib(probe, "to", RAYO_JID(rclient));
-			RAYO_SEND(globals.server, rclient, rayo_message_create(probe));
-		}
-	} else {
-		rclient->last_probe = 0;
-#endif
 	}
 }
 
@@ -3101,10 +3073,10 @@ done:
  */
 static void rayo_actor_dump(struct rayo_actor *actor, switch_stream_handle_t *stream)
 {
-	if (actor->type == RAT_CLIENT) {
-		stream->write_function(stream, "TYPE='%s',SUBTYPE='%s',ID='%s',JID='%s',DOMAIN='%s',REFS=%i,STATUS='%s'", rayo_actor_type_to_string(actor->type), actor->subtype, actor->id, RAYO_JID(actor), RAYO_DOMAIN(actor), actor->ref_count, presence_status_to_string(RAYO_CLIENT(actor)->availability));
+	if (!strcmp(RAT_CLIENT, actor->type)) {
+		stream->write_function(stream, "TYPE='%s',SUBTYPE='%s',ID='%s',JID='%s',DOMAIN='%s',REFS=%i,STATUS='%s'", actor->type, actor->subtype, actor->id, RAYO_JID(actor), RAYO_DOMAIN(actor), actor->ref_count, presence_status_to_string(RAYO_CLIENT(actor)->availability));
 	} else {
-		stream->write_function(stream, "TYPE='%s',SUBTYPE='%s',ID='%s',JID='%s',DOMAIN='%s',REFS=%i", rayo_actor_type_to_string(actor->type), actor->subtype, actor->id, RAYO_JID(actor), RAYO_DOMAIN(actor), actor->ref_count);
+		stream->write_function(stream, "TYPE='%s',SUBTYPE='%s',ID='%s',JID='%s',DOMAIN='%s',REFS=%i", actor->type, actor->subtype, actor->id, RAYO_JID(actor), RAYO_DOMAIN(actor), actor->ref_count);
 	}
 }
 
@@ -3153,14 +3125,14 @@ static int dump_api(const char *cmd, switch_stream_handle_t *stream)
 /**
  * Process response to console command_api
  */
-void rayo_console_client_send(struct rayo_actor *from, struct rayo_actor *actor, struct rayo_message *msg, const char *file, int line)
+void rayo_console_client_send(struct rayo_actor *actor, struct rayo_message *msg, const char *file, int line)
 {
 	iks *response = msg->payload;
 
 	if (response) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nRECV: from %s, %s\n", RAYO_JID(from), iks_string(iks_stack(response), response));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nRECV: from %s, %s\n", msg->from_jid, iks_string(iks_stack(response), response));
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nRECV: (null) from %s\n", RAYO_JID(from));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nRECV: (null) from %s\n", msg->from_jid);
 	}
 }
 
@@ -3175,7 +3147,7 @@ static struct rayo_client *rayo_console_client_create(void)
 	char id[SWITCH_UUID_FORMATTED_LENGTH + 1] = { 0 };
 	switch_uuid_str(id, sizeof(id));
 	jid = switch_mprintf("%s@%s/console", id, RAYO_JID(globals.server));
-	client = rayo_client_create(jid, NULL, PS_OFFLINE, rayo_console_client_send, 1, NULL);
+	client = rayo_client_create(jid, NULL, PS_OFFLINE, rayo_console_client_send, NULL);
 	free(jid);
 	return client;
 }
@@ -3255,20 +3227,16 @@ static int command_api(const char *cmd, switch_stream_handle_t *stream)
  */
 static void send_console_message(struct rayo_client *client, const char *to, const char *message_str)
 {
-	struct rayo_actor *actor = RAYO_LOCATE(to);
-	if (actor) {
-		iks *message = NULL, *x;
-		message = iks_new("message");
-		iks_insert_attrib(message, "to", to);
-		iks_insert_attrib(message, "from", RAYO_JID(client));
-		iks_insert_attrib_printf(message, "id", "console-%i", RAYO_SEQ_NEXT(client));
-		iks_insert_attrib(message, "type", "chat");
-		x = iks_insert(message, "body");
-		iks_insert_cdata(x, message_str, strlen(message_str));
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nSEND: to %s, %s\n", to, iks_string(iks_stack(message), message));
-		RAYO_SEND(client, actor, rayo_message_create(message));
-		RAYO_UNLOCK(actor);
-	}
+	iks *message = NULL, *x;
+	message = iks_new("message");
+	iks_insert_attrib(message, "to", to);
+	iks_insert_attrib(message, "from", RAYO_JID(client));
+	iks_insert_attrib_printf(message, "id", "console-%i", RAYO_SEQ_NEXT(client));
+	iks_insert_attrib(message, "type", "chat");
+	x = iks_insert(message, "body");
+	iks_insert_cdata(x, message_str, strlen(message_str));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nSEND: to %s, %s\n", to, iks_string(iks_stack(message), message));
+	RAYO_SEND(to, RAYO_MESSAGE_CREATE(client, message));
 }
 
 /**
@@ -3298,22 +3266,18 @@ static int message_api(const char *msg, switch_stream_handle_t *stream)
  */
 static void send_console_presence(struct rayo_client *client, const char *to, int is_online)
 {
-	struct rayo_actor *actor = RAYO_LOCATE(to);
-	if (actor) {
-		iks *presence = NULL, *x;
-		presence = iks_new("presence");
-		iks_insert_attrib(presence, "to", to);
-		iks_insert_attrib(presence, "from", RAYO_JID(client));
-		iks_insert_attrib_printf(presence, "id", "console-%i", RAYO_SEQ_NEXT(client));
-		if (!is_online) {
-			iks_insert_attrib(presence, "type", "unavailable");
-		}
-		x = iks_insert(presence, "show");
-		iks_insert_cdata(x, is_online ? "chat" : "dnd", 0);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nSEND: to %s, %s\n", to, iks_string(iks_stack(presence), presence));
-		RAYO_SEND(client, actor, rayo_message_create(presence));
-		RAYO_UNLOCK(actor);
+	iks *presence = NULL, *x;
+	presence = iks_new("presence");
+	iks_insert_attrib(presence, "to", to);
+	iks_insert_attrib(presence, "from", RAYO_JID(client));
+	iks_insert_attrib_printf(presence, "id", "console-%i", RAYO_SEQ_NEXT(client));
+	if (!is_online) {
+		iks_insert_attrib(presence, "type", "unavailable");
 	}
+	x = iks_insert(presence, "show");
+	iks_insert_cdata(x, is_online ? "chat" : "dnd", 0);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nSEND: to %s, %s\n", to, iks_string(iks_stack(presence), presence));
+	RAYO_SEND(to, RAYO_MESSAGE_CREATE(client, presence));
 }
 
 /**
@@ -3383,7 +3347,7 @@ switch_status_t list_internal(const char *line, const char *cursor, switch_conso
 		switch_hash_this(hi, &vvar, NULL, &val);
 
 		actor = (struct rayo_actor *) val;
-		if (actor->type != RAT_CLIENT && actor->type != RAT_PEER_SERVER) {
+		if (strcmp(RAT_CLIENT, actor->type) && strcmp(RAT_PEER_SERVER, actor->type)) {
 			switch_console_push_match(&my_matches, (const char *) vvar);
 		}
 	}
@@ -3414,7 +3378,7 @@ switch_status_t list_external(const char *line, const char *cursor, switch_conso
 		switch_hash_this(hi, &vvar, NULL, &val);
 
 		actor = (struct rayo_actor *) val;
-		if (actor->type == RAT_CLIENT || actor->type == RAT_PEER_SERVER) {
+		if (!strcmp(RAT_CLIENT, actor->type) || !strcmp(RAT_PEER_SERVER, actor->type)) {
 			switch_console_push_match(&my_matches, (const char *) vvar);
 		}
 	}

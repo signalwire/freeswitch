@@ -57,14 +57,14 @@ struct output_component {
 /**
  * Create new output component
  */
-static struct rayo_component *create_output_component(struct rayo_actor *actor, iks *output, const char *client_jid)
+static struct rayo_component *create_output_component(struct rayo_actor *actor, const char *type, iks *output, const char *client_jid)
 {
 	switch_memory_pool_t *pool;
 	struct output_component *output_component = NULL;
 
 	switch_core_new_memory_pool(&pool);
 	output_component = switch_core_alloc(pool, sizeof(*output_component));
-	rayo_component_init((struct rayo_component *)output_component, pool, "output", NULL, actor, client_jid);
+	rayo_component_init((struct rayo_component *)output_component, pool, type, "output", NULL, actor, client_jid);
 
 	output_component->document = iks_copy(output);
 	output_component->repeat_interval = iks_find_int_attrib(output, "repeat-interval");
@@ -120,8 +120,9 @@ static iks *start_call_output(struct rayo_component *component, switch_core_sess
 /**
  * Start execution of call output component
  */
-static iks *start_call_output_component(struct rayo_actor *client, struct rayo_actor *call, iks *iq, void *session_data)
+static iks *start_call_output_component(struct rayo_actor *call, struct rayo_message *msg, void *session_data)
 {
+	iks *iq = msg->payload;
 	switch_core_session_t *session = (switch_core_session_t *)session_data;
 	struct rayo_component *output_component = NULL;
 	iks *output = iks_find(iq, "output");
@@ -131,15 +132,16 @@ static iks *start_call_output_component(struct rayo_actor *client, struct rayo_a
 		return iks_new_error(iq, STANZA_ERROR_BAD_REQUEST);
 	}
 
-	output_component = create_output_component(call, output, iks_find_attrib(iq, "from"));
+	output_component = create_output_component(call, RAT_CALL_COMPONENT, output, iks_find_attrib(iq, "from"));
 	return start_call_output(output_component, session, output, iq);
 }
 
 /**
  * Start execution of mixer output component
  */
-static iks *start_mixer_output_component(struct rayo_actor *client, struct rayo_actor *mixer, iks *iq, void *data)
+static iks *start_mixer_output_component(struct rayo_actor *mixer, struct rayo_message *msg, void *data)
 {
+	iks *iq = msg->payload;
 	struct rayo_component *component = NULL;
 	iks *output = iks_find(iq, "output");
 	switch_stream_handle_t stream = { 0 };
@@ -149,7 +151,7 @@ static iks *start_mixer_output_component(struct rayo_actor *client, struct rayo_
 		return iks_new_error(iq, STANZA_ERROR_BAD_REQUEST);
 	}
 
-	component = create_output_component(mixer, output, iks_find_attrib(iq, "from"));
+	component = create_output_component(mixer, RAT_MIXER_COMPONENT, output, iks_find_attrib(iq, "from"));
 
 	/* build conference command */
 	SWITCH_STANDARD_STREAM(stream);
@@ -174,8 +176,9 @@ static iks *start_mixer_output_component(struct rayo_actor *client, struct rayo_
 /**
  * Stop execution of output component
  */
-static iks *stop_output_component(struct rayo_actor *client, struct rayo_actor *component, iks *iq, void *data)
+static iks *stop_output_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
+	iks *iq = msg->payload;
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s stop", RAYO_JID(component));
 	SWITCH_STANDARD_STREAM(stream);
@@ -190,8 +193,9 @@ static iks *stop_output_component(struct rayo_actor *client, struct rayo_actor *
 /**
  * Pause execution of output component
  */
-static iks *pause_output_component(struct rayo_actor *client, struct rayo_actor *component, iks *iq, void *data)
+static iks *pause_output_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
+	iks *iq = msg->payload;
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s pause", RAYO_JID(component));
 	SWITCH_STANDARD_STREAM(stream);
@@ -205,8 +209,9 @@ static iks *pause_output_component(struct rayo_actor *client, struct rayo_actor 
 /**
  * Resume execution of output component
  */
-static iks *resume_output_component(struct rayo_actor *client, struct rayo_actor *component, iks *iq, void *data)
+static iks *resume_output_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
+	iks *iq = msg->payload;
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s resume", RAYO_JID(component));
 	SWITCH_STANDARD_STREAM(stream);
@@ -220,8 +225,9 @@ static iks *resume_output_component(struct rayo_actor *client, struct rayo_actor
 /**
  * Speed up execution of output component
  */
-static iks *speed_up_output_component(struct rayo_actor *client, struct rayo_actor *component, iks *iq, void *data)
+static iks *speed_up_output_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
+	iks *iq = msg->payload;
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s speed:+", RAYO_JID(component));
 	SWITCH_STANDARD_STREAM(stream);
@@ -235,8 +241,9 @@ static iks *speed_up_output_component(struct rayo_actor *client, struct rayo_act
 /**
  * Slow down execution of output component
  */
-static iks *speed_down_output_component(struct rayo_actor *client, struct rayo_actor *component, iks *iq, void *data)
+static iks *speed_down_output_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
+	iks *iq = msg->payload;
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s speed:-", RAYO_JID(component));
 	SWITCH_STANDARD_STREAM(stream);
@@ -250,8 +257,9 @@ static iks *speed_down_output_component(struct rayo_actor *client, struct rayo_a
 /**
  * Increase volume of output component
  */
-static iks *volume_up_output_component(struct rayo_actor *client, struct rayo_actor *component, iks *iq, void *data)
+static iks *volume_up_output_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
+	iks *iq = msg->payload;
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s volume:+", RAYO_JID(component));
 	SWITCH_STANDARD_STREAM(stream);
@@ -265,8 +273,9 @@ static iks *volume_up_output_component(struct rayo_actor *client, struct rayo_ac
 /**
  * Lower volume of output component
  */
-static iks *volume_down_output_component(struct rayo_actor *client, struct rayo_actor *component, iks *iq, void *data)
+static iks *volume_down_output_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
+	iks *iq = msg->payload;
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s volume:-", RAYO_JID(component));
 	SWITCH_STANDARD_STREAM(stream);
@@ -280,8 +289,9 @@ static iks *volume_down_output_component(struct rayo_actor *client, struct rayo_
 /**
  * Seek output component
  */
-static iks *seek_output_component(struct rayo_actor *client, struct rayo_actor *component, iks *iq, void *data)
+static iks *seek_output_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
+	iks *iq = msg->payload;
 	iks *seek = iks_find(iq, "seek");
 
 	if (VALIDATE_RAYO_OUTPUT_SEEK(seek)) {

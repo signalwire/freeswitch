@@ -187,7 +187,7 @@ static void send_barge_event(struct rayo_component *component)
 	iks_insert_attrib(event, "to", component->client_jid);
 	x = iks_insert(event, "start-of-input");
 	iks_insert_attrib(x, "xmlns", RAYO_INPUT_NS);
-	RAYO_SEND_BY_JID(component, component->client_jid, rayo_message_create(event));
+	RAYO_SEND(component->client_jid, RAYO_REPLY_CREATE(component, event));
 }
 
 /**
@@ -466,8 +466,9 @@ static iks *start_call_input(struct input_component *component, switch_core_sess
 /**
  * Start execution of input component
  */
-static iks *start_call_input_component(struct rayo_actor *client, struct rayo_actor *call, iks *iq, void *session_data)
+static iks *start_call_input_component(struct rayo_actor *call, struct rayo_message *msg, void *session_data)
 {
+	iks *iq = msg->payload;
 	switch_core_session_t *session = (switch_core_session_t *)session_data;
 	char *component_id = switch_mprintf("%s-input", switch_core_session_get_uuid(session));
 	switch_memory_pool_t *pool = NULL;
@@ -482,7 +483,7 @@ static iks *start_call_input_component(struct rayo_actor *client, struct rayo_ac
 	/* create component */
 	switch_core_new_memory_pool(&pool);
 	input_component = switch_core_alloc(pool, sizeof(*input_component));
-	rayo_component_init(RAYO_COMPONENT(input_component), pool, "input", component_id, call, iks_find_attrib(iq, "from"));
+	rayo_component_init(RAYO_COMPONENT(input_component), pool, RAT_CALL_COMPONENT, "input", component_id, call, iks_find_attrib(iq, "from"));
 	switch_safe_free(component_id);
 
 	/* start input */
@@ -492,8 +493,9 @@ static iks *start_call_input_component(struct rayo_actor *client, struct rayo_ac
 /**
  * Stop execution of input component
  */
-static iks *stop_call_input_component(struct rayo_actor *client, struct rayo_actor *component, iks *iq, void *data)
+static iks *stop_call_input_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
+	iks *iq = msg->payload;
 	struct input_component *input_component = INPUT_COMPONENT(component);
 
 	if (input_component && !input_component->stop) {
@@ -518,8 +520,9 @@ static iks *stop_call_input_component(struct rayo_actor *client, struct rayo_act
 /**
  * Start input component timers
  */
-static iks *start_timers_call_input_component(struct rayo_actor *client, struct rayo_actor *component, iks *iq, void *data)
+static iks *start_timers_call_input_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
+	iks *iq = msg->payload;
 	struct input_component *input_component = INPUT_COMPONENT(component);
 	if (input_component) {
 		switch_core_session_t *session = switch_core_session_locate(RAYO_COMPONENT(component)->parent->id);
