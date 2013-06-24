@@ -91,7 +91,6 @@ static const char *prompt_component_state_to_string(enum prompt_component_state 
  */
 static void rayo_component_send_stop(struct rayo_actor *from, struct rayo_actor *to)
 {
-	struct rayo_message *reply;
 	iks *stop = iks_new("iq");
 	iks *x;
 	iks_insert_attrib(stop, "from", RAYO_JID(from));
@@ -100,11 +99,7 @@ static void rayo_component_send_stop(struct rayo_actor *from, struct rayo_actor 
 	iks_insert_attrib_printf(stop, "id", "mod_rayo-%d", RAYO_SEQ_NEXT(from));
 	x = iks_insert(stop, "stop");
 	iks_insert_attrib(x, "xmlns", RAYO_EXT_NS);
-	reply = RAYO_SEND(from, to, rayo_message_create(stop));
-	if (reply) {
-		/* don't care */
-		rayo_message_destroy(reply);
-	}
+	RAYO_SEND(from, to, rayo_message_create(stop));
 }
 
 /**
@@ -112,7 +107,6 @@ static void rayo_component_send_stop(struct rayo_actor *from, struct rayo_actor 
  */
 static void start_input(struct prompt_component *prompt, int start_timers, int barge_event)
 {
-	struct rayo_message *reply;
 	iks *iq = iks_new("iq");
 	iks *input = iks_find(PROMPT_COMPONENT(prompt)->iq, "prompt");
 	input = iks_find(input, "input");
@@ -124,11 +118,7 @@ static void start_input(struct prompt_component *prompt, int start_timers, int b
 	iks_insert_attrib(input, "start-timers", start_timers ? "true" : "false");
 	iks_insert_attrib(input, "barge-event", barge_event ? "true" : "false");
 	iks_insert_node(iq, input);
-	reply = RAYO_SEND(prompt, RAYO_COMPONENT(prompt)->parent, rayo_message_create(iq));
-	if (reply) {
-		/* handle response */
-		RAYO_SEND(RAYO_COMPONENT(prompt)->parent, prompt, reply);
-	}
+	RAYO_SEND(prompt, RAYO_COMPONENT(prompt)->parent, rayo_message_create(iq));
 }
 
 /**
@@ -136,7 +126,6 @@ static void start_input(struct prompt_component *prompt, int start_timers, int b
  */
 static void start_input_timers(struct prompt_component *prompt)
 {
-	struct rayo_message *reply;
 	iks *x;
 	iks *iq = iks_new("iq");
 	iks_insert_attrib(iq, "from", RAYO_JID(prompt));
@@ -145,11 +134,7 @@ static void start_input_timers(struct prompt_component *prompt)
 	iks_insert_attrib_printf(iq, "id", "mod_rayo-%d", RAYO_SEQ_NEXT(prompt));
 	x = iks_insert(iq, "start-timers");
 	iks_insert_attrib(x, "xmlns", RAYO_INPUT_NS);
-	reply = RAYO_SEND(prompt, prompt->input, rayo_message_create(iq));
-	if (reply) {
-		/* process reply */
-		RAYO_SEND(prompt->input, prompt, reply);
-	}
+	RAYO_SEND(prompt, prompt->input, rayo_message_create(iq));
 }
 
 /**
@@ -501,7 +486,6 @@ static iks *start_call_prompt_component(struct rayo_actor *client, struct rayo_a
 	iks *prompt = iks_find(iq, "prompt");
 	iks *input;
 	iks *output;
-	struct rayo_message *reply = NULL;
 	iks *cmd;
 
 	if (!VALIDATE_RAYO_PROMPT(prompt)) {
@@ -540,11 +524,7 @@ static iks *start_call_prompt_component(struct rayo_actor *client, struct rayo_a
 	iks_insert_attrib(cmd, "type", "set");
 	output = iks_copy_within(output, iks_stack(cmd));
 	iks_insert_node(cmd, output);
-	reply = RAYO_SEND(prompt_component, call, rayo_message_create(cmd));
-	if (reply) {
-		/* handle response */
-		RAYO_SEND(call, prompt_component, reply);
-	}
+	RAYO_SEND(prompt_component, call, rayo_message_create(cmd));
 
 	return NULL;
 }
@@ -607,17 +587,10 @@ static iks *forward_output_component_request(struct rayo_actor *client, struct r
 		case PCS_START_INPUT_OUTPUT:
 		case PCS_INPUT_OUTPUT: {
 			/* forward request to output component */
-			struct rayo_message *reply;
 			iks_insert_attrib(iq, "from", RAYO_JID(prompt));
 			iks_insert_attrib(iq, "to", RAYO_JID(PROMPT_COMPONENT(prompt)->output));
-			reply = RAYO_SEND(prompt, PROMPT_COMPONENT(prompt)->output, rayo_message_create_dup(iq));
-
-			/* return reply to client */
-			iq = rayo_message_remove_payload(reply);
-			rayo_message_destroy(reply);
-			iks_insert_attrib(iq, "from", RAYO_JID(prompt));
-			iks_insert_attrib(iq, "to", RAYO_JID(client));
-			return iq;
+			RAYO_SEND(prompt, PROMPT_COMPONENT(prompt)->output, rayo_message_create_dup(iq));
+			return NULL;
 		}
 		case PCS_START_INPUT_TIMERS:
 		case PCS_START_OUTPUT:
@@ -632,7 +605,6 @@ static iks *forward_output_component_request(struct rayo_actor *client, struct r
 		case PCS_DONE:
 			return iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, "output is finished");
 	}
-
 	return NULL;
 }
 
