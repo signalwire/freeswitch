@@ -464,7 +464,7 @@ static void tport_ws_deinit_secondary(tport_t *self)
 		wsh_t *wsh = wstp->ws;
 		SU_DEBUG_1(("%p destroy ws%s transport %p.\n", (void *) self, wstp->ws_secure ? "s" : "", (void *) wsh));
 		ws_destroy(&wsh);
-		wstp->ws_initialized = 0;
+		wstp->ws_initialized = 1;
 	}
 }
 
