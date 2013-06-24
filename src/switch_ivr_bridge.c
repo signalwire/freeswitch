@@ -1523,36 +1523,41 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
 	state = switch_channel_get_state(caller_channel);
 
-
 	if (!switch_channel_test_flag(caller_channel, CF_TRANSFER) && !switch_channel_test_flag(caller_channel, CF_REDIRECT) &&
 		!switch_channel_test_flag(caller_channel, CF_XFER_ZOMBIE) && !a_leg->clean_exit && !inner_bridge) {
+		switch_call_cause_t cause = switch_channel_get_cause(peer_channel);
+		const char *hup = switch_channel_get_variable(caller_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE);
+		int explicit = 0;
+
+		if (cause == SWITCH_CAUSE_NONE) {
+			cause = SWITCH_CAUSE_NORMAL_CLEARING;
+		}
+		
+		if (hup) {
+			explicit = !strcasecmp(hup, "explicit");
+		}
+		
+		if (cause && !switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
+			switch_channel_handle_cause(caller_channel, cause);
+		}
+		
+		if (explicit) {
+			if (switch_channel_test_flag(peer_channel, CF_INTERCEPTED)) {
+				switch_channel_set_flag(peer_channel, CF_INTERCEPT);
+			}
+			switch_channel_hangup(caller_channel, cause);
+		}
+
 		if ((state != CS_EXECUTE && state != CS_SOFT_EXECUTE && state != CS_PARK && state != CS_ROUTING) ||
 			(switch_channel_test_flag(peer_channel, CF_ANSWERED) && state < CS_HANGUP)) {
-			switch_call_cause_t cause = switch_channel_get_cause(peer_channel);
-
-			if (cause && !switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
-				switch_channel_handle_cause(caller_channel, cause);
-			}
-
+			
 			if (!switch_channel_test_flag(caller_channel, CF_TRANSFER)) {
 				if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
 					switch_ivr_park_session(session);
 				} else if ((var = switch_channel_get_variable(caller_channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE))) {
 					transfer_after_bridge(session, var);
 				} else {
-					const char *hup = switch_channel_get_variable(caller_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE);
-					int explicit = 0;
-					
-					if (hup) {
-						explicit = !strcasecmp(hup, "explicit");
-					}
-					
-					if (explicit || (switch_channel_test_flag(peer_channel, CF_ANSWERED) && switch_true(hup))) {
-						switch_call_cause_t cause = switch_channel_get_cause(peer_channel);
-						if (cause == SWITCH_CAUSE_NONE) {
-							cause = SWITCH_CAUSE_NORMAL_CLEARING;
-						}
-						
+					if ((switch_channel_test_flag(peer_channel, CF_ANSWERED) && switch_true(hup))) {
 						if (switch_channel_test_flag(peer_channel, CF_INTERCEPTED)) {
 							switch_channel_set_flag(peer_channel, CF_INTERCEPT);
 						}
