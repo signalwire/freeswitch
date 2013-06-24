@@ -548,6 +548,10 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 		helper->lines_count++;
 		switch_channel_set_variable(channel, "effective_callee_id_number", value);
 		switch_channel_set_variable(channel, "effective_callee_id_name", caller_name);
+
+		skinny_log_l(listener, SWITCH_LOG_DEBUG, "Ring Lines Callback with Callee Number (%s), Caller Name (%s), Dest Number (%s)\n",
+			value, caller_name, helper->tech_pvt->caller_profile->destination_number);
+
 		if (helper->remote_session) {
 			switch_core_session_message_t msg = { 0 };
 			msg.message_id = SWITCH_MESSAGE_INDICATE_DISPLAY;
@@ -667,7 +671,10 @@ int skinny_session_answer_callback(void *pArg, int argc, char **argv, char **col
 				&& (device_instance == helper->listener->device_instance)
 				&& (line_instance == helper->line_instance)) {/* the answering line */
 			/* nothing */
+			skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Session Answer Callback - matched helper\n");
 		} else {
+			skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Session Answer Callback\n");
+
 			send_define_current_time_date(listener);
 			send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_ON);
 			skinny_line_set_state(listener, line_instance, helper->tech_pvt->call_id, SKINNY_IN_USE_REMOTELY);
@@ -1418,21 +1425,15 @@ switch_status_t skinny_handle_forward_stat_req_message(listener_t *listener, ski
 
 switch_status_t skinny_handle_speed_dial_stat_request(listener_t *listener, skinny_message_t *request)
 {
-	skinny_message_t *message;
 	struct speed_dial_stat_res_message *button = NULL;
 
 	skinny_check_data_length(request, sizeof(request->data.speed_dial_req));
 
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.speed_dial_res));
-	message->type = SPEED_DIAL_STAT_RES_MESSAGE;
-	message->length = 4 + sizeof(message->data.speed_dial_res);
+	skinny_log_l(listener, SWITCH_LOG_DEBUG, "Handle Speed Dial Stat Request for Number (%d)\n", request->data.speed_dial_req.number);
 
 	skinny_speed_dial_get(listener, request->data.speed_dial_req.number, &button);
 
-	memcpy(&message->data.speed_dial_res, button, sizeof(struct speed_dial_stat_res_message));
-
-	skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Handle Speed Dial Stat Request\n");
-	skinny_send_reply_quiet(listener, message);
+	send_speed_dial_stat_res(listener, request->data.speed_dial_req.number, button->line, button->label);
 
 	return SWITCH_STATUS_SUCCESS;
 }
