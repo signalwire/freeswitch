@@ -1013,7 +1013,7 @@ static ftdm_status_t state_advance(ftdm_channel_t *chan)
 				}
 			} else if (call) {
 //				pri_progress(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 1);
-				pri_acknowledge(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 1);
+				pri_acknowledge(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 0);
 			} else {
 				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RESTART);
 			}
