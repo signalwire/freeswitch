@@ -144,7 +144,7 @@ static void on_call_record_stop_event(switch_event_t *event)
 /**
  * Create a record component
  */
-static struct rayo_component *record_component_create(struct rayo_actor *actor, const char *client_jid, iks *record)
+static struct rayo_component *record_component_create(struct rayo_actor *actor, const char *type, const char *client_jid, iks *record)
 {
 	switch_memory_pool_t *pool;
 	struct record_component *record_component = NULL;
@@ -171,7 +171,7 @@ static struct rayo_component *record_component_create(struct rayo_actor *actor, 
 
 	switch_core_new_memory_pool(&pool);
 	record_component = switch_core_alloc(pool, sizeof(*record_component));
-	rayo_component_init(RAYO_COMPONENT(record_component), pool, "record", fs_file_path, actor, client_jid);
+	rayo_component_init(RAYO_COMPONENT(record_component), pool, type, "record", fs_file_path, actor, client_jid);
 	record_component->max_duration = iks_find_int_attrib(record, "max-duration");
 	record_component->initial_timeout = iks_find_int_attrib(record, "initial-timeout");
 	record_component->final_timeout = iks_find_int_attrib(record, "final-timeout");
@@ -259,13 +259,14 @@ static int start_call_record(switch_core_session_t *session, struct rayo_compone
 /**
  * Start execution of call record component
  */
-static iks *start_call_record_component(struct rayo_actor *client, struct rayo_actor *call, iks *iq, void *session_data)
+static iks *start_call_record_component(struct rayo_actor *call, struct rayo_message *msg, void *session_data)
 {
+	iks *iq = msg->payload;
 	switch_core_session_t *session = (switch_core_session_t *)session_data;
 	struct rayo_component *component = NULL;
 	iks *record = iks_find(iq, "record");
 
-	component = record_component_create(call, iks_find_attrib(iq, "from"), record);
+	component = record_component_create(call, RAT_CALL_COMPONENT, iks_find_attrib(iq, "from"), record);
 	if (!component) {
 		return iks_new_error(iq, STANZA_ERROR_BAD_REQUEST);
 	}
@@ -284,8 +285,9 @@ static iks *start_call_record_component(struct rayo_actor *client, struct rayo_a
 /**
  * Stop execution of record component
  */
-static iks *stop_call_record_component(struct rayo_actor *client, struct rayo_actor *component, iks *iq, void *data)
+static iks *stop_call_record_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
+	iks *iq = msg->payload;
 	switch_core_session_t *session = switch_core_session_locate(RAYO_COMPONENT(component)->parent->id);
 	if (session) {
 		RECORD_COMPONENT(component)->stop = 1;
@@ -298,8 +300,9 @@ static iks *stop_call_record_component(struct rayo_actor *client, struct rayo_ac
 /**
  * Pause execution of record component
  */
-static iks *pause_record_component(struct rayo_actor *client, struct rayo_actor *component, iks *iq, void *data)
+static iks *pause_record_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
+	iks *iq = msg->payload;
 	struct record_component *record = RECORD_COMPONENT(component);
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s pause", record->local_file_path);
@@ -319,8 +322,9 @@ static iks *pause_record_component(struct rayo_actor *client, struct rayo_actor 
 /**
  * Resume execution of record component
  */
-static iks *resume_record_component(struct rayo_actor *client, struct rayo_actor *component, iks *iq, void *data)
+static iks *resume_record_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
+	iks *iq = msg->payload;
 	struct record_component *record = RECORD_COMPONENT(component);
 	switch_stream_handle_t stream = { 0 };
 	char *command = switch_mprintf("%s resume", record->local_file_path);
@@ -381,12 +385,13 @@ static int start_mixer_record(struct rayo_component *component)
 /**
  * Start execution of mixer record component
  */
-static iks *start_mixer_record_component(struct rayo_actor *client, struct rayo_actor *mixer, iks *iq, void *data)
+static iks *start_mixer_record_component(struct rayo_actor *mixer, struct rayo_message *msg, void *data)
 {
+	iks *iq = msg->payload;
 	struct rayo_component *component = NULL;
 	iks *record = iks_find(iq, "record");
 
-	component = record_component_create(mixer, iks_find_attrib(iq, "from"), record);
+	component = record_component_create(mixer, RAT_MIXER_COMPONENT, iks_find_attrib(iq, "from"), record);
 	if (!component) {
 		return iks_new_error(iq, STANZA_ERROR_BAD_REQUEST);
 	}
@@ -412,8 +417,9 @@ static iks *start_mixer_record_component(struct rayo_actor *client, struct rayo_
 /**
  * Stop execution of record component
  */
-static iks *stop_mixer_record_component(struct rayo_actor *client, struct rayo_actor *component, iks *iq, void *data)
+static iks *stop_mixer_record_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
+	iks *iq = msg->payload;
 	char *args;
 	switch_stream_handle_t stream = { 0 };
 	SWITCH_STANDARD_STREAM(stream);
