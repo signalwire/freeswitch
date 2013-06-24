@@ -500,6 +500,28 @@ switch_status_t perform_send_register_ack(listener_t *listener,
 	return skinny_send_reply_quiet(listener, message);
 }
 
+switch_status_t perform_send_speed_dial_stat_res(listener_t *listener,
+		const char *file, const char *func, int line,
+		uint32_t number,
+		char *speed_line,
+		char *speed_label)
+{
+	skinny_message_t *message;
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.speed_dial_res));
+	message->type = SPEED_DIAL_STAT_RES_MESSAGE;
+	message->length = 4 + sizeof(message->data.speed_dial_res);
+
+	message->data.speed_dial_res.number = number;
+    strncpy(message->data.speed_dial_res.line, speed_line, 24);
+    strncpy(message->data.speed_dial_res.label, speed_label, 40);
+
+	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
+		"Sending Speed Dial Stat Res with Number (%d), Line (%s), Label (%s)\n",
+		number, speed_line, speed_label);
+
+	return skinny_send_reply_quiet(listener, message);
+}
+
 switch_status_t perform_send_start_tone(listener_t *listener,
 		const char *file, const char *func, int line,
 		uint32_t tone,

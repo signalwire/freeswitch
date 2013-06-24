@@ -810,6 +810,13 @@ switch_status_t perform_send_register_ack(listener_t *listener,
 		char *reserved2);
 #define send_register_ack(listener, ...) perform_send_register_ack(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
 
+switch_status_t perform_send_speed_dial_stat_res(listener_t *listener,
+		const char *file, const char *func, int line,
+		uint32_t number,
+		char *speed_line,
+		char *speed_label);
+#define send_speed_dial_stat_res(listener, ...) perform_send_speed_dial_stat_res(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
 switch_status_t perform_send_start_tone(listener_t *listener,
 		const char *file, const char *func, int line,
 		uint32_t tone,
