@@ -224,5 +224,5 @@ OZ_DECLARE(void) hashtable_this(struct hashtable_iterator *i, const void **key, 
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

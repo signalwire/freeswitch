@@ -275,5 +275,5 @@ void put_reply_unlock(fetch_reply_t *p, char *uuid_str);
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

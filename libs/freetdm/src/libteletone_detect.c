@@ -481,5 +481,5 @@ TELETONE_API(int) teletone_dtmf_get (teletone_dtmf_detect_state_t *dtmf_detect_s
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

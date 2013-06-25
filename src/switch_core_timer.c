@@ -138,5 +138,5 @@ SWITCH_DECLARE(switch_status_t) switch_core_timer_destroy(switch_timer_t *timer)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

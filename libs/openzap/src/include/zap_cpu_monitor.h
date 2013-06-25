@@ -70,5 +70,5 @@ OZ_DECLARE(zap_status_t) zap_cpu_get_system_idle_time (struct zap_cpu_monitor_st
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

@@ -208,5 +208,5 @@ switch_status_t mongo_connection_pool_put(mongo_connection_pool_t *conn_pool, DB
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet
  */

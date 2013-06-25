@@ -1520,5 +1520,5 @@ extern "C" void Kstdcall khompAudioListener (int32 deviceid, int32 objectid, byt
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet expandtab:
  */

@@ -490,5 +490,5 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_say_zh_load)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

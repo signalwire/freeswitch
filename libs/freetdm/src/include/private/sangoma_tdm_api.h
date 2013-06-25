@@ -316,6 +316,6 @@ static __inline__ int tdmv_api_writemsg_tdm(sng_fd_t fd, void *hdrbuf, int hdrle
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
 

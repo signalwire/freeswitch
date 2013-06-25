@@ -51,6 +51,6 @@ OZ_DECLARE(zap_status_t) zap_interrupt_multiple_wait(zap_interrupt_t *interrupts
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
 

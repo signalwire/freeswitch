@@ -3281,5 +3281,5 @@ void ldl_handle_set_log_stream(ldl_handle_t *handle, FILE *log_stream)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

@@ -368,5 +368,5 @@ SWITCH_DECLARE(void) switch_change_sln_volume(int16_t *data, uint32_t samples, i
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

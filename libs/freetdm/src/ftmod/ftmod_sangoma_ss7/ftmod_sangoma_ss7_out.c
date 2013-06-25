@@ -1047,6 +1047,6 @@ void ft_to_sngss7_txa (ftdm_channel_t * ftdmchan)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
 /******************************************************************************/

@@ -230,5 +230,5 @@ static ftdm_status_t ftdm_std_queue_destroy(ftdm_queue_t **inqueue)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

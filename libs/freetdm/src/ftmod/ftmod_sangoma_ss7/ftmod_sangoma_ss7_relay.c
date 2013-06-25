@@ -340,6 +340,6 @@ static ftdm_status_t unblock_all_ckts_for_relay(uint32_t procId)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
 /******************************************************************************/

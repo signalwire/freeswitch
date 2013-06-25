@@ -582,7 +582,7 @@ void sngisdn_snd_event(sngisdn_span_data_t *signal_data, ftdm_oob_event_t event)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
 
 /******************************************************************************/

@@ -3207,5 +3207,5 @@ SWITCH_DECLARE(char *) switch_strerror_r(int errnum, char *buf, switch_size_t bu
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

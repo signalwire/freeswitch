@@ -142,5 +142,5 @@ KS_DECLARE(ks_size_t) ks_buffer_zwrite(ks_buffer_t *buffer, const void *data, ks
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

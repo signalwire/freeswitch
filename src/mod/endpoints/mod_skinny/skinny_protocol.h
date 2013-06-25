@@ -1050,6 +1050,6 @@ switch_status_t perform_send_extended_data(listener_t *listener,
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
 

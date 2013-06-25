@@ -91,7 +91,7 @@ void sngisdn_set_span_sig_status(ftdm_span_t *span, ftdm_signaling_status_t stat
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
 
 /******************************************************************************/

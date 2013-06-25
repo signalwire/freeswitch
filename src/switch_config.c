@@ -206,5 +206,5 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config_t *cfg, char **var, ch
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

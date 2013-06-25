@@ -332,5 +332,5 @@ ESL_DECLARE(const char *)esl_priority_name(esl_priority_t priority);
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

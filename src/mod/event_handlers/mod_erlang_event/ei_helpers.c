@@ -411,5 +411,5 @@ switch_status_t initialise_ei(struct ei_cnode_s *ec)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

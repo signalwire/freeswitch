@@ -146,6 +146,6 @@ typedef struct ftdm_libpri_b_chan ftdm_libpri_b_chan_t;
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
 

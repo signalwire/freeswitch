@@ -3011,5 +3011,5 @@ void sofia_event_fire(sofia_profile_t *profile, switch_event_t **event)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

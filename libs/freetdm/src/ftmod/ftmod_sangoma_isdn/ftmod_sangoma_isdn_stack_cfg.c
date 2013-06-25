@@ -1267,7 +1267,7 @@ uint8_t sng_isdn_stack_switchtype(sngisdn_switchtype_t switchtype)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
 
 /******************************************************************************/
