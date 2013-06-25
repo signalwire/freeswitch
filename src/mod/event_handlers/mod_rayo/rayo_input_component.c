@@ -187,7 +187,7 @@ static void send_barge_event(struct rayo_component *component)
 	iks_insert_attrib(event, "to", component->client_jid);
 	x = iks_insert(event, "start-of-input");
 	iks_insert_attrib(x, "xmlns", RAYO_INPUT_NS);
-	RAYO_SEND(component->client_jid, RAYO_REPLY_CREATE(component, event));
+	RAYO_SEND_REPLY(component, component->client_jid, event);
 }
 
 /**
