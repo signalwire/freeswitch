@@ -96,7 +96,7 @@ static void rayo_component_send_stop(struct rayo_actor *from, const char *to)
 	iks_insert_attrib(stop, "from", RAYO_JID(from));
 	iks_insert_attrib(stop, "to", to);
 	iks_insert_attrib(stop, "type", "set");
-	iks_insert_attrib_printf(stop, "id", "mod_rayo-%d", RAYO_SEQ_NEXT(from));
+	iks_insert_attrib_printf(stop, "id", "mod_rayo-prompt-%d", RAYO_SEQ_NEXT(from));
 	x = iks_insert(stop, "stop");
 	iks_insert_attrib(x, "xmlns", RAYO_EXT_NS);
 	RAYO_SEND_MESSAGE(from, to, stop);
@@ -112,7 +112,7 @@ static void start_input(struct prompt_component *prompt, int start_timers, int b
 	input = iks_find(input, "input");
 	iks_insert_attrib(iq, "from", RAYO_JID(prompt));
 	iks_insert_attrib(iq, "to", RAYO_JID(RAYO_COMPONENT(prompt)->parent));
-	iks_insert_attrib_printf(iq, "id", "mod_rayo-%d", RAYO_SEQ_NEXT(prompt));
+	iks_insert_attrib_printf(iq, "id", "mod_rayo-prompt-%d", RAYO_SEQ_NEXT(prompt));
 	iks_insert_attrib(iq, "type", "set");
 	input = iks_copy_within(input, iks_stack(iq));
 	iks_insert_attrib(input, "start-timers", start_timers ? "true" : "false");
@@ -131,7 +131,7 @@ static void start_input_timers(struct prompt_component *prompt)
 	iks_insert_attrib(iq, "from", RAYO_JID(prompt));
 	iks_insert_attrib(iq, "to", prompt->input_jid);
 	iks_insert_attrib(iq, "type", "set");
-	iks_insert_attrib_printf(iq, "id", "mod_rayo-%d", RAYO_SEQ_NEXT(prompt));
+	iks_insert_attrib_printf(iq, "id", "mod_rayo-prompt-%d", RAYO_SEQ_NEXT(prompt));
 	x = iks_insert(iq, "start-timers");
 	iks_insert_attrib(x, "xmlns", RAYO_INPUT_NS);
 	RAYO_SEND_MESSAGE(prompt, prompt->input_jid, iq);
@@ -423,6 +423,22 @@ static iks *prompt_component_handle_input_complete(struct rayo_actor *prompt, st
 }
 
 /**
+ * Forward result
+ */
+static iks *prompt_component_handle_result(struct rayo_actor *prompt, struct rayo_message *msg, void *data)
+{
+	iks *iq = msg->payload;
+
+	/* forward all results, except for internal ones... */
+	if (strncmp("mod_rayo-prompt", iks_find_attrib_soft(iq, "id"), 15)) {
+		iks_insert_attrib(iq, "from", RAYO_JID(prompt));
+		iks_insert_attrib(iq, "to", RAYO_COMPONENT(prompt)->client_jid);
+		RAYO_SEND_REPLY_DUP(prompt, RAYO_COMPONENT(prompt)->client_jid, iq);
+	}
+	return NULL;
+}
+
+/**
  * Handle completion event
  */
 static iks *prompt_component_handle_output_complete(struct rayo_actor *prompt, struct rayo_message *msg, void *data)
@@ -582,7 +598,7 @@ static iks *forward_output_component_request(struct rayo_actor *prompt, struct r
 		case PCS_INPUT_OUTPUT: {
 			/* forward request to output component */
 			iks_insert_attrib(iq, "from", RAYO_JID(prompt));
-			iks_insert_attrib(iq, "to", RAYO_JID(PROMPT_COMPONENT(prompt)->output_jid));
+			iks_insert_attrib(iq, "to", PROMPT_COMPONENT(prompt)->output_jid);
 			RAYO_SEND_MESSAGE_DUP(prompt, PROMPT_COMPONENT(prompt)->output_jid, iq);
 			return NULL;
 		}
@@ -590,7 +606,7 @@ static iks *forward_output_component_request(struct rayo_actor *prompt, struct r
 		case PCS_START_OUTPUT:
 		case PCS_START_OUTPUT_BARGE:
 			/* ref hasn't been sent yet */
-			return iks_new_error(iq, STANZA_ERROR_UNEXPECTED_REQUEST);
+			return iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, "too soon");
 			break;
 		case PCS_START_INPUT:
 		case PCS_STOP_OUTPUT:
@@ -612,6 +628,7 @@ switch_status_t rayo_prompt_component_load(void)
 	rayo_actor_command_handler_add(RAT_CALL, "", "set:"RAYO_PROMPT_NS":prompt", start_call_prompt_component);
 	rayo_actor_command_handler_add(RAT_CALL_COMPONENT, "prompt", "set:"RAYO_EXT_NS":stop", stop_call_prompt_component);
 	rayo_actor_command_handler_add(RAT_CALL_COMPONENT, "prompt", "result:"RAYO_NS":ref", prompt_component_handle_io_start);
+	rayo_actor_command_handler_add(RAT_CALL_COMPONENT, "prompt", "result::", prompt_component_handle_result);
 	rayo_actor_command_handler_add(RAT_CALL_COMPONENT, "prompt", "error:"RAYO_OUTPUT_NS":output", prompt_component_handle_output_error);
 	rayo_actor_command_handler_add(RAT_CALL_COMPONENT, "prompt", "error:"RAYO_INPUT_NS":input", prompt_component_handle_input_error);
 	rayo_actor_command_handler_add(RAT_CALL_COMPONENT, "prompt", "error:"RAYO_INPUT_NS":start-timers", prompt_component_handle_input_start_timers_error);
