@@ -99,7 +99,7 @@ static void rayo_component_send_stop(struct rayo_actor *from, const char *to)
 	iks_insert_attrib_printf(stop, "id", "mod_rayo-%d", RAYO_SEQ_NEXT(from));
 	x = iks_insert(stop, "stop");
 	iks_insert_attrib(x, "xmlns", RAYO_EXT_NS);
-	RAYO_SEND(to, RAYO_MESSAGE_CREATE(from, stop));
+	RAYO_SEND_MESSAGE(from, to, stop);
 }
 
 /**
@@ -118,7 +118,7 @@ static void start_input(struct prompt_component *prompt, int start_timers, int b
 	iks_insert_attrib(input, "start-timers", start_timers ? "true" : "false");
 	iks_insert_attrib(input, "barge-event", barge_event ? "true" : "false");
 	iks_insert_node(iq, input);
-	RAYO_SEND(RAYO_JID(RAYO_COMPONENT(prompt)->parent), RAYO_MESSAGE_CREATE(prompt, iq));
+	RAYO_SEND_MESSAGE(prompt, RAYO_JID(RAYO_COMPONENT(prompt)->parent), iq);
 }
 
 /**
@@ -134,7 +134,7 @@ static void start_input_timers(struct prompt_component *prompt)
 	iks_insert_attrib_printf(iq, "id", "mod_rayo-%d", RAYO_SEQ_NEXT(prompt));
 	x = iks_insert(iq, "start-timers");
 	iks_insert_attrib(x, "xmlns", RAYO_INPUT_NS);
-	RAYO_SEND(prompt->input_jid, RAYO_MESSAGE_CREATE(prompt, iq));
+	RAYO_SEND_MESSAGE(prompt, prompt->input_jid, iq);
 }
 
 /**
@@ -317,7 +317,7 @@ static iks *prompt_component_handle_output_error(struct rayo_actor *prompt, stru
 			iks_insert_attrib(iq, "from", RAYO_JID(RAYO_COMPONENT(prompt)->parent));
 			iks_insert_attrib(iq, "to", RAYO_COMPONENT(prompt)->client_jid);
 			iks_insert_node(iq, iks_copy_within(error, iks_stack(iq)));
-			RAYO_SEND(RAYO_COMPONENT(prompt)->client_jid, RAYO_REPLY_CREATE(prompt, iq));
+			RAYO_SEND_REPLY(prompt, RAYO_COMPONENT(prompt)->client_jid, iq);
 
 			/* done */
 			RAYO_UNLOCK(prompt);
@@ -516,7 +516,7 @@ static iks *start_call_prompt_component(struct rayo_actor *call, struct rayo_mes
 	iks_insert_attrib(cmd, "type", "set");
 	output = iks_copy_within(output, iks_stack(cmd));
 	iks_insert_node(cmd, output);
-	RAYO_SEND(RAYO_JID(call), RAYO_MESSAGE_CREATE(prompt_component, cmd));
+	RAYO_SEND_MESSAGE(prompt_component, RAYO_JID(call), cmd);
 
 	return NULL;
 }
@@ -583,7 +583,7 @@ static iks *forward_output_component_request(struct rayo_actor *prompt, struct r
 			/* forward request to output component */
 			iks_insert_attrib(iq, "from", RAYO_JID(prompt));
 			iks_insert_attrib(iq, "to", RAYO_JID(PROMPT_COMPONENT(prompt)->output_jid));
-			RAYO_SEND(PROMPT_COMPONENT(prompt)->output_jid, RAYO_MESSAGE_CREATE_DUP(prompt, iq));
+			RAYO_SEND_MESSAGE_DUP(prompt, PROMPT_COMPONENT(prompt)->output_jid, iq);
 			return NULL;
 		}
 		case PCS_START_INPUT_TIMERS:

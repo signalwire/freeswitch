@@ -63,7 +63,7 @@ void rayo_component_send_start(struct rayo_component *component, iks *iq)
 #else
 	iks_insert_attrib_printf(ref, "uri", "xmpp:%s", RAYO_JID(component));
 #endif
-	RAYO_SEND(iks_find_attrib(response, "to"), RAYO_REPLY_CREATE(component, response));
+	RAYO_SEND_REPLY(component, iks_find_attrib(response, "to"), response);
 }
 
 /**
@@ -116,7 +116,7 @@ iks *rayo_component_create_complete_event(struct rayo_component *component, cons
  */
 void rayo_component_send_complete_event(struct rayo_component *component, iks *response)
 {
-	RAYO_SEND(iks_find_attrib(response, "to"), RAYO_REPLY_CREATE(component, response));
+	RAYO_SEND_REPLY(component, iks_find_attrib(response, "to"), response);
 	RAYO_UNLOCK(component);
 	RAYO_DESTROY(component);
 }

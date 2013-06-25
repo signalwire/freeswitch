@@ -64,14 +64,17 @@ struct rayo_component;
  */
 struct rayo_message {
 	iks *payload;
+	char *to_jid;
 	char *from_jid;
 	char *from_type;
 	char *from_subtype;
 	int is_reply;
+	char *file;
+	int line;
 };
 
 typedef void (* rayo_actor_cleanup_fn)(struct rayo_actor *);
-typedef void (* rayo_actor_send_fn)(struct rayo_actor *, struct rayo_message *, const char *file, int line);
+typedef void (* rayo_actor_send_fn)(struct rayo_actor *, struct rayo_message *);
 
 /**
  * A rayo actor - this is an entity that can be controlled by a rayo client
@@ -126,19 +129,17 @@ struct rayo_component {
 #define RAYO_CALL(x) ((struct rayo_call *)x)
 #define RAYO_MIXER(x) ((struct rayo_mixer *)x)
 
-extern struct rayo_message *rayo_message_create(struct rayo_actor *from, iks *xml, int dup, int reply);
+extern void rayo_message_send(struct rayo_actor *from, const char *to, iks *payload, int dup, int reply, const char *file, int line);
 extern void rayo_message_destroy(struct rayo_message *msg);
 extern iks *rayo_message_remove_payload(struct rayo_message *msg);
-
-#define RAYO_MESSAGE_CREATE(from, msg) rayo_message_create(RAYO_ACTOR(from), msg, 0, 0)
-#define RAYO_MESSAGE_CREATE_DUP(from, msg) rayo_message_create(RAYO_ACTOR(from), msg, 1, 0)
-#define RAYO_REPLY_CREATE(from, msg) rayo_message_create(RAYO_ACTOR(from), msg, 0, 1)
-#define RAYO_REPLY_CREATE_DUP(from, msg) rayo_message_create(RAYO_ACTOR(from), msg, 1, 1)
+#define RAYO_SEND_MESSAGE(from, to, payload) rayo_message_send(RAYO_ACTOR(from), to, payload, 0, 0, __FILE__, __LINE__)
+#define RAYO_SEND_MESSAGE_DUP(from, to, payload) rayo_message_send(RAYO_ACTOR(from), to, payload, 1, 0, __FILE__, __LINE__)
+#define RAYO_SEND_REPLY(from, to, payload) rayo_message_send(RAYO_ACTOR(from), to, payload, 0, 1, __FILE__, __LINE__)
+#define RAYO_SEND_REPLY_DUP(from, to, payload) rayo_message_send(RAYO_ACTOR(from), to, payload, 1, 1, __FILE__, __LINE__)
 
 extern struct rayo_actor *rayo_actor_locate(const char *jid, const char *file, int line);
 extern struct rayo_actor *rayo_actor_locate_by_id(const char *id, const char *file, int line);
 extern int rayo_actor_seq_next(struct rayo_actor *actor);
-extern void rayo_actor_send(const char *jid, struct rayo_message *msg, const char *file, int line);
 extern void rayo_actor_rdlock(struct rayo_actor *actor, const char *file, int line);
 extern void rayo_actor_unlock(struct rayo_actor *actor, const char *file, int line);
 extern void rayo_actor_destroy(struct rayo_actor *actor, const char *file, int line);
@@ -154,7 +155,6 @@ extern void rayo_actor_destroy(struct rayo_actor *actor, const char *file, int l
 #define RAYO_UNLOCK(x) rayo_actor_unlock(RAYO_ACTOR(x), __FILE__, __LINE__)
 #define RAYO_DESTROY(x) rayo_actor_destroy(RAYO_ACTOR(x), __FILE__, __LINE__)
 #define RAYO_SEQ_NEXT(x) rayo_actor_seq_next(RAYO_ACTOR(x))
-#define RAYO_SEND(to, msg) rayo_actor_send(to, msg, __FILE__, __LINE__)
 
 extern const char *rayo_call_get_dcp_jid(struct rayo_call *call);
 
