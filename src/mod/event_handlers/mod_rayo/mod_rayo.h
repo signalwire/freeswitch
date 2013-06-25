@@ -65,7 +65,9 @@ struct rayo_component;
 struct rayo_message {
 	iks *payload;
 	char *to_jid;
+	iksid *to;
 	char *from_jid;
+	iksid *from;
 	char *from_type;
 	char *from_subtype;
 	int is_reply;
@@ -104,8 +106,6 @@ struct rayo_actor {
 	rayo_actor_send_fn send_fn;
 	/** optional cleanup */
 	rayo_actor_cleanup_fn cleanup_fn;
-	/** incoming message queue */
-	switch_queue_t *msg_queue;
 };
 
 /**

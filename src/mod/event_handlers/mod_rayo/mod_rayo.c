@@ -230,14 +230,22 @@ static void rayo_console_client_send(struct rayo_actor *client, struct rayo_mess
 
 static void on_client_presence(struct rayo_client *rclient, iks *node);
 
+/**
+ * @param msg to check
+ * @return true if message was sent by admin client (console)
+ */
+static int is_admin_client_message(struct rayo_message *msg)
+{
+	return !zstr(msg->from_jid) && !strcmp(RAYO_JID(globals.console), msg->from_jid);
+}
 
 /**
- * @param jid to check
- * @return true if jid is admin client (console)
+ * @param msg to check
+ * @return true if from/to bare JIDs match
  */
-static int is_admin_client(const char *jid)
+static int is_internal_message(struct rayo_message *msg)
 {
-	return !zstr(jid) && !strcmp(RAYO_JID(globals.console), jid);
+	return msg->from && msg->to && (iks_id_cmp(msg->from, msg->to, IKS_ID_PARTIAL) == 0);
 }
 
 /**
@@ -580,6 +588,8 @@ iks *rayo_message_remove_payload(struct rayo_message *msg)
 {
 	iks *payload = msg->payload;
 	msg->payload = NULL;
+	msg->from = NULL;
+	msg->to = NULL;
 	return payload;
 }
 
@@ -600,6 +610,7 @@ static void *SWITCH_THREAD_FUNC deliver_message_thread(switch_thread_t *thread, 
 			if (actor) {
 				/* deliver to actor */
 				switch_mutex_lock(actor->mutex);
+				switch_log_printf(SWITCH_CHANNEL_ID_LOG, msg->file, "", msg->line, "", SWITCH_LOG_DEBUG, "Deliver %s => %s %s\n", msg->from_jid, msg->to_jid, iks_string(iks_stack(msg->payload), msg->payload));
 				actor->send_fn(actor, msg);
 				switch_mutex_unlock(actor->mutex);
 				RAYO_UNLOCK(actor);
@@ -665,7 +676,13 @@ void rayo_message_send(struct rayo_actor *from, const char *to, iks *payload, in
 	}
 	msg->is_reply = reply;
 	msg->to_jid = strdup(zstr(to) ? "" : to);
+	if (!zstr(msg->to_jid)) {
+		msg->to = iks_id_new(iks_stack(payload), msg->to_jid);
+	}
 	msg->from_jid = strdup(RAYO_JID(from));
+	if (!zstr(msg->from_jid)) {
+		msg->from = iks_id_new(iks_stack(payload), msg->from_jid);
+	}
 	msg->from_type = strdup(zstr(from->type) ? "" : from->type);
 	msg->from_subtype = strdup(zstr(from->subtype) ? "" : from->subtype);
 	msg->file = strdup(file);
@@ -1239,39 +1256,32 @@ static struct rayo_peer_server *rayo_peer_server_create(const char *jid)
 }
 
 /**
- * Check if client has control of offered call. Take control if nobody else does.
- * @param rclient the Rayo client
+ * Check if message sender has control of offered call. Take control if nobody else does.
  * @param call the Rayo call
  * @param session the session
- * @param call_jid the call JID
- * @param call_uuid the internal call UUID
- * @return 1 if session has call control
+ * @param msg the message
+ * @return 1 if sender has call control
  */
-static int rayo_client_has_call_control(const char *rclient, struct rayo_call *call, switch_core_session_t *session)
+static int has_call_control(struct rayo_call *call, switch_core_session_t *session, struct rayo_message *msg)
 {
 	int control = 0;
-
-	if (zstr(rclient)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Null client JID!!\n");
-		return 0;
-	}
 
 	/* nobody in charge */
 	if (zstr(call->dcp_jid)) {
 		/* was offered to this session? */
-		if (switch_core_hash_find(call->pcps, rclient)) {
+		if (!zstr(msg->from_jid) && switch_core_hash_find(call->pcps, msg->from_jid)) {
 			/* take charge */
-			call->dcp_jid = switch_core_strdup(RAYO_POOL(call), rclient);
+			call->dcp_jid = switch_core_strdup(RAYO_POOL(call), msg->from_jid);
 			switch_channel_set_variable(switch_core_session_get_channel(session), "rayo_dcp_jid", rayo_call_get_dcp_jid(call));
 			control = 1;
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_INFO, "%s has control of call\n", rayo_call_get_dcp_jid(call));
 		}
-	} else if (is_admin_client(rclient) || !strcmp(rayo_call_get_dcp_jid(call), rclient)) {
+	} else if (!strcmp(rayo_call_get_dcp_jid(call), msg->from_jid) || is_internal_message(msg) || is_admin_client_message(msg)) {
 		control = 1;
 	}
 
 	if (!control) {
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_INFO, "%s does not have control of call\n", rclient);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_INFO, "%s does not have control of call\n", msg->from_jid);
 	}
 
 	return control;
@@ -1311,7 +1321,7 @@ static iks *rayo_call_command_ok(struct rayo_call *call, switch_core_session_t *
 
 	if (bad) {
 		response = iks_new_error(node, STANZA_ERROR_BAD_REQUEST);
-	} else if (!rayo_client_has_call_control(msg->from_jid, call, session)) {
+	} else if (!has_call_control(call, session, msg)) {
 		response = iks_new_error(node, STANZA_ERROR_CONFLICT);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, %s conflict\n", msg->from_jid, RAYO_JID(call));
 	}
@@ -1335,7 +1345,7 @@ static iks *rayo_component_command_ok(struct rayo_component *component, struct r
 	if (bad) {
 		response = iks_new_error(node, STANZA_ERROR_BAD_REQUEST);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, %s bad request\n", msg->from_jid, RAYO_JID(component));
-	} else if (!is_admin_client(msg->from_jid) && strcmp(component->client_jid, from)) {
+	} else if (strcmp(component->client_jid, from) && !is_admin_client_message(msg) && !is_internal_message(msg)) {
 		/* does not have control of this component */
 		response = iks_new_error(node, STANZA_ERROR_CONFLICT);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, %s conflict\n", msg->from_jid, RAYO_JID(component));
@@ -1369,7 +1379,9 @@ void rayo_server_send(struct rayo_actor *server, struct rayo_message *msg)
 	handler = rayo_actor_command_handler_find(server, msg);
 	if (!handler) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, no handler function for command to %s\n", msg->from_jid, RAYO_JID(server));
-		RAYO_SEND_REPLY(server, msg->from_jid, iks_new_error(iq, STANZA_ERROR_FEATURE_NOT_IMPLEMENTED));
+		if (!msg->is_reply) {
+			RAYO_SEND_REPLY(server, msg->from_jid, iks_new_error(iq, STANZA_ERROR_FEATURE_NOT_IMPLEMENTED));
+		}
 		return;
 	}
 
@@ -1379,7 +1391,11 @@ void rayo_server_send(struct rayo_actor *server, struct rayo_message *msg)
 	}
 
 	if (response) {
-		RAYO_SEND_REPLY(server, msg->from_jid, response);
+		if (!msg->is_reply) {
+			RAYO_SEND_REPLY(server, msg->from_jid, response);
+		} else {
+			iks_delete(response);
+		}
 	}
 }
 
@@ -1397,7 +1413,9 @@ void rayo_call_send(struct rayo_actor *call, struct rayo_message *msg)
 	handler = rayo_actor_command_handler_find(call, msg);
 	if (!handler) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, no handler function for command\n", RAYO_JID(call));
-		RAYO_SEND_REPLY(call, msg->from_jid, iks_new_error(iq, STANZA_ERROR_FEATURE_NOT_IMPLEMENTED));
+		if (!msg->is_reply) {
+			RAYO_SEND_REPLY(call, msg->from_jid, iks_new_error(iq, STANZA_ERROR_FEATURE_NOT_IMPLEMENTED));
+		}
 		return;
 	}
 
@@ -1405,7 +1423,9 @@ void rayo_call_send(struct rayo_actor *call, struct rayo_message *msg)
 	session = switch_core_session_locate(rayo_call_get_uuid(RAYO_CALL(call)));
 	if (!session) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, session not found\n", RAYO_JID(call));
-		RAYO_SEND_REPLY(call, msg->from_jid, iks_new_error(iq, STANZA_ERROR_SERVICE_UNAVAILABLE));
+		if (!msg->is_reply) {
+			RAYO_SEND_REPLY(call, msg->from_jid, iks_new_error(iq, STANZA_ERROR_SERVICE_UNAVAILABLE));
+		}
 		return;
 	}
 
@@ -1419,7 +1439,11 @@ void rayo_call_send(struct rayo_actor *call, struct rayo_message *msg)
 	switch_core_session_rwunlock(session);
 
 	if (response) {
-		RAYO_SEND_REPLY(call, msg->from_jid, response);
+		if (!msg->is_reply) {
+			RAYO_SEND_REPLY(call, msg->from_jid, response);
+		} else {
+			iks_delete(response);
+		}
 	}
 }
 
@@ -1436,14 +1460,20 @@ void rayo_mixer_send(struct rayo_actor *mixer, struct rayo_message *msg)
 	handler = rayo_actor_command_handler_find(mixer, msg);
 	if (!handler) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, no handler function for command\n", RAYO_JID(mixer));
-		RAYO_SEND_REPLY(mixer, msg->from_jid, iks_new_error(iq, STANZA_ERROR_FEATURE_NOT_IMPLEMENTED));
+		if (!msg->is_reply) {
+			RAYO_SEND_REPLY(mixer, msg->from_jid, iks_new_error(iq, STANZA_ERROR_FEATURE_NOT_IMPLEMENTED));
+		}
 		return;
 	}
 
 	/* execute the command */
 	response = handler(mixer, msg, NULL);
 	if (response) {
-		RAYO_SEND_REPLY(mixer, msg->from_jid, response);
+		if (!msg->is_reply) {
+			RAYO_SEND_REPLY(mixer, msg->from_jid, response);
+		} else {
+			iks_delete(response);
+		}
 	}
 }
 
@@ -1461,7 +1491,9 @@ void rayo_component_send(struct rayo_actor *component, struct rayo_message *msg)
 		handler = rayo_actor_command_handler_find(component, msg);
 		if (!handler) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, no component handler function for command\n", RAYO_JID(component));
-			RAYO_SEND_REPLY(component, msg->from_jid, iks_new_error(xml_msg, STANZA_ERROR_FEATURE_NOT_IMPLEMENTED));
+			if (!msg->is_reply) {
+				RAYO_SEND_REPLY(component, msg->from_jid, iks_new_error(xml_msg, STANZA_ERROR_FEATURE_NOT_IMPLEMENTED));
+			}
 			return;
 		}
 
@@ -1473,7 +1505,11 @@ void rayo_component_send(struct rayo_actor *component, struct rayo_message *msg)
 		}
 
 		if (response) {
-			RAYO_SEND_REPLY(component, msg->from_jid, response);
+			if (!msg->is_reply) {
+				RAYO_SEND_REPLY(component, msg->from_jid, response);
+			} else {
+				iks_delete(response);
+			}
 			return;
 		}
 	} else if (!strcmp("presence", iks_name(xml_msg))) {
@@ -1488,7 +1524,11 @@ void rayo_component_send(struct rayo_actor *component, struct rayo_message *msg)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, forwarding event\n", RAYO_JID(component));
 		response = handler(component, msg, NULL);
 		if (response) {
-			RAYO_SEND_REPLY(component, msg->from_jid, response);
+			if (!msg->is_reply) {
+				RAYO_SEND_REPLY(component, msg->from_jid, response);
+			} else {
+				iks_delete(response);
+			}
 		}
 	}
 }
@@ -2245,7 +2285,10 @@ static void rayo_client_command_recv(struct rayo_client *rclient, iks *iq)
 	if (command) {
 		RAYO_SEND_MESSAGE_DUP(rclient, to, iq);
 	} else {
-		RAYO_SEND_REPLY(globals.server, RAYO_JID(rclient), iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "empty IQ request"));
+		const char *type = iks_find_attrib_soft(iq, "type");
+		if (strcmp("error", type) && strcmp("result", type)) {
+			RAYO_SEND_REPLY(globals.server, RAYO_JID(rclient), iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "empty IQ request"));
+		}
 	}
 }
 
