@@ -1132,6 +1132,22 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_ssml_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_ssml_shutdown)
 {
+	switch_core_hash_destroy(&globals.voice_cache);
+	switch_core_hash_destroy(&globals.tts_voice_map);
+	switch_core_hash_destroy(&globals.say_voice_map);
+	switch_core_hash_destroy(&globals.interpret_as_map);
+	switch_core_hash_destroy(&globals.language_map);
+	{
+		switch_hash_index_t *hi = NULL;
+		for (hi = switch_core_hash_first(globals.tag_defs); hi; hi = switch_core_hash_next(hi)) {
+			const void *key;
+			struct tag_def *def;
+			switch_core_hash_this(hi, &key, NULL, (void *)&def);
+			switch_core_hash_destroy(&def->children_tags);
+		}
+	}
+	switch_core_hash_destroy(&globals.tag_defs);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
