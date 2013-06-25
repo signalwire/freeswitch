@@ -677,11 +677,11 @@ void rayo_message_send(struct rayo_actor *from, const char *to, iks *payload, in
 	msg->is_reply = reply;
 	msg->to_jid = strdup(zstr(to) ? "" : to);
 	if (!zstr(msg->to_jid)) {
-		msg->to = iks_id_new(iks_stack(payload), msg->to_jid);
+		msg->to = iks_id_new(iks_stack(msg->payload), msg->to_jid);
 	}
 	msg->from_jid = strdup(RAYO_JID(from));
 	if (!zstr(msg->from_jid)) {
-		msg->from = iks_id_new(iks_stack(payload), msg->from_jid);
+		msg->from = iks_id_new(iks_stack(msg->payload), msg->from_jid);
 	}
 	msg->from_type = strdup(zstr(from->type) ? "" : from->type);
 	msg->from_subtype = strdup(zstr(from->subtype) ? "" : from->subtype);
