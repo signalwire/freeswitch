@@ -598,12 +598,16 @@ static void *SWITCH_THREAD_FUNC deliver_message_thread(switch_thread_t *thread, 
 		if (switch_queue_pop(globals.msg_queue, (void *)&msg) == SWITCH_STATUS_SUCCESS) {
 			struct rayo_actor *actor = RAYO_LOCATE(msg->to_jid);
 			if (actor) {
+				/* deliver to actor */
 				switch_mutex_lock(actor->mutex);
 				actor->send_fn(actor, msg);
 				switch_mutex_unlock(actor->mutex);
 				RAYO_UNLOCK(actor);
-				rayo_message_destroy(msg);
+			} else {
+				/* unknown actor */
+				RAYO_SEND_REPLY(globals.server, msg->from_jid, iks_new_error(msg->payload, STANZA_ERROR_ITEM_NOT_FOUND));
 			}
+			rayo_message_destroy(msg);
 		}
 	}
 
