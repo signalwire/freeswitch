@@ -1625,6 +1625,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_http_cache_shutdown)
 
 	url_cache_clear(&gcache, NULL);
 	switch_core_hash_destroy(&gcache.map);
+	switch_core_hash_destroy(&gcache.profiles);
 	switch_mutex_destroy(gcache.mutex);
 	return SWITCH_STATUS_SUCCESS;
 }
