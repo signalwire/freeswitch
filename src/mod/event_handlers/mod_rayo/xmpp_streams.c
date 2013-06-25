@@ -1592,7 +1592,7 @@ static void *SWITCH_THREAD_FUNC xmpp_listener_thread(switch_thread_t *thread, vo
 				int allowed = 0;
 				char remote_ip[50] = { 0 };
 				if (switch_socket_addr_get(&sa, SWITCH_TRUE, socket) == SWITCH_STATUS_SUCCESS && sa) {
-            		switch_get_addr(remote_ip, sizeof(remote_ip), sa);
+					switch_get_addr(remote_ip, sizeof(remote_ip), sa);
 					allowed = switch_check_network_list_ip(remote_ip, listener->acl);
 				}
 				if (!allowed) {
@@ -1779,6 +1779,9 @@ void xmpp_stream_context_destroy(struct xmpp_stream_context *context)
 	context->shutdown = 1;
 	/* wait for threads to finish */
 	switch_thread_rwlock_wrlock(context->shutdown_rwlock);
+	switch_core_hash_destroy(&context->routes);
+	switch_core_hash_destroy(&context->streams);
+	switch_core_hash_destroy(&context->users);
 	pool = context->pool;
 	switch_core_destroy_memory_pool(&pool);
 }
