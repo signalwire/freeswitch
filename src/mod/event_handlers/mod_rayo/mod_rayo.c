@@ -603,7 +603,7 @@ static void *SWITCH_THREAD_FUNC deliver_message_thread(switch_thread_t *thread, 
 				actor->send_fn(actor, msg);
 				switch_mutex_unlock(actor->mutex);
 				RAYO_UNLOCK(actor);
-			} else {
+			} else if (!msg->is_reply) {
 				/* unknown actor */
 				RAYO_SEND_REPLY(globals.server, msg->from_jid, iks_new_error(msg->payload, STANZA_ERROR_ITEM_NOT_FOUND));
 			}
