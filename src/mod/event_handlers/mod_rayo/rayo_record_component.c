@@ -514,3 +514,15 @@ switch_status_t rayo_record_component_shutdown(void)
 	switch_event_unbind_callback(on_mixer_record_event);
 	return SWITCH_STATUS_SUCCESS;
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet
+ */
+
