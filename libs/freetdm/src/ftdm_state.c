@@ -571,5 +571,5 @@ FT_DECLARE(int) ftdm_check_state_all(ftdm_span_t *span, ftdm_channel_state_t sta
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

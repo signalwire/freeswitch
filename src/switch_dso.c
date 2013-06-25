@@ -152,5 +152,5 @@ void *switch_dso_data_sym(switch_dso_lib_t lib, const char *sym, char **err)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet
  */

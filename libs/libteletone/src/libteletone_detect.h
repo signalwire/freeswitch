@@ -278,5 +278,5 @@ TELETONE_API(void) teletone_goertzel_update(teletone_goertzel_state_t *goertzel_
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

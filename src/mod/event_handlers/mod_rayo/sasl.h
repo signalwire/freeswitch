@@ -41,5 +41,5 @@ extern void parse_plain_auth_message(const char *message, char **authzid, char *
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet
  */

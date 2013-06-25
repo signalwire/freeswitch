@@ -959,5 +959,5 @@ switch_status_t mod_spandsp_codecs_load(switch_loadable_module_interface_t **mod
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

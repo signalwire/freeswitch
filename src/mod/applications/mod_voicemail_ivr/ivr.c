@@ -251,5 +251,5 @@ switch_status_t ivre_record(switch_core_session_t *session, ivre_data_t *loc, sw
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet
  */

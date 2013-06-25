@@ -567,5 +567,5 @@ SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

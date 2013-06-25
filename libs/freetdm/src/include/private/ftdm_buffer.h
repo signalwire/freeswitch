@@ -150,5 +150,5 @@ FT_DECLARE(ftdm_size_t) ftdm_buffer_zwrite(ftdm_buffer_t *buffer, const void *da
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

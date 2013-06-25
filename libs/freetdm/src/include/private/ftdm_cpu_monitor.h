@@ -71,5 +71,5 @@ FT_DECLARE(ftdm_status_t) ftdm_cpu_get_system_idle_time (struct ftdm_cpu_monitor
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

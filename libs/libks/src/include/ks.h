@@ -367,5 +367,5 @@ static __inline__ int ks_safe_strcasecmp(const char *s1, const char *s2)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

@@ -498,5 +498,5 @@ SWITCH_DECLARE(void) switch_config_perform_set_item(switch_xml_config_item_t *it
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

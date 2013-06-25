@@ -8928,5 +8928,5 @@ static void set_variable_sip_param(switch_channel_t *channel, char *header_type,
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

@@ -1587,5 +1587,5 @@ ESL_DECLARE(unsigned int) esl_separate_string_string(char *buf, const char *deli
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
