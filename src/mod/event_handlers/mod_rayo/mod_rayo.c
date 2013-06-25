@@ -3640,7 +3640,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
  */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_rayo_shutdown)
 {
-	switch_console_del_complete_func("::rayo::list_actors");
+	switch_console_del_complete_func("::rayo::list_internal");
+	switch_console_del_complete_func("::rayo::list_external");
+	switch_console_del_complete_func("::rayo::list_all");
 	switch_console_set_complete("del rayo");
 
 	/* stop XMPP streams */
