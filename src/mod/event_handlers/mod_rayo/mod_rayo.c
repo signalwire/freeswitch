@@ -1086,7 +1086,7 @@ static void rayo_component_cleanup(struct rayo_actor *actor)
  */
 struct rayo_component *_rayo_component_init(struct rayo_component *component, switch_memory_pool_t *pool, const char *type, const char *subtype, const char *id, struct rayo_actor *parent, const char *client_jid, const char *file, int line)
 {
-	char *ref = switch_mprintf("%s-%d", type, rayo_actor_seq_next(parent));
+	char *ref = switch_mprintf("%s-%d", subtype, rayo_actor_seq_next(parent));
 	char *jid = switch_mprintf("%s/%s", RAYO_JID(parent), ref);
 	if (zstr(id)) {
 		id = jid;
