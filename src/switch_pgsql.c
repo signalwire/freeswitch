@@ -886,5 +886,5 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_SQLEndTran(switch_pgsql_handl
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

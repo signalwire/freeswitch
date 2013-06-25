@@ -889,5 +889,5 @@ void (*vmivr_get_menu_function(const char *menu_name))(switch_core_session_t *se
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet
  */

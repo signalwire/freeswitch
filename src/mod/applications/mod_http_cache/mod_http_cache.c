@@ -1625,6 +1625,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_http_cache_shutdown)
 
 	url_cache_clear(&gcache, NULL);
 	switch_core_hash_destroy(&gcache.map);
+	switch_core_hash_destroy(&gcache.profiles);
 	switch_mutex_destroy(gcache.mutex);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1638,5 +1639,5 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_http_cache_shutdown)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

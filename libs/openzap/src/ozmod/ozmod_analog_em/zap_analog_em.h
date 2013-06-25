@@ -66,5 +66,5 @@ typedef struct zap_analog_data zap_analog_em_data_t;
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

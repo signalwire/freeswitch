@@ -57,7 +57,7 @@ typedef struct tport_ws_s {
   tport_t  wstp_tp[1];
   wsh_t    ws[1];
   char    *wstp_buffer;
-  unsigned ws_initialized:1;
+  SU_S8_T  ws_initialized;
   unsigned ws_secure:1;
   unsigned:0;
 } tport_ws_t;

@@ -786,19 +786,19 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 
 	if (packet->header.type == SWITCH_STUN_BINDING_ERROR_RESPONSE) {
-
-		if (ice->flips < 4) {
-			if ((ice->type & ICE_CONTROLLED)) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Changing role to CONTROLLING\n");
-				ice->type &= ~ICE_CONTROLLED;
-				ice->flips++;
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Changing role to CONTROLLED\n");
-				ice->type |= ICE_CONTROLLED;
-				ice->flips++;
+		if ((ice->type & ICE_VANILLA)) {
+			if (ice->flips < 4) {
+				if ((ice->type & ICE_CONTROLLED)) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Changing role to CONTROLLING\n");
+					ice->type &= ~ICE_CONTROLLED;
+					ice->flips++;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Changing role to CONTROLLED\n");
+					ice->type |= ICE_CONTROLLED;
+					ice->flips++;
+				}
+				packet->header.type = SWITCH_STUN_BINDING_RESPONSE;
 			}
-
-			packet->header.type = SWITCH_STUN_BINDING_RESPONSE;
 		}
 
 	} else {
@@ -840,10 +840,10 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		xlen += 4 + switch_stun_attribute_padded_length(attr);
 	} while (xlen <= packet->header.length);
 
-	if (ice->type == ICE_GOOGLE_JINGLE && ok) {
+	if ((ice->type && ICE_GOOGLE_JINGLE) && ok) {
 		ok = !strcmp(ice->user_ice, username);
 	}
-
+	
 	if ((ice->type & ICE_VANILLA)) {
 		char foo1[13] = "", foo2[13] = "";
 		if (!ok) ok = !strncmp(packet->header.id, ice->last_sent_id, 12);
@@ -997,7 +997,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			memset(stunbuf, 0, sizeof(stunbuf));
 			rpacket = switch_stun_packet_build_header(SWITCH_STUN_BINDING_RESPONSE, packet->header.id, stunbuf);
 
-			if (ice->type == ICE_GOOGLE_JINGLE) {
+			if ((ice->type && ICE_GOOGLE_JINGLE)) {
 				switch_stun_packet_attribute_add_username(rpacket, username, (uint16_t)strlen(username));
 			}
 
@@ -5942,6 +5942,6 @@ SWITCH_DECLARE(void *) switch_rtp_get_private(switch_rtp_t *rtp_session)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
 

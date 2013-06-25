@@ -2891,5 +2891,5 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_refresh_video(switch_core_se
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

@@ -1133,5 +1133,5 @@ SWITCH_DECLARE(uint32_t) switch_crc32_8bytes(const void* data, size_t length)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

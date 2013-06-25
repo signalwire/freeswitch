@@ -75248,7 +75248,7 @@ index 679f29b..df87773 100644
 - * c-basic-offset:4
 - * End:
 - * For VIM:
-- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
 - */
 +* Local Variables:
 +* mode:c
@@ -75257,7 +75257,7 @@ index 679f29b..df87773 100644
 +* c-basic-offset:4
 +* End:
 +* For VIM:
-+* vim:set softtabstop=4 shiftwidth=4 tabstop=4:
++* vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
 +*/
 diff --git a/src/mod/languages/mod_lua/mod_lua.cpp b/src/mod/languages/mod_lua/mod_lua.cpp
 index 0df0d8f..a409f05 100644

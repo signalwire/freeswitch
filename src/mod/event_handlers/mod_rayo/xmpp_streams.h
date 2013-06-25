@@ -61,5 +61,5 @@ extern void *xmpp_stream_get_private(struct xmpp_stream *stream);
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet
  */

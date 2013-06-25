@@ -4697,5 +4697,5 @@ void sofia_presence_check_subscriptions(sofia_profile_t *profile, time_t now)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

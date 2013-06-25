@@ -1513,5 +1513,5 @@ switch_status_t FSMediaStream::write_frame(const switch_frame_t *frame, switch_i
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:s:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:s:
  */

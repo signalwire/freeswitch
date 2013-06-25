@@ -2520,5 +2520,5 @@ SWITCH_DECLARE(void) switch_event_add_presence_data_cols(switch_channel_t *chann
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

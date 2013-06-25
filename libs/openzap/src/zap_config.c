@@ -247,5 +247,5 @@ OZ_DECLARE (int) zap_config_get_cas_bits(char *strvalue, unsigned char *outbits)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

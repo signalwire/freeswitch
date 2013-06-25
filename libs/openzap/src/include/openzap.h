@@ -814,5 +814,5 @@ static __inline__ void zap_clear_flag_all(zap_span_t *span, uint32_t flag)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

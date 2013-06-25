@@ -347,5 +347,5 @@ SWITCH_DECLARE(void) switch_core_asr_float_param(switch_asr_handle_t *ah, char *
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

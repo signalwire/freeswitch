@@ -159,5 +159,5 @@ openr2_mflib_interface_t *ftdm_r2_get_native_channel_mf_generation_iface()
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet
  */

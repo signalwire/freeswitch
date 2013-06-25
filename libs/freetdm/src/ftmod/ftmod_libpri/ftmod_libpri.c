@@ -1013,7 +1013,7 @@ static ftdm_status_t state_advance(ftdm_channel_t *chan)
 				}
 			} else if (call) {
 //				pri_progress(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 1);
-				pri_acknowledge(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 1);
+				pri_acknowledge(isdn_data->spri.pri, call, ftdm_channel_get_id(chan), 0);
 			} else {
 				ftdm_set_state_locked(chan, FTDM_CHANNEL_STATE_RESTART);
 			}
@@ -3203,5 +3203,5 @@ ftdm_module_t ftdm_module = {
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */

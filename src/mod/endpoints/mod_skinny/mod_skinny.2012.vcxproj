@@ -142,7 +142,6 @@
   <ItemGroup>
     <ClInclude Include="mod_skinny.h" />
     <ClInclude Include="skinny_api.h" />
-    <ClInclude Include="skinny_labels.h" />
     <ClInclude Include="skinny_protocol.h" />
     <ClInclude Include="skinny_server.h" />
     <ClInclude Include="skinny_tables.h" />

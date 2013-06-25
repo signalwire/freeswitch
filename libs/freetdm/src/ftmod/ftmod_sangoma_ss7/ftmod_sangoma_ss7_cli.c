@@ -4002,6 +4002,6 @@ static ftdm_status_t handle_show_m2ua_cluster_status(ftdm_stream_handle_t *strea
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
 /******************************************************************************/

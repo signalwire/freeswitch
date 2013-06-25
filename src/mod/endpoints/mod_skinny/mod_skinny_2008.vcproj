@@ -312,10 +312,6 @@
 			>
 		</File>
 		<File
-			RelativePath=".\skinny_labels.h"
-			>
-		</File>
-		<File
 			RelativePath=".\skinny_protocol.c"
 			>
 		</File>

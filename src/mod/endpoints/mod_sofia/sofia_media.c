@@ -155,6 +155,6 @@ char *sofia_media_get_multipart(switch_core_session_t *session, const char *pref
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
 

@@ -148,7 +148,7 @@ SNGISDN_STR2ENUM_P(ftdm_str2ftdm_sngisdn_netspecfac_spec, ftdm_sngisdn_netspecfa
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
  */
 
 /******************************************************************************/
