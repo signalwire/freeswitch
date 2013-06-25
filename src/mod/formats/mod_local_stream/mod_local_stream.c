@@ -39,7 +39,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_local_stream_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_local_stream_shutdown);
 SWITCH_MODULE_DEFINITION(mod_local_stream, mod_local_stream_load, mod_local_stream_shutdown, NULL);
 
-static void launch_streams(const char *name);
+static int launch_streams(const char *name);
 static void launch_thread(const char *name, const char *path, switch_xml_t directory);
 
 static const char *global_cf = "local_stream.conf";
@@ -663,25 +663,31 @@ static void launch_thread(const char *name, const char *path, switch_xml_t direc
 	switch_thread_create(&thread, thd_attr, read_stream_thread, source, source->pool);
 }
 
-static void launch_streams(const char *name)
+static int launch_streams(const char *name)
 {
 	switch_xml_t cfg, xml, directory;
+	int x = 0;
 
 	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
-		abort();
+		return 0;
 	}
+
 	if (zstr(name)) {
 		for (directory = switch_xml_child(cfg, "directory"); directory; directory = directory->next) {
 			char *name = (char *) switch_xml_attr(directory, "name");
 			char *path = (char *) switch_xml_attr(directory, "path");
 			launch_thread(name, path, directory);
+			x++;
 		}
 	} else if ((directory = switch_xml_find_child(cfg, "directory", "name", name))) {
 		char *path = (char *) switch_xml_attr(directory, "path");
 		launch_thread(name, path, directory);
+		x++;
 	}
 	switch_xml_free(xml);
+
+	return x;
 }
 
 static void event_handler(switch_event_t *event)
@@ -882,6 +888,7 @@ SWITCH_STANDARD_API(start_local_stream_function)
 	char *mycmd = NULL, *argv[8] = { 0 };
 	char *local_stream_name = NULL;
 	int argc = 0;
+	int ok = 0;
 
 	if (zstr(cmd)) {
 		goto usage;
@@ -906,10 +913,10 @@ SWITCH_STANDARD_API(start_local_stream_function)
 		goto done;
 	}
 
-	launch_streams(local_stream_name);
-	stream->write_function(stream, "+OK stream: %s", local_stream_name);
-
-	goto done;
+	if ((ok = launch_streams(local_stream_name))) {
+		stream->write_function(stream, "+OK stream: %s", local_stream_name);
+		goto done;
+	}
 
   usage:
 	stream->write_function(stream, "-USAGE: %s\n", START_LOCAL_STREAM_SYNTAX);
@@ -967,8 +974,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_local_stream_load)
 {
 	switch_api_interface_t *commands_api_interface;
 	switch_file_interface_t *file_interface;
+
 	supported_formats[0] = "local_stream";
 
+
+	memset(&globals, 0, sizeof(globals));
+	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, pool);
+	switch_core_hash_init(&globals.source_hash, pool);
+	if (!launch_streams(NULL)) {
+		return SWITCH_STATUS_GENERR;
+	}
+	
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
 	file_interface->interface_name = modname;
@@ -981,10 +997,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_local_stream_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind event handler!\n");
 	}
 
-	memset(&globals, 0, sizeof(globals));
-	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, pool);
-	switch_core_hash_init(&globals.source_hash, pool);
-	launch_streams(NULL);
+
 
 	SWITCH_ADD_API(commands_api_interface, "hup_local_stream", "Skip to next file in local_stream", hup_local_stream_function, RELOAD_LOCAL_STREAM_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "reload_local_stream", "Reloads a local_stream", reload_local_stream_function, RELOAD_LOCAL_STREAM_SYNTAX);

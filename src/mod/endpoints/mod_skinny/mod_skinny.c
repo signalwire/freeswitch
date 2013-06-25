@@ -34,7 +34,6 @@
 #include "skinny_protocol.h"
 #include "skinny_server.h"
 #include "skinny_tables.h"
-#include "skinny_labels.h"
 #include "skinny_api.h"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load);
@@ -102,6 +101,44 @@ static char active_lines_sql[] =
 "   call_id          INTEGER,\n"
 "   call_state       INTEGER\n"
 ");\n";
+
+/*****************************************************************************/
+/* TEXT FUNCTIONS */
+/*****************************************************************************/
+char *skinny_expand_textid(const char *str)
+{
+	char *tmp;
+	int i;
+
+	/* Look for \200, if found, next character indicates string id */
+	char match = (char) 128;
+	
+	tmp = switch_mprintf("");
+
+	if (zstr(str)) {
+		return tmp;
+	}
+
+	for (i=0; i<strlen(str); i++)
+	{
+		char *old = tmp;
+
+		if ( str[i] == match ) {
+			if ( tmp[0] ) {
+				tmp = switch_mprintf("%s [%s] ", old, skinny_textid2str(str[i+1]));
+			} else {
+				tmp = switch_mprintf("[%s] ", skinny_textid2str(str[i+1]));
+			}
+			switch_safe_free(old);
+			i++;
+		} else {
+			tmp = switch_mprintf("%s%c", old, str[i]);
+			switch_safe_free(old);
+		}
+	}
+
+	return tmp;
+}
 
 /*****************************************************************************/
 /* PROFILES FUNCTIONS */
@@ -399,9 +436,10 @@ void skinny_line_perform_set_state(const char *file, const char *func, int line,
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-Call-State", "%d", call_state);
 	switch_event_fire(&event);
 	send_call_state(listener, call_state, line_instance, call_id);
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG,
-			"Device %s:%d, Line %d, Call %d Change State to %s (%d)\n",
-			listener->device_name, listener->device_instance, line_instance, call_id,
+
+	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
+			"Line %d, Call %d Change State to %s (%d)\n",
+			line_instance, call_id,
 			skinny_call_state2str(call_state), call_state);	
 }
 
@@ -620,6 +658,7 @@ int channel_on_routing_callback(void *pArg, int argc, char **argv, char **column
 {
 	struct channel_on_routing_helper *helper = pArg;
 	listener_t *listener = NULL;
+	char *label;
 
 	char *device_name = argv[0];
 	uint32_t device_instance = atoi(argv[1]);
@@ -654,8 +693,11 @@ int channel_on_routing_callback(void *pArg, int argc, char **argv, char **column
 			send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_ON);
 			skinny_line_set_state(listener, line_instance, helper->tech_pvt->call_id, SKINNY_IN_USE_REMOTELY);
 			send_select_soft_keys(listener, line_instance, helper->tech_pvt->call_id, SKINNY_KEY_SET_IN_USE_HINT, 0xffff);
-			send_display_prompt_status(listener, 0, SKINNY_DISP_IN_USE_REMOTE,
-					line_instance, helper->tech_pvt->call_id);
+
+			label = skinny_textid2raw(SKINNY_TEXTID_IN_USE_REMOTE);
+			send_display_prompt_status(listener, 0, label, line_instance, helper->tech_pvt->call_id);
+			switch_safe_free(label);
+
 			skinny_session_send_call_info(helper->tech_pvt->session, listener, line_instance);
 		}
 	}
@@ -751,6 +793,7 @@ int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnN
 {
 	struct channel_on_hangup_helper *helper = pArg;
 	listener_t *listener = NULL;
+	char *label;
 
 	char *device_name = argv[0];
 	uint32_t device_instance = atoi(argv[1]);
@@ -782,11 +825,15 @@ int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnN
 			case SWITCH_CAUSE_UNALLOCATED_NUMBER:
 				send_start_tone(listener, SKINNY_TONE_REORDER, 0, line_instance, call_id);
 				skinny_session_send_call_info(helper->tech_pvt->session, listener, line_instance);
-				send_display_prompt_status(listener, 0, SKINNY_DISP_UNKNOWN_NUMBER, line_instance, call_id);
+				label = skinny_textid2raw(SKINNY_TEXTID_UNKNOWN_NUMBER);
+				send_display_prompt_status(listener, 0, label, line_instance, call_id);
+				switch_safe_free(label);
 				break;
 			case SWITCH_CAUSE_USER_BUSY:
 				send_start_tone(listener, SKINNY_TONE_BUSYTONE, 0, line_instance, call_id);
-				send_display_prompt_status(listener, 0, SKINNY_DISP_BUSY, line_instance, call_id);
+				label = skinny_textid2raw(SKINNY_TEXTID_BUSY);
+				send_display_prompt_status(listener, 0, label, line_instance, call_id);
+				switch_safe_free(label);
 				break;
 			case SWITCH_CAUSE_NORMAL_CLEARING:
 				send_clear_prompt_status(listener, line_instance, call_id);
@@ -1431,11 +1478,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_socket_timeout_set(listener->sock, 5000000);
 #endif
 	if (listener->profile->debug > 0) {
-		if (zstr(listener->remote_ip)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Open\n");
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Open from %s:%d\n", listener->remote_ip, listener->remote_port);
-		}
+		skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Connection Open\n");
 	}
 
 	switch_set_flag_locked(listener, LFLAG_RUNNING);
@@ -1449,8 +1492,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		if (status != SWITCH_STATUS_SUCCESS) {
 			switch(status) {
 				case SWITCH_STATUS_TIMEOUT:
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Communication Time Out with %s:%d.\n",
-							listener->remote_ip, listener->remote_port);
+					skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Communication Time Out\n");
 
 					if(listener->expire_time < switch_epoch_time_now(NULL)) {
 						switch_event_t *event = NULL;
@@ -1460,8 +1502,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 					}
 					break;
 				default: 
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Communication Error with %s:%d.\n",
-							listener->remote_ip, listener->remote_port);
+					skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Communication Error\n");
 			}
 			switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			break;
@@ -1484,8 +1525,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	remove_listener(listener);
 
 	if (listener->profile->debug > 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Communication Complete with %s:%d.\n",
-				listener->remote_ip, listener->remote_port);
+		skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Communication Complete\n");
 	}
 
 	switch_thread_rwlock_wrlock(listener->rwlock);
@@ -1498,8 +1538,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_thread_rwlock_unlock(listener->rwlock);
 
 	if (listener->profile->debug > 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Communication Closed with %s:%d.\n",
-				listener->remote_ip, listener->remote_port);
+		skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Communication Closed\n");
 	}
 
 	if(destroy_pool == 0) {
@@ -2009,8 +2048,7 @@ static void skinny_user_to_device_event_handler(switch_event_t *event)
 							data);
 					break;
 				default:
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-							"Incorrect message type %s (%d).\n", skinny_message_type2str(message_type), message_type);
+					skinny_log_l(listener, SWITCH_LOG_WARNING, "Incorrect message type %s (%d).\n", skinny_message_type2str(message_type), message_type);
 			}
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
@@ -2102,8 +2140,13 @@ int skinny_message_waiting_event_handler_callback(void *pArg, int argc, char **a
 	if (listener) {
 		if (helper->yn == SWITCH_TRUE) {
 			char buffer[32];
+			char *label;
 			send_set_lamp(listener, SKINNY_BUTTON_VOICEMAIL, 0, SKINNY_LAMP_ON);
-			sprintf(buffer, "%s: (%d/%d urgents)", SKINNY_DISP_YOU_HAVE_VOICEMAIL, helper->total_new_messages, helper->total_new_urgent_messages);
+
+			label = skinny_textid2raw(SKINNY_TEXTID_YOU_HAVE_VOICEMAIL);
+			sprintf(buffer, "%s: (%d/%d urgents)", label, helper->total_new_messages, helper->total_new_urgent_messages);
+			switch_safe_free(label);
+
 			send_display_pri_notify(listener, 5, 10, buffer);
 		} else {
 			send_set_lamp(listener, SKINNY_BUTTON_VOICEMAIL, 0, SKINNY_LAMP_OFF);
@@ -2206,6 +2249,7 @@ static void skinny_trap_event_handler(switch_event_t *event)
 	}
 
 }
+
 /*****************************************************************************/
 SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 {

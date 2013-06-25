@@ -789,37 +789,70 @@ void skinny_feature_get(listener_t *listener, uint32_t instance, struct feature_
 switch_status_t skinny_perform_send_reply(listener_t *listener, const char *file, const char *func, int line, skinny_message_t *reply);
 #define  skinny_send_reply(listener, reply)  skinny_perform_send_reply(listener, __FILE__, __SWITCH_FUNC__, __LINE__, reply)
 
+switch_status_t skinny_perform_send_reply_quiet(listener_t *listener, const char *file, const char *func, int line, skinny_message_t *reply);
+#define  skinny_send_reply_quiet(listener, reply)  skinny_perform_send_reply_quiet(listener, __FILE__, __SWITCH_FUNC__, __LINE__, reply)
+
 switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *request);
 
 /*****************************************************************************/
 /* SKINNY MESSAGE HELPER */
 /*****************************************************************************/
-switch_status_t send_register_ack(listener_t *listener,
+switch_status_t perform_send_keep_alive_ack(listener_t *listener,
+		const char *file, const char *func, int line);
+#define send_keep_alive_ack(listener) perform_send_keep_alive_ack(listener, __FILE__, __SWITCH_FUNC__, __LINE__);
+
+switch_status_t perform_send_register_ack(listener_t *listener,
+		const char *file, const char *func, int line,
 		uint32_t keep_alive,
 		char *date_format,
 		char *reserved,
 		uint32_t secondary_keep_alive,
 		char *reserved2);
-switch_status_t send_start_tone(listener_t *listener,
+#define send_register_ack(listener, ...) perform_send_register_ack(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_speed_dial_stat_res(listener_t *listener,
+		const char *file, const char *func, int line,
+		uint32_t number,
+		char *speed_line,
+		char *speed_label);
+#define send_speed_dial_stat_res(listener, ...) perform_send_speed_dial_stat_res(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_start_tone(listener_t *listener,
+		const char *file, const char *func, int line,
 		uint32_t tone,
 		uint32_t reserved,
 		uint32_t line_instance,
 		uint32_t call_id);
-switch_status_t send_stop_tone(listener_t *listener,
+#define send_start_tone(listener, ...) perform_send_start_tone(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_stop_tone(listener_t *listener,
+		const char *file, const char *func, int line,
 		uint32_t line_instance,
 		uint32_t call_id);
-switch_status_t send_set_ringer(listener_t *listener,
+#define send_stop_tone(listener, ...) perform_send_stop_tone(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_set_ringer(listener_t *listener,
+		const char *file, const char *func, int line,
 		uint32_t ring_type,
 		uint32_t ring_mode,
 		uint32_t line_instance,
 		uint32_t call_id);
-switch_status_t send_set_lamp(listener_t *listener,
+#define send_set_ringer(listener, ...) perform_send_set_ringer(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_set_lamp(listener_t *listener,
+		const char *file, const char *func, int line,
 		uint32_t stimulus,
 		uint32_t stimulus_instance,
 		uint32_t mode);
-switch_status_t send_set_speaker_mode(listener_t *listener,
+#define send_set_lamp(listener, ...) perform_send_set_lamp(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_set_speaker_mode(listener_t *listener,
+		const char *file, const char *func, int line,
 		uint32_t mode);
-switch_status_t send_start_media_transmission(listener_t *listener,
+#define send_set_speaker_mode(listener, ...) perform_send_set_speaker_mode(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_start_media_transmission(listener_t *listener,
+		const char *file, const char *func, int line,
 		uint32_t conference_id,
 		uint32_t pass_thru_party_id,
 		uint32_t remote_ip,
@@ -830,11 +863,17 @@ switch_status_t send_start_media_transmission(listener_t *listener,
 		uint32_t silence_suppression,
 		uint16_t max_frames_per_packet,
 		uint32_t g723_bitrate);
-switch_status_t send_stop_media_transmission(listener_t *listener,
+#define send_start_media_transmission(listener,...) perform_send_start_media_transmission(listener,__FILE__, __SWITCH_FUNC__, __LINE__,__VA_ARGS__)
+
+switch_status_t perform_send_stop_media_transmission(listener_t *listener,
+		const char *file, const char *func, int line,
 		uint32_t conference_id,
 		uint32_t pass_thru_party_id,
 		uint32_t conference_id2);
-switch_status_t skinny_send_call_info(listener_t *listener,
+#define send_stop_media_transmission(listener, ...) perform_send_stop_media_transmission(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_call_info(listener_t *listener,
+		const char *file, const char *func, int line,
 		const char *calling_party_name,
 		const char *calling_party,
 		const char *called_party_name,
@@ -855,7 +894,10 @@ switch_status_t skinny_send_call_info(listener_t *listener,
 		uint32_t call_instance,
 		uint32_t call_security_status,
 		uint32_t party_pi_restriction_bits);
-switch_status_t send_define_time_date(listener_t *listener,
+#define send_call_info(listener, ...) perform_send_call_info(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_define_time_date(listener_t *listener,
+		const char *file, const char *func, int line,
 		uint32_t year,
 		uint32_t month,
 		uint32_t day_of_week, /* monday = 1 */
@@ -865,13 +907,28 @@ switch_status_t send_define_time_date(listener_t *listener,
 		uint32_t seconds,
 		uint32_t milliseconds,
 		uint32_t timestamp);
-switch_status_t send_define_current_time_date(listener_t *listener);
-switch_status_t send_version(listener_t *listener,
+#define send_define_time_date(listener, ...) perform_send_define_time_date(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_define_current_time_date(listener_t *listener,
+		const char *file, const char *func, int line);
+#define send_define_current_time_date(listener) perform_send_define_current_time_date(listener, __FILE__, __SWITCH_FUNC__, __LINE__)
+
+switch_status_t perform_send_version(listener_t *listener,
+		const char *file, const char *func, int line,
 		char *version);
-switch_status_t send_capabilities_req(listener_t *listener);
-switch_status_t send_register_reject(listener_t *listener,
+#define send_version(listener, ...) perform_send_version(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_capabilities_req(listener_t *listener,
+		const char *file, const char *func, int line);
+#define send_capabilities_req(listener) perform_send_capabilities_req(listener, __FILE__, __SWITCH_FUNC__, __LINE__)
+
+switch_status_t perform_send_register_reject(listener_t *listener,
+		const char *file, const char *func, int line,
 		char *error);
-switch_status_t send_open_receive_channel(listener_t *listener,
+#define send_register_reject(listener, ...) perform_send_register_reject(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_open_receive_channel(listener_t *listener,
+		const char *file, const char *func, int line,
 		uint32_t conference_id,
 		uint32_t pass_thru_party_id,
 		uint32_t ms_per_packet,
@@ -880,52 +937,96 @@ switch_status_t send_open_receive_channel(listener_t *listener,
 		uint32_t g723_bitrate,
 		uint32_t conference_id2,
 		uint32_t reserved[10]);
-switch_status_t send_close_receive_channel(listener_t *listener,
+#define send_open_receive_channel(listener, ...) perform_send_open_receive_channel(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_close_receive_channel(listener_t *listener,
+		const char *file, const char *func, int line,
 		uint32_t conference_id,
 		uint32_t pass_thru_party_id,
 		uint32_t conference_id2);
-switch_status_t send_select_soft_keys(listener_t *listener,
+#define send_close_receive_channel(listener, ...) perform_send_close_receive_channel(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_select_soft_keys(listener_t *listener,
+		const char *file, const char *func, int line,
 		uint32_t line_instance,
 		uint32_t call_id,
 		uint32_t soft_key_set,
 		uint32_t valid_key_mask);
-switch_status_t send_call_state(listener_t *listener,
+#define send_select_soft_keys(listener, ...) perform_send_select_soft_keys(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_call_state(listener_t *listener,
+		const char *file, const char *func, int line,
 		uint32_t call_state,
 		uint32_t line_instance,
 		uint32_t call_id);
-switch_status_t send_display_prompt_status(listener_t *listener,
+#define send_call_state(listener, ...) perform_send_call_state(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_display_prompt_status(listener_t *listener,
+		const char *file, const char *func, int line,
 		uint32_t timeout,
 		const char *display,
 		uint32_t line_instance,
 		uint32_t call_id);
-switch_status_t send_clear_prompt_status(listener_t *listener,
+#define send_display_prompt_status(listener, ...) perform_send_display_prompt_status(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_display_prompt_status_textid(listener_t *listener,
+		const char *file, const char *func, int line,
+		uint32_t timeout,
+		uint32_t display_textid,
 		uint32_t line_instance,
 		uint32_t call_id);
-switch_status_t send_activate_call_plane(listener_t *listener,
+#define send_display_prompt_status_textid(listener, ...) perform_send_display_prompt_status_textid(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_clear_prompt_status(listener_t *listener,
+		const char *file, const char *func, int line,
+		uint32_t line_instance,
+		uint32_t call_id);
+#define send_clear_prompt_status(listener, ...) perform_send_clear_prompt_status(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_activate_call_plane(listener_t *listener,
+		const char *file, const char *func, int line,
 		uint32_t line_instance);
-switch_status_t send_back_space_request(listener_t *listener,
+#define send_activate_call_plane(listener, ...) perform_send_activate_call_plane(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_back_space_request(listener_t *listener,
+		const char *file, const char *func, int line,
 		uint32_t line_instance,
 		uint32_t call_id);
-switch_status_t send_dialed_number(listener_t *listener,
+#define send_back_space_request(listener, ...) perform_send_back_space_request(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_dialed_number(listener_t *listener,
+		const char *file, const char *func, int line,
 		char called_party[24],
 		uint32_t line_instance,
 		uint32_t call_id);
-switch_status_t send_display_pri_notify(listener_t *listener,
+#define send_dialed_number(listener, ...) perform_send_dialed_number(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_display_pri_notify(listener_t *listener,
+		const char *file, const char *func, int line,
 		uint32_t message_timeout,
 		uint32_t priority,
 		char *notify);
-switch_status_t send_reset(listener_t *listener,
-		uint32_t reset_type);
+#define send_display_pri_notify(listener, ...) perform_send_display_pri_notify(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
 
-switch_status_t send_data(listener_t *listener, uint32_t message_type,
+switch_status_t perform_send_reset(listener_t *listener,
+		const char *file, const char *func, int line,
+		uint32_t reset_type);
+#define send_reset(listener, ...) perform_send_reset(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_data(listener_t *listener,
+		const char *file, const char *func, int line,
+		uint32_t message_type,
 		uint32_t application_id,
 		uint32_t line_instance,
 		uint32_t call_id,
 		uint32_t transaction_id,
 		uint32_t data_length,
 		const char *data);
+#define send_data(listener, ...) perform_send_data(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
 
-switch_status_t send_extended_data(listener_t *listener, uint32_t message_type,
+switch_status_t perform_send_extended_data(listener_t *listener,
+		const char *file, const char *func, int line,
+		uint32_t message_type,
 		uint32_t application_id,
 		uint32_t line_instance,
 		uint32_t call_id,
@@ -937,6 +1038,7 @@ switch_status_t send_extended_data(listener_t *listener, uint32_t message_type,
 		uint32_t app_instance_id,
 		uint32_t routing_id,
 		const char *data);
+#define send_extended_data(listener, ...) perform_send_extended_data(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
 
 #endif /* _SKINNY_PROTOCOL_H */
 
