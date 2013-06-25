@@ -3242,6 +3242,7 @@ static void send_console_command(struct rayo_client *client, const char *to, con
 		str = iks_string(iks_stack(iq), iq);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nSEND: to %s, %s\n", to, str);
 		rayo_client_command_recv(client, iq);
+		iks_delete(command);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "bad request xml\n");
 	}
@@ -3639,11 +3640,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
  */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_rayo_shutdown)
 {
-	if (globals.console) {
-		RAYO_UNLOCK(globals.console);
-		RAYO_DESTROY(globals.console);
-	}
-
 	switch_console_del_complete_func("::rayo::list_actors");
 	switch_console_set_complete("del rayo");
 
@@ -3655,12 +3651,33 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_rayo_shutdown)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for message threads to stop\n");
 	stop_deliver_message_threads();
 
+	if (globals.console) {
+		RAYO_UNLOCK(globals.console);
+		RAYO_DESTROY(globals.console);
+		globals.console = NULL;
+	}
+
+	if (globals.server) {
+		RAYO_UNLOCK(globals.server);
+		RAYO_DESTROY(globals.server);
+		globals.server = NULL;
+	}
+
 	rayo_components_shutdown();
 
 	/* cleanup module */
 	switch_event_unbind_callback(route_call_event);
 	switch_event_unbind_callback(on_call_end_event);
 	switch_event_unbind_callback(route_mixer_event);
+
+        switch_core_hash_destroy(&globals.command_handlers);
+        switch_core_hash_destroy(&globals.event_handlers);
+        switch_core_hash_destroy(&globals.clients_roster);
+        switch_core_hash_destroy(&globals.actors);
+        switch_core_hash_destroy(&globals.destroy_actors);
+        switch_core_hash_destroy(&globals.actors_by_id);
+        switch_core_hash_destroy(&globals.dial_gateways);
+        switch_core_hash_destroy(&globals.cmd_aliases);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Module shutdown\n");
 
