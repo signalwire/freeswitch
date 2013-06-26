@@ -2241,7 +2241,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 {
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
-	ftdm_status_t status;
+	ftdm_status_t status = FTDM_SUCCESS;
 	uint32_t spanid;
 	uint32_t chanid;
 	ftdm_caller_data_t *caller_data;
@@ -2296,6 +2296,45 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 		break;
 	case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
 	case FTDM_SIGEVENT_COLLECTED_DIGIT: /* Analog E&M */
+		{
+			int span_id = ftdm_channel_get_span_id(sigmsg->channel);
+			char *dtmf = sigmsg->ev_data.collected.digits;
+			char *regex = SPAN_CONFIG[span_id].dial_regex;
+			char *fail_regex = SPAN_CONFIG[span_id].fail_dial_regex;
+			ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(sigmsg->channel);
+
+			if (zstr(regex)) {
+				regex = NULL;
+			}
+
+			if (zstr(fail_regex)) {
+				fail_regex = NULL;
+			}
+
+			ftdm_log(FTDM_LOG_DEBUG, "got DTMF sig [%s]\n", dtmf);
+			switch_set_string(caller_data->collected, dtmf);
+
+			if ((regex || fail_regex) && !zstr(dtmf)) {
+				switch_regex_t *re = NULL;
+				int ovector[30];
+				int match = 0;
+
+				if (fail_regex) {
+					match = switch_regex_perform(dtmf, fail_regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+					status = match ? FTDM_SUCCESS : FTDM_BREAK;
+					switch_regex_safe_free(re);
+					ftdm_log(FTDM_LOG_DEBUG, "DTMF [%s] vs fail regex %s %s\n", dtmf, fail_regex, match ? "matched" : "did not match");
+				}
+
+				if (status == FTDM_SUCCESS && regex) {
+					match = switch_regex_perform(dtmf, regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+					status = match ? FTDM_BREAK : FTDM_SUCCESS;
+					switch_regex_safe_free(re);
+					ftdm_log(FTDM_LOG_DEBUG, "DTMF [%s] vs dial regex %s %s\n", dtmf, regex, match ? "matched" : "did not match");
+				}
+				ftdm_log(FTDM_LOG_DEBUG, "returning %s to COLLECT event with DTMF %s\n", status == FTDM_SUCCESS ? "success" : "break", dtmf);
+			}
+		}
 		break;
 	default:
 		{
@@ -2305,7 +2344,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 		break;
 	}
 
-	return FTDM_SUCCESS;
+	return status;
 }
 
 static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
