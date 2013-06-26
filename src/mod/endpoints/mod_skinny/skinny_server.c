@@ -58,6 +58,8 @@ uint32_t soft_key_template_default_textids[] = {
 	SKINNY_TEXTID_IDIVERT
 };
 
+#define TEXT_ID_LEN 20
+
 uint32_t soft_key_template_default_events[] = {
 	SOFTKEY_REDIAL,
 	SOFTKEY_NEWCALL,
@@ -1731,6 +1733,10 @@ switch_status_t skinny_handle_open_receive_channel_ack_message(listener_t *liste
 		switch_channel_t *channel = NULL;
 		struct in_addr addr;
 
+		flags[SWITCH_RTP_FLAG_DATAWAIT]++;
+		flags[SWITCH_RTP_FLAG_AUTOADJ]++;
+		flags[SWITCH_RTP_FLAG_RAW_WRITE]++;
+
 		tech_pvt = switch_core_session_get_private(session);
 		channel = switch_core_session_get_channel(session);
 
@@ -1954,7 +1960,7 @@ switch_status_t skinny_handle_unregister(listener_t *listener, skinny_message_t 
 
 switch_status_t skinny_handle_soft_key_template_request(listener_t *listener, skinny_message_t *request)
 {
-	int i;
+	size_t i;
 	skinny_message_t *message;
 
 	switch_assert(listener->profile);
@@ -1969,7 +1975,7 @@ switch_status_t skinny_handle_soft_key_template_request(listener_t *listener, sk
 	message->data.soft_key_template.total_soft_key_count = 21;
 
 	memset(message->data.soft_key_template.soft_key, 0, sizeof(message->data.soft_key_template));
-	for (i=0; i<sizeof(soft_key_template_default_textids); i++) {
+	for (i=0; i< TEXT_ID_LEN; i++) {
 		char *label = skinny_textid2raw(soft_key_template_default_textids[i]);
 		strcpy(message->data.soft_key_template.soft_key[i].soft_key_label, skinny_textid2raw(soft_key_template_default_textids[i]));
 		switch_safe_free(label);
