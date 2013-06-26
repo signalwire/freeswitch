@@ -722,7 +722,9 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 		if (analog_data->ringback_during_collect && ringback_f &&
 		    (ftdmchan->state == FTDM_CHANNEL_STATE_COLLECT ||
 		     ftdmchan->state == FTDM_CHANNEL_STATE_RING ||
-		     ftdmchan->state == FTDM_CHANNEL_STATE_RINGING
+		     ftdmchan->state == FTDM_CHANNEL_STATE_RINGING ||
+		     ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS ||
+		     ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS_MEDIA
 		     )) {
 			indicate = 1;
 		}
