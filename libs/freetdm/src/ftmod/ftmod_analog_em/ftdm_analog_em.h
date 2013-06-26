@@ -33,6 +33,7 @@
  * Contributor(s):
  *
  * John Wehle (john@feith.com)
+ * Moises Silva (moy@sangoma.com)
  *
  */
 
@@ -53,6 +54,8 @@ struct ftdm_analog_data {
 	uint32_t digit_timeout;
 	uint32_t dial_timeout;
 	ftdm_bool_t answer_supervision;
+	ftdm_bool_t ringback_during_collect;
+	char ringback_file[512];
 };
 
 static void *ftdm_analog_em_run(ftdm_thread_t *me, void *obj);
