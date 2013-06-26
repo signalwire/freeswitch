@@ -741,7 +741,7 @@ read_try:
 			rlen = fread(frame, 1, len, ringback_f);
 			if (rlen != len) {
 				if (!feof(ringback_f)) {
-					ftdm_log(FTDM_LOG_ERROR, "Error reading from ringback file");
+					ftdm_log(FTDM_LOG_ERROR, "Error reading from ringback file: %zd != %zd\n", rlen, len);
 				}
 				if (failed_read) {
 					continue;
