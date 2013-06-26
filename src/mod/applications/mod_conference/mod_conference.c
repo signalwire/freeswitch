@@ -7354,7 +7354,7 @@ SWITCH_STANDARD_APP(conference_function)
 	char *bridgeto = NULL;
 	char *profile_name = NULL;
 	switch_xml_t cxml = NULL, cfg = NULL, profiles = NULL;
-	const char *flags_str;
+	const char *flags_str, *v_flags_str;
 	member_flag_t mflags = 0;
 	switch_core_session_message_t msg = { 0 };
 	uint8_t rl = 0, isbr = 0;
@@ -7406,8 +7406,14 @@ SWITCH_STANDARD_APP(conference_function)
 		if ((p = strchr(flags_str, '}'))) {
 			*p = '\0';
 		}
-	} else {
-		flags_str = switch_channel_get_variable(channel, "conference_member_flags");
+	}
+	
+	if ((v_flags_str = switch_channel_get_variable(channel, "conference_member_flags"))) {
+		if (zstr(flags_str)) {
+			flags_str = v_flags_str;
+		} else {
+			flags_str = switch_core_session_sprintf(session, "%s|%s", flags_str, v_flags_str);
+		}
 	}
 
 	/* is this a bridging conference ? */
