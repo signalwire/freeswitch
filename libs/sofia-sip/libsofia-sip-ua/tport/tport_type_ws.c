@@ -207,23 +207,14 @@ int tport_recv_stream_ws(tport_t *self)
   int err;
   msg_iovec_t iovec[msg_n_fragments] = {{ 0 }};
   tport_ws_t *wstp = (tport_ws_t *)self;
-  wsh_t *ws = wstp->ws;
-  tport_ws_primary_t *wspri = (tport_ws_primary_t *)self->tp_pri;
   uint8_t *data;
   ws_opcode_t oc;
 
   if (wstp->ws_initialized < 0) {
 	  return -1;
-  } else if (wstp->ws_initialized == 0) {
-	  if (ws_init(ws, self->tp_socket, 65336, wstp->ws_secure ? wspri->ssl_ctx : NULL, 0) == -2) {
-		  return 2;
-	  }
-	  wstp->ws_initialized = 1;
-	  self->tp_pre_framed = 1;
-	  return 1;
   }
 
-  N = ws_read_frame(ws, &oc, &data);
+  N = ws_read_frame(&wstp->ws, &oc, &data);
 
   if (N == -2) {
 	  return 2;
@@ -276,7 +267,6 @@ ssize_t tport_send_stream_ws(tport_t const *self, msg_t *msg,
   size_t i, j, n, m, size = 0;
   ssize_t nerror;
   tport_ws_t *wstp = (tport_ws_t *)self;
-  wsh_t *ws = wstp->ws;
 
   enum { WSBUFSIZE = 2048 };
 
@@ -311,10 +301,10 @@ ssize_t tport_send_stream_ws(tport_t const *self, msg_t *msg,
       iov[j].siv_base = buf, iov[j].siv_len = m;
 	}
 
-	nerror = ws_feed_buf(ws, buf, m);
+	nerror = ws_feed_buf(&wstp->ws, buf, m);
 	
     SU_DEBUG_9(("tport_ws_writevec: vec %p %p %lu ("MOD_ZD")\n",
-		(void *)ws, (void *)iov[i].siv_base, (LU)iov[i].siv_len,
+		(void *)&wstp->ws, (void *)iov[i].siv_base, (LU)iov[i].siv_len,
 		nerror));
 
     if (nerror == -1) {
@@ -333,7 +323,7 @@ ssize_t tport_send_stream_ws(tport_t const *self, msg_t *msg,
       break;
   }
 
-  ws_send_buf(ws, WSOC_TEXT);
+  ws_send_buf(&wstp->ws, WSOC_TEXT);
 
 
   return size;
@@ -453,6 +443,15 @@ int tport_ws_init_secondary(tport_t *self, int socket, int accepted,
 
   if ( wspri->ws_secure ) wstp->ws_secure = 1;
 
+
+  memset(&wstp->ws, 0, sizeof(wstp->ws));
+  if (ws_init(&wstp->ws, socket, 65336, wstp->ws_secure ? wspri->ssl_ctx : NULL, 0) < 0) {
+	  return *return_reason = "WS_INIT", -1;
+  }
+
+  wstp->ws_initialized = 1;
+  self->tp_pre_framed = 1;
+
   return 0;
 }
 
@@ -461,10 +460,9 @@ static void tport_ws_deinit_secondary(tport_t *self)
 	tport_ws_t *wstp = (tport_ws_t *)self;
 
 	if (wstp->ws_initialized == 1) {
-		wsh_t *wsh = wstp->ws;
-		SU_DEBUG_1(("%p destroy ws%s transport %p.\n", (void *) self, wstp->ws_secure ? "s" : "", (void *) wsh));
-		ws_destroy(&wsh);
-		wstp->ws_initialized = 1;
+		SU_DEBUG_1(("%p destroy ws%s transport %p.\n", (void *) self, wstp->ws_secure ? "s" : "", (void *) &wstp->ws));
+		ws_destroy(&wstp->ws);
+		wstp->ws_initialized = -1;
 	}
 }
 
