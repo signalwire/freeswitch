@@ -2494,7 +2494,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				goto done;
 			} else {
 				const char *var = switch_channel_get_variable(channel, "t38_passthru");
-				int pass = switch_media_handle_test_media_flag(smh, SCMF_T38_PASSTHRU);
+				int pass = switch_channel_test_flag(smh->session->channel, CF_T38_PASSTHRU);
 
 
 				if (switch_channel_test_app_flag_key("T38", session->channel, CF_APP_T38)) {
@@ -2509,7 +2509,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					}
 				}
 
-				if ((pass == 2 && switch_media_handle_test_media_flag(smh, SCMF_T38_PASSTHRU)) 
+				if ((pass == 2 && switch_channel_test_flag(smh->session->channel, CF_T38_PASSTHRU)) 
 					|| !switch_channel_test_flag(session->channel, CF_REINVITE) ||
 					
 					switch_channel_test_flag(session->channel, CF_PROXY_MODE) || 
@@ -2572,9 +2572,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 					switch_core_media_copy_t38_options(t38_options, other_session);
 
-					switch_media_handle_set_media_flag(smh, SCMF_T38_PASSTHRU);
-					switch_media_handle_set_media_flag(other_session->media_handle, SCMF_T38_PASSTHRU);
-
+					switch_channel_set_flag(smh->session->channel, CF_T38_PASSTHRU);
+					switch_channel_set_flag(other_session->channel, CF_T38_PASSTHRU);
+					
 					msg = switch_core_session_alloc(other_session, sizeof(*msg));
 					msg->message_id = SWITCH_MESSAGE_INDICATE_REQUEST_IMAGE_MEDIA;
 					msg->from = __FILE__;

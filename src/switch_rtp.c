@@ -840,7 +840,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		xlen += 4 + switch_stun_attribute_padded_length(attr);
 	} while (xlen <= packet->header.length);
 
-	if ((ice->type && ICE_GOOGLE_JINGLE) && ok) {
+	if ((ice->type & ICE_GOOGLE_JINGLE) && ok) {
 		ok = !strcmp(ice->user_ice, username);
 	}
 	
@@ -997,7 +997,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			memset(stunbuf, 0, sizeof(stunbuf));
 			rpacket = switch_stun_packet_build_header(SWITCH_STUN_BINDING_RESPONSE, packet->header.id, stunbuf);
 
-			if ((ice->type && ICE_GOOGLE_JINGLE)) {
+			if ((ice->type & ICE_GOOGLE_JINGLE)) {
 				switch_stun_packet_attribute_add_username(rpacket, username, (uint16_t)strlen(username));
 			}
 

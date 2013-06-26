@@ -55,7 +55,7 @@ typedef enum {
 
 typedef struct tport_ws_s {
   tport_t  wstp_tp[1];
-  wsh_t    ws[1];
+  wsh_t    ws;
   char    *wstp_buffer;
   SU_S8_T  ws_initialized;
   unsigned ws_secure:1;

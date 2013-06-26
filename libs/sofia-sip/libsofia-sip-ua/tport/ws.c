@@ -402,17 +402,13 @@ int ws_init(wsh_t *wsh, ws_socket_t sock, size_t buflen, SSL_CTX *ssl_ctx, int c
 	return 0;
 }
 
-void ws_destroy(wsh_t **wshp)
+void ws_destroy(wsh_t *wsh)
 {
-	wsh_t *wsh;
 
-	if (!wshp || ! *wshp) {
+	if (!wsh) {
 		return;
 	}
 
-	wsh = *wshp;
-	*wshp = NULL;
-	
 	if (!wsh->down) {
 		ws_close(wsh, WS_NONE);
 	}
