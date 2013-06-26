@@ -1596,7 +1596,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 		
 		args.input_callback = cancel_on_dtmf;
 		
-		switch_snprintf(key_buf, sizeof(key_buf), "%s:%s:%s:%s:%s:%s%s%s", profile->listen_file_key, profile->save_file_key,
+		switch_snprintf(key_buf, sizeof(key_buf), "%s:%s:%s:%s:%s:%s%s%s", profile->repeat_msg_key, profile->save_file_key,
 						profile->delete_file_key, profile->email_key, profile->callback_key,
 						profile->forward_key, cbt->email ? ":" : "", cbt->email ? cbt->email : "");
 
