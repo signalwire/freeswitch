@@ -432,25 +432,42 @@ int tport_ws_init_secondary(tport_t *self, int socket, int accepted,
   int one = 1;
   tport_ws_primary_t *wspri = (tport_ws_primary_t *)self->tp_pri;
   tport_ws_t *wstp = (tport_ws_t *)self;
+  char *buffer, *wbuffer;
 
   self->tp_has_connection = 1;
 
   if (setsockopt(socket, SOL_TCP, TCP_NODELAY, (void *)&one, sizeof one) == -1)
-    return *return_reason = "TCP_NODELAY", -1;
+	  return *return_reason = "TCP_NODELAY", -1;
+
+#if defined(SO_KEEPALIVE)
+  setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, (void *)&one, sizeof one);
+#endif
+  one = 30;
+#if defined(TCP_KEEPIDLE)
+  setsockopt(socket, SOL_TCP, TCP_KEEPIDLE, (void *)&one, sizeof one);
+#endif
+#if defined(TCP_KEEPINTVL)
+  setsockopt(socket, SOL_TCP, TCP_KEEPINTVL, (void *)&one, sizeof one);
+#endif
+
 
   if (!accepted)
     tport_ws_setsndbuf(socket, 64 * 1024);
 
   if ( wspri->ws_secure ) wstp->ws_secure = 1;
 
-
   memset(&wstp->ws, 0, sizeof(wstp->ws));
-  if (ws_init(&wstp->ws, socket, 65336, wstp->ws_secure ? wspri->ssl_ctx : NULL, 0) < 0) {
+  
+  buffer = (char *) su_alloc((su_home_t *)self, 65536);
+  wbuffer = (char *) su_alloc((su_home_t *)self, 65536);
+
+  if (ws_init(&wstp->ws, socket, buffer, wbuffer, 65336, wstp->ws_secure ? wspri->ssl_ctx : NULL, 0) < 0) {
 	  return *return_reason = "WS_INIT", -1;
   }
 
   wstp->ws_initialized = 1;
   self->tp_pre_framed = 1;
+
 
   return 0;
 }
