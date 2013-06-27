@@ -4985,6 +4985,13 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			switch_channel_set_variable(channel, "sip_hangup_disposition", "recv_refuse");
 		}
 
+		if (status >= 400) {
+			char status_str[5];
+			switch_snprintf(status_str, sizeof(status_str), "%d", status);
+			switch_channel_set_variable_partner(channel, "sip_invite_failure_status", status_str);
+			switch_channel_set_variable_partner(channel, "sip_invite_failure_phrase", phrase);
+		}
+
 		if (status >= 400 && sip->sip_reason && sip->sip_reason->re_protocol && (!strcasecmp(sip->sip_reason->re_protocol, "Q.850")
 				|| !strcasecmp(sip->sip_reason->re_protocol, "FreeSWITCH")
 				|| !strcasecmp(sip->sip_reason->re_protocol, profile->sdp_username)) && sip->sip_reason->re_cause) {
