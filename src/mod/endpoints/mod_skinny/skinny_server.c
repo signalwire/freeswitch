@@ -986,9 +986,9 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 			request->data.reg.device_name, request->data.reg.instance, &listener2);
 	if (listener2) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-				"Device %s:%d is already registred on another listener.\n",
+				"Device %s:%d is already registered on another listener.\n",
 				request->data.reg.device_name, request->data.reg.instance);
-		send_register_reject(listener, "Device is already registred on another listener");
+		send_register_reject(listener, "Device is already registered on another listener");
 		status =  SWITCH_STATUS_FALSE;
 		goto end;
 	}
