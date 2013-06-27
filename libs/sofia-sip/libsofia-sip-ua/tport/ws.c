@@ -379,7 +379,8 @@ int ws_init(wsh_t *wsh, ws_socket_t sock, size_t buflen, SSL_CTX *ssl_ctx, int c
 
 	if (wsh->secure) {
 		int code;
-
+		int sanity = 500;
+		
 		wsh->ssl = SSL_new(ssl_ctx);
 		assert(wsh->ssl);
 
@@ -387,8 +388,32 @@ int ws_init(wsh_t *wsh, ws_socket_t sock, size_t buflen, SSL_CTX *ssl_ctx, int c
 
 		do {
 			code = SSL_accept(wsh->ssl);
-		} while (code == -1 && SSL_get_error(wsh->ssl, code) == SSL_ERROR_WANT_READ);
 
+			if (code == 1) {
+				break;
+			}
+
+			if (code == 0) {
+				return -1;
+			}
+			
+			if (code < 0) {
+				if (code == -1 && SSL_get_error(wsh->ssl, code) != SSL_ERROR_WANT_READ) {
+					return -1;
+				}
+			}
+#ifndef _MSC_VER
+				usleep(10000);
+#else
+				Sleep(10);
+#endif				
+				
+		} while (--sanity > 0);
+		
+		if (!sanity) {
+			return -1;
+		}
+		
 	}
 
 	while (!wsh->down && !wsh->handshake) {
