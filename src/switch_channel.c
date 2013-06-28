@@ -4681,31 +4681,36 @@ SWITCH_DECLARE(void) switch_channel_clear_device_record(switch_channel_t *channe
 static void process_device_hup(switch_channel_t *channel)
 {
 	switch_hold_record_t *hr, *newhr, *last = NULL;
+	switch_device_record_t *drec = NULL;
+	switch_device_node_t *node;
 
 	if (!channel->device_node) {
 		return;
 	}
 	
 	switch_mutex_lock(globals.device_mutex);
-	channel->device_node->hup_profile = switch_caller_profile_dup(channel->device_node->parent->pool, channel->caller_profile);
-	fetch_device_stats(channel->device_node->parent);
+	node = channel->device_node;
+	drec = channel->device_node->parent;
 
-	switch_ivr_generate_xml_cdr(channel->session, &channel->device_node->xml_cdr);
-	if (switch_event_create(&channel->device_node->event, SWITCH_EVENT_CALL_DETAIL) == SWITCH_STATUS_SUCCESS) {
-		switch_channel_event_set_extended_data(channel, channel->device_node->event);
+	node->hup_profile = switch_caller_profile_dup(drec->pool, channel->caller_profile);
+	fetch_device_stats(drec);
+
+	switch_ivr_generate_xml_cdr(channel->session, &node->xml_cdr);
+	if (switch_event_create(&node->event, SWITCH_EVENT_CALL_DETAIL) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_extended_data(channel, node->event);
 	}
 
 	for (hr = channel->hold_record; hr; hr = hr->next) {
-		newhr = switch_core_alloc(channel->device_node->parent->pool, sizeof(*newhr));
+		newhr = switch_core_alloc(drec->pool, sizeof(*newhr));
 		newhr->on = hr->on;
 		newhr->off = hr->off;
 
 		if (hr->uuid) {
-			newhr->uuid = switch_core_strdup(channel->device_node->parent->pool, hr->uuid);
+			newhr->uuid = switch_core_strdup(drec->pool, hr->uuid);
 		}
 
-		if (!channel->device_node->hold_record) {
-			channel->device_node->hold_record = newhr;
+		if (!node->hold_record) {
+			node->hold_record = newhr;
 		} else {
 			last->next = newhr;
 		}
@@ -4713,15 +4718,17 @@ static void process_device_hup(switch_channel_t *channel)
 		last = newhr;
 	}	
 
-	if (!channel->device_node->parent->stats.offhook) { /* this is final call */
+	if (!drec->stats.offhook) { /* this is final call */
 
-		switch_core_hash_delete(globals.device_hash, channel->device_node->parent->device_id);
+		switch_core_hash_delete(globals.device_hash, drec->device_id);
 		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Processing last call from device [%s]\n", 
-						  channel->device_node->parent->device_id);
+						  drec->device_id);
 		switch_channel_set_flag(channel, CF_FINAL_DEVICE_LEG);
+	} else {
+		channel->device_node = NULL;
 	}
 
-	channel->device_node->parent->refs--;
+	drec->refs--;
 
 	switch_mutex_unlock(globals.device_mutex);
 	
