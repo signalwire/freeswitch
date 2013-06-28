@@ -430,6 +430,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	
 	if (punt) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Only one bug of this type allowed!\n");
+		return SWITCH_STATUS_GENERR;
 	}
 
 
