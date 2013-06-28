@@ -69,6 +69,13 @@
 void (*_su_time)(su_time_t *tv);
 uint64_t (*_su_nanotime)(uint64_t *);
 
+static su_time_func_t custom_time_func = NULL;
+
+void su_set_time_func(su_time_func_t func) {
+	custom_time_func = func;
+}
+
+
 /** Get current time.
  *
  * The function @c su_time() fills its argument with the current NTP
@@ -79,6 +86,13 @@ uint64_t (*_su_nanotime)(uint64_t *);
 void su_time(su_time_t *tv)
 {
 	su_time_t ltv = {0,0};
+
+	if (custom_time_func) {
+		custom_time_func(&ltv);
+		if (tv) *tv = ltv;
+		return;
+	}
+
 #if HAVE_CLOCK_GETTIME
 	struct timespec ctv = {0};
 	if (clock_gettime(CLOCK_REALTIME, &ctv) == 0) {

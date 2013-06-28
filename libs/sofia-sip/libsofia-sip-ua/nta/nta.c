@@ -152,9 +152,7 @@ struct nta_agent_s
   nta_error_magic_t   *sa_error_magic;
   nta_error_tport_f   *sa_error_tport;
 
-  su_time_t             sa_now;	 /**< Timestamp in microsecond resolution. */
   uint32_t              sa_next; /**< Timestamp for next agent_timer. */
-  uint32_t              sa_millisec; /**< Timestamp in milliseconds. */
 
   msg_mclass_t const   *sa_mclass;
   uint32_t sa_flags;		/**< SIP message flags */
@@ -1242,15 +1240,12 @@ void agent_timer(su_root_magic_t *rm, su_timer_t *timer, nta_agent_t *agent)
 
   agent->sa_next = 0;
 
-  agent->sa_now = stamp;
-  agent->sa_millisec = now;
   agent->sa_in_timer = 1;
+
 
   _nta_outgoing_timer(agent);
   _nta_incoming_timer(agent);
 
-  /* agent->sa_now is used only if sa_millisec != 0 */
-  agent->sa_millisec = 0;
   agent->sa_in_timer = 0;
 
   /* Calculate next timeout */
@@ -1335,12 +1330,12 @@ uint32_t set_timeout(nta_agent_t *agent, uint32_t offset)
   if (offset == 0)
     return 0;
 
-  if (agent->sa_millisec) /* Avoid expensive call to su_now() */
-    now = agent->sa_now, ms = agent->sa_millisec;
-  else
-    now = su_now(), ms = su_time_ms(now);
+  now = su_now();
+  ms = su_time_ms(now);
 
-  next = ms + offset; if (next == 0) next = 1;
+  next = ms + offset;
+
+  if (next == 0) next = 1;
 
   if (agent->sa_in_timer)	/* Currently executing timer */
     return next;
@@ -1365,9 +1360,6 @@ uint32_t set_timeout(nta_agent_t *agent, uint32_t offset)
 static
 su_time_t agent_now(nta_agent_t const *agent)
 {
-  if (agent && agent->sa_millisec != 0)
-    return agent->sa_now;
-  else
     return su_now();
 }
 
@@ -2784,8 +2776,6 @@ void agent_recv_message(nta_agent_t *agent,
 {
   sip_t *sip = sip_object(msg);
 
-  agent->sa_millisec = su_time_ms(agent->sa_now = now);
-
   if (sip && sip->sip_request) {
     agent_recv_request(agent, msg, sip, tport);
   }
@@ -2795,8 +2785,6 @@ void agent_recv_message(nta_agent_t *agent,
   else {
     agent_recv_garbage(agent, msg, tport);
   }
-
-  agent->sa_millisec = 0;
 }
 
 /** @internal Handle incoming requests. */
@@ -6869,7 +6857,7 @@ enum {
 static void
 _nta_incoming_timer(nta_agent_t *sa)
 {
-  uint32_t now = sa->sa_millisec;
+  uint32_t now = su_time_ms(su_now());
   nta_incoming_t *irq, *irq_next;
   size_t retransmitted = 0, timeout = 0, terminated = 0, destroyed = 0;
   size_t unconfirmed =
@@ -6886,6 +6874,9 @@ _nta_incoming_timer(nta_agent_t *sa)
 
   /* Handle retry queue */
   while ((irq = sa->sa_in.re_list)) {
+
+	  now = su_time_ms(su_now());
+
     if ((int32_t)(irq->irq_retry - now) > 0)
       break;
     if (retransmitted >= timer_max_retransmit)
@@ -6943,6 +6934,8 @@ _nta_incoming_timer(nta_agent_t *sa)
   }
 
   while ((irq = sa->sa_in.final_failed->q_head)) {
+	  
+
     incoming_remove(irq);
     irq->irq_final_failed = 0;
 
@@ -6974,6 +6967,8 @@ _nta_incoming_timer(nta_agent_t *sa)
     assert(irq->irq_status < 200);
     assert(irq->irq_timeout);
 
+	now = su_time_ms(su_now());
+
     if ((int32_t)(irq->irq_timeout - now) > 0)
       break;
     if (timeout >= timer_max_timeout)
@@ -6993,6 +6988,8 @@ _nta_incoming_timer(nta_agent_t *sa)
     assert(irq->irq_status >= 200);
     assert(irq->irq_timeout);
     assert(irq->irq_method == sip_method_invite);
+
+	now = su_time_ms(su_now());
 
     if ((int32_t)(irq->irq_timeout - now) > 0 ||
 	timeout >= timer_max_timeout ||
@@ -7022,6 +7019,8 @@ _nta_incoming_timer(nta_agent_t *sa)
     assert(irq->irq_status >= 200);
     assert(irq->irq_method == sip_method_invite);
 
+	now = su_time_ms(su_now());
+
     if ((int32_t)(irq->irq_timeout - now) > 0 ||
 	terminated >= timer_max_terminate)
       break;
@@ -7044,6 +7043,8 @@ _nta_incoming_timer(nta_agent_t *sa)
     assert(irq->irq_timeout);
     assert(irq->irq_method != sip_method_invite);
 
+	now = su_time_ms(su_now());	
+
     if ((int32_t)(irq->irq_timeout - now) > 0 ||
 	terminated >= timer_max_terminate)
       break;
@@ -7063,6 +7064,7 @@ _nta_incoming_timer(nta_agent_t *sa)
   }
 
   for (irq = sa->sa_in.terminated->q_head; irq; irq = irq_next) {
+	  
     irq_next = irq->irq_next;
     if (irq->irq_destroyed)
       incoming_free_queue(rq, irq);
@@ -8727,7 +8729,7 @@ void outgoing_destroy(nta_outgoing_t *orq)
 static void
 _nta_outgoing_timer(nta_agent_t *sa)
 {
-  uint32_t now = sa->sa_millisec;
+  uint32_t now = su_time_ms(su_now());
   nta_outgoing_t *orq;
   outgoing_queue_t rq[1];
   size_t retransmitted = 0, terminated = 0, timeout = 0, destroyed;
@@ -8741,6 +8743,9 @@ _nta_outgoing_timer(nta_agent_t *sa)
   outgoing_queue_init(sa->sa_out.free = rq, 0);
 
   while ((orq = sa->sa_out.re_list)) {
+
+	  now = su_time_ms(su_now());
+
     if ((int32_t)(orq->orq_retry - now) > 0)
       break;
     if (retransmitted >= timer_max_retransmit)
