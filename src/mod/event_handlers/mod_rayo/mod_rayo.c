@@ -3674,6 +3674,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
 		"<![CDATA[<grammar mode=\"dtmf\"><rule id=\"digits\" scope=\"public\"><item repeat=\"4\"><one-of><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item><item>6</item><item>7</item><item>8</item><item>9</item></one-of></item></rule></grammar>]]>"
 		"</grammar></input>"
 		"</prompt>");
+	rayo_add_cmd_alias("input", "<input xmlns=\""RAYO_INPUT_NS"\" mode=\"dtmf\" initial-timeout=\"5000\" inter-digit-timeout=\"3000\">"
+		"<grammar content-type=\"application/srgs+xml\">"
+		"<![CDATA[<grammar mode=\"dtmf\"><rule id=\"digits\" scope=\"public\"><item><one-of><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item><item>6</item><item>7</item><item>8</item><item>9</item><item>*</item><item>#</item></one-of></item></rule></grammar>]]>"
+		"</grammar></input>");
 
 	return SWITCH_STATUS_SUCCESS;
 }

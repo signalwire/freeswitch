@@ -877,6 +877,26 @@ static switch_status_t parse_hangup(const char *tag_name, client_t *client, swit
 	return SWITCH_STATUS_FALSE;
 }
 
+static switch_status_t parse_answer(const char *tag_name, client_t *client, switch_xml_t tag, const char *body)
+{
+
+	if (!strcasecmp(tag_name, "answer")) {
+		const char *conf = switch_xml_attr(tag, "is-conference");
+
+		if (conf && switch_true(conf)) {
+			switch_channel_set_flag(client->channel, CF_CONFERENCE);
+		}
+
+		switch_channel_answer(client->channel);
+	} else if (!strcasecmp(tag_name, "preAnswer")) {
+		switch_channel_pre_answer(client->channel);
+	} else if (!strcasecmp(tag_name, "ringReady")) {
+		switch_channel_ring_ready(client->channel);
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
 static switch_status_t parse_record_call(const char *tag_name, client_t *client, switch_xml_t tag, const char *body)
 {
 	const char *limit_ = switch_xml_attr(tag, "limit");
@@ -2997,6 +3017,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load)
 	bind_parser("sms", parse_sms);
 	bind_parser("dial", parse_dial);
 	bind_parser("pause", parse_playback);
+	bind_parser("answer", parse_answer);
+	bind_parser("preAnswer", parse_answer);
+	bind_parser("ringReady", parse_answer);
 	bind_parser("hangup", parse_hangup);
 	bind_parser("record", parse_record);
 	bind_parser("recordCall", parse_record_call);

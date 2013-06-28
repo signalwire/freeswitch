@@ -257,11 +257,16 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 				*val = ntohl(*val);	/* should we do this here? */
 			}
 			break;
+		case SWITCH_STUN_ATTR_ERROR_CODE:	/* ErrorCode */
+			{
+				uint32_t *u = (uint32_t *) attr->value;
+				*u = htonl(*u);
+			}
+			break;
 
 		case SWITCH_STUN_ATTR_USERNAME:	/* ByteString, multiple of 4 bytes */
 		case SWITCH_STUN_ATTR_PASSWORD:	/* ByteString, multiple of 4 bytes */
 		case SWITCH_STUN_ATTR_DATA:	/* ByteString */
-		case SWITCH_STUN_ATTR_ERROR_CODE:	/* ErrorCode */
 		case SWITCH_STUN_ATTR_TRANSPORT_PREFERENCES:	/* TransportPrefs */
 			/*
 			 * No length checking here, since we already checked against the padded length

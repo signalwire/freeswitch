@@ -227,7 +227,6 @@ typedef struct {
 	uint8_t ready;
 	uint8_t rready;
 	int missed_count;
-	int flips;
 	char last_sent_id[12];
 } switch_rtp_ice_t;
 
@@ -784,27 +783,6 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 	}
 
-
-	if (packet->header.type == SWITCH_STUN_BINDING_ERROR_RESPONSE) {
-		if ((ice->type & ICE_VANILLA)) {
-			if (ice->flips < 4) {
-				if ((ice->type & ICE_CONTROLLED)) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Changing role to CONTROLLING\n");
-					ice->type &= ~ICE_CONTROLLED;
-					ice->flips++;
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Changing role to CONTROLLED\n");
-					ice->type |= ICE_CONTROLLED;
-					ice->flips++;
-				}
-				packet->header.type = SWITCH_STUN_BINDING_RESPONSE;
-			}
-		}
-
-	} else {
-		ice->flips = 0;
-	}
-
 	end_buf = buf + ((sizeof(buf) > packet->header.length) ? packet->header.length : sizeof(buf));
 
 	rtp_session->last_stun = switch_micro_time_now();
@@ -813,6 +791,30 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 	do {
 		switch (attr->type) {
+		case SWITCH_STUN_ATTR_ERROR_CODE:
+			{
+				switch_stun_error_code_t *err = (switch_stun_error_code_t *) attr->value;
+				uint32_t code = (err->code * 100) + err->number;
+
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "%s got stun binding response %u %s\n",
+								  switch_core_session_get_name(rtp_session->session),
+								  code,
+								  err->reason
+								  );
+
+				if ((ice->type & ICE_VANILLA) && code == 487) {
+					if ((ice->type & ICE_CONTROLLED)) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Changing role to CONTROLLING\n");
+						ice->type &= ~ICE_CONTROLLED;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "Changing role to CONTROLLED\n");
+						ice->type |= ICE_CONTROLLED;
+					}
+					packet->header.type = SWITCH_STUN_BINDING_RESPONSE;
+				}
+
+			}
+			break;
 		case SWITCH_STUN_ATTR_MAPPED_ADDRESS:
 			if (attr->type) {
 				char ip[16];

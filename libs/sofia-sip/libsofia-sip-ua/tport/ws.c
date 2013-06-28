@@ -352,7 +352,7 @@ issize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 	return r;
 }
 
-int ws_init(wsh_t *wsh, ws_socket_t sock, size_t buflen, SSL_CTX *ssl_ctx, int close_sock)
+int ws_init(wsh_t *wsh, ws_socket_t sock, char *buffer, char *wbuffer, size_t buflen, SSL_CTX *ssl_ctx, int close_sock)
 {
 	memset(wsh, 0, sizeof(*wsh));
 	wsh->sock = sock;
@@ -372,14 +372,26 @@ int ws_init(wsh_t *wsh, ws_socket_t sock, size_t buflen, SSL_CTX *ssl_ctx, int c
 	wsh->buflen = buflen;
 	wsh->secure = ssl_ctx ? 1 : 0;
 
-	if (!wsh->buffer) {
+	if (buffer) {
+		wsh->buffer = buffer;
+	} else if (!wsh->buffer) {
 		wsh->buffer = malloc(wsh->buflen);
 		assert(wsh->buffer);
+		wsh->free_buffer = 1;
+	}
+
+	if (wbuffer) {
+		wsh->wbuffer = wbuffer;
+	} else if (!wsh->wbuffer) {
+		wsh->wbuffer = malloc(wsh->buflen);
+		assert(wsh->wbuffer);
+		wsh->free_wbuffer = 1;
 	}
 
 	if (wsh->secure) {
 		int code;
-
+		int sanity = 500;
+		
 		wsh->ssl = SSL_new(ssl_ctx);
 		assert(wsh->ssl);
 
@@ -387,8 +399,32 @@ int ws_init(wsh_t *wsh, ws_socket_t sock, size_t buflen, SSL_CTX *ssl_ctx, int c
 
 		do {
 			code = SSL_accept(wsh->ssl);
-		} while (code == -1 && SSL_get_error(wsh->ssl, code) == SSL_ERROR_WANT_READ);
 
+			if (code == 1) {
+				break;
+			}
+
+			if (code == 0) {
+				return -1;
+			}
+			
+			if (code < 0) {
+				if (code == -1 && SSL_get_error(wsh->ssl, code) != SSL_ERROR_WANT_READ) {
+					return -1;
+				}
+			}
+#ifndef _MSC_VER
+				usleep(10000);
+#else
+				Sleep(10);
+#endif				
+				
+		} while (--sanity > 0);
+		
+		if (!sanity) {
+			return -1;
+		}
+		
 	}
 
 	while (!wsh->down && !wsh->handshake) {
@@ -429,12 +465,12 @@ void ws_destroy(wsh_t *wsh)
 		wsh->ssl = NULL;
 	}
 
-	if (wsh->buffer) {
+	if (wsh->free_buffer && wsh->buffer) {
 		free(wsh->buffer);
 		wsh->buffer = NULL;
 	}
 
-	if (wsh->wbuffer) {
+	if (wsh->free_wbuffer && wsh->wbuffer) {
 		free(wsh->wbuffer);
 		wsh->wbuffer = NULL;
 	}
@@ -627,13 +663,6 @@ issize_t ws_feed_buf(wsh_t *wsh, void *data, size_t bytes)
 	if (bytes + wsh->wdatalen > wsh->buflen) {
 		return -1;
 	}
-
-
-	if (!wsh->wbuffer) {
-		wsh->wbuffer = malloc(wsh->buflen);
-		assert(wsh->wbuffer);
-	}
-	
 
 	memcpy(wsh->wbuffer + wsh->wdatalen, data, bytes);
 	

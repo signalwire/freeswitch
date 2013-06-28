@@ -1051,26 +1051,39 @@ switch_status_t channel_receive_message(switch_core_session_t *session, switch_c
 	private_t *tech_pvt = switch_core_session_get_private(session);
 
 	switch (msg->message_id) {
-		case SWITCH_MESSAGE_INDICATE_ANSWER:
-			switch_clear_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
+	case SWITCH_MESSAGE_INDICATE_ANSWER:
+		switch_clear_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
+		return channel_answer_channel(session);
+		
+	case SWITCH_MESSAGE_INDICATE_DISPLAY:
+		skinny_session_send_call_info_all(session);
+		break;
+
+	case SWITCH_MESSAGE_INDICATE_PROGRESS:
+		if (!switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
+			/* early media */
+			switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
 			return channel_answer_channel(session);
-
-		case SWITCH_MESSAGE_INDICATE_DISPLAY:
-			skinny_session_send_call_info_all(session);
-			return SWITCH_STATUS_SUCCESS;
-
-		case SWITCH_MESSAGE_INDICATE_PROGRESS:
-			if (!switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
-				/* early media */
-				switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
-				return channel_answer_channel(session);
-			}
-			return SWITCH_STATUS_SUCCESS;
-
-		default:
-			return SWITCH_STATUS_SUCCESS;
-
+		}
+		break;
+		
+	case SWITCH_MESSAGE_INDICATE_BRIDGE:
+		if (switch_rtp_ready(tech_pvt->rtp_session)) {
+			rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_STICK);
+		}
+		break;
+	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
+		if (switch_rtp_ready(tech_pvt->rtp_session)) {
+			rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_UNSTICK);
+		}
+		break;
+		
+	default:
+		break;
+			
 	}
+
+	return SWITCH_STATUS_SUCCESS;
 
 }
 
@@ -1982,10 +1995,10 @@ static switch_status_t load_skinny_config(void)
 				
 				
 				if ((dbh = skinny_get_db_handle(profile))) {
-					switch_cache_db_test_reactive(dbh, "DELETE FROM skinny_devices", "DROP TABLE skinny_devices", devices_sql);
-					switch_cache_db_test_reactive(dbh, "DELETE FROM skinny_lines", "DROP TABLE skinny_lines", lines_sql);
-					switch_cache_db_test_reactive(dbh, "DELETE FROM skinny_buttons", "DROP TABLE skinny_buttons", buttons_sql);
-					switch_cache_db_test_reactive(dbh, "DELETE FROM skinny_active_lines", "DROP TABLE skinny_active_lines", active_lines_sql);
+					switch_cache_db_test_reactive(dbh, "select count(*) from skinny_devices", NULL, devices_sql);
+					switch_cache_db_test_reactive(dbh, "select count(*) from skinny_lines", NULL, lines_sql);
+					switch_cache_db_test_reactive(dbh, "select count(*) from skinny_buttons", NULL, buttons_sql);
+					switch_cache_db_test_reactive(dbh, "select count(*) from skinny_active_lines", NULL, active_lines_sql);
 					switch_cache_db_release_db_handle(&dbh);
 				}
 					
