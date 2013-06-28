@@ -85,6 +85,12 @@ void su_set_time_func(su_time_func_t func) {
  */
 void su_time(su_time_t *tv)
 {
+#if HAVE_FILETIME
+  union {
+    FILETIME       ft[1];
+    ULARGE_INTEGER ull[1];
+  } date;
+#endif
 	su_time_t ltv = {0,0};
 
 	if (custom_time_func) {
@@ -105,10 +111,6 @@ void su_time(su_time_t *tv)
     ltv.tv_sec += NTP_EPOCH;
 
 #elif HAVE_FILETIME
-  union {
-    FILETIME       ft[1];
-    ULARGE_INTEGER ull[1];
-  } date;
 
   GetSystemTimeAsFileTime(date.ft);
 
