@@ -2048,7 +2048,7 @@ fi
 %defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_mp4v.so*
 
-%files codec-mp4v
+%files codec-vp8
 %defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_vp8.so*
 
