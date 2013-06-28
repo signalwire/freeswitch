@@ -3434,6 +3434,21 @@ static void config_sofia_profile_urls(sofia_profile_t * profile)
 	}
 }
 
+#ifdef SOFIA_CUSTOM_TIME
+/* appears to not be granular enough */
+static void sofia_time(su_time_t *tv)
+{
+	switch_time_t now;
+
+	if (tv) {
+		now = switch_micro_time_now();
+		tv->tv_sec = ((uint32_t) (now / 1000000)) + 2208988800UL;
+		tv->tv_usec = (uint32_t) (now % 1000000);
+	}
+	
+}
+#endif
+
 switch_status_t sofia_init(void)
 {
 	su_init();
@@ -3441,6 +3456,10 @@ switch_status_t sofia_init(void)
 		su_deinit();
 		return SWITCH_STATUS_GENERR;
 	}
+
+#ifdef SOFIA_TIME
+	su_set_time_func(sofia_time);
+#endif
 
 	/* Redirect loggers in sofia */
 	su_log_redirect(su_log_default, logger, NULL);
