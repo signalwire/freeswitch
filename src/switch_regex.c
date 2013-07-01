@@ -132,19 +132,36 @@ SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_c
 	const char *replace = NULL;
 	switch_size_t x, y = 0, z = 0;
 	int num = 0;
+	int brace;
 
-	for (x = 0; x < (len - 1) && x < strlen(data);) {
+	for (x = 0; y < (len - 1) && x < strlen(data);) {
 		if (data[x] == '$') {
 			x++;
 
+			brace = data[x] == '{';
+			if (brace) {
+				x++;
+			}
+
 			if (!(data[x] > 47 && data[x] < 58)) {
+				x -= brace;
 				substituted[y++] = data[x - 1];
 				continue;
 			}
 
-			while (data[x] > 47 && data[x] < 58) {
+			while (data[x] > 47 && data[x] < 58 && z < sizeof(index) - 1) {
 				index[z++] = data[x];
 				x++;
+			}
+			if (brace) {
+				if (data[x] != '}') {
+					x -= z - 1;
+					substituted[y++] = data[x - 1];
+					continue;
+				}
+				else {
+					x++;
+				}
 			}
 			index[z++] = '\0';
 			z = 0;
@@ -156,7 +173,7 @@ SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_c
 
 			if (pcre_get_substring(field_data, ovector, match_count, num, &replace) > 0) {
 				switch_size_t r;
-				for (r = 0; r < strlen(replace); r++) {
+				for (r = 0; r < strlen(replace) && y < (len - 1); r++) {
 					substituted[y++] = replace[r];
 				}
 				pcre_free_substring(replace);

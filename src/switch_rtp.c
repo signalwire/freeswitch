@@ -681,8 +681,12 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 
 	ice->next_run = now + RTP_STUN_FREQ;
 		
-	if (ice == &rtp_session->rtcp_ice) {
+	if (ice == &rtp_session->rtcp_ice && rtp_session->rtcp_sock_output) {
 		sock_output = rtp_session->rtcp_sock_output;		
+	}
+
+	if (!sock_output) {
+		return SWITCH_STATUS_FALSE;
 	}
 
 	switch_assert(rtp_session != NULL);
