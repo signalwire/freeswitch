@@ -275,7 +275,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 				switch_event_t *event = NULL;
 
 				if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
-					status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
+					switch_status_t ostatus = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
+					if (ostatus != SWITCH_STATUS_SUCCESS) {
+						status = ostatus;
+					}
 					switch_event_destroy(&event);
 				}
 			}
@@ -1092,7 +1095,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 
 		if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 			if (args && args->input_callback) {
-				if ((status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen)) != SWITCH_STATUS_SUCCESS) {
+				switch_status_t ostatus;
+
+				if ((ostatus = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen)) != SWITCH_STATUS_SUCCESS) {
+					status = ostatus;
 					break;
 				}
 			} else {
@@ -1210,7 +1216,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 		}
 
 		if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
-			status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
+			switch_status_t ostatus = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
+			if (ostatus != SWITCH_STATUS_SUCCESS) {
+				status = ostatus;
+			}
 			switch_event_destroy(&event);
 		}
 

@@ -687,9 +687,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 			if (args->input_callback) {
 				switch_event_t *event = NULL;
+				switch_status_t ostatus;
 
 				if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
-					status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
+					if ((ostatus = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen)) != SWITCH_STATUS_SUCCESS) {
+						status = ostatus;
+					}
+					
 					switch_event_destroy(&event);
 				}
 			}
@@ -941,7 +945,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 				switch_event_t *event;
 				
 				if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
-					status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
+					switch_status_t ostatus = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
+					if (ostatus != SWITCH_STATUS_SUCCESS) {
+						status = ostatus;
+					}
 					switch_event_destroy(&event);
 				}
 			}
@@ -1433,7 +1440,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					switch_event_t *event;
 
 					if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
-						status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
+						switch_status_t ostatus = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
+						if (ostatus != SWITCH_STATUS_SUCCESS) {
+							status = ostatus;
+						}
 						switch_event_destroy(&event);
 					}
 				}
@@ -2277,7 +2287,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 
 			if (args->input_callback) {
 				if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
-					status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
+					switch_status_t ostatus = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
+					if (ostatus != SWITCH_STATUS_SUCCESS) {
+						status = ostatus;
+					}
 					switch_event_destroy(&event);
 				}
 			}
