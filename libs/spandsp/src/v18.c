@@ -954,6 +954,7 @@ SPAN_DECLARE(logging_state_t *) v18_get_logging_state(v18_state_t *s)
 SPAN_DECLARE(v18_state_t *) v18_init(v18_state_t *s,
                                      int calling_party,
                                      int mode,
+                                     int nation,
                                      put_msg_func_t put_msg,
                                      void *user_data)
 {
@@ -1024,6 +1025,7 @@ SPAN_DECLARE(v18_state_t *) v18_init(v18_state_t *s,
         fsk_rx_init(&s->fskrx, &preset_fsk_specs[FSK_V21CH1], FSK_FRAME_MODE_7E1_FRAMES, v18_textphone_put_async_byte, s);
         break;
     }
+    s->nation = nation;
     queue_init(&s->queue.queue, 128, QUEUE_READ_ATOMIC | QUEUE_WRITE_ATOMIC);
     return s;
 }

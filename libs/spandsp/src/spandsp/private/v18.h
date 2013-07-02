@@ -31,6 +31,7 @@ struct v18_state_s
     /*! \brief TRUE if we are the calling modem */
     int calling_party;
     int mode;
+    int nation;
     put_msg_func_t put_msg;
     void *user_data;
     int repeat_shifts;
