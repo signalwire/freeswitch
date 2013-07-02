@@ -1734,10 +1734,6 @@ switch_status_t skinny_handle_open_receive_channel_ack_message(listener_t *liste
 		struct in_addr addr;
 		switch_rtp_flag_t flags[SWITCH_RTP_FLAG_INVALID] = {0};
 
-		flags[SWITCH_RTP_FLAG_DATAWAIT]++;
-		flags[SWITCH_RTP_FLAG_AUTOADJ]++;
-		flags[SWITCH_RTP_FLAG_RAW_WRITE]++;
-
 		tech_pvt = switch_core_session_get_private(session);
 		channel = switch_core_session_get_channel(session);
 
