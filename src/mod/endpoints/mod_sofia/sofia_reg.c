@@ -804,6 +804,14 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 			
 			sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sofia_reg_nat_callback, profile);
 			switch_safe_free(sql);
+		} else if (sofia_test_pflag(profile, PFLAG_UDP_NAT_OPTIONS_PING)) {
+			sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,"
+							"expires,user_agent,server_user,server_host,profile_name"
+							" from sip_registrations where status like '%%UDP-NAT%%' "
+ "and hostname='%s' and profile_name='%s'", mod_sofia_globals.hostname, profile->name); 
+			
+			sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sofia_reg_nat_callback, profile);
+			switch_safe_free(sql);
 		} else if (sofia_test_pflag(profile, PFLAG_NAT_OPTIONS_PING)) {
 			sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,"
 							"expires,user_agent,server_user,server_host,profile_name"
