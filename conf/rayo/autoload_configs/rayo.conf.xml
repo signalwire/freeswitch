@@ -1,0 +1,43 @@
+<configuration name="rayo.conf" description="Rayo server config">
+
+	<!-- rayo params -->
+	<settings>
+		<param name="max-idle-sec" value="300"/>
+		<param name="mixer-conf-profile" value="sla"/>
+	</settings>
+
+	<!-- record component params -->
+	<record>
+		<param name="record-file-prefix" value="$${recordings_dir}/"/>
+	</record>
+
+	<!-- domain to use in from attribute of client messages -->
+	<domain name="$${rayo_domain_name}" shared-secret="ClueCon">
+
+		<!-- Listeners for new Rayo client connections -->
+		<!--listen type="c2s" port="5222" address="$${local_ip_v4}" acl="rayo-clients"/-->
+		<listen type="c2s" port="5222" address="$${rayo_ip}" acl=""/>
+
+		<!-- Listeners for new server connections -->
+		<!--listen type="s2s" port="5269" address="$${local_ip_v4}" acl="rayo-servers"/-->
+
+		<!-- servers to connect to -->
+		<!--connect port="5269" address="node.example.com" domain="example.com"/-->
+
+		<!-- Authorized users -->
+		<users>
+			<user name="usera" password="1"/>
+		</users>
+	</domain>
+
+	<!-- URI mapping to endpoint / gateway -->
+	<dial-gateways>
+		<dial-gateway uriprefix="default" dialprefix="sofia/gateway/outbound/" strip="0"/>
+		<dial-gateway uriprefix="sip:" dialprefix="sofia/external/" strip="0"/>
+		<dial-gateway uriprefix="tel:" dialprefix="sofia/gateway/outbound/" strip="4"/>
+		<!-- pass through user and sofia unaltered -->
+		<dial-gateway uriprefix="user" dialprefix="" strip=""/>
+		<dial-gateway uriprefix="sofia" dialprefix="" strip=""/>
+	</dial-gateways>
+
+</configuration>
