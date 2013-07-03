@@ -105,6 +105,42 @@ void globfree(glob_t *);
 /* Use UTF-8 as the general encoding */
 static switch_bool_t USE_UTF_8_ENCODING = SWITCH_TRUE;
 
+static void preprocess_exec_set(char *keyval)
+{
+	char *key = keyval;
+	char *val = strchr(key, '=');
+
+	if (val) {
+		char *ve = val++;
+		while (*val && *val == ' ') {
+			val++;
+		}
+		*ve-- = '\0';
+		while (*ve && *ve == ' ') {
+			*ve-- = '\0';
+		}
+	}
+
+	if (key && val) {
+		switch_stream_handle_t exec_result = { 0 };
+		SWITCH_STANDARD_STREAM(exec_result);
+		if (switch_stream_system_fork(val, &exec_result) == 0) {
+			if (!zstr(exec_result.data)) {
+				char *tmp = (char *) exec_result.data;
+				tmp = &tmp[strlen(tmp)-1];
+				while (tmp >= (char *) exec_result.data && ( tmp[0] == ' ' || tmp[0] == '\n') ) {
+					tmp[0] = '\0'; /* remove trailing spaces and newlines */
+					tmp--;
+				}
+				switch_core_set_variable(key, exec_result.data);
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error while executing command: %s\n", val);
+		}
+		switch_safe_free(exec_result.data);
+	}
+}
+
 static int preprocess(const char *cwd, const char *file, FILE *write_fd, int rlevel);
 
 typedef struct switch_xml_root *switch_xml_root_t;
@@ -1457,6 +1493,8 @@ static int preprocess(const char *cwd, const char *file, FILE *write_fd, int rle
 					switch_core_set_variable(name, val);
 				}
 
+			} else if (!strcasecmp(tcmd, "exec-set")) {
+				preprocess_exec_set(targ);
 			} else if (!strcasecmp(tcmd, "include")) {
 				preprocess_glob(cwd, targ, write_fd, rlevel + 1);
 			} else if (!strcasecmp(tcmd, "exec")) {
@@ -1515,6 +1553,8 @@ static int preprocess(const char *cwd, const char *file, FILE *write_fd, int rle
 						switch_core_set_variable(name, val);
 					}
 
+				} else if (!strcasecmp(cmd, "exec-set")) {
+					preprocess_exec_set(arg);
 				} else if (!strcasecmp(cmd, "include")) {
 					preprocess_glob(cwd, arg, write_fd, rlevel + 1);
 				} else if (!strcasecmp(cmd, "exec")) {

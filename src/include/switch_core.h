@@ -2520,6 +2520,10 @@ SWITCH_DECLARE(void) switch_sql_queue_manger_execute_sql_event_callback(switch_s
 							
 SWITCH_DECLARE(pid_t) switch_fork(void);
 
+SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait);
+SWITCH_DECLARE(int) switch_stream_system_fork(const char *cmd, switch_stream_handle_t *stream);
+SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t *stream);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:
