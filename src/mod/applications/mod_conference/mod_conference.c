@@ -7355,7 +7355,7 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_core_session_message_t msg = { 0 };
 	uint8_t rl = 0, isbr = 0;
 	char *dpin = "";
-	char *mdpin = "";
+	const char *mdpin = "";
 	conf_xml_cfg_t xml_cfg = { 0 };
 	switch_event_t *params = NULL;
 	int locked = 0;
@@ -7596,6 +7596,9 @@ SWITCH_STANDARD_APP(conference_function)
 			switch_channel_set_variable(channel, "conference_name", conference->name);
 			rl++;
 		}
+
+		/* Moderator PIN as a channel variable */
+		mdpin = switch_channel_get_variable(channel, "conference_moderator_pin");
 
 		if (zstr(dpin) && conference->pin) {
 			dpin = conference->pin;
