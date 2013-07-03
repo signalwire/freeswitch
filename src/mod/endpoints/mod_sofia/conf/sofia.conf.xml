@@ -205,6 +205,10 @@
         <!-- if you want to send any special bind params of your own -->
         <!-- <param name="bind-params" value="transport=udp"/> -->
         <!-- <param name="unregister-on-options-fail" value="true"/> -->
+        <!-- Send an OPTIONS packet to all registered endpoints -->
+        <!--<param name="all-reg-options-ping" value="true"/>-->
+        <!-- Send an OPTIONS packet to NATed registered endpoints. Can be 'true' or 'udp-only
+        <!--<param name="nat-options-ping" value="true"/>-->
 
         <!-- TLS: disabled by default, set to "true" to enable -->
         <param name="tls" value="$${internal_ssl_enable}"/>

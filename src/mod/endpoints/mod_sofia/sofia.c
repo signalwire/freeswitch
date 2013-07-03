@@ -4309,10 +4309,13 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					} else if (!strcasecmp(var, "contact-user")) {
 						profile->contact_user = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "nat-options-ping")) {
-						if (switch_true(val)) {
+						if (!strcasecmp(val, "udp-only")) {
+							sofia_set_pflag(profile, PFLAG_UDP_NAT_OPTIONS_PING);
+						} else if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_NAT_OPTIONS_PING);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_NAT_OPTIONS_PING);
+							sofia_clear_pflag(profile, PFLAG_UDP_NAT_OPTIONS_PING);
 						}
 					} else if (!strcasecmp(var, "all-reg-options-ping")) { 
 						if (switch_true(val)) {
