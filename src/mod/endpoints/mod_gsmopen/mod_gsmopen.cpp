@@ -208,6 +208,7 @@ switch_status_t gsmopen_tech_init(private_t *tech_pvt, switch_core_session_t *se
 	dtmf_rx_init(&tech_pvt->dtmf_state, NULL, NULL);
 	dtmf_rx_parms(&tech_pvt->dtmf_state, 0, 10, 10, -99);
 
+/*
 	if (tech_pvt->no_sound == 0) {
 		if (serial_audio_init(tech_pvt)) {
 			ERRORA("serial_audio_init failed\n", GSMOPEN_P_LOG);
@@ -215,6 +216,7 @@ switch_status_t gsmopen_tech_init(private_t *tech_pvt, switch_core_session_t *se
 
 		}
 	}
+*/
 
 	if (switch_core_timer_init(&tech_pvt->timer_read, "soft", 20, tech_pvt->read_codec.implementation->samples_per_packet, gsmopen_module_pool) !=
 		SWITCH_STATUS_SUCCESS) {
@@ -805,6 +807,9 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 	gsmopen_sound_boost(frame->data, frame->samples, tech_pvt->playback_boost);
 	if (!tech_pvt->no_sound) {
+		if (!tech_pvt->serialPort_serial_audio_opened) {
+			serial_audio_init(tech_pvt);
+		}
 		sent = tech_pvt->serialPort_serial_audio->Write((char *) frame->data, (int) (frame->datalen));
 
 		if (sent && sent != frame->datalen && sent != -1) {

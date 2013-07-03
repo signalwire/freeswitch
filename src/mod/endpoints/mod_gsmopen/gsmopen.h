@@ -455,6 +455,7 @@ struct private_object {
 
 	char buffer2[320];
 	int buffer2_full;
+	int serialPort_serial_audio_opened;
 
 };
 
