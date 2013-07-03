@@ -227,9 +227,9 @@ Description: Voicemail detection
  This module detects voicemail beeps at any frequency in O(1) time.
 
 Module: applications/mod_voicemail
-Depends: mail-transport-agent
 Description: Voicemail
  This module provides a voicemail system.
+Depends: mail-transport-agent
 
 Module: applications/mod_voicemail_ivr
 Description: Voicemail IVR
