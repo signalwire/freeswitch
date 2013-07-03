@@ -353,6 +353,10 @@
 
         <!-- force suscription expires to a lower value than requested -->
         <!-- <param name="force-subscription-expires" value="60"/> -->
+
+        <!-- add a random deviation to the expires value of the 202 Accepted -->
+        <!--<param name="sip-subscription-max-deviation" value="120"/>-->
+
         <!-- disable register and transfer which may be undesirable in a public
              switch -->
         <!-- <param name="disable-transfer" value="true"/> -->

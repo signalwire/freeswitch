@@ -3516,6 +3516,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 	long exp_delta = 0;
 	char exp_delta_str[30] = "";
+	uint32_t sub_max_deviation_var = 0;
 	sip_to_t const *to;
 	const char *from_user = NULL, *from_host = NULL;
 	const char *to_user = NULL, *to_host = NULL;
@@ -3612,6 +3613,18 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	if ((exp_delta = sip->sip_expires ? sip->sip_expires->ex_delta : 3600)) {
 		if ((profile->force_subscription_expires > 0) && (profile->force_subscription_expires < (uint32_t)exp_delta)) {
 			exp_delta = profile->force_subscription_expires;
+		}
+	}
+
+	if ((sub_max_deviation_var = profile->sip_subscription_max_deviation)) {
+		if (sub_max_deviation_var > 0) {
+			int sub_deviation;
+			srand( (unsigned) ( (unsigned)(intptr_t)switch_thread_self() + switch_micro_time_now() ) );
+			/* random negative number between 0 and negative sub_max_deviation_var: */
+			sub_deviation = ( rand() % sub_max_deviation_var ) - sub_max_deviation_var;
+			if ( (exp_delta + sub_deviation) > 45 ) {
+				exp_delta += sub_deviation;
+			}
 		}
 	}
 
