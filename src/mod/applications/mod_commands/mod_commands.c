@@ -4543,6 +4543,34 @@ SWITCH_STANDARD_API(alias_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define COALESCE_SYNTAX "[^^<delim>]<value1>,<value2>,..."
+SWITCH_STANDARD_API(coalesce_function)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *data = (char *) cmd;
+	char *mydata = NULL, *argv[256] = { 0 };
+	int argc = -1;
+
+	if (data && *data && (mydata = strdup(data))) {
+		argc = switch_separate_string(mydata, ',', argv,
+				(sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argc > 0) {
+		for (int i = 0; i < argc; i++) {
+			if (argv[i] && *argv[i]) {
+				stream->write_function(stream, argv[i]);
+				status = SWITCH_STATUS_SUCCESS;
+				break;
+			}
+		}
+	} else if (argc <= 0){
+		stream->write_function(stream, "-USAGE: %s\n", COALESCE_SYNTAX);
+	}
+
+	return status;
+}
+
 #define SHOW_SYNTAX "codec|endpoint|application|api|dialplan|file|timer|calls [count]|channels [count|like <match string>]|calls|detailed_calls|bridged_calls|detailed_bridged_calls|aliases|complete|chat|management|modules|nat_map|say|interfaces|interface_types|tasks|limits|status"
 SWITCH_STANDARD_API(show_function)
 {
@@ -5982,7 +6010,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 
 
 	SWITCH_ADD_API(commands_api_interface, "acl", "Compare an ip to an acl list", acl_function, "<ip> <list_name>");
-	SWITCH_ADD_API(commands_api_interface, "alias", "Alias", alias_function, ALIAS_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "alias", "Alias", alias_function, ALIAS_SYNTAX);	SWITCH_ADD_API(commands_api_interface, "coalesce", "Return first nonempty parameter", coalesce_function, COALESCE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "banner", "Return the system banner", banner_function, "");
 	SWITCH_ADD_API(commands_api_interface, "bgapi", "Execute an api command in a thread", bgapi_function, "<command>[ <arg>]");
 	SWITCH_ADD_API(commands_api_interface, "bg_system", "Execute a system command in the background", bg_system_function, SYSTEM_SYNTAX);
@@ -6108,6 +6136,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 
 	switch_console_set_complete("add alias add");
 	switch_console_set_complete("add alias del");
+	switch_console_set_complete("add coalesce");
 	switch_console_set_complete("add complete add");
 	switch_console_set_complete("add complete del");
 	switch_console_set_complete("add db_cache status");
