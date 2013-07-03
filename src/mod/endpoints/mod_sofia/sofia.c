@@ -3685,6 +3685,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->rtp_digit_delay = 40;
 					profile->sip_force_expires = 0;
 					profile->sip_expires_max_deviation = 0;
+					profile->sip_subscription_max_deviation = 0;
 					profile->tls_version = 0;
 					profile->tls_timeout = 300;
 					profile->mflags = MFLAG_REFER | MFLAG_REGISTER;
@@ -4634,6 +4635,13 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							profile->sip_expires_max_deviation = sip_expires_max_deviation;
 						} else {
 							profile->sip_expires_max_deviation = 0;
+						}
+					} else if (!strcasecmp(var, "sip-subscription-max-deviation")) {
+						int32_t sip_subscription_max_deviation = atoi(val);
+						if (sip_subscription_max_deviation >= 0) {
+							profile->sip_subscription_max_deviation = sip_subscription_max_deviation;
+						} else {
+							profile->sip_subscription_max_deviation = 0;
 						}
 					} else if (!strcasecmp(var, "reuse-connections")) {
 						switch_bool_t value = switch_true(val);
