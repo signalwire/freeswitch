@@ -412,7 +412,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec_string(switch_odbc_
 		SQLRowCount(stmt, &m);
 		handle->affected_rows = (int) m;
 
-		if (m <= 0) {
+		if (m == 0) {
 			goto done;
 		}
 
