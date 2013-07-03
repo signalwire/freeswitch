@@ -1519,6 +1519,33 @@ SWITCH_STANDARD_APP(unset_function)
 	}
 }
 
+SWITCH_STANDARD_APP(multiunset_function)
+{
+	char delim = ' ';
+	char *arg = (char *) data;
+
+	if (!zstr(arg) && *arg == '^' && *(arg+1) == '^') {
+		arg += 2;
+		delim = *arg++;
+	}
+
+	if (arg) {
+		char *array[256] = {0};
+		int i, argc;
+
+		arg = switch_core_session_strdup(session, arg);
+		argc = switch_split(arg, delim, array);
+
+		for(i = 0; i < argc; i++) {
+			switch_channel_set_variable(switch_core_session_get_channel(session), array[i], NULL);
+		}
+
+	} else {
+		switch_channel_set_variable(switch_core_session_get_channel(session), arg, NULL);
+	}
+}
+
+
 SWITCH_STANDARD_APP(log_function)
 {
 	char *level, *log_str;
@@ -5506,6 +5533,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   "<varname>=<value>", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "unset", "Unset a channel variable", UNSET_LONG_DESC, unset_function, "<varname>",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
+	SWITCH_ADD_APP(app_interface, "multiunset", "Unset many channel variables", SET_LONG_DESC, multiunset_function, "[^^<delim>]<varname> <var2> <var3>",
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
+
 	SWITCH_ADD_APP(app_interface, "ring_ready", "Indicate Ring_Ready", "Indicate Ring_Ready on a channel.", ring_ready_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "remove_bugs", "Remove media bugs", "Remove all media bugs from a channel.", remove_bugs_function, "[<function>]", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "break", "Break", "Set the break flag.", break_function, "", SAF_SUPPORT_NOMEDIA);
