@@ -4557,7 +4557,8 @@ SWITCH_STANDARD_API(coalesce_function)
 	}
 
 	if (argc > 0) {
-		for (int i = 0; i < argc; i++) {
+		int i;
+		for (i = 0; i < argc; i++) {
 			if (argv[i] && *argv[i]) {
 				stream->write_function(stream, argv[i]);
 				status = SWITCH_STATUS_SUCCESS;
