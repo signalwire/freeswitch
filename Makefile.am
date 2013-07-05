@@ -3,9 +3,17 @@ SUBDIRS = . src
 AUTOMAKE_OPTIONS = foreign
 NAME = freeswitch
 
+AM_LIBAPR_CFLAGS := $(shell ./libs/apr/apr-1-config --cflags)
+AM_LIBAPR_CPPFLAGS := $(shell ./libs/apr/apr-1-config --cppflags --includes)
+AM_LIBAPR_LDFLAGS := $(shell ./libs/apr/apr-1-config --ldflags)
+AM_LIBAPR_LIBS := $(subst $(CURDIR)/,,$(shell ./libs/apr/apr-1-config \--link-libtool \--libs))
+AM_LIBAPU_CPPFLAGS := $(shell ./libs/apr-util/apu-1-config --includes)
+AM_LIBAPU_LDFLAGS := $(shell ./libs/apr-util/apu-1-config --ldflags)
+AM_LIBAPU_LIBS := $(subst $(CURDIR)/,,$(shell ./libs/apr-util/apu-1-config \--link-libtool \--libs))
+
 AM_CFLAGS   = $(SWITCH_AM_CFLAGS) $(SWITCH_ANSI_CFLAGS) 
 AM_CPPFLAGS = $(SWITCH_AM_CXXFLAGS) -Ilibs/sofia-sip/libsofia-sip-ua/sdp/sofia-sip -Ilibs/sofia-sip/libsofia-sip-ua/su
-AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS)
+AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS) $(AM_LIBAPR_LDFLAGS) $(AM_LIBAPU_LDFLAGS)
 
 DEFAULT_SOUNDS=en-us-callie-8000
 
@@ -101,8 +109,8 @@ $(RECURSIVE_TARGETS): freeswitch
 	   exit 1; \
 	fi ;
 
-CORE_CFLAGS  = `$(switch_builddir)/libs/apr/apr-1-config --cflags --cppflags --includes`
-CORE_CFLAGS += `$(switch_builddir)/libs/apr-util/apu-1-config --includes`
+CORE_CFLAGS  = $(AM_LIBAPR_CFLAGS) $(AM_LIBAPR_CPPFLAGS)
+CORE_CFLAGS += $(AM_LIBAPU_CPPFLAGS)
 CORE_CFLAGS += -I$(switch_srcdir)/libs/libtpl-1.5/src
 CORE_CFLAGS += -I$(switch_srcdir)/libs/stfu
 CORE_CFLAGS += -I$(switch_builddir)/libs/sqlite
@@ -112,7 +120,7 @@ CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/spandsp/src -I$(switch_srcdir)/libs/tiff-4.0.2/libtiff
 
-CORE_LIBS  = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
+CORE_LIBS  = $(AM_LIBAPU_LIBS) $(AM_LIBAPR_LIBS)
 CORE_LIBS += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la
 
 if ENABLE_SRTP
