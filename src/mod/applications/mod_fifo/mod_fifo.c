@@ -3087,16 +3087,21 @@ SWITCH_STANDARD_APP(fifo_function)
 				switch_channel_set_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(other_session));
 				switch_channel_set_variable(other_channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(session));
 
+				switch_channel_set_variable(switch_core_session_get_channel(other_session), "fifo_initiated_bridge", "true");
+				switch_channel_set_variable(switch_core_session_get_channel(other_session), "fifo_bridge_role", "caller");
+				switch_channel_set_variable(switch_core_session_get_channel(session), "fifo_initiated_bridge", "true");
+				switch_channel_set_variable(switch_core_session_get_channel(session), "fifo_bridge_role", "consumer");
+
 				switch_ivr_multi_threaded_bridge(session, other_session, on_dtmf, other_session, session);
 
-				if (!switch_channel_test_flag(other_channel, CF_TRANSFER) || !switch_channel_up(other_channel)) {
-					switch_channel_set_variable(other_channel, "fifo_initiated_bridge", "true");
-					switch_channel_set_variable(other_channel, "fifo_bridge_role", "caller");
+				if (switch_channel_test_flag(other_channel, CF_TRANSFER) || switch_channel_up(other_channel)) {
+					switch_channel_set_variable(switch_core_session_get_channel(other_session), "fifo_initiated_bridge", NULL);
+					switch_channel_set_variable(switch_core_session_get_channel(other_session), "fifo_bridge_role", NULL);
 				}
-
-				if (!switch_channel_test_flag(channel, CF_TRANSFER) || !switch_channel_up(channel)) {
-					switch_channel_set_variable(channel, "fifo_initiated_bridge", "true");
-					switch_channel_set_variable(channel, "fifo_bridge_role", "consumer");
+				
+				if (switch_channel_test_flag(channel, CF_TRANSFER) || switch_channel_up(channel)) {
+					switch_channel_set_variable(switch_core_session_get_channel(other_session), "fifo_initiated_bridge", NULL);
+					switch_channel_set_variable(switch_core_session_get_channel(other_session), "fifo_bridge_role", NULL);
 				}
 
 				if (outbound_id) {
