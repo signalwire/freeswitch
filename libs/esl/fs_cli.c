@@ -57,6 +57,7 @@ typedef struct {
 	int debug;
 	const char *console_fnkeys[12];
 	char loglevel[128];
+	int log_uuid;
 	int quiet;
 	int batch_mode;
 	char prompt_color[12];
@@ -595,6 +596,7 @@ static const char *usage_str =
 	"  -i, --interrupt                 Allow Control-c to interrupt\n"
 	"  -x, --execute=command           Execute Command and Exit\n"
 	"  -l, --loglevel=command          Log Level\n"
+	"  -U, --log-uuid                  Include UUID in log output\n"
 	"  -q, --quiet                     Disable logging\n"
 	"  -r, --retry                     Retry connection on failure\n"
 	"  -R, --reconnect                 Reconnect if disconnected\n"
@@ -745,10 +747,14 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 							if (aok) {
 								if (feature_level) clear_line();
 								if(!(global_profile->batch_mode)) {
-									printf("%s%s", colors[level], handle->last_event->body);
+									printf("%s", colors[level]);
+								}
+								if (global_profile->log_uuid && !esl_strlen_zero(userdata)) {
+									printf("%s ", userdata);
+								}
+								printf("%s", handle->last_event->body);
+								if(!(global_profile->batch_mode)) {
 									if (!feature_level) printf("%s", ESL_SEQ_DEFAULT_COLOR);
-								} else {
-									printf("%s", handle->last_event->body);
 								}
 								if (feature_level) redisplay();
 							}
@@ -756,6 +762,10 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 							if (aok) {
 								if(!(global_profile->batch_mode)) {
 									SetConsoleTextAttribute(hStdout, colors[level]);
+								}
+								if (global_profile->log_uuid && !esl_strlen_zero(userdata)) {
+									WriteFile(hStdout, userdata, strlen(userdata), &outbytes, NULL);
+									WriteFile(hStdout, " ", strlen(" "), &outbytes, NULL);
 								}
 								WriteFile(hStdout, handle->last_event->body, len, &outbytes, NULL);
 								if(!(global_profile->batch_mode)) {
@@ -1221,6 +1231,8 @@ static void read_config(const char *dft_cfile, const char *cfile) {
 				}
 			} else if(!strcasecmp(var, "loglevel")) {
 				esl_set_string(profiles[pcount-1].loglevel, val);
+			} else if(!strcasecmp(var, "log-uuid")) {
+				profiles[pcount-1].log_uuid = esl_true(val);
 			} else if(!strcasecmp(var, "quiet")) {
 				profiles[pcount-1].quiet = esl_true(val);
 			} else if(!strcasecmp(var, "prompt-color")) {
@@ -1282,6 +1294,7 @@ int main(int argc, char *argv[])
 		{"debug", 1, 0, 'd'},
 		{"execute", 1, 0, 'x'},
 		{"loglevel", 1, 0, 'l'},
+		{"log-uuid", 0, 0, 'U'},
 		{"quiet", 0, 0, 'q'},
 		{"batchmode", 0, 0, 'b'},
 		{"retry", 0, 0, 'r'},
@@ -1303,6 +1316,7 @@ int main(int argc, char *argv[])
 	int argv_exec = 0;
 	char argv_command[1024] = "";
 	char argv_loglevel[128] = "";
+	int argv_log_uuid = 0;
 	int argv_quiet = 0;
 	int argv_batch = 0;
 	int loops = 2, reconnect = 0, timeout = 0;
@@ -1340,7 +1354,7 @@ int main(int argc, char *argv[])
 	esl_global_set_default_logger(6); /* default debug level to 6 (info) */
 	for(;;) {
 		int option_index = 0;
-		opt = getopt_long(argc, argv, "H:U:P:S:u:p:d:x:l:t:qrRhib?n", options, &option_index);
+		opt = getopt_long(argc, argv, "H:P:S:u:p:d:x:l:Ut:qrRhib?n", options, &option_index);
 		if (opt == -1) break;
 		switch (opt) {
 			case 'H':
@@ -1382,6 +1396,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'l':
 				esl_set_string(argv_loglevel, optarg);
+				break;
+			case 'U':
+				argv_log_uuid = 1;
 				break;
 			case 'q':
 				argv_quiet = 1;
@@ -1444,6 +1461,9 @@ int main(int argc, char *argv[])
 	if (*argv_loglevel) {
 		esl_set_string(profile->loglevel, argv_loglevel);
 		profile->quiet = 0;
+	}
+	if (argv_log_uuid) {
+		profile->log_uuid = 1;
 	}
 	esl_log(ESL_LOG_DEBUG, "Using profile %s [%s]\n", profile->name, profile->host);
 	esl_set_string(prompt_color, profile->prompt_color);

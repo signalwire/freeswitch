@@ -60,6 +60,7 @@ static switch_memory_pool_t *module_pool = NULL;
 static switch_hash_t *log_hash = NULL;
 static uint32_t all_level = 0;
 static int32_t hard_log_level = SWITCH_LOG_DEBUG;
+static switch_bool_t log_uuid = SWITCH_FALSE;
 //static int32_t failed_write = 0;
 static void del_mapping(char *var)
 {
@@ -138,6 +139,8 @@ static switch_status_t config_logger(void)
 #endif
 			} else if (!strcasecmp(var, "loglevel") && !zstr(val)) {
 				hard_log_level = switch_log_str2level(val);
+			} else if (!strcasecmp(var, "uuid") && switch_true(val)) {
+				log_uuid = SWITCH_TRUE;
 			}
 		}
 	}
@@ -244,11 +247,21 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 				DWORD len = (DWORD) strlen(node->data);
 				DWORD outbytes = 0;
 				SetConsoleTextAttribute(hStdout, COLORS[node->level]);
+				if (log_uuid && !zstr(node->userdata)) {
+					WriteFile(hStdout, node->userdata, strlen(node->userdata), &outbytes, NULL);
+					WriteFile(hStdout, " ", strlen(" "), &outbytes, NULL);
+				}
 				WriteFile(hStdout, node->data, len, &outbytes, NULL);
 				SetConsoleTextAttribute(hStdout, wOldColorAttrs);
 #else
-				fprintf(handle, "%s%s%s", COLORS[node->level], node->data, SWITCH_SEQ_DEFAULT_COLOR);
+				if (log_uuid && !zstr(node->userdata)) {
+					fprintf(handle, "%s%s %s%s", COLORS[node->level], node->userdata, node->data, SWITCH_SEQ_DEFAULT_COLOR);
+				} else {
+					fprintf(handle, "%s%s%s", COLORS[node->level], node->data, SWITCH_SEQ_DEFAULT_COLOR);
+				}
 #endif
+			} else if (log_uuid && !zstr(node->userdata)) {
+				fprintf(handle, "%s %s", node->userdata, node->data);
 			} else {
 				fprintf(handle, "%s", node->data);
 			}
