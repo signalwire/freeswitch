@@ -31,6 +31,7 @@
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  * Cesar Cepeda <cesar@auronix.com>
  * Christopher M. Rienzo <chris@rienzo.com>
+ * Seven Du <dujinfang@gmail.com>
  *
  * mod_dptools.c -- Raw Audio File Streaming Application Module
  *
@@ -2663,6 +2664,55 @@ SWITCH_STANDARD_APP(endless_playback_function)
 	const char *file = data;
 
 	while (switch_channel_ready(channel)) {
+		status = switch_ivr_play_file(session, NULL, file, NULL);
+
+		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
+			break;
+		}
+	}
+
+	switch (status) {
+	case SWITCH_STATUS_SUCCESS:
+	case SWITCH_STATUS_BREAK:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "FILE PLAYED");
+		break;
+	case SWITCH_STATUS_NOTFOUND:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "FILE NOT FOUND");
+		break;
+	default:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "PLAYBACK ERROR");
+		break;
+	}
+
+}
+
+SWITCH_STANDARD_APP(loop_playback_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	const char *file = data;
+	int loop = 1;
+
+	if (*file == '+') {
+		const char *p = ++file;
+		while(*file && *file++ != ' ') { }
+
+		if (zstr(p)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing loop in data [%s]\n", data);
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			return;
+		}
+
+		loop = atoi(p);
+	}
+
+	if (zstr(file)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing file arg in data [%s]\n", data);
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		return;
+	}
+
+	while (switch_channel_ready(channel) && (loop < 0 || loop-- > 0)) {
 		status = switch_ivr_play_file(session, NULL, file, NULL);
 
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
@@ -5604,6 +5654,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "playback", "Playback File", "Playback a file to the channel", playback_function, "<path>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "endless_playback", "Playback File Endlessly", "Endlessly Playback a file to the channel",
 				   endless_playback_function, "<path>", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "loop_playback", "Playback File looply", "Playback a file to the channel looply for limted times",
+				   loop_playback_function, "[+loops] <path>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "att_xfer", "Attended Transfer", "Attended Transfer", att_xfer_function, "<channel_url>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "read", "Read Digits", "Read Digits", read_function, 
 				   "<min> <max> <file> <var_name> <timeout> <terminators> <digit_timeout>", SAF_NONE);
