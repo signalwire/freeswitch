@@ -3094,12 +3094,12 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				switch_ivr_multi_threaded_bridge(session, other_session, on_dtmf, other_session, session);
 
-				if (switch_channel_test_flag(other_channel, CF_TRANSFER) || switch_channel_up(other_channel)) {
+				if (switch_channel_test_flag(other_channel, CF_TRANSFER) && switch_channel_up(other_channel)) {
 					switch_channel_set_variable(switch_core_session_get_channel(other_session), "fifo_initiated_bridge", NULL);
 					switch_channel_set_variable(switch_core_session_get_channel(other_session), "fifo_bridge_role", NULL);
 				}
 				
-				if (switch_channel_test_flag(channel, CF_TRANSFER) || switch_channel_up(channel)) {
+				if (switch_channel_test_flag(channel, CF_TRANSFER) && switch_channel_up(channel)) {
 					switch_channel_set_variable(switch_core_session_get_channel(other_session), "fifo_initiated_bridge", NULL);
 					switch_channel_set_variable(switch_core_session_get_channel(other_session), "fifo_bridge_role", NULL);
 				}
