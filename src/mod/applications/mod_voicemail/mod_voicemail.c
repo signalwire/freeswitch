@@ -1186,6 +1186,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 	cc_t cc = { 0 };
 	switch_codec_implementation_t read_impl = { 0 };
 	int got_file = 0;
+	switch_bool_t skip_record_check = switch_true(switch_channel_get_variable(channel, "skip_record_check"));
 
 	switch_core_session_get_read_impl(session, &read_impl);
 
@@ -1265,6 +1266,9 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 				*(input + 1) = '\0';
 				status = SWITCH_STATUS_SUCCESS;
 				*cc.buf = '\0';
+			} else if (skip_record_check) {
+				/* Skip the record check and simply return */
+				goto end;
 			} else {
 				(void) vm_macro_get(session, VM_RECORD_FILE_CHECK_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout);
 			}
@@ -3311,10 +3315,12 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	int disk_quota = 0;
 	switch_bool_t skip_greeting = switch_true(switch_channel_get_variable(channel, "skip_greeting"));
 	switch_bool_t skip_instructions = switch_true(switch_channel_get_variable(channel, "skip_instructions"));
+	switch_bool_t skip_record_urgent_check = switch_true(switch_channel_get_variable(channel, "skip_record_urgent_check"));
 	switch_bool_t vm_enabled = SWITCH_TRUE;
 
 	switch_channel_set_variable(channel, "skip_greeting", NULL);
 	switch_channel_set_variable(channel, "skip_instructions", NULL);
+	switch_channel_set_variable(channel, "skip_record_urgent_check", NULL);
 
 	memset(&cbt, 0, sizeof(cbt));
 
@@ -3589,13 +3595,14 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		char input[10] = "", term = 0;
 
 		switch_snprintf(key_buf, sizeof(key_buf), "%s:%s", profile->urgent_key, profile->terminator_key);
-
-		(void) vm_macro_get(session, VM_RECORD_URGENT_CHECK_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout);
-		if (*profile->urgent_key == *input) {
-			read_flags = URGENT_FLAG_STRING;
-			(void) switch_ivr_phrase_macro(session, VM_ACK_MACRO, "marked-urgent", NULL, NULL);
-		} else {
-			(void) switch_ivr_phrase_macro(session, VM_ACK_MACRO, "saved", NULL, NULL);
+		if (!skip_record_urgent_check) {
+			(void) vm_macro_get(session, VM_RECORD_URGENT_CHECK_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout);
+			if (*profile->urgent_key == *input) {
+				read_flags = URGENT_FLAG_STRING;
+				(void) switch_ivr_phrase_macro(session, VM_ACK_MACRO, "marked-urgent", NULL, NULL);
+			} else {
+				(void) switch_ivr_phrase_macro(session, VM_ACK_MACRO, "saved", NULL, NULL);
+			}
 		}
 	}
 
