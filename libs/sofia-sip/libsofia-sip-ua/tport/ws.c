@@ -1,5 +1,10 @@
 #include "ws.h"
 #include <pthread.h>
+
+#ifndef _MSC_VER
+#include <fcntl.h>
+#endif
+
 #define SHA1_HASH_SIZE 20
 struct globals_s globals;
 
@@ -316,16 +321,16 @@ issize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 	do {
 		r = recv(wsh->sock, data, bytes, 0);
 #ifndef _MSC_VER
-			if (x++) usleep(10000);
+		if (x++) usleep(10000);
 #else
-			if (x++) Sleep(10);
+		if (x++) Sleep(10);
 #endif
-	} while (r == -1 && (errno == EAGAIN || errno == EINTR) && x < 100);
-
-	//if (r<0) {
-	//	printf("READ FAIL: %s\n", strerror(errno));
-	//}
-
+		} while (r == -1 && (errno == EAGAIN || errno == EINTR) && x < 100);
+	
+	if (x >= 100) {
+		r = -1;
+	}
+	
 	return r;
 }
 
@@ -352,7 +357,54 @@ issize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 	return r;
 }
 
-int ws_init(wsh_t *wsh, ws_socket_t sock, char *buffer, char *wbuffer, size_t buflen, SSL_CTX *ssl_ctx, int close_sock)
+#ifdef _MSC_VER
+static int setup_socket(ws_socket_t sock)
+{
+	unsigned log v = 1;
+
+	if (ioctlsocket(ssock, FIONBIO, &v) == SOCKET_ERROR) {
+		return -1;
+	}
+
+	return 0;
+
+}
+
+static int restore_socket(ws_socket_t sock)
+{
+	unsigned log v = 0;
+
+	if (ioctlsocket(ssock, FIONBIO, &v) == SOCKET_ERROR) {
+		return -1;
+	}
+
+	return 0;
+
+}
+
+#else
+
+static int setup_socket(ws_socket_t sock)
+{
+	int flags = fcntl(sock, F_GETFL, 0);
+	return fcntl(sock, F_SETFL, flags | O_NONBLOCK);
+}
+
+static int restore_socket(ws_socket_t sock)
+{
+	int flags = fcntl(sock, F_GETFL, 0);
+
+	flags &= ~O_NONBLOCK;
+
+	return fcntl(sock, F_SETFL, flags);
+
+}
+
+#endif
+
+
+
+int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock)
 {
 	memset(wsh, 0, sizeof(*wsh));
 	wsh->sock = sock;
@@ -365,28 +417,10 @@ int ws_init(wsh_t *wsh, ws_socket_t sock, char *buffer, char *wbuffer, size_t bu
 		wsh->close_sock = 1;
 	}
 
-	if (buflen > MAXLEN) {
-		buflen = MAXLEN;
-	}
-
-	wsh->buflen = buflen;
+	wsh->buflen = sizeof(wsh->buffer);
 	wsh->secure = ssl_ctx ? 1 : 0;
 
-	if (buffer) {
-		wsh->buffer = buffer;
-	} else if (!wsh->buffer) {
-		wsh->buffer = malloc(wsh->buflen);
-		assert(wsh->buffer);
-		wsh->free_buffer = 1;
-	}
-
-	if (wbuffer) {
-		wsh->wbuffer = wbuffer;
-	} else if (!wsh->wbuffer) {
-		wsh->wbuffer = malloc(wsh->buflen);
-		assert(wsh->wbuffer);
-		wsh->free_wbuffer = 1;
-	}
+	setup_socket(sock);
 
 	if (wsh->secure) {
 		int code;
@@ -464,16 +498,6 @@ void ws_destroy(wsh_t *wsh)
 		SSL_free(wsh->ssl);
 		wsh->ssl = NULL;
 	}
-
-	if (wsh->free_buffer && wsh->buffer) {
-		free(wsh->buffer);
-		wsh->buffer = NULL;
-	}
-
-	if (wsh->free_wbuffer && wsh->wbuffer) {
-		free(wsh->wbuffer);
-		wsh->wbuffer = NULL;
-	}
 }
 
 issize_t ws_close(wsh_t *wsh, int16_t reason) 
@@ -493,6 +517,8 @@ issize_t ws_close(wsh_t *wsh, int16_t reason)
 		*u16 = htons((int16_t)reason);
 		ws_raw_write(wsh, fr, 4);
 	}
+
+	restore_socket(wsh->sock);
 
 	if (wsh->close_sock) {
 		close(wsh->sock);

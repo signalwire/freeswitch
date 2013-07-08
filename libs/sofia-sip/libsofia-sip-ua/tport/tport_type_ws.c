@@ -432,7 +432,6 @@ int tport_ws_init_secondary(tport_t *self, int socket, int accepted,
   int one = 1;
   tport_ws_primary_t *wspri = (tport_ws_primary_t *)self->tp_pri;
   tport_ws_t *wstp = (tport_ws_t *)self;
-  char *buffer, *wbuffer;
 
   self->tp_has_connection = 1;
 
@@ -458,10 +457,7 @@ int tport_ws_init_secondary(tport_t *self, int socket, int accepted,
 
   memset(&wstp->ws, 0, sizeof(wstp->ws));
   
-  buffer = (char *) su_alloc((su_home_t *)self, 65536);
-  wbuffer = (char *) su_alloc((su_home_t *)self, 65536);
-
-  if (ws_init(&wstp->ws, socket, buffer, wbuffer, 65336, wstp->ws_secure ? wspri->ssl_ctx : NULL, 0) < 0) {
+  if (ws_init(&wstp->ws, socket, wstp->ws_secure ? wspri->ssl_ctx : NULL, 0) < 0) {
 	  return *return_reason = "WS_INIT", -1;
   }
 
