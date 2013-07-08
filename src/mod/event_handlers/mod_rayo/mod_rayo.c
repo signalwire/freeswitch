@@ -2884,7 +2884,7 @@ static struct rayo_actor *xmpp_stream_client_locate(struct xmpp_stream *stream, 
 			struct rayo_peer_server *rserver = RAYO_PEER_SERVER(xmpp_stream_get_private(stream));
 			actor = RAYO_ACTOR(rayo_client_create(jid, xmpp_stream_get_jid(stream), PS_UNKNOWN, rayo_client_send, rserver));
 			RAYO_RDLOCK(actor);
-		} else if (!strcmp(RAT_CLIENT, actor->type)) {
+		} else if (strcmp(RAT_CLIENT, actor->type)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, not a client: %s\n", xmpp_stream_get_jid(stream), jid);
 			RAYO_UNLOCK(actor);
 			actor = NULL;
