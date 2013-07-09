@@ -360,9 +360,9 @@ issize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 #ifdef _MSC_VER
 static int setup_socket(ws_socket_t sock)
 {
-	unsigned log v = 1;
+	unsigned long v = 1;
 
-	if (ioctlsocket(ssock, FIONBIO, &v) == SOCKET_ERROR) {
+	if (ioctlsocket(sock, FIONBIO, &v) == SOCKET_ERROR) {
 		return -1;
 	}
 
@@ -372,9 +372,9 @@ static int setup_socket(ws_socket_t sock)
 
 static int restore_socket(ws_socket_t sock)
 {
-	unsigned log v = 0;
+	unsigned long v = 0;
 
-	if (ioctlsocket(ssock, FIONBIO, &v) == SOCKET_ERROR) {
+	if (ioctlsocket(sock, FIONBIO, &v) == SOCKET_ERROR) {
 		return -1;
 	}
 
