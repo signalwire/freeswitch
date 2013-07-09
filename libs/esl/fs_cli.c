@@ -764,8 +764,8 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 									SetConsoleTextAttribute(hStdout, colors[level]);
 								}
 								if (global_profile->log_uuid && !esl_strlen_zero(userdata)) {
-									WriteFile(hStdout, userdata, strlen(userdata), &outbytes, NULL);
-									WriteFile(hStdout, " ", strlen(" "), &outbytes, NULL);
+									WriteFile(hStdout, userdata, (DWORD)strlen(userdata), &outbytes, NULL);
+									WriteFile(hStdout, " ", (DWORD)strlen(" "), &outbytes, NULL);
 								}
 								WriteFile(hStdout, handle->last_event->body, len, &outbytes, NULL);
 								if(!(global_profile->batch_mode)) {
