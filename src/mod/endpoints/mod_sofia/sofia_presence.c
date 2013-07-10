@@ -260,9 +260,22 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 	}
 
 	if (!list) {
+		switch_event_t *event;
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 		"Chat proto [%s]\nfrom [%s]\nto [%s]\n%s\nNobody to send to: Profile %s\n", proto, from, to,
 						  body ? body : "[no body]", prof ? prof : "NULL");
+		// emit no recipient event
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_ERROR) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Error-Type", "chat");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Error-Reason", "no recipient");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Chat-Send-To", to);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Chat-Send-From", from);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Chat-Send-Profile", prof ? prof : "NULL");
+			switch_event_add_body(event, body);
+			switch_event_fire(&event);
+		}
+
 		goto end;
 	}
 
