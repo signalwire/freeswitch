@@ -445,7 +445,7 @@ static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t st
 			fly++;
 		}
 		
-		if ((header = esl_event_get_header_ptr(event, header_name))) {
+		if (header || (header = esl_event_get_header_ptr(event, header_name))) {
 			
 			if (index_ptr) {
 				if (index > -1 && index <= 4000) {
