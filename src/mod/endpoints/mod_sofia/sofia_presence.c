@@ -272,7 +272,7 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Chat-Send-To", to);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Chat-Send-From", from);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Chat-Send-Profile", prof ? prof : "NULL");
-			switch_event_add_body(event, body);
+			switch_event_add_body(event, "%s", body);
 			switch_event_fire(&event);
 		}
 
