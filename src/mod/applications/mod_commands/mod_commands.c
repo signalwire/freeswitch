@@ -4390,7 +4390,11 @@ static int show_as_json_callback(void *pArg, int argc, char **argv, char **colum
 	}
 
 	if (holder->justcount) {
-		holder->count++;
+		if (zstr(argv[0])) {
+			holder->count = 0;
+		} else {
+			holder->count = (uint32_t) atoi(argv[0]);
+		}
 		return 0;
 	}
 
@@ -4430,7 +4434,11 @@ static int show_as_xml_callback(void *pArg, int argc, char **argv, char **column
 	}
 
 	if (holder->justcount) {
-		holder->count++;
+		if (zstr(argv[0])) {
+			holder->count = 0;
+		} else {
+			holder->count = (uint32_t) atoi(argv[0]);
+		}
 		return 0;
 	}
 
@@ -4468,7 +4476,11 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames)
 	int x;
 
 	if (holder->justcount) {
-		holder->count++;
+		if (zstr(argv[0])) {
+			holder->count = 0;
+		} else {
+			holder->count = (uint32_t) atoi(argv[0]);
+		}
 		return 0;
 	}
 
@@ -4704,6 +4716,7 @@ SWITCH_STANDARD_API(show_function)
 		if (!strcasecmp(command, "calls")) {
 			sprintf(sql, "select * from basic_calls where hostname='%s' order by call_created_epoch", hostname);
 			if (argv[1] && !strcasecmp(argv[1], "count")) {
+				sprintf(sql, "select count(*) from basic_calls where hostname='%s'", hostname);
 				holder.justcount = 1;
 				if (argv[3] && !strcasecmp(argv[2], "as")) {
 					as = argv[3];
@@ -4712,6 +4725,7 @@ SWITCH_STANDARD_API(show_function)
 		} else if (!strcasecmp(command, "registrations")) {
 			sprintf(sql, "select * from registrations where hostname='%s'", hostname);
 			if (argv[1] && !strcasecmp(argv[1], "count")) {
+				sprintf(sql, "select count(*) from registrations where hostname='%s'", hostname);
 				holder.justcount = 1;
 				if (argv[3] && !strcasecmp(argv[2], "as")) {
 					as = argv[3];
@@ -4743,6 +4757,7 @@ SWITCH_STANDARD_API(show_function)
 		} else if (!strcasecmp(command, "channels")) {
 			sprintf(sql, "select * from channels where hostname='%s' order by created_epoch", hostname);
 			if (argv[1] && !strcasecmp(argv[1], "count")) {
+				sprintf(sql, "select count(*) from channels where hostname='%s'", hostname);
 				holder.justcount = 1;
 				if (argv[3] && !strcasecmp(argv[2], "as")) {
 					as = argv[3];

@@ -1591,7 +1591,35 @@ switch_status_t FSH323Connection::receive_message(switch_core_session_message_t 
 			}
 			break;
 		}
+		case SWITCH_MESSAGE_INDICATE_DEBUG_MEDIA:{
+			if (switch_rtp_ready(tech_pvt->rtp_session) && !zstr(msg->string_array_arg[0]) && !zstr(msg->string_array_arg[1])) {
+				switch_rtp_flag_t flags = 0;
+				int x = 0;
 
+				if (!strcasecmp(msg->string_array_arg[0], "read")) {
+					x++; flags |= SWITCH_RTP_FLAG_DEBUG_RTP_READ;
+				} else if (!strcasecmp(msg->string_array_arg[0], "write")) {
+					x++; flags |= SWITCH_RTP_FLAG_DEBUG_RTP_WRITE;
+				} else if (!strcasecmp(msg->string_array_arg[0], "both")) {
+					x++;
+					x++; flags |= SWITCH_RTP_FLAG_DEBUG_RTP_READ | SWITCH_RTP_FLAG_DEBUG_RTP_WRITE;
+				} else if (*msg->string_array_arg[0] == 'v') {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(m_fsSession), SWITCH_LOG_ERROR, "Video is not supported yet\n");
+					break;
+				}
+
+				if (x) {
+					if (switch_true(msg->string_array_arg[1])) {
+						switch_rtp_set_flag(tech_pvt->rtp_session, flags);
+					} else {
+						switch_rtp_clear_flag(tech_pvt->rtp_session, flags);
+					}
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(m_fsSession), SWITCH_LOG_ERROR, "Invalid Options\n");
+				}
+			}
+			break;
+		}
 		default:{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"Received message id = %d [%p]\n", msg->message_id,this);
 		}	
