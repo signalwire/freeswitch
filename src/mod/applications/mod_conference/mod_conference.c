@@ -7539,6 +7539,8 @@ SWITCH_STANDARD_APP(conference_function)
 		/* if the conference exists, get the pointer to it */
 		if (!conference) {
 			const char *max_members_str;
+			const char *endconf_grace_time_str;
+			const char *auto_record_str;
 
 			/* couldn't find the conference, create one */
 			conference = conference_new(conf_name, xml_cfg, session, NULL);
@@ -7558,9 +7560,17 @@ SWITCH_STANDARD_APP(conference_function)
 			if (zstr(conference->moh_sound)) {
 				conference->moh_sound = switch_core_strdup(conference->pool, switch_channel_get_variable(channel, "conference_moh_sound"));
 			}
+
 			/* Set perpetual-sound from variable if not set */
 			if (zstr(conference->perpetual_sound)) {
 				conference->perpetual_sound = switch_core_strdup(conference->pool, switch_channel_get_variable(channel, "conference_perpetual_sound"));
+			}
+
+			/* Override auto-record profile parameter from variable */
+			if (!zstr(auto_record_str = switch_channel_get_variable(channel, "conference_auto_record"))) {
+				conference->auto_record = switch_core_strdup(conference->pool, auto_record_str);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+								  "conference_auto_record set from variable to %s\n", auto_record_str);
 			}
 
 			/* Set the minimum number of members (once you go above it you cannot go below it) */
@@ -7576,6 +7586,21 @@ SWITCH_STANDARD_APP(conference_function)
 									  "conference_max_members variable %s is invalid, not setting a limit\n", max_members_str);
 				} else {
 					conference->max_members = max_members_val;
+				}
+			}
+
+			/* check for variable to override endconf_grace_time profile value */
+			if (!zstr(endconf_grace_time_str = switch_channel_get_variable(channel, "conference_endconf_grace_time"))) {
+				uint32_t grace_time_val;
+				errno = 0;		/* sanity first */
+				grace_time_val = strtol(endconf_grace_time_str, NULL, 0);	/* base 0 lets 0x... for hex 0... for octal and base 10 otherwise through */
+				if (errno == ERANGE || errno == EINVAL || (int32_t) grace_time_val < 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+									  "conference_endconf_grace_time variable %s is invalid, not setting a time limit\n", endconf_grace_time_str);
+				} else {
+					conference->endconf_grace_time = grace_time_val;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+									  "conference endconf_grace_time set from variable to %d\n", grace_time_val);
 				}
 			}
 
