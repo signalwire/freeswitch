@@ -32,6 +32,7 @@
 
 
 #include <switch.h>
+#include <switch_event.h>
 SWITCH_BEGIN_EXTERN_C
 #include "lua.h"
 #include <lauxlib.h>
@@ -44,6 +45,7 @@ SWITCH_MODULE_DEFINITION_EX(mod_lua, mod_lua_load, mod_lua_shutdown, NULL, SMODF
 static struct {
 	switch_memory_pool_t *pool;
 	char *xml_handler;
+	switch_event_node_t *node;
 } globals;
 
 int luaopen_freeswitch(lua_State * L);
@@ -287,10 +289,12 @@ static switch_xml_t lua_fetch(const char *section,
 }
 
 
+static void lua_event_handler(switch_event_t *event);
+
 static switch_status_t do_config(void)
 {
 	const char *cf = "lua.conf";
-	switch_xml_t cfg, xml, settings, param;
+	switch_xml_t cfg, xml, settings, param, hook;
 	switch_stream_handle_t path_stream = {0};
 	switch_stream_handle_t cpath_stream = {0};
 	
@@ -325,6 +329,31 @@ static switch_status_t do_config(void)
 					path_stream.write_function(&path_stream, ";");
 				}
 				path_stream.write_function(&path_stream, "%s", val);
+			}
+		}
+
+		for (hook = switch_xml_child(settings, "hook"); hook; hook = hook->next) {
+			char *event = (char *) switch_xml_attr_soft(hook, "event");
+			char *subclass = (char *) switch_xml_attr_soft(hook, "subclass");
+			//char *script = strdup( (char *) switch_xml_attr_soft(hook, "script"));
+			char *script = (char *) switch_xml_attr_soft(hook, "script");
+			switch_event_types_t evtype;
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "hook params: '%s' | '%s' | '%s'\n", event, subclass, script);
+
+			if (switch_name_event(event,&evtype) == SWITCH_STATUS_SUCCESS) {
+				if (!zstr(script)) {
+					if (switch_event_bind_removable(modname, evtype, !zstr(subclass) ? subclass : SWITCH_EVENT_SUBCLASS_ANY,
+							lua_event_handler, script, &globals.node) == SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "event handler for '%s' set to '%s'\n", switch_event_name(evtype), script);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set event handler: unsuccessful bind\n");
+					}
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set event handler: no script name\n", event);
+				}
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set event handler: unknown event type '%s'\n", event);
 			}
 		}
 	}
@@ -403,6 +432,23 @@ int lua_thread(const char *text)
 	switch_thread_create(&thread, thd_attr, lua_thread_run, lth, lth->pool);
 
 	return 0;
+}
+
+static void lua_event_handler(switch_event_t *event)
+{
+	lua_State *L = lua_init();
+	char *script = NULL;
+
+	if (event->bind_user_data) {
+		script = strdup((char *)event->bind_user_data);
+	}
+
+	mod_lua_conjure_event(L, event, "event", 1);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "lua event hook: execute '%s'\n", (char *)script);
+	lua_parse_and_execute(L, (char *)script);
+	lua_uninit(L);
+
+	switch_safe_free(script);
 }
 
 SWITCH_STANDARD_APP(lua_function)
@@ -645,6 +691,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_lua_shutdown)
 {
+	switch_event_unbind(&globals.node);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
