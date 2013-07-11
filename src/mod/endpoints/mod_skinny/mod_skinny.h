@@ -271,6 +271,7 @@ switch_bool_t skinny_execute_sql_callback(skinny_profile_t *profile,
 uint8_t listener_is_ready(listener_t *listener);
 switch_status_t kill_listener(listener_t *listener, void *pvt);
 switch_status_t keepalive_listener(listener_t *listener, void *pvt);
+void skinny_clean_listener_from_db(listener_t *listener);
 
 /*****************************************************************************/
 /* CHANNEL FUNCTIONS */

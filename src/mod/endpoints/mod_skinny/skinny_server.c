@@ -964,8 +964,8 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 
 	if (!zstr(listener->device_name)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-				"A device is already registred on this listener.\n");
-		send_register_reject(listener, "A device is already registred on this listener");
+				"A device is already registered on this listener.\n");
+		send_register_reject(listener, "A device is already registered on this listener");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -992,6 +992,9 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 		status =  SWITCH_STATUS_FALSE;
 		goto end;
 	}
+
+	/* clean up all traces before adding to database */
+	skinny_clean_listener_from_db(listener);
 
 	if ((sql = switch_mprintf(
 					"INSERT INTO skinny_devices "
@@ -1951,6 +1954,9 @@ switch_status_t skinny_handle_unregister(listener_t *listener, skinny_message_t 
 
 	/* Close socket */
 	switch_clear_flag_locked(listener, LFLAG_RUNNING);
+
+	/* Clear this device from database and any active lines/etc. */
+	skinny_clean_listener_from_db(listener);
 
 	return SWITCH_STATUS_SUCCESS;
 }
