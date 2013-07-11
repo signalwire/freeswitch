@@ -44,6 +44,7 @@ config.cache
 configure.lineno
 config.log
 config.status
+test-driver
 core.*
 TAGS
 *.2010.log
