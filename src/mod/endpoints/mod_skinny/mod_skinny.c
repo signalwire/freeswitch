@@ -1315,24 +1315,11 @@ static int flush_listener_callback(void *pArg, int argc, char **argv, char **col
 	return 0;
 }
 
-static void flush_listener(listener_t *listener)
+void skinny_clean_listener_from_db(listener_t *listener)
 {
-
 	if(!zstr(listener->device_name)) {
 		skinny_profile_t *profile = listener->profile;
 		char *sql;
-
-		if ((sql = switch_mprintf(
-						"SELECT '%q', value, '%q', '%q', '%d' "
-						"FROM skinny_lines "
-						"WHERE device_name='%s' AND device_instance=%d "
-						"ORDER BY position",
-						profile->name, profile->domain, listener->device_name, listener->device_instance,
-						listener->device_name, listener->device_instance
-					 ))) {
-			skinny_execute_sql_callback(profile, profile->sql_mutex, sql, flush_listener_callback, NULL);
-			switch_safe_free(sql);
-		}
 
 		if ((sql = switch_mprintf(
 						"DELETE FROM skinny_devices "
@@ -1357,6 +1344,38 @@ static void flush_listener(listener_t *listener)
 			skinny_execute_sql(profile, sql, profile->sql_mutex);
 			switch_safe_free(sql);
 		}
+
+		if ((sql = switch_mprintf(
+						"DELETE FROM skinny_active_lines "
+						"WHERE device_name='%s' and device_instance=%d",
+						listener->device_name, listener->device_instance))) {
+			skinny_execute_sql(profile, sql, profile->sql_mutex);
+			switch_safe_free(sql);
+		}
+
+	}
+}
+
+static void flush_listener(listener_t *listener)
+{
+
+	if(!zstr(listener->device_name)) {
+		skinny_profile_t *profile = listener->profile;
+		char *sql;
+
+		if ((sql = switch_mprintf(
+						"SELECT '%q', value, '%q', '%q', '%d' "
+						"FROM skinny_lines "
+						"WHERE device_name='%s' AND device_instance=%d "
+						"ORDER BY position",
+						profile->name, profile->domain, listener->device_name, listener->device_instance,
+						listener->device_name, listener->device_instance
+					 ))) {
+			skinny_execute_sql_callback(profile, profile->sql_mutex, sql, flush_listener_callback, NULL);
+			switch_safe_free(sql);
+		}
+
+		skinny_clean_listener_from_db(listener);
 
 		strcpy(listener->device_name, "");
 	}
