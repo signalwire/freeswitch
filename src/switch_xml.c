@@ -1345,6 +1345,8 @@ static FILE *preprocess_glob(const char *cwd, const char *pattern, FILE *write_f
 	if ( globres != 0) {
 		if ( !ignore_nomatch || globres != GLOB_NOMATCH ) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error including %s\n", pattern);
+		} else if ( ignore_nomatch && globres == GLOB_NOMATCH ) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Include pattern %s did not match any files.\n", pattern);
 		}
 		goto end;
 	}
