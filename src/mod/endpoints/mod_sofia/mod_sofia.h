@@ -230,6 +230,7 @@ typedef enum {
 	PFLAG_DISABLE_SRV503,
 	PFLAG_DISABLE_NAPTR,
 	PFLAG_NAT_OPTIONS_PING,
+	PFLAG_UDP_NAT_OPTIONS_PING,
 	PFLAG_ALL_REG_OPTIONS_PING,
 	PFLAG_MESSAGE_QUERY_ON_REGISTER,
 	PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER,
@@ -672,6 +673,7 @@ struct sofia_profile {
 	su_strlst_t *tls_verify_in_subjects;
 	uint32_t sip_force_expires;
 	uint32_t sip_expires_max_deviation;
+	uint32_t sip_subscription_max_deviation;
 	int ireg_seconds;
 	sofia_paid_type_t paid_type;
 	uint32_t rtp_digit_delay;

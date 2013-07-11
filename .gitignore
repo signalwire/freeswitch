@@ -36,6 +36,7 @@
 *.xz
 *.bz2
 *.tbz2
+*.deb
 *.swp
 aclocal.m4
 autom4te.cache
@@ -43,6 +44,7 @@ config.cache
 configure.lineno
 config.log
 config.status
+test-driver
 core.*
 TAGS
 *.2010.log

@@ -2234,8 +2234,10 @@ static int switch_ivr_set_xml_chan_var(switch_xml_t xml, const char *var, const 
 	char *data;
 	switch_size_t dlen = strlen(val) * 3 + 1;
 	switch_xml_t variable;
+
+	if (!val) val = "";
 	
-	if (!zstr(var) && !zstr(val) && ((variable = switch_xml_add_child_d(xml, var, off++)))) {
+	if (!zstr(var) && ((variable = switch_xml_add_child_d(xml, var, off++)))) {
 		if ((data = malloc(dlen))) {
 			memset(data, 0, dlen);
 			switch_url_encode(val, data, dlen);

@@ -54,12 +54,16 @@ enum
     /* V.18 Annex F - V.21 text telephone, V.21, duplex, ASCII (Sweden, Norway and Finland). */
     V18_MODE_V21TEXTPHONE = 7,
     /* V.18 Annex G - V.18 text telephone mode. */
-    V18_MODE_V18TEXTPHONE = 8
+    V18_MODE_V18TEXTPHONE = 8,
+    /* Use repetitive shift characters where character set shifts are used */ 
+    V18_MODE_REPETITIVE_SHIFTS_OPTION = 0x1000
 };
 
 /* Automoding sequences for different countries */
 enum
 {
+    V18_AUTOMODING_GLOBAL = 0,
+
     /* 5-bit, V.21, V.23, EDT, DTMF, Bell 103 */
     V18_AUTOMODING_AUSTRALIA,
     V18_AUTOMODING_IRELAND,
@@ -89,7 +93,9 @@ enum
 
     /* V.23, EDT, DTMF, 5-bit, V.21, Bell 103 */
     V18_AUTOMODING_FRANCE,
-    V18_AUTOMODING_BELGIUM
+    V18_AUTOMODING_BELGIUM,
+
+    V18_AUTOMODING_END
 };
 
 #if defined(__cplusplus)
@@ -104,6 +110,7 @@ SPAN_DECLARE(logging_state_t *) v18_get_logging_state(v18_state_t *s);
     \param s The V.18 context.
     \param calling_party TRUE if caller mode, else answerer mode.
     \param mode Mode of operation.
+    \param nation National variant for automoding.
     \param put_msg A callback routine called to deliver the received text
            to the application.
     \param user_data An opaque pointer for the callback routine.
@@ -111,6 +118,7 @@ SPAN_DECLARE(logging_state_t *) v18_get_logging_state(v18_state_t *s);
 SPAN_DECLARE(v18_state_t *) v18_init(v18_state_t *s,
                                      int calling_party,
                                      int mode,
+                                     int nation,
                                      put_msg_func_t put_msg,
                                      void *user_data);
 

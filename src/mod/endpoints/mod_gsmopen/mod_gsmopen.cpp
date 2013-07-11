@@ -208,6 +208,7 @@ switch_status_t gsmopen_tech_init(private_t *tech_pvt, switch_core_session_t *se
 	dtmf_rx_init(&tech_pvt->dtmf_state, NULL, NULL);
 	dtmf_rx_parms(&tech_pvt->dtmf_state, 0, 10, 10, -99);
 
+/*
 	if (tech_pvt->no_sound == 0) {
 		if (serial_audio_init(tech_pvt)) {
 			ERRORA("serial_audio_init failed\n", GSMOPEN_P_LOG);
@@ -215,6 +216,7 @@ switch_status_t gsmopen_tech_init(private_t *tech_pvt, switch_core_session_t *se
 
 		}
 	}
+*/
 
 	if (switch_core_timer_init(&tech_pvt->timer_read, "soft", 20, tech_pvt->read_codec.implementation->samples_per_packet, gsmopen_module_pool) !=
 		SWITCH_STATUS_SUCCESS) {
@@ -805,6 +807,9 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 	gsmopen_sound_boost(frame->data, frame->samples, tech_pvt->playback_boost);
 	if (!tech_pvt->no_sound) {
+		if (!tech_pvt->serialPort_serial_audio_opened) {
+			serial_audio_init(tech_pvt);
+		}
 		sent = tech_pvt->serialPort_serial_audio->Write((char *) frame->data, (int) (frame->datalen));
 
 		if (sent && sent != frame->datalen && sent != -1) {
@@ -1237,6 +1242,8 @@ static switch_status_t load_config(int reload_type)
 			uint32_t controldevprotocol = PROTOCOL_AT;	//FIXME TODO
 			uint32_t running = 1;	//FIXME TODO
 			const char *gsmopen_serial_sync_period = "300";	//FIXME TODO
+			const char *imei = "";	
+			const char *imsi = "";
 
 			tech_pvt = NULL;
 
@@ -1394,6 +1401,10 @@ static switch_status_t load_config(int reload_type)
 					playback_boost = val;
 				} else if (!strcasecmp(var, "no_sound")) {
 					no_sound = val;
+				} else if (!strcasecmp(var, "imsi")) {
+					imsi = val;
+				} else if (!strcasecmp(var, "imei")) {
+					imei = val;
 				} else if (!strcasecmp(var, "gsmopen_serial_sync_period")) {
 					gsmopen_serial_sync_period = val;
 				}
@@ -1466,7 +1477,6 @@ static switch_status_t load_config(int reload_type)
 
 			if (interface_id && interface_id < GSMOPEN_MAX_INTERFACES) {
 				private_t newconf;
-				switch_threadattr_t *gsmopen_api_thread_attr = NULL;
 				int res = 0;
 
 				memset(&newconf, '\0', sizeof(newconf));
@@ -1536,6 +1546,8 @@ static switch_status_t load_config(int reload_type)
 				switch_set_string(globals.GSMOPEN_INTERFACES[interface_id].at_indicator_callsetupoutgoing_string, at_indicator_callsetupoutgoing_string);
 				switch_set_string(globals.GSMOPEN_INTERFACES[interface_id].at_indicator_callsetupremoteringing_string,
 								  at_indicator_callsetupremoteringing_string);
+				switch_set_string(globals.GSMOPEN_INTERFACES[interface_id].imsi, imsi);
+				switch_set_string(globals.GSMOPEN_INTERFACES[interface_id].imei, imei);
 				globals.GSMOPEN_INTERFACES[interface_id].at_early_audio = atoi(at_early_audio);
 				globals.GSMOPEN_INTERFACES[interface_id].at_after_preinit_pause = atoi(at_after_preinit_pause);
 				globals.GSMOPEN_INTERFACES[interface_id].at_initial_pause = atoi(at_initial_pause);
@@ -1550,6 +1562,30 @@ static switch_status_t load_config(int reload_type)
 				globals.GSMOPEN_INTERFACES[interface_id].controldevprotocol = controldevprotocol;	//FIXME
 				globals.GSMOPEN_INTERFACES[interface_id].running = running;	//FIXME
 
+
+				gsmopen_store_boost((char *) capture_boost, &globals.GSMOPEN_INTERFACES[interface_id].capture_boost);	//FIXME
+				gsmopen_store_boost((char *) playback_boost, &globals.GSMOPEN_INTERFACES[interface_id].playback_boost);	//FIXME
+
+			} else {
+				ERRORA("interface id %u is higher than GSMOPEN_MAX_INTERFACES (%d)\n", GSMOPEN_P_LOG, interface_id, GSMOPEN_MAX_INTERFACES);
+				alarm_event(&globals.GSMOPEN_INTERFACES[interface_id], ALARM_FAILED_INTERFACE, "interface id is higher than GSMOPEN_MAX_INTERFACES");
+				continue;
+			}
+
+		}
+
+#ifndef WIN32
+		find_ttyusb_devices(NULL, "/sys/devices");
+#endif// WIN32
+
+		for (i = 0; i < GSMOPEN_MAX_INTERFACES; i++) {
+
+				switch_threadattr_t *gsmopen_api_thread_attr = NULL;
+				int res = 0;
+				int interface_id = i;
+
+			if (strlen(globals.GSMOPEN_INTERFACES[i].name)) {
+
 				WARNINGA("STARTING interface_id=%u\n", GSMOPEN_P_LOG, interface_id);
 				DEBUGA_GSMOPEN("id=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].id);
 				DEBUGA_GSMOPEN("name=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].name);
@@ -1557,6 +1593,8 @@ static switch_status_t load_config(int reload_type)
 				DEBUGA_GSMOPEN("context=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].context);
 				DEBUGA_GSMOPEN("dialplan=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].dialplan);
 				DEBUGA_GSMOPEN("destination=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].destination);
+				DEBUGA_GSMOPEN("imei=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].imei);
+				DEBUGA_GSMOPEN("imsi=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].imsi);
 				DEBUGA_GSMOPEN("controldevice_name=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].controldevice_name);
 				DEBUGA_GSMOPEN("controldevice_audio_name=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].controldevice_audio_name);
 				DEBUGA_GSMOPEN("gsmopen_serial_sync_period=%d\n", GSMOPEN_P_LOG,
@@ -1628,8 +1666,8 @@ static switch_status_t load_config(int reload_type)
 
 				globals.GSMOPEN_INTERFACES[interface_id].active = 1;
 
-				gsmopen_store_boost((char *) capture_boost, &globals.GSMOPEN_INTERFACES[interface_id].capture_boost);	//FIXME
-				gsmopen_store_boost((char *) playback_boost, &globals.GSMOPEN_INTERFACES[interface_id].playback_boost);	//FIXME
+				//gsmopen_store_boost((char *) capture_boost, &globals.GSMOPEN_INTERFACES[interface_id].capture_boost);	//FIXME
+				//gsmopen_store_boost((char *) playback_boost, &globals.GSMOPEN_INTERFACES[interface_id].playback_boost);	//FIXME
 
 				switch_sleep(100000);
 				switch_threadattr_create(&gsmopen_api_thread_attr, gsmopen_module_pool);
@@ -1640,13 +1678,9 @@ static switch_status_t load_config(int reload_type)
 				switch_sleep(100000);
 				WARNINGA("STARTED interface_id=%u\n", GSMOPEN_P_LOG, interface_id);
 
-			} else {
-				ERRORA("interface id %u is higher than GSMOPEN_MAX_INTERFACES (%d)\n", GSMOPEN_P_LOG, interface_id, GSMOPEN_MAX_INTERFACES);
-				alarm_event(&globals.GSMOPEN_INTERFACES[interface_id], ALARM_FAILED_INTERFACE, "interface id is higher than GSMOPEN_MAX_INTERFACES");
-				continue;
 			}
-
 		}
+
 
 		for (i = 0; i < GSMOPEN_MAX_INTERFACES; i++) {
 			if (strlen(globals.GSMOPEN_INTERFACES[i].name)) {
@@ -1661,6 +1695,8 @@ static switch_status_t load_config(int reload_type)
 				DEBUGA_GSMOPEN("hold-music=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].hold_music);
 				DEBUGA_GSMOPEN("dialplan=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].dialplan);
 				DEBUGA_GSMOPEN("destination=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].destination);
+				DEBUGA_GSMOPEN("imei=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].imei);
+				DEBUGA_GSMOPEN("imsi=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].imsi);
 				DEBUGA_GSMOPEN("controldevice_name=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].controldevice_name);
 				DEBUGA_GSMOPEN("gsmopen_serial_sync_period=%d\n", GSMOPEN_P_LOG, (int) globals.GSMOPEN_INTERFACES[i].gsmopen_serial_sync_period);
 				DEBUGA_GSMOPEN("controldevice_audio_name=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].controldevice_audio_name);
@@ -2772,6 +2808,294 @@ int sms_incoming(private_t *tech_pvt)
 
 	return 0;
 }
+
+
+
+#ifndef WIN32
+#define PATH_MAX_GIOVA PATH_MAX
+static struct {
+char path_idvendor[PATH_MAX_GIOVA];
+char path_idproduct[PATH_MAX_GIOVA];
+char tty_base[PATH_MAX_GIOVA];
+char idvendor[PATH_MAX_GIOVA];
+char idproduct[PATH_MAX_GIOVA];
+char tty_data_dir[PATH_MAX_GIOVA];
+char tty_audio_dir[PATH_MAX_GIOVA];
+char data_dev_id[256];
+char audio_dev_id[256];
+char delimiter[256];
+char txt_saved[PATH_MAX_GIOVA];
+char tty_base_copied[PATH_MAX_GIOVA];
+char tty_data_device_file[PATH_MAX_GIOVA];
+char tty_data_device[256];
+char tty_audio_device_file[PATH_MAX_GIOVA];
+char tty_audio_device[256];
+char answer[AT_BUFSIZ];
+char imei[256];
+char imsi[256];
+} f;
+/*
+int times=0;
+int conta=0;
+*/
+void find_ttyusb_devices(private_t *tech_pvt, const char *dirname)
+{
+	DIR *dir;
+	struct dirent *entry;
+
+	memset( f.path_idvendor, 0, sizeof(f.path_idvendor) );
+	memset( f.path_idproduct, 0, sizeof(f.path_idproduct) );
+	memset( f.tty_base, 0, sizeof(f.tty_base) );
+	memset( f.idvendor, 0, sizeof(f.idvendor) );
+	memset( f.idproduct, 0, sizeof(f.idproduct) );
+	memset( f.tty_data_dir, 0, sizeof(f.tty_data_dir) );
+	memset( f.tty_audio_dir, 0, sizeof(f.tty_audio_dir) );
+	memset( f.data_dev_id, 0, sizeof(f.data_dev_id) );
+	memset( f.audio_dev_id, 0, sizeof(f.audio_dev_id) );
+	memset( f.delimiter, 0, sizeof(f.delimiter) );
+	memset( f.txt_saved, 0, sizeof(f.txt_saved) );
+	memset( f.tty_base_copied, 0, sizeof(f.tty_base_copied) );
+	memset( f.tty_data_device_file, 0, sizeof(f.tty_data_device_file) );
+	memset( f.tty_data_device, 0, sizeof(f.tty_data_device) );
+	memset( f.tty_audio_device_file, 0, sizeof(f.tty_audio_device_file) );
+	memset( f.tty_audio_device, 0, sizeof(f.tty_audio_device) );
+
+	if (!(dir = opendir(dirname))){
+		ERRORA("ERRORA! dirname=%s\n", GSMOPEN_P_LOG, dirname);
+		closedir(dir);
+		//conta--;
+		return;
+	}
+	if (!(entry = readdir(dir))){
+		ERRORA("ERRORA!\n", GSMOPEN_P_LOG);
+		closedir(dir);
+		//conta--;
+		return;
+	}
+
+	//conta++;
+	do {
+		if (entry->d_type == DT_DIR) {
+			char path[PATH_MAX_GIOVA];
+			int len;
+
+			//times++;
+			len = snprintf(path, sizeof(path)-1, "%s/%s", dirname, entry->d_name);
+			path[len] = 0;
+			if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+				continue;
+			find_ttyusb_devices(tech_pvt, path);
+		} else{
+			int fd=-1;
+			int len2=-1;
+			DIR *dir2=NULL;
+			struct dirent *entry2=NULL;
+			int counter;
+			char *scratch=NULL;
+			char *txt=NULL;
+
+			if (strcmp(entry->d_name, "idVendor") == 0){
+				sprintf(f.tty_base, "%s", dirname);
+				sprintf(f.path_idvendor, "%s/%s", dirname, entry->d_name);
+				sprintf(f.path_idproduct, "%s/idProduct", dirname);
+
+				fd = open(f.path_idvendor, O_RDONLY);
+				len2=read(fd, f.idvendor, sizeof(f.idvendor));
+				close(fd);
+
+				if(f.idvendor[len2-1]=='\n'){
+					f.idvendor[len2-1]='\0';
+				}
+				if (strcmp(f.idvendor, "12d1") == 0){
+
+					fd = open(f.path_idproduct, O_RDONLY);
+					len2=read(fd, f.idproduct, sizeof(f.idproduct));
+					close(fd);
+
+					if(f.idproduct[len2-1]=='\n'){
+						f.idproduct[len2-1]='\0';
+					}
+					if (strcmp(f.idproduct, "1001") == 0  ||  strcmp(f.idproduct, "140c") == 0 ||  strcmp(f.idproduct, "1436") == 0 ||  strcmp(f.idproduct, "1506") == 0 ||  strcmp(f.idproduct, "14ac") == 0 ){
+						if (strcmp(f.idproduct, "1001") == 0){
+							strcpy(f.data_dev_id, "2");
+							strcpy(f.audio_dev_id, "1");
+						}else if (strcmp(f.idproduct, "140c") == 0){
+							strcpy(f.data_dev_id, "3");
+							strcpy(f.audio_dev_id, "2");
+						}else if (strcmp(f.idproduct, "1436") == 0){
+							strcpy(f.data_dev_id, "4");
+							strcpy(f.audio_dev_id, "3");
+						}else if (strcmp(f.idproduct, "1506") == 0){
+							strcpy(f.data_dev_id, "1");
+							strcpy(f.audio_dev_id, "2");
+						}else if (strcmp(f.idproduct, "14ac") == 0){
+							strcpy(f.data_dev_id, "4");
+							strcpy(f.audio_dev_id, "3");
+						}else{
+							//not possible
+						}
+						strcpy(f.delimiter, "/");
+						strcpy(f.tty_base_copied, f.tty_base);
+						counter=0;
+						while((txt = strtok_r(!counter ? f.tty_base_copied : NULL, f.delimiter, &scratch)))
+						{
+							strcpy(f.txt_saved, txt);
+							counter++;
+						}
+						sprintf(f.tty_data_dir, "%s/%s:1.%s", f.tty_base, f.txt_saved, f.data_dev_id);
+						sprintf(f.tty_audio_dir, "%s/%s:1.%s", f.tty_base, f.txt_saved, f.audio_dev_id);
+
+						if (!(dir2 = opendir(f.tty_data_dir))) {
+							ERRORA("ERRORA!\n", GSMOPEN_P_LOG);
+						}
+						if (!(entry2 = readdir(dir2))){
+							ERRORA("ERRORA!\n", GSMOPEN_P_LOG);
+						}
+						do {
+							if (strncmp(entry2->d_name, "ttyUSB", 6) == 0){
+								//char f.answer[AT_BUFSIZ];
+								ctb::SerialPort *serialPort_serial_control;
+								int res;
+								int read_count;
+								char at_command[256];
+
+								sprintf(f.tty_data_device_file, "%s/%s", f.tty_data_dir, entry2->d_name);
+								sprintf(f.tty_data_device, "/dev/%s", entry2->d_name);
+
+								memset(f.answer,0,sizeof(f.answer));
+								memset(f.imei,0,sizeof(f.imei));
+								memset(f.imsi,0,sizeof(f.imsi));
+
+								serialPort_serial_control = new ctb::SerialPort();
+								if (serialPort_serial_control->Open(f.tty_data_device, 115200, "8N1", ctb::SerialPort::NoFlowControl) >= 0) {
+									sprintf(at_command, "AT\r\n");
+									res = serialPort_serial_control->Write(at_command, 4);
+									usleep(20000); //0.02 seconds
+									res = serialPort_serial_control->Write(at_command, 4);
+									usleep(20000); //0.02 seconds
+									sprintf(at_command, "ATE1\r\n");
+									res = serialPort_serial_control->Write(at_command, 6);
+									usleep(20000); //0.02 seconds
+									read_count = serialPort_serial_control->Read(f.answer, AT_BUFSIZ);
+									sprintf(at_command, "AT\r\n");
+									res = serialPort_serial_control->Write(at_command, 4);
+									usleep(20000); //0.02 seconds
+									read_count = serialPort_serial_control->Read(f.answer, AT_BUFSIZ);
+									memset(f.answer,0,sizeof(f.answer));
+									read_count = serialPort_serial_control->Read(f.answer, AT_BUFSIZ);
+									memset(f.answer,0,sizeof(f.answer));
+
+									/* IMEI */
+									sprintf(at_command, "AT+GSN\r\n");
+									res = serialPort_serial_control->Write(at_command, 8);
+									if (res != 8) {
+										ERRORA("writing AT+GSN failed: %d\n", GSMOPEN_P_LOG, res);
+									}else {
+										usleep(200000); //0.2 seconds
+										read_count = serialPort_serial_control->Read(f.answer, AT_BUFSIZ);
+										if (read_count < 32) {
+											ERRORA("reading AT+GSN failed: |%s|, read_count=%d\n", GSMOPEN_P_LOG, f.answer, read_count);
+										} else {
+											strncpy(f.imei, f.answer+9, 15);
+											sprintf(at_command, "AT\r\n");
+											res = serialPort_serial_control->Write(at_command, 4);
+											usleep(20000); //0.02 seconds
+											res = serialPort_serial_control->Write(at_command, 4);
+											usleep(20000); //0.02 seconds
+											sprintf(at_command, "ATE1\r\n");
+											res = serialPort_serial_control->Write(at_command, 6);
+											usleep(20000); //0.02 seconds
+											read_count = serialPort_serial_control->Read(f.answer, AT_BUFSIZ);
+											sprintf(at_command, "AT\r\n");
+											res = serialPort_serial_control->Write(at_command, 4);
+											usleep(20000); //0.02 seconds
+											read_count = serialPort_serial_control->Read(f.answer, AT_BUFSIZ);
+											memset(f.answer,0,sizeof(f.answer));
+											read_count = serialPort_serial_control->Read(f.answer, AT_BUFSIZ);
+											memset(f.answer,0,sizeof(f.answer));
+
+											/* IMSI */
+											sprintf(at_command, "AT+CIMI\r\n");
+											res = serialPort_serial_control->Write(at_command, 9);
+											if (res != 9) {
+												ERRORA("writing AT+CIMI failed: %d\n", GSMOPEN_P_LOG, res);
+											}else {
+												usleep(200000); //0.2 seconds
+												read_count = serialPort_serial_control->Read(f.answer, AT_BUFSIZ);
+												if (read_count < 33) {
+													ERRORA("reading AT+CIMI failed: |%s|, read_count=%d\n", GSMOPEN_P_LOG, f.answer, read_count);
+												} else {
+													strncpy(f.imsi, f.answer+10, 15);
+												}
+											}
+										}
+									}
+									res = serialPort_serial_control->Close();
+								} else {
+									ERRORA("port %s, NOT open\n", GSMOPEN_P_LOG, f.tty_data_device);
+								}
+							}
+						} while ((entry2 = readdir(dir2)));
+						closedir(dir2);
+
+						if (!(dir2 = opendir(f.tty_audio_dir))) {
+							ERRORA("ERRORA!\n", GSMOPEN_P_LOG);
+						}
+						if (!(entry2 = readdir(dir2))){
+							ERRORA("ERRORA!\n", GSMOPEN_P_LOG);
+						}
+						do {
+							if (strncmp(entry2->d_name, "ttyUSB", 6) == 0){
+								int i;
+								sprintf(f.tty_audio_device_file, "%s/%s", f.tty_audio_dir, entry2->d_name);
+								sprintf(f.tty_audio_device, "/dev/%s", entry2->d_name);
+
+								NOTICA("************************************************\n", GSMOPEN_P_LOG, f.imei);
+								NOTICA("f.imei=|%s|\n", GSMOPEN_P_LOG, f.imei);
+								NOTICA("f.imsi=|%s|\n", GSMOPEN_P_LOG, f.imsi);
+								NOTICA("f.tty_data_device = |%s|\n", GSMOPEN_P_LOG, f.tty_data_device);
+								NOTICA("f.tty_audio_device = |%s|\n", GSMOPEN_P_LOG, f.tty_audio_device);
+								NOTICA("************************************************\n", GSMOPEN_P_LOG, f.imei);
+
+								for (i = 0; i < GSMOPEN_MAX_INTERFACES; i++) {
+									switch_threadattr_t *gsmopen_api_thread_attr = NULL;
+									int res = 0;
+									int interface_id = i;
+
+									if (strlen(globals.GSMOPEN_INTERFACES[i].name) && (strlen(globals.GSMOPEN_INTERFACES[i].imsi) || strlen(globals.GSMOPEN_INTERFACES[i].imei)) ) {
+										//NOTICA("globals.GSMOPEN_INTERFACES[i].imei)=%s strlen(globals.GSMOPEN_INTERFACES[i].imei)=%d (strcmp(globals.GSMOPEN_INTERFACES[i].imei, f.imei) == 0)=%d \n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].imei, strlen(globals.GSMOPEN_INTERFACES[i].imei), (strcmp(globals.GSMOPEN_INTERFACES[i].imei, f.imei) == 0) );
+										if( ( strlen(globals.GSMOPEN_INTERFACES[i].imei) ? (strcmp(globals.GSMOPEN_INTERFACES[i].imei, f.imei) == 0) : 1)  ) {
+											if ( (strlen(globals.GSMOPEN_INTERFACES[i].imsi) ? (strcmp(globals.GSMOPEN_INTERFACES[i].imsi, f.imsi) == 0) : 1) ){
+												strcpy(globals.GSMOPEN_INTERFACES[i].controldevice_audio_name, f.tty_audio_device);
+												strcpy(globals.GSMOPEN_INTERFACES[i].controldevice_name, f.tty_data_device);
+												NOTICA("name = |%s|, controldevice_audio_name = |%s|, controldevice_name = |%s|\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[i].name, globals.GSMOPEN_INTERFACES[i].controldevice_audio_name, globals.GSMOPEN_INTERFACES[i].controldevice_name);
+												break;
+											}
+										}
+									}
+								}
+							}
+						} while ((entry2 = readdir(dir2)));
+						closedir(dir2);
+					}
+				}
+			}
+		}
+	} while ((entry = readdir(dir)));
+	closedir(dir);
+/*
+	if(f.conta < 0){
+		ERRORA("f.conta=%d, dirs=%d, mem=%d\n", GSMOPEN_P_LOG, conta, times, conta*PATH_MAX_GIOVA);
+	}else{
+		NOTICA("f.conta=%d, dirs=%d, mem=%d\n", GSMOPEN_P_LOG, conta, times, conta*PATH_MAX_GIOVA);
+	}
+	conta--;
+*/
+}
+#endif// WIN32
+
+
+
 
 /* For Emacs:
  * Local Variables:

@@ -607,12 +607,15 @@ static inline char *switch_sanitize_number(char *number)
 
 	switch_assert(number);
 
-	if (!(strchr(p, '/') || strchr(p, ':') || strchr(p, '@'))) {
+	if (!(strchr(p, '/') || strchr(p, ':') || strchr(p, '@') || strchr(p, '%'))) {
 		return number;
 	}
 
 	while ((q = strrchr(p, '@')))
 		*q = '\0';
+	
+	while ((q = strrchr(p, '%')))
+			*q = '\0';
 
 	for (i = 0; i < (int) strlen(warp); i++) {
 		while (p && (q = strchr(p, warp[i])))

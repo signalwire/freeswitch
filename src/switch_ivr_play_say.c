@@ -1705,7 +1705,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 		if (read_impl.samples_per_second) {
 			switch_channel_set_variable_printf(channel, "playback_seconds", "%d", fh->samples_in / fh->native_rate);
-			switch_channel_set_variable_printf(channel, "playback_ms", "%d", fh->samples_in / fh->native_rate);
+			switch_channel_set_variable_printf(channel, "playback_ms", "%d", fh->samples_in / (fh->native_rate / 1000));
 		}
 		switch_channel_set_variable_printf(channel, "playback_samples", "%d", fh->samples_in);
 

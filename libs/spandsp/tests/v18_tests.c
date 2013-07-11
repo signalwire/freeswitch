@@ -100,11 +100,11 @@ static void basic_tests(int mode)
     int j;
 
     printf("Testing %s\n", v18_mode_to_str(mode));
-    v18[0] = v18_init(NULL, TRUE, mode, put_text_msg, NULL);
+    v18[0] = v18_init(NULL, TRUE, mode, V18_AUTOMODING_GLOBAL, put_text_msg, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, mode, put_text_msg, NULL);
+    v18[1] = v18_init(NULL, FALSE, mode, V18_AUTOMODING_GLOBAL, put_text_msg, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -227,11 +227,11 @@ static int test_misc_01(void)
                         TUT should continue to probe until the test is terminated.
         Comments:       This feature should also be verified by observation during the automoding tests.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -326,11 +326,11 @@ static int test_misc_02(void)
         Comments:       The TUT should indicate that carrier has been lost at some time after the 1650Hz
                         signal is lost.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -425,11 +425,11 @@ static int test_misc_03(void)
         Comments:       The TUT should indicate that carrier has been lost at some time after the carrier
                         signal is removed and not disconnect.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -523,11 +523,11 @@ static int test_misc_04(void)
                         automatically hang up when busy tone is detected. PABX busy tones may differ in
                         frequency and cadence from national parameters.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -618,11 +618,11 @@ static int test_misc_05(void)
         Pass criteria:  The RINGING condition should be visually indicated by the TUT.
         Comments:       This test should be repeated across a range of valid timings and ring voltages.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -716,11 +716,11 @@ static int test_misc_06(void)
                         mode. There may be other cases, e.g. where the V.18 DCE is used in a gateway,
                         when automatic disconnection is required.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -812,11 +812,11 @@ static int test_misc_07(void)
                         However, this may possibly not be indicated by the DTE.
         Comments:       The possible modes are: V.21, V.23, Baudot 45, Baudot 50, EDT, Bell 103, DTMF.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -909,11 +909,11 @@ static int test_misc_08(void)
         Comment:        The response times and signal level thresholds of Circuit 135 are not specified in
                         ITU-T V.18 or V.24 and therefore the pattern indicated may vary.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -1003,11 +1003,11 @@ static int test_misc_09(void)
         Pass criteria:  TBD
         Comment:        TBD
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -1106,11 +1106,11 @@ static int test_org_01(void)
                         8) The whole sequence should be repeated until the call is cleared.
                         9) When V.18 to V.18, the XCI must not force V.23 or Minitel mode.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -1204,11 +1204,11 @@ static int test_org_02(void)
                         2) The TUT should reply with transmission of TXP as defined in 5.1.2.
                         3) Verify that TXP sequence has correct bit pattern.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -1299,11 +1299,11 @@ static int test_org_03(void)
         Pass criteria:  The TUT should stop sending TXP at the end of the current sequence when ANS
                         tone ceases.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -1398,11 +1398,11 @@ static int test_org_04(void)
                            with the V.18 operational requirements.
         Comments:       The TUT should indicate that V.18 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -1498,11 +1498,11 @@ static int test_org_05(void)
                         examination of TUT. If there is no visual indication, verify by use of ITU-T T.50 for
                         ITU-T V.21 as opposed to UTF-8 coded ISO 10646 character set for ITU-T V.18.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -1597,11 +1597,11 @@ static int test_org_06(void)
                            by the TUT to comply with Annex E.
         Comments:       The TUT should indicate that V.23 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -1696,11 +1696,11 @@ static int test_org_07(void)
                         literally. It may however, occur when connected to certain Swedish textphones if the
                         handset is lifted just after the start of an automatically answered incoming call.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -1791,11 +1791,11 @@ static int test_org_08(void)
                         2) Data should be transmitted and received at 300 bit/s to comply with Annex D.
         Comments:       The TUT should indicate that Bell 103 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -1886,11 +1886,11 @@ static int test_org_09(void)
                         2) Data should be transmitted and received at 300 bit/s to comply with Annex F.
         Comments:       The TUT should indicate that V.21 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -1982,11 +1982,11 @@ static int test_org_10(void)
                            by the TUT to comply with Annex E.
         Comments:       The TUT should indicate that V.23 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -2081,11 +2081,11 @@ static int test_org_11(void)
         Comments:       The TUT should indicate that V.23 mode has been selected at least 3 seconds after
                         the start of the 390Hz tone.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -2185,11 +2185,11 @@ static int test_org_12(void)
                         automode answer state. The TUT may then select either 45.45 or 50 bit/s for the
                         transmission.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -2283,11 +2283,11 @@ static int test_org_13(void)
                         TUT should comply with ITU-T Q.24 for the Danish Administration while
                         receiving for best possible performance.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -2383,11 +2383,11 @@ static int test_org_14(void)
                         the number lost should be minimal. The data bits and parity are specified in
                         Annex C.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -2478,11 +2478,11 @@ static int test_org_15(void)
                         the CI signal.
         Comments:       Echoes of the CI sequences may be detected at 300 bit/s.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -2573,11 +2573,11 @@ static int test_org_16(void)
                         2) Data should be transmitted and received at 300 bit/s complying with Annex F.
         Comments:       The TUT should indicate that V.21 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -2666,11 +2666,11 @@ static int test_org_17(void)
         Pass criteria:  TUT should not respond to the 980Hz tone and resume sending CI signals after a
                         maximum of 2.4 seconds from the end of the 980Hz tone.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -2761,11 +2761,11 @@ static int test_org_18(void)
         Comments:       This implies timer Tr has expired 2 seconds after the start of the 980Hz tone and
                         then 1650Hz has been detected for 0.5 seconds.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -2855,11 +2855,11 @@ static int test_org_19(void)
                         2) Data should be transmitted and received at 300 bit/s complying with Annex D.
         Comments:       The TUT should indicate that Bell 103 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -2956,11 +2956,11 @@ static int test_org_20(void)
                         presence and cadence of the tones for instance by a flashing light. The TUT may
                         disconnect on reception of tones indicating a failed call attempt.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -3053,11 +3053,11 @@ static int test_org_21(void)
         Comments:       Some high speed modems may fall back to a compatibility mode, e.g. V.21 or V.23
                         that should be correctly detected by the TUT.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -3149,11 +3149,11 @@ static int test_org_22(void)
         Comments:       Ideally the TUT should detect the presence of a fax machine and report it back to
                         the user.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -3245,11 +3245,11 @@ static int test_org_23(void)
         Comments:       Ideally the TUT should report the presence of speech back to the user, e.g. via
                         circuit 135.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -3343,11 +3343,11 @@ static int test_org_24(void)
                         2) The TUT should reply with transmission of CM as defined in 5.2.13.
                         3) Verify that CM sequence has correct bit pattern.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -3436,11 +3436,11 @@ static int test_org_25(void)
         Method:         The Test System waits for the TUT to start transmitting V.21 carrier (1).
         Pass criteria:  The TUT should connect by sending V.21 carrier (1).
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -3530,11 +3530,11 @@ static int test_ans_01(void)
                         answers the call. It will then monitor for any signal.
         Pass criteria:  The TUT should start probing 3 seconds after answering the call.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -3626,11 +3626,11 @@ static int test_ans_02(void)
         Comments:       The ANSam tone is a modulated 2100Hz tone. It may have phase reversals. The
                         XCI signal is tested in a separate test.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -3726,11 +3726,11 @@ static int test_ans_03(void)
                            V.18 mode connection is completed.
         Comments:       The TUT should indicate V.18 mode.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -3820,11 +3820,11 @@ static int test_ans_04(void)
         Pass criteria:  The TUT should start probing 3 seconds after ANSam disappears.
         Comments:       It is assumed that timer Ta is restarted on return to Monitor A.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -3915,11 +3915,11 @@ static int test_ans_05(void)
         Pass criteria:  TUT should respond with 1650Hz within 400+-100 ms of start of 980Hz.
         Comments:       The TUT should indicate that V.21 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -4010,11 +4010,11 @@ static int test_ans_06(void)
         Pass criteria:  TUT should respond with 390Hz after 1.7(+0.2-0.0) seconds of start of 1300Hz.
         Comments:       The TUT should indicate that V.23 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -4105,11 +4105,11 @@ static int test_ans_07(void)
         Pass criteria:  TUT should respond with 980Hz within 400+-100 ms of start of 1650Hz.
         Comments:       The TUT should indicate that V.21 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -4202,11 +4202,11 @@ static int test_ans_08(void)
         Comments:       The TUT should indicate a V.21 connection. The time for which each frequency is
                         transmitted is random and varies between 0.64 and 2.56 seconds.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -4298,11 +4298,11 @@ static int test_ans_09(void)
                            700 ms followed by 1 second of silence.
         Comments:       The probe sent by the TUT will depend on the country setting.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -4392,11 +4392,11 @@ static int test_ans_10(void)
         Pass criteria:  The TUT should respond with a 1650Hz tone in 1.5+-0.1 seconds.
         Comments:       The TUT should indicate that V.21 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -4490,11 +4490,11 @@ static int test_ans_11(void)
                         be lost during the detection process. However, the number lost should be minimal.
                         The data bits and parity are specified in Annex C.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -4589,11 +4589,11 @@ static int test_ans_12(void)
                         (1650Hz) probe. However, it is catered for in V.18. It is more likely that this is
                         where CI or TXP characters would be detected (see test ANS-02).
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -4687,11 +4687,11 @@ static int test_ans_13(void)
                         when timer Tr will start. It is assumed that timer Ta is restarted on re-entering the
                         Monitor A state.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -4782,11 +4782,11 @@ static int test_ans_14(void)
         Comments:       It is assumed that timer Ta (3 seconds) is restarted on re-entering the Monitor A
                         state.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -4887,11 +4887,11 @@ static int test_ans_15(void)
                         automode answer state. The TUT may then select either 45.45 or 50 bit/s for the
                         transmission.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -4983,11 +4983,11 @@ static int test_ans_16(void)
         Comments:       The TUT should indicate that it has selected DTMF mode. The DTMF capabilities
                         of the TUT should comply with ITU-T Q.24 for the Danish Administration.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -5076,11 +5076,11 @@ static int test_ans_17(void)
         Pass criteria:  TUT should respond with 2225Hz tone after 0.7+-0.1 s.
         Comments:       The TUT should indicate that Bell 103 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -5170,11 +5170,11 @@ static int test_ans_18(void)
         Comments:       The TUT should indicate that Bell 103 mode has been selected. Bell 103 modems
                         use 2225Hz as both answer tone and higher frequency of the upper channel.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -5263,11 +5263,11 @@ static int test_ans_19(void)
         Pass criteria:  The TUT should respond with 980Hz after 0.4+-0.2 seconds.
         Comments:       The TUT should indicate that V.21 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -5359,11 +5359,11 @@ static int test_ans_20(void)
                            700 ms followed by 1 second of silence.
         Comments:       The probe sent by the TUT will depend on the country setting.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -5452,11 +5452,11 @@ static int test_ans_21(void)
                         Pass criteria: The TUT should respond with 390Hz after 1.7+-0.1 seconds.
         Comments:       The TUT should indicate that V.23 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -5545,11 +5545,11 @@ static int test_ans_22(void)
                         silent for 500 ms then transmit the TXP signal in V.21 (1) mode.
         Pass criteria:  The TUT should respond with TXP using V.21 (2) and select V.18 mode.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -5641,11 +5641,11 @@ static int test_ans_23(void)
         Pass criteria:  The TUT should use the orders described in Appendix I.
         Comments:       The order of the probes is not mandatory.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -5737,11 +5737,11 @@ static int test_ans_24(void)
                         modes followed by a pause of Tm (default 3) seconds.
         Comments:       The carrierless modes are those described in Annexes A, B and C.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -5833,11 +5833,11 @@ static int test_ans_25(void)
         Pass criteria:  The TUT should transmit silence on detecting the 1270Hz tone and then continue
                         probing starting with the V.23 probe 20 seconds after the end of the 1270Hz signal.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -5929,11 +5929,11 @@ static int test_ans_26(void)
                         75+-5 ms and then the 1650Hz, 1300Hz and 2225Hz probes for time Tc.
         Comments:       The carrier modes are those described in Annexes D, E, and F.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -6029,11 +6029,11 @@ static int test_ans_27(void)
                         390Hz. When the 1300Hz probe is not being transmitted, a 390Hz tone may be
                         interpreted as a 400Hz network tone.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -6127,11 +6127,11 @@ static int test_ans_28(void)
         Comments:       It is most likely that the TUT will return to probing time Ta (3 seconds) after the
                         1270Hz tone ceases. This condition needs further clarification.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -6224,11 +6224,11 @@ static int test_ans_29(void)
         Comments:       The TUT may not respond to any signals while a carrierless mode probe is being
                         sent since these modes are half duplex.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -6323,11 +6323,11 @@ static int test_ans_30(void)
                         tones may be ignored. Some devices may only provide a visual indication of the
                         presence and cadence of the tones for instance by a flashing light.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -6419,11 +6419,11 @@ static int test_ans_31(void)
         Comments:       This is an optional test as detection of the fax calling tone is not required by
                         ITU-T V.18.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -6515,11 +6515,11 @@ static int test_ans_32(void)
         Comments:       Ideally the TUT should report the presence of speech back to the user. This is an
                         optional test.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -6616,11 +6616,11 @@ static int test_ans_33(void)
                            V.18 mode connection is completed.
         Comments:       The TUT should indicate V.18 mode.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -6717,11 +6717,11 @@ static int test_mon_21(void)
                         for 1 minute.
         Pass criteria:  The TUT should not start probing.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -6815,11 +6815,11 @@ static int test_mon_22(void)
         Comments:       In automode answer, the 1300Hz calling causes the DCE to start probing. In
                         monitor mode it should only report detection to the DTE.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -6913,11 +6913,11 @@ static int test_mon_23(void)
         Comments:       In automode answer, the 980Hz calling causes the DCE to start probing. In monitor
                         mode it should only report detection to the DTE.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -7022,11 +7022,11 @@ static int test_x_01(void)
                         3) The tester will confirm that 1 start bit and at least 1.5 stop bits are used.
         Comments:       The carrier should be maintained during the 300 ms after a character.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_5BIT_45, x_01_put_text_msg, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_5BIT_45, V18_AUTOMODING_GLOBAL, x_01_put_text_msg, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_5BIT_45, x_01_put_text_msg, (void *) (intptr_t) 1);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_5BIT_45, V18_AUTOMODING_GLOBAL, x_01_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -7121,11 +7121,11 @@ static int test_x_02(void)
                         transmit the string "abcdef" at each rate.
         Pass criteria:  The tester will measure the bit timings and confirm the rates.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_5BIT_45, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_5BIT_45, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_5BIT_45, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_5BIT_45, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -7218,11 +7218,11 @@ static int test_x_03(void)
         Comments:       The probe message must be long enough for the tester to establish the bit rate. "GA"
                         may not be sufficient.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_5BIT_45, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_5BIT_45, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_5BIT_45, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_5BIT_45, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -7336,11 +7336,11 @@ static int test_x_04(void)
                         assumed that the character conversion is the same for Baudot at 50 bit/s and any
                         other supported speed.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_5BIT_45, x_04_put_echo_text_msg, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_5BIT_45, V18_AUTOMODING_GLOBAL, x_04_put_echo_text_msg, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_5BIT_45, x_04_put_text_msg, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_5BIT_45, V18_AUTOMODING_GLOBAL, x_04_put_text_msg, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -7450,11 +7450,11 @@ static int test_x_05(void)
                         display will show when its receiver is re-enabled.
         Pass criteria:  The receiver should be re-enabled after 300 ms.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, x_05_put_text_msg, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, x_05_put_text_msg, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, x_05_put_text_msg, (void *) (intptr_t) 1);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, x_05_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -7565,11 +7565,11 @@ static int test_x_06(void)
                         receiving character from the TUT. It is assumed that the echo delay in the test
                         system is negligible.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, x_06_put_text_msg, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, x_06_put_text_msg, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -7681,11 +7681,11 @@ static int test_x_07(void)
                         3) The tester will confirm that 1 start bit and at least 1.5 stop bits are used.
         Comments:       The carrier should be maintained during the 300 ms after a character.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -7776,11 +7776,11 @@ static int test_x_08(void)
                         2) The tester should confirm that 1 start bit, 7 data bits, 1 even parity bit and 2 stop
                            bits are used.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -7874,11 +7874,11 @@ static int test_x_09(void)
                            that there are no duplicate characters on the TUT display.
                         3) The received string should be correctly displayed despite the incorrect parity.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -7975,11 +7975,11 @@ static int test_x_10(void)
         Comments:       This test is only applicable to Minitel Dialogue terminals. Prestel and Minitel
                         Normal terminals cannot operate in this mode.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -8074,11 +8074,11 @@ static int test_x_11(void)
                         4) The last five characters on the TUT display should be "12345" (no "6")
                            correctly displayed despite the incorrect parity.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -8170,11 +8170,11 @@ static int test_x_12(void)
         Pass criteria:  The tester should confirm UTF8 encoded UNICODE characters are used with the
                         controls specified in ITU-T T.140.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, NULL, NULL);
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "B");
@@ -8267,7 +8267,7 @@ static int decode_test_data_file(int mode, const char *filename)
         fprintf(stderr, "    Cannot open audio file '%s'\n", decode_test_file);
         exit(2);
     }
-    v18_state = v18_init(NULL, FALSE, mode, put_v18_msg, NULL);
+    v18_state = v18_init(NULL, FALSE, mode, V18_AUTOMODING_GLOBAL, put_v18_msg, NULL);
     logging = v18_get_logging_state(v18_state);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "");

@@ -179,7 +179,7 @@ Build-Depends:
 # bootstrapping
  automake (>= 1.9), autoconf, libtool,
 # core build
- dpkg-dev (>= 1.15.8.12), gcc (>= 4:4.4.5) , g++ (>= 4:4.4.5),
+ dpkg-dev (>= 1.15.8.12), gcc (>= 4:4.4.5), g++ (>= 4:4.4.5),
  libc6-dev (>= 2.11.3), make (>= 3.81),
  wget, pkg-config,
 # configure options

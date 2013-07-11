@@ -2788,7 +2788,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					if ((zstr(map->rm_encoding) || (smh->mparams->ndlb & SM_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
 						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 					} else {
-						match = strcasecmp(rm_encoding, imp->iananame) ? 0 : 1;
+						match = (!strcasecmp(rm_encoding, imp->iananame) && (map->rm_rate == codec_rate)) ? 1 : 0;
 					}
 
 					if (match && bit_rate && map_bit_rate && map_bit_rate != bit_rate && strcasecmp(map->rm_encoding, "ilbc") && 

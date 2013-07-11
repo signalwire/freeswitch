@@ -1132,6 +1132,9 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			switch_time_t diff;
 			rh->wready = 1;
 			
+			nframe = switch_core_media_bug_get_native_write_frame(bug);
+			len = nframe->datalen;
+
 			if (!rh->rready) {
 				unsigned char fill_data[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
 				switch_size_t fill_len = len;
@@ -1140,8 +1143,6 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			}
 
 
-			nframe = switch_core_media_bug_get_native_write_frame(bug);
-			len = nframe->datalen;
 			
 
 			if (rh->last_write_time && rh->last_write_time < now) {
@@ -1210,6 +1211,12 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", rh->file);
 				switch_event_fire(&event);
 			}
+
+			if (read_impl.actual_samples_per_second) {
+				switch_channel_set_variable_printf(channel, "record_seconds", "%d", rh->fh->samples_out / read_impl.actual_samples_per_second);
+				switch_channel_set_variable_printf(channel, "record_ms", "%d", rh->fh->samples_out / (read_impl.actual_samples_per_second / 1000));
+			}
+			switch_channel_set_variable_printf(channel, "record_samples", "%d", rh->fh->samples_out);
 
 			switch_channel_execute_on(channel, SWITCH_RECORD_POST_PROCESS_EXEC_APP_VARIABLE);
 

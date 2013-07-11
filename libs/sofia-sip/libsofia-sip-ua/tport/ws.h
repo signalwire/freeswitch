@@ -3,7 +3,6 @@
 
 //#define WSS_STANDALONE 1
 
-#define MAXLEN 0x10000
 #define WEBSOCKET_GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 #define B64BUFFLEN 1024
 
@@ -59,8 +58,8 @@ typedef enum {
 
 typedef struct wsh_s {
 	ws_socket_t sock;
-	char *buffer;
-	char *wbuffer;
+	char buffer[65536];
+	char wbuffer[65536];
 	size_t buflen;
 	issize_t datalen;
 	issize_t wdatalen;
@@ -71,8 +70,6 @@ typedef struct wsh_s {
 	int handshake;
 	uint8_t down;
 	int secure;
-	uint8_t free_buffer;
-	uint8_t free_wbuffer;
 	uint8_t close_sock;
 } wsh_t;
 
@@ -84,7 +81,7 @@ issize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes);
 issize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes);
 issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data);
 issize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes);
-int ws_init(wsh_t *wsh, ws_socket_t sock, char *buffer, char *wbuffer, size_t buflen, SSL_CTX *ssl_ctx, int close_sock);
+int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock);
 issize_t ws_close(wsh_t *wsh, int16_t reason);
 void ws_destroy(wsh_t *wsh);
 void init_ssl(void);

@@ -2557,6 +2557,11 @@ SWITCH_DECLARE(int) switch_core_cert_expand_fingerprint(dtls_fingerprint_t *fp, 
 SWITCH_DECLARE(int) switch_core_cert_verify(dtls_fingerprint_t *fp);
 SWITCH_DECLARE(switch_status_t) switch_core_session_refresh_video(switch_core_session_t *session);
 
+SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait);
+SWITCH_DECLARE(int) switch_stream_system_fork(const char *cmd, switch_stream_handle_t *stream);
+SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t *stream);
+
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:
