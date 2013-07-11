@@ -2567,6 +2567,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flag
 		*flags = application_interface->flags;
 	}
 
+	if (!switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA) && (switch_channel_test_flag(session->channel, CF_VIDEO))) {
+		switch_core_session_refresh_video(session);
+	}
+
 	if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) && !switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA)) {
 		switch_ivr_media(session->uuid_str, SMF_NONE);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Application %s Requires media on channel %s!\n",

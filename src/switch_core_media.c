@@ -126,6 +126,7 @@ typedef struct switch_rtp_engine_s {
 	uint32_t max_missed_packets;
 	uint32_t max_missed_hold_packets;
 	uint32_t ssrc;
+	uint32_t remote_ssrc;
 	switch_port_t remote_rtcp_port;
 	switch_rtp_bug_flag_t rtp_bugs;
 
@@ -1985,6 +1986,8 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 			generate_local_fingerprint(smh, type);
 			switch_channel_set_flag(smh->session->channel, CF_DTLS);
 
+		} else if (!engine->remote_ssrc && !strcasecmp(attr->a_name, "ssrc") && attr->a_value) {
+			engine->remote_ssrc = (uint32_t) atol(attr->a_value);
 #ifdef RTCP_MUX
 		} else if (!strcasecmp(attr->a_name, "rtcp-mux")) {
 			engine->rtcp_mux = SWITCH_TRUE;
@@ -2294,7 +2297,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	codec_array = smh->codecs;
 	total_codecs = smh->mparams->num_codecs;
 
-
 	if (!(parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
 		return 0;
 	}
@@ -2459,9 +2461,12 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			got_webrtc++;
 			switch_core_session_set_ice(session);
 		}
-
+		
 		if (m->m_proto_name && !strcasecmp(m->m_proto_name, "UDP/TLS/RTP/SAVPF")) {
 			switch_channel_set_flag(session->channel, CF_WEBRTC_MOZ);
+			printf("PRICK FACE 1\n");
+		}  else {
+			printf("PRICK FACE 2 [%s]\n", m->m_proto_name);
 		}
 
 		if (m->m_proto == sdp_proto_srtp || m->m_proto == sdp_proto_extended_srtp) {
@@ -3790,7 +3795,8 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Video thread started\n", switch_channel_get_name(session->channel));
 	switch_core_session_refresh_video(session);
-	
+	switch_channel_set_flag(channel, CF_VIDEO_ECHO);	
+
 	while (switch_channel_up_nosig(channel)) {
 
 		if (switch_channel_test_flag(channel, CF_VIDEO_PASSIVE)) {
@@ -3812,7 +3818,6 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 		
 		status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		
-		
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			switch_cond_next();
 			continue;
@@ -3828,7 +3833,9 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			continue;
 		}
 
-		switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
+		if (switch_channel_test_flag(channel, CF_VIDEO_ECHO)) {
+			switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
+		}
 
 	}
 
@@ -4092,6 +4099,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			switch_rtp_set_ssrc(a_engine->rtp_session, a_engine->ssrc);
 		}
 
+		if (a_engine->remote_ssrc) {
+			switch_rtp_set_remote_ssrc(a_engine->rtp_session, a_engine->remote_ssrc);
+		}
 
 		switch_channel_set_flag(session->channel, CF_FS_RTP);
 
@@ -4552,6 +4562,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 					switch_rtp_set_ssrc(v_engine->rtp_session, v_engine->ssrc);
 				}
 				
+				if (v_engine->remote_ssrc) {
+					switch_rtp_set_remote_ssrc(v_engine->rtp_session, v_engine->remote_ssrc);
+				}
+
 				if (v_engine->ice_in.cands[v_engine->ice_in.chosen[0]][0].ready) {
 					
 					gen_ice(session, SWITCH_MEDIA_TYPE_VIDEO, NULL, 0);
@@ -5125,7 +5139,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	switch_rtp_engine_t *a_engine, *v_engine;
 	switch_media_handle_t *smh;
 	ice_t *ice_out;
-
+	int vp8 = 0;
 
 	switch_assert(session);
 
@@ -5629,6 +5643,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			
 			if (v_engine->codec_params.rm_encoding) {
 				const char *of;
+				
+				if (!strcasecmp(v_engine->codec_params.rm_encoding, "VP8")) {
+					vp8 = v_engine->codec_params.pt;
+				}
 
 				rate = v_engine->codec_params.rm_rate;
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%ld\n",
@@ -5694,6 +5712,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					
 					channels = get_channels(imp);
 
+					if (!strcasecmp(imp->iananame, "VP8")) {
+						vp8 = ianacode;
+					}
+
 					if (channels > 1) {
 						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d/%d\n", ianacode, imp->iananame,
 										imp->samples_per_second, channels);
@@ -5733,7 +5755,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			}
 
 
-			if (smh->mparams->rtcp_audio_interval_msec) {
+			if (smh->mparams->rtcp_video_interval_msec) {
 				if (v_engine->rtcp_mux > 0) {
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp-mux\n");
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp:%d IN %s %s\n", v_port, family, ip);
@@ -5751,7 +5773,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				uint32_t c2 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 2);
 				uint32_t c3 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 1);
 				uint32_t c4 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 2);
-
+				const char *vbw;
+				int bw = 256;
+				
 				tmp1[10] = '\0';
 				tmp2[10] = '\0';
 				switch_stun_random_string(tmp1, 10, "0123456789");
@@ -5760,6 +5784,21 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				ice_out = &v_engine->ice_out;
 
 
+				if ((vbw = switch_channel_get_variable(smh->session->channel, "rtp_video_max_bandwidth"))) {
+					int v = atoi(vbw);
+					bw = v;
+				}
+				
+				if (bw > 0) {
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "b=AS:%d\n", bw);
+				}
+
+
+				if (vp8) {
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
+									"a=rtcp-fb:%d ccm fir\n", vp8);
+				}
+				
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u cname:%s\n", v_engine->ssrc, smh->cname);
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u msid:%s v0\n", v_engine->ssrc, smh->msid);
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u mslabel:%s\n", v_engine->ssrc, smh->msid);

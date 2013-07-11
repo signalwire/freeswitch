@@ -139,6 +139,7 @@ SWITCH_DECLARE(void) switch_rtp_shutdown(void);
 SWITCH_DECLARE(switch_port_t) switch_rtp_set_start_port(switch_port_t port);
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_ssrc(switch_rtp_t *rtp_session, uint32_t ssrc);
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_ssrc(switch_rtp_t *rtp_session, uint32_t ssrc);
 
 /*!
   \brief Set/Get RTP end port
