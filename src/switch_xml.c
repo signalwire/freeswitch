@@ -1328,24 +1328,20 @@ static FILE *preprocess_exec(const char *cwd, const char *command, FILE *write_f
 
 }
 
-static FILE *preprocess_glob(const char *cwd, const char *pattern, FILE *write_fd, int rlevel, switch_bool_t ignore_nomatch)
+static FILE *preprocess_glob(const char *cwd, const char *pattern, FILE *write_fd, int rlevel)
 {
 	char *full_path = NULL;
 	char *dir_path = NULL, *e = NULL;
 	glob_t glob_data;
 	size_t n;
-	int globres;
 
 	if (!switch_is_file_path(pattern)) {
 		full_path = switch_mprintf("%s%s%s", cwd, SWITCH_PATH_SEPARATOR, pattern);
 		pattern = full_path;
 	}
 
-	globres = glob(pattern, ignore_nomatch ? GLOB_NOMATCH : GLOB_NOCHECK, NULL, &glob_data);
-	if ( globres != 0) {
-		if ( !ignore_nomatch || globres != GLOB_NOMATCH ) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error including %s\n", pattern);
-		}
+	if (glob(pattern, GLOB_NOCHECK, NULL, &glob_data) != 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error including %s\n", pattern);
 		goto end;
 	}
 
@@ -1500,9 +1496,7 @@ static int preprocess(const char *cwd, const char *file, FILE *write_fd, int rle
 			} else if (!strcasecmp(tcmd, "exec-set")) {
 				preprocess_exec_set(targ);
 			} else if (!strcasecmp(tcmd, "include")) {
-				preprocess_glob(cwd, targ, write_fd, rlevel + 1, SWITCH_FALSE);
-			} else if (!strcasecmp(tcmd, "include_silent")) {
-				preprocess_glob(cwd, targ, write_fd, rlevel + 1, SWITCH_TRUE);
+				preprocess_glob(cwd, targ, write_fd, rlevel + 1);
 			} else if (!strcasecmp(tcmd, "exec")) {
 				preprocess_exec(cwd, targ, write_fd, rlevel + 1);
 			}
@@ -1562,9 +1556,7 @@ static int preprocess(const char *cwd, const char *file, FILE *write_fd, int rle
 				} else if (!strcasecmp(cmd, "exec-set")) {
 					preprocess_exec_set(arg);
 				} else if (!strcasecmp(cmd, "include")) {
-					preprocess_glob(cwd, arg, write_fd, rlevel + 1, SWITCH_FALSE);
-				} else if (!strcasecmp(cmd, "include_silent")) {
-					preprocess_glob(cwd, arg, write_fd, rlevel + 1, SWITCH_TRUE);
+					preprocess_glob(cwd, arg, write_fd, rlevel + 1);
 				} else if (!strcasecmp(cmd, "exec")) {
 					preprocess_exec(cwd, arg, write_fd, rlevel + 1);
 				}
