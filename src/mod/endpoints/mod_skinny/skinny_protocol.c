@@ -37,7 +37,7 @@
 /*****************************************************************************/
 /* SKINNY FUNCTIONS */
 /*****************************************************************************/
-char* skinny_codec2string(enum skinny_codecs skinnycodec)
+char* skinny_codec2string(skinny_codecs skinnycodec)
 {
 	switch (skinnycodec) {
 		case SKINNY_CODEC_ALAW_64K:
