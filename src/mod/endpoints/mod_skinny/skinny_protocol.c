@@ -623,6 +623,26 @@ switch_status_t perform_send_set_speaker_mode(listener_t *listener,
 	return skinny_send_reply_quiet(listener, message);
 }
 
+switch_status_t perform_send_srvreq_response(listener_t *listener, 
+		const char *file, const char *func, int line,
+		char *ip, uint32_t port)
+{
+	skinny_message_t *message;
+
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.serv_res_mess));
+	message->type = SERVER_RESPONSE_MESSAGE;
+	message->length = 4 + sizeof(message->data.serv_res_mess);
+
+	message->data.serv_res_mess.serverListenPort[0] = port;
+	switch_inet_pton(AF_INET,ip, &message->data.serv_res_mess.serverIpAddr[0]);
+	switch_copy_string(message->data.serv_res_mess.server[0].serverName,ip,sizeof(message->data.serv_res_mess.server[0].serverName));
+
+	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
+		"Sending Server Request Response with IP (%s) and Port (%d)\n", ip, port);
+
+	return skinny_send_reply(listener, message);
+}
+
 switch_status_t perform_send_start_media_transmission(listener_t *listener,
 		const char *file, const char *func, int line,
 		uint32_t conference_id,

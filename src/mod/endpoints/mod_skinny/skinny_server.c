@@ -2184,6 +2184,79 @@ switch_status_t skinny_handle_accessory_status_message(listener_t *listener, ski
 	return SWITCH_STATUS_SUCCESS;
 }
 
+switch_status_t skinny_handle_updatecapabilities(listener_t *listener, skinny_message_t *request)
+{
+	char *sql;
+	skinny_profile_t *profile;
+
+	uint32_t i = 0;
+	uint32_t n = 0;
+	char *codec_order[SWITCH_MAX_CODECS];
+	char *codec_string;
+
+	size_t string_len, string_pos, pos;
+
+	switch_assert(listener->profile);
+	switch_assert(listener->device_name);
+
+	profile = listener->profile;
+
+	skinny_check_data_length(request, sizeof(request->data.upd_cap.lel_audioCapCount));
+
+	n = request->data.upd_cap.lel_audioCapCount;
+	if (n > SWITCH_MAX_CODECS) {
+		n = SWITCH_MAX_CODECS;
+	}
+	string_len = -1;
+
+	skinny_check_data_length(request, sizeof(request->data.upd_cap.lel_audioCapCount) + n * sizeof(request->data.upd_cap.audioCaps[0]));
+
+	for (i = 0; i < n; i++) {
+		char *codec = skinny_codec2string(request->data.upd_cap.audioCaps[i].lel_payloadCapability);
+		codec_order[i] = codec;
+		string_len += strlen(codec)+1;
+	}
+	i = 0;
+	pos = 0;
+	codec_string = switch_core_alloc(listener->pool, string_len+1);
+	for (string_pos = 0; string_pos < string_len; string_pos++) {
+		char *codec = codec_order[i];
+		switch_assert(i < n);
+		if(pos == strlen(codec)) {
+			codec_string[string_pos] = ',';
+			i++;
+			pos = 0;
+		} else {
+			codec_string[string_pos] = codec[pos++];
+		}
+	}
+	codec_string[string_len] = '\0';
+	if ((sql = switch_mprintf(
+					"UPDATE skinny_devices SET codec_string='%s' WHERE name='%s'",
+					codec_string,
+					listener->device_name
+				 ))) {
+		skinny_execute_sql(profile, sql, profile->sql_mutex);
+		switch_safe_free(sql);
+	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+			"Codecs %s supported.\n", codec_string);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+switch_status_t skinny_handle_server_req_message(listener_t *listener, skinny_message_t *request)
+{
+	skinny_profile_t *profile;
+
+	profile = listener->profile;
+
+	skinny_log_l(listener, SWITCH_LOG_INFO, "Received Server Request Message (length=%d).\n", request->length);
+
+	send_srvreq_response(listener, profile->ip, profile->port);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 switch_status_t skinny_handle_xml_alarm(listener_t *listener, skinny_message_t *request)
 {
 	switch_event_t *event = NULL;
@@ -2209,7 +2282,7 @@ switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *re
 		skinny_log_l(listener, SWITCH_LOG_DEBUG, "Received %s (type=%x,length=%d).\n",
 			skinny_message_type2str(request->type), request->type, request->length);
 	}
-	if(zstr(listener->device_name) && request->type != REGISTER_MESSAGE && request->type != ALARM_MESSAGE && request->type != XML_ALARM_MESSAGE) {
+	if(zstr(listener->device_name) && request->type != REGISTER_MESSAGE && request->type != ALARM_MESSAGE && request->type != XML_ALARM_MESSAGE && request->type != KEEP_ALIVE_MESSAGE) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 				"Device should send a register message first. Received %s (type=%x,length=%d).\n", skinny_message_type2str(request->type), request->type, request->length);
 		return SWITCH_STATUS_FALSE;
@@ -2281,6 +2354,10 @@ switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *re
 			return skinny_handle_accessory_status_message(listener, request);
 		case XML_ALARM_MESSAGE:
 			return skinny_handle_xml_alarm(listener, request);
+		case DEVICE_UPDATECAPABILITIES:
+			return skinny_handle_updatecapabilities(listener, request);
+		case SERVER_REQ_MESSAGE:
+			return skinny_handle_server_req_message(listener, request);         
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 					"Unhandled %s (type=%x,length=%d).\n", skinny_message_type2str(request->type), request->type, request->length);
