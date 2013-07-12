@@ -155,8 +155,8 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 				memcpy(request, mbuf, bytes);
 #ifdef SKINNY_MEGA_DEBUG
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-						"Got request: length=%d,reserved=%x,type=%x\n",
-						request->length,request->reserved,request->type);
+						"Got request: length=%d,version=%x,type=%x\n",
+						request->length,request->version,request->type);
 #endif
 				if(request->length < SKINNY_MESSAGE_FIELD_SIZE) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,

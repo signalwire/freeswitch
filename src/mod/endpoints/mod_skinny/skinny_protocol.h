@@ -702,7 +702,7 @@ union skinny_data {
 #endif
 
 /*
- * header is length+reserved
+ * header is length+version
  * body is type+data
  * length is length of body
  */
