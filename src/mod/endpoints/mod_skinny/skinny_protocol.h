@@ -145,6 +145,8 @@ struct PACKED capabilities_res_message {
 	struct station_capabilities caps[SWITCH_MAX_CODECS];
 };
 
+#define SERVER_REQ_MESSAGE 0x0012
+
 /* AlarmMessage */
 #define ALARM_MESSAGE 0x0020
 struct PACKED alarm_message {
@@ -206,6 +208,8 @@ struct PACKED data_message {
 /* DeviceToUserDataResponseMessage */
 #define DEVICE_TO_USER_DATA_RESPONSE_MESSAGE 0x002F
 /* See struct PACKED data_message */
+
+#define DEVICE_UPDATECAPABILITIES 0x0030
 
 /* ServiceUrlStatReqMessage */
 #define SERVICE_URL_STAT_REQ_MESSAGE 0x0033
@@ -441,6 +445,8 @@ struct PACKED version_message {
 struct PACKED register_reject_message {
 	char error[33];
 };
+
+#define SERVER_RESPONSE_MESSAGE 0x009E
 
 /* ResetMessage */
 #define RESET_MESSAGE 0x009F
@@ -723,6 +729,8 @@ typedef struct skinny_message skinny_message_t;
 /* SKINNY TYPES */
 /*****************************************************************************/
 enum skinny_codecs {
+	SKINNY_CODEC_NONE = 0,
+	SKINNY_CODEC_NONSTANDARD = 1,
 	SKINNY_CODEC_ALAW_64K = 2,
 	SKINNY_CODEC_ALAW_56K = 3,
 	SKINNY_CODEC_ULAW_64K = 4,
@@ -744,6 +752,8 @@ enum skinny_codecs {
 	SKINNY_CODEC_WIDEBAND_256K = 25,
 	SKINNY_CODEC_DATA_64K = 32,
 	SKINNY_CODEC_DATA_56K = 33,
+	SKINNY_CODEC_G722_1_32K = 40,
+	SKINNY_CODEC_G722_1_24K = 41,
 	SKINNY_CODEC_GSM = 80,
 	SKINNY_CODEC_ACTIVEVOICE = 81,
 	SKINNY_CODEC_G726_32K = 82,
@@ -754,6 +764,7 @@ enum skinny_codecs {
 	SKINNY_CODEC_H261 = 100,
 	SKINNY_CODEC_H263 = 101,
 	SKINNY_CODEC_VIDEO = 102,
+	SKINNY_CODEC_H264 = 103,
 	SKINNY_CODEC_T120 = 105,
 	SKINNY_CODEC_H224 = 106,
 	SKINNY_CODEC_RFC2833_DYNPAYLOAD = 257
