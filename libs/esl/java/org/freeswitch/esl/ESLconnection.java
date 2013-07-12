@@ -33,16 +33,24 @@ public class ESLconnection {
     swigCPtr = 0;
   }
 
-  public ESLconnection(String host, String port, String user, String password) {
+  public ESLconnection(String host, int port, String user, String password) {
     this(eslJNI.new_ESLconnection__SWIG_0(host, port, user, password), true);
   }
 
-  public ESLconnection(String host, String port, String password) {
+  public ESLconnection(String host, int port, String password) {
     this(eslJNI.new_ESLconnection__SWIG_1(host, port, password), true);
   }
 
+  public ESLconnection(String host, String port, String user, String password) {
+    this(eslJNI.new_ESLconnection__SWIG_2(host, port, user, password), true);
+  }
+
+  public ESLconnection(String host, String port, String password) {
+    this(eslJNI.new_ESLconnection__SWIG_3(host, port, password), true);
+  }
+
   public ESLconnection(int socket) {
-    this(eslJNI.new_ESLconnection__SWIG_2(socket), true);
+    this(eslJNI.new_ESLconnection__SWIG_4(socket), true);
   }
 
   public int socketDescriptor() {

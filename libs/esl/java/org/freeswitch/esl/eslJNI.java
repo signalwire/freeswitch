@@ -31,9 +31,11 @@ class eslJNI {
   public final static native boolean ESLevent_delHeader(long jarg1, ESLevent jarg1_, String jarg2);
   public final static native String ESLevent_firstHeader(long jarg1, ESLevent jarg1_);
   public final static native String ESLevent_nextHeader(long jarg1, ESLevent jarg1_);
-  public final static native long new_ESLconnection__SWIG_0(String jarg1, String jarg2, String jarg3, String jarg4);
-  public final static native long new_ESLconnection__SWIG_1(String jarg1, String jarg2, String jarg3);
-  public final static native long new_ESLconnection__SWIG_2(int jarg1);
+  public final static native long new_ESLconnection__SWIG_0(String jarg1, int jarg2, String jarg3, String jarg4);
+  public final static native long new_ESLconnection__SWIG_1(String jarg1, int jarg2, String jarg3);
+  public final static native long new_ESLconnection__SWIG_2(String jarg1, String jarg2, String jarg3, String jarg4);
+  public final static native long new_ESLconnection__SWIG_3(String jarg1, String jarg2, String jarg3);
+  public final static native long new_ESLconnection__SWIG_4(int jarg1);
   public final static native void delete_ESLconnection(long jarg1);
   public final static native int ESLconnection_socketDescriptor(long jarg1, ESLconnection jarg1_);
   public final static native int ESLconnection_connected(long jarg1, ESLconnection jarg1_);
