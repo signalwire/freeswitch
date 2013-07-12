@@ -256,7 +256,7 @@ struct PACKED data_message {
 #define DEVICE_TO_USER_DATA_RESPONSE_MESSAGE 0x002F
 /* See struct PACKED data_message */
 
-#define DEVICE_UPDATECAPABILITIES 0x0030
+#define UPDATE_CAPABILITIES_MESSAGE 0x0030
 
 #define MAX_CUSTOM_PICTURES						6
 #define MAX_LAYOUT_WITH_SAME_SERVICE			5
@@ -270,12 +270,12 @@ struct PACKED data_message {
  * \brief Picture Format Structure
  */
 typedef struct {
-	uint32_t customPictureFormatWidth;                                      /*!< Picture Width */
-	uint32_t customPictureFormatHeight;                                     /*!< Picture Height */
-	uint32_t customPictureFormatpixelAspectRatio;                           /*!< Picture Pixel Aspect Ratio */
-	uint32_t customPictureFormatpixelclockConversionCode;                   /*!< Picture Pixel Conversion Code  */
-	uint32_t customPictureFormatpixelclockDivisor;                          /*!< Picture Pixel Divisor */
-} customPictureFormat_t;
+	uint32_t custom_picture_format_width;                                      /*!< Picture Width */
+	uint32_t custom_picture_format_height;                                     /*!< Picture Height */
+	uint32_t custom_picture_format_pixelAspectRatio;                           /*!< Picture Pixel Aspect Ratio */
+	uint32_t custom_picture_format_pixelclockConversionCode;                   /*!< Picture Pixel Conversion Code  */
+	uint32_t custom_picture_format_pixelclockDivisor;                          /*!< Picture Pixel Divisor */
+} custom_picture_format_t;
 
 
 /*!
@@ -317,22 +317,22 @@ typedef struct {
  * \brief Audio Capabilities Structure
  */
 typedef struct {
-	skinny_codecs lel_payloadCapability;                                   /*!< PayLoad Capability */
-	uint32_t lel_maxFramesPerPacket;                                        /*!< Maximum Number of Frames per IP Packet */
-	uint32_t lel_unknown[2];                                                /*!< this are related to G.723 */
+	skinny_codecs payload_capability;                                   /*!< PayLoad Capability */
+	uint32_t maxFramesPerPacket;                                        /*!< Maximum Number of Frames per IP Packet */
+	uint32_t unknown[2];                                                /*!< this are related to G.723 */
 } audioCap_t;  
 
 /*!
  * \brief Video Capabilities Structure
  */
 typedef struct {
-	skinny_codecs lel_payloadCapability;                                   /*!< PayLoad Capability */
-	uint32_t lel_transmitOreceive;                                          /*!< Transmit of Receive */
-	uint32_t lel_levelPreferenceCount;                                      /*!< Level of Preference Count */
+	skinny_codecs payload_capability;                                   /*!< PayLoad Capability */
+	uint32_t transmitOreceive;                                          /*!< Transmit of Receive */
+	uint32_t levelPreferenceCount;                                      /*!< Level of Preference Count */
 
 	levelPreference_t levelPreference[MAX_LEVEL_PREFERENCE];                /*!< Level Preference */
 
-//      uint32_t lel_codec_options[2];                                          /*!< Codec Options */
+//      uint32_t codec_options[2];                                          /*!< Codec Options */
 
 	union {
                 struct {
@@ -350,16 +350,16 @@ typedef struct {
          *
          * Here is a list of known parameters per codec
         // H.261
-        uint32_t                lel_temporalSpatialTradeOffCapability;
-        uint32_t                lel_stillImageTransmission;
+        uint32_t                temporalSpatialTradeOffCapability;
+        uint32_t                stillImageTransmission;
 
         // H.263
-        uint32_t                lel_h263_capability_bitfield;
-        uint32_t                lel_annexNandWFutureUse;
+        uint32_t                h263_capability_bitfield;
+        uint32_t                annexNandWFutureUse;
 
         // Video
-        uint32_t                lel_modelNumber;
-        uint32_t                lel_bandwidth;
+        uint32_t                modelNumber;
+        uint32_t                bandwidth;
         */
 } videoCap_t;                                                                   /*!< Video Capabilities Structure */
 
@@ -367,7 +367,7 @@ typedef struct {
  * \brief Data Capabilities Structure
  */
 typedef struct {
-	uint32_t payloadCapability;                                             /*!< Payload Capability */
+	uint32_t payload_capability;                                             /*!< Payload Capability */
 	uint32_t transmitOrReceive;                                             /*!< Transmit or Receive */
 	uint32_t protocolDependentData;                                         /*!< Protocol Dependent Data */
 	uint32_t maxBitRate;                                                    /*!< Maximum BitRate */
@@ -375,13 +375,13 @@ typedef struct {
 
 
 struct PACKED update_capabilities_message {
-	uint32_t lel_audioCapCount;                                     /*!< Audio Capability Count */
-	uint32_t lel_videoCapCount;                                     /*!< Video Capability Count */
-	uint32_t lel_dataCapCount;                                      /*!< Data Capability Count */
+	uint32_t audio_cap_count;                                     /*!< Audio Capability Count */
+	uint32_t videoCapCount;                                     /*!< Video Capability Count */
+	uint32_t dataCapCount;                                      /*!< Data Capability Count */
 	uint32_t RTPPayloadFormat;                                      /*!< RTP Payload Format */
-	uint32_t customPictureFormatCount;                              /*!< Custom Picture Format Count */
+	uint32_t custom_picture_formatCount;                              /*!< Custom Picture Format Count */
 
-	customPictureFormat_t customPictureFormat[MAX_CUSTOM_PICTURES]; /*!< Custom Picture Format */
+	custom_picture_format_t custom_picture_format[MAX_CUSTOM_PICTURES]; /*!< Custom Picture Format */
 
 	uint32_t activeStreamsOnRegistration;                           /*!< Active Streams on Registration */
 	uint32_t maxBW;                                                 /*!< Max BW ?? */
