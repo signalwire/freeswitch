@@ -2201,18 +2201,18 @@ switch_status_t skinny_handle_updatecapabilities(listener_t *listener, skinny_me
 
 	profile = listener->profile;
 
-	skinny_check_data_length(request, sizeof(request->data.upd_cap.lel_audioCapCount));
+	skinny_check_data_length(request, sizeof(request->data.upd_cap.audio_cap_count));
 
-	n = request->data.upd_cap.lel_audioCapCount;
+	n = request->data.upd_cap.audio_cap_count;
 	if (n > SWITCH_MAX_CODECS) {
 		n = SWITCH_MAX_CODECS;
 	}
 	string_len = -1;
 
-	skinny_check_data_length(request, sizeof(request->data.upd_cap.lel_audioCapCount) + n * sizeof(request->data.upd_cap.audioCaps[0]));
+	skinny_check_data_length(request, sizeof(request->data.upd_cap.audio_cap_count) + n * sizeof(request->data.upd_cap.audioCaps[0]));
 
 	for (i = 0; i < n; i++) {
-		char *codec = skinny_codec2string(request->data.upd_cap.audioCaps[i].lel_payloadCapability);
+		char *codec = skinny_codec2string(request->data.upd_cap.audioCaps[i].payload_capability);
 		codec_order[i] = codec;
 		string_len += strlen(codec)+1;
 	}
@@ -2354,7 +2354,7 @@ switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *re
 			return skinny_handle_accessory_status_message(listener, request);
 		case XML_ALARM_MESSAGE:
 			return skinny_handle_xml_alarm(listener, request);
-		case DEVICE_UPDATECAPABILITIES:
+		case UPDATE_CAPABILITIES_MESSAGE:
 			return skinny_handle_updatecapabilities(listener, request);
 		case SERVER_REQ_MESSAGE:
 			return skinny_handle_server_req_message(listener, request);         

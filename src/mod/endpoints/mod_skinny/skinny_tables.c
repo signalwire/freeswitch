@@ -61,7 +61,7 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
 	{REGISTER_AVAILABLE_LINES_MESSAGE, "RegisterAvailableLinesMessage"},
 	{DEVICE_TO_USER_DATA_MESSAGE, "DeviceToUserDataMessage"},
 	{DEVICE_TO_USER_DATA_RESPONSE_MESSAGE, "DeviceToUserDataResponseMessage"},
-	{DEVICE_UPDATECAPABILITIES, "DeviceUpdateCapabilities"},
+	{UPDATE_CAPABILITIES_MESSAGE, "DeviceUpdateCapabilities"},
 	{SERVICE_URL_STAT_REQ_MESSAGE, "ServiceUrlStatReqMessage"},
 	{FEATURE_STAT_REQ_MESSAGE, "FeatureStatReqMessage"},
 	{DEVICE_TO_USER_DATA_VERSION1_MESSAGE, "DeviceToUserDataVersion1Message"},
