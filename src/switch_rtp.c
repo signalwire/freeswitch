@@ -34,8 +34,6 @@
 //#define RTP_DEBUG_WRITE_DELTA
 //#define DEBUG_MISSED_SEQ
 
-#define FIR_COUNTDOWN 100
-
 #include <switch.h>
 #ifndef _MSC_VER
 #include <switch_private.h>
@@ -55,6 +53,8 @@
 #include <srtp_priv.h>
 #include <switch_version.h>
 #include <switch_ssl.h>
+
+#define FIR_COUNTDOWN 100
 
 #define READ_INC(rtp_session) switch_mutex_lock(rtp_session->read_mutex); rtp_session->reading++
 #define READ_DEC(rtp_session)  switch_mutex_unlock(rtp_session->read_mutex); rtp_session->reading--
