@@ -558,11 +558,13 @@ opal
 /spandsp/src/Makefile.in
 /spandsp/src/make_math_fixed_tables
 /spandsp/src/make_modem_filter
+/spandsp/src/make_t43_gray_code_tables
 /spandsp/src/math_fixed_tables.h
 /spandsp/src/msvc/All/BuildLog make_at_dictionary.htm
 /spandsp/src/msvc/All/BuildLog make_modem_filter.htm
 /spandsp/src/spandsp.h
 /spandsp/src/stamp-h1
+/spandsp/src/t43_gray_code_tables.h
 /spandsp/src/v17_v32bis_rx_fixed_rrc.h
 /spandsp/src/v17_v32bis_rx_floating_rrc.h
 /spandsp/src/v17_v32bis_tx_fixed_rrc.h
