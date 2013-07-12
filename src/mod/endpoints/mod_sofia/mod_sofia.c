@@ -4276,7 +4276,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		} else {
 			host++;
 			
-			if (!strchr(host, '.')) {
+			if (!strchr(host, '.') || switch_true(switch_event_get_header(var_event, "sip_gethostbyname"))) {
 				struct sockaddr_in sa;
 				struct hostent *he = gethostbyname(host);
 				char *ip, *tmp;
