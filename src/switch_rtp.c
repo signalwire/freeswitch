@@ -270,7 +270,6 @@ typedef struct ts_normalize_s {
 	uint32_t last_frame;
 	uint32_t ts;
 	uint32_t delta;
-	uint8_t m;
 } ts_normalize_t;
 
 struct switch_rtp {
@@ -5484,7 +5483,6 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 		if (!rtp_session->ts_norm.last_ssrc || send_msg->header.ssrc != rtp_session->ts_norm.last_ssrc) {
 			if (rtp_session->ts_norm.last_ssrc) {
-				rtp_session->ts_norm.m = 1;
 				if (rtp_session->ts_norm.delta) {
 					rtp_session->ts_norm.ts += rtp_session->ts_norm.delta;
 				}
@@ -5502,13 +5500,6 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		rtp_session->ts_norm.last_frame = ntohl(send_msg->header.ts);
 		send_msg->header.ts = htonl(rtp_session->ts_norm.ts);
 
-		if (rtp_session->ts_norm.m) {
-			if (send_msg->header.m) {
-				rtp_session->ts_norm.m = 0;
-			} else {
-				send_msg->header.m = 1;
-			}
-		}
 	}
 
 	send_msg->header.ssrc = htonl(rtp_session->ssrc);
