@@ -201,7 +201,8 @@ typedef enum {
 	CFLAG_VIDEO_BRIDGE = (1 << 14),
 	CFLAG_AUDIO_ALWAYS = (1 << 15),
 	CFLAG_ENDCONF_FORCED = (1 << 16),
-	CFLAG_RFC4579 = (1 << 17)
+	CFLAG_RFC4579 = (1 << 17),
+	CFLAG_FLOOR_CHANGE = (1 << 18)
 } conf_flag_t;
 
 typedef enum {
@@ -394,6 +395,7 @@ typedef struct conference_relationship {
 struct conference_member {
 	uint32_t id;
 	switch_core_session_t *session;
+	switch_channel_t *channel;
 	conference_obj_t *conference;
 	switch_memory_pool_t *pool;
 	switch_buffer_t *audio_buffer;
@@ -1443,15 +1445,20 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 
 		conference_send_presence(conference);
 
-
-
 		channel = switch_core_session_get_channel(member->session);
-		switch_channel_set_flag(channel, CF_VIDEO_PASSIVE);
+
 		switch_channel_set_variable_printf(channel, "conference_member_id", "%d", member->id);
 		switch_channel_set_variable_printf(channel, "conference_moderator", "%s", switch_test_flag(member, MFLAG_MOD) ? "true" : "false");
 		switch_channel_set_variable(channel, "conference_recording", conference->record_filename);
 		switch_channel_set_variable(channel, CONFERENCE_UUID_VARIABLE, conference->uuid_str);
-		
+
+
+
+		if (switch_channel_test_flag(channel, CF_VIDEO)) {
+			switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
+			/* Tell the channel to request a fresh vid frame */
+			switch_core_session_refresh_video(member->session);
+		}
 
 		if (!switch_channel_get_variable(channel, "conference_call_key")) {
 			char *key = switch_core_session_sprintf(member->session, "conf_%s_%s_%s", 
@@ -1565,6 +1572,20 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	return status;
 }
 
+static void conference_set_floor_holder(conference_obj_t *conference, conference_member_t *member)
+{
+
+	if (conference->floor_holder && conference->floor_holder != member) {
+		switch_channel_clear_flag(conference->floor_holder->channel, CF_VIDEO_PASSIVE);
+	}
+
+	if ((conference->floor_holder = member)) {
+		switch_channel_set_flag(member->channel, CF_VIDEO_PASSIVE);
+		switch_core_session_refresh_video(conference->floor_holder->session);
+		switch_set_flag(conference, CFLAG_FLOOR_CHANGE);
+	}
+}
+
 /* Gain exclusive access and remove the member from the list */
 static switch_status_t conference_del_member(conference_obj_t *conference, conference_member_t *member)
 {
@@ -1648,7 +1669,9 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 	}
 
 	if (member == member->conference->floor_holder) {
-		member->conference->floor_holder = NULL;
+		//member->conference->floor_holder = NULL;
+		conference_set_floor_holder(member->conference, NULL);
+
 
 		if (test_eflag(conference, EFLAG_FLOOR_CHANGE)) {
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
@@ -1673,7 +1696,10 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 			}
 		}
 
-		switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
+		if (switch_channel_test_flag(channel, CF_VIDEO)) {
+			switch_channel_set_flag(channel, CF_VIDEO_ECHO);
+			switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
+		}
 
 		conference_send_presence(conference);
 		switch_channel_set_variable(channel, "conference_call_key", NULL);
@@ -1839,19 +1865,15 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 	conference_member_t *imember;
 	switch_frame_t *vid_frame;
 	switch_status_t status;
-	int has_vid = 1, want_refresh = 0;
+	int want_refresh = 0;
 	int yield = 0;
 	switch_core_session_t *session;
-	switch_core_session_message_t msg = { 0 };
+	char buf[65536];
 
 	conference->video_running = 1;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Video thread started for conference %s\n", conference->name);
 
-	/* Tell the channel to request a fresh vid frame */
-	msg.from = __FILE__;
-	msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
-
-	while (has_vid && conference->video_running == 1 && globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT)) {
+	while (conference->video_running == 1 && globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT)) {
 		if (yield) {
 			switch_yield(yield);
 			yield = 0;
@@ -1887,11 +1909,20 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 			goto do_continue;
 		}
 
+		if (vid_frame && switch_test_flag(vid_frame, SFF_CNG)) {
+			yield = 10000;
+			goto do_continue;
+		}
 
+		memcpy(buf, vid_frame->packet, vid_frame->packetlen);
+		
 		switch_mutex_unlock(conference->mutex);
 		switch_mutex_lock(conference->mutex);
-		has_vid = 0;
 		want_refresh = 0;
+
+		if (switch_test_flag(conference, CFLAG_FLOOR_CHANGE)) {
+			switch_clear_flag(conference, CFLAG_FLOOR_CHANGE);
+		}
 
 		for (imember = conference->members; imember; imember = imember->next) {
 			switch_core_session_t *isession = imember->session;
@@ -1908,21 +1939,20 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 				switch_channel_clear_flag(ichannel, CF_VIDEO_REFRESH_REQ);
 			}
 
-			if (imember->session && switch_channel_test_flag(ichannel, CF_VIDEO)) {
-				has_vid++;
+			if (isession && switch_channel_test_flag(ichannel, CF_VIDEO)) {
+				memcpy(vid_frame->packet, buf, vid_frame->packetlen);
 				switch_core_session_write_video_frame(imember->session, vid_frame, SWITCH_IO_FLAG_NONE, 0);
 			}
 
 			switch_core_session_rwunlock(isession);
 		}
 		
-		if (want_refresh) {
-			switch_core_session_receive_message(session, &msg);
+		if (want_refresh && session) {
+			switch_core_session_refresh_video(session);
 			want_refresh = 0;
 		}
 
 	do_continue:
-		
 		switch_mutex_unlock(conference->mutex);
 	}
 
@@ -2078,7 +2108,8 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				}
 			}
 			
-			conference->floor_holder = floor_holder;
+			//conference->floor_holder = floor_holder;
+			conference_set_floor_holder(conference, floor_holder);
 		}
 		
 
@@ -5219,7 +5250,8 @@ static switch_status_t conf_api_sub_floor(conference_member_t *member, switch_st
 	switch_mutex_lock(member->conference->mutex);
 
 	if (member->conference->floor_holder == member) {
-		member->conference->floor_holder = NULL;
+		//member->conference->floor_holder = NULL;
+		conference_set_floor_holder(member->conference, NULL);
 		if (test_eflag(member->conference, EFLAG_FLOOR_CHANGE)) {
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
 			conference_add_event_data(member->conference, event);
@@ -5232,7 +5264,8 @@ static switch_status_t conf_api_sub_floor(conference_member_t *member, switch_st
 			}
 		}
 	} else if (member->conference->floor_holder == NULL) {
-		member->conference->floor_holder = member;
+		//member->conference->floor_holder = member;
+		conference_set_floor_holder(member->conference, member);
 		if (test_eflag(member->conference, EFLAG_FLOOR_CHANGE)) {
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
 			conference_add_event_data(member->conference, event);
@@ -5272,7 +5305,8 @@ static switch_status_t conf_api_sub_enforce_floor(conference_member_t *member, s
 
 	if (member->conference->floor_holder != member) {
 		conference_member_t *old_member = member->conference->floor_holder;
-		member->conference->floor_holder = member;
+		//member->conference->floor_holder = member;
+		conference_set_floor_holder(member->conference, member);
 		if (test_eflag(member->conference, EFLAG_FLOOR_CHANGE)) {
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
 			conference_add_event_data(member->conference, event);
@@ -7781,6 +7815,7 @@ SWITCH_STANDARD_APP(conference_function)
 	}
 
 	member.session = session;
+	member.channel = switch_core_session_get_channel(session);
 	member.pool = switch_core_session_get_pool(session);
 
 	if (setup_media(&member, conference)) {

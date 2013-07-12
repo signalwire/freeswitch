@@ -37,6 +37,53 @@
 #include "mod_skinny.h"
 
 /*****************************************************************************/
+/* SKINNY TYPES */
+/*****************************************************************************/
+typedef enum {
+	SKINNY_CODEC_NONE = 0,
+	SKINNY_CODEC_NONSTANDARD = 1,
+	SKINNY_CODEC_ALAW_64K = 2,
+	SKINNY_CODEC_ALAW_56K = 3,
+	SKINNY_CODEC_ULAW_64K = 4,
+	SKINNY_CODEC_ULAW_56K = 5,
+	SKINNY_CODEC_G722_64K = 6,
+	SKINNY_CODEC_G722_56K = 7,
+	SKINNY_CODEC_G722_48K = 8,
+	SKINNY_CODEC_G723_1 = 9,
+	SKINNY_CODEC_G728 = 10,
+	SKINNY_CODEC_G729 = 11,
+	SKINNY_CODEC_G729A = 12,
+	SKINNY_CODEC_IS11172 = 13,
+	SKINNY_CODEC_IS13818 = 14,
+	SKINNY_CODEC_G729B = 15,
+	SKINNY_CODEC_G729AB = 16,
+	SKINNY_CODEC_GSM_FULL = 18,
+	SKINNY_CODEC_GSM_HALF = 19,
+	SKINNY_CODEC_GSM_EFULL = 20,
+	SKINNY_CODEC_WIDEBAND_256K = 25,
+	SKINNY_CODEC_DATA_64K = 32,
+	SKINNY_CODEC_DATA_56K = 33,
+	SKINNY_CODEC_G722_1_32K = 40,
+	SKINNY_CODEC_G722_1_24K = 41,
+	SKINNY_CODEC_GSM = 80,
+	SKINNY_CODEC_ACTIVEVOICE = 81,
+	SKINNY_CODEC_G726_32K = 82,
+	SKINNY_CODEC_G726_24K = 83,
+	SKINNY_CODEC_G726_16K = 84,
+	SKINNY_CODEC_G729B_BIS = 85,
+	SKINNY_CODEC_G729B_LOW = 86,
+	SKINNY_CODEC_H261 = 100,
+	SKINNY_CODEC_H263 = 101,
+	SKINNY_CODEC_VIDEO = 102,
+	SKINNY_CODEC_H264 = 103,
+	SKINNY_CODEC_T120 = 105,
+	SKINNY_CODEC_H224 = 106,
+	SKINNY_CODEC_RFC2833_DYNPAYLOAD = 257
+} skinny_codecs;
+
+char* skinny_codec2string(skinny_codecs skinnycodec);
+
+/*****************************************************************************/
 /* SKINNY MESSAGE DATA */
 /*****************************************************************************/
 
@@ -145,6 +192,8 @@ struct PACKED capabilities_res_message {
 	struct station_capabilities caps[SWITCH_MAX_CODECS];
 };
 
+#define SERVER_REQ_MESSAGE 0x0012
+
 /* AlarmMessage */
 #define ALARM_MESSAGE 0x0020
 struct PACKED alarm_message {
@@ -206,6 +255,147 @@ struct PACKED data_message {
 /* DeviceToUserDataResponseMessage */
 #define DEVICE_TO_USER_DATA_RESPONSE_MESSAGE 0x002F
 /* See struct PACKED data_message */
+
+#define UPDATE_CAPABILITIES_MESSAGE 0x0030
+
+#define MAX_CUSTOM_PICTURES						6
+#define MAX_LAYOUT_WITH_SAME_SERVICE			5
+#define MAX_SERVICE_TYPE						4
+#define SKINNY_MAX_CAPABILITIES					18	/*!< max capabilities allowed in Cap response message */
+#define SKINNY_MAX_VIDEO_CAPABILITIES			10
+#define SKINNY_MAX_DATA_CAPABILITIES			5
+#define MAX_LEVEL_PREFERENCE					4
+
+/*!
+ * \brief Picture Format Structure
+ */
+typedef struct {
+	uint32_t custom_picture_format_width;                                      /*!< Picture Width */
+	uint32_t custom_picture_format_height;                                     /*!< Picture Height */
+	uint32_t custom_picture_format_pixelAspectRatio;                           /*!< Picture Pixel Aspect Ratio */
+	uint32_t custom_picture_format_pixelclockConversionCode;                   /*!< Picture Pixel Conversion Code  */
+	uint32_t custom_picture_format_pixelclockDivisor;                          /*!< Picture Pixel Divisor */
+} custom_picture_format_t;
+
+
+/*!
+ * \brief Video Level Preference Structure
+ */
+typedef struct {
+	uint32_t transmitPreference;                                            /*!< Transmit Preference */
+	uint32_t format;                                                        /*!< Format / Codec */
+	uint32_t maxBitRate;                                                    /*!< Maximum BitRate */
+	uint32_t minBitRate;                                                    /*!< Minimum BitRate */
+	uint32_t MPI;                                                           /*!<  */
+	uint32_t serviceNumber;                                                 /*!< Service Number */
+} levelPreference_t;                                                            /*!< Level Preference Structure */
+
+/*! 
+ * \brief Layout Config Structure (Update Capabilities Message Struct)
+ * \since 20080111
+ */
+typedef struct {
+	uint32_t layout;                                                        /*!< Layout \todo what is layout? */
+} layoutConfig_t;                                                               /*!< Layout Config Structure */
+
+
+/*!
+ * \brief Service Resource Structure
+ */
+typedef struct {
+	uint32_t layoutCount;                                                   /*!< Layout Count */
+	layoutConfig_t layout[MAX_LAYOUT_WITH_SAME_SERVICE];                    /*!< Layout */
+	uint32_t serviceNum;                                                    /*!< Service Number */
+	uint32_t maxStreams;                                                    /*!< Maximum number of Streams */
+	uint32_t maxConferences;                                                /*!< Maximum number of Conferences */
+	uint32_t activeConferenceOnRegistration;                                /*!< Active Conference On Registration */
+} serviceResource_t;
+
+
+
+/*!
+ * \brief Audio Capabilities Structure
+ */
+typedef struct {
+	skinny_codecs payload_capability;                                   /*!< PayLoad Capability */
+	uint32_t maxFramesPerPacket;                                        /*!< Maximum Number of Frames per IP Packet */
+	uint32_t unknown[2];                                                /*!< this are related to G.723 */
+} audioCap_t;  
+
+/*!
+ * \brief Video Capabilities Structure
+ */
+typedef struct {
+	skinny_codecs payload_capability;                                   /*!< PayLoad Capability */
+	uint32_t transmitOreceive;                                          /*!< Transmit of Receive */
+	uint32_t levelPreferenceCount;                                      /*!< Level of Preference Count */
+
+	levelPreference_t levelPreference[MAX_LEVEL_PREFERENCE];                /*!< Level Preference */
+
+//      uint32_t codec_options[2];                                          /*!< Codec Options */
+
+	union {
+                struct {
+                        uint32_t unknown1;
+                        uint32_t unknown2;
+                } h263;
+                struct {
+                        uint32_t profile;                                       /*!< H264 profile */
+                        uint32_t level;                                         /*!< H264 level */
+                } h264;
+        } codec_options;
+
+        /**
+         * Codec options contains data specific for every codec
+         *
+         * Here is a list of known parameters per codec
+        // H.261
+        uint32_t                temporalSpatialTradeOffCapability;
+        uint32_t                stillImageTransmission;
+
+        // H.263
+        uint32_t                h263_capability_bitfield;
+        uint32_t                annexNandWFutureUse;
+
+        // Video
+        uint32_t                modelNumber;
+        uint32_t                bandwidth;
+        */
+} videoCap_t;                                                                   /*!< Video Capabilities Structure */
+
+/*!
+ * \brief Data Capabilities Structure
+ */
+typedef struct {
+	uint32_t payload_capability;                                             /*!< Payload Capability */
+	uint32_t transmitOrReceive;                                             /*!< Transmit or Receive */
+	uint32_t protocolDependentData;                                         /*!< Protocol Dependent Data */
+	uint32_t maxBitRate;                                                    /*!< Maximum BitRate */
+} dataCap_t;                                                                    /*!< Data Capabilities Structure */
+
+
+struct PACKED update_capabilities_message {
+	uint32_t audio_cap_count;                                     /*!< Audio Capability Count */
+	uint32_t videoCapCount;                                     /*!< Video Capability Count */
+	uint32_t dataCapCount;                                      /*!< Data Capability Count */
+	uint32_t RTPPayloadFormat;                                      /*!< RTP Payload Format */
+	uint32_t custom_picture_formatCount;                              /*!< Custom Picture Format Count */
+
+	custom_picture_format_t custom_picture_format[MAX_CUSTOM_PICTURES]; /*!< Custom Picture Format */
+
+	uint32_t activeStreamsOnRegistration;                           /*!< Active Streams on Registration */
+	uint32_t maxBW;                                                 /*!< Max BW ?? */
+
+	uint32_t serviceResourceCount;                                  /*!< Service Resource Count */
+	serviceResource_t serviceResource[MAX_SERVICE_TYPE];            /*!< Service Resource */
+
+	audioCap_t audioCaps[SKINNY_MAX_CAPABILITIES];                  /*!< Audio Capabilities */
+	videoCap_t videoCaps[SKINNY_MAX_VIDEO_CAPABILITIES];            /*!< Video Capabilities */
+	dataCap_t dataCaps[SKINNY_MAX_DATA_CAPABILITIES];               /*!< Data Capabilities */
+
+	uint32_t unknown;                                               /*!< Unknown */
+}; 
+
 
 /* ServiceUrlStatReqMessage */
 #define SERVICE_URL_STAT_REQ_MESSAGE 0x0033
@@ -442,6 +632,23 @@ struct PACKED register_reject_message {
 	char error[33];
 };
 
+#define SERVER_RESPONSE_MESSAGE 0x009E
+#define ServerMaxNameSize                       48
+#define StationMaxServers                       5
+/*!
+ * \brief Station Identifier Structure
+ */
+typedef struct {
+	char serverName[ServerMaxNameSize];                                     /*!< Server Name */
+} ServerIdentifier;
+
+struct PACKED server_response_message {
+	ServerIdentifier server[StationMaxServers];                     /*!< Server Identifier */
+	uint32_t serverListenPort[StationMaxServers];                   /*!< Server is Listening on Port */
+	uint32_t serverIpAddr[StationMaxServers];                       /*!< Server IP Port */
+};                                                     /*!< Server Result Message Structure */
+
+
 /* ResetMessage */
 #define RESET_MESSAGE 0x009F
 struct PACKED reset_message {
@@ -670,6 +877,7 @@ union skinny_data {
 	/* no data for CAPABILITIES_REQ_MESSAGE */
 	struct register_reject_message reg_rej;
 	struct reset_message reset;
+	struct server_response_message serv_res_mess;
 	/* no data for KEEP_ALIVE_ACK_MESSAGE */
 	struct open_receive_channel_message open_receive_channel;
 	struct close_receive_channel_message close_receive_channel;
@@ -690,6 +898,7 @@ union skinny_data {
 	/* see field "extended_data" for USER_TO_DEVICE_DATA_VERSION1_MESSAGE */
 	struct dialed_phone_book_ack_message dialed_phone_book_ack;
 
+	struct update_capabilities_message upd_cap;
 	struct data_message data;
 	struct extended_data_message extended_data;
 
@@ -702,7 +911,7 @@ union skinny_data {
 #endif
 
 /*
- * header is length+reserved
+ * header is length+version
  * body is type+data
  * length is length of body
  */
@@ -719,47 +928,7 @@ struct PACKED skinny_message {
 
 typedef struct skinny_message skinny_message_t;
 
-/*****************************************************************************/
-/* SKINNY TYPES */
-/*****************************************************************************/
-enum skinny_codecs {
-	SKINNY_CODEC_ALAW_64K = 2,
-	SKINNY_CODEC_ALAW_56K = 3,
-	SKINNY_CODEC_ULAW_64K = 4,
-	SKINNY_CODEC_ULAW_56K = 5,
-	SKINNY_CODEC_G722_64K = 6,
-	SKINNY_CODEC_G722_56K = 7,
-	SKINNY_CODEC_G722_48K = 8,
-	SKINNY_CODEC_G723_1 = 9,
-	SKINNY_CODEC_G728 = 10,
-	SKINNY_CODEC_G729 = 11,
-	SKINNY_CODEC_G729A = 12,
-	SKINNY_CODEC_IS11172 = 13,
-	SKINNY_CODEC_IS13818 = 14,
-	SKINNY_CODEC_G729B = 15,
-	SKINNY_CODEC_G729AB = 16,
-	SKINNY_CODEC_GSM_FULL = 18,
-	SKINNY_CODEC_GSM_HALF = 19,
-	SKINNY_CODEC_GSM_EFULL = 20,
-	SKINNY_CODEC_WIDEBAND_256K = 25,
-	SKINNY_CODEC_DATA_64K = 32,
-	SKINNY_CODEC_DATA_56K = 33,
-	SKINNY_CODEC_GSM = 80,
-	SKINNY_CODEC_ACTIVEVOICE = 81,
-	SKINNY_CODEC_G726_32K = 82,
-	SKINNY_CODEC_G726_24K = 83,
-	SKINNY_CODEC_G726_16K = 84,
-	SKINNY_CODEC_G729B_BIS = 85,
-	SKINNY_CODEC_G729B_LOW = 86,
-	SKINNY_CODEC_H261 = 100,
-	SKINNY_CODEC_H263 = 101,
-	SKINNY_CODEC_VIDEO = 102,
-	SKINNY_CODEC_T120 = 105,
-	SKINNY_CODEC_H224 = 106,
-	SKINNY_CODEC_RFC2833_DYNPAYLOAD = 257
-};
 
-char* skinny_codec2string(enum skinny_codecs skinnycodec);
 
 /*****************************************************************************/
 /* SKINNY FUNCTIONS */
@@ -850,6 +1019,11 @@ switch_status_t perform_send_set_speaker_mode(listener_t *listener,
 		const char *file, const char *func, int line,
 		uint32_t mode);
 #define send_set_speaker_mode(listener, ...) perform_send_set_speaker_mode(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
+switch_status_t perform_send_srvreq_response(listener_t *listener,
+		const char *file, const char *func, int line,
+		char *ip, uint32_t port);
+#define send_srvreq_response(listener, ...) perform_send_srvreq_response(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
 
 switch_status_t perform_send_start_media_transmission(listener_t *listener,
 		const char *file, const char *func, int line,

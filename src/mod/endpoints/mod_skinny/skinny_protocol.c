@@ -37,7 +37,7 @@
 /*****************************************************************************/
 /* SKINNY FUNCTIONS */
 /*****************************************************************************/
-char* skinny_codec2string(enum skinny_codecs skinnycodec)
+char* skinny_codec2string(skinny_codecs skinnycodec)
 {
 	switch (skinnycodec) {
 		case SKINNY_CODEC_ALAW_64K:
@@ -155,8 +155,8 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 				memcpy(request, mbuf, bytes);
 #ifdef SKINNY_MEGA_DEBUG
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-						"Got request: length=%d,reserved=%x,type=%x\n",
-						request->length,request->reserved,request->type);
+						"Got request: length=%d,version=%x,type=%x\n",
+						request->length,request->version,request->type);
 #endif
 				if(request->length < SKINNY_MESSAGE_FIELD_SIZE) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
@@ -621,6 +621,26 @@ switch_status_t perform_send_set_speaker_mode(listener_t *listener,
 		"Sending Set Speaker Mode with Mode (%s)\n", skinny_speaker_mode2str(mode));
 
 	return skinny_send_reply_quiet(listener, message);
+}
+
+switch_status_t perform_send_srvreq_response(listener_t *listener, 
+		const char *file, const char *func, int line,
+		char *ip, uint32_t port)
+{
+	skinny_message_t *message;
+
+	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.serv_res_mess));
+	message->type = SERVER_RESPONSE_MESSAGE;
+	message->length = 4 + sizeof(message->data.serv_res_mess);
+
+	message->data.serv_res_mess.serverListenPort[0] = port;
+	switch_inet_pton(AF_INET,ip, &message->data.serv_res_mess.serverIpAddr[0]);
+	switch_copy_string(message->data.serv_res_mess.server[0].serverName,ip,sizeof(message->data.serv_res_mess.server[0].serverName));
+
+	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
+		"Sending Server Request Response with IP (%s) and Port (%d)\n", ip, port);
+
+	return skinny_send_reply(listener, message);
 }
 
 switch_status_t perform_send_start_media_transmission(listener_t *listener,
