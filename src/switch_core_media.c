@@ -2464,9 +2464,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		
 		if (m->m_proto_name && !strcasecmp(m->m_proto_name, "UDP/TLS/RTP/SAVPF")) {
 			switch_channel_set_flag(session->channel, CF_WEBRTC_MOZ);
-			printf("PRICK FACE 1\n");
-		}  else {
-			printf("PRICK FACE 2 [%s]\n", m->m_proto_name);
 		}
 
 		if (m->m_proto == sdp_proto_srtp || m->m_proto == sdp_proto_extended_srtp) {
