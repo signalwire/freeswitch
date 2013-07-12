@@ -728,7 +728,7 @@ typedef struct skinny_message skinny_message_t;
 /*****************************************************************************/
 /* SKINNY TYPES */
 /*****************************************************************************/
-enum skinny_codecs {
+typedef enum {
 	SKINNY_CODEC_NONE = 0,
 	SKINNY_CODEC_NONSTANDARD = 1,
 	SKINNY_CODEC_ALAW_64K = 2,
@@ -768,9 +768,9 @@ enum skinny_codecs {
 	SKINNY_CODEC_T120 = 105,
 	SKINNY_CODEC_H224 = 106,
 	SKINNY_CODEC_RFC2833_DYNPAYLOAD = 257
-};
+} skinny_codecs;
 
-char* skinny_codec2string(enum skinny_codecs skinnycodec);
+char* skinny_codec2string(skinny_codecs skinnycodec);
 
 /*****************************************************************************/
 /* SKINNY FUNCTIONS */
