@@ -116,7 +116,7 @@ xcopy "$(ProjectDir)..\..\apr\include\*.h" "$(ProjectDir)..\..\include\" /C /D /
       <AdditionalOptions>/EHsc  %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\..\apr\include;..\..\apr\include/arch;..\..\apr\include/arch/win32;..\..\apr\include/arch/unix;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;APR_DECLARE_EXPORT;APR_VOID_P_IS_QUAD;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -185,7 +185,7 @@ xcopy "$(ProjectDir)..\..\apr\include\*.h" "$(ProjectDir)..\..\include\" /C /D /
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <AdditionalIncludeDirectories>..\..\apr\include;..\..\apr\include/arch;..\..\apr\include/arch/win32;..\..\apr\include/arch/unix;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;APR_DECLARE_EXPORT;APR_VOID_P_IS_QUAD;WIN32;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
