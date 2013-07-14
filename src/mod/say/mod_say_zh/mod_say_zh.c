@@ -40,7 +40,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * PeteDao <petekay@gmail.com>
  * Steve Underwood 0.0.1 <steveu@coppice.org>
- * 
+ * Seven Du <dujinfang@gmail.com>
  *
  * mod_say_zh.c -- Say for Mandarin, Cantonese, and probably any other Chinese
  *                 dialect.
@@ -430,6 +430,58 @@ static switch_status_t zh_say_money(switch_core_session_t *session, char *tosay,
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t zh_CN_say_money(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
+{
+	char sbuf[16] = "";			/* enough for 999,999,999,999.99 (w/o the commas or leading $) */
+	char dbuf[16] = "";			/* enough for digits/x.wav */
+	char *yuan = NULL;
+	char *rest = NULL;
+	int i;
+
+	if (strlen(tosay) > 15 || !(tosay = switch_strip_nonnumerics(tosay, sbuf, sizeof(sbuf)-1))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	yuan = sbuf;
+
+	if ((rest = strchr(sbuf, '.'))) {
+		*rest++ = '\0';
+	}
+
+	/* If positive sign - skip over" */
+	if (sbuf[0] == '+') {
+		yuan++;
+	}
+
+	/* If negative say "negative" */
+	if (sbuf[0] == '-') {
+		say_file("currency/negative.wav");
+		yuan++;
+	}
+
+	/* Say dollar amount */
+	zh_say_general_count(session, yuan, say_args, args);
+	say_file("currency/yuan.wav");
+
+	if (!rest) return SWITCH_STATUS_SUCCESS;
+
+	/* Say cents */
+	for (i=0; *rest; i++, rest++) {
+	sprintf(dbuf, "digits/%c.wav", *rest);
+		say_file(dbuf);
+		if (i == 0) {
+			say_file("currency/jiao.wav");
+		} else if (i == 1) {
+			say_file("currency/fen.wav");
+		} else if (i == 2) {
+			say_file("currency/li.wav");
+		}  /* else just say the rest of digits */
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t zh_say(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
 {
 	switch_say_callback_t say_cb = NULL;
@@ -469,14 +521,58 @@ static switch_status_t zh_say(switch_core_session_t *session, char *tosay, switc
 	return SWITCH_STATUS_FALSE;
 }
 
+static switch_status_t zh_CN_say(switch_core_session_t *session, char *tosay, switch_say_args_t *say_args, switch_input_args_t *args)
+{
+	switch_say_callback_t say_cb = NULL;
+
+	switch (say_args->type) {
+	case SST_NUMBER:
+	case SST_ITEMS:
+	case SST_PERSONS:
+	case SST_MESSAGES:
+		say_cb = zh_say_general_count;
+		break;
+	case SST_TIME_MEASUREMENT:
+	case SST_CURRENT_DATE:
+	case SST_CURRENT_TIME:
+	case SST_CURRENT_DATE_TIME:
+		say_cb = zh_say_time;
+		break;
+	case SST_IP_ADDRESS:
+		return switch_ivr_say_ip(session, tosay, zh_say_general_count, say_args, args);
+		break;
+	case SST_NAME_SPELLED:
+	case SST_NAME_PHONETIC:
+		return switch_ivr_say_spell(session, tosay, say_args, args);
+		break;
+	case SST_CURRENCY:
+		say_cb = zh_CN_say_money;
+		break;
+	default:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown Say type=[%d]\n", say_args->type);
+		break;
+	}
+
+	if (say_cb) {
+		return say_cb(session, tosay, say_args, args);
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_say_zh_load)
 {
 	switch_say_interface_t *say_interface;
+	switch_say_interface_t *say_zh_CN_interface;
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	say_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_SAY_INTERFACE);
 	say_interface->interface_name = "zh";
 	say_interface->say_function = zh_say;
+
+	say_zh_CN_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_SAY_INTERFACE);
+	say_zh_CN_interface->interface_name = "zh_CN";
+	say_zh_CN_interface->say_function = zh_CN_say;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
