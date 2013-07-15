@@ -35,6 +35,8 @@ typedef unsigned __int32 uint32_t;
 #define SF_FOREIGN 1
 #define SF_TRY_SECURE 2
 #define SF_SECURE 4
+#define SF_SERVER 8
+#define SF_SSLv23 16
 
 struct stream_data {
 	iksparser *prs;
@@ -51,6 +53,8 @@ struct stream_data {
 	unsigned int flags;
 	char *auth_username;
 	char *auth_pass;
+	char *cert_file;
+	char *key_file;
 #ifdef HAVE_GNUTLS
 	gnutls_session sess;
 	gnutls_certificate_credentials cred;
@@ -201,6 +205,7 @@ handshake (struct stream_data *data)
 		gnutls_certificate_free_credentials (data->cred);
 		return IKS_NOMEM;
 	}
+
 	gnutls_protocol_set_priority (data->sess, protocol_priority);
 	gnutls_cipher_set_priority(data->sess, cipher_priority);
 	gnutls_compression_set_priority(data->sess, comp_priority);
@@ -224,7 +229,9 @@ handshake (struct stream_data *data)
 	data->flags &= (~SF_TRY_SECURE);
 	data->flags |= SF_SECURE;
 
-	iks_send_header (data->prs, data->server);
+	if (!(data->flags & SF_SERVER)) {
+		iks_send_header (data->prs, data->server);
+	}
 
 	return IKS_OK;
 } // HAVE_GNUTLS
@@ -311,8 +318,25 @@ handshake (struct stream_data *data)
 	SSL_library_init();
 	SSL_load_error_strings();
 	
-	data->ssl_ctx = SSL_CTX_new(TLSv1_method());
-	if(!data->ssl_ctx) return IKS_NOMEM;
+	if (data->flags & SF_SERVER) {
+		if (data->flags & SF_SSLv23) {
+			data->ssl_ctx = SSL_CTX_new(SSLv23_server_method());
+		} else {
+			data->ssl_ctx = SSL_CTX_new(TLSv1_server_method());
+		}
+		if(!data->ssl_ctx) return IKS_NOMEM;
+
+		if (SSL_CTX_use_certificate_file(data->ssl_ctx, data->cert_file, SSL_FILETYPE_PEM) <= 0) {
+			return IKS_NET_TLSFAIL;
+		}
+		if (SSL_CTX_use_PrivateKey_file(data->ssl_ctx, data->key_file, SSL_FILETYPE_PEM) <= 0) {
+			return IKS_NET_TLSFAIL;
+		}
+		SSL_CTX_set_verify(data->ssl_ctx, SSL_VERIFY_NONE, NULL);
+	} else {
+		data->ssl_ctx = SSL_CTX_new(TLSv1_method());
+		if(!data->ssl_ctx) return IKS_NOMEM;
+	}
 	
 	data->ssl = SSL_new(data->ssl_ctx);
 	if(!data->ssl) return IKS_NOMEM;
@@ -329,7 +353,11 @@ handshake (struct stream_data *data)
 	
 	do
 	{
-		ret = SSL_connect(data->ssl);
+		if (data->flags & SF_SERVER) {
+			ret = SSL_accept(data->ssl);
+		} else {
+			ret = SSL_connect(data->ssl);
+		}
 		
 		if( ret != 1 ) 
 		{
@@ -346,7 +374,9 @@ handshake (struct stream_data *data)
 		data->flags &= (~SF_TRY_SECURE);
 		data->flags |= SF_SECURE;
 	
-		iks_send_header (data->prs, data->server);
+		if (!(data->flags & SF_SERVER)) {
+			iks_send_header (data->prs, data->server);
+		}
 	}
 	
 	return ret == 1 ? IKS_OK : IKS_NET_TLSFAIL;
@@ -949,6 +979,40 @@ iks_start_tls (iksparser *prs)
 	if (ret) return ret;
 	data->flags |= SF_TRY_SECURE;
 	return IKS_OK;
+#else
+	return IKS_NET_NOTSUPP;
+#endif
+}
+
+int
+iks_proceed_tls (iksparser *prs, const char *cert_file, const char *key_file, int use_ssl)
+{
+#ifdef HAVE_GNUTLS
+	int ret;
+	struct stream_data *data = iks_user_data (prs);
+
+	ret = iks_send_raw (prs, "<proceed xmlns='urn:ietf:params:xml:ns:xmpp-tls'/>");
+	if (ret) return ret;
+	data->cert_file = iks_stack_strdup(data->s, cert_file, 0);
+	data->key_file = iks_stack_strdup(data->s, key_file, 0);
+	data->flags |= SF_TRY_SECURE | SF_SERVER;
+	if (use_ssl) {
+		data->flags |= SF_SSLv23;
+	}
+	return handshake (data);
+#elif HAVE_SSL
+	int ret;
+	struct stream_data *data = iks_user_data (prs);
+
+	ret = iks_send_raw (prs, "<proceed xmlns='urn:ietf:params:xml:ns:xmpp-tls'/>");
+	if (ret) return ret;
+	data->cert_file = iks_stack_strdup(data->s, cert_file, 0);
+	data->key_file = iks_stack_strdup(data->s, key_file, 0);
+	data->flags |= SF_TRY_SECURE | SF_SERVER;
+	if (use_ssl) {
+		data->flags |= SF_SSLv23;
+	}
+	return handshake (data);
 #else
 	return IKS_NET_NOTSUPP;
 #endif
