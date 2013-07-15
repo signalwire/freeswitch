@@ -848,11 +848,22 @@ int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnN
 		skinny_line_set_state(listener, line_instance, call_id, SKINNY_ON_HOOK);
 		send_select_soft_keys(listener, line_instance, call_id, SKINNY_KEY_SET_ON_HOOK, 0xffff);
 		send_define_current_time_date(listener);
-		if((call_state == SKINNY_PROCEED) || (call_state == SKINNY_RING_OUT) || (call_state == SKINNY_CONNECTED)) { /* calling parties */
+
+		skinny_log_ls(listener, helper->tech_pvt->session, SWITCH_LOG_DEBUG, 
+			"channel_on_hangup_callback - cause=%s [%d], call_state = %s [%d]\n", 
+			switch_channel_cause2str(helper->cause), helper->cause,
+			skinny_call_state2str(call_state), call_state);
+
+		if ( call_state == SKINNY_RING_OUT && helper->cause == SWITCH_CAUSE_USER_BUSY )
+		{
+			// don't hang up speaker here
+		}
+		else if((call_state == SKINNY_PROCEED) || (call_state == SKINNY_RING_OUT) || (call_state == SKINNY_CONNECTED)) { /* calling parties */
 			// This is NOT correct, but results in slightly better behavior than before
 			// leaving note here to revisit.
 
-			//send_set_speaker_mode(listener, SKINNY_SPEAKER_OFF);
+			/* re-enabling for testing to bring back bad behavior */
+			send_set_speaker_mode(listener, SKINNY_SPEAKER_OFF);
 		}
 		send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, call_id);
 	}
@@ -869,7 +880,7 @@ switch_status_t channel_on_hangup(switch_core_session_t *session)
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP [%s]\n", 
+	skinny_log_s(session, SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP [%s]\n", 
 		switch_channel_get_name(channel), switch_channel_cause2str(cause));
 
 	helper.tech_pvt= tech_pvt;
