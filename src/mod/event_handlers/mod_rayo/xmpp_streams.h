@@ -37,6 +37,8 @@ typedef void (* xmpp_stream_recv_callback)(struct xmpp_stream *stream, iks *stan
 typedef void (* xmpp_stream_destroy_callback)(struct xmpp_stream *stream);
 
 extern struct xmpp_stream_context *xmpp_stream_context_create(const char *domain, const char *domain_secret, xmpp_stream_ready_callback ready, xmpp_stream_recv_callback recv, xmpp_stream_destroy_callback destroy);
+extern void xmpp_stream_context_add_cert(struct xmpp_stream_context *context, const char *cert_pem_file);
+extern void xmpp_stream_context_add_key(struct xmpp_stream_context *context, const char *key_pem_file);
 extern void xmpp_stream_context_add_user(struct xmpp_stream_context *context, const char *user, const char *password);
 extern void xmpp_stream_context_dump(struct xmpp_stream_context *context, switch_stream_handle_t *stream);
 extern void xmpp_stream_context_destroy(struct xmpp_stream_context *context);
