@@ -11,8 +11,10 @@
 		<param name="record-file-prefix" value="$${recordings_dir}/"/>
 	</record>
 
-	<!-- domain to use in from attribute of client messages -->
+	<!-- XMPP server domain -->
 	<domain name="$${rayo_domain_name}" shared-secret="ClueCon">
+	<!-- use this instead if you want secure XMPP client to server connections.  Put .crt and .key file in freeswitch/certs -->
+	<!--domain name="$${rayo_domain_name}" shared-secret="ClueCon" cert="$${base_dir}/certs/$${rayo_domain_name}.crt" key="$${base_dir}/certs/$${rayo_domain_name}.key"-->
 
 		<!-- Listeners for new Rayo client connections -->
 		<!--listen type="c2s" port="5222" address="$${local_ip_v4}" acl="rayo-clients"/-->

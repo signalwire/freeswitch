@@ -39,8 +39,7 @@
 #define IKS_NS_XMPP_STANZAS "urn:ietf:params:xml:ns:xmpp-stanzas"
 #define IKS_NS_XMPP_STREAMS "http://etherx.jabber.org/streams"
 #define IKS_NS_XMPP_DIALBACK "jabber:server:dialback"
-#define IKS_NS_BIDI_FEATURE "urn:xmpp:features:bidi"
-#define IKS_NS_BIDI "urn:xmpp:bidi"
+#define IKS_NS_XMPP_TLS "urn:ietf:params:xml:ns:xmpp-tls"
 
 struct xmpp_error {
 	const char *name;
