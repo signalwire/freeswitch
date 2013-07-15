@@ -9,6 +9,20 @@ void eslSetLogLevel(int level)
 	esl_global_set_default_logger(level);
 }
 
+ESLconnection::ESLconnection(const char *host, const int port, const char *password)
+{
+	connection_construct_common();
+
+	esl_connect(&handle, host, port, NULL, password);
+}
+
+ESLconnection::ESLconnection(const char *host, const int port, const char *user, const char *password)
+{
+	connection_construct_common();
+
+	esl_connect(&handle, host, port, user, password);
+}
+
 ESLconnection::ESLconnection(const char *host, const char *port, const char *password)
 {
 	connection_construct_common();

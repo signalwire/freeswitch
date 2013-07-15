@@ -598,39 +598,28 @@ switch_mutex_unlock(obj->flag_mutex);
 
 #define switch_set_string(_dst, _src) switch_copy_string(_dst, _src, sizeof(_dst))
 
-SWITCH_DECLARE(char *) switch_url_encode(const char *url, char *buf, size_t len);
-SWITCH_DECLARE(char *) switch_url_decode(char *s);
 
 static inline char *switch_sanitize_number(char *number)
 {
-	char *p, *q;
+	char *p = number, *q;
 	char warp[] = "/:";
 	int i;
-	char *val;
 
 	switch_assert(number);
 
-	p = strdup(number);
-	val = p;
-	switch_url_decode(val);
-
-	if (!(strchr(val, '/') || strchr(val, ':') || strchr(val, '@') || strchr(val, '%'))) {
+	if (!(strchr(p, '/') || strchr(p, ':') || strchr(p, '@'))) {
 		return number;
 	}
 
-	while ((q = strrchr(val, '@')))
+	while ((q = strrchr(p, '@')))
 		*q = '\0';
 	
-	while ((q = strrchr(val, '%')))
-			*q = '\0';
-
 	for (i = 0; i < (int) strlen(warp); i++) {
-		while (val && (q = strchr(val, warp[i])))
-			val = q + 1;
+		while (p && (q = strchr(p, warp[i])))
+			p = q + 1;
 	}
-	free(p);
 
-	return val;
+	return p;
 }
 
 static inline switch_bool_t switch_string_var_check(char *s, switch_bool_t disable)
@@ -938,6 +927,8 @@ SWITCH_DECLARE(char *) switch_util_quote_shell_arg_pool(const char *string, swit
 
 
 #define SWITCH_READ_ACCEPTABLE(status) (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK)
+SWITCH_DECLARE(char *) switch_url_encode(const char *url, char *buf, size_t len);
+SWITCH_DECLARE(char *) switch_url_decode(char *s);
 SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 												  const char *from,
 												  const char *headers,

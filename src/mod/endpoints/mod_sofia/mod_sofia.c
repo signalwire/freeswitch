@@ -4275,6 +4275,24 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			}
 		} else {
 			host++;
+			
+			if (!strchr(host, '.') || switch_true(switch_event_get_header(var_event, "sip_gethostbyname"))) {
+				struct sockaddr_in sa;
+				struct hostent *he = gethostbyname(host);
+				char *ip, *tmp;
+
+				if (he) {
+					memcpy(&sa.sin_addr, he->h_addr, sizeof(struct in_addr));
+					ip = inet_ntoa(sa.sin_addr);
+					
+					tmp = switch_string_replace(dest, host, ip);
+					//host = switch_core_session_strdup(nsession, ip);
+					//dest = switch_core_session_strdup(nsession, tmp);
+					switch_channel_set_variable_printf(nchannel, "sip_route_uri", "sip:%s", tmp);
+					free(tmp);
+				}
+			}
+
 			tech_pvt->dest = switch_core_session_alloc(nsession, strlen(dest) + 5);
 			tech_pvt->e_dest = switch_core_session_strdup(nsession, dest);
 			switch_snprintf(tech_pvt->dest, strlen(dest) + 5, "sip:%s", dest);

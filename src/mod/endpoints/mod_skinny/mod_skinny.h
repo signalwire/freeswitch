@@ -61,6 +61,10 @@
     "[%s:%d @ %s:%d] " _fmt, skinny_undef_str(listener->device_name), listener->device_instance, skinny_undef_str(listener->remote_ip), \
     listener->remote_port)
 
+#define skinny_log_s(session, level, _fmt, ...) switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), level, \
+    _fmt, __VA_ARGS__)
+
+
 /*****************************************************************************/
 /* MODULE TYPES */
 /*****************************************************************************/

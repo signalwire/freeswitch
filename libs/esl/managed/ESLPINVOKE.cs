@@ -251,13 +251,19 @@ class ESLPINVOKE {
   public static extern string ESLevent_NextHeader(HandleRef jarg1);
 
   [DllImport("ESL", EntryPoint="CSharp_new_ESLconnection__SWIG_0")]
-  public static extern IntPtr new_ESLconnection__SWIG_0(string jarg1, string jarg2, string jarg3, string jarg4);
+  public static extern IntPtr new_ESLconnection__SWIG_0(string jarg1, int jarg2, string jarg3, string jarg4);
 
   [DllImport("ESL", EntryPoint="CSharp_new_ESLconnection__SWIG_1")]
-  public static extern IntPtr new_ESLconnection__SWIG_1(string jarg1, string jarg2, string jarg3);
+  public static extern IntPtr new_ESLconnection__SWIG_1(string jarg1, int jarg2, string jarg3);
 
   [DllImport("ESL", EntryPoint="CSharp_new_ESLconnection__SWIG_2")]
-  public static extern IntPtr new_ESLconnection__SWIG_2(int jarg1);
+  public static extern IntPtr new_ESLconnection__SWIG_2(string jarg1, string jarg2, string jarg3, string jarg4);
+
+  [DllImport("ESL", EntryPoint="CSharp_new_ESLconnection__SWIG_3")]
+  public static extern IntPtr new_ESLconnection__SWIG_3(string jarg1, string jarg2, string jarg3);
+
+  [DllImport("ESL", EntryPoint="CSharp_new_ESLconnection__SWIG_4")]
+  public static extern IntPtr new_ESLconnection__SWIG_4(int jarg1);
 
   [DllImport("ESL", EntryPoint="CSharp_delete_ESLconnection")]
   public static extern void delete_ESLconnection(HandleRef jarg1);
