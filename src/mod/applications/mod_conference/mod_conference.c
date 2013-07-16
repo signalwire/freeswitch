@@ -1590,6 +1590,8 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 		if (conference->video_floor_holder == member) {
 			return;
 		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Dropping video floor %s\n", 
+							  switch_channel_get_name(conference->video_floor_holder->channel));
 			old_id = conference->video_floor_holder->id;
 			switch_channel_clear_flag(conference->video_floor_holder->channel, CF_VIDEO_PASSIVE);
 			switch_core_session_refresh_video(conference->video_floor_holder->session);
@@ -1597,6 +1599,8 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 	}
 
 	if ((conference->video_floor_holder = member)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Adding video floor %s\n", 
+						  switch_channel_get_name(conference->video_floor_holder->channel));
 		switch_channel_set_flag(member->channel, CF_VIDEO_PASSIVE);
 		switch_core_session_refresh_video(conference->video_floor_holder->session);
 		switch_set_flag(conference, CFLAG_FLOOR_CHANGE);
@@ -1632,6 +1636,8 @@ static void conference_set_floor_holder(conference_obj_t *conference, conference
 		} else {
 			old_id = conference->floor_holder->id;
 			if (!conference->video_floor_holder && !switch_test_flag(conference, CFLAG_VIDEO_BRIDGE)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Dropping floor %s\n", 
+								  switch_channel_get_name(conference->floor_holder->channel));
 				switch_channel_clear_flag(conference->floor_holder->channel, CF_VIDEO_PASSIVE);
 				switch_core_session_refresh_video(conference->floor_holder->session);
 			}
@@ -1640,6 +1646,8 @@ static void conference_set_floor_holder(conference_obj_t *conference, conference
 
 	if ((conference->floor_holder = member)) {
 		if (!conference->video_floor_holder && !switch_test_flag(conference, CFLAG_VIDEO_BRIDGE)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Adding floor %s\n", 
+							  switch_channel_get_name(conference->floor_holder->channel));
 			switch_channel_set_flag(member->channel, CF_VIDEO_PASSIVE);
 			switch_core_session_refresh_video(conference->floor_holder->session);
 		}
