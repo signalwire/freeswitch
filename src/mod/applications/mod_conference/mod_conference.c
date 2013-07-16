@@ -1459,6 +1459,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		if (switch_channel_test_flag(channel, CF_VIDEO)) {
 			if (!switch_test_flag(conference, CFLAG_VIDEO_BRIDGE)) {
 				switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
+				switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
 			}
 			/* Tell the channel to request a fresh vid frame */
 			switch_core_session_refresh_video(member->session);
