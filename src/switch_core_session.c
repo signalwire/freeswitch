@@ -2625,7 +2625,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	int scope = 0;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	char *app_uuid = uuid_str;
-	
+
 	if ((app_uuid_var = switch_channel_get_variable(channel, "app_uuid"))) {
 		app_uuid = (char *)app_uuid_var;
 		switch_channel_set_variable(channel, "app_uuid", NULL);
@@ -2727,8 +2727,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	msg.string_array_arg[1] = expanded;
 	switch_core_session_receive_message(session, &msg);
 
+	if (switch_channel_test_flag(channel, CF_VIDEO)) {
+		switch_channel_set_flag(channel, CF_VIDEO_ECHO);
+		switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
+		switch_core_session_refresh_video(session);
+	}
+
 	application_interface->application_function(session, expanded);
 
+	if (switch_channel_test_flag(channel, CF_VIDEO)) {
+		switch_channel_set_flag(channel, CF_VIDEO_ECHO);
+		switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
+		switch_core_session_refresh_video(session);
+	}
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE_COMPLETE) == SWITCH_STATUS_SUCCESS) {
 		const char *resp = switch_channel_get_variable(session->channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE);
 		switch_channel_event_set_data(session->channel, event);

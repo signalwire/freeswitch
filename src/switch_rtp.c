@@ -54,7 +54,7 @@
 #include <switch_version.h>
 #include <switch_ssl.h>
 
-#define FIR_COUNTDOWN 100
+#define FIR_COUNTDOWN 50
 
 #define READ_INC(rtp_session) switch_mutex_lock(rtp_session->read_mutex); rtp_session->reading++
 #define READ_DEC(rtp_session)  switch_mutex_unlock(rtp_session->read_mutex); rtp_session->reading--
@@ -270,6 +270,12 @@ typedef struct ts_normalize_s {
 	uint32_t last_frame;
 	uint32_t ts;
 	uint32_t delta;
+	uint32_t delta_ct;
+	uint32_t delta_ttl;
+	uint32_t delta_avg;
+	uint32_t delta_delta;
+	double delta_percent;
+	uint8_t m;
 } ts_normalize_t;
 
 struct switch_rtp {
@@ -3349,6 +3355,10 @@ SWITCH_DECLARE(void) switch_rtp_break(switch_rtp_t *rtp_session)
 		return;
 	}
 
+	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
+		return;
+	}
+
 	switch_mutex_lock(rtp_session->flag_mutex);
 	rtp_session->flags[SWITCH_RTP_FLAG_BREAK] = 1;
 
@@ -4247,15 +4257,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-
-	if (*bytes && rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-		unsigned int diff = ts - rtp_session->last_read_ts;
-
-		if (abs(diff) > 10000) {
-			switch_rtp_video_refresh(rtp_session);
-		}
-	}
-
 	if (ts) {
 		rtp_session->last_read_ts = ts;
 	}
@@ -4645,7 +4646,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 							goto end;
 						}
 						// This is dumb
-						switch_rtp_video_refresh(rtp_session);
+						//switch_rtp_video_refresh(rtp_session);
 						goto  rtcp;
 					}
 				}
@@ -4712,7 +4713,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				}
 
 				has_rtcp = 0;
-
+				
 			} else if (rtp_session->rtcp_read_pollfd) {
 				rtcp_poll_status = switch_poll(rtp_session->rtcp_read_pollfd, 1, &rtcp_fdr, 0);
 			}
@@ -5272,7 +5273,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 	}
 
 	if (rtp_session->fir_countdown) {
-		if (--rtp_session->fir_countdown == 0) {
+		if (--rtp_session->fir_countdown == FIR_COUNTDOWN / 2) {
 			send_fir(rtp_session);
 			//send_pli(rtp_session);
 		}
@@ -5483,6 +5484,9 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 		if (!rtp_session->ts_norm.last_ssrc || send_msg->header.ssrc != rtp_session->ts_norm.last_ssrc) {
 			if (rtp_session->ts_norm.last_ssrc) {
+				rtp_session->ts_norm.m = 1;
+				rtp_session->ts_norm.delta_ct = 1;
+				rtp_session->ts_norm.delta_ttl = 0;
 				if (rtp_session->ts_norm.delta) {
 					rtp_session->ts_norm.ts += rtp_session->ts_norm.delta;
 				}
@@ -5494,12 +5498,40 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 		if (ntohl(send_msg->header.ts) != rtp_session->ts_norm.last_frame) {
 			rtp_session->ts_norm.delta = ntohl(send_msg->header.ts) - rtp_session->ts_norm.last_frame;
+
+			if (rtp_session->ts_norm.delta > 0) {
+				rtp_session->ts_norm.delta_ct++;
+				if (rtp_session->ts_norm.delta_ct == 1000) {
+					rtp_session->ts_norm.delta_ct = 1;
+					rtp_session->ts_norm.delta_ttl = 0;
+				}
+
+				rtp_session->ts_norm.delta_ttl += rtp_session->ts_norm.delta;
+				rtp_session->ts_norm.delta_avg = rtp_session->ts_norm.delta_ttl / rtp_session->ts_norm.delta_ct;
+				rtp_session->ts_norm.delta_delta = abs(rtp_session->ts_norm.delta_avg - rtp_session->ts_norm.delta);
+				rtp_session->ts_norm.delta_percent = (double)((double)rtp_session->ts_norm.delta / (double)rtp_session->ts_norm.delta_avg) * 100.0f;
+
+
+				if (rtp_session->ts_norm.delta_ct > 50 && rtp_session->ts_norm.delta_percent > 125.0) {
+					//printf("%s diff %d %d (%.2f)\n", switch_core_session_get_name(rtp_session->session),
+					//rtp_session->ts_norm.delta, rtp_session->ts_norm.delta_avg, rtp_session->ts_norm.delta_percent);
+					switch_rtp_video_refresh(rtp_session);
+				}
+			}
 			rtp_session->ts_norm.ts += rtp_session->ts_norm.delta;
 		}
 		
 		rtp_session->ts_norm.last_frame = ntohl(send_msg->header.ts);
 		send_msg->header.ts = htonl(rtp_session->ts_norm.ts);
 
+		/* wait for a marked frame since we just switched streams */
+		if (rtp_session->ts_norm.m) {
+			if (send_msg->header.m) {
+				rtp_session->ts_norm.m = 0;
+			} else {
+				send = 0;
+			}
+		}
 	}
 
 	send_msg->header.ssrc = htonl(rtp_session->ssrc);

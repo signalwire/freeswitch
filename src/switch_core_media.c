@@ -3792,7 +3792,6 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Video thread started\n", switch_channel_get_name(session->channel));
 	switch_core_session_refresh_video(session);
-	switch_channel_set_flag(channel, CF_VIDEO_ECHO);	
 
 	while (switch_channel_up_nosig(channel)) {
 
