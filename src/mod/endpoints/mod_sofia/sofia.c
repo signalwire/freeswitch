@@ -5795,6 +5795,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						  switch_channel_get_name(channel), nua_callstate_name(ss_state), status);
 
 		if (r_sdp) {
+			switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
 
 			if (!(profile->mndlb & SM_NDLB_ALLOW_NONDUP_SDP) || (!zstr(tech_pvt->mparams.remote_sdp_str) && !strcmp(tech_pvt->mparams.remote_sdp_str, r_sdp))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Duplicate SDP\n%s\n", r_sdp);
@@ -5802,7 +5803,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote SDP:\n%s\n", r_sdp);
 				tech_pvt->mparams.remote_sdp_str = switch_core_session_strdup(session, r_sdp);
-				switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
 
 				if ((sofia_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) || switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND)) {
 					switch_core_media_set_sdp_codec_string(session, r_sdp);
