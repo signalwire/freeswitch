@@ -1931,6 +1931,8 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 
 		if (conference->video_floor_holder) {
 			floor_holder = conference->video_floor_holder;
+		} else {
+			floor_holder = NULL;
 		}
 
 
@@ -5311,8 +5313,12 @@ static switch_status_t conf_api_sub_vid_floor(conference_member_t *member, switc
 	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
+	if (!switch_channel_test_flag(member->channel, CF_VIDEO)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Channel %s does not have video capability!\n", switch_channel_get_name(member->channel));
+	}
+
 	if (switch_test_flag(member->conference, CFLAG_VIDEO_BRIDGE)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
 						  "conference %s is in video bridge mode, this functionality is not compatible\n", member->conference->name);
 		return SWITCH_STATUS_FALSE;
 	}
