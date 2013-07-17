@@ -2946,8 +2946,9 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 		sofia_gateway_t *gateway;
 		char *pkey = switch_mprintf("%s::%s", profile->name, name);
 
-		if (zstr(name)) {
-			name = "anonymous";
+		if (zstr(name) || switch_regex_match(name, "^[\\w\\.\\-\\_]+$") != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Ignoring invalid name '%s'\n", name ? name : "NULL");
+			goto skip;
 		}
 
 		switch_mutex_lock(mod_sofia_globals.hash_mutex);
