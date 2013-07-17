@@ -5273,7 +5273,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 	}
 
 	if (rtp_session->fir_countdown) {
-		if (--rtp_session->fir_countdown == FIR_COUNTDOWN / 2) {
+		rtp_session->fir_countdown--;
+
+		if (rtp_session->fir_countdown == FIR_COUNTDOWN / 2 || rtp_session->fir_countdown == 0) {
 			send_fir(rtp_session);
 			//send_pli(rtp_session);
 		}
