@@ -1135,6 +1135,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	const char *to_host = NULL;
 	char *mwi_account = NULL;
 	char *dup_mwi_account = NULL;
+	char *display_m = NULL;
 	char *mwi_user = NULL;
 	char *mwi_host = NULL;
 	char *var = NULL;
@@ -1320,10 +1321,16 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			if (to) {
 				display = to->a_display;
 				if (zstr(display)) {
-					display = "\"user\"";
+					display = "\"\"";
 				}
 			}
 		}
+
+		if (display && !strchr(display, '"')) {
+			display_m = switch_mprintf("\"%q\"", display);
+			display = display_m;
+		}
+
 
 		if (sip->sip_path) {
 			path_val = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_path);
@@ -2023,6 +2030,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 
   end:
+	switch_safe_free(display_m);
 	switch_safe_free(dup_mwi_account);
 	switch_safe_free(utmp);
 
