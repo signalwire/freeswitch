@@ -1583,6 +1583,10 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 	conference_member_t *old_member = NULL;
 	int old_id = 0;
 
+	if (!member) {
+		switch_clear_flag(conference, CFLAG_VID_FLOOR_LOCK);
+	}
+
 	if (switch_test_flag(conference, CFLAG_VIDEO_BRIDGE) || (!force && switch_test_flag(conference, CFLAG_VID_FLOOR_LOCK))) {
 		return;
 	}
@@ -1599,6 +1603,17 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 
 
 	switch_mutex_lock(conference->mutex);
+	if (!member) {
+		conference_member_t *imember;
+
+		for (imember = conference->members; imember; imember = imember->next) {
+			if (imember != conference->video_floor_holder && switch_channel_test_flag(imember->channel, CF_VIDEO)) {
+				member = imember;
+				break;
+			}
+		}
+	}
+
 	if (member) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Adding video floor %s\n", 
 						  switch_channel_get_name(member->channel));
@@ -5315,6 +5330,7 @@ static switch_status_t conf_api_sub_vid_floor(conference_member_t *member, switc
 
 	if (!switch_channel_test_flag(member->channel, CF_VIDEO)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Channel %s does not have video capability!\n", switch_channel_get_name(member->channel));
+		return SWITCH_STATUS_FALSE;
 	}
 
 	if (switch_test_flag(member->conference, CFLAG_VIDEO_BRIDGE)) {
