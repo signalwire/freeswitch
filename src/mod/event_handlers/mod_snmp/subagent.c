@@ -257,6 +257,10 @@ int handle_systemStats(netsnmp_mib_handler *handler, netsnmp_handler_registratio
 			switch_core_session_ctl(SCSC_SPS, &int_val);
 			snmp_set_var_typed_integer(requests->requestvb, ASN_GAUGE, int_val);
 			break;
+		case SS_PEAK_SESSIONS_PER_SECOND:
+			switch_core_session_ctl(SCSC_SPS_PEAK, &int_val);
+			snmp_set_var_typed_integer(requests->requestvb, ASN_GAUGE, int_val);
+			break;
 		default:
 			snmp_log(LOG_WARNING, "Unregistered OID-suffix requested (%d)\n", (int) subid);
 			netsnmp_set_request_error(reqinfo, request, SNMP_NOSUCHOBJECT);
