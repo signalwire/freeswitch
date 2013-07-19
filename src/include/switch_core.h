@@ -1937,6 +1937,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_check_results(switch_asr_handle_
 SWITCH_DECLARE(switch_status_t) switch_core_asr_get_results(switch_asr_handle_t *ah, char **xmlstr, switch_asr_flag_t *flags);
 
 /*!
+  \brief Get result headers from an asr handle
+  \param ah the handle to get results from
+  \param headers a pointer to dynamically allocate an switch_event_t result to
+  \param flags flags to influence behaviour
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_asr_get_result_headers(switch_asr_handle_t *ah, switch_event_t **headers, switch_asr_flag_t *flags);
+
+/*!
   \brief Load a grammar to an asr handle
   \param ah the handle to load to
   \param grammar the grammar text, file path, or URI
