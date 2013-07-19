@@ -26,6 +26,8 @@
 #if !defined(_SPANDSP_PRIVATE_T4_RX_H_)
 #define _SPANDSP_PRIVATE_T4_RX_H_
 
+typedef int (*t4_image_put_handler_t)(void *user_data, const uint8_t buf[], size_t len);
+
 /*!
     TIFF specific state information to go with T.4 compression or decompression handling.
 */
@@ -125,6 +127,9 @@ struct t4_rx_state_s
         t45_decode_state_t t45;
 #endif
     } decoder;
+
+    t4_image_put_handler_t image_put_handler;
+
     int current_decoder;
 
     uint8_t *pre_encoded_buf;

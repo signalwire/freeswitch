@@ -3079,6 +3079,8 @@ static switch_status_t do_config(switch_memory_pool_t *pool, const char *config_
 			switch_xml_t l;
 			const char *shared_secret = switch_xml_attr_soft(domain, "shared-secret");
 			const char *name = switch_xml_attr_soft(domain, "name");
+			const char *cert = switch_xml_attr_soft(domain, "cert");
+			const char *key = switch_xml_attr_soft(domain, "key");
 			if (zstr(name)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing <domain name=\"... failed to configure rayo server\n");
 				status = SWITCH_STATUS_FALSE;
@@ -3092,6 +3094,14 @@ static switch_status_t do_config(switch_memory_pool_t *pool, const char *config_
 
 			globals.xmpp_context = xmpp_stream_context_create(name, shared_secret, on_xmpp_stream_ready, on_xmpp_stream_recv, on_xmpp_stream_destroy);
 			globals.server = rayo_server_create(name);
+
+			/* set up TLS */
+			if (!zstr(cert)) {
+				xmpp_stream_context_add_cert(globals.xmpp_context, cert);
+			}
+			if (!zstr(key)) {
+				xmpp_stream_context_add_key(globals.xmpp_context, key);
+			}
 
 			/* configure authorized users for this domain */
 			l = switch_xml_child(domain, "users");
@@ -3719,14 +3729,14 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_rayo_shutdown)
 	switch_event_unbind_callback(on_call_end_event);
 	switch_event_unbind_callback(route_mixer_event);
 
-        switch_core_hash_destroy(&globals.command_handlers);
-        switch_core_hash_destroy(&globals.event_handlers);
-        switch_core_hash_destroy(&globals.clients_roster);
-        switch_core_hash_destroy(&globals.actors);
-        switch_core_hash_destroy(&globals.destroy_actors);
-        switch_core_hash_destroy(&globals.actors_by_id);
-        switch_core_hash_destroy(&globals.dial_gateways);
-        switch_core_hash_destroy(&globals.cmd_aliases);
+	switch_core_hash_destroy(&globals.command_handlers);
+	switch_core_hash_destroy(&globals.event_handlers);
+	switch_core_hash_destroy(&globals.clients_roster);
+	switch_core_hash_destroy(&globals.actors);
+	switch_core_hash_destroy(&globals.destroy_actors);
+	switch_core_hash_destroy(&globals.actors_by_id);
+	switch_core_hash_destroy(&globals.dial_gateways);
+	switch_core_hash_destroy(&globals.cmd_aliases);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Module shutdown\n");
 

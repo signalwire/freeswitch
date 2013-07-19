@@ -26,6 +26,8 @@
 #if !defined(_SPANDSP_PRIVATE_T4_TX_H_)
 #define _SPANDSP_PRIVATE_T4_TX_H_
 
+typedef int (*t4_image_get_handler_t)(void *user_data, uint8_t buf[], size_t len);
+
 /*!
     TIFF specific state information to go with T.4 compression or decompression handling.
 */
@@ -45,6 +47,17 @@ typedef struct
     /*! \brief The TIFF fill order setting for the current page. */
     uint16_t fill_order;
 
+    /*! \brief Width of the image in the file. */
+    uint32_t image_width;
+    /*! \brief Length of the image in the file. */
+    uint32_t image_length;
+    /*! \brief Column-to-column (X) resolution in pixels per metre of the image in the file. */
+    int x_resolution;
+    /*! \brief Row-to-row (Y) resolution in pixels per metre of the image in the file. */
+    int y_resolution;
+    /*! \brief Code for the combined X and Y resolution of the image in the file. */
+    int resolution_code;
+
     /*! \brief The number of pages in the current image file. */
     int pages_in_file;
 
@@ -56,18 +69,6 @@ typedef struct
     int image_buffer_size;
     /*! \brief Row counter for playing out the rows of the image. */
     int row;
-
-    /*! \brief Width of the image in the file. */
-    uint32_t image_width;
-    /*! \brief Length of the image in the file. */
-    uint32_t image_length;
-    /*! \brief Column-to-column (X) resolution in pixels per metre of the image in the file. */
-    int image_x_resolution;
-    /*! \brief Row-to-row (Y) resolution in pixels per metre of the image in the file. */
-    int image_y_resolution;
-    /*! \brief Code for the combined X and Y resolution of the image in the file. */
-    int resolution_code;
-
     /*! \brief Row counter used when the image is resized or dithered flat. */
     int raw_row;
 } t4_tx_tiff_state_t;
@@ -162,23 +163,25 @@ struct t4_tx_state_s
 #endif
     } encoder;
 
-    image_translate_state_t translator;
-    uint8_t *pack_buf;
-    int pack_ptr;
-    int pack_row;
-    int pack_bit_mask;
+    t4_image_get_handler_t image_get_handler;
 
     int apply_lab;
     lab_params_t lab_params;
     uint8_t *colour_map;
     int colour_map_entries;
 
+    image_translate_state_t translator;
+    uint8_t *pack_buf;
+    int pack_ptr;
+    int pack_row;
+    int pack_bit_mask;
+
     uint8_t *pre_encoded_buf;
     int pre_encoded_len;
     int pre_encoded_ptr;
     int pre_encoded_bit;
 
-    /* Supporting information, like resolutions, which the backend may want. */
+    /*! \brief Supporting information, like resolutions, which the backend may want. */
     t4_tx_metadata_t metadata;
 
     /*! \brief All TIFF file specific state information for the T.4 context. */

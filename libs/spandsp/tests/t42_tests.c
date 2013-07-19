@@ -147,11 +147,15 @@ int main(int argc, char *argv[])
     uint16_t *map_b;
     uint16_t *map_z;
     uint32_t jpeg_table_len;
+#if 0
     logging_state_t *logging;
+#endif
 
     printf("Demo of ITU/Lab library.\n");
 
+#if 0
     logging = span_log_init(NULL, SPAN_LOG_FLOW, "T.42");
+#endif
 
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
     TIFF_FX_init();
@@ -265,6 +269,7 @@ int main(int argc, char *argv[])
         break;
     }
 
+    outsize = 0;
     if (process_raw)
     {
         uint8_t *jpeg_table;

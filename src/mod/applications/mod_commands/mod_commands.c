@@ -2012,7 +2012,7 @@ SWITCH_STANDARD_API(lan_addr_function)
 SWITCH_STANDARD_API(status_function)
 {
 	switch_core_time_duration_t duration = { 0 };
-	int sps = 0, last_sps = 0;
+	int sps = 0, last_sps = 0, max_sps = 0;
 	switch_bool_t html = SWITCH_FALSE;	/* shortcut to format.html	*/
 	char * nl = "\n";					/* shortcut to format.nl	*/
 	stream_format format = { 0 };
@@ -2058,7 +2058,8 @@ SWITCH_STANDARD_API(status_function)
 	stream->write_function(stream, "%" SWITCH_SIZE_T_FMT " session(s) since startup%s", switch_core_session_id() - 1, nl);
 	switch_core_session_ctl(SCSC_LAST_SPS, &last_sps);
 	switch_core_session_ctl(SCSC_SPS, &sps);
-	stream->write_function(stream, "%d session(s) - %d out of max %d per sec %s", switch_core_session_count(), last_sps, sps, nl);
+	switch_core_session_ctl(SCSC_SPS_PEAK, &max_sps);
+	stream->write_function(stream, "%d session(s) - %d out of max %d per sec peak %d %s", switch_core_session_count(), last_sps, sps, max_sps, nl);
 	stream->write_function(stream, "%d session(s) max%s", switch_core_session_limit(0), nl);
 	stream->write_function(stream, "min idle cpu %0.2f/%0.2f%s", switch_core_min_idle_cpu(-1.0), switch_core_idle_cpu(), nl);
 
@@ -2067,7 +2068,7 @@ SWITCH_STANDARD_API(status_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define CTL_SYNTAX "[recover|send_sighup|hupall|pause [inbound|outbound]|resume [inbound|outbound]|shutdown [cancel|elegant|asap|now|restart]|sps|sync_clock|sync_clock_when_idle|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|min_idle_cpu|loglevel [level]|debug_level [level]]"
+#define CTL_SYNTAX "[recover|send_sighup|hupall|pause [inbound|outbound]|resume [inbound|outbound]|shutdown [cancel|elegant|asap|now|restart]|sps|sps_peak_reset|sync_clock|sync_clock_when_idle|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|min_idle_cpu|loglevel [level]|debug_level [level]]"
 SWITCH_STANDARD_API(ctl_function)
 {
 	int argc;
@@ -2289,6 +2290,10 @@ SWITCH_STANDARD_API(ctl_function)
 			switch_core_session_ctl(SCSC_DEBUG_LEVEL, &arg);
 			stream->write_function(stream, "+OK DEBUG level: %d\n", arg);
 
+		} else if (!strcasecmp(argv[0], "sps_peak_reset")) {
+			arg = -1;
+			switch_core_session_ctl(SCSC_SPS_PEAK, &arg);
+			stream->write_function(stream, "+OK max sessions per second counter reset\n");
 		} else if (!strcasecmp(argv[0], "last_sps")) {
 			switch_core_session_ctl(SCSC_LAST_SPS, &arg);
 			stream->write_function(stream, "+OK last sessions per second: %d\n", arg);

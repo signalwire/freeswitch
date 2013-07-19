@@ -434,7 +434,7 @@ static void disconnect(t30_state_t *s);
 static void decode_20digit_msg(t30_state_t *s, char *msg, const uint8_t *pkt, int len);
 static void decode_url_msg(t30_state_t *s, char *msg, const uint8_t *pkt, int len);
 static int decode_nsf_nss_nsc(t30_state_t *s, uint8_t *msg[], const uint8_t *pkt, int len);
-static int set_min_scan_time_code(t30_state_t *s);
+static void set_min_scan_time(t30_state_t *s);
 static int send_cfr_sequence(t30_state_t *s, int start);
 static void timer_t2_start(t30_state_t *s);
 static void timer_t2a_start(t30_state_t *s);
@@ -1682,7 +1682,7 @@ static int build_dcs(t30_state_t *s)
         ||
         ((s->image_width == T4_WIDTH_1200_A4)  &&  (s->x_resolution == T4_X_RESOLUTION_1200)))
     {
-        span_log(&s->logging, SPAN_LOG_FLOW, "Image width is A4 at %ddpi x %ddpi\n", s->x_resolution, s->y_resolution);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Image width is A4 at %ddpm x %ddpm\n", s->x_resolution, s->y_resolution);
         /* No width related bits need to be set. */
     }
     else if (((s->image_width == T4_WIDTH_200_B4)  &&  (s->x_resolution == T4_X_RESOLUTION_200  ||  s->x_resolution == T4_X_RESOLUTION_R8))
@@ -1697,7 +1697,7 @@ static int build_dcs(t30_state_t *s)
     {
         if ((s->mutual_image_sizes & T4_SUPPORT_WIDTH_255MM))
         {
-            span_log(&s->logging, SPAN_LOG_FLOW, "Image width is B4 at %ddpi x %ddpi\n", s->x_resolution, s->y_resolution);
+            span_log(&s->logging, SPAN_LOG_FLOW, "Image width is B4 at %ddpm x %ddpm\n", s->x_resolution, s->y_resolution);
             set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_255MM_WIDTH);
         }
         else
@@ -1718,7 +1718,7 @@ static int build_dcs(t30_state_t *s)
     {
         if ((s->mutual_image_sizes & T4_SUPPORT_WIDTH_303MM))
         {
-            span_log(&s->logging, SPAN_LOG_FLOW, "Image width is A3 at %ddpi x %ddpi\n", s->x_resolution, s->y_resolution);
+            span_log(&s->logging, SPAN_LOG_FLOW, "Image width is A3 at %ddpm x %ddpm\n", s->x_resolution, s->y_resolution);
             set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_303MM_WIDTH);
         }
         else
@@ -2392,8 +2392,6 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
 
 static int step_fallback_entry(t30_state_t *s)
 {
-    int min_row_bits;
-
     while (fallback_sequence[++s->current_fallback].which)
     {
         if ((fallback_sequence[s->current_fallback].which & s->current_permitted_modems))
@@ -2404,8 +2402,7 @@ static int step_fallback_entry(t30_state_t *s)
     /* TODO: This only sets the minimum row time for future pages. It doesn't fix up the
              current page, though it is benign - fallback will only result in an excessive
              minimum. */
-    min_row_bits = set_min_scan_time_code(s);
-    t4_tx_set_min_bits_per_row(&s->t4.tx, min_row_bits);
+    set_min_scan_time(s);
     /* We need to rebuild the DCS message we will send. */
     build_dcs(s);
     return s->current_fallback;
@@ -2629,7 +2626,7 @@ static void disconnect(t30_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int set_min_scan_time_code(t30_state_t *s)
+static void set_min_scan_time(t30_state_t *s)
 {
     /* Translation between the codes for the minimum scan times the other end needs,
        and the codes for what we say will be used. We need 0 minimum. */
@@ -2645,6 +2642,7 @@ static int set_min_scan_time_code(t30_state_t *s)
         20, 5, 10, 0, 40, 0, 0, 0
     };
     int min_bits_field;
+    int min_row_bits;
 
     /* Set the minimum scan time bits */
     if (s->error_correcting_mode)
@@ -2654,6 +2652,7 @@ static int set_min_scan_time_code(t30_state_t *s)
     switch (s->y_resolution)
     {
     case T4_Y_RESOLUTION_SUPERFINE:
+    case T4_Y_RESOLUTION_400:
         if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_400_CAPABLE))
         {
             s->min_scan_time_code = translate_min_scan_time[(test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_MIN_SCAN_TIME_HALVES))  ?  2  :  1][min_bits_field];
@@ -2662,6 +2661,7 @@ static int set_min_scan_time_code(t30_state_t *s)
         span_log(&s->logging, SPAN_LOG_FLOW, "Remote FAX does not support super-fine resolution. Squashing image.\n");
         /* Fall through */
     case T4_Y_RESOLUTION_FINE:
+    case T4_Y_RESOLUTION_200:
         if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_200_CAPABLE))
         {
             s->min_scan_time_code = translate_min_scan_time[1][min_bits_field];
@@ -2671,19 +2671,21 @@ static int set_min_scan_time_code(t30_state_t *s)
         /* Fall through */
     default:
     case T4_Y_RESOLUTION_STANDARD:
+    case T4_Y_RESOLUTION_100:
         s->min_scan_time_code = translate_min_scan_time[0][min_bits_field];
         break;
     }
     if (!s->error_correcting_mode  &&  (s->iaf & T30_IAF_MODE_NO_FILL_BITS))
-        return 0;
-    return fallback_sequence[s->current_fallback].bit_rate*min_scan_times[s->min_scan_time_code]/1000;
+        min_row_bits = 0;
+    else
+        min_row_bits = fallback_sequence[s->current_fallback].bit_rate*min_scan_times[s->min_scan_time_code]/1000;
+    span_log(&s->logging, SPAN_LOG_FLOW, "Minimum bits per row will be %d\n", min_row_bits);
+    t4_tx_set_min_bits_per_row(&s->t4.tx, min_row_bits);
 }
 /*- End of function --------------------------------------------------------*/
 
 static int start_sending_document(t30_state_t *s)
 {
-    int min_row_bits;
-
     if (s->tx_file[0] == '\0')
     {
         /* There is nothing to send */
@@ -2715,15 +2717,8 @@ static int start_sending_document(t30_state_t *s)
     s->x_resolution = t4_tx_get_x_resolution(&s->t4.tx);
     s->y_resolution = t4_tx_get_y_resolution(&s->t4.tx);
     s->image_width = t4_tx_get_image_width(&s->t4.tx);
-    /* The minimum scan time to be used can't be evaluated until we know the Y resolution, and
-       must be evaluated before the minimum scan row bits can be evaluated. */
-    if ((min_row_bits = set_min_scan_time_code(s)) < 0)
-    {
-        terminate_operation_in_progress(s);
-        return -1;
-    }
-    span_log(&s->logging, SPAN_LOG_FLOW, "Minimum bits per row will be %d\n", min_row_bits);
-    t4_tx_set_min_bits_per_row(&s->t4.tx, min_row_bits);
+    /* The minimum scan time to be used can't be evaluated until we know the Y resolution. */
+    set_min_scan_time(s);
 
     if (s->error_correcting_mode)
     {

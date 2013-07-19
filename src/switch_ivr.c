@@ -3190,36 +3190,18 @@ static const char *get_prefixed_str(char *buffer, size_t buffer_size, const char
 	return buffer;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *session, const char *data)
+SWITCH_DECLARE(switch_status_t) switch_ivr_set_user_xml(switch_core_session_t *session, const char *prefix, 
+														const char *user, const char *domain, switch_xml_t x_user)
 {
-	switch_xml_t x_domain, xml = NULL, x_user, x_param, x_params, x_group = NULL;
-	char *user, *number_alias, *domain;
+	switch_xml_t x_params, x_param;
+	char *number_alias;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	char *prefix_buffer = NULL, *prefix;
+	char *prefix_buffer = NULL;
 	size_t buffer_size = 0;
 	size_t prefix_size = 0;
-	if (zstr(data)) {
-		goto error;
-	}
 
-	user = switch_core_session_strdup(session, data);
-
-	if ((prefix = strchr(user, ' '))) {
-		*prefix++ = 0;
-	}
-
-	if (!(domain = strchr(user, '@'))) {
-		goto error;
-	}
-
-	*domain++ = '\0';
-
-	if (switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, &x_group, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", user, domain);
-		goto done;
-	}
 
 	status = SWITCH_STATUS_SUCCESS;
 
@@ -3231,50 +3213,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *sessi
 
 	if ((number_alias = (char *) switch_xml_attr(x_user, "number-alias"))) {
 		switch_channel_set_variable(channel, get_prefixed_str(prefix_buffer, buffer_size, prefix, prefix_size, "number_alias"), number_alias);
-	}
-
-	if ((x_params = switch_xml_child(x_domain, "variables"))) {
-		for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
-			const char *var = switch_xml_attr(x_param, "name");
-			const char *val = switch_xml_attr(x_param, "value");
-
-			if (var && val) {
-				switch_channel_set_variable(channel, get_prefixed_str(prefix_buffer, buffer_size, prefix, prefix_size, var), val);
-			}
-		}
-	}
-
-	if ((x_params = switch_xml_child(x_domain, "profile-variables"))) {
-		for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
-			const char *var = switch_xml_attr(x_param, "name");
-			const char *val = switch_xml_attr(x_param, "value");
-
-			if (var && val) {
-				switch_channel_set_profile_var(channel, get_prefixed_str(prefix_buffer, buffer_size, prefix, prefix_size, var), val);
-			}
-		}
-	}
-
-	if (x_group && (x_params = switch_xml_child(x_group, "variables"))) {
-		for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
-			const char *var = switch_xml_attr(x_param, "name");
-			const char *val = switch_xml_attr(x_param, "value");
-
-			if (var && val) {
-				switch_channel_set_variable(channel, get_prefixed_str(prefix_buffer, buffer_size, prefix, prefix_size, var), val);
-			}
-		}
-	}
-
-	if ((x_params = switch_xml_child(x_group, "profile-variables"))) {
-		for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
-			const char *var = switch_xml_attr(x_param, "name");
-			const char *val = switch_xml_attr(x_param, "value");
-
-			if (var && val) {
-				switch_channel_set_profile_var(channel, get_prefixed_str(prefix_buffer, buffer_size, prefix, prefix_size, var), val);
-			}
-		}
 	}
 
 	if ((x_params = switch_xml_child(x_user, "variables"))) {
@@ -3299,17 +3237,55 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *sessi
 		}
 	}
 
-	switch_channel_set_variable(channel, get_prefixed_str(prefix_buffer, buffer_size, prefix, prefix_size, "user_name"), user);
-	switch_channel_set_variable(channel, get_prefixed_str(prefix_buffer, buffer_size, prefix, prefix_size, "domain_name"), domain);
+	if (user && domain) {
+		switch_channel_set_variable(channel, get_prefixed_str(prefix_buffer, buffer_size, prefix, prefix_size, "user_name"), user);
+		switch_channel_set_variable(channel, get_prefixed_str(prefix_buffer, buffer_size, prefix, prefix_size, "domain_name"), domain);
+	}
 
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *session, const char *data)
+{
+	switch_xml_t x_user;
+	char *user, *domain;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	char *prefix;
+
+	if (zstr(data)) {
+		goto error;
+	}
+
+	user = switch_core_session_strdup(session, data);
+
+	if ((prefix = strchr(user, ' '))) {
+		*prefix++ = 0;
+	}
+
+	if (!(domain = strchr(user, '@'))) {
+		goto error;
+	}
+
+	*domain++ = '\0';
+
+
+	if (switch_xml_locate_user_merged("id", user, domain, NULL, &x_user, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", user, domain);
+		goto done;
+	}
+
+	status = switch_ivr_set_user_xml(session, prefix, user, domain, x_user);
+	
 	goto done;
 
   error:
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No user@domain specified.\n");
 
   done:
-	if (xml) {
-		switch_xml_free(xml);
+
+	if (x_user) {
+		switch_xml_free(x_user);
 	}
 
 	return status;

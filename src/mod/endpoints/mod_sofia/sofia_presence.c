@@ -4475,8 +4475,8 @@ void sofia_presence_handle_sip_i_message(int status,
 				sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), NULL);
 				auth_res = sofia_reg_parse_auth(profile, authorization, sip, de,
 												(char *) sip->sip_request->rq_method_name, key, keylen, network_ip, NULL, 0,
-												REG_INVITE, NULL, NULL, NULL);
-			} else if ( sofia_reg_handle_register(nua, profile, nh, sip, de, REG_INVITE, key, keylen, &v_event, NULL, NULL)) {
+												REG_INVITE, NULL, NULL, NULL, NULL);
+			} else if ( sofia_reg_handle_register(nua, profile, nh, sip, de, REG_INVITE, key, keylen, &v_event, NULL, NULL, NULL)) {
 				if (v_event) {
 					switch_event_destroy(&v_event);
 				}

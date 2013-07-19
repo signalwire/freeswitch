@@ -357,6 +357,28 @@
 		</div>
 	</script>
 
+	<script type="text/x-handlebars" data-template-name="showNatMaps">
+		<h1>Nat Maps</h1>
+		<div>
+			<table class="table">
+			<tr>
+				<th>Port</th>
+				<th>Protocol</th>
+				<th>Protocol Number</th>
+				<th>Sticky</th>
+			</tr>
+			{{#each App.showNatMapsController.content}}
+			<tr>
+				<td>{{ port }}</td>
+				<td>{{ proto }}</td>
+				<td>{{ proto_num }}</td>
+				<td>{{ sticky }}</td>
+			</tr>
+			{{/each}}
+			</table>
+		</div>
+	</script>
+
 	<script type="text/x-handlebars" data-template-name="showSays">
 		<h1>Say</h1>
 		<div>
@@ -492,7 +514,7 @@
 		{{#linkTo "showCompletes"}} Complete {{/linkTo}} |
 		{{#linkTo "showChats"}} Chat {{/linkTo}} |
 		{{#linkTo "showManagements"}} Management {{/linkTo}} |
-		Nat_map |
+		{{#linkTo "showNatMaps"}} Nat Map {{/linkTo}} |
 		{{#linkTo "showSays"}} Say {{/linkTo}} |
 		{{#linkTo "showInterfaces"}} Interfaces {{/linkTo}} |
 		{{#linkTo "showInterfaceTypes"}} InterfaceTypes {{/linkTo}} |

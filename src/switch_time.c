@@ -1008,6 +1008,10 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			}
 			switch_mutex_lock(runtime.throttle_mutex);
 			runtime.sps_last = runtime.sps_total - runtime.sps;
+
+			if (runtime.sps_last > runtime.sps_peak) {
+				runtime.sps_peak = runtime.sps_last;
+			}
 			runtime.sps = runtime.sps_total;
 			switch_mutex_unlock(runtime.throttle_mutex);
 			tick = 0;

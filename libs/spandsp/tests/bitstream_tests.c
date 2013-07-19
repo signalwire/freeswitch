@@ -45,7 +45,7 @@
 
 uint8_t buffer[256];
 
-#define PATTERN             0x11111111
+#define PATTERN             0x1111111
 #define SEQUENCE_LENGTH     17
 
 uint8_t left[] =
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
     total_bits = 0;
     for (i = 0;  i < SEQUENCE_LENGTH;  i++)
     {
-        bitstream_put(s, &w, PATTERN*i, i + 1);
+        bitstream_put(s, &w, i*PATTERN, i + 1);
         total_bits += (i + 1);
     }
     bitstream_flush(s, &w);

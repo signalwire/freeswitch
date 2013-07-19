@@ -1108,7 +1108,7 @@ static void our_sofia_event_callback(nua_event_t event,
 			sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), NULL);
 			auth_res = sofia_reg_parse_auth(profile, authorization, sip, de,
 											(char *) sip->sip_request->rq_method_name, tech_pvt->key, strlen(tech_pvt->key), network_ip, NULL, 0,
-											REG_INVITE, NULL, NULL, NULL);
+											REG_INVITE, NULL, NULL, NULL, NULL);
 		}
 
 		if ((auth_res != AUTH_OK && auth_res != AUTH_RENEWED)) {
@@ -2946,8 +2946,9 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 		sofia_gateway_t *gateway;
 		char *pkey = switch_mprintf("%s::%s", profile->name, name);
 
-		if (zstr(name)) {
-			name = "anonymous";
+		if (zstr(name) || switch_regex_match(name, "^[\\w\\.\\-\\_]+$") != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Ignoring invalid name '%s'\n", name ? name : "NULL");
+			goto skip;
 		}
 
 		switch_mutex_lock(mod_sofia_globals.hash_mutex);
@@ -5794,6 +5795,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						  switch_channel_get_name(channel), nua_callstate_name(ss_state), status);
 
 		if (r_sdp) {
+			switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
 
 			if (!(profile->mndlb & SM_NDLB_ALLOW_NONDUP_SDP) || (!zstr(tech_pvt->mparams.remote_sdp_str) && !strcmp(tech_pvt->mparams.remote_sdp_str, r_sdp))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Duplicate SDP\n%s\n", r_sdp);
@@ -5801,7 +5803,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote SDP:\n%s\n", r_sdp);
 				tech_pvt->mparams.remote_sdp_str = switch_core_session_strdup(session, r_sdp);
-				switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
 
 				if ((sofia_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) || switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND)) {
 					switch_core_media_set_sdp_codec_string(session, r_sdp);
@@ -7762,6 +7763,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	char network_ip[80];
 	char proxied_client_ip[80];
 	switch_event_t *v_event = NULL;
+	switch_xml_t x_user = NULL;
 	uint32_t sess_count = switch_core_session_count();
 	uint32_t sess_max = switch_core_session_limit(0);
 	int is_auth = 0, calling_myself = 0;
@@ -7999,9 +8001,12 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		if (!strcmp(network_ip, profile->sipip) && network_port == profile->sip_port) {
 			calling_myself++;
 		} else {
-			if (sofia_reg_handle_register(nua, profile, nh, sip, de, REG_INVITE, key, sizeof(key), &v_event, NULL, NULL)) {
+			if (sofia_reg_handle_register(nua, profile, nh, sip, de, REG_INVITE, key, sizeof(key), &v_event, NULL, NULL, &x_user)) {
 				if (v_event) {
 					switch_event_destroy(&v_event);
+				}
+				if (x_user) {
+					switch_xml_free(x_user);
 				}
 
 				if (sip->sip_authorization || sip->sip_proxy_authorization) {
@@ -8083,15 +8088,6 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 	if (calling_myself) {
 		switch_channel_set_variable(channel, "sip_looped_call", "true");
-	}
-
-	if (v_event) {
-		switch_event_header_t *hp;
-
-		for (hp = v_event->headers; hp; hp = hp->next) {
-			switch_channel_set_variable(channel, hp->name, hp->value);
-		}
-		switch_event_destroy(&v_event);
 	}
 
 	if (sip->sip_from && sip->sip_from->a_url) {
@@ -8839,6 +8835,24 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 		switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 	}
+
+	if (x_user) {
+		const char *user = NULL, *domain = NULL;
+
+		if (v_event) {
+			user = switch_event_get_header(v_event, "username");
+			domain = switch_event_get_header(v_event, "domain_name");
+		}
+
+		switch_ivr_set_user_xml(session, NULL, user, domain, x_user);
+		switch_xml_free(x_user);
+		x_user = NULL;
+	}
+
+	if (v_event) {
+		switch_event_destroy(&v_event);
+	}
+
 
 	tech_pvt->sofia_private = sofia_private;
 	tech_pvt->nh = nh;

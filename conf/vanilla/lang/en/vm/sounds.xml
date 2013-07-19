@@ -334,12 +334,15 @@
   <macro name="voicemail_say_phone_number">
     <input pattern="^000|^$|^[Aa]non|^[Pp]rivate" break_on_match="true">
       <match>
-        <!-- add 'anonymous caller' sound here -->
+        <action function="play-file" data="voicemail/vm-message_from.wav"/>
+        <action function="execute" data="sleep(100)"/>
+        <action function="play-file" data="ivr/ivr-anonymous_caller.wav"/>
+        <action function="execute" data="sleep(500)"/>
       </match>
     </input>
     <input pattern="^(.*)$">
       <match>
-        <action function="play-file" data="ivr/ivr-this_is_a_call_from.wav"/>
+        <action function="play-file" data="voicemail/vm-message_from.wav"/>
         <action function="execute" data="sleep(100)"/>
         <action function="say" data="$1" method="pronounced" type="name_spelled"/>
         <action function="execute" data="sleep(500)"/>

@@ -154,6 +154,12 @@ App.ShowSaysRoute = Ember.Route.extend({
 	}
 });
 
+App.ShowNatMapsRoute = Ember.Route.extend({
+	setupController: function(controller) {
+		App.showNatMapsController.load();
+	}
+});
+
 App.ShowChatsRoute = Ember.Route.extend({
 	setupController: function(controller) {
 		App.showChatsController.load();
@@ -203,6 +209,7 @@ App.Router.map(function(){
 	this.route("showAliases");
 	this.route("showCompletes");
 	this.route("showManagements");
+	this.route("showNatMaps");
 	this.route("showSays");
 	this.route("showChats");
 	this.route("showInterfaces");
@@ -540,6 +547,23 @@ App.showManagementsController = Ember.ArrayController.create({
 	load: function() {
 		var me = this;
 		$.getJSON("/txtapi/show?management%20as%20json", function(data){
+			me.set('total', data.row_count);
+			me.content.clear();
+			if (data.row_count == 0) return;
+
+			me.pushObjects(data.rows);
+
+		});
+	}
+});
+
+App.showNatMapsController = Ember.ArrayController.create({
+	content: [],
+	init: function(){
+	},
+	load: function() {
+		var me = this;
+		$.getJSON("/txtapi/show?nat_map%20as%20json", function(data){
 			me.set('total', data.row_count);
 			me.content.clear();
 			if (data.row_count == 0) return;

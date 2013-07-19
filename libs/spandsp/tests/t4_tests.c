@@ -53,48 +53,6 @@ in ITU specifications T.4 and T.6.
 t4_tx_state_t *send_state;
 t4_rx_state_t *receive_state;
 
-/* The following are some test cases from T.4 */
-#define FILL_70      "                                                                      "
-#define FILL_80      "                                                                                "
-#define FILL_100     "                                                                                                    "
-#define FILL_670     FILL_100 FILL_100 FILL_100 FILL_100 FILL_100 FILL_100 FILL_70
-#define FILL_980     FILL_100 FILL_100 FILL_100 FILL_100 FILL_100 FILL_100 FILL_100 FILL_100 FILL_100 FILL_80
-
-static const char t4_t6_test_patterns[][1728 + 1] =
-{
-    "XXXXXX              " FILL_980 "  XXX  XXX X                  " FILL_670 "                        XXXX",
-    "XXXXXX              " FILL_980 "     XXX   X                  " FILL_670 "                        XXXX",
-    /* Line start should code to V(0). Line middle codes to VR(3) VL(2) V(0). Line end should code to V(0) V(0). */
-
-    " XXXX               " FILL_980 "    XXXXXXX                   " FILL_670 "                        XX  ",
-    "XXXXX               " FILL_980 "XX       XX                   " FILL_670 "                        XXXX",
-    /* Line start should code to VL(1). Line middle codes to H(7,2). Line end should code to V(0) VR(2) */
-
-    "XXX                 " FILL_980 " XX  XX   XX        XXX       " FILL_670 "                      X     ",
-    "                    " FILL_980 " X       XXX   XXXX           " FILL_670 "                      X   XX",
-    /* Line start should code to P. Line middle codes to P VL(1) V(0) H(3,4) P. Line end codes to V(0) VL(2) V(0). */
-
-    "XXXXX               " FILL_980 "                              " FILL_670 "                        XXXX",
-    "  XXX               " FILL_980 "                              " FILL_670 "                        XX  ",
-    /* Line start should code to VR(2). Line end codes to V(0) VL(2) V(0). */
-
-    "         XX         " FILL_980 "                              " FILL_670 "                      X  XXX",
-    "XXX       X         " FILL_980 "                              " FILL_670 "                      X     ",
-    /* Line start should code to H(0,3) VR(1). Line end codes to V(0) VR(3). */
-
-    "                    " FILL_980 "                              " FILL_670 "                         XX ",
-    "                    " FILL_980 "                              " FILL_670 "                            ",
-    /* Line end codes to P V(0) a'0. */
-
-    "                    " FILL_980 "                              " FILL_670 "                  XXXXXXXXXX",
-    "                    " FILL_980 "                              " FILL_670 "              XXXXXX  XXXXXX",
-    /* Line end codes to H(2,6). */
-
-    "                    " FILL_980 "                              " FILL_670 "                   XX  XXXXX",
-    "                    " FILL_980 "                              " FILL_670 "                   XX       ",
-    /* Line end codes to V(0) H(7,0). */
-};
-
 int rows_written = 0;
 int rows_read = 0;
 
@@ -140,63 +98,7 @@ static void display_page_stats(t4_rx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int row_read_handler(void *user_data, uint8_t buf[], size_t len)
-{
-    int i;
-    int j;
-    const char *s;
-
-    /* Send the test pattern. */
-    if (rows_read >= 16)
-        return 0;
-    s = t4_t6_test_patterns[rows_read++];
-    memset(buf, 0, len);
-    for (i = 0;  i < len;  i++)
-    {
-        for (j = 0;  j < 8;  j++)
-        {
-            if (*s++ != ' ')
-                buf[i] |= (0x80 >> j);
-        }
-    }
-    if (*s)
-        printf("Oops - '%c' at end of row %d\n", *s, rows_read);
-    return len;
-}
-/*- End of function --------------------------------------------------------*/
-
-static int row_write_handler(void *user_data, const uint8_t buf[], size_t len)
-{
-    int i;
-    int j;
-    const char *s;
-    uint8_t ref[8192];
-
-    /* Verify that what is received matches the test pattern. */
-    if (len == 0)
-        return 0;
-    s = t4_t6_test_patterns[rows_written++];
-    memset(ref, 0, len);
-    for (i = 0;  i < len;  i++)
-    {
-        for (j = 0;  j < 8;  j++)
-        {
-            if (*s++ != ' ')
-                ref[i] |= (0x80 >> j);
-        }
-    }
-    if (*s)
-        printf("Oops - '%c' at end of row %d\n", *s, rows_written);
-    if (memcmp(buf, ref, len))
-    {
-        printf("Test failed at row %d\n", rows_written);
-        exit(2);
-    }
-    return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-static int detect_page_end(int bit, int page_ended)
+static int detect_non_ecm_page_end(int bit, int page_ended)
 {
     static int consecutive_eols;
     static int max_consecutive_eols;
@@ -207,10 +109,10 @@ static int detect_page_end(int bit, int page_ended)
     static int expected_eols;
     static int end_marks;
 
-    /* Check the EOLs are added properly to the end of an image. We can't rely on the
-       decoder giving the right answer, as a full set of EOLs is not needed for the
-       decoder to work. */
-    if (bit == -1000000)
+    /* Check the EOLs are added properly to the end of a non-ECM image. We can't rely
+       on the decoder giving the right answer, as a full set of EOLs is not needed for
+       the decoder to work. */
+    if (bit == -1)
     {
         /* Reset */
         consecutive_eols = 0;
@@ -287,6 +189,9 @@ int main(int argc, char *argv[])
         T4_COMPRESSION_T6,
         T4_COMPRESSION_T85,
         T4_COMPRESSION_T85_L0,
+#if defined(SPANDSP_SUPPORT_T88x)
+        T4_COMPRESSION_T88,
+#endif
 #if defined(SPANDSP_SUPPORT_T42x)
         T4_COMPRESSION_T42_T81,
         T4_COMPRESSION_SYCC_T81,
@@ -294,7 +199,9 @@ int main(int argc, char *argv[])
 #if defined(SPANDSP_SUPPORT_T43x)
         T4_COMPRESSION_T43,
 #endif
-        //T4_COMPRESSION_T45,
+#if defined(SPANDSP_SUPPORT_T45x)
+        T4_COMPRESSION_T45,
+#endif
         -1
     };
     int sends;
@@ -348,7 +255,10 @@ int main(int argc, char *argv[])
         case 'b':
             block_size = atoi(optarg);
             if (block_size > 1024)
-                block_size = 1024;
+            {
+                printf("Block size too large. Must be 1024 or less\n");
+                exit(2);
+            }
             break;
         case 'c':
             if (strcmp(optarg, "T41D") == 0)
@@ -371,6 +281,13 @@ int main(int argc, char *argv[])
                 compression = T4_COMPRESSION_T85;
                 compression_step = -1;
             }
+#if defined(SPANDSP_SUPPORT_T88)
+            else if (strcmp(optarg, "T88") == 0)
+            {
+                compression = T4_COMPRESSION_T88;
+                compression_step = -1;
+            }
+#endif
 #if defined(SPANDSP_SUPPORT_T42)
             else if (strcmp(optarg, "T81") == 0)
             {
@@ -385,6 +302,18 @@ int main(int argc, char *argv[])
                 compression_step = -1;
             }
 #endif
+#if defined(SPANDSP_SUPPORT_T45)
+            else if (strcmp(optarg, "T45") == 0)
+            {
+                compression = T4_COMPRESSION_T45;
+                compression_step = -1;
+            }
+#endif
+            else
+            {
+                printf("Unrecognised compression.\n");
+                exit(2);
+            }
             break;
         case 'd':
             decode_file_name = optarg;
@@ -534,130 +463,6 @@ int main(int argc, char *argv[])
     else
     {
 #if 1
-        printf("Testing image_function->compress->decompress->image_function\n");
-        /* Send end gets image from a function */
-        if ((send_state = t4_tx_init(NULL, NULL, -1, -1)) == NULL)
-        {
-            printf("Failed to init T.4 tx\n");
-            exit(2);
-        }
-        span_log_set_level(t4_tx_get_logging_state(send_state), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_FLOW);
-        t4_tx_set_row_read_handler(send_state, row_read_handler, NULL);
-        t4_tx_set_image_width(send_state, 1728);
-        t4_tx_set_min_bits_per_row(send_state, min_row_bits);
-        t4_tx_set_max_2d_rows_per_1d_row(send_state, 2);
-
-        /* Receive end puts TIFF to a function. */
-        if ((receive_state = t4_rx_init(NULL, NULL, T4_COMPRESSION_T4_2D)) == NULL)
-        {
-            printf("Failed to init T.4 rx\n");
-            exit(2);
-        }
-        span_log_set_level(t4_rx_get_logging_state(receive_state), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_FLOW);
-        t4_rx_set_row_write_handler(receive_state, row_write_handler, NULL);
-        t4_rx_set_image_width(receive_state, t4_tx_get_image_width(send_state));
-        t4_rx_set_x_resolution(receive_state, t4_tx_get_x_resolution(send_state));
-        t4_rx_set_y_resolution(receive_state, t4_tx_get_y_resolution(send_state));
-
-        /* Now send and receive the test data with all compression modes. */
-        /* If we are stepping around the compression schemes, reset to the start of the sequence. */
-        if (compression_step > 0)
-            compression_step = 0;
-        for (;;)
-        {
-            end_marks = 0;
-            if (compression_step >= 0)
-            {
-                compression = compression_sequence[compression_step++];
-                if (compression < 0  ||  (block_size == 0  &&  compression_step >= 3))
-                    break;
-            }
-            t4_tx_set_tx_encoding(send_state, compression);
-            t4_rx_set_rx_encoding(receive_state, compression);
-
-            rows_read = 0;
-            rows_written = 0;
-            if (t4_tx_start_page(send_state))
-                break;
-            if (t4_rx_start_page(receive_state))
-                break;
-            detect_page_end(-1000000, compression);
-            page_ended = FALSE;
-            switch (block_size)
-            {
-            case 0:
-                while ((bit = t4_tx_get_bit(send_state)) >= 0)
-                {
-                    /* Monitor whether the EOLs are there in the correct amount */
-                    if ((res = detect_page_end(bit, page_ended)))
-                    {
-                        printf("Incorrect EOLs - %d\n", res);
-                        tests_failed += (res - 1);
-                        break;
-                    }
-                    if (bit >= 0)
-                    {
-                        if (bit_error_rate)
-                        {
-                            if ((rand() % bit_error_rate) == 0)
-                                bit ^= 1;
-                        }
-                        end_of_page = t4_rx_put_bit(receive_state, bit);
-                    }
-                }
-                while (end_of_page != T4_DECODE_OK)
-                {
-                    end_of_page = t4_rx_put_bit(receive_state, 0);
-                    if (++end_marks > 50)
-                    {
-                        printf("Receiver missed the end of page mark\n");
-                        tests_failed++;
-                        break;
-                    }
-                }
-                /* Now throw junk at the receive context, to ensure stuff occuring
-                   after the end of page condition has no bad effect. */
-                for (i = 0;  i < 1000;  i++)
-                    t4_rx_put_bit(receive_state, (rand() >> 10) & 1);
-                break;
-            default:
-                /* Some decoders require a few extra bits before the recognise the end
-                   of an image, so be prepared to offer it a few. */
-                do
-                {
-                    len = t4_tx_get(send_state, block, block_size);
-                    if (len > 0)
-                        end_of_page = t4_rx_put(receive_state, block, len);
-                }
-                while (len > 0);
-                while (end_of_page != T4_DECODE_OK)
-                {
-                    block[0] = 0;
-                    end_of_page = t4_rx_put(receive_state, block, 1);
-                    if (++end_marks > 5)
-                    {
-                        printf("Receiver missed the end of page mark\n");
-                        tests_failed++;
-                        break;
-                    }
-                }
-                break;
-            }
-            display_page_stats(receive_state);
-            t4_tx_end_page(send_state);
-            t4_rx_end_page(receive_state);
-            if (rows_read != (15 + 1)  ||  rows_written != (15 + 1))
-            {
-                printf("Test failed: %d rows read, %d rows written\n", rows_read, rows_written);
-                exit(2);
-            }
-            if (compression_step < 0)
-                break;
-        }
-        t4_tx_release(send_state);
-        t4_rx_release(receive_state);
-#endif
-#if 1
         printf("Testing TIFF->compress->decompress->TIFF cycle\n");
         /* Send end gets TIFF from a file */
         if ((send_state = t4_tx_init(NULL, in_file_name, -1, -1)) == NULL)
@@ -713,6 +518,37 @@ int main(int argc, char *argv[])
                         compression = compression_sequence[compression_step++];
                     }
                 }
+#if 0
+                if (t4_tx_set_tx_image_format(send_state,
+                                              compression,
+                                              T4_SUPPORT_WIDTH_215MM
+                                            | T4_SUPPORT_LENGTH_US_LETTER
+                                            | T4_SUPPORT_LENGTH_US_LEGAL
+                                            | T4_SUPPORT_LENGTH_UNLIMITED,
+                                              T4_RESOLUTION_R8_STANDARD
+                                            | T4_RESOLUTION_R8_FINE
+                                            | T4_RESOLUTION_R8_SUPERFINE
+                                            | T4_RESOLUTION_R16_SUPERFINE
+                                            | T4_RESOLUTION_200_100
+                                            | T4_RESOLUTION_200_200
+                                            | T4_RESOLUTION_200_400
+                                            | T4_RESOLUTION_300_300
+                                            | T4_RESOLUTION_300_600
+                                            | T4_RESOLUTION_400_400
+                                            | T4_RESOLUTION_400_800
+                                            | T4_RESOLUTION_600_600
+                                            | T4_RESOLUTION_600_1200
+                                            | T4_RESOLUTION_1200_1200,
+                                              T4_RESOLUTION_100_100
+                                            | T4_RESOLUTION_200_200
+                                            | T4_RESOLUTION_300_300
+                                            | T4_RESOLUTION_400_400
+                                            | T4_RESOLUTION_600_600
+                                            | T4_RESOLUTION_1200_1200) < 0)
+                {
+                    break;
+                }
+#endif
                 t4_tx_set_tx_encoding(send_state, compression);
                 t4_rx_set_rx_encoding(receive_state, compression);
 
@@ -723,15 +559,17 @@ int main(int argc, char *argv[])
                 t4_rx_set_image_width(receive_state, t4_tx_get_image_width(send_state));
             }
             t4_rx_start_page(receive_state);
-            detect_page_end(-1000000, compression);
+            detect_non_ecm_page_end(-1, compression);
             page_ended = FALSE;
             switch (block_size)
             {
             case 0:
+                /* Bit by bit operation. This is only appropriate for T.4 1D and 2D,
+                   which are used without ECM. */
                 while ((bit = t4_tx_get_bit(send_state)) >= 0)
                 {
                     /* Monitor whether the EOLs are there in the correct amount */
-                    if ((res = detect_page_end(bit, page_ended)))
+                    if ((res = detect_non_ecm_page_end(bit, page_ended)))
                     {
                         printf("Incorrect EOLs - %d\n", res);
                         tests_failed += (res - 1);
@@ -767,7 +605,7 @@ int main(int argc, char *argv[])
                         end_of_page = t4_rx_put(receive_state, block, len);
                 }
                 while (len > 0);
-                /* Some decoders require a few extra bits before the recognise the end
+                /* Some decoders require a few extra bits before they recognise the end
                    of an image, so be prepared to offer it a few. */
                 while (end_of_page != T4_DECODE_OK)
                 {

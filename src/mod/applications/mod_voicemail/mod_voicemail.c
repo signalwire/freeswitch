@@ -1672,6 +1672,9 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 				char vm_cc[256] = "";
 				char macro_buf[80] = "";
 
+				switch_xml_t xml_root, x_domain, x_param, x_params, x_user = NULL;
+				switch_event_t *my_params = NULL;
+				switch_bool_t vm_enabled = SWITCH_TRUE;
 
 				switch_snprintf(key_buf, sizeof(key_buf), "%s:%s", profile->prepend_key, profile->forward_key);
 				TRY_CODE(vm_macro_get(session, VM_FORWARD_PREPEND_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout));
@@ -1712,15 +1715,51 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 				cmd = switch_core_session_sprintf(session, "%s@%s@%s %s %s '%s'", vm_cc, cbt->domain, profile->name, 
 												  new_file_path, cbt->cid_number, cbt->cid_name);
 
-				if (voicemail_inject(cmd, session) == SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s\n", vm_cc);
-					TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "saved", NULL, NULL));
-					cbt->move = VM_MOVE_SAME;
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to Carbon Copy to %s\n", vm_cc);
+				switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
+				switch_assert(my_params);
+
+				if (switch_xml_locate_domain(cbt->domain, my_params, &xml_root, &x_domain) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to forward message - Cannot locate domain %s\n", cbt->domain);
 					TRY_CODE(switch_ivr_phrase_macro(session, VM_INVALID_EXTENSION_MACRO, vm_cc, NULL, NULL));
 					goto get_exten;
+				} else if (switch_xml_locate_user_in_domain(vm_cc, x_domain, &x_user, NULL) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to forward message - Cannot locate user %s@%s\n", vm_cc, cbt->domain);
+					TRY_CODE(switch_ivr_phrase_macro(session, VM_INVALID_EXTENSION_MACRO, vm_cc, NULL, NULL));
+					goto get_exten;
+				} else {
+					x_params = switch_xml_child(x_user, "params");
+
+					for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
+						const char *var = switch_xml_attr_soft(x_param, "name");
+						const char *val = switch_xml_attr_soft(x_param, "value");
+						if (zstr(var) || zstr(val)) {
+							continue; /* Ignore empty entires */
+						}
+
+						if (!strcasecmp(var, "vm-enabled")) {
+							vm_enabled = !switch_false(val);
+						}
+					}
+
+					if (!vm_enabled) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to forward message - Voicemail is disabled for user %s@%s\n", vm_cc, cbt->domain);
+						TRY_CODE(switch_ivr_phrase_macro(session, VM_INVALID_EXTENSION_MACRO, vm_cc, NULL, NULL));
+						goto get_exten;
+					} else {
+						if (voicemail_inject(cmd, session) == SWITCH_STATUS_SUCCESS) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Forwarded message to %s\n", vm_cc);
+							TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "saved", NULL, NULL));
+							cbt->move = VM_MOVE_SAME;
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to forward message to %s\n", vm_cc);
+							TRY_CODE(switch_ivr_phrase_macro(session, VM_INVALID_EXTENSION_MACRO, vm_cc, NULL, NULL));
+							goto get_exten;
+						}
+					}
 				}
+				
+				switch_xml_free(xml_root);
+				switch_event_destroy(&my_params);
 			} else if (!strcmp(input, profile->delete_file_key) || (!strcmp(input, profile->email_key) && !zstr(cbt->email))) {
 				char *sql = switch_mprintf("update voicemail_msgs set flags='delete' where uuid='%s'", cbt->uuid);
 				vm_execute_sql(profile, sql, profile->mutex);
