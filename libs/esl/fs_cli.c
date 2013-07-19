@@ -1201,7 +1201,7 @@ static void read_config(const char *dft_cfile, const char *cfile) {
 			if (strcmp(cur_cat, cfg.category)) {
 				esl_set_string(cur_cat, cfg.category);
 				esl_set_string(profiles[pcount].name, cur_cat);
-				esl_set_string(profiles[pcount].host, "localhost");
+				esl_set_string(profiles[pcount].host, "127.0.0.1");
 				esl_set_string(profiles[pcount].pass, "ClueCon");
 				profiles[pcount].port = 8021;
 				set_fn_keys(&profiles[pcount]);
