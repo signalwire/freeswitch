@@ -1000,7 +1000,7 @@ void sofia_reg_auth_challenge(sofia_profile_t *profile, nua_handle_t *nh, sofia_
 auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization,
 								sip_t const *sip,
 								sofia_dispatch_event_t *de, const char *regstr, char *np, size_t nplen, char *ip, switch_event_t **v_event,
-								long exptime, sofia_regtype_t regtype, const char *to_user, switch_event_t **auth_params, long *reg_count);
+								long exptime, sofia_regtype_t regtype, const char *to_user, switch_event_t **auth_params, long *reg_count, switch_xml_t *user_xml);
 
 
 void sofia_reg_handle_sip_r_challenge(int status,
@@ -1047,7 +1047,7 @@ switch_call_cause_t sofia_glue_sip_cause_to_freeswitch(int status);
 void sofia_glue_do_xfer_invite(switch_core_session_t *session);
 uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip,
 								sofia_dispatch_event_t *de,
-								  sofia_regtype_t regtype, char *key, uint32_t keylen, switch_event_t **v_event, const char *is_nat);
+								  sofia_regtype_t regtype, char *key, uint32_t keylen, switch_event_t **v_event, const char *is_nat, switch_xml_t *user_xml);
 extern switch_endpoint_interface_t *sofia_endpoint_interface;
 void sofia_presence_set_chat_hash(private_object_t *tech_pvt, sip_t const *sip);
 switch_status_t sofia_on_hangup(switch_core_session_t *session);
