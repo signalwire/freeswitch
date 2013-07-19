@@ -1676,6 +1676,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 		*cause = SWITCH_CAUSE_NO_ANSWER;
 	}
 
+	if (channel) {
+		if (*cause == SWITCH_CAUSE_SUCCESS) {
+			switch_channel_set_variable(channel, "originate_disposition", "success");
+		} else {
+			switch_channel_set_variable(channel, "originate_disposition", "failure");
+			switch_channel_set_variable(channel, "hangup_cause", switch_channel_cause2str(*cause));
+		}
+	}
+
+
 	if (var_event && var_event != ovars) {
 		switch_event_destroy(&var_event);
 	}
