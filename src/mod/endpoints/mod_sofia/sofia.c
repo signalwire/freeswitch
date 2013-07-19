@@ -8844,7 +8844,6 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 			domain = switch_event_get_header(v_event, "domain_name");
 		}
 
-		printf("W00t!!!!\n");
 		switch_ivr_set_user_xml(session, NULL, user, domain, x_user);
 		switch_xml_free(x_user);
 		x_user = NULL;
