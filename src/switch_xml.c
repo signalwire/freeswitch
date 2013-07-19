@@ -1919,8 +1919,10 @@ SWITCH_DECLARE(void) switch_xml_merge_user(switch_xml_t user, switch_xml_t domai
 
 	do_merge(user, group, "params", "param");
 	do_merge(user, group, "variables", "variable");
+	do_merge(user, group, "profile-variables", "variable");
 	do_merge(user, domain, "params", "param");
 	do_merge(user, domain, "variables", "variable");
+	do_merge(user, domain, "profile-variables", "variable");
 }
 
 SWITCH_DECLARE(uint32_t) switch_xml_clear_user_cache(const char *key, const char *user_name, const char *domain_name)
