@@ -3791,6 +3791,7 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 
 	while (switch_channel_up_nosig(channel) && !switch_test_flag(sth->ah, SWITCH_ASR_FLAG_CLOSED)) {
 		char *xmlstr = NULL;
+		switch_event_t *headers = NULL;
 
 		switch_thread_cond_wait(sth->cond, sth->mutex);
 
@@ -3804,6 +3805,9 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 
 			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 				goto done;
+			} else if (status == SWITCH_STATUS_SUCCESS) {
+				/* Try to fetch extra information for this result, the return value doesn't really matter here - it's just optional data. */
+				switch_core_asr_get_result_headers(sth->ah, &headers, &flags);
 			}
 
 			if (status == SWITCH_STATUS_SUCCESS && switch_true(switch_channel_get_variable(channel, "asr_intercept_dtmf"))) {
@@ -3853,6 +3857,11 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 			if (switch_event_create(&event, SWITCH_EVENT_DETECTED_SPEECH) == SWITCH_STATUS_SUCCESS) {
 				if (status == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Speech-Type", "detected-speech");
+
+					if (headers) {
+						switch_event_merge(event, headers);
+					}
+
 					switch_event_add_body(event, "%s", xmlstr);
 				} else {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Speech-Type", "begin-speaking");
@@ -3876,6 +3885,10 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 			}
 
 			switch_safe_free(xmlstr);
+
+			if (headers) {
+				switch_event_destroy(&headers);
+			}
 		}
 	}
   done:
