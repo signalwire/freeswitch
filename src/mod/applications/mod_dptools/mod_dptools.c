@@ -445,6 +445,8 @@ SWITCH_STANDARD_APP(detect_speech_function)
 			switch_ivr_detect_speech_disable_grammar(session, argv[1]);
 		} else if (!strcasecmp(argv[0], "grammarsalloff")) {
 			switch_ivr_detect_speech_disable_all_grammars(session);
+		} else if (!strcasecmp(argv[0], "init")) {
+			switch_ivr_detect_speech_init(session, argv[1], argv[2], NULL);
 		} else if (!strcasecmp(argv[0], "pause")) {
 			switch_ivr_pause_detect_speech(session);
 		} else if (!strcasecmp(argv[0], "resume")) {

@@ -185,6 +185,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_se
 
 
 /*!
+  \brief Initialize background Speech detection on a session, so that parameters can be set, and grammars loaded.
+  After calling this function, it is possible to call switch_ivr_set_param_detect_speech() to set recognition parameters.
+  Calling switch_ivr_detect_speech_load_grammar() starts the speech recognition.
+  \param session the session to attach
+  \param mod_name the module name of the ASR library
+  \param dest the destination address
+  \param ah an ASR handle to use (NULL to create one)
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_init(switch_core_session_t *session, const char *mod_name,
+															  const char *dest, switch_asr_handle_t *ah);
+/*!
   \brief Engage background Speech detection on a session
   \param session the session to attach
   \param mod_name the module name of the ASR library
