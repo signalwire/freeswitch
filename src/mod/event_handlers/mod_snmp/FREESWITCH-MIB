@@ -141,6 +141,14 @@ maxSessionsPerSecond OBJECT-TYPE
         "Maximum permissible sessions per second"
     ::= { systemStats 7 }
 
+peakSessionsPerSecond OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Maximum sessions per second"
+    ::= { systemStats 8 }
+
 
 ChannelEntry ::= SEQUENCE {
     chanIndex           Integer32,
