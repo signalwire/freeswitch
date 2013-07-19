@@ -552,7 +552,6 @@ int read_compressed_image(meta_t *meta, uint8_t **buf)
 int read_decompressed_image(meta_t *meta, uint8_t **buf)
 {
     int bytes_per_row;
-    tsize_t off;
     int x;
     int y;
     int xx;
@@ -561,21 +560,23 @@ int read_decompressed_image(meta_t *meta, uint8_t **buf)
     int yyy;
     int i;
     int j;
-    uint32_t w;
-    uint32_t h;
-    uint16_t samples_per_pixel;
     int result;
     int total_raw;
     int total_data;
     uint8_t *raw_buf;
     uint8_t *image_buf;
-    uint8_t *jpeg_table;
-    uint32_t jpeg_table_len;
     t85_decode_state_t t85;
     t43_decode_state_t t43;
     packer_t pack;
     logging_state_t *logging;
     logging_state_t logging2;
+#if 0
+    uint8_t *jpeg_table;
+    uint32_t jpeg_table_len;
+    tsize_t off;
+    uint32_t w;
+    uint32_t h;
+#endif
 
     image_buf = NULL;
     total_data = 0;
@@ -652,8 +653,8 @@ total_data *= 8;
             if ((image_buf = malloc(total_data)) == NULL)
                 printf("Failed to allocated image buffer\n");
 
-            jpeg_table_len = 0;
 #if 0
+            jpeg_table_len = 0;
             if (TIFFGetField(meta->tif, TIFFTAG_JPEGTABLES, &jpeg_table_len, &jpeg_table))
             {
                 total_image_len += (jpeg_table_len - 4);
@@ -921,6 +922,7 @@ int main(int argc, char *argv[])
     set_lab_illuminant(&lab_param, 96.422f, 100.000f,  82.521f);
     set_lab_gamut(&lab_param, 0, 100, -85, 85, -75, 125, FALSE);
 
+    outptr = NULL;
     for (page_no = 0;   ;  page_no++)
     {
         if (read_file(&in_meta, page_no) < 0)

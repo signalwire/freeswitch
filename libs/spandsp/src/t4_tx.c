@@ -369,18 +369,18 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
     t->fill_order = FILLORDER_LSB2MSB;
 
     if (res_unit == RESUNIT_INCH)
-        t->image_x_resolution = x_resolution*100.0f/CM_PER_INCH;
+        t->x_resolution = x_resolution*100.0f/CM_PER_INCH;
     else
-        t->image_x_resolution = x_resolution*100.0f;
+        t->x_resolution = x_resolution*100.0f;
     /* Treat everything we can't match as R8. Most FAXes are this resolution anyway. */
     if ((best_x_entry = match_resolution(res_unit, x_resolution, x_res_table)) < 0)
         best_x_entry = 3;
     s->metadata.x_resolution = x_res_table[best_x_entry].code;
 
     if (res_unit == RESUNIT_INCH)
-        t->image_y_resolution = y_resolution*100.0f/CM_PER_INCH;
+        t->y_resolution = y_resolution*100.0f/CM_PER_INCH;
     else
-        t->image_y_resolution = y_resolution*100.0f;
+        t->y_resolution = y_resolution*100.0f;
     if ((best_y_entry = match_resolution(res_unit, y_resolution, y_res_table)) < 0)
         best_y_entry = 0;
     s->metadata.y_resolution = y_res_table[best_y_entry].code;
@@ -1354,8 +1354,8 @@ SPAN_DECLARE(void) t4_tx_get_transfer_statistics(t4_tx_state_t *s, t4_stats_t *t
     t->image_type = s->tiff.image_type;
     t->image_width = s->tiff.image_width;
     t->image_length = s->tiff.image_length;
-    t->image_x_resolution = s->tiff.image_x_resolution;
-    t->image_y_resolution = s->tiff.image_y_resolution;
+    t->image_x_resolution = s->tiff.x_resolution;
+    t->image_y_resolution = s->tiff.y_resolution;
 
     t->x_resolution = s->metadata.x_resolution;
     t->y_resolution = s->metadata.y_resolution/s->row_squashing_ratio;
