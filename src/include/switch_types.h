@@ -1888,7 +1888,8 @@ typedef enum {
 	SCSC_SQL,
 	SCSC_API_EXPANSION,
 	SCSC_RECOVER,
-	SCSC_SPS_PEAK
+	SCSC_SPS_PEAK,
+	SCSC_SPS_PEAK_FIVEMIN
 } switch_session_ctl_t;
 
 typedef enum {
