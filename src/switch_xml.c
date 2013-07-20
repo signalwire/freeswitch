@@ -1916,6 +1916,7 @@ static void do_merge(switch_xml_t in, switch_xml_t src, const char *container, c
 
 SWITCH_DECLARE(void) switch_xml_merge_user(switch_xml_t user, switch_xml_t domain, switch_xml_t group)
 {
+	const char *domain_name = switch_xml_attr(domain, "name");
 
 	do_merge(user, group, "params", "param");
 	do_merge(user, group, "variables", "variable");
@@ -1923,6 +1924,10 @@ SWITCH_DECLARE(void) switch_xml_merge_user(switch_xml_t user, switch_xml_t domai
 	do_merge(user, domain, "params", "param");
 	do_merge(user, domain, "variables", "variable");
 	do_merge(user, domain, "profile-variables", "variable");
+
+	if (!zstr(domain_name)) {
+		switch_xml_set_attr_d(user, "domain-name", domain_name);
+	}
 }
 
 SWITCH_DECLARE(uint32_t) switch_xml_clear_user_cache(const char *key, const char *user_name, const char *domain_name)
