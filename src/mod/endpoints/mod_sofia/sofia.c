@@ -8095,13 +8095,19 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 
 	if (x_user) {
-		const char *user = NULL, *domain = NULL;
+		const char *ruser = NULL, *rdomain = NULL, *user = switch_xml_attr(x_user, "id"), *domain = switch_xml_attr(x_user, "domain-name");
 
 		if (v_event) {
-			user = switch_event_get_header(v_event, "username");
-			domain = switch_event_get_header(v_event, "domain_name");
+			ruser = switch_event_get_header(v_event, "username");
+			rdomain = switch_event_get_header(v_event, "domain_name");
+			
+			switch_channel_set_variable(channel, "requested_user_name", ruser);
+			switch_channel_set_variable(channel, "requested_domain_name", rdomain);
 		}
 
+		if (!user) user = ruser;
+		if (!domain) domain = rdomain;
+		
 		switch_ivr_set_user_xml(session, NULL, user, domain, x_user);
 		switch_xml_free(x_user);
 		x_user = NULL;
