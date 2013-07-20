@@ -2012,7 +2012,7 @@ SWITCH_STANDARD_API(lan_addr_function)
 SWITCH_STANDARD_API(status_function)
 {
 	switch_core_time_duration_t duration = { 0 };
-	int sps = 0, last_sps = 0, max_sps = 0;
+	int sps = 0, last_sps = 0, max_sps = 0, max_sps_fivemin = 0;
 	switch_bool_t html = SWITCH_FALSE;	/* shortcut to format.html	*/
 	char * nl = "\n";					/* shortcut to format.nl	*/
 	stream_format format = { 0 };
@@ -2059,7 +2059,8 @@ SWITCH_STANDARD_API(status_function)
 	switch_core_session_ctl(SCSC_LAST_SPS, &last_sps);
 	switch_core_session_ctl(SCSC_SPS, &sps);
 	switch_core_session_ctl(SCSC_SPS_PEAK, &max_sps);
-	stream->write_function(stream, "%d session(s) - %d out of max %d per sec peak %d %s", switch_core_session_count(), last_sps, sps, max_sps, nl);
+	switch_core_session_ctl(SCSC_SPS_PEAK_FIVEMIN, &max_sps_fivemin);
+	stream->write_function(stream, "%d session(s) - %d out of max %d per sec peak %d (%d last 5min) %s", switch_core_session_count(), last_sps, sps, max_sps, max_sps_fivemin, nl);
 	stream->write_function(stream, "%d session(s) max%s", switch_core_session_limit(0), nl);
 	stream->write_function(stream, "min idle cpu %0.2f/%0.2f%s", switch_core_min_idle_cpu(-1.0), switch_core_idle_cpu(), nl);
 
