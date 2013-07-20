@@ -8090,6 +8090,27 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		switch_channel_set_variable(channel, "sip_looped_call", "true");
 	}
 
+	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
+														 NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, MODNAME, NULL, NULL);
+	switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
+
+	if (x_user) {
+		const char *user = NULL, *domain = NULL;
+
+		if (v_event) {
+			user = switch_event_get_header(v_event, "username");
+			domain = switch_event_get_header(v_event, "domain_name");
+		}
+
+		switch_ivr_set_user_xml(session, NULL, user, domain, x_user);
+		switch_xml_free(x_user);
+		x_user = NULL;
+	}
+
+	if (v_event) {
+		switch_event_destroy(&v_event);
+	}
+
 	if (sip->sip_from && sip->sip_from->a_url) {
 		from_user = sip->sip_from->a_url->url_user;
 		from_host = sip->sip_from->a_url->url_host;
@@ -8612,10 +8633,15 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 
 	check_decode(displayname, session);
-	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
-														 from_user,
-														 dialplan,
-														 displayname, from_user, network_ip, from_user, aniii, NULL, MODNAME, context, destination_number);
+
+	profile_dup_clean(from_user, tech_pvt->caller_profile->username, tech_pvt->caller_profile->pool);
+	profile_dup_clean(dialplan, tech_pvt->caller_profile->dialplan, tech_pvt->caller_profile->pool);
+	profile_dup_clean(displayname, tech_pvt->caller_profile->caller_id_name, tech_pvt->caller_profile->pool);
+	profile_dup_clean(from_user, tech_pvt->caller_profile->caller_id_number, tech_pvt->caller_profile->pool);
+	profile_dup_clean(network_ip, tech_pvt->caller_profile->network_addr, tech_pvt->caller_profile->pool);
+	profile_dup_clean(aniii, tech_pvt->caller_profile->aniii, tech_pvt->caller_profile->pool);
+	profile_dup_clean(context, tech_pvt->caller_profile->context, tech_pvt->caller_profile->pool);
+	profile_dup_clean(destination_number, tech_pvt->caller_profile->destination_number, tech_pvt->caller_profile->pool);
 
 	if (!bnh && sip->sip_replaces) {
 		if (!(bnh = nua_handle_by_replaces(nua, sip->sip_replaces))) {
@@ -8833,26 +8859,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 			}
 		}
 
-		switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 	}
-
-	if (x_user) {
-		const char *user = NULL, *domain = NULL;
-
-		if (v_event) {
-			user = switch_event_get_header(v_event, "username");
-			domain = switch_event_get_header(v_event, "domain_name");
-		}
-
-		switch_ivr_set_user_xml(session, NULL, user, domain, x_user);
-		switch_xml_free(x_user);
-		x_user = NULL;
-	}
-
-	if (v_event) {
-		switch_event_destroy(&v_event);
-	}
-
 
 	tech_pvt->sofia_private = sofia_private;
 	tech_pvt->nh = nh;
