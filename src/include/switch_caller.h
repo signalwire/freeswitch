@@ -57,6 +57,9 @@
 
 SWITCH_BEGIN_EXTERN_C
 
+#define profile_dup(a,b,p) if (!zstr(a)) { b = switch_core_strdup(p, a); } else { b = SWITCH_BLANK_STRING; }
+#define profile_dup_clean(a,b,p) if (!zstr(a)) { b = switch_var_clean_string(switch_clean_string(switch_core_strdup(p, a)));} else { b = SWITCH_BLANK_STRING; }
+
 typedef struct profile_node_s {
 	char *var;
 	char *val;

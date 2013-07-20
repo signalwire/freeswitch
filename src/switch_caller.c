@@ -33,9 +33,6 @@
 #include <switch.h>
 #include <switch_caller.h>
 
-#define profile_dup(a,b,p) if (!zstr(a)) { b = switch_core_strdup(p, a); } else { b = SWITCH_BLANK_STRING; }
-#define profile_dup_clean(a,b,p) if (!zstr(a)) { b = switch_var_clean_string(switch_clean_string(switch_core_strdup(p, a)));} else { b = SWITCH_BLANK_STRING; }
-
 SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memory_pool_t *pool,
 																	const char *username,
 																	const char *dialplan,
