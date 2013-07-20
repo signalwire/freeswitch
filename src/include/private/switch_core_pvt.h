@@ -242,6 +242,8 @@ struct switch_runtime {
 	int32_t sps_last;
 	int32_t sps_peak;
 	int32_t sps_peak_fivemin;
+	int32_t sessions_peak;
+	int32_t sessions_peak_fivemin;
 	switch_log_level_t hard_log_level;
 	char *mailer_app;
 	char *mailer_app_args;

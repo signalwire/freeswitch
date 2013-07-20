@@ -1012,7 +1012,11 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			if (sps_interval_ticks >= 300) {
 				runtime.sps_peak_fivemin = 0;
 				sps_interval_ticks = 0;
+				switch_mutex_lock(runtime.session_hash_mutex);
+				runtime.sessions_peak_fivemin = session_manager.session_count;
+				switch_mutex_unlock(runtime.session_hash_mutex);
 			}
+
 			sps_interval_ticks++;
 			
 			if (runtime.sps_last > runtime.sps_peak_fivemin) {

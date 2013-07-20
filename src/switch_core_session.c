@@ -2300,6 +2300,14 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 	switch_core_hash_insert(session_manager.session_table, session->uuid_str, session);
 	session->id = session_manager.session_id++;
 	session_manager.session_count++;
+
+	if (session_manager.session_count > runtime.sessions_peak) {
+		runtime.sessions_peak = session_manager.session_count;
+	}
+	if (session_manager.session_count > runtime.sessions_peak_fivemin) {
+		runtime.sessions_peak_fivemin = session_manager.session_count;
+	}
+
 	switch_mutex_unlock(runtime.session_hash_mutex);
 
 	switch_channel_set_variable_printf(session->channel, "session_id", "%u", session->id);
