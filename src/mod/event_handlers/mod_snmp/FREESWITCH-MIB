@@ -146,8 +146,16 @@ peakSessionsPerSecond OBJECT-TYPE
     MAX-ACCESS  read-only
     STATUS      current
     DESCRIPTION
-        "Maximum sessions per second"
+        "Peak sessions per second"
     ::= { systemStats 8 }
+
+peakSessionsPerSecond OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Peak sessions per second last 5 minutes"
+    ::= { systemStats 9 }
 
 
 ChannelEntry ::= SEQUENCE {

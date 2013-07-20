@@ -89,6 +89,7 @@ static void send_heartbeat(void)
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Max-Sessions", "%u", switch_core_session_limit(0));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Session-Per-Sec", "%u", runtime.sps);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Session-Per-Sec-Max", "%u", runtime.sps_peak);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Session-Per-Sec-FiveMin", "%u", runtime.sps_peak_fivemin);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Session-Since-Startup", "%" SWITCH_SIZE_T_FMT, switch_core_session_id() - 1);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Idle-CPU", "%f", switch_core_idle_cpu());
 		switch_event_fire(&event);
@@ -2483,6 +2484,9 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 			runtime.sps_peak = 0;
 		}
 		newintval = runtime.sps_peak;
+		break;
+	case SCSC_SPS_PEAK_FIVEMIN:
+		newintval = runtime.sps_peak_fivemin;
 		break;
 	case SCSC_MAX_DTMF_DURATION:
 		newintval = switch_core_max_dtmf_duration(oldintval);
