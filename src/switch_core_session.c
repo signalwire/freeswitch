@@ -2301,10 +2301,10 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 	session->id = session_manager.session_id++;
 	session_manager.session_count++;
 
-	if (session_manager.session_count > runtime.sessions_peak) {
+	if (session_manager.session_count > (uint32_t)runtime.sessions_peak) {
 		runtime.sessions_peak = session_manager.session_count;
 	}
-	if (session_manager.session_count > runtime.sessions_peak_fivemin) {
+	if (session_manager.session_count > (uint32_t)runtime.sessions_peak_fivemin) {
 		runtime.sessions_peak_fivemin = session_manager.session_count;
 	}
 
