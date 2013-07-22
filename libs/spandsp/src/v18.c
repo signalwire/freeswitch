@@ -973,25 +973,25 @@ SPAN_DECLARE(v18_state_t *) v18_init(v18_state_t *s,
     {
     case V18_MODE_5BIT_45:
         s->repeat_shifts = mode & 0x100;
-        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_WEITBRECHT], async_tx_get_bit, &s->async_tx);
+        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_WEITBRECHT_4545], async_tx_get_bit, &s->async_tx);
         async_tx_init(&s->async_tx, 5, ASYNC_PARITY_NONE, 2, FALSE, v18_tdd_get_async_byte, s);
         /* Schedule an explicit shift at the start of baudot transmission */
         s->baudot_tx_shift = 2;
         /* TDD uses 5 bit data, no parity and 1.5 stop bits. We scan for the first stop bit, and
            ride over the fraction. */
-        fsk_rx_init(&s->fsk_rx, &preset_fsk_specs[FSK_WEITBRECHT], FSK_FRAME_MODE_5N1_FRAMES, v18_tdd_put_async_byte, s);
+        fsk_rx_init(&s->fsk_rx, &preset_fsk_specs[FSK_WEITBRECHT_4545], FSK_FRAME_MODE_5N1_FRAMES, v18_tdd_put_async_byte, s);
         s->baudot_rx_shift = 0;
         s->next_byte = (uint8_t) 0xFF;
         break;
     case V18_MODE_5BIT_50:
         s->repeat_shifts = mode & 0x100;
-        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_WEITBRECHT50], async_tx_get_bit, &s->async_tx);
+        fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_WEITBRECHT_50], async_tx_get_bit, &s->async_tx);
         async_tx_init(&s->async_tx, 5, ASYNC_PARITY_NONE, 2, FALSE, v18_tdd_get_async_byte, s);
         /* Schedule an explicit shift at the start of baudot transmission */
         s->baudot_tx_shift = 2;
         /* TDD uses 5 bit data, no parity and 1.5 stop bits. We scan for the first stop bit, and
            ride over the fraction. */
-        fsk_rx_init(&s->fsk_rx, &preset_fsk_specs[FSK_WEITBRECHT50], FSK_FRAME_MODE_5N1_FRAMES, v18_tdd_put_async_byte, s);
+        fsk_rx_init(&s->fsk_rx, &preset_fsk_specs[FSK_WEITBRECHT_50], FSK_FRAME_MODE_5N1_FRAMES, v18_tdd_put_async_byte, s);
         s->baudot_rx_shift = 0;
         s->next_byte = (uint8_t) 0xFF;
         break;

@@ -212,6 +212,14 @@ ImageLayer(34732)                                                   LONG
 #define     COMPRESSION_T43             10
 #endif
 
+typedef enum
+{
+    T4_IMAGE_FORMAT_OK = 0,
+    T4_IMAGE_FORMAT_INCOMPATIBLE = -1,
+    T4_IMAGE_FORMAT_NOSIZESUPPORT = -2,
+    T4_IMAGE_FORMAT_NORESSUPPORT = -3
+} t4_image_format_status_t;
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -267,7 +275,7 @@ SPAN_DECLARE(int) t4_tx_get_bit(t4_tx_state_t *s);
             indicates that the end of the document has been reached. */
 SPAN_DECLARE(int) t4_tx_get(t4_tx_state_t *s, uint8_t buf[], size_t max_len);
 
-/*! \brief Set the encoding for the encoded data.
+/*! \brief Set the compression for the encoded data.
     \param s The T.4 context.
     \param encoding The encoding.
     \return 0 for success, otherwise -1. */
