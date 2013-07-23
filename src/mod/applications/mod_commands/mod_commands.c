@@ -2013,6 +2013,7 @@ SWITCH_STANDARD_API(status_function)
 {
 	switch_core_time_duration_t duration = { 0 };
 	int sps = 0, last_sps = 0, max_sps = 0, max_sps_fivemin = 0;
+	int sessions_peak = 0, sessions_peak_fivemin = 0; /* Max Concurrent Sessions buffers */
 	switch_bool_t html = SWITCH_FALSE;	/* shortcut to format.html	*/
 	char * nl = "\n";					/* shortcut to format.nl	*/
 	stream_format format = { 0 };
@@ -2056,11 +2057,14 @@ SWITCH_STANDARD_API(status_function)
 						   switch_core_ready() ? "ready" : "not ready", nl);
 
 	stream->write_function(stream, "%" SWITCH_SIZE_T_FMT " session(s) since startup%s", switch_core_session_id() - 1, nl);
+	switch_core_session_ctl(SCSC_SESSIONS_PEAK, &sessions_peak);
+	switch_core_session_ctl(SCSC_SESSIONS_PEAK_FIVEMIN, &sessions_peak_fivemin);
+	stream->write_function(stream, "%d session(s) - peak %d, last 5min %d %s", switch_core_session_count(), sessions_peak, sessions_peak_fivemin, nl);
 	switch_core_session_ctl(SCSC_LAST_SPS, &last_sps);
 	switch_core_session_ctl(SCSC_SPS, &sps);
 	switch_core_session_ctl(SCSC_SPS_PEAK, &max_sps);
 	switch_core_session_ctl(SCSC_SPS_PEAK_FIVEMIN, &max_sps_fivemin);
-	stream->write_function(stream, "%d session(s) - %d out of max %d per sec peak %d (%d last 5min) %s", switch_core_session_count(), last_sps, sps, max_sps, max_sps_fivemin, nl);
+	stream->write_function(stream, "%d session(s) per Sec out of max %d, peak %d, last 5min %d %s", last_sps, sps, max_sps, max_sps_fivemin, nl);
 	stream->write_function(stream, "%d session(s) max%s", switch_core_session_limit(0), nl);
 	stream->write_function(stream, "min idle cpu %0.2f/%0.2f%s", switch_core_min_idle_cpu(-1.0), switch_core_idle_cpu(), nl);
 
