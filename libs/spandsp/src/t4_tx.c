@@ -1488,7 +1488,6 @@ SPAN_DECLARE(int) t4_tx_get_bit(t4_tx_state_t *s)
 
 SPAN_DECLARE(int) t4_tx_get(t4_tx_state_t *s, uint8_t buf[], size_t max_len)
 {
-#if 0
     if (s->pre_encoded_len > 0)
     {
         if (max_len > (s->pre_encoded_len - s->pre_encoded_ptr))
@@ -1500,33 +1499,6 @@ SPAN_DECLARE(int) t4_tx_get(t4_tx_state_t *s, uint8_t buf[], size_t max_len)
 
     if (s->image_get_handler)
         return s->image_get_handler((void *) &s->encoder, buf, max_len);
-#else
-    switch (s->metadata.compression)
-    {
-    case T4_COMPRESSION_T4_1D:
-    case T4_COMPRESSION_T4_2D:
-    case T4_COMPRESSION_T6:
-        return t4_t6_encode_get(&s->encoder.t4_t6, buf, max_len);
-    case T4_COMPRESSION_T85:
-    case T4_COMPRESSION_T85_L0:
-        return t85_encode_get(&s->encoder.t85, buf, max_len);
-#if defined(SPANDSP_SUPPORT_T88)
-    case T4_COMPRESSION_T88:
-        return t88_encode_get(&s->encoder.t88, buf, max_len);
-#endif
-    case T4_COMPRESSION_T42_T81:
-    case T4_COMPRESSION_SYCC_T81:
-        return t42_encode_get(&s->encoder.t42, buf, max_len);
-#if defined(SPANDSP_SUPPORT_T43)
-    case T4_COMPRESSION_T43:
-        return t43_encode_get(&s->encoder.t43, buf, max_len);
-#endif
-#if defined(SPANDSP_SUPPORT_T45)
-    case T4_COMPRESSION_T45:
-        return t45_encode_get(&s->encoder.t45, buf, max_len);
-#endif
-    }
-#endif
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
