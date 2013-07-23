@@ -1052,8 +1052,10 @@ SPAN_DECLARE(int) t4_rx_end_page(t4_rx_state_t *s)
     int length;
 
     length = 0;
+
     if (s->image_put_handler)
         s->image_put_handler((void *) &s->decoder, NULL, 0);
+
     switch (s->metadata.compression)
     {
     case T4_COMPRESSION_T4_1D:
