@@ -387,31 +387,6 @@ SPAN_DECLARE(int) t4_tx_set_row_read_handler(t4_tx_state_t *s, t4_row_read_handl
     \param row_squashing_ratio Vertical squashing ratio. */
 SPAN_DECLARE(void) t4_tx_set_row_squashing_ratio(t4_tx_state_t *s, int row_squashing_ratio);
 
-/*! \brief Get the row-to-row (y) resolution of the current page.
-    \param s The T.4 context.
-    \return The resolution, in pixels per metre. */
-SPAN_DECLARE(int) t4_tx_get_y_resolution(t4_tx_state_t *s);
-
-/*! \brief Get the column-to-column (x) resolution of the current page.
-    \param s The T.4 context.
-    \return The resolution, in pixels per metre. */
-SPAN_DECLARE(int) t4_tx_get_x_resolution(t4_tx_state_t *s);
-
-/*! \brief Get the X and Y resolution code of the current page.
-    \param s The T.4 context.
-    \return The resolution code,. */
-SPAN_DECLARE(int) t4_tx_get_resolution(t4_tx_state_t *s);
-
-/*! \brief Get the width of the current page, in pixel columns.
-    \param s The T.4 context.
-    \return The number of columns. */
-SPAN_DECLARE(int) t4_tx_get_image_width(t4_tx_state_t *s);
-
-/*! \brief Get the type of the current page, in pixel columns.
-    \param s The T.4 context.
-    \return The type. */
-SPAN_DECLARE(int) t4_tx_get_image_type(t4_tx_state_t *s);
-
 /*! \brief Get the number of pages in the file.
     \param s The T.4 context.
     \return The number of pages, or -1 if there is an error. */

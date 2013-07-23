@@ -1337,12 +1337,6 @@ SPAN_DECLARE(void) t4_tx_set_max_2d_rows_per_1d_row(t4_tx_state_t *s, int max)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t4_tx_get_image_width(t4_tx_state_t *s)
-{
-    return s->metadata.image_width;
-}
-/*- End of function --------------------------------------------------------*/
-
 SPAN_DECLARE(void) t4_tx_set_header_overlays_image(t4_tx_state_t *s, int header_overlays_image)
 {
     s->header_overlays_image = header_overlays_image;
@@ -1364,30 +1358,6 @@ SPAN_DECLARE(void) t4_tx_set_header_info(t4_tx_state_t *s, const char *info)
 SPAN_DECLARE(void) t4_tx_set_header_tz(t4_tx_state_t *s, struct tz_s *tz)
 {
     s->tz = tz;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) t4_tx_get_y_resolution(t4_tx_state_t *s)
-{
-    return s->metadata.y_resolution;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) t4_tx_get_x_resolution(t4_tx_state_t *s)
-{
-    return s->metadata.x_resolution;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) t4_tx_get_resolution(t4_tx_state_t *s)
-{
-    return s->metadata.resolution_code;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) t4_tx_get_image_type(t4_tx_state_t *s)
-{
-    return s->metadata.image_type;
 }
 /*- End of function --------------------------------------------------------*/
 
