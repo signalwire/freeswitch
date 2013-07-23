@@ -7478,7 +7478,7 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 	ip = switch_channel_get_variable(session->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE);
 	port = switch_channel_get_variable(session->channel, SWITCH_LOCAL_MEDIA_PORT_VARIABLE);
 
-
+	switch_channel_set_flag(session->channel, CF_RECOVERING);
 
 	if (switch_channel_test_flag(session->channel, CF_PROXY_MODE)  || !(ip && port)) {
 		return;
