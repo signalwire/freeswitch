@@ -38,24 +38,25 @@ typedef struct v18_state_s v18_state_t;
 
 enum
 {
-    V18_MODE_NONE = 0,
+    V18_MODE_NONE = 0x0001,
     /* V.18 Annex A - Weitbrecht TDD at 45.45bps (US TTY), half-duplex, 5 bit baudot (USA). */
-    V18_MODE_5BIT_4545 = 1,
+    V18_MODE_5BIT_4545 = 0x0002,
     /* V.18 Annex A - Weitbrecht TDD at 50bps (International TTY), half-duplex, 5 bit baudot (UK, Australia and others). */
-    V18_MODE_5BIT_50 = 2,
+    V18_MODE_5BIT_50 = 0x0004,
     /* V.18 Annex B - DTMF encoding of ASCII (Denmark, Holland and others). */
-    V18_MODE_DTMF = 3,
+    V18_MODE_DTMF = 0x0008,
     /* V.18 Annex C - EDT (European Deaf Telephone) 110bps, V.21, half-duplex, ASCII (Germany, Austria, Switzerland and others). */
-    V18_MODE_EDT = 4,
+    V18_MODE_EDT = 0x0010,
     /* V.18 Annex D - 300bps, Bell 103, duplex, ASCII (USA). */
-    V18_MODE_BELL103 = 5,
+    V18_MODE_BELL103 = 0x0020,
     /* V.18 Annex E - 1200bps Videotex terminals, ASCII (France). */
-    V18_MODE_V23VIDEOTEX = 6,
+    V18_MODE_V23VIDEOTEX = 0x0040,
     /* V.18 Annex F - V.21 text telephone, V.21, duplex, ASCII (Sweden, Norway and Finland). */
-    V18_MODE_V21TEXTPHONE = 7,
+    V18_MODE_V21TEXTPHONE = 0x0080,
     /* V.18 Annex G - V.18 text telephone mode. */
-    V18_MODE_V18TEXTPHONE = 8,
-    V18_MODE_5BIT_476 = 9,
+    V18_MODE_V18TEXTPHONE = 0x0100,
+    /* V.18 Annex A - Used during probing. */
+    V18_MODE_5BIT_476 = 0x0200,
     /* Use repetitive shift characters where character set shifts are used */ 
     V18_MODE_REPETITIVE_SHIFTS_OPTION = 0x1000
 };

@@ -77,6 +77,12 @@ SPAN_DECLARE(int) t4_t6_encode_set_encoding(t4_t6_encode_state_t *s, int encodin
     \return 0 for success, otherwise -1. */
 SPAN_DECLARE(int) t4_t6_encode_set_image_width(t4_t6_encode_state_t *s, int image_width);
 
+/*! \brief Set the length of the image.
+    \param s The T.4/T.6 context.
+    \param image_length The image length, in pixels.
+    \return 0 for success, otherwise -1. */
+SPAN_DECLARE(int) t4_t6_encode_set_image_length(t4_t6_encode_state_t *s, int image_length);
+
 /*! \brief Get the width of the image.
     \param s The T.4/T.6 context.
     \return The width of the image, in pixels. */

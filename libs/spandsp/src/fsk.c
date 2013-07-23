@@ -69,6 +69,7 @@ const fsk_spec_t preset_fsk_specs[] =
         300*100
     },
     {
+        /* This is mode 2 of the V.23 spec. Mode 1 (the 600baud mode) is not defined here */
         "V23 ch 1",
         1700 + 400,
         1700 - 400,
@@ -123,6 +124,14 @@ const fsk_spec_t preset_fsk_specs[] =
         -14,
         -30,
          50*100
+    },
+    {
+        "Weitbrecht 47.6",  /* Used for V.18 probing */
+        1600 + 200,
+        1600 - 200,
+        -14,
+        -30,
+         4760
     },
     {
         "V21 (110bps) ch 1",

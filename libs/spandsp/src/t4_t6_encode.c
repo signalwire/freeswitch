@@ -1040,6 +1040,12 @@ SPAN_DECLARE(int) t4_t6_encode_set_image_width(t4_t6_encode_state_t *s, int imag
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) t4_t6_encode_set_image_length(t4_t6_encode_state_t *s, int image_length)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(uint32_t) t4_t6_encode_get_image_width(t4_t6_encode_state_t *s)
 {
     return s->image_width;
