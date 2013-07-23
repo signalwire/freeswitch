@@ -132,18 +132,19 @@ static const res_table_t y_res_table[] =
     {             -1.00f, -1}
 };
 
-static const int resolution_map[10][10] =
+static const int resolution_map[10][9] =
 {
-    {                    0, 0,                     0,  T4_RESOLUTION_R8_STANDARD,                     0,                     0,                           0,                      0, 0,                       0},
-    {T4_RESOLUTION_100_100, 0, T4_RESOLUTION_200_100,                          0,                     0,                     0,                           0,                      0, 0,                       0},
-    {                    0, 0,                     0,      T4_RESOLUTION_R8_FINE,                     0,                     0,                           0,                      0, 0,                       0},
-    {                    0, 0, T4_RESOLUTION_200_200,                          0,                     0,                     0,                           0,                      0, 0,                       0},
-    {                    0, 0,                     0,                          0, T4_RESOLUTION_300_300,                     0,                           0,                      0, 0,                       0},
-    {                    0, 0,                     0, T4_RESOLUTION_R8_SUPERFINE,                     0,                     0, T4_RESOLUTION_R16_SUPERFINE,                      0, 0,                       0},
-    {                    0, 0, T4_RESOLUTION_200_400,                          0,                     0, T4_RESOLUTION_400_400,                           0,                      0, 0,                       0},
-    {                    0, 0,                     0,                          0, T4_RESOLUTION_300_600,                     0,                           0,  T4_RESOLUTION_600_600, 0,                       0},
-    {                    0, 0,                     0,                          0,                     0, T4_RESOLUTION_400_800,                           0,                      0, 0,                       0},
-    {                    0, 0,                     0,                          0,                     0,                     0,                           0, T4_RESOLUTION_600_1200, 0, T4_RESOLUTION_1200_1200},
+    /*  x =           100 102                    200                         204                    300                    400                          408                     600                     1200 */
+    {                    0, 0,                     0,  T4_RESOLUTION_R8_STANDARD,                     0,                     0,                           0,                      0,                       0}, /* y = 3.85/mm */
+    {T4_RESOLUTION_100_100, 0, T4_RESOLUTION_200_100,                          0,                     0,                     0,                           0,                      0,                       0}, /* y = 100 */
+    {                    0, 0,                     0,      T4_RESOLUTION_R8_FINE,                     0,                     0,                           0,                      0,                       0}, /* y = 7.7/mm */
+    {                    0, 0, T4_RESOLUTION_200_200,                          0,                     0,                     0,                           0,                      0,                       0}, /* y = 200 */
+    {                    0, 0,                     0,                          0, T4_RESOLUTION_300_300,                     0,                           0,                      0,                       0}, /* y = 300 */
+    {                    0, 0,                     0, T4_RESOLUTION_R8_SUPERFINE,                     0,                     0, T4_RESOLUTION_R16_SUPERFINE,                      0,                       0}, /* y = 154/mm */
+    {                    0, 0, T4_RESOLUTION_200_400,                          0,                     0, T4_RESOLUTION_400_400,                           0,                      0,                       0}, /* y = 400 */
+    {                    0, 0,                     0,                          0, T4_RESOLUTION_300_600,                     0,                           0,  T4_RESOLUTION_600_600,                       0}, /* y = 600 */
+    {                    0, 0,                     0,                          0,                     0, T4_RESOLUTION_400_800,                           0,                      0,                       0}, /* y = 800 */
+    {                    0, 0,                     0,                          0,                     0,                     0,                           0, T4_RESOLUTION_600_1200, T4_RESOLUTION_1200_1200}  /* y = 1200 */
 };
 
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
@@ -1354,12 +1355,14 @@ SPAN_DECLARE(void) t4_tx_get_transfer_statistics(t4_tx_state_t *s, t4_stats_t *t
     t->image_type = s->tiff.image_type;
     t->image_width = s->tiff.image_width;
     t->image_length = s->tiff.image_length;
+
     t->image_x_resolution = s->tiff.x_resolution;
     t->image_y_resolution = s->tiff.y_resolution;
-
     t->x_resolution = s->metadata.x_resolution;
     t->y_resolution = s->metadata.y_resolution/s->row_squashing_ratio;
+
     t->compression = s->metadata.compression;
+
     switch (s->metadata.compression)
     {
     case T4_COMPRESSION_T4_1D:
@@ -1417,7 +1420,7 @@ SPAN_DECLARE(int) t4_tx_image_complete(t4_tx_state_t *s)
         return t85_encode_image_complete(&s->encoder.t85);
 #if defined(SPANDSP_SUPPORT_T88)
     case T4_COMPRESSION_T88:
-        break;
+        return t88_encode_image_complete(&s->encoder.t88);
 #endif
     case T4_COMPRESSION_T42_T81:
     case T4_COMPRESSION_SYCC_T81:
@@ -1428,7 +1431,7 @@ SPAN_DECLARE(int) t4_tx_image_complete(t4_tx_state_t *s)
 #endif
 #if defined(SPANDSP_SUPPORT_T45)
     case T4_COMPRESSION_T45:
-        break;
+        return t45_encode_image_complete(&s->encoder.t45);
 #endif
     }
     return SIG_STATUS_END_OF_DATA;
@@ -1444,6 +1447,19 @@ SPAN_DECLARE(int) t4_tx_get_bit(t4_tx_state_t *s)
 
 SPAN_DECLARE(int) t4_tx_get(t4_tx_state_t *s, uint8_t buf[], size_t max_len)
 {
+#if 0
+    if (s->pre_encoded_len > 0)
+    {
+        if (max_len > (s->pre_encoded_len - s->pre_encoded_ptr))
+            max_len = s->pre_encoded_len - s->pre_encoded_ptr;
+        memcpy(buf, &s->pre_encoded_buf[s->pre_encoded_ptr], max_len);
+        s->pre_encoded_ptr += max_len;
+        return max_len;
+    }
+
+    if (s->image_get_handler)
+        return s->image_get_handler((void *) &s->encoder, buf, max_len);
+#else
     switch (s->metadata.compression)
     {
     case T4_COMPRESSION_T4_1D:
@@ -1469,6 +1485,7 @@ SPAN_DECLARE(int) t4_tx_get(t4_tx_state_t *s, uint8_t buf[], size_t max_len)
         break;
 #endif
     }
+#endif
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1497,31 +1514,44 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_tx_state_t *s)
     case T4_COMPRESSION_T4_2D:
     case T4_COMPRESSION_T6:
         t4_t6_encode_restart(&s->encoder.t4_t6, s->metadata.image_width, s->metadata.image_length);
+        s->image_get_handler = (t4_image_get_handler_t) t4_t6_encode_get;
         break;
     case T4_COMPRESSION_T85:
     case T4_COMPRESSION_T85_L0:
         t85_encode_restart(&s->encoder.t85, s->metadata.image_width, s->metadata.image_length);
+        s->image_get_handler = (t4_image_get_handler_t) t85_encode_get;
         break;
 #if defined(SPANDSP_SUPPORT_T88)
     case T4_COMPRESSION_T88:
+        t88_encode_restart(&s->encoder.t88, s->metadata.image_width, s->metadata.image_length);
+        s->image_get_handler = (t4_image_get_handler_t) t88_encode_get;
         break;
 #endif
     case T4_COMPRESSION_T42_T81:
     case T4_COMPRESSION_SYCC_T81:
         t42_encode_restart(&s->encoder.t42, s->metadata.image_width, s->metadata.image_length);
+        s->image_get_handler = (t4_image_get_handler_t) t42_encode_get;
         break;
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_T43:
         t43_encode_restart(&s->encoder.t43, s->metadata.image_width, s->metadata.image_length);
+        s->image_get_handler = (t4_image_get_handler_t) t43_encode_get;
         break;
 #endif
 #if defined(SPANDSP_SUPPORT_T45)
     case T4_COMPRESSION_T45:
+        t45_encode_restart(&s->encoder.t45, s->metadata.image_width, s->metadata.image_length);
+        s->image_get_handler = (t4_image_get_handler_t) t45_encode_get;
         break;
 #endif
+    default:
+        s->image_get_handler = NULL;
+        break;
     }
+
     /* If there is a page header, create that first */
-    if (s->tiff.image_type == T4_IMAGE_TYPE_BILEVEL  &&  s->header_info  &&  s->header_info[0]  &&  make_header(s) == 0)
+    if (s->metadata.image_type == T4_IMAGE_TYPE_BILEVEL  &&  s->header_info  &&  s->header_info[0]  &&  make_header(s) == 0)
+    //if (s->header_info  &&  s->header_info[0]  &&  make_header(s) == 0)
     {
         s->header_row = 0;
         set_row_read_handler(s, header_row_read_handler, (void *) s);
@@ -1634,7 +1664,7 @@ SPAN_DECLARE(int) t4_tx_release(t4_tx_state_t *s)
         return t85_encode_release(&s->encoder.t85);
 #if defined(SPANDSP_SUPPORT_T88)
     case T4_COMPRESSION_T88:
-        break;
+        return t88_encode_release(&s->encoder.t88);
 #endif
     case T4_COMPRESSION_T42_T81:
     case T4_COMPRESSION_SYCC_T81:
@@ -1645,7 +1675,7 @@ SPAN_DECLARE(int) t4_tx_release(t4_tx_state_t *s)
 #endif
 #if defined(SPANDSP_SUPPORT_T45)
     case T4_COMPRESSION_T45:
-        break;
+        return t45_encode_release(&s->encoder.t45);
 #endif
     }
     return -1;

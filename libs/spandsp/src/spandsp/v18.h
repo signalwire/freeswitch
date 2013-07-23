@@ -40,7 +40,7 @@ enum
 {
     V18_MODE_NONE = 0,
     /* V.18 Annex A - Weitbrecht TDD at 45.45bps (US TTY), half-duplex, 5 bit baudot (USA). */
-    V18_MODE_5BIT_45 = 1,
+    V18_MODE_5BIT_4545 = 1,
     /* V.18 Annex A - Weitbrecht TDD at 50bps (International TTY), half-duplex, 5 bit baudot (UK, Australia and others). */
     V18_MODE_5BIT_50 = 2,
     /* V.18 Annex B - DTMF encoding of ASCII (Denmark, Holland and others). */
@@ -55,6 +55,7 @@ enum
     V18_MODE_V21TEXTPHONE = 7,
     /* V.18 Annex G - V.18 text telephone mode. */
     V18_MODE_V18TEXTPHONE = 8,
+    V18_MODE_5BIT_476 = 9,
     /* Use repetitive shift characters where character set shifts are used */ 
     V18_MODE_REPETITIVE_SHIFTS_OPTION = 0x1000
 };
@@ -170,28 +171,6 @@ SPAN_DECLARE_NONSTD(int) v18_rx_fillin(v18_state_t *s, int len);
             length of the digit string, if the buffer fills up. If the string is
             invalid, this function will return -1. */
 SPAN_DECLARE(int) v18_put(v18_state_t *s, const char msg[], int len);
-
-/*! Convert a text string to a V.18 DTMF string.
-    \brief Convert a text string to a V.18 DTMF string.
-    \param s The V.18 context.
-    \param dtmf The resulting DTMF string.
-    \param msg The text string to be converted.
-    \return The length of the DTMF string.
-*/
-SPAN_DECLARE(int) v18_encode_dtmf(v18_state_t *s, char dtmf[], const char msg[]);
-
-/*! Convert a V.18 DTMF string to a text string.
-    \brief Convert a V.18 DTMF string to a text string.
-    \param s The V.18 context.
-    \param msg The resulting test string.
-    \param dtmf The DTMF string to be converted.
-    \return The length of the text string.
-*/
-SPAN_DECLARE(int) v18_decode_dtmf(v18_state_t *s, char msg[], const char dtmf[]);
-
-SPAN_DECLARE(uint16_t) v18_encode_baudot(v18_state_t *s, uint8_t ch);
-
-SPAN_DECLARE(uint8_t) v18_decode_baudot(v18_state_t *s, uint8_t ch);
 
 /*! \brief Return a short name for an V.18 mode
     \param mode The code for the V.18 mode.

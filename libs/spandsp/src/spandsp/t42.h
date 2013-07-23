@@ -76,16 +76,6 @@ SPAN_DECLARE(void) set_lab_gamut2(lab_params_t *s, int L_P, int L_Q, int a_P, in
 
 SPAN_DECLARE(void) get_lab_gamut2(lab_params_t *s, int *L_P, int *L_Q, int *a_P, int *a_Q, int *b_P, int *b_Q);
 
-SPAN_DECLARE(int) t42_itulab_to_itulab(logging_state_t *logging, tdata_t *dst, tsize_t *dstlen, tdata_t src, tsize_t srclen, uint32_t width, uint32_t height);
-
-SPAN_DECLARE(int) t42_itulab_to_jpeg(logging_state_t *logging, lab_params_t *s, tdata_t *dst, tsize_t *dstlen, tdata_t src, tsize_t srclen);
-
-SPAN_DECLARE(int) t42_jpeg_to_itulab(logging_state_t *logging, lab_params_t *s, tdata_t *dst, tsize_t *dstlen, tdata_t src, tsize_t srclen);
-
-SPAN_DECLARE(int) t42_srgb_to_itulab(logging_state_t *logging, lab_params_t *s, tdata_t *dst, tsize_t *dstlen, tdata_t src, tsize_t srclen, uint32_t width, uint32_t height);
-
-SPAN_DECLARE(int) t42_itulab_to_srgb(logging_state_t *logging, lab_params_t *s, tdata_t dst, tsize_t *dstlen, tdata_t src, tsize_t srclen, uint32_t *width, uint32_t *height);
-
 SPAN_DECLARE(void) t42_encode_set_options(t42_encode_state_t *s, uint32_t l0, int quality, int options);
 
 SPAN_DECLARE(int) t42_encode_set_image_width(t42_encode_state_t *s, uint32_t image_width);
