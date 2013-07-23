@@ -275,6 +275,54 @@ SPAN_DECLARE(int) t4_tx_get_bit(t4_tx_state_t *s);
             indicates that the end of the document has been reached. */
 SPAN_DECLARE(int) t4_tx_get(t4_tx_state_t *s, uint8_t buf[], size_t max_len);
 
+/*! \brief Get the compression for the encoded data.
+    \param s The T.4 context.
+    \return the chosen compression for success, otherwise -1. */
+SPAN_DECLARE(int) t4_tx_get_tx_compression(t4_tx_state_t *s);
+
+/*! \brief Get the image type of the encoded data.
+    \param s The T.4 context.
+    \return the chosen image type for success, otherwise -1. */
+SPAN_DECLARE(int) t4_tx_get_tx_image_type(t4_tx_state_t *s);
+
+/*! \brief Get the X and Y resolution code of the current page.
+    \param s The T.4 context.
+    \return The resolution code,. */
+SPAN_DECLARE(int) t4_tx_get_tx_resolution(t4_tx_state_t *s);
+
+/*! \brief Get the column-to-column (x) resolution of the current page.
+    \param s The T.4 context.
+    \return The resolution, in pixels per metre. */
+SPAN_DECLARE(int) t4_tx_get_tx_x_resolution(t4_tx_state_t *s);
+
+/*! \brief Get the row-to-row (y) resolution of the current page.
+    \param s The T.4 context.
+    \return The resolution, in pixels per metre. */
+SPAN_DECLARE(int) t4_tx_get_tx_y_resolution(t4_tx_state_t *s);
+
+/*! \brief Get the width of the encoded data.
+    \param s The T.4 context.
+    \return the width, in pixels, for success, otherwise -1. */
+SPAN_DECLARE(int) t4_tx_get_tx_image_width(t4_tx_state_t *s);
+
+/*! \brief Get the width code of the encoded data.
+    \param s The T.4 context.
+    \return the width code, for success, otherwise -1. */
+SPAN_DECLARE(int) t4_tx_get_tx_image_width_code(t4_tx_state_t *s);
+
+/*! \brief Auto-select the format in which to send the image.
+    \param s The T.4 context.
+    \param supported_compressions The set of compressions supported for this transmission
+    \param supported_image_sizes The set of image sizes supported for this transmission
+    \param supported_bilevel_resolutions The set of bi-level resolutions supported for this transmission
+    \param supported_colour_resolutions The set of gray scale and colour resolutions supported for this transmission
+    \return A t4_image_format_status_t result code */
+SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
+                                            int supported_compressions,
+                                            int supported_image_sizes,
+                                            int supported_bilevel_resolutions,
+                                            int supported_colour_resolutions);
+
 /*! \brief Set the compression for the encoded data.
     \param s The T.4 context.
     \param encoding The encoding.
