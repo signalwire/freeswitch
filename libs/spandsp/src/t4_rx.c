@@ -371,6 +371,7 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
         break;
 #if defined(SPANDSP_SUPPORT_T88)
     case T4_COMPRESSION_T88:
+        s->metadata.image_length = t88_decode_get_image_length(&s->decoder.t88);
         break;
 #endif
     case T4_COMPRESSION_T42_T81:
@@ -383,6 +384,7 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
 #endif
 #if defined(SPANDSP_SUPPORT_T45)
     case T4_COMPRESSION_T45:
+        s->metadata.image_length = t45_decode_get_image_length(&s->decoder.t45);
         break;
 #endif
     }
@@ -884,7 +886,7 @@ SPAN_DECLARE(int) t4_rx_set_row_write_handler(t4_rx_state_t *s, t4_row_write_han
         return t85_decode_set_row_write_handler(&s->decoder.t85, handler, user_data);
 #if defined(SPANDSP_SUPPORT_T88)
     case T4_COMPRESSION_T88:
-        break;
+        return t88_decode_set_row_write_handler(&s->decoder.t88, handler, user_data);
 #endif
     case T4_COMPRESSION_T42_T81:
         return t42_decode_set_row_write_handler(&s->decoder.t42, handler, user_data);
@@ -894,7 +896,7 @@ SPAN_DECLARE(int) t4_rx_set_row_write_handler(t4_rx_state_t *s, t4_row_write_han
 #endif
 #if defined(SPANDSP_SUPPORT_T45)
     case T4_COMPRESSION_T45:
-        break;
+        return t45_decode_set_row_write_handler(&s->decoder.t45, handler, user_data);
 #endif
     }
     return -1;
@@ -942,7 +944,7 @@ SPAN_DECLARE(void) t4_rx_get_transfer_statistics(t4_rx_state_t *s, t4_stats_t *t
         break;
 #endif
     case T4_COMPRESSION_T42_T81:
-        t->type = 0;
+        t->type = T4_IMAGE_TYPE_COLOUR_8BIT; //T4_IMAGE_TYPE_GRAY_8BIT;
         t->width = t42_decode_get_image_width(&s->decoder.t42);
         t->length = t42_decode_get_image_length(&s->decoder.t42);
         t->image_type = t->type;
@@ -952,7 +954,7 @@ SPAN_DECLARE(void) t4_rx_get_transfer_statistics(t4_rx_state_t *s, t4_stats_t *t
         break;
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_T43:
-        t->type = 0;
+        t->type = T4_IMAGE_TYPE_COLOUR_8BIT;
         t->width = t43_decode_get_image_width(&s->decoder.t43);
         t->length = t43_decode_get_image_length(&s->decoder.t43);
         t->image_type = t->type;
@@ -986,6 +988,7 @@ SPAN_DECLARE(int) t4_rx_start_page(t4_rx_state_t *s)
         break;
 #if defined(SPANDSP_SUPPORT_T88)
     case T4_COMPRESSION_T88:
+        t88_decode_restart(&s->decoder.t88);
         break;
 #endif
     case T4_COMPRESSION_T42_T81:
@@ -998,6 +1001,7 @@ SPAN_DECLARE(int) t4_rx_start_page(t4_rx_state_t *s)
 #endif
 #if defined(SPANDSP_SUPPORT_T45)
     case T4_COMPRESSION_T45:
+        t45_decode_restart(&s->decoder.t45);
         break;
 #endif
     }
@@ -1052,11 +1056,17 @@ SPAN_DECLARE(int) t4_rx_end_page(t4_rx_state_t *s)
         break;
 #if defined(SPANDSP_SUPPORT_T88)
     case T4_COMPRESSION_T88:
+        t88_decode_put(&s->decoder.t88, NULL, 0);
+        length = t88_decode_get_image_length(&s->decoder.t88);
         break;
 #endif
     case T4_COMPRESSION_T42_T81:
         t42_decode_put(&s->decoder.t42, NULL, 0);
         length = t42_decode_get_image_length(&s->decoder.t42);
+        if (s->decoder.t42.samples_per_pixel == 3)
+            select_tiff_compression(s, T4_IMAGE_TYPE_COLOUR_8BIT);
+        else
+            select_tiff_compression(s, T4_IMAGE_TYPE_GRAY_8BIT);
         break;
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_T43:
@@ -1066,6 +1076,8 @@ SPAN_DECLARE(int) t4_rx_end_page(t4_rx_state_t *s)
 #endif
 #if defined(SPANDSP_SUPPORT_T45)
     case T4_COMPRESSION_T45:
+        t45_decode_put(&s->decoder.t45, NULL, 0);
+        length = t45_decode_get_image_length(&s->decoder.t45);
         break;
 #endif
     }
@@ -1156,7 +1168,7 @@ SPAN_DECLARE(int) t4_rx_release(t4_rx_state_t *s)
         return t85_decode_release(&s->decoder.t85);
 #if defined(SPANDSP_SUPPORT_T88)
     case T4_COMPRESSION_T88:
-        break;
+        return t88_decode_release(&s->decoder.t88);
 #endif
     case T4_COMPRESSION_T42_T81:
         return t42_decode_release(&s->decoder.t42);
@@ -1166,7 +1178,7 @@ SPAN_DECLARE(int) t4_rx_release(t4_rx_state_t *s)
 #endif
 #if defined(SPANDSP_SUPPORT_T45)
     case T4_COMPRESSION_T45:
-        break;
+        return t45_decode_release(&s->decoder.t45);
 #endif
     }
     return -1;
