@@ -116,7 +116,7 @@ Source2:	http://files.freeswitch.org/downloads/libs/flite-1.5.1-current.tar.bz2
 Source3:	http://files.freeswitch.org/downloads/libs/lame-3.97.tar.gz
 Source4:	http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
 Source5:	http://files.freeswitch.org/downloads/libs/mpg123-1.13.2.tar.gz
-Source6:	http://files.freeswitch.org/downloads/libs/openldap-2.4.11.tar.gz
+#Source6:	http://files.freeswitch.org/downloads/libs/openldap-2.4.11.tar.gz
 Source7:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.7.tar.gz
 Source8:	http://files.freeswitch.org/downloads/libs/soundtouch-1.6.0.tar.gz
 Source9:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.7.tar.gz
@@ -137,7 +137,7 @@ Prefix:        	%{prefix}
 #BuildRequires: openldap2-devel
 BuildRequires: lzo-devel
 %else
-BuildRequires: openldap-devel
+#BuildRequires: openldap-devel
 %endif
 BuildRequires: autoconf
 BuildRequires: automake
@@ -182,7 +182,7 @@ Requires: ncurses
 Requires: openssl
 Requires: unixODBC
 Requires: libjpeg
-Requires: openldap
+#Requires: openldap
 Requires: db4
 Requires: gdbm
 Requires: zlib
@@ -778,13 +778,13 @@ Theora Video Codec support for FreeSWITCH open source telephony platform.
 #				FreeSWITCH Directory Modules
 ######################################################################################################################
 
-%package directory-ldap
-Summary:        LDAP Directory support for FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
+#%package directory-ldap
+#Summary:        LDAP Directory support for FreeSWITCH open source telephony platform
+#Group:          System/Libraries
+#Requires:       %{name} = %{version}-%{release}
 
-%description directory-ldap
-LDAP Directory support for FreeSWITCH open source telephony platform.
+#%description directory-ldap
+#LDAP Directory support for FreeSWITCH open source telephony platform.
 
 ######################################################################################################################
 #				FreeSWITCH Endpoint Modules
@@ -2084,9 +2084,9 @@ fi
 #
 ######################################################################################################################
 
-%files directory-ldap
-%defattr(-,freeswitch,daemon)
-%{MODINSTDIR}/mod_theora.so*
+#%files directory-ldap
+#%defattr(-,freeswitch,daemon)
+#%{MODINSTDIR}/mod_theora.so*
 
 ######################################################################################################################
 #
