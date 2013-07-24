@@ -40,6 +40,7 @@ struct switch_ivr_menu {
 	char *short_greeting_sound;
 	char *invalid_sound;
 	char *exit_sound;
+	char *transfer_sound;
 	char *buf;
 	char *ptr;
 	char *confirm_macro;
@@ -105,6 +106,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 													 const char *short_greeting_sound,
 													 const char *invalid_sound,
 													 const char *exit_sound,
+													 const char *transfer_sound,
 													 const char *confirm_macro,
 													 const char *confirm_key,
 													 const char *tts_engine,
@@ -156,6 +158,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 
 	if (!zstr(invalid_sound)) {
 		menu->invalid_sound = switch_core_strdup(menu->pool, invalid_sound);
+	}
+
+	if (!zstr(transfer_sound)) {
+		menu->transfer_sound = switch_core_strdup(menu->pool, transfer_sound);
 	}
 
 	if (!zstr(exit_sound)) {
@@ -588,6 +594,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 								}
 
 								if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
+									if (!zstr(menu->transfer_sound) && !strcmp(app_name, "transfer")) {
+										status = play_and_collect(session, menu, menu->transfer_sound, 0);
+									}
+
 									switch_core_session_exec(session, application_interface, app_arg);
 									UNPROTECT_INTERFACE(application_interface);
 									status = SWITCH_STATUS_SUCCESS;
@@ -822,6 +832,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 		const char *greet_short = switch_xml_attr(xml_menu, "greet-short");	/* if the attr doesn't exist, return NULL */
 		const char *invalid_sound = switch_xml_attr(xml_menu, "invalid-sound");	/* if the attr doesn't exist, return NULL */
 		const char *exit_sound = switch_xml_attr(xml_menu, "exit-sound");	/* if the attr doesn't exist, return NULL */
+		const char *transfer_sound = switch_xml_attr(xml_menu, "transfer-sound");	/* if the attr doesn't exist, return NULL */
 		const char *timeout = switch_xml_attr_soft(xml_menu, "timeout");	/* if the attr doesn't exist, return "" */
 		const char *max_failures = switch_xml_attr_soft(xml_menu, "max-failures");	/* if the attr doesn't exist, return "" */
 		const char *max_timeouts = switch_xml_attr_soft(xml_menu, "max-timeouts");
@@ -853,6 +864,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 									  greet_short,
 									  invalid_sound,
 									  exit_sound,
+									  transfer_sound,
 									  confirm_macro,
 									  confirm_key,
 									  tts_engine,
