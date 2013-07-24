@@ -700,6 +700,8 @@ switch_status_t skinny_session_answer(switch_core_session_t *session, listener_t
 	switch_assert(listener);
 	switch_assert(listener->profile);
 
+	skinny_hold_active_calls(listener);
+
 	channel = switch_core_session_get_channel(session);
 	tech_pvt = switch_core_session_get_private(session);
 
