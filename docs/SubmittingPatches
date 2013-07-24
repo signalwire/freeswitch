@@ -1,0 +1,102 @@
+How to Contribute Patches to FreeSWITCH
+=======================================
+
+Download the Source Code
+------------------------
+
+    git clone git://git.freeswitch.org/freeswitch.git
+    cd freeswitch
+
+Create Your Patch
+-----------------
+
+    # create a topic/feature branch in your local repository
+    git checkout -b myfeature
+
+    # make your change
+    emacs .
+
+    # commit the results locally; see below for how to write a good
+    # commit message
+    git commit -va
+
+    # create more commits as needed such that each commit represents a
+    # logically separate change
+    #while true; do emacs .; git commit -va; done
+
+    # create patch files
+    git format-patch origin/master..HEAD
+
+    # you'll now have a number of *.patch files in your current
+    # directory
+
+    # navigate to the FreeSWITCH JIRA
+    chromium http://jira.freeswitch.org/
+
+    # create an account in JIRA and create a new issue;
+    # attach the patch file(s) you created to the issue
+
+Writing a Good Commit Message
+-----------------------------
+
+Your commit message consists of two parts: the subject and the body.
+
+The subject is like the subject in an email message.  It should be
+short -- typically less than 50 characters -- and it should concisely
+describe the purpose or effect of your change.
+
+If you're having a difficult time writing a short subject for your
+commit, perhaps your commit should be broken into smaller separate
+commits.
+
+The commit body can be longer and can consist of multiple paragraphs.
+The text of the body should be hard wrapped to 68-72 characters.
+
+When writing the commit body, describe in detail the problem that your
+commit aims to solve, how your commit solves the problem, and any
+changes in behavior that result from your change, such as new
+variables, command flags, or breaks in backward compatibility.
+
+Your commit message should be written in the present tense in
+imperative style.  Your message should talk about what the patch
+*does*, not what you *did* to write it.
+
+The commit subject is the first line of your commit message, then
+there is an empty line, then your commit body starts.  A good commit
+message might look like this:
+
+> Add frobinator support to mod_sofia
+> 
+> Without proper frobinator support users had to make multiple calls
+> to shell scripts to do the sort of frobbing needed in high call
+> volume environments.
+> 
+> With this change, we now link to libfrob and support the IETF
+> draft-cross-voip-frobbing API.
+> 
+> After appropriate amounts of frobbing have been done, a new variable
+> `frobbing_done` is set in the caller's channel.
+
+Where to Go for Help
+--------------------
+
+If you have any questions or run into any roadblocks please reach out
+to us.  You can send an email to our development mailing list:
+
+> http://lists.freeswitch.org/mailman/listinfo/freeswitch-dev
+
+Note that while you're free to send a patch to that list for questions
+or for review, patches sent to the mailing list will not be considered
+for inclusion.  Patches that you want included in FreeSWITCH must be
+submitted to JIRA.
+
+You can also reach us on freenode.net at:
+
+> #freeswitch-dev
+  
+Finally, feel free to join us in our weekly conference call.  Many of
+the core developers are often on the call and you'll have an
+opportunity at the beginning or end of the call to ask your questions:
+
+> http://wiki.freeswitch.org/wiki/Weekly_Conference_Call
+
