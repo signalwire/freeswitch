@@ -90,6 +90,7 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 											const char *short_greeting_sound,
 											const char *invalid_sound,
 											const char *exit_sound,
+											const char *transfer_sound,
 											const char *confirm_macro,
 											const char *confirm_key,
 											const char *tts_engine,

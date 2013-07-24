@@ -787,6 +787,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  *\param short_greeting_sound Optional pointer to a shorter main sound for subsequent loops.
  *\param invalid_sound Optional pointer to a sound to play after invalid input.
  *\param exit_sound Optional pointer to a sound to play upon exiting the menu.
+ *\param transfer_sound Optional pointer to a sound to play upon transfer away from the menu.
  *\param confirm_macro phrase macro name to confirm input
  *\param confirm_key the dtmf key required for positive confirmation
  *\param tts_engine the tts engine to use for this menu
@@ -807,6 +808,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 													 const char *short_greeting_sound,
 													 const char *invalid_sound,
 													 const char *exit_sound,
+													 const char *transfer_sound,
 													 const char *confirm_macro,
 													 const char *confirm_key,
 													 const char *tts_engine,
