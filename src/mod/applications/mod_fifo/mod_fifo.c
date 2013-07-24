@@ -934,7 +934,7 @@ struct call_helper {
 	switch_memory_pool_t *pool;
 };
 
-#define MAX_ROWS 25
+#define MAX_ROWS 250
 struct callback_helper {
 	int need;
 	switch_memory_pool_t *pool;
