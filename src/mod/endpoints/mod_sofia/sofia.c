@@ -4272,7 +4272,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else if (!strcasecmp(val, "contact") || switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_MULTIREG);
 							sofia_set_pflag(profile, PFLAG_MULTIREG_CONTACT);
-						} else if (switch_true(val)) {
+						} else if (!switch_true(val)) {
 							sofia_clear_pflag(profile, PFLAG_MULTIREG);
 							//sofia_clear_pflag(profile, PFLAG_MULTIREG_CONTACT);
 						}
