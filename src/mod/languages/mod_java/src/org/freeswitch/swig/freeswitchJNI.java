@@ -157,6 +157,7 @@ class freeswitchJNI {
   public final static native long CoreSession_get_cb_args(long jarg1, CoreSession jarg1_);
   public final static native void CoreSession_check_hangup_hook(long jarg1, CoreSession jarg1_);
   public final static native long CoreSession_run_dtmf_callback(long jarg1, CoreSession jarg1_, long jarg2, long jarg3);
+  public final static native void CoreSession_consoleLog(long jarg1, CoreSession jarg1_, String jarg2, String jarg3);
   public final static native void console_log(String jarg1, String jarg2);
   public final static native void console_clean_log(String jarg1);
   public final static native void msleep(long jarg1);
