@@ -879,14 +879,14 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 								  T4_SUPPORT_LENGTH_US_LETTER | T4_SUPPORT_LENGTH_US_LEGAL | T4_SUPPORT_LENGTH_UNLIMITED
 								| T4_SUPPORT_WIDTH_215MM | T4_SUPPORT_WIDTH_255MM | T4_SUPPORT_WIDTH_303MM);
 	t30_set_supported_bilevel_resolutions(t30,
-										  T4_SUPPORT_RESOLUTION_R8_STANDARD
-										| T4_SUPPORT_RESOLUTION_R8_FINE
-										| T4_SUPPORT_RESOLUTION_R8_SUPERFINE
-										| T4_SUPPORT_RESOLUTION_R16_SUPERFINE
-                                        | T4_SUPPORT_RESOLUTION_200_100
-                                        | T4_SUPPORT_RESOLUTION_200_200
-                                        | T4_SUPPORT_RESOLUTION_200_400
-                                        | T4_SUPPORT_RESOLUTION_400_400);
+										  T4_RESOLUTION_R8_STANDARD
+										| T4_RESOLUTION_R8_FINE
+										| T4_RESOLUTION_R8_SUPERFINE
+										| T4_RESOLUTION_R16_SUPERFINE
+                                        | T4_RESOLUTION_200_100
+                                        | T4_RESOLUTION_200_200
+                                        | T4_RESOLUTION_200_400
+                                        | T4_RESOLUTION_400_400);
 	t30_set_supported_colour_resolutions(t30, 0);
 
 	if (pvt->disable_v17) {
@@ -898,11 +898,11 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 	}
 
 	if (pvt->use_ecm) {
-		t30_set_supported_compressions(t30, T4_SUPPORT_COMPRESSION_T4_1D | T4_SUPPORT_COMPRESSION_T4_2D | T4_SUPPORT_COMPRESSION_T6 | T4_SUPPORT_COMPRESSION_T85 | T4_SUPPORT_COMPRESSION_T85_L0);
+		t30_set_supported_compressions(t30, T4_COMPRESSION_T4_1D | T4_COMPRESSION_T4_2D | T4_COMPRESSION_T6 | T4_COMPRESSION_T85 | T4_COMPRESSION_T85_L0);
 		t30_set_ecm_capability(t30, TRUE);
 		switch_channel_set_variable(channel, "fax_ecm_requested", "1");
 	} else {
-		t30_set_supported_compressions(t30, T4_SUPPORT_COMPRESSION_T4_1D | T4_SUPPORT_COMPRESSION_T4_2D);
+		t30_set_supported_compressions(t30, T4_COMPRESSION_T4_1D | T4_COMPRESSION_T4_2D);
 		switch_channel_set_variable(channel, "fax_ecm_requested", "0");
 	}
 

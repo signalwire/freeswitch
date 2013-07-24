@@ -740,20 +740,20 @@ static void select_tiff_compression(t4_rx_state_t *s, int output_image_type)
     {
         /* Only provide for one form of coding throughout the file, even though the
            coding on the wire could change between pages. */
-        if ((s->supported_tiff_compressions & T4_SUPPORT_COMPRESSION_T85))
+        if ((s->supported_tiff_compressions & T4_COMPRESSION_T85))
             s->tiff.compression = T4_COMPRESSION_T85;
-        else if ((s->supported_tiff_compressions & T4_SUPPORT_COMPRESSION_T6))
+        else if ((s->supported_tiff_compressions & T4_COMPRESSION_T6))
             s->tiff.compression = T4_COMPRESSION_T6;
-        else if ((s->supported_tiff_compressions & T4_SUPPORT_COMPRESSION_T4_2D))
+        else if ((s->supported_tiff_compressions & T4_COMPRESSION_T4_2D))
             s->tiff.compression = T4_COMPRESSION_T4_2D;
-        else if ((s->supported_tiff_compressions & T4_SUPPORT_COMPRESSION_T4_1D))
+        else if ((s->supported_tiff_compressions & T4_COMPRESSION_T4_1D))
             s->tiff.compression = T4_COMPRESSION_T4_1D;
     }
     else
     {
-        if ((s->supported_tiff_compressions & T4_SUPPORT_COMPRESSION_T42_T81))
+        if ((s->supported_tiff_compressions & T4_COMPRESSION_T42_T81))
             s->tiff.compression = T4_COMPRESSION_T42_T81;
-        else if ((s->supported_tiff_compressions & T4_SUPPORT_COMPRESSION_T43))
+        else if ((s->supported_tiff_compressions & T4_COMPRESSION_T43))
             s->tiff.compression = T4_COMPRESSION_T43;
     }
 }
