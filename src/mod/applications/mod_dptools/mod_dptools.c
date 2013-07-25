@@ -1343,7 +1343,16 @@ SWITCH_STANDARD_APP(sched_cancel_function)
 	if (zstr(group)) {
 		group = switch_core_session_get_uuid(session);
 	}
-	switch_scheduler_del_task_group(group);
+
+	if (switch_is_digit_string(group)) {
+		int64_t tmp;
+		tmp = (uint32_t) atoi(group);
+		if (tmp > 0) {
+			switch_scheduler_del_task_id((uint32_t) tmp);
+		}
+	} else {
+		switch_scheduler_del_task_group(group);
+	}
 }
 
 static void base_set (switch_core_session_t *session, const char *data, switch_stack_t stack)
