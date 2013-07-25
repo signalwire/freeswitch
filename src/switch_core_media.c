@@ -6701,6 +6701,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 			}
 			switch_core_media_set_local_sdp(session, NULL, SWITCH_FALSE);
 
+			if (switch_true(switch_channel_get_variable(session->channel, "bypass_keep_codec"))) {
+				switch_channel_set_variable(session->channel, "absolute_codec_string", switch_channel_get_variable(session->channel, "ep_codec_string"));
+			}
+
+
 			if ((uuid = switch_channel_get_partner_uuid(session->channel))
 				&& (other_session = switch_core_session_locate(uuid))) {
 				other_channel = switch_core_session_get_channel(other_session);
