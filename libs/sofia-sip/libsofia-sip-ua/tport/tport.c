@@ -885,12 +885,16 @@ tport_t *tport_alloc_secondary(tport_primary_t *pri,
     self->tp_stime = self->tp_ktime = self->tp_rtime = su_now();
 
     if (pri->pri_vtable->vtp_init_secondary &&
-	pri->pri_vtable->vtp_init_secondary(self, socket, accepted,
-					    return_reason) < 0) {
-      if (pri->pri_vtable->vtp_deinit_secondary)
-	pri->pri_vtable->vtp_deinit_secondary(self);
-      su_home_zap(self->tp_home);
-      return NULL;
+
+		pri->pri_vtable->vtp_init_secondary(self, socket, accepted, return_reason) < 0) {
+
+		if (pri->pri_vtable->vtp_deinit_secondary) {
+			pri->pri_vtable->vtp_deinit_secondary(self);
+		}
+		su_timer_destroy(self->tp_timer);
+		su_home_zap(self->tp_home);
+
+		return NULL;
     }
 
     /* Set IP TOS if it is set in primary */

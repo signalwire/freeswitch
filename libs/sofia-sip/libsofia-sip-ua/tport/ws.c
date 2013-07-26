@@ -242,6 +242,10 @@ int ws_handshake(wsh_t *wsh)
 		}
 	}
 
+	if (bytes > sizeof(wsh->buffer)) {
+		goto err;
+	}
+
 	*(wsh->buffer+bytes) = '\0';
 	
 	if (strncasecmp(wsh->buffer, "GET ", 4)) {
@@ -325,7 +329,8 @@ issize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 #else
 		if (x++) Sleep(10);
 #endif
-		} while (r == -1 && (errno == EAGAIN || errno == EINTR) && x < 100);
+		} while (r == -1 && (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK || 
+							 errno == 35 || errno == 730035 || errno == 2 || errno == 60) && x < 100);
 	
 	if (x >= 100) {
 		r = -1;
@@ -462,7 +467,12 @@ int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock)
 	}
 
 	while (!wsh->down && !wsh->handshake) {
-		ws_handshake(wsh);
+		int r = ws_handshake(wsh);
+
+		if (r < 0) {
+			wsh->down = 1;
+			return -1;
+		}
 	}
 
 	if (wsh->down) {
