@@ -44,6 +44,10 @@
 #endif
 #endif
 
+#ifdef __linux__
+#include <sys/prctl.h>
+#endif
+
 #include <switch.h>
 #include <switch_version.h>
 #include "private/switch_core_pvt.h"
@@ -397,6 +401,10 @@ static void reincarnate_protect(char **argv) {
 			} else goto refork;
 		}
 		goto rewait;
+	} else { /* child */
+#ifdef __linux__
+		prctl(PR_SET_PDEATHSIG, SIGTERM);
+#endif
 	}
 }
 
