@@ -117,7 +117,6 @@ typedef struct switch_rtp_engine_s {
 	switch_codec_implementation_t read_impl;
 	switch_codec_implementation_t write_impl;
 
-	uint32_t codec_ms;
 	switch_size_t last_ts;
 	uint32_t check_frames;
 	uint32_t mismatch_count;
@@ -1360,7 +1359,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 						engine->last_codec_ms = codec_ms;
 
 						if (engine->mismatch_count > MAX_MISMATCH_FRAMES) {
-							if (switch_rtp_ready(engine->rtp_session) && codec_ms != engine->codec_ms) {
+							if (switch_rtp_ready(engine->rtp_session) && codec_ms != engine->codec_params.codec_ms) {
 								const char *val;
 								int rtp_timeout_sec = 0;
 								int rtp_hold_timeout_sec = 0;
@@ -1376,17 +1375,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
 								engine->read_frame.datalen = 0;
 
-								if (codec_ms != engine->codec_ms) {
+								if (codec_ms != engine->codec_params.codec_ms) {
 									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 													  "Asynchronous PTIME not supported, changing our end from %d to %d\n",
-													  (int) engine->codec_ms,
+													  (int) engine->codec_params.codec_ms,
 													  (int) codec_ms
 													  );
 
 									switch_channel_set_variable_printf(session->channel, "rtp_h_X-Broken-PTIME", "Adv=%d;Sent=%d",
-																	   (int) engine->codec_ms, (int) codec_ms);
+																	   (int) engine->codec_params.codec_ms, (int) codec_ms);
 
-									engine->codec_ms = codec_ms;
+									engine->codec_params.codec_ms = codec_ms;
 								}
 
 
