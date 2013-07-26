@@ -357,11 +357,25 @@ static void daemonize(int *fds)
 	return;
 }
 
+static pid_t reincarnate_child = 0;
+static void reincarnate_handle_sigterm (int sig) {
+	if (!sig) return;
+	if (reincarnate_child) kill(reincarnate_child, sig);
+	return;
+}
+
 static void reincarnate_protect(char **argv) {
-	int i;
+	int i; struct sigaction sa, sa_dfl, sa4_prev, sa15_prev, sa17_prev;
+	memset(&sa, 0, sizeof(sa)); memset(&sa_dfl, 0, sizeof(sa_dfl));
+	sa.sa_handler = reincarnate_handle_sigterm;
+	sa_dfl.sa_handler = SIG_DFL;
  refork:
 	if ((i=fork())) { /* parent */
 		int s; pid_t r;
+		reincarnate_child = i;
+		sigaction(SIGILL, &sa, &sa4_prev);
+		sigaction(SIGTERM, &sa, &sa15_prev);
+		sigaction(SIGCHLD, &sa_dfl, &sa17_prev);
 	rewait:
 		r = waitpid(i, &s, 0);
 		if (r == (pid_t)-1) {
@@ -375,6 +389,9 @@ static void reincarnate_protect(char **argv) {
 			exit(WEXITSTATUS(s));
 		}
 		if (WIFEXITED(s) || WIFSIGNALED(s)) {
+			sigaction(SIGILL, &sa4_prev, NULL);
+			sigaction(SIGTERM, &sa15_prev, NULL);
+			sigaction(SIGCHLD, &sa17_prev, NULL);
 			if (argv) {
 				execv(argv[0], argv); return;
 			} else goto refork;
