@@ -1052,6 +1052,8 @@ SWITCH_STANDARD_APP(sched_transfer_function)
 	if (!zstr(data) && (mydata = switch_core_session_strdup(session, data))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
 			time_t when;
+			uint32_t id;
+			char ids[80] = "";
 
 			if (*argv[0] == '+') {
 				when = switch_epoch_time_now(NULL) + atol(argv[0] + 1);
@@ -1059,7 +1061,9 @@ SWITCH_STANDARD_APP(sched_transfer_function)
 				when = atol(argv[0]);
 			}
 
-			switch_ivr_schedule_transfer(when, switch_core_session_get_uuid(session), argv[1], argv[2], argv[3]);
+			id = switch_ivr_schedule_transfer(when, switch_core_session_get_uuid(session), argv[1], argv[2], argv[3]);
+			snprintf(ids, sizeof(ids), "%u", id);
+			switch_channel_set_variable(switch_core_session_get_channel(session), "last_sched_id", ids);			
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Args\n");
 		}
@@ -1114,6 +1118,8 @@ SWITCH_STANDARD_APP(sched_broadcast_function)
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
 			time_t when;
 			switch_media_flag_t flags = SMF_NONE;
+			uint32_t id;
+			char ids[80] = "";
 
 			if (*argv[0] == '+') {
 				when = switch_epoch_time_now(NULL) + atol(argv[0] + 1);
@@ -1133,7 +1139,9 @@ SWITCH_STANDARD_APP(sched_broadcast_function)
 				flags |= SMF_ECHO_ALEG;
 			}
 
-			switch_ivr_schedule_broadcast(when, switch_core_session_get_uuid(session), argv[1], flags);
+			id = switch_ivr_schedule_broadcast(when, switch_core_session_get_uuid(session), argv[1], flags);
+			snprintf(ids, sizeof(ids), "%u", id);
+			switch_channel_set_variable(switch_core_session_get_channel(session), "last_sched_id", ids);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Args\n");
 		}
