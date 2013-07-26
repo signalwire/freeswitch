@@ -777,6 +777,9 @@ print_mod_install () {
   cat <<EOF
 /usr/lib/freeswitch/mod/${1}.so
 EOF
+  case "$1" in
+    mod_managed) echo "/usr/lib/freeswitch/mod/FreeSWITCH.Managed.dll" ;;
+  esac
 }
 
 print_long_filename_override () {
