@@ -53,7 +53,7 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PostBuildEvent>
-      <Command>"$(TargetPath)" &gt;"$(ProjectDir)..\make_cielab_luts.h"</Command>
+      <Command>"$(TargetPath)" &gt;"$(ProjectDir)..\cielab_luts.h"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
