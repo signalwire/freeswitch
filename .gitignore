@@ -38,6 +38,7 @@
 *.tbz2
 *.deb
 *.swp
+*.serial
 aclocal.m4
 autom4te.cache
 config.cache
@@ -153,7 +154,8 @@ Release/
 /src/mod/applications/mod_osp/Makefile.in
 /src/mod/applications/mod_rss/Makefile
 /src/mod/applications/mod_snipe_hunt/Makefile
-/src/mod/codecs/mod_com_g729/
+/src/mod/codecs/mod_com_g729/Makefile
+/src/mod/codecs/mod_com_g729/Makefile.in
 /src/mod/codecs/mod_dahdi_codec/Makefile
 /src/mod/dialplans/mod_dialplan_directory/Makefile
 /src/mod/formats/mod_shell_stream/Makefile
@@ -170,8 +172,6 @@ Release/
 
 BuildLog.htm
 
-Win32/
-win32/
 !/libs/win32/
 !/libs/speex/win32/
 !/src/mod/endpoints/mod_gsmopen/gsmlib/gsmlib-1.10-patched-13ubuntu/win32/
