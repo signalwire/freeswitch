@@ -427,6 +427,9 @@
       <Project>{dee932ab-5911-4700-9eeb-8c7090a0a330}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="msvc\make_cielab_luts.2010.vcxproj">
+      <Project>{85f0cf8c-c7ab-48f6-ba19-cc94cf87f981}</Project>
+    </ProjectReference>
     <ProjectReference Include="msvc\make_math_fixed_tables.2010.vcxproj">
       <Project>{9d04a840-ce18-4ff5-a6d3-0a2bb92ff2e6}</Project>
     </ProjectReference>
