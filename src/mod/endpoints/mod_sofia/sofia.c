@@ -8015,6 +8015,8 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		if (!strcmp(network_ip, profile->sipip) && network_port == profile->sip_port) {
 			calling_myself++;
 		} else {
+			switch_event_create(&v_event, SWITCH_EVENT_REQUEST_PARAMS);
+
 			if (sofia_reg_handle_register(nua, profile, nh, sip, de, REG_INVITE, key, sizeof(key), &v_event, NULL, NULL, &x_user)) {
 				if (v_event) {
 					switch_event_destroy(&v_event);
@@ -8035,7 +8037,6 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 
 
-	
 	tech_pvt->mparams.remote_ip = switch_core_session_strdup(session, network_ip);
 	tech_pvt->mparams.remote_port = network_port;
 
@@ -8112,6 +8113,12 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		const char *ruser = NULL, *rdomain = NULL, *user = switch_xml_attr(x_user, "id"), *domain = switch_xml_attr(x_user, "domain-name");
 
 		if (v_event) {
+			switch_event_header_t *hp;
+
+			for (hp = v_event->headers; hp; hp = hp->next) {
+				switch_channel_set_variable(channel, hp->name, hp->value);
+			}
+
 			ruser = switch_event_get_header(v_event, "username");
 			rdomain = switch_event_get_header(v_event, "domain_name");
 			
