@@ -728,11 +728,28 @@ function eventCallback(data) {
 			direction: data["Call-Direction"]
 		}
 		App.channelsController.pushObject(App.Channel.create(channel));
+
+		var x = $('#auto_update_calls')[0];
+		if (typeof x != "undefined" && x.checked) {
+			return;
+		}
+
 		App.callsController.pushObject(App.Call.create(channel));
 	} else if (data["Event-Name"] == "CHANNEL_HANGUP_COMPLETE") {
 		App.channelsController.delete(data["Unique-ID"]);
+
+		var x = $('#auto_update_calls')[0];
+		if (typeof x != "undefined" && x.checked) {
+			return;
+		}
+
 		App.callsController.delete(data["Unique-ID"]);
 	} else if (data["Event-Name"] == "CHANNEL_BRIDGE") {
+		var x = $('#auto_update_calls')[0];
+		if (typeof x != "undefined" && x.checked) {
+			return;
+		}
+
 		App.callsController.delete(data["Unique-ID"]);
 		App.callsController.delete(data["Other-Leg-Unique-ID"]);
 
