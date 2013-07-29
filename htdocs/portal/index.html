@@ -709,6 +709,7 @@
 			$('#ws-status').html('Socket Connected').css("color", "green");
 			// socket.send("event json all");
 			socket.send("event json CHANNEL_CREATE");
+			socket.send("event json CHANNEL_BRIDGE");
 			socket.send("event json CHANNEL_HANGUP_COMPLETE");
 			socket.send("event json CHANNEL_CALLSTATE");
 		}

@@ -263,6 +263,10 @@ App.callsController = Ember.ArrayController.create({
 
 		});
 	},
+	delete: function(uuid) {
+		var obj = this.content.findProperty("uuid", uuid);
+		if (obj) this.content.removeObject(obj);// else alert(uuid);
+	},
 	dump: function(uuid) {
 		var obj = this.content.findProperty("uuid", uuid);
 		console.log(obj.getProperties(["uuid", "cid_num"]));
@@ -724,8 +728,30 @@ function eventCallback(data) {
 			direction: data["Call-Direction"]
 		}
 		App.channelsController.pushObject(App.Channel.create(channel));
+		App.callsController.pushObject(App.Call.create(channel));
 	} else if (data["Event-Name"] == "CHANNEL_HANGUP_COMPLETE") {
 		App.channelsController.delete(data["Unique-ID"]);
+		App.callsController.delete(data["Unique-ID"]);
+	} else if (data["Event-Name"] == "CHANNEL_BRIDGE") {
+		App.callsController.delete(data["Unique-ID"]);
+		App.callsController.delete(data["Other-Leg-Unique-ID"]);
+
+		var call = {
+			uuid: data["Unique-ID"],
+			b_uuid: data["Other-Leg-Unique-ID"],
+			cid_num: data["Caller-Caller-ID-Number"],
+			b_cid_num: data["Other-Leg-Caller-ID-Number"],
+			dest: data["Caller-Destination-Number"],
+			b_dest: data["Other-Leg-Destination-Number"],
+			callstate: data["Channel-Call-State"],
+			b_callstate: data["Channel-Call-State"],
+			direction: data["Call-Direction"],
+			b_direction: data["Other-Leg-Direction"],
+			created: data["Caller-Channel-Created-Time"]
+		};
+
+		App.callsController.pushObject(App.Call.create(call));
+
 	} else if (data["Event-Name"] == "CHANNEL_CALLSTATE") {
 		var obj = App.channelsController.content.findProperty("uuid", data["Unique-ID"]);
 		if (obj) {
