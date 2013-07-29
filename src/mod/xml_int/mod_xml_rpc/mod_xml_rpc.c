@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthm@freeswitch.org>
  * John Wehle <john@feith.com>
  * Garmt Boekholt <garmt@cimico.com>
+ * Seven Du <dujinfang@gmail.com>
  *
  * mod_xml_rpc.c -- XML RPC
  *
@@ -69,6 +70,7 @@
 #include <../lib/abyss/src/token.h>
 #include <../lib/abyss/src/http.h>
 #include <../lib/abyss/src/session.h>
+#include "ws.h"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_rpc_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_rpc_shutdown);
@@ -87,6 +89,7 @@ static struct {
 	switch_bool_t virtual_host;
 	TServer abyssServer;
 	xmlrpc_registry *registryP;
+	switch_bool_t enable_websocket;
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_realm, globals.realm);
@@ -126,6 +129,8 @@ static switch_status_t do_config(void)
 					default_domain = val;
 				} else if (!strcasecmp(var, "virtual-host")) {
 					globals.virtual_host = switch_true(val);
+				} else if (!strcasecmp(var, "enable-websocket")) {
+					globals.enable_websocket = switch_true(val);
 				}
 			}
 		}
@@ -541,10 +546,159 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 	return rval;
 }
 
+void stop_hook_event_handler(switch_event_t *event) {
+	char *json;
+	wsh_t *wsh = (TSession *)event->bind_user_data;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "got websocket::stophook, closing\n");
+	wsh->down++;
+}
+
+void event_handler(switch_event_t *event) {
+	char *json;
+	wsh_t *wsh = (TSession *)event->bind_user_data;
+	switch_event_serialize_json(event, &json);
+	ws_write_frame(wsh, WSOC_TEXT, json, strlen(json));
+	free(json);
+}
+
+#define MAX_EVENT_BIND_SLOTS SWITCH_EVENT_ALL
+
+abyss_bool websocket_hook(TSession *r)
+{
+	wsh_t wsh;
+	int ret;
+	int i;
+	ws_opcode_t opcode;
+	uint8_t *data;
+	switch_event_node_t *nodes[MAX_EVENT_BIND_SLOTS];
+	int node_count = 0;
+	char *p;
+	char *key = TableFind(&r->requestHeaderFields, "sec-websocket-key");
+	char *version = TableFind(&r->requestHeaderFields, "sec-websocket-version");
+	char *proto = TableFind(&r->requestHeaderFields, "sec-websocket-protocol");
+	char *upgrade = TableFind(&r->requestHeaderFields, "connection");
+
+	if (!key || !version || !proto || !upgrade) return FALSE;
+	if (strncasecmp(upgrade, "Upgrade", 7) || strncasecmp(proto, "websocket", 9)) return FALSE;
+
+	for (i = 0; i < r->requestHeaderFields.size; ++i) {
+		TTableItem * const fieldP = &r->requestHeaderFields.item[i];
+		const char * const fieldValue = fieldP->value;
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "headers %s: %s\n", fieldP->name, fieldValue);
+	}
+
+	ret = ws_init(&wsh, r, NULL, 0);
+	if (ret != 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "websocket error %d\n", ret);
+		return FALSE;
+	}
+
+	while(!wsh.down && !wsh.handshake) {
+		ret = ws_handshake_kvp(&wsh, key, version, proto);
+		if (ret < 0) wsh.down = 1;
+	}
+
+	if (ret != 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "handshake error %d\n", ret);
+		return FALSE;
+	}
+
+	if (switch_event_bind_removable("websocket", SWITCH_EVENT_CUSTOM, "websocket::stophook", stop_hook_event_handler, &wsh, &nodes[node_count++]) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't bind!\n");
+		node_count--;
+	}
+
+	while (!wsh.down) {
+		int bytes = ws_read_frame(&wsh, &opcode, &data);
+
+		if (bytes < 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%d %s\n", opcode, (char *)data);
+			switch_yield(1000);
+			continue;
+		}
+
+		switch (opcode) {
+			case WSOC_CLOSE:
+				ws_close(&wsh, 1000);
+				break;
+			case WSOC_CONTINUATION:
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "continue\n");
+				continue;
+			case WSOC_TEXT:
+				p = data;
+				if (!p) continue;
+				if (!strncasecmp(data, "event ", 6)) {
+					switch_event_types_t type;
+					char *subclass;
+
+					if (node_count == MAX_EVENT_BIND_SLOTS - 1) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot subscribe more than %d events\n", node_count);
+						continue;
+					}
+					p += 6;
+					if (p = strchr(p, ' ')) p++;
+					if (!strncasecmp(p, "json ", 5)) {
+						p += 5;
+					} else if (!strncasecmp(p, "xml ", 4)) {
+						p += 4;
+					} else if (!strncasecmp(p, "plain ", 6)) {
+						p += 6;
+					}
+					if (!*p) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "missing event type in [%s]\n", data);
+						break;
+					} else {
+					}
+					if (subclass = strchr(p, ' ')) {
+						*subclass++ = '\0';
+						if (!*subclass) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "missing subclass\n");
+							continue;
+						}
+					} else {
+						subclass = SWITCH_EVENT_SUBCLASS_ANY;
+					}
+
+					if (switch_name_event(p, &type) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown event %s\n", p);
+						continue;
+					}
+
+					if (switch_event_bind_removable("websocket", type, subclass, event_handler, &wsh, &nodes[node_count++]) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't bind!\n");
+						node_count--;
+						continue;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Bind %s\n", data);
+					}
+
+				}
+				break;
+			default:
+				break;
+		}
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "wsh.down = %d, node_count = %d\n", wsh.down, node_count);
+
+	switch_yield(2000);
+	while (--node_count >= 0) switch_event_unbind(&nodes[node_count]);
+
+	return FALSE;
+}
+
 abyss_bool auth_hook(TSession * r)
 {
 	char *domain_name, *e;
 	abyss_bool ret = FALSE;
+
+	if (globals.enable_websocket && !strncmp(r->requestInfo.uri, "/socket", 7)) {
+		// Chrome has no Authorization support yet
+		// https://code.google.com/p/chromium/issues/detail?id=123862
+		return websocket_hook(r);
+	}
 
 	if (!strncmp(r->requestInfo.uri, "/domains/", 9)) {
 		domain_name = strdup(r->requestInfo.uri + 9);
@@ -1059,7 +1213,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 	ServerAddHandler(&globals.abyssServer, auth_hook);
 	ServerSetKeepaliveTimeout(&globals.abyssServer, 5);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Starting HTTP Port %d, DocRoot [%s]\n", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Starting HTTP Port %d, DocRoot [%s]%s\n",
+		globals.port, SWITCH_GLOBAL_dirs.htdocs_dir, globals.enable_websocket ? " with websocket." : "");
 	ServerRun(&globals.abyssServer);
 
 	switch_yield(1000000);
@@ -1069,9 +1224,27 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 	return SWITCH_STATUS_TERM;
 }
 
+void stop_all_websockets()
+{
+	switch_event_t *event;
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "websocket::stophook") != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Failed to create event!\n");
+	}
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "stop", "now");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "stopping all websockets ...\n");
+	if (switch_event_fire(&event) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Failed to fire the event!\n");
+		switch_event_destroy(&event);
+		return false;
+	}
+}
+
 /* upon module unload */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_rpc_shutdown)
 {
+
+	/* Cann't find a way to stop the websockets, use this for a workaround before finding the real one that works */
+	stop_all_websockets();
 
 	/* this makes the worker thread (ServerRun) stop */
 	ServerTerminate(&globals.abyssServer);

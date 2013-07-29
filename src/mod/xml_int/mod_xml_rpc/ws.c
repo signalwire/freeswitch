@@ -218,11 +218,8 @@ static void sha1_digest(unsigned char *digest, char *in)
 
 #endif
 
-int ws_handshake(wsh_t *wsh)
+int ws_handshake_kvp(wsh_t *wsh, char *key, char *version, char *proto)
 {
-	char key[256] = "";
-	char version[5] = "";
-	char proto[256] = "";
 	char uri[256] = "";
 	char input[256] = "";
 	unsigned char output[SHA1_HASH_SIZE] = "";
@@ -231,44 +228,14 @@ int ws_handshake(wsh_t *wsh)
 	issize_t bytes;
 	char *p, *e = 0;
 
-	if (wsh->sock == ws_sock_invalid) {
+	if (!wsh->tsession) {
 		return -3;
 	}
 
-	while((bytes = ws_raw_read(wsh, wsh->buffer + wsh->datalen, wsh->buflen - wsh->datalen)) > 0) {
-		wsh->datalen += bytes;
-		if (strstr(wsh->buffer, "\r\n\r\n") || strstr(wsh->buffer, "\n\n")) {
-			break;
-		}
-	}
-
-	if (bytes > sizeof(wsh->buffer)) {
+	if (!*key || !*version || !*proto) {
 		goto err;
 	}
 
-	*(wsh->buffer+bytes) = '\0';
-	
-	if (strncasecmp(wsh->buffer, "GET ", 4)) {
-		goto err;
-	}
-	
-	p = wsh->buffer + 4;
-	
-	e = strchr(p, ' ');
-	if (!e) {
-		goto err;
-	}
-	
-	strncpy(uri, p, e-p);
-	
-	cheezy_get_var(wsh->buffer, "Sec-WebSocket-Key", key, sizeof(key));
-	cheezy_get_var(wsh->buffer, "Sec-WebSocket-Version", version, sizeof(version));
-	cheezy_get_var(wsh->buffer, "Sec-WebSocket-Protocol", proto, sizeof(proto));
-	
-	if (!*key) {
-		goto err;
-	}
-		
 	snprintf(input, sizeof(input), "%s%s", key, WEBSOCKET_GUID);
 	sha1_digest(output, input);
 	b64encode((unsigned char *)output, SHA1_HASH_SIZE, (unsigned char *)b64, sizeof(b64));
@@ -281,7 +248,6 @@ int ws_handshake(wsh_t *wsh)
 			 "Sec-WebSocket-Protocol: %s\r\n\r\n",
 			 b64,
 			 proto);
-
 
 	ws_raw_write(wsh, respond, strlen(respond));
 	wsh->handshake = 1;
@@ -308,7 +274,9 @@ issize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 {
 	issize_t r;
 	int x = 0;
+ 	TConn *conn = wsh->tsession->connP;
 
+#if 0
 	if (wsh->ssl) {
 		do {
 			r = SSL_read(wsh->ssl, data, bytes);
@@ -321,21 +289,50 @@ issize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 
 		return r;
 	}
-
-	do {
-		r = recv(wsh->sock, data, bytes, 0);
-#ifndef _MSC_VER
-		if (x++) usleep(10000);
-#else
-		if (x++) Sleep(10);
 #endif
-		} while (r == -1 && (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK || 
-							 errno == 35 || errno == 730035 || errno == 2 || errno == 60) && x < 100);
-	
-	if (x >= 100) {
-		r = -1;
+
+	if (!wsh->handshake) {
+		r = wsh->tsession->connP->buffersize;
+		memcpy(data, conn->buffer.b, r);
+		printf("%s\n", conn->buffer.t);
+		ConnReadInit(conn);
+		return r;
+	} else {
+		const char *readError = NULL;
+
+		// printf("    pos=%d size=%d need=%d\n", conn->bufferpos, conn->buffersize, bytes);
+
+		r = conn->buffersize - conn->bufferpos;
+
+		if (r < 0) {
+			printf("348 Read Error %d!\n", r);
+			return 0;
+		} else if (r == 0) {
+			ConnRead(conn, 2, NULL, NULL, &readError);
+
+			if (readError) {
+				// printf("354 Read Error %s\n", readError);
+				xmlrpc_strfree(readError);
+				return 0;
+			}
+
+			r = conn->buffersize - conn->bufferpos;
+		}
+
+		if (r <= bytes) {
+			memcpy(data, conn->buffer.b + conn->bufferpos, r);
+			// ConnReadInit(conn);
+			conn->bufferpos = conn->buffersize;
+			ConnReadInit(conn);
+			return r;
+		} else {
+			memcpy(data, conn->buffer.b + conn->bufferpos, bytes);
+			conn->bufferpos += bytes;
+			return bytes;
+		}
+
 	}
-	
+
 	return r;
 }
 
@@ -351,9 +348,11 @@ issize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 		return r;
 	}
 
-	do {
-		r = send(wsh->sock, data, bytes, 0);
-	} while (r == -1 && (errno == EAGAIN || errno == EINTR));
+	if (ConnWrite(wsh->tsession->connP, data, bytes)) {
+		return bytes;
+	} else {
+		return 0;
+	}
 
 	//if (r<0) {
 		//printf("wRITE FAIL: %s\n", strerror(errno));
@@ -408,11 +407,10 @@ static int restore_socket(ws_socket_t sock)
 #endif
 
 
-
-int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock)
+int ws_init(wsh_t *wsh, ws_tsession_t *tsession, SSL_CTX *ssl_ctx, int close_sock)
 {
 	memset(wsh, 0, sizeof(*wsh));
-	wsh->sock = sock;
+	wsh->tsession = tsession;
 
 	if (!ssl_ctx) {
 		ssl_ctx = globals.ssl_ctx;
@@ -425,7 +423,7 @@ int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock)
 	wsh->buflen = sizeof(wsh->buffer);
 	wsh->secure = ssl_ctx ? 1 : 0;
 
-	setup_socket(sock);
+	// setup_socket(sock);
 
 	if (wsh->secure) {
 		int code;
@@ -466,6 +464,7 @@ int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock)
 		
 	}
 
+/*
 	while (!wsh->down && !wsh->handshake) {
 		int r = ws_handshake(wsh);
 
@@ -474,6 +473,7 @@ int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock)
 			return -1;
 		}
 	}
+*/
 
 	if (wsh->down) {
 		return -1;
@@ -560,8 +560,10 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 	}
 
 	if ((wsh->datalen = ws_raw_read(wsh, wsh->buffer, 14)) < need) {
-		if ((wsh->datalen += ws_raw_read(wsh, wsh->buffer + wsh->datalen, 14 - wsh->datalen)) < need) {
-			/* too small - protocol err */
+		while (!wsh->down && (wsh->datalen += ws_raw_read(wsh, wsh->buffer + wsh->datalen, 14 - wsh->datalen)) < need) ;
+
+		if (0 && (wsh->datalen += ws_raw_read(wsh, wsh->buffer + wsh->datalen, 14 - wsh->datalen)) < need) {
+			 /* too small - protocol err */
 			return ws_close(wsh, WS_PROTO_ERR);
 		}
 	}

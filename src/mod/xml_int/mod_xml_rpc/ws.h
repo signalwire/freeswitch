@@ -25,7 +25,10 @@
 //#include "sha1.h"
 #include <openssl/ssl.h>
 #include <sofia-sip/su_types.h>
+#include <../lib/abyss/src/session.h>
+#include <../lib/abyss/src/conn.h>
 
+typedef TSession ws_tsession_t;
 
 struct globals_s {
 	const SSL_METHOD *ssl_method;
@@ -34,7 +37,7 @@ struct globals_s {
 	char key[512];
 };
 
-extern struct globals_s globals;
+// extern struct globals_s globals;
 
 typedef int ws_socket_t;
 #define ws_sock_invalid -1
@@ -71,6 +74,7 @@ typedef struct wsh_s {
 	uint8_t down;
 	int secure;
 	uint8_t close_sock;
+	ws_tsession_t *tsession;
 } wsh_t;
 
 issize_t ws_send_buf(wsh_t *wsh, ws_opcode_t oc);
@@ -81,11 +85,12 @@ issize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes);
 issize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes);
 issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data);
 issize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes);
-int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock);
+int ws_init(wsh_t *wsh, ws_tsession_t *tsession, SSL_CTX *ssl_ctx, int close_sock);
 issize_t ws_close(wsh_t *wsh, int16_t reason);
 void ws_destroy(wsh_t *wsh);
 void init_ssl(void);
 void deinit_ssl(void);
+int ws_handshake_kvp(wsh_t *wsh, char *key, char *version, char *proto);
 
 
 #ifndef _MSC_VER
