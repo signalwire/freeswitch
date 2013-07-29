@@ -68,6 +68,7 @@ typedef enum {
 	SCMF_RUNNING,
 	SCMF_DISABLE_TRANSCODING,
 	SCMF_AUTOFIX_TIMING,
+	SCMF_AUTOFIX_PT,
 	SCMF_CODEC_GREEDY,
 	SCMF_CODEC_SCROOGE,
 	SCMF_DISABLE_HOLD,
@@ -242,7 +243,7 @@ SWITCH_DECLARE(switch_rtp_stats_t *) switch_core_media_get_stats(switch_core_ses
 
 
 SWITCH_DECLARE(void) switch_core_media_set_sdp_codec_string(switch_core_session_t *session, const char *r_sdp);
-SWITCH_DECLARE(void) switch_core_media_reset_autofix_timing(switch_core_session_t *session, switch_media_type_t type);
+SWITCH_DECLARE(void) switch_core_media_reset_autofix(switch_core_session_t *session, switch_media_type_t type);
 SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_t *session, switch_core_session_t *o_session);
 SWITCH_DECLARE(switch_status_t) switch_core_media_codec_chosen(switch_core_session_t *session, switch_media_type_t media);
 SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *session);

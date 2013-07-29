@@ -1273,8 +1273,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				switch_channel_set_flag(tech_pvt->channel, CF_SECURE);
 			}
 
-			if (sofia_test_media_flag(tech_pvt->profile, SCMF_AUTOFIX_TIMING)) {
-				switch_core_media_reset_autofix_timing(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO);
+			if (sofia_test_media_flag(tech_pvt->profile, SCMF_AUTOFIX_TIMING) || sofia_test_media_flag(tech_pvt->profile, SCMF_AUTOFIX_PT)) {
+				switch_core_media_reset_autofix(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO);
 			}
 		}
 		break;

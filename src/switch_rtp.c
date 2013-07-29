@@ -4819,7 +4819,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			rtp_session->recv_msg.header.pt != 13 && 
 			rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
 			(!rtp_session->cng_pt || rtp_session->recv_msg.header.pt != rtp_session->cng_pt) && 
-			rtp_session->recv_msg.header.pt != rtp_session->rpayload && !(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS)) {
+			rtp_session->recv_msg.header.pt != rtp_session->rpayload && 
+			!(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PAYLOAD) && !(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS)) {
 			/* drop frames of incorrect payload number and return CNG frame instead */
 			return_cng_frame();			
 		}

@@ -3714,6 +3714,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					sofia_set_pflag(profile, PFLAG_DISABLE_100REL);
 					profile->auto_restart = 1;
 					sofia_set_media_flag(profile, SCMF_AUTOFIX_TIMING);
+					sofia_set_media_flag(profile, SCMF_AUTOFIX_PT);
 					sofia_set_media_flag(profile, SCMF_RTP_AUTOFLUSH_DURING_BRIDGE);
 					profile->contact_user = SOFIA_DEFAULT_CONTACT_USER;
 					sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
@@ -4324,6 +4325,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_set_media_flag(profile, SCMF_AUTOFIX_TIMING);
 						} else {
 							sofia_clear_media_flag(profile, SCMF_AUTOFIX_TIMING);
+						}
+					} else if (!strcasecmp(var, "rtp-autofix-pt")) {
+						if (switch_true(val)) {
+							sofia_set_media_flag(profile, SCMF_AUTOFIX_PT);
+						} else {
+							sofia_clear_media_flag(profile, SCMF_AUTOFIX_PT);
 						}
 					} else if (!strcasecmp(var, "contact-user")) {
 						profile->contact_user = switch_core_strdup(profile->pool, val);
@@ -5188,8 +5195,8 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			
 			sofia_update_callee_id(session, profile, sip, SWITCH_FALSE);
 
-			if (sofia_test_media_flag(tech_pvt->profile, SCMF_AUTOFIX_TIMING)) {
-				switch_core_media_reset_autofix_timing(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO);
+			if (sofia_test_media_flag(tech_pvt->profile, SCMF_AUTOFIX_TIMING) || sofia_test_media_flag(tech_pvt->profile, SCMF_AUTOFIX_PT)) {
+				switch_core_media_reset_autofix(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO);
 			}
 
 		}
