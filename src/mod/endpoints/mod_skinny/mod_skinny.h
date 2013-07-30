@@ -276,6 +276,7 @@ uint8_t listener_is_ready(listener_t *listener);
 switch_status_t kill_listener(listener_t *listener, void *pvt);
 switch_status_t keepalive_listener(listener_t *listener, void *pvt);
 void skinny_clean_listener_from_db(listener_t *listener);
+void skinny_clean_device_from_db(listener_t *listener, char *device_name);
 
 /*****************************************************************************/
 /* CHANNEL FUNCTIONS */

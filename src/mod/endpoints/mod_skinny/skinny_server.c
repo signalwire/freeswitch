@@ -975,6 +975,9 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 	skinny_device_event(listener, &params, SWITCH_EVENT_REQUEST_PARAMS, SWITCH_EVENT_SUBCLASS_ANY);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", "skinny-auth");
 
+	/* clean up all traces before adding to database */
+	skinny_clean_device_from_db(listener, request->data.reg.device_name);
+
 	if (switch_xml_locate_user("id", request->data.reg.device_name, profile->domain, "", &xroot, &xdomain, &xuser, &xgroup, params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find device [%s@%s]\n"
 				"You must define a domain called '%s' in your directory and add a user with id=\"%s\".\n"
@@ -983,6 +986,11 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 		status =  SWITCH_STATUS_FALSE;
 		goto end;
 	}
+
+	/* we clean up device above, so this below block will never trigger. I don't
+		know the full details of why there would be multiple listeners with 
+		the same device - maybe a VGC or similar? Not really high priority for
+		support at the moment, but may need to revisit this later */
 
 	skinny_profile_find_listener_by_device_name_and_instance(listener->profile,
 			request->data.reg.device_name, request->data.reg.instance, &listener2);
@@ -994,9 +1002,6 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 		status =  SWITCH_STATUS_FALSE;
 		goto end;
 	}
-
-	/* clean up all traces before adding to database */
-	skinny_clean_listener_from_db(listener);
 
 	if ((sql = switch_mprintf(
 					"INSERT INTO skinny_devices "
