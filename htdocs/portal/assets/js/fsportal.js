@@ -715,10 +715,15 @@ App.usersController = Ember.ArrayController.create({
 });
 
 App.initialize();
-
+var global_debug_event = false;
 
 function eventCallback(data) {
 	console.log(data["Event-Name"]);
+
+	if (global_debug_event) {
+		console.log(data);
+	}
+
 	if (data["Event-Name"] == "CHANNEL_CREATE") {
 		var channel = {
 			uuid: data["Unique-ID"],

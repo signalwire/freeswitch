@@ -777,7 +777,6 @@
 		socket.onmessage =function(msg) {
 			// console.log(msg.data);
 			var data = JSON.parse(msg.data);
-			console.log(data["Event-Name"]);
 
 			eventCallback(data);
 		}
