@@ -461,6 +461,7 @@ static const char usage[] =
 	"\t-scripts [scriptsdir]   -- alternate directory for scripts\n"
 	"\t-temp [directory]       -- alternate directory for temporary files\n"
 	"\t-grammar [directory]    -- alternate directory for grammar files\n"
+	"\t-certs [directory]      -- alternate directory for certificates\n"
 	"\t-recordings [directory] -- alternate directory for recordings\n"
 	"\t-storage [directory]    -- alternate directory for voicemail storage\n"
 	"\t-sounds [directory]     -- alternate directory for sound files\n";
@@ -942,6 +943,21 @@ int main(int argc, char *argv[])
 				return 255;
 			}
 			strcpy(SWITCH_GLOBAL_dirs.grammar_dir, local_argv[x]);
+		}
+
+		else if (!strcmp(local_argv[x], "-certs")) {
+			x++;
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
+				fprintf(stderr, "When using -certs you must specify a grammar directory\n");
+				return 255;
+			}
+
+			SWITCH_GLOBAL_dirs.certs_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_dirs.certs_dir) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_dirs.certs_dir, local_argv[x]);
 		}
 
 		else if (!strcmp(local_argv[x], "-sounds")) {
