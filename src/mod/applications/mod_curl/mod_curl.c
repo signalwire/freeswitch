@@ -163,6 +163,7 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 		method = "get";
 	}
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "method: %s, url: %s, content-type: %s\n", method, url, content_type);
 	curl_handle = switch_curl_easy_init();
 
 	if (options) {
