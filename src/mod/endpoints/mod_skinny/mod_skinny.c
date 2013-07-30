@@ -1326,11 +1326,63 @@ static int flush_listener_callback(void *pArg, int argc, char **argv, char **col
 	return 0;
 }
 
+void skinny_clean_device_from_db(listener_t *listener, char *device_name)
+{
+	if(!zstr(device_name)) {
+		skinny_profile_t *profile = listener->profile;
+		char *sql;
+
+		skinny_log_l(listener, SWITCH_LOG_DEBUG, 
+			"Clean device from DB with name '%s'\n",
+			device_name);
+
+		if ((sql = switch_mprintf(
+						"DELETE FROM skinny_devices "
+						"WHERE name='%s'",
+						device_name))) {
+			skinny_execute_sql(profile, sql, profile->sql_mutex);
+			switch_safe_free(sql);
+		}
+
+		if ((sql = switch_mprintf(
+						"DELETE FROM skinny_lines "
+						"WHERE device_name='%s'",
+						device_name))) {
+			skinny_execute_sql(profile, sql, profile->sql_mutex);
+			switch_safe_free(sql);
+		}
+
+		if ((sql = switch_mprintf(
+						"DELETE FROM skinny_buttons "
+						"WHERE device_name='%s'",
+						device_name))) {
+			skinny_execute_sql(profile, sql, profile->sql_mutex);
+			switch_safe_free(sql);
+		}
+
+		if ((sql = switch_mprintf(
+						"DELETE FROM skinny_active_lines "
+						"WHERE device_name='%s'",
+						device_name))) {
+			skinny_execute_sql(profile, sql, profile->sql_mutex);
+			switch_safe_free(sql);
+		}
+
+	} else {
+		skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, 
+			"Clean device from DB, missing device name.\n");
+	}
+}
+
 void skinny_clean_listener_from_db(listener_t *listener)
 {
 	if(!zstr(listener->device_name)) {
 		skinny_profile_t *profile = listener->profile;
 		char *sql;
+
+		skinny_log_l(listener, SWITCH_LOG_DEBUG, 
+			"Clean listener from DB with name '%s' and instance '%d'\n",
+			listener->device_name, listener->device_instance);
 
 		if ((sql = switch_mprintf(
 						"DELETE FROM skinny_devices "
@@ -1364,6 +1416,9 @@ void skinny_clean_listener_from_db(listener_t *listener)
 			switch_safe_free(sql);
 		}
 
+	} else {
+		skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, 
+			"Clean listener from DB, missing device name.\n");
 	}
 }
 
