@@ -166,7 +166,6 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 	curl_handle = switch_curl_easy_init();
 
 	if (options) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%ld %ld\n", options->connect_timeout, options->timeout);
 		if (options->connect_timeout) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, options->connect_timeout);
 		}
