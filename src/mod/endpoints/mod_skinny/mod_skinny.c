@@ -2253,6 +2253,10 @@ static void skinny_message_waiting_event_handler(switch_event_t *event)
 		return;
 	}
 
+	if (!strncmp("sip:", account, 4)) {
+		return;
+	}
+
 	if (!(yn = switch_event_get_header(event, "mwi-messages-waiting"))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing required Header 'MWI-Messages-Waiting'\n");
 		return;
