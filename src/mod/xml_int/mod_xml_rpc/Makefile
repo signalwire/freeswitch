@@ -65,7 +65,7 @@ ws.o
 
 LOCAL_CFLAGS = -w -I$(XMLRPC_DIR)/lib/expat/xmlparse -I$(XMLRPC_DIR)/lib/expat/xmltok -I$(XMLRPC_DIR) -I$(XMLRPC_DIR)/include
 LOCAL_CFLAGS+= -I$(XMLRPC_DIR)/lib/abyss/src -I$(XMLRPC_DIR)/lib/util/include -D_THREAD -D__EXTENSIONS__
-LOCAL_CFLAGS+= -I. -I../../../../libs/sofia-sip/libsofia-sip-ua/su
+LOCAL_CFLAGS+= -I.
 
 include $(BASE)/build/modmake.rules
 

@@ -1,5 +1,4 @@
 #include "ws.h"
-#include <pthread.h>
 
 #ifndef _MSC_VER
 #include <fcntl.h>
