@@ -219,13 +219,10 @@ static void sha1_digest(unsigned char *digest, char *in)
 
 int ws_handshake_kvp(wsh_t *wsh, char *key, char *version, char *proto)
 {
-	char uri[256] = "";
 	char input[256] = "";
 	unsigned char output[SHA1_HASH_SIZE] = "";
 	char b64[256] = "";
 	char respond[512] = "";
-	issize_t bytes;
-	char *p, *e = 0;
 
 	if (!wsh->tsession) {
 		return -3;
@@ -257,9 +254,6 @@ int ws_handshake_kvp(wsh_t *wsh, char *key, char *version, char *proto)
 
 	snprintf(respond, sizeof(respond), "HTTP/1.1 400 Bad Request\r\n"
 			 "Sec-WebSocket-Version: 13\r\n\r\n");
-
-	//printf("ERR:\n%s\n", respond);
-
 
 	ws_raw_write(wsh, respond, strlen(respond));
 
