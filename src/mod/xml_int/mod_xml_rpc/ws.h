@@ -11,7 +11,6 @@
 #include <arpa/inet.h>
 #include <sys/wait.h> 
 #include <sys/socket.h>
-#include <unistd.h>
 #else
 #pragma warning(disable:4996)
 #define snprintf _snprintf
