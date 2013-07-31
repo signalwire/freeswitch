@@ -1850,14 +1850,8 @@ switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, c
 		profile->keep_alive = atoi(val);
 	} else if (!strcasecmp(var, "date-format")) {
 		strncpy(profile->date_format, val, 6);
-	} else if (!strcasecmp(var, "odbc-dsn")) {
-		if (!zstr(val)) {
-			if (switch_odbc_available()) {
-				profile->odbc_dsn = switch_core_strdup(profile->pool, val);
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
-			}
-		}
+	} else if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
+		profile->odbc_dsn = switch_core_strdup(profile->pool, val);
 	} else if (!strcasecmp(var, "debug")) {
 		profile->debug = atoi(val);
 	} else if (!strcasecmp(var, "auto-restart")) {
