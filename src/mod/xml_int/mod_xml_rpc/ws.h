@@ -11,24 +11,24 @@
 #include <arpa/inet.h>
 #include <sys/wait.h> 
 #include <sys/socket.h>
+#include <unistd.h>
 #else
 #pragma warning(disable:4996)
+#define snprintf _snprintf
 #endif
 #include <string.h>
-#include <unistd.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <errno.h>
-//#include "sha1.h"
 #include <openssl/ssl.h>
-#include <sofia-sip/su_types.h>
 #include <../lib/abyss/src/session.h>
 #include <../lib/abyss/src/conn.h>
 
 typedef TSession ws_tsession_t;
+typedef int issize_t;
 
 struct globals_s {
 	const SSL_METHOD *ssl_method;
