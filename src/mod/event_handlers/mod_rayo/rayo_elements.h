@@ -23,7 +23,7 @@
  * Contributor(s):
  * Chris Rienzo <chris.rienzo@grasshopper.com>
  *
- * rayo_elements.h -- Rayo XML element definition
+ * rayo_elements.h -- Rayo XML elements
  *
  */
 #ifndef RAYO_ELEMENTS_H
@@ -31,80 +31,12 @@
 
 #include "iks_helpers.h"
 
-/**
- * <input> component validation
- */
-ELEMENT(RAYO_INPUT)
-	STRING_ATTRIB(mode, any, "any,dtmf,voice")
-	ATTRIB(terminator,, any)
-	ATTRIB(recognizer,, any)
-	ATTRIB(language, en-US, any)
-	ATTRIB(initial-timeout, -1, positive_or_neg_one)
-	ATTRIB(inter-digit-timeout, -1, positive_or_neg_one)
-	ATTRIB(sensitivity, 0.5, decimal_between_zero_and_one)
-	ATTRIB(min-confidence, 0, decimal_between_zero_and_one)
-	ATTRIB(max-silence, -1, positive_or_neg_one)
-	/* for now, only NLSML */
-	STRING_ATTRIB(match-content-type, application/nlsml+xml, "application/nlsml+xml")
-	/* internal attribs for prompt support */
-	ATTRIB(barge-event, false, bool)
-	ATTRIB(start-timers, true, bool)
-ELEMENT_END
-
-/**
- * <output> component validation
- */
-ELEMENT(RAYO_OUTPUT)
-	ATTRIB(start-offset, 0, not_negative)
-	ATTRIB(start-paused, false, bool)
-	ATTRIB(repeat-interval, 0, not_negative)
-	ATTRIB(repeat-times, 1, not_negative)
-	ATTRIB(max-time, -1, positive_or_neg_one)
-	ATTRIB(renderer,, any)
-	ATTRIB(voice,, any)
-ELEMENT_END
-
-/**
- * <output><seek> validation
- */
-ELEMENT(RAYO_OUTPUT_SEEK)
-	STRING_ATTRIB(direction,, "forward,back")
-	ATTRIB(amount,-1, positive)
-ELEMENT_END
-
-/**
- * <prompt> component validation
- */
-ELEMENT(RAYO_PROMPT)
-	ATTRIB(barge-in, true, bool)
-ELEMENT_END
-
-/**
- * <record> component validation
- */
-ELEMENT(RAYO_RECORD)
-	ATTRIB(format, mp3, any)
-	ATTRIB(start-beep, false, bool)
-	ATTRIB(stop-beep, false, bool)
-	ATTRIB(start-paused, false, bool)
-	ATTRIB(max-duration, -1, positive_or_neg_one)
-	ATTRIB(initial-timeout, -1, positive_or_neg_one)
-	ATTRIB(final-timeout, -1, positive_or_neg_one)
-	STRING_ATTRIB(direction, duplex, "duplex,send,recv")
-	ATTRIB(mix, false, bool)
-ELEMENT_END
-
-/**
- * <join> command validation
- */
-ELEMENT(RAYO_JOIN)
-	/* for now, only allow duplex
-	STRING_ATTRIB(direction, duplex, "send,recv,duplex"); */
-	STRING_ATTRIB(direction, duplex, "duplex")
-	STRING_ATTRIB(media, bridge, "bridge,direct")
-	ATTRIB(call-uri,, any)
-	ATTRIB(mixer-name,, any)
-ELEMENT_END
+ELEMENT_DECL(RAYO_INPUT)
+ELEMENT_DECL(RAYO_OUTPUT)
+ELEMENT_DECL(RAYO_OUTPUT_SEEK)
+ELEMENT_DECL(RAYO_PROMPT)
+ELEMENT_DECL(RAYO_RECORD)
+ELEMENT_DECL(RAYO_JOIN)
 
 #endif
 
