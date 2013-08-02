@@ -76,21 +76,21 @@ message might look like this:
 > 
 > After appropriate amounts of frobbing have been done, a new variable
 > `frobbing_done` is set in the caller's channel.
+> 
+> FS-XXXX --resolve
 
-Patches related to JIRA issues
+Patches Related to JIRA Issues
 ------------------------------
 
-If your patch is related to an JIRA issue, you should add its name
-(i.e. FS-555) to your commit message. You can also use some JIRA
-directives, like '--resolve'. For example, if your patch fixes some
-error reported by case FS-555, just add the following line somewhere
-in your commit message:
+When your patch is related to an issue logged in JIRA, add the
+identifier for the issue (e.g. FS-XXXX) to the body of your commit
+message at the beginning of a line, typically the last line or just
+before "Signed-off-by:" and "Thanks-to:" lines.  This helps our JIRA
+bot do useful things by relating the commit to the issue.
 
-> FS-555 --resolve
-
-or modify the subject:
-
-> FS-555 --resolve Add frobinator support to mod_sofia
+If you believe your patch resolves the issue in question, follow the
+issue number with a space and the "--resolve" directive as in the
+example above.
 
 Where to Go for Help
 --------------------
