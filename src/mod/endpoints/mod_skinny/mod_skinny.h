@@ -117,6 +117,7 @@ struct skinny_profile {
 	/* extensions */
 	char *ext_voicemail;
 	char *ext_redial;
+	char *ext_meetme;
 	/* db */
 	char *dbname;
 	char *odbc_dsn;

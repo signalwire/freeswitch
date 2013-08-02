@@ -239,7 +239,7 @@ SKINNY_DECLARE_STR2ID(skinny_str2button, SKINNY_BUTTONS, -1)
 		{SOFTKEY_CONF, "SoftkeyConf"},
 		{SOFTKEY_PARK, "SoftkeyPark"},
 		{SOFTKEY_JOIN, "SoftkeyJoin"},
-		{SOFTKEY_MEETMECONF, "SoftkeyMeetmeconfrm"},
+		{SOFTKEY_MEETME, "SoftkeyMeetme"},
 		{SOFTKEY_CALLPICKUP, "SoftkeyCallpickup"},
 		{SOFTKEY_GRPCALLPICKUP, "SoftkeyGrpcallpickup"},
 		{SOFTKEY_DND, "SoftkeyDnd"},

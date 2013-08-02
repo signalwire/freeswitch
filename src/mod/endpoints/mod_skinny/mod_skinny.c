@@ -171,6 +171,7 @@ switch_status_t skinny_profile_dump(const skinny_profile_t *profile, switch_stre
 	stream->write_function(stream, "Listener-Threads  \t%d\n", profile->listener_threads);
 	stream->write_function(stream, "Ext-Voicemail     \t%s\n", profile->ext_voicemail);
 	stream->write_function(stream, "Ext-Redial        \t%s\n", profile->ext_redial);
+	stream->write_function(stream, "Ext-MeetMe        \t%s\n", profile->ext_meetme);
 	stream->write_function(stream, "%s\n", line);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1864,6 +1865,10 @@ switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, c
 		if (!profile->ext_redial || strcmp(val, profile->ext_redial)) {
 			profile->ext_redial = switch_core_strdup(profile->pool, val);
 		}
+	} else if (!strcasecmp(var, "ext-meetme")) {
+		if (!profile->ext_meetme || strcmp(val, profile->ext_meetme)) {
+			profile->ext_meetme = switch_core_strdup(profile->pool, val);
+		}
 	} else {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1954,6 +1959,10 @@ static switch_status_t load_skinny_config(void)
 
 				if (!profile->ext_redial) {
 					skinny_profile_set(profile, "ext-redial", "redial");
+				}
+
+				if (!profile->ext_meetme) {
+					skinny_profile_set(profile, "ext-meetme", "conference");
 				}
 
 				if (profile->port == 0) {
