@@ -76,6 +76,21 @@ message might look like this:
 > 
 > After appropriate amounts of frobbing have been done, a new variable
 > `frobbing_done` is set in the caller's channel.
+> 
+> FS-XXXX --resolve
+
+Patches Related to JIRA Issues
+------------------------------
+
+When your patch is related to an issue logged in JIRA, add the
+identifier for the issue (e.g. FS-XXXX) to the body of your commit
+message at the beginning of a line, typically the last line or just
+before "Signed-off-by:" and "Thanks-to:" lines.  This helps our JIRA
+bot do useful things by relating the commit to the issue.
+
+If you believe your patch resolves the issue in question, follow the
+issue number with a space and the "--resolve" directive as in the
+example above.
 
 Where to Go for Help
 --------------------
