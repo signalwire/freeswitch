@@ -8,6 +8,14 @@
     <param name="ext-redial" value="redial">
     <param name="ext-meetme" value="conference">
     -->
+
+    <!-- if you define an extension that runs 'pickup' application with 'key' as the data
+        this will cause the PickUp softkey to route to that extension. Combine with adding ",pickup/key"
+        to bridge call to implement PickUp groups -->
+
+    <!--
+    <param name="ext-pickup" value="pickup-key">
+    -->
     <param name="foo" value="bar"/>
    </params>
    <skinny>
