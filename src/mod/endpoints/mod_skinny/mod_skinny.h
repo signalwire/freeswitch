@@ -36,6 +36,12 @@
 #include <switch.h>
 
 /*****************************************************************************/
+/* UTILITY MACROS */
+/*****************************************************************************/
+#define empty_null(a) ((a)?(a):NULL)
+#define empty_null2(a,b) ((a)?(a):empty_null(b))
+
+/*****************************************************************************/
 /* LOGGING FUNCTIONS */
 /*****************************************************************************/
 #define skinny_undef_str(x) (zstr(x) ? "_undef_" : x)
@@ -183,6 +189,9 @@ struct listener {
 	uint32_t flags;
 	time_t expire_time;
 	struct listener *next;
+	char *ext_voicemail;
+	char *ext_redial;
+	char *ext_meetme;
 };
 
 typedef struct listener listener_t;
