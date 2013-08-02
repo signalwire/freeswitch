@@ -1034,6 +1034,18 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 					strncpy(listener->firmware_version, value, 16);
 				} else if (!strcasecmp(name, "skinny-soft-key-set-set")) {
 					listener->soft_key_set_set = switch_core_strdup(profile->pool, value);
+				} else if (!strcasecmp(name, "ext-voicemail")) {
+					if (!listener->ext_voicemail || strcmp(value,listener->ext_voicemail)) {
+						listener->ext_voicemail = switch_core_strdup(profile->pool, value);
+					}
+				} else if (!strcasecmp(name, "ext-redial")) {
+					if (!listener->ext_redial || strcmp(value,listener->ext_redial)) {
+						listener->ext_redial = switch_core_strdup(profile->pool, value);
+					}
+				} else if (!strcasecmp(name, "ext-meetme")) {
+					if (!listener->ext_meetme || strcmp(value,listener->ext_meetme)) {
+						listener->ext_meetme = switch_core_strdup(profile->pool, value);
+					}
 				}
 			}
 		}
@@ -1267,7 +1279,8 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 	switch(request->data.stimulus.instance_type) {
 		case SKINNY_BUTTON_LAST_NUMBER_REDIAL:
 			skinny_create_incoming_session(listener, &line_instance, &session);
-			skinny_session_process_dest(session, listener, line_instance, listener->profile->ext_redial, '\0', 0);
+			skinny_session_process_dest(session, listener, line_instance, 
+				empty_null2(listener->ext_redial,listener->profile->ext_redial), '\0', 0);
 			break;
 		case SKINNY_BUTTON_SPEED_DIAL:
 			skinny_speed_dial_get(listener, request->data.stimulus.instance, &button_speed_dial);
@@ -1296,7 +1309,8 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 			break;
 		case SKINNY_BUTTON_VOICEMAIL:
 			skinny_create_incoming_session(listener, &line_instance, &session);
-			skinny_session_process_dest(session, listener, line_instance, listener->profile->ext_voicemail, '\0', 0);
+			skinny_session_process_dest(session, listener, line_instance, 
+				empty_null2(listener->ext_voicemail, listener->profile->ext_voicemail), '\0', 0);
 			break;
 
 		case SKINNY_BUTTON_LINE:
@@ -1871,7 +1885,8 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 	switch(request->data.soft_key_event.event) {
 		case SOFTKEY_REDIAL:
 			status = skinny_create_incoming_session(listener, &line_instance, &session);
-			skinny_session_process_dest(session, listener, line_instance, listener->profile->ext_redial, '\0', 0);
+			skinny_session_process_dest(session, listener, line_instance, 
+				empty_null2(listener->ext_redial,listener->profile->ext_redial), '\0', 0);
 			break;
 		case SOFTKEY_NEWCALL:
 			status = skinny_create_incoming_session(listener, &line_instance, &session);
@@ -1931,7 +1946,8 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 			break;
 		case SOFTKEY_MEETME:
 			skinny_create_incoming_session(listener, &line_instance, &session);
-			skinny_session_process_dest(session, listener, line_instance, listener->profile->ext_meetme, '\0', 0);
+			skinny_session_process_dest(session, listener, line_instance, 
+				empty_null2(listener->ext_meetme, listener->profile->ext_meetme), '\0', 0);
 			break;
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
