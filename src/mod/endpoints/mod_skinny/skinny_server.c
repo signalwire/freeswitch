@@ -76,7 +76,7 @@ uint32_t soft_key_template_default_events[] = {
 	SOFTKEY_CONF,
 	SOFTKEY_PARK,
 	SOFTKEY_JOIN,
-	SOFTKEY_MEETMECONF,
+	SOFTKEY_MEETME,
 	SOFTKEY_CALLPICKUP,
 	SOFTKEY_GRPCALLPICKUP,
 	SOFTKEY_DND,
@@ -1928,6 +1928,10 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 					switch_channel_hangup(channel, SWITCH_CAUSE_NO_ANSWER);
 				}
 			}
+			break;
+		case SOFTKEY_MEETME:
+			skinny_create_incoming_session(listener, &line_instance, &session);
+			skinny_session_process_dest(session, listener, line_instance, listener->profile->ext_meetme, '\0', 0);
 			break;
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
