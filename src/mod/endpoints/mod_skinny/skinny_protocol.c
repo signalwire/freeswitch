@@ -110,7 +110,7 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 	char *ptr;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	request = switch_core_alloc(listener->pool, SKINNY_MESSAGE_MAXSIZE);
+	request = calloc(SKINNY_MESSAGE_MAXSIZE,1);
 
 	if (!request) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to allocate memory.\n");
@@ -122,6 +122,7 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 	while (listener_is_ready(listener)) {
 		uint8_t do_sleep = 1;
 		if (listener->expire_time && listener->expire_time < switch_epoch_time_now(NULL)) {
+			switch_safe_free(request);
 			return SWITCH_STATUS_TIMEOUT;
 		}
 		if(bytes < SKINNY_MESSAGE_FIELD_SIZE) {
@@ -135,6 +136,7 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 		status = switch_socket_recv(listener->sock, ptr, &mlen);
 
 		if (listener->expire_time && listener->expire_time < switch_epoch_time_now(NULL)) {
+			switch_safe_free(request);
 			return SWITCH_STATUS_TIMEOUT;
 		}
 
@@ -143,6 +145,7 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 		}
 		if (!switch_status_is_timeup(status) && !SWITCH_STATUS_IS_BREAK(status) && (status != SWITCH_STATUS_SUCCESS)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Socket break with status=%d.\n", status);
+			switch_safe_free(request);
 			return SWITCH_STATUS_FALSE;
 		}
 
@@ -162,17 +165,20 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 							"Skinny client sent invalid data. Length should be greater than 4 but got %d.\n",
 							request->length);
+					switch_safe_free(request);
 					return SWITCH_STATUS_FALSE;
 				}
 				if(request->length + 2*SKINNY_MESSAGE_FIELD_SIZE > SKINNY_MESSAGE_MAXSIZE) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 							"Skinny client sent too huge data. Got %d which is above threshold %d.\n",
 							request->length, SKINNY_MESSAGE_MAXSIZE - 2*SKINNY_MESSAGE_FIELD_SIZE);
+					switch_safe_free(request);
 					return SWITCH_STATUS_FALSE;
 				}
 				if(bytes >= request->length + 2*SKINNY_MESSAGE_FIELD_SIZE) {
 					/* Message body */
 					*req = request;
+					/* Do not free here, caller needs to do it */
 					return  SWITCH_STATUS_SUCCESS;
 				}
 			}
@@ -181,6 +187,8 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 			switch_cond_next();
 		}
 	}
+
+	switch_safe_free(request);
 	return SWITCH_STATUS_SUCCESS;
 }
 

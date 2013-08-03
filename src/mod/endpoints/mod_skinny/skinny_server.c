@@ -1687,7 +1687,11 @@ switch_status_t skinny_handle_capabilities_response(listener_t *listener, skinny
 	}
 	i = 0;
 	pos = 0;
-	codec_string = switch_core_alloc(listener->pool, string_len+1);
+	codec_string = calloc(string_len+1,1);
+	if ( !codec_string ) {
+		skinny_log_l_msg(listener, SWITCH_LOG_ERROR, "Unable to allocate memory for codec string.\n");
+		return SWITCH_STATUS_FALSE;
+	}
 	for (string_pos = 0; string_pos < string_len; string_pos++) {
 		char *codec = codec_order[i];
 		switch_assert(i < n);
@@ -1709,6 +1713,7 @@ switch_status_t skinny_handle_capabilities_response(listener_t *listener, skinny
 		switch_safe_free(sql);
 	}
 	skinny_log_l(listener, SWITCH_LOG_DEBUG, "Codecs %s supported.\n", codec_string);
+	switch_safe_free(codec_string);
 	return SWITCH_STATUS_SUCCESS;
 }
 
