@@ -87,6 +87,17 @@ char* skinny_codec2string(skinny_codecs skinnycodec);
 /* SKINNY MESSAGE DATA */
 /*****************************************************************************/
 
+#define skinny_create_message(message,msgtype,field) \
+    message = calloc(12 + sizeof(message->data.field), 1); \
+    message->type = msgtype; \
+    message->length = 4 + sizeof(message->data.field)
+
+#define skinny_create_empty_message(message,msgtype) \
+    message = calloc(12, 1); \
+    message->type = msgtype; \
+    message->length = 4
+
+
 /* KeepAliveMessage */
 #define KEEP_ALIVE_MESSAGE 0x0000
 
@@ -955,11 +966,11 @@ void skinny_speed_dial_get(listener_t *listener, uint32_t instance, struct speed
 void skinny_service_url_get(listener_t *listener, uint32_t instance, struct service_url_stat_res_message **button);
 void skinny_feature_get(listener_t *listener, uint32_t instance, struct feature_stat_res_message **button);
 
-switch_status_t skinny_perform_send_reply(listener_t *listener, const char *file, const char *func, int line, skinny_message_t *reply);
-#define  skinny_send_reply(listener, reply)  skinny_perform_send_reply(listener, __FILE__, __SWITCH_FUNC__, __LINE__, reply)
+switch_status_t skinny_perform_send_reply(listener_t *listener, const char *file, const char *func, int line, skinny_message_t *reply, switch_bool_t discard);
+#define  skinny_send_reply(listener, reply, discard)  skinny_perform_send_reply(listener, __FILE__, __SWITCH_FUNC__, __LINE__, reply, discard)
 
-switch_status_t skinny_perform_send_reply_quiet(listener_t *listener, const char *file, const char *func, int line, skinny_message_t *reply);
-#define  skinny_send_reply_quiet(listener, reply)  skinny_perform_send_reply_quiet(listener, __FILE__, __SWITCH_FUNC__, __LINE__, reply)
+switch_status_t skinny_perform_send_reply_quiet(listener_t *listener, const char *file, const char *func, int line, skinny_message_t *reply, switch_bool_t discard);
+#define  skinny_send_reply_quiet(listener, reply, discard)  skinny_perform_send_reply_quiet(listener, __FILE__, __SWITCH_FUNC__, __LINE__, reply, discard)
 
 switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *request);
 
