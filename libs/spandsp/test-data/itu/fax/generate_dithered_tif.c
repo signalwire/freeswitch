@@ -63,7 +63,6 @@ int main(int argc, char *argv[])
 {
     int image_width;
     int row;
-    int resunit;
     int output_compression;
     int output_t4_options;
     uint8_t image_buffer[1024];
@@ -99,7 +98,6 @@ int main(int argc, char *argv[])
     TIFFSetField(tiff_file, TIFFTAG_BITSPERSAMPLE, 1);
     TIFFSetField(tiff_file, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
     TIFFSetField(tiff_file, TIFFTAG_SAMPLESPERPIXEL, 1);
-    TIFFSetField(tiff_file, TIFFTAG_ROWSPERSTRIP, -1L);
     TIFFSetField(tiff_file, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
     TIFFSetField(tiff_file, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISWHITE);
     TIFFSetField(tiff_file, TIFFTAG_FILLORDER, FILLORDER_LSB2MSB);
@@ -108,16 +106,15 @@ int main(int argc, char *argv[])
     y_resolution = y_res/100.0f;
     TIFFSetField(tiff_file, TIFFTAG_XRESOLUTION, floorf(x_resolution*2.54f + 0.5f));
     TIFFSetField(tiff_file, TIFFTAG_YRESOLUTION, floorf(y_resolution*2.54f + 0.5f));
-    resunit = RESUNIT_INCH;
-    TIFFSetField(tiff_file, TIFFTAG_RESOLUTIONUNIT, resunit);
+    TIFFSetField(tiff_file, TIFFTAG_RESOLUTIONUNIT, RESUNIT_INCH);
 
-    TIFFSetField(tiff_file, TIFFTAG_SOFTWARE, "spandsp");
     if (gethostname(buf, sizeof(buf)) == 0)
         TIFFSetField(tiff_file, TIFFTAG_HOSTCOMPUTER, buf);
 
+    TIFFSetField(tiff_file, TIFFTAG_SOFTWARE, "Spandsp");
     TIFFSetField(tiff_file, TIFFTAG_IMAGEDESCRIPTION, "Checkerboard or dithered ones");
     TIFFSetField(tiff_file, TIFFTAG_MAKE, "soft-switch.org");
-    TIFFSetField(tiff_file, TIFFTAG_MODEL, "test data");
+    TIFFSetField(tiff_file, TIFFTAG_MODEL, "testy");
 
     time(&now);
     tm = localtime(&now);
@@ -131,6 +128,7 @@ int main(int argc, char *argv[])
             tm->tm_sec);
     TIFFSetField(tiff_file, TIFFTAG_DATETIME, buf);
 
+    TIFFSetField(tiff_file, TIFFTAG_ROWSPERSTRIP, image_length);
     TIFFSetField(tiff_file, TIFFTAG_IMAGELENGTH, image_length);
     TIFFSetField(tiff_file, TIFFTAG_PAGENUMBER, 0, 1);
     TIFFSetField(tiff_file, TIFFTAG_CLEANFAXDATA, CLEANFAXDATA_CLEAN);

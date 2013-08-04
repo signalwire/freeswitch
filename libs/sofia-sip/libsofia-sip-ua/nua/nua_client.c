@@ -1062,11 +1062,15 @@ int nua_client_response(nua_client_request_t *cr,
     sip_method_t method = cr->cr_method;
     int terminated, graceful = 1;
 
-    if (status < 700)
-      terminated = sip_response_terminates_dialog(status, method, &graceful);
-    else
-      /* XXX - terminate usage by all internal error responses */
-      terminated = 0, graceful = 1;
+    if (status < 700) {
+		terminated = sip_response_terminates_dialog(status, method, &graceful);
+		if (terminated && !cr->cr_initial) {
+			terminated = 0, graceful = 1;
+		}
+	} else {
+		/* XXX - terminate usage by all internal error responses */
+		terminated = 0, graceful = 1;
+	}
 
     if (terminated < 0)
       cr->cr_terminated = terminated;

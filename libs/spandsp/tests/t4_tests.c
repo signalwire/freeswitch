@@ -554,9 +554,9 @@ int main(int argc, char *argv[])
 
                 if (t4_tx_start_page(send_state))
                     break;
-                t4_rx_set_x_resolution(receive_state, t4_tx_get_x_resolution(send_state));
-                t4_rx_set_y_resolution(receive_state, t4_tx_get_y_resolution(send_state));
-                t4_rx_set_image_width(receive_state, t4_tx_get_image_width(send_state));
+                t4_rx_set_x_resolution(receive_state, t4_tx_get_tx_x_resolution(send_state));
+                t4_rx_set_y_resolution(receive_state, t4_tx_get_tx_y_resolution(send_state));
+                t4_rx_set_image_width(receive_state, t4_tx_get_tx_image_width(send_state));
             }
             t4_rx_start_page(receive_state);
             detect_non_ecm_page_end(-1, compression);

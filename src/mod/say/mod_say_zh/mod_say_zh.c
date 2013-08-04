@@ -497,6 +497,7 @@ static switch_status_t zh_say(switch_core_session_t *session, char *tosay, switc
 	case SST_CURRENT_DATE:
 	case SST_CURRENT_TIME:
 	case SST_CURRENT_DATE_TIME:
+	case SST_SHORT_DATE_TIME:
 		say_cb = zh_say_time;
 		break;
 	case SST_IP_ADDRESS:

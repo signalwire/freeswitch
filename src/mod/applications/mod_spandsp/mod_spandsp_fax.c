@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -167,7 +167,7 @@ static int del_pvt(pvt_t *del_pvt)
 			r = 1;
 			break;
 		}
-	
+
 		l = p;
 	}
 
@@ -259,15 +259,11 @@ static void counter_increment(void)
 	switch_mutex_unlock(spandsp_globals.mutex);
 }
 
-void spanfax_log_message(void *user_data, int level, const char *msg)
+void mod_spandsp_log_message(void *user_data, int level, const char *msg)
 {
 	int fs_log_level;
-    switch_core_session_t *session;
-    pvt_t *pvt;
-    
-	pvt = (pvt_t *) user_data;
-	session = pvt->session;
-    
+	switch_core_session_t *session = (switch_core_session_t *)user_data;
+
 	switch (level) {
 	case SPAN_LOG_NONE:
 		return;
@@ -329,7 +325,7 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 	switch_channel_set_variable(channel, "fax_remote_model", switch_str_nil(t30_get_rx_model(s)));
 
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "=== Negotiation Result =======================================================\n"); 
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "=== Negotiation Result =======================================================\n");
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote station id: %s\n", far_ident);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Local station id:  %s\n", local_ident);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Transfer Rate:     %i\n", t30_stats.bit_rate);
@@ -339,7 +335,7 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote vendor:    %s\n", switch_str_nil(t30_get_rx_vendor(s)));
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote model:     %s\n", switch_str_nil(t30_get_rx_model(s)));
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==============================================================================\n"); 
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==============================================================================\n");
 
 	switch_channel_execute_on(channel, "execute_on_fax_phase_b");
 
@@ -673,9 +669,9 @@ static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uin
 
 	if (r < 0) {
 		t30_state_t *t30;
-	
+
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "TERMINATING T30 STATE\n");
-	
+
 		if (pvt->t38_state && (t30 = t38_terminal_get_t30_state(pvt->t38_state))) {
 			t30_terminate(t30);
 		}
@@ -733,8 +729,8 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 
 		fax_set_transmit_on_idle(fax, TRUE);
 
-		span_log_set_message_handler(fax_get_logging_state(fax), spanfax_log_message, pvt);
-		span_log_set_message_handler(t30_get_logging_state(t30), spanfax_log_message, pvt);
+		span_log_set_message_handler(fax_get_logging_state(fax), mod_spandsp_log_message, pvt->session);
+		span_log_set_message_handler(t30_get_logging_state(t30), mod_spandsp_log_message, pvt->session);
 
 		if (pvt->verbose) {
 			span_log_set_level(fax_get_logging_state(fax), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
@@ -772,7 +768,7 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 
 			pvt->t38_core = t38_terminal_get_t38_core_state(pvt->t38_state);
 
-			if (udptl_init(pvt->udptl_state, UDPTL_ERROR_CORRECTION_REDUNDANCY, fec_span, fec_entries, 
+			if (udptl_init(pvt->udptl_state, UDPTL_ERROR_CORRECTION_REDUNDANCY, fec_span, fec_entries,
 					(udptl_rx_packet_handler_t *) t38_core_rx_ifp_packet, (void *) pvt->t38_core) == NULL) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize my UDPTL structs\n");
 				return SWITCH_STATUS_FALSE;
@@ -789,8 +785,8 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 				}
 			}
 
-			span_log_set_message_handler(t38_terminal_get_logging_state(t38), spanfax_log_message, pvt);
-			span_log_set_message_handler(t30_get_logging_state(t30), spanfax_log_message, pvt);
+			span_log_set_message_handler(t38_terminal_get_logging_state(t38), mod_spandsp_log_message, pvt->session);
+			span_log_set_message_handler(t30_get_logging_state(t30), mod_spandsp_log_message, pvt->session);
 
 			if (pvt->verbose) {
 				span_log_set_level(t38_terminal_get_logging_state(t38), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
@@ -811,13 +807,13 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize my T.38 structs\n");
 			t38_gateway_free(pvt->t38_gateway_state);
 			pvt->t38_gateway_state = NULL;
-			
+
 			return SWITCH_STATUS_FALSE;
 		}
 
 		pvt->t38_core = t38_gateway_get_t38_core_state(pvt->t38_gateway_state);
 
-		if (udptl_init(pvt->udptl_state, UDPTL_ERROR_CORRECTION_REDUNDANCY, fec_span, fec_entries, 
+		if (udptl_init(pvt->udptl_state, UDPTL_ERROR_CORRECTION_REDUNDANCY, fec_span, fec_entries,
 						(udptl_rx_packet_handler_t *) t38_core_rx_ifp_packet, (void *) pvt->t38_core) == NULL) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize my UDPTL structs\n");
 			t38_gateway_free(pvt->t38_gateway_state);
@@ -843,8 +839,8 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 			t38_gateway_set_ecm_capability(pvt->t38_gateway_state, TRUE);
 		}
 
-		span_log_set_message_handler(t38_gateway_get_logging_state(pvt->t38_gateway_state), spanfax_log_message, pvt);
-		span_log_set_message_handler(t38_core_get_logging_state(pvt->t38_core), spanfax_log_message, pvt);
+		span_log_set_message_handler(t38_gateway_get_logging_state(pvt->t38_gateway_state), mod_spandsp_log_message, pvt->session);
+		span_log_set_message_handler(t38_core_get_logging_state(pvt->t38_core), mod_spandsp_log_message, pvt->session);
 
 		if (pvt->verbose) {
 			span_log_set_level(t38_gateway_get_logging_state(pvt->t38_gateway_state), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
@@ -879,14 +875,14 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 								  T4_SUPPORT_LENGTH_US_LETTER | T4_SUPPORT_LENGTH_US_LEGAL | T4_SUPPORT_LENGTH_UNLIMITED
 								| T4_SUPPORT_WIDTH_215MM | T4_SUPPORT_WIDTH_255MM | T4_SUPPORT_WIDTH_303MM);
 	t30_set_supported_bilevel_resolutions(t30,
-										  T4_SUPPORT_RESOLUTION_R8_STANDARD
-										| T4_SUPPORT_RESOLUTION_R8_FINE
-										| T4_SUPPORT_RESOLUTION_R8_SUPERFINE
-										| T4_SUPPORT_RESOLUTION_R16_SUPERFINE
-                                        | T4_SUPPORT_RESOLUTION_200_100
-                                        | T4_SUPPORT_RESOLUTION_200_200
-                                        | T4_SUPPORT_RESOLUTION_200_400
-                                        | T4_SUPPORT_RESOLUTION_400_400);
+										  T4_RESOLUTION_R8_STANDARD
+										| T4_RESOLUTION_R8_FINE
+										| T4_RESOLUTION_R8_SUPERFINE
+										| T4_RESOLUTION_R16_SUPERFINE
+                                        | T4_RESOLUTION_200_100
+                                        | T4_RESOLUTION_200_200
+                                        | T4_RESOLUTION_200_400
+                                        | T4_RESOLUTION_400_400);
 	t30_set_supported_colour_resolutions(t30, 0);
 
 	if (pvt->disable_v17) {
@@ -898,11 +894,11 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 	}
 
 	if (pvt->use_ecm) {
-		t30_set_supported_compressions(t30, T4_SUPPORT_COMPRESSION_T4_1D | T4_SUPPORT_COMPRESSION_T4_2D | T4_SUPPORT_COMPRESSION_T6 | T4_SUPPORT_COMPRESSION_T85 | T4_SUPPORT_COMPRESSION_T85_L0);
+		t30_set_supported_compressions(t30, T4_COMPRESSION_T4_1D | T4_COMPRESSION_T4_2D | T4_COMPRESSION_T6 | T4_COMPRESSION_T85 | T4_COMPRESSION_T85_L0);
 		t30_set_ecm_capability(t30, TRUE);
 		switch_channel_set_variable(channel, "fax_ecm_requested", "1");
 	} else {
-		t30_set_supported_compressions(t30, T4_SUPPORT_COMPRESSION_T4_1D | T4_SUPPORT_COMPRESSION_T4_2D);
+		t30_set_supported_compressions(t30, T4_COMPRESSION_T4_1D | T4_COMPRESSION_T4_2D);
 		switch_channel_set_variable(channel, "fax_ecm_requested", "0");
 	}
 
@@ -988,7 +984,7 @@ static t38_mode_t configure_t38(pvt_t *pvt)
 	t38_set_jbig_transcoding(pvt->t38_core, t38_options->T38FaxTranscodingJBIG);
 	t38_set_max_datagram_size(pvt->t38_core, t38_options->T38FaxMaxDatagram);
 
-	if (t38_options->T38FaxRateManagement) { 
+	if (t38_options->T38FaxRateManagement) {
 		if (!strcasecmp(t38_options->T38FaxRateManagement, "transferredTCF")) {
 			method = 2;
 		} else {
@@ -1043,7 +1039,7 @@ static t38_mode_t negotiate_t38(pvt_t *pvt)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38FaxMaxDatagram = %d\n", t38_options->T38FaxMaxDatagram);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38FaxUdpEC = '%s'\n", t38_options->T38FaxUdpEC);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "T38VendorInfo = '%s'\n", switch_str_nil(t38_options->T38VendorInfo));
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "ip = '%s'\n", 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "ip = '%s'\n",
 				t38_options->remote_ip ? t38_options->remote_ip : "Not specified");
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "port = %d\n", t38_options->remote_port);
 
@@ -1128,7 +1124,7 @@ static t38_mode_t request_t38(pvt_t *pvt)
 	}
 
 	if ((t38_options = switch_channel_get_private(channel, "t38_options"))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 				"%s already has T.38 data\n", switch_channel_get_name(channel));
 		enabled = 0;
 	}
@@ -1427,11 +1423,11 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 		int tx = 0;
 		switch_status_t status;
 
-		/* 
+		/*
 		   if we are in T.38 mode, we should: 1- initialize the ptv->t38_state stuff, if not done
 		   and then set some callbacks when reading frames.
 		   The only thing we need, then, in this loop, is:
-		   - read a frame without blocking 
+		   - read a frame without blocking
 		   - eventually feed that frame in spandsp,
 		   - call t38_terminal_send_timeout(), sleep for a while
 
@@ -1458,7 +1454,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 					switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_NEGOTIATED);
 					spanfax_init(pvt, T38_MODE);
 					configure_t38(pvt);
-	
+
 					/* This will change the rtp stack to udptl mode */
 					msg.from = __FILE__;
 					msg.message_id = SWITCH_MESSAGE_INDICATE_UDPTL_MODE;
@@ -1475,7 +1471,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 						request_t38(pvt);
 					}
 				}
-	
+
 				if (switch_channel_test_app_flag_key("T38", channel, CF_APP_T38)) {
 					if (negotiate_t38(pvt) == T38_MODE_NEGOTIATED) {
 						/* is is safe to call this again, it was already called above in AUDIO_MODE */
@@ -1493,11 +1489,11 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 					/* dunno what to do, most likely you will not get too many of these since we turn off the timer in udptl mode */
 					continue;
 				}
-	
+
 				if (switch_test_flag(read_frame, SFF_UDPTL_PACKET) && read_frame->packet && read_frame->packetlen) {
 					/* now we know we can cast frame->packet to a udptl structure */
 					//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "READ %d udptl bytes\n", read_frame->packetlen);
-	
+
 					udptl_rx_packet(pvt->udptl_state, read_frame->packet, read_frame->packetlen);
 				}
 			}
@@ -1602,7 +1598,7 @@ static switch_status_t t38_gateway_on_soft_execute(switch_core_session_t *sessio
 
 	if (!(other_session = switch_core_session_locate(peer_uuid))) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Cannot locate channel with uuid %s", 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Cannot locate channel with uuid %s",
 				switch_channel_get_name(channel), peer_uuid);
 		goto end;
 	}
@@ -1829,13 +1825,13 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
 	switch_ivr_sleep(session, 0, SWITCH_TRUE, NULL);
 
 	if (switch_true(t38_trace)) {
-		trace_read = switch_core_session_sprintf(session, "%s%s%s_read.raw", SWITCH_GLOBAL_dirs.temp_dir, 
+		trace_read = switch_core_session_sprintf(session, "%s%s%s_read.raw", SWITCH_GLOBAL_dirs.temp_dir,
 							SWITCH_PATH_SEPARATOR, switch_core_session_get_uuid(session));
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Tracing inbound audio to %s\n", trace_read);
 		switch_channel_set_variable(channel, "t38_trace_read", trace_read);
 
-		trace_write = switch_core_session_sprintf(session, "%s%s%s_write.raw", SWITCH_GLOBAL_dirs.temp_dir, 
+		trace_write = switch_core_session_sprintf(session, "%s%s%s_write.raw", SWITCH_GLOBAL_dirs.temp_dir,
 							SWITCH_PATH_SEPARATOR, switch_core_session_get_uuid(session));
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Tracing outbound audio to %s\n", trace_write);
@@ -1865,7 +1861,7 @@ static switch_status_t t38_gateway_on_consume_media(switch_core_session_t *sessi
 		} else {
 			if (read_fd != FAX_INVALID_SOCKET) {
 				switch_ssize_t rv;
-				do { rv = write(read_fd, read_frame->data, read_frame->datalen); } while (rv == -1 && errno == EINTR); 
+				do { rv = write(read_fd, read_frame->data, read_frame->datalen); } while (rv == -1 && errno == EINTR);
 		}
 		if (t38_gateway_rx(pvt->t38_gateway_state, (int16_t *) read_frame->data, read_frame->samples)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "fax_rx reported an error\n");
@@ -1994,7 +1990,7 @@ switch_bool_t t38_gateway_start(switch_core_session_t *session, const char *app,
 		switch_channel_set_variable(peer ? channel : other_channel, "t38_gateway_format", "audio");
 
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s starting gateway mode to %s\n", 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s starting gateway mode to %s\n",
 				switch_channel_get_name(peer ? channel : other_channel),
 				switch_channel_get_name(peer ? other_channel : channel));
 
@@ -2033,20 +2029,20 @@ typedef struct {
 	int expires;
 	int default_sleep;
 	int default_expires;
-	switch_tone_detect_callback_t callback;	
+	switch_tone_detect_callback_t callback;
 	modem_connect_tones_rx_state_t rx_tones;
 
 	switch_media_bug_t *bug;
 	switch_core_session_t *session;
 	int bug_running;
-	
+
 } spandsp_fax_tone_container_t;
 
 static switch_status_t tone_on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf, switch_dtmf_direction_t direction)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	spandsp_fax_tone_container_t *cont = switch_channel_get_private(channel, "_fax_tone_detect_");
-	
+
 
 	if (!cont || dtmf->digit != 'f') {
 		return SWITCH_STATUS_SUCCESS;
@@ -2060,7 +2056,7 @@ static switch_status_t tone_on_dtmf(switch_core_session_t *session, const switch
 			switch_core_session_execute_application_async(cont->session, cont->app, cont->data);
 		}
 	}
-		
+
 	return SWITCH_STATUS_SUCCESS;
 
 }
@@ -2085,13 +2081,13 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 	case SWITCH_ABC_TYPE_WRITE_REPLACE:
 		{
 			int skip = 0;
-			
+
 			if (type == SWITCH_ABC_TYPE_READ_REPLACE) {
 				frame = switch_core_media_bug_get_read_replace_frame(bug);
 			} else {
 				frame = switch_core_media_bug_get_write_replace_frame(bug);
 			}
-			
+
 			if (cont->sleep) {
 				cont->sleep--;
 				if (cont->sleep) {
@@ -2122,7 +2118,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 
 			if (cont->hits) {
 				switch_event_t *event;
-				
+
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_DEBUG,
 								  "Fax Tone Detected. [%s][%s]\n", cont->app, switch_str_nil(cont->data));
 
@@ -2134,7 +2130,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 						switch_core_session_execute_application_async(cont->session, cont->app, cont->data);
 					}
 				}
-				
+
 
 				if (switch_event_create(&event, SWITCH_EVENT_DETECTED_TONE) == SWITCH_STATUS_SUCCESS) {
 					switch_event_t *dup;
@@ -2148,7 +2144,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 					    channel = switch_core_session_get_channel(session);
 					    if (channel) switch_channel_event_set_data(channel, event);
 					}
-				
+
 					if (switch_event_dup(&dup, event) == SWITCH_STATUS_SUCCESS) {
 						switch_event_fire(&dup);
 					}
@@ -2163,7 +2159,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 
 				rval = SWITCH_FALSE;
 			}
-			
+
 		}
 		break;
 	case SWITCH_ABC_TYPE_WRITE:

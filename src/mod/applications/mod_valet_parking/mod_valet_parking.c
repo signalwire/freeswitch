@@ -650,6 +650,8 @@ SWITCH_STANDARD_APP(valet_parking_function)
 			switch_event_fire(&event);
 		}
 
+		switch_channel_set_variable(channel, "valet_lot_extension", ext);
+
 		valet_send_presence(lot_name, lot, token, SWITCH_TRUE);
 
 		if ((rf.exten = switch_channel_get_variable(channel, "valet_parking_orbit_exten"))) {

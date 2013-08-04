@@ -22,3 +22,6 @@ testisdn
 testpri
 testr2
 testtones
+
+!/msvc/testanalog/
+!/msvc/testisdn/

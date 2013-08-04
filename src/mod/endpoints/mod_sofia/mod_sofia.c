@@ -1199,13 +1199,35 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			char *xdest;
 
 			if (event && uuid) {
+				char payload_str[255] = "SIP/2.0 403 Forbidden\r\n";
+				if (msg->numeric_arg) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+							"%s Completing blind transfer with success\n", switch_channel_get_name(channel));
+					switch_set_string(payload_str, "SIP/2.0 200 OK\r\n");
+				} else if (uuid) {
+					switch_core_session_t *other_session = switch_core_session_locate(uuid);
+					if (other_session) {
+						switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
+						const char *invite_failure_status = switch_channel_get_variable(other_channel, "sip_invite_failure_status");
+						const char *invite_failure_str = switch_channel_get_variable(other_channel, "sip_invite_failure_status");
+						if (!zstr(invite_failure_status) && !zstr(invite_failure_str)) {
+							snprintf(payload_str, sizeof(payload_str), "SIP/2.0 %s %s\r\n", invite_failure_status, invite_failure_str);
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+									"%s Completing blind transfer with custom failure: %s %s\n",
+									switch_channel_get_name(channel), invite_failure_status, invite_failure_str);
+						}
+						switch_core_session_rwunlock(other_session);
+					}
+				}
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+						"%s Completing blind transfer with status: %s\n", switch_channel_get_name(channel), payload_str);
 				nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag;version=2.0"),
 						   NUTAG_SUBSTATE(nua_substate_terminated),
-						   SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"), 
-						   SIPTAG_PAYLOAD_STR(msg->numeric_arg ? "SIP/2.0 200 OK\r\n" : "SIP/2.0 403 Forbidden\r\n"), 
-						   SIPTAG_EVENT_STR(event), TAG_END());				
+						   SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"),
+						   SIPTAG_PAYLOAD_STR(payload_str),
+						   SIPTAG_EVENT_STR(event), TAG_END());
 
-				
+
 				if (!msg->numeric_arg) {
 					xdest = switch_core_session_sprintf(session, "intercept:%s", uuid);
 					switch_ivr_session_transfer(session, xdest, "inline", NULL);
@@ -1251,8 +1273,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				switch_channel_set_flag(tech_pvt->channel, CF_SECURE);
 			}
 
-			if (sofia_test_media_flag(tech_pvt->profile, SCMF_AUTOFIX_TIMING)) {
-				switch_core_media_reset_autofix_timing(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO);
+			if (sofia_test_media_flag(tech_pvt->profile, SCMF_AUTOFIX_TIMING) || sofia_test_media_flag(tech_pvt->profile, SCMF_AUTOFIX_PT)) {
+				switch_core_media_reset_autofix(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO);
 			}
 		}
 		break;

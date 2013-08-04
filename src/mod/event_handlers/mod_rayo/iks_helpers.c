@@ -305,6 +305,93 @@ int value_matches(const char *value, const char *rule)
 	return 0;
 }
 
+/**
+ * Validate boolean
+ * @param value
+ * @return SWTICH_TRUE if boolean
+ */
+int iks_attrib_is_bool(const char *value)
+{
+	if (value && *value && (!strcasecmp("true", value) || !strcasecmp("false", value))) {
+		return SWITCH_TRUE;
+	}
+	return SWITCH_FALSE;
+}
+
+/**
+ * Validate integer
+ * @param value
+ * @return SWTICH_TRUE if not negative
+ */
+int iks_attrib_is_not_negative(const char *value)
+{
+	if (value && *value && switch_is_number(value)) {
+		int value_i = atoi(value);
+		if (value_i >= 0) {
+			return SWITCH_TRUE;
+		}
+	}
+	return SWITCH_FALSE;
+}
+
+/**
+ * Validate integer
+ * @param value
+ * @return SWTICH_TRUE if positive
+ */
+int iks_attrib_is_positive(const char *value)
+{
+	if (value && *value && switch_is_number(value)) {
+		int value_i = atoi(value);
+		if (value_i > 0) {
+			return SWITCH_TRUE;
+		}
+	}
+	return SWITCH_FALSE;
+}
+
+/**
+ * Validate integer
+ * @param value
+ * @return SWTICH_TRUE if positive or -1
+ */
+int iks_attrib_is_positive_or_neg_one(const char *value)
+{
+	if (value && *value && switch_is_number(value)) {
+		int value_i = atoi(value);
+		if (value_i == -1 || value_i > 0) {
+			return SWITCH_TRUE;
+		}
+	}
+	return SWITCH_FALSE;
+}
+
+/**
+ * Validate string
+ * @param value
+ * @return SWTICH_TRUE
+ */
+int iks_attrib_is_any(const char *value)
+{
+	return SWITCH_TRUE;
+}
+
+/**
+ * Validate decimal
+ * @param value
+ * @return SWTICH_TRUE if 0.0 <= x <= 1.0
+ */
+int iks_attrib_is_decimal_between_zero_and_one(const char *value)
+{
+	if (value && *value && switch_is_number(value)) {
+		double value_d = atof(value);
+		if (value_d >= 0.0 || value_d <= 1.0) {
+			return SWITCH_TRUE;
+		}
+	}
+	return SWITCH_FALSE;
+}
+
 #define IKS_SHA256_HEX_DIGEST_LENGTH ((SHA256_DIGEST_LENGTH * 2) + 1)
 
 /**

@@ -50,7 +50,7 @@
 
 int log_audio = FALSE;
 SNDFILE *outhandle = NULL;
-char result[1024];
+char result[2][1024];
 int unexpected_echo = FALSE;
 
 char *decode_test_file = NULL;
@@ -88,7 +88,6 @@ static void put_text_msg(void *user_data, const uint8_t *msg, int len)
 
 static void basic_tests(int mode)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -103,11 +102,11 @@ static void basic_tests(int mode)
     v18[0] = v18_init(NULL, TRUE, mode, V18_AUTOMODING_GLOBAL, put_text_msg, NULL);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
+    span_log_set_tag(logging, "Tester");
     v18[1] = v18_init(NULL, FALSE, mode, V18_AUTOMODING_GLOBAL, put_text_msg, NULL);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -133,6 +132,8 @@ static void basic_tests(int mode)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         if (push == 0)
@@ -204,9 +205,13 @@ static void basic_tests(int mode)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void misc_01_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_misc_01(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -223,18 +228,18 @@ static int test_misc_01(void)
         Preamble:       N/A
         Method:         A call is made to the TUT from the tester which remains off hook for 10 minutes
                         without sending any signal.
-        Pass criteria:  The TUT should answer the call and enter the probing state after 3 seconds. The
+        Pass criteria:  The TUT should answer the call and enter the probing state after 3s. The
                         TUT should continue to probe until the test is terminated.
         Comments:       This feature should also be verified by observation during the automoding tests.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, misc_01_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, misc_01_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -251,6 +256,8 @@ static int test_misc_01(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -299,9 +306,13 @@ static int test_misc_01(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void misc_02_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_misc_02(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -315,25 +326,25 @@ static int test_misc_02(void)
     /*
         III.5.4.1.2     Automatic resumption of automoding
         Purpose:        To ensure that the DCE can be configured to automatically re-assume the automode
-                        calling state after 10 s of no valid signal.
+                        calling state after 10s of no valid signal.
         Preamble:       The TUT should be configured to automatically re-assume the initial automoding
                         state.
         Method:         The tester should set up a call to the TUT in V.21 mode and then drop the carrier.
-                        The tester will then transmit silence for 11 seconds followed by a 1300Hz tone for
-                        5 seconds (i.e. V.23).
-        Pass criteria:  1) Ten seconds after dropping the carrier the TUT should return to state Monitor 1.
-                        2) After 2.7+-0.3 seconds the TUT should select V.23 mode and send a 390Hz tone.
+                        The tester will then transmit silence for 11s followed by a 1300Hz tone for
+                        5s (i.e. V.23).
+        Pass criteria:  1) 10s after dropping the carrier the TUT should return to state Monitor 1.
+                        2) After 2.7+-0.3s the TUT should select V.23 mode and send a 390Hz tone.
         Comments:       The TUT should indicate that carrier has been lost at some time after the 1650Hz
                         signal is lost.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, misc_02_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, misc_02_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -350,6 +361,8 @@ static int test_misc_02(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -398,9 +411,13 @@ static int test_misc_02(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void misc_03_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_misc_03(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -418,21 +435,21 @@ static int test_misc_03(void)
         Preamble:       The TUT should be configured to remain in the selected transmission mode when
                         the carrier is lost.
         Method:         The tester should set up a call to the TUT in V.21 mode, for example. It will drop
-                        the carrier for 9 seconds and then re-start transmission of the same carrier for
-                        1 second followed by a short message.
+                        the carrier for 9s and then re-start transmission of the same carrier for
+                        1s followed by a short message.
         Pass criteria:  The TUT should resume operation in V.21 mode and capture the entire test
                         message.
         Comments:       The TUT should indicate that carrier has been lost at some time after the carrier
                         signal is removed and not disconnect.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, misc_03_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, misc_03_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -449,6 +466,8 @@ static int test_misc_03(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -497,9 +516,13 @@ static int test_misc_03(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void misc_04_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_misc_04(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -523,14 +546,14 @@ static int test_misc_04(void)
                         automatically hang up when busy tone is detected. PABX busy tones may differ in
                         frequency and cadence from national parameters.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, misc_04_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, misc_04_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -547,6 +570,8 @@ static int test_misc_04(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -595,9 +620,13 @@ static int test_misc_04(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void misc_05_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_misc_05(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -618,14 +647,14 @@ static int test_misc_05(void)
         Pass criteria:  The RINGING condition should be visually indicated by the TUT.
         Comments:       This test should be repeated across a range of valid timings and ring voltages.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, misc_05_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, misc_05_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -642,6 +671,8 @@ static int test_misc_05(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -690,9 +721,13 @@ static int test_misc_05(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void misc_06_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_misc_06(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -716,14 +751,14 @@ static int test_misc_06(void)
                         mode. There may be other cases, e.g. where the V.18 DCE is used in a gateway,
                         when automatic disconnection is required.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, misc_06_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, misc_06_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -740,6 +775,8 @@ static int test_misc_06(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -788,9 +825,13 @@ static int test_misc_06(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void misc_07_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_misc_07(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -812,14 +853,14 @@ static int test_misc_07(void)
                         However, this may possibly not be indicated by the DTE.
         Comments:       The possible modes are: V.21, V.23, Baudot 45, Baudot 50, EDT, Bell 103, DTMF.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, misc_07_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, misc_07_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -836,6 +877,8 @@ static int test_misc_07(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -884,9 +927,13 @@ static int test_misc_07(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void misc_08_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_misc_08(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -902,21 +949,21 @@ static int test_misc_08(void)
         Purpose:        To ensure that the DCE implements circuit 135 or an equivalent way of indicating
                         presence of a signal.
         Preamble:       N/A
-        Method:         A call from the TUT should be answered in voice mode after 20 seconds. The tester
+        Method:         A call from the TUT should be answered in voice mode after 20s. The tester
                         will transmit sampled voice messages. V.24 circuit 135 or its equivalent should be
                         observed.
         Pass criteria:  The ring tone and speech shall be indicated by circuit 135.
         Comment:        The response times and signal level thresholds of Circuit 135 are not specified in
                         ITU-T V.18 or V.24 and therefore the pattern indicated may vary.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, misc_08_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, misc_08_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -933,6 +980,8 @@ static int test_misc_08(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -981,9 +1030,13 @@ static int test_misc_08(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void misc_09_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_misc_09(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -1003,14 +1056,14 @@ static int test_misc_09(void)
         Pass criteria:  TBD
         Comment:        TBD
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, misc_09_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, misc_09_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -1027,6 +1080,8 @@ static int test_misc_09(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -1075,9 +1130,13 @@ static int test_misc_09(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_01_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_01(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -1098,22 +1157,22 @@ static int test_org_01(void)
                         check for correct coding and timing of the signal.
         Pass criteria:  1) No signal should be transmitted for one second after connecting to the line.
                         2) Four CI patterns are transmitted for each repetition.
-                        3) No signal is transmitted for two seconds after the end of each CI.
+                        3) No signal is transmitted for 2s after the end of each CI.
                         4) Each CI must have the correct bit pattern.
-                        5) The CI patterns followed by two seconds of silence must be repeated twice.
+                        5) The CI patterns followed by 2s of silence must be repeated twice.
                         6) One second after every 3 blocks CI an XCI signal must be transmitted.
                         7) The XCI should have the structure defined in 3.11.
                         8) The whole sequence should be repeated until the call is cleared.
                         9) When V.18 to V.18, the XCI must not force V.23 or Minitel mode.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_01_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_01_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -1130,6 +1189,8 @@ static int test_org_01(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -1178,9 +1239,13 @@ static int test_org_01(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_02_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_02(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -1198,20 +1263,19 @@ static int test_org_02(void)
         Preamble:       Make a V.18 call from the TUT.
         Method:         The Test System waits for the TUT to stop transmitting a CI and responds with an
                         ANS signal. The V.21 demodulator is used to decode the TXP sequence and a timer
-                        measures the silence intervals between them. ANS should be transmitted for 2
-                        seconds.
-        Pass criteria:  1) No signal should be transmitted by TUT for 0.5 seconds from detection of ANS.
+                        measures the silence intervals between them. ANS should be transmitted for 2s.
+        Pass criteria:  1) No signal should be transmitted by TUT for 0.5s from detection of ANS.
                         2) The TUT should reply with transmission of TXP as defined in 5.1.2.
                         3) Verify that TXP sequence has correct bit pattern.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_02_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_02_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -1228,6 +1292,8 @@ static int test_org_02(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -1276,9 +1342,13 @@ static int test_org_02(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_03_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_03(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -1294,19 +1364,19 @@ static int test_org_03(void)
         Purpose:        The TUT should stop sending TXP at the end of the current sequence when the ANS
                         tone ceases.
         Preamble:       Test ORG-02 should be successfully completed immediately prior to this test.
-        Method:         The tester sends ANS for 2 seconds followed by silence. The tester will then
+        Method:         The tester sends ANS for 2s followed by silence. The tester will then
                         monitor for cessation of TXP at the end of the answer tone.
         Pass criteria:  The TUT should stop sending TXP at the end of the current sequence when ANS
                         tone ceases.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_03_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_03_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -1323,6 +1393,8 @@ static int test_org_03(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -1371,9 +1443,13 @@ static int test_org_03(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_04_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_04(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -1388,24 +1464,24 @@ static int test_org_04(void)
         III.5.4.2.4     ANS tone followed by TXP
         Purpose:        To check correct detection of V.18 modem.
         Preamble:       Tests ORG-02 and ORG-03 should be successfully completed prior to this test.
-        Method:         Tester transmits ANS for 2.5 seconds followed by 75 ms of no tone then transmits
-                        3 TXP sequences using V.21 (2) and starts a 1 s timer. It will then transmit 1650Hz
-                        for 5 seconds.
+        Method:         Tester transmits ANS for 2.5s followed by 75ms of no tone then transmits
+                        3 TXP sequences using V.21 (2) and starts a 1s timer. It will then transmit 1650Hz
+                        for 5s.
         Pass criteria:  1) TUT should initially respond with TXP.
-                        2) TUT should stop sending TXP within 0.2 seconds of end of ANS.
-                        3) TUT should respond with 980Hz carrier within 1 second of end of 3 TXP sequences.
+                        2) TUT should stop sending TXP within 0.2s of end of ANS.
+                        3) TUT should respond with 980Hz carrier within 1s of end of 3 TXP sequences.
                         4) Data should be transmitted and received according to ITU-T T.140 to comply
                            with the V.18 operational requirements.
         Comments:       The TUT should indicate that V.18 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_04_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_04_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -1422,6 +1498,8 @@ static int test_org_04(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -1470,9 +1548,13 @@ static int test_org_04(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_05_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_05(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -1488,24 +1570,24 @@ static int test_org_05(void)
         Purpose:        To check correct detection of V.21 modem upper channel when preceded by answer
                         tone and to confirm discrimination between V.21 and V.18 modes.
         Preamble:       Tests ORG-02 and ORG-03 should be successfully completed prior to this test.
-        Method:         Tester transmits ANS for 2.5 seconds followed by 75 ms of no tone then transmits
+        Method:         Tester transmits ANS for 2.5s followed by 75ms of no tone then transmits
                         1650Hz and starts a 0.7 second timer.
         Pass criteria:  1) TUT should initially respond with TXP.
-                        2) TUT should stop sending TXP within 0.2 seconds of end of ANS.
-                        3) TUT should respond with 980Hz at 0.5(+0.2-0.0) seconds of start of 1650Hz.
+                        2) TUT should stop sending TXP within 0.2s of end of ANS.
+                        3) TUT should respond with 980Hz at 0.5(+0.2-0.0)s of start of 1650Hz.
                         4) Data should be transmitted and received at 300 bit/s complying with Annex F.
         Comments:       Selection of ITU-T V.21 as opposed to ITU-T V.18 should be confirmed by
                         examination of TUT. If there is no visual indication, verify by use of ITU-T T.50 for
                         ITU-T V.21 as opposed to UTF-8 coded ISO 10646 character set for ITU-T V.18.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_05_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_05_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -1522,6 +1604,8 @@ static int test_org_05(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -1570,9 +1654,13 @@ static int test_org_05(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_06_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_06(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -1588,23 +1676,23 @@ static int test_org_06(void)
         Purpose:        To check correct detection of V.23 modem upper channel when preceded by answer
                         tone.
         Preamble:       Tests ORG-02 and ORG-03 should be successfully completed prior to this test.
-        Method:         Tester transmits ANS for 2.5 seconds followed by 75 ms of no tone then transmits
-                        1300Hz and starts a 2.7 s timer.
+        Method:         Tester transmits ANS for 2.5s followed by 75ms of no tone then transmits
+                        1300Hz and starts a 2.7s timer.
         Pass criteria:  1) TUT should initially respond with TXP.
-                        2) TUT should stop sending TXP within 0.2 seconds of end of ANS.
-                        3) TUT should respond with 390Hz after 1.7(+0.2-0.0) seconds of start of 1300Hz.
+                        2) TUT should stop sending TXP within 0.2s of end of ANS.
+                        3) TUT should respond with 390Hz after 1.7(+0.2-0.0)s of start of 1300Hz.
                         4) Data should be transmitted and received at 75 bit/s and 1200 bit/s respectively
                            by the TUT to comply with Annex E.
         Comments:       The TUT should indicate that V.23 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_06_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_06_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -1621,6 +1709,8 @@ static int test_org_06(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -1669,9 +1759,13 @@ static int test_org_06(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_07_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_07(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -1686,24 +1780,24 @@ static int test_org_07(void)
         III.5.4.2.7     ANS tone followed by no tone
         Purpose:        To confirm that TUT does not lock up under this condition.
         Preamble:       Tests ORG-02 and ORG-03 should be successfully completed prior to this test.
-        Method:         Tester transmits ANS for 2.5 seconds followed by no tone for 10 s. It then transmits
-                        DTMF tones for 2 seconds.
+        Method:         Tester transmits ANS for 2.5s followed by no tone for 10 s. It then transmits
+                        DTMF tones for 2s.
         Pass criteria:  1) TUT should initially respond with TXP.
-                        2) TUT should stop sending TXP within 0.2 seconds of end of ANS.
+                        2) TUT should stop sending TXP within 0.2s of end of ANS.
                         3) TUT should return to Monitor 1 state and then connect in DTMF mode within
-                           12 seconds of the end of ANS tone.
+                           12s of the end of ANS tone.
         Comments:       This condition would cause the terminal to lock up if the V.18 standard is followed
                         literally. It may however, occur when connected to certain Swedish textphones if the
                         handset is lifted just after the start of an automatically answered incoming call.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_07_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_07_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -1720,6 +1814,8 @@ static int test_org_07(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -1768,9 +1864,13 @@ static int test_org_07(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_08_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_08(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -1786,19 +1886,19 @@ static int test_org_08(void)
         Purpose:        To verify that the TUT correctly detects the Bell 103 upper channel signal during
                         the 2-second interval between transmission of CI sequences.
         Preamble:       N/A
-        Method:         The tester waits for a CI and then sends a 2225Hz signal for 5 seconds.
-        Pass criteria:  1) The TUT should respond with a 1270Hz tone in 0.5+-0.1 seconds.
+        Method:         The tester waits for a CI and then sends a 2225Hz signal for 5s.
+        Pass criteria:  1) The TUT should respond with a 1270Hz tone in 0.5+-0.1s.
                         2) Data should be transmitted and received at 300 bit/s to comply with Annex D.
         Comments:       The TUT should indicate that Bell 103 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_08_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_08_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -1815,6 +1915,8 @@ static int test_org_08(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -1863,9 +1965,13 @@ static int test_org_08(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_09_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_09(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -1881,19 +1987,19 @@ static int test_org_09(void)
         Purpose:        To verify that the TUT correctly detects the V.21 upper channel signal during the
                         2-second interval between transmission of CI sequences.
         Preamble:       N/A
-        Method:         The tester waits for a CI and then sends a 1650Hz signal for 5 seconds.
-        Pass criteria:  1) The TUT should respond with a 980Hz tone in 0.5+-0.1 seconds.
+        Method:         The tester waits for a CI and then sends a 1650Hz signal for 5s.
+        Pass criteria:  1) The TUT should respond with a 980Hz tone in 0.5+-0.1s.
                         2) Data should be transmitted and received at 300 bit/s to comply with Annex F.
         Comments:       The TUT should indicate that V.21 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_09_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_09_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -1910,6 +2016,8 @@ static int test_org_09(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -1958,9 +2066,13 @@ static int test_org_09(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_10_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_10(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -1976,20 +2088,20 @@ static int test_org_10(void)
         Purpose:        To verify that the TUT correctly detects the V.23 upper channel signal during the
                         2-second interval between transmission of CI sequences.
         Preamble:       N/A
-        Method:         The tester waits for a CI and then sends a 1300Hz signal for 5 seconds.
-        Pass criteria:  1) The TUT should respond with a 390Hz tone in 1.7+-0.1 seconds.
+        Method:         The tester waits for a CI and then sends a 1300Hz signal for 5s.
+        Pass criteria:  1) The TUT should respond with a 390Hz tone in 1.7+-0.1s.
                         2) Data should be transmitted and received at 75 bit/s and 1200 bit/s respectively
                            by the TUT to comply with Annex E.
         Comments:       The TUT should indicate that V.23 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_10_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_10_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -2006,6 +2118,8 @@ static int test_org_10(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -2054,9 +2168,13 @@ static int test_org_10(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_11_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_11(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -2072,23 +2190,23 @@ static int test_org_11(void)
         Purpose:        To confirm correct selection of V.23 reverse mode during sending of XCI.
         Preamble:       N/A
         Method:         The tester should wait for the start of the XCI signal and then send 390Hz to TUT
-                        for 5 seconds.
+                        for 5s.
         Pass criteria:  1) The TUT should complete the XCI as normal.
                         2) The TUT should then maintain the 1300Hz tone while the 390Hz test tone is
                            present.
                         3) Data should be transmitted and received at 1200 bit/s and 75 bit/s respectively
                            by the TUT to comply with Annex E when connection is indicated.
-        Comments:       The TUT should indicate that V.23 mode has been selected at least 3 seconds after
+        Comments:       The TUT should indicate that V.23 mode has been selected at least 3s after
                         the start of the 390Hz tone.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_11_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_11_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -2105,6 +2223,8 @@ static int test_org_11(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -2153,9 +2273,13 @@ static int test_org_11(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_12_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_12(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -2185,14 +2309,14 @@ static int test_org_12(void)
                         automode answer state. The TUT may then select either 45.45 or 50 bit/s for the
                         transmission.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_12_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_12_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -2209,6 +2333,8 @@ static int test_org_12(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -2257,9 +2383,13 @@ static int test_org_12(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_13_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_13(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -2275,7 +2405,7 @@ static int test_org_13(void)
         Purpose:        To verify whether the TUT correctly recognizes DTMF signals during the 2-second
                         interval between transmission of CI.
         Preamble:       N/A
-        Method:         The tester will send a single DTMF tone of 40 ms duration to TUT. When TUT
+        Method:         The tester will send a single DTMF tone of 40ms duration to TUT. When TUT
                         indicates a connection, type at least 5 characters back to the tester so that correct
                         selection of mode can be confirmed.
         Pass criteria:  The tester will analyse the received characters to confirm DTMF mode selection.
@@ -2283,14 +2413,14 @@ static int test_org_13(void)
                         TUT should comply with ITU-T Q.24 for the Danish Administration while
                         receiving for best possible performance.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_13_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_13_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -2307,6 +2437,8 @@ static int test_org_13(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -2355,9 +2487,13 @@ static int test_org_13(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_14_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_14(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -2383,14 +2519,14 @@ static int test_org_14(void)
                         the number lost should be minimal. The data bits and parity are specified in
                         Annex C.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_14_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_14_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -2407,6 +2543,8 @@ static int test_org_14(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -2455,9 +2593,13 @@ static int test_org_14(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_15_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_15(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -2473,19 +2615,19 @@ static int test_org_15(void)
         Purpose:        To verify the presence of 980/1180Hz at a different signalling rate than 110 bit/s
                         returns the TUT modem to the "monitor A" state.
         Preamble:       N/A
-        Method:         The tester transmits 980/1180Hz signals at 300 bit/s for 2 seconds.
+        Method:         The tester transmits 980/1180Hz signals at 300 bit/s for 2s.
         Pass criteria:  The TUT should not select EDT or any other mode and should continue to transmit
                         the CI signal.
         Comments:       Echoes of the CI sequences may be detected at 300 bit/s.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_15_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_15_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -2502,6 +2644,8 @@ static int test_org_15(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -2550,9 +2694,13 @@ static int test_org_15(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_16_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_16(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -2567,20 +2715,20 @@ static int test_org_16(void)
         III.5.4.2.16    980Hz detection
         Purpose:        To confirm correct selection of V.21 reverse mode.
         Preamble:       N/A
-        Method:         The tester sends 980Hz to TUT for 5 seconds.
-        Pass criteria:  1) TUT should respond with 1650Hz tone after 1.5+-0.1 seconds after start of
+        Method:         The tester sends 980Hz to TUT for 5s.
+        Pass criteria:  1) TUT should respond with 1650Hz tone after 1.5+-0.1s after start of
                            980Hz tone.
                         2) Data should be transmitted and received at 300 bit/s complying with Annex F.
         Comments:       The TUT should indicate that V.21 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_16_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_16_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -2597,6 +2745,8 @@ static int test_org_16(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -2645,9 +2795,13 @@ static int test_org_16(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_17_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_17(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -2662,18 +2816,18 @@ static int test_org_17(void)
         III.5.4.2.17    Loss of signal after 980Hz
         Purpose:        To confirm that TUT returns to the Monitor 1 state if 980Hz signal disappears.
         Preamble:       N/A
-        Method:         The tester sends 980Hz to TUT for 1.2 seconds followed by silence for 5 seconds.
+        Method:         The tester sends 980Hz to TUT for 1.2s followed by silence for 5s.
         Pass criteria:  TUT should not respond to the 980Hz tone and resume sending CI signals after a
-                        maximum of 2.4 seconds from the end of the 980Hz tone.
+                        maximum of 2.4s from the end of the 980Hz tone.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_17_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_17_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -2690,6 +2844,8 @@ static int test_org_17(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -2738,9 +2894,13 @@ static int test_org_17(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_18_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_18(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -2755,20 +2915,20 @@ static int test_org_18(void)
         III.5.4.2.18    Tr timer
         Purpose:        To confirm that TUT returns to the Monitor 1 state if Timer Tr expires.
         Preamble:       N/A
-        Method:         The tester sends 980Hz to TUT for 1.2 seconds followed by 1650Hz for 5 seconds
+        Method:         The tester sends 980Hz to TUT for 1.2s followed by 1650Hz for 5s
                         with no pause.
-        Pass criteria:  TUT should respond with 980Hz after 1.3+-0.1 seconds of 1650Hz.
-        Comments:       This implies timer Tr has expired 2 seconds after the start of the 980Hz tone and
-                        then 1650Hz has been detected for 0.5 seconds.
+        Pass criteria:  TUT should respond with 980Hz after 1.3+-0.1s of 1650Hz.
+        Comments:       This implies timer Tr has expired 2s after the start of the 980Hz tone and
+                        then 1650Hz has been detected for 0.5s.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_18_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_18_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -2785,6 +2945,8 @@ static int test_org_18(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -2833,9 +2995,13 @@ static int test_org_18(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_19_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_19(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -2850,19 +3016,19 @@ static int test_org_19(void)
         III.5.4.2.19    Bell 103 (1270Hz signal) detection
         Purpose:        To confirm correct selection of Bell 103 reverse mode.
         Preamble:       N/A
-        Method:         The tester sends 1270Hz to TUT for 5 seconds.
+        Method:         The tester sends 1270Hz to TUT for 5s.
         Pass criteria:  1) TUT should respond with 2225Hz tone after 0.7+-0.1 s.
                         2) Data should be transmitted and received at 300 bit/s complying with Annex D.
         Comments:       The TUT should indicate that Bell 103 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_19_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_19_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -2879,6 +3045,8 @@ static int test_org_19(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -2927,9 +3095,13 @@ static int test_org_19(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_20_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_20(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -2956,14 +3128,14 @@ static int test_org_20(void)
                         presence and cadence of the tones for instance by a flashing light. The TUT may
                         disconnect on reception of tones indicating a failed call attempt.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_20_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_20_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -2980,6 +3152,8 @@ static int test_org_20(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -3028,9 +3202,13 @@ static int test_org_20(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_21_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_21(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -3053,14 +3231,14 @@ static int test_org_21(void)
         Comments:       Some high speed modems may fall back to a compatibility mode, e.g. V.21 or V.23
                         that should be correctly detected by the TUT.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_21_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_21_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -3077,6 +3255,8 @@ static int test_org_21(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -3125,9 +3305,13 @@ static int test_org_21(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_22_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_22(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -3149,14 +3333,14 @@ static int test_org_22(void)
         Comments:       Ideally the TUT should detect the presence of a fax machine and report it back to
                         the user.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_22_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_22_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -3173,6 +3357,8 @@ static int test_org_22(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -3221,9 +3407,13 @@ static int test_org_22(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_23_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_23(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -3245,14 +3435,14 @@ static int test_org_23(void)
         Comments:       Ideally the TUT should report the presence of speech back to the user, e.g. via
                         circuit 135.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_23_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_23_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -3269,6 +3459,8 @@ static int test_org_23(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -3317,9 +3509,13 @@ static int test_org_23(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_24_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_24(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -3337,20 +3533,20 @@ static int test_org_24(void)
         Preamble:       Make a V.18 call from the TUT.
         Method:         The Test System waits for the TUT to stop transmitting a CI and responds with an
                         ANSam signal. The V.21 demodulator is used to decode the CM sequence. ANSam
-                        should be transmitted for 2 seconds.
-        Pass criteria:  1) No signal should be transmitted by TUT for 0.5 seconds from detection of
+                        should be transmitted for 2s.
+        Pass criteria:  1) No signal should be transmitted by TUT for 0.5s from detection of
                            ANSam.
                         2) The TUT should reply with transmission of CM as defined in 5.2.13.
                         3) Verify that CM sequence has correct bit pattern.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_24_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_24_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -3367,6 +3563,8 @@ static int test_org_24(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -3415,9 +3613,13 @@ static int test_org_24(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void org_25_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_org_25(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -3436,14 +3638,14 @@ static int test_org_25(void)
         Method:         The Test System waits for the TUT to start transmitting V.21 carrier (1).
         Pass criteria:  The TUT should connect by sending V.21 carrier (1).
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_25_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, org_25_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -3460,6 +3662,8 @@ static int test_org_25(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -3508,9 +3712,13 @@ static int test_org_25(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_01_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_01(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -3523,21 +3731,21 @@ static int test_ans_01(void)
 
     /*
         III.5.4.3.1     Ta timer
-        Purpose:        To ensure that on connecting the call, the DCE starts timer Ta (3 seconds) and on
+        Purpose:        To ensure that on connecting the call, the DCE starts timer Ta (3s) and on
                         expiry begins probing.
         Preamble:       N/A
         Method:         The tester makes a call to the TUT and attempts to determine when the TUT
                         answers the call. It will then monitor for any signal.
-        Pass criteria:  The TUT should start probing 3 seconds after answering the call.
+        Pass criteria:  The TUT should start probing 3s after answering the call.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_01_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_01_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -3554,6 +3762,8 @@ static int test_ans_01(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -3602,9 +3812,13 @@ static int test_ans_01(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_02_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_02(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -3619,21 +3833,21 @@ static int test_ans_02(void)
         III.5.4.3.2     CI signal detection
         Purpose:        To confirm the correct detection and response to the V.18 CI signal.
         Preamble:       N/A
-        Method:         The tester will transmit 2 sequences of 4 CI patterns separated by 2 seconds. It will
+        Method:         The tester will transmit 2 sequences of 4 CI patterns separated by 2s. It will
                         monitor for ANS and measure duration.
         Pass criteria:  1) The TUT should respond after either the first or second CI with ANSam tone.
-                        2) ANSam tone should remain for 3 seconds +-0.5 s followed by silence.
+                        2) ANSam tone should remain for 3s+-0.5s followed by silence.
         Comments:       The ANSam tone is a modulated 2100Hz tone. It may have phase reversals. The
                         XCI signal is tested in a separate test.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_02_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_02_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -3650,6 +3864,8 @@ static int test_ans_02(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -3698,9 +3914,13 @@ static int test_ans_02(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_03_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_03(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -3716,24 +3936,24 @@ static int test_ans_03(void)
         Purpose:        To confirm that the TUT will respond correctly to TXP signals, i.e. by stopping
                         ANSam tone on reception of TXP signal.
         Preamble:       N/A
-        Method:         The tester will transmit 2 sequences of 4 CI patterns separated by 2 seconds. On
-                        reception of the ANSam tone the tester will wait 0.5 seconds and then begin
+        Method:         The tester will transmit 2 sequences of 4 CI patterns separated by 2s. On
+                        reception of the ANSam tone the tester will wait 0.5s and then begin
                         transmitting the TXP signal in V.21 (1) mode.
-        Pass criteria:  1) On reception of the TXP signal, the TUT should remain silent for 75+-5 ms.
+        Pass criteria:  1) On reception of the TXP signal, the TUT should remain silent for 75+-5ms.
                         2) The TUT should then transmit 3 TXP sequences in V.21(2) mode.
                         3) The 3 TXPs should be followed by continuous 1650Hz.
                         4) Correct transmission and reception of T.140 data should be verified after the
                            V.18 mode connection is completed.
         Comments:       The TUT should indicate V.18 mode.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_03_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_03_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -3750,6 +3970,8 @@ static int test_ans_03(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -3798,9 +4020,13 @@ static int test_ans_03(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_04_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_04(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -3817,17 +4043,17 @@ static int test_ans_04(void)
                         timer Tt expires.
         Preamble:       Successful completion of test ANS-03.
         Method:         After completion of test ANS-03 the tester will continue to monitor for signals.
-        Pass criteria:  The TUT should start probing 3 seconds after ANSam disappears.
+        Pass criteria:  The TUT should start probing 3s after ANSam disappears.
         Comments:       It is assumed that timer Ta is restarted on return to Monitor A.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_04_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_04_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -3844,6 +4070,8 @@ static int test_ans_04(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -3892,9 +4120,13 @@ static int test_ans_04(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_05_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_05(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -3910,19 +4142,19 @@ static int test_ans_05(void)
         Purpose:        To check correct detection of V.21 modem lower channel when preceded by answer
                         tone.
         Preamble:       N/A
-        Method:         Tester transmits ANS for 2.5 seconds followed by 75 ms of no tone then transmits
-                        980Hz and starts a 1 s timer.
-        Pass criteria:  TUT should respond with 1650Hz within 400+-100 ms of start of 980Hz.
+        Method:         Tester transmits ANS for 2.5s followed by 75ms of no tone then transmits
+                        980Hz and starts a 1s timer.
+        Pass criteria:  TUT should respond with 1650Hz within 400+-100ms of start of 980Hz.
         Comments:       The TUT should indicate that V.21 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_05_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_05_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -3939,6 +4171,8 @@ static int test_ans_05(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -3987,9 +4221,13 @@ static int test_ans_05(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_06_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_06(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -4005,19 +4243,19 @@ static int test_ans_06(void)
         Purpose:        To check correct detection of V.23 modem upper channel when preceded by answer
                         tone.
         Preamble:       N/A
-        Method:         Tester transmits ANS for 2.5 seconds followed by 75 ms of no tone then transmits
+        Method:         Tester transmits ANS for 2.5s followed by 75ms of no tone then transmits
                         1300Hz and starts a 2-s timer.
-        Pass criteria:  TUT should respond with 390Hz after 1.7(+0.2-0.0) seconds of start of 1300Hz.
+        Pass criteria:  TUT should respond with 390Hz after 1.7(+0.2-0.0)s of start of 1300Hz.
         Comments:       The TUT should indicate that V.23 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_06_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_06_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -4034,6 +4272,8 @@ static int test_ans_06(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -4082,9 +4322,13 @@ static int test_ans_06(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_07_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_07(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -4100,19 +4344,19 @@ static int test_ans_07(void)
         Purpose:        To check correct detection of V.21 modem upper channel when preceded by answer
                         tone and to confirm discrimination between V.21 and V.18 modes.
         Preamble:       N/A
-        Method:         Tester transmits ANS for 2.5 seconds followed by 75 ms of no tone then transmits
+        Method:         Tester transmits ANS for 2.5s followed by 75ms of no tone then transmits
                         1650Hz and starts a 1-second timer.
-        Pass criteria:  TUT should respond with 980Hz within 400+-100 ms of start of 1650Hz.
+        Pass criteria:  TUT should respond with 980Hz within 400+-100ms of start of 1650Hz.
         Comments:       The TUT should indicate that V.21 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_07_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_07_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -4129,6 +4373,8 @@ static int test_ans_07(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -4177,9 +4423,13 @@ static int test_ans_07(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_08_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_08(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -4200,16 +4450,16 @@ static int test_ans_08(void)
         Pass criteria:  The TUT should respond with the appropriate carrier depending on when it
                         connects.
         Comments:       The TUT should indicate a V.21 connection. The time for which each frequency is
-                        transmitted is random and varies between 0.64 and 2.56 seconds.
+                        transmitted is random and varies between 0.64 and 2.56s.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_08_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_08_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -4226,6 +4476,8 @@ static int test_ans_08(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -4274,9 +4526,13 @@ static int test_ans_08(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_09_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_09(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -4291,21 +4547,21 @@ static int test_ans_09(void)
         III.5.4.3.9     980Hz calling tone detection
         Purpose:        To confirm correct detection of 980Hz calling tones as defined in V.25.
         Preamble:       N/A
-        Method:         The tester will send bursts of 980Hz signals (a) 400 ms, (b) 500 ms, (c) 700 ms and
-                        (d) 800 ms followed by 1 second of silence.
-        Pass criteria:  1) The TUT should not respond to bursts of 400 or 800 ms.
-                        2) The TUT should immediately begin probing after a burst of 980Hz for 500 or
-                           700 ms followed by 1 second of silence.
+        Method:         The tester will send bursts of 980Hz signals (a) 400ms, (b) 500ms, (c) 700ms and
+                        (d) 800ms followed by 1s of silence.
+        Pass criteria:  1) The TUT should not respond to bursts of 400ms or 800ms.
+                        2) The TUT should immediately begin probing after a burst of 980Hz for 500ms or
+                           700ms followed by 1s of silence.
         Comments:       The probe sent by the TUT will depend on the country setting.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_09_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_09_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -4322,6 +4578,8 @@ static int test_ans_09(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -4370,9 +4628,13 @@ static int test_ans_09(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_10_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_10(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -4388,18 +4650,18 @@ static int test_ans_10(void)
         Purpose:        To confirm correct selection of V.21 calling modem when the received signal is not
                         modulated, i.e. there is no 1180Hz.
         Preamble:       N/A
-        Method:         The tester sends 980Hz to TUT for 2 seconds.
-        Pass criteria:  The TUT should respond with a 1650Hz tone in 1.5+-0.1 seconds.
+        Method:         The tester sends 980Hz to TUT for 2s.
+        Pass criteria:  The TUT should respond with a 1650Hz tone in 1.5+-0.1s.
         Comments:       The TUT should indicate that V.21 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_10_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_10_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -4416,6 +4678,8 @@ static int test_ans_10(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -4464,9 +4728,13 @@ static int test_ans_10(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_11_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_11(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -4490,14 +4758,14 @@ static int test_ans_11(void)
                         be lost during the detection process. However, the number lost should be minimal.
                         The data bits and parity are specified in Annex C.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_11_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_11_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -4514,6 +4782,8 @@ static int test_ans_11(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -4562,9 +4832,13 @@ static int test_ans_11(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_12_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_12(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -4589,14 +4863,14 @@ static int test_ans_12(void)
                         (1650Hz) probe. However, it is catered for in V.18. It is more likely that this is
                         where CI or TXP characters would be detected (see test ANS-02).
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_12_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_12_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -4613,6 +4887,8 @@ static int test_ans_12(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -4661,9 +4937,13 @@ static int test_ans_12(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_13_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_13(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -4677,24 +4957,24 @@ static int test_ans_13(void)
     /*
         III.5.4.3.13    Tr timer
         Purpose:        To ensure that the TUT returns to the Monitor A state on expiry of timer Tr
-                        (2 seconds). Timer Tr is started when a modulated V.21 (1) signal is detected.
+                        (2s). Timer Tr is started when a modulated V.21 (1) signal is detected.
         Preamble:       N/A
-        Method:         The tester will transmit 980Hz for 200 ms followed by alternating 980Hz/1180Hz
-                        at 110 bit/s for 100 ms followed by 980Hz for 1 second.
-        Pass criteria:  The TUT should begin probing 4+-0.5 seconds after the 980Hz signal is removed.
+        Method:         The tester will transmit 980Hz for 200ms followed by alternating 980Hz/1180Hz
+                        at 110 bit/s for 100ms followed by 980Hz for 1s.
+        Pass criteria:  The TUT should begin probing 4+-0.5s after the 980Hz signal is removed.
         Comments:       It is not possible to be precise on timings for this test since the definition of a
                         "modulated signal" as in 5.2.4.4 is not specified. Therefore it is not known exactly
                         when timer Tr will start. It is assumed that timer Ta is restarted on re-entering the
                         Monitor A state.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_13_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_13_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -4711,6 +4991,8 @@ static int test_ans_13(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -4759,9 +5041,13 @@ static int test_ans_13(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_14_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_14(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -4775,21 +5061,21 @@ static int test_ans_14(void)
     /*
         III.5.4.3.14    Te timer
         Purpose:        To ensure that the TUT returns to the Monitor A on expiry of timer Te
-                        (2.7 seconds). Timer Te is started when a 980Hz signal is detected.
+                        (2.7s). Timer Te is started when a 980Hz signal is detected.
         Preamble:       N/A
-        Method:         The tester will transmit 980Hz for 200 ms followed silence for 7 s.
-        Pass criteria:  The TUT should begin probing 5.5+-0.5 seconds after the 980Hz signal is removed.
-        Comments:       It is assumed that timer Ta (3 seconds) is restarted on re-entering the Monitor A
+        Method:         The tester will transmit 980Hz for 200ms followed silence for 7 s.
+        Pass criteria:  The TUT should begin probing 5.5+-0.5s after the 980Hz signal is removed.
+        Comments:       It is assumed that timer Ta (3s) is restarted on re-entering the Monitor A
                         state.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_14_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_14_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -4806,6 +5092,8 @@ static int test_ans_14(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -4854,9 +5142,13 @@ static int test_ans_14(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_15_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_15(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -4887,14 +5179,14 @@ static int test_ans_15(void)
                         automode answer state. The TUT may then select either 45.45 or 50 bit/s for the
                         transmission.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_15_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_15_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -4911,6 +5203,8 @@ static int test_ans_15(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -4959,9 +5253,13 @@ static int test_ans_15(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_16_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_16(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -4976,21 +5274,21 @@ static int test_ans_16(void)
         III.5.4.3.16    DTMF signal detection
         Purpose:        To verify whether the TUT correctly recognizes DTMF signals.
         Preamble:       N/A
-        Method:         The tester will send a single DTMF tone of 40 ms duration to TUT. When TUT
+        Method:         The tester will send a single DTMF tone of 40ms duration to TUT. When TUT
                         indicates a connection, type at least 5 characters back to the tester so that correct
                         selection of mode can be confirmed.
         Pass criteria:  Tester will analyse the received characters to confirm DTMF mode selection.
         Comments:       The TUT should indicate that it has selected DTMF mode. The DTMF capabilities
                         of the TUT should comply with ITU-T Q.24 for the Danish Administration.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_16_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_16_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -5007,6 +5305,8 @@ static int test_ans_16(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -5055,9 +5355,13 @@ static int test_ans_16(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_17_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_17(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -5072,18 +5376,18 @@ static int test_ans_17(void)
         III.5.4.3.17    Bell 103 (1270Hz signal) detection
         Purpose:        To ensure correct detection and selection of Bell 103 modems.
         Preamble:       N/A
-        Method:         The tester sends 1270Hz to TUT for 5 seconds.
-        Pass criteria:  TUT should respond with 2225Hz tone after 0.7+-0.1 s.
+        Method:         The tester sends 1270Hz to TUT for 5s.
+        Pass criteria:  TUT should respond with 2225Hz tone after 0.7+-0.1s.
         Comments:       The TUT should indicate that Bell 103 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_17_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_17_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -5100,6 +5404,8 @@ static int test_ans_17(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -5148,9 +5454,13 @@ static int test_ans_17(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_18_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_18(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -5165,19 +5475,19 @@ static int test_ans_18(void)
         III.5.4.3.18    Bell 103 (2225Hz signal) detection
         Purpose:        To ensure correct detection and selection of Bell 103 modems in reverse mode.
         Preamble:       N/A
-        Method:         The tester sends 2225Hz to TUT for 5 seconds.
-        Pass criteria:  The TUT should respond with 1270Hz after 1+-0.2 seconds.
+        Method:         The tester sends 2225Hz to TUT for 5s.
+        Pass criteria:  The TUT should respond with 1270Hz after 1+-0.2s.
         Comments:       The TUT should indicate that Bell 103 mode has been selected. Bell 103 modems
                         use 2225Hz as both answer tone and higher frequency of the upper channel.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_18_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_18_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -5194,6 +5504,8 @@ static int test_ans_18(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -5242,9 +5554,13 @@ static int test_ans_18(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_19_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_19(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -5259,18 +5575,18 @@ static int test_ans_19(void)
         III.5.4.3.19    V.21 Reverse mode (1650Hz) detection
         Purpose:        To ensure correct detection and selection of V.21 reverse mode.
         Preamble:       N/A
-        Method:         The tester sends 1650Hz to TUT for 5 seconds.
-        Pass criteria:  The TUT should respond with 980Hz after 0.4+-0.2 seconds.
+        Method:         The tester sends 1650Hz to TUT for 5s.
+        Pass criteria:  The TUT should respond with 980Hz after 0.4+-0.2s.
         Comments:       The TUT should indicate that V.21 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_19_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_19_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -5287,6 +5603,8 @@ static int test_ans_19(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -5335,9 +5653,13 @@ static int test_ans_19(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_20_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_20(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -5352,21 +5674,21 @@ static int test_ans_20(void)
         III.5.4.3.20    1300Hz calling tone discrimination
         Purpose:        To confirm correct detection of 1300Hz calling tones as defined in ITU-T V.25.
         Preamble:       N/A
-        Method:         The tester will send 1300Hz bursts of (a) 400 ms, (b) 500 ms, (c) 700 ms and
-                        (d) 800 ms followed by 1 second of silence.
-        Pass criteria:  1) The TUT should not respond to bursts of 400 or 800 ms.
-                        2) The TUT should immediately begin probing after a burst of 1300Hz for 500 or
-                           700 ms followed by 1 second of silence.
+        Method:         The tester will send 1300Hz bursts of (a) 400ms, (b) 500ms, (c) 700ms and
+                        (d) 800ms followed by 1s of silence.
+        Pass criteria:  1) The TUT should not respond to bursts of 400ms or 800ms.
+                        2) The TUT should immediately begin probing after a burst of 1300Hz for 500ms or
+                           700ms followed by 1s of silence.
         Comments:       The probe sent by the TUT will depend on the country setting.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_20_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_20_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -5383,6 +5705,8 @@ static int test_ans_20(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -5431,9 +5755,13 @@ static int test_ans_20(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_21_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_21(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -5448,18 +5776,18 @@ static int test_ans_21(void)
         III.5.4.3.21    V.23 Reverse mode (1300Hz) detection
         Purpose:        To ensure correct detection and selection of V.23 reverse mode.
         Preamble:       N/A
-        Method:         The tester sends 1300Hz only, with no XCI signals, to TUT for 5 seconds.
-                        Pass criteria: The TUT should respond with 390Hz after 1.7+-0.1 seconds.
+        Method:         The tester sends 1300Hz only, with no XCI signals, to TUT for 5s.
+                        Pass criteria: The TUT should respond with 390Hz after 1.7+-0.1s.
         Comments:       The TUT should indicate that V.23 mode has been selected.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_21_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_21_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -5476,6 +5804,8 @@ static int test_ans_21(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -5524,9 +5854,13 @@ static int test_ans_21(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_22_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_22(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -5542,17 +5876,17 @@ static int test_ans_22(void)
         Purpose:        To ensure correct detection of the XCI signal and selection of V.18 mode.
         Preamble:       N/A
         Method:         The tester sends XCI signal as defined in 3.11. On reception of ANS it will become
-                        silent for 500 ms then transmit the TXP signal in V.21 (1) mode.
+                        silent for 500ms then transmit the TXP signal in V.21 (1) mode.
         Pass criteria:  The TUT should respond with TXP using V.21 (2) and select V.18 mode.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_22_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_22_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -5569,6 +5903,8 @@ static int test_ans_22(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -5617,9 +5953,13 @@ static int test_ans_22(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_23_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_23(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -5641,14 +5981,14 @@ static int test_ans_23(void)
         Pass criteria:  The TUT should use the orders described in Appendix I.
         Comments:       The order of the probes is not mandatory.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_23_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_23_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -5665,6 +6005,8 @@ static int test_ans_23(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -5713,9 +6055,13 @@ static int test_ans_23(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_24_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_24(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -5734,17 +6080,17 @@ static int test_ans_24(void)
         Method:         The tester will call the TUT, wait for Ta to expire and then monitor the probes sent
                         by the TUT.
         Pass criteria:  The TUT should send the user defined probe message for Annexes A, B, and C
-                        modes followed by a pause of Tm (default 3) seconds.
+                        modes followed by a pause of Tm (default 3)s.
         Comments:       The carrierless modes are those described in Annexes A, B and C.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_24_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_24_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -5761,6 +6107,8 @@ static int test_ans_24(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -5809,9 +6157,13 @@ static int test_ans_24(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_25_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_25(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -5825,22 +6177,22 @@ static int test_ans_25(void)
     /*
         III.5.4.3.25    Interrupted carrierless mode probe
         Purpose:        To ensure that the TUT continues probing from the point of interruption a maximum
-                        of 20 s after a failed connect attempt.
+                        of 20s after a failed connect attempt.
         Preamble:       The TUT should be configured for the UK country setting.
         Method:         The tester will call the TUT, wait for Ta to expire and then during the pause after
-                        the first Baudot probe it will send a 200 ms burst of 1270Hz followed by silence
-                        for 30 s.
+                        the first Baudot probe it will send a 200ms burst of 1270Hz followed by silence
+                        for 30s.
         Pass criteria:  The TUT should transmit silence on detecting the 1270Hz tone and then continue
-                        probing starting with the V.23 probe 20 seconds after the end of the 1270Hz signal.
+                        probing starting with the V.23 probe 20s after the end of the 1270Hz signal.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_25_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_25_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -5857,6 +6209,8 @@ static int test_ans_25(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -5905,9 +6259,13 @@ static int test_ans_25(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_26_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_26(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -5920,23 +6278,23 @@ static int test_ans_26(void)
 
     /*
         III.5.4.3.26    Stimulate carrier mode probe time
-        Purpose:        To ensure that the TUT sends each carrier mode for time Tc (default 6 seconds)
+        Purpose:        To ensure that the TUT sends each carrier mode for time Tc (default 6s)
                         preceded by the correct answer tone.
         Preamble:       None.
         Method:         The tester will call the TUT, wait for Ta to expire and then monitor the probes sent
                         by the TUT.
-        Pass criteria:  The TUT should send the ANS tone (2100Hz) for 1 second followed by silence for
-                        75+-5 ms and then the 1650Hz, 1300Hz and 2225Hz probes for time Tc.
+        Pass criteria:  The TUT should send the ANS tone (2100Hz) for 1s followed by silence for
+                        75+-5ms and then the 1650Hz, 1300Hz and 2225Hz probes for time Tc.
         Comments:       The carrier modes are those described in Annexes D, E, and F.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_26_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_26_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -5953,6 +6311,8 @@ static int test_ans_26(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -6001,9 +6361,13 @@ static int test_ans_26(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_27_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_27(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -6019,24 +6383,24 @@ static int test_ans_27(void)
         Purpose:        To confirm correct selection of V.23 mode.
         Preamble:       N/A
         Method:         The tester waits until the 1300Hz probe is detected from the TUT and then
-                        transmits 390Hz for 11 seconds.
-        Pass criteria:  1) After 3 seconds of the 390Hz signal the TUT should indicate that V.23 has
+                        transmits 390Hz for 11s.
+        Pass criteria:  1) After 3s of the 390Hz signal the TUT should indicate that V.23 has
                            been selected.
                         2) The tester will confirm that the 1300Hz carrier is maintained for at least
-                           4 seconds beyond the normal probe duration, i.e. Tc (= 6 s default) + 4 s =
-                           10 seconds total.
+                           4s beyond the normal probe duration, i.e. Tc (= 6s default) + 4s =
+                           10s total.
         Comments:       All known V.23 devices need to receive 1300Hz tone before they will respond with
                         390Hz. When the 1300Hz probe is not being transmitted, a 390Hz tone may be
                         interpreted as a 400Hz network tone.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_27_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_27_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -6053,6 +6417,8 @@ static int test_ans_27(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -6101,9 +6467,13 @@ static int test_ans_27(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_28_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_28(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -6117,24 +6487,24 @@ static int test_ans_28(void)
     /*
         III.5.4.3.28    Interrupted carrier mode probe
         Purpose:        To ensure that the TUT continues probing from the point of interruption a maximum
-                        of 4 s after a failed connect attempt.
+                        of 4s after a failed connect attempt.
         Preamble:       The TUT should be configured for the UK country setting.
         Method:         The tester will call the TUT, wait for Ta to expire and then during the first V.21
-                        probe it will send a 200 ms burst of 1270Hz followed by silence for 30 s.
+                        probe it will send a 200ms burst of 1270Hz followed by silence for 30s.
         Pass criteria:  The TUT should transmit silence on detecting the 1270Hz tone and then continue
-                        probing with the Baudot stored message 4 seconds after the end of the 1270Hz
+                        probing with the Baudot stored message 4s after the end of the 1270Hz
                         burst.
-        Comments:       It is most likely that the TUT will return to probing time Ta (3 seconds) after the
+        Comments:       It is most likely that the TUT will return to probing time Ta (3s) after the
                         1270Hz tone ceases. This condition needs further clarification.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_28_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_28_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -6151,6 +6521,8 @@ static int test_ans_28(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -6199,9 +6571,13 @@ static int test_ans_28(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_29_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_29(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -6224,14 +6600,14 @@ static int test_ans_29(void)
         Comments:       The TUT may not respond to any signals while a carrierless mode probe is being
                         sent since these modes are half duplex.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_29_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_29_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -6248,6 +6624,8 @@ static int test_ans_29(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -6296,9 +6674,13 @@ static int test_ans_29(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_30_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_30(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -6323,14 +6705,14 @@ static int test_ans_30(void)
                         tones may be ignored. Some devices may only provide a visual indication of the
                         presence and cadence of the tones for instance by a flashing light.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_30_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_30_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -6347,6 +6729,8 @@ static int test_ans_30(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -6395,9 +6779,13 @@ static int test_ans_30(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_31_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_31(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -6413,20 +6801,20 @@ static int test_ans_31(void)
         Purpose:        To determine whether the TUT can discriminate fax calling tones.
         Preamble:       N/A
         Method:         The tester will call the TUT and send the fax calling tone, CNG. This is an 1100Hz
-                        tone with cadence of 0.5 seconds ON and 3 seconds OFF as defined in ITU-T T.30.
+                        tone with cadence of 0.5s ON and 3s OFF as defined in ITU-T T.30.
         Pass criteria:  The TUT should not respond to this signal and may report it as being a calling fax
                         machine.
         Comments:       This is an optional test as detection of the fax calling tone is not required by
                         ITU-T V.18.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_31_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_31_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -6443,6 +6831,8 @@ static int test_ans_31(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -6491,9 +6881,13 @@ static int test_ans_31(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_32_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_32(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -6515,14 +6909,14 @@ static int test_ans_32(void)
         Comments:       Ideally the TUT should report the presence of speech back to the user. This is an
                         optional test.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_32_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_32_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -6539,6 +6933,8 @@ static int test_ans_32(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -6587,9 +6983,13 @@ static int test_ans_32(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void ans_33_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_ans_33(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -6605,8 +7005,8 @@ static int test_ans_33(void)
         Purpose:        To confirm that the TUT will respond correctly to CM signals and connect
                         according to V.8 procedures.
         Preamble:       N/A
-        Method:         The tester will transmit 2 sequences of 4 CI patterns separated by 2 seconds. On
-                        reception of the ANSam tone the tester will wait 0.5 seconds and then begin
+        Method:         The tester will transmit 2 sequences of 4 CI patterns separated by 2s. On
+                        reception of the ANSam tone the tester will wait 0.5s and then begin
                         transmitting the CM signal with textphone and V.21 specified.
         Pass criteria:  1) On reception of the CM signal, the TUT should transmit JM with textphone
                            and V.21.
@@ -6616,14 +7016,14 @@ static int test_ans_33(void)
                            V.18 mode connection is completed.
         Comments:       The TUT should indicate V.18 mode.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_33_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, ans_33_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -6640,6 +7040,8 @@ static int test_ans_33(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -6688,6 +7090,11 @@ static int test_ans_33(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void mon_01_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_mon_01(void)
 {
     printf("Test not yet implemented\n");
@@ -6695,9 +7102,13 @@ static int test_mon_01(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void mon_21_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_mon_21(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -6710,21 +7121,21 @@ static int test_mon_21(void)
 
     /*
         III.5.4.4.1     Automode monitor Ta timer test
-        Purpose:        To ensure that on entering monitor mode, timer Ta (3 seconds) is not active and that
+        Purpose:        To ensure that on entering monitor mode, timer Ta (3s) is not active and that
                         the TUT does not enter the probing state.
         Preamble:       N/A
         Method:         The TUT should be put into monitor state. The tester will then monitor for signals
                         for 1 minute.
         Pass criteria:  The TUT should not start probing.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, mon_21_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, mon_21_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -6741,6 +7152,8 @@ static int test_mon_21(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -6789,9 +7202,13 @@ static int test_mon_21(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void mon_22_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_mon_22(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -6807,22 +7224,22 @@ static int test_mon_22(void)
         Purpose:        To confirm correct detection and reporting of 1300Hz calling tones as defined in
                         ITU-T V.25.
         Preamble:       N/A
-        Method:         The tester will send 1300Hz bursts of (a) 400 ms, (b) 500 ms, (c) 700 ms and
-                        (d) 800 ms followed by 1 second of silence.
-        Pass criteria:  1) The TUT should not respond to bursts of 400 or 800 ms.
+        Method:         The tester will send 1300Hz bursts of (a) 400ms, (b) 500ms, (c) 700ms and
+                        (d) 800ms followed by 1s of silence.
+        Pass criteria:  1) The TUT should not respond to bursts of 400ms or 800ms.
                         2) The TUT should report detection of calling tones to the DTE after a burst of
-                           1300Hz for 500 or 700 ms followed by 1 second of silence.
+                           1300Hz for 500ms or 700ms followed by 1s of silence.
         Comments:       In automode answer, the 1300Hz calling causes the DCE to start probing. In
                         monitor mode it should only report detection to the DTE.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, mon_22_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, mon_22_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -6839,6 +7256,8 @@ static int test_mon_22(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -6887,9 +7306,13 @@ static int test_mon_22(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void mon_23_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_mon_23(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -6905,22 +7328,22 @@ static int test_mon_23(void)
         Purpose:        To confirm correct detection and reporting of 980Hz calling tones as defined in
                         ITU-T V.25.
         Preamble:       N/A
-        Method:         The tester will send 980Hz bursts of (a) 400 ms, (b) 500 ms, (c) 700 ms and
-                        (d) 800 ms followed by 1 second of silence.
-        Pass criteria:  1) The TUT should not respond to bursts of 400 or 800 ms.
+        Method:         The tester will send 980Hz bursts of (a) 400ms, (b) 500ms, (c) 700ms and
+                        (d) 800ms followed by 1s of silence.
+        Pass criteria:  1) The TUT should not respond to bursts of 400ms or 800ms.
                         2) The TUT should report detection of calling tones to the DTE after a burst of
-                           980Hz for 500 or 700 ms followed by 1 second of silence.
+                           980Hz for 500ms or 700ms followed by 1s of silence.
         Comments:       In automode answer, the 980Hz calling causes the DCE to start probing. In monitor
                         mode it should only report detection to the DTE.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, mon_23_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, mon_23_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -6937,6 +7360,8 @@ static int test_mon_23(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -6989,9 +7414,9 @@ static void x_01_put_text_msg(void *user_data, const uint8_t *msg, int len)
 {
 printf("1-1 %d '%s'\n", len, msg);
     if (user_data == NULL)
-        strcat(result, (const char *) msg);
-    else
-        v18_put(v18[1], "abcdefghij", 10);
+        strcat(result[1], (const char *) msg);
+    //else
+    //    v18_put(v18[1], "abcdefghij", 10);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -7010,26 +7435,26 @@ static int test_x_01(void)
 
     /*
         III.5.4.5.1     Baudot carrier timing and receiver disabling
-        Purpose:        To verify that the TUT sends unmodulated carrier for 150 ms before a new character
-                        and disables its receiver for 300 ms after a character is transmitted.
+        Purpose:        To verify that the TUT sends unmodulated carrier for 150ms before a new character
+                        and disables its receiver for 300ms after a character is transmitted.
         Preamble:       Establish a call between the tester and TUT in Baudot mode.
         Method:         The operator should send a single character from the TUT. The tester will
                         immediately start sending a unique character sequence. Examination of the TUT
                         display will show when its receiver is re-enabled.
-        Pass criteria:  1) The TUT should send unmodulated carrier for 150 ms before the beginning of
+        Pass criteria:  1) The TUT should send unmodulated carrier for 150ms before the beginning of
                            the start bit.
-                        2) The receiver should be re-enabled after 300 ms.
+                        2) The receiver should be re-enabled after 300ms.
                         3) The tester will confirm that 1 start bit and at least 1.5 stop bits are used.
-        Comments:       The carrier should be maintained during the 300 ms after a character.
+        Comments:       The carrier should be maintained during the 300ms after a character.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_5BIT_45, V18_AUTOMODING_GLOBAL, x_01_put_text_msg, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_5BIT_4545, V18_AUTOMODING_GLOBAL, x_01_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_5BIT_45, V18_AUTOMODING_GLOBAL, x_01_put_text_msg, (void *) (intptr_t) 1);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_5BIT_4545, V18_AUTOMODING_GLOBAL, x_01_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -7046,6 +7471,8 @@ static int test_x_01(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     v18_put(v18[0], "z", 1);
     for (i = 0;  i < 10000;  i++)
     {
@@ -7091,17 +7518,21 @@ static int test_x_01(void)
     v18_free(v18[0]);
     v18_free(v18[1]);
     ref = "cdefghij";
-    printf("Result:\n%s\n", result);
+    printf("Result:\n%s\n", result[0]);
     printf("Reference result:\n%s\n", ref);
-    if (unexpected_echo  ||  strcmp(result, ref) != 0)
+    if (unexpected_echo  ||  strcmp(result[1], ref) != 0)
         return -1;
     return 1;
 }
 /*- End of function --------------------------------------------------------*/
 
+static void x_02_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_x_02(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -7121,14 +7552,14 @@ static int test_x_02(void)
                         transmit the string "abcdef" at each rate.
         Pass criteria:  The tester will measure the bit timings and confirm the rates.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_5BIT_45, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_5BIT_4545, V18_AUTOMODING_GLOBAL, x_02_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_5BIT_45, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_5BIT_4545, V18_AUTOMODING_GLOBAL, x_02_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -7145,6 +7576,8 @@ static int test_x_02(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -7193,9 +7626,13 @@ static int test_x_02(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void x_03_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_x_03(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -7218,14 +7655,14 @@ static int test_x_03(void)
         Comments:       The probe message must be long enough for the tester to establish the bit rate. "GA"
                         may not be sufficient.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_5BIT_45, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_5BIT_4545, V18_AUTOMODING_USA, x_03_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_5BIT_45, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_5BIT_4545, V18_AUTOMODING_USA, x_03_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -7242,6 +7679,8 @@ static int test_x_03(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -7290,24 +7729,27 @@ static int test_x_03(void)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void x_04_put_echo_text_msg(void *user_data, const uint8_t *msg, int len)
-{
-    printf("Unexpected ECHO received (%d) '%s'\n", len, msg);
-    unexpected_echo = TRUE;
-}
-/*- End of function --------------------------------------------------------*/
-
 static void x_04_put_text_msg(void *user_data, const uint8_t *msg, int len)
 {
+    if (user_data == NULL)
+    {
+        strcat(result[0], (const char *) msg);
+printf("Unexpected ECHO received (%d) '%s'\n", len, msg);
+        unexpected_echo = TRUE;
+    }
+    else
+    {
 printf("1-1 %d '%s'\n", len, msg);
-    strcat(result, (const char *) msg);
+        strcat(result[1], (const char *) msg);
+        /* Echo each received character */
+        //v18_put(v18[1], msg, len);
+    }
 }
 /*- End of function --------------------------------------------------------*/
 
 static int test_x_04(void)
 {
     char msg[1024];
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -7336,14 +7778,14 @@ static int test_x_04(void)
                         assumed that the character conversion is the same for Baudot at 50 bit/s and any
                         other supported speed.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_5BIT_45, V18_AUTOMODING_GLOBAL, x_04_put_echo_text_msg, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_5BIT_4545 | V18_MODE_REPETITIVE_SHIFTS_OPTION, V18_AUTOMODING_GLOBAL, x_04_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_5BIT_45, V18_AUTOMODING_GLOBAL, x_04_put_text_msg, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_5BIT_4545 | V18_MODE_REPETITIVE_SHIFTS_OPTION, V18_AUTOMODING_GLOBAL, x_04_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -7360,14 +7802,15 @@ static int test_x_04(void)
         exit(2);
     }
 
-    result[0] = '\0';
+    result[0][0] =
+    result[1][0] = '\0';
     unexpected_echo = FALSE;
     for (i = 0;  i < 127;  i++)
         msg[i] = i + 1;
     msg[127] = '\0';
     v18_put(v18[0], msg, 127);
 
-    for (i = 0;  i < 1000;  i++)
+    for (i = 0;  i < 2000;  i++)
     {
         for (j = 0;  j < 2;  j++)
         {
@@ -7409,9 +7852,10 @@ static int test_x_04(void)
 
     v18_free(v18[0]);
     v18_free(v18[1]);
-    printf("Result:\n%s\n", result);
+    printf("Result:\n%s\n", result[0]);
+    printf("Result:\n%s\n", result[1]);
     printf("Reference result:\n%s\n", full_baudot_rx);
-    if (unexpected_echo  ||  strcmp(result, full_baudot_rx) != 0)
+    if (unexpected_echo  ||  strcmp(result[1], full_baudot_rx) != 0)
         return -1;
     return 0;
 }
@@ -7420,7 +7864,7 @@ static int test_x_04(void)
 static void x_05_put_text_msg(void *user_data, const uint8_t *msg, int len)
 {
     if (user_data == NULL)
-        strcat(result, (const char *) msg);
+        strcat(result[0], (const char *) msg);
     else
         v18_put(v18[1], "behknqtwz", 9);
 }
@@ -7441,23 +7885,23 @@ static int test_x_05(void)
 
     /*
         III.5.4.5.5     DTMF receiver disabling
-        Purpose:        To verify that the TUT disables its DTMF receiver for 300 ms when a character is
+        Purpose:        To verify that the TUT disables its DTMF receiver for 300ms when a character is
                         transmitted.
         Preamble:       Establish a call between the tester and TUT in DTMF mode.
         Method:         The operator should send a single "e" character from the TUT which will result in
                         sending a single DTMF tone to the tester. The tester will immediately start sending a
                         unique character sequence using single DTMF tones. Examination of the TUT
                         display will show when its receiver is re-enabled.
-        Pass criteria:  The receiver should be re-enabled after 300 ms.
+        Pass criteria:  The receiver should be re-enabled after 300ms.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, x_05_put_text_msg, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, x_05_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
+    span_log_set_tag(logging, "Tester");
     v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, x_05_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -7474,7 +7918,8 @@ static int test_x_05(void)
         exit(2);
     }
 
-    result[0] = '\0';
+    result[0][0] =
+    result[1][0] = '\0';
     v18_put(v18[0], "e", 1);
 
     for (i = 0;  i < 1000;  i++)
@@ -7521,9 +7966,9 @@ static int test_x_05(void)
     v18_free(v18[0]);
     v18_free(v18[1]);
     ref = "knqtwz";
-    printf("Result:\n%s\n", result);
+    printf("Result:\n%s\n", result[0]);
     printf("Reference result:\n%s\n", ref);
-    if (strcmp(result, ref) != 0)
+    if (strcmp(result[0], ref) != 0)
         return -1;
     return 0;
 }
@@ -7531,16 +7976,17 @@ static int test_x_05(void)
 
 static void x_06_put_text_msg(void *user_data, const uint8_t *msg, int len)
 {
-    strcat(result, (const char *) msg);
+    if (user_data == NULL)
+        ;
+    else
+        strcat(result[1], (const char *) msg);
 }
 /*- End of function --------------------------------------------------------*/
 
 static int test_x_06(void)
 {
     char msg[128];
-    char dtmf[1024];
     const char *ref;
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -7560,19 +8006,19 @@ static int test_x_06(void)
                         after each one. Each character should be responded to at the TUT by typing the
                         same character.
         Pass criteria:  The tester will verify that each character is correctly echoed back by the TUT.
-        Comments:       The conversion table is specified in Annex B. The receiver at the tester may be re-
-                        enabled 100 ms after transmission of each character to maximize likelihood of
+        Comments:       The conversion table is specified in Annex B. The receiver at the tester may be
+                        re-enabled 100ms after transmission of each character to maximize likelihood of
                         receiving character from the TUT. It is assumed that the echo delay in the test
                         system is negligible.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, x_06_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, x_06_put_text_msg, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, x_06_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -7589,15 +8035,12 @@ static int test_x_06(void)
         exit(2);
     }
 
-    result[0] = '\0';
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 127;  i++)
         msg[i] = i + 1;
     msg[127] = '\0';
-    printf("Original:\n%s\n", msg);
-
-    v18_encode_dtmf(NULL, dtmf, msg);
-    printf("DTMF:\n%s\n", dtmf);
-    v18_decode_dtmf(NULL, result, dtmf);
+    v18_put(v18[0], msg, 127);
 
     for (i = 0;  i < 10000;  i++)
     {
@@ -7640,23 +8083,27 @@ static int test_x_06(void)
         v18_rx(v18[1], model_amp[0], samples);
     }
 
-    ref = "\b \n\n\n?\n\n\n  %+().+,-.0123456789:;(=)"
-          "?XABCDEFGHIJKLMNOPQRSTUVWXYZ\xC6\xD8\xC5"
+    ref = "\b \n\n\n?\n\n\n  !%+().+,-.0123456789:;(=)?"
+          "XABCDEFGHIJKLMNOPQRSTUVWXYZ\xC6\xD8\xC5"
           " abcdefghijklmnopqrstuvwxyz\xE6\xF8\xE5 \b";
 
-    printf("Result:\n%s\n", result);
+    printf("Result:\n%s\n", result[0]);
     printf("Reference result:\n%s\n", ref);
     v18_free(v18[0]);
     v18_free(v18[1]);
-    if (strcmp(result, ref) != 0)
+    if (strcmp(result[1], ref) != 0)
         return -1;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
+static void x_07_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_x_07(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -7669,26 +8116,26 @@ static int test_x_07(void)
 
     /*
         III.5.4.5.7     EDT carrier timing and receiver disabling
-        Purpose:        To verify that the TUT sends unmodulated carrier for 300 ms before a character and
-                        disables its receiver for 300 ms after a character is transmitted.
+        Purpose:        To verify that the TUT sends unmodulated carrier for 300ms before a character and
+                        disables its receiver for 300ms after a character is transmitted.
         Preamble:       Establish a call between the tester and TUT in EDT mode.
         Method:         The operator should send a single character from the TUT. The tester will
                         immediately start sending a unique character sequence. Examination of the TUT
                         display will show when its receiver is re-enabled.
-        Pass criteria:  1) The TUT should send unmodulated carrier for 300 ms before the beginning of
+        Pass criteria:  1) The TUT should send unmodulated carrier for 300ms before the beginning of
                            the start bit.
-                        2) The receiver should be re-enabled after 300 ms.
+                        2) The receiver should be re-enabled after 300ms.
                         3) The tester will confirm that 1 start bit and at least 1.5 stop bits are used.
-        Comments:       The carrier should be maintained during the 300 ms after a character.
+        Comments:       The carrier should be maintained during the 300ms after a character.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, x_07_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, x_07_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -7705,6 +8152,8 @@ static int test_x_07(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -7753,9 +8202,13 @@ static int test_x_07(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void x_08_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_x_08(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -7776,14 +8229,14 @@ static int test_x_08(void)
                         2) The tester should confirm that 1 start bit, 7 data bits, 1 even parity bit and 2 stop
                            bits are used.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, x_08_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, x_08_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -7800,6 +8253,8 @@ static int test_x_08(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -7848,9 +8303,13 @@ static int test_x_08(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void x_09_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_x_09(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -7874,14 +8333,14 @@ static int test_x_09(void)
                            that there are no duplicate characters on the TUT display.
                         3) The received string should be correctly displayed despite the incorrect parity.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, x_09_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, x_09_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -7898,6 +8357,8 @@ static int test_x_09(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -7946,9 +8407,13 @@ static int test_x_09(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void x_10_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_x_10(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -7975,14 +8440,14 @@ static int test_x_10(void)
         Comments:       This test is only applicable to Minitel Dialogue terminals. Prestel and Minitel
                         Normal terminals cannot operate in this mode.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, x_10_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, x_10_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -7999,6 +8464,8 @@ static int test_x_10(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -8047,9 +8514,13 @@ static int test_x_10(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void x_11_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_x_11(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -8074,14 +8545,14 @@ static int test_x_11(void)
                         4) The last five characters on the TUT display should be "12345" (no "6")
                            correctly displayed despite the incorrect parity.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, x_11_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, x_11_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -8098,6 +8569,8 @@ static int test_x_11(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -8146,9 +8619,13 @@ static int test_x_11(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void x_12_put_text_msg(void *user_data, const uint8_t *msg, int len)
+{
+}
+/*- End of function --------------------------------------------------------*/
+
 static int test_x_12(void)
 {
-    v18_state_t *v18[2];
     logging_state_t *logging;
     int16_t amp[2][SAMPLES_PER_CHUNK];
     int16_t model_amp[2][SAMPLES_PER_CHUNK];
@@ -8170,14 +8647,14 @@ static int test_x_12(void)
         Pass criteria:  The tester should confirm UTF8 encoded UNICODE characters are used with the
                         controls specified in ITU-T T.140.
      */
-    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    v18[0] = v18_init(NULL, TRUE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, x_12_put_text_msg, (void *) (intptr_t) 0);
     logging = v18_get_logging_state(v18[0]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "A");
-    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, NULL, NULL);
+    span_log_set_tag(logging, "Tester");
+    v18[1] = v18_init(NULL, FALSE, V18_MODE_DTMF, V18_AUTOMODING_GLOBAL, x_12_put_text_msg, (void *) (intptr_t) 1);
     logging = v18_get_logging_state(v18[1]);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "B");
+    span_log_set_tag(logging, "TUT");
 
     if ((model = both_ways_line_model_init(line_model_no,
                                            (float) noise_level,
@@ -8194,6 +8671,8 @@ static int test_x_12(void)
         exit(2);
     }
 
+    result[0][0] =
+    result[1][0] = '\0';
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -8474,8 +8953,8 @@ int main(int argc, char *argv[])
         printf("Test not found\n");
         exit(2);
     }
-    basic_tests(V18_MODE_5BIT_45);
-    basic_tests(V18_MODE_5BIT_45 | 0x100);
+    basic_tests(V18_MODE_5BIT_4545);
+    basic_tests(V18_MODE_5BIT_4545 | V18_MODE_REPETITIVE_SHIFTS_OPTION);
     if (log_audio)
     {
         if (sf_close_telephony(outhandle))

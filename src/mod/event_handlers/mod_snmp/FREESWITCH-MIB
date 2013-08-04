@@ -149,7 +149,7 @@ peakSessionsPerSecond OBJECT-TYPE
         "Peak sessions per second"
     ::= { systemStats 8 }
 
-peakSessionsPerSecond OBJECT-TYPE
+peakSessionsPerSecondFiveMin OBJECT-TYPE
     SYNTAX      Gauge32
     MAX-ACCESS  read-only
     STATUS      current
@@ -157,6 +157,21 @@ peakSessionsPerSecond OBJECT-TYPE
         "Peak sessions per second last 5 minutes"
     ::= { systemStats 9 }
 
+peakSessions OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Peak sessions"
+    ::= { systemStats 10 }
+
+peakSessionsFiveMin OBJECT-TYPE
+    SYNTAX      Gauge32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+        "Peak sessions last 5 minutes"
+    ::= { systemStats 11 }
 
 ChannelEntry ::= SEQUENCE {
     chanIndex           Integer32,

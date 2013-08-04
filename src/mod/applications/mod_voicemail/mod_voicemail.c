@@ -1918,7 +1918,7 @@ static void update_mwi(vm_profile_t *profile, const char *id, const char *domain
 		yn = "yes";
 	}
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", yn);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MWI-Update-Reason", update_reason);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Update-Reason", update_reason);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", "%s@%s", id, domain_name);
 	/* 
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)", total_new_messages, total_saved_messages,

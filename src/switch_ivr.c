@@ -3247,7 +3247,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user_xml(switch_core_session_t *s
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *session, const char *data)
 {
-	switch_xml_t x_user;
+	switch_xml_t x_user = 0;
 	char *user, *domain;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 

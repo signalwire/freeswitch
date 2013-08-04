@@ -25,6 +25,7 @@
  * 
  * Rupa Schomaker <rupa@rupa.com>
  * Yossi Neiman <mishehu@freeswitch.org>
+ * Seven Du <dujinfang@gmail.com>
  *
  * mod_curl.c -- API for performing http queries
  *
@@ -106,6 +107,12 @@ struct callback_obj {
 };
 typedef struct callback_obj callback_t;
 
+struct curl_options_obj {
+	long connect_timeout;
+	long timeout;
+};
+typedef struct curl_options_obj curl_options_t;
+
 static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 {
 	register unsigned int realsize = (unsigned int) (size * nmemb);
@@ -138,7 +145,7 @@ static size_t header_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	return realsize;
 }
 
-static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, const char *method, const char *data, const char *content_type)
+static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, const char *method, const char *data, const char *content_type, curl_options_t *options)
 {
 	switch_CURL *curl_handle = NULL;
 	long httpRes = 0;
@@ -158,6 +165,16 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "method: %s, url: %s, content-type: %s\n", method, url, content_type);
 	curl_handle = switch_curl_easy_init();
+
+	if (options) {
+		if (options->connect_timeout) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, options->connect_timeout);
+		}
+
+		if (options->timeout) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, options->timeout);
+		}
+	}
 
 	if (!strncasecmp(url, "https", 5)) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
@@ -710,6 +727,8 @@ SWITCH_STANDARD_APP(curl_app_function)
 	switch_curl_slist_t *slist = NULL;
 	switch_stream_handle_t stream = { 0 };
 	int i = 0;
+	curl_options_t options = { 0 };
+	const char *curl_timeout;
 
 	if (session) {
 		pool = switch_core_session_get_pool(session);
@@ -750,7 +769,16 @@ SWITCH_STANDARD_APP(curl_app_function)
 		}
 	}
 
-	http_data = do_lookup_url(pool, url, method, postdata, content_type);
+	curl_timeout = switch_channel_get_variable(channel, "curl_connect_timeout");
+
+	if (curl_timeout) options.connect_timeout = atoi(curl_timeout);
+
+	curl_timeout = switch_channel_get_variable(channel, "curl_timeout");
+
+	if (curl_timeout) options.timeout = atoi(curl_timeout);
+
+
+	http_data = do_lookup_url(pool, url, method, postdata, content_type, &options);
 	if (do_json) {
 		switch_channel_set_variable(channel, "curl_response_data", print_json(pool, http_data));
 	} else {
@@ -843,7 +871,7 @@ SWITCH_STANDARD_API(curl_function)
 			}
 		}
 
-		http_data = do_lookup_url(pool, url, method, postdata, content_type);
+		http_data = do_lookup_url(pool, url, method, postdata, content_type, NULL);
 		if (do_json) {
 			stream->write_function(stream, "%s", print_json(pool, http_data));
 		} else {

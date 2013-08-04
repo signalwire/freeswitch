@@ -440,7 +440,7 @@ int main(int argc, char *argv[])
         t30_set_phase_d_handler(t30, phase_d_handler, (void *) (intptr_t) 'A');
         t30_set_phase_e_handler(t30, phase_e_handler, (void *) (intptr_t) 'A');
         t30_set_ecm_capability(t30, use_ecm);
-        t30_set_supported_compressions(t30, T4_SUPPORT_COMPRESSION_T4_1D | T4_SUPPORT_COMPRESSION_T4_2D | T4_SUPPORT_COMPRESSION_T6 | T4_SUPPORT_COMPRESSION_T85);
+        t30_set_supported_compressions(t30, T4_COMPRESSION_T4_1D | T4_COMPRESSION_T4_2D | T4_COMPRESSION_T6 | T4_COMPRESSION_T85);
 
         if (pcap_scan_pkts(input_file_name, src_addr, src_port, dest_addr, dest_port, t38_terminal_timing_update, process_packet, NULL))
             exit(2);
@@ -497,7 +497,7 @@ int main(int argc, char *argv[])
         t30_set_phase_d_handler(t30, phase_d_handler, (void *) (intptr_t) 'B');
         t30_set_phase_e_handler(t30, phase_e_handler, (void *) (intptr_t) 'B');
         t30_set_ecm_capability(t30, use_ecm);
-        t30_set_supported_compressions(t30, T4_SUPPORT_COMPRESSION_T4_1D | T4_SUPPORT_COMPRESSION_T4_2D | T4_SUPPORT_COMPRESSION_T6);
+        t30_set_supported_compressions(t30, T4_COMPRESSION_T4_1D | T4_COMPRESSION_T4_2D | T4_COMPRESSION_T6);
 
         logging = fax_get_logging_state(fax_state);
         span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);

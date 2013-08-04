@@ -393,6 +393,7 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 	const char *db_name = NULL;
 	const char *odbc_user = NULL;
 	const char *odbc_pass = NULL;
+	const char *db_type = NULL;
 
 	while(runtime.max_db_handles && sql_manager.total_handles >= runtime.max_db_handles && sql_manager.total_used_handles >= sql_manager.total_handles) {
 		if (!waiting++) {
@@ -416,12 +417,14 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 			db_name = connection_options->pgsql_options.dsn;
 			odbc_user = NULL;
 			odbc_pass = NULL;
+			db_type = "pgsql";
 		}
 	case SCDB_TYPE_ODBC:
 		{
 			db_name = connection_options->odbc_options.dsn;
 			odbc_user = connection_options->odbc_options.user;
 			odbc_pass = connection_options->odbc_options.pass;
+			db_type = "odbc";
 		}
 		break;
 	case SCDB_TYPE_CORE_DB:
@@ -429,6 +432,7 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 			db_name = connection_options->core_db_options.db_path;
 			odbc_user = NULL;
 			odbc_pass = NULL;
+			db_type = "core_db";
 		}
 		break;
 	}
@@ -438,9 +442,9 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 	}
 
 	if (odbc_user || odbc_pass) {
-		snprintf(db_str, sizeof(db_str) - 1, "db=\"%s\";user=\"%s\";pass=\"%s\"", db_name, odbc_user, odbc_pass);
+		snprintf(db_str, sizeof(db_str) - 1, "db=\"%s\";type=\"%s\"user=\"%s\";pass=\"%s\"", db_name, db_type, odbc_user, odbc_pass);
 	} else {
-		snprintf(db_str, sizeof(db_str) - 1, "db=\"%s\"", db_name);
+		snprintf(db_str, sizeof(db_str) - 1, "db=\"%s\",type=\"%s\"", db_name, db_type);
 	}
 	snprintf(db_callsite_str, sizeof(db_callsite_str) - 1, "%s:%d", file, line);
 	snprintf(thread_str, sizeof(thread_str) - 1, "thread=\"%lu\"",  (unsigned long) (intptr_t) self); 

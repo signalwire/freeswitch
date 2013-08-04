@@ -63,7 +63,7 @@ struct
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_STANDARD,
         T4_WIDTH_R8_A4,
-        1100,
+        1002,
         COMPRESSION_CCITT_T4,
         0
     },
@@ -72,7 +72,7 @@ struct
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_STANDARD,
         T4_WIDTH_R8_A4,
-        1100,
+        1002,
         COMPRESSION_CCITT_T4,
         1
     },
@@ -81,7 +81,7 @@ struct
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_STANDARD,
         T4_WIDTH_R8_A4,
-        1100,
+        237,
         COMPRESSION_CCITT_T4,
         2
     },
@@ -90,7 +90,7 @@ struct
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_STANDARD,
         T4_WIDTH_R8_A4,
-        1100,
+        237,
         COMPRESSION_CCITT_T4,
         3
     },
@@ -99,7 +99,7 @@ struct
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_STANDARD,
         T4_WIDTH_R8_A4,
-        1100,
+        400,
         COMPRESSION_CCITT_T4,
         4
     },
@@ -108,7 +108,7 @@ struct
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_STANDARD,
         T4_WIDTH_R8_A4,
-        1100,
+        1079,
         COMPRESSION_CCITT_T4,
         5
     },
@@ -117,7 +117,7 @@ struct
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_STANDARD,
         T4_WIDTH_R8_A4,
-        1100,
+        1728,
         COMPRESSION_CCITT_T4,
         6
     },
@@ -153,7 +153,7 @@ struct
         T4_X_RESOLUTION_R8,
         T4_Y_RESOLUTION_STANDARD,
         T4_WIDTH_R8_A4,
-        1100,
+        1079,
         COMPRESSION_CCITT_T4,
         5
     },
@@ -178,23 +178,10 @@ struct
 int photo_metric = PHOTOMETRIC_MINISWHITE;
 int fill_order = FILLORDER_LSB2MSB;
 
-static void clear_row(uint8_t buf[], int width)
-{
-    memset(buf, 0, width/8 + 1);
-}
-/*- End of function --------------------------------------------------------*/
-
 static void set_pixel(uint8_t buf[], int row, int pixel)
 {
     row--;
     buf[row*1728/8 + pixel/8] |= (0x80 >> (pixel & 0x07));
-}
-/*- End of function --------------------------------------------------------*/
-
-static void clear_pixel(uint8_t buf[], int row, int pixel)
-{
-    row--;
-    buf[row*1728/8 + pixel/8] &= ~(0x80 >> (pixel & 0x07));
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -207,12 +194,25 @@ static void set_pixel_range(uint8_t buf[], int row, int start, int end)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void clear_pixel(uint8_t buf[], int row, int pixel)
+{
+    row--;
+    buf[row*1728/8 + pixel/8] &= ~(0x80 >> (pixel & 0x07));
+}
+/*- End of function --------------------------------------------------------*/
+
 static void clear_pixel_range(uint8_t buf[], int row, int start, int end)
 {
     int i;
 
     for (i = start;  i <= end;  i++)
         clear_pixel(buf, row, i);
+}
+/*- End of function --------------------------------------------------------*/
+
+static void clear_row(uint8_t buf[], int width)
+{
+    memset(buf, 0, width/8 + 1);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -593,7 +593,6 @@ int main(int argc, char *argv[])
         TIFFSetField(tiff_file, TIFFTAG_BITSPERSAMPLE, 1);
         TIFFSetField(tiff_file, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
         TIFFSetField(tiff_file, TIFFTAG_SAMPLESPERPIXEL, 1);
-        TIFFSetField(tiff_file, TIFFTAG_ROWSPERSTRIP, -1L);
         TIFFSetField(tiff_file, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
         TIFFSetField(tiff_file, TIFFTAG_PHOTOMETRIC, photo_metric);
         TIFFSetField(tiff_file, TIFFTAG_FILLORDER, fill_order);
@@ -625,6 +624,7 @@ int main(int argc, char *argv[])
         image_length = sequence[i].length;
         TIFFSetField(tiff_file, TIFFTAG_PAGENUMBER, 0, 1);
         TIFFSetField(tiff_file, TIFFTAG_CLEANFAXDATA, CLEANFAXDATA_CLEAN);
+        TIFFSetField(tiff_file, TIFFTAG_ROWSPERSTRIP, 128);
         TIFFSetField(tiff_file, TIFFTAG_IMAGELENGTH, image_length);
         TIFFCheckpointDirectory(tiff_file);
 
@@ -665,7 +665,11 @@ int main(int argc, char *argv[])
             break;
         }
         /* ....then the directory entry, and libtiff is happy. */
-        TIFFSetField(tiff_file, TIFFTAG_IMAGELENGTH, image_length);
+        if (image_length != sequence[i].length)
+        {
+            printf("Length mismatch - %d: %d vs %d\n", i, image_length, sequence[i].length);
+            exit(2);
+        }
 
         TIFFWriteDirectory(tiff_file);
     }

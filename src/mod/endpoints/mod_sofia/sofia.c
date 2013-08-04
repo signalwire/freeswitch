@@ -253,7 +253,7 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 			
 			switch_channel_set_variable(channel, "sip_full_via", (char *)stream.data);
 
-			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND || switch_stristr("TCP", (char *)stream.data)) {
 				switch_channel_set_variable(channel, "sip_recover_via", (char *)stream.data);
 			}
 
@@ -3714,6 +3714,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					sofia_set_pflag(profile, PFLAG_DISABLE_100REL);
 					profile->auto_restart = 1;
 					sofia_set_media_flag(profile, SCMF_AUTOFIX_TIMING);
+					sofia_set_media_flag(profile, SCMF_AUTOFIX_PT);
 					sofia_set_media_flag(profile, SCMF_RTP_AUTOFLUSH_DURING_BRIDGE);
 					profile->contact_user = SOFIA_DEFAULT_CONTACT_USER;
 					sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
@@ -4272,7 +4273,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else if (!strcasecmp(val, "contact") || switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_MULTIREG);
 							sofia_set_pflag(profile, PFLAG_MULTIREG_CONTACT);
-						} else if (switch_true(val)) {
+						} else if (!switch_true(val)) {
 							sofia_clear_pflag(profile, PFLAG_MULTIREG);
 							//sofia_clear_pflag(profile, PFLAG_MULTIREG_CONTACT);
 						}
@@ -4324,6 +4325,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_set_media_flag(profile, SCMF_AUTOFIX_TIMING);
 						} else {
 							sofia_clear_media_flag(profile, SCMF_AUTOFIX_TIMING);
+						}
+					} else if (!strcasecmp(var, "rtp-autofix-pt")) {
+						if (switch_true(val)) {
+							sofia_set_media_flag(profile, SCMF_AUTOFIX_PT);
+						} else {
+							sofia_clear_media_flag(profile, SCMF_AUTOFIX_PT);
 						}
 					} else if (!strcasecmp(var, "contact-user")) {
 						profile->contact_user = switch_core_strdup(profile->pool, val);
@@ -5034,6 +5041,13 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			switch_channel_set_variable(channel, "sip_hangup_disposition", "recv_refuse");
 		}
 
+		if (status >= 400) {
+			char status_str[5];
+			switch_snprintf(status_str, sizeof(status_str), "%d", status);
+			switch_channel_set_variable_partner(channel, "sip_invite_failure_status", status_str);
+			switch_channel_set_variable_partner(channel, "sip_invite_failure_phrase", phrase);
+		}
+
 		if (status >= 400 && sip->sip_reason && sip->sip_reason->re_protocol && (!strcasecmp(sip->sip_reason->re_protocol, "Q.850")
 				|| !strcasecmp(sip->sip_reason->re_protocol, "FreeSWITCH")
 				|| !strcasecmp(sip->sip_reason->re_protocol, profile->sdp_username)) && sip->sip_reason->re_cause) {
@@ -5181,8 +5195,8 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			
 			sofia_update_callee_id(session, profile, sip, SWITCH_FALSE);
 
-			if (sofia_test_media_flag(tech_pvt->profile, SCMF_AUTOFIX_TIMING)) {
-				switch_core_media_reset_autofix_timing(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO);
+			if (sofia_test_media_flag(tech_pvt->profile, SCMF_AUTOFIX_TIMING) || sofia_test_media_flag(tech_pvt->profile, SCMF_AUTOFIX_PT)) {
+				switch_core_media_reset_autofix(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO);
 			}
 
 		}
@@ -8001,6 +8015,8 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		if (!strcmp(network_ip, profile->sipip) && network_port == profile->sip_port) {
 			calling_myself++;
 		} else {
+			switch_event_create(&v_event, SWITCH_EVENT_REQUEST_PARAMS);
+
 			if (sofia_reg_handle_register(nua, profile, nh, sip, de, REG_INVITE, key, sizeof(key), &v_event, NULL, NULL, &x_user)) {
 				if (v_event) {
 					switch_event_destroy(&v_event);
@@ -8021,7 +8037,6 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 
 
-	
 	tech_pvt->mparams.remote_ip = switch_core_session_strdup(session, network_ip);
 	tech_pvt->mparams.remote_port = network_port;
 
@@ -8095,13 +8110,25 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 
 	if (x_user) {
-		const char *user = NULL, *domain = NULL;
+		const char *ruser = NULL, *rdomain = NULL, *user = switch_xml_attr(x_user, "id"), *domain = switch_xml_attr(x_user, "domain-name");
 
 		if (v_event) {
-			user = switch_event_get_header(v_event, "username");
-			domain = switch_event_get_header(v_event, "domain_name");
+			switch_event_header_t *hp;
+
+			for (hp = v_event->headers; hp; hp = hp->next) {
+				switch_channel_set_variable(channel, hp->name, hp->value);
+			}
+
+			ruser = switch_event_get_header(v_event, "username");
+			rdomain = switch_event_get_header(v_event, "domain_name");
+			
+			switch_channel_set_variable(channel, "requested_user_name", ruser);
+			switch_channel_set_variable(channel, "requested_domain_name", rdomain);
 		}
 
+		if (!user) user = ruser;
+		if (!domain) domain = rdomain;
+		
 		switch_ivr_set_user_xml(session, NULL, user, domain, x_user);
 		switch_xml_free(x_user);
 		x_user = NULL;

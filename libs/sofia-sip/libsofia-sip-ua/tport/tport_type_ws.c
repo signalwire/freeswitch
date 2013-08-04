@@ -456,13 +456,17 @@ int tport_ws_init_secondary(tport_t *self, int socket, int accepted,
   if ( wspri->ws_secure ) wstp->ws_secure = 1;
 
   memset(&wstp->ws, 0, sizeof(wstp->ws));
-  
+
   if (ws_init(&wstp->ws, socket, wstp->ws_secure ? wspri->ssl_ctx : NULL, 0) < 0) {
+	  ws_destroy(&wstp->ws);
+	  su_close(socket);
+	  wstp->ws_initialized = -1;
 	  return *return_reason = "WS_INIT", -1;
   }
 
   wstp->ws_initialized = 1;
   self->tp_pre_framed = 1;
+  
 
 
   return 0;

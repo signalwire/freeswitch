@@ -110,7 +110,7 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 	char *ptr;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	request = switch_core_alloc(listener->pool, SKINNY_MESSAGE_MAXSIZE);
+	request = calloc(SKINNY_MESSAGE_MAXSIZE,1);
 
 	if (!request) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to allocate memory.\n");
@@ -122,6 +122,7 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 	while (listener_is_ready(listener)) {
 		uint8_t do_sleep = 1;
 		if (listener->expire_time && listener->expire_time < switch_epoch_time_now(NULL)) {
+			switch_safe_free(request);
 			return SWITCH_STATUS_TIMEOUT;
 		}
 		if(bytes < SKINNY_MESSAGE_FIELD_SIZE) {
@@ -135,6 +136,7 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 		status = switch_socket_recv(listener->sock, ptr, &mlen);
 
 		if (listener->expire_time && listener->expire_time < switch_epoch_time_now(NULL)) {
+			switch_safe_free(request);
 			return SWITCH_STATUS_TIMEOUT;
 		}
 
@@ -143,6 +145,7 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 		}
 		if (!switch_status_is_timeup(status) && !SWITCH_STATUS_IS_BREAK(status) && (status != SWITCH_STATUS_SUCCESS)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Socket break with status=%d.\n", status);
+			switch_safe_free(request);
 			return SWITCH_STATUS_FALSE;
 		}
 
@@ -162,17 +165,20 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 							"Skinny client sent invalid data. Length should be greater than 4 but got %d.\n",
 							request->length);
+					switch_safe_free(request);
 					return SWITCH_STATUS_FALSE;
 				}
 				if(request->length + 2*SKINNY_MESSAGE_FIELD_SIZE > SKINNY_MESSAGE_MAXSIZE) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 							"Skinny client sent too huge data. Got %d which is above threshold %d.\n",
 							request->length, SKINNY_MESSAGE_MAXSIZE - 2*SKINNY_MESSAGE_FIELD_SIZE);
+					switch_safe_free(request);
 					return SWITCH_STATUS_FALSE;
 				}
 				if(bytes >= request->length + 2*SKINNY_MESSAGE_FIELD_SIZE) {
 					/* Message body */
 					*req = request;
+					/* Do not free here, caller needs to do it */
 					return  SWITCH_STATUS_SUCCESS;
 				}
 			}
@@ -181,6 +187,8 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 			switch_cond_next();
 		}
 	}
+
+	switch_safe_free(request);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -463,16 +471,15 @@ switch_status_t perform_send_keep_alive_ack(listener_t *listener,
 		const char *file, const char *func, int line)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12);
-	message->type = KEEP_ALIVE_ACK_MESSAGE;
-	message->length = 4;
+
+	skinny_create_empty_message(message, KEEP_ALIVE_ACK_MESSAGE);
 
 	if ( listener->profile->debug >= 10 ) {
 		skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 			"Sending Keep Alive Ack%s\n", "");
 	}
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_register_ack(listener_t *listener,
@@ -484,9 +491,9 @@ switch_status_t perform_send_register_ack(listener_t *listener,
 		char *reserved2)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.reg_ack));
-	message->type = REGISTER_ACK_MESSAGE;
-	message->length = 4 + sizeof(message->data.reg_ack);
+
+	skinny_create_message(message, REGISTER_ACK_MESSAGE, reg_ack);
+
 	message->data.reg_ack.keep_alive = keep_alive;
 	strncpy(message->data.reg_ack.date_format, date_format, 6);
 	strncpy(message->data.reg_ack.reserved, reserved, 2);
@@ -497,7 +504,7 @@ switch_status_t perform_send_register_ack(listener_t *listener,
 		"Sending Register Ack with Keep Alive (%d), Date Format (%s), Secondary Keep Alive (%d)\n",
 		keep_alive, date_format, secondary_keep_alive);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_speed_dial_stat_res(listener_t *listener,
@@ -507,9 +514,8 @@ switch_status_t perform_send_speed_dial_stat_res(listener_t *listener,
 		char *speed_label)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.speed_dial_res));
-	message->type = SPEED_DIAL_STAT_RES_MESSAGE;
-	message->length = 4 + sizeof(message->data.speed_dial_res);
+
+	skinny_create_message(message, SPEED_DIAL_STAT_RES_MESSAGE, speed_dial_res);
 
 	message->data.speed_dial_res.number = number;
     strncpy(message->data.speed_dial_res.line, speed_line, 24);
@@ -519,7 +525,7 @@ switch_status_t perform_send_speed_dial_stat_res(listener_t *listener,
 		"Sending Speed Dial Stat Res with Number (%d), Line (%s), Label (%s)\n",
 		number, speed_line, speed_label);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_start_tone(listener_t *listener,
@@ -530,9 +536,9 @@ switch_status_t perform_send_start_tone(listener_t *listener,
 		uint32_t call_id)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.start_tone));
-	message->type = START_TONE_MESSAGE;
-	message->length = 4 + sizeof(message->data.start_tone);
+
+	skinny_create_message(message, START_TONE_MESSAGE, start_tone);
+
 	message->data.start_tone.tone = tone;
 	message->data.start_tone.reserved = reserved;
 	message->data.start_tone.line_instance = line_instance;
@@ -542,7 +548,7 @@ switch_status_t perform_send_start_tone(listener_t *listener,
 		"Sending Start Tone with Tone (%s), Line Instance (%d), Call ID (%d)\n", 
 		skinny_tone2str(tone), line_instance, call_id);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_stop_tone(listener_t *listener,
@@ -551,16 +557,16 @@ switch_status_t perform_send_stop_tone(listener_t *listener,
 		uint32_t call_id)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.stop_tone));
-	message->type = STOP_TONE_MESSAGE;
-	message->length = 4 + sizeof(message->data.stop_tone);
+
+	skinny_create_message(message, STOP_TONE_MESSAGE, stop_tone);
+
 	message->data.stop_tone.line_instance = line_instance;
 	message->data.stop_tone.call_id = call_id;
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 		"Sending Stop Tone with Line Instance (%d), Call ID (%d)\n", line_instance, call_id);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_set_ringer(listener_t *listener,
@@ -571,9 +577,9 @@ switch_status_t perform_send_set_ringer(listener_t *listener,
 		uint32_t call_id)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.ringer));
-	message->type = SET_RINGER_MESSAGE;
-	message->length = 4 + sizeof(message->data.ringer);
+
+	skinny_create_message(message, SET_RINGER_MESSAGE, ringer);
+
 	message->data.ringer.ring_type = ring_type;
 	message->data.ringer.ring_mode = ring_mode;
 	message->data.ringer.line_instance = line_instance;
@@ -583,7 +589,7 @@ switch_status_t perform_send_set_ringer(listener_t *listener,
 		"Sending SetRinger with Ring Type (%s), Mode (%s), Line Instance (%d), Call ID (%d)\n",
 		skinny_ring_type2str(ring_type), skinny_ring_mode2str(ring_mode), line_instance, call_id);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_set_lamp(listener_t *listener,
@@ -593,9 +599,9 @@ switch_status_t perform_send_set_lamp(listener_t *listener,
 		uint32_t mode)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.lamp));
-	message->type = SET_LAMP_MESSAGE;
-	message->length = 4 + sizeof(message->data.lamp);
+
+	skinny_create_message(message, SET_LAMP_MESSAGE, lamp);
+
 	message->data.lamp.stimulus = stimulus;
 	message->data.lamp.stimulus_instance = stimulus_instance;
 	message->data.lamp.mode = mode;
@@ -604,7 +610,7 @@ switch_status_t perform_send_set_lamp(listener_t *listener,
 		"Sending Set Lamp with Stimulus (%s), Stimulus Instance (%d), Mode (%s)\n",
 		skinny_button2str(stimulus), stimulus_instance, skinny_lamp_mode2str(mode));
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_set_speaker_mode(listener_t *listener,
@@ -612,15 +618,15 @@ switch_status_t perform_send_set_speaker_mode(listener_t *listener,
 		uint32_t mode)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.speaker_mode));
-	message->type = SET_SPEAKER_MODE_MESSAGE;
-	message->length = 4 + sizeof(message->data.speaker_mode);
+
+	skinny_create_message(message, SET_SPEAKER_MODE_MESSAGE, speaker_mode);
+
 	message->data.speaker_mode.mode = mode;
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 		"Sending Set Speaker Mode with Mode (%s)\n", skinny_speaker_mode2str(mode));
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_srvreq_response(listener_t *listener, 
@@ -629,9 +635,7 @@ switch_status_t perform_send_srvreq_response(listener_t *listener,
 {
 	skinny_message_t *message;
 
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.serv_res_mess));
-	message->type = SERVER_RESPONSE_MESSAGE;
-	message->length = 4 + sizeof(message->data.serv_res_mess);
+	skinny_create_message(message, SERVER_RESPONSE_MESSAGE, serv_res_mess);
 
 	message->data.serv_res_mess.serverListenPort[0] = port;
 	switch_inet_pton(AF_INET,ip, &message->data.serv_res_mess.serverIpAddr[0]);
@@ -640,7 +644,7 @@ switch_status_t perform_send_srvreq_response(listener_t *listener,
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 		"Sending Server Request Response with IP (%s) and Port (%d)\n", ip, port);
 
-	return skinny_send_reply(listener, message);
+	return skinny_send_reply(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_start_media_transmission(listener_t *listener,
@@ -657,9 +661,9 @@ switch_status_t perform_send_start_media_transmission(listener_t *listener,
 		uint32_t g723_bitrate)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.start_media));
-	message->type = START_MEDIA_TRANSMISSION_MESSAGE;
-	message->length = 4 + sizeof(message->data.start_media);
+
+	skinny_create_message(message, START_MEDIA_TRANSMISSION_MESSAGE, start_media);
+
 	message->data.start_media.conference_id = conference_id;
 	message->data.start_media.pass_thru_party_id = pass_thru_party_id;
 	message->data.start_media.remote_ip = remote_ip;
@@ -676,7 +680,7 @@ switch_status_t perform_send_start_media_transmission(listener_t *listener,
 		"Send Start Media Transmission with Conf ID(%d), Passthrough Party ID (%d), ...\n", 
 		conference_id, pass_thru_party_id);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_stop_media_transmission(listener_t *listener,
@@ -686,9 +690,9 @@ switch_status_t perform_send_stop_media_transmission(listener_t *listener,
 		uint32_t conference_id2)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.stop_media));
-	message->type = STOP_MEDIA_TRANSMISSION_MESSAGE;
-	message->length = 4 + sizeof(message->data.stop_media);
+
+	skinny_create_message(message, STOP_MEDIA_TRANSMISSION_MESSAGE, stop_media);
+
 	message->data.stop_media.conference_id = conference_id;
 	message->data.stop_media.pass_thru_party_id = pass_thru_party_id;
 	message->data.stop_media.conference_id2 = conference_id2;
@@ -698,7 +702,7 @@ switch_status_t perform_send_stop_media_transmission(listener_t *listener,
 		"Send Stop Media Transmission with Conf ID (%d), Passthrough Party ID (%d), Conf ID2 (%d)\n", 
 		conference_id, pass_thru_party_id, conference_id2);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_call_info(listener_t *listener,
@@ -725,9 +729,9 @@ switch_status_t perform_send_call_info(listener_t *listener,
 		uint32_t party_pi_restriction_bits)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.call_info));
-	message->type = CALL_INFO_MESSAGE;
-	message->length = 4 + sizeof(message->data.call_info);
+
+	skinny_create_message(message, CALL_INFO_MESSAGE, call_info);
+
 	strncpy(message->data.call_info.calling_party_name, calling_party_name, 40);
 	strncpy(message->data.call_info.calling_party, calling_party, 24);
 	strncpy(message->data.call_info.called_party_name, called_party_name, 40);
@@ -752,7 +756,7 @@ switch_status_t perform_send_call_info(listener_t *listener,
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 		"Send Call Info with Line Instance (%d)...\n", line_instance);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_define_time_date(listener_t *listener,
@@ -768,9 +772,9 @@ switch_status_t perform_send_define_time_date(listener_t *listener,
 		uint32_t timestamp)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.define_time_date));
-	message->type = DEFINE_TIME_DATE_MESSAGE;
-	message->length = 4+sizeof(message->data.define_time_date);
+
+	skinny_create_message(message, DEFINE_TIME_DATE_MESSAGE, define_time_date);
+
 	message->data.define_time_date.year = year;
 	message->data.define_time_date.month = month;
 	message->data.define_time_date.day_of_week = day_of_week;
@@ -785,7 +789,7 @@ switch_status_t perform_send_define_time_date(listener_t *listener,
 		"Send Define Time Date with %.4d-%.2d-%.2d %.2d:%.2d:%.2d.%d, Timestamp (%d), DOW (%d)\n", 
 		year, month, day, hour, minute, seconds, milliseconds, timestamp, day_of_week);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_define_current_time_date(listener_t *listener,
@@ -812,14 +816,13 @@ switch_status_t perform_send_capabilities_req(listener_t *listener,
 		const char *file, const char *func, int line)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12);
-	message->type = CAPABILITIES_REQ_MESSAGE;
-	message->length = 4;
+
+	skinny_create_empty_message(message, CAPABILITIES_REQ_MESSAGE);
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 		"Send Capabilities Req%s\n", "");
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_version(listener_t *listener,
@@ -827,15 +830,15 @@ switch_status_t perform_send_version(listener_t *listener,
 		char *version)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.version));
-	message->type = VERSION_MESSAGE;
-	message->length = 4+ sizeof(message->data.version);
+
+	skinny_create_message(message, VERSION_MESSAGE, version);
+
 	strncpy(message->data.version.version, version, 16);
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 		"Send Version with Version(%s)\n", version);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_register_reject(listener_t *listener,
@@ -843,15 +846,15 @@ switch_status_t perform_send_register_reject(listener_t *listener,
 		char *error)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.reg_rej));
-	message->type = REGISTER_REJECT_MESSAGE;
-	message->length = 4 + sizeof(message->data.reg_rej);
+
+	skinny_create_message(message, REGISTER_REJECT_MESSAGE, reg_rej);
+
 	strncpy(message->data.reg_rej.error, error, 33);
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 		"Send Register Reject with Error (%s)\n", error);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_open_receive_channel(listener_t *listener,
@@ -866,9 +869,9 @@ switch_status_t perform_send_open_receive_channel(listener_t *listener,
 		uint32_t reserved[10])
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.open_receive_channel));
-	message->type = OPEN_RECEIVE_CHANNEL_MESSAGE;
-	message->length = 4 + sizeof(message->data.open_receive_channel);
+
+	skinny_create_message(message, OPEN_RECEIVE_CHANNEL_MESSAGE, open_receive_channel);
+
 	message->data.open_receive_channel.conference_id = conference_id;
 	message->data.open_receive_channel.pass_thru_party_id = pass_thru_party_id;
 	message->data.open_receive_channel.ms_per_packet = ms_per_packet;
@@ -892,7 +895,7 @@ switch_status_t perform_send_open_receive_channel(listener_t *listener,
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 		"Send Open Receive Channel with Conf ID (%d), ...\n", conference_id);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_close_receive_channel(listener_t *listener,
@@ -902,9 +905,9 @@ switch_status_t perform_send_close_receive_channel(listener_t *listener,
 		uint32_t conference_id2)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.close_receive_channel));
-	message->type = CLOSE_RECEIVE_CHANNEL_MESSAGE;
-	message->length = 4 + sizeof(message->data.close_receive_channel);
+
+	skinny_create_message(message, CLOSE_RECEIVE_CHANNEL_MESSAGE, close_receive_channel);
+
 	message->data.close_receive_channel.conference_id = conference_id;
 	message->data.close_receive_channel.pass_thru_party_id = pass_thru_party_id;
 	message->data.close_receive_channel.conference_id2 = conference_id2;
@@ -912,7 +915,7 @@ switch_status_t perform_send_close_receive_channel(listener_t *listener,
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 		"Send Close Receive Channel with Conf ID (%d), ...\n", conference_id);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_select_soft_keys(listener_t *listener,
@@ -923,9 +926,9 @@ switch_status_t perform_send_select_soft_keys(listener_t *listener,
 		uint32_t valid_key_mask)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.select_soft_keys));
-	message->type = SELECT_SOFT_KEYS_MESSAGE;
-	message->length = 4 + sizeof(message->data.select_soft_keys);
+
+	skinny_create_message(message, SELECT_SOFT_KEYS_MESSAGE, select_soft_keys);
+
 	message->data.select_soft_keys.line_instance = line_instance;
 	message->data.select_soft_keys.call_id = call_id;
 	message->data.select_soft_keys.soft_key_set = soft_key_set;
@@ -935,7 +938,7 @@ switch_status_t perform_send_select_soft_keys(listener_t *listener,
 		"Send Select Soft Keys with Line Instance (%d), Call ID (%d), Soft Key Set (%d), Valid Key Mask (%x)\n",
 			line_instance, call_id, soft_key_set, valid_key_mask);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_call_state(listener_t *listener,
@@ -945,9 +948,9 @@ switch_status_t perform_send_call_state(listener_t *listener,
 		uint32_t call_id)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.call_state));
-	message->type = CALL_STATE_MESSAGE;
-	message->length = 4 + sizeof(message->data.call_state);
+
+	skinny_create_message(message, CALL_STATE_MESSAGE, call_state);
+
 	message->data.call_state.call_state = call_state;
 	message->data.call_state.line_instance = line_instance;
 	message->data.call_state.call_id = call_id;
@@ -956,7 +959,7 @@ switch_status_t perform_send_call_state(listener_t *listener,
 		"Send Call State with State (%s), Line Instance (%d), Call ID (%d)\n",
 		skinny_call_state2str(call_state), line_instance, call_id);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_display_prompt_status(listener_t *listener,
@@ -969,9 +972,8 @@ switch_status_t perform_send_display_prompt_status(listener_t *listener,
 	skinny_message_t *message;
 	char *tmp;
 
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.display_prompt_status));
-	message->type = DISPLAY_PROMPT_STATUS_MESSAGE;
-	message->length = 4 + sizeof(message->data.display_prompt_status);
+	skinny_create_message(message, DISPLAY_PROMPT_STATUS_MESSAGE, display_prompt_status);
+
 	message->data.display_prompt_status.timeout = timeout;
 	strncpy(message->data.display_prompt_status.display, display, 32);
 	message->data.display_prompt_status.line_instance = line_instance;
@@ -985,7 +987,7 @@ switch_status_t perform_send_display_prompt_status(listener_t *listener,
 
 	switch_safe_free(tmp);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_display_prompt_status_textid(listener_t *listener,
@@ -997,9 +999,9 @@ switch_status_t perform_send_display_prompt_status_textid(listener_t *listener,
 {
 	skinny_message_t *message;
 	char *label;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.display_prompt_status));
-	message->type = DISPLAY_PROMPT_STATUS_MESSAGE;
-	message->length = 4 + sizeof(message->data.display_prompt_status);
+
+	skinny_create_message(message, DISPLAY_PROMPT_STATUS_MESSAGE, display_prompt_status);
+
 	message->data.display_prompt_status.timeout = timeout;
 
 	label = skinny_textid2raw(display_textid);
@@ -1013,7 +1015,7 @@ switch_status_t perform_send_display_prompt_status_textid(listener_t *listener,
 		"Send Display Prompt Status with Timeout (%d), Display (%s), Line Instance (%d), Call ID (%d)\n", 
 		timeout, skinny_textid2str(display_textid), line_instance, call_id);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_clear_prompt_status(listener_t *listener,
@@ -1022,9 +1024,9 @@ switch_status_t perform_send_clear_prompt_status(listener_t *listener,
 		uint32_t call_id)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.clear_prompt_status));
-	message->type = CLEAR_PROMPT_STATUS_MESSAGE;
-	message->length = 4 + sizeof(message->data.clear_prompt_status);
+
+	skinny_create_message(message, CLEAR_PROMPT_STATUS_MESSAGE, clear_prompt_status);
+
 	message->data.clear_prompt_status.line_instance = line_instance;
 	message->data.clear_prompt_status.call_id = call_id;
 
@@ -1032,7 +1034,7 @@ switch_status_t perform_send_clear_prompt_status(listener_t *listener,
 		"Send Clear Prompt Status with Line Instance (%d), Call ID (%d)\n",
 		line_instance, call_id);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_activate_call_plane(listener_t *listener,
@@ -1040,15 +1042,15 @@ switch_status_t perform_send_activate_call_plane(listener_t *listener,
 		uint32_t line_instance)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.activate_call_plane));
-	message->type = ACTIVATE_CALL_PLANE_MESSAGE;
-	message->length = 4 + sizeof(message->data.activate_call_plane);
+
+	skinny_create_message(message, ACTIVATE_CALL_PLANE_MESSAGE, activate_call_plane);
+
 	message->data.activate_call_plane.line_instance = line_instance;
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 		"Send Activate Call Plane with Line Instance (%d)\n", line_instance);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_back_space_request(listener_t *listener,
@@ -1057,9 +1059,9 @@ switch_status_t perform_send_back_space_request(listener_t *listener,
 		uint32_t call_id)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.back_space_req));
-	message->type = BACK_SPACE_REQ_MESSAGE;
-	message->length = 4 + sizeof(message->data.back_space_req);
+
+	skinny_create_message(message, BACK_SPACE_REQ_MESSAGE, back_space_req);
+
 	message->data.back_space_req.line_instance = line_instance;
 	message->data.back_space_req.call_id = call_id;
 
@@ -1067,7 +1069,7 @@ switch_status_t perform_send_back_space_request(listener_t *listener,
 		"Send Back Space Request with Line Instance (%d), Call ID (%d)\n",
 		line_instance, call_id);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 
 }
 
@@ -1078,9 +1080,9 @@ switch_status_t perform_send_dialed_number(listener_t *listener,
 		uint32_t call_id)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.dialed_number));
-	message->type = DIALED_NUMBER_MESSAGE;
-	message->length = 4 + sizeof(message->data.dialed_number);
+
+	skinny_create_message(message, DIALED_NUMBER_MESSAGE, dialed_number);
+
 	strncpy(message->data.dialed_number.called_party, called_party, 24);
 	message->data.dialed_number.line_instance = line_instance;
 	message->data.dialed_number.call_id = call_id;
@@ -1089,7 +1091,7 @@ switch_status_t perform_send_dialed_number(listener_t *listener,
 		"Send Dialed Number with Number (%s), Line Instance (%d), Call ID (%d)\n",
 		called_party, line_instance, call_id);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_display_pri_notify(listener_t *listener,
@@ -1099,9 +1101,9 @@ switch_status_t perform_send_display_pri_notify(listener_t *listener,
 		char *notify)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.display_pri_notify));
-	message->type = DISPLAY_PRI_NOTIFY_MESSAGE;
-	message->length = 4 + sizeof(message->data.display_pri_notify);
+
+	skinny_create_message(message, DISPLAY_PRI_NOTIFY_MESSAGE, display_pri_notify);
+
 	message->data.display_pri_notify.message_timeout = message_timeout;
 	message->data.display_pri_notify.priority = priority;
 	strncpy(message->data.display_pri_notify.notify, notify, 32);
@@ -1110,7 +1112,7 @@ switch_status_t perform_send_display_pri_notify(listener_t *listener,
 		"Send Display Pri Notify with Timeout (%d), Priority (%d), Message (%s)\n", 
 		message_timeout, priority, notify);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 
@@ -1119,15 +1121,15 @@ switch_status_t perform_send_reset(listener_t *listener,
 		uint32_t reset_type)
 {
 	skinny_message_t *message;
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.reset));
-	message->type = RESET_MESSAGE;
-	message->length = 4 + sizeof(message->data.reset);
+
+	skinny_create_message(message, RESET_MESSAGE, reset);
+
 	message->data.reset.reset_type = reset_type;
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 		"Send Reset with Type (%s)\n", skinny_device_reset_type2str(reset_type));
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_data(listener_t *listener,
@@ -1142,13 +1144,17 @@ switch_status_t perform_send_data(listener_t *listener,
 {
 	skinny_message_t *message;
 	switch_assert(data_length == strlen(data));
+
 	/* data_length should be a multiple of 4 */
 	if ((data_length % 4) != 0) {
 		data_length = (data_length / 4 + 1) * 4;
 	}
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.data)+data_length-1);
+
+	/* This one needs explicit allocation */
+	message = calloc(12+sizeof(message->data.data)+data_length-1, 1);
 	message->type = message_type;
 	message->length = 4 + sizeof(message->data.data)+data_length-1;
+
 	message->data.data.application_id = application_id;
 	message->data.data.line_instance = line_instance;
 	message->data.data.call_id = call_id;
@@ -1159,7 +1165,7 @@ switch_status_t perform_send_data(listener_t *listener,
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 		"Send Data with Data Length (%d)\n", data_length);
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
 switch_status_t perform_send_extended_data(listener_t *listener, 
@@ -1179,13 +1185,17 @@ switch_status_t perform_send_extended_data(listener_t *listener,
 {
 	skinny_message_t *message;
 	switch_assert(data_length == strlen(data));
+
 	/* data_length should be a multiple of 4 */
 	if ((data_length % 4) != 0) {
 		data_length = (data_length / 4 + 1) * 4;
 	}
-	message = switch_core_alloc(listener->pool, 12+sizeof(message->data.extended_data)+data_length-1);
+
+	/* This one needs explicit allocation */
+	message = calloc(12+sizeof(message->data.extended_data)+data_length-1, 1);
 	message->type = message_type;
 	message->length = 4 + sizeof(message->data.extended_data)+data_length-1;
+
 	message->data.extended_data.application_id = application_id;
 	message->data.extended_data.line_instance = line_instance;
 	message->data.extended_data.call_id = call_id;
@@ -1202,32 +1212,45 @@ switch_status_t perform_send_extended_data(listener_t *listener,
 		"Send Extended Data with Application ID (%d), Line Instance (%d), Call ID (%d), ...\n", 
 		application_id, line_instance, call_id );
 
-	return skinny_send_reply_quiet(listener, message);
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
-switch_status_t skinny_perform_send_reply_quiet(listener_t *listener, const char *file, const char *func, int line, skinny_message_t *reply)
+switch_status_t skinny_perform_send_reply_quiet(listener_t *listener, const char *file, const char *func, int line, skinny_message_t *reply,
+	switch_bool_t discard)
 {
 	char *ptr;
 	switch_size_t len;
+	switch_status_t res;
+
 	switch_assert(reply != NULL);
+
 	len = reply->length+8;
 	ptr = (char *) reply;
 
 	if (listener_is_ready(listener)) {
-		return switch_socket_send(listener->sock, ptr, &len);
+		res = switch_socket_send(listener->sock, ptr, &len);
+
+		if ( discard ) { switch_safe_free(reply); }
+		return res;
 	} else {
 		skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_WARNING,
 				"Not sending %s (type=%x,length=%d) while not ready.\n",
 				skinny_message_type2str(reply->type), reply->type, reply->length);
+
+		if ( discard ) { switch_safe_free(reply); }
 		return SWITCH_STATUS_FALSE;
 	}
 }
 
-switch_status_t skinny_perform_send_reply(listener_t *listener, const char *file, const char *func, int line, skinny_message_t *reply)
+switch_status_t skinny_perform_send_reply(listener_t *listener, const char *file, const char *func, int line, skinny_message_t *reply,
+	switch_bool_t discard)
 {
 	char *ptr;
 	switch_size_t len;
+	switch_status_t res;
+
 	switch_assert(reply != NULL);
+
 	len = reply->length+8;
 	ptr = (char *) reply;
 
@@ -1237,11 +1260,16 @@ switch_status_t skinny_perform_send_reply(listener_t *listener, const char *file
 					"Sending %s (type=%x,length=%d).\n",
 					skinny_message_type2str(reply->type), reply->type, reply->length);
 		}
-		return switch_socket_send(listener->sock, ptr, &len);
+		res = switch_socket_send(listener->sock, ptr, &len);
+
+		if ( discard ) { switch_safe_free(reply); }
+		return res;
 	} else {
 		skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_WARNING,
 				"Not sending %s (type=%x,length=%d) while not ready.\n",
 				skinny_message_type2str(reply->type), reply->type, reply->length);
+
+		if ( discard ) { switch_safe_free(reply); }
 		return SWITCH_STATUS_FALSE;
 	}
 }

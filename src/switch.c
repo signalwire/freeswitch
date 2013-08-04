@@ -44,6 +44,10 @@
 #endif
 #endif
 
+#ifdef __linux__
+#include <sys/prctl.h>
+#endif
+
 #include <switch.h>
 #include <switch_version.h>
 #include "private/switch_core_pvt.h"
@@ -357,6 +361,53 @@ static void daemonize(int *fds)
 	return;
 }
 
+static pid_t reincarnate_child = 0;
+static void reincarnate_handle_sigterm (int sig) {
+	if (!sig) return;
+	if (reincarnate_child) kill(reincarnate_child, sig);
+	return;
+}
+
+static void reincarnate_protect(char **argv) {
+	int i; struct sigaction sa, sa_dfl, sa4_prev, sa15_prev, sa17_prev;
+	memset(&sa, 0, sizeof(sa)); memset(&sa_dfl, 0, sizeof(sa_dfl));
+	sa.sa_handler = reincarnate_handle_sigterm;
+	sa_dfl.sa_handler = SIG_DFL;
+ refork:
+	if ((i=fork())) { /* parent */
+		int s; pid_t r;
+		reincarnate_child = i;
+		sigaction(SIGILL, &sa, &sa4_prev);
+		sigaction(SIGTERM, &sa, &sa15_prev);
+		sigaction(SIGCHLD, &sa_dfl, &sa17_prev);
+	rewait:
+		r = waitpid(i, &s, 0);
+		if (r == (pid_t)-1) {
+			if (errno == EINTR) goto rewait;
+			exit(EXIT_FAILURE);
+		}
+		if (r != i) goto rewait;
+		if (WIFEXITED(s)
+			&& (WEXITSTATUS(s) == EXIT_SUCCESS
+				|| WEXITSTATUS(s) == EXIT_FAILURE)) {
+			exit(WEXITSTATUS(s));
+		}
+		if (WIFEXITED(s) || WIFSIGNALED(s)) {
+			sigaction(SIGILL, &sa4_prev, NULL);
+			sigaction(SIGTERM, &sa15_prev, NULL);
+			sigaction(SIGCHLD, &sa17_prev, NULL);
+			if (argv) {
+				execv(argv[0], argv); return;
+			} else goto refork;
+		}
+		goto rewait;
+	} else { /* child */
+#ifdef __linux__
+		prctl(PR_SET_PDEATHSIG, SIGTERM);
+#endif
+	}
+}
+
 #endif
 
 static const char usage[] =
@@ -369,6 +420,8 @@ static const char usage[] =
 	"\t-monotonic-clock       -- use monotonic clock as timer source\n"
 #else
 	"\t-nf                    -- no forking\n"
+	"\t-reincarnate           -- restart the switch on an uncontrolled exit\n"
+	"\t-reincarnate-reexec    -- run execv on a restart (helpful for upgrades)\n"
 	"\t-u [user]              -- specify user to switch to\n"
 	"\t-g [group]             -- specify group to switch to\n"
 #endif
@@ -408,6 +461,7 @@ static const char usage[] =
 	"\t-scripts [scriptsdir]   -- alternate directory for scripts\n"
 	"\t-temp [directory]       -- alternate directory for temporary files\n"
 	"\t-grammar [directory]    -- alternate directory for grammar files\n"
+	"\t-certs [directory]      -- alternate directory for certificates\n"
 	"\t-recordings [directory] -- alternate directory for recordings\n"
 	"\t-storage [directory]    -- alternate directory for voicemail storage\n"
 	"\t-sounds [directory]     -- alternate directory for sound files\n";
@@ -437,6 +491,7 @@ int main(int argc, char *argv[])
 	switch_bool_t do_wait = SWITCH_FALSE;
 	char *runas_user = NULL;
 	char *runas_group = NULL;
+	switch_bool_t reincarnate = SWITCH_FALSE, reincarnate_reexec = SWITCH_FALSE;
 	int fds[2] = { 0, 0 };
 #else
 	switch_bool_t win32_service = SWITCH_FALSE;
@@ -610,6 +665,14 @@ int main(int argc, char *argv[])
 
 		else if (!strcmp(local_argv[x], "-nf")) {
 			nf = SWITCH_TRUE;
+		}
+
+		else if (!strcmp(local_argv[x], "-reincarnate")) {
+			reincarnate = SWITCH_TRUE;
+		}
+		else if (!strcmp(local_argv[x], "-reincarnate-reexec")) {
+			reincarnate = SWITCH_TRUE;
+			reincarnate_reexec = SWITCH_TRUE;
 		}
 
 		else if (!strcmp(local_argv[x], "-version")) {
@@ -882,6 +945,21 @@ int main(int argc, char *argv[])
 			strcpy(SWITCH_GLOBAL_dirs.grammar_dir, local_argv[x]);
 		}
 
+		else if (!strcmp(local_argv[x], "-certs")) {
+			x++;
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
+				fprintf(stderr, "When using -certs you must specify a grammar directory\n");
+				return 255;
+			}
+
+			SWITCH_GLOBAL_dirs.certs_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_dirs.certs_dir) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_dirs.certs_dir, local_argv[x]);
+		}
+
 		else if (!strcmp(local_argv[x], "-sounds")) {
 			x++;
 			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
@@ -994,6 +1072,10 @@ int main(int argc, char *argv[])
 		}
 #endif
 	}
+#ifndef WIN32
+	if (reincarnate)
+		reincarnate_protect(reincarnate_reexec ? argv : NULL);
+#endif
 
 	switch (priority) {
 	case 2:

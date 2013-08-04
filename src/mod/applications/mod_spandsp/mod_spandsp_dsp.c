@@ -150,11 +150,11 @@ static int get_v18_mode(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *var;
-	int r = V18_MODE_5BIT_45;
+	int r = V18_MODE_5BIT_4545;
 
 	if ((var = switch_channel_get_variable(channel, "v18_mode"))) {
 		if (!strcasecmp(var, "5BIT_45") || !strcasecmp(var, "baudot")) {
-			r = V18_MODE_5BIT_45;
+			r = V18_MODE_5BIT_4545;
 		} else if (!strcasecmp(var, "5BIT_50")) {
 			r = V18_MODE_5BIT_50;
 		} else if (!strcasecmp(var, "DTMF")) {
@@ -349,6 +349,7 @@ switch_status_t spandsp_tdd_decode_session(switch_core_session_t *session)
 typedef struct {
 	switch_core_session_t *session;
 	dtmf_rx_state_t *dtmf_detect;
+	int verbose;
 	char last_digit;
 	uint32_t samples;
 	uint32_t last_digit_end;
@@ -394,6 +395,10 @@ static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_da
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT: {
 		pvt->dtmf_detect = dtmf_rx_init(NULL, NULL, NULL);
+		span_log_set_message_handler(dtmf_rx_get_logging_state(pvt->dtmf_detect), mod_spandsp_log_message, pvt->session);
+		if (pvt->verbose) {
+			span_log_set_level(dtmf_rx_get_logging_state(pvt->dtmf_detect), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+		}
 		dtmf_rx_parms(pvt->dtmf_detect, pvt->filter_dialtone, pvt->twist, pvt->reverse_twist, pvt->threshold);
 		dtmf_rx_set_realtime_callback(pvt->dtmf_detect, spandsp_dtmf_rx_realtime_callback, pvt);
 		break;
@@ -500,6 +505,10 @@ switch_status_t spandsp_inband_dtmf_session(switch_core_session_t *session)
 		pvt->filter_dialtone = 0;
 	}
 
+	if ((value = switch_channel_get_variable(channel, "dtmf_verbose"))) {
+		pvt->verbose = switch_true(value);
+	}
+
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -554,7 +563,7 @@ static switch_bool_t callprogress_detector_process_buffer(switch_media_bug_t *bu
  * Allocate the tone descriptor
  *
  * @param descriptor the descriptor to create
- * @param name the descriptor name 
+ * @param name the descriptor name
  * @param memory_pool the pool to use
  * @return SWITCH_STATUS_SUCCESS if successful
  */
@@ -632,7 +641,7 @@ static void tone_report_callback(void *user_data, int code, int level, int delay
 
 /**
  * Process tone segment report from spandsp (for debugging)
- * 
+ *
  * @param user_data the tone_detector
  * @param f1 the first frequency of the segment
  * @param f2 the second frequency of the segment
@@ -705,7 +714,7 @@ static switch_bool_t tone_detector_process_buffer(tone_detector_t *detector, voi
  * Destroy the tone detector
  * @param detector the detector to destroy
  */
-static void tone_detector_destroy(tone_detector_t *detector) 
+static void tone_detector_destroy(tone_detector_t *detector)
 {
 	if (detector) {
 		if (detector->spandsp_detector) {
@@ -720,7 +729,7 @@ static void tone_detector_destroy(tone_detector_t *detector)
  * Start call progress detection
  *
  * @param session the session to detect
- * @param name of the descriptor to use 
+ * @param name of the descriptor to use
  * @return SWITCH_STATUS_SUCCESS if successful
  */
 switch_status_t callprogress_detector_start(switch_core_session_t *session, const char *name)
@@ -759,7 +768,7 @@ switch_status_t callprogress_detector_start(switch_core_session_t *session, cons
 /**
  * Process a buffer of audio data for call progress tones
  *
- * @param bug the session's media bug 
+ * @param bug the session's media bug
  * @param user_data the detector
  * @param type the type of data available from the bug
  * @return SWITCH_TRUE
@@ -817,7 +826,7 @@ static switch_bool_t callprogress_detector_process_buffer(switch_media_bug_t *bu
 
 /**
  * Stop call progress detection
- * @param session the session to stop 
+ * @param session the session to stop
  * @return SWITCH_STATUS_SUCCESS if successful
  */
 switch_status_t callprogress_detector_stop(switch_core_session_t *session)
