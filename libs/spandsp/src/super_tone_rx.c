@@ -45,6 +45,7 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/complex.h"
 #include "spandsp/vector_float.h"
@@ -95,7 +96,7 @@ static int add_super_tone_freq(super_tone_rx_descriptor_t *desc, int freq)
     desc->pitches[i][1] = desc->monitored_frequencies;
     if (desc->monitored_frequencies%5 == 0)
     {
-        desc->desc = (goertzel_descriptor_t *) realloc(desc->desc, (desc->monitored_frequencies + 5)*sizeof(goertzel_descriptor_t));
+        desc->desc = (goertzel_descriptor_t *) span_realloc(desc->desc, (desc->monitored_frequencies + 5)*sizeof(goertzel_descriptor_t));
     }
     make_goertzel_descriptor(&desc->desc[desc->monitored_frequencies++], (float) freq, SUPER_TONE_BINS);
     desc->used_frequencies++;
@@ -107,8 +108,8 @@ SPAN_DECLARE(int) super_tone_rx_add_tone(super_tone_rx_descriptor_t *desc)
 {
     if (desc->tones%5 == 0)
     {
-        desc->tone_list = (super_tone_rx_segment_t **) realloc(desc->tone_list, (desc->tones + 5)*sizeof(super_tone_rx_segment_t *));
-        desc->tone_segs = (int *) realloc(desc->tone_segs, (desc->tones + 5)*sizeof(int));
+        desc->tone_list = (super_tone_rx_segment_t **) span_realloc(desc->tone_list, (desc->tones + 5)*sizeof(super_tone_rx_segment_t *));
+        desc->tone_segs = (int *) span_realloc(desc->tone_segs, (desc->tones + 5)*sizeof(int));
     }
     desc->tone_list[desc->tones] = NULL;
     desc->tone_segs[desc->tones] = 0;
@@ -129,7 +130,7 @@ SPAN_DECLARE(int) super_tone_rx_add_element(super_tone_rx_descriptor_t *desc,
     step = desc->tone_segs[tone];
     if (step%5 == 0)
     {
-        desc->tone_list[tone] = (super_tone_rx_segment_t *) realloc(desc->tone_list[tone], (step + 5)*sizeof(super_tone_rx_segment_t));
+        desc->tone_list[tone] = (super_tone_rx_segment_t *) span_realloc(desc->tone_list[tone], (step + 5)*sizeof(super_tone_rx_segment_t));
     }
     desc->tone_list[tone][step].f1 = add_super_tone_freq(desc, f1);
     desc->tone_list[tone][step].f2 = add_super_tone_freq(desc, f2);
@@ -199,7 +200,7 @@ SPAN_DECLARE(super_tone_rx_descriptor_t *) super_tone_rx_make_descriptor(super_t
 {
     if (desc == NULL)
     {
-        if ((desc = (super_tone_rx_descriptor_t *) malloc(sizeof(*desc))) == NULL)
+        if ((desc = (super_tone_rx_descriptor_t *) span_alloc(sizeof(*desc))) == NULL)
             return NULL;
     }
     desc->tone_list = NULL;
@@ -222,15 +223,15 @@ SPAN_DECLARE(int) super_tone_rx_free_descriptor(super_tone_rx_descriptor_t *desc
         for (i = 0; i < desc->tones; i++)
         {
             if (desc->tone_list[i])
-                free(desc->tone_list[i]);
+                span_free(desc->tone_list[i]);
         }
         if (desc->tone_list)
-            free(desc->tone_list);
+            span_free(desc->tone_list);
         if (desc->tone_segs)
-            free(desc->tone_segs);
+            span_free(desc->tone_segs);
         if (desc->desc)
-            free(desc->desc);
-        free(desc);
+            span_free(desc->desc);
+        span_free(desc);
     }
     return 0;
 }
@@ -265,7 +266,7 @@ SPAN_DECLARE(super_tone_rx_state_t *) super_tone_rx_init(super_tone_rx_state_t *
         return NULL;
     if (s == NULL)
     {
-        if ((s = (super_tone_rx_state_t *) malloc(sizeof(*s) + desc->monitored_frequencies*sizeof(goertzel_state_t))) == NULL)
+        if ((s = (super_tone_rx_state_t *) span_alloc(sizeof(*s) + desc->monitored_frequencies*sizeof(goertzel_state_t))) == NULL)
             return NULL;
     }
 
@@ -301,7 +302,7 @@ SPAN_DECLARE(int) super_tone_rx_release(super_tone_rx_state_t *s)
 SPAN_DECLARE(int) super_tone_rx_free(super_tone_rx_state_t *s)
 {
     if (s)
-        free(s);
+        span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

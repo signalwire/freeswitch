@@ -35,6 +35,7 @@
 #include <string.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/t81_t82_arith_coding.h"
 
 #include "spandsp/private/t81_t82_arith_coding.h"
@@ -341,7 +342,7 @@ SPAN_DECLARE(t81_t82_arith_encode_state_t *) t81_t82_arith_encode_init(t81_t82_a
 {
     if (s == NULL)
     {
-        if ((s = (t81_t82_arith_encode_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (t81_t82_arith_encode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -364,7 +365,7 @@ SPAN_DECLARE(int) t81_t82_arith_encode_free(t81_t82_arith_encode_state_t *s)
     int ret;
 
     ret = t81_t82_arith_encode_release(s);
-    free(s);
+    span_free(s);
     return ret;
 }
 /*- End of function --------------------------------------------------------*/
@@ -481,7 +482,7 @@ SPAN_DECLARE(t81_t82_arith_decode_state_t *) t81_t82_arith_decode_init(t81_t82_a
 {
     if (s == NULL)
     {
-        if ((s = (t81_t82_arith_decode_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (t81_t82_arith_decode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -502,7 +503,7 @@ SPAN_DECLARE(int) t81_t82_arith_decode_free(t81_t82_arith_decode_state_t *s)
     int ret;
 
     ret = t81_t82_arith_decode_release(s);
-    free(s);
+    span_free(s);
     return ret;
 }
 /*- End of function --------------------------------------------------------*/

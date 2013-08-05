@@ -45,6 +45,7 @@
 #include <tiffio.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/queue.h"
@@ -277,8 +278,8 @@ SPAN_DECLARE(const char *) t30_get_rx_password(t30_state_t *s)
 SPAN_DECLARE(int) t30_set_tx_nsf(t30_state_t *s, const uint8_t *nsf, int len)
 {
     if (s->tx_info.nsf)
-        free(s->tx_info.nsf);
-    if (nsf  &&  len > 0  &&  (s->tx_info.nsf = malloc(len + 3)))
+        span_free(s->tx_info.nsf);
+    if (nsf  &&  len > 0  &&  (s->tx_info.nsf = span_alloc(len + 3)))
     {
         memcpy(s->tx_info.nsf + 3, nsf, len);
         s->tx_info.nsf_len = len;
@@ -311,8 +312,8 @@ SPAN_DECLARE(size_t) t30_get_rx_nsf(t30_state_t *s, const uint8_t *nsf[])
 SPAN_DECLARE(int) t30_set_tx_nsc(t30_state_t *s, const uint8_t *nsc, int len)
 {
     if (s->tx_info.nsc)
-        free(s->tx_info.nsc);
-    if (nsc  &&  len > 0  &&  (s->tx_info.nsc = malloc(len + 3)))
+        span_free(s->tx_info.nsc);
+    if (nsc  &&  len > 0  &&  (s->tx_info.nsc = span_alloc(len + 3)))
     {
         memcpy(s->tx_info.nsc + 3, nsc, len);
         s->tx_info.nsc_len = len;
@@ -345,8 +346,8 @@ SPAN_DECLARE(size_t) t30_get_rx_nsc(t30_state_t *s, const uint8_t *nsc[])
 SPAN_DECLARE(int) t30_set_tx_nss(t30_state_t *s, const uint8_t *nss, int len)
 {
     if (s->tx_info.nss)
-        free(s->tx_info.nss);
-    if (nss  &&  len > 0  &&  (s->tx_info.nss = malloc(len + 3)))
+        span_free(s->tx_info.nss);
+    if (nss  &&  len > 0  &&  (s->tx_info.nss = span_alloc(len + 3)))
     {
         memcpy(s->tx_info.nss + 3, nss, len);
         s->tx_info.nss_len = len;
@@ -379,7 +380,7 @@ SPAN_DECLARE(size_t) t30_get_rx_nss(t30_state_t *s, const uint8_t *nss[])
 SPAN_DECLARE(int) t30_set_tx_tsa(t30_state_t *s, int type, const char *address, int len)
 {
     if (s->tx_info.tsa)
-        free(s->tx_info.tsa);
+        span_free(s->tx_info.tsa);
     if (address == NULL  ||  len == 0)
     {
         s->tx_info.tsa = NULL;
@@ -389,7 +390,7 @@ SPAN_DECLARE(int) t30_set_tx_tsa(t30_state_t *s, int type, const char *address, 
     s->tx_info.tsa_type = type;
     if (len < 0)
         len = strlen(address);
-    if ((s->tx_info.tsa = malloc(len)))
+    if ((s->tx_info.tsa = span_alloc(len)))
     {
         memcpy(s->tx_info.tsa, address, len);
         s->tx_info.tsa_len = len;
@@ -421,7 +422,7 @@ SPAN_DECLARE(size_t) t30_get_rx_tsa(t30_state_t *s, int *type, const char *addre
 SPAN_DECLARE(int) t30_set_tx_ira(t30_state_t *s, int type, const char *address, int len)
 {
     if (s->tx_info.ira)
-        free(s->tx_info.ira);
+        span_free(s->tx_info.ira);
     if (address == NULL)
     {
         s->tx_info.ira = NULL;
@@ -455,7 +456,7 @@ SPAN_DECLARE(size_t) t30_get_rx_ira(t30_state_t *s, int *type, const char *addre
 SPAN_DECLARE(int) t30_set_tx_cia(t30_state_t *s, int type, const char *address, int len)
 {
     if (s->tx_info.cia)
-        free(s->tx_info.cia);
+        span_free(s->tx_info.cia);
     if (address == NULL)
     {
         s->tx_info.cia = NULL;
@@ -489,7 +490,7 @@ SPAN_DECLARE(size_t) t30_get_rx_cia(t30_state_t *s, int *type, const char *addre
 SPAN_DECLARE(int) t30_set_tx_isp(t30_state_t *s, int type, const char *address, int len)
 {
     if (s->tx_info.isp)
-        free(s->tx_info.isp);
+        span_free(s->tx_info.isp);
     if (address == NULL)
     {
         s->tx_info.isp = NULL;
@@ -523,7 +524,7 @@ SPAN_DECLARE(size_t) t30_get_rx_isp(t30_state_t *s, int *type, const char *addre
 SPAN_DECLARE(int) t30_set_tx_csa(t30_state_t *s, int type, const char *address, int len)
 {
     if (s->tx_info.csa)
-        free(s->tx_info.csa);
+        span_free(s->tx_info.csa);
     if (address == NULL)
     {
         s->tx_info.csa = NULL;

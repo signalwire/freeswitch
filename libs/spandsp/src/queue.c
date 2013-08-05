@@ -39,6 +39,7 @@
 
 #define SPANDSP_FULLY_DEFINE_QUEUE_STATE_T
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/queue.h"
 
 #include "spandsp/private/queue.h"
@@ -395,7 +396,7 @@ SPAN_DECLARE(queue_state_t *) queue_init(queue_state_t *s, int len, int flags)
 {
     if (s == NULL)
     {
-        if ((s = (queue_state_t *) malloc(sizeof(*s) + len + 1)) == NULL)
+        if ((s = (queue_state_t *) span_alloc(sizeof(*s) + len + 1)) == NULL)
             return NULL;
     }
     s->iptr =
@@ -414,7 +415,7 @@ SPAN_DECLARE(int) queue_release(queue_state_t *s)
 
 SPAN_DECLARE(int) queue_free(queue_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

@@ -35,6 +35,7 @@
 #include <time.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/async.h"
 #include "spandsp/timezone.h"
@@ -399,7 +400,7 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
         if (min_len > s->row_buf_len)
         {
             /* We need to expand the 3 row buffer */
-            if ((buf = (uint8_t *) realloc(s->row_buf, min_len)) == NULL)
+            if ((buf = (uint8_t *) span_realloc(s->row_buf, min_len)) == NULL)
                 return T4_DECODE_NOMEM;
             s->row_buf = buf;
             s->row_buf_len = min_len;
@@ -409,7 +410,7 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
         s->s.nopadding = s->options & T85_VLENGTH;
         if (s->comment)
         {
-            free(s->comment);
+            span_free(s->comment);
             s->comment = NULL;
         }
         s->comment_len = 0;
@@ -455,7 +456,7 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                     s->interrupt = s->comment_handler(s->comment_user_data, s->comment, s->comment_len);
                 if (s->comment)
                 {
-                    free(s->comment);
+                    span_free(s->comment);
                     s->comment = NULL;
                 }
                 s->comment_len = 0;
@@ -506,12 +507,12 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                 s->comment_len = pack_32(&s->buffer[2]);
                 /* Only try to buffer and process the comment's contents if we have
                    a defined callback routine to do something with it. */
-                /* If this malloc fails we carry on working just fine, and don't try to
+                /* If this allocate fails we carry on working just fine, and don't try to
                    process the contents of the comment. That is fairly benign, as
                    the comments are not generally of critical importance, so let's
                    not worry. */
                 if (s->comment_handler  &&  s->comment_len > 0  &&  s->comment_len <= s->max_comment_len)
-                    s->comment = malloc(s->comment_len);
+                    s->comment = span_alloc(s->comment_len);
                 s->comment_progress = 0;
                 continue;
             case T82_ATMOVE:
@@ -738,7 +739,7 @@ SPAN_DECLARE(int) t85_decode_new_plane(t85_decode_state_t *s)
     s->end_of_data = 0;
     if (s->comment)
     {
-        free(s->comment);
+        span_free(s->comment);
         s->comment = NULL;
     }
     s->comment_len = 0;
@@ -786,7 +787,7 @@ SPAN_DECLARE(int) t85_decode_restart(t85_decode_state_t *s)
     s->end_of_data = 0;
     if (s->comment)
     {
-        free(s->comment);
+        span_free(s->comment);
         s->comment = NULL;
     }
     s->comment_len = 0;
@@ -811,7 +812,7 @@ SPAN_DECLARE(t85_decode_state_t *) t85_decode_init(t85_decode_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (t85_decode_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (t85_decode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -837,12 +838,12 @@ SPAN_DECLARE(int) t85_decode_release(t85_decode_state_t *s)
 {
     if (s->row_buf)
     {
-        free(s->row_buf);
+        span_free(s->row_buf);
         s->row_buf = NULL;
     }
     if (s->comment)
     {
-        free(s->comment);
+        span_free(s->comment);
         s->comment = NULL;
     }
     return 0;
@@ -854,7 +855,7 @@ SPAN_DECLARE(int) t85_decode_free(t85_decode_state_t *s)
     int ret;
 
     ret = t85_decode_release(s);
-    free(s);
+    span_free(s);
     return ret;
 }
 /*- End of function --------------------------------------------------------*/

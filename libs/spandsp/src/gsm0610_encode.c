@@ -45,6 +45,7 @@
 #include <memory.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/bitstream.h"
 #include "spandsp/saturated.h"
@@ -115,7 +116,7 @@ SPAN_DECLARE(gsm0610_state_t *) gsm0610_init(gsm0610_state_t *s, int packing)
 {
     if (s == NULL)
     {
-        if ((s = (gsm0610_state_t *) malloc(sizeof (*s))) == NULL)
+        if ((s = (gsm0610_state_t *) span_alloc(sizeof (*s))) == NULL)
             return NULL;
         /*endif*/
     }
@@ -136,7 +137,7 @@ SPAN_DECLARE(int) gsm0610_release(gsm0610_state_t *s)
 SPAN_DECLARE(int) gsm0610_free(gsm0610_state_t *s)
 {
     if (s)
-        free(s);
+        span_free(s);
     /*endif*/
     return 0;
 }

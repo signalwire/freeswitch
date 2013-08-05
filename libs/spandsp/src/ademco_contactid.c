@@ -46,6 +46,7 @@
 #include <assert.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/logging.h"
 #include "spandsp/queue.h"
@@ -749,7 +750,7 @@ SPAN_DECLARE(ademco_contactid_receiver_state_t *) ademco_contactid_receiver_init
 {
     if (s == NULL)
     {
-        if ((s = (ademco_contactid_receiver_state_t *) malloc(sizeof (*s))) == NULL)
+        if ((s = (ademco_contactid_receiver_state_t *) span_alloc(sizeof (*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -776,7 +777,7 @@ SPAN_DECLARE(int) ademco_contactid_receiver_release(ademco_contactid_receiver_st
 
 SPAN_DECLARE(int) ademco_contactid_receiver_free(ademco_contactid_receiver_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1084,7 +1085,7 @@ SPAN_DECLARE(ademco_contactid_sender_state_t *) ademco_contactid_sender_init(ade
 {
     if (s == NULL)
     {
-        if ((s = (ademco_contactid_sender_state_t *) malloc(sizeof (*s))) == NULL)
+        if ((s = (ademco_contactid_sender_state_t *) span_alloc(sizeof (*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -1121,7 +1122,7 @@ SPAN_DECLARE(int) ademco_contactid_sender_release(ademco_contactid_sender_state_
 
 SPAN_DECLARE(int) ademco_contactid_sender_free(ademco_contactid_sender_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

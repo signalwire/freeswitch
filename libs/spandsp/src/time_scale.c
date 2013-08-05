@@ -45,6 +45,7 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/time_scale.h"
 #include "spandsp/saturated.h"
@@ -132,7 +133,7 @@ SPAN_DECLARE(time_scale_state_t *) time_scale_init(time_scale_state_t *s, int sa
     alloced = FALSE;
     if (s == NULL)
     {
-        if ((s = (time_scale_state_t *) malloc(sizeof (*s))) == NULL)
+        if ((s = (time_scale_state_t *) span_alloc(sizeof (*s))) == NULL)
             return NULL;
         /*endif*/
         alloced = TRUE;
@@ -145,7 +146,7 @@ SPAN_DECLARE(time_scale_state_t *) time_scale_init(time_scale_state_t *s, int sa
     if (time_scale_rate(s, playout_rate))
     {
         if (alloced)
-            free(s);
+            span_free(s);
         return NULL;
     }
     /*endif*/
@@ -164,7 +165,7 @@ SPAN_DECLARE(int) time_scale_release(time_scale_state_t *s)
 
 SPAN_DECLARE(int) time_scale_free(time_scale_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

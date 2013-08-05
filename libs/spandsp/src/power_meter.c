@@ -45,13 +45,14 @@
 #include <assert.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/power_meter.h"
 
 SPAN_DECLARE(power_meter_t *) power_meter_init(power_meter_t *s, int shift)
 {
     if (s == NULL)
     {
-        if ((s = (power_meter_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (power_meter_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     s->shift = shift;
@@ -69,7 +70,7 @@ SPAN_DECLARE(int) power_meter_release(power_meter_t *s)
 SPAN_DECLARE(int) power_meter_free(power_meter_t *s)
 {
     if (s)
-        free(s);
+        span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -181,7 +182,7 @@ SPAN_DECLARE(power_surge_detector_state_t *) power_surge_detector_init(power_sur
 
     if (s == NULL)
     {
-        if ((s = (power_surge_detector_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (power_surge_detector_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -205,7 +206,7 @@ SPAN_DECLARE(int) power_surge_detector_release(power_surge_detector_state_t *s)
 SPAN_DECLARE(int) power_surge_detector_free(power_surge_detector_state_t *s)
 {
     if (s)
-        free(s);
+        span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

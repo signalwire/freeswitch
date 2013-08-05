@@ -48,11 +48,6 @@
 #include "spandsp/telephony.h"
 #include "spandsp/alloc.h"
 
-#if defined(HAVE_POSIX_MEMALIGN)
-static void *fake_posix_memalign(size_t alignment, size_t size);
-#endif
-static void *fake_aligned_alloc(size_t alignment, size_t size);
-
 span_alloc_t __span_alloc = malloc;
 #if defined(HAVE_ALIGNED_ALLOC)
 span_aligned_alloc_t __span_aligned_alloc = aligned_alloc;
@@ -60,13 +55,18 @@ span_aligned_alloc_t __span_aligned_alloc = aligned_alloc;
 span_aligned_alloc_t __span_aligned_alloc = memalign;
 #elif defined(HAVE_POSIX_MEMALIGN)
 span_aligned_alloc_t __span_aligned_alloc = fake_posix_memalign;
+static void *fake_posix_memalign(size_t alignment, size_t size);
 #else
 span_aligned_alloc_t __span_aligned_alloc = fake_aligned_alloc;
 #endif
 span_realloc_t __span_realloc = realloc;
 span_free_t __span_free = free;
 
-#if defined(HAVE_POSIX_MEMALIGN)
+static void *fake_aligned_alloc(size_t alignment, size_t size);
+
+#if defined(HAVE_ALIGNED_ALLOC)
+#elif defined(HAVE_MEMALIGN)
+#elif defined(HAVE_POSIX_MEMALIGN)
 static void *fake_posix_memalign(size_t alignment, size_t size)
 {
     void *ptr;

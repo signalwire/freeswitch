@@ -57,6 +57,7 @@
 #include <stdio.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/logging.h"
 #include "spandsp/complex.h"
@@ -258,7 +259,7 @@ SPAN_DECLARE(modem_connect_tones_tx_state_t *) modem_connect_tones_tx_init(modem
     alloced = FALSE;
     if (s == NULL)
     {
-        if ((s = (modem_connect_tones_tx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (modem_connect_tones_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
         alloced = TRUE;
     }
@@ -341,7 +342,7 @@ SPAN_DECLARE(modem_connect_tones_tx_state_t *) modem_connect_tones_tx_init(modem
         break;
     default:
         if (alloced)
-            free(s);
+            span_free(s);
         return NULL;
     }
     return s;
@@ -356,7 +357,7 @@ SPAN_DECLARE(int) modem_connect_tones_tx_release(modem_connect_tones_tx_state_t 
 
 SPAN_DECLARE(int) modem_connect_tones_tx_free(modem_connect_tones_tx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -716,7 +717,7 @@ SPAN_DECLARE(modem_connect_tones_rx_state_t *) modem_connect_tones_rx_init(modem
 {
     if (s == NULL)
     {
-        if ((s = (modem_connect_tones_rx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (modem_connect_tones_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
 
@@ -765,7 +766,7 @@ SPAN_DECLARE(int) modem_connect_tones_rx_release(modem_connect_tones_rx_state_t 
 
 SPAN_DECLARE(int) modem_connect_tones_rx_free(modem_connect_tones_rx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

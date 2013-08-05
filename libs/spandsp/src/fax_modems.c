@@ -48,6 +48,7 @@
 #endif
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/dc_restore.h"
@@ -503,7 +504,7 @@ SPAN_DECLARE(fax_modems_state_t *) fax_modems_init(fax_modems_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (fax_modems_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (fax_modems_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     /*endif*/
@@ -562,7 +563,7 @@ SPAN_DECLARE(int) fax_modems_release(fax_modems_state_t *s)
 SPAN_DECLARE(int) fax_modems_free(fax_modems_state_t *s)
 {
     if (s)
-        free(s);
+        span_free(s);
     /*endif*/
     return 0;
 }

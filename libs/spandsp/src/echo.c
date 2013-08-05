@@ -93,6 +93,7 @@
 #include <stdio.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/logging.h"
 #include "spandsp/saturated.h"
@@ -244,26 +245,26 @@ SPAN_DECLARE(echo_can_state_t *) echo_can_init(int len, int adaption_mode)
     int i;
     int j;
 
-    if ((ec = (echo_can_state_t *) malloc(sizeof(*ec))) == NULL)
+    if ((ec = (echo_can_state_t *) span_alloc(sizeof(*ec))) == NULL)
         return NULL;
     memset(ec, 0, sizeof(*ec));
     ec->taps = len;
     ec->curr_pos = ec->taps - 1;
     ec->tap_mask = ec->taps - 1;
-    if ((ec->fir_taps32 = (int32_t *) malloc(ec->taps*sizeof(int32_t))) == NULL)
+    if ((ec->fir_taps32 = (int32_t *) span_alloc(ec->taps*sizeof(int32_t))) == NULL)
     {
-        free(ec);
+        span_free(ec);
         return NULL;
     }
     memset(ec->fir_taps32, 0, ec->taps*sizeof(int32_t));
     for (i = 0;  i < 4;  i++)
     {
-        if ((ec->fir_taps16[i] = (int16_t *) malloc(ec->taps*sizeof(int16_t))) == NULL)
+        if ((ec->fir_taps16[i] = (int16_t *) span_alloc(ec->taps*sizeof(int16_t))) == NULL)
         {
             for (j = 0;  j < i;  j++)
-                free(ec->fir_taps16[j]);
-            free(ec->fir_taps32);
-            free(ec);
+                span_free(ec->fir_taps16[j]);
+            span_free(ec->fir_taps32);
+            span_free(ec);
             return NULL;
         }
         memset(ec->fir_taps16[i], 0, ec->taps*sizeof(int16_t));
@@ -294,10 +295,10 @@ SPAN_DECLARE(int) echo_can_free(echo_can_state_t *ec)
     int i;
 
     fir16_free(&ec->fir_state);
-    free(ec->fir_taps32);
+    span_free(ec->fir_taps32);
     for (i = 0;  i < 4;  i++)
-        free(ec->fir_taps16[i]);
-    free(ec);
+        span_free(ec->fir_taps16[i]);
+    span_free(ec);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

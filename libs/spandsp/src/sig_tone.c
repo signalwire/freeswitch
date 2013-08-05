@@ -44,6 +44,7 @@
 #include <limits.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/saturated.h"
 #include "spandsp/vector_int.h"
@@ -325,7 +326,7 @@ SPAN_DECLARE(sig_tone_tx_state_t *) sig_tone_tx_init(sig_tone_tx_state_t *s, int
 
     if (s == NULL)
     {
-        if ((s = (sig_tone_tx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (sig_tone_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -357,7 +358,7 @@ SPAN_DECLARE(int) sig_tone_tx_release(sig_tone_tx_state_t *s)
 SPAN_DECLARE(int) sig_tone_tx_free(sig_tone_tx_state_t *s)
 {
     if (s)
-        free(s);
+        span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -641,7 +642,7 @@ SPAN_DECLARE(sig_tone_rx_state_t *) sig_tone_rx_init(sig_tone_rx_state_t *s, int
 
     if (s == NULL)
     {
-        if ((s = (sig_tone_rx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (sig_tone_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -685,7 +686,7 @@ SPAN_DECLARE(int) sig_tone_rx_release(sig_tone_rx_state_t *s)
 SPAN_DECLARE(int) sig_tone_rx_free(sig_tone_rx_state_t *s)
 {
     if (s)
-        free(s);
+        span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

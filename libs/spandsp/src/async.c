@@ -35,6 +35,7 @@
 #include <assert.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/async.h"
 
@@ -174,7 +175,7 @@ SPAN_DECLARE(async_rx_state_t *) async_rx_init(async_rx_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (async_rx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (async_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     s->data_bits = data_bits;
@@ -203,7 +204,7 @@ SPAN_DECLARE(int) async_rx_release(async_rx_state_t *s)
 
 SPAN_DECLARE(int) async_rx_free(async_rx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -274,7 +275,7 @@ SPAN_DECLARE(async_tx_state_t *) async_tx_init(async_tx_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (async_tx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (async_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     /* We have a use_v14 parameter for completeness, but right now V.14 only
@@ -304,7 +305,7 @@ SPAN_DECLARE(int) async_tx_release(async_tx_state_t *s)
 
 SPAN_DECLARE(int) async_tx_free(async_tx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

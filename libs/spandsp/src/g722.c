@@ -41,6 +41,7 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/saturated.h"
 #include "spandsp/vector_int.h"
@@ -251,7 +252,7 @@ SPAN_DECLARE(g722_decode_state_t *) g722_decode_init(g722_decode_state_t *s, int
 {
     if (s == NULL)
     {
-        if ((s = (g722_decode_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (g722_decode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -281,7 +282,7 @@ SPAN_DECLARE(int) g722_decode_release(g722_decode_state_t *s)
 
 SPAN_DECLARE(int) g722_decode_free(g722_decode_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -432,7 +433,7 @@ SPAN_DECLARE(g722_encode_state_t *) g722_encode_init(g722_encode_state_t *s, int
 {
     if (s == NULL)
     {
-        if ((s = (g722_encode_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (g722_encode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -462,7 +463,7 @@ SPAN_DECLARE(int) g722_encode_release(g722_encode_state_t *s)
 
 SPAN_DECLARE(int) g722_encode_free(g722_encode_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

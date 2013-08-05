@@ -32,6 +32,7 @@
 #include <inttypes.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/complex.h"
 #include "spandsp/complex_filters.h"
 
@@ -40,7 +41,7 @@ SPAN_DECLARE(filter_t *) filter_create(fspec_t *fs)
     int i;
     filter_t *fi;
 
-    if ((fi = (filter_t *) malloc(sizeof(*fi) + sizeof(float)*(fs->np + 1))))
+    if ((fi = (filter_t *) span_alloc(sizeof(*fi) + sizeof(float)*(fs->np + 1))))
     {
         fi->fs = fs;
         fi->sum = 0.0;
@@ -56,7 +57,7 @@ SPAN_DECLARE(filter_t *) filter_create(fspec_t *fs)
 SPAN_DECLARE(void) filter_delete(filter_t *fi)
 {
     if (fi)
-        free(fi);
+        span_free(fi);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -70,17 +71,17 @@ SPAN_DECLARE(cfilter_t *) cfilter_create(fspec_t *fs)
 {
     cfilter_t *cfi;
 
-    if ((cfi = (cfilter_t *) malloc(sizeof(*cfi))))
+    if ((cfi = (cfilter_t *) span_alloc(sizeof(*cfi))))
     {
         if ((cfi->ref = filter_create(fs)) == NULL)
         {
-            free(cfi);
+            span_free(cfi);
             return NULL;
         }
         if ((cfi->imf = filter_create(fs)) == NULL)
         {
-            free(cfi->ref);
-            free(cfi);
+            span_free(cfi->ref);
+            span_free(cfi);
             return NULL;
         }
     }

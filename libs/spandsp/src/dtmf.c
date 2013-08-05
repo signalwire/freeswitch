@@ -43,6 +43,7 @@
 #include <limits.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/queue.h"
@@ -413,7 +414,7 @@ SPAN_DECLARE(dtmf_rx_state_t *) dtmf_rx_init(dtmf_rx_state_t *s,
 
     if (s == NULL)
     {
-        if ((s = (dtmf_rx_state_t *) malloc(sizeof (*s))) == NULL)
+        if ((s = (dtmf_rx_state_t *) span_alloc(sizeof (*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -466,7 +467,7 @@ SPAN_DECLARE(int) dtmf_rx_release(dtmf_rx_state_t *s)
 
 SPAN_DECLARE(int) dtmf_rx_free(dtmf_rx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -578,7 +579,7 @@ SPAN_DECLARE(dtmf_tx_state_t *) dtmf_tx_init(dtmf_tx_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (dtmf_tx_state_t *) malloc(sizeof (*s))) == NULL)
+        if ((s = (dtmf_tx_state_t *) span_alloc(sizeof (*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -603,7 +604,7 @@ SPAN_DECLARE(int) dtmf_tx_release(dtmf_tx_state_t *s)
 
 SPAN_DECLARE(int) dtmf_tx_free(dtmf_tx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

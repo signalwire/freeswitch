@@ -35,6 +35,7 @@
 #include <assert.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/bitstream.h"
 
 #include "spandsp/private/bitstream.h"
@@ -132,7 +133,7 @@ SPAN_DECLARE(bitstream_state_t *) bitstream_init(bitstream_state_t *s, int lsb_f
 {
     if (s == NULL)
     {
-        if ((s = (bitstream_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (bitstream_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     s->bitstream = 0;
@@ -151,7 +152,7 @@ SPAN_DECLARE(int) bitstream_release(bitstream_state_t *s)
 SPAN_DECLARE(int) bitstream_free(bitstream_state_t *s)
 {
     if (s)
-        free(s);
+        span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

@@ -55,6 +55,7 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/saturated.h"
 #include "spandsp/awgn.h"
@@ -100,7 +101,7 @@ SPAN_DECLARE(awgn_state_t *) awgn_init_dbov(awgn_state_t *s, int idum, float lev
 
     if (s == NULL)
     {
-        if ((s = (awgn_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (awgn_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     if (idum < 0)
@@ -140,7 +141,7 @@ SPAN_DECLARE(int) awgn_release(awgn_state_t *s)
 
 SPAN_DECLARE(int) awgn_free(awgn_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

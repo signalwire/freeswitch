@@ -44,6 +44,7 @@
 #include <assert.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/logging.h"
 #include "spandsp/queue.h"
@@ -426,7 +427,7 @@ SPAN_DECLARE(adsi_rx_state_t *) adsi_rx_init(adsi_rx_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (adsi_rx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (adsi_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -465,7 +466,7 @@ SPAN_DECLARE(int) adsi_rx_release(adsi_rx_state_t *s)
 
 SPAN_DECLARE(int) adsi_rx_free(adsi_rx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -658,7 +659,7 @@ SPAN_DECLARE(adsi_tx_state_t *) adsi_tx_init(adsi_tx_state_t *s, int standard)
 {
     if (s == NULL)
     {
-        if ((s = (adsi_tx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (adsi_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -688,7 +689,7 @@ SPAN_DECLARE(int) adsi_tx_release(adsi_tx_state_t *s)
 
 SPAN_DECLARE(int) adsi_tx_free(adsi_tx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

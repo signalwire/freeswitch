@@ -42,6 +42,7 @@
 #include <time.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 
 #include "spandsp/private/logging.h"
@@ -229,7 +230,7 @@ SPAN_DECLARE(logging_state_t *) span_log_init(logging_state_t *s, int level, con
 {
     if (s == NULL)
     {
-        if ((s = (logging_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (logging_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     s->span_message = __span_message;
@@ -252,7 +253,7 @@ SPAN_DECLARE(int) span_log_release(logging_state_t *s)
 SPAN_DECLARE(int) span_log_free(logging_state_t *s)
 {
     if (s)
-        free(s);
+        span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

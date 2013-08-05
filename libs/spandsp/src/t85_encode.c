@@ -35,6 +35,7 @@
 #include <time.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/async.h"
 #include "spandsp/timezone.h"
@@ -78,7 +79,7 @@ static void put_stuff(t85_encode_state_t *s, const uint8_t buf[], int len)
         /* The number of uncompressed bytes per row seems like a reasonable measure
            of what to expect as a poor case for a compressed row. */
         bytes_per_row = (s->xd + 7) >> 3;
-        if ((new_buf = realloc(s->bitstream, s->bitstream_len + len + bytes_per_row)) == NULL)
+        if ((new_buf = span_realloc(s->bitstream, s->bitstream_len + len + bytes_per_row)) == NULL)
             return;
         s->bitstream = new_buf;
         s->bitstream_len += (len + bytes_per_row);
@@ -518,7 +519,7 @@ SPAN_DECLARE(int) t85_encode_set_image_width(t85_encode_state_t *s, uint32_t ima
         return -1;
     s->xd = image_width;
     bytes_per_row = (s->xd + 7) >> 3;
-    if ((t = (uint8_t *) realloc(s->row_buf, 3*bytes_per_row)) == NULL)
+    if ((t = (uint8_t *) span_realloc(s->row_buf, 3*bytes_per_row)) == NULL)
         return -1;
     s->row_buf = t;
     memset(s->row_buf, 0, 3*bytes_per_row);
@@ -663,7 +664,7 @@ SPAN_DECLARE(int) t85_encode_restart(t85_encode_state_t *s, uint32_t image_width
     s->bitstream_optr = 0;
     if (s->bitstream)
     {
-        free(s->bitstream);
+        span_free(s->bitstream);
         s->bitstream = NULL;
     }
     s->bitstream_len = 0;
@@ -689,7 +690,7 @@ SPAN_DECLARE(t85_encode_state_t *) t85_encode_init(t85_encode_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (t85_encode_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (t85_encode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -722,12 +723,12 @@ SPAN_DECLARE(int) t85_encode_release(t85_encode_state_t *s)
 {
     if (s->row_buf)
     {
-        free(s->row_buf);
+        span_free(s->row_buf);
         s->row_buf = NULL;
     }
     if (s->bitstream)
     {
-        free(s->bitstream);
+        span_free(s->bitstream);
         s->bitstream = NULL;
         s->bitstream_len = 0;
     }
@@ -740,7 +741,7 @@ SPAN_DECLARE(int) t85_encode_free(t85_encode_state_t *s)
     int ret;
 
     ret = t85_encode_release(s);
-    free(s);
+    span_free(s);
     return ret;
 }
 /*- End of function --------------------------------------------------------*/

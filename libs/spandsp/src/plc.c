@@ -43,6 +43,7 @@
 #include <limits.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/saturated.h"
 #include "spandsp/plc.h"
@@ -234,7 +235,7 @@ SPAN_DECLARE(plc_state_t *) plc_init(plc_state_t *s)
 {
     if (s == NULL)
     {
-        if ((s = (plc_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (plc_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -251,7 +252,7 @@ SPAN_DECLARE(int) plc_release(plc_state_t *s)
 SPAN_DECLARE(int) plc_free(plc_state_t *s)
 {
     if (s)
-        free(s);
+        span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

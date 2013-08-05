@@ -46,6 +46,7 @@
 #include <assert.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/queue.h"
 #include "spandsp/power_meter.h"
@@ -379,7 +380,7 @@ SPAN_DECLARE(void) at_reset_call_info(at_state_t *s)
     for (call_id = s->call_id;  call_id;  call_id = next)
     {
         next = call_id->next;
-        free(call_id);
+        span_free(call_id);
     }
     s->call_id = NULL;
     s->rings_indicated = 0;
@@ -392,8 +393,8 @@ SPAN_DECLARE(void) at_set_call_info(at_state_t *s, char const *id, char const *v
     at_call_id_t *new_call_id;
     at_call_id_t *call_id;
 
-    /* TODO: We should really not merely ignore a failure to malloc */
-    if ((new_call_id = (at_call_id_t *) malloc(sizeof(*new_call_id))) == NULL)
+    /* TODO: We should really not merely ignore a failure to allocate */
+    if ((new_call_id = (at_call_id_t *) span_alloc(sizeof(*new_call_id))) == NULL)
         return;
     call_id = s->call_id;
     /* If these strdups fail its pretty harmless. We just appear to not
@@ -752,7 +753,7 @@ static int parse_string_out(at_state_t *s, const char **t, char **target, const 
         default:
             /* Set value */
             if (*target)
-                free(*target);
+                span_free(*target);
             /* If this strdup fails, it should be harmless */
             *target = strdup(*t);
             break;
@@ -5590,7 +5591,7 @@ SPAN_DECLARE(at_state_t *) at_init(at_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (at_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (at_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, '\0', sizeof(*s));
@@ -5615,7 +5616,7 @@ SPAN_DECLARE(int) at_release(at_state_t *s)
 {
     at_reset_call_info(s);
     if (s->local_id)
-        free(s->local_id);
+        span_free(s->local_id);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -5625,7 +5626,7 @@ SPAN_DECLARE(int) at_free(at_state_t *s)
     int ret;
 
     ret = at_release(s);
-    free(s);
+    span_free(s);
     return ret;
 }
 /*- End of function --------------------------------------------------------*/

@@ -43,6 +43,7 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/queue.h"
@@ -325,7 +326,7 @@ SPAN_DECLARE(bell_mf_tx_state_t *) bell_mf_tx_init(bell_mf_tx_state_t *s)
 {
     if (s == NULL)
     {
-        if ((s = (bell_mf_tx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (bell_mf_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -348,7 +349,7 @@ SPAN_DECLARE(int) bell_mf_tx_release(bell_mf_tx_state_t *s)
 
 SPAN_DECLARE(int) bell_mf_tx_free(bell_mf_tx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -397,7 +398,7 @@ SPAN_DECLARE(r2_mf_tx_state_t *) r2_mf_tx_init(r2_mf_tx_state_t *s, int fwd)
 
     if (s == NULL)
     {
-        if ((s = (r2_mf_tx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (r2_mf_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -451,7 +452,7 @@ SPAN_DECLARE(int) r2_mf_tx_release(r2_mf_tx_state_t *s)
 
 SPAN_DECLARE(int) r2_mf_tx_free(r2_mf_tx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -633,7 +634,7 @@ SPAN_DECLARE(bell_mf_rx_state_t *) bell_mf_rx_init(bell_mf_rx_state_t *s,
 
     if (s == NULL)
     {
-        if ((s = (bell_mf_rx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (bell_mf_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -671,7 +672,7 @@ SPAN_DECLARE(int) bell_mf_rx_release(bell_mf_rx_state_t *s)
 
 SPAN_DECLARE(int) bell_mf_rx_free(bell_mf_rx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -813,7 +814,7 @@ SPAN_DECLARE(r2_mf_rx_state_t *) r2_mf_rx_init(r2_mf_rx_state_t *s,
 
     if (s == NULL)
     {
-        if ((s = (r2_mf_rx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (r2_mf_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -855,7 +856,7 @@ SPAN_DECLARE(int) r2_mf_rx_release(r2_mf_rx_state_t *s)
 
 SPAN_DECLARE(int) r2_mf_rx_free(r2_mf_rx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

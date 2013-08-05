@@ -44,6 +44,7 @@
 #include <memory.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/lpc10.h"
 #include "spandsp/private/lpc10.h"
@@ -1016,7 +1017,7 @@ SPAN_DECLARE(lpc10_decode_state_t *) lpc10_decode_init(lpc10_decode_state_t *s, 
 
     if (s == NULL)
     {
-        if ((s = (lpc10_decode_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (lpc10_decode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
 
@@ -1084,7 +1085,7 @@ SPAN_DECLARE(int) lpc10_decode_release(lpc10_decode_state_t *s)
 
 SPAN_DECLARE(int) lpc10_decode_free(lpc10_decode_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

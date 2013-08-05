@@ -47,6 +47,7 @@
 #include <assert.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/timezone.h"
 
 #include "spandsp/private/timezone.h"
@@ -796,7 +797,7 @@ SPAN_DECLARE(tz_t *) tz_init(tz_t *tz, const char *tzstring)
 {
     if (tz == NULL)
     {
-        if ((tz = (tz_t *) malloc(sizeof(*tz))) == NULL)
+        if ((tz = (tz_t *) span_alloc(sizeof(*tz))) == NULL)
             return NULL;
     }
     memset(tz, 0, sizeof(*tz));
@@ -816,7 +817,7 @@ SPAN_DECLARE(int) tz_release(tz_t *tz)
 SPAN_DECLARE(int) tz_free(tz_t *tz)
 {
     if (tz)
-        free(tz);
+        span_free(tz);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

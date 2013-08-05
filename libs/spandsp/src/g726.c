@@ -67,6 +67,7 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/bitstream.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/g711.h"
@@ -1002,7 +1003,7 @@ SPAN_DECLARE(g726_state_t *) g726_init(g726_state_t *s, int bit_rate, int ext_co
         return NULL;
     if (s == NULL)
     {
-        if ((s = (g726_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (g726_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     s->yl = 34816;
@@ -1062,7 +1063,7 @@ SPAN_DECLARE(int) g726_release(g726_state_t *s)
 
 SPAN_DECLARE(int) g726_free(g726_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

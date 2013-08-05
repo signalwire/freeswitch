@@ -42,6 +42,7 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/queue.h"
 #include "spandsp/async.h"
@@ -1078,7 +1079,7 @@ SPAN_DECLARE(v8_state_t *) v8_init(v8_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (v8_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (v8_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -1103,7 +1104,7 @@ SPAN_DECLARE(int) v8_free(v8_state_t *s)
     int ret;
 
     ret = queue_free(s->tx_queue);
-    free(s);
+    span_free(s);
     return ret;
 }
 /*- End of function --------------------------------------------------------*/

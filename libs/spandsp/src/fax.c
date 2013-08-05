@@ -50,6 +50,7 @@
 #include <tiffio.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/queue.h"
 #include "spandsp/dc_restore.h"
@@ -470,7 +471,7 @@ SPAN_DECLARE(fax_state_t *) fax_init(fax_state_t *s, int calling_party)
 
     if (s == NULL)
     {
-        if ((s = (fax_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (fax_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -525,7 +526,7 @@ SPAN_DECLARE(int) fax_release(fax_state_t *s)
 SPAN_DECLARE(int) fax_free(fax_state_t *s)
 {
     t30_release(&s->t30);
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

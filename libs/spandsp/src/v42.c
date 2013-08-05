@@ -41,6 +41,7 @@
 #include <assert.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/async.h"
@@ -1509,7 +1510,7 @@ SPAN_DECLARE(v42_state_t *) v42_init(v42_state_t *ss,
 
     if (ss == NULL)
     {
-        if ((ss = (v42_state_t *) malloc(sizeof(*ss))) == NULL)
+        if ((ss = (v42_state_t *) span_alloc(sizeof(*ss))) == NULL)
             return NULL;
     }
     memset(ss, 0, sizeof(*ss));
@@ -1564,7 +1565,7 @@ SPAN_DECLARE(int) v42_release(v42_state_t *s)
 SPAN_DECLARE(int) v42_free(v42_state_t *s)
 {
     v42_release(s);
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

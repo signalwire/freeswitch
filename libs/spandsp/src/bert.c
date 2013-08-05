@@ -35,6 +35,7 @@
 #include <time.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/async.h"
 #include "spandsp/bert.h"
@@ -350,7 +351,7 @@ SPAN_DECLARE(bert_state_t *) bert_init(bert_state_t *s, int limit, int pattern, 
 
     if (s == NULL)
     {
-        if ((s = (bert_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (bert_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -503,7 +504,7 @@ SPAN_DECLARE(int) bert_release(bert_state_t *s)
 
 SPAN_DECLARE(int) bert_free(bert_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
