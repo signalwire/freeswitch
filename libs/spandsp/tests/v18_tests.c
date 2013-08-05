@@ -7473,7 +7473,7 @@ static int test_x_01(void)
 
     result[0][0] =
     result[1][0] = '\0';
-    v18_put(v18[0], "z", 1);
+    v18_put(v18[0], "zabcdefghijklmnopq", -1);
     for (i = 0;  i < 10000;  i++)
     {
         for (j = 0;  j < 2;  j++)
@@ -7518,7 +7518,7 @@ static int test_x_01(void)
     v18_free(v18[0]);
     v18_free(v18[1]);
     ref = "cdefghij";
-    printf("Result:\n%s\n", result[0]);
+    printf("Result:\n%s\n", result[1]);
     printf("Reference result:\n%s\n", ref);
     if (unexpected_echo  ||  strcmp(result[1], ref) != 0)
         return -1;
@@ -7864,9 +7864,18 @@ static int test_x_04(void)
 static void x_05_put_text_msg(void *user_data, const uint8_t *msg, int len)
 {
     if (user_data == NULL)
+    {
+        /* Gather the received characters, which should be like the transmitted characters,
+           but with the first three characters missing. */
         strcat(result[0], (const char *) msg);
+    }
     else
+    {
+        /* Receiving a character from the far end should block out its receiver
+           for a while. If we send a stream of DTMF back, the first few characters
+           (actually 3 for this particular text string) should be lost. */
         v18_put(v18[1], "behknqtwz", 9);
+    }
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -7920,7 +7929,8 @@ static int test_x_05(void)
 
     result[0][0] =
     result[1][0] = '\0';
-    v18_put(v18[0], "e", 1);
+    /* Sending a character should block out the receiver for a while */
+    v18_put(v18[0], "z", 1);
 
     for (i = 0;  i < 1000;  i++)
     {

@@ -84,6 +84,7 @@ lib_LTLIBRARIES = libspandsp.la
 
 libspandsp_la_SOURCES = ademco_contactid.c \
                         adsi.c \
+                        alloc.c \
                         async.c \
                         at_interpreter.c \
                         awgn.c \
@@ -178,6 +179,7 @@ libspandsp_la_LDFLAGS = -version-info @SPANDSP_LT_CURRENT@:@SPANDSP_LT_REVISION@
 
 nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/adsi.h \
+                         spandsp/alloc.h \
                          spandsp/async.h \
                          spandsp/arctan2.h \
                          spandsp/at_interpreter.h \
