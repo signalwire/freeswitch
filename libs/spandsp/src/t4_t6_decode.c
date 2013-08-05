@@ -79,6 +79,7 @@
 #include <tiffio.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/async.h"
@@ -138,17 +139,17 @@ static int free_buffers(t4_t6_decode_state_t *s)
 {
     if (s->cur_runs)
     {
-        free(s->cur_runs);
+        span_free(s->cur_runs);
         s->cur_runs = NULL;
     }
     if (s->ref_runs)
     {
-        free(s->ref_runs);
+        span_free(s->ref_runs);
         s->ref_runs = NULL;
     }
     if (s->row_buf)
     {
-        free(s->row_buf);
+        span_free(s->row_buf);
         s->row_buf = NULL;
     }
     s->bytes_per_row = 0;
@@ -824,10 +825,10 @@ SPAN_DECLARE(int) t4_t6_decode_restart(t4_t6_decode_state_t *s, int image_width)
     if (s->bytes_per_row == 0  ||  image_width != s->image_width)
     {
         /* Allocate the space required for decoding the new row length. */
-        if ((bufptr = (uint32_t *) realloc(s->cur_runs, run_space)) == NULL)
+        if ((bufptr = (uint32_t *) span_realloc(s->cur_runs, run_space)) == NULL)
             return -1;
         s->cur_runs = bufptr;
-        if ((bufptr = (uint32_t *) realloc(s->ref_runs, run_space)) == NULL)
+        if ((bufptr = (uint32_t *) span_realloc(s->ref_runs, run_space)) == NULL)
             return -1;
         s->ref_runs = bufptr;
         s->image_width = image_width;
@@ -835,7 +836,7 @@ SPAN_DECLARE(int) t4_t6_decode_restart(t4_t6_decode_state_t *s, int image_width)
     bytes_per_row = (image_width + 7)/8;
     if (bytes_per_row != s->bytes_per_row)
     {
-        if ((bufptr8 = (uint8_t *) realloc(s->row_buf, bytes_per_row)) == NULL)
+        if ((bufptr8 = (uint8_t *) span_realloc(s->row_buf, bytes_per_row)) == NULL)
             return -1;
         s->row_buf = bufptr8;
         s->bytes_per_row = bytes_per_row;
@@ -892,7 +893,7 @@ SPAN_DECLARE(t4_t6_decode_state_t *) t4_t6_decode_init(t4_t6_decode_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (t4_t6_decode_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (t4_t6_decode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -919,7 +920,7 @@ SPAN_DECLARE(int) t4_t6_decode_free(t4_t6_decode_state_t *s)
     int ret;
 
     ret = t4_t6_decode_release(s);
-    free(s);
+    span_free(s);
     return ret;
 }
 /*- End of function --------------------------------------------------------*/

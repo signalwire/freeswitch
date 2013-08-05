@@ -57,9 +57,9 @@
 SPAN_DECLARE(void) modem_echo_can_free(modem_echo_can_state_t *ec)
 {
     fir16_free(&ec->fir_state);
-    free(ec->fir_taps32);
-    free(ec->fir_taps16);
-    free(ec);
+    span_free(ec->fir_taps32);
+    span_free(ec->fir_taps16);
+    span_free(ec);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -74,7 +74,7 @@ SPAN_DECLARE(modem_echo_can_state_t *) modem_echo_can_init(int len)
     ec->curr_pos = ec->taps - 1;
     if ((ec->fir_taps32 = (int32_t *) span_alloc(ec->taps*sizeof(int32_t))) == NULL)
     {
-        free(ec);
+        span_free(ec);
         return NULL;
     }
     memset(ec->fir_taps32, 0, ec->taps*sizeof(int32_t));

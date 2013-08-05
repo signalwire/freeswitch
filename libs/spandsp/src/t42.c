@@ -50,6 +50,7 @@
 #include <assert.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/logging.h"
 #include "spandsp/saturated.h"
@@ -742,7 +743,7 @@ static int t42_srgb_to_itulab_jpeg(t42_encode_state_t *s)
             span_log(&s->logging, SPAN_LOG_FLOW, "Unspecified libjpeg error.\n");
         if (s->scan_line_out)
         {
-            free(s->scan_line_out);
+            span_free(s->scan_line_out);
             s->scan_line_out = NULL;
         }
         if (s->out)
@@ -802,12 +803,12 @@ static int t42_srgb_to_itulab_jpeg(t42_encode_state_t *s)
 
     set_itu_fax(s);
 
-    if ((s->scan_line_in = (JSAMPROW) malloc(s->samples_per_pixel*s->image_width)) == NULL)
+    if ((s->scan_line_in = (JSAMPROW) span_alloc(s->samples_per_pixel*s->image_width)) == NULL)
         return -1;
 
     if (s->image_type == T4_IMAGE_TYPE_COLOUR_8BIT)
     {
-        if ((s->scan_line_out = (JSAMPROW) malloc(s->samples_per_pixel*s->image_width)) == NULL)
+        if ((s->scan_line_out = (JSAMPROW) span_alloc(s->samples_per_pixel*s->image_width)) == NULL)
             return -1;
 
         for (i = 0;  i < s->compressor.image_height;  i++)
@@ -828,7 +829,7 @@ static int t42_srgb_to_itulab_jpeg(t42_encode_state_t *s)
 
     if (s->scan_line_out)
     {
-        free(s->scan_line_out);
+        span_free(s->scan_line_out);
         s->scan_line_out = NULL;
     }
     jpeg_finish_compress(&s->compressor);
@@ -841,13 +842,13 @@ static int t42_srgb_to_itulab_jpeg(t42_encode_state_t *s)
 #else
     s->buf_size =
     s->compressed_image_size = ftell(s->out);
-    if ((s->compressed_buf = malloc(s->compressed_image_size)) == NULL)
+    if ((s->compressed_buf = span_alloc(s->compressed_image_size)) == NULL)
         return -1;
     if (fseek(s->out, 0, SEEK_SET) != 0)
     {
         fclose(s->out);
         s->out = NULL;
-        free(s->compressed_buf);
+        span_free(s->compressed_buf);
         s->compressed_buf = NULL;
         return -1;
     }
@@ -855,7 +856,7 @@ static int t42_srgb_to_itulab_jpeg(t42_encode_state_t *s)
     {
         fclose(s->out);
         s->out = NULL;
-        free(s->compressed_buf);
+        span_free(s->compressed_buf);
         s->compressed_buf = NULL;
         return -1;
     }
@@ -986,7 +987,7 @@ SPAN_DECLARE(t42_encode_state_t *) t42_encode_init(t42_encode_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (t42_encode_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (t42_encode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -1016,7 +1017,7 @@ SPAN_DECLARE(int) t42_encode_free(t42_encode_state_t *s)
     int ret;
 
     ret = t42_encode_release(s);
-    free(s);
+    span_free(s);
     return ret;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1087,7 +1088,7 @@ static int t42_itulab_jpeg_to_srgb(t42_decode_state_t *s)
             span_log(&s->logging, SPAN_LOG_FLOW, "Unspecified libjpeg error.\n");
         if (s->scan_line_out)
         {
-            free(s->scan_line_out);
+            span_free(s->scan_line_out);
             s->scan_line_out = NULL;
         }
         if (s->in)
@@ -1155,12 +1156,12 @@ static int t42_itulab_jpeg_to_srgb(t42_decode_state_t *s)
 
     jpeg_start_decompress(&s->decompressor);
 
-    if ((s->scan_line_in = malloc(s->samples_per_pixel*s->image_width)) == NULL)
+    if ((s->scan_line_in = span_alloc(s->samples_per_pixel*s->image_width)) == NULL)
         return -1;
 
     if (s->samples_per_pixel == 3)
     {
-        if ((s->scan_line_out = malloc(s->samples_per_pixel*s->image_width)) == NULL)
+        if ((s->scan_line_out = span_alloc(s->samples_per_pixel*s->image_width)) == NULL)
             return -1;
 
         while (s->decompressor.output_scanline < s->image_length)
@@ -1181,12 +1182,12 @@ static int t42_itulab_jpeg_to_srgb(t42_decode_state_t *s)
 
     if (s->scan_line_in)
     {
-        free(s->scan_line_in);
+        span_free(s->scan_line_in);
         s->scan_line_in = NULL;
     }
     if (s->scan_line_out)
     {
-        free(s->scan_line_out);
+        span_free(s->scan_line_out);
         s->scan_line_out = NULL;
     }
     jpeg_finish_decompress(&s->decompressor);
@@ -1243,7 +1244,7 @@ SPAN_DECLARE(int) t42_decode_put(t42_decode_state_t *s, const uint8_t data[], si
 
     if (s->compressed_image_size + len > s->buf_size)
     {
-        if ((buf = (uint8_t *) realloc(s->compressed_buf, s->compressed_image_size + len + 10000)) == NULL)
+        if ((buf = (uint8_t *) span_realloc(s->compressed_buf, s->compressed_image_size + len + 10000)) == NULL)
             return -1;
         s->buf_size = s->compressed_image_size + len + 10000;
         s->compressed_buf = buf;
@@ -1340,7 +1341,7 @@ SPAN_DECLARE(t42_decode_state_t *) t42_decode_init(t42_decode_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (t42_decode_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (t42_decode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -1363,12 +1364,12 @@ SPAN_DECLARE(int) t42_decode_release(t42_decode_state_t *s)
 {
     if (s->scan_line_in)
     {
-        free(s->scan_line_in);
+        span_free(s->scan_line_in);
         s->scan_line_in = NULL;
     }
     if (s->scan_line_out)
     {
-        free(s->scan_line_out);
+        span_free(s->scan_line_out);
         s->scan_line_out = NULL;
     }
     jpeg_destroy_decompress(&s->decompressor);
@@ -1379,7 +1380,7 @@ SPAN_DECLARE(int) t42_decode_release(t42_decode_state_t *s)
     }
     if (s->comment)
     {
-        free(s->comment);
+        span_free(s->comment);
         s->comment = NULL;
     }
     return 0;
@@ -1391,7 +1392,7 @@ SPAN_DECLARE(int) t42_decode_free(t42_decode_state_t *s)
     int ret;
 
     ret = t42_decode_release(s);
-    free(s);
+    span_free(s);
     return ret;
 }
 /*- End of function --------------------------------------------------------*/

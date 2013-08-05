@@ -42,6 +42,7 @@
 #include <assert.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/complex.h"
 #include "spandsp/dds.h"
 #include "spandsp/power_meter.h"
@@ -166,7 +167,7 @@ SPAN_DECLARE(fsk_tx_state_t *) fsk_tx_init(fsk_tx_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (fsk_tx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (fsk_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -186,7 +187,7 @@ SPAN_DECLARE(int) fsk_tx_release(fsk_tx_state_t *s)
 
 SPAN_DECLARE(int) fsk_tx_free(fsk_tx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -328,7 +329,7 @@ SPAN_DECLARE(fsk_rx_state_t *) fsk_rx_init(fsk_rx_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (fsk_rx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (fsk_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -348,7 +349,7 @@ SPAN_DECLARE(int) fsk_rx_release(fsk_rx_state_t *s)
 
 SPAN_DECLARE(int) fsk_rx_free(fsk_rx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

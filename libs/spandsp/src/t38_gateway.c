@@ -50,6 +50,7 @@
 #include <tiffio.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/queue.h"
 #include "spandsp/dc_restore.h"
@@ -2267,7 +2268,7 @@ SPAN_DECLARE(t38_gateway_state_t *) t38_gateway_init(t38_gateway_state_t *s,
     /*endif*/
     if (s == NULL)
     {
-        if ((s = (t38_gateway_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (t38_gateway_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
         /*endif*/
     }
@@ -2332,7 +2333,7 @@ SPAN_DECLARE(int) t38_gateway_release(t38_gateway_state_t *s)
 
 SPAN_DECLARE(int) t38_gateway_free(t38_gateway_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

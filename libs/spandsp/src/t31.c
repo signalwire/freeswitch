@@ -51,6 +51,7 @@
 #include <tiffio.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/bitstream.h"
@@ -3016,7 +3017,7 @@ SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
     alloced = FALSE;
     if (s == NULL)
     {
-        if ((s = (t31_state_t *) malloc(sizeof (*s))) == NULL)
+        if ((s = (t31_state_t *) span_alloc(sizeof (*s))) == NULL)
             return NULL;
         /*endif*/
         alloced = TRUE;
@@ -3071,7 +3072,7 @@ SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
     if ((s->rx_queue = queue_init(NULL, 4096, QUEUE_WRITE_ATOMIC | QUEUE_READ_ATOMIC)) == NULL)
     {
         if (alloced)
-            free(s);
+            span_free(s);
         /*endif*/
         return NULL;
     }
@@ -3100,7 +3101,7 @@ SPAN_DECLARE(int) t31_release(t31_state_t *s)
 SPAN_DECLARE(int) t31_free(t31_state_t *s)
 {
     t31_release(s);
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
