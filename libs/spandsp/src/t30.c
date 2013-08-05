@@ -45,6 +45,7 @@
 #include <tiffio.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/queue.h"
@@ -636,89 +637,89 @@ static void release_resources(t30_state_t *s)
 {
     if (s->tx_info.nsf)
     {
-        free(s->tx_info.nsf);
+        span_free(s->tx_info.nsf);
         s->tx_info.nsf = NULL;
     }
     s->tx_info.nsf_len = 0;
     if (s->tx_info.nsc)
     {
-        free(s->tx_info.nsc);
+        span_free(s->tx_info.nsc);
         s->tx_info.nsc = NULL;
     }
     s->tx_info.nsc_len = 0;
     if (s->tx_info.nss)
     {
-        free(s->tx_info.nss);
+        span_free(s->tx_info.nss);
         s->tx_info.nss = NULL;
     }
     s->tx_info.nss_len = 0;
     if (s->tx_info.tsa)
     {
-        free(s->tx_info.tsa);
+        span_free(s->tx_info.tsa);
         s->tx_info.tsa = NULL;
     }
     if (s->tx_info.ira)
     {
-        free(s->tx_info.ira);
+        span_free(s->tx_info.ira);
         s->tx_info.ira = NULL;
     }
     if (s->tx_info.cia)
     {
-        free(s->tx_info.cia);
+        span_free(s->tx_info.cia);
         s->tx_info.cia = NULL;
     }
     if (s->tx_info.isp)
     {
-        free(s->tx_info.isp);
+        span_free(s->tx_info.isp);
         s->tx_info.isp = NULL;
     }
     if (s->tx_info.csa)
     {
-        free(s->tx_info.csa);
+        span_free(s->tx_info.csa);
         s->tx_info.csa = NULL;
     }
 
     if (s->rx_info.nsf)
     {
-        free(s->rx_info.nsf);
+        span_free(s->rx_info.nsf);
         s->rx_info.nsf = NULL;
     }
     s->rx_info.nsf_len = 0;
     if (s->rx_info.nsc)
     {
-        free(s->rx_info.nsc);
+        span_free(s->rx_info.nsc);
         s->rx_info.nsc = NULL;
     }
     s->rx_info.nsc_len = 0;
     if (s->rx_info.nss)
     {
-        free(s->rx_info.nss);
+        span_free(s->rx_info.nss);
         s->rx_info.nss = NULL;
     }
     s->rx_info.nss_len = 0;
     if (s->rx_info.tsa)
     {
-        free(s->rx_info.tsa);
+        span_free(s->rx_info.tsa);
         s->rx_info.tsa = NULL;
     }
     if (s->rx_info.ira)
     {
-        free(s->rx_info.ira);
+        span_free(s->rx_info.ira);
         s->rx_info.ira = NULL;
     }
     if (s->rx_info.cia)
     {
-        free(s->rx_info.cia);
+        span_free(s->rx_info.cia);
         s->rx_info.cia = NULL;
     }
     if (s->rx_info.isp)
     {
-        free(s->rx_info.isp);
+        span_free(s->rx_info.isp);
         s->rx_info.isp = NULL;
     }
     if (s->rx_info.csa)
     {
-        free(s->rx_info.csa);
+        span_free(s->rx_info.csa);
         s->rx_info.csa = NULL;
     }
 }
@@ -5829,7 +5830,7 @@ static int decode_nsf_nss_nsc(t30_state_t *s, uint8_t *msg[], const uint8_t *pkt
 {
     uint8_t *t;
 
-    if ((t = malloc(len - 1)) == NULL)
+    if ((t = span_alloc(len - 1)) == NULL)
         return 0;
     memcpy(t, pkt + 1, len - 1);
     *msg = t;
@@ -6795,7 +6796,7 @@ SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (t30_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (t30_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -6845,7 +6846,7 @@ SPAN_DECLARE(int) t30_release(t30_state_t *s)
 SPAN_DECLARE(int) t30_free(t30_state_t *s)
 {
     t30_release(s);
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

@@ -48,6 +48,7 @@
 #include <tiffio.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/async.h"
@@ -1121,7 +1122,7 @@ SPAN_DECLARE(t4_rx_state_t *) t4_rx_init(t4_rx_state_t *s, const char *file, int
     allocated = FALSE;
     if (s == NULL)
     {
-        if ((s = (t4_rx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (t4_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
         allocated = TRUE;
     }

@@ -43,6 +43,7 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/math_fixed.h"
@@ -1526,7 +1527,7 @@ SPAN_DECLARE(v17_rx_state_t *) v17_rx_init(v17_rx_state_t *s, int bit_rate, put_
     }
     if (s == NULL)
     {
-        if ((s = (v17_rx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (v17_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -1551,7 +1552,7 @@ SPAN_DECLARE(int) v17_rx_release(v17_rx_state_t *s)
 
 SPAN_DECLARE(int) v17_rx_free(v17_rx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

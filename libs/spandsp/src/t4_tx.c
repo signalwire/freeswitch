@@ -48,6 +48,7 @@
 #include <tiffio.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/async.h"
@@ -621,7 +622,7 @@ static int read_tiff_t85_image(t4_tx_state_t *s)
         if (len > biggest)
             biggest = len;
     }
-    if ((raw_data = malloc(biggest)) == NULL)
+    if ((raw_data = span_alloc(biggest)) == NULL)
         return -1;
 
     s->tiff.image_size = s->tiff.image_length*((s->tiff.image_width + 7)/8);
@@ -685,7 +686,7 @@ static int read_tiff_t43_image(t4_tx_state_t *s, uint8_t **buf)
     total_image_len = 0;
     for (i = 0;  i < num_strips;  i++)
         total_image_len += TIFFRawStripSize(s->tiff.tiff_file, i);
-    if ((raw_data = malloc(total_image_len)) == NULL)
+    if ((raw_data = span_alloc(total_image_len)) == NULL)
         return -1;
 
     total_len = 0;
@@ -704,7 +705,7 @@ static int read_tiff_t43_image(t4_tx_state_t *s, uint8_t **buf)
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
 
     image_size = 3*s->metadata.image_length*s->metadata.image_width;
-    if ((*buf = malloc(image_size)) == NULL)
+    if ((*buf = span_alloc(image_size)) == NULL)
         return -1;
 
     pack.buf = *buf;
@@ -751,7 +752,7 @@ static int read_tiff_t42_t81_image(t4_tx_state_t *s)
 
     for (i = 0;  i < num_strips;  i++)
         total_image_len += TIFFRawStripSize(s->tiff.tiff_file, i);
-    if ((raw_data = malloc(total_image_len)) == NULL)
+    if ((raw_data = span_alloc(total_image_len)) == NULL)
         return -1;
 
     total_len = 0;
@@ -985,7 +986,7 @@ static int make_header(t4_tx_state_t *s)
 
     if (s->header_text == NULL)
     {
-        if ((s->header_text = malloc(132 + 1)) == NULL)
+        if ((s->header_text = span_alloc(132 + 1)) == NULL)
             return -1;
     }
     /* This is very English oriented, but then most FAX machines are, too. Some
@@ -1604,7 +1605,7 @@ SPAN_DECLARE(t4_tx_state_t *) t4_tx_init(t4_tx_state_t *s, const char *file, int
     allocated = FALSE;
     if (s == NULL)
     {
-        if ((s = (t4_tx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (t4_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
         allocated = TRUE;
     }
