@@ -38,6 +38,11 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_console", "src\mod\loggers\mod_console\mod_console.2010.vcxproj", "{1C453396-D912-4213-89FD-9B489162B7B5}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_xml_rpc", "src\mod\xml_int\mod_xml_rpc\mod_xml_rpc.2010.vcxproj", "{CBEC7225-0C21-4DA8-978E-1F158F8AD950}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9D04A840-CE18-4FF5-A6D3-0A2BB92FF2E6} = {9D04A840-CE18-4FF5-A6D3-0A2BB92FF2E6}
+		{85F0CF8C-C7AB-48F6-BA19-CC94CF87F981} = {85F0CF8C-C7AB-48F6-BA19-CC94CF87F981}
+		{329A6FA0-0FCC-4435-A950-E670AEFA9838} = {329A6FA0-0FCC-4435-A950-E670AEFA9838}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_rss", "src\mod\applications\mod_rss\mod_rss.2010.vcxproj", "{B69247FA-ECD6-40ED-8E44-5CA6C3BAF9A4}"
 EndProject
@@ -221,6 +226,7 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libspandsp", "libs\spandsp\src\libspandsp.2010.vcxproj", "{1CBB0077-18C5-455F-801C-0A0CE7B0BBF5}"
 	ProjectSection(ProjectDependencies) = postProject
 		{019DBD2A-273D-4BA4-BF86-B5EFE2ED76B1} = {019DBD2A-273D-4BA4-BF86-B5EFE2ED76B1}
+		{85F0CF8C-C7AB-48F6-BA19-CC94CF87F981} = {85F0CF8C-C7AB-48F6-BA19-CC94CF87F981}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libspeex", "libs\speex\win32\VS2008\libspeex\libspeex.vcxproj", "{E972C52F-9E85-4D65-B19C-031E511E9DB4}"
@@ -337,6 +343,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gennmtab", "libs\win32\xmlrpc-c\gennmtab.2010.vcxproj", "{BED7539C-0099-4A14-AD5D-30828F15A171}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "make_math_fixed_tables", "libs\spandsp\src\msvc\make_math_fixed_tables.2010.vcxproj", "{9D04A840-CE18-4FF5-A6D3-0A2BB92FF2E6}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "make_cielab_luts", "libs\spandsp\src\msvc\make_cielab_luts.2010.vcxproj", "{85F0CF8C-C7AB-48F6-BA19-CC94CF87F981}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -2067,6 +2075,15 @@ Global
 		{9D04A840-CE18-4FF5-A6D3-0A2BB92FF2E6}.Release|Win32.Build.0 = All|Win32
 		{9D04A840-CE18-4FF5-A6D3-0A2BB92FF2E6}.Release|x64.ActiveCfg = All|Win32
 		{9D04A840-CE18-4FF5-A6D3-0A2BB92FF2E6}.Release|x64.Build.0 = All|Win32
+		{85F0CF8C-C7AB-48F6-BA19-CC94CF87F981}.All|Win32.ActiveCfg = All|Win32
+		{85F0CF8C-C7AB-48F6-BA19-CC94CF87F981}.All|Win32.Build.0 = All|Win32
+		{85F0CF8C-C7AB-48F6-BA19-CC94CF87F981}.All|x64.ActiveCfg = All|Win32
+		{85F0CF8C-C7AB-48F6-BA19-CC94CF87F981}.Debug|Win32.ActiveCfg = All|Win32
+		{85F0CF8C-C7AB-48F6-BA19-CC94CF87F981}.Debug|Win32.Build.0 = All|Win32
+		{85F0CF8C-C7AB-48F6-BA19-CC94CF87F981}.Debug|x64.ActiveCfg = All|Win32
+		{85F0CF8C-C7AB-48F6-BA19-CC94CF87F981}.Release|Win32.ActiveCfg = All|Win32
+		{85F0CF8C-C7AB-48F6-BA19-CC94CF87F981}.Release|Win32.Build.0 = All|Win32
+		{85F0CF8C-C7AB-48F6-BA19-CC94CF87F981}.Release|x64.ActiveCfg = All|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
