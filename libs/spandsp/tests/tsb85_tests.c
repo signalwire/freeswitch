@@ -397,6 +397,7 @@ static void fax_prepare(void)
                                         | T4_RESOLUTION_R8_FINE
                                         | T4_RESOLUTION_R8_SUPERFINE
                                         | T4_RESOLUTION_R16_SUPERFINE
+                                        | T4_RESOLUTION_100_100
                                         | T4_RESOLUTION_200_100
                                         | T4_RESOLUTION_200_200
                                         | T4_RESOLUTION_200_400
@@ -980,7 +981,37 @@ static int next_step(faxtester_state_t *s)
                 else if (strcasecmp((const char *) compression, "T.6") == 0)
                     compression_type = T4_COMPRESSION_T6;
             }
-            t4_tx_set_tx_encoding(&t4_tx_state, compression_type);
+            if (t4_tx_set_tx_image_format(&t4_tx_state,
+                                          compression_type,
+                                          T4_SUPPORT_WIDTH_215MM
+                                        | T4_SUPPORT_LENGTH_US_LETTER
+                                        | T4_SUPPORT_LENGTH_US_LEGAL
+                                        | T4_SUPPORT_LENGTH_UNLIMITED,
+                                          T4_RESOLUTION_R8_STANDARD
+                                        | T4_RESOLUTION_R8_FINE
+                                        | T4_RESOLUTION_R8_SUPERFINE
+                                        | T4_RESOLUTION_R16_SUPERFINE
+                                        | T4_RESOLUTION_200_100
+                                        | T4_RESOLUTION_200_200
+                                        | T4_RESOLUTION_200_400
+                                        | T4_RESOLUTION_300_300
+                                        | T4_RESOLUTION_300_600
+                                        | T4_RESOLUTION_400_400
+                                        | T4_RESOLUTION_400_800
+                                        | T4_RESOLUTION_600_600
+                                        | T4_RESOLUTION_600_1200
+                                        | T4_RESOLUTION_1200_1200,
+                                          T4_RESOLUTION_100_100
+                                        | T4_RESOLUTION_200_200
+                                        | T4_RESOLUTION_300_300
+                                        | T4_RESOLUTION_400_400
+                                        | T4_RESOLUTION_600_600
+                                        | T4_RESOLUTION_1200_1200) < 0)
+            {
+                span_log(&s->logging, SPAN_LOG_FLOW, "Failed to set T.4 compression\n");
+                printf("Test failed\n");
+                exit(2);
+            }
             t4_tx_set_min_bits_per_row(&t4_tx_state, min_row_bits);
             if (t4_tx_start_page(&t4_tx_state))
             {
@@ -1020,7 +1051,37 @@ static int next_step(faxtester_state_t *s)
                 else if (strcasecmp((const char *) compression, "T.6") == 0)
                     compression_type = T4_COMPRESSION_T6;
             }
-            t4_tx_set_tx_encoding(&t4_tx_state, compression_type);
+            if (t4_tx_set_tx_image_format(&t4_tx_state,
+                                          compression_type,
+                                          T4_SUPPORT_WIDTH_215MM
+                                        | T4_SUPPORT_LENGTH_US_LETTER
+                                        | T4_SUPPORT_LENGTH_US_LEGAL
+                                        | T4_SUPPORT_LENGTH_UNLIMITED,
+                                          T4_RESOLUTION_R8_STANDARD
+                                        | T4_RESOLUTION_R8_FINE
+                                        | T4_RESOLUTION_R8_SUPERFINE
+                                        | T4_RESOLUTION_R16_SUPERFINE
+                                        | T4_RESOLUTION_200_100
+                                        | T4_RESOLUTION_200_200
+                                        | T4_RESOLUTION_200_400
+                                        | T4_RESOLUTION_300_300
+                                        | T4_RESOLUTION_300_600
+                                        | T4_RESOLUTION_400_400
+                                        | T4_RESOLUTION_400_800
+                                        | T4_RESOLUTION_600_600
+                                        | T4_RESOLUTION_600_1200
+                                        | T4_RESOLUTION_1200_1200,
+                                          T4_RESOLUTION_100_100
+                                        | T4_RESOLUTION_200_200
+                                        | T4_RESOLUTION_300_300
+                                        | T4_RESOLUTION_400_400
+                                        | T4_RESOLUTION_600_600
+                                        | T4_RESOLUTION_1200_1200) < 0)
+            {
+                span_log(&s->logging, SPAN_LOG_FLOW, "Failed to set T.4 compression\n");
+                printf("Test failed\n");
+                exit(2);
+            }
             t4_tx_set_min_bits_per_row(&t4_tx_state, min_row_bits);
             if (t4_tx_start_page(&t4_tx_state))
             {

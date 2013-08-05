@@ -46,7 +46,7 @@ EXTRA_DIST = fax_tests.sh \
  
 MAINTAINERCLEANFILES = Makefile.in
 
-INCLUDES = -I$(top_builddir)/src -I$(top_builddir)/spandsp-sim -DDATADIR="\"$(pkgdatadir)\""
+AM_CPPFLAGS = -I$(top_builddir)/src -I$(top_builddir)/spandsp-sim -DDATADIR="\"$(pkgdatadir)\""
 
 LIBDIR = -L$(top_builddir)/src
 

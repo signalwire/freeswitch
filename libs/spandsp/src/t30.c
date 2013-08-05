@@ -1224,7 +1224,7 @@ int t30_build_dis_or_dtc(t30_state_t *s)
         //    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T88_CAPABILITY_3);
         //}
 
-        //if ((s->supported_compressions & (T4_COMPRESSION_COLOUR | T4_COMPRESSION_GRAYSCALE)))
+        if ((s->supported_compressions & (T4_COMPRESSION_COLOUR | T4_COMPRESSION_GRAYSCALE)))
         {
             if ((s->supported_compressions & T4_COMPRESSION_COLOUR))
                 set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_FULL_COLOUR_CAPABLE);
@@ -1249,8 +1249,8 @@ int t30_build_dis_or_dtc(t30_state_t *s)
             if ((s->supported_compressions & T4_COMPRESSION_12BIT))
                 set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_12BIT_CAPABLE);
 
-            //if ((s->supported_compressions & T4_COMPRESSION_NO_SUBSAMPLING))
-            //    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_NO_SUBSAMPLING);
+            if ((s->supported_compressions & T4_COMPRESSION_NO_SUBSAMPLING))
+                set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_NO_SUBSAMPLING);
 
             /* No custom illuminant */
             /* No custom gamut range */
@@ -1423,8 +1423,6 @@ static int prune_dis_dtc(t30_state_t *s)
 static int build_dcs(t30_state_t *s)
 {
     int i;
-    int bad;
-    int row_squashing_ratio;
     int use_bilevel;
     int image_type;
 
@@ -1523,229 +1521,21 @@ static int build_dcs(t30_state_t *s)
         break;
     }
 
-    /* Set the Y resolution bits */
-    row_squashing_ratio = 1;
-    bad = T30_ERR_NORESSUPPORT;
-    if ((use_bilevel  &&  (s->current_page_resolution & s->mutual_bilevel_resolutions))
-        ||
-        (!use_bilevel  &&  (s->current_page_resolution & s->mutual_colour_resolutions)))
+    /* Set the image width */
+    switch (s->line_width_code)
     {
-        /* The resolution is supported by both parties */
-        switch (s->current_page_resolution)
-        {
-        case T4_RESOLUTION_1200_1200:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_1200_1200);
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-            if (!use_bilevel)
-                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_1200_1200);
-            break;
-        case T4_RESOLUTION_600_1200:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_600_1200);
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-            break;
-        case T4_RESOLUTION_600_600:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_600_600);
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-            if (!use_bilevel)
-                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_600_600);
-            break;
-        case T4_RESOLUTION_400_800:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_800);
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-            break;
-        case T4_RESOLUTION_400_400:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_400);
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-            if (!use_bilevel)
-                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_300_300_400_400);
-            break;
-        case T4_RESOLUTION_300_600:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_300_600);
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-            break;
-        case T4_RESOLUTION_300_300:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_300_300);
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-            if (!use_bilevel)
-                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_300_300_400_400);
-            break;
-        case T4_RESOLUTION_200_400:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_400);
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-            break;
-        case T4_RESOLUTION_200_200:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_200);
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-            if (!use_bilevel)
-                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE);
-            break;
-        case T4_RESOLUTION_200_100:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-            break;
-        case T4_RESOLUTION_100_100:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-            if (!use_bilevel)
-                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_100_100);
-            break;
-        case T4_RESOLUTION_R16_SUPERFINE:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_400);
-            break;
-        case T4_RESOLUTION_R8_SUPERFINE:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_400);
-            break;
-        case T4_RESOLUTION_R8_FINE:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_200);
-            break;
-        case T4_RESOLUTION_R8_STANDARD:
-            /* Nothing special to set */
-            break;
-        }
-        bad = T30_ERR_OK;
-    }
-    else
-    {
-#if 0
-        /* Deal with resolution fudging */
-        if ((s->current_page_resolution & (T4_RESOLUTION_R16_SUPERFINE | T4_RESOLUTION_R8_SUPERFINE | T4_RESOLUTION_R8_FINE | T4_RESOLUTION_R8_STANDARD)))
-        {
-            if ((s->mutual_bilevel_resolutions & (T4_RESOLUTION_400_400 | T4_RESOLUTION_200_400 | T4_RESOLUTION_200_200 | T4_RESOLUTION_200_100)))
-            {
-                /* Fudge between imperial and metric */
-            }
-        }
-        else if ((s->current_page_resolution & (T4_RESOLUTION_400_400 | T4_RESOLUTION_200_400 | T4_RESOLUTION_200_200 | T4_RESOLUTION_200_100))
-        {
-            if ((s->mutual_bilevel_resolutions & (T4_RESOLUTION_R16_SUPERFINE | T4_RESOLUTION_R8_SUPERFINE | T4_RESOLUTION_R8_FINE | T4_RESOLUTION_R8_STANDARD)))
-            {
-                /* Fudge between imperial and metric */
-            }
-        }
-#endif
-        /* Deal with squashing options */
-        if ((s->current_page_resolution & T4_RESOLUTION_R8_SUPERFINE))
-        {
-            if ((s->mutual_bilevel_resolutions & T4_RESOLUTION_R8_FINE))
-            {
-                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_200);
-                row_squashing_ratio = 2;
-                bad = T30_ERR_OK;
-            }
-            else if ((s->mutual_bilevel_resolutions & T4_RESOLUTION_R8_STANDARD))
-            {
-                row_squashing_ratio = 4;
-                bad = T30_ERR_OK;
-            }
-        }
-        else if ((s->current_page_resolution & T4_RESOLUTION_R8_FINE)  &&  (s->mutual_bilevel_resolutions & T4_RESOLUTION_R8_STANDARD))
-        {
-            row_squashing_ratio = 2;
-            bad = T30_ERR_OK;
-        }
-        else if ((s->current_page_resolution & T4_RESOLUTION_200_400))
-        {
-            if ((s->mutual_bilevel_resolutions & T4_RESOLUTION_200_200))
-            {
-                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_200);
-                row_squashing_ratio = 2;
-                bad = T30_ERR_OK;
-            }
-            else if ((s->mutual_bilevel_resolutions & T4_RESOLUTION_200_100))
-            {
-                row_squashing_ratio = 4;
-                bad = T30_ERR_OK;
-            }
-        }
-        else if ((s->current_page_resolution & T4_RESOLUTION_200_200)  &&  (s->mutual_bilevel_resolutions & T4_RESOLUTION_200_100))
-        {
-            row_squashing_ratio = 2;
-            bad = T30_ERR_OK;
-        }
-    }
-
-    t4_tx_set_row_squashing_ratio(&s->t4.tx, row_squashing_ratio);
-    if (bad != T30_ERR_OK)
-    {
-        t30_set_status(s, bad);
-        span_log(&s->logging, SPAN_LOG_FLOW, "Image resolution (%d x %d) not acceptable\n", s->x_resolution, s->y_resolution);
-        return -1;
-    }
-
-    /* Deal with the image width. */
-    /* Low (R4) res widths are not supported in recent versions of T.30 */
-    bad = T30_ERR_OK;
-    /* The following treats a width field of 11 like 10, which does what note 6 of Table 2/T.30
-       says we should do with the invalid value 11. */
-    if (((s->image_width == T4_WIDTH_200_A4)  &&  (s->x_resolution == T4_X_RESOLUTION_200  ||  s->x_resolution == T4_X_RESOLUTION_R8))
-        ||
-        ((s->image_width == T4_WIDTH_300_A4)  &&  (s->x_resolution == T4_X_RESOLUTION_300))
-        ||
-        ((s->image_width == T4_WIDTH_400_A4)  &&  (s->x_resolution == T4_X_RESOLUTION_400  ||  s->x_resolution == T4_X_RESOLUTION_R16))
-        ||
-        ((s->image_width == T4_WIDTH_600_A4)  &&  (s->x_resolution == T4_X_RESOLUTION_600))
-        ||
-        ((s->image_width == T4_WIDTH_1200_A4)  &&  (s->x_resolution == T4_X_RESOLUTION_1200)))
-    {
+    case T4_SUPPORT_WIDTH_215MM:
         span_log(&s->logging, SPAN_LOG_FLOW, "Image width is A4 at %ddpm x %ddpm\n", s->x_resolution, s->y_resolution);
         /* No width related bits need to be set. */
-    }
-    else if (((s->image_width == T4_WIDTH_200_B4)  &&  (s->x_resolution == T4_X_RESOLUTION_200  ||  s->x_resolution == T4_X_RESOLUTION_R8))
-             ||
-             ((s->image_width == T4_WIDTH_300_B4)  &&  (s->x_resolution == T4_X_RESOLUTION_300))
-             ||
-             ((s->image_width == T4_WIDTH_400_B4)  &&  (s->x_resolution == T4_X_RESOLUTION_400  ||  s->x_resolution == T4_X_RESOLUTION_R16))
-             ||
-             ((s->image_width == T4_WIDTH_600_B4)  &&  (s->x_resolution == T4_X_RESOLUTION_600))
-             ||
-             ((s->image_width == T4_WIDTH_1200_B4)  &&  (s->x_resolution == T4_X_RESOLUTION_1200)))
-    {
-        if ((s->mutual_image_sizes & T4_SUPPORT_WIDTH_255MM))
-        {
-            span_log(&s->logging, SPAN_LOG_FLOW, "Image width is B4 at %ddpm x %ddpm\n", s->x_resolution, s->y_resolution);
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_255MM_WIDTH);
-        }
-        else
-        {
-            /* We do not support this width and resolution combination */
-            bad = T30_ERR_NOSIZESUPPORT;
-        }
-    }
-    else if (((s->image_width == T4_WIDTH_200_A3)  &&  (s->x_resolution == T4_X_RESOLUTION_200  ||  s->x_resolution == T4_X_RESOLUTION_R8))
-             ||
-             ((s->image_width == T4_WIDTH_300_A3)  &&  (s->x_resolution == T4_X_RESOLUTION_300))
-             ||
-             ((s->image_width == T4_WIDTH_400_A3)  &&  (s->x_resolution == T4_X_RESOLUTION_400  ||  s->x_resolution == T4_X_RESOLUTION_R16))
-             ||
-             ((s->image_width == T4_WIDTH_600_A3)  &&  (s->x_resolution == T4_X_RESOLUTION_600))
-             ||
-             ((s->image_width == T4_WIDTH_1200_A3)  &&  (s->x_resolution == T4_X_RESOLUTION_1200)))
-    {
-        if ((s->mutual_image_sizes & T4_SUPPORT_WIDTH_303MM))
-        {
-            span_log(&s->logging, SPAN_LOG_FLOW, "Image width is A3 at %ddpm x %ddpm\n", s->x_resolution, s->y_resolution);
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_303MM_WIDTH);
-        }
-        else
-        {
-            /* We do not support this width and resolution combination */
-            bad = T30_ERR_NOSIZESUPPORT;
-        }
-    }
-    else
-    {
-        /* We do not support this width and resolution combination */
-        bad = T30_ERR_NOSIZESUPPORT;
-    }
-
-    if (bad != T30_ERR_OK)
-    {
-        t30_set_status(s, bad);
-        span_log(&s->logging,
-                 SPAN_LOG_FLOW,
-                 "Image width (%d pixels) and resolution (%d x %d) is not an acceptable\n",
-                 s->image_width,
-                 s->x_resolution,
-                 s->y_resolution);
-        return -1;
+        break;
+    case T4_SUPPORT_WIDTH_255MM:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_255MM_WIDTH);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Image width is B4 at %ddpm x %ddpm\n", s->x_resolution, s->y_resolution);
+        break;
+    case T4_SUPPORT_WIDTH_303MM:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_303MM_WIDTH);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Image width is A3 at %ddpm x %ddpm\n", s->x_resolution, s->y_resolution);
+        break;
     }
 
     /* Set the image length */
@@ -1759,6 +1549,77 @@ static int build_dcs(t30_state_t *s)
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_NORTH_AMERICAN_LETTER);
     else if ((s->mutual_image_sizes & T4_SUPPORT_LENGTH_US_LEGAL))
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_NORTH_AMERICAN_LEGAL);
+
+    /* Set the Y resolution bits */
+    switch (s->current_page_resolution)
+    {
+    case T4_RESOLUTION_1200_1200:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_1200_1200);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+        if (!use_bilevel)
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_1200_1200);
+        break;
+    case T4_RESOLUTION_600_1200:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_600_1200);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+        break;
+    case T4_RESOLUTION_600_600:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_600_600);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+        if (!use_bilevel)
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_600_600);
+        break;
+    case T4_RESOLUTION_400_800:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_800);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+        break;
+    case T4_RESOLUTION_400_400:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_400);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+        if (!use_bilevel)
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_300_300_400_400);
+        break;
+    case T4_RESOLUTION_300_600:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_300_600);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+        break;
+    case T4_RESOLUTION_300_300:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_300_300);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+        if (!use_bilevel)
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_300_300_400_400);
+        break;
+    case T4_RESOLUTION_200_400:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_400);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+        break;
+    case T4_RESOLUTION_200_200:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_200);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+        if (!use_bilevel)
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE);
+        break;
+    case T4_RESOLUTION_200_100:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+        break;
+    case T4_RESOLUTION_100_100:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+        if (!use_bilevel)
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_100_100);
+        break;
+    case T4_RESOLUTION_R16_SUPERFINE:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_400);
+        break;
+    case T4_RESOLUTION_R8_SUPERFINE:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_400);
+        break;
+    case T4_RESOLUTION_R8_FINE:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_200);
+        break;
+    case T4_RESOLUTION_R8_STANDARD:
+        /* Nothing special to set */
+        break;
+    }
 
     if (s->error_correcting_mode)
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_ECM_MODE);
@@ -1832,7 +1693,7 @@ static int analyze_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
     if (!s->error_correcting_mode)
     {
         /* Remove any compression schemes which need error correction to work. */
-        s->mutual_compressions &= (0xF0000000 | T4_COMPRESSION_NONE | T4_COMPRESSION_T4_1D | T4_COMPRESSION_T4_2D);
+        s->mutual_compressions &= (0xFF800000 | T4_COMPRESSION_NONE | T4_COMPRESSION_T4_1D | T4_COMPRESSION_T4_2D);
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_2D_CAPABLE))
             s->mutual_compressions &= ~T4_COMPRESSION_T4_2D;
     }
@@ -1866,8 +1727,8 @@ static int analyze_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
 
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_12BIT_CAPABLE))
             s->mutual_compressions &= ~T4_COMPRESSION_12BIT;
-        //if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_NO_SUBSAMPLING))
-        //    ???? = T4_COMPRESSION_T42_T81_SUBSAMPLING;
+        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_NO_SUBSAMPLING))
+            s->mutual_compressions &= ~T4_COMPRESSION_NO_SUBSAMPLING;
 
         /* bit74 custom illuminant */
         /* bit75 custom gamut range */
@@ -2087,7 +1948,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
 
         if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_NO_SUBSAMPLING))
         {
-            //???? = T4_COMPRESSION_T42_T81_SUBSAMPLING;
+            //???? = T4_COMPRESSION_NO_SUBSAMPLING;
         }
 
         if (!test_ctrl_bit(dcs_frame, T30_DCS_BIT_PREFERRED_HUFFMAN_TABLES))
@@ -2529,7 +2390,6 @@ static int send_dcs_sequence(t30_state_t *s, int start)
     /* Schedule training after the messages */
     if (start)
     {
-        prune_dcs(s);
         set_state(s, T30_STATE_D);
         s->step = 0;
     }
@@ -2654,22 +2514,12 @@ static void set_min_scan_time(t30_state_t *s)
     {
     case T4_Y_RESOLUTION_SUPERFINE:
     case T4_Y_RESOLUTION_400:
-        if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_400_CAPABLE))
-        {
-            s->min_scan_time_code = translate_min_scan_time[(test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_MIN_SCAN_TIME_HALVES))  ?  2  :  1][min_bits_field];
-            break;
-        }
-        span_log(&s->logging, SPAN_LOG_FLOW, "Remote FAX does not support super-fine resolution. Squashing image.\n");
-        /* Fall through */
+        s->min_scan_time_code = translate_min_scan_time[(test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_MIN_SCAN_TIME_HALVES))  ?  2  :  1][min_bits_field];
+        break;
     case T4_Y_RESOLUTION_FINE:
     case T4_Y_RESOLUTION_200:
-        if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_200_CAPABLE))
-        {
-            s->min_scan_time_code = translate_min_scan_time[1][min_bits_field];
-            break;
-        }
-        span_log(&s->logging, SPAN_LOG_FLOW, "Remote FAX does not support fine resolution. Squashing image.\n");
-        /* Fall through */
+        s->min_scan_time_code = translate_min_scan_time[1][min_bits_field];
+        break;
     case T4_Y_RESOLUTION_STANDARD:
     case T4_Y_RESOLUTION_100:
         s->min_scan_time_code = translate_min_scan_time[0][min_bits_field];
@@ -2689,6 +2539,8 @@ static void set_min_scan_time(t30_state_t *s)
 
 static int start_sending_document(t30_state_t *s)
 {
+    int res;
+
     if (s->tx_file[0] == '\0')
     {
         /* There is nothing to send */
@@ -2703,26 +2555,67 @@ static int start_sending_document(t30_state_t *s)
         return -1;
     }
     s->operation_in_progress = OPERATION_IN_PROGRESS_T4_TX;
-    t4_tx_get_pages_in_file(&s->t4.tx);
-    t4_tx_set_tx_encoding(&s->t4.tx, s->line_compression);
+
     t4_tx_set_local_ident(&s->t4.tx, s->tx_info.ident);
     t4_tx_set_header_info(&s->t4.tx, s->header_info);
     if (s->use_own_tz)
         t4_tx_set_header_tz(&s->t4.tx, &s->tz);
 
-    if (tx_start_page(s))
+    t4_tx_get_pages_in_file(&s->t4.tx);
+
+    if ((res = t4_tx_set_tx_image_format(&s->t4.tx,
+                                         s->mutual_compressions,
+                                         s->mutual_image_sizes,
+                                         s->mutual_bilevel_resolutions,
+                                         s->mutual_colour_resolutions)) < 0)
     {
-        span_log(&s->logging, SPAN_LOG_WARNING, "Something seems to be wrong in the file\n");
-        t30_set_status(s, T30_ERR_FILEERROR);
+        switch (res)
+        {
+        case T4_IMAGE_FORMAT_INCOMPATIBLE:
+            span_log(&s->logging, SPAN_LOG_WARNING, "Cannot negotiate an image format\n");
+            t30_set_status(s, T30_ERR_BADTIFFHDR);
+            break;
+        case T4_IMAGE_FORMAT_NOSIZESUPPORT:
+            span_log(&s->logging, SPAN_LOG_WARNING, "Cannot negotiate an image size\n");
+            t30_set_status(s, T30_ERR_NOSIZESUPPORT);
+            break;
+        case T4_IMAGE_FORMAT_NORESSUPPORT:
+            span_log(&s->logging, SPAN_LOG_WARNING, "Cannot negotiate an image resolution\n");
+            t30_set_status(s, T30_ERR_NORESSUPPORT);
+            break;
+        default:
+            span_log(&s->logging, SPAN_LOG_WARNING, "Cannot negotiate an image format\n");
+            t30_set_status(s, T30_ERR_BADTIFF);
+            break;
+        }
         return -1;
     }
+    s->line_image_type = t4_tx_get_tx_image_type(&s->t4.tx);
+    s->line_compression = t4_tx_get_tx_compression(&s->t4.tx);
+    s->image_width = t4_tx_get_tx_image_width(&s->t4.tx);
+    s->line_width_code = t4_tx_get_tx_image_width_code(&s->t4.tx);
 
     s->x_resolution = t4_tx_get_tx_x_resolution(&s->t4.tx);
     s->y_resolution = t4_tx_get_tx_y_resolution(&s->t4.tx);
-    s->image_width = t4_tx_get_tx_image_width(&s->t4.tx);
-    /* The minimum scan time to be used can't be evaluated until we know the Y resolution, and
-       must be evaluated before the minimum scan row bits can be evaluated. */
+    s->current_page_resolution = t4_tx_get_tx_resolution(&s->t4.tx);
+
+    span_log(&s->logging,
+             SPAN_LOG_FLOW,
+             "Choose image type %s (%d), compression %s (%d)\n",
+             t4_image_type_to_str(s->line_image_type),
+             s->line_image_type,
+             t4_compression_to_str(s->line_compression),
+             s->line_compression);
+
+    /* The minimum scan time to be used can't be evaluated until we know the Y resolution. */
     set_min_scan_time(s);
+
+    if (tx_start_page(s))
+    {
+        span_log(&s->logging, SPAN_LOG_WARNING, "Something seems to be wrong in the file\n");
+        t30_set_status(s, T30_ERR_BADTIFFHDR);
+        return -1;
+    }
 
     if (s->error_correcting_mode)
     {
@@ -2795,21 +2688,6 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
         send_dcn(s);
         return -1;
     }
-
-    /* Choose a compression scheme from amongst those mutually available */
-    if ((s->mutual_compressions & T4_COMPRESSION_T85_L0))
-        s->line_compression = T4_COMPRESSION_T85_L0;
-    else if ((s->mutual_compressions & T4_COMPRESSION_T85))
-        s->line_compression = T4_COMPRESSION_T85;
-    else if ((s->mutual_compressions & T4_COMPRESSION_T6))
-        s->line_compression = T4_COMPRESSION_T6;
-    else if ((s->mutual_compressions & T4_COMPRESSION_T4_2D))
-        s->line_compression = T4_COMPRESSION_T4_2D;
-    else
-        s->line_compression = T4_COMPRESSION_T4_1D;
-
-    span_log(&s->logging, SPAN_LOG_FLOW, "Choose compression %s (%d)\n", t4_compression_to_str(s->line_compression), s->line_compression);
-
     if (s->phase_b_handler)
     {
         new_status = s->phase_b_handler(s, s->phase_b_user_data, msg[2]);
@@ -6825,7 +6703,7 @@ SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
                              | T4_SUPPORT_LENGTH_UNLIMITED;
     /* Set the output encoding to something safe. Most things get 1D and 2D
        encoding right. Quite a lot get other things wrong. */
-    s->supported_output_compressions = T4_COMPRESSION_T4_2D;
+    s->supported_output_compressions = T4_COMPRESSION_T4_2D | T4_COMPRESSION_T42_T81;
     s->local_min_scan_time_code = T30_MIN_SCAN_0MS;
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "T.30");

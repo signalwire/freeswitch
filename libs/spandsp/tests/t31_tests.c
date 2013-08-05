@@ -106,9 +106,9 @@ static const struct command_response_s fax_send_test_seq[] =
     EXCHANGE("AT+FRH=3\r", "\r\nCONNECT\r\n"),
     //<DIS frame data>
 #if 1
-    RESPONSE("\xFF\x13\x80\x00\xEE\xF8\x80\x80\x89\x80\x80\x80\x18\x18\xB9\x10\x03"),   // For audio FAXing
+    RESPONSE("\xFF\x13\x80\x00\xEE\xF8\x80\x80\x99\x80\x80\x80\x18\x58\x0D\x10\x03"),   // For audio FAXing
 #else
-    RESPONSE("\xFF\x13\x80\x04\xEE\xF8\x80\x80\x89\x80\x80\x80\x18\x84\x09\x10\x03"),   // For T.38 FAXing
+    RESPONSE("\xFF\x13\x80\x04\xEE\xF8\x80\x80\x99\x80\x80\x80\x18\xC4\xBD\x10\x03"),   // For T.38 FAXing
 #endif
     RESPONSE("\r\nOK\r\n"),
     //EXCHANGE("AT+FRH=3\r", "\r\nNO CARRIER\r\n"),

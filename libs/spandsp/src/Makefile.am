@@ -78,7 +78,7 @@ EXTRA_DIST = floating_fudge.h \
              spandsp/private/README \
              spandsp/version.h.in
 
-INCLUDES = -I$(top_builddir)
+AM_CPPFLAGS = -I$(top_builddir)
 
 lib_LTLIBRARIES = libspandsp.la
 

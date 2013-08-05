@@ -34,7 +34,7 @@ EXTRA_DIST = libspandsp_sim.dsp \
              msvc/vc9proj.head \
              msvc/vc9proj.foot
 
-INCLUDES = -I$(top_builddir) -I$(top_builddir)/src -DDATADIR="\"$(pkgdatadir)\""
+AM_CPPFLAGS = -I$(top_builddir) -I$(top_builddir)/src -DDATADIR="\"$(pkgdatadir)\""
 
 noinst_PROGRAMS = make_line_models
 

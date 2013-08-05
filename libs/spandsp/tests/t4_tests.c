@@ -518,7 +518,6 @@ int main(int argc, char *argv[])
                         compression = compression_sequence[compression_step++];
                     }
                 }
-#if 0
                 if (t4_tx_set_tx_image_format(send_state,
                                               compression,
                                               T4_SUPPORT_WIDTH_215MM
@@ -548,8 +547,6 @@ int main(int argc, char *argv[])
                 {
                     break;
                 }
-#endif
-                t4_tx_set_tx_encoding(send_state, compression);
                 t4_rx_set_rx_encoding(receive_state, compression);
 
                 if (t4_tx_start_page(send_state))
