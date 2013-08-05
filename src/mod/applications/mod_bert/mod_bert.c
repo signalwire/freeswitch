@@ -24,7 +24,7 @@
  * Contributor(s):
  * Moises Silva <moises.silva@gmail.com>
  *
- * mod_g711_bert -- Naive BERT tester
+ * mod_bert -- Naive BERT tester
  *
  */
 
@@ -34,40 +34,84 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_bert_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_bert_shutdown);
 SWITCH_MODULE_DEFINITION(mod_bert, mod_bert_load, mod_bert_shutdown, NULL);
 
-SWITCH_STANDARD_APP(g711_bert_function)
+#define BERT_DEFAULT_WINDOW_MS 1000
+#define BERT_DEFAULT_MAX_ERR 10.0
+#define BERT_DEFAULT_TIMEOUT_MS 10000
+SWITCH_STANDARD_APP(bert_test_function)
 {
 	switch_status_t status;
 	switch_frame_t *read_frame = NULL, write_frame = { 0 };
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_channel_t *channel = NULL;
+	const char *var = NULL;
 	int i = 0;
-	uint32_t interval = 0;
+	int synced = 0;
 	uint32_t ts = 0;
+	int32_t timeout_ms = 0;
 	struct {
-		uint64_t sync;
-		uint32_t bytes_since_sync;
-		uint32_t min_sync_samples;
-		uint32_t max_sync_err;
-		uint32_t sync_err;
-		int16_t tx_sample;
-		int16_t test_data;
+		uint32_t processed_samples;
+		uint32_t err_samples;
+		uint32_t window_ms;
+		uint32_t window_samples;
+		int16_t sequence_sample;
+		int16_t predicted_sample;
+		float max_err;
+		float max_err_hit;
+		float max_err_ever;
+		uint8_t in_sync;
+		uint8_t hangup_on_error;
+		switch_time_t timeout;
 	} bert;
 
-	memset(&bert, 0, sizeof(bert));
 	channel = switch_core_session_get_channel(session);
 
 	switch_channel_answer(channel);
 
 	switch_core_session_get_read_impl(session, &read_impl);
 
-	interval = read_impl.microseconds_per_packet / 1000;
+	memset(&bert, 0, sizeof(bert));
+	bert.window_ms = BERT_DEFAULT_WINDOW_MS;
+	bert.window_samples = switch_samples_per_packet(read_impl.samples_per_second, bert.window_ms);
+	bert.max_err = BERT_DEFAULT_MAX_ERR;
+	timeout_ms = BERT_DEFAULT_TIMEOUT_MS;
+
+	/* check if there are user-defined overrides */
+	if ((var = switch_channel_get_variable(channel, "bert_window_ms"))) {
+		int tmp = atoi(var);
+		if (tmp > 0) {
+			bert.window_ms = tmp;
+			bert.window_samples = switch_samples_per_packet(read_impl.samples_per_second, bert.window_ms);
+		}
+	}
+	if ((var = switch_channel_get_variable(channel, "bert_timeout_ms"))) {
+		int tmp = atoi(var);
+		if (tmp > 0) {
+			timeout_ms = tmp;
+		}
+	}
+	if ((var = switch_channel_get_variable(channel, "bert_max_err"))) {
+		double tmp = atoi(var);
+		if (tmp > 0) {
+			bert.max_err = (float)tmp;
+		}
+	}
+	if ((var = switch_channel_get_variable(channel, "bert_hangup_on_error"))) {
+		if (switch_true(var)) {
+			bert.hangup_on_error = 1;
+		}
+	}
+
+	bert.timeout = (switch_micro_time_now() + (timeout_ms * 1000));
 
 	write_frame.codec = switch_core_session_get_read_codec(session);
 	write_frame.data = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
-	bert.min_sync_samples = (read_impl.samples_per_packet * 40);
-	bert.max_sync_err = (read_impl.samples_per_packet * 20);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "BERT Test Window=%ums/%u MaxErr=%f%%\n", bert.window_ms, bert.window_samples, bert.max_err);
+	if (bert.window_samples <= 0) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to compute BERT window samples!\n");
+		goto done;
+	}
 	while (switch_channel_ready(channel)) {
 		int16_t *read_samples = NULL;
 		int16_t *write_samples = NULL;
@@ -79,30 +123,48 @@ SWITCH_STANDARD_APP(g711_bert_function)
 		read_samples = read_frame->data;
 		write_samples = write_frame.data;
 		for (i = 0; i < (read_frame->datalen / 2); i++) {
-			if (bert.sync < bert.min_sync_samples) {
-				if (bert.test_data == read_samples[i]) {
-					bert.sync++;
-				}
-			} else {
-				if (bert.sync == bert.min_sync_samples) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "G.711 synced (%lu)\n", bert.sync);
-					bert.bytes_since_sync = 0;
-					bert.sync_err = 0;
-				}
-				bert.bytes_since_sync++;
-				if (bert.test_data != read_samples[i]) {
-					bert.sync_err++;
-					if (bert.sync_err >= bert.max_sync_err) {
-						bert.sync = 0;
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "G.711 sync lost (%u)\n", bert.bytes_since_sync);
+			if (bert.window_samples == bert.processed_samples) {
+				/* Calculate error rate */
+				float err = ((float)((float)bert.err_samples / (float)bert.processed_samples) * 100.0);
+				if (err > bert.max_err) {
+					if (bert.in_sync) {
+						bert.in_sync = 0;
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "BERT Sync Lost: %f%% loss\n", err);
+						if (bert.hangup_on_error) {
+							switch_channel_hangup(channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
+						}
 					}
-				} else {
-					bert.sync++;
+				} else if (!bert.in_sync) {
+					bert.in_sync = 1;
+					synced = 1;
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "BERT Sync\n");
+					bert.timeout = 0;
+				}
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "Err=%f%% (%u/%u)\n", err, bert.err_samples, bert.processed_samples);
+				if (synced && err > bert.max_err_hit) {
+					bert.max_err_hit = err;
+				}
+				if (err > bert.max_err_ever) {
+					bert.max_err_ever = err;
+				}
+				bert.processed_samples = 0;
+				bert.err_samples = 0;
+				if (bert.timeout && !synced) {
+					switch_time_t now = switch_micro_time_now();
+					if (now >= bert.timeout) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "BERT Timeout\n");
+						if (bert.hangup_on_error) {
+							switch_channel_hangup(channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
+						}
+					}
 				}
 			}
-			bert.test_data = (read_samples[i] + 1);
-
-			write_samples[i] = bert.tx_sample++;
+			if (bert.predicted_sample != read_samples[i]) {
+				bert.err_samples++;
+			}
+			bert.predicted_sample = (read_samples[i] + 1);
+			write_samples[i] = bert.sequence_sample++;
+			bert.processed_samples++;
 		}
 
 		write_frame.datalen = read_frame->datalen;
@@ -114,6 +176,10 @@ SWITCH_STANDARD_APP(g711_bert_function)
 		}
 		ts += read_impl.samples_per_packet;
 	}
+
+done:
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "BERT Test Completed. MaxErr=%f%%\n", synced ? bert.max_err_hit : bert.max_err_ever);
+
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_bert_load)
@@ -122,7 +188,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_bert_load)
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	SWITCH_ADD_APP(app_interface, "bert_test", "Start BERT Test", "Start BERT Test", g711_bert_function, "", SAF_NONE); 
+	SWITCH_ADD_APP(app_interface, "bert_test", "Start BERT Test", "Start BERT Test", bert_test_function, "", SAF_NONE); 
 	return SWITCH_STATUS_SUCCESS;
 }
 
