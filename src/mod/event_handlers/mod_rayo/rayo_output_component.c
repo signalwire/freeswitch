@@ -126,9 +126,16 @@ static iks *start_call_output_component(struct rayo_actor *call, struct rayo_mes
 	switch_core_session_t *session = (switch_core_session_t *)session_data;
 	struct rayo_component *output_component = NULL;
 	iks *output = iks_find(iq, "output");
+	iks *document = NULL;
 
 	/* validate output attributes */
 	if (!VALIDATE_RAYO_OUTPUT(output)) {
+		return iks_new_error(iq, STANZA_ERROR_BAD_REQUEST);
+	}
+
+	/* check if <document> exists */
+	document = iks_find(output, "document");
+	if (!document) {
 		return iks_new_error(iq, STANZA_ERROR_BAD_REQUEST);
 	}
 
@@ -144,10 +151,17 @@ static iks *start_mixer_output_component(struct rayo_actor *mixer, struct rayo_m
 	iks *iq = msg->payload;
 	struct rayo_component *component = NULL;
 	iks *output = iks_find(iq, "output");
+	iks *document = NULL;
 	switch_stream_handle_t stream = { 0 };
 
 	/* validate output attributes */
 	if (!VALIDATE_RAYO_OUTPUT(output)) {
+		return iks_new_error(iq, STANZA_ERROR_BAD_REQUEST);
+	}
+
+	/* check if <document> exists */
+	document = iks_find(output, "document");
+	if (!document) {
 		return iks_new_error(iq, STANZA_ERROR_BAD_REQUEST);
 	}
 
