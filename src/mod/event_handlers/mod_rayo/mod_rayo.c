@@ -1424,7 +1424,7 @@ void rayo_call_send(struct rayo_actor *call, struct rayo_message *msg)
 	if (!session) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, session not found\n", RAYO_JID(call));
 		if (!msg->is_reply) {
-			RAYO_SEND_REPLY(call, msg->from_jid, iks_new_error(iq, STANZA_ERROR_SERVICE_UNAVAILABLE));
+			RAYO_SEND_REPLY(call, msg->from_jid, iks_new_error(iq, STANZA_ERROR_ITEM_NOT_FOUND));
 		}
 		return;
 	}
