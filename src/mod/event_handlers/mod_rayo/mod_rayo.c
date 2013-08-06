@@ -129,6 +129,8 @@ struct rayo_call {
 	const char *dial_id;
 	/** channel destroy event */
 	switch_event_t *end_event;
+	/** True if ringing event sent to client */
+	int ringing_sent;
 };
 
 /**
@@ -1031,6 +1033,7 @@ static struct rayo_call *rayo_call_init(struct rayo_call *call, switch_memory_po
 	call->dcp_jid = "";
 	call->idle_start_time = switch_micro_time_now();
 	call->joined = 0;
+	call->ringing_sent = 0;
 	switch_core_hash_init(&call->pcps, pool);
 
 	switch_safe_free(call_jid);
@@ -2550,13 +2553,21 @@ static void on_call_answer_event(struct rayo_client *rclient, switch_event_t *ev
  */
 static void on_call_ringing_event(struct rayo_client *rclient, switch_event_t *event)
 {
-	struct rayo_call *call = RAYO_CALL_LOCATE(switch_event_get_header(event, "Unique-ID"));
-	if (call) {
-		iks *revent = iks_new_presence("ringing", RAYO_NS,
-			switch_event_get_header(event, "variable_rayo_call_jid"),
-			switch_event_get_header(event, "variable_rayo_dcp_jid"));
-		RAYO_SEND_MESSAGE(call, RAYO_JID(rclient), revent);
-		RAYO_UNLOCK(call);
+	const char *call_direction = switch_event_get_header(event, "Call-Direction");
+	if (call_direction && !strcmp(call_direction, "outbound")) {
+		struct rayo_call *call = RAYO_CALL_LOCATE(switch_event_get_header(event, "Unique-ID"));
+		if (call) {
+			switch_mutex_lock(RAYO_ACTOR(call)->mutex);
+			if (!call->ringing_sent) {
+				iks *revent = iks_new_presence("ringing", RAYO_NS,
+					switch_event_get_header(event, "variable_rayo_call_jid"),
+					switch_event_get_header(event, "variable_rayo_dcp_jid"));
+				call->ringing_sent = 1;
+				RAYO_SEND_MESSAGE(call, RAYO_JID(rclient), revent);
+				RAYO_UNLOCK(call);
+			}
+			switch_mutex_unlock(RAYO_ACTOR(call)->mutex);
+		}
 	}
 }
 
@@ -2651,6 +2662,7 @@ static void rayo_client_handle_event(struct rayo_client *rclient, switch_event_t
 		case SWITCH_EVENT_CHANNEL_ORIGINATE:
 			on_call_originate_event(rclient, event);
 			break;
+		case SWITCH_EVENT_CHANNEL_PROGRESS:
 		case SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA:
 			on_call_ringing_event(rclient, event);
 			break;
@@ -3598,6 +3610,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
 
 	switch_event_bind(modname, SWITCH_EVENT_CHANNEL_ORIGINATE, NULL, route_call_event, NULL);
 	switch_event_bind(modname, SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA, NULL, route_call_event, NULL);
+	switch_event_bind(modname, SWITCH_EVENT_CHANNEL_PROGRESS, NULL, route_call_event, NULL);
 	switch_event_bind(modname, SWITCH_EVENT_CHANNEL_ANSWER, NULL, route_call_event, NULL);
 	switch_event_bind(modname, SWITCH_EVENT_CHANNEL_BRIDGE, NULL, route_call_event, NULL);
 	switch_event_bind(modname, SWITCH_EVENT_CHANNEL_UNBRIDGE, NULL, route_call_event, NULL);
