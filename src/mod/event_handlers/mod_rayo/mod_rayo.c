@@ -3688,7 +3688,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
 		"<grammar content-type=\"application/srgs+xml\">"
 		"<![CDATA[<grammar mode=\"dtmf\"><rule id=\"digits\" scope=\"public\"><item><one-of><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item><item>6</item><item>7</item><item>8</item><item>9</item><item>*</item><item>#</item></one-of></item></rule></grammar>]]>"
 		"</grammar></input>");
-
+	rayo_add_cmd_alias("output_bad",
+		"<output xmlns=\""RAYO_OUTPUT_NS"\" repeat-time=\"100\"></output>");
 	return SWITCH_STATUS_SUCCESS;
 }
 
