@@ -2728,11 +2728,34 @@ static iks *rayo_create_offer(struct rayo_call *call, switch_core_session_t *ses
 	switch_caller_profile_t *profile = switch_channel_get_caller_profile(channel);
 	iks *presence = iks_new("presence");
 	iks *offer = iks_insert(presence, "offer");
+	const char *val;
 
 	iks_insert_attrib(presence, "from", RAYO_JID(call));
-	iks_insert_attrib(offer, "from", profile->caller_id_number);
-	iks_insert_attrib(offer, "to", profile->destination_number);
 	iks_insert_attrib(offer, "xmlns", RAYO_NS);
+
+	if ((val = switch_channel_get_variable(channel, "sip_from_uri"))) {
+		/* is a SIP call - pass the URI */
+		if (!strchr(val, ':')) {
+			iks_insert_attrib_printf(offer, "from", "sip:%s", val);
+		} else {
+			iks_insert_attrib(offer, "from", val);
+		}
+	} else {
+		/* pass caller ID */
+		iks_insert_attrib(offer, "from", profile->caller_id_number);
+	}
+
+	if ((val = switch_channel_get_variable(channel, "sip_to_uri"))) {
+		/* is a SIP call - pass the URI */
+		if (!strchr(val, ':')) {
+			iks_insert_attrib_printf(offer, "to", "sip:%s", val);
+		} else {
+			iks_insert_attrib(offer, "to", val);
+		}
+	} else {
+		/* pass dialed number */
+		iks_insert_attrib(offer, "to", profile->destination_number);
+	}
 
 	/* add signaling headers */
 	{
