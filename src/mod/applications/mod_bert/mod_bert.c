@@ -34,6 +34,19 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_bert_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_bert_shutdown);
 SWITCH_MODULE_DEFINITION(mod_bert, mod_bert_load, mod_bert_shutdown, NULL);
 
+static int16_t bert_next_sample(int16_t sample, uint8_t *going_up)
+{
+	if (sample == INT16_MAX || !(*going_up)) {
+		*going_up = 0;
+		return --sample;
+	}
+	if (sample == INT16_MIN || *going_up) {
+		*going_up = 1;
+		return ++sample;
+	}
+	switch_assert(0);
+}
+
 #define BERT_DEFAULT_WINDOW_MS 1000
 #define BERT_DEFAULT_MAX_ERR 10.0
 #define BERT_DEFAULT_TIMEOUT_MS 10000
@@ -55,11 +68,14 @@ SWITCH_STANDARD_APP(bert_test_function)
 		uint32_t window_samples;
 		int16_t sequence_sample;
 		int16_t predicted_sample;
+		int16_t previous_sample;
 		float max_err;
 		float max_err_hit;
 		float max_err_ever;
 		uint8_t in_sync;
 		uint8_t hangup_on_error;
+		uint8_t sequence_going_up;
+		uint8_t prediction_going_up;
 		switch_time_t timeout;
 	} bert;
 
@@ -73,6 +89,7 @@ SWITCH_STANDARD_APP(bert_test_function)
 	bert.window_ms = BERT_DEFAULT_WINDOW_MS;
 	bert.window_samples = switch_samples_per_packet(read_impl.samples_per_second, bert.window_ms);
 	bert.max_err = BERT_DEFAULT_MAX_ERR;
+	bert.sequence_going_up = 1;
 	timeout_ms = BERT_DEFAULT_TIMEOUT_MS;
 
 	/* check if there are user-defined overrides */
@@ -137,7 +154,7 @@ SWITCH_STANDARD_APP(bert_test_function)
 				} else if (!bert.in_sync) {
 					bert.in_sync = 1;
 					synced = 1;
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "BERT Sync\n");
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "BERT Sync Success\n");
 					bert.timeout = 0;
 				}
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "Err=%f%% (%u/%u)\n", err, bert.err_samples, bert.processed_samples);
@@ -162,8 +179,15 @@ SWITCH_STANDARD_APP(bert_test_function)
 			if (bert.predicted_sample != read_samples[i]) {
 				bert.err_samples++;
 			}
-			bert.predicted_sample = (read_samples[i] + 1);
-			write_samples[i] = bert.sequence_sample++;
+			if (bert.previous_sample > read_samples[i]) {
+				bert.prediction_going_up = 0;
+			} else {
+				bert.prediction_going_up = 1;
+			}
+			bert.predicted_sample = bert_next_sample(read_samples[i], &bert.prediction_going_up);
+			bert.sequence_sample = bert_next_sample(bert.sequence_sample, &bert.sequence_going_up);
+			write_samples[i] = bert.sequence_sample;
+			bert.previous_sample = read_samples[i];
 			bert.processed_samples++;
 		}
 
