@@ -1907,6 +1907,7 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 	char *dial_to_dup = NULL;
 	const char *dial_from = iks_find_attrib(dial, "from");
 	const char *dial_timeout_ms = iks_find_attrib(dial, "timeout");
+	const char *uuid = NULL;
 	struct dial_gateway *gateway = NULL;
 	struct rayo_call *call = NULL;
 	switch_stream_handle_t stream = { 0 };
@@ -1917,6 +1918,7 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 	call->dcp_jid = switch_core_strdup(RAYO_POOL(call), dcp_jid);
 	call->dial_id = iks_find_attrib(iq, "id");
 	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_INFO, "%s has control of call\n", dcp_jid);
+	uuid = switch_core_strdup(dtdata->pool, rayo_call_get_uuid(call));
 
 	/* set rayo channel variables so channel originate event can be identified as coming from Rayo */
 	stream.write_function(&stream, "{origination_uuid=%s,rayo_dcp_jid=%s,rayo_call_jid=%s",
@@ -2016,19 +2018,17 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 
 		/* <iq><ref> response will be sent when originate event is received- otherwise error is returned */
 		if (switch_api_execute("originate", stream.data, NULL, &api_stream) == SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "Got originate result: %s\n", (char *)api_stream.data);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "Got originate result: %s\n", (char *)api_stream.data);
 
 			/* check for failure */
 			if (strncmp("+OK", api_stream.data, strlen("+OK"))) {
-				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_INFO, "Failed to originate call\n");
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_INFO, "Failed to originate call\n");
 
 				if (call->dial_id) {
 					/* map failure reason to iq error */
 					if (!strncmp("-ERR DESTINATION_OUT_OF_ORDER", api_stream.data, strlen("-ERR DESTINATION_OUT_OF_ORDER"))) {
 						/* this -ERR is received when out of sessions */
 						response = iks_new_error(iq, STANZA_ERROR_RESOURCE_CONSTRAINT);
-					} else {
-						response = iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, api_stream.data);
 					}
 				}
 			}
