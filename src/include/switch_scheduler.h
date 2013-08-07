@@ -43,6 +43,7 @@ SWITCH_BEGIN_EXTERN_C
 	int64_t created;
 	int64_t runtime;
 	uint32_t cmd_id;
+	uint32_t repeat;
 	char *group;
 	void *cmd_arg;
 	uint32_t task_id;
