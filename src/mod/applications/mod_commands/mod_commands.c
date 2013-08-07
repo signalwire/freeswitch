@@ -3164,7 +3164,7 @@ SWITCH_STANDARD_API(uuid_broadcast_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define SCHED_BROADCAST_SYNTAX "[+]<time> <uuid> <path> [aleg|bleg|both]"
+#define SCHED_BROADCAST_SYNTAX "[[+]<time>|@time] <uuid> <path> [aleg|bleg|both]"
 SWITCH_STANDARD_API(sched_broadcast_function)
 {
 	char *mycmd = NULL, *argv[4] = { 0 };
@@ -3180,7 +3180,9 @@ SWITCH_STANDARD_API(sched_broadcast_function)
 		switch_media_flag_t flags = SMF_NONE;
 		time_t when;
 
-		if (*argv[0] == '+') {
+		if (*argv[0] == '@') {
+			when = atol(argv[0] + 1);
+		} else if (*argv[0] == '+') {
 			when = switch_epoch_time_now(NULL) + atol(argv[0] + 1);
 		} else {
 			when = atol(argv[0]);
