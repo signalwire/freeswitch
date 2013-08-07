@@ -283,6 +283,9 @@
     <ClCompile Include="math_fixed.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="alloc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="spandsp\adsi.h">

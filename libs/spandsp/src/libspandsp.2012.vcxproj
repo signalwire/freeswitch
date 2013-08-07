@@ -161,6 +161,7 @@
   <ItemGroup>
     <ClCompile Include="ademco_contactid.c" />
     <ClCompile Include="adsi.c" />
+    <ClCompile Include="alloc.c" />
     <ClCompile Include="async.c" />
     <ClCompile Include="at_interpreter.c" />
     <ClCompile Include="awgn.c" />

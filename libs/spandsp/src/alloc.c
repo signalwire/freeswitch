@@ -48,6 +48,13 @@
 #include "spandsp/telephony.h"
 #include "spandsp/alloc.h"
 
+static void *fake_aligned_alloc(size_t alignment, size_t size);
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4232)	/* address of dllimport is not static, identity not guaranteed */
+#endif
+
 span_alloc_t __span_alloc = malloc;
 #if defined(HAVE_ALIGNED_ALLOC)
 span_aligned_alloc_t __span_aligned_alloc = aligned_alloc;
@@ -62,7 +69,9 @@ span_aligned_alloc_t __span_aligned_alloc = fake_aligned_alloc;
 span_realloc_t __span_realloc = realloc;
 span_free_t __span_free = free;
 
-static void *fake_aligned_alloc(size_t alignment, size_t size);
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #if defined(HAVE_ALIGNED_ALLOC)
 #elif defined(HAVE_MEMALIGN)
