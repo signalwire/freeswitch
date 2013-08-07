@@ -8496,7 +8496,18 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		if (call_info->ci_params && (msg_params_find(call_info->ci_params, "answer-after=0"))) {
 			switch_channel_set_variable(channel, "sip_auto_answer_detected", "true");
 		}
+
 		switch_channel_set_variable(channel, "sip_call_info", call_info_str);
+
+		call_info = call_info->ci_next;
+
+		while (call_info) {
+			call_info_str = sip_header_as_string(nh->nh_home, (void *) call_info);
+			switch_channel_add_variable_var_check(channel, "sip_call_info", call_info_str, SWITCH_FALSE, SWITCH_STACK_PUSH);
+			call_info = call_info->ci_next;
+		}
+
+
 	} else if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
 		char buf[128] = "";
 		char *sql;
