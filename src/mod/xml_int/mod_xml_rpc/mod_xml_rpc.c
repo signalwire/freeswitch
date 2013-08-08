@@ -1235,7 +1235,6 @@ void stop_all_websockets()
 	if (switch_event_fire(&event) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Failed to fire the event!\n");
 		switch_event_destroy(&event);
-		return false;
 	}
 }
 
