@@ -1969,6 +1969,20 @@ void sofia_glue_tech_set_local_sdp(private_object_t *tech_pvt, const char *sdp_s
 	switch_mutex_unlock(tech_pvt->flag_mutex);
 }
 
+static void process_mp(switch_core_session_t *session, switch_stream_handle_t *stream, const char *boundary, const char *str) {
+	char *dname = switch_core_session_strdup(session, str);
+	char *dval;
+
+	if ((dval = strchr(dname, ':'))) {
+		*dval++ = '\0';
+		if (*dval == '~') {
+			stream->write_function(stream, "--%s\nContent-Type: %s\nContent-Length: %d\n%s\n", boundary, dname, strlen(dval), dval + 1);
+		} else {
+			stream->write_function(stream, "--%s\nContent-Type: %s\nContent-Length: %d\n\n%s\n", boundary, dname, strlen(dval) + 1, dval);
+		}							
+	}
+}
+
 char *sofia_glue_get_multipart(switch_core_session_t *session, const char *prefix, const char *sdp, char **mp_type)
 {
 	char *extra_headers = NULL;
@@ -1984,14 +1998,18 @@ char *sofia_glue_get_multipart(switch_core_session_t *session, const char *prefi
 			const char *name = (char *) hi->name;
 			char *value = (char *) hi->value;
 
-			if (!strncasecmp(name, prefix, strlen(prefix))) {
-				const char *hname = name + strlen(prefix);
-				if (*value == '~') {
-					stream.write_function(&stream, "--%s\nContent-Type: %s\nContent-Length: %d\n%s\n", boundary, hname, strlen(value), value + 1);
+			if (!strcasecmp(name, prefix)) {
+				if (hi->idx > 0) {
+					int i = 0;
+
+					for(i = 0; i < hi->idx; i++) {
+						process_mp(session, &stream, boundary, hi->array[i]);
+						x++;
+					}
 				} else {
-					stream.write_function(&stream, "--%s\nContent-Type: %s\nContent-Length: %d\n\n%s\n", boundary, hname, strlen(value) + 1, value);
+					process_mp(session, &stream, boundary, value);
+					x++;
 				}
-				x++;
 			}
 		}
 		switch_channel_variable_last(channel);
@@ -2013,7 +2031,6 @@ char *sofia_glue_get_multipart(switch_core_session_t *session, const char *prefi
 
 	return extra_headers;
 }
-
 
 char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix)
 {
