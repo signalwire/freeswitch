@@ -574,13 +574,10 @@ abyss_bool websocket_hook(TSession *r)
 	switch_event_node_t *nodes[MAX_EVENT_BIND_SLOTS];
 	int node_count = 0;
 	char *p;
-	char *key = TableFind(&r->requestHeaderFields, "sec-websocket-key");
-	char *version = TableFind(&r->requestHeaderFields, "sec-websocket-version");
-	char *proto = TableFind(&r->requestHeaderFields, "sec-websocket-protocol");
-	char *upgrade = TableFind(&r->requestHeaderFields, "connection");
-
-	if (!key || !version || !proto || !upgrade) return FALSE;
-	if (strncasecmp(upgrade, "Upgrade", 7) || strncasecmp(proto, "websocket", 9)) return FALSE;
+	char *key = NULL;
+	char *version = NULL;
+	char *proto = NULL;
+	char *upgrade = NULL;
 
 	for (i = 0; i < r->requestHeaderFields.size; ++i) {
 		TTableItem * const fieldP = &r->requestHeaderFields.item[i];
@@ -588,6 +585,14 @@ abyss_bool websocket_hook(TSession *r)
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "headers %s: %s\n", fieldP->name, fieldValue);
 	}
+
+	key = TableFind(&r->requestHeaderFields, "sec-websocket-key");
+	version = TableFind(&r->requestHeaderFields, "sec-websocket-version");
+	proto = TableFind(&r->requestHeaderFields, "sec-websocket-protocol");
+	upgrade = TableFind(&r->requestHeaderFields, "connection");
+
+	if (!key || !version || !proto || !upgrade) return FALSE;
+	if (!strstr(upgrade, "Upgrade") || strncasecmp(proto, "websocket", 9)) return FALSE;
 
 	ret = ws_init(&wsh, r, NULL, 0);
 	if (ret != 0) {
