@@ -2885,7 +2885,7 @@ SWITCH_STANDARD_APP(rayo_app)
 
 		/* nobody to offer to */
 		if (!ok) {
-			switch_channel_hangup(channel, RAYO_CAUSE_DECLINE);
+			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE);
 		}
 	}
 
