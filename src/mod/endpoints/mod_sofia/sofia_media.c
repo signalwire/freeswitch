@@ -115,6 +115,13 @@ char *sofia_media_get_multipart(switch_core_session_t *session, const char *pref
 
 			if (!strncasecmp(name, prefix, strlen(prefix))) {
 				const char *hname = name + strlen(prefix);
+
+				if (*hname == '_' && strncmp(hname, "_enc_", 4)) {
+					char *dname = switch_core_session_strdup(session, hname);
+					switch_url_decode(dname);
+					hname = dname;
+				}
+
 				if (*value == '~') {
 					stream.write_function(&stream, "--%s\nContent-Type: %s\nContent-Length: %d\n%s\n", boundary, hname, strlen(value), value + 1);
 				} else {
