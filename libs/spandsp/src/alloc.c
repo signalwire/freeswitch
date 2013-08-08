@@ -61,8 +61,8 @@ span_aligned_alloc_t __span_aligned_alloc = aligned_alloc;
 #elif defined(HAVE_MEMALIGN)
 span_aligned_alloc_t __span_aligned_alloc = memalign;
 #elif defined(HAVE_POSIX_MEMALIGN)
-span_aligned_alloc_t __span_aligned_alloc = fake_posix_memalign;
 static void *fake_posix_memalign(size_t alignment, size_t size);
+span_aligned_alloc_t __span_aligned_alloc = fake_posix_memalign;
 #else
 span_aligned_alloc_t __span_aligned_alloc = fake_aligned_alloc;
 #endif
