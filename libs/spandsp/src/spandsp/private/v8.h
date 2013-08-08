@@ -28,8 +28,8 @@
 
 struct v8_state_s
 {
-    /*! \brief TRUE if we are the calling party */
-    int calling_party;
+    /*! \brief True if we are the calling party */
+    bool calling_party;
 
     /*! \brief A handler to process the V.8 signals */
     v8_result_handler_t result_handler;
@@ -38,7 +38,7 @@ struct v8_state_s
 
     /*! \brief The current state of the V.8 protocol */
     int state;
-    int fsk_tx_on;
+    bool fsk_tx_on;
     int modem_connect_tone_tx_on;
     int negotiation_timer;
     int ci_timer;
@@ -67,8 +67,8 @@ struct v8_state_s
                testing for matches. */
     uint8_t cm_jm_data[64];
     int cm_jm_len;
-    int got_cm_jm;
-    int got_cj;
+    bool got_cm_jm;
+    bool got_cj;
     int zero_byte_count;
     /*! \brief Error and flow logging control */
     logging_state_t logging;

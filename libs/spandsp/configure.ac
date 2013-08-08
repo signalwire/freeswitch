@@ -187,6 +187,9 @@ AC_HEADER_TIME
 AC_CHECK_HEADERS([socket.h])
 AC_CHECK_HEADERS([inttypes.h], [INSERT_INTTYPES_HEADER="#include <inttypes.h>"])
 AC_CHECK_HEADERS([stdint.h], [INSERT_STDINT_HEADER="#include <stdint.h>"])
+AC_CHECK_HEADERS([stdatomic.h])
+AC_CHECK_HEADERS([stdbool.h], [INSERT_STDBOOL_HEADER="#include <stdbool.h>"], [INSERT_STDBOOL_HEADER="#include <spandsp/stdbool.h>"])
+AC_CHECK_HEADERS([stdfix.h])
 AC_CHECK_HEADERS([unistd.h])
 AC_CHECK_HEADERS([stdlib.h])
 AC_CHECK_HEADERS([string.h])
@@ -592,6 +595,7 @@ AC_SUBST(INSERT_INTTYPES_HEADER)
 AC_SUBST(INSERT_STDINT_HEADER)
 AC_SUBST(INSERT_TGMATH_HEADER)
 AC_SUBST(INSERT_MATH_HEADER)
+AC_SUBST(INSERT_STDBOOL_HEADER)
 
 AC_CONFIG_FILES([Makefile
                  doc/Makefile

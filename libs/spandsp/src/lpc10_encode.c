@@ -41,6 +41,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
@@ -322,7 +327,7 @@ SPAN_DECLARE(lpc10_encode_state_t *) lpc10_encode_init(lpc10_encode_state_t *s, 
     s->l2sum1 = 0.0f;
     s->l2ptr1 = 1;
     s->l2ptr2 = 9;
-    s->hyst = FALSE;
+    s->hyst = false;
 
     /* State used by function lpc10_voicing */
     s->dither = 20.0f;

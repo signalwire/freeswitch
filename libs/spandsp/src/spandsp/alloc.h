@@ -28,8 +28,8 @@
 #if !defined(_SPANDSP_ALLOC_H_)
 #define _SPANDSP_ALLOC_H_
 
-typedef void *(*span_alloc_t)(size_t size);
 typedef void *(*span_aligned_alloc_t)(size_t alignment, size_t size);
+typedef void *(*span_alloc_t)(size_t size);
 typedef void *(*span_realloc_t)(void *ptr, size_t size);
 typedef void (*span_free_t)(void *ptr);
 
@@ -38,11 +38,11 @@ extern "C"
 {
 #endif
 
-/* Allocate size bytes of memory. */
-SPAN_DECLARE(void *) span_alloc(size_t size);
-
 /* Allocate size bytes allocated to ALIGNMENT bytes.  */
 SPAN_DECLARE(void *) span_aligned_alloc(size_t alignment, size_t size);
+
+/* Allocate size bytes of memory. */
+SPAN_DECLARE(void *) span_alloc(size_t size);
 
 /* Re-allocate the previously allocated block in ptr, making the new block size bytes long. */
 SPAN_DECLARE(void *) span_realloc(void *ptr, size_t size);
@@ -50,8 +50,8 @@ SPAN_DECLARE(void *) span_realloc(void *ptr, size_t size);
 /* Free a block allocated by span_alloc, span_aligned_alloc, or span_realloc. */
 SPAN_DECLARE(void) span_free(void *ptr);
 
-SPAN_DECLARE(int) span_mem_allocators(span_alloc_t custom_alloc,
-                                      span_aligned_alloc_t custom_aligned_alloc,
+SPAN_DECLARE(int) span_mem_allocators(span_aligned_alloc_t custom_aligned_alloc,
+                                      span_alloc_t custom_alloc,
                                       span_realloc_t custom_realloc,
                                       span_free_t custom_free);
 

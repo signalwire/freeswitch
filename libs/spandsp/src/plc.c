@@ -48,6 +48,8 @@
 #include "spandsp/saturated.h"
 #include "spandsp/plc.h"
 
+#include "spandsp/private/plc.h"
+
 /* We do a straight line fade to zero volume in 50ms when we are filling in for missing data. */
 #define ATTENUATION_INCREMENT       0.0025f     /* Attenuation per sample */
 

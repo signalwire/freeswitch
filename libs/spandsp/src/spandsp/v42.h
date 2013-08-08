@@ -78,16 +78,16 @@ SPAN_DECLARE(logging_state_t *) v42_get_logging_state(v42_state_t *s);
 
 /*! Initialise a V.42 context.
     \param s The V.42 context.
-    \param calling_party TRUE if caller mode, else answerer mode.
-    \param detect TRUE to perform the V.42 detection, else go straight into LAP.M
+    \param calling_party True if caller mode, else answerer mode.
+    \param detect True to perform the V.42 detection, else go straight into LAP.M
     \param iframe_get A callback function to handle received frames of data.
     \param iframe_put A callback function to get frames of data for transmission.
     \param user_data An opaque pointer passed to the frame handler routines.
     \return ???
 */
 SPAN_DECLARE(v42_state_t *) v42_init(v42_state_t *s,
-                                     int calling_party,
-                                     int detect,
+                                     bool calling_party,
+                                     bool detect,
                                      get_msg_func_t iframe_get,
                                      put_msg_func_t iframe_put,
                                      void *user_data);

@@ -98,9 +98,9 @@ struct t38_core_state_s
     /*! \brief Pace transmission */
     int pace_transmission;
 
-    /*! \brief TRUE if IFP packet sequence numbers are relevant. For some transports, like TPKT
+    /*! \brief True if IFP packet sequence numbers are relevant. For some transports, like TPKT
                over TCP they are not relevent. */
-    int check_sequence_numbers;
+    bool check_sequence_numbers;
 
     /*! \brief The number of times each packet type will be sent (low byte). The
                depth of redundancy (2nd byte). Higher numbers may increase reliability

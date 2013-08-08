@@ -83,7 +83,7 @@ static int dial_pulses = 0;
 static int rx_handler_callbacks = 0;
 static int tx_handler_callbacks = 0;
 
-static int use_gui = FALSE;
+static bool use_gui = false;
 
 static void plot_frequency_response(void)
 {
@@ -522,13 +522,13 @@ int main(int argc, char *argv[])
     template_t template[10];
     int opt;
 
-    use_gui = FALSE;
+    use_gui = false;
     while ((opt = getopt(argc, argv, "g")) != -1)
     {
         switch (opt)
         {
         case 'g':
-            use_gui = TRUE;
+            use_gui = true;
             break;
         default:
             //usage();

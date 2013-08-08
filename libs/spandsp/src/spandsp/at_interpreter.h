@@ -115,14 +115,14 @@ enum
 */
 typedef struct
 {
-    /*! TRUE if character echo is enabled */
-    int echo;
-    /*! TRUE if verbose reporting is enabled */
-    int verbose;
-    /*! TRUE if result codes are verbose */
+    /*! True if character echo is enabled */
+    bool echo;
+    /*! True if verbose reporting is enabled */
+    bool verbose;
+    /*! Result code format code - numeic or verbose */
     int result_code_format;
-    /*! TRUE if pulse dialling is the default */
-    int pulse_dial;
+    /*! True if pulse dialling is the default */
+    bool pulse_dial;
     /*! ??? */
     int double_escape;
     /*! ??? */

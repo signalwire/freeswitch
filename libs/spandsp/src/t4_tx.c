@@ -44,6 +44,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <tiffio.h>
 
@@ -149,18 +154,18 @@ static const int resolution_map[10][9] =
 
 static const TIFFFieldInfo tiff_fx_tiff_field_info[] =
 {
-    {TIFFTAG_INDEXED, 1, 1, TIFF_SHORT, FIELD_CUSTOM, FALSE, FALSE, (char *) "Indexed"},
-    {TIFFTAG_GLOBALPARAMETERSIFD, 1, 1, TIFF_IFD8, FIELD_CUSTOM, FALSE, FALSE, (char *) "GlobalParametersIFD"},
-    {TIFFTAG_PROFILETYPE, 1, 1, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "ProfileType"},
-    {TIFFTAG_FAXPROFILE, 1, 1, TIFF_BYTE, FIELD_CUSTOM, FALSE, FALSE, (char *) "FaxProfile"},
-    {TIFFTAG_CODINGMETHODS, 1, 1, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "CodingMethods"},
-    {TIFFTAG_VERSIONYEAR, 4, 4, TIFF_BYTE, FIELD_CUSTOM, FALSE, FALSE, (char *) "VersionYear"},
-    {TIFFTAG_MODENUMBER, 1, 1, TIFF_BYTE, FIELD_CUSTOM, FALSE, FALSE, (char *) "ModeNumber"},
-    {TIFFTAG_DECODE, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_SRATIONAL, FIELD_CUSTOM, FALSE, TRUE, (char *) "Decode"},
-    {TIFFTAG_IMAGEBASECOLOR, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_SHORT, FIELD_CUSTOM, FALSE, TRUE, (char *) "ImageBaseColor"},
-    {TIFFTAG_T82OPTIONS, 1, 1, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "T82Options"},
-    {TIFFTAG_STRIPROWCOUNTS, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_LONG, FIELD_CUSTOM, FALSE, TRUE, (char *) "StripRowCounts"},
-    {TIFFTAG_IMAGELAYER, 2, 2, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "ImageLayer"},
+    {TIFFTAG_INDEXED, 1, 1, TIFF_SHORT, FIELD_CUSTOM, false, false, (char *) "Indexed"},
+    {TIFFTAG_GLOBALPARAMETERSIFD, 1, 1, TIFF_IFD8, FIELD_CUSTOM, false, false, (char *) "GlobalParametersIFD"},
+    {TIFFTAG_PROFILETYPE, 1, 1, TIFF_LONG, FIELD_CUSTOM, false, false, (char *) "ProfileType"},
+    {TIFFTAG_FAXPROFILE, 1, 1, TIFF_BYTE, FIELD_CUSTOM, false, false, (char *) "FaxProfile"},
+    {TIFFTAG_CODINGMETHODS, 1, 1, TIFF_LONG, FIELD_CUSTOM, false, false, (char *) "CodingMethods"},
+    {TIFFTAG_VERSIONYEAR, 4, 4, TIFF_BYTE, FIELD_CUSTOM, false, false, (char *) "VersionYear"},
+    {TIFFTAG_MODENUMBER, 1, 1, TIFF_BYTE, FIELD_CUSTOM, false, false, (char *) "ModeNumber"},
+    {TIFFTAG_DECODE, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_SRATIONAL, FIELD_CUSTOM, false, true, (char *) "Decode"},
+    {TIFFTAG_IMAGEBASECOLOR, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_SHORT, FIELD_CUSTOM, false, true, (char *) "ImageBaseColor"},
+    {TIFFTAG_T82OPTIONS, 1, 1, TIFF_LONG, FIELD_CUSTOM, false, false, (char *) "T82Options"},
+    {TIFFTAG_STRIPROWCOUNTS, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_LONG, FIELD_CUSTOM, false, true, (char *) "StripRowCounts"},
+    {TIFFTAG_IMAGELAYER, 2, 2, TIFF_LONG, FIELD_CUSTOM, false, false, (char *) "ImageLayer"},
 };
 
 #if 1
@@ -199,11 +204,11 @@ static void TIFFFXDefaultDirectory(TIFF *tif)
 
 SPAN_DECLARE(void) TIFF_FX_init(void)
 {
-    static int first_time = TRUE;
+    static int first_time = true;
 
     if (!first_time)
         return;
-    first_time = FALSE;
+    first_time = false;
 
     /* Grab the inherited method and install */
     _ParentExtender = TIFFSetTagExtender(TIFFFXDefaultDirectory);
@@ -506,7 +511,7 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
 
     /* The default luminant is D50 */
     set_lab_illuminant(&s->lab_params, 96.422f, 100.000f,  82.521f);
-    set_lab_gamut(&s->lab_params, 0, 100, -85, 85, -75, 125, FALSE);
+    set_lab_gamut(&s->lab_params, 0, 100, -85, 85, -75, 125, false);
 
     t->compression = -1;
     TIFFGetField(t->tiff_file, TIFFTAG_COMPRESSION, &t->compression);
@@ -1278,17 +1283,17 @@ static int read_tiff_image(t4_tx_state_t *s)
             case PHOTOMETRIC_CIELAB:
                 /* The default luminant is D50 */
                 set_lab_illuminant(&s->lab_params, 96.422f, 100.000f,  82.521f);
-                set_lab_gamut(&s->lab_params, 0, 100, -128, 127, -128, 127, TRUE);
-                s->apply_lab = TRUE;
+                set_lab_gamut(&s->lab_params, 0, 100, -128, 127, -128, 127, true);
+                s->apply_lab = true;
                 break;
             case PHOTOMETRIC_ITULAB:
                 /* The default luminant is D50 */
                 set_lab_illuminant(&s->lab_params, 96.422f, 100.000f,  82.521f);
-                set_lab_gamut(&s->lab_params, 0, 100, -85, 85, -75, 125, FALSE);
-                s->apply_lab = TRUE;
+                set_lab_gamut(&s->lab_params, 0, 100, -85, 85, -75, 125, false);
+                s->apply_lab = true;
                 break;
             default:
-                s->apply_lab = FALSE;
+                s->apply_lab = false;
                 break;
             }
             total_len = 0;
@@ -2303,7 +2308,7 @@ SPAN_DECLARE(void) t4_tx_set_max_2d_rows_per_1d_row(t4_tx_state_t *s, int max)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t4_tx_set_header_overlays_image(t4_tx_state_t *s, int header_overlays_image)
+SPAN_DECLARE(void) t4_tx_set_header_overlays_image(t4_tx_state_t *s, bool header_overlays_image)
 {
     s->header_overlays_image = header_overlays_image;
 }
@@ -2587,12 +2592,12 @@ SPAN_DECLARE(t4_tx_state_t *) t4_tx_init(t4_tx_state_t *s, const char *file, int
 {
     int allocated;
 
-    allocated = FALSE;
+    allocated = false;
     if (s == NULL)
     {
         if ((s = (t4_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
-        allocated = TRUE;
+        allocated = true;
     }
     memset(s, 0, sizeof(*s));
 #if defined(SPANDSP_SUPPORT_TIFF_FX)

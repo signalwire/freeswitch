@@ -64,6 +64,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
@@ -394,7 +399,7 @@ static void update(g726_state_t *s,
     int16_t thr;
     int16_t pk0;
     int i;
-    int tr;
+    bool tr;
 
     a2p = 0;
     /* Needed in updating predictor poles */
@@ -409,11 +414,11 @@ static void update(g726_state_t *s,
     thr = (ylint > 9)  ?  (31 << 10)  :  ((32 + ylfrac) << ylint);
     dqthr = (thr + (thr >> 1)) >> 1;            /* dqthr = 0.75 * thr */
     if (!s->td)                                 /* signal supposed voice */
-        tr = FALSE;
+        tr = false;
     else if (mag <= dqthr)                      /* supposed data, but small mag */
-        tr = FALSE;                             /* treated as voice */
+        tr = false;                             /* treated as voice */
     else                                        /* signal is data (modem) */
-        tr = TRUE;
+        tr = true;
 
     /*
      * Quantizer scale factor adaptation.
@@ -564,11 +569,11 @@ static void update(g726_state_t *s,
 
     /* TONE */
     if (tr)                 /* this sample has been treated as data */
-        s->td = FALSE;      /* next one will be treated as voice */
+        s->td = false;      /* next one will be treated as voice */
     else if (a2p < -11776)  /* small sample-to-sample correlation */
-        s->td = TRUE;       /* signal may be data */
+        s->td = true;       /* signal may be data */
     else                    /* signal is voice */
-        s->td = FALSE;
+        s->td = false;
 
     /* Adaptation speed control. */
     /* FILTA */
@@ -1025,7 +1030,7 @@ SPAN_DECLARE(g726_state_t *) g726_init(g726_state_t *s, int bit_rate, int ext_co
         s->b[i] = 0;
         s->dq[i] = 32;
     }
-    s->td = FALSE;
+    s->td = false;
     switch (bit_rate)
     {
     case 16000:

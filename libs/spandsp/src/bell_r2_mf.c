@@ -40,6 +40,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
@@ -78,10 +83,10 @@ typedef struct
     uint8_t     off_time;   /* Minimum post tone silence (ms) */
 } mf_digit_tones_t;
 
-int bell_mf_gen_inited = FALSE;
+int bell_mf_gen_inited = false;
 tone_gen_descriptor_t bell_mf_digit_tones[15];
 
-int r2_mf_gen_inited = FALSE;
+int r2_mf_gen_inited = false;
 tone_gen_descriptor_t r2_mf_fwd_digit_tones[15];
 tone_gen_descriptor_t r2_mf_back_digit_tones[15];
 
@@ -271,10 +276,10 @@ static void bell_mf_gen_init(void)
                                  tones->off_time,
                                  0,
                                  0,
-                                 FALSE);
+                                 false);
         tones++;
     }
-    bell_mf_gen_inited = TRUE;
+    bell_mf_gen_inited = true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -391,7 +396,7 @@ SPAN_DECLARE(int) r2_mf_tx_put(r2_mf_tx_state_t *s, char digit)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(r2_mf_tx_state_t *) r2_mf_tx_init(r2_mf_tx_state_t *s, int fwd)
+SPAN_DECLARE(r2_mf_tx_state_t *) r2_mf_tx_init(r2_mf_tx_state_t *s, bool fwd)
 {
     int i;
     const mf_digit_tones_t *tones;
@@ -437,7 +442,7 @@ SPAN_DECLARE(r2_mf_tx_state_t *) r2_mf_tx_init(r2_mf_tx_state_t *s, int fwd)
                                      (tones->off_time == 0));
             tones++;
         }
-        r2_mf_gen_inited = TRUE;
+        r2_mf_gen_inited = true;
     }
     s->fwd = fwd;
     return s;
@@ -630,7 +635,7 @@ SPAN_DECLARE(bell_mf_rx_state_t *) bell_mf_rx_init(bell_mf_rx_state_t *s,
                                                    void *user_data)
 {
     int i;
-    static int initialised = FALSE;
+    static int initialised = false;
 
     if (s == NULL)
     {
@@ -643,7 +648,7 @@ SPAN_DECLARE(bell_mf_rx_state_t *) bell_mf_rx_init(bell_mf_rx_state_t *s,
     {
         for (i = 0;  i < 6;  i++)
             make_goertzel_descriptor(&bell_mf_detect_desc[i], (float) bell_mf_frequencies[i], BELL_MF_SAMPLES_PER_BLOCK);
-        initialised = TRUE;
+        initialised = true;
     }
     s->digits_callback = callback;
     s->digits_callback_data = user_data;
@@ -746,7 +751,7 @@ SPAN_DECLARE(int) r2_mf_rx(r2_mf_rx_state_t *s, const int16_t amp[], int samples
             }
         }
         /* Basic signal level and twist tests */
-        hit = FALSE;
+        hit = false;
         if (energy[best] >= R2_MF_THRESHOLD
             &&
             energy[second_best] >= R2_MF_THRESHOLD
@@ -756,7 +761,7 @@ SPAN_DECLARE(int) r2_mf_rx(r2_mf_rx_state_t *s, const int16_t amp[], int samples
             energy[best]*R2_MF_TWIST > energy[second_best])
         {
             /* Relative peak test */
-            hit = TRUE;
+            hit = true;
             for (i = 0;  i < 6;  i++)
             {
                 if (i != best  &&  i != second_best)
@@ -764,7 +769,7 @@ SPAN_DECLARE(int) r2_mf_rx(r2_mf_rx_state_t *s, const int16_t amp[], int samples
                     if (energy[i]*R2_MF_RELATIVE_PEAK >= energy[second_best])
                     {
                         /* The best two are not clearly the best */
-                        hit = FALSE;
+                        hit = false;
                         break;
                     }
                 }
@@ -805,12 +810,12 @@ SPAN_DECLARE(int) r2_mf_rx_get(r2_mf_rx_state_t *s)
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(r2_mf_rx_state_t *) r2_mf_rx_init(r2_mf_rx_state_t *s,
-                                               int fwd,
+                                               bool fwd,
                                                tone_report_func_t callback,
                                                void *user_data)
 {
     int i;
-    static int initialised = FALSE;
+    static int initialised = false;
 
     if (s == NULL)
     {
@@ -828,7 +833,7 @@ SPAN_DECLARE(r2_mf_rx_state_t *) r2_mf_rx_init(r2_mf_rx_state_t *s,
             make_goertzel_descriptor(&mf_fwd_detect_desc[i], (float) r2_mf_fwd_frequencies[i], R2_MF_SAMPLES_PER_BLOCK);
             make_goertzel_descriptor(&mf_back_detect_desc[i], (float) r2_mf_back_frequencies[i], R2_MF_SAMPLES_PER_BLOCK);
         }
-        initialised = TRUE;
+        initialised = true;
     }
     if (fwd)
     {

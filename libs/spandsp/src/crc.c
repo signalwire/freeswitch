@@ -32,6 +32,11 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 
 #include "spandsp/telephony.h"
 #include "spandsp/crc.h"
@@ -102,7 +107,7 @@ SPAN_DECLARE(int) crc_itu32_append(uint8_t *buf, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) crc_itu32_check(const uint8_t *buf, int len)
+SPAN_DECLARE(bool) crc_itu32_check(const uint8_t *buf, int len)
 {
     uint32_t crc;
     int i;
@@ -193,7 +198,7 @@ SPAN_DECLARE(int) crc_itu16_append(uint8_t *buf, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) crc_itu16_check(const uint8_t *buf, int len)
+SPAN_DECLARE(bool) crc_itu16_check(const uint8_t *buf, int len)
 {
     uint16_t crc;
     int i;

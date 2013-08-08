@@ -135,19 +135,19 @@ extern "C"
 #endif
 
 SPAN_DECLARE(int) v8_restart(v8_state_t *s,
-                             int calling_party,
+                             bool calling_party,
                              v8_parms_t *parms);
 
 /*! Initialise a V.8 context.
     \brief Initialise a V.8 context.
     \param s The V.8 context.
-    \param calling_party TRUE if caller mode, else answerer mode.
+    \param calling_party True if caller mode, else answerer mode.
     \param parms The allowed parameters for the call.
     \param result_handler The callback routine used to handle the results of negotiation.
     \param user_data An opaque pointer passed to the result_handler routine.
     \return A pointer to the V.8 context, or NULL if there was a problem. */
 SPAN_DECLARE(v8_state_t *) v8_init(v8_state_t *s,
-                                   int calling_party,
+                                   bool calling_party,
                                    v8_parms_t *parms,
                                    v8_result_handler_t result_handler,
                                    void *user_data);

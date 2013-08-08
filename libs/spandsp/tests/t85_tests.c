@@ -57,9 +57,6 @@ in ITU specifications T.85.
 #define TESTBUF_SIZE        400000
 #define TEST_IMAGE_SIZE     (1951*1960/8)
 
-#define FALSE 0
-#define TRUE (!FALSE)
-
 uint8_t testbuf[TESTBUF_SIZE];
 uint8_t test_image[TEST_IMAGE_SIZE];
 

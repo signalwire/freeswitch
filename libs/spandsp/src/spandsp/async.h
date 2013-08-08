@@ -164,7 +164,7 @@ SPAN_DECLARE_NONSTD(void) async_rx_put_bit(void *user_data, int bit);
     \param data_bits The number of data bits.
     \param parity_bits The type of parity.
     \param stop_bits The number of stop bits.
-    \param use_v14 TRUE if V.14 rate adaption processing should be used.
+    \param use_v14 True if V.14 rate adaption processing should be used.
     \param put_byte The callback routine used to put the received data.
     \param user_data An opaque pointer.
     \return A pointer to the initialised context, or NULL if there was a problem. */
@@ -172,7 +172,7 @@ SPAN_DECLARE(async_rx_state_t *) async_rx_init(async_rx_state_t *s,
                                                int data_bits,
                                                int parity_bits,
                                                int stop_bits,
-                                               int use_v14,
+                                               bool use_v14,
                                                put_byte_func_t put_byte,
                                                void *user_data);
 
@@ -198,7 +198,7 @@ SPAN_DECLARE_NONSTD(int) async_tx_get_bit(void *user_data);
     \param data_bits The number of data bit.
     \param parity_bits The type of parity.
     \param stop_bits The number of stop bits.
-    \param use_v14 TRUE if V.14 rate adaption processing should be used.
+    \param use_v14 True if V.14 rate adaption processing should be used.
     \param get_byte The callback routine used to get the data to be transmitted.
     \param user_data An opaque pointer.
     \return A pointer to the initialised context, or NULL if there was a problem. */
@@ -206,7 +206,7 @@ SPAN_DECLARE(async_tx_state_t *) async_tx_init(async_tx_state_t *s,
                                                int data_bits,
                                                int parity_bits,
                                                int stop_bits,
-                                               int use_v14,
+                                               bool use_v14,
                                                get_byte_func_t get_byte,
                                                void *user_data);
 

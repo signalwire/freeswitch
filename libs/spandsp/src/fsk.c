@@ -38,6 +38,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <assert.h>
 
@@ -49,6 +54,7 @@
 #include "spandsp/async.h"
 #include "spandsp/fsk.h"
 
+#include "spandsp/private/power_meter.h"
 #include "spandsp/private/fsk.h"
 
 const fsk_spec_t preset_fsk_specs[] =
@@ -155,7 +161,7 @@ SPAN_DECLARE(int) fsk_tx_restart(fsk_tx_state_t *s, const fsk_spec_t *spec)
     s->baud_frac = 0;
     s->current_phase_rate = s->phase_rates[1];
 
-    s->shutdown = FALSE;
+    s->shutdown = false;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -214,7 +220,7 @@ SPAN_DECLARE_NONSTD(int) fsk_tx(fsk_tx_state_t *s, int16_t amp[], int len)
                     s->status_handler(s->status_user_data, SIG_STATUS_END_OF_DATA);
                 if (s->status_handler)
                     s->status_handler(s->status_user_data, SIG_STATUS_SHUTDOWN_COMPLETE);
-                s->shutdown = TRUE;
+                s->shutdown = true;
                 break;
             }
             s->current_phase_rate = s->phase_rates[bit & 1];

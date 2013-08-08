@@ -112,7 +112,7 @@ static tone_gen_descriptor_t my_mf_digit_tones[16];
 
 static char bell_mf_tone_codes[] = "1234567890CA*B#";
 
-int callback_ok;
+bool callback_ok;
 int callback_roll;
 
 static void my_mf_gen_init(float low_fudge,
@@ -139,7 +139,7 @@ static void my_mf_gen_init(float low_fudge,
                                  gap,
                                  0,
                                  0,
-                                 FALSE);
+                                 false);
     }
 }
 /*- End of function --------------------------------------------------------*/
@@ -188,10 +188,10 @@ static void digit_delivery(void *data, const char *digits, int len)
 
     if (data != (void *) 0x12345678)
     {
-        callback_ok = FALSE;
+        callback_ok = false;
         return;
     }
-    callback_ok = TRUE;
+    callback_ok = true;
     t = s + callback_roll;
     seg = 15 - callback_roll;
     for (i = 0;  i < len;  i += seg, seg = 15)
@@ -200,7 +200,7 @@ static void digit_delivery(void *data, const char *digits, int len)
             seg = len - i;
         if (memcmp(digits + i, t, seg))
         {
-            callback_ok = FALSE;
+            callback_ok = false;
             printf("Fail at %d %d\n", i, seg);
             break;
         }
@@ -522,7 +522,7 @@ int main(int argc, char *argv[])
     /* Test the callback mode for delivering detected digits */
 
     printf("Test: Callback digit delivery mode.\n");
-    callback_ok = FALSE;
+    callback_ok = false;
     callback_roll = 0;
     mf_state = bell_mf_rx_init(NULL, digit_delivery, (void *) 0x12345678);
     my_mf_gen_init(0.0, -10, 0.0, -10, 68, 68);

@@ -145,15 +145,15 @@ float dtmf_col[] =
 
 char dtmf_positions[] = "123A" "456B" "789C" "*0#D";
 
-int callback_hit;
-int callback_ok;
+bool callback_hit;
+bool callback_ok;
 int callback_roll;
 int step;
 
 float max_forward_twist;
 float max_reverse_twist;
 
-int use_dialtone_filter = FALSE;
+bool use_dialtone_filter = false;
 
 char *decode_test_file = NULL;
 
@@ -185,7 +185,7 @@ static void my_dtmf_gen_init(float low_fudge,
                                      gap,
                                      0,
                                      0,
-                                     FALSE);
+                                     false);
         }
     }
 }
@@ -219,7 +219,7 @@ static void digit_delivery(void *data, const char *digits, int len)
     const char *s = ALL_POSSIBLE_DIGITS;
     const char *t;
 
-    callback_hit = TRUE;
+    callback_hit = true;
     if (data == (void *) 0x12345678)
     {
         t = s + callback_roll;
@@ -230,7 +230,7 @@ static void digit_delivery(void *data, const char *digits, int len)
                 seg = len - i;
             if (memcmp(digits + i, t, seg))
             {
-                callback_ok = FALSE;
+                callback_ok = false;
                 printf("Fail at %d %d\n", i, seg);
                 break;
             }
@@ -240,7 +240,7 @@ static void digit_delivery(void *data, const char *digits, int len)
     }
     else
     {
-        callback_ok = FALSE;
+        callback_ok = false;
     }
 }
 /*- End of function --------------------------------------------------------*/
@@ -250,10 +250,10 @@ static void digit_status(void *data, int signal, int level, int delay)
     const char *s = ALL_POSSIBLE_DIGITS;
     int len;
     static int last_step = 0;
-    static int first = TRUE;
+    static int first = true;
 
     //printf("Digit status %d %d %d\n", signal, level, delay);
-    callback_hit = TRUE;
+    callback_hit = true;
     len = step - last_step;
     if (data == (void *) 0x12345678)
     {
@@ -262,12 +262,12 @@ static void digit_status(void *data, int signal, int level, int delay)
             if (first)
             {
                 /* At the beginning the apparent duration is expected to be wrong */
-                first = FALSE;
+                first = false;
             }
             else
             {
                 printf("Failed for signal %s length %d at %d\n", (callback_roll & 1)  ?  "on"  :  "off", len, step);
-                callback_ok = FALSE;
+                callback_ok = false;
             }
         }
         if (callback_roll & 1)
@@ -275,7 +275,7 @@ static void digit_status(void *data, int signal, int level, int delay)
             if (signal != 0)
             {
                 printf("Failed for signal 0x%X instead of 0\n", signal);
-                callback_ok = FALSE;
+                callback_ok = false;
             }
         }
         else
@@ -283,12 +283,12 @@ static void digit_status(void *data, int signal, int level, int delay)
             if (signal != s[callback_roll >> 1])
             {
                 printf("Failed for signal 0x%X instead of 0x%X\n", signal, s[callback_roll >> 1]);
-                callback_ok = FALSE;
+                callback_ok = false;
             }
             if (level < DEFAULT_DTMF_TX_LEVEL + 3 - 1  ||  level > DEFAULT_DTMF_TX_LEVEL + 3 + 1)
             {
                 printf("Failed for level %d instead of %d\n", level, DEFAULT_DTMF_TX_LEVEL + 3);
-                callback_ok = FALSE;
+                callback_ok = false;
             }
         }
         if (++callback_roll >= 32)
@@ -296,7 +296,7 @@ static void digit_status(void *data, int signal, int level, int delay)
     }
     else
     {
-        callback_ok = FALSE;
+        callback_ok = false;
     }
     last_step = step;
 }
@@ -714,7 +714,7 @@ static void dial_tone_tolerance_tests(void)
 
     for (j = -30;  j < -3;  j++)
     {
-        tone_gen_descriptor_init(&dial_tone_desc, 350, j, 440, j, 1, 0, 0, 0, TRUE);
+        tone_gen_descriptor_init(&dial_tone_desc, 350, j, 440, j, 1, 0, 0, 0, true);
         tone_gen_init(&dial_tone, &dial_tone_desc);
         for (i = 0;  i < 10;  i++)
         {
@@ -755,8 +755,8 @@ static void callback_function_tests(void)
 
     /* Test the callback mode for delivering detected digits */
     printf("Test: Callback digit delivery mode.\n");
-    callback_hit = FALSE;
-    callback_ok = TRUE;
+    callback_hit = false;
+    callback_ok = true;
     callback_roll = 0;
     dtmf_state = dtmf_rx_init(NULL, digit_delivery, (void *) 0x12345678);
     if (use_dialtone_filter  ||  max_forward_twist >= 0.0f  ||  max_reverse_twist >= 0.0f)
@@ -784,8 +784,8 @@ static void callback_function_tests(void)
 
     /* Test the realtime callback mode for reporting detected digits */
     printf("Test: Realtime callback digit delivery mode.\n");
-    callback_hit = FALSE;
-    callback_ok = TRUE;
+    callback_hit = false;
+    callback_ok = true;
     callback_roll = 0;
     dtmf_rx_init(dtmf_state, NULL, NULL);
     dtmf_rx_set_realtime_callback(dtmf_state, digit_status, (void *) 0x12345678);
@@ -867,7 +867,7 @@ int main(int argc, char *argv[])
     int channel_codec;
     int opt;
 
-    use_dialtone_filter = FALSE;
+    use_dialtone_filter = false;
     channel_codec = MUNGE_CODEC_NONE;
     decode_test_file = NULL;
     max_forward_twist = -1.0f;
@@ -886,7 +886,7 @@ int main(int argc, char *argv[])
             max_forward_twist = atof(optarg);
             break;
         case 'f':
-            use_dialtone_filter = TRUE;
+            use_dialtone_filter = true;
             break;
         case 'R':
             max_reverse_twist = atof(optarg);

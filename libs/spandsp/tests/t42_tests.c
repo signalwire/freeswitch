@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
 
     /* The default luminant is D50 */
     set_lab_illuminant(&lab_param, 96.422f, 100.000f,  82.521f);
-    set_lab_gamut(&lab_param, 0, 100, -85, 85, -75, 125, FALSE);
+    set_lab_gamut(&lab_param, 0, 100, -85, 85, -75, 125, false);
 
     source_file = (argc > 1)  ?  argv[1]  :  IN_FILE_NAME;
     /* sRGB to ITU */
@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
 
         /* The default luminant is D50 */
         set_lab_illuminant(&lab, 96.422f, 100.000f,  82.521f);
-        set_lab_gamut(&lab, 0, 100, -85, 85, -75, 125, FALSE);
+        set_lab_gamut(&lab, 0, 100, -85, 85, -75, 125, false);
         lab_to_srgb(&lab, colour_map, colour_map, 256);
         for (i = 0;  i < (1 << bits_per_pixel);  i++)
             printf("Map %3d - %5d %5d %5d\n", i, colour_map[3*i], colour_map[3*i + 1], colour_map[3*i + 2]);
@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
     {
         printf("There is no colour map\n");
     }
-    process_raw = FALSE;
+    process_raw = false;
     printf("Compression is ");
     switch (compression)
     {
@@ -246,18 +246,18 @@ int main(int argc, char *argv[])
         return 0;
     case COMPRESSION_T85:
         printf("T.85\n");
-        process_raw = TRUE;
+        process_raw = true;
         break;
     case COMPRESSION_T43:
         printf("T.43\n");
-        process_raw = TRUE;
+        process_raw = true;
         break;
     case COMPRESSION_JPEG:
         printf("JPEG");
         if (photometric == PHOTOMETRIC_ITULAB)
         {
             printf(" ITULAB");
-            process_raw = TRUE;
+            process_raw = true;
         }
         printf("\n");
         break;
@@ -474,13 +474,13 @@ int main(int argc, char *argv[])
                 printf("CIELAB\n");
                 /* The default luminant is D50 */
                 set_lab_illuminant(&lab_param, 96.422f, 100.000f,  82.521f);
-                set_lab_gamut(&lab_param, 0, 100, -128, 127, -128, 127, TRUE);
+                set_lab_gamut(&lab_param, 0, 100, -128, 127, -128, 127, true);
                 lab_to_srgb(&lab_param, data, data, w*h);
                 break;
             case PHOTOMETRIC_ITULAB:
                 /* The default luminant is D50 */
                 set_lab_illuminant(&lab_param, 96.422f, 100.000f,  82.521f);
-                set_lab_gamut(&lab_param, 0, 100, -85, 85, -75, 125, FALSE);
+                set_lab_gamut(&lab_param, 0, 100, -85, 85, -75, 125, false);
                 break;
             }
             //if (!t42_srgb_to_itulab_jpeg(logging, &lab_param, (tdata_t) &outptr, &outsize, data, off, w, h, 3))
@@ -543,7 +543,7 @@ int main(int argc, char *argv[])
         totdata = h*bytes_per_row;
         /* The default luminant is D50 */
         set_lab_illuminant(&lab_param, 96.422f, 100.000f,  82.521f);
-        set_lab_gamut(&lab_param, 0, 100, -85, 85, -75, 125, FALSE);
+        set_lab_gamut(&lab_param, 0, 100, -85, 85, -75, 125, false);
 #if 0
         start = rdtscll();
         data2 = NULL;

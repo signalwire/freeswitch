@@ -31,6 +31,11 @@
 #include <inttypes.h>
 #include <stdlib.h>
 #include <memory.h>
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 
 #include "spandsp/telephony.h"
 #include "spandsp/alloc.h"

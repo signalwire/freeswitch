@@ -72,6 +72,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <tiffio.h>
 
@@ -841,12 +846,12 @@ static int encode_row(t4_t6_encode_state_t *s, const uint8_t *row_buf, size_t le
         else
         {
             encode_1d_row(s, row_buf);
-            s->row_is_2d = TRUE;
+            s->row_is_2d = true;
         }
         if (s->rows_to_next_1d_row <= 0)
         {
             /* Insert a row of 1D encoding */
-            s->row_is_2d = FALSE;
+            s->row_is_2d = false;
             s->rows_to_next_1d_row = s->max_rows_to_next_1d_row - 1;
         }
         break;
@@ -874,7 +879,7 @@ static int finalise_page(t4_t6_encode_state_t *s)
     else
     {
         /* Attach an RTC (return to control == 6 x EOLs) to the end of the page */
-        s->row_is_2d = FALSE;
+        s->row_is_2d = false;
         for (i = 0;  i < EOLS_TO_END_T4_TX_PAGE;  i++)
             encode_eol(s);
     }
@@ -1105,7 +1110,7 @@ SPAN_DECLARE(void) t4_t6_encode_set_max_2d_rows_per_1d_row(t4_t6_encode_state_t 
     }
     s->max_rows_to_next_1d_row = max;
     s->rows_to_next_1d_row = max - 1;
-    s->row_is_2d = FALSE;
+    s->row_is_2d = false;
 }
 /*- End of function --------------------------------------------------------*/
 

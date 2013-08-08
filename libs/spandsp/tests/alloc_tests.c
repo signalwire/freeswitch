@@ -58,16 +58,16 @@ int main(int argc, char *argv[])
     void *b;
     void *c;
     
-    if (span_mem_allocators(malloc,
-                            memalign,
+    if (span_mem_allocators(memalign,
+                            malloc,
                             realloc,
                             free))
     {
         printf("Failed\n");
         exit(2);
     }
-    a = span_alloc(42);
-    b = span_aligned_alloc(8, 42);
+    a = span_aligned_alloc(8, 42);
+    b = span_alloc(42);
     c = span_realloc(NULL, 42);
     printf("%p %p %p\n", a, b, c);
     span_free(a);

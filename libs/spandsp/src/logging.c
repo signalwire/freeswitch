@@ -40,6 +40,11 @@
 #include <signal.h>
 #include <sys/time.h>
 #include <time.h>
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 
 #include "spandsp/telephony.h"
 #include "spandsp/alloc.h"
@@ -74,11 +79,11 @@ static void default_message_handler(void *user_data, int level, const char *text
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) span_log_test(logging_state_t *s, int level)
+SPAN_DECLARE(bool) span_log_test(logging_state_t *s, int level)
 {
     if (s  &&  (s->level & SPAN_LOG_SEVERITY_MASK) >= (level & SPAN_LOG_SEVERITY_MASK))
-        return TRUE;
-    return FALSE;
+        return true;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 

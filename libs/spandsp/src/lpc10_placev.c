@@ -41,6 +41,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
@@ -67,7 +72,7 @@ void lpc10_placea(int32_t *ipitch,
     int32_t k;
     int32_t l;
     int32_t hrange;
-    int ephase;
+    bool ephase;
     int32_t lrange;
 
     lrange = (af - 2)*lframe + 1;
@@ -148,14 +153,14 @@ void lpc10_placea(int32_t *ipitch,
             awin[af - 1][1] += *ipitch;
         }
         /* Make energy window be phase-synchronous. */
-        ephase = TRUE;
+        ephase = true;
     }
     else
     {
         /* Case 3 */
         awin[af - 1][0] = vwin[af - 1][0];
         awin[af - 1][1] = vwin[af - 1][1];
-        ephase = FALSE;
+        ephase = false;
     }
     /* RMS is computed over an integer number of pitch periods in the analysis
        window.  When it is not placed phase-synchronously, it is placed as close
@@ -193,7 +198,7 @@ void lpc10_placev(int32_t *osbuf,
 {
     int32_t i1;
     int32_t i2;
-    int crit;
+    bool crit;
     int32_t q;
     int32_t osptr1;
     int32_t hrange;
@@ -286,12 +291,12 @@ void lpc10_placev(int32_t *osbuf,
         q++;
         /* Check for case 2 (placement before onset): */
         /* Check for critical region exception: */
-        crit = FALSE;
+        crit = false;
         for (i = q + 1;  i < osptr1;  i++)
         {
             if (osbuf[i - 1] - osbuf[q - 1] >= minwin)
             {
-                crit = TRUE;
+                crit = true;
                 break;
             }
         }

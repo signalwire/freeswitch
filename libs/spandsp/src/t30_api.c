@@ -41,6 +41,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <tiffio.h>
 
@@ -555,7 +560,7 @@ SPAN_DECLARE(size_t) t30_get_rx_csa(t30_state_t *s, int *type, const char *addre
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t30_set_tx_page_header_overlays_image(t30_state_t *s, int header_overlays_image)
+SPAN_DECLARE(int) t30_set_tx_page_header_overlays_image(t30_state_t *s, bool header_overlays_image)
 {
     s->header_overlays_image = header_overlays_image;
     t4_tx_set_header_overlays_image(&s->t4.tx, s->header_overlays_image);
@@ -590,7 +595,7 @@ SPAN_DECLARE(int) t30_set_tx_page_header_tz(t30_state_t *s, const char *tzstring
 {
     if (tz_init(&s->tz, tzstring))
     {
-        s->use_own_tz = TRUE;
+        s->use_own_tz = true;
         t4_tx_set_header_tz(&s->t4.tx, &s->tz);
         return 0;
     }
@@ -633,13 +638,13 @@ SPAN_DECLARE(void) t30_set_tx_file(t30_state_t *s, const char *file, int start_p
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t30_set_iaf_mode(t30_state_t *s, int iaf)
+SPAN_DECLARE(void) t30_set_iaf_mode(t30_state_t *s, bool iaf)
 {
     s->iaf = iaf;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t30_set_ecm_capability(t30_state_t *s, int enabled)
+SPAN_DECLARE(int) t30_set_ecm_capability(t30_state_t *s, bool enabled)
 {
     s->ecm_allowed = enabled;
     t30_build_dis_or_dtc(s);
@@ -694,7 +699,7 @@ SPAN_DECLARE(int) t30_set_supported_compressions(t30_state_t *s, int supported_c
 #if defined(SPANDSP_SUPPORT_T88)
                             | T4_COMPRESSION_T88
 #endif
-                            //| T4_COMPRESSION_T42_T81
+                            | T4_COMPRESSION_T42_T81
 #if defined(SPANDSP_SUPPORT_SYCC_T81)
                             | T4_COMPRESSION_SYCC_T81
 #endif
@@ -704,7 +709,6 @@ SPAN_DECLARE(int) t30_set_supported_compressions(t30_state_t *s, int supported_c
 #if defined(SPANDSP_SUPPORT_T45)
                             | T4_COMPRESSION_T45
 #endif
-#if 0
                             | T4_COMPRESSION_GRAYSCALE
                             | T4_COMPRESSION_COLOUR
                             | T4_COMPRESSION_12BIT
@@ -712,8 +716,8 @@ SPAN_DECLARE(int) t30_set_supported_compressions(t30_state_t *s, int supported_c
                             | T4_COMPRESSION_GRAY_TO_BILEVEL
                             | T4_COMPRESSION_COLOUR_TO_BILEVEL
                             | T4_COMPRESSION_RESCALING
-#endif
                             | 0;
+
     s->supported_compressions = supported_compressions;
     t30_build_dis_or_dtc(s);
     return 0;

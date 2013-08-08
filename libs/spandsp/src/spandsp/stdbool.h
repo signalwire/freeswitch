@@ -1,11 +1,11 @@
 /*
  * SpanDSP - a series of DSP components for telephony
  *
- * private/bitstream.h - Bitstream composition and decomposition routines.
+ * stdbool.h - A version for systems which lack their own stdbool.h
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
- * Copyright (C) 2006 Steve Underwood
+ * Copyright (C) 2003 Steve Underwood
  *
  * All rights reserved.
  *
@@ -23,20 +23,33 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#if !defined(_SPANDSP_PRIVATE_BITSTREAM_H_)
-#define _SPANDSP_PRIVATE_BITSTREAM_H_
+/*! \file */
 
-/*! Bitstream handler state */
-struct bitstream_state_s
-{
-    /*! The bit stream. */
-    uint32_t bitstream;
-    /*! The residual bits in bitstream. */
-    int residue;
-    /*! True if the stream is LSB first, else MSB first */
-    bool lsb_first;
-};
 
+/*
+ * ISO C Standard:  7.16  Boolean type and values  <stdbool.h>
+ */
+
+#if !defined(_STDBOOL_H)
+#define _STDBOOL_H
+
+#if !defined(__cplusplus)
+
+#define _Bool   int
+#define bool    int
+#define false   0
+#define true    (!false)
+
+#else
+
+#define _Bool   bool
+#define bool    bool
+#define false   false
+#define true    true
 
 #endif
-/*- End of file ------------------------------------------------------------*/
+
+/* Signal that all the definitions are present.  */
+#define __bool_true_false_are_defined   1
+
+#endif

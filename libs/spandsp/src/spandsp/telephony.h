@@ -70,13 +70,6 @@ typedef int (*span_tx_handler_t)(void *s, int16_t amp[], int max_len);
 #define ms_to_samples(t)            ((t)*(SAMPLE_RATE/1000))
 #define us_to_samples(t)            ((t)/(1000000/SAMPLE_RATE))
 
-#if !defined(FALSE)
-#define FALSE 0
-#endif
-#if !defined(TRUE)
-#define TRUE (!FALSE)
-#endif
-
 /* Fixed point constant macros */
 #define FP_Q_9_7(x) ((int16_t) (128.0*x + ((x >= 0.0)  ?  0.5  :  -0.5)))
 #define FP_Q_8_8(x) ((int16_t) (256.0*x + ((x >= 0.0)  ?  0.5  :  -0.5)))

@@ -38,6 +38,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <memory.h>
 #include <string.h>
@@ -54,6 +59,7 @@
 #include "spandsp/super_tone_rx.h"
 #include "spandsp/sig_tone.h"
 
+#include "spandsp/private/power_meter.h"
 #include "spandsp/private/sig_tone.h"
 
 /*! PI */
@@ -226,7 +232,7 @@ SPAN_DECLARE(int) sig_tone_tx(sig_tone_tx_state_t *s, int16_t amp[], int len)
     int k;
     int n;
     int16_t tone;
-    int need_update;
+    bool need_update;
     int high_low;
 
     for (i = 0;  i < len;  i += n)
@@ -236,19 +242,19 @@ SPAN_DECLARE(int) sig_tone_tx(sig_tone_tx_state_t *s, int16_t amp[], int len)
             if (s->current_tx_timeout <= len - i)
             {
                 n = s->current_tx_timeout;
-                need_update = TRUE;
+                need_update = true;
             }
             else
             {
                 n = len - i;
-                need_update = FALSE;
+                need_update = false;
             }
             s->current_tx_timeout -= n;
         }
         else
         {
             n = len - i;
-            need_update = FALSE;
+            need_update = false;
         }
         if (!(s->current_tx_tone & SIG_TONE_TX_PASSTHROUGH))
             vec_zeroi16(&amp[i], n);
@@ -449,13 +455,13 @@ SPAN_DECLARE(int) sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len)
         if ((s->signalling_state & (SIG_TONE_1_PRESENT | SIG_TONE_2_PRESENT)))
         {
             if (s->flat_mode_timeout  &&  --s->flat_mode_timeout == 0)
-                s->flat_mode = TRUE;
+                s->flat_mode = true;
             /*endif*/
         }
         else
         {
             s->flat_mode_timeout = s->desc->sharp_flat_timeout;
-            s->flat_mode = FALSE;
+            s->flat_mode = false;
         }
         /*endif*/
 

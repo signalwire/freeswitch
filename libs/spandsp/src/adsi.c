@@ -40,6 +40,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <assert.h>
 
@@ -64,6 +69,7 @@
 #include "spandsp/private/queue.h"
 #include "spandsp/private/tone_generate.h"
 #include "spandsp/private/async.h"
+#include "spandsp/private/power_meter.h"
 #include "spandsp/private/fsk.h"
 #include "spandsp/private/dtmf.h"
 #include "spandsp/private/adsi.h"
@@ -151,7 +157,7 @@ static int adsi_tx_get_bit(void *user_data)
         if (s->tx_signal_on)
         {
             /* The FSK should now be switched off. */
-            s->tx_signal_on = FALSE;
+            s->tx_signal_on = false;
             s->msg_len = 0;
         }
     }
@@ -170,7 +176,7 @@ static int adsi_tdd_get_async_byte(void *user_data)
     if (s->tx_signal_on)
     {
         /* The FSK should now be switched off. */
-        s->tx_signal_on = FALSE;
+        s->tx_signal_on = false;
         s->msg_len = 0;
     }
     return 0x1F;
@@ -386,12 +392,12 @@ static void start_tx(adsi_tx_state_t *s)
         break;
     case ADSI_STANDARD_TDD:
         fsk_tx_init(&s->fsktx, &preset_fsk_specs[FSK_WEITBRECHT_4545], async_tx_get_bit, &s->asynctx);
-        async_tx_init(&s->asynctx, 5, ASYNC_PARITY_NONE, 2, FALSE, adsi_tdd_get_async_byte, s);
+        async_tx_init(&s->asynctx, 5, ASYNC_PARITY_NONE, 2, false, adsi_tdd_get_async_byte, s);
         /* Schedule an explicit shift at the start of baudot transmission */
         s->baudot_shift = 2;
         break;
     }
-    s->tx_signal_on = TRUE;
+    s->tx_signal_on = true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -489,7 +495,7 @@ SPAN_DECLARE(int) adsi_tx(adsi_tx_state_t *s, int16_t amp[], int max_len)
             if (len < max_len)
             {
                 if ((lenx = fsk_tx(&s->fsktx, amp + len, max_len - len)) <= 0)
-                    s->tx_signal_on = FALSE;
+                    s->tx_signal_on = false;
                 len += lenx;
             }
             break;
@@ -672,7 +678,7 @@ SPAN_DECLARE(adsi_tx_state_t *) adsi_tx_init(adsi_tx_state_t *s, int standard)
                              60,
                              0,
                              0,
-                             FALSE);
+                             false);
     s->standard = standard;
     adsi_tx_set_preamble(s, -1, -1, -1, -1);
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);

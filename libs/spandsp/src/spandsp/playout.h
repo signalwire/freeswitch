@@ -56,80 +56,13 @@ enum
 
 typedef int timestamp_t;
 
-typedef struct playout_frame_s
-{
-    /*! The actual frame data */
-    void *data;
-    /*! The type of frame */
-    int type;
-    /*! The timestamp assigned by the sending end */
-    timestamp_t sender_stamp;
-    /*! The timespan covered by the data in this frame */
-    timestamp_t sender_len;
-    /*! The timestamp assigned by the receiving end */
-    timestamp_t receiver_stamp;
-    /*! Pointer to the next earlier frame */
-    struct playout_frame_s *earlier;
-    /*! Pointer to the next later frame */
-    struct playout_frame_s *later;
-} playout_frame_t;
+typedef struct playout_frame_s playout_frame_t;
 
 /*!
     Playout (jitter buffer) descriptor. This defines the working state
     for a single instance of playout buffering.
 */
-typedef struct
-{
-    /*! TRUE if the buffer is dynamically sized */
-    int dynamic;
-    /*! The minimum length (dynamic) or fixed length (static) of the buffer */
-    int min_length;
-    /*! The maximum length (dynamic) or fixed length (static) of the buffer */
-    int max_length;
-    /*! The target filter threshold for adjusting dynamic buffering. */
-    int dropable_threshold;
-
-    int start;
-
-    /*! The queued frame list */
-    playout_frame_t *first_frame;
-    playout_frame_t *last_frame;
-    /*! The free frame pool */
-    playout_frame_t *free_frames;
-
-    /*! The total frames input to the buffer, to date. */
-    int frames_in;
-    /*! The total frames output from the buffer, to date. */
-    int frames_out;
-    /*! The number of frames received out of sequence. */
-    int frames_oos;
-    /*! The number of frames which were discarded, due to late arrival. */
-    int frames_late;
-    /*! The number of frames which were never received. */
-    int frames_missing;
-    /*! The number of frames trimmed from the stream, due to buffer shrinkage. */
-    int frames_trimmed;
-
-    timestamp_t latest_expected;
-    /*! The present jitter adjustment */
-    timestamp_t current;
-    /*! The sender_stamp of the last speech frame */
-    timestamp_t last_speech_sender_stamp;
-    /*! The duration of the last speech frame */
-    timestamp_t last_speech_sender_len;
-
-    int not_first;
-    /*! The time since the target buffer length was last changed. */
-    timestamp_t since_last_step;
-    /*! Filter state for tracking the packets arriving just in time */
-    int32_t state_just_in_time;
-    /*! Filter state for tracking the packets arriving late */
-    int32_t state_late;
-    /*! The current target length of the buffer */
-    int target_buffer_length;
-    /*! The current actual length of the buffer, which may lag behind the target value */
-    int actual_buffer_length;
-} playout_state_t;
+typedef struct playout_state_s playout_state_t;
 
 #if defined(__cplusplus)
 extern "C"

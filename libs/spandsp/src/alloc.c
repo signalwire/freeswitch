@@ -33,7 +33,9 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <fcntl.h>
+#if !defined(__USE_ISOC11)
 #define __USE_ISOC11
+#endif
 #include <stdlib.h>
 #if defined(HAVE_MALLOC_H)
 #include <malloc.h>
@@ -48,26 +50,25 @@
 #include "spandsp/telephony.h"
 #include "spandsp/alloc.h"
 
-static void *fake_aligned_alloc(size_t alignment, size_t size);
-
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4232)	/* address of dllimport is not static, identity not guaranteed */
 #endif
 
-span_alloc_t __span_alloc = malloc;
 #if defined(HAVE_ALIGNED_ALLOC)
-span_aligned_alloc_t __span_aligned_alloc = aligned_alloc;
+static span_aligned_alloc_t __span_aligned_alloc = aligned_alloc;
 #elif defined(HAVE_MEMALIGN)
-span_aligned_alloc_t __span_aligned_alloc = memalign;
+static span_aligned_alloc_t __span_aligned_alloc = memalign;
 #elif defined(HAVE_POSIX_MEMALIGN)
 static void *fake_posix_memalign(size_t alignment, size_t size);
-span_aligned_alloc_t __span_aligned_alloc = fake_posix_memalign;
+static span_aligned_alloc_t __span_aligned_alloc = fake_posix_memalign;
 #else
-span_aligned_alloc_t __span_aligned_alloc = fake_aligned_alloc;
+static void *fake_aligned_alloc(size_t alignment, size_t size);
+static span_aligned_alloc_t __span_aligned_alloc = fake_aligned_alloc;
 #endif
-span_realloc_t __span_realloc = realloc;
-span_free_t __span_free = free;
+static span_alloc_t __span_alloc = malloc;
+static span_realloc_t __span_realloc = realloc;
+static span_free_t __span_free = free;
 
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -85,23 +86,23 @@ static void *fake_posix_memalign(size_t alignment, size_t size)
     return ptr;
 }
 /*- End of function --------------------------------------------------------*/
-#endif
-
+#else
 static void *fake_aligned_alloc(size_t alignment, size_t size)
 {
-    return NULL;
+    return malloc(size);
+}
+/*- End of function --------------------------------------------------------*/
+#endif
+
+SPAN_DECLARE(void *) span_aligned_alloc(size_t alignment, size_t size)
+{
+    return __span_aligned_alloc(alignment, size);
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(void *) span_alloc(size_t size)
 {
     return __span_alloc(size);
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(void *) span_aligned_alloc(size_t alignment, size_t size)
-{
-    return __span_aligned_alloc(alignment, size);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -117,20 +118,27 @@ SPAN_DECLARE(void) span_free(void *ptr)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) span_mem_allocators(span_alloc_t custom_alloc,
-                                      span_aligned_alloc_t custom_aligned_alloc,
+SPAN_DECLARE(int) span_mem_allocators(span_aligned_alloc_t custom_aligned_alloc,
+                                      span_alloc_t custom_alloc,
                                       span_realloc_t custom_realloc,
                                       span_free_t custom_free)
 {
-    if (custom_alloc == NULL  ||  custom_realloc == NULL  ||  custom_free == NULL)
-        return -1;
-    __span_alloc = custom_alloc;
-    if (custom_aligned_alloc)
-        __span_aligned_alloc = custom_aligned_alloc;
-    else
-        __span_aligned_alloc = fake_aligned_alloc;
-    __span_realloc = custom_realloc;
-    __span_free = custom_free;
+    __span_aligned_alloc = (custom_aligned_alloc)
+                            ?
+                            custom_aligned_alloc
+                            :
+#if defined(HAVE_ALIGNED_ALLOC)
+                            aligned_alloc;
+#elif defined(HAVE_MEMALIGN)
+                            memalign;
+#elif defined(HAVE_POSIX_MEMALIGN)
+                            fake_posix_memalign;
+#else
+                            fake_aligned_alloc;
+#endif
+    __span_alloc = (custom_alloc)  ?  custom_alloc  :  malloc;
+    __span_realloc = (custom_realloc)  ?  custom_realloc  :  realloc;
+    __span_free = (custom_free)  ?  custom_free  :  free;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

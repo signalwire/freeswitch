@@ -39,6 +39,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include <time.h>
 #include "floating_fudge.h"
 #include <setjmp.h>
@@ -63,13 +68,6 @@
 
 #include "t43_gray_code_tables.h"
 #include "t42_t43_local.h"
-
-#if !defined(FALSE)
-#define FALSE 0
-#endif
-#if !defined(TRUE)
-#define TRUE (!FALSE)
-#endif
 
 SPAN_DECLARE(const char *) t43_image_type_to_str(int type)
 {
@@ -868,7 +866,7 @@ SPAN_DECLARE(int) t43_decode_restart(t43_decode_state_t *s)
     /* ITULAB */
     /* Illuminant D50 */
     set_lab_illuminant(&s->lab, 96.422f, 100.000f,  82.521f);
-    set_lab_gamut(&s->lab, 0, 100, -85, 85, -75, 125, FALSE);
+    set_lab_gamut(&s->lab, 0, 100, -85, 85, -75, 125, false);
 
     s->t85.min_bit_planes = 1;
     s->t85.max_bit_planes = 8;
@@ -901,7 +899,7 @@ SPAN_DECLARE(t43_decode_state_t *) t43_decode_init(t43_decode_state_t *s,
     /* ITULAB */
     /* Illuminant D50 */
     set_lab_illuminant(&s->lab, 96.422f, 100.000f,  82.521f);
-    set_lab_gamut(&s->lab, 0, 100, -85, 85, -75, 125, FALSE);
+    set_lab_gamut(&s->lab, 0, 100, -85, 85, -75, 125, false);
 
     s->t85.min_bit_planes = 1;
     s->t85.max_bit_planes = 8;

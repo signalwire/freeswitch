@@ -363,8 +363,8 @@ SPAN_DECLARE(size_t) t30_get_rx_csa(t30_state_t *s, int *type, const char *addre
 /*! Set page header extends or overlays the image mode.
     \brief Set page header overlay mode.
     \param s The T.30 context.
-    \param header_overlays_image TRUE for overlay, or FALSE for extend the page. */
-SPAN_DECLARE(int) t30_set_tx_page_header_overlays_image(t30_state_t *s, int header_overlays_image);
+    \param header_overlays_image True for overlay, or false for extend the page. */
+SPAN_DECLARE(int) t30_set_tx_page_header_overlays_image(t30_state_t *s, bool header_overlays_image);
 
 /*! Set the transmitted header information associated with a T.30 context.
     \brief Set the transmitted header information associated with a T.30 context.
@@ -426,15 +426,15 @@ SPAN_DECLARE(void) t30_set_tx_file(t30_state_t *s, const char *file, int start_p
 /*! Set Internet aware FAX (IAF) mode.
     \brief Set Internet aware FAX (IAF) mode.
     \param s The T.30 context.
-    \param iaf TRUE for IAF, or FALSE for non-IAF. */
-SPAN_DECLARE(void) t30_set_iaf_mode(t30_state_t *s, int iaf);
+    \param iaf True for IAF, or false for non-IAF. */
+SPAN_DECLARE(void) t30_set_iaf_mode(t30_state_t *s, bool iaf);
 
 /*! Specify if error correction mode (ECM) is allowed by a T.30 context.
     \brief Select ECM capability.
     \param s The T.30 context.
-    \param enabled TRUE for ECM capable, FALSE for not ECM capable.
+    \param enabled True for ECM capable, or false for not ECM capable.
     \return 0 if OK, else -1. */
-SPAN_DECLARE(int) t30_set_ecm_capability(t30_state_t *s, int enabled);
+SPAN_DECLARE(int) t30_set_ecm_capability(t30_state_t *s, bool enabled);
 
 /*! Specify the output encoding for TIFF files created during FAX reception.
     \brief Specify the output encoding for TIFF files created during FAX reception.

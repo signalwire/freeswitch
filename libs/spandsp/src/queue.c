@@ -35,6 +35,14 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <inttypes.h>
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
+#if defined(HAVE_STDATOMIC_H)
+#include <stdatomic.h>
+#endif
 #include <sys/types.h>
 
 #define SPANDSP_FULLY_DEFINE_QUEUE_STATE_T
@@ -44,7 +52,7 @@
 
 #include "spandsp/private/queue.h"
 
-SPAN_DECLARE(int) queue_empty(queue_state_t *s)
+SPAN_DECLARE(bool) queue_empty(queue_state_t *s)
 {
     return (s->iptr == s->optr);
 }

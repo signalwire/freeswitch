@@ -110,7 +110,7 @@ SPAN_DECLARE(logging_state_t *) v18_get_logging_state(v18_state_t *s);
 /*! Initialise a V.18 context.
     \brief Initialise a V.18 context.
     \param s The V.18 context.
-    \param calling_party TRUE if caller mode, else answerer mode.
+    \param calling_party True if caller mode, else answerer mode.
     \param mode Mode of operation.
     \param nation National variant for automoding.
     \param put_msg A callback routine called to deliver the received text
@@ -118,7 +118,7 @@ SPAN_DECLARE(logging_state_t *) v18_get_logging_state(v18_state_t *s);
     \param user_data An opaque pointer for the callback routine.
     \return A pointer to the V.18 context, or NULL if there was a problem. */
 SPAN_DECLARE(v18_state_t *) v18_init(v18_state_t *s,
-                                     int calling_party,
+                                     bool calling_party,
                                      int mode,
                                      int nation,
                                      put_msg_func_t put_msg,

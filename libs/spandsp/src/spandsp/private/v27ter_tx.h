@@ -73,9 +73,9 @@ struct v27ter_tx_state_s
     /*! \brief A counter for the number of consecutive bits of repeating pattern through
                the scrambler. */
     int scrambler_pattern_count;
-    /*! \brief TRUE if transmitting the training sequence, or shutting down transmission.
-               FALSE if transmitting user data. */
-    int in_training;
+    /*! \brief True if transmitting the training sequence, or shutting down transmission.
+               False if transmitting user data. */
+    bool in_training;
     /*! \brief A counter used to track progress through sending the training sequence. */
     int training_step;
 

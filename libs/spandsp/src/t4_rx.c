@@ -44,6 +44,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <tiffio.h>
 
@@ -1185,14 +1190,14 @@ SPAN_DECLARE(logging_state_t *) t4_rx_get_logging_state(t4_rx_state_t *s)
 
 SPAN_DECLARE(t4_rx_state_t *) t4_rx_init(t4_rx_state_t *s, const char *file, int supported_output_compressions)
 {
-    int allocated;
+    bool alloced;
 
-    allocated = FALSE;
+    alloced = false;
     if (s == NULL)
     {
         if ((s = (t4_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
-        allocated = TRUE;
+        alloced = true;
     }
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
     TIFF_FX_init();
@@ -1221,7 +1226,7 @@ SPAN_DECLARE(t4_rx_state_t *) t4_rx_init(t4_rx_state_t *s, const char *file, int
         s->tiff.pages_in_file = 0;
         if (open_tiff_output_file(s, file) < 0)
         {
-            if (allocated)
+            if (alloced)
                 span_free(s);
             return NULL;
         }

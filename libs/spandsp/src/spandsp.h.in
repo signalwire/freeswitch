@@ -45,6 +45,7 @@
 #include <limits.h>
 #include <time.h>
 @INSERT_MATH_HEADER@
+@INSERT_STDBOOL_HEADER@
 #include <tiffio.h>
 
 #include <spandsp/telephony.h>

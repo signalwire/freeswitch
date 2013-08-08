@@ -224,6 +224,7 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/queue.h \
                          spandsp/saturated.h \
                          spandsp/schedule.h \
+                         spandsp/stdbool.h \
                          spandsp/sig_tone.h \
                          spandsp/silence_gen.h \
                          spandsp/super_tone_rx.h \

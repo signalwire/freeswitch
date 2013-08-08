@@ -42,6 +42,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
@@ -61,6 +66,7 @@
 #include "spandsp/v22bis.h"
 
 #include "spandsp/private/logging.h"
+#include "spandsp/private/power_meter.h"
 #include "spandsp/private/v22bis.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -669,7 +675,7 @@ SPAN_DECLARE(int) v22bis_request_retrain(v22bis_state_t *s, int bit_rate)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) v22bis_remote_loopback(v22bis_state_t *s, int enable)
+SPAN_DECLARE(int) v22bis_remote_loopback(v22bis_state_t *s, bool enable)
 {
     /* TODO: */
     return -1;
@@ -685,7 +691,7 @@ SPAN_DECLARE(int) v22bis_get_current_bit_rate(v22bis_state_t *s)
 SPAN_DECLARE(v22bis_state_t *) v22bis_init(v22bis_state_t *s,
                                            int bit_rate,
                                            int guard,
-                                           int calling_party,
+                                           bool calling_party,
                                            get_bit_func_t get_bit,
                                            void *get_bit_user_data,
                                            put_bit_func_t put_bit,

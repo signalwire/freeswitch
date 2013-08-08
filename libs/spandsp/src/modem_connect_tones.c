@@ -53,6 +53,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <stdio.h>
 
@@ -70,6 +75,7 @@
 #include "spandsp/fsk.h"
 #include "spandsp/modem_connect_tones.h"
 
+#include "spandsp/private/power_meter.h"
 #include "spandsp/private/fsk.h"
 #include "spandsp/private/modem_connect_tones.h"
 
@@ -256,12 +262,12 @@ SPAN_DECLARE(modem_connect_tones_tx_state_t *) modem_connect_tones_tx_init(modem
 {
     int alloced;
 
-    alloced = FALSE;
+    alloced = false;
     if (s == NULL)
     {
         if ((s = (modem_connect_tones_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
-        alloced = TRUE;
+        alloced = true;
     }
     s->tone_type = tone_type;
     switch (s->tone_type)
@@ -399,7 +405,7 @@ static void v21_put_bit(void *user_data, int bit)
             s->raw_bit_stream = 0;
             s->num_bits = 0;
             s->flags_seen = 0;
-            s->framing_ok_announced = FALSE;
+            s->framing_ok_announced = false;
             break;
         }
         return;
@@ -430,7 +436,7 @@ static void v21_put_bit(void *user_data, int bit)
                 if (++s->flags_seen >= HDLC_FRAMING_OK_THRESHOLD  &&  !s->framing_ok_announced)
                 {
                     report_tone_state(s, MODEM_CONNECT_TONES_FAX_PREAMBLE, lfastrintf(fsk_rx_signal_power(&(s->v21rx))));
-                    s->framing_ok_announced = TRUE;
+                    s->framing_ok_announced = true;
                 }
             }
         }
@@ -442,7 +448,7 @@ static void v21_put_bit(void *user_data, int bit)
         {
             if (s->num_bits == 8)
             {
-                s->framing_ok_announced = FALSE;
+                s->framing_ok_announced = false;
                 s->flags_seen = 0;
             }
         }
@@ -548,7 +554,7 @@ SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *
                     report_tone_state(s, MODEM_CONNECT_TONES_NONE, -99);
                 s->tone_cycle_duration = 0;
                 s->good_cycles = 0;
-                s->tone_on = FALSE;
+                s->tone_on = false;
                 continue;
             }
             /* There is adequate energy in the channel. Is it mostly at 2100Hz? */
@@ -590,7 +596,7 @@ SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *
                         s->tone_cycle_duration = ms_to_samples(450 + 100);
                     }
                 }
-                s->tone_on = TRUE;
+                s->tone_on = true;
             }
             else if (s->notch_level*5 > s->channel_level)
             {
@@ -609,7 +615,7 @@ SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *
                         s->good_cycles = 0;
                     }
                 }
-                s->tone_on = FALSE;
+                s->tone_on = false;
             }
         }
         break;
@@ -743,7 +749,7 @@ SPAN_DECLARE(modem_connect_tones_rx_state_t *) modem_connect_tones_rx_init(modem
     s->tone_cycle_duration = 0;
     s->good_cycles = 0;
     s->hit = MODEM_CONNECT_TONES_NONE;
-    s->tone_on = FALSE;
+    s->tone_on = false;
     s->tone_callback = tone_callback;
     s->callback_data = user_data;
     s->znotch_1 = 0.0f;
@@ -752,7 +758,7 @@ SPAN_DECLARE(modem_connect_tones_rx_state_t *) modem_connect_tones_rx_init(modem
     s->z15hz_2 = 0.0f;
     s->num_bits = 0;
     s->flags_seen = 0;
-    s->framing_ok_announced = FALSE;
+    s->framing_ok_announced = false;
     s->raw_bit_stream = 0;
     return s;
 }

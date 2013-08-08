@@ -39,10 +39,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 
 #include "spandsp/telephony.h"
 #include "spandsp/alloc.h"
 #include "spandsp/playout.h"
+
+#include "spandsp/private/playout.h"
 
 static playout_frame_t *queue_get(playout_state_t *s, timestamp_t sender_stamp)
 {
@@ -121,7 +128,7 @@ SPAN_DECLARE(int) playout_get(playout_state_t *s, playout_frame_t *frameout, tim
         if (!s->not_first)
         {
             /* Prime things the first time through */
-            s->not_first = TRUE;
+            s->not_first = true;
             s->latest_expected = frame->receiver_stamp + s->min_length;
         }
         /* Leaky integrate the rate of occurance of frames received just in time and late */
@@ -297,7 +304,7 @@ SPAN_DECLARE(int) playout_put(playout_state_t *s, void *data, int type, timestam
     {
         s->last_speech_sender_stamp = sender_stamp - sender_len - s->min_length;
         s->last_speech_sender_len = sender_len;
-        s->start = FALSE;
+        s->start = false;
     }
 
     return PLAYOUT_OK;
@@ -321,7 +328,7 @@ SPAN_DECLARE(void) playout_restart(playout_state_t *s, int min_length, int max_l
     s->min_length = min_length;
     s->max_length = (max_length > min_length)  ?  max_length  :  min_length;
     s->dropable_threshold = 1*0x10000000/100;
-    s->start = TRUE;
+    s->start = true;
     s->since_last_step = 0x7FFFFFFF;
     /* Start with the minimum buffer length allowed, and work from there */
     s->actual_buffer_length =

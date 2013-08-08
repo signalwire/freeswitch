@@ -43,24 +43,24 @@ struct hdlc_rx_state_s
     modem_status_func_t status_handler;
     /*! \brief An opaque parameter passed to the status callback routine. */
     void *status_user_data;
-    /*! \brief TRUE if bad frames are to be reported. */
-    int report_bad_frames;
+    /*! \brief True if bad frames are to be reported. */
+    bool report_bad_frames;
     /*! \brief The number of consecutive flags which must be seen before framing is
         declared OK. */
     int framing_ok_threshold;
-    /*! \brief TRUE if framing OK has been announced. */
-    int framing_ok_announced;
+    /*! \brief True if framing OK has been announced. */
+    bool framing_ok_announced;
     /*! \brief Number of consecutive flags seen so far. */
     int flags_seen;
 
     /*! \brief The raw (stuffed) bit stream buffer. */
-    unsigned int raw_bit_stream;
+    uint32_t raw_bit_stream;
     /*! \brief The destuffed bit stream buffer. */
-    unsigned int byte_in_progress;
+    uint32_t byte_in_progress;
     /*! \brief The current number of bits in byte_in_progress. */
     int num_bits;
-    /*! \brief TRUE if in octet counting mode (e.g. for MTP). */
-    int octet_counting_mode;
+    /*! \brief True if in octet counting mode (e.g. for MTP). */
+    bool octet_counting_mode;
     /*! \brief Octet count, to achieve the functionality needed for things
                like MTP. */
     int octet_count;
@@ -98,8 +98,8 @@ struct hdlc_tx_state_s
     void *user_data;
     /*! \brief The minimum flag octets to insert between frames. */
     int inter_frame_flags;
-    /*! \brief TRUE if frame creation works in progressive mode. */
-    int progressive;
+    /*! \brief True if frame creation works in progressive mode. */
+    bool progressive;
     /*! \brief Maximum permitted frame length. */
     size_t max_frame_len;
 
@@ -113,8 +113,8 @@ struct hdlc_tx_state_s
     int flag_octets;
     /*! \brief The number of abort octets to send for a timed burst of aborts. */
     int abort_octets;
-    /*! \brief TRUE if the next underflow of timed flag octets should be reported */
-    int report_flag_underflow;
+    /*! \brief True if the next underflow of timed flag octets should be reported */
+    bool report_flag_underflow;
 
     /*! \brief The current message being transmitted, with its CRC attached. */
     uint8_t buffer[HDLC_MAXFRAME_LEN + 4];
@@ -130,8 +130,8 @@ struct hdlc_tx_state_s
     /*! \brief The number of bits remaining in byte. */
     int bits;
 
-    /*! \brief TRUE if transmission should end on buffer underflow .*/
-    int tx_end;
+    /*! \brief True if transmission should end on buffer underflow .*/
+    bool tx_end;
 };
 
 #endif

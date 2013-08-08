@@ -124,10 +124,10 @@ struct t4_tx_state_s
     /*! \brief The last page to transfer. -1 to continue to the end of the file. */
     int stop_page;
 
-    /*! \brief TRUE for FAX page headers to overlay (i.e. replace) the beginning of the
-               page image. FALSE for FAX page headers to add to the overall length of
+    /*! \brief True for FAX page headers to overlay (i.e. replace) the beginning of the
+               page image. False for FAX page headers to add to the overall length of
                the page. */
-    int header_overlays_image;
+    bool header_overlays_image;
     /*! \brief The text which will be used in FAX page header. No text results
                in no header line. */
     const char *header_info;

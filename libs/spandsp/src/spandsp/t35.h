@@ -83,9 +83,9 @@ SPAN_DECLARE(const char *) t35_vendor_to_str(const uint8_t *msg, int len);
     \param model A pointer which will be pointed to the identified model.
            If a NULL pointer is given, the model will not be returned.
            If the model is not identified, NULL will be returned.
-    \return TRUE if the machine was identified, otherwise FALSE.
+    \return True if the machine was identified.
 */
-SPAN_DECLARE(int) t35_decode(const uint8_t *msg, int len, const char **country, const char **vendor, const char **model);
+SPAN_DECLARE(bool) t35_decode(const uint8_t *msg, int len, const char **country, const char **vendor, const char **model);
 
 #if defined(__cplusplus)
 }

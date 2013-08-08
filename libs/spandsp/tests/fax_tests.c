@@ -116,16 +116,16 @@ int t38_subst_seq[2] = {0, 0};
 
 t30_exchanged_info_t expected_rx_info[2];
 
-int use_receiver_not_ready = FALSE;
-int test_local_interrupt = FALSE;
+bool use_receiver_not_ready = false;
+bool test_local_interrupt = false;
 
 double when = 0.0;
 
-int phase_e_reached[2] = {FALSE, FALSE};
-int completed[2] = {FALSE, FALSE};
-int succeeded[2] = {FALSE, FALSE};
+bool phase_e_reached[2] = {false, false};
+bool completed[2] = {false, false};
+bool succeeded[2] = {false, false};
 
-int t38_simulate_incrementing_repeats = FALSE;
+bool t38_simulate_incrementing_repeats = false;
 
 static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 {
@@ -316,7 +316,7 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int result)
         if (i == 'A')
         {
             printf("%c: Initiating interrupt request\n", i);
-            t30_local_interrupt_request(s, TRUE);
+            t30_local_interrupt_request(s, true);
         }
         else
         {
@@ -327,7 +327,7 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int result)
             case T30_PRI_EOM:
             case T30_PRI_EOP:
                 printf("%c: Accepting interrupt request\n", i);
-                t30_local_interrupt_request(s, TRUE);
+                t30_local_interrupt_request(s, true);
                 break;
             case T30_PIN:
                 break;
@@ -352,13 +352,13 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
     fax_log_rx_parameters(s, tag);
     t30_get_transfer_statistics(s, &t);
     succeeded[i] = (result == T30_ERR_OK);
-    phase_e_reached[i] = TRUE;
+    phase_e_reached[i] = true;
 }
 /*- End of function --------------------------------------------------------*/
 
 static void real_time_frame_handler(t30_state_t *s,
                                     void *user_data,
-                                    int direction,
+                                    bool incoming,
                                     const uint8_t *msg,
                                     int len)
 {
@@ -367,7 +367,7 @@ static void real_time_frame_handler(t30_state_t *s,
     i = (intptr_t) user_data;
     printf("%c: Real time frame handler - %s, %s, length = %d\n",
            i + 'A',
-           (direction)  ?  "line->T.30"  : "T.30->line",
+           (incoming)  ?  "line->T.30"  : "T.30->line",
            t30_frametype(msg[2]),
            len);
 }
@@ -379,7 +379,7 @@ static int document_handler(t30_state_t *s, void *user_data, int event)
 
     i = (intptr_t) user_data;
     printf("%c: Document handler - event %d\n", i + 'A', event);
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -395,7 +395,7 @@ static void set_t30_callbacks(t30_state_t *t30, int chan)
 
 static void real_time_gateway_frame_handler(t38_gateway_state_t *s,
                                             void *user_data,
-                                            int direction,
+                                            bool incoming,
                                             const uint8_t *msg,
                                             int len)
 {
@@ -404,7 +404,7 @@ static void real_time_gateway_frame_handler(t38_gateway_state_t *s,
     i = (intptr_t) user_data;
     printf("%c: Real time gateway frame handler - %s, %s, length = %d\n",
            i + 'A',
-           (direction)  ?  "PSTN->T.38"  : "T.38->PSTN",
+           (incoming)  ?  "PSTN->T.38"  : "T.38->PSTN",
            t30_frametype(msg[2]),
            len);
 }
@@ -505,19 +505,19 @@ int main(int argc, char *argv[])
 #endif
 
 #if defined(ENABLE_GUI)
-    use_gui = FALSE;
+    use_gui = false;
 #endif
-    log_audio = FALSE;
-    use_ecm = FALSE;
+    log_audio = false;
+    use_ecm = false;
     t38_version = 1;
     input_tiff_file_name = INPUT_TIFF_FILE_NAME;
-    t38_simulate_incrementing_repeats = FALSE;
+    t38_simulate_incrementing_repeats = false;
     g1050_model_no = 0;
     g1050_speed_pattern_no = 1;
-    remove_fill_bits = FALSE;
-    use_tep = FALSE;
-    feedback_audio = FALSE;
-    use_transmit_on_idle = TRUE;
+    remove_fill_bits = false;
+    use_tep = false;
+    feedback_audio = false;
+    use_transmit_on_idle = true;
     supported_modems = T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17;
     page_header_info = NULL;
     page_header_tz = NULL;
@@ -531,7 +531,7 @@ int main(int argc, char *argv[])
     decode_file_name = NULL;
     code_to_look_up = -1;
     allowed_bilevel_resolutions = 0;
-    colour_enabled = FALSE;
+    colour_enabled = false;
     t38_transport = T38_TRANSPORT_UDPTL;
     while ((opt = getopt(argc, argv, "b:c:Cd:D:efFgH:i:Ilm:M:n:p:s:S:tT:u:v:z:")) != -1)
     {
@@ -544,7 +544,7 @@ int main(int argc, char *argv[])
             code_to_look_up = atoi(optarg);
             break;
         case 'C':
-            colour_enabled = TRUE;
+            colour_enabled = true;
             break;
         case 'd':
             decode_file_name = optarg;
@@ -554,17 +554,17 @@ int main(int argc, char *argv[])
             drop_frame = atoi(optarg);
             break;
         case 'e':
-            use_ecm = TRUE;
+            use_ecm = true;
             break;
         case 'f':
-            feedback_audio = TRUE;
+            feedback_audio = true;
             break;
         case 'F':
-            remove_fill_bits = TRUE;
+            remove_fill_bits = true;
             break;
         case 'g':
 #if defined(ENABLE_GUI)
-            use_gui = TRUE;
+            use_gui = true;
 #else
             fprintf(stderr, "Graphical monitoring not available\n");
             exit(2);
@@ -577,10 +577,10 @@ int main(int argc, char *argv[])
             input_tiff_file_name = optarg;
             break;
         case 'I':
-            t38_simulate_incrementing_repeats = TRUE;
+            t38_simulate_incrementing_repeats = true;
             break;
         case 'l':
-            log_audio = TRUE;
+            log_audio = true;
             break;
         case 'm':
             supported_modems = atoi(optarg);
@@ -630,7 +630,7 @@ int main(int argc, char *argv[])
             scan_line_time = atoi(optarg);
             break;
         case 't':
-            use_tep = TRUE;
+            use_tep = true;
             break;
         case 'T':
             start_page = 0;
@@ -926,7 +926,7 @@ int main(int argc, char *argv[])
         {
             t30_set_supported_colour_resolutions(t30_state[i], 0);
         }
-        t30_set_supported_output_compressions(t30_state[i], T4_COMPRESSION_T4_2D);
+        //t30_set_supported_output_compressions(t30_state[i], T4_COMPRESSION_T85);
         t30_set_ecm_capability(t30_state[i], use_ecm);
         t30_set_supported_compressions(t30_state[i],
                                        T4_COMPRESSION_T4_1D
@@ -934,7 +934,6 @@ int main(int argc, char *argv[])
                                      | T4_COMPRESSION_T6
                                      | T4_COMPRESSION_T85
                                      | T4_COMPRESSION_T85_L0
-#if 0
                                      //| T4_COMPRESSION_T88
                                      | T4_COMPRESSION_T43
                                      | T4_COMPRESSION_T45
@@ -947,7 +946,6 @@ int main(int argc, char *argv[])
                                      | T4_COMPRESSION_GRAY_TO_BILEVEL
                                      | T4_COMPRESSION_COLOUR_TO_BILEVEL
                                      | T4_COMPRESSION_RESCALING
-#endif
                                      | 0);
         t30_set_minimum_scan_line_time(t30_state[i], scan_line_time);
 
@@ -977,9 +975,9 @@ int main(int argc, char *argv[])
                 break;
             case T38_TRANSPORT_TCP:
             case T38_TRANSPORT_TCP_TPKT:
-                t38_terminal_set_fill_bit_removal(t38_state[i], TRUE);
+                t38_terminal_set_fill_bit_removal(t38_state[i], true);
                 t38_terminal_set_config(t38_state[i], T38_TERMINAL_OPTION_NO_PACING | T38_TERMINAL_OPTION_NO_INDICATORS);
-                t38_terminal_set_tep_mode(t38_state[i], FALSE);
+                t38_terminal_set_tep_mode(t38_state[i], false);
                 break;
             }
         }
@@ -1031,7 +1029,7 @@ int main(int argc, char *argv[])
                 fax_rx(fax_state[i], fax_rx_buf[i], SAMPLES_PER_CHUNK);
                 if (!t30_call_active(t30_state[i]))
                 {
-                    completed[i] = TRUE;
+                    completed[i] = true;
                     continue;
                 }
 

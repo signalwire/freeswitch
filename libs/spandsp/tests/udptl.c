@@ -34,15 +34,13 @@
 #include <sys/types.h>
 #include <inttypes.h>
 #include <memory.h>
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include <spandsp/stdbool.h>
+#endif
 
 #include "udptl.h"
-
-#if !defined(FALSE)
-#define FALSE 0
-#endif
-#if !defined(TRUE)
-#define TRUE (!FALSE)
-#endif
 
 static int decode_length(const uint8_t *buf, int limit, int *len, int *pvalue)
 {
@@ -296,7 +294,7 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
         s->rx[x].fec_span = span;
 
         memset(repaired, 0, sizeof(repaired));
-        repaired[x] = TRUE;
+        repaired[x] = true;
 
         /* The number of entries is defined as a length, but will only ever be a small
            value. Treat it as such. */
@@ -355,7 +353,7 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
                         }
                     }
                     s->rx[which].buf_len = s->rx[l].fec_len[m];
-                    repaired[which] = TRUE;
+                    repaired[which] = true;
                 }
             }
         }

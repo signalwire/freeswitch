@@ -38,6 +38,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
@@ -263,11 +268,11 @@ SPAN_DECLARE(g722_decode_state_t *) g722_decode_init(g722_decode_state_t *s, int
     else
         s->bits_per_sample = 8;
     if ((options & G722_SAMPLE_RATE_8000))
-        s->eight_k = TRUE;
+        s->eight_k = true;
     if ((options & G722_PACKED)  &&  s->bits_per_sample != 8)
-        s->packed = TRUE;
+        s->packed = true;
     else
-        s->packed = FALSE;
+        s->packed = false;
     s->band[0].det = 32;
     s->band[1].det = 8;
     return s;
@@ -444,11 +449,11 @@ SPAN_DECLARE(g722_encode_state_t *) g722_encode_init(g722_encode_state_t *s, int
     else
         s->bits_per_sample = 8;
     if ((options & G722_SAMPLE_RATE_8000))
-        s->eight_k = TRUE;
+        s->eight_k = true;
     if ((options & G722_PACKED)  &&  s->bits_per_sample != 8)
-        s->packed = TRUE;
+        s->packed = true;
     else
-        s->packed = FALSE;
+        s->packed = false;
     s->band[0].det = 32;
     s->band[1].det = 8;
     return s;

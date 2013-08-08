@@ -40,6 +40,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
@@ -64,6 +69,7 @@
 #include "spandsp/v17rx.h"
 
 #include "spandsp/private/logging.h"
+#include "spandsp/private/power_meter.h"
 #include "spandsp/private/v17rx.h"
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
@@ -1118,7 +1124,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
                 s->signal_present = 60;
                 equalizer_save(s);
                 s->carrier_phase_rate_save = s->carrier_phase_rate;
-                s->short_train = TRUE;
+                s->short_train = true;
                 s->training_stage = TRAINING_STAGE_NORMAL_OPERATION;
             }
             else
@@ -1213,7 +1219,7 @@ static __inline__ int signal_detect(v17_rx_state_t *s, int16_t amp)
             }
 #if defined(IAXMODEM_STUFF)
             /* Carrier has dropped, but the put_bit is pending the signal_present delay. */
-            s->carrier_drop_pending = TRUE;
+            s->carrier_drop_pending = true;
 #endif
         }
     }
@@ -1224,7 +1230,7 @@ static __inline__ int signal_detect(v17_rx_state_t *s, int16_t amp)
             return 0;
         s->signal_present = 1;
 #if defined(IAXMODEM_STUFF)
-        s->carrier_drop_pending = FALSE;
+        s->carrier_drop_pending = false;
 #endif
         report_status_change(s, SIG_STATUS_CARRIER_UP);
     }
@@ -1387,7 +1393,7 @@ SPAN_DECLARE(logging_state_t *) v17_rx_get_logging_state(v17_rx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_train)
+SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, bool short_train)
 {
     int i;
 
@@ -1441,7 +1447,7 @@ SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_trai
 #if defined(IAXMODEM_STUFF)
     s->high_sample = 0;
     s->low_samples = 0;
-    s->carrier_drop_pending = FALSE;
+    s->carrier_drop_pending = false;
 #endif
     if (short_train != 2)
         s->short_train = short_train;
@@ -1535,7 +1541,7 @@ SPAN_DECLARE(v17_rx_state_t *) v17_rx_init(v17_rx_state_t *s, int bit_rate, put_
     span_log_set_protocol(&s->logging, "V.17 RX");
     s->put_bit = put_bit;
     s->put_bit_user_data = user_data;
-    s->short_train = FALSE;
+    s->short_train = false;
     s->scrambler_tap = 18 - 1;
     v17_rx_signal_cutoff(s, -45.5f);
     s->carrier_phase_rate_save = DDS_PHASE_RATE(CARRIER_NOMINAL_FREQ);

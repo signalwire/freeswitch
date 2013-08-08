@@ -33,6 +33,11 @@
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 
 #include "spandsp/telephony.h"
 #include "spandsp/alloc.h"
@@ -45,9 +50,6 @@
    described in T.82. QM-Coder is supposed to be the same in some other image
    compression schemes, such as T.81. However, this code has not been checked
    to see if it follows the letter of any spec other than T.82. */
-
-#define FALSE 0
-#define TRUE (!FALSE)
 
 /* Code bytes which must trigger stuffing */
 enum
@@ -349,7 +351,7 @@ SPAN_DECLARE(t81_t82_arith_encode_state_t *) t81_t82_arith_encode_init(t81_t82_a
     s->output_byte_handler = output_byte_handler;
     s->user_data = user_data;
 
-    t81_t82_arith_encode_restart(s, FALSE);
+    t81_t82_arith_encode_restart(s, false);
     return s;
 }
 /*- End of function --------------------------------------------------------*/
@@ -400,7 +402,7 @@ SPAN_DECLARE(int) t81_t82_arith_decode(t81_t82_arith_decode_state_t *s, int cx)
                     if (s->nopadding)
                     {
                         /* Subsequent symbols might depend on zero padding */
-                        s->nopadding = FALSE;
+                        s->nopadding = false;
                         return -2;
                     }
                 }
@@ -416,7 +418,7 @@ SPAN_DECLARE(int) t81_t82_arith_decode(t81_t82_arith_decode_state_t *s, int cx)
         if (s->ct >= 0)
             s->ct--;
         if (s->a == 0x10000)
-            s->startup = FALSE;
+            s->startup = false;
     }
 
     /* T.82 figure 32 - DECODE */
@@ -472,8 +474,8 @@ SPAN_DECLARE(int) t81_t82_arith_decode_restart(t81_t82_arith_decode_state_t *s, 
     s->c = 0;
     s->a = 1;
     s->ct = 0;
-    s->startup = TRUE;
-    s->nopadding = FALSE;
+    s->startup = true;
+    s->nopadding = false;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -487,7 +489,7 @@ SPAN_DECLARE(t81_t82_arith_decode_state_t *) t81_t82_arith_decode_init(t81_t82_a
     }
     memset(s, 0, sizeof(*s));
 
-    t81_t82_arith_decode_restart(s, FALSE);
+    t81_t82_arith_decode_restart(s, false);
     return s;
 }
 /*- End of function --------------------------------------------------------*/

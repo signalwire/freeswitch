@@ -33,6 +33,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 
 #include "spandsp/telephony.h"
 #include "spandsp/alloc.h"
@@ -279,7 +284,7 @@ static int get_next_row(t85_encode_state_t *s)
                 return 0;
             /* We can't clip the image to the current length. We will have to
                continue up to the original length with blank (all white) rows. */
-            s->fill_with_white = TRUE;
+            s->fill_with_white = true;
             memset(s->prev_row[0], 0, bytes_per_row);
         }
     }
@@ -312,11 +317,11 @@ static int get_next_row(t85_encode_state_t *s)
             for (i = 0;  i <= s->mx;  i++)
                 s->c[i] = 0;
         }
-        t81_t82_arith_encode_restart(&s->s, TRUE);
+        t81_t82_arith_encode_restart(&s->s, true);
     }
 
     /* Typical prediction */
-    ltp = FALSE;
+    ltp = false;
     if ((s->options & T85_TPBON))
     {
         /* Look for a match between the rows */
@@ -659,7 +664,7 @@ SPAN_DECLARE(int) t85_encode_restart(t85_encode_state_t *s, uint32_t image_width
     s->newlen = NEWLEN_NONE;
     s->new_tx = -1;
     s->tx = 0;
-    s->prev_ltp = FALSE;
+    s->prev_ltp = false;
     s->bitstream_iptr = 0;
     s->bitstream_optr = 0;
     if (s->bitstream)
@@ -668,7 +673,7 @@ SPAN_DECLARE(int) t85_encode_restart(t85_encode_state_t *s, uint32_t image_width
         s->bitstream = NULL;
     }
     s->bitstream_len = 0;
-    s->fill_with_white = FALSE;
+    s->fill_with_white = false;
     s->compressed_image_size = 0;
 
     t81_t82_arith_encode_init(&s->s, output_byte, s);

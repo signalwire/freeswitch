@@ -45,6 +45,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <tiffio.h>
 #include <assert.h>
@@ -330,7 +335,7 @@ SPAN_DECLARE(void) set_lab_gamut2(lab_params_t *lab, int L_P, int L_Q, int a_P, 
     lab->offset_a = a_P;
     lab->offset_b = b_P;
 
-    lab->ab_are_signed = FALSE;
+    lab->ab_are_signed = false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -548,13 +553,13 @@ static int is_itu_fax(t42_decode_state_t *s, jpeg_saved_marker_ptr ptr)
     int ok;
     int val[6];
 
-    ok = FALSE;
+    ok = false;
     for (  ;  ptr;  ptr = ptr->next)
     {
         if (ptr->marker != (JPEG_APP0 + 1))
             continue;
         if (ptr->data_length < 6)
-            return FALSE;
+            return false;
         /* Markers are:
             JPEG_RST0
             JPEG_EOI
@@ -562,26 +567,26 @@ static int is_itu_fax(t42_decode_state_t *s, jpeg_saved_marker_ptr ptr)
             JPEG_COM */
         data = (const uint8_t *) ptr->data;
         if (strncmp((const char *) data, "G3FAX", 5))
-            return FALSE;
+            return false;
         switch (data[5])
         {
         case 0:
             if (ptr->data_length < 6 + 4)
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "Got bad G3FAX0 length - %d\n", ptr->data_length);
-                return FALSE;
+                return false;
             }
             val[0] = pack_16(&data[6]);
             s->spatial_resolution = pack_16(&data[6 + 2]);
             span_log(&s->logging, SPAN_LOG_FLOW, "Version %d, resolution %ddpi\n", val[0], s->spatial_resolution);
-            ok = TRUE;
+            ok = true;
             break;
         case 1:
             span_log(&s->logging, SPAN_LOG_FLOW, "Set gamut\n");
             if (ptr->data_length < 6 + 12)
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "Got bad G3FAX1 length - %d\n", ptr->data_length);
-                return FALSE;
+                return false;
             }
             set_gamut_from_code(&s->logging, &s->lab, &data[6]);
             break;
@@ -590,13 +595,13 @@ static int is_itu_fax(t42_decode_state_t *s, jpeg_saved_marker_ptr ptr)
             if (ptr->data_length < 6 + 4)
             {
                 span_log(&s->logging, SPAN_LOG_FLOW, "Got bad G3FAX2 length - %d\n", ptr->data_length);
-                return FALSE;
+                return false;
             }
             s->illuminant_colour_temperature = set_illuminant_from_code(&s->logging, &s->lab, &data[6]);
             break;
         default:
             span_log(&s->logging, SPAN_LOG_FLOW, "Got unexpected G3FAX%d length - %d\n", data[5], ptr->data_length);
-            return FALSE;
+            return false;
         }
     }
 
@@ -776,7 +781,7 @@ static int t42_srgb_to_itulab_jpeg(t42_encode_state_t *s)
 
     jpeg_set_defaults(&s->compressor);
     /* Limit to baseline-JPEG values */
-    //jpeg_set_quality(&s->compressor, s->quality, TRUE);
+    //jpeg_set_quality(&s->compressor, s->quality, true);
 
     if (s->no_subsampling)
     {
@@ -799,7 +804,7 @@ static int t42_srgb_to_itulab_jpeg(t42_encode_state_t *s)
     s->compressor.image_width = s->image_width;
     s->compressor.image_height = s->image_length;
 
-    jpeg_start_compress(&s->compressor, TRUE);
+    jpeg_start_compress(&s->compressor, true);
 
     set_itu_fax(s);
 
@@ -937,14 +942,14 @@ SPAN_DECLARE(int) t42_encode_restart(t42_encode_state_t *s, uint32_t image_width
         /* ITU-YCC */
         /* Illuminant D65 */
         set_lab_illuminant(&s->lab, 95.047f, 100.000f, 108.883f);
-        set_lab_gamut(&s->lab, 0, 100, -127, 127, -127, 127, FALSE);
+        set_lab_gamut(&s->lab, 0, 100, -127, 127, -127, 127, false);
     }
     else
     {
         /* ITULAB */
         /* Illuminant D50 */
         set_lab_illuminant(&s->lab, 96.422f, 100.000f,  82.521f);
-        set_lab_gamut(&s->lab, 0, 100, -85, 85, -75, 125, FALSE);
+        set_lab_gamut(&s->lab, 0, 100, -85, 85, -75, 125, false);
     }
     s->compressed_image_size = 0;
     s->compressed_image_ptr = 0;
@@ -1118,7 +1123,7 @@ static int t42_itulab_jpeg_to_srgb(t42_decode_state_t *s)
     }
 
     /* Take the header */
-    jpeg_read_header(&s->decompressor, FALSE);
+    jpeg_read_header(&s->decompressor, false);
     /* Sanity check and parameter check */
     if (!is_itu_fax(s, s->decompressor.marker_list))
     {
@@ -1316,14 +1321,14 @@ SPAN_DECLARE(int) t42_decode_restart(t42_decode_state_t *s)
         /* ITU-YCC */
         /* Illuminant D65 */
         set_lab_illuminant(&s->lab, 95.047f, 100.000f, 108.883f);
-        set_lab_gamut(&s->lab, 0, 100, -127, 127, -127, 127, FALSE);
+        set_lab_gamut(&s->lab, 0, 100, -127, 127, -127, 127, false);
     }
     else
     {
         /* ITULAB */
         /* Illuminant D50 */
         set_lab_illuminant(&s->lab, 96.422f, 100.000f,  82.521f);
-        set_lab_gamut(&s->lab, 0, 100, -85, 85, -75, 125, FALSE);
+        set_lab_gamut(&s->lab, 0, 100, -85, 85, -75, 125, false);
     }
 
     s->end_of_data = 0;

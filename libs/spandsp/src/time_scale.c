@@ -42,6 +42,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
@@ -126,17 +131,17 @@ SPAN_DECLARE(int) time_scale_rate(time_scale_state_t *s, float playout_rate)
 
 SPAN_DECLARE(time_scale_state_t *) time_scale_init(time_scale_state_t *s, int sample_rate, float playout_rate)
 {
-    int alloced;
+    bool alloced;
 
     if (sample_rate > TIME_SCALE_MAX_SAMPLE_RATE)
         return NULL;
-    alloced = FALSE;
+    alloced = false;
     if (s == NULL)
     {
         if ((s = (time_scale_state_t *) span_alloc(sizeof (*s))) == NULL)
             return NULL;
         /*endif*/
-        alloced = TRUE;
+        alloced = true;
     }
     /*endif*/
     s->sample_rate = sample_rate;

@@ -616,7 +616,7 @@ static void run_test(echo_can_state_t *ctx, int16_t (*tx_source)(void), int16_t 
 
 static void print_test_title(const char *title)
 {
-    if (quiet == FALSE)
+    if (quiet == false)
         printf(title);
 }
 /*- End of function --------------------------------------------------------*/
@@ -1567,23 +1567,23 @@ int main(int argc, char *argv[])
     int i;
     time_t now;
     int simulate;
-    int cng;
-    int hpf;
-    int two_channel_file;
     int opt;
     int mode;
+    bool cng;
+    bool hpf;
+    bool two_channel_file;
 
     /* Check which tests we should run */
     if (argc < 2)
         fprintf(stderr, "Usage: echo tests [-g] [-m <model number>] [-s] <list of test numbers>\n");
     line_model_no = 0;
     supp_line_model_no = 0;
-    cng = FALSE;
-    hpf = FALSE;
-    use_gui = FALSE;
-    simulate = FALSE;
+    cng = false;
+    hpf = false;
+    use_gui = false;
+    simulate = false;
     munger = -1;
-    two_channel_file = FALSE;
+    two_channel_file = false;
     erl = -12.0f;
 
     while ((opt = getopt(argc, argv, "2ace:ghm:M:su")) != -1)
@@ -1591,13 +1591,13 @@ int main(int argc, char *argv[])
         switch (opt)
         {
         case '2':
-            two_channel_file = TRUE;
+            two_channel_file = true;
             break;
         case 'a':
             munger = G711_ALAW;
             break;
         case 'c':
-            cng = TRUE;
+            cng = true;
             break;
         case 'e':
             /* Allow for ERL being entered as x or -x */
@@ -1605,14 +1605,14 @@ int main(int argc, char *argv[])
             break;
         case 'g':
 #if defined(ENABLE_GUI)
-            use_gui = TRUE;
+            use_gui = true;
 #else
             fprintf(stderr, "Graphical monitoring not available\n");
             exit(2);
 #endif
             break;
         case 'h':
-            hpf = TRUE;
+            hpf = true;
             break;
         case 'm':
             line_model_no = atoi(optarg);
@@ -1621,7 +1621,7 @@ int main(int argc, char *argv[])
             supp_line_model_no = atoi(optarg);
             break;
         case 's':
-            simulate = TRUE;
+            simulate = true;
             break;
         case 'u':
             munger = G711_ULAW;

@@ -71,7 +71,7 @@ SPAN_DECLARE(void) bitstream_flush(bitstream_state_t *s, uint8_t **c);
 
 /*! \brief Initialise a bitstream context.
     \param s A pointer to the bitstream context.
-    \param lsb_first TRUE if the bit stream is LSB first, else its MSB first.
+    \param lsb_first True if the bit stream is LSB first, else its MSB first.
     \return A pointer to the bitstream context. */
 SPAN_DECLARE(bitstream_state_t *) bitstream_init(bitstream_state_t *s, int direction);
 
