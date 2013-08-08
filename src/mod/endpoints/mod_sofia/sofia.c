@@ -8436,16 +8436,8 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		
 		for (mp = sip->sip_multipart; mp; mp = mp->mp_next) {
 			if (mp->mp_payload && mp->mp_payload->pl_data && mp->mp_content_type && mp->mp_content_type->c_type) {
-				char *name = switch_core_session_strdup(session, mp->mp_content_type->c_type);
-				char *p;
-
-				for (p = name; p && *p; p++) {
-					if (*p == '/') {
-						*p = '_';
-					}
-				}
-				
-				switch_channel_set_variable_name_printf(channel, mp->mp_payload->pl_data, SOFIA_MULTIPART_PREFIX "%s", name);
+				char *val = switch_core_session_sprintf(session, "%s:%s", mp->mp_content_type->c_type, mp->mp_payload->pl_data);
+				switch_channel_add_variable_var_check(channel, "sip_multipart", val, SWITCH_FALSE, SWITCH_STACK_PUSH);
 			}
 		}
 	}
