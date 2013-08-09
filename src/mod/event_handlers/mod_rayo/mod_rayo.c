@@ -1762,9 +1762,9 @@ static iks *join_mixer(struct rayo_call *call, switch_core_session_t *session, i
 		/* join new conference */
 		const char *conf_args = switch_core_session_sprintf(session, "%s@%s", mixer_name, globals.mixer_conf_profile);
 		if (!strcmp("send", direction)) {
-			conf_args = switch_core_session_sprintf(session, "%s+flags{mute}", conf_args);
-		} else if (!strcmp("recv", direction)) {
 			conf_args = switch_core_session_sprintf(session, "%s+flags{deaf}", conf_args);
+		} else if (!strcmp("recv", direction)) {
+			conf_args = switch_core_session_sprintf(session, "%s+flags{mute}", conf_args);
 		}
 		if (switch_core_session_execute_application_async(session, "conference", conf_args) == SWITCH_STATUS_SUCCESS) {
 			response = iks_new_iq_result(node);
