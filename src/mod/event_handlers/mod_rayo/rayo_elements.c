@@ -95,9 +95,7 @@ ELEMENT_END
  * <join> command validation
  */
 ELEMENT(RAYO_JOIN)
-	/* for now, only allow duplex
-	STRING_ATTRIB(direction, duplex, "send,recv,duplex"); */
-	STRING_ATTRIB(direction, duplex, "duplex")
+	STRING_ATTRIB(direction, duplex, "send,recv,duplex")
 	STRING_ATTRIB(media, bridge, "bridge,direct")
 	ATTRIB(call-uri,, any)
 	ATTRIB(mixer-name,, any)

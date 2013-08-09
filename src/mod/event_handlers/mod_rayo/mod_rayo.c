@@ -57,6 +57,9 @@ SWITCH_MODULE_DEFINITION(mod_rayo, mod_rayo_load, mod_rayo_shutdown, NULL);
 
 #define RAYO_CONFIG_FILE "rayo.conf"
 
+#define JOINED_CALL 1
+#define JOINED_MIXER 2
+
 struct rayo_actor;
 struct rayo_client;
 struct rayo_call;
@@ -123,8 +126,10 @@ struct rayo_call {
 	switch_hash_t *pcps;
 	/** current idle start time */
 	switch_time_t idle_start_time;
-	/** true if joined */
+	/** 1 if joined to call, 2 if joined to mixer */
 	int joined;
+	/** ID of joined party TODO this will be many mixers / calls */
+	const char *joined_id;
 	/** set if response needs to be sent to IQ request */
 	const char *dial_id;
 	/** channel destroy event */
@@ -1033,6 +1038,7 @@ static struct rayo_call *rayo_call_init(struct rayo_call *call, switch_memory_po
 	call->dcp_jid = "";
 	call->idle_start_time = switch_micro_time_now();
 	call->joined = 0;
+	call->joined_id = NULL;
 	call->ringing_sent = 0;
 	switch_core_hash_init(&call->pcps, pool);
 
@@ -1715,22 +1721,57 @@ static iks *join_call(struct rayo_call *call, switch_core_session_t *session, ik
 }
 
 /**
+ * Execute command on session's conference
+ */
+static void exec_conference_api(switch_core_session_t *session, const char *conf_name, const char *command)
+{
+	switch_stream_handle_t stream = { 0 };
+	const char *conf_member_id = switch_channel_get_variable(switch_core_session_get_channel(session), "conference_member_id");
+	SWITCH_STANDARD_STREAM(stream);
+	switch_api_execute("conference", switch_core_session_sprintf(session, "%s %s %s", conf_name, command, conf_member_id), NULL, &stream);
+	switch_safe_free(stream.data);
+}
+
+/**
  * Join call to a mixer
  * @param call the call that joins
  * @param session the session
  * @param node the join request
+ * @param mixer_name the mixer to join
+ * @param direction the media direction
  * @return the response
  */
-static iks *join_mixer(struct rayo_call *call, switch_core_session_t *session, iks *node, const char *mixer_name)
+static iks *join_mixer(struct rayo_call *call, switch_core_session_t *session, iks *node, const char *mixer_name, const char *direction)
 {
 	iks *response = NULL;
-	char *conf_args = switch_mprintf("%s@%s", mixer_name, globals.mixer_conf_profile);
-	if (switch_core_session_execute_application_async(session, "conference", conf_args) == SWITCH_STATUS_SUCCESS) {
+
+	if (call->joined_id) {
+		/* adjust join conference params */
+		if (!strcmp("duplex", direction)) {
+			exec_conference_api(session, mixer_name, "unmute");
+			exec_conference_api(session, mixer_name, "undeaf");
+		} else if (!strcmp("recv", direction)) {
+			exec_conference_api(session, mixer_name, "mute");
+			exec_conference_api(session, mixer_name, "undeaf");
+		} else {
+			exec_conference_api(session, mixer_name, "unmute");
+			exec_conference_api(session, mixer_name, "deaf");
+		}
 		response = iks_new_iq_result(node);
 	} else {
-		response = iks_new_error_detailed(node, STANZA_ERROR_INTERNAL_SERVER_ERROR, "failed execute conference app");
+		/* join new conference */
+		const char *conf_args = switch_core_session_sprintf(session, "%s@%s", mixer_name, globals.mixer_conf_profile);
+		if (!strcmp("send", direction)) {
+			conf_args = switch_core_session_sprintf(session, "%s+flags{mute}", conf_args);
+		} else if (!strcmp("recv", direction)) {
+			conf_args = switch_core_session_sprintf(session, "%s+flags{deaf}", conf_args);
+		}
+		if (switch_core_session_execute_application_async(session, "conference", conf_args) == SWITCH_STATUS_SUCCESS) {
+			response = iks_new_iq_result(node);
+		} else {
+			response = iks_new_error_detailed(node, STANZA_ERROR_INTERNAL_SERVER_ERROR, "failed execute conference app");
+		}
 	}
-	switch_safe_free(conf_args);
 	return response;
 }
 
@@ -1746,6 +1787,7 @@ static iks *on_rayo_join(struct rayo_actor *call, struct rayo_message *msg, void
 	switch_core_session_t *session = (switch_core_session_t *)session_data;
 	iks *response = NULL;
 	iks *join = iks_find(node, "join");
+	const char *join_id;
 	const char *mixer_name;
 	const char *call_id;
 
@@ -1757,6 +1799,12 @@ static iks *on_rayo_join(struct rayo_actor *call, struct rayo_message *msg, void
 	}
 	mixer_name = iks_find_attrib(join, "mixer-name");
 	call_id = iks_find_attrib(join, "call-uri");
+
+	if (!zstr(mixer_name)) {
+		join_id = mixer_name;
+	} else {
+		join_id = call_id;
+	}
 
 	/* can't join both mixer and call */
 	if (!zstr(mixer_name) && !zstr(call_id)) {
@@ -1770,7 +1818,8 @@ static iks *on_rayo_join(struct rayo_actor *call, struct rayo_message *msg, void
 		goto done;
 	}
 
-	if (RAYO_CALL(call)->joined) {
+	if ((RAYO_CALL(call)->joined == JOINED_CALL) ||
+		(RAYO_CALL(call)->joined == JOINED_MIXER && strcmp(RAYO_CALL(call)->joined_id, join_id))) {
 		/* already joined */
 		response = iks_new_error_detailed(node, STANZA_ERROR_CONFLICT, "call is already joined");
 		goto done;
@@ -1778,7 +1827,7 @@ static iks *on_rayo_join(struct rayo_actor *call, struct rayo_message *msg, void
 
 	if (!zstr(mixer_name)) {
 		/* join conference */
-		response = join_mixer(RAYO_CALL(call), session, node,  mixer_name);
+		response = join_mixer(RAYO_CALL(call), session, node, mixer_name, iks_find_attrib(join, "direction"));
 	} else {
 		/* bridge calls */
 		response = join_call(RAYO_CALL(call), session, node, call_id, iks_find_attrib(join, "media"));
@@ -1827,10 +1876,7 @@ static iks *unjoin_mixer(struct rayo_call *call, switch_core_session_t *session,
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *conf_member_id = switch_channel_get_variable(channel, "conference_member_id");
 	const char *conf_name = switch_channel_get_variable(channel, "conference_name");
-	char *kick_command;
 	iks *response = NULL;
-	switch_stream_handle_t stream = { 0 };
-	SWITCH_STANDARD_STREAM(stream);
 
 	/* not conferenced, or wrong conference */
 	if (zstr(conf_name) || strcmp(mixer_name, conf_name)) {
@@ -1846,11 +1892,9 @@ static iks *unjoin_mixer(struct rayo_call *call, switch_core_session_t *session,
 	response = iks_new_iq_result(node);
 
 	/* kick the member */
-	kick_command = switch_core_session_sprintf(session, "%s hup %s", mixer_name, conf_member_id);
-	switch_api_execute("conference", kick_command, NULL, &stream);
+	exec_conference_api(session, mixer_name, "hup");
 
 done:
-	switch_safe_free(stream.data);
 
 	return response;
 }
@@ -1880,8 +1924,15 @@ static iks *on_rayo_unjoin(struct rayo_actor *call, struct rayo_message *msg, vo
 	} else if (!zstr(mixer_name)) {
 		response = unjoin_mixer(RAYO_CALL(call), session, node, mixer_name);
 	} else {
-		/* missing mixer or call */
-		response = iks_new_error(node, STANZA_ERROR_BAD_REQUEST);
+		/* unjoin everything */
+		if (RAYO_CALL(call)->joined == JOINED_MIXER) {
+			response = unjoin_mixer(RAYO_CALL(call), session, node, RAYO_CALL(call)->joined_id);
+		} else if (RAYO_CALL(call)->joined == JOINED_CALL) {
+			response = unjoin_call(RAYO_CALL(call), session, node, RAYO_CALL(call)->joined_id);
+		} else {
+			/* shouldn't happen */
+			response = iks_new_error(node, STANZA_ERROR_INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	return response;
@@ -2343,6 +2394,7 @@ static void on_mixer_delete_member_event(struct rayo_mixer *mixer, switch_event_
 	call = RAYO_CALL_LOCATE(uuid);
 	if (call) {
 		call->joined = 0;
+		call->joined_id = NULL;
 		RAYO_UNLOCK(call);
 	}
 
@@ -2418,7 +2470,8 @@ static void on_mixer_add_member_event(struct rayo_mixer *mixer, switch_event_t *
 		member->dcp_jid = subscriber->jid;
 		switch_core_hash_insert(mixer->members, uuid, member);
 
-		call->joined = 1;
+		call->joined = JOINED_MIXER;
+		call->joined_id = switch_core_strdup(RAYO_POOL(call), rayo_mixer_get_name(mixer));
 
 		/* send mixer joined event to member DCP */
 		add_member_event = iks_new_presence("joined", RAYO_NS, RAYO_JID(call), call->dcp_jid);
@@ -2591,7 +2644,8 @@ static void on_call_bridge_event(struct rayo_client *rclient, switch_event_t *ev
 		iks *joined = iks_find(revent, "joined");
 		iks_insert_attrib(joined, "call-uri", b_uuid);
 
-		call->joined = 1;
+		call->joined = JOINED_CALL;
+		call->joined_id = switch_core_strdup(RAYO_POOL(call), b_uuid);
 
 		RAYO_SEND_MESSAGE(call, RAYO_JID(rclient), revent);
 
@@ -2602,7 +2656,8 @@ static void on_call_bridge_event(struct rayo_client *rclient, switch_event_t *ev
 			joined = iks_find(revent, "joined");
 			iks_insert_attrib(joined, "call-uri", a_uuid);
 
-			b_call->joined = 1;
+			b_call->joined = JOINED_CALL;
+			b_call->joined_id = switch_core_strdup(RAYO_POOL(b_call), a_uuid);
 
 			RAYO_SEND_MESSAGE(b_call, rayo_call_get_dcp_jid(b_call), revent);
 			RAYO_UNLOCK(b_call);
@@ -2633,6 +2688,7 @@ static void on_call_unbridge_event(struct rayo_client *rclient, switch_event_t *
 		RAYO_SEND_MESSAGE(call, RAYO_JID(rclient), revent);
 
 		call->joined = 0;
+		call->joined_id = NULL;
 
 		/* send B-leg event */
 		b_call = RAYO_CALL_LOCATE(b_uuid);
@@ -2643,6 +2699,7 @@ static void on_call_unbridge_event(struct rayo_client *rclient, switch_event_t *
 			RAYO_SEND_MESSAGE(b_call, rayo_call_get_dcp_jid(b_call), revent);
 
 			b_call->joined = 0;
+			b_call->joined_id = NULL;
 			RAYO_UNLOCK(b_call);
 		}
 		RAYO_UNLOCK(call);
@@ -3726,6 +3783,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
 		"</grammar></input>");
 	rayo_add_cmd_alias("output_bad",
 		"<output xmlns=\""RAYO_OUTPUT_NS"\" repeat-time=\"100\"></output>");
+	rayo_add_cmd_alias("join_mixer_duplex",
+		"<join xmlns=\""RAYO_NS"\" mixer-name=\"test\" direction=\"duplex\"/>");
+	rayo_add_cmd_alias("join_mixer_send",
+		"<join xmlns=\""RAYO_NS"\" mixer-name=\"test\" direction=\"send\"/>");
+	rayo_add_cmd_alias("join_mixer_recv",
+		"<join xmlns=\""RAYO_NS"\" mixer-name=\"test\" direction=\"recv\"/>");
+	rayo_add_cmd_alias("unjoin_mixer",
+		"<unjoin xmlns=\""RAYO_NS"\" mixer-name=\"test\"/>");
+	rayo_add_cmd_alias("unjoin",
+		"<unjoin xmlns=\""RAYO_NS"\"/>");
 	return SWITCH_STATUS_SUCCESS;
 }
 
