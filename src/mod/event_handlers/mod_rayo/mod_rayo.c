@@ -214,6 +214,8 @@ static struct {
 	int shutdown;
 	/** prevents context shutdown until all threads are finished */
 	switch_thread_rwlock_t *shutdown_rwlock;
+	/** if true, URI is put in from/to of offer if available */
+	int offer_uri;
 } globals;
 
 /**
@@ -2802,7 +2804,7 @@ static iks *rayo_create_offer(struct rayo_call *call, switch_core_session_t *ses
 	iks_insert_attrib(presence, "from", RAYO_JID(call));
 	iks_insert_attrib(offer, "xmlns", RAYO_NS);
 
-	if ((val = switch_channel_get_variable(channel, "sip_from_uri"))) {
+	if (globals.offer_uri && (val = switch_channel_get_variable(channel, "sip_from_uri"))) {
 		/* is a SIP call - pass the URI */
 		if (!strchr(val, ':')) {
 			iks_insert_attrib_printf(offer, "from", "sip:%s", val);
@@ -2814,7 +2816,7 @@ static iks *rayo_create_offer(struct rayo_call *call, switch_core_session_t *ses
 		iks_insert_attrib(offer, "from", profile->caller_id_number);
 	}
 
-	if ((val = switch_channel_get_variable(channel, "sip_to_uri"))) {
+	if (globals.offer_uri && (val = switch_channel_get_variable(channel, "sip_to_uri"))) {
 		/* is a SIP call - pass the URI */
 		if (!strchr(val, ':')) {
 			iks_insert_attrib_printf(offer, "to", "sip:%s", val);
@@ -3096,6 +3098,7 @@ static switch_status_t do_config(switch_memory_pool_t *pool, const char *config_
 	globals.max_idle_ms = 30000;
 	globals.mixer_conf_profile = "sla";
 	globals.num_message_threads = 8;
+	globals.offer_uri = 1;
 
 	/* get params */
 	{
@@ -3123,6 +3126,10 @@ static switch_status_t do_config(switch_memory_pool_t *pool, const char *config_
 						if (num_message_threads > 0) {
 							globals.num_message_threads = num_message_threads;
 						}
+					}
+				} else if (!strcasecmp(var, "offer-uri")) {
+					if (switch_false(val)) {
+						globals.offer_uri = 0;
 					}
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unsupported param: %s\n", var);
