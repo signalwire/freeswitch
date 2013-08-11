@@ -158,6 +158,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	switch_assert(data);
 
 	scgi_add_param(&handle, "REQUEST_METHOD", "POST");
+	scgi_add_param(&handle, "SERVER_PROTOCOL", "HTTP/1.0");
 	scgi_add_param(&handle, "REQUEST_URI", binding->uri);
 	scgi_add_body(&handle, data);
 
