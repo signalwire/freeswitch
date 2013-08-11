@@ -579,11 +579,10 @@ abyss_bool websocket_hook(TSession *r)
 	char *proto = NULL;
 	char *upgrade = NULL;
 
-	for (i = 0; i < r->requestHeaderFields.size; ++i) {
-		TTableItem * const fieldP = &r->requestHeaderFields.item[i];
-		const char * const fieldValue = fieldP->value;
+	for (i = 0; i < r->requestHeaderFields.size; i++) {
+		TTableItem * const item = &r->requestHeaderFields.item[i];
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "headers %s: %s\n", fieldP->name, fieldValue);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "headers %s: %s\n", item->name, item->value);
 	}
 
 	key = TableFind(&r->requestHeaderFields, "sec-websocket-key");
