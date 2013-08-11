@@ -752,6 +752,7 @@ struct private_object {
 	char *respond_phrase;
 	int respond_code;
 	char *respond_dest;
+	time_t last_vid_info;
 };
 
 
