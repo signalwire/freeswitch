@@ -245,10 +245,10 @@ int ws_handshake_kvp(wsh_t *wsh, char *key, char *version, char *proto)
 			 b64,
 			 proto);
 
-	ws_raw_write(wsh, respond, strlen(respond));
-	wsh->handshake = 1;
-	
-	return 0;
+	if (ws_raw_write(wsh, respond, strlen(respond))) {
+		wsh->handshake = 1;
+		return 0;
+	}
 
  err:
 
@@ -269,21 +269,6 @@ issize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 	int x = 0;
  	TConn *conn = wsh->tsession->connP;
 
-#if 0
-	if (wsh->ssl) {
-		do {
-			r = SSL_read(wsh->ssl, data, bytes);
-#ifndef _MSC_VER
-			if (x++) usleep(10000);
-#else
-			if (x++) Sleep(10);
-#endif
-		} while (r == -1 && SSL_get_error(wsh->ssl, r) == SSL_ERROR_WANT_READ && x < 100);
-
-		return r;
-	}
-#endif
-
 	if (!wsh->handshake) {
 		r = wsh->tsession->connP->buffersize;
 		memcpy(data, conn->buffer.b, r);
@@ -298,13 +283,13 @@ issize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 		r = conn->buffersize - conn->bufferpos;
 
 		if (r < 0) {
-			printf("348 Read Error %d!\n", r);
+			printf("286 Read Error %d!\n", r);
 			return 0;
 		} else if (r == 0) {
 			ConnRead(conn, 2, NULL, NULL, &readError);
 
 			if (readError) {
-				// printf("354 Read Error %s\n", readError);
+				// printf("292 Read Error %s\n", readError);
 				xmlrpc_strfree(readError);
 				return 0;
 			}
@@ -347,132 +332,20 @@ issize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 		return 0;
 	}
 
-	//if (r<0) {
-		//printf("wRITE FAIL: %s\n", strerror(errno));
-	//}
-
 	return r;
 }
 
-#ifdef _MSC_VER
-static int setup_socket(ws_socket_t sock)
+wsh_t * ws_init(ws_tsession_t *tsession)
 {
-	unsigned long v = 1;
+	wsh_t *wsh = malloc(sizeof(*wsh));
 
-	if (ioctlsocket(sock, FIONBIO, &v) == SOCKET_ERROR) {
-		return -1;
-	}
+	if (!wsh) return NULL;
 
-	return 0;
-
-}
-
-static int restore_socket(ws_socket_t sock)
-{
-	unsigned long v = 0;
-
-	if (ioctlsocket(sock, FIONBIO, &v) == SOCKET_ERROR) {
-		return -1;
-	}
-
-	return 0;
-
-}
-
-#else
-
-static int setup_socket(ws_socket_t sock)
-{
-	int flags = fcntl(sock, F_GETFL, 0);
-	return fcntl(sock, F_SETFL, flags | O_NONBLOCK);
-}
-
-static int restore_socket(ws_socket_t sock)
-{
-	int flags = fcntl(sock, F_GETFL, 0);
-
-	flags &= ~O_NONBLOCK;
-
-	return fcntl(sock, F_SETFL, flags);
-
-}
-
-#endif
-
-
-int ws_init(wsh_t *wsh, ws_tsession_t *tsession, SSL_CTX *ssl_ctx, int close_sock)
-{
 	memset(wsh, 0, sizeof(*wsh));
 	wsh->tsession = tsession;
-
-	if (!ssl_ctx) {
-		ssl_ctx = globals.ssl_ctx;
-	}
-
-	if (close_sock) {
-		wsh->close_sock = 1;
-	}
-
 	wsh->buflen = sizeof(wsh->buffer);
-	wsh->secure = ssl_ctx ? 1 : 0;
 
-	// setup_socket(sock);
-
-	if (wsh->secure) {
-		int code;
-		int sanity = 500;
-		
-		wsh->ssl = SSL_new(ssl_ctx);
-		assert(wsh->ssl);
-
-		SSL_set_fd(wsh->ssl, wsh->sock);
-
-		do {
-			code = SSL_accept(wsh->ssl);
-
-			if (code == 1) {
-				break;
-			}
-
-			if (code == 0) {
-				return -1;
-			}
-			
-			if (code < 0) {
-				if (code == -1 && SSL_get_error(wsh->ssl, code) != SSL_ERROR_WANT_READ) {
-					return -1;
-				}
-			}
-#ifndef _MSC_VER
-				usleep(10000);
-#else
-				Sleep(10);
-#endif				
-				
-		} while (--sanity > 0);
-		
-		if (!sanity) {
-			return -1;
-		}
-		
-	}
-
-/*
-	while (!wsh->down && !wsh->handshake) {
-		int r = ws_handshake(wsh);
-
-		if (r < 0) {
-			wsh->down = 1;
-			return -1;
-		}
-	}
-*/
-
-	if (wsh->down) {
-		return -1;
-	}
-
-	return 0;
+	return wsh;
 }
 
 void ws_destroy(wsh_t *wsh)
@@ -511,26 +384,8 @@ issize_t ws_close(wsh_t *wsh, int16_t reason)
 	}
 
 	wsh->down = 1;
-	
-	if (reason && wsh->sock != ws_sock_invalid) {
-		uint16_t *u16;
-		uint8_t fr[4] = {WSOC_CLOSE | 0x80, 2, 0};
-
-		u16 = (uint16_t *) &fr[2];
-		*u16 = htons((int16_t)reason);
-		ws_raw_write(wsh, fr, 4);
-	}
-
-	restore_socket(wsh->sock);
-
-	if (wsh->close_sock) {
-		close(wsh->sock);
-	}
-
-	wsh->sock = ws_sock_invalid;
 
 	return reason * -1;
-	
 }
 
 issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
