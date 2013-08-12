@@ -3320,7 +3320,9 @@ static int broadsoft_sla_gather_state_callback(void *pArg, int argc, char **argv
 		}
 
 		if (!zstr(callee_name)) {
-			callee_name = switch_sanitize_number(switch_url_decode(switch_core_session_strdup(session, callee_name)));
+			char *tmp = switch_core_session_strdup(session, callee_name);
+			switch_url_decode(tmp);
+			callee_name = switch_sanitize_number(tmp);
 		}
 
 
