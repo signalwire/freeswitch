@@ -2745,7 +2745,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
   skip_auth:
 	if (first && (ret == AUTH_OK || ret == AUTH_RENEWED)) {
-		if (!v_event) {
+		if (v_event && !*v_event) {
 			switch_event_create_plain(v_event, SWITCH_EVENT_REQUEST_PARAMS);
 		}
 
