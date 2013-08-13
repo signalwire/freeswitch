@@ -3416,6 +3416,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_proxy_remote_addr(switch_core_
 	if (*rvp) {
 		v_engine->codec_params.remote_sdp_ip = switch_core_session_strdup(session, rip);
 		v_engine->codec_params.remote_sdp_port = (switch_port_t) atoi(rvp);
+		switch_channel_set_flag(session->channel, CF_VIDEO_POSSIBLE);
+		switch_channel_set_flag(session->channel, CF_VIDEO);
 	}
 
 	if (v_engine->codec_params.remote_sdp_ip && v_engine->codec_params.remote_sdp_port) {
@@ -6175,7 +6177,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 	}
 
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
-	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 
 	if (zstr(smh->mparams->local_sdp_str)) {
 		return;

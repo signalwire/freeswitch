@@ -4604,7 +4604,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				pt = 0;
 			}
 
-			if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
+			if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && !rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA]) {
 				pt = 100000;
 			}
 
