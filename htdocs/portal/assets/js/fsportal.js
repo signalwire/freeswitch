@@ -783,3 +783,30 @@ function eventCallback(data) {
 	}
 }
 
+// execute api
+function api(cmdstr)
+{
+	cmdarr = cmdstr.split(" ");
+	cmd = cmdarr.shift();
+	arg = escape(cmdarr.join(" "));
+	arg = arg ? "?" + arg : "";
+	url = "/txtapi/" + cmd + arg;
+	$.get(url, function(data){
+		console.log(data);
+	});
+	return url;
+}
+
+//execute bgapi
+function bgapi(cmd)
+{
+	api("bgapi " + cmd);
+}
+
+// subscribe event
+function event(e)
+{
+	cmd = "event json " + e;
+	socket.send(cmd);
+	return cmd;
+}
