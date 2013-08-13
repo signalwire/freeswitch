@@ -154,6 +154,11 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 		goto end;
 	}
 
+	if (!from) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing From: header.\n");
+		goto end;
+	}
+
 	if (!zstr(type)) {
 		ct = type;
 	}
