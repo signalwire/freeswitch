@@ -34,18 +34,36 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_bert_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_bert_shutdown);
 SWITCH_MODULE_DEFINITION(mod_bert, mod_bert_load, mod_bert_shutdown, NULL);
 
-static int16_t bert_next_sample(int16_t sample, uint8_t *going_up)
-{
-	if (sample == INT16_MAX || !(*going_up)) {
-		*going_up = 0;
-		return --sample;
-	}
-	if (sample == INT16_MIN || *going_up) {
-		*going_up = 1;
-		return ++sample;
-	}
-	switch_assert(0);
-}
+/* http://en.wikipedia.org/wiki/Digital_milliwatt */
+unsigned char ulaw_digital_milliwatt[8] = { 0x1e, 0x0b, 0x0b, 0x1e, 0x9e, 0x8b, 0x8b, 0x9e };
+
+typedef struct {
+	uint32_t processed_samples;
+	uint32_t err_samples;
+	uint32_t window_ms;
+	uint32_t window_samples;
+	uint8_t sequence_sample;
+	uint8_t predicted_sample;
+	float max_err;
+	float max_err_hit;
+	float max_err_ever;
+	uint8_t in_sync;
+	uint8_t hangup_on_error;
+	uint8_t milliwatt_index;
+	uint8_t milliwatt_prediction_index;
+	switch_time_t timeout;
+	FILE *input_debug_f;
+	FILE *output_debug_f;
+} bert_t;
+
+#define bert_increase_milliwatt_index(index) \
+	do { \
+		if ((index) == (switch_arraylen(ulaw_digital_milliwatt)-1)) { \
+			(index) = 0; \
+		} else { \
+			(index) = ((index) + 1); \
+		} \
+	} while (0);
 
 #define BERT_DEFAULT_WINDOW_MS 1000
 #define BERT_DEFAULT_MAX_ERR 10.0
@@ -59,25 +77,11 @@ SWITCH_STANDARD_APP(bert_test_function)
 	const char *var = NULL;
 	int i = 0;
 	int synced = 0;
-	uint32_t ts = 0;
+	uint32_t write_ts = 0;
 	int32_t timeout_ms = 0;
-	struct {
-		uint32_t processed_samples;
-		uint32_t err_samples;
-		uint32_t window_ms;
-		uint32_t window_samples;
-		int16_t sequence_sample;
-		int16_t predicted_sample;
-		int16_t previous_sample;
-		float max_err;
-		float max_err_hit;
-		float max_err_ever;
-		uint8_t in_sync;
-		uint8_t hangup_on_error;
-		uint8_t sequence_going_up;
-		uint8_t prediction_going_up;
-		switch_time_t timeout;
-	} bert;
+	bert_t bert = { 0 };
+
+	memset(&bert, 0, sizeof(bert));
 
 	channel = switch_core_session_get_channel(session);
 
@@ -85,11 +89,14 @@ SWITCH_STANDARD_APP(bert_test_function)
 
 	switch_core_session_get_read_impl(session, &read_impl);
 
-	memset(&bert, 0, sizeof(bert));
+	if (read_impl.ianacode != 0) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "This application only works when using ulaw codec\n");
+		goto done;
+	}
+
 	bert.window_ms = BERT_DEFAULT_WINDOW_MS;
 	bert.window_samples = switch_samples_per_packet(read_impl.samples_per_second, bert.window_ms);
 	bert.max_err = BERT_DEFAULT_MAX_ERR;
-	bert.sequence_going_up = 1;
 	timeout_ms = BERT_DEFAULT_TIMEOUT_MS;
 
 	/* check if there are user-defined overrides */
@@ -117,6 +124,19 @@ SWITCH_STANDARD_APP(bert_test_function)
 			bert.hangup_on_error = 1;
 		}
 	}
+	if ((var = switch_channel_get_variable(channel, "bert_debug_io_file"))) {
+		char debug_file[1024];
+		snprintf(debug_file, sizeof(debug_file), "%s.in", var);
+		bert.input_debug_f = fopen(debug_file, "w");
+		if (!bert.input_debug_f) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to open input debug file %s\n", debug_file);
+		}
+		snprintf(debug_file, sizeof(debug_file), "%s.out", var);
+		bert.output_debug_f = fopen(debug_file, "w");
+		if (!bert.output_debug_f) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to open output debug file %s\n", debug_file);
+		}
+	}
 
 	bert.timeout = (switch_micro_time_now() + (timeout_ms * 1000));
 
@@ -124,22 +144,50 @@ SWITCH_STANDARD_APP(bert_test_function)
 	write_frame.data = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "BERT Test Window=%ums/%u MaxErr=%f%%\n", bert.window_ms, bert.window_samples, bert.max_err);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "BERT Test Window=%ums/%u, MaxErr=%f%%, Timeout=%dms\n", bert.window_ms, bert.window_samples, bert.max_err, timeout_ms);
 	if (bert.window_samples <= 0) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to compute BERT window samples!\n");
 		goto done;
 	}
 	while (switch_channel_ready(channel)) {
-		int16_t *read_samples = NULL;
-		int16_t *write_samples = NULL;
+		uint8_t *read_samples = NULL;
+		uint8_t *write_samples = NULL;
+
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
 		}
-		/* BERT Sync */
+
+		if (bert.timeout && !synced) {
+			switch_time_t now = switch_micro_time_now();
+			if (now >= bert.timeout) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "BERT Timeout (read_samples=%d, read_bytes=%d, expected_samples=%d, %s)\n",
+						read_frame->samples, read_frame->datalen, read_impl.samples_per_packet, switch_core_session_get_uuid(session));
+				if (bert.hangup_on_error) {
+					switch_channel_hangup(channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
+				}
+			}
+		}
+
+		if (!read_frame->datalen) {
+			continue;
+		}
+
+		if (read_frame->samples != read_impl.samples_per_packet) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Only read %d samples, expected %d!\n", read_frame->samples, read_impl.samples_per_packet);
+			continue;
+		}
+
 		read_samples = read_frame->data;
 		write_samples = write_frame.data;
-		for (i = 0; i < (read_frame->datalen / 2); i++) {
+		if (read_frame->samples) {
+			if (bert.input_debug_f) {
+				fwrite(read_frame->data, read_frame->datalen, 1, bert.input_debug_f);
+			}
+		}
+
+		/* BERT Sync Loop */
+		for (i = 0; i < read_frame->samples; i++) {
 			if (bert.window_samples == bert.processed_samples) {
 				/* Calculate error rate */
 				float err = ((float)((float)bert.err_samples / (float)bert.processed_samples) * 100.0);
@@ -166,44 +214,52 @@ SWITCH_STANDARD_APP(bert_test_function)
 				}
 				bert.processed_samples = 0;
 				bert.err_samples = 0;
-				if (bert.timeout && !synced) {
-					switch_time_t now = switch_micro_time_now();
-					if (now >= bert.timeout) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "BERT Timeout\n");
-						if (bert.hangup_on_error) {
-							switch_channel_hangup(channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
-						}
-					}
-				}
 			}
+
 			if (bert.predicted_sample != read_samples[i]) {
 				bert.err_samples++;
+				if (!bert.in_sync) {
+					/* If we're not in sync, we must reset the index on error to start the pattern detection again */
+					bert.milliwatt_prediction_index = 0;
+				}
 			}
-			if (bert.previous_sample > read_samples[i]) {
-				bert.prediction_going_up = 0;
-			} else {
-				bert.prediction_going_up = 1;
-			}
-			bert.predicted_sample = bert_next_sample(read_samples[i], &bert.prediction_going_up);
-			bert.sequence_sample = bert_next_sample(bert.sequence_sample, &bert.sequence_going_up);
+
+			/* Calculate our next sequence sample to write */
+			bert.sequence_sample = ulaw_digital_milliwatt[bert.milliwatt_index];
+			//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "[%d] 0x%X\n", bert.milliwatt_index, bert.sequence_sample);
+			bert_increase_milliwatt_index(bert.milliwatt_index);
+			//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "[%d] 0x%X\n", bert.milliwatt_index, bert.sequence_sample);
 			write_samples[i] = bert.sequence_sample;
-			bert.previous_sample = read_samples[i];
+
+			/* Try to guess what the next sample will be in the milliwatt sequence */
+			bert.predicted_sample = ulaw_digital_milliwatt[bert.milliwatt_prediction_index];
+			bert_increase_milliwatt_index(bert.milliwatt_prediction_index);
+
 			bert.processed_samples++;
 		}
 
 		write_frame.datalen = read_frame->datalen;
 		write_frame.samples = i;
-		write_frame.timestamp = ts;
+		write_frame.timestamp = write_ts;
+		if (bert.output_debug_f) {
+			fwrite(write_frame.data, write_frame.datalen, 1, bert.output_debug_f);
+		}
 		status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
 		}
-		ts += read_impl.samples_per_packet;
+
+		write_ts += read_impl.samples_per_packet;
 	}
 
 done:
+	if (bert.input_debug_f) {
+		fclose(bert.input_debug_f);
+	}
+	if (bert.output_debug_f) {
+		fclose(bert.output_debug_f);
+	}
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "BERT Test Completed. MaxErr=%f%%\n", synced ? bert.max_err_hit : bert.max_err_ever);
-
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_bert_load)
