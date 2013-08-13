@@ -78,12 +78,13 @@ EXTRA_DIST = floating_fudge.h \
              spandsp/private/README \
              spandsp/version.h.in
 
-INCLUDES = -I$(top_builddir)
+AM_CPPFLAGS = -I$(top_builddir)
 
 lib_LTLIBRARIES = libspandsp.la
 
 libspandsp_la_SOURCES = ademco_contactid.c \
                         adsi.c \
+                        alloc.c \
                         async.c \
                         at_interpreter.c \
                         awgn.c \
@@ -178,6 +179,7 @@ libspandsp_la_LDFLAGS = -version-info @SPANDSP_LT_CURRENT@:@SPANDSP_LT_REVISION@
 
 nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/adsi.h \
+                         spandsp/alloc.h \
                          spandsp/async.h \
                          spandsp/arctan2.h \
                          spandsp/at_interpreter.h \
@@ -222,6 +224,7 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/queue.h \
                          spandsp/saturated.h \
                          spandsp/schedule.h \
+                         spandsp/stdbool.h \
                          spandsp/sig_tone.h \
                          spandsp/silence_gen.h \
                          spandsp/super_tone_rx.h \

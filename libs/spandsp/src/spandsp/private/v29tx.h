@@ -76,9 +76,9 @@ struct v29_tx_state_s
     uint32_t scramble_reg;
     /*! \brief The register for the training scrambler. */
     uint8_t training_scramble_reg;
-    /*! \brief TRUE if transmitting the training sequence, or shutting down transmission.
-               FALSE if transmitting user data. */
-    int in_training;
+    /*! \brief True if transmitting the training sequence, or shutting down transmission.
+               False if transmitting user data. */
+    bool in_training;
     /*! \brief A counter used to track progress through sending the training sequence. */
     int training_step;
     /*! \brief An offset value into the table of training parameters, used to match the

@@ -83,10 +83,10 @@ extern "C"
 
 /*! \brief Initialise a T.38 rate adapting non-ECM buffer context.
     \param s The buffer context.
-    \param mode TRUE for image data mode, or FALSE for TCF mode.
+    \param image_mode True for image data mode, or false for TCF mode.
     \param bits The minimum number of bits per FAX image row.
     \return A pointer to the buffer context, or NULL if there was a problem. */
-SPAN_DECLARE(t38_non_ecm_buffer_state_t *) t38_non_ecm_buffer_init(t38_non_ecm_buffer_state_t *s, int mode, int min_row_bits);
+SPAN_DECLARE(t38_non_ecm_buffer_state_t *) t38_non_ecm_buffer_init(t38_non_ecm_buffer_state_t *s, bool image_mode, int min_row_bits);
 
 SPAN_DECLARE(int) t38_non_ecm_buffer_release(t38_non_ecm_buffer_state_t *s);
 
@@ -94,9 +94,9 @@ SPAN_DECLARE(int) t38_non_ecm_buffer_free(t38_non_ecm_buffer_state_t *s);
 
 /*! \brief Set the mode of a T.38 rate adapting non-ECM buffer context.
     \param s The buffer context.
-    \param mode TRUE for image data mode, or FALSE for TCF mode.
+    \param mode True for image data mode, or false for TCF mode.
     \param bits The minimum number of bits per FAX image row. */
-SPAN_DECLARE(void) t38_non_ecm_buffer_set_mode(t38_non_ecm_buffer_state_t *s, int mode, int min_row_bits);
+SPAN_DECLARE(void) t38_non_ecm_buffer_set_mode(t38_non_ecm_buffer_state_t *s, bool image_mode, int min_row_bits);
 
 /*! \brief Inject data to T.38 rate adapting non-ECM buffer context.
     \param s The buffer context.

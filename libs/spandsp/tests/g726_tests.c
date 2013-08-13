@@ -1196,7 +1196,7 @@ int main(int argc, char *argv[])
     g726_state_t enc_state;
     g726_state_t dec_state;
     int opt;
-    int itutests;
+    bool itutests;
     int bit_rate;
     SNDFILE *inhandle;
     SNDFILE *outhandle;
@@ -1206,7 +1206,7 @@ int main(int argc, char *argv[])
     int packing;
 
     bit_rate = 32000;
-    itutests = TRUE;
+    itutests = true;
     packing = G726_PACKING_NONE;
     while ((opt = getopt(argc, argv, "b:LR")) != -1)
     {
@@ -1219,7 +1219,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "Invalid bit rate selected. Only 16000, 24000, 32000 and 40000 are valid.\n");
                 exit(2);
             }
-            itutests = FALSE;
+            itutests = false;
             break;
         case 'L':
             packing = G726_PACKING_LEFT;

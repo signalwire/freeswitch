@@ -34,16 +34,22 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <inttypes.h>
+#include <memory.h>
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
-#include <memory.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/lpc10.h"
 #include "spandsp/private/lpc10.h"
@@ -279,7 +285,7 @@ static int pitsyn(lpc10_decode_state_t *s,
             ipiti[i] = *pitch;
             rmsi[i] = *rms;
         }
-        s->first_pitsyn = FALSE;
+        s->first_pitsyn = false;
     }
     else
     {
@@ -406,7 +412,7 @@ static int pitsyn(lpc10_decode_state_t *s,
         /* NOUT        | --   --     --       --        ??        ?? */
         /* IVOICE      | --   --     --       --        0         0 */
 
-        /* UVPIT is always 0.0 on the first pass through the DO WHILE (TRUE)
+        /* UVPIT is always 0.0 on the first pass through the DO WHILE (true)
            loop below. */
 
         /* The only possible non-0 value of SLOPE (in column 111) is
@@ -857,7 +863,7 @@ static void decode(lpc10_decode_state_t *s,
         /* Skip decoding on first frame because present data not yet available */
         if (s->first)
         {
-            s->first = FALSE;
+            s->first = false;
             /* Assign PITCH a "default" value on the first call, since */
             /* otherwise it would be left uninitialized.  The two lines */
             /* below were copied from above, since it seemed like a */
@@ -1016,7 +1022,7 @@ SPAN_DECLARE(lpc10_decode_state_t *) lpc10_decode_init(lpc10_decode_state_t *s, 
 
     if (s == NULL)
     {
-        if ((s = (lpc10_decode_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (lpc10_decode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
 
@@ -1024,7 +1030,7 @@ SPAN_DECLARE(lpc10_decode_state_t *) lpc10_decode_init(lpc10_decode_state_t *s, 
 
     /* State used by function decode */
     s->iptold = 60;
-    s->first = TRUE;
+    s->first = true;
     s->ivp2h = 0;
     s->iovoic = 0;
     s->iavgp = 60;
@@ -1044,7 +1050,7 @@ SPAN_DECLARE(lpc10_decode_state_t *) lpc10_decode_init(lpc10_decode_state_t *s, 
 
     /* State used by function pitsyn */
     s->rmso = 1.0f;
-    s->first_pitsyn = TRUE;
+    s->first_pitsyn = true;
 
     /* State used by function bsynz */
     s->ipo = 0;
@@ -1084,7 +1090,7 @@ SPAN_DECLARE(int) lpc10_decode_release(lpc10_decode_state_t *s)
 
 SPAN_DECLARE(int) lpc10_decode_free(lpc10_decode_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

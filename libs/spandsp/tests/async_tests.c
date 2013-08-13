@@ -128,8 +128,8 @@ int main(int argc, char *argv[])
     int bit;
 
     printf("Test with async 8N1\n");
-    async_tx_init(&tx_async, 8, ASYNC_PARITY_NONE, 1, FALSE, test_get_async_byte, NULL);
-    async_rx_init(&rx_async, 8, ASYNC_PARITY_NONE, 1, FALSE, test_put_async_byte, NULL);
+    async_tx_init(&tx_async, 8, ASYNC_PARITY_NONE, 1, false, test_get_async_byte, NULL);
+    async_rx_init(&rx_async, 8, ASYNC_PARITY_NONE, 1, false, test_put_async_byte, NULL);
     tx_async_chars = 0;
     rx_async_chars = 0;
     rx_async_char_mask = 0xFF;
@@ -150,8 +150,8 @@ int main(int argc, char *argv[])
     }
 
     printf("Test with async 7E1\n");
-    async_tx_init(&tx_async, 7, ASYNC_PARITY_EVEN, 1, FALSE, test_get_async_byte, NULL);
-    async_rx_init(&rx_async, 7, ASYNC_PARITY_EVEN, 1, FALSE, test_put_async_byte, NULL);
+    async_tx_init(&tx_async, 7, ASYNC_PARITY_EVEN, 1, false, test_get_async_byte, NULL);
+    async_rx_init(&rx_async, 7, ASYNC_PARITY_EVEN, 1, false, test_put_async_byte, NULL);
     tx_async_chars = 0;
     rx_async_chars = 0;
     rx_async_char_mask = 0x7F;
@@ -172,8 +172,8 @@ int main(int argc, char *argv[])
     }
 
     printf("Test with async 8O1\n");
-    async_tx_init(&tx_async, 8, ASYNC_PARITY_ODD, 1, FALSE, test_get_async_byte, NULL);
-    async_rx_init(&rx_async, 8, ASYNC_PARITY_ODD, 1, FALSE, test_put_async_byte, NULL);
+    async_tx_init(&tx_async, 8, ASYNC_PARITY_ODD, 1, false, test_get_async_byte, NULL);
+    async_rx_init(&rx_async, 8, ASYNC_PARITY_ODD, 1, false, test_put_async_byte, NULL);
     tx_async_chars = 0;
     rx_async_chars = 0;
     rx_async_char_mask = 0xFF;
@@ -194,8 +194,8 @@ int main(int argc, char *argv[])
     }
 
     printf("Test with async 8O1 and V.14\n");
-    async_tx_init(&tx_async, 8, ASYNC_PARITY_ODD, 1, TRUE, test_get_async_byte, NULL);
-    async_rx_init(&rx_async, 8, ASYNC_PARITY_ODD, 1, TRUE, test_put_async_byte, NULL);
+    async_tx_init(&tx_async, 8, ASYNC_PARITY_ODD, 1, true, test_get_async_byte, NULL);
+    async_rx_init(&rx_async, 8, ASYNC_PARITY_ODD, 1, true, test_put_async_byte, NULL);
     tx_async_chars = 0;
     rx_async_chars = 0;
     rx_async_char_mask = 0xFF;
@@ -216,8 +216,8 @@ int main(int argc, char *argv[])
     }
 
     printf("Test with async 5N2\n");
-    async_tx_init(&tx_async, 5, ASYNC_PARITY_NONE, 2, FALSE, test_get_async_byte, NULL);
-    async_rx_init(&rx_async, 5, ASYNC_PARITY_NONE, 2, FALSE, test_put_async_byte, NULL);
+    async_tx_init(&tx_async, 5, ASYNC_PARITY_NONE, 2, false, test_get_async_byte, NULL);
+    async_rx_init(&rx_async, 5, ASYNC_PARITY_NONE, 2, false, test_put_async_byte, NULL);
     tx_async_chars = 0;
     rx_async_chars = 0;
     rx_async_char_mask = 0x1F;

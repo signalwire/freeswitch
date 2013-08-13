@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
         exit(2);
     }
 
-    add_digits = TRUE;
+    add_digits = true;
     do
     {
         len = dtmf_tx(gen, amp, 160);
@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
             if (dtmf_tx_put(gen, "1234567890", -1))
             {
                 printf("Digit buffer full\n");
-                add_digits = FALSE;
+                add_digits = false;
             }
         }
     }

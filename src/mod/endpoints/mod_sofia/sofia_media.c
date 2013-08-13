@@ -97,6 +97,19 @@ switch_status_t sofia_media_tech_media(private_object_t *tech_pvt, const char *r
 	return SWITCH_STATUS_FALSE;
 }
 
+static void process_mp(switch_core_session_t *session, switch_stream_handle_t *stream, const char *boundary, const char *str) {
+	char *dname = switch_core_session_strdup(session, str);
+	char *dval;
+
+	if ((dval = strchr(dname, ':'))) {
+		*dval++ = '\0';
+		if (*dval == '~') {
+			stream->write_function(stream, "--%s\nContent-Type: %s\nContent-Length: %d\n%s\n", boundary, dname, strlen(dval), dval + 1);
+		} else {
+			stream->write_function(stream, "--%s\nContent-Type: %s\nContent-Length: %d\n\n%s\n", boundary, dname, strlen(dval) + 1, dval);
+		}							
+	}
+}
 
 char *sofia_media_get_multipart(switch_core_session_t *session, const char *prefix, const char *sdp, char **mp_type)
 {
@@ -113,14 +126,18 @@ char *sofia_media_get_multipart(switch_core_session_t *session, const char *pref
 			const char *name = (char *) hi->name;
 			char *value = (char *) hi->value;
 
-			if (!strncasecmp(name, prefix, strlen(prefix))) {
-				const char *hname = name + strlen(prefix);
-				if (*value == '~') {
-					stream.write_function(&stream, "--%s\nContent-Type: %s\nContent-Length: %d\n%s\n", boundary, hname, strlen(value), value + 1);
+			if (!strcasecmp(name, prefix)) {
+				if (hi->idx > 0) {
+					int i = 0;
+
+					for(i = 0; i < hi->idx; i++) {
+						process_mp(session, &stream, boundary, hi->array[i]);
+						x++;
+					}
 				} else {
-					stream.write_function(&stream, "--%s\nContent-Type: %s\nContent-Length: %d\n\n%s\n", boundary, hname, strlen(value) + 1, value);
+					process_mp(session, &stream, boundary, value);
+					x++;
 				}
-				x++;
 			}
 		}
 		switch_channel_variable_last(channel);

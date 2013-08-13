@@ -31,18 +31,24 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
+#include <memory.h>
+#include <string.h>
+#include <limits.h>
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
-#include <memory.h>
-#include <string.h>
-#include <limits.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/queue.h"
@@ -93,11 +99,11 @@ static const float dtmf_col[] =
 
 static const char dtmf_positions[] = "123A" "456B" "789C" "*0#D";
 
-static int dtmf_rx_inited = FALSE;
+static bool dtmf_rx_inited = false;
 static goertzel_descriptor_t dtmf_detect_row[4];
 static goertzel_descriptor_t dtmf_detect_col[4];
 
-static int dtmf_tx_inited = FALSE;
+static bool dtmf_tx_inited = false;
 static tone_gen_descriptor_t dtmf_digit_tones[16];
 
 SPAN_DECLARE(int) dtmf_rx(dtmf_rx_state_t *s, const int16_t amp[], int samples)
@@ -413,7 +419,7 @@ SPAN_DECLARE(dtmf_rx_state_t *) dtmf_rx_init(dtmf_rx_state_t *s,
 
     if (s == NULL)
     {
-        if ((s = (dtmf_rx_state_t *) malloc(sizeof (*s))) == NULL)
+        if ((s = (dtmf_rx_state_t *) span_alloc(sizeof (*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -423,7 +429,7 @@ SPAN_DECLARE(dtmf_rx_state_t *) dtmf_rx_init(dtmf_rx_state_t *s,
     s->digits_callback_data = user_data;
     s->realtime_callback = NULL;
     s->realtime_callback_data = NULL;
-    s->filter_dialtone = FALSE;
+    s->filter_dialtone = false;
     s->normal_twist = DTMF_NORMAL_TWIST;
     s->reverse_twist = DTMF_REVERSE_TWIST;
     s->threshold = DTMF_THRESHOLD;
@@ -438,7 +444,7 @@ SPAN_DECLARE(dtmf_rx_state_t *) dtmf_rx_init(dtmf_rx_state_t *s,
             make_goertzel_descriptor(&dtmf_detect_row[i], dtmf_row[i], DTMF_SAMPLES_PER_BLOCK);
             make_goertzel_descriptor(&dtmf_detect_col[i], dtmf_col[i], DTMF_SAMPLES_PER_BLOCK);
         }
-        dtmf_rx_inited = TRUE;
+        dtmf_rx_inited = true;
     }
     for (i = 0;  i < 4;  i++)
     {
@@ -466,7 +472,7 @@ SPAN_DECLARE(int) dtmf_rx_release(dtmf_rx_state_t *s)
 
 SPAN_DECLARE(int) dtmf_rx_free(dtmf_rx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -491,10 +497,10 @@ static void dtmf_tx_initialise(void)
                                      DEFAULT_DTMF_TX_OFF_TIME,
                                      0,
                                      0,
-                                     FALSE);
+                                     false);
         }
     }
-    dtmf_tx_inited = TRUE;
+    dtmf_tx_inited = true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -578,7 +584,7 @@ SPAN_DECLARE(dtmf_tx_state_t *) dtmf_tx_init(dtmf_tx_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (dtmf_tx_state_t *) malloc(sizeof (*s))) == NULL)
+        if ((s = (dtmf_tx_state_t *) span_alloc(sizeof (*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -603,7 +609,7 @@ SPAN_DECLARE(int) dtmf_tx_release(dtmf_tx_state_t *s)
 
 SPAN_DECLARE(int) dtmf_tx_free(dtmf_tx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

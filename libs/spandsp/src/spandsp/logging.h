@@ -80,9 +80,9 @@ extern "C"
     \brief Test if logging of a specified severity level is enabled.
     \param s The logging context.
     \param level The severity level to be tested.
-    \return TRUE if logging is enable, else FALSE.
+    \return True if logging is enable.
 */
-SPAN_DECLARE(int) span_log_test(logging_state_t *s, int level);
+SPAN_DECLARE(bool) span_log_test(logging_state_t *s, int level);
 
 /*! Generate a log entry.
     \brief Generate a log entry.

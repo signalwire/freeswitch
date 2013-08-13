@@ -566,7 +566,7 @@ void event_handler(switch_event_t *event) {
 
 abyss_bool websocket_hook(TSession *r)
 {
-	wsh_t wsh;
+	wsh_t *wsh;
 	int ret;
 	int i;
 	ws_opcode_t opcode;
@@ -574,54 +574,56 @@ abyss_bool websocket_hook(TSession *r)
 	switch_event_node_t *nodes[MAX_EVENT_BIND_SLOTS];
 	int node_count = 0;
 	char *p;
-	char *key = TableFind(&r->requestHeaderFields, "sec-websocket-key");
-	char *version = TableFind(&r->requestHeaderFields, "sec-websocket-version");
-	char *proto = TableFind(&r->requestHeaderFields, "sec-websocket-protocol");
-	char *upgrade = TableFind(&r->requestHeaderFields, "connection");
+	char *key = NULL;
+	char *version = NULL;
+	char *proto = NULL;
+	char *upgrade = NULL;
 
-	if (!key || !version || !proto || !upgrade) return FALSE;
-	if (strncasecmp(upgrade, "Upgrade", 7) || strncasecmp(proto, "websocket", 9)) return FALSE;
+	for (i = 0; i < r->requestHeaderFields.size; i++) {
+		TTableItem * const item = &r->requestHeaderFields.item[i];
 
-	for (i = 0; i < r->requestHeaderFields.size; ++i) {
-		TTableItem * const fieldP = &r->requestHeaderFields.item[i];
-		const char * const fieldValue = fieldP->value;
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "headers %s: %s\n", fieldP->name, fieldValue);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "headers %s: %s\n", item->name, item->value);
 	}
 
-	ret = ws_init(&wsh, r, NULL, 0);
-	if (ret != 0) {
+	key = RequestHeaderValue(r, "sec-websocket-key");
+	version = RequestHeaderValue(r, "sec-websocket-version");
+	proto = RequestHeaderValue(r, "sec-websocket-protocol");
+	upgrade = RequestHeaderValue(r, "upgrade");
+
+	if (!key || !version || !proto || !upgrade) return FALSE;
+	if (strncasecmp(upgrade, "websocket", 9) || strncasecmp(proto, "websocket", 9)) return FALSE;
+
+	wsh = ws_init(r);
+	if (!wsh) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "websocket error %d\n", ret);
 		return FALSE;
 	}
 
-	while(!wsh.down && !wsh.handshake) {
-		ret = ws_handshake_kvp(&wsh, key, version, proto);
-		if (ret < 0) wsh.down = 1;
-	}
+	ret = ws_handshake_kvp(wsh, key, version, proto);
+	if (ret < 0) wsh->down = 1;
 
 	if (ret != 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "handshake error %d\n", ret);
 		return FALSE;
 	}
 
-	if (switch_event_bind_removable("websocket", SWITCH_EVENT_CUSTOM, "websocket::stophook", stop_hook_event_handler, &wsh, &nodes[node_count++]) != SWITCH_STATUS_SUCCESS) {
+	if (switch_event_bind_removable("websocket", SWITCH_EVENT_CUSTOM, "websocket::stophook", stop_hook_event_handler, wsh, &nodes[node_count++]) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't bind!\n");
 		node_count--;
 	}
 
-	while (!wsh.down) {
-		int bytes = ws_read_frame(&wsh, &opcode, &data);
+	while (!wsh->down) {
+		int bytes = ws_read_frame(wsh, &opcode, &data);
 
 		if (bytes < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%d %s\n", opcode, (char *)data);
-			switch_yield(1000);
+			switch_yield(100000);
 			continue;
 		}
 
 		switch (opcode) {
 			case WSOC_CLOSE:
-				ws_close(&wsh, 1000);
+				ws_close(wsh, 1000);
 				break;
 			case WSOC_CONTINUATION:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "continue\n");
@@ -666,7 +668,7 @@ abyss_bool websocket_hook(TSession *r)
 						continue;
 					}
 
-					if (switch_event_bind_removable("websocket", type, subclass, event_handler, &wsh, &nodes[node_count++]) != SWITCH_STATUS_SUCCESS) {
+					if (switch_event_bind_removable("websocket", type, subclass, event_handler, wsh, &nodes[node_count++]) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't bind!\n");
 						node_count--;
 						continue;
@@ -681,10 +683,12 @@ abyss_bool websocket_hook(TSession *r)
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "wsh.down = %d, node_count = %d\n", wsh.down, node_count);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "wsh->down = %d, node_count = %d\n", wsh->down, node_count);
 
 	switch_yield(2000);
 	while (--node_count >= 0) switch_event_unbind(&nodes[node_count]);
+
+	switch_safe_free(wsh);
 
 	return FALSE;
 }
@@ -698,6 +702,12 @@ abyss_bool auth_hook(TSession * r)
 		// Chrome has no Authorization support yet
 		// https://code.google.com/p/chromium/issues/detail?id=123862
 		return websocket_hook(r);
+	}
+
+	if (!strncmp(r->requestInfo.uri, "/portal", 7) && strlen(r->requestInfo.uri) <= 8) {
+		ResponseAddField(r, "Location", "/portal/index.html");
+		ResponseStatus(r, 302);
+		return TRUE;
 	}
 
 	if (!strncmp(r->requestInfo.uri, "/domains/", 9)) {
@@ -1235,7 +1245,6 @@ void stop_all_websockets()
 	if (switch_event_fire(&event) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG,SWITCH_LOG_ERROR, "Failed to fire the event!\n");
 		switch_event_destroy(&event);
-		return false;
 	}
 }
 

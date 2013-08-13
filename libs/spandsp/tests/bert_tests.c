@@ -210,18 +210,18 @@ int main(int argc, char *argv[])
         bert_put_bit(rx_bert, bit);
         test[tx_bert->tx.reg]++;
     }
-    failed = FALSE;
+    failed = false;
     if (test[0] != 0)
     {
         printf("XXX %d %d\n", 0, test[0]);
-        failed = TRUE;
+        failed = true;
     }
     for (i = 1;  i < 0x200;  i++)
     {
         if (test[i] != 2)
         {
             printf("XXX %d %d\n", i, test[i]);
-            failed = TRUE;
+            failed = true;
         }
     }
     bert_result(rx_bert, &bert_results);
@@ -254,18 +254,18 @@ int main(int argc, char *argv[])
         bert_put_bit(rx_bert, bit);
         test[tx_bert->tx.reg]++;
     }
-    failed = FALSE;
+    failed = false;
     if (test[0] != 0)
     {
         printf("XXX %d %d\n", 0, test[0]);
-        failed = TRUE;
+        failed = true;
     }
     for (i = 1;  i < 0x800;  i++)
     {
         if (test[i] != 2)
         {
             printf("XXX %d %d\n", i, test[i]);
-            failed = TRUE;
+            failed = true;
         }
     }
     bert_result(rx_bert, &bert_results);
@@ -298,18 +298,18 @@ int main(int argc, char *argv[])
         bert_put_bit(rx_bert, bit);
         test[tx_bert->tx.reg]++;
     }
-    failed = FALSE;
+    failed = false;
     if (test[0] != 0)
     {
         printf("XXX %d %d\n", 0, test[0]);
-        failed = TRUE;
+        failed = true;
     }
     for (i = 1;  i < 0x8000;  i++)
     {
         if (test[i] != 2)
         {
             printf("XXX %d %d\n", i, test[i]);
-            failed = TRUE;
+            failed = true;
         }
     }
     bert_result(rx_bert, &bert_results);
@@ -342,11 +342,11 @@ int main(int argc, char *argv[])
         bert_put_bit(rx_bert, bit);
         test[tx_bert->tx.reg]++;
     }
-    failed = FALSE;
+    failed = false;
     if (test[0] != 0)
     {
         printf("XXX %d %d\n", 0, test[0]);
-        failed = TRUE;
+        failed = true;
     }
     for (i = 1;  i < 0x100000;  i++)
     {
@@ -383,11 +383,11 @@ int main(int argc, char *argv[])
         bert_put_bit(rx_bert, bit);
         test[tx_bert->tx.reg]++;
     }
-    failed = FALSE;
+    failed = false;
     if (test[0] != 0)
     {
         printf("XXX %d %d\n", 0, test[0]);
-        failed = TRUE;
+        failed = true;
     }
     for (i = 1;  i < 0x800000;  i++)
     {

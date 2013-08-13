@@ -65,9 +65,9 @@ static SNDFILE *wave_handle;
 
 static int log_audio;
 static int use_transmit_on_idle;
-static int done = FALSE;
+static int done = false;
 
-static int started = FALSE;
+static int started = false;
 static int64_t current = 0;
 
 static int phase_b_handler(t30_state_t *s, void *user_data, int result)
@@ -263,7 +263,7 @@ static int ifp_handler(void *user_data, const uint8_t msg[], int len, int seq_no
 {
     int i;
 
-    started = TRUE;
+    started = true;
 
     printf("%5d >>> ", seq_no);
     for (i = 0;  i < len;  i++)
@@ -333,17 +333,17 @@ int main(int argc, char *argv[])
     uint32_t dest_addr;
     uint16_t dest_port;
 
-    caller = FALSE;
-    use_ecm = FALSE;
+    caller = false;
+    use_ecm = false;
     t38_version = 0;
     options = 0;
     input_file_name = INPUT_FILE_NAME;
-    fill_removal = FALSE;
-    use_tep = FALSE;
-    use_transmit_on_idle = TRUE;
+    fill_removal = false;
+    use_tep = false;
+    use_transmit_on_idle = true;
     supported_modems = T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17;
-    t38_terminal_operation = TRUE;
-    log_audio = FALSE;
+    t38_terminal_operation = true;
+    log_audio = false;
     src_addr = 0;
     src_port = 0;
     dest_addr = 0;
@@ -353,7 +353,7 @@ int main(int argc, char *argv[])
         switch (opt)
         {
         case 'c':
-            caller = TRUE;
+            caller = true;
             break;
         case 'D':
             dest_addr = parse_inet_addr(optarg);
@@ -362,19 +362,19 @@ int main(int argc, char *argv[])
             dest_port = atoi(optarg);
             break;
         case 'e':
-            use_ecm = TRUE;
+            use_ecm = true;
             break;
         case 'F':
-            fill_removal = TRUE;
+            fill_removal = true;
             break;
         case 'G':
-            t38_terminal_operation = FALSE;
+            t38_terminal_operation = false;
             break;
         case 'i':
             input_file_name = optarg;
             break;
         case 'l':
-            log_audio = TRUE;
+            log_audio = true;
             break;
         case 'm':
             supported_modems = atoi(optarg);
@@ -389,7 +389,7 @@ int main(int argc, char *argv[])
             src_port = atoi(optarg);
             break;
         case 't':
-            use_tep = TRUE;
+            use_tep = true;
             break;
         case 'v':
             t38_version = atoi(optarg);

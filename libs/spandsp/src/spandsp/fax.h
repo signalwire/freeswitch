@@ -75,16 +75,16 @@ SPAN_DECLARE_NONSTD(int) fax_tx(fax_state_t *s, int16_t *amp, int max_len);
 /*! Select whether silent audio will be sent when FAX transmit is idle.
     \brief Select whether silent audio will be sent when FAX transmit is idle.
     \param s The FAX context.
-    \param transmit_on_idle TRUE if silent audio should be output when the FAX transmitter is
-           idle. FALSE to transmit zero length audio when the FAX transmitter is idle. The default
-           behaviour is FALSE.
+    \param transmit_on_idle True if silent audio should be output when the FAX transmitter is
+           idle. False to transmit zero length audio when the FAX transmitter is idle. The default
+           behaviour is false.
 */
 SPAN_DECLARE(void) fax_set_transmit_on_idle(fax_state_t *s, int transmit_on_idle);
 
 /*! Select whether talker echo protection tone will be sent for the image modems.
     \brief Select whether TEP will be sent for the image modems.
     \param s The FAX context.
-    \param use_tep TRUE if TEP should be sent.
+    \param use_tep True if TEP should be sent.
 */
 SPAN_DECLARE(void) fax_set_tep_mode(fax_state_t *s, int use_tep);
 
@@ -105,7 +105,7 @@ SPAN_DECLARE(logging_state_t *) fax_get_logging_state(fax_state_t *s);
 /*! Restart a FAX context.
     \brief Restart a FAX context.
     \param s The FAX context.
-    \param calling_party TRUE if the context is for a calling party. FALSE if the
+    \param calling_party True if the context is for a calling party. False if the
            context is for an answering party.
     \return 0 for OK, else -1. */
 SPAN_DECLARE(int) fax_restart(fax_state_t *s, int calling_party);
@@ -113,7 +113,7 @@ SPAN_DECLARE(int) fax_restart(fax_state_t *s, int calling_party);
 /*! Initialise a FAX context.
     \brief Initialise a FAX context.
     \param s The FAX context.
-    \param calling_party TRUE if the context is for a calling party. FALSE if the
+    \param calling_party True if the context is for a calling party. False if the
            context is for an answering party.
     \return A pointer to the FAX context, or NULL if there was a problem.
 */

@@ -493,27 +493,27 @@ static void translate_tests_gray8(void)
     printf("Dithering from a 8 bit per sample gray scale to bi-level\n");
     create_undithered_50_by_50(&im, image, 1);
     s = image_translate_init(NULL, T4_IMAGE_TYPE_BILEVEL, -1, -1, T4_IMAGE_TYPE_GRAY_8BIT, im.width, im.length, row_read, &im);
-    get_bilevel_image(s, TRUE);
+    get_bilevel_image(s, true);
 
     printf("Scrunching from a 8 bit per sample gray scale to 8 bit per sample gray scale\n");
     create_undithered_50_by_50(&im, image, 1);
     s = image_translate_init(s, T4_IMAGE_TYPE_GRAY_8BIT, -1, -1, T4_IMAGE_TYPE_GRAY_8BIT, im.width, im.length, row_read, &im);
-    get_gray8_image(s, TRUE);
+    get_gray8_image(s, true);
 
     printf("Scrunching from a 8 bit per sample gray scale to 16 bit per sample gray scale\n");
     create_undithered_50_by_50(&im, image, 1);
     s = image_translate_init(s, T4_IMAGE_TYPE_GRAY_12BIT, -1, -1, T4_IMAGE_TYPE_GRAY_8BIT, im.width, im.length, row_read, &im);
-    get_gray16_image(s, TRUE);
+    get_gray16_image(s, true);
 
     printf("Scrunching from a 8 bit per sample gray scale to 3x8 bit per sample colour\n");
     create_undithered_50_by_50(&im, image, 1);
     s = image_translate_init(s, T4_IMAGE_TYPE_COLOUR_8BIT, -1, -1, T4_IMAGE_TYPE_GRAY_8BIT, im.width, im.length, row_read, &im);
-    get_colour8_image(s, TRUE);
+    get_colour8_image(s, true);
 
     printf("Scrunching from a 8 bit per sample gray scale to 3x16 bit per sample colour\n");
     create_undithered_50_by_50(&im, image, 1);
     s = image_translate_init(s, T4_IMAGE_TYPE_COLOUR_12BIT, -1, -1, T4_IMAGE_TYPE_GRAY_8BIT, im.width, im.length, row_read, &im);
-    get_colour16_image(s, TRUE);
+    get_colour16_image(s, true);
 
     image_translate_free(s);
 }
@@ -528,27 +528,27 @@ static void translate_tests_gray16(void)
     printf("Dithering from a 16 bit per sample gray scale to bi-level\n");
     create_undithered_50_by_50(&im, (uint8_t *) image, 2);
     s = image_translate_init(NULL, T4_IMAGE_TYPE_BILEVEL, -1, -1, T4_IMAGE_TYPE_GRAY_12BIT, im.width, im.length, row_read, &im);
-    get_bilevel_image(s, TRUE);
+    get_bilevel_image(s, true);
 
     printf("Scrunching from a 16 bit per sample gray scale to 8 bit per sample gray scale\n");
     create_undithered_50_by_50(&im, (uint8_t *) image, 2);
     s = image_translate_init(s, T4_IMAGE_TYPE_GRAY_8BIT, -1, -1, T4_IMAGE_TYPE_GRAY_12BIT, im.width, im.length, row_read, &im);
-    get_gray8_image(s, TRUE);
+    get_gray8_image(s, true);
 
     printf("Scrunching from a 16 bit per sample gray scale to 16 bit per sample gray scale\n");
     create_undithered_50_by_50(&im, (uint8_t *) image, 2);
     s = image_translate_init(s, T4_IMAGE_TYPE_GRAY_12BIT, -1, -1, T4_IMAGE_TYPE_GRAY_12BIT, im.width, im.length, row_read, &im);
-    get_gray16_image(s, TRUE);
+    get_gray16_image(s, true);
 
     printf("Scrunching from a 16 bit per sample gray scale to 3x8 bit per sample colour\n");
     create_undithered_50_by_50(&im, (uint8_t *) image, 2);
     s = image_translate_init(s, T4_IMAGE_TYPE_COLOUR_8BIT, -1, -1, T4_IMAGE_TYPE_GRAY_12BIT, im.width, im.length, row_read, &im);
-    get_colour8_image(s, TRUE);
+    get_colour8_image(s, true);
 
     printf("Scrunching from a 16 bit per sample gray scale to 3x16 bit per sample colour\n");
     create_undithered_50_by_50(&im, (uint8_t *) image, 2);
     s = image_translate_init(s, T4_IMAGE_TYPE_COLOUR_12BIT, -1, -1, T4_IMAGE_TYPE_GRAY_12BIT, im.width, im.length, row_read, &im);
-    get_colour16_image(s, TRUE);
+    get_colour16_image(s, true);
 
     image_translate_free(s);
 }
@@ -563,27 +563,27 @@ static void translate_tests_colour8(void)
     printf("Dithering from a 3x8 bit per sample colour to bi-level\n");
     create_undithered_50_by_50(&im, image, 3);
     s = image_translate_init(NULL, T4_IMAGE_TYPE_BILEVEL, -1, -1, T4_IMAGE_TYPE_COLOUR_8BIT, im.width, im.length, row_read, &im);
-    get_bilevel_image(s, TRUE);
+    get_bilevel_image(s, true);
 
     printf("Scrunching from a 3x8 bit per sample colour to 8 bit per sample gray scale\n");
     create_undithered_50_by_50(&im, image, 3);
     s = image_translate_init(s, T4_IMAGE_TYPE_GRAY_8BIT, -1, -1, T4_IMAGE_TYPE_COLOUR_8BIT, im.width, im.length, row_read, &im);
-    get_gray8_image(s, TRUE);
+    get_gray8_image(s, true);
 
     printf("Scrunching from a 3x8 bit per sample colour to 16 bit per sample gray scale\n");
     create_undithered_50_by_50(&im, image, 3);
     s = image_translate_init(s, T4_IMAGE_TYPE_GRAY_12BIT, -1, -1, T4_IMAGE_TYPE_COLOUR_8BIT, im.width, im.length, row_read, &im);
-    get_gray16_image(s, TRUE);
+    get_gray16_image(s, true);
 
     printf("Scrunching from a 3x8 bit per sample colour to 3x8 bit per sample colour\n");
     create_undithered_50_by_50(&im, image, 3);
     s = image_translate_init(s, T4_IMAGE_TYPE_COLOUR_8BIT, -1, -1, T4_IMAGE_TYPE_COLOUR_8BIT, im.width, im.length, row_read, &im);
-    get_colour8_image(s, TRUE);
+    get_colour8_image(s, true);
 
     printf("Scrunching from a 3x8 bit per sample colour to 3x16 bit per sample colour\n");
     create_undithered_50_by_50(&im, image, 3);
     s = image_translate_init(s, T4_IMAGE_TYPE_COLOUR_12BIT, -1, -1, T4_IMAGE_TYPE_COLOUR_8BIT, im.width, im.length, row_read, &im);
-    get_colour16_image(s, TRUE);
+    get_colour16_image(s, true);
 
     image_translate_free(s);
 }
@@ -598,27 +598,27 @@ static void translate_tests_colour16(void)
     printf("Dithering from a 3x16 bit per sample colour to bi-level\n");
     create_undithered_50_by_50(&im, (uint8_t *) image, 6);
     s = image_translate_init(NULL, T4_IMAGE_TYPE_BILEVEL, -1, -1, T4_IMAGE_TYPE_COLOUR_12BIT, im.width, im.length, row_read, &im);
-    get_bilevel_image(s, TRUE);
+    get_bilevel_image(s, true);
 
     printf("Scrunching from a 3x16 bit per sample colour to 8 bit per sample gray scale\n");
     create_undithered_50_by_50(&im, (uint8_t *) image, 6);
     s = image_translate_init(s, T4_IMAGE_TYPE_GRAY_8BIT, -1, -1, T4_IMAGE_TYPE_COLOUR_12BIT, im.width, im.length, row_read, &im);
-    get_gray8_image(s, TRUE);
+    get_gray8_image(s, true);
 
     printf("Scrunching from a 3x16 bit per sample colour to 16 bit per sample gray scale\n");
     create_undithered_50_by_50(&im, (uint8_t *) image, 6);
     s = image_translate_init(s, T4_IMAGE_TYPE_GRAY_12BIT, -1, -1, T4_IMAGE_TYPE_COLOUR_12BIT, im.width, im.length, row_read, &im);
-    get_gray16_image(s, TRUE);
+    get_gray16_image(s, true);
 
     printf("Scrunching from a 3x16 bit per sample colour to 3x8 bit per sample colour\n");
     create_undithered_50_by_50(&im, (uint8_t *) image, 6);
     s = image_translate_init(s, T4_IMAGE_TYPE_COLOUR_8BIT, -1, -1, T4_IMAGE_TYPE_COLOUR_12BIT, im.width, im.length, row_read, &im);
-    get_colour8_image(s, TRUE);
+    get_colour8_image(s, true);
 
     printf("Scrunching from a 3x16 bit per sample colour to 3x16 bit per sample colour\n");
     create_undithered_50_by_50(&im, (uint8_t *) image, 6);
     s = image_translate_init(s, T4_IMAGE_TYPE_COLOUR_12BIT, -1, -1, T4_IMAGE_TYPE_COLOUR_12BIT, im.width, im.length, row_read, &im);
-    get_colour16_image(s, TRUE);
+    get_colour16_image(s, true);
 
     image_translate_free(s);
 }
@@ -634,7 +634,7 @@ static void grow_tests_colour8(void)
     create_undithered_50_by_50(&im, image, 3);
 
     s = image_translate_init(NULL, T4_IMAGE_TYPE_BILEVEL, 200, -1, T4_IMAGE_TYPE_COLOUR_8BIT, im.width, im.length, row_read, &im);
-    get_bilevel_image(s, FALSE);
+    get_bilevel_image(s, false);
     image_translate_free(s);
 }
 /*- End of function --------------------------------------------------------*/

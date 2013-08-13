@@ -47,11 +47,17 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <tiffio.h>
 #include <assert.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/logging.h"
 #include "spandsp/saturated.h"
@@ -712,7 +718,7 @@ SPAN_DECLARE(int) image_translate_restart(image_translate_state_t *s, int input_
         {
             if (s->raw_pixel_row[i] == NULL)
             {
-                if ((s->raw_pixel_row[i] = (uint8_t *) malloc(raw_row_size)) == NULL)
+                if ((s->raw_pixel_row[i] = (uint8_t *) span_alloc(raw_row_size)) == NULL)
                     return -1;
             }
             memset(s->raw_pixel_row[i], 0, raw_row_size);
@@ -729,7 +735,7 @@ SPAN_DECLARE(int) image_translate_restart(image_translate_state_t *s, int input_
         {
             if (s->pixel_row[i] == NULL)
             {
-                if ((s->pixel_row[i] = (uint8_t *) malloc(raw_row_size)) == NULL)
+                if ((s->pixel_row[i] = (uint8_t *) span_alloc(raw_row_size)) == NULL)
                     return -1;
             }
             memset(s->pixel_row[i], 0, raw_row_size);
@@ -757,7 +763,7 @@ SPAN_DECLARE(image_translate_state_t *) image_translate_init(image_translate_sta
 {
     if (s == NULL)
     {
-        if ((s = (image_translate_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (image_translate_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -794,12 +800,12 @@ SPAN_DECLARE(int) image_translate_release(image_translate_state_t *s)
     {
         if (s->raw_pixel_row[i])
         {
-            free(s->raw_pixel_row[i]);
+            span_free(s->raw_pixel_row[i]);
             s->raw_pixel_row[i] = NULL;
         }
         if (s->pixel_row[i])
         {
-            free(s->pixel_row[i]);
+            span_free(s->pixel_row[i]);
             s->pixel_row[i] = NULL;
         }
     }
@@ -812,7 +818,7 @@ SPAN_DECLARE(int) image_translate_free(image_translate_state_t *s)
     int res;
 
     res = image_translate_release(s);
-    free(s);
+    span_free(s);
     return res;
 }
 /*- End of function --------------------------------------------------------*/

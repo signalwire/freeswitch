@@ -72,10 +72,16 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <tiffio.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/async.h"
@@ -373,17 +379,17 @@ static int free_buffers(t4_t6_encode_state_t *s)
 {
     if (s->cur_runs)
     {
-        free(s->cur_runs);
+        span_free(s->cur_runs);
         s->cur_runs = NULL;
     }
     if (s->ref_runs)
     {
-        free(s->ref_runs);
+        span_free(s->ref_runs);
         s->ref_runs = NULL;
     }
     if (s->bitstream)
     {
-        free(s->bitstream);
+        span_free(s->bitstream);
         s->bitstream = NULL;
     }
     s->bytes_per_row = 0;
@@ -840,12 +846,12 @@ static int encode_row(t4_t6_encode_state_t *s, const uint8_t *row_buf, size_t le
         else
         {
             encode_1d_row(s, row_buf);
-            s->row_is_2d = TRUE;
+            s->row_is_2d = true;
         }
         if (s->rows_to_next_1d_row <= 0)
         {
             /* Insert a row of 1D encoding */
-            s->row_is_2d = FALSE;
+            s->row_is_2d = false;
             s->rows_to_next_1d_row = s->max_rows_to_next_1d_row - 1;
         }
         break;
@@ -873,7 +879,7 @@ static int finalise_page(t4_t6_encode_state_t *s)
     else
     {
         /* Attach an RTC (return to control == 6 x EOLs) to the end of the page */
-        s->row_is_2d = FALSE;
+        s->row_is_2d = false;
         for (i = 0;  i < EOLS_TO_END_T4_TX_PAGE;  i++)
             encode_eol(s);
     }
@@ -1026,13 +1032,13 @@ SPAN_DECLARE(int) t4_t6_encode_set_image_width(t4_t6_encode_state_t *s, int imag
         s->bytes_per_row = (s->image_width + 7)/8;
         run_space = (s->image_width + 4)*sizeof(uint32_t);
 
-        if ((bufptr = (uint32_t *) realloc(s->cur_runs, run_space)) == NULL)
+        if ((bufptr = (uint32_t *) span_realloc(s->cur_runs, run_space)) == NULL)
             return -1;
         s->cur_runs = bufptr;
-        if ((bufptr = (uint32_t *) realloc(s->ref_runs, run_space)) == NULL)
+        if ((bufptr = (uint32_t *) span_realloc(s->ref_runs, run_space)) == NULL)
             return -1;
         s->ref_runs = bufptr;
-        if ((bufptr8 = (uint8_t *) realloc(s->bitstream, (s->image_width + 1)*sizeof(uint16_t))) == NULL)
+        if ((bufptr8 = (uint8_t *) span_realloc(s->bitstream, (s->image_width + 1)*sizeof(uint16_t))) == NULL)
             return -1;
         s->bitstream = bufptr8;
     }
@@ -1104,7 +1110,7 @@ SPAN_DECLARE(void) t4_t6_encode_set_max_2d_rows_per_1d_row(t4_t6_encode_state_t 
     }
     s->max_rows_to_next_1d_row = max;
     s->rows_to_next_1d_row = max - 1;
-    s->row_is_2d = FALSE;
+    s->row_is_2d = false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1151,7 +1157,7 @@ SPAN_DECLARE(t4_t6_encode_state_t *) t4_t6_encode_init(t4_t6_encode_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (t4_t6_encode_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (t4_t6_encode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -1181,7 +1187,7 @@ SPAN_DECLARE(int) t4_t6_encode_free(t4_t6_encode_state_t *s)
     int ret;
 
     ret = t4_t6_encode_release(s);
-    free(s);
+    span_free(s);
     return ret;
 }
 /*- End of function --------------------------------------------------------*/

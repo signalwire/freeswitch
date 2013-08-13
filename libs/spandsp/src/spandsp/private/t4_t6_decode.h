@@ -81,8 +81,8 @@ struct t4_t6_decode_state_s
     int run_length;
     /*! \brief 2D horizontal mode control. */
     int black_white;
-    /*! \brief TRUE if the current run is black */
-    int in_black;
+    /*! \brief True if the current run is black */
+    bool in_black;
 
     /*! \brief The current step into the current row run-lengths buffer. */
     int a_cursor;

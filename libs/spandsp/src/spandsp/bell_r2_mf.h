@@ -175,10 +175,10 @@ SPAN_DECLARE(int) r2_mf_tx_put(r2_mf_tx_state_t *s, char digit);
 
 /*! \brief Initialise an R2 MF tone generator context.
     \param s The R2 MF generator context.
-    \param fwd TRUE if the context is for forward signals. FALSE if the
+    \param fwd True if the context is for forward signals. False if the
            context is for backward signals.
     \return A pointer to the MFC/R2 generator context.*/
-SPAN_DECLARE(r2_mf_tx_state_t *) r2_mf_tx_init(r2_mf_tx_state_t *s, int fwd);
+SPAN_DECLARE(r2_mf_tx_state_t *) r2_mf_tx_init(r2_mf_tx_state_t *s, bool fwd);
 
 /*! \brief Release an R2 MF tone generator context.
     \param s The R2 MF tone generator context.
@@ -242,7 +242,7 @@ SPAN_DECLARE(int) r2_mf_rx_get(r2_mf_rx_state_t *s);
 
 /*! \brief Initialise an R2 MF receiver context.
     \param s The R2 MF receiver context.
-    \param fwd TRUE if the context is for forward signals. FALSE if the
+    \param fwd True if the context is for forward signals. False if the
            context is for backward signals.
     \param callback An optional callback routine, used to report received digits. If
            no callback routine is set, digits may be collected, using the r2_mf_rx_get()
@@ -251,7 +251,7 @@ SPAN_DECLARE(int) r2_mf_rx_get(r2_mf_rx_state_t *s);
            and supplied in callbacks.
     \return A pointer to the R2 MF receiver context. */
 SPAN_DECLARE(r2_mf_rx_state_t *) r2_mf_rx_init(r2_mf_rx_state_t *s,
-                                               int fwd,
+                                               bool fwd,
                                                tone_report_func_t callback,
                                                void *user_data);
 

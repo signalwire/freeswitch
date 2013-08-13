@@ -42,6 +42,7 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/saturated.h"
 #include "spandsp/ima_adpcm.h"
@@ -282,7 +283,7 @@ SPAN_DECLARE(ima_adpcm_state_t *) ima_adpcm_init(ima_adpcm_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (ima_adpcm_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (ima_adpcm_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     /*endif*/
@@ -301,7 +302,7 @@ SPAN_DECLARE(int) ima_adpcm_release(ima_adpcm_state_t *s)
 
 SPAN_DECLARE(int) ima_adpcm_free(ima_adpcm_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

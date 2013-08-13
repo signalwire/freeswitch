@@ -402,14 +402,14 @@ SPAN_DECLARE(int) t4_rx_start_page(t4_rx_state_t *s);
 /*! \brief Put a bit of the current document page.
     \param s The T.4 context.
     \param bit The data bit.
-    \return TRUE when the bit ends the document page, otherwise FALSE. */
+    \return Decode status. */
 SPAN_DECLARE(int) t4_rx_put_bit(t4_rx_state_t *s, int bit);
 
 /*! \brief Put a byte of the current document page.
     \param s The T.4 context.
     \param buf The buffer containing the chunk.
     \param len The length of the chunk.
-    \return TRUE when the byte ends the document page, otherwise FALSE. */
+    \return Decode status. */
 SPAN_DECLARE(int) t4_rx_put(t4_rx_state_t *s, const uint8_t buf[], size_t len);
 
 /*! \brief Complete the reception of a page.

@@ -60,8 +60,8 @@ typedef struct
     /*! \brief The maximum amount to be passed to the data handler. */
     int max_output_len;
 
-    /*! \brief TRUE if we are in transparent (i.e. uncompressable) mode */
-    int transparent;
+    /*! \brief True if we are in transparent (i.e. uncompressable) mode */
+    bool transparent;
     /*! \brief Next empty dictionary entry */
     uint16_t v42bis_parm_c1;
     /*! \brief Current codeword size */
@@ -104,8 +104,8 @@ typedef struct
 
     /*! \brief The current value of the escape code */
     uint8_t escape_code;
-    /*! \brief TRUE if we just hit an escape code, and are waiting for the following octet */
-    int escaped;
+    /*! \brief True if we just hit an escape code, and are waiting for the following octet */
+    bool escaped;
 } v42bis_comp_state_t;
 
 /*!

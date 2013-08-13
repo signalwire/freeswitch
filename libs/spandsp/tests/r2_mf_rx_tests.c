@@ -165,7 +165,7 @@ static void my_mf_gen_init(float low_fudge,
                                  0,
                                  0,
                                  0,
-                                 FALSE);
+                                 false);
     }
 }
 /*- End of function --------------------------------------------------------*/
@@ -205,7 +205,7 @@ static void digit_delivery(void *data, int digit, int level, int delay)
 
     if (data != (void *) 0x12345678)
     {
-        callback_ok = FALSE;
+        callback_ok = false;
         return;
     }
     if ((callback_roll & 1))
@@ -213,13 +213,13 @@ static void digit_delivery(void *data, int digit, int level, int delay)
     else
         ch = r2_mf_tone_codes[callback_roll >> 1];
     if (ch == digit)
-        callback_ok = TRUE;
+        callback_ok = true;
     else
-        callback_ok = FALSE;
+        callback_ok = false;
     if (r2_mf_tone_codes[callback_roll >> 1])
         callback_roll++;
     else
-        callback_ok = FALSE;
+        callback_ok = false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -539,7 +539,7 @@ static int test_a_tone_set(int fwd)
     printf("    Passed\n");
 
     printf("Test 8: Callback digit delivery mode.\n");
-    callback_ok = FALSE;
+    callback_ok = false;
     callback_roll = 0;
     mf_state = r2_mf_rx_init(NULL, fwd, digit_delivery, (void *) 0x12345678);
     my_mf_gen_init(0.0, -3, 0.0, -3, 68, fwd);
@@ -583,9 +583,9 @@ int main(int argc, char *argv[])
 
     now = time(NULL);
     printf("R2 forward tones\n");
-    test_a_tone_set(TRUE);
+    test_a_tone_set(true);
     printf("R2 backward tones\n");
-    test_a_tone_set(FALSE);
+    test_a_tone_set(false);
     duration = time(NULL) - now;
     printf("Tests passed in %lds\n", duration);
     return 0;

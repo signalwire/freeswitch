@@ -59,7 +59,7 @@
 static void weighting_filter(int16_t x[40],
                              const int16_t *e)      // signal [-5..0.39.44] IN)
 {
-#if defined(__GNUC__)  &&  defined(SPANDSP_USE_MMX)  &&  defined(__x86_64__) && !(defined(__APPLE_CC__)  && __APPLE_CC__ >= 5448)
+#if defined(__GNUC__)  &&  defined(SPANDSP_USE_MMX)  &&  defined(__x86_64__)
     /* Table 4.4   Coefficients of the weighting filter */
     /* This must be padded to a multiple of 4 for MMX to work */
     static const union

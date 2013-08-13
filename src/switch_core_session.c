@@ -2379,6 +2379,7 @@ SWITCH_DECLARE(uint8_t) switch_core_session_check_interface(switch_core_session_
 
 SWITCH_DECLARE(char *) switch_core_session_get_uuid(switch_core_session_t *session)
 {
+	if (!session) return NULL;
 	return session->uuid_str;
 }
 

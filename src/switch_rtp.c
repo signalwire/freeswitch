@@ -25,7 +25,7 @@
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
- *
+ * Seven Du <dujinfang@gmail.com>
  *
  * switch_rtp.c -- RTP
  *
@@ -3889,15 +3889,10 @@ static void do_flush(switch_rtp_t *rtp_session, int force)
 	if (switch_rtp_ready(rtp_session)) {
 		
 		if (rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_READ]) {
-			
-			if (!rtp_session->session) {
-				rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_READ] = 0;
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_CRIT, "RTP HAS NO SESSION!\n");
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session),
-								  SWITCH_LOG_CONSOLE, "%s FLUSH\n", switch_channel_get_name(switch_core_session_get_channel(rtp_session->session))
-								  );
-			}
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session),
+				  SWITCH_LOG_CONSOLE, "%s FLUSH\n",
+				  rtp_session->session ? switch_channel_get_name(switch_core_session_get_channel(rtp_session->session)) : "NoName"
+				  );
 		}
 
 		if (!rtp_session->flags[SWITCH_RTP_FLAG_NOBLOCK]) {
@@ -4041,31 +4036,26 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 
 	if (*bytes && rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_READ]) {
-		if (!rtp_session->session) {
-			rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_READ] = 0;
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_CRIT, "RTP HAS NO SESSION!\n");
-		} else {
-			const char *tx_host;
-			const char *old_host;
-			const char *my_host;
+		const char *tx_host;
+		const char *old_host;
+		const char *my_host;
 
-			char bufa[30], bufb[30], bufc[30];
+		char bufa[30], bufb[30], bufc[30];
 
 
-			tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->from_addr);
-			old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->remote_addr);
-			my_host = switch_get_addr(bufc, sizeof(bufc), rtp_session->local_addr);
+		tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->from_addr);
+		old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->remote_addr);
+		my_host = switch_get_addr(bufc, sizeof(bufc), rtp_session->local_addr);
 
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(rtp_session->session), SWITCH_LOG_CONSOLE,
-							  "R %s b=%4ld %s:%u %s:%u %s:%u pt=%d ts=%u m=%d\n",
-							  switch_channel_get_name(switch_core_session_get_channel(rtp_session->session)),
-							  (long) *bytes,
-							  my_host, switch_sockaddr_get_port(rtp_session->local_addr),
-							  old_host, rtp_session->remote_port,
-							  tx_host, switch_sockaddr_get_port(rtp_session->from_addr),
-							  rtp_session->recv_msg.header.pt, ntohl(rtp_session->recv_msg.header.ts), rtp_session->recv_msg.header.m);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(rtp_session->session), SWITCH_LOG_CONSOLE,
+						  "R %s b=%4ld %s:%u %s:%u %s:%u pt=%d ts=%u m=%d\n",
+						  rtp_session->session ? switch_channel_get_name(switch_core_session_get_channel(rtp_session->session)) : "No-Name",
+						  (long) *bytes,
+						  my_host, switch_sockaddr_get_port(rtp_session->local_addr),
+						  old_host, rtp_session->remote_port,
+						  tx_host, switch_sockaddr_get_port(rtp_session->from_addr),
+						  rtp_session->recv_msg.header.pt, ntohl(rtp_session->recv_msg.header.ts), rtp_session->recv_msg.header.m);
 
-		}
 	}
 	
 
@@ -5750,31 +5740,26 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		rtp_session->send_time = now;
 
 		if (rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_WRITE]) {
-			if (!rtp_session->session) {
-				rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_WRITE] = 0;
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_CRIT, "RTP HAS NO SESSION!\n");
-			} else {
-				const char *tx_host;
-				const char *old_host;
-				const char *my_host;
+			const char *tx_host;
+			const char *old_host;
+			const char *my_host;
 
-				char bufa[30], bufb[30], bufc[30];
+			char bufa[30], bufb[30], bufc[30];
 
 
-				tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->from_addr);
-				old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->remote_addr);
-				my_host = switch_get_addr(bufc, sizeof(bufc), rtp_session->local_addr);
+			tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->from_addr);
+			old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->remote_addr);
+			my_host = switch_get_addr(bufc, sizeof(bufc), rtp_session->local_addr);
 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(rtp_session->session), SWITCH_LOG_CONSOLE,
-								  "W %s b=%4ld %s:%u %s:%u %s:%u pt=%d ts=%u m=%d\n",
-								  switch_channel_get_name(switch_core_session_get_channel(rtp_session->session)),
-								  (long) bytes,
-								  my_host, switch_sockaddr_get_port(rtp_session->local_addr),
-								  old_host, rtp_session->remote_port,
-								  tx_host, switch_sockaddr_get_port(rtp_session->from_addr),
-								  send_msg->header.pt, ntohl(send_msg->header.ts), send_msg->header.m);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(rtp_session->session), SWITCH_LOG_CONSOLE,
+							  "W %s b=%4ld %s:%u %s:%u %s:%u pt=%d ts=%u m=%d\n",
+							  rtp_session->session ? switch_channel_get_name(switch_core_session_get_channel(rtp_session->session)) : "NoName",
+							  (long) bytes,
+							  my_host, switch_sockaddr_get_port(rtp_session->local_addr),
+							  old_host, rtp_session->remote_port,
+							  tx_host, switch_sockaddr_get_port(rtp_session->from_addr),
+							  send_msg->header.pt, ntohl(send_msg->header.ts), send_msg->header.m);
 
-			}
 		}
 
 		if (switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, (void *) send_msg, &bytes) != SWITCH_STATUS_SUCCESS) {

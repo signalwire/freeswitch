@@ -42,10 +42,16 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <assert.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/queue.h"
 #include "spandsp/dc_restore.h"
@@ -75,7 +81,7 @@ static void restart_buffer(t38_non_ecm_buffer_state_t *s)
     s->out_ptr = 0;
     s->in_ptr = 0;
     s->latest_eol_ptr = 0;
-    s->data_finished = FALSE;
+    s->data_finished = false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -123,7 +129,7 @@ SPAN_DECLARE(void) t38_non_ecm_buffer_push(t38_non_ecm_buffer_state_t *s)
     /* Don't flow control the data any more. Just push out the remainder of the data
        in the buffer as fast as we can, and shut down. */
     s->latest_eol_ptr = s->in_ptr;
-    s->data_finished = TRUE;
+    s->data_finished = true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -340,22 +346,22 @@ SPAN_DECLARE(void) t38_non_ecm_buffer_report_output_status(t38_non_ecm_buffer_st
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t38_non_ecm_buffer_set_mode(t38_non_ecm_buffer_state_t *s, int mode, int min_bits_per_row)
+SPAN_DECLARE(void) t38_non_ecm_buffer_set_mode(t38_non_ecm_buffer_state_t *s, bool image_mode, int min_bits_per_row)
 {
-    s->image_data_mode = mode;
+    s->image_data_mode = image_mode;
     s->min_bits_per_row = min_bits_per_row;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(t38_non_ecm_buffer_state_t *) t38_non_ecm_buffer_init(t38_non_ecm_buffer_state_t *s, int mode, int min_bits_per_row)
+SPAN_DECLARE(t38_non_ecm_buffer_state_t *) t38_non_ecm_buffer_init(t38_non_ecm_buffer_state_t *s, bool image_mode, int min_bits_per_row)
 {
     if (s == NULL)
     {
-        if ((s = (t38_non_ecm_buffer_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (t38_non_ecm_buffer_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
-    s->image_data_mode = mode;
+    s->image_data_mode = image_mode;
     s->min_bits_per_row = min_bits_per_row;
     restart_buffer(s);
     return s;
@@ -371,7 +377,7 @@ SPAN_DECLARE(int) t38_non_ecm_buffer_release(t38_non_ecm_buffer_state_t *s)
 SPAN_DECLARE(int) t38_non_ecm_buffer_free(t38_non_ecm_buffer_state_t *s)
 {
     if (s)
-        free(s);
+        span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

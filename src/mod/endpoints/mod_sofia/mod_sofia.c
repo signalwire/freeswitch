@@ -1295,12 +1295,18 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
 		{
 			const char *pl = "<media_control><vc_primitive><to_encoder><picture_fast_update/></to_encoder></vc_primitive></media_control>";
+			time_t now = switch_epoch_time_now(NULL);
 
-			if (!zstr(msg->string_arg)) {
-				pl = msg->string_arg;
+			if (!tech_pvt->last_vid_info || (now - tech_pvt->last_vid_info) > 5) {
+
+				tech_pvt->last_vid_info = now;
+
+				if (!zstr(msg->string_arg)) {
+					pl = msg->string_arg;
+				}
+			
+				nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("application/media_control+xml"), SIPTAG_PAYLOAD_STR(pl), TAG_END());
 			}
-
-			nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("application/media_control+xml"), SIPTAG_PAYLOAD_STR(pl), TAG_END());
 			
 		}
 		break;
@@ -4496,7 +4502,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		}
 
 		if (!(vval = switch_channel_get_variable(o_channel, "sip_copy_multipart")) || switch_true(vval)) {
-			switch_ivr_transfer_variable(session, nsession, SOFIA_MULTIPART_PREFIX_T);
+			switch_ivr_transfer_variable(session, nsession, "sip_multipart");
 		}
 		switch_ivr_transfer_variable(session, nsession, "rtp_video_fmtp");
 		switch_ivr_transfer_variable(session, nsession, "sip-force-contact");

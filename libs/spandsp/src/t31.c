@@ -46,11 +46,17 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <assert.h>
 #include <tiffio.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/bitstream.h"
@@ -93,6 +99,7 @@
 #include "spandsp/private/bitstream.h"
 #include "spandsp/private/t38_core.h"
 #include "spandsp/private/silence_gen.h"
+#include "spandsp/private/power_meter.h"
 #include "spandsp/private/fsk.h"
 #include "spandsp/private/modem_connect_tones.h"
 #include "spandsp/private/v8.h"
@@ -215,7 +222,7 @@ static int front_end_status(t31_state_t *s, int status)
             {
                 at_modem_control(&s->at_state, AT_MODEM_CONTROL_HANGUP, NULL);
                 t31_set_at_rx_mode(s, AT_MODE_ONHOOK_COMMAND);
-                s->at_state.do_hangup = FALSE;
+                s->at_state.do_hangup = false;
             }
             else
             {
@@ -309,7 +316,7 @@ static int process_rx_missing(t38_core_state_t *t, void *user_data, int rx_seq_n
     t31_state_t *s;
 
     s = (t31_state_t *) user_data;
-    s->t38_fe.rx_data_missing = TRUE;
+    s->t38_fe.rx_data_missing = true;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -391,7 +398,7 @@ static int process_rx_indicator(t38_core_state_t *t, void *user_data, int indica
     }
     /*endswitch*/
     fe->hdlc_rx.len = 0;
-    fe->rx_data_missing = FALSE;
+    fe->rx_data_missing = false;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -405,7 +412,7 @@ static void process_hdlc_data(t31_t38_front_end_state_t *fe, const uint8_t *buf,
     }
     else
     {
-        fe->rx_data_missing = TRUE;
+        fe->rx_data_missing = true;
     }
     /*endif*/
 }
@@ -460,7 +467,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             /* All real HDLC messages in the FAX world start with 0xFF. If this one is not starting
                with 0xFF it would appear some octets must have been missed before this one. */
             if (len <= 0  ||  buf[0] != 0xFF)
-                fe->rx_data_missing = TRUE;
+                fe->rx_data_missing = true;
             /*endif*/
         }
         /*endif*/
@@ -514,7 +521,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             fe->hdlc_rx.len = 0;
         }
         /*endif*/
-        fe->rx_data_missing = FALSE;
+        fe->rx_data_missing = false;
         fe->timeout_rx_samples = fe->samples + ms_to_samples(MID_RX_TIMEOUT);
         break;
     case T38_FIELD_HDLC_FCS_BAD:
@@ -533,14 +540,14 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Type %s - CRC bad (%s)\n", (fe->hdlc_rx.len >= 3)  ?  t30_frametype(fe->hdlc_rx.buf[2])  :  "???", (fe->rx_data_missing)  ?  "missing octets"  :  "clean");
             if (data_type == T38_DATA_V21)
-                hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, FALSE);
+                hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, false);
             else
-                hdlc_accept_t38_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, FALSE);
+                hdlc_accept_t38_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, false);
             /*endif*/
             fe->hdlc_rx.len = 0;
         }
         /*endif*/
-        fe->rx_data_missing = FALSE;
+        fe->rx_data_missing = false;
         fe->timeout_rx_samples = fe->samples + ms_to_samples(MID_RX_TIMEOUT);
         break;
     case T38_FIELD_HDLC_FCS_OK_SIG_END:
@@ -586,7 +593,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             fe->hdlc_rx.len = 0;
         }
         /*endif*/
-        fe->rx_data_missing = FALSE;
+        fe->rx_data_missing = false;
         if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
         {
             if (data_type == T38_DATA_V21)
@@ -614,14 +621,14 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Type %s - CRC bad, sig end (%s)\n", (fe->hdlc_rx.len >= 3)  ?  t30_frametype(fe->hdlc_rx.buf[2])  :  "???", (fe->rx_data_missing)  ?  "missing octets"  :  "clean");
             if (data_type == T38_DATA_V21)
-                hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, FALSE);
+                hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, false);
             else
-                hdlc_accept_t38_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, FALSE);
+                hdlc_accept_t38_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, false);
             /*endif*/
             fe->hdlc_rx.len = 0;
         }
         /*endif*/
-        fe->rx_data_missing = FALSE;
+        fe->rx_data_missing = false;
         if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
         {
             if (data_type == T38_DATA_V21)
@@ -653,7 +660,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
                i.e. they send T38_FIELD_HDLC_FCS_OK, and then T38_FIELD_HDLC_SIG_END when the carrier actually drops.
                The other is because the HDLC signal drops unexpectedly - i.e. not just after a final frame. */
             fe->hdlc_rx.len = 0;
-            fe->rx_data_missing = FALSE;
+            fe->rx_data_missing = false;
             fe->timeout_rx_samples = 0;
             if (data_type == T38_DATA_V21)
                 hdlc_rx_status(s, SIG_STATUS_CARRIER_DOWN);
@@ -669,7 +676,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             if (!s->at_state.rx_signal_present)
             {
                 non_ecm_rx_status(s, SIG_STATUS_TRAINING_SUCCEEDED);
-                s->at_state.rx_signal_present = TRUE;
+                s->at_state.rx_signal_present = true;
             }
             /*endif*/
             bit_reverse(buf2, buf, len);
@@ -689,7 +696,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
                 if (!s->at_state.rx_signal_present)
                 {
                     non_ecm_rx_status(s, SIG_STATUS_TRAINING_SUCCEEDED);
-                    s->at_state.rx_signal_present = TRUE;
+                    s->at_state.rx_signal_present = true;
                 }
                 /*endif*/
                 bit_reverse(buf2, buf, len);
@@ -703,7 +710,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             non_ecm_rx_status(s, SIG_STATUS_CARRIER_DOWN);
         }
         /*endif*/
-        s->at_state.rx_signal_present = FALSE;
+        s->at_state.rx_signal_present = false;
         fe->timeout_rx_samples = 0;
         break;
     case T38_FIELD_CM_MESSAGE:
@@ -1177,7 +1184,7 @@ static int stream_hdlc(t31_state_t *s)
             else
             {
                 /* End of transmission */
-                s->hdlc_tx.final = FALSE;
+                s->hdlc_tx.final = false;
                 category = (fe->current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA_END  :  T38_PACKET_CATEGORY_IMAGE_DATA_END;
                 if ((res = t38_core_send_data(&fe->t38, previous, T38_FIELD_HDLC_FCS_OK_SIG_END, NULL, 0, category)) < 0)
                     return res;
@@ -1301,7 +1308,7 @@ SPAN_DECLARE(int) t31_t38_send_timeout(t31_state_t *s, int samples)
 
     fe = &s->t38_fe;
     if (fe->current_rx_type == T30_MODEM_DONE  ||  fe->current_tx_type == T30_MODEM_DONE)
-        return TRUE;
+        return true;
     /*endif*/
 
     fe->samples += samples;
@@ -1313,12 +1320,12 @@ SPAN_DECLARE(int) t31_t38_send_timeout(t31_state_t *s, int samples)
     }
     /*endif*/
     if (fe->timed_step == T38_TIMED_STEP_NONE)
-        return FALSE;
+        return false;
     /*endif*/
     /* Wait until the right time comes along, unless we are working in "no delays" mode, while talking to an
        IAF terminal. */
     if (fe->us_per_tx_chunk  &&  fe->samples < fe->next_tx_samples)
-        return FALSE;
+        return false;
     /*endif*/
     /* Its time to send something */
     delay = 0;
@@ -1347,7 +1354,7 @@ SPAN_DECLARE(int) t31_t38_send_timeout(t31_state_t *s, int samples)
     }
     /*endswitch*/
     fe->next_tx_samples += us_to_samples(delay);
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1369,7 +1376,7 @@ static int t31_modem_control_handler(at_state_t *s, void *user_data, int op, con
     case AT_MODEM_CONTROL_ONHOOK:
         if (t->non_ecm_tx.holding)
         {
-            t->non_ecm_tx.holding = FALSE;
+            t->non_ecm_tx.holding = false;
             /* Tell the application to release further data */
             at_modem_control(&t->at_state, AT_MODEM_CONTROL_CTS, (void *) 1);
         }
@@ -1413,15 +1420,15 @@ static void non_ecm_rx_status(void *user_data, int status)
     case SIG_STATUS_TRAINING_IN_PROGRESS:
         break;
     case SIG_STATUS_TRAINING_FAILED:
-        s->at_state.rx_trained = FALSE;
-        s->audio.modems.rx_trained = FALSE;
+        s->at_state.rx_trained = false;
+        s->audio.modems.rx_trained = false;
         break;
     case SIG_STATUS_TRAINING_SUCCEEDED:
         /* The modem is now trained */
         at_put_response_code(&s->at_state, AT_RESPONSE_CODE_CONNECT);
-        s->at_state.rx_signal_present = TRUE;
-        s->at_state.rx_trained = TRUE;
-        s->audio.modems.rx_trained = TRUE;
+        s->at_state.rx_signal_present = true;
+        s->at_state.rx_trained = true;
+        s->audio.modems.rx_trained = true;
         break;
     case SIG_STATUS_CARRIER_UP:
         break;
@@ -1439,9 +1446,9 @@ static void non_ecm_rx_status(void *user_data, int status)
             t31_set_at_rx_mode(s, AT_MODE_OFFHOOK_COMMAND);
         }
         /*endif*/
-        s->at_state.rx_signal_present = FALSE;
-        s->at_state.rx_trained = FALSE;
-        s->audio.modems.rx_trained = FALSE;
+        s->at_state.rx_signal_present = false;
+        s->at_state.rx_trained = false;
+        s->audio.modems.rx_trained = false;
         break;
     default:
         if (s->at_state.p.result_code_format)
@@ -1496,7 +1503,7 @@ static void non_ecm_put(void *user_data, const uint8_t buf[], int len)
     if (!s->at_state.rx_signal_present)
     {
         non_ecm_rx_status(s, SIG_STATUS_TRAINING_SUCCEEDED);
-        s->at_state.rx_signal_present = TRUE;
+        s->at_state.rx_signal_present = true;
     }
     /*endif*/
     /* Ignore any fractional bytes which may have accumulated */
@@ -1546,20 +1553,20 @@ static int non_ecm_get_bit(void *user_data)
                    release flow control. */
                 if (s->non_ecm_tx.out_bytes > T31_TX_BUF_LOW_TIDE)
                 {
-                    s->non_ecm_tx.holding = FALSE;
+                    s->non_ecm_tx.holding = false;
                     /* Tell the application to release further data */
                     at_modem_control(&s->at_state, AT_MODEM_CONTROL_CTS, (void *) 1);
                 }
                 /*endif*/
             }
             /*endif*/
-            s->non_ecm_tx.data_started = TRUE;
+            s->non_ecm_tx.data_started = true;
         }
         else
         {
             if (s->non_ecm_tx.final)
             {
-                s->non_ecm_tx.final = FALSE;
+                s->non_ecm_tx.final = false;
                 /* This will put the modem into its shutdown sequence. When
                    it has finally shut down, an OK response will be sent. */
                 return SIG_STATUS_END_OF_DATA;
@@ -1603,20 +1610,20 @@ static int non_ecm_get(void *user_data, uint8_t buf[], int len)
                 /* See if the buffer is approaching empty. It might be time to release flow control. */
                 if (s->non_ecm_tx.out_bytes > T31_TX_BUF_LOW_TIDE)
                 {
-                    s->non_ecm_tx.holding = FALSE;
+                    s->non_ecm_tx.holding = false;
                     /* Tell the application to release further data */
                     at_modem_control(&s->at_state, AT_MODEM_CONTROL_CTS, (void *) 1);
                 }
                 /*endif*/
             }
             /*endif*/
-            s->non_ecm_tx.data_started = TRUE;
+            s->non_ecm_tx.data_started = true;
         }
         else
         {
             if (s->non_ecm_tx.final)
             {
-                s->non_ecm_tx.final = FALSE;
+                s->non_ecm_tx.final = false;
                 /* This will put the modem into its shutdown sequence. When
                    it has finally shut down, an OK response will be sent. */
                 return i;
@@ -1660,7 +1667,7 @@ static void hdlc_tx_underflow(void *user_data)
     s = (t31_state_t *) user_data;
     if (s->hdlc_tx.final)
     {
-        s->hdlc_tx.final = FALSE;
+        s->hdlc_tx.final = false;
         /* Schedule an orderly shutdown of the modem */
         hdlc_tx_frame(&s->audio.modems.hdlc_tx, NULL, 0);
     }
@@ -1688,21 +1695,21 @@ static void hdlc_rx_status(void *user_data, int status)
     case SIG_STATUS_TRAINING_IN_PROGRESS:
         break;
     case SIG_STATUS_TRAINING_FAILED:
-        s->at_state.rx_trained = FALSE;
-        s->audio.modems.rx_trained = FALSE;
+        s->at_state.rx_trained = false;
+        s->audio.modems.rx_trained = false;
         break;
     case SIG_STATUS_TRAINING_SUCCEEDED:
         /* The modem is now trained */
-        s->at_state.rx_signal_present = TRUE;
-        s->at_state.rx_trained = TRUE;
-        s->audio.modems.rx_trained = TRUE;
+        s->at_state.rx_signal_present = true;
+        s->at_state.rx_trained = true;
+        s->audio.modems.rx_trained = true;
         break;
     case SIG_STATUS_CARRIER_UP:
         if (s->modem == FAX_MODEM_CNG_TONE_TX  ||  s->modem == FAX_MODEM_NOCNG_TONE_TX  ||  s->modem == FAX_MODEM_V21_RX)
         {
-            s->at_state.rx_signal_present = TRUE;
-            s->rx_frame_received = FALSE;
-            s->audio.modems.rx_frame_received = FALSE;
+            s->at_state.rx_signal_present = true;
+            s->rx_frame_received = false;
+            s->audio.modems.rx_frame_received = false;
         }
         /*endif*/
         break;
@@ -1714,14 +1721,14 @@ static void hdlc_rx_status(void *user_data, int status)
                 if (s->at_state.ok_is_pending)
                 {
                     at_put_response_code(&s->at_state, AT_RESPONSE_CODE_OK);
-                    s->at_state.ok_is_pending = FALSE;
+                    s->at_state.ok_is_pending = false;
                 }
                 else
                 {
                     at_put_response_code(&s->at_state, AT_RESPONSE_CODE_NO_CARRIER);
                 }
                 /*endif*/
-                s->at_state.dte_is_waiting = FALSE;
+                s->at_state.dte_is_waiting = false;
                 t31_set_at_rx_mode(s, AT_MODE_OFFHOOK_COMMAND);
             }
             else
@@ -1732,9 +1739,9 @@ static void hdlc_rx_status(void *user_data, int status)
             /*endif*/
         }
         /*endif*/
-        s->at_state.rx_signal_present = FALSE;
-        s->at_state.rx_trained = FALSE;
-        s->audio.modems.rx_trained = FALSE;
+        s->at_state.rx_signal_present = false;
+        s->at_state.rx_trained = false;
+        s->audio.modems.rx_trained = false;
         break;
     case SIG_STATUS_FRAMING_OK:
         if (s->modem == FAX_MODEM_CNG_TONE_TX  ||  s->modem == FAX_MODEM_NOCNG_TONE_TX)
@@ -1742,7 +1749,7 @@ static void hdlc_rx_status(void *user_data, int status)
             /* Once we get any valid HDLC the CNG tone stops, and we drop
                to the V.21 receive modem on its own. */
             s->modem = FAX_MODEM_V21_RX;
-            s->at_state.transmit = FALSE;
+            s->at_state.transmit = false;
         }
         /*endif*/
         if (s->modem == FAX_MODEM_V17_RX  ||  s->modem == FAX_MODEM_V27TER_RX  ||  s->modem == FAX_MODEM_V29_RX)
@@ -1753,12 +1760,12 @@ static void hdlc_rx_status(void *user_data, int status)
                V.21 receive mode. */
             if (s->at_state.p.adaptive_receive)
             {
-                s->at_state.rx_signal_present = TRUE;
-                s->rx_frame_received = TRUE;
-                s->audio.modems.rx_frame_received = TRUE;
+                s->at_state.rx_signal_present = true;
+                s->rx_frame_received = true;
+                s->audio.modems.rx_frame_received = true;
                 s->modem = FAX_MODEM_V21_RX;
-                s->at_state.transmit = FALSE;
-                s->at_state.dte_is_waiting = TRUE;
+                s->at_state.transmit = false;
+                s->at_state.dte_is_waiting = true;
                 at_put_response_code(&s->at_state, AT_RESPONSE_CODE_FRH3);
                 at_put_response_code(&s->at_state, AT_RESPONSE_CODE_CONNECT);
             }
@@ -1766,8 +1773,8 @@ static void hdlc_rx_status(void *user_data, int status)
             {
                 s->modem = FAX_MODEM_SILENCE_TX;
                 t31_set_at_rx_mode(s, AT_MODE_OFFHOOK_COMMAND);
-                s->rx_frame_received = FALSE;
-                s->audio.modems.rx_frame_received = FALSE;
+                s->rx_frame_received = false;
+                s->audio.modems.rx_frame_received = false;
                 at_put_response_code(&s->at_state, AT_RESPONSE_CODE_FCERROR);
             }
             /*endif*/
@@ -1780,8 +1787,8 @@ static void hdlc_rx_status(void *user_data, int status)
                 {
                     /* Report CONNECT as soon as possible to avoid a timeout. */
                     at_put_response_code(&s->at_state, AT_RESPONSE_CODE_CONNECT);
-                    s->rx_frame_received = TRUE;
-                    s->audio.modems.rx_frame_received = TRUE;
+                    s->rx_frame_received = true;
+                    s->audio.modems.rx_frame_received = true;
                 }
                 else
                 {
@@ -1824,8 +1831,8 @@ static void hdlc_accept_frame(void *user_data, const uint8_t *msg, int len, int 
         {
             /* Report CONNECT as soon as possible to avoid a timeout. */
             at_put_response_code(&s->at_state, AT_RESPONSE_CODE_CONNECT);
-            s->rx_frame_received = TRUE;
-            s->audio.modems.rx_frame_received = TRUE;
+            s->rx_frame_received = true;
+            s->audio.modems.rx_frame_received = true;
         }
         else
         {
@@ -1859,14 +1866,14 @@ static void hdlc_accept_frame(void *user_data, const uint8_t *msg, int len, int 
             {
                 /* This is the last frame.  We don't send OK until the carrier drops to avoid
                    redetecting it later. */
-                s->at_state.ok_is_pending = TRUE;
+                s->at_state.ok_is_pending = true;
             }
             else
             {
                 at_put_response_code(&s->at_state, (ok)  ?  AT_RESPONSE_CODE_OK  :  AT_RESPONSE_CODE_ERROR);
-                s->at_state.dte_is_waiting = FALSE;
-                s->rx_frame_received = FALSE;
-                s->audio.modems.rx_frame_received = FALSE;
+                s->at_state.dte_is_waiting = false;
+                s->rx_frame_received = false;
+                s->audio.modems.rx_frame_received = false;
             }
             /*endif*/
         }
@@ -2014,13 +2021,13 @@ static void hdlc_accept_non_ecm_frame(void *user_data, const uint8_t *msg, int l
 
 static void t31_v21_rx(t31_state_t *s)
 {
-    s->at_state.ok_is_pending = FALSE;
+    s->at_state.ok_is_pending = false;
     s->hdlc_tx.len = 0;
-    s->hdlc_tx.final = FALSE;
-    s->dled = FALSE;
-    hdlc_rx_init(&s->audio.modems.hdlc_rx, FALSE, TRUE, HDLC_FRAMING_OK_THRESHOLD, hdlc_accept_frame, s);
+    s->hdlc_tx.final = false;
+    s->dled = false;
+    hdlc_rx_init(&s->audio.modems.hdlc_rx, false, true, HDLC_FRAMING_OK_THRESHOLD, hdlc_accept_frame, s);
     fax_modems_start_slow_modem(&s->audio.modems, FAX_MODEM_V21_RX);
-    s->at_state.transmit = TRUE;
+    s->at_state.transmit = true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -2037,14 +2044,14 @@ static int restart_modem(t31_state_t *s, int new_modem)
     /*endif*/
     queue_flush(s->rx_queue);
     s->modem = new_modem;
-    s->non_ecm_tx.final = FALSE;
-    s->at_state.rx_signal_present = FALSE;
-    s->at_state.rx_trained = FALSE;
-    s->audio.modems.rx_trained = FALSE;
-    s->rx_frame_received = FALSE;
-    s->audio.modems.rx_frame_received = FALSE;
+    s->non_ecm_tx.final = false;
+    s->at_state.rx_signal_present = false;
+    s->at_state.rx_trained = false;
+    s->audio.modems.rx_trained = false;
+    s->rx_frame_received = false;
+    s->audio.modems.rx_frame_received = false;
     fax_modems_set_rx_handler(t, (span_rx_handler_t) &span_dummy_rx, NULL, (span_rx_fillin_handler_t) &span_dummy_rx_fillin, NULL);
-    use_hdlc = FALSE;
+    use_hdlc = false;
     switch (s->modem)
     {
     case FAX_MODEM_CNG_TONE_TX:
@@ -2067,7 +2074,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
             fax_modems_set_next_tx_handler(t, (span_tx_handler_t) NULL, NULL);
         }
         /*endif*/
-        s->at_state.transmit = TRUE;
+        s->at_state.transmit = true;
         break;
     case FAX_MODEM_NOCNG_TONE_TX:
         if (s->t38_mode)
@@ -2081,7 +2088,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
             fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         }
         /*endif*/
-        s->at_state.transmit = FALSE;
+        s->at_state.transmit = false;
         break;
     case FAX_MODEM_CED_TONE_TX:
         if (s->t38_mode)
@@ -2096,7 +2103,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
             fax_modems_set_next_tx_handler(t, (span_tx_handler_t) NULL, NULL);
         }
         /*endif*/
-        s->at_state.transmit = TRUE;
+        s->at_state.transmit = true;
         break;
     case FAX_MODEM_V21_RX:
         if (s->t38_mode)
@@ -2114,13 +2121,13 @@ static int restart_modem(t31_state_t *s, int new_modem)
         {
             s->t38_fe.next_tx_indicator = T38_IND_V21_PREAMBLE;
             s->t38_fe.current_tx_data_type = T38_DATA_V21;
-            use_hdlc = TRUE;
+            use_hdlc = true;
             s->t38_fe.timed_step = (use_hdlc)  ?  T38_TIMED_STEP_HDLC_MODEM  :  T38_TIMED_STEP_NON_ECM_MODEM;
             set_octets_per_data_packet(s, 300);
         }
         else
         {
-            hdlc_tx_init(&t->hdlc_tx, FALSE, 2, FALSE, hdlc_tx_underflow, s);
+            hdlc_tx_init(&t->hdlc_tx, false, 2, false, hdlc_tx_underflow, s);
             /* The spec says 1s +-15% of preamble. So, the minimum is 32 octets. */
             hdlc_tx_flags(&t->hdlc_tx, 32);
             fax_modems_start_slow_modem(t, FAX_MODEM_V21_TX);
@@ -2129,9 +2136,9 @@ static int restart_modem(t31_state_t *s, int new_modem)
         }
         /*endif*/
         s->hdlc_tx.len = 0;
-        s->hdlc_tx.final = FALSE;
-        s->dled = FALSE;
-        s->at_state.transmit = TRUE;
+        s->hdlc_tx.final = false;
+        s->dled = false;
+        s->at_state.transmit = true;
         break;
     case FAX_MODEM_V17_RX:
     case FAX_MODEM_V27TER_RX:
@@ -2143,7 +2150,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
             fax_modems_start_fast_modem(t, s->modem, s->bit_rate, s->short_train, use_hdlc);
         }
         /*endif*/
-        s->at_state.transmit = FALSE;
+        s->at_state.transmit = false;
         break;
     case FAX_MODEM_V17_TX:
         if (s->t38_mode)
@@ -2177,8 +2184,8 @@ static int restart_modem(t31_state_t *s, int new_modem)
         }
         /*endif*/
         s->non_ecm_tx.out_bytes = 0;
-        s->non_ecm_tx.data_started = FALSE;
-        s->at_state.transmit = TRUE;
+        s->non_ecm_tx.data_started = false;
+        s->at_state.transmit = true;
         break;
     case FAX_MODEM_V27TER_TX:
         if (s->t38_mode)
@@ -2204,8 +2211,8 @@ static int restart_modem(t31_state_t *s, int new_modem)
         }
         /*endif*/
         s->non_ecm_tx.out_bytes = 0;
-        s->non_ecm_tx.data_started = FALSE;
-        s->at_state.transmit = TRUE;
+        s->non_ecm_tx.data_started = false;
+        s->at_state.transmit = true;
         break;
     case FAX_MODEM_V29_TX:
         if (s->t38_mode)
@@ -2231,8 +2238,8 @@ static int restart_modem(t31_state_t *s, int new_modem)
         }
         /*endif*/
         s->non_ecm_tx.out_bytes = 0;
-        s->non_ecm_tx.data_started = FALSE;
-        s->at_state.transmit = TRUE;
+        s->non_ecm_tx.data_started = false;
+        s->at_state.transmit = true;
         break;
     case FAX_MODEM_SILENCE_TX:
         if (s->t38_mode)
@@ -2251,7 +2258,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
             fax_modems_set_next_tx_handler(t, (span_tx_handler_t) NULL, NULL);
         }
         /*endif*/
-        s->at_state.transmit = FALSE;
+        s->at_state.transmit = false;
         break;
     case FAX_MODEM_SILENCE_RX:
         if (!s->t38_mode)
@@ -2262,7 +2269,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
             fax_modems_set_next_tx_handler(t, (span_tx_handler_t) NULL, NULL);
         }
         /*endif*/
-        s->at_state.transmit = FALSE;
+        s->at_state.transmit = false;
         break;
     case FAX_MODEM_FLUSH:
         /* Send 200ms of silence to "push" the last audio out */
@@ -2278,7 +2285,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
             silence_gen_alter(&t->silence_gen, ms_to_samples(200));
             fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
             fax_modems_set_next_tx_handler(t, (span_tx_handler_t) NULL, NULL);
-            s->at_state.transmit = TRUE;
+            s->at_state.transmit = true;
         }
         /*endif*/
         break;
@@ -2300,7 +2307,7 @@ static __inline__ void dle_unstuff_hdlc(t31_state_t *s, const char *stuffed, int
     {
         if (s->dled)
         {
-            s->dled = FALSE;
+            s->dled = false;
             if (stuffed[i] == ETX)
             {
                 s->hdlc_tx.final = (s->hdlc_tx.buf[1] & 0x10);
@@ -2329,7 +2336,7 @@ static __inline__ void dle_unstuff_hdlc(t31_state_t *s, const char *stuffed, int
         else
         {
             if (stuffed[i] == DLE)
-                s->dled = TRUE;
+                s->dled = true;
             else
                 s->hdlc_tx.buf[s->hdlc_tx.len++] = stuffed[i];
             /*endif*/
@@ -2348,10 +2355,10 @@ static __inline__ void dle_unstuff_fake_hdlc(t31_state_t *s, const char *stuffed
     {
         if (s->dled)
         {
-            s->dled = FALSE;
+            s->dled = false;
             if (stuffed[i] == ETX)
             {
-                s->non_ecm_tx.final = TRUE;
+                s->non_ecm_tx.final = true;
                 t31_set_at_rx_mode(s, AT_MODE_OFFHOOK_COMMAND);
                 return;
             }
@@ -2369,7 +2376,7 @@ static __inline__ void dle_unstuff_fake_hdlc(t31_state_t *s, const char *stuffed
         else
         {
             if (stuffed[i] == DLE)
-                s->dled = TRUE;
+                s->dled = true;
             else
                 hdlc_rx_put_byte(&s->t38_fe.hdlc_rx_non_ecm, bit_reverse8(stuffed[i]));
             /*endif*/
@@ -2388,10 +2395,10 @@ static __inline__ void dle_unstuff(t31_state_t *s, const char *stuffed, int len)
     {
         if (s->dled)
         {
-            s->dled = FALSE;
+            s->dled = false;
             if (stuffed[i] == ETX)
             {
-                s->non_ecm_tx.final = TRUE;
+                s->non_ecm_tx.final = true;
                 t31_set_at_rx_mode(s, AT_MODE_OFFHOOK_COMMAND);
                 return;
             }
@@ -2410,7 +2417,7 @@ static __inline__ void dle_unstuff(t31_state_t *s, const char *stuffed, int len)
         else
         {
             if (stuffed[i] == DLE)
-                s->dled = TRUE;
+                s->dled = true;
             else
                 s->non_ecm_tx.buf[s->non_ecm_tx.in_bytes++] = stuffed[i];
             /*endif*/
@@ -2430,7 +2437,7 @@ static __inline__ void dle_unstuff(t31_state_t *s, const char *stuffed, int len)
         /* See if the buffer is approaching full. We might need to apply flow control. */
         if (s->non_ecm_tx.in_bytes > T31_TX_BUF_HIGH_TIDE)
         {
-            s->non_ecm_tx.holding = TRUE;
+            s->non_ecm_tx.holding = true;
             /* Tell the application to hold further data */
             at_modem_control(&s->at_state, AT_MODEM_CONTROL_CTS, (void *) 0);
         }
@@ -2452,7 +2459,7 @@ static int process_class1_cmd(at_state_t *t, void *user_data, int direction, int
 
     s = (t31_state_t *) user_data;
     new_transmit = direction;
-    immediate_response = TRUE;
+    immediate_response = true;
     switch (operation)
     {
     case 'S':
@@ -2466,7 +2473,7 @@ static int process_class1_cmd(at_state_t *t, void *user_data, int direction, int
             else
                 silence_gen_alter(&s->audio.modems.silence_gen, ms_to_samples(val*10));
             /*endif*/
-            s->at_state.transmit = TRUE;
+            s->at_state.transmit = true;
         }
         else
         {
@@ -2486,7 +2493,7 @@ static int process_class1_cmd(at_state_t *t, void *user_data, int direction, int
             /*endif*/
         }
         /*endif*/
-        immediate_response = FALSE;
+        immediate_response = false;
         span_log(&s->logging, SPAN_LOG_FLOW, "Silence %dms\n", val*10);
         break;
     case 'H':
@@ -2494,7 +2501,7 @@ static int process_class1_cmd(at_state_t *t, void *user_data, int direction, int
         {
         case 3:
             new_modem = (new_transmit)  ?  FAX_MODEM_V21_TX  :  FAX_MODEM_V21_RX;
-            s->short_train = FALSE;
+            s->short_train = false;
             s->bit_rate = 300;
             break;
         default:
@@ -2505,7 +2512,7 @@ static int process_class1_cmd(at_state_t *t, void *user_data, int direction, int
         if (new_modem != s->modem)
         {
             restart_modem(s, new_modem);
-            immediate_response = FALSE;
+            immediate_response = false;
         }
         /*endif*/
         s->at_state.transmit = new_transmit;
@@ -2520,8 +2527,8 @@ static int process_class1_cmd(at_state_t *t, void *user_data, int direction, int
         {
             /* Send straight away, if there is something queued. */
             t31_set_at_rx_mode(s, AT_MODE_DELIVERY);
-            s->rx_frame_received = FALSE;
-            s->audio.modems.rx_frame_received = FALSE;
+            s->rx_frame_received = false;
+            s->audio.modems.rx_frame_received = false;
             do
             {
                 if (!queue_empty(s->rx_queue))
@@ -2550,7 +2557,7 @@ static int process_class1_cmd(at_state_t *t, void *user_data, int direction, int
                 }
                 else
                 {
-                    s->at_state.dte_is_waiting = TRUE;
+                    s->at_state.dte_is_waiting = true;
                     break;
                 }
                 /*endif*/
@@ -2558,7 +2565,7 @@ static int process_class1_cmd(at_state_t *t, void *user_data, int direction, int
             while (msg[0] == AT_RESPONSE_CODE_CONNECT);
         }
         /*endif*/
-        immediate_response = FALSE;
+        immediate_response = false;
         break;
     default:
         switch (val)
@@ -2567,84 +2574,84 @@ static int process_class1_cmd(at_state_t *t, void *user_data, int direction, int
             s->t38_fe.next_tx_indicator = T38_IND_V27TER_2400_TRAINING;
             s->t38_fe.current_tx_data_type = T38_DATA_V27TER_2400;
             new_modem = (new_transmit)  ?  FAX_MODEM_V27TER_TX  :  FAX_MODEM_V27TER_RX;
-            s->short_train = FALSE;
+            s->short_train = false;
             s->bit_rate = 2400;
             break;
         case 48:
             s->t38_fe.next_tx_indicator = T38_IND_V27TER_4800_TRAINING;
             s->t38_fe.current_tx_data_type = T38_DATA_V27TER_4800;
             new_modem = (new_transmit)  ?  FAX_MODEM_V27TER_TX  :  FAX_MODEM_V27TER_RX;
-            s->short_train = FALSE;
+            s->short_train = false;
             s->bit_rate = 4800;
             break;
         case 72:
             s->t38_fe.next_tx_indicator = T38_IND_V29_7200_TRAINING;
             s->t38_fe.current_tx_data_type = T38_DATA_V29_7200;
             new_modem = (new_transmit)  ?  FAX_MODEM_V29_TX  :  FAX_MODEM_V29_RX;
-            s->short_train = FALSE;
+            s->short_train = false;
             s->bit_rate = 7200;
             break;
         case 96:
             s->t38_fe.next_tx_indicator = T38_IND_V29_9600_TRAINING;
             s->t38_fe.current_tx_data_type = T38_DATA_V29_9600;
             new_modem = (new_transmit)  ?  FAX_MODEM_V29_TX  :  FAX_MODEM_V29_RX;
-            s->short_train = FALSE;
+            s->short_train = false;
             s->bit_rate = 9600;
             break;
         case 73:
             s->t38_fe.next_tx_indicator = T38_IND_V17_7200_LONG_TRAINING;
             s->t38_fe.current_tx_data_type = T38_DATA_V17_7200;
             new_modem = (new_transmit)  ?  FAX_MODEM_V17_TX  :  FAX_MODEM_V17_RX;
-            s->short_train = FALSE;
+            s->short_train = false;
             s->bit_rate = 7200;
             break;
         case 74:
             s->t38_fe.next_tx_indicator = T38_IND_V17_7200_SHORT_TRAINING;
             s->t38_fe.current_tx_data_type = T38_DATA_V17_7200;
             new_modem = (new_transmit)  ?  FAX_MODEM_V17_TX  :  FAX_MODEM_V17_RX;
-            s->short_train = TRUE;
+            s->short_train = true;
             s->bit_rate = 7200;
             break;
         case 97:
             s->t38_fe.next_tx_indicator = T38_IND_V17_9600_LONG_TRAINING;
             s->t38_fe.current_tx_data_type = T38_DATA_V17_9600;
             new_modem = (new_transmit)  ?  FAX_MODEM_V17_TX  :  FAX_MODEM_V17_RX;
-            s->short_train = FALSE;
+            s->short_train = false;
             s->bit_rate = 9600;
             break;
         case 98:
             s->t38_fe.next_tx_indicator = T38_IND_V17_9600_SHORT_TRAINING;
             s->t38_fe.current_tx_data_type = T38_DATA_V17_9600;
             new_modem = (new_transmit)  ?  FAX_MODEM_V17_TX  :  FAX_MODEM_V17_RX;
-            s->short_train = TRUE;
+            s->short_train = true;
             s->bit_rate = 9600;
             break;
         case 121:
             s->t38_fe.next_tx_indicator = T38_IND_V17_12000_LONG_TRAINING;
             s->t38_fe.current_tx_data_type = T38_DATA_V17_12000;
             new_modem = (new_transmit)  ?  FAX_MODEM_V17_TX  :  FAX_MODEM_V17_RX;
-            s->short_train = FALSE;
+            s->short_train = false;
             s->bit_rate = 12000;
             break;
         case 122:
             s->t38_fe.next_tx_indicator = T38_IND_V17_12000_SHORT_TRAINING;
             s->t38_fe.current_tx_data_type = T38_DATA_V17_12000;
             new_modem = (new_transmit)  ?  FAX_MODEM_V17_TX  :  FAX_MODEM_V17_RX;
-            s->short_train = TRUE;
+            s->short_train = true;
             s->bit_rate = 12000;
             break;
         case 145:
             s->t38_fe.next_tx_indicator = T38_IND_V17_14400_LONG_TRAINING;
             s->t38_fe.current_tx_data_type = T38_DATA_V17_14400;
             new_modem = (new_transmit)  ?  FAX_MODEM_V17_TX  :  FAX_MODEM_V17_RX;
-            s->short_train = FALSE;
+            s->short_train = false;
             s->bit_rate = 14400;
             break;
         case 146:
             s->t38_fe.next_tx_indicator = T38_IND_V17_14400_SHORT_TRAINING;
             s->t38_fe.current_tx_data_type = T38_DATA_V17_14400;
             new_modem = (new_transmit)  ?  FAX_MODEM_V17_TX  :  FAX_MODEM_V17_RX;
-            s->short_train = TRUE;
+            s->short_train = true;
             s->bit_rate = 14400;
             break;
         default:
@@ -2663,7 +2670,7 @@ static int process_class1_cmd(at_state_t *t, void *user_data, int direction, int
         }
         /*endif*/
         restart_modem(s, new_modem);
-        immediate_response = FALSE;
+        immediate_response = false;
         break;
     }
     /*endswitch*/
@@ -2707,7 +2714,7 @@ SPAN_DECLARE(int) t31_at_rx(t31_state_t *s, const char *t, int len)
             }
             /*endif*/
             s->at_state.rx_data_bytes = 0;
-            s->at_state.transmit = FALSE;
+            s->at_state.transmit = false;
             s->modem = FAX_MODEM_SILENCE_TX;
             fax_modems_set_rx_handler(&s->audio.modems, (span_rx_handler_t) &span_dummy_rx, NULL, (span_rx_fillin_handler_t) &span_dummy_rx_fillin, NULL);
             t31_set_at_rx_mode(s, AT_MODE_OFFHOOK_COMMAND);
@@ -2900,19 +2907,19 @@ SPAN_DECLARE_NONSTD(int) t31_tx(t31_state_t *s, int16_t amp[], int max_len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t31_set_transmit_on_idle(t31_state_t *s, int transmit_on_idle)
+SPAN_DECLARE(void) t31_set_transmit_on_idle(t31_state_t *s, bool transmit_on_idle)
 {
     s->audio.modems.transmit_on_idle = transmit_on_idle;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t31_set_tep_mode(t31_state_t *s, int use_tep)
+SPAN_DECLARE(void) t31_set_tep_mode(t31_state_t *s, bool use_tep)
 {
     s->audio.modems.use_tep = use_tep;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t31_set_t38_config(t31_state_t *s, int without_pacing)
+SPAN_DECLARE(void) t31_set_t38_config(t31_state_t *s, bool without_pacing)
 {
     if (without_pacing)
     {
@@ -2940,7 +2947,7 @@ SPAN_DECLARE(void) t31_set_t38_config(t31_state_t *s, int without_pacing)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t31_set_mode(t31_state_t *s, int t38_mode)
+SPAN_DECLARE(void) t31_set_mode(t31_state_t *s, bool t38_mode)
 {
     s->t38_mode = t38_mode;
     span_log(&s->logging, SPAN_LOG_FLOW, "Mode set to %d\n", s->t38_mode);
@@ -2992,8 +2999,8 @@ static int t31_t38_fe_init(t31_state_t *t,
 
     t->hdlc_tx.ptr = 0;
 
-    hdlc_tx_init(&s->hdlc_tx_non_ecm, FALSE, 1, FALSE, hdlc_tx_underflow2, s);
-    hdlc_rx_init(&s->hdlc_rx_non_ecm, FALSE, TRUE, 2, hdlc_accept_non_ecm_frame, t);
+    hdlc_tx_init(&s->hdlc_tx_non_ecm, false, 1, false, hdlc_tx_underflow2, s);
+    hdlc_rx_init(&s->hdlc_rx_non_ecm, false, true, 2, hdlc_accept_non_ecm_frame, t);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3013,13 +3020,13 @@ SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
         return NULL;
     /*endif*/
 
-    alloced = FALSE;
+    alloced = false;
     if (s == NULL)
     {
-        if ((s = (t31_state_t *) malloc(sizeof (*s))) == NULL)
+        if ((s = (t31_state_t *) span_alloc(sizeof (*s))) == NULL)
             return NULL;
         /*endif*/
-        alloced = TRUE;
+        alloced = true;
     }
     /*endif*/
     memset(s, 0, sizeof(*s));
@@ -3029,7 +3036,7 @@ SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
     s->modem_control_handler = modem_control_handler;
     s->modem_control_user_data = modem_control_user_data;
     fax_modems_init(&s->audio.modems,
-                    FALSE,
+                    false,
                     hdlc_accept_frame,
                     hdlc_tx_underflow,
                     non_ecm_put_bit,
@@ -3051,27 +3058,27 @@ SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
     v8_parms.pstn_access = 0;
     v8_parms.nsf = -1;
     v8_parms.t66 = -1;
-    v8_init(&s->audio.v8, FALSE, &v8_parms, v8_handler, s);
+    v8_init(&s->audio.v8, false, &v8_parms, v8_handler, s);
 
     power_meter_init(&s->audio.rx_power, 4);
     s->audio.last_sample = 0;
     s->audio.silence_threshold_power = power_meter_level_dbm0(-36);
-    s->at_state.rx_signal_present = FALSE;
-    s->at_state.rx_trained = FALSE;
-    s->audio.modems.rx_trained = FALSE;
+    s->at_state.rx_signal_present = false;
+    s->at_state.rx_trained = false;
+    s->audio.modems.rx_trained = false;
 
-    s->at_state.do_hangup = FALSE;
+    s->at_state.do_hangup = false;
     s->at_state.line_ptr = 0;
     s->audio.silence_heard = 0;
     s->silence_awaited = 0;
     s->call_samples = 0;
     s->modem = FAX_MODEM_NONE;
-    s->at_state.transmit = TRUE;
+    s->at_state.transmit = true;
 
     if ((s->rx_queue = queue_init(NULL, 4096, QUEUE_WRITE_ATOMIC | QUEUE_READ_ATOMIC)) == NULL)
     {
         if (alloced)
-            free(s);
+            span_free(s);
         /*endif*/
         return NULL;
     }
@@ -3082,10 +3089,10 @@ SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
     if (tx_t38_packet_handler)
     {
         t31_t38_fe_init(s, tx_t38_packet_handler, tx_t38_packet_user_data);
-        t31_set_t38_config(s, FALSE);
+        t31_set_t38_config(s, false);
     }
     /*endif*/
-    s->t38_mode = FALSE;
+    s->t38_mode = false;
     return s;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3100,7 +3107,7 @@ SPAN_DECLARE(int) t31_release(t31_state_t *s)
 SPAN_DECLARE(int) t31_free(t31_state_t *s)
 {
     t31_release(s);
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

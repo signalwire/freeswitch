@@ -39,11 +39,17 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include <time.h>
 #include "floating_fudge.h"
 #include <setjmp.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/async.h"
 #include "spandsp/timezone.h"
@@ -62,13 +68,6 @@
 
 #include "t43_gray_code_tables.h"
 #include "t42_t43_local.h"
-
-#if !defined(FALSE)
-#define FALSE 0
-#endif
-#if !defined(TRUE)
-#define TRUE (!FALSE)
-#endif
 
 SPAN_DECLARE(const char *) t43_image_type_to_str(int type)
 {
@@ -133,7 +132,9 @@ static int t43_create_header(t43_encode_state_t *s, uint8_t data[], size_t len)
 {
     int pos;
     int val[6];
+#if 0
     int bytes_per_entry;
+#endif
 
     pos = 0;
     unpack_16(data, 0xFFA8);
@@ -345,7 +346,7 @@ SPAN_DECLARE(t43_encode_state_t *) t43_encode_init(t43_encode_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (t43_encode_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (t43_encode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -380,7 +381,7 @@ SPAN_DECLARE(int) t43_encode_free(t43_encode_state_t *s)
 
     t85_encode_free(&s->t85);
     ret = t43_encode_release(s);
-    free(s);
+    span_free(s);
     return ret;
 }
 /*- End of function --------------------------------------------------------*/
@@ -700,7 +701,7 @@ static int t85_row_write_handler(void *user_data, const uint8_t buf[], size_t le
     if (s->buf == NULL)
     {
         image_size = s->samples_per_pixel*s->t85.xd*s->t85.yd;
-        if ((s->buf = malloc(image_size)) == NULL)
+        if ((s->buf = span_alloc(image_size)) == NULL)
             return -1;
         memset(s->buf, 0, image_size);
     }
@@ -761,6 +762,7 @@ SPAN_DECLARE(int) t43_decode_put(t43_decode_state_t *s, const uint8_t data[], si
     }
 
     /* Now deal the bit-planes, one after another. */
+    total_len = 0;
     while (s->current_bit_plane < s->t85.bit_planes)
     {
         j = s->current_bit_plane;
@@ -864,7 +866,7 @@ SPAN_DECLARE(int) t43_decode_restart(t43_decode_state_t *s)
     /* ITULAB */
     /* Illuminant D50 */
     set_lab_illuminant(&s->lab, 96.422f, 100.000f,  82.521f);
-    set_lab_gamut(&s->lab, 0, 100, -85, 85, -75, 125, FALSE);
+    set_lab_gamut(&s->lab, 0, 100, -85, 85, -75, 125, false);
 
     s->t85.min_bit_planes = 1;
     s->t85.max_bit_planes = 8;
@@ -882,7 +884,7 @@ SPAN_DECLARE(t43_decode_state_t *) t43_decode_init(t43_decode_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (t43_decode_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (t43_decode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -897,7 +899,7 @@ SPAN_DECLARE(t43_decode_state_t *) t43_decode_init(t43_decode_state_t *s,
     /* ITULAB */
     /* Illuminant D50 */
     set_lab_illuminant(&s->lab, 96.422f, 100.000f,  82.521f);
-    set_lab_gamut(&s->lab, 0, 100, -85, 85, -75, 125, FALSE);
+    set_lab_gamut(&s->lab, 0, 100, -85, 85, -75, 125, false);
 
     s->t85.min_bit_planes = 1;
     s->t85.max_bit_planes = 8;
@@ -922,7 +924,7 @@ SPAN_DECLARE(int) t43_decode_free(t43_decode_state_t *s)
 
     ret = t43_decode_release(s);
     t85_decode_free(&s->t85);
-    free(s);
+    span_free(s);
     return ret;
 }
 /*- End of function --------------------------------------------------------*/

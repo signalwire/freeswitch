@@ -118,8 +118,8 @@ fir32_state_t line_model;
 SNDFILE *resulthandle;
 int16_t residue_sound[8000];
 int residue_cur = 0;
-int do_codec_munge = TRUE;
-int use_gui = FALSE;
+int do_codec_munge = true;
+int use_gui = false;
 
 static const int16_t tone_1khz[] = {10362, 7327, 0, -7327, -10362, -7327, 0, 7327};
 
@@ -268,12 +268,12 @@ int main(int argc, char *argv[])
 #endif
 
     line_model_no = 0;
-    use_gui = FALSE;
+    use_gui = false;
     for (i = 1;  i < argc;  i++)
     {
         if (strcmp(argv[i], "-g") == 0)
         {
-            use_gui = TRUE;
+            use_gui = true;
             continue;
         }
         line_model_no = atoi(argv[1]);
@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
     power_meter_init(&power_after, 5);
 
     /* Measure the echo power before adaption */
-    modem_echo_can_adaption_mode(ctx, FALSE);
+    modem_echo_can_adaption_mode(ctx, false);
     for (i = 0;  i < 8000*5;  i++)
     {
         tx = tone_1khz[i & 7];
@@ -322,7 +322,7 @@ int main(int argc, char *argv[])
 
     /* Converge the canceller */
     signal_restart(&local_css);
-    modem_echo_can_adaption_mode(ctx, TRUE);
+    modem_echo_can_adaption_mode(ctx, true);
     for (i = 0;  i < 800*2;  i++)
     {
         clean = modem_echo_can_update(ctx, 0, 0);
@@ -352,7 +352,7 @@ int main(int argc, char *argv[])
     }
 
     /* Now lets see how well adapted we are */
-    modem_echo_can_adaption_mode(ctx, FALSE);
+    modem_echo_can_adaption_mode(ctx, false);
     for (i = 0;  i < 8000*5;  i++)
     {
         tx = tone_1khz[i & 7];

@@ -1121,7 +1121,9 @@ SWITCH_STANDARD_APP(sched_broadcast_function)
 			uint32_t id;
 			char ids[80] = "";
 
-			if (*argv[0] == '+') {
+			if (*argv[0] == '@') {
+				when = atol(argv[0] + 1);
+			} else if (*argv[0] == '+') {
 				when = switch_epoch_time_now(NULL) + atol(argv[0] + 1);
 			} else {
 				when = atol(argv[0]);

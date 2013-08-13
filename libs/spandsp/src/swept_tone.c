@@ -39,9 +39,15 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/complex.h"
 #include "spandsp/vector_float.h"
@@ -59,7 +65,7 @@ SPAN_DECLARE(swept_tone_state_t *) swept_tone_init(swept_tone_state_t *s, float 
 {
     if (s == NULL)
     {
-        if ((s = (swept_tone_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (swept_tone_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -119,7 +125,7 @@ SPAN_DECLARE(int) swept_tone_release(swept_tone_state_t *s)
 
 SPAN_DECLARE(int) swept_tone_free(swept_tone_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

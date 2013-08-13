@@ -44,20 +44,18 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include <assert.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/timezone.h"
 
 #include "spandsp/private/timezone.h"
-
-#if !defined(FALSE)
-#define FALSE    0
-#endif
-
-#if !defined(TRUE)
-#define TRUE    (!FALSE)
-#endif
 
 #define SECS_PER_MIN            60
 #define MINS_PER_HOUR           60
@@ -644,7 +642,7 @@ static int tzparse(const char *name, struct tz_state_s * const sp, const int las
                 }
             }
             /* Initially we're assumed to be in standard time. */
-            isdst = FALSE;
+            isdst = false;
             theiroffset = theirstdoffset;
             /* Now juggle transition times and types tracking offsets as you do. */
             for (i = 0;  i < sp->timecnt;  i++)
@@ -680,10 +678,10 @@ static int tzparse(const char *name, struct tz_state_s * const sp, const int las
             }
             /* Finally, fill in ttis. ttisstd and ttisgmt need not be handled. */
             sp->ttis[0].gmtoff = -stdoffset;
-            sp->ttis[0].isdst = FALSE;
+            sp->ttis[0].isdst = false;
             sp->ttis[0].abbrind = 0;
             sp->ttis[1].gmtoff = -dstoffset;
-            sp->ttis[1].isdst = TRUE;
+            sp->ttis[1].isdst = true;
             sp->ttis[1].abbrind = stdlen + 1;
             sp->typecnt = 2;
         }
@@ -741,9 +739,9 @@ static void tz_set(tz_t *tz, const char *tzstring)
         lclptr->ttis[0].abbrind = 0;
         strcpy(lclptr->chars, gmt);
     }
-    else if (name[0] == ':'  ||  tzparse(name, lclptr, FALSE) != 0)
+    else if (name[0] == ':'  ||  tzparse(name, lclptr, false) != 0)
     {
-        tzparse(gmt, lclptr, TRUE);
+        tzparse(gmt, lclptr, true);
     }
     set_tzname(tz);
 }
@@ -796,7 +794,7 @@ SPAN_DECLARE(tz_t *) tz_init(tz_t *tz, const char *tzstring)
 {
     if (tz == NULL)
     {
-        if ((tz = (tz_t *) malloc(sizeof(*tz))) == NULL)
+        if ((tz = (tz_t *) span_alloc(sizeof(*tz))) == NULL)
             return NULL;
     }
     memset(tz, 0, sizeof(*tz));
@@ -816,7 +814,7 @@ SPAN_DECLARE(int) tz_release(tz_t *tz)
 SPAN_DECLARE(int) tz_free(tz_t *tz)
 {
     if (tz)
-        free(tz);
+        span_free(tz);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

@@ -211,10 +211,7 @@ int main(int argc, char *argv[])
     int res;
     int compression;
     int compression_step;
-    int add_page_headers;
-    int overlay_page_headers;
     int min_row_bits;
-    int restart_pages;
     int block_size;
     char buf[1024];
     uint8_t block[1024];
@@ -226,8 +223,11 @@ int main(int argc, char *argv[])
     int len;
     int i;
     int bit_error_rate;
-    int dump_as_xxx;
     int tests_failed;
+    bool restart_pages;
+    bool add_page_headers;
+    bool overlay_page_headers;
+    bool dump_as_xxx;
     unsigned int last_pkt_no;
     unsigned int pkt_no;
     int page_ended;
@@ -236,9 +236,9 @@ int main(int argc, char *argv[])
     tests_failed = 0;
     compression = -1;
     compression_step = 0;
-    add_page_headers = FALSE;
-    overlay_page_headers = FALSE;
-    restart_pages = FALSE;
+    add_page_headers = false;
+    overlay_page_headers = false;
+    restart_pages = false;
     in_file_name = IN_FILE_NAME;
     decode_file_name = NULL;
     page_header_tz = NULL;
@@ -247,7 +247,7 @@ int main(int argc, char *argv[])
     min_row_bits = 50;
     block_size = 1;
     bit_error_rate = 0;
-    dump_as_xxx = FALSE;
+    dump_as_xxx = false;
     while ((opt = getopt(argc, argv, "b:c:d:ehHri:m:t:x")) != -1)
     {
         switch (opt)
@@ -322,15 +322,15 @@ int main(int argc, char *argv[])
             bit_error_rate = 0x3FF;
             break;
         case 'h':
-            add_page_headers = TRUE;
-            overlay_page_headers = FALSE;
+            add_page_headers = true;
+            overlay_page_headers = false;
             break;
         case 'H':
-            add_page_headers = TRUE;
-            overlay_page_headers = TRUE;
+            add_page_headers = true;
+            overlay_page_headers = true;
             break;
         case 'r':
-            restart_pages = TRUE;
+            restart_pages = true;
             break;
         case 'i':
             in_file_name = optarg;
@@ -342,7 +342,7 @@ int main(int argc, char *argv[])
             page_header_tz = optarg;
             break;
         case 'x':
-            dump_as_xxx = TRUE;
+            dump_as_xxx = true;
             break;
         default:
             //usage();
@@ -518,7 +518,6 @@ int main(int argc, char *argv[])
                         compression = compression_sequence[compression_step++];
                     }
                 }
-#if 0
                 if (t4_tx_set_tx_image_format(send_state,
                                               compression,
                                               T4_SUPPORT_WIDTH_215MM
@@ -548,8 +547,6 @@ int main(int argc, char *argv[])
                 {
                     break;
                 }
-#endif
-                t4_tx_set_tx_encoding(send_state, compression);
                 t4_rx_set_rx_encoding(receive_state, compression);
 
                 if (t4_tx_start_page(send_state))
@@ -560,7 +557,7 @@ int main(int argc, char *argv[])
             }
             t4_rx_start_page(receive_state);
             detect_non_ecm_page_end(-1, compression);
-            page_ended = FALSE;
+            page_ended = false;
             switch (block_size)
             {
             case 0:

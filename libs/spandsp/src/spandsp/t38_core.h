@@ -312,21 +312,21 @@ SPAN_DECLARE(void) t38_set_data_transport_protocol(t38_core_state_t *s, int data
 
 /*! Set the non-ECM fill bit removal mode.
     \param s The T.38 context.
-    \param fill_bit_removal TRUE to remove fill bits across the T.38 link, else FALSE.
+    \param fill_bit_removal True to remove fill bits across the T.38 link.
 */
-SPAN_DECLARE(void) t38_set_fill_bit_removal(t38_core_state_t *s, int fill_bit_removal);
+SPAN_DECLARE(void) t38_set_fill_bit_removal(t38_core_state_t *s, bool fill_bit_removal);
 
 /*! Set the MMR transcoding mode.
     \param s The T.38 context.
-    \param mmr_transcoding TRUE to transcode to MMR across the T.38 link, else FALSE.
+    \param mmr_transcoding True to transcode to MMR across the T.38 link.
 */
-SPAN_DECLARE(void) t38_set_mmr_transcoding(t38_core_state_t *s, int mmr_transcoding);
+SPAN_DECLARE(void) t38_set_mmr_transcoding(t38_core_state_t *s, bool mmr_transcoding);
 
 /*! Set the JBIG transcoding mode.
     \param s The T.38 context.
-    \param jbig_transcoding TRUE to transcode to JBIG across the T.38 link, else FALSE.
+    \param jbig_transcoding True to transcode to JBIG across the T.38 link.
 */
-SPAN_DECLARE(void) t38_set_jbig_transcoding(t38_core_state_t *s, int jbig_transcoding);
+SPAN_DECLARE(void) t38_set_jbig_transcoding(t38_core_state_t *s, bool jbig_transcoding);
 
 /*! Set the maximum buffer size for received data at the far end.
     \param s The T.38 context.
@@ -363,16 +363,16 @@ SPAN_DECLARE(void) t38_set_t38_version(t38_core_state_t *s, int t38_version);
 
 /*! Set the sequence number handling option.
     \param s The T.38 context.
-    \param check TRUE to check sequence numbers, and handle gaps reasonably. FALSE
+    \param check True to check sequence numbers, and handle gaps reasonably. False
            for no sequence number processing (e.g. for TPKT over TCP transport).
 */
-SPAN_DECLARE(void) t38_set_sequence_number_handling(t38_core_state_t *s, int check);
+SPAN_DECLARE(void) t38_set_sequence_number_handling(t38_core_state_t *s, bool check);
 
 /*! Set the TEP handling option.
     \param s The T.38 context.
-    \param allow_for_tep TRUE to allow for TEP playout, else FALSE.
+    \param allow_for_tep True to allow for TEP playout.
 */
-SPAN_DECLARE(void) t38_set_tep_handling(t38_core_state_t *s, int allow_for_tep);
+SPAN_DECLARE(void) t38_set_tep_handling(t38_core_state_t *s, bool allow_for_tep);
 
 /*! Get a pointer to the logging context associated with a T.38 context.
     \brief Get a pointer to the logging context associated with a T.38 context.

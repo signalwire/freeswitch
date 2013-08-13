@@ -75,10 +75,16 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <tiffio.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/async.h"
@@ -138,17 +144,17 @@ static int free_buffers(t4_t6_decode_state_t *s)
 {
     if (s->cur_runs)
     {
-        free(s->cur_runs);
+        span_free(s->cur_runs);
         s->cur_runs = NULL;
     }
     if (s->ref_runs)
     {
-        free(s->ref_runs);
+        span_free(s->ref_runs);
         s->ref_runs = NULL;
     }
     if (s->row_buf)
     {
-        free(s->row_buf);
+        span_free(s->row_buf);
         s->row_buf = NULL;
     }
     s->bytes_per_row = 0;
@@ -380,12 +386,12 @@ static int put_bits(t4_t6_decode_state_t *s, uint32_t bit_string, int quantity)
        need a minimum of 13 bits in the buffer to proceed with any bit stream
        analysis. */
     if ((s->rx_bits += quantity) < 13)
-        return FALSE;
+        return false;
     if (s->consecutive_eols)
     {
         /* Check if the image has already terminated. */
         if (s->consecutive_eols >= EOLS_TO_END_ANY_RX_PAGE)
-            return TRUE;
+            return true;
         /* Check if the image hasn't even started. */
         if (s->consecutive_eols < 0)
         {
@@ -396,14 +402,14 @@ static int put_bits(t4_t6_decode_state_t *s, uint32_t bit_string, int quantity)
             {
                 s->rx_bitstream >>= 1;
                 if (--s->rx_bits < 13)
-                    return FALSE;
+                    return false;
             }
             /* We have an EOL, so now the page begins and we can proceed to
                process the bit stream as image data. */
             s->consecutive_eols = 0;
             if (s->encoding == T4_COMPRESSION_T4_1D)
             {
-                s->row_is_2d = FALSE;
+                s->row_is_2d = false;
                 force_drop_rx_bits(s, 12);
             }
             else
@@ -444,7 +450,7 @@ static int put_bits(t4_t6_decode_state_t *s, uint32_t bit_string, int quantity)
                     if (s->consecutive_eols >= EOLS_TO_END_T6_RX_PAGE)
                     {
                         s->consecutive_eols = EOLS_TO_END_ANY_RX_PAGE;
-                        return TRUE;
+                        return true;
                     }
                 }
                 else
@@ -452,7 +458,7 @@ static int put_bits(t4_t6_decode_state_t *s, uint32_t bit_string, int quantity)
                     if (s->consecutive_eols >= EOLS_TO_END_T4_RX_PAGE)
                     {
                         s->consecutive_eols = EOLS_TO_END_ANY_RX_PAGE;
-                        return TRUE;
+                        return true;
                     }
                 }
             }
@@ -464,7 +470,7 @@ static int put_bits(t4_t6_decode_state_t *s, uint32_t bit_string, int quantity)
                     add_run_to_row(s);
                 s->consecutive_eols = 0;
                 if (put_decoded_row(s))
-                    return TRUE;
+                    return true;
             }
             if (s->encoding == T4_COMPRESSION_T4_2D)
             {
@@ -475,7 +481,7 @@ static int put_bits(t4_t6_decode_state_t *s, uint32_t bit_string, int quantity)
             {
                 force_drop_rx_bits(s, 12);
             }
-            s->in_black = FALSE;
+            s->in_black = false;
             s->black_white = 0;
             s->run_length = 0;
             s->row_len = 0;
@@ -608,7 +614,7 @@ static int put_bits(t4_t6_decode_state_t *s, uint32_t bit_string, int quantity)
                     s->a0 += t4_1d_black_table[bits].param;
                     break;
                 case S_TermB:
-                    s->in_black = FALSE;
+                    s->in_black = false;
                     if (s->row_len < s->image_width)
                     {
                         s->run_length += t4_1d_black_table[bits].param;
@@ -642,7 +648,7 @@ static int put_bits(t4_t6_decode_state_t *s, uint32_t bit_string, int quantity)
                     s->a0 += t4_1d_white_table[bits].param;
                     break;
                 case S_TermW:
-                    s->in_black = TRUE;
+                    s->in_black = true;
                     if (s->row_len < s->image_width)
                     {
                         s->run_length += t4_1d_white_table[bits].param;
@@ -675,15 +681,15 @@ static int put_bits(t4_t6_decode_state_t *s, uint32_t bit_string, int quantity)
                 if (s->run_length > 0)
                     add_run_to_row(s);
                 if (put_decoded_row(s))
-                    return TRUE;
-                s->in_black = FALSE;
+                    return true;
+                s->in_black = false;
                 s->black_white = 0;
                 s->run_length = 0;
                 s->row_len = 0;
             }
         }
     }
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -714,7 +720,7 @@ SPAN_DECLARE(int) t4_t6_decode_put_bit(t4_t6_decode_state_t *s, int bit)
     if (bit < 0)
     {
         t4_t6_decode_rx_status(s, bit);
-        return TRUE;
+        return true;
     }
     s->compressed_image_size++;
     if (put_bits(s, bit & 1, 1))
@@ -824,10 +830,10 @@ SPAN_DECLARE(int) t4_t6_decode_restart(t4_t6_decode_state_t *s, int image_width)
     if (s->bytes_per_row == 0  ||  image_width != s->image_width)
     {
         /* Allocate the space required for decoding the new row length. */
-        if ((bufptr = (uint32_t *) realloc(s->cur_runs, run_space)) == NULL)
+        if ((bufptr = (uint32_t *) span_realloc(s->cur_runs, run_space)) == NULL)
             return -1;
         s->cur_runs = bufptr;
-        if ((bufptr = (uint32_t *) realloc(s->ref_runs, run_space)) == NULL)
+        if ((bufptr = (uint32_t *) span_realloc(s->ref_runs, run_space)) == NULL)
             return -1;
         s->ref_runs = bufptr;
         s->image_width = image_width;
@@ -835,7 +841,7 @@ SPAN_DECLARE(int) t4_t6_decode_restart(t4_t6_decode_state_t *s, int image_width)
     bytes_per_row = (image_width + 7)/8;
     if (bytes_per_row != s->bytes_per_row)
     {
-        if ((bufptr8 = (uint8_t *) realloc(s->row_buf, bytes_per_row)) == NULL)
+        if ((bufptr8 = (uint8_t *) span_realloc(s->row_buf, bytes_per_row)) == NULL)
             return -1;
         s->row_buf = bufptr8;
         s->bytes_per_row = bytes_per_row;
@@ -857,7 +863,7 @@ SPAN_DECLARE(int) t4_t6_decode_restart(t4_t6_decode_state_t *s, int image_width)
     s->pixels = 8;
 
     s->row_len = 0;
-    s->in_black = FALSE;
+    s->in_black = false;
     s->black_white = 0;
     s->b_cursor = 1;
     s->a_cursor = 0;
@@ -892,7 +898,7 @@ SPAN_DECLARE(t4_t6_decode_state_t *) t4_t6_decode_init(t4_t6_decode_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (t4_t6_decode_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (t4_t6_decode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -919,7 +925,7 @@ SPAN_DECLARE(int) t4_t6_decode_free(t4_t6_decode_state_t *s)
     int ret;
 
     ret = t4_t6_decode_release(s);
-    free(s);
+    span_free(s);
     return ret;
 }
 /*- End of function --------------------------------------------------------*/

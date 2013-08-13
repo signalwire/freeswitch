@@ -46,12 +46,13 @@ EXTRA_DIST = fax_tests.sh \
  
 MAINTAINERCLEANFILES = Makefile.in
 
-INCLUDES = -I$(top_builddir)/src -I$(top_builddir)/spandsp-sim -DDATADIR="\"$(pkgdatadir)\""
+AM_CPPFLAGS = -I$(top_builddir)/src -I$(top_builddir)/spandsp-sim -DDATADIR="\"$(pkgdatadir)\""
 
 LIBDIR = -L$(top_builddir)/src
 
 noinst_PROGRAMS =   ademco_contactid_tests \
                     adsi_tests \
+                    alloc_tests \
                     async_tests \
                     at_interpreter_tests \
                     awgn_tests \
@@ -145,6 +146,9 @@ ademco_contactid_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIB
 
 adsi_tests_SOURCES = adsi_tests.c
 adsi_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
+
+alloc_tests_SOURCES = alloc_tests.c
+alloc_tests_LDADD = $(LIBDIR) -lspandsp
 
 async_tests_SOURCES = async_tests.c
 async_tests_LDADD = $(LIBDIR) -lspandsp

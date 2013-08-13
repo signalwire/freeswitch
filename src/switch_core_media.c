@@ -2671,6 +2671,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					
 					if (!strcasecmp(attr->a_name, "fingerprint") && !zstr(attr->a_value)) {
 						got_crypto = 1;
+						if (sdp_type == SDP_TYPE_REQUEST) {
+							switch_channel_set_variable(session->channel, "answer_delay", "2500");
+						}
 					}
 				}
 			}

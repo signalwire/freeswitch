@@ -61,6 +61,10 @@ static void switch_scheduler_execute(switch_scheduler_task_container_t *tp)
 
 	tp->func(&tp->task);
 
+	if (tp->task.repeat) {
+		tp->task.runtime = switch_epoch_time_now(NULL) + tp->task.repeat;
+	}
+
 	if (tp->task.runtime > tp->executed) {
 		tp->executed = 0;
 		if (switch_event_create(&event, SWITCH_EVENT_RE_SCHEDULE) == SWITCH_STATUS_SUCCESS) {
@@ -190,10 +194,17 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_add_task(time_t task_runtime,
 {
 	switch_scheduler_task_container_t *container, *tp;
 	switch_event_t *event;
+	switch_time_t now = switch_epoch_time_now(NULL);
 
 	switch_mutex_lock(globals.task_mutex);
 	switch_zmalloc(container, sizeof(*container));
 	switch_assert(func);
+
+	if (task_runtime < now) {
+		container->task.repeat = task_runtime;
+		task_runtime += now;
+	}
+
 	container->func = func;
 	container->task.created = switch_epoch_time_now(NULL);
 	container->task.runtime = task_runtime;

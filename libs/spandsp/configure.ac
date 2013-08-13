@@ -138,6 +138,7 @@ AC_ARG_ENABLE(avx,          [  --enable-avx         Enable AVX support])
 AC_ARG_ENABLE(avx2,         [  --enable-avx2        Enable AVX2 support])
 AC_ARG_ENABLE(neon,         [  --enable-neon        Enable NEON support])
 AC_ARG_ENABLE(fixed_point,  [  --enable-fixed-point Enable fixed point support])
+
 # The following is for MSVC, where we may be using a local copy of libtiff, built alongside spandsp
 AC_ARG_ENABLE(builtin_tiff,
     [AC_HELP_STRING([--enable-builtin-tiff],[build with builtin libtiff])],[enable_builtin_tiff="$enableval"],[enable_builtin_tiff="no"])
@@ -164,6 +165,8 @@ fi
 AX_C99_FLEXIBLE_ARRAY
 
 AC_CHECK_FUNCS([aligned_alloc])
+AC_CHECK_FUNCS([memalign])
+AC_CHECK_FUNCS([posix_memalign])
 AC_CHECK_FUNCS([memmove])
 AC_CHECK_FUNCS([memset])
 AC_CHECK_FUNCS([select])
@@ -184,6 +187,9 @@ AC_HEADER_TIME
 AC_CHECK_HEADERS([socket.h])
 AC_CHECK_HEADERS([inttypes.h], [INSERT_INTTYPES_HEADER="#include <inttypes.h>"])
 AC_CHECK_HEADERS([stdint.h], [INSERT_STDINT_HEADER="#include <stdint.h>"])
+AC_CHECK_HEADERS([stdatomic.h])
+AC_CHECK_HEADERS([stdbool.h], [INSERT_STDBOOL_HEADER="#include <stdbool.h>"], [INSERT_STDBOOL_HEADER="#include <spandsp/stdbool.h>"])
+AC_CHECK_HEADERS([stdfix.h])
 AC_CHECK_HEADERS([unistd.h])
 AC_CHECK_HEADERS([stdlib.h])
 AC_CHECK_HEADERS([string.h])
@@ -589,6 +595,7 @@ AC_SUBST(INSERT_INTTYPES_HEADER)
 AC_SUBST(INSERT_STDINT_HEADER)
 AC_SUBST(INSERT_TGMATH_HEADER)
 AC_SUBST(INSERT_MATH_HEADER)
+AC_SUBST(INSERT_STDBOOL_HEADER)
 
 AC_CONFIG_FILES([Makefile
                  doc/Makefile

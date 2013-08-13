@@ -40,9 +40,15 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/queue.h"
 #include "spandsp/async.h"
@@ -62,6 +68,7 @@
 #include "spandsp/private/queue.h"
 #include "spandsp/private/tone_generate.h"
 #include "spandsp/private/async.h"
+#include "spandsp/private/power_meter.h"
 #include "spandsp/private/fsk.h"
 #include "spandsp/private/dtmf.h"
 #include "spandsp/private/modem_connect_tones.h"
@@ -740,14 +747,34 @@ static int v18_tdd_get_async_byte(void *user_data)
         s->next_byte = (uint8_t) 0xFF;
         return x;
     }
-    if ((ch = queue_read_byte(&s->queue.queue)) >= 0)
-        return ch;
-    if (s->tx_signal_on)
+    for (;;)
     {
-        /* The FSK should now be switched off. */
-        s->tx_signal_on = 0;
+        if ((ch = queue_read_byte(&s->queue.queue)) < 0)
+        {
+            if (s->tx_signal_on)
+            {
+                /* The FSK should now be switched off. */
+                s->tx_signal_on = 0;
+            }
+            async_tx_presend_bits(&s->async_tx, 42);
+            return SIG_STATUS_LINK_IDLE;
+        }
+        if ((x = encode_baudot(s, ch)) != 0)
+            break;
     }
-    return 0x1F;
+    s->rx_suppression = (300*SAMPLE_RATE)/1000;
+    if (s->tx_signal_on == 1)
+    {
+        async_tx_presend_bits(&s->async_tx, 7);
+        s->tx_signal_on = 2;
+    }
+    if ((x & 0x3E0))
+    {
+        s->next_byte = (uint8_t) (x & 0x1F);
+        return (uint8_t) ((x >> 5) & 0x1F);
+    }
+    s->next_byte = (uint8_t) 0xFF;
+    return (uint8_t) (x & 0x1F);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -823,10 +850,15 @@ static void v18_tdd_put_async_byte(void *user_data, int byte)
         }
         return;
     }
+    if (s->rx_suppression > 0)
+        return;
     span_log(&s->logging, SPAN_LOG_FLOW, "Rx byte %x\n", byte);
     if ((octet = decode_baudot(s, byte)) != 0xFF)
+    {
         s->rx_msg[s->rx_msg_len++] = octet;
-    if (s->rx_msg_len >= 256)
+        span_log(&s->logging, SPAN_LOG_FLOW, "Rx byte 0x%x '%c'\n", octet, octet);
+    }
+    if (s->rx_msg_len > 0) //= 256)
     {
         s->rx_msg[s->rx_msg_len] = '\0';
         if (s->put_msg)
@@ -982,18 +1014,23 @@ SPAN_DECLARE_NONSTD(int) v18_rx(v18_state_t *s, const int16_t amp[], int len)
         else
             s->rx_suppression = 0;
     }
-    switch (s->mode)
+    if ((s->mode & V18_MODE_DTMF))
     {
-    case V18_MODE_DTMF:
         /* Apply a message timeout. */
-        s->in_progress -= len;
-        if (s->in_progress <= 0)
-            s->rx_msg_len = 0;
+        if (s->in_progress)
+        {
+            s->in_progress -= len;
+            if (s->in_progress <= 0)
+            {
+                s->in_progress = 0;
+                s->rx_msg_len = 0;
+            }
+        }
         dtmf_rx(&s->dtmf_rx, amp, len);
-        break;
-    default:
+    }
+    if ((s->mode & (V18_MODE_5BIT_4545 | V18_MODE_5BIT_476 | V18_MODE_5BIT_50)))
+    {
         fsk_rx(&s->fsk_rx, amp, len);
-        break;
     }
     return 0;
 }
@@ -1008,18 +1045,23 @@ SPAN_DECLARE_NONSTD(int) v18_rx_fillin(v18_state_t *s, int len)
         else
             s->rx_suppression = 0;
     }
-    switch (s->mode)
+    if ((s->mode & V18_MODE_DTMF))
     {
-    case V18_MODE_DTMF:
         /* Apply a message timeout. */
-        //s->in_progress -= len;
-        //if (s->in_progress <= 0)
-        //    s->rx_msg_len = 0;
+        if (s->in_progress)
+        {
+            s->in_progress -= len;
+            if (s->in_progress <= 0)
+            {
+                s->in_progress = 0;
+                s->rx_msg_len = 0;
+            }
+        }
         dtmf_rx_fillin(&s->dtmf_rx, len);
-        break;
-    default:
+    }
+    if ((s->mode & (V18_MODE_5BIT_4545 | V18_MODE_5BIT_476 | V18_MODE_5BIT_50)))
+    {
         fsk_rx_fillin(&s->fsk_rx, len);
-        break;
     }
     return 0;
 }
@@ -1027,9 +1069,6 @@ SPAN_DECLARE_NONSTD(int) v18_rx_fillin(v18_state_t *s, int len)
 
 SPAN_DECLARE(int) v18_put(v18_state_t *s, const char msg[], int len)
 {
-    char buf[256 + 1];
-    int x;
-    int n;
     int i;
 
     /* This returns the number of characters that would not fit in the buffer.
@@ -1040,29 +1079,11 @@ SPAN_DECLARE(int) v18_put(v18_state_t *s, const char msg[], int len)
         if ((len = strlen(msg)) == 0)
             return 0;
     }
-    switch (s->mode)
-    {
-    case V18_MODE_5BIT_4545:
-    case V18_MODE_5BIT_50:
-        for (i = 0;  i < len;  i++)
-        {
-            n = 0;
-            if ((x = encode_baudot(s, msg[i])))
-            {
-                if ((x & 0x3E0))
-                    buf[n++] = (uint8_t) ((x >> 5) & 0x1F);
-                buf[n++] = (uint8_t) (x & 0x1F);
-                /* TODO: Deal with out of space condition */
-                if (queue_write(&s->queue.queue, (const uint8_t *) buf, n) < 0)
-                    return i;
-                s->tx_signal_on = 1;
-            }
-        }
-        return len;
-    case V18_MODE_DTMF:
-        break;
-    }
-    return -1;
+    /* TODO: Deal with out of space condition */
+    if ((i = queue_write(&s->queue.queue, (const uint8_t *) msg, len)) < 0)
+        return i;
+    s->tx_signal_on = 1;
+    return i;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1102,7 +1123,7 @@ SPAN_DECLARE(logging_state_t *) v18_get_logging_state(v18_state_t *s)
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(v18_state_t *) v18_init(v18_state_t *s,
-                                     int calling_party,
+                                     bool calling_party,
                                      int mode,
                                      int nation,
                                      put_msg_func_t put_msg,
@@ -1113,7 +1134,7 @@ SPAN_DECLARE(v18_state_t *) v18_init(v18_state_t *s,
 
     if (s == NULL)
     {
-        if ((s = (v18_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (v18_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -1127,7 +1148,7 @@ SPAN_DECLARE(v18_state_t *) v18_init(v18_state_t *s,
     case V18_MODE_5BIT_4545:
         s->repeat_shifts = mode & V18_MODE_REPETITIVE_SHIFTS_OPTION;
         fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_WEITBRECHT_4545], async_tx_get_bit, &s->async_tx);
-        async_tx_init(&s->async_tx, 5, ASYNC_PARITY_NONE, 2, FALSE, v18_tdd_get_async_byte, s);
+        async_tx_init(&s->async_tx, 5, ASYNC_PARITY_NONE, 2, false, v18_tdd_get_async_byte, s);
         /* Schedule an explicit shift at the start of baudot transmission */
         s->baudot_tx_shift = 2;
         /* TDD uses 5 bit data, no parity and 1.5 stop bits. We scan for the first stop bit, and
@@ -1139,7 +1160,7 @@ SPAN_DECLARE(v18_state_t *) v18_init(v18_state_t *s,
     case V18_MODE_5BIT_476:
         s->repeat_shifts = mode & V18_MODE_REPETITIVE_SHIFTS_OPTION;
         fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_WEITBRECHT_476], async_tx_get_bit, &s->async_tx);
-        async_tx_init(&s->async_tx, 5, ASYNC_PARITY_NONE, 2, FALSE, v18_tdd_get_async_byte, s);
+        async_tx_init(&s->async_tx, 5, ASYNC_PARITY_NONE, 2, false, v18_tdd_get_async_byte, s);
         /* Schedule an explicit shift at the start of baudot transmission */
         s->baudot_tx_shift = 2;
         /* TDD uses 5 bit data, no parity and 1.5 stop bits. We scan for the first stop bit, and
@@ -1151,7 +1172,7 @@ SPAN_DECLARE(v18_state_t *) v18_init(v18_state_t *s,
     case V18_MODE_5BIT_50:
         s->repeat_shifts = mode & V18_MODE_REPETITIVE_SHIFTS_OPTION;
         fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_WEITBRECHT_50], async_tx_get_bit, &s->async_tx);
-        async_tx_init(&s->async_tx, 5, ASYNC_PARITY_NONE, 2, FALSE, v18_tdd_get_async_byte, s);
+        async_tx_init(&s->async_tx, 5, ASYNC_PARITY_NONE, 2, false, v18_tdd_get_async_byte, s);
         /* Schedule an explicit shift at the start of baudot transmission */
         s->baudot_tx_shift = 2;
         /* TDD uses 5 bit data, no parity and 1.5 stop bits. We scan for the first stop bit, and
@@ -1166,27 +1187,27 @@ SPAN_DECLARE(v18_state_t *) v18_init(v18_state_t *s,
         break;
     case V18_MODE_EDT:
         fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_V21CH1_110], async_tx_get_bit, &s->async_tx);
-        async_tx_init(&s->async_tx, 7, ASYNC_PARITY_EVEN, 2, FALSE, v18_edt_get_async_byte, s);
+        async_tx_init(&s->async_tx, 7, ASYNC_PARITY_EVEN, 2, false, v18_edt_get_async_byte, s);
         fsk_rx_init(&s->fsk_rx, &preset_fsk_specs[FSK_V21CH1_110], FSK_FRAME_MODE_7E2_FRAMES, v18_edt_put_async_byte, s);
         break;
     case V18_MODE_BELL103:
         fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_BELL103CH1], async_tx_get_bit, &s->async_tx);
-        async_tx_init(&s->async_tx, 7, ASYNC_PARITY_EVEN, 1, FALSE, v18_edt_get_async_byte, s);
+        async_tx_init(&s->async_tx, 7, ASYNC_PARITY_EVEN, 1, false, v18_edt_get_async_byte, s);
         fsk_rx_init(&s->fsk_rx, &preset_fsk_specs[FSK_BELL103CH2], FSK_FRAME_MODE_7E1_FRAMES, v18_bell103_put_async_byte, s);
         break;
     case V18_MODE_V23VIDEOTEX:
         fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_V23CH1], async_tx_get_bit, &s->async_tx);
-        async_tx_init(&s->async_tx, 7, ASYNC_PARITY_EVEN, 1, FALSE, v18_edt_get_async_byte, s);
+        async_tx_init(&s->async_tx, 7, ASYNC_PARITY_EVEN, 1, false, v18_edt_get_async_byte, s);
         fsk_rx_init(&s->fsk_rx, &preset_fsk_specs[FSK_V23CH2], FSK_FRAME_MODE_7E1_FRAMES, v18_videotex_put_async_byte, s);
         break;
     case V18_MODE_V21TEXTPHONE:
         fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_V21CH1], async_tx_get_bit, &s->async_tx);
-        async_tx_init(&s->async_tx, 7, ASYNC_PARITY_EVEN, 1, FALSE, v18_edt_get_async_byte, s);
+        async_tx_init(&s->async_tx, 7, ASYNC_PARITY_EVEN, 1, false, v18_edt_get_async_byte, s);
         fsk_rx_init(&s->fsk_rx, &preset_fsk_specs[FSK_V21CH1], FSK_FRAME_MODE_7E1_FRAMES, v18_textphone_put_async_byte, s);
         break;
     case V18_MODE_V18TEXTPHONE:
         fsk_tx_init(&s->fsk_tx, &preset_fsk_specs[FSK_V21CH1], async_tx_get_bit, &s->async_tx);
-        async_tx_init(&s->async_tx, 7, ASYNC_PARITY_EVEN, 1, FALSE, v18_edt_get_async_byte, s);
+        async_tx_init(&s->async_tx, 7, ASYNC_PARITY_EVEN, 1, false, v18_edt_get_async_byte, s);
         fsk_rx_init(&s->fsk_rx, &preset_fsk_specs[FSK_V21CH1], FSK_FRAME_MODE_7E1_FRAMES, v18_textphone_put_async_byte, s);
         break;
     }
@@ -1204,7 +1225,7 @@ SPAN_DECLARE(int) v18_release(v18_state_t *s)
 
 SPAN_DECLARE(int) v18_free(v18_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

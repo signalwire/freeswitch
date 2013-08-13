@@ -43,9 +43,12 @@
 #include <limits.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/saturated.h"
 #include "spandsp/plc.h"
+
+#include "spandsp/private/plc.h"
 
 /* We do a straight line fade to zero volume in 50ms when we are filling in for missing data. */
 #define ATTENUATION_INCREMENT       0.0025f     /* Attenuation per sample */
@@ -234,7 +237,7 @@ SPAN_DECLARE(plc_state_t *) plc_init(plc_state_t *s)
 {
     if (s == NULL)
     {
-        if ((s = (plc_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (plc_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -251,7 +254,7 @@ SPAN_DECLARE(int) plc_release(plc_state_t *s)
 SPAN_DECLARE(int) plc_free(plc_state_t *s)
 {
     if (s)
-        free(s);
+        span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

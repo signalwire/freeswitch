@@ -71,12 +71,12 @@
 
 SNDFILE *out_handle;
 
-int use_receiver_not_ready = FALSE;
-int test_local_interrupt = FALSE;
+bool use_receiver_not_ready = false;
+bool test_local_interrupt = false;
 
 const char *output_tiff_file_name;
 
-int log_audio = FALSE;
+bool log_audio = false;
 
 fax_state_t *fax;
 faxtester_state_t state;
@@ -230,7 +230,7 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int result)
         if (i == 'A')
         {
             printf("%c: Initiating interrupt request\n", i);
-            t30_local_interrupt_request(s, TRUE);
+            t30_local_interrupt_request(s, true);
         }
         else
         {
@@ -241,7 +241,7 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int result)
             case T30_PRI_EOM:
             case T30_PRI_EOP:
                 printf("%c: Accepting interrupt request\n", i);
-                t30_local_interrupt_request(s, TRUE);
+                t30_local_interrupt_request(s, true);
                 break;
             case T30_PIN:
                 break;
@@ -268,7 +268,7 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 
 static void t30_real_time_frame_handler(t30_state_t *s,
                                         void *user_data,
-                                        int direction,
+                                        bool incoming,
                                         const uint8_t *msg,
                                         int len)
 {
@@ -279,7 +279,7 @@ static void t30_real_time_frame_handler(t30_state_t *s,
     {
         fprintf(stderr,
                 "T.30: Real time frame handler - %s, %s, length = %d\n",
-                (direction)  ?  "line->T.30"  : "T.30->line",
+                (incoming)  ?  "line->T.30"  : "T.30->line",
                 t30_frametype(msg[2]),
                 len);
     }
@@ -296,9 +296,9 @@ static int document_handler(t30_state_t *s, void *user_data, int event)
     {
         t30_set_tx_file(s, next_tx_file, -1, -1);
         next_tx_file[0] = '\0';
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -367,8 +367,8 @@ static void fax_prepare(void)
     logging_state_t *logging;
 
     t30 = fax_get_t30_state(fax);
-    fax_set_transmit_on_idle(fax, TRUE);
-    fax_set_tep_mode(fax, TRUE);
+    fax_set_transmit_on_idle(fax, true);
+    fax_set_tep_mode(fax, true);
 #if 0
     t30_set_tx_ident(t30, "1234567890");
     t30_set_tx_sub_address(t30, "Sub-address");
@@ -380,7 +380,7 @@ static void fax_prepare(void)
     t30_set_tx_nsf(t30, (const uint8_t *) "\x50\x00\x00\x00Spandsp NSF\x00", 16);
     //t30_set_tx_nss(t30, (const uint8_t *) "\x50\x00\x00\x00Spandsp NSS\x00", 16);
     t30_set_tx_nsc(t30, (const uint8_t *) "\x50\x00\x00\x00Spandsp NSC\x00", 16);
-    t30_set_ecm_capability(t30, TRUE);
+    t30_set_ecm_capability(t30, true);
     t30_set_supported_t30_features(t30,
                                    T30_SUPPORT_IDENTIFICATION
                                  | T30_SUPPORT_SELECTIVE_POLLING
@@ -397,6 +397,7 @@ static void fax_prepare(void)
                                         | T4_RESOLUTION_R8_FINE
                                         | T4_RESOLUTION_R8_SUPERFINE
                                         | T4_RESOLUTION_R16_SUPERFINE
+                                        | T4_RESOLUTION_100_100
                                         | T4_RESOLUTION_200_100
                                         | T4_RESOLUTION_200_200
                                         | T4_RESOLUTION_200_400
@@ -639,9 +640,9 @@ static int next_step(faxtester_state_t *s)
             /* Add a bit of waiting at the end, to ensure everything gets flushed through,
                any timers can expire, etc. */
             faxtester_set_timeout(s, -1);
-            faxtester_set_rx_type(s, T30_MODEM_NONE, 0, FALSE, FALSE);
-            faxtester_set_tx_type(s, T30_MODEM_PAUSE, 0, 120000, FALSE);
-            s->final_delayed = TRUE;
+            faxtester_set_rx_type(s, T30_MODEM_NONE, 0, false, false);
+            faxtester_set_tx_type(s, T30_MODEM_PAUSE, 0, 120000, false);
+            s->final_delayed = true;
             return 1;
         }
         /* Finished */
@@ -699,10 +700,10 @@ static int next_step(faxtester_state_t *s)
         {
             hdlc = (strcasecmp((const char *) type, "PREAMBLE") == 0);
             short_train = (strcasecmp((const char *) type, "TCF") != 0);
-            faxtester_set_tx_type(s, T30_MODEM_NONE, 0, FALSE, FALSE);
+            faxtester_set_tx_type(s, T30_MODEM_NONE, 0, false, false);
             if (strcasecmp((const char *) modem, "V.21") == 0)
             {
-                faxtester_set_rx_type(s, T30_MODEM_V21, 300, FALSE, TRUE);
+                faxtester_set_rx_type(s, T30_MODEM_V21, 300, false, true);
             }
             else if (strcasecmp((const char *) modem, "V.17/14400") == 0)
             {
@@ -722,19 +723,19 @@ static int next_step(faxtester_state_t *s)
             }
             else if (strcasecmp((const char *) modem, "V.29/9600") == 0)
             {
-                faxtester_set_rx_type(s, T30_MODEM_V29, 9600, FALSE, hdlc);
+                faxtester_set_rx_type(s, T30_MODEM_V29, 9600, false, hdlc);
             }
             else if (strcasecmp((const char *) modem, "V.29/7200") == 0)
             {
-                faxtester_set_rx_type(s, T30_MODEM_V29, 7200, FALSE, hdlc);
+                faxtester_set_rx_type(s, T30_MODEM_V29, 7200, false, hdlc);
             }
             else if (strcasecmp((const char *) modem, "V.27ter/4800") == 0)
             {
-                faxtester_set_rx_type(s, T30_MODEM_V27TER, 4800, FALSE, hdlc);
+                faxtester_set_rx_type(s, T30_MODEM_V27TER, 4800, false, hdlc);
             }
             else if (strcasecmp((const char *) modem, "V.27ter/2400") == 0)
             {
-                faxtester_set_rx_type(s, T30_MODEM_V27TER, 2400, FALSE, hdlc);
+                faxtester_set_rx_type(s, T30_MODEM_V27TER, 2400, false, hdlc);
             }
             else
             {
@@ -761,14 +762,14 @@ static int next_step(faxtester_state_t *s)
         else if (strcasecmp((const char *) type, "CNG") == 0)
         {
             /* Look for CNG */
-            faxtester_set_rx_type(s, T30_MODEM_CNG, 0, FALSE, FALSE);
-            faxtester_set_tx_type(s, T30_MODEM_NONE, 0, FALSE, FALSE);
+            faxtester_set_rx_type(s, T30_MODEM_CNG, 0, false, false);
+            faxtester_set_tx_type(s, T30_MODEM_NONE, 0, false, false);
         }
         else if (strcasecmp((const char *) type, "CED") == 0)
         {
             /* Look for CED */
-            faxtester_set_rx_type(s, T30_MODEM_CED, 0, FALSE, FALSE);
-            faxtester_set_tx_type(s, T30_MODEM_NONE, 0, FALSE, FALSE);
+            faxtester_set_rx_type(s, T30_MODEM_CED, 0, false, false);
+            faxtester_set_tx_type(s, T30_MODEM_NONE, 0, false, false);
         }
         else if (strcasecmp((const char *) type, "HDLC") == 0)
         {
@@ -802,10 +803,10 @@ static int next_step(faxtester_state_t *s)
         {
             hdlc = (strcasecmp((const char *) type, "PREAMBLE") == 0);
             short_train = (strcasecmp((const char *) type, "TCF") != 0);
-            faxtester_set_rx_type(s, T30_MODEM_NONE, 0, FALSE, FALSE);
+            faxtester_set_rx_type(s, T30_MODEM_NONE, 0, false, false);
             if (strcasecmp((const char *) modem, "V.21") == 0)
             {
-                faxtester_set_tx_type(s, T30_MODEM_V21, 300, FALSE, TRUE);
+                faxtester_set_tx_type(s, T30_MODEM_V21, 300, false, true);
             }
             else if (strcasecmp((const char *) modem, "V.17/14400") == 0)
             {
@@ -825,19 +826,19 @@ static int next_step(faxtester_state_t *s)
             }
             else if (strcasecmp((const char *) modem, "V.29/9600") == 0)
             {
-                faxtester_set_tx_type(s, T30_MODEM_V29, 9600, FALSE, hdlc);
+                faxtester_set_tx_type(s, T30_MODEM_V29, 9600, false, hdlc);
             }
             else if (strcasecmp((const char *) modem, "V.29/7200") == 0)
             {
-                faxtester_set_tx_type(s, T30_MODEM_V29, 7200, FALSE, hdlc);
+                faxtester_set_tx_type(s, T30_MODEM_V29, 7200, false, hdlc);
             }
             else if (strcasecmp((const char *) modem, "V.27ter/4800") == 0)
             {
-                faxtester_set_tx_type(s, T30_MODEM_V27TER, 4800, FALSE, hdlc);
+                faxtester_set_tx_type(s, T30_MODEM_V27TER, 4800, false, hdlc);
             }
             else if (strcasecmp((const char *) modem, "V.27ter/2400") == 0)
             {
-                faxtester_set_tx_type(s, T30_MODEM_V27TER, 2400, FALSE, hdlc);
+                faxtester_set_tx_type(s, T30_MODEM_V27TER, 2400, false, hdlc);
             }
             else
             {
@@ -876,7 +877,7 @@ static int next_step(faxtester_state_t *s)
         }
         else if (strcasecmp((const char *) type, "CALL") == 0)
         {
-            fax = fax_init(NULL, FALSE);
+            fax = fax_init(NULL, false);
             fax_prepare();
             next_tx_file[0] = '\0';
             t30 = fax_get_t30_state(fax);
@@ -892,7 +893,7 @@ static int next_step(faxtester_state_t *s)
         }
         else if (strcasecmp((const char *) type, "ANSWER") == 0)
         {
-            fax = fax_init(NULL, TRUE);
+            fax = fax_init(NULL, true);
             fax_prepare();
             next_tx_file[0] = '\0';
             t30 = fax_get_t30_state(fax);
@@ -907,19 +908,19 @@ static int next_step(faxtester_state_t *s)
         }
         else if (strcasecmp((const char *) type, "CNG") == 0)
         {
-            faxtester_set_rx_type(s, T30_MODEM_NONE, 0, FALSE, FALSE);
-            faxtester_set_tx_type(s, T30_MODEM_CNG, 0, FALSE, FALSE);
+            faxtester_set_rx_type(s, T30_MODEM_NONE, 0, false, false);
+            faxtester_set_tx_type(s, T30_MODEM_CNG, 0, false, false);
         }
         else if (strcasecmp((const char *) type, "CED") == 0)
         {
-            faxtester_set_rx_type(s, T30_MODEM_NONE, 0, FALSE, FALSE);
-            faxtester_set_tx_type(s, T30_MODEM_CED, 0, FALSE, FALSE);
+            faxtester_set_rx_type(s, T30_MODEM_NONE, 0, false, false);
+            faxtester_set_tx_type(s, T30_MODEM_CED, 0, false, false);
         }
         else if (strcasecmp((const char *) type, "WAIT") == 0)
         {
             delay = (value)  ?  atoi((const char *) value)  :  1;
-            faxtester_set_rx_type(s, T30_MODEM_NONE, 0, FALSE, FALSE);
-            faxtester_set_tx_type(s, T30_MODEM_PAUSE, 0, delay, FALSE);
+            faxtester_set_rx_type(s, T30_MODEM_NONE, 0, false, false);
+            faxtester_set_tx_type(s, T30_MODEM_PAUSE, 0, delay, false);
         }
         else if (strcasecmp((const char *) type, "PREAMBLE") == 0)
         {
@@ -936,9 +937,9 @@ static int next_step(faxtester_state_t *s)
             i = string_to_msg(buf, mask, (const char *) value);
             bit_reverse(buf, buf, abs(i));
             if (crc_error  &&  strcasecmp((const char *) crc_error, "0") == 0)
-                faxtester_send_hdlc_msg(s, buf, abs(i), FALSE);
+                faxtester_send_hdlc_msg(s, buf, abs(i), false);
             else
-                faxtester_send_hdlc_msg(s, buf, abs(i), TRUE);
+                faxtester_send_hdlc_msg(s, buf, abs(i), true);
         }
         else if (strcasecmp((const char *) type, "TCF") == 0)
         {
@@ -980,7 +981,37 @@ static int next_step(faxtester_state_t *s)
                 else if (strcasecmp((const char *) compression, "T.6") == 0)
                     compression_type = T4_COMPRESSION_T6;
             }
-            t4_tx_set_tx_encoding(&t4_tx_state, compression_type);
+            if (t4_tx_set_tx_image_format(&t4_tx_state,
+                                          compression_type,
+                                          T4_SUPPORT_WIDTH_215MM
+                                        | T4_SUPPORT_LENGTH_US_LETTER
+                                        | T4_SUPPORT_LENGTH_US_LEGAL
+                                        | T4_SUPPORT_LENGTH_UNLIMITED,
+                                          T4_RESOLUTION_R8_STANDARD
+                                        | T4_RESOLUTION_R8_FINE
+                                        | T4_RESOLUTION_R8_SUPERFINE
+                                        | T4_RESOLUTION_R16_SUPERFINE
+                                        | T4_RESOLUTION_200_100
+                                        | T4_RESOLUTION_200_200
+                                        | T4_RESOLUTION_200_400
+                                        | T4_RESOLUTION_300_300
+                                        | T4_RESOLUTION_300_600
+                                        | T4_RESOLUTION_400_400
+                                        | T4_RESOLUTION_400_800
+                                        | T4_RESOLUTION_600_600
+                                        | T4_RESOLUTION_600_1200
+                                        | T4_RESOLUTION_1200_1200,
+                                          T4_RESOLUTION_100_100
+                                        | T4_RESOLUTION_200_200
+                                        | T4_RESOLUTION_300_300
+                                        | T4_RESOLUTION_400_400
+                                        | T4_RESOLUTION_600_600
+                                        | T4_RESOLUTION_1200_1200) < 0)
+            {
+                span_log(&s->logging, SPAN_LOG_FLOW, "Failed to set T.4 compression\n");
+                printf("Test failed\n");
+                exit(2);
+            }
             t4_tx_set_min_bits_per_row(&t4_tx_state, min_row_bits);
             if (t4_tx_start_page(&t4_tx_state))
             {
@@ -1020,7 +1051,37 @@ static int next_step(faxtester_state_t *s)
                 else if (strcasecmp((const char *) compression, "T.6") == 0)
                     compression_type = T4_COMPRESSION_T6;
             }
-            t4_tx_set_tx_encoding(&t4_tx_state, compression_type);
+            if (t4_tx_set_tx_image_format(&t4_tx_state,
+                                          compression_type,
+                                          T4_SUPPORT_WIDTH_215MM
+                                        | T4_SUPPORT_LENGTH_US_LETTER
+                                        | T4_SUPPORT_LENGTH_US_LEGAL
+                                        | T4_SUPPORT_LENGTH_UNLIMITED,
+                                          T4_RESOLUTION_R8_STANDARD
+                                        | T4_RESOLUTION_R8_FINE
+                                        | T4_RESOLUTION_R8_SUPERFINE
+                                        | T4_RESOLUTION_R16_SUPERFINE
+                                        | T4_RESOLUTION_200_100
+                                        | T4_RESOLUTION_200_200
+                                        | T4_RESOLUTION_200_400
+                                        | T4_RESOLUTION_300_300
+                                        | T4_RESOLUTION_300_600
+                                        | T4_RESOLUTION_400_400
+                                        | T4_RESOLUTION_400_800
+                                        | T4_RESOLUTION_600_600
+                                        | T4_RESOLUTION_600_1200
+                                        | T4_RESOLUTION_1200_1200,
+                                          T4_RESOLUTION_100_100
+                                        | T4_RESOLUTION_200_200
+                                        | T4_RESOLUTION_300_300
+                                        | T4_RESOLUTION_400_400
+                                        | T4_RESOLUTION_600_600
+                                        | T4_RESOLUTION_1200_1200) < 0)
+            {
+                span_log(&s->logging, SPAN_LOG_FLOW, "Failed to set T.4 compression\n");
+                printf("Test failed\n");
+                exit(2);
+            }
             t4_tx_set_min_bits_per_row(&t4_tx_state, min_row_bits);
             if (t4_tx_start_page(&t4_tx_state))
             {
@@ -1077,12 +1138,12 @@ static void exchange(faxtester_state_t *s)
 
     total_audio_time = 0;
 
-    faxtester_set_transmit_on_idle(&state, TRUE);
+    faxtester_set_transmit_on_idle(&state, true);
     faxtester_set_real_time_frame_handler(&state, faxtester_real_time_frame_handler, NULL);
     faxtester_set_front_end_step_complete_handler(&state, faxtester_front_end_step_complete_handler, NULL);
     faxtester_set_front_end_step_timeout_handler(&state, faxtester_front_end_step_timeout_handler, NULL);
 
-    fax = fax_init(NULL, FALSE);
+    fax = fax_init(NULL, false);
     fax_prepare();
     next_tx_file[0] = '\0';
 
@@ -1294,13 +1355,13 @@ int main(int argc, char *argv[])
 
     xml_file_name = "../spandsp/tsb85.xml";
     test_name = "MRGN01";
-    log_audio = FALSE;
+    log_audio = false;
     while ((opt = getopt(argc, argv, "lx:")) != -1)
     {
         switch (opt)
         {
         case 'l':
-            log_audio = TRUE;
+            log_audio = true;
             break;
         case 'x':
             xml_file_name = optarg;
@@ -1317,7 +1378,7 @@ int main(int argc, char *argv[])
         test_name = argv[0];
 
     strcpy(image_path, ".");
-    faxtester_init(&state, TRUE);
+    faxtester_init(&state, true);
     memset(&expected_rx_info, 0, sizeof(expected_rx_info));
     span_log_set_level(&state.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
     span_log_set_tag(&state.logging, "B");

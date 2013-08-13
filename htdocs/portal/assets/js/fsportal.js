@@ -716,11 +716,13 @@ App.usersController = Ember.ArrayController.create({
 
 App.initialize();
 var global_debug_event = false;
+var global_background_job = false;
 
 function eventCallback(data) {
 	console.log(data["Event-Name"]);
 
-	if (global_debug_event) {
+	if (global_debug_event ||
+		(global_background_job && data["Event-Name"] == "BACKGROUND_JOB")) {
 		console.log(data);
 	}
 
@@ -783,3 +785,34 @@ function eventCallback(data) {
 	}
 }
 
+// execute api
+function api(cmdstr)
+{
+	cmdarr = cmdstr.split(" ");
+	cmd = cmdarr.shift();
+	arg = escape(cmdarr.join(" "));
+	arg = arg ? "?" + arg : "";
+	url = "/txtapi/" + cmd + arg;
+	$.get(url, function(data){
+		console.log(data);
+	});
+	return url;
+}
+
+//execute bgapi
+function bgapi(cmd)
+{
+	if (!global_background_job) {
+		socket.send("event json BACKGROUND_JOB");
+		global_background_job = true;
+	}
+	api("bgapi " + cmd);
+}
+
+// subscribe event
+function event(e)
+{
+	cmd = "event json " + e;
+	socket.send(cmd);
+	return cmd;
+}

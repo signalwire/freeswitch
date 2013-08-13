@@ -363,13 +363,13 @@ static void test_line_filter(int line_model_no)
 int main(int argc, char *argv[])
 {
     int line_model_no;
-    int speech_test;
     int opt;
+    bool speech_test;
 
     channel_codec = MUNGE_CODEC_NONE;
     line_model_no = 0;
     rbs_pattern = 0;
-    speech_test = FALSE;
+    speech_test = false;
     while ((opt = getopt(argc, argv, "c:m:r:s:")) != -1)
     {
         switch (opt)

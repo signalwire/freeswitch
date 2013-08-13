@@ -43,9 +43,15 @@
 #include <memory.h>
 #include <string.h>
 #include <ctype.h>
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include <assert.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/queue.h"
 #include "spandsp/power_meter.h"
@@ -77,20 +83,20 @@ static at_profile_t profiles[3] =
 {
     {
 #if defined(_MSC_VER)  ||  defined(__sunos)  ||  defined(__solaris)  ||  defined(__sun)
-        /*.echo =*/ TRUE,
-        /*.verbose =*/ TRUE,
+        /*.echo =*/ true,
+        /*.verbose =*/ true,
         /*.result_code_format =*/ ASCII_RESULT_CODES,
-        /*.pulse_dial =*/ FALSE,
-        /*.double_escape =*/ FALSE,
-        /*.adaptive_receive =*/ FALSE,
+        /*.pulse_dial =*/ false,
+        /*.double_escape =*/ false,
+        /*.adaptive_receive =*/ false,
         /*.s_regs[100] =*/ {0, 0, 0, '\r', '\n', '\b', 1, 60, 5, 0, 0}
 #else
-        .echo = TRUE,
-        .verbose = TRUE,
+        .echo = true,
+        .verbose = true,
         .result_code_format = ASCII_RESULT_CODES,
-        .pulse_dial = FALSE,
-        .double_escape = FALSE,
-        .adaptive_receive = FALSE,
+        .pulse_dial = false,
+        .double_escape = false,
+        .adaptive_receive = false,
         .s_regs[0] = 0,
         .s_regs[3] = '\r',
         .s_regs[4] = '\n',
@@ -255,11 +261,11 @@ SPAN_DECLARE(void) at_put_response_code(at_state_t *s, int code)
 static int answer_call(at_state_t *s)
 {
     if (at_modem_control(s, AT_MODEM_CONTROL_ANSWER, NULL) < 0)
-        return FALSE;
+        return false;
     /* Answering should now be in progress. No AT response should be
        issued at this point. */
-    s->do_hangup = FALSE;
-    return TRUE;
+    s->do_hangup = false;
+    return true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -318,7 +324,7 @@ SPAN_DECLARE(void) at_call_event(at_state_t *s, int event)
                     at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_NOCNG_TONE_TX);
                 else
                     at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_CNG_TONE_TX);
-                s->dte_is_waiting = TRUE;
+                s->dte_is_waiting = true;
             }
         }
         break;
@@ -342,13 +348,13 @@ SPAN_DECLARE(void) at_call_event(at_state_t *s, int event)
             if (s->ok_is_pending)
             {
                 at_put_response_code(s, AT_RESPONSE_CODE_OK);
-                s->ok_is_pending = FALSE;
+                s->ok_is_pending = false;
             }
             else
             {
                 at_put_response_code(s, AT_RESPONSE_CODE_NO_CARRIER);
             }
-            s->dte_is_waiting = FALSE;
+            s->dte_is_waiting = false;
             at_set_at_rx_mode(s, AT_MODE_ONHOOK_COMMAND);
         }
         else if (s->fclass_mode  &&  s->rx_signal_present)
@@ -360,7 +366,7 @@ SPAN_DECLARE(void) at_call_event(at_state_t *s, int event)
         }
         if (s->at_rx_mode != AT_MODE_OFFHOOK_COMMAND  &&  s->at_rx_mode != AT_MODE_ONHOOK_COMMAND)
             at_put_response_code(s, AT_RESPONSE_CODE_NO_CARRIER);
-        s->rx_signal_present = FALSE;
+        s->rx_signal_present = false;
         at_modem_control(s, AT_MODEM_CONTROL_RNG, (void *) 0);
         at_set_at_rx_mode(s, AT_MODE_ONHOOK_COMMAND);
         break;
@@ -379,11 +385,11 @@ SPAN_DECLARE(void) at_reset_call_info(at_state_t *s)
     for (call_id = s->call_id;  call_id;  call_id = next)
     {
         next = call_id->next;
-        free(call_id);
+        span_free(call_id);
     }
     s->call_id = NULL;
     s->rings_indicated = 0;
-    s->call_info_displayed = FALSE;
+    s->call_info_displayed = false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -392,8 +398,8 @@ SPAN_DECLARE(void) at_set_call_info(at_state_t *s, char const *id, char const *v
     at_call_id_t *new_call_id;
     at_call_id_t *call_id;
 
-    /* TODO: We should really not merely ignore a failure to malloc */
-    if ((new_call_id = (at_call_id_t *) malloc(sizeof(*new_call_id))) == NULL)
+    /* TODO: We should really not merely ignore a failure to allocate */
+    if ((new_call_id = (at_call_id_t *) span_alloc(sizeof(*new_call_id))) == NULL)
         return;
     call_id = s->call_id;
     /* If these strdups fail its pretty harmless. We just appear to not
@@ -430,7 +436,7 @@ SPAN_DECLARE(void) at_display_call_info(at_state_t *s)
         at_put_response(s, buf);
         call_id = call_id->next;
     }
-    s->call_info_displayed = TRUE;
+    s->call_info_displayed = true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -525,7 +531,7 @@ static int parse_out(at_state_t *s, const char **t, int *target, int max_value, 
         default:
             /* Set value */
             if ((val = parse_num(t, max_value)) < 0)
-                return FALSE;
+                return false;
             if (target)
                 *target = val;
             break;
@@ -538,9 +544,9 @@ static int parse_out(at_state_t *s, const char **t, int *target, int max_value, 
         at_put_response(s, buf);
         break;
     default:
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -564,14 +570,14 @@ static int parse_2_out(at_state_t *s, const char **t, int *target1, int max_valu
         default:
             /* Set value */
             if ((val1 = parse_num(t, max_value1)) < 0)
-                return FALSE;
+                return false;
             if (target1)
                 *target1 = val1;
             if (**t == ',')
             {
                 (*t)++;
                 if ((val2 = parse_num(t, max_value2)) < 0)
-                    return FALSE;
+                    return false;
                 if (target2)
                     *target2 = val2;
             }
@@ -586,9 +592,9 @@ static int parse_2_out(at_state_t *s, const char **t, int *target1, int max_valu
         at_put_response(s, buf);
         break;
     default:
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -621,7 +627,7 @@ static int parse_n_out(at_state_t *s,
             for (i = 0;  i < entries;  i++)
             {
                 if ((val = parse_num(t, max_values[i])) < 0)
-                    return FALSE;
+                    return false;
                 if (targets[i])
                     *targets[i] = val;
                 if (**t != ',')
@@ -644,9 +650,9 @@ static int parse_n_out(at_state_t *s,
         at_put_response(s, buf);
         break;
     default:
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -669,7 +675,7 @@ static int parse_hex_out(at_state_t *s, const char **t, int *target, int max_val
         default:
             /* Set value */
             if ((val = parse_hex_num(t, max_value)) < 0)
-                return FALSE;
+                return false;
             if (target)
                 *target = val;
             break;
@@ -682,9 +688,9 @@ static int parse_hex_out(at_state_t *s, const char **t, int *target, int max_val
         at_put_response(s, buf);
         break;
     default:
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -709,7 +715,7 @@ static int parse_string_list_out(at_state_t *s, const char **t, int *target, int
         default:
             /* Set value */
             if ((val = match_element(t, def)) < 0)
-                return FALSE;
+                return false;
             if (target)
                 *target = val;
             break;
@@ -728,9 +734,9 @@ static int parse_string_list_out(at_state_t *s, const char **t, int *target, int
         at_put_response(s, buf);
         break;
     default:
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -752,7 +758,7 @@ static int parse_string_out(at_state_t *s, const char **t, char **target, const 
         default:
             /* Set value */
             if (*target)
-                free(*target);
+                span_free(*target);
             /* If this strdup fails, it should be harmless */
             *target = strdup(*t);
             break;
@@ -763,11 +769,11 @@ static int parse_string_out(at_state_t *s, const char **t, char **target, const 
         at_put_response(s, (*target)  ?  *target  :  "");
         break;
     default:
-        return FALSE;
+        return false;
     }
     while (*t)
         t++;
-    return TRUE;
+    return true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -862,18 +868,18 @@ static int process_class1_cmd(at_state_t *s, const char **t)
 
     val = -1;
     if (!parse_out(s, t, &val, 255, NULL, allowed))
-        return TRUE;
+        return true;
     if (val < 0)
     {
         /* It was just a query */
-        return TRUE;
+        return true;
     }
     /* All class 1 FAX commands are supposed to give an ERROR response, if the phone
        is on-hook. */
     if (s->at_rx_mode == AT_MODE_ONHOOK_COMMAND)
-        return FALSE;
+        return false;
 
-    result = TRUE;
+    result = true;
     if (s->class1_handler)
         result = s->class1_handler(s, s->class1_user_data, direction, operation, val);
     switch (result)
@@ -881,11 +887,11 @@ static int process_class1_cmd(at_state_t *s, const char **t)
     case 0:
         /* Inhibit an immediate response.  (These commands should not be part of a multi-command entry.) */
         *t = (const char *) -1;
-        return TRUE;
+        return true;
     case -1:
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -915,11 +921,11 @@ static const char *at_cmd_D(at_state_t *s, const char *t)
 
     /* V.250 6.3.1 - Dial (abortable) */
     at_reset_call_info(s);
-    s->do_hangup = FALSE;
-    s->silent_dial = FALSE;
-    s->command_dial = FALSE;
+    s->do_hangup = false;
+    s->silent_dial = false;
+    s->command_dial = false;
     t += 1;
-    ok = FALSE;
+    ok = false;
     /* There are a numbers of options in a dial command string.
        Many are completely irrelevant in this application. */
     u = num;
@@ -961,11 +967,11 @@ static const char *at_cmd_D(at_state_t *s, const char *t)
                 break;
             case 'T':
                 /* V.250 6.3.1.3 Tone dial */
-                s->p.pulse_dial = FALSE;
+                s->p.pulse_dial = false;
                 break;
             case 'P':
                 /* V.250 6.3.1.4 Pulse dial */
-                s->p.pulse_dial = TRUE;
+                s->p.pulse_dial = true;
                 break;
             case '!':
                 /* V.250 6.3.1.5 Hook flash, register recall */
@@ -977,7 +983,7 @@ static const char *at_cmd_D(at_state_t *s, const char *t)
                 break;
             case '@':
                 /* V.250 6.3.1.7 Wait for quiet answer */
-                s->silent_dial = TRUE;
+                s->silent_dial = true;
                 break;
             case 'S':
                 /* V.250 6.3.1.8 Invoke stored string */
@@ -998,7 +1004,7 @@ static const char *at_cmd_D(at_state_t *s, const char *t)
                 break;
             case ';':
                 /* V.250 6.3.1 - Dial string terminator - make voice call and remain in command mode */
-                s->command_dial = TRUE;
+                s->command_dial = true;
                 break;
             case '>':
                 /* GSM07.07 6.2 - Direct dialling from phone book supplementary service subscription
@@ -1054,7 +1060,7 @@ static const char *at_cmd_H(at_state_t *s, const char *t)
     {
         /* Push out the last of the audio (probably by sending a short silence). */
         at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_FLUSH);
-        s->do_hangup = TRUE;
+        s->do_hangup = true;
         at_set_at_rx_mode(s, AT_MODE_CONNECTED);
         return (const char *) -1;
     }
@@ -1137,7 +1143,7 @@ static const char *at_cmd_P(at_state_t *s, const char *t)
 {
     /* V.250 6.3.3 - Select pulse dialling (command) */
     t += 1;
-    s->p.pulse_dial = TRUE;
+    s->p.pulse_dial = true;
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1231,7 +1237,7 @@ static const char *at_cmd_T(at_state_t *s, const char *t)
 {
     /* V.250 6.3.2 - Select tone dialling (command) */
     t += 1;
-    s->p.pulse_dial = FALSE;
+    s->p.pulse_dial = false;
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -5590,7 +5596,7 @@ SPAN_DECLARE(at_state_t *) at_init(at_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (at_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (at_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, '\0', sizeof(*s));
@@ -5615,7 +5621,7 @@ SPAN_DECLARE(int) at_release(at_state_t *s)
 {
     at_reset_call_info(s);
     if (s->local_id)
-        free(s->local_id);
+        span_free(s->local_id);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -5625,7 +5631,7 @@ SPAN_DECLARE(int) at_free(at_state_t *s)
     int ret;
 
     ret = at_release(s);
-    free(s);
+    span_free(s);
     return ret;
 }
 /*- End of function --------------------------------------------------------*/

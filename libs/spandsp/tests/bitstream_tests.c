@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
     unsigned int x;
     int total_bits;
 
-    s = bitstream_init(&state, TRUE);
+    s = bitstream_init(&state, true);
     w = buffer;
     total_bits = 0;
     for (i = 0;  i < SEQUENCE_LENGTH;  i++)
@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
         exit(2);
     }
 
-    s = bitstream_init(&state, TRUE);
+    s = bitstream_init(&state, true);
     r = buffer;
     for (i = 0;  i < SEQUENCE_LENGTH;  i++)
     {
@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    s = bitstream_init(&state, FALSE);
+    s = bitstream_init(&state, false);
     w = buffer;
     total_bits = 0;
     for (i = 0;  i < SEQUENCE_LENGTH;  i++)
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
         exit(2);
     }
 
-    s = bitstream_init(&state, FALSE);
+    s = bitstream_init(&state, false);
     r = buffer;
     for (i = 0;  i < SEQUENCE_LENGTH;  i++)
     {

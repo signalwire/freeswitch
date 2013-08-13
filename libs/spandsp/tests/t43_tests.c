@@ -67,18 +67,18 @@ typedef struct
 /* TIFF-FX related extensions to the tag set supported by libtiff */
 static const TIFFFieldInfo tiff_fx_tiff_field_info[] =
 {
-    {TIFFTAG_INDEXED, 1, 1, TIFF_SHORT, FIELD_CUSTOM, FALSE, FALSE, (char *) "Indexed"},
-	{TIFFTAG_GLOBALPARAMETERSIFD, 1, 1, TIFF_IFD8, FIELD_CUSTOM, FALSE, FALSE, (char *) "GlobalParametersIFD"},
-    {TIFFTAG_PROFILETYPE, 1, 1, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "ProfileType"},
-    {TIFFTAG_FAXPROFILE, 1, 1, TIFF_BYTE, FIELD_CUSTOM, FALSE, FALSE, (char *) "FaxProfile"},
-    {TIFFTAG_CODINGMETHODS, 1, 1, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "CodingMethods"},
-    {TIFFTAG_VERSIONYEAR, 4, 4, TIFF_BYTE, FIELD_CUSTOM, FALSE, FALSE, (char *) "VersionYear"},
-    {TIFFTAG_MODENUMBER, 1, 1, TIFF_BYTE, FIELD_CUSTOM, FALSE, FALSE, (char *) "ModeNumber"},
-    {TIFFTAG_DECODE, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_SRATIONAL, FIELD_CUSTOM, FALSE, TRUE, (char *) "Decode"},
-    {TIFFTAG_IMAGEBASECOLOR, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_SHORT, FIELD_CUSTOM, FALSE, TRUE, (char *) "ImageBaseColor"},
-    {TIFFTAG_T82OPTIONS, 1, 1, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "T82Options"},
-    {TIFFTAG_STRIPROWCOUNTS, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_LONG, FIELD_CUSTOM, FALSE, TRUE, (char *) "StripRowCounts"},
-    {TIFFTAG_IMAGELAYER, 2, 2, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "ImageLayer"},
+    {TIFFTAG_INDEXED, 1, 1, TIFF_SHORT, FIELD_CUSTOM, false, false, (char *) "Indexed"},
+	{TIFFTAG_GLOBALPARAMETERSIFD, 1, 1, TIFF_IFD8, FIELD_CUSTOM, false, false, (char *) "GlobalParametersIFD"},
+    {TIFFTAG_PROFILETYPE, 1, 1, TIFF_LONG, FIELD_CUSTOM, false, false, (char *) "ProfileType"},
+    {TIFFTAG_FAXPROFILE, 1, 1, TIFF_BYTE, FIELD_CUSTOM, false, false, (char *) "FaxProfile"},
+    {TIFFTAG_CODINGMETHODS, 1, 1, TIFF_LONG, FIELD_CUSTOM, false, false, (char *) "CodingMethods"},
+    {TIFFTAG_VERSIONYEAR, 4, 4, TIFF_BYTE, FIELD_CUSTOM, false, false, (char *) "VersionYear"},
+    {TIFFTAG_MODENUMBER, 1, 1, TIFF_BYTE, FIELD_CUSTOM, false, false, (char *) "ModeNumber"},
+    {TIFFTAG_DECODE, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_SRATIONAL, FIELD_CUSTOM, false, true, (char *) "Decode"},
+    {TIFFTAG_IMAGEBASECOLOR, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_SHORT, FIELD_CUSTOM, false, true, (char *) "ImageBaseColor"},
+    {TIFFTAG_T82OPTIONS, 1, 1, TIFF_LONG, FIELD_CUSTOM, false, false, (char *) "T82Options"},
+    {TIFFTAG_STRIPROWCOUNTS, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_LONG, FIELD_CUSTOM, false, true, (char *) "StripRowCounts"},
+    {TIFFTAG_IMAGELAYER, 2, 2, TIFF_LONG, FIELD_CUSTOM, false, false, (char *) "ImageLayer"},
 };
 
 static TIFFFieldArray tifffxFieldArray;
@@ -509,7 +509,7 @@ int read_file(meta_t *meta, int page)
 #endif
             /* The default luminant is D50 */
             set_lab_illuminant(&lab_param, 96.422f, 100.000f,  82.521f);
-            set_lab_gamut(&lab, 0, 100, -85, 85, -75, 125, FALSE);
+            set_lab_gamut(&lab, 0, 100, -85, 85, -75, 125, false);
             lab_to_srgb(&lab, meta->colour_map, meta->colour_map, 256);
             for (i = 0;  i < entries;  i++)
                 printf("Map %3d - %5d %5d %5d\n", i, meta->colour_map[3*i], meta->colour_map[3*i + 1], meta->colour_map[3*i + 2]);
@@ -920,7 +920,7 @@ int main(int argc, char *argv[])
 
     /* The default luminant is D50 */
     set_lab_illuminant(&lab_param, 96.422f, 100.000f,  82.521f);
-    set_lab_gamut(&lab_param, 0, 100, -85, 85, -75, 125, FALSE);
+    set_lab_gamut(&lab_param, 0, 100, -85, 85, -75, 125, false);
 
     outptr = NULL;
     for (page_no = 0;   ;  page_no++)
@@ -965,7 +965,7 @@ int main(int argc, char *argv[])
                 printf("Bi-level\n");
 
                 /* We have finished acquiring the image. Now we need to push it out */
-                meta.pre_compressed = FALSE;
+                meta.pre_compressed = false;
                 meta.image_width = in_meta.image_width;
                 meta.image_length = in_meta.image_length;
                 meta.x_resolution = in_meta.x_resolution;
@@ -1023,7 +1023,7 @@ int main(int argc, char *argv[])
                 off = in_meta.samples_per_pixel*in_meta.image_width*in_meta.image_length;
 
                 /* We have finished acquiring the image. Now we need to push it out */
-                meta.pre_compressed = FALSE;
+                meta.pre_compressed = false;
                 meta.image_width = in_meta.image_width;
                 meta.image_length = in_meta.image_length;
                 meta.x_resolution = in_meta.x_resolution;
@@ -1052,7 +1052,7 @@ int main(int argc, char *argv[])
                 free(data);
                 data = (uint8_t *) outptr;
 
-                meta.pre_compressed = FALSE;
+                meta.pre_compressed = false;
                 meta.image_width = in_meta.image_width;
                 meta.image_length = in_meta.image_length;
                 meta.x_resolution = in_meta.x_resolution;
@@ -1074,7 +1074,7 @@ int main(int argc, char *argv[])
                     /* Convert this to sRGB first */
                     /* The default luminant is D50 */
                     set_lab_illuminant(&lab_param, 96.422f, 100.000f,  82.521f);
-                    set_lab_gamut(&lab_param, 0, 100, -128, 127, -128, 127, TRUE);
+                    set_lab_gamut(&lab_param, 0, 100, -128, 127, -128, 127, true);
                     lab_to_srgb(&lab_param, data, data, in_meta.image_width*in_meta.image_length);
                     break;
                 case PHOTOMETRIC_RGB:
@@ -1134,7 +1134,7 @@ int main(int argc, char *argv[])
 #if 0
                 /* The default luminant is D50 */
                 set_lab_illuminant(&lab_param, 96.422f, 100.000f,  82.521f);
-                set_lab_gamut(&lab_param, 0, 100, -85, 85, -75, 125, FALSE);
+                set_lab_gamut(&lab_param, 0, 100, -85, 85, -75, 125, false);
                 if (!t42_srgb_to_itulab_jpeg(&logging2, &lab_param, (tdata_t) &outptr, &outsize, data, off, in_meta.image_width, in_meta.image_length, 3))
                 {
                     printf("Failed to convert to ITULAB (B).\n");
@@ -1147,7 +1147,7 @@ int main(int argc, char *argv[])
                 off = outsize;
 #endif
 #endif
-                meta.pre_compressed = FALSE;
+                meta.pre_compressed = false;
                 meta.image_width = in_meta.image_width;
                 meta.image_length = in_meta.image_length;
                 meta.x_resolution = in_meta.x_resolution;
@@ -1190,7 +1190,7 @@ int main(int argc, char *argv[])
                     /* Convert this to sRGB first */
                     /* The default luminant is D50 */
                     set_lab_illuminant(&lab_param, 96.422f, 100.000f,  82.521f);
-                    set_lab_gamut(&lab_param, 0, 100, -128, 127, -128, 127, TRUE);
+                    set_lab_gamut(&lab_param, 0, 100, -128, 127, -128, 127, true);
                     lab_to_srgb(&lab_param, data, data, in_meta.image_width*in_meta.image_length);
                     break;
                 case PHOTOMETRIC_SEPARATED:
@@ -1219,7 +1219,7 @@ int main(int argc, char *argv[])
 
                 /* The default luminant is D50 */
                 set_lab_illuminant(&lab_param, 96.422f, 100.000f,  82.521f);
-                set_lab_gamut(&lab_param, 0, 100, -85, 85, -75, 125, FALSE);
+                set_lab_gamut(&lab_param, 0, 100, -85, 85, -75, 125, false);
                 //if (!t42_srgb_to_itulab_jpeg(&logging2, &lab_param, (tdata_t) &outptr, &outsize, data, off, in_meta.image_width, in_meta.image_length, 3))
                 {
                     printf("Failed to convert to ITULAB (D).\n");
@@ -1230,7 +1230,7 @@ int main(int argc, char *argv[])
                 off = outsize;
                 in_meta.bits_per_sample = 8;
             }
-            meta.pre_compressed = FALSE;
+            meta.pre_compressed = false;
             meta.image_width = in_meta.image_width;
             meta.image_length = in_meta.image_length;
             meta.x_resolution = in_meta.x_resolution;
@@ -1252,7 +1252,7 @@ int main(int argc, char *argv[])
 
     /* We now have the image in memory in ITULAB form */
 
-    meta.pre_compressed = FALSE;
+    meta.pre_compressed = false;
     meta.compressed_image_len = off;
     meta.image_width = in_meta.image_width;
     meta.image_length = in_meta.image_length;
@@ -1326,7 +1326,7 @@ int main(int argc, char *argv[])
             totdata = meta.image_length*bytes_per_row;
             /* The default luminant is D50 */
             set_lab_illuminant(&lab_param, 96.422f, 100.000f,  82.521f);
-            set_lab_gamut(&lab_param, 0, 100, -85, 85, -75, 125, FALSE);
+            set_lab_gamut(&lab_param, 0, 100, -85, 85, -75, 125, false);
 #if 0
             start = rdtscll();
             data2 = NULL;

@@ -23,8 +23,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#if !defined(_POWER_METER_H_)
-#define _POWER_METER_H_
+#if !defined(_SPANDSP_POWER_METER_H_)
+#define _SPANDSP_POWER_METER_H_
 
 /*! \page power_meter_page Power metering
 
@@ -45,24 +45,9 @@ values +/-8031, and this square wave represents 0dBov.  This translates into 6.1
     Power meter descriptor. This defines the working state for a
     single instance of a power measurement device.
 */
-typedef struct
-{
-    /*! The shift factor, which controls the damping of the power meter. */
-    int shift;
+typedef struct power_meter_s power_meter_t;
 
-    /*! The current power reading. */
-    int32_t reading;
-} power_meter_t;
-
-typedef struct
-{
-    power_meter_t short_term;
-    power_meter_t medium_term;
-    int signal_present;
-    int32_t surge;
-    int32_t sag;
-    int32_t min;
-} power_surge_detector_state_t;
+typedef struct power_surge_detector_state_s power_surge_detector_state_t;
 
 #if defined(__cplusplus)
 extern "C"

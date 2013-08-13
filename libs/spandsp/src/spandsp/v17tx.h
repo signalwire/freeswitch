@@ -101,20 +101,20 @@ SPAN_DECLARE(void) v17_tx_power(v17_tx_state_t *s, float power);
     \brief Initialise a V.17 modem transmit context.
     \param s The modem context.
     \param bit_rate The bit rate of the modem. Valid values are 7200, 9600, 12000 and 14400.
-    \param tep TRUE is the optional TEP tone is to be transmitted.
+    \param tep True is the optional TEP tone is to be transmitted.
     \param get_bit The callback routine used to get the data to be transmitted.
     \param user_data An opaque pointer.
     \return A pointer to the modem context, or NULL if there was a problem. */
-SPAN_DECLARE(v17_tx_state_t *) v17_tx_init(v17_tx_state_t *s, int bit_rate, int tep, get_bit_func_t get_bit, void *user_data);
+SPAN_DECLARE(v17_tx_state_t *) v17_tx_init(v17_tx_state_t *s, int bit_rate, bool tep, get_bit_func_t get_bit, void *user_data);
 
 /*! Reinitialise an existing V.17 modem transmit context, so it may be reused.
     \brief Reinitialise an existing V.17 modem transmit context.
     \param s The modem context.
     \param bit_rate The bit rate of the modem. Valid values are 7200, 9600, 12000 and 14400.
-    \param tep TRUE is the optional TEP tone is to be transmitted.
-    \param short_train TRUE if the short training sequence should be used.
+    \param tep True is the optional TEP tone is to be transmitted.
+    \param short_train True if the short training sequence should be used.
     \return 0 for OK, -1 for parameter error. */
-SPAN_DECLARE(int) v17_tx_restart(v17_tx_state_t *s, int bit_rate, int tep, int short_train);
+SPAN_DECLARE(int) v17_tx_restart(v17_tx_state_t *s, int bit_rate, bool tep, bool short_train);
 
 /*! Release a V.17 modem transmit context.
     \brief Release a V.17 modem transmit context.

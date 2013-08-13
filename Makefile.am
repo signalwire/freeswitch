@@ -291,6 +291,7 @@ libfreeswitch_la_SOURCES = \
 	libs/libnatpmp/natpmp.c \
 	libs/libnatpmp/getgateway.c\
 	libs/spandsp/src/plc.c \
+	libs/spandsp/src/alloc.c \
 	libs/spandsp/src/bit_operations.c
 
 if ENABLE_CPP

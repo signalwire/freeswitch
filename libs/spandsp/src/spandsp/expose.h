@@ -40,6 +40,7 @@
 #include <spandsp/private/awgn.h>
 #include <spandsp/private/noise.h>
 #include <spandsp/private/bert.h>
+#include <spandsp/private/power_meter.h>
 #include <spandsp/private/tone_generate.h>
 #include <spandsp/private/bell_r2_mf.h>
 #include <spandsp/private/sig_tone.h>
@@ -49,6 +50,8 @@
 #include <spandsp/private/g726.h>
 #include <spandsp/private/lpc10.h>
 #include <spandsp/private/gsm0610.h>
+#include <spandsp/private/plc.h>
+#include <spandsp/private/playout.h>
 #include <spandsp/private/oki_adpcm.h>
 #include <spandsp/private/ima_adpcm.h>
 #include <spandsp/private/hdlc.h>
@@ -70,11 +73,10 @@
 #include <spandsp/private/v27ter_tx.h>
 #include <spandsp/private/v29rx.h>
 #include <spandsp/private/v29tx.h>
-/*#include <spandsp/private/v32bis.h>*/
-/*#include <spandsp/private/v34.h>*/
 #include <spandsp/private/v42.h>
 #include <spandsp/private/v42bis.h>
 #include <spandsp/private/at_interpreter.h>
+//#include <spandsp/private/data_modems.h>
 #include <spandsp/private/fax_modems.h>
 #include <spandsp/private/timezone.h>
 #include <spandsp/private/image_translate.h>
