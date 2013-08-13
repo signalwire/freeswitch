@@ -704,6 +704,12 @@ abyss_bool auth_hook(TSession * r)
 		return websocket_hook(r);
 	}
 
+	if (!strncmp(r->requestInfo.uri, "/portal", 7) && strlen(r->requestInfo.uri) <= 8) {
+		ResponseAddField(r, "Location", "/portal/index.html");
+		ResponseStatus(r, 302);
+		return TRUE;
+	}
+
 	if (!strncmp(r->requestInfo.uri, "/domains/", 9)) {
 		domain_name = strdup(r->requestInfo.uri + 9);
 		switch_assert(domain_name);
