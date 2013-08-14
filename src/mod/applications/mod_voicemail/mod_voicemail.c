@@ -2876,7 +2876,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		update_mwi(profile, myid, domain_name, myfolder, MWI_REASON_NEW);
 	}
 
-	if (send_mail && !zstr(vm_email) && switch_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
+	if (send_mail && (!zstr(vm_email) || !zstr(vm_notify_email)) && switch_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
 		switch_event_t *event;
 		char *from;
 		char *body;
