@@ -227,15 +227,10 @@ void rayo_component_api_execute_async(struct rayo_component *component, const ch
  */
 switch_status_t rayo_components_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file)
 {
-	rayo_input_component_load();
-	rayo_output_component_load(module_interface, pool);
-	rayo_prompt_component_load();
-	rayo_record_component_load(pool, config_file);
-
-	if (rayo_input_component_load() != SWITCH_STATUS_SUCCESS ||
-		rayo_output_component_load(module_interface, pool) != SWITCH_STATUS_SUCCESS ||
-		rayo_prompt_component_load() != SWITCH_STATUS_SUCCESS ||
-		rayo_record_component_load(pool, config_file) != SWITCH_STATUS_SUCCESS) {
+	if (rayo_input_component_load(module_interface, pool, config_file) != SWITCH_STATUS_SUCCESS ||
+		rayo_output_component_load(module_interface, pool, config_file) != SWITCH_STATUS_SUCCESS ||
+		rayo_prompt_component_load(module_interface, pool, config_file) != SWITCH_STATUS_SUCCESS ||
+		rayo_record_component_load(module_interface, pool, config_file) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_TERM;
 	}
 	return SWITCH_STATUS_SUCCESS;

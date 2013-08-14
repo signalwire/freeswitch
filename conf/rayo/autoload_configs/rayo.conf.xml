@@ -11,6 +11,11 @@
 		<param name="record-file-prefix" value="$${recordings_dir}/"/>
 	</record>
 
+	<!-- input component params -->
+	<input>
+		<param name="default-recognizer" value="pocketsphinx"/>
+	</input>
+
 	<!-- XMPP server domain -->
 	<domain name="$${rayo_domain_name}" shared-secret="ClueCon">
 	<!-- use this instead if you want secure XMPP client to server connections.  Put .crt and .key file in freeswitch/certs -->

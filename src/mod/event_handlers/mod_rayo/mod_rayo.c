@@ -3737,6 +3737,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
 		"</grammar></input>"
 		"</prompt>");
 
+	rayo_add_cmd_alias("prompt_barge_mrcp", "<prompt xmlns=\""RAYO_PROMPT_NS"\" barge-in=\"true\">"
+		"<output xmlns=\""RAYO_OUTPUT_NS"\" repeat-times=\"5\"><document content-type=\"application/ssml+xml\"><![CDATA[<speak><p>Please press a digit.</p></speak>]]></document></output>"
+		"<input xmlns=\""RAYO_INPUT_NS"\" mode=\"any\" initial-timeout=\"5000\" inter-digit-timeout=\"3000\">"
+		"<grammar content-type=\"application/srgs+xml\">"
+		"<![CDATA[<grammar mode=\"dtmf\"><rule id=\"digit\" scope=\"public\"><one-of><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item><item>6</item><item>7</item><item>8</item><item>9</item></one-of></rule></grammar>]]>"
+		"</grammar></input>"
+		"</prompt>");
+
 	rayo_add_cmd_alias("prompt_no_barge", "<prompt xmlns=\""RAYO_PROMPT_NS"\" barge-in=\"false\">"
 		"<output xmlns=\""RAYO_OUTPUT_NS"\" repeat-times=\"2\"><document content-type=\"application/ssml+xml\"><![CDATA[<speak><p>Please press a digit.</p></speak>]]></document></output>"
 		"<input xmlns=\""RAYO_INPUT_NS"\" mode=\"dtmf\" initial-timeout=\"5000\" inter-digit-timeout=\"3000\">"
@@ -3800,6 +3808,34 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
 		"<unjoin xmlns=\""RAYO_NS"\" mixer-name=\"test\"/>");
 	rayo_add_cmd_alias("unjoin",
 		"<unjoin xmlns=\""RAYO_NS"\"/>");
+	rayo_add_cmd_alias("input_voice_yesno_unimrcp",
+		"<input xmlns=\""RAYO_INPUT_NS"\" mode=\"voice\" recognizer=\"unimrcp\"><grammar content-type=\"application/srgs+xml\">"
+		"<![CDATA[<grammar xmlns=\"http://www.w3.org/2001/06/grammar\" "
+			"xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+			"xsi:schemaLocation=\"http://www.w3.org/2001/06/grammar http://www.w3.org/TR/speech-grammar/grammar.xsd\" "
+			"xml:lang=\"en-US\" version=\"1.0\">"
+		"<rule id=\"yesno\"><one-of><item>yes</item><item>no</item></one-of></rule></grammar>]]></grammar></input>");
+rayo_add_cmd_alias("input_voice_yesno_unimrcp_timeout",
+		"<input xmlns=\""RAYO_INPUT_NS"\" mode=\"voice\" recognizer=\"unimrcp\" max-silence=\"5\" initial-timeout=\"5000\"><grammar content-type=\"application/srgs+xml\">"
+		"<![CDATA[<grammar xmlns=\"http://www.w3.org/2001/06/grammar\" "
+			"xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+			"xsi:schemaLocation=\"http://www.w3.org/2001/06/grammar http://www.w3.org/TR/speech-grammar/grammar.xsd\" "
+			"xml:lang=\"en-US\" version=\"1.0\">"
+		"<rule id=\"yesno\"><one-of><item>yes</item><item>no</item></one-of></rule></grammar>]]></grammar></input>");
+	rayo_add_cmd_alias("input_voice_yesno_pocketsphinx",
+		"<input xmlns=\""RAYO_INPUT_NS"\" mode=\"voice\" recognizer=\"pocketsphinx\" max-silence=\"5000\" initial-timeout=\"5000\"><grammar content-type=\"application/srgs+xml\">"
+		"<![CDATA[<grammar xmlns=\"http://www.w3.org/2001/06/grammar\" "
+			"xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+			"xsi:schemaLocation=\"http://www.w3.org/2001/06/grammar http://www.w3.org/TR/speech-grammar/grammar.xsd\" "
+			"xml:lang=\"en-US\" version=\"1.0\">"
+		"<rule id=\"yesno\"><one-of><item>yes</item><item>no</item></one-of></rule></grammar>]]></grammar></input>");
+	rayo_add_cmd_alias("input_voice_yesno_default",
+		"<input xmlns=\""RAYO_INPUT_NS"\" mode=\"voice\"><grammar content-type=\"application/srgs+xml\">"
+		"<![CDATA[<grammar xmlns=\"http://www.w3.org/2001/06/grammar\" "
+			"xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
+			"xsi:schemaLocation=\"http://www.w3.org/2001/06/grammar http://www.w3.org/TR/speech-grammar/grammar.xsd\" "
+			"xml:lang=\"en-US\" version=\"1.0\">"
+		"<rule id=\"yesno\"><one-of><item>yes</item><item>no</item></one-of></rule></grammar>]]></grammar></input>");
 	return SWITCH_STATUS_SUCCESS;
 }
 

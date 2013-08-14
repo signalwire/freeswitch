@@ -63,6 +63,7 @@ extern const char *iks_find_attrib_soft(iks *xml, const char *attrib);
 extern const char *iks_find_attrib_default(iks *xml, const char *attrib, const char *def);
 extern int iks_find_bool_attrib(iks *xml, const char *attrib);
 extern int iks_find_int_attrib(iks *xml, const char *attrib);
+extern char iks_find_char_attrib(iks *xml, const char *attrib);
 extern double iks_find_decimal_attrib(iks *xml, const char *attrib);
 extern const char *iks_node_type_to_string(int type);
 extern const char *iks_net_error_to_string(int err);
@@ -73,9 +74,12 @@ extern char *iks_server_dialback_key(const char *secret, const char *receiving_s
 /** A function to validate attribute value */
 typedef int (*iks_attrib_validation_function)(const char *);
 
+extern int validate_optional_attrib(iks_attrib_validation_function fn, const char *attrib);
+
 #define ELEMENT_DECL(name) extern int VALIDATE_##name(iks *node);
 #define ELEMENT(name) int VALIDATE_##name(iks *node) { int result = 1; if (!node) return 0;
 #define ATTRIB(name, def, rule) result &= iks_attrib_is_##rule(iks_find_attrib_default(node, #name, #def));
+#define OPTIONAL_ATTRIB(name, def, rule) result &= validate_optional_attrib(iks_attrib_is_##rule, iks_find_attrib_default(node, #name, #def));
 #define STRING_ATTRIB(name, def, rule) result &= value_matches(iks_find_attrib_default(node, #name, #def), rule);
 #define ELEMENT_END return result; }
 
@@ -87,6 +91,7 @@ extern int iks_attrib_is_positive(const char *value);
 extern int iks_attrib_is_positive_or_neg_one(const char *value);
 extern int iks_attrib_is_any(const char *value);
 extern int iks_attrib_is_decimal_between_zero_and_one(const char *value);
+extern int iks_attrib_is_dtmf_digit(const char *value);
 
 #endif
 
