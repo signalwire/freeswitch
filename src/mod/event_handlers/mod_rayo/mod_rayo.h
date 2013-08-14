@@ -162,6 +162,7 @@ extern const char *rayo_call_get_dcp_jid(struct rayo_call *call);
 
 #define rayo_component_init(component, pool, type, subtype, id, parent, client_jid) _rayo_component_init(component, pool, type, subtype, id, parent, client_jid, __FILE__, __LINE__)
 extern struct rayo_component *_rayo_component_init(struct rayo_component *component, switch_memory_pool_t *pool, const char *type, const char *subtype, const char *id, struct rayo_actor *parent, const char *client_jid, const char *file, int line);
+extern switch_bool_t is_component_actor(struct rayo_actor *);
 
 typedef iks *(*rayo_actor_xmpp_handler)(struct rayo_actor *, struct rayo_message *, void *);
 extern void rayo_actor_command_handler_add(const char *type, const char *subtype, const char *name, rayo_actor_xmpp_handler fn);

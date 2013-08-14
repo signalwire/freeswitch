@@ -47,4 +47,211 @@
 		<dial-gateway uriprefix="sofia" dialprefix="" strip=""/>
 	</dial-gateways>
 
+	<!-- IQ request aliases.  Used mainly for testing purposes or for controlling a rayo call via the console -->
+	<aliases>
+		<alias name="ping" target="external"><![CDATA[<iq type="get"><ping xmlns="urn:xmpp:ping"/></iq>]]></alias>
+		<alias name="answer" target="call"><![CDATA[<answer xmlns="urn:xmpp:rayo:1"/>]]></alias>
+		<alias name="hangup" target="call"><![CDATA[<hangup xmlns="urn:xmpp:rayo:1"/>]]></alias>
+		<alias name="join_mixer_duplex" target="call"><![CDATA[<join xmlns="urn:xmpp:rayo:1" mixer-name="test" direction="duplex"/>]]></alias>
+		<alias name="join_mixer_send" target="call"><![CDATA[<join xmlns="urn:xmpp:rayo:1" mixer-name="test" direction="send"/>]]></alias>
+		<alias name="join_mixer_recv" target="call"><![CDATA[<join xmlns="urn:xmpp:rayo:1" mixer-name="test" direction="recv"/>]]></alias>
+		<alias name="unjoin_mixer" target="call"><![CDATA[<unjoin xmlns="urn:xmpp:rayo:1" mixer-name="test"/>]]></alias>
+		<alias name="unjoin" target="call"><![CDATA[<unjoin xmlns="urn:xmpp:rayo:1"/>]]></alias>
+		<alias name="stop" target="component"><![CDATA[<stop xmlns="urn:xmpp:rayo:ext:1"/>]]></alias>
+		<alias name="output_bad" target="call"><![CDATA[<output xmlns="urn:xmpp:rayo:output:1" repeat-time="100"></output>]]></alias>
+		<alias name="pause" target="output"><![CDATA[<pause xmlns="urn:xmpp:rayo:output:1"/>]]></alias>
+		<alias name="resume" target="output"><![CDATA[<resume xmlns="urn:xmpp:rayo:output:1"/>]]></alias>
+		<alias name="speed-up" target="output"><![CDATA[<speed-up xmlns="urn:xmpp:rayo:output:1"/>]]></alias>
+		<alias name="speed-down" target="output"><![CDATA[<speed-down xmlns="urn:xmpp:rayo:output:1"/>]]></alias>
+		<alias name="volume-up" target="output"><![CDATA[<volume-up xmlns="urn:xmpp:rayo:output:1"/>]]></alias>
+		<alias name="volume-down" target="output"><![CDATA[<volume-down xmlns="urn:xmpp:rayo:output:1"/>]]></alias>
+		<alias name="record" target="call"><![CDATA[<record xmlns="urn:xmpp:rayo:record:1"/>]]></alias>
+		<alias name="record_pause" target="record"><![CDATA[<pause xmlns="urn:xmpp:rayo:record:1"/>]]></alias>
+		<alias name="record_resume" target="record"><![CDATA[<resume xmlns="urn:xmpp:rayo:record:1"/>]]></alias>
+		<alias name="prompt_barge" target="call">
+			<![CDATA[
+				<prompt xmlns="urn:xmpp:rayo:prompt:1" barge-in="true">
+					<output xmlns="urn:xmpp:rayo:output:1" repeat-times="5">
+						<document content-type="application/ssml+xml">
+							<![CDATA[<speak><p>Please press a digit.</p></speak>]]]]><![CDATA[>
+						</document>
+					</output>
+					<input xmlns="urn:xmpp:rayo:input:1" mode="dtmf" initial-timeout="5000" inter-digit-timeout="3000">
+						<grammar content-type="application/srgs+xml">
+							<![CDATA[<grammar mode="dtmf"><rule id="digit" scope="public"><one-of><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item><item>6</item><item>7</item><item>8</item><item>9</item></one-of></rule></grammar>]]]]><![CDATA[>
+						</grammar>
+					</input>
+				</prompt>
+			]]>
+		</alias>
+		<alias name="prompt_no_barge" target="call">
+			<![CDATA[
+				<prompt xmlns="urn:xmpp:rayo:prompt:1" barge-in="false">
+					<output xmlns="urn:xmpp:rayo:output:1" repeat-times="5">
+						<document content-type="application/ssml+xml">
+							<![CDATA[<speak><p>Please press a digit.</p></speak>]]]]><![CDATA[>
+						</document>
+					</output>
+					<input xmlns="urn:xmpp:rayo:input:1" mode="dtmf" initial-timeout="5000" inter-digit-timeout="3000">
+						<grammar content-type="application/srgs+xml">
+							<![CDATA[<grammar mode="dtmf"><rule id="digit" scope="public"><one-of><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item><item>6</item><item>7</item><item>8</item><item>9</item></one-of></rule></grammar>]]]]><![CDATA[>
+						</grammar>
+					</input>
+				</prompt>
+			]]>
+		</alias>
+		<alias name="prompt_long" target="call">
+			<![CDATA[
+				<prompt xmlns="urn:xmpp:rayo:prompt:1" barge-in="true">
+					<output xmlns="urn:xmpp:rayo:output:1" repeat-times="100">
+						<document content-type="application/ssml+xml">
+							<![CDATA[<speak><p>Please press a digit.</p></speak>]]]]><![CDATA[>
+						</document>
+					</output>
+					<input xmlns="urn:xmpp:rayo:input:1" mode="dtmf" initial-timeout="5000" inter-digit-timeout="3000">
+						<grammar content-type="application/srgs+xml">
+							<![CDATA[<grammar mode="dtmf"><rule id="digit" scope="public"><one-of><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item><item>6</item><item>7</item><item>8</item><item>9</item></one-of></rule></grammar>]]]]><![CDATA[>
+						</grammar>
+					</input>
+				</prompt>
+			]]>
+		</alias>
+		<alias name="prompt_multi_digit" target="call">
+			<![CDATA[
+				<prompt xmlns="urn:xmpp:rayo:prompt:1" barge-in="true">
+					<output xmlns="urn:xmpp:rayo:output:1" repeat-times="100">
+						<document content-type="application/ssml+xml">
+							<![CDATA[<speak><p>Please press a digit.</p></speak>]]]]><![CDATA[>
+						</document>
+					</output>
+					<input xmlns="urn:xmpp:rayo:input:1" mode="dtmf" initial-timeout="5000" inter-digit-timeout="3000">
+						<grammar content-type="application/srgs+xml">
+							<![CDATA[<grammar mode="dtmf"><rule id="digit" scope="public"><item repeat="1-4"><one-of><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item><item>6</item><item>7</item><item>8</item><item>9</item></one-of></item></rule></grammar>]]]]><![CDATA[>
+						</grammar>
+					</input>
+				</prompt>
+			]]>
+		</alias>
+		<alias name="prompt_terminator" target="call">
+			<![CDATA[
+				<prompt xmlns="urn:xmpp:rayo:prompt:1" barge-in="true">
+					<output xmlns="urn:xmpp:rayo:output:1" repeat-times="100">
+						<document content-type="application/ssml+xml">
+							<![CDATA[<speak><p>Please press a digit.</p></speak>]]]]><![CDATA[>
+						</document>
+					</output>
+					<input xmlns="urn:xmpp:rayo:input:1" mode="dtmf" initial-timeout="5000" inter-digit-timeout="3000" terminator="#">
+						<grammar content-type="application/srgs+xml">
+							<![CDATA[<grammar mode="dtmf"><rule id="digit" scope="public"><item repeat="1-4"><one-of><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item><item>6</item><item>7</item><item>8</item><item>9</item></one-of></item></rule></grammar>]]]]><![CDATA[>
+						</grammar>
+					</input>
+				</prompt>
+			]]>
+		</alias>
+		<alias name="prompt_input_bad" target="call">
+			<![CDATA[
+				<prompt xmlns="urn:xmpp:rayo:prompt:1" barge-in="true">
+					<output xmlns="urn:xmpp:rayo:output:1" repeat-times="100">
+						<document content-type="application/ssml+xml">
+							<![CDATA[<speak><p>Please press a digit.</p></speak>]]]]><![CDATA[>
+						</document>
+					</output>
+					<input xmlns="urn:xmpp:rayo:input:1" mode="dtf" initial-timeout="5000" inter-digit-timeout="3000" terminator="#">
+						<grammar content-type="application/srgs+xml">
+							<![CDATA[<grammar mode="dtmf"><rule id="digit" scope="public"><item repeat="1-4"><one-of><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item><item>6</item><item>7</item><item>8</item><item>9</item></one-of></item></rule></grammar>]]]]><![CDATA[>
+						</grammar>
+					</input>
+				</prompt>
+			]]>
+		</alias>
+		<alias name="prompt_output_bad" target="call">
+			<![CDATA[
+				<prompt xmlns="urn:xmpp:rayo:prompt:1" barge-in="true">
+					<output xmlns="urn:xmpp:rayo:output:1" repeat-time="100">
+						<document content-type="application/ssml+xml">
+							<![CDATA[<speak><p>Please press a digit.</p></speak>]]]]><![CDATA[>
+						</document>
+					</output>
+					<input xmlns="urn:xmpp:rayo:input:1" mode="dtmf" initial-timeout="5000" inter-digit-timeout="3000" terminator="#">
+						<grammar content-type="application/srgs+xml">
+							<![CDATA[<grammar mode="dtmf"><rule id="digit" scope="public"><item repeat="1-4"><one-of><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item><item>6</item><item>7</item><item>8</item><item>9</item></one-of></item></rule></grammar>]]]]><![CDATA[>
+						</grammar>
+					</input>
+				</prompt>
+			]]>
+		</alias>
+		<alias name="input" target="call">
+			<![CDATA[
+				<input xmlns="urn:xmpp:rayo:input:1" mode="dtmf" initial-timeout="5000" inter-digit-timeout="3000">
+					<grammar content-type="application/srgs+xml">
+						<![CDATA[<grammar mode="dtmf"><rule id="digit" scope="public"><one-of><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item><item>6</item><item>7</item><item>8</item><item>9</item></one-of></rule></grammar>]]]]><![CDATA[>
+					</grammar>
+				</input>
+			]]>
+		</alias>
+		<alias name="input_voice_yesno_unimrcp" target="call">
+			<![CDATA[
+				<input xmlns="urn:xmpp:rayo:input:1" mode="voice" recognizer="unimrcp">
+					<grammar content-type="application/srgs+xml>
+					<![CDATA[
+						<grammar xmlns="http://www.w3.org/2001/06/grammar"
+							xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+							xsi:schemaLocation="http://www.w3.org/2001/06/grammar http://www.w3.org/TR/speech-grammar/grammar.xsd"
+							xml:lang="en-US" version="1.0">
+								<rule id="yesno"><one-of><item>yes</item><item>no</item></one-of></rule></grammar>
+					]]]]><![CDATA[>
+					</grammar>
+				</input>
+			]]>
+		</alias>
+		<alias name="input_voice_yesno_unimrcp_timeout" target="call">
+			<![CDATA[
+				<input xmlns="urn:xmpp:rayo:input:1" mode="voice" recognizer="unimrcp" max-silence="5000" initial-timeout="5000">
+					<grammar content-type="application/srgs+xml>
+					<![CDATA[
+						<grammar xmlns="http://www.w3.org/2001/06/grammar"
+							xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+							xsi:schemaLocation="http://www.w3.org/2001/06/grammar http://www.w3.org/TR/speech-grammar/grammar.xsd"
+							xml:lang="en-US" version="1.0">
+								<rule id="yesno"><one-of><item>yes</item><item>no</item></one-of></rule></grammar>
+					]]]]><![CDATA[>
+					</grammar>
+				</input>
+			]]>
+		</alias>
+
+		<alias name="input_voice_yesno_pocketsphinx" target="call">
+			<![CDATA[
+				<input xmlns="urn:xmpp:rayo:input:1" mode="voice" recognizer="pocketsphinx" max-silence="5000" initial-timeout="5000">
+					<grammar content-type="application/srgs+xml>
+					<![CDATA[
+						<grammar xmlns="http://www.w3.org/2001/06/grammar"
+							xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+							xsi:schemaLocation="http://www.w3.org/2001/06/grammar http://www.w3.org/TR/speech-grammar/grammar.xsd"
+							xml:lang="en-US" version="1.0">
+								<rule id="yesno"><one-of><item>yes</item><item>no</item></one-of></rule></grammar>
+					]]]]><![CDATA[>
+					</grammar>
+				</input>
+			]]>
+		</alias>
+
+		<alias name="input_voice_yesno_default" target="call">
+			<![CDATA[
+				<input xmlns="urn:xmpp:rayo:input:1" mode="voice" max-silence="5000" initial-timeout="5000">
+					<grammar content-type="application/srgs+xml>
+					<![CDATA[
+						<grammar xmlns="http://www.w3.org/2001/06/grammar"
+							xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+							xsi:schemaLocation="http://www.w3.org/2001/06/grammar http://www.w3.org/TR/speech-grammar/grammar.xsd"
+							xml:lang="en-US" version="1.0">
+								<rule id="yesno"><one-of><item>yes</item><item>no</item></one-of></rule></grammar>
+					]]]]><![CDATA[>
+					</grammar>
+				</input>
+			]]>
+		</alias>
+
+	</aliases>
+
 </configuration>

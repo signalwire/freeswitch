@@ -40,7 +40,7 @@
 struct rayo_component *rayo_component_locate(const char *id, const char *file, int line)
 {
 	struct rayo_actor *actor = rayo_actor_locate_by_id(id, file, line);
-	if (actor && !strncmp(RAT_COMPONENT, actor->type, strlen(RAT_COMPONENT))) {
+	if (actor && is_component_actor(actor)) {
 		return RAYO_COMPONENT(actor);
 	} else if (actor) {
 		 RAYO_UNLOCK(actor);
