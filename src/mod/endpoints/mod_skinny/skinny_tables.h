@@ -87,12 +87,12 @@ if (my_matches) {\
 }
 
 
-extern struct skinny_table SKINNY_MESSAGE_TYPES[72];
+extern struct skinny_table SKINNY_MESSAGE_TYPES[75];
 const char *skinny_message_type2str(uint32_t id);
 uint32_t skinny_str2message_type(const char *str);
 #define SKINNY_PUSH_MESSAGE_TYPES SKINNY_DECLARE_PUSH_MATCH(SKINNY_MESSAGE_TYPES)
 
-extern struct skinny_table SKINNY_DEVICE_TYPES[16];
+extern struct skinny_table SKINNY_DEVICE_TYPES[75];
 const char *skinny_device_type2str(uint32_t id);
 uint32_t skinny_str2device_type(const char *str);
 #define SKINNY_PUSH_DEVICE_TYPES SKINNY_DECLARE_PUSH_MATCH(SKINNY_DEVICE_TYPES)
@@ -192,7 +192,7 @@ enum skinny_soft_key_event {
 	SOFTKEY_CONF = 0x0D,
 	SOFTKEY_PARK = 0x0E,
 	SOFTKEY_JOIN = 0x0F,
-	SOFTKEY_MEETMECONF = 0x10,
+	SOFTKEY_MEETME = 0x10,
 	SOFTKEY_CALLPICKUP = 0x11,
 	SOFTKEY_GRPCALLPICKUP = 0x12,
 	SOFTKEY_DND = 0x13,

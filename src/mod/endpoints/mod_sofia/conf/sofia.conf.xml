@@ -205,6 +205,10 @@
         <!-- if you want to send any special bind params of your own -->
         <!-- <param name="bind-params" value="transport=udp"/> -->
         <!-- <param name="unregister-on-options-fail" value="true"/> -->
+        <!-- Send an OPTIONS packet to all registered endpoints -->
+        <!--<param name="all-reg-options-ping" value="true"/>-->
+        <!-- Send an OPTIONS packet to NATed registered endpoints. Can be 'true' or 'udp-only
+        <!--<param name="nat-options-ping" value="true"/>-->
 
         <!-- TLS: disabled by default, set to "true" to enable -->
         <param name="tls" value="$${internal_ssl_enable}"/>
@@ -353,6 +357,10 @@
 
         <!-- force suscription expires to a lower value than requested -->
         <!-- <param name="force-subscription-expires" value="60"/> -->
+
+        <!-- add a random deviation to the expires value of the 202 Accepted -->
+        <!--<param name="sip-subscription-max-deviation" value="120"/>-->
+
         <!-- disable register and transfer which may be undesirable in a public
              switch -->
         <!-- <param name="disable-transfer" value="true"/> -->

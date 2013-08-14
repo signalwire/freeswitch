@@ -230,6 +230,19 @@ action		    : Change url to submit to.
 temp-action	    : Change url to submit to. just for the next loop.
 
 
+<answer is-conference>
+		    : Answer the call
+
+ATTRS:
+is-conference       : true|false (set the conference flag for RFC4579 stuff.
+
+
+<preAnswer>
+		    : Establish media on the call without answering.
+
+<ringReady>
+		    : Indicate ringing to an unaswered channel.
+
 
 <hangup cause action>
 		    : Hangup the call

@@ -145,6 +145,27 @@ static void test_dialback_key(void)
 	ASSERT_NULL(iks_server_dialback_key("s3cr3tf0rd14lb4ck", "xmpp.example.com", "example.org", NULL));
 }
 
+static void test_validate_dtmf(void)
+{
+	ASSERT_EQUALS(SWITCH_TRUE, iks_attrib_is_dtmf_digit("1"));
+	ASSERT_EQUALS(SWITCH_TRUE, iks_attrib_is_dtmf_digit("A"));
+	ASSERT_EQUALS(SWITCH_TRUE, iks_attrib_is_dtmf_digit("a"));
+	ASSERT_EQUALS(SWITCH_TRUE, iks_attrib_is_dtmf_digit("D"));
+	ASSERT_EQUALS(SWITCH_TRUE, iks_attrib_is_dtmf_digit("d"));
+	ASSERT_EQUALS(SWITCH_TRUE, iks_attrib_is_dtmf_digit("*"));
+	ASSERT_EQUALS(SWITCH_TRUE, iks_attrib_is_dtmf_digit("#"));
+	ASSERT_EQUALS(SWITCH_FALSE, iks_attrib_is_dtmf_digit("E"));
+	ASSERT_EQUALS(SWITCH_FALSE, iks_attrib_is_dtmf_digit(NULL));
+	ASSERT_EQUALS(SWITCH_FALSE, iks_attrib_is_dtmf_digit(""));
+	ASSERT_EQUALS(SWITCH_FALSE, iks_attrib_is_dtmf_digit("11"));
+	ASSERT_EQUALS(SWITCH_TRUE, validate_optional_attrib(iks_attrib_is_dtmf_digit, "A"));
+	ASSERT_EQUALS(SWITCH_TRUE, validate_optional_attrib(iks_attrib_is_dtmf_digit, "1"));
+	ASSERT_EQUALS(SWITCH_FALSE, validate_optional_attrib(iks_attrib_is_dtmf_digit, "Z"));
+	ASSERT_EQUALS(SWITCH_FALSE, validate_optional_attrib(iks_attrib_is_dtmf_digit, "11"));
+	ASSERT_EQUALS(SWITCH_TRUE, validate_optional_attrib(iks_attrib_is_dtmf_digit, NULL));
+	ASSERT_EQUALS(SWITCH_TRUE, validate_optional_attrib(iks_attrib_is_dtmf_digit, ""));
+}
+
 /**
  * main program
  */
@@ -159,5 +180,6 @@ int main(int argc, char **argv)
 	TEST(test_rayo_test_srgs);
 	TEST(test_iks_helper_value_matches);
 	TEST(test_dialback_key);
+	TEST(test_validate_dtmf);
 	return 0;
 }

@@ -610,7 +610,7 @@ static inline char *switch_sanitize_number(char *number)
 
 	while ((q = strrchr(p, '@')))
 		*q = '\0';
-
+	
 	for (i = 0; i < (int) strlen(warp); i++) {
 		while (p && (q = strchr(p, warp[i])))
 			p = q + 1;

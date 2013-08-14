@@ -48,6 +48,7 @@ const char *default_template =
 
 static struct {
 	switch_memory_pool_t *pool;
+	switch_mutex_t *mutex;
 	switch_hash_t *fd_hash;
 	switch_hash_t *template_hash;
 	char *log_dir;
@@ -130,6 +131,7 @@ static void write_cdr(const char *path, const char *log_line)
 	unsigned int bytes_in, bytes_out;
 	int loops = 0;
 
+	switch_mutex_lock(globals.mutex);
 	if (!(fd = switch_core_hash_find(globals.fd_hash, path))) {
 		fd = switch_core_alloc(globals.pool, sizeof(*fd));
 		switch_assert(fd);
@@ -139,6 +141,7 @@ static void write_cdr(const char *path, const char *log_line)
 		fd->path = switch_core_strdup(globals.pool, path);
 		switch_core_hash_insert(globals.fd_hash, path, fd);
 	}
+	switch_mutex_unlock(globals.mutex);
 
 	switch_mutex_lock(fd->mutex);
 	bytes_out = (unsigned) strlen(log_line);
@@ -275,6 +278,7 @@ static void do_rotate_all()
 		return;
 	}
 
+	switch_mutex_lock(globals.mutex);
 	for (hi = switch_hash_first(NULL, globals.fd_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		fd = (cdr_fd_t *) val;
@@ -282,6 +286,7 @@ static void do_rotate_all()
 		do_rotate(fd);
 		switch_mutex_unlock(fd->mutex);
 	}
+	switch_mutex_unlock(globals.mutex);
 }
 
 
@@ -409,6 +414,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_csv_load)
 	switch_api_interface_t *api_interface;
 
 	load_config(pool);
+
+	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
 	if ((status = switch_dir_make_recursive(globals.log_dir, SWITCH_DEFAULT_DIR_PERMS, pool)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error creating %s\n", globals.log_dir);

@@ -26,6 +26,9 @@ testr2
 testsangomaboost
 testtones
 
+!/msvc/testanalog/
+!/msvc/testboost/
+
 !/sample/boost/Makefile
 !/sample/dso/Makefile
 

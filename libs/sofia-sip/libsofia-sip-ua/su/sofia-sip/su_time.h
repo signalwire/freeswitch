@@ -85,6 +85,11 @@ typedef uint64_t su_nanotime_t;
 
 #define SU_E9 (1000000000U)
 
+typedef void (*su_time_func_t)(su_time_t *tv);
+
+
+SOFIAPUBFUN void su_set_time_func(su_time_func_t func);
+
 SOFIAPUBFUN su_nanotime_t su_nanotime(su_nanotime_t *return_time);
 SOFIAPUBFUN su_nanotime_t su_monotime(su_nanotime_t *return_time);
 
@@ -138,7 +143,7 @@ su_inline uint32_t su_ntp_fraq(su_time_t t)
 /** Time as milliseconds. */
 su_inline uint32_t su_time_ms(su_time_t t)
 {
-  return t.tv_sec * 1000 + (t.tv_usec + 500) / 1000;
+	return (t.tv_sec * 1000) + ((t.tv_usec + 500) / 1000);
 }
 #endif
 

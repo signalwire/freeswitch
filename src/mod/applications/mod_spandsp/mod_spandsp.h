@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -141,7 +141,7 @@ switch_status_t spandsp_fax_detect_session(switch_core_session_t *session,
 														   int hits, const char *app, const char *data, switch_tone_detect_callback_t callback);
 
 switch_status_t spandsp_fax_stop_detect_session(switch_core_session_t *session);
-void spanfax_log_message(void *user_data, int level, const char *msg);
+void mod_spandsp_log_message(void *session, int level, const char *msg);
 switch_status_t load_configuration(switch_bool_t reload);
 void mod_spandsp_indicate_data(switch_core_session_t *session, switch_bool_t self, switch_bool_t on);
 

@@ -1969,6 +1969,20 @@ void sofia_glue_tech_set_local_sdp(private_object_t *tech_pvt, const char *sdp_s
 	switch_mutex_unlock(tech_pvt->flag_mutex);
 }
 
+static void process_mp(switch_core_session_t *session, switch_stream_handle_t *stream, const char *boundary, const char *str) {
+	char *dname = switch_core_session_strdup(session, str);
+	char *dval;
+
+	if ((dval = strchr(dname, ':'))) {
+		*dval++ = '\0';
+		if (*dval == '~') {
+			stream->write_function(stream, "--%s\nContent-Type: %s\nContent-Length: %d\n%s\n", boundary, dname, strlen(dval), dval + 1);
+		} else {
+			stream->write_function(stream, "--%s\nContent-Type: %s\nContent-Length: %d\n\n%s\n", boundary, dname, strlen(dval) + 1, dval);
+		}							
+	}
+}
+
 char *sofia_glue_get_multipart(switch_core_session_t *session, const char *prefix, const char *sdp, char **mp_type)
 {
 	char *extra_headers = NULL;
@@ -1984,14 +1998,18 @@ char *sofia_glue_get_multipart(switch_core_session_t *session, const char *prefi
 			const char *name = (char *) hi->name;
 			char *value = (char *) hi->value;
 
-			if (!strncasecmp(name, prefix, strlen(prefix))) {
-				const char *hname = name + strlen(prefix);
-				if (*value == '~') {
-					stream.write_function(&stream, "--%s\nContent-Type: %s\nContent-Length: %d\n%s\n", boundary, hname, strlen(value), value + 1);
+			if (!strcasecmp(name, prefix)) {
+				if (hi->idx > 0) {
+					int i = 0;
+
+					for(i = 0; i < hi->idx; i++) {
+						process_mp(session, &stream, boundary, hi->array[i]);
+						x++;
+					}
 				} else {
-					stream.write_function(&stream, "--%s\nContent-Type: %s\nContent-Length: %d\n\n%s\n", boundary, hname, strlen(value) + 1, value);
+					process_mp(session, &stream, boundary, value);
+					x++;
 				}
-				x++;
 			}
 		}
 		switch_channel_variable_last(channel);
@@ -2013,7 +2031,6 @@ char *sofia_glue_get_multipart(switch_core_session_t *session, const char *prefi
 
 	return extra_headers;
 }
-
 
 char *sofia_glue_get_extra_headers(switch_channel_t *channel, const char *prefix)
 {
@@ -2444,7 +2461,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		switch_channel_set_variable(channel, "sip_to_host", sofia_glue_get_host(to_str, switch_core_session_get_pool(session)));
 		switch_channel_set_variable(channel, "sip_from_host", sofia_glue_get_host(from_str, switch_core_session_get_pool(session)));
 
-
 		if (!(tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
 										NUTAG_URL(url_str),
 										TAG_IF(call_id, SIPTAG_CALL_ID_STR(call_id)),
@@ -2664,7 +2680,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		tech_pvt->nh->nh_has_invite = 1;
 	}
 
-	if ((mp = sofia_glue_get_multipart(session, SOFIA_MULTIPART_PREFIX, tech_pvt->local_sdp_str, &mp_type))) {
+	if ((mp = sofia_glue_get_multipart(session, "sip_multipart", tech_pvt->local_sdp_str, &mp_type))) {
 		sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
 	}
 
@@ -2678,6 +2694,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG,
 						  "Local SDP:\n%s\n", tech_pvt->local_sdp_str);
 	}
+
 
 	if (sofia_use_soa(tech_pvt)) {
 		nua_invite(tech_pvt->nh,
@@ -5961,10 +5978,13 @@ int sofia_recover_callback(switch_core_session_t *session)
 		tech_pvt->redirected = switch_core_session_sprintf(session, "sip:%s", switch_channel_get_variable(channel, "sip_contact_uri"));
 
 		if (zstr(rr)) {
-			switch_channel_set_variable_printf(channel, "sip_invite_route_uri", "<sip:%s@%s:%s;lr>",
+			switch_channel_set_variable_printf(channel, "sip_invite_route_uri", "<sip:%s@%s:%s;transport=%s>",
 											   switch_channel_get_variable(channel, "sip_from_user"),
-											   switch_channel_get_variable(channel, "sip_network_ip"), switch_channel_get_variable(channel, "sip_network_port")
+											   switch_channel_get_variable(channel, "sip_network_ip"), 
+											   switch_channel_get_variable(channel, "sip_network_port"),
+											   switch_channel_get_variable(channel,"sip_via_protocol")
 											   );
+
 		}
 
 		tech_pvt->dest = switch_core_session_sprintf(session, "sip:%s", switch_channel_get_variable(channel, "sip_from_uri"));

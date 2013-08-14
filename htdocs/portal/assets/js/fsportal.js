@@ -154,6 +154,12 @@ App.ShowSaysRoute = Ember.Route.extend({
 	}
 });
 
+App.ShowNatMapsRoute = Ember.Route.extend({
+	setupController: function(controller) {
+		App.showNatMapsController.load();
+	}
+});
+
 App.ShowChatsRoute = Ember.Route.extend({
 	setupController: function(controller) {
 		App.showChatsController.load();
@@ -203,6 +209,7 @@ App.Router.map(function(){
 	this.route("showAliases");
 	this.route("showCompletes");
 	this.route("showManagements");
+	this.route("showNatMaps");
 	this.route("showSays");
 	this.route("showChats");
 	this.route("showInterfaces");
@@ -255,6 +262,10 @@ App.callsController = Ember.ArrayController.create({
 			});
 
 		});
+	},
+	delete: function(uuid) {
+		var obj = this.content.findProperty("uuid", uuid);
+		if (obj) this.content.removeObject(obj);// else alert(uuid);
 	},
 	dump: function(uuid) {
 		var obj = this.content.findProperty("uuid", uuid);
@@ -550,6 +561,23 @@ App.showManagementsController = Ember.ArrayController.create({
 	}
 });
 
+App.showNatMapsController = Ember.ArrayController.create({
+	content: [],
+	init: function(){
+	},
+	load: function() {
+		var me = this;
+		$.getJSON("/txtapi/show?nat_map%20as%20json", function(data){
+			me.set('total', data.row_count);
+			me.content.clear();
+			if (data.row_count == 0) return;
+
+			me.pushObjects(data.rows);
+
+		});
+	}
+});
+
 App.showSaysController = Ember.ArrayController.create({
 	content: [],
 	init: function(){
@@ -687,10 +715,17 @@ App.usersController = Ember.ArrayController.create({
 });
 
 App.initialize();
-
+var global_debug_event = false;
+var global_background_job = false;
 
 function eventCallback(data) {
 	console.log(data["Event-Name"]);
+
+	if (global_debug_event ||
+		(global_background_job && data["Event-Name"] == "BACKGROUND_JOB")) {
+		console.log(data);
+	}
+
 	if (data["Event-Name"] == "CHANNEL_CREATE") {
 		var channel = {
 			uuid: data["Unique-ID"],
@@ -700,8 +735,47 @@ function eventCallback(data) {
 			direction: data["Call-Direction"]
 		}
 		App.channelsController.pushObject(App.Channel.create(channel));
+
+		var x = $('#auto_update_calls')[0];
+		if (typeof x != "undefined" && x.checked) {
+			return;
+		}
+
+		App.callsController.pushObject(App.Call.create(channel));
 	} else if (data["Event-Name"] == "CHANNEL_HANGUP_COMPLETE") {
 		App.channelsController.delete(data["Unique-ID"]);
+
+		var x = $('#auto_update_calls')[0];
+		if (typeof x != "undefined" && x.checked) {
+			return;
+		}
+
+		App.callsController.delete(data["Unique-ID"]);
+	} else if (data["Event-Name"] == "CHANNEL_BRIDGE") {
+		var x = $('#auto_update_calls')[0];
+		if (typeof x != "undefined" && x.checked) {
+			return;
+		}
+
+		App.callsController.delete(data["Unique-ID"]);
+		App.callsController.delete(data["Other-Leg-Unique-ID"]);
+
+		var call = {
+			uuid: data["Unique-ID"],
+			b_uuid: data["Other-Leg-Unique-ID"],
+			cid_num: data["Caller-Caller-ID-Number"],
+			b_cid_num: data["Other-Leg-Caller-ID-Number"],
+			dest: data["Caller-Destination-Number"],
+			b_dest: data["Other-Leg-Destination-Number"],
+			callstate: data["Channel-Call-State"],
+			b_callstate: data["Channel-Call-State"],
+			direction: data["Call-Direction"],
+			b_direction: data["Other-Leg-Direction"],
+			created: data["Caller-Channel-Created-Time"]
+		};
+
+		App.callsController.pushObject(App.Call.create(call));
+
 	} else if (data["Event-Name"] == "CHANNEL_CALLSTATE") {
 		var obj = App.channelsController.content.findProperty("uuid", data["Unique-ID"]);
 		if (obj) {
@@ -711,3 +785,34 @@ function eventCallback(data) {
 	}
 }
 
+// execute api
+function api(cmdstr)
+{
+	cmdarr = cmdstr.split(" ");
+	cmd = cmdarr.shift();
+	arg = escape(cmdarr.join(" "));
+	arg = arg ? "?" + arg : "";
+	url = "/txtapi/" + cmd + arg;
+	$.get(url, function(data){
+		console.log(data);
+	});
+	return url;
+}
+
+//execute bgapi
+function bgapi(cmd)
+{
+	if (!global_background_job) {
+		socket.send("event json BACKGROUND_JOB");
+		global_background_job = true;
+	}
+	api("bgapi " + cmd);
+}
+
+// subscribe event
+function event(e)
+{
+	cmd = "event json " + e;
+	socket.send(cmd);
+	return cmd;
+}

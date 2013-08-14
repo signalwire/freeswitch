@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
+ * Raymond Chandler <intralanman@freeswitch.org>
  *
  * mod_sms.c -- Abstract SMS 
  *
@@ -448,6 +449,23 @@ static switch_status_t chat_send(switch_event_t *message_event)
 
 }
 
+SWITCH_STANDARD_CHAT_APP(info_function)
+{
+	char *buf;
+	int level = SWITCH_LOG_INFO;
+
+	if (!zstr(data)) {
+		level = switch_log_str2level(data);
+	}
+
+	switch_event_serialize(message, &buf, SWITCH_FALSE);
+	switch_assert(buf);
+	switch_log_printf(SWITCH_CHANNEL_LOG, level, "CHANNEL_DATA:\n%s\n", buf);
+	free(buf);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_CHAT_APP(system_function)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Executing command: %s\n", data);
@@ -546,6 +564,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sms_load)
 
 	SWITCH_ADD_CHAT(chat_interface, SMS_CHAT_PROTO, chat_send);
 
+	SWITCH_ADD_CHAT_APP(chat_app_interface, "info", "Display Call Info", "Display Call Info", info_function, "", SCAF_NONE);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "reply", "reply to a message", "reply to a message", reply_function, "", SCAF_NONE);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "stop", "stop execution", "stop execution", stop_function, "", SCAF_NONE);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "set", "set a variable", "set a variable", set_function, "", SCAF_NONE);

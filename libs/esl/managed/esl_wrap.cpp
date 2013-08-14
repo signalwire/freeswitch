@@ -576,7 +576,41 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_ESLevent_NextHeader(void * jarg1) {
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_new_ESLconnection__SWIG_0(char * jarg1, char * jarg2, char * jarg3, char * jarg4) {
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_ESLconnection__SWIG_0(char * jarg1, int jarg2, char * jarg3, char * jarg4) {
+  void * jresult ;
+  char *arg1 = (char *) 0 ;
+  int arg2 ;
+  char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
+  ESLconnection *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (int)jarg2; 
+  arg3 = (char *)jarg3; 
+  arg4 = (char *)jarg4; 
+  result = (ESLconnection *)new ESLconnection((char const *)arg1,arg2,(char const *)arg3,(char const *)arg4);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_ESLconnection__SWIG_1(char * jarg1, int jarg2, char * jarg3) {
+  void * jresult ;
+  char *arg1 = (char *) 0 ;
+  int arg2 ;
+  char *arg3 = (char *) 0 ;
+  ESLconnection *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (int)jarg2; 
+  arg3 = (char *)jarg3; 
+  result = (ESLconnection *)new ESLconnection((char const *)arg1,arg2,(char const *)arg3);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_ESLconnection__SWIG_2(char * jarg1, char * jarg2, char * jarg3, char * jarg4) {
   void * jresult ;
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -594,7 +628,7 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_new_ESLconnection__SWIG_0(char * jarg1, cha
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_new_ESLconnection__SWIG_1(char * jarg1, char * jarg2, char * jarg3) {
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_ESLconnection__SWIG_3(char * jarg1, char * jarg2, char * jarg3) {
   void * jresult ;
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -610,7 +644,7 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_new_ESLconnection__SWIG_1(char * jarg1, cha
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_new_ESLconnection__SWIG_2(int jarg1) {
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_ESLconnection__SWIG_4(int jarg1) {
   void * jresult ;
   int arg1 ;
   ESLconnection *result = 0 ;

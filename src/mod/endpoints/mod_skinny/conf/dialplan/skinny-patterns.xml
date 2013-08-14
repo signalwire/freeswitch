@@ -15,7 +15,7 @@
     <!--
     Wait for another digit by default
     -->
-    <extension name="Default">
+    <extension name="Default" continue="true">
       <condition>
         <action application="skinny-wait" />
       </condition>

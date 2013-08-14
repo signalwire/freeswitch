@@ -2233,6 +2233,63 @@ static swig_lua_class _wrap_class_ESLevent = { "ESLevent", &SWIGTYPE_p_ESLevent,
 static int _wrap_new_ESLconnection__SWIG_0(lua_State* L) {
   int SWIG_arg = -1;
   char *arg1 = (char *) 0 ;
+  int arg2 ;
+  char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
+  ESLconnection *result = 0 ;
+  
+  SWIG_check_num_args("ESLconnection",4,4)
+  if(!lua_isstring(L,1)) SWIG_fail_arg("ESLconnection",1,"char const *");
+  if(!lua_isnumber(L,2)) SWIG_fail_arg("ESLconnection",2,"int const");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("ESLconnection",3,"char const *");
+  if(!lua_isstring(L,4)) SWIG_fail_arg("ESLconnection",4,"char const *");
+  arg1 = (char *)lua_tostring(L, 1);
+  arg2 = (int const)lua_tonumber(L, 2);
+  arg3 = (char *)lua_tostring(L, 3);
+  arg4 = (char *)lua_tostring(L, 4);
+  result = (ESLconnection *)new ESLconnection((char const *)arg1,arg2,(char const *)arg3,(char const *)arg4);
+  SWIG_arg=0;
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLconnection,1); SWIG_arg++; 
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_new_ESLconnection__SWIG_1(lua_State* L) {
+  int SWIG_arg = -1;
+  char *arg1 = (char *) 0 ;
+  int arg2 ;
+  char *arg3 = (char *) 0 ;
+  ESLconnection *result = 0 ;
+  
+  SWIG_check_num_args("ESLconnection",3,3)
+  if(!lua_isstring(L,1)) SWIG_fail_arg("ESLconnection",1,"char const *");
+  if(!lua_isnumber(L,2)) SWIG_fail_arg("ESLconnection",2,"int const");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("ESLconnection",3,"char const *");
+  arg1 = (char *)lua_tostring(L, 1);
+  arg2 = (int const)lua_tonumber(L, 2);
+  arg3 = (char *)lua_tostring(L, 3);
+  result = (ESLconnection *)new ESLconnection((char const *)arg1,arg2,(char const *)arg3);
+  SWIG_arg=0;
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLconnection,1); SWIG_arg++; 
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_new_ESLconnection__SWIG_2(lua_State* L) {
+  int SWIG_arg = -1;
+  char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   char *arg4 = (char *) 0 ;
@@ -2260,7 +2317,7 @@ fail:
 }
 
 
-static int _wrap_new_ESLconnection__SWIG_1(lua_State* L) {
+static int _wrap_new_ESLconnection__SWIG_3(lua_State* L) {
   int SWIG_arg = -1;
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -2287,7 +2344,7 @@ fail:
 }
 
 
-static int _wrap_new_ESLconnection__SWIG_2(lua_State* L) {
+static int _wrap_new_ESLconnection__SWIG_4(lua_State* L) {
   int SWIG_arg = -1;
   int arg1 ;
   ESLconnection *result = 0 ;
@@ -2321,7 +2378,26 @@ static int _wrap_new_ESLconnection(lua_State* L) {
       _v = lua_isnumber(L,argv[0]);
     }
     if (_v) {
-      return _wrap_new_ESLconnection__SWIG_2(L);
+      return _wrap_new_ESLconnection__SWIG_4(L);
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    {
+      _v = lua_isstring(L,argv[0]);
+    }
+    if (_v) {
+      {
+        _v = lua_isnumber(L,argv[1]);
+      }
+      if (_v) {
+        {
+          _v = lua_isstring(L,argv[2]);
+        }
+        if (_v) {
+          return _wrap_new_ESLconnection__SWIG_1(L);
+        }
+      }
     }
   }
   if (argc == 3) {
@@ -2338,7 +2414,31 @@ static int _wrap_new_ESLconnection(lua_State* L) {
           _v = lua_isstring(L,argv[2]);
         }
         if (_v) {
-          return _wrap_new_ESLconnection__SWIG_1(L);
+          return _wrap_new_ESLconnection__SWIG_3(L);
+        }
+      }
+    }
+  }
+  if (argc == 4) {
+    int _v;
+    {
+      _v = lua_isstring(L,argv[0]);
+    }
+    if (_v) {
+      {
+        _v = lua_isnumber(L,argv[1]);
+      }
+      if (_v) {
+        {
+          _v = lua_isstring(L,argv[2]);
+        }
+        if (_v) {
+          {
+            _v = lua_isstring(L,argv[3]);
+          }
+          if (_v) {
+            return _wrap_new_ESLconnection__SWIG_0(L);
+          }
         }
       }
     }
@@ -2361,7 +2461,7 @@ static int _wrap_new_ESLconnection(lua_State* L) {
             _v = lua_isstring(L,argv[3]);
           }
           if (_v) {
-            return _wrap_new_ESLconnection__SWIG_0(L);
+            return _wrap_new_ESLconnection__SWIG_2(L);
           }
         }
       }

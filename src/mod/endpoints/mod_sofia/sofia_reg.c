@@ -804,6 +804,14 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 			
 			sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sofia_reg_nat_callback, profile);
 			switch_safe_free(sql);
+		} else if (sofia_test_pflag(profile, PFLAG_UDP_NAT_OPTIONS_PING)) {
+			sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,"
+							"expires,user_agent,server_user,server_host,profile_name"
+							" from sip_registrations where status like '%%UDP-NAT%%' "
+ "and hostname='%s' and profile_name='%s'", mod_sofia_globals.hostname, profile->name); 
+			
+			sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sofia_reg_nat_callback, profile);
+			switch_safe_free(sql);
 		} else if (sofia_test_pflag(profile, PFLAG_NAT_OPTIONS_PING)) {
 			sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,"
 							"expires,user_agent,server_user,server_host,profile_name"
@@ -1065,8 +1073,8 @@ static int debounce_check(sofia_profile_t *profile, const char *user, const char
 						
 
 uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip,
-								sofia_dispatch_event_t *de, sofia_regtype_t regtype, char *key,
-								  uint32_t keylen, switch_event_t **v_event, const char *is_nat)
+								  sofia_dispatch_event_t *de, sofia_regtype_t regtype, char *key,
+								  uint32_t keylen, switch_event_t **v_event, const char *is_nat, switch_xml_t *user_xml)
 {
 	sip_to_t const *to = NULL;
 	sip_from_t const *from = NULL;
@@ -1293,7 +1301,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		const char *username = "unknown";
 		const char *realm = reg_host;
 		if ((auth_res = sofia_reg_parse_auth(profile, authorization, sip, de, sip->sip_request->rq_method_name,
-											 key, keylen, network_ip, v_event, exptime, regtype, to_user, &auth_params, &reg_count)) == AUTH_STALE) {
+											 key, keylen, network_ip, v_event, exptime, regtype, to_user, &auth_params, &reg_count, user_xml)) == AUTH_STALE) {
 			stale = 1;
 		}
 
@@ -2004,7 +2012,9 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 		is_nat = NULL;
 	}
 
-	sofia_reg_handle_register(nua, profile, nh, sip, de, type, key, sizeof(key), &v_event, is_nat);
+
+	sofia_reg_handle_register(nua, profile, nh, sip, de, type, key, sizeof(key), &v_event, is_nat, NULL);
+
 
 	if (v_event) {
 		switch_event_destroy(&v_event);
@@ -2311,7 +2321,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 								size_t nplen,
 								char *ip,
 								switch_event_t **v_event,
-								long exptime, sofia_regtype_t regtype, const char *to_user, switch_event_t **auth_params, long *reg_count)
+								long exptime, sofia_regtype_t regtype, const char *to_user, switch_event_t **auth_params, long *reg_count, switch_xml_t *user_xml)
 {
 	int indexnum;
 	const char *cur;
@@ -2735,7 +2745,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
   skip_auth:
 	if (first && (ret == AUTH_OK || ret == AUTH_RENEWED)) {
-		if (v_event) {
+		if (v_event && !*v_event) {
 			switch_event_create_plain(v_event, SWITCH_EVENT_REQUEST_PARAMS);
 		}
 
@@ -2867,7 +2877,11 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	switch_event_destroy(&params);
 
 	if (user) {
-		switch_xml_free(user);
+		if (user_xml) {
+			*user_xml = user;
+		} else {
+			switch_xml_free(user);
+		}
 	}
 
 	switch_safe_free(input);

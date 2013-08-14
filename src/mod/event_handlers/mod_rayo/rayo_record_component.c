@@ -479,11 +479,12 @@ static switch_status_t do_config(switch_memory_pool_t *pool, const char *config_
 
 /**
  * Initialize record component
+ * @param module_interface
  * @param pool memory pool to allocate from
  * @param config_file to use
  * @return SWITCH_STATUS_SUCCESS if successful
  */
-switch_status_t rayo_record_component_load(switch_memory_pool_t *pool, const char *config_file)
+switch_status_t rayo_record_component_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file)
 {
 	if (do_config(pool, config_file) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_TERM;

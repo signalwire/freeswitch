@@ -185,6 +185,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_and_detect_speech(switch_core_se
 
 
 /*!
+  \brief Initialize background Speech detection on a session, so that parameters can be set, and grammars loaded.
+  After calling this function, it is possible to call switch_ivr_set_param_detect_speech() to set recognition parameters.
+  Calling switch_ivr_detect_speech_load_grammar() starts the speech recognition.
+  \param session the session to attach
+  \param mod_name the module name of the ASR library
+  \param dest the destination address
+  \param ah an ASR handle to use (NULL to create one)
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_init(switch_core_session_t *session, const char *mod_name,
+															  const char *dest, switch_asr_handle_t *ah);
+/*!
   \brief Engage background Speech detection on a session
   \param session the session to attach
   \param mod_name the module name of the ASR library
@@ -775,6 +787,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  *\param short_greeting_sound Optional pointer to a shorter main sound for subsequent loops.
  *\param invalid_sound Optional pointer to a sound to play after invalid input.
  *\param exit_sound Optional pointer to a sound to play upon exiting the menu.
+ *\param transfer_sound Optional pointer to a sound to play upon transfer away from the menu.
  *\param confirm_macro phrase macro name to confirm input
  *\param confirm_key the dtmf key required for positive confirmation
  *\param tts_engine the tts engine to use for this menu
@@ -795,6 +808,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 													 const char *short_greeting_sound,
 													 const char *invalid_sound,
 													 const char *exit_sound,
+													 const char *transfer_sound,
 													 const char *confirm_macro,
 													 const char *confirm_key,
 													 const char *tts_engine,
@@ -934,6 +948,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say_ip(switch_core_session_t *session
 												  switch_input_args_t *args);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *session, const char *data);
+SWITCH_DECLARE(switch_status_t) switch_ivr_set_user_xml(switch_core_session_t *session, const char *prefix,
+														const char *user, const char *domain, switch_xml_t x_user);
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_sound_test(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_process_import(switch_core_session_t *session, switch_channel_t *peer_channel, const char *varname, const char *prefix);
 SWITCH_DECLARE(switch_bool_t) switch_ivr_uuid_exists(const char *uuid);

@@ -60,52 +60,43 @@ static struct {
 
 mpg123_handle *our_mpg123_new(const char *decoder, int *error)
 {
-	mpg123_handle *mh;
 	const char *arch = "auto";
+	const char *err = NULL;
+	mpg123_handle *mh;
 	int x64 = 0;
 	int rc = 0;
-	const char *err = NULL;
 
-	if (*globals.decoder || globals.outscale || globals.vol) {
-		if (*globals.decoder) {
-			arch = globals.decoder;
-		}
-		if ((mh = mpg123_new(arch, &rc))) {
-			if (rc) {
-				err = mpg123_plain_strerror(rc);
-			}
-			if (globals.outscale) {
-				mpg123_param(mh, MPG123_OUTSCALE, globals.outscale, 0);
-			}
-			if (globals.vol) {
-				mpg123_volume(mh, globals.vol);
-			}
-		}
+	if (*globals.decoder) {
+		arch = globals.decoder;
+	}
+#ifndef WIN32
+	else if (sizeof(void *) == 4) {
+		arch = "i586";
 	} else {
-
-#ifdef WIN32
-		x64++;
+		x64 = 1;
+	}
 #else
-		if (sizeof(void *) == 4) {
-			arch = "i586";
-		} else {
-			x64++;
-		}
+	x64 = 1;
 #endif
+	mh = mpg123_new(arch, &rc);
+	if (!mh) {
+		err = mpg123_plain_strerror(rc);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error allocating mpg123 handle! %s\n", switch_str_nil(err));
+		return NULL;
+	}
 
-		if ((mh = mpg123_new(arch, &rc))) {
-			if (rc) {
-				err = mpg123_plain_strerror(rc);
-			}
-			if (x64) {
-				mpg123_param(mh, MPG123_OUTSCALE, 8192, 0);
-			}
+	/* NOTE: keeping the globals.decoder check here for behaviour backwards compat - stkn */
+	if (*globals.decoder || globals.outscale || globals.vol) {
+		if (globals.outscale) {
+			mpg123_param(mh, MPG123_OUTSCALE, globals.outscale, 0);
 		}
+		if (globals.vol) {
+			mpg123_volume(mh, globals.vol);
+		}
+	} else if (x64) {
+		mpg123_param(mh, MPG123_OUTSCALE, 8192, 0);
 	}
 
-	if (err) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error allocating mpg123 handle! %s\n", err);
-	}
 	return mh;
 }
 

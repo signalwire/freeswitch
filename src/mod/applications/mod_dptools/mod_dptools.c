@@ -31,6 +31,7 @@
  * Luke Dashjr <luke@openmethods.com> (OpenMethods, LLC)
  * Cesar Cepeda <cesar@auronix.com>
  * Christopher M. Rienzo <chris@rienzo.com>
+ * Seven Du <dujinfang@gmail.com>
  *
  * mod_dptools.c -- Raw Audio File Streaming Application Module
  *
@@ -444,6 +445,8 @@ SWITCH_STANDARD_APP(detect_speech_function)
 			switch_ivr_detect_speech_disable_grammar(session, argv[1]);
 		} else if (!strcasecmp(argv[0], "grammarsalloff")) {
 			switch_ivr_detect_speech_disable_all_grammars(session);
+		} else if (!strcasecmp(argv[0], "init")) {
+			switch_ivr_detect_speech_init(session, argv[1], argv[2], NULL);
 		} else if (!strcasecmp(argv[0], "pause")) {
 			switch_ivr_pause_detect_speech(session);
 		} else if (!strcasecmp(argv[0], "resume")) {
@@ -1049,6 +1052,8 @@ SWITCH_STANDARD_APP(sched_transfer_function)
 	if (!zstr(data) && (mydata = switch_core_session_strdup(session, data))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
 			time_t when;
+			uint32_t id;
+			char ids[80] = "";
 
 			if (*argv[0] == '+') {
 				when = switch_epoch_time_now(NULL) + atol(argv[0] + 1);
@@ -1056,7 +1061,9 @@ SWITCH_STANDARD_APP(sched_transfer_function)
 				when = atol(argv[0]);
 			}
 
-			switch_ivr_schedule_transfer(when, switch_core_session_get_uuid(session), argv[1], argv[2], argv[3]);
+			id = switch_ivr_schedule_transfer(when, switch_core_session_get_uuid(session), argv[1], argv[2], argv[3]);
+			snprintf(ids, sizeof(ids), "%u", id);
+			switch_channel_set_variable(switch_core_session_get_channel(session), "last_sched_id", ids);			
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Args\n");
 		}
@@ -1111,8 +1118,12 @@ SWITCH_STANDARD_APP(sched_broadcast_function)
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
 			time_t when;
 			switch_media_flag_t flags = SMF_NONE;
+			uint32_t id;
+			char ids[80] = "";
 
-			if (*argv[0] == '+') {
+			if (*argv[0] == '@') {
+				when = atol(argv[0] + 1);
+			} else if (*argv[0] == '+') {
 				when = switch_epoch_time_now(NULL) + atol(argv[0] + 1);
 			} else {
 				when = atol(argv[0]);
@@ -1130,7 +1141,9 @@ SWITCH_STANDARD_APP(sched_broadcast_function)
 				flags |= SMF_ECHO_ALEG;
 			}
 
-			switch_ivr_schedule_broadcast(when, switch_core_session_get_uuid(session), argv[1], flags);
+			id = switch_ivr_schedule_broadcast(when, switch_core_session_get_uuid(session), argv[1], flags);
+			snprintf(ids, sizeof(ids), "%u", id);
+			switch_channel_set_variable(switch_core_session_get_channel(session), "last_sched_id", ids);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Args\n");
 		}
@@ -1340,7 +1353,16 @@ SWITCH_STANDARD_APP(sched_cancel_function)
 	if (zstr(group)) {
 		group = switch_core_session_get_uuid(session);
 	}
-	switch_scheduler_del_task_group(group);
+
+	if (switch_is_digit_string(group)) {
+		int64_t tmp;
+		tmp = (uint32_t) atoi(group);
+		if (tmp > 0) {
+			switch_scheduler_del_task_id((uint32_t) tmp);
+		}
+	} else {
+		switch_scheduler_del_task_group(group);
+	}
 }
 
 static void base_set (switch_core_session_t *session, const char *data, switch_stack_t stack)
@@ -1518,6 +1540,33 @@ SWITCH_STANDARD_APP(unset_function)
 		switch_channel_set_variable(switch_core_session_get_channel(session), data, NULL);
 	}
 }
+
+SWITCH_STANDARD_APP(multiunset_function)
+{
+	char delim = ' ';
+	char *arg = (char *) data;
+
+	if (!zstr(arg) && *arg == '^' && *(arg+1) == '^') {
+		arg += 2;
+		delim = *arg++;
+	}
+
+	if (arg) {
+		char *array[256] = {0};
+		int i, argc;
+
+		arg = switch_core_session_strdup(session, arg);
+		argc = switch_split(arg, delim, array);
+
+		for(i = 0; i < argc; i++) {
+			switch_channel_set_variable(switch_core_session_get_channel(session), array[i], NULL);
+		}
+
+	} else {
+		switch_channel_set_variable(switch_core_session_get_channel(session), arg, NULL);
+	}
+}
+
 
 SWITCH_STANDARD_APP(log_function)
 {
@@ -2636,6 +2685,55 @@ SWITCH_STANDARD_APP(endless_playback_function)
 	const char *file = data;
 
 	while (switch_channel_ready(channel)) {
+		status = switch_ivr_play_file(session, NULL, file, NULL);
+
+		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
+			break;
+		}
+	}
+
+	switch (status) {
+	case SWITCH_STATUS_SUCCESS:
+	case SWITCH_STATUS_BREAK:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "FILE PLAYED");
+		break;
+	case SWITCH_STATUS_NOTFOUND:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "FILE NOT FOUND");
+		break;
+	default:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "PLAYBACK ERROR");
+		break;
+	}
+
+}
+
+SWITCH_STANDARD_APP(loop_playback_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	const char *file = data;
+	int loop = 1;
+
+	if (*file == '+') {
+		const char *p = ++file;
+		while(*file && *file++ != ' ') { }
+
+		if (zstr(p)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing loop in data [%s]\n", data);
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			return;
+		}
+
+		loop = atoi(p);
+	}
+
+	if (zstr(file)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing file arg in data [%s]\n", data);
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		return;
+	}
+
+	while (switch_channel_ready(channel) && (loop < 0 || loop-- > 0)) {
 		status = switch_ivr_play_file(session, NULL, file, NULL);
 
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
@@ -5506,6 +5604,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   "<varname>=<value>", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "unset", "Unset a channel variable", UNSET_LONG_DESC, unset_function, "<varname>",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
+	SWITCH_ADD_APP(app_interface, "multiunset", "Unset many channel variables", SET_LONG_DESC, multiunset_function, "[^^<delim>]<varname> <var2> <var3>",
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
+
 	SWITCH_ADD_APP(app_interface, "ring_ready", "Indicate Ring_Ready", "Indicate Ring_Ready on a channel.", ring_ready_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "remove_bugs", "Remove media bugs", "Remove all media bugs from a channel.", remove_bugs_function, "[<function>]", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "break", "Break", "Set the break flag.", break_function, "", SAF_SUPPORT_NOMEDIA);
@@ -5574,6 +5675,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "playback", "Playback File", "Playback a file to the channel", playback_function, "<path>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "endless_playback", "Playback File Endlessly", "Endlessly Playback a file to the channel",
 				   endless_playback_function, "<path>", SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "loop_playback", "Playback File looply", "Playback a file to the channel looply for limted times",
+				   loop_playback_function, "[+loops] <path>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "att_xfer", "Attended Transfer", "Attended Transfer", att_xfer_function, "<channel_url>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "read", "Read Digits", "Read Digits", read_function, 
 				   "<min> <max> <file> <var_name> <timeout> <terminators> <digit_timeout>", SAF_NONE);

@@ -382,9 +382,12 @@ TELETONE_API(int) teletone_run(teletone_generation_session_t *ts, const char *cm
 					break;
 				case 'L':
 					if (!LOOPING) {
-						ts->LOOPS = atoi(cur + 2); 
+						int L;
+						if ((L = atoi(cur + 2)) > 0) {
+							ts->LOOPS = L;
+							LOOPING++;
+						}
 					}
-					LOOPING++;
 					break;
 				}
 			} else {
@@ -480,6 +483,7 @@ TELETONE_API(int) teletone_run(teletone_generation_session_t *ts, const char *cm
 	bottom:
 		free(data);
 		data = NULL;
+
 		if (ts->LOOPS > 0) {
 			ts->LOOPS--;
 		}

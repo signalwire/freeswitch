@@ -2,8 +2,19 @@
  <user id="SEP001120AABBCC">
    <params>
     <!-- for devices requesting firmware via SCCP, like ATA186
-    <param name="skinny-firmware-version" value="ATA030101SCCP04"
-    <param name="skinny-soft-key-set-set" value="default"
+    <param name="skinny-firmware-version" value="ATA030101SCCP04">
+    <param name="skinny-soft-key-set-set" value="default">
+    <param name="ext-voicemail" value="voicemail">
+    <param name="ext-redial" value="redial">
+    <param name="ext-meetme" value="conference">
+    -->
+
+    <!-- if you define an extension that runs 'pickup' application with 'key' as the data
+        this will cause the PickUp softkey to route to that extension. Combine with adding ",pickup/key"
+        to bridge call to implement PickUp groups -->
+
+    <!--
+    <param name="ext-pickup" value="pickup-key">
     -->
     <param name="foo" value="bar"/>
    </params>
