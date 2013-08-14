@@ -48,6 +48,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
@@ -70,6 +75,7 @@
 #include "spandsp/v22bis.h"
 
 #include "spandsp/private/logging.h"
+#include "spandsp/private/power_meter.h"
 #include "spandsp/private/v22bis.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -711,7 +717,7 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
                 if (s->rx.training_count >= ms_to_symbols(100 + 450))
                 {
                     span_log(&s->logging, SPAN_LOG_FLOW, "+++ starting 16 way decisions (caller)\n");
-                    s->rx.sixteen_way_decisions = TRUE;
+                    s->rx.sixteen_way_decisions = true;
                     s->rx.training = V22BIS_RX_TRAINING_STAGE_WAIT_FOR_SCRAMBLED_ONES_AT_2400;
                     s->rx.pattern_repeats = 0;
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -726,7 +732,7 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
                 if (s->rx.training_count >= ms_to_symbols(450))
                 {
                     span_log(&s->logging, SPAN_LOG_FLOW, "+++ starting 16 way decisions (answerer)\n");
-                    s->rx.sixteen_way_decisions = TRUE;
+                    s->rx.sixteen_way_decisions = true;
                     s->rx.training = V22BIS_RX_TRAINING_STAGE_WAIT_FOR_SCRAMBLED_ONES_AT_2400;
                     s->rx.pattern_repeats = 0;
                 }
@@ -839,7 +845,7 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int l
             /* Look for power exceeding the carrier on point */
             if (power < s->rx.carrier_on_power)
                 continue;
-            s->rx.signal_present = TRUE;
+            s->rx.signal_present = true;
             v22bis_report_status_change(s, SIG_STATUS_CARRIER_UP);
         }
         /* Only spend effort processing this data if the modem is not parked, after
@@ -952,7 +958,7 @@ int v22bis_rx_restart(v22bis_state_t *s)
     s->rx.scrambler_pattern_count = 0;
     s->rx.training = V22BIS_RX_TRAINING_STAGE_SYMBOL_ACQUISITION;
     s->rx.training_count = 0;
-    s->rx.signal_present = FALSE;
+    s->rx.signal_present = false;
 
     s->rx.carrier_phase_rate = (s->calling_party)  ?  DDS_PHASE_RATE(2400.0f)  :  DDS_PHASE_RATE(1200.0f);
     s->rx.carrier_phase = 0;
@@ -965,7 +971,7 @@ int v22bis_rx_restart(v22bis_state_t *s)
 #endif
 
     s->rx.constellation_state = 0;
-    s->rx.sixteen_way_decisions = FALSE;
+    s->rx.sixteen_way_decisions = false;
 
     equalizer_reset(s);
 

@@ -210,10 +210,10 @@ struct sig_tone_rx_state_s
     /*! \brief The minimum ratio between notched power and total power for detection */
     int32_t detection_ratio;
 
-    /*! \brief TRUE if in flat mode. FALSE if in sharp mode. */
-    int flat_mode;
-    /*! \brief TRUE if the notch filter is enabled in the media path */
-    int notch_enabled;
+    /*! \brief True if in flat mode. False if in sharp mode. */
+    bool flat_mode;
+    /*! \brief True if the notch filter is enabled in the media path */
+    bool notch_enabled;
     /*! \brief ??? */
     int flat_mode_timeout;
     /*! \brief ??? */

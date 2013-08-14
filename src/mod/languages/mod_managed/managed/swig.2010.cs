@@ -505,6 +505,10 @@ public class CoreSession : IDisposable {
     freeswitchPINVOKE.CoreSession_check_hangup_hook(swigCPtr);
   }
 
+  public void consoleLog(string level_str, string msg) {
+    freeswitchPINVOKE.CoreSession_consoleLog(swigCPtr, level_str, msg);
+  }
+
 }
 
 }
@@ -2460,6 +2464,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_status_t switch_core_asr_get_result_headers(switch_asr_handle ah, SWIGTYPE_p_p_switch_event headers, SWIGTYPE_p_unsigned_long flags) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_asr_get_result_headers(switch_asr_handle.getCPtr(ah), SWIGTYPE_p_p_switch_event.getCPtr(headers), SWIGTYPE_p_unsigned_long.getCPtr(flags));
+    return ret;
+  }
+
   public static switch_status_t switch_core_asr_load_grammar(switch_asr_handle ah, string grammar, string name) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_asr_load_grammar(switch_asr_handle.getCPtr(ah), grammar, name);
     return ret;
@@ -3129,6 +3138,11 @@ public class freeswitch {
 
   public static switch_status_t switch_core_session_refresh_video(SWIGTYPE_p_switch_core_session session) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_refresh_video(SWIGTYPE_p_switch_core_session.getCPtr(session));
+    return ret;
+  }
+
+  public static int switch_stream_system_fork(string cmd, switch_stream_handle stream) {
+    int ret = freeswitchPINVOKE.switch_stream_system_fork(cmd, switch_stream_handle.getCPtr(stream));
     return ret;
   }
 
@@ -5132,6 +5146,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_status_t switch_ivr_detect_speech_init(SWIGTYPE_p_switch_core_session session, string mod_name, string dest, switch_asr_handle ah) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_detect_speech_init(SWIGTYPE_p_switch_core_session.getCPtr(session), mod_name, dest, switch_asr_handle.getCPtr(ah));
+    return ret;
+  }
+
   public static switch_status_t switch_ivr_detect_speech(SWIGTYPE_p_switch_core_session session, string mod_name, string grammar, string name, string dest, switch_asr_handle ah) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_detect_speech(SWIGTYPE_p_switch_core_session.getCPtr(session), mod_name, grammar, name, dest, switch_asr_handle.getCPtr(ah));
     return ret;
@@ -5464,8 +5483,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_ivr_menu_init(SWIGTYPE_p_p_switch_ivr_menu new_menu, SWIGTYPE_p_switch_ivr_menu main, string name, string greeting_sound, string short_greeting_sound, string invalid_sound, string exit_sound, string confirm_macro, string confirm_key, string tts_engine, string tts_voice, int confirm_attempts, int inter_timeout, int digit_len, int timeout, int max_failures, int max_timeouts, SWIGTYPE_p_apr_pool_t pool) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_menu_init(SWIGTYPE_p_p_switch_ivr_menu.getCPtr(new_menu), SWIGTYPE_p_switch_ivr_menu.getCPtr(main), name, greeting_sound, short_greeting_sound, invalid_sound, exit_sound, confirm_macro, confirm_key, tts_engine, tts_voice, confirm_attempts, inter_timeout, digit_len, timeout, max_failures, max_timeouts, SWIGTYPE_p_apr_pool_t.getCPtr(pool));
+  public static switch_status_t switch_ivr_menu_init(SWIGTYPE_p_p_switch_ivr_menu new_menu, SWIGTYPE_p_switch_ivr_menu main, string name, string greeting_sound, string short_greeting_sound, string invalid_sound, string exit_sound, string transfer_sound, string confirm_macro, string confirm_key, string tts_engine, string tts_voice, int confirm_attempts, int inter_timeout, int digit_len, int timeout, int max_failures, int max_timeouts, SWIGTYPE_p_apr_pool_t pool) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_menu_init(SWIGTYPE_p_p_switch_ivr_menu.getCPtr(new_menu), SWIGTYPE_p_switch_ivr_menu.getCPtr(main), name, greeting_sound, short_greeting_sound, invalid_sound, exit_sound, transfer_sound, confirm_macro, confirm_key, tts_engine, tts_voice, confirm_attempts, inter_timeout, digit_len, timeout, max_failures, max_timeouts, SWIGTYPE_p_apr_pool_t.getCPtr(pool));
     return ret;
   }
 
@@ -5605,6 +5624,11 @@ public class freeswitch {
 
   public static switch_status_t switch_ivr_set_user(SWIGTYPE_p_switch_core_session session, string data) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_set_user(SWIGTYPE_p_switch_core_session.getCPtr(session), data);
+    return ret;
+  }
+
+  public static switch_status_t switch_ivr_set_user_xml(SWIGTYPE_p_switch_core_session session, string prefix, string user, string domain, switch_xml x_user) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_set_user_xml(SWIGTYPE_p_switch_core_session.getCPtr(session), prefix, user, domain, switch_xml.getCPtr(x_user));
     return ret;
   }
 
@@ -5774,6 +5798,11 @@ public class freeswitch {
 
   public static switch_status_t switch_rtp_set_ssrc(SWIGTYPE_p_switch_rtp rtp_session, uint ssrc) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_set_ssrc(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), ssrc);
+    return ret;
+  }
+
+  public static switch_status_t switch_rtp_set_remote_ssrc(SWIGTYPE_p_switch_rtp rtp_session, uint ssrc) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_set_remote_ssrc(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), ssrc);
     return ret;
   }
 
@@ -9827,6 +9856,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_asr_get_results")]
   public static extern int switch_core_asr_get_results(HandleRef jarg1, ref string jarg2, HandleRef jarg3);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_asr_get_result_headers")]
+  public static extern int switch_core_asr_get_result_headers(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_asr_load_grammar")]
   public static extern int switch_core_asr_load_grammar(HandleRef jarg1, string jarg2, string jarg3);
 
@@ -10345,6 +10377,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_refresh_video")]
   public static extern int switch_core_session_refresh_video(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_stream_system_fork")]
+  public static extern int switch_stream_system_fork(string jarg1, HandleRef jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_module_name_set")]
   public static extern void switch_loadable_module_interface_module_name_set(HandleRef jarg1, string jarg2);
@@ -12355,6 +12390,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_asr_interface_asr_get_results_get")]
   public static extern IntPtr switch_asr_interface_asr_get_results_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_asr_interface_asr_get_result_headers_set")]
+  public static extern void switch_asr_interface_asr_get_result_headers_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_asr_interface_asr_get_result_headers_get")]
+  public static extern IntPtr switch_asr_interface_asr_get_result_headers_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_asr_interface_asr_start_input_timers_set")]
   public static extern void switch_asr_interface_asr_start_input_timers_set(HandleRef jarg1, HandleRef jarg2);
@@ -14735,6 +14776,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_play_and_detect_speech")]
   public static extern int switch_ivr_play_and_detect_speech(HandleRef jarg1, string jarg2, string jarg3, string jarg4, ref string jarg5, uint jarg6, HandleRef jarg7);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_detect_speech_init")]
+  public static extern int switch_ivr_detect_speech_init(HandleRef jarg1, string jarg2, string jarg3, HandleRef jarg4);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_detect_speech")]
   public static extern int switch_ivr_detect_speech(HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5, HandleRef jarg6);
 
@@ -14934,7 +14978,7 @@ class freeswitchPINVOKE {
   public static extern int switch_ivr_digit_stream_parser_set_terminator(HandleRef jarg1, char jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_menu_init")]
-  public static extern int switch_ivr_menu_init(HandleRef jarg1, HandleRef jarg2, string jarg3, string jarg4, string jarg5, string jarg6, string jarg7, string jarg8, string jarg9, string jarg10, string jarg11, int jarg12, int jarg13, int jarg14, int jarg15, int jarg16, int jarg17, HandleRef jarg18);
+  public static extern int switch_ivr_menu_init(HandleRef jarg1, HandleRef jarg2, string jarg3, string jarg4, string jarg5, string jarg6, string jarg7, string jarg8, string jarg9, string jarg10, string jarg11, string jarg12, int jarg13, int jarg14, int jarg15, int jarg16, int jarg17, int jarg18, HandleRef jarg19);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_menu_bind_action")]
   public static extern int switch_ivr_menu_bind_action(HandleRef jarg1, int jarg2, string jarg3, string jarg4);
@@ -15019,6 +15063,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_set_user")]
   public static extern int switch_ivr_set_user(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_set_user_xml")]
+  public static extern int switch_ivr_set_user_xml(HandleRef jarg1, string jarg2, string jarg3, string jarg4, HandleRef jarg5);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_sound_test")]
   public static extern int switch_ivr_sound_test(HandleRef jarg1);
@@ -15298,6 +15345,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_set_ssrc")]
   public static extern int switch_rtp_set_ssrc(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_set_remote_ssrc")]
+  public static extern int switch_rtp_set_remote_ssrc(HandleRef jarg1, uint jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_set_end_port")]
   public static extern ushort switch_rtp_set_end_port(ushort jarg1);
@@ -16341,7 +16391,7 @@ class freeswitchPINVOKE {
   public static extern bool email(string jarg1, string jarg2, string jarg3, string jarg4, string jarg5, string jarg6, string jarg7);
 
   [DllImport("mod_managed", EntryPoint="CSharp_new_IvrMenu")]
-  public static extern IntPtr new_IvrMenu(HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5, string jarg6, string jarg7, string jarg8, string jarg9, string jarg10, int jarg11, int jarg12, int jarg13, int jarg14, int jarg15, int jarg16);
+  public static extern IntPtr new_IvrMenu(HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5, string jarg6, string jarg7, string jarg8, string jarg9, string jarg10, string jarg11, int jarg12, int jarg13, int jarg14, int jarg15, int jarg16, int jarg17);
 
   [DllImport("mod_managed", EntryPoint="CSharp_delete_IvrMenu")]
   public static extern void delete_IvrMenu(HandleRef jarg1);
@@ -16744,6 +16794,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_check_hangup_hook")]
   public static extern void CoreSession_check_hangup_hook(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_consoleLog")]
+  public static extern void CoreSession_consoleLog(HandleRef jarg1, string jarg2, string jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_console_log")]
   public static extern void console_log(string jarg1, string jarg2);
@@ -17272,7 +17325,7 @@ public class IvrMenu : IDisposable {
     }
   }
 
-  public IvrMenu(IvrMenu main, string name, string greeting_sound, string short_greeting_sound, string invalid_sound, string exit_sound, string confirm_macro, string confirm_key, string tts_engine, string tts_voice, int confirm_attempts, int inter_timeout, int digit_len, int timeout, int max_failures, int max_timeouts) : this(freeswitchPINVOKE.new_IvrMenu(IvrMenu.getCPtr(main), name, greeting_sound, short_greeting_sound, invalid_sound, exit_sound, confirm_macro, confirm_key, tts_engine, tts_voice, confirm_attempts, inter_timeout, digit_len, timeout, max_failures, max_timeouts), true) {
+  public IvrMenu(IvrMenu main, string name, string greeting_sound, string short_greeting_sound, string invalid_sound, string exit_sound, string transfer_sound, string confirm_macro, string confirm_key, string tts_engine, string tts_voice, int confirm_attempts, int inter_timeout, int digit_len, int timeout, int max_failures, int max_timeouts) : this(freeswitchPINVOKE.new_IvrMenu(IvrMenu.getCPtr(main), name, greeting_sound, short_greeting_sound, invalid_sound, exit_sound, transfer_sound, confirm_macro, confirm_key, tts_engine, tts_voice, confirm_attempts, inter_timeout, digit_len, timeout, max_failures, max_timeouts), true) {
   }
 
   public void bindAction(string action, string arg, string bind) {
@@ -18063,6 +18116,36 @@ public class SWIGTYPE_p_f_p_switch_asr_handle_p_p_char_p_unsigned_long__switch_s
   }
 
   internal static HandleRef getCPtr(SWIGTYPE_p_f_p_switch_asr_handle_p_p_char_p_unsigned_long__switch_status_t obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 2.0.1
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
+public class SWIGTYPE_p_f_p_switch_asr_handle_p_p_switch_event_p_unsigned_long__switch_status_t {
+  private HandleRef swigCPtr;
+
+  internal SWIGTYPE_p_f_p_switch_asr_handle_p_p_switch_event_p_unsigned_long__switch_status_t(IntPtr cPtr, bool futureUse) {
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  protected SWIGTYPE_p_f_p_switch_asr_handle_p_p_switch_event_p_unsigned_long__switch_status_t() {
+    swigCPtr = new HandleRef(null, IntPtr.Zero);
+  }
+
+  internal static HandleRef getCPtr(SWIGTYPE_p_f_p_switch_asr_handle_p_p_switch_event_p_unsigned_long__switch_status_t obj) {
     return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
   }
 }
@@ -23930,6 +24013,17 @@ public class switch_asr_interface : IDisposable {
     } 
   }
 
+  public SWIGTYPE_p_f_p_switch_asr_handle_p_p_switch_event_p_unsigned_long__switch_status_t asr_get_result_headers {
+    set {
+      freeswitchPINVOKE.switch_asr_interface_asr_get_result_headers_set(swigCPtr, SWIGTYPE_p_f_p_switch_asr_handle_p_p_switch_event_p_unsigned_long__switch_status_t.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_asr_interface_asr_get_result_headers_get(swigCPtr);
+      SWIGTYPE_p_f_p_switch_asr_handle_p_p_switch_event_p_unsigned_long__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_asr_handle_p_p_switch_event_p_unsigned_long__switch_status_t(cPtr, false);
+      return ret;
+    } 
+  }
+
   public SWIGTYPE_p_f_p_switch_asr_handle__switch_status_t asr_start_input_timers {
     set {
       freeswitchPINVOKE.switch_asr_interface_asr_start_input_timers_set(swigCPtr, SWIGTYPE_p_f_p_switch_asr_handle__switch_status_t.getCPtr(value));
@@ -25827,6 +25921,8 @@ public enum switch_channel_flag_t {
   CF_VERBOSE_SDP,
   CF_DTLS_OK,
   CF_VIDEO_PASSIVE,
+  CF_NOVIDEO,
+  CF_VIDEO_ECHO,
   CF_FLAG_MAX
 }
 
@@ -35097,7 +35193,11 @@ public enum switch_session_ctl_t {
   SCSC_DEBUG_SQL,
   SCSC_SQL,
   SCSC_API_EXPANSION,
-  SCSC_RECOVER
+  SCSC_RECOVER,
+  SCSC_SPS_PEAK,
+  SCSC_SPS_PEAK_FIVEMIN,
+  SCSC_SESSIONS_PEAK,
+  SCSC_SESSIONS_PEAK_FIVEMIN
 }
 
 }

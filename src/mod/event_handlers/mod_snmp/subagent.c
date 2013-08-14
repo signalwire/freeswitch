@@ -158,7 +158,7 @@ void init_subagent(switch_memory_pool_t *pool)
 	DEBUGMSGTL(("init_subagent", "mod_snmp subagent initializing\n"));
 
 	netsnmp_register_scalar_group(netsnmp_create_handler_registration("identity", handle_identity, identity_oid, OID_LENGTH(identity_oid), HANDLER_CAN_RONLY), 1, 2);
-	netsnmp_register_scalar_group(netsnmp_create_handler_registration("systemStats", handle_systemStats, systemStats_oid, OID_LENGTH(systemStats_oid), HANDLER_CAN_RONLY), 1, 7);
+	netsnmp_register_scalar_group(netsnmp_create_handler_registration("systemStats", handle_systemStats, systemStats_oid, OID_LENGTH(systemStats_oid), HANDLER_CAN_RONLY), 1, 11);
 
 	ch_table_info = switch_core_alloc(pool, sizeof(netsnmp_table_registration_info));
 	netsnmp_table_helper_add_indexes(ch_table_info, ASN_INTEGER, 0);
@@ -216,6 +216,7 @@ int handle_systemStats(netsnmp_mib_handler *handler, netsnmp_handler_registratio
 	switch(reqinfo->mode) {
 	case MODE_GET:
 		subid = requests->requestvb->name[reginfo->rootoid_len - 2];
+		snmp_log(LOG_DEBUG, "systemStats OID-suffix requested (%d)\n", (int) subid);
 
 		switch (subid) {
 		case SS_UPTIME:
@@ -255,6 +256,22 @@ int handle_systemStats(netsnmp_mib_handler *handler, netsnmp_handler_registratio
 			break;
 		case SS_MAX_SESSIONS_PER_SECOND:
 			switch_core_session_ctl(SCSC_SPS, &int_val);
+			snmp_set_var_typed_integer(requests->requestvb, ASN_GAUGE, int_val);
+			break;
+		case SS_PEAK_SESSIONS_PER_SECOND:
+			switch_core_session_ctl(SCSC_SPS_PEAK, &int_val);
+			snmp_set_var_typed_integer(requests->requestvb, ASN_GAUGE, int_val);
+			break;
+		case SS_PEAK_SESSIONS_PER_FIVEMIN:
+			switch_core_session_ctl(SCSC_SPS_PEAK_FIVEMIN, &int_val);
+			snmp_set_var_typed_integer(requests->requestvb, ASN_GAUGE, int_val);
+			break;
+		case SS_PEAK_SESSIONS:
+			switch_core_session_ctl(SCSC_SESSIONS_PEAK, &int_val);
+			snmp_set_var_typed_integer(requests->requestvb, ASN_GAUGE, int_val);
+			break;
+		case SS_PEAK_SESSIONS_FIVEMIN:
+			switch_core_session_ctl(SCSC_SESSIONS_PEAK_FIVEMIN, &int_val);
 			snmp_set_var_typed_integer(requests->requestvb, ASN_GAUGE, int_val);
 			break;
 		default:

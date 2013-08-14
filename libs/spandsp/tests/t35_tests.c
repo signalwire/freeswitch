@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
     const char *country;
     const char *model;
     const char *real_country;
-    int first_hit;
+    bool first_hit;
 
     printf("Sweep through all the possible countries\n");
     for (i = 0;  i < 256;  i++)
@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
         msg[0] = i;
         msg[1] = '\x00';
         msg[2] = '\x00';
-        first_hit = TRUE;
+        first_hit = true;
         for (j = 0;  j < 65536;  j++)
         {
             msg[1] = (j >> 8) & 0xFF;
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
                         printf("%s\n", real_country);
                     else
                         printf("???\n");
-                    first_hit = FALSE;
+                    first_hit = false;
                 }
                 printf("    0x%02x 0x%02x 0x%02x '%s'\n", msg[0], msg[1], msg[2], vendor);
             }

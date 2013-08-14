@@ -116,14 +116,14 @@ Source2:	http://files.freeswitch.org/downloads/libs/flite-1.5.1-current.tar.bz2
 Source3:	http://files.freeswitch.org/downloads/libs/lame-3.97.tar.gz
 Source4:	http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
 Source5:	http://files.freeswitch.org/downloads/libs/mpg123-1.13.2.tar.gz
-Source6:	http://files.freeswitch.org/downloads/libs/openldap-2.4.11.tar.gz
-Source7:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.7.tar.gz
-Source8:	http://files.freeswitch.org/downloads/libs/soundtouch-1.6.0.tar.gz
-Source9:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.7.tar.gz
-Source10:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
-Source11:	http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
-Source12:       http://files.freeswitch.org/downloads/libs/json-c-0.9.tar.gz
-Source13:       http://files.freeswitch.org/downloads/libs/opus-0.9.0.tar.gz
+#Source6:	http://files.freeswitch.org/downloads/libs/openldap-2.4.11.tar.gz
+Source6:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.7.tar.gz
+Source7:	http://files.freeswitch.org/downloads/libs/soundtouch-1.6.0.tar.gz
+Source8:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.7.tar.gz
+Source9:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
+Source10:	http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
+Source11:       http://files.freeswitch.org/downloads/libs/json-c-0.9.tar.gz
+Source12:       http://files.freeswitch.org/downloads/libs/opus-0.9.0.tar.gz
 Prefix:        	%{prefix}
 
 
@@ -137,7 +137,7 @@ Prefix:        	%{prefix}
 #BuildRequires: openldap2-devel
 BuildRequires: lzo-devel
 %else
-BuildRequires: openldap-devel
+#BuildRequires: openldap-devel
 %endif
 BuildRequires: autoconf
 BuildRequires: automake
@@ -182,7 +182,7 @@ Requires: ncurses
 Requires: openssl
 Requires: unixODBC
 Requires: libjpeg
-Requires: openldap
+#Requires: openldap
 Requires: db4
 Requires: gdbm
 Requires: zlib
@@ -700,6 +700,14 @@ Requires:       %{name} = %{version}-%{release}
 %description codec-isac
 iSAC Codec support for FreeSWITCH open source telephony platform
 
+%package codec-vp8
+Summary:        vp8 Codec support for FreeSWITCH open source telephony platform
+Group:          System/Libraries
+Requires:       %{name} = %{version}-%{release}
+
+%description codec-vp8
+iSAC Codec support for FreeSWITCH open source telephony platform
+
 %package codec-mp4v
 Summary:        MP4V Video Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
@@ -770,13 +778,13 @@ Theora Video Codec support for FreeSWITCH open source telephony platform.
 #				FreeSWITCH Directory Modules
 ######################################################################################################################
 
-%package directory-ldap
-Summary:        LDAP Directory support for FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
+#%package directory-ldap
+#Summary:        LDAP Directory support for FreeSWITCH open source telephony platform
+#Group:          System/Libraries
+#Requires:       %{name} = %{version}-%{release}
 
-%description directory-ldap
-LDAP Directory support for FreeSWITCH open source telephony platform.
+#%description directory-ldap
+#LDAP Directory support for FreeSWITCH open source telephony platform.
 
 ######################################################################################################################
 #				FreeSWITCH Endpoint Modules
@@ -1266,7 +1274,6 @@ cp %{SOURCE9} libs/
 cp %{SOURCE10} libs/
 cp %{SOURCE11} libs/
 cp %{SOURCE12} libs/
-cp %{SOURCE13} libs/
 
 ######################################################################################################################
 #
@@ -1329,7 +1336,7 @@ ASR_TTS_MODULES="asr_tts/mod_flite asr_tts/mod_pocketsphinx asr_tts/mod_tts_comm
 ######################################################################################################################
 CODECS_MODULES="codecs/mod_amr codecs/mod_amrwb codecs/mod_bv codecs/mod_celt codecs/mod_codec2 codecs/mod_g723_1 \
 		codecs/mod_g729 codecs/mod_h26x codecs/mod_ilbc codecs/mod_isac codecs/mod_mp4v codecs/mod_opus codecs/mod_silk \
-		codecs/mod_siren codecs/mod_speex codecs/mod_theora "
+		codecs/mod_siren codecs/mod_speex codecs/mod_theora codecs/mod_vp8"
 #
 %if %{build_sng_tc}
 CODECS_MODULES+="codecs/mod_sangoma_codec"
@@ -2040,6 +2047,10 @@ fi
 %defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_mp4v.so*
 
+%files codec-vp8
+%defattr(-,freeswitch,daemon)
+%{MODINSTDIR}/mod_vp8.so*
+
 %files codec-opus
 %defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_opus.so*
@@ -2072,9 +2083,9 @@ fi
 #
 ######################################################################################################################
 
-%files directory-ldap
-%defattr(-,freeswitch,daemon)
-%{MODINSTDIR}/mod_theora.so*
+#%files directory-ldap
+#%defattr(-,freeswitch,daemon)
+#%{MODINSTDIR}/mod_theora.so*
 
 ######################################################################################################################
 #
@@ -2374,7 +2385,9 @@ fi
 #
 ######################################################################################################################
 %changelog
-* Thu June 19 2013 - krice@freeswitch.org
+* Thu Jun 28 2013 - krice@freeswitch.org
+- Add module for VP8
+* Thu Jun 19 2013 - krice@freeswitch.org
 - tweak files included for vanilla configs
 * Thu Sep 19 2012 - krice@freeswitch.org
 - Add support for Spanish and Portugese say language modules

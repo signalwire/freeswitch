@@ -327,7 +327,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    end_of_page = FALSE;
+    end_of_page = false;
 #if 1
     printf("Testing image_function->compress->decompress->image_function\n");
     /* Send end gets image from a function */
@@ -372,7 +372,7 @@ int main(int argc, char *argv[])
         switch (block_size)
         {
         case 0:
-            end_of_page = FALSE;
+            end_of_page = false;
             for (;;)
             {
                 bit = t4_t6_encode_get_bit(send_state);

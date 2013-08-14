@@ -2202,7 +2202,7 @@ int gsmopen_serial_answer_AT(private_t *tech_pvt)
 			return -1;
 		}
 	}
-	res = gsmopen_serial_write_AT_expect(tech_pvt, "AT^DDSETEX=2", tech_pvt->at_dial_expect);
+	//res = gsmopen_serial_write_AT_expect(tech_pvt, "AT^DDSETEX=2", tech_pvt->at_dial_expect);
 	DEBUGA_GSMOPEN("AT: call answered\n", GSMOPEN_P_LOG);
 	return 0;
 }
@@ -2286,7 +2286,7 @@ int gsmopen_serial_call_AT(private_t *tech_pvt, char *dstr)
 		ERRORA("dial command failed, dial string was: %s\n", GSMOPEN_P_LOG, at_command);
 		return -1;
 	}
-	res = gsmopen_serial_write_AT_expect(tech_pvt, "AT^DDSETEX=2", tech_pvt->at_dial_expect);
+	//res = gsmopen_serial_write_AT_expect(tech_pvt, "AT^DDSETEX=2", tech_pvt->at_dial_expect);
 
 	return 0;
 }
@@ -3007,6 +3007,8 @@ int gsmopen_serial_init_audio_port(private_t *tech_pvt, int controldevice_audio_
 
 	if (tech_pvt->serialPort_serial_audio->Open(devname, 115200, "8N1", ctb::SerialPort::NoFlowControl) >= 0) {
 		DEBUGA_GSMOPEN("port %s, SUCCESS open\n", GSMOPEN_P_LOG, tech_pvt->controldevice_audio_name);
+		tech_pvt->serialPort_serial_audio_opened =1;
+		gsmopen_serial_write_AT_expect(tech_pvt, "AT^DDSETEX=2", tech_pvt->at_dial_expect);
 	} else {
 #ifdef WIN32
 		LPVOID msg;
@@ -3054,6 +3056,7 @@ int serial_audio_shutdown(private_t *tech_pvt)
 
 	res = tech_pvt->serialPort_serial_audio->Close();
 	DEBUGA_GSMOPEN("serial_audio_shutdown res=%d (controldev_audio_fd is %d)\n", GSMOPEN_P_LOG, res, tech_pvt->controldev_audio_fd);
+	tech_pvt->serialPort_serial_audio_opened =0;
 
 	return res;
 }

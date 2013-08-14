@@ -357,6 +357,28 @@
 		</div>
 	</script>
 
+	<script type="text/x-handlebars" data-template-name="showNatMaps">
+		<h1>Nat Maps</h1>
+		<div>
+			<table class="table">
+			<tr>
+				<th>Port</th>
+				<th>Protocol</th>
+				<th>Protocol Number</th>
+				<th>Sticky</th>
+			</tr>
+			{{#each App.showNatMapsController.content}}
+			<tr>
+				<td>{{ port }}</td>
+				<td>{{ proto }}</td>
+				<td>{{ proto_num }}</td>
+				<td>{{ sticky }}</td>
+			</tr>
+			{{/each}}
+			</table>
+		</div>
+	</script>
+
 	<script type="text/x-handlebars" data-template-name="showSays">
 		<h1>Say</h1>
 		<div>
@@ -492,7 +514,7 @@
 		{{#linkTo "showCompletes"}} Complete {{/linkTo}} |
 		{{#linkTo "showChats"}} Chat {{/linkTo}} |
 		{{#linkTo "showManagements"}} Management {{/linkTo}} |
-		Nat_map |
+		{{#linkTo "showNatMaps"}} Nat Map {{/linkTo}} |
 		{{#linkTo "showSays"}} Say {{/linkTo}} |
 		{{#linkTo "showInterfaces"}} Interfaces {{/linkTo}} |
 		{{#linkTo "showInterfaceTypes"}} InterfaceTypes {{/linkTo}} |
@@ -507,6 +529,66 @@
 			The FreeSWITCH Portal Project is Created by <a href="http://www.dujinfang.com">Seven Du</a>.
 			Available with MPL1.1 licence - Same as FreeSWITCH.
 		</p>
+
+
+		<p>The FreeSWITCH Portal Project is designed to show an intuitive view of the FreeSWITCH internals. It can be used by FreeSWITCH funs, administrators, developers etc. It does not aims to replace GUIs such as FusionPBX or blue.box. It would be very easy to use and super helpful for new FreeSWITCH users.
+
+		<hr>
+		<h2>Philosophy</h2>
+
+		<p>To provide a GUI out of the box without depends on external resources like PHP or a webserver such as Apache or Nginx.
+
+		<p>Mainly developed with static html and Javascripts, and perhaps some lua scripts can help do some more magic things later.
+
+		<h2>Install</h2>
+
+		<p>If you see this page it means you already installed. Remember it works Out of the Box!
+
+		<h2>Todo</h2>
+
+
+		<li>Modify users: A raw idea to add a new user would be something like below and reloadxml.
+
+		<pre>sed -e 's/1000/new-user/g' 1000.xml > new-user.xml</pre>
+
+		<li>Modify dialplan and/or other XMLs: possible to use some online XML editor and
+			can save the XML with some lua or C code at the backend,
+			although there are security concerns.
+
+		<li>Store information in DB: I guess the Dbh handle in lua should can do something like this.
+
+		<li>Web terminal: With terminal.js like things and websocket we can really build a web version of fs_cli
+
+		<li>rtmp web client support to make and receive calls
+
+		<li>WebRTC?
+
+		<li>Logging, Event Debugging or SIP tracing: Yeah, more magic
+
+		<li>i18n
+
+		<h2>Security</h2>
+
+		<p>The primary goal is to help new users learn and use FreeSWITCH.
+			Please <strong>DON'T</strong> put this on your production server as
+			I haven't think anything about security.
+
+		<p>You can disable this by delete or move the portal directory out of /usr/local/freeswitch/htdocs . e.g.
+
+		<pre>mv /usr/local/freeswitch/htdocs/portal /usr/local/freeswitch/</pre>
+
+		And move back any time you want.
+
+		<h2>Development</h2>
+
+		<li>I started this project to learn how to use bootstrap and ember.js,
+			the latter said it is a framework for <strong>creating ambitious web applications</strong>.
+
+		<li>Contributions and patches are welcome.
+		<br>
+		<br>
+		<br>
+		<br>
 	</script>
 
 	<script type="text/x-handlebars" data-template-name="users">
@@ -605,6 +687,7 @@
 <!-- Le javascript
 ================================================== -->
 <!-- Placed at the end of the document so the pages load faster -->
+<script src="assets/js/ie-console.js"></script>
 <script src="assets/js/jquery-1.9.1.min.js"></script>
 <script src="assets/js/handlebars.js"></script>
 <script src="assets/js/ember-1.0.0-rc.1.js"></script>
@@ -687,6 +770,7 @@
 			$('#ws-status').html('Socket Connected').css("color", "green");
 			// socket.send("event json all");
 			socket.send("event json CHANNEL_CREATE");
+			socket.send("event json CHANNEL_BRIDGE");
 			socket.send("event json CHANNEL_HANGUP_COMPLETE");
 			socket.send("event json CHANNEL_CALLSTATE");
 		}
@@ -694,7 +778,6 @@
 		socket.onmessage =function(msg) {
 			// console.log(msg.data);
 			var data = JSON.parse(msg.data);
-			console.log(data["Event-Name"]);
 
 			eventCallback(data);
 		}

@@ -72,16 +72,16 @@ SPAN_DECLARE(void) t38_terminal_set_config(t38_terminal_state_t *s, int config);
 /*! Select whether the time for talker echo protection tone will be allowed for when sending.
     \brief Select whether TEP time will be allowed for.
     \param s The T.38 context.
-    \param use_tep TRUE if TEP should be allowed for.
+    \param use_tep True if TEP should be allowed for.
 */
-SPAN_DECLARE(void) t38_terminal_set_tep_mode(t38_terminal_state_t *s, int use_tep);
+SPAN_DECLARE(void) t38_terminal_set_tep_mode(t38_terminal_state_t *s, bool use_tep);
 
 /*! Select whether non-ECM fill bits are to be removed during transmission.
     \brief Select whether non-ECM fill bits are to be removed during transmission.
     \param s The T.38 context.
-    \param remove TRUE if fill bits are to be removed.
+    \param remove True if fill bits are to be removed.
 */
-SPAN_DECLARE(void) t38_terminal_set_fill_bit_removal(t38_terminal_state_t *s, int remove);
+SPAN_DECLARE(void) t38_terminal_set_fill_bit_removal(t38_terminal_state_t *s, bool remove);
 
 /*! Get a pointer to the T.30 engine associated with a termination mode T.38 context.
     \brief Get a pointer to the T.30 engine associated with a T.38 context.
@@ -108,21 +108,21 @@ SPAN_DECLARE(logging_state_t *) t38_terminal_get_logging_state(t38_terminal_stat
 
 /*! \brief Reinitialise a termination mode T.38 context.
     \param s The T.38 context.
-    \param calling_party TRUE if the context is for a calling party. FALSE if the
+    \param calling_party True if the context is for a calling party. False if the
            context is for an answering party.
     \return 0 for OK, else -1. */
 SPAN_DECLARE(int) t38_terminal_restart(t38_terminal_state_t *s,
-                                       int calling_party);
+                                       bool calling_party);
 
 /*! \brief Initialise a termination mode T.38 context.
     \param s The T.38 context.
-    \param calling_party TRUE if the context is for a calling party. FALSE if the
+    \param calling_party True if the context is for a calling party. False if the
            context is for an answering party.
     \param tx_packet_handler A callback routine to encapsulate and transmit T.38 packets.
     \param tx_packet_user_data An opaque pointer passed to the tx_packet_handler routine.
     \return A pointer to the termination mode T.38 context, or NULL if there was a problem. */
 SPAN_DECLARE(t38_terminal_state_t *) t38_terminal_init(t38_terminal_state_t *s,
-                                                       int calling_party,
+                                                       bool calling_party,
                                                        t38_tx_packet_handler_t tx_packet_handler,
                                                        void *tx_packet_user_data);
 

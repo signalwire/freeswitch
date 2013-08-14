@@ -79,9 +79,9 @@ int main(int argc, char *argv[])
     lpc10_decode_state_t *lpc10_dec_state;
     int i;
     int block_no;
-    int log_error;
-    int compress;
-    int decompress;
+    bool log_error;
+    bool compress;
+    bool decompress;
     const char *in_file_name;
     int compress_file;
     int decompress_file;
@@ -90,25 +90,25 @@ int main(int argc, char *argv[])
     int enc_len;
     int dec_len;
 
-    compress = FALSE;
-    decompress = FALSE;
-    log_error = TRUE;
+    compress = false;
+    decompress = false;
+    log_error = true;
     in_file_name = IN_FILE_NAME;
     while ((opt = getopt(argc, argv, "cdi:l")) != -1)
     {
         switch (opt)
         {
         case 'c':
-            compress = TRUE;
+            compress = true;
             break;
         case 'd':
-            decompress = TRUE;
+            decompress = true;
             break;
         case 'i':
             in_file_name = optarg;
             break;
         case 'l':
-            log_error = FALSE;
+            log_error = false;
             break;
         default:
             //usage();
@@ -150,13 +150,13 @@ int main(int argc, char *argv[])
         exit(2);
     }
 
-    if ((lpc10_enc_state = lpc10_encode_init(NULL, TRUE)) == NULL)
+    if ((lpc10_enc_state = lpc10_encode_init(NULL, true)) == NULL)
     {
         fprintf(stderr, "    Cannot create encoder\n");
         exit(2);
     }
 
-    if ((lpc10_dec_state = lpc10_decode_init(NULL, TRUE)) == NULL)
+    if ((lpc10_dec_state = lpc10_decode_init(NULL, true)) == NULL)
     {
         fprintf(stderr, "    Cannot create decoder\n");
         exit(2);

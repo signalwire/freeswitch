@@ -40,8 +40,14 @@
 #include <signal.h>
 #include <sys/time.h>
 #include <time.h>
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 
 #include "spandsp/private/logging.h"
@@ -73,11 +79,11 @@ static void default_message_handler(void *user_data, int level, const char *text
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) span_log_test(logging_state_t *s, int level)
+SPAN_DECLARE(bool) span_log_test(logging_state_t *s, int level)
 {
     if (s  &&  (s->level & SPAN_LOG_SEVERITY_MASK) >= (level & SPAN_LOG_SEVERITY_MASK))
-        return TRUE;
-    return FALSE;
+        return true;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -229,7 +235,7 @@ SPAN_DECLARE(logging_state_t *) span_log_init(logging_state_t *s, int level, con
 {
     if (s == NULL)
     {
-        if ((s = (logging_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (logging_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     s->span_message = __span_message;
@@ -252,7 +258,7 @@ SPAN_DECLARE(int) span_log_release(logging_state_t *s)
 SPAN_DECLARE(int) span_log_free(logging_state_t *s)
 {
     if (s)
-        free(s);
+        span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

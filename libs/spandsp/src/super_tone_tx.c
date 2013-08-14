@@ -45,6 +45,7 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/complex.h"
 #include "spandsp/dds.h"
@@ -78,7 +79,7 @@ SPAN_DECLARE(super_tone_tx_step_t *) super_tone_tx_make_step(super_tone_tx_step_
 {
     if (s == NULL)
     {
-        if ((s = (super_tone_tx_step_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (super_tone_tx_step_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     if (f1 >= 1.0f)
@@ -121,7 +122,7 @@ SPAN_DECLARE(int) super_tone_tx_free_tone(super_tone_tx_step_t *s)
             super_tone_tx_free_tone(s->nest);
         t = s;
         s = s->next;
-        free(t);
+        span_free(t);
     }
     return 0;
 }
@@ -133,7 +134,7 @@ SPAN_DECLARE(super_tone_tx_state_t *) super_tone_tx_init(super_tone_tx_state_t *
         return NULL;
     if (s == NULL)
     {
-        if ((s = (super_tone_tx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (super_tone_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -155,7 +156,7 @@ SPAN_DECLARE(int) super_tone_tx_release(super_tone_tx_state_t *s)
 SPAN_DECLARE(int) super_tone_tx_free(super_tone_tx_state_t *s)
 {
     if (s)
-        free(s);
+        span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

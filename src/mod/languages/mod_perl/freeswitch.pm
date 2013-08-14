@@ -458,6 +458,7 @@ sub DESTROY {
 *get_cb_args = *freeswitchc::CoreSession_get_cb_args;
 *check_hangup_hook = *freeswitchc::CoreSession_check_hangup_hook;
 *run_dtmf_callback = *freeswitchc::CoreSession_run_dtmf_callback;
+*consoleLog = *freeswitchc::CoreSession_consoleLog;
 sub DISOWN {
     my $self = shift;
     my $ptr = tied(%$self);

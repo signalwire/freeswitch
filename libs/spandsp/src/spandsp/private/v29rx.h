@@ -139,8 +139,8 @@ struct v29_rx_state_s
     uint8_t training_scramble_reg;
     /*! \brief The current step in the table of CD constellation positions. */
     int training_cd;
-    /*! \brief TRUE if the previous trained values are to be reused. */
-    int old_train;
+    /*! \brief True if the previous trained values are to be reused. */
+    bool old_train;
     /*! \brief The section of the training data we are currently in. */
     int training_stage;
     /*! \brief A count of how far through the current training step we are. */

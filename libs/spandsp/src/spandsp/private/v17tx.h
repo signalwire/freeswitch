@@ -81,10 +81,10 @@ struct v17_tx_state_s
     uint32_t scramble_reg;
     /*! \brief Scrambler tap */
     int scrambler_tap;
-    /*! \brief TRUE if transmitting the training sequence. FALSE if transmitting user data. */
-    int in_training;
-    /*! \brief TRUE if the short training sequence is to be used. */
-    int short_train;
+    /*! \brief True if transmitting the training sequence. False if transmitting user data. */
+    bool in_training;
+    /*! \brief True if the short training sequence is to be used. */
+    bool short_train;
     /*! \brief A counter used to track progress through sending the training sequence. */
     int training_step;
 

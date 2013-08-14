@@ -39,6 +39,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <memory.h>
 #include <string.h>
@@ -46,6 +51,7 @@
 #include <assert.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/logging.h"
 #include "spandsp/queue.h"
@@ -447,7 +453,7 @@ static const struct ademco_code_s ademco_codes[] =
 #define TONE_TO_TOTAL_ENERGY        45.2233f        /* -0.85dB [GOERTZEL_SAMPLES_PER_BLOCK*10^(-0.85/10.0)] */
 #endif
 
-static int tone_rx_init = FALSE;
+static int tone_rx_init = false;
 static goertzel_descriptor_t tone_1400_desc;
 static goertzel_descriptor_t tone_2300_desc;
 
@@ -749,7 +755,7 @@ SPAN_DECLARE(ademco_contactid_receiver_state_t *) ademco_contactid_receiver_init
 {
     if (s == NULL)
     {
-        if ((s = (ademco_contactid_receiver_state_t *) malloc(sizeof (*s))) == NULL)
+        if ((s = (ademco_contactid_receiver_state_t *) span_alloc(sizeof (*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -776,7 +782,7 @@ SPAN_DECLARE(int) ademco_contactid_receiver_release(ademco_contactid_receiver_st
 
 SPAN_DECLARE(int) ademco_contactid_receiver_free(ademco_contactid_receiver_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -793,7 +799,7 @@ SPAN_DECLARE(int) ademco_contactid_sender_tx(ademco_contactid_sender_state_t *s,
         case 0:
             if (!s->clear_to_send)
                 return 0;
-            s->clear_to_send = FALSE;
+            s->clear_to_send = false;
             s->step++;
             s->remaining_samples = ms_to_samples(250);
             /* Fall through */
@@ -810,7 +816,7 @@ SPAN_DECLARE(int) ademco_contactid_sender_tx(ademco_contactid_sender_state_t *s,
             samples = dtmf_tx(&s->dtmf, &amp[sample], max_samples - sample);
             if (samples == 0)
             {
-                s->clear_to_send = FALSE;
+                s->clear_to_send = false;
                 s->step = 0;
                 return sample;
             }
@@ -947,7 +953,7 @@ SPAN_DECLARE(int) ademco_contactid_sender_rx(ademco_contactid_sender_state_t *s,
                             s->callback(s->callback_user_data, -1, 0, 0);
                         s->tone_state = 4;
                         /* Release the transmit side, and it will time the 250ms post tone delay */
-                        s->clear_to_send = TRUE;
+                        s->clear_to_send = true;
                         s->tries = 0;
                         if (s->tx_digits_len)
                             s->timer = ms_to_samples(3000);
@@ -968,7 +974,7 @@ SPAN_DECLARE(int) ademco_contactid_sender_rx(ademco_contactid_sender_state_t *s,
             case 5:
                 if (hit == 0)
                 {
-                    s->busy = FALSE;
+                    s->busy = false;
                     if (s->duration < ms_to_samples(400)  ||  s->duration > ms_to_samples(1500))
                     {
                         span_log(&s->logging, SPAN_LOG_FLOW, "Bad kissoff duration %d\n", s->duration);
@@ -982,18 +988,18 @@ SPAN_DECLARE(int) ademco_contactid_sender_rx(ademco_contactid_sender_state_t *s,
                         {
                             s->timer = 0;
                             if (s->callback)
-                                s->callback(s->callback_user_data, FALSE, 0, 0);
+                                s->callback(s->callback_user_data, false, 0, 0);
                         }
                     }
                     else
                     {
                         span_log(&s->logging, SPAN_LOG_FLOW, "Received good kissoff\n");
-                        s->clear_to_send = TRUE;
+                        s->clear_to_send = true;
                         s->tx_digits_len = 0;
                         if (s->callback)
-                            s->callback(s->callback_user_data, TRUE, 0, 0);
+                            s->callback(s->callback_user_data, true, 0, 0);
                         s->tone_state = 4;
-                        s->clear_to_send = TRUE;
+                        s->clear_to_send = true;
                         s->tries = 0;
                         if (s->tx_digits_len)
                             s->timer = ms_to_samples(3000);
@@ -1023,7 +1029,7 @@ SPAN_DECLARE(int) ademco_contactid_sender_rx(ademco_contactid_sender_state_t *s,
                     {
                         s->timer = 0;
                         if (s->callback)
-                            s->callback(s->callback_user_data, FALSE, 0, 0);
+                            s->callback(s->callback_user_data, false, 0, 0);
                     }
                 }
             }
@@ -1058,7 +1064,7 @@ SPAN_DECLARE(int) ademco_contactid_sender_put(ademco_contactid_sender_state_t *s
         return -1;
     if ((s->tx_digits_len = encode_msg(s->tx_digits, report)) < 0)
         return -1;
-    s->busy = TRUE;
+    s->busy = true;
     return dtmf_tx_put(&s->dtmf, s->tx_digits, s->tx_digits_len);
 }
 /*- End of function --------------------------------------------------------*/
@@ -1084,7 +1090,7 @@ SPAN_DECLARE(ademco_contactid_sender_state_t *) ademco_contactid_sender_init(ade
 {
     if (s == NULL)
     {
-        if ((s = (ademco_contactid_sender_state_t *) malloc(sizeof (*s))) == NULL)
+        if ((s = (ademco_contactid_sender_state_t *) span_alloc(sizeof (*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -1095,7 +1101,7 @@ SPAN_DECLARE(ademco_contactid_sender_state_t *) ademco_contactid_sender_init(ade
     {
         make_goertzel_descriptor(&tone_1400_desc, 1400.0f, GOERTZEL_SAMPLES_PER_BLOCK);
         make_goertzel_descriptor(&tone_2300_desc, 2300.0f, GOERTZEL_SAMPLES_PER_BLOCK);
-        tone_rx_init = TRUE;
+        tone_rx_init = true;
     }
     goertzel_init(&s->tone_1400, &tone_1400_desc);
     goertzel_init(&s->tone_2300, &tone_2300_desc);
@@ -1121,7 +1127,7 @@ SPAN_DECLARE(int) ademco_contactid_sender_release(ademco_contactid_sender_state_
 
 SPAN_DECLARE(int) ademco_contactid_sender_free(ademco_contactid_sender_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

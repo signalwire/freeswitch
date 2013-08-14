@@ -37,8 +37,14 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include <assert.h>
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/async.h"
@@ -170,8 +176,8 @@ static void dictionary_init(v42bis_comp_state_t *s)
     s->flushed_length = 0;
     s->string_length = 0;
     s->escape_code = 0;
-    s->transparent = TRUE;
-    s->escaped = FALSE;
+    s->transparent = true;
+    s->escaped = false;
     s->compression_performance = COMPRESSIBILITY_MONITOR;
 }
 /*- End of function --------------------------------------------------------*/
@@ -329,7 +335,7 @@ static void go_compressed(v42bis_state_t *ss)
     push_octet(s, s->escape_code);
     push_octet(s, V42BIS_ECM);
     s->bit_buffer = 0;
-    s->transparent = FALSE;
+    s->transparent = false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -352,7 +358,7 @@ static void go_transparent(v42bis_state_t *ss)
     s->last_added = 0;
     push_compressed_code(s, V42BIS_ETM);
     push_octet_alignment(s);
-    s->transparent = TRUE;
+    s->transparent = true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -534,14 +540,14 @@ SPAN_DECLARE(int) v42bis_decompress(v42bis_state_t *ss, const uint8_t buf[], int
             if (s->escaped)
             {
                 /* Command */
-                s->escaped = FALSE;
+                s->escaped = false;
                 switch (in)
                 {
                 case V42BIS_ECM:
                     /* Enter compressed mode */
                     span_log(&ss->logging, SPAN_LOG_FLOW, "Hit V42BIS_ECM\n");
                     send_string(s);
-                    s->transparent = FALSE;
+                    s->transparent = false;
                     s->update_at = s->last_matched;
                     s->last_matched = 0;
                     i++;
@@ -567,12 +573,12 @@ SPAN_DECLARE(int) v42bis_decompress(v42bis_state_t *ss, const uint8_t buf[], int
             }
             else if (in == s->escape_code)
             {
-                s->escaped = TRUE;
+                s->escaped = true;
                 i++;
                 continue;
             }
 
-            yyy = TRUE;
+            yyy = true;
             for (j = 0;  j < 2  &&  yyy;  j++)
             {
                 if (s->update_at)
@@ -605,7 +611,7 @@ SPAN_DECLARE(int) v42bis_decompress(v42bis_state_t *ss, const uint8_t buf[], int
                         s->last_matched = 0;
                     }
                     i++;
-                    yyy = FALSE;
+                    yyy = false;
                 }
             }
         }
@@ -632,7 +638,7 @@ SPAN_DECLARE(int) v42bis_decompress(v42bis_state_t *ss, const uint8_t buf[], int
                     /* Enter transparent mode */
                     span_log(&ss->logging, SPAN_LOG_FLOW, "Hit V42BIS_ETM\n");
                     s->bit_count = 0;
-                    s->transparent = TRUE;
+                    s->transparent = true;
                     s->last_matched = 0;
                     s->last_added = 0;
                     break;
@@ -729,7 +735,7 @@ SPAN_DECLARE(v42bis_state_t *) v42bis_init(v42bis_state_t *s,
         return NULL;
     if (s == NULL)
     {
-        if ((s = (v42bis_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (v42bis_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -760,6 +766,7 @@ SPAN_DECLARE(int) v42bis_free(v42bis_state_t *s)
 {
     comp_exit(&s->compress);
     comp_exit(&s->decompress);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

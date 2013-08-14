@@ -512,21 +512,21 @@ static int perform_pack_unpack_test(void)
 
 static void etsi_compliance_tests(void)
 {
-    perform_linear_test(TRUE, 1, "Seq01");
-    perform_linear_test(TRUE, 1, "Seq02");
-    perform_linear_test(TRUE, 1, "Seq03");
-    perform_linear_test(TRUE, 1, "Seq04");
-    perform_linear_test(FALSE, 1, "Seq05");
-    perform_law_test(TRUE, 'a', "Seq01");
-    perform_law_test(TRUE, 'a', "Seq02");
-    perform_law_test(TRUE, 'a', "Seq03");
-    perform_law_test(TRUE, 'a', "Seq04");
-    perform_law_test(FALSE, 'a', "Seq05");
-    perform_law_test(TRUE, 'u', "Seq01");
-    perform_law_test(TRUE, 'u', "Seq02");
-    perform_law_test(TRUE, 'u', "Seq03");
-    perform_law_test(TRUE, 'u', "Seq04");
-    perform_law_test(FALSE, 'u', "Seq05");
+    perform_linear_test(true, 1, "Seq01");
+    perform_linear_test(true, 1, "Seq02");
+    perform_linear_test(true, 1, "Seq03");
+    perform_linear_test(true, 1, "Seq04");
+    perform_linear_test(false, 1, "Seq05");
+    perform_law_test(true, 'a', "Seq01");
+    perform_law_test(true, 'a', "Seq02");
+    perform_law_test(true, 'a', "Seq03");
+    perform_law_test(true, 'a', "Seq04");
+    perform_law_test(false, 'a', "Seq05");
+    perform_law_test(true, 'u', "Seq01");
+    perform_law_test(true, 'u', "Seq02");
+    perform_law_test(true, 'u', "Seq03");
+    perform_law_test(true, 'u', "Seq04");
+    perform_law_test(false, 'u', "Seq05");
     /* This is not actually an ETSI test */
     perform_pack_unpack_test();
 
@@ -549,14 +549,14 @@ int main(int argc, char *argv[])
     int etsitests;
     int packing;
 
-    etsitests = TRUE;
+    etsitests = true;
     packing = GSM0610_PACKING_NONE;
     while ((opt = getopt(argc, argv, "lp:")) != -1)
     {
         switch (opt)
         {
         case 'l':
-            etsitests = FALSE;
+            etsitests = false;
             break;
         case 'p':
             packing = atoi(optarg);

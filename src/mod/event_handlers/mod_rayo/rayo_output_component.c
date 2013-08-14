@@ -126,9 +126,16 @@ static iks *start_call_output_component(struct rayo_actor *call, struct rayo_mes
 	switch_core_session_t *session = (switch_core_session_t *)session_data;
 	struct rayo_component *output_component = NULL;
 	iks *output = iks_find(iq, "output");
+	iks *document = NULL;
 
 	/* validate output attributes */
 	if (!VALIDATE_RAYO_OUTPUT(output)) {
+		return iks_new_error(iq, STANZA_ERROR_BAD_REQUEST);
+	}
+
+	/* check if <document> exists */
+	document = iks_find(output, "document");
+	if (!document) {
 		return iks_new_error(iq, STANZA_ERROR_BAD_REQUEST);
 	}
 
@@ -144,10 +151,17 @@ static iks *start_mixer_output_component(struct rayo_actor *mixer, struct rayo_m
 	iks *iq = msg->payload;
 	struct rayo_component *component = NULL;
 	iks *output = iks_find(iq, "output");
+	iks *document = NULL;
 	switch_stream_handle_t stream = { 0 };
 
 	/* validate output attributes */
 	if (!VALIDATE_RAYO_OUTPUT(output)) {
+		return iks_new_error(iq, STANZA_ERROR_BAD_REQUEST);
+	}
+
+	/* check if <document> exists */
+	document = iks_find(output, "document");
+	if (!document) {
 		return iks_new_error(iq, STANZA_ERROR_BAD_REQUEST);
 	}
 
@@ -1078,9 +1092,12 @@ static char *fileman_supported_formats[] = { "fileman", NULL };
 
 /**
  * Initialize output component
+ * @param module_interface
+ * @param pool memory pool to allocate from
+ * @param config_file to use
  * @return SWITCH_STATUS_SUCCESS if successful
  */
-switch_status_t rayo_output_component_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool)
+switch_status_t rayo_output_component_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file)
 {
 	switch_api_interface_t *api_interface;
 	switch_file_interface_t *file_interface;

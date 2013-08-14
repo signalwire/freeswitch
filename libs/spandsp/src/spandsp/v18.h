@@ -38,28 +38,34 @@ typedef struct v18_state_s v18_state_t;
 
 enum
 {
-    V18_MODE_NONE = 0,
+    V18_MODE_NONE = 0x0001,
     /* V.18 Annex A - Weitbrecht TDD at 45.45bps (US TTY), half-duplex, 5 bit baudot (USA). */
-    V18_MODE_5BIT_45 = 1,
+    V18_MODE_5BIT_4545 = 0x0002,
     /* V.18 Annex A - Weitbrecht TDD at 50bps (International TTY), half-duplex, 5 bit baudot (UK, Australia and others). */
-    V18_MODE_5BIT_50 = 2,
+    V18_MODE_5BIT_50 = 0x0004,
     /* V.18 Annex B - DTMF encoding of ASCII (Denmark, Holland and others). */
-    V18_MODE_DTMF = 3,
+    V18_MODE_DTMF = 0x0008,
     /* V.18 Annex C - EDT (European Deaf Telephone) 110bps, V.21, half-duplex, ASCII (Germany, Austria, Switzerland and others). */
-    V18_MODE_EDT = 4,
+    V18_MODE_EDT = 0x0010,
     /* V.18 Annex D - 300bps, Bell 103, duplex, ASCII (USA). */
-    V18_MODE_BELL103 = 5,
+    V18_MODE_BELL103 = 0x0020,
     /* V.18 Annex E - 1200bps Videotex terminals, ASCII (France). */
-    V18_MODE_V23VIDEOTEX = 6,
+    V18_MODE_V23VIDEOTEX = 0x0040,
     /* V.18 Annex F - V.21 text telephone, V.21, duplex, ASCII (Sweden, Norway and Finland). */
-    V18_MODE_V21TEXTPHONE = 7,
+    V18_MODE_V21TEXTPHONE = 0x0080,
     /* V.18 Annex G - V.18 text telephone mode. */
-    V18_MODE_V18TEXTPHONE = 8
+    V18_MODE_V18TEXTPHONE = 0x0100,
+    /* V.18 Annex A - Used during probing. */
+    V18_MODE_5BIT_476 = 0x0200,
+    /* Use repetitive shift characters where character set shifts are used */ 
+    V18_MODE_REPETITIVE_SHIFTS_OPTION = 0x1000
 };
 
 /* Automoding sequences for different countries */
 enum
 {
+    V18_AUTOMODING_GLOBAL = 0,
+
     /* 5-bit, V.21, V.23, EDT, DTMF, Bell 103 */
     V18_AUTOMODING_AUSTRALIA,
     V18_AUTOMODING_IRELAND,
@@ -89,7 +95,9 @@ enum
 
     /* V.23, EDT, DTMF, 5-bit, V.21, Bell 103 */
     V18_AUTOMODING_FRANCE,
-    V18_AUTOMODING_BELGIUM
+    V18_AUTOMODING_BELGIUM,
+
+    V18_AUTOMODING_END
 };
 
 #if defined(__cplusplus)
@@ -102,15 +110,17 @@ SPAN_DECLARE(logging_state_t *) v18_get_logging_state(v18_state_t *s);
 /*! Initialise a V.18 context.
     \brief Initialise a V.18 context.
     \param s The V.18 context.
-    \param calling_party TRUE if caller mode, else answerer mode.
+    \param calling_party True if caller mode, else answerer mode.
     \param mode Mode of operation.
+    \param nation National variant for automoding.
     \param put_msg A callback routine called to deliver the received text
            to the application.
     \param user_data An opaque pointer for the callback routine.
     \return A pointer to the V.18 context, or NULL if there was a problem. */
 SPAN_DECLARE(v18_state_t *) v18_init(v18_state_t *s,
-                                     int calling_party,
+                                     bool calling_party,
                                      int mode,
+                                     int nation,
                                      put_msg_func_t put_msg,
                                      void *user_data);
 
@@ -162,28 +172,6 @@ SPAN_DECLARE_NONSTD(int) v18_rx_fillin(v18_state_t *s, int len);
             length of the digit string, if the buffer fills up. If the string is
             invalid, this function will return -1. */
 SPAN_DECLARE(int) v18_put(v18_state_t *s, const char msg[], int len);
-
-/*! Convert a text string to a V.18 DTMF string.
-    \brief Convert a text string to a V.18 DTMF string.
-    \param s The V.18 context.
-    \param dtmf The resulting DTMF string.
-    \param msg The text string to be converted.
-    \return The length of the DTMF string.
-*/
-SPAN_DECLARE(int) v18_encode_dtmf(v18_state_t *s, char dtmf[], const char msg[]);
-
-/*! Convert a V.18 DTMF string to a text string.
-    \brief Convert a V.18 DTMF string to a text string.
-    \param s The V.18 context.
-    \param msg The resulting test string.
-    \param dtmf The DTMF string to be converted.
-    \return The length of the text string.
-*/
-SPAN_DECLARE(int) v18_decode_dtmf(v18_state_t *s, char msg[], const char dtmf[]);
-
-SPAN_DECLARE(uint16_t) v18_encode_baudot(v18_state_t *s, uint8_t ch);
-
-SPAN_DECLARE(uint8_t) v18_decode_baudot(v18_state_t *s, uint8_t ch);
 
 /*! \brief Return a short name for an V.18 mode
     \param mode The code for the V.18 mode.

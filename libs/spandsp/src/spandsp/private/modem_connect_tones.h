@@ -77,7 +77,7 @@ struct modem_connect_tones_rx_state_s
     int32_t am_level;
     /*! \brief Sample counter for the small chunks of samples, after which a test is conducted. */
     int chunk_remainder;
-    /*! \brief TRUE is the tone is currently confirmed present in the audio. */
+    /*! \brief The code for the tone currently confirmed present in the audio. */
     int tone_present;
     /*! \brief */
     int tone_on;
@@ -85,7 +85,7 @@ struct modem_connect_tones_rx_state_s
     int tone_cycle_duration;
     /*! \brief A count of the number of good cycles of tone reversal seen. */
     int good_cycles;
-    /*! \brief TRUE if the tone has been seen since the last time the user tested for it */
+    /*! \brief The confirmed tone code. */
     int hit;
     /*! \brief A V.21 FSK modem context used when searching for FAX preamble. */
     fsk_rx_state_t v21rx;
@@ -95,8 +95,8 @@ struct modem_connect_tones_rx_state_s
     int num_bits;
     /*! \brief Number of consecutive flags seen so far. */
     int flags_seen;
-    /*! \brief TRUE if framing OK has been announced. */
-    int framing_ok_announced;
+    /*! \brief True if framing OK has been announced. */
+    bool framing_ok_announced;
 };
 
 #endif

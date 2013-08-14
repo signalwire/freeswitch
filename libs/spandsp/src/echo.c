@@ -88,11 +88,17 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <string.h>
 #include <stdio.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/logging.h"
 #include "spandsp/saturated.h"
@@ -104,12 +110,6 @@
 
 #if !defined(NULL)
 #define NULL (void *) 0
-#endif
-#if !defined(FALSE)
-#define FALSE 0
-#endif
-#if !defined(TRUE)
-#define TRUE (!FALSE)
 #endif
 
 #define NONUPDATE_DWELL_TIME        600     /* 600 samples, or 75ms */
@@ -244,26 +244,26 @@ SPAN_DECLARE(echo_can_state_t *) echo_can_init(int len, int adaption_mode)
     int i;
     int j;
 
-    if ((ec = (echo_can_state_t *) malloc(sizeof(*ec))) == NULL)
+    if ((ec = (echo_can_state_t *) span_alloc(sizeof(*ec))) == NULL)
         return NULL;
     memset(ec, 0, sizeof(*ec));
     ec->taps = len;
     ec->curr_pos = ec->taps - 1;
     ec->tap_mask = ec->taps - 1;
-    if ((ec->fir_taps32 = (int32_t *) malloc(ec->taps*sizeof(int32_t))) == NULL)
+    if ((ec->fir_taps32 = (int32_t *) span_alloc(ec->taps*sizeof(int32_t))) == NULL)
     {
-        free(ec);
+        span_free(ec);
         return NULL;
     }
     memset(ec->fir_taps32, 0, ec->taps*sizeof(int32_t));
     for (i = 0;  i < 4;  i++)
     {
-        if ((ec->fir_taps16[i] = (int16_t *) malloc(ec->taps*sizeof(int16_t))) == NULL)
+        if ((ec->fir_taps16[i] = (int16_t *) span_alloc(ec->taps*sizeof(int16_t))) == NULL)
         {
             for (j = 0;  j < i;  j++)
-                free(ec->fir_taps16[j]);
-            free(ec->fir_taps32);
-            free(ec);
+                span_free(ec->fir_taps16[j]);
+            span_free(ec->fir_taps32);
+            span_free(ec);
             return NULL;
         }
         memset(ec->fir_taps16[i], 0, ec->taps*sizeof(int16_t));
@@ -274,7 +274,7 @@ SPAN_DECLARE(echo_can_state_t *) echo_can_init(int len, int adaption_mode)
     ec->rx_power_threshold = 10000000;
     ec->geigel_max = 0;
     ec->geigel_lag = 0;
-    ec->dtd_onset = FALSE;
+    ec->dtd_onset = false;
     ec->tap_set = 0;
     ec->tap_rotate_counter = 1600;
     ec->cng_level = 1000;
@@ -294,10 +294,10 @@ SPAN_DECLARE(int) echo_can_free(echo_can_state_t *ec)
     int i;
 
     fir16_free(&ec->fir_state);
-    free(ec->fir_taps32);
+    span_free(ec->fir_taps32);
     for (i = 0;  i < 4;  i++)
-        free(ec->fir_taps16[i]);
-    free(ec);
+        span_free(ec->fir_taps16[i]);
+    span_free(ec);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -337,7 +337,7 @@ SPAN_DECLARE(void) echo_can_flush(echo_can_state_t *ec)
 
     ec->geigel_max = 0;
     ec->geigel_lag = 0;
-    ec->dtd_onset = FALSE;
+    ec->dtd_onset = false;
     ec->tap_set = 0;
     ec->tap_rotate_counter = 1600;
 
@@ -485,7 +485,7 @@ printf("Revert to %d at %d\n", (ec->tap_set + 1)%3, sample_no);
                         ec->narrowband_score = 0;
                     }
                 }
-                ec->dtd_onset = FALSE;
+                ec->dtd_onset = false;
                 if (--ec->tap_rotate_counter <= 0)
                 {
 printf("Rotate to %d at %d\n", ec->tap_set, sample_no);
@@ -532,7 +532,7 @@ printf("Revert to %d at %d\n", (ec->tap_set + 1)%3, sample_no);
                 for (i = 0;  i < ec->taps;  i++)
                     ec->fir_taps32[i] = ec->fir_taps16[(ec->tap_set + 1)%3][i] << 15;
                 ec->tap_rotate_counter = 1600;
-                ec->dtd_onset = TRUE;
+                ec->dtd_onset = true;
             }
             ec->nonupdate_dwell = NONUPDATE_DWELL_TIME;
         }
@@ -575,7 +575,7 @@ printf("Revert to %d at %d\n", (ec->tap_set + 1)%3, sample_no);
             if (!ec->cng)
             {
                 ec->cng_level = ec->clean_rx_power;
-                ec->cng = TRUE;
+                ec->cng = true;
             }
             if ((ec->adaption_mode & ECHO_CAN_USE_CNG))
             {
@@ -594,12 +594,12 @@ printf("Revert to %d at %d\n", (ec->tap_set + 1)%3, sample_no);
         }
         else
         {
-            ec->cng = FALSE;
+            ec->cng = false;
         }
     }
     else
     {
-        ec->cng = FALSE;
+        ec->cng = false;
     }
 
 printf("Narrowband score %4d %5d at %d\n", ec->narrowband_score, score, sample_no);

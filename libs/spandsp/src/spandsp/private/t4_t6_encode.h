@@ -59,7 +59,7 @@ struct t4_t6_encode_state_s
 
     /*! \brief This variable is set if we are treating the current row as a 2D encoded
                one. */
-    int row_is_2d;
+    bool row_is_2d;
 
     /*! \brief Encoded data bits buffer. */
     uint32_t tx_bitstream;

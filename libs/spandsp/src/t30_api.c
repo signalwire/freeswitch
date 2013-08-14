@@ -41,10 +41,16 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <tiffio.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/queue.h"
@@ -277,8 +283,8 @@ SPAN_DECLARE(const char *) t30_get_rx_password(t30_state_t *s)
 SPAN_DECLARE(int) t30_set_tx_nsf(t30_state_t *s, const uint8_t *nsf, int len)
 {
     if (s->tx_info.nsf)
-        free(s->tx_info.nsf);
-    if (nsf  &&  len > 0  &&  (s->tx_info.nsf = malloc(len + 3)))
+        span_free(s->tx_info.nsf);
+    if (nsf  &&  len > 0  &&  (s->tx_info.nsf = span_alloc(len + 3)))
     {
         memcpy(s->tx_info.nsf + 3, nsf, len);
         s->tx_info.nsf_len = len;
@@ -311,8 +317,8 @@ SPAN_DECLARE(size_t) t30_get_rx_nsf(t30_state_t *s, const uint8_t *nsf[])
 SPAN_DECLARE(int) t30_set_tx_nsc(t30_state_t *s, const uint8_t *nsc, int len)
 {
     if (s->tx_info.nsc)
-        free(s->tx_info.nsc);
-    if (nsc  &&  len > 0  &&  (s->tx_info.nsc = malloc(len + 3)))
+        span_free(s->tx_info.nsc);
+    if (nsc  &&  len > 0  &&  (s->tx_info.nsc = span_alloc(len + 3)))
     {
         memcpy(s->tx_info.nsc + 3, nsc, len);
         s->tx_info.nsc_len = len;
@@ -345,8 +351,8 @@ SPAN_DECLARE(size_t) t30_get_rx_nsc(t30_state_t *s, const uint8_t *nsc[])
 SPAN_DECLARE(int) t30_set_tx_nss(t30_state_t *s, const uint8_t *nss, int len)
 {
     if (s->tx_info.nss)
-        free(s->tx_info.nss);
-    if (nss  &&  len > 0  &&  (s->tx_info.nss = malloc(len + 3)))
+        span_free(s->tx_info.nss);
+    if (nss  &&  len > 0  &&  (s->tx_info.nss = span_alloc(len + 3)))
     {
         memcpy(s->tx_info.nss + 3, nss, len);
         s->tx_info.nss_len = len;
@@ -379,7 +385,7 @@ SPAN_DECLARE(size_t) t30_get_rx_nss(t30_state_t *s, const uint8_t *nss[])
 SPAN_DECLARE(int) t30_set_tx_tsa(t30_state_t *s, int type, const char *address, int len)
 {
     if (s->tx_info.tsa)
-        free(s->tx_info.tsa);
+        span_free(s->tx_info.tsa);
     if (address == NULL  ||  len == 0)
     {
         s->tx_info.tsa = NULL;
@@ -389,7 +395,7 @@ SPAN_DECLARE(int) t30_set_tx_tsa(t30_state_t *s, int type, const char *address, 
     s->tx_info.tsa_type = type;
     if (len < 0)
         len = strlen(address);
-    if ((s->tx_info.tsa = malloc(len)))
+    if ((s->tx_info.tsa = span_alloc(len)))
     {
         memcpy(s->tx_info.tsa, address, len);
         s->tx_info.tsa_len = len;
@@ -421,7 +427,7 @@ SPAN_DECLARE(size_t) t30_get_rx_tsa(t30_state_t *s, int *type, const char *addre
 SPAN_DECLARE(int) t30_set_tx_ira(t30_state_t *s, int type, const char *address, int len)
 {
     if (s->tx_info.ira)
-        free(s->tx_info.ira);
+        span_free(s->tx_info.ira);
     if (address == NULL)
     {
         s->tx_info.ira = NULL;
@@ -455,7 +461,7 @@ SPAN_DECLARE(size_t) t30_get_rx_ira(t30_state_t *s, int *type, const char *addre
 SPAN_DECLARE(int) t30_set_tx_cia(t30_state_t *s, int type, const char *address, int len)
 {
     if (s->tx_info.cia)
-        free(s->tx_info.cia);
+        span_free(s->tx_info.cia);
     if (address == NULL)
     {
         s->tx_info.cia = NULL;
@@ -489,7 +495,7 @@ SPAN_DECLARE(size_t) t30_get_rx_cia(t30_state_t *s, int *type, const char *addre
 SPAN_DECLARE(int) t30_set_tx_isp(t30_state_t *s, int type, const char *address, int len)
 {
     if (s->tx_info.isp)
-        free(s->tx_info.isp);
+        span_free(s->tx_info.isp);
     if (address == NULL)
     {
         s->tx_info.isp = NULL;
@@ -523,7 +529,7 @@ SPAN_DECLARE(size_t) t30_get_rx_isp(t30_state_t *s, int *type, const char *addre
 SPAN_DECLARE(int) t30_set_tx_csa(t30_state_t *s, int type, const char *address, int len)
 {
     if (s->tx_info.csa)
-        free(s->tx_info.csa);
+        span_free(s->tx_info.csa);
     if (address == NULL)
     {
         s->tx_info.csa = NULL;
@@ -554,7 +560,7 @@ SPAN_DECLARE(size_t) t30_get_rx_csa(t30_state_t *s, int *type, const char *addre
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t30_set_tx_page_header_overlays_image(t30_state_t *s, int header_overlays_image)
+SPAN_DECLARE(int) t30_set_tx_page_header_overlays_image(t30_state_t *s, bool header_overlays_image)
 {
     s->header_overlays_image = header_overlays_image;
     t4_tx_set_header_overlays_image(&s->t4.tx, s->header_overlays_image);
@@ -589,7 +595,7 @@ SPAN_DECLARE(int) t30_set_tx_page_header_tz(t30_state_t *s, const char *tzstring
 {
     if (tz_init(&s->tz, tzstring))
     {
-        s->use_own_tz = TRUE;
+        s->use_own_tz = true;
         t4_tx_set_header_tz(&s->t4.tx, &s->tz);
         return 0;
     }
@@ -632,13 +638,13 @@ SPAN_DECLARE(void) t30_set_tx_file(t30_state_t *s, const char *file, int start_p
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t30_set_iaf_mode(t30_state_t *s, int iaf)
+SPAN_DECLARE(void) t30_set_iaf_mode(t30_state_t *s, bool iaf)
 {
     s->iaf = iaf;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t30_set_ecm_capability(t30_state_t *s, int enabled)
+SPAN_DECLARE(int) t30_set_ecm_capability(t30_state_t *s, bool enabled)
 {
     s->ecm_allowed = enabled;
     t30_build_dis_or_dtc(s);
@@ -685,31 +691,33 @@ SPAN_DECLARE(int) t30_set_supported_modems(t30_state_t *s, int supported_modems)
 SPAN_DECLARE(int) t30_set_supported_compressions(t30_state_t *s, int supported_compressions)
 {
     /* Mask out the ones we actually support today. */
-    supported_compressions &= T4_SUPPORT_COMPRESSION_T4_1D
-                            | T4_SUPPORT_COMPRESSION_T4_2D
-                            | T4_SUPPORT_COMPRESSION_T6
-                            | T4_SUPPORT_COMPRESSION_T85
-                            | T4_SUPPORT_COMPRESSION_T85_L0
+    supported_compressions &= T4_COMPRESSION_T4_1D
+                            | T4_COMPRESSION_T4_2D
+                            | T4_COMPRESSION_T6
+                            | T4_COMPRESSION_T85
+                            | T4_COMPRESSION_T85_L0
 #if defined(SPANDSP_SUPPORT_T88)
-                            | T4_SUPPORT_COMPRESSION_T88
+                            | T4_COMPRESSION_T88
 #endif
-                            //| T4_SUPPORT_COMPRESSION_T81
+                            | T4_COMPRESSION_T42_T81
+#if defined(SPANDSP_SUPPORT_SYCC_T81)
+                            | T4_COMPRESSION_SYCC_T81
+#endif
 #if defined(SPANDSP_SUPPORT_T43)
-                            | T4_SUPPORT_COMPRESSION_T43
+                            | T4_COMPRESSION_T43
 #endif
 #if defined(SPANDSP_SUPPORT_T45)
-                            | T4_SUPPORT_COMPRESSION_T45
+                            | T4_COMPRESSION_T45
 #endif
-#if 0
-                            | T4_SUPPORT_COMPRESSION_GRAYSCALE
-                            | T4_SUPPORT_COMPRESSION_COLOUR
-                            | T4_SUPPORT_COMPRESSION_12BIT
-                            | T4_SUPPORT_COMPRESSION_COLOUR_TO_GRAY
-                            | T4_SUPPORT_COMPRESSION_GRAY_TO_BILEVEL
-                            | T4_SUPPORT_COMPRESSION_COLOUR_TO_BILEVEL
-                            | T4_SUPPORT_COMPRESSION_RESCALING
-#endif
+                            | T4_COMPRESSION_GRAYSCALE
+                            | T4_COMPRESSION_COLOUR
+                            | T4_COMPRESSION_12BIT
+                            | T4_COMPRESSION_COLOUR_TO_GRAY
+                            | T4_COMPRESSION_GRAY_TO_BILEVEL
+                            | T4_COMPRESSION_COLOUR_TO_BILEVEL
+                            | T4_COMPRESSION_RESCALING
                             | 0;
+
     s->supported_compressions = supported_compressions;
     t30_build_dis_or_dtc(s);
     return 0;
@@ -718,23 +726,23 @@ SPAN_DECLARE(int) t30_set_supported_compressions(t30_state_t *s, int supported_c
 
 SPAN_DECLARE(int) t30_set_supported_bilevel_resolutions(t30_state_t *s, int supported_resolutions)
 {
-    supported_resolutions &= T4_SUPPORT_RESOLUTION_R8_STANDARD
-                           | T4_SUPPORT_RESOLUTION_R8_FINE
-                           | T4_SUPPORT_RESOLUTION_R8_SUPERFINE
-                           | T4_SUPPORT_RESOLUTION_R16_SUPERFINE
-                           | T4_SUPPORT_RESOLUTION_200_100
-                           | T4_SUPPORT_RESOLUTION_200_200
-                           | T4_SUPPORT_RESOLUTION_200_400
-                           | T4_SUPPORT_RESOLUTION_300_300
-                           | T4_SUPPORT_RESOLUTION_300_600
-                           | T4_SUPPORT_RESOLUTION_400_400
-                           | T4_SUPPORT_RESOLUTION_400_800
-                           | T4_SUPPORT_RESOLUTION_600_600
-                           | T4_SUPPORT_RESOLUTION_600_1200
-                           | T4_SUPPORT_RESOLUTION_1200_1200;
+    supported_resolutions &= T4_RESOLUTION_R8_STANDARD
+                           | T4_RESOLUTION_R8_FINE
+                           | T4_RESOLUTION_R8_SUPERFINE
+                           | T4_RESOLUTION_R16_SUPERFINE
+                           | T4_RESOLUTION_200_100
+                           | T4_RESOLUTION_200_200
+                           | T4_RESOLUTION_200_400
+                           | T4_RESOLUTION_300_300
+                           | T4_RESOLUTION_300_600
+                           | T4_RESOLUTION_400_400
+                           | T4_RESOLUTION_400_800
+                           | T4_RESOLUTION_600_600
+                           | T4_RESOLUTION_600_1200
+                           | T4_RESOLUTION_1200_1200;
     /* Make sure anything needed for colour is enabled as a bi-level image, as that is a
        rule from T.30. 100x100 is an exception, as it doesn't exist as a bi-level resolution. */
-    supported_resolutions |= (s->supported_colour_resolutions & ~T4_SUPPORT_RESOLUTION_100_100);
+    supported_resolutions |= (s->supported_colour_resolutions & ~T4_RESOLUTION_100_100);
     s->supported_bilevel_resolutions = supported_resolutions;
     t30_build_dis_or_dtc(s);
     return 0;
@@ -743,16 +751,16 @@ SPAN_DECLARE(int) t30_set_supported_bilevel_resolutions(t30_state_t *s, int supp
 
 SPAN_DECLARE(int) t30_set_supported_colour_resolutions(t30_state_t *s, int supported_resolutions)
 {
-    supported_resolutions &= T4_SUPPORT_RESOLUTION_100_100
-                           | T4_SUPPORT_RESOLUTION_200_200
-                           | T4_SUPPORT_RESOLUTION_300_300
-                           | T4_SUPPORT_RESOLUTION_400_400
-                           | T4_SUPPORT_RESOLUTION_600_600
-                           | T4_SUPPORT_RESOLUTION_1200_1200;
+    supported_resolutions &= T4_RESOLUTION_100_100
+                           | T4_RESOLUTION_200_200
+                           | T4_RESOLUTION_300_300
+                           | T4_RESOLUTION_400_400
+                           | T4_RESOLUTION_600_600
+                           | T4_RESOLUTION_1200_1200;
     s->supported_colour_resolutions = supported_resolutions;
     /* Make sure anything needed for colour is enabled as a bi-level image, as that is a
        rule from T.30. 100x100 is an exception, as it doesn't exist as a bi-level resolution. */
-    s->supported_bilevel_resolutions |= (s->supported_colour_resolutions & ~T4_SUPPORT_RESOLUTION_100_100);
+    s->supported_bilevel_resolutions |= (s->supported_colour_resolutions & ~T4_RESOLUTION_100_100);
     t30_build_dis_or_dtc(s);
     return 0;
 }

@@ -114,19 +114,19 @@ SPAN_DECLARE(void) v29_tx_power(v29_tx_state_t *s, float power);
     \brief Initialise a V.29 modem transmit context.
     \param s The modem context.
     \param bit_rate The bit rate of the modem. Valid values are 4800, 7200 and 9600.
-    \param tep TRUE is the optional TEP tone is to be transmitted.
+    \param tep True is the optional TEP tone is to be transmitted.
     \param get_bit The callback routine used to get the data to be transmitted.
     \param user_data An opaque pointer.
     \return A pointer to the modem context, or NULL if there was a problem. */
-SPAN_DECLARE(v29_tx_state_t *) v29_tx_init(v29_tx_state_t *s, int bit_rate, int tep, get_bit_func_t get_bit, void *user_data);
+SPAN_DECLARE(v29_tx_state_t *) v29_tx_init(v29_tx_state_t *s, int bit_rate, bool tep, get_bit_func_t get_bit, void *user_data);
 
 /*! Reinitialise an existing V.29 modem transmit context, so it may be reused.
     \brief Reinitialise an existing V.29 modem transmit context.
     \param s The modem context.
     \param bit_rate The bit rate of the modem. Valid values are 4800, 7200 and 9600.
-    \param tep TRUE is the optional TEP tone is to be transmitted.
+    \param tep True is the optional TEP tone is to be transmitted.
     \return 0 for OK, -1 for bad parameter */
-SPAN_DECLARE(int) v29_tx_restart(v29_tx_state_t *s, int bit_rate, int tep);
+SPAN_DECLARE(int) v29_tx_restart(v29_tx_state_t *s, int bit_rate, bool tep);
 
 /*! Release a V.29 modem transmit context.
     \brief Release a V.29 modem transmit context.

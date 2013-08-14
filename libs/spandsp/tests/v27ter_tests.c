@@ -78,7 +78,7 @@ display of modem status is maintained.
 #define OUT_FILE_NAME   "v27ter.wav"
 
 char *decode_test_file = NULL;
-int use_gui = FALSE;
+bool use_gui = false;
 
 int symbol_no = 0;
 
@@ -341,30 +341,30 @@ int main(int argc, char *argv[])
     SNDFILE *outhandle;
     int outframes;
     int samples;
-    int tep;
     int test_bps;
     int noise_level;
     int signal_level;
     int bits_per_test;
     int line_model_no;
     int block_no;
-    int log_audio;
     int channel_codec;
     int rbs_pattern;
     int opt;
+    bool tep;
+    bool log_audio;
     logging_state_t *logging;
 
     channel_codec = MUNGE_CODEC_NONE;
     rbs_pattern = 0;
     test_bps = 4800;
-    tep = FALSE;
+    tep = false;
     line_model_no = 0;
     decode_test_file = NULL;
-    use_gui = FALSE;
+    use_gui = false;
     noise_level = -70;
     signal_level = -13;
     bits_per_test = 50000;
-    log_audio = FALSE;
+    log_audio = false;
     while ((opt = getopt(argc, argv, "b:B:c:d:glm:n:r:s:t")) != -1)
     {
         switch (opt)
@@ -388,14 +388,14 @@ int main(int argc, char *argv[])
             break;
         case 'g':
 #if defined(ENABLE_GUI)
-            use_gui = TRUE;
+            use_gui = true;
 #else
             fprintf(stderr, "Graphical monitoring not available\n");
             exit(2);
 #endif
             break;
         case 'l':
-            log_audio = TRUE;
+            log_audio = true;
             break;
         case 'm':
             line_model_no = atoi(optarg);
@@ -410,7 +410,7 @@ int main(int argc, char *argv[])
             signal_level = atoi(optarg);
             break;
         case 't':
-            tep = TRUE;
+            tep = true;
             break;
         default:
             //usage();
@@ -537,7 +537,7 @@ int main(int argc, char *argv[])
                 signal_level--;
                 v27ter_tx_restart(tx, test_bps, tep);
                 v27ter_tx_power(tx, signal_level);
-                v27ter_rx_restart(rx, test_bps, FALSE);
+                v27ter_rx_restart(rx, test_bps, false);
                 bert_init(&bert, bits_per_test, BERT_PATTERN_ITU_O152_11, test_bps, 20);
                 bert_set_report(&bert, 10000, reporter, NULL);
                 one_way_line_model_release(line_model);

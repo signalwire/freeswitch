@@ -88,13 +88,13 @@ int main(int argc, char *argv[])
     int encoded_fd;
     const char *encoded_file_name;
     const char *in_file_name;
-    int log_encoded_data;
+    bool log_encoded_data;
     int opt;
 
     bit_rate = 32000;
     encoded_file_name = NULL;
     in_file_name = IN_FILE_NAME;
-    log_encoded_data = FALSE;
+    log_encoded_data = false;
     while ((opt = getopt(argc, argv, "2d:i:l")) != -1)
     {
         switch (opt)
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
             in_file_name = optarg;
             break;
         case 'l':
-            log_encoded_data = TRUE;
+            log_encoded_data = true;
             break;
         default:
             //usage();

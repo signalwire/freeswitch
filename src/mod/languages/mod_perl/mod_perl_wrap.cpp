@@ -2186,12 +2186,13 @@ XS(_wrap_new_IVRMenu) {
     char *arg8 = (char *) 0 ;
     char *arg9 = (char *) 0 ;
     char *arg10 = (char *) 0 ;
-    int arg11 ;
+    char *arg11 = (char *) 0 ;
     int arg12 ;
     int arg13 ;
     int arg14 ;
     int arg15 ;
     int arg16 ;
+    int arg17 ;
     IVRMenu *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -2222,8 +2223,9 @@ XS(_wrap_new_IVRMenu) {
     int res10 ;
     char *buf10 = 0 ;
     int alloc10 = 0 ;
-    int val11 ;
-    int ecode11 = 0 ;
+    int res11 ;
+    char *buf11 = 0 ;
+    int alloc11 = 0 ;
     int val12 ;
     int ecode12 = 0 ;
     int val13 ;
@@ -2234,11 +2236,13 @@ XS(_wrap_new_IVRMenu) {
     int ecode15 = 0 ;
     int val16 ;
     int ecode16 = 0 ;
+    int val17 ;
+    int ecode17 = 0 ;
     int argvi = 0;
     dXSARGS;
     
-    if ((items < 16) || (items > 16)) {
-      SWIG_croak("Usage: new_IVRMenu(main,name,greeting_sound,short_greeting_sound,invalid_sound,exit_sound,confirm_macro,confirm_key,tts_engine,tts_voice,confirm_attempts,inter_timeout,digit_len,timeout,max_failures,max_timeouts);");
+    if ((items < 17) || (items > 17)) {
+      SWIG_croak("Usage: new_IVRMenu(main,name,greeting_sound,short_greeting_sound,invalid_sound,exit_sound,transfer_sound,confirm_macro,confirm_key,tts_engine,tts_voice,confirm_attempts,inter_timeout,digit_len,timeout,max_failures,max_timeouts);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_IVRMenu, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -2290,11 +2294,11 @@ XS(_wrap_new_IVRMenu) {
       SWIG_exception_fail(SWIG_ArgError(res10), "in method '" "new_IVRMenu" "', argument " "10"" of type '" "char const *""'");
     }
     arg10 = reinterpret_cast< char * >(buf10);
-    ecode11 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(10), &val11);
-    if (!SWIG_IsOK(ecode11)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode11), "in method '" "new_IVRMenu" "', argument " "11"" of type '" "int""'");
-    } 
-    arg11 = static_cast< int >(val11);
+    res11 = SWIG_AsCharPtrAndSize(ST(10), &buf11, NULL, &alloc11);
+    if (!SWIG_IsOK(res11)) {
+      SWIG_exception_fail(SWIG_ArgError(res11), "in method '" "new_IVRMenu" "', argument " "11"" of type '" "char const *""'");
+    }
+    arg11 = reinterpret_cast< char * >(buf11);
     ecode12 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(11), &val12);
     if (!SWIG_IsOK(ecode12)) {
       SWIG_exception_fail(SWIG_ArgError(ecode12), "in method '" "new_IVRMenu" "', argument " "12"" of type '" "int""'");
@@ -2320,7 +2324,12 @@ XS(_wrap_new_IVRMenu) {
       SWIG_exception_fail(SWIG_ArgError(ecode16), "in method '" "new_IVRMenu" "', argument " "16"" of type '" "int""'");
     } 
     arg16 = static_cast< int >(val16);
-    result = (IVRMenu *)new IVRMenu(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8,(char const *)arg9,(char const *)arg10,arg11,arg12,arg13,arg14,arg15,arg16);
+    ecode17 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(16), &val17);
+    if (!SWIG_IsOK(ecode17)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode17), "in method '" "new_IVRMenu" "', argument " "17"" of type '" "int""'");
+    } 
+    arg17 = static_cast< int >(val17);
+    result = (IVRMenu *)new IVRMenu(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8,(char const *)arg9,(char const *)arg10,(char const *)arg11,arg12,arg13,arg14,arg15,arg16,arg17);
     ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_IVRMenu, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -2332,6 +2341,7 @@ XS(_wrap_new_IVRMenu) {
     if (alloc8 == SWIG_NEWOBJ) delete[] buf8;
     if (alloc9 == SWIG_NEWOBJ) delete[] buf9;
     if (alloc10 == SWIG_NEWOBJ) delete[] buf10;
+    if (alloc11 == SWIG_NEWOBJ) delete[] buf11;
     
     
     
@@ -2350,6 +2360,7 @@ XS(_wrap_new_IVRMenu) {
     if (alloc8 == SWIG_NEWOBJ) delete[] buf8;
     if (alloc9 == SWIG_NEWOBJ) delete[] buf9;
     if (alloc10 == SWIG_NEWOBJ) delete[] buf10;
+    if (alloc11 == SWIG_NEWOBJ) delete[] buf11;
     
     
     
@@ -8040,6 +8051,55 @@ XS(_wrap_CoreSession_run_dtmf_callback) {
 }
 
 
+XS(_wrap_CoreSession_consoleLog) {
+  {
+    CoreSession *arg1 = (CoreSession *) 0 ;
+    char *arg2 = (char *) 0 ;
+    char *arg3 = (char *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int res3 ;
+    char *buf3 = 0 ;
+    int alloc3 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 3) || (items > 3)) {
+      SWIG_croak("Usage: CoreSession_consoleLog(self,level_str,msg);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_consoleLog" "', argument " "1"" of type '" "CoreSession *""'"); 
+    }
+    arg1 = reinterpret_cast< CoreSession * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_consoleLog" "', argument " "2"" of type '" "char *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "CoreSession_consoleLog" "', argument " "3"" of type '" "char *""'");
+    }
+    arg3 = reinterpret_cast< char * >(buf3);
+    (arg1)->consoleLog(arg2,arg3);
+    
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_console_log) {
   {
     char *arg1 = (char *) 0 ;
@@ -9873,6 +9933,7 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::CoreSession_get_cb_args", _wrap_CoreSession_get_cb_args},
 {"freeswitchc::CoreSession_check_hangup_hook", _wrap_CoreSession_check_hangup_hook},
 {"freeswitchc::CoreSession_run_dtmf_callback", _wrap_CoreSession_run_dtmf_callback},
+{"freeswitchc::CoreSession_consoleLog", _wrap_CoreSession_consoleLog},
 {"freeswitchc::console_log", _wrap_console_log},
 {"freeswitchc::console_clean_log", _wrap_console_clean_log},
 {"freeswitchc::msleep", _wrap_msleep},

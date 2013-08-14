@@ -32,28 +32,26 @@
 
 #include <inttypes.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <time.h>
+#include <fcntl.h>
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
-#include <string.h>
-#include <stdio.h>
-#include <time.h>
-#include <fcntl.h>
 
 #include "spandsp/telephony.h"
 #include "spandsp/complex.h"
 #include "filter_tools.h"
-
-#if !defined(FALSE)
-#define FALSE 0
-#endif
-#if !defined(TRUE)
-#define TRUE (!FALSE)
-#endif
 
 #define MAXPZ       8192
 #define SEQ_LEN     8192

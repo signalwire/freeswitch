@@ -46,9 +46,9 @@ typedef struct
     /*! \brief The timed step to go to when we reach idle from the current timed step */
     int queued_timed_step;
 
-    /*! \brief TRUE is there has been some T.38 data missed (i.e. lost packets) in the current
+    /*! \brief True is there has been some T.38 data missed (i.e. lost packets) in the current
                reception period. */
-    int rx_data_missing;
+    bool rx_data_missing;
 
     /*! \brief The number of octets to send in each image packet (non-ECM or ECM) at the current
                rate and the current specified packet interval. */
@@ -84,8 +84,8 @@ typedef struct
     /*! \brief The current T.38 data type being transmitted. */
     int current_tx_data_type;
 
-    /*! \brief TRUE if a carrier is present. Otherwise FALSE. */
-    int rx_signal_present;
+    /*! \brief True if a carrier is present. Otherwise false. */
+    bool rx_signal_present;
 
     /*! \brief The current operating mode of the receiver. */
     int current_rx_type;

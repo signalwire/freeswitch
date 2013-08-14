@@ -133,7 +133,9 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 		switch_channel_set_flag(tech_pvt->channel, CF_RTP_NOTIMER_DURING_BRIDGE);
 	}
 
-
+	if (sofia_test_pflag(tech_pvt->profile, PFLAG_T38_PASSTHRU)) {
+		switch_channel_set_flag(tech_pvt->channel, CF_T38_PASSTHRU);
+	}
 	
 	switch_core_media_check_dtmf_type(session);
 	switch_channel_set_cap(tech_pvt->channel, CC_MEDIA_ACK);
@@ -984,7 +986,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		switch_channel_set_variable(channel, "sip_to_host", sofia_glue_get_host(to_str, switch_core_session_get_pool(session)));
 		switch_channel_set_variable(channel, "sip_from_host", sofia_glue_get_host(from_str, switch_core_session_get_pool(session)));
 
-
 		if (!(tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
 										NUTAG_URL(url_str),
 										TAG_IF(call_id, SIPTAG_CALL_ID_STR(call_id)),
@@ -1204,7 +1205,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		tech_pvt->nh->nh_has_invite = 1;
 	}
 
-	if ((mp = sofia_media_get_multipart(session, SOFIA_MULTIPART_PREFIX, tech_pvt->mparams.local_sdp_str, &mp_type))) {
+	if ((mp = sofia_media_get_multipart(session, "sip_multipart", tech_pvt->mparams.local_sdp_str, &mp_type))) {
 		sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
 	}
 
@@ -1218,6 +1219,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG,
 						  "Local SDP:\n%s\n", tech_pvt->mparams.local_sdp_str);
 	}
+
 
 	if (sofia_use_soa(tech_pvt)) {
 		nua_invite(tech_pvt->nh,
@@ -1848,10 +1850,13 @@ int sofia_recover_callback(switch_core_session_t *session)
 		tech_pvt->redirected = switch_core_session_sprintf(session, "sip:%s", switch_channel_get_variable(channel, "sip_contact_uri"));
 
 		if (zstr(rr)) {
-			switch_channel_set_variable_printf(channel, "sip_invite_route_uri", "<sip:%s@%s:%s;lr>",
+			switch_channel_set_variable_printf(channel, "sip_invite_route_uri", "<sip:%s@%s:%s;transport=%s>",
 											   switch_channel_get_variable(channel, "sip_from_user"),
-											   switch_channel_get_variable(channel, "sip_network_ip"), switch_channel_get_variable(channel, "sip_network_port")
+											   switch_channel_get_variable(channel, "sip_network_ip"), 
+											   switch_channel_get_variable(channel, "sip_network_port"),
+											   switch_channel_get_variable(channel,"sip_via_protocol")
 											   );
+
 		}
 
 		tech_pvt->dest = switch_core_session_sprintf(session, "sip:%s", switch_channel_get_variable(channel, "sip_from_uri"));
@@ -1886,8 +1891,6 @@ int sofia_recover_callback(switch_core_session_t *session)
 
 	if (session) {
 		const char *use_uuid;
-
-		switch_channel_set_flag(channel, CF_RECOVERING);
 
 		if ((use_uuid = switch_channel_get_variable(channel, "origination_uuid"))) {
 			if (switch_core_session_set_uuid(session, use_uuid) == SWITCH_STATUS_SUCCESS) {

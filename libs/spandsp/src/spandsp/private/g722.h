@@ -21,14 +21,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * Based on a single channel G.722 codec which is:
- *
- *****    Copyright (c) CMU    1993      *****
- * Computer Science, Speech Group
- * Chengxiang Lu and Alex Hauptmann
  */
-
 
 /*! \file */
 
@@ -54,13 +47,13 @@ typedef struct
  */
 struct g722_encode_state_s
 {
-    /*! TRUE if the operating in the special ITU test mode, with the band split filters
+    /*! True if the operating in the special ITU test mode, with the band split filters
              disabled. */
-    int itu_test_mode;
-    /*! TRUE if the G.722 data is packed */
-    int packed;
-    /*! TRUE if encode from 8k samples/second */
-    int eight_k;
+    bool itu_test_mode;
+    /*! True if the G.722 data is packed */
+    bool packed;
+    /*! True if encode from 8k samples/second */
+    bool eight_k;
     /*! 6 for 48000kbps, 7 for 56000kbps, or 8 for 64000kbps. */
     int bits_per_sample;
 
@@ -82,13 +75,13 @@ struct g722_encode_state_s
  */
 struct g722_decode_state_s
 {
-    /*! TRUE if the operating in the special ITU test mode, with the band split filters
+    /*! True if the operating in the special ITU test mode, with the band split filters
              disabled. */
-    int itu_test_mode;
-    /*! TRUE if the G.722 data is packed */
-    int packed;
-    /*! TRUE if decode to 8k samples/second */
-    int eight_k;
+    bool itu_test_mode;
+    /*! True if the G.722 data is packed */
+    bool packed;
+    /*! True if decode to 8k samples/second */
+    bool eight_k;
     /*! 6 for 48000kbps, 7 for 56000kbps, or 8 for 64000kbps. */
     int bits_per_sample;
 

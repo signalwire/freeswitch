@@ -172,7 +172,7 @@ int psuedo_terminal_create(modem_t *modem)
         psuedo_terminal_close(modem);
         return -1;
     }
-    modem->threadAbort = CreateEvent(NULL, TRUE, FALSE, NULL);
+    modem->threadAbort = CreateEvent(NULL, true, false, NULL);
 #else
     modem->slot = next_id++;
     snprintf(modem->devlink, sizeof(modem->devlink), "/dev/spandsp/%d", modem->slot);

@@ -33,8 +33,14 @@
 #include <string.h>
 #include <assert.h>
 #include <time.h>
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/async.h"
 #include "spandsp/bert.h"
@@ -136,14 +142,14 @@ static void assess_error_rate(bert_state_t *s)
     int i;
     int j;
     int sum;
-    int test;
+    bool test;
 
     /* We assess the error rate in decadic steps. For each decade we assess the error over 10 times
        the number of bits, to smooth the result. This means we assess the 1 in 100 rate based on 1000 bits
        (i.e. we look for >=10 errors in 1000 bits). We make an assessment every 100 bits, using a sliding
        window over the last 1000 bits. We assess the 1 in 1000 rate over 10000 bits in a similar way, and
        so on for the lower error rates. */
-    test = TRUE;
+    test = false;
     for (i = 2;  i <= 7;  i++)
     {
         if (++s->decade_ptr[i] < 10)
@@ -156,7 +162,7 @@ static void assess_error_rate(bert_state_t *s)
         if (test  &&  sum > 10)
         {
             /* We overflow into the next decade */
-            test = FALSE;
+            test = false;
             if (s->error_rate != i  &&  s->reporter)
                 s->reporter(s->user_data, BERT_REPORT_GT_10_2 + i - 2, &s->results);
             s->error_rate = i;
@@ -350,7 +356,7 @@ SPAN_DECLARE(bert_state_t *) bert_init(bert_state_t *s, int limit, int pattern, 
 
     if (s == NULL)
     {
-        if ((s = (bert_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (bert_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -503,7 +509,7 @@ SPAN_DECLARE(int) bert_release(bert_state_t *s)
 
 SPAN_DECLARE(int) bert_free(bert_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

@@ -156,8 +156,8 @@ struct v17_rx_state_s
     /*! \brief Scrambler tap */
     int scrambler_tap;
 
-    /*! \brief TRUE if the short training sequence is to be used. */
-    int short_train;
+    /*! \brief True if the short training sequence is to be used. */
+    bool short_train;
     /*! \brief The section of the training data we are currently in. */
     int training_stage;
     /*! \brief A count of how far through the current training step we are. */

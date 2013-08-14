@@ -73,8 +73,8 @@ struct r2_mf_tx_state_s
 {
     /*! The tone generator. */
     tone_gen_state_t tone;
-    /*! TRUE if generating forward tones, otherwise generating reverse tones. */
-    int fwd;
+    /*! True if generating forward tones, otherwise generating reverse tones. */
+    bool fwd;
     /*! The current digit being generated. */
     int digit;
 };
@@ -88,8 +88,8 @@ struct r2_mf_rx_state_s
     tone_report_func_t callback;
     /*! An opaque pointer passed to the callback function. */
     void *callback_data;
-    /*! TRUE is we are detecting forward tones. FALSE if we are detecting backward tones */
-    int fwd;
+    /*! Tue is we are detecting forward tones. False if we are detecting backward tones */
+    bool fwd;
     /*! Tone detector working states */
     goertzel_state_t out[6];
     /*! The current sample number within a processing block. */

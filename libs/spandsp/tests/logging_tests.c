@@ -42,12 +42,12 @@
 
 #include "spandsp.h"
 
-static int tests_failed = FALSE;
+static bool tests_failed = false;
 
 static int msg_step = 0;
 static int msg2_step = 0;
-static int msg_done = FALSE;
-static int msg2_done = FALSE;
+static bool msg_done = false;
+static bool msg2_done = false;
 
 static void message_handler(void *user_data, int level, const char *text)
 {
@@ -78,10 +78,10 @@ static void message_handler(void *user_data, int level, const char *text)
     if (strcmp(ref[msg_step], text))
     {
         printf(">>>: %s", ref[msg_step]);
-        tests_failed = TRUE;
+        tests_failed = true;
     }
     if (ref[++msg_step][0] == '\0')
-        msg_done = TRUE;
+        msg_done = true;
     printf("MSG: %s", text);
 }
 /*- End of function --------------------------------------------------------*/
@@ -92,10 +92,10 @@ static void message_handler2(void *user_data, int level, const char *text)
     if (strcmp(" FLOW Protocol NewTag Date/time tagged log 1 2 3\n", text + 23))
     {
         printf(">>>: %s", text + 23);
-        tests_failed = TRUE;
+        tests_failed = true;
     }
     if (++msg2_step == 10)
-        msg2_done = TRUE;
+        msg2_done = true;
     printf("MSG: %s", text);
 }
 /*- End of function --------------------------------------------------------*/
@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
         if (!span_log_test(log, i))
         {
             if (i != 6)
-                tests_failed = TRUE;
+                tests_failed = true;
             break;
         }
     }

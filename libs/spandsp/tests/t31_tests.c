@@ -82,7 +82,7 @@ g1050_state_t *path_b_to_a;
 
 double when = 0.0;
 
-int t38_mode = FALSE;
+int t38_mode = false;
 
 #define EXCHANGE(a,b) {a, sizeof(a) - 1, b, sizeof(b) - 1}
 #define RESPONSE(b) {"", 0, b, sizeof(b) - 1}
@@ -106,9 +106,9 @@ static const struct command_response_s fax_send_test_seq[] =
     EXCHANGE("AT+FRH=3\r", "\r\nCONNECT\r\n"),
     //<DIS frame data>
 #if 1
-    RESPONSE("\xFF\x13\x80\x00\xEE\xF8\x80\x80\x89\x80\x80\x80\x18\x18\xB9\x10\x03"),   // For audio FAXing
+    RESPONSE("\xFF\x13\x80\x00\xEE\xF8\x80\x80\x99\x80\x80\x80\x18\x58\x0D\x10\x03"),   // For audio FAXing
 #else
-    RESPONSE("\xFF\x13\x80\x04\xEE\xF8\x80\x80\x89\x80\x80\x80\x18\x84\x09\x10\x03"),   // For T.38 FAXing
+    RESPONSE("\xFF\x13\x80\x04\xEE\xF8\x80\x80\x99\x80\x80\x80\x18\xC4\xBD\x10\x03"),   // For T.38 FAXing
 #endif
     RESPONSE("\r\nOK\r\n"),
     //EXCHANGE("AT+FRH=3\r", "\r\nNO CARRIER\r\n"),
@@ -268,11 +268,11 @@ int countdown = 0;
 int command_response_test_step = -1;
 char response_buf[1000];
 int response_buf_ptr = 0;
-int answered = FALSE;
-int kick = FALSE;
-int dled = FALSE;
-int done = FALSE;
-int sequence_terminated = FALSE;
+int answered = false;
+int kick = false;
+int dled = false;
+int done = false;
+int sequence_terminated = false;
 
 static const struct command_response_s *fax_test_seq;
 
@@ -333,10 +333,10 @@ static int modem_call_control(t31_state_t *s, void *user_data, int op, const cha
         t31_call_event(t31_state, AT_CALL_EVENT_CONNECTED);
         break;
     case AT_MODEM_CONTROL_ANSWER:
-        answered = TRUE;
+        answered = true;
         break;
     case AT_MODEM_CONTROL_HANGUP:
-        done = TRUE;
+        done = true;
         break;
     case AT_MODEM_CONTROL_OFFHOOK:
         break;
@@ -393,17 +393,17 @@ static int at_tx_handler(at_state_t *s, void *user_data, const uint8_t *buf, siz
                     response_buf[response_buf_ptr] = '\0';
                     test_seq_ptr++;
                     if (fax_test_seq[test_seq_ptr].command == NULL  &&  fax_test_seq[test_seq_ptr].command == NULL)
-                        sequence_terminated = TRUE;
+                        sequence_terminated = true;
                     if (fax_test_seq[test_seq_ptr].command)
-                        kick = TRUE;
+                        kick = true;
                     break;
                 }
-                dled = FALSE;
+                dled = false;
             }
             else
             {
                 if (buf[i] == DLE)
-                    dled = TRUE;
+                    dled = true;
             }
         }
         i++;
@@ -432,13 +432,13 @@ static int at_tx_handler(at_state_t *s, void *user_data, const uint8_t *buf, siz
         printf("\nMatched\n");
         test_seq_ptr++;
         if (fax_test_seq[test_seq_ptr].command == NULL  &&  fax_test_seq[test_seq_ptr].command == NULL)
-            sequence_terminated = TRUE;
+            sequence_terminated = true;
         response_buf_ptr = 0;
         response_buf[response_buf_ptr] = '\0';
         if (fax_test_seq[test_seq_ptr].command)
-            kick = TRUE;
+            kick = true;
         else
-            dled = FALSE;
+            dled = false;
     }
     return 0;
 }
@@ -511,8 +511,8 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
 
     /* Set up the test environment */
     t38_version = 1;
-    without_pacing = FALSE;
-    use_tep = FALSE;
+    without_pacing = false;
+    use_tep = false;
 
     wave_handle = NULL;
     if (log_audio)
@@ -552,7 +552,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
     {
         if (t38_mode)
         {
-            if ((t38_state = t38_terminal_init(NULL, FALSE, t38_tx_packet_handler, t31_state)) == NULL)
+            if ((t38_state = t38_terminal_init(NULL, false, t38_tx_packet_handler, t31_state)) == NULL)
             {
                 fprintf(stderr, "Cannot start the T.38 channel\n");
                 exit(2);
@@ -561,7 +561,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
         }
         else
         {
-            fax_state = fax_init(NULL, FALSE);
+            fax_state = fax_init(NULL, false);
             t30 = fax_get_t30_state(fax_state);
         }
         t30_set_rx_file(t30, OUTPUT_FILE_NAME, -1);
@@ -572,7 +572,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
     {
         if (t38_mode)
         {
-            if ((t38_state = t38_terminal_init(NULL, TRUE, t38_tx_packet_handler, t31_state)) == NULL)
+            if ((t38_state = t38_terminal_init(NULL, true, t38_tx_packet_handler, t31_state)) == NULL)
             {
                 fprintf(stderr, "Cannot start the T.38 channel\n");
                 exit(2);
@@ -581,7 +581,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
         }
         else
         {
-            fax_state = fax_init(NULL, TRUE);
+            fax_state = fax_init(NULL, true);
             t30 = fax_get_t30_state(fax_state);
         }
         t30_set_tx_file(t30, INPUT_FILE_NAME, -1, -1);
@@ -652,14 +652,14 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
         span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
         span_log_set_tag(logging, "T.31");
 
-        t31_set_mode(t31_state, TRUE);
+        t31_set_mode(t31_state, true);
         t38_set_t38_version(t38_core, t38_version);
     }
 
-    fast_send = FALSE;
-    fast_send_tcf = TRUE;
+    fast_send = false;
+    fast_send_tcf = true;
     fast_blocks = 0;
-    kick = TRUE;
+    kick = true;
 #if defined(ENABLE_GUI)
     if (use_gui)
         start_media_monitor();
@@ -684,7 +684,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
         if (kick)
         {
             /* Work through the script */
-            kick = FALSE;
+            kick = false;
             if (fax_test_seq[test_seq_ptr].command > (const char *) 2)
             {
                 if (fax_test_seq[test_seq_ptr].command[0])
@@ -698,15 +698,15 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
                 if (fax_test_seq[test_seq_ptr].command == (const char *) 2)
                 {
                     printf("Fast send TCF\n");
-                    fast_send = TRUE;
-                    fast_send_tcf = TRUE;
+                    fast_send = true;
+                    fast_send_tcf = true;
                     fast_blocks = 100;
                 }
                 else
                 {
                     printf("Fast send image\n");
-                    fast_send = TRUE;
-                    fast_send_tcf = FALSE;
+                    fast_send = true;
+                    fast_send_tcf = false;
                     fast_blocks = 100;
                 }
             }
@@ -756,7 +756,7 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
             }
             t31_at_rx(t31_state, (char *) fast_buf, 36);
             if (--fast_blocks == 0)
-                fast_send = FALSE;
+                fast_send = false;
         }
 
         if (t38_mode)
@@ -888,10 +888,10 @@ int main(int argc, char *argv[])
     int opt;
 
     decode_test_file = NULL;
-    log_audio = FALSE;
-    test_sending = FALSE;
-    t38_mode = FALSE;
-    use_gui = FALSE;
+    log_audio = false;
+    test_sending = false;
+    t38_mode = false;
+    use_gui = false;
     g1050_model_no = 0;
     g1050_speed_pattern_no = 1;
     while ((opt = getopt(argc, argv, "d:glM:rS:st")) != -1)
@@ -903,29 +903,29 @@ int main(int argc, char *argv[])
             break;
         case 'g':
 #if defined(ENABLE_GUI)
-            use_gui = TRUE;
+            use_gui = true;
 #else
             fprintf(stderr, "Graphical monitoring not available\n");
             exit(2);
 #endif
             break;
         case 'l':
-            log_audio = TRUE;
+            log_audio = true;
             break;
         case 'M':
             g1050_model_no = optarg[0] - 'A' + 1;
             break;
         case 'r':
-            test_sending = FALSE;
+            test_sending = false;
             break;
         case 'S':
             g1050_speed_pattern_no = atoi(optarg);
             break;
         case 's':
-            test_sending = TRUE;
+            test_sending = true;
             break;
         case 't':
-            t38_mode = TRUE;
+            t38_mode = true;
             break;
         default:
             //usage();

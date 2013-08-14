@@ -71,6 +71,7 @@
 #include <termios.h>
 #include <sys/ioctl.h>
 #include <iconv.h>
+#include <dirent.h>
 #endif //WIN32
 
 #ifndef WIN32
@@ -454,6 +455,7 @@ struct private_object {
 
 	char buffer2[320];
 	int buffer2_full;
+	int serialPort_serial_audio_opened;
 
 };
 
@@ -556,3 +558,6 @@ int dump_event_full(private_t *tech_pvt, int is_alarm, int alarm_code, const cha
 int gsmopen_serial_init_audio_port(private_t *tech_pvt, int controldevice_audio_speed);
 int serial_audio_init(private_t *tech_pvt);
 int serial_audio_shutdown(private_t *tech_pvt);
+#ifndef WIN32
+void find_ttyusb_devices(private_t *tech_pvt, const char *dirname);
+#endif// WIN32

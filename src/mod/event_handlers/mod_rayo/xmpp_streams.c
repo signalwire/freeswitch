@@ -29,6 +29,8 @@
 #include <switch.h>
 #include <iksemel.h>
 
+#include <openssl/ssl.h>
+
 #include "xmpp_streams.h"
 #include "iks_helpers.h"
 #include "sasl.h"
@@ -63,6 +65,10 @@ struct xmpp_stream_context {
 	int shutdown;
 	/** prevents context shutdown until all threads are finished */
 	switch_thread_rwlock_t *shutdown_rwlock;
+	/** path to cert PEM file */
+	const char *cert_pem_file;
+	/** path to key PEM file */
+	const char *key_pem_file;
 };
 
 /**
@@ -71,8 +77,8 @@ struct xmpp_stream_context {
 enum xmpp_stream_state {
 	/** new connection */
 	XSS_CONNECT,
-	/** bidirectional comms established */
-	XSS_BIDI,
+	/** encrypted comms established */
+	XSS_SECURE,
 	/** remote party authenticated */
 	XSS_AUTHENTICATED,
 	/** client resource bound */
@@ -159,7 +165,7 @@ static const char *xmpp_stream_state_to_string(enum xmpp_stream_state state)
 {
 	switch(state) {
 		case XSS_CONNECT: return "CONNECT";
-		case XSS_BIDI: return "BIDI";
+		case XSS_SECURE: return "SECURE";
 		case XSS_AUTHENTICATED: return "AUTHENTICATED";
 		case XSS_RESOURCE_BOUND: return "RESOURCE_BOUND";
 		case XSS_READY: return "READY";
@@ -359,6 +365,31 @@ static void xmpp_send_client_header_auth(struct xmpp_stream *stream)
 }
 
 /**
+ * Send sasl + starttls reply to xmpp <stream>
+ * @param stream the xmpp stream
+ */
+static void xmpp_send_client_header_tls(struct xmpp_stream *stream)
+{
+	if (stream->context->key_pem_file && stream->context->cert_pem_file) {
+		struct xmpp_stream_context *context = stream->context;
+		char *header = switch_mprintf(
+			"<stream:stream xmlns='"IKS_NS_CLIENT"' xmlns:db='"IKS_NS_XMPP_DIALBACK"'"
+			" from='%s' id='%s' xml:lang='en' version='1.0'"
+			" xmlns:stream='"IKS_NS_XMPP_STREAMS"'><stream:features>"
+			"<starttls xmlns='"IKS_NS_XMPP_TLS"'><required/></starttls>"
+			"<mechanisms xmlns='"IKS_NS_XMPP_SASL"'>"
+			"<mechanism>PLAIN</mechanism>"
+			"</mechanisms></stream:features>", context->domain, stream->id);
+		iks_send_raw(stream->parser, header);
+		free(header);
+	} else {
+		/* not set up for TLS, skip it */
+		stream->state = XSS_SECURE;
+		xmpp_send_client_header_auth(stream);
+	}
+}
+
+/**
  * Send sasl reply to xmpp <stream>
  * @param stream the xmpp stream
  */
@@ -370,12 +401,6 @@ static void xmpp_send_server_header_auth(struct xmpp_stream *stream)
 		" from='%s' id='%s' xml:lang='en' version='1.0'"
 		" xmlns:stream='"IKS_NS_XMPP_STREAMS"'>"
 		"<stream:features>"
-#if 0
-		"<bidi xmlns='"IKS_NS_BIDI_FEATURE"'/>"
-		"<mechanisms xmlns='"IKS_NS_XMPP_SASL"'>"
-		"<mechanism>PLAIN</mechanism>"
-		"</mechanisms>"
-#endif
 		"</stream:features>",
 		context->domain, stream->id);
 	iks_send_raw(stream->parser, header);
@@ -418,6 +443,21 @@ static void xmpp_send_outbound_server_header(struct xmpp_stream *stream)
 }
 
 /**
+ * Handle <starttls> message.
+ * @param the xmpp stream
+ * @param node the <starttls> packet
+ */
+static void on_stream_starttls(struct xmpp_stream *stream, iks *node)
+{
+	/* wait for handshake to start */
+	if (iks_proceed_tls(stream->parser, stream->context->cert_pem_file, stream->context->key_pem_file, 1) == IKS_OK) {
+		stream->state = XSS_SECURE;
+	} else {
+		stream->state = XSS_ERROR;
+	}
+}
+
+/**
  * Handle <auth> message.  Only PLAIN supported.
  * @param stream the xmpp stream
  * @param node the <auth> packet
@@ -431,7 +471,7 @@ static void on_stream_auth(struct xmpp_stream *stream, iks *node)
 	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s, auth, state = %s\n", stream->jid, xmpp_stream_state_to_string(stream->state));
 
 	/* wrong state for authentication */
-	if (stream->state != XSS_BIDI) {
+	if (stream->state != XSS_SECURE) {
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_WARNING, "%s, auth UNEXPECTED, state = %s\n", stream->jid, xmpp_stream_state_to_string(stream->state));
 		/* on_auth unexpected error */
 		stream->state = XSS_ERROR;
@@ -483,38 +523,6 @@ static void on_stream_auth(struct xmpp_stream *stream, iks *node)
 	} else {
 		/* missing message */
 		stream->state = XSS_ERROR;
-	}
-}
-
-/**
- * Handle <bidi> message.
- * @param stream the xmpp stream
- * @param node the <bidi> packet
- */
-static void on_stream_bidi(struct xmpp_stream *stream, iks *node)
-{
-	/* only allow bidi on s2s connections before auth */
-	if (stream->s2s) {
-		switch(stream->state) {
-			case XSS_CONNECT:
-				stream->state = XSS_BIDI;
-				break;
-			case XSS_BIDI:
-			case XSS_AUTHENTICATED:
-			case XSS_RESOURCE_BOUND:
-			case XSS_READY:
-			case XSS_SHUTDOWN:
-			case XSS_ERROR:
-			case XSS_DESTROY:
-				/* error */
-				stream->state = XSS_ERROR;
-				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, bad state: %s\n", stream->jid, xmpp_stream_state_to_string(stream->state));
-				break;
-		}
-	} else {
-		/* error */
-		stream->state = XSS_ERROR;
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, bidi not allowed from client\n", stream->jid);
 	}
 }
 
@@ -606,7 +614,7 @@ static void on_stream_iq(struct xmpp_stream *stream, iks *iq)
 	struct xmpp_stream_context *context = stream->context;
 	switch(stream->state) {
 		case XSS_CONNECT:
-		case XSS_BIDI: {
+		case XSS_SECURE: {
 			iks *error = iks_new_error(iq, STANZA_ERROR_NOT_AUTHORIZED);
 			xmpp_stream_stanza_send(stream, error);
 			break;
@@ -689,7 +697,9 @@ static void on_client_stream_start(struct xmpp_stream *stream, iks *node)
 
 	switch (stream->state) {
 		case XSS_CONNECT:
-		case XSS_BIDI:
+			xmpp_send_client_header_tls(stream);
+			break;
+		case XSS_SECURE:
 			xmpp_send_client_header_auth(stream);
 			break;
 		case XSS_AUTHENTICATED:
@@ -960,7 +970,7 @@ static void on_outbound_server_stream_start(struct xmpp_stream *stream, iks *nod
 			/* strange... I expect IKS_NODE_STOP, this is a workaround. */
 			stream->state = XSS_DESTROY;
 			break;
-		case XSS_BIDI:
+		case XSS_SECURE:
 		case XSS_AUTHENTICATED:
 		case XSS_RESOURCE_BOUND:
 		case XSS_READY:
@@ -1001,7 +1011,7 @@ static void on_inbound_server_stream_start(struct xmpp_stream *stream, iks *node
 		case XSS_CONNECT:
 			xmpp_send_server_header_auth(stream);
 			break;
-		case XSS_BIDI:
+		case XSS_SECURE:
 			break;
 		case XSS_AUTHENTICATED: {
 			/* all set */
@@ -1075,8 +1085,8 @@ static int on_stream(void *user_data, int type, iks *node)
 					on_stream_presence(stream, node);
 				} else if (!strcmp("auth", name)) {
 					on_stream_auth(stream, node);
-				} else if (!strcmp("bidi", name)) {
-					on_stream_bidi(stream, node);
+				} else if (!strcmp("starttls", name)) {
+					on_stream_starttls(stream, node);
 				} else if (!strcmp("db:result", name)) {
 					on_stream_dialback_result(stream, node);
 				} else if (!strcmp("db:verify", name)) {
@@ -1194,6 +1204,7 @@ static void *SWITCH_THREAD_FUNC xmpp_stream_thread(switch_thread_t *thread, void
 		case IKS_OK:
 			err_count = 0;
 			break;
+		case IKS_NET_TLSFAIL:
 		case IKS_NET_RWERR:
 		case IKS_NET_NOCONN:
 		case IKS_NET_NOSOCK:
@@ -1290,11 +1301,6 @@ static struct xmpp_stream *xmpp_stream_init(struct xmpp_stream_context *context,
 	stream->s2s = s2s;
 	stream->incoming = incoming;
 	switch_queue_create(&stream->msg_queue, MAX_QUEUE_LEN, pool);
-
-	if (!stream->s2s) {
-		/* client is already bi-directional */
-		stream->state = XSS_BIDI;
-	}
 
 	/* set up XMPP stream parser */
 	stream->parser = iks_stream_new(stream->s2s ? IKS_NS_SERVER : IKS_NS_CLIENT, stream, on_stream);
@@ -1828,6 +1834,23 @@ void *xmpp_stream_get_private(struct xmpp_stream *stream)
 {
 	return stream->user_private;
 }
+
+/**
+ * Add PEM cert file to stream for new SSL connections
+ */
+void xmpp_stream_context_add_cert(struct xmpp_stream_context *context, const char *cert_pem_file)
+{
+	context->cert_pem_file = switch_core_strdup(context->pool, cert_pem_file);
+}
+
+/**
+ * Add PEM key file to stream for new SSL connections
+ */
+void xmpp_stream_context_add_key(struct xmpp_stream_context *context, const char *key_pem_file)
+{
+	context->key_pem_file = switch_core_strdup(context->pool, key_pem_file);
+}
+
 
 /* For Emacs:
  * Local Variables:

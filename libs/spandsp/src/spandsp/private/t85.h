@@ -89,8 +89,8 @@ struct t85_encode_state_s
     uint32_t c[128];
     /*! New TX value, or <0 for analysis in progress */
     int32_t new_tx;
-    /*! TRUE if previous row was typical */
-    int prev_ltp;
+    /*! True if previous row was typical */
+    bool prev_ltp;
     /*! Pointers to the 3 row buffers */
     uint8_t *prev_row[3];
     /*! Pointer to a block of allocated memory 3 rows long, which

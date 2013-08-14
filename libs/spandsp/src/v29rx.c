@@ -40,9 +40,15 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/math_fixed.h"
@@ -61,6 +67,7 @@
 #include "spandsp/v29rx.h"
 
 #include "spandsp/private/logging.h"
+#include "spandsp/private/power_meter.h"
 #include "spandsp/private/v29rx.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -860,14 +867,14 @@ static __inline__ int signal_detect(v29_rx_state_t *s, int16_t amp)
             {
                 /* Count down a short delay, to ensure we push the last
                    few bits through the filters before stopping. */
-                v29_rx_restart(s, s->bit_rate, FALSE);
+                v29_rx_restart(s, s->bit_rate, false);
                 report_status_change(s, SIG_STATUS_CARRIER_DOWN);
                 return 0;
             }
 #if defined(IAXMODEM_STUFF)
             /* Carrier has dropped, but the put_bit is pending the
                signal_present delay. */
-            s->carrier_drop_pending = TRUE;
+            s->carrier_drop_pending = true;
 #endif
         }
     }
@@ -878,7 +885,7 @@ static __inline__ int signal_detect(v29_rx_state_t *s, int16_t amp)
             return 0;
         s->signal_present = 1;
 #if defined(IAXMODEM_STUFF)
-        s->carrier_drop_pending = FALSE;
+        s->carrier_drop_pending = false;
 #endif
         report_status_change(s, SIG_STATUS_CARRIER_UP);
     }
@@ -1047,7 +1054,7 @@ SPAN_DECLARE(logging_state_t *) v29_rx_get_logging_state(v29_rx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) v29_rx_restart(v29_rx_state_t *s, int bit_rate, int old_train)
+SPAN_DECLARE(int) v29_rx_restart(v29_rx_state_t *s, int bit_rate, bool old_train)
 {
     int i;
 
@@ -1082,7 +1089,7 @@ SPAN_DECLARE(int) v29_rx_restart(v29_rx_state_t *s, int bit_rate, int old_train)
 #if defined(IAXMODEM_STUFF)
     s->high_sample = 0;
     s->low_samples = 0;
-    s->carrier_drop_pending = FALSE;
+    s->carrier_drop_pending = false;
 #endif
     s->old_train = old_train;
     vec_zeroi32(s->diff_angles, 16);
@@ -1148,7 +1155,7 @@ SPAN_DECLARE(v29_rx_state_t *) v29_rx_init(v29_rx_state_t *s, int bit_rate, put_
     }
     if (s == NULL)
     {
-        if ((s = (v29_rx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (v29_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -1163,7 +1170,7 @@ SPAN_DECLARE(v29_rx_state_t *) v29_rx_init(v29_rx_state_t *s, int bit_rate, put_
     /* The thresholds should be on at -26dBm0 and off at -31dBm0 */
     v29_rx_signal_cutoff(s, -28.5f);
 
-    v29_rx_restart(s, bit_rate, FALSE);
+    v29_rx_restart(s, bit_rate, false);
     return s;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1176,7 +1183,7 @@ SPAN_DECLARE(int) v29_rx_release(v29_rx_state_t *s)
 
 SPAN_DECLARE(int) v29_rx_free(v29_rx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

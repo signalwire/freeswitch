@@ -916,11 +916,9 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 	if (index_ptr || (stack & SWITCH_STACK_PUSH) || (stack & SWITCH_STACK_UNSHIFT)) {
 		
 		if (!(header = switch_event_get_header_ptr(event, header_name)) && index_ptr) {
-			/*
-			 * Removing a possible leak. But it doesn't appear this is used anywhere, and even if it were then it wouldn't be working.
-			   header = new_header(header_name);
-			*/
-
+			
+			header = new_header(header_name);
+			
 			if (switch_test_flag(event, EF_UNIQ_HEADERS)) {
 				switch_event_del_header(event, header_name);
 			}

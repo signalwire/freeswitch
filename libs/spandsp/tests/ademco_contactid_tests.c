@@ -75,17 +75,17 @@ static int reports_entry = 0;
 
 static int16_t amp[1000000];
 
-int tx_callback_reported = FALSE;
-int rx_callback_reported = FALSE;
+bool tx_callback_reported = false;
+bool rx_callback_reported = false;
 
-int sending_complete = FALSE;
+bool sending_complete = false;
 
 SNDFILE *outhandle;
 
 static void talkoff_tx_callback(void *user_data, int tone, int level, int duration)
 {
     printf("Ademco sender report %d\n", tone);
-    tx_callback_reported = TRUE;
+    tx_callback_reported = true;
 }
 
 static int mitel_cm7291_side_2_and_bellcore_tests(void)
@@ -102,7 +102,7 @@ static int mitel_cm7291_side_2_and_bellcore_tests(void)
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "Ademco-tx");
 
-    tx_callback_reported = FALSE;
+    tx_callback_reported = false;
 
     /* The remainder of the Mitel tape is the talk-off test */
     /* Here we use the Bellcore test tapes (much tougher), in six
@@ -153,7 +153,7 @@ static void rx_callback(void *user_data, const ademco_contactid_report_t *report
         printf("Report mismatch\n");
         exit(2);
     }
-    rx_callback_reported = TRUE;
+    rx_callback_reported = true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -174,11 +174,11 @@ static void tx_callback(void *user_data, int tone, int level, int duration)
         if (++reports_entry < 5)
             ademco_contactid_sender_put(sender, &reports[reports_entry]);
         else
-            sending_complete = TRUE;
+            sending_complete = true;
         break;
     case 0:
         /* Sending failed after retries */
-        sending_complete = TRUE;
+        sending_complete = true;
         break;
     }
 }
@@ -223,8 +223,8 @@ static int end_to_end_tests(void)
     awgn_init_dbm0(&noise_source, 1234567, -50);
     munge = codec_munge_init(MUNGE_CODEC_ALAW, 0);
 
-    sending_complete = FALSE;
-    rx_callback_reported = FALSE;
+    sending_complete = false;
+    rx_callback_reported = false;
 
     for (i = 0;  i < 1000;  i++)
     {

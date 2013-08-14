@@ -38,9 +38,15 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <ctype.h>
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include <assert.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/async.h"
@@ -50,9 +56,6 @@
 #include "spandsp/private/logging.h"
 #include "spandsp/private/hdlc.h"
 #include "spandsp/private/v42.h"
-
-#define FALSE 0
-#define TRUE (!FALSE)
 
 /* Detection phase timer */
 #define T_400                           750
@@ -625,30 +628,30 @@ static int tx_information_frame(v42_state_t *ss)
 
     s = &ss->lapm;
     if (s->far_busy  ||  ((s->vs - s->va) & 0x7F) >= s->tx_window_size_k)
-        return FALSE;
+        return false;
     if (s->info_get != s->info_put)
-        return TRUE;
+        return true;
     if ((info_put_next = s->info_put + 1) >= V42_INFO_FRAMES)
         info_put_next = 0;
     if (info_put_next == s->info_get  ||  info_put_next == s->info_acked)
-        return FALSE;
+        return false;
     f = &s->info_buf[s->info_put];
     buf = f->buf;
     if (s->iframe_get == NULL)
-        return FALSE;
+        return false;
     n = s->iframe_get(s->iframe_get_user_data, buf + 3, s->tx_n401);
     if (n < 0)
     {
         /* Error */
         report_rx_status_change(ss, SIG_STATUS_LINK_ERROR);
-        return FALSE;
+        return false;
     }
     if (n == 0)
-        return FALSE;
+        return false;
 
     f->len = n + 3;
     s->info_put = info_put_next;
-    return TRUE;
+    return true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -767,11 +770,11 @@ static void receive_information_frame(v42_state_t *ss, const uint8_t *frame, int
         if (!s->rejected)
         {
             tx_supervisory_frame(s, s->rsp_addr, LAPM_S_REJ, (frame[2] & 0x1));
-            s->rejected = TRUE;
+            s->rejected = true;
         }
         return;
     }
-    s->rejected = FALSE;
+    s->rejected = false;
 
     s->iframe_put(s->iframe_put_user_data, frame + 3, len - 3);
     /* Increment vr */
@@ -789,20 +792,20 @@ static void rx_supervisory_cmd_frame(v42_state_t *ss, const uint8_t *frame, int 
     switch (frame[1] & 0x0C)
     {
     case LAPM_S_RR:
-        s->far_busy = FALSE;
+        s->far_busy = false;
         ack_info(ss, frame[2] >> 1);
         /* If p = 1 may be used for status checking? */
         tx_information_rr_rnr_response(ss, frame, len);
         break;
     case LAPM_S_RNR:
-        s->far_busy = TRUE;
+        s->far_busy = true;
         ack_info(ss, frame[2] >> 1);
         /* If p = 1 may be used for status checking? */
         if ((frame[2] & 0x1))
             tx_supervisory_frame(s, s->rsp_addr, (s->local_busy)  ?  LAPM_S_RNR  :  LAPM_S_RR, 1);
         break;
     case LAPM_S_REJ:
-        s->far_busy = FALSE;
+        s->far_busy = false;
         ack_info(ss, frame[2] >> 1);
         if (s->retry_count == 0)
         {
@@ -831,7 +834,7 @@ static void rx_supervisory_rsp_frame(v42_state_t *ss, const uint8_t *frame, int 
     switch (frame[1] & 0x0C)
     {
     case LAPM_S_RR:
-        s->far_busy = FALSE;
+        s->far_busy = false;
         ack_info(ss, frame[2] >> 1);
         if (s->retry_count  &&  (frame[2] & 0x1))
         {
@@ -840,7 +843,7 @@ static void rx_supervisory_rsp_frame(v42_state_t *ss, const uint8_t *frame, int 
         }
         break;
     case LAPM_S_RNR:
-        s->far_busy = TRUE;
+        s->far_busy = true;
         ack_info(ss, frame[2] >> 1);
         if (s->retry_count  &&  (frame[2] & 0x1))
         {
@@ -851,7 +854,7 @@ static void rx_supervisory_rsp_frame(v42_state_t *ss, const uint8_t *frame, int 
             t401_start(ss);
         break;
     case LAPM_S_REJ:
-        s->far_busy = FALSE;
+        s->far_busy = false;
         ack_info(ss, frame[2] >> 1);
         if (s->retry_count == 0  ||  (frame[2] & 0x1))
         {
@@ -997,7 +1000,7 @@ static int rx_unnumbered_rsp_frame(v42_state_t *ss, const uint8_t *frame, int le
         if (s->configuring)
         {
             receive_xid(ss, frame, len);
-            s->configuring = FALSE;
+            s->configuring = false;
             t401_stop(ss);
             switch (s->state)
             {
@@ -1005,7 +1008,7 @@ static int rx_unnumbered_rsp_frame(v42_state_t *ss, const uint8_t *frame, int le
                 lapm_connect(ss);
                 break;
             case LAPM_DATA:
-                s->local_busy = FALSE;
+                s->local_busy = false;
                 tx_supervisory_frame(s, s->cmd_addr, LAPM_S_RR, 0);
                 break;
             }
@@ -1140,10 +1143,10 @@ static int lapm_config(v42_state_t *ss)
     lapm_state_t *s;
 
     s = &ss->lapm;
-    s->configuring = TRUE;
+    s->configuring = true;
     if (s->state == LAPM_DATA)
     {
-        s->local_busy = TRUE;
+        s->local_busy = true;
         tx_supervisory_frame(s, s->cmd_addr, LAPM_S_RNR, 1);
     }
     transmit_xid(ss, s->cmd_addr);
@@ -1158,8 +1161,8 @@ static void reset_lapm(v42_state_t *ss)
 
     s = &ss->lapm;
     /* Reset the LAP.M state */
-    s->local_busy = FALSE;
-    s->far_busy = FALSE;
+    s->local_busy = false;
+    s->far_busy = false;
     s->vs = 0;
     s->va = 0;
     s->vr = 0;
@@ -1320,7 +1323,7 @@ static void negotiation_rx_bit(v42_state_t *s, int new_bit)
                 }
                 else
                 {
-                    s->neg.odp_seen = TRUE;
+                    s->neg.odp_seen = true;
                 }
                 /*endif*/
                 break;
@@ -1471,8 +1474,8 @@ SPAN_DECLARE(void) v42_set_status_callback(v42_state_t *s, modem_status_func_t s
 
 SPAN_DECLARE(void) v42_restart(v42_state_t *s)
 {
-    hdlc_tx_init(&s->lapm.hdlc_tx, FALSE, 1, TRUE, lapm_hdlc_underflow, s);
-    hdlc_rx_init(&s->lapm.hdlc_rx, FALSE, FALSE, 1, lapm_receive, s);
+    hdlc_tx_init(&s->lapm.hdlc_tx, false, 1, true, lapm_hdlc_underflow, s);
+    hdlc_rx_init(&s->lapm.hdlc_rx, false, false, 1, lapm_receive, s);
 
     if (s->detect)
     {
@@ -1484,7 +1487,7 @@ SPAN_DECLARE(void) v42_restart(v42_state_t *s)
         s->neg.rxoks = 0;
         s->neg.txadps = 0;
         s->neg.rx_negotiation_step = 0;
-        s->neg.odp_seen = FALSE;
+        s->neg.odp_seen = false;
         t400_start(s);
         s->lapm.state = LAPM_DETECT;
     }
@@ -1499,8 +1502,8 @@ SPAN_DECLARE(void) v42_restart(v42_state_t *s)
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(v42_state_t *) v42_init(v42_state_t *ss,
-                                     int calling_party,
-                                     int detect,
+                                     bool calling_party,
+                                     bool detect,
                                      get_msg_func_t iframe_get,
                                      put_msg_func_t iframe_put,
                                      void *user_data)
@@ -1509,7 +1512,7 @@ SPAN_DECLARE(v42_state_t *) v42_init(v42_state_t *ss,
 
     if (ss == NULL)
     {
-        if ((ss = (v42_state_t *) malloc(sizeof(*ss))) == NULL)
+        if ((ss = (v42_state_t *) span_alloc(sizeof(*ss))) == NULL)
             return NULL;
     }
     memset(ss, 0, sizeof(*ss));
@@ -1523,8 +1526,8 @@ SPAN_DECLARE(v42_state_t *) v42_init(v42_state_t *ss,
     s->iframe_put_user_data = user_data;
 
     s->state = (ss->detect)  ?  LAPM_DETECT  :  LAPM_IDLE;
-    s->local_busy = FALSE;
-    s->far_busy = FALSE;
+    s->local_busy = false;
+    s->far_busy = false;
 
     /* The address octet is:
         Data link connection identifier (0)
@@ -1564,7 +1567,7 @@ SPAN_DECLARE(int) v42_release(v42_state_t *s)
 SPAN_DECLARE(int) v42_free(v42_state_t *s)
 {
     v42_release(s);
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

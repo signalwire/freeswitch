@@ -33,8 +33,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/async.h"
 
@@ -168,13 +174,13 @@ SPAN_DECLARE(async_rx_state_t *) async_rx_init(async_rx_state_t *s,
                                                int data_bits,
                                                int parity,
                                                int stop_bits,
-                                               int use_v14,
+                                               bool use_v14,
                                                put_byte_func_t put_byte,
                                                void *user_data)
 {
     if (s == NULL)
     {
-        if ((s = (async_rx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (async_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     s->data_bits = data_bits;
@@ -203,7 +209,7 @@ SPAN_DECLARE(int) async_rx_release(async_rx_state_t *s)
 
 SPAN_DECLARE(int) async_rx_free(async_rx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -268,13 +274,13 @@ SPAN_DECLARE(async_tx_state_t *) async_tx_init(async_tx_state_t *s,
                                                int data_bits,
                                                int parity,
                                                int stop_bits,
-                                               int use_v14,
+                                               bool use_v14,
                                                get_byte_func_t get_byte,
                                                void *user_data)
 {
     if (s == NULL)
     {
-        if ((s = (async_tx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (async_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     /* We have a use_v14 parameter for completeness, but right now V.14 only
@@ -304,7 +310,7 @@ SPAN_DECLARE(int) async_tx_release(async_tx_state_t *s)
 
 SPAN_DECLARE(int) async_tx_free(async_tx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

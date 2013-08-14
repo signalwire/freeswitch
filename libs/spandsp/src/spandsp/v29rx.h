@@ -154,9 +154,9 @@ SPAN_DECLARE(v29_rx_state_t *) v29_rx_init(v29_rx_state_t *s, int bit_rate, put_
     \brief Reinitialise an existing V.29 modem receive context.
     \param s The modem context.
     \param bit_rate The bit rate of the modem. Valid values are 4800, 7200 and 9600.
-    \param old_train TRUE if a previous trained values are to be reused.
+    \param old_train True if a previous trained values are to be reused.
     \return 0 for OK, -1 for bad parameter */
-SPAN_DECLARE(int) v29_rx_restart(v29_rx_state_t *s, int bit_rate, int old_train);
+SPAN_DECLARE(int) v29_rx_restart(v29_rx_state_t *s, int bit_rate, bool old_train);
 
 /*! Release a V.29 modem receive context.
     \brief Release a V.29 modem receive context.

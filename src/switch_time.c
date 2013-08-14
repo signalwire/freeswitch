@@ -802,7 +802,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 {
 	switch_time_t too_late = runtime.microseconds_per_tick * 1000;
 	uint32_t current_ms = 0;
-	uint32_t x, tick = 0;
+	uint32_t x, tick = 0, sps_interval_ticks = 0;
 	switch_time_t ts = 0, last = 0;
 	int fwd_errs = 0, rev_errs = 0;
 	int profile_tick = 0;
@@ -1008,6 +1008,24 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			}
 			switch_mutex_lock(runtime.throttle_mutex);
 			runtime.sps_last = runtime.sps_total - runtime.sps;
+
+			if (sps_interval_ticks >= 300) {
+				runtime.sps_peak_fivemin = 0;
+				sps_interval_ticks = 0;
+				switch_mutex_lock(runtime.session_hash_mutex);
+				runtime.sessions_peak_fivemin = session_manager.session_count;
+				switch_mutex_unlock(runtime.session_hash_mutex);
+			}
+
+			sps_interval_ticks++;
+			
+			if (runtime.sps_last > runtime.sps_peak_fivemin) {
+				runtime.sps_peak_fivemin = runtime.sps_last;
+			}
+
+			if (runtime.sps_last > runtime.sps_peak) {
+				runtime.sps_peak = runtime.sps_last;
+			}
 			runtime.sps = runtime.sps_total;
 			switch_mutex_unlock(runtime.throttle_mutex);
 			tick = 0;

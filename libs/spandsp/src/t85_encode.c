@@ -33,8 +33,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/async.h"
 #include "spandsp/timezone.h"
@@ -78,7 +84,7 @@ static void put_stuff(t85_encode_state_t *s, const uint8_t buf[], int len)
         /* The number of uncompressed bytes per row seems like a reasonable measure
            of what to expect as a poor case for a compressed row. */
         bytes_per_row = (s->xd + 7) >> 3;
-        if ((new_buf = realloc(s->bitstream, s->bitstream_len + len + bytes_per_row)) == NULL)
+        if ((new_buf = span_realloc(s->bitstream, s->bitstream_len + len + bytes_per_row)) == NULL)
             return;
         s->bitstream = new_buf;
         s->bitstream_len += (len + bytes_per_row);
@@ -278,7 +284,7 @@ static int get_next_row(t85_encode_state_t *s)
                 return 0;
             /* We can't clip the image to the current length. We will have to
                continue up to the original length with blank (all white) rows. */
-            s->fill_with_white = TRUE;
+            s->fill_with_white = true;
             memset(s->prev_row[0], 0, bytes_per_row);
         }
     }
@@ -311,11 +317,11 @@ static int get_next_row(t85_encode_state_t *s)
             for (i = 0;  i <= s->mx;  i++)
                 s->c[i] = 0;
         }
-        t81_t82_arith_encode_restart(&s->s, TRUE);
+        t81_t82_arith_encode_restart(&s->s, true);
     }
 
     /* Typical prediction */
-    ltp = FALSE;
+    ltp = false;
     if ((s->options & T85_TPBON))
     {
         /* Look for a match between the rows */
@@ -518,7 +524,7 @@ SPAN_DECLARE(int) t85_encode_set_image_width(t85_encode_state_t *s, uint32_t ima
         return -1;
     s->xd = image_width;
     bytes_per_row = (s->xd + 7) >> 3;
-    if ((t = (uint8_t *) realloc(s->row_buf, 3*bytes_per_row)) == NULL)
+    if ((t = (uint8_t *) span_realloc(s->row_buf, 3*bytes_per_row)) == NULL)
         return -1;
     s->row_buf = t;
     memset(s->row_buf, 0, 3*bytes_per_row);
@@ -658,16 +664,16 @@ SPAN_DECLARE(int) t85_encode_restart(t85_encode_state_t *s, uint32_t image_width
     s->newlen = NEWLEN_NONE;
     s->new_tx = -1;
     s->tx = 0;
-    s->prev_ltp = FALSE;
+    s->prev_ltp = false;
     s->bitstream_iptr = 0;
     s->bitstream_optr = 0;
     if (s->bitstream)
     {
-        free(s->bitstream);
+        span_free(s->bitstream);
         s->bitstream = NULL;
     }
     s->bitstream_len = 0;
-    s->fill_with_white = FALSE;
+    s->fill_with_white = false;
     s->compressed_image_size = 0;
 
     t81_t82_arith_encode_init(&s->s, output_byte, s);
@@ -689,7 +695,7 @@ SPAN_DECLARE(t85_encode_state_t *) t85_encode_init(t85_encode_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (t85_encode_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (t85_encode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -722,12 +728,12 @@ SPAN_DECLARE(int) t85_encode_release(t85_encode_state_t *s)
 {
     if (s->row_buf)
     {
-        free(s->row_buf);
+        span_free(s->row_buf);
         s->row_buf = NULL;
     }
     if (s->bitstream)
     {
-        free(s->bitstream);
+        span_free(s->bitstream);
         s->bitstream = NULL;
         s->bitstream_len = 0;
     }
@@ -740,7 +746,7 @@ SPAN_DECLARE(int) t85_encode_free(t85_encode_state_t *s)
     int ret;
 
     ret = t85_encode_release(s);
-    free(s);
+    span_free(s);
     return ret;
 }
 /*- End of function --------------------------------------------------------*/

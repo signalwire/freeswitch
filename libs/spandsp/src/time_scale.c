@@ -42,9 +42,15 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/time_scale.h"
 #include "spandsp/saturated.h"
@@ -125,17 +131,17 @@ SPAN_DECLARE(int) time_scale_rate(time_scale_state_t *s, float playout_rate)
 
 SPAN_DECLARE(time_scale_state_t *) time_scale_init(time_scale_state_t *s, int sample_rate, float playout_rate)
 {
-    int alloced;
+    bool alloced;
 
     if (sample_rate > TIME_SCALE_MAX_SAMPLE_RATE)
         return NULL;
-    alloced = FALSE;
+    alloced = false;
     if (s == NULL)
     {
-        if ((s = (time_scale_state_t *) malloc(sizeof (*s))) == NULL)
+        if ((s = (time_scale_state_t *) span_alloc(sizeof (*s))) == NULL)
             return NULL;
         /*endif*/
-        alloced = TRUE;
+        alloced = true;
     }
     /*endif*/
     s->sample_rate = sample_rate;
@@ -145,7 +151,7 @@ SPAN_DECLARE(time_scale_state_t *) time_scale_init(time_scale_state_t *s, int sa
     if (time_scale_rate(s, playout_rate))
     {
         if (alloced)
-            free(s);
+            span_free(s);
         return NULL;
     }
     /*endif*/
@@ -164,7 +170,7 @@ SPAN_DECLARE(int) time_scale_release(time_scale_state_t *s)
 
 SPAN_DECLARE(int) time_scale_free(time_scale_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

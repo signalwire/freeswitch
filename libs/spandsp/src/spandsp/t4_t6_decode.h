@@ -48,7 +48,7 @@ extern "C" {
 /*! \brief Put a bit of the current document page.
     \param s The T.4/T.6 context.
     \param bit The data bit.
-    \return TRUE when the bit ends the document page, otherwise FALSE. */
+    \return Decode status. */
 SPAN_DECLARE(int) t4_t6_decode_put_bit(t4_t6_decode_state_t *s, int bit);
 
 /*! \brief Put a byte of the current document page.

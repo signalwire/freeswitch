@@ -364,6 +364,37 @@ iks *nlsml_normalize(const char *result)
 }
 
 /**
+ * @return true if digit is a DTMF
+ */
+static int isdtmf(const char digit)
+{
+	switch(digit) {
+	case '0':
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case '9':
+	case '*':
+	case '#':
+	case 'a':
+	case 'A':
+	case 'b':
+	case 'B':
+	case 'c':
+	case 'C':
+	case 'd':
+	case 'D':
+		return 1;
+	}
+	return 0;
+}
+
+/**
  * Construct an NLSML result for digit match
  * @param digits the matching digits
  * @return the NLSML <result>
@@ -387,7 +418,7 @@ iks *nlsml_create_dtmf_match(const char *digits)
 
 		SWITCH_STANDARD_STREAM(stream);
 		for (i = 0; i < num_digits; i++) {
-			if (isdigit(digits[i])) {
+			if (isdtmf(digits[i])) {
 				if (first) {
 					stream.write_function(&stream, "%c", digits[i]);
 					first = 0;

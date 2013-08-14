@@ -39,8 +39,7 @@
 #define IKS_NS_XMPP_STANZAS "urn:ietf:params:xml:ns:xmpp-stanzas"
 #define IKS_NS_XMPP_STREAMS "http://etherx.jabber.org/streams"
 #define IKS_NS_XMPP_DIALBACK "jabber:server:dialback"
-#define IKS_NS_BIDI_FEATURE "urn:xmpp:features:bidi"
-#define IKS_NS_BIDI "urn:xmpp:bidi"
+#define IKS_NS_XMPP_TLS "urn:ietf:params:xml:ns:xmpp-tls"
 
 struct xmpp_error {
 	const char *name;
@@ -64,6 +63,7 @@ extern const char *iks_find_attrib_soft(iks *xml, const char *attrib);
 extern const char *iks_find_attrib_default(iks *xml, const char *attrib, const char *def);
 extern int iks_find_bool_attrib(iks *xml, const char *attrib);
 extern int iks_find_int_attrib(iks *xml, const char *attrib);
+extern char iks_find_char_attrib(iks *xml, const char *attrib);
 extern double iks_find_decimal_attrib(iks *xml, const char *attrib);
 extern const char *iks_node_type_to_string(int type);
 extern const char *iks_net_error_to_string(int err);
@@ -74,101 +74,24 @@ extern char *iks_server_dialback_key(const char *secret, const char *receiving_s
 /** A function to validate attribute value */
 typedef int (*iks_attrib_validation_function)(const char *);
 
-#define ELEMENT(name) inline int VALIDATE_##name(iks *node) { int result = 1; if (!node) return 0;
+extern int validate_optional_attrib(iks_attrib_validation_function fn, const char *attrib);
+
+#define ELEMENT_DECL(name) extern int VALIDATE_##name(iks *node);
+#define ELEMENT(name) int VALIDATE_##name(iks *node) { int result = 1; if (!node) return 0;
 #define ATTRIB(name, def, rule) result &= iks_attrib_is_##rule(iks_find_attrib_default(node, #name, #def));
+#define OPTIONAL_ATTRIB(name, def, rule) result &= validate_optional_attrib(iks_attrib_is_##rule, iks_find_attrib_default(node, #name, #def));
 #define STRING_ATTRIB(name, def, rule) result &= value_matches(iks_find_attrib_default(node, #name, #def), rule);
 #define ELEMENT_END return result; }
 
 extern int value_matches(const char *value, const char *rule);
 
-#define ATTRIB_RULE(rule) inline int iks_attrib_is_ ## rule (const char *value)
-
-/**
- * Validate boolean
- * @param value
- * @return SWTICH_TRUE if boolean
- */
-ATTRIB_RULE(bool)
-{
-	if (value && *value && (!strcasecmp("true", value) || !strcasecmp("false", value))) {
-		return SWITCH_TRUE;
-	}
-	return SWITCH_FALSE;
-}
-
-/**
- * Validate integer
- * @param value
- * @return SWTICH_TRUE if not negative
- */
-ATTRIB_RULE(not_negative)
-{
-	if (value && *value && switch_is_number(value)) {
-		int value_i = atoi(value);
-		if (value_i >= 0) {
-			return SWITCH_TRUE;
-		}
-	}
-	return SWITCH_FALSE;
-}
-
-/**
- * Validate integer
- * @param value
- * @return SWTICH_TRUE if positive
- */
-ATTRIB_RULE(positive)
-{
-	if (value && *value && switch_is_number(value)) {
-		int value_i = atoi(value);
-		if (value_i > 0) {
-			return SWITCH_TRUE;
-		}
-	}
-	return SWITCH_FALSE;
-}
-
-/**
- * Validate integer
- * @param value
- * @return SWTICH_TRUE if positive or -1
- */
-ATTRIB_RULE(positive_or_neg_one)
-{
-	if (value && *value && switch_is_number(value)) {
-		int value_i = atoi(value);
-		if (value_i == -1 || value_i > 0) {
-			return SWITCH_TRUE;
-		}
-	}
-	return SWITCH_FALSE;
-}
-
-/**
- * Validate string
- * @param value
- * @return SWTICH_TRUE
- */
-ATTRIB_RULE(any)
-{
-	return SWITCH_TRUE;
-}
-
-/**
- * Validate decimal
- * @param value
- * @return SWTICH_TRUE if 0.0 <= x <= 1.0
- */
-ATTRIB_RULE(decimal_between_zero_and_one)
-{
-	if (value && *value && switch_is_number(value)) {
-		double value_d = atof(value);
-		if (value_d >= 0.0 || value_d <= 1.0) {
-			return SWITCH_TRUE;
-		}
-	}
-	return SWITCH_FALSE;
-}
+extern int iks_attrib_is_bool(const char *value);
+extern int iks_attrib_is_not_negative(const char *value);
+extern int iks_attrib_is_positive(const char *value);
+extern int iks_attrib_is_positive_or_neg_one(const char *value);
+extern int iks_attrib_is_any(const char *value);
+extern int iks_attrib_is_decimal_between_zero_and_one(const char *value);
+extern int iks_attrib_is_dtmf_digit(const char *value);
 
 #endif
 

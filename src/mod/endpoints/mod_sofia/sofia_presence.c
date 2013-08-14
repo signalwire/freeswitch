@@ -154,6 +154,11 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 		goto end;
 	}
 
+	if (!from) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing From: header.\n");
+		goto end;
+	}
+
 	if (!zstr(type)) {
 		ct = type;
 	}
@@ -260,9 +265,22 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 	}
 
 	if (!list) {
+		switch_event_t *event;
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 		"Chat proto [%s]\nfrom [%s]\nto [%s]\n%s\nNobody to send to: Profile %s\n", proto, from, to,
 						  body ? body : "[no body]", prof ? prof : "NULL");
+		// emit no recipient event
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_ERROR) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Error-Type", "chat");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Error-Reason", "no recipient");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Chat-Send-To", to);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Chat-Send-From", from);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Chat-Send-Profile", prof ? prof : "NULL");
+			switch_event_add_body(event, "%s", body);
+			switch_event_fire(&event);
+		}
+
 		goto end;
 	}
 
@@ -3307,7 +3325,9 @@ static int broadsoft_sla_gather_state_callback(void *pArg, int argc, char **argv
 		}
 
 		if (!zstr(callee_name)) {
-			callee_name = switch_sanitize_number(switch_core_session_strdup(session, callee_name));
+			char *tmp = switch_core_session_strdup(session, callee_name);
+			switch_url_decode(tmp);
+			callee_name = switch_sanitize_number(tmp);
 		}
 
 
@@ -3516,6 +3536,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 	long exp_delta = 0;
 	char exp_delta_str[30] = "";
+	uint32_t sub_max_deviation_var = 0;
 	sip_to_t const *to;
 	const char *from_user = NULL, *from_host = NULL;
 	const char *to_user = NULL, *to_host = NULL;
@@ -3612,6 +3633,18 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	if ((exp_delta = sip->sip_expires ? sip->sip_expires->ex_delta : 3600)) {
 		if ((profile->force_subscription_expires > 0) && (profile->force_subscription_expires < (uint32_t)exp_delta)) {
 			exp_delta = profile->force_subscription_expires;
+		}
+	}
+
+	if ((sub_max_deviation_var = profile->sip_subscription_max_deviation)) {
+		if (sub_max_deviation_var > 0) {
+			int sub_deviation;
+			srand( (unsigned) ( (unsigned)(intptr_t)switch_thread_self() + switch_micro_time_now() ) );
+			/* random negative number between 0 and negative sub_max_deviation_var: */
+			sub_deviation = ( rand() % sub_max_deviation_var ) - sub_max_deviation_var;
+			if ( (exp_delta + sub_deviation) > 45 ) {
+				exp_delta += sub_deviation;
+			}
 		}
 	}
 
@@ -4449,8 +4482,8 @@ void sofia_presence_handle_sip_i_message(int status,
 				sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), NULL);
 				auth_res = sofia_reg_parse_auth(profile, authorization, sip, de,
 												(char *) sip->sip_request->rq_method_name, key, keylen, network_ip, NULL, 0,
-												REG_INVITE, NULL, NULL, NULL);
-			} else if ( sofia_reg_handle_register(nua, profile, nh, sip, de, REG_INVITE, key, keylen, &v_event, NULL, NULL)) {
+												REG_INVITE, NULL, NULL, NULL, NULL);
+			} else if ( sofia_reg_handle_register(nua, profile, nh, sip, de, REG_INVITE, key, keylen, &v_event, NULL, NULL, NULL)) {
 				if (v_event) {
 					switch_event_destroy(&v_event);
 				}

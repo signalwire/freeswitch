@@ -6,5 +6,7 @@
     <param name="auth-realm" value="freeswitch"/>
     <param name="auth-user" value="freeswitch"/>
     <param name="auth-pass" value="works"/>
+    <!-- <param name="enable-websocket" value="true"/> -->
+
   </settings>
 </configuration>

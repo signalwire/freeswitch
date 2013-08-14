@@ -41,10 +41,16 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <tiffio.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/queue.h"
@@ -434,8 +440,7 @@ static void disconnect(t30_state_t *s);
 static void decode_20digit_msg(t30_state_t *s, char *msg, const uint8_t *pkt, int len);
 static void decode_url_msg(t30_state_t *s, char *msg, const uint8_t *pkt, int len);
 static int decode_nsf_nss_nsc(t30_state_t *s, uint8_t *msg[], const uint8_t *pkt, int len);
-static int set_min_scan_time_code(t30_state_t *s);
-static int send_cfr_sequence(t30_state_t *s, int start);
+static void set_min_scan_time(t30_state_t *s);
 static void timer_t2_start(t30_state_t *s);
 static void timer_t2a_start(t30_state_t *s);
 static void timer_t2b_start(t30_state_t *s);
@@ -637,89 +642,89 @@ static void release_resources(t30_state_t *s)
 {
     if (s->tx_info.nsf)
     {
-        free(s->tx_info.nsf);
+        span_free(s->tx_info.nsf);
         s->tx_info.nsf = NULL;
     }
     s->tx_info.nsf_len = 0;
     if (s->tx_info.nsc)
     {
-        free(s->tx_info.nsc);
+        span_free(s->tx_info.nsc);
         s->tx_info.nsc = NULL;
     }
     s->tx_info.nsc_len = 0;
     if (s->tx_info.nss)
     {
-        free(s->tx_info.nss);
+        span_free(s->tx_info.nss);
         s->tx_info.nss = NULL;
     }
     s->tx_info.nss_len = 0;
     if (s->tx_info.tsa)
     {
-        free(s->tx_info.tsa);
+        span_free(s->tx_info.tsa);
         s->tx_info.tsa = NULL;
     }
     if (s->tx_info.ira)
     {
-        free(s->tx_info.ira);
+        span_free(s->tx_info.ira);
         s->tx_info.ira = NULL;
     }
     if (s->tx_info.cia)
     {
-        free(s->tx_info.cia);
+        span_free(s->tx_info.cia);
         s->tx_info.cia = NULL;
     }
     if (s->tx_info.isp)
     {
-        free(s->tx_info.isp);
+        span_free(s->tx_info.isp);
         s->tx_info.isp = NULL;
     }
     if (s->tx_info.csa)
     {
-        free(s->tx_info.csa);
+        span_free(s->tx_info.csa);
         s->tx_info.csa = NULL;
     }
 
     if (s->rx_info.nsf)
     {
-        free(s->rx_info.nsf);
+        span_free(s->rx_info.nsf);
         s->rx_info.nsf = NULL;
     }
     s->rx_info.nsf_len = 0;
     if (s->rx_info.nsc)
     {
-        free(s->rx_info.nsc);
+        span_free(s->rx_info.nsc);
         s->rx_info.nsc = NULL;
     }
     s->rx_info.nsc_len = 0;
     if (s->rx_info.nss)
     {
-        free(s->rx_info.nss);
+        span_free(s->rx_info.nss);
         s->rx_info.nss = NULL;
     }
     s->rx_info.nss_len = 0;
     if (s->rx_info.tsa)
     {
-        free(s->rx_info.tsa);
+        span_free(s->rx_info.tsa);
         s->rx_info.tsa = NULL;
     }
     if (s->rx_info.ira)
     {
-        free(s->rx_info.ira);
+        span_free(s->rx_info.ira);
         s->rx_info.ira = NULL;
     }
     if (s->rx_info.cia)
     {
-        free(s->rx_info.cia);
+        span_free(s->rx_info.cia);
         s->rx_info.cia = NULL;
     }
     if (s->rx_info.isp)
     {
-        free(s->rx_info.isp);
+        span_free(s->rx_info.isp);
         s->rx_info.isp = NULL;
     }
     if (s->rx_info.csa)
     {
-        free(s->rx_info.csa);
+        span_free(s->rx_info.csa);
         s->rx_info.csa = NULL;
     }
 }
@@ -748,7 +753,7 @@ static uint8_t check_next_tx_step(t30_state_t *s)
     if (s->document_handler)
         more = s->document_handler(s, s->document_user_data, 0);
     else
-        more = FALSE;
+        more = false;
     if (more)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Another document to send\n");
@@ -795,7 +800,7 @@ static int get_partial_ecm_page(t30_state_t *s)
             }
             s->ecm_frames = i;
             span_log(&s->logging, SPAN_LOG_FLOW, "Partial page buffer contains %d frames (%d per frame)\n", i, s->octets_per_ecm_frame);
-            s->ecm_at_page_end = TRUE;
+            s->ecm_at_page_end = true;
             return i;
         }
         s->ecm_len[i] = (int16_t) (4 + len);
@@ -844,7 +849,7 @@ static int send_next_ecm_frame(t30_state_t *s)
         send_frame(s, frame, 3);
         /* In case we are just after a CTC/CTR exchange, which kicked us back
            to long training */
-        s->short_train = TRUE;
+        s->short_train = true;
         return 0;
     }
     return -1;
@@ -892,7 +897,7 @@ static void send_frame(t30_state_t *s, const uint8_t *msg, int len)
     print_frame(s, "Tx: ", msg, len);
 
     if (s->real_time_frame_handler)
-        s->real_time_frame_handler(s, s->real_time_frame_user_data, FALSE, msg, len);
+        s->real_time_frame_handler(s, s->real_time_frame_user_data, false, msg, len);
     if (s->send_hdlc_handler)
         s->send_hdlc_handler(s->send_hdlc_user_data, msg, len);
 }
@@ -939,9 +944,9 @@ static int send_nsf_frame(t30_state_t *s)
         s->tx_info.nsf[1] = CONTROL_FIELD_NON_FINAL_FRAME;
         s->tx_info.nsf[2] = (uint8_t) (T30_NSF | s->dis_received);
         send_frame(s, s->tx_info.nsf, s->tx_info.nsf_len + 3);
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -955,9 +960,9 @@ static int send_nss_frame(t30_state_t *s)
         s->tx_info.nss[1] = CONTROL_FIELD_NON_FINAL_FRAME;
         s->tx_info.nss[2] = (uint8_t) (T30_NSS | s->dis_received);
         send_frame(s, s->tx_info.nss, s->tx_info.nss_len + 3);
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -971,9 +976,9 @@ static int send_nsc_frame(t30_state_t *s)
         s->tx_info.nsc[1] = CONTROL_FIELD_NON_FINAL_FRAME;
         s->tx_info.nsc[2] = (uint8_t) (T30_NSC | s->dis_received);
         send_frame(s, s->tx_info.nsc, s->tx_info.nsc_len + 3);
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -984,9 +989,9 @@ static int send_ident_frame(t30_state_t *s, uint8_t cmd)
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending ident '%s'\n", s->tx_info.ident);
         /* 'cmd' should be T30_TSI, T30_CIG or T30_CSI */
         send_20digit_msg_frame(s, cmd, s->tx_info.ident);
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -997,10 +1002,10 @@ static int send_psa_frame(t30_state_t *s)
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending polled sub-address '%s'\n", s->tx_info.polled_sub_address);
         send_20digit_msg_frame(s, T30_PSA, s->tx_info.polled_sub_address);
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_POLLED_SUBADDRESSING_CAPABLE);
-        return TRUE;
+        return true;
     }
     clr_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_POLLED_SUBADDRESSING_CAPABLE);
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1011,10 +1016,10 @@ static int send_sep_frame(t30_state_t *s)
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending selective polling address '%s'\n", s->tx_info.selective_polling_address);
         send_20digit_msg_frame(s, T30_SEP, s->tx_info.selective_polling_address);
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_SELECTIVE_POLLING_CAPABLE);
-        return TRUE;
+        return true;
     }
     clr_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_SELECTIVE_POLLING_CAPABLE);
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1026,10 +1031,10 @@ static int send_sid_frame(t30_state_t *s)
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending sender identification '%s'\n", s->tx_info.sender_ident);
         send_20digit_msg_frame(s, T30_SID, s->tx_info.sender_ident);
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_SENDER_ID_TRANSMISSION);
-        return TRUE;
+        return true;
     }
     clr_ctrl_bit(s->dcs_frame, T30_DCS_BIT_SENDER_ID_TRANSMISSION);
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1041,10 +1046,10 @@ static int send_pwd_frame(t30_state_t *s)
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending password '%s'\n", s->tx_info.password);
         send_20digit_msg_frame(s, T30_PWD, s->tx_info.password);
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_PASSWORD);
-        return TRUE;
+        return true;
     }
     clr_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_PASSWORD);
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1056,10 +1061,10 @@ static int send_sub_frame(t30_state_t *s)
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending sub-address '%s'\n", s->tx_info.sub_address);
         send_20digit_msg_frame(s, T30_SUB, s->tx_info.sub_address);
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_SUBADDRESS_TRANSMISSION);
-        return TRUE;
+        return true;
     }
     clr_ctrl_bit(s->dcs_frame, T30_DCS_BIT_SUBADDRESS_TRANSMISSION);
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1068,9 +1073,9 @@ static int send_tsa_frame(t30_state_t *s)
     if ((test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T37)  ||  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T38))  &&  0)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending transmitting subscriber internet address '%s'\n", "");
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1080,10 +1085,10 @@ static int send_ira_frame(t30_state_t *s)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending internet routing address '%s'\n", "");
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INTERNET_ROUTING_ADDRESS_TRANSMISSION);
-        return TRUE;
+        return true;
     }
     clr_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INTERNET_ROUTING_ADDRESS_TRANSMISSION);
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1092,9 +1097,9 @@ static int send_cia_frame(t30_state_t *s)
     if ((test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T37)  ||  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T38))  &&  0)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending calling subscriber internet address '%s'\n", "");
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1104,10 +1109,10 @@ static int send_isp_frame(t30_state_t *s)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending internet selective polling address '%s'\n", "");
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_INTERNET_SELECTIVE_POLLING_ADDRESS);
-        return TRUE;
+        return true;
     }
     clr_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_INTERNET_SELECTIVE_POLLING_ADDRESS);
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1117,10 +1122,10 @@ static int send_csa_frame(t30_state_t *s)
     if (("in T.37 mode"  ||  "in T.38 mode")  &&  0)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending called subscriber internet address '%s'\n", "");
-        return TRUE;
+        return true;
     }
 #endif
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1195,9 +1200,9 @@ int t30_build_dis_or_dtc(t30_state_t *s)
     /* No scan-line padding required, but some may be specified by the application. */
     set_ctrl_bits(s->local_dis_dtc_frame, s->local_min_scan_time_code, T30_DIS_BIT_MIN_SCAN_LINE_TIME_CAPABILITY_1);
 
-    if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T4_2D))
+    if ((s->supported_compressions & T4_COMPRESSION_T4_2D))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_2D_CAPABLE);
-    if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_NONE))
+    if ((s->supported_compressions & T4_COMPRESSION_NONE))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_UNCOMPRESSED_CAPABLE);
     if (s->ecm_allowed)
     {
@@ -1206,50 +1211,55 @@ int t30_build_dis_or_dtc(t30_state_t *s)
 
         /* Only offer the option of fancy compression schemes, if we are
            also offering the ECM option needed to support them. */
-        if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T6))
+        if ((s->supported_compressions & T4_COMPRESSION_T6))
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T6_CAPABLE);
-        if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T85))
+        if ((s->supported_compressions & T4_COMPRESSION_T85))
         {
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T85_CAPABLE);
             /* Bit 79 set with bit 78 clear is invalid, so only check for L0
                support here. */
-            if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T85_L0))
+            if ((s->supported_compressions & T4_COMPRESSION_T85_L0))
                 set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T85_L0_CAPABLE);
         }
 
-        if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_COLOUR))
-            set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_FULL_COLOUR_CAPABLE);
-
-        if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T42_T81))
-            set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T81_CAPABLE);
-        if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T43))
-        {
-            /* Note 25 of table 2/T.30 */
-            set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T43_CAPABLE);
-            set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T81_CAPABLE);
-        }
-        if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T45))
-            set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T45_CAPABLE);
-        if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_SYCC_T81))
-        {
-            set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T81_CAPABLE);
-            set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_SYCC_T81_CAPABLE);
-        }
-        //if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T88))
+        //if ((s->supported_compressions & T4_COMPRESSION_T88))
         //{
         //    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T88_CAPABILITY_1);
         //    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T88_CAPABILITY_2);
         //    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T88_CAPABILITY_3);
         //}
 
-        if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_12BIT))
-            set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_12BIT_CAPABLE);
+        if ((s->supported_compressions & (T4_COMPRESSION_COLOUR | T4_COMPRESSION_GRAYSCALE)))
+        {
+            if ((s->supported_compressions & T4_COMPRESSION_COLOUR))
+                set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_FULL_COLOUR_CAPABLE);
 
-        //if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_NO_SUBSAMPLING))
-        //    set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_NO_SUBSAMPLING);
+            if ((s->supported_compressions & T4_COMPRESSION_T42_T81))
+                set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T81_CAPABLE);
+            if ((s->supported_compressions & T4_COMPRESSION_T43))
+            {
+                /* Note 25 of table 2/T.30 */
+                set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T81_CAPABLE);
+                set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T43_CAPABLE);
+                /* No plane interleave */
+            }
+            if ((s->supported_compressions & T4_COMPRESSION_T45))
+                set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T45_CAPABLE);
+            if ((s->supported_compressions & T4_COMPRESSION_SYCC_T81))
+            {
+                set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_T81_CAPABLE);
+                set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_SYCC_T81_CAPABLE);
+            }
 
-        /* No custom illuminant */
-        /* No custom gamut range */
+            if ((s->supported_compressions & T4_COMPRESSION_12BIT))
+                set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_12BIT_CAPABLE);
+
+            if ((s->supported_compressions & T4_COMPRESSION_NO_SUBSAMPLING))
+                set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_NO_SUBSAMPLING);
+
+            /* No custom illuminant */
+            /* No custom gamut range */
+        }
     }
     if ((s->supported_t30_features & T30_SUPPORT_FIELD_NOT_VALID))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_FNV_CAPABLE);
@@ -1257,12 +1267,6 @@ int t30_build_dis_or_dtc(t30_state_t *s)
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_MULTIPLE_SELECTIVE_POLLING_CAPABLE);
     if ((s->supported_t30_features & T30_SUPPORT_POLLED_SUB_ADDRESSING))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_POLLED_SUBADDRESSING_CAPABLE);
-
-    /* No plane interleave */
-    /* No G.726 */
-    /* No extended voice coding */
-    /* Superfine minimum scan line time pattern follows fine */
-
     if ((s->supported_t30_features & T30_SUPPORT_SELECTIVE_POLLING))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_SELECTIVE_POLLING_CAPABLE);
     if ((s->supported_t30_features & T30_SUPPORT_SUB_ADDRESSING))
@@ -1270,10 +1274,16 @@ int t30_build_dis_or_dtc(t30_state_t *s)
     if ((s->supported_t30_features & T30_SUPPORT_IDENTIFICATION))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_PASSWORD);
 
+    /* No G.726 */
+    /* No extended voice coding */
+    /* Superfine minimum scan line time pattern follows fine */
+
     /* Ready to transmit a data file (polling) */
     if (s->tx_file[0])
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_READY_TO_TRANSMIT_DATA_FILE);
 
+    /* No simple phase C BFT negotiations */
+    /* No extended BFT negotiations */
     /* No Binary file transfer (BFT) */
     /* No Document transfer mode (DTM) */
     /* No Electronic data interchange (EDI) */
@@ -1295,67 +1305,65 @@ int t30_build_dis_or_dtc(t30_state_t *s)
     /* No HFX40-I hashing */
     /* No alternative hashing system number 2 */
     /* No alternative hashing system number 3 */
-    /* No T.44 (mixed raster content) */
 
+    /* No T.44 (mixed raster content) */
     /* No page length maximum strip size for T.44 (mixed raster content) */
-    /* No simple phase C BFT negotiations */
-    /* No extended BFT negotiations */
 
     if ((s->supported_t30_features & T30_SUPPORT_INTERNET_SELECTIVE_POLLING_ADDRESS))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_INTERNET_SELECTIVE_POLLING_ADDRESS);
     if ((s->supported_t30_features & T30_SUPPORT_INTERNET_ROUTING_ADDRESS))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_INTERNET_ROUTING_ADDRESS);
 
-    if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_1200_1200))
+    if ((s->supported_bilevel_resolutions & T4_RESOLUTION_1200_1200))
     {
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_1200_1200_CAPABLE);
-        if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_1200_1200))
+        if ((s->supported_colour_resolutions & T4_RESOLUTION_1200_1200))
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_COLOUR_GRAY_1200_1200_CAPABLE);
     }
-    if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_600_1200))
+    if ((s->supported_bilevel_resolutions & T4_RESOLUTION_600_1200))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_600_1200_CAPABLE);
-    if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_600_600))
+    if ((s->supported_bilevel_resolutions & T4_RESOLUTION_600_600))
     {
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_600_600_CAPABLE);
-        if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_600_600))
+        if ((s->supported_colour_resolutions & T4_RESOLUTION_600_600))
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_COLOUR_GRAY_600_600_CAPABLE);
     }
-    if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_400_800))
+    if ((s->supported_bilevel_resolutions & T4_RESOLUTION_400_800))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_400_800_CAPABLE);
-    if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_R16_SUPERFINE))
+    if ((s->supported_bilevel_resolutions & T4_RESOLUTION_R16_SUPERFINE))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_400_400_CAPABLE);
-    if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_400_400))
+    if ((s->supported_bilevel_resolutions & T4_RESOLUTION_400_400))
     {
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_400_400_CAPABLE);
-        if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_400_400))
+        if ((s->supported_colour_resolutions & T4_RESOLUTION_400_400))
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_COLOUR_GRAY_300_300_400_400_CAPABLE);
     }
-    if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_300_600))
+    if ((s->supported_bilevel_resolutions & T4_RESOLUTION_300_600))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_300_600_CAPABLE);
-    if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_300_300))
+    if ((s->supported_bilevel_resolutions & T4_RESOLUTION_300_300))
     {
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_300_300_CAPABLE);
-        if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_300_300))
+        if ((s->supported_colour_resolutions & T4_RESOLUTION_300_300))
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_COLOUR_GRAY_300_300_400_400_CAPABLE);
     }
-    if ((s->supported_bilevel_resolutions & (T4_SUPPORT_RESOLUTION_200_400 | T4_SUPPORT_RESOLUTION_R8_SUPERFINE)))
+    if ((s->supported_bilevel_resolutions & (T4_RESOLUTION_200_400 | T4_RESOLUTION_R8_SUPERFINE)))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_200_400_CAPABLE);
-    if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_R8_FINE))
+    if ((s->supported_bilevel_resolutions & T4_RESOLUTION_R8_FINE))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_200_200_CAPABLE);
-    if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_200_200))
+    if ((s->supported_bilevel_resolutions & T4_RESOLUTION_200_200))
     {
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_200_200_CAPABLE);
-        if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_200_200))
+        if ((s->supported_colour_resolutions & T4_RESOLUTION_200_200))
             set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_FULL_COLOUR_CAPABLE);
     }
     /* Standard FAX resolution bi-level image support goes without saying */
-    if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_100_100))
+    if ((s->supported_colour_resolutions & T4_RESOLUTION_100_100))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_COLOUR_GRAY_100_100_CAPABLE);
 
-    if ((s->supported_bilevel_resolutions & (T4_SUPPORT_RESOLUTION_R8_STANDARD | T4_SUPPORT_RESOLUTION_R8_FINE | T4_SUPPORT_RESOLUTION_R8_SUPERFINE | T4_SUPPORT_RESOLUTION_R16_SUPERFINE)))
-        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_INCH_RESOLUTION_PREFERRED);
-    if ((s->supported_bilevel_resolutions & (T4_SUPPORT_RESOLUTION_200_100 | T4_SUPPORT_RESOLUTION_200_200 | T4_SUPPORT_RESOLUTION_200_400 | T4_SUPPORT_RESOLUTION_300_300 | T4_SUPPORT_RESOLUTION_300_600 | T4_SUPPORT_RESOLUTION_400_400 | T4_SUPPORT_RESOLUTION_400_800 | T4_SUPPORT_RESOLUTION_600_600 | T4_SUPPORT_RESOLUTION_600_1200 | T4_SUPPORT_RESOLUTION_1200_1200)))
+    if ((s->supported_bilevel_resolutions & (T4_RESOLUTION_R8_STANDARD | T4_RESOLUTION_R8_FINE | T4_RESOLUTION_R8_SUPERFINE | T4_RESOLUTION_R16_SUPERFINE)))
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_METRIC_RESOLUTION_PREFERRED);
+    if ((s->supported_bilevel_resolutions & (T4_RESOLUTION_200_100 | T4_RESOLUTION_200_200 | T4_RESOLUTION_200_400 | T4_RESOLUTION_300_300 | T4_RESOLUTION_300_600 | T4_RESOLUTION_400_400 | T4_RESOLUTION_400_800 | T4_RESOLUTION_600_600 | T4_RESOLUTION_600_1200 | T4_RESOLUTION_1200_1200)))
+        set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_INCH_RESOLUTION_PREFERRED);
 
     /* No double sided printing (alternate mode) */
     /* No double sided printing (continuous mode) */
@@ -1420,17 +1428,15 @@ static int prune_dis_dtc(t30_state_t *s)
 static int build_dcs(t30_state_t *s)
 {
     int i;
-    int bad;
-    int row_squashing_ratio;
     int use_bilevel;
     int image_type;
 
     /* Reacquire page information, in case the image was resized, flattened, etc. */
-    s->x_resolution = t4_tx_get_x_resolution(&s->t4.tx);
-    s->y_resolution = t4_tx_get_y_resolution(&s->t4.tx);
-    s->current_page_resolution = t4_tx_get_resolution(&s->t4.tx);
-    s->image_width = t4_tx_get_image_width(&s->t4.tx);
-    image_type = t4_tx_get_image_type(&s->t4.tx);
+    s->current_page_resolution = t4_tx_get_tx_resolution(&s->t4.tx);
+    s->x_resolution = t4_tx_get_tx_x_resolution(&s->t4.tx);
+    s->y_resolution = t4_tx_get_tx_y_resolution(&s->t4.tx);
+    s->image_width = t4_tx_get_tx_image_width(&s->t4.tx);
+    image_type = t4_tx_get_tx_image_type(&s->t4.tx);
 
     /* Make a DCS frame based on local issues and the latest received DIS/DTC frame.
        Negotiate the result based on what both parties can do. */
@@ -1456,7 +1462,7 @@ static int build_dcs(t30_state_t *s)
     s->dcs_frame[4] |= fallback_sequence[s->current_fallback].dcs_code;
 
     /* Select the compression to use. */
-    use_bilevel = TRUE;
+    use_bilevel = true;
     set_ctrl_bits(s->dcs_frame, s->min_scan_time_code, T30_DCS_BIT_MIN_SCAN_LINE_TIME_1);
     switch (s->line_compression)
     {
@@ -1490,7 +1496,7 @@ static int build_dcs(t30_state_t *s)
         //if (???????? & T4_COMPRESSION_?????))
         //    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_PREFERRED_HUFFMAN_TABLES);
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, T30_DCS_BIT_MIN_SCAN_LINE_TIME_1);
-        use_bilevel = FALSE;
+        use_bilevel = false;
         break;
 #if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_T43:
@@ -1502,17 +1508,17 @@ static int build_dcs(t30_state_t *s)
         //if (???????? & T4_COMPRESSION_NO_SUBSAMPLING))
         //    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_NO_SUBSAMPLING);
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, T30_DCS_BIT_MIN_SCAN_LINE_TIME_1);
-        use_bilevel = FALSE;
+        use_bilevel = false;
         break;
 #endif
 #if defined(SPANDSP_SUPPORT_T45)
     case T4_COMPRESSION_T45:
-        use_bilevel = FALSE;
+        use_bilevel = false;
         break;
 #endif
 #if defined(SPANDSP_SUPPORT_SYCC_T81)
     case T4_COMPRESSION_SYCC_T81:
-        use_bilevel = FALSE;
+        use_bilevel = false;
         break;
 #endif
     default:
@@ -1520,229 +1526,21 @@ static int build_dcs(t30_state_t *s)
         break;
     }
 
-    /* Set the Y resolution bits */
-    row_squashing_ratio = 1;
-    bad = T30_ERR_NORESSUPPORT;
-    if ((use_bilevel  &&  (s->current_page_resolution & s->mutual_bilevel_resolutions))
-        ||
-        (!use_bilevel  &&  (s->current_page_resolution & s->mutual_colour_resolutions)))
+    /* Set the image width */
+    switch (s->line_width_code)
     {
-        /* The resolution is supported by both parties */
-        switch (s->current_page_resolution)
-        {
-        case T4_RESOLUTION_1200_1200:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_1200_1200);
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-            if (!use_bilevel)
-                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_1200_1200);
-            break;
-        case T4_RESOLUTION_600_1200:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_600_1200);
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-            break;
-        case T4_RESOLUTION_600_600:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_600_600);
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-            if (!use_bilevel)
-                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_600_600);
-            break;
-        case T4_RESOLUTION_400_800:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_800);
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-            break;
-        case T4_RESOLUTION_400_400:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_400);
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-            if (!use_bilevel)
-                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_300_300_400_400);
-            break;
-        case T4_RESOLUTION_300_600:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_300_600);
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-            break;
-        case T4_RESOLUTION_300_300:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_300_300);
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-            if (!use_bilevel)
-                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_300_300_400_400);
-            break;
-        case T4_RESOLUTION_200_400:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_400);
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-            break;
-        case T4_RESOLUTION_200_200:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_200);
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-            if (!use_bilevel)
-                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE);
-            break;
-        case T4_RESOLUTION_200_100:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-            break;
-        case T4_RESOLUTION_100_100:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
-            if (!use_bilevel)
-                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_100_100);
-            break;
-        case T4_RESOLUTION_R16_SUPERFINE:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_400);
-            break;
-        case T4_RESOLUTION_R8_SUPERFINE:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_400);
-            break;
-        case T4_RESOLUTION_R8_FINE:
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_200);
-            break;
-        case T4_RESOLUTION_R8_STANDARD:
-            /* Nothing special to set */
-            break;
-        }
-        bad = T30_ERR_OK;
-    }
-    else
-    {
-#if 0
-        /* Deal with resolution fudging */
-        if ((s->current_page_resolution & (T4_RESOLUTION_R16_SUPERFINE | T4_RESOLUTION_R8_SUPERFINE | T4_RESOLUTION_R8_FINE | T4_RESOLUTION_R8_STANDARD)))
-        {
-            if ((s->mutual_bilevel_resolutions & (T4_RESOLUTION_400_400 | T4_RESOLUTION_200_400 | T4_RESOLUTION_200_200 | T4_RESOLUTION_200_100)))
-            {
-                /* Fudge between imperial and metric */
-            }
-        }
-        else if ((s->current_page_resolution & (T4_RESOLUTION_400_400 | T4_RESOLUTION_200_400 | T4_RESOLUTION_200_200 | T4_RESOLUTION_200_100))
-        {
-            if ((s->mutual_bilevel_resolutions & (T4_RESOLUTION_R16_SUPERFINE | T4_RESOLUTION_R8_SUPERFINE | T4_RESOLUTION_R8_FINE | T4_RESOLUTION_R8_STANDARD)))
-            {
-                /* Fudge between imperial and metric */
-            }
-        }
-#endif
-        /* Deal with squashing options */
-        if ((s->current_page_resolution & T4_RESOLUTION_R8_SUPERFINE))
-        {
-            if ((s->mutual_bilevel_resolutions & T4_RESOLUTION_R8_FINE))
-            {
-                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_200);
-                row_squashing_ratio = 2;
-                bad = T30_ERR_OK;
-            }
-            else if ((s->mutual_bilevel_resolutions & T4_RESOLUTION_R8_STANDARD))
-            {
-                row_squashing_ratio = 4;
-                bad = T30_ERR_OK;
-            }
-        }
-        else if ((s->current_page_resolution & T4_RESOLUTION_R8_FINE)  &&  (s->mutual_bilevel_resolutions & T4_RESOLUTION_R8_STANDARD))
-        {
-            row_squashing_ratio = 2;
-            bad = T30_ERR_OK;
-        }
-        else if ((s->current_page_resolution & T4_RESOLUTION_200_400))
-        {
-            if ((s->mutual_bilevel_resolutions & T4_RESOLUTION_200_200))
-            {
-                set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_200);
-                row_squashing_ratio = 2;
-                bad = T30_ERR_OK;
-            }
-            else if ((s->mutual_bilevel_resolutions & T4_RESOLUTION_200_100))
-            {
-                row_squashing_ratio = 4;
-                bad = T30_ERR_OK;
-            }
-        }
-        else if ((s->current_page_resolution & T4_RESOLUTION_200_200)  &&  (s->mutual_bilevel_resolutions & T4_RESOLUTION_200_100))
-        {
-            row_squashing_ratio = 2;
-            bad = T30_ERR_OK;
-        }
-    }
-
-    t4_tx_set_row_squashing_ratio(&s->t4.tx, row_squashing_ratio);
-    if (bad != T30_ERR_OK)
-    {
-        t30_set_status(s, bad);
-        span_log(&s->logging, SPAN_LOG_FLOW, "Image resolution (%d x %d) not acceptable\n", s->x_resolution, s->y_resolution);
-        return -1;
-    }
-
-    /* Deal with the image width. */
-    /* Low (R4) res widths are not supported in recent versions of T.30 */
-    bad = T30_ERR_OK;
-    /* The following treats a width field of 11 like 10, which does what note 6 of Table 2/T.30
-       says we should do with the invalid value 11. */
-    if (((s->image_width == T4_WIDTH_200_A4)  &&  (s->x_resolution == T4_X_RESOLUTION_200  ||  s->x_resolution == T4_X_RESOLUTION_R8))
-        ||
-        ((s->image_width == T4_WIDTH_300_A4)  &&  (s->x_resolution == T4_X_RESOLUTION_300))
-        ||
-        ((s->image_width == T4_WIDTH_400_A4)  &&  (s->x_resolution == T4_X_RESOLUTION_400  ||  s->x_resolution == T4_X_RESOLUTION_R16))
-        ||
-        ((s->image_width == T4_WIDTH_600_A4)  &&  (s->x_resolution == T4_X_RESOLUTION_600))
-        ||
-        ((s->image_width == T4_WIDTH_1200_A4)  &&  (s->x_resolution == T4_X_RESOLUTION_1200)))
-    {
-        span_log(&s->logging, SPAN_LOG_FLOW, "Image width is A4 at %ddpi x %ddpi\n", s->x_resolution, s->y_resolution);
+    case T4_SUPPORT_WIDTH_215MM:
+        span_log(&s->logging, SPAN_LOG_FLOW, "Image width is A4 at %ddpm x %ddpm\n", s->x_resolution, s->y_resolution);
         /* No width related bits need to be set. */
-    }
-    else if (((s->image_width == T4_WIDTH_200_B4)  &&  (s->x_resolution == T4_X_RESOLUTION_200  ||  s->x_resolution == T4_X_RESOLUTION_R8))
-             ||
-             ((s->image_width == T4_WIDTH_300_B4)  &&  (s->x_resolution == T4_X_RESOLUTION_300))
-             ||
-             ((s->image_width == T4_WIDTH_400_B4)  &&  (s->x_resolution == T4_X_RESOLUTION_400  ||  s->x_resolution == T4_X_RESOLUTION_R16))
-             ||
-             ((s->image_width == T4_WIDTH_600_B4)  &&  (s->x_resolution == T4_X_RESOLUTION_600))
-             ||
-             ((s->image_width == T4_WIDTH_1200_B4)  &&  (s->x_resolution == T4_X_RESOLUTION_1200)))
-    {
-        if ((s->mutual_image_sizes & T4_SUPPORT_WIDTH_255MM))
-        {
-            span_log(&s->logging, SPAN_LOG_FLOW, "Image width is B4 at %ddpi x %ddpi\n", s->x_resolution, s->y_resolution);
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_255MM_WIDTH);
-        }
-        else
-        {
-            /* We do not support this width and resolution combination */
-            bad = T30_ERR_NOSIZESUPPORT;
-        }
-    }
-    else if (((s->image_width == T4_WIDTH_200_A3)  &&  (s->x_resolution == T4_X_RESOLUTION_200  ||  s->x_resolution == T4_X_RESOLUTION_R8))
-             ||
-             ((s->image_width == T4_WIDTH_300_A3)  &&  (s->x_resolution == T4_X_RESOLUTION_300))
-             ||
-             ((s->image_width == T4_WIDTH_400_A3)  &&  (s->x_resolution == T4_X_RESOLUTION_400  ||  s->x_resolution == T4_X_RESOLUTION_R16))
-             ||
-             ((s->image_width == T4_WIDTH_600_A3)  &&  (s->x_resolution == T4_X_RESOLUTION_600))
-             ||
-             ((s->image_width == T4_WIDTH_1200_A3)  &&  (s->x_resolution == T4_X_RESOLUTION_1200)))
-    {
-        if ((s->mutual_image_sizes & T4_SUPPORT_WIDTH_303MM))
-        {
-            span_log(&s->logging, SPAN_LOG_FLOW, "Image width is A3 at %ddpi x %ddpi\n", s->x_resolution, s->y_resolution);
-            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_303MM_WIDTH);
-        }
-        else
-        {
-            /* We do not support this width and resolution combination */
-            bad = T30_ERR_NOSIZESUPPORT;
-        }
-    }
-    else
-    {
-        /* We do not support this width and resolution combination */
-        bad = T30_ERR_NOSIZESUPPORT;
-    }
-
-    if (bad != T30_ERR_OK)
-    {
-        t30_set_status(s, bad);
-        span_log(&s->logging,
-                 SPAN_LOG_FLOW,
-                 "Image width (%d pixels) and resolution (%d x %d) is not an acceptable\n",
-                 s->image_width,
-                 s->x_resolution,
-                 s->y_resolution);
-        return -1;
+        break;
+    case T4_SUPPORT_WIDTH_255MM:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_255MM_WIDTH);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Image width is B4 at %ddpm x %ddpm\n", s->x_resolution, s->y_resolution);
+        break;
+    case T4_SUPPORT_WIDTH_303MM:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_303MM_WIDTH);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Image width is A3 at %ddpm x %ddpm\n", s->x_resolution, s->y_resolution);
+        break;
     }
 
     /* Set the image length */
@@ -1756,6 +1554,77 @@ static int build_dcs(t30_state_t *s)
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_NORTH_AMERICAN_LETTER);
     else if ((s->mutual_image_sizes & T4_SUPPORT_LENGTH_US_LEGAL))
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_NORTH_AMERICAN_LEGAL);
+
+    /* Set the Y resolution bits */
+    switch (s->current_page_resolution)
+    {
+    case T4_RESOLUTION_1200_1200:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_1200_1200);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+        if (!use_bilevel)
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_1200_1200);
+        break;
+    case T4_RESOLUTION_600_1200:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_600_1200);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+        break;
+    case T4_RESOLUTION_600_600:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_600_600);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+        if (!use_bilevel)
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_600_600);
+        break;
+    case T4_RESOLUTION_400_800:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_800);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+        break;
+    case T4_RESOLUTION_400_400:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_400);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+        if (!use_bilevel)
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_300_300_400_400);
+        break;
+    case T4_RESOLUTION_300_600:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_300_600);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+        break;
+    case T4_RESOLUTION_300_300:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_300_300);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+        if (!use_bilevel)
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_300_300_400_400);
+        break;
+    case T4_RESOLUTION_200_400:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_400);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+        break;
+    case T4_RESOLUTION_200_200:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_200);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+        if (!use_bilevel)
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE);
+        break;
+    case T4_RESOLUTION_200_100:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+        break;
+    case T4_RESOLUTION_100_100:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INCH_RESOLUTION);
+        if (!use_bilevel)
+            set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_COLOUR_GRAY_100_100);
+        break;
+    case T4_RESOLUTION_R16_SUPERFINE:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_400_400);
+        break;
+    case T4_RESOLUTION_R8_SUPERFINE:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_400);
+        break;
+    case T4_RESOLUTION_R8_FINE:
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_200_200);
+        break;
+    case T4_RESOLUTION_R8_STANDARD:
+        /* Nothing special to set */
+        break;
+    }
 
     if (s->error_correcting_mode)
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_ECM_MODE);
@@ -1810,7 +1679,7 @@ static int analyze_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
     }
 
     if (msg[2] == T30_DIS)
-        s->dis_received = TRUE;
+        s->dis_received = true;
 
     /* Make a local copy of the message, padded to the maximum possible length with zeros. This allows
        us to simply pick out the bits, without worrying about whether they were set from the remote side. */
@@ -1829,42 +1698,42 @@ static int analyze_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
     if (!s->error_correcting_mode)
     {
         /* Remove any compression schemes which need error correction to work. */
-        s->mutual_compressions &= (0xF0000000 | T4_SUPPORT_COMPRESSION_NONE | T4_SUPPORT_COMPRESSION_T4_1D | T4_SUPPORT_COMPRESSION_T4_2D);
+        s->mutual_compressions &= (0xFF800000 | T4_COMPRESSION_NONE | T4_COMPRESSION_T4_1D | T4_COMPRESSION_T4_2D);
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_2D_CAPABLE))
-            s->mutual_compressions &= ~T4_SUPPORT_COMPRESSION_T4_2D;
+            s->mutual_compressions &= ~T4_COMPRESSION_T4_2D;
     }
     else
     {
         /* Check the bi-level capabilities */
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_2D_CAPABLE))
-            s->mutual_compressions &= ~T4_SUPPORT_COMPRESSION_T4_2D;
+            s->mutual_compressions &= ~T4_COMPRESSION_T4_2D;
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T6_CAPABLE))
-            s->mutual_compressions &= ~T4_SUPPORT_COMPRESSION_T6;
+            s->mutual_compressions &= ~T4_COMPRESSION_T6;
         /* T.85 L0 capable without T.85 capable is an invalid combination, so let
            just zap both capabilities if the far end is not T.85 capable. */
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T85_CAPABLE))
-            s->mutual_compressions &= ~(T4_SUPPORT_COMPRESSION_T85 | T4_SUPPORT_COMPRESSION_T85_L0);
+            s->mutual_compressions &= ~(T4_COMPRESSION_T85 | T4_COMPRESSION_T85_L0);
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T85_L0_CAPABLE))
-            s->mutual_compressions &= ~T4_SUPPORT_COMPRESSION_T85_L0;
+            s->mutual_compressions &= ~T4_COMPRESSION_T85_L0;
 
         /* Check for full colour or only gray-scale from the multi-level codecs */
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_FULL_COLOUR_CAPABLE))
-            s->mutual_compressions &= ~T4_SUPPORT_COMPRESSION_COLOUR;
+            s->mutual_compressions &= ~T4_COMPRESSION_COLOUR;
 
         /* Check the colour capabilities */
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T81_CAPABLE))
-            s->mutual_compressions &= ~T4_SUPPORT_COMPRESSION_T42_T81;
+            s->mutual_compressions &= ~T4_COMPRESSION_T42_T81;
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_SYCC_T81_CAPABLE))
-            s->mutual_compressions &= ~T4_SUPPORT_COMPRESSION_SYCC_T81;
+            s->mutual_compressions &= ~T4_COMPRESSION_SYCC_T81;
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T43_CAPABLE))
-            s->mutual_compressions &= ~T4_SUPPORT_COMPRESSION_T43;
+            s->mutual_compressions &= ~T4_COMPRESSION_T43;
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T45_CAPABLE))
-            s->mutual_compressions &= ~T4_SUPPORT_COMPRESSION_T45;
+            s->mutual_compressions &= ~T4_COMPRESSION_T45;
 
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_12BIT_CAPABLE))
-            s->mutual_compressions &= ~T4_SUPPORT_COMPRESSION_12BIT;
-        //if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_NO_SUBSAMPLING))
-        //    ???? = T4_COMPRESSION_T42_T81_SUBSAMPLING;
+            s->mutual_compressions &= ~T4_COMPRESSION_12BIT;
+        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_NO_SUBSAMPLING))
+            s->mutual_compressions &= ~T4_COMPRESSION_NO_SUBSAMPLING;
 
         /* bit74 custom illuminant */
         /* bit75 custom gamut range */
@@ -1874,75 +1743,75 @@ static int analyze_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
     s->mutual_colour_resolutions = s->supported_colour_resolutions;
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_1200_1200_CAPABLE))
     {
-        s->mutual_bilevel_resolutions &= ~T4_SUPPORT_RESOLUTION_1200_1200;
-        s->mutual_colour_resolutions &= ~T4_SUPPORT_RESOLUTION_1200_1200;
+        s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_1200_1200;
+        s->mutual_colour_resolutions &= ~T4_RESOLUTION_1200_1200;
     }
     else
     {
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_COLOUR_GRAY_1200_1200_CAPABLE))
-            s->mutual_colour_resolutions &= ~T4_SUPPORT_RESOLUTION_1200_1200;
+            s->mutual_colour_resolutions &= ~T4_RESOLUTION_1200_1200;
     }
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_600_1200_CAPABLE))
-        s->mutual_bilevel_resolutions &= ~T4_SUPPORT_RESOLUTION_600_1200;
+        s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_600_1200;
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_600_600_CAPABLE))
     {
-        s->mutual_bilevel_resolutions &= ~T4_SUPPORT_RESOLUTION_600_600;
-        s->mutual_colour_resolutions &= ~T4_SUPPORT_RESOLUTION_600_600;
+        s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_600_600;
+        s->mutual_colour_resolutions &= ~T4_RESOLUTION_600_600;
     }
     else
     {
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_COLOUR_GRAY_600_600_CAPABLE))
-            s->mutual_colour_resolutions &= ~T4_SUPPORT_RESOLUTION_600_600;
+            s->mutual_colour_resolutions &= ~T4_RESOLUTION_600_600;
     }
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_400_800_CAPABLE))
-        s->mutual_bilevel_resolutions &= ~T4_SUPPORT_RESOLUTION_400_800;
+        s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_400_800;
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_400_400_CAPABLE))
     {
-        s->mutual_bilevel_resolutions &= ~(T4_SUPPORT_RESOLUTION_400_400 | T4_SUPPORT_RESOLUTION_R16_SUPERFINE);
-        s->mutual_colour_resolutions &= ~T4_SUPPORT_RESOLUTION_400_400;
+        s->mutual_bilevel_resolutions &= ~(T4_RESOLUTION_400_400 | T4_RESOLUTION_R16_SUPERFINE);
+        s->mutual_colour_resolutions &= ~T4_RESOLUTION_400_400;
     }
     else
     {
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_COLOUR_GRAY_300_300_400_400_CAPABLE))
-            s->mutual_colour_resolutions &= ~T4_SUPPORT_RESOLUTION_400_400;
+            s->mutual_colour_resolutions &= ~T4_RESOLUTION_400_400;
     }
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_300_600_CAPABLE))
-        s->mutual_bilevel_resolutions &= ~T4_SUPPORT_RESOLUTION_300_600;
+        s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_300_600;
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_300_300_CAPABLE))
     {
-        s->mutual_bilevel_resolutions &= ~T4_SUPPORT_RESOLUTION_300_300;
-        s->mutual_colour_resolutions &= ~T4_SUPPORT_RESOLUTION_300_300;
+        s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_300_300;
+        s->mutual_colour_resolutions &= ~T4_RESOLUTION_300_300;
     }
     else
     {
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_COLOUR_GRAY_300_300_400_400_CAPABLE))
-            s->mutual_colour_resolutions &= ~T4_SUPPORT_RESOLUTION_300_300;
+            s->mutual_colour_resolutions &= ~T4_RESOLUTION_300_300;
     }
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_400_CAPABLE))
     {
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_INCH_RESOLUTION_PREFERRED))
-            s->mutual_bilevel_resolutions &= ~T4_SUPPORT_RESOLUTION_200_400;
+            s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_200_400;
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_METRIC_RESOLUTION_PREFERRED))
-            s->mutual_bilevel_resolutions &= ~T4_SUPPORT_RESOLUTION_R8_SUPERFINE;
+            s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_R8_SUPERFINE;
     }
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_200_CAPABLE))
     {
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_INCH_RESOLUTION_PREFERRED))
-            s->mutual_bilevel_resolutions &= ~T4_SUPPORT_RESOLUTION_200_200;
+            s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_200_200;
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_METRIC_RESOLUTION_PREFERRED))
-            s->mutual_bilevel_resolutions &= ~T4_SUPPORT_RESOLUTION_R8_FINE;
-        s->mutual_colour_resolutions &= ~T4_SUPPORT_RESOLUTION_200_200;
+            s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_R8_FINE;
+        s->mutual_colour_resolutions &= ~T4_RESOLUTION_200_200;
     }
     else
     {
         if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_INCH_RESOLUTION_PREFERRED))
-            s->mutual_colour_resolutions &= ~T4_SUPPORT_RESOLUTION_200_200;
+            s->mutual_colour_resolutions &= ~T4_RESOLUTION_200_200;
     }
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_INCH_RESOLUTION_PREFERRED))
-        s->mutual_bilevel_resolutions &= ~T4_SUPPORT_RESOLUTION_200_100;
-    /* Never suppress T4_SUPPORT_RESOLUTION_R8_STANDARD */
+        s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_200_100;
+    /* Never suppress T4_RESOLUTION_R8_STANDARD */
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_COLOUR_GRAY_100_100_CAPABLE))
-        s->mutual_colour_resolutions &= ~T4_SUPPORT_RESOLUTION_100_100;
+        s->mutual_colour_resolutions &= ~T4_RESOLUTION_100_100;
 
     s->mutual_image_sizes = s->supported_image_sizes;
     /* 215mm wide is always supported */
@@ -2068,7 +1937,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         /* Note 35 of Table 2/T.30 */
         if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE))
         {
-            if ((s->supported_colour_resolutions & T4_SUPPORT_COMPRESSION_COLOUR))
+            if ((s->supported_colour_resolutions & T4_COMPRESSION_COLOUR))
             {
                 /* We are going to work in full colour mode */
             }
@@ -2076,7 +1945,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
 
         if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_12BIT_COMPONENT))
         {
-            if ((s->supported_colour_resolutions & T4_SUPPORT_COMPRESSION_12BIT))
+            if ((s->supported_colour_resolutions & T4_COMPRESSION_12BIT))
             {
                 /* We are going to work in 12 bit mode */
             }
@@ -2084,17 +1953,17 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
 
         if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_NO_SUBSAMPLING))
         {
-            //???? = T4_SUPPORT_COMPRESSION_T42_T81_SUBSAMPLING;
+            //???? = T4_COMPRESSION_NO_SUBSAMPLING;
         }
 
         if (!test_ctrl_bit(dcs_frame, T30_DCS_BIT_PREFERRED_HUFFMAN_TABLES))
         {
-            //???? = T4_SUPPORT_COMPRESSION_T42_T81_HUFFMAN;
+            //???? = T4_COMPRESSION_T42_T81_HUFFMAN;
         }
 
         if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_COLOUR_GRAY_1200_1200))
         {
-            if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_1200_1200))
+            if ((s->supported_colour_resolutions & T4_RESOLUTION_1200_1200))
             {
                 s->x_resolution = T4_X_RESOLUTION_1200;
                 s->y_resolution = T4_Y_RESOLUTION_1200;
@@ -2104,7 +1973,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_COLOUR_GRAY_600_600))
         {
-            if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_600_600))
+            if ((s->supported_colour_resolutions & T4_RESOLUTION_600_600))
             {
                 s->x_resolution = T4_X_RESOLUTION_600;
                 s->y_resolution = T4_Y_RESOLUTION_600;
@@ -2114,7 +1983,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_400_400))
         {
-            if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_400_400))
+            if ((s->supported_colour_resolutions & T4_RESOLUTION_400_400))
             {
                 s->x_resolution = T4_X_RESOLUTION_400;
                 s->y_resolution = T4_Y_RESOLUTION_400;
@@ -2124,7 +1993,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_300_300))
         {
-            if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_300_300))
+            if ((s->supported_colour_resolutions & T4_RESOLUTION_300_300))
             {
                 s->x_resolution = T4_X_RESOLUTION_300;
                 s->y_resolution = T4_Y_RESOLUTION_300;
@@ -2134,7 +2003,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_200_200))
         {
-            if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_200_200))
+            if ((s->supported_colour_resolutions & T4_RESOLUTION_200_200))
             {
                 s->x_resolution = T4_X_RESOLUTION_200;
                 s->y_resolution = T4_Y_RESOLUTION_200;
@@ -2144,7 +2013,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_COLOUR_GRAY_100_100))
         {
-            if ((s->supported_colour_resolutions & T4_SUPPORT_RESOLUTION_100_100))
+            if ((s->supported_colour_resolutions & T4_RESOLUTION_100_100))
             {
                 s->x_resolution = T4_X_RESOLUTION_100;
                 s->y_resolution = T4_Y_RESOLUTION_100;
@@ -2156,22 +2025,22 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         /* Check which compression the far end has decided to use. */
         if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T81_MODE))
         {
-            if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T42_T81))
+            if ((s->supported_compressions & T4_COMPRESSION_T42_T81))
                 s->line_compression = T4_COMPRESSION_T42_T81;
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T43_MODE))
         {
-            if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T43))
+            if ((s->supported_compressions & T4_COMPRESSION_T43))
                 s->line_compression = T4_COMPRESSION_T43;
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T45_MODE))
         {
-            if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T45))
+            if ((s->supported_compressions & T4_COMPRESSION_T45))
                 s->line_compression = T4_COMPRESSION_T45;
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_SYCC_T81_MODE))
         {
-            if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_SYCC_T81))
+            if ((s->supported_compressions & T4_COMPRESSION_SYCC_T81))
                 s->line_compression = T4_COMPRESSION_SYCC_T81;
         }
     }
@@ -2180,7 +2049,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         /* Bi-level image */
         if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_1200_1200))
         {
-            if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_1200_1200))
+            if ((s->supported_bilevel_resolutions & T4_RESOLUTION_1200_1200))
             {
                 s->x_resolution = T4_X_RESOLUTION_1200;
                 s->y_resolution = T4_Y_RESOLUTION_1200;
@@ -2190,7 +2059,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_600_1200))
         {
-            if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_600_1200))
+            if ((s->supported_bilevel_resolutions & T4_RESOLUTION_600_1200))
             {
                 s->x_resolution = T4_X_RESOLUTION_600;
                 s->y_resolution = T4_Y_RESOLUTION_1200;
@@ -2200,7 +2069,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_600_600))
         {
-            if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_600_600))
+            if ((s->supported_bilevel_resolutions & T4_RESOLUTION_600_600))
             {
                 s->x_resolution = T4_X_RESOLUTION_600;
                 s->y_resolution = T4_Y_RESOLUTION_600;
@@ -2210,7 +2079,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_400_800))
         {
-            if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_400_800))
+            if ((s->supported_bilevel_resolutions & T4_RESOLUTION_400_800))
             {
                 s->x_resolution = T4_X_RESOLUTION_400;
                 s->y_resolution = T4_Y_RESOLUTION_800;
@@ -2222,7 +2091,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         {
             if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_INCH_RESOLUTION))
             {
-                if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_400_400))
+                if ((s->supported_bilevel_resolutions & T4_RESOLUTION_400_400))
                 {
                     s->x_resolution = T4_X_RESOLUTION_400;
                     s->y_resolution = T4_Y_RESOLUTION_400;
@@ -2232,7 +2101,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
             }
             else
             {
-                if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_R16_SUPERFINE))
+                if ((s->supported_bilevel_resolutions & T4_RESOLUTION_R16_SUPERFINE))
                 {
                     s->x_resolution = T4_X_RESOLUTION_R16;
                     s->y_resolution = T4_Y_RESOLUTION_SUPERFINE;
@@ -2243,7 +2112,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_300_600))
         {
-            if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_300_600))
+            if ((s->supported_bilevel_resolutions & T4_RESOLUTION_300_600))
             {
                 s->x_resolution = T4_X_RESOLUTION_300;
                 s->y_resolution = T4_Y_RESOLUTION_600;
@@ -2253,7 +2122,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_300_300))
         {
-            if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_300_300))
+            if ((s->supported_bilevel_resolutions & T4_RESOLUTION_300_300))
             {
                 s->x_resolution = T4_X_RESOLUTION_300;
                 s->y_resolution = T4_Y_RESOLUTION_300;
@@ -2265,7 +2134,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         {
             if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_INCH_RESOLUTION))
             {
-                if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_200_400))
+                if ((s->supported_bilevel_resolutions & T4_RESOLUTION_200_400))
                 {
                     s->x_resolution = T4_X_RESOLUTION_200;
                     s->y_resolution = T4_Y_RESOLUTION_400;
@@ -2275,7 +2144,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
             }
             else
             {
-                if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_R8_SUPERFINE))
+                if ((s->supported_bilevel_resolutions & T4_RESOLUTION_R8_SUPERFINE))
                 {
                     s->x_resolution = T4_X_RESOLUTION_R8;
                     s->y_resolution = T4_Y_RESOLUTION_SUPERFINE;
@@ -2288,7 +2157,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         {
             if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_INCH_RESOLUTION))
             {
-                if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_200_200))
+                if ((s->supported_bilevel_resolutions & T4_RESOLUTION_200_200))
                 {
                     s->x_resolution = T4_X_RESOLUTION_200;
                     s->y_resolution = T4_Y_RESOLUTION_200;
@@ -2298,7 +2167,7 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
             }
             else
             {
-                if ((s->supported_bilevel_resolutions & T4_SUPPORT_RESOLUTION_R8_FINE))
+                if ((s->supported_bilevel_resolutions & T4_RESOLUTION_R8_FINE))
                 {
                     s->x_resolution = T4_X_RESOLUTION_R8;
                     s->y_resolution = T4_Y_RESOLUTION_FINE;
@@ -2332,32 +2201,32 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
             ||
             test_ctrl_bit(dcs_frame, T30_DCS_BIT_T88_MODE_3))
         {
-            if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T88))
+            if ((s->supported_compressions & T4_COMPRESSION_T88))
                 s->line_compression = T4_COMPRESSION_T88;
         }
         if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T85_L0_MODE))
         {
-            if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T85_L0))
+            if ((s->supported_compressions & T4_COMPRESSION_T85_L0))
                 s->line_compression = T4_COMPRESSION_T85_L0;
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T85_MODE))
         {
-            if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T85))
+            if ((s->supported_compressions & T4_COMPRESSION_T85))
                 s->line_compression = T4_COMPRESSION_T85;
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_T6_MODE))
         {
-            if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T6))
+            if ((s->supported_compressions & T4_COMPRESSION_T6))
                 s->line_compression = T4_COMPRESSION_T6;
         }
         else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_2D_MODE))
         {
-            if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T4_2D))
+            if ((s->supported_compressions & T4_COMPRESSION_T4_2D))
                 s->line_compression = T4_COMPRESSION_T4_2D;
         }
         else
         {
-            if ((s->supported_compressions & T4_SUPPORT_COMPRESSION_T4_1D))
+            if ((s->supported_compressions & T4_COMPRESSION_T4_1D))
                 s->line_compression = T4_COMPRESSION_T4_1D;
         }
     }
@@ -2392,8 +2261,6 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
 
 static int step_fallback_entry(t30_state_t *s)
 {
-    int min_row_bits;
-
     while (fallback_sequence[++s->current_fallback].which)
     {
         if ((fallback_sequence[s->current_fallback].which & s->current_permitted_modems))
@@ -2401,12 +2268,9 @@ static int step_fallback_entry(t30_state_t *s)
     }
     if (fallback_sequence[s->current_fallback].which == 0)
         return -1;
-    /* TODO: This only sets the minimum row time for future pages. It doesn't fix up the
-             current page, though it is benign - fallback will only result in an excessive
-             minimum. */
-    min_row_bits = set_min_scan_time_code(s);
-    t4_tx_set_min_bits_per_row(&s->t4.tx, min_row_bits);
-    /* We need to rebuild the DCS message we will send. */
+    /* We need to update the minimum scan time, in case we are in non-ECM mode. */
+    set_min_scan_time(s);
+    /* Now we need to rebuild the DCS message we will send. */
     build_dcs(s);
     return s->current_fallback;
 }
@@ -2531,7 +2395,6 @@ static int send_dcs_sequence(t30_state_t *s, int start)
     /* Schedule training after the messages */
     if (start)
     {
-        prune_dcs(s);
         set_state(s, T30_STATE_D);
         s->step = 0;
     }
@@ -2629,7 +2492,7 @@ static void disconnect(t30_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int set_min_scan_time_code(t30_state_t *s)
+static void set_min_scan_time(t30_state_t *s)
 {
     /* Translation between the codes for the minimum scan times the other end needs,
        and the codes for what we say will be used. We need 0 minimum. */
@@ -2645,6 +2508,7 @@ static int set_min_scan_time_code(t30_state_t *s)
         20, 5, 10, 0, 40, 0, 0, 0
     };
     int min_bits_field;
+    int min_row_bits;
 
     /* Set the minimum scan time bits */
     if (s->error_correcting_mode)
@@ -2654,35 +2518,33 @@ static int set_min_scan_time_code(t30_state_t *s)
     switch (s->y_resolution)
     {
     case T4_Y_RESOLUTION_SUPERFINE:
-        if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_400_CAPABLE))
-        {
-            s->min_scan_time_code = translate_min_scan_time[(test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_MIN_SCAN_TIME_HALVES))  ?  2  :  1][min_bits_field];
-            break;
-        }
-        span_log(&s->logging, SPAN_LOG_FLOW, "Remote FAX does not support super-fine resolution. Squashing image.\n");
-        /* Fall through */
+    case T4_Y_RESOLUTION_400:
+        s->min_scan_time_code = translate_min_scan_time[(test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_MIN_SCAN_TIME_HALVES))  ?  2  :  1][min_bits_field];
+        break;
     case T4_Y_RESOLUTION_FINE:
-        if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_200_CAPABLE))
-        {
-            s->min_scan_time_code = translate_min_scan_time[1][min_bits_field];
-            break;
-        }
-        span_log(&s->logging, SPAN_LOG_FLOW, "Remote FAX does not support fine resolution. Squashing image.\n");
-        /* Fall through */
-    default:
+    case T4_Y_RESOLUTION_200:
+        s->min_scan_time_code = translate_min_scan_time[1][min_bits_field];
+        break;
     case T4_Y_RESOLUTION_STANDARD:
+    case T4_Y_RESOLUTION_100:
         s->min_scan_time_code = translate_min_scan_time[0][min_bits_field];
         break;
+    default:
+        s->min_scan_time_code = T30_MIN_SCAN_0MS;
+        break;
     }
-    if (!s->error_correcting_mode  &&  (s->iaf & T30_IAF_MODE_NO_FILL_BITS))
-        return 0;
-    return fallback_sequence[s->current_fallback].bit_rate*min_scan_times[s->min_scan_time_code]/1000;
+    if ((s->iaf & T30_IAF_MODE_NO_FILL_BITS))
+        min_row_bits = 0;
+    else
+        min_row_bits = (fallback_sequence[s->current_fallback].bit_rate*min_scan_times[s->min_scan_time_code])/1000;
+    span_log(&s->logging, SPAN_LOG_FLOW, "Minimum bits per row will be %d\n", min_row_bits);
+    t4_tx_set_min_bits_per_row(&s->t4.tx, min_row_bits);
 }
 /*- End of function --------------------------------------------------------*/
 
 static int start_sending_document(t30_state_t *s)
 {
-    int min_row_bits;
+    int res;
 
     if (s->tx_file[0] == '\0')
     {
@@ -2698,32 +2560,67 @@ static int start_sending_document(t30_state_t *s)
         return -1;
     }
     s->operation_in_progress = OPERATION_IN_PROGRESS_T4_TX;
-    t4_tx_get_pages_in_file(&s->t4.tx);
-    t4_tx_set_tx_encoding(&s->t4.tx, s->line_compression);
+
     t4_tx_set_local_ident(&s->t4.tx, s->tx_info.ident);
     t4_tx_set_header_info(&s->t4.tx, s->header_info);
     if (s->use_own_tz)
         t4_tx_set_header_tz(&s->t4.tx, &s->tz);
 
+    t4_tx_get_pages_in_file(&s->t4.tx);
+
+    if ((res = t4_tx_set_tx_image_format(&s->t4.tx,
+                                         s->mutual_compressions,
+                                         s->mutual_image_sizes,
+                                         s->mutual_bilevel_resolutions,
+                                         s->mutual_colour_resolutions)) < 0)
+    {
+        switch (res)
+        {
+        case T4_IMAGE_FORMAT_INCOMPATIBLE:
+            span_log(&s->logging, SPAN_LOG_WARNING, "Cannot negotiate an image format\n");
+            t30_set_status(s, T30_ERR_BADTIFFHDR);
+            break;
+        case T4_IMAGE_FORMAT_NOSIZESUPPORT:
+            span_log(&s->logging, SPAN_LOG_WARNING, "Cannot negotiate an image size\n");
+            t30_set_status(s, T30_ERR_NOSIZESUPPORT);
+            break;
+        case T4_IMAGE_FORMAT_NORESSUPPORT:
+            span_log(&s->logging, SPAN_LOG_WARNING, "Cannot negotiate an image resolution\n");
+            t30_set_status(s, T30_ERR_NORESSUPPORT);
+            break;
+        default:
+            span_log(&s->logging, SPAN_LOG_WARNING, "Cannot negotiate an image format\n");
+            t30_set_status(s, T30_ERR_BADTIFF);
+            break;
+        }
+        return -1;
+    }
+    s->line_image_type = t4_tx_get_tx_image_type(&s->t4.tx);
+    s->line_compression = t4_tx_get_tx_compression(&s->t4.tx);
+    s->image_width = t4_tx_get_tx_image_width(&s->t4.tx);
+    s->line_width_code = t4_tx_get_tx_image_width_code(&s->t4.tx);
+
+    s->x_resolution = t4_tx_get_tx_x_resolution(&s->t4.tx);
+    s->y_resolution = t4_tx_get_tx_y_resolution(&s->t4.tx);
+    s->current_page_resolution = t4_tx_get_tx_resolution(&s->t4.tx);
+
+    span_log(&s->logging,
+             SPAN_LOG_FLOW,
+             "Choose image type %s (%d), compression %s (%d)\n",
+             t4_image_type_to_str(s->line_image_type),
+             s->line_image_type,
+             t4_compression_to_str(s->line_compression),
+             s->line_compression);
+
+    /* The minimum scan time to be used can't be evaluated until we know the Y resolution. */
+    set_min_scan_time(s);
+
     if (tx_start_page(s))
     {
         span_log(&s->logging, SPAN_LOG_WARNING, "Something seems to be wrong in the file\n");
-        t30_set_status(s, T30_ERR_FILEERROR);
+        t30_set_status(s, T30_ERR_BADTIFFHDR);
         return -1;
     }
-
-    s->x_resolution = t4_tx_get_x_resolution(&s->t4.tx);
-    s->y_resolution = t4_tx_get_y_resolution(&s->t4.tx);
-    s->image_width = t4_tx_get_image_width(&s->t4.tx);
-    /* The minimum scan time to be used can't be evaluated until we know the Y resolution, and
-       must be evaluated before the minimum scan row bits can be evaluated. */
-    if ((min_row_bits = set_min_scan_time_code(s)) < 0)
-    {
-        terminate_operation_in_progress(s);
-        return -1;
-    }
-    span_log(&s->logging, SPAN_LOG_FLOW, "Minimum bits per row will be %d\n", min_row_bits);
-    t4_tx_set_min_bits_per_row(&s->t4.tx, min_row_bits);
 
     if (s->error_correcting_mode)
     {
@@ -2739,7 +2636,7 @@ static int restart_sending_document(t30_state_t *s)
     t4_tx_restart_page(&s->t4.tx);
     s->retries = 0;
     s->ecm_block = 0;
-    send_dcs_sequence(s, TRUE);
+    send_dcs_sequence(s, true);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2755,7 +2652,7 @@ static int start_receiving_document(t30_state_t *s)
     span_log(&s->logging, SPAN_LOG_FLOW, "Start receiving document\n");
     queue_phase(s, T30_PHASE_B_TX);
     s->ecm_block = 0;
-    send_dis_or_dtc_sequence(s, TRUE);
+    send_dis_or_dtc_sequence(s, true);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2796,21 +2693,6 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
         send_dcn(s);
         return -1;
     }
-
-    /* Choose a compression scheme from amongst those mutually available */
-    if ((s->mutual_compressions & T4_SUPPORT_COMPRESSION_T85_L0))
-        s->line_compression = T4_COMPRESSION_T85_L0;
-    else if ((s->mutual_compressions & T4_SUPPORT_COMPRESSION_T85))
-        s->line_compression = T4_COMPRESSION_T85;
-    else if ((s->mutual_compressions & T4_SUPPORT_COMPRESSION_T6))
-        s->line_compression = T4_COMPRESSION_T6;
-    else if ((s->mutual_compressions & T4_SUPPORT_COMPRESSION_T4_2D))
-        s->line_compression = T4_COMPRESSION_T4_2D;
-    else
-        s->line_compression = T4_COMPRESSION_T4_1D;
-
-    span_log(&s->logging, SPAN_LOG_FLOW, "Choose compression %s (%d)\n", t4_compression_to_str(s->line_compression), s->line_compression);
-
     if (s->phase_b_handler)
     {
         new_status = s->phase_b_handler(s, s->phase_b_user_data, msg[2]);
@@ -2846,7 +2728,7 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
             return -1;
         }
         s->retries = 0;
-        send_dcs_sequence(s, TRUE);
+        send_dcs_sequence(s, true);
         return 0;
     }
     span_log(&s->logging, SPAN_LOG_FLOW, "%s nothing to send\n", t30_frametype(msg[2]));
@@ -2873,7 +2755,7 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
             return -1;
         }
         s->retries = 0;
-        send_dis_or_dtc_sequence(s, TRUE);
+        send_dis_or_dtc_sequence(s, true);
         return 0;
     }
     span_log(&s->logging, SPAN_LOG_FLOW, "%s nothing to receive\n", t30_frametype(msg[2]));
@@ -2932,7 +2814,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
     if (!(s->iaf & T30_IAF_MODE_NO_TCF))
     {
         /* TCF is always sent with long training */
-        s->short_train = FALSE;
+        s->short_train = false;
         set_state(s, T30_STATE_F_TCF);
         queue_phase(s, T30_PHASE_C_NON_ECM_RX);
         timer_t2_start(s);
@@ -2948,7 +2830,7 @@ static int send_response_to_pps(t30_state_t *s)
     {
         set_state(s, T30_STATE_F_POST_RCP_MCF);
         send_simple_frame(s, T30_MCF);
-        return TRUE;
+        return true;
     }
     /* We need to send the PPR frame we have created, to try to fill in the missing/bad data. */
     set_state(s, T30_STATE_F_POST_RCP_PPR);
@@ -2956,7 +2838,7 @@ static int send_response_to_pps(t30_state_t *s)
     s->ecm_frame_map[1] = CONTROL_FIELD_FINAL_FRAME;
     s->ecm_frame_map[2] = (uint8_t) (T30_PPR | s->dis_received);
     send_frame(s, s->ecm_frame_map, 3 + 32);
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -3053,7 +2935,7 @@ static int process_rx_pps(t30_state_t *s, const uint8_t *msg, int len)
 
     /* Build a bit map of which frames we now have stored OK */
     first_bad_frame = 256;
-    first = TRUE;
+    first = true;
     expected_len = 256;
     for (i = 0;  i < 32;  i++)
     {
@@ -3080,7 +2962,7 @@ static int process_rx_pps(t30_state_t *s, const uint8_t *msg, int len)
                         /* Use the length of the first frame as our model for what the length should be */
                         if (s->ecm_len[frame_no] == 64)
                             expected_len = 64;
-                        first = FALSE;
+                        first = false;
                     }
                     /* Check the length is consistent with the first frame */
                     if (s->ecm_len[frame_no] != expected_len)
@@ -3165,7 +3047,7 @@ static int process_rx_pps(t30_state_t *s, const uint8_t *msg, int len)
                 case T30_PRI_EOP:
                 case T30_EOP:
                     span_log(&s->logging, SPAN_LOG_FLOW, "End of procedure detected\n");
-                    s->end_of_procedure_detected = TRUE;
+                    s->end_of_procedure_detected = true;
                     break;
                 }
             }
@@ -3280,7 +3162,7 @@ static void process_rx_fcd(t30_state_t *s, const uint8_t *msg, int len)
             memcpy(&s->ecm_data[frame_no][0], &msg[4], len - 4);
             s->ecm_len[frame_no] = (int16_t) (len - 4);
             /* In case we are just after a CTC/CTR exchange, which kicked us back to long training */
-            s->short_train = TRUE;
+            s->short_train = true;
         }
         /* We have received something, so any missing carrier status is out of date */
         if (s->current_status == T30_ERR_RX_NOCARRIER)
@@ -3545,7 +3427,7 @@ static void process_state_d_post_tcf(t30_state_t *s, const uint8_t *msg, int len
         /* Trainability test succeeded. Send the document. */
         span_log(&s->logging, SPAN_LOG_FLOW, "Trainability test succeeded\n");
         s->retries = 0;
-        s->short_train = TRUE;
+        s->short_train = true;
         if (s->error_correcting_mode)
         {
             set_state(s, T30_STATE_IV);
@@ -3562,7 +3444,7 @@ static void process_state_d_post_tcf(t30_state_t *s, const uint8_t *msg, int len
         /* Trainability test failed. Try again. */
         span_log(&s->logging, SPAN_LOG_FLOW, "Trainability test failed\n");
         s->retries = 0;
-        s->short_train = FALSE;
+        s->short_train = false;
         if (step_fallback_entry(s) < 0)
         {
             /* We have fallen back as far as we can go. Give up. */
@@ -3572,7 +3454,7 @@ static void process_state_d_post_tcf(t30_state_t *s, const uint8_t *msg, int len
             break;
         }
         queue_phase(s, T30_PHASE_B_TX);
-        send_dcs_sequence(s, TRUE);
+        send_dcs_sequence(s, true);
         break;
     case T30_DIS:
         /* It appears they didn't see what we sent - retry the TCF */
@@ -3586,7 +3468,7 @@ static void process_state_d_post_tcf(t30_state_t *s, const uint8_t *msg, int len
         span_log(&s->logging, SPAN_LOG_FLOW, "Retry number %d\n", s->retries);
         queue_phase(s, T30_PHASE_B_TX);
         /* TODO: should we reassess the new DIS message, and possibly adjust the DCS we use? */
-        send_dcs_sequence(s, TRUE);
+        send_dcs_sequence(s, true);
         break;
     case T30_DCN:
         t30_set_status(s, T30_ERR_TX_BADDCS);
@@ -3848,7 +3730,7 @@ static void process_state_f_post_doc_non_ecm(t30_state_t *s, const uint8_t *msg,
         /* Fall through */
     case T30_EOP:
         span_log(&s->logging, SPAN_LOG_FLOW, "End of procedure detected\n");
-        s->end_of_procedure_detected = TRUE;
+        s->end_of_procedure_detected = true;
         s->next_rx_step = fcf;
         queue_phase(s, T30_PHASE_D_TX);
         switch (copy_quality(s))
@@ -3960,7 +3842,7 @@ static void process_state_f_doc_and_post_doc_ecm(t30_state_t *s, const uint8_t *
         break;
     case T30_CTC:
         /* T.30 says we change back to long training here */
-        s->short_train = FALSE;
+        s->short_train = false;
         queue_phase(s, T30_PHASE_D_TX);
         set_state(s, T30_STATE_F_DOC_ECM);
         send_simple_frame(s, T30_CTR);
@@ -4056,7 +3938,7 @@ static void process_state_f_post_rcp_rnr(t30_state_t *s, const uint8_t *msg, int
                 case T30_PRI_EOP:
                 case T30_EOP:
                     span_log(&s->logging, SPAN_LOG_FLOW, "End of procedure detected\n");
-                    s->end_of_procedure_detected = TRUE;
+                    s->end_of_procedure_detected = true;
                     break;
                 }
             }
@@ -4221,8 +4103,8 @@ static void process_state_ii_q(t30_state_t *s, const uint8_t *msg, int len)
             if (s->phase_d_handler)
                 s->phase_d_handler(s, s->phase_d_user_data, fcf);
             terminate_operation_in_progress(s);
-            report_tx_result(s, TRUE);
-            return_to_phase_b(s, FALSE);
+            report_tx_result(s, true);
+            return_to_phase_b(s, false);
             break;
         case T30_PRI_EOP:
         case T30_EOP:
@@ -4231,7 +4113,7 @@ static void process_state_ii_q(t30_state_t *s, const uint8_t *msg, int len)
                 s->phase_d_handler(s, s->phase_d_user_data, fcf);
             terminate_operation_in_progress(s);
             send_dcn(s);
-            report_tx_result(s, TRUE);
+            report_tx_result(s, true);
             break;
         }
         break;
@@ -4269,7 +4151,7 @@ static void process_state_ii_q(t30_state_t *s, const uint8_t *msg, int len)
                 s->phase_d_handler(s, s->phase_d_user_data, fcf);
             t4_tx_release(&s->t4.tx);
             /* TODO: should go back to T, and resend */
-            return_to_phase_b(s, TRUE);
+            return_to_phase_b(s, true);
             break;
         case T30_PRI_EOP:
         case T30_EOP:
@@ -4334,7 +4216,7 @@ static void process_state_ii_q(t30_state_t *s, const uint8_t *msg, int len)
             }
             else
             {
-                return_to_phase_b(s, TRUE);
+                return_to_phase_b(s, true);
             }
             break;
         case T30_PRI_EOP:
@@ -4574,8 +4456,8 @@ static void process_state_iv_pps_null(t30_state_t *s, const uint8_t *msg, int le
                 if (s->phase_d_handler)
                     s->phase_d_handler(s, s->phase_d_user_data, fcf);
                 terminate_operation_in_progress(s);
-                report_tx_result(s, TRUE);
-                return_to_phase_b(s, FALSE);
+                report_tx_result(s, true);
+                return_to_phase_b(s, false);
                 break;
             case T30_PRI_EOP:
             case T30_EOP:
@@ -4584,7 +4466,7 @@ static void process_state_iv_pps_null(t30_state_t *s, const uint8_t *msg, int le
                     s->phase_d_handler(s, s->phase_d_user_data, fcf);
                 terminate_operation_in_progress(s);
                 send_dcn(s);
-                report_tx_result(s, TRUE);
+                report_tx_result(s, true);
                 break;
             }
         }
@@ -4678,8 +4560,8 @@ static void process_state_iv_pps_q(t30_state_t *s, const uint8_t *msg, int len)
                 if (s->phase_d_handler)
                     s->phase_d_handler(s, s->phase_d_user_data, fcf);
                 terminate_operation_in_progress(s);
-                report_tx_result(s, TRUE);
-                return_to_phase_b(s, FALSE);
+                report_tx_result(s, true);
+                return_to_phase_b(s, false);
                 break;
             case T30_PRI_EOP:
             case T30_EOP:
@@ -4688,7 +4570,7 @@ static void process_state_iv_pps_q(t30_state_t *s, const uint8_t *msg, int len)
                     s->phase_d_handler(s, s->phase_d_user_data, fcf);
                 terminate_operation_in_progress(s);
                 send_dcn(s);
-                report_tx_result(s, TRUE);
+                report_tx_result(s, true);
                 break;
             }
         }
@@ -4793,8 +4675,8 @@ static void process_state_iv_pps_rnr(t30_state_t *s, const uint8_t *msg, int len
                 if (s->phase_d_handler)
                     s->phase_d_handler(s, s->phase_d_user_data, fcf);
                 terminate_operation_in_progress(s);
-                report_tx_result(s, TRUE);
-                return_to_phase_b(s, FALSE);
+                report_tx_result(s, true);
+                return_to_phase_b(s, false);
                 break;
             case T30_PRI_EOP:
             case T30_EOP:
@@ -4803,7 +4685,7 @@ static void process_state_iv_pps_rnr(t30_state_t *s, const uint8_t *msg, int len
                     s->phase_d_handler(s, s->phase_d_user_data, fcf);
                 terminate_operation_in_progress(s);
                 send_dcn(s);
-                report_tx_result(s, TRUE);
+                report_tx_result(s, true);
                 break;
             }
         }
@@ -4854,7 +4736,7 @@ static void process_state_iv_ctc(t30_state_t *s, const uint8_t *msg, int len)
     case T30_CTR:
         /* Valid response to a CTC received */
         /* T.30 says we change back to long training here */
-        s->short_train = FALSE;
+        s->short_train = false;
         /* Initiate resending of the remainder of the frames. */
         set_state(s, T30_STATE_IV);
         queue_phase(s, T30_PHASE_C_ECM_TX);
@@ -4980,7 +4862,7 @@ static void process_rx_control_msg(t30_state_t *s, const uint8_t *msg, int len)
     /* We should only get good frames here. */
     print_frame(s, "Rx: ", msg, len);
     if (s->real_time_frame_handler)
-        s->real_time_frame_handler(s, s->real_time_frame_user_data, TRUE, msg, len);
+        s->real_time_frame_handler(s, s->real_time_frame_user_data, true, msg, len);
 
     if ((msg[1] & 0x10) == 0)
     {
@@ -5281,42 +5163,42 @@ static void set_phase(t30_state_t *s, int phase)
        signal. Force the signal present indicator to off, because the
        receiver will never be able to. */
     if (s->phase != T30_PHASE_A_CED  &&  s->phase != T30_PHASE_A_CNG)
-        s->rx_signal_present = FALSE;
-    s->rx_trained = FALSE;
-    s->rx_frame_received = FALSE;
+        s->rx_signal_present = false;
+    s->rx_trained = false;
+    s->rx_frame_received = false;
     s->phase = phase;
     switch (phase)
     {
     case T30_PHASE_A_CED:
         if (s->set_rx_type_handler)
-            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_V21, 300, FALSE, TRUE);
+            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_V21, 300, false, true);
         if (s->set_tx_type_handler)
-            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_CED, 0, FALSE, FALSE);
+            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_CED, 0, false, false);
         break;
     case T30_PHASE_A_CNG:
         if (s->set_rx_type_handler)
-            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_V21, 300, FALSE, TRUE);
+            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_V21, 300, false, true);
         if (s->set_tx_type_handler)
-            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_CNG, 0, FALSE, FALSE);
+            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_CNG, 0, false, false);
         break;
     case T30_PHASE_B_RX:
     case T30_PHASE_D_RX:
         if (s->set_rx_type_handler)
-            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_V21, 300, FALSE, TRUE);
+            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_V21, 300, false, true);
         if (s->set_tx_type_handler)
-            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_NONE, 0, FALSE, FALSE);
+            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_NONE, 0, false, false);
         break;
     case T30_PHASE_B_TX:
     case T30_PHASE_D_TX:
         if (!s->far_end_detected  &&  s->timer_t0_t1 > 0)
         {
             s->timer_t0_t1 = ms_to_samples(DEFAULT_TIMER_T1);
-            s->far_end_detected = TRUE;
+            s->far_end_detected = true;
         }
         if (s->set_rx_type_handler)
-            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, FALSE, FALSE);
+            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, false, false);
         if (s->set_tx_type_handler)
-            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_V21, 300, FALSE, TRUE);
+            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_V21, 300, false, true);
         break;
     case T30_PHASE_C_NON_ECM_RX:
         if (s->set_rx_type_handler)
@@ -5324,11 +5206,11 @@ static void set_phase(t30_state_t *s, int phase)
             /* Momentarily stop the receive modem, so the next change is forced to happen. If we don't do this
                an HDLC message on the slow modem, which has disabled the fast modem, will prevent the same
                fast modem from restarting. */
-            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, FALSE, FALSE);
-            s->set_rx_type_handler(s->set_rx_type_user_data, fallback_sequence[s->current_fallback].modem_type, fallback_sequence[s->current_fallback].bit_rate, s->short_train, FALSE);
+            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, false, false);
+            s->set_rx_type_handler(s->set_rx_type_user_data, fallback_sequence[s->current_fallback].modem_type, fallback_sequence[s->current_fallback].bit_rate, s->short_train, false);
         }
         if (s->set_tx_type_handler)
-            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_NONE, 0, FALSE, FALSE);
+            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_NONE, 0, false, false);
         break;
     case T30_PHASE_C_NON_ECM_TX:
         /* Pause before switching from anything to phase C */
@@ -5340,24 +5222,24 @@ static void set_phase(t30_state_t *s, int phase)
             /* Momentarily stop the receive modem, so the next change is forced to happen. If we don't do this
                an HDLC message on the slow modem, which has disabled the fast modem, will prevent the same
                fast modem from restarting. */
-            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, FALSE, FALSE);
-            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, FALSE, FALSE);
+            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, false, false);
+            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, false, false);
         }
         if (s->set_tx_type_handler)
-            s->set_tx_type_handler(s->set_tx_type_user_data, fallback_sequence[s->current_fallback].modem_type, fallback_sequence[s->current_fallback].bit_rate, s->short_train, FALSE);
+            s->set_tx_type_handler(s->set_tx_type_user_data, fallback_sequence[s->current_fallback].modem_type, fallback_sequence[s->current_fallback].bit_rate, s->short_train, false);
         break;
     case T30_PHASE_C_ECM_RX:
         if (s->set_rx_type_handler)
-            s->set_rx_type_handler(s->set_rx_type_user_data, fallback_sequence[s->current_fallback].modem_type, fallback_sequence[s->current_fallback].bit_rate, s->short_train, TRUE);
+            s->set_rx_type_handler(s->set_rx_type_user_data, fallback_sequence[s->current_fallback].modem_type, fallback_sequence[s->current_fallback].bit_rate, s->short_train, true);
         if (s->set_tx_type_handler)
-            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_NONE, 0, FALSE, FALSE);
+            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_NONE, 0, false, false);
         break;
     case T30_PHASE_C_ECM_TX:
         /* Pause before switching from anything to phase C */
         if (s->set_rx_type_handler)
-            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, FALSE, FALSE);
+            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, false, false);
         if (s->set_tx_type_handler)
-            s->set_tx_type_handler(s->set_tx_type_user_data, fallback_sequence[s->current_fallback].modem_type, fallback_sequence[s->current_fallback].bit_rate, s->short_train, TRUE);
+            s->set_tx_type_handler(s->set_tx_type_user_data, fallback_sequence[s->current_fallback].modem_type, fallback_sequence[s->current_fallback].bit_rate, s->short_train, true);
         break;
     case T30_PHASE_E:
         /* Send a little silence before ending things, to ensure the
@@ -5367,15 +5249,15 @@ static void set_phase(t30_state_t *s, int phase)
         s->tcf_current_zeros = 0;
         s->tcf_most_zeros = 0;
         if (s->set_rx_type_handler)
-            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, FALSE, FALSE);
+            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, false, false);
         if (s->set_tx_type_handler)
-            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_PAUSE, 0, FINAL_FLUSH_TIME, FALSE);
+            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_PAUSE, 0, FINAL_FLUSH_TIME, false);
         break;
     case T30_PHASE_CALL_FINISHED:
         if (s->set_rx_type_handler)
-            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_DONE, 0, FALSE, FALSE);
+            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_DONE, 0, false, false);
         if (s->set_tx_type_handler)
-            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_DONE, 0, FALSE, FALSE);
+            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_DONE, 0, false, false);
         break;
     }
 }
@@ -5422,9 +5304,9 @@ static void repeat_last_command(t30_state_t *s)
     switch (s->state)
     {
     case T30_STATE_R:
-        s->dis_received = FALSE;
+        s->dis_received = false;
         queue_phase(s, T30_PHASE_B_TX);
-        send_dis_or_dtc_sequence(s, TRUE);
+        send_dis_or_dtc_sequence(s, true);
         break;
     case T30_STATE_III_Q_MCF:
         queue_phase(s, T30_PHASE_D_TX);
@@ -5454,7 +5336,7 @@ static void repeat_last_command(t30_state_t *s)
         break;
     case T30_STATE_D:
         queue_phase(s, T30_PHASE_B_TX);
-        send_dcs_sequence(s, TRUE);
+        send_dcs_sequence(s, true);
         break;
     case T30_STATE_F_FTT:
         queue_phase(s, T30_PHASE_B_TX);
@@ -5462,13 +5344,13 @@ static void repeat_last_command(t30_state_t *s)
         break;
     case T30_STATE_F_CFR:
         queue_phase(s, T30_PHASE_B_TX);
-        send_cfr_sequence(s, TRUE);
+        send_cfr_sequence(s, true);
         break;
     case T30_STATE_D_POST_TCF:
         /* Need to send the whole training thing again */
-        s->short_train = FALSE;
+        s->short_train = false;
         queue_phase(s, T30_PHASE_B_TX);
-        send_dcs_sequence(s, TRUE);
+        send_dcs_sequence(s, true);
         break;
     case T30_STATE_F_POST_RCP_RNR:
         /* Just ignore */
@@ -5644,8 +5526,8 @@ static void timer_t2_expired(t30_state_t *s)
             span_log(&s->logging, SPAN_LOG_FLOW, "Returning to phase B after %s\n", t30_frametype(s->next_rx_step));
             set_phase(s, T30_PHASE_B_TX);
             timer_t2_start(s);
-            s->dis_received = FALSE;
-            send_dis_or_dtc_sequence(s, TRUE);
+            s->dis_received = false;
+            send_dis_or_dtc_sequence(s, true);
             return;
         }
         break;
@@ -5831,7 +5713,7 @@ static int decode_nsf_nss_nsc(t30_state_t *s, uint8_t *msg[], const uint8_t *pkt
 {
     uint8_t *t;
 
-    if ((t = malloc(len - 1)) == NULL)
+    if ((t = span_alloc(len - 1)) == NULL)
         return 0;
     memcpy(t, pkt + 1, len - 1);
     *msg = t;
@@ -5851,7 +5733,7 @@ static void t30_non_ecm_rx_status(void *user_data, int status)
     case SIG_STATUS_TRAINING_IN_PROGRESS:
         break;
     case SIG_STATUS_TRAINING_FAILED:
-        s->rx_trained = FALSE;
+        s->rx_trained = false;
         break;
     case SIG_STATUS_TRAINING_SUCCEEDED:
         /* The modem is now trained */
@@ -5859,16 +5741,16 @@ static void t30_non_ecm_rx_status(void *user_data, int status)
         s->tcf_test_bits = 0;
         s->tcf_current_zeros = 0;
         s->tcf_most_zeros = 0;
-        s->rx_signal_present = TRUE;
-        s->rx_trained = TRUE;
+        s->rx_signal_present = true;
+        s->rx_trained = true;
         timer_t2_t4_stop(s);
         break;
     case SIG_STATUS_CARRIER_UP:
         break;
     case SIG_STATUS_CARRIER_DOWN:
         was_trained = s->rx_trained;
-        s->rx_signal_present = FALSE;
-        s->rx_trained = FALSE;
+        s->rx_signal_present = false;
+        s->rx_trained = false;
         switch (s->state)
         {
         case T30_STATE_F_TCF:
@@ -5896,11 +5778,11 @@ static void t30_non_ecm_rx_status(void *user_data, int status)
                 else
                 {
                     /* The training went OK */
-                    s->short_train = TRUE;
+                    s->short_train = true;
                     rx_start_page(s);
                     set_phase(s, T30_PHASE_B_TX);
                     set_state(s, T30_STATE_F_CFR);
-                    send_cfr_sequence(s, TRUE);
+                    send_cfr_sequence(s, true);
                 }
             }
             break;
@@ -6104,15 +5986,15 @@ static void t30_hdlc_rx_status(void *user_data, int status)
     case SIG_STATUS_TRAINING_IN_PROGRESS:
         break;
     case SIG_STATUS_TRAINING_FAILED:
-        s->rx_trained = FALSE;
+        s->rx_trained = false;
         break;
     case SIG_STATUS_TRAINING_SUCCEEDED:
         /* The modem is now trained */
-        s->rx_signal_present = TRUE;
-        s->rx_trained = TRUE;
+        s->rx_signal_present = true;
+        s->rx_trained = true;
         break;
     case SIG_STATUS_CARRIER_UP:
-        s->rx_signal_present = TRUE;
+        s->rx_signal_present = true;
         switch (s->timer_t2_t4_is)
         {
         case TIMER_IS_T2B:
@@ -6127,8 +6009,8 @@ static void t30_hdlc_rx_status(void *user_data, int status)
         break;
     case SIG_STATUS_CARRIER_DOWN:
         was_trained = s->rx_trained;
-        s->rx_signal_present = FALSE;
-        s->rx_trained = FALSE;
+        s->rx_signal_present = false;
+        s->rx_trained = false;
         /* If a phase change has been queued to occur after the receive signal drops,
            its time to change. */
         if (s->state == T30_STATE_F_DOC_ECM)
@@ -6181,7 +6063,7 @@ static void t30_hdlc_rx_status(void *user_data, int status)
         if (!s->far_end_detected  &&  s->timer_t0_t1 > 0)
         {
             s->timer_t0_t1 = ms_to_samples(DEFAULT_TIMER_T1);
-            s->far_end_detected = TRUE;
+            s->far_end_detected = true;
             if (s->phase == T30_PHASE_A_CED  ||  s->phase == T30_PHASE_A_CNG)
                 set_phase(s, T30_PHASE_B_RX);
         }
@@ -6276,7 +6158,7 @@ SPAN_DECLARE_NONSTD(void) t30_hdlc_accept(void *user_data, const uint8_t *msg, i
         timer_t2_t4_stop(s);
         return;
     }
-    s->rx_frame_received = TRUE;
+    s->rx_frame_received = true;
     /* Cancel the command or response timer (if one is running) */
     timer_t2_t4_stop(s);
     process_rx_control_msg(s, msg, len);
@@ -6300,11 +6182,11 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
             span_log(&s->logging, SPAN_LOG_FLOW, "Starting answer mode\n");
             set_phase(s, T30_PHASE_B_TX);
             timer_t2_start(s);
-            s->dis_received = FALSE;
-            send_dis_or_dtc_sequence(s, TRUE);
+            s->dis_received = false;
+            send_dis_or_dtc_sequence(s, true);
             break;
         case T30_STATE_R:
-            if (send_dis_or_dtc_sequence(s, FALSE))
+            if (send_dis_or_dtc_sequence(s, false))
             {
                 /* Wait for an acknowledgement. */
                 set_phase(s, T30_PHASE_B_RX);
@@ -6312,7 +6194,7 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
             }
             break;
         case T30_STATE_F_CFR:
-            if (send_cfr_sequence(s, FALSE))
+            if (send_cfr_sequence(s, false))
             {
                 if (s->error_correcting_mode)
                 {
@@ -6432,13 +6314,13 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
             }
             break;
         case T30_STATE_D:
-            if (send_dcs_sequence(s, FALSE))
+            if (send_dcs_sequence(s, false))
             {
                 if ((s->iaf & T30_IAF_MODE_NO_TCF))
                 {
                     /* Skip the trainability test */
                     s->retries = 0;
-                    s->short_train = TRUE;
+                    s->short_train = true;
                     if (s->error_correcting_mode)
                     {
                         set_state(s, T30_STATE_IV);
@@ -6454,7 +6336,7 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
                 {
                     /* Do the trainability test */
                     /* TCF is always sent with long training */
-                    s->short_train = FALSE;
+                    s->short_train = false;
                     set_state(s, T30_STATE_D_TCF);
                     set_phase(s, T30_PHASE_C_NON_ECM_TX);
                 }
@@ -6488,7 +6370,8 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
             {
                 /* Send the end of page or partial page message */
                 set_phase(s, T30_PHASE_D_TX);
-                s->next_tx_step = check_next_tx_step(s);
+                if (s->ecm_at_page_end)
+                    s->next_tx_step = check_next_tx_step(s);
                 if (send_pps_frame(s) == T30_NULL)
                     set_state(s, T30_STATE_IV_PPS_NULL);
                 else
@@ -6557,7 +6440,7 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
         default:
             /* Cancel any receive timeout, and declare that a receive signal is present,
                since the front end is explicitly telling us we have seen something. */
-            s->rx_signal_present = TRUE;
+            s->rx_signal_present = true;
             timer_t2_t4_stop(s);
             break;
         }
@@ -6751,9 +6634,9 @@ SPAN_DECLARE(int) t30_restart(t30_state_t *s)
     s->phase = T30_PHASE_IDLE;
     s->next_phase = T30_PHASE_IDLE;
     s->current_fallback = 0;
-    s->rx_signal_present = FALSE;
-    s->rx_trained = FALSE;
-    s->rx_frame_received = FALSE;
+    s->rx_signal_present = false;
+    s->rx_trained = false;
+    s->rx_frame_received = false;
     s->current_status = T30_ERR_OK;
     s->ppr_count = 0;
     s->ecm_progress = 0;
@@ -6767,9 +6650,9 @@ SPAN_DECLARE(int) t30_restart(t30_state_t *s)
     s->tx_page_number = 0;
     s->rtn_events = 0;
     s->rtp_events = 0;
-    s->local_interrupt_pending = FALSE;
-    s->far_end_detected = FALSE;
-    s->end_of_procedure_detected = FALSE;
+    s->local_interrupt_pending = false;
+    s->far_end_detected = false;
+    s->end_of_procedure_detected = false;
     s->timer_t0_t1 = ms_to_samples(DEFAULT_TIMER_T0);
     if (s->calling_party)
     {
@@ -6796,7 +6679,7 @@ SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (t30_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (t30_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -6810,10 +6693,13 @@ SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
 
     /* Default to the basic modems. */
     s->supported_modems = T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17;
-    s->supported_compressions = T4_SUPPORT_COMPRESSION_T4_1D | T4_SUPPORT_COMPRESSION_T4_2D;
-    s->supported_bilevel_resolutions = T4_SUPPORT_RESOLUTION_R8_STANDARD
-                                     | T4_SUPPORT_RESOLUTION_R8_FINE
-                                     | T4_SUPPORT_RESOLUTION_R8_SUPERFINE;
+    s->supported_compressions = T4_COMPRESSION_T4_1D | T4_COMPRESSION_T4_2D;
+    s->supported_bilevel_resolutions = T4_RESOLUTION_R8_STANDARD
+                                     | T4_RESOLUTION_R8_FINE
+                                     | T4_RESOLUTION_R8_SUPERFINE
+                                     | T4_RESOLUTION_200_100
+                                     | T4_RESOLUTION_200_200
+                                     | T4_RESOLUTION_200_400;
     s->supported_image_sizes = T4_SUPPORT_WIDTH_215MM
                              | T4_SUPPORT_LENGTH_US_LETTER
                              | T4_SUPPORT_LENGTH_US_LEGAL
@@ -6822,7 +6708,7 @@ SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
                              | T4_SUPPORT_LENGTH_UNLIMITED;
     /* Set the output encoding to something safe. Most things get 1D and 2D
        encoding right. Quite a lot get other things wrong. */
-    s->supported_output_compressions = T4_COMPRESSION_T4_2D;
+    s->supported_output_compressions = T4_COMPRESSION_T4_2D | T4_COMPRESSION_T42_T81;
     s->local_min_scan_time_code = T30_MIN_SCAN_0MS;
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "T.30");
@@ -6843,7 +6729,7 @@ SPAN_DECLARE(int) t30_release(t30_state_t *s)
 SPAN_DECLARE(int) t30_free(t30_state_t *s)
 {
     t30_release(s);
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

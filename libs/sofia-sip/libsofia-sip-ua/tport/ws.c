@@ -1,5 +1,10 @@
 #include "ws.h"
 #include <pthread.h>
+
+#ifndef _MSC_VER
+#include <fcntl.h>
+#endif
+
 #define SHA1_HASH_SIZE 20
 struct globals_s globals;
 
@@ -237,6 +242,10 @@ int ws_handshake(wsh_t *wsh)
 		}
 	}
 
+	if (bytes > sizeof(wsh->buffer)) {
+		goto err;
+	}
+
 	*(wsh->buffer+bytes) = '\0';
 	
 	if (strncasecmp(wsh->buffer, "GET ", 4)) {
@@ -316,16 +325,17 @@ issize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 	do {
 		r = recv(wsh->sock, data, bytes, 0);
 #ifndef _MSC_VER
-			if (x++) usleep(10000);
+		if (x++) usleep(10000);
 #else
-			if (x++) Sleep(10);
+		if (x++) Sleep(10);
 #endif
-	} while (r == -1 && (errno == EAGAIN || errno == EINTR) && x < 100);
-
-	//if (r<0) {
-	//	printf("READ FAIL: %s\n", strerror(errno));
-	//}
-
+		} while (r == -1 && (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK || 
+							 errno == 35 || errno == 730035 || errno == 2 || errno == 60) && x < 100);
+	
+	if (x >= 100) {
+		r = -1;
+	}
+	
 	return r;
 }
 
@@ -352,7 +362,54 @@ issize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 	return r;
 }
 
-int ws_init(wsh_t *wsh, ws_socket_t sock, size_t buflen, SSL_CTX *ssl_ctx, int close_sock)
+#ifdef _MSC_VER
+static int setup_socket(ws_socket_t sock)
+{
+	unsigned long v = 1;
+
+	if (ioctlsocket(sock, FIONBIO, &v) == SOCKET_ERROR) {
+		return -1;
+	}
+
+	return 0;
+
+}
+
+static int restore_socket(ws_socket_t sock)
+{
+	unsigned long v = 0;
+
+	if (ioctlsocket(sock, FIONBIO, &v) == SOCKET_ERROR) {
+		return -1;
+	}
+
+	return 0;
+
+}
+
+#else
+
+static int setup_socket(ws_socket_t sock)
+{
+	int flags = fcntl(sock, F_GETFL, 0);
+	return fcntl(sock, F_SETFL, flags | O_NONBLOCK);
+}
+
+static int restore_socket(ws_socket_t sock)
+{
+	int flags = fcntl(sock, F_GETFL, 0);
+
+	flags &= ~O_NONBLOCK;
+
+	return fcntl(sock, F_SETFL, flags);
+
+}
+
+#endif
+
+
+
+int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock)
 {
 	memset(wsh, 0, sizeof(*wsh));
 	wsh->sock = sock;
@@ -365,21 +422,15 @@ int ws_init(wsh_t *wsh, ws_socket_t sock, size_t buflen, SSL_CTX *ssl_ctx, int c
 		wsh->close_sock = 1;
 	}
 
-	if (buflen > MAXLEN) {
-		buflen = MAXLEN;
-	}
-
-	wsh->buflen = buflen;
+	wsh->buflen = sizeof(wsh->buffer);
 	wsh->secure = ssl_ctx ? 1 : 0;
 
-	if (!wsh->buffer) {
-		wsh->buffer = malloc(wsh->buflen);
-		assert(wsh->buffer);
-	}
+	setup_socket(sock);
 
 	if (wsh->secure) {
 		int code;
-
+		int sanity = 500;
+		
 		wsh->ssl = SSL_new(ssl_ctx);
 		assert(wsh->ssl);
 
@@ -387,12 +438,41 @@ int ws_init(wsh_t *wsh, ws_socket_t sock, size_t buflen, SSL_CTX *ssl_ctx, int c
 
 		do {
 			code = SSL_accept(wsh->ssl);
-		} while (code == -1 && SSL_get_error(wsh->ssl, code) == SSL_ERROR_WANT_READ);
 
+			if (code == 1) {
+				break;
+			}
+
+			if (code == 0) {
+				return -1;
+			}
+			
+			if (code < 0) {
+				if (code == -1 && SSL_get_error(wsh->ssl, code) != SSL_ERROR_WANT_READ) {
+					return -1;
+				}
+			}
+#ifndef _MSC_VER
+				usleep(10000);
+#else
+				Sleep(10);
+#endif				
+				
+		} while (--sanity > 0);
+		
+		if (!sanity) {
+			return -1;
+		}
+		
 	}
 
 	while (!wsh->down && !wsh->handshake) {
-		ws_handshake(wsh);
+		int r = ws_handshake(wsh);
+
+		if (r < 0) {
+			wsh->down = 1;
+			return -1;
+		}
 	}
 
 	if (wsh->down) {
@@ -402,17 +482,13 @@ int ws_init(wsh_t *wsh, ws_socket_t sock, size_t buflen, SSL_CTX *ssl_ctx, int c
 	return 0;
 }
 
-void ws_destroy(wsh_t **wshp)
+void ws_destroy(wsh_t *wsh)
 {
-	wsh_t *wsh;
 
-	if (!wshp || ! *wshp) {
+	if (!wsh) {
 		return;
 	}
 
-	wsh = *wshp;
-	*wshp = NULL;
-	
 	if (!wsh->down) {
 		ws_close(wsh, WS_NONE);
 	}
@@ -431,16 +507,6 @@ void ws_destroy(wsh_t **wshp)
 
 		SSL_free(wsh->ssl);
 		wsh->ssl = NULL;
-	}
-
-	if (wsh->buffer) {
-		free(wsh->buffer);
-		wsh->buffer = NULL;
-	}
-
-	if (wsh->wbuffer) {
-		free(wsh->wbuffer);
-		wsh->wbuffer = NULL;
 	}
 }
 
@@ -461,6 +527,8 @@ issize_t ws_close(wsh_t *wsh, int16_t reason)
 		*u16 = htons((int16_t)reason);
 		ws_raw_write(wsh, fr, 4);
 	}
+
+	restore_socket(wsh->sock);
 
 	if (wsh->close_sock) {
 		close(wsh->sock);
@@ -631,13 +699,6 @@ issize_t ws_feed_buf(wsh_t *wsh, void *data, size_t bytes)
 	if (bytes + wsh->wdatalen > wsh->buflen) {
 		return -1;
 	}
-
-
-	if (!wsh->wbuffer) {
-		wsh->wbuffer = malloc(wsh->buflen);
-		assert(wsh->wbuffer);
-	}
-	
 
 	memcpy(wsh->wbuffer + wsh->wdatalen, data, bytes);
 	

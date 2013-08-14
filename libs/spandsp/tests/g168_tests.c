@@ -38,9 +38,6 @@
 #include "spandsp/g168models.h"
 #include "spandsp-sim.h"
 
-#define FALSE 0
-#define TRUE (!FALSE)
-
 typedef struct
 {
     const char *name;
@@ -158,7 +155,7 @@ int main(int argc, char *argv[])
                                   0,
                                   0,
                                   0,
-                                  TRUE);
+                                  true);
         tone_gen_init(&tone_state, &tone_desc);
         tone_gen(&tone_state, amp, 8000);
         for (i = 0;  i < 10;  i++)

@@ -70,18 +70,18 @@ int main(int argc, char *argv[])
     int block_len;
     int loss_rate;
     int dropit;
-    int block_real;
-    int block_synthetic;
     int tone;
     int i;
+    int opt;
+    bool block_real;
+    bool block_synthetic;
     uint32_t phase_acc;
     int32_t phase_rate;
-    int opt;
 
     loss_rate = 25;
     block_len = 160;
-    block_real = FALSE;
-    block_synthetic = FALSE;
+    block_real = false;
+    block_synthetic = false;
     tone = -1;
     while ((opt = getopt(argc, argv, "b:l:rst:")) != -1)
     {
@@ -94,10 +94,10 @@ int main(int argc, char *argv[])
             loss_rate = atoi(optarg);
             break;
         case 'r':
-            block_real = TRUE;
+            block_real = true;
             break;
         case 's':
-            block_synthetic = TRUE;
+            block_synthetic = true;
             break;
         case 't':
             tone = atoi(optarg);

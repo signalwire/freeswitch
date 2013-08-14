@@ -80,14 +80,14 @@ g1050_state_t *path_b_to_a;
 
 double when = 0.0;
 
-int t38_mode = FALSE;
+int t38_mode = false;
 
 struct modem_s modem[10];
 
 char *decode_test_file = NULL;
 int countdown = 0;
 int answered = 0;
-int done = FALSE;
+int done = false;
 
 int test_seq_ptr = 0;
 
@@ -155,7 +155,7 @@ printf("\n");
 
     modem = (modem_t *) user_data;
 #if defined(WIN32)
-    o.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    o.hEvent = CreateEvent(NULL, true, false, NULL);
     /* Initialize the rest of the OVERLAPPED structure to zero. */
     o.Internal = 0;
     o.InternalHigh = 0;
@@ -163,7 +163,7 @@ printf("\n");
     o.OffsetHigh = 0;
     assert(o.hEvent);
     if (!WriteFile(modem->master, buf, (DWORD) len, &res, &o))
-        GetOverlappedResult(modem->master, &o, &res, TRUE);
+        GetOverlappedResult(modem->master, &o, &res, true);
     CloseHandle(o.hEvent);
 #else
     res = write(modem->master, buf, len);
@@ -205,7 +205,7 @@ static int t31_call_control(t31_state_t *s, void *user_data, int op, const char 
         answered = 1;
         break;
     case AT_MODEM_CONTROL_HANGUP:
-        //done = TRUE;
+        //done = true;
         break;
     case AT_MODEM_CONTROL_OFFHOOK:
         break;
@@ -302,7 +302,7 @@ static int modem_wait_sock(modem_t *modem, int ms, modem_poll_t flags)
     ret = MODEM_POLL_ERROR;
     arHandles[0] = modem->threadAbort;
 
-    o.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    o.hEvent = CreateEvent(NULL, true, false, NULL);
     arHandles[1] = o.hEvent;
 
     /* Initialize the rest of the OVERLAPPED structure to zero. */
@@ -323,7 +323,7 @@ static int modem_wait_sock(modem_t *modem, int ms, modem_poll_t flags)
         else
         {
             /* IO is pending, wait for it to finish */
-            dwWait = WaitForMultipleObjects(2, arHandles, FALSE, INFINITE);
+            dwWait = WaitForMultipleObjects(2, arHandles, false, INFINITE);
             if (dwWait == WAIT_OBJECT_0 + 1  &&  !modem->block_read)
                 ret = MODEM_POLL_READ;
         }
@@ -415,8 +415,8 @@ static int t30_tests(int t38_mode, int use_ecm, int use_gui, int log_audio, int 
 
     /* Set up the test environment */
     t38_version = 1;
-    without_pacing = FALSE;
-    use_tep = FALSE;
+    without_pacing = false;
+    use_tep = false;
 
     wave_handle = NULL;
     if (log_audio)
@@ -456,7 +456,7 @@ static int t30_tests(int t38_mode, int use_ecm, int use_gui, int log_audio, int 
     {
         if (t38_mode)
         {
-            if ((t38_state = t38_terminal_init(NULL, FALSE, t38_tx_packet_handler, t31_state)) == NULL)
+            if ((t38_state = t38_terminal_init(NULL, false, t38_tx_packet_handler, t31_state)) == NULL)
             {
                 fprintf(stderr, "Cannot start the T.38 channel\n");
                 exit(2);
@@ -465,7 +465,7 @@ static int t30_tests(int t38_mode, int use_ecm, int use_gui, int log_audio, int 
         }
         else
         {
-            fax_state = fax_init(NULL, FALSE);
+            fax_state = fax_init(NULL, false);
             t30 = fax_get_t30_state(fax_state);
         }
         t30_set_rx_file(t30, OUTPUT_FILE_NAME, -1);
@@ -475,7 +475,7 @@ static int t30_tests(int t38_mode, int use_ecm, int use_gui, int log_audio, int 
     {
         if (t38_mode)
         {
-            if ((t38_state = t38_terminal_init(NULL, TRUE, t38_tx_packet_handler, t31_state)) == NULL)
+            if ((t38_state = t38_terminal_init(NULL, true, t38_tx_packet_handler, t31_state)) == NULL)
             {
                 fprintf(stderr, "Cannot start the T.38 channel\n");
                 exit(2);
@@ -484,7 +484,7 @@ static int t30_tests(int t38_mode, int use_ecm, int use_gui, int log_audio, int 
         }
         else
         {
-            fax_state = fax_init(NULL, TRUE);
+            fax_state = fax_init(NULL, true);
             t30 = fax_get_t30_state(fax_state);
         }
         t30_set_tx_file(t30, INPUT_FILE_NAME, -1, -1);
@@ -559,7 +559,7 @@ static int t30_tests(int t38_mode, int use_ecm, int use_gui, int log_audio, int 
         span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
         span_log_set_tag(logging, "T.31");
 
-        t31_set_mode(t31_state, TRUE);
+        t31_set_mode(t31_state, true);
         t38_set_t38_version(t38_core, t38_version);
     }
 
@@ -606,7 +606,7 @@ printf("ZZZ\n");
         if ((ret & MODEM_POLL_READ))
         {
 #if defined(WIN32)
-            o.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+            o.hEvent = CreateEvent(NULL, true, false, NULL);
 
             /* Initialize the rest of the OVERLAPPED structure to zero. */
             o.Internal = 0;
@@ -615,7 +615,7 @@ printf("ZZZ\n");
             o.OffsetHigh = 0;
             assert(o.hEvent);
             if (!ReadFile(modem->master, buf, avail, &read_bytes, &o))
-                GetOverlappedResult(modem->master, &o, &read_bytes, TRUE);
+                GetOverlappedResult(modem->master, &o, &read_bytes, true);
             CloseHandle (o.hEvent);
             if ((len = read_bytes))
 #else
@@ -767,11 +767,11 @@ int main(int argc, char *argv[])
 #endif
 
     decode_test_file = NULL;
-    log_audio = FALSE;
-    test_sending = FALSE;
-    t38_mode = FALSE;
-    use_ecm = FALSE;
-    use_gui = FALSE;
+    log_audio = false;
+    test_sending = false;
+    t38_mode = false;
+    use_ecm = false;
+    use_gui = false;
     g1050_model_no = 0;
     g1050_speed_pattern_no = 1;
     while ((opt = getopt(argc, argv, "d:eglM:rS:st")) != -1)
@@ -782,33 +782,33 @@ int main(int argc, char *argv[])
             decode_test_file = optarg;
             break;
         case 'e':
-            use_ecm = TRUE;
+            use_ecm = true;
             break;
         case 'g':
 #if defined(ENABLE_GUI)
-            use_gui = TRUE;
+            use_gui = true;
 #else
             fprintf(stderr, "Graphical monitoring not available\n");
             exit(2);
 #endif
             break;
         case 'l':
-            log_audio = TRUE;
+            log_audio = true;
             break;
         case 'M':
             g1050_model_no = optarg[0] - 'A' + 1;
             break;
         case 'r':
-            test_sending = FALSE;
+            test_sending = false;
             break;
         case 'S':
             g1050_speed_pattern_no = atoi(optarg);
             break;
         case 's':
-            test_sending = TRUE;
+            test_sending = true;
             break;
         case 't':
-            t38_mode = TRUE;
+            t38_mode = true;
             break;
         default:
             //usage();

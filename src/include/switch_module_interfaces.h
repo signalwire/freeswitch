@@ -377,6 +377,8 @@ struct switch_asr_interface {
 	switch_status_t (*asr_check_results) (switch_asr_handle_t *ah, switch_asr_flag_t *flags);
 	/*! function to read results from the ASR */
 	switch_status_t (*asr_get_results) (switch_asr_handle_t *ah, char **xmlstr, switch_asr_flag_t *flags);
+	/*! function to read result headers from the ASR */
+	switch_status_t (*asr_get_result_headers) (switch_asr_handle_t *ah, switch_event_t **headers, switch_asr_flag_t *flags);
 	/*! function to start ASR input timers */
 	switch_status_t (*asr_start_input_timers) (switch_asr_handle_t *ah);
 	void (*asr_text_param) (switch_asr_handle_t *ah, char *param, const char *val);

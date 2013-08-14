@@ -32,7 +32,7 @@
 
 \section t30_page_sec_1 What does it do?
 The T.30 protocol is the core protocol used for FAX transmission. This module
-implements most of its key featrues. It does not interface to the outside work.
+implements most of its key features. It does not interface to the outside work.
 Seperate modules do that for T.38, analogue line, and other forms of FAX
 communication.
 
@@ -184,13 +184,13 @@ typedef void (*t30_phase_e_handler_t)(t30_state_t *s, void *user_data, int compl
     \brief T.30 real time frame handler.
     \param s The T.30 context.
     \param user_data An opaque pointer.
-    \param direction TRUE for incoming, FALSE for outgoing.
+    \param incoming True for incoming, false for outgoing.
     \param msg The HDLC message.
     \param len The length of the message.
 */
 typedef void (*t30_real_time_frame_handler_t)(t30_state_t *s,
                                               void *user_data,
-                                              int direction,
+                                              bool direction,
                                               const uint8_t msg[],
                                               int len);
 
@@ -209,8 +209,8 @@ typedef int (*t30_document_handler_t)(t30_state_t *s, void *user_data, int statu
     \param user_data An opaque pointer.
     \param type The modem, tone or silence to be sent or received.
     \param bit_rate The bit rate of the modem to be sent or received.
-    \param short_train TRUE if the short training sequence should be used (where one exists).
-    \param use_hdlc FALSE for bit stream, TRUE for HDLC framing.
+    \param short_train True if the short training sequence should be used (where one exists).
+    \param use_hdlc False for bit stream, true for HDLC framing.
 */
 typedef void (*t30_set_handler_t)(void *user_data, int type, int bit_rate, int short_train, int use_hdlc);
 
@@ -448,7 +448,7 @@ typedef struct
 {
     /*! \brief The current bit rate for image transfer. */
     int bit_rate;
-    /*! \brief TRUE if error correcting mode is used. */
+    /*! \brief True if error correcting mode is used. */
     int error_correcting_mode;
     /*! \brief The number of pages sent so far. */
     int pages_tx;
@@ -502,7 +502,7 @@ extern "C"
 /*! Initialise a T.30 context.
     \brief Initialise a T.30 context.
     \param s The T.30 context.
-    \param calling_party TRUE if the context is for a calling party. FALSE if the
+    \param calling_party True if the context is for a calling party. False if the
            context is for an answering party.
     \param set_rx_type_handler
     \param set_rx_type_user_data
@@ -542,7 +542,7 @@ SPAN_DECLARE(int) t30_restart(t30_state_t *s);
     if the job has finished.
     \brief Check if a T.30 call is still active.
     \param s The T.30 context.
-    \return TRUE for call still active, or FALSE for call completed. */
+    \return True for call still active, or false for call completed. */
 SPAN_DECLARE(int) t30_call_active(t30_state_t *s);
 
 /*! Cleanup a T.30 context if the call terminates.
@@ -588,7 +588,7 @@ SPAN_DECLARE(void) t30_non_ecm_put(void *user_data, const uint8_t buf[], int len
     \param user_data The T.30 context.
     \param msg The HDLC message.
     \param len The length of the message, in octets.
-    \param ok TRUE if the frame was received without error. */
+    \param ok True if the frame was received without error. */
 SPAN_DECLARE_NONSTD(void) t30_hdlc_accept(void *user_data, const uint8_t msg[], int len, int ok);
 
 /*! Report the passage of time to the T.30 engine.
@@ -606,13 +606,13 @@ SPAN_DECLARE(void) t30_get_transfer_statistics(t30_state_t *s, t30_stats_t *t);
 /*! Request a local interrupt of FAX exchange.
     \brief Request a local interrupt of FAX exchange.
     \param s The T.30 context.
-    \param state TRUE to enable interrupt request, else FALSE. */
+    \param state True to enable interrupt request, else false. */
 SPAN_DECLARE(void) t30_local_interrupt_request(t30_state_t *s, int state);
 
 /*! Allow remote interrupts of FAX exchange.
     \brief Allow remote interrupts of FAX exchange.
     \param s The T.30 context.
-    \param state TRUE to allow interruptd, else FALSE. */
+    \param state True to allow interruptd, else false. */
 SPAN_DECLARE(void) t30_remote_interrupts_allowed(t30_state_t *s, int state);
 
 #if defined(__cplusplus)

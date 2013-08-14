@@ -1002,6 +1002,7 @@ static switch_bool_t test_profile(char *lcr_profile)
 	callback_t routes = { 0 };
 	switch_memory_pool_t *pool = NULL;
 	switch_event_t *event = NULL;
+	switch_bool_t r;
 
 	switch_core_new_memory_pool(&pool);
 	switch_event_create(&event, SWITCH_EVENT_MESSAGE);
@@ -1016,8 +1017,11 @@ static switch_bool_t test_profile(char *lcr_profile)
 	routes.lookup_number = "15555551212";
 	routes.cid = "18005551212";
 	lcr_destroy(routes.head);
-	return (lcr_do_lookup(&routes) == SWITCH_STATUS_SUCCESS) ?
-	        SWITCH_TRUE : SWITCH_FALSE;
+
+	r = (lcr_do_lookup(&routes) == SWITCH_STATUS_SUCCESS) ? SWITCH_TRUE : SWITCH_FALSE;
+	switch_event_destroy(&event);
+
+	return r;
 }
 
 static switch_status_t lcr_load_config()

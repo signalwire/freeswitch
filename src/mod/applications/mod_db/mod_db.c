@@ -342,6 +342,8 @@ static switch_status_t do_config()
 
 /* CORE DB STUFF */
 
+static int group_callback(void *pArg, int argc, char **argv, char **columnNames);
+
 SWITCH_STANDARD_API(db_api_function)
 {
 	int argc = 0;
@@ -409,6 +411,44 @@ SWITCH_STANDARD_API(db_api_function)
 		else {
 			stream->write_function(stream, "true");
 		}
+		goto done;
+	} else if (!strcasecmp(argv[0], "count")) {
+		char buf[256] = "";
+		if (argc < 2) {
+			sql = switch_mprintf("select count(distinct realm) from db_data");
+		} else if (argc < 3) {
+			sql = switch_mprintf("select count(data_key) from db_data where realm='%q'", argv[1]);
+		} else {
+			goto error;
+		}
+		limit_execute_sql2str(sql, buf, sizeof(buf));
+		switch_safe_free(sql);
+		stream->write_function(stream, "%s", buf);
+		goto done;
+	} else if (!strcasecmp(argv[0], "list")) {
+		char buf[4096] = "";
+		callback_t cbt = { 0 };
+		cbt.buf = buf;
+		cbt.len = sizeof(buf);
+
+		if (argc < 2) {
+			sql = switch_mprintf("select distinct realm,',' from db_data");
+		} else if (argc < 3) {
+			sql = switch_mprintf("select distinct data_key,',' from db_data where realm='%q'", argv[1]);
+		} else {
+			goto error;
+		}
+		switch_assert(sql);
+
+		limit_execute_sql_callback(sql, group_callback, &cbt);
+		switch_safe_free(sql);
+
+		if (!zstr(buf)) {
+			*(buf + (strlen(buf) - 1)) = '\0';
+    }
+
+		stream->write_function(stream, "%s", buf);
+
 		goto done;
 	}
 
@@ -628,11 +668,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_db_load)
 
 	SWITCH_ADD_APP(app_interface, "db", "Insert to the db", DB_DESC, db_function, DB_USAGE, SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "group", "Manage a group", GROUP_DESC, group_function, GROUP_USAGE, SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC);
-	SWITCH_ADD_API(commands_api_interface, "db", "db get/set", db_api_function, "[insert|delete|select]/<realm>/<key>/<value>");
+	SWITCH_ADD_API(commands_api_interface, "db", "db get/set", db_api_function, "[insert|delete|select|exists|count|list]/<realm>/<key>/<value>");
 	switch_console_set_complete("add db insert");
 	switch_console_set_complete("add db delete");
 	switch_console_set_complete("add db select");
 	switch_console_set_complete("add db exists");
+	switch_console_set_complete("add db count");
+	switch_console_set_complete("add db list");
 	SWITCH_ADD_API(commands_api_interface, "group", "group [insert|delete|call]", group_api_function, "[insert|delete|call]:<group name>:<url>");
 	switch_console_set_complete("add group insert");
 	switch_console_set_complete("add group delete");

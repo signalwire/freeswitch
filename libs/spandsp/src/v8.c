@@ -39,9 +39,15 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/queue.h"
 #include "spandsp/async.h"
@@ -57,6 +63,7 @@
 #include "spandsp/v8.h"
 
 #include "spandsp/private/logging.h"
+#include "spandsp/private/power_meter.h"
 #include "spandsp/private/fsk.h"
 #include "spandsp/private/modem_connect_tones.h"
 #include "spandsp/private/v8.h"
@@ -426,7 +433,7 @@ static void cm_jm_decode(v8_state_t *s)
         return;
     }
     /* We have a matching pair of CMs or JMs, so we are happy this is correct. */
-    s->got_cm_jm = TRUE;
+    s->got_cm_jm = true;
 
     span_log(&s->logging, SPAN_LOG_FLOW, "Decoding\n");
 
@@ -576,7 +583,7 @@ static void put_bit(void *user_data, int bit)
             if (data == 0)
             {
                 if (++s->zero_byte_count == 3)
-                    s->got_cj = TRUE;
+                    s->got_cj = true;
             }
             else
             {
@@ -602,8 +609,8 @@ static void v8_decode_init(v8_state_t *s)
     s->preamble_type = V8_SYNC_UNKNOWN;
     s->bit_stream = 0;
     s->cm_jm_len = 0;
-    s->got_cm_jm = FALSE;
-    s->got_cj = FALSE;
+    s->got_cm_jm = false;
+    s->got_cj = false;
     s->zero_byte_count = 0;
     s->rx_data_ptr = 0;
 }
@@ -750,7 +757,7 @@ SPAN_DECLARE_NONSTD(int) v8_tx(v8_state_t *s, int16_t *amp, int max_len)
         if (len < max_len)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "FSK ends\n");
-            s->fsk_tx_on = FALSE;
+            s->fsk_tx_on = false;
         }
     }
     return len;
@@ -831,7 +838,7 @@ SPAN_DECLARE_NONSTD(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
         fsk_tx_restart(&s->v21tx, &preset_fsk_specs[FSK_V21CH1]);
         send_ci(s);
         s->state = V8_CI_ON;
-        s->fsk_tx_on = TRUE;
+        s->fsk_tx_on = true;
         break;
     case V8_CI_ON:
         residual_samples = modem_connect_tones_rx(&s->ansam_rx, amp, len);
@@ -872,7 +879,7 @@ SPAN_DECLARE_NONSTD(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
                 fsk_tx_restart(&s->v21tx, &preset_fsk_specs[FSK_V21CH1]);
                 send_ci(s);
                 s->state = V8_CI_ON;
-                s->fsk_tx_on = TRUE;
+                s->fsk_tx_on = true;
             }
         }
         break;
@@ -893,7 +900,7 @@ SPAN_DECLARE_NONSTD(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
             send_v92(s);
             send_cm_jm(s);
             s->state = V8_CM_ON;
-            s->fsk_tx_on = TRUE;
+            s->fsk_tx_on = true;
         }
         break;
     case V8_CM_ON:
@@ -907,7 +914,7 @@ SPAN_DECLARE_NONSTD(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
             for (i = 0;  i < 3;  i++)
                 v8_put_byte(s, 0);
             s->state = V8_CJ_ON;
-            s->fsk_tx_on = TRUE;
+            s->fsk_tx_on = true;
             break;
         }
         if ((s->negotiation_timer -= len) <= 0)
@@ -960,7 +967,7 @@ SPAN_DECLARE_NONSTD(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
             s->state = V8_JM_ON;
             send_cm_jm(s);
             s->modem_connect_tone_tx_on = ms_to_samples(75);
-            s->fsk_tx_on = TRUE;
+            s->fsk_tx_on = true;
             break;
         }
         if ((s->negotiation_timer -= len) <= 0)
@@ -1023,7 +1030,7 @@ SPAN_DECLARE(logging_state_t *) v8_get_logging_state(v8_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) v8_restart(v8_state_t *s, int calling_party, v8_parms_t *parms)
+SPAN_DECLARE(int) v8_restart(v8_state_t *s, bool calling_party, v8_parms_t *parms)
 {
     memcpy(&s->parms, parms, sizeof(s->parms));
     memset(&s->result, 0, sizeof(s->result));
@@ -1071,14 +1078,14 @@ SPAN_DECLARE(int) v8_restart(v8_state_t *s, int calling_party, v8_parms_t *parms
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(v8_state_t *) v8_init(v8_state_t *s,
-                                   int calling_party,
+                                   bool calling_party,
                                    v8_parms_t *parms,
                                    v8_result_handler_t result_handler,
                                    void *user_data)
 {
     if (s == NULL)
     {
-        if ((s = (v8_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (v8_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -1103,7 +1110,7 @@ SPAN_DECLARE(int) v8_free(v8_state_t *s)
     int ret;
 
     ret = queue_free(s->tx_queue);
-    free(s);
+    span_free(s);
     return ret;
 }
 /*- End of function --------------------------------------------------------*/

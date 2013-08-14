@@ -212,6 +212,14 @@ ImageLayer(34732)                                                   LONG
 #define     COMPRESSION_T43             10
 #endif
 
+typedef enum
+{
+    T4_IMAGE_FORMAT_OK = 0,
+    T4_IMAGE_FORMAT_INCOMPATIBLE = -1,
+    T4_IMAGE_FORMAT_NOSIZESUPPORT = -2,
+    T4_IMAGE_FORMAT_NORESSUPPORT = -3
+} t4_image_format_status_t;
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -267,11 +275,53 @@ SPAN_DECLARE(int) t4_tx_get_bit(t4_tx_state_t *s);
             indicates that the end of the document has been reached. */
 SPAN_DECLARE(int) t4_tx_get(t4_tx_state_t *s, uint8_t buf[], size_t max_len);
 
-/*! \brief Set the encoding for the encoded data.
+/*! \brief Get the compression for the encoded data.
     \param s The T.4 context.
-    \param encoding The encoding.
-    \return 0 for success, otherwise -1. */
-SPAN_DECLARE(int) t4_tx_set_tx_encoding(t4_tx_state_t *s, int encoding);
+    \return the chosen compression for success, otherwise -1. */
+SPAN_DECLARE(int) t4_tx_get_tx_compression(t4_tx_state_t *s);
+
+/*! \brief Get the image type of the encoded data.
+    \param s The T.4 context.
+    \return the chosen image type for success, otherwise -1. */
+SPAN_DECLARE(int) t4_tx_get_tx_image_type(t4_tx_state_t *s);
+
+/*! \brief Get the X and Y resolution code of the current page.
+    \param s The T.4 context.
+    \return The resolution code,. */
+SPAN_DECLARE(int) t4_tx_get_tx_resolution(t4_tx_state_t *s);
+
+/*! \brief Get the column-to-column (x) resolution of the current page.
+    \param s The T.4 context.
+    \return The resolution, in pixels per metre. */
+SPAN_DECLARE(int) t4_tx_get_tx_x_resolution(t4_tx_state_t *s);
+
+/*! \brief Get the row-to-row (y) resolution of the current page.
+    \param s The T.4 context.
+    \return The resolution, in pixels per metre. */
+SPAN_DECLARE(int) t4_tx_get_tx_y_resolution(t4_tx_state_t *s);
+
+/*! \brief Get the width of the encoded data.
+    \param s The T.4 context.
+    \return the width, in pixels, for success, otherwise -1. */
+SPAN_DECLARE(int) t4_tx_get_tx_image_width(t4_tx_state_t *s);
+
+/*! \brief Get the width code of the encoded data.
+    \param s The T.4 context.
+    \return the width code, for success, otherwise -1. */
+SPAN_DECLARE(int) t4_tx_get_tx_image_width_code(t4_tx_state_t *s);
+
+/*! \brief Auto-select the format in which to send the image.
+    \param s The T.4 context.
+    \param supported_compressions The set of compressions supported for this transmission
+    \param supported_image_sizes The set of image sizes supported for this transmission
+    \param supported_bilevel_resolutions The set of bi-level resolutions supported for this transmission
+    \param supported_colour_resolutions The set of gray scale and colour resolutions supported for this transmission
+    \return A t4_image_format_status_t result code */
+SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
+                                            int supported_compressions,
+                                            int supported_image_sizes,
+                                            int supported_bilevel_resolutions,
+                                            int supported_colour_resolutions);
 
 /*! \brief Set the minimum number of encoded bits per row. This allows the
            makes the encoding process to be set to comply with the minimum row
@@ -279,11 +329,6 @@ SPAN_DECLARE(int) t4_tx_set_tx_encoding(t4_tx_state_t *s, int encoding);
     \param s The T.4 context.
     \param bits The minimum number of bits per row. */
 SPAN_DECLARE(void) t4_tx_set_min_bits_per_row(t4_tx_state_t *s, int bits);
-
-/*! \brief Set the width of the image.
-    \param s The T.4 context.
-    \param image_width The image width, in pixels. */
-SPAN_DECLARE(void) t4_tx_set_image_width(t4_tx_state_t *s, int image_width);
 
 /*! \brief Set the maximum number of 2D encoded rows between 1D encoded rows. This
            is only valid for T.4 2D encoding.
@@ -315,8 +360,8 @@ SPAN_DECLARE(void) t4_tx_set_header_tz(t4_tx_state_t *s, tz_t *tz);
 /*! Set page header extends or overlays the image mode.
     \brief Set page header overlay mode.
     \param s The T.4 context.
-    \param header_overlays_image TRUE for overlay, or FALSE for extend the page. */
-SPAN_DECLARE(void) t4_tx_set_header_overlays_image(t4_tx_state_t *s, int header_overlays_image);
+    \param header_overlays_image True for overlay, or false to extend the page. */
+SPAN_DECLARE(void) t4_tx_set_header_overlays_image(t4_tx_state_t *s, bool header_overlays_image);
 
 /*! \brief Set the row read handler for a T.4 transmit context.
     \param s The T.4 transmit context.
@@ -324,37 +369,6 @@ SPAN_DECLARE(void) t4_tx_set_header_overlays_image(t4_tx_state_t *s, int header_
     \param user_data An opaque pointer passed to the handler routine.
     \return 0 for success, otherwise -1. */
 SPAN_DECLARE(int) t4_tx_set_row_read_handler(t4_tx_state_t *s, t4_row_read_handler_t handler, void *user_data);
-
-/*! \brief Set the row squashing ratio, for adjusting row-to-row (y) resolution of bi-level
-           images for a T.4 transmit context.
-    \param s The T.4 transmit context.
-    \param row_squashing_ratio Vertical squashing ratio. */
-SPAN_DECLARE(void) t4_tx_set_row_squashing_ratio(t4_tx_state_t *s, int row_squashing_ratio);
-
-/*! \brief Get the row-to-row (y) resolution of the current page.
-    \param s The T.4 context.
-    \return The resolution, in pixels per metre. */
-SPAN_DECLARE(int) t4_tx_get_y_resolution(t4_tx_state_t *s);
-
-/*! \brief Get the column-to-column (x) resolution of the current page.
-    \param s The T.4 context.
-    \return The resolution, in pixels per metre. */
-SPAN_DECLARE(int) t4_tx_get_x_resolution(t4_tx_state_t *s);
-
-/*! \brief Get the X and Y resolution code of the current page.
-    \param s The T.4 context.
-    \return The resolution code,. */
-SPAN_DECLARE(int) t4_tx_get_resolution(t4_tx_state_t *s);
-
-/*! \brief Get the width of the current page, in pixel columns.
-    \param s The T.4 context.
-    \return The number of columns. */
-SPAN_DECLARE(int) t4_tx_get_image_width(t4_tx_state_t *s);
-
-/*! \brief Get the type of the current page, in pixel columns.
-    \param s The T.4 context.
-    \return The type. */
-SPAN_DECLARE(int) t4_tx_get_image_type(t4_tx_state_t *s);
 
 /*! \brief Get the number of pages in the file.
     \param s The T.4 context.

@@ -1186,6 +1186,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 	cc_t cc = { 0 };
 	switch_codec_implementation_t read_impl = { 0 };
 	int got_file = 0;
+	switch_bool_t skip_record_check = switch_true(switch_channel_get_variable(channel, "skip_record_check"));
 
 	switch_core_session_get_read_impl(session, &read_impl);
 
@@ -1265,6 +1266,9 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 				*(input + 1) = '\0';
 				status = SWITCH_STATUS_SUCCESS;
 				*cc.buf = '\0';
+			} else if (skip_record_check) {
+				/* Skip the record check and simply return */
+				goto end;
 			} else {
 				(void) vm_macro_get(session, VM_RECORD_FILE_CHECK_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout);
 			}
@@ -1596,7 +1600,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 		
 		args.input_callback = cancel_on_dtmf;
 		
-		switch_snprintf(key_buf, sizeof(key_buf), "%s:%s:%s:%s:%s:%s%s%s", profile->listen_file_key, profile->save_file_key,
+		switch_snprintf(key_buf, sizeof(key_buf), "%s:%s:%s:%s:%s:%s%s%s", profile->repeat_msg_key, profile->save_file_key,
 						profile->delete_file_key, profile->email_key, profile->callback_key,
 						profile->forward_key, cbt->email ? ":" : "", cbt->email ? cbt->email : "");
 
@@ -1668,6 +1672,9 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 				char vm_cc[256] = "";
 				char macro_buf[80] = "";
 
+				switch_xml_t xml_root, x_domain, x_param, x_params, x_user = NULL;
+				switch_event_t *my_params = NULL;
+				switch_bool_t vm_enabled = SWITCH_TRUE;
 
 				switch_snprintf(key_buf, sizeof(key_buf), "%s:%s", profile->prepend_key, profile->forward_key);
 				TRY_CODE(vm_macro_get(session, VM_FORWARD_PREPEND_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout));
@@ -1708,15 +1715,51 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 				cmd = switch_core_session_sprintf(session, "%s@%s@%s %s %s '%s'", vm_cc, cbt->domain, profile->name, 
 												  new_file_path, cbt->cid_number, cbt->cid_name);
 
-				if (voicemail_inject(cmd, session) == SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s\n", vm_cc);
-					TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "saved", NULL, NULL));
-					cbt->move = VM_MOVE_SAME;
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to Carbon Copy to %s\n", vm_cc);
+				switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
+				switch_assert(my_params);
+
+				if (switch_xml_locate_domain(cbt->domain, my_params, &xml_root, &x_domain) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to forward message - Cannot locate domain %s\n", cbt->domain);
 					TRY_CODE(switch_ivr_phrase_macro(session, VM_INVALID_EXTENSION_MACRO, vm_cc, NULL, NULL));
 					goto get_exten;
+				} else if (switch_xml_locate_user_in_domain(vm_cc, x_domain, &x_user, NULL) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to forward message - Cannot locate user %s@%s\n", vm_cc, cbt->domain);
+					TRY_CODE(switch_ivr_phrase_macro(session, VM_INVALID_EXTENSION_MACRO, vm_cc, NULL, NULL));
+					goto get_exten;
+				} else {
+					x_params = switch_xml_child(x_user, "params");
+
+					for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
+						const char *var = switch_xml_attr_soft(x_param, "name");
+						const char *val = switch_xml_attr_soft(x_param, "value");
+						if (zstr(var) || zstr(val)) {
+							continue; /* Ignore empty entires */
+						}
+
+						if (!strcasecmp(var, "vm-enabled")) {
+							vm_enabled = !switch_false(val);
+						}
+					}
+
+					if (!vm_enabled) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Failed to forward message - Voicemail is disabled for user %s@%s\n", vm_cc, cbt->domain);
+						TRY_CODE(switch_ivr_phrase_macro(session, VM_INVALID_EXTENSION_MACRO, vm_cc, NULL, NULL));
+						goto get_exten;
+					} else {
+						if (voicemail_inject(cmd, session) == SWITCH_STATUS_SUCCESS) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Forwarded message to %s\n", vm_cc);
+							TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "saved", NULL, NULL));
+							cbt->move = VM_MOVE_SAME;
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to forward message to %s\n", vm_cc);
+							TRY_CODE(switch_ivr_phrase_macro(session, VM_INVALID_EXTENSION_MACRO, vm_cc, NULL, NULL));
+							goto get_exten;
+						}
+					}
 				}
+				
+				switch_xml_free(xml_root);
+				switch_event_destroy(&my_params);
 			} else if (!strcmp(input, profile->delete_file_key) || (!strcmp(input, profile->email_key) && !zstr(cbt->email))) {
 				char *sql = switch_mprintf("update voicemail_msgs set flags='delete' where uuid='%s'", cbt->uuid);
 				vm_execute_sql(profile, sql, profile->mutex);
@@ -1875,7 +1918,7 @@ static void update_mwi(vm_profile_t *profile, const char *id, const char *domain
 		yn = "yes";
 	}
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", yn);
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MWI-Update-Reason", update_reason);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Update-Reason", update_reason);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", "%s@%s", id, domain_name);
 	/* 
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)", total_new_messages, total_saved_messages,
@@ -2833,7 +2876,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		update_mwi(profile, myid, domain_name, myfolder, MWI_REASON_NEW);
 	}
 
-	if (send_mail && !zstr(vm_email) && switch_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
+	if (send_mail && (!zstr(vm_email) || !zstr(vm_notify_email)) && switch_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
 		switch_event_t *event;
 		char *from;
 		char *body;
@@ -3311,10 +3354,12 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	int disk_quota = 0;
 	switch_bool_t skip_greeting = switch_true(switch_channel_get_variable(channel, "skip_greeting"));
 	switch_bool_t skip_instructions = switch_true(switch_channel_get_variable(channel, "skip_instructions"));
+	switch_bool_t skip_record_urgent_check = switch_true(switch_channel_get_variable(channel, "skip_record_urgent_check"));
 	switch_bool_t vm_enabled = SWITCH_TRUE;
 
 	switch_channel_set_variable(channel, "skip_greeting", NULL);
 	switch_channel_set_variable(channel, "skip_instructions", NULL);
+	switch_channel_set_variable(channel, "skip_record_urgent_check", NULL);
 
 	memset(&cbt, 0, sizeof(cbt));
 
@@ -3589,13 +3634,14 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		char input[10] = "", term = 0;
 
 		switch_snprintf(key_buf, sizeof(key_buf), "%s:%s", profile->urgent_key, profile->terminator_key);
-
-		(void) vm_macro_get(session, VM_RECORD_URGENT_CHECK_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout);
-		if (*profile->urgent_key == *input) {
-			read_flags = URGENT_FLAG_STRING;
-			(void) switch_ivr_phrase_macro(session, VM_ACK_MACRO, "marked-urgent", NULL, NULL);
-		} else {
-			(void) switch_ivr_phrase_macro(session, VM_ACK_MACRO, "saved", NULL, NULL);
+		if (!skip_record_urgent_check) {
+			(void) vm_macro_get(session, VM_RECORD_URGENT_CHECK_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout);
+			if (*profile->urgent_key == *input) {
+				read_flags = URGENT_FLAG_STRING;
+				(void) switch_ivr_phrase_macro(session, VM_ACK_MACRO, "marked-urgent", NULL, NULL);
+			} else {
+				(void) switch_ivr_phrase_macro(session, VM_ACK_MACRO, "saved", NULL, NULL);
+			}
 		}
 	}
 

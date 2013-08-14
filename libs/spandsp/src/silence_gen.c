@@ -40,11 +40,17 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <assert.h>
 #include <limits.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/async.h"
 #include "spandsp/silence_gen.h"
@@ -119,7 +125,7 @@ SPAN_DECLARE(silence_gen_state_t *) silence_gen_init(silence_gen_state_t *s, int
 {
     if (s == NULL)
     {
-        if ((s = (silence_gen_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (silence_gen_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -137,7 +143,7 @@ SPAN_DECLARE(int) silence_gen_release(silence_gen_state_t *s)
 SPAN_DECLARE(int) silence_gen_free(silence_gen_state_t *s)
 {
     if (s)
-        free(s);
+        span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

@@ -109,21 +109,7 @@ That's it!
 /*!
     The generic packet loss concealer context.
 */
-typedef struct
-{
-    /*! Consecutive erased samples */
-    int missing_samples;
-    /*! Current offset into pitch period */
-    int pitch_offset;
-    /*! Pitch estimate */
-    int pitch;
-    /*! Buffer for a cycle of speech */
-    float pitchbuf[PLC_PITCH_MIN];
-    /*! History buffer */
-    int16_t history[PLC_HISTORY_LEN];
-    /*! Current pointer into the history buffer */
-    int buf_ptr;
-} plc_state_t;
+typedef struct plc_state_s plc_state_t;
 
 
 #if defined(__cplusplus)

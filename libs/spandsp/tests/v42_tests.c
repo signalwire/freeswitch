@@ -128,14 +128,14 @@ static void v42_put_frames(void *user_data, const uint8_t msg[], int len)
     {
         if (++count == 5)
         {
-            v42_set_local_busy_status(s, TRUE);
+            v42_set_local_busy_status(s, true);
             xxx = 1;
         }
     }
     else
     {
         if (xxx  &&  ++count == 45)
-            v42_set_local_busy_status(caller, FALSE);
+            v42_set_local_busy_status(caller, false);
     }
 }
 /*- End of function --------------------------------------------------------*/
@@ -144,13 +144,13 @@ int main(int argc, char *argv[])
 {
     int i;
     int bit;
-    int insert_caller_bit_errors;
-    int insert_answerer_bit_errors;
+    bool insert_caller_bit_errors;
+    bool insert_answerer_bit_errors;
     int opt;
 
-    insert_caller_bit_errors = FALSE;
-    insert_answerer_bit_errors = FALSE;
-    variable_length = FALSE;
+    insert_caller_bit_errors = false;
+    insert_answerer_bit_errors = false;
+    variable_length = false;
     while ((opt = getopt(argc, argv, "bv")) != -1)
     {
         switch (opt)
@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
             insert_answerer_bit_errors = 10000;
             break;
         case 'v':
-            variable_length = TRUE;
+            variable_length = true;
             break;
         default:
             //usage();
@@ -169,8 +169,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    caller = v42_init(&callerx, TRUE, TRUE, v42_get_frames, v42_put_frames, (void *) &callerx);
-    answerer = v42_init(&answererx, FALSE, TRUE, v42_get_frames, v42_put_frames, (void *) &answererx);
+    caller = v42_init(&callerx, true, true, v42_get_frames, v42_put_frames, (void *) &callerx);
+    answerer = v42_init(&answererx, false, true, v42_get_frames, v42_put_frames, (void *) &answererx);
     v42_set_status_callback(caller, v42_status, (void *) caller);
     v42_set_status_callback(answerer, v42_status, (void *) answerer);
     v42_restart(caller);

@@ -41,12 +41,18 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <assert.h>
 #include <memory.h>
 #include <tiffio.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/t38_core.h"
@@ -455,7 +461,7 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
         //printf("Count is %d\n", count);
         /* Do a dummy run through the fields to check we have a complete and uncorrupted packet. */
         prev_ptr = ptr;
-        other_half = FALSE;
+        other_half = false;
         t30_field_type = 0;
         for (i = 0;  i < (int) count;  i++)
         {
@@ -472,7 +478,7 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
                     /* Decode field_type */
                     t30_field_type = buf[ptr] & 0x7;
                     ptr++;
-                    other_half = FALSE;
+                    other_half = false;
                 }
                 else
                 {
@@ -482,7 +488,7 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
                     if (field_data_present)
                         ptr++;
                     else
-                        other_half = TRUE;
+                        other_half = true;
                 }
                 if (t30_field_type > T38_FIELD_T4_NON_ECM_SIG_END)
                 {
@@ -537,7 +543,7 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
         /* Things look alright in the data, so lets run through the fields again, actually processing them.
            There is no need to do all the error checking along the way on this pass. */
         ptr = prev_ptr;
-        other_half = FALSE;
+        other_half = false;
         for (i = 0;  i < (int) count;  i++)
         {
             if (s->t38_version == 0)
@@ -551,7 +557,7 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
                     /* Decode field_type */
                     t30_field_type = buf[ptr] & 0x7;
                     ptr++;
-                    other_half = FALSE;
+                    other_half = false;
                 }
                 else
                 {
@@ -561,7 +567,7 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
                     if (field_data_present)
                         ptr++;
                     else
-                        other_half = TRUE;
+                        other_half = true;
                 }
             }
             else
@@ -1001,19 +1007,19 @@ SPAN_DECLARE(void) t38_set_data_transport_protocol(t38_core_state_t *s, int data
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t38_set_fill_bit_removal(t38_core_state_t *s, int fill_bit_removal)
+SPAN_DECLARE(void) t38_set_fill_bit_removal(t38_core_state_t *s, bool fill_bit_removal)
 {
     s->fill_bit_removal = fill_bit_removal;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t38_set_mmr_transcoding(t38_core_state_t *s, int mmr_transcoding)
+SPAN_DECLARE(void) t38_set_mmr_transcoding(t38_core_state_t *s, bool mmr_transcoding)
 {
     s->mmr_transcoding = mmr_transcoding;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t38_set_jbig_transcoding(t38_core_state_t *s, int jbig_transcoding)
+SPAN_DECLARE(void) t38_set_jbig_transcoding(t38_core_state_t *s, bool jbig_transcoding)
 {
     s->jbig_transcoding = jbig_transcoding;
 }
@@ -1037,7 +1043,7 @@ SPAN_DECLARE(void) t38_set_t38_version(t38_core_state_t *s, int t38_version)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t38_set_sequence_number_handling(t38_core_state_t *s, int check)
+SPAN_DECLARE(void) t38_set_sequence_number_handling(t38_core_state_t *s, bool check)
 {
     s->check_sequence_numbers = check;
 }
@@ -1049,7 +1055,7 @@ SPAN_DECLARE(void) t38_set_pace_transmission(t38_core_state_t *s, int pace_trans
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t38_set_tep_handling(t38_core_state_t *s, int allow_for_tep)
+SPAN_DECLARE(void) t38_set_tep_handling(t38_core_state_t *s, bool allow_for_tep)
 {
     s->allow_for_tep = allow_for_tep;
 }
@@ -1109,7 +1115,7 @@ SPAN_DECLARE(t38_core_state_t *) t38_core_init(t38_core_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (t38_core_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (t38_core_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -1120,14 +1126,14 @@ SPAN_DECLARE(t38_core_state_t *) t38_core_init(t38_core_state_t *s,
        T.38 domain - e.g. from SDP data. */
     s->data_rate_management_method = T38_DATA_RATE_MANAGEMENT_TRANSFERRED_TCF;
     s->data_transport_protocol = T38_TRANSPORT_UDPTL;
-    s->fill_bit_removal = FALSE;
-    s->mmr_transcoding = FALSE;
-    s->jbig_transcoding = FALSE;
+    s->fill_bit_removal = false;
+    s->mmr_transcoding = false;
+    s->jbig_transcoding = false;
     s->max_buffer_size = 400;
     s->max_datagram_size = 100;
     s->t38_version = 0;
-    s->check_sequence_numbers = TRUE;
-    s->pace_transmission = TRUE;
+    s->check_sequence_numbers = true;
+    s->pace_transmission = true;
 
     /* Set some defaults */
     s->category_control[T38_PACKET_CATEGORY_INDICATOR] = 1;
@@ -1157,7 +1163,7 @@ SPAN_DECLARE(int) t38_core_release(t38_core_state_t *s)
 SPAN_DECLARE(int) t38_core_free(t38_core_state_t *s)
 {
     if (s)
-        free(s);
+        span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

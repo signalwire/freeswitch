@@ -33,14 +33,14 @@
 */
 struct fax_modems_state_s
 {
-    /*! TRUE is talker echo protection should be sent for the image modems */
-    int use_tep;
+    /*! True is talker echo protection should be sent for the image modems */
+    bool use_tep;
     /*! \brief The callback function used to report detected tones. */
     tone_report_func_t tone_callback;
     /*! \brief A user specified opaque pointer passed to the tone_callback function. */
     void *tone_callback_user_data;
 
-    /*! If TRUE, transmit silence when there is nothing else to transmit. If FALSE return only
+    /*! If true, transmit silence when there is nothing else to transmit. If false return only
         the actual generated audio. Note that this only affects untimed silences. Timed silences
         (e.g. the 75ms silence between V.21 and a high speed modem) will alway be transmitted as
         silent audio. */
@@ -110,12 +110,12 @@ struct fax_modems_state_s
     hdlc_frame_handler_t hdlc_accept;
     void *hdlc_accept_user_data;
 
-    /*! \brief TRUE if a carrier is present. Otherwise FALSE. */
-    int rx_signal_present;
-    /*! \brief TRUE if a modem has trained correctly. */
-    int rx_trained;
-    /*! \brief TRUE if an HDLC frame has been received correctly. */
-    int rx_frame_received;
+    /*! \brief True if a carrier is present. Otherwise false. */
+    bool rx_signal_present;
+    /*! \brief True if a modem has trained correctly. */
+    bool rx_trained;
+    /*! \brief True if an HDLC frame has been received correctly. */
+    bool rx_frame_received;
 
     int deferred_rx_handler_updates;
     /*! \brief The current receive signal handler */
@@ -145,8 +145,8 @@ struct fax_modems_state_s
     /*! \brief The current bit rate of the receiver. */
     int rx_bit_rate;
 
-    /*! \brief If TRUE, transmission is in progress */
-    int transmit;
+    /*! \brief If True, transmission is in progress */
+    bool transmit;
     /*! \brief Audio logging file handle for received audio. */
     int audio_rx_log;
     /*! \brief Audio logging file handle for transmitted audio. */

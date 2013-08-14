@@ -74,9 +74,9 @@ SPAN_DECLARE(v27ter_rx_state_t *) v27ter_rx_init(v27ter_rx_state_t *s, int bit_r
     \brief Reinitialise an existing V.27ter modem receive context.
     \param s The modem context.
     \param bit_rate The bit rate of the modem. Valid values are 2400 and 4800.
-    \param old_train TRUE if a previous trained values are to be reused.
+    \param old_train True if a previous trained values are to be reused.
     \return 0 for OK, -1 for bad parameter */
-SPAN_DECLARE(int) v27ter_rx_restart(v27ter_rx_state_t *s, int bit_rate, int old_train);
+SPAN_DECLARE(int) v27ter_rx_restart(v27ter_rx_state_t *s, int bit_rate, bool old_train);
 
 /*! Release a V.27ter modem receive context.
     \brief Release a V.27ter modem receive context.

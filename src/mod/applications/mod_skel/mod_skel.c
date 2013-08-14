@@ -214,6 +214,28 @@ SWITCH_STANDARD_API(skel_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void mycb(switch_core_session_t *session, switch_channel_callstate_t callstate, switch_device_record_t *drec)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_CRIT, 
+					  "%s device: %s\nState: %s Dev State: %s/%s Total:%u Offhook:%u Active:%u Held:%u Hungup:%u Dur: %u %s\n", 
+					  switch_channel_get_name(channel),
+					  drec->device_id,
+					  switch_channel_callstate2str(callstate),
+					  switch_channel_device_state2str(drec->last_state),
+					  switch_channel_device_state2str(drec->state),
+					  drec->stats.total,
+					  drec->stats.offhook,
+					  drec->stats.active,
+					  drec->stats.held,
+					  drec->stats.hup,
+					  drec->active_stop ? (uint32_t)(drec->active_stop - drec->active_start) / 1000 : 0,
+					  switch_channel_test_flag(channel, CF_FINAL_DEVICE_LEG) ? "FINAL LEG" : "");
+
+}
+
+
 /* Macro expands to: switch_status_t mod_skel_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool) */
 SWITCH_MODULE_LOAD_FUNCTION(mod_skel_load)
 {
@@ -227,6 +249,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skel_load)
 
 	SWITCH_ADD_API(api_interface, "skel", "Skel API", skel_function, "syntax");
 
+	switch_channel_bind_device_state_handler(mycb, NULL);
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -237,6 +261,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skel_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skel_shutdown)
 {
 	/* Cleanup dynamically allocated config settings */
+	switch_channel_unbind_device_state_handler(mycb);
 	switch_xml_config_cleanup(instructions);
 	return SWITCH_STATUS_SUCCESS;
 }

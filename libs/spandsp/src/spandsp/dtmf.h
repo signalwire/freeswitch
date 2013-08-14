@@ -156,7 +156,7 @@ SPAN_DECLARE(void) dtmf_rx_set_realtime_callback(dtmf_rx_state_t *s,
 
 /*! \brief Adjust a DTMF receiver context.
     \param s The DTMF receiver context.
-    \param filter_dialtone TRUE to enable filtering of dialtone, FALSE
+    \param filter_dialtone True to enable filtering of dialtone, false
            to disable, < 0 to leave unchanged.
     \param twist Acceptable twist, in dB. < 0.0 to leave unchanged.
     \param reverse_twist Acceptable reverse twist, in dB. < 0.0 to leave unchanged.

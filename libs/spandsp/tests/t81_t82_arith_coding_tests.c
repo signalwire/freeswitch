@@ -52,9 +52,6 @@ the present time.
 
 #define MSG_SIZE 10000
 
-#define FALSE 0
-#define TRUE (!FALSE)
-
 uint8_t msg[MSG_SIZE];
 
 int32_t msg_len;
@@ -134,7 +131,7 @@ int main(int argc, char *argv[])
 
     printf("Arithmetic decoder tests from ITU-T T.82/7.1\n");
     printf("Decoding byte by byte...\n");
-    test_failed = FALSE;
+    test_failed = false;
     if ((sd = t81_t82_arith_decode_init(NULL)) == NULL)
     {
         fprintf(stderr, "Failed to allocate arithmetic decoder!\n");
@@ -162,7 +159,7 @@ int main(int argc, char *argv[])
                 printf("Bad pixel %d, byte %" PRIdPTR ".\n\n",
                        i*16 + j + 1,
                        sd->pscd_ptr - sd->pscd_end);
-                test_failed = TRUE;
+                test_failed = true;
                 break;
             }
             if (pix != ((pix_7_1[i] >> (15 - j)) & 1))
@@ -170,7 +167,7 @@ int main(int argc, char *argv[])
                 printf("Bad PIX (%d) at pixel %d.\n\n",
                        pix,
                        i*16 + j + 1);
-                test_failed = TRUE;
+                test_failed = true;
                 break;
             }
         }
@@ -179,7 +176,7 @@ int main(int argc, char *argv[])
     {
         printf("%" PRIdPTR " bytes left after decoder finished.\n\n",
                sd->pscd_end - sd->pscd_ptr - 2);
-        test_failed = TRUE;
+        test_failed = true;
     }
     if (test_failed)
     {
@@ -189,7 +186,7 @@ int main(int argc, char *argv[])
     printf("Test passed\n");
 
     printf("Decoding chunk by chunk...\n");
-    test_failed = FALSE;
+    test_failed = false;
     t81_t82_arith_decode_init(sd);
     sd->pscd_ptr = sde_7_1;
     sd->pscd_end = sde_7_1 + SDE_7_1_FULL_LEN;
@@ -203,7 +200,7 @@ int main(int argc, char *argv[])
                 printf("Bad pixel %d, byte %" PRIdPTR ".\n\n",
                        i*16 + j + 1,
                        sd->pscd_ptr - sd->pscd_end);
-                test_failed = TRUE;
+                test_failed = true;
                 break;
             }
             if (pix != ((pix_7_1[i] >> (15 - j)) & 1))
@@ -211,7 +208,7 @@ int main(int argc, char *argv[])
                 printf("Bad PIX (%d) at pixel %d.\n\n",
                        pix,
                        i*16 + j + 1);
-                test_failed = TRUE;
+                test_failed = true;
                 break;
             }
         }
@@ -220,7 +217,7 @@ int main(int argc, char *argv[])
     {
         printf("%" PRIdPTR " bytes left after decoder finished.\n\n",
                sd->pscd_end - sd->pscd_ptr - 2);
-        test_failed = TRUE;
+        test_failed = true;
     }
     if (test_failed)
     {
