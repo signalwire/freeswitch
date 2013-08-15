@@ -297,11 +297,13 @@ char *generate_pai_str(private_object_t *tech_pvt)
 			pai = switch_core_session_sprintf(tech_pvt->session, "%s: \"%s\" <%s>%s\n"
 											  "X-FS-Display-Name: %s\nX-FS-Display-Number: %s\n",
 											  header, callee_name, callee_number,
-											  tech_pvt->cid_type == CID_TYPE_RPID ? ";party=calling;privacy=off;screen=no" : "",
+											  tech_pvt->cid_type == CID_TYPE_RPID && !switch_stristr("aastra", ua) ?
+											  ";party=calling;privacy=off;screen=no" : "",
 											  callee_name, callee_number);
 		} else {
 			pai = switch_core_session_sprintf(tech_pvt->session, "%s: \"%s\" <%s>%s\n", header, callee_name, callee_number,
-											  tech_pvt->cid_type == CID_TYPE_RPID ? ";party=calling;privacy=off;screen=no" : "");
+											  tech_pvt->cid_type == CID_TYPE_RPID && !switch_stristr("aastra", ua) ?
+											  ";party=calling;privacy=off;screen=no" : "");
 		}
 
 	}
