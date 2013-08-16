@@ -63,7 +63,7 @@ static void *SWITCH_THREAD_FUNC video_bridge_thread(switch_thread_t *thread, voi
 
 	if (!switch_stristr("loopback", source) && !switch_stristr("loopback", b_source)) {
 		switch_channel_set_flag(channel, CF_VIDEO_PASSIVE);
-		switch_channel_set_flag(b_channel, CF_VIDEO_PASSIVE);
+		//switch_channel_set_flag(b_channel, CF_VIDEO_PASSIVE);
 	}
 
 	switch_core_session_refresh_video(vh->session_a);
@@ -94,7 +94,7 @@ static void *SWITCH_THREAD_FUNC video_bridge_thread(switch_thread_t *thread, voi
 	}
 
 	switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
-	switch_channel_clear_flag(b_channel, CF_VIDEO_PASSIVE);
+	//switch_channel_clear_flag(b_channel, CF_VIDEO_PASSIVE);
 
 	switch_core_session_kill_channel(vh->session_b, SWITCH_SIG_BREAK);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(vh->session_a), SWITCH_LOG_DEBUG, "%s video thread ended.\n", switch_channel_get_name(channel));
@@ -624,7 +624,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	if (vid_thread) {
 		switch_status_t st;
 
-		if (vh.up) {
+		if (vh.up == 1) {
+			vh.up = -1;
 			switch_core_session_kill_channel(session_a, SWITCH_SIG_BREAK);
 			switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 		}

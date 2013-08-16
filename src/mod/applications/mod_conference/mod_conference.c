@@ -7472,6 +7472,8 @@ SWITCH_STANDARD_APP(conference_function)
 		switch_channel_set_app_flag_key("conf_silent", channel, CONF_SILENT_REQ);
 	}
 
+	switch_core_session_video_reset(session);
+
 	switch_channel_set_flag(channel, CF_CONFERENCE);
 
 	if (switch_channel_answer(channel) != SWITCH_STATUS_SUCCESS) {
@@ -8028,6 +8030,7 @@ SWITCH_STANDARD_APP(conference_function)
 
 	switch_channel_clear_flag(channel, CF_CONFERENCE);
 
+	switch_core_session_video_reset(session);
 }
 
 /* Create a thread for the conference and launch it */
