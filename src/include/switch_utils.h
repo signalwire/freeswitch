@@ -464,13 +464,26 @@ SWITCH_DECLARE(switch_status_t) switch_resolve_host(const char *host, char *buf,
 
 /*!
   \brief find local ip of the box
-  \param buf the buffer to write the ip adress found into
+  \param buf the buffer to write the ip address found into
   \param len the length of the buf
+  \param mask the CIDR found (AF_INET only)
   \param family the address family to return (AF_INET or AF_INET6)
   \return SWITCH_STATUS_SUCCESSS for success, otherwise failure
 */
 SWITCH_DECLARE(switch_status_t) switch_find_local_ip(_Out_opt_bytecapcount_(len)
 													 char *buf, _In_ int len, _In_opt_ int *mask, _In_ int family);
+
+/*!
+  \brief find primary ip of the specified interface
+  \param buf the buffer to write the ip address found into
+  \param len the length of the buf
+  \param mask the CIDR found (AF_INET only)
+  \param ifname interface name to check
+  \param family the address family to return (AF_INET or AF_INET6)
+  \return SWITCH_STATUS_SUCCESSS for success, otherwise failure
+*/
+SWITCH_DECLARE(switch_status_t) switch_find_interface_ip(_Out_opt_bytecapcount_(len)
+													 char *buf, _In_ int len, _In_opt_ int *mask, _In_ const char *ifname, _In_ int family);
 
 /*!
   \brief find the char representation of an ip adress

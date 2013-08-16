@@ -4052,9 +4052,22 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "rtp-ip")) {
 						char *ip = mod_sofia_globals.guess_ip;
+						char buf[64];
 
 						if (!strcmp(val, "0.0.0.0")) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid IP 0.0.0.0 replaced with %s\n", mod_sofia_globals.guess_ip);
+						} else if (!strncasecmp(val, "interface:", 10)) {
+							char *ifname = val+10;
+							int family = AF_UNSPEC;
+							if (!strncasecmp(ifname, "auto/", 5)) { ifname += 5; family = AF_UNSPEC; }
+							if (!strncasecmp(ifname, "ipv4/", 5)) { ifname += 5; family = AF_INET;   }
+							if (!strncasecmp(ifname, "ipv6/", 5)) { ifname += 5; family = AF_INET6;  }
+							if (switch_find_interface_ip(buf, sizeof(buf), NULL, ifname, family) == SWITCH_STATUS_SUCCESS) {
+								ip = buf;
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Using %s IP for interface %s for rtp-ip\n", ip, val+10);
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown IP for interface %s for rtp-ip\n", val+10);
+							}
 						} else {
 							ip = strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip;
 						}
@@ -4065,9 +4078,22 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						}
 					} else if (!strcasecmp(var, "sip-ip")) {
 						char *ip = mod_sofia_globals.guess_ip;
+						char buf[64];
 
 						if (!strcmp(val, "0.0.0.0")) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid IP 0.0.0.0 replaced with %s\n", mod_sofia_globals.guess_ip);
+						} else if (!strncasecmp(val, "interface:", 10)) {
+							char *ifname = val+10;
+							int family = AF_UNSPEC;
+							if (!strncasecmp(ifname, "auto/", 5)) { ifname += 5; family = AF_UNSPEC; }
+							if (!strncasecmp(ifname, "ipv4/", 5)) { ifname += 5; family = AF_INET;   }
+							if (!strncasecmp(ifname, "ipv6/", 5)) { ifname += 5; family = AF_INET6;  }
+							if (switch_find_interface_ip(buf, sizeof(buf), NULL, ifname, family) == SWITCH_STATUS_SUCCESS) {
+								ip = buf;
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Using %s IP for interface %s for sip-ip\n", ip, val+10);
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown IP for interface %s for sip-ip\n", val+10);
+							}
 						} else {
 							ip = strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip;
 						}
