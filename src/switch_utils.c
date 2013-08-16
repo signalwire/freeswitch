@@ -1273,7 +1273,7 @@ static int get_netmask(struct sockaddr_in *me, int *mask)
 		struct sockaddr_in *s = (struct sockaddr_in *) i->ifa_addr;
 		struct sockaddr_in *m = (struct sockaddr_in *) i->ifa_netmask;
 
-		if (s && m && addr->ifa_addr->sa_family == AF_INET && s->sin_addr && s->sin_addr.s_addr == me->sin_addr.s_addr) {
+		if (s && m && s->sin_addr.s_addr == me->sin_addr.s_addr) {
 			*mask = m->sin_addr.s_addr;
 			freeifaddrs(ifaddrs);
 			return 0;
