@@ -949,6 +949,7 @@ SPAN_DECLARE(int) t42_encode_restart(t42_encode_state_t *s, uint32_t image_width
         /* ITULAB */
         /* Illuminant D50 */
         set_lab_illuminant(&s->lab, 96.422f, 100.000f,  82.521f);
+set_lab_illuminant(&s->lab, 95.047f, 100.000f, 108.883f);
         set_lab_gamut(&s->lab, 0, 100, -85, 85, -75, 125, false);
     }
     s->compressed_image_size = 0;
@@ -963,12 +964,6 @@ SPAN_DECLARE(int) t42_encode_restart(t42_encode_state_t *s, uint32_t image_width
     if ((s->out = open_memstream((char **) &s->compressed_buf, &s->outsize)) == NULL)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Failed to open_memstream().\n");
-        return -1;
-    }
-    if (fseek(s->out, 0, SEEK_SET) != 0)
-    {
-        fclose(s->out);
-        s->out = NULL;
         return -1;
     }
 #else
@@ -1113,14 +1108,6 @@ static int t42_itulab_jpeg_to_srgb(t42_decode_state_t *s)
     /* Get the FAX tags */
     for (i = 0;  i < 16;  i++)
         jpeg_save_markers(&s->decompressor, JPEG_APP0 + i, 0xFFFF);
-
-    /* Rewind the file */
-    if (fseek(s->in, 0, SEEK_SET) != 0)
-    {
-        fclose(s->in);
-        s->in = NULL;
-        return -1;
-    }
 
     /* Take the header */
     jpeg_read_header(&s->decompressor, false);
@@ -1328,6 +1315,7 @@ SPAN_DECLARE(int) t42_decode_restart(t42_decode_state_t *s)
         /* ITULAB */
         /* Illuminant D50 */
         set_lab_illuminant(&s->lab, 96.422f, 100.000f,  82.521f);
+set_lab_illuminant(&s->lab, 95.047f, 100.000f, 108.883f);
         set_lab_gamut(&s->lab, 0, 100, -85, 85, -75, 125, false);
     }
 
