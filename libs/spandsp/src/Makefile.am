@@ -294,6 +294,9 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/private/modem_echo.h \
                          spandsp/private/noise.h \
                          spandsp/private/oki_adpcm.h \
+                         spandsp/private/playout.h \
+                         spandsp/private/plc.h \
+                         spandsp/private/power_meter.h \
                          spandsp/private/queue.h \
                          spandsp/private/schedule.h \
                          spandsp/private/sig_tone.h \
