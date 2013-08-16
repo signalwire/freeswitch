@@ -42,6 +42,7 @@ typedef struct {
 	uint32_t err_samples;
 	uint32_t window_ms;
 	uint32_t window_samples;
+	uint32_t stats_sync_lost_cnt;
 	uint8_t sequence_sample;
 	uint8_t predicted_sample;
 	float max_err;
@@ -83,6 +84,9 @@ typedef struct {
 			bert.output_debug_f = NULL; \
 		} \
 	} while (0);
+
+#define BERT_STATS_VAR_SYNC_LOST "bert_stats_sync_lost"
+#define BERT_STATS_VAR_SYNC_LOST_CNT "bert_stats_sync_lost_count"
 
 #define BERT_DEFAULT_WINDOW_MS 1000
 #define BERT_DEFAULT_MAX_ERR 10.0
@@ -168,6 +172,8 @@ SWITCH_STANDARD_APP(bert_test_function)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to compute BERT window samples!\n");
 		goto done;
 	}
+	switch_channel_set_variable(channel, BERT_STATS_VAR_SYNC_LOST_CNT, "0");
+	switch_channel_set_variable(channel, BERT_STATS_VAR_SYNC_LOST, "false");
 	while (switch_channel_ready(channel)) {
 		uint8_t *read_samples = NULL;
 		uint8_t *write_samples = NULL;
@@ -210,12 +216,22 @@ SWITCH_STANDARD_APP(bert_test_function)
 		/* BERT Sync Loop */
 		for (i = 0; i < read_frame->samples; i++) {
 			if (bert.window_samples == bert.processed_samples) {
+				float err = 0.0;
+				/* If the channel is going down, then it is expected we'll have errors, ignore them and bail out */
+				if (!switch_channel_ready(channel)) {
+					bert_close_debug_streams(bert, session);
+					break;
+				}
 				/* Calculate error rate */
-				float err = ((float)((float)bert.err_samples / (float)bert.processed_samples) * 100.0);
+				err = ((float)((float)bert.err_samples / (float)bert.processed_samples) * 100.0);
 				if (err > bert.max_err) {
 					if (bert.in_sync) {
 						bert.in_sync = 0;
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "BERT Sync Lost: %f%% loss (err_samples=%u, session=%s)\n", err, bert.err_samples, switch_core_session_get_uuid(session));
+						bert.stats_sync_lost_cnt++;
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "BERT Sync Lost: %f%% loss (count=%u, err_samples=%u, session=%s)\n",
+								err, bert.stats_sync_lost_cnt, bert.err_samples, switch_core_session_get_uuid(session));
+						switch_channel_set_variable_printf(channel, BERT_STATS_VAR_SYNC_LOST_CNT, "%u", bert.stats_sync_lost_cnt);
+						switch_channel_set_variable(channel, BERT_STATS_VAR_SYNC_LOST, "true");
 						if (bert.hangup_on_error) {
 							switch_channel_hangup(channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
 							bert_close_debug_streams(bert, session);
