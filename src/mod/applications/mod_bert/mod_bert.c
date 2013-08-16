@@ -65,6 +65,25 @@ typedef struct {
 		} \
 	} while (0);
 
+#define bert_close_debug_streams(bert, session) \
+	do { \
+		int rc = 0; \
+		if (bert.input_debug_f) { \
+			rc = fclose(bert.input_debug_f); \
+			if (rc) { \
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to close BERT input debug file!\n"); \
+			} \
+			bert.input_debug_f = NULL; \
+		} \
+		if (bert.output_debug_f) { \
+			rc = fclose(bert.output_debug_f); \
+			if (rc) { \
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to close BERT output debug file!\n"); \
+			} \
+			bert.output_debug_f = NULL; \
+		} \
+	} while (0);
+
 #define BERT_DEFAULT_WINDOW_MS 1000
 #define BERT_DEFAULT_MAX_ERR 10.0
 #define BERT_DEFAULT_TIMEOUT_MS 10000
@@ -161,7 +180,7 @@ SWITCH_STANDARD_APP(bert_test_function)
 		if (bert.timeout && !synced) {
 			switch_time_t now = switch_micro_time_now();
 			if (now >= bert.timeout) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "BERT Timeout (read_samples=%d, read_bytes=%d, expected_samples=%d, %s)\n",
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "BERT Timeout (read_samples=%d, read_bytes=%d, expected_samples=%d, session=%s)\n",
 						read_frame->samples, read_frame->datalen, read_impl.samples_per_packet, switch_core_session_get_uuid(session));
 				if (bert.hangup_on_error) {
 					switch_channel_hangup(channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
@@ -169,20 +188,22 @@ SWITCH_STANDARD_APP(bert_test_function)
 			}
 		}
 
-		if (!read_frame->datalen) {
+		/* Ignore confort noise, TODO: we should probably deal with this and treat it as a full frame of silence?? */
+		if (switch_test_flag(read_frame, SFF_CNG) || !read_frame->datalen) {
 			continue;
 		}
 
 		if (read_frame->samples != read_impl.samples_per_packet) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Only read %d samples, expected %d!\n", read_frame->samples, read_impl.samples_per_packet);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Only read %d samples, expected %d!\n", read_frame->samples, read_impl.samples_per_packet);
 			continue;
 		}
 
 		read_samples = read_frame->data;
 		write_samples = write_frame.data;
-		if (read_frame->samples) {
-			if (bert.input_debug_f) {
-				fwrite(read_frame->data, read_frame->datalen, 1, bert.input_debug_f);
+		if (bert.input_debug_f) {
+			size_t ret = fwrite(read_frame->data, read_frame->datalen, 1, bert.input_debug_f);
+			if (ret != 1) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to write to BERT input debug file!\n");
 			}
 		}
 
@@ -194,9 +215,10 @@ SWITCH_STANDARD_APP(bert_test_function)
 				if (err > bert.max_err) {
 					if (bert.in_sync) {
 						bert.in_sync = 0;
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "BERT Sync Lost: %f%% loss\n", err);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "BERT Sync Lost: %f%% loss (err_samples=%u, session=%s)\n", err, bert.err_samples, switch_core_session_get_uuid(session));
 						if (bert.hangup_on_error) {
 							switch_channel_hangup(channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
+							bert_close_debug_streams(bert, session);
 						}
 					}
 				} else if (!bert.in_sync) {
@@ -253,12 +275,7 @@ SWITCH_STANDARD_APP(bert_test_function)
 	}
 
 done:
-	if (bert.input_debug_f) {
-		fclose(bert.input_debug_f);
-	}
-	if (bert.output_debug_f) {
-		fclose(bert.output_debug_f);
-	}
+	bert_close_debug_streams(bert, session);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "BERT Test Completed. MaxErr=%f%%\n", synced ? bert.max_err_hit : bert.max_err_ever);
 }
 
