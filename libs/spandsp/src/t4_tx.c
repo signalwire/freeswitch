@@ -1863,7 +1863,7 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
                 s->metadata.image_type = T4_IMAGE_TYPE_BILEVEL;
             }
             /* Squashing to a bi-level image is possible */
-            span_log(&s->logging, SPAN_LOG_FLOW, "The image may be flattened to %d\n", s->metadata.image_type);
+            span_log(&s->logging, SPAN_LOG_FLOW, "The image will be flattened to %d\n", s->metadata.image_type);
         }
     }
 
