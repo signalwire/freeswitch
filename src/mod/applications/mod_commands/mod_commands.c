@@ -6028,6 +6028,49 @@ SWITCH_STANDARD_API(file_exists_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define INTERFACE_IP_SYNTAX "[auto|ipv4|ipv6] <ifname>"
+SWITCH_STANDARD_API(interface_ip_function)
+{
+	char *mydata = NULL, *argv[3] = { 0 };
+	int argc = 0;
+	char addr[INET6_ADDRSTRLEN];
+
+	if (!zstr(cmd)) {
+		mydata = strdup(cmd);
+		switch_assert(mydata);
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (argc < 2) {
+		stream->write_function(stream, "USAGE: interface_ip %s\n", INTERFACE_IP_SYNTAX);
+		goto end;
+	}
+
+	if (!strcasecmp(argv[0], "ipv4")) {
+		if (switch_find_interface_ip(addr, sizeof(addr), NULL, argv[1], AF_INET) == SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "%s", addr);
+		}
+	}
+	else if (!strcasecmp(argv[0], "ipv6")) {
+		if (switch_find_interface_ip(addr, sizeof(addr), NULL, argv[1], AF_INET6) == SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "%s", addr);
+		}
+	}
+	else if (!strcasecmp(argv[0], "auto")) {
+		if (switch_find_interface_ip(addr, sizeof(addr), NULL, argv[1], AF_UNSPEC) == SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "%s", addr);
+		}
+	}
+	else {
+		stream->write_function(stream, "USAGE: interface_ip %s\n", INTERFACE_IP_SYNTAX);
+	}
+
+end:
+	switch_safe_free(mydata);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 {
 	switch_api_interface_t *commands_api_interface;
@@ -6065,6 +6108,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "help", "Show help for all the api commands", help_function, "");
 	SWITCH_ADD_API(commands_api_interface, "host_lookup", "Lookup host", host_lookup_function, "<hostname>");
 	SWITCH_ADD_API(commands_api_interface, "hostname", "Return the system hostname", hostname_api_function, "");
+	SWITCH_ADD_API(commands_api_interface, "interface_ip", "Return the primary IP of an interface", interface_ip_function, INTERFACE_IP_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "switchname", "Return the switch name", switchname_api_function, "");
 	SWITCH_ADD_API(commands_api_interface, "hupall", "hupall", hupall_api_function, "<cause> [<var> <value>]");
 	SWITCH_ADD_API(commands_api_interface, "in_group", "Determine if a user is in a group", in_group_function, "<user>[@<domain>] <group_name>");
@@ -6217,6 +6261,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add fsctl flush_db_handles");
 	switch_console_set_complete("add fsctl min_idle_cpu");
 	switch_console_set_complete("add fsctl send_sighup");
+	switch_console_set_complete("add interface_ip auto ::console::list_interfaces");
+	switch_console_set_complete("add interface_ip ipv4 ::console::list_interfaces");
+	switch_console_set_complete("add interface_ip ipv6 ::console::list_interfaces");
 	switch_console_set_complete("add load ::console::list_available_modules");
 	switch_console_set_complete("add nat_map reinit");
 	switch_console_set_complete("add nat_map republish");

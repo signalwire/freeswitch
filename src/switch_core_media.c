@@ -156,6 +156,7 @@ typedef struct switch_rtp_engine_s {
 
 	struct media_helper mh;
 	switch_thread_t *media_thread;
+	switch_mutex_t *read_mutex;
 
 } switch_rtp_engine_t;
 
@@ -1224,6 +1225,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 	switch_assert(engine->rtp_session != NULL);
 	engine->read_frame.datalen = 0;
 
+	if (!switch_channel_up_nosig(session->channel) || !switch_rtp_ready(engine->rtp_session) || switch_channel_test_flag(session->channel, CF_NOT_READY)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_mutex_trylock(engine->read_mutex) != SWITCH_STATUS_SUCCESS) {
+		/* return CNG, another thread is already reading  */
+		*frame = &engine->read_frame;
+		switch_set_flag((*frame), SFF_CNG);
+		(*frame)->datalen = engine->read_impl.encoded_bytes_per_packet;
+		memset((*frame)->data, 0, (*frame)->datalen);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "%s is already being read for %s\n", 
+						  switch_channel_get_name(session->channel), type2str(type));
+		switch_yield(10000);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	
 	while (smh->media_flags[SCMF_RUNNING] && engine->read_frame.datalen == 0) {
 		engine->read_frame.flags = SFF_NONE;
@@ -1239,13 +1256,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 					(*frame)->datalen = engine->read_impl.encoded_bytes_per_packet;
 					memset((*frame)->data, 0, (*frame)->datalen);
 					switch_channel_execute_on(session->channel, "execute_on_media_timeout");
-					return SWITCH_STATUS_SUCCESS;
+					switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 				}
 
 
 				switch_channel_hangup(session->channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
 			}
-			return status;
+			goto end;
 		}
 
 		/* Try to read an RTCP frame, if successful raise an event */
@@ -1322,7 +1339,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 		/* Fast PASS! */
 		if (switch_test_flag((&engine->read_frame), SFF_PROXY_PACKET)) {
 			*frame = &engine->read_frame;
-			return SWITCH_STATUS_SUCCESS;
+			switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 		}
 
 		if (switch_rtp_has_dtmf(engine->rtp_session)) {
@@ -1338,7 +1355,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 			if (!switch_test_flag((&engine->read_frame), SFF_CNG)) {
 				if (!engine->read_codec.implementation || !switch_core_codec_ready(&engine->read_codec)) {
 					*frame = NULL;
-					return SWITCH_STATUS_GENERR;
+					switch_goto_status(SWITCH_STATUS_GENERR, end);
 				}
 
 				/* check for timing or codec issues */
@@ -1475,7 +1492,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 						if (switch_rtp_ready(engine->rtp_session)) {
 							if (switch_core_media_set_codec(session, 2, 0) != SWITCH_STATUS_SUCCESS) {
 								*frame = NULL;
-								return SWITCH_STATUS_GENERR;
+								switch_goto_status(SWITCH_STATUS_GENERR, end);
 							}
 
 							if ((val = switch_channel_get_variable(session->channel, "rtp_timeout_sec"))) {
@@ -1516,7 +1533,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 						switch_set_flag((*frame), SFF_CNG);
 						(*frame)->datalen = engine->read_impl.encoded_bytes_per_packet;
 						memset((*frame)->data, 0, (*frame)->datalen);
-						return SWITCH_STATUS_SUCCESS;
+						switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 					}
 				}
 
@@ -1541,7 +1558,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
 	*frame = &engine->read_frame;
 
-	return SWITCH_STATUS_SUCCESS;
+	status = SWITCH_STATUS_SUCCESS;
+
+ end:
+
+	switch_mutex_unlock(engine->read_mutex);
+
+	return status;
 }
 
 //?
@@ -4164,6 +4187,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		uint8_t inb = switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND;
 		const char *ssrc;
 
+		switch_mutex_init(&a_engine->read_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+
 		//switch_core_media_set_rtp_session(session, SWITCH_MEDIA_TYPE_AUDIO, a_engine->rtp_session);
 
 		if ((ssrc = switch_channel_get_variable(session->channel, "rtp_use_ssrc"))) {
@@ -4623,6 +4648,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 				switch_thread_cond_create(&v_engine->mh.cond, pool);
 				switch_mutex_init(&v_engine->mh.cond_mutex, SWITCH_MUTEX_NESTED, pool);
+				switch_mutex_init(&v_engine->read_mutex, SWITCH_MUTEX_NESTED, pool);
 				switch_thread_create(&v_engine->media_thread, thd_attr, video_helper_thread, &v_engine->mh, switch_core_session_get_pool(session));
 			}
 

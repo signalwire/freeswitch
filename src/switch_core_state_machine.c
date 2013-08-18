@@ -216,6 +216,8 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 
   top:
 	switch_channel_clear_flag(session->channel, CF_RESET);
+
+	switch_core_session_video_reset(session);
 	
 	if ((extension = switch_channel_get_caller_extension(session->channel)) == 0) {
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_NORMAL_CLEARING);
