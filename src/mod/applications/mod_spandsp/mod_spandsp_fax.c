@@ -442,7 +442,7 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int msg)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==== Page %s===========================================================\n", pvt->app_mode == FUNCTION_TX ? "Sent ====": "Received ");
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Page no = %d\n", (pvt->app_mode == FUNCTION_TX)  ?  t30_stats.pages_tx  :  t30_stats.pages_rx);
-    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image type = %s (%s in the file)\n", t4_image_type_to_str(t30_stats.type), t4_image_type_to_str(t30_stats.image_type));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image type = %s (%s in the file)\n", t4_image_type_to_str(t30_stats.type), t4_image_type_to_str(t30_stats.image_type));
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image size = %d x %d pixels (%d x %d pixels in the file)\n", t30_stats.width, t30_stats.length, t30_stats.image_width, t30_stats.image_length);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image resolution = %d/m x %d/m (%d/m x %d/m in the file)\n", t30_stats.x_resolution, t30_stats.y_resolution, t30_stats.image_x_resolution, t30_stats.image_y_resolution);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Compression = %s (%d)\n", t4_compression_to_str(t30_stats.compression), t30_stats.compression);

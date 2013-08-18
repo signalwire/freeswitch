@@ -1020,7 +1020,7 @@ SPAN_DECLARE(void) t4_rx_get_transfer_statistics(t4_rx_state_t *s, t4_stats_t *t
         break;
 #endif
     case T4_COMPRESSION_T42_T81:
-        t->type = T4_IMAGE_TYPE_GRAY_8BIT; //T4_IMAGE_TYPE_COLOUR_8BIT;
+        t->type = T4_IMAGE_TYPE_COLOUR_8BIT; //T4_IMAGE_TYPE_GRAY_8BIT;
         t->width = t42_decode_get_image_width(&s->decoder.t42);
         t->length = t42_decode_get_image_length(&s->decoder.t42);
         t->image_type = t->type;
