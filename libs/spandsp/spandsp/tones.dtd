@@ -1,21 +1,64 @@
 <!-- Global PSTN supervisory tones -->
 <!ELEMENT global-tones (tone-set)* >
-<!ELEMENT tone-set (dial-tone|ringback-tone|busy-tone|congestion-tone|number-unobtainable-tone|special-information-tone|call-waiting-tone|waiting-tone|payphone-recognition-tone|test-number-tone|end-of-three-party-service-tone|service-activated-tone|record-tone|facilities-tone|offering-tone|positive-indication-tone|negative-indication-tone|route-tone|pay-tone|confirmation-tone|intrusion-tone|intercept-tone|warning-tone|holding-tone|search-tone|acceptance-tone|executive-override-tone|function-acknowledge-tone|queue-tone|valid-tone-radio-paging|notify-tone|re-order-tone|preemption-tone|comfort-tone|connection-tone|refusal-tone|line-lockout-tone|permanent-signal-tone|identification-tone|reorder-tone|recall-dial-tone|special-ringback-tone|busy-verification-tone)* >
-
+<!ELEMENT tone-set (dial-tone
+                   |ringing-tone
+                   |busy-tone
+                   |congestion-tone
+                   |number-unobtainable-tone
+                   |special-information-tone
+                   |call-waiting-tone
+                   |waiting-tone
+                   |pay-tone
+                   |payphone-recognition-tone
+                   |warning-tone
+                   |test-number-tone
+                   |end-of-three-party-service-tone
+                   |service-activated-tone
+                   |record-tone
+                   |facilities-tone
+                   |offering-tone
+                   |route-tone
+                   |confirmation-tone
+                   |intrusion-tone
+                   |intercept-tone
+                   |reorder-tone
+                   |holding-tone
+                   |search-tone
+                   |acceptance-tone
+                   |executive-override-tone
+                   |function-acknowledge-tone
+                   |queue-tone
+                   |valid-tone-radio-paging
+                   |notify-tone
+                   |preemption-tone
+                   |comfort-tone
+                   |connection-tone
+                   |refusal-tone
+                   |line-lockout-tone
+                   |permanent-signal-tone
+                   |identification-tone
+                   |positive-indication-tone
+                   |negative-indication-tone)* >
 <!ATTLIST tone-set
   country   CDATA   #REQUIRED
   uncode    CDATA   #REQUIRED
   >
 
+<!-- Dialing tones -->
 <!ELEMENT dial-tone (step)* >
 <!ATTLIST dial-tone
   domain    CDATA   #IMPLIED
   type      CDATA   #IMPLIED
   >
-<!ELEMENT ringback-tone (step)* >
-<!ATTLIST ringback-tone
+
+<!-- Post-dialing tones -->
+<!ELEMENT ringing-tone (step)* >
+<!ATTLIST ringing-tone
   domain    CDATA   #IMPLIED
+  type      CDATA   #IMPLIED
   >
+
+<!-- Dial result tones -->
 <!ELEMENT busy-tone (step)* >
 <!ATTLIST busy-tone
   domain    CDATA   #IMPLIED
@@ -32,11 +75,14 @@
 <!ATTLIST special-information-tone
   domain    CDATA   #IMPLIED
   >
+
 <!ELEMENT call-waiting-tone (step)* >
 <!ATTLIST call-waiting-tone
   domain    CDATA   #IMPLIED
   type      CDATA   #IMPLIED
   >
+
+<!-- Payment related tones -->
 <!ELEMENT pay-tone (step)* >
 <!ATTLIST pay-tone
   domain    CDATA   #IMPLIED
@@ -45,6 +91,7 @@
 <!ATTLIST payphone-recognition-tone
   domain    CDATA   #IMPLIED
   >
+
 <!ELEMENT warning-tone (step)* >
 <!ATTLIST warning-tone
   type      CDATA   #IMPLIED
@@ -54,19 +101,6 @@
 <!ATTLIST reorder-tone
   domain    CDATA   #IMPLIED
   >
-<!ELEMENT recall-dial-tone (step)* >
-<!ATTLIST recall-dial-tone
-  domain    CDATA   #IMPLIED
-  >
-<!ELEMENT special-ringback-tone (step)* >
-<!ATTLIST special-ringback-tone
-  domain    CDATA   #IMPLIED
-  >
-<!ELEMENT busy-verification-tone (step)* >
-<!ATTLIST busy-verification-tone
-  domain    CDATA   #IMPLIED
-  >
-
 <!ELEMENT waiting-tone (step)* >
 <!ATTLIST waiting-tone
   domain    CDATA   #IMPLIED
@@ -93,14 +127,6 @@
   >
 <!ELEMENT offering-tone (step)* >
 <!ATTLIST offering-tone
-  domain    CDATA   #IMPLIED
-  >
-<!ELEMENT positive-indication-tone (step)* >
-<!ATTLIST positive-indication-tone
-  domain    CDATA   #IMPLIED
-  >
-<!ELEMENT negative-indication-tone (step)* >
-<!ATTLIST negative-indication-tone
   domain    CDATA   #IMPLIED
   >
 <!ELEMENT route-tone (step)* >
@@ -151,10 +177,6 @@
 <!ATTLIST notify-tone
   domain    CDATA   #IMPLIED
   >
-<!ELEMENT re-order-tone (step)* >
-<!ATTLIST re-order-tone
-  domain    CDATA   #IMPLIED
-  >
 <!ELEMENT preemption-tone (step)* >
 <!ATTLIST preemption-tone
   domain    CDATA   #IMPLIED
@@ -181,6 +203,14 @@
   >
 <!ELEMENT identification-tone (step)* >
 <!ATTLIST identification-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT positive-indication-tone (step)* >
+<!ATTLIST positive-indication-tone
+  domain    CDATA   #IMPLIED
+  >
+<!ELEMENT negative-indication-tone (step)* >
+<!ATTLIST negative-indication-tone
   domain    CDATA   #IMPLIED
   >
 
