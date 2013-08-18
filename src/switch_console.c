@@ -33,7 +33,9 @@
 #include <switch.h>
 #include <switch_console.h>
 #include <switch_version.h>
+#ifndef _MSC_VER
 #include <switch_private.h>
+#endif
 #define CMD_BUFLEN 1024
 
 #ifdef SWITCH_HAVE_LIBEDIT
