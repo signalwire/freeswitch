@@ -1863,7 +1863,7 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
                 s->metadata.image_type = T4_IMAGE_TYPE_BILEVEL;
             }
             /* Squashing to a bi-level image is possible */
-            span_log(&s->logging, SPAN_LOG_FLOW, "The image will be flattened to %d\n", s->metadata.image_type);
+            span_log(&s->logging, SPAN_LOG_FLOW, "The image may be flattened to %d\n", s->metadata.image_type);
         }
     }
 
@@ -2022,8 +2022,18 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
 
     if (s->metadata.image_type != s->tiff.image_type  ||  s->metadata.image_width != s->tiff.image_width)
     {
-        if (image_translate_init(&s->translator, s->metadata.image_type, s->metadata.image_width, -1, s->tiff.image_type, s->tiff.image_width, s->tiff.image_length, translate_row_read2, s) == NULL)
+        if (image_translate_init(&s->translator,
+                                 s->metadata.image_type,
+                                 s->metadata.image_width,
+                                 -1,
+                                 s->tiff.image_type,
+                                 s->tiff.image_width,
+                                 s->tiff.image_length,
+                                 translate_row_read2,
+                                 s) == NULL)
+        {
             return T4_IMAGE_FORMAT_INCOMPATIBLE;
+        }
         s->metadata.image_length = image_translate_get_output_length(&s->translator);
     }
 

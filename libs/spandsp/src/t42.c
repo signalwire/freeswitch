@@ -72,6 +72,11 @@
 #include "spandsp/private/t85.h"
 #include "spandsp/private/t42.h"
 
+/* The open_memstream() and fmemopen() in older versions of glibc seems quirky */
+#if defined(__GLIBC__)  &&  (__GLIBC__ < 2  ||  (__GLIBC__ == 2  &&  __GLIBC_MINOR__ < 12))
+#undef OPEN_MEMSTREAM
+#endif
+
 #define T42_USE_LUTS
 
 #include "t42_t43_local.h"
@@ -1209,7 +1214,7 @@ SPAN_DECLARE(void) t42_decode_rx_status(t42_decode_state_t *s, int status)
         {
             if (t42_itulab_jpeg_to_srgb(s))
                 span_log(&s->logging, SPAN_LOG_FLOW, "Failed to convert from ITULAB.\n");
-            s->end_of_data = 1;
+            s->end_of_data = true;
         }
         break;
     default:
@@ -1229,7 +1234,7 @@ SPAN_DECLARE(int) t42_decode_put(t42_decode_state_t *s, const uint8_t data[], si
         {
             if (t42_itulab_jpeg_to_srgb(s))
                 span_log(&s->logging, SPAN_LOG_FLOW, "Failed to convert from ITULAB.\n");
-            s->end_of_data = 1;
+            s->end_of_data = true;
         }
         return T4_DECODE_OK;
     }
@@ -1319,7 +1324,7 @@ set_lab_illuminant(&s->lab, 95.047f, 100.000f, 108.883f);
         set_lab_gamut(&s->lab, 0, 100, -85, 85, -75, 125, false);
     }
 
-    s->end_of_data = 0;
+    s->end_of_data = false;
     s->compressed_image_size = 0;
 
     s->error_message[0] = '\0';

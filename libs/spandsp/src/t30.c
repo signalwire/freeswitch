@@ -2589,7 +2589,7 @@ static int start_sending_document(t30_state_t *s)
             t30_set_status(s, T30_ERR_NORESSUPPORT);
             break;
         default:
-            span_log(&s->logging, SPAN_LOG_WARNING, "Cannot negotiate an image format\n");
+            span_log(&s->logging, SPAN_LOG_WARNING, "Cannot negotiate an image mode\n");
             t30_set_status(s, T30_ERR_BADTIFF);
             break;
         }
