@@ -55,6 +55,7 @@ typedef struct {
 	switch_time_t timeout;
 	FILE *input_debug_f;
 	FILE *output_debug_f;
+	switch_timer_t timer;
 } bert_t;
 
 #define bert_increase_milliwatt_index(index) \
@@ -100,8 +101,11 @@ SWITCH_STANDARD_APP(bert_test_function)
 	const char *var = NULL;
 	int i = 0;
 	int synced = 0;
-	uint32_t write_ts = 0;
 	int32_t timeout_ms = 0;
+	int32_t interval = 20;
+	int32_t samples = 0;
+	uint8_t *write_samples = NULL;
+	uint8_t *read_samples = NULL;
 	bert_t bert = { 0 };
 
 	memset(&bert, 0, sizeof(bert));
@@ -161,6 +165,16 @@ SWITCH_STANDARD_APP(bert_test_function)
 		}
 	}
 
+	/* Setup the timer, so we can send audio at correct time frames even if we do not receive audio */
+	interval = read_impl.microseconds_per_packet / 1000;
+	samples = switch_samples_per_packet(read_impl.samples_per_second, interval);
+	if (switch_core_timer_init(&bert.timer, "soft", interval, samples, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setup timer success interval: %u  samples: %u\n", interval, samples);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer Setup Failed.  BERT cannot start!\n");
+		goto done;
+	}
+
 	bert.timeout = (switch_micro_time_now() + (timeout_ms * 1000));
 
 	write_frame.codec = switch_core_session_get_read_codec(session);
@@ -174,10 +188,32 @@ SWITCH_STANDARD_APP(bert_test_function)
 	}
 	switch_channel_set_variable(channel, BERT_STATS_VAR_SYNC_LOST_CNT, "0");
 	switch_channel_set_variable(channel, BERT_STATS_VAR_SYNC_LOST, "false");
+	write_samples = write_frame.data;
 	while (switch_channel_ready(channel)) {
-		uint8_t *read_samples = NULL;
-		uint8_t *write_samples = NULL;
+		switch_core_timer_next(&bert.timer);
 
+		/* Write our frame before anything else happens */
+		for (i = 0; i < read_impl.samples_per_packet; i++) {
+			/* Calculate our next sequence sample to write */
+			bert.sequence_sample = ulaw_digital_milliwatt[bert.milliwatt_index];
+			//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "[%d] 0x%X\n", bert.milliwatt_index, bert.sequence_sample);
+			bert_increase_milliwatt_index(bert.milliwatt_index);
+			//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "[%d] 0x%X\n", bert.milliwatt_index, bert.sequence_sample);
+			write_samples[i] = bert.sequence_sample;
+		}
+
+		write_frame.datalen = read_impl.samples_per_packet;
+		write_frame.samples = read_impl.samples_per_packet;
+		write_frame.timestamp = bert.timer.samplecount;
+		if (bert.output_debug_f) {
+			fwrite(write_frame.data, write_frame.datalen, 1, bert.output_debug_f);
+		}
+		status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			break;
+		}
+
+		/* Proceed to read and process the readed frame ... */
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
@@ -191,6 +227,7 @@ SWITCH_STANDARD_APP(bert_test_function)
 				if (bert.hangup_on_error) {
 					switch_channel_hangup(channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
 				}
+				bert.timeout = 0;
 			}
 		}
 
@@ -200,12 +237,11 @@ SWITCH_STANDARD_APP(bert_test_function)
 		}
 
 		if (read_frame->samples != read_impl.samples_per_packet) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Only read %d samples, expected %d!\n", read_frame->samples, read_impl.samples_per_packet);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Read %d samples, expected %d!\n", read_frame->samples, read_impl.samples_per_packet);
 			continue;
 		}
 
 		read_samples = read_frame->data;
-		write_samples = write_frame.data;
 		if (bert.input_debug_f) {
 			size_t ret = fwrite(read_frame->data, read_frame->datalen, 1, bert.input_debug_f);
 			if (ret != 1) {
@@ -262,36 +298,19 @@ SWITCH_STANDARD_APP(bert_test_function)
 				}
 			}
 
-			/* Calculate our next sequence sample to write */
-			bert.sequence_sample = ulaw_digital_milliwatt[bert.milliwatt_index];
-			//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "[%d] 0x%X\n", bert.milliwatt_index, bert.sequence_sample);
-			bert_increase_milliwatt_index(bert.milliwatt_index);
-			//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "[%d] 0x%X\n", bert.milliwatt_index, bert.sequence_sample);
-			write_samples[i] = bert.sequence_sample;
-
 			/* Try to guess what the next sample will be in the milliwatt sequence */
 			bert.predicted_sample = ulaw_digital_milliwatt[bert.milliwatt_prediction_index];
 			bert_increase_milliwatt_index(bert.milliwatt_prediction_index);
 
 			bert.processed_samples++;
 		}
-
-		write_frame.datalen = read_frame->datalen;
-		write_frame.samples = i;
-		write_frame.timestamp = write_ts;
-		if (bert.output_debug_f) {
-			fwrite(write_frame.data, write_frame.datalen, 1, bert.output_debug_f);
-		}
-		status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
-		if (!SWITCH_READ_ACCEPTABLE(status)) {
-			break;
-		}
-
-		write_ts += read_impl.samples_per_packet;
 	}
 
 done:
 	bert_close_debug_streams(bert, session);
+	if (bert.timer.interval) {
+		switch_core_timer_destroy(&bert.timer);
+	}
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "BERT Test Completed. MaxErr=%f%%\n", synced ? bert.max_err_hit : bert.max_err_ever);
 }
 
