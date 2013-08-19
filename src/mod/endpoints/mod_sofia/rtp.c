@@ -153,6 +153,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     char name[128];
     crtp_private_t *tech_pvt = NULL;    
     switch_caller_profile_t *caller_profile;
+    switch_rtp_flag_t rtp_flags[SWITCH_RTP_FLAG_INVALID] = {0};
     
     const char *err;
 
@@ -261,7 +262,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     
     if (!(tech_pvt->rtp_session = switch_rtp_new(local_addr, local_port, remote_addr, remote_port, tech_pvt->agreed_pt,
 												 tech_pvt->read_codec.implementation->samples_per_packet, ptime * 1000,
-												 0, "soft", &err, switch_core_session_get_pool(*new_session)))) {
+												 rtp_flags, "soft", &err, switch_core_session_get_pool(*new_session)))) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't setup RTP session: [%s]\n", err);
         goto fail;
     }
