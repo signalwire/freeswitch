@@ -488,6 +488,12 @@ int skinny_session_set_variables_callback(void *pArg, int argc, char **argv, cha
 
 	listener = helper->listener;
 
+	if ( ! listener ) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(helper->tech_pvt->session), SWITCH_LOG_DEBUG, 
+			"no defined listener on channel var setup, will not attempt to set variables\n");
+		return(0);
+	}
+
 	/* Process through and extract any variables from the user and set in the channel */
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(helper->tech_pvt->session), SWITCH_LOG_DEBUG, 
 			"searching for user (id=%s) in profile %s in channel var setup\n", 
