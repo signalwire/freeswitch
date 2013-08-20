@@ -2556,11 +2556,7 @@ static void on_call_originate_event(struct rayo_client *rclient, switch_event_t 
 		ref = iks_insert(response, "ref");
 		iks_insert_attrib(ref, "xmlns", RAYO_NS);
 
-#ifdef RAYO_UUID_IN_REF_URI
-		iks_insert_attrib(ref, "uri", uuid);
-#else
 		iks_insert_attrib_printf(ref, "uri", "xmpp:%s", RAYO_JID(call));
-#endif
 		RAYO_SEND_MESSAGE(call, RAYO_JID(rclient), response);
 		call->dial_id = NULL;
 	}
