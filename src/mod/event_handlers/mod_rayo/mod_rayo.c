@@ -718,6 +718,9 @@ struct rayo_actor *rayo_actor_locate(const char *jid, const char *file, int line
 {
 	struct rayo_actor *actor = NULL;
 	switch_mutex_lock(globals.actors_mutex);
+	if (!strncmp("xmpp:", jid, 5)) {
+		jid = jid + 5;
+	}
 	actor = (struct rayo_actor *)switch_core_hash_find(globals.actors, jid);
 	if (actor) {
 		if (!actor->destroy) {
@@ -824,13 +827,30 @@ int rayo_actor_seq_next(struct rayo_actor *actor)
 	return seq;
 }
 
-#define RAYO_CALL_LOCATE(call_uuid) rayo_call_locate(call_uuid, __FILE__, __LINE__)
+#define RAYO_CALL_LOCATE(call_uri) rayo_call_locate(call_uri, __FILE__, __LINE__)
 /**
- * Get exclusive access to Rayo call data.  Use to access call data outside channel thread.
+ * Get access to Rayo call data.  Use to access call data outside channel thread.
+ * @param call_uri the Rayo XMPP URI
+ * @return the call or NULL.
+ */
+static struct rayo_call *rayo_call_locate(const char *call_uri, const char *file, int line)
+{
+	struct rayo_actor *actor = rayo_actor_locate(call_uri, file, line);
+	if (actor && is_call_actor(actor)) {
+		return RAYO_CALL(actor);
+	} else if (actor) {
+		RAYO_UNLOCK(actor);
+	}
+	return NULL;
+}
+
+#define RAYO_CALL_LOCATE_BY_ID(call_uuid) rayo_call_locate_by_id(call_uuid, __FILE__, __LINE__)
+/**
+ * Get access to Rayo call data.  Use to access call data outside channel thread.
  * @param call_uuid the FreeSWITCH call UUID
  * @return the call or NULL.
  */
-static struct rayo_call *rayo_call_locate(const char *call_uuid, const char *file, int line)
+static struct rayo_call *rayo_call_locate_by_id(const char *call_uuid, const char *file, int line)
 {
 	struct rayo_actor *actor = rayo_actor_locate_by_id(call_uuid, file, line);
 	if (actor && is_call_actor(actor)) {
@@ -1692,18 +1712,18 @@ static iks *on_rayo_hangup(struct rayo_actor *call, struct rayo_message *msg, vo
  * @param call the call that joins
  * @param session the session
  * @param node the join request
- * @param call_id to join
+ * @param call_uri to join
  * @param media mode (direct/bridge)
  * @return the response
  */
-static iks *join_call(struct rayo_call *call, switch_core_session_t *session, iks *node, const char *call_id, const char *media)
+static iks *join_call(struct rayo_call *call, switch_core_session_t *session, iks *node, const char *call_uri, const char *media)
 {
 	iks *response = NULL;
 	/* take call out of media path if media = "direct" */
 	const char *bypass = !strcmp("direct", media) ? "true" : "false";
 
 	/* check if joining to rayo call */
-	struct rayo_call *b_call = RAYO_CALL_LOCATE(call_id);
+	struct rayo_call *b_call = RAYO_CALL_LOCATE(call_uri);
 	if (!b_call) {
 		/* not a rayo call */
 		response = iks_new_error_detailed(node, STANZA_ERROR_SERVICE_UNAVAILABLE, "b-leg is not a rayo call");
@@ -1712,18 +1732,17 @@ static iks *join_call(struct rayo_call *call, switch_core_session_t *session, ik
 		response = iks_new_error_detailed(node, STANZA_ERROR_CONFLICT, "multiple joined calls not supported");
 		RAYO_UNLOCK(b_call);
 	} else {
-		RAYO_UNLOCK(b_call);
-
 		/* bridge this call to call-uri */
 		switch_channel_set_variable(switch_core_session_get_channel(session), "bypass_media", bypass);
 		if (switch_false(bypass)) {
 			switch_channel_pre_answer(switch_core_session_get_channel(session));
 		}
-		if (switch_ivr_uuid_bridge(rayo_call_get_uuid(call), call_id) == SWITCH_STATUS_SUCCESS) {
+		if (switch_ivr_uuid_bridge(rayo_call_get_uuid(call), rayo_call_get_uuid(b_call)) == SWITCH_STATUS_SUCCESS) {
 			response = iks_new_iq_result(node);
 		} else {
 			response = iks_new_error_detailed(node, STANZA_ERROR_INTERNAL_SERVER_ERROR, "failed to bridge call");
 		}
+		RAYO_UNLOCK(b_call);
 	}
 	return response;
 }
@@ -1797,7 +1816,7 @@ static iks *on_rayo_join(struct rayo_actor *call, struct rayo_message *msg, void
 	iks *join = iks_find(node, "join");
 	const char *join_id;
 	const char *mixer_name;
-	const char *call_id;
+	const char *call_uri;
 
 	/* validate input attributes */
 	if (!VALIDATE_RAYO_JOIN(join)) {
@@ -1806,22 +1825,22 @@ static iks *on_rayo_join(struct rayo_actor *call, struct rayo_message *msg, void
 		goto done;
 	}
 	mixer_name = iks_find_attrib(join, "mixer-name");
-	call_id = iks_find_attrib(join, "call-uri");
+	call_uri = iks_find_attrib(join, "call-uri");
 
 	if (!zstr(mixer_name)) {
 		join_id = mixer_name;
 	} else {
-		join_id = call_id;
+		join_id = call_uri;
 	}
 
 	/* can't join both mixer and call */
-	if (!zstr(mixer_name) && !zstr(call_id)) {
+	if (!zstr(mixer_name) && !zstr(call_uri)) {
 		response = iks_new_error_detailed(node, STANZA_ERROR_BAD_REQUEST, "mixer-name and call-uri are mutually exclusive");
 		goto done;
 	}
 
 	/* need to join *something* */
-	if (zstr(mixer_name) && zstr(call_id)) {
+	if (zstr(mixer_name) && zstr(call_uri)) {
 		response = iks_new_error_detailed(node, STANZA_ERROR_BAD_REQUEST, "mixer-name or call-uri is required");
 		goto done;
 	}
@@ -1838,7 +1857,7 @@ static iks *on_rayo_join(struct rayo_actor *call, struct rayo_message *msg, void
 		response = join_mixer(RAYO_CALL(call), session, node, mixer_name, iks_find_attrib(join, "direction"));
 	} else {
 		/* bridge calls */
-		response = join_call(RAYO_CALL(call), session, node, call_id, iks_find_attrib(join, "media"));
+		response = join_call(RAYO_CALL(call), session, node, call_uri, iks_find_attrib(join, "media"));
 	}
 
 done:
@@ -1850,21 +1869,22 @@ done:
  * @param call the call that unjoined
  * @param session the session
  * @param node the unjoin request
- * @param call_id the b-leg uuid
+ * @param call_uri the b-leg xmpp URI
  * @return the response
  */
-static iks *unjoin_call(struct rayo_call *call, switch_core_session_t *session, iks *node, const char *call_id)
+static iks *unjoin_call(struct rayo_call *call, switch_core_session_t *session, iks *node, const char *call_uri)
 {
 	iks *response = NULL;
-	const char *bleg = switch_channel_get_variable(switch_core_session_get_channel(session), SWITCH_BRIDGE_UUID_VARIABLE);
+	const char *bleg_uuid = switch_channel_get_variable(switch_core_session_get_channel(session), SWITCH_BRIDGE_UUID_VARIABLE);
+	const char *bleg_uri = switch_core_session_sprintf(session, "xmpp:%s@%s", bleg_uuid ? bleg_uuid : "", RAYO_JID(globals.server));
 
-	/* bleg must match call_id */
-	if (!zstr(bleg) && !strcmp(bleg, call_id)) {
+	/* bleg must match call_uri */
+	if (!zstr(bleg_uri) && !strcmp(bleg_uri, call_uri)) {
 		/* unbridge call */
 		response = iks_new_iq_result(node);
 		switch_ivr_park_session(session);
 	} else {
-		/* not bridged or wrong b-leg UUID */
+		/* not bridged or wrong b-leg URI */
 		response = iks_new_error(node, STANZA_ERROR_SERVICE_UNAVAILABLE);
 	}
 
@@ -1919,16 +1939,16 @@ static iks *on_rayo_unjoin(struct rayo_actor *call, struct rayo_message *msg, vo
 	switch_core_session_t *session = (switch_core_session_t *)session_data;
 	iks *response = NULL;
 	iks *unjoin = iks_find(node, "unjoin");
-	const char *call_id = iks_find_attrib(unjoin, "call-uri");
+	const char *call_uri = iks_find_attrib(unjoin, "call-uri");
 	const char *mixer_name = iks_find_attrib(unjoin, "mixer-name");
 
-	if (!zstr(call_id) && !zstr(mixer_name)) {
+	if (!zstr(call_uri) && !zstr(mixer_name)) {
 		response = iks_new_error(node, STANZA_ERROR_BAD_REQUEST);
 	} else if (!RAYO_CALL(call)->joined) {
 		/* not joined to anything */
 		response = iks_new_error(node, STANZA_ERROR_SERVICE_UNAVAILABLE);
-	} else if (!zstr(call_id)) {
-		response = unjoin_call(RAYO_CALL(call), session, node, call_id);
+	} else if (!zstr(call_uri)) {
+		response = unjoin_call(RAYO_CALL(call), session, node, call_uri);
 	} else if (!zstr(mixer_name)) {
 		response = unjoin_mixer(RAYO_CALL(call), session, node, mixer_name);
 	} else {
@@ -2043,20 +2063,20 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 
 		if (join) {
 			/* check join args */
-			const char *call_id = iks_find_attrib(join, "call-uri");
+			const char *call_uri = iks_find_attrib(join, "call-uri");
 			const char *mixer_name = iks_find_attrib(join, "mixer-name");
 
-			if (!zstr(call_id) && !zstr(mixer_name)) {
+			if (!zstr(call_uri) && !zstr(mixer_name)) {
 				/* can't join both */
 				response = iks_new_error(iq, STANZA_ERROR_BAD_REQUEST);
 				goto done;
-			} else if (zstr(call_id) && zstr(mixer_name)) {
+			} else if (zstr(call_uri) && zstr(mixer_name)) {
 				/* nobody to join to? */
 				response = iks_new_error(iq, STANZA_ERROR_BAD_REQUEST);
 				goto done;
-			} else if (!zstr(call_id)) {
+			} else if (!zstr(call_uri)) {
 				/* bridge */
-				struct rayo_call *b_call = RAYO_CALL_LOCATE(call_id);
+				struct rayo_call *b_call = RAYO_CALL_LOCATE(call_uri);
 				/* is b-leg available? */
 				if (!b_call) {
 					response = iks_new_error_detailed(iq, STANZA_ERROR_SERVICE_UNAVAILABLE, "b-leg not found");
@@ -2066,8 +2086,8 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 					RAYO_UNLOCK(b_call);
 					goto done;
 				}
+				stream.write_function(&stream, "%s%s &rayo(bridge %s)", gateway->dial_prefix, dial_to_stripped, rayo_call_get_uuid(b_call));
 				RAYO_UNLOCK(b_call);
-				stream.write_function(&stream, "%s%s &rayo(bridge %s)", gateway->dial_prefix, dial_to_stripped, call_id);
 			} else {
 				/* conference */
 				stream.write_function(&stream, "%s%s &rayo(conference %s@%s)", gateway->dial_prefix, dial_to_stripped, mixer_name, globals.mixer_conf_profile);
@@ -2399,7 +2419,7 @@ static void on_mixer_delete_member_event(struct rayo_mixer *mixer, switch_event_
 	switch_core_hash_delete(mixer->members, uuid);
 
 	/* flag call as available to join another mixer */
-	call = RAYO_CALL_LOCATE(uuid);
+	call = RAYO_CALL_LOCATE_BY_ID(uuid);
 	if (call) {
 		call->joined = 0;
 		call->joined_id = NULL;
@@ -2415,7 +2435,7 @@ static void on_mixer_delete_member_event(struct rayo_mixer *mixer, switch_event_
 	/* broadcast member unjoined event to subscribers */
 	delete_member_event = iks_new_presence("unjoined", RAYO_NS, RAYO_JID(mixer), "");
 	x = iks_find(delete_member_event, "unjoined");
-	iks_insert_attrib(x, "call-uri", uuid);
+	iks_insert_attrib_printf(x, "call-uri", "xmpp:%s@%s", uuid, RAYO_JID(globals.server));
 	broadcast_mixer_event(mixer, delete_member_event);
 	iks_delete(delete_member_event);
 
@@ -2451,7 +2471,7 @@ static void on_mixer_add_member_event(struct rayo_mixer *mixer, switch_event_t *
 {
 	iks *add_member_event = NULL, *x;
 	const char *uuid = switch_event_get_header(event, "Unique-ID");
-	struct rayo_call *call = RAYO_CALL_LOCATE(uuid);
+	struct rayo_call *call = RAYO_CALL_LOCATE_BY_ID(uuid);
 
 	if (!mixer) {
 		/* new mixer */
@@ -2493,7 +2513,7 @@ static void on_mixer_add_member_event(struct rayo_mixer *mixer, switch_event_t *
 	/* broadcast member joined event to subscribers */
 	add_member_event = iks_new_presence("joined", RAYO_NS, RAYO_JID(mixer), "");
 	x = iks_find(add_member_event, "joined");
-	iks_insert_attrib(x, "call-uri", uuid);
+	iks_insert_attrib_printf(x, "call-uri", "xmpp:%s@%s", uuid, RAYO_JID(globals.server));
 	broadcast_mixer_event(mixer, add_member_event);
 	iks_delete(add_member_event);
 }
@@ -2539,7 +2559,7 @@ static void on_call_originate_event(struct rayo_client *rclient, switch_event_t 
 {
 	switch_core_session_t *session = NULL;
 	const char *uuid = switch_event_get_header(event, "Unique-ID");
-	struct rayo_call *call = RAYO_CALL_LOCATE(uuid);
+	struct rayo_call *call = RAYO_CALL_LOCATE_BY_ID(uuid);
 
 	if (call && (session = switch_core_session_locate(uuid))) {
 		iks *response, *ref;
@@ -2569,7 +2589,7 @@ static void on_call_originate_event(struct rayo_client *rclient, switch_event_t 
  */
 static void on_call_end_event(switch_event_t *event)
 {
-	struct rayo_call *call = RAYO_CALL_LOCATE(switch_event_get_header(event, "Unique-ID"));
+	struct rayo_call *call = RAYO_CALL_LOCATE_BY_ID(switch_event_get_header(event, "Unique-ID"));
 
 	if (call) {
 #if 0
@@ -2593,7 +2613,7 @@ static void on_call_end_event(switch_event_t *event)
  */
 static void on_call_answer_event(struct rayo_client *rclient, switch_event_t *event)
 {
-	struct rayo_call *call = RAYO_CALL_LOCATE(switch_event_get_header(event, "Unique-ID"));
+	struct rayo_call *call = RAYO_CALL_LOCATE_BY_ID(switch_event_get_header(event, "Unique-ID"));
 	if (call) {
 		iks *revent = iks_new_presence("answered", RAYO_NS,
 			switch_event_get_header(event, "variable_rayo_call_jid"),
@@ -2612,7 +2632,7 @@ static void on_call_ringing_event(struct rayo_client *rclient, switch_event_t *e
 {
 	const char *call_direction = switch_event_get_header(event, "Call-Direction");
 	if (call_direction && !strcmp(call_direction, "outbound")) {
-		struct rayo_call *call = RAYO_CALL_LOCATE(switch_event_get_header(event, "Unique-ID"));
+		struct rayo_call *call = RAYO_CALL_LOCATE_BY_ID(switch_event_get_header(event, "Unique-ID"));
 		if (call) {
 			switch_mutex_lock(RAYO_ACTOR(call)->mutex);
 			if (!call->ringing_sent) {
@@ -2637,7 +2657,7 @@ static void on_call_bridge_event(struct rayo_client *rclient, switch_event_t *ev
 {
 	const char *a_uuid = switch_event_get_header(event, "Unique-ID");
 	const char *b_uuid = switch_event_get_header(event, "Bridge-B-Unique-ID");
-	struct rayo_call *call = RAYO_CALL_LOCATE(a_uuid);
+	struct rayo_call *call = RAYO_CALL_LOCATE_BY_ID(a_uuid);
 	struct rayo_call *b_call;
 
 	if (call) {
@@ -2646,7 +2666,7 @@ static void on_call_bridge_event(struct rayo_client *rclient, switch_event_t *ev
 			switch_event_get_header(event, "variable_rayo_call_jid"),
 			switch_event_get_header(event, "variable_rayo_dcp_jid"));
 		iks *joined = iks_find(revent, "joined");
-		iks_insert_attrib(joined, "call-uri", b_uuid);
+		iks_insert_attrib_printf(joined, "call-uri", "xmpp:%s@%s", b_uuid, RAYO_JID(globals.server));
 
 		call->joined = JOINED_CALL;
 		call->joined_id = switch_core_strdup(RAYO_POOL(call), b_uuid);
@@ -2654,11 +2674,11 @@ static void on_call_bridge_event(struct rayo_client *rclient, switch_event_t *ev
 		RAYO_SEND_MESSAGE(call, RAYO_JID(rclient), revent);
 
 		/* send B-leg event */
-		b_call = RAYO_CALL_LOCATE(b_uuid);
+		b_call = RAYO_CALL_LOCATE_BY_ID(b_uuid);
 		if (b_call) {
 			revent = iks_new_presence("joined", RAYO_NS, RAYO_JID(b_call), rayo_call_get_dcp_jid(b_call));
 			joined = iks_find(revent, "joined");
-			iks_insert_attrib(joined, "call-uri", a_uuid);
+			iks_insert_attrib_printf(joined, "call-uri", "xmpp:%s@%s", a_uuid, RAYO_JID(globals.server));
 
 			b_call->joined = JOINED_CALL;
 			b_call->joined_id = switch_core_strdup(RAYO_POOL(b_call), a_uuid);
@@ -2679,7 +2699,7 @@ static void on_call_unbridge_event(struct rayo_client *rclient, switch_event_t *
 {
 	const char *a_uuid = switch_event_get_header(event, "Unique-ID");
 	const char *b_uuid = switch_event_get_header(event, "Bridge-B-Unique-ID");
-	struct rayo_call *call = RAYO_CALL_LOCATE(a_uuid);
+	struct rayo_call *call = RAYO_CALL_LOCATE_BY_ID(a_uuid);
 	struct rayo_call *b_call;
 
 	if (call) {
@@ -2688,18 +2708,18 @@ static void on_call_unbridge_event(struct rayo_client *rclient, switch_event_t *
 			switch_event_get_header(event, "variable_rayo_call_jid"),
 			switch_event_get_header(event, "variable_rayo_dcp_jid"));
 		iks *joined = iks_find(revent, "unjoined");
-		iks_insert_attrib(joined, "call-uri", b_uuid);
+		iks_insert_attrib_printf(joined, "call-uri", "xmpp:%s@%s", b_uuid, RAYO_JID(globals.server));
 		RAYO_SEND_MESSAGE(call, RAYO_JID(rclient), revent);
 
 		call->joined = 0;
 		call->joined_id = NULL;
 
 		/* send B-leg event */
-		b_call = RAYO_CALL_LOCATE(b_uuid);
+		b_call = RAYO_CALL_LOCATE_BY_ID(b_uuid);
 		if (b_call) {
 			revent = iks_new_presence("unjoined", RAYO_NS, RAYO_JID(b_call), rayo_call_get_dcp_jid(b_call));
 			joined = iks_find(revent, "unjoined");
-			iks_insert_attrib(joined, "call-uri", a_uuid);
+			iks_insert_attrib_printf(joined, "call-uri", "xmpp:%s@%s", a_uuid, RAYO_JID(globals.server));
 			RAYO_SEND_MESSAGE(b_call, rayo_call_get_dcp_jid(b_call), revent);
 
 			b_call->joined = 0;
