@@ -51,9 +51,6 @@
 #define RAT_PEER_SERVER "PEER_SERVER"
 #define RAT_CLIENT "CLIENT"
 
-/* these are support punchblock.. undefine once punchblock is fixed */
-#define RAYO_UUID_IN_REF_URI
-
 struct rayo_actor;
 struct rayo_call;
 struct rayo_mixer;
