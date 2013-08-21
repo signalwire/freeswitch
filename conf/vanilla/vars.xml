@@ -15,7 +15,7 @@
   <X-PRE-PROCESS cmd="set" data="default_password=1234"/>
   <!-- Did you change it yet? -->
   <!--
-      The following variables are set dynamically - claculated if possible by freeswitch - and 
+      The following variables are set dynamically - calculated if possible by freeswitch - and 
       are available to the config as $${variable}.  You can see their calculated value via fs_cli
       by entering eval $${variable}
       
