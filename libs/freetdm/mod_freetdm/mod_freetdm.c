@@ -3826,7 +3826,7 @@ static switch_status_t load_config(void)
 			char str_false[] = "false";
 			char str_empty[] = "";
 			char *answer_supervision = str_false;
-			char *ringback_during_collect = str_false;
+			char *immediate_ringback = str_false;
 			char *ringback_file = str_empty;
 			uint32_t span_id = 0, to = 0, max = 0, dial_timeout_int = 0;
 			ftdm_span_t *span = NULL;
@@ -3856,8 +3856,8 @@ static switch_status_t load_config(void)
 					max_digits = val;
 				} else if (!strcasecmp(var, "answer-supervision")) {
 					answer_supervision = val;
-				} else if (!strcasecmp(var, "ringback-during-collect")) {
-					ringback_during_collect = val;
+				} else if (!strcasecmp(var, "immediate-ringback")) {
+					immediate_ringback = val;
 				} else if (!strcasecmp(var, "ringback-file")) {
 					ringback_file = val;
 				} else if (!strcasecmp(var, "enable-analog-option")) {
@@ -3913,7 +3913,7 @@ static switch_status_t load_config(void)
 			if (ftdm_configure_span(span, "analog_em", on_analog_signal,
 								   "tonemap", tonegroup,
 								   "answer_supervision", answer_supervision,
-								   "ringback_during_collect", ringback_during_collect,
+								   "immediate_ringback", immediate_ringback,
 								   "ringback_file", ringback_file,
 								   "digit_timeout", &to,
 								   "dial_timeout", &dial_timeout_int,

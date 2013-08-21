@@ -171,6 +171,19 @@ static FIO_CHANNEL_OUTGOING_CALL_FUNCTION(analog_em_outgoing_call)
 	return FTDM_FAIL;
 }
 
+static ftdm_status_t ftdm_analog_em_sig_write(ftdm_channel_t *ftdmchan, void *data, ftdm_size_t size)
+{
+	ftdm_analog_em_data_t *analog_data = ftdmchan->span->signal_data;
+	if (ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS_MEDIA
+	    && analog_data->immediate_ringback
+	    && ftdmchan->call_data) {
+		/* DO NOT USE ftdmchan->call_data, as is a dummy non-null pointer */
+		/* ringback is being played in the analog thread, ignore user data for now */
+		return FTDM_BREAK;
+	}
+	return FTDM_SUCCESS;
+}
+
 /**
  * \brief Starts an EM span thread (monitor)
  * \param span Span to monitor
@@ -235,7 +248,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_em_configure_span)
 	ftdm_analog_em_data_t *analog_data = NULL;
 	const char *tonemap = "us";
 	const char *ringback_file = "";
-	ftdm_bool_t ringback_during_collect = FTDM_FALSE;
+	ftdm_bool_t immediate_ringback = FTDM_FALSE;
 	uint32_t digit_timeout = 2000;
 	uint32_t max_dialstr = 11;
 	uint32_t dial_timeout = 0;
@@ -260,11 +273,11 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_em_configure_span)
 				break;
 			}
 			tonemap = val;
-		} else if (!strcasecmp(var, "ringback_during_collect")) {
+		} else if (!strcasecmp(var, "immediate_ringback")) {
 			if (!(val = va_arg(ap, char *))) {
 				break;
 			}
-			ringback_during_collect = ftdm_true(val);
+			immediate_ringback = ftdm_true(val);
 		} else if (!strcasecmp(var, "ringback_file")) {
 			if (!(val = va_arg(ap, char *))) {
 				break;
@@ -308,6 +321,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_em_configure_span)
 
 	span->start = ftdm_analog_em_start;
 	span->stop = ftdm_analog_em_stop;
+	span->sig_write = ftdm_analog_em_sig_write;
 	analog_data->digit_timeout = digit_timeout;
 	analog_data->max_dialstr = max_dialstr;
 	analog_data->dial_timeout = dial_timeout;
@@ -319,8 +333,8 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_em_configure_span)
 	span->get_channel_sig_status = analog_em_get_channel_sig_status;
 	span->get_span_sig_status = analog_em_get_span_sig_status;
 	ftdm_span_load_tones(span, tonemap);
-	if (ringback_during_collect) {
-		analog_data->ringback_during_collect = FTDM_TRUE;
+	if (immediate_ringback || !ftdm_strlen_zero(ringback_file)) {
+		analog_data->immediate_ringback = FTDM_TRUE;
 		ftdm_set_string(analog_data->ringback_file, ringback_file);
 	}
 
@@ -411,7 +425,7 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 	assert(interval != 0);
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "IO Interval: %u\n", interval);
 
-	if (analog_data->ringback_during_collect && !ftdm_strlen_zero(analog_data->ringback_file)) {
+	if (analog_data->immediate_ringback && !ftdm_strlen_zero(analog_data->ringback_file)) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Using ringback file '%s'\n", analog_data->ringback_file);
 		ringback_f = fopen(analog_data->ringback_file, "rb");
 		if (!ringback_f) {
@@ -604,9 +618,11 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 				break;
 			case FTDM_CHANNEL_STATE_RINGING:
 				{
-					ftdm_buffer_zero(dt_buffer);
-					teletone_run(&ts, ftdmchan->span->tone_map[FTDM_TONEMAP_RING]);
-					indicate = 1;
+					if (!analog_data->immediate_ringback) {
+						ftdm_buffer_zero(dt_buffer);
+						teletone_run(&ts, ftdmchan->span->tone_map[FTDM_TONEMAP_RING]);
+						indicate = 1;
+					}
 				}
 				break;
 			case FTDM_CHANNEL_STATE_BUSY:
@@ -670,7 +686,8 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 			continue;
 		}
 
-		len = sizeof(frame);
+		/* Do not try to read more than the proper interval size */
+		len = ftdmchan->packet_len * 2;
 		if (ftdm_channel_read(ftdmchan, frame, &len) != FTDM_SUCCESS) {
 			ftdm_log(FTDM_LOG_ERROR, "READ ERROR [%s]\n", ftdmchan->last_error);
 			goto done;
@@ -678,6 +695,11 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 
 		if (0 == len) {
 			ftdm_log(FTDM_LOG_DEBUG, "Nothing read\n");
+			continue;
+		}
+
+		if (len >= (sizeof(frame)/2)) {
+			ftdm_log(FTDM_LOG_CRIT, "Ignoring big read of %zd bytes!\n", len);
 			continue;
 		}
 
@@ -716,7 +738,7 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 			continue;
 		}
 
-		if (analog_data->ringback_during_collect && ringback_f &&
+		if (analog_data->immediate_ringback &&
 		    (ftdmchan->state == FTDM_CHANNEL_STATE_COLLECT ||
 		     ftdmchan->state == FTDM_CHANNEL_STATE_RING ||
 		     ftdmchan->state == FTDM_CHANNEL_STATE_RINGING ||
@@ -724,6 +746,10 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 		     ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS_MEDIA
 		     )) {
 			indicate = 1;
+			if (!ringback_f) {
+				ftdm_buffer_zero(dt_buffer);
+				teletone_run(&ts, ftdmchan->span->tone_map[FTDM_TONEMAP_RING]);
+			}
 		}
 		
 		if (!indicate) {
@@ -771,7 +797,12 @@ read_try:
 			}
 		}
 
+		/* we must lock the channel and make sure we let our own generated audio thru (ftdmchan->call_data is tested in the ftdm_analog_em_sig_write handler)*/
+		ftdm_channel_lock(ftdmchan);
+		ftdmchan->call_data = (void *)0xFF; /* ugh! */
 		ftdm_channel_write(ftdmchan, frame, sizeof(frame), &rlen);
+		ftdmchan->call_data = NULL;
+		ftdm_channel_unlock(ftdmchan);
 	}
 
  done:
