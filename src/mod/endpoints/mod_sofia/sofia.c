@@ -1300,18 +1300,17 @@ static void our_sofia_event_callback(nua_event_t event,
 				}
 
 
-				if ((refer_to = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_refer_to))) {
-					
-					if ((tmp = sofia_glue_get_url_from_contact(refer_to, 0))) {
-						refer_to = tmp;
-					}
-
-					if ((iparams = strrchr(refer_to, ';'))) {
+				if ((refer_to = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_refer_to))) {					
+					if ((iparams = strchr(refer_to, ';'))) {
 						*iparams++ = '\0';
 
-						if (!switch_stristr("method=", iparams)) {
+						if (!params || !switch_stristr("method=", params)) {
 							params = iparams;
 						}
+					}
+
+					if ((tmp = sofia_glue_get_url_from_contact(refer_to, 0))) {
+						refer_to = tmp;
 					}
 				}
 
