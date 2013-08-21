@@ -2616,6 +2616,10 @@ SWITCH_DECLARE(void) switch_rtp_set_flag(switch_rtp_t *rtp_session, switch_rtp_f
 		rtp_session->autoadj_window = 20;
 		rtp_session->autoadj_tally = 0;
 		rtp_flush_read_buffer(rtp_session, SWITCH_RTP_FLUSH_ONCE);
+
+		if (rtp_session->jb) {
+			stfu_n_reset(rtp_session->jb);
+		}
 	} else if (flags & SWITCH_RTP_FLAG_NOBLOCK) {
 		switch_socket_opt_set(rtp_session->sock_input, SWITCH_SO_NONBLOCK, TRUE);
 	}
