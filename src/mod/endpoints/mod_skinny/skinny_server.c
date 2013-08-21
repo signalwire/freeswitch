@@ -438,6 +438,7 @@ switch_status_t skinny_session_send_call_info_all(switch_core_session_t *session
 struct skinny_session_set_variables_helper {
 	private_t *tech_pvt;
 	switch_channel_t *channel;
+	listener_t *listener;
 	uint32_t count;
 };
 
@@ -463,6 +464,9 @@ int skinny_session_set_variables_callback(void *pArg, int argc, char **argv, cha
 
 	struct skinny_session_set_variables_helper *helper = pArg;
 	char *tmp;
+	listener_t *listener;
+
+	switch_xml_t xroot, xdomain, xuser, xvariables, xvariable;
 
 	helper->count++;
 	switch_channel_set_variable_name_printf(helper->channel, device_name, "skinny_device_name_%d", helper->count);
@@ -482,6 +486,50 @@ int skinny_session_set_variables_callback(void *pArg, int argc, char **argv, cha
 	switch_channel_set_variable_name_printf(helper->channel, value, "skinny_line_value_%d", helper->count);
 	switch_channel_set_variable_name_printf(helper->channel, caller_name, "skinny_line_caller_name_%d", helper->count);
 
+	listener = helper->listener;
+
+	if ( ! listener ) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(helper->tech_pvt->session), SWITCH_LOG_DEBUG, 
+			"no defined listener on channel var setup, will not attempt to set variables\n");
+		return(0);
+	}
+
+	/* Process through and extract any variables from the user and set in the channel */
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(helper->tech_pvt->session), SWITCH_LOG_DEBUG, 
+			"searching for user (id=%s) in profile %s in channel var setup\n", 
+			listener->device_name, listener->profile->domain);
+
+	if (switch_xml_locate_user("id", listener->device_name, listener->profile->domain, "", 
+		&xroot, &xdomain, &xuser, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(helper->tech_pvt->session), SWITCH_LOG_WARNING, 
+				"unable to find user (id=%s) in channel var setup\n", listener->device_name);
+	}
+
+	if ( xuser ) {
+		char *uid = (char *) switch_xml_attr_soft(xuser, "id");
+
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(helper->tech_pvt->session), SWITCH_LOG_DEBUG, 
+				"found user (id=%s) in channel var setup\n", uid);
+
+		if ((xvariables = switch_xml_child(xuser, "variables"))) {
+			
+			for (xvariable = switch_xml_child(xvariables, "variable"); xvariable; xvariable = xvariable->next) {
+				char *var = (char *) switch_xml_attr_soft(xvariable, "name");
+				char *val = (char *) switch_xml_attr_soft(xvariable, "value");
+
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(helper->tech_pvt->session), SWITCH_LOG_DEBUG, 
+					"found variable (%s=%s) for user (%s) in channel var setup\n", listener->device_name, val, var);
+
+				switch_channel_set_variable_name_printf(helper->channel, var, "%s", val);
+			}
+		}
+	}
+
+	if ( xroot ) {
+		switch_xml_free(xroot);
+	}
+
 	return 0;
 }
 
@@ -492,6 +540,7 @@ switch_status_t skinny_session_set_variables(switch_core_session_t *session, lis
 
 	helper.tech_pvt = switch_core_session_get_private(session);
 	helper.channel = switch_core_session_get_channel(session);
+	helper.listener = listener;
 	helper.count = 0;
 
 	switch_channel_set_variable(helper.channel, "skinny_profile_name", helper.tech_pvt->profile->name);

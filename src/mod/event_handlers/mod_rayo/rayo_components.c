@@ -58,11 +58,7 @@ void rayo_component_send_start(struct rayo_component *component, iks *iq)
 	iks *response = iks_new_iq_result(iq);
 	iks *ref = iks_insert(response, "ref");
 	iks_insert_attrib(ref, "xmlns", RAYO_NS);
-#ifdef RAYO_UUID_IN_REF_URI
-	iks_insert_attrib(ref, "uri", component->ref);
-#else
 	iks_insert_attrib_printf(ref, "uri", "xmpp:%s", RAYO_JID(component));
-#endif
 	RAYO_SEND_REPLY(component, iks_find_attrib(response, "to"), response);
 }
 

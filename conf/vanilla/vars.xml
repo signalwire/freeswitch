@@ -14,6 +14,28 @@
   -->
   <X-PRE-PROCESS cmd="set" data="default_password=1234"/>
   <!-- Did you change it yet? -->
+  <!--
+      The following variables are set dynamically - calculated if possible by freeswitch - and 
+      are available to the config as $${variable}.  You can see their calculated value via fs_cli
+      by entering eval $${variable}
+      
+      hostname
+      local_ip_v4 
+      local_mask_v4
+      local_ip_v6
+      switch_serial
+      base_dir
+      recordings_dir
+      sound_prefix
+      sounds_dir
+      core_uuid
+      zrtp_enabled
+      nat_public_addr
+      nat_private_addr
+      nat_type
+      
+  -->
+
 
   <X-PRE-PROCESS cmd="set" data="sound_prefix=$${sounds_dir}/en/us/callie"/>
 

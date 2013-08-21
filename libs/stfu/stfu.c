@@ -447,6 +447,10 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
 
 
         if (i->max_drift) {
+            if (i->drift_dropped_packets > 500) {
+                stfu_n_reset(i);
+            }
+
             if (i->ts_drift < i->max_drift) {
                 if (++i->drift_dropped_packets < i->drift_max_dropped) {
                     stfu_log(STFU_LOG_EMERG, "%s TOO LATE !!! %u \n\n\n", i->name, ts);

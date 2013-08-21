@@ -1262,7 +1262,7 @@ static int get_netmask(struct sockaddr_in *me, int *mask)
 		struct sockaddr_in *s = (struct sockaddr_in *) i->ifa_addr;
 		struct sockaddr_in *m = (struct sockaddr_in *) i->ifa_netmask;
 
-		if (s && m && s->sin_addr.s_addr == me->sin_addr.s_addr) {
+		if (s && m && s->sin_family == AF_INET && s->sin_addr.s_addr == me->sin_addr.s_addr) {
 			*mask = m->sin_addr.s_addr;
 			freeifaddrs(ifaddrs);
 			return 0;
@@ -1568,6 +1568,61 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *ma
 
 	return status;
 }
+
+#ifdef HAVE_GETIFADDRS
+# include <ifaddrs.h>
+# include <net/if.h>
+#endif
+SWITCH_DECLARE(switch_status_t) switch_find_interface_ip(char *buf, int len, int *mask, const char *ifname, int family)
+{
+        switch_status_t status = SWITCH_STATUS_FALSE;
+
+#ifdef HAVE_GETIFADDRS
+
+	struct ifaddrs *addrs, *addr;
+
+	getifaddrs(&addrs);
+	for(addr = addrs; addr; addr = addr->ifa_next)
+	{
+		if (!(addr->ifa_flags & IFF_UP)) continue; // Address is not UP
+		if (!addr->ifa_addr) continue; // No address set
+		if (!addr->ifa_netmask) continue; // No netmask set
+		if (family != AF_UNSPEC && addr->ifa_addr->sa_family != family) continue; // Not the address family we're looking for
+		if (strcmp(addr->ifa_name, ifname)) continue; // Not the interface we're looking for
+
+		switch(addr->ifa_addr->sa_family) {
+		case AF_INET:
+			inet_ntop(AF_INET, &( ((struct sockaddr_in*)(addr->ifa_addr))->sin_addr ), buf, len - 1);
+			break;
+		case AF_INET6:
+			inet_ntop(AF_INET6, &( ((struct sockaddr_in6*)(addr->ifa_addr))->sin6_addr ), buf, len - 1);
+			break;
+		default:
+			continue;
+		}
+
+		if (mask && addr->ifa_netmask->sa_family == AF_INET) {
+			*mask = ((struct sockaddr_in*)(addr->ifa_addr))->sin_addr.s_addr;
+		}
+
+		status = SWITCH_STATUS_SUCCESS;
+		break;
+	}
+	freeifaddrs(addrs);
+
+#elif defined(__linux__)
+
+	// TODO Not implemented, contributions welcome.
+
+#elif defined(WIN32)
+
+	// TODO Not implemented, contributions welcome.
+
+#endif
+
+	return status;
+}
+
 
 SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in)
 {

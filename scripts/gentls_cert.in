@@ -7,7 +7,7 @@ export KEY_SIZE=${KEY_SIZE}
 
 TMPFILE="/tmp/fs-ca-$$-$(date +%Y%m%d%H%M%S)"
 
-COMMON_NAME="FreesSWITCH CA"
+COMMON_NAME="FreeSWITCH CA"
 ALT_NAME="DNS:test.freeswitch.org"
 ORG_NAME="FreeSWITCH"
 OUTFILE="agent.pem"
@@ -47,6 +47,7 @@ setup_ca() {
 			default_bits            = \$ENV::KEY_SIZE
 			prompt                  = no
 			distinguished_name      = req_dn
+			x509_extensions         = v3_ca
 
 			[ req_dn ]
 			commonName              = %CN%
@@ -69,6 +70,12 @@ setup_ca() {
 			subjectAltName=%ALTNAME%
 			nsCertType=client
 			extendedKeyUsage=clientAuth
+
+			[ v3_ca ]
+			subjectKeyIdentifier=hash
+			authorityKeyIdentifier=keyid:always,issuer
+			basicConstraints=CA:TRUE
+
 		EOF
 	fi
 
@@ -80,10 +87,12 @@ setup_ca() {
 		"${CONFDIR}/CA/config.tpl" \
 			> "${TMPFILE}.cfg" || exit 1
 
+	openssl ecparam -name secp160r2 -out CA_CURVE.pem
 	openssl req -out "${CONFDIR}/CA/cacert.pem" \
-		-new -x509 -keyout "${CONFDIR}/CA/cakey.pem" \
+	        -new -x509 -keyout "${CONFDIR}/CA/cakey.pem" -newkey ec:CA_CURVE.pem \
 		-config "${TMPFILE}.cfg" -nodes -days ${DAYS} -sha1 >/dev/null || exit 1
 	cat "${CONFDIR}/CA/cacert.pem" > "${CONFDIR}/cafile.pem"
+	cp $TMPFILE.cfg /tmp/ssl.cfg
 	rm "${TMPFILE}.cfg"
 
 	echo "DONE"
@@ -122,7 +131,7 @@ generate_cert() {
 			> "${TMPFILE}.cfg" || exit 1
 
 	openssl req -new -out "${TMPFILE}.req" \
-		-newkey rsa:${KEY_SIZE} -keyout "${TMPFILE}.key" \
+	        -newkey ec:CA_CURVE.pem -keyout "${TMPFILE}.key" \
 		-config "${TMPFILE}.cfg" -nodes -sha1 >/dev/null || exit 1
 
 	openssl x509 -req -CAkey "${CONFDIR}/CA/cakey.pem" -CA "${CONFDIR}/CA/cacert.pem" -CAcreateserial \
@@ -148,7 +157,6 @@ remove_ca() {
 }
 OUTFILESET="0"
 command="$1"
-shift
 
 while [ $# -gt 0 ]; do
 	case $1 in
