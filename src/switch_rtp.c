@@ -3126,9 +3126,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_deactivate_jitter_buffer(switch_rtp_t
 		return SWITCH_STATUS_FALSE;
 	}
 
-	READ_INC(rtp_session);
-	stfu_n_destroy(&rtp_session->jb);
-	READ_DEC(rtp_session);
+	rtp_session->flags[SWITCH_RTP_FLAG_KILL_JB]++;
 	
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -3638,6 +3636,9 @@ SWITCH_DECLARE(void) switch_rtp_set_flag(switch_rtp_t *rtp_session, switch_rtp_f
 		rtp_session->autoadj_window = 20;
 		rtp_session->autoadj_tally = 0;
 		rtp_flush_read_buffer(rtp_session, SWITCH_RTP_FLUSH_ONCE);
+		if (rtp_session->jb) {
+			stfu_n_reset(rtp_session->jb);
+		}
 	} else if (flag == SWITCH_RTP_FLAG_NOBLOCK && rtp_session->sock_input) {
 		switch_socket_opt_set(rtp_session->sock_input, SWITCH_SO_NONBLOCK, TRUE);
 	}
@@ -4254,6 +4255,14 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	if (rtp_session->flags[SWITCH_RTP_FLAG_BYTESWAP] && rtp_session->recv_msg.header.pt == rtp_session->rpayload) {
 		switch_swap_linear((int16_t *)RTP_BODY(rtp_session), (int) *bytes - rtp_header_len);
 	}
+
+	if (rtp_session->flags[SWITCH_RTP_FLAG_KILL_JB]) {
+		rtp_session->flags[SWITCH_RTP_FLAG_KILL_JB] = 0;
+		if (rtp_session->jb) {
+			stfu_n_destroy(&rtp_session->jb);
+		}
+	}
+
 
 	if (rtp_session->jb && !rtp_session->pause_jb && rtp_session->recv_msg.header.version == 2 && *bytes) {
 		if (rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
