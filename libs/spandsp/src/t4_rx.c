@@ -123,6 +123,11 @@ SPAN_DECLARE(const char *) t4_compression_to_str(int compression)
         return "T.43";
     case T4_COMPRESSION_T45:
         return "T.45";
+    /* Compressions which can only be used in TIFF files */
+    case T4_COMPRESSION_UNCOMPRESSED:
+        return "Uncompressed";
+    case T4_COMPRESSION_JPEG:
+        return "JPEG";
     }
     return "???";
 }
@@ -238,13 +243,27 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
         break;
 #endif
 #if defined(SPANDSP_SUPPORT_T42)
+    case T4_COMPRESSION_JPEG:
+        output_compression = COMPRESSION_JPEG;
+        bits_per_sample = 8;
+        if (t->image_type == T4_IMAGE_TYPE_COLOUR_8BIT)
+        {
+            samples_per_pixel = 3;
+            photometric = PHOTOMETRIC_YCBCR;
+        }
+        else
+        {
+            samples_per_pixel = 1;
+            photometric = PHOTOMETRIC_MINISBLACK;
+        }
+        break;
     case T4_COMPRESSION_T42_T81:
         output_compression = COMPRESSION_JPEG;
         bits_per_sample = 8;
         if (t->image_type == T4_IMAGE_TYPE_COLOUR_8BIT)
         {
             samples_per_pixel = 3;
-            photometric = PHOTOMETRIC_YCBCR; //PHOTOMETRIC_ITULAB;
+            photometric = PHOTOMETRIC_ITULAB;
         }
         else
         {
@@ -306,12 +325,20 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
     TIFFSetField(t->tiff_file, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
     TIFFSetField(t->tiff_file, TIFFTAG_PHOTOMETRIC, photometric);
     TIFFSetField(t->tiff_file, TIFFTAG_FILLORDER, FILLORDER_LSB2MSB);
-    if (t->compression == T4_COMPRESSION_T42_T81)
+    switch (t->compression)
     {
+    case T4_COMPRESSION_JPEG:
         TIFFSetField(t->tiff_file, TIFFTAG_YCBCRSUBSAMPLING, 2, 2);
         //TIFFSetField(t->tiff_file, TIFFTAG_YCBCRSUBSAMPLING, 1, 1);
         TIFFSetField(t->tiff_file, TIFFTAG_JPEGQUALITY, 75);
         TIFFSetField(t->tiff_file, TIFFTAG_JPEGCOLORMODE, JPEGCOLORMODE_RGB);
+        break;
+    case T4_COMPRESSION_T42_T81:
+        TIFFSetField(t->tiff_file, TIFFTAG_YCBCRSUBSAMPLING, 2, 2);
+        //TIFFSetField(t->tiff_file, TIFFTAG_YCBCRSUBSAMPLING, 1, 1);
+        TIFFSetField(t->tiff_file, TIFFTAG_JPEGQUALITY, 75);
+        TIFFSetField(t->tiff_file, TIFFTAG_JPEGCOLORMODE, JPEGCOLORMODE_RGB);
+        break;
     }
     /* TIFFTAG_STRIPBYTECOUNTS and TIFFTAG_STRIPOFFSETS are added automatically */
 
@@ -815,10 +842,14 @@ static void select_tiff_compression(t4_rx_state_t *s, int output_image_type)
     }
     else
     {
-        if ((s->supported_tiff_compressions & T4_COMPRESSION_T42_T81))
+        if ((s->supported_tiff_compressions & T4_COMPRESSION_JPEG))
+            s->tiff.compression = T4_COMPRESSION_JPEG;
+        else if ((s->supported_tiff_compressions & T4_COMPRESSION_T42_T81))
             s->tiff.compression = T4_COMPRESSION_T42_T81;
         else if ((s->supported_tiff_compressions & T4_COMPRESSION_T43))
             s->tiff.compression = T4_COMPRESSION_T43;
+        else if ((s->supported_tiff_compressions & T4_COMPRESSION_UNCOMPRESSED))
+            s->tiff.compression = T4_COMPRESSION_UNCOMPRESSED;
     }
     s->tiff.image_type = output_image_type;
 }

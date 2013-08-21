@@ -40,10 +40,13 @@ struct lab_params_s
     float offset_b;
     int ab_are_signed;
 
-    /* Illuminant */
+    /* Illuminant, forward and reverse */
     float x_n;
     float y_n;
     float z_n;
+    float x_rn;
+    float y_rn;
+    float z_rn;
 };
 
 /* State of a working instance of the T.42 JPEG FAX encoder */

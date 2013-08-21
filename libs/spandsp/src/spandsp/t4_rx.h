@@ -70,6 +70,12 @@ typedef enum
     T4_COMPRESSION_SYCC_T81 = 0x200,
     /*! T.88 monochrome JBIG2 compression */
     T4_COMPRESSION_T88 = 0x400,
+    /*! Uncompressed image. This compression cannot be used for FAXes. It is provided for specifying
+        output formats for received images. */
+    T4_COMPRESSION_UNCOMPRESSED = 0x1000,
+    /*! Conventional JPEG. This compression cannot be used for FAXes. It is provided for specifying
+        output formats for received images. */
+    T4_COMPRESSION_JPEG = 0x2000,
     /*! Support solour compression without sub-sampling */
     T4_COMPRESSION_NO_SUBSAMPLING = 0x800000,
     /*! Gray-scale support by multi-level codecs */

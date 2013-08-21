@@ -926,7 +926,7 @@ int main(int argc, char *argv[])
         {
             t30_set_supported_colour_resolutions(t30_state[i], 0);
         }
-        //t30_set_supported_output_compressions(t30_state[i], T4_COMPRESSION_T85);
+        t30_set_supported_output_compressions(t30_state[i], T4_COMPRESSION_T6 | T4_COMPRESSION_JPEG);
         t30_set_ecm_capability(t30_state[i], use_ecm);
         t30_set_supported_compressions(t30_state[i],
                                        T4_COMPRESSION_T4_1D

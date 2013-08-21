@@ -309,6 +309,9 @@ SPAN_DECLARE(void) set_lab_illuminant(lab_params_t *lab, float new_xn, float new
         lab->y_n = new_yn;
         lab->z_n = new_zn;
     }
+    lab->x_rn = 1.0f/lab->x_n;
+    lab->y_rn = 1.0f/lab->y_n;
+    lab->z_rn = 1.0f/lab->z_n;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -475,9 +478,9 @@ SPAN_DECLARE(void) srgb_to_lab(lab_params_t *s, uint8_t lab[], const uint8_t srg
         z = 0.0193f*r + 0.1192f*g + 0.9505f*b;
 
         /* Normalise for the illuminant */
-        x /= s->x_n;
-        y /= s->y_n;
-        z /= s->z_n;
+        x *= s->x_rn;
+        y *= s->y_rn;
+        z *= s->z_rn;
 
         /* XYZ to Lab */
         xx = (x <= 0.008856f)  ?  (7.787f*x + 0.1379f)  :  cbrtf(x);
@@ -946,15 +949,16 @@ SPAN_DECLARE(int) t42_encode_restart(t42_encode_state_t *s, uint32_t image_width
     {
         /* ITU-YCC */
         /* Illuminant D65 */
-        set_lab_illuminant(&s->lab, 95.047f, 100.000f, 108.883f);
+        //set_lab_illuminant(&s->lab, 95.047f, 100.000f, 108.883f);
+        set_lab_illuminant(&s->lab, 100.0f, 100.0f, 100.0f);
         set_lab_gamut(&s->lab, 0, 100, -127, 127, -127, 127, false);
     }
     else
     {
         /* ITULAB */
         /* Illuminant D50 */
-        set_lab_illuminant(&s->lab, 96.422f, 100.000f,  82.521f);
-set_lab_illuminant(&s->lab, 95.047f, 100.000f, 108.883f);
+        //set_lab_illuminant(&s->lab, 96.422f, 100.000f,  82.521f);
+        set_lab_illuminant(&s->lab, 100.0f, 100.0f, 100.0f);
         set_lab_gamut(&s->lab, 0, 100, -85, 85, -75, 125, false);
     }
     s->compressed_image_size = 0;
@@ -1312,15 +1316,16 @@ SPAN_DECLARE(int) t42_decode_restart(t42_decode_state_t *s)
     {
         /* ITU-YCC */
         /* Illuminant D65 */
-        set_lab_illuminant(&s->lab, 95.047f, 100.000f, 108.883f);
+        //set_lab_illuminant(&s->lab, 95.047f, 100.000f, 108.883f);
+        set_lab_illuminant(&s->lab, 100.0f, 100.0f, 100.0f);
         set_lab_gamut(&s->lab, 0, 100, -127, 127, -127, 127, false);
     }
     else
     {
         /* ITULAB */
         /* Illuminant D50 */
-        set_lab_illuminant(&s->lab, 96.422f, 100.000f,  82.521f);
-set_lab_illuminant(&s->lab, 95.047f, 100.000f, 108.883f);
+        //set_lab_illuminant(&s->lab, 96.422f, 100.000f,  82.521f);
+        set_lab_illuminant(&s->lab, 100.0f, 100.0f, 100.0f);
         set_lab_gamut(&s->lab, 0, 100, -85, 85, -75, 125, false);
     }
 
