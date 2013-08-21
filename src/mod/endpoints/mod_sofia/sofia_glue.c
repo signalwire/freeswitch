@@ -1459,7 +1459,12 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 	char *stripped = switch_core_session_strdup(session, uri);
 	char *new_uri = NULL;
 	char *p;
+	const char *url_params = NULL;
 
+	if (!zstr(params) && *params == '~') {
+		url_params = params + 1;
+		params = NULL;
+	}
 
 	stripped = sofia_glue_get_url_from_contact(stripped, 0);
 
@@ -1504,7 +1509,9 @@ char *sofia_overcome_sip_uri_weakness(switch_core_session_t *session, const char
 		}
 	}
 
-
+	if (url_params && !uri_only) {
+		new_uri = switch_core_session_sprintf(session, "%s;%s", new_uri, url_params);
+	}
 
 	if (!zstr(invite_tel_params)) {
 		char *lhs, *rhs = strchr(new_uri, '@');
@@ -2387,7 +2394,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		to_str = sofia_overcome_sip_uri_weakness(session, invite_to_uri ? invite_to_uri : tech_pvt->dest_to, 0, SWITCH_FALSE, invite_to_params, NULL);
 
 		switch_channel_set_variable(channel, "sip_outgoing_contact_uri", invite_contact);
-
 
 		/*
 		  Does the "genius" who wanted SIP to be "text-based" so it was "easier to read" even use it now,
