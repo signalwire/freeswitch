@@ -40,7 +40,7 @@
 struct rayo_component *rayo_component_locate(const char *id, const char *file, int line)
 {
 	struct rayo_actor *actor = rayo_actor_locate_by_id(id, file, line);
-	if (actor && !strncmp(RAT_COMPONENT, actor->type, strlen(RAT_COMPONENT))) {
+	if (actor && is_component_actor(actor)) {
 		return RAYO_COMPONENT(actor);
 	} else if (actor) {
 		 RAYO_UNLOCK(actor);
@@ -58,11 +58,7 @@ void rayo_component_send_start(struct rayo_component *component, iks *iq)
 	iks *response = iks_new_iq_result(iq);
 	iks *ref = iks_insert(response, "ref");
 	iks_insert_attrib(ref, "xmlns", RAYO_NS);
-#ifdef RAYO_UUID_IN_REF_URI
-	iks_insert_attrib(ref, "uri", component->ref);
-#else
 	iks_insert_attrib_printf(ref, "uri", "xmpp:%s", RAYO_JID(component));
-#endif
 	RAYO_SEND_REPLY(component, iks_find_attrib(response, "to"), response);
 }
 
@@ -227,15 +223,10 @@ void rayo_component_api_execute_async(struct rayo_component *component, const ch
  */
 switch_status_t rayo_components_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file)
 {
-	rayo_input_component_load();
-	rayo_output_component_load(module_interface, pool);
-	rayo_prompt_component_load();
-	rayo_record_component_load(pool, config_file);
-
-	if (rayo_input_component_load() != SWITCH_STATUS_SUCCESS ||
-		rayo_output_component_load(module_interface, pool) != SWITCH_STATUS_SUCCESS ||
-		rayo_prompt_component_load() != SWITCH_STATUS_SUCCESS ||
-		rayo_record_component_load(pool, config_file) != SWITCH_STATUS_SUCCESS) {
+	if (rayo_input_component_load(module_interface, pool, config_file) != SWITCH_STATUS_SUCCESS ||
+		rayo_output_component_load(module_interface, pool, config_file) != SWITCH_STATUS_SUCCESS ||
+		rayo_prompt_component_load(module_interface, pool, config_file) != SWITCH_STATUS_SUCCESS ||
+		rayo_record_component_load(module_interface, pool, config_file) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_TERM;
 	}
 	return SWITCH_STATUS_SUCCESS;

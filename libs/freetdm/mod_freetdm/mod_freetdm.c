@@ -2241,7 +2241,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 {
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
-	ftdm_status_t status;
+	ftdm_status_t status = FTDM_SUCCESS;
 	uint32_t spanid;
 	uint32_t chanid;
 	ftdm_caller_data_t *caller_data;
@@ -2296,6 +2296,45 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 		break;
 	case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
 	case FTDM_SIGEVENT_COLLECTED_DIGIT: /* Analog E&M */
+		{
+			int span_id = ftdm_channel_get_span_id(sigmsg->channel);
+			char *dtmf = sigmsg->ev_data.collected.digits;
+			char *regex = SPAN_CONFIG[span_id].dial_regex;
+			char *fail_regex = SPAN_CONFIG[span_id].fail_dial_regex;
+			ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(sigmsg->channel);
+
+			if (zstr(regex)) {
+				regex = NULL;
+			}
+
+			if (zstr(fail_regex)) {
+				fail_regex = NULL;
+			}
+
+			ftdm_log(FTDM_LOG_DEBUG, "got DTMF sig [%s]\n", dtmf);
+			switch_set_string(caller_data->collected, dtmf);
+
+			if ((regex || fail_regex) && !zstr(dtmf)) {
+				switch_regex_t *re = NULL;
+				int ovector[30];
+				int match = 0;
+
+				if (fail_regex) {
+					match = switch_regex_perform(dtmf, fail_regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+					status = match ? FTDM_SUCCESS : FTDM_BREAK;
+					switch_regex_safe_free(re);
+					ftdm_log(FTDM_LOG_DEBUG, "DTMF [%s] vs fail regex %s %s\n", dtmf, fail_regex, match ? "matched" : "did not match");
+				}
+
+				if (status == FTDM_SUCCESS && regex) {
+					match = switch_regex_perform(dtmf, regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+					status = match ? FTDM_BREAK : FTDM_SUCCESS;
+					switch_regex_safe_free(re);
+					ftdm_log(FTDM_LOG_DEBUG, "DTMF [%s] vs dial regex %s %s\n", dtmf, regex, match ? "matched" : "did not match");
+				}
+				ftdm_log(FTDM_LOG_DEBUG, "returning %s to COLLECT event with DTMF %s\n", status == FTDM_SUCCESS ? "success" : "break", dtmf);
+			}
+		}
 		break;
 	default:
 		{
@@ -2305,7 +2344,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 		break;
 	}
 
-	return FTDM_SUCCESS;
+	return status;
 }
 
 static FIO_SIGNAL_CB_FUNCTION(on_fxs_signal)
@@ -3785,7 +3824,10 @@ static switch_status_t load_config(void)
 			char *hold_music = NULL;
 			char *fail_dial_regex = NULL;
 			char str_false[] = "false";
+			char str_empty[] = "";
 			char *answer_supervision = str_false;
+			char *ringback_during_collect = str_false;
+			char *ringback_file = str_empty;
 			uint32_t span_id = 0, to = 0, max = 0, dial_timeout_int = 0;
 			ftdm_span_t *span = NULL;
 			analog_option_t analog_options = ANALOG_OPTION_NONE;
@@ -3814,6 +3856,10 @@ static switch_status_t load_config(void)
 					max_digits = val;
 				} else if (!strcasecmp(var, "answer-supervision")) {
 					answer_supervision = val;
+				} else if (!strcasecmp(var, "ringback-during-collect")) {
+					ringback_during_collect = val;
+				} else if (!strcasecmp(var, "ringback-file")) {
+					ringback_file = val;
 				} else if (!strcasecmp(var, "enable-analog-option")) {
 					analog_options = enable_analog_option(val, analog_options);
 				}
@@ -3867,6 +3913,8 @@ static switch_status_t load_config(void)
 			if (ftdm_configure_span(span, "analog_em", on_analog_signal,
 								   "tonemap", tonegroup,
 								   "answer_supervision", answer_supervision,
+								   "ringback_during_collect", ringback_during_collect,
+								   "ringback_file", ringback_file,
 								   "digit_timeout", &to,
 								   "dial_timeout", &dial_timeout_int,
 								   "max_dialstr", &max,

@@ -54,10 +54,10 @@
 #define COMPONENT_COMPLETE_HANGUP "hangup", RAYO_EXT_COMPLETE_NS
 
 extern switch_status_t rayo_components_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file);
-extern switch_status_t rayo_input_component_load(void);
-extern switch_status_t rayo_output_component_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool);
-extern switch_status_t rayo_prompt_component_load(void);
-extern switch_status_t rayo_record_component_load(switch_memory_pool_t *pool, const char *config_file);
+extern switch_status_t rayo_input_component_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file);
+extern switch_status_t rayo_output_component_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file);
+extern switch_status_t rayo_prompt_component_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file);
+extern switch_status_t rayo_record_component_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file);
 
 extern switch_status_t rayo_components_shutdown(void);
 extern switch_status_t rayo_input_component_shutdown(void);

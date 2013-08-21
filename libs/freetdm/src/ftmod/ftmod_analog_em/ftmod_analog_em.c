@@ -33,6 +33,7 @@
  * Contributor(s):
  *
  * John Wehle (john@feith.com)
+ * Moises Silva (moy@sangoma.com)
  *
  */
 
@@ -42,6 +43,106 @@
 #ifndef localtime_r
 struct tm * localtime_r(const time_t *clock, struct tm *result);
 #endif
+
+/* check if the given file is a wave file and skip the header if it is */
+#define WAVE_CHUNK_ID "RIFF"
+#define WAVE_FMT "WAVEfmt "
+#define WAVE_HEADER_LEN 44
+static int skip_wave_header(const char *fname, FILE *f)
+{
+	char rbuff[10] = { 0 };
+	unsigned int hz = 0;
+	unsigned int hs = 0;
+	unsigned short fmt = 0;
+	unsigned short chans = 0;
+	unsigned int size = 0;
+
+	/* check chunk id */
+	if (fread(rbuff, 1, 4, f) != 4) {
+		ftdm_log(FTDM_LOG_ERROR, "Unable to read wav chunk id from file %s\n", fname);
+		goto error;
+	}
+	rbuff[4] = 0;
+
+	if (strncasecmp(rbuff, WAVE_CHUNK_ID, sizeof(WAVE_CHUNK_ID)-1)) {
+		goto notwave;
+	}
+
+	/* read chunk size */
+	if (fread(&size, 1, 4, f) != 4) {
+		ftdm_log(FTDM_LOG_ERROR, "Unable to read wav chunk size from file %s\n", fname);
+		goto error;
+	}
+
+	/* check format and sub chunk id */
+	if (fread(rbuff, 1, 8, f) != 8) {
+		ftdm_log(FTDM_LOG_ERROR, "Unable to read wav format and sub chunk id from file %s\n", fname);
+		goto error;
+	}
+	rbuff[8] = 0;
+
+	if (strncasecmp(rbuff, WAVE_FMT, sizeof(WAVE_FMT)-1)) {
+		goto notwave;
+	}
+
+	/* At this point we know is a wav file ... */
+
+	/* validate sub chunk size */
+	if (fread(&hs, 1, 4, f) != 4) {
+		ftdm_log(FTDM_LOG_ERROR, "Unable to read wav sub chunk size from file %s\n", fname);
+		goto error;
+	}
+
+	if (hs != 16) {
+		ftdm_log(FTDM_LOG_ERROR, "Unsupported wav sub chunk size %d from file %s\n", hs, fname);
+		goto error;
+	}
+
+	/* validate audio format */
+	if (fread(&fmt, 1, 2, f) != 2) {
+		ftdm_log(FTDM_LOG_ERROR, "Unable to read wav audio format from file %s\n", fname);
+		goto error;
+	}
+
+	if (fmt != 1) {
+		ftdm_log(FTDM_LOG_ERROR, "Unsupported wav audio format %d in file %s, we only support PCM\n", fmt, fname);
+		goto error;
+	}
+
+	/* validate channels */
+	if (fread(&chans, 1, 2, f) != 2) {
+		ftdm_log(FTDM_LOG_ERROR, "Unable to read wav channels from file %s\n", fname);
+		goto error;
+	}
+
+	if (chans != 1) {
+		ftdm_log(FTDM_LOG_ERROR, "Unsupported number of channels %d in file %s, we only support 1 (mono)\n", chans, fname);
+		goto error;
+	}
+
+	/* validate sampling rate */
+	if (fread(&hz, 1, 2, f) != 2) {
+		ftdm_log(FTDM_LOG_ERROR, "Unable to read wav sampling rate from file %s\n", fname);
+		goto error;
+	}
+
+	if (hz != 8000) {
+		ftdm_log(FTDM_LOG_ERROR, "Invalid input wav sampling rate %dHz, only 8000Hz supported\n", hz);
+		goto error;
+	}
+
+	ftdm_log(FTDM_LOG_DEBUG, "Found input file %s. PCM mono wav of %d bytes at %dHz, skipping header ...\n", fname, size, hz);
+	fseek(f, WAVE_HEADER_LEN, SEEK_SET);
+
+	return 0;
+
+notwave:
+	ftdm_log(FTDM_LOG_ERROR, "File %s is not a wav file\n", fname);
+	return -1;
+
+error:
+	return -1;
+}
 
 static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj);
 
@@ -83,6 +184,19 @@ static ftdm_status_t ftdm_analog_em_start(ftdm_span_t *span)
 }
 
 /**
+ * \brief Stops EM span thread (monitor)
+ * \param span Span to monitor
+ * \return Success or failure
+ */
+static ftdm_status_t ftdm_analog_em_stop(ftdm_span_t *span)
+{
+	ftdm_analog_em_data_t *analog_data = span->signal_data;
+	ftdm_clear_flag(analog_data, FTDM_ANALOG_EM_RUNNING);
+	ftdm_sleep(100);
+	return FTDM_SUCCESS;
+}
+
+/**
  * \brief Returns the signalling status on a channel
  * \param ftdmchan Channel to get status on
  * \param status	Pointer to set signalling status
@@ -118,8 +232,10 @@ static FIO_SPAN_GET_SIG_STATUS_FUNCTION(analog_em_get_span_sig_status)
 static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_em_configure_span)
 //ftdm_status_t ftdm_analog_em_configure_span(ftdm_span_t *span, char *tonemap, uint32_t digit_timeout, uint32_t max_dialstr, fio_signal_cb_t sig_cb)
 {
-	ftdm_analog_em_data_t *analog_data;
+	ftdm_analog_em_data_t *analog_data = NULL;
 	const char *tonemap = "us";
+	const char *ringback_file = "";
+	ftdm_bool_t ringback_during_collect = FTDM_FALSE;
 	uint32_t digit_timeout = 2000;
 	uint32_t max_dialstr = 11;
 	uint32_t dial_timeout = 0;
@@ -134,9 +250,8 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_em_configure_span)
 		return FTDM_FAIL;
 	}
 	
-	analog_data = ftdm_malloc(sizeof(*analog_data));
+	analog_data = ftdm_calloc(1, sizeof(*analog_data));
 	assert(analog_data != NULL);
-	memset(analog_data, 0, sizeof(*analog_data));
 
 	while((var = va_arg(ap, char *))) {
 		ftdm_log(FTDM_LOG_DEBUG, "Parsing analog em parameter '%s'\n", var);
@@ -145,6 +260,16 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_em_configure_span)
 				break;
 			}
 			tonemap = val;
+		} else if (!strcasecmp(var, "ringback_during_collect")) {
+			if (!(val = va_arg(ap, char *))) {
+				break;
+			}
+			ringback_during_collect = ftdm_true(val);
+		} else if (!strcasecmp(var, "ringback_file")) {
+			if (!(val = va_arg(ap, char *))) {
+				break;
+			}
+			ringback_file = val;
 		} else if (!strcasecmp(var, "answer_supervision")) {
 			if (!(val = va_arg(ap, char *))) {
 				break;
@@ -182,6 +307,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_em_configure_span)
 	}
 
 	span->start = ftdm_analog_em_start;
+	span->stop = ftdm_analog_em_stop;
 	analog_data->digit_timeout = digit_timeout;
 	analog_data->max_dialstr = max_dialstr;
 	analog_data->dial_timeout = dial_timeout;
@@ -193,6 +319,10 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_em_configure_span)
 	span->get_channel_sig_status = analog_em_get_channel_sig_status;
 	span->get_span_sig_status = analog_em_get_span_sig_status;
 	ftdm_span_load_tones(span, tonemap);
+	if (ringback_during_collect) {
+		analog_data->ringback_during_collect = FTDM_TRUE;
+		ftdm_set_string(analog_data->ringback_file, ringback_file);
+	}
 
 	return FTDM_SUCCESS;
 
@@ -239,6 +369,7 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 	int cas_bits = 0;
 	uint32_t cas_answer = 0;
 	int cas_answer_ms = 500;
+	FILE *ringback_f = NULL;
 	ftdm_bool_t digits_sent = FTDM_FALSE;
 	
 	ftdm_log(FTDM_LOG_DEBUG, "ANALOG EM CHANNEL thread starting.\n");
@@ -279,6 +410,18 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 	
 	assert(interval != 0);
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "IO Interval: %u\n", interval);
+
+	if (analog_data->ringback_during_collect && !ftdm_strlen_zero(analog_data->ringback_file)) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Using ringback file '%s'\n", analog_data->ringback_file);
+		ringback_f = fopen(analog_data->ringback_file, "rb");
+		if (!ringback_f) {
+			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to open ringback file '%s'\n", analog_data->ringback_file);
+		} else {
+			if (skip_wave_header(analog_data->ringback_file, ringback_f)) {
+				ringback_f = NULL;
+			}
+		}
+	}
 
 	while (ftdm_running() && ftdm_test_flag(ftdmchan, FTDM_CHANNEL_INTHREAD)) {
 		ftdm_wait_flag_t flags = FTDM_READ;
@@ -512,7 +655,6 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 			}
 		}
 
-
 		if (last_digit && (!collecting || ((elapsed - last_digit > analog_data->digit_timeout) || strlen(dtmf) > analog_data->max_dialstr))) {
 			ftdm_log(FTDM_LOG_DEBUG, "Number obtained [%s]\n", dtmf);
 			ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_RING);
@@ -573,6 +715,16 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 			ftdm_channel_write(ftdmchan, frame, sizeof(frame), &rlen);
 			continue;
 		}
+
+		if (analog_data->ringback_during_collect && ringback_f &&
+		    (ftdmchan->state == FTDM_CHANNEL_STATE_COLLECT ||
+		     ftdmchan->state == FTDM_CHANNEL_STATE_RING ||
+		     ftdmchan->state == FTDM_CHANNEL_STATE_RINGING ||
+		     ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS ||
+		     ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS_MEDIA
+		     )) {
+			indicate = 1;
+		}
 		
 		if (!indicate) {
 			continue;
@@ -582,7 +734,25 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 			len *= 2;
 		}
 
-		rlen = ftdm_buffer_read_loop(dt_buffer, frame, len);
+		if (ringback_f) {
+			uint8_t failed_read = 0;
+read_try:
+			rlen = fread(frame, 1, len, ringback_f);
+			if (rlen != len) {
+				if (!feof(ringback_f)) {
+					ftdm_log(FTDM_LOG_ERROR, "Error reading from ringback file: %zd != %zd\n", rlen, len);
+				}
+				if (failed_read) {
+					continue;
+				}
+				/* return cursor to start of wav file */
+				fseek(ringback_f, WAVE_HEADER_LEN, SEEK_SET);
+				failed_read++;
+				goto read_try;
+			}
+		} else {
+			rlen = ftdm_buffer_read_loop(dt_buffer, frame, len);
+		}
 
 		if (ftdmchan->effective_codec != FTDM_CODEC_SLIN) {
 			fio_codec_t codec_func = NULL;
@@ -596,7 +766,7 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 			if (codec_func) {
 				codec_func(frame, sizeof(frame), &rlen);
 			} else {
-				snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "codec error!");
+				ftdm_log(FTDM_LOG_ERROR, "codec error, no codec function for native codec %d!", ftdmchan->native_codec);
 				goto done;
 			}
 		}
@@ -619,6 +789,10 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 
 	if (dt_buffer) {
 		ftdm_buffer_destroy(&dt_buffer);
+	}
+
+	if (ringback_f) {
+		fclose(ringback_f);
 	}
 
 	ftdm_clear_flag(closed_chan, FTDM_CHANNEL_INTHREAD);

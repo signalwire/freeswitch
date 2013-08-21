@@ -620,9 +620,12 @@ static iks *forward_output_component_request(struct rayo_actor *prompt, struct r
 
 /**
  * Initialize prompt component
+ * @param module_interface
+ * @param pool memory pool to allocate from
+ * @param config_file to use
  * @return SWITCH_STATUS_SUCCESS if successful
  */
-switch_status_t rayo_prompt_component_load(void)
+switch_status_t rayo_prompt_component_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file)
 {
 	/* Prompt is a convenience component that wraps <input> and <output> */
 	rayo_actor_command_handler_add(RAT_CALL, "", "set:"RAYO_PROMPT_NS":prompt", start_call_prompt_component);

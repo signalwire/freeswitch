@@ -7670,7 +7670,9 @@ SWITCH_STANDARD_APP(conference_function)
 			}
 
 			while (!pin_valid && pin_retries && status == SWITCH_STATUS_SUCCESS) {
-				int maxpin = strlen(dpin) > strlen(mdpin) ? strlen(dpin) : strlen(mdpin);
+				size_t dpin_length = dpin ? strlen(dpin) : 0;
+				size_t mdpin_length = mdpin ? strlen(mdpin) : 0;
+				int maxpin = dpin_length > mdpin_length ? dpin_length : mdpin_length;
 				switch_status_t pstatus = SWITCH_STATUS_FALSE;
 
 				/* be friendly */

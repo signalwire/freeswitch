@@ -894,6 +894,7 @@ SWITCH_STANDARD_API(sangoma_function)
 	char *argv[10] = { 0 };
 	int argc = 0;
 	char *mycmd = NULL;
+	switch_bool_t locked = SWITCH_FALSE;
 
 	if (zstr(cmd)) {
 		stream->write_function(stream, "%s", SANGOMA_SYNTAX);
@@ -910,6 +911,10 @@ SWITCH_STANDARD_API(sangoma_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	/* Most operations in this API require the global session lock anyways since sessions can disappear at any moment ... */
+	switch_mutex_lock(g_sessions_lock);
+	locked = SWITCH_TRUE;
+
 	if (!strcasecmp(argv[0], "settings")) {
 		char addrbuff[50];
 		int addr;
@@ -922,7 +927,6 @@ SWITCH_STANDARD_API(sangoma_function)
 		const void *var;
 		void *val;
 		unsigned totalsess = 0;
-		switch_mutex_lock(g_sessions_lock);
 #define STATS_FORMAT "%-10.10s %-10.10s %-10.10s %-10.10s %-10.10s %-10.10s %-10.10s %-10.10s %-10.10s %-10.10s %-15.15s %-15.15s\n"
 		stream->write_function(stream, STATS_FORMAT,
 				"Session", "Codec", "Enc", "Dec", "Enc Tx", "Enc Rx", "Dec Tx", "Dec Rx", "Enc Lost", "Dec Lost", "Enc AvgRxMs", "Dec AvgRxMs");
@@ -967,7 +971,6 @@ SWITCH_STANDARD_API(sangoma_function)
 					decoder_avgrxus_str);
 			totalsess++;
 		}
-		switch_mutex_unlock(g_sessions_lock);
 		stream->write_function(stream, "Total sessions: %d\n", totalsess);
 	} else if (!strcasecmp(argv[0], "stats")) {
 		struct sangoma_transcoding_session *sess;
@@ -983,6 +986,7 @@ SWITCH_STANDARD_API(sangoma_function)
 			stream->write_function(stream, "%s", SANGOMA_SYNTAX);
 			goto done;
 		} 
+
 		sess = sangoma_find_session(sessid);
 		if (!sess) {
 			stream->write_function(stream, "Failed to find session %lu\n", sessid);
@@ -1076,6 +1080,9 @@ SWITCH_STANDARD_API(sangoma_function)
 	}
 
 done:
+	if (locked) {
+		switch_mutex_unlock(g_sessions_lock);
+	}
 	switch_safe_free(mycmd);
 
 	return SWITCH_STATUS_SUCCESS;
