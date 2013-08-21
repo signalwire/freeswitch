@@ -54,7 +54,7 @@ struct ftdm_analog_data {
 	uint32_t digit_timeout;
 	uint32_t dial_timeout;
 	ftdm_bool_t answer_supervision;
-	ftdm_bool_t ringback_during_collect;
+	ftdm_bool_t immediate_ringback;
 	char ringback_file[512];
 };
 
