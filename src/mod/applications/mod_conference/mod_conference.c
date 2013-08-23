@@ -451,6 +451,7 @@ struct conference_member {
 	conference_cdr_node_t *cdr_node;
 	char *kicked_sound;
 	switch_queue_t *dtmf_queue;
+	switch_thread_t *input_thread;
 };
 
 /* Record Node */
@@ -3184,6 +3185,11 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 	uint32_t hangover = 40, hangunder = 5, hangover_hits = 0, hangunder_hits = 0, diff_level = 400;
 	switch_core_session_t *session = member->session;
 
+
+	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
+		return NULL;
+	}
+
 	switch_assert(member != NULL);
 
 	switch_clear_flag_locked(member, MFLAG_TALKING);
@@ -3480,6 +3486,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 	switch_resample_destroy(&member->read_resampler);
 	switch_clear_flag_locked(member, MFLAG_ITHREAD);
 
+	switch_core_session_rwunlock(session);
+
 	return NULL;
 }
 
@@ -3569,17 +3577,15 @@ static void member_add_file_data(conference_member_t *member, int16_t *data, swi
 /* launch an input thread for the call leg */
 static void launch_conference_loop_input(conference_member_t *member, switch_memory_pool_t *pool)
 {
-	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 
 	if (member == NULL)
 		return;
 
 	switch_threadattr_create(&thd_attr, pool);
-	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_set_flag_locked(member, MFLAG_ITHREAD);
-	switch_thread_create(&thread, thd_attr, conference_loop_input, member, pool);
+	switch_thread_create(&member->input_thread, thd_attr, conference_loop_input, member, pool);
 }
 
 /* marshall frames from the conference (or file or tts output) to the call leg */
@@ -3599,6 +3605,7 @@ static void conference_loop_output(conference_member_t *member)
 	call_list_t *call_list, *cp;
 	switch_codec_implementation_t read_impl = { 0 };
 	int sanity;
+	switch_status_t st;
 
 	switch_core_session_get_read_impl(member->session, &read_impl);
 
@@ -3913,6 +3920,11 @@ static void conference_loop_output(conference_member_t *member)
  end:
 
 	switch_clear_flag_locked(member, MFLAG_RUNNING);
+
+	if (member->input_thread) {
+		switch_thread_join(&st, member->input_thread);
+	}
+
 	switch_core_timer_destroy(&timer);
 
 	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Channel leaving conference, cause: %s\n",
