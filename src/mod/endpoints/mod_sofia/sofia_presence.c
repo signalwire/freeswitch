@@ -3658,6 +3658,39 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 	switch_snprintf(exp_delta_str, sizeof(exp_delta_str), "%ld", exp_delta);
 
+	if (!strcmp("as-feature-event", event)) {
+		sip_authorization_t const *authorization = NULL;
+		auth_res_t auth_res = AUTH_FORBIDDEN;
+		char key[128] = "";
+		switch_event_t *v_event = NULL;
+
+
+		if (sip->sip_authorization) {
+			authorization = sip->sip_authorization;
+		} else if (sip->sip_proxy_authorization) {
+			authorization = sip->sip_proxy_authorization;
+		}
+
+		if (authorization) {
+			char network_ip[80];
+			sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), NULL);
+			auth_res = sofia_reg_parse_auth(profile, authorization, sip, de,
+											(char *) sip->sip_request->rq_method_name, key, sizeof(key), network_ip, &v_event, 0,
+											REG_REGISTER, to_user, NULL, NULL, NULL);
+		} else if ( sofia_reg_handle_register(nua, profile, nh, sip, de, REG_REGISTER, key, sizeof(key), &v_event, NULL, NULL, NULL)) {
+			if (v_event) {
+				switch_event_destroy(&v_event);
+			}
+
+			goto end;
+		}
+
+		if ((auth_res != AUTH_OK && auth_res != AUTH_RENEWED)) {
+			nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+			goto end;
+		}
+	}
+
 	if (to_user && strchr(to_user, '+')) {
 		char *h;
 		if ((proto = (d_user = strdup(to_user)))) {
@@ -3991,7 +4024,24 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 	switch_safe_free(sstr);
 
-	if (!strcasecmp(event, "message-summary")) {
+	if (!strcasecmp(event, "as-feature-event")) {
+		switch_event_t *event;
+		char sip_cseq[40] = "";
+		switch_snprintf(sip_cseq, sizeof(sip_cseq), "%d", sip->sip_cseq->cs_seq);
+		switch_event_create(&event, SWITCH_EVENT_PHONE_FEATURE_SUBSCRIBE);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "user", from_user);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "host", from_host);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "contact", contact_str);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-id", call_id);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "expires", exp_delta_str);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "cseq", sip_cseq);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "profile_name", profile->name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hostname", mod_sofia_globals.hostname);
+		if (sip->sip_payload) {
+				switch_event_add_body(event, "%s", sip->sip_payload->pl_data);
+		}
+		switch_event_fire(&event);
+	} else if (!strcasecmp(event, "message-summary")) {
 		if ((sql = switch_mprintf("select proto,sip_user,'%q',sub_to_user,sub_to_host,event,contact,call_id,full_from,"
 								  "full_via,expires,user_agent,accept,profile_name,network_ip"
 								  " from sip_subscriptions where hostname='%q' and profile_name='%q' and "

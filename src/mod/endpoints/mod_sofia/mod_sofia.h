@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,14 +22,14 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Ken Rice <krice@freeswitch.org>
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  * Raymond Chandler <intralanman@gmail.com>
- * Emmanuel Schmidbauer <e.schmidbauer@gmail.com> 
+ * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
  *
  *
  * mod_sofia.h -- SOFIA SIP Endpoint
@@ -149,9 +149,9 @@ typedef enum {
 
 typedef struct sofia_dispatch_event_s {
 	nua_saved_event_t event[1];
-    nua_handle_t *nh;
-    nua_event_data_t const *data;
-    su_time_t when;
+	nua_handle_t *nh;
+	nua_event_data_t const *data;
+	su_time_t when;
 	sip_t *sip;
 	nua_t *nua;
 	sofia_profile_t *profile;
@@ -353,7 +353,7 @@ struct mod_sofia_globals {
 	int reg_deny_binding_fetch_and_no_lookup; /* backwards compatibility */
 	int auto_nat;
 	int tracelevel;
-	char *capture_server;	
+	char *capture_server;
 	int rewrite_multicasted_fs_path;
 	int presence_flush;
 	switch_thread_t *presence_thread;
@@ -511,10 +511,10 @@ typedef enum {
 } sofia_media_options_t;
 
 typedef enum {
-       PAID_DEFAULT = 0,
-       PAID_USER,
-       PAID_USER_DOMAIN,
-       PAID_VERBATIM
+	   PAID_DEFAULT = 0,
+	   PAID_USER,
+	   PAID_USER_DOMAIN,
+	   PAID_VERBATIM
 } sofia_paid_type_t;
 
 #define MAX_RTPIP 50
@@ -619,7 +619,7 @@ struct sofia_profile {
 	char *pre_trans_execute;
 	char *post_trans_execute;
 	char *inner_pre_trans_execute;
-	char *inner_post_trans_execute;	
+	char *inner_post_trans_execute;
 	switch_sql_queue_manager_t *qm;
 	char *acl[SOFIA_MAX_ACL];
 	char *acl_pass_context[SOFIA_MAX_ACL];
@@ -678,7 +678,7 @@ struct sofia_profile {
 	sofia_paid_type_t paid_type;
 	uint32_t rtp_digit_delay;
 	switch_queue_t *event_queue;
-	switch_thread_t *thread;		
+	switch_thread_t *thread;
 	switch_core_media_vflag_t vflags;
 	char *ws_ip;
 	switch_port_t ws_port;
@@ -851,7 +851,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 								sofia_dispatch_event_t *de, tagi_t tags[]);
 
 void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, sofia_dispatch_event_t *de, tagi_t tags[]);
-							   
+
 
 void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t **sofia_private, sip_t const *sip,
 								sofia_dispatch_event_t *de,
@@ -868,9 +868,9 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 void launch_sofia_profile_thread(sofia_profile_t *profile);
 
 switch_status_t sofia_presence_chat_send(switch_event_t *message_event);
-										 
+
 /*
- * \brief Sets the "ep_codec_string" channel variable, parsing r_sdp and taing codec_string in consideration 
+ * \brief Sets the "ep_codec_string" channel variable, parsing r_sdp and taing codec_string in consideration
  * \param channel Current channel
  * \param codec_string The profile's codec string or NULL if inexistant
  * \param sdp The parsed SDP content
@@ -935,7 +935,7 @@ switch_call_cause_t sofia_glue_sip_cause_to_freeswitch(int status);
 void sofia_glue_do_xfer_invite(switch_core_session_t *session);
 uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip,
 								  sofia_dispatch_event_t *de,
-								  sofia_regtype_t regtype, char *key, 
+								  sofia_regtype_t regtype, char *key,
 								  uint32_t keylen, switch_event_t **v_event, const char *is_nat, sofia_private_t **sofia_private_p, switch_xml_t *user_xml);
 extern switch_endpoint_interface_t *sofia_endpoint_interface;
 void sofia_presence_set_chat_hash(private_object_t *tech_pvt, sip_t const *sip);
@@ -1044,7 +1044,7 @@ void sofia_glue_restart_all_profiles(void);
 const char *sofia_state_string(int state);
 void sofia_wait_for_reply(struct private_object *tech_pvt, nua_event_t event, uint32_t timeout);
 
-/* 
+/*
  * Logging control functions
  */
 
@@ -1117,6 +1117,7 @@ switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, char **i
 void sofia_reg_check_socket(sofia_profile_t *profile, const char *call_id, const char *network_addr, const char *network_ip);
 void sofia_reg_close_handles(sofia_profile_t *profile);
 
+void write_csta_xml_chunk(switch_event_t *event, switch_stream_handle_t stream, const char *csta_event, char *fwd_type);
 /* For Emacs:
  * Local Variables:
  * mode:c

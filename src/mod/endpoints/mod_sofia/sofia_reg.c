@@ -1240,10 +1240,12 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		to_host = to->a_url->url_host;
 	}
 
-	if (!to_user)
+	if (!to_user) {
 		to_user = from_user;
-	if (!to_host)
+	}
+	if (!to_host) {
 		to_host = from_host;
+	}
 
 	if (!to_user || !to_host) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can not do authorization without a complete header in REGISTER request from %s:%d\n", 

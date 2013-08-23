@@ -4582,6 +4582,70 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	return cause;
 }
 
+static int notify_csta_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	nua_handle_t *nh;
+	sofia_profile_t *ext_profile = NULL, *profile = (sofia_profile_t *) pArg;
+	int i = 0;
+	char *user = argv[i++];
+	char *host = argv[i++];
+	char *contact_in = argv[i++];
+	char *profile_name = argv[i++];
+	char *call_id = argv[i++];
+	char *full_from = argv[i++];
+	char *full_to = argv[i++];
+	int expires = atoi(argv[i++]);
+	char *body = argv[i++];
+	char *ct = argv[i++];
+	char *id = NULL;
+	char *contact;
+	sofia_destination_t *dst = NULL;
+	char *route_uri = NULL;
+
+	time_t epoch_now = switch_epoch_time_now(NULL);
+	time_t expires_in = (expires - epoch_now);
+	char *extra_headers = switch_mprintf("Subscription-State: active, %d\r\n", expires_in);
+
+	if (profile_name && strcasecmp(profile_name, profile->name)) {
+		if ((ext_profile = sofia_glue_find_profile(profile_name))) {
+			profile = ext_profile;
+		}
+	}
+
+	id = switch_mprintf("sip:%s@%s", user, host);
+	switch_assert(id);
+	contact = sofia_glue_get_url_from_contact(contact_in, 1);
+
+
+	dst = sofia_glue_get_destination((char *) contact);
+
+	if (dst->route_uri) {
+		route_uri = sofia_glue_strip_uri(dst->route_uri);
+	}
+
+	//nh = nua_handle(profile->nua, NULL, NUTAG_URL(dst->contact), SIPTAG_FROM_STR(id), SIPTAG_TO_STR(id), SIPTAG_CONTACT_STR(profile->url), TAG_END());
+	nh = nua_handle(profile->nua, NULL, NUTAG_URL(dst->contact), SIPTAG_FROM_STR(full_from), SIPTAG_TO_STR(full_to), SIPTAG_CONTACT_STR(profile->url), TAG_END());
+
+	nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
+
+	nua_notify(nh, NUTAG_NEWSUB(1),
+			   TAG_IF(dst->route_uri, NUTAG_PROXY(route_uri)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)), TAG_IF(call_id, SIPTAG_CALL_ID_STR(call_id)),
+			   SIPTAG_EVENT_STR("as-feature-event"), SIPTAG_CONTENT_TYPE_STR(ct), TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_IF(!zstr(body), SIPTAG_PAYLOAD_STR(body)), TAG_END());
+
+
+
+	switch_safe_free(route_uri);
+	sofia_glue_free_destination(dst);
+
+	free(id);
+	free(contact);
+
+	if (ext_profile) {
+		sofia_glue_release_profile(ext_profile);
+	}
+
+	return 0;
+}
 
 static int notify_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
@@ -4655,22 +4719,69 @@ static void general_event_handler(switch_event_t *event)
 			const char *to_uri = switch_event_get_header(event, "to-uri");
 			const char *from_uri = switch_event_get_header(event, "from-uri");
 			const char *extra_headers = switch_event_get_header(event, "extra-headers");
+			const char *contact_uri = switch_event_get_header(event, "contact-uri");
+			const char *no_sub_state = switch_event_get_header(event, "no-sub-state");
 
 			sofia_profile_t *profile;
 
+			if (contact_uri) {
+				if (!es) {
+					es = "message-summary";
+				}
 
-			if (to_uri || from_uri) {
+				if (!ct) {
+					ct = "application/simple-message-summary";
+				}
 
-				if (!to_uri) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing To-URI header\n");
+				if (!profile_name) {
+					profile_name = "default";
+				}
+
+				if (!(profile = sofia_glue_find_profile(profile_name))) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find profile %s\n", profile_name);
 					return;
 				}
 
-				if (!from_uri) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing From-URI header\n");
-					return;
+				if (to_uri && from_uri) {
+					sofia_destination_t *dst = NULL;
+					nua_handle_t *nh;
+					char *route_uri = NULL;
+					char *sip_sub_st = NULL;
+
+					dst = sofia_glue_get_destination((char *) contact_uri);
+
+					if (dst->route_uri) {
+						route_uri = sofia_glue_strip_uri(dst->route_uri);
+					}
+
+					nh = nua_handle(profile->nua,
+									NULL,
+									NUTAG_URL(dst->contact),
+									SIPTAG_FROM_STR(from_uri),
+									SIPTAG_TO_STR(to_uri),
+									SIPTAG_CONTACT_STR(profile->url),
+									TAG_END());
+
+					nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
+
+					if (!switch_true(no_sub_state)) {
+						sip_sub_st = "terminated;reason=noresource";
+					}
+
+					nua_notify(nh,
+							   NUTAG_NEWSUB(1), TAG_IF(sip_sub_st, SIPTAG_SUBSCRIPTION_STATE_STR(sip_sub_st)),
+							   TAG_IF(dst->route_uri, NUTAG_PROXY(dst->route_uri)), TAG_IF(dst->route, SIPTAG_ROUTE_STR(dst->route)), TAG_IF(call_id, SIPTAG_CALL_ID_STR(call_id)),
+							   SIPTAG_EVENT_STR(es), TAG_IF(ct, SIPTAG_CONTENT_TYPE_STR(ct)), TAG_IF(!zstr(body), SIPTAG_PAYLOAD_STR(body)),
+							   TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)), TAG_END());
+
+					switch_safe_free(route_uri);
+					sofia_glue_free_destination(dst);
+
+					sofia_glue_release_profile(profile);
 				}
 
+				return;
+			} else if (to_uri || from_uri) {
 				if (!es) {
 					es = "message-summary";
 				}
@@ -4768,6 +4879,96 @@ static void general_event_handler(switch_event_t *event)
 				free(sql);
 			}
 
+		}
+		break;
+	case SWITCH_EVENT_PHONE_FEATURE:
+		{
+			const char *profile_name = switch_event_get_header(event, "profile");
+			const char *user = switch_event_get_header(event, "user");
+			const char *host = switch_event_get_header(event, "host");
+			const char *call_id = switch_event_get_header(event, "call-id");
+			const char *csta_event = switch_event_get_header(event, "csta-event");
+
+			char *ct = "application/x-as-feature-event+xml";
+
+			sofia_profile_t *profile;
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Phone Feature NOTIFY\n");
+			if (profile_name && user && host && (profile = sofia_glue_find_profile(profile_name))) {
+				char *sql;
+				switch_stream_handle_t stream = { 0 };
+				SWITCH_STANDARD_STREAM(stream);
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "we have all required vars\n");
+
+				if (csta_event) {
+					if (!strcmp(csta_event, "init")) {
+						char *boundary_string = "UniqueFreeSWITCHBoundary";
+						switch_stream_handle_t dnd_stream = { 0 };
+						char *header_name = NULL;
+
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending multipart with DND and CFWD\n");
+
+						if ((header_name = switch_event_get_header(event, "forward_immediate"))) {
+							switch_stream_handle_t fwdi_stream = { 0 };
+							SWITCH_STANDARD_STREAM(fwdi_stream);
+							write_csta_xml_chunk(event, fwdi_stream, "ForwardingEvent", "forwardImmediate");
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%s] is %d bytes long\n", (char *)fwdi_stream.data, (int)strlen(fwdi_stream.data));
+							stream.write_function(&stream, "--%s\nContent-Type: application/x-as-feature-event+xml\nContent-Length:%d\nContent-ID:<%s@%s>\n\n%s", boundary_string, strlen(fwdi_stream.data), user, host, fwdi_stream.data);
+							switch_safe_free(fwdi_stream.data);
+						}
+						if ((header_name = switch_event_get_header(event, "forward_busy"))) {
+							switch_stream_handle_t fwdb_stream = { 0 };
+							SWITCH_STANDARD_STREAM(fwdb_stream);
+							write_csta_xml_chunk(event, fwdb_stream, "ForwardingEvent", "forwardBusy");
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%s] is %d bytes long\n", (char *)fwdb_stream.data, (int)strlen(fwdb_stream.data));
+							stream.write_function(&stream, "--%s\nContent-Type: application/x-as-feature-event+xml\nContent-Length:%d\nContent-ID:<%s@%s>\n\n%s", boundary_string, strlen(fwdb_stream.data), user, host, fwdb_stream.data);
+							switch_safe_free(fwdb_stream.data);
+						}
+						if ((header_name = switch_event_get_header(event, "forward_no_answer"))) {
+							switch_stream_handle_t fwdna_stream = { 0 };
+							SWITCH_STANDARD_STREAM(fwdna_stream);
+							write_csta_xml_chunk(event, fwdna_stream, "ForwardingEvent", "forwardNoAns");
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%s] is %d bytes long\n", (char *)fwdna_stream.data, (int)strlen(fwdna_stream.data));
+							stream.write_function(&stream, "--%s\nContent-Type: application/x-as-feature-event+xml\nContent-Length:%d\nContent-ID:<%s@%s>\n\n%s", boundary_string, strlen(fwdna_stream.data), user, host, fwdna_stream.data);
+							switch_safe_free(fwdna_stream.data);
+						}
+
+						SWITCH_STANDARD_STREAM(dnd_stream);
+						write_csta_xml_chunk(event, dnd_stream, "DoNotDisturbEvent", NULL);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%s] is %d bytes long\n", (char *)dnd_stream.data, (int)strlen(dnd_stream.data));
+						stream.write_function(&stream, "--%s\nContent-Type:application/x-as-feature-event+xml\nContent-Length:%d\nContent-ID:<%s@%s>\n\n%s", boundary_string, strlen(dnd_stream.data), user, host, dnd_stream.data);
+						switch_safe_free(dnd_stream.data);
+
+						stream.write_function(&stream, "--%s--\n", boundary_string);
+
+						ct = switch_mprintf("multipart/mixed; boundary=\"%s\"", boundary_string);
+					} else {
+						// this will need some work to handle the different types of forwarding events
+						write_csta_xml_chunk(event, stream, csta_event, NULL);
+					}
+				}
+
+				if (call_id) {
+					sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,call_id,full_from,full_to,expires,'%q', '%q' "
+										 "from sip_subscriptions where event='as-feature-event' and call_id='%q'", stream.data, ct, call_id);
+				} else {
+					sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,call_id,full_from,full_to,expires,'%q', '%q' "
+										 "from sip_subscriptions where event='as-feature-event' and sip_user='%s' and sip_host='%q'", stream.data, ct, switch_str_nil(user), switch_str_nil(host)
+										 );
+				}
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Query: %s\n", sql);
+				switch_safe_free(stream.data);
+				switch_mutex_lock(profile->ireg_mutex);
+				sofia_glue_execute_sql_callback(profile, NULL, sql, notify_csta_callback, profile);
+				switch_mutex_unlock(profile->ireg_mutex);
+				sofia_glue_release_profile(profile);
+
+				free(sql);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "missing something\n");
+			}
 		}
 		break;
 	case SWITCH_EVENT_SEND_MESSAGE:
@@ -5021,6 +5222,57 @@ static void general_event_handler(switch_event_t *event)
 		break;
 	default:
 		break;
+	}
+}
+
+void write_csta_xml_chunk(switch_event_t *event, switch_stream_handle_t stream, const char *csta_event, char *fwdtype)
+{
+	const char *device = switch_event_get_header(event, "device");
+
+	if (csta_event) {
+		stream.write_function(&stream, "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n<%s xmlns=\"http://www.ecma-international.org/standards/ecma-323/csta/ed3\">\n", csta_event);
+	}
+
+	if (device) {
+		stream.write_function(&stream, "  <device>%s</device>\n", device);
+	}
+
+	if (!strcmp(csta_event, "DoNotDisturbEvent")) {
+		const char *dndstatus = switch_event_get_header(event, "doNotDisturbOn");
+
+		if (dndstatus) {
+			stream.write_function(&stream, "  <doNotDisturbOn>%s</doNotDisturbOn>\n", dndstatus);
+		}
+	} else if(!strcmp(csta_event, "ForwardingEvent")) {
+		const char *fwdstatus = switch_event_get_header(event, "forwardStatus");
+		const char *fwdto = NULL;
+		const char *ringcount = NULL;
+
+		if (strcmp("forwardImmediate", fwdtype)) {
+			fwdto = switch_event_get_header(event, "forward_immediate");
+		} else if (strcmp("forwardBusy", fwdtype)) {
+			fwdto = switch_event_get_header(event, "forward_busy");
+		} else if (strcmp("fowardNoAns", fwdtype)) {
+			fwdto = switch_event_get_header(event, "forward_no_answer");
+			ringcount = switch_event_get_header(event, "ringCount");
+		}
+
+		if (fwdtype) {
+			stream.write_function(&stream, "  <forwardingType>%s</forwardingType>\n", fwdtype);
+		}
+		if (fwdstatus) {
+			stream.write_function(&stream, "  <forwardStatus>%s</forwardStatus>\n", fwdstatus);
+		}
+		if (fwdto) {
+			stream.write_function(&stream, "  <forwardTo>%s</forwardTo>\n", fwdto);
+		}
+		if (ringcount) {
+			stream.write_function(&stream, "  <ringCount>%s</ringCount>\n", ringcount);
+		}
+	}
+
+	if (csta_event) {
+		stream.write_function(&stream, "</%s>\n", csta_event);
 	}
 }
 
@@ -5283,6 +5535,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	}
 
 	if (switch_event_bind(modname, SWITCH_EVENT_NOTIFY, SWITCH_EVENT_SUBCLASS_ANY, general_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (switch_event_bind(modname, SWITCH_EVENT_PHONE_FEATURE, SWITCH_EVENT_SUBCLASS_ANY, general_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
