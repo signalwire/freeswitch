@@ -244,8 +244,8 @@ static void test_parse_nlsml_examples(void)
 static const char *nlsml_dtmf_result =
 	"<result xmlns='http://www.ietf.org/xml/ns/mrcpv2' "
 	"xmlns:xf='http://www.w3.org/2000/xforms'><interpretation>"
-	"<input><input mode='dtmf' confidence='100'>1 2 3 4</input>"
-	"</input></interpretation></result>";
+	"<input mode='dtmf' confidence='100'>1 2 3 4</input>"
+	"</interpretation></result>";
 
 /**
  * Test parsing NLSML example results
