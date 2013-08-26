@@ -287,7 +287,7 @@ static void valet_send_presence(const char *lot_name, valet_lot_t *lot, valet_to
 	}
 	
 	if (zstr(domain_name)) {
-		dup_domain_name = switch_core_get_variable_dup("domain");
+		dup_domain_name = switch_core_get_domain(SWITCH_TRUE);
 		domain_name = dup_domain_name;
 	}
 	

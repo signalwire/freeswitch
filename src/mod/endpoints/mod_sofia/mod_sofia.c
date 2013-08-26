@@ -4305,7 +4305,7 @@ SWITCH_STANDARD_API(sofia_contact_function)
 	}
 
 	if (zstr(domain)) {
-		dup_domain = switch_core_get_variable_dup("domain");
+		dup_domain = switch_core_get_domain(SWITCH_TRUE);
 		domain = dup_domain;
 	}
 
@@ -4495,7 +4495,7 @@ SWITCH_STANDARD_API(sofia_presence_data_function)
 	}
 
 	if (zstr(domain)) {
-		dup_domain = switch_core_get_variable_dup("domain");
+		dup_domain = switch_core_get_domain(SWITCH_TRUE);
 		domain = dup_domain;
 	}
 

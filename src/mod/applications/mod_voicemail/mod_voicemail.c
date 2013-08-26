@@ -3167,7 +3167,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 	}
 
 	if (zstr(domain)) {
-		if ((dup_domain = switch_core_get_variable_dup("domain"))) {
+		if ((dup_domain = switch_core_get_domain(SWITCH_TRUE))) {
 			domain = dup_domain;
 		}
 		profile_name = domain;

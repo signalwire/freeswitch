@@ -311,6 +311,24 @@ SWITCH_DECLARE(const char *) switch_core_get_switchname(void)
 	return runtime.hostname;
 }
 
+SWITCH_DECLARE(char *) switch_core_get_domain(switch_bool_t dup)
+{
+	char *domain;
+	const char *var;
+
+	switch_thread_rwlock_rdlock(runtime.global_var_rwlock);  
+	if (!(var = switch_core_get_variable("domain"))) {
+		var = "freeswitch.local";
+	}
+	if (dup) {
+		domain = strdup(var);
+	} else {
+		domain = (char *) var;
+	}
+	switch_thread_rwlock_unlock(runtime.global_var_rwlock);
+
+	return domain;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_core_get_variables(switch_event_t **event)
 {

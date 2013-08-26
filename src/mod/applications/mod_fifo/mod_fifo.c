@@ -863,7 +863,7 @@ static fifo_node_t *create_node(const char *name, uint32_t importance, switch_mu
 	node->name = switch_core_strdup(node->pool, name);
 
 	if (!strchr(name, '@')) {
-		domain_name = switch_core_get_variable_dup("domain");
+		domain_name = switch_core_get_domain(SWITCH_TRUE);
 		node->domain_name = switch_core_strdup(node->pool, domain_name);
 	}
 

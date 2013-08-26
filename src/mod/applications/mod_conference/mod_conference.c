@@ -638,7 +638,7 @@ static char *conference_rfc4579_render(conference_obj_t *conference, switch_even
 
 	if (!event || !(domain = switch_event_get_header(event, "conference-domain"))) {
 		if (!(domain = conference->domain)) {
-			dup_domain = switch_core_get_variable_dup("domain");
+			dup_domain = switch_core_get_domain(SWITCH_TRUE);
 			if (!(domain = dup_domain)) {
 				domain = "cluecon.com";
 			}
@@ -1333,7 +1333,7 @@ static void send_rfc_event(conference_obj_t *conference)
 	}
 
 	if (!(domain = conference->domain)) {
-		dup_domain = switch_core_get_variable_dup("domain");
+		dup_domain = switch_core_get_domain(SWITCH_TRUE);
 		if (!(domain = dup_domain)) {
 			domain = "cluecon.com";
 		}
@@ -1372,7 +1372,7 @@ static void send_conference_notify(conference_obj_t *conference, const char *sta
 	}
 
 	if (!(domain = conference->domain)) {
-		dup_domain = switch_core_get_variable_dup("domain");
+		dup_domain = switch_core_get_domain(SWITCH_TRUE);
 		if (!(domain = dup_domain)) {
 			domain = "cluecon.com";
 		}

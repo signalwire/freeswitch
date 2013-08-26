@@ -428,7 +428,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 						if (globals.default_domain) {
 							domain_name = globals.default_domain;
 						} else {
-							if ((dup_domain = switch_core_get_variable_dup("domain"))) {
+							if ((dup_domain = switch_core_get_domain(SWITCH_TRUE))) {
 								domain_name = dup_domain;
 							}
 						}
