@@ -467,7 +467,7 @@ SWITCH_STANDARD_API(reg_url_function)
 	}
 
 	if (zstr(domain)) {
-		dup_domain = switch_core_get_variable_dup("domain");
+		dup_domain = switch_core_get_domain(SWITCH_TRUE);
 		domain = dup_domain;
 	}
 
@@ -886,7 +886,7 @@ SWITCH_STANDARD_API(group_call_function)
 	if (domain) {
 		*domain++ = '\0';
 	} else {
-		if ((dup_domain = switch_core_get_variable_dup("domain"))) {
+		if ((dup_domain = switch_core_get_domain(SWITCH_TRUE))) {
 			domain = dup_domain;
 		}
 	}
@@ -1076,7 +1076,7 @@ SWITCH_STANDARD_API(in_group_function)
 	if ((domain = strchr(user, '@'))) {
 		*domain++ = '\0';
 	} else {
-		if ((dup_domain = switch_core_get_variable_dup("domain"))) {
+		if ((dup_domain = switch_core_get_domain(SWITCH_TRUE))) {
 			domain = dup_domain;
 		}
 	}
@@ -1131,7 +1131,7 @@ SWITCH_STANDARD_API(user_data_function)
 	if ((domain = strchr(user, '@'))) {
 		*domain++ = '\0';
 	} else {
-		if ((dup_domain = switch_core_get_variable_dup("domain"))) {
+		if ((dup_domain = switch_core_get_domain(SWITCH_TRUE))) {
 			domain = dup_domain;
 		} else {
 			domain = "cluecon.com";

@@ -1037,7 +1037,7 @@ static void conference_data_event_handler(switch_event_t *event)
 	sofia_profile_t *profile = NULL;
 
 	if (zstr(host)) {
-		dup_domain = switch_core_get_variable_dup("domain");
+		dup_domain = switch_core_get_domain(SWITCH_TRUE);
 		host = dup_domain;
 	}
 

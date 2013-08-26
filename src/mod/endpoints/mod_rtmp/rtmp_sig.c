@@ -376,7 +376,7 @@ RTMP_INVOKE_FUNCTION(rtmp_i_login)
 	}
 	
 	if (zstr(domain)) {
-		ddomain = switch_core_get_variable_dup("domain");
+		ddomain = switch_core_get_domain(SWITCH_TRUE);
 		domain = ddomain;
 	}
 

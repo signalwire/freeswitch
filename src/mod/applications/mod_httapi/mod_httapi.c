@@ -263,7 +263,7 @@ static switch_status_t parse_voicemail(const char *tag_name, client_t *client, s
 	if (zstr(profile)) profile = "default";
 
 	if (zstr(domain)) {
-		if ((ddom = switch_core_get_variable_dup("domain"))) {
+		if ((ddom = switch_core_get_domain(SWITCH_TRUE))) {
 			domain = ddom;
 		}
 	}

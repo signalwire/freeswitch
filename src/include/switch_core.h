@@ -878,6 +878,8 @@ SWITCH_DECLARE(char *) switch_core_get_variable_pdup(_In_z_ const char *varname,
 SWITCH_DECLARE(const char *) switch_core_get_hostname(void);
 SWITCH_DECLARE(const char *) switch_core_get_switchname(void);
 
+SWITCH_DECLARE(char *) switch_core_get_domain(switch_bool_t dup);
+
 /*! 
   \brief Add a global variable to the core
   \param varname the name of the variable
