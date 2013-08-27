@@ -515,13 +515,13 @@ int skinny_session_set_variables_callback(void *pArg, int argc, char **argv, cha
 		if ((xvariables = switch_xml_child(xuser, "variables"))) {
 			
 			for (xvariable = switch_xml_child(xvariables, "variable"); xvariable; xvariable = xvariable->next) {
-				char *var = (char *) switch_xml_attr_soft(xvariable, "name");
-				char *val = (char *) switch_xml_attr_soft(xvariable, "value");
+				char *name = (char *) switch_xml_attr_soft(xvariable, "name");
+				char *value = (char *) switch_xml_attr_soft(xvariable, "value");
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(helper->tech_pvt->session), SWITCH_LOG_DEBUG, 
-					"found variable (%s=%s) for user (%s) in channel var setup\n", listener->device_name, val, var);
+					"found variable (%s=%s) for user (%s) in channel var setup\n", name, value, listener->device_name);
 
-				switch_channel_set_variable_name_printf(helper->channel, var, "%s", val);
+				switch_channel_set_variable_name_printf(helper->channel, value, "%s", name);
 			}
 		}
 	}
