@@ -229,7 +229,7 @@ int tport_recv_stream_ws(tport_t *self)
   if (N < 0) {
 	  err = errno = EHOSTDOWN;
 	  SU_DEBUG_1(("%s(%p): su_getmsgsize(): %s (%d) N=%ld\n", __func__, (void *)self,
-				  su_strerror(err), err, N));
+				  su_strerror(err), err, (long)N));
 	  return 0;
   }
 
