@@ -1092,9 +1092,12 @@ static char *fileman_supported_formats[] = { "fileman", NULL };
 
 /**
  * Initialize output component
+ * @param module_interface
+ * @param pool memory pool to allocate from
+ * @param config_file to use
  * @return SWITCH_STATUS_SUCCESS if successful
  */
-switch_status_t rayo_output_component_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool)
+switch_status_t rayo_output_component_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file)
 {
 	switch_api_interface_t *api_interface;
 	switch_file_interface_t *file_interface;

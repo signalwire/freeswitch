@@ -239,6 +239,12 @@ static void rayo_console_client_send(struct rayo_actor *client, struct rayo_mess
 
 static void on_client_presence(struct rayo_client *rclient, iks *node);
 
+typedef switch_bool_t (* rayo_actor_match_fn)(struct rayo_actor *);
+
+static switch_bool_t is_call_actor(struct rayo_actor *actor);
+
+
+
 /**
  * @param msg to check
  * @return true if message was sent by admin client (console)
@@ -712,6 +718,9 @@ struct rayo_actor *rayo_actor_locate(const char *jid, const char *file, int line
 {
 	struct rayo_actor *actor = NULL;
 	switch_mutex_lock(globals.actors_mutex);
+	if (!strncmp("xmpp:", jid, 5)) {
+		jid = jid + 5;
+	}
 	actor = (struct rayo_actor *)switch_core_hash_find(globals.actors, jid);
 	if (actor) {
 		if (!actor->destroy) {
@@ -818,16 +827,33 @@ int rayo_actor_seq_next(struct rayo_actor *actor)
 	return seq;
 }
 
-#define RAYO_CALL_LOCATE(call_uuid) rayo_call_locate(call_uuid, __FILE__, __LINE__)
+#define RAYO_CALL_LOCATE(call_uri) rayo_call_locate(call_uri, __FILE__, __LINE__)
 /**
- * Get exclusive access to Rayo call data.  Use to access call data outside channel thread.
+ * Get access to Rayo call data.  Use to access call data outside channel thread.
+ * @param call_uri the Rayo XMPP URI
+ * @return the call or NULL.
+ */
+static struct rayo_call *rayo_call_locate(const char *call_uri, const char *file, int line)
+{
+	struct rayo_actor *actor = rayo_actor_locate(call_uri, file, line);
+	if (actor && is_call_actor(actor)) {
+		return RAYO_CALL(actor);
+	} else if (actor) {
+		RAYO_UNLOCK(actor);
+	}
+	return NULL;
+}
+
+#define RAYO_CALL_LOCATE_BY_ID(call_uuid) rayo_call_locate_by_id(call_uuid, __FILE__, __LINE__)
+/**
+ * Get access to Rayo call data.  Use to access call data outside channel thread.
  * @param call_uuid the FreeSWITCH call UUID
  * @return the call or NULL.
  */
-static struct rayo_call *rayo_call_locate(const char *call_uuid, const char *file, int line)
+static struct rayo_call *rayo_call_locate_by_id(const char *call_uuid, const char *file, int line)
 {
 	struct rayo_actor *actor = rayo_actor_locate_by_id(call_uuid, file, line);
-	if (actor && !strcmp(RAT_CALL, actor->type)) {
+	if (actor && is_call_actor(actor)) {
 		return RAYO_CALL(actor);
 	} else if (actor) {
 		RAYO_UNLOCK(actor);
@@ -1686,18 +1712,18 @@ static iks *on_rayo_hangup(struct rayo_actor *call, struct rayo_message *msg, vo
  * @param call the call that joins
  * @param session the session
  * @param node the join request
- * @param call_id to join
+ * @param call_uri to join
  * @param media mode (direct/bridge)
  * @return the response
  */
-static iks *join_call(struct rayo_call *call, switch_core_session_t *session, iks *node, const char *call_id, const char *media)
+static iks *join_call(struct rayo_call *call, switch_core_session_t *session, iks *node, const char *call_uri, const char *media)
 {
 	iks *response = NULL;
 	/* take call out of media path if media = "direct" */
 	const char *bypass = !strcmp("direct", media) ? "true" : "false";
 
 	/* check if joining to rayo call */
-	struct rayo_call *b_call = RAYO_CALL_LOCATE(call_id);
+	struct rayo_call *b_call = RAYO_CALL_LOCATE(call_uri);
 	if (!b_call) {
 		/* not a rayo call */
 		response = iks_new_error_detailed(node, STANZA_ERROR_SERVICE_UNAVAILABLE, "b-leg is not a rayo call");
@@ -1706,18 +1732,17 @@ static iks *join_call(struct rayo_call *call, switch_core_session_t *session, ik
 		response = iks_new_error_detailed(node, STANZA_ERROR_CONFLICT, "multiple joined calls not supported");
 		RAYO_UNLOCK(b_call);
 	} else {
-		RAYO_UNLOCK(b_call);
-
 		/* bridge this call to call-uri */
 		switch_channel_set_variable(switch_core_session_get_channel(session), "bypass_media", bypass);
 		if (switch_false(bypass)) {
 			switch_channel_pre_answer(switch_core_session_get_channel(session));
 		}
-		if (switch_ivr_uuid_bridge(rayo_call_get_uuid(call), call_id) == SWITCH_STATUS_SUCCESS) {
+		if (switch_ivr_uuid_bridge(rayo_call_get_uuid(call), rayo_call_get_uuid(b_call)) == SWITCH_STATUS_SUCCESS) {
 			response = iks_new_iq_result(node);
 		} else {
 			response = iks_new_error_detailed(node, STANZA_ERROR_INTERNAL_SERVER_ERROR, "failed to bridge call");
 		}
+		RAYO_UNLOCK(b_call);
 	}
 	return response;
 }
@@ -1791,7 +1816,7 @@ static iks *on_rayo_join(struct rayo_actor *call, struct rayo_message *msg, void
 	iks *join = iks_find(node, "join");
 	const char *join_id;
 	const char *mixer_name;
-	const char *call_id;
+	const char *call_uri;
 
 	/* validate input attributes */
 	if (!VALIDATE_RAYO_JOIN(join)) {
@@ -1800,22 +1825,22 @@ static iks *on_rayo_join(struct rayo_actor *call, struct rayo_message *msg, void
 		goto done;
 	}
 	mixer_name = iks_find_attrib(join, "mixer-name");
-	call_id = iks_find_attrib(join, "call-uri");
+	call_uri = iks_find_attrib(join, "call-uri");
 
 	if (!zstr(mixer_name)) {
 		join_id = mixer_name;
 	} else {
-		join_id = call_id;
+		join_id = call_uri;
 	}
 
 	/* can't join both mixer and call */
-	if (!zstr(mixer_name) && !zstr(call_id)) {
+	if (!zstr(mixer_name) && !zstr(call_uri)) {
 		response = iks_new_error_detailed(node, STANZA_ERROR_BAD_REQUEST, "mixer-name and call-uri are mutually exclusive");
 		goto done;
 	}
 
 	/* need to join *something* */
-	if (zstr(mixer_name) && zstr(call_id)) {
+	if (zstr(mixer_name) && zstr(call_uri)) {
 		response = iks_new_error_detailed(node, STANZA_ERROR_BAD_REQUEST, "mixer-name or call-uri is required");
 		goto done;
 	}
@@ -1832,7 +1857,7 @@ static iks *on_rayo_join(struct rayo_actor *call, struct rayo_message *msg, void
 		response = join_mixer(RAYO_CALL(call), session, node, mixer_name, iks_find_attrib(join, "direction"));
 	} else {
 		/* bridge calls */
-		response = join_call(RAYO_CALL(call), session, node, call_id, iks_find_attrib(join, "media"));
+		response = join_call(RAYO_CALL(call), session, node, call_uri, iks_find_attrib(join, "media"));
 	}
 
 done:
@@ -1844,21 +1869,22 @@ done:
  * @param call the call that unjoined
  * @param session the session
  * @param node the unjoin request
- * @param call_id the b-leg uuid
+ * @param call_uri the b-leg xmpp URI
  * @return the response
  */
-static iks *unjoin_call(struct rayo_call *call, switch_core_session_t *session, iks *node, const char *call_id)
+static iks *unjoin_call(struct rayo_call *call, switch_core_session_t *session, iks *node, const char *call_uri)
 {
 	iks *response = NULL;
-	const char *bleg = switch_channel_get_variable(switch_core_session_get_channel(session), SWITCH_BRIDGE_UUID_VARIABLE);
+	const char *bleg_uuid = switch_channel_get_variable(switch_core_session_get_channel(session), SWITCH_BRIDGE_UUID_VARIABLE);
+	const char *bleg_uri = switch_core_session_sprintf(session, "xmpp:%s@%s", bleg_uuid ? bleg_uuid : "", RAYO_JID(globals.server));
 
-	/* bleg must match call_id */
-	if (!zstr(bleg) && !strcmp(bleg, call_id)) {
+	/* bleg must match call_uri */
+	if (!zstr(bleg_uri) && !strcmp(bleg_uri, call_uri)) {
 		/* unbridge call */
 		response = iks_new_iq_result(node);
 		switch_ivr_park_session(session);
 	} else {
-		/* not bridged or wrong b-leg UUID */
+		/* not bridged or wrong b-leg URI */
 		response = iks_new_error(node, STANZA_ERROR_SERVICE_UNAVAILABLE);
 	}
 
@@ -1913,16 +1939,16 @@ static iks *on_rayo_unjoin(struct rayo_actor *call, struct rayo_message *msg, vo
 	switch_core_session_t *session = (switch_core_session_t *)session_data;
 	iks *response = NULL;
 	iks *unjoin = iks_find(node, "unjoin");
-	const char *call_id = iks_find_attrib(unjoin, "call-uri");
+	const char *call_uri = iks_find_attrib(unjoin, "call-uri");
 	const char *mixer_name = iks_find_attrib(unjoin, "mixer-name");
 
-	if (!zstr(call_id) && !zstr(mixer_name)) {
+	if (!zstr(call_uri) && !zstr(mixer_name)) {
 		response = iks_new_error(node, STANZA_ERROR_BAD_REQUEST);
 	} else if (!RAYO_CALL(call)->joined) {
 		/* not joined to anything */
 		response = iks_new_error(node, STANZA_ERROR_SERVICE_UNAVAILABLE);
-	} else if (!zstr(call_id)) {
-		response = unjoin_call(RAYO_CALL(call), session, node, call_id);
+	} else if (!zstr(call_uri)) {
+		response = unjoin_call(RAYO_CALL(call), session, node, call_uri);
 	} else if (!zstr(mixer_name)) {
 		response = unjoin_mixer(RAYO_CALL(call), session, node, mixer_name);
 	} else {
@@ -2037,20 +2063,20 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 
 		if (join) {
 			/* check join args */
-			const char *call_id = iks_find_attrib(join, "call-uri");
+			const char *call_uri = iks_find_attrib(join, "call-uri");
 			const char *mixer_name = iks_find_attrib(join, "mixer-name");
 
-			if (!zstr(call_id) && !zstr(mixer_name)) {
+			if (!zstr(call_uri) && !zstr(mixer_name)) {
 				/* can't join both */
 				response = iks_new_error(iq, STANZA_ERROR_BAD_REQUEST);
 				goto done;
-			} else if (zstr(call_id) && zstr(mixer_name)) {
+			} else if (zstr(call_uri) && zstr(mixer_name)) {
 				/* nobody to join to? */
 				response = iks_new_error(iq, STANZA_ERROR_BAD_REQUEST);
 				goto done;
-			} else if (!zstr(call_id)) {
+			} else if (!zstr(call_uri)) {
 				/* bridge */
-				struct rayo_call *b_call = RAYO_CALL_LOCATE(call_id);
+				struct rayo_call *b_call = RAYO_CALL_LOCATE(call_uri);
 				/* is b-leg available? */
 				if (!b_call) {
 					response = iks_new_error_detailed(iq, STANZA_ERROR_SERVICE_UNAVAILABLE, "b-leg not found");
@@ -2060,8 +2086,8 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 					RAYO_UNLOCK(b_call);
 					goto done;
 				}
+				stream.write_function(&stream, "%s%s &rayo(bridge %s)", gateway->dial_prefix, dial_to_stripped, rayo_call_get_uuid(b_call));
 				RAYO_UNLOCK(b_call);
-				stream.write_function(&stream, "%s%s &rayo(bridge %s)", gateway->dial_prefix, dial_to_stripped, call_id);
 			} else {
 				/* conference */
 				stream.write_function(&stream, "%s%s &rayo(conference %s@%s)", gateway->dial_prefix, dial_to_stripped, mixer_name, globals.mixer_conf_profile);
@@ -2393,7 +2419,7 @@ static void on_mixer_delete_member_event(struct rayo_mixer *mixer, switch_event_
 	switch_core_hash_delete(mixer->members, uuid);
 
 	/* flag call as available to join another mixer */
-	call = RAYO_CALL_LOCATE(uuid);
+	call = RAYO_CALL_LOCATE_BY_ID(uuid);
 	if (call) {
 		call->joined = 0;
 		call->joined_id = NULL;
@@ -2409,7 +2435,7 @@ static void on_mixer_delete_member_event(struct rayo_mixer *mixer, switch_event_
 	/* broadcast member unjoined event to subscribers */
 	delete_member_event = iks_new_presence("unjoined", RAYO_NS, RAYO_JID(mixer), "");
 	x = iks_find(delete_member_event, "unjoined");
-	iks_insert_attrib(x, "call-uri", uuid);
+	iks_insert_attrib_printf(x, "call-uri", "xmpp:%s@%s", uuid, RAYO_JID(globals.server));
 	broadcast_mixer_event(mixer, delete_member_event);
 	iks_delete(delete_member_event);
 
@@ -2445,7 +2471,7 @@ static void on_mixer_add_member_event(struct rayo_mixer *mixer, switch_event_t *
 {
 	iks *add_member_event = NULL, *x;
 	const char *uuid = switch_event_get_header(event, "Unique-ID");
-	struct rayo_call *call = RAYO_CALL_LOCATE(uuid);
+	struct rayo_call *call = RAYO_CALL_LOCATE_BY_ID(uuid);
 
 	if (!mixer) {
 		/* new mixer */
@@ -2487,7 +2513,7 @@ static void on_mixer_add_member_event(struct rayo_mixer *mixer, switch_event_t *
 	/* broadcast member joined event to subscribers */
 	add_member_event = iks_new_presence("joined", RAYO_NS, RAYO_JID(mixer), "");
 	x = iks_find(add_member_event, "joined");
-	iks_insert_attrib(x, "call-uri", uuid);
+	iks_insert_attrib_printf(x, "call-uri", "xmpp:%s@%s", uuid, RAYO_JID(globals.server));
 	broadcast_mixer_event(mixer, add_member_event);
 	iks_delete(add_member_event);
 }
@@ -2533,7 +2559,7 @@ static void on_call_originate_event(struct rayo_client *rclient, switch_event_t 
 {
 	switch_core_session_t *session = NULL;
 	const char *uuid = switch_event_get_header(event, "Unique-ID");
-	struct rayo_call *call = RAYO_CALL_LOCATE(uuid);
+	struct rayo_call *call = RAYO_CALL_LOCATE_BY_ID(uuid);
 
 	if (call && (session = switch_core_session_locate(uuid))) {
 		iks *response, *ref;
@@ -2550,11 +2576,7 @@ static void on_call_originate_event(struct rayo_client *rclient, switch_event_t 
 		ref = iks_insert(response, "ref");
 		iks_insert_attrib(ref, "xmlns", RAYO_NS);
 
-#ifdef RAYO_UUID_IN_REF_URI
-		iks_insert_attrib(ref, "uri", uuid);
-#else
 		iks_insert_attrib_printf(ref, "uri", "xmpp:%s", RAYO_JID(call));
-#endif
 		RAYO_SEND_MESSAGE(call, RAYO_JID(rclient), response);
 		call->dial_id = NULL;
 	}
@@ -2567,7 +2589,7 @@ static void on_call_originate_event(struct rayo_client *rclient, switch_event_t 
  */
 static void on_call_end_event(switch_event_t *event)
 {
-	struct rayo_call *call = RAYO_CALL_LOCATE(switch_event_get_header(event, "Unique-ID"));
+	struct rayo_call *call = RAYO_CALL_LOCATE_BY_ID(switch_event_get_header(event, "Unique-ID"));
 
 	if (call) {
 #if 0
@@ -2591,7 +2613,7 @@ static void on_call_end_event(switch_event_t *event)
  */
 static void on_call_answer_event(struct rayo_client *rclient, switch_event_t *event)
 {
-	struct rayo_call *call = RAYO_CALL_LOCATE(switch_event_get_header(event, "Unique-ID"));
+	struct rayo_call *call = RAYO_CALL_LOCATE_BY_ID(switch_event_get_header(event, "Unique-ID"));
 	if (call) {
 		iks *revent = iks_new_presence("answered", RAYO_NS,
 			switch_event_get_header(event, "variable_rayo_call_jid"),
@@ -2610,7 +2632,7 @@ static void on_call_ringing_event(struct rayo_client *rclient, switch_event_t *e
 {
 	const char *call_direction = switch_event_get_header(event, "Call-Direction");
 	if (call_direction && !strcmp(call_direction, "outbound")) {
-		struct rayo_call *call = RAYO_CALL_LOCATE(switch_event_get_header(event, "Unique-ID"));
+		struct rayo_call *call = RAYO_CALL_LOCATE_BY_ID(switch_event_get_header(event, "Unique-ID"));
 		if (call) {
 			switch_mutex_lock(RAYO_ACTOR(call)->mutex);
 			if (!call->ringing_sent) {
@@ -2635,7 +2657,7 @@ static void on_call_bridge_event(struct rayo_client *rclient, switch_event_t *ev
 {
 	const char *a_uuid = switch_event_get_header(event, "Unique-ID");
 	const char *b_uuid = switch_event_get_header(event, "Bridge-B-Unique-ID");
-	struct rayo_call *call = RAYO_CALL_LOCATE(a_uuid);
+	struct rayo_call *call = RAYO_CALL_LOCATE_BY_ID(a_uuid);
 	struct rayo_call *b_call;
 
 	if (call) {
@@ -2644,7 +2666,7 @@ static void on_call_bridge_event(struct rayo_client *rclient, switch_event_t *ev
 			switch_event_get_header(event, "variable_rayo_call_jid"),
 			switch_event_get_header(event, "variable_rayo_dcp_jid"));
 		iks *joined = iks_find(revent, "joined");
-		iks_insert_attrib(joined, "call-uri", b_uuid);
+		iks_insert_attrib_printf(joined, "call-uri", "xmpp:%s@%s", b_uuid, RAYO_JID(globals.server));
 
 		call->joined = JOINED_CALL;
 		call->joined_id = switch_core_strdup(RAYO_POOL(call), b_uuid);
@@ -2652,11 +2674,11 @@ static void on_call_bridge_event(struct rayo_client *rclient, switch_event_t *ev
 		RAYO_SEND_MESSAGE(call, RAYO_JID(rclient), revent);
 
 		/* send B-leg event */
-		b_call = RAYO_CALL_LOCATE(b_uuid);
+		b_call = RAYO_CALL_LOCATE_BY_ID(b_uuid);
 		if (b_call) {
 			revent = iks_new_presence("joined", RAYO_NS, RAYO_JID(b_call), rayo_call_get_dcp_jid(b_call));
 			joined = iks_find(revent, "joined");
-			iks_insert_attrib(joined, "call-uri", a_uuid);
+			iks_insert_attrib_printf(joined, "call-uri", "xmpp:%s@%s", a_uuid, RAYO_JID(globals.server));
 
 			b_call->joined = JOINED_CALL;
 			b_call->joined_id = switch_core_strdup(RAYO_POOL(b_call), a_uuid);
@@ -2677,7 +2699,7 @@ static void on_call_unbridge_event(struct rayo_client *rclient, switch_event_t *
 {
 	const char *a_uuid = switch_event_get_header(event, "Unique-ID");
 	const char *b_uuid = switch_event_get_header(event, "Bridge-B-Unique-ID");
-	struct rayo_call *call = RAYO_CALL_LOCATE(a_uuid);
+	struct rayo_call *call = RAYO_CALL_LOCATE_BY_ID(a_uuid);
 	struct rayo_call *b_call;
 
 	if (call) {
@@ -2686,18 +2708,18 @@ static void on_call_unbridge_event(struct rayo_client *rclient, switch_event_t *
 			switch_event_get_header(event, "variable_rayo_call_jid"),
 			switch_event_get_header(event, "variable_rayo_dcp_jid"));
 		iks *joined = iks_find(revent, "unjoined");
-		iks_insert_attrib(joined, "call-uri", b_uuid);
+		iks_insert_attrib_printf(joined, "call-uri", "xmpp:%s@%s", b_uuid, RAYO_JID(globals.server));
 		RAYO_SEND_MESSAGE(call, RAYO_JID(rclient), revent);
 
 		call->joined = 0;
 		call->joined_id = NULL;
 
 		/* send B-leg event */
-		b_call = RAYO_CALL_LOCATE(b_uuid);
+		b_call = RAYO_CALL_LOCATE_BY_ID(b_uuid);
 		if (b_call) {
 			revent = iks_new_presence("unjoined", RAYO_NS, RAYO_JID(b_call), rayo_call_get_dcp_jid(b_call));
 			joined = iks_find(revent, "unjoined");
-			iks_insert_attrib(joined, "call-uri", a_uuid);
+			iks_insert_attrib_printf(joined, "call-uri", "xmpp:%s@%s", a_uuid, RAYO_JID(globals.server));
 			RAYO_SEND_MESSAGE(b_call, rayo_call_get_dcp_jid(b_call), revent);
 
 			b_call->joined = 0;
@@ -3078,6 +3100,21 @@ static void on_xmpp_stream_destroy(struct xmpp_stream *stream)
 }
 
 /**
+ * Add an alias to an API command
+ * @param alias_name
+ * @param alias_target
+ * @param alias_cmd
+ */
+static void rayo_add_cmd_alias(const char *alias_name, const char *alias_target, const char *alias_cmd)
+{
+	if (zstr(alias_target)) {
+		alias_target = "all";
+	}
+	switch_console_set_complete(switch_core_sprintf(globals.pool, "add rayo %s ::rayo::list_%s", alias_name, alias_target));
+	switch_core_hash_insert(globals.cmd_aliases, alias_name, alias_cmd);
+}
+
+/**
  * Process module XML configuration
  * @param pool memory pool to allocate from
  * @param config_file to use
@@ -3262,6 +3299,22 @@ static switch_status_t do_config(switch_memory_pool_t *pool, const char *config_
 		}
 	}
 
+	/* get aliases */
+	{
+		switch_xml_t aliases = switch_xml_child(cfg, "aliases");
+		if (aliases) {
+			switch_xml_t alias;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting configured aliases\n");
+			for (alias = switch_xml_child(aliases, "alias"); alias; alias = alias->next) {
+				const char *alias_name = switch_xml_attr_soft(alias, "name");
+				const char *alias_target = switch_xml_attr_soft(alias, "target");
+				if (!zstr(alias_name) && !zstr(alias->txt)) {
+					rayo_add_cmd_alias(alias_name, alias_target, alias->txt);
+				}
+			}
+		}
+	}
+
 done:
 	switch_xml_free(xml);
 
@@ -3360,12 +3413,6 @@ static void send_console_command(struct rayo_client *client, const char *to, con
 	iks *command = NULL;
 	iksparser *p = iks_dom_new(&command);
 
-	/* check if aliased */
-	const char *alias = switch_core_hash_find(globals.cmd_aliases, command_str);
-	if (!zstr(alias)) {
-		command_str = alias;
-	}
-
 	if (iks_parse(p, command_str, 0, 1) == IKS_OK && command) {
 		char *str;
 		iks *iq = NULL;
@@ -3404,14 +3451,15 @@ static void send_console_command(struct rayo_client *client, const char *to, con
 /**
  * Send command to rayo actor
  */
-static int command_api(const char *cmd, switch_stream_handle_t *stream)
+static int command_api(char *cmd, switch_stream_handle_t *stream)
 {
-	char *cmd_dup = strdup(cmd);
 	char *argv[2] = { 0 };
-	int argc = switch_separate_string(cmd_dup, ' ', argv, sizeof(argv) / sizeof(argv[0]));
-
-	if (argc != 2) {
-		free(cmd_dup);
+	if (!zstr(cmd)) {
+		int argc = switch_separate_string(cmd, ' ', argv, sizeof(argv) / sizeof(argv[0]));
+		if (argc != 2) {
+			return 0;
+		}
+	} else {
 		return 0;
 	}
 
@@ -3419,7 +3467,22 @@ static int command_api(const char *cmd, switch_stream_handle_t *stream)
 	send_console_command(globals.console, argv[0], argv[1]);
 	stream->write_function(stream, "+OK\n");
 
-	free(cmd_dup);
+	return 1;
+}
+
+/**
+ * Send command to rayo actor
+ */
+static int alias_api(const char *cmd, char *jid, switch_stream_handle_t *stream)
+{
+	if (zstr(cmd) || zstr(jid)) {
+		return 0;
+	}
+
+	/* send command */
+	send_console_command(globals.console, jid, cmd);
+	stream->write_function(stream, "+OK\n");
+
 	return 1;
 }
 
@@ -3443,14 +3506,15 @@ static void send_console_message(struct rayo_client *client, const char *to, con
 /**
  * Send message to rayo actor
  */
-static int message_api(const char *msg, switch_stream_handle_t *stream)
+static int message_api(char *cmd, switch_stream_handle_t *stream)
 {
-	char *msg_dup = strdup(msg);
 	char *argv[2] = { 0 };
-	int argc = switch_separate_string(msg_dup, ' ', argv, sizeof(argv) / sizeof(argv[0]));
-
-	if (argc != 2) {
-		free(msg_dup);
+	if (!zstr(cmd)) {
+		int argc = switch_separate_string(cmd, ' ', argv, sizeof(argv) / sizeof(argv[0]));
+		if (argc != 2) {
+			return 0;
+		}
+	} else {
 		return 0;
 	}
 
@@ -3458,7 +3522,6 @@ static int message_api(const char *msg, switch_stream_handle_t *stream)
 	send_console_message(globals.console, argv[0], argv[1]);
 	stream->write_function(stream, "+OK\n");
 
-	free(msg_dup);
 	return 1;
 }
 
@@ -3484,151 +3547,238 @@ static void send_console_presence(struct rayo_client *client, const char *to, in
 /**
  * Send console presence
  */
-static int presence_api(const char *cmd, switch_stream_handle_t *stream)
+static int presence_api(char *cmd, switch_stream_handle_t *stream)
 {
-	char *cmd_dup = strdup(cmd);
-	char *argv[2] = { 0 };
-	int argc = switch_separate_string(cmd_dup, ' ', argv, sizeof(argv) / sizeof(argv[0]));
 	int is_online = 0;
-
-	if (argc != 2) {
-		free(cmd_dup);
+	char *argv[2] = { 0 };
+	if (!zstr(cmd)) {
+		int argc = switch_separate_string(cmd, ' ', argv, sizeof(argv) / sizeof(argv[0]));
+		if (argc != 2) {
+			return 0;
+		}
+	} else {
 		return 0;
 	}
 
 	if (!strcmp("online", argv[1])) {
 		is_online = 1;
 	} else if (strcmp("offline", argv[1])) {
-		free(cmd_dup);
 		return 0;
 	}
 
 	/* send presence */
 	send_console_presence(globals.console, argv[0], is_online);
 	stream->write_function(stream, "+OK\n");
-	free(cmd_dup);
 	return 1;
 }
 
-#define RAYO_API_SYNTAX "status | (cmd <jid> <command>) | (msg <jid> <message text>) | (presence <jid> <online|offline>)"
+#define RAYO_API_SYNTAX "status | (<alias> <jid>) | (cmd <jid> <command>) | (msg <jid> <message text>) | (presence <jid> <online|offline>)"
 SWITCH_STANDARD_API(rayo_api)
 {
+	const char *alias;
+	char *cmd_dup = strdup(cmd);
+	char *argv[2] = { 0 };
 	int success = 0;
-	if (!strncmp("status", cmd, 6)) {
-		success = dump_api(cmd + 6, stream);
-	} else if (!strncmp("cmd", cmd, 3)) {
-		success = command_api(cmd + 3, stream);
-	} else if (!strncmp("msg", cmd, 3)) {
-		success = message_api(cmd + 3, stream);
-	} else if (!strncmp("presence", cmd, 8)) {
-		success = presence_api(cmd + 8, stream);
+
+	switch_separate_string(cmd_dup, ' ', argv, sizeof(argv) / sizeof(argv[0]));
+
+	/* check if a command alias */
+	alias = switch_core_hash_find(globals.cmd_aliases, argv[0]);
+
+	if (!zstr(alias)) {
+		success = alias_api(alias, argv[1], stream);
+	} else if (!strcmp("cmd", argv[0])) {
+		success = command_api(argv[1], stream);
+	} else if (!strcmp("status", argv[0])) {
+		success = dump_api(argv[1], stream);
+	} else if (!strcmp("msg", argv[0])) {
+		success = message_api(argv[1], stream);
+	} else if (!strcmp("presence", argv[0])) {
+		success = presence_api(argv[1], stream);
 	}
 
 	if (!success) {
 		stream->write_function(stream, "-ERR: USAGE %s\n", RAYO_API_SYNTAX);
 	}
 
+	free(cmd_dup);
+
 	return SWITCH_STATUS_SUCCESS;
+}
+
+/**
+ * Console auto-completion for actors given validation function
+ */
+static switch_status_t list_actors(const char *line, const char *cursor, switch_console_callback_match_t **matches, rayo_actor_match_fn match)
+{
+	switch_hash_index_t *hi;
+	void *val;
+	const void *vvar;
+	switch_console_callback_match_t *my_matches = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	struct rayo_actor *actor;
+
+	switch_mutex_lock(globals.actors_mutex);
+	for (hi = switch_hash_first(NULL, globals.actors); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &vvar, NULL, &val);
+
+		actor = (struct rayo_actor *) val;
+		if (match(actor)) {
+			switch_console_push_match(&my_matches, (const char *) vvar);
+		}
+	}
+	switch_mutex_unlock(globals.actors_mutex);
+
+	if (my_matches) {
+		*matches = my_matches;
+		status = SWITCH_STATUS_SUCCESS;
+	}
+
+	return status;
+}
+
+/**
+ * @return true if internal actor
+ */
+static switch_bool_t is_internal_actor(struct rayo_actor *actor)
+{
+	return strcmp(RAT_CLIENT, actor->type) && strcmp(RAT_PEER_SERVER, actor->type);
 }
 
 /**
  * Console auto-completion for all internal actors
  */
-switch_status_t list_internal(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+static switch_status_t list_internal(const char *line, const char *cursor, switch_console_callback_match_t **matches)
 {
-	switch_hash_index_t *hi;
-	void *val;
-	const void *vvar;
-	switch_console_callback_match_t *my_matches = NULL;
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	struct rayo_actor *actor;
+	return list_actors(line, cursor, matches, is_internal_actor);
+}
 
-	switch_mutex_lock(globals.actors_mutex);
-	for (hi = switch_hash_first(NULL, globals.actors); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, &vvar, NULL, &val);
-
-		actor = (struct rayo_actor *) val;
-		if (strcmp(RAT_CLIENT, actor->type) && strcmp(RAT_PEER_SERVER, actor->type)) {
-			switch_console_push_match(&my_matches, (const char *) vvar);
-		}
-	}
-	switch_mutex_unlock(globals.actors_mutex);
-
-	if (my_matches) {
-		*matches = my_matches;
-		status = SWITCH_STATUS_SUCCESS;
-	}
-
-	return status;
+/**
+ * @return true if external actor
+ */
+static switch_bool_t is_external_actor(struct rayo_actor *actor)
+{
+	return !strcmp(RAT_CLIENT, actor->type) || !strcmp(RAT_PEER_SERVER, actor->type);
 }
 
 /**
  * Console auto-completion for all external actors
  */
-switch_status_t list_external(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+static switch_status_t list_external(const char *line, const char *cursor, switch_console_callback_match_t **matches)
 {
-	switch_hash_index_t *hi;
-	void *val;
-	const void *vvar;
-	switch_console_callback_match_t *my_matches = NULL;
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	struct rayo_actor *actor;
+	return list_actors(line, cursor, matches, is_external_actor);
+}
 
-	switch_mutex_lock(globals.actors_mutex);
-	for (hi = switch_hash_first(NULL, globals.actors); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, &vvar, NULL, &val);
-
-		actor = (struct rayo_actor *) val;
-		if (!strcmp(RAT_CLIENT, actor->type) || !strcmp(RAT_PEER_SERVER, actor->type)) {
-			switch_console_push_match(&my_matches, (const char *) vvar);
-		}
-	}
-	switch_mutex_unlock(globals.actors_mutex);
-
-	if (my_matches) {
-		*matches = my_matches;
-		status = SWITCH_STATUS_SUCCESS;
-	}
-
-	return status;
+/**
+ * @return true
+ */
+static switch_bool_t is_any_actor(struct rayo_actor *actor)
+{
+	return SWITCH_TRUE;
 }
 
 /**
  * Console auto-completion for all actors
  */
-switch_status_t list_all(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+static switch_status_t list_all(const char *line, const char *cursor, switch_console_callback_match_t **matches)
 {
-	switch_hash_index_t *hi;
-	void *val;
-	const void *vvar;
-	switch_console_callback_match_t *my_matches = NULL;
-	switch_status_t status = SWITCH_STATUS_FALSE;
-
-	switch_mutex_lock(globals.actors_mutex);
-	for (hi = switch_hash_first(NULL, globals.actors); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, &vvar, NULL, &val);
-		switch_console_push_match(&my_matches, (const char *) vvar);
-	}
-	switch_mutex_unlock(globals.actors_mutex);
-
-	if (my_matches) {
-		*matches = my_matches;
-		status = SWITCH_STATUS_SUCCESS;
-	}
-
-	return status;
+	return list_actors(line, cursor, matches, is_any_actor);
 }
 
 /**
- * Add an alias to an API command
- * @param alias_name
- * @param alias_cmd
+ * @return true if a server
  */
-static void rayo_add_cmd_alias(const char *alias_name, const char *alias_cmd)
+static switch_bool_t is_server_actor(struct rayo_actor *actor)
 {
-	char *cmd = switch_core_sprintf(globals.pool, "add rayo cmd ::rayo::list_actors %s", alias_name);
-	switch_console_set_complete(cmd);
-	switch_core_hash_insert(globals.cmd_aliases, alias_name, alias_cmd);
+	return !strcmp(RAT_SERVER, actor->type);
+}
+
+/**
+ * Console auto-completion for all servers
+ */
+static switch_status_t list_server(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	return list_actors(line, cursor, matches, is_server_actor);
+}
+
+/**
+ * @return true if a call
+ */
+static switch_bool_t is_call_actor(struct rayo_actor *actor)
+{
+	return !strcmp(RAT_CALL, actor->type);
+}
+
+/**
+ * Console auto-completion for all calls
+ */
+static switch_status_t list_call(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	return list_actors(line, cursor, matches, is_call_actor);
+}
+
+/**
+ * @return true if a component
+ */
+switch_bool_t is_component_actor(struct rayo_actor *actor)
+{
+	return !strncmp(RAT_COMPONENT, actor->type, strlen(RAT_COMPONENT));
+}
+
+/**
+ * Console auto-completion for all components
+ */
+static switch_status_t list_component(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	return list_actors(line, cursor, matches, is_component_actor);
+}
+
+/**
+ * @return true if a record component
+ */
+static switch_bool_t is_record_actor(struct rayo_actor *actor)
+{
+	return is_component_actor(actor) && !strcmp(actor->subtype, "record");
+}
+
+/**
+ * Console auto-completion for all components
+ */
+static switch_status_t list_record(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	return list_actors(line, cursor, matches, is_record_actor);
+}
+
+/**
+ * @return true if an output component
+ */
+static switch_bool_t is_output_actor(struct rayo_actor *actor)
+{
+	return is_component_actor(actor) && !strcmp(actor->subtype, "output");
+}
+
+/**
+ * Console auto-completion for all components
+ */
+static switch_status_t list_output(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	return list_actors(line, cursor, matches, is_output_actor);
+}
+
+/**
+ * @return true if an input component
+ */
+static switch_bool_t is_input_actor(struct rayo_actor *actor)
+{
+	return is_component_actor(actor) && !strcmp(actor->subtype, "input");
+}
+
+/**
+ * Console auto-completion for all components
+ */
+static switch_status_t list_input(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	return list_actors(line, cursor, matches, is_input_actor);
 }
 
 /**
@@ -3708,98 +3858,20 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
 	globals.console = rayo_console_client_create();
 
 	switch_console_set_complete("add rayo status");
-	switch_console_set_complete("add rayo cmd ::rayo::list_internal");
 	switch_console_set_complete("add rayo msg ::rayo::list_external");
-	switch_console_set_complete("add rayo presence ::rayo::list_all online");
-	switch_console_set_complete("add rayo presence ::rayo::list_all offline");
+	switch_console_set_complete("add rayo cmd ::rayo::list_all");
+	switch_console_set_complete("add rayo presence ::rayo::list_server online");
+	switch_console_set_complete("add rayo presence ::rayo::list_server offline");
+	switch_console_add_complete_func("::rayo::list_all", list_all);
 	switch_console_add_complete_func("::rayo::list_internal", list_internal);
 	switch_console_add_complete_func("::rayo::list_external", list_external);
-	switch_console_add_complete_func("::rayo::list_all", list_all);
+	switch_console_add_complete_func("::rayo::list_server", list_server);
+	switch_console_add_complete_func("::rayo::list_call", list_call);
+	switch_console_add_complete_func("::rayo::list_component", list_component);
+	switch_console_add_complete_func("::rayo::list_record", list_record);
+	switch_console_add_complete_func("::rayo::list_output", list_output);
+	switch_console_add_complete_func("::rayo::list_input", list_input);
 
-	rayo_add_cmd_alias("ping", "<iq type=\"get\"><ping xmlns=\""IKS_NS_XMPP_PING"\"/></iq>");
-	rayo_add_cmd_alias("answer", "<answer xmlns=\""RAYO_NS"\"/>");
-	rayo_add_cmd_alias("hangup", "<hangup xmlns=\""RAYO_NS"\"/>");
-	rayo_add_cmd_alias("stop", "<stop xmlns=\""RAYO_EXT_NS"\"/>");
-	rayo_add_cmd_alias("pause", "<pause xmlns=\""RAYO_OUTPUT_NS"\"/>");
-	rayo_add_cmd_alias("resume", "<resume xmlns=\""RAYO_OUTPUT_NS"\"/>");
-	rayo_add_cmd_alias("speed-up", "<speed-up xmlns=\""RAYO_OUTPUT_NS"\"/>");
-	rayo_add_cmd_alias("speed-down", "<speed-down xmlns=\""RAYO_OUTPUT_NS"\"/>");
-	rayo_add_cmd_alias("volume-up", "<volume-up xmlns=\""RAYO_OUTPUT_NS"\"/>");
-	rayo_add_cmd_alias("volume-down", "<volume-down xmlns=\""RAYO_OUTPUT_NS"\"/>");
-	rayo_add_cmd_alias("record", "<record xmlns=\""RAYO_RECORD_NS"\"/>");
-	rayo_add_cmd_alias("record_pause", "<pause xmlns=\""RAYO_RECORD_NS"\"/>");
-	rayo_add_cmd_alias("record_resume", "<resume xmlns=\""RAYO_RECORD_NS"\"/>");
-	rayo_add_cmd_alias("prompt_barge", "<prompt xmlns=\""RAYO_PROMPT_NS"\" barge-in=\"true\">"
-		"<output xmlns=\""RAYO_OUTPUT_NS"\" repeat-times=\"5\"><document content-type=\"application/ssml+xml\"><![CDATA[<speak><p>Please press a digit.</p></speak>]]></document></output>"
-		"<input xmlns=\""RAYO_INPUT_NS"\" mode=\"dtmf\" initial-timeout=\"5000\" inter-digit-timeout=\"3000\">"
-		"<grammar content-type=\"application/srgs+xml\">"
-		"<![CDATA[<grammar mode=\"dtmf\"><rule id=\"digit\" scope=\"public\"><one-of><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item><item>6</item><item>7</item><item>8</item><item>9</item></one-of></rule></grammar>]]>"
-		"</grammar></input>"
-		"</prompt>");
-
-	rayo_add_cmd_alias("prompt_no_barge", "<prompt xmlns=\""RAYO_PROMPT_NS"\" barge-in=\"false\">"
-		"<output xmlns=\""RAYO_OUTPUT_NS"\" repeat-times=\"2\"><document content-type=\"application/ssml+xml\"><![CDATA[<speak><p>Please press a digit.</p></speak>]]></document></output>"
-		"<input xmlns=\""RAYO_INPUT_NS"\" mode=\"dtmf\" initial-timeout=\"5000\" inter-digit-timeout=\"3000\">"
-		"<grammar content-type=\"application/srgs+xml\">"
-		"<![CDATA[<grammar mode=\"dtmf\"><rule id=\"digit\" scope=\"public\"><one-of><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item><item>6</item><item>7</item><item>8</item><item>9</item></one-of></rule></grammar>]]>"
-		"</grammar></input>"
-		"</prompt>");
-
-	rayo_add_cmd_alias("prompt_long", "<prompt xmlns=\""RAYO_PROMPT_NS"\" barge-in=\"true\">"
-		"<output xmlns=\""RAYO_OUTPUT_NS"\" repeat-times=\"100\"><document content-type=\"application/ssml+xml\"><![CDATA[<speak><audio src=\"http://phono.com/audio/troporocks.mp3\"/></speak>]]></document></output>"
-		"<input xmlns=\""RAYO_INPUT_NS"\" mode=\"dtmf\" initial-timeout=\"5000\" inter-digit-timeout=\"3000\">"
-		"<grammar content-type=\"application/srgs+xml\">"
-		"<![CDATA[<grammar mode=\"dtmf\"><rule id=\"digit\" scope=\"public\"><one-of><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item><item>6</item><item>7</item><item>8</item><item>9</item></one-of></rule></grammar>]]>"
-		"</grammar></input>"
-		"</prompt>");
-
-	rayo_add_cmd_alias("prompt_multi_digit", "<prompt xmlns=\""RAYO_PROMPT_NS"\" barge-in=\"true\">"
-		"<output xmlns=\""RAYO_OUTPUT_NS"\" repeat-times=\"100\"><document content-type=\"application/ssml+xml\"><![CDATA[<speak><audio src=\"http://phono.com/audio/troporocks.mp3\"/></speak>]]></document></output>"
-		"<input xmlns=\""RAYO_INPUT_NS"\" mode=\"dtmf\" initial-timeout=\"5000\" inter-digit-timeout=\"3000\">"
-		"<grammar content-type=\"application/srgs+xml\">"
-		"<![CDATA[<grammar mode=\"dtmf\"><rule id=\"digits\" scope=\"public\"><item repeat=\"1-4\"><one-of><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item><item>6</item><item>7</item><item>8</item><item>9</item></one-of></item></rule></grammar>]]>"
-		"</grammar></input>"
-		"</prompt>");
-
-	rayo_add_cmd_alias("prompt_terminator", "<prompt xmlns=\""RAYO_PROMPT_NS"\" barge-in=\"true\">"
-		"<output xmlns=\""RAYO_OUTPUT_NS"\" repeat-times=\"100\"><document content-type=\"application/ssml+xml\"><![CDATA[<speak><audio src=\"http://phono.com/audio/troporocks.mp3\"/></speak>]]></document></output>"
-		"<input xmlns=\""RAYO_INPUT_NS"\" mode=\"dtmf\" initial-timeout=\"5000\" inter-digit-timeout=\"3000\" terminator=\"#\">"
-		"<grammar content-type=\"application/srgs+xml\">"
-		"<![CDATA[<grammar mode=\"dtmf\"><rule id=\"digits\" scope=\"public\"><item repeat=\"1-4\"><one-of><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item><item>6</item><item>7</item><item>8</item><item>9</item></one-of></item></rule></grammar>]]>"
-		"</grammar></input>"
-		"</prompt>");
-
-	rayo_add_cmd_alias("prompt_input_bad", "<prompt xmlns=\""RAYO_PROMPT_NS"\" barge-in=\"true\">"
-		"<output xmlns=\""RAYO_OUTPUT_NS"\" repeat-times=\"100\"><document content-type=\"application/ssml+xml\"><![CDATA[<speak><audio src=\"http://phono.com/audio/troporocks.mp3\"/></speak>]]></document></output>"
-		"<input xmlns=\""RAYO_INPUT_NS"\" mode=\"dtf\" initial-timeout=\"5000\" inter-digit-timeout=\"3000\">"
-		"<grammar content-type=\"application/srgs+xml\">"
-		"<![CDATA[<grammar mode=\"dtmf\"><rule id=\"digits\" scope=\"public\"><item repeat=\"4\"><one-of><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item><item>6</item><item>7</item><item>8</item><item>9</item></one-of></item></rule></grammar>]]>"
-		"</grammar></input>"
-		"</prompt>");
-
-	rayo_add_cmd_alias("prompt_output_bad", "<prompt xmlns=\""RAYO_PROMPT_NS"\" barge-in=\"true\">"
-		"<output xmlns=\""RAYO_OUTPUT_NS"\" repeat-time=\"100\"><document content-type=\"application/ssml+xml\"><![CDATA[<speak><audio src=\"http://phono.com/audio/troporocks.mp3\"/></speak>]]></document></output>"
-		"<input xmlns=\""RAYO_INPUT_NS"\" mode=\"dtmf\" initial-timeout=\"5000\" inter-digit-timeout=\"3000\">"
-		"<grammar content-type=\"application/srgs+xml\">"
-		"<![CDATA[<grammar mode=\"dtmf\"><rule id=\"digits\" scope=\"public\"><item repeat=\"4\"><one-of><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item><item>6</item><item>7</item><item>8</item><item>9</item></one-of></item></rule></grammar>]]>"
-		"</grammar></input>"
-		"</prompt>");
-	rayo_add_cmd_alias("input", "<input xmlns=\""RAYO_INPUT_NS"\" mode=\"dtmf\" initial-timeout=\"5000\" inter-digit-timeout=\"3000\">"
-		"<grammar content-type=\"application/srgs+xml\">"
-		"<![CDATA[<grammar mode=\"dtmf\"><rule id=\"digits\" scope=\"public\"><item><one-of><item>0</item><item>1</item><item>2</item><item>3</item><item>4</item><item>5</item><item>6</item><item>7</item><item>8</item><item>9</item><item>*</item><item>#</item></one-of></item></rule></grammar>]]>"
-		"</grammar></input>");
-	rayo_add_cmd_alias("output_bad",
-		"<output xmlns=\""RAYO_OUTPUT_NS"\" repeat-time=\"100\"></output>");
-	rayo_add_cmd_alias("join_mixer_duplex",
-		"<join xmlns=\""RAYO_NS"\" mixer-name=\"test\" direction=\"duplex\"/>");
-	rayo_add_cmd_alias("join_mixer_send",
-		"<join xmlns=\""RAYO_NS"\" mixer-name=\"test\" direction=\"send\"/>");
-	rayo_add_cmd_alias("join_mixer_recv",
-		"<join xmlns=\""RAYO_NS"\" mixer-name=\"test\" direction=\"recv\"/>");
-	rayo_add_cmd_alias("unjoin_mixer",
-		"<unjoin xmlns=\""RAYO_NS"\" mixer-name=\"test\"/>");
-	rayo_add_cmd_alias("unjoin",
-		"<unjoin xmlns=\""RAYO_NS"\"/>");
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -3808,9 +3880,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
  */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_rayo_shutdown)
 {
+	switch_console_del_complete_func("::rayo::list_all");
 	switch_console_del_complete_func("::rayo::list_internal");
 	switch_console_del_complete_func("::rayo::list_external");
-	switch_console_del_complete_func("::rayo::list_all");
+	switch_console_del_complete_func("::rayo::list_server");
+	switch_console_del_complete_func("::rayo::list_call");
+	switch_console_del_complete_func("::rayo::list_component");
+	switch_console_del_complete_func("::rayo::list_record");
+	switch_console_del_complete_func("::rayo::list_output");
+	switch_console_del_complete_func("::rayo::list_input");
 	switch_console_set_complete("del rayo");
 
 	/* stop XMPP streams */

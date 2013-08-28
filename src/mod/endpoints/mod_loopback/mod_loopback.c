@@ -458,10 +458,7 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 		if ((find_non_loopback_bridge(tech_pvt->other_session, &other_session, &other_uuid) == SWITCH_STATUS_SUCCESS)) {
 			switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
 
-			if (switch_channel_test_flag(other_channel, CF_BRIDGED)) {
-				/* Wait for real channel to be exchanging media */
-				switch_channel_wait_for_state(other_channel, channel, CS_EXCHANGE_MEDIA);
-			}
+			switch_channel_wait_for_state_timeout(other_channel, CS_EXCHANGE_MEDIA, 5000);
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_INFO, "BOWOUT Replacing loopback channel with real channel: %s\n",
 							  switch_channel_get_name(other_channel));

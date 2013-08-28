@@ -3288,7 +3288,7 @@ static void pickup_send_presence(const char *key_name)
 	}
 	
 	if (zstr(domain_name)) {
-		dup_domain_name = switch_core_get_variable_dup("domain");
+		dup_domain_name = switch_core_get_domain(SWITCH_TRUE);
 		domain_name = dup_domain_name;
 	}
 	
@@ -3363,7 +3363,7 @@ static void pickup_pres_event_handler(switch_event_t *event)
 	if ((domain_name = strchr(key_name, '@'))) {
 		*domain_name++ = '\0';
 	} else {
-		dup_domain_name = switch_core_get_variable_dup("domain");
+		dup_domain_name = switch_core_get_domain(SWITCH_TRUE);
 		domain_name = dup_domain_name;
 	}
 
@@ -3422,7 +3422,7 @@ static void pickup_add_session(switch_core_session_t *session, const char *key)
 	char *dup_key = NULL;
 
 	if (!strchr(key, '@')) {
-		dup_key = switch_mprintf("%s@%s", key, switch_core_get_variable("domain"));
+		dup_key = switch_mprintf("%s@%s", key, switch_core_get_domain(SWITCH_FALSE));
 		key = dup_key;
 	}
 
@@ -3456,7 +3456,7 @@ static char *pickup_pop_uuid(const char *key, const char *uuid)
 	char *dup_key = NULL;
 
 	if (!strchr(key, '@')) {
-		dup_key = switch_mprintf("%s@%s", key, switch_core_get_variable("domain"));
+		dup_key = switch_mprintf("%s@%s", key, switch_core_get_domain(SWITCH_FALSE));
 		key = dup_key;
 	}
 
@@ -3781,7 +3781,7 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 	if ((domain = strchr(group, '@'))) {
 		*domain++ = '\0';
 	} else {
-		domain = switch_core_get_variable_dup("domain");
+		domain = switch_core_get_domain(SWITCH_TRUE);
 		dup_domain = domain;
 	}
 
@@ -3904,7 +3904,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	if ((domain = strchr(user, '@'))) {
 		*domain++ = '\0';
 	} else {
-		domain = switch_core_get_variable_dup("domain");
+		domain = switch_core_get_domain(SWITCH_TRUE);
 		dup_domain = domain;
 	}
 

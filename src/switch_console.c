@@ -33,6 +33,9 @@
 #include <switch.h>
 #include <switch_console.h>
 #include <switch_version.h>
+#ifndef _MSC_VER
+#include <switch_private.h>
+#endif
 #define CMD_BUFLEN 1024
 
 #ifdef SWITCH_HAVE_LIBEDIT
@@ -618,6 +621,36 @@ SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_list_loaded_modules(const 
 
 	return SWITCH_STATUS_FALSE;
 }
+
+#ifdef HAVE_GETIFADDRS
+#include <ifaddrs.h>
+#include <net/if.h>
+SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_list_interfaces(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	struct match_helper h = { 0 };
+	struct ifaddrs *addrs, *addr;
+
+	getifaddrs(&addrs);
+	for(addr = addrs; addr; addr = addr->ifa_next) {
+		if (addr->ifa_flags & IFF_UP) {
+			switch_console_push_match_unique(&h.my_matches, addr->ifa_name);
+		}
+	}
+	freeifaddrs(addrs);
+
+	if (h.my_matches) {
+		*matches = h.my_matches;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+#else
+SWITCH_DECLARE_NONSTD(switch_status_t) switch_console_list_interfaces(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	return SWITCH_STATUS_FALSE;
+}
+#endif
 
 static int uuid_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
@@ -1631,6 +1664,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_init(switch_memory_pool_t *pool)
 	switch_core_hash_init(&globals.func_hash, pool);
 	switch_console_add_complete_func("::console::list_available_modules", (switch_console_complete_callback_t) switch_console_list_available_modules);
 	switch_console_add_complete_func("::console::list_loaded_modules", (switch_console_complete_callback_t) switch_console_list_loaded_modules);
+	switch_console_add_complete_func("::console::list_interfaces", (switch_console_complete_callback_t) switch_console_list_interfaces);
 	switch_console_add_complete_func("::console::list_uuid", (switch_console_complete_callback_t) switch_console_list_uuid);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1739,6 +1773,20 @@ SWITCH_DECLARE(void) switch_console_sort_matches(switch_console_callback_match_t
 		p->next = NULL;
 		matches->end = p;
 	}
+}
+
+SWITCH_DECLARE(void) switch_console_push_match_unique(switch_console_callback_match_t **matches, const char *new_val)
+{
+	/* Ignore the entry if it is already in the list */
+	if (*matches) {
+		switch_console_callback_match_node_t *node;
+
+		for(node = (*matches)->head; node; node = node->next) {
+			if (!strcasecmp(node->val, new_val)) return;
+		}
+	}
+
+	switch_console_push_match(matches, new_val);
 }
 
 SWITCH_DECLARE(void) switch_console_push_match(switch_console_callback_match_t **matches, const char *new_val)

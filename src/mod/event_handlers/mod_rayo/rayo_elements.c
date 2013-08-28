@@ -33,7 +33,7 @@
  */
 ELEMENT(RAYO_INPUT)
 	STRING_ATTRIB(mode, any, "any,dtmf,voice")
-	ATTRIB(terminator,, any)
+	OPTIONAL_ATTRIB(terminator,, dtmf_digit)
 	ATTRIB(recognizer,, any)
 	ATTRIB(language, en-US, any)
 	ATTRIB(initial-timeout, -1, positive_or_neg_one)

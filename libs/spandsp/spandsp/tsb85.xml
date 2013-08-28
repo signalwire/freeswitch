@@ -2534,7 +2534,7 @@
         <!-- UNKNOWN_BCS_3 -->
         <step dir="T" type="PREAMBLE" modem="V.21" value="37"/>
         <step dir="T" type="HDLC" tag="GARBAGE" value="A2 02 B5 C9 7E 67"/>
- 
+
         <step dir="R" type="HDLC" modem="V.21" tag="DIS" value="FF C8 01 ..." timeout="60000"/>
         <step dir="R" type="SILENCE"/>
 
@@ -6123,7 +6123,7 @@
         <step type="ANSWER" value="etsi_300_242_a4_white.tif"/>
 
         <step dir="R" type="CNG"/>
- 
+
         <step dir="T" type="CED"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>

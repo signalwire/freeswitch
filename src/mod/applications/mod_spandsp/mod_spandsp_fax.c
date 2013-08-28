@@ -89,6 +89,10 @@ struct pvt_s {
 
 	int use_ecm;
 	int disable_v17;
+	int enable_colour_fax;
+	int enable_image_resizing;
+	int enable_colour_to_bilevel;
+	int enable_grayscale_to_bilevel;
 	int verbose;
 	int caller;
 
@@ -438,7 +442,7 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int msg)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==== Page %s===========================================================\n", pvt->app_mode == FUNCTION_TX ? "Sent ====": "Received ");
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Page no = %d\n", (pvt->app_mode == FUNCTION_TX)  ?  t30_stats.pages_tx  :  t30_stats.pages_rx);
-    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image type = %s (%s in the file)\n", t4_image_type_to_str(t30_stats.type), t4_image_type_to_str(t30_stats.image_type));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image type = %s (%s in the file)\n", t4_image_type_to_str(t30_stats.type), t4_image_type_to_str(t30_stats.image_type));
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image size = %d x %d pixels (%d x %d pixels in the file)\n", t30_stats.width, t30_stats.length, t30_stats.image_width, t30_stats.image_length);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Image resolution = %d/m x %d/m (%d/m x %d/m in the file)\n", t30_stats.x_resolution, t30_stats.y_resolution, t30_stats.image_x_resolution, t30_stats.image_y_resolution);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Compression = %s (%d)\n", t4_compression_to_str(t30_stats.compression), t30_stats.compression);
@@ -693,6 +697,7 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
     const char *tz;
 	int fec_entries = DEFAULT_FEC_ENTRIES;
 	int fec_span = DEFAULT_FEC_SPAN;
+	int compressions;
 
 
 	session = (switch_core_session_t *) pvt->session;
@@ -872,8 +877,12 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 	t30_set_phase_b_handler(t30, phase_b_handler, pvt);
 
 	t30_set_supported_image_sizes(t30,
-								  T4_SUPPORT_LENGTH_US_LETTER | T4_SUPPORT_LENGTH_US_LEGAL | T4_SUPPORT_LENGTH_UNLIMITED
-								| T4_SUPPORT_WIDTH_215MM | T4_SUPPORT_WIDTH_255MM | T4_SUPPORT_WIDTH_303MM);
+								  T4_SUPPORT_LENGTH_US_LETTER
+								| T4_SUPPORT_LENGTH_US_LEGAL
+								| T4_SUPPORT_LENGTH_UNLIMITED
+								| T4_SUPPORT_WIDTH_215MM
+								| T4_SUPPORT_WIDTH_255MM
+								| T4_SUPPORT_WIDTH_303MM);
 	t30_set_supported_bilevel_resolutions(t30,
 										  T4_RESOLUTION_R8_STANDARD
 										| T4_RESOLUTION_R8_FINE
@@ -883,7 +892,28 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
                                         | T4_RESOLUTION_200_200
                                         | T4_RESOLUTION_200_400
                                         | T4_RESOLUTION_400_400);
-	t30_set_supported_colour_resolutions(t30, 0);
+	compressions = T4_COMPRESSION_T4_1D
+				 | T4_COMPRESSION_T4_2D
+				 | T4_COMPRESSION_T6
+				 | T4_COMPRESSION_T85
+				 | T4_COMPRESSION_T85_L0;
+	if (pvt->enable_colour_fax) {
+		t30_set_supported_colour_resolutions(t30, T4_RESOLUTION_100_100
+												| T4_RESOLUTION_200_200
+												| T4_RESOLUTION_300_300
+												| T4_RESOLUTION_400_400);
+		compressions |= (T4_COMPRESSION_COLOUR | T4_COMPRESSION_T42_T81);
+	} else {
+		t30_set_supported_colour_resolutions(t30, 0);
+	}
+	if (pvt->enable_image_resizing)
+		compressions |= T4_COMPRESSION_RESCALING;
+	if (pvt->enable_colour_to_bilevel)
+		compressions |= T4_COMPRESSION_COLOUR_TO_BILEVEL;
+	if (pvt->enable_grayscale_to_bilevel)
+		compressions |= T4_COMPRESSION_GRAY_TO_BILEVEL;
+
+	t30_set_supported_compressions(t30, compressions);
 
 	if (pvt->disable_v17) {
 		t30_set_supported_modems(t30, T30_SUPPORT_V29 | T30_SUPPORT_V27TER);
@@ -894,11 +924,10 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 	}
 
 	if (pvt->use_ecm) {
-		t30_set_supported_compressions(t30, T4_COMPRESSION_T4_1D | T4_COMPRESSION_T4_2D | T4_COMPRESSION_T6 | T4_COMPRESSION_T85 | T4_COMPRESSION_T85_L0);
 		t30_set_ecm_capability(t30, TRUE);
 		switch_channel_set_variable(channel, "fax_ecm_requested", "1");
 	} else {
-		t30_set_supported_compressions(t30, T4_COMPRESSION_T4_1D | T4_COMPRESSION_T4_2D);
+		t30_set_ecm_capability(t30, FALSE);
 		switch_channel_set_variable(channel, "fax_ecm_requested", "0");
 	}
 
@@ -1215,6 +1244,30 @@ static pvt_t *pvt_init(switch_core_session_t *session, mod_spandsp_fax_applicati
 		pvt->disable_v17 = switch_true(tmp);
 	} else {
 		pvt->disable_v17 = spandsp_globals.disable_v17;
+	}
+
+	if ((tmp = switch_channel_get_variable(channel, "fax_enable_colour"))) {
+		pvt->enable_colour_fax = switch_true(tmp);
+	} else {
+		pvt->enable_colour_fax = spandsp_globals.enable_colour_fax;
+	}
+
+	if ((tmp = switch_channel_get_variable(channel, "fax_enable_image_resizing"))) {
+		pvt->enable_image_resizing = switch_true(tmp);
+	} else {
+		pvt->enable_image_resizing = spandsp_globals.enable_image_resizing;
+	}
+
+	if ((tmp = switch_channel_get_variable(channel, "fax_enable_colour_to_bilevel"))) {
+		pvt->enable_colour_to_bilevel = switch_true(tmp);
+	} else {
+		pvt->enable_colour_to_bilevel = spandsp_globals.enable_colour_to_bilevel;
+	}
+
+	if ((tmp = switch_channel_get_variable(channel, "fax_enable_grayscale_to_bilevel"))) {
+		pvt->enable_grayscale_to_bilevel = switch_true(tmp);
+	} else {
+		pvt->enable_grayscale_to_bilevel = spandsp_globals.enable_grayscale_to_bilevel;
 	}
 
 	if ((tmp = switch_channel_get_variable(channel, "fax_verbose"))) {

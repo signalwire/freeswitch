@@ -6089,6 +6089,7 @@ static void execute_safety_hangup(void *data)
 FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t *sigmsg)
 {
 	ftdm_channel_t *fchan = NULL;
+	ftdm_status_t status = FTDM_SUCCESS;
 	if (sigmsg->channel) {
 		fchan = sigmsg->channel;
 		ftdm_channel_lock(fchan);
@@ -6193,7 +6194,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_send_signal(ftdm_span_t *span, ftdm_sigmsg_t
 	if (ftdm_test_flag(span, FTDM_SPAN_USE_SIGNALS_QUEUE)) {
 		ftdm_span_queue_signal(span, sigmsg);
 	} else {
-		ftdm_span_trigger_signal(span, sigmsg);
+		status = ftdm_span_trigger_signal(span, sigmsg);
 	}
 
 done:
@@ -6202,7 +6203,7 @@ done:
 		ftdm_channel_unlock(fchan);
 	}
 
-	return FTDM_SUCCESS;
+	return status;
 }
 
 static void *ftdm_cpu_monitor_run(ftdm_thread_t *me, void *obj)

@@ -48,6 +48,9 @@
 #include <math.h>
 #include <tiffio.h>
 
+#if !defined(__cplusplus)
+#include <spandsp/stdbool.h>
+#endif
 #include <spandsp/telephony.h>
 #include <spandsp/fast_convert.h>
 #include <spandsp/logging.h>

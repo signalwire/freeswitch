@@ -337,6 +337,7 @@ static int image_resize_row(image_translate_state_t *s, uint8_t buf[])
     double int_part;
     double frac_row;
     double frac_col;
+    double width_scaling;
 #endif
     uint8_t *row8[2];
     uint16_t *row16[2];
@@ -352,17 +353,13 @@ static int image_resize_row(image_translate_state_t *s, uint8_t buf[])
     input_width = s->input_width - 1;
     input_length = s->input_length - 1;
 
-    skip = s->raw_output_row*input_length/output_length;
+    skip = s->raw_output_row*input_length/output_length + 1;
     if (skip >= s->raw_input_row)
     {
-        skip++;
         while (skip >= s->raw_input_row)
         {
             if (s->raw_input_row >= s->input_length)
-            {
-                s->raw_output_row = -1;
                 break;
-            }
             row_len = get_and_scrunch_row(s, s->raw_pixel_row[0]);
             if (row_len != s->output_width)
             {
@@ -380,6 +377,7 @@ static int image_resize_row(image_translate_state_t *s, uint8_t buf[])
     frac_row = ((s->raw_output_row*256*input_length)/output_length) & 0xFF;
 #else
     frac_row = modf((double) s->raw_output_row*input_length/output_length, &int_part);
+    width_scaling = (double) input_width/output_width;
 #endif
 
     switch (s->output_format)
@@ -402,7 +400,7 @@ static int image_resize_row(image_translate_state_t *s, uint8_t buf[])
                 buf[3*i + j] = saturateu8(c1 + (((c2 - c1)*frac_row) >> 8));
             }
 #else
-            frac_col = modf((double) i*input_width/output_width, &int_part);
+            frac_col = modf(width_scaling*i, &int_part);
             x = 3*int_part;
             for (j = 0;  j < 3;  j++)
             {
@@ -431,7 +429,7 @@ static int image_resize_row(image_translate_state_t *s, uint8_t buf[])
                 buf16[3*i + j] = saturateu16(c1 + (((c2 - c1)*frac_row) >> 8));
             }
 #else
-            frac_col = modf((double) i*input_width/output_width, &int_part);
+            frac_col = modf(width_scaling*i, &int_part);
             x = 3*int_part;
             for (j = 0;  j < 3;  j++)
             {
@@ -456,7 +454,7 @@ static int image_resize_row(image_translate_state_t *s, uint8_t buf[])
             c2 = row8[1][x] + (((row8[1][x + 1] - row8[1][x])*frac_col) >> 8);
             buf[i] = saturateu8(c1 + (((c2 - c1)*frac_row) >> 8));
 #else
-            frac_col = modf((double) i*input_width/output_width, &int_part);
+            frac_col = modf(width_scaling*i, &int_part);
             x = int_part;
             c1 = row8[0][x] + (row8[0][x + 1] - row8[0][x])*frac_col;
             c2 = row8[1][x] + (row8[1][x + 1] - row8[1][x])*frac_col;
@@ -478,7 +476,7 @@ static int image_resize_row(image_translate_state_t *s, uint8_t buf[])
             c2 = row16[1][x] + (((row16[1][x + 1] - row16[1][x])*frac_col) >> 8);
             buf[i] = saturateu8(c1 + (((c2 - c1)*frac_row) >> 8));
 #else
-            frac_col = modf((double) i*input_width/output_width, &int_part);
+            frac_col = modf(width_scaling*i, &int_part);
             x = int_part;
             c1 = row16[0][x] + (row16[0][x + 1] - row16[0][x])*frac_col;
             c2 = row16[1][x] + (row16[1][x + 1] - row16[1][x])*frac_col;

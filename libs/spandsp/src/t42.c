@@ -72,6 +72,11 @@
 #include "spandsp/private/t85.h"
 #include "spandsp/private/t42.h"
 
+/* The open_memstream() and fmemopen() in older versions of glibc seems quirky */
+#if defined(__GLIBC__)  &&  (__GLIBC__ < 2  ||  (__GLIBC__ == 2  &&  __GLIBC_MINOR__ < 12))
+#undef OPEN_MEMSTREAM
+#endif
+
 #define T42_USE_LUTS
 
 #include "t42_t43_local.h"
@@ -97,23 +102,23 @@ typedef struct
 
 static const illuminant_t illuminants[] =
 {
-    {"\0D50",  "CIE D50/2°",   96.422f, 100.000f,  82.521f},
+    {"\0D50",  "CIE D50/2°",   96.422f, 100.000f,  82.521f},    /* Horizon Light. ICC profile PCS */
     {"",       "CIE D50/10°",  96.720f, 100.000f,  81.427f},
-    {"",       "CIE D55/2°",   95.682f, 100.000f,  92.149f},
+    {"",       "CIE D55/2°",   95.682f, 100.000f,  92.149f},    /* Mid-morning/mid-afternoon daylight */
     {"",       "CIE D55/10°",  95.799f, 100.000f,  90.926f},
-    {"\0D65",  "CIE D65/2°",   95.047f, 100.000f, 108.883f},
+    {"\0D65",  "CIE D65/2°",   95.047f, 100.000f, 108.883f},    /* Noon daylight, television, sRGB color space */
     {"",       "CIE D65/10°",  94.811f, 100.000f, 107.304f},
-    {"\0D75",  "CIE D75/2°",   94.972f, 100.000f, 122.638f},
+    {"\0D75",  "CIE D75/2°",   94.972f, 100.000f, 122.638f},    /* North sky daylight */
     {"",       "CIE D75/10°",  94.416f, 100.000f, 120.641f},
-    {"\0\0F2", "F02/2°",       99.186f, 100.000f,  67.393f},
+    {"\0\0F2", "F02/2°",       99.186f, 100.000f,  67.393f},    /* Cool white fluorescent */
     {"",       "F02/10°",     103.279f, 100.000f,  69.027f},
-    {"\0\0F7", "F07/2°",       95.041f, 100.000f, 108.747f},
+    {"\0\0F7", "F07/2°",       95.041f, 100.000f, 108.747f},    /* D65 simulator, daylight simulator */
     {"",       "F07/10°",      95.792f, 100.000f, 107.686f},
-    {"\0F11",  "F11/2°",      100.962f, 100.000f,  64.350f},
+    {"\0F11",  "F11/2°",      100.962f, 100.000f,  64.350f},    /* Philips TL84, Ultralume 40 */
     {"",       "F11/10°",     103.863f, 100.000f,  65.607f},
-    {"\0\0SA", "A/2°",        109.850f, 100.000f,  35.585f},
+    {"\0\0SA", "A/2°",        109.850f, 100.000f,  35.585f},    /* Incandescent/tungsten */
     {"",       "A/10°",       111.144f, 100.000f,  35.200f},
-    {"\0\0SC", "C/2°",         98.074f, 100.000f, 118.232f},
+    {"\0\0SC", "C/2°",         98.074f, 100.000f, 118.232f},    /* {obsolete} average/north sky daylight */
     {"",       "C/10°",        97.285f, 100.000f, 116.145f},
     {"",       "",              0.000f,   0.000f,   0.000f}
 };
@@ -304,6 +309,9 @@ SPAN_DECLARE(void) set_lab_illuminant(lab_params_t *lab, float new_xn, float new
         lab->y_n = new_yn;
         lab->z_n = new_zn;
     }
+    lab->x_rn = 1.0f/lab->x_n;
+    lab->y_rn = 1.0f/lab->y_n;
+    lab->z_rn = 1.0f/lab->z_n;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -470,9 +478,9 @@ SPAN_DECLARE(void) srgb_to_lab(lab_params_t *s, uint8_t lab[], const uint8_t srg
         z = 0.0193f*r + 0.1192f*g + 0.9505f*b;
 
         /* Normalise for the illuminant */
-        x /= s->x_n;
-        y /= s->y_n;
-        z /= s->z_n;
+        x *= s->x_rn;
+        y *= s->y_rn;
+        z *= s->z_rn;
 
         /* XYZ to Lab */
         xx = (x <= 0.008856f)  ?  (7.787f*x + 0.1379f)  :  cbrtf(x);
@@ -941,14 +949,16 @@ SPAN_DECLARE(int) t42_encode_restart(t42_encode_state_t *s, uint32_t image_width
     {
         /* ITU-YCC */
         /* Illuminant D65 */
-        set_lab_illuminant(&s->lab, 95.047f, 100.000f, 108.883f);
+        //set_lab_illuminant(&s->lab, 95.047f, 100.000f, 108.883f);
+        set_lab_illuminant(&s->lab, 100.0f, 100.0f, 100.0f);
         set_lab_gamut(&s->lab, 0, 100, -127, 127, -127, 127, false);
     }
     else
     {
         /* ITULAB */
         /* Illuminant D50 */
-        set_lab_illuminant(&s->lab, 96.422f, 100.000f,  82.521f);
+        //set_lab_illuminant(&s->lab, 96.422f, 100.000f,  82.521f);
+        set_lab_illuminant(&s->lab, 100.0f, 100.0f, 100.0f);
         set_lab_gamut(&s->lab, 0, 100, -85, 85, -75, 125, false);
     }
     s->compressed_image_size = 0;
@@ -963,12 +973,6 @@ SPAN_DECLARE(int) t42_encode_restart(t42_encode_state_t *s, uint32_t image_width
     if ((s->out = open_memstream((char **) &s->compressed_buf, &s->outsize)) == NULL)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Failed to open_memstream().\n");
-        return -1;
-    }
-    if (fseek(s->out, 0, SEEK_SET) != 0)
-    {
-        fclose(s->out);
-        s->out = NULL;
         return -1;
     }
 #else
@@ -1114,14 +1118,6 @@ static int t42_itulab_jpeg_to_srgb(t42_decode_state_t *s)
     for (i = 0;  i < 16;  i++)
         jpeg_save_markers(&s->decompressor, JPEG_APP0 + i, 0xFFFF);
 
-    /* Rewind the file */
-    if (fseek(s->in, 0, SEEK_SET) != 0)
-    {
-        fclose(s->in);
-        s->in = NULL;
-        return -1;
-    }
-
     /* Take the header */
     jpeg_read_header(&s->decompressor, false);
     /* Sanity check and parameter check */
@@ -1222,7 +1218,7 @@ SPAN_DECLARE(void) t42_decode_rx_status(t42_decode_state_t *s, int status)
         {
             if (t42_itulab_jpeg_to_srgb(s))
                 span_log(&s->logging, SPAN_LOG_FLOW, "Failed to convert from ITULAB.\n");
-            s->end_of_data = 1;
+            s->end_of_data = true;
         }
         break;
     default:
@@ -1242,7 +1238,7 @@ SPAN_DECLARE(int) t42_decode_put(t42_decode_state_t *s, const uint8_t data[], si
         {
             if (t42_itulab_jpeg_to_srgb(s))
                 span_log(&s->logging, SPAN_LOG_FLOW, "Failed to convert from ITULAB.\n");
-            s->end_of_data = 1;
+            s->end_of_data = true;
         }
         return T4_DECODE_OK;
     }
@@ -1320,18 +1316,20 @@ SPAN_DECLARE(int) t42_decode_restart(t42_decode_state_t *s)
     {
         /* ITU-YCC */
         /* Illuminant D65 */
-        set_lab_illuminant(&s->lab, 95.047f, 100.000f, 108.883f);
+        //set_lab_illuminant(&s->lab, 95.047f, 100.000f, 108.883f);
+        set_lab_illuminant(&s->lab, 100.0f, 100.0f, 100.0f);
         set_lab_gamut(&s->lab, 0, 100, -127, 127, -127, 127, false);
     }
     else
     {
         /* ITULAB */
         /* Illuminant D50 */
-        set_lab_illuminant(&s->lab, 96.422f, 100.000f,  82.521f);
+        //set_lab_illuminant(&s->lab, 96.422f, 100.000f,  82.521f);
+        set_lab_illuminant(&s->lab, 100.0f, 100.0f, 100.0f);
         set_lab_gamut(&s->lab, 0, 100, -85, 85, -75, 125, false);
     }
 
-    s->end_of_data = 0;
+    s->end_of_data = false;
     s->compressed_image_size = 0;
 
     s->error_message[0] = '\0';

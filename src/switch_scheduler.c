@@ -201,7 +201,7 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_add_task(time_t task_runtime,
 	switch_assert(func);
 
 	if (task_runtime < now) {
-		container->task.repeat = task_runtime;
+		container->task.repeat = (uint32_t)task_runtime;
 		task_runtime += now;
 	}
 

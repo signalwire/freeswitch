@@ -412,7 +412,6 @@ iks *nlsml_create_dtmf_match(const char *digits)
 
 		iks *interpretation = iks_insert(result, "interpretation");
 		iks *input = iks_insert(interpretation, "input");
-		input = iks_insert(input, "input");
 		iks_insert_attrib(input, "mode", "dtmf");
 		iks_insert_attrib(input, "confidence", "100");
 

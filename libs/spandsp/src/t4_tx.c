@@ -2009,6 +2009,8 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
         /* We can't rework a bilevel image that fits none of the patterns */
         if (s->tiff.image_type == T4_IMAGE_TYPE_BILEVEL)
             return T4_IMAGE_FORMAT_NORESSUPPORT;
+        if (!(supported_compressions & T4_COMPRESSION_RESCALING))
+            return T4_IMAGE_FORMAT_NORESSUPPORT;
         res = T4_IMAGE_FORMAT_OK;
         /* Any other kind of image might be resizable */
         s->metadata.image_width = T4_WIDTH_200_A4;
@@ -2022,8 +2024,18 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
 
     if (s->metadata.image_type != s->tiff.image_type  ||  s->metadata.image_width != s->tiff.image_width)
     {
-        if (image_translate_init(&s->translator, s->metadata.image_type, s->metadata.image_width, -1, s->tiff.image_type, s->tiff.image_width, s->tiff.image_length, translate_row_read2, s) == NULL)
+        if (image_translate_init(&s->translator,
+                                 s->metadata.image_type,
+                                 s->metadata.image_width,
+                                 -1,
+                                 s->tiff.image_type,
+                                 s->tiff.image_width,
+                                 s->tiff.image_length,
+                                 translate_row_read2,
+                                 s) == NULL)
+        {
             return T4_IMAGE_FORMAT_INCOMPATIBLE;
+        }
         s->metadata.image_length = image_translate_get_output_length(&s->translator);
     }
 

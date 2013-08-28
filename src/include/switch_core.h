@@ -878,6 +878,8 @@ SWITCH_DECLARE(char *) switch_core_get_variable_pdup(_In_z_ const char *varname,
 SWITCH_DECLARE(const char *) switch_core_get_hostname(void);
 SWITCH_DECLARE(const char *) switch_core_get_switchname(void);
 
+SWITCH_DECLARE(char *) switch_core_get_domain(switch_bool_t dup);
+
 /*! 
   \brief Add a global variable to the core
   \param varname the name of the variable
@@ -1015,6 +1017,8 @@ SWITCH_DECLARE(switch_app_log_t *) switch_core_session_get_app_log(_In_ switch_c
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_exec(_In_ switch_core_session_t *session,
 														 _In_ const switch_application_interface_t *application_interface, _In_opt_z_ const char *arg);
+
+SWITCH_DECLARE(void) switch_core_session_video_reset(switch_core_session_t *session);
 /*! 
   \brief Execute an application on a session 
   \param session the current session

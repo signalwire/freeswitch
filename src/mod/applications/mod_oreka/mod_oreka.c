@@ -274,17 +274,17 @@ static int oreka_send_sip_message(oreka_session_t *oreka, oreka_recording_status
 	caller_id_number = switch_caller_get_field_by_name(caller_profile, "caller_id_number");
 	
 	caller_id_name = switch_caller_get_field_by_name(caller_profile, "caller_id_name");
-	if (!caller_id_name) {
+	if (zstr(caller_id_name)) {
 		caller_id_name = caller_id_number;
 	}
 
 	callee_id_number = switch_caller_get_field_by_name(caller_profile, "callee_id_number");
-	if (!callee_id_number) {
+	if (zstr(callee_id_number)) {
 		callee_id_number = switch_caller_get_field_by_name(caller_profile, "destination_number");
 	}
 
 	callee_id_name = switch_caller_get_field_by_name(caller_profile, "callee_id_name");
-	if (!callee_id_name) {
+	if (zstr(callee_id_name)) {
 		callee_id_name = callee_id_number;
 	}
 

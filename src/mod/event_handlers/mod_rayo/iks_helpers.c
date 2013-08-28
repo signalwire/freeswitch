@@ -217,6 +217,17 @@ double iks_find_decimal_attrib(iks *xml, const char *attrib)
 }
 
 /**
+ * Get attribute character value of node
+ * @param xml the XML node to search
+ * @param attrib the Attribute name
+ * @return the attribute value
+ */
+char iks_find_char_attrib(iks *xml, const char *attrib)
+{
+	return iks_find_attrib_soft(xml, attrib)[0];
+}
+
+/**
  * Convert iksemel XML node type to string
  * @param type the XML node type
  * @return the string value of type or "UNKNOWN"
@@ -390,6 +401,54 @@ int iks_attrib_is_decimal_between_zero_and_one(const char *value)
 		}
 	}
 	return SWITCH_FALSE;
+}
+
+/**
+ * Validate dtmf digit
+ * @param value
+ * @return SWITCH_TRUE if 0-9,a,b,c,d,A,B,C,D,*,#
+ */
+int iks_attrib_is_dtmf_digit(const char *value)
+{
+	if (value && *value && strlen(value) == 1) {
+		switch (*value) {
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+			case 'A':
+			case 'a':
+			case 'B':
+			case 'b':
+			case 'C':
+			case 'c':
+			case 'D':
+			case 'd':
+			case '*':
+			case '#':
+				return SWITCH_TRUE;
+		}
+	}
+	return SWITCH_FALSE;
+}
+
+/**
+ * @param fn to evaluate attribute
+ * @param attrib to evaluate
+ * @return true if not set or is valid
+ */
+int validate_optional_attrib(iks_attrib_validation_function fn, const char *attrib)
+{
+	if (!attrib || !*attrib) {
+		return SWITCH_TRUE;
+	}
+	return fn(attrib);
 }
 
 #define IKS_SHA256_HEX_DIGEST_LENGTH ((SHA256_DIGEST_LENGTH * 2) + 1)

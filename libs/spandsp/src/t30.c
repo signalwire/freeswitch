@@ -1804,8 +1804,8 @@ static int analyze_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
     }
     else
     {
-        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_INCH_RESOLUTION_PREFERRED))
-            s->mutual_colour_resolutions &= ~T4_RESOLUTION_200_200;
+        //if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_INCH_RESOLUTION_PREFERRED))
+        //    s->mutual_colour_resolutions &= ~T4_RESOLUTION_200_200;
     }
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_INCH_RESOLUTION_PREFERRED))
         s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_200_100;
@@ -2589,7 +2589,7 @@ static int start_sending_document(t30_state_t *s)
             t30_set_status(s, T30_ERR_NORESSUPPORT);
             break;
         default:
-            span_log(&s->logging, SPAN_LOG_WARNING, "Cannot negotiate an image format\n");
+            span_log(&s->logging, SPAN_LOG_WARNING, "Cannot negotiate an image mode\n");
             t30_set_status(s, T30_ERR_BADTIFF);
             break;
         }
@@ -6706,9 +6706,9 @@ SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
                              | T4_SUPPORT_LENGTH_A4
                              | T4_SUPPORT_LENGTH_B4
                              | T4_SUPPORT_LENGTH_UNLIMITED;
-    /* Set the output encoding to something safe. Most things get 1D and 2D
-       encoding right. Quite a lot get other things wrong. */
-    s->supported_output_compressions = T4_COMPRESSION_T4_2D | T4_COMPRESSION_T42_T81;
+    /* Set the output encoding to something safe. For bi-level images ost things get
+       1D and 2D encoding right. Quite a lot get other things wrong. */
+    s->supported_output_compressions = T4_COMPRESSION_T4_2D | T4_COMPRESSION_JPEG;
     s->local_min_scan_time_code = T30_MIN_SCAN_0MS;
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "T.30");

@@ -228,8 +228,8 @@ int tport_recv_stream_ws(tport_t *self)
   }
   if (N < 0) {
 	  err = errno = EHOSTDOWN;
-	  SU_DEBUG_1(("%s(%p): su_getmsgsize(): %s (%d)\n", __func__, (void *)self,
-				  su_strerror(err), err));
+	  SU_DEBUG_1(("%s(%p): su_getmsgsize(): %s (%d) N=%ld\n", __func__, (void *)self,
+				  su_strerror(err), err, N));
 	  return 0;
   }
 
@@ -459,7 +459,6 @@ int tport_ws_init_secondary(tport_t *self, int socket, int accepted,
 
   if (ws_init(&wstp->ws, socket, wstp->ws_secure ? wspri->ssl_ctx : NULL, 0) < 0) {
 	  ws_destroy(&wstp->ws);
-	  su_close(socket);
 	  wstp->ws_initialized = -1;
 	  return *return_reason = "WS_INIT", -1;
   }
