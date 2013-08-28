@@ -100,7 +100,7 @@ int
 psf_fclose (SF_PRIVATE *psf)
 {	int retval ;
 
-	if (psf->filedes =- -1)
+	if (psf->filedes == -1)
 		return -1; /* already closed */
 
 	if (psf->virtual_io)
