@@ -1608,7 +1608,7 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 		conference_member_t *imember;
 
 		for (imember = conference->members; imember; imember = imember->next) {
-			if (imember != conference->video_floor_holder && switch_channel_test_flag(imember->channel, CF_VIDEO)) {
+			if (imember != conference->video_floor_holder && imember->channel && switch_channel_test_flag(imember->channel, CF_VIDEO)) {
 				member = imember;
 				break;
 			}
@@ -1659,7 +1659,8 @@ static void conference_set_floor_holder(conference_obj_t *conference, conference
 	int old_id = 0;
 
 	if (!switch_test_flag(conference, CFLAG_VIDEO_BRIDGE) && 
-		((conference->video_floor_holder && !member) || (member && switch_channel_test_flag(member->channel, CF_VIDEO)))) {
+		((conference->video_floor_holder && !member) ||
+			(member && member->channel && switch_channel_test_flag(member->channel, CF_VIDEO)))) {
 		conference_set_video_floor_holder(conference, member, SWITCH_FALSE);
 	}
 
