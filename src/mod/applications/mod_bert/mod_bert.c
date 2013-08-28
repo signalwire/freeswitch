@@ -89,6 +89,9 @@ typedef struct {
 #define BERT_STATS_VAR_SYNC_LOST "bert_stats_sync_lost"
 #define BERT_STATS_VAR_SYNC_LOST_CNT "bert_stats_sync_lost_count"
 
+#define BERT_EVENT_TIMEOUT "mod_bert::timeout"
+#define BERT_EVENT_LOST_SYNC "mod_bert::lost_sync"
+
 #define BERT_DEFAULT_WINDOW_MS 1000
 #define BERT_DEFAULT_MAX_ERR 10.0
 #define BERT_DEFAULT_TIMEOUT_MS 10000
@@ -98,6 +101,7 @@ SWITCH_STANDARD_APP(bert_test_function)
 	switch_frame_t *read_frame = NULL, write_frame = { 0 };
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_channel_t *channel = NULL;
+	switch_event_t *event = NULL;
 	const char *var = NULL;
 	int i = 0;
 	int synced = 0;
@@ -222,12 +226,16 @@ SWITCH_STANDARD_APP(bert_test_function)
 		if (bert.timeout && !synced) {
 			switch_time_t now = switch_micro_time_now();
 			if (now >= bert.timeout) {
+				bert.timeout = 0;
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "BERT Timeout (read_samples=%d, read_bytes=%d, expected_samples=%d, session=%s)\n",
 						read_frame->samples, read_frame->datalen, read_impl.samples_per_packet, switch_core_session_get_uuid(session));
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, BERT_EVENT_TIMEOUT) == SWITCH_STATUS_SUCCESS) {
+					switch_channel_event_set_basic_data(channel, event);
+					switch_event_fire(&event);
+				}
 				if (bert.hangup_on_error) {
 					switch_channel_hangup(channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
 				}
-				bert.timeout = 0;
 			}
 		}
 
@@ -268,6 +276,10 @@ SWITCH_STANDARD_APP(bert_test_function)
 								err, bert.stats_sync_lost_cnt, bert.err_samples, switch_core_session_get_uuid(session));
 						switch_channel_set_variable_printf(channel, BERT_STATS_VAR_SYNC_LOST_CNT, "%u", bert.stats_sync_lost_cnt);
 						switch_channel_set_variable(channel, BERT_STATS_VAR_SYNC_LOST, "true");
+						if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, BERT_EVENT_LOST_SYNC) == SWITCH_STATUS_SUCCESS) {
+							switch_channel_event_set_basic_data(channel, event);
+							switch_event_fire(&event);
+						}
 						if (bert.hangup_on_error) {
 							switch_channel_hangup(channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
 							bert_close_debug_streams(bert, session);
