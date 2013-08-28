@@ -21,6 +21,7 @@
 	<!-- map interpret-as to say macros -->
 	<macros>
 		<macro name="cardinal" method="pronounced" type="number"/>
+		<macro name="characters" method="pronounced" type="name_spelled"/>
 	</macros>
 
 </configuration>
