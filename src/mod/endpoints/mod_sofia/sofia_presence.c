@@ -1346,18 +1346,18 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 										 "((sip_from_user='%q' and sip_from_host='%q') or presence_id='%q@%q') order by rcd desc", 
 										 uuid, mod_sofia_globals.hostname, profile->name, euser, host, euser, host);
 				}
-				
+
+				sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sofia_presence_dialog_callback, &dh);
+								
 				if (mod_sofia_globals.debug_presence > 0) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "CHECK SQL: %s@%s [%s]\nhits: %d\n", euser, host, sql, dh.hits);
 				}
 
-				sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sofia_presence_dialog_callback, &dh);
-				
-
 				switch_safe_free(sql);
-#if 0
+
 				if (hup && dh.hits > 0) {
 					/* sigh, mangle this packet to simulate a call that is up instead of hungup */
+					hup = 0;
 					event->flags |= EF_UNIQ_HEADERS;
 
 					if (!strcasecmp(dh.state, "early")) {
@@ -1386,7 +1386,7 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed"); 
 					}
 				}
-#endif
+
 				
 
 				if (zstr(call_id) && (dh.hits && presence_source && (!strcasecmp(presence_source, "register") || switch_stristr("register", status)))) {
@@ -2553,7 +2553,8 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	char *open_closed = NULL;
 	char *dialog_status = NULL;
 	char *dialog_rpid = NULL;
-	char *default_dialog = "partial";
+	//char *default_dialog = "partial";
+	char *default_dialog = "full";
 	const char *ct = "no/idea";
 
 	char *to = NULL;
@@ -2731,9 +2732,9 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		}
 
 
-		if (user_agent && switch_stristr("snom", user_agent) && uuid) {
-			default_dialog = "full" ;
-		}
+		//if (user_agent && switch_stristr("snom", user_agent) && uuid) {
+		//	default_dialog = "full" ;
+		//}
 		
 		if (call_state && !strcasecmp(call_state, "cs_hangup")) {
 			astate = "hangup";
