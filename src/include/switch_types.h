@@ -1630,94 +1630,63 @@ typedef uint32_t switch_io_flag_t;
 
 <pre>
     SWITCH_EVENT_CUSTOM				- A custom event
-    SWITCH_EVENT_CLONE				- A cloned event
     SWITCH_EVENT_CHANNEL_CREATE		- A channel has been created
     SWITCH_EVENT_CHANNEL_DESTROY	- A channel has been destroyed
     SWITCH_EVENT_CHANNEL_STATE		- A channel has changed state
-    SWITCH_EVENT_CHANNEL_CALLSTATE	- A channel has changed call state
     SWITCH_EVENT_CHANNEL_ANSWER		- A channel has been answered
     SWITCH_EVENT_CHANNEL_HANGUP		- A channel has been hungup
-    SWITCH_EVENT_CHANNEL_HANGUP_COMPLETE	- A channel has completed the hangup
     SWITCH_EVENT_CHANNEL_EXECUTE	- A channel has executed a module's application
     SWITCH_EVENT_CHANNEL_EXECUTE_COMPLETE	- A channel has finshed executing a module's application
-    SWITCH_EVENT_CHANNEL_HOLD		- A channel has been put on hold
-    SWITCH_EVENT_CHANNEL_UNHOLD		- A channel has been unheld
-    SWITCH_EVENT_CHANNEL_BRIDGE     - A channel has bridged to another channel
-    SWITCH_EVENT_CHANNEL_UNBRIDGE   - A channel has unbridged from another channel
+	SWITCH_EVENT_CHANNEL_BRIDGE     - A channel has bridged to another channel
+	SWITCH_EVENT_CHANNEL_UNBRIDGE   - A channel has unbridged from another channel
     SWITCH_EVENT_CHANNEL_PROGRESS	- A channel has started ringing
     SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA	- A channel has started early media
     SWITCH_EVENT_CHANNEL_OUTGOING	- A channel has been unparked
-    SWITCH_EVENT_CHANNEL_PARK 		- A channel has been parked
-    SWITCH_EVENT_CHANNEL_UNPARK 	- A channel has been unparked
-    SWITCH_EVENT_CHANNEL_APPLICATION- A channel has called and event from an application
-    SWITCH_EVENT_CHANNEL_ORIGINATE  - A channel has been originated
-    SWITCH_EVENT_CHANNEL_UUID       - A channel has changed uuid
+	SWITCH_EVENT_CHANNEL_PARK 		- A channel has been parked
+	SWITCH_EVENT_CHANNEL_UNPARK 	- A channel has been unparked
+	SWITCH_EVENT_CHANNEL_APPLICATION- A channel has called and event from an application
+	SWITCH_EVENT_CHANNEL_ORIGINATE  - A channel has been originated
+	SWITCH_EVENT_CHANNEL_UUID       - A channel has changed uuid
     SWITCH_EVENT_API				- An API call has been executed
     SWITCH_EVENT_LOG				- A LOG event has been triggered
     SWITCH_EVENT_INBOUND_CHAN		- A new inbound channel has been created
     SWITCH_EVENT_OUTBOUND_CHAN		- A new outbound channel has been created
     SWITCH_EVENT_STARTUP			- The system has been started
     SWITCH_EVENT_SHUTDOWN			- The system has been shutdown
-    SWITCH_EVENT_PUBLISH			- Publish
-    SWITCH_EVENT_UNPUBLISH			- UnPublish
-    SWITCH_EVENT_TALK				- Talking Detected
-    SWITCH_EVENT_NOTALK				- Not Talking Detected
-    SWITCH_EVENT_SESSION_CRASH		- Session Crashed
-    SWITCH_EVENT_MODULE_LOAD		- Module was loaded
-    SWITCH_EVENT_MODULE_UNLOAD		- Module was unloaded
-    SWITCH_EVENT_DTMF				- DTMF was sent
-    SWITCH_EVENT_MESSAGE			- A Basic Message
-    SWITCH_EVENT_PRESENCE_IN		- Presence in
-    SWITCH_EVENT_NOTIFY_IN			- Received incoming NOTIFY from gateway subscription
-    SWITCH_EVENT_PRESENCE_OUT		- Presence out
-    SWITCH_EVENT_PRESENCE_PROBE		- Presence probe
-    SWITCH_EVENT_MESSAGE_WAITING	- A message is waiting
-    SWITCH_EVENT_MESSAGE_QUERY		- A query for MESSAGE_WAITING events
-    SWITCH_EVENT_ROSTER				- ?
-    SWITCH_EVENT_CODEC				- Codec Change
-    SWITCH_EVENT_BACKGROUND_JOB		- Background Job
-    SWITCH_EVENT_DETECTED_SPEECH	- Detected Speech
-    SWITCH_EVENT_DETECTED_TONE      - Detected Tone
-    SWITCH_EVENT_PRIVATE_COMMAND	- A private command event 
-    SWITCH_EVENT_HEARTBEAT			- Machine is alive
-    SWITCH_EVENT_TRAP				- Error Trap
-    SWITCH_EVENT_ADD_SCHEDULE		- Something has been scheduled
-    SWITCH_EVENT_DEL_SCHEDULE		- Something has been unscheduled
-    SWITCH_EVENT_EXE_SCHEDULE		- Something scheduled has been executed
-    SWITCH_EVENT_RE_SCHEDULE		- Something scheduled has been rescheduled
-    SWITCH_EVENT_RELOADXML			- XML registry has been reloaded
-    SWITCH_EVENT_NOTIFY				- Notification
-    SWITCH_EVENT_PHONE_FEATURE		- Notification (DND/CFWD/etc)
-    SWITCH_EVENT_PHONE_FEATURE_SUBSCRIBE - Phone feature subscription
-    SWITCH_EVENT_SEND_MESSAGE		- Message
-    SWITCH_EVENT_RECV_MESSAGE		- Message
-    SWITCH_EVENT_REQUEST_PARAMS
-    SWITCH_EVENT_CHANNEL_DATA
-    SWITCH_EVENT_GENERAL
-    SWITCH_EVENT_COMMAND
-    SWITCH_EVENT_SESSION_HEARTBEAT
-    SWITCH_EVENT_CLIENT_DISCONNECTED
-    SWITCH_EVENT_SERVER_DISCONNECTED
-    SWITCH_EVENT_SEND_INFO
-    SWITCH_EVENT_RECV_INFO
-    SWITCH_EVENT_RECV_RTCP_MESSAGE
-    SWITCH_EVENT_CALL_SECURE
-    SWITCH_EVENT_NAT            	- NAT Management (new/del/status)
-    SWITCH_EVENT_RECORD_START
-    SWITCH_EVENT_RECORD_STOP
-    SWITCH_EVENT_PLAYBACK_START
-    SWITCH_EVENT_PLAYBACK_STOP
-    SWITCH_EVENT_CALL_UPDATE
-    SWITCH_EVENT_FAILURE            - A failure occurred which might impact the normal functioning of the switch
-    SWITCH_EVENT_SOCKET_DATA
-    SWITCH_EVENT_MEDIA_BUG_START
-    SWITCH_EVENT_MEDIA_BUG_STOP
-    SWITCH_EVENT_CONFERENCE_DATA_QUERY
-    SWITCH_EVENT_CONFERENCE_DATA
-    SWITCH_EVENT_CALL_SETUP_REQ
-    SWITCH_EVENT_CALL_SETUP_RESULT
-    SWITCH_EVENT_CALL_DETAIL
-    SWITCH_EVENT_DEVICE_STATE
+	SWITCH_EVENT_PUBLISH			- Publish
+	SWITCH_EVENT_UNPUBLISH			- UnPublish
+	SWITCH_EVENT_TALK				- Talking Detected
+	SWITCH_EVENT_NOTALK				- Not Talking Detected
+	SWITCH_EVENT_SESSION_CRASH		- Session Crashed
+	SWITCH_EVENT_MODULE_LOAD		- Module was loaded
+	SWITCH_EVENT_MODULE_UNLOAD		- Module was unloaded
+	SWITCH_EVENT_DTMF				- DTMF was sent
+	SWITCH_EVENT_MESSAGE			- A Basic Message
+	SWITCH_EVENT_PRESENCE_IN		- Presence in
+	SWITCH_EVENT_NOTIFY_IN			- Received incoming NOTIFY from gateway subscription
+	SWITCH_EVENT_PRESENCE_OUT		- Presence out
+	SWITCH_EVENT_PRESENCE_PROBE		- Presence probe
+	SWITCH_EVENT_MESSAGE_WAITING	- A message is waiting
+	SWITCH_EVENT_MESSAGE_QUERY		- A query for MESSAGE_WAITING events
+	SWITCH_EVENT_CODEC				- Codec Change
+	SWITCH_EVENT_BACKGROUND_JOB		- Background Job
+	SWITCH_EVENT_DETECTED_SPEECH	- Detected Speech
+	SWITCH_EVENT_DETECTED_TONE      - Detected Tone
+	SWITCH_EVENT_PRIVATE_COMMAND	- A private command event 
+	SWITCH_EVENT_HEARTBEAT			- Machine is alive
+	SWITCH_EVENT_TRAP				- Error Trap
+	SWITCH_EVENT_ADD_SCHEDULE		- Something has been scheduled
+	SWITCH_EVENT_DEL_SCHEDULE		- Something has been unscheduled
+	SWITCH_EVENT_EXE_SCHEDULE		- Something scheduled has been executed
+	SWITCH_EVENT_RE_SCHEDULE		- Something scheduled has been rescheduled
+	SWITCH_EVENT_RELOADXML			- XML registry has been reloaded
+	SWITCH_EVENT_NOTIFY				- Notification
+	SWITCH_EVENT_PHONE_FEATURE			- Notification (DND/CFWD/etc)
+	SWITCH_EVENT_PHONE_FEATURE_SUBSCRIBE - Phone feature subscription
+	SWITCH_EVENT_SEND_MESSAGE		- Message
+	SWITCH_EVENT_RECV_MESSAGE		- Message
+	SWITCH_EVENT_NAT            - NAT Management (new/del/status)
+	SWITCH_EVENT_FAILURE            - A failure occurred which might impact the normal functioning of the switch
     SWITCH_EVENT_ALL				- All events at once
 </pre>
 
