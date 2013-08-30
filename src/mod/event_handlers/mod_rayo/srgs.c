@@ -112,7 +112,7 @@ struct item_value {
 	int repeat_min;
 	int repeat_max;
 	const char *weight;
-	char *tag;
+	int tag;
 };
 
 /**
@@ -164,7 +164,7 @@ struct srgs_grammar {
 	/** rule names mapped to node */
 	switch_hash_t *rules;
 	/** possible matching tags */
-	const char *tags[MAX_TAGS];
+	const char *tags[MAX_TAGS + 1];
 	/** number of tags */
 	int tag_count;
 	/** grammar encoding */
@@ -725,11 +725,13 @@ static int process_cdata_tag(struct srgs_grammar *grammar, char *data, size_t le
 {
 	struct srgs_node *item = grammar->cur->parent;
 	if (item && item->type == SNT_ITEM) {
-		item->value.item.tag = switch_core_alloc(grammar->pool, sizeof(char) * (len + 1));
-		item->value.item.tag[len] = '\0';
-		strncpy(item->value.item.tag, data, len);
 		if (grammar->tag_count < MAX_TAGS) {
-			grammar->tags[grammar->tag_count++] = item->value.item.tag;
+			/* grammar gets the tag name, item gets the unique tag number */
+			char *tag = switch_core_alloc(grammar->pool, sizeof(char) * (len + 1));
+			tag[len] = '\0';
+			strncpy(tag, data, len);
+			grammar->tags[++grammar->tag_count] = tag;
+			item->value.item.tag = grammar->tag_count;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "too many <tag>s\n");
 			return IKS_BADXML;
@@ -986,11 +988,11 @@ static int create_regexes(struct srgs_grammar *grammar, struct srgs_node *node, 
 		case SNT_ITEM:
 			if (node->child) {
 				struct srgs_node *item = node->child;
-				if (node->value.item.repeat_min != 1 || node->value.item.repeat_max != 1 || !zstr(node->value.item.tag)) {
-					if (zstr(node->value.item.tag)) {
-						stream->write_function(stream, "%s", "(?:");
+				if (node->value.item.repeat_min != 1 || node->value.item.repeat_max != 1 || node->value.item.tag) {
+					if (node->value.item.tag) {
+						stream->write_function(stream, "(?P<%d>", node->value.item.tag);
 					} else {
-						stream->write_function(stream, "(?P<%s>", node->value.item.tag);
+						stream->write_function(stream, "%s", "(?:");
 					}
 				}
 				for(; item; item = item->next) {
@@ -1014,7 +1016,7 @@ static int create_regexes(struct srgs_grammar *grammar, struct srgs_node *node, 
 					} else {
 						stream->write_function(stream, "){%i}", node->value.item.repeat_min);
 					}
-				} else if (!zstr(node->value.item.tag)) {
+				} else if (node->value.item.tag) {
 					stream->write_function(stream, "%s", ")");
 				}
 			}
@@ -1282,9 +1284,11 @@ enum srgs_match_type srgs_grammar_match(struct srgs_grammar *grammar, const char
 		buffer[MAX_INPUT_SIZE] = '\0';
 
 		/* find matching instance... */
-		for (i = 0; i < grammar->tag_count; i++) {
+		for (i = 1; i <= grammar->tag_count; i++) {
+			char substring_name[16] = { 0 };
 			buffer[0] = '\0';
-			if (pcre_copy_named_substring(compiled_regex, input, ovector, result, grammar->tags[i], buffer, MAX_INPUT_SIZE) != PCRE_ERROR_NOSUBSTRING && !zstr_buf(buffer)) {
+			snprintf(substring_name, 16, "%d", i);
+			if (pcre_copy_named_substring(compiled_regex, input, ovector, result, substring_name, buffer, MAX_INPUT_SIZE) != PCRE_ERROR_NOSUBSTRING && !zstr_buf(buffer)) {
 				*interpretation = grammar->tags[i];
 				break;
 			}
