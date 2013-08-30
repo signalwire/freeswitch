@@ -65,6 +65,66 @@ static void test_match_adhearsion_menu_grammar(void)
 	srgs_parser_destroy(parser);
 }
 
+static const char *duplicate_tag_grammar =
+	"<grammar xmlns=\"http://www.w3.org/2001/06/grammar\" version=\"1.0\" xml:lang=\"en-US\" mode=\"dtmf\" root=\"options\" tag-format=\"semantics/1.0-literals\">"
+	"  <rule id=\"options\" scope=\"public\">\n"
+	"    <one-of>\n"
+	"      <item><tag>2</tag>1</item>\n"
+	"      <item><tag>2</tag>5</item>\n"
+	"      <item><tag>4</tag>7</item>\n"
+	"      <item><tag>4</tag>9</item>\n"
+	"    </one-of>\n"
+	"  </rule>\n"
+	"</grammar>\n";
+
+/**
+ * Test matching with duplicate tags
+ */
+static void test_match_duplicate_tag_grammar(void)
+{
+	struct srgs_parser *parser;
+	struct srgs_grammar *grammar;
+	const char *interpretation;
+
+	parser = srgs_parser_new("1234");
+	ASSERT_NOT_NULL((grammar = srgs_parse(parser, duplicate_tag_grammar)));
+
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "0", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1", &interpretation));
+	ASSERT_STRING_EQUALS("2", interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "2", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "3", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "4", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "5", &interpretation));
+	ASSERT_STRING_EQUALS("2", interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "6", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "7", &interpretation));
+	ASSERT_STRING_EQUALS("4", interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "8", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "9", &interpretation));
+	ASSERT_STRING_EQUALS("4", interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "#", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "*", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "27", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "223", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "0123456789*#", &interpretation));
+	ASSERT_NULL(interpretation);
+
+	srgs_parser_destroy(parser);
+}
+
 
 static const char *adhearsion_ask_grammar =
 	"<grammar xmlns=\"http://www.w3.org/2001/06/grammar\" version=\"1.0\" xml:lang=\"en-US\" mode=\"dtmf\" root=\"inputdigits\">"
@@ -1025,6 +1085,7 @@ int main(int argc, char **argv)
 	srgs_init();
 	TEST(test_parse_grammar);
 	TEST(test_match_adhearsion_menu_grammar);
+	TEST(test_match_duplicate_tag_grammar);
 	TEST(test_match_adhearsion_ask_grammar);
 	TEST(test_match_multi_digit_grammar);
 	TEST(test_match_multi_rule_grammar);
