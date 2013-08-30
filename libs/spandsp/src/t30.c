@@ -1505,8 +1505,6 @@ static int build_dcs(t30_state_t *s)
             set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_FULL_COLOUR_MODE);
         if (image_type == T4_IMAGE_TYPE_GRAY_12BIT  ||  image_type == T4_IMAGE_TYPE_COLOUR_12BIT)
             set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_12BIT_COMPONENT);
-        //if (???????? & T4_COMPRESSION_NO_SUBSAMPLING))
-        //    set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_NO_SUBSAMPLING);
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, T30_DCS_BIT_MIN_SCAN_LINE_TIME_1);
         use_bilevel = false;
         break;
@@ -1789,17 +1787,13 @@ static int analyze_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
     }
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_400_CAPABLE))
     {
-        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_INCH_RESOLUTION_PREFERRED))
-            s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_200_400;
-        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_METRIC_RESOLUTION_PREFERRED))
-            s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_R8_SUPERFINE;
+        s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_200_400;
+        s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_R8_SUPERFINE;
     }
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_200_CAPABLE))
     {
-        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_INCH_RESOLUTION_PREFERRED))
-            s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_200_200;
-        if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_METRIC_RESOLUTION_PREFERRED))
-            s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_R8_FINE;
+        s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_200_200;
+        s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_R8_FINE;
         s->mutual_colour_resolutions &= ~T4_RESOLUTION_200_200;
     }
     else
@@ -6706,8 +6700,8 @@ SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
                              | T4_SUPPORT_LENGTH_A4
                              | T4_SUPPORT_LENGTH_B4
                              | T4_SUPPORT_LENGTH_UNLIMITED;
-    /* Set the output encoding to something safe. For bi-level images ost things get
-       1D and 2D encoding right. Quite a lot get other things wrong. */
+    /* Set the output encoding to something safe. For bi-level images most things
+       get 1D and 2D encoding right. Quite a lot get other things wrong. */
     s->supported_output_compressions = T4_COMPRESSION_T4_2D | T4_COMPRESSION_JPEG;
     s->local_min_scan_time_code = T30_MIN_SCAN_0MS;
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);

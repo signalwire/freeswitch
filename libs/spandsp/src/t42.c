@@ -72,7 +72,7 @@
 #include "spandsp/private/t85.h"
 #include "spandsp/private/t42.h"
 
-/* The open_memstream() and fmemopen() in older versions of glibc seems quirky */
+/* The open_memstream() and fmemopen() in older versions of glibc seem quirky */
 #if defined(__GLIBC__)  &&  (__GLIBC__ < 2  ||  (__GLIBC__ == 2  &&  __GLIBC_MINOR__ < 12))
 #undef OPEN_MEMSTREAM
 #endif
@@ -227,6 +227,38 @@ static __inline__ int unpack_16(uint8_t *s, uint16_t value)
     s[0] = (value >> 8) & 0xFF;
     s[1] = value & 0xFF;
     return sizeof(uint16_t);
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(bool) t42_analyse_header(uint32_t *width, uint32_t *length, const uint8_t data[], size_t len)
+{
+    int type;
+    int seg;
+    int pos;
+
+    /* Search the image data for its width and length */
+    *length = 0;
+    *width = 0;
+
+    pos = 0;
+    if (pack_16(&data[pos]) != 0xFFD8)
+        return false;
+    pos += 2;
+    while (pos < len)
+    {
+        type = pack_16(&data[pos]);
+        pos += 2;
+        seg = pack_16(&data[pos]) - 2;
+        pos += 2;
+        if (type == 0xFFC0)
+        {
+            *length = pack_16(&data[pos + 1]);
+            *width = pack_16(&data[pos + 3]);
+            return true;
+        }
+        pos += seg;
+    }
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 

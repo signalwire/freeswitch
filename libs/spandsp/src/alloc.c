@@ -50,21 +50,25 @@
 #include "spandsp/telephony.h"
 #include "spandsp/alloc.h"
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER)
 #pragma warning(push)
 #pragma warning(disable:4232)	/* address of dllimport is not static, identity not guaranteed */
 #endif
 
 #if defined(HAVE_ALIGNED_ALLOC)
 static span_aligned_alloc_t __span_aligned_alloc = aligned_alloc;
+static span_aligned_free_t __span_aligned_free = free;
 #elif defined(HAVE_MEMALIGN)
 static span_aligned_alloc_t __span_aligned_alloc = memalign;
-#elif defined(HAVE_POSIX_MEMALIGN)
-static void *fake_posix_memalign(size_t alignment, size_t size);
-static span_aligned_alloc_t __span_aligned_alloc = fake_posix_memalign;
+static span_aligned_free_t __span_aligned_free = free;
+#elif defined(__MSVC__)
+static void *fake_aligned_alloc(size_t alignment, size_t size);
+static span_aligned_alloc_t __span_aligned_alloc = fake_aligned_alloc;
+static span_aligned_free_t __span_aligned_free = _aligned_free;
 #else
 static void *fake_aligned_alloc(size_t alignment, size_t size);
 static span_aligned_alloc_t __span_aligned_alloc = fake_aligned_alloc;
+static span_aligned_free_t __span_aligned_free = free;
 #endif
 static span_alloc_t __span_alloc = malloc;
 static span_realloc_t __span_realloc = realloc;
@@ -76,12 +80,19 @@ static span_free_t __span_free = free;
 
 #if defined(HAVE_ALIGNED_ALLOC)
 #elif defined(HAVE_MEMALIGN)
+#elif defined(__MSVC__)
+static void *fake_aligned_alloc(size_t alignment, size_t size)
+{
+    /* Make Microsoft's _aligned_malloc() look like the C11 aligned_alloc */
+    return _aligned_malloc(size, alignment);
+}
+/*- End of function --------------------------------------------------------*/
 #elif defined(HAVE_POSIX_MEMALIGN)
-static void *fake_posix_memalign(size_t alignment, size_t size)
+static void *fake_aligned_alloc(size_t alignment, size_t size)
 {
     void *ptr;
 
-    /* Make posix_memalign look like the more modern aligned_alloc */
+    /* Make posix_memalign() look like the C11 aligned_alloc */
     posix_memalign(&ptr, alignment, size);
     return ptr;
 }
@@ -93,12 +104,6 @@ static void *fake_aligned_alloc(size_t alignment, size_t size)
 }
 /*- End of function --------------------------------------------------------*/
 #endif
-
-SPAN_DECLARE(void *) span_aligned_alloc(size_t alignment, size_t size)
-{
-    return __span_aligned_alloc(alignment, size);
-}
-/*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(void *) span_alloc(size_t size)
 {
@@ -118,11 +123,28 @@ SPAN_DECLARE(void) span_free(void *ptr)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) span_mem_allocators(span_aligned_alloc_t custom_aligned_alloc,
-                                      span_alloc_t custom_alloc,
-                                      span_realloc_t custom_realloc,
-                                      span_free_t custom_free)
+SPAN_DECLARE(void *) span_aligned_alloc(size_t alignment, size_t size)
 {
+    return __span_aligned_alloc(alignment, size);
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) span_aligned_free(void *ptr)
+{
+    __span_aligned_free(ptr);
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) span_mem_allocators(span_alloc_t custom_alloc,
+                                      span_realloc_t custom_realloc,
+                                      span_free_t custom_free,
+                                      span_aligned_alloc_t custom_aligned_alloc,
+                                      span_aligned_free_t custom_aligned_free)
+{
+    __span_alloc = (custom_alloc)  ?  custom_alloc  :  malloc;
+    __span_realloc = (custom_realloc)  ?  custom_realloc  :  realloc;
+    __span_free = (custom_free)  ?  custom_free  :  free;
+
     __span_aligned_alloc = (custom_aligned_alloc)
                             ?
                             custom_aligned_alloc
@@ -131,14 +153,18 @@ SPAN_DECLARE(int) span_mem_allocators(span_aligned_alloc_t custom_aligned_alloc,
                             aligned_alloc;
 #elif defined(HAVE_MEMALIGN)
                             memalign;
-#elif defined(HAVE_POSIX_MEMALIGN)
-                            fake_posix_memalign;
 #else
                             fake_aligned_alloc;
 #endif
-    __span_alloc = (custom_alloc)  ?  custom_alloc  :  malloc;
-    __span_realloc = (custom_realloc)  ?  custom_realloc  :  realloc;
-    __span_free = (custom_free)  ?  custom_free  :  free;
+    __span_aligned_free = (custom_aligned_free)
+                          ?
+                          custom_aligned_free
+                          :
+#if defined(__MSVC__)
+                          _aligned_free;
+#else
+                          free;
+#endif
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

@@ -53,7 +53,7 @@
 #include "spandsp/private/t81_t82_arith_coding.h"
 #include "spandsp/private/t85.h"
 
-static __inline__ int32_t pack_32(uint8_t *s)
+static __inline__ int32_t pack_32(const uint8_t *s)
 {
     int32_t value;
 
@@ -262,6 +262,16 @@ static int finish_sde(t85_decode_state_t *s)
     }
 
     return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(bool) t85_analyse_header(uint32_t *width, uint32_t *length, const uint8_t data[], size_t len)
+{
+    if (len < 20)
+        return false;
+    *width = pack_32(&data[6]);
+    *length = pack_32(&data[10]);
+    return true;
 }
 /*- End of function --------------------------------------------------------*/
 

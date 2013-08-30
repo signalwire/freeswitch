@@ -28,7 +28,17 @@
 #if !defined(_SPANDSP_ALLOC_H_)
 #define _SPANDSP_ALLOC_H_
 
+/* Notes:
+    - Most platforms don't have an aligned realloc function, so we don't try to
+      support an aligned realloc on any platform.
+    - Some platforms use a special free function for memory which was allocated
+      by alligned allocation functions. We use a separate aligned_free function
+      on all platforms, for compatibility, even though it may simply reduce to
+      free().
+ */
+  
 typedef void *(*span_aligned_alloc_t)(size_t alignment, size_t size);
+typedef void (*span_aligned_free_t)(void *ptr);
 typedef void *(*span_alloc_t)(size_t size);
 typedef void *(*span_realloc_t)(void *ptr, size_t size);
 typedef void (*span_free_t)(void *ptr);
@@ -41,20 +51,24 @@ extern "C"
 /* Allocate size bytes allocated to ALIGNMENT bytes.  */
 SPAN_DECLARE(void *) span_aligned_alloc(size_t alignment, size_t size);
 
+/* Free a block allocated by span_aligned_alloc, or span_aligned_realloc. */
+SPAN_DECLARE(void) span_aligned_free(void *ptr);
+
 /* Allocate size bytes of memory. */
 SPAN_DECLARE(void *) span_alloc(size_t size);
 
 /* Re-allocate the previously allocated block in ptr, making the new block size bytes long. */
 SPAN_DECLARE(void *) span_realloc(void *ptr, size_t size);
 
-/* Free a block allocated by span_alloc, span_aligned_alloc, or span_realloc. */
+/* Free a block allocated by span_alloc or span_realloc. */
 SPAN_DECLARE(void) span_free(void *ptr);
 
-SPAN_DECLARE(int) span_mem_allocators(span_aligned_alloc_t custom_aligned_alloc,
-                                      span_alloc_t custom_alloc,
+SPAN_DECLARE(int) span_mem_allocators(span_alloc_t custom_alloc,
                                       span_realloc_t custom_realloc,
-                                      span_free_t custom_free);
-
+                                      span_free_t custom_free,
+                                      span_aligned_alloc_t custom_aligned_alloc,
+                                      span_aligned_free_t custom_aligned_free);
+                                      
 #if defined(__cplusplus)
 }
 #endif
