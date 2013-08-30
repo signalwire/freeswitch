@@ -865,7 +865,8 @@ SPAN_DECLARE(int) t43_decode_restart(t43_decode_state_t *s)
 {
     /* ITULAB */
     /* Illuminant D50 */
-    set_lab_illuminant(&s->lab, 96.422f, 100.000f,  82.521f);
+    //set_lab_illuminant(&s->lab, 96.422f, 100.000f,  82.521f);
+    set_lab_illuminant(&s->lab, 100.0f, 100.0f, 100.0f);
     set_lab_gamut(&s->lab, 0, 100, -85, 85, -75, 125, false);
 
     s->t85.min_bit_planes = 1;
@@ -898,7 +899,8 @@ SPAN_DECLARE(t43_decode_state_t *) t43_decode_init(t43_decode_state_t *s,
 
     /* ITULAB */
     /* Illuminant D50 */
-    set_lab_illuminant(&s->lab, 96.422f, 100.000f,  82.521f);
+    //set_lab_illuminant(&s->lab, 96.422f, 100.000f,  82.521f);
+    set_lab_illuminant(&s->lab, 100.0f, 100.0f, 100.0f);
     set_lab_gamut(&s->lab, 0, 100, -85, 85, -75, 125, false);
 
     s->t85.min_bit_planes = 1;

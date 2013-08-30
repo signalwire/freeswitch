@@ -64,6 +64,8 @@ extern "C"
 {
 #endif
 
+SPAN_DECLARE(bool) t85_analyse_header(uint32_t *width, uint32_t *length, const uint8_t data[], size_t len);
+
 /*! \brief Check if we are at the end of the current document page.
     \param s The T.85 context.
     \return 0 for more data to come. SIG_STATUS_END_OF_DATA for no more data. */

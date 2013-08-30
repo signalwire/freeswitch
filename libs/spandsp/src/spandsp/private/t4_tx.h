@@ -100,6 +100,14 @@ typedef struct
     int resolution_code;
 } t4_tx_metadata_t;
 
+typedef struct
+{
+    uint8_t *buf;
+    int buf_len;
+    int buf_ptr;
+    int bit;
+} no_encoder_state_t;
+
 /*!
     T.4 FAX compression descriptor. This defines the working state
     for a single instance of a T.4 FAX compression channel.
@@ -149,6 +157,7 @@ struct t4_tx_state_s
 
     union
     {
+        no_encoder_state_t no_encoder;
         t4_t6_encode_state_t t4_t6;
         t85_encode_state_t t85;
 #if defined(SPANDSP_SUPPORT_T88)
@@ -176,10 +185,7 @@ struct t4_tx_state_s
     int pack_row;
     int pack_bit_mask;
 
-    uint8_t *pre_encoded_buf;
-    int pre_encoded_len;
-    int pre_encoded_ptr;
-    int pre_encoded_bit;
+    no_encoder_state_t no_encoder;
 
     /*! \brief Supporting information, like resolutions, which the backend may want. */
     t4_tx_metadata_t metadata;

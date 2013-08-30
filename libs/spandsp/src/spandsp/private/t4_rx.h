@@ -91,6 +91,13 @@ typedef struct
     const char *dcs;
 } t4_rx_metadata_t;
 
+typedef struct
+{
+    uint8_t *buf;
+    int buf_len;
+    int buf_ptr;
+} no_decoder_state_t;
+
 /*!
     T.4 FAX decompression descriptor. This defines the working state
     for a single instance of a T.4 FAX decompression channel.
@@ -114,6 +121,7 @@ struct t4_rx_state_s
 
     union
     {
+        no_decoder_state_t no_decoder;
         t4_t6_decode_state_t t4_t6;
         t85_decode_state_t t85;
 #if defined(SPANDSP_SUPPORT_T88)
@@ -131,11 +139,6 @@ struct t4_rx_state_s
     t4_image_put_handler_t image_put_handler;
 
     int current_decoder;
-
-    uint8_t *pre_encoded_buf;
-    int pre_encoded_len;
-    int pre_encoded_ptr;
-    int pre_encoded_bit;
 
     /* Supporting information, like resolutions, which the backend may want. */
     t4_rx_metadata_t metadata;

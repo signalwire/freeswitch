@@ -873,20 +873,20 @@ static int read_tiff_raw_image(t4_tx_state_t *s)
     total_len = 0;
     for (i = 0;  i < num_strips;  i++)
         total_len += TIFFRawStripSize(s->tiff.tiff_file, i);
-    if ((s->pre_encoded_buf = span_realloc(s->pre_encoded_buf, total_len)) == NULL)
+    if ((s->no_encoder.buf = span_realloc(s->no_encoder.buf, total_len)) == NULL)
         return -1;
     total_len = 0;
     for (i = 0;  i < num_strips;  i++, total_len += len)
     {
         len = TIFFRawStripSize(s->tiff.tiff_file, i);
-        if ((len = TIFFReadRawStrip(s->tiff.tiff_file, i, &s->pre_encoded_buf[total_len], len)) < 0)
+        if ((len = TIFFReadRawStrip(s->tiff.tiff_file, i, &s->no_encoder.buf[total_len], len)) < 0)
         {
             span_log(&s->logging, SPAN_LOG_WARNING, "%s: TIFFReadRawStrip error.\n", s->tiff.file);
             return -1;
         }
     }
-    s->pre_encoded_len = total_len;
-    s->pre_encoded_ptr = 0;
+    s->no_encoder.buf_len = total_len;
+    s->no_encoder.buf_ptr = 0;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1674,7 +1674,7 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
         int width_code;
         int res_code;           /* Correct resolution code */
         int alt_res_code;       /* Fallback resolution code, where a metric/inch swap is possible */
-    } width_info[] =
+    } width_and_res_info[] =
     {
         { T4_WIDTH_100_A4, T4_SUPPORT_WIDTH_215MM,       T4_RESOLUTION_100_100,                           0},
         { T4_WIDTH_100_B4, T4_SUPPORT_WIDTH_255MM,       T4_RESOLUTION_100_100,                           0},
@@ -1777,7 +1777,9 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
     int entry;
     int compression;
     int res;
+    int supported_colour_compressions;
 
+    supported_colour_compressions = supported_compressions & (T4_COMPRESSION_T42_T81 | T4_COMPRESSION_T43 | T4_COMPRESSION_T45 | T4_COMPRESSION_SYCC_T81);
     compression = -1;
     s->metadata.image_type = s->tiff.image_type;
     if (s->tiff.image_type != T4_IMAGE_TYPE_BILEVEL)
@@ -1786,7 +1788,7 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
         /* Can we send this page as it is? */
         if (supported_colour_resolutions
             &&
-            (supported_compressions & (T4_COMPRESSION_T42_T81 | T4_COMPRESSION_T43 | T4_COMPRESSION_T45 | T4_COMPRESSION_SYCC_T81))
+            supported_colour_compressions
             &&
                   (((s->tiff.image_type == T4_IMAGE_TYPE_COLOUR_BILEVEL  ||  s->tiff.image_type == T4_IMAGE_TYPE_COLOUR_8BIT  ||  s->tiff.image_type == T4_IMAGE_TYPE_COLOUR_12BIT)
                     &&
@@ -1798,28 +1800,6 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
         {
             /* Gray-scale/colour is possible */
             span_log(&s->logging, SPAN_LOG_FLOW, "Gray-scale/colour is allowed\n");
-            if (s->tiff.image_type == T4_IMAGE_TYPE_COLOUR_BILEVEL
-                ||
-                s->tiff.image_type == T4_IMAGE_TYPE_COLOUR_8BIT
-                ||
-                s->tiff.image_type == T4_IMAGE_TYPE_COLOUR_12BIT)
-            {
-                if (!(supported_compressions & T4_COMPRESSION_COLOUR))
-                {
-                    span_log(&s->logging, SPAN_LOG_FLOW, "Colour is not allowed\n");
-                    return T4_IMAGE_FORMAT_INCOMPATIBLE;
-                }
-            }
-            else if (s->tiff.image_type == T4_IMAGE_TYPE_GRAY_8BIT
-                     ||
-                     s->tiff.image_type == T4_IMAGE_TYPE_GRAY_12BIT)
-            {
-                if (!(supported_compressions & T4_COMPRESSION_GRAYSCALE))
-                {
-                    span_log(&s->logging, SPAN_LOG_FLOW, "Gray-scale is not allowed\n");
-                    return T4_IMAGE_FORMAT_INCOMPATIBLE;
-                }
-            }
             /* Choose the best gray-scale/colour encoding available to us */
             if (s->tiff.image_type == T4_IMAGE_TYPE_COLOUR_BILEVEL  &&  (supported_compressions & T4_COMPRESSION_T43))
                 compression = T4_COMPRESSION_T43;
@@ -1838,32 +1818,29 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
         {
             /* Gray-scale/colour is not possible. Can we flatten the image to send it? */
             span_log(&s->logging, SPAN_LOG_FLOW, "Gray-scale/colour is not allowed\n");
-            if (s->tiff.image_type == T4_IMAGE_TYPE_COLOUR_BILEVEL
-                ||
-                s->tiff.image_type == T4_IMAGE_TYPE_COLOUR_8BIT
-                ||
-                s->tiff.image_type == T4_IMAGE_TYPE_COLOUR_12BIT)
+            switch (s->tiff.image_type)
             {
+            case T4_IMAGE_TYPE_COLOUR_BILEVEL:
+            case T4_IMAGE_TYPE_COLOUR_8BIT:
+            case T4_IMAGE_TYPE_COLOUR_12BIT:
                 if (!(supported_compressions & T4_COMPRESSION_COLOUR_TO_BILEVEL))
                 {
                     span_log(&s->logging, SPAN_LOG_FLOW, "Flattening is not allowed\n");
                     return T4_IMAGE_FORMAT_INCOMPATIBLE;
                 }
-                s->metadata.image_type = T4_IMAGE_TYPE_BILEVEL;
-            }
-            else if (s->tiff.image_type == T4_IMAGE_TYPE_GRAY_8BIT
-                     ||
-                     s->tiff.image_type == T4_IMAGE_TYPE_GRAY_12BIT)
-            {
+                break;
+            case T4_IMAGE_TYPE_GRAY_8BIT:
+            case T4_IMAGE_TYPE_GRAY_12BIT:
                 if (!(supported_compressions & T4_COMPRESSION_GRAY_TO_BILEVEL))
                 {
                     span_log(&s->logging, SPAN_LOG_FLOW, "Flattening is not allowed\n");
                     return T4_IMAGE_FORMAT_INCOMPATIBLE;
                 }
-                s->metadata.image_type = T4_IMAGE_TYPE_BILEVEL;
+                break;
             }
             /* Squashing to a bi-level image is possible */
-            span_log(&s->logging, SPAN_LOG_FLOW, "The image may be flattened to %d\n", s->metadata.image_type);
+            s->metadata.image_type = T4_IMAGE_TYPE_BILEVEL;
+            span_log(&s->logging, SPAN_LOG_FLOW, "The image will be flattened to %d\n", s->metadata.image_type);
         }
     }
 
@@ -1884,26 +1861,20 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
 
     /* Deal with the image width/resolution combination. */
     /* Look for a pattern that matches the image */
-    res = T4_IMAGE_FORMAT_NOSIZESUPPORT;
-    for (entry = 0;  s->tiff.image_width >= width_info[entry].width;  entry++)
+    s->metadata.width_code = -1;
+    for (entry = 0;  s->tiff.image_width >= width_and_res_info[entry].width;  entry++)
     {
-        if (s->tiff.image_width == width_info[entry].width  &&  s->tiff.resolution_code == width_info[entry].res_code)
+        if (s->tiff.image_width == width_and_res_info[entry].width  &&  s->tiff.resolution_code == width_and_res_info[entry].res_code)
         {
-            res = T4_IMAGE_FORMAT_OK;
+            s->metadata.width_code = width_and_res_info[entry].width_code;
             break;
         }
     }
-
-    s->metadata.width_code = width_info[entry].width_code;
-    
+    res = T4_IMAGE_FORMAT_NOSIZESUPPORT;
     s->row_squashing_ratio = 1;
-    if (res == T4_IMAGE_FORMAT_OK)
+    if (s->metadata.width_code >= 0  &&  (supported_image_sizes & s->metadata.width_code))
     {
-        /* We have a valid width/resolution combination */
-
-        /* Check if this width/resolution combination is supported */
-        if (!(supported_image_sizes & width_info[entry].width_code))
-            return T4_IMAGE_FORMAT_NOSIZESUPPORT;
+        /* We have a valid and supported width/resolution combination */
 
         /* No resize necessary */
         s->metadata.image_width = s->tiff.image_width;
@@ -1912,7 +1883,7 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
         res = T4_IMAGE_FORMAT_NORESSUPPORT;
         if (s->metadata.image_type == T4_IMAGE_TYPE_BILEVEL)
         {
-            if ((width_info[entry].res_code & supported_bilevel_resolutions))
+            if ((width_and_res_info[entry].res_code & supported_bilevel_resolutions))
             {
                 /* We can use the resolution of the original image */
                 s->metadata.resolution_code = s->tiff.resolution_code;
@@ -1920,56 +1891,51 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
                 s->metadata.y_resolution = code_to_y_resolution(s->metadata.resolution_code);
                 res = T4_IMAGE_FORMAT_OK;
             }
+            else if ((width_and_res_info[entry].alt_res_code & supported_bilevel_resolutions))
+            {
+                /* We can do a metric/imperial swap, and have a usable resolution */
+                span_log(&s->logging,
+                         SPAN_LOG_FLOW,
+                         "Image resolution %s falls back to %s\n",
+                         t4_image_resolution_to_str(s->tiff.resolution_code),
+                         t4_image_resolution_to_str(width_and_res_info[entry].alt_res_code));
+                s->metadata.resolution_code = width_and_res_info[entry].alt_res_code;
+                s->metadata.x_resolution = code_to_x_resolution(s->metadata.resolution_code);
+                s->metadata.y_resolution = code_to_y_resolution(s->metadata.resolution_code);
+                res = T4_IMAGE_FORMAT_OK;
+            }
             else
             {
-                /* The resolution is not supported, but there might be an approximation, or a length
-                   squashing that might work. */
-                if ((width_info[entry].alt_res_code & supported_bilevel_resolutions))
+                if (s->tiff.image_type == T4_IMAGE_TYPE_BILEVEL)
                 {
-                    /* We can do a metric/imperial swap, and have a usable resolution */
-                    span_log(&s->logging,
-                             SPAN_LOG_FLOW,
-                             "Image resolution %s falls back to %s\n",
-                             t4_image_resolution_to_str(s->tiff.resolution_code),
-                             t4_image_resolution_to_str(width_info[entry].alt_res_code));
-                    s->metadata.resolution_code = width_info[entry].alt_res_code;
-                    s->metadata.x_resolution = code_to_x_resolution(s->metadata.resolution_code);
-                    s->metadata.y_resolution = code_to_y_resolution(s->metadata.resolution_code);
-                    res = T4_IMAGE_FORMAT_OK;
-                }
-                else
-                {
-                    if (s->tiff.image_type == T4_IMAGE_TYPE_BILEVEL)
+                    if ((s->tiff.resolution_code & (T4_RESOLUTION_200_400 | T4_RESOLUTION_200_200 | T4_RESOLUTION_R8_SUPERFINE | T4_RESOLUTION_R8_FINE)))
                     {
-                        if ((s->tiff.resolution_code & (T4_RESOLUTION_200_400 | T4_RESOLUTION_200_200 | T4_RESOLUTION_R8_SUPERFINE | T4_RESOLUTION_R8_FINE)))
+                        /* This might be a resolution we can squash down to something which is supported */
+                        for (i = 0;  i < 4;  i++)
                         {
-                            /* This might be a resolution we can squash down to something which is supported */
-                            for (i = 0;  i < 4;  i++)
+                            if ((s->tiff.resolution_code & squashable[i].resolution))
+                                break;
+                        }
+                        if (i < 4)
+                        {
+                            /* This is a squashable resolution, so let's see if there is a valid
+                               fallback we can squash the image to, scanning through the entries
+                               in their order of preference. */
+                            for (j = 0;  j < 4;  j++)
                             {
-                                if ((s->tiff.resolution_code & squashable[i].resolution))
-                                    break;
-                            }
-                            if (i < 4)
-                            {
-                                /* This is a squashable resolution, so let's see if there is a valid
-                                   fallback we can squash the image to, scanning through the entries
-                                   in their order of preference. */
-                                for (j = 0;  j < 4;  j++)
+                                if ((supported_bilevel_resolutions & squashable[i].fallback[j].resolution))
                                 {
-                                    if ((supported_bilevel_resolutions & squashable[i].fallback[j].resolution))
-                                    {
-                                        span_log(&s->logging,
-                                                 SPAN_LOG_FLOW,
-                                                 "Image resolution %s falls back to %s\n",
-                                                 t4_image_resolution_to_str(s->tiff.resolution_code),
-                                                 t4_image_resolution_to_str(squashable[i].fallback[j].resolution));
-                                        s->row_squashing_ratio = squashable[i].fallback[j].squashing_factor;
-                                        s->metadata.resolution_code = squashable[i].fallback[j].resolution;
-                                        s->metadata.x_resolution = code_to_x_resolution(s->metadata.resolution_code);
-                                        s->metadata.y_resolution = code_to_y_resolution(s->metadata.resolution_code);
-                                        res = T4_IMAGE_FORMAT_OK;
-                                        break;
-                                    }
+                                    span_log(&s->logging,
+                                             SPAN_LOG_FLOW,
+                                             "Image resolution %s falls back to %s\n",
+                                             t4_image_resolution_to_str(s->tiff.resolution_code),
+                                             t4_image_resolution_to_str(squashable[i].fallback[j].resolution));
+                                    s->row_squashing_ratio = squashable[i].fallback[j].squashing_factor;
+                                    s->metadata.resolution_code = squashable[i].fallback[j].resolution;
+                                    s->metadata.x_resolution = code_to_x_resolution(s->metadata.resolution_code);
+                                    s->metadata.y_resolution = code_to_y_resolution(s->metadata.resolution_code);
+                                    res = T4_IMAGE_FORMAT_OK;
+                                    break;
                                 }
                             }
                         }
@@ -1977,25 +1943,25 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
                 }
             }
             /* If we have not succeeded in matching up the size and resolution, the next step will
-               depend on whether the original was a bi-level image. If it was we are stuck, as you can't
+               depend on whether the original was a bi-level image. If it was, we are stuck, as you can't
                really resize those. If it was not, a resize might be possible */
             if (res != T4_IMAGE_FORMAT_OK)
             {
                 if (s->tiff.image_type == T4_IMAGE_TYPE_BILEVEL)
                     return T4_IMAGE_FORMAT_NORESSUPPORT;
                 if (!(supported_compressions & T4_COMPRESSION_RESCALING))
-                    return T4_IMAGE_FORMAT_NORESSUPPORT;
+                    return T4_IMAGE_FORMAT_NOSIZESUPPORT;
             }
             /* TODO */
         }
         else
         {
-            if ((width_info[entry].res_code & supported_bilevel_resolutions))
+            if ((width_and_res_info[entry].res_code & supported_bilevel_resolutions))
             {
                 if ((s->tiff.resolution_code & supported_colour_resolutions))
                 {
                     /* We can use the resolution of the original image */
-                    s->metadata.resolution_code = width_info[entry].res_code;
+                    s->metadata.resolution_code = width_and_res_info[entry].res_code;
                     s->metadata.x_resolution = code_to_x_resolution(s->metadata.resolution_code);
                     s->metadata.y_resolution = code_to_y_resolution(s->metadata.resolution_code);
                     res = T4_IMAGE_FORMAT_OK;
@@ -2007,12 +1973,13 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
     {
         /* Can we rework the image to fit? */
         /* We can't rework a bilevel image that fits none of the patterns */
-        if (s->tiff.image_type == T4_IMAGE_TYPE_BILEVEL)
+        if (s->tiff.image_type == T4_IMAGE_TYPE_BILEVEL  ||  s->tiff.image_type == T4_IMAGE_TYPE_COLOUR_BILEVEL)
             return T4_IMAGE_FORMAT_NORESSUPPORT;
         if (!(supported_compressions & T4_COMPRESSION_RESCALING))
-            return T4_IMAGE_FORMAT_NORESSUPPORT;
-        res = T4_IMAGE_FORMAT_OK;
+            return T4_IMAGE_FORMAT_NOSIZESUPPORT;
         /* Any other kind of image might be resizable */
+        res = T4_IMAGE_FORMAT_OK;
+        /* TODO: use more sophisticated resizing */
         s->metadata.image_width = T4_WIDTH_200_A4;
         s->metadata.resolution_code = T4_RESOLUTION_200_200;
         s->metadata.x_resolution = code_to_x_resolution(s->metadata.resolution_code);
@@ -2430,9 +2397,9 @@ SPAN_DECLARE(void) t4_tx_get_transfer_statistics(t4_tx_state_t *s, t4_stats_t *t
 
 SPAN_DECLARE(int) t4_tx_image_complete(t4_tx_state_t *s)
 {
-    if (s->pre_encoded_len > 0)
+    if (s->no_encoder.buf_len > 0)
     {
-        if (s->pre_encoded_ptr >= s->pre_encoded_len)
+        if (s->no_encoder.buf_ptr >= s->no_encoder.buf_len)
             return SIG_STATUS_END_OF_DATA;
         return 0;
     }
@@ -2471,15 +2438,15 @@ SPAN_DECLARE(int) t4_tx_get_bit(t4_tx_state_t *s)
     int bit;
 
     /* We only get bit by bit for T.4 1D and T.4 2-D. */
-    if (s->pre_encoded_len > 0)
+    if (s->no_encoder.buf_len > 0)
     {
-        if (s->pre_encoded_ptr >= s->pre_encoded_len)
+        if (s->no_encoder.buf_ptr >= s->no_encoder.buf_len)
             return SIG_STATUS_END_OF_DATA;
-        bit = (s->pre_encoded_buf[s->pre_encoded_ptr] >> s->pre_encoded_bit) & 1;
-        if (++s->pre_encoded_bit >= 8)
+        bit = (s->no_encoder.buf[s->no_encoder.buf_ptr] >> s->no_encoder.bit) & 1;
+        if (++s->no_encoder.bit >= 8)
         {
-            s->pre_encoded_bit = 0;
-            s->pre_encoded_ptr++;
+            s->no_encoder.bit = 0;
+            s->no_encoder.buf_ptr++;
         }
         return bit;
     }
@@ -2489,12 +2456,12 @@ SPAN_DECLARE(int) t4_tx_get_bit(t4_tx_state_t *s)
 
 SPAN_DECLARE(int) t4_tx_get(t4_tx_state_t *s, uint8_t buf[], size_t max_len)
 {
-    if (s->pre_encoded_len > 0)
+    if (s->no_encoder.buf_len > 0)
     {
-        if (max_len > (s->pre_encoded_len - s->pre_encoded_ptr))
-            max_len = s->pre_encoded_len - s->pre_encoded_ptr;
-        memcpy(buf, &s->pre_encoded_buf[s->pre_encoded_ptr], max_len);
-        s->pre_encoded_ptr += max_len;
+        if (max_len > (s->no_encoder.buf_len - s->no_encoder.buf_ptr))
+            max_len = s->no_encoder.buf_len - s->no_encoder.buf_ptr;
+        memcpy(buf, &s->no_encoder.buf[s->no_encoder.buf_ptr], max_len);
+        s->no_encoder.buf_ptr += max_len;
         return max_len;
     }
 
