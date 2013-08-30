@@ -42,7 +42,7 @@ enum nlsml_match_type {
 extern int nlsml_init(void);
 enum nlsml_match_type nlsml_parse(const char *result, const char *uuid);
 iks *nlsml_normalize(const char *result);
-extern iks *nlsml_create_dtmf_match(const char *digits);
+extern iks *nlsml_create_dtmf_match(const char *digits, const char *interpretation);
 
 #endif
 

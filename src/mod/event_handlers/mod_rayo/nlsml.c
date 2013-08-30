@@ -397,9 +397,10 @@ static int isdtmf(const char digit)
 /**
  * Construct an NLSML result for digit match
  * @param digits the matching digits
+ * @param interpretation the optional digit interpretation
  * @return the NLSML <result>
  */
-iks *nlsml_create_dtmf_match(const char *digits)
+iks *nlsml_create_dtmf_match(const char *digits, const char *interpretation)
 {
 	iks *result = iks_new("result");
 	iks_insert_attrib(result, "xmlns", NLSML_NS);
@@ -410,10 +411,11 @@ iks *nlsml_create_dtmf_match(const char *digits)
 		int num_digits = strlen(digits);
 		switch_stream_handle_t stream = { 0 };
 
-		iks *interpretation = iks_insert(result, "interpretation");
-		iks *input = iks_insert(interpretation, "input");
-		iks_insert_attrib(input, "mode", "dtmf");
-		iks_insert_attrib(input, "confidence", "100");
+		iks *interpretation_node = iks_insert(result, "interpretation");
+		iks *input_node = iks_insert(interpretation_node, "input");
+		iks *instance_node = iks_insert(interpretation_node, "instance");
+		iks_insert_attrib(input_node, "mode", "dtmf");
+		iks_insert_attrib(input_node, "confidence", "100");
 
 		SWITCH_STANDARD_STREAM(stream);
 		for (i = 0; i < num_digits; i++) {
@@ -426,7 +428,13 @@ iks *nlsml_create_dtmf_match(const char *digits)
 				}
 			}
 		}
-		iks_insert_cdata(input, stream.data, strlen(stream.data));
+		iks_insert_cdata(input_node, stream.data, strlen(stream.data));
+
+		if (zstr(interpretation)) {
+			iks_insert_cdata(instance_node, stream.data, strlen(stream.data));
+		} else {
+			iks_insert_cdata(instance_node, interpretation, strlen(interpretation));
+		}
 		switch_safe_free(stream.data);
 	}
 	return result;

@@ -5,6 +5,67 @@
 #include "srgs.h"
 
 
+static const char *adhearsion_menu_grammar =
+	"<grammar xmlns=\"http://www.w3.org/2001/06/grammar\" version=\"1.0\" xml:lang=\"en-US\" mode=\"dtmf\" root=\"options\" tag-format=\"semantics/1.0-literals\">"
+	"  <rule id=\"options\" scope=\"public\">\n"
+	"    <one-of>\n"
+	"      <item><tag>0</tag>1</item>\n"
+	"      <item><tag>1</tag>5</item>\n"
+	"      <item><tag>2</tag>7</item>\n"
+	"      <item><tag>3</tag>9</item>\n"
+	"    </one-of>\n"
+	"  </rule>\n"
+	"</grammar>\n";
+
+/**
+ * Test matching against adhearsion menu grammar
+ */
+static void test_match_adhearsion_menu_grammar(void)
+{
+	struct srgs_parser *parser;
+	struct srgs_grammar *grammar;
+	const char *interpretation;
+
+	parser = srgs_parser_new("1234");
+	ASSERT_NOT_NULL((grammar = srgs_parse(parser, adhearsion_menu_grammar)));
+
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "0", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1", &interpretation));
+	ASSERT_STRING_EQUALS("0", interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "2", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "3", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "4", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "5", &interpretation));
+	ASSERT_STRING_EQUALS("1", interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "6", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "7", &interpretation));
+	ASSERT_STRING_EQUALS("2", interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "8", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "9", &interpretation));
+	ASSERT_STRING_EQUALS("3", interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "#", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "*", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "27", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "223", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "0123456789*#", &interpretation));
+	ASSERT_NULL(interpretation);
+
+	srgs_parser_destroy(parser);
+}
+
+
 static const char *adhearsion_ask_grammar =
 	"<grammar xmlns=\"http://www.w3.org/2001/06/grammar\" version=\"1.0\" xml:lang=\"en-US\" mode=\"dtmf\" root=\"inputdigits\">"
 	"  <rule id=\"inputdigits\" scope=\"public\">\n"
@@ -32,26 +93,28 @@ static void test_match_adhearsion_ask_grammar(void)
 {
 	struct srgs_parser *parser;
 	struct srgs_grammar *grammar;
+	const char *interpretation;
 
 	parser = srgs_parser_new("1234");
 	ASSERT_NOT_NULL((grammar = srgs_parse(parser, adhearsion_ask_grammar)));
 
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "0"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "2"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "3"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "4"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "5"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "6"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "7"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "8"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "9"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "#"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "*"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "27"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "223"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "0123456789*#"));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "0", &interpretation));
+	ASSERT_NULL(interpretation);
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "2", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "3", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "4", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "5", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "6", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "7", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "8", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "9", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "*", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "27", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "223", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "0123456789*#", &interpretation));
 
 	srgs_parser_destroy(parser);
 }
@@ -84,26 +147,27 @@ static void test_match_multi_digit_grammar(void)
 {
 	struct srgs_parser *parser;
 	struct srgs_grammar *grammar;
+	const char *interpretation;
 
 	parser = srgs_parser_new("1234");
 	ASSERT_NOT_NULL((grammar = srgs_parse(parser, multi_digit_grammar)));
 
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "0"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "2"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "3"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "4"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "5"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "6"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "7"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "8"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "9"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "*"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "27"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "223"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "0123456789*#"));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "0", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "2", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "3", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "4", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "5", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "6", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "7", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "8", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "9", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "*", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "27", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "223", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "0123456789*#", &interpretation));
 
 	srgs_parser_destroy(parser);
 }
@@ -137,26 +201,27 @@ static void test_match_multi_rule_grammar(void)
 {
 	struct srgs_parser *parser;
 	struct srgs_grammar *grammar;
+	const char *interpretation;
 
 	parser = srgs_parser_new("1234");
 	ASSERT_NOT_NULL((grammar = srgs_parse(parser, multi_rule_grammar)));
 
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "0"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "2"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "3"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "4"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "5"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "6"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "7"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "8"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "9"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "*"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "27"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "223"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "0123456789*#"));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "0", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "2", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "3", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "4", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "5", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "6", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "7", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "8", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "9", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "*", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "27", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "223", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "0123456789*#", &interpretation));
 
 	srgs_parser_destroy(parser);
 }
@@ -200,28 +265,29 @@ static void test_match_rayo_example_grammar(void)
 {
 	struct srgs_parser *parser;
 	struct srgs_grammar *grammar;
+	const char *interpretation;
 
 	parser = srgs_parser_new("1234");
 	ASSERT_NOT_NULL((grammar = srgs_parse(parser, rayo_example_grammar)));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "0"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "2"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "3"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "4"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "5"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "6"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "7"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "8"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "9"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "*"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "*9"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1234#"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "2321#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "27"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "223"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "0123456789*#"));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "0", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "2", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "3", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "4", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "5", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "6", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "7", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "8", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "9", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "*", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "*9", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1234#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "2321#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "27", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "223", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "0123456789*#", &interpretation));
 
 	srgs_parser_destroy(parser);
 }
@@ -566,6 +632,7 @@ static void test_repeat_item_grammar(void)
 {
 	struct srgs_parser *parser;
 	struct srgs_grammar *grammar;
+	const char *interpretation;
 
 	parser = srgs_parser_new("1234");
 	ASSERT_NULL(srgs_parse(parser, repeat_item_grammar_bad));
@@ -575,74 +642,74 @@ static void test_repeat_item_grammar(void)
 	ASSERT_NULL(srgs_parse(parser, repeat_item_grammar_bad5));
 	ASSERT_NULL(srgs_parse(parser, repeat_item_grammar_bad6));
 	ASSERT_NOT_NULL((grammar = srgs_parse(parser, repeat_item_grammar)));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1111#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1111"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1234#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1234"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "11115#"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "11115"));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1111#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1111", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1234#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1234", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "11115#", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "11115", &interpretation));
 	ASSERT_NOT_NULL((grammar = srgs_parse(parser, repeat_item_range_grammar)));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1111#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1111"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1234#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1234"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "11115#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "11115"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "111156#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "111156"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "1111567#"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "1111567"));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1111#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1111", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1234#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1234", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "11115#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "11115", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "111156#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "111156", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "1111567#", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "1111567", &interpretation));
 	ASSERT_NOT_NULL((grammar = srgs_parse(parser, repeat_item_optional_grammar)));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "1111#"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "1111"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "1234#"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "1234"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "11115#"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "11115"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "111156#"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "111156"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "1111567#"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "1111567"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "#"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, ""));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A#"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A"));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "1111#", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "1111", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "1234#", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "1234", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "11115#", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "11115", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "111156#", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "111156", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "1111567#", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "1111567", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "#", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A#", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A", &interpretation));
 	ASSERT_NOT_NULL((grammar = srgs_parse(parser, repeat_item_plus_grammar)));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1111#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1111"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1234#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1234"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "11115#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "11115"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "111156#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "111156"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "111157#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "111157"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "#"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, ""));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A#"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A"));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1111#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1111", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1234#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1234", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "11115#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "11115", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "111156#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "111156", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "111157#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "111157", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "#", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A#", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A", &interpretation));
 	ASSERT_NOT_NULL((grammar = srgs_parse(parser, repeat_item_star_grammar)));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1111#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1111"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1234#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1234"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "11115#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "11115"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "111156#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "111156"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "111157#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "111157"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1#"));
-	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "#"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, ""));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A#"));
-	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A"));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1111#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1111", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1234#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1234", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "11115#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "11115", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "111156#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "111156", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "111157#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "111157", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_PARTIAL, srgs_grammar_match(grammar, "1", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "#", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A#", &interpretation));
+	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "A", &interpretation));
 
 	srgs_parser_destroy(parser);
 }
@@ -678,12 +745,13 @@ static void test_repeat_item_range_ambiguous_grammar(void)
 {
 	struct srgs_parser *parser;
 	struct srgs_grammar *grammar;
+	const char *interpretation;
 
 	parser = srgs_parser_new("1234");
 	ASSERT_NOT_NULL((grammar = srgs_parse(parser, repeat_item_range_ambiguous_grammar)));
-	ASSERT_EQUALS(SMT_MATCH, srgs_grammar_match(grammar, "1"));
-	ASSERT_EQUALS(SMT_MATCH, srgs_grammar_match(grammar, "12"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "123"));
+	ASSERT_EQUALS(SMT_MATCH, srgs_grammar_match(grammar, "1", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH, srgs_grammar_match(grammar, "12", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "123", &interpretation));
 }
 
 static const char *repeat_item_range_optional_pound_grammar =
@@ -722,14 +790,15 @@ static void test_repeat_item_range_optional_pound_grammar(void)
 {
 	struct srgs_parser *parser;
 	struct srgs_grammar *grammar;
+	const char *interpretation;
 
 	parser = srgs_parser_new("1234");
 	ASSERT_NOT_NULL((grammar = srgs_parse(parser, repeat_item_range_optional_pound_grammar)));
-	ASSERT_EQUALS(SMT_MATCH, srgs_grammar_match(grammar, "1"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1#"));
-	ASSERT_EQUALS(SMT_MATCH, srgs_grammar_match(grammar, "12"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "12#"));
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "123"));
+	ASSERT_EQUALS(SMT_MATCH, srgs_grammar_match(grammar, "1", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "1#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH, srgs_grammar_match(grammar, "12", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "12#", &interpretation));
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "123", &interpretation));
 }
 
 /*
@@ -955,6 +1024,7 @@ int main(int argc, char **argv)
 	TEST_INIT
 	srgs_init();
 	TEST(test_parse_grammar);
+	TEST(test_match_adhearsion_menu_grammar);
 	TEST(test_match_adhearsion_ask_grammar);
 	TEST(test_match_multi_digit_grammar);
 	TEST(test_match_multi_rule_grammar);

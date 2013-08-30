@@ -245,18 +245,39 @@ static const char *nlsml_dtmf_result =
 	"<result xmlns='http://www.ietf.org/xml/ns/mrcpv2' "
 	"xmlns:xf='http://www.w3.org/2000/xforms'><interpretation>"
 	"<input mode='dtmf' confidence='100'>1 2 3 4</input>"
+	"<instance>1 2 3 4</instance>"
 	"</interpretation></result>";
 
 /**
- * Test parsing NLSML example results
+ * Test creating DTMF match result
  */
 static void test_create_dtmf_match(void)
 {
-	iks *result = nlsml_create_dtmf_match("1234");
+	iks *result = nlsml_create_dtmf_match("1234", NULL);
 	char *result_str;
 	ASSERT_NOT_NULL(result);
 	result_str = iks_string(NULL, result);
 	ASSERT_STRING_EQUALS(nlsml_dtmf_result, result_str);
+	iks_free(result_str);
+}
+
+static const char *nlsml_dtmf_instance_result =
+	"<result xmlns='http://www.ietf.org/xml/ns/mrcpv2' "
+	"xmlns:xf='http://www.w3.org/2000/xforms'><interpretation>"
+	"<input mode='dtmf' confidence='100'>1</input>"
+	"<instance>foo</instance>"
+	"</interpretation></result>";
+
+/**
+ * Test creating DTMF match result with instance interpretation
+ */
+static void test_create_dtmf_instance(void)
+{
+	iks *result = nlsml_create_dtmf_match("1", "foo");
+	char *result_str;
+	ASSERT_NOT_NULL(result);
+	result_str = iks_string(NULL, result);
+	ASSERT_STRING_EQUALS(nlsml_dtmf_instance_result, result_str);
 	iks_free(result_str);
 }
 
@@ -295,6 +316,7 @@ int main(int argc, char **argv)
 	nlsml_init();
 	TEST(test_parse_nlsml_examples);
 	TEST(test_create_dtmf_match);
+	TEST(test_create_dtmf_instance);
 	TEST(test_normalize);
 	return 0;
 }

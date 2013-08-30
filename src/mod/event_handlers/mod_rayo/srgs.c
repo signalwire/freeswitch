@@ -33,6 +33,7 @@
 #include "srgs.h"
 
 #define MAX_RECURSION 100
+#define MAX_TAGS 30
 
 /** function to handle tag attributes */
 typedef int (* tag_attribs_fn)(struct srgs_grammar *, char **);
@@ -111,6 +112,7 @@ struct item_value {
 	int repeat_min;
 	int repeat_max;
 	const char *weight;
+	char *tag;
 };
 
 /**
@@ -161,6 +163,10 @@ struct srgs_grammar {
 	struct srgs_node *cur;
 	/** rule names mapped to node */
 	switch_hash_t *rules;
+	/** possible matching tags */
+	const char *tags[MAX_TAGS];
+	/** number of tags */
+	int tag_count;
 	/** grammar encoding */
 	char *encoding;
 	/** grammar language */
@@ -709,6 +715,30 @@ static int tag_hook(void *user_data, char *name, char **atts, int type)
 }
 
 /**
+ * Process <tag> CDATA
+ * @param grammar the grammar
+ * @param data the CDATA
+ * @param len the CDATA length
+ * @return IKS_OK
+ */
+static int process_cdata_tag(struct srgs_grammar *grammar, char *data, size_t len)
+{
+	struct srgs_node *item = grammar->cur->parent;
+	if (item && item->type == SNT_ITEM) {
+		item->value.item.tag = switch_core_alloc(grammar->pool, sizeof(char) * (len + 1));
+		item->value.item.tag[len] = '\0';
+		strncpy(item->value.item.tag, data, len);
+		if (grammar->tag_count < MAX_TAGS) {
+			grammar->tags[grammar->tag_count++] = item->value.item.tag;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "too many <tag>s\n");
+			return IKS_BADXML;
+		}
+	}
+	return IKS_OK;
+}
+
+/**
  * Process CDATA grammar tokens
  * @param grammar the grammar
  * @param data the CDATA
@@ -956,8 +986,12 @@ static int create_regexes(struct srgs_grammar *grammar, struct srgs_node *node, 
 		case SNT_ITEM:
 			if (node->child) {
 				struct srgs_node *item = node->child;
-				if (node->value.item.repeat_min != 1 || node->value.item.repeat_max != 1) {
-					stream->write_function(stream, "%s", "(?:");
+				if (node->value.item.repeat_min != 1 || node->value.item.repeat_max != 1 || !zstr(node->value.item.tag)) {
+					if (zstr(node->value.item.tag)) {
+						stream->write_function(stream, "%s", "(?:");
+					} else {
+						stream->write_function(stream, "(?P<%s>", node->value.item.tag);
+					}
 				}
 				for(; item; item = item->next) {
 					if (!create_regexes(grammar, item, stream)) {
@@ -980,6 +1014,8 @@ static int create_regexes(struct srgs_grammar *grammar, struct srgs_node *node, 
 					} else {
 						stream->write_function(stream, "){%i}", node->value.item.repeat_min);
 					}
+				} else if (!zstr(node->value.item.tag)) {
+					stream->write_function(stream, "%s", ")");
 				}
 			}
 			break;
@@ -1171,7 +1207,7 @@ struct srgs_grammar *srgs_parse(struct srgs_parser *parser, const char *document
 }
 
 #define MAX_INPUT_SIZE 128
-#define OVECTOR_SIZE 30
+#define OVECTOR_SIZE MAX_TAGS
 #define WORKSPACE_SIZE 1024
 
 /**
@@ -1214,14 +1250,16 @@ static int is_match_end(pcre *compiled_regex, const char *input)
  * Find a match
  * @param grammar the grammar to match
  * @param input the input to compare
+ * @param interpretation the (optional) interpretation of the input result
  * @return the match result
  */
-enum srgs_match_type srgs_grammar_match(struct srgs_grammar *grammar, const char *input)
+enum srgs_match_type srgs_grammar_match(struct srgs_grammar *grammar, const char *input, const char **interpretation)
 {
 	int result = 0;
 	int ovector[OVECTOR_SIZE];
-	int workspace[WORKSPACE_SIZE];
 	pcre *compiled_regex;
+
+	*interpretation = NULL;
 
 	if (zstr(input)) {
 		return SMT_NO_MATCH;
@@ -1234,12 +1272,24 @@ enum srgs_match_type srgs_grammar_match(struct srgs_grammar *grammar, const char
 	if (!(compiled_regex = get_compiled_regex(grammar))) {
 		return SMT_NO_MATCH;
 	}
-	result = pcre_dfa_exec(compiled_regex, NULL, input, strlen(input), 0, PCRE_PARTIAL,
-		ovector, sizeof(ovector) / sizeof(ovector[0]),
-		workspace, sizeof(workspace) / sizeof(workspace[0]));
+	result = pcre_exec(compiled_regex, NULL, input, strlen(input), 0, PCRE_PARTIAL,
+		ovector, OVECTOR_SIZE);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "match = %i\n", result);
 	if (result > 0) {
+		int i;
+		char buffer[MAX_INPUT_SIZE + 1];
+		buffer[MAX_INPUT_SIZE] = '\0';
+
+		/* find matching instance... */
+		for (i = 0; i < grammar->tag_count; i++) {
+			buffer[0] = '\0';
+			if (pcre_copy_named_substring(compiled_regex, input, ovector, result, grammar->tags[i], buffer, MAX_INPUT_SIZE) != PCRE_ERROR_NOSUBSTRING && !zstr_buf(buffer)) {
+				*interpretation = grammar->tags[i];
+				break;
+			}
+		}
+
 		if (is_match_end(compiled_regex, input)) {
 			return SMT_MATCH_END;
 		}
@@ -1562,7 +1612,7 @@ int srgs_init(void)
 	add_root_tag_def("grammar", process_grammar, process_cdata_bad, "meta,metadata,lexicon,tag,rule");
 	add_tag_def("ruleref", process_ruleref, process_cdata_bad, "");
 	add_tag_def("token", process_attribs_ignore, process_cdata_ignore, "");
-	add_tag_def("tag", process_attribs_ignore, process_cdata_ignore, "");
+	add_tag_def("tag", process_attribs_ignore, process_cdata_tag, "");
 	add_tag_def("one-of", process_attribs_ignore, process_cdata_tokens, "item");
 	add_tag_def("item", process_item, process_cdata_tokens, "token,ruleref,item,one-of,tag");
 	add_tag_def("rule", process_rule, process_cdata_tokens, "token,ruleref,item,one-of,tag,example");
