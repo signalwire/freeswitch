@@ -19,7 +19,7 @@
 # @start 1
 
 AC_PREREQ([2.59])
-AC_INIT([spandsp], [0.0.7])
+AC_INIT([spandsp], [1.99.0])
 
 SPANDSP_LT_CURRENT=3
 SPANDSP_LT_REVISION=0
@@ -264,15 +264,6 @@ then
         ;;
     esac
 fi
-
-AC_DEFINE([SPANDSP_SUPPORT_T42], [1], [Support T.42 JPEG compression])
-SPANDSP_SUPPORT_T42="#define SPANDSP_SUPPORT_T42 1"
-AC_DEFINE([SPANDSP_SUPPORT_T43], [1], [Support T.43 JBIG gray and colour compression])
-SPANDSP_SUPPORT_T43="#define SPANDSP_SUPPORT_T43 1"
-#AC_DEFINE([SPANDSP_SUPPORT_V32BIS], [1], [Support the V.32bis modem])
-SPANDSP_SUPPORT_V32BIS="#undef SPANDSP_SUPPORT_V32BIS"
-#AC_DEFINE([SPANDSP_SUPPORT_V34], [1], [Support the V.34 FAX modem])
-SPANDSP_SUPPORT_V34="#undef SPANDSP_SUPPORT_V34"
 
 AC_CHECK_LIB([m], [cos])
 # Some platforms still seem to lack the basic single precision trig and power related functions.
@@ -524,21 +515,6 @@ x86_64-* | i386-* | i686-*)
     ;;
 esac
 
-AM_CONDITIONAL([COND_DOC], [test "$enable_doc" = yes])
-AM_CONDITIONAL([COND_TESTS], [test "$enable_tests" = yes])
-AM_CONDITIONAL([COND_MMX], [test "$enable_mmx" = yes])
-AM_CONDITIONAL([COND_SSE], [test "$enable_sse" = yes])
-AM_CONDITIONAL([COND_SSE2], [test "$enable_sse2" = yes])
-AM_CONDITIONAL([COND_SSE3], [test "$enable_sse3" = yes])
-AM_CONDITIONAL([COND_SSSE3], [test "$enable_ssse3" = yes])
-AM_CONDITIONAL([COND_SSE4_1], [test "$enable_sse4_1" = yes])
-AM_CONDITIONAL([COND_SSE4_2], [test "$enable_sse4_2" = yes])
-AM_CONDITIONAL([COND_SSE4A], [test "$enable_sse4a" = yes])
-AM_CONDITIONAL([COND_SSE5], [test "$enable_sse5" = yes])
-AM_CONDITIONAL([COND_AVX], [test "$enable_avx" = yes])
-AM_CONDITIONAL([COND_AVX2], [test "$enable_avx2" = yes])
-AM_CONDITIONAL([COND_NEON], [test "$enable_neon" = yes])
-
 if test "$enable_builtin_tiff" = "yes" ; then
     abs_tiffdir="`cd $srcdir/../tiff-4.0.2/ && pwd`"
     save_CFLAGS=$CFLAGS
@@ -553,9 +529,7 @@ if test "$enable_builtin_tiff" = "yes" ; then
     AC_DEFINE([HAVE_LIBTIFF], [1], [Define to 1 if you have the `tiff' library (-ltiff).])
 else
     AC_CHECK_HEADERS([tiffio.h])
-    AC_CHECK_HEADERS([tif_dir.h], [], [], [#include <tiffio.h>
-])
-    AC_CHECK_LIB([tiff], [TIFFOpen], [TIFF_LIBS="-ltiff"], AC_MSG_ERROR("Cannot build without libtiff (does your system require a libtiff-devel package?)"), -lm)
+    AC_CHECK_LIB([tiff], [TIFFOpen], , AC_MSG_ERROR("Cannot build without libtiff (does your system require a libtiff-devel package?)"), -lm)
 fi
 
 AC_CHECK_LIB([tiff], [TIFFCreateCustomDirectory], [
@@ -574,6 +548,31 @@ LIBS="$LIBS $TIFF_LIBS $JPEG_LIBS"
 
 TESTLIBS="$SIMLIBS $TESTLIBS"
 
+AC_DEFINE([SPANDSP_SUPPORT_T43], [0], [Support T.43 JBIG gray and colour compression])
+SPANDSP_SUPPORT_T43="#undef SPANDSP_SUPPORT_T43"
+AC_DEFINE([SPANDSP_SUPPORT_V32BIS], [0], [Support the V.32bis modem])
+SPANDSP_SUPPORT_V32BIS="#undef SPANDSP_SUPPORT_V32BIS"
+AC_DEFINE([SPANDSP_SUPPORT_V34], [0], [Support the V.34 FAX modem])
+SPANDSP_SUPPORT_V34="#undef SPANDSP_SUPPORT_V34"
+
+AM_CONDITIONAL([COND_DOC], [test "$enable_doc" = yes])
+AM_CONDITIONAL([COND_TESTS], [test "$enable_tests" = yes])
+AM_CONDITIONAL([COND_MMX], [test "$enable_mmx" = yes])
+AM_CONDITIONAL([COND_SSE], [test "$enable_sse" = yes])
+AM_CONDITIONAL([COND_SSE2], [test "$enable_sse2" = yes])
+AM_CONDITIONAL([COND_SSE3], [test "$enable_sse3" = yes])
+AM_CONDITIONAL([COND_SSSE3], [test "$enable_ssse3" = yes])
+AM_CONDITIONAL([COND_SSE4_1], [test "$enable_sse4_1" = yes])
+AM_CONDITIONAL([COND_SSE4_2], [test "$enable_sse4_2" = yes])
+AM_CONDITIONAL([COND_SSE4A], [test "$enable_sse4a" = yes])
+AM_CONDITIONAL([COND_SSE5], [test "$enable_sse5" = yes])
+AM_CONDITIONAL([COND_AVX], [test "$enable_avx" = yes])
+AM_CONDITIONAL([COND_AVX2], [test "$enable_avx2" = yes])
+AM_CONDITIONAL([COND_NEON], [test "$enable_neon" = yes])
+
+AM_CONDITIONAL([COND_V32BIS], [test yes = xyes])
+AM_CONDITIONAL([COND_V34], [test yes = xyes])
+
 AC_SUBST(SPANDSP_LT_CURRENT)
 AC_SUBST(SPANDSP_LT_REVISION)
 AC_SUBST(SPANDSP_LT_AGE)
@@ -586,7 +585,6 @@ AC_SUBST(TESTLIBS)
 AC_SUBST(SPANDSP_USE_FIXED_POINT)
 AC_SUBST(SPANDSP_MISALIGNED_ACCESS_FAILS)
 AC_SUBST(SPANDSP_USE_EXPORT_CAPABILITY)
-AC_SUBST(SPANDSP_SUPPORT_T42)
 AC_SUBST(SPANDSP_SUPPORT_T43)
 AC_SUBST(SPANDSP_SUPPORT_V32BIS)
 AC_SUBST(SPANDSP_SUPPORT_V34)

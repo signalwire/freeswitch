@@ -128,9 +128,7 @@ struct t4_rx_state_s
         t88_decode_state_t t88;
 #endif
         t42_decode_state_t t42;
-#if defined(SPANDSP_SUPPORT_T43)
         t43_decode_state_t t43;
-#endif
 #if defined(SPANDSP_SUPPORT_T45)
         t45_decode_state_t t45;
 #endif

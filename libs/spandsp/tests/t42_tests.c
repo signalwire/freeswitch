@@ -300,7 +300,7 @@ int main(int argc, char *argv[])
             memcpy(data, jpeg_table, jpeg_table_len - 2);
 
         if (total_len != total_image_len)
-            printf("Size mismatch %ld %ld\n", total_len, total_image_len);
+            printf("Size mismatch %ld %ld\n", (long int) total_len, (long int) total_image_len);
         off = total_len;
         switch (compression)
         {
@@ -309,7 +309,7 @@ int main(int argc, char *argv[])
         case COMPRESSION_CCITT_T6:
             break;
         case COMPRESSION_T85:
-            printf("T.85 image %ld bytes\n", total_len);
+            printf("T.85 image %ld bytes\n", (long int) total_len);
             for (i = 0;  i < 16;  i++)
                 printf("0x%02x\n", data[i]);
             t85_decode_init(&t85_dec, t85_row_write_handler, NULL);
@@ -322,7 +322,7 @@ int main(int argc, char *argv[])
             t85_decode_release(&t85_dec);
             return 0;
         case COMPRESSION_T43:
-            printf("T.43 image %ld bytes\n", total_len);
+            printf("T.43 image %ld bytes\n", (long int) total_len);
             if (pack_16(data) == 0xFFA8)
             {
                 data += 2;
@@ -447,7 +447,7 @@ int main(int argc, char *argv[])
                 return 1;
             off += bytes_per_row;
         }
-        printf("total %u, off %ld\n", totdata, off);
+        printf("total %u, off %ld\n", totdata, (long int) off);
 
         /* We now have the image in memory in RGB form */
 
@@ -497,7 +497,7 @@ int main(int argc, char *argv[])
     }
     TIFFClose(tif);
 
-    printf("XXX - image is %d by %d, %ld bytes\n", w, h, off);
+    printf("XXX - image is %d by %d, %ld bytes\n", w, h, (long int) off);
 
     /* We now have the image in memory in ITULAB form */
 

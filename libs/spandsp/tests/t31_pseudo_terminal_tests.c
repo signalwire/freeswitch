@@ -47,8 +47,6 @@
 
 #include "spandsp.h"
 
-#include "spandsp/t30_fcf.h"
-
 #include "spandsp-sim.h"
 
 #undef SPANDSP_EXPOSE_INTERNAL_STRUCTURES

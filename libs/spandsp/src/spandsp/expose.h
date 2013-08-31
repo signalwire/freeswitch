@@ -73,6 +73,12 @@
 #include <spandsp/private/v27ter_tx.h>
 #include <spandsp/private/v29rx.h>
 #include <spandsp/private/v29tx.h>
+#if defined(SPANDSP_SUPPORT_V32BIS)
+#include <spandsp/private/v32bis.h>
+#endif
+#if defined(SPANDSP_SUPPORT_V34)
+#include <spandsp/private/v34.h>
+#endif
 #include <spandsp/private/v42.h>
 #include <spandsp/private/v42bis.h>
 #include <spandsp/private/at_interpreter.h>

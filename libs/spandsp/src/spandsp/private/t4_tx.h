@@ -164,9 +164,7 @@ struct t4_tx_state_s
         t88_encode_state_t t88;
 #endif
         t42_encode_state_t t42;
-#if defined(SPANDSP_SUPPORT_T43)
         t43_encode_state_t t43;
-#endif
 #if defined(SPANDSP_SUPPORT_T45)
         t45_encode_state_t t45;
 #endif

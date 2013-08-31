@@ -71,9 +71,7 @@
 #include "spandsp/t81_t82_arith_coding.h"
 #include "spandsp/t85.h"
 #include "spandsp/t42.h"
-#if defined(SPANDSP_SUPPORT_T43)
 #include "spandsp/t43.h"
-#endif
 #include "spandsp/t4_t6_decode.h"
 #include "spandsp/t4_t6_encode.h"
 #include "spandsp/t30_fcf.h"
@@ -87,9 +85,7 @@
 #include "spandsp/private/t81_t82_arith_coding.h"
 #include "spandsp/private/t85.h"
 #include "spandsp/private/t42.h"
-#if defined(SPANDSP_SUPPORT_T43)
 #include "spandsp/private/t43.h"
-#endif
 #include "spandsp/private/t4_t6_decode.h"
 #include "spandsp/private/t4_t6_encode.h"
 #include "spandsp/private/image_translate.h"
@@ -1498,7 +1494,6 @@ static int build_dcs(t30_state_t *s)
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, T30_DCS_BIT_MIN_SCAN_LINE_TIME_1);
         use_bilevel = false;
         break;
-#if defined(SPANDSP_SUPPORT_T43)
     case T4_COMPRESSION_T43:
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T43_MODE);
         if (image_type == T4_IMAGE_TYPE_COLOUR_8BIT  ||  image_type == T4_IMAGE_TYPE_COLOUR_12BIT)
@@ -1508,7 +1503,6 @@ static int build_dcs(t30_state_t *s)
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, T30_DCS_BIT_MIN_SCAN_LINE_TIME_1);
         use_bilevel = false;
         break;
-#endif
 #if defined(SPANDSP_SUPPORT_T45)
     case T4_COMPRESSION_T45:
         use_bilevel = false;
@@ -1786,20 +1780,11 @@ static int analyze_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
             s->mutual_colour_resolutions &= ~T4_RESOLUTION_300_300;
     }
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_400_CAPABLE))
-    {
-        s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_200_400;
-        s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_R8_SUPERFINE;
-    }
+        s->mutual_bilevel_resolutions &= ~(T4_RESOLUTION_200_400 | T4_RESOLUTION_R8_SUPERFINE);
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_200_200_CAPABLE))
     {
-        s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_200_200;
-        s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_R8_FINE;
+        s->mutual_bilevel_resolutions &= ~(T4_RESOLUTION_200_200 | T4_RESOLUTION_R8_FINE);
         s->mutual_colour_resolutions &= ~T4_RESOLUTION_200_200;
-    }
-    else
-    {
-        //if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_INCH_RESOLUTION_PREFERRED))
-        //    s->mutual_colour_resolutions &= ~T4_RESOLUTION_200_200;
     }
     if (!test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_INCH_RESOLUTION_PREFERRED))
         s->mutual_bilevel_resolutions &= ~T4_RESOLUTION_200_100;

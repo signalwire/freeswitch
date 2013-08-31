@@ -175,7 +175,8 @@ ImageLayer(34732)                                                   LONG
 */
 
 /* Define the TIFF/FX tags to extend libtiff, when using a version of libtiff where this
-   stuff has not been merged. */
+   stuff has not been merged. We only need to define these things for older versions of
+   libtiff. */
 #if defined(SPANDSP_SUPPORT_TIFF_FX)  &&  !defined(TIFFTAG_FAXPROFILE)
 #define TIFFTAG_INDEXED                 346
 #define TIFFTAG_GLOBALPARAMETERSIFD     400

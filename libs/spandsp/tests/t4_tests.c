@@ -288,20 +288,16 @@ int main(int argc, char *argv[])
                 compression_step = -1;
             }
 #endif
-#if defined(SPANDSP_SUPPORT_T42)
             else if (strcmp(optarg, "T81") == 0)
             {
                 compression = T4_COMPRESSION_T42_T81;
                 compression_step = -1;
             }
-#endif
-#if defined(SPANDSP_SUPPORT_T43)
             else if (strcmp(optarg, "T43") == 0)
             {
                 compression = T4_COMPRESSION_T43;
                 compression_step = -1;
             }
-#endif
 #if defined(SPANDSP_SUPPORT_T45)
             else if (strcmp(optarg, "T45") == 0)
             {
