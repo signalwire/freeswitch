@@ -36,6 +36,9 @@
 #include <switch_curl.h>
 #include "aws.h"
 
+/* 253 max domain size + '/' + NUL byte */
+#define DOMAIN_BUF_SIZE 255
+
 /* Defines module interface to FreeSWITCH */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_http_cache_shutdown);
 SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load);
@@ -151,6 +154,8 @@ struct url_cache {
 	char *location;
 	/** HTTP profiles */
 	switch_hash_t *profiles;
+	/** profiles mapped by FQDN */
+	switch_hash_t *fqdn_profiles;
 	/** Cache mapped by URL */
 	switch_hash_t *map;
 	/** Cached URLs queued for replacement */
@@ -195,9 +200,40 @@ static void url_cache_lock(url_cache_t *cache, switch_core_session_t *session);
 static void url_cache_unlock(url_cache_t *cache, switch_core_session_t *session);
 static void url_cache_clear(url_cache_t *cache, switch_core_session_t *session);
 static http_profile_t *url_cache_http_profile_find(url_cache_t *cache, const char *name);
-static void url_cache_http_profile_add(url_cache_t *cache, const char *name, const char *aws_s3_access_key_id, const char *aws_s3_secret_access_key);
+static http_profile_t *url_cache_http_profile_find_by_fqdn(url_cache_t *cache, const char *url);
+static http_profile_t *url_cache_http_profile_add(url_cache_t *cache, const char *name, const char *aws_s3_access_key_id, const char *aws_s3_secret_access_key);
 
 static switch_curl_slist_t *append_aws_s3_headers(switch_curl_slist_t *headers, http_profile_t *profile, const char *verb, const char *content_type, const char *url);
+
+
+/**
+ * Parse FQDN from URL
+ */
+static void parse_domain(const char *url, char *domain_buf, int domain_buf_len)
+{
+	char *end;
+	char *start;
+	domain_buf[0] = '\0';
+	if (zstr(url)) {
+		return;
+	}
+	start = strstr(url, "://");
+	if (!start) {
+		return;
+	}
+	start += 3;
+	if (!*start) {
+		return;
+	}
+	strncpy(domain_buf, start, domain_buf_len);
+	end = strchr(domain_buf, '/');
+	if (end) {
+		*end = '\0';
+	} else {
+		/* bad URL */
+		domain_buf[0] = '\0';
+	}
+}
 
 /**
  * Put a file to the URL
@@ -233,6 +269,12 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 	}
 
 	buf = switch_mprintf("Content-Type: %s", mime_type);
+
+	/* find profile for domain */
+	if (!profile) {
+		profile = url_cache_http_profile_find_by_fqdn(cache, url);
+	}
+
 	headers = switch_curl_slist_append(headers, buf);
 	headers = append_aws_s3_headers(headers, profile, "PUT", mime_type, url);
 
@@ -733,9 +775,24 @@ static http_profile_t *url_cache_http_profile_find(url_cache_t *cache, const cha
 }
 
 /**
+ * Find a profile by domain name
+ */
+static http_profile_t *url_cache_http_profile_find_by_fqdn(url_cache_t *cache, const char *url)
+{
+	if (cache && !zstr(url)) {
+		char fqdn[DOMAIN_BUF_SIZE];
+		parse_domain(url, fqdn, DOMAIN_BUF_SIZE);
+		if (!zstr_buf(fqdn)) {
+			return (http_profile_t *)switch_core_hash_find(cache->fqdn_profiles, fqdn);
+		}
+	}
+	return NULL;
+}
+
+/**
  * Add a profile to the cache
  */
-static void url_cache_http_profile_add(url_cache_t *cache, const char *name, const char *aws_s3_access_key_id, const char *aws_s3_secret_access_key)
+static http_profile_t *url_cache_http_profile_add(url_cache_t *cache, const char *name, const char *aws_s3_access_key_id, const char *aws_s3_secret_access_key)
 {
 	http_profile_t *profile = switch_core_alloc(cache->pool, sizeof(*profile));
 	profile->name = switch_core_strdup(cache->pool, name);
@@ -746,6 +803,7 @@ static void url_cache_http_profile_add(url_cache_t *cache, const char *name, con
 		profile->aws_s3_secret_access_key = switch_core_strdup(cache->pool, aws_s3_secret_access_key);
 	}
 	switch_core_hash_insert(cache->profiles, profile->name, profile);
+	return profile;
 }
 
 /**
@@ -900,6 +958,11 @@ static switch_status_t http_get(url_cache_t *cache, http_profile_t *profile, cac
 	/* set up HTTP GET */
 	get_data.fd = 0;
 	get_data.url = url;
+
+	/* find profile for domain */
+	if (!profile) {
+		profile = url_cache_http_profile_find_by_fqdn(cache, url->url);
+	}
 
 	/* add optional AWS S3 headers if necessary */
 	headers = append_aws_s3_headers(headers, profile, "GET", "", url->url);
@@ -1329,6 +1392,8 @@ static switch_status_t do_config(url_cache_t *cache)
 		for (profile = switch_xml_child(profiles, "profile"); profile; profile = profile->next) {
 			const char *name = switch_xml_attr_soft(profile, "name");
 			if (!zstr(name)) {
+				http_profile_t *profile_obj;
+				switch_xml_t domains;
 				switch_xml_t s3 = switch_xml_child(profile, "aws-s3");
 				const char *access_key_id = NULL;
 				const char *secret_access_key = NULL;
@@ -1348,7 +1413,21 @@ static switch_status_t do_config(url_cache_t *cache)
 					}
 				}
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Adding profile \"%s\" to cache\n", name);
-				url_cache_http_profile_add(cache, name, access_key_id, secret_access_key);
+				profile_obj = url_cache_http_profile_add(cache, name, access_key_id, secret_access_key);
+
+				domains = switch_xml_child(profile, "domains");
+				if (domains) {
+					switch_xml_t domain;
+					for (domain = switch_xml_child(domains, "domain"); domain; domain = domain->next) {
+						const char *fqdn = switch_xml_attr_soft(domain, "name");
+						if (!zstr(fqdn)) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Adding profile \"%s\" domain \"%s\" to cache\n", name, fqdn);
+							switch_core_hash_insert(cache->fqdn_profiles, fqdn, profile_obj);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "HTTP profile domain missing name!\n");
+						}
+					}
+				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "HTTP profile missing name\n");
 			}
@@ -1554,6 +1633,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load)
 	gcache.pool = pool;
 	switch_core_hash_init(&gcache.map, gcache.pool);
 	switch_core_hash_init(&gcache.profiles, gcache.pool);
+	switch_core_hash_init(&gcache.fqdn_profiles, gcache.pool);
 	switch_mutex_init(&gcache.mutex, SWITCH_MUTEX_UNNESTED, gcache.pool);
 	switch_thread_rwlock_create(&gcache.shutdown_lock, gcache.pool);
 
@@ -1626,6 +1706,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_http_cache_shutdown)
 	url_cache_clear(&gcache, NULL);
 	switch_core_hash_destroy(&gcache.map);
 	switch_core_hash_destroy(&gcache.profiles);
+	switch_core_hash_destroy(&gcache.fqdn_profiles);
 	switch_mutex_destroy(gcache.mutex);
 	return SWITCH_STATUS_SUCCESS;
 }
