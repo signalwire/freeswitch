@@ -2967,7 +2967,7 @@ static int process_rx_pps(t30_state_t *s, const uint8_t *msg, int len)
         span_log(&s->logging, SPAN_LOG_FLOW, "Partial page OK - committing block %d, %d frames\n", s->ecm_block, s->ecm_frames);
         for (i = 0;  i < s->ecm_frames;  i++)
         {
-            if (t4_rx_put(&s->t4.rx, s->ecm_data[i], s->ecm_len[i]))
+            if (t4_rx_put(&s->t4.rx, s->ecm_data[i], s->ecm_len[i]) != T4_DECODE_MORE_DATA)
             {
                 /* This is the end of the document */
                 break;
@@ -5831,7 +5831,7 @@ SPAN_DECLARE_NONSTD(void) t30_non_ecm_put_bit(void *user_data, int bit)
         break;
     case T30_STATE_F_DOC_NON_ECM:
         /* Document transfer */
-        if (t4_rx_put_bit(&s->t4.rx, bit) == T4_DECODE_OK)
+        if (t4_rx_put_bit(&s->t4.rx, bit) != T4_DECODE_MORE_DATA)
         {
             /* That is the end of the document */
             set_state(s, T30_STATE_F_POST_DOC_NON_ECM);
@@ -5871,7 +5871,7 @@ SPAN_DECLARE(void) t30_non_ecm_put(void *user_data, const uint8_t buf[], int len
         break;
     case T30_STATE_F_DOC_NON_ECM:
         /* Document transfer */
-        if (t4_rx_put(&s->t4.rx, buf, len))
+        if (t4_rx_put(&s->t4.rx, buf, len) != T4_DECODE_MORE_DATA)
         {
             /* That is the end of the document */
             set_state(s, T30_STATE_F_POST_DOC_NON_ECM);

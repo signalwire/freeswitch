@@ -90,7 +90,9 @@ typedef struct
 } packer_t;
 
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
+#if TIFFLIB_VERSION >= 20120615
 extern TIFFFieldArray tiff_fx_field_array;
+#endif
 #endif
 
 SPAN_DECLARE(const char *) t4_compression_to_str(int compression)
