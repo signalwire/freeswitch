@@ -73,12 +73,10 @@ noinst_PROGRAMS =   ademco_contactid_tests \
                     complex_vector_float_tests \
                     complex_vector_int_tests \
                     crc_tests \
-                    data_modems_tests \
                     dc_restore_tests \
                     dds_tests \
                     dtmf_rx_tests \
                     dtmf_tx_tests \
-                    dummy_modems_tests \
                     echo_tests \
                     fax_decode \
                     fax_tests \
@@ -153,7 +151,6 @@ noinst_HEADERS =    echo_monitor.h \
                     modem_monitor.h \
                     pcap_parse.h \
                     pseudo_terminals.h \
-                    socket_harness.h \
                     udptl.h
 
 ademco_contactid_tests_SOURCES = ademco_contactid_tests.c
@@ -201,9 +198,6 @@ complex_vector_int_tests_LDADD = $(LIBDIR) -lspandsp
 crc_tests_SOURCES = crc_tests.c
 crc_tests_LDADD = $(LIBDIR) -lspandsp
 
-data_modems_tests_SOURCES = data_modems_tests.c media_monitor.cpp
-data_modems_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
-
 dc_restore_tests_SOURCES = dc_restore_tests.c
 dc_restore_tests_LDADD = $(LIBDIR) -lspandsp
 
@@ -215,9 +209,6 @@ dtmf_rx_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lsp
 
 dtmf_tx_tests_SOURCES = dtmf_tx_tests.c
 dtmf_tx_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
-
-dummy_modems_tests_SOURCES = dummy_modems_tests.c media_monitor.cpp socket_harness.c
-dummy_modems_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 echo_tests_SOURCES = echo_tests.c echo_monitor.cpp
 echo_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp

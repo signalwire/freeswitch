@@ -125,6 +125,9 @@ AC_TYPE_SIGNAL
 
 AC_ARG_ENABLE(doc,          [  --enable-doc         Build the documentation])
 AC_ARG_ENABLE(tests,        [  --enable-tests       Build the test programs])
+AC_ARG_ENABLE(t43,          [  --enable-t43         Enable T.43 support])
+AC_ARG_ENABLE(v32bis,       [  --enable-v32bis      Enable V.32bis support])
+AC_ARG_ENABLE(v34,          [  --enable-v34         Enable V.34 support])
 AC_ARG_ENABLE(mmx,          [  --enable-mmx         Enable MMX support])
 AC_ARG_ENABLE(sse,          [  --enable-sse         Enable SSE support])
 AC_ARG_ENABLE(sse2,         [  --enable-sse2        Enable SSE2 support])
@@ -548,12 +551,26 @@ LIBS="$LIBS $TIFF_LIBS $JPEG_LIBS"
 
 TESTLIBS="$SIMLIBS $TESTLIBS"
 
-AC_DEFINE([SPANDSP_SUPPORT_T43], [0], [Support T.43 JBIG gray and colour compression])
-SPANDSP_SUPPORT_T43="#undef SPANDSP_SUPPORT_T43"
-AC_DEFINE([SPANDSP_SUPPORT_V32BIS], [0], [Support the V.32bis modem])
-SPANDSP_SUPPORT_V32BIS="#undef SPANDSP_SUPPORT_V32BIS"
-AC_DEFINE([SPANDSP_SUPPORT_V34], [0], [Support the V.34 FAX modem])
-SPANDSP_SUPPORT_V34="#undef SPANDSP_SUPPORT_V34"
+if test "$enable_t43" = "yes" ; then
+    AC_DEFINE([SPANDSP_SUPPORT_T43], [1], [Support T.43 JBIG gray and colour compression])
+    SPANDSP_SUPPORT_T43="#define SPANDSP_SUPPORT_T43 1"
+else
+    SPANDSP_SUPPORT_T43="#undef SPANDSP_SUPPORT_T43"
+fi
+
+if test "$enable_v32bis" = "yes" ; then
+    AC_DEFINE([SPANDSP_SUPPORT_V32BIS], [1], [Support the V.32bis modem])
+    SPANDSP_SUPPORT_V32BIS="#define SPANDSP_SUPPORT_V32BIS 1"
+else
+    SPANDSP_SUPPORT_V32BIS="#undef SPANDSP_SUPPORT_V32BIS"
+fi
+
+if test "$enable_v34" = "yes" ; then
+    AC_DEFINE([SPANDSP_SUPPORT_V34], [1], [Support the V.34 FAX modem])
+    SPANDSP_SUPPORT_V34="#define SPANDSP_SUPPORT_V34 1"
+else
+    SPANDSP_SUPPORT_V34="#undef SPANDSP_SUPPORT_V34"
+fi
 
 AM_CONDITIONAL([COND_DOC], [test "$enable_doc" = yes])
 AM_CONDITIONAL([COND_TESTS], [test "$enable_tests" = yes])
