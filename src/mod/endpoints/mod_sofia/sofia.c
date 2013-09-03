@@ -8525,6 +8525,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 			call_info = call_info->ci_next;
 		}
 
+		call_info = sip_call_info(sip);
 
 	} else if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
 		char buf[128] = "";
