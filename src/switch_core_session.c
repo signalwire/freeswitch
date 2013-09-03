@@ -2523,11 +2523,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_async(sw
 
 SWITCH_DECLARE(void) switch_core_session_video_reset(switch_core_session_t *session)
 {
-	if (switch_channel_test_flag(session->channel, CF_VIDEO)) {
-		switch_channel_set_flag(session->channel, CF_VIDEO_ECHO);
-		switch_channel_clear_flag(session->channel, CF_VIDEO_PASSIVE);
-		switch_core_session_refresh_video(session);
-	}
+	switch_channel_set_flag(session->channel, CF_VIDEO_ECHO);
+	switch_channel_clear_flag(session->channel, CF_VIDEO_PASSIVE);
+	switch_core_session_refresh_video(session);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flags(switch_core_session_t *session, const char *app,
