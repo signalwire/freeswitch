@@ -110,6 +110,7 @@ SWITCH_STANDARD_APP(bert_test_function)
 	int32_t samples = 0;
 	uint8_t *write_samples = NULL;
 	uint8_t *read_samples = NULL;
+	const char *timer_name = NULL;
 	bert_t bert = { 0 };
 
 	memset(&bert, 0, sizeof(bert));
@@ -168,15 +169,21 @@ SWITCH_STANDARD_APP(bert_test_function)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to open output debug file %s\n", debug_file);
 		}
 	}
+	if ((var = switch_channel_get_variable(channel, "bert_timer_name"))) {
+		timer_name = var;
+	}
 
 	/* Setup the timer, so we can send audio at correct time frames even if we do not receive audio */
-	interval = read_impl.microseconds_per_packet / 1000;
-	samples = switch_samples_per_packet(read_impl.samples_per_second, interval);
-	if (switch_core_timer_init(&bert.timer, "soft", interval, samples, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setup timer success interval: %u  samples: %u\n", interval, samples);
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer Setup Failed.  BERT cannot start!\n");
-		goto done;
+	if (timer_name) {
+		interval = read_impl.microseconds_per_packet / 1000;
+		samples = switch_samples_per_packet(read_impl.samples_per_second, interval);
+		if (switch_core_timer_init(&bert.timer, "soft", interval, samples, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setup timer success interval: %u  samples: %u\n", interval, samples);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer Setup Failed.  BERT cannot start!\n");
+			goto done;
+		}
+		switch_core_timer_sync(&bert.timer);
 	}
 
 	bert.timeout = (switch_micro_time_now() + (timeout_ms * 1000));
@@ -193,8 +200,20 @@ SWITCH_STANDARD_APP(bert_test_function)
 	switch_channel_set_variable(channel, BERT_STATS_VAR_SYNC_LOST_CNT, "0");
 	switch_channel_set_variable(channel, BERT_STATS_VAR_SYNC_LOST, "false");
 	write_samples = write_frame.data;
-	while (switch_channel_ready(channel)) {
-		switch_core_timer_next(&bert.timer);
+	for (;;) {
+
+		if (!switch_channel_ready(channel)) {
+			break;
+		}
+
+		switch_ivr_parse_all_events(session);
+
+		if (timer_name) {
+			if (switch_core_timer_next(&bert.timer) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to step on timer!\n");
+				break;
+			}
+		}
 
 		/* Write our frame before anything else happens */
 		for (i = 0; i < read_impl.samples_per_packet; i++) {
@@ -208,7 +227,11 @@ SWITCH_STANDARD_APP(bert_test_function)
 
 		write_frame.datalen = read_impl.samples_per_packet;
 		write_frame.samples = read_impl.samples_per_packet;
-		write_frame.timestamp = bert.timer.samplecount;
+		if (timer_name) {
+			write_frame.timestamp = bert.timer.samplecount;
+		} else {
+			/* playback() does not set write_frame.timestamp unless a timer is used, what's the catch? */
+		}
 		if (bert.output_debug_f) {
 			fwrite(write_frame.data, write_frame.datalen, 1, bert.output_debug_f);
 		}
@@ -217,7 +240,8 @@ SWITCH_STANDARD_APP(bert_test_function)
 			break;
 		}
 
-		/* Proceed to read and process the readed frame ... */
+		/* Proceed to read and process the read frame ...
+		 * Note core_session_read_frame is a blocking operation, we should probably do reathing in another thread like playback() does using switch_core_service_session()  */
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
