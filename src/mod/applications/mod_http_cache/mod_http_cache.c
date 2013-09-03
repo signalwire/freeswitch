@@ -1633,7 +1633,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_http_cache_load)
 	gcache.pool = pool;
 	switch_core_hash_init(&gcache.map, gcache.pool);
 	switch_core_hash_init(&gcache.profiles, gcache.pool);
-	switch_core_hash_init(&gcache.fqdn_profiles, gcache.pool);
+	switch_core_hash_init_nocase(&gcache.fqdn_profiles, gcache.pool);
 	switch_mutex_init(&gcache.mutex, SWITCH_MUTEX_UNNESTED, gcache.pool);
 	switch_thread_rwlock_create(&gcache.shutdown_lock, gcache.pool);
 
