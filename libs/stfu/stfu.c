@@ -367,7 +367,7 @@ void stfu_n_reset(stfu_instance_t *i)
 	i->last_rd_ts = 0;
 	i->miss_count = 0;	
     i->packet_count = 0;
-
+    i->ts_offset = 0;
 
 }
 
