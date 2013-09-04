@@ -56,6 +56,7 @@
 #include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
+#include "spandsp/bitstream.h"
 #include "spandsp/dc_restore.h"
 #include "spandsp/queue.h"
 #include "spandsp/power_meter.h"
@@ -73,14 +74,21 @@
 #include "spandsp/v27ter_rx.h"
 #include "spandsp/v17tx.h"
 #include "spandsp/v17rx.h"
+#if defined(SPANDSP_SUPPORT_V34)
+#include "spandsp/v34.h"
+#endif
 #include "spandsp/super_tone_rx.h"
 #include "spandsp/modem_connect_tones.h"
 #include "spandsp/fax_modems.h"
 
 #include "spandsp/private/logging.h"
+#include "spandsp/private/bitstream.h"
 #include "spandsp/private/silence_gen.h"
 #include "spandsp/private/power_meter.h"
 #include "spandsp/private/fsk.h"
+#if defined(SPANDSP_SUPPORT_V34)
+#include "spandsp/private/v34.h"
+#endif
 #include "spandsp/private/v17tx.h"
 #include "spandsp/private/v17rx.h"
 #include "spandsp/private/v27ter_tx.h"

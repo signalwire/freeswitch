@@ -648,6 +648,12 @@ SPAN_DECLARE(int) t30_set_ecm_capability(t30_state_t *s, bool enabled)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(void) t30_set_keep_bad_quality_pages(t30_state_t *s, bool keep_bad_pages)
+{
+    s->keep_bad_pages = keep_bad_pages;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) t30_set_supported_output_compressions(t30_state_t *s, int supported_compressions)
 {
     /* Mask out the ones we actually support today. */
@@ -856,6 +862,20 @@ SPAN_DECLARE(void) t30_set_real_time_frame_handler(t30_state_t *s, t30_real_time
 {
     s->real_time_frame_handler = handler;
     s->real_time_frame_user_data = user_data;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) t30_set_document_get_handler(t30_state_t *s, t30_document_get_handler_t handler, void *user_data)
+{
+    s->document_get_handler = handler;
+    s->document_get_user_data = user_data;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) t30_set_document_put_handler(t30_state_t *s, t30_document_put_handler_t handler, void *user_data)
+{
+    s->document_put_handler = handler;
+    s->document_put_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 

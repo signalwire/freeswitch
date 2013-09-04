@@ -927,7 +927,7 @@ static int read_tiff_t85_image(t4_tx_state_t *s)
     pack.row = 0;
     t85_decode_init(&t85, packing_row_write_handler, &pack);
     t85_decode_set_comment_handler(&t85, 1000, embedded_comment_handler, s);
-
+    t85_decode_set_image_size_constraints(&t85, s->tiff.image_width, s->tiff.image_length);
     result = -1;
     for (i = 0;  i < num_strips;  i++)
     {
@@ -938,8 +938,7 @@ static int read_tiff_t85_image(t4_tx_state_t *s)
             span_free(raw_data);
             return -1;
         }
-        result = t85_decode_put(&t85, raw_data, len);
-        if (result != T4_DECODE_MORE_DATA)
+        if ((result = t85_decode_put(&t85, raw_data, len)) != T4_DECODE_MORE_DATA)
             break;
     }
     if (result == T4_DECODE_MORE_DATA)
@@ -1000,6 +999,7 @@ static int read_tiff_t43_image(t4_tx_state_t *s)
 
     t43_decode_init(&t43, packing_row_write_handler, &pack);
     t43_decode_set_comment_handler(&t43, 1000, embedded_comment_handler, NULL);
+    t43_decode_set_image_size_constraints(&t43, s->tiff.image_width, s->tiff.image_length);
     logging = t43_decode_get_logging_state(&t43);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
 
@@ -1018,8 +1018,7 @@ static int read_tiff_t43_image(t4_tx_state_t *s)
             span_free(raw_data);
             return -1;
         }
-        result = t43_decode_put(&t43, raw_data, len);
-        if (result != T4_DECODE_MORE_DATA)
+        if ((result = t43_decode_put(&t43, raw_data, len)) != T4_DECODE_MORE_DATA)
             break;
     }
     if (result == T4_DECODE_MORE_DATA)

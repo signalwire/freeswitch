@@ -31,7 +31,6 @@
 #else
 #if defined(__APPLE__)
 #include <util.h>
-#include <sys/ioctl.h>
 #elif defined(__FreeBSD__)
 #include <libutil.h>
 #include <termios.h>
@@ -39,6 +38,8 @@
 #else
 #include <pty.h>
 #endif
+#include <sys/ioctl.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -62,9 +63,6 @@ static int master(void)
     char buf[1024];
     int len;
     int i;
-#if !defined(WIN32)
-    int tioflags;
-#endif
 
     for (i = 0;  i < 10;  i++)
     {
@@ -76,15 +74,6 @@ static int master(void)
         printf("%s %s\n", modem[i].devlink, modem[i].stty);
     }
 
-    for (i = 0;  i < 10;  i++)
-    {
-#if !defined(WIN32)
-        ioctl(modem[i].slave, TIOCMGET, &tioflags);
-        tioflags |= TIOCM_RI;
-        ioctl(modem[i].slave, TIOCMSET, &tioflags);
-#endif
-    }
-
     for (;;)
     {
         for (i = 0;  i < 10;  i++)
@@ -94,11 +83,6 @@ static int master(void)
             {
                 buf[len] = '\0';
                 printf("%d %d '%s' %s\n", i, len, buf, strerror(errno));
-#if !defined(WIN32)
-                ioctl(modem[i].slave, TIOCMGET, &tioflags);
-                tioflags |= TIOCM_RI;
-                ioctl(modem[i].slave, TIOCMSET, &tioflags);
-#endif
             }
         }
     }
@@ -121,9 +105,6 @@ static int slave(void)
     char name[64];
     int i;
     int j;
-#if !defined(WIN32)
-    int tioflags;
-#endif
 
     for (i = 0;  i < 10;  i++)
     {
@@ -136,27 +117,11 @@ static int slave(void)
         printf("%s\n", name);
     }
 
-    for (i = 0;  i < 10;  i++)
-    {
-#if !defined(WIN32)
-        ioctl(fd[i], TIOCMGET, &tioflags);
-        if ((tioflags & TIOCM_RI))
-            printf("Ring %d\n", i);
-        else
-            printf("No ring %d\n", i);
-#endif
-    }
-
     for (j = 0;  j < 10;  j++)
     {
         for (i = 0;  i < 10;  i++)
         {
             write(fd[i], "FRED", 4);
-#if !defined(WIN32)
-            ioctl(fd[i], TIOCMGET, &tioflags);
-            if ((tioflags & TIOCM_RI))
-                printf("Ring %d\n", i);
-#endif
         }
     }
 

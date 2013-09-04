@@ -785,9 +785,13 @@ static int get_partial_ecm_page(t30_state_t *s)
         /* These frames contain a frame sequence number within the partial page (one octet) followed
            by some image data. */
         s->ecm_data[i][3] = (uint8_t) i;
-        if ((len = t4_tx_get(&s->t4.tx, &s->ecm_data[i][4], s->octets_per_ecm_frame)) < s->octets_per_ecm_frame)
+        if (s->document_get_handler)
+            len = s->document_get_handler(s->document_get_user_data, &s->ecm_data[i][4], s->octets_per_ecm_frame);
+        else
+            len = t4_tx_get(&s->t4.tx, &s->ecm_data[i][4], s->octets_per_ecm_frame);
+        if (len < s->octets_per_ecm_frame)
         {
-            /* The image is not big enough to fill the entire buffer */
+            /* The document is not big enough to fill the entire buffer */
             /* We need to pad to a full frame, as most receivers expect that. */
             if (len > 0)
             {
@@ -795,7 +799,7 @@ static int get_partial_ecm_page(t30_state_t *s)
                 s->ecm_len[i++] = (int16_t) (s->octets_per_ecm_frame + 4);
             }
             s->ecm_frames = i;
-            span_log(&s->logging, SPAN_LOG_FLOW, "Partial page buffer contains %d frames (%d per frame)\n", i, s->octets_per_ecm_frame);
+            span_log(&s->logging, SPAN_LOG_FLOW, "Partial document buffer contains %d frames (%d per frame)\n", i, s->octets_per_ecm_frame);
             s->ecm_at_page_end = true;
             return i;
         }
@@ -2832,6 +2836,7 @@ static int process_rx_pps(t30_state_t *s, const uint8_t *msg, int len)
     int first_bad_frame;
     int first;
     int expected_len;
+    int res;
 
     if (len < 7)
     {
@@ -2965,11 +2970,18 @@ static int process_rx_pps(t30_state_t *s, const uint8_t *msg, int len)
     if (s->rx_ecm_block_ok)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Partial page OK - committing block %d, %d frames\n", s->ecm_block, s->ecm_frames);
+        /* Deliver the ECM data */
         for (i = 0;  i < s->ecm_frames;  i++)
         {
-            if (t4_rx_put(&s->t4.rx, s->ecm_data[i], s->ecm_len[i]) != T4_DECODE_MORE_DATA)
+            if (s->document_put_handler)
+                res = s->document_put_handler(s->document_put_user_data, s->ecm_data[i], s->ecm_len[i]);
+            else
+                res = t4_rx_put(&s->t4.rx, s->ecm_data[i], s->ecm_len[i]);
+            if (res != T4_DECODE_MORE_DATA)
             {
                 /* This is the end of the document */
+                if (res != T4_DECODE_OK)
+                    span_log(&s->logging, SPAN_LOG_FLOW, "Document ended with status %d\n", res);
                 break;
             }
         }
@@ -3621,6 +3633,53 @@ static void process_state_f_doc_non_ecm(t30_state_t *s, const uint8_t *msg, int 
 }
 /*- End of function --------------------------------------------------------*/
 
+static void assess_copy_quality(t30_state_t *s, uint8_t fcf)
+{
+    int quality;
+    
+    quality = copy_quality(s);
+    switch (quality)
+    {
+    case T30_COPY_QUALITY_PERFECT:
+    case T30_COPY_QUALITY_GOOD:
+        rx_end_page(s);
+        break;
+    case T30_COPY_QUALITY_POOR:
+        rx_end_page(s);
+        break;
+    case T30_COPY_QUALITY_BAD:
+        /* Some people want to keep even the bad pages */
+        if (s->keep_bad_pages)
+            rx_end_page(s);
+        break;
+    }
+
+    if (s->phase_d_handler)
+        s->phase_d_handler(s, s->phase_d_user_data, fcf);
+    if (fcf == T30_EOP)
+        terminate_operation_in_progress(s);
+    else
+        rx_start_page(s);
+
+    switch (quality)
+    {
+    case T30_COPY_QUALITY_PERFECT:
+    case T30_COPY_QUALITY_GOOD:
+        set_state(s, T30_STATE_III_Q_MCF);
+        send_simple_frame(s, T30_MCF);
+        break;
+    case T30_COPY_QUALITY_POOR:
+        set_state(s, T30_STATE_III_Q_RTP);
+        send_simple_frame(s, T30_RTP);
+        break;
+    case T30_COPY_QUALITY_BAD:
+        set_state(s, T30_STATE_III_Q_RTN);
+        send_simple_frame(s, T30_RTN);
+        break;
+    }
+}
+/*- End of function --------------------------------------------------------*/
+
 static void process_state_f_post_doc_non_ecm(t30_state_t *s, const uint8_t *msg, int len)
 {
     uint8_t fcf;
@@ -3636,33 +3695,7 @@ static void process_state_f_post_doc_non_ecm(t30_state_t *s, const uint8_t *msg,
     case T30_MPS:
         s->next_rx_step = fcf;
         queue_phase(s, T30_PHASE_D_TX);
-        switch (copy_quality(s))
-        {
-        case T30_COPY_QUALITY_PERFECT:
-        case T30_COPY_QUALITY_GOOD:
-            rx_end_page(s);
-            if (s->phase_d_handler)
-                s->phase_d_handler(s, s->phase_d_user_data, fcf);
-            rx_start_page(s);
-            set_state(s, T30_STATE_III_Q_MCF);
-            send_simple_frame(s, T30_MCF);
-            break;
-        case T30_COPY_QUALITY_POOR:
-            rx_end_page(s);
-            if (s->phase_d_handler)
-                s->phase_d_handler(s, s->phase_d_user_data, fcf);
-            rx_start_page(s);
-            set_state(s, T30_STATE_III_Q_RTP);
-            send_simple_frame(s, T30_RTP);
-            break;
-        case T30_COPY_QUALITY_BAD:
-            if (s->phase_d_handler)
-                s->phase_d_handler(s, s->phase_d_user_data, fcf);
-            rx_start_page(s);
-            set_state(s, T30_STATE_III_Q_RTN);
-            send_simple_frame(s, T30_RTN);
-            break;
-        }
+        assess_copy_quality(s, fcf);
         break;
     case T30_PRI_EOM:
         if (s->remote_interrupts_allowed)
@@ -3674,33 +3707,7 @@ static void process_state_f_post_doc_non_ecm(t30_state_t *s, const uint8_t *msg,
         s->next_rx_step = fcf;
         /* Return to phase B */
         queue_phase(s, T30_PHASE_B_TX);
-        switch (copy_quality(s))
-        {
-        case T30_COPY_QUALITY_PERFECT:
-        case T30_COPY_QUALITY_GOOD:
-            rx_end_page(s);
-            if (s->phase_d_handler)
-                s->phase_d_handler(s, s->phase_d_user_data, fcf);
-            rx_start_page(s);
-            set_state(s, T30_STATE_III_Q_MCF);
-            send_simple_frame(s, T30_MCF);
-            break;
-        case T30_COPY_QUALITY_POOR:
-            rx_end_page(s);
-            if (s->phase_d_handler)
-                s->phase_d_handler(s, s->phase_d_user_data, fcf);
-            rx_start_page(s);
-            set_state(s, T30_STATE_III_Q_RTP);
-            send_simple_frame(s, T30_RTP);
-            break;
-        case T30_COPY_QUALITY_BAD:
-            if (s->phase_d_handler)
-                s->phase_d_handler(s, s->phase_d_user_data, fcf);
-            rx_start_page(s);
-            set_state(s, T30_STATE_III_Q_RTN);
-            send_simple_frame(s, T30_RTN);
-            break;
-        }
+        assess_copy_quality(s, fcf);
         break;
     case T30_PRI_EOP:
         if (s->remote_interrupts_allowed)
@@ -3712,37 +3719,7 @@ static void process_state_f_post_doc_non_ecm(t30_state_t *s, const uint8_t *msg,
         s->end_of_procedure_detected = true;
         s->next_rx_step = fcf;
         queue_phase(s, T30_PHASE_D_TX);
-        switch (copy_quality(s))
-        {
-        case T30_COPY_QUALITY_PERFECT:
-        case T30_COPY_QUALITY_GOOD:
-            rx_end_page(s);
-            if (s->phase_d_handler)
-                s->phase_d_handler(s, s->phase_d_user_data, fcf);
-            terminate_operation_in_progress(s);
-            set_state(s, T30_STATE_III_Q_MCF);
-            send_simple_frame(s, T30_MCF);
-            break;
-        case T30_COPY_QUALITY_POOR:
-            rx_end_page(s);
-            if (s->phase_d_handler)
-                s->phase_d_handler(s, s->phase_d_user_data, fcf);
-            terminate_operation_in_progress(s);
-            set_state(s, T30_STATE_III_Q_RTP);
-            send_simple_frame(s, T30_RTP);
-            break;
-        case T30_COPY_QUALITY_BAD:
-#if 0
-            /* Some people want to keep even the bad pages */
-            if (s->keep_bad_pages)
-                rx_end_page(s);
-#endif
-            if (s->phase_d_handler)
-                s->phase_d_handler(s, s->phase_d_user_data, fcf);
-            set_state(s, T30_STATE_III_Q_RTN);
-            send_simple_frame(s, T30_RTN);
-            break;
-        }
+        assess_copy_quality(s, fcf);
         break;
     case T30_DCN:
         t30_set_status(s, T30_ERR_RX_DCNFAX);
@@ -5806,6 +5783,7 @@ static void t30_non_ecm_rx_status(void *user_data, int status)
 SPAN_DECLARE_NONSTD(void) t30_non_ecm_put_bit(void *user_data, int bit)
 {
     t30_state_t *s;
+    int res;
 
     if (bit < 0)
     {
@@ -5830,10 +5808,12 @@ SPAN_DECLARE_NONSTD(void) t30_non_ecm_put_bit(void *user_data, int bit)
         }
         break;
     case T30_STATE_F_DOC_NON_ECM:
-        /* Document transfer */
-        if (t4_rx_put_bit(&s->t4.rx, bit) != T4_DECODE_MORE_DATA)
+        /* Image transfer */
+        if ((res = t4_rx_put_bit(&s->t4.rx, bit)) != T4_DECODE_MORE_DATA)
         {
-            /* That is the end of the document */
+            /* This is the end of the image */
+            if (res != T4_DECODE_OK)
+                span_log(&s->logging, SPAN_LOG_FLOW, "Page ended with status %d\n", res);
             set_state(s, T30_STATE_F_POST_DOC_NON_ECM);
             queue_phase(s, T30_PHASE_D_RX);
             timer_t2_start(s);
@@ -5847,6 +5827,7 @@ SPAN_DECLARE(void) t30_non_ecm_put(void *user_data, const uint8_t buf[], int len
 {
     t30_state_t *s;
     int i;
+    int res;
 
     s = (t30_state_t *) user_data;
     switch (s->state)
@@ -5870,10 +5851,12 @@ SPAN_DECLARE(void) t30_non_ecm_put(void *user_data, const uint8_t buf[], int len
         }
         break;
     case T30_STATE_F_DOC_NON_ECM:
-        /* Document transfer */
-        if (t4_rx_put(&s->t4.rx, buf, len) != T4_DECODE_MORE_DATA)
+        /* Image transfer */
+        if ((res = t4_rx_put(&s->t4.rx, buf, len)) != T4_DECODE_MORE_DATA)
         {
-            /* That is the end of the document */
+            /* This is the end of the image */
+            if (res != T4_DECODE_OK)
+                span_log(&s->logging, SPAN_LOG_FLOW, "Page ended with status %d\n", res);
             set_state(s, T30_STATE_F_POST_DOC_NON_ECM);
             queue_phase(s, T30_PHASE_D_RX);
             timer_t2_start(s);
