@@ -3448,8 +3448,12 @@ static void xml_gateway_status(sofia_gateway_t *gp, switch_stream_handle_t *stre
 	stream->write_function(stream, "    <freq>%d</freq>\n", gp->freq);
 	stream->write_function(stream, "    <ping>%d</ping>\n", gp->ping);
 	stream->write_function(stream, "    <pingfreq>%d</pingfreq>\n", gp->ping_freq);
+	stream->write_function(stream, "    <pingmin>%d</pingmin>\n", gp->ping_min);
+	stream->write_function(stream, "    <pingcount>%d</pingcount>\n", gp->ping_count);
+	stream->write_function(stream, "    <pingmax>%d</pingmax>\n", gp->ping_max);
+	stream->write_function(stream, "    <pinging>%d</pinging>\n", gp->pinging);
 	stream->write_function(stream, "    <state>%s</state>\n", sofia_state_names[gp->state]);
-	stream->write_function(stream, "    <status>%s%s</status>\n", status_names[gp->status], gp->pinging ? " (ping)" : "");
+	stream->write_function(stream, "    <status>%s</status>\n", status_names[gp->status]);
 	stream->write_function(stream, "    <calls-in>%u</calls-in>\n", gp->ib_calls);
 	stream->write_function(stream, "    <calls-out>%u</calls-out>\n", gp->ob_calls);
 	stream->write_function(stream, "    <failed-calls-in>%u</failed-calls-in>\n", gp->ib_failed_calls);
