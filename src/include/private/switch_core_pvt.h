@@ -273,6 +273,7 @@ struct switch_runtime {
 	char *core_db_post_trans_execute;
 	char *core_db_inner_pre_trans_execute;
 	char *core_db_inner_post_trans_execute;
+	int events_use_dispatch;
 };
 
 extern struct switch_runtime runtime;
