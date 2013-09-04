@@ -5920,6 +5920,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 			}
 		
 			send_msg->header.ssrc = htonl(rtp_session->ssrc);
+			send_msg->header.seq = htons(++rtp_session->seq);
 		}
 
 		if (switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, frame->packet, &bytes) != SWITCH_STATUS_SUCCESS) {
