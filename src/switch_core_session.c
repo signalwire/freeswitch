@@ -1622,10 +1622,14 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 
 			td->func(thread, td->obj);
 
-			if (td->alloc) {
+			if (td->pool) {
+				switch_memory_pool_t *pool = td->pool;
+				td = NULL;
+				switch_core_destroy_memory_pool(&pool);
+			} else if (td->alloc) {
 				free(td);
 			}
-			
+
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Done Processing\n", (long) thread);
 			
 			switch_mutex_lock(session_manager.mutex);

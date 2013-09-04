@@ -36,6 +36,7 @@
 #include <switch.h>
 #include <switch_event.h>
 #include "tpl.h"
+#include "private/switch_core_pvt.h"
 
 //#define SWITCH_EVENT_RECYCLE
 #define DISPATCH_QUEUE_LEN 10000
@@ -242,6 +243,34 @@ static int switch_events_match(switch_event_t *event, switch_event_node_t *node)
 	}
 
 	return match;
+}
+
+
+static void *SWITCH_THREAD_FUNC switch_event_deliver_thread(switch_thread_t *thread, void *obj)
+{
+	switch_event_t *event = (switch_event_t *) obj;
+
+	switch_event_deliver(&event);
+
+	return NULL;
+}
+
+static void switch_event_deliver_thread_pool(switch_event_t **event)
+{
+	switch_thread_data_t *td;
+	
+	td = malloc(sizeof(*td));
+	switch_assert(td);
+
+	td->alloc = 1;
+	td->func = switch_event_deliver_thread;
+	td->obj = *event;
+	td->pool = NULL;
+
+	*event = NULL;
+
+	switch_thread_pool_launch_thread(&td);
+
 }
 
 static void *SWITCH_THREAD_FUNC switch_event_dispatch_thread(switch_thread_t *thread, void *obj)
@@ -489,19 +518,22 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 	SYSTEM_RUNNING = 0;
 	switch_mutex_unlock(EVENT_QUEUE_MUTEX);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping dispatch queues\n");
+	if (runtime.events_use_dispatch) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping dispatch queues\n");
 
-	for(x = 0; x < (uint32_t)DISPATCH_THREAD_COUNT; x++) {
-		switch_queue_trypush(EVENT_DISPATCH_QUEUE, NULL);
-	}
+		for(x = 0; x < (uint32_t)DISPATCH_THREAD_COUNT; x++) {
+			switch_queue_trypush(EVENT_DISPATCH_QUEUE, NULL);
+		}
+		
 
-	switch_queue_interrupt_all(EVENT_DISPATCH_QUEUE);
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping dispatch threads\n");
-
-	for(x = 0; x < (uint32_t)DISPATCH_THREAD_COUNT; x++) {
-		switch_status_t st;
-		switch_thread_join(&st, EVENT_DISPATCH_QUEUE_THREADS[x]);
+		switch_queue_interrupt_all(EVENT_DISPATCH_QUEUE);
+		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping dispatch threads\n");
+		
+		for(x = 0; x < (uint32_t)DISPATCH_THREAD_COUNT; x++) {
+			switch_status_t st;
+			switch_thread_join(&st, EVENT_DISPATCH_QUEUE_THREADS[x]);
+		}
 	}
 
 	x = 0;
@@ -513,7 +545,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 		last = THREAD_COUNT;
 	}
 
-	{
+	if (runtime.events_use_dispatch) {
 		void *pop = NULL;
 		switch_event_t *event = NULL;
 
@@ -622,18 +654,20 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 
 	//switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 
-
-	switch_queue_create(&EVENT_DISPATCH_QUEUE, DISPATCH_QUEUE_LEN * MAX_DISPATCH, pool);
-	switch_event_launch_dispatch_threads(1);
+	if (runtime.events_use_dispatch) {
+		switch_queue_create(&EVENT_DISPATCH_QUEUE, DISPATCH_QUEUE_LEN * MAX_DISPATCH, pool);
+		switch_event_launch_dispatch_threads(1);
+	}
 
 	//switch_thread_create(&EVENT_QUEUE_THREADS[0], thd_attr, switch_event_thread, EVENT_QUEUE[0], RUNTIME_POOL);
 	//switch_thread_create(&EVENT_QUEUE_THREADS[1], thd_attr, switch_event_thread, EVENT_QUEUE[1], RUNTIME_POOL);
 	//switch_thread_create(&EVENT_QUEUE_THREADS[2], thd_attr, switch_event_thread, EVENT_QUEUE[2], RUNTIME_POOL);
 
-	while (!THREAD_COUNT) {
-		switch_cond_next();
+	if (runtime.events_use_dispatch) {
+		while (!THREAD_COUNT) {
+			switch_cond_next();
+		}
 	}
-
 
 	switch_mutex_lock(EVENT_QUEUE_MUTEX);
 	SYSTEM_RUNNING = 1;
@@ -1884,9 +1918,15 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(const char *file, con
 		(*event)->event_user_data = user_data;
 	}
 
-	if (switch_event_queue_dispatch_event(event) != SWITCH_STATUS_SUCCESS) {
-		switch_event_destroy(event);
-		return SWITCH_STATUS_FALSE;
+
+
+	if (runtime.events_use_dispatch) {
+		if (switch_event_queue_dispatch_event(event) != SWITCH_STATUS_SUCCESS) {
+			switch_event_destroy(event);
+			return SWITCH_STATUS_FALSE;
+		}
+	} else {
+		switch_event_deliver_thread_pool(event);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
