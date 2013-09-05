@@ -141,6 +141,8 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_dup(switch_memor
 	if (tocopy->times) {
 		profile->old_times = (switch_channel_timetable_t *) switch_core_alloc(profile->pool, sizeof(switch_channel_timetable_t));
 		*profile->old_times = *tocopy->times;
+	} else {
+		tocopy->times = (switch_channel_timetable_t *) switch_core_alloc(tocopy->pool, sizeof(*tocopy->times));
 	}
 
 	if (tocopy->soft) {

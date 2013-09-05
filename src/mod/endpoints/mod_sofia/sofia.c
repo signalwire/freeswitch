@@ -8719,7 +8719,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 			if ((b_session = switch_core_session_locate(b_private->uuid))) {
 				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
 				const char *bridge_uuid;
-				switch_caller_profile_t *orig_cp;
+				switch_caller_profile_t *orig_cp, *cp;
 				//const char *sent_name, *sent_number;
 				orig_cp = switch_channel_get_caller_profile(b_channel);
 				tech_pvt->caller_profile->callee_id_name = switch_core_strdup(tech_pvt->caller_profile->pool, orig_cp->callee_id_name);
@@ -8730,7 +8730,10 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 					tech_pvt->caller_profile->caller_id_number = switch_core_strdup(tech_pvt->caller_profile->pool, orig_cp->caller_id_number);
 				}
 
-				tech_pvt->caller_profile->originator_caller_profile = switch_caller_profile_dup(tech_pvt->caller_profile->pool, orig_cp);
+				if (orig_cp) {
+					cp = switch_caller_profile_dup(tech_pvt->caller_profile->pool, orig_cp);
+					switch_channel_set_originator_caller_profile(channel, cp);
+				}
 
 #if 0
 				sent_name = switch_channel_get_variable(b_channel, "last_sent_callee_id_name");
@@ -8796,7 +8799,14 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 						tech_pvt->caller_profile->callee_id_name = switch_core_strdup(tech_pvt->caller_profile->pool, name);
 						tech_pvt->caller_profile->callee_id_number = switch_core_strdup(tech_pvt->caller_profile->pool, num);
 
-						tech_pvt->caller_profile->originatee_caller_profile = switch_caller_profile_dup(tech_pvt->caller_profile->pool, bcp->originatee_caller_profile);
+						if (bcp->originatee_caller_profile) {
+							switch_caller_profile_t *cp;
+
+							cp = switch_caller_profile_dup(tech_pvt->caller_profile->pool, 
+														   bcp->originatee_caller_profile);
+
+							switch_channel_set_originatee_caller_profile(tech_pvt->channel, cp);
+						}
 
 						tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool,
 																						   "%sanswer,sofia_sla:%s", codec_str, b_private->uuid);
