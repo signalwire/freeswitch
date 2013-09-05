@@ -620,7 +620,7 @@ static void print_media(sdp_printer_t *p,
     else {
 		/* SDP syntax requires at least one format. */
 		/* defaults to "19", or "t38" for image */
-		if (m->m_image == sdp_media_image) sdp_printf(p, " t38");
+		if (m->m_type == sdp_media_image) sdp_printf(p, " t38");
 		else sdp_printf(p, " 19");
     }
 
