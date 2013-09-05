@@ -1231,14 +1231,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
 	if (switch_mutex_trylock(engine->read_mutex) != SWITCH_STATUS_SUCCESS) {
 		/* return CNG, another thread is already reading  */
-		*frame = &engine->read_frame;
-		switch_set_flag((*frame), SFF_CNG);
-		(*frame)->datalen = engine->read_impl.encoded_bytes_per_packet;
-		memset((*frame)->data, 0, (*frame)->datalen);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "%s is already being read for %s\n", 
 						  switch_channel_get_name(session->channel), type2str(type));
-		switch_yield(10000);
-		return SWITCH_STATUS_SUCCESS;
+		return SWITCH_STATUS_INUSE;
 	}
 
 	

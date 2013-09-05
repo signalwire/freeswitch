@@ -229,6 +229,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			}
 		}
 
+		if (status == SWITCH_STATUS_INUSE) {
+			*frame = &runtime.dummy_cng_frame;
+			switch_yield(20000);
+			return SWITCH_STATUS_SUCCESS;
+		}
+
 		if (!SWITCH_READ_ACCEPTABLE(status) || !session->read_codec || !switch_core_codec_ready(session->read_codec)) {
 			*frame = NULL;
 			return SWITCH_STATUS_FALSE;
