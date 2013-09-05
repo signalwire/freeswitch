@@ -8785,19 +8785,28 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 						tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool,
 																						   "%sanswer,intercept:%s", codec_str, bridge_uuid);
 					} else {
-						const char *name = NULL, *num = NULL;
 						switch_caller_profile_t *bcp = switch_channel_get_caller_profile(b_channel);
 
-						if (switch_channel_test_flag(b_channel, CF_BRIDGE_ORIGINATOR) || !switch_channel_test_flag(b_channel, CF_BRIDGED)) {
-							name = bcp->callee_id_name;
-							num = bcp->callee_id_number;
-						} else {
-							name = bcp->caller_id_name;
-							num = bcp->caller_id_number;
+						if (switch_channel_test_flag(b_channel, CF_BRIDGE_ORIGINATOR)) {
+							switch_channel_set_flag(tech_pvt->channel, CF_BRIDGE_ORIGINATOR);
 						}
 
-						tech_pvt->caller_profile->callee_id_name = switch_core_strdup(tech_pvt->caller_profile->pool, name);
-						tech_pvt->caller_profile->callee_id_number = switch_core_strdup(tech_pvt->caller_profile->pool, num);
+						if (!zstr(bcp->callee_id_name)) {
+							tech_pvt->caller_profile->callee_id_name = switch_core_strdup(tech_pvt->caller_profile->pool, bcp->callee_id_name);
+						}
+
+						if (!zstr(bcp->callee_id_number)) {
+							tech_pvt->caller_profile->callee_id_number = switch_core_strdup(tech_pvt->caller_profile->pool, bcp->callee_id_number);
+						}
+
+
+						if (!zstr(bcp->caller_id_name)) {
+							tech_pvt->caller_profile->caller_id_name = switch_core_strdup(tech_pvt->caller_profile->pool, bcp->caller_id_name);
+						}
+
+						if (!zstr(bcp->caller_id_number)) {
+							tech_pvt->caller_profile->caller_id_number = switch_core_strdup(tech_pvt->caller_profile->pool, bcp->caller_id_number);
+						}
 
 						if (bcp->originatee_caller_profile) {
 							switch_caller_profile_t *cp;
