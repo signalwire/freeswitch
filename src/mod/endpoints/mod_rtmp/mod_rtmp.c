@@ -857,7 +857,7 @@ switch_status_t rtmp_session_destroy(rtmp_session_t **rsession)
 			 * write lock, before the FS session is hungup, then once the FS session does get the write lock
 			 * the rsession pointer will be null, and the FS session will never try and touch the already destroyed rsession.
 			 */
-			switch_core_session_write_lock(session);
+
 			channel = switch_core_session_get_channel(session);
 			tech_pvt = switch_core_session_get_private(session);
 			if ( tech_pvt && tech_pvt->rtmp_session ) {
