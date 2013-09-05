@@ -8730,6 +8730,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 					tech_pvt->caller_profile->caller_id_number = switch_core_strdup(tech_pvt->caller_profile->pool, orig_cp->caller_id_number);
 				}
 
+				tech_pvt->caller_profile->originator_caller_profile = switch_caller_profile_dup(tech_pvt->caller_profile->pool, orig_cp);
 
 #if 0
 				sent_name = switch_channel_get_variable(b_channel, "last_sent_callee_id_name");
@@ -8794,6 +8795,8 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 						tech_pvt->caller_profile->callee_id_name = switch_core_strdup(tech_pvt->caller_profile->pool, name);
 						tech_pvt->caller_profile->callee_id_number = switch_core_strdup(tech_pvt->caller_profile->pool, num);
+
+						tech_pvt->caller_profile->originatee_caller_profile = switch_caller_profile_dup(tech_pvt->caller_profile->pool, bcp->originatee_caller_profile);
 
 						tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool,
 																						   "%sanswer,sofia_sla:%s", codec_str, b_private->uuid);
