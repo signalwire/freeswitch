@@ -1664,7 +1664,7 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 							}
 							catch(...) {
 								ERRORA("GsmException\n", GSMOPEN_P_LOG);
-								sleep(5);
+								gsmopen_sleep(5000);
 								return -1;
 							}
 
@@ -1720,7 +1720,7 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 						}
 							catch(...) {
 								ERRORA("GsmException\n", GSMOPEN_P_LOG);
-								sleep(5);
+								gsmopen_sleep(5000);
 								return -1;
 						}
 
