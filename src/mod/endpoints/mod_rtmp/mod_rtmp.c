@@ -250,7 +250,6 @@ switch_status_t rtmp_on_hangup(switch_core_session_t *session)
 	rtmp_private_t *tech_pvt = NULL;
 	rtmp_session_t *rsession = NULL;
 
-	switch_core_session_write_lock(session);
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
@@ -311,7 +310,6 @@ switch_status_t rtmp_on_hangup(switch_core_session_t *session)
 	switch_thread_rwlock_unlock(rsession->rwlock);
 
  done:
-	switch_core_session_rwunlock(session);
 	return SWITCH_STATUS_SUCCESS;
 }
 
