@@ -849,8 +849,6 @@ switch_status_t rtmp_session_destroy(rtmp_session_t **rsession)
 		
 		/* At this point we don't know if the session still exists, so request a fresh pointer to it from the core. */
 		if ( (session = switch_core_session_locate((char *)key)) != NULL ) {
-			switch_core_session_rwunlock(session);
-
 			/* 
 			 * This is here so that if the FS session still exists and has the FS session write(or read) lock, then we won't destroy the rsession 
 			 * until the FS session is finished with it. But if the rsession is able to get the FS session
