@@ -1586,9 +1586,9 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 	switch_mutex_lock(session_manager.mutex);
 	session_manager.running++;
 	switch_mutex_unlock(session_manager.mutex);
-
+#ifdef DEBUG_THREAD_POOL
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Started\n", (long) thread);
-
+#endif
 	while(session_manager.ready) {
 		switch_status_t check_status;
 
@@ -1616,9 +1616,9 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 			switch_mutex_lock(session_manager.mutex);
 			session_manager.busy++;
 			switch_mutex_unlock(session_manager.mutex);
-			
+#ifdef DEBUG_THREAD_POOL			
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Processing\n", (long) thread);
-
+#endif
 
 			td->func(thread, td->obj);
 
@@ -1629,9 +1629,9 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 			} else if (td->alloc) {
 				free(td);
 			}
-
+#ifdef DEBUG_THREAD_POOL
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Done Processing\n", (long) thread);
-			
+#endif
 			switch_mutex_lock(session_manager.mutex);
 			session_manager.busy--;
 			switch_mutex_unlock(session_manager.mutex);
@@ -1643,9 +1643,9 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 			check++;
 		}
 	}
-
+#ifdef DEBUG_THREAD_POOL
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Ended\n", (long) thread);
-
+#endif
 	switch_mutex_lock(session_manager.mutex);
 	session_manager.running--;
 	switch_mutex_unlock(session_manager.mutex);
@@ -1729,9 +1729,10 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_manager(switch_t
 
 		if (++x == 300) {
 			if (session_manager.popping) {
+#ifdef DEBUG_THREAD_POOL
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, 
 								  "Thread pool: running:%d busy:%d popping:%d\n", session_manager.running, session_manager.busy, session_manager.popping);
-
+#endif
 				switch_queue_interrupt_all(session_manager.thread_queue);
 
 				x--;
