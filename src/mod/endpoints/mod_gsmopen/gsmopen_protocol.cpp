@@ -1687,7 +1687,6 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 						
 							DEBUGA_GSMOPEN("SMS=\n%s\n", GSMOPEN_P_LOG, letsee);
 #endif //0
-
 							memset(content2, '\0', sizeof(content2));
 							if (sms->dataCodingScheme().getAlphabet() == DCS_DEFAULT_ALPHABET) {
 								iso_8859_1_to_utf8(tech_pvt, (char *) sms->userData().c_str(), content2, sizeof(content2));
