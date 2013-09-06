@@ -29,6 +29,7 @@
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Raymond Chandler <intralanman@freeswitch.org>
  * William King <william.king@quentustech.com>
+ * Emmanuel Schmidbauer <e.schmidbauer@gmail.com> 
  *
  * sofia_presence.c -- SOFIA SIP Endpoint (presence code)
  *
@@ -3304,7 +3305,8 @@ static int broadsoft_sla_gather_state_callback(void *pArg, int argc, char **argv
 	if (strcasecmp(state, "idle") && uuid && (session = switch_core_session_locate(uuid))) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 
-		if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
+		if (switch_channel_test_flag(channel, CF_ORIGINATOR) || switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR) || 
+			switch_channel_inbound_display(channel) || switch_channel_test_flag(channel, CF_SLA_BARGING)) {
 			callee_name = switch_channel_get_variable(channel, "callee_id_name");
 			callee_number = switch_channel_get_variable(channel, "callee_id_number");
 
