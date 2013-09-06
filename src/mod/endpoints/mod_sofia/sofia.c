@@ -8525,6 +8525,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 			call_info = call_info->ci_next;
 		}
 
+		call_info = sip_call_info(sip);
 
 	} else if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
 		char buf[128] = "";
@@ -8694,6 +8695,8 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	profile_dup_clean(dialplan, tech_pvt->caller_profile->dialplan, tech_pvt->caller_profile->pool);
 	profile_dup_clean(displayname, tech_pvt->caller_profile->caller_id_name, tech_pvt->caller_profile->pool);
 	profile_dup_clean(from_user, tech_pvt->caller_profile->caller_id_number, tech_pvt->caller_profile->pool);
+	profile_dup_clean(displayname, tech_pvt->caller_profile->orig_caller_id_name, tech_pvt->caller_profile->pool);
+	profile_dup_clean(from_user, tech_pvt->caller_profile->orig_caller_id_number, tech_pvt->caller_profile->pool);
 	profile_dup_clean(network_ip, tech_pvt->caller_profile->network_addr, tech_pvt->caller_profile->pool);
 	profile_dup_clean(from_user, tech_pvt->caller_profile->ani, tech_pvt->caller_profile->pool);
 	profile_dup_clean(aniii, tech_pvt->caller_profile->aniii, tech_pvt->caller_profile->pool);
@@ -8716,14 +8719,21 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 			if ((b_session = switch_core_session_locate(b_private->uuid))) {
 				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
 				const char *bridge_uuid;
-				switch_caller_profile_t *orig_cp;
+				switch_caller_profile_t *orig_cp, *cp;
 				//const char *sent_name, *sent_number;
 				orig_cp = switch_channel_get_caller_profile(b_channel);
 				tech_pvt->caller_profile->callee_id_name = switch_core_strdup(tech_pvt->caller_profile->pool, orig_cp->callee_id_name);
 				tech_pvt->caller_profile->callee_id_number = switch_core_strdup(tech_pvt->caller_profile->pool, orig_cp->callee_id_number);
-				tech_pvt->caller_profile->caller_id_name = switch_core_strdup(tech_pvt->caller_profile->pool, orig_cp->caller_id_name);
-				tech_pvt->caller_profile->caller_id_number = switch_core_strdup(tech_pvt->caller_profile->pool, orig_cp->caller_id_number);
 
+				if (!call_info) {
+					tech_pvt->caller_profile->caller_id_name = switch_core_strdup(tech_pvt->caller_profile->pool, orig_cp->caller_id_name);
+					tech_pvt->caller_profile->caller_id_number = switch_core_strdup(tech_pvt->caller_profile->pool, orig_cp->caller_id_number);
+				}
+
+				if (orig_cp) {
+					cp = switch_caller_profile_dup(tech_pvt->caller_profile->pool, orig_cp);
+					switch_channel_set_originator_caller_profile(channel, cp);
+				}
 
 #if 0
 				sent_name = switch_channel_get_variable(b_channel, "last_sent_callee_id_name");
@@ -8775,19 +8785,37 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 						tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool,
 																						   "%sanswer,intercept:%s", codec_str, bridge_uuid);
 					} else {
-						const char *name = NULL, *num = NULL;
 						switch_caller_profile_t *bcp = switch_channel_get_caller_profile(b_channel);
 
-						if (switch_channel_test_flag(b_channel, CF_BRIDGE_ORIGINATOR) || !switch_channel_test_flag(b_channel, CF_BRIDGED)) {
-							name = bcp->callee_id_name;
-							num = bcp->callee_id_number;
-						} else {
-							name = bcp->caller_id_name;
-							num = bcp->caller_id_number;
+						if (switch_channel_test_flag(b_channel, CF_BRIDGE_ORIGINATOR)) {
+							switch_channel_set_flag(tech_pvt->channel, CF_BRIDGE_ORIGINATOR);
 						}
 
-						tech_pvt->caller_profile->callee_id_name = switch_core_strdup(tech_pvt->caller_profile->pool, name);
-						tech_pvt->caller_profile->callee_id_number = switch_core_strdup(tech_pvt->caller_profile->pool, num);
+						if (!zstr(bcp->callee_id_name)) {
+							tech_pvt->caller_profile->callee_id_name = switch_core_strdup(tech_pvt->caller_profile->pool, bcp->callee_id_name);
+						}
+
+						if (!zstr(bcp->callee_id_number)) {
+							tech_pvt->caller_profile->callee_id_number = switch_core_strdup(tech_pvt->caller_profile->pool, bcp->callee_id_number);
+						}
+
+
+						if (!zstr(bcp->caller_id_name)) {
+							tech_pvt->caller_profile->caller_id_name = switch_core_strdup(tech_pvt->caller_profile->pool, bcp->caller_id_name);
+						}
+
+						if (!zstr(bcp->caller_id_number)) {
+							tech_pvt->caller_profile->caller_id_number = switch_core_strdup(tech_pvt->caller_profile->pool, bcp->caller_id_number);
+						}
+
+						if (bcp->originatee_caller_profile) {
+							switch_caller_profile_t *cp;
+
+							cp = switch_caller_profile_dup(tech_pvt->caller_profile->pool, 
+														   bcp->originatee_caller_profile);
+
+							switch_channel_set_originatee_caller_profile(tech_pvt->channel, cp);
+						}
 
 						tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool,
 																						   "%sanswer,sofia_sla:%s", codec_str, b_private->uuid);

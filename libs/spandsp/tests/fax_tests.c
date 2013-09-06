@@ -463,8 +463,8 @@ int main(int argc, char *argv[])
     int outframes;
     SNDFILE *wave_handle;
     SNDFILE *input_wave_handle;
-    int use_ecm;
-    int use_tep;
+    bool use_ecm;
+    bool use_tep;
     int feedback_audio;
     int use_transmit_on_idle;
     int t38_version;
@@ -479,7 +479,6 @@ int main(int argc, char *argv[])
     double tx_when;
     double rx_when;
     int supported_modems;
-    int remove_fill_bits;
     int opt;
     int start_page;
     int end_page;
@@ -490,8 +489,11 @@ int main(int argc, char *argv[])
     int noise_level;
     int code_to_look_up;
     int scan_line_time;
-    int allowed_bilevel_resolutions; 
-    int colour_enabled;
+    int allowed_bilevel_resolutions[2];
+    int allowed;
+    bool remove_fill_bits;
+    bool colour_enabled;
+    bool t37_like_output;
     t38_stats_t t38_stats;
     t30_stats_t t30_stats;
     logging_state_t *logging;
@@ -530,15 +532,22 @@ int main(int argc, char *argv[])
     scan_line_time = 0;
     decode_file_name = NULL;
     code_to_look_up = -1;
-    allowed_bilevel_resolutions = 0;
+    allowed_bilevel_resolutions[0] = 0;
+    allowed_bilevel_resolutions[1] = 0;
+    allowed = 0;
     colour_enabled = false;
+    t37_like_output = false;
     t38_transport = T38_TRANSPORT_UDPTL;
-    while ((opt = getopt(argc, argv, "b:c:Cd:D:efFgH:i:Ilm:M:n:p:s:S:tT:u:v:z:")) != -1)
+    while ((opt = getopt(argc, argv, "7b:c:Cd:D:efFgH:i:Ilm:M:n:p:s:S:tT:u:v:z:")) != -1)
     {
         switch (opt)
         {
+        case '7':
+            t37_like_output = true;
+            break;
         case 'b':
-            allowed_bilevel_resolutions = atoi(optarg);
+            allowed_bilevel_resolutions[allowed] = atoi(optarg);
+            allowed ^= 1;
             break;
         case 'c':
             code_to_look_up = atoi(optarg);
@@ -855,7 +864,7 @@ int main(int argc, char *argv[])
                                     | T4_SUPPORT_LENGTH_US_LETTER
                                     | T4_SUPPORT_LENGTH_US_LEGAL
                                     | T4_SUPPORT_LENGTH_UNLIMITED);
-        switch (allowed_bilevel_resolutions)
+        switch (allowed_bilevel_resolutions[i])
         {
         case 0:
             /* Allow anything */
@@ -926,7 +935,21 @@ int main(int argc, char *argv[])
         {
             t30_set_supported_colour_resolutions(t30_state[i], 0);
         }
-        t30_set_supported_output_compressions(t30_state[i], T4_COMPRESSION_T6 | T4_COMPRESSION_JPEG);
+        if (t37_like_output)
+        {
+            t30_set_supported_output_compressions(t30_state[i],
+                                                  T4_COMPRESSION_T85
+                                                | T4_COMPRESSION_T85_L0
+                                                | T4_COMPRESSION_T6
+                                                | T4_COMPRESSION_T42_T81);
+        }
+        else
+        {
+            t30_set_supported_output_compressions(t30_state[i],
+                                                  T4_COMPRESSION_T6
+                                                | T4_COMPRESSION_JPEG);
+        }
+
         t30_set_ecm_capability(t30_state[i], use_ecm);
         t30_set_supported_compressions(t30_state[i],
                                        T4_COMPRESSION_T4_1D

@@ -211,6 +211,7 @@
     <ClCompile Include="super_tone_tx.c" />
     <ClCompile Include="swept_tone.c" />
     <ClCompile Include="t42.c" />
+    <ClCompile Include="t43.c" />
     <ClCompile Include="t4_rx.c" />
     <ClCompile Include="t4_t6_decode.c" />
     <ClCompile Include="t4_t6_encode.c" />
@@ -294,6 +295,7 @@
     <ClInclude Include="spandsp\private\ademco_contactid.h" />
     <ClInclude Include="spandsp\private\image_translate.h" />
     <ClInclude Include="spandsp\private\t42.h" />
+    <ClInclude Include="spandsp\private\t43.h" />
     <ClInclude Include="spandsp\private\t81_t82_arith_coding.h" />
     <ClInclude Include="spandsp\private\t85.h" />
     <ClInclude Include="spandsp\queue.h" />
@@ -305,6 +307,7 @@
     <ClInclude Include="spandsp\super_tone_tx.h" />
     <ClInclude Include="spandsp\swept_tone.h" />
     <ClInclude Include="spandsp\t42.h" />
+    <ClInclude Include="spandsp\t43.h" />
     <ClInclude Include="spandsp\t4_rx.h" />
     <ClInclude Include="spandsp\t4_tx.h" />
     <ClInclude Include="spandsp\t4_t6_decode.h" />
@@ -436,6 +439,10 @@
     </ProjectReference>
     <ProjectReference Include="msvc\make_modem_filter.2010.vcxproj">
       <Project>{329a6fa0-0fcc-4435-a950-e670aefa9838}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="msvc\make_t43_gray_code_tables.2010.vcxproj">
+      <Project>{eddb8ab9-c53e-44c0-a620-0e86c2cbd5d5}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

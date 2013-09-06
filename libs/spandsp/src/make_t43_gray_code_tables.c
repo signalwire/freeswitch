@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
     int j;
     int gray;
     int new_gray;
-    int restore;
+    int restore = 0;
 
     printf("static const int16_t gray_code[4096] =\n{\n");
     for (i = 0;  i < 4096;  i++)

@@ -1459,6 +1459,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		if (switch_channel_test_flag(channel, CF_VIDEO)) {
 			if (switch_test_flag(conference, CFLAG_VIDEO_BRIDGE)) {
 				switch_channel_set_flag(channel, CF_VIDEO_ECHO);
+				switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
 			} else {
 				switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
 			}
@@ -1618,7 +1619,7 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 	if (member) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Adding video floor %s\n", 
 						  switch_channel_get_name(member->channel));
-		switch_channel_set_flag(member->channel, CF_VIDEO_PASSIVE);
+		//switch_channel_set_flag(member->channel, CF_VIDEO_PASSIVE);
 		switch_core_session_refresh_video(member->session);
 		conference->video_floor_holder = member;
 	} else {
@@ -1627,7 +1628,7 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 
 	if (old_member) {
 		old_id = old_member->id;
-		switch_channel_clear_flag(old_member->channel, CF_VIDEO_PASSIVE);
+		//switch_channel_clear_flag(old_member->channel, CF_VIDEO_PASSIVE);
 	}
 
 	switch_set_flag(conference, CFLAG_FLOOR_CHANGE);
@@ -7488,6 +7489,7 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_core_session_video_reset(session);
 
 	switch_channel_set_flag(channel, CF_CONFERENCE);
+	switch_channel_set_flag(channel, CF_VIDEO_PASSIVE);
 
 	if (switch_channel_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel answer failed.\n");
@@ -8042,6 +8044,7 @@ SWITCH_STANDARD_APP(conference_function)
  end:
 
 	switch_channel_clear_flag(channel, CF_CONFERENCE);
+	switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
 
 	switch_core_session_video_reset(session);
 }

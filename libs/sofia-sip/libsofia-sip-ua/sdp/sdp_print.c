@@ -618,8 +618,10 @@ static void print_media(sdp_printer_t *p,
 	sdp_printf(p, " %s", l->l_text);
     }
     else {
-      sdp_printf(p, " 19");      /* SDP syntax requires at least one format.
-				    19 is used by nobody, right?. */
+		/* SDP syntax requires at least one format. */
+		/* defaults to "19", or "t38" for image */
+		if (m->m_type == sdp_media_image) sdp_printf(p, " t38");
+		else sdp_printf(p, " 19");
     }
 
 

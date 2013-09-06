@@ -50,6 +50,14 @@ AM_CPPFLAGS = -I$(top_builddir)/src -I$(top_builddir)/spandsp-sim -DDATADIR="\"$
 
 LIBDIR = -L$(top_builddir)/src
 
+if COND_V32BIS
+V32BIS_PROGS = v32bis_tests
+endif
+
+if COND_V34
+V34_PROGS = v34_tests
+endif
+
 noinst_PROGRAMS =   ademco_contactid_tests \
                     adsi_tests \
                     alloc_tests \
@@ -94,6 +102,7 @@ noinst_PROGRAMS =   ademco_contactid_tests \
                     playout_tests \
                     plc_tests \
                     power_meter_tests \
+                    pseudo_terminal_tests \
                     queue_tests \
                     r2_mf_rx_tests \
                     r2_mf_tx_tests \
@@ -130,7 +139,9 @@ noinst_PROGRAMS =   ademco_contactid_tests \
                     v42bis_tests \
                     v8_tests \
                     vector_float_tests \
-                    vector_int_tests
+                    vector_int_tests \
+                    $(V32BIS_PROGS) \
+                    $(V34_PROGS)
 
 noinst_HEADERS =    echo_monitor.h \
                     fax_tester.h \
@@ -139,6 +150,7 @@ noinst_HEADERS =    echo_monitor.h \
                     media_monitor.h \
                     modem_monitor.h \
                     pcap_parse.h \
+                    pseudo_terminals.h \
                     udptl.h
 
 ademco_contactid_tests_SOURCES = ademco_contactid_tests.c
@@ -273,6 +285,9 @@ plc_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspands
 power_meter_tests_SOURCES = power_meter_tests.c
 power_meter_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
+pseudo_terminal_tests_SOURCES = pseudo_terminal_tests.c fax_utils.c pseudo_terminals.c
+pseudo_terminal_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim -lspandsp -lutil
+
 queue_tests_SOURCES = queue_tests.c
 queue_tests_LDADD = $(LIBDIR) -lspandsp
 
@@ -368,6 +383,16 @@ v27ter_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspa
 
 v29_tests_SOURCES = v29_tests.c line_model_monitor.cpp modem_monitor.cpp
 v29_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
+
+if COND_V32BIS
+v32bis_tests_SOURCES = v32bis_tests.c line_model_monitor.cpp modem_monitor.cpp
+v32bis_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
+endif
+
+if COND_V34
+v34_tests_SOURCES = v34_tests.c line_model_monitor.cpp modem_monitor.cpp
+v34_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
+endif
 
 v42_tests_SOURCES = v42_tests.c
 v42_tests_LDADD = $(LIBDIR) -lspandsp

@@ -250,7 +250,6 @@ switch_status_t rtmp_on_hangup(switch_core_session_t *session)
 	rtmp_private_t *tech_pvt = NULL;
 	rtmp_session_t *rsession = NULL;
 
-	switch_core_session_write_lock(session);
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
@@ -311,7 +310,6 @@ switch_status_t rtmp_on_hangup(switch_core_session_t *session)
 	switch_thread_rwlock_unlock(rsession->rwlock);
 
  done:
-	switch_core_session_rwunlock(session);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -851,15 +849,13 @@ switch_status_t rtmp_session_destroy(rtmp_session_t **rsession)
 		
 		/* At this point we don't know if the session still exists, so request a fresh pointer to it from the core. */
 		if ( (session = switch_core_session_locate((char *)key)) != NULL ) {
-			switch_core_session_rwunlock(session);
-
 			/* 
 			 * This is here so that if the FS session still exists and has the FS session write(or read) lock, then we won't destroy the rsession 
 			 * until the FS session is finished with it. But if the rsession is able to get the FS session
 			 * write lock, before the FS session is hungup, then once the FS session does get the write lock
 			 * the rsession pointer will be null, and the FS session will never try and touch the already destroyed rsession.
 			 */
-			switch_core_session_write_lock(session);
+
 			channel = switch_core_session_get_channel(session);
 			tech_pvt = switch_core_session_get_private(session);
 			if ( tech_pvt && tech_pvt->rtmp_session ) {

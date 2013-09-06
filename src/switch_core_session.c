@@ -1586,9 +1586,9 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 	switch_mutex_lock(session_manager.mutex);
 	session_manager.running++;
 	switch_mutex_unlock(session_manager.mutex);
-
+#ifdef DEBUG_THREAD_POOL
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Started\n", (long) thread);
-
+#endif
 	while(session_manager.ready) {
 		switch_status_t check_status;
 
@@ -1616,18 +1616,22 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 			switch_mutex_lock(session_manager.mutex);
 			session_manager.busy++;
 			switch_mutex_unlock(session_manager.mutex);
-			
+#ifdef DEBUG_THREAD_POOL			
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Processing\n", (long) thread);
-
+#endif
 
 			td->func(thread, td->obj);
 
-			if (td->alloc) {
+			if (td->pool) {
+				switch_memory_pool_t *pool = td->pool;
+				td = NULL;
+				switch_core_destroy_memory_pool(&pool);
+			} else if (td->alloc) {
 				free(td);
 			}
-			
+#ifdef DEBUG_THREAD_POOL
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Done Processing\n", (long) thread);
-			
+#endif
 			switch_mutex_lock(session_manager.mutex);
 			session_manager.busy--;
 			switch_mutex_unlock(session_manager.mutex);
@@ -1639,9 +1643,9 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 			check++;
 		}
 	}
-
+#ifdef DEBUG_THREAD_POOL
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Worker Thread %ld Ended\n", (long) thread);
-
+#endif
 	switch_mutex_lock(session_manager.mutex);
 	session_manager.running--;
 	switch_mutex_unlock(session_manager.mutex);
@@ -1725,9 +1729,10 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_manager(switch_t
 
 		if (++x == 300) {
 			if (session_manager.popping) {
+#ifdef DEBUG_THREAD_POOL
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, 
 								  "Thread pool: running:%d busy:%d popping:%d\n", session_manager.running, session_manager.busy, session_manager.popping);
-
+#endif
 				switch_queue_interrupt_all(session_manager.thread_queue);
 
 				x--;
@@ -2523,11 +2528,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_async(sw
 
 SWITCH_DECLARE(void) switch_core_session_video_reset(switch_core_session_t *session)
 {
-	if (switch_channel_test_flag(session->channel, CF_VIDEO)) {
-		switch_channel_set_flag(session->channel, CF_VIDEO_ECHO);
-		switch_channel_clear_flag(session->channel, CF_VIDEO_PASSIVE);
-		switch_core_session_refresh_video(session);
-	}
+	switch_channel_set_flag(session->channel, CF_VIDEO_ECHO);
+	switch_channel_clear_flag(session->channel, CF_VIDEO_PASSIVE);
+	switch_core_session_refresh_video(session);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flags(switch_core_session_t *session, const char *app,

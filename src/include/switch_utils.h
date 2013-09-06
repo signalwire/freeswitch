@@ -939,7 +939,7 @@ SWITCH_DECLARE(char *) switch_util_quote_shell_arg(const char *string);
 SWITCH_DECLARE(char *) switch_util_quote_shell_arg_pool(const char *string, switch_memory_pool_t *pool);
 
 
-#define SWITCH_READ_ACCEPTABLE(status) (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK)
+#define SWITCH_READ_ACCEPTABLE(status) (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK || status == SWITCH_STATUS_INUSE)
 SWITCH_DECLARE(char *) switch_url_encode(const char *url, char *buf, size_t len);
 SWITCH_DECLARE(char *) switch_url_decode(char *s);
 SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,

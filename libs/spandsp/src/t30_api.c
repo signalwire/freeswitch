@@ -71,9 +71,7 @@
 #include "spandsp/t81_t82_arith_coding.h"
 #include "spandsp/t85.h"
 #include "spandsp/t42.h"
-#if defined(SPANDSP_SUPPORT_T43)
 #include "spandsp/t43.h"
-#endif
 #include "spandsp/t4_t6_decode.h"
 #include "spandsp/t4_t6_encode.h"
 #include "spandsp/t30_fcf.h"
@@ -87,9 +85,7 @@
 #include "spandsp/private/t81_t82_arith_coding.h"
 #include "spandsp/private/t85.h"
 #include "spandsp/private/t42.h"
-#if defined(SPANDSP_SUPPORT_T43)
 #include "spandsp/private/t43.h"
-#endif
 #include "spandsp/private/t4_t6_decode.h"
 #include "spandsp/private/t4_t6_encode.h"
 #include "spandsp/private/image_translate.h"
@@ -652,8 +648,36 @@ SPAN_DECLARE(int) t30_set_ecm_capability(t30_state_t *s, bool enabled)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(void) t30_set_keep_bad_quality_pages(t30_state_t *s, bool keep_bad_pages)
+{
+    s->keep_bad_pages = keep_bad_pages;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) t30_set_supported_output_compressions(t30_state_t *s, int supported_compressions)
 {
+    /* Mask out the ones we actually support today. */
+    supported_compressions &= T4_COMPRESSION_T4_1D
+                            | T4_COMPRESSION_T4_2D
+                            | T4_COMPRESSION_T6
+                            | T4_COMPRESSION_T85
+                            | T4_COMPRESSION_T85_L0
+#if defined(SPANDSP_SUPPORT_T88)
+                            | T4_COMPRESSION_T88
+#endif
+                            | T4_COMPRESSION_T42_T81
+#if defined(SPANDSP_SUPPORT_SYCC_T81)
+                            | T4_COMPRESSION_SYCC_T81
+#endif
+#if defined(SPANDSP_SUPPORT_T43)
+                            | T4_COMPRESSION_T43
+#endif
+#if defined(SPANDSP_SUPPORT_T45)
+                            | T4_COMPRESSION_T45
+#endif
+                            | T4_COMPRESSION_UNCOMPRESSED
+                            | T4_COMPRESSION_JPEG
+                            | 0;
     s->supported_output_compressions = supported_compressions;
     return 0;
 }
@@ -838,6 +862,20 @@ SPAN_DECLARE(void) t30_set_real_time_frame_handler(t30_state_t *s, t30_real_time
 {
     s->real_time_frame_handler = handler;
     s->real_time_frame_user_data = user_data;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) t30_set_document_get_handler(t30_state_t *s, t30_document_get_handler_t handler, void *user_data)
+{
+    s->document_get_handler = handler;
+    s->document_get_user_data = user_data;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) t30_set_document_put_handler(t30_state_t *s, t30_document_put_handler_t handler, void *user_data)
+{
+    s->document_put_handler = handler;
+    s->document_put_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 

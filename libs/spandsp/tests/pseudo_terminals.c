@@ -51,6 +51,7 @@
 #include "pseudo_terminals.h"
 
 int next_id = 0;
+const char *device_root_name = "/dev/spandsp";
 
 int psuedo_terminal_close(modem_t *modem)
 {
@@ -175,7 +176,7 @@ int psuedo_terminal_create(modem_t *modem)
     modem->threadAbort = CreateEvent(NULL, true, false, NULL);
 #else
     modem->slot = next_id++;
-    snprintf(modem->devlink, sizeof(modem->devlink), "/dev/spandsp/%d", modem->slot);
+    snprintf(modem->devlink, sizeof(modem->devlink), "%s/%d", device_root_name, modem->slot);
 
     /* Remove any stale link which might be present */
     unlink(modem->devlink);

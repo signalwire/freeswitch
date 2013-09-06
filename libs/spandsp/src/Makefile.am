@@ -82,6 +82,16 @@ AM_CPPFLAGS = -I$(top_builddir)
 
 lib_LTLIBRARIES = libspandsp.la
 
+if COND_V32BIS
+V32BIS_SOURCES = v32bis.c
+endif
+
+if COND_V34
+V34_SOURCES = v34rx.c \
+              v34tx.c \
+              v34_logging.c
+endif
+
 libspandsp_la_SOURCES = ademco_contactid.c \
                         adsi.c \
                         alloc.c \
@@ -173,7 +183,9 @@ libspandsp_la_SOURCES = ademco_contactid.c \
                         v42bis.c \
                         v8.c \
                         vector_float.c \
-                        vector_int.c
+                        vector_int.c \
+                        $(V32BIS_SOURCES) \
+                        $(V34_SOURCES)
 
 libspandsp_la_LDFLAGS = -version-info @SPANDSP_LT_CURRENT@:@SPANDSP_LT_REVISION@:@SPANDSP_LT_AGE@ $(COMP_VENDOR_LDFLAGS)
 

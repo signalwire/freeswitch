@@ -2244,6 +2244,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_set_open_root_function(switch_xml_ope
 SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **err)
 {
 	switch_xml_t root = NULL;
+	switch_event_t *event;
 
 	switch_mutex_lock(XML_LOCK);
 
@@ -2251,6 +2252,15 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 		root = XML_OPEN_ROOT_FUNCTION(reload, err, XML_OPEN_ROOT_FUNCTION_USER_DATA);
 	}
 	switch_mutex_unlock(XML_LOCK);
+
+
+	if (root) {
+		if (switch_event_create(&event, SWITCH_EVENT_RELOADXML) == SWITCH_STATUS_SUCCESS) {
+			if (switch_event_fire(&event) != SWITCH_STATUS_SUCCESS) {
+				switch_event_destroy(&event);
+			}
+		}
+	}
 
 	return root;
 }
@@ -2288,12 +2298,6 @@ SWITCH_DECLARE_NONSTD(switch_xml_t) __switch_xml_open_root(uint8_t reload, const
 	}
 
 	if (errcnt == 0) {
-		switch_event_t *event;
-		if (switch_event_create(&event, SWITCH_EVENT_RELOADXML) == SWITCH_STATUS_SUCCESS) {
-			if (switch_event_fire(&event) != SWITCH_STATUS_SUCCESS) {
-				switch_event_destroy(&event);
-			}
-		}
 		r = switch_xml_root();
 	}
 

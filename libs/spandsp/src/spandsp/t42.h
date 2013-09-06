@@ -76,6 +76,8 @@ SPAN_DECLARE(void) set_lab_gamut2(lab_params_t *s, int L_P, int L_Q, int a_P, in
 
 SPAN_DECLARE(void) get_lab_gamut2(lab_params_t *s, int *L_P, int *L_Q, int *a_P, int *a_Q, int *b_P, int *b_Q);
 
+SPAN_DECLARE(bool) t42_analyse_header(uint32_t *width, uint32_t *length, const uint8_t data[], size_t len);
+
 SPAN_DECLARE(void) t42_encode_set_options(t42_encode_state_t *s, uint32_t l0, int quality, int options);
 
 SPAN_DECLARE(int) t42_encode_set_image_width(t42_encode_state_t *s, uint32_t image_width);

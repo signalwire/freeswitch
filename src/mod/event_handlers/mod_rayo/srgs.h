@@ -51,7 +51,7 @@ extern struct srgs_grammar *srgs_parse(struct srgs_parser *parser, const char *d
 extern const char *srgs_grammar_to_regex(struct srgs_grammar *grammar);
 extern const char *srgs_grammar_to_jsgf(struct srgs_grammar *grammar);
 extern const char *srgs_grammar_to_jsgf_file(struct srgs_grammar *grammar, const char *basedir, const char *ext);
-extern enum srgs_match_type srgs_grammar_match(struct srgs_grammar *grammar, const char *input);
+extern enum srgs_match_type srgs_grammar_match(struct srgs_grammar *grammar, const char *input, const char **interpretation);
 extern void srgs_parser_destroy(struct srgs_parser *parser);
 
 #endif

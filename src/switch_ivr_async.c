@@ -1711,9 +1711,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 				name = cp->caller_id_name;
 				num = cp->caller_id_number;
 			}
-
-			my_cp->callee_id_name = switch_core_strdup(my_cp->pool, name);
-			my_cp->callee_id_number = switch_core_strdup(my_cp->pool, num);
 		}
 
 		sanity = 300;

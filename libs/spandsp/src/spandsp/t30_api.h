@@ -225,6 +225,12 @@ SPAN_DECLARE(const char *) t30_get_tx_password(t30_state_t *s);
     \return A pointer to the password. */
 SPAN_DECLARE(const char *) t30_get_rx_password(t30_state_t *s);
 
+/*! Set the save bad quality pages handling associated with a T.30 context.
+    \brief Set the save bad quality pages handling associated with a T.30 context.
+    \param s The T.30 context.
+    \param keep_bad_pages True to save bad quality pages. */
+SPAN_DECLARE(void) t30_set_keep_bad_quality_pages(t30_state_t *s, bool keep_bad_pages);
+
 /*! Set the transmitted TSA (i.e. the one we will send to the far
     end) associated with a T.30 context.
     \brief Set the transmitted TSA associated with a T.30 context.
@@ -542,6 +548,10 @@ SPAN_DECLARE(void) t30_set_document_handler(t30_state_t *s, t30_document_handler
     \param handler The callback function.
     \param user_data An opaque pointer passed to the callback function. */
 SPAN_DECLARE(void) t30_set_real_time_frame_handler(t30_state_t *s, t30_real_time_frame_handler_t handler, void *user_data);
+
+SPAN_DECLARE(void) t30_set_document_get_handler(t30_state_t *s, t30_document_get_handler_t handler, void *user_data);
+
+SPAN_DECLARE(void) t30_set_document_put_handler(t30_state_t *s, t30_document_put_handler_t handler, void *user_data);
 
 /*! Get a pointer to the logging context associated with a T.30 context.
     \brief Get a pointer to the logging context associated with a T.30 context.

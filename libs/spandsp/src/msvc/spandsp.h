@@ -117,9 +117,7 @@
 #include <spandsp/t81_t82_arith_coding.h>
 #include <spandsp/t85.h>
 #include <spandsp/t42.h>
-#if defined(SPANDSP_SUPPORT_T43)
 #include <spandsp/t43.h>
-#endif
 #include <spandsp/t30.h>
 #include <spandsp/t30_api.h>
 #include <spandsp/t30_fcf.h>

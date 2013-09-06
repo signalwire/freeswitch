@@ -157,6 +157,7 @@ static switch_status_t input_component_on_dtmf(switch_core_session_t *session, c
 		int is_term_digit = 0;
 		struct input_component *component;
 		enum srgs_match_type match;
+		const char *interpretation = NULL;
 
 		switch_mutex_lock(handler->mutex);
 
@@ -179,7 +180,7 @@ static switch_status_t input_component_on_dtmf(switch_core_session_t *session, c
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Collected term digit = \"%c\"\n", dtmf->digit);
 		}
 
-		match = srgs_grammar_match(component->grammar, component->digits);
+		match = srgs_grammar_match(component->grammar, component->digits, &interpretation);
 
 		/* adjust result if terminating digit was pressed */
 		if (is_term_digit) {
@@ -208,7 +209,7 @@ static switch_status_t input_component_on_dtmf(switch_core_session_t *session, c
 				break;
 			}
 			case SMT_MATCH_END: {
-				iks *result = nlsml_create_dtmf_match(component->digits);
+				iks *result = nlsml_create_dtmf_match(component->digits, interpretation);
 				/* notify of match and remove input component */
 				handler->dtmf_component = NULL;
 				switch_core_media_bug_remove(session, &handler->bug);
@@ -248,13 +249,14 @@ static switch_bool_t input_component_bug_callback(switch_media_bug_t *bug, void 
 				int elapsed_ms = (switch_micro_time_now() - component->last_digit_time) / 1000;
 				if (component->num_digits && component->inter_digit_timeout > 0 && elapsed_ms > component->inter_digit_timeout) {
 					enum srgs_match_type match;
+					const char *interpretation = NULL;
 					handler->dtmf_component = NULL;
 					switch_core_media_bug_set_flag(bug, SMBF_PRUNE);
 
 					/* we got some input, check for match */
-					match = srgs_grammar_match(component->grammar, component->digits);
+					match = srgs_grammar_match(component->grammar, component->digits, &interpretation);
 					if (match == SMT_MATCH || match == SMT_MATCH_END) {
-						iks *result = nlsml_create_dtmf_match(component->digits);
+						iks *result = nlsml_create_dtmf_match(component->digits, interpretation);
 						/* notify of match */
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "MATCH = %s\n", component->digits);
 						send_match_event(RAYO_COMPONENT(component), result);

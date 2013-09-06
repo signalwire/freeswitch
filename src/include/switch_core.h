@@ -65,6 +65,7 @@ typedef struct switch_thread_data_s {
 	switch_thread_start_t func;
 	void *obj;
 	int alloc;
+	switch_memory_pool_t *pool;
 } switch_thread_data_t;
 
 typedef struct switch_hold_record_s {

@@ -1658,16 +1658,35 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 							char content2[1000];
 							SMSMessageRef sms;
 
+							DEBUGA_GSMOPEN("about to decode\n", GSMOPEN_P_LOG);
 							try {
 								sms = SMSMessage::decode(tech_pvt->line_array.result[i]);	// dataCodingScheme = 8 , text=ciao 123 belè новости לק ראת ﺎﻠﺠﻤﻋﺓ 人大
 							}
 							catch(...) {
 								ERRORA("GsmException\n", GSMOPEN_P_LOG);
+								gsmopen_sleep(5000);
 								return -1;
 							}
 
-							DEBUGA_GSMOPEN("SMS=\n%s\n", GSMOPEN_P_LOG, sms->toString().c_str());
+							DEBUGA_GSMOPEN("after decode\n", GSMOPEN_P_LOG);
 
+#if 0
+							char letsee[1024];
+							memset(letsee, '\0', sizeof(letsee));
+	
+							DEBUGA_GSMOPEN("about to letsee\n", GSMOPEN_P_LOG);
+							try {
+								sprintf(letsee, "|%s|\n", sms->toString().c_str());
+							}
+							catch(...) {
+								ERRORA("GsmException\n", GSMOPEN_P_LOG);
+								sleep(5);
+								return -1;
+							}
+							DEBUGA_GSMOPEN("after letsee\n", GSMOPEN_P_LOG);
+						
+							DEBUGA_GSMOPEN("SMS=\n%s\n", GSMOPEN_P_LOG, letsee);
+#endif //0
 							memset(content2, '\0', sizeof(content2));
 							if (sms->dataCodingScheme().getAlphabet() == DCS_DEFAULT_ALPHABET) {
 								iso_8859_1_to_utf8(tech_pvt, (char *) sms->userData().c_str(), content2, sizeof(content2));
@@ -1701,6 +1720,7 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 						}
 							catch(...) {
 								ERRORA("GsmException\n", GSMOPEN_P_LOG);
+								gsmopen_sleep(5000);
 								return -1;
 						}
 

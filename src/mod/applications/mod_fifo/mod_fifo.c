@@ -1689,6 +1689,9 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 	switch_channel_set_state(channel, CS_EXECUTE);
 	switch_core_session_rwunlock(session);
 
+	sql = switch_mprintf("update fifo_outbound set ring_count=ring_count-1 where uuid='%q' and ring_count > 0", h->uuid);
+	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
+
   end:
 
 	switch_event_destroy(&ovars);

@@ -224,6 +224,26 @@ typedef void (*t30_set_handler_t)(void *user_data, int type, int bit_rate, int s
 typedef void (*t30_send_hdlc_handler_t)(void *user_data, const uint8_t msg[], int len);
 
 /*!
+    T.30 send document handler.
+    \brief T.30 send document handler.
+    \param user_data An opaque pointer.
+    \param msg The document chunk.
+    \param len The length of the chunk.
+    \return The actual length of the chunk.
+*/
+typedef int (*t30_document_get_handler_t)(void *user_data, uint8_t msg[], int len);
+
+/*!
+    T.30 deliver document handler.
+    \brief T.30 deliver handler.
+    \param user_data An opaque pointer.
+    \param msg The document chunk.
+    \param len The length of the chunk.
+    \return The delivery status.
+*/
+typedef int (*t30_document_put_handler_t)(void *user_data, const uint8_t msg[], int len);
+
+/*!
     T.30 protocol completion codes, at phase E.
 */
 enum

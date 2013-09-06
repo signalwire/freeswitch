@@ -1,7 +1,7 @@
 /*
  * SpanDSP - a series of DSP components for telephony
  *
- * pseudo_terminals_tests.c - pseudo terminal handling tests.
+ * pseudo_terminal_tests.c - pseudo terminal handling tests.
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
@@ -31,7 +31,6 @@
 #else
 #if defined(__APPLE__)
 #include <util.h>
-#include <sys/ioctl.h>
 #elif defined(__FreeBSD__)
 #include <libutil.h>
 #include <termios.h>
@@ -39,32 +38,112 @@
 #else
 #include <pty.h>
 #endif
+#include <sys/ioctl.h>
+#include <fcntl.h>
 #include <unistd.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <errno.h>
 #endif
 
 #include "spandsp.h"
 
+#include "spandsp/t30_fcf.h"
+
+#include "spandsp-sim.h"
+
+#undef SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+
 #include "pseudo_terminals.h"
 
-int main(int argc, char *argv[])
+static int master(void)
 {
     modem_t modem[10];
+    char buf[1024];
+    int len;
     int i;
 
     for (i = 0;  i < 10;  i++)
     {
         if (psuedo_terminal_create(&modem[i]))
+        {
             printf("Failure\n");
+            exit(2);
+        }
         printf("%s %s\n", modem[i].devlink, modem[i].stty);
     }
-    getchar();
+
+    for (;;)
+    {
+        for (i = 0;  i < 10;  i++)
+        {
+            len = read(modem[i].master, buf, 4);
+            if (len >= 0)
+            {
+                buf[len] = '\0';
+                printf("%d %d '%s' %s\n", i, len, buf, strerror(errno));
+            }
+        }
+    }
+
     for (i = 0;  i < 10;  i++)
     {
         if (psuedo_terminal_close(&modem[i]))
+        {
             printf("Failure\n");
+            exit(2);
+        }
     }
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int slave(void)
+{
+    int fd[10];
+    char name[64];
+    int i;
+    int j;
+
+    for (i = 0;  i < 10;  i++)
+    {
+        sprintf(name, "/dev/spandsp/%d", i);
+        if ((fd[i] = open(name, O_RDWR)) < 0)
+        {
+            printf("Failed to open %s\n", name);
+            exit(2);
+        }
+        printf("%s\n", name);
+    }
+
+    for (j = 0;  j < 10;  j++)
+    {
+        for (i = 0;  i < 10;  i++)
+        {
+            write(fd[i], "FRED", 4);
+        }
+    }
+
+    for (i = 0;  i < 10;  i++)
+    {
+        if (close(fd[i]))
+        {
+            printf("Failed to close %d\n", i);
+            exit(2);
+        }
+    }
+
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+int main(int argc, char *argv[])
+{
+    if (argc < 2)
+        master();
+    else
+        slave();
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
