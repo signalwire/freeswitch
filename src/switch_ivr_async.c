@@ -1577,7 +1577,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		switch_codec_implementation_t tread_impl = { 0 }, read_impl = { 0 };
 		switch_core_session_message_t msg = { 0 };
 		char cid_buf[1024] = "";
-		switch_caller_profile_t *cp = NULL, *my_cp = NULL;
+		switch_caller_profile_t *cp = NULL;
 		uint32_t sanity = 600;
 
 		if (!switch_channel_media_up(channel)) {
@@ -1699,7 +1699,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
 		switch_core_session_receive_message(session, &msg);
 		cp = switch_channel_get_caller_profile(tchannel);
-		my_cp = switch_channel_get_caller_profile(channel);
+
 		name = cp->caller_id_name;
 		num = cp->caller_id_number;
 
