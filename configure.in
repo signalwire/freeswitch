@@ -464,6 +464,12 @@ SPANDSP_LA_JBIG="-ljbig"
 AC_SUBST(SPANDSP_LA_JBIG)
 fi
 
+AC_CHECK_LIB(lzma, lzma_code, have_liblzma=yes, have_liblzma=no)
+if test "x$have_liblzma" = "xyes" ; then
+SPANDSP_LA_LZMA="-llzma"
+AC_SUBST(SPANDSP_LA_LZMA)
+fi
+
 AC_CHECK_LIB(resolv, res_init, have_libresolv=yes, have_libresolv=no)
 if test "x$have_libresolv" = "xyes"  ; then
 APR_ADDTO(SWITCH_AM_LDFLAGS, -lresolv)
@@ -951,9 +957,16 @@ AC_ARG_ENABLE(core-libedit-support,
 	[AS_HELP_STRING([--disable-core-libedit-support], [Compile without libedit Support])], [enable_core_libedit_support="$enableval"], [enable_core_libedit_support="yes"])
 
 if test "$enable_core_libedit_support" = "yes" ; then
-    AC_CHECK_LIB(ncurses, tgetent,,
-       [AC_CHECK_LIB(curses, tgetent,,
-          [AC_MSG_ERROR([libtermcap, libcurses or libncurses are required!])] )] )
+    AC_CHECK_LIB(tinfo, tgetent, [have_libtinfo="yes"], [have_libtinfo="no"])
+    if test "$have_libtinfo" == "yes" ; then
+       TINFO_LIBS="-ltinfo"
+    else
+       TINFO_LIBS=""
+       AC_CHECK_LIB(ncurses, tgetent,,
+          [AC_CHECK_LIB(curses, tgetent,,
+	     [AC_MSG_ERROR([libtermcap, libcurses or libncurses are required!])] )] )
+    fi
+    AC_SUBST(TINFO_LIBS)
 fi
 
 SAC_OPENSSL
@@ -1125,6 +1138,7 @@ AC_CONFIG_FILES([Makefile
 		build/getg729.sh
 		build/freeswitch.pc
 		build/modmake.rules
+                libs/esl/eslmake.rules
 		libs/xmlrpc-c/xmlrpc_config.h
 		libs/xmlrpc-c/config.mk
 		libs/xmlrpc-c/srcdir.mk

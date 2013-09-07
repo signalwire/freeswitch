@@ -1,5 +1,5 @@
 
-LDADD = $(top_builddir)/src/libedit.la
+LDADD = $(top_builddir)/src/libedit.la $(TINFO_LIBS)
 AM_CFLAGS = -I$(top_srcdir)/src
 
 noinst_PROGRAMS    = test fileman
