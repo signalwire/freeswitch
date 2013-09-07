@@ -139,7 +139,7 @@ endif
 
 if HAVE_LIBEDIT
 CORE_CFLAGS += -I$(switch_srcdir)/libs/libedit/src -DSWITCH_HAVE_LIBEDIT
-CORE_LIBS   += libs/libedit/src/.libs/libedit.a
+CORE_LIBS   += libs/libedit/src/.libs/libedit.a $(TINFO_LIBS)
 endif
 
 if ENABLE_TIMERFD_WRAPPER
@@ -330,7 +330,7 @@ fs_cli_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS) -lm
 
 if HAVE_LIBEDIT
 fs_cli_CFLAGS += -DHAVE_EDITLINE -I$(switch_srcdir)/libs/libedit/src
-fs_cli_LDADD   = libs/libedit/src/.libs/libedit.a
+fs_cli_LDADD   = libs/libedit/src/.libs/libedit.a $(TINFO_LIBS)
 endif
 
 
@@ -379,7 +379,7 @@ freeswitch_LDADD   = libfreeswitch.la libs/apr/libapr-1.la
 
 if HAVE_LIBEDIT
 freeswitch_CFLAGS += -Ilibs/libedit/src -DSWITCH_HAVE_LIBEDIT
-freeswitch_LDADD  += libs/libedit/src/.libs/libedit.a
+freeswitch_LDADD  += libs/libedit/src/.libs/libedit.a $(TINFO_LIBS)
 endif
 
 if HAVE_ODBC
