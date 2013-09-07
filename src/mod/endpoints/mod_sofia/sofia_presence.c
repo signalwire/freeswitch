@@ -3304,9 +3304,13 @@ static int broadsoft_sla_gather_state_callback(void *pArg, int argc, char **argv
 
 	if (strcasecmp(state, "idle") && uuid && (session = switch_core_session_locate(uuid))) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
+		private_object_t *tech_pvt = NULL;
+
+		tech_pvt = switch_core_session_get_private(session);
+		switch_assert(tech_pvt != NULL);
 
 		if (switch_channel_test_flag(channel, CF_ORIGINATOR) || switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR) || 
-			switch_channel_inbound_display(channel) || switch_channel_test_flag(channel, CF_SLA_BARGING)) {
+			switch_channel_inbound_display(channel) || sofia_test_flag(tech_pvt, TFLAG_SLA_BARGING)) {
 			callee_name = switch_channel_get_variable(channel, "callee_id_name");
 			callee_number = switch_channel_get_variable(channel, "callee_id_number");
 
