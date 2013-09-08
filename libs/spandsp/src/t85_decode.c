@@ -271,11 +271,16 @@ SPAN_DECLARE(bool) t85_analyse_header(uint32_t *width, uint32_t *length, const u
         return false;
     *width = pack_32(&data[6]);
     *length = pack_32(&data[10]);
+    if ((data[19] & T85_VLENGTH))
+    {
+        /* TODO: scan for a true length, if the initial one just says 0xFFFFFFFF */
+        /* There should be an image length sequence terminating the image later on. */
+    }
     return true;
 }
 /*- End of function --------------------------------------------------------*/
 
-static int check_bih(t85_decode_state_t *s)
+static int extract_bih(t85_decode_state_t *s)
 {
     /* Check that the fixed parameters have the values they are expected to be
        fixed at - see T.85/Table 1 */
@@ -303,50 +308,68 @@ static int check_bih(t85_decode_state_t *s)
         return T4_DECODE_INVALID_DATA;
     }
     /* P - Number of bit planes */
-    if (s->buffer[2] < s->min_bit_planes  ||  s->buffer[2] > s->max_bit_planes)
-    {
-        span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. %d bit planes. Should be %d to %d.\n", s->buffer[2], s->min_bit_planes, s->max_bit_planes);
-        s->end_of_data = 2;
-        return T4_DECODE_INVALID_DATA;
-    }
     s->bit_planes = s->buffer[2];
     s->current_bit_plane = 0;
     /* Now look at the stuff which actually counts in a T.85 header. */
     /* XD - Horizontal image size at layer D */
     s->xd = pack_32(&s->buffer[4]);
+    /* YD - Vertical image size at layer D */
+    s->yd = pack_32(&s->buffer[8]);
+    /* L0 - Rows per stripe, at the lowest resolution */
+    s->l0 = pack_32(&s->buffer[12]);
+    /* MX - Maximum horizontal offset allowed for AT pixel */
+    s->mx = s->buffer[16];
+    /* Options byte */
+    s->options = s->buffer[19];
+
+    if (s->bit_planes < s->min_bit_planes  ||  s->bit_planes > s->max_bit_planes)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. %d bit planes. Should be %d to %d.\n", s->bit_planes, s->min_bit_planes, s->max_bit_planes);
+        s->end_of_data = 2;
+        return T4_DECODE_INVALID_DATA;
+    }
     if (s->xd == 0  ||  (s->max_xd  &&  s->xd > s->max_xd))
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. Width is %" PRIu32 "\n", s->xd);
         s->end_of_data = 2;
         return T4_DECODE_INVALID_DATA;
     }
-    /* YD - Vertical image size at layer D */
-    s->yd = pack_32(&s->buffer[8]);
-    if (s->yd == 0  ||  (s->max_yd  &&  s->yd > s->max_yd))
+    if (s->yd == 0)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. Length is %" PRIu32 "\n", s->yd);
         s->end_of_data = 2;
         return T4_DECODE_INVALID_DATA;
     }
-    /* L0 - Rows per stripe, at the lowest resolution */
-    s->l0 = pack_32(&s->buffer[12]);
+    if (s->max_yd)
+    {
+        if ((s->options & T85_VLENGTH))
+        {
+            if (s->yd > s->max_yd)
+                s->yd = s->max_yd;
+        }
+        else
+        {
+            if (s->yd > s->max_yd)
+            {
+                span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. Length is %" PRIu32 "\n", s->yd);
+                s->end_of_data = 2;
+                return T4_DECODE_INVALID_DATA;
+            }
+        }
+    }
     if (s->l0 == 0)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. L0 is %" PRIu32 "\n", s->l0);
         s->end_of_data = 2;
         return T4_DECODE_INVALID_DATA;
     }
-    /* MX - Maximum horizontal offset allowed for AT pixel */
-    s->mx = s->buffer[16];
     if (s->mx > 127)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. MX is %d\n", s->mx);
         s->end_of_data = 2;
         return T4_DECODE_INVALID_DATA;
     }
-    /* Options byte */
-    s->options = s->buffer[19];
-    if ((s->options & 0x97))
+    if ((s->options & ~(T85_LRLTWO | T85_VLENGTH | T85_TPBON)))
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. Options are 0x%X\n", s->options);
         s->end_of_data = 2;
@@ -413,7 +436,7 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
         cnt = i;
         if (s->bie_len < 20)
             return T4_DECODE_MORE_DATA;
-        if ((ret = check_bih(s)) != T4_DECODE_OK)
+        if ((ret = extract_bih(s)) != T4_DECODE_OK)
             return ret;
         /* Set up the two/three row buffer */
         bytes_per_row = (s->xd + 7) >> 3;
@@ -690,8 +713,8 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
             cnt += decode_pscd(s, data + cnt, len - cnt);
             if (s->interrupt)
                 return T4_DECODE_INTERRUPT;
-            /* We should only have stopped processing PSCD if
-               we ran out of data, or hit a T82_ESC */
+            /* We should only have stopped processing PSCD if we ran out of data,
+               or hit a T82_ESC */
             if (cnt < len  &&  data[cnt] != T82_ESC)
             {
                 s->end_of_data = 2;
