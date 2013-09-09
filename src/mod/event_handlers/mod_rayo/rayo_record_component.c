@@ -85,22 +85,23 @@ static void complete_record(struct rayo_component *component, const char *reason
 {
 	switch_core_session_t *session = NULL;
 	const char *uuid = component->parent->id;
-	char *uri = switch_mprintf("file://%s", RECORD_COMPONENT(component)->local_file_path);
+	const char *uri = RECORD_COMPONENT(component)->local_file_path;
 	iks *recording;
 	switch_size_t file_size = 0;
-/* TODO this doesn't work with HTTP */
+
+	/* TODO this doesn't work with HTTP, improve core RECORD_STOP event so that file size and duration is reported */
 #if 0
 	switch_file_t *file;
 
-	if (switch_file_open(&file, RECORD_COMPONENT(component)->local_file_path, SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD, RAYO_POOL(component)) == SWITCH_STATUS_SUCCESS) {
+	if (switch_file_open(&file, uri, SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD, RAYO_POOL(component)) == SWITCH_STATUS_SUCCESS) {
 		file_size = switch_file_get_size(file);
 		switch_file_close(file);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_INFO, "Failed to open %s.\n", RECORD_COMPONENT(component)->local_file_path);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_INFO, "Failed to open %s.\n", uri);
 	}
 #endif
 
-	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "Recording %s done.\n", RECORD_COMPONENT(component)->local_file_path);
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "Recording %s done.\n", uri);
 
 	if (RECORD_COMPONENT(component)->stop_beep && (session = switch_core_session_locate(uuid))) {
 		switch_ivr_displace_session(session, RECORD_BEEP, 0, "");
@@ -110,15 +111,19 @@ static void complete_record(struct rayo_component *component, const char *reason
 	/* send complete event to client */
 	recording = iks_new("recording");
 	iks_insert_attrib(recording, "xmlns", RAYO_RECORD_COMPLETE_NS);
-	iks_insert_attrib(recording, "uri", uri);
+	if (strlen(uri) > strlen(SWITCH_PATH_SEPARATOR) && !strncmp(uri, SWITCH_PATH_SEPARATOR, strlen(SWITCH_PATH_SEPARATOR))) {
+		/* convert absolute path to file:// URI */
+		iks_insert_attrib_printf(recording, "uri", "file://%s", uri);
+	} else {
+		/* is already a URI (hopefully) */
+		iks_insert_attrib(recording, "uri", uri);
+	}
 	iks_insert_attrib_printf(recording, "duration", "%i", RECORD_COMPONENT(component)->duration_ms);
 	iks_insert_attrib_printf(recording, "size", "%"SWITCH_SIZE_T_FMT, file_size);
 	rayo_component_send_complete_with_metadata(component, reason, reason_namespace, recording, 1);
 	iks_delete(recording);
 
 	RAYO_UNLOCK(component);
-
-	switch_safe_free(uri);
 }
 
 /**
