@@ -24,7 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
- *
+ * Seven Du <dujinfang@gmail.com>
  *
  * switch_loadable_module.c -- Loadable Modules
  *
@@ -1732,10 +1732,11 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 	switch_core_hash_init_nocase(&loadable_modules.dialplan_hash, loadable_modules.pool);
 	switch_mutex_init(&loadable_modules.mutex, SWITCH_MUTEX_NESTED, loadable_modules.pool);
 
+	if (!autoload) return SWITCH_STATUS_SUCCESS;
+
 	switch_loadable_module_load_module("", "CORE_SOFTTIMER_MODULE", SWITCH_FALSE, &err);
 	switch_loadable_module_load_module("", "CORE_PCM_MODULE", SWITCH_FALSE, &err);
 
-	if (!autoload) return SWITCH_STATUS_SUCCESS;
 
 	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_xml_t mods, ld;
