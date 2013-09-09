@@ -4322,10 +4322,11 @@ switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, const char *r_
 int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 {
 	int changed = 0;
+	switch_core_session_t *b_session = NULL;
+	switch_channel_t *b_channel = NULL;
 
-	if (sofia_test_flag(tech_pvt, TFLAG_SLA_BARGE) || sofia_test_flag(tech_pvt, TFLAG_SLA_BARGING)) {
-		switch_channel_mark_hold(tech_pvt->channel, sendonly);
-		return 0;
+	if (switch_core_session_get_partner(tech_pvt->session, &b_session) == SWITCH_STATUS_SUCCESS) {
+		b_channel = switch_core_session_get_channel(b_session);
 	}
 
 	if (sendonly && switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED)) {
@@ -4334,7 +4335,19 @@ int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 			const char *msg = "hold";
 
 			if (sofia_test_pflag(tech_pvt->profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
-				const char *info = switch_channel_get_variable(tech_pvt->channel, "presence_call_info");
+				const char *info;
+
+				if ((sofia_test_flag(tech_pvt, TFLAG_SLA_BARGE) || sofia_test_flag(tech_pvt, TFLAG_SLA_BARGING)) &&
+					(!b_channel || switch_channel_test_flag(b_channel, CF_BROADCAST))) {
+					switch_channel_mark_hold(tech_pvt->channel, sendonly);
+					sofia_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+					changed = 0;
+					goto end;
+				}
+
+				info = switch_channel_get_variable(tech_pvt->channel, "presence_call_info");
+
+
 				if (info) {
 					if (switch_stristr("private", info)) {
 						msg = "hold-private";
@@ -4355,7 +4368,7 @@ int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 				stream = tech_pvt->profile->hold_music;
 			}
 
-			if (stream && strcasecmp(stream, "silence")) {
+			if (stream && strcasecmp(stream, "silence") && (!b_channel || !switch_channel_test_flag(b_channel, CF_BROADCAST))) {
 				if (!strcasecmp(stream, "indicate_hold")) {
 					switch_channel_set_flag(tech_pvt->channel, CF_SUSPEND);
 					switch_channel_set_flag(tech_pvt->channel, CF_HOLD);
@@ -4377,8 +4390,6 @@ int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 		sofia_clear_flag_locked(tech_pvt, TFLAG_HOLD_LOCK);
 
 		if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
-			const char *uuid;
-			switch_core_session_t *b_session;
 
 			switch_yield(250000);
 
@@ -4387,8 +4398,7 @@ int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 				switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets);
 			}
 
-			if ((uuid = switch_channel_get_partner_uuid(tech_pvt->channel)) && (b_session = switch_core_session_locate(uuid))) {
-				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
+			if (b_channel) {
 
 				if (switch_channel_test_flag(tech_pvt->channel, CF_HOLD)) {
 					switch_ivr_unhold(b_session);
@@ -4406,6 +4416,12 @@ int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 			switch_channel_presence(tech_pvt->channel, "unknown", "unhold", NULL);
 			changed = 1;
 		}
+	}
+
+ end:
+	
+	if (b_session) {
+		switch_core_session_rwunlock(b_session);
 	}
 
 	return changed;
