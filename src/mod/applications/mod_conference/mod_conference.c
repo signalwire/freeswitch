@@ -32,6 +32,7 @@
  * David Weekly <david@weekly.org>
  * Joao Mesquita <jmesquita@gmail.com>
  * Raymond Chandler <intralanman@freeswitch.org>
+ * Seven Du <dujinfang@gmail.com>
  *
  * mod_conference.c -- Software Conference Bridge
  *
@@ -1869,7 +1870,6 @@ static void *SWITCH_THREAD_FUNC conference_video_bridge_thread_run(switch_thread
 	switch_status_t status;
 	switch_frame_t *read_frame;
 	conference_obj_t *conference = vh->member_a->conference;
-	switch_core_session_message_t msg = { 0 };
 	
 	switch_thread_rwlock_rdlock(conference->rwlock);
 	switch_thread_rwlock_rdlock(vh->member_a->rwlock);
@@ -1882,16 +1882,12 @@ static void *SWITCH_THREAD_FUNC conference_video_bridge_thread_run(switch_thread
 	switch_core_session_read_lock(session_a);
 	switch_core_session_read_lock(session_b);
 	
-	/* Tell the channel to request a fresh vid frame */
-	msg.from = __FILE__;
-	msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
-
 	vh->up = 1;
 	while (vh->up == 1 && switch_test_flag(vh->member_a, MFLAG_RUNNING) && switch_test_flag(vh->member_b, MFLAG_RUNNING) &&
 		   switch_channel_ready(channel_a) && switch_channel_ready(channel_b))  {
 
 		if (switch_channel_test_flag(channel_a, CF_VIDEO_REFRESH_REQ)) {
-			switch_core_session_receive_message(session_b, &msg);
+			switch_core_session_refresh_video(session_b);
 			switch_channel_clear_flag(channel_a, CF_VIDEO_REFRESH_REQ);
 		}
 

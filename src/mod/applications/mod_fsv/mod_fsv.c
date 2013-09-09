@@ -114,17 +114,12 @@ SWITCH_STANDARD_APP(record_fsv_function)
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_dtmf_t dtmf = { 0 };
 	int count = 0, sanity = 30;
-	switch_core_session_message_t msg = { 0 };
 
 	switch_channel_set_flag(channel, CF_VIDEO_PASSIVE);
 
-	/* Tell the channel to request a fresh vid frame */
-	msg.from = __FILE__;
-	msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
-
 	switch_core_session_get_read_impl(session, &read_impl);
 	switch_channel_answer(channel);
-	switch_core_session_receive_message(session, &msg);
+	switch_core_session_refresh_video(session);
 
 	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
 
@@ -310,15 +305,10 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	switch_dtmf_t dtmf = { 0 };
 	switch_frame_t *read_frame;
 	switch_codec_implementation_t read_impl = { 0 };
-	switch_core_session_message_t msg = { 0 };
 
 	switch_channel_set_flag(channel, CF_VIDEO_PASSIVE);
 
-	/* Tell the channel to request a fresh vid frame */
-	msg.from = __FILE__;
-	msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
-
-	switch_core_session_receive_message(session, &msg);
+	switch_core_session_refresh_video(session);
 
 	switch_core_session_get_read_impl(session, &read_impl);
 
