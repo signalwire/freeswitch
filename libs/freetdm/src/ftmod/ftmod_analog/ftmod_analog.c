@@ -942,7 +942,7 @@ static void *ftdm_analog_channel_run(ftdm_thread_t *me, void *obj)
 	ftdm_channel_lock(closed_chan);
 
 	if (ftdmchan->type == FTDM_CHAN_TYPE_FXO && ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OFFHOOK)) {
-		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Going onhook");
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Going onhook\n");
 		ftdm_channel_command(ftdmchan, FTDM_COMMAND_ONHOOK, NULL);
 	}
 
