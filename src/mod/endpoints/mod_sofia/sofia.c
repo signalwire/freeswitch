@@ -858,7 +858,7 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	const char *name_var = "callee_id_name";
 	const char *num_var = "callee_id_number";
 
-	if (switch_true(switch_channel_get_variable(channel, SWITCH_IGNORE_DISPLAY_UPDATES_VARIABLE)) || sofia_test_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE)) {
+	if (switch_true(switch_channel_get_variable(channel, SWITCH_IGNORE_DISPLAY_UPDATES_VARIABLE)) || !sofia_test_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE)) {
 		return;
 	}
 
