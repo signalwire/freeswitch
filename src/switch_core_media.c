@@ -3238,6 +3238,8 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 	int changed = 0;
 	switch_rtp_engine_t *a_engine;//, *v_engine;
 	switch_media_handle_t *smh;
+	switch_core_session_t *b_session = NULL;
+	switch_channel_t *b_channel = NULL;
 
 	switch_assert(session);
 
@@ -3248,23 +3250,32 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 	//v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 
-	if (switch_channel_test_flag(session->channel, CF_SLA_BARGE) || switch_channel_test_flag(session->channel, CF_SLA_BARGING)) {
-		switch_channel_mark_hold(session->channel, sendonly);
-		return 0;
+	
+	if (switch_core_session_get_partner(session, &b_session) == SWITCH_STATUS_SUCCESS) {
+		b_channel = switch_core_session_get_channel(b_session);
 	}
 
 	if (sendonly && switch_channel_test_flag(session->channel, CF_ANSWERED)) {
 		if (!switch_channel_test_flag(session->channel, CF_PROTO_HOLD)) {
 			const char *stream;
 			const char *msg = "hold";
-			const char *info = switch_channel_get_variable(session->channel, "presence_call_info");
+			const char *info;
+
+			if ((switch_channel_test_flag(session->channel, CF_SLA_BARGE) || switch_channel_test_flag(session->channel, CF_SLA_BARGING)) && 
+				(!b_channel || switch_channel_test_flag(b_channel, CF_BROADCAST))) {
+				switch_channel_mark_hold(session->channel, sendonly);
+				switch_channel_set_flag(session->channel, CF_PROTO_HOLD);
+				changed = 0;
+				goto end;
+			}
+
+			info = switch_channel_get_variable(session->channel, "presence_call_info");
 
 			if (info) {
 				if (switch_stristr("private", info)) {
 					msg = "hold-private";
 				}
 			}
-			
 
 			switch_channel_set_flag(session->channel, CF_PROTO_HOLD);
 			switch_channel_mark_hold(session->channel, SWITCH_TRUE);
@@ -3279,7 +3290,8 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 				stream = "local_stream://moh";
 			}
 
-			if (stream && strcasecmp(stream, "silence")) {
+
+			if (stream && strcasecmp(stream, "silence") && (!b_channel || !switch_channel_test_flag(b_channel, CF_BROADCAST))) {
 				if (!strcasecmp(stream, "indicate_hold")) {
 					switch_channel_set_flag(session->channel, CF_SUSPEND);
 					switch_channel_set_flag(session->channel, CF_HOLD);
@@ -3290,6 +3302,7 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 					switch_yield(250000);
 				}
 			}
+
 		}
 	} else {
 		if (switch_channel_test_flag(session->channel, CF_HOLD_LOCK)) {
@@ -3301,9 +3314,6 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 		switch_channel_clear_flag(session->channel, CF_HOLD_LOCK);
 
 		if (switch_channel_test_flag(session->channel, CF_PROTO_HOLD)) {
-			const char *uuid;
-			switch_core_session_t *b_session;
-
 			switch_yield(250000);
 
 			if (a_engine->max_missed_packets) {
@@ -3311,9 +3321,7 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 				switch_rtp_set_max_missed_packets(a_engine->rtp_session, a_engine->max_missed_packets);
 			}
 
-			if ((uuid = switch_channel_get_partner_uuid(session->channel)) && (b_session = switch_core_session_locate(uuid))) {
-				switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
-
+			if (b_channel) {
 				if (switch_channel_test_flag(session->channel, CF_HOLD)) {
 					switch_ivr_unhold(b_session);
 					switch_channel_clear_flag(session->channel, CF_SUSPEND);
@@ -3322,7 +3330,6 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 					switch_channel_stop_broadcast(b_channel);
 					switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000, NULL);
 				}
-				switch_core_session_rwunlock(b_session);
 			}
 
 			switch_channel_clear_flag(session->channel, CF_PROTO_HOLD);
@@ -3331,6 +3338,14 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 			changed = 1;
 		}
 	}
+
+
+ end:
+
+	if (b_session) {
+		switch_core_session_rwunlock(b_session);
+	}
+
 
 	return changed;
 }
