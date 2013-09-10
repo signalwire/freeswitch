@@ -8790,9 +8790,8 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 							sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
 
 							switch_channel_presence(b_channel, "unknown", "idle", NULL);
-							
 						}
-
+						switch_channel_set_flag(tech_pvt->channel, CF_SLA_INTERCEPT);
 						tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool,
 																						   "%sanswer,intercept:%s", codec_str, bridge_uuid);
 					} else {

@@ -740,7 +740,11 @@ SWITCH_DECLARE(void) switch_channel_perform_presence(switch_channel_t *channel, 
 			if (channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND) {
 				call_info_state = "progressing";
 			} else {
-				call_info_state = "alerting";
+				if (switch_channel_test_flag(channel, CF_SLA_INTERCEPT)) {
+					call_info_state = "idle";
+				} else {
+					call_info_state = "alerting";
+				}
 			}
 		}
 		
