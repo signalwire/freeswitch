@@ -730,7 +730,7 @@ SWITCH_DECLARE(void) switch_channel_perform_presence(switch_channel_t *channel, 
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 
 
-		if (!switch_channel_up_nosig(channel)) {
+		if (!strcasecmp(status, "idle") || !switch_channel_up_nosig(channel)) {
 			call_info_state = "idle";
 		} else if (!strcasecmp(status, "hold-private")) {
 			call_info_state = "held-private";

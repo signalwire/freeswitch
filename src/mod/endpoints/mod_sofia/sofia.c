@@ -8782,6 +8782,17 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 					}
 
 					if (!zstr(bridge_uuid) && switch_channel_test_flag(b_channel, CF_LEG_HOLDING)) {
+						const char *b_call_id = switch_channel_get_variable(b_channel, "sip_call_id");
+
+						if (b_call_id) {
+							char *sql = switch_mprintf("update sip_dialogs set call_info_state='idle' where call_id='%q'", b_call_id);
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "SQL: %s\n", sql);
+							sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+
+							switch_channel_presence(b_channel, "unknown", "idle", NULL);
+							
+						}
+
 						tech_pvt->caller_profile->destination_number = switch_core_sprintf(tech_pvt->caller_profile->pool,
 																						   "%sanswer,intercept:%s", codec_str, bridge_uuid);
 					} else {
