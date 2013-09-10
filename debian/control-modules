@@ -493,6 +493,7 @@ Description: mod_radius_cdr
 Module: event_handlers/mod_rayo
 Description: mod_rayo
  Adds mod_rayo.
+Depends: freeswitch-mod-ssml (= ${binary:Version})
 
 Module: event_handlers/mod_snmp
 Description: mod_snmp
