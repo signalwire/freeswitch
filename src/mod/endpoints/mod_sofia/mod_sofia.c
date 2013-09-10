@@ -5904,10 +5904,13 @@ SWITCH_STANDARD_APP(sofia_sla_function)
 	private_object_t *tech_pvt;
 	switch_core_session_t *bargee_session;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+
 	if (zstr(data)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: <uuid>\n");
 		return;
 	}
+
+	switch_channel_answer(channel);
 	
 	if ((bargee_session = switch_core_session_locate((char *)data))) {
 		if (bargee_session == session) {
