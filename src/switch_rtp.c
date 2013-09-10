@@ -65,7 +65,6 @@
 
 static switch_port_t START_PORT = RTP_START_PORT;
 static switch_port_t END_PORT = RTP_END_PORT;
-static switch_port_t NEXT_PORT = RTP_START_PORT;
 static switch_mutex_t *port_lock = NULL;
 static void do_flush(switch_rtp_t *rtp_session);
 
@@ -1244,13 +1243,7 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_set_start_port(switch_port_t port)
 		if (port_lock) {
 			switch_mutex_lock(port_lock);
 		}
-		if (NEXT_PORT == START_PORT) {
-			NEXT_PORT = port;
-		}
 		START_PORT = port;
-		if (NEXT_PORT < START_PORT) {
-			NEXT_PORT = START_PORT;
-		}
 		if (port_lock) {
 			switch_mutex_unlock(port_lock);
 		}
@@ -1265,9 +1258,6 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_set_end_port(switch_port_t port)
 			switch_mutex_lock(port_lock);
 		}
 		END_PORT = port;
-		if (NEXT_PORT > END_PORT) {
-			NEXT_PORT = START_PORT;
-		}
 		if (port_lock) {
 			switch_mutex_unlock(port_lock);
 		}
