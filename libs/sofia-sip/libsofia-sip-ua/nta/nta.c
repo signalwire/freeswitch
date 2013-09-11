@@ -3818,8 +3818,10 @@ int nta_msg_ackbye(nta_agent_t *agent, msg_t *msg)
   return 0;
 
  err:
-  msg_destroy(amsg);
+
   msg_destroy(bmsg);
+  msg_destroy(amsg);
+
   return -1;
 }
 
