@@ -1639,7 +1639,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 		write_fd = NULL;
 		if ((fd = open(new_file, O_RDONLY, 0)) > -1) {
 			if ((xml = switch_xml_parse_fd(fd))) {
-				if (strcmp(file, SWITCH_GLOBAL_filenames.conf_name)) {
+				if (strcmp(abs, SWITCH_GLOBAL_filenames.conf_name)) {
 					xml->free_path = new_file;
 					new_file = NULL;
 				}
