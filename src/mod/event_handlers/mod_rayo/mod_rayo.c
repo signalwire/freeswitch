@@ -50,7 +50,7 @@ SWITCH_MODULE_DEFINITION(mod_rayo, mod_rayo_load, mod_rayo_shutdown, NULL);
 #define RAYO_END_REASON_REJECT "rejected"
 #define RAYO_END_REASON_ERROR "error"
 
-#define RAYO_SIP_REQUEST_HEADER "sip_r_"
+#define RAYO_SIP_REQUEST_HEADER "sip_h_"
 #define RAYO_SIP_RESPONSE_HEADER "sip_rh_"
 #define RAYO_SIP_PROVISIONAL_RESPONSE_HEADER "sip_ph_"
 #define RAYO_SIP_BYE_RESPONSE_HEADER "sip_bye_h_"
@@ -909,9 +909,9 @@ static void rayo_call_cleanup(struct rayo_actor *actor)
 	/* add signaling headers */
 	{
 		switch_event_header_t *header;
-		/* get all variables prefixed with sip_r_ */
+		/* get all variables prefixed with sip_h_ */
 		for (header = event->headers; header; header = header->next) {
-			if (!strncmp("variable_sip_r_", header->name, 15)) {
+			if (!strncmp("variable_sip_h_", header->name, 15)) {
 				add_header(end, header->name + 15, header->value);
 			}
 		}
@@ -2857,9 +2857,9 @@ static iks *rayo_create_offer(struct rayo_call *call, switch_core_session_t *ses
 		add_header(offer, "to", switch_channel_get_variable(channel, "sip_full_to"));
 		add_header(offer, "via", switch_channel_get_variable(channel, "sip_full_via"));
 
-		/* get all variables prefixed with sip_r_ */
+		/* get all variables prefixed with sip_h_ */
 		for (var = switch_channel_variable_first(channel); var; var = var->next) {
-			if (!strncmp("sip_r_", var->name, 6)) {
+			if (!strncmp("sip_h_", var->name, 6)) {
 				add_header(offer, var->name + 6, var->value);
 			}
 		}
