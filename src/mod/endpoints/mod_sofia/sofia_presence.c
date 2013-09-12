@@ -3598,6 +3598,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		contact_user = sip->sip_contact->m_url->url_user;
 	}
 
+	full_agent = sip_header_as_string(nh->nh_home, (void *) sip->sip_user_agent);
+
 	//tl_gets(tags, NUTAG_SUBSTATE_REF(sub_state), TAG_END());
 
 	//sip->sip_subscription_state->ss_substate
@@ -3785,7 +3787,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 			sub_state = nua_substate_active;
 			
-			full_agent = sip_header_as_string(nh->nh_home, (void *) sip->sip_user_agent);
 			while (ap) {
 				switch_snprintf(accept + strlen(accept), sizeof(accept) - strlen(accept), "%s%s ", ap->ac_type, ap->ac_next ? "," : "");
 				ap = ap->ac_next;
@@ -3925,10 +3926,16 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			if (mod_sofia_globals.debug_presence > 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending NOTIFY with Expires [0] and State [%s]\n", sstr);
 			}
-			nua_notify(nh,
-					   SIPTAG_EXPIRES_STR("0"),
-					   SIPTAG_SUBSCRIPTION_STATE_STR(sstr),
-					   TAG_END());
+
+			if (zstr(full_agent) || !switch_stristr("zoiper", full_agent)) {
+				/* supress endless loop bug with zoiper */
+				nua_notify(nh,
+						   SIPTAG_EXPIRES_STR("0"),
+						   SIPTAG_SUBSCRIPTION_STATE_STR(sstr),
+						   TAG_END());
+			}
+
+
 		}
 	}
 
