@@ -20,8 +20,10 @@
 
 	<!-- map interpret-as to say macros -->
 	<macros>
-		<macro name="cardinal" method="pronounced" type="number"/>
-		<macro name="characters" method="pronounced" type="name_spelled"/>
+		<macro name="ordinal" type="number" method="counted"/>
+		<macro name="cardinal" type="number" method="pronounced"/>
+		<macro name="characters" type="name_spelled" method="pronounced"/>
+		<macro name="telephone" type="telephone_number" method="pronounced"/>
 	</macros>
 
 </configuration>
