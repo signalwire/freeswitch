@@ -2538,6 +2538,8 @@ SWITCH_DECLARE(void) switch_say_file(switch_say_file_handle_t *sh, const char *f
 	if ((ret = switch_vsnprintf(buf, sizeof(buf), fmt, ap)) > 0) {
 		if (!sh->cnt++) {
 			sh->stream.write_function(&sh->stream, "file_string://%s.%s", buf, sh->ext);
+		} else if (strstr(buf, "://")) {
+			sh->stream.write_function(&sh->stream, "!%s", buf);
 		} else {
 			sh->stream.write_function(&sh->stream, "!%s.%s", buf, sh->ext);
 		}
