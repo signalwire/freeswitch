@@ -330,7 +330,9 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 	if (!cng_type) {
 		//switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d CN/8000\n", cng_type);
 		//} else {
-		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=silenceSupp:off - - - -\n");
+		if (sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG)) {
+			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=silenceSupp:off - - - -\n");
+		}
 	}
 
 	if (append_audio) {
@@ -542,13 +544,14 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 			&& tech_pvt->te > 95) {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", tech_pvt->te, tech_pvt->te);
 		}
-		if (!sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) && tech_pvt->cng_pt && use_cng) {
+
+		if (sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG)) {
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=silenceSupp:off - - - -\n");
+		} else if (tech_pvt->cng_pt && use_cng) {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d CN/8000\n", tech_pvt->cng_pt);
 			if (!tech_pvt->rm_encoding) {
 				tech_pvt->cng_pt = 0;
 			}
-		} else {
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=silenceSupp:off - - - -\n");
 		}
 
 		if (append_audio) {
