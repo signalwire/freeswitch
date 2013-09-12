@@ -2466,6 +2466,11 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		}
 	}
 
+	if (sip->sip_via) {
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_via_protocol", sofia_glue_transport2str(sofia_glue_via2transport(sip->sip_via)));
+	}
+
+
 	if (sip->sip_from) {
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_from_user", sip->sip_from->a_url->url_user);
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_from_host", sip->sip_from->a_url->url_host);
