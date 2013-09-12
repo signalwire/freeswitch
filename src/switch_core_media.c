@@ -5095,7 +5095,9 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	if (!cng_type) {
 		//switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d CN/8000\n", cng_type);
 		//} else {
-		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=silenceSupp:off - - - -\n");
+		if (switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG)) { 
+			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=silenceSupp:off - - - -\n");
+		}
 	}
 
 	if (append_audio) {
@@ -5478,13 +5480,15 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", smh->mparams->te, smh->mparams->te);
 			}
 		}
-		if (!switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG) && smh->mparams->cng_pt && use_cng) {
+
+		if (switch_media_handle_test_media_flag(smh, SCMF_SUPPRESS_CNG)) {
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=silenceSupp:off - - - -\n");
+		} else if (smh->mparams->cng_pt && use_cng) {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d CN/8000\n", smh->mparams->cng_pt);
+
 			if (!a_engine->codec_params.rm_encoding) {
 				smh->mparams->cng_pt = 0;
 			}
-		} else {
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=silenceSupp:off - - - -\n");
 		}
 
 		if (append_audio) {
