@@ -3344,7 +3344,17 @@ SWITCH_DECLARE(void) switch_rtp_break(switch_rtp_t *rtp_session)
 	}
 
 	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-		return;
+		int ret = 1;
+
+		if (rtp_session->session) {
+			switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
+			if (switch_channel_test_flag(channel, CF_VIDEO_BREAK)) {
+				switch_channel_clear_flag(channel, CF_VIDEO_BREAK);
+				ret = 0;
+			}
+		}
+
+		if (ret) return;
 	}
 
 	switch_mutex_lock(rtp_session->flag_mutex);
@@ -4612,6 +4622,13 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if (rtp_session->dtmf_data.out_digit_dur > 0) {
 				return_cng_frame();
 			}
+
+			if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && rtp_session->flags[SWITCH_RTP_FLAG_BREAK]) {
+				switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_BREAK);
+				bytes = 0;
+                return_cng_frame();
+			}
+
 		}
 		
 		if (poll_status == SWITCH_STATUS_SUCCESS) {
