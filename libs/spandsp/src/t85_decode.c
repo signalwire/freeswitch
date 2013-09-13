@@ -267,14 +267,45 @@ static int finish_sde(t85_decode_state_t *s)
 
 SPAN_DECLARE(bool) t85_analyse_header(uint32_t *width, uint32_t *length, const uint8_t data[], size_t len)
 {
+    uint32_t i;
+    uint32_t skip;
+
     if (len < 20)
+    {
+        *width = 0;
+        *length = 0;
         return false;
+    }
     *width = pack_32(&data[6]);
     *length = pack_32(&data[10]);
     if ((data[19] & T85_VLENGTH))
     {
-        /* TODO: scan for a true length, if the initial one just says 0xFFFFFFFF */
         /* There should be an image length sequence terminating the image later on. */
+        /* TODO: scan for a true length, instead of this fudge */
+        for (i = 20;  i < len - 6;  i++)
+        {
+            if (data[i] == T82_ESC)
+            {
+                if (data[i + 1] == T82_COMMENT)
+                {
+                    skip = pack_32(&data[2]);
+                    if ((skip + 6) > (len - i))
+                        break;
+                    i += (6 + skip - 1);
+                }
+                else if (data[i + 1] == T82_ATMOVE)
+                {
+                    i += (8 - 1);
+                }
+                else if (data[i + 1] == T82_NEWLEN)
+                {
+                    /* We are only allow to have one of these, so if we find one
+                       we should not look any further. */
+                    *length = pack_32(&data[i + 2]);
+                    break;
+                }
+            }
+        }
     }
     return true;
 }
