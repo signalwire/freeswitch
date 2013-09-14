@@ -2192,7 +2192,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		if (rh->native) {
 			switch_core_file_close(&rh->in_fh);
 			switch_core_file_close(&rh->out_fh);
-		} else
+		} else {
 			switch_core_file_close(fh);
 		}
 		return status;
