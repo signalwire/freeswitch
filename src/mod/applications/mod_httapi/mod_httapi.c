@@ -2343,7 +2343,7 @@ static char *load_cache_data(http_file_context_t *context, const char *url)
 		if ((p = strchr(dext, '?'))) {
 			*p = '\0';
 			ext = dext;
-		} else free(dext);
+		} else switch_safe_free(dext);
 	}
 
 	context->cache_file_base = switch_core_sprintf(context->pool, "%s%s%s", globals.cache_path, SWITCH_PATH_SEPARATOR, digest);
