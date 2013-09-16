@@ -9034,6 +9034,10 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		switch_assert(sql);
 
 		sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+
+		if ( full_contact ) {
+			su_free(nua_handle_home(tech_pvt->nh), full_contact);
+		}
 	}
 
 	if (is_nat) {

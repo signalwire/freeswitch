@@ -346,6 +346,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "make_math_fixed_tables", "l
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "make_cielab_luts", "libs\spandsp\src\msvc\make_cielab_luts.2010.vcxproj", "{85F0CF8C-C7AB-48F6-BA19-CC94CF87F981}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "make_t43_gray_code_tables", "libs\spandsp\src\msvc\make_t43_gray_code_tables.2010.vcxproj", "{EDDB8AB9-C53E-44C0-A620-0E86C2CBD5D5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		All|Win32 = All|Win32
@@ -2086,6 +2088,15 @@ Global
 		{85F0CF8C-C7AB-48F6-BA19-CC94CF87F981}.Release|Win32.Build.0 = All|Win32
 		{85F0CF8C-C7AB-48F6-BA19-CC94CF87F981}.Release|x64.ActiveCfg = All|Win32
 		{85F0CF8C-C7AB-48F6-BA19-CC94CF87F981}.Release|x64.Build.0 = All|Win32
+		{EDDB8AB9-C53E-44C0-A620-0E86C2CBD5D5}.All|Win32.ActiveCfg = All|Win32
+		{EDDB8AB9-C53E-44C0-A620-0E86C2CBD5D5}.All|Win32.Build.0 = All|Win32
+		{EDDB8AB9-C53E-44C0-A620-0E86C2CBD5D5}.All|x64.ActiveCfg = All|Win32
+		{EDDB8AB9-C53E-44C0-A620-0E86C2CBD5D5}.Debug|Win32.ActiveCfg = All|Win32
+		{EDDB8AB9-C53E-44C0-A620-0E86C2CBD5D5}.Debug|Win32.Build.0 = All|Win32
+		{EDDB8AB9-C53E-44C0-A620-0E86C2CBD5D5}.Debug|x64.ActiveCfg = All|Win32
+		{EDDB8AB9-C53E-44C0-A620-0E86C2CBD5D5}.Release|Win32.ActiveCfg = All|Win32
+		{EDDB8AB9-C53E-44C0-A620-0E86C2CBD5D5}.Release|Win32.Build.0 = All|Win32
+		{EDDB8AB9-C53E-44C0-A620-0E86C2CBD5D5}.Release|x64.ActiveCfg = All|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
