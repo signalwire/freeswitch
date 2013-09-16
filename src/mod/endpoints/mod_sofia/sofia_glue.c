@@ -3437,8 +3437,6 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		const char *rport = NULL;
 		switch_port_t remote_rtcp_port = 0;
 
-		
-
 		if ((rport = switch_channel_get_variable(tech_pvt->channel, "sip_remote_audio_rtcp_port"))) {
 			remote_rtcp_port = (switch_port_t)atoi(rport);
 		}
@@ -3449,6 +3447,11 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "AUDIO RTP CHANGING DEST TO: [%s:%d]\n",
 							  tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
+
+			if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD) && strcmp(tech_pvt->remote_sdp_audio_ip, "0.0.0.0")) {
+				sofia_glue_toggle_hold(tech_pvt, 0);
+			}
+
 			if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) &&
 				!((val = switch_channel_get_variable(tech_pvt->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
 				/* Reactivate the NAT buster flag. */
