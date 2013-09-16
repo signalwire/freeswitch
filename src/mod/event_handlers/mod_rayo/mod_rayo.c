@@ -3309,7 +3309,7 @@ static switch_status_t do_config(switch_memory_pool_t *pool, const char *config_
 				const char *alias_name = switch_xml_attr_soft(alias, "name");
 				const char *alias_target = switch_xml_attr_soft(alias, "target");
 				if (!zstr(alias_name) && !zstr(alias->txt)) {
-					rayo_add_cmd_alias(alias_name, alias_target, alias->txt);
+					rayo_add_cmd_alias(alias_name, switch_core_strdup(pool, alias_target), switch_core_strdup(pool, alias->txt));
 				}
 			}
 		}
