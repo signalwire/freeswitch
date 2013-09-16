@@ -4138,6 +4138,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "AUDIO RTP CHANGING DEST TO: [%s:%d]\n",
 							  a_engine->codec_params.remote_sdp_ip, a_engine->codec_params.remote_sdp_port);
+
+			if (switch_channel_test_flag(session->channel, CF_PROTO_HOLD) && strcmp(a_engine->codec_params.remote_sdp_ip, "0.0.0.0")) {
+				switch_core_media_toggle_hold(session, 0);
+			}
+
+
 			if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) &&
 				!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val)) &&
 				!switch_channel_test_flag(session->channel, CF_WEBRTC)) {
