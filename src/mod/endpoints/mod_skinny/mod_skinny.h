@@ -125,6 +125,7 @@ struct skinny_profile {
 	char *ext_redial;
 	char *ext_meetme;
 	char *ext_pickup;
+	char *ext_cfwdall;
 	/* db */
 	char *dbname;
 	char *odbc_dsn;
@@ -194,6 +195,7 @@ struct listener {
 	char *ext_redial;
 	char *ext_meetme;
 	char *ext_pickup;
+	char *ext_cfwdall;
 };
 
 typedef struct listener listener_t;
