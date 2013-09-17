@@ -1097,6 +1097,10 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 					if (!listener->ext_pickup || strcmp(value,listener->ext_pickup)) {
 						listener->ext_pickup = switch_core_strdup(profile->pool, value);
 					}
+				} else if (!strcasecmp(name, "ext-cfwdall")) {
+					if (!listener->ext_cfwdall || strcmp(value,listener->ext_cfwdall)) {
+						listener->ext_cfwdall = switch_core_strdup(profile->pool, value);
+					}
 				}
 			}
 		}
@@ -2000,6 +2004,11 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 			skinny_create_incoming_session(listener, &line_instance, &session);
 			skinny_session_process_dest(session, listener, line_instance, 
 				empty_null2(listener->ext_pickup, listener->profile->ext_pickup), '\0', 0);
+			break;
+		case SOFTKEY_CFWDALL:
+			skinny_create_incoming_session(listener, &line_instance, &session);
+			skinny_session_process_dest(session, listener, line_instance, 
+				empty_null2(listener->ext_cfwdall, listener->profile->ext_cfwdall), '\0', 0);
 			break;
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
