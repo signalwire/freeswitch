@@ -1120,7 +1120,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_stress/Makefile
 		src/mod/applications/mod_hash/Makefile
 		src/mod/codecs/mod_com_g729/Makefile
-		src/mod/endpoints/mod_html5/Makefile
 		src/mod/endpoints/mod_portaudio/Makefile
 		src/mod/endpoints/mod_skinny/Makefile
 		src/mod/endpoints/mod_skypopen/Makefile

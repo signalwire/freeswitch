@@ -395,10 +395,6 @@ Description: mod_h323
  Adds mod_h323.
 Build-Depends: libopenh323-dev | libh323plus-dev, libpt-dev
 
-Module: endpoints/mod_html5
-Description: HTML5 endpoint module
- This module adds support for HTML5 technologies such as WebRTC.
-
 Module: endpoints/mod_khomp
 Description: mod_khomp
  Adds mod_khomp.
