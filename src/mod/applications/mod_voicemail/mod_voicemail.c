@@ -3079,15 +3079,16 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 
 		for (vm_cc_i=0; vm_cc_i<vm_cc_num; vm_cc_i++) {
 			const char *vm_cc_current = vm_cc_list[vm_cc_i];
-			char *cmd = switch_core_session_sprintf(session, "%s %s %s '%s' %s@%s %s",
-													vm_cc_current, file_path, caller_id_number,
-													caller_id_name, myid, domain_name, read_flags);
+			char *cmd = switch_mprintf("%s %s %s '%s' %s@%s %s",
+									   vm_cc_current, file_path, caller_id_number,
+									   caller_id_name, myid, domain_name, read_flags);
 
 			if (voicemail_inject(cmd, session) == SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s\n", vm_cc_current);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to Carbon Copy to %s\n", vm_cc_current);
 			}
+			switch_safe_free(cmd);
 		}
 
 		switch_safe_free(vm_cc_dup);
