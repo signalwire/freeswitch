@@ -24,17 +24,27 @@
 #include <errno.h>
 //#include "sha1.h"
 #include <openssl/ssl.h>
-#include <sofia-sip/su_types.h>
+
+#ifdef _MSC_VER
+#ifdef _WIN64
+#define WS_SSIZE_T __int64
+#elif _MSC_VER >= 1400
+#define WS_SSIZE_T __int32 __w64
+#else
+#define WS_SSIZE_T __int32
+#endif
+typedef WS_SSIZE_T ssize_t
+#endif
 
 
-struct globals_s {
+struct ws_globals_s {
 	const SSL_METHOD *ssl_method;
 	SSL_CTX *ssl_ctx;
 	char cert[512];
 	char key[512];
 };
 
-extern struct globals_s globals;
+extern struct ws_globals_s ws_globals;
 
 typedef int ws_socket_t;
 #define ws_sock_invalid -1
@@ -61,11 +71,11 @@ typedef struct wsh_s {
 	char buffer[65536];
 	char wbuffer[65536];
 	size_t buflen;
-	issize_t datalen;
-	issize_t wdatalen;
+	ssize_t datalen;
+	ssize_t wdatalen;
 	char *payload;
-	issize_t plen;
-	issize_t rplen;
+	ssize_t plen;
+	ssize_t rplen;
 	SSL *ssl;
 	int handshake;
 	uint8_t down;
@@ -73,16 +83,16 @@ typedef struct wsh_s {
 	uint8_t close_sock;
 } wsh_t;
 
-issize_t ws_send_buf(wsh_t *wsh, ws_opcode_t oc);
-issize_t ws_feed_buf(wsh_t *wsh, void *data, size_t bytes);
+ssize_t ws_send_buf(wsh_t *wsh, ws_opcode_t oc);
+ssize_t ws_feed_buf(wsh_t *wsh, void *data, size_t bytes);
 
 
-issize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes);
-issize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes);
-issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data);
-issize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes);
+ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes);
+ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes);
+ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data);
+ssize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes);
 int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock);
-issize_t ws_close(wsh_t *wsh, int16_t reason);
+ssize_t ws_close(wsh_t *wsh, int16_t reason);
 void ws_destroy(wsh_t *wsh);
 void init_ssl(void);
 void deinit_ssl(void);

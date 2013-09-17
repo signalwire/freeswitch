@@ -215,8 +215,13 @@ SWITCH_DECLARE(void) IVRMenu::execute(CoreSession *session, const char *name)
 	switch_ivr_menu_execute(session->session, menu, (char *)name, NULL);
 }
 
-SWITCH_DECLARE_CONSTRUCTOR API::API()
+SWITCH_DECLARE_CONSTRUCTOR API::API(CoreSession *s)
 {
+	if (s) {
+		session = s->session;
+	} else {
+		session = NULL;
+	}
 	last_data = NULL;
 }
 
@@ -231,7 +236,7 @@ SWITCH_DECLARE(const char *) API::execute(const char *cmd, const char *arg)
 	switch_stream_handle_t stream = { 0 };
 	this_check("");
 	SWITCH_STANDARD_STREAM(stream);
-	switch_api_execute(cmd, arg, NULL, &stream);
+	switch_api_execute(cmd, arg, session, &stream);
 	switch_safe_free(last_data);
 	last_data = (char *) stream.data;
 	return last_data;
@@ -267,7 +272,7 @@ SWITCH_DECLARE(const char *) API::executeString(const char *cmd)
 	switch_safe_free(last_data);
 	
 	SWITCH_STANDARD_STREAM(stream);
-	switch_api_execute(mycmd, arg, NULL, &stream);
+	switch_api_execute(mycmd, arg, session, &stream);
 	last_data = (char *) stream.data;
 	switch_safe_free(mycmd);
 	return last_data;

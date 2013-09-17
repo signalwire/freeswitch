@@ -6639,6 +6639,29 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_thread_data_t_alloc_get(void * jarg1) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_thread_data_t_pool_set(void * jarg1, void * jarg2) {
+  switch_thread_data_t *arg1 = (switch_thread_data_t *) 0 ;
+  switch_memory_pool_t *arg2 = (switch_memory_pool_t *) 0 ;
+  
+  arg1 = (switch_thread_data_t *)jarg1; 
+  arg2 = (switch_memory_pool_t *)jarg2; 
+  if (arg1) (arg1)->pool = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_thread_data_t_pool_get(void * jarg1) {
+  void * jresult ;
+  switch_thread_data_t *arg1 = (switch_thread_data_t *) 0 ;
+  switch_memory_pool_t *result = 0 ;
+  
+  arg1 = (switch_thread_data_t *)jarg1; 
+  result = (switch_memory_pool_t *) ((arg1)->pool);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_thread_data_t() {
   void * jresult ;
   switch_thread_data_t *result = 0 ;
@@ -39944,11 +39967,13 @@ SWIGEXPORT void SWIGSTDCALL CSharp_IvrMenu_Execute(void * jarg1, void * jarg2, c
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_new_Api() {
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_Api(void * jarg1) {
   void * jresult ;
+  CoreSession *arg1 = (CoreSession *) NULL ;
   API *result = 0 ;
   
-  result = (API *)new API();
+  arg1 = (CoreSession *)jarg1; 
+  result = (API *)new API(arg1);
   jresult = (void *)result; 
   return jresult;
 }

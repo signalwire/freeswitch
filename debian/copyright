@@ -1765,7 +1765,6 @@ License: GPL-2+
 Files: src/mod/endpoints/mod_rtmp/rtmp.c
  src/mod/endpoints/mod_rtmp/mod_rtmp.[ch]
  src/mod/endpoints/mod_rtmp/rtmp_sig.c
- src/mod/endpoints/mod_html5/mod_html5.c
  src/mod/endpoints/mod_rtmp/rtmp_tcp.c
 Copyright: 2011-2012, Barracuda Networks Inc.
 License: MPL-1.1

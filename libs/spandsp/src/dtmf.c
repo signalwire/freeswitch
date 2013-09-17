@@ -71,21 +71,24 @@
 #define DTMF_SAMPLES_PER_BLOCK      102
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-#define DTMF_THRESHOLD              10438           /* -42dBm0 */
-#define DTMF_NORMAL_TWIST           6.309f          /* 8dB */
-#define DTMF_REVERSE_TWIST          2.512f          /* 4dB */
-#define DTMF_RELATIVE_PEAK_ROW      6.309f          /* 8dB */
-#define DTMF_RELATIVE_PEAK_COL      6.309f          /* 8dB */
-#define DTMF_TO_TOTAL_ENERGY        83.868f         /* -0.85dB */
-#define DTMF_POWER_OFFSET           68.251f         /* 10*log(256.0*256.0*DTMF_SAMPLES_PER_BLOCK) */
-#else
-#define DTMF_THRESHOLD              171032462.0f    /* -42dBm0 [((DTMF_SAMPLES_PER_BLOCK*32768.0/1.4142)*10^((-42 - DBM0_MAX_SINE_POWER)/20.0))^2] */
-#define DTMF_NORMAL_TWIST           6.309f          /* 8dB [10^(8/10) => 6.309] */
-#define DTMF_REVERSE_TWIST          2.512f          /* 4dB */
-#define DTMF_RELATIVE_PEAK_ROW      6.309f          /* 8dB */
-#define DTMF_RELATIVE_PEAK_COL      6.309f          /* 8dB */
+/* The fixed point version scales the 16 bit signal down by 7 bits, so the Goertzels will fit in a 32 bit word */
+#define FP_SCALE(x)                 ((int16_t) (x/128.0 + ((x >= 0.0)  ?  0.5  :  -0.5)))
+#define DTMF_THRESHOLD              10438           /* -42dBm0 [((DTMF_SAMPLES_PER_BLOCK*32768.0/1.4142)*10^((-42 - DBM0_MAX_SINE_POWER)/20.0)/128.0)^2]*/
+#define DTMF_NORMAL_TWIST           6.309f          /* 8dB [10.0^(8.0/10.0)] */
+#define DTMF_REVERSE_TWIST          2.512f          /* 4dB [10.0^(4.0/10.0)] */
+#define DTMF_RELATIVE_PEAK_ROW      6.309f          /* 8dB [10.0^(8.0/10.0)] */
+#define DTMF_RELATIVE_PEAK_COL      6.309f          /* 8dB [10.0^(8.0/10.0)] */
 #define DTMF_TO_TOTAL_ENERGY        83.868f         /* -0.85dB [DTMF_SAMPLES_PER_BLOCK*10^(-0.85/10.0)] */
-#define DTMF_POWER_OFFSET           110.395f        /* 10*log(32768.0*32768.0*DTMF_SAMPLES_PER_BLOCK) */
+#define DTMF_POWER_OFFSET           68.251f         /* 10*log(((32768.0/128.0)^2)*DTMF_SAMPLES_PER_BLOCK) */
+#else
+#define FP_SCALE(x)                 (x)
+#define DTMF_THRESHOLD              171032462.0f    /* -42dBm0 [((DTMF_SAMPLES_PER_BLOCK*32768.0/1.4142)*10^((-42 - DBM0_MAX_SINE_POWER)/20.0))^2] */
+#define DTMF_NORMAL_TWIST           6.309f          /* 8dB [10.0^(8.0/10.0)] */
+#define DTMF_REVERSE_TWIST          2.512f          /* 4dB [10.0^(4.0/10.0)] */
+#define DTMF_RELATIVE_PEAK_ROW      6.309f          /* 8dB [10.0^(8.0/10.0)] */
+#define DTMF_RELATIVE_PEAK_COL      6.309f          /* 8dB [10.0^(8.0/10.0)] */
+#define DTMF_TO_TOTAL_ENERGY        83.868f         /* -0.85dB [DTMF_SAMPLES_PER_BLOCK*10^(-0.85/10.0)] */
+#define DTMF_POWER_OFFSET           110.395f        /* 10*log((32768.0^2)*DTMF_SAMPLES_PER_BLOCK) */
 #endif
 
 static const float dtmf_row[] =
@@ -303,11 +306,7 @@ SPAN_DECLARE(int) dtmf_rx(dtmf_rx_state_t *s, const int16_t amp[], int samples)
             s->in_digit = hit;
         }
         s->last_hit = hit;
-#if defined(SPANDSP_USE_FIXED_POINT)
-        s->energy = 0;
-#else
-        s->energy = 0.0f;
-#endif
+        s->energy = FP_SCALE(0.0f);
         s->current_sample = 0;
     }
     if (s->current_digits  &&  s->digits_callback)
@@ -330,11 +329,7 @@ SPAN_DECLARE(int) dtmf_rx_fillin(dtmf_rx_state_t *s, int samples)
         goertzel_reset(&s->row_out[i]);
         goertzel_reset(&s->col_out[i]);
     }
-#if defined(SPANDSP_USE_FIXED_POINT)
-    s->energy = 0;
-#else
-    s->energy = 0.0f;
-#endif
+    s->energy = FP_SCALE(0.0f);
     s->current_sample = 0;
     /* Don't update the hit detection. Pretend it never happened. */
     /* TODO: Surely we can be cleverer than this. */
@@ -399,7 +394,11 @@ SPAN_DECLARE(void) dtmf_rx_parms(dtmf_rx_state_t *s,
         s->reverse_twist = powf(10.0f, reverse_twist/10.0f);
     if (threshold > -99)
     {
+#if defined(SPANDSP_USE_FIXED_POINT)
+        x = (DTMF_SAMPLES_PER_BLOCK*32768.0f/(128.0f*1.4142f))*powf(10.0f, (threshold - DBM0_MAX_SINE_POWER)/20.0f);
+#else
         x = (DTMF_SAMPLES_PER_BLOCK*32768.0f/1.4142f)*powf(10.0f, (threshold - DBM0_MAX_SINE_POWER)/20.0f);
+#endif
         s->threshold = x*x;
     }
 }
@@ -451,11 +450,7 @@ SPAN_DECLARE(dtmf_rx_state_t *) dtmf_rx_init(dtmf_rx_state_t *s,
         goertzel_init(&s->row_out[i], &dtmf_detect_row[i]);
         goertzel_init(&s->col_out[i], &dtmf_detect_col[i]);
     }
-#if defined(SPANDSP_USE_FIXED_POINT)
-    s->energy = 0;
-#else
-    s->energy = 0.0f;
-#endif
+    s->energy = FP_SCALE(0.0f);
     s->current_sample = 0;
     s->lost_digits = 0;
     s->current_digits = 0;

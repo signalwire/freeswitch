@@ -675,11 +675,11 @@ static void mitel_cm7291_side_2_and_bellcore_tests(void)
     {
         if (hit_types[i])
         {
-            printf("    Digit %c had %d false hits\n", i, hit_types[i]);
+            printf("    Digit %c had %d false hits.\n", i, hit_types[i]);
             j += hit_types[i];
         }
     }
-    printf("    %d hits in total\n", j);
+    printf("    %d false hits in total.\n", j);
     if (j > 470)
     {
         printf("    Failed\n");

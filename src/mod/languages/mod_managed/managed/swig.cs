@@ -39,7 +39,7 @@ public class Api : IDisposable {
     }
   }
 
-  public Api() : this(freeswitchPINVOKE.new_Api(), true) {
+  public Api(CoreSession s) : this(freeswitchPINVOKE.new_Api(CoreSession.getCPtr(s)), true) {
   }
 
   public string Execute(string command, string data) {
@@ -8683,6 +8683,12 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_thread_data_t_alloc_get")]
   public static extern int switch_thread_data_t_alloc_get(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_thread_data_t_pool_set")]
+  public static extern void switch_thread_data_t_pool_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_thread_data_t_pool_get")]
+  public static extern IntPtr switch_thread_data_t_pool_get(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_new_switch_thread_data_t")]
   public static extern IntPtr new_switch_thread_data_t();
 
@@ -16421,7 +16427,7 @@ class freeswitchPINVOKE {
   public static extern void IvrMenu_Execute(HandleRef jarg1, HandleRef jarg2, string jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_new_Api")]
-  public static extern IntPtr new_Api();
+  public static extern IntPtr new_Api(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_delete_Api")]
   public static extern void delete_Api(HandleRef jarg1);
@@ -25895,6 +25901,8 @@ public enum switch_channel_flag_t {
   CF_VIDEO_PASSIVE,
   CF_NOVIDEO,
   CF_VIDEO_ECHO,
+  CF_SLA_INTERCEPT,
+  CF_VIDEO_BREAK,
   CF_FLAG_MAX
 }
 
@@ -27816,6 +27824,9 @@ public enum switch_core_session_message_types_t {
   SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE,
   SWITCH_MESSAGE_INDICATE_STUN_ERROR,
   SWITCH_MESSAGE_INDICATE_MEDIA_RENEG,
+  SWITCH_MESSAGE_ANSWER_EVENT,
+  SWITCH_MESSAGE_PROGRESS_EVENT,
+  SWITCH_MESSAGE_RING_EVENT,
   SWITCH_MESSAGE_INVALID
 }
 
@@ -36347,6 +36358,17 @@ public class switch_thread_data_t : IDisposable {
     } 
     get {
       int ret = freeswitchPINVOKE.switch_thread_data_t_alloc_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_apr_pool_t pool {
+    set {
+      freeswitchPINVOKE.switch_thread_data_t_pool_set(swigCPtr, SWIGTYPE_p_apr_pool_t.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_thread_data_t_pool_get(swigCPtr);
+      SWIGTYPE_p_apr_pool_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_apr_pool_t(cPtr, false);
       return ret;
     } 
   }

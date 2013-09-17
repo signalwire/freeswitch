@@ -107,8 +107,9 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 	   protected:
 		 char *last_data;
 		 char time_buf[64];
+		 switch_core_session_t *session;
 	   public:
-		 SWITCH_DECLARE_CONSTRUCTOR API(void);
+		 SWITCH_DECLARE_CONSTRUCTOR API(CoreSession *s = NULL);
 		 virtual SWITCH_DECLARE_CONSTRUCTOR ~ API();
 		 SWITCH_DECLARE(const char *) execute(const char *command, const char *data = NULL);
 		 SWITCH_DECLARE(const char *) executeString(const char *command);

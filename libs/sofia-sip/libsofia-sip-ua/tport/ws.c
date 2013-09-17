@@ -6,7 +6,7 @@
 #endif
 
 #define SHA1_HASH_SIZE 20
-struct globals_s globals;
+struct ws_globals_s ws_globals;
 
 #ifndef WSS_STANDALONE
 
@@ -83,20 +83,20 @@ void init_ssl(void) {
 
 	OpenSSL_add_all_algorithms();   /* load & register cryptos */
 	SSL_load_error_strings();     /* load all error messages */
-	globals.ssl_method = TLSv1_server_method();   /* create server instance */
-	globals.ssl_ctx = SSL_CTX_new(globals.ssl_method);         /* create context */
-	assert(globals.ssl_ctx);
+	ws_globals.ssl_method = TLSv1_server_method();   /* create server instance */
+	ws_globals.ssl_ctx = SSL_CTX_new(ws_globals.ssl_method);         /* create context */
+	assert(ws_globals.ssl_ctx);
 	
 	/* set the local certificate from CertFile */
-	SSL_CTX_use_certificate_file(globals.ssl_ctx, globals.cert, SSL_FILETYPE_PEM);
+	SSL_CTX_use_certificate_file(ws_globals.ssl_ctx, ws_globals.cert, SSL_FILETYPE_PEM);
 	/* set the private key from KeyFile */
-	SSL_CTX_use_PrivateKey_file(globals.ssl_ctx, globals.key, SSL_FILETYPE_PEM);
+	SSL_CTX_use_PrivateKey_file(ws_globals.ssl_ctx, ws_globals.key, SSL_FILETYPE_PEM);
 	/* verify private key */
-	if ( !SSL_CTX_check_private_key(globals.ssl_ctx) ) {
+	if ( !SSL_CTX_check_private_key(ws_globals.ssl_ctx) ) {
 		abort();
     }
 
-	SSL_CTX_set_cipher_list(globals.ssl_ctx, "HIGH:!DSS:!aNULL@STRENGTH");
+	SSL_CTX_set_cipher_list(ws_globals.ssl_ctx, "HIGH:!DSS:!aNULL@STRENGTH");
 
 	thread_setup();
 }
@@ -228,7 +228,7 @@ int ws_handshake(wsh_t *wsh)
 	unsigned char output[SHA1_HASH_SIZE] = "";
 	char b64[256] = "";
 	char respond[512] = "";
-	issize_t bytes;
+	ssize_t bytes;
 	char *p, *e = 0;
 
 	if (wsh->sock == ws_sock_invalid) {
@@ -304,9 +304,9 @@ int ws_handshake(wsh_t *wsh)
 
 }
 
-issize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
+ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 {
-	issize_t r;
+	ssize_t r;
 	int x = 0;
 
 	if (wsh->ssl) {
@@ -335,11 +335,11 @@ issize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 	if (x >= 100) {
 		r = -1;
 	}
-	
+
 	return r;
 }
 
-issize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
+ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 {
 	size_t r;
 
@@ -415,7 +415,7 @@ int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock)
 	wsh->sock = sock;
 
 	if (!ssl_ctx) {
-		ssl_ctx = globals.ssl_ctx;
+		ssl_ctx = ws_globals.ssl_ctx;
 	}
 
 	if (close_sock) {
@@ -510,7 +510,7 @@ void ws_destroy(wsh_t *wsh)
 	}
 }
 
-issize_t ws_close(wsh_t *wsh, int16_t reason) 
+ssize_t ws_close(wsh_t *wsh, int16_t reason) 
 {
 	
 	if (wsh->down) {
@@ -540,10 +540,10 @@ issize_t ws_close(wsh_t *wsh, int16_t reason)
 	
 }
 
-issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
+ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 {
 	
-	issize_t need = 2;
+	ssize_t need = 2;
 	char *maskp;
 
  again:
@@ -559,8 +559,8 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 		return ws_close(wsh, WS_PROTO_ERR);
 	}
 
-	if ((wsh->datalen = ws_raw_read(wsh, wsh->buffer, 14)) < need) {
-		if ((wsh->datalen += ws_raw_read(wsh, wsh->buffer + wsh->datalen, 14 - wsh->datalen)) < need) {
+	if ((wsh->datalen = ws_raw_read(wsh, wsh->buffer, 9)) < need) {
+		if ((wsh->datalen += ws_raw_read(wsh, wsh->buffer + wsh->datalen, 9 - wsh->datalen)) < need) {
 			/* too small - protocol err */
 			return ws_close(wsh, WS_PROTO_ERR);
 		}
@@ -597,7 +597,7 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 
 			wsh->plen = wsh->buffer[1] & 0x7f;
 			wsh->payload = &wsh->buffer[2];
-			
+
 			if (wsh->plen == 127) {
 				uint64_t *u64;
 
@@ -637,7 +637,13 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 
 			need = (wsh->plen - (wsh->datalen - need));
 
-			if ((need + wsh->datalen) > (issize_t)wsh->buflen) {
+			if (need < 0) {
+				/* invalid read - protocol err .. */
+				*oc = WSOC_CLOSE;
+				return ws_close(wsh, WS_PROTO_ERR);
+			}
+
+			if ((need + wsh->datalen) > (ssize_t)wsh->buflen) {
 				/* too big - Ain't nobody got time fo' dat */
 				*oc = WSOC_CLOSE;
 				return ws_close(wsh, WS_DATA_TOO_BIG);				
@@ -646,7 +652,7 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 			wsh->rplen = wsh->plen - need;
 
 			while(need) {
-				issize_t r = ws_raw_read(wsh, wsh->payload + wsh->rplen, need);
+				ssize_t r = ws_raw_read(wsh, wsh->payload + wsh->rplen, need);
 
 				if (r < 1) {
 					/* invalid read - protocol err .. */
@@ -660,7 +666,7 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 			}
 			
 			if (mask && maskp) {
-				issize_t i;
+				ssize_t i;
 
 				for (i = 0; i < wsh->datalen; i++) {
 					wsh->payload[i] ^= maskp[i % 4];
@@ -693,7 +699,7 @@ issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 	}
 }
 
-issize_t ws_feed_buf(wsh_t *wsh, void *data, size_t bytes)
+ssize_t ws_feed_buf(wsh_t *wsh, void *data, size_t bytes)
 {
 
 	if (bytes + wsh->wdatalen > wsh->buflen) {
@@ -707,9 +713,9 @@ issize_t ws_feed_buf(wsh_t *wsh, void *data, size_t bytes)
 	return bytes;
 }
 
-issize_t ws_send_buf(wsh_t *wsh, ws_opcode_t oc)
+ssize_t ws_send_buf(wsh_t *wsh, ws_opcode_t oc)
 {
-	issize_t r = 0;
+	ssize_t r = 0;
 
 	if (!wsh->wdatalen) {
 		return -1;
@@ -723,7 +729,7 @@ issize_t ws_send_buf(wsh_t *wsh, ws_opcode_t oc)
 }
 
 
-issize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes)
+ssize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes)
 {
 	uint8_t hdr[14] = { 0 };
 	size_t hlen = 2;
@@ -757,11 +763,11 @@ issize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes)
 		*u64 = htonl(bytes);
 	}
 
-	if (ws_raw_write(wsh, (void *) &hdr[0], hlen) != (issize_t)hlen) {
+	if (ws_raw_write(wsh, (void *) &hdr[0], hlen) != (ssize_t)hlen) {
 		return -1;
 	}
 
-	if (ws_raw_write(wsh, data, bytes) != (issize_t)bytes) {
+	if (ws_raw_write(wsh, data, bytes) != (ssize_t)bytes) {
 		return -2;
 	}
 	

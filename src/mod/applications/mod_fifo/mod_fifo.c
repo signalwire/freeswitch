@@ -1637,7 +1637,6 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
 
 	status = switch_ivr_originate(NULL, &session, &cause, originate_string, h->timeout, NULL, NULL, NULL, NULL, ovars, SOF_NONE, NULL);
-	free(originate_string);
 
 	if (status != SWITCH_STATUS_SUCCESS) {
 
@@ -1693,6 +1692,10 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
 
   end:
+
+	if ( originate_string ){
+		switch_safe_free(originate_string);
+	}
 
 	switch_event_destroy(&ovars);
 	if (node) {
@@ -4571,6 +4574,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fifo_load)
 	switch_console_set_complete("add fifo count");
 	switch_console_set_complete("add fifo has_outbound");
 	switch_console_set_complete("add fifo importance");
+	switch_console_set_complete("add fifo reparse");
 	switch_console_set_complete("add fifo_check_bridge ::console::list_uuid");
 
 	start_node_thread(globals.pool);

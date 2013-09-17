@@ -905,12 +905,11 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
         tune_equalizer(s, &z, target);
         if (++s->training_count >= V17_TRAINING_SEG_2_LEN - 48)
         {
+            s->training_error = FP_SCALE(0.0f);
 #if defined(SPANDSP_USE_FIXED_POINTx)
-            s->training_error = 0;
             s->carrier_track_i = 100;
             s->carrier_track_p = 500000;
 #else
-            s->training_error = 0.0f;
             s->carrier_track_i = 100.0f;
             s->carrier_track_p = 500000.0f;
 #endif

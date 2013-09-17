@@ -36,7 +36,6 @@
 /codecs/mod_vp8/Makefile
 /dialplans/mod_dialplan_asterisk/Makefile
 /dialplans/mod_dialplan_xml/Makefile
-/endpoints/mod_html5/mod_html5.log
 /endpoints/mod_portaudio/Makefile
 /endpoints/mod_portaudio/Makefile.in
 /endpoints/mod_portaudio/mod_portaudio.log
@@ -49,8 +48,6 @@
 /endpoints/mod_sofia/Makefile
 /endpoints/mod_sofia/Makefile.in
 /endpoints/mod_sofia/mod_sofia.log
-/endpoints/mod_html5/Makefile
-/endpoints/mod_html5/Makefile.in
 /event_handlers/mod_erlang_event/Makefile
 /event_handlers/mod_event_socket/Makefile
 /formats/mod_native_file/Makefile

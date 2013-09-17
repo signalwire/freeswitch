@@ -498,6 +498,29 @@ static switch_status_t say_ip(switch_say_file_handle_t *sh,
 }
 
 
+static switch_status_t say_telephone_number(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args)
+{
+	int silence = 0;
+	char *p;
+
+	for (p = tosay; !zstr(p); p++) {
+		int a = tolower((int) *p);
+		if (a >= '0' && a <= '9') {
+			switch_say_file(sh, "digits/%c", a);
+			silence = 0;
+		} else if (a == '+' || (a >= 'a' && a <= 'z')) {
+			switch_say_file(sh, "ascii/%d", a);
+			silence = 0;
+		} else if (!silence) {
+			switch_say_file(sh, "silence_stream://100");
+			silence = 1;
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 static switch_status_t say_spell(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args)
 {
 	char *p;
@@ -546,6 +569,9 @@ static switch_new_say_callback_t choose_callback(switch_say_args_t *say_args)
 		break;
 	case SST_CURRENCY:
 		say_cb = en_say_money;
+		break;
+	case SST_TELEPHONE_NUMBER:
+		say_cb = say_telephone_number;
 		break;
 	default:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown Say type=[%d]\n", say_args->type);

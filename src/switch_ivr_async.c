@@ -2189,7 +2189,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	if ((status = switch_core_media_bug_add(session, "session_record", file,
 											record_callback, rh, to, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error adding media bug for file %s\n", file);
-		switch_core_file_close(fh);
+		if (rh->native) {
+			switch_core_file_close(&rh->in_fh);
+			switch_core_file_close(&rh->out_fh);
+		} else {
+			switch_core_file_close(fh);
+		}
 		return status;
 	}
 

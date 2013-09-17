@@ -1639,8 +1639,10 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 		write_fd = NULL;
 		if ((fd = open(new_file, O_RDONLY, 0)) > -1) {
 			if ((xml = switch_xml_parse_fd(fd))) {
-				xml->free_path = new_file;
-				new_file = NULL;
+				if (strcmp(abs, SWITCH_GLOBAL_filenames.conf_name)) {
+					xml->free_path = new_file;
+					new_file = NULL;
+				}
 			}
 			close(fd);
 			fd = -1;
@@ -2742,10 +2744,8 @@ SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml)
 	}
 
 	if (xml->free_path) {
-		if (!switch_stristr("freeswitch.xml.fsxml", xml->free_path)) {
-			if (unlink(xml->free_path) != 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", xml->free_path);
-			}
+		if (unlink(xml->free_path) != 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", xml->free_path);
 		}
 		switch_safe_free(xml->free_path);
 	}

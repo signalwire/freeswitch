@@ -730,7 +730,7 @@ SWITCH_DECLARE(void) switch_channel_perform_presence(switch_channel_t *channel, 
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 
 
-		if (!switch_channel_up_nosig(channel)) {
+		if (!strcasecmp(status, "idle") || !switch_channel_up_nosig(channel)) {
 			call_info_state = "idle";
 		} else if (!strcasecmp(status, "hold-private")) {
 			call_info_state = "held-private";
@@ -740,7 +740,11 @@ SWITCH_DECLARE(void) switch_channel_perform_presence(switch_channel_t *channel, 
 			if (channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND) {
 				call_info_state = "progressing";
 			} else {
-				call_info_state = "alerting";
+				if (switch_channel_test_flag(channel, CF_SLA_INTERCEPT)) {
+					call_info_state = "idle";
+				} else {
+					call_info_state = "alerting";
+				}
 			}
 		}
 		
@@ -3140,6 +3144,16 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 	return channel->state;
 }
 
+static switch_status_t send_ind(switch_channel_t *channel, switch_core_session_message_types_t msg_id, const char *file, const char *func, int line)
+{
+	switch_core_session_message_t msg = { 0 };
+
+	msg.message_id = msg_id;
+	msg.from = channel->name;
+	return switch_core_session_perform_receive_message(channel->session, &msg, file, func, line);
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready_value(switch_channel_t *channel, 
 																			 switch_ring_ready_t rv,
 																			 const char *file, const char *func, int line)
@@ -3178,6 +3192,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready_value(swi
 		switch_channel_api_on(channel, SWITCH_CHANNEL_API_ON_RING_VARIABLE);
 
 		switch_channel_set_callstate(channel, CCS_RINGING);
+
+		send_ind(channel, SWITCH_MESSAGE_RING_EVENT, file, func, line);
 
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -3314,6 +3330,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 		}
 
 		switch_channel_set_callstate(channel, CCS_EARLY);
+
+		send_ind(channel, SWITCH_MESSAGE_PROGRESS_EVENT, file, func, line);
 
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -3593,6 +3611,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 	switch_core_recovery_track(channel->session);
 
 	switch_channel_set_callstate(channel, CCS_ACTIVE);
+
+	send_ind(channel, SWITCH_MESSAGE_ANSWER_EVENT, file, func, line);
+
 
 	return SWITCH_STATUS_SUCCESS;
 }

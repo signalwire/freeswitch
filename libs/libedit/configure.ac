@@ -27,9 +27,16 @@ AC_PROG_LN_S
 AC_PROG_AWK
 EL_MANTYPE
 
-AC_CHECK_LIB(curses, tgetent,,
-   [AC_CHECK_LIB(ncurses, tgetent,,
-      [AC_MSG_ERROR([libtermcap, libcurses or libncurses are required!])] )] )
+AC_CHECK_LIB(tinfo, tgetent, [have_libtinfo="yes"], [have_libtinfo="no"])
+if test "$have_libtinfo" == "yes" ; then
+   TINFO_LIBS="-ltinfo"
+else
+   TINFO_LIBS=""
+   AC_CHECK_LIB(ncurses, tgetent,,
+      [AC_CHECK_LIB(curses, tgetent,,
+         [AC_MSG_ERROR([libtermcap, libcurses or libncurses are required!])] )] )
+fi
+AC_SUBST(TINFO_LIBS)
 
 # Checks for header files.
 AC_FUNC_ALLOCA

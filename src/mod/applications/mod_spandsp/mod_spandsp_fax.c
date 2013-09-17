@@ -1089,7 +1089,9 @@ static t38_mode_t negotiate_t38(pvt_t *pvt)
 		t38_options->T38FaxTranscodingMMR = 0;
 		t38_options->T38FaxTranscodingJBIG = 0;
 		t38_options->T38FaxRateManagement = "transferredTCF";
-		t38_options->T38FaxMaxBuffer = 2000;
+        if (!t38_options->T38FaxMaxBuffer) {
+            t38_options->T38FaxMaxBuffer = 2000;
+        }
 		t38_options->T38FaxMaxDatagram = LOCAL_FAX_MAX_DATAGRAM;
 		if (!zstr(t38_options->T38FaxUdpEC) &&
 				(strcasecmp(t38_options->T38FaxUdpEC, "t38UDPRedundancy") == 0 ||
