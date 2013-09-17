@@ -454,7 +454,8 @@ static iks *prompt_component_handle_output_complete(struct rayo_actor *prompt, s
 			iks_delete(PROMPT_COMPONENT(prompt)->iq);
 			break;
 		case PCS_START_INPUT_OUTPUT:
-			PROMPT_COMPONENT(prompt)->state = PCS_INPUT;
+			/* output finished before input started */
+			PROMPT_COMPONENT(prompt)->state = PCS_START_INPUT_TIMERS;
 			break;
 		case PCS_INPUT_OUTPUT:
 			PROMPT_COMPONENT(prompt)->state = PCS_INPUT;
