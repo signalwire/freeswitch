@@ -13,6 +13,7 @@
 #include <sys/socket.h>
 #else
 #pragma warning(disable:4996)
+#include <config.h>
 #endif
 #include <string.h>
 #include <unistd.h>
@@ -26,14 +27,7 @@
 #include <openssl/ssl.h>
 
 #ifdef _MSC_VER
-#ifdef _WIN64
-#define WS_SSIZE_T __int64
-#elif _MSC_VER >= 1400
-#define WS_SSIZE_T __int32 __w64
-#else
-#define WS_SSIZE_T __int32
-#endif
-typedef WS_SSIZE_T ssize_t
+typedef intptr_t ssize_t;
 #endif
 
 
