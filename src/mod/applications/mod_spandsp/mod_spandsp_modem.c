@@ -239,7 +239,6 @@ switch_status_t modem_init(modem_t *modem, modem_control_handler_t control_handl
 	modem->stty = ttyname(modem->slave);
 #else
 #ifdef WIN32
-	modem->slot = 4 + globals.NEXT_ID++; /* need work here we start at COM4 for now*/
 	snprintf(modem->devlink, sizeof(modem->devlink), "COM%d", modem->slot);
 
 	modem->master = CreateFile(modem->devlink,
