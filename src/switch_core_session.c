@@ -721,6 +721,10 @@ static const char *message_names[] = {
 	"AUDIO_DATA",
 	"BLIND_TRANSFER_RESPONSE",
 	"STUN_ERROR",
+	"MEDIA_RENEG",
+	"ANSWER_EVENT",
+	"PROGRESS_EVENT",
+	"RING_EVENT",
 	"INVALID"
 };
 
