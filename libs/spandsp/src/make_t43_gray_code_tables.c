@@ -41,12 +41,13 @@ int main(int argc, char *argv[])
     int j;
     int gray;
     int new_gray;
-    int restore = 0;
+    int restore;
 
     printf("static const int16_t gray_code[4096] =\n{\n");
     for (i = 0;  i < 4096;  i++)
     {
         gray = i & 0x800;
+        restore = i;
         for (j = 10;  j >= 0;  j--)
         {
             if (((i >> (j + 1)) & 1) ^ ((i >> j) & 1))
