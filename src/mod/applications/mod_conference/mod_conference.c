@@ -3185,7 +3185,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 
 	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
-		return NULL;
+		goto end;
 	}
 
 	switch_assert(member != NULL);
@@ -3482,9 +3482,11 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 
 	switch_resample_destroy(&member->read_resampler);
-	switch_clear_flag_locked(member, MFLAG_ITHREAD);
-
 	switch_core_session_rwunlock(session);
+
+ end:
+
+	switch_clear_flag_locked(member, MFLAG_ITHREAD);
 
 	return NULL;
 }
@@ -3583,7 +3585,9 @@ static void launch_conference_loop_input(conference_member_t *member, switch_mem
 	switch_threadattr_create(&thd_attr, pool);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_set_flag_locked(member, MFLAG_ITHREAD);
-	switch_thread_create(&member->input_thread, thd_attr, conference_loop_input, member, pool);
+	if (switch_thread_create(&member->input_thread, thd_attr, conference_loop_input, member, pool) != SWITCH_STATUS_SUCCESS) {
+		switch_clear_flag_locked(member, MFLAG_ITHREAD);
+	}
 }
 
 /* marshall frames from the conference (or file or tts output) to the call leg */
@@ -3919,6 +3923,7 @@ static void conference_loop_output(conference_member_t *member)
 
 	switch_clear_flag_locked(member, MFLAG_RUNNING);
 
+	/* Wait for the input thread to end */
 	if (member->input_thread) {
 		switch_thread_join(&st, member->input_thread);
 	}
@@ -3931,11 +3936,6 @@ static void conference_loop_output(conference_member_t *member)
 	/* if it's an outbound channel, store the release cause in the conference struct, we might need it */
 	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 		member->conference->bridge_hangup_cause = switch_channel_get_cause(channel);
-	}
-
-	/* Wait for the input thread to end */
-	while (switch_test_flag(member, MFLAG_ITHREAD)) {
-		switch_cond_next();
 	}
 }
 
