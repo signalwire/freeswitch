@@ -129,7 +129,8 @@ int main(int argc, char *argv[])
 	}
 	
 	switch_loadable_module_init(SWITCH_FALSE);
-	
+	switch_loadable_module_load_module("", "CORE_PCM_MODULE", SWITCH_TRUE, &err);
+
 	for (i = 0; i < extra_modules_count; i++) {
 		if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) extra_modules[i], SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {
 			fprintf(stderr, "Cannot init %s [%s]\n", extra_modules[i], err);
