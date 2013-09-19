@@ -642,7 +642,7 @@ static switch_status_t fileman_file_open(switch_file_handle_t *handle, const cha
 	switch_mutex_unlock(fileman_globals.mutex);
 
 	context->max_frame_len = (handle->samplerate / 1000 * SWITCH_MAX_INTERVAL);
-	switch_zmalloc(context->abuf, FILE_STARTBYTES);
+	switch_zmalloc(context->abuf, FILE_STARTBYTES * sizeof(*context->abuf));
 
 	if (!context->fh.audio_buffer) {
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(context->uuid), SWITCH_LOG_DEBUG, "Create audio buffer\n");
