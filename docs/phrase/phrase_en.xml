@@ -388,7 +388,7 @@
       <prompt phrase="Your estimated hold time is..." filename="ivr-estimated_hold_time.wav"/>
       <prompt phrase="More than..." filename="ivr-more_than.wav"/>
       <prompt phrase="Less than..." filename="ivr-less_than.wav"/>
-      <prompt phrase="Begin recording." filename="ivr-begin_recording.wav "/>
+      <prompt phrase="Begin recording." filename="ivr-begin_recording.wav"/>
       <prompt phrase="Call forwarding has been cancelled." filename="ivr-call_forwarding_has_been_cancelled.wav"/>
       <prompt phrase="Call forwarding has been set." filename="ivr-call_forwarding_has_been_set.wav"/>
       <prompt phrase="Please enter the phone number." filename="ivr-please_enter_the_phone_number.wav"/>
@@ -443,7 +443,7 @@
       <prompt phrase="Good morning." filename="ivr-good_morning.wav"/>
       <prompt phrase="Good afternoon." filename="ivr-good_afternoon.wav"/>
       <prompt phrase="Good evening." filename="ivr-good_evening.wav"/>
-      <prompt phrase="Thank you." filename="ivr-Thank_you.wav"/>
+      <prompt phrase="Thank you." filename="ivr-thank_you.wav"/>
       <prompt phrase="For..." filename="ivr-for.wav"/>
       <prompt phrase="We are experiencing longer than usual hold times." filename="ivr-longer_than_usual_hold_times.wav"/>
       <prompt phrase="You are the..." filename="ivr-you_are_the.wav"/>
@@ -507,6 +507,7 @@
       <prompt phrase="Unallocated number" filename="ivr-unallocated_number.wav"/>
       <prompt phrase="No user response" filename="ivr-no_user_response.wav"/>
       <prompt phrase="Invalid number format" filename="ivr-invalid_number_format.wav"/>
+      <prompt phrase="Invalid sound prompt." filename="ivr-invalid_sound_prompt.wav"/>
       <prompt phrase="Gateway down" filename="ivr-gateway_down.wav"/>
       <prompt phrase="No route to destination" filename="ivr-no_route_destination.wav"/>
       <prompt phrase="User busy" filename="ivr-user_busy.wav"/>
@@ -598,12 +599,16 @@
       <prompt phrase="...has been added to the blacklist." filename="ivr-has_been_added_to_the_blacklist.wav"/>
       <prompt phrase="...has been removed from the blacklist." filename="ivr-has_been_removed_from_blacklist.wav"/>
       <prompt phrase="Please enter the number to be added to the blacklist." filename="ivr-enter_number_to_add_to_blacklist.wav"/>
+      <prompt phrase="Please enter the number to remove from the blacklist" filename="ivr-enter_number_to_remove_from_blacklist.wav"/>
       <prompt phrase="...is not on the blacklist." filename="ivr-is_not_on_the_blacklist.wav"/>
       <prompt phrase="...is already on the blacklist." filename="ivr-is_already_on_the_blacklist.wav"/>
       <prompt phrase="For other options, press..." filename="ivr-for_other_options.wav"/>
       <prompt phrase="Your caller I.D. information is..." filename="ivr-your_caller_id_information_is.wav"/>
       <prompt phrase="Call screening has been enabled." filename="ivr-call_screening_enabled.wav"/>
       <prompt phrase="Call screening has been disabled." filename="ivr-call_screening_disabled.wav"/>
+      <prompt phrase="Prompt." filename="ivr-prompt.wav"/>
+      <prompt phrase="...enabled." filename="ivr-enabled.wav"/>
+      <prompt phrase="...disabled." filename="ivr-disabled.wav"/>
       <prompt phrase="Ain't nobody got time for that!" filename="ivr-aint_nobody_got_time_for_that.wav"/>
       <prompt phrase="We would support the shit out of you if only you returned our phone calls and emails." filename="ivr-we_would_support.wav"/>
       <prompt phrase="...suck." filename="ivr-suck.wav"/>
