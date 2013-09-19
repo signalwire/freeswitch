@@ -1584,7 +1584,7 @@ static void parse_media_attr(sdp_parser_t *p, char *r, sdp_media_t *m,
 
   if (p->pr_mode_manual)
     ;
-  else if (su_casematch(name, "inactive")) {
+  else if (m->m_port == 0 || su_casematch(name, "inactive")) {
     m->m_mode = sdp_inactive;
     return;
   }
