@@ -1621,8 +1621,16 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		break;
 	case SWITCH_MESSAGE_INDICATE_DISPLAY:
 		{
-			const char *name = msg->string_array_arg[0], *number = msg->string_array_arg[1];
-			const char *call_info = switch_channel_get_variable(channel, "presence_call_info_full");
+			const char *name = NULL, *number = NULL;
+			const char *call_info = NULL;
+
+			if (!sofia_test_pflag(tech_pvt->profile, PFLAG_SEND_DISPLAY_UPDATE)) {
+				goto end_lock;
+			}
+
+			name = msg->string_array_arg[0];
+			number = msg->string_array_arg[1];
+			call_info = switch_channel_get_variable(channel, "presence_call_info_full");
 
 			if (!zstr(name)) {
 				char message[256] = "";
