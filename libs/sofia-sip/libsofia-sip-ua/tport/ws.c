@@ -223,6 +223,7 @@ int ws_handshake(wsh_t *wsh)
 	char key[256] = "";
 	char version[5] = "";
 	char proto[256] = "";
+	char proto_buf[384] = "";
 	char uri[256] = "";
 	char input[256] = "";
 	unsigned char output[SHA1_HASH_SIZE] = "";
@@ -274,7 +275,7 @@ int ws_handshake(wsh_t *wsh)
 	b64encode((unsigned char *)output, SHA1_HASH_SIZE, (unsigned char *)b64, sizeof(b64));
 
 	if (*proto) {
-		snprintf(proto, sizeof(proto), "Sec-WebSocket-Protocol: %s\r\n", proto);
+		snprintf(proto_buf, sizeof(proto_buf), "Sec-WebSocket-Protocol: %s\r\n", proto);
 	}
 
 	snprintf(respond, sizeof(respond), 
@@ -284,7 +285,7 @@ int ws_handshake(wsh_t *wsh)
 			 "Sec-WebSocket-Accept: %s\r\n"
 			 "%s\r\n",
 			 b64,
-			 proto);
+			 proto_buf);
 
 
 	ws_raw_write(wsh, respond, strlen(respond));
