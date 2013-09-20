@@ -2538,8 +2538,8 @@ SWITCH_STANDARD_APP(play_and_get_digits_function)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Transfer on failure = [%s].\n", transfer_on_failure);
 	}
 
-	if (min_digits <= 1) {
-		min_digits = 1;
+	if (min_digits <= 0) {
+		min_digits = 0;
 	}
 
 	if (max_digits < min_digits) {
