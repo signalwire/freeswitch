@@ -292,7 +292,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 			rlen = asis ? fh->pre_buffer_datalen : fh->pre_buffer_datalen / 2;
 
 			if (switch_buffer_inuse(fh->pre_buffer) < rlen * 2) {
-				if ((status = fh->file_interface->file_read(fh, fh->pre_buffer_data, &rlen)) != SWITCH_STATUS_SUCCESS || !rlen) {
+				if ((status = fh->file_interface->file_read(fh, fh->pre_buffer_data, &rlen)) == SWITCH_STATUS_BREAK) {
+					return SWITCH_STATUS_BREAK;
+				}
+				
+
+				if (status != SWITCH_STATUS_SUCCESS || !rlen) {
 					switch_set_flag(fh, SWITCH_FILE_BUFFER_DONE);
 				} else {
 					fh->samples_in += rlen;
@@ -316,7 +321,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 
 	} else {
 
-		if ((status = fh->file_interface->file_read(fh, data, len)) != SWITCH_STATUS_SUCCESS || !*len) {
+		if ((status = fh->file_interface->file_read(fh, data, len)) == SWITCH_STATUS_BREAK) {
+			return SWITCH_STATUS_BREAK;
+		}
+
+		if (status != SWITCH_STATUS_SUCCESS || !*len) {
 			switch_set_flag(fh, SWITCH_FILE_DONE);
 			goto top;
 		}

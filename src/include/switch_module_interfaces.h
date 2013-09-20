@@ -310,7 +310,7 @@ struct switch_file_handle {
 	/*! the current native samplerate */
 	uint32_t native_rate;
 	/*! the number of channels */
-	uint8_t channels;
+	uint32_t channels;
 	/*! integer representation of the format */
 	unsigned int format;
 	/*! integer representation of the sections */
@@ -353,6 +353,8 @@ struct switch_file_handle {
 	const char *prefix;
 	int max_samples;
 	switch_event_t *params;
+	uint32_t cur_channels;
+	uint32_t cur_samplerate;
 };
 
 /*! \brief Abstract interface to an asr module */
