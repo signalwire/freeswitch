@@ -1255,7 +1255,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 
 		if (!abuf) {
-			switch_zmalloc(abuf, FILE_STARTSAMPLES * sizeof(*abuf));
+			switch_zmalloc(abuf, FILE_STARTSAMPLES * sizeof(*abuf) * fh->channels);
 			write_frame.data = abuf;
 			write_frame.buflen = FILE_STARTSAMPLES;
 		}
