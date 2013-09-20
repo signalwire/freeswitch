@@ -2122,7 +2122,9 @@ static void _send_presence_notify(sofia_profile_t *profile,
 		cparams += 3;
 	}
 
-	path = sofia_glue_get_path_from_contact((char *) o_contact);
+	if (!switch_stristr("fs_nat=yes", o_contact)) {
+		path = sofia_glue_get_path_from_contact((char *) o_contact);
+	}
 
 	tmp = (char *)o_contact;
 	o_contact_dup = sofia_glue_get_url_from_contact(tmp, 1);
