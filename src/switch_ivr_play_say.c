@@ -1049,6 +1049,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	int more_data = 0;
 	switch_event_t *event;
 	uint32_t test_native = 0, last_native = 0;
+	uint32_t buflen = 0;
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -1110,6 +1111,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		fh->samples = 0;
 	}
 	
+
+
+
 	for (cur = 0; switch_channel_ready(channel) && !done && cur < argc; cur++) {
 		file = argv[cur];
 		eof = 0;
@@ -1255,9 +1259,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 
 		if (!abuf) {
-			switch_zmalloc(abuf, FILE_STARTSAMPLES * sizeof(*abuf) * fh->channels);
+			buflen = write_frame.buflen = FILE_STARTSAMPLES * sizeof(*abuf) * fh->channels;
+			switch_zmalloc(abuf, write_frame.buflen);
 			write_frame.data = abuf;
-			write_frame.buflen = FILE_STARTSAMPLES;
 		}
 
 		if (sample_start > 0) {
@@ -1454,6 +1458,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				}
 			}
 
+			buflen = FILE_STARTSAMPLES * sizeof(*abuf) * fh->cur_channels;
+
+			if (buflen > write_frame.buflen) {
+				abuf = realloc(abuf, buflen);
+				write_frame.data = abuf;
+				write_frame.buflen = buflen;
+			}
+
 			if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
 				if (framelen > FILE_STARTSAMPLES) {
 					framelen = FILE_STARTSAMPLES;
@@ -1493,6 +1505,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 				olen = switch_test_flag(fh, SWITCH_FILE_NATIVE) ? framelen : ilen;
 			} else {
+				switch_status_t rstatus;
+
 				if (eof) {
 					break;
 				}
@@ -1500,7 +1514,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				if (!switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
 					olen /= 2;
 				}
-				if (switch_core_file_read(fh, abuf, &olen) != SWITCH_STATUS_SUCCESS) {
+				switch_set_flag(fh, SWITCH_FILE_BREAK_ON_CHANGE);
+				if ((rstatus = switch_core_file_read(fh, abuf, &olen)) == SWITCH_STATUS_BREAK) {
+					continue;
+				}
+
+				if (rstatus != SWITCH_STATUS_SUCCESS) {
 					eof++;
 					continue;
 				}
