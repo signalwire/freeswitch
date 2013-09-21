@@ -39,7 +39,7 @@
 SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, const char *func, int line,
 															  switch_file_handle_t *fh,
 															  const char *file_path,
-															  uint8_t channels, uint32_t rate, unsigned int flags, switch_memory_pool_t *pool)
+															  uint32_t channels, uint32_t rate, unsigned int flags, switch_memory_pool_t *pool)
 {
 	char *ext;
 	switch_status_t status = SWITCH_STATUS_FALSE;
