@@ -927,7 +927,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 									   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec Error!\n");
 				if (caller_channel) {
-					switch_channel_hangup(caller_channel, SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE);
+					switch_channel_hangup(caller_channel, SWITCH_CAUSE_BEARERCAPABILITY_NOTIMPL);
 				}
 				read_codec = NULL;
 				goto done;
@@ -1254,7 +1254,7 @@ static switch_status_t setup_ringback(originate_global_t *oglobals, originate_st
 				switch_core_session_set_read_codec(oglobals->session, write_codec);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(caller_channel), SWITCH_LOG_ERROR, "Codec Error!\n");
-				switch_channel_hangup(caller_channel, SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE);
+				switch_channel_hangup(caller_channel, SWITCH_CAUSE_BEARERCAPABILITY_NOTIMPL);
 				read_codec = NULL;
 				switch_goto_status(SWITCH_STATUS_BREAK, end);
 			}
