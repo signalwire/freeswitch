@@ -883,6 +883,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (outbound_profile) {
 			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 			caller_profile->source = switch_core_strdup(caller_profile->pool, "mod_spandsp");
+			caller_profile->destination_number = switch_core_strdup(caller_profile->pool, number);
 			switch_channel_set_caller_profile(channel, caller_profile);
 			tech_pvt->caller_profile = caller_profile;
 		} else {
