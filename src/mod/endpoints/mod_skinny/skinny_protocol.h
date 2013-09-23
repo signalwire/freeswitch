@@ -1019,6 +1019,11 @@ switch_status_t perform_send_set_ringer(listener_t *listener,
 		uint32_t call_id);
 #define send_set_ringer(listener, ...) perform_send_set_ringer(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
 
+switch_status_t perform_send_forward_stat(listener_t *listener,
+		const char *file, const char *func, int line,
+		const char *forward_to);
+#define send_forward_stat(listener, ...) perform_send_forward_stat(listener, __FILE__, __SWITCH_FUNC__, __LINE__, __VA_ARGS__)
+
 switch_status_t perform_send_set_lamp(listener_t *listener,
 		const char *file, const char *func, int line,
 		uint32_t stimulus,
