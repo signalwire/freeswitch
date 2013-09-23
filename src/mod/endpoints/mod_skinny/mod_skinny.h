@@ -59,6 +59,11 @@
     "[%s:%d @ %s:%d] " _fmt, skinny_undef_str(listener->device_name), listener->device_instance, skinny_undef_str(listener->remote_ip), \
     listener->remote_port, __VA_ARGS__)
 
+#define skinny_log_l_ffl_msg(listener, file, func, line, level, _fmt) switch_log_printf( \
+	SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, level, \
+    "[%s:%d @ %s:%d] " _fmt, skinny_undef_str(listener->device_name), listener->device_instance, skinny_undef_str(listener->remote_ip), \
+    listener->remote_port)
+
 #define skinny_log_ls(listener, session, level, _fmt, ...) switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), level, \
     "[%s:%d @ %s:%d] " _fmt, skinny_undef_str(listener->device_name), listener->device_instance, skinny_undef_str(listener->remote_ip), \
     listener->remote_port, __VA_ARGS__)
