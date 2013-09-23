@@ -407,6 +407,28 @@ static switch_status_t skinny_api_cmd_profile_device_send_forward_stat_message(c
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t skinny_api_cmd_profile_device_send_display_prompt_status_message(const char *profile_name, const char *device_name, const char *display, switch_stream_handle_t *stream)
+{
+	skinny_profile_t *profile;
+
+	if ((profile = skinny_find_profile(profile_name))) {
+		listener_t *listener = NULL;
+		skinny_profile_find_listener_by_device_name(profile, device_name, &listener);
+		if(listener) {
+
+			send_display_prompt_status(listener, 0, display, 0, 0); 
+
+			stream->write_function(stream, "+OK\n");
+		} else {
+			stream->write_function(stream, "Listener not found!\n");
+		}
+	} else {
+		stream->write_function(stream, "Profile not found!\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t skinny_api_cmd_profile_device_send_reset_message(const char *profile_name, const char *device_name, const char *reset_type, switch_stream_handle_t *stream)
 {
 	skinny_profile_t *profile;
@@ -521,6 +543,7 @@ SWITCH_STANDARD_API(skinny_function)
 		"skinny profile <profile_name> device <device_name> send SetSpeakerModeMessage <speaker_mode>\n"
 		"skinny profile <profile_name> device <device_name> send CallStateMessage <call_state> <line_instance> <call_id>\n"
 		"skinny profile <profile_name> device <device_name> send ForwardStatMessage <number>\n"
+		"skinny profile <profile_name> device <device_name> send DisplayPromptStatus <message>\n"
 		"skinny profile <profile_name> device <device_name> send <UserToDeviceDataMessage|UserToDeviceDataVersion1Message> [ <param>=<value>;... ] <data>\n"
 		"skinny profile <profile_name> set <name> <value>\n"
 		"--------------------------------------------------------------------------------\n";
@@ -593,6 +616,12 @@ SWITCH_STANDARD_API(skinny_function)
 					status = skinny_api_cmd_profile_device_send_forward_stat_message(argv[1], argv[3], NULL, stream);
 				}
 				break;
+			case DISPLAY_PROMPT_STATUS_MESSAGE:
+				if (argc == 7) {
+					/* DisplayPromptStatus <display> */
+					status = skinny_api_cmd_profile_device_send_display_prompt_status_message(argv[1], argv[3], argv[6], stream);
+				}
+				break;
 			case RESET_MESSAGE:
 				if (argc == 7) {
 					/* ResetMessage <reset_type> */
@@ -644,6 +673,7 @@ switch_status_t skinny_api_register(switch_loadable_module_interface_t **module_
 	switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send SetSpeakerModeMessage ::skinny::list_speaker_modes");
 	switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send CallStateMessage ::skinny::list_call_states ::skinny::list_line_instances ::skinny::list_call_ids");
 	switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send ForwardStatMessage");
+	switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send DisplayPromptStatusMessage");
 	switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send UserToDeviceDataMessage");
 	switch_console_set_complete("add skinny profile ::skinny::list_profiles device ::skinny::list_devices send UserToDeviceDataVersion1Message");
 	switch_console_set_complete("add skinny profile ::skinny::list_profiles set ::skinny::list_settings");
