@@ -541,6 +541,7 @@ SWITCH_DECLARE_DATA extern switch_filenames SWITCH_GLOBAL_filenames;
 #define SWITCH_MAX_SAMPLE_LEN 48
 #define SWITCH_BYTES_PER_SAMPLE 2	/* slin is 2 bytes per sample */
 #define SWITCH_RECOMMENDED_BUFFER_SIZE 8192
+#define SWITCH_RECOMMENDED_VIDEO_BUFFER_SIZE 4096 * 1024 /* Fixme: Just Make sure it's big enough for now */
 #define SWITCH_MAX_CODECS 50
 #define SWITCH_MAX_STATE_HANDLERS 30
 #define SWITCH_CORE_QUEUE_LEN 100000
@@ -1472,10 +1473,12 @@ typedef enum {
 <pre>
 SFF_CNG        = (1 <<  0) - Frame represents comfort noise
 SFF_RAW_RTP    = (1 <<  1) - Frame has raw rtp accessible
-SFF_RTP_HEADER = (1 << 2)  - Get the rtp header from the frame header
-SFF_PLC        = (1 << 3)  - Frame has generated PLC data
-SFF_RFC2833    = (1 << 4)  - Frame has rfc2833 dtmf data
-SFF_DYNAMIC    = (1 << 5)  - Frame is dynamic and should be freed
+SFF_RTP_HEADER = (1 <<  2) - Get the rtp header from the frame header
+SFF_PLC        = (1 <<  3) - Frame has generated PLC data
+SFF_RFC2833    = (1 <<  4) - Frame has rfc2833 dtmf data
+SFF_DYNAMIC    = (1 <<  5) - Frame is dynamic and should be freed
+SFF_MARKER     = (1 << 11) - Frame flag has Marker set, only set by encoder
+SFF_WAIT_KEY_FRAME = (1 << 12) - Need a key from before could decode
 </pre>
  */
 typedef enum {
@@ -1490,7 +1493,9 @@ typedef enum {
 	SFF_ZRTP = (1 << 7),
 	SFF_UDPTL_PACKET = (1 << 8),
 	SFF_NOT_AUDIO = (1 << 9),
-	SFF_RTCP = (1 << 10)
+	SFF_RTCP = (1 << 10),
+	SFF_MARKER = (1 << 11),
+	SFF_WAIT_KEY_FRAME = (1 << 12)
 } switch_frame_flag_enum_t;
 typedef uint32_t switch_frame_flag_t;
 
@@ -2090,6 +2095,7 @@ typedef struct switch_caller_extension switch_caller_extension_t;
 typedef struct switch_caller_application switch_caller_application_t;
 typedef struct switch_state_handler_table switch_state_handler_table_t;
 typedef struct switch_timer switch_timer_t;
+typedef struct switch_picture switch_picture_t;
 typedef struct switch_codec switch_codec_t;
 typedef struct switch_core_thread_session switch_core_thread_session_t;
 typedef struct switch_codec_implementation switch_codec_implementation_t;

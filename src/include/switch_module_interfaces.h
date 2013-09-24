@@ -611,6 +611,13 @@ struct switch_codec_fmtp {
 
 };
 
+struct switch_picture {
+	uint32_t width;      /* the picture width */
+	uint32_t height;     /* the picture height */
+	uint8_t *planes[4];  /* pointer to the top left pixel for each plane */
+	uint32_t stride[4];  /* stride between rows for each plane */
+};
+
 /*! an abstract handle to a codec module */
 struct switch_codec {
 	/*! the codec interface table this handle uses */
@@ -632,6 +639,10 @@ struct switch_codec {
 	struct switch_codec *next;
 	switch_core_session_t *session;
 	switch_frame_t *cur_frame;
+	/*! raw picture for encode */
+	switch_picture_t enc_picture;
+	/*! decoded picture */
+	switch_picture_t dec_picture;
 };
 
 /*! \brief A table of settings and callbacks that define a paticular implementation of a codec */

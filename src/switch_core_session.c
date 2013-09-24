@@ -1317,6 +1317,17 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, s
 	switch_buffer_destroy(&session->raw_read_buffer);
 	switch_mutex_unlock(session->codec_read_mutex);
 
+	switch_mutex_lock(session->video_codec_write_mutex);
+	switch_buffer_destroy(&session->video_raw_write_buffer);
+	switch_mutex_unlock(session->video_codec_write_mutex);
+
+	switch_mutex_lock(session->video_codec_read_mutex);
+	switch_buffer_destroy(&session->video_raw_read_buffer);
+	switch_mutex_unlock(session->video_codec_read_mutex);
+
+	//video_raw_read_frame.data is dynamically allocated if necessary, so wipe this also
+	switch_safe_free(session->video_raw_read_frame.data);
+
 	if (flush_dtmf) {
 		while ((has = switch_channel_has_dtmf(channel))) {
 			switch_channel_flush_dtmf(channel);
@@ -2419,6 +2430,8 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 	switch_mutex_init(&session->resample_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_mutex_init(&session->codec_read_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_mutex_init(&session->codec_write_mutex, SWITCH_MUTEX_NESTED, session->pool);
+	switch_mutex_init(&session->video_codec_read_mutex, SWITCH_MUTEX_NESTED, session->pool);
+	switch_mutex_init(&session->video_codec_write_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_mutex_init(&session->frame_read_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_thread_rwlock_create(&session->bug_rwlock, session->pool);
 	switch_thread_cond_create(&session->cond, session->pool);

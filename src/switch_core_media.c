@@ -4346,9 +4346,6 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 
 #define BUF_SIZE (352 * 288 * 3 / 2 * 4) // big enough for 4CIF, looks like C doesn't like huge array
 #define FPS 15
-#define WIDTH 352
-#define HEIGHT 288
-#define SIZE WIDTH * HEIGHT
 
 static switch_status_t video_bridge_callback(switch_core_session_t *session, switch_bool_t video_transcoding, uint32_t *ts)
 {
@@ -4397,7 +4394,7 @@ static switch_status_t video_bridge_callback(switch_core_session_t *session, swi
 		uint32_t flag = 0;
 		uint32_t encoded_data_len = 1500;
 		uint32_t encoded_rate = 0;
-		switch_frame_t write_frame;
+		switch_frame_t write_frame = { 0 };
 
 #if 0
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%d/%s != %d/%s need transcoding!!!\n",
@@ -4413,13 +4410,13 @@ static switch_status_t video_bridge_callback(switch_core_session_t *session, swi
 
 		if (decoded_data_len < 3) return SWITCH_STATUS_SUCCESS;
 
-		decoded_data_len = 152064;
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "decoded_data_len: %d %s\n", decoded_data_len, codec->implementation->iananame);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s decoded_data_len: %d size: %dx%d\n", codec->implementation->iananame, decoded_data_len, codec->dec_picture.width, codec->dec_picture.height);
 
 		write_frame.packet = rtp_buff;
 		write_frame.data = rtp_buff + 12;
 
+		other_codec->enc_picture.width = codec->dec_picture.width;
+		other_codec->enc_picture.height = codec->dec_picture.height;
 		encoded_data_len = 1500;
 		switch_core_codec_encode(other_codec, NULL, raw_buff, decoded_data_len, 0, rtp_buff+12, &encoded_data_len, &encoded_rate, &flag);
 
@@ -4428,7 +4425,7 @@ static switch_status_t video_bridge_callback(switch_core_session_t *session, swi
 
 			write_frame.datalen = encoded_data_len;
 			write_frame.packetlen = write_frame.datalen + 12;
-			write_frame.m = flag;
+			write_frame.m = flag & SFF_MARKER ? 1 : 0;
 			write_frame.timestamp = *ts;
 			if (write_frame.m) *ts += 90000 / FPS;
 

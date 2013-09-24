@@ -104,8 +104,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 		goto done;
 	}
 
-	switch_assert(*frame != NULL);
-
 	if (switch_test_flag(*frame, SFF_CNG)) {
 		status = SWITCH_STATUS_SUCCESS;
 		goto done;
