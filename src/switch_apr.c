@@ -717,7 +717,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_connect(switch_socket_t *sock, swi
 
 SWITCH_DECLARE(switch_status_t) switch_socket_send(switch_socket_t *sock, const char *buf, switch_size_t *len)
 {
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	int status = SWITCH_STATUS_SUCCESS;
 	switch_size_t req = *len, wrote = 0, need = *len;
 	int to_count = 0;
 
@@ -737,7 +737,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_send(switch_socket_t *sock, const 
 	}
 
 	*len = wrote;
-	return status;
+	return (switch_status_t)status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_socket_send_nonblock(switch_socket_t *sock, const char *buf, switch_size_t *len)
@@ -760,7 +760,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_sendto(switch_socket_t *sock, swit
 
 SWITCH_DECLARE(switch_status_t) switch_socket_recv(switch_socket_t *sock, char *buf, switch_size_t *len)
 {
-	switch_status_t r;
+	int r;
 
 	r = apr_socket_recv(sock, buf, len);
 
@@ -768,7 +768,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_recv(switch_socket_t *sock, char *
 		r = SWITCH_STATUS_BREAK;
 	}
 
-	return r;
+	return (switch_status_t)r;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_sockaddr_create(switch_sockaddr_t **sa, switch_memory_pool_t *pool)
@@ -866,7 +866,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_atmark(switch_socket_t *sock, int 
 
 SWITCH_DECLARE(switch_status_t) switch_socket_recvfrom(switch_sockaddr_t *from, switch_socket_t *sock, int32_t flags, char *buf, size_t *len)
 {
-	apr_status_t r = SWITCH_STATUS_GENERR;
+	int r = SWITCH_STATUS_GENERR;
 
 	if (from && sock && (r = apr_socket_recvfrom(from, sock, flags, buf, len)) == APR_SUCCESS) {
 		from->port = ntohs(from->sa.sin.sin_port);
@@ -879,7 +879,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_recvfrom(switch_sockaddr_t *from, 
 		r = SWITCH_STATUS_BREAK;
 	}
 
-	return r;
+	return (switch_status_t)r;
 }
 
 /* poll stubs */
