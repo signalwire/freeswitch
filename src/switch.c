@@ -435,7 +435,7 @@ static const char usage[] =
 	"\t-version               -- print the version and exit\n"
 	"\t-rp                    -- enable high(realtime) priority settings\n"
 	"\t-lp                    -- enable low priority settings\n"
-	"\t-np                    -- enable normal priority settings (system defaults)\n"
+	"\t-np                    -- enable normal priority settings\n"
 	"\t-vg                    -- run under valgrind\n"
 	"\t-nosql                 -- disable internal sql scoreboard\n"
 	"\t-heavy-timer           -- Heavy Timer, possibly more accurate but at a cost\n"
