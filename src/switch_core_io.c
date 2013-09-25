@@ -773,7 +773,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					switch_buffer_create_dynamic(&session->raw_read_buffer, bytes * SWITCH_BUFFER_BLOCK_FRAMES, bytes * SWITCH_BUFFER_START_FRAMES, 0);
 				}
 
-				if (!switch_buffer_write(session->raw_read_buffer, read_frame->data, read_frame->datalen)) {
+				if (read_frame->datalen && (!switch_buffer_write(session->raw_read_buffer, read_frame->data, read_frame->datalen))) {
 					status = SWITCH_STATUS_MEMERR;
 					goto done;
 				}
