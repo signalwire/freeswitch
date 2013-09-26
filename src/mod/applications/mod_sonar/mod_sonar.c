@@ -103,7 +103,7 @@ SWITCH_STANDARD_APP(sonar_app)
 	int loops;
 	int lost = 0;
 	int x;
-	int avg = 0, mdev = 0;
+	int avg = 0, sdev = 0, mdev = 0;
 	int sum2;
 	switch_event_t *event;
 	sonar_ping_helper_t ph = { 0 };
@@ -159,16 +159,26 @@ SWITCH_STANDARD_APP(sonar_app)
 
 	sum2 = 0;
 	for(x = 0; x < ph.received; x++) {
+		sum2 += abs(ph.samples[x] - avg);
+	}
+
+	if (ph.received > 0) {
+		mdev = sum2 / ph.received;
+	}
+
+
+	sum2 = 0;
+	for(x = 0; x < ph.received; x++) {
 		sum2 += (ph.samples[x] - avg) * (ph.samples[x] - avg);
 	}
 
 	if (ph.received > 1) {
-		mdev = sqrt(sum2 / (ph.received - 1));
+		sdev = sqrt(sum2 / (ph.received - 1));
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
-		"Sonar Ping (in ms): min:%d max:%d avg:%d mdev:%d sent:%d recv: %d lost:%d lost/send:%2.2f%%\n",
-		ph.min, ph.max, avg, mdev, loops, ph.received, lost, lost * 1.0 / loops);
+		"Sonar Ping (in ms): min:%d max:%d avg:%d sdev:%d mdev:%d sent:%d recv: %d lost:%d lost/send:%2.2f%%\n",
+		ph.min, ph.max, avg, sdev, mdev, loops, ph.received, lost, lost * 1.0 / loops);
 
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "sonar::ping") == SWITCH_STATUS_SUCCESS) {
 		const char *verbose_event;
@@ -176,6 +186,7 @@ SWITCH_STANDARD_APP(sonar_app)
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "ping_min", "%d", ph.min);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "ping_max", "%d", ph.max);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "ping_avg", "%d", avg);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "ping_sdev", "%d", sdev);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "ping_mdev", "%d", mdev);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "ping_sent", "%d", loops);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "ping_recv", "%d", ph.received);
