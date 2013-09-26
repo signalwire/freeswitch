@@ -70,9 +70,16 @@ SWITCH_STANDARD_APP(sonar_app)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *tone = "%(500,0,1004)";
-	int loops = atoi(data);
-	
-	if ( ! loops ) {
+	const char *arg = (char *) data;
+	int loops;
+
+	if (zstr(arg)) {
+		loops = 5;
+	} else {
+		loops = atoi(data);
+	}
+
+	if (loops < 0) {
 		loops = 5;
 	}
 	
