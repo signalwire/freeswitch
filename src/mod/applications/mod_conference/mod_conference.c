@@ -547,7 +547,6 @@ static switch_status_t conference_add_event_member_data(conference_member_t *mem
 static switch_status_t conf_api_sub_floor(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 static switch_status_t conf_api_sub_vid_floor(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 static switch_status_t conf_api_sub_clear_vid_floor(conference_obj_t *conference, switch_stream_handle_t *stream, void *data);
-static switch_status_t conf_api_sub_enforce_floor(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 
 
 #define lock_member(_member) switch_mutex_lock(_member->write_mutex); switch_mutex_lock(_member->read_mutex)
@@ -2605,13 +2604,6 @@ static void conference_loop_fn_vid_floor_force(conference_member_t *member, call
 	if (member == NULL) return;
 
 	conf_api_sub_vid_floor(member, NULL, "force");
-}
-
-static void conference_loop_fn_enforce_floor(conference_member_t *member, caller_control_action_t *action)
-{
-	if (member == NULL) return;
-
-	conf_api_sub_enforce_floor(member, NULL, NULL);
 }
 
 static void conference_loop_fn_mute_toggle(conference_member_t *member, caller_control_action_t *action)
@@ -5390,26 +5382,6 @@ static switch_status_t conf_api_sub_vid_floor(conference_member_t *member, switc
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t conf_api_sub_enforce_floor(conference_member_t *member, switch_stream_handle_t *stream, void *data)
-{
-	if (member == NULL)
-		return SWITCH_STATUS_GENERR;
-
-	switch_mutex_lock(member->conference->mutex);
-
-	if (member->conference->floor_holder != member) {
-		conference_set_floor_holder(member->conference, member);
-
-		if (stream != NULL) {
-			stream->write_function(stream, "OK floor %u\n", member->id);
-		}
-	}
-
-	switch_mutex_unlock(member->conference->mutex);
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
 static switch_xml_t add_x_tag(switch_xml_t x_member, const char *name, const char *value, int off)
 {
 	switch_size_t dlen;
@@ -6604,8 +6576,7 @@ static api_command_t conf_api_sub_commands[] = {
 	{"set", (void_fn_t) & conf_api_sub_set, CONF_API_SUB_ARGS_SPLIT, "set", "<max_members|sound_prefix|caller_id_name|caller_id_number|endconf_grace_time> <value>"},
 	{"floor", (void_fn_t) & conf_api_sub_floor, CONF_API_SUB_MEMBER_TARGET, "floor", "<member_id|last>"},
 	{"vid-floor", (void_fn_t) & conf_api_sub_vid_floor, CONF_API_SUB_MEMBER_TARGET, "vid-floor", "<member_id|last> [force]"},
-	{"clear-vid-floor", (void_fn_t) & conf_api_sub_clear_vid_floor, CONF_API_SUB_ARGS_AS_ONE, "clear-vid-floor", ""},
-	{"enforce_floor", (void_fn_t) & conf_api_sub_enforce_floor, CONF_API_SUB_MEMBER_TARGET, "enforce_floor", "<member_id|last>"},
+	{"clear-vid-floor", (void_fn_t) & conf_api_sub_clear_vid_floor, CONF_API_SUB_ARGS_AS_ONE, "clear-vid-floor", ""}
 };
 
 #define CONFFUNCAPISIZE (sizeof(conf_api_sub_commands)/sizeof(conf_api_sub_commands[0]))
@@ -9189,8 +9160,7 @@ static struct _mapping control_mappings[] = {
     {"execute_application", conference_loop_fn_exec_app},
     {"floor", conference_loop_fn_floor_toggle},
     {"vid-floor", conference_loop_fn_vid_floor_toggle},
-    {"vid-floor-force", conference_loop_fn_vid_floor_force},
-    {"enforce_floor", conference_loop_fn_enforce_floor},
+    {"vid-floor-force", conference_loop_fn_vid_floor_force}
 };
 #define MAPPING_LEN (sizeof(control_mappings)/sizeof(control_mappings[0]))
 
