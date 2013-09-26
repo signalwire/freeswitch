@@ -92,6 +92,7 @@ SWITCH_STANDARD_APP(sonar_app)
 	int lost = 0;
 	int x;
 	int avg = 0, mdev = 0;
+	switch_event_t *event;
 
 	if (zstr(arg)) {
 		loops = 5;
@@ -151,8 +152,24 @@ SWITCH_STANDARD_APP(sonar_app)
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
-		"SONAR: min:%d max:%d avg:%d mdev:%d sent:%d recv: %d lost:%d lost/send:%2.2f%%\n",
+		"Sonar Ping (in ms): min:%d max:%d avg:%d mdev:%d sent:%d recv: %d lost:%d lost/send:%2.2f%%\n",
 		min, max, avg, mdev, loops, received, lost, lost * 1.0 / loops);
+
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "sonar::ping") == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "ping_min", "%d", min);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "ping_max", "%d", max);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "ping_avg", "%d", avg);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "ping_mdev", "%d", mdev);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "ping_sent", "%d", loops);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "ping_recv", "%d", received);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "ping_lost", "%d", lost);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lost_rate", "%2.2f%%", lost * 1.0 / loops);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "destination_number",
+			switch_channel_get_variable(channel, "ping_destination_number"));
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "sonar_ping_ref",
+			switch_channel_get_variable(channel, "sonar_ping_ref"));
+		switch_event_fire(&event);
+	}
 
 }
 
