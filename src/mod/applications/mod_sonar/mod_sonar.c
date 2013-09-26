@@ -170,6 +170,8 @@ SWITCH_STANDARD_APP(sonar_app)
 		ph.min, ph.max, avg, mdev, loops, ph.received, lost, lost * 1.0 / loops);
 
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, "sonar::ping") == SWITCH_STATUS_SUCCESS) {
+		const char *verbose_event;
+
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "ping_min", "%d", ph.min);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "ping_max", "%d", ph.max);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "ping_avg", "%d", avg);
@@ -182,6 +184,13 @@ SWITCH_STANDARD_APP(sonar_app)
 			switch_channel_get_variable(channel, "ping_destination_number"));
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "sonar_ping_ref",
 			switch_channel_get_variable(channel, "sonar_ping_ref"));
+
+		verbose_event = switch_channel_get_variable(channel, "sonar_channel_event");
+
+		if (verbose_event && switch_true(verbose_event)) {
+			switch_channel_event_set_data(channel, event);
+		}
+
 		switch_event_fire(&event);
 	}
 
