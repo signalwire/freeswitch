@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * William King <william.king@quentustech.com>
+ * Seven Du <dujinfang@gmail.com>
  *
  * mod_sonar.c -- Sonar ping timer
  *
