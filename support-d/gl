@@ -1,0 +1,82 @@
+#!/usr/bin/perl
+
+my $pager = `which less` || `which more`;
+my $tmpdir = "/tmp/FSJIRA";
+
+system("mkdir -p $tmpdir");
+
+my $cmd = "git log " . join(" ", @ARGV);
+
+open(CMD, "$cmd |");
+open(PAGER, "|$pager");
+select PAGER;
+
+while(my $line = <CMD>) {
+
+    print $line;
+
+    if ($line =~ /([A-Z]+\-[0-9]+)/) {
+	my $bug = $1;
+	my $txt = bugtxt($bug);
+	if ($txt) {
+	    print "=" x 80 . "\n";
+	    print $txt;
+	    print "=" x 80 . "\n";
+	}
+    }
+}
+
+close(CMD);
+close(PAGER);
+
+sub catfile($) {
+    my $file = shift;
+    open(I, $file) or return;
+    $/ = undef;
+    my $txt = <I>;
+    $/ = "\n";
+    close(I);
+    return $txt;
+}
+
+
+sub bugtxt($)
+{
+    my $bug = shift or return "";
+    my $now = time;
+    my $tmp;
+
+    $bug =~ s/\.\.//g;
+    $bug =~ s/^\///g;
+    $bug =~ s/~//g;
+    $bug =~ s/[^a-zA-Z0-9\-]//g;
+
+    $tmp = "$tmpdir/$bug.txt";
+
+    if(-f $tmp) {
+	return catfile($tmp);
+    }
+
+    my $cmd = "wget -q http://jira.freeswitch.org/si/jira.issueviews:issue-xml/$bug/$bug.xml -O $tmp";
+
+    system($cmd);
+
+    my $txt = catfile($tmp);
+
+    my ($a,$title) = $txt =~ /\<title\>(.*?)\<\/title\>/smg;
+    my ($status) = $txt =~ /\<status.*?\>(.*?)\<\/status\>/smg;
+    my ($a,$des) = $txt =~ /\<description\>(.*?)\<\/description\>/smg;
+    my ($alogin, $aname) = $txt =~ /\<assignee username=\"([^\"]+)\"\>(.*?)\<\/assignee\>/smg;
+    my ($rlogin, $rname) = $txt =~ /\<reporter username=\"([^\"]+)\"\>(.*?)\<\/reporter\>/smg;
+
+
+    if ($rname && $aname) {
+	my $data = "$title\nReporter: $rname [$rlogin]\nAssignee: $aname [$alogin]\nStatus: $status\nhttp://jira.freeswitch.org/browse/$bug\n";
+	open(O, ">$tmp");
+	print O $data;
+	close(O);
+	return $data;
+    } else {
+	unlink($tmp);
+    }
+}

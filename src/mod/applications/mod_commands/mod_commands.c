@@ -1329,6 +1329,8 @@ SWITCH_STANDARD_API(stun_function)
 	switch_port_t port = 0;
 	switch_memory_pool_t *pool = NULL;
 	char *error = "";
+	char *argv[3] = { 0 };
+	char *mycmd = NULL;
 
 	ip = ip_buf;
 
@@ -1337,8 +1339,14 @@ SWITCH_STANDARD_API(stun_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	stun_ip = strdup(cmd);
+	mycmd = strdup(cmd);
+	switch_split(mycmd, ' ', argv);
+
+	stun_ip = argv[0];
+
 	switch_assert(stun_ip);
+
+	port = argv[1] ? atoi(argv[1]) : 0;
 
 	if ((p = strchr(stun_ip, ':'))) {
 		int iport;
@@ -1374,7 +1382,7 @@ SWITCH_STANDARD_API(stun_function)
 	}
 
 	switch_core_destroy_memory_pool(&pool);
-	free(stun_ip);
+	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
 

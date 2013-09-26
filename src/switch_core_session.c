@@ -1394,7 +1394,7 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 					  switch_channel_get_name((*session)->channel), switch_channel_state_name(switch_channel_get_state((*session)->channel)));
 
 
-	switch_core_session_reset(*session, TRUE, SWITCH_TRUE);
+	switch_core_session_reset(*session, SWITCH_TRUE, SWITCH_TRUE);
 
 	switch_core_media_bug_remove_all(*session);
 	switch_ivr_deactivate_unicast(*session);
