@@ -1260,7 +1260,7 @@ switch_status_t skinny_handle_keypad_button_message(listener_t *listener, skinny
 			digit = '*';
 		} else if (request->data.keypad_button.button == 15) {
 			digit = '#';
-		} else if (request->data.keypad_button.button >= 0 && request->data.keypad_button.button <= 9) {
+		} else if (request->data.keypad_button.button <= 9) { /* unsigned, so guaranteed to be >= 0 */
 			digit = '0' + request->data.keypad_button.button;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "UNKNOW DTMF RECEIVED ON CALL %d [%d]\n", tech_pvt->call_id, request->data.keypad_button.button);
