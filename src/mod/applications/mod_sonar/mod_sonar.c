@@ -40,6 +40,14 @@
 
 #include <switch.h>
 
+#ifndef MIN
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#endif
+
+#ifndef MAX
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
+#endif
+
 /* Prototypes */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sonar_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_sonar_runtime);
@@ -51,17 +59,26 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sonar_load);
 SWITCH_MODULE_DEFINITION(mod_sonar, mod_sonar_load, mod_sonar_shutdown, NULL);
 
 switch_time_t start, end, diff;
+int samples[1024];
+int received;
+int sum, min, max = 0;
 
 switch_bool_t sonar_ping_callback(switch_core_session_t *session, const char *app, const char *app_data){
 	
 	if ( end ) {
 		return SWITCH_TRUE;
 	}
-	
 	end = switch_time_now();
 	diff = end - start;
+
 	start = 0;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Sonar ping took %ld milliseconds\n", (long)diff / 1000);
+
+	diff /= 1000;
+	sum += diff;
+	max = MAX(max, diff);
+	min = MIN(min, diff);
+	samples[received++] = diff;
 	
 	return SWITCH_TRUE;
 }
@@ -72,6 +89,9 @@ SWITCH_STANDARD_APP(sonar_app)
 	char *tone = "%(500,0,1004)";
 	const char *arg = (char *) data;
 	int loops;
+	int lost = 0;
+	int x;
+	int avg = 0, mdev = 0;
 
 	if (zstr(arg)) {
 		loops = 5;
@@ -81,6 +101,8 @@ SWITCH_STANDARD_APP(sonar_app)
 
 	if (loops < 0) {
 		loops = 5;
+	} else if (loops > 1024) {
+		loops = 1024;
 	}
 	
 	switch_channel_answer(channel);
@@ -93,18 +115,45 @@ SWITCH_STANDARD_APP(sonar_app)
 	
 	switch_ivr_sleep(session, 1000, SWITCH_FALSE, NULL);
 
-	for( int x = 0; x < loops; x++ ) {
+	received = 0; sum = 0; max = 0; min = 999999;
+	for( x = 0; x < loops; x++ ) {
 		end = 0;
 		start = switch_time_now();
 		switch_ivr_gentones(session, tone, 1, NULL);
 		switch_ivr_sleep(session, 2000, SWITCH_FALSE, NULL);
 		if ( start ) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Lost sonar ping\n");			
+			lost++;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Lost sonar ping\n");
 		}
 	}
 	
 	switch_ivr_sleep(session, 1000, SWITCH_FALSE, NULL);
 	switch_ivr_stop_tone_detect_session(session);
+
+	if (loops == lost) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Too bad, we lost all!\n");
+		return;
+	}
+
+	if (received + lost != loops) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Race happend %d + %d != %d\n", received, lost, loops);
+	}
+
+	if (received > 0) avg = sum / received;
+
+	sum = 0;
+	for(x = 0; x < received; x++) {
+		sum += (samples[x] - avg) * (samples[x] - avg);
+	}
+
+	if (received > 1) {
+		mdev = sqrt(sum / (received - 1));
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+		"SONAR: min:%d max:%d avg:%d mdev:%d sent:%d recv: %d lost:%d lost/send:%2.2f%%\n",
+		min, max, avg, mdev, loops, received, lost, lost * 1.0 / loops);
+
 }
 
 /* Macro expands to: switch_status_t mod_sonar_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool) */
