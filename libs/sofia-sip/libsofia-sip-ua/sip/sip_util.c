@@ -672,7 +672,7 @@ static void sip_fragment_clear_chain(sip_header_t *h)
 {
   void const *next;
 
-  for (h = h; h; h = h->sh_succ) {
+  for (; h; h = h->sh_succ) {
     next = (char *)h->sh_data + h->sh_len;
 
     sip_fragment_clear(h->sh_common);
