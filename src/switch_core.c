@@ -1792,6 +1792,12 @@ static void switch_load_core_config(const char *file)
 	switch_core_hash_insert(runtime.ptimes, "isac", &d_30);
 	switch_core_hash_insert(runtime.ptimes, "G723", &d_30);
 
+	if (runtime.cpu_count == 1) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+						  "Implicitly setting events-use-dispatch based on a single CPU\n");
+		runtime.events_use_dispatch = 1;
+	}
+
 	if ((xml = switch_xml_open_cfg(file, &cfg, NULL))) {
 		switch_xml_t settings, param;
 
