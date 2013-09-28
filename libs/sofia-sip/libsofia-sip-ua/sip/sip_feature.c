@@ -130,7 +130,7 @@ int sip_is_allowed(sip_allow_t const *allow,
 		   sip_method_t method,
 		   char const *name)
 {
-  int met = method;
+  int meth = method;
 
   if (meth < sip_method_unknown || !allow)
     return 0;
