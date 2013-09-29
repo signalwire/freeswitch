@@ -5658,7 +5658,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "unbind_meta_app", "Unbind a key from an application", "Unbind a key from an application", dtmf_unbind_function,
 				   UNBIND_SYNTAX, SAF_SUPPORT_NOMEDIA);
-	SWITCH_ADD_APP(app_interface, "block_dfmf", "Block DTMF", "Block DTMF", dtmf_block_function, "", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "block_dtmf", "Block DTMF", "Block DTMF", dtmf_block_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "unblock_dtmf", "Stop blocking DTMF", "Stop blocking DTMF", dtmf_unblock_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "intercept", "intercept", "intercept", intercept_function, INTERCEPT_SYNTAX, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "eavesdrop", "eavesdrop on a uuid", "eavesdrop on a uuid", eavesdrop_function, eavesdrop_SYNTAX, SAF_MEDIA_TAP);
