@@ -3303,7 +3303,8 @@ tport_t *tport_tsend(tport_t *self,
     self = primary->pri_primary;
   }
   else if (tport_is_secondary(self) && tport_is_clear_to_send(self)) {
-    self = self;
+	/* self = self; */
+	;
   }
   /*
    * Try to find an already open connection to the destination,
