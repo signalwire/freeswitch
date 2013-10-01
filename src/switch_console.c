@@ -1859,7 +1859,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 						}
 					}
 				}
-				mystream.write_function(&mystream, " '%s')", switch_core_get_switchname());
+				mystream.write_function(&mystream, " '%s')", switch_core_get_hostname());
 				switch_core_sql_exec(mystream.data);
 				status = SWITCH_STATUS_SUCCESS;
 			} else if (!strcasecmp(argv[0], "add")) {
@@ -1875,7 +1875,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 						}
 					}
 				}
-				mystream.write_function(&mystream, " '%s')", switch_core_get_switchname());
+				mystream.write_function(&mystream, " '%s')", switch_core_get_hostname());
 
 				switch_core_sql_exec(mystream.data);
 				status = SWITCH_STATUS_SUCCESS;
@@ -1892,7 +1892,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 							mystream.write_function(&mystream, "a%d = '%w'%w", x + 1, switch_str_nil(argv[x + 1]), x == argc - 2 ? "" : " and ");
 						}
 					}
-					mystream.write_function(&mystream, " and hostname='%s'", switch_core_get_switchname());
+					mystream.write_function(&mystream, " and hostname='%s'", switch_core_get_hostname());
 					switch_core_sql_exec(mystream.data);
 				}
 				status = SWITCH_STATUS_SUCCESS;
