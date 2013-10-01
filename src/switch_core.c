@@ -1646,7 +1646,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 		runtime.console = stdout;
 	}
 
-	SSL_library_init();
 	switch_ssl_init_ssl_locks();
 	switch_curl_init();
 
