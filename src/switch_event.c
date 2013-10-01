@@ -571,6 +571,25 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void check_dispatch(void)
+{
+	if (!EVENT_DISPATCH_QUEUE) {
+		switch_mutex_lock(BLOCK);
+		
+		if (!EVENT_DISPATCH_QUEUE) {
+			switch_queue_create(&EVENT_DISPATCH_QUEUE, DISPATCH_QUEUE_LEN * MAX_DISPATCH, THRUNTIME_POOL);
+			switch_event_launch_dispatch_threads(1);
+			
+			while (!THREAD_COUNT) {
+				switch_cond_next();
+			}
+		}
+		switch_mutex_unlock(BLOCK);
+	}            
+}
+
+
+
 SWITCH_DECLARE(void) switch_event_launch_dispatch_threads(uint32_t max)
 {
 	switch_threadattr_t *thd_attr;
@@ -579,6 +598,8 @@ SWITCH_DECLARE(void) switch_event_launch_dispatch_threads(uint32_t max)
 	uint32_t sanity = 200;
 
 	switch_memory_pool_t *pool = RUNTIME_POOL;
+
+	check_dispatch();
 
 	if (max > MAX_DISPATCH) {
 		return;
@@ -648,6 +669,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 	switch_queue_create(&EVENT_RECYCLE_QUEUE, 250000, THRUNTIME_POOL);
 	switch_queue_create(&EVENT_HEADER_RECYCLE_QUEUE, 250000, THRUNTIME_POOL);
 #endif
+
+	check_dispatch();
 
 	switch_mutex_lock(EVENT_QUEUE_MUTEX);
 	SYSTEM_RUNNING = 1;
@@ -1901,19 +1924,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(const char *file, con
 
 
 	if (runtime.events_use_dispatch) {
-        if (!EVENT_DISPATCH_QUEUE) {
-            switch_mutex_lock(BLOCK);
-
-            if (!EVENT_DISPATCH_QUEUE) {
-				switch_queue_create(&EVENT_DISPATCH_QUEUE, DISPATCH_QUEUE_LEN * MAX_DISPATCH, THRUNTIME_POOL);
-                switch_event_launch_dispatch_threads(1);
-
-                while (!THREAD_COUNT) {
-                    switch_cond_next();
-                }
-            }
-            switch_mutex_unlock(BLOCK);
-        }            
+		check_dispatch();
 
 		if (switch_event_queue_dispatch_event(event) != SWITCH_STATUS_SUCCESS) {
 			switch_event_destroy(event);

@@ -1659,6 +1659,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 		runtime.console = stdout;
 	}
 
+	SSL_library_init();
 	switch_ssl_init_ssl_locks();
 	switch_curl_init();
 
@@ -1792,11 +1793,6 @@ static void switch_load_core_config(const char *file)
 	switch_core_hash_insert(runtime.ptimes, "isac", &d_30);
 	switch_core_hash_insert(runtime.ptimes, "G723", &d_30);
 
-	if (runtime.cpu_count == 1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-						  "Implicitly setting events-use-dispatch based on a single CPU\n");
-		runtime.events_use_dispatch = 1;
-	}
 
 	if ((xml = switch_xml_open_cfg(file, &cfg, NULL))) {
 		switch_xml_t settings, param;
@@ -1970,7 +1966,7 @@ static void switch_load_core_config(const char *file)
 				} else if (!strcasecmp(var, "tipping-point") && !zstr(val)) {
 					runtime.tipping_point = atoi(val);
 				} else if (!strcasecmp(var, "events-use-dispatch") && !zstr(val)) {
-					runtime.events_use_dispatch = 1;
+					runtime.events_use_dispatch = switch_true(val);
 				} else if (!strcasecmp(var, "initial-event-threads") && !zstr(val)) {
 					int tmp;
 
@@ -2092,6 +2088,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 	}
 
 	runtime.runlevel++;
+	runtime.events_use_dispatch = 1;
 
 	switch_core_set_signal_handlers();
 	switch_load_network_lists(SWITCH_FALSE);
