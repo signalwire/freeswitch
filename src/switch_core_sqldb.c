@@ -2317,7 +2317,7 @@ static void core_event_handler(switch_event_t *event)
 		new_sql() = switch_mprintf("delete from channels where hostname='%q';"
 								   "delete from interfaces where hostname='%q';"
 								   "delete from calls where hostname='%q'",
-								   switch_core_get_switchname(), switch_core_get_switchname(), switch_core_get_switchname()
+								   switch_core_get_switchname(), switch_core_get_hostname(), switch_core_get_switchname()
 								   );
 		break;
 	case SWITCH_EVENT_LOG:
@@ -3106,7 +3106,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	case SCDB_TYPE_ODBC:
 		if (switch_test_flag((&runtime), SCF_CLEAR_SQL)) {
 			char sql[512] = "";
-			char *tables[] = { "channels", "calls", "interfaces", "tasks", NULL };
+			char *tables[] = { "channels", "calls", "tasks", NULL };
 			int i;
 			const char *hostname = switch_core_get_switchname();
 
@@ -3265,8 +3265,18 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 		break;
 	}
 
+	if (switch_test_flag((&runtime), SCF_CLEAR_SQL)) {
+		char sql[512] = "";
+		char *tables[] = { "complete", "interfaces", NULL };
+		int i;
+		const char *hostname = switch_core_get_hostname();
 
-	switch_cache_db_execute_sql(sql_manager.dbh, "delete from complete where sticky=0", NULL);
+		for (i = 0; tables[i]; i++) {
+			switch_snprintfv(sql, sizeof(sql), "delete from %q where hostname='%q'", tables[i], hostname);
+			switch_cache_db_execute_sql(sql_manager.dbh, sql, NULL);
+		}
+	}
+
 	switch_cache_db_execute_sql(sql_manager.dbh, "delete from aliases where sticky=0", NULL);
 	switch_cache_db_execute_sql(sql_manager.dbh, "delete from nat where sticky=0", NULL);
 	switch_cache_db_execute_sql(sql_manager.dbh, "create index alias1 on aliases (alias)", NULL);
