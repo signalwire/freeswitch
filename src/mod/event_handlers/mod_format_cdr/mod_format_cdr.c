@@ -557,6 +557,8 @@ switch_status_t mod_format_cdr_load_profile_xml(switch_xml_t xprofile)
 	}
 
 	profile = switch_core_alloc(pool, sizeof(cdr_profile_t));
+	memset(profile, 0, sizeof(cdr_profile_t));
+
 	profile->pool = pool;
 	profile->name = switch_core_strdup(profile->pool, profile_name);
 
@@ -768,9 +770,9 @@ void mod_format_cdr_profile_shutdown(cdr_profile_t *profile)
 
 	switch_safe_free(profile->log_dir);
 	
-	switch_core_destroy_memory_pool(&profile->pool);
-
 	switch_thread_rwlock_destroy(profile->log_path_lock);
+
+	switch_core_destroy_memory_pool(&profile->pool);
 }
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_format_cdr_shutdown)
@@ -788,13 +790,12 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_format_cdr_shutdown)
 		switch_hash_this(hi, NULL, NULL, &val);
 		profile = (cdr_profile_t *) val;
 
-		mod_format_cdr_profile_shutdown(profile);
+		if ( profile ) {
+			mod_format_cdr_profile_shutdown(profile);
+		}
 	}
 
 	switch_core_hash_destroy(&globals.profile_hash);
-	switch_core_destroy_memory_pool(&globals.pool);
-
-	memset(&globals, 0, sizeof(globals));
 
 	return SWITCH_STATUS_SUCCESS;
 }
