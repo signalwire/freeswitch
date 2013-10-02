@@ -1882,7 +1882,8 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string)
 			} else if (!strcasecmp(argv[0], "del")) {
 				char *what = argv[1];
 				if (!strcasecmp(what, "*")) {
-					switch_core_sql_exec("delete from complete");
+					mystream.write_function(&mystream, "delete from complete where hostname='%s'", switch_core_get_hostname());
+					switch_core_sql_exec(mystream.data);
 				} else {
 					mystream.write_function(&mystream, "delete from complete where ");
 					for (x = 0; x < argc - 1; x++) {
