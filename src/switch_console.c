@@ -798,7 +798,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 
 	if (h.words == 0) {
 		sql = switch_mprintf("select distinct name from interfaces where type='api' and name like '%q%%' and hostname='%q' order by name",
-							 buf, switch_core_get_switchname());
+							 buf, switch_core_get_hostname());
 	}
 
 	if (sql) {
@@ -826,7 +826,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 
 		if (h.words == 0) {
 			stream.write_function(&stream, "select distinct a1 from complete where " "a1 not in (select name from interfaces where hostname='%s') %s ",
-								  switch_core_get_switchname(), argc ? "and" : "");
+								  switch_core_get_hostname(), argc ? "and" : "");
 		} else {
 			if (switch_cache_db_get_type(db) == SCDB_TYPE_CORE_DB) {
 				stream.write_function(&stream, "select distinct a%d,'%q','%q' from complete where ", h.words + 1, switch_str_nil(dup), switch_str_nil(lp));
@@ -855,7 +855,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 			}
 		}
 
-		stream.write_function(&stream, " and hostname='%s' order by a%d", switch_core_get_switchname(), h.words + 1);
+		stream.write_function(&stream, " and hostname='%s' order by a%d", switch_core_get_hostname(), h.words + 1);
 		
 		switch_cache_db_execute_sql_callback(db, stream.data, comp_callback, &h, &errmsg);
 
