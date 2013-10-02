@@ -1366,7 +1366,11 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 	if (!switch_event_get_header(ovars, "origination_caller_id_name")) {
 		if ((caller_id_name = switch_event_get_header(pop, "caller-caller-id-name"))) {
 			if (!zstr(node->outbound_name)) {
-				switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "origination_caller_id_name", "(%s) %s", node->outbound_name, caller_id_name);
+				if ( node->outbound_name[0] == '=' ) {
+					switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "origination_caller_id_name", "%s", node->outbound_name + 1);
+				} else {
+					switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "origination_caller_id_name", "(%s) %s", node->outbound_name, caller_id_name);
+				}
 			} else {
 				switch_event_add_header_string(ovars, SWITCH_STACK_BOTTOM, "origination_caller_id_name", caller_id_name);
 			}
