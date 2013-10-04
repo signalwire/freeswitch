@@ -1913,6 +1913,12 @@ static int on_ring(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
 	ftdm_set_string(caller_data->dnis.digits, (char *)pevent->ring.callednum);
 	ftdm_set_string(caller_data->rdnis.digits, (char *)pevent->ring.redirectingnum);
 
+	caller_data->cid_num.type = pevent->ring.callingplan >> 4;
+	caller_data->cid_num.plan = pevent->ring.callingplan & 0x0F;
+
+	caller_data->dnis.type = pevent->ring.calledplan >> 4;
+	caller_data->dnis.plan = pevent->ring.calledplan & 0x0F;
+
 	if (!ftdm_strlen_zero((char *)pevent->ring.callingname)) {
 		ftdm_set_string(caller_data->cid_name, (char *)pevent->ring.callingname);
 	} else {
