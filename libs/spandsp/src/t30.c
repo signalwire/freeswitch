@@ -421,7 +421,7 @@ static const struct
     { 7200, T30_MODEM_V29,      T30_SUPPORT_V29,    (DISBIT4 | DISBIT3)},
     { 4800, T30_MODEM_V27TER,   T30_SUPPORT_V27TER, DISBIT4},
     { 2400, T30_MODEM_V27TER,   T30_SUPPORT_V27TER, 0},
-    {    0, 0, 0, 0}
+    {    0, 0,                  0,                  0}
 };
 
 static void queue_phase(t30_state_t *s, int phase);
@@ -437,6 +437,7 @@ static void decode_20digit_msg(t30_state_t *s, char *msg, const uint8_t *pkt, in
 static void decode_url_msg(t30_state_t *s, char *msg, const uint8_t *pkt, int len);
 static int decode_nsf_nss_nsc(t30_state_t *s, uint8_t *msg[], const uint8_t *pkt, int len);
 static void set_min_scan_time(t30_state_t *s);
+static int build_dcs(t30_state_t *s);
 static void timer_t2_start(t30_state_t *s);
 static void timer_t2a_start(t30_state_t *s);
 static void timer_t2b_start(t30_state_t *s);
@@ -467,6 +468,27 @@ static int find_fallback_entry(int dcs_code)
     if (fallback_sequence[i].bit_rate == 0)
         return -1;
     return i;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int step_fallback_entry(t30_state_t *s)
+{
+    while (fallback_sequence[++s->current_fallback].bit_rate)
+    {
+        if ((fallback_sequence[s->current_fallback].which & s->current_permitted_modems))
+            break;
+    }
+    if (fallback_sequence[s->current_fallback].bit_rate == 0)
+    {
+        /* Reset the fallback sequence */
+        s->current_fallback = 0;
+        return -1;
+    }
+    /* We need to update the minimum scan time, in case we are in non-ECM mode. */
+    set_min_scan_time(s);
+    /* Now we need to rebuild the DCS message we will send. */
+    build_dcs(s);
+    return s->current_fallback;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -2242,23 +2264,6 @@ static int analyze_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int step_fallback_entry(t30_state_t *s)
-{
-    while (fallback_sequence[++s->current_fallback].which)
-    {
-        if ((fallback_sequence[s->current_fallback].which & s->current_permitted_modems))
-            break;
-    }
-    if (fallback_sequence[s->current_fallback].which == 0)
-        return -1;
-    /* We need to update the minimum scan time, in case we are in non-ECM mode. */
-    set_min_scan_time(s);
-    /* Now we need to rebuild the DCS message we will send. */
-    build_dcs(s);
-    return s->current_fallback;
-}
-/*- End of function --------------------------------------------------------*/
-
 static void send_dcn(t30_state_t *s)
 {
     queue_phase(s, T30_PHASE_D_TX);
@@ -2710,6 +2715,13 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
             send_dcn(s);
             return -1;
         }
+        /* Start document transmission */
+        span_log(&s->logging,
+                 SPAN_LOG_FLOW,
+                 "Put document with modem (%d) %s at %dbps\n",
+                 fallback_sequence[s->current_fallback].modem_type,
+                 t30_modem_to_str(fallback_sequence[s->current_fallback].modem_type),
+                 fallback_sequence[s->current_fallback].bit_rate);
         s->retries = 0;
         send_dcs_sequence(s, true);
         return 0;
@@ -2773,9 +2785,10 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
     /* Start document reception */
     span_log(&s->logging,
              SPAN_LOG_FLOW,
-             "Get document at %dbps, modem %d\n",
-             fallback_sequence[s->current_fallback].bit_rate,
-             fallback_sequence[s->current_fallback].modem_type);
+             "Get document with modem (%d) %s at %dbps\n",
+             fallback_sequence[s->current_fallback].modem_type,
+             t30_modem_to_str(fallback_sequence[s->current_fallback].modem_type),
+             fallback_sequence[s->current_fallback].bit_rate);
     if (s->rx_file[0] == '\0')
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "No document to receive\n");
@@ -3439,7 +3452,6 @@ static void process_state_d_post_tcf(t30_state_t *s, const uint8_t *msg, int len
         if (step_fallback_entry(s) < 0)
         {
             /* We have fallen back as far as we can go. Give up. */
-            s->current_fallback = 0;
             t30_set_status(s, T30_ERR_CANNOT_TRAIN);
             send_dcn(s);
             break;
@@ -4091,7 +4103,6 @@ static void process_state_ii_q(t30_state_t *s, const uint8_t *msg, int len)
             if (step_fallback_entry(s) < 0)
             {
                 /* We have fallen back as far as we can go. Give up. */
-                s->current_fallback = 0;
                 t30_set_status(s, T30_ERR_CANNOT_TRAIN);
                 send_dcn(s);
                 break;
@@ -4152,7 +4163,6 @@ static void process_state_ii_q(t30_state_t *s, const uint8_t *msg, int len)
             if (step_fallback_entry(s) < 0)
             {
                 /* We have fallen back as far as we can go. Give up. */
-                s->current_fallback = 0;
                 t30_set_status(s, T30_ERR_CANNOT_TRAIN);
                 send_dcn(s);
                 break;
@@ -4186,7 +4196,6 @@ static void process_state_ii_q(t30_state_t *s, const uint8_t *msg, int len)
                 if (step_fallback_entry(s) < 0)
                 {
                     /* We have fallen back as far as we can go. Give up. */
-                    s->current_fallback = 0;
                     t30_set_status(s, T30_ERR_CANNOT_TRAIN);
                     send_dcn(s);
                     break;

@@ -101,6 +101,50 @@
 
 #define HDLC_FRAMING_OK_THRESHOLD               5
 
+SPAN_DECLARE(const char *) fax_modem_to_str(int modem)
+{
+    switch (modem)
+    {
+    case FAX_MODEM_NONE:
+        return "None";
+    case FAX_MODEM_FLUSH:
+        return "Flush";
+    case FAX_MODEM_SILENCE_TX:
+        return "Silence Tx";
+    case FAX_MODEM_SILENCE_RX:
+        return "Silence Rx";
+    case FAX_MODEM_CED_TONE_TX:
+        return "CED Tx";
+    case FAX_MODEM_CNG_TONE_TX:
+        return "CNG Tx";
+    case FAX_MODEM_NOCNG_TONE_TX:
+        return "No CNG Tx";
+    case FAX_MODEM_CED_TONE_RX:
+        return "CED Rx";
+    case FAX_MODEM_CNG_TONE_RX:
+        return "CNG Rx";
+    case FAX_MODEM_V21_TX:
+        return "V.21 Tx";
+    case FAX_MODEM_V17_TX:
+        return "V.17 Tx";
+    case FAX_MODEM_V27TER_TX:
+        return "V.27ter Tx";
+    case FAX_MODEM_V29_TX:
+        return "V.29 Tx";
+    case FAX_MODEM_V21_RX:
+        return "V.21 Rx";
+    case FAX_MODEM_V17_RX:
+        return "V.17 Rx";
+    case FAX_MODEM_V27TER_RX:
+        return "V.27ter Rx";
+    case FAX_MODEM_V29_RX:
+        return "V.29 Rx";
+    }
+    /*endswitch*/
+    return "???";
+}
+/*- End of function --------------------------------------------------------*/
+
 static void fax_modems_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
 {
     fax_modems_state_t *s;
