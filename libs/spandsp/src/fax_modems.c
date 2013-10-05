@@ -533,6 +533,23 @@ SPAN_DECLARE(void) fax_modems_set_next_tx_handler(fax_modems_state_t *s, span_tx
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) fax_modems_set_next_tx_type(fax_modems_state_t *s)
+{
+    if (s->next_tx_handler)
+    {
+        fax_modems_set_tx_handler(s, s->next_tx_handler, s->next_tx_user_data);
+        fax_modems_set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+        return 0;
+    }
+    /* There is nothing else to change to, so use zero length silence */
+    silence_gen_alter(&s->silence_gen, 0);
+    fax_modems_set_tx_handler(s, (span_tx_handler_t) &silence_gen, &s->silence_gen);
+    fax_modems_set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+    s->transmit = false;
+    return -1;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(void) fax_modems_set_tep_mode(fax_modems_state_t *s, int use_tep)
 {
     s->use_tep = use_tep;

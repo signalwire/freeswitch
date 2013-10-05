@@ -2061,7 +2061,8 @@ SPAN_DECLARE_NONSTD(int) t38_gateway_rx(t38_gateway_state_t *s, int16_t amp[], i
     for (i = 0;  i < len;  i++)
         amp[i] = dc_restore(&s->audio.modems.dc_restore, amp[i]);
     /*endfor*/
-    s->audio.modems.rx_handler(s->audio.modems.rx_user_data, amp, len);
+    if (s->audio.modems.rx_handler)
+        s->audio.modems.rx_handler(s->audio.modems.rx_user_data, amp, len);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2102,12 +2103,13 @@ SPAN_DECLARE_NONSTD(int) t38_gateway_tx(t38_gateway_state_t *s, int16_t amp[], i
 
     required_len = max_len;
 #endif
+    len = 0;
     if ((len = s->audio.modems.tx_handler(s->audio.modems.tx_user_data, amp, max_len)) < max_len)
     {
         if (set_next_tx_type(s))
         {
             /* Give the new handler a chance to file the remaining buffer space */
-            len += s->audio.modems.tx_handler(s->audio.modems.tx_user_data, amp + len, max_len - len);
+            len += s->audio.modems.tx_handler(s->audio.modems.tx_user_data, &amp[len], max_len - len);
             if (len < max_len)
             {
                 silence_gen_set(&s->audio.modems.silence_gen, 0);
@@ -2121,7 +2123,7 @@ SPAN_DECLARE_NONSTD(int) t38_gateway_tx(t38_gateway_state_t *s, int16_t amp[], i
     if (s->audio.modems.transmit_on_idle)
     {
         /* Pad to the requested length with silence */
-        memset(amp + len, 0, (max_len - len)*sizeof(int16_t));
+        memset(&amp[len], 0, (max_len - len)*sizeof(int16_t));
         len = max_len;
     }
     /*endif*/
@@ -2129,7 +2131,7 @@ SPAN_DECLARE_NONSTD(int) t38_gateway_tx(t38_gateway_state_t *s, int16_t amp[], i
     if (s->audio.modems.audio_tx_log >= 0)
     {
         if (len < required_len)
-            memset(amp + len, 0, (required_len - len)*sizeof(int16_t));
+            memset(&amp[len], 0, (required_len - len)*sizeof(int16_t));
         /*endif*/
         write(s->audio.modems.audio_tx_log, amp, required_len*sizeof(int16_t));
     }

@@ -163,7 +163,8 @@ SPAN_DECLARE_NONSTD(int) fax_rx(fax_state_t *s, int16_t *amp, int len)
 #endif
     for (i = 0;  i < len;  i++)
         amp[i] = dc_restore(&s->modems.dc_restore, amp[i]);
-    s->modems.rx_handler(s->modems.rx_user_data, amp, len);
+    if (s->modems.rx_handler)
+        s->modems.rx_handler(s->modems.rx_user_data, amp, len);
     t30_timer_update(&s->t30, len);
     return 0;
 }
@@ -197,26 +198,6 @@ SPAN_DECLARE_NONSTD(int) fax_rx_fillin(fax_state_t *s, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int set_next_tx_type(fax_state_t *s)
-{
-    fax_modems_state_t *t;
-
-    t = &s->modems;
-    if (t->next_tx_handler)
-    {
-        fax_modems_set_tx_handler(t, t->next_tx_handler, t->next_tx_user_data);
-        t->next_tx_handler = NULL;
-        return 0;
-    }
-    /* If there is nothing else to change to, so use zero length silence */
-    silence_gen_alter(&t->silence_gen, 0);
-    fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
-    fax_modems_set_next_tx_handler(t, (span_tx_handler_t) NULL, NULL);
-    t->transmit = false;
-    return -1;
-}
-/*- End of function --------------------------------------------------------*/
-
 SPAN_DECLARE_NONSTD(int) fax_tx(fax_state_t *s, int16_t *amp, int max_len)
 {
     int len;
@@ -226,41 +207,30 @@ SPAN_DECLARE_NONSTD(int) fax_tx(fax_state_t *s, int16_t *amp, int max_len)
     required_len = max_len;
 #endif
     len = 0;
-    if (s->modems.transmit)
+    while (s->modems.transmit  &&  (len += s->modems.tx_handler(s->modems.tx_user_data, &amp[len], max_len - len)) < max_len)
     {
-        while ((len += s->modems.tx_handler(s->modems.tx_user_data, amp + len, max_len - len)) < max_len)
-        {
-            /* Allow for a change of tx handler within a block */
-            if (set_next_tx_type(s)  &&  s->modems.current_tx_type != T30_MODEM_NONE  &&  s->modems.current_tx_type != T30_MODEM_DONE)
-                t30_front_end_status(&s->t30, T30_FRONT_END_SEND_STEP_COMPLETE);
-            if (!s->modems.transmit)
-            {
-                if (s->modems.transmit_on_idle)
-                {
-                    /* Pad to the requested length with silence */
-                    memset(amp + len, 0, (max_len - len)*sizeof(int16_t));
-                    len = max_len;
-                }
-                break;
-            }
-        }
+        /* Allow for a change of tx handler within a block */
+        if (fax_modems_set_next_tx_type(&s->modems)  &&  s->modems.current_tx_type != T30_MODEM_NONE  &&  s->modems.current_tx_type != T30_MODEM_DONE)
+            t30_front_end_status(&s->t30, T30_FRONT_END_SEND_STEP_COMPLETE);
+        /*endif*/
     }
-    else
+    /*endwhile*/
+    if (s->modems.transmit_on_idle)
     {
-        if (s->modems.transmit_on_idle)
-        {
-            /* Pad to the requested length with silence */
-            memset(amp, 0, max_len*sizeof(int16_t));
-            len = max_len;
-        }
+        /* Pad to the requested length with silence */
+        memset(&amp[len], 0, (max_len - len)*sizeof(int16_t));
+        len = max_len;
     }
+    /*endif*/
 #if defined(LOG_FAX_AUDIO)
     if (s->modems.audio_tx_log >= 0)
     {
         if (len < required_len)
-            memset(amp + len, 0, (required_len - len)*sizeof(int16_t));
+            memset(&amp[len], 0, (required_len - len)*sizeof(int16_t));
+        /*endif*/
         write(s->modems.audio_tx_log, amp, required_len*sizeof(int16_t));
     }
+    /*endif*/
 #endif
     return len;
 }
