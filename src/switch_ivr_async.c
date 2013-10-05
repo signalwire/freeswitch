@@ -1274,8 +1274,15 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 					switch_channel_set_variable(channel, "RECORD_DISCARDED", "true");
 					switch_file_remove(rh->file, switch_core_session_get_pool(session));
 				}
-			}
 
+				if (read_impl.actual_samples_per_second) {
+					switch_channel_set_variable_printf(channel, "record_seconds", "%d", rh->fh->samples_out / read_impl.actual_samples_per_second);
+					switch_channel_set_variable_printf(channel, "record_ms", "%d", rh->fh->samples_out / (read_impl.actual_samples_per_second / 1000));
+				}
+				switch_channel_set_variable_printf(channel, "record_samples", "%d", rh->fh->samples_out);
+				
+			}
+			
 			if (switch_event_create(&event, SWITCH_EVENT_RECORD_STOP) == SWITCH_STATUS_SUCCESS) {
 				switch_channel_event_set_data(channel, event);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", rh->file);
