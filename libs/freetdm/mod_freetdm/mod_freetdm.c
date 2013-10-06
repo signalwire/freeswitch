@@ -2294,7 +2294,6 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 			}
 		}
 		break;
-	case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
 	case FTDM_SIGEVENT_COLLECTED_DIGIT: /* Analog E&M */
 		{
 			int span_id = ftdm_channel_get_span_id(sigmsg->channel);
@@ -2335,6 +2334,9 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 				ftdm_log(FTDM_LOG_DEBUG, "returning %s to COLLECT event with DTMF %s\n", status == FTDM_SUCCESS ? "success" : "break", dtmf);
 			}
 		}
+		break;
+	case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
+		/* span signaling status changed ... nothing to do here .. */
 		break;
 	default:
 		{
