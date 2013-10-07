@@ -2487,8 +2487,8 @@ void switch_core_session_init(switch_memory_pool_t *pool)
 		switch_queue_create(&session_manager.thread_queue, 100000, session_manager.memory_pool);
 		switch_threadattr_create(&thd_attr, session_manager.memory_pool);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		switch_thread_create(&session_manager.manager_thread, thd_attr, switch_core_session_thread_pool_manager, NULL, session_manager.memory_pool);		
 		session_manager.ready = 1;
+		switch_thread_create(&session_manager.manager_thread, thd_attr, switch_core_session_thread_pool_manager, NULL, session_manager.memory_pool);		
 	}
 
 }
@@ -2498,15 +2498,16 @@ void switch_core_session_uninit(void)
 	int sanity = 100;
 	switch_status_t st = SWITCH_STATUS_FALSE;
 
-	switch_core_hash_destroy(&session_manager.session_table);
 	session_manager.ready = 0;
-
-	switch_thread_join(&st, session_manager.manager_thread);
+	wake_queue();
 
 	while(session_manager.running && --sanity > 0) {
 		switch_queue_interrupt_all(session_manager.thread_queue);
 		switch_yield(100000);
 	}
+
+	switch_thread_join(&st, session_manager.manager_thread);
+	switch_core_hash_destroy(&session_manager.session_table);
 	
 }
 
