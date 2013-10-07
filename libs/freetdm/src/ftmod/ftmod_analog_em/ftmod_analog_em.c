@@ -44,6 +44,8 @@
 struct tm * localtime_r(const time_t *clock, struct tm *result);
 #endif
 
+static FIO_SPAN_SET_SIG_STATUS_FUNCTION(analog_em_set_span_sig_status);
+
 /* check if the given file is a wave file and skip the header if it is */
 #define WAVE_CHUNK_ID "RIFF"
 #define WAVE_FMT "WAVEfmt "
@@ -223,6 +225,7 @@ static ftdm_status_t ftdm_analog_em_stop(ftdm_span_t *span)
 	ftdm_analog_em_data_t *analog_data = span->signal_data;
 	ftdm_clear_flag(analog_data, FTDM_ANALOG_EM_RUNNING);
 	ftdm_sleep(100);
+	analog_em_set_span_sig_status(span, FTDM_SIG_STATE_SUSPENDED);
 	return FTDM_SUCCESS;
 }
 
@@ -1016,6 +1019,7 @@ static void *ftdm_analog_em_run(ftdm_thread_t *me, void *obj)
 
 	ftdm_unused_arg(me);
 	ftdm_log(FTDM_LOG_DEBUG, "ANALOG EM thread starting.\n");
+	analog_em_set_span_sig_status(span, FTDM_SIG_STATE_UP);
 
 	while(ftdm_running() && ftdm_test_flag(analog_data, FTDM_ANALOG_EM_RUNNING)) {
 		int waitms = 10;
