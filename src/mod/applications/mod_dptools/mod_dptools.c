@@ -4615,6 +4615,7 @@ static switch_status_t file_string_file_read(switch_file_handle_t *handle, void 
 	return status;
 }
 
+
 static switch_status_t file_string_file_write(switch_file_handle_t *handle, void *data, size_t *len)
 {
 	file_string_context_t *context = handle->private_info;
@@ -4633,10 +4634,101 @@ static switch_status_t file_string_file_write(switch_file_handle_t *handle, void
 	return status;
 }
 
+static switch_status_t file_url_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
+{
+	switch_file_handle_t *fh = handle->private_info;
+	return switch_core_file_seek(fh, cur_sample, samples, whence);
+}
+
+static switch_status_t file_url_file_close(switch_file_handle_t *handle)
+{
+	switch_file_handle_t *fh = handle->private_info;
+	if (switch_test_flag(fh, SWITCH_FILE_OPEN)) {
+		switch_core_file_close(fh);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t file_url_file_read(switch_file_handle_t *handle, void *data, size_t *len)
+{
+	switch_file_handle_t *fh = handle->private_info;
+	return switch_core_file_read(fh, data, len);
+}
+
+static switch_status_t file_url_file_open(switch_file_handle_t *handle, const char *path)
+{
+	switch_file_handle_t *fh = switch_core_alloc(handle->memory_pool, sizeof(*fh));
+	switch_status_t status;
+	char *url_host;
+	char *url_path;
+
+	if (zstr(path)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NULL path\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	/* parse and check host */
+	url_host = switch_core_strdup(handle->memory_pool, path);
+	if (!(url_path = strchr(url_host, '/'))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "missing path\n");
+		return SWITCH_STATUS_FALSE;
+	}
+	*url_path = '\0';
+	/* TODO allow this host */
+	if (!zstr(url_host) && strcasecmp(url_host, "localhost")) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "not localhost\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	/* decode and check path */
+	url_path++;
+	if (zstr(url_path)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "empty path\n");
+		return SWITCH_STATUS_FALSE;
+	}
+	if (strstr(url_path, "%2f") || strstr(url_path, "%2F")) {
+		/* don't allow %2f or %2F encoding (/) */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "encoded slash is not allowed\n");
+		return SWITCH_STATUS_FALSE;
+	}
+	url_path = switch_core_sprintf(handle->memory_pool, "/%s", url_path);
+	switch_url_decode(url_path);
+
+	/* TODO convert to native file separators? */
+
+	handle->private_info = fh;
+	status = switch_core_file_open(fh, url_path, handle->channels, handle->samplerate, handle->flags, NULL);
+	if (status == SWITCH_STATUS_SUCCESS) {
+		handle->samples = fh->samples;
+		handle->cur_samplerate = fh->samplerate;
+		handle->cur_channels = fh->channels;
+		handle->format = fh->format;
+		handle->sections = fh->sections;
+		handle->seekable = fh->seekable;
+		handle->speed = fh->speed;
+		handle->interval = fh->interval;
+		handle->max_samples = 0;
+
+		if (switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
+			switch_set_flag(handle, SWITCH_FILE_NATIVE);
+		} else {
+			switch_clear_flag(handle, SWITCH_FILE_NATIVE);
+		}
+	}
+	return status;
+}
+
+static switch_status_t file_url_file_write(switch_file_handle_t *handle, void *data, size_t *len)
+{
+	switch_file_handle_t *fh = handle->private_info;
+	return switch_core_file_write(fh, data, len);
+}
 
 /* Registration */
 
 static char *file_string_supported_formats[SWITCH_MAX_CODECS] = { 0 };
+static char *file_url_supported_formats[SWITCH_MAX_CODECS] = { 0 };
 
 
 /* /FILE STRING INTERFACE */
@@ -5503,6 +5595,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	file_interface->file_read = file_string_file_read;
 	file_interface->file_write = file_string_file_write;
 	file_interface->file_seek = file_string_file_seek;
+
+	file_url_supported_formats[0] = "file";
+
+	file_interface = (switch_file_interface_t *) switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
+	file_interface->interface_name = modname;
+	file_interface->extens = file_url_supported_formats;
+	file_interface->file_open = file_url_file_open;
+	file_interface->file_close = file_url_file_close;
+	file_interface->file_read = file_url_file_read;
+	file_interface->file_write = file_url_file_write;
+	file_interface->file_seek = file_url_file_seek;
 
 
 	error_endpoint_interface = (switch_endpoint_interface_t *) switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
