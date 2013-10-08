@@ -283,6 +283,17 @@ struct vid_helper {
 	int up;
 };
 
+struct conference_obj;
+
+/* Record Node */
+typedef struct conference_record {
+	struct conference_obj *conference;
+	char *path;
+	switch_memory_pool_t *pool;
+	switch_bool_t autorec;
+	struct conference_record *next;
+} conference_record_t;
+
 /* Conference Object */
 typedef struct conference_obj {
 	char *name;
@@ -348,7 +359,7 @@ typedef struct conference_obj {
 	int pin_retries;
 	int broadcast_chat_messages;
 	int comfort_noise_level;
-	int is_recording;
+	int auto_recording;
 	int record_count;
 	int video_running;
 	int ivr_dtmf_timeout;
@@ -381,6 +392,7 @@ typedef struct conference_obj {
 	cdr_event_mode_t cdr_event_mode;
 	struct vid_helper vh[2];
 	struct vid_helper mh;
+	conference_record_t *rec_node_head;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -450,13 +462,6 @@ struct conference_member {
 	switch_thread_t *input_thread;
 };
 
-/* Record Node */
-typedef struct conference_record {
-	conference_obj_t *conference;
-	char *path;
-	switch_memory_pool_t *pool;
-} conference_record_t;
-
 typedef enum {
 	CONF_API_SUB_ARGS_SPLIT,
 	CONF_API_SUB_MEMBER_TARGET,
@@ -524,7 +529,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 static switch_status_t chat_send(switch_event_t *message_event);
 								 
 
-static void launch_conference_record_thread(conference_obj_t *conference, char *path);
+static void launch_conference_record_thread(conference_obj_t *conference, char *path, switch_bool_t autorec);
 static int launch_conference_video_bridge_thread(conference_member_t *member_a, conference_member_t *member_b);
 static void launch_conference_video_mirror_thread(conference_member_t *member_a);
 
@@ -1965,7 +1970,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	globals.threads++;
 	switch_mutex_unlock(globals.hash_mutex);
 
-	conference->is_recording = 0;
+	conference->auto_recording = 0;
 	conference->record_count = 0;
 
 
@@ -2105,15 +2110,15 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		}
 
 		/* Start recording if there's more than one participant. */
-		if (conference->auto_record && !conference->is_recording && conference->count > 1) {
-			conference->is_recording = 1;
+		if (conference->auto_record && !conference->auto_recording && conference->count > 1) {
+			conference->auto_recording++;
 			conference->record_count++;
 			imember = conference->members;
 			if (imember) {
 				switch_channel_t *channel = switch_core_session_get_channel(imember->session);
 				char *rfile = switch_channel_expand_variables(channel, conference->auto_record);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Auto recording file: %s\n", rfile);
-				launch_conference_record_thread(conference, rfile);
+				launch_conference_record_thread(conference, rfile, SWITCH_TRUE);
 				if (rfile != conference->auto_record) {
 					conference->record_filename = switch_core_strdup(conference->pool, rfile);
 					switch_safe_free(rfile);
@@ -3877,7 +3882,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	int16_t *data_buf;
 	switch_file_handle_t fh = { 0 };
 	conference_member_t smember = { 0 }, *member;
-	conference_record_t *rec = (conference_record_t *) obj;
+	conference_record_t *rp, *last = NULL, *rec = (conference_record_t *) obj;
 	conference_obj_t *conference = rec->conference;
 	uint32_t samples = switch_samples_per_packet(conference->rate, conference->interval);
 	uint32_t mux_used;
@@ -4058,8 +4063,6 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		switch_mutex_unlock(member->audio_out_mutex);
 	}
 
-	conference->is_recording = 0;
-	
 	switch_safe_free(data_buf);
 	switch_core_timer_destroy(&timer);
 	conference_del_member(conference, member);
@@ -4077,6 +4080,23 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Path", rec->path);
 		switch_event_fire(&event);
 	}
+
+	if (rec->autorec && conference->auto_recording) {
+		conference->auto_recording--;
+	}
+
+	switch_mutex_lock(conference->flag_mutex);
+	for (rp = conference->rec_node_head; rp; rp = rp->next) {
+		if (rec == rp) {
+			if (last) {
+				last->next = rp->next;
+			} else {
+				conference->rec_node_head = rp->next;
+			}
+		}
+	}
+	switch_mutex_unlock(conference->flag_mutex);
+
 
 	if (rec->pool) {
 		switch_memory_pool_t *pool = rec->pool;
@@ -6177,11 +6197,20 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 
 static switch_status_t conf_api_sub_check_record(conference_obj_t *conference, switch_stream_handle_t *stream, int arc, char **argv)
 {
-	if (conference->is_recording) {
-		stream->write_function(stream, "Record file %s\n", conference->record_filename);
-	} else {
+	conference_record_t *rec;
+	int x = 0;
+
+	switch_mutex_lock(conference->flag_mutex);
+	for (rec = conference->rec_node_head; rec; rec = rec->next) {
+		stream->write_function(stream, "Record file %s%s%s\n", rec->path, rec->autorec ? " " : "", rec->autorec ? "(Auto)" : "");
+		x++;
+	}
+
+	if (!x) {
 		stream->write_function(stream, "Conference is not being recorded.\n");
 	}
+	switch_mutex_unlock(conference->flag_mutex);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -6196,7 +6225,7 @@ static switch_status_t conf_api_sub_record(conference_obj_t *conference, switch_
 	stream->write_function(stream, "Record file %s\n", argv[2]);
 	conference->record_filename = switch_core_strdup(conference->pool, argv[2]);
 	conference->record_count++;
-	launch_conference_record_thread(conference, argv[2]);
+	launch_conference_record_thread(conference, argv[2], SWITCH_FALSE);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -6281,6 +6310,13 @@ static switch_status_t conf_api_sub_recording(conference_obj_t *conference, swit
 {
 	switch_assert(conference != NULL);
 	switch_assert(stream != NULL);
+
+	if (argc <= 3) {
+		if (strcasecmp(argv[2], "stop") == 0 || strcasecmp(argv[2], "check") == 0) {
+			argv[3] = "all";
+			argc++;
+		}
+	}
 
 	if (argc <= 3) {
 		/* It means that old syntax is used */
@@ -8023,7 +8059,7 @@ static void launch_conference_video_mirror_thread(conference_member_t *member_a)
 	launch_thread_detached(conference_video_mirror_thread_run, pool, &conference->mh);
 }
 
-static void launch_conference_record_thread(conference_obj_t *conference, char *path)
+static void launch_conference_record_thread(conference_obj_t *conference, char *path, switch_bool_t autorec)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
@@ -8042,11 +8078,15 @@ static void launch_conference_record_thread(conference_obj_t *conference, char *
 		return;
 	}
 
-	conference->is_recording = 1;
-
 	rec->conference = conference;
 	rec->path = switch_core_strdup(pool, path);
 	rec->pool = pool;
+	rec->autorec = autorec;
+
+	switch_mutex_lock(conference->flag_mutex);
+	rec->next = conference->rec_node_head;
+	conference->rec_node_head = rec;
+	switch_mutex_unlock(conference->flag_mutex);
 
 	switch_threadattr_create(&thd_attr, rec->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
