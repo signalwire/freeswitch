@@ -283,9 +283,16 @@ SWITCH_STANDARD_APP(clear_digit_action_function)
 {
 	//switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_ivr_dmachine_t *dmachine;
-	char *realm = switch_core_session_strdup(session, data);
+	char *realm = NULL;
 	char *target_str;
 	switch_digit_action_target_t target = DIGIT_TARGET_SELF;
+
+	if (zstr(realm)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "clear_digit_action called with no args");
+		return;
+	}
+
+	realm = switch_core_session_strdup(session, data);
 
 	if ((target_str = strchr(realm, ','))) {
 		*target_str++ = '\0';
