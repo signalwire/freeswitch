@@ -64,6 +64,10 @@
         <!-- <domain name="$${domain}" parse="true"/> -->
         <!-- indicator to parse the directory for domains with parse="true" to
              get gateways and alias every domain to this profile -->
+        <!-- This may seem like just a configuration convenience, but
+             aliasing has real effects on the handling of packets.  If
+             you're sharing a profile between multiple realms, you
+             want to alias all realms to the shared profile. -->
         <!-- <domain name="all" alias="true" parse="true"/> -->
         <domain name="all" alias="true" parse="false"/>
       </domains>
