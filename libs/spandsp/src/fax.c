@@ -255,7 +255,6 @@ static void fax_set_rx_type(void *user_data, int type, int bit_rate, int short_t
     {
     case T30_MODEM_V21:
         fax_modems_start_slow_modem(t, FAX_MODEM_V21_RX);
-        fax_modems_set_rx_handler(t, (span_rx_handler_t) &fsk_rx, &t->v21_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &t->v21_rx);
         break;
     case T30_MODEM_V17:
         fax_modems_start_fast_modem(t, FAX_MODEM_V17_RX, bit_rate, short_train, use_hdlc);
@@ -286,6 +285,7 @@ static void fax_set_tx_type(void *user_data, int type, int bit_rate, int short_t
     span_log(&s->logging, SPAN_LOG_FLOW, "Set tx type %d\n", type);
     if (t->current_tx_type == type)
         return;
+
     switch (type)
     {
     case T30_MODEM_PAUSE:
