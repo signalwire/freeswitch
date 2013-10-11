@@ -3086,7 +3086,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 
 			cmd = switch_mprintf("%s %s %s '%s' %s@%s %s",
 								 vm_cc_current, file_path, caller_id_number,
-								 caller_id_name, myid, domain_name, read_flags);
+								 val, myid, domain_name, read_flags);
 
 			free(val);
 
