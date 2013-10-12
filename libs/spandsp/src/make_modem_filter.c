@@ -41,6 +41,10 @@
 #include <getopt.h>
 #endif
 
+#if defined (_MSC_VER)
+ #define __inline__ __inline
+#endif
+
 #include "spandsp/telephony.h"
 #include "spandsp/complex.h"
 #include "filter_tools.h"
