@@ -165,13 +165,14 @@ enum skinny_button_definition {
 	SKINNY_BUTTON_SPEED_DIAL = 0x02,
 	SKINNY_BUTTON_HOLD = 0x03,
 	SKINNY_BUTTON_TRANSFER = 0x04,
+	SKINNY_BUTTON_FORWARDALL = 0x05,
 	SKINNY_BUTTON_LINE = 0x09,
 	SKINNY_BUTTON_VOICEMAIL = 0x0F,
 	SKINNY_BUTTON_PRIVACY = 0x13,
 	SKINNY_BUTTON_SERVICE_URL = 0x14,
 	SKINNY_BUTTON_UNDEFINED = 0xFF,
 };
-extern struct skinny_table SKINNY_BUTTONS[11];
+extern struct skinny_table SKINNY_BUTTONS[12];
 const char *skinny_button2str(uint32_t id);
 uint32_t skinny_str2button(const char *str);
 #define SKINNY_PUSH_STIMULI SKINNY_DECLARE_PUSH_MATCH(SKINNY_BUTTONS)

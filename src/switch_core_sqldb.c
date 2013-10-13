@@ -2012,7 +2012,7 @@ static void core_event_handler(switch_event_t *event)
 				new_sql() = switch_mprintf("insert into tasks values(%q,'%q','%q',%q, '%q')",
 										   id,
 										   switch_event_get_header_nil(event, "task-desc"),
-										   switch_event_get_header_nil(event, "task-group"), manager ? manager : "0", switch_core_get_switchname()
+										   switch_event_get_header_nil(event, "task-group"), manager ? manager : "0", switch_core_get_hostname()
 										   );
 			}
 		}
@@ -2020,7 +2020,7 @@ static void core_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_DEL_SCHEDULE:
 	case SWITCH_EVENT_EXE_SCHEDULE:
 		new_sql() = switch_mprintf("delete from tasks where task_id=%q and hostname='%q'",
-								   switch_event_get_header_nil(event, "task-id"), switch_core_get_switchname());
+								   switch_event_get_header_nil(event, "task-id"), switch_core_get_hostname());
 		break;
 	case SWITCH_EVENT_RE_SCHEDULE:
 		{
@@ -2031,7 +2031,7 @@ static void core_event_handler(switch_event_t *event)
 				new_sql() = switch_mprintf("update tasks set task_desc='%q',task_group='%q', task_sql_manager=%q where task_id=%q and hostname='%q'",
 										   switch_event_get_header_nil(event, "task-desc"),
 										   switch_event_get_header_nil(event, "task-group"), manager ? manager : "0", id,
-										   switch_core_get_switchname());
+										   switch_core_get_hostname());
 			}
 		}
 		break;
@@ -2317,7 +2317,7 @@ static void core_event_handler(switch_event_t *event)
 		new_sql() = switch_mprintf("delete from channels where hostname='%q';"
 								   "delete from interfaces where hostname='%q';"
 								   "delete from calls where hostname='%q'",
-								   switch_core_get_switchname(), switch_core_get_switchname(), switch_core_get_switchname()
+								   switch_core_get_switchname(), switch_core_get_hostname(), switch_core_get_switchname()
 								   );
 		break;
 	case SWITCH_EVENT_LOG:
@@ -2335,7 +2335,7 @@ static void core_event_handler(switch_event_t *event)
 					switch_mprintf
 					("insert into interfaces (type,name,description,syntax,ikey,filename,hostname) values('%q','%q','%q','%q','%q','%q','%q')", type, name,
 					 switch_str_nil(description), switch_str_nil(syntax), switch_str_nil(key), switch_str_nil(filename),
-					 switch_core_get_switchname()
+					 switch_core_get_hostname()
 					 );
 			}
 			break;
@@ -2346,7 +2346,7 @@ static void core_event_handler(switch_event_t *event)
 			const char *name = switch_event_get_header_nil(event, "name");
 			if (!zstr(type) && !zstr(name)) {
 				new_sql() = switch_mprintf("delete from interfaces where type='%q' and name='%q' and hostname='%q'", type, name,
-										   switch_core_get_switchname());
+										   switch_core_get_hostname());
 			}
 			break;
 		}
@@ -2369,12 +2369,12 @@ static void core_event_handler(switch_event_t *event)
 			if (!strcmp("add", op)) {
 				new_sql() = switch_mprintf("insert into nat (port, proto, sticky, hostname) values (%s, %s, %d,'%q')",
 										   switch_event_get_header_nil(event, "port"),
-										   switch_event_get_header_nil(event, "proto"), sticky, switch_core_get_switchname()
+										   switch_event_get_header_nil(event, "proto"), sticky, switch_core_get_hostname()
 										   );
 			} else if (!strcmp("del", op)) {
 				new_sql() = switch_mprintf("delete from nat where port=%s and proto=%s and hostname='%q'",
 										   switch_event_get_header_nil(event, "port"),
-										   switch_event_get_header_nil(event, "proto"), switch_core_get_switchname());
+										   switch_event_get_header_nil(event, "proto"), switch_core_get_hostname());
 			} else if (!strcmp("status", op)) {
 				/* call show nat api */
 			} else if (!strcmp("status_response", op)) {
@@ -3106,7 +3106,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	case SCDB_TYPE_ODBC:
 		if (switch_test_flag((&runtime), SCF_CLEAR_SQL)) {
 			char sql[512] = "";
-			char *tables[] = { "channels", "calls", "interfaces", "tasks", NULL };
+			char *tables[] = { "channels", "calls", "tasks", NULL };
 			int i;
 			const char *hostname = switch_core_get_switchname();
 
@@ -3265,8 +3265,18 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 		break;
 	}
 
+	if (switch_test_flag((&runtime), SCF_CLEAR_SQL)) {
+		char sql[512] = "";
+		char *tables[] = { "complete", "interfaces", NULL };
+		int i;
+		const char *hostname = switch_core_get_hostname();
 
-	switch_cache_db_execute_sql(sql_manager.dbh, "delete from complete where sticky=0", NULL);
+		for (i = 0; tables[i]; i++) {
+			switch_snprintfv(sql, sizeof(sql), "delete from %q where hostname='%q'", tables[i], hostname);
+			switch_cache_db_execute_sql(sql_manager.dbh, sql, NULL);
+		}
+	}
+
 	switch_cache_db_execute_sql(sql_manager.dbh, "delete from aliases where sticky=0", NULL);
 	switch_cache_db_execute_sql(sql_manager.dbh, "delete from nat where sticky=0", NULL);
 	switch_cache_db_execute_sql(sql_manager.dbh, "create index alias1 on aliases (alias)", NULL);

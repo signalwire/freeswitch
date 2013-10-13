@@ -592,6 +592,38 @@ switch_status_t perform_send_set_ringer(listener_t *listener,
 	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
 
+switch_status_t perform_send_forward_stat(listener_t *listener,
+		const char *file, const char *func, int line,
+		const char *number)
+{
+	skinny_message_t *message;
+
+	skinny_create_message(message, FORWARD_STAT_MESSAGE, forward_stat);
+	
+	if ( number && number[0] )
+	{
+		message->data.forward_stat.active_forward = 1;
+		message->data.forward_stat.line_instance = 1;
+		message->data.forward_stat.forward_all_active = 1;
+		message->data.forward_stat.forward_busy_active = 1;
+		message->data.forward_stat.forward_noanswer_active = 1;
+
+		strncpy(message->data.forward_stat.forward_all_number, number, sizeof(message->data.forward_stat.forward_all_number));
+		strncpy(message->data.forward_stat.forward_busy_number, number, sizeof(message->data.forward_stat.forward_all_number));
+		strncpy(message->data.forward_stat.forward_noanswer_number, number, sizeof(message->data.forward_stat.forward_all_number));
+		skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
+			"Sending ForwardStat with Number (%s)\n", number);
+	}
+	else
+	{
+		skinny_log_l_ffl_msg(listener, file, func, line, SWITCH_LOG_DEBUG,
+			"Sending ForwardStat with No Number (Inactive)\n");
+	}
+
+
+	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
+}
+
 switch_status_t perform_send_set_lamp(listener_t *listener,
 		const char *file, const char *func, int line,
 		uint32_t stimulus,

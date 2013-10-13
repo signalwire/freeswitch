@@ -59,6 +59,11 @@
     "[%s:%d @ %s:%d] " _fmt, skinny_undef_str(listener->device_name), listener->device_instance, skinny_undef_str(listener->remote_ip), \
     listener->remote_port, __VA_ARGS__)
 
+#define skinny_log_l_ffl_msg(listener, file, func, line, level, _fmt) switch_log_printf( \
+	SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, level, \
+    "[%s:%d @ %s:%d] " _fmt, skinny_undef_str(listener->device_name), listener->device_instance, skinny_undef_str(listener->remote_ip), \
+    listener->remote_port)
+
 #define skinny_log_ls(listener, session, level, _fmt, ...) switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), level, \
     "[%s:%d @ %s:%d] " _fmt, skinny_undef_str(listener->device_name), listener->device_instance, skinny_undef_str(listener->remote_ip), \
     listener->remote_port, __VA_ARGS__)
@@ -125,6 +130,7 @@ struct skinny_profile {
 	char *ext_redial;
 	char *ext_meetme;
 	char *ext_pickup;
+	char *ext_cfwdall;
 	/* db */
 	char *dbname;
 	char *odbc_dsn;
@@ -194,6 +200,7 @@ struct listener {
 	char *ext_redial;
 	char *ext_meetme;
 	char *ext_pickup;
+	char *ext_cfwdall;
 };
 
 typedef struct listener listener_t;

@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Marc Olivier Chouinard <mochouinard@moctel.com>
+ * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
  *
  *
  * mod_callcenter.c -- Call Center Module
@@ -1452,9 +1453,12 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		switch_channel_process_export(member_channel, NULL, ovars, "cc_export_vars");
 
 		t_agent_called = local_epoch_time_now(NULL);
-		dialstr = switch_mprintf("%s", h->originate_string);
+
+		dialstr = switch_channel_expand_variables(member_channel, h->originate_string);
 		status = switch_ivr_originate(NULL, &agent_session, &cause, dialstr, 60, NULL, cid_name ? cid_name : h->member_cid_name, h->member_cid_number, NULL, ovars, SOF_NONE, NULL);
-		switch_safe_free(dialstr);
+		if (dialstr != h->originate_string) {
+			switch_safe_free(dialstr);
+		}
 		switch_safe_free(cid_name);
 
 		switch_event_destroy(&ovars);

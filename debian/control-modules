@@ -229,7 +229,7 @@ Description: Voicemail detection
 Module: applications/mod_voicemail
 Description: Voicemail
  This module provides a voicemail system.
-Depends: mail-transport-agent
+Depends: ssmtp | mail-transport-agent
 
 Module: applications/mod_voicemail_ivr
 Description: Voicemail IVR

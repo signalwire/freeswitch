@@ -223,6 +223,7 @@ int ws_handshake(wsh_t *wsh)
 	char key[256] = "";
 	char version[5] = "";
 	char proto[256] = "";
+	char proto_buf[384] = "";
 	char uri[256] = "";
 	char input[256] = "";
 	unsigned char output[SHA1_HASH_SIZE] = "";
@@ -242,7 +243,7 @@ int ws_handshake(wsh_t *wsh)
 		}
 	}
 
-	if (bytes > sizeof(wsh->buffer)) {
+	if (bytes > sizeof(wsh->buffer) -1) {
 		goto err;
 	}
 
@@ -273,14 +274,18 @@ int ws_handshake(wsh_t *wsh)
 	sha1_digest(output, input);
 	b64encode((unsigned char *)output, SHA1_HASH_SIZE, (unsigned char *)b64, sizeof(b64));
 
+	if (*proto) {
+		snprintf(proto_buf, sizeof(proto_buf), "Sec-WebSocket-Protocol: %s\r\n", proto);
+	}
+
 	snprintf(respond, sizeof(respond), 
 			 "HTTP/1.1 101 Switching Protocols\r\n"
 			 "Upgrade: websocket\r\n"
 			 "Connection: Upgrade\r\n"
 			 "Sec-WebSocket-Accept: %s\r\n"
-			 "Sec-WebSocket-Protocol: %s\r\n\r\n",
+			 "%s\r\n",
 			 b64,
-			 proto);
+			 proto_buf);
 
 
 	ws_raw_write(wsh, respond, strlen(respond));
@@ -319,7 +324,7 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 #endif
 		} while (r == -1 && SSL_get_error(wsh->ssl, r) == SSL_ERROR_WANT_READ && x < 100);
 
-		return r;
+		goto end;
 	}
 
 	do {
@@ -334,6 +339,12 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 	
 	if (x >= 100) {
 		r = -1;
+	}
+
+ end:
+
+	if (r > 0) {
+		*((char *)data + r) = '\0';
 	}
 
 	return r;
@@ -530,7 +541,7 @@ ssize_t ws_close(wsh_t *wsh, int16_t reason)
 
 	restore_socket(wsh->sock);
 
-	if (wsh->close_sock) {
+	if (wsh->close_sock && wsh->sock != ws_sock_invalid) {
 		close(wsh->sock);
 	}
 
@@ -559,7 +570,11 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 		return ws_close(wsh, WS_PROTO_ERR);
 	}
 
-	if ((wsh->datalen = ws_raw_read(wsh, wsh->buffer, 9)) < need) {
+	if ((wsh->datalen = ws_raw_read(wsh, wsh->buffer, 9)) < 0) {
+		return ws_close(wsh, WS_PROTO_ERR);
+	}
+	
+	if (wsh->datalen < need) {
 		if ((wsh->datalen += ws_raw_read(wsh, wsh->buffer + wsh->datalen, 9 - wsh->datalen)) < need) {
 			/* too small - protocol err */
 			return ws_close(wsh, WS_PROTO_ERR);

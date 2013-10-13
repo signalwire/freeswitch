@@ -592,7 +592,6 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 			device_name, device_instance, &listener);
 	if(listener && helper->tech_pvt->session && helper->remote_session) {
 		switch_channel_t *channel = switch_core_session_get_channel(helper->tech_pvt->session);
-		switch_channel_t *remchannel = switch_core_session_get_channel(helper->remote_session);
 		switch_channel_set_state(channel, CS_ROUTING);
 		helper->lines_count++;
 		switch_channel_set_variable(channel, "effective_callee_id_number", value);
@@ -632,7 +631,7 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 		skinny_session_send_call_info(helper->tech_pvt->session, listener, line_instance);
 		send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_BLINK);
 		send_set_ringer(listener, SKINNY_RING_INSIDE, SKINNY_RING_FOREVER, 0, helper->tech_pvt->call_id);
-		switch_channel_ring_ready(remchannel);
+		switch_channel_ring_ready(channel);
 	}
 	return 0;
 }
@@ -1097,6 +1096,10 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 					if (!listener->ext_pickup || strcmp(value,listener->ext_pickup)) {
 						listener->ext_pickup = switch_core_strdup(profile->pool, value);
 					}
+				} else if (!strcasecmp(name, "ext-cfwdall")) {
+					if (!listener->ext_cfwdall || strcmp(value,listener->ext_cfwdall)) {
+						listener->ext_cfwdall = switch_core_strdup(profile->pool, value);
+					}
 				}
 			}
 		}
@@ -1256,7 +1259,7 @@ switch_status_t skinny_handle_keypad_button_message(listener_t *listener, skinny
 			digit = '*';
 		} else if (request->data.keypad_button.button == 15) {
 			digit = '#';
-		} else if (request->data.keypad_button.button >= 0 && request->data.keypad_button.button <= 9) {
+		} else if (request->data.keypad_button.button <= 9) { /* unsigned, so guaranteed to be >= 0 */
 			digit = '0' + request->data.keypad_button.button;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "UNKNOW DTMF RECEIVED ON CALL %d [%d]\n", tech_pvt->call_id, request->data.keypad_button.button);
@@ -2000,6 +2003,11 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 			skinny_create_incoming_session(listener, &line_instance, &session);
 			skinny_session_process_dest(session, listener, line_instance, 
 				empty_null2(listener->ext_pickup, listener->profile->ext_pickup), '\0', 0);
+			break;
+		case SOFTKEY_CFWDALL:
+			skinny_create_incoming_session(listener, &line_instance, &session);
+			skinny_session_process_dest(session, listener, line_instance, 
+				empty_null2(listener->ext_cfwdall, listener->profile->ext_cfwdall), '\0', 0);
 			break;
 		default:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,

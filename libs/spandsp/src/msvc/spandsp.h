@@ -36,9 +36,10 @@
 
 #define SPANDSP_USE_EXPORT_CAPABILITY 1
 
-#undef SPANDSP_SUPPORT_T42
 #undef SPANDSP_SUPPORT_T43
+#undef SPANDSP_SUPPORT_V32BIS
 #undef SPANDSP_SUPPORT_V34
+#undef SPANDSP_SUPPORT_TIFF_FX
 
 #include <stdlib.h>
 #include <msvc/inttypes.h>

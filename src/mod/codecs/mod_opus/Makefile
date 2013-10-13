@@ -1,6 +1,6 @@
 BASE=../../../..
 
-OPUS=opus-1.0.2
+OPUS=opus-1.0.3
 
 OPUS_DIR=$(switch_srcdir)/libs/$(OPUS)
 OPUS_BUILDDIR=$(switch_builddir)/libs/$(OPUS)

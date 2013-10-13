@@ -239,7 +239,6 @@ switch_status_t modem_init(modem_t *modem, modem_control_handler_t control_handl
 	modem->stty = ttyname(modem->slave);
 #else
 #ifdef WIN32
-	modem->slot = 4 + globals.NEXT_ID++; /* need work here we start at COM4 for now*/
 	snprintf(modem->devlink, sizeof(modem->devlink), "COM%d", modem->slot);
 
 	modem->master = CreateFile(modem->devlink,
@@ -884,6 +883,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		if (outbound_profile) {
 			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 			caller_profile->source = switch_core_strdup(caller_profile->pool, "mod_spandsp");
+			caller_profile->destination_number = switch_core_strdup(caller_profile->pool, number);
 			switch_channel_set_caller_profile(channel, caller_profile);
 			tech_pvt->caller_profile = caller_profile;
 		} else {

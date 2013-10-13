@@ -15,11 +15,11 @@ install: $(LICSERVER) $(VALIDATOR) $(MOD)
 
 $(LICSERVER) $(VALIDATOR) $(MOD): $(G729INSTALLER)
 	$(SHELL) $(G729INSTALLER) $(bindir) $(moddir) nobanner
-	$(ECHO)
-	$(ECHO)
-	$(ECHO) Now you can activate your license by running $(MAKE) mod_com_g729-activate
-	$(ECHO)
-	$(ECHO)
+	@echo
+	@echo
+	@echo Now you can activate your license by running $(MAKE) mod_com_g729-activate
+	@echo
+	@echo
 
 $(G729INSTALLER):
 	rm -f $(top_srcdir)/libs/fsg729-*-installer*

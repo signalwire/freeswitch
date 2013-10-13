@@ -24,10 +24,6 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#if defined(HAVE_CONFIG_H)
-#include "config.h"
-#endif
-
 #include <inttypes.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -35,20 +31,18 @@
 #include <stdio.h>
 #include <time.h>
 #include <fcntl.h>
-#if defined(HAVE_TGMATH_H)
-#include <tgmath.h>
-#endif
-#if defined(HAVE_MATH_H)
 #include <math.h>
-#endif
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
 #include "spandsp/stdbool.h"
 #endif
-#include "floating_fudge.h"
 #if defined(__sunos)  ||  defined(__solaris)  ||  defined(__sun)
 #include <getopt.h>
+#endif
+
+#if defined (_MSC_VER)
+ #define __inline__ __inline
 #endif
 
 #include "spandsp/telephony.h"

@@ -2830,7 +2830,8 @@ SPAN_DECLARE_NONSTD(int) t31_rx(t31_state_t *s, int16_t amp[], int len)
     }
     /*endif*/
 
-    s->audio.modems.rx_handler(s->audio.modems.rx_user_data, amp, len);
+    if (s->audio.modems.rx_handler)
+        s->audio.modems.rx_handler(s->audio.modems.rx_user_data, amp, len);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2861,23 +2862,6 @@ SPAN_DECLARE_NONSTD(int) t31_rx_fillin(t31_state_t *s, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int set_next_tx_type(t31_state_t *s)
-{
-    if (s->audio.next_tx_handler)
-    {
-        fax_modems_set_tx_handler(&s->audio.modems, s->audio.next_tx_handler, s->audio.next_tx_user_data);
-        fax_modems_set_next_tx_handler(&s->audio.modems, (span_tx_handler_t) NULL, NULL);
-        return 0;
-    }
-    /*endif*/
-    /* There is nothing else to change to, so use zero length silence */
-    silence_gen_alter(&s->audio.modems.silence_gen, 0);
-    fax_modems_set_tx_handler(&s->audio.modems, (span_tx_handler_t) &silence_gen, &s->audio.modems.silence_gen);
-    fax_modems_set_next_tx_handler(&s->audio.modems, (span_tx_handler_t) NULL, NULL);
-    return -1;
-}
-/*- End of function --------------------------------------------------------*/
-
 SPAN_DECLARE_NONSTD(int) t31_tx(t31_state_t *s, int16_t amp[], int max_len)
 {
     int len;
@@ -2888,8 +2872,8 @@ SPAN_DECLARE_NONSTD(int) t31_tx(t31_state_t *s, int16_t amp[], int max_len)
         if ((len = s->audio.modems.tx_handler(s->audio.modems.tx_user_data, amp, max_len)) < max_len)
         {
             /* Allow for one change of tx handler within a block */
-            set_next_tx_type(s);
-            if ((len += s->audio.modems.tx_handler(s->audio.modems.tx_user_data, amp + len, max_len - len)) < max_len)
+            fax_modems_set_next_tx_type(&s->audio.modems);
+            if ((len += s->audio.modems.tx_handler(s->audio.modems.tx_user_data, &amp[len], max_len - len)) < max_len)
                 front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
             /*endif*/
         }
@@ -2899,7 +2883,7 @@ SPAN_DECLARE_NONSTD(int) t31_tx(t31_state_t *s, int16_t amp[], int max_len)
     if (s->audio.modems.transmit_on_idle)
     {
         /* Pad to the requested length with silence */
-        memset(amp + len, 0, (max_len - len)*sizeof(int16_t));
+        memset(&amp[len], 0, (max_len - len)*sizeof(int16_t));
         len = max_len;
     }
     /*endif*/

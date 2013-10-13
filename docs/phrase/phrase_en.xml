@@ -198,8 +198,10 @@
     <voicemail>
       <prompt phrase="The person at extension" filename="vm-person.wav"/>
       <prompt phrase="marked urgent" filename="vm-marked-urgent.wav"/>
+      <prompt phrase="marked new" filename="vm-marked_new.wav"/>
       <prompt phrase="emailed" filename="vm-emailed.wav"/>
       <prompt phrase="you have" filename="vm-you_have.wav"/>
+      <prompt phrase="message from" filename="vm-from.wav"/>
       <prompt phrase="please enter your i d, followed by" filename="vm-enter_id.wav"/>
       <prompt phrase="please enter your password, followed by" filename="vm-enter_pass.wav"/>
       <prompt phrase="login incorrect" filename="vm-fail_auth.wav"/>
@@ -218,13 +220,34 @@
       <prompt phrase="urgent saved" filename="vm-urgent-saved.wav"/>
       <prompt phrase="saved" filename="vm-saved.wav"/>
       <prompt phrase="message" filename="vm-message.wav"/>
+      <prompt phrase="message" filename="vm-message_alt.wav"/>
       <prompt phrase="messages" filename="vm-messages.wav"/>
+      <prompt phrase="messages" filename="vm-messages_alt.wav"/>
+      <prompt phrase="no more messages" filename="vm-no_more_messages.wav"/>
+      <prompt phrase="to repeat this message..." filename="vm-repeat_message.wav"/>
+      <prompt phrase="to delete this message..." filename="vm-delete_message.wav"/>
+      <prompt phrase="to save this message" filename="vm-save_message.wav"/>
+      <prompt phrase="to play the next message..." filename="vm-play_next_message.wav"/>
+      <prompt phrase="to play the previous message..." filename="vm-play_previous_message.wav"/>
+      <prompt phrase="to undelete this message..." filename="vm-undelete_message.wav"/>
+      <prompt phrase="to send this message now..." filename="vm-send_message_now.wav"/>
+      <prompt phrase="to hear the message envelope..." filename="vm-message_envelope.wav"/>
+      <prompt phrase="...has been changed to..." filename="vm-has_been_changed_to.wav"/>
       <prompt phrase="press" filename="vm-press.wav"/>
+      <prompt phrase="received..." filename="vm-received.wav"/>
+      <prompt phrase="...followed by..." filename="vm-followed_by.wav"/>
+      <prompt phrase="That was an invalid extension." filename="vm-that_was_an_invalid_ext.wav"/>
+      <prompt phrase="Undeleted." filename="vm-undeleted.wav"/>
+      <prompt phrase="...followed by pound." filename="vm-followed_by_pound.wav"/>
+      <prompt phrase="next" filename="vm-next.wav"/>
       <prompt phrase="to listen to new messages" filename="vm-listen_new.wav"/>
       <prompt phrase="to listen to saved messages" filename="vm-listen_saved.wav"/>
       <prompt phrase="for advanced options" filename="vm-advanced.wav"/>
+      <prompt phrase="for advanced options" filename="vm-advanced_alt.wav"/>
       <prompt phrase="to exit" filename="vm-to_exit.wav"/>
+      <prompt phrase="to exit" filename="vm-to_exit_alt.wav"/>
       <prompt phrase="to record a greeting" filename="vm-record_greeting.wav"/>
+      <prompt phrase="to record a greeting" filename="vm-to_record_greeting.wav"/>
       <prompt phrase="to choose greeting" filename="vm-choose_greeting.wav"/>
       <prompt phrase="to record your name" filename="vm-record_name2.wav"/>
       <prompt phrase="for the main menu" filename="vm-main_menu.wav"/>
@@ -232,10 +255,14 @@
       <prompt phrase="to save the recording" filename="vm-save_recording.wav"/>
       <prompt phrase="to rerecord" filename="vm-rerecord.wav"/>
       <prompt phrase="to mark this message urgent" filename="vm-mark-urgent.wav"/>
+      <prompt phrase="to mark this message new" filename="vm-mark_message_new.wav"/>
       <prompt phrase="to continue" filename="vm-continue.wav"/>
       <prompt phrase="to listen to the recording again" filename="vm-listen_to_recording_again.wav"/>
       <prompt phrase="to delete the recording" filename="vm-delete_recording.wav"/>
       <prompt phrase="to forward the recording to your email" filename="vm-forward_to_email.wav"/>
+      <prompt phrase="to forward this message to another mailbox" filename="vm-to_forward.wav"/>
+      <prompt phrase="Please enter the extension to forward this message to." filename="vm-forward_enter_ext.wav"/>
+      <prompt phrase="to add an introduction to this message..." filename="vm-forward_add_intro.wav"/>
       <prompt phrase="greeting" filename="vm-greeting.wav"/>
       <prompt phrase="selected" filename="vm-selected.wav"/>
       <prompt phrase="is not available" filename="vm-not_available.wav"/>
@@ -260,6 +287,7 @@
       <prompt phrase="Remember that your voicemail password is also your Web interface password." filename="vm-voicemail_password_is_web_password.wav"/>
       <prompt phrase="Message from..." filename="vm-message_from.wav"/>
       <prompt phrase="Nobody is currently leaving a message in this voicemail box." filename="vm-nobody_leaving_message.wav"/>
+      <prompt phrase="last" filename="vm-last.wav"/>
     </voicemail>
     <directory>
       <prompt phrase="Please enter the first few letters of the persons" filename="dir-enter_person.wav"/>
@@ -388,7 +416,7 @@
       <prompt phrase="Your estimated hold time is..." filename="ivr-estimated_hold_time.wav"/>
       <prompt phrase="More than..." filename="ivr-more_than.wav"/>
       <prompt phrase="Less than..." filename="ivr-less_than.wav"/>
-      <prompt phrase="Begin recording." filename="ivr-begin_recording.wav "/>
+      <prompt phrase="Begin recording." filename="ivr-begin_recording.wav"/>
       <prompt phrase="Call forwarding has been cancelled." filename="ivr-call_forwarding_has_been_cancelled.wav"/>
       <prompt phrase="Call forwarding has been set." filename="ivr-call_forwarding_has_been_set.wav"/>
       <prompt phrase="Please enter the phone number." filename="ivr-please_enter_the_phone_number.wav"/>
@@ -443,7 +471,7 @@
       <prompt phrase="Good morning." filename="ivr-good_morning.wav"/>
       <prompt phrase="Good afternoon." filename="ivr-good_afternoon.wav"/>
       <prompt phrase="Good evening." filename="ivr-good_evening.wav"/>
-      <prompt phrase="Thank you." filename="ivr-Thank_you.wav"/>
+      <prompt phrase="Thank you." filename="ivr-thank_you.wav"/>
       <prompt phrase="For..." filename="ivr-for.wav"/>
       <prompt phrase="We are experiencing longer than usual hold times." filename="ivr-longer_than_usual_hold_times.wav"/>
       <prompt phrase="You are the..." filename="ivr-you_are_the.wav"/>
@@ -507,6 +535,7 @@
       <prompt phrase="Unallocated number" filename="ivr-unallocated_number.wav"/>
       <prompt phrase="No user response" filename="ivr-no_user_response.wav"/>
       <prompt phrase="Invalid number format" filename="ivr-invalid_number_format.wav"/>
+      <prompt phrase="Invalid sound prompt." filename="ivr-invalid_sound_prompt.wav"/>
       <prompt phrase="Gateway down" filename="ivr-gateway_down.wav"/>
       <prompt phrase="No route to destination" filename="ivr-no_route_destination.wav"/>
       <prompt phrase="User busy" filename="ivr-user_busy.wav"/>
@@ -598,12 +627,16 @@
       <prompt phrase="...has been added to the blacklist." filename="ivr-has_been_added_to_the_blacklist.wav"/>
       <prompt phrase="...has been removed from the blacklist." filename="ivr-has_been_removed_from_blacklist.wav"/>
       <prompt phrase="Please enter the number to be added to the blacklist." filename="ivr-enter_number_to_add_to_blacklist.wav"/>
+      <prompt phrase="Please enter the number to remove from the blacklist" filename="ivr-enter_number_to_remove_from_blacklist.wav"/>
       <prompt phrase="...is not on the blacklist." filename="ivr-is_not_on_the_blacklist.wav"/>
       <prompt phrase="...is already on the blacklist." filename="ivr-is_already_on_the_blacklist.wav"/>
       <prompt phrase="For other options, press..." filename="ivr-for_other_options.wav"/>
       <prompt phrase="Your caller I.D. information is..." filename="ivr-your_caller_id_information_is.wav"/>
       <prompt phrase="Call screening has been enabled." filename="ivr-call_screening_enabled.wav"/>
       <prompt phrase="Call screening has been disabled." filename="ivr-call_screening_disabled.wav"/>
+      <prompt phrase="Prompt." filename="ivr-prompt.wav"/>
+      <prompt phrase="...enabled." filename="ivr-enabled.wav"/>
+      <prompt phrase="...disabled." filename="ivr-disabled.wav"/>
       <prompt phrase="Ain't nobody got time for that!" filename="ivr-aint_nobody_got_time_for_that.wav"/>
       <prompt phrase="We would support the shit out of you if only you returned our phone calls and emails." filename="ivr-we_would_support.wav"/>
       <prompt phrase="...suck." filename="ivr-suck.wav"/>

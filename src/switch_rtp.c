@@ -3961,6 +3961,10 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 	status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, bytes);
 
+	if (*bytes) {
+		rtp_session->missed_count = 0;
+	}
+
 	if (check_rtcp_and_ice(rtp_session) == -1) {
 		return SWITCH_STATUS_GENERR;
 	}
@@ -4641,7 +4645,15 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					ret = -1;
 					goto end;
 				}
-
+				
+				if (rtp_session->max_missed_packets && read_loops == 1 && !rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
+					if (bytes) {
+						rtp_session->missed_count = 0;
+					} else if (++rtp_session->missed_count >= rtp_session->max_missed_packets) {
+						ret = -2;
+						goto end;
+					}
+				}
 				
 				if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
 					//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_CRIT, "Read bytes (%i) %ld\n", status, bytes); 
@@ -4835,15 +4847,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			rtp_session->missed_count = 0;
 			ret = 0;
 			goto end;
-		}
-
-		if (rtp_session->max_missed_packets && read_loops == 1 && !rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-			if (bytes) {
-				rtp_session->missed_count = 0;
-			} else if (++rtp_session->missed_count >= rtp_session->max_missed_packets) {
-				ret = -2;
-				goto end;
-			}
 		}
 
 		check = !bytes;

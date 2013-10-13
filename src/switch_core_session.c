@@ -721,6 +721,10 @@ static const char *message_names[] = {
 	"AUDIO_DATA",
 	"BLIND_TRANSFER_RESPONSE",
 	"STUN_ERROR",
+	"MEDIA_RENEG",
+	"ANSWER_EVENT",
+	"PROGRESS_EVENT",
+	"RING_EVENT",
 	"INVALID"
 };
 
@@ -1390,7 +1394,7 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 					  switch_channel_get_name((*session)->channel), switch_channel_state_name(switch_channel_get_state((*session)->channel)));
 
 
-	switch_core_session_reset(*session, TRUE, SWITCH_TRUE);
+	switch_core_session_reset(*session, SWITCH_TRUE, SWITCH_TRUE);
 
 	switch_core_media_bug_remove_all(*session);
 	switch_ivr_deactivate_unicast(*session);
@@ -1584,6 +1588,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 	int check = 0;
 
 	switch_mutex_lock(session_manager.mutex);
+	session_manager.starting--;
 	session_manager.running++;
 	switch_mutex_unlock(session_manager.mutex);
 #ifdef DEBUG_THREAD_POOL
@@ -1678,6 +1683,33 @@ static void thread_launch_failure(void)
 	switch_mutex_unlock(session_manager.mutex);
 }
 
+static int wake_queue(void)
+{
+	switch_status_t status;
+	int tries = 0;
+
+ top:
+	
+	status = switch_mutex_trylock(session_manager.cond_mutex);
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		switch_thread_cond_signal(session_manager.cond);
+		switch_mutex_unlock(session_manager.cond_mutex);
+		return 1;
+	} else {
+		if (switch_mutex_trylock(session_manager.cond2_mutex) == SWITCH_STATUS_SUCCESS) {
+			switch_mutex_unlock(session_manager.cond2_mutex);
+		} else {
+			if (++tries < 10) {
+				switch_cond_next();
+				goto top;
+			}
+		}
+	}
+
+	return 0;
+}
+
 static switch_status_t check_queue(void) 
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -1686,7 +1718,7 @@ static switch_status_t check_queue(void)
 
 	switch_mutex_lock(session_manager.mutex);
 	ttl = switch_queue_size(session_manager.thread_queue);
-	x = (session_manager.running - session_manager.busy);
+	x = ((session_manager.running + session_manager.starting) - session_manager.busy);
 	switch_mutex_unlock(session_manager.mutex);
 
 
@@ -1713,6 +1745,10 @@ static switch_status_t check_queue(void)
 		} else {
 			status = SWITCH_STATUS_SUCCESS;
 		}
+
+		switch_mutex_lock(session_manager.mutex);
+		session_manager.starting++;
+		switch_mutex_unlock(session_manager.mutex);
 		x++;
 	}
 
@@ -1722,12 +1758,20 @@ static switch_status_t check_queue(void)
 
 static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_manager(switch_thread_t *thread, void *obj)
 {
-	int x = 0;
+
+	uint32_t sleep = 10000000;
+	switch_time_t next = switch_micro_time_now() + sleep;
+
+	switch_mutex_lock(session_manager.cond_mutex);
 
 	while(session_manager.ready) {
-		switch_yield(100000);
+		int check = 1;
 
-		if (++x == 300) {
+		switch_mutex_lock(session_manager.cond2_mutex);
+		switch_thread_cond_timedwait(session_manager.cond, session_manager.cond_mutex, sleep);
+		switch_mutex_unlock(session_manager.cond2_mutex);
+
+		if (switch_micro_time_now() >= next) {
 			if (session_manager.popping) {
 #ifdef DEBUG_THREAD_POOL
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, 
@@ -1735,16 +1779,19 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_manager(switch_t
 #endif
 				switch_queue_interrupt_all(session_manager.thread_queue);
 
-				x--;
-
-				continue;
+				sleep = 100000;
+				check = 0;
 			} else {
-				x = 0;
+				sleep = 10000000;
 			}
 		}
 
-		check_queue();
+		if (check) check_queue();
+
+		next = switch_micro_time_now() + sleep;
 	}
+
+	switch_mutex_unlock(session_manager.cond_mutex);
 
 	while(session_manager.running) {
 		switch_queue_interrupt_all(session_manager.thread_queue);
@@ -1766,7 +1813,7 @@ SWITCH_DECLARE(switch_status_t) switch_thread_pool_launch_thread(switch_thread_d
 	*tdp = NULL;
 
 	switch_queue_push(session_manager.thread_queue, td);
-	check_queue();
+	wake_queue();
 
 	return status;	
 }
@@ -1789,7 +1836,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_thread_pool_launch(switch_co
 		td->obj = session;
 		td->func = switch_core_session_thread;
 		switch_queue_push(session_manager.thread_queue, td);
-		check_queue();
+		wake_queue();
 	}
 	switch_mutex_unlock(session->mutex);
 
@@ -2434,11 +2481,14 @@ void switch_core_session_init(switch_memory_pool_t *pool)
 		switch_threadattr_t *thd_attr;
 
 		switch_mutex_init(&session_manager.mutex, SWITCH_MUTEX_NESTED, session_manager.memory_pool);
+		switch_thread_cond_create(&session_manager.cond, session_manager.memory_pool);
+		switch_mutex_init(&session_manager.cond_mutex, SWITCH_MUTEX_NESTED, session_manager.memory_pool);
+		switch_mutex_init(&session_manager.cond2_mutex, SWITCH_MUTEX_NESTED, session_manager.memory_pool);
 		switch_queue_create(&session_manager.thread_queue, 100000, session_manager.memory_pool);
 		switch_threadattr_create(&thd_attr, session_manager.memory_pool);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		switch_thread_create(&session_manager.manager_thread, thd_attr, switch_core_session_thread_pool_manager, NULL, session_manager.memory_pool);		
 		session_manager.ready = 1;
+		switch_thread_create(&session_manager.manager_thread, thd_attr, switch_core_session_thread_pool_manager, NULL, session_manager.memory_pool);		
 	}
 
 }
@@ -2448,15 +2498,16 @@ void switch_core_session_uninit(void)
 	int sanity = 100;
 	switch_status_t st = SWITCH_STATUS_FALSE;
 
-	switch_core_hash_destroy(&session_manager.session_table);
 	session_manager.ready = 0;
-
-	switch_thread_join(&st, session_manager.manager_thread);
+	wake_queue();
 
 	while(session_manager.running && --sanity > 0) {
 		switch_queue_interrupt_all(session_manager.thread_queue);
 		switch_yield(100000);
 	}
+
+	switch_thread_join(&st, session_manager.manager_thread);
+	switch_core_hash_destroy(&session_manager.session_table);
 	
 }
 

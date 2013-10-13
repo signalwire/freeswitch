@@ -25,22 +25,13 @@
 
 /*! \file */
 
-#if defined(HAVE_CONFIG_H)
-#include "config.h"
-#endif
-
 #include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <memory.h>
-#if defined(HAVE_TGMATH_H)
-#include <tgmath.h>
-#endif
-#if defined(HAVE_MATH_H)
 #include <math.h>
-#endif
 
 typedef struct
 {

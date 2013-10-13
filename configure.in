@@ -420,9 +420,9 @@ if test "$PG_CONFIG" != "no"; then
         POSTGRESQL_CXXFLAGS="`$PG_CONFIG --cppflags` -I`$PG_CONFIG --includedir`"
         POSTGRESQL_LDFLAGS="`$PG_CONFIG --ldflags|sed 's/ -Wl,--as-needed//g'` -L`$PG_CONFIG --libdir` -lpq"
         POSTGRESQL_VERSION=`$PG_CONFIG --version | sed -e 's#PostgreSQL ##'`
-        POSTGRESQL_MAJOR_VERSION=`$PG_CONFIG --version | sed -re 's#PostgreSQL ([0-9]+).[0-9]+.[0-9]+#\1#'`
-        POSTGRESQL_MINOR_VERSION=`$PG_CONFIG --version | sed -re 's#PostgreSQL [0-9]+.([0-9]+).[0-9]+#\1#'`
-        POSTGRESQL_PATCH_VERSION=`$PG_CONFIG --version | sed -re 's#PostgreSQL [0-9]+.[0-9]+.([0-9]+)#\1#'`
+        POSTGRESQL_MAJOR_VERSION=`$PG_CONFIG --version | sed -e 's/devel//' | sed -re 's#PostgreSQL ([0-9]+).[0-9]+.?[0-9]+?#\1#'`
+        POSTGRESQL_MINOR_VERSION=`$PG_CONFIG --version | sed -e 's/devel//' | sed -re 's#PostgreSQL [0-9]+.([0-9]+).?[0-9]+?#\1#'`
+        POSTGRESQL_PATCH_VERSION=`$PG_CONFIG --version | sed -e 's/devel//' | sed -re 's#PostgreSQL [0-9]+.[0-9]+.?([0-9]+)?#\1#'`
         AC_DEFINE([SWITCH_HAVE_PGSQL], [1], [Define to 1 if PostgreSQL libraries are available])
 	AC_DEFINE_UNQUOTED([POSTGRESQL_VERSION], "${POSTGRESQL_VERSION}", [Specifies the version of PostgreSQL we are linking against])
 	AC_DEFINE_UNQUOTED([POSTGRESQL_MAJOR_VERSION], ${POSTGRESQL_MAJOR_VERSION}, [Specifies the version of PostgreSQL we are linking against])

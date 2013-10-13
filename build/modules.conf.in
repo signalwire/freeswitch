@@ -99,6 +99,7 @@ event_handlers/mod_cdr_sqlite
 #event_handlers/mod_event_multicast
 event_handlers/mod_event_socket
 #event_handlers/mod_event_zmq
+#event_handlers/mod_format_cdr
 #event_handlers/mod_json_cdr
 #event_handlers/mod_radius_cdr
 #event_handlers/mod_rayo

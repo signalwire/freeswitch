@@ -59,6 +59,12 @@ extern "C"
 {
 #endif
 
+/*! Convert a FAX modem type to a short text description.
+    \brief Convert a FAX modem type to a short text description.
+    \param modem The modem code.
+    \return A pointer to the description. */
+SPAN_DECLARE(const char *) fax_modem_to_str(int modem);
+
 /* N.B. the following are currently a work in progress */
 SPAN_DECLARE_NONSTD(int) fax_modems_v17_v21_rx(void *user_data, const int16_t amp[], int len);
 SPAN_DECLARE_NONSTD(int) fax_modems_v27ter_v21_rx(void *user_data, const int16_t amp[], int len);
@@ -92,6 +98,8 @@ SPAN_DECLARE(void) fax_modems_set_rx_active(fax_modems_state_t *s, int active);
 SPAN_DECLARE(void) fax_modems_set_tx_handler(fax_modems_state_t *s, span_tx_handler_t handler, void *user_data);
 
 SPAN_DECLARE(void) fax_modems_set_next_tx_handler(fax_modems_state_t *s, span_tx_handler_t handler, void *user_data);
+
+SPAN_DECLARE(int) fax_modems_set_next_tx_type(fax_modems_state_t *s);
 
 SPAN_DECLARE(int) fax_modems_restart(fax_modems_state_t *s);
 

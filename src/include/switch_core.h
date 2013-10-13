@@ -1751,7 +1751,7 @@ SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *te
 SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, const char *func, int line,
 															  _In_ switch_file_handle_t *fh,
 															  _In_opt_z_ const char *file_path,
-															  _In_ uint8_t channels,
+															  _In_ uint32_t channels,
 															  _In_ uint32_t rate, _In_ unsigned int flags, _In_opt_ switch_memory_pool_t *pool);
 
 /*! 

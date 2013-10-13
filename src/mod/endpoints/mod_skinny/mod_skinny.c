@@ -173,6 +173,7 @@ switch_status_t skinny_profile_dump(const skinny_profile_t *profile, switch_stre
 	stream->write_function(stream, "Ext-Redial        \t%s\n", profile->ext_redial);
 	stream->write_function(stream, "Ext-MeetMe        \t%s\n", profile->ext_meetme);
 	stream->write_function(stream, "Ext-PickUp        \t%s\n", profile->ext_pickup);
+	stream->write_function(stream, "Ext-CFwdAll       \t%s\n", profile->ext_cfwdall);
 	stream->write_function(stream, "%s\n", line);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1939,6 +1940,10 @@ switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, c
 		if (!profile->ext_pickup || strcmp(val, profile->ext_pickup)) {
 			profile->ext_pickup = switch_core_strdup(profile->pool, val);
 		}
+	} else if (!strcasecmp(var, "ext-cfwdall")) {
+		if (!profile->ext_cfwdall || strcmp(val, profile->ext_cfwdall)) {
+			profile->ext_cfwdall = switch_core_strdup(profile->pool, val);
+		}
 	} else {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -2037,6 +2042,10 @@ static switch_status_t load_skinny_config(void)
 
 				if (!profile->ext_pickup) {
 					skinny_profile_set(profile, "ext-pickup", "pickup");
+				}
+
+				if (!profile->ext_cfwdall) {
+					skinny_profile_set(profile, "ext-pickup", "cfwdall");
 				}
 
 				if (profile->port == 0) {

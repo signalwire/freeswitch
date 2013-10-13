@@ -116,7 +116,7 @@ static int sip_allow_update(msg_common_t *h,
     k->k_bitmap = 0;
   }
   else {
-    sip_method_t method = sip_method_code(name);
+	  int method = (int)sip_method_code(name);
 
     if (method >= 0 && method < 32)
       k->k_bitmap |= 1 << method;
@@ -130,14 +130,16 @@ int sip_is_allowed(sip_allow_t const *allow,
 		   sip_method_t method,
 		   char const *name)
 {
-  if (method < sip_method_unknown || !allow)
+  int meth = method;
+
+  if (meth < sip_method_unknown || !allow)
     return 0;
 
-  if (sip_method_unknown < method && method < 32)
+  if (sip_method_unknown < meth && meth < 32)
     /* Well-known method */
-    return (allow->k_bitmap & (1 << method)) != 0;
+    return (allow->k_bitmap & (1 << meth)) != 0;
 
-  if (method == sip_method_unknown &&
+  if (meth == sip_method_unknown &&
       (allow->k_bitmap & (1 << sip_method_unknown)) == 0)
     return 0;
 
