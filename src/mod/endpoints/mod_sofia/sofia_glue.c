@@ -4414,7 +4414,6 @@ int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 					switch_channel_stop_broadcast(b_channel);
 					switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000, NULL);
 				}
-				switch_core_session_rwunlock(b_session);
 			}
 
 			sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
