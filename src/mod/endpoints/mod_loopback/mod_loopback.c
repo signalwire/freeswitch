@@ -709,6 +709,10 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		}
 		
 		tech_pvt->write_frame = (switch_frame_t *) pop;
+
+        switch_clear_flag(tech_pvt->write_frame, SFF_RAW_RTP);
+		tech_pvt->write_frame->timestamp = 0;                    
+
 		tech_pvt->write_frame->codec = &tech_pvt->read_codec;
 		*frame = tech_pvt->write_frame;
 		tech_pvt->packet_count++;
