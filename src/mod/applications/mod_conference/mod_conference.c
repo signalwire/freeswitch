@@ -1599,7 +1599,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 static void conference_set_video_floor_holder(conference_obj_t *conference, conference_member_t *member, switch_bool_t force)
 {
 	switch_event_t *event;
-	conference_member_t *old_member = NULL;
+	conference_member_t *old_member = NULL, *imember = NULL;
 	int old_id = 0;
 
 	if (!member) {
@@ -1623,8 +1623,6 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 
 	switch_mutex_lock(conference->mutex);
 	if (!member) {
-		conference_member_t *imember;
-
 		for (imember = conference->members; imember; imember = imember->next) {
 			if (imember != conference->video_floor_holder && imember->channel && switch_channel_test_flag(imember->channel, CF_VIDEO)) {
 				member = imember;
@@ -1646,6 +1644,20 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 	if (old_member) {
 		old_id = old_member->id;
 		//switch_channel_clear_flag(old_member->channel, CF_VIDEO_PASSIVE);
+	}
+
+	for (imember = conference->members; imember; imember = imember->next) {
+		if (!imember->channel || !switch_channel_test_flag(imember->channel, CF_VIDEO)) {
+			continue;
+		}
+		switch_channel_clear_flag(imember->channel, CF_VIDEO_ECHO);
+
+		if (imember == conference->video_floor_holder) {
+			switch_channel_set_flag(imember->channel, CF_VIDEO_PASSIVE);
+		} else {
+			switch_channel_clear_flag(imember->channel, CF_VIDEO_PASSIVE);
+		}
+		switch_core_session_refresh_video(imember->session);
 	}
 
 	switch_set_flag(conference, CFLAG_FLOOR_CHANGE);
@@ -7504,6 +7516,7 @@ SWITCH_STANDARD_APP(conference_function)
 
 	switch_channel_set_flag(channel, CF_CONFERENCE);
 	switch_channel_set_flag(channel, CF_VIDEO_PASSIVE);
+
 
 	if (switch_channel_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel answer failed.\n");
