@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 
         r = floorf(r*256.0f);
 
-        srgb = (r < 0)  ?  0  :  (r <= 255)  ?  r  :  255;
+        srgb = (uint8_t) ((r < 0)  ?  0  :  (r <= 255)  ?  r  :  255);
 
         printf((i < 4095)  ?  "    %d,\n"  :  "    %d\n", srgb);
     }
