@@ -172,11 +172,19 @@ SWITCH_AM_LDFLAGS="-lm"
 #set SOLINK variable based on compiler and host
 if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
     SOLINK="-Bdynamic -dy -G"
-elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
+elif test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
     case "$host" in
-        *darwin12.*|*darwin11.*|*darwin10.*)
+        *darwin*)
             SOLINK="-dynamic -force-flat-namespace"
         ;;
+        *)
+            AC_ERROR([Please update configure.in with SOLINK values for your compiler])
+        ;;
+
+    esac
+elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
+    case "$host" in
+# older Xcode test for darwin, Xcode 4/5 use clang above
         *darwin*)
             SOLINK="-dynamic -bundle -force-flat-namespace"
         ;;
@@ -190,7 +198,6 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
 else
     AC_ERROR([Please update configure.in with SOLINK values for your compiler])
 fi
-
 # set DYNAMIC_LIB_EXTEN
 # we should really be using libtool so we don't need to do this
 case "$host" in
@@ -726,6 +733,16 @@ if test x"$ac_cv_gcc_declaration_after_statement" = xyes; then
     APR_ADDTO(SWITCH_ANSI_CFLAGS, -Wdeclaration-after-statement)
 fi
 CFLAGS="$saved_CFLAGS"
+
+# Next check added for Xcode 5 and systems with clang 5 llvm 3.3 or above, extended offset must be off
+AC_CACHE_CHECK([whether compiler supports -Wextended-offsetof], [ac_cv_clang_extended_offsetof], [
+AC_TRY_COMPILE([],[return 0;],[ac_cv_clang_extended_offsetof=yes],[ac_cv_clang_extended_offsetof=no])
+])
+AC_MSG_RESULT($ac_cv_clang_extended_offsetof)
+if test x"$ac_cv_clang_extended_offsetof" = xyes; then
+    APR_ADDTO(CFLAGS, -Wno-extended-offsetof)
+fi
+
 
 # Tested and fixed lot of modules, but some are untested.  Will be added back when the core team decide it ready
 # Untested modules : mod_osp mod_soundtouch mod_sangoma_codec mod_dingaling mod_opal mod_skypopen mod_h323 mod_khomp 
