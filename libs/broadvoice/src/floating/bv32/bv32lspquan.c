@@ -20,8 +20,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: bv32lspquan.c,v 1.1.1.1 2009/11/19 12:10:48 steveu Exp $
  */
 
 /*! \file */
@@ -153,7 +151,7 @@ static void vqmse(Float *xq,    /* VQ output vector (quantized version of input 
         if (d < dmin)
         {
             dmin = d;
-            *idx = j;
+            *idx = (int16_t) j;
         }
     }
 
@@ -211,7 +209,7 @@ static void vqwmse_stbl(Float *xq,    /* VQ output vector (quantized version of 
             if (d < dmin)
             {
                 dmin = d;
-                *idx = j;
+                *idx = (int16_t) j;
             }
         }
     }
@@ -256,7 +254,7 @@ static void vqwmse(Float *xq,      /* VQ output vector (quantized version of inp
         if (d < dmin)
         {
             dmin = d;
-            *idx = j;
+            *idx = (int16_t) j;
         }
     }
 
