@@ -692,11 +692,14 @@ static int get_file_from_macro(struct ssml_parser *parsed_data, char *to_say)
 static int get_file_from_voice(struct ssml_parser *parsed_data, char *to_say)
 {
 	struct ssml_node *cur_node = parsed_data->cur_node;
-	char *file = switch_core_sprintf(parsed_data->pool, "%s%s", cur_node->tts_voice->prefix, to_say);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding <%s>: \"%s\"\n", cur_node->tag_name, file);
-	parsed_data->files[parsed_data->num_files].name = file;
-	parsed_data->files[parsed_data->num_files++].prefix = NULL;
-	return 1;
+	if (cur_node->tts_voice) {
+		char *file = switch_core_sprintf(parsed_data->pool, "%s%s", cur_node->tts_voice->prefix, to_say);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding <%s>: \"%s\"\n", cur_node->tag_name, file);
+		parsed_data->files[parsed_data->num_files].name = file;
+		parsed_data->files[parsed_data->num_files++].prefix = NULL;
+		return 1;
+	}
+	return 0;
 }
 
 /**
@@ -708,7 +711,7 @@ static int process_cdata_tts(struct ssml_parser *parsed_data, char *data, size_t
 	if (!len) {
 		return IKS_OK;
 	}
-	if (cur_node && cur_node->tts_voice && parsed_data->num_files < parsed_data->max_files) {
+	if (cur_node && parsed_data->num_files < parsed_data->max_files) {
 		int i = 0;
 		int empty = 1;
 		char *to_say;
@@ -728,7 +731,9 @@ static int process_cdata_tts(struct ssml_parser *parsed_data, char *data, size_t
 		to_say[len] = '\0';
 		if (!cur_node->say_macro || !get_file_from_macro(parsed_data, to_say)) {
 			/* use voice instead */
-			get_file_from_voice(parsed_data, to_say);
+			if (!get_file_from_voice(parsed_data, to_say)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No TTS voices available to render text!\n");
+			}
 		}
 		free(to_say);
 		return IKS_OK;
