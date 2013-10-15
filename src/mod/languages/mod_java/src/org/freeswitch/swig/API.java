@@ -33,8 +33,8 @@ public class API {
     swigCPtr = 0;
   }
 
-  public API() {
-    this(freeswitchJNI.new_API(), true);
+  public API(CoreSession s) {
+    this(freeswitchJNI.new_API(CoreSession.getCPtr(s), s), true);
   }
 
   public String execute(String command, String data) {

@@ -521,13 +521,16 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_IVRMenu_1execute(
 }
 
 
-SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1API(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_new_1API(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
+  CoreSession *arg1 = (CoreSession *) NULL ;
   API *result = 0 ;
   
   (void)jenv;
   (void)jcls;
-  result = (API *)new API();
+  (void)jarg1_;
+  arg1 = *(CoreSession **)&jarg1; 
+  result = (API *)new API(arg1);
   *(API **)&jresult = result; 
   return jresult;
 }
