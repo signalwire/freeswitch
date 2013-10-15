@@ -20,8 +20,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: bitpack32.c,v 1.1.1.1 2009/11/19 12:10:48 steveu Exp $
  */
 
 /*! \file */
@@ -82,15 +80,15 @@ void bv32_bitunpack(const uint8_t *PackedStream, struct BV32_Bit_Stream *BitStru
     stream = PackedStream;
     bitstream_init(&bs);
 
-    BitStruct->lspidx[0] = bitstream_get(&bs, &stream, 7);
-    BitStruct->lspidx[1] = bitstream_get(&bs, &stream, 5);
-    BitStruct->lspidx[2] = bitstream_get(&bs, &stream, 5);
+    BitStruct->lspidx[0] = (int16_t) bitstream_get(&bs, &stream, 7);
+    BitStruct->lspidx[1] = (int16_t) bitstream_get(&bs, &stream, 5);
+    BitStruct->lspidx[2] = (int16_t) bitstream_get(&bs, &stream, 5);
 
-    BitStruct->ppidx = bitstream_get(&bs, &stream, 8);
-    BitStruct->bqidx = bitstream_get(&bs, &stream, 5);
-    BitStruct->gidx[0] = bitstream_get(&bs, &stream, 5);
-    BitStruct->gidx[1] = bitstream_get(&bs, &stream, 5);
+    BitStruct->ppidx = (int16_t) bitstream_get(&bs, &stream, 8);
+    BitStruct->bqidx = (int16_t) bitstream_get(&bs, &stream, 5);
+    BitStruct->gidx[0] = (int16_t) bitstream_get(&bs, &stream, 5);
+    BitStruct->gidx[1] = (int16_t) bitstream_get(&bs, &stream, 5);
 
     for (i = 0;  i < 20;  i++)
-        BitStruct->qvidx[i] = bitstream_get(&bs, &stream, 6);
+        BitStruct->qvidx[i] = (int16_t) bitstream_get(&bs, &stream, 6);
 }
