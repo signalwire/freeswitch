@@ -586,11 +586,6 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	//ERRORA("%s CHANNEL INIT\n", GSMOPEN_P_LOG, tech_pvt->name);
 	switch_set_flag(tech_pvt, TFLAG_IO);
 
-	/* Move channel's state machine to ROUTING. This means the call is trying
-	   to get from the initial start where the call because, to the point
-	   where a destination has been identified. If the channel is simply
-	   left in the initial state, nothing will happen. */
-	switch_channel_set_state(channel, CS_ROUTING);
 	switch_mutex_lock(globals.mutex);
 	globals.calls++;
 

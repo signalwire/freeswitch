@@ -445,17 +445,26 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(const char *uuid_
 }
 
 
-SWITCH_DECLARE(void *) switch_core_session_get_private(switch_core_session_t *session)
+SWITCH_DECLARE(void *) switch_core_session_get_private_class(switch_core_session_t *session, switch_pvt_class_t index)
 {
+	if (index >= SWITCH_CORE_SESSION_MAX_PRIVATES) {
+		return NULL;
+	}
+
 	switch_assert(session != NULL);
-	return session->private_info;
+	return session->private_info[index];
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_set_private(switch_core_session_t *session, void *private_info)
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_private_class(switch_core_session_t *session, void *private_info, switch_pvt_class_t index)
 {
 	switch_assert(session != NULL);
-	session->private_info = private_info;
+
+	if (index >= SWITCH_CORE_SESSION_MAX_PRIVATES) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	session->private_info[index] = private_info;
 	return SWITCH_STATUS_SUCCESS;
 }
 

@@ -385,6 +385,13 @@ SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch
 	return times;
 }
 
+SWITCH_DECLARE(void) switch_channel_set_direction(switch_channel_t *channel, switch_call_direction_t direction)
+{
+	if (!switch_core_session_in_thread(channel->session)) {
+		channel->direction = direction;
+	}
+}
+
 SWITCH_DECLARE(switch_call_direction_t) switch_channel_direction(switch_channel_t *channel)
 {
 	return channel->direction;
@@ -491,6 +498,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 		switch_zmalloc(dt, sizeof(*dt));
 		*dt = new_dtmf;
 
+
 		while (switch_queue_trypush(channel->dtmf_queue, dt) != SWITCH_STATUS_SUCCESS) {
 			if (switch_queue_trypop(channel->dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 				free(pop);
@@ -508,6 +516,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
   done:
 
 	switch_mutex_unlock(channel->dtmf_mutex);
+
+	switch_core_media_break(channel->session, SWITCH_MEDIA_TYPE_AUDIO);
 
 	return status;
 }
@@ -2951,19 +2961,33 @@ SWITCH_DECLARE(void) switch_channel_invert_cid(switch_channel_t *channel)
 SWITCH_DECLARE(void) switch_channel_flip_cid(switch_channel_t *channel)
 {
 	switch_event_t *event;
+	const char *tmp = NULL;
 
 	switch_mutex_lock(channel->profile_mutex);
 	if (channel->caller_profile->callee_id_name) {
+		tmp = channel->caller_profile->caller_id_name;
 		switch_channel_set_variable(channel, "pre_transfer_caller_id_name", channel->caller_profile->caller_id_name);
 		channel->caller_profile->caller_id_name = switch_core_strdup(channel->caller_profile->pool, channel->caller_profile->callee_id_name);
 	}
-	channel->caller_profile->callee_id_name = SWITCH_BLANK_STRING;
+
+	if (switch_channel_test_flag(channel, CF_BRIDGED)) {
+		channel->caller_profile->callee_id_name = SWITCH_BLANK_STRING;
+	} else if (tmp) {
+		channel->caller_profile->callee_id_name = tmp;
+	}
 	
 	if (channel->caller_profile->callee_id_number) {
+		tmp = channel->caller_profile->caller_id_number;
 		switch_channel_set_variable(channel, "pre_transfer_caller_id_number", channel->caller_profile->caller_id_number);
 		channel->caller_profile->caller_id_number = switch_core_strdup(channel->caller_profile->pool, channel->caller_profile->callee_id_number);
 	}
-	channel->caller_profile->callee_id_number = SWITCH_BLANK_STRING;
+
+	if (switch_channel_test_flag(channel, CF_BRIDGED)) {
+		channel->caller_profile->callee_id_number = SWITCH_BLANK_STRING;
+	} else if (tmp) {
+		channel->caller_profile->callee_id_number = tmp;
+	}
+
 	switch_mutex_unlock(channel->profile_mutex);
 
 
@@ -3260,7 +3284,7 @@ static void check_secure(switch_channel_t *channel)
 {
 	const char *var, *sec;
 
-	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+	if (!switch_channel_media_ready(channel) && switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 		if ((sec = switch_channel_get_variable(channel, "rtp_secure_media")) && switch_true(sec)) {
 			if (!(var = switch_channel_get_variable(channel, "rtp_has_crypto"))) {
 				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_WARNING, "rtp_secure_media invalid in this context.\n");

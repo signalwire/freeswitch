@@ -309,10 +309,11 @@ SWITCH_DECLARE(switch_status_t) switch_event_free_subclass_detailed(const char *
   \return SWITCH_STATUS_SUCCESS if the operation was successful
   \note you must free the resulting string when you are finished with it
 */
-SWITCH_DECLARE(switch_status_t) switch_event_binary_deserialize(switch_event_t **eventp, void **data, switch_size_t len, switch_bool_t destroy);
+SWITCH_DECLARE(switch_status_t) switch_event_binary_deserialize(switch_event_t **eventp, void **data, switch_size_t len, switch_bool_t duplicate);
 SWITCH_DECLARE(switch_status_t) switch_event_binary_serialize(switch_event_t *event, void **data, switch_size_t *len);
 SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, char **str, switch_bool_t encode);
 SWITCH_DECLARE(switch_status_t) switch_event_serialize_json(switch_event_t *event, char **str);
+SWITCH_DECLARE(switch_status_t) switch_event_serialize_json_obj(switch_event_t *event, cJSON **json);
 SWITCH_DECLARE(switch_status_t) switch_event_create_json(switch_event_t **event, const char *json);
 SWITCH_DECLARE(switch_status_t) switch_event_create_brackets(char *data, char a, char b, char c, switch_event_t **event, char **new_data, switch_bool_t dup);
 SWITCH_DECLARE(switch_status_t) switch_event_create_array_pair(switch_event_t **event, char **names, char **vals, int len);
@@ -420,7 +421,37 @@ SWITCH_DECLARE(void) switch_event_deliver(switch_event_t **event);
 SWITCH_DECLARE(char *) switch_event_build_param_string(switch_event_t *event, const char *prefix, switch_hash_t *vars_map);
 SWITCH_DECLARE(int) switch_event_check_permission_list(switch_event_t *list, const char *name);
 SWITCH_DECLARE(void) switch_event_add_presence_data_cols(switch_channel_t *channel, switch_event_t *event, const char *prefix);
+SWITCH_DECLARE(void) switch_json_add_presence_data_cols(switch_event_t *event, cJSON *json, const char *prefix);
+
 SWITCH_DECLARE(void) switch_event_launch_dispatch_threads(uint32_t max);
+
+SWITCH_DECLARE(uint32_t) switch_event_channel_broadcast(const char *event_channel, cJSON **json, const char *key, switch_event_channel_id_t id);
+SWITCH_DECLARE(uint32_t) switch_event_channel_unbind(const char *event_channel, switch_event_channel_func_t func);
+SWITCH_DECLARE(switch_status_t) switch_event_channel_bind(const char *event_channel, switch_event_channel_func_t func, switch_event_channel_id_t *id);
+														  
+
+typedef void (*switch_live_array_command_handler_t)(switch_live_array_t *la, const char *cmd, const char *sessid, cJSON *jla, void *user_data);
+
+#define NO_EVENT_CHANNEL_ID 0
+#define SWITCH_EVENT_CHANNEL_GLOBAL "__global__"
+
+SWITCH_DECLARE(switch_status_t) switch_live_array_clear(switch_live_array_t *la);
+SWITCH_DECLARE(switch_status_t) switch_live_array_bootstrap(switch_live_array_t *la, const char *sessid, switch_event_channel_id_t channel_id);
+SWITCH_DECLARE(switch_status_t) switch_live_array_destroy(switch_live_array_t **live_arrayP);
+SWITCH_DECLARE(switch_status_t) switch_live_array_create(const char *event_channel, const char *name,
+														 switch_event_channel_id_t channel_id, switch_live_array_t **live_arrayP);
+SWITCH_DECLARE(cJSON *) switch_live_array_get(switch_live_array_t *la, const char *name);
+SWITCH_DECLARE(cJSON *) switch_live_array_get_idx(switch_live_array_t *la, int idx);
+SWITCH_DECLARE(switch_status_t) switch_live_array_del(switch_live_array_t *la, const char *name);
+SWITCH_DECLARE(switch_status_t) switch_live_array_add(switch_live_array_t *la, const char *name, int index, cJSON **obj, switch_bool_t destroy);
+SWITCH_DECLARE(switch_status_t) switch_live_array_visible(switch_live_array_t *la, switch_bool_t visible, switch_bool_t force);
+SWITCH_DECLARE(switch_bool_t) switch_live_array_isnew(switch_live_array_t *la);
+SWITCH_DECLARE(void) switch_live_array_lock(switch_live_array_t *la);
+SWITCH_DECLARE(void) switch_live_array_unlock(switch_live_array_t *la);
+SWITCH_DECLARE(void) switch_live_array_set_user_data(switch_live_array_t *la, void *user_data);
+SWITCH_DECLARE(void) switch_live_array_set_command_handler(switch_live_array_t *la, switch_live_array_command_handler_t command_handler);
+SWITCH_DECLARE(void) switch_live_array_parse_json(cJSON *json, switch_event_channel_id_t channel_id);
+
 
 ///\}
 

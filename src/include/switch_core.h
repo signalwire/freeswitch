@@ -1070,7 +1070,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_event(_In_ switch_co
   \param session the session to retrieve from
   \return a pointer to the private data
 */
-SWITCH_DECLARE(void *) switch_core_session_get_private(_In_ switch_core_session_t *session);
+SWITCH_DECLARE(void *) switch_core_session_get_private_class(_In_ switch_core_session_t *session, _In_ switch_pvt_class_t index);
+#define switch_core_session_get_private(_s) switch_core_session_get_private_class(_s, SWITCH_PVT_PRIMARY)
 
 /*! 
   \brief Add private user data to a session
@@ -1078,7 +1079,8 @@ SWITCH_DECLARE(void *) switch_core_session_get_private(_In_ switch_core_session_
   \param private_info the used data to add
   \return SWITCH_STATUS_SUCCESS if data is added
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_set_private(_In_ switch_core_session_t *session, _In_ void *private_info);
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_private_class(_In_ switch_core_session_t *session, _In_ void *private_info, _In_ switch_pvt_class_t index);
+#define switch_core_session_set_private(_s, _p) switch_core_session_set_private_class(_s, _p, SWITCH_PVT_PRIMARY)
 
 /*!
   \brief Add a logical stream to a session
@@ -2575,6 +2577,7 @@ SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait);
 SWITCH_DECLARE(int) switch_stream_system_fork(const char *cmd, switch_stream_handle_t *stream);
 SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t *stream);
 
+SWITCH_DECLARE(switch_call_direction_t) switch_ice_direction(switch_core_session_t *session);
 
 SWITCH_END_EXTERN_C
 #endif

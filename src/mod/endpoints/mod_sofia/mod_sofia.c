@@ -102,20 +102,6 @@ static switch_status_t sofia_on_init(switch_core_session_t *session)
 		}
 	}
 
-
-
-	if (switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING_BRIDGE)) {
-		switch_channel_set_state(channel, CS_RESET);
-	} else {
-		if (switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING)) {
-			switch_channel_set_state(channel, CS_EXECUTE);
-		} else {
-			/* Move channel's state machine to ROUTING */
-			switch_channel_set_state(channel, CS_ROUTING);
-			assert(switch_channel_get_state(channel) != CS_INIT);
-		}
-	}
-
   end:
 
 	switch_mutex_unlock(tech_pvt->sofia_mutex);
@@ -156,43 +142,6 @@ static switch_status_t sofia_on_reset(switch_core_session_t *session)
 					  switch_channel_get_name(switch_core_session_get_channel(session)));
 
 
-	if (switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING_BRIDGE)) {
-		switch_core_session_t *other_session = NULL;
-		const char *uuid = switch_core_session_get_uuid(session);
-
-		if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
-			const char *other_uuid = switch_channel_get_partner_uuid(channel);
-			int x = 0;
-
-			if (other_uuid) {
-				for (x = 0; other_session == NULL && x < 20; x++) {
-					if (!switch_channel_up(channel)) {
-						break;
-					}
-					other_session = switch_core_session_locate(other_uuid);
-					switch_yield(100000);
-				}
-			}
-
-			if (other_session) {
-				switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
-				switch_channel_clear_flag(channel, CF_BRIDGE_ORIGINATOR);
-				switch_channel_wait_for_state_timeout(other_channel, CS_RESET, 5000);
-				switch_channel_wait_for_flag(other_channel, CF_MEDIA_ACK, SWITCH_TRUE, 2000, NULL);
-
-				if (switch_channel_test_flag(channel, CF_PROXY_MODE) && switch_channel_test_flag(other_channel, CF_PROXY_MODE)) {
-					switch_ivr_signal_bridge(session, other_session);
-				} else {
-					switch_ivr_uuid_bridge(uuid, other_uuid);
-				}
-				switch_core_session_rwunlock(other_session);
-			}
-		}
-
-		switch_channel_clear_flag(tech_pvt->channel, CF_RECOVERING_BRIDGE);
-	}
-
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -221,12 +170,11 @@ static switch_status_t sofia_on_execute(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_assert(tech_pvt != NULL);
 
-	switch_channel_clear_flag(tech_pvt->channel, CF_RECOVERING);
-
 	if (!sofia_test_flag(tech_pvt, TFLAG_HOLD_LOCK)) {
 		sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 		switch_channel_clear_flag(channel, CF_LEG_HOLDING);
 	}
+
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s SOFIA EXECUTE\n",
 					  switch_channel_get_name(switch_core_session_get_channel(session)));
 
@@ -872,8 +820,6 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		} else {
 			tech_pvt->session_refresher = nua_no_refresher;
 		}
-
-
 
 		if (sofia_use_soa(tech_pvt)) {
 			nua_respond(tech_pvt->nh, SIP_200_OK,

@@ -648,7 +648,8 @@ switch_status_t channel_on_init(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s CHANNEL INIT\n", switch_channel_get_name(channel));
 
-	return SWITCH_STATUS_SUCCESS;
+	/* This does not set the state to routing like most modules do, this now happens in the default state handeler so return FALSE TO BLOCK IT*/
+	return SWITCH_STATUS_FALSE;
 }
 
 struct channel_on_routing_helper {

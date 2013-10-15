@@ -853,7 +853,7 @@ switch_status_t FSConnection::on_init()
         return SWITCH_STATUS_FALSE;
 
     PTRACE(4, "mod_opal\tStarted routing for connection " << *this);
-    switch_channel_set_state(m_fsChannel, CS_ROUTING);
+
     return SWITCH_STATUS_SUCCESS;
 }
 
