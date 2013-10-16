@@ -287,7 +287,7 @@ SWITCH_STANDARD_APP(clear_digit_action_function)
 	char *target_str;
 	switch_digit_action_target_t target = DIGIT_TARGET_SELF;
 
-	if (zstr(realm)) {
+	if (zstr((char *)data)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "clear_digit_action called with no args");
 		return;
 	}
