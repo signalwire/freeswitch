@@ -911,9 +911,6 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			switch_port_t port = 0;
 			char *host = NULL;
 
-			ice->missed_count++;
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "missed %d\n", ice->missed_count);
-
 			if (elapsed > 20000 && pri) {
 				int i, j;
 				uint32_t old;
@@ -924,6 +921,11 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				char adj_port[6];
 				switch_channel_t *channel = NULL;
 				
+
+				ice->missed_count++;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "missed %d\n", ice->missed_count);
+
+
 				if (rtp_session->session) {
 					channel = switch_core_session_get_channel(rtp_session->session);
 				}
