@@ -451,7 +451,8 @@ SWITCH_DECLARE(void) switch_live_array_unlock(switch_live_array_t *la);
 SWITCH_DECLARE(void) switch_live_array_set_user_data(switch_live_array_t *la, void *user_data);
 SWITCH_DECLARE(void) switch_live_array_set_command_handler(switch_live_array_t *la, switch_live_array_command_handler_t command_handler);
 SWITCH_DECLARE(void) switch_live_array_parse_json(cJSON *json, switch_event_channel_id_t channel_id);
-
+SWITCH_DECLARE(switch_bool_t) switch_live_array_add_alias(switch_live_array_t *la, const char *event_channel, const char *name);
+SWITCH_DECLARE(switch_bool_t) switch_live_array_clear_alias(switch_live_array_t *la, const char *event_channel, const char *name);
 
 ///\}
 

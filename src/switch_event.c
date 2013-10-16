@@ -2963,6 +2963,12 @@ SWITCH_DECLARE(switch_status_t) switch_event_channel_bind(const char *event_chan
 	return status;
 }
 
+typedef struct alias_node_s {
+	char *event_channel;
+	char *name;
+	struct alias_node_s *next;
+} alias_node_t;
+
 typedef struct la_node_s {
 	char *name;
 	cJSON *obj;
@@ -2986,7 +2992,30 @@ struct switch_live_array_s {
 	switch_event_channel_id_t channel_id;
 	switch_live_array_command_handler_t command_handler;
 	void *user_data;
+	alias_node_t *aliases;
 };
+
+static switch_status_t la_broadcast(switch_live_array_t *la, cJSON **json)
+{
+	alias_node_t *np;
+
+	if (la->aliases) {
+		switch_mutex_lock(la->mutex);
+		for (np = la->aliases; np; np = np->next) {
+			cJSON *dup = cJSON_Duplicate(*json, 1);
+			cJSON *data = cJSON_GetObjectItem(dup, "data");
+
+			cJSON_ReplaceItemInObject(dup, "eventChannel", cJSON_CreateString(np->event_channel));
+			cJSON_ReplaceItemInObject(data, "name", cJSON_CreateString(np->name));
+			
+			switch_event_channel_broadcast(np->event_channel, &dup, __FILE__, la->channel_id);
+		}
+		switch_mutex_unlock(la->mutex);
+	}
+
+	return switch_event_channel_broadcast(la->event_channel, json, __FILE__, la->channel_id);
+
+}
 
 
 SWITCH_DECLARE(switch_status_t) switch_live_array_visible(switch_live_array_t *la, switch_bool_t visible, switch_bool_t force)
@@ -3004,7 +3033,7 @@ SWITCH_DECLARE(switch_status_t) switch_live_array_visible(switch_live_array_t *l
 		cJSON_AddItemToObject(data, "action", cJSON_CreateString(visible ? "hide" : "show"));
 		cJSON_AddItemToObject(data, "wireSerno", cJSON_CreateNumber(la->serno++));
 		
-		switch_event_channel_broadcast(la->event_channel, &msg, __FILE__, la->channel_id);
+		la_broadcast(la, &msg);
 
 		la->visible = visible;
 	}
@@ -3030,7 +3059,7 @@ SWITCH_DECLARE(switch_status_t) switch_live_array_clear(switch_live_array_t *la)
 	cJSON_AddItemToObject(data, "wireSerno", cJSON_CreateNumber(-1));
 	cJSON_AddItemToObject(data, "data", cJSON_CreateObject());
 	
-	switch_event_channel_broadcast(la->event_channel, &msg, __FILE__, la->channel_id);
+	la_broadcast(la, &msg);
 
 	while(np) {
 		cur = np;
@@ -3146,6 +3175,60 @@ SWITCH_DECLARE(switch_bool_t) switch_live_array_isnew(switch_live_array_t *la)
 	return la->new;
 }
 
+SWITCH_DECLARE(switch_bool_t) switch_live_array_clear_alias(switch_live_array_t *la, const char *event_channel, const char *name)
+{
+	alias_node_t *np, *last = NULL;
+	switch_bool_t r = SWITCH_FALSE;
+
+	switch_mutex_lock(la->mutex);
+	for (np = la->aliases; np; np = np->next) {
+		if (!strcmp(np->event_channel, event_channel) && !strcmp(np->name, name)) {
+			r = SWITCH_TRUE;
+
+			if (last) {
+				last->next = np->next;
+			} else {
+				la->aliases = np->next;
+			}
+		} else {
+			last = np;
+		}
+	}
+	switch_mutex_unlock(la->mutex);
+
+	return r;
+}
+
+SWITCH_DECLARE(switch_bool_t) switch_live_array_add_alias(switch_live_array_t *la, const char *event_channel, const char *name)
+{
+	alias_node_t *node, *np;
+	switch_bool_t exist = SWITCH_FALSE;
+
+	switch_mutex_lock(la->mutex);
+	for (np = la->aliases; np && np->next; np = np->next) {
+		if (!strcmp(np->event_channel, event_channel) && !strcmp(np->name, name)) {
+			exist = SWITCH_TRUE;
+			break;
+		}
+	}
+	
+	if (!exist) {
+		node = switch_core_alloc(la->pool, sizeof(*node));
+		node->event_channel = switch_core_strdup(la->pool, event_channel);
+		node->name = switch_core_strdup(la->pool, name);
+		if (np) {
+			np->next = node;
+		} else {
+			la->aliases = node;
+		}
+	}
+
+	switch_mutex_unlock(la->mutex);
+
+	return !exist;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_live_array_create(const char *event_channel, const char *name, 
 														 switch_event_channel_id_t channel_id, switch_live_array_t **live_arrayP)
 {
@@ -3259,7 +3342,7 @@ SWITCH_DECLARE(switch_status_t) switch_live_array_del(switch_live_array_t *la, c
 				cJSON_AddItemToObject(data, "data", cur->obj);
 				cur->obj = NULL;
 
-				switch_event_channel_broadcast(la->event_channel, &msg, __FILE__, la->channel_id);
+				la_broadcast(la, &msg);
 				free(cur->name);
 				free(cur);
 			} else {
@@ -3360,7 +3443,7 @@ SWITCH_DECLARE(switch_status_t) switch_live_array_add(switch_live_array_t *la, c
 	cJSON_AddItemToObject(data, "wireSerno", cJSON_CreateNumber(la->serno++));
 	cJSON_AddItemToObject(data, "data", cJSON_Duplicate(node->obj, 1));
 
-	switch_event_channel_broadcast(la->event_channel, &msg, __FILE__, la->channel_id);
+	la_broadcast(la, &msg);
 	
 	switch_mutex_unlock(la->mutex);
 

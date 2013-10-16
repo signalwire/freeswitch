@@ -2038,7 +2038,11 @@ static void generate_local_fingerprint(switch_media_handle_t *smh, switch_media_
 	switch_rtp_engine_t *engine = &smh->engines[type];
 
 	if (!engine->local_dtls_fingerprint.len) {
-		engine->local_dtls_fingerprint.type = "sha-256";
+		if (engine->remote_dtls_fingerprint.type) {
+			engine->local_dtls_fingerprint.type = engine->remote_dtls_fingerprint.type;
+		} else {
+			engine->local_dtls_fingerprint.type = "sha-256";
+		}
 		switch_core_cert_gen_fingerprint(DTLS_SRTP_FNAME, &engine->local_dtls_fingerprint);
 	}
 }
@@ -2118,16 +2122,16 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 				switch_set_string(engine->local_dtls_fingerprint.str, p);
 			}
 			
-			if (strcasecmp(engine->remote_dtls_fingerprint.type, "sha-256")) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "Unsupported fingerprint type.\n");
-				engine->local_dtls_fingerprint.type = NULL;
-				engine->remote_dtls_fingerprint.type = NULL;
-			}
+			//if (strcasecmp(engine->remote_dtls_fingerprint.type, "sha-256")) {
+			//	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "Unsupported fingerprint type.\n");
+				//engine->local_dtls_fingerprint.type = NULL;
+				//engine->remote_dtls_fingerprint.type = NULL;
+			//}
 
 
 			generate_local_fingerprint(smh, type);
 			switch_channel_set_flag(smh->session->channel, CF_DTLS);
-
+			
 		} else if (!engine->remote_ssrc && !strcasecmp(attr->a_name, "ssrc") && attr->a_value) {
 			engine->remote_ssrc = (uint32_t) atol(attr->a_value);
 
