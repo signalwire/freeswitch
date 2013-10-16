@@ -453,6 +453,9 @@ SWITCH_DECLARE(void) switch_live_array_set_command_handler(switch_live_array_t *
 SWITCH_DECLARE(void) switch_live_array_parse_json(cJSON *json, switch_event_channel_id_t channel_id);
 SWITCH_DECLARE(switch_bool_t) switch_live_array_add_alias(switch_live_array_t *la, const char *event_channel, const char *name);
 SWITCH_DECLARE(switch_bool_t) switch_live_array_clear_alias(switch_live_array_t *la, const char *event_channel, const char *name);
+SWITCH_DECLARE(switch_bool_t) switch_event_channel_permission_verify(const char *cookie, const char *event_channel);
+SWITCH_DECLARE(void) switch_event_channel_permission_modify(const char *cookie, const char *event_channel, switch_bool_t set);
+SWITCH_DECLARE(void) switch_event_channel_permission_clear(const char *cookie);
 
 ///\}
 
