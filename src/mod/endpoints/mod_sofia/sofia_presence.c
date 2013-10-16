@@ -644,13 +644,29 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 static int sofia_presence_dialog_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	struct dialog_helper *helper = (struct dialog_helper *) pArg;
+	switch_core_session_t *session = NULL;
+	switch_channel_t *channel = NULL;
+	int done = 0;
 
 	if (argc >= 4) {
 
 		if (argc == 5 && !zstr(argv[4])) {
-			if (!switch_ivr_uuid_exists(argv[4])) {
+			if ((session = switch_core_session_locate(argv[4]))) {
+				channel = switch_core_session_get_channel(session);
+
+				if (!switch_channel_test_flag(channel, CF_ANSWERED) &&
+					switch_true(switch_channel_get_variable_dup(channel, "presence_disable_early", SWITCH_FALSE, -1))) {
+					done++;
+				}
+
+				switch_core_session_rwunlock(session);
+			} else {
 				return 0;
 			}
+		}
+
+		if (done) {
+			return 0;
 		}
 
 		if (mod_sofia_globals.debug_presence > 0) {
