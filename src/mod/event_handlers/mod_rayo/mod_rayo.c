@@ -1793,7 +1793,7 @@ static iks *exec_conference_api(switch_core_session_t *session, const char *conf
 	SWITCH_STANDARD_STREAM(stream);
 	switch_api_execute("conference", switch_core_session_sprintf(session, "%s %s %s", conf_name, command, conf_member_id), NULL, &stream);
 	if (!zstr(stream.data) && strncmp("OK", stream.data, 2)) {
-		response = iks_new_error_detailed_printf(node, STANZA_ERROR_INTERNAL_SERVER_ERROR, "%s", stream.data);
+		response = iks_new_error_detailed_printf(node, STANZA_ERROR_SERVICE_UNAVAILABLE, "%s", stream.data);
 	}
 	switch_safe_free(stream.data);
 	return response;
@@ -2047,7 +2047,13 @@ static iks *on_rayo_unjoin(struct rayo_actor *call, struct rayo_message *msg, vo
 		response = iks_new_error_detailed(msg->payload, STANZA_ERROR_UNEXPECTED_REQUEST, "(un)join request is pending");
 	} else if (!RAYO_CALL(call)->joined) {
 		/* not joined to anything */
-		response = iks_new_error(msg->payload, STANZA_ERROR_SERVICE_UNAVAILABLE);
+		response = iks_new_error_detailed(msg->payload, STANZA_ERROR_SERVICE_UNAVAILABLE, "not joined to anything");
+	} else if (RAYO_CALL(call)->joined == JOINED_MIXER && !zstr(call_uri)) {
+		/* joined to mixer, not call */
+		response = iks_new_error_detailed(msg->payload, STANZA_ERROR_SERVICE_UNAVAILABLE, "not joined to call");
+	} else if (RAYO_CALL(call)->joined == JOINED_CALL && !zstr(mixer_name)) {
+		/* joined to call, not mixer */
+		response = iks_new_error_detailed(msg->payload, STANZA_ERROR_SERVICE_UNAVAILABLE, "not joined to mixer");
 	} else if (!zstr(call_uri)) {
 		response = unjoin_call(RAYO_CALL(call), session, msg, call_uri);
 	} else if (!zstr(mixer_name)) {
