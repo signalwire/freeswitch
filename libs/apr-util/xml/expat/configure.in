@@ -12,6 +12,7 @@ dnl
 
 AC_INIT(Makefile.in)
 AC_CONFIG_AUX_DIR(conftools)
+AC_CONFIG_MACRO_DIR(.)
 
 dnl
 dnl Follow the GNU/Linux convention of odd number minor version for
