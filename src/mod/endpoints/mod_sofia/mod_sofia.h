@@ -171,6 +171,8 @@ struct sofia_private {
 	char *network_ip;
 	char *network_port;
 	char *key;
+	char *user;
+	char *realm;
 	int destroy_nh;
 	int destroy_me;
 	int is_call;

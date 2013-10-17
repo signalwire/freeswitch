@@ -1454,6 +1454,7 @@ static void our_sofia_event_callback(nua_event_t event,
 
 			if (sofia_private && sofia_private->call_id && sofia_private->network_ip && sofia_private->network_port) {
 				char *sql;
+				switch_event_t *event = NULL;
 
 				sql = switch_mprintf("delete from sip_registrations where call_id='%q' and network_ip='%q' and network_port='%q'",
 										   sofia_private->call_id, sofia_private->network_ip, sofia_private->network_port);
@@ -1461,6 +1462,34 @@ static void our_sofia_event_callback(nua_event_t event,
 								  sofia_private->call_id, sofia_private->network_ip, sofia_private->network_port);
 				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 
+				switch_core_del_registration(sofia_private->user, sofia_private->realm, sofia_private->call_id);
+
+
+
+				if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->url);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "user-agent",
+												   (sip && sip->sip_user_agent) ? sip->sip_user_agent->g_string : "unknown");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", sofia_private->user, sofia_private->realm);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", "Unregistered");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-source", "register");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+					switch_event_fire(&event);
+				}
+
+				
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_UNREGISTER) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from-user", sofia_private->user);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from-host", sofia_private->realm);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-id", sofia_private->call_id);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "reason", "socket-disconnection");
+					switch_event_fire(&event);
+				}
+				
 
 				sofia_reg_check_socket(profile, sofia_private->call_id, sofia_private->network_ip, sofia_private->network_port);
 			}
