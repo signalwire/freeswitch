@@ -5646,9 +5646,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 		rate = a_engine->codec_params.rm_rate;
 
-		if (!strcasecmp(a_engine->codec_params.rm_encoding, "opus")) {
-			a_engine->codec_params.adv_channels = 2;
-		}
+		//if (!strcasecmp(a_engine->codec_params.rm_encoding, "opus")) {
+		//	a_engine->codec_params.adv_channels = 2;
+		//}
 
 		if (a_engine->codec_params.adv_channels > 1) {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d/%d\n", 
