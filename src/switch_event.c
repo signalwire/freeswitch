@@ -3275,7 +3275,7 @@ SWITCH_DECLARE(switch_bool_t) switch_live_array_clear_alias(switch_live_array_t 
 
 SWITCH_DECLARE(switch_bool_t) switch_live_array_add_alias(switch_live_array_t *la, const char *event_channel, const char *name)
 {
-	alias_node_t *node, *np;
+	alias_node_t *node = 0, *np;
 	switch_bool_t exist = SWITCH_FALSE;
 
 	switch_mutex_lock(la->mutex);
