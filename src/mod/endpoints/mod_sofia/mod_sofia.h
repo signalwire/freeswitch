@@ -718,6 +718,8 @@ struct private_object {
 	sofia_private_t *sofia_private;
 	uint8_t flags[TFLAG_MAX];
 	switch_payload_t agreed_pt;
+	int channels;
+	int adv_channels;
 	switch_payload_t audio_recv_pt;
 	switch_payload_t video_recv_pt;
 	switch_core_session_t *session;

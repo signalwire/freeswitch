@@ -39,6 +39,15 @@
 switch_cache_db_handle_t *_sofia_glue_get_db_handle(sofia_profile_t *profile, const char *file, const char *func, int line);
 #define sofia_glue_get_db_handle(_p) _sofia_glue_get_db_handle(_p, __FILE__, __SWITCH_FUNC__, __LINE__)
 
+static int get_channels(const switch_codec_implementation_t *imp)
+{
+	if (!strcasecmp(imp->iananame, "opus")) {
+		return 2; /* IKR???*/
+	}
+
+	return imp->number_of_channels;
+}
+
 void sofia_glue_set_udptl_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *t38_options, int insist)
 {
 	char buf[2048] = "";
@@ -308,7 +317,14 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 		}
 		
 		if (tech_pvt->ianacodes[i] > 95 || verbose_sdp) {
-			switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d %s/%d\n", tech_pvt->ianacodes[i], imp->iananame, rate);
+			int channels = get_channels(imp);
+
+			if (channels > 1) {
+				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d %s/%d/%d\n", tech_pvt->ianacodes[i], imp->iananame, rate, channels);
+								
+			} else {
+				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d %s/%d\n", tech_pvt->ianacodes[i], imp->iananame, rate);
+			}
 		}
 
 		if (fmtp) {
@@ -530,7 +546,15 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "\n");
 
 		rate = tech_pvt->rm_rate;
-		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d\n", tech_pvt->agreed_pt, tech_pvt->rm_encoding, rate);
+
+		if (tech_pvt->adv_channels > 1) {
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d/%d\n", 
+							tech_pvt->agreed_pt, tech_pvt->rm_encoding, rate, tech_pvt->adv_channels);
+		} else {
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d\n", 
+							tech_pvt->agreed_pt, tech_pvt->rm_encoding, rate);
+		}
+
 		if (fmtp_out) {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fmtp:%d %s\n", tech_pvt->agreed_pt, fmtp_out);
 		}
@@ -735,6 +759,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 					const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
 					char *fmtp = NULL;
 					uint32_t ianacode = tech_pvt->ianacodes[i];
+					int channels = 1;
 
 					if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
 						continue;
@@ -751,9 +776,15 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 						rate = imp->samples_per_second;
 					}
 					
-					
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d\n", ianacode, imp->iananame,
-									imp->samples_per_second);
+					channels = get_channels(imp);
+
+					if (channels > 1) {
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d/%d\n", ianacode, imp->iananame,
+										imp->samples_per_second, channels);
+					} else {
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d\n", ianacode, imp->iananame,
+										imp->samples_per_second);
+					}
 					
 					if (!zstr(ov_fmtp)) {
 						fmtp = (char *) ov_fmtp;
@@ -5314,6 +5345,23 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
 					switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
 					tech_pvt->audio_recv_pt = (switch_payload_t)map->rm_pt;
+
+					if (!strcasecmp((char *) map->rm_encoding, "opus")) {
+						if (tech_pvt->channels == 1) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invalid SDP for opus.  Don't ask.. but it needs a /2\n");
+							tech_pvt->adv_channels = 1;
+						} else {
+							tech_pvt->adv_channels = 2; /* IKR ???*/
+						}
+						if (!zstr((char *) map->rm_fmtp) && switch_stristr("stereo=1", (char *) map->rm_fmtp)) {
+							tech_pvt->channels = 2;
+						} else {
+							tech_pvt->channels = 1;
+						}
+					} else {
+						tech_pvt->adv_channels = tech_pvt->channels;
+					}
+
 					
 					if (!switch_true(mirror) && 
 						switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND && 
