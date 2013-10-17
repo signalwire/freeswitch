@@ -1904,6 +1904,7 @@ SWITCH_DECLARE(void) switch_channel_clear_state_flag(switch_channel_t *channel, 
 SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch_channel_flag_t flag)
 {
 	int ACTIVE = 0;
+	int CLEAR = 0;
 
 	switch_assert(channel != NULL);
 	switch_assert(channel->flag_mutex);
@@ -1912,6 +1913,11 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 	if (flag == CF_LEG_HOLDING && channel->flags[flag] && channel->flags[CF_ANSWERED]) {
 		ACTIVE = 1;
 	}
+
+	if (flag == CF_VIDEO_PASSIVE && channel->flags[flag]) {
+		CLEAR = 1;
+	}
+
 	channel->flags[flag] = 0;
 	switch_mutex_unlock(channel->flag_mutex);
 
@@ -1937,7 +1943,7 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 		switch_channel_set_variable(channel, "recovered", NULL);
 	}
 
-	if (flag == CF_VIDEO_PASSIVE) {
+	if (flag == CF_VIDEO_PASSIVE && CLEAR) {
 		switch_core_session_wake_video_thread(channel->session);
 	}
 
