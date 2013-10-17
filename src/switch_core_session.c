@@ -525,7 +525,16 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		}
 
 		if (caller_profile) {
+			const char *eani = NULL, *eaniii = NULL;
 			const char *ecaller_id_name = NULL, *ecaller_id_number = NULL;
+
+			if (!(flags & SOF_NO_EFFECTIVE_ANI)) {
+				eani = switch_channel_get_variable(channel, "effective_ani");
+			}
+
+			if (!(flags & SOF_NO_EFFECTIVE_ANIII)) {
+				eaniii = switch_channel_get_variable(channel, "effective_aniii");
+			}
 
 			if (!(flags & SOF_NO_EFFECTIVE_CID_NAME)) {
 				ecaller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name");
@@ -535,9 +544,15 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 				ecaller_id_number = switch_channel_get_variable(channel, "effective_caller_id_number");
 			}
 
-			if (ecaller_id_name || ecaller_id_number) {
+			if (eani || eaniii || ecaller_id_name || ecaller_id_number) {
 				outgoing_profile = switch_caller_profile_clone(session, caller_profile);
 
+				if (eani) {
+					outgoing_profile->ani = eani;
+				}
+				if (eaniii) {
+					outgoing_profile->aniii = eaniii;
+				}
 				if (ecaller_id_name) {
 					outgoing_profile->caller_id_name = ecaller_id_name;
 				}
