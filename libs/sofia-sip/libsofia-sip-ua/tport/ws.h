@@ -91,6 +91,8 @@ void ws_destroy(wsh_t *wsh);
 void init_ssl(void);
 void deinit_ssl(void);
 
+int xp_errno(void);
+int xp_is_blocking(int errcode);
 
 #ifndef _MSC_VER
 static inline uint64_t get_unaligned_uint64(const void *p)
