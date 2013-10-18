@@ -1657,6 +1657,9 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 		} else {
 			switch_channel_clear_flag(imember->channel, CF_VIDEO_PASSIVE);
 		}
+
+		switch_channel_set_flag(imember->channel, CF_VIDEO_BREAK);
+		switch_core_session_kill_channel(imember->session, SWITCH_SIG_BREAK);
 		switch_core_session_refresh_video(imember->session);
 	}
 
