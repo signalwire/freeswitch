@@ -1972,11 +1972,8 @@ static iks *unjoin_call(struct rayo_call *call, switch_core_session_t *session, 
 {
 	iks *node = msg->payload;
 	iks *response = NULL;
-	const char *bleg_uuid = switch_channel_get_variable(switch_core_session_get_channel(session), SWITCH_BRIDGE_UUID_VARIABLE);
-	const char *bleg_uri = switch_core_session_sprintf(session, "xmpp:%s@%s", bleg_uuid ? bleg_uuid : "", RAYO_JID(globals.server));
 
-	/* bleg must match call_uri */
-	if (!zstr(bleg_uri) && !strcmp(bleg_uri, call_uri)) {
+	if (!strcmp(call_uri, call->joined_id)) {
 		/* unbridge call */
 		call->pending_join_request = iks_copy(node);
 		switch_ivr_park_session(session);
@@ -2781,7 +2778,7 @@ static void on_call_bridge_event(struct rayo_client *rclient, switch_event_t *ev
 		iks *joined;
 
 		call->joined = JOINED_CALL;
-		call->joined_id = switch_core_strdup(RAYO_POOL(call), b_uuid);
+		call->joined_id = switch_core_sprintf(RAYO_POOL(call), "xmpp:%s@%s", b_uuid, RAYO_JID(globals.server));
 
 		/* send IQ result to client now. */
 		if (call->pending_join_request) {
@@ -2790,6 +2787,29 @@ static void on_call_bridge_event(struct rayo_client *rclient, switch_event_t *ev
 			call->pending_join_request = NULL;
 			RAYO_SEND_REPLY(call, iks_find_attrib_soft(request, "from"), result);
 			iks_delete(request);
+		}
+
+		b_call = RAYO_CALL_LOCATE_BY_ID(b_uuid);
+		if (b_call) {
+			b_call->joined = JOINED_CALL;
+			b_call->joined_id = switch_core_sprintf(RAYO_POOL(b_call), "xmpp:%s@s", a_uuid, RAYO_JID(globals.server));
+
+			/* send IQ result to client now. */
+			if (b_call->pending_join_request) {
+				iks *request = b_call->pending_join_request;
+				iks *result = iks_new_iq_result(request);
+				b_call->pending_join_request = NULL;
+				RAYO_SEND_REPLY(call, iks_find_attrib_soft(request, "from"), result);
+				iks_delete(request);
+			}
+
+			/* send B-leg event */
+			revent = iks_new_presence("joined", RAYO_NS, RAYO_JID(b_call), rayo_call_get_dcp_jid(b_call));
+			joined = iks_find(revent, "joined");
+			iks_insert_attrib_printf(joined, "call-uri", "xmpp:%s@%s", a_uuid, RAYO_JID(globals.server));
+
+			RAYO_SEND_MESSAGE(b_call, rayo_call_get_dcp_jid(b_call), revent);
+			RAYO_UNLOCK(b_call);
 		}
 
 		/* send A-leg event */
@@ -2801,19 +2821,6 @@ static void on_call_bridge_event(struct rayo_client *rclient, switch_event_t *ev
 
 		RAYO_SEND_MESSAGE(call, RAYO_JID(rclient), revent);
 
-		/* send B-leg event */
-		b_call = RAYO_CALL_LOCATE_BY_ID(b_uuid);
-		if (b_call) {
-			revent = iks_new_presence("joined", RAYO_NS, RAYO_JID(b_call), rayo_call_get_dcp_jid(b_call));
-			joined = iks_find(revent, "joined");
-			iks_insert_attrib_printf(joined, "call-uri", "xmpp:%s@%s", a_uuid, RAYO_JID(globals.server));
-
-			b_call->joined = JOINED_CALL;
-			b_call->joined_id = switch_core_strdup(RAYO_POOL(b_call), a_uuid);
-
-			RAYO_SEND_MESSAGE(b_call, rayo_call_get_dcp_jid(b_call), revent);
-			RAYO_UNLOCK(b_call);
-		}
 		RAYO_UNLOCK(call);
 	}
 }
@@ -2846,6 +2853,28 @@ static void on_call_unbridge_event(struct rayo_client *rclient, switch_event_t *
 			iks_delete(request);
 		}
 
+		b_call = RAYO_CALL_LOCATE_BY_ID(b_uuid);
+		if (b_call) {
+			b_call->joined = 0;
+			b_call->joined_id = NULL;
+
+			/* send IQ result to client now. */
+			if (b_call->pending_join_request) {
+				iks *request = b_call->pending_join_request;
+				iks *result = iks_new_iq_result(request);
+				b_call->pending_join_request = NULL;
+				RAYO_SEND_REPLY(b_call, iks_find_attrib_soft(request, "from"), result);
+				iks_delete(request);
+			}
+
+			/* send B-leg event */
+			revent = iks_new_presence("unjoined", RAYO_NS, RAYO_JID(b_call), rayo_call_get_dcp_jid(b_call));
+			joined = iks_find(revent, "unjoined");
+			iks_insert_attrib_printf(joined, "call-uri", "xmpp:%s@%s", a_uuid, RAYO_JID(globals.server));
+			RAYO_SEND_MESSAGE(b_call, rayo_call_get_dcp_jid(b_call), revent);
+			RAYO_UNLOCK(b_call);
+		}
+
 		/* send A-leg event */
 		revent = iks_new_presence("unjoined", RAYO_NS,
 			switch_event_get_header(event, "variable_rayo_call_jid"),
@@ -2854,18 +2883,6 @@ static void on_call_unbridge_event(struct rayo_client *rclient, switch_event_t *
 		iks_insert_attrib_printf(joined, "call-uri", "xmpp:%s@%s", b_uuid, RAYO_JID(globals.server));
 		RAYO_SEND_MESSAGE(call, RAYO_JID(rclient), revent);
 
-		/* send B-leg event */
-		b_call = RAYO_CALL_LOCATE_BY_ID(b_uuid);
-		if (b_call) {
-			revent = iks_new_presence("unjoined", RAYO_NS, RAYO_JID(b_call), rayo_call_get_dcp_jid(b_call));
-			joined = iks_find(revent, "unjoined");
-			iks_insert_attrib_printf(joined, "call-uri", "xmpp:%s@%s", a_uuid, RAYO_JID(globals.server));
-			RAYO_SEND_MESSAGE(b_call, rayo_call_get_dcp_jid(b_call), revent);
-
-			b_call->joined = 0;
-			b_call->joined_id = NULL;
-			RAYO_UNLOCK(b_call);
-		}
 		RAYO_UNLOCK(call);
 	}
 }
@@ -3153,9 +3170,8 @@ done:
 	if (ok) {
 		switch_channel_set_variable(channel, "hangup_after_bridge", "false");
 		switch_channel_set_variable(channel, "transfer_after_bridge", "");
-		switch_channel_set_variable(channel, "park_after_bridge", "false");
-		switch_channel_set_variable(channel, "exec_after_bridge_app", "park");
-		switch_channel_set_variable(channel, "exec_after_bridge_arg", "");
+		switch_channel_set_variable(channel, "park_after_bridge", "true");
+		switch_channel_set_variable(channel, "hold_hangup_xfer_exten", "foo"); /* Icky hack to prevent unjoin of call on hold from hanging up b-leg. park_after_bridge will take precedence over the transfer_after_bridge variable that gets set by this var */
 		switch_channel_set_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE, "-1"); /* required so that output mixing works */
 		switch_core_event_hook_add_read_frame(session, rayo_call_on_read_frame);
 		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
