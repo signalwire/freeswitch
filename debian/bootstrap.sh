@@ -207,10 +207,16 @@ cat <<EOF
 Package: freeswitch-all
 Architecture: any
 Provides: freeswitch, libfreeswitch1, freeswitch-doc, freeswitch-init
-Replaces: freeswitch, libfreeswitch1, freeswitch-doc,
- freeswitch-sysvinit, freeswitch-systemd
-Breaks: freeswitch, libfreeswitch1, freeswitch-doc,
- freeswitch-sysvinit, freeswitch-systemd
+Replaces: freeswitch (<= \${binary:Version}),
+ libfreeswitch1 (<= \${binary:Version}),
+ freeswitch-doc (<= \${binary:Version}),
+ freeswitch-sysvinit (<= \${binary:Version}),
+ freeswitch-systemd (<= \${binary:Version})
+Breaks: freeswitch (<= \${binary:Version}),
+ libfreeswitch1 (<= \${binary:Version}),
+ freeswitch-doc (<= \${binary:Version}),
+ freeswitch-sysvinit (<= \${binary:Version}),
+ freeswitch-systemd (<= \${binary:Version})
 Depends: \${shlibs:Depends}, \${perl:Depends}, \${misc:Depends},
  freeswitch-music-default (>= 1.0.8),
  freeswitch-sounds-en-us-callie (>= 1.0.25) | freeswitch-sounds,
