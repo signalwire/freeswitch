@@ -3125,10 +3125,10 @@ SWITCH_DECLARE(switch_status_t) switch_live_array_clear(switch_live_array_t *la)
 
 	while(np) {
 		cur = np;
+		np  = np->next;
 		cJSON_Delete(cur->obj);
 		free(cur->name);
 		free(cur);
-		np = np->next;
 	}
 
 	la->head = la->tail = NULL;
