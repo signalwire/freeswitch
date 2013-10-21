@@ -13,7 +13,6 @@
 #include <sys/socket.h>
 #else
 #pragma warning(disable:4996)
-#include <config.h>
 #endif
 #include <string.h>
 #include <unistd.h>
@@ -27,7 +26,14 @@
 #include <openssl/ssl.h>
 
 #ifdef _MSC_VER
-typedef intptr_t ssize_t;
+#ifdef _WIN64
+#define WS_SSIZE_T __int64
+#elif _MSC_VER >= 1400
+#define WS_SSIZE_T __int32 __w64
+#else
+#define WS_SSIZE_T __int32
+#endif
+typedef WS_SSIZE_T ssize_t
 #endif
 
 
@@ -90,9 +96,10 @@ ssize_t ws_close(wsh_t *wsh, int16_t reason);
 void ws_destroy(wsh_t *wsh);
 void init_ssl(void);
 void deinit_ssl(void);
-
 int xp_errno(void);
 int xp_is_blocking(int errcode);
+
+
 
 #ifndef _MSC_VER
 static inline uint64_t get_unaligned_uint64(const void *p)
