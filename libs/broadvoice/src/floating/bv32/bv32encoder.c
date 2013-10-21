@@ -20,8 +20,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: bv32encoder.c,v 1.1.1.1 2009/11/19 12:10:48 steveu Exp $
  */
 
 /*! \file */
@@ -161,10 +159,10 @@ BV_DECLARE(int) bv32_encode(bv32_encode_state_t *cs,
         /* Refine the pitch period in the neighborhood of coarse pitch period
            also calculate the pitch predictor tap for single-tap predictor */
         pp = bv32_refinepitch(dq, cpp, &ppt);
-        bs.ppidx = pp - MINPP;
+        bs.ppidx = (int16_t) (pp - MINPP);
 
         /* vq 3 pitch predictor taps with minimum residual energy */
-        bs.bqidx = bv32_pitchtapquan(dq, pp, bq);
+        bs.bqidx = (int16_t) bv32_pitchtapquan(dq, pp, bq);
 
         /* get coefficients for long-term noise feedback filter */
         if (ppt > 1.0)
@@ -190,9 +188,9 @@ BV_DECLARE(int) bv32_encode(bv32_encode_state_t *cs,
 
             /* Log-gain quantization within each sub-frame */
             lg = (ee < TMinE)  ?  MinE  :  log(ee/SFRSZ)/log(2.0);
-            bs.gidx[issf] = bv32_gainquan(gainq + issf, lg, cs->lgpm, cs->prevlg, cs->level);
+            bs.gidx[issf] = (int16_t) bv32_gainquan(gainq + issf, lg, cs->lgpm, cs->prevlg, cs->level);
 
-            /* Level estimation */
+            /* Level Estimation */
             bv32_estlevel(cs->prevlg[0], &cs->level, &cs->lmax, &cs->lmin, &cs->lmean, &cs->x1);
 
             /* Scale the excitation codebook */

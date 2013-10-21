@@ -762,10 +762,7 @@ static int tiff_row_read_handler(void *user_data, uint8_t buf[], size_t len)
     if (s->tiff.row >= s->tiff.image_length)
         return 0;
     if (s->tiff.image_buffer == NULL)
-    {
-        exit(2);
         return 0;
-    }
     memcpy(buf, &s->tiff.image_buffer[s->tiff.row*len], len);
     s->tiff.row++;
 
@@ -1158,7 +1155,6 @@ static int read_tiff_image(t4_tx_state_t *s)
 {
     int total_len;
     int i;
-    int len;
     int alter_image;
     uint8_t *t;
 
@@ -1204,7 +1200,7 @@ static int read_tiff_image(t4_tx_state_t *s)
         {
             if (alter_image)
             {
-                if ((len = read_tiff_t43_image(s)) < 0)
+                if ( read_tiff_t43_image(s) < 0)
                     return -1;
                 s->pack_buf = s->tiff.image_buffer;
             }

@@ -97,6 +97,7 @@ static const EVP_MD *get_evp_by_name(const char *name)
 {
 	if (!strcasecmp(name, "md5")) return EVP_md5();
 	if (!strcasecmp(name, "sha1")) return EVP_sha1();
+	if (!strcasecmp(name, "sha-1")) return EVP_sha1();
 	if (!strcasecmp(name, "sha-256")) return EVP_sha256();
 	if (!strcasecmp(name, "sha-512")) return EVP_sha512();
 

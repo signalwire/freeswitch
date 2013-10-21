@@ -258,7 +258,6 @@ static int set_next_tx_type(t38_gateway_state_t *s)
     int indicator;
     fax_modems_state_t *t;
     t38_gateway_hdlc_state_t *u;
-    int bit_rate;
     int short_train;
     int use_hdlc;
 
@@ -348,20 +347,18 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         break;
     case T38_IND_V27TER_2400_TRAINING:
     case T38_IND_V27TER_4800_TRAINING:
-        bit_rate =
         t->tx_bit_rate = (indicator == T38_IND_V27TER_4800_TRAINING)  ?  4800  :  2400;
         silence_gen_alter(&t->silence_gen, ms_to_samples(75));
-        fax_modems_start_fast_modem(t, FAX_MODEM_V27TER_TX, bit_rate, s->core.short_train, use_hdlc);
+        fax_modems_start_fast_modem(t, FAX_MODEM_V27TER_TX, t->tx_bit_rate, s->core.short_train, use_hdlc);
         fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         fax_modems_set_next_tx_handler(t, (span_tx_handler_t) &v27ter_tx, &t->fast_modems.v27ter_tx);
         fax_modems_set_rx_active(t, true);
         break;
     case T38_IND_V29_7200_TRAINING:
     case T38_IND_V29_9600_TRAINING:
-        bit_rate =
         t->tx_bit_rate = (indicator == T38_IND_V29_9600_TRAINING)  ?  9600  :  7200;
         silence_gen_alter(&t->silence_gen, ms_to_samples(75));
-        fax_modems_start_fast_modem(t, FAX_MODEM_V29_TX, bit_rate, s->core.short_train, use_hdlc);
+        fax_modems_start_fast_modem(t, FAX_MODEM_V29_TX, t->tx_bit_rate, s->core.short_train, use_hdlc);
         fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         fax_modems_set_next_tx_handler(t, (span_tx_handler_t) &v29_tx, &t->fast_modems.v29_tx);
         fax_modems_set_rx_active(t, true);
@@ -379,37 +376,36 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         {
         case T38_IND_V17_7200_SHORT_TRAINING:
             short_train = true;
-            bit_rate = 7200;
+            t->tx_bit_rate = 7200;
             break;
         case T38_IND_V17_7200_LONG_TRAINING:
-            bit_rate = 7200;
+            t->tx_bit_rate = 7200;
             break;
         case T38_IND_V17_9600_SHORT_TRAINING:
             short_train = true;
-            bit_rate = 9600;
+            t->tx_bit_rate = 9600;
             break;
         case T38_IND_V17_9600_LONG_TRAINING:
-            bit_rate = 9600;
+            t->tx_bit_rate = 9600;
             break;
         case T38_IND_V17_12000_SHORT_TRAINING:
             short_train = true;
-            bit_rate = 12000;
+            t->tx_bit_rate = 12000;
             break;
         case T38_IND_V17_12000_LONG_TRAINING:
-            bit_rate = 12000;
+            t->tx_bit_rate = 12000;
             break;
         case T38_IND_V17_14400_SHORT_TRAINING:
             short_train = true;
-            bit_rate = 14400;
+            t->tx_bit_rate = 14400;
             break;
         case T38_IND_V17_14400_LONG_TRAINING:
-            bit_rate = 14400;
+            t->tx_bit_rate = 14400;
             break;
         }
         /*endswitch*/
-        t->tx_bit_rate = bit_rate;
         silence_gen_alter(&t->silence_gen, ms_to_samples(75));
-        fax_modems_start_fast_modem(t, FAX_MODEM_V17_TX, bit_rate, short_train, use_hdlc);
+        fax_modems_start_fast_modem(t, FAX_MODEM_V17_TX, t->tx_bit_rate, short_train, use_hdlc);
         fax_modems_set_tx_handler(t, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         fax_modems_set_next_tx_handler(t, (span_tx_handler_t) &v17_tx, &t->fast_modems.v17_tx);
         fax_modems_set_rx_active(t, true);

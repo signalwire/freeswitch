@@ -457,11 +457,6 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	switch_set_flag(tech_pvt, TFLAG_IO);
 	switch_mutex_unlock(tech_pvt->flag_mutex);
 
-	/* Move channel's state machine to ROUTING. This means the call is trying
-	   to get from the initial start where the call because, to the point
-	   where a destination has been identified. If the channel is simply
-	   left in the initial state, nothing will happen. */
-	switch_channel_set_state(channel, CS_ROUTING);
 	DEBUGA_SKYPE("%s CHANNEL INIT %s\n", SKYPOPEN_P_LOG, tech_pvt->name, switch_core_session_get_uuid(session));
 	switch_copy_string(tech_pvt->session_uuid_str, switch_core_session_get_uuid(session), sizeof(tech_pvt->session_uuid_str));
 
@@ -670,11 +665,11 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 
 static switch_status_t channel_on_routing(switch_core_session_t *session)
 {
-	switch_channel_t *channel = NULL;
+	//switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
 
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
+	//channel = switch_core_session_get_channel(session);
+	//switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);

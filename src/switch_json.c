@@ -487,7 +487,20 @@ static char *print_object(cJSON *item,int depth,int fmt)
 /* Get Array size/item / object item. */
 SWITCH_DECLARE(int)   cJSON_GetArraySize(cJSON *array)							{cJSON *c=array->child;int i=0;while(c)i++,c=c->next;return i;}
 SWITCH_DECLARE(cJSON *)cJSON_GetArrayItem(cJSON *array,int item)				{cJSON *c=array->child;  while (c && item>0) item--,c=c->next; return c;}
-SWITCH_DECLARE(cJSON *)cJSON_GetObjectItem(cJSON *object,const char *string)	{cJSON *c=object->child; while (c && cJSON_strcasecmp(c->string,string)) c=c->next; return c;}
+SWITCH_DECLARE(cJSON *)cJSON_GetObjectItem(const cJSON *object,const char *string)	{cJSON *c=object->child; while (c && cJSON_strcasecmp(c->string,string)) c=c->next; return c;}
+
+
+SWITCH_DECLARE(const char *)cJSON_GetObjectCstr(const cJSON *object, const char *string)	
+{
+	cJSON *cj = cJSON_GetObjectItem(object, string);
+
+	if (!cj || cj->type != cJSON_String || !cj->valuestring) return NULL;
+
+	return cj->valuestring;
+}
+
+
+
 
 /* Utility for array list handling. */
 static void suffix_object(cJSON *prev,cJSON *item) {prev->next=item;item->prev=prev;}
@@ -554,3 +567,27 @@ SWITCH_DECLARE(cJSON *) cJSON_Duplicate(cJSON *item,int recurse)
 	}
 	return newitem;
 }
+
+
+SWITCH_DECLARE(cJSON *) cJSON_CreateStringPrintf(const char *fmt, ...)
+{
+	va_list ap;
+	char *str;
+	cJSON *item;
+
+	va_start(ap, fmt);
+	str = switch_vmprintf(fmt, ap);
+	va_end(ap);
+
+	if (!str) return NULL;
+
+	if ((item = cJSON_New_Item())) {
+		item->type=cJSON_String;
+		item->valuestring = str;
+	} else {
+		free(str);
+	}
+
+	return item;
+}
+

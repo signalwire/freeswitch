@@ -20,8 +20,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: bv32excquan.c,v 1.1.1.1 2009/11/19 12:10:48 steveu Exp $
  */
 
 /*! \file */
@@ -186,9 +184,9 @@ void bv32_excquan(Float *qv,     /* output quantized excitation signal vector */
 
         /* THE BEST CODEVECTOR HAS BEEN FOUND; ASSIGN VQ CODEBOOK INDEX */
         if (sign == 1.0F)
-            idx[iv++] = jmin;
+            idx[iv++] = (int16_t) jmin;
         else
-            idx[iv++] = jmin + CBSZ; /* MSB of index is sign bit */
+            idx[iv++] = (int16_t) (jmin + CBSZ); /* MSB of index is sign bit */
 
         /* BORROW zbuf[] TO STORE FINAL VQ OUTPUT VECTOR WITH CORRECT SIGN */
         fp3 = &cb[jmin*VDIM]; /* fp3 points to start of best codevector */

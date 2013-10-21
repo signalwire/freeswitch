@@ -22,8 +22,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: bv16excquan.c,v 1.1.1.1 2009/11/19 12:10:48 steveu Exp $
  */
 
 /*! \file */
@@ -241,9 +239,9 @@ void excquan(int16_t *idx, /* quantizer codebook index for uq[] vector */
 
         /* The best codevector has been found; assign vq codebook index */
         if (sign == 1.0F)
-            idx[iv++] = jmin;
+            idx[iv++] = (int16_t) jmin;
         else
-            idx[iv++] = jmin + CBSZ; /* MSB of index is sign bit */
+            idx[iv++] = (int16_t) (jmin + CBSZ); /* MSB of index is sign bit */
 
         fp3 = &cb[jmin*VDIM]; /* fp3 points to start of best codevector */
         for (n = 0;  n < VDIM;  n++)

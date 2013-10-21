@@ -445,17 +445,26 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(const char *uuid_
 }
 
 
-SWITCH_DECLARE(void *) switch_core_session_get_private(switch_core_session_t *session)
+SWITCH_DECLARE(void *) switch_core_session_get_private_class(switch_core_session_t *session, switch_pvt_class_t index)
 {
+	if (index >= SWITCH_CORE_SESSION_MAX_PRIVATES) {
+		return NULL;
+	}
+
 	switch_assert(session != NULL);
-	return session->private_info;
+	return session->private_info[index];
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_set_private(switch_core_session_t *session, void *private_info)
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_private_class(switch_core_session_t *session, void *private_info, switch_pvt_class_t index)
 {
 	switch_assert(session != NULL);
-	session->private_info = private_info;
+
+	if (index >= SWITCH_CORE_SESSION_MAX_PRIVATES) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	session->private_info[index] = private_info;
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -516,7 +525,16 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		}
 
 		if (caller_profile) {
+			const char *eani = NULL, *eaniii = NULL;
 			const char *ecaller_id_name = NULL, *ecaller_id_number = NULL;
+
+			if (!(flags & SOF_NO_EFFECTIVE_ANI)) {
+				eani = switch_channel_get_variable(channel, "effective_ani");
+			}
+
+			if (!(flags & SOF_NO_EFFECTIVE_ANIII)) {
+				eaniii = switch_channel_get_variable(channel, "effective_aniii");
+			}
 
 			if (!(flags & SOF_NO_EFFECTIVE_CID_NAME)) {
 				ecaller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name");
@@ -526,9 +544,15 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 				ecaller_id_number = switch_channel_get_variable(channel, "effective_caller_id_number");
 			}
 
-			if (ecaller_id_name || ecaller_id_number) {
+			if (eani || eaniii || ecaller_id_name || ecaller_id_number) {
 				outgoing_profile = switch_caller_profile_clone(session, caller_profile);
 
+				if (eani) {
+					outgoing_profile->ani = eani;
+				}
+				if (eaniii) {
+					outgoing_profile->aniii = eaniii;
+				}
 				if (ecaller_id_name) {
 					outgoing_profile->caller_id_name = ecaller_id_name;
 				}

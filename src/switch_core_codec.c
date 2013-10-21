@@ -171,8 +171,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_real_read_codec(switch_c
 		}
 
 		switch_channel_set_variable(channel, "read_codec", session->read_impl.iananame);
+		switch_channel_set_variable(channel, "original_read_codec", session->read_impl.iananame);
 		switch_snprintf(tmp, sizeof(tmp), "%d", session->read_impl.actual_samples_per_second);
 		switch_channel_set_variable(channel, "read_rate", tmp);
+		switch_channel_set_variable(channel, "original_read_rate", tmp);
 
 		session->raw_read_frame.codec = session->read_codec;
 		session->raw_write_frame.codec = session->read_codec;

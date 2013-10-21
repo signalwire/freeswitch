@@ -66,6 +66,11 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 		caller_id_number = SWITCH_DEFAULT_CLID_NUMBER;
 	}
 
+	/* ANI defaults to Caller ID Number when not specified */
+	if (zstr(ani)) {
+		ani = caller_id_number;
+	}
+
 	profile_dup_clean(username, profile->username, pool);
 	profile_dup_clean(dialplan, profile->dialplan, pool);
 	profile_dup_clean(caller_id_name, profile->caller_id_name, pool);

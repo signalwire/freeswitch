@@ -104,6 +104,7 @@ override_dh_auto_install:
 
 override_dh_installinit:
 	dh_installinit -pfreeswitch-sysvinit --name=freeswitch
+	dh_installinit -pfreeswitch-all --name=freeswitch
 
 debian-bootstrap: debian/.stamp-bootstrap
 debian/.stamp-bootstrap:

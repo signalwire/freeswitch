@@ -763,6 +763,7 @@ SPAN_DECLARE(int) t43_decode_put(t43_decode_state_t *s, const uint8_t data[], si
 
     /* Now deal the bit-planes, one after another. */
     total_len = 0;
+    result = 0;
     while (s->current_bit_plane < s->t85.bit_planes)
     {
         j = s->current_bit_plane;

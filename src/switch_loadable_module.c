@@ -65,6 +65,7 @@ struct switch_loadable_module_container {
 	switch_hash_t *application_hash;
 	switch_hash_t *chat_application_hash;
 	switch_hash_t *api_hash;
+	switch_hash_t *json_api_hash;
 	switch_hash_t *file_hash;
 	switch_hash_t *speech_hash;
 	switch_hash_t *asr_hash;
@@ -73,6 +74,7 @@ struct switch_loadable_module_container {
 	switch_hash_t *say_hash;
 	switch_hash_t *management_hash;
 	switch_hash_t *limit_hash;
+	switch_hash_t *secondary_recover_hash;
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
 };
@@ -314,6 +316,29 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					added++;
 				}
 				switch_core_hash_insert(loadable_modules.api_hash, ptr->interface_name, (const void *) ptr);
+			}
+		}
+	}
+
+	if (new_module->module_interface->json_api_interface) {
+		const switch_json_api_interface_t *ptr;
+
+		for (ptr = new_module->module_interface->json_api_interface; ptr; ptr = ptr->next) {
+			if (!ptr->interface_name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to load JSON api interface from %s due to no interface name.\n", key);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding JSON API Function '%s'\n", ptr->interface_name);
+				if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "json_api");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "description", switch_str_nil(ptr->desc));
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", new_module->key);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "filename", new_module->filename);
+					switch_event_fire(&event);
+					added++;
+				}
+				switch_core_hash_insert(loadable_modules.json_api_hash, ptr->interface_name, (const void *) ptr);
 			}
 		}
 	}
@@ -1047,6 +1072,36 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 		}
 	}
 
+	if (old_module->module_interface->json_api_interface) {
+		const switch_json_api_interface_t *ptr;
+
+		for (ptr = old_module->module_interface->json_api_interface; ptr; ptr = ptr->next) {
+			if (ptr->interface_name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting API Function '%s'\n", ptr->interface_name);
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n",
+								  ptr->interface_name);
+
+				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
+					switch_thread_rwlock_unlock(ptr->rwlock);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up on '%s' waiting for existing references.\n", ptr->interface_name);
+				}
+
+
+				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "api");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "description", switch_str_nil(ptr->desc));
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "syntax", switch_str_nil(ptr->syntax));
+					switch_event_fire(&event);
+					removed++;
+				}
+				switch_core_hash_delete(loadable_modules.json_api_hash, ptr->interface_name);
+			}
+		}
+	}
+
 	if (old_module->module_interface->file_interface) {
 		const switch_file_interface_t *ptr;
 
@@ -1721,6 +1776,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 	switch_core_hash_init_nocase(&loadable_modules.application_hash, loadable_modules.pool);
 	switch_core_hash_init_nocase(&loadable_modules.chat_application_hash, loadable_modules.pool);
 	switch_core_hash_init_nocase(&loadable_modules.api_hash, loadable_modules.pool);
+	switch_core_hash_init_nocase(&loadable_modules.json_api_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.file_hash, loadable_modules.pool);
 	switch_core_hash_init_nocase(&loadable_modules.speech_hash, loadable_modules.pool);
 	switch_core_hash_init_nocase(&loadable_modules.asr_hash, loadable_modules.pool);
@@ -1730,6 +1786,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(switch_bool_t autolo
 	switch_core_hash_init_nocase(&loadable_modules.management_hash, loadable_modules.pool);
 	switch_core_hash_init_nocase(&loadable_modules.limit_hash, loadable_modules.pool);
 	switch_core_hash_init_nocase(&loadable_modules.dialplan_hash, loadable_modules.pool);
+	switch_core_hash_init(&loadable_modules.secondary_recover_hash, loadable_modules.pool);
 	switch_mutex_init(&loadable_modules.mutex, SWITCH_MUTEX_NESTED, loadable_modules.pool);
 
 	if (!autoload) return SWITCH_STATUS_SUCCESS;
@@ -1945,6 +2002,7 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 	switch_core_hash_destroy(&loadable_modules.application_hash);
 	switch_core_hash_destroy(&loadable_modules.chat_application_hash);
 	switch_core_hash_destroy(&loadable_modules.api_hash);
+	switch_core_hash_destroy(&loadable_modules.json_api_hash);
 	switch_core_hash_destroy(&loadable_modules.file_hash);
 	switch_core_hash_destroy(&loadable_modules.speech_hash);
 	switch_core_hash_destroy(&loadable_modules.asr_hash);
@@ -2014,6 +2072,7 @@ HASH_FUNC(timer)
 HASH_FUNC(application)
 HASH_FUNC(chat_application)
 HASH_FUNC(api)
+HASH_FUNC(json_api)
 HASH_FUNC(file)
 HASH_FUNC(speech)
 HASH_FUNC(asr)
@@ -2369,6 +2428,46 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_json_api_execute(cJSON *json, switch_core_session_t *session, cJSON **retval)
+{
+	switch_json_api_interface_t *json_api;
+	switch_status_t status;
+	cJSON *function, *json_reply = NULL;
+
+	switch_assert(json);
+
+	function = cJSON_GetObjectItem(json, "command");
+
+	if (function && function->valuestring 
+		&& cJSON_GetObjectItem(json, "data") && (json_api = switch_loadable_module_get_json_api_interface(function->valuestring)) != 0) {
+		if ((status = json_api->function(json, session, &json_reply)) != SWITCH_STATUS_SUCCESS) {
+			cJSON_AddItemToObject(json, "status", cJSON_CreateString("error"));
+			cJSON_AddItemToObject(json, "message", cJSON_CreateString("The command returned an error"));
+		} else {
+			cJSON_AddItemToObject(json, "status", cJSON_CreateString("success"));
+		}
+		
+		if (!json_reply) {
+			json_reply = cJSON_CreateNull();
+		}
+
+		if (retval) {
+			*retval = json_reply;
+		} else {
+			cJSON_AddItemToObject(json, "response", json_reply);
+		}
+		
+		UNPROTECT_INTERFACE(json_api);
+	} else {
+		status = SWITCH_STATUS_FALSE;
+		cJSON_AddItemToObject(json, "status", cJSON_CreateString("error"));
+		cJSON_AddItemToObject(json, "message", cJSON_CreateString("Invalid request or non-existant command"));
+		cJSON_AddItemToObject(json, "response", cJSON_CreateNull());
+	}
+
+	return status;
+}
+
 
 SWITCH_DECLARE(switch_loadable_module_interface_t *) switch_loadable_module_create_module_interface(switch_memory_pool_t *pool, const char *name)
 {
@@ -2424,6 +2523,9 @@ SWITCH_DECLARE(void *) switch_loadable_module_create_interface(switch_loadable_m
 
 	case SWITCH_API_INTERFACE:
 		ALLOC_INTERFACE(api)
+
+	case SWITCH_JSON_API_INTERFACE:
+		ALLOC_INTERFACE(json_api)
 
 	case SWITCH_FILE_INTERFACE:
 		ALLOC_INTERFACE(file)
@@ -2549,7 +2651,42 @@ SWITCH_DECLARE(void) switch_say_file(switch_say_file_handle_t *sh, const char *f
 	va_end(ap);
 }
 
+SWITCH_DECLARE(switch_core_recover_callback_t) switch_core_get_secondary_recover_callback(const char *key)
+{
+	switch_core_recover_callback_t cb;
 
+	switch_mutex_lock(loadable_modules.mutex);
+	cb = (switch_core_recover_callback_t) (intptr_t) switch_core_hash_find(loadable_modules.secondary_recover_hash, key);
+	switch_mutex_unlock(loadable_modules.mutex);
+
+	return cb;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_core_register_secondary_recover_callback(const char *key, switch_core_recover_callback_t cb)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	switch_assert(cb);
+
+	switch_mutex_lock(loadable_modules.mutex);
+	if (switch_core_hash_find(loadable_modules.secondary_recover_hash, key)) {
+		status = SWITCH_STATUS_FALSE;
+	} else {
+		switch_core_hash_insert(loadable_modules.secondary_recover_hash, key, (void *)(intptr_t) cb);
+	}
+	switch_mutex_unlock(loadable_modules.mutex);
+
+	return status;
+}
+
+
+SWITCH_DECLARE(void) switch_core_unregister_secondary_recover_callback(const char *key)
+{
+	switch_mutex_lock(loadable_modules.mutex);
+	switch_core_hash_delete(loadable_modules.secondary_recover_hash, key);
+	switch_mutex_unlock(loadable_modules.mutex);
+}
 
 
 /* For Emacs:

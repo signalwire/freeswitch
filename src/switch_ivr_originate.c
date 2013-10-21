@@ -1487,16 +1487,24 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_enterprise_originate(switch_core_sess
 	}
 	
 	if (channel) {
-		const char *cid;
+		const char *tmp_var = NULL;
 
 		switch_channel_process_export(channel, NULL, var_event, SWITCH_EXPORT_VARS_VARIABLE);
 
-		if ((cid = switch_channel_get_variable(channel, "effective_caller_id_name"))) {
-			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_name", cid);
+		if ((tmp_var = switch_channel_get_variable(channel, "effective_ani"))) {
+			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_ani", tmp_var);
 		}
 
-		if ((cid = switch_channel_get_variable(channel, "effective_caller_id_number"))) {
-			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_number", cid);
+		if ((tmp_var = switch_channel_get_variable(channel, "effective_aniii"))) {
+			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_aniii", tmp_var);
+		}
+
+		if ((tmp_var = switch_channel_get_variable(channel, "effective_caller_id_name"))) {
+			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_name", tmp_var);
+		}
+
+		if ((tmp_var = switch_channel_get_variable(channel, "effective_caller_id_number"))) {
+			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_caller_id_number", tmp_var);
 		}
 	}
 
@@ -1891,6 +1899,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	int read_packet = 0;
 	int check_reject = 1;
 	switch_codec_implementation_t read_impl = { 0 };
+	const char *ani_override = NULL;
+	const char *aniii_override = NULL;
 
 	if (session) {
 		switch_channel_set_variable(switch_core_session_get_channel(session), "originated_legs", NULL);
@@ -2342,6 +2352,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		}
 	}
 
+	/* variable to force ANI / ANIII */
+	ani_override = switch_event_get_header(var_event, "origination_ani");
+	aniii_override = switch_event_get_header(var_event, "origination_aniii");
+
 	if ((cid_tmp = switch_event_get_header(var_event, "origination_caller_id_name"))) {
 		cid_name_override = cid_tmp;
 	}
@@ -2368,6 +2382,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	if (flags & SOF_NO_LIMITS) {
 		dftflags |= SOF_NO_LIMITS;
+	}
+
+	if (ani_override) {
+		dftflags |= SOF_NO_EFFECTIVE_ANI;
+	}
+
+	if (aniii_override) {
+		dftflags |= SOF_NO_EFFECTIVE_ANIII;
 	}
 
 	if (cid_num_override) {
@@ -2542,13 +2564,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						new_profile = switch_caller_profile_new(oglobals.pool,
 																NULL,
 																NULL,
-																cid_name_override, cid_num_override, NULL, NULL, NULL, NULL, __FILE__, NULL, chan_data);
+																cid_name_override, cid_num_override, NULL, ani_override, aniii_override, NULL, __FILE__, NULL, chan_data);
 					}
 
 					new_profile->uuid = SWITCH_BLANK_STRING;
 					new_profile->chan_name = SWITCH_BLANK_STRING;
 					new_profile->destination_number = switch_core_strdup(new_profile->pool, chan_data);
 
+					if (ani_override) {
+						new_profile->ani = switch_core_strdup(new_profile->pool, ani_override);
+					}
+					if (aniii_override) {
+						new_profile->aniii = switch_core_strdup(new_profile->pool, aniii_override);
+					}
 					if (cid_name_override) {
 						new_profile->caller_id_name = switch_core_strdup(new_profile->pool, cid_name_override);
 					}
@@ -2572,7 +2600,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						new_profile = switch_caller_profile_new(oglobals.pool,
 																NULL,
 																NULL,
-																cid_name_override, cid_num_override, NULL, NULL, NULL, NULL, __FILE__, NULL, chan_data);
+																cid_name_override, cid_num_override, NULL, ani_override, aniii_override, NULL, __FILE__, NULL, chan_data);
 					}
 				}
 
@@ -2613,6 +2641,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				if (local_var_event) {
 					switch_event_merge(originate_var_event, local_var_event);
+				}
+
+				if ((current_variable = switch_event_get_header(originate_var_event, "origination_ani"))) {
+					new_profile->ani = switch_core_strdup(new_profile->pool, current_variable);
+					myflags |= SOF_NO_EFFECTIVE_ANI;
+				}
+
+				if ((current_variable = switch_event_get_header(originate_var_event, "origination_aniii"))) {
+					new_profile->aniii = switch_core_strdup(new_profile->pool, current_variable);
+					myflags |= SOF_NO_EFFECTIVE_ANIII;
 				}
 
 				if ((current_variable = switch_event_get_header(originate_var_event, "origination_caller_id_number"))) {

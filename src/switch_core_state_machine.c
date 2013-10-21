@@ -38,6 +38,16 @@
 static void switch_core_standard_on_init(switch_core_session_t *session)
 {
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard INIT\n", switch_channel_get_name(session->channel));
+
+	if (switch_channel_test_flag(session->channel, CF_RECOVERING_BRIDGE)) {
+		switch_channel_set_state(session->channel, CS_RESET);
+	} else {
+		if (switch_channel_test_flag(session->channel, CF_RECOVERING)) {
+			switch_channel_set_state(session->channel, CS_EXECUTE);
+		} else {
+			switch_channel_set_state(session->channel, CS_ROUTING);
+		}
+	}
 }
 
 static void switch_core_standard_on_hangup(switch_core_session_t *session)
@@ -104,6 +114,43 @@ static void switch_core_standard_on_reset(switch_core_session_t *session)
 	switch_channel_set_variable(session->channel, "call_uuid", switch_core_session_get_uuid(session));
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard RESET\n", switch_channel_get_name(session->channel));
+
+	if (switch_channel_test_flag(session->channel, CF_RECOVERING_BRIDGE)) {
+		switch_core_session_t *other_session = NULL;
+		const char *uuid = switch_core_session_get_uuid(session);
+
+		if (switch_channel_test_flag(session->channel, CF_BRIDGE_ORIGINATOR)) {
+			const char *other_uuid = switch_channel_get_partner_uuid(session->channel);
+			int x = 0;
+
+			if (other_uuid) {
+				for (x = 0; other_session == NULL && x < 20; x++) {
+					if (!switch_channel_up(session->channel)) {
+						break;
+					}
+					other_session = switch_core_session_locate(other_uuid);
+					switch_yield(100000);
+				}
+			}
+
+			if (other_session) {
+				switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
+				switch_channel_clear_flag(session->channel, CF_BRIDGE_ORIGINATOR);
+				switch_channel_wait_for_state_timeout(other_channel, CS_RESET, 5000);
+				switch_channel_wait_for_flag(other_channel, CF_MEDIA_ACK, SWITCH_TRUE, 2000, NULL);
+
+				if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) && switch_channel_test_flag(other_channel, CF_PROXY_MODE)) {
+					switch_ivr_signal_bridge(session, other_session);
+				} else {
+					switch_ivr_uuid_bridge(uuid, other_uuid);
+				}
+				switch_core_session_rwunlock(other_session);
+			}
+		}
+
+		switch_channel_clear_flag(session->channel, CF_RECOVERING_BRIDGE);
+	}
+
 }
 
 static void switch_core_standard_on_routing(switch_core_session_t *session)
@@ -207,6 +254,8 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 	const char *uuid;
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s Standard EXECUTE\n", switch_channel_get_name(session->channel));
+
+	switch_channel_clear_flag(session->channel, CF_RECOVERING);
 
 	switch_channel_set_variable(session->channel, "call_uuid", switch_core_session_get_uuid(session));
 

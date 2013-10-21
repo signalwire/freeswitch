@@ -2717,14 +2717,35 @@ static int recover_callback(void *pArg, int argc, char **argv, char **columnName
 
 	if (ep->recover_callback) {
 		switch_caller_extension_t *extension = NULL;
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		int r = 0;
 
+		if ((r = ep->recover_callback(session)) > 0) {
+			const char *cbname;
 
-		if (ep->recover_callback(session) > 0) {
-			switch_channel_t *channel = switch_core_session_get_channel(session);
+			switch_channel_set_flag(session->channel, CF_RECOVERING);
+			
 
 			if (switch_channel_get_partner_uuid(channel)) {
 				switch_channel_set_flag(channel, CF_RECOVERING_BRIDGE);
-			} else {
+			}
+
+			switch_core_media_recover_session(session);
+
+			if ((cbname = switch_channel_get_variable(channel, "secondary_recovery_module"))) {
+				switch_core_recover_callback_t recover_callback;
+				
+				if ((recover_callback = switch_core_get_secondary_recover_callback(cbname))) {
+					r = recover_callback(session);
+				}
+			}
+			
+			
+		}
+		
+		if (r > 0) {
+
+			if (!switch_channel_test_flag(channel, CF_RECOVERING_BRIDGE)) {
 				switch_xml_t callflow, param, x_extension;
 				if ((extension = switch_caller_extension_new(session, "recovery", "recovery")) == 0) {
 					abort();

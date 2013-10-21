@@ -20,8 +20,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: bv16encoder.c,v 1.1.1.1 2009/11/19 12:10:48 steveu Exp $
  */
 
 /*! \file */
@@ -169,10 +167,10 @@ BV_DECLARE(int) bv16_encode(bv16_encode_state_t *cs,
         /* Refine the pitch period in the neighborhood of coarse pitch period
            also calculate the pitch predictor tap for single-tap predictor */
         pp = refinepitch(dq, cpp, &ppt);
-        bs.ppidx = pp - MINPP;
+        bs.ppidx = (int16_t) (pp - MINPP);
 
         /* Vector quantize 3 pitch predictor taps with minimum residual energy */
-        bs.bqidx = pitchtapquan(dq, pp, bq, &lg);
+        bs.bqidx = (int16_t) pitchtapquan(dq, pp, bq, &lg);
 
         /* Get coefficients of long-term noise feedback filter */
         if (ppt > 1.0)
@@ -184,7 +182,7 @@ BV_DECLARE(int) bv16_encode(bv16_encode_state_t *cs,
 
         /* Gain quantization */
         lg = (lg < FRSZ)  ?  0  :  log(lg/FRSZ)/log(2.0);
-        bs.gidx = gainquan(&gainq, lg, cs->lgpm, cs->prevlg, cs->level);
+        bs.gidx = (int16_t) gainquan(&gainq, lg, cs->lgpm, cs->prevlg, cs->level);
 
         /* Level estimation */
         dummy = estl_alpha;

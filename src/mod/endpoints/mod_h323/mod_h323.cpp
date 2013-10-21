@@ -1655,7 +1655,6 @@ switch_status_t FSH323Connection::on_init()
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"Started routing for connection [%p]\n",this);
-	switch_channel_set_state(channel, CS_ROUTING);
 
 	return SWITCH_STATUS_SUCCESS;
 }

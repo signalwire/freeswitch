@@ -21,8 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: bv16lspquan.c,v 1.1.1.1 2009/11/19 12:10:48 steveu Exp $
  */
 
 /*! \file */
@@ -36,30 +34,26 @@
 #include "bv16externs.h"
 #include "bvcommon.h"
 
-void vqmse(
-    Float *xq,
-    int16_t *idx,
-    Float *x,
-    const Float *cb,
-    int vdim,
-    int cbsz);
+void vqmse(Float *xq,
+           int16_t *idx,
+           Float *x,
+           const Float *cb,
+           int vdim,
+           int cbsz);
 
-void svqwmse(
-    Float *xq,
-    int16_t *idx,
-    Float *x,
-    Float *xa,
-    Float *w,
-    const Float *cb,
-    int vdim,
-    int cbsz);
+void svqwmse(Float *xq,
+             int16_t *idx,
+             Float *x,
+             Float *xa,
+             Float *w,
+             const Float *cb,
+             int vdim,
+             int cbsz);
 
-void lspquan(
-    Float   *lspq,
-    int16_t   *lspidx,
-    Float   *lsp,
-    Float   *lsppm
-)
+void lspquan(Float *lspq,
+             int16_t *lspidx,
+             Float *lsp,
+             Float *lsppm)
 {
     Float d[LPCO];
     Float w[LPCO];
@@ -75,7 +69,7 @@ void lspquan(
     int i;
     int k;
 
-    /* calculate the weights for weighted mean-square error distortion */
+    /* Calculate the weights for weighted mean-square error distortion */
     for (i = 0;  i < LPCO - 1;  i++)
         d[i] = lsp[i + 1] - lsp[i];       /* LSP difference vector */
     w[0] = 1.0F/d[0];
@@ -119,7 +113,7 @@ void lspquan(
     for (i = 0;  i < LPCO;  i++)
         lspe[i] = lspeq1[i] + lspeq2[i];
 
-    /* update lsp ma predictor memory */
+    /* Update lsp ma predictor memory */
     i = LPCO * LSPPORDER - 1;
     fp1 = &lsppm[i];
     fp2 = &lsppm[i - 1];
@@ -131,20 +125,20 @@ void lspquan(
         fp2--;
     }
 
-    /* calculate quantized lsp */
+    /* Calculate quantized lsp */
     for (i = 0;  i < LPCO;  i++)
         lspq[i] = lspa[i] + lspeq2[i];
 
-    /* ensure correct ordering of lsp to guarantee lpc filter stability */
+    /* Ensure correct ordering of lsp to guarantee lpc filter stability */
     stblz_lsp(lspq, LPCO);
 }
 
-void vqmse(Float *xq,    /* VQ output vector (quantized version of input vector) */
-           int16_t *idx,   /* VQ codebook index for the nearest neighbor */
-           Float *x,     /* input vector */
-           const Float *cb,    /* VQ codebook */
-           int vdim,   /* vector dimension */
-           int cbsz)   /* codebook size (number of codevectors) */
+void vqmse(Float *xq,       /* VQ output vector (quantized version of input vector) */
+           int16_t *idx,    /* VQ codebook index for the nearest neighbor */
+           Float *x,        /* input vector */
+           const Float *cb, /* VQ codebook */
+           int vdim,        /* vector dimension */
+           int cbsz)        /* codebook size (number of codevectors) */
 {
     const Float *fp1;
     Float dmin;
@@ -166,7 +160,7 @@ void vqmse(Float *xq,    /* VQ output vector (quantized version of input vector)
         if (d < dmin)
         {
             dmin = d;
-            *idx = j;
+            *idx = (int16_t) j;
         }
     }
 
@@ -176,23 +170,24 @@ void vqmse(Float *xq,    /* VQ output vector (quantized version of input vector)
 }
 
 /* Signed WMSE VQ */
-void svqwmse(
-    Float   *xq,    /* VQ output vector (quantized version of input vector) */
-    int16_t   *idx,   /* VQ codebook index for the nearest neighbor */
-    Float   *x,     /* input vector */
-    Float   *xa,    /* approximation prior to current stage */
-    Float   *w,     /* weights for weighted Mean-Square Error */
-    const Float   *cb,    /* VQ codebook */
-    int     vdim,   /* vector dimension */
-    int     cbsz    /* codebook size (number of codevectors) */
-)
+void svqwmse(Float *xq,         /* VQ output vector (quantized version of input vector) */
+             int16_t *idx,      /* VQ codebook index for the nearest neighbor */
+             Float *x,          /* input vector */
+             Float *xa,         /* approximation prior to current stage */
+             Float *w,          /* weights for weighted Mean-Square Error */
+             const Float *cb,   /* VQ codebook */
+             int vdim,          /* vector dimension */
+             int cbsz)          /* codebook size (number of codevectors) */
 {
     const Float *fp1;
     const Float *fp2;
     Float dmin;
     Float d;
     Float xqc[STBLDIM];
-    int j, k, stbl, sign=1;
+    int j;
+    int k;
+    int stbl;
+    int sign = 1;
     Float e;
 
     fp1  = cb;
@@ -211,17 +206,17 @@ void svqwmse(
             d += w[k]*e*e;
         }
 
-        /* check candidate - negative sign */
+        /* Check candidate - negative sign */
         if (d < dmin)
         {
             for (k = 0;  k < STBLDIM;  k++)
                 xqc[k]  = xa[k] - *fp2++;
-            /* check stability - negative sign */
+            /* Check stability - negative sign */
             stbl = stblchck(xqc, STBLDIM);
             if (stbl > 0)
             {
                 dmin = d;
-                *idx = j;
+                *idx = (int16_t) j;
                 sign = -1;
             }
         }
@@ -237,18 +232,18 @@ void svqwmse(
             d += w[k]*e*e;
         }
 
-        /* check candidate - positive sign */
+        /* Check candidate - positive sign */
         if (d < dmin)
         {
             for (k = 0;  k < STBLDIM;  k++)
                 xqc[k]  = xa[k] + *fp2++;
 
-            /* check stability - positive sign */
+            /* Check stability - positive sign */
             stbl = stblchck(xqc, STBLDIM);
             if (stbl > 0)
             {
                 dmin = d;
-                *idx = j;
+                *idx = (int16_t) j;
                 sign = +1;
             }
         }

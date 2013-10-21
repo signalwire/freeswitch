@@ -1907,9 +1907,6 @@ int sofia_recover_callback(switch_core_session_t *session)
 								  switch_channel_get_name(channel), use_uuid);
 			}
 		}
-	
-		switch_core_media_recover_session(session);
-	
 	}
 
 	r++;
