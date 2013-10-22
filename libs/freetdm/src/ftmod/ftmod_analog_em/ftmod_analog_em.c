@@ -483,7 +483,9 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 	ftdm_sigmsg_t sig;
 	int cas_bits = 0;
 	uint32_t cas_answer = 0;
+	uint32_t cas_hangup = 0;
 	int cas_answer_ms = 500;
+	int cas_hangup_ms = 500;
 	FILE *ringback_f = NULL;
 	ftdm_bool_t digits_sent = FTDM_FALSE;
 
@@ -641,6 +643,23 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 			case FTDM_CHANNEL_STATE_RING:
 				{
 					ftdm_sleep(interval);
+					if (ftdmchan->state == FTDM_CHANNEL_STATE_UP && cas_answer) {
+						cas_bits = 0;
+						ftdm_channel_command(ftdmchan, FTDM_COMMAND_GET_CAS_BITS, &cas_bits);
+						if (!(state_counter % 5000)) {
+							ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "CAS bits: 0x%X\n", cas_bits);
+						}
+						if (cas_bits == 0x0) {
+							cas_hangup += interval;
+							if (cas_hangup >= cas_hangup_ms) {
+								ftdm_log_chan_msg(ftdmchan, FTDM_LOG_INFO, "Hanging up on CAS hangup signal persistence\n");
+								ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+							}
+						} else if (cas_hangup) {
+							ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Resetting cas hangup to 0: 0x%X!\n", cas_bits);
+							cas_hangup = 0;
+						}
+					}
 					continue;
 				}
 				break;
