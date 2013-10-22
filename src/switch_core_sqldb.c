@@ -510,8 +510,6 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle(switch_cache_db_h
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG10,
 						  "Create Cached DB handle %s [%s] %s:%d\n", new_dbh->name, switch_cache_db_type_name(type), file, line);
 
-		new_dbh = create_handle(type);
-
 		if (db) {
 			new_dbh->native_handle.core_db_dbh = db;
 		} else if (odbc_dbh) {
