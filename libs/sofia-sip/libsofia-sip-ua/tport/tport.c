@@ -903,7 +903,6 @@ tport_t *tport_alloc_secondary(tport_primary_t *pri,
 		  pri->pri_params->tpp_tos);
   }
   else {
-    su_close(socket);
     *return_reason = "malloc";
   }
 
