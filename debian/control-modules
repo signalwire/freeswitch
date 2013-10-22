@@ -229,7 +229,7 @@ Description: Voicemail detection
 Module: applications/mod_voicemail
 Description: Voicemail
  This module provides a voicemail system.
-Depends: mail-transport-agent
+Depends: ssmtp | mail-transport-agent
 
 Module: applications/mod_voicemail_ivr
 Description: Voicemail IVR
@@ -394,10 +394,6 @@ Module: endpoints/mod_h323
 Description: mod_h323
  Adds mod_h323.
 Build-Depends: libopenh323-dev | libh323plus-dev, libpt-dev
-
-Module: endpoints/mod_html5
-Description: HTML5 endpoint module
- This module adds support for HTML5 technologies such as WebRTC.
 
 Module: endpoints/mod_khomp
 Description: mod_khomp

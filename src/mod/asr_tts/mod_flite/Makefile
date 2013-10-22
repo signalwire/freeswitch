@@ -21,12 +21,12 @@ $(MODNAME).lo: $(FLITE_A)
 $(FLITE_DIR):
 	$(GETLIB) $(FLITE)-current.tar.bz2
 
-$(FLITE_BUILDDIR)/Makefile: $(FLITE_DIR)
+$(FLITE_BUILDDIR)/.stamp-configure: $(FLITE_DIR)
 	mkdir -p $(FLITE_BUILDDIR)
 	cd $(FLITE_BUILDDIR) && $(DEFAULT_VARS) $(FLITE_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(FLITE_DIR) --with-audio=none --with-pic --disable-shared
-	$(TOUCH_TARGET)
+	test -f Makefile && touch $@
 
-$(FLITE_A): $(FLITE_DIR) $(FLITE_BUILDDIR)/Makefile
+$(FLITE_A): $(FLITE_DIR) $(FLITE_BUILDDIR)/.stamp-configure
 	cd $(FLITE_BUILDDIR) && $(MAKE) -j1
 	test -d $(FLITE_LIBDIR) || mkdir $(FLITE_LIBDIR)
 	TARGET_OS=`grep TARGET_OS $(FLITE_BUILDDIR)/config/config | sed "s/^.*= //"` ;\

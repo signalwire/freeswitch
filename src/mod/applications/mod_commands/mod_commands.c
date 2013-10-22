@@ -1321,11 +1321,11 @@ SWITCH_STANDARD_API(echo_function)
 SWITCH_STANDARD_API(stun_function)
 {
 	char *stun_ip = NULL;
+	char *src_ip = NULL;
 	switch_port_t stun_port = (switch_port_t) SWITCH_STUN_DEFAULT_PORT;
 	char *p;
 	char ip_buf[256] = "";
 	char *ip = NULL;
-	char *pip = NULL;
 	switch_port_t port = 0;
 	switch_memory_pool_t *pool = NULL;
 	char *error = "";
@@ -1346,7 +1346,7 @@ SWITCH_STANDARD_API(stun_function)
 
 	switch_assert(stun_ip);
 
-	port = argv[1] ? atoi(argv[1]) : 0;
+	src_ip = argv[1];
 
 	if ((p = strchr(stun_ip, ':'))) {
 		int iport;
@@ -1359,12 +1359,19 @@ SWITCH_STANDARD_API(stun_function)
 		p = stun_ip;
 	}
 
-	if (p && (pip = strchr(p, ' '))) {
-		*pip++ = '\0';
+	if (!zstr(src_ip) && (p = strchr(src_ip, ':'))) {
+		int iport;
+		*p++ = '\0';
+		iport = atoi(p);
+		if (iport > 0 && iport < 0xFFFF) {
+			port = (switch_port_t) iport;
+		}
+	} else if (!zstr(src_ip)) {
+		ip = src_ip;
 	}
 
-	if (pip) {
-		switch_copy_string(ip_buf, pip, sizeof(ip_buf));
+	if ( !zstr(src_ip) ) {
+		switch_copy_string(ip_buf, src_ip, sizeof(ip_buf));
 	} else {
 		switch_find_local_ip(ip_buf, sizeof(ip_buf), NULL, AF_INET);
 	}
@@ -6150,7 +6157,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "sql_escape", "Escape a string to prevent sql injection", sql_escape, SQL_ESCAPE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "status", "Show current status", status_function, "");
 	SWITCH_ADD_API(commands_api_interface, "strftime_tz", "Display formatted time of timezone", strftime_tz_api_function, "<timezone_name> [<epoch>|][format string]");
-	SWITCH_ADD_API(commands_api_interface, "stun", "Execute STUN lookup", stun_function, "<stun_server>[:port]");
+	SWITCH_ADD_API(commands_api_interface, "stun", "Execute STUN lookup", stun_function, "<stun_server>[:port] [<source_ip>[:<source_port]]");
 	SWITCH_ADD_API(commands_api_interface, "system", "Execute a system command", system_function, SYSTEM_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "time_test", "Show time jitter", time_test_function, "<mss> [count]");
 	SWITCH_ADD_API(commands_api_interface, "timer_test", "Exercise FS timer", timer_test_function, TIMER_TEST_SYNTAX);

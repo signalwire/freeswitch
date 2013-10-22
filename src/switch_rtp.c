@@ -2777,7 +2777,7 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 			rtp_session->dtmf_data.out_digit_dur = rdigit->duration;
 			rtp_session->dtmf_data.out_digit = rdigit->digit;
 			rtp_session->dtmf_data.out_digit_packet[0] = (unsigned char) switch_char_to_rfc2833(rdigit->digit);
-			rtp_session->dtmf_data.out_digit_packet[1] = 7;
+			rtp_session->dtmf_data.out_digit_packet[1] = 13;
 			rtp_session->dtmf_data.out_digit_packet[2] = (unsigned char) (rtp_session->dtmf_data.out_digit_sub_sofar >> 8);
 			rtp_session->dtmf_data.out_digit_packet[3] = (unsigned char) rtp_session->dtmf_data.out_digit_sub_sofar;
 

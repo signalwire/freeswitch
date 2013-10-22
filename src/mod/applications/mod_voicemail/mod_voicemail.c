@@ -3078,10 +3078,17 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		vm_cc_num = switch_separate_string(vm_cc_dup, ',', vm_cc_list, (sizeof(vm_cc_list) / sizeof(vm_cc_list[0])));
 
 		for (vm_cc_i=0; vm_cc_i<vm_cc_num; vm_cc_i++) {
+			char *cmd, *val;
 			const char *vm_cc_current = vm_cc_list[vm_cc_i];
-			char *cmd = switch_mprintf("%s %s %s '%s' %s@%s %s",
-									   vm_cc_current, file_path, caller_id_number,
-									   caller_id_name, myid, domain_name, read_flags);
+
+			val = strdup(caller_id_name);
+			switch_url_decode(val);
+
+			cmd = switch_mprintf("%s %s %s '%s' %s@%s %s",
+								 vm_cc_current, file_path, caller_id_number,
+								 val, myid, domain_name, read_flags);
+
+			free(val);
 
 			if (voicemail_inject(cmd, session) == SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s\n", vm_cc_current);
