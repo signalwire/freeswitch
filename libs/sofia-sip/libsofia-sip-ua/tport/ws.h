@@ -26,6 +26,8 @@
 #include <openssl/ssl.h>
 
 #ifdef _MSC_VER
+#define strncasecmp _strnicmp
+#define snprintf _snprintf
 #ifdef _WIN64
 #define WS_SSIZE_T __int64
 #elif _MSC_VER >= 1400
@@ -33,7 +35,7 @@
 #else
 #define WS_SSIZE_T __int32
 #endif
-typedef WS_SSIZE_T ssize_t
+typedef WS_SSIZE_T ssize_t;
 #endif
 
 
