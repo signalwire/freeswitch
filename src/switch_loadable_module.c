@@ -188,10 +188,18 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 				}
 				if (load_interface) {
 					for (impl = ptr->implementations; impl; impl = impl->next) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
-										  "Adding Codec %s %d %s %dhz %dms %dbps\n",
-										  impl->iananame, impl->ianacode,
-										  ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_packet / 1000, impl->bits_per_second);
+						if (impl->bits_per_second) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
+											  "Adding Codec %s %d %s %dhz %dms %dbps\n",
+											  impl->iananame, impl->ianacode,
+											  ptr->interface_name, impl->actual_samples_per_second, 
+											  impl->microseconds_per_packet / 1000, impl->bits_per_second);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
+											  "Adding Codec %s %d %s %dhz %dms (VBR)\n",
+											  impl->iananame, impl->ianacode,
+											  ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_packet / 1000);
+						}
 						if (!switch_core_hash_find(loadable_modules.codec_hash, impl->iananame)) {
 							switch_core_hash_insert(loadable_modules.codec_hash, impl->iananame, (const void *) ptr);
 						}
@@ -2308,7 +2316,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 						continue;
 					}
 
-					if (((!rate && (uint32_t) imp->samples_per_second != default_rate) || (rate && (uint32_t) imp->samples_per_second != rate))) {
+					if (((!rate && (uint32_t) imp->actual_samples_per_second != default_rate) || (rate && (uint32_t) imp->actual_samples_per_second != rate))) {
 						continue;
 					}
 
@@ -2332,7 +2340,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 						continue;
 					}
 
-					if (rate && (uint32_t) imp->samples_per_second != rate) {
+					if (rate && (uint32_t) imp->actual_samples_per_second != rate) {
 						continue;
 					}
 
