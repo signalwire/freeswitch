@@ -6893,6 +6893,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 			exten = (char *) refer_to->r_url->url_user;
 		}
 
+		switch_core_session_queue_indication(session, SWITCH_MESSAGE_REFER_EVENT);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Process REFER to [%s@%s]\n", exten, (char *) refer_to->r_url->url_host);
 
 		switch_channel_set_variable(tech_pvt->channel, "transfer_disposition", "recv_replace");
