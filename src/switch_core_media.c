@@ -73,6 +73,7 @@ typedef struct codec_params_s {
 	char *iananame;
 	switch_payload_t pt;
 	unsigned long rm_rate;
+	unsigned long adv_rm_rate;
 	uint32_t codec_ms;
 	uint32_t bitrate;
 
@@ -1436,6 +1437,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 								engine->codec_params.rm_encoding = switch_core_session_strdup(smh->session, imp->iananame);
 								engine->codec_params.rm_fmtp = NULL;
 								engine->codec_params.rm_rate = imp->samples_per_second;
+								engine->codec_params.adv_rm_rate = imp->samples_per_second;
+								if (strcasecmp(imp->iananame, "g722")) {
+									engine->codec_params.rm_rate = imp->actual_samples_per_second;
+								}
 								engine->codec_params.codec_ms = imp->microseconds_per_packet / 1000;
 								engine->codec_params.bitrate = imp->bits_per_second;
 								engine->codec_params.channels = 1;
@@ -2983,6 +2988,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					const switch_codec_implementation_t *imp = codec_array[i];
 					uint32_t bit_rate = imp->bits_per_second;
 					uint32_t codec_rate = imp->samples_per_second;
+					char *samp = NULL;
+					
 					if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
 						continue;
 					}
@@ -3009,6 +3016,21 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						match = 0;
 					}
 					
+					if (!zstr(map->rm_fmtp)) {
+						samp = strstr(map->rm_fmtp, "samplerate=");
+					}
+					if (!strcasecmp(map->rm_encoding, "opus") && !strcasecmp(rm_encoding, imp->iananame) && samp) {
+						char *rate_str = samp + 11;
+
+						if (rate_str && *rate_str) {
+							near_rate = atoi(rate_str);
+							near_match = imp;
+							near_map = mmap = map;
+							match = 0;
+							goto near_match;
+						}
+					}
+
 					if (match) {
 						if (scrooge) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
@@ -3087,6 +3109,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				a_engine->codec_params.iananame = switch_core_session_strdup(session, (char *) mimp->iananame);
 				a_engine->codec_params.pt = (switch_payload_t) mmap->rm_pt;
 				a_engine->codec_params.rm_rate = mimp->samples_per_second;
+				a_engine->codec_params.adv_rm_rate = mimp->samples_per_second;
+				if (strcasecmp(mimp->iananame, "g722")) {
+					a_engine->codec_params.rm_rate = mimp->actual_samples_per_second;
+				}
 				a_engine->codec_params.codec_ms = mimp->microseconds_per_packet / 1000;
 				a_engine->codec_params.bitrate = mimp->bits_per_second;
 				a_engine->codec_params.channels = mmap->rm_params ? atoi(mmap->rm_params) : 1;
@@ -5644,7 +5670,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "\n");
 
 
-		rate = a_engine->codec_params.rm_rate;
+		rate = a_engine->codec_params.adv_rm_rate;
 
 		//if (!strcasecmp(a_engine->codec_params.rm_encoding, "opus")) {
 		//	a_engine->codec_params.adv_channels = 2;
@@ -6439,6 +6465,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 		}
 		a_engine->codec_params.iananame = switch_core_session_strdup(session, "PROXY");
 		a_engine->codec_params.rm_rate = 8000;
+		a_engine->codec_params.adv_rm_rate = 8000;
 		a_engine->codec_params.codec_ms = 20;
 	}
 
@@ -6584,6 +6611,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 				switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_VIDEO, 1);
 				v_engine->codec_params.rm_encoding = "PROXY-VID";
 				v_engine->codec_params.rm_rate = 90000;
+				v_engine->codec_params.adv_rm_rate = 90000;
 				v_engine->codec_params.codec_ms = 0;
 				switch_snprintf(vport_buf, sizeof(vport_buf), "%u", v_engine->codec_params.adv_sdp_port);
 				if (switch_channel_media_ready(session->channel) && !switch_rtp_ready(v_engine->rtp_session)) {
@@ -7686,6 +7714,7 @@ SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_
 	
 	a_engine->codec_params.iananame = switch_core_session_strdup(session, "PROXY");
 	a_engine->codec_params.rm_rate = 8000;
+	a_engine->codec_params.adv_rm_rate = 8000;
 
 	a_engine->codec_params.codec_ms = 20;
 	
@@ -7693,6 +7722,7 @@ SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_
 		switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_VIDEO, 1);
 		v_engine->codec_params.rm_encoding = "PROXY-VID";
 		v_engine->codec_params.rm_rate = 90000;
+		v_engine->codec_params.adv_rm_rate = 90000;
 		v_engine->codec_params.codec_ms = 0;
 		switch_channel_set_flag(session->channel, CF_VIDEO);
 		switch_channel_set_flag(session->channel, CF_VIDEO_POSSIBLE);
@@ -7764,6 +7794,7 @@ SWITCH_DECLARE(void) switch_core_media_proxy_codec(switch_core_session_t *sessio
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
 				a_engine->codec_params.iananame = switch_core_session_strdup(session, map->rm_encoding);
 				a_engine->codec_params.rm_rate = map->rm_rate;
+				a_engine->codec_params.adv_rm_rate = map->rm_rate;
 				a_engine->codec_params.codec_ms = ptime;
 				switch_core_media_set_codec(session, 0, smh->mparams->codec_flags);
 				break;
@@ -7841,6 +7872,7 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 
 	if ((tmp = switch_channel_get_variable(session->channel, "rtp_use_codec_rate"))) {
 		a_engine->codec_params.rm_rate = atoi(tmp);
+		a_engine->codec_params.adv_rm_rate = a_engine->codec_params.rm_rate;
 	}
 
 	if ((tmp = switch_channel_get_variable(session->channel, "rtp_use_codec_ptime"))) {
@@ -7895,6 +7927,7 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 
 		if ((tmp = switch_channel_get_variable(session->channel, "rtp_use_video_codec_rate"))) {
 			v_engine->codec_params.rm_rate = atoi(tmp);
+			v_engine->codec_params.adv_rm_rate = v_engine->codec_params.rm_rate;
 		}
 
 		if ((tmp = switch_channel_get_variable(session->channel, "rtp_use_video_codec_ptime"))) {
