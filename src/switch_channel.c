@@ -4708,6 +4708,13 @@ static void fetch_device_stats(switch_device_record_t *drec)
 					} else {
 						drec->stats.ringing_out++;
 					}
+				} else if (np->callstate == CCS_HANGUP) {
+					drec->stats.hup++;
+					if (np->direction == SWITCH_CALL_DIRECTION_INBOUND) {
+						drec->stats.hup_in++;
+					} else {
+						drec->stats.hup_out++;
+					}
 				} else if (np->callstate != CCS_DOWN) {
 					drec->stats.active++;
 					if (np->direction == SWITCH_CALL_DIRECTION_INBOUND) {
