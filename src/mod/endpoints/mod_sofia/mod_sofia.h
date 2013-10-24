@@ -804,6 +804,7 @@ struct private_object {
 	switch_port_t stun_port;
 	uint32_t stun_flags;
 	unsigned long rm_rate;
+	unsigned long adv_rm_rate;
 	switch_payload_t pt;
 	switch_mutex_t *flag_mutex;
 	switch_mutex_t *sofia_mutex;
