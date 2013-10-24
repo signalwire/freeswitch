@@ -41,7 +41,6 @@
 #include <ctype.h>
 #include <time.h>
 #include <inttypes.h>
-#include <sys/socket.h>
 #include <sndfile.h>
 
 #if defined(HAVE_LIBXML_XMLMEMORY_H)

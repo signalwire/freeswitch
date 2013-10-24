@@ -696,8 +696,12 @@
     <ClInclude Include="spandsp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="spandsp\t4_t6_decode.h" />
-    <ClInclude Include="spandsp\t4_t6_encode.h" />
+    <ClInclude Include="spandsp\t4_t6_decode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="spandsp\t4_t6_encode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="spandsp\ademco_contactid.h">
       <Filter>Header Files</Filter>
     </ClInclude>

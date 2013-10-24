@@ -300,7 +300,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
     
     switch_channel_set_state(channel, CS_CONSUME_MEDIA);
     
-    return SWITCH_STATUS_SUCCESS;
+    return SWITCH_STATUS_FALSE;
 }
 
 static switch_status_t channel_on_destroy(switch_core_session_t *session)

@@ -99,6 +99,8 @@ SPAN_DECLARE(void) fax_modems_set_tx_handler(fax_modems_state_t *s, span_tx_hand
 
 SPAN_DECLARE(void) fax_modems_set_next_tx_handler(fax_modems_state_t *s, span_tx_handler_t handler, void *user_data);
 
+SPAN_DECLARE(int) fax_modems_set_next_tx_type(fax_modems_state_t *s);
+
 SPAN_DECLARE(int) fax_modems_restart(fax_modems_state_t *s);
 
 /*! Get a pointer to the logging context associated with a FAX modems context.

@@ -229,7 +229,7 @@ Description: Voicemail detection
 Module: applications/mod_voicemail
 Description: Voicemail
  This module provides a voicemail system.
-Depends: mail-transport-agent
+Depends: ssmtp | mail-transport-agent
 
 Module: applications/mod_voicemail_ivr
 Description: Voicemail IVR
@@ -477,6 +477,10 @@ Description: mod_event_test
 Module: event_handlers/mod_event_zmq
 Description: mod_event_zmq
  Adds mod_event_zmq.
+
+Module: event_handlers/mod_format_cdr
+Description: mod_format_cdr
+ Adds mod_format_cdr.
 
 Module: event_handlers/mod_json_cdr
 Description: mod_json_cdr

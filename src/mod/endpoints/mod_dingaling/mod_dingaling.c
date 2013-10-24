@@ -1916,6 +1916,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	struct private_object *tech_pvt = NULL;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
@@ -1928,11 +1929,10 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 			switch_channel_mark_answered(channel);
 		}
-		/* Move channel's state machine to ROUTING */
-		switch_channel_set_state(channel, CS_ROUTING);
+		status = SWITCH_STATUS_SUCCESS;
 	}
 
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 static switch_status_t channel_on_routing(switch_core_session_t *session)

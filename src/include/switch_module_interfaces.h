@@ -743,6 +743,24 @@ struct switch_api_interface {
 	struct switch_api_interface *next;
 };
 
+
+/*! \brief A module interface to implement a json api function */
+struct switch_json_api_interface {
+	/*! the name of the interface */
+	const char *interface_name;
+	/*! a description of the api function */
+	const char *desc;
+	/*! function the api call uses */
+	switch_json_api_function_t function;
+	/*! an example of the api syntax */
+	const char *syntax;
+	switch_thread_rwlock_t *rwlock;
+	int refs;
+	switch_mutex_t *reflock;
+	switch_loadable_module_interface_t *parent;
+	struct switch_json_api_interface *next;
+};
+
 #define PROTECT_INTERFACE(_it) if (_it) {switch_mutex_lock(_it->reflock); switch_thread_rwlock_rdlock(_it->parent->rwlock); switch_thread_rwlock_rdlock(_it->rwlock); _it->refs++; _it->parent->refs++; switch_mutex_unlock(_it->reflock);}	//if (!strcmp(_it->interface_name, "user")) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "+++++++++++LOCK %s %d/%d\n", _it->interface_name, _it->refs, _it->parent->refs);
 #define UNPROTECT_INTERFACE(_it) if (_it) {switch_mutex_lock(_it->reflock); switch_thread_rwlock_unlock(_it->rwlock); switch_thread_rwlock_unlock(_it->parent->rwlock); _it->refs--; _it->parent->refs--; switch_mutex_unlock(_it->reflock);}	//if (!strcmp(_it->interface_name, "user")) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "---------UNLOCK %s %d/%d\n", _it->interface_name, _it->refs, _it->parent->refs);
 

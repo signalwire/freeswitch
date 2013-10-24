@@ -1758,6 +1758,9 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				sofia_private->network_ip = su_strdup(nh->nh_home, network_ip);
 				sofia_private->network_port = su_strdup(nh->nh_home, network_port_c);
 				sofia_private->key = su_strdup(nh->nh_home, key);
+				sofia_private->user = su_strdup(nh->nh_home, to_user);
+				sofia_private->realm = su_strdup(nh->nh_home, reg_host);
+
 				sofia_private->is_static++;
 				*sofia_private_p = sofia_private;
 				nua_handle_bind(nh, sofia_private);

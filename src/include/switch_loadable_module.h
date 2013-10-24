@@ -69,6 +69,8 @@ SWITCH_BEGIN_EXTERN_C
 	switch_chat_application_interface_t *chat_application_interface;
 	/*! the table of api functions the module has implemented */
 	switch_api_interface_t *api_interface;
+	/*! the table of json api functions the module has implemented */
+	switch_json_api_interface_t *json_api_interface;
 	/*! the table of file formats the module has implemented */
 	switch_file_interface_t *file_interface;
 	/*! the table of speech interfaces the module has implemented */
@@ -190,6 +192,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_execute_chat_app(switch_event_t *mes
 SWITCH_DECLARE(switch_api_interface_t *) switch_loadable_module_get_api_interface(const char *name);
 
 /*!
+  \brief Retrieve the JSON API interface by it's registered name
+  \param name the name of the API
+  \return the desired API interface
+ */
+SWITCH_DECLARE(switch_json_api_interface_t *) switch_loadable_module_get_json_api_interface(const char *name);
+
+/*!
   \brief Retrieve the file format interface by it's registered name
   \param name the name of the file format
   \return the desired file format interface
@@ -276,6 +285,16 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *arg, switch_core_session_t *session, switch_stream_handle_t *stream);
 
 /*!
+  \brief Execute a registered JSON API command
+  \param json the name of the JSON API command to execute
+  \param arg the optional arguement to the command
+  \param session an optional session
+  \param stream stream for output
+  \return the status returned by the API call
+*/
+SWITCH_DECLARE(switch_status_t) switch_json_api_execute(cJSON *json, switch_core_session_t *session, cJSON **retval);
+
+/*!
   \brief Load a module
   \param dir the directory where the module resides
   \param fname the file name of the module
@@ -325,6 +344,16 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void);
 	api_int->desc = descript; \
 	api_int->function = funcptr; \
 	api_int->syntax = syntax_string; \
+	break; \
+	}
+
+#define SWITCH_ADD_JSON_API(json_api_int, int_name, descript, funcptr, syntax_string) \
+	for (;;) { \
+	json_api_int = (switch_json_api_interface_t *)switch_loadable_module_create_interface(*module_interface, SWITCH_JSON_API_INTERFACE); \
+	json_api_int->interface_name = int_name; \
+	json_api_int->desc = descript; \
+	json_api_int->function = funcptr; \
+	json_api_int->syntax = syntax_string; \
 	break; \
 	}
 
@@ -510,8 +539,9 @@ static inline switch_bool_t switch_core_codec_ready(switch_codec_t *codec)
 }
 
 
-
-
+SWITCH_DECLARE(switch_core_recover_callback_t) switch_core_get_secondary_recover_callback(const char *key);
+SWITCH_DECLARE(switch_status_t) switch_core_register_secondary_recover_callback(const char *key, switch_core_recover_callback_t cb);
+SWITCH_DECLARE(void) switch_core_unregister_secondary_recover_callback(const char *key);
 
 SWITCH_END_EXTERN_C
 #endif

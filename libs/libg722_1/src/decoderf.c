@@ -263,7 +263,6 @@ static void decode_vector_quantized_mlt_indices(g722_1_decode_state_t *s,
     int signs_index;
     int bit;
     int num_sign_bits;
-    int num_bits;
     int ran_out_of_bits_flag;
     int random_word;
     const int16_t *decoder_table_ptr;
@@ -282,7 +281,6 @@ static void decode_vector_quantized_mlt_indices(g722_1_decode_state_t *s,
 
             for (n = 0;  n < num_vecs;  n++)
             {
-                num_bits = 0;
                 index = 0;
                 do
                 {
@@ -450,7 +448,7 @@ static void decode_vector_quantized_mlt_indices(g722_1_decode_state_t *s,
 
         if (category == NUM_CATEGORIES - 1)
         {
-            noifillpos = standard_deviation*0.70711;
+            noifillpos = standard_deviation*0.70711f;
             noifillneg = -noifillpos;
 
             /* This assumes region_size = 20 */

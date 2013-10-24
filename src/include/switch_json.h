@@ -76,7 +76,8 @@ SWITCH_DECLARE(int)	  cJSON_GetArraySize(cJSON *array);
 /* Retrieve item number "item" from array "array". Returns NULL if unsuccessful. */
 SWITCH_DECLARE(cJSON *)cJSON_GetArrayItem(cJSON *array,int item);
 /* Get item "string" from object. Case insensitive. */
-SWITCH_DECLARE(cJSON *)cJSON_GetObjectItem(cJSON *object,const char *string);
+SWITCH_DECLARE(cJSON *)cJSON_GetObjectItem(const cJSON *object,const char *string);
+SWITCH_DECLARE(const char *)cJSON_GetObjectCstr(const cJSON *object, const char *string);
 
 /* For analysing failed parses. This returns a pointer to the parse error. You'll probably need to look a few chars back to make sense of it. Defined when cJSON_Parse() returns 0. 0 when cJSON_Parse() succeeds. */
 SWITCH_DECLARE(const char *)cJSON_GetErrorPtr(void);
@@ -126,6 +127,55 @@ SWITCH_DECLARE(cJSON *) cJSON_Duplicate(cJSON *item,int recurse);
 #define cJSON_AddFalseToObject(object,name)		cJSON_AddItemToObject(object, name, cJSON_CreateFalse())
 #define cJSON_AddNumberToObject(object,name,n)	cJSON_AddItemToObject(object, name, cJSON_CreateNumber(n))
 #define cJSON_AddStringToObject(object,name,s)	cJSON_AddItemToObject(object, name, cJSON_CreateString(s))
+
+SWITCH_DECLARE(cJSON *) cJSON_CreateStringPrintf(const char *fmt, ...);
+
+static inline cJSON *json_add_child_obj(cJSON *json, const char *name, cJSON *obj)
+{
+	cJSON *new_json = NULL;
+
+	switch_assert(json);
+
+	if (obj) {
+		new_json = obj;
+	} else {
+		new_json = cJSON_CreateObject();
+	}
+
+	switch_assert(new_json);
+
+	cJSON_AddItemToObject(json, name, new_json);
+
+	return new_json;
+}
+
+static inline cJSON *json_add_child_array(cJSON *json, const char *name)
+{
+	cJSON *new_json = NULL;
+
+	switch_assert(json);
+
+	new_json = cJSON_CreateArray();
+	switch_assert(new_json);
+
+	cJSON_AddItemToObject(json, name, new_json);
+
+	return new_json;
+}
+
+static inline cJSON *json_add_child_string(cJSON *json, const char *name, const char *val)
+{
+	cJSON *new_json = NULL;
+
+	switch_assert(json);
+
+	new_json = cJSON_CreateString(val);
+	switch_assert(new_json);
+
+	cJSON_AddItemToObject(json, name, new_json);
+
+	return new_json;
+}
 
 #ifdef __cplusplus
 }

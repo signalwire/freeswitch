@@ -219,6 +219,7 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
     bits_per_sample = 1;
     samples_per_pixel = 1;
     photometric = PHOTOMETRIC_MINISWHITE;
+    output_t4_options = 0;
     switch (t->compression)
     {
     case T4_COMPRESSION_T4_1D:

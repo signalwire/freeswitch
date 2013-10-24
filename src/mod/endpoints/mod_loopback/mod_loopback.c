@@ -231,6 +231,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	switch_caller_profile_t *caller_profile;
 	switch_event_t *vars = NULL;
 	const char *var;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	tech_pvt = switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
@@ -354,11 +355,12 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	}
 
 	switch_channel_set_variable(channel, "loopback_leg", switch_test_flag(tech_pvt, TFLAG_BLEG) ? "B" : "A");
+	status = SWITCH_STATUS_SUCCESS;
 	switch_channel_set_state(channel, CS_ROUTING);
 
   end:
 
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 static void do_reset(loopback_private_t *tech_pvt)
@@ -486,7 +488,6 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
 	loopback_private_t *tech_pvt = NULL;
-	void *pop;
 	switch_event_t *vars;
 
 	channel = switch_core_session_get_channel(session);
@@ -514,10 +515,7 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 			switch_frame_free(&tech_pvt->write_frame);
 		}
 
-		while (switch_queue_trypop(tech_pvt->frame_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
-			switch_frame_t *frame = (switch_frame_t *) pop;
-			switch_frame_free(&frame);
-		}
+		clear_queue(tech_pvt);
 	}
 
 
@@ -709,6 +707,10 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		}
 		
 		tech_pvt->write_frame = (switch_frame_t *) pop;
+
+        switch_clear_flag(tech_pvt->write_frame, SFF_RAW_RTP);
+		tech_pvt->write_frame->timestamp = 0;                    
+
 		tech_pvt->write_frame->codec = &tech_pvt->read_codec;
 		*frame = tech_pvt->write_frame;
 		tech_pvt->packet_count++;

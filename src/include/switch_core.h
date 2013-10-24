@@ -82,18 +82,33 @@ typedef struct device_uuid_node_s {
 	switch_channel_callstate_t callstate;
 	switch_hold_record_t *hold_record;
 	switch_caller_profile_t *hup_profile;
+	switch_call_direction_t direction;
 	struct switch_device_record_s *parent;
 	struct device_uuid_node_s *next;
 } switch_device_node_t;
 
 typedef struct switch_device_stats_s {
 	uint32_t total; 
+	uint32_t total_in;
+	uint32_t total_out;
 	uint32_t offhook;
+	uint32_t offhook_in;
+	uint32_t offhook_out;
 	uint32_t active;
+	uint32_t active_in;
+	uint32_t active_out;
 	uint32_t held;
+	uint32_t held_in;
+	uint32_t held_out;
 	uint32_t hup;
+	uint32_t hup_in;
+	uint32_t hup_out;
 	uint32_t ringing;
+	uint32_t ringing_in;
+	uint32_t ringing_out;
 	uint32_t early;
+	uint32_t early_in;
+	uint32_t early_out;
 } switch_device_stats_t;
 
 
@@ -102,15 +117,22 @@ typedef struct switch_device_record_s {
 	char *uuid;
 	int refs;
 	switch_device_stats_t stats;
+	switch_device_stats_t last_stats;
 	switch_device_state_t state;
 	switch_device_state_t last_state;
 	switch_time_t active_start;
 	switch_time_t active_stop;
 	switch_time_t last_call_time;
+	switch_time_t ring_start;
+	switch_time_t ring_stop;
+	switch_time_t hold_start;
+	switch_time_t hold_stop;
+	switch_time_t call_start;
 	struct device_uuid_node_s *uuid_list;
 	struct device_uuid_node_s *uuid_tail;
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
+	void *user_data;
 } switch_device_record_t;
 
 typedef void(*switch_device_state_function_t)(switch_core_session_t *session, switch_channel_callstate_t callstate, switch_device_record_t *drec);
@@ -1070,7 +1092,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_event(_In_ switch_co
   \param session the session to retrieve from
   \return a pointer to the private data
 */
-SWITCH_DECLARE(void *) switch_core_session_get_private(_In_ switch_core_session_t *session);
+SWITCH_DECLARE(void *) switch_core_session_get_private_class(_In_ switch_core_session_t *session, _In_ switch_pvt_class_t index);
+#define switch_core_session_get_private(_s) switch_core_session_get_private_class(_s, SWITCH_PVT_PRIMARY)
 
 /*! 
   \brief Add private user data to a session
@@ -1078,7 +1101,8 @@ SWITCH_DECLARE(void *) switch_core_session_get_private(_In_ switch_core_session_
   \param private_info the used data to add
   \return SWITCH_STATUS_SUCCESS if data is added
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_set_private(_In_ switch_core_session_t *session, _In_ void *private_info);
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_private_class(_In_ switch_core_session_t *session, _In_ void *private_info, _In_ switch_pvt_class_t index);
+#define switch_core_session_set_private(_s, _p) switch_core_session_set_private_class(_s, _p, SWITCH_PVT_PRIMARY)
 
 /*!
   \brief Add a logical stream to a session
@@ -2575,6 +2599,7 @@ SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait);
 SWITCH_DECLARE(int) switch_stream_system_fork(const char *cmd, switch_stream_handle_t *stream);
 SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t *stream);
 
+SWITCH_DECLARE(switch_call_direction_t) switch_ice_direction(switch_core_session_t *session);
 
 SWITCH_END_EXTERN_C
 #endif

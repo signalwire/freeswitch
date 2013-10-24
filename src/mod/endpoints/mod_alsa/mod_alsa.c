@@ -297,9 +297,6 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 	switch_set_flag_locked(tech_pvt, TFLAG_IO);
 
-	/* Move channel's state machine to ROUTING */
-	switch_channel_set_state(channel, CS_ROUTING);
-
 	return SWITCH_STATUS_SUCCESS;
 
 }

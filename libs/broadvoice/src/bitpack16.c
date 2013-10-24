@@ -20,8 +20,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * $Id: bitpack16.c,v 1.1.1.1 2009/11/19 12:10:48 steveu Exp $
  */
 
 /*! \file */
@@ -80,12 +78,12 @@ void bv16_bitunpack(const uint8_t *PackedStream, struct BV16_Bit_Stream *BitStru
     stream = PackedStream;
     bitstream_init(&bs);
 
-    BitStruct->lspidx[0] = bitstream_get(&bs, &stream, 7);
-    BitStruct->lspidx[1] = bitstream_get(&bs, &stream, 7);
-    BitStruct->ppidx = bitstream_get(&bs, &stream, 7);
-    BitStruct->bqidx = bitstream_get(&bs, &stream, 5);
-    BitStruct->gidx = bitstream_get(&bs, &stream, 4);
+    BitStruct->lspidx[0] = (int16_t) bitstream_get(&bs, &stream, 7);
+    BitStruct->lspidx[1] = (int16_t) bitstream_get(&bs, &stream, 7);
+    BitStruct->ppidx = (int16_t) bitstream_get(&bs, &stream, 7);
+    BitStruct->bqidx = (int16_t) bitstream_get(&bs, &stream, 5);
+    BitStruct->gidx = (int16_t) bitstream_get(&bs, &stream, 4);
 
     for (i = 0;  i < 10;  i++)
-        BitStruct->qvidx[i] = bitstream_get(&bs, &stream, 5);
+        BitStruct->qvidx[i] = (int16_t) bitstream_get(&bs, &stream, 5);
 }

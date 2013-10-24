@@ -2510,17 +2510,29 @@ XS(_wrap_IVRMenu_execute) {
 
 XS(_wrap_new_API) {
   {
+    CoreSession *arg1 = (CoreSession *) NULL ;
     API *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
     int argvi = 0;
     dXSARGS;
     
-    if ((items < 0) || (items > 0)) {
-      SWIG_croak("Usage: new_API();");
+    if ((items < 0) || (items > 1)) {
+      SWIG_croak("Usage: new_API(s);");
     }
-    result = (API *)new API();
+    if (items > 0) {
+      res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+      if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_API" "', argument " "1"" of type '" "CoreSession *""'"); 
+      }
+      arg1 = reinterpret_cast< CoreSession * >(argp1);
+    }
+    result = (API *)new API(arg1);
     ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_API, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
+    
     XSRETURN(argvi);
   fail:
+    
     SWIG_croak_null();
   }
 }

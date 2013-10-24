@@ -19,7 +19,7 @@ class freeswitchJNI {
   public final static native void delete_IVRMenu(long jarg1);
   public final static native void IVRMenu_bindAction(long jarg1, IVRMenu jarg1_, String jarg2, String jarg3, String jarg4);
   public final static native void IVRMenu_execute(long jarg1, IVRMenu jarg1_, long jarg2, CoreSession jarg2_, String jarg3);
-  public final static native long new_API();
+  public final static native long new_API(long jarg1, CoreSession jarg1_);
   public final static native void delete_API(long jarg1);
   public final static native String API_execute(long jarg1, API jarg1_, String jarg2, String jarg3);
   public final static native String API_executeString(long jarg1, API jarg1_, String jarg2);

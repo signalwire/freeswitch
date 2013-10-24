@@ -264,11 +264,13 @@ SWITCH_DECLARE(switch_console_callback_match_t *) switch_core_session_findall_ma
 	switch_memory_pool_t *pool;
 	struct str_node *head = NULL, *np;
 	switch_console_callback_match_t *my_matches = NULL;
+	const char *like = NULL;
+
+	if (var_val && *var_val == '~') {
+		like = var_val + 1;
+	}
 
 	switch_core_new_memory_pool(&pool);
-
-	if (!var_val)
-		return NULL;
 
 	switch_mutex_lock(runtime.session_hash_mutex);
 	for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
@@ -290,7 +292,8 @@ SWITCH_DECLARE(switch_console_callback_match_t *) switch_core_session_findall_ma
 		if ((session = switch_core_session_locate(np->str))) {
 			const char *this_val;
 			if (switch_channel_up_nosig(session->channel) &&
-				(this_val = switch_channel_get_variable_dup(session->channel, var_name, SWITCH_FALSE, -1)) && (!strcmp(this_val, var_val))) {			
+				(this_val = switch_channel_get_variable_dup(session->channel, var_name, SWITCH_FALSE, -1)) && 
+				(!var_val || (like && switch_stristr(like, var_val)) || !strcmp(this_val, var_val))) {
 				switch_console_push_match(&my_matches, (const char *) np->str);
 			}
 			switch_core_session_rwunlock(session);
@@ -445,17 +448,26 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(const char *uuid_
 }
 
 
-SWITCH_DECLARE(void *) switch_core_session_get_private(switch_core_session_t *session)
+SWITCH_DECLARE(void *) switch_core_session_get_private_class(switch_core_session_t *session, switch_pvt_class_t index)
 {
+	if (index >= SWITCH_CORE_SESSION_MAX_PRIVATES) {
+		return NULL;
+	}
+
 	switch_assert(session != NULL);
-	return session->private_info;
+	return session->private_info[index];
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_set_private(switch_core_session_t *session, void *private_info)
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_private_class(switch_core_session_t *session, void *private_info, switch_pvt_class_t index)
 {
 	switch_assert(session != NULL);
-	session->private_info = private_info;
+
+	if (index >= SWITCH_CORE_SESSION_MAX_PRIVATES) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	session->private_info[index] = private_info;
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -516,7 +528,16 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		}
 
 		if (caller_profile) {
+			const char *eani = NULL, *eaniii = NULL;
 			const char *ecaller_id_name = NULL, *ecaller_id_number = NULL;
+
+			if (!(flags & SOF_NO_EFFECTIVE_ANI)) {
+				eani = switch_channel_get_variable(channel, "effective_ani");
+			}
+
+			if (!(flags & SOF_NO_EFFECTIVE_ANIII)) {
+				eaniii = switch_channel_get_variable(channel, "effective_aniii");
+			}
 
 			if (!(flags & SOF_NO_EFFECTIVE_CID_NAME)) {
 				ecaller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name");
@@ -526,9 +547,15 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 				ecaller_id_number = switch_channel_get_variable(channel, "effective_caller_id_number");
 			}
 
-			if (ecaller_id_name || ecaller_id_number) {
+			if (eani || eaniii || ecaller_id_name || ecaller_id_number) {
 				outgoing_profile = switch_caller_profile_clone(session, caller_profile);
 
+				if (eani) {
+					outgoing_profile->ani = eani;
+				}
+				if (eaniii) {
+					outgoing_profile->aniii = eaniii;
+				}
 				if (ecaller_id_name) {
 					outgoing_profile->caller_id_name = ecaller_id_name;
 				}
@@ -2487,8 +2514,8 @@ void switch_core_session_init(switch_memory_pool_t *pool)
 		switch_queue_create(&session_manager.thread_queue, 100000, session_manager.memory_pool);
 		switch_threadattr_create(&thd_attr, session_manager.memory_pool);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		switch_thread_create(&session_manager.manager_thread, thd_attr, switch_core_session_thread_pool_manager, NULL, session_manager.memory_pool);		
 		session_manager.ready = 1;
+		switch_thread_create(&session_manager.manager_thread, thd_attr, switch_core_session_thread_pool_manager, NULL, session_manager.memory_pool);		
 	}
 
 }
@@ -2498,15 +2525,16 @@ void switch_core_session_uninit(void)
 	int sanity = 100;
 	switch_status_t st = SWITCH_STATUS_FALSE;
 
-	switch_core_hash_destroy(&session_manager.session_table);
 	session_manager.ready = 0;
-
-	switch_thread_join(&st, session_manager.manager_thread);
+	wake_queue();
 
 	while(session_manager.running && --sanity > 0) {
 		switch_queue_interrupt_all(session_manager.thread_queue);
 		switch_yield(100000);
 	}
+
+	switch_thread_join(&st, session_manager.manager_thread);
+	switch_core_hash_destroy(&session_manager.session_table);
 	
 }
 

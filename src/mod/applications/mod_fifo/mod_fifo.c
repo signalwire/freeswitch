@@ -576,6 +576,8 @@ static struct {
 	switch_hash_t *caller_orig_hash;
 	switch_hash_t *consumer_orig_hash;
 	switch_hash_t *bridge_hash;
+	switch_hash_t *use_hash;
+	switch_mutex_t *use_mutex;
 	switch_mutex_t *caller_orig_mutex;
 	switch_mutex_t *consumer_orig_mutex;
 	switch_mutex_t *bridge_mutex;
@@ -601,6 +603,66 @@ static struct {
 	switch_sql_queue_manager_t *qm;
 	int allow_transcoding;
 } globals;
+
+
+
+static int fifo_dec_use_count(const char *outbound_id)
+{
+	int r = 0, *count;
+
+
+	switch_mutex_lock(globals.use_mutex);
+	if ((count = (int *) switch_core_hash_find(globals.use_hash, outbound_id))) {
+		if (*count > 0) {
+			r = --(*count);
+		}
+	}
+	switch_mutex_unlock(globals.use_mutex);
+	
+	return r;
+}
+
+static int fifo_get_use_count(const char *outbound_id) 
+{
+	int r = 0, *count;
+
+	switch_mutex_lock(globals.use_mutex);
+	if ((count = (int *) switch_core_hash_find(globals.use_hash, outbound_id))) {
+		r = *count;
+	}
+	switch_mutex_unlock(globals.use_mutex);
+	
+	return r;
+}
+
+
+static int fifo_inc_use_count(const char *outbound_id) 
+{
+	int r = 0, *count;
+
+	switch_mutex_lock(globals.use_mutex);
+	if (!(count = (int *) switch_core_hash_find(globals.use_hash, outbound_id))) {
+		count = switch_core_alloc(globals.pool, sizeof(int));
+		switch_core_hash_insert(globals.use_hash, outbound_id, count);
+	}
+
+	r = ++(*count);
+
+	switch_mutex_unlock(globals.use_mutex);
+	
+	return r;
+}
+
+static void fifo_init_use_count(void) 
+{
+	switch_mutex_lock(globals.use_mutex);
+	if (globals.use_hash) {
+		switch_core_hash_destroy(&globals.use_hash);
+	}
+	switch_core_hash_init(&globals.use_hash, globals.pool);
+	switch_mutex_unlock(globals.use_mutex);
+}
+
 
 
 
@@ -961,10 +1023,16 @@ static void do_unbridge(switch_core_session_t *consumer_session, switch_core_ses
 		const char *epoch_start_a = NULL;
 		char *sql;
 		switch_event_t *event;
+		const char *outbound_id = NULL;
+		int use_count = 0;
 
 		switch_channel_clear_app_flag_key(FIFO_APP_KEY, consumer_channel, FIFO_APP_BRIDGE_TAG);
 		switch_channel_set_variable(consumer_channel, "fifo_bridged", NULL);
 
+		if ((outbound_id = switch_channel_get_variable(consumer_channel, "fifo_outbound_uuid"))) {
+			use_count = fifo_get_use_count(outbound_id);
+		}
+		
 		ts = switch_micro_time_now();
 		switch_time_exp_lt(&tm, ts);
 		switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
@@ -999,6 +1067,10 @@ static void do_unbridge(switch_core_session_t *consumer_session, switch_core_ses
 			switch_channel_event_set_data(consumer_channel, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", MANUAL_QUEUE_NAME);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "bridge-consumer-stop");
+			if (use_count) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Outbound-ID", outbound_id);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Use-Count", "%d", use_count);
+			}
 			switch_event_fire(&event);
 		}
 
@@ -1072,7 +1144,7 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 			switch_time_t ts;
 			switch_time_exp_t tm;
 			switch_size_t retsize;
-			const char *ced_name, *ced_number, *cid_name, *cid_number;
+			const char *ced_name, *ced_number, *cid_name, *cid_number, *outbound_id;
 
 			if (switch_channel_test_app_flag_key(FIFO_APP_KEY, consumer_channel, FIFO_APP_BRIDGE_TAG)) {
 				goto end;
@@ -1083,6 +1155,7 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 			switch_channel_set_variable(consumer_channel, "fifo_bridged", "true");
 			switch_channel_set_variable(consumer_channel, "fifo_manual_bridge", "true");
 			switch_channel_set_variable(consumer_channel, "fifo_role", "consumer");
+			outbound_id = switch_channel_get_variable(consumer_channel, "fifo_outbound_uuid");
 
 			if (caller_channel) {
 				switch_channel_set_variable(caller_channel, "fifo_role", "caller");
@@ -1118,6 +1191,10 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "bridge-consumer-start");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Caller-CID-Name", ced_name);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Caller-CID-Number", ced_number);
+				if (outbound_id) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Outbound-ID", outbound_id);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Use-Count", "%d", fifo_get_use_count(outbound_id));
+				}
 				switch_event_fire(&event);
 			}
 
@@ -2144,7 +2221,7 @@ SWITCH_STANDARD_API(fifo_add_outbound_function)
 static void dec_use_count(switch_core_session_t *session, switch_bool_t send_event)
 {
 	char *sql;
-	const char *outbound_id;
+	const char *outbound_id = NULL;
 	switch_event_t *event;
 	long now = (long) switch_epoch_time_now(NULL);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -2162,6 +2239,7 @@ static void dec_use_count(switch_core_session_t *session, switch_bool_t send_eve
 		sql = switch_mprintf("update fifo_outbound set use_count=use_count-1, stop_time=%ld, next_avail=%ld + lag + 1 where use_count > 0 and uuid='%q'",
 							 now, now, outbound_id);
 		fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
+		fifo_dec_use_count(outbound_id);
 	}
 
 	if (send_event) {
@@ -2169,6 +2247,10 @@ static void dec_use_count(switch_core_session_t *session, switch_bool_t send_eve
 			switch_channel_event_set_data(channel, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", MANUAL_QUEUE_NAME);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "channel-consumer-stop");
+			if (outbound_id) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Outbound-ID", outbound_id);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Use-Count", "%d", fifo_get_use_count(outbound_id));
+			}
 			switch_event_fire(&event);
 		}
 	}
@@ -2229,7 +2311,7 @@ SWITCH_STANDARD_APP(fifo_track_call_function)
 	sql = switch_mprintf("update fifo_outbound set stop_time=0,start_time=%ld,outbound_fail_count=0,use_count=use_count+1,%s=%s+1,%s=%s+1 where uuid='%q'",
 						 (long) switch_epoch_time_now(NULL), col1, col1, col2, col2, data);
 	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
-
+	fifo_inc_use_count(data);
 
 	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 		cid_name = switch_channel_get_variable(channel, "destination_number");
@@ -2647,6 +2729,7 @@ SWITCH_STANDARD_APP(fifo_function)
 		const char *url = NULL;
 		const char *caller_uuid = NULL;
 		const char *outbound_id = switch_channel_get_variable(channel, "fifo_outbound_uuid");
+
 		//const char *track_use_count = switch_channel_get_variable(channel, "fifo_track_use_count");
 		//int do_track = switch_true(track_use_count);
 
@@ -3051,18 +3134,6 @@ SWITCH_STANDARD_APP(fifo_function)
 				switch_process_import(session, other_channel, "fifo_caller_consumer_import", switch_channel_get_variable(channel, "fifo_import_prefix"));
 				switch_process_import(other_session, channel, "fifo_consumer_caller_import", switch_channel_get_variable(other_channel, "fifo_import_prefix"));
 
-				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
-					switch_channel_event_set_data(channel, event);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "bridge-consumer-start");
-					switch_event_fire(&event);
-				}
-				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
-					switch_channel_event_set_data(other_channel, event);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "bridge-caller-start");
-					switch_event_fire(&event);
-				}
 
 				if (outbound_id) {
 					cancel_consumer_outbound_call(outbound_id, SWITCH_CAUSE_ORIGINATOR_CANCEL);
@@ -3073,8 +3144,29 @@ SWITCH_STANDARD_APP(fifo_function)
 
 
 					fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
+					fifo_inc_use_count(outbound_id);
+
 				}
 
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
+					switch_channel_event_set_data(channel, event);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "bridge-consumer-start");
+					if (outbound_id) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Outbound-ID", outbound_id);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Use-Count", "%d", fifo_get_use_count(outbound_id));
+					}
+
+					switch_event_fire(&event);
+				}
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
+					switch_channel_event_set_data(other_channel, event);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "bridge-caller-start");
+					switch_event_fire(&event);
+				}
+
+				
 				add_bridge_call(switch_core_session_get_uuid(other_session));
 				add_bridge_call(switch_core_session_get_uuid(session));
 
@@ -3125,6 +3217,7 @@ SWITCH_STANDARD_APP(fifo_function)
 					fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
 
 					del_bridge_call(outbound_id);
+					fifo_dec_use_count(outbound_id);
 
 				}
 
@@ -3136,6 +3229,10 @@ SWITCH_STANDARD_APP(fifo_function)
 					switch_channel_event_set_data(channel, event);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "bridge-consumer-stop");
+					if (outbound_id) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Outbound-ID", outbound_id);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Use-Count", "%d", fifo_get_use_count(outbound_id));
+					}	
 					switch_event_fire(&event);
 				}
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
@@ -4129,6 +4226,7 @@ static switch_status_t load_config(int reload, int del_all)
 	if (!reload) {
 		char *sql= "update fifo_outbound set start_time=0,stop_time=0,ring_count=0,use_count=0,outbound_call_count=0,outbound_fail_count=0 where static=0";
 		fifo_execute_sql_queued(&sql, SWITCH_FALSE, SWITCH_TRUE);
+		fifo_init_use_count();
 	}
 
 	if (reload) {
@@ -4547,11 +4645,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fifo_load)
 	switch_core_hash_init(&globals.caller_orig_hash, globals.pool);
 	switch_core_hash_init(&globals.consumer_orig_hash, globals.pool);
 	switch_core_hash_init(&globals.bridge_hash, globals.pool);
+	switch_core_hash_init(&globals.use_hash, globals.pool);
 	switch_mutex_init(&globals.caller_orig_mutex, SWITCH_MUTEX_NESTED, globals.pool);
 	switch_mutex_init(&globals.consumer_orig_mutex, SWITCH_MUTEX_NESTED, globals.pool);
 	switch_mutex_init(&globals.bridge_mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
+	switch_mutex_init(&globals.use_mutex, SWITCH_MUTEX_NESTED, globals.pool);
 	switch_mutex_init(&globals.sql_mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
 	globals.running = 1;

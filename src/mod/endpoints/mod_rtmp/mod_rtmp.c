@@ -163,13 +163,6 @@ switch_status_t rtmp_on_init(switch_core_session_t *session)
 	
 	switch_set_flag_locked(tech_pvt, TFLAG_IO);
 	
-	/* Move channel's state machine to ROUTING. This means the call is trying
-	   to get from the initial start where the call because, to the point
-	   where a destination has been identified. If the channel is simply
-	   left in the initial state, nothing will happen. */
-	switch_channel_set_state(channel, CS_ROUTING);
-
-	
 	switch_mutex_lock(rsession->profile->mutex);
 	rsession->profile->calls++;
 	switch_mutex_unlock(rsession->profile->mutex);

@@ -25,22 +25,13 @@
 
 /*! \file */
 
-#if defined(HAVE_CONFIG_H)
-#include "config.h"
-#endif
-
 #include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <memory.h>
-#if defined(HAVE_TGMATH_H)
-#include <tgmath.h>
-#endif
-#if defined(HAVE_MATH_H)
 #include <math.h>
-#endif
 
 typedef struct
 {
@@ -81,7 +72,7 @@ int main(int argc, char *argv[])
 
         r = floorf(r*256.0f);
 
-        srgb = (r < 0)  ?  0  :  (r <= 255)  ?  r  :  255;
+        srgb = (uint8_t) ((r < 0)  ?  0  :  (r <= 255)  ?  r  :  255);
 
         printf((i < 4095)  ?  "    %d,\n"  :  "    %d\n", srgb);
     }

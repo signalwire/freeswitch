@@ -2614,7 +2614,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 		switch_nat_shutdown();
 	}
 	switch_xml_destroy();
-	switch_core_session_uninit();
 	switch_console_shutdown();
 	switch_channel_global_uninit();
 
@@ -2624,6 +2623,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Finalizing Shutdown.\n");
 	switch_log_shutdown();
 
+	switch_core_session_uninit();
 	switch_core_unset_variables();
 	switch_core_memory_stop();
 

@@ -27,6 +27,7 @@
  * Bret McDanel <trixter AT 0xdecafbad dot com>
  * Joseph Sullivan <jossulli@amazon.com>
  * Raymond Chandler <intralanman@freeswitch.org>
+ * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
  *
  * switch_types.h -- Data Types
  *
@@ -38,6 +39,7 @@
 #define SWITCH_TYPES_H
 
 #include <switch.h>
+#include <switch_json.h>
 
 SWITCH_BEGIN_EXTERN_C
 #define SWITCH_ENT_ORIGINATE_DELIM ":_:"
@@ -223,7 +225,15 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_DEFAULT_FILE_BUFFER_LEN 65536
 #define SWITCH_DTMF_LOG_LEN 1000
 #define SWITCH_MAX_TRANS 2000
+#define SWITCH_CORE_SESSION_MAX_PRIVATES 2
+
 typedef uint8_t switch_byte_t;
+
+typedef enum {
+	SWITCH_PVT_PRIMARY = 0,
+	SWITCH_PVT_SECONDARY
+} switch_pvt_class_t;
+
 
 /*!
   \enum switch_dtmf_source_t
@@ -290,9 +300,11 @@ typedef enum {
 	SOF_NONE = 0,
 	SOF_NOBLOCK = (1 << 0),
 	SOF_FORKED_DIAL = (1 << 1),
-	SOF_NO_EFFECTIVE_CID_NUM = (1 << 2),
-	SOF_NO_EFFECTIVE_CID_NAME = (1 << 3),
-	SOF_NO_LIMITS = (1 << 4)
+	SOF_NO_EFFECTIVE_ANI = (1 << 2),
+	SOF_NO_EFFECTIVE_ANIII = (1 << 3),
+	SOF_NO_EFFECTIVE_CID_NUM = (1 << 4),
+	SOF_NO_EFFECTIVE_CID_NAME = (1 << 5),
+	SOF_NO_LIMITS = (1 << 6)
 } switch_originate_flag_enum_t;
 typedef uint32_t switch_originate_flag_t;
 
@@ -357,7 +369,8 @@ typedef enum {
 	SWITCH_ASR_INTERFACE,
 	SWITCH_MANAGEMENT_INTERFACE,
 	SWITCH_LIMIT_INTERFACE,
-	SWITCH_CHAT_APPLICATION_INTERFACE
+	SWITCH_CHAT_APPLICATION_INTERFACE,
+	SWITCH_JSON_API_INTERFACE,
 } switch_module_interface_name_t;
 
 typedef enum {
@@ -653,6 +666,7 @@ typedef enum {
 	SWITCH_RTP_FLAG_ENABLE_RTCP,
 	SWITCH_RTP_FLAG_RTCP_MUX,
 	SWITCH_RTP_FLAG_KILL_JB,
+	SWITCH_RTP_FLAG_VIDEO_BREAK,
 	SWITCH_RTP_FLAG_INVALID
 } switch_rtp_flag_t;
 
@@ -955,6 +969,7 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE,
 	SWITCH_MESSAGE_INDICATE_STUN_ERROR,
 	SWITCH_MESSAGE_INDICATE_MEDIA_RENEG,
+	SWITCH_MESSAGE_REFER_EVENT,
 	SWITCH_MESSAGE_ANSWER_EVENT,
 	SWITCH_MESSAGE_PROGRESS_EVENT,
 	SWITCH_MESSAGE_RING_EVENT,
@@ -1309,6 +1324,7 @@ typedef enum {
 	CF_CONFIRM_BLIND_TRANSFER,
 	CF_NO_PRESENCE,
 	CF_CONFERENCE,
+	CF_CONFERENCE_ADV,
 	CF_RECOVERING,
 	CF_RECOVERING_BRIDGE,
 	CF_TRACKED,
@@ -2000,6 +2016,7 @@ typedef struct switch_codec_interface switch_codec_interface_t;
 typedef struct switch_application_interface switch_application_interface_t;
 typedef struct switch_chat_application_interface switch_chat_application_interface_t;
 typedef struct switch_api_interface switch_api_interface_t;
+typedef struct switch_json_api_interface switch_json_api_interface_t;
 typedef struct switch_file_interface switch_file_interface_t;
 typedef struct switch_speech_interface switch_speech_interface_t;
 typedef struct switch_asr_interface switch_asr_interface_t;
@@ -2082,6 +2099,12 @@ typedef switch_status_t (*switch_api_function_t) (_In_opt_z_ const char *cmd, _I
 
 
 #define SWITCH_STANDARD_API(name) static switch_status_t name (_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session, _In_ switch_stream_handle_t *stream)
+
+
+typedef switch_status_t (*switch_json_api_function_t) (const cJSON *json, _In_opt_ switch_core_session_t *session, cJSON **json_reply);
+
+
+#define SWITCH_STANDARD_JSON_API(name) static switch_status_t name (const cJSON *json, _In_opt_ switch_core_session_t *session, cJSON **json_reply)
 
 typedef switch_status_t (*switch_input_callback_function_t) (switch_core_session_t *session, void *input,
 															 switch_input_type_t input_type, void *buf, unsigned int buflen);
@@ -2235,6 +2258,13 @@ struct sql_queue_manager;
 
 struct switch_media_handle_s;
 typedef struct switch_media_handle_s switch_media_handle_t;
+
+typedef uint32_t switch_event_channel_id_t;
+typedef void (*switch_event_channel_func_t)(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id);
+
+struct switch_live_array_s;
+typedef struct switch_live_array_s switch_live_array_t;
+
 
 
 SWITCH_END_EXTERN_C

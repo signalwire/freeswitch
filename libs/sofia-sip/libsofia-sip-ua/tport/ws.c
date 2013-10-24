@@ -334,8 +334,7 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 #else
 		if (x++) Sleep(10);
 #endif
-		} while (r == -1 && (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK || 
-							 errno == 35 || errno == 730035 || errno == 2 || errno == 60) && x < 100);
+	} while (r == -1 && xp_is_blocking(xp_errno()) && x < 100);
 	
 	if (x >= 100) {
 		r = -1;
@@ -364,7 +363,7 @@ ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 
 	do {
 		r = send(wsh->sock, data, bytes, 0);
-	} while (r == -1 && (errno == EAGAIN || errno == EINTR));
+	} while (r == -1 && xp_is_blocking(xp_errno()));
 
 	//if (r<0) {
 		//printf("wRITE FAIL: %s\n", strerror(errno));
@@ -789,4 +788,28 @@ ssize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes)
 	return bytes;
 }
 
+#ifdef _MSC_VER
 
+int xp_errno(void)
+{
+	return WSAGetLastError();
+}
+
+int xp_is_blocking(int errcode)
+{
+	return errcode == WSAEWOULDBLOCK || errcode == WSAEINPROGRESS;
+}
+
+#else
+
+int xp_errno(void)
+{
+	return errno;
+}
+
+int xp_is_blocking(int errcode)
+{
+  return errcode == EAGAIN || errcode == EWOULDBLOCK || errcode == EINPROGRESS || errcode == EINTR;
+}
+
+#endif

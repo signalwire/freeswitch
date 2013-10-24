@@ -171,8 +171,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_real_read_codec(switch_c
 		}
 
 		switch_channel_set_variable(channel, "read_codec", session->read_impl.iananame);
+		switch_channel_set_variable(channel, "original_read_codec", session->read_impl.iananame);
 		switch_snprintf(tmp, sizeof(tmp), "%d", session->read_impl.actual_samples_per_second);
 		switch_channel_set_variable(channel, "read_rate", tmp);
+		switch_channel_set_variable(channel, "original_read_rate", tmp);
 
 		session->raw_read_frame.codec = session->read_codec;
 		session->raw_write_frame.codec = session->read_codec;
@@ -653,7 +655,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init_with_bitrate(switch_codec
 	/* If no specific codec interval is requested opt for 20ms above all else because lots of stuff assumes it */
 	if (!ms) {
 		for (iptr = codec_interface->implementations; iptr; iptr = iptr->next) {
-			if ((!rate || rate == iptr->samples_per_second) && (!bitrate || bitrate == (uint32_t)iptr->bits_per_second) &&
+			uint32_t crate = !strcasecmp(codec_name, "g722") ? iptr->samples_per_second : iptr->actual_samples_per_second;
+			if ((!rate || rate == crate) && (!bitrate || bitrate == (uint32_t)iptr->bits_per_second) &&
 				(20 == (iptr->microseconds_per_packet / 1000)) && (!channels || channels == iptr->number_of_channels)) {
 				implementation = iptr;
 				goto found;
@@ -663,7 +666,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init_with_bitrate(switch_codec
 
 	/* Either looking for a specific interval or there was no interval specified and there wasn't one @20ms available */
 	for (iptr = codec_interface->implementations; iptr; iptr = iptr->next) {
-		if ((!rate || rate == iptr->samples_per_second) && (!bitrate || bitrate == (uint32_t)iptr->bits_per_second) &&
+		uint32_t crate = !strcasecmp(codec_name, "g722") ? iptr->samples_per_second : iptr->actual_samples_per_second;
+		if ((!rate || rate == crate) && (!bitrate || bitrate == (uint32_t)iptr->bits_per_second) &&
 			(!ms || ms == (iptr->microseconds_per_packet / 1000)) && (!channels || channels == iptr->number_of_channels)) {
 			implementation = iptr;
 			break;
