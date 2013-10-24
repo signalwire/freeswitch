@@ -903,7 +903,6 @@ tport_t *tport_alloc_secondary(tport_primary_t *pri,
 		  pri->pri_params->tpp_tos);
   }
   else {
-    su_close(socket);
     *return_reason = "malloc";
   }
 
@@ -2620,6 +2619,8 @@ int tport_accept(tport_primary_t *pri, int events)
     SU_DEBUG_3(("%s(%p): incoming secondary on "TPN_FORMAT
                 " failed. reason = %s\n", __func__, (void *)pri, 
                 TPN_ARGS(pri->pri_primary->tp_name), reason));
+	shutdown(s, 2);
+	su_close(s);
     return 0;
   }
   else {

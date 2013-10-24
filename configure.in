@@ -418,32 +418,45 @@ SWITCH_AM_CFLAGS="$LIBUUID_CFLAGS $SWITCH_AM_CFLAGS"
 
 AC_ARG_ENABLE(core-pgsql-support,     
 	[AS_HELP_STRING([--enable-core-pgsql-support], [Compile with PGSQL Support])],,[enable_core_pgsql_support="no"])
+AC_ARG_ENABLE(core-pgsql-pkgconfig,
+	[AS_HELP_STRING([--disable-core-pgsql-pkgconfig], [Use pg_config to get PGQSL build options])],[enable_core_pgsql_pkgconfig="$enableval"],[enable_core_pgsql_pkgconfig="yes"])
 
 if test x"$enable_core_pgsql_support" = x"yes" ; then
-
-AC_PATH_PROG([PG_CONFIG], [pg_config], [no])
-if test "$PG_CONFIG" != "no"; then
-        AC_MSG_CHECKING([for PostgreSQL libraries])
-        POSTGRESQL_CXXFLAGS="`$PG_CONFIG --cppflags` -I`$PG_CONFIG --includedir`"
-        POSTGRESQL_LDFLAGS="`$PG_CONFIG --ldflags|sed 's/ -Wl,--as-needed//g'` -L`$PG_CONFIG --libdir` -lpq"
-        POSTGRESQL_VERSION=`$PG_CONFIG --version | sed -e 's#PostgreSQL ##'`
-        POSTGRESQL_MAJOR_VERSION=`$PG_CONFIG --version | sed -e 's/devel//' | sed -re 's#PostgreSQL ([0-9]+).[0-9]+.?[0-9]+?#\1#'`
-        POSTGRESQL_MINOR_VERSION=`$PG_CONFIG --version | sed -e 's/devel//' | sed -re 's#PostgreSQL [0-9]+.([0-9]+).?[0-9]+?#\1#'`
-        POSTGRESQL_PATCH_VERSION=`$PG_CONFIG --version | sed -e 's/devel//' | sed -re 's#PostgreSQL [0-9]+.[0-9]+.?([0-9]+)?#\1#'`
-        AC_DEFINE([SWITCH_HAVE_PGSQL], [1], [Define to 1 if PostgreSQL libraries are available])
-	AC_DEFINE_UNQUOTED([POSTGRESQL_VERSION], "${POSTGRESQL_VERSION}", [Specifies the version of PostgreSQL we are linking against])
-	AC_DEFINE_UNQUOTED([POSTGRESQL_MAJOR_VERSION], ${POSTGRESQL_MAJOR_VERSION}, [Specifies the version of PostgreSQL we are linking against])
-	AC_DEFINE_UNQUOTED([POSTGRESQL_MINOR_VERSION], ${POSTGRESQL_MINOR_VERSION}, [Specifies the version of PostgreSQL we are linking against])
-	AC_DEFINE_UNQUOTED([POSTGRESQL_PATCH_VERSION], ${POSTGRESQL_PATCH_VERSION}, [Specifies the version of PostgreSQL we are linking against])
-	AC_CHECK_LIB([pq], [PQgetvalue],, AC_MSG_ERROR([no usable libpq; please install PostgreSQL devel package or equivalent]))
-        AC_MSG_RESULT([yes])
-	SWITCH_AM_CXXFLAGS="$POSTGRESQL_CXXFLAGS $SWITCH_AM_CXXFLAGS"
-	SWITCH_AM_LDFLAGS="$POSTGRESQL_LDFLAGS $SWITCH_AM_LDFLAGS"
-else
-        AC_MSG_RESULT([no])
-        AC_MSG_FAILURE([Unabled to find pg_config in PATH. Is PostgreSQL installed?])
-fi
-
+  AC_PATH_PROG([PG_CONFIG], [pg_config], [no])
+  AC_PATH_PROG([PKG_CONFIG], [pkg-config], [no])
+  if test "$PG_CONFIG" = "no"; then
+    AC_MSG_RESULT([no])
+    AC_MSG_FAILURE([Unabled to find pg_config in PATH. Is PostgreSQL installed?])
+  else
+    if test "$PKG_CONFIG" = "no" \
+       || test x"$enable_core_pgsql_pkgconfig" = x"no" \
+       || ! pkg-config libpq; then
+      AC_MSG_CHECKING([for PostgreSQL libraries])
+      POSTGRESQL_CXXFLAGS="`$PG_CONFIG --cppflags` -I`$PG_CONFIG --includedir`"
+      POSTGRESQL_LDFLAGS="`$PG_CONFIG --ldflags|sed 's/ -Wl,--as-needed//g'` -L`$PG_CONFIG --libdir` -lpq"
+      POSTGRESQL_VERSION=`$PG_CONFIG --version | sed -e 's#PostgreSQL ##'`
+      POSTGRESQL_MAJOR_VERSION=`$PG_CONFIG --version | sed -e 's/devel//' | sed -re 's#PostgreSQL ([0-9]+).[0-9]+.?[0-9]+?#\1#'`
+      POSTGRESQL_MINOR_VERSION=`$PG_CONFIG --version | sed -e 's/devel//' | sed -re 's#PostgreSQL [0-9]+.([0-9]+).?[0-9]+?#\1#'`
+      POSTGRESQL_PATCH_VERSION=`$PG_CONFIG --version | sed -e 's/devel//' | sed -re 's#PostgreSQL [0-9]+.[0-9]+.?([0-9]+)?#\1#'`
+    else
+      AC_MSG_CHECKING([for PostgreSQL libraries])
+      POSTGRESQL_CXXFLAGS="`$PKG_CONFIG --cflags libpq`"
+      POSTGRESQL_LDFLAGS="`$PKG_CONFIG --libs libpq`"
+      POSTGRESQL_VERSION="`$PKG_CONFIG --modversion libpq`"
+      POSTGRESQL_MAJOR_VERSION="`echo $POSTGRESQL_VERSION | cut -d. -f1`"
+      POSTGRESQL_MINOR_VERSION="`echo $POSTGRESQL_VERSION | cut -d. -f2`"
+      POSTGRESQL_PATCH_VERSION="`echo $POSTGRESQL_VERSION | cut -d. -f3`"
+    fi
+    AC_DEFINE([SWITCH_HAVE_PGSQL], [1], [Define to 1 if PostgreSQL libraries are available])
+    AC_DEFINE_UNQUOTED([POSTGRESQL_VERSION], "${POSTGRESQL_VERSION}", [Specifies the version of PostgreSQL we are linking against])
+    AC_DEFINE_UNQUOTED([POSTGRESQL_MAJOR_VERSION], ${POSTGRESQL_MAJOR_VERSION}, [Specifies the version of PostgreSQL we are linking against])
+    AC_DEFINE_UNQUOTED([POSTGRESQL_MINOR_VERSION], ${POSTGRESQL_MINOR_VERSION}, [Specifies the version of PostgreSQL we are linking against])
+    AC_DEFINE_UNQUOTED([POSTGRESQL_PATCH_VERSION], ${POSTGRESQL_PATCH_VERSION}, [Specifies the version of PostgreSQL we are linking against])
+    AC_CHECK_LIB([pq], [PQgetvalue],, AC_MSG_ERROR([no usable libpq; please install PostgreSQL devel package or equivalent]))
+    AC_MSG_RESULT([yes])
+    SWITCH_AM_CXXFLAGS="$POSTGRESQL_CXXFLAGS $SWITCH_AM_CXXFLAGS"
+    SWITCH_AM_LDFLAGS="$POSTGRESQL_LDFLAGS $SWITCH_AM_LDFLAGS"
+  fi
 fi
 
 AC_ARG_ENABLE(deprecated-core-db-events,

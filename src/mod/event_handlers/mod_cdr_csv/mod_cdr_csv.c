@@ -290,6 +290,26 @@ static void do_rotate_all()
 }
 
 
+static void do_teardown()
+{
+	switch_hash_index_t *hi;
+	void *val;
+	cdr_fd_t *fd;
+	switch_mutex_lock(globals.mutex);
+	for (hi = switch_hash_first(NULL, globals.fd_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, NULL, NULL, &val);
+		fd = (cdr_fd_t *) val;
+		switch_mutex_lock(fd->mutex);
+		if (fd->fd > -1) {
+			close(fd->fd);
+			fd->fd = -1;
+		}
+		switch_mutex_unlock(fd->mutex);
+	}
+	switch_mutex_unlock(globals.mutex);
+}
+
+
 static void event_handler(switch_event_t *event)
 {
 	const char *sig = switch_event_get_header(event, "Trapped-Signal");
@@ -445,6 +465,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cdr_csv_shutdown)
 	switch_event_unbind_callback(event_handler);
 	switch_core_remove_state_handler(&state_handlers);
 
+	do_teardown();
+	switch_core_hash_destroy(&globals.fd_hash);
+	switch_core_hash_destroy(&globals.template_hash);
 
 	return SWITCH_STATUS_SUCCESS;
 }
