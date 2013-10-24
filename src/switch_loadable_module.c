@@ -2310,13 +2310,14 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 				uint32_t default_rate = switch_default_rate(imp->iananame, imp->ianacode);
 				
 				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
-					
+					uint32_t crate = !strcasecmp(imp->iananame, "g722") ? imp->samples_per_second : imp->actual_samples_per_second;
+
 					if ((!interval && (uint32_t) (imp->microseconds_per_packet / 1000) != default_ptime) ||
 						(interval && (uint32_t) (imp->microseconds_per_packet / 1000) != interval)) {
 						continue;
 					}
 
-					if (((!rate && (uint32_t) imp->actual_samples_per_second != default_rate) || (rate && (uint32_t) imp->actual_samples_per_second != rate))) {
+					if (((!rate && crate != default_rate) || (rate && (uint32_t) imp->actual_samples_per_second != rate))) {
 						continue;
 					}
 
@@ -2335,12 +2336,13 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 			/* Either looking for a specific interval or there was no interval specified and there wasn't one at the default ptime available */
 			for (imp = codec_interface->implementations; imp; imp = imp->next) {
 				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
+					uint32_t crate = !strcasecmp(imp->iananame, "g722") ? imp->samples_per_second : imp->actual_samples_per_second;
 
 					if (interval && (uint32_t) (imp->microseconds_per_packet / 1000) != interval) {
 						continue;
 					}
 
-					if (rate && (uint32_t) imp->actual_samples_per_second != rate) {
+					if (rate && (uint32_t) crate != rate) {
 						continue;
 					}
 
