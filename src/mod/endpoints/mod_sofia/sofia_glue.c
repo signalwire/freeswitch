@@ -545,7 +545,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 		
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "\n");
 
-		rate = tech_pvt->rm_rate;
+		rate = tech_pvt->adv_rm_rate;
 
 		if (tech_pvt->adv_channels > 1) {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d/%d\n", 
@@ -1755,6 +1755,7 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 		}
 		tech_pvt->iananame = switch_core_session_strdup(tech_pvt->session, "PROXY");
 		tech_pvt->rm_rate = 8000;
+		tech_pvt->adv_rm_rate = 8000;
 		tech_pvt->codec_ms = 20;
 	}
 
@@ -4666,6 +4667,7 @@ void sofia_glue_proxy_codec(switch_core_session_t *session, const char *r_sdp)
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
 				tech_pvt->iananame = switch_core_session_strdup(tech_pvt->session, map->rm_encoding);
 				tech_pvt->rm_rate = map->rm_rate;
+				tech_pvt->adv_rm_rate = map->rm_rate;
 				tech_pvt->codec_ms = ptime;
 				sofia_glue_tech_set_codec(tech_pvt, 0);
 				break;
@@ -4750,7 +4752,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 	int reneg = 1;
 	const switch_codec_implementation_t **codec_array;
 	int total_codecs;
-
+	char *samp = NULL;
 
 	codec_array = tech_pvt->codecs;
 	total_codecs = tech_pvt->num_codecs;
@@ -5273,6 +5275,20 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 						match = 0;
 					}
 					
+					if (!zstr(map->rm_fmtp)) {
+						samp = strstr(map->rm_fmtp, "samplerate=");
+					}
+					if (!strcasecmp(map->rm_encoding, "opus") && !strcasecmp(rm_encoding, imp->iananame) && samp) {
+						char *rate_str = samp + 11;
+
+						if (rate_str && *rate_str) {
+							near_rate = atoi(rate_str);
+							near_match = imp;
+							match = 0;
+							goto near_match;
+						}
+					}
+
 					if (match) {
 						if (scrooge) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
@@ -5291,6 +5307,8 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					}
 				}
 
+			near_match:
+
 				if (!match && near_match) {
 					const switch_codec_implementation_t *search[1];
 					char *prefs[1];
@@ -5302,7 +5320,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 
 					prefs[0] = tmp;
 					num = switch_loadable_module_get_codecs_sorted(search, 1, prefs, 1);
-
+					
 					if (num) {
 						mimp = search[0];
 					} else {
@@ -5333,6 +5351,10 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					tech_pvt->iananame = switch_core_session_strdup(session, (char *) mimp->iananame);
 					tech_pvt->pt = (switch_payload_t) map->rm_pt;
 					tech_pvt->rm_rate = mimp->samples_per_second;
+					tech_pvt->adv_rm_rate = mimp->samples_per_second;
+					if (strcasecmp(mimp->iananame, "g722")) {
+						tech_pvt->rm_rate = mimp->actual_samples_per_second;
+					}
 					tech_pvt->codec_ms = mimp->microseconds_per_packet / 1000;
 					tech_pvt->bitrate = mimp->bits_per_second;
 					tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(session, (char *) connection->c_address);
@@ -6131,6 +6153,7 @@ int sofia_recover_callback(switch_core_session_t *session)
 
 			if ((tmp = switch_channel_get_variable(channel, "sip_use_codec_rate"))) {
 				tech_pvt->rm_rate = atoi(tmp);
+				tech_pvt->adv_rm_rate = tech_pvt->rm_rate;
 			}
 
 			if ((tmp = switch_channel_get_variable(channel, "sip_use_codec_ptime"))) {
