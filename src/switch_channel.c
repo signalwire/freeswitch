@@ -4904,7 +4904,7 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 		break;
 	case SDS_ACTIVE:
 	case SDS_ACTIVE_MULTI:
-		if (drec->last_state != SDS_HELD && drec->active_start) {
+		if (drec->active_start && drec->last_state != SDS_HELD) {
 			drec->active_stop = switch_micro_time_now();
 		} else if (!drec->active_start) {
 			drec->active_start = switch_micro_time_now();
@@ -4914,7 +4914,7 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 		drec->hold_start = switch_micro_time_now();
 		drec->hold_stop = 0;
 	default:
-		if (drec->last_state != SDS_HELD) {
+		if (drec->active_start && drec->last_state != SDS_HELD) {
 			drec->active_stop = switch_micro_time_now();
 		}
 		break;
