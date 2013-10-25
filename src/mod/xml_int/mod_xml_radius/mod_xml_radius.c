@@ -46,6 +46,23 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_radius_shutdown);
 SWITCH_MODULE_DEFINITION(mod_xml_radius, mod_xml_radius_load, mod_xml_radius_shutdown, NULL);
 
 int GLOBAL_DEBUG = 0;
+/*
+ * Time format 0:
+ * 20:16:33.479 UTC Thu May 02 2013
+ *
+ * Time format 1:
+ * 2013-05-03T00:53:26.139798+0400
+ *
+ */
+int GLOBAL_TIME_FORMAT = 0;
+char *GLOBAL_TIME_ZONE = "UTC";
+static char radattrdays[7][4] = {
+	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+};
+static char radattrmonths[12][4] = {
+	"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+};
 
 switch_status_t mod_xml_radius_new_handle(rc_handle **new_handle, switch_xml_t xml) {
 	switch_xml_t server, param;
@@ -186,7 +203,26 @@ switch_status_t do_config()
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Could not find 'auth_invite' section in config file.\n");		
 	}
-	
+
+	if ((tmp = switch_xml_child(cfg, "global")) != NULL ) {
+		for (param = switch_xml_child(tmp, "param"); param; param = param->next) {
+			char *name = (char *) switch_xml_attr_soft(param, "name");
+			char *value = (char *) switch_xml_attr_soft(param, "value");
+			if ( strncmp(name, "time_format", 11) == 0 && value != NULL ) {
+				GLOBAL_TIME_FORMAT = atoi(value);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Time format changed to %d\n", GLOBAL_TIME_FORMAT);
+			}
+			if ( strncmp(name, "time_zone", 9) == 0 && value != NULL ) {
+				GLOBAL_TIME_ZONE = value;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Time zone changed to %s\n", GLOBAL_TIME_ZONE);
+			}
+			if ( strncmp(name, "debug", 5) == 0 && value != NULL ) {
+				GLOBAL_DEBUG = atoi(value);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Debug changed to %d\n", GLOBAL_DEBUG);
+			}
+		}
+	}
+
 	serv = timeout = deadtime = retries = dict = seq = 0;
 	if ((tmp = switch_xml_dup(switch_xml_child(cfg, "auth_app"))) != NULL ) {
 		if ( (server = switch_xml_child(tmp, "connection")) != NULL) {
@@ -375,11 +411,19 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 					}
 					
 					switch_time_exp_lt(&tm, time);
-					av_value = switch_mprintf("%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
-											  tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
-											  tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec, 
-											  tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
 					
+					if ( GLOBAL_TIME_FORMAT == 1 ) {
+						av_value = switch_mprintf("%02u:%02u:%02u.%03u %s %s %s %02u %04u",
+												  tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec/1000,
+												  GLOBAL_TIME_ZONE, radattrdays[tm.tm_wday], radattrmonths[tm.tm_mon],
+												  tm.tm_mday, tm.tm_year + 1900);
+					} else {
+						av_value = switch_mprintf("%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
+												  tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+												  tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec,
+												  tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
+					}
+
 					if (rc_avpair_add(handle, send, attr_num, av_value, -1, vend_num) == NULL) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: failed to add option to handle\n");
 						goto err;
@@ -397,12 +441,19 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 					}
 					
 					switch_time_exp_lt(&tm, time);
-					
-					av_value = switch_mprintf("%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
-											  tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
-											  tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec, 
-											  tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
-						
+
+					if ( GLOBAL_TIME_FORMAT == 1 ) {
+						av_value = switch_mprintf("%02u:%02u:%02u.%03u %s %s %s %02u %04u",
+												  tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec/1000,
+												  GLOBAL_TIME_ZONE, radattrdays[tm.tm_wday], radattrmonths[tm.tm_mon],
+												  tm.tm_mday, tm.tm_year + 1900);
+					} else {
+						av_value = switch_mprintf("%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
+												  tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+												  tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec,
+												  tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
+					}
+
 					if (rc_avpair_add(handle, send, attr_num, av_value, -1, vend_num) == NULL) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: failed to add option to handle\n");
 						goto err;
@@ -424,12 +475,19 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 					}
 					
 					switch_time_exp_lt(&tm, time);
-					
-					av_value = switch_mprintf("%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
-											  tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
-											  tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec, 
-											  tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
-					
+
+					if ( GLOBAL_TIME_FORMAT == 1 ) {
+						av_value = switch_mprintf("%02u:%02u:%02u.%03u MSD %s %s %02u %04u",
+												  tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec/1000,
+												  GLOBAL_TIME_FORMAT, radattrdays[tm.tm_wday], radattrmonths[tm.tm_mon],
+												  tm.tm_mday, tm.tm_year + 1900);
+					} else {
+						av_value = switch_mprintf("%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
+												  tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+												  tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec,
+												  tm.tm_gmtoff / 3600, tm.tm_gmtoff % 3600);
+					}
+
 					if (rc_avpair_add(handle, send, attr_num, av_value, -1, vend_num) == NULL) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: failed to add option to handle\n");
 						goto err;
