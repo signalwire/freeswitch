@@ -2094,6 +2094,10 @@ void tport_close(tport_t *self)
   SU_DEBUG_5(("%s(%p): " TPN_FORMAT "\n",
 	      __func__, (void *)self, TPN_ARGS(self->tp_name)));
 
+  if (self->tp_refs == -1) {
+	  self->tp_refs = 0;
+  }
+
   if (self->tp_closed || !tport_is_secondary(self))
     return;
 
