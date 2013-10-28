@@ -193,13 +193,13 @@ struct switch_media_handle_s {
 
 };
 
-static int get_channels(const switch_codec_implementation_t *imp)
+static int get_channels(const char *name, int dft)
 {
-	if (!strcasecmp(imp->iananame, "opus")) {
+	if (!strcasecmp(name, "opus")) {
 		return 2; /* IKR???*/
 	}
 
-	return imp->number_of_channels;
+	return dft ? dft : 1;
 }
 
 static void _switch_core_media_pass_zrtp_hash2(switch_core_session_t *aleg_session, switch_core_session_t *bleg_session, switch_media_type_t type)
@@ -5207,7 +5207,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 		}
 		
 		if (smh->ianacodes[i] > 95 || switch_channel_test_flag(session->channel, CF_VERBOSE_SDP)) {
-			int channels = get_channels(imp);
+			int channels = get_channels(imp->iananame, imp->number_of_channels);
 
 			if (channels > 1) {
 				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d %s/%d/%d\n", smh->ianacodes[i], imp->iananame, rate, channels);
@@ -5689,9 +5689,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 		rate = a_engine->codec_params.adv_rm_rate;
 
-		//if (!strcasecmp(a_engine->codec_params.rm_encoding, "opus")) {
-		//	a_engine->codec_params.adv_channels = 2;
-		//}
+		if (!a_engine->codec_params.adv_channels) {
+			a_engine->codec_params.adv_channels = get_channels(a_engine->codec_params.rm_encoding, 1);
+		}
 
 		if (a_engine->codec_params.adv_channels > 1) {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d/%d\n", 
@@ -6066,7 +6066,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 						rate = imp->samples_per_second;
 					}
 					
-					channels = get_channels(imp);
+					channels = get_channels(imp->iananame, imp->number_of_channels);
 
 					if (!strcasecmp(imp->iananame, "VP8")) {
 						vp8 = ianacode;
