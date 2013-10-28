@@ -476,6 +476,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 	switch_bool_t is_timeout = switch_ivr_dmachine_check_timeout(dmachine);
 	dm_match_t is_match = switch_ivr_dmachine_check_match(dmachine, is_timeout);
 	switch_status_t r, s;
+	int clear = 0;
 
 	if (is_match == DM_MATCH_NEVER) {
 		is_timeout++;
@@ -503,7 +504,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 		dmachine->is_match = 1;
 
 		dmachine->match.type = DM_MATCH_POSITIVE;
-		switch_ivr_dmachine_clear(dmachine);
 		
 		if (dmachine->last_matching_binding->callback) {
 			s = dmachine->last_matching_binding->callback(&dmachine->match);
@@ -537,6 +537,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 
 		}
 
+		clear++;
 	} else if (is_timeout) {
 		r = SWITCH_STATUS_TIMEOUT;
 	} else if (is_match == DM_MATCH_NONE && dmachine->cur_digit_len == dmachine->max_digit_len) {
@@ -546,7 +547,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 	}
 	
 	if (r != SWITCH_STATUS_FOUND && r != SWITCH_STATUS_SUCCESS && r != SWITCH_STATUS_BREAK) {
-		switch_ivr_dmachine_clear(dmachine);
 		switch_set_string(dmachine->last_failed_digits, dmachine->digits);
 		dmachine->match.match_digits = dmachine->last_failed_digits;
 		
@@ -569,8 +569,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_ping(switch_ivr_dmachine_t *
 
 		}
 		
+		clear++;
 	}
-		
+	
+	if (clear) {
+		switch_ivr_dmachine_clear(dmachine);
+	}
+
 	dmachine->last_return = r;
 
 	switch_mutex_unlock(dmachine->mutex);
