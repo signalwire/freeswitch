@@ -1890,21 +1890,22 @@ static switch_status_t enable_remote_rtcp_socket(switch_rtp_t *rtp_session, cons
 							  "Setting RTCP remote addr to %s:%d\n", host, rtp_session->remote_rtcp_port);
 		}
 
-		if (!(rtp_session->rtcp_sock_input && rtp_session->rtcp_sock_output)) {
-			if (rtp_session->rtcp_sock_input && switch_sockaddr_get_family(rtp_session->rtcp_remote_addr) == 
-				switch_sockaddr_get_family(rtp_session->rtcp_local_addr)) {
-				rtp_session->rtcp_sock_output = rtp_session->rtcp_sock_input;
-			} else {
-				if (rtp_session->rtcp_sock_output && rtp_session->rtcp_sock_output != rtp_session->rtcp_sock_input) {
-					switch_socket_close(rtp_session->rtcp_sock_output);
-				}
-				if ((status = switch_socket_create(&rtp_session->rtcp_sock_output,
-												   switch_sockaddr_get_family(rtp_session->rtcp_remote_addr),
-												   SOCK_DGRAM, 0, rtp_session->pool)) != SWITCH_STATUS_SUCCESS) {
-					*err = "RTCP Socket Error!";
-				}
+		if (rtp_session->rtcp_sock_input && switch_sockaddr_get_family(rtp_session->rtcp_remote_addr) == 
+			switch_sockaddr_get_family(rtp_session->rtcp_local_addr)) {
+			rtp_session->rtcp_sock_output = rtp_session->rtcp_sock_input;
+		} else {
+
+			if (rtp_session->rtcp_sock_output && rtp_session->rtcp_sock_output != rtp_session->rtcp_sock_input) {
+				switch_socket_close(rtp_session->rtcp_sock_output);
+			}
+
+			if ((status = switch_socket_create(&rtp_session->rtcp_sock_output,
+											   switch_sockaddr_get_family(rtp_session->rtcp_remote_addr),
+											   SOCK_DGRAM, 0, rtp_session->pool)) != SWITCH_STATUS_SUCCESS) {
+				*err = "RTCP Socket Error!";
 			}
 		}
+
 	} else {
 		*err = "RTCP NOT ACTIVE!";
 	}
