@@ -4545,7 +4545,14 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 	return status;
 }
 
+static int using_ice(switch_rtp_t *rtp_session)
+{
+	if (rtp_session->ice.ice_user || rtp_session->rtcp_ice.ice_user) {
+		return 1;
+	}
 
+	return 0;
+}
 
 static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_type, switch_frame_flag_t *flags, switch_io_flag_t io_flags)
 {
@@ -4693,7 +4700,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				pt = 100000;
 			}
 
-			
+			if (using_ice(rtp_session)) {
+				pt = 20000;
+			}
+
 			poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, pt);
 
 
@@ -4780,20 +4790,19 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				}
 			}
 
-			if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {				
+			if (using_ice(rtp_session)) {
 				if (check_rtcp_and_ice(rtp_session) == -1) {
 					ret = -1;
 					goto end;
 				}
-				goto recvfrom;
-			}  
+			}
 			
 			if ((!(io_flags & SWITCH_IO_FLAG_NOBLOCK)) && 
 				(rtp_session->dtmf_data.out_digit_dur == 0)) {
 				return_cng_frame();
 			}
 		}
-
+		
 	rtcp:
 
 		if (rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]) {
@@ -5749,7 +5758,9 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		send = 0;
 	}
 
-
+	if (rtp_session->flags[SWITCH_RTP_FLAG_PAUSE]) {
+		send = 0;
+	}
 
 	if (send) {
 		send_msg->header.seq = htons(++rtp_session->seq);

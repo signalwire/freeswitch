@@ -3372,7 +3372,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session, int sendonly)
 {
 	int changed = 0;
-	switch_rtp_engine_t *a_engine;//, *v_engine;
+	switch_rtp_engine_t *a_engine, *v_engine;
 	switch_media_handle_t *smh;
 	switch_core_session_t *b_session = NULL;
 	switch_channel_t *b_channel = NULL;
@@ -3384,7 +3384,7 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 	}
 
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
-	//v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
+	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 
 	
 	if (switch_core_session_get_partner(session, &b_session) == SWITCH_STATUS_SUCCESS) {
@@ -3411,6 +3411,11 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 				if (switch_stristr("private", info)) {
 					msg = "hold-private";
 				}
+			}
+			
+			switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_PAUSE);
+			if (v_engine->rtp_session) {
+				switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_PAUSE);
 			}
 
 			switch_channel_set_flag(session->channel, CF_PROTO_HOLD);
@@ -3444,6 +3449,12 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 		if (switch_channel_test_flag(session->channel, CF_HOLD_LOCK)) {
 			switch_channel_set_flag(session->channel, CF_PROTO_HOLD);
 			switch_channel_mark_hold(session->channel, SWITCH_TRUE);
+
+			switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_PAUSE);
+			if (v_engine->rtp_session) {
+				switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_PAUSE);
+			}
+
 			changed = 1;
 		}
 
@@ -3471,6 +3482,12 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 			switch_channel_clear_flag(session->channel, CF_PROTO_HOLD);
 			switch_channel_mark_hold(session->channel, SWITCH_FALSE);
 			switch_channel_presence(session->channel, "unknown", "unhold", NULL);
+
+			switch_rtp_clear_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_PAUSE);
+			if (v_engine->rtp_session) {
+				switch_rtp_clear_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_PAUSE);
+			}
+
 			changed = 1;
 		}
 	}
@@ -6965,7 +6982,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 
 				if (ok) {
 					switch_rtp_clear_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
-					switch_rtp_clear_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
+					//switch_rtp_clear_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
 					switch_channel_set_flag(session->channel, CF_NOTIMER_DURING_BRIDGE);
 				}
 
@@ -7013,7 +7030,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 				if (!switch_rtp_test_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_UDPTL) && 
 					!switch_rtp_test_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
 					switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
-					switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
+					//switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
 				}
 				switch_channel_clear_flag(session->channel, CF_NOTIMER_DURING_BRIDGE);
 			}
