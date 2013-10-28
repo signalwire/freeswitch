@@ -179,7 +179,7 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 		if (sip->sip_route) {
 			if ((full = sip_header_as_string(nh->nh_home, (void *) sip->sip_route))) {
 				const char *v = switch_channel_get_variable(channel, "sip_full_route");
-				if (!v) { 
+				if (!v) {
 					switch_channel_set_variable(channel, "sip_full_route", full);
 				}
 				su_free(nh->nh_home, full);
