@@ -6511,11 +6511,11 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 			strncpy(q, p, 7);
 			p += 7;
 			q += 7;
-			strncpy(q, strchr(a_engine->codec_params.local_sdp_ip, ':') ? "6 " : "4 ", 2);
+			strncpy(q, strchr(a_engine->codec_params.adv_sdp_ip, ':') ? "6 " : "4 ", 2);
 			p +=2;
 			q +=2;			
-			strncpy(q, a_engine->codec_params.local_sdp_ip, strlen(a_engine->codec_params.local_sdp_ip));
-			q += strlen(a_engine->codec_params.local_sdp_ip);
+			strncpy(q, a_engine->codec_params.adv_sdp_ip, strlen(a_engine->codec_params.adv_sdp_ip));
+			q += strlen(a_engine->codec_params.adv_sdp_ip);
 
 			while (p && *p && ((*p >= '0' && *p <= '9') || *p == '.' || *p == ':' || (*p >= 'A' && *p <= 'F') || (*p >= 'a' && *p <= 'f'))) {
 				if (p >= pe) {
