@@ -350,7 +350,7 @@ static switch_status_t do_config(void)
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set event handler: unsuccessful bind\n");
 					}
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set event handler: no script name\n", event);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set event handler: no script name for event type '%s'\n", event);
 				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set event handler: unknown event type '%s'\n", event);
