@@ -280,12 +280,24 @@ void tport_stamp(tport_t const *self, msg_t *msg,
   char name[SU_ADDRSIZE] = "";
   su_sockaddr_t const *su;
   unsigned short second, minute, hour;
+  /* should check for ifdef HAVE_LOCALTIME_R instead -_- */
+#if defined(HAVE_GETTIMEOFDAY) || defined(HAVE_CLOCK_MONOTONIC)
+  struct tm nowtm = { 0 };
+  time_t nowtime = (now.tv_sec - SU_TIME_EPOCH); /* see su_time0.c 'now' is not really 'now', so we decrease it by SU_TIME_EPOCH */
+#endif
 
   assert(self); assert(msg);
 
+#if defined(HAVE_GETTIMEOFDAY) || defined(HAVE_CLOCK_MONOTONIC)
+  localtime_r(&nowtime, &nowtm);
+  second = nowtm.tm_sec;
+  minute = nowtm.tm_min;
+  hour = nowtm.tm_hour;
+#else
   second = (unsigned short)(now.tv_sec % 60);
   minute = (unsigned short)((now.tv_sec / 60) % 60);
   hour = (unsigned short)((now.tv_sec / 3600) % 24);
+#endif
 
   su = msg_addr(msg);
 
