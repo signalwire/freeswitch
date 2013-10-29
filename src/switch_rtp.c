@@ -2965,7 +2965,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 							  "Starting timer [%s] %d bytes per %dms\n", timer_name, samples_per_interval, ms_per_packet / 1000);
 		} else {
 			memset(&rtp_session->timer, 0, sizeof(rtp_session->timer));
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error starting timer [%s], async RTP disabled\n", timer_name);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR,
+							  "Error Starting timer [%s] %d bytes per %dms, async RTP disabled\n", timer_name, samples_per_interval, ms_per_packet / 1000);
 			switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
 		}
 	} else {
