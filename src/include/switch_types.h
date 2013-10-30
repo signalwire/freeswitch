@@ -1116,6 +1116,7 @@ typedef enum {
 	CCS_EARLY,
 	CCS_ACTIVE,
 	CCS_HELD,
+	CCS_RING_WAIT,
 	CCS_HANGUP,
 	CCS_UNHOLD
 } switch_channel_callstate_t;
