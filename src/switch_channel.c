@@ -4920,7 +4920,6 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 		if (!drec->active_start) {
 			drec->active_start = switch_micro_time_now();
 			drec->active_stop = 0;
-			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_CRIT, "SET START start:%ld stop:%ld\n", drec->active_start, drec->active_stop);
 		}
 		break;
 	case SDS_HELD:
@@ -4935,7 +4934,6 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 
 	if (drec->active_start && drec->state != SDS_ACTIVE && drec->state != SDS_ACTIVE_MULTI) {
 		drec->active_stop = switch_micro_time_now();
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_CRIT, "SET STOP start:%ld stop:%ld\n", drec->active_start, drec->active_stop);
 	}
 
 	if (drec->ring_start && !drec->ring_stop && drec->state != SDS_RINGING) {
@@ -4997,7 +4995,6 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 		if (drec->state == SDS_ACTIVE || drec->state == SDS_ACTIVE_MULTI) {
 			drec->active_start = switch_micro_time_now();
 		}
-		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_CRIT, "SET START start:%ld stop:%ld\n", drec->active_start, drec->active_stop);
 	}
 
 	if (drec->hold_stop) {
