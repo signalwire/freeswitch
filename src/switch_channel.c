@@ -240,6 +240,7 @@ static struct switch_callstate_table CALLSTATE_CHART[] = {
     {"EARLY", CCS_EARLY},
     {"ACTIVE", CCS_ACTIVE},
     {"HELD", CCS_HELD},
+    {"RING_WAIT", CCS_RING_WAIT},
     {"HANGUP", CCS_HANGUP},
 	{"UNHOLD", CCS_UNHOLD},
     {NULL, 0}
@@ -1757,6 +1758,10 @@ SWITCH_DECLARE(void) switch_channel_set_flag_value(switch_channel_t *channel, sw
 	channel->flags[flag] = value;
 	switch_mutex_unlock(channel->flag_mutex);
 
+	if (flag == CF_ORIGINATOR && switch_channel_test_flag(channel, CF_ANSWERED) && switch_channel_up_nosig(channel)) {
+		switch_channel_set_callstate(channel, CCS_RING_WAIT);
+	}
+
 	if (HELD) {
 		switch_hold_record_t *hr;
 		const char *brto = switch_channel_get_partner_uuid(channel);
@@ -1937,6 +1942,10 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 		}
 
 		switch_mutex_unlock(channel->profile_mutex);
+	}
+
+	if (flag == CF_ORIGINATOR && switch_channel_test_flag(channel, CF_ANSWERED) && switch_channel_up_nosig(channel)) {
+		switch_channel_set_callstate(channel, CCS_ACTIVE);
 	}
 
 	if (flag == CF_OUTBOUND) {
@@ -4708,6 +4717,8 @@ static void fetch_device_stats(switch_device_record_t *drec)
 					} else {
 						drec->stats.ringing_out++;
 					}
+				} else if (np->callstate == CCS_RING_WAIT) {
+					drec->stats.ring_wait++;
 				} else if (np->callstate == CCS_HANGUP) {
 					drec->stats.hup++;
 					if (np->direction == SWITCH_CALL_DIRECTION_INBOUND) {
@@ -4871,7 +4882,7 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 		drec->state = SDS_HANGUP;
 	} else {
 		if (drec->stats.active == 0) {
-			if ((drec->stats.ringing_out + drec->stats.early_out) > 0) {
+			if ((drec->stats.ringing_out + drec->stats.early_out) > 0 || drec->stats.ring_wait > 0) {
 				drec->state = SDS_RINGING;
 			} else {
 				if (drec->stats.held > 0) {
@@ -4899,25 +4910,32 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 
 	switch(drec->state) {
 	case SDS_RINGING:
-		drec->ring_start = switch_micro_time_now();
-		drec->ring_stop = 0;
+		if (!drec->ring_start) {
+			drec->ring_start = switch_micro_time_now();
+			drec->ring_stop = 0;
+		}
 		break;
 	case SDS_ACTIVE:
 	case SDS_ACTIVE_MULTI:
-		if (drec->active_start && drec->last_state != SDS_HELD) {
-			drec->active_stop = switch_micro_time_now();
-		} else if (!drec->active_start) {
+		if (!drec->active_start) {
 			drec->active_start = switch_micro_time_now();
+			drec->active_stop = 0;
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_CRIT, "SET START start:%ld stop:%ld\n", drec->active_start, drec->active_stop);
 		}
 		break;
 	case SDS_HELD:
-		drec->hold_start = switch_micro_time_now();
-		drec->hold_stop = 0;
-	default:
-		if (drec->active_start && drec->last_state != SDS_HELD) {
-			drec->active_stop = switch_micro_time_now();
+		if (!drec->hold_start) {
+			drec->hold_start = switch_micro_time_now();
+			drec->hold_stop = 0;
 		}
 		break;
+	default:
+		break;
+	}
+
+	if (drec->active_start && drec->state != SDS_ACTIVE && drec->state != SDS_ACTIVE_MULTI) {
+		drec->active_stop = switch_micro_time_now();
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_CRIT, "SET STOP start:%ld stop:%ld\n", drec->active_start, drec->active_stop);
 	}
 
 	if (drec->ring_start && !drec->ring_stop && drec->state != SDS_RINGING) {
@@ -4979,6 +4997,7 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 		if (drec->state == SDS_ACTIVE || drec->state == SDS_ACTIVE_MULTI) {
 			drec->active_start = switch_micro_time_now();
 		}
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_CRIT, "SET START start:%ld stop:%ld\n", drec->active_start, drec->active_stop);
 	}
 
 	if (drec->hold_stop) {
