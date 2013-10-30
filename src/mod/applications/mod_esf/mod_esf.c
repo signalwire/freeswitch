@@ -200,7 +200,7 @@ SWITCH_STANDARD_APP(bcast_function)
 									 mcast_ip,
 									 mcast_port,
 									 0,
-									 8000,
+									 160,
 									 20000, flags, "soft", &err, switch_core_session_get_pool(session));
 
 		if (!switch_rtp_ready(rtp_session)) {
