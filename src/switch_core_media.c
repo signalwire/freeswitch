@@ -3033,19 +3033,21 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 											  "Bah HUMBUG! Sticking with %s@%uh@%ui\n",
 											  imp->iananame, imp->samples_per_second, imp->microseconds_per_packet / 1000);
-						} else if (!near_match) {
-							if ((ptime && codec_ms && codec_ms * 1000 != imp->microseconds_per_packet) || map->rm_rate != codec_rate) {
+						} else if ((ptime && codec_ms && codec_ms * 1000 != imp->microseconds_per_packet) || map->rm_rate != codec_rate) {
+							/* ptime does not match */
+							match = 0;
+
+							/* save first near_match */
+							if (!near_match) {
 								near_rate = map->rm_rate;
 								near_match = imp;
 								near_map = mmap = map;
-								match = 0;
 
 								if (switch_true(switch_channel_get_variable_dup(channel, "rtp_negotiate_near_match", SWITCH_FALSE, -1))) {
 									goto near_match;
 								}
-
-								continue;
 							}
+							continue;
 						}
 						mimp = imp;
 						mmap = map;
@@ -3080,10 +3082,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				
 				if (num) {
 					mimp = search[0];
-					mmap = map;
 				} else {
 					mimp = near_match;
-					mmap = map;
 				}
 				
 				if (!maxptime || mimp->microseconds_per_packet / 1000 <= maxptime) {
