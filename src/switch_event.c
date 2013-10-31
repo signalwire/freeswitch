@@ -3055,6 +3055,7 @@ struct switch_live_array_s {
 	switch_live_array_command_handler_t command_handler;
 	void *user_data;
 	alias_node_t *aliases;
+	int refs;
 };
 
 static switch_status_t la_broadcast(switch_live_array_t *la, cJSON **json)
@@ -3215,8 +3216,20 @@ SWITCH_DECLARE(switch_status_t) switch_live_array_destroy(switch_live_array_t **
 	switch_live_array_t *la = *live_arrayP;
 	switch_memory_pool_t *pool;
 	alias_node_t *np;
+	int done = 0;
 
 	*live_arrayP = NULL;
+
+	switch_mutex_lock(la->mutex);
+	if (la->refs) {
+		la->refs--;
+	}
+	if (la->refs) done = 1;
+	switch_mutex_unlock(la->mutex);
+
+	if (done) {
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	pool = la->pool;
 
@@ -3311,7 +3324,6 @@ SWITCH_DECLARE(switch_bool_t) switch_live_array_add_alias(switch_live_array_t *l
 	return !exist;
 }
 
-
 SWITCH_DECLARE(switch_status_t) switch_live_array_create(const char *event_channel, const char *name, 
 														 switch_event_channel_id_t channel_id, switch_live_array_t **live_arrayP)
 {
@@ -3345,6 +3357,10 @@ SWITCH_DECLARE(switch_status_t) switch_live_array_create(const char *event_chann
 		switch_core_hash_insert(event_channel_manager.lahash, la->key, la);
 		switch_mutex_unlock(event_channel_manager.lamutex);
 	}
+
+	switch_mutex_lock(la->mutex);
+	la->refs++;
+	switch_mutex_unlock(la->mutex);
 
 	*live_arrayP = la;
 	
@@ -3559,14 +3575,16 @@ SWITCH_DECLARE(void) switch_live_array_parse_json(cJSON *json, switch_event_chan
 			const char *sessid = cJSON_GetObjectCstr(json, "sessid");
 
 			if (command) {
-				switch_live_array_create(context, name, channel_id, &la);
+				if (switch_live_array_create(context, name, channel_id, &la) == SWITCH_STATUS_SUCCESS) {
 				
-				if (!strcasecmp(command, "bootstrap")) {
-					switch_live_array_bootstrap(la, sessid, channel_id);
-				} else {
-					if (la->command_handler) {
-						la->command_handler(la, command, sessid, jla, la->user_data);
+					if (!strcasecmp(command, "bootstrap")) {
+						switch_live_array_bootstrap(la, sessid, channel_id);
+					} else {
+						if (la->command_handler) {
+							la->command_handler(la, command, sessid, jla, la->user_data);
+						}
 					}
+					switch_live_array_destroy(&la);
 				}
 			}
 		}
