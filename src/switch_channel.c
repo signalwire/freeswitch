@@ -139,6 +139,7 @@ typedef enum {
 struct switch_channel {
 	char *name;
 	switch_call_direction_t direction;
+	switch_call_direction_t logical_direction;
 	switch_queue_t *dtmf_queue;
 	switch_queue_t *dtmf_log_queue;
 	switch_mutex_t*dtmf_mutex;
@@ -390,9 +391,21 @@ SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch
 	return times;
 }
 
+SWITCH_DECLARE(void) switch_channel_set_direction(switch_channel_t *channel, switch_call_direction_t direction)
+{
+	if (!switch_core_session_in_thread(channel->session)) {
+		channel->direction = channel->logical_direction = direction;
+	}
+}
+
 SWITCH_DECLARE(switch_call_direction_t) switch_channel_direction(switch_channel_t *channel)
 {
 	return channel->direction;
+}
+
+SWITCH_DECLARE(switch_call_direction_t) switch_channel_logical_direction(switch_channel_t *channel)
+{
+	return channel->logical_direction;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel, switch_call_direction_t direction, switch_memory_pool_t *pool)
@@ -416,7 +429,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel,
 	switch_mutex_init(&(*channel)->profile_mutex, SWITCH_MUTEX_NESTED, pool);
 	(*channel)->hangup_cause = SWITCH_CAUSE_NONE;
 	(*channel)->name = "";
-	(*channel)->direction = direction;
+	(*channel)->direction = (*channel)->logical_direction = direction;
 	switch_channel_set_variable(*channel, "direction", switch_channel_direction(*channel) == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1752,6 +1765,20 @@ SWITCH_DECLARE(void) switch_channel_set_flag_value(switch_channel_t *channel, sw
 		switch_channel_set_callstate(channel, CCS_RING_WAIT);
 	}
 
+	if (flag == CF_DIALPLAN) {
+		if (channel->direction == SWITCH_CALL_DIRECTION_INBOUND) {
+			channel->logical_direction = SWITCH_CALL_DIRECTION_OUTBOUND;
+			if (channel->device_node) {
+				channel->device_node->direction = SWITCH_CALL_DIRECTION_INBOUND;
+			}
+		} else {
+			channel->logical_direction = SWITCH_CALL_DIRECTION_INBOUND;
+			if (channel->device_node) {
+				channel->device_node->direction = SWITCH_CALL_DIRECTION_OUTBOUND;
+			}
+		}
+	}
+
 	if (HELD) {
 		switch_hold_record_t *hr;
 		const char *brto = switch_channel_get_partner_uuid(channel);
@@ -1913,6 +1940,15 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 	}
 	channel->flags[flag] = 0;
 	switch_mutex_unlock(channel->flag_mutex);
+
+	if (flag == CF_DIALPLAN) {
+		if (channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND) {
+			channel->logical_direction = SWITCH_CALL_DIRECTION_OUTBOUND;
+			if (channel->device_node) {
+				channel->device_node->direction = SWITCH_CALL_DIRECTION_INBOUND;
+			}
+		}
+	}
 
 	if (ACTIVE) {
 		switch_channel_set_callstate(channel, CCS_UNHOLD);
@@ -2594,6 +2630,7 @@ SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel
 	switch_assert(caller_profile != NULL);
 
 	caller_profile->direction = channel->direction;
+	caller_profile->logical_direction = channel->logical_direction;
 	uuid = switch_core_session_get_uuid(channel->session);
 
 	if (!caller_profile->uuid || strcasecmp(caller_profile->uuid, uuid)) {
@@ -2676,6 +2713,7 @@ SWITCH_DECLARE(void) switch_channel_set_hunt_caller_profile(switch_channel_t *ch
 	channel->caller_profile->hunt_caller_profile = NULL;
 	if (channel->caller_profile && caller_profile) {
 		caller_profile->direction = channel->direction;
+		caller_profile->logical_direction = channel->logical_direction;
 		channel->caller_profile->hunt_caller_profile = caller_profile;
 	}
 	switch_mutex_unlock(channel->profile_mutex);
@@ -4988,7 +5026,7 @@ static void add_uuid(switch_device_record_t *drec, switch_channel_t *channel)
 	node->uuid = switch_core_strdup(drec->pool, switch_core_session_get_uuid(channel->session));
 	node->parent = drec;
 	node->callstate = channel->callstate;
-	node->direction = channel->direction == SWITCH_CALL_DIRECTION_INBOUND ? SWITCH_CALL_DIRECTION_OUTBOUND : SWITCH_CALL_DIRECTION_INBOUND;
+	node->direction = channel->logical_direction == SWITCH_CALL_DIRECTION_INBOUND ? SWITCH_CALL_DIRECTION_OUTBOUND : SWITCH_CALL_DIRECTION_INBOUND;
 
 	channel->device_node = node;
 
