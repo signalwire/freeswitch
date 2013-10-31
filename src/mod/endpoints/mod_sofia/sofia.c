@@ -6438,7 +6438,41 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			}
 		break;
 	case nua_callstate_ready:
-		if (!switch_channel_test_flag(channel, CF_PROXY_MODE) && !switch_channel_test_flag(channel, CF_PROXY_MEDIA) &&
+		if (switch_channel_test_flag(channel, CF_PROXY_MODE) && r_sdp) {
+			char ibuf[35] = "", pbuf[35] = "";
+			const char *ptr;
+			
+			if ((ptr = switch_stristr("c=IN IP4", r_sdp))) {
+				int i = 0;
+
+				ptr += 8;
+
+				while(*ptr == ' ') {
+					ptr++;
+				}
+				while(*ptr && *ptr != ' ' && *ptr != '\r' && *ptr != '\n') {
+					ibuf[i++] = *ptr++;
+				}
+
+				switch_channel_set_variable(channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, ibuf);
+			}
+
+			if ((ptr = switch_stristr("m=audio", r_sdp))) {
+				int i = 0;
+		
+				ptr += 7;
+
+				while(*ptr == ' ') {
+					ptr++;
+				}
+				while(*ptr && *ptr != ' ' && *ptr != '\r' && *ptr != '\n') {
+					pbuf[i++] = *ptr++;
+				}
+
+				switch_channel_set_variable(channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, pbuf);
+			}
+			
+		} else if (!switch_channel_test_flag(channel, CF_PROXY_MODE) && !switch_channel_test_flag(channel, CF_PROXY_MEDIA) &&
 			r_sdp && (!is_dup_sdp || sofia_test_flag(tech_pvt, TFLAG_NEW_SDP)) && switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO) && !sofia_test_flag(tech_pvt, TFLAG_NOSDP_REINVITE)) {
 			/* sdp changed since 18X w sdp, we're supposed to ignore it but we, of course, were pressured into supporting it */
 			uint8_t match = 0;
