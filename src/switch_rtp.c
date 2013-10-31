@@ -2561,7 +2561,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 		
 	dtls->pvt = switch_core_sprintf(rtp_session->pool, "%s%s%s.key", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, DTLS_SRTP_FNAME);
 	dtls->rsa = switch_core_sprintf(rtp_session->pool, "%s%s%s.crt", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, DTLS_SRTP_FNAME);
-	//dtls->ca = switch_core_sprintf(rtp_session->pool, "%s%sca-bundle.crt", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR);
+	dtls->ca = switch_core_sprintf(rtp_session->pool, "%s%sca-bundle.crt", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR);
 		
 	dtls->ssl_ctx = SSL_CTX_new(DTLSv1_method());
 	switch_assert(dtls->ssl_ctx);
@@ -2604,7 +2604,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!zstr(dtls->ca) && (ret=SSL_CTX_load_verify_locations(dtls->ssl_ctx, dtls->ca, NULL)) != 1) {
+	if (!zstr(dtls->ca) && switch_file_exists(dtls->ca, rtp_session->pool) == SWITCH_STATUS_SUCCESS 
+		&& (ret = SSL_CTX_load_verify_locations(dtls->ssl_ctx, dtls->ca, NULL)) != 1) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s DTLS check chain cert failed [%d]\n",
 						  rtp_type(rtp_session) ,
 						  SSL_get_error(dtls->ssl, ret));
