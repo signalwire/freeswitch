@@ -324,9 +324,11 @@ AX_CHECK_EXPORT_CAPABILITY([$host],
 
 saved_CFLAGS="$CFLAGS"
 AC_CACHE_CHECK([whether compiler supports -Wunused-but-set-variable], [ac_cv_gcc_unused_but_set_variable], [
-CFLAGS="$CFLAGS -Wunused-but-set-variable"
-AC_TRY_COMPILE([],[return 0;],[ac_cv_gcc_unused_but_set_variable=yes],[ac_cv_gcc_unused_but_set_variable=no])
-])
+    # We need to add -Werror here or clang doesn't fail (it just warns), even though it doesn't understand the
+    # -Wunused-but-set-variable tag
+    CFLAGS="$CFLAGS -Werror -Wunused-but-set-variable"
+    AC_TRY_COMPILE([],[return 0;],[ac_cv_gcc_unused_but_set_variable=yes],[ac_cv_gcc_unused_but_set_variable=no])
+    ])
 AC_MSG_RESULT($ac_cv_gcc_unused_but_set_variable)
 CFLAGS="$saved_CFLAGS"
 
