@@ -1915,7 +1915,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 
 	if (conference->la && member->channel) {
 		member->json = cJSON_CreateArray();
-		cJSON_AddItemToArray(member->json, cJSON_CreateStringPrintf("%0.8d", member->id));
+		cJSON_AddItemToArray(member->json, cJSON_CreateStringPrintf("%0.4d", member->id));
 		cJSON_AddItemToArray(member->json, cJSON_CreateString(switch_channel_get_variable(member->channel, "caller_id_number")));
 		cJSON_AddItemToArray(member->json, cJSON_CreateString(switch_channel_get_variable(member->channel, "caller_id_name")));
 
