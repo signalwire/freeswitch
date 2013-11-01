@@ -264,11 +264,13 @@ SWITCH_DECLARE(switch_console_callback_match_t *) switch_core_session_findall_ma
 	switch_memory_pool_t *pool;
 	struct str_node *head = NULL, *np;
 	switch_console_callback_match_t *my_matches = NULL;
+	const char *like = NULL;
+
+	if (var_val && *var_val == '~') {
+		like = var_val + 1;
+	}
 
 	switch_core_new_memory_pool(&pool);
-
-	if (!var_val)
-		return NULL;
 
 	switch_mutex_lock(runtime.session_hash_mutex);
 	for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
@@ -290,7 +292,8 @@ SWITCH_DECLARE(switch_console_callback_match_t *) switch_core_session_findall_ma
 		if ((session = switch_core_session_locate(np->str))) {
 			const char *this_val;
 			if (switch_channel_up_nosig(session->channel) &&
-				(this_val = switch_channel_get_variable_dup(session->channel, var_name, SWITCH_FALSE, -1)) && (!strcmp(this_val, var_val))) {			
+				(this_val = switch_channel_get_variable_dup(session->channel, var_name, SWITCH_FALSE, -1)) && 
+				(!var_val || (like && switch_stristr(like, var_val)) || !strcmp(this_val, var_val))) {
 				switch_console_push_match(&my_matches, (const char *) np->str);
 			}
 			switch_core_session_rwunlock(session);
