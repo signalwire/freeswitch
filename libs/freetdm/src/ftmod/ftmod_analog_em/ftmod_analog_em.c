@@ -643,7 +643,7 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 			case FTDM_CHANNEL_STATE_RING:
 				{
 					ftdm_sleep(interval);
-					if (ftdmchan->state == FTDM_CHANNEL_STATE_UP && cas_answer) {
+					if (ftdmchan->state == FTDM_CHANNEL_STATE_UP) {
 						cas_bits = 0;
 						ftdm_channel_command(ftdmchan, FTDM_COMMAND_GET_CAS_BITS, &cas_bits);
 						if (!(state_counter % 5000)) {
