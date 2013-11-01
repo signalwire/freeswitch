@@ -789,11 +789,16 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	len = tech_pvt->read_frame.buflen;
 	if (ftdm_channel_read(tech_pvt->ftdmchan, tech_pvt->read_frame.data, &len) != FTDM_SUCCESS) {
+		if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Failed to read from dead channel %s device %d:%d\n", name, span_id, chan_id);
+			goto normal_failure;
+		}
 		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_WARNING, "Failed to read from channel %s device %d:%d!\n", name, span_id, chan_id);
 		if (++tech_pvt->read_error > FTDM_MAX_READ_WRITE_ERRORS) {
 			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_ERROR, "too many I/O read errors on channel %s device %d:%d!\n", name, span_id, chan_id);
 			goto fail;
 		}
+
 	} else {
 		tech_pvt->read_error = 0;
 	}
@@ -822,6 +827,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 fail:
 	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_ERROR, "clearing IO in channel %s device %d:%d!\n", name, span_id, chan_id);
+normal_failure:
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	return SWITCH_STATUS_GENERR;
 }
