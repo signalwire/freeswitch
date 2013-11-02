@@ -5960,7 +5960,40 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		}
 
 		if (r_sdp) {
-			if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+			if (switch_channel_test_flag(channel, CF_PROXY_MODE) && r_sdp) {
+				char ibuf[35] = "", pbuf[35] = "";
+				const char *ptr;
+			
+				if ((ptr = switch_stristr("c=IN IP4", r_sdp))) {
+					int i = 0;
+
+					ptr += 8;
+
+					while(*ptr == ' ') {
+						ptr++;
+					}
+					while(*ptr && *ptr != ' ' && *ptr != '\r' && *ptr != '\n') {
+						ibuf[i++] = *ptr++;
+					}
+
+					switch_channel_set_variable(channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, ibuf);
+				}
+
+				if ((ptr = switch_stristr("m=audio", r_sdp))) {
+					int i = 0;
+		
+					ptr += 7;
+
+					while(*ptr == ' ') {
+						ptr++;
+					}
+					while(*ptr && *ptr != ' ' && *ptr != '\r' && *ptr != '\n') {
+						pbuf[i++] = *ptr++;
+					}
+
+					switch_channel_set_variable(channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, pbuf);
+				}
+			
 				if (switch_channel_test_flag(channel, CF_PROXY_MEDIA) &&  switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "PROXY MEDIA");
 				}
@@ -6893,6 +6926,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 			exten = (char *) refer_to->r_url->url_user;
 		}
 
+		switch_core_session_queue_indication(session, SWITCH_MESSAGE_REFER_EVENT);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Process REFER to [%s@%s]\n", exten, (char *) refer_to->r_url->url_host);
 
 		switch_channel_set_variable(tech_pvt->channel, "transfer_disposition", "recv_replace");

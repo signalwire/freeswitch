@@ -147,7 +147,7 @@ SPAN_DECLARE(int32_t) vec_dot_prodi16(const int16_t x[], const int16_t y[], int 
         " emms;\n"
         : "=a" (z)
         : "S" (x), "D" (y), "a" (n)
-        : "cc"
+        : "cc", "rdx", "mm0", "mm1", "mm2"
     );
 #elif defined(__GNUC__)  &&  defined(SPANDSP_USE_MMX)  &&  defined(__i386__)
     __asm__ __volatile__(
@@ -245,7 +245,7 @@ SPAN_DECLARE(int32_t) vec_dot_prodi16(const int16_t x[], const int16_t y[], int 
         " emms;\n"
         : "=a" (z)
         : "S" (x), "D" (y), "a" (n)
-        : "cc"
+        : "cc", "edx", "mm0", "mm1", "mm2"
     );
 #else
     int i;
@@ -436,7 +436,7 @@ SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
         " emms;\n"
         : "=a" (max)
         : "S" (x), "a" (n), "d" (out), [lower] "m" (lower_bound), [upper] "m" (upper_bound)
-        : "ecx"
+        : "ecx", "mm0", "mm1", "mm2", "mm3", "mm4"
     );
 #elif defined(__GNUC__)  &&  defined(SPANDSP_USE_MMX)  &&  defined(__i386__)
     static const int32_t lower_bound = 0x80008000;
@@ -589,7 +589,7 @@ SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
         " emms;\n"
         : "=a" (max)
         : "S" (x), "a" (n), "d" (out), [lower] "m" (lower_bound), [upper] "m" (upper_bound)
-        : "ecx"
+        : "ecx", "mm0", "mm1", "mm2", "mm3", "mm4"
     );
 #else
     int i;

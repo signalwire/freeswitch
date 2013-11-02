@@ -30,6 +30,7 @@
  *
  */
 #include <switch.h>
+#include <g711.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_esf_load);
 SWITCH_MODULE_DEFINITION(mod_esf, mod_esf_load, NULL, NULL);
@@ -168,7 +169,7 @@ SWITCH_STANDARD_APP(bcast_function)
 	if (ready == SEND_TYPE_RTP) {
 		if (read_impl.ianacode != 0) {
 			if (switch_core_codec_init(&codec,
-									   "PCMU",
+									   "L16",
 									   NULL,
 									   8000,
 									   20,
@@ -200,8 +201,8 @@ SWITCH_STANDARD_APP(bcast_function)
 									 mcast_ip,
 									 mcast_port,
 									 0,
-									 8000,
-									 20, flags, "soft", &err, switch_core_session_get_pool(session));
+									 160,
+									 20000, flags, "soft", &err, switch_core_session_get_pool(session));
 
 		if (!switch_rtp_ready(rtp_session)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "RTP Error\n");
@@ -237,7 +238,22 @@ SWITCH_STANDARD_APP(bcast_function)
 			continue;
 		}
 		if (ready == SEND_TYPE_RTP) {
+			short *dbuf;
+			unsigned char *ebuf;
+			uint32_t i;
+			unsigned char encoded_data[4192];
+
+			dbuf = read_frame->data;
+			ebuf = encoded_data;
+			
+			for (i = 0; i < read_frame->datalen / sizeof(short); i++) {
+				ebuf[i] = linear_to_ulaw(dbuf[i]);
+			}
+			read_frame->data = encoded_data;
+			read_frame->datalen = read_frame->datalen / 2;
 			switch_rtp_write_frame(rtp_session, read_frame);
+			read_frame->data = dbuf;
+			read_frame->datalen = read_frame->datalen * 2;
 		} else {
 			bytes = read_frame->packetlen;
 			switch_socket_sendto(socket, audio_addr, 0, read_frame->packet, &bytes);

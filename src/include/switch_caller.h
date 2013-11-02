@@ -127,6 +127,7 @@ typedef struct profile_node_s {
 	switch_memory_pool_t *pool;
 	struct switch_caller_profile *next;
 	switch_call_direction_t direction;
+	switch_call_direction_t logical_direction;
 	profile_node_t *soft;
 	char *uuid_str;
 	char *clone_of;

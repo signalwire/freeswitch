@@ -82,18 +82,34 @@ typedef struct device_uuid_node_s {
 	switch_channel_callstate_t callstate;
 	switch_hold_record_t *hold_record;
 	switch_caller_profile_t *hup_profile;
+	switch_call_direction_t direction;
 	struct switch_device_record_s *parent;
 	struct device_uuid_node_s *next;
 } switch_device_node_t;
 
 typedef struct switch_device_stats_s {
 	uint32_t total; 
+	uint32_t total_in;
+	uint32_t total_out;
 	uint32_t offhook;
+	uint32_t offhook_in;
+	uint32_t offhook_out;
 	uint32_t active;
+	uint32_t active_in;
+	uint32_t active_out;
 	uint32_t held;
+	uint32_t held_in;
+	uint32_t held_out;
 	uint32_t hup;
+	uint32_t hup_in;
+	uint32_t hup_out;
 	uint32_t ringing;
+	uint32_t ringing_in;
+	uint32_t ringing_out;
 	uint32_t early;
+	uint32_t early_in;
+	uint32_t early_out;
+	uint32_t ring_wait;
 } switch_device_stats_t;
 
 
@@ -102,15 +118,22 @@ typedef struct switch_device_record_s {
 	char *uuid;
 	int refs;
 	switch_device_stats_t stats;
+	switch_device_stats_t last_stats;
 	switch_device_state_t state;
 	switch_device_state_t last_state;
 	switch_time_t active_start;
 	switch_time_t active_stop;
 	switch_time_t last_call_time;
+	switch_time_t ring_start;
+	switch_time_t ring_stop;
+	switch_time_t hold_start;
+	switch_time_t hold_stop;
+	switch_time_t call_start;
 	struct device_uuid_node_s *uuid_list;
 	struct device_uuid_node_s *uuid_tail;
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
+	void *user_data;
 } switch_device_record_t;
 
 typedef void(*switch_device_state_function_t)(switch_core_session_t *session, switch_channel_callstate_t callstate, switch_device_record_t *drec);

@@ -295,6 +295,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		switch_thread_rwlock_rdlock(session->bug_rwlock);
 
 		for (bp = session->bugs; bp; bp = bp->next) {
+			ok = SWITCH_TRUE;
+
 			if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
 				continue;
 			}
@@ -357,6 +359,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		if (session->bugs && switch_test_flag((*frame), SFF_CNG)) {
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
 			for (bp = session->bugs; bp; bp = bp->next) {
+				ok = SWITCH_TRUE;
+
 				if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
 					continue;
 				}
@@ -651,6 +655,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
 
 			for (bp = session->bugs; bp; bp = bp->next) {
+				ok = SWITCH_TRUE;
+
 				if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
 					continue;
 				}
@@ -700,6 +706,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
 
 			for (bp = session->bugs; bp; bp = bp->next) {
+				ok = SWITCH_TRUE;
+
 				if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
 					continue;
 				}
@@ -866,6 +874,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			int prune = 0;
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
 			for (bp = session->bugs; bp; bp = bp->next) {
+				ok = SWITCH_TRUE;
+
 				if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
 					continue;
 				}
@@ -936,6 +946,8 @@ static switch_status_t perform_write(switch_core_session_t *session, switch_fram
 		switch_thread_rwlock_rdlock(session->bug_rwlock);
 
 		for (bp = session->bugs; bp; bp = bp->next) {
+			ok = SWITCH_TRUE;
+
 			if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
 				continue;
 			}
@@ -1237,6 +1249,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		switch_thread_rwlock_rdlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
 			switch_bool_t ok = SWITCH_TRUE;
+
 			if (!bp->ready) {
 				continue;
 			}

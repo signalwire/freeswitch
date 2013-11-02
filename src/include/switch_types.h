@@ -27,6 +27,7 @@
  * Bret McDanel <trixter AT 0xdecafbad dot com>
  * Joseph Sullivan <jossulli@amazon.com>
  * Raymond Chandler <intralanman@freeswitch.org>
+ * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
  *
  * switch_types.h -- Data Types
  *
@@ -666,6 +667,7 @@ typedef enum {
 	SWITCH_RTP_FLAG_RTCP_MUX,
 	SWITCH_RTP_FLAG_KILL_JB,
 	SWITCH_RTP_FLAG_VIDEO_BREAK,
+	SWITCH_RTP_FLAG_PAUSE,
 	SWITCH_RTP_FLAG_INVALID
 } switch_rtp_flag_t;
 
@@ -968,6 +970,7 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE,
 	SWITCH_MESSAGE_INDICATE_STUN_ERROR,
 	SWITCH_MESSAGE_INDICATE_MEDIA_RENEG,
+	SWITCH_MESSAGE_REFER_EVENT,
 	SWITCH_MESSAGE_ANSWER_EVENT,
 	SWITCH_MESSAGE_PROGRESS_EVENT,
 	SWITCH_MESSAGE_RING_EVENT,
@@ -1137,6 +1140,7 @@ typedef enum {
 	CCS_EARLY,
 	CCS_ACTIVE,
 	CCS_HELD,
+	CCS_RING_WAIT,
 	CCS_HANGUP,
 	CCS_UNHOLD
 } switch_channel_callstate_t;

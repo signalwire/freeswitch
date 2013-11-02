@@ -44,6 +44,8 @@
 struct tm * localtime_r(const time_t *clock, struct tm *result);
 #endif
 
+static FIO_SPAN_SET_SIG_STATUS_FUNCTION(analog_em_set_span_sig_status);
+
 /* check if the given file is a wave file and skip the header if it is */
 #define WAVE_CHUNK_ID "RIFF"
 #define WAVE_FMT "WAVEfmt "
@@ -196,6 +198,23 @@ static ftdm_status_t ftdm_analog_em_start(ftdm_span_t *span)
 	return ftdm_thread_create_detached(ftdm_analog_em_run, span);
 }
 
+static void ftdm_analog_set_chan_sig_status(ftdm_channel_t *ftdmchan, ftdm_signaling_status_t status)
+{
+	ftdm_sigmsg_t sig;
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Signalling link status changed to %s\n", ftdm_signaling_status2str(status));
+
+	memset(&sig, 0, sizeof(sig));
+	sig.chan_id = ftdmchan->chan_id;
+	sig.span_id = ftdmchan->span_id;
+	sig.channel = ftdmchan;
+	sig.event_id = FTDM_SIGEVENT_SIGSTATUS_CHANGED;
+	sig.ev_data.sigstatus.status = status;
+	if (ftdm_span_send_signal(ftdmchan->span, &sig) != FTDM_SUCCESS) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed to change channel status to %s\n", ftdm_signaling_status2str(status));
+	}
+	return;
+}
+
 /**
  * \brief Stops EM span thread (monitor)
  * \param span Span to monitor
@@ -206,6 +225,7 @@ static ftdm_status_t ftdm_analog_em_stop(ftdm_span_t *span)
 	ftdm_analog_em_data_t *analog_data = span->signal_data;
 	ftdm_clear_flag(analog_data, FTDM_ANALOG_EM_RUNNING);
 	ftdm_sleep(100);
+	analog_em_set_span_sig_status(span, FTDM_SIG_STATE_SUSPENDED);
 	return FTDM_SUCCESS;
 }
 
@@ -215,10 +235,16 @@ static ftdm_status_t ftdm_analog_em_stop(ftdm_span_t *span)
  * \param status	Pointer to set signalling status
  * \return Success or failure
  */
-
 static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(analog_em_get_channel_sig_status)
 {
-	ftdm_unused_arg(ftdmchan);
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_IN_ALARM)) {
+		*status = FTDM_SIG_STATE_DOWN;
+		return FTDM_SUCCESS;
+	}
+	if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SUSPENDED)) {
+		*status = FTDM_SIG_STATE_SUSPENDED;
+		return FTDM_SUCCESS;
+	}
 	*status = FTDM_SIG_STATE_UP;
 	return FTDM_SUCCESS;
 }
@@ -229,11 +255,82 @@ static FIO_CHANNEL_GET_SIG_STATUS_FUNCTION(analog_em_get_channel_sig_status)
  * \param status	Pointer to set signalling status
  * \return Success or failure
  */
-
 static FIO_SPAN_GET_SIG_STATUS_FUNCTION(analog_em_get_span_sig_status)
 {
-	ftdm_unused_arg(span);
-	*status = FTDM_SIG_STATE_UP;
+	ftdm_iterator_t *citer = NULL;
+	ftdm_iterator_t *chaniter = ftdm_span_get_chan_iterator(span, NULL);
+	if (!chaniter) {
+		ftdm_log(FTDM_LOG_CRIT, "Failed to allocate channel iterator for span %s!\n", span->name);
+		return FTDM_FAIL;
+	}
+	/* if ALL channels are in alarm, report DOWN, UP otherwise. */
+	*status = FTDM_SIG_STATE_DOWN;
+	for (citer = chaniter; citer; citer = ftdm_iterator_next(citer)) {
+		ftdm_channel_t *fchan = ftdm_iterator_current(citer);
+		ftdm_channel_lock(fchan);
+		if (!ftdm_test_flag(fchan, FTDM_CHANNEL_IN_ALARM)) {
+			if (!ftdm_test_flag(fchan, FTDM_CHANNEL_SUSPENDED)) {
+				*status = FTDM_SIG_STATE_UP;
+				ftdm_channel_unlock(fchan);
+				break;
+			} else {
+				*status = FTDM_SIG_STATE_SUSPENDED;
+			}
+		}
+		ftdm_channel_unlock(fchan);
+	}
+	ftdm_iterator_free(chaniter);
+	return FTDM_SUCCESS;
+}
+
+static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(analog_em_set_channel_sig_status)
+{
+	switch (status) {
+	case FTDM_SIG_STATE_DOWN:
+		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Cannot bring channel down, perhaps you want to try '%s'\n", ftdm_signaling_status2str(FTDM_SIG_STATE_SUSPENDED));
+		return FTDM_FAIL;
+	case FTDM_SIG_STATE_SUSPENDED:
+		if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SUSPENDED)) {
+			ftdm_set_flag(ftdmchan, FTDM_CHANNEL_SUSPENDED);
+			ftdm_analog_set_chan_sig_status(ftdmchan, FTDM_SIG_STATE_SUSPENDED);
+		}
+		break;
+	case FTDM_SIG_STATE_UP:
+		if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SUSPENDED)) {
+			ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_SUSPENDED);
+			if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_IN_ALARM)) {
+				ftdm_analog_set_chan_sig_status(ftdmchan, FTDM_SIG_STATE_UP);
+			}
+		}
+		break;
+	default:
+		ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Cannot set signaling status to unknown value '%d'\n", status);
+		return FTDM_FAIL;
+	}
+	return FTDM_SUCCESS;
+}
+
+static FIO_SPAN_SET_SIG_STATUS_FUNCTION(analog_em_set_span_sig_status)
+{
+	ftdm_iterator_t *chaniter = NULL;
+	ftdm_iterator_t *citer = NULL;
+
+	chaniter = ftdm_span_get_chan_iterator(span, NULL);
+	if (!chaniter) {
+		ftdm_log(FTDM_LOG_CRIT, "Failed to allocate channel iterator for span %s!\n", span->name);
+		return FTDM_FAIL;
+	}
+	/* iterate over all channels, setting them to the requested state */
+	for (citer = chaniter; citer; citer = ftdm_iterator_next(citer)) {
+		ftdm_channel_t *fchan = ftdm_iterator_current(citer);
+		/* we set channel's state through analog_em_set_channel_sig_status(), since it already takes care of notifying the user when appropriate */
+		ftdm_channel_lock(fchan);
+		if ((analog_em_set_channel_sig_status(fchan, status)) != FTDM_SUCCESS) {
+			ftdm_log_chan(fchan, FTDM_LOG_ERROR, "Failed to set signaling status to %s\n", ftdm_signaling_status2str(status));
+		}
+		ftdm_channel_unlock(fchan);
+	}
+	ftdm_iterator_free(chaniter);
 	return FTDM_SUCCESS;
 }
 
@@ -334,6 +431,8 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_em_configure_span)
 	span->outgoing_call = analog_em_outgoing_call;
 	span->get_channel_sig_status = analog_em_get_channel_sig_status;
 	span->get_span_sig_status = analog_em_get_span_sig_status;
+	span->set_channel_sig_status = analog_em_set_channel_sig_status;
+	span->set_span_sig_status = analog_em_set_span_sig_status;
 	ftdm_span_load_tones(span, tonemap);
 	if (immediate_ringback || !ftdm_strlen_zero(ringback_file)) {
 		analog_data->immediate_ringback = FTDM_TRUE;
@@ -384,7 +483,9 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 	ftdm_sigmsg_t sig;
 	int cas_bits = 0;
 	uint32_t cas_answer = 0;
+	uint32_t cas_hangup = 0;
 	int cas_answer_ms = 500;
+	int cas_hangup_ms = 500;
 	FILE *ringback_f = NULL;
 	ftdm_bool_t digits_sent = FTDM_FALSE;
 
@@ -542,6 +643,23 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 			case FTDM_CHANNEL_STATE_RING:
 				{
 					ftdm_sleep(interval);
+					if (ftdmchan->state == FTDM_CHANNEL_STATE_UP && cas_answer) {
+						cas_bits = 0;
+						ftdm_channel_command(ftdmchan, FTDM_COMMAND_GET_CAS_BITS, &cas_bits);
+						if (!(state_counter % 5000)) {
+							ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "CAS bits: 0x%X\n", cas_bits);
+						}
+						if (cas_bits == 0x0) {
+							cas_hangup += interval;
+							if (cas_hangup >= cas_hangup_ms) {
+								ftdm_log_chan_msg(ftdmchan, FTDM_LOG_INFO, "Hanging up on CAS hangup signal persistence\n");
+								ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_HANGUP);
+							}
+						} else if (cas_hangup) {
+							ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Resetting cas hangup to 0: 0x%X!\n", cas_bits);
+							cas_hangup = 0;
+						}
+					}
 					continue;
 				}
 				break;
@@ -859,6 +977,12 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 	ftdm_mutex_lock(event->channel->mutex);
 	locked++;
 
+	if (ftdm_test_flag(event->channel, FTDM_CHANNEL_SUSPENDED)) {
+		ftdm_log(FTDM_LOG_WARNING, "Ignoring event %s on channel %d:%d in state %s, channel is suspended\n",
+				ftdm_oob_event2str(event->enum_id), event->channel->span_id, event->channel->chan_id, ftdm_channel_state2str(event->channel->state));
+		goto done;
+	}
+
 	switch(event->enum_id) {
 	case FTDM_OOB_ONHOOK:
 		{
@@ -893,6 +1017,9 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 		}
 		break;
 	}
+
+done:
+
 	if (locked) {
 		ftdm_mutex_unlock(event->channel->mutex);
 	}
@@ -911,6 +1038,7 @@ static void *ftdm_analog_em_run(ftdm_thread_t *me, void *obj)
 
 	ftdm_unused_arg(me);
 	ftdm_log(FTDM_LOG_DEBUG, "ANALOG EM thread starting.\n");
+	analog_em_set_span_sig_status(span, FTDM_SIG_STATE_UP);
 
 	while(ftdm_running() && ftdm_test_flag(analog_data, FTDM_ANALOG_EM_RUNNING)) {
 		int waitms = 10;

@@ -719,14 +719,14 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	name = switch_channel_get_name(channel);
 	if (!tech_pvt->ftdmchan) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no ftdmchan set in channel %s!\n", name);
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "no ftdmchan set in channel %s!\n", name);
 		return SWITCH_STATUS_FALSE;
 	}
 
 	span_id = ftdm_channel_get_span_id(tech_pvt->ftdmchan);
 	chan_id = ftdm_channel_get_id(tech_pvt->ftdmchan);
 	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TFLAG_DEAD is set in channel %s device %d:%d!\n", name, span_id, chan_id);
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "TFLAG_DEAD is set in channel %s device %d:%d!\n", name, span_id, chan_id);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -760,7 +760,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TFLAG_IO is not set in channel %s device %d:%d!\n", name, span_id, chan_id);
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "TFLAG_IO is not set in channel %s device %d:%d!\n", name, span_id, chan_id);
 		goto fail;
 	}
 
@@ -768,7 +768,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	status = ftdm_channel_wait(tech_pvt->ftdmchan, &wflags, chunk);
 
 	if (status == FTDM_FAIL) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to read from channel %s device %d:%d!\n", name, span_id, chan_id);
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_ERROR, "Failed to read from channel %s device %d:%d!\n", name, span_id, chan_id);
 		goto fail;
 	}
 
@@ -776,7 +776,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		if (!switch_test_flag(tech_pvt, TFLAG_HOLD)) {
 			total_to -= chunk;
 			if (total_to <= 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Too many timeouts while waiting I/O in channel %s device %d:%d!\n", name, span_id, chan_id);
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_WARNING, "Too many timeouts while waiting I/O in channel %s device %d:%d!\n", name, span_id, chan_id);
 				goto fail;
 			}
 		}
@@ -789,9 +789,9 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	len = tech_pvt->read_frame.buflen;
 	if (ftdm_channel_read(tech_pvt->ftdmchan, tech_pvt->read_frame.data, &len) != FTDM_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to read from channel %s device %d:%d!\n", name, span_id, chan_id);
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_WARNING, "Failed to read from channel %s device %d:%d!\n", name, span_id, chan_id);
 		if (++tech_pvt->read_error > FTDM_MAX_READ_WRITE_ERRORS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "too many I/O read errors on channel %s device %d:%d!\n", name, span_id, chan_id);
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_ERROR, "too many I/O read errors on channel %s device %d:%d!\n", name, span_id, chan_id);
 			goto fail;
 		}
 	} else {
@@ -812,7 +812,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		for (p = dtmf; p && *p; p++) {
 			if (is_dtmf(*p)) {
 				_dtmf.digit = *p;
-				ftdm_log(FTDM_LOG_DEBUG, "Queuing DTMF [%c] in channel %s device %d:%d\n", *p, name, span_id, chan_id);
+				switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Queuing DTMF [%c] in channel %s device %d:%d\n", *p, name, span_id, chan_id);
 				switch_channel_queue_dtmf(channel, &_dtmf);
 			}
 		}
@@ -821,7 +821,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	return SWITCH_STATUS_SUCCESS;
 
 fail:
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "clearing IO in channel %s device %d:%d!\n", name, span_id, chan_id);
+	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_ERROR, "clearing IO in channel %s device %d:%d!\n", name, span_id, chan_id);
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	return SWITCH_STATUS_GENERR;
 }
@@ -844,7 +844,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 	name = switch_channel_get_name(channel);
 	if (!tech_pvt->ftdmchan) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "no ftdmchan set in channel %s!\n", name);
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "no ftdmchan set in channel %s!\n", name);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -852,7 +852,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	chan_id = ftdm_channel_get_id(tech_pvt->ftdmchan);
 
 	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TFLAG_DEAD is set in channel %s device %d:%d!\n", name, span_id, chan_id);
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "TFLAG_DEAD is set in channel %s device %d:%d!\n", name, span_id, chan_id);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -861,7 +861,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	}
 
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TFLAG_IO is not set in channel %s device %d:%d!\n", name, span_id, chan_id);
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "TFLAG_IO is not set in channel %s device %d:%d!\n", name, span_id, chan_id);
 		goto fail;
 	}
 
@@ -879,15 +879,15 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	ftdm_channel_wait(tech_pvt->ftdmchan, &wflags, ftdm_channel_get_io_interval(tech_pvt->ftdmchan) * 10);
 
 	if (!(wflags & FTDM_WRITE)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Dropping frame! (write not ready) in channel %s device %d:%d!\n", name, span_id, chan_id);
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Dropping frame! (write not ready) in channel %s device %d:%d!\n", name, span_id, chan_id);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	len = frame->datalen;
 	if (ftdm_channel_write(tech_pvt->ftdmchan, frame->data, frame->buflen, &len) != FTDM_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Failed to write to channel %s device %d:%d!\n", name, span_id, chan_id);
+		switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Failed to write to channel %s device %d:%d!\n", name, span_id, chan_id);
 		if (++tech_pvt->write_error > FTDM_MAX_READ_WRITE_ERRORS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, 
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), 
 					SWITCH_LOG_ERROR, "Too many I/O write errors on channel %s device %d:%d!\n", name, span_id, chan_id);
 			goto fail;
 		}
@@ -898,7 +898,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	return SWITCH_STATUS_SUCCESS;
 
  fail:
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error writing to channel %s device %d:%d!\n", name, span_id, chan_id);
+	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Error writing to channel %s device %d:%d!\n", name, span_id, chan_id);
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	return SWITCH_STATUS_GENERR;
 
@@ -1239,7 +1239,7 @@ static ftdm_status_t on_channel_found(ftdm_channel_t *fchan, ftdm_caller_data_t 
 	tech_init(hdata->tech_pvt, hdata->new_session, fchan, caller_data);
 
 	snprintf(name, sizeof(name), "FreeTDM/%u:%u/%s", span_id, chan_id, caller_data->dnis.digits);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connect outbound channel %s\n", name);
+	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Connect outbound channel %s\n", name);
 	switch_channel_set_name(channel, name);
 	switch_channel_set_variable(channel, "freetdm_span_name", ftdm_channel_get_span_name(fchan));
 	switch_channel_set_variable_printf(channel, "freetdm_span_number", "%d", span_id);
@@ -1267,7 +1267,7 @@ static ftdm_status_t on_channel_found(ftdm_channel_t *fchan, ftdm_caller_data_t 
 			return FTDM_BREAK;
 		}
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Attached session %s to channel %d:%d\n", sess_uuid, span_id, chan_id);
+	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Attached session %s to channel %d:%d\n", sess_uuid, span_id, chan_id);
 	return FTDM_SUCCESS;
 }
 
@@ -2294,7 +2294,6 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 			}
 		}
 		break;
-	case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
 	case FTDM_SIGEVENT_COLLECTED_DIGIT: /* Analog E&M */
 		{
 			int span_id = ftdm_channel_get_span_id(sigmsg->channel);
@@ -2335,6 +2334,9 @@ static FIO_SIGNAL_CB_FUNCTION(on_fxo_signal)
 				ftdm_log(FTDM_LOG_DEBUG, "returning %s to COLLECT event with DTMF %s\n", status == FTDM_SUCCESS ? "success" : "break", dtmf);
 			}
 		}
+		break;
+	case FTDM_SIGEVENT_SIGSTATUS_CHANGED:
+		/* span signaling status changed ... nothing to do here .. */
 		break;
 	default:
 		{
