@@ -324,7 +324,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 												  cp->func, cp->file, cp->line, bused, (long)source->samples);
 								switch_buffer_zero(cp->audio_buffer);
 							} else {
-								switch_buffer_write(cp->audio_buffer, dist_buf, bused);
+								switch_buffer_write(cp->audio_buffer, dist_buf, used);
 							}
 							switch_mutex_unlock(cp->audio_mutex);
 						}
