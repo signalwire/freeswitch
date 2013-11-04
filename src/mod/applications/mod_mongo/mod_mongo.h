@@ -1,6 +1,6 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2013, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -40,14 +40,14 @@
 using namespace mongo;
 
 typedef struct {
-  char *conn_str;
+	char *conn_str;
 
-  switch_size_t min_connections;
-  switch_size_t max_connections;
-  switch_size_t size;  
-  switch_queue_t *connections;
-  switch_mutex_t *mutex;
-  switch_memory_pool_t *pool;
+	switch_size_t min_connections;
+	switch_size_t max_connections;
+	switch_size_t size;  
+	switch_queue_t *connections;
+	switch_mutex_t *mutex;
+	switch_memory_pool_t *pool;
 
 } mongo_connection_pool_t;
 
@@ -56,7 +56,7 @@ switch_status_t mongo_connection_create(DBClientBase **connection, const char *c
 void mongo_connection_destroy(DBClientBase **conn);
 
 switch_status_t mongo_connection_pool_create(mongo_connection_pool_t **conn_pool, switch_size_t min_connections, switch_size_t max_connections,
-					     const char *conn_str);
+											const char *conn_str);
 void mongo_connection_pool_destroy(mongo_connection_pool_t **conn_pool);
 
 
