@@ -62,7 +62,7 @@ SWITCH_STANDARD_API(mongo_mapreduce_function)
 			BSONObj out;
 			BSONObjBuilder cmd;
 
-			cmd.append("mapreduce", conn->nsGetCollection(ns));
+			cmd.append("mapreduce", nsGetCollection(ns));
 			if (!zstr(globals.map)) {
 				cmd.appendCode("map", globals.map);
 			}
@@ -79,7 +79,7 @@ SWITCH_STANDARD_API(mongo_mapreduce_function)
 
 			conn = mongo_connection_pool_get(globals.conn_pool);
 			if (conn) {
-				conn->runCommand(conn->nsGetDB(ns), cmd.done(), out);
+				conn->runCommand(nsGetDB(ns), cmd.done(), out);
 				mongo_connection_pool_put(globals.conn_pool, conn, SWITCH_FALSE);
 
 				stream->write_function(stream, "-OK\n%s\n", out.jsonString().c_str());
