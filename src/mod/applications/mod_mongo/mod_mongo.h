@@ -32,10 +32,7 @@
 #ifndef MOD_MONGO_H
 #define MOD_MONGO_H
 
-#include <client/dbclient.h>
-#include <client/connpool.h>
-#include <db/json.h>
-#include <bson/bson.h>
+#include <mongo/client/dbclient.h>
 
 using namespace mongo;
 
