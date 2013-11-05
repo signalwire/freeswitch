@@ -80,7 +80,7 @@ ELEMENT_END
  * <record> component validation
  */
 ELEMENT(RAYO_RECORD)
-	ATTRIB(format, mp3, any)
+	ATTRIB(format, wav, any)
 	ATTRIB(start-beep, false, bool)
 	ATTRIB(stop-beep, false, bool)
 	ATTRIB(start-paused, false, bool)
