@@ -49,6 +49,9 @@
 #define RAYO_PROMPT_NS RAYO_BASE "prompt:" RAYO_VERSION
 #define RAYO_PROMPT_COMPLETE_NS RAYO_BASE "prompt:complete:" RAYO_VERSION
 
+#define RAYO_FAX_NS RAYO_BASE "fax:" RAYO_VERSION
+#define RAYO_FAX_COMPLETE_NS RAYO_BASE "fax:complete:" RAYO_VERSION
+
 #define COMPONENT_COMPLETE_STOP "stop", RAYO_EXT_COMPLETE_NS
 #define COMPONENT_COMPLETE_ERROR "error", RAYO_EXT_COMPLETE_NS
 #define COMPONENT_COMPLETE_HANGUP "hangup", RAYO_EXT_COMPLETE_NS
@@ -58,12 +61,14 @@ extern switch_status_t rayo_input_component_load(switch_loadable_module_interfac
 extern switch_status_t rayo_output_component_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file);
 extern switch_status_t rayo_prompt_component_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file);
 extern switch_status_t rayo_record_component_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file);
+extern switch_status_t rayo_receivefax_component_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file);
 
 extern switch_status_t rayo_components_shutdown(void);
 extern switch_status_t rayo_input_component_shutdown(void);
 extern switch_status_t rayo_output_component_shutdown(void);
 extern switch_status_t rayo_prompt_component_shutdown(void);
 extern switch_status_t rayo_record_component_shutdown(void);
+extern switch_status_t rayo_receivefax_component_shutdown(void);
 
 extern void rayo_component_send_start(struct rayo_component *component, iks *iq);
 extern void rayo_component_send_iq_error(struct rayo_component *component, iks *iq, const char *error_name, const char *error_type);
