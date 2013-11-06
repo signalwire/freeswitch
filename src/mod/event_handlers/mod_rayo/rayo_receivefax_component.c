@@ -92,14 +92,16 @@ static iks *start_receivefax_component(struct rayo_actor *call, struct rayo_mess
 	file_no = rayo_actor_seq_next(call);
 	receivefax_component->filename = switch_core_sprintf(pool, "%s%s%s-%d",
 		globals.file_prefix, SWITCH_PATH_SEPARATOR, switch_core_session_get_uuid(session), file_no);
-	if (!strncmp(receivefax_component->filename, "http://", 7) || strncmp(receivefax_component->filename, "https://", 8)) {
+	if (!strncmp(receivefax_component->filename, "http://", 7) || !strncmp(receivefax_component->filename, "https://", 8)) {
 		/* This is an HTTP URL, need to PUT after fax is received */
 		receivefax_component->local_filename = switch_core_sprintf(pool, "%s%s%s-%d",
 			SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, switch_core_session_get_uuid(session), file_no);
 		receivefax_component->http_put_after_receive = 1;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s save fax to HTTP URL\n", RAYO_JID(receivefax_component));
 	} else {
 		/* assume file.. */
 		receivefax_component->local_filename = receivefax_component->filename;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s save fax to local file\n", RAYO_JID(receivefax_component));
 	}
 
 	/* add channel variable so that fax component can be located from fax events */
@@ -188,18 +190,6 @@ static void insert_fax_metadata(switch_event_t *event, const char *name, iks *re
 }
 
 /**
- * Handle rxfax execute event
- * @param event received from FreeSWITCH core.  It will be destroyed by the core after this function returns.
- */
-static void on_execute_event(switch_event_t *event)
-{
-	const char *application = switch_event_get_header(event, "Application");
-	if (!zstr(application) && !strcmp(application, "rxfax")) {
-		/* TODO */
-	}
-}
-
-/**
  * Handle rxfax completion event from FreeSWITCH core
  * @param event received from FreeSWITCH core.  It will be destroyed by the core after this function returns.
  */
@@ -215,6 +205,7 @@ static void on_execute_complete_event(switch_event_t *event)
 			iks *result;
 			iks *complete;
 			iks *fax;
+			int have_fax_document = 1;
 			switch_core_session_t *session;
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "Got result for %s\n", fax_jid);
 
@@ -228,10 +219,26 @@ static void on_execute_complete_event(switch_event_t *event)
 			/* flag faxing as done */
 			rayo_call_set_faxing(RAYO_CALL(RAYO_COMPONENT(component)->parent), 0);
 
+			/* transfer HTTP document and delete local copy */
+			if (RECEIVEFAX_COMPONENT(component)->http_put_after_receive && switch_file_exists(RECEIVEFAX_COMPONENT(component)->local_filename, RAYO_POOL(component))) {
+				switch_stream_handle_t stream = { 0 };
+				SWITCH_STANDARD_STREAM(stream);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s PUT fax to %s\n", RAYO_JID(component), RECEIVEFAX_COMPONENT(component)->filename);
+				switch_api_execute("http_put", RECEIVEFAX_COMPONENT(component)->filename, NULL, &stream);
+				/* check if successful */
+				if (!zstr(stream.data) && strncmp(stream.data, "+OK", 3)) {
+					/* PUT failed */
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s PUT fax to %s failed: %s\n", RAYO_JID(component), RECEIVEFAX_COMPONENT(component)->filename, (char *)stream.data);
+					have_fax_document = 0;
+				}
+				switch_safe_free(stream.data)
+				switch_file_remove(RECEIVEFAX_COMPONENT(component)->local_filename, RAYO_POOL(component));
+			}
+
 			/* successful fax? */
-			if (switch_true(switch_event_get_header(event, "variable_fax_success"))) {
+			if (have_fax_document && switch_true(switch_event_get_header(event, "variable_fax_success"))) {
 				result = rayo_component_create_complete_event(RAYO_COMPONENT(component), RECEIVEFAX_FINISH);
-			} else if (RECEIVEFAX_COMPONENT(component)->stop) {
+			} else if (have_fax_document && RECEIVEFAX_COMPONENT(component)->stop) {
 				result = rayo_component_create_complete_event(RAYO_COMPONENT(component), COMPONENT_COMPLETE_STOP);
 			} else {
 				result = rayo_component_create_complete_event(RAYO_COMPONENT(component), COMPONENT_COMPLETE_ERROR);
@@ -239,7 +246,7 @@ static void on_execute_complete_event(switch_event_t *event)
 			complete = iks_find(result, "complete");
 
 			/* add fax document information */
-			{
+			if (have_fax_document) {
 				const char *pages = switch_event_get_header(event, "variable_fax_document_transferred_pages");
 				if (!zstr(pages) && switch_is_number(pages) && atoi(pages) > 0) {
 					const char *resolution = switch_event_get_header(event, "variable_fax_file_image_resolution");
@@ -248,12 +255,11 @@ static void on_execute_complete_event(switch_event_t *event)
 					fax = iks_insert(complete, "fax");
 					iks_insert_attrib(fax, "xmlns", RAYO_FAX_COMPLETE_NS);
 
-					if (strlen(url) > strlen(SWITCH_PATH_SEPARATOR) && !strncmp(url, SWITCH_PATH_SEPARATOR, strlen(SWITCH_PATH_SEPARATOR))) {
+					if (RECEIVEFAX_COMPONENT(component)->http_put_after_receive) {
+						iks_insert_attrib(fax, "url", url);
+					} else {
 						/* convert absolute path to file:// URI */
 						iks_insert_attrib_printf(fax, "url", "file://%s", url);
-					} else {
-						/* is already a URI (hopefully) */
-						iks_insert_attrib(fax, "url", url);
 					}
 
 					if (!zstr(resolution)) {
@@ -264,8 +270,6 @@ static void on_execute_complete_event(switch_event_t *event)
 					}
 					iks_insert_attrib(fax, "pages", pages);
 				}
-
-				/* TODO transfer HTTP document and delete local copy */
 			}
 
 			/* add metadata from event */
@@ -327,6 +331,8 @@ static switch_status_t do_config(switch_memory_pool_t *pool, const char *config_
 		}
 	}
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "receivefax file-prefix = %s\n", globals.file_prefix);
+
 	switch_xml_free(xml);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -346,7 +352,6 @@ switch_status_t rayo_receivefax_component_load(switch_loadable_module_interface_
 	}
 
 	switch_event_bind("rayo_receivefax_component", SWITCH_EVENT_CHANNEL_EXECUTE_COMPLETE, NULL, on_execute_complete_event, NULL);
-	switch_event_bind("rayo_receivefax_component", SWITCH_EVENT_CHANNEL_EXECUTE, NULL, on_execute_event, NULL);
 
 	rayo_actor_command_handler_add(RAT_CALL, "", "set:"RAYO_FAX_NS":receivefax", start_receivefax_component);
 	rayo_actor_command_handler_add(RAT_CALL_COMPONENT, "receivefax", "set:"RAYO_EXT_NS":stop", stop_receivefax_component);
@@ -360,7 +365,6 @@ switch_status_t rayo_receivefax_component_load(switch_loadable_module_interface_
  */
 switch_status_t rayo_receivefax_component_shutdown(void)
 {
-	switch_event_unbind_callback(on_execute_event);
 	switch_event_unbind_callback(on_execute_complete_event);
 
 	return SWITCH_STATUS_SUCCESS;
