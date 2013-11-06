@@ -16,6 +16,12 @@
 		<param name="default-recognizer" value="pocketsphinx"/>
 	</input>
 
+	<!-- receivefax component params -->
+	<receivefax>
+		<!-- where to store incoming faxes -->
+		<param name="file-prefix" value="/tmp/"/>
+	</receivefax>
+
 	<!-- XMPP server domain -->
 	<domain name="$${rayo_domain_name}" shared-secret="ClueCon">
 	<!-- use this instead if you want secure XMPP client to server connections.  Put .crt and .key file in freeswitch/certs -->
@@ -65,6 +71,7 @@
 		<alias name="speed-down" target="output"><![CDATA[<speed-down xmlns="urn:xmpp:rayo:output:1"/>]]></alias>
 		<alias name="volume-up" target="output"><![CDATA[<volume-up xmlns="urn:xmpp:rayo:output:1"/>]]></alias>
 		<alias name="volume-down" target="output"><![CDATA[<volume-down xmlns="urn:xmpp:rayo:output:1"/>]]></alias>
+		<alias name="receivefax" target="call"><![CDATA[<receivefax xmlns="urn:xmpp:rayo:fax:1"/>]]></alias>
 		<alias name="record" target="call"><![CDATA[<record xmlns="urn:xmpp:rayo:record:1"/>]]></alias>
 		<alias name="record_pause" target="record"><![CDATA[<pause xmlns="urn:xmpp:rayo:record:1"/>]]></alias>
 		<alias name="record_resume" target="record"><![CDATA[<resume xmlns="urn:xmpp:rayo:record:1"/>]]></alias>

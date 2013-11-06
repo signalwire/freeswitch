@@ -32,6 +32,7 @@
  * <input> component validation
  */
 ELEMENT(RAYO_INPUT)
+	ATTRIB(xmlns,, any)
 	STRING_ATTRIB(mode, any, "any,dtmf,voice")
 	OPTIONAL_ATTRIB(terminator,, dtmf_digit)
 	ATTRIB(recognizer,, any)
@@ -52,6 +53,7 @@ ELEMENT_END
  * <output> component validation
  */
 ELEMENT(RAYO_OUTPUT)
+	ATTRIB(xmlns,, any)
 	ATTRIB(start-offset, 0, not_negative)
 	ATTRIB(start-paused, false, bool)
 	ATTRIB(repeat-interval, 0, not_negative)
@@ -65,6 +67,7 @@ ELEMENT_END
  * <output><seek> validation
  */
 ELEMENT(RAYO_OUTPUT_SEEK)
+	ATTRIB(xmlns,, any)
 	STRING_ATTRIB(direction,, "forward,back")
 	ATTRIB(amount,-1, positive)
 ELEMENT_END
@@ -73,6 +76,7 @@ ELEMENT_END
  * <prompt> component validation
  */
 ELEMENT(RAYO_PROMPT)
+	ATTRIB(xmlns,, any)
 	ATTRIB(barge-in, true, bool)
 ELEMENT_END
 
@@ -80,6 +84,7 @@ ELEMENT_END
  * <record> component validation
  */
 ELEMENT(RAYO_RECORD)
+	ATTRIB(xmlns,, any)
 	ATTRIB(format, wav, any)
 	ATTRIB(start-beep, false, bool)
 	ATTRIB(stop-beep, false, bool)
@@ -95,12 +100,19 @@ ELEMENT_END
  * <join> command validation
  */
 ELEMENT(RAYO_JOIN)
+	ATTRIB(xmlns,, any)
 	STRING_ATTRIB(direction, duplex, "send,recv,duplex")
 	STRING_ATTRIB(media, bridge, "bridge,direct")
 	ATTRIB(call-uri,, any)
 	ATTRIB(mixer-name,, any)
 ELEMENT_END
 
+/**
+ * <receivefax> command validation
+ */
+ELEMENT(RAYO_RECEIVEFAX)
+	ATTRIB(xmlns,, any)
+ELEMENT_END
 
 /* For Emacs:
  * Local Variables:

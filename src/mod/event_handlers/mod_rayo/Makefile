@@ -14,6 +14,7 @@ LOCAL_OBJS= $(IKS_LA) \
 	rayo_input_component.o \
 	rayo_output_component.o \
 	rayo_prompt_component.o \
+	rayo_receivefax_component.o \
 	rayo_record_component.o \
 	sasl.o \
 	srgs.o \
@@ -27,6 +28,7 @@ LOCAL_SOURCES=	\
 	rayo_output_component.c \
 	rayo_prompt_component.c \
 	rayo_record_component.c \
+	rayo_receivefax_component.c \
 	sasl.c \
 	srgs.c \
 	xmpp_streams.c
