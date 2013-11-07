@@ -2371,11 +2371,14 @@ static iks *on_iq_get_xmpp_disco(struct rayo_actor *server, struct rayo_message 
 	iks *node = msg->payload;
 	iks *response = NULL;
 	iks *x;
+	iks *feature;
 	response = iks_new_iq_result(node);
 	x = iks_insert(response, "query");
 	iks_insert_attrib(x, "xmlns", IKS_NS_XMPP_DISCO);
-	x = iks_insert(x, "feature");
-	iks_insert_attrib(x, "var", RAYO_NS);
+	feature = iks_insert(x, "feature");
+	iks_insert_attrib(feature, "var", RAYO_NS);
+	feature = iks_insert(x, "feature");
+	iks_insert_attrib(feature, "var", RAYO_FAX_NS);
 
 	/* TODO The response MUST also include features for the application formats and transport methods supported by
 	 * the responding entity, as described in the relevant specifications.
