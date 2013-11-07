@@ -83,9 +83,21 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vp8_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_CODEC(codec_interface, "VP8 Video (passthru)");
+
 	switch_core_codec_add_implementation(pool, codec_interface,
 										 SWITCH_CODEC_TYPE_VIDEO, 99, "VP8", NULL, 90000, 90000, 0,
 										 0, 0, 0, 0, 1, 1, switch_vp8_init, switch_vp8_encode, switch_vp8_decode, switch_vp8_destroy);
+
+	SWITCH_ADD_CODEC(codec_interface, "red Video (passthru)");
+	switch_core_codec_add_implementation(pool, codec_interface,
+										 SWITCH_CODEC_TYPE_VIDEO, 103, "red", NULL, 90000, 90000, 0,
+										 0, 0, 0, 0, 1, 1, switch_vp8_init, switch_vp8_encode, switch_vp8_decode, switch_vp8_destroy);
+
+	SWITCH_ADD_CODEC(codec_interface, "ulpfec Video (passthru)");
+	switch_core_codec_add_implementation(pool, codec_interface,
+										 SWITCH_CODEC_TYPE_VIDEO, 103, "ulpfec", NULL, 90000, 90000, 0,
+										 0, 0, 0, 0, 1, 1, switch_vp8_init, switch_vp8_encode, switch_vp8_decode, switch_vp8_destroy);
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

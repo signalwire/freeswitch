@@ -513,7 +513,7 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
 		}
 
 		switch_rtp_set_default_payload(tech_pvt->rtp_session, pt);
-		switch_rtp_set_recv_pt(tech_pvt->rtp_session, pt);
+		//switch_rtp_set_recv_pt(tech_pvt->rtp_session, pt);
 	}
         
         if (compare_var(event, channel, kRFC2833PT)) {

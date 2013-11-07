@@ -325,7 +325,6 @@ struct switch_rtp {
 	int8_t sending_dtmf;
 	uint8_t need_mark;
 	switch_payload_t payload;
-	switch_payload_t rpayload;
 	switch_rtp_invalid_handler_t invalid_handler;
 	void *private_data;
 	uint32_t ts;
@@ -398,6 +397,10 @@ struct switch_rtp {
 	switch_size_t last_flush_packet_count;
 	uint32_t interdigit_delay;
 	switch_core_session_t *session;
+	payload_map_t **pmaps;
+	payload_map_t *pmap_tail;
+	int pmap_ttl;
+
 #ifdef ENABLE_ZRTP
 	zrtp_session_t *zrtp_session;
 	zrtp_profile_t *zrtp_profile;
@@ -1859,6 +1862,19 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(const char *ip)
 	return port;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_payload_map(switch_rtp_t *rtp_session, payload_map_t **pmap)
+{
+
+	if (rtp_session) {
+		switch_mutex_lock(rtp_session->flag_mutex);
+		rtp_session->pmaps = pmap;
+		switch_mutex_unlock(rtp_session->flag_mutex);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
 SWITCH_DECLARE(void) switch_rtp_intentional_bugs(switch_rtp_t *rtp_session, switch_rtp_bug_flag_t bugs)
 {
 	rtp_session->rtp_bugs = bugs;
@@ -2973,7 +2989,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	rtp_session->recv_msg.header.cc = 0;
 
 	rtp_session->payload = payload;
-	rtp_session->rpayload = payload;
 
 	switch_rtp_set_interval(rtp_session, ms_per_packet, samples_per_interval);
 	rtp_session->conf_samples_per_interval = samples_per_interval;
@@ -3162,11 +3177,6 @@ SWITCH_DECLARE(void) switch_rtp_set_telephony_recv_event(switch_rtp_t *rtp_sessi
 	if (te > 95) {
 		rtp_session->recv_te = te;
 	}
-}
-
-SWITCH_DECLARE(void) switch_rtp_set_recv_pt(switch_rtp_t *rtp_session, switch_payload_t pt)
-{
-	rtp_session->rpayload = pt;
 }
 
 
@@ -4063,6 +4073,27 @@ static int jb_valid(switch_rtp_t *rtp_session)
 	return 1;
 }
 
+static int check_recv_payload(switch_rtp_t *rtp_session)
+{
+	int ok = 0;
+
+	if (rtp_session->pmaps && *rtp_session->pmaps) {
+		payload_map_t *pmap;
+		switch_mutex_lock(rtp_session->flag_mutex);
+		for (pmap = *rtp_session->pmaps; pmap && pmap->allocated; pmap = pmap->next) {					
+			if (!pmap->negotiated) {
+				continue;
+			}
+			if (rtp_session->recv_msg.header.pt == pmap->pt) {
+				ok = 1;
+			}
+		}
+		switch_mutex_unlock(rtp_session->flag_mutex);
+	}
+
+	return ok;
+}
+
 #define return_cng_frame() do_cng = 1; goto timer_check
 
 static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t *bytes, switch_frame_flag_t *flags, switch_bool_t return_jb_packet)
@@ -4149,7 +4180,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	if (status == SWITCH_STATUS_SUCCESS && *bytes) { 
 		if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX]) { 
 			*flags &= ~SFF_RTCP;
-			if (rtp_session->recv_msg.header.pt != rtp_session->rpayload && 
+			if (!check_recv_payload(rtp_session)  && 
 				(!rtp_session->recv_te || rtp_session->recv_msg.header.pt != rtp_session->recv_te) &&
 				(!rtp_session->cng_pt || rtp_session->recv_msg.header.pt != rtp_session->cng_pt) &&
 				rtp_session->rtcp_recv_msg_p->header.version == 2 && 
@@ -4319,7 +4350,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			
 #ifdef ENABLE_SRTP
 			if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && rtp_session->recv_msg.header.version == 2 && 
-				((rtp_session->recv_msg.header.pt == rtp_session->rpayload) || 
+				(check_recv_payload(rtp_session) || 
 				 (rtp_session->recv_te && rtp_session->recv_msg.header.pt == rtp_session->recv_te) || 
 				 (rtp_session->cng_pt && rtp_session->recv_msg.header.pt == rtp_session->cng_pt))) {
 				//if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && (!rtp_session->ice.ice_user || rtp_session->recv_msg.header.version == 2)) {
@@ -4376,7 +4407,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		rtp_session->last_read_ts = ts;
 	}
 	
-	if (rtp_session->flags[SWITCH_RTP_FLAG_BYTESWAP] && rtp_session->recv_msg.header.pt == rtp_session->rpayload) {
+	if (rtp_session->flags[SWITCH_RTP_FLAG_BYTESWAP] && check_recv_payload(rtp_session)) {
 		switch_swap_linear((int16_t *)RTP_BODY(rtp_session), (int) *bytes - rtp_header_len);
 	}
 
@@ -4602,7 +4633,8 @@ static int using_ice(switch_rtp_t *rtp_session)
 	return 0;
 }
 
-static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_type, switch_frame_flag_t *flags, switch_io_flag_t io_flags)
+static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_type, 
+						   payload_map_t **pmapP, switch_frame_flag_t *flags, switch_io_flag_t io_flags)
 {
 	
 	switch_channel_t *channel = NULL;
@@ -4969,11 +5001,33 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			!rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] && !rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
 			rtp_session->recv_msg.header.pt != 13 && 
 			rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
-			(!rtp_session->cng_pt || rtp_session->recv_msg.header.pt != rtp_session->cng_pt) && 
-			rtp_session->recv_msg.header.pt != rtp_session->rpayload && 
-			!(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PAYLOAD) && !(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS)) {
-			/* drop frames of incorrect payload number and return CNG frame instead */
-			return_cng_frame();			
+			(!rtp_session->cng_pt || rtp_session->recv_msg.header.pt != rtp_session->cng_pt)) {
+			int accept_packet = 0;
+			
+
+			if (rtp_session->pmaps && *rtp_session->pmaps) {
+				payload_map_t *pmap;
+				switch_mutex_lock(rtp_session->flag_mutex);
+				for (pmap = *rtp_session->pmaps; pmap && pmap->allocated; pmap = pmap->next) {					
+					if (!pmap->negotiated) {
+						continue;
+					}
+
+					if (rtp_session->recv_msg.header.pt == pmap->pt) {
+						accept_packet = 1;
+						if (pmapP) {
+							*pmapP = pmap;
+						}
+					}
+				}
+				switch_mutex_unlock(rtp_session->flag_mutex);
+			}
+			
+			if (!accept_packet &&
+				!(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PAYLOAD) && !(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS)) {
+				/* drop frames of incorrect payload number and return CNG frame instead */
+				return_cng_frame();
+			}
 		}
 
 		if (!bytes && (io_flags & SWITCH_IO_FLAG_NOBLOCK)) {
@@ -5085,7 +5139,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 			if (rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
 #if 0
-				if (rtp_session->recv_msg.header.version == 2 && rtp_session->recv_msg.header.pt == rtp_session->rpayload) {
+				if (rtp_session->recv_msg.header.version == 2 && check_recv_payload(rtp_session)) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, 
 									  "Ignoring udptl packet of size of %ld bytes that looks strikingly like a RTP packet.\n", (long)bytes);
 					bytes = 0;
@@ -5335,7 +5389,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_read(switch_rtp_t *rtp_session, void 
 		return SWITCH_STATUS_FALSE;
 	}
 
-	bytes = rtp_common_read(rtp_session, payload_type, flags, io_flags);
+	bytes = rtp_common_read(rtp_session, payload_type, NULL, flags, io_flags);
 
 	if (bytes < 0) {
 		*datalen = 0;
@@ -5415,7 +5469,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 		return SWITCH_STATUS_FALSE;
 	}
 
-	bytes = rtp_common_read(rtp_session, &frame->payload, &frame->flags, io_flags);
+	bytes = rtp_common_read(rtp_session, &frame->payload, &frame->pmap, &frame->flags, io_flags);
 
 	frame->data = RTP_BODY(rtp_session);
 	frame->packet = &rtp_session->recv_msg;
@@ -5504,7 +5558,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_sessi
 		return SWITCH_STATUS_FALSE;
 	}
 
-	bytes = rtp_common_read(rtp_session, payload_type, flags, io_flags);
+	bytes = rtp_common_read(rtp_session, payload_type, NULL, flags, io_flags);
 	*data = RTP_BODY(rtp_session);
 
 	if (bytes < 0) {
@@ -6146,12 +6200,26 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 		rtp_session->stats.outbound.packet_count++;
 	}
 
+	if (frame->pmap && rtp_session->pmaps && *rtp_session->pmaps && rtp_session->pmap_ttl > 1) {
+		payload_map_t *pmap;
+		switch_mutex_lock(rtp_session->flag_mutex);
+
+		for (pmap = *rtp_session->pmaps; pmap; pmap = pmap->next) {
+			if (pmap->hash == frame->pmap->hash && !strcmp(pmap->iananame, frame->pmap->iananame)) {
+				payload = pmap->recv_pt;
+				break;
+			}
+		}
+		switch_mutex_unlock(rtp_session->flag_mutex);
+	}
+
 	if (fwd) {
 		send_msg = frame->packet;
 		len = frame->packetlen;
 		ts = 0;
 		// Trying this based on http://jira.freeswitch.org/browse/MODSOFIA-90
 		//if (frame->codec && frame->codec->agreed_pt == frame->payload) {
+
 		send_msg->header.pt = payload;
 		//}
 	} else {

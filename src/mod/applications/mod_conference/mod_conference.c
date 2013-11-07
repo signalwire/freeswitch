@@ -184,7 +184,8 @@ typedef enum {
 	MFLAG_NOMOH = (1 << 19),
 	MFLAG_VIDEO_BRIDGE = (1 << 20),
 	MFLAG_INDICATE_MUTE_DETECT = (1 << 21),
-	MFLAG_PAUSE_RECORDING = (1 << 22)
+	MFLAG_PAUSE_RECORDING = (1 << 22),
+	MFLAG_ACK_VIDEO = (1 << 23)
 } member_flag_t;
 
 typedef enum {
@@ -1796,6 +1797,10 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 
 		channel = switch_core_session_get_channel(member->session);
 
+		if (switch_channel_test_flag(channel, CF_VIDEO)) {
+			switch_set_flag_locked(member, MFLAG_ACK_VIDEO);
+		}
+
 		switch_channel_set_variable_printf(channel, "conference_member_id", "%d", member->id);
 		switch_channel_set_variable_printf(channel, "conference_moderator", "%s", switch_test_flag(member, MFLAG_MOD) ? "true" : "false");
 		switch_channel_set_variable(channel, "conference_recording", conference->record_filename);
@@ -2595,6 +2600,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				char *rfile = switch_channel_expand_variables(channel, conference->auto_record);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Auto recording file: %s\n", rfile);
 				launch_conference_record_thread(conference, rfile, SWITCH_TRUE);
+
 				if (rfile != conference->auto_record) {
 					conference->record_filename = switch_core_strdup(conference->pool, rfile);
 					switch_safe_free(rfile);
@@ -3637,6 +3643,12 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 		if (!SWITCH_READ_ACCEPTABLE(status) || !switch_test_flag(member, MFLAG_RUNNING)) {
 			switch_mutex_unlock(member->read_mutex);
 			break;
+		}
+
+		if (switch_channel_test_flag(channel, CF_VIDEO) && !switch_test_flag(member, MFLAG_ACK_VIDEO)) {
+			switch_set_flag_locked(member, MFLAG_ACK_VIDEO);
+			switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
+			switch_core_session_refresh_video(member->session);
 		}
 
 		/* if we have caller digits, feed them to the parser to find an action */
@@ -8410,8 +8422,8 @@ SWITCH_STANDARD_APP(conference_function)
 	msg.from = __FILE__;
 
 	/* Tell the channel we are going to be in a bridge */
-	msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
-	switch_core_session_receive_message(session, &msg);
+	//msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
+	//switch_core_session_receive_message(session, &msg);
 
 	/* Run the conference loop */
 	conference_loop_output(&member);
