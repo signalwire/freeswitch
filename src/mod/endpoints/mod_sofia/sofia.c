@@ -1492,8 +1492,8 @@ static void our_sofia_event_callback(nua_event_t event,
 				
 
 				sofia_reg_check_socket(profile, sofia_private->call_id, sofia_private->network_ip, sofia_private->network_port);
+			        nua_handle_destroy(nh);
 			}
-			nua_handle_destroy(nh);
 		}
 		break;
 	case nua_r_authenticate:
