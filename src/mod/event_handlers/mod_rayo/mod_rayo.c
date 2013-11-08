@@ -952,6 +952,7 @@ static void rayo_call_cleanup(struct rayo_actor *actor)
 
 	iks_delete(revent);
 	switch_event_destroy(&event);
+	switch_core_hash_destroy(&call->pcps);
 }
 
 /**
@@ -1131,12 +1132,22 @@ static struct rayo_call *_rayo_call_create(const char *uuid, const char *file, i
 }
 
 /**
+ * Mixer destructor
+ */
+static void rayo_mixer_cleanup(struct rayo_actor *actor)
+{
+	struct rayo_mixer *mixer = RAYO_MIXER(actor);
+	switch_core_hash_destroy(&mixer->members);
+	switch_core_hash_destroy(&mixer->subscribers);
+}
+
+/**
  * Initialize mixer
  */
 static struct rayo_mixer *rayo_mixer_init(struct rayo_mixer *mixer, switch_memory_pool_t *pool, const char *name, const char *file, int line)
 {
 	char *mixer_jid = switch_mprintf("%s@%s", name, RAYO_JID(globals.server));
-	rayo_actor_init(RAYO_ACTOR(mixer), pool, RAT_MIXER, "", name, mixer_jid, NULL, rayo_mixer_send, file, line);
+	rayo_actor_init(RAYO_ACTOR(mixer), pool, RAT_MIXER, "", name, mixer_jid, rayo_mixer_cleanup, rayo_mixer_send, file, line);
 	switch_core_hash_init(&mixer->members, pool);
 	switch_core_hash_init(&mixer->subscribers, pool);
 	switch_safe_free(mixer_jid);
@@ -1307,6 +1318,7 @@ static void rayo_peer_server_cleanup(struct rayo_actor *actor)
 		RAYO_UNLOCK(client);
 		RAYO_DESTROY(client);
 	}
+	switch_core_hash_destroy(&rserver->clients);
 	switch_mutex_unlock(globals.clients_mutex);
 }
 
