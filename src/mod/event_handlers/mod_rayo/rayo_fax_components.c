@@ -107,12 +107,12 @@ static iks *start_sendfax_component(struct rayo_actor *call, struct rayo_message
 	}
 
 	/* is valid URL type? */
-	if (!strncasecmp(fax_document, "http://", 7) || strncasecmp(fax_document, "https://", 8)) {
+	if (!strncasecmp(fax_document, "http://", 7) || !strncasecmp(fax_document, "https://", 8)) {
 		switch_stream_handle_t stream = { 0 };
 		SWITCH_STANDARD_STREAM(stream);
 		/* need to fetch document from server... */
 		switch_api_execute("http_get", fax_document, session, &stream);
-		if (!zstr(stream.data) && !strncasecmp(fax_document, SWITCH_PATH_SEPARATOR, sizeof(SWITCH_PATH_SEPARATOR) - 1)) {
+		if (!zstr(stream.data) && !strncmp(fax_document, SWITCH_PATH_SEPARATOR, strlen(SWITCH_PATH_SEPARATOR))) {
 			fax_document = switch_core_session_strdup(session, stream.data);
 		} else {
 			switch_safe_free(stream.data);
@@ -124,12 +124,12 @@ static iks *start_sendfax_component(struct rayo_actor *call, struct rayo_message
 		if (zstr(fax_document)) {
 			return iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "invalid file:// url");
 		}
-	} else if (strncasecmp(fax_document, SWITCH_PATH_SEPARATOR, sizeof(SWITCH_PATH_SEPARATOR) - 1)) {
+	} else if (strncasecmp(fax_document, SWITCH_PATH_SEPARATOR, strlen(SWITCH_PATH_SEPARATOR))) {
 		return iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "unsupported url type");
 	}
 
 	/* does document exist? */
-	if (!switch_file_exists(fax_document, pool)) {
+	if (switch_file_exists(fax_document, pool) != SWITCH_STATUS_SUCCESS) {
 		return iks_new_error_detailed_printf(iq, STANZA_ERROR_BAD_REQUEST, "file not found: %s", fax_document);
 	}
 
@@ -392,7 +392,7 @@ static void on_execute_complete_event(switch_event_t *event)
 			}
 
 			/* RX only: transfer HTTP document and delete local copy */
-			if (is_rxfax && RECEIVEFAX_COMPONENT(component)->http_put_after_receive && switch_file_exists(RECEIVEFAX_COMPONENT(component)->local_filename, RAYO_POOL(component))) {
+			if (is_rxfax && RECEIVEFAX_COMPONENT(component)->http_put_after_receive && switch_file_exists(RECEIVEFAX_COMPONENT(component)->local_filename, RAYO_POOL(component)) == SWITCH_STATUS_SUCCESS) {
 				switch_stream_handle_t stream = { 0 };
 				SWITCH_STANDARD_STREAM(stream);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s PUT fax to %s\n", RAYO_JID(component), RECEIVEFAX_COMPONENT(component)->filename);
