@@ -510,10 +510,10 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 	}
 
 	pmap->allocated = 1;
-	pmap->recv_pt = pt;
+	pmap->recv_pt = (switch_payload_t)pt;
 
 	if (sdp_type == SDP_TYPE_REQUEST || !exists) {
-		pmap->pt = pt;
+		pmap->pt = (switch_payload_t)pt;
 	}
 
 	if (negotiated) {
