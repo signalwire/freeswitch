@@ -27,6 +27,7 @@
  * Bret McDanel <trixter AT 0xdecafbad dot com>
  * Joseph Sullivan <jossulli@amazon.com>
  * Raymond Chandler <intralanman@freeswitch.org>
+ * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
  *
  * switch_types.h -- Data Types
  *
@@ -945,6 +946,7 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE,
 	SWITCH_MESSAGE_INDICATE_STUN_ERROR,
 	SWITCH_MESSAGE_INDICATE_MEDIA_RENEG,
+	SWITCH_MESSAGE_REFER_EVENT,
 	SWITCH_MESSAGE_ANSWER_EVENT,
 	SWITCH_MESSAGE_PROGRESS_EVENT,
 	SWITCH_MESSAGE_RING_EVENT,
@@ -1114,6 +1116,7 @@ typedef enum {
 	CCS_EARLY,
 	CCS_ACTIVE,
 	CCS_HELD,
+	CCS_RING_WAIT,
 	CCS_HANGUP,
 	CCS_UNHOLD
 } switch_channel_callstate_t;

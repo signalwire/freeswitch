@@ -109,6 +109,7 @@ typedef struct switch_device_stats_s {
 	uint32_t early;
 	uint32_t early_in;
 	uint32_t early_out;
+	uint32_t ring_wait;
 } switch_device_stats_t;
 
 

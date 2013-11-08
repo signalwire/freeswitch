@@ -39,13 +39,13 @@
 switch_cache_db_handle_t *_sofia_glue_get_db_handle(sofia_profile_t *profile, const char *file, const char *func, int line);
 #define sofia_glue_get_db_handle(_p) _sofia_glue_get_db_handle(_p, __FILE__, __SWITCH_FUNC__, __LINE__)
 
-static int get_channels(const switch_codec_implementation_t *imp)
+static int get_channels(const char *name, int dft)
 {
-	if (!strcasecmp(imp->iananame, "opus")) {
+	if (!strcasecmp(name, "opus")) {
 		return 2; /* IKR???*/
 	}
 
-	return imp->number_of_channels;
+	return dft ? dft : 1;
 }
 
 void sofia_glue_set_udptl_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *t38_options, int insist)
@@ -317,7 +317,7 @@ static void generate_m(private_object_t *tech_pvt, char *buf, size_t buflen,
 		}
 		
 		if (tech_pvt->ianacodes[i] > 95 || verbose_sdp) {
-			int channels = get_channels(imp);
+			int channels = get_channels(imp->iananame, imp->number_of_channels);
 
 			if (channels > 1) {
 				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=rtpmap:%d %s/%d/%d\n", tech_pvt->ianacodes[i], imp->iananame, rate, channels);
@@ -546,6 +546,10 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "\n");
 
 		rate = tech_pvt->adv_rm_rate;
+
+		if (!tech_pvt->adv_channels) {
+			tech_pvt->adv_channels = get_channels(tech_pvt->rm_encoding, 1);
+		}
 
 		if (tech_pvt->adv_channels > 1) {
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d/%d\n", 
@@ -776,7 +780,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, switch
 						rate = imp->samples_per_second;
 					}
 					
-					channels = get_channels(imp);
+					channels = get_channels(imp->iananame, imp->number_of_channels);
 
 					if (channels > 1) {
 						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d/%d\n", ianacode, imp->iananame,

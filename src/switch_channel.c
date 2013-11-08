@@ -139,6 +139,7 @@ typedef enum {
 struct switch_channel {
 	char *name;
 	switch_call_direction_t direction;
+	switch_call_direction_t logical_direction;
 	switch_queue_t *dtmf_queue;
 	switch_queue_t *dtmf_log_queue;
 	switch_mutex_t*dtmf_mutex;
@@ -240,6 +241,7 @@ static struct switch_callstate_table CALLSTATE_CHART[] = {
     {"EARLY", CCS_EARLY},
     {"ACTIVE", CCS_ACTIVE},
     {"HELD", CCS_HELD},
+    {"RING_WAIT", CCS_RING_WAIT},
     {"HANGUP", CCS_HANGUP},
 	{"UNHOLD", CCS_UNHOLD},
     {NULL, 0}
@@ -389,9 +391,21 @@ SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch
 	return times;
 }
 
+SWITCH_DECLARE(void) switch_channel_set_direction(switch_channel_t *channel, switch_call_direction_t direction)
+{
+	if (!switch_core_session_in_thread(channel->session)) {
+		channel->direction = channel->logical_direction = direction;
+	}
+}
+
 SWITCH_DECLARE(switch_call_direction_t) switch_channel_direction(switch_channel_t *channel)
 {
 	return channel->direction;
+}
+
+SWITCH_DECLARE(switch_call_direction_t) switch_channel_logical_direction(switch_channel_t *channel)
+{
+	return channel->logical_direction;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel, switch_call_direction_t direction, switch_memory_pool_t *pool)
@@ -415,7 +429,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel,
 	switch_mutex_init(&(*channel)->profile_mutex, SWITCH_MUTEX_NESTED, pool);
 	(*channel)->hangup_cause = SWITCH_CAUSE_NONE;
 	(*channel)->name = "";
-	(*channel)->direction = direction;
+	(*channel)->direction = (*channel)->logical_direction = direction;
 	switch_channel_set_variable(*channel, "direction", switch_channel_direction(*channel) == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1747,6 +1761,24 @@ SWITCH_DECLARE(void) switch_channel_set_flag_value(switch_channel_t *channel, sw
 	channel->flags[flag] = value;
 	switch_mutex_unlock(channel->flag_mutex);
 
+	if (flag == CF_ORIGINATOR && switch_channel_test_flag(channel, CF_ANSWERED) && switch_channel_up_nosig(channel)) {
+		switch_channel_set_callstate(channel, CCS_RING_WAIT);
+	}
+
+	if (flag == CF_DIALPLAN) {
+		if (channel->direction == SWITCH_CALL_DIRECTION_INBOUND) {
+			channel->logical_direction = SWITCH_CALL_DIRECTION_OUTBOUND;
+			if (channel->device_node) {
+				channel->device_node->direction = SWITCH_CALL_DIRECTION_INBOUND;
+			}
+		} else {
+			channel->logical_direction = SWITCH_CALL_DIRECTION_INBOUND;
+			if (channel->device_node) {
+				channel->device_node->direction = SWITCH_CALL_DIRECTION_OUTBOUND;
+			}
+		}
+	}
+
 	if (HELD) {
 		switch_hold_record_t *hr;
 		const char *brto = switch_channel_get_partner_uuid(channel);
@@ -1909,6 +1941,15 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 	channel->flags[flag] = 0;
 	switch_mutex_unlock(channel->flag_mutex);
 
+	if (flag == CF_DIALPLAN) {
+		if (channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND) {
+			channel->logical_direction = SWITCH_CALL_DIRECTION_OUTBOUND;
+			if (channel->device_node) {
+				channel->device_node->direction = SWITCH_CALL_DIRECTION_INBOUND;
+			}
+		}
+	}
+
 	if (ACTIVE) {
 		switch_channel_set_callstate(channel, CCS_UNHOLD);
 		switch_mutex_lock(channel->profile_mutex);
@@ -1921,6 +1962,10 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 		}
 
 		switch_mutex_unlock(channel->profile_mutex);
+	}
+
+	if (flag == CF_ORIGINATOR && switch_channel_test_flag(channel, CF_ANSWERED) && switch_channel_up_nosig(channel)) {
+		switch_channel_set_callstate(channel, CCS_ACTIVE);
 	}
 
 	if (flag == CF_OUTBOUND) {
@@ -2585,6 +2630,7 @@ SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel
 	switch_assert(caller_profile != NULL);
 
 	caller_profile->direction = channel->direction;
+	caller_profile->logical_direction = channel->logical_direction;
 	uuid = switch_core_session_get_uuid(channel->session);
 
 	if (!caller_profile->uuid || strcasecmp(caller_profile->uuid, uuid)) {
@@ -2667,6 +2713,7 @@ SWITCH_DECLARE(void) switch_channel_set_hunt_caller_profile(switch_channel_t *ch
 	channel->caller_profile->hunt_caller_profile = NULL;
 	if (channel->caller_profile && caller_profile) {
 		caller_profile->direction = channel->direction;
+		caller_profile->logical_direction = channel->logical_direction;
 		channel->caller_profile->hunt_caller_profile = caller_profile;
 	}
 	switch_mutex_unlock(channel->profile_mutex);
@@ -4658,6 +4705,8 @@ static void fetch_device_stats(switch_device_record_t *drec)
 					} else {
 						drec->stats.ringing_out++;
 					}
+				} else if (np->callstate == CCS_RING_WAIT) {
+					drec->stats.ring_wait++;
 				} else if (np->callstate == CCS_HANGUP) {
 					drec->stats.hup++;
 					if (np->direction == SWITCH_CALL_DIRECTION_INBOUND) {
@@ -4821,7 +4870,7 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 		drec->state = SDS_HANGUP;
 	} else {
 		if (drec->stats.active == 0) {
-			if ((drec->stats.ringing_out + drec->stats.early_out) > 0) {
+			if ((drec->stats.ringing_out + drec->stats.early_out) > 0 || drec->stats.ring_wait > 0) {
 				drec->state = SDS_RINGING;
 			} else {
 				if (drec->stats.held > 0) {
@@ -4849,25 +4898,30 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 
 	switch(drec->state) {
 	case SDS_RINGING:
-		drec->ring_start = switch_micro_time_now();
-		drec->ring_stop = 0;
+		if (!drec->ring_start) {
+			drec->ring_start = switch_micro_time_now();
+			drec->ring_stop = 0;
+		}
 		break;
 	case SDS_ACTIVE:
 	case SDS_ACTIVE_MULTI:
-		if (drec->active_start && drec->last_state != SDS_HELD) {
-			drec->active_stop = switch_micro_time_now();
-		} else if (!drec->active_start) {
+		if (!drec->active_start) {
 			drec->active_start = switch_micro_time_now();
+			drec->active_stop = 0;
 		}
 		break;
 	case SDS_HELD:
-		drec->hold_start = switch_micro_time_now();
-		drec->hold_stop = 0;
-	default:
-		if (drec->active_start && drec->last_state != SDS_HELD) {
-			drec->active_stop = switch_micro_time_now();
+		if (!drec->hold_start) {
+			drec->hold_start = switch_micro_time_now();
+			drec->hold_stop = 0;
 		}
 		break;
+	default:
+		break;
+	}
+
+	if (drec->active_start && drec->state != SDS_ACTIVE && drec->state != SDS_ACTIVE_MULTI) {
+		drec->active_stop = switch_micro_time_now();
 	}
 
 	if (drec->ring_start && !drec->ring_stop && drec->state != SDS_RINGING) {
@@ -4972,7 +5026,7 @@ static void add_uuid(switch_device_record_t *drec, switch_channel_t *channel)
 	node->uuid = switch_core_strdup(drec->pool, switch_core_session_get_uuid(channel->session));
 	node->parent = drec;
 	node->callstate = channel->callstate;
-	node->direction = channel->direction == SWITCH_CALL_DIRECTION_INBOUND ? SWITCH_CALL_DIRECTION_OUTBOUND : SWITCH_CALL_DIRECTION_INBOUND;
+	node->direction = channel->logical_direction == SWITCH_CALL_DIRECTION_INBOUND ? SWITCH_CALL_DIRECTION_OUTBOUND : SWITCH_CALL_DIRECTION_INBOUND;
 
 	channel->device_node = node;
 

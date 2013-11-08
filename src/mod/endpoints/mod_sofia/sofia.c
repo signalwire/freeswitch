@@ -179,7 +179,7 @@ static void extract_header_vars(sofia_profile_t *profile, sip_t const *sip,
 		if (sip->sip_route) {
 			if ((full = sip_header_as_string(nh->nh_home, (void *) sip->sip_route))) {
 				const char *v = switch_channel_get_variable(channel, "sip_full_route");
-				if (!v) { 
+				if (!v) {
 					switch_channel_set_variable(channel, "sip_full_route", full);
 				}
 				su_free(nh->nh_home, full);
@@ -5755,9 +5755,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		if (r_sdp) {
 			sdp_parser_t *parser;
 			sdp_session_t *sdp;
-
+			tech_pvt->remote_sdp_str = NULL;
 			switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
-
+			printf("WTF %d\n---\n%s\n---\n%s", (profile->ndlb & PFLAG_NDLB_ALLOW_NONDUP_SDP), tech_pvt->remote_sdp_str, r_sdp);
 			if (!(profile->ndlb & PFLAG_NDLB_ALLOW_NONDUP_SDP) || (!zstr(tech_pvt->remote_sdp_str) && !strcmp(tech_pvt->remote_sdp_str, r_sdp))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Duplicate SDP\n%s\n", r_sdp);
 				is_dup_sdp = 1;
@@ -5855,6 +5855,39 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 		if (r_sdp) {
 			if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+				char ibuf[35] = "", pbuf[35] = "";
+				const char *ptr;
+				
+				if ((ptr = switch_stristr("c=IN IP4", r_sdp))) {
+					int i = 0;
+					
+					ptr += 8;
+					
+					while(*ptr == ' ') {
+						ptr++;
+					}
+					while(*ptr && *ptr != ' ' && *ptr != '\r' && *ptr != '\n') {
+						ibuf[i++] = *ptr++;
+					}
+					
+					switch_channel_set_variable(channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, ibuf);
+				}
+				
+				if ((ptr = switch_stristr("m=audio", r_sdp))) {
+					int i = 0;
+					
+					ptr += 7;
+					
+					while(*ptr == ' ') {
+						ptr++;
+					}
+					while(*ptr && *ptr != ' ' && *ptr != '\r' && *ptr != '\n') {
+						pbuf[i++] = *ptr++;
+					}
+					
+					switch_channel_set_variable(channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, pbuf);
+				}
+
 				if (switch_channel_test_flag(channel, CF_PROXY_MEDIA) &&  switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "PROXY MEDIA");
 				}
@@ -6785,6 +6818,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 			exten = (char *) refer_to->r_url->url_user;
 		}
 
+		switch_core_session_queue_indication(session, SWITCH_MESSAGE_REFER_EVENT);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Process REFER to [%s@%s]\n", exten, (char *) refer_to->r_url->url_host);
 
 		switch_channel_set_variable(tech_pvt->channel, "transfer_disposition", "recv_replace");

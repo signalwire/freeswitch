@@ -304,7 +304,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 static switch_status_t channel_on_destroy(switch_core_session_t *session)
 {
-    crtp_private_t *tech_pvt = switch_core_session_get_private(session);
+    crtp_private_t *tech_pvt = NULL;
     
  	if ((tech_pvt = switch_core_session_get_private(session))) {
         

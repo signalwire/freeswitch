@@ -1,11 +1,11 @@
---- SConstruct.orig	2011-04-28 19:00:36.000000000 +0200
-+++ SConstruct	2011-04-28 19:01:19.000000000 +0200
-@@ -45,7 +45,7 @@
-     linux = True
+--- SConstruct	2013-10-30 17:18:51.160645496 -0400
++++ new	2013-10-30 17:22:18.790072856 -0400
+@@ -78,7 +78,7 @@
+     env['DIST_ARCHIVE_SUFFIX'] = '.tgz'
  
  if nix:
--    env.Append( CPPFLAGS=" -O3" )
-+    env.Append( CPPFLAGS=" -I../pcre -fPIC -O3" )
-     env.Append( LIBS=["pthread"] )
+-    env.Append(CCFLAGS=["-O3", "-pthread"])
++    env.Append(CCFLAGS=["-I../pcre", "-fPIC", "-O3", "-pthread"])
  if linux:
-     env.Append( LINKFLAGS=" -Wl,--as-needed -Wl,-zdefs " )
+     env.Append(LINKFLAGS=["-pthread"])
+ 

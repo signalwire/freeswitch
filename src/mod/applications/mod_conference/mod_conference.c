@@ -32,6 +32,8 @@
  * David Weekly <david@weekly.org>
  * Joao Mesquita <jmesquita@gmail.com>
  * Raymond Chandler <intralanman@freeswitch.org>
+ * Seven Du <dujinfang@gmail.com>
+ * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
  *
  * mod_conference.c -- Software Conference Bridge
  *
@@ -3605,6 +3607,7 @@ static void conference_loop_output(conference_member_t *member)
 		const char *ann = switch_channel_get_variable(channel, "conference_auto_outcall_announce");
 		const char *prefix = switch_channel_get_variable(channel, "conference_auto_outcall_prefix");
 		const char *maxwait = switch_channel_get_variable(channel, "conference_auto_outcall_maxwait");
+		const char *delimiter_val = switch_channel_get_variable(channel, "conference_auto_outcall_delimiter");
 		int to = 60;
 		int wait_sec = 2;
 		int loops = 0;
@@ -3631,7 +3634,12 @@ static void conference_loop_output(conference_member_t *member)
 			int x = 0;
 
 			switch_assert(cpstr);
-			argc = switch_separate_string(cpstr, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+			if (!zstr(delimiter_val) && strlen(delimiter_val) == 1) {
+				char delimiter = *delimiter_val;
+				argc = switch_separate_string(cpstr, delimiter, argv, (sizeof(argv) / sizeof(argv[0])));
+			} else {
+				argc = switch_separate_string(cpstr, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+			}
 			for (x = 0; x < argc; x++) {
 				char *dial_str = switch_mprintf("%s%s", switch_str_nil(prefix), argv[x]);
 				switch_assert(dial_str);

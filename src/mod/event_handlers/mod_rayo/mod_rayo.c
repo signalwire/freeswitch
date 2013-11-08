@@ -126,6 +126,8 @@ struct rayo_call {
 	switch_hash_t *pcps;
 	/** current idle start time */
 	switch_time_t idle_start_time;
+	/** true if fax is in progress */
+	int faxing;
 	/** 1 if joined to call, 2 if joined to mixer */
 	int joined;
 	/** pending join */
@@ -950,6 +952,7 @@ static void rayo_call_cleanup(struct rayo_actor *actor)
 
 	iks_delete(revent);
 	switch_event_destroy(&event);
+	switch_core_hash_destroy(&call->pcps);
 }
 
 /**
@@ -963,11 +966,35 @@ const char *rayo_call_get_dcp_jid(struct rayo_call *call)
 
 /**
  * @param call the Rayo call
- * @return true if joined
+ * @return true if joined (or a join is in progress)
  */
-static int rayo_call_is_joined(struct rayo_call *call)
+int rayo_call_is_joined(struct rayo_call *call)
 {
-	return call->joined;
+	return call->joined || call->pending_join_request;
+}
+
+/**
+ * @param call to check if faxing
+ * @return true if faxing is in progress
+ */
+int rayo_call_is_faxing(struct rayo_call *call)
+{
+	return call->faxing;
+}
+
+/**
+ * Set faxing flag if faxing is not in progress
+ * @param call the call to flag
+ * @param faxing true if faxing is in progress
+ * @return true if set, false if can't set because faxing is already in progress.  Reset always succeeds.
+ */
+int rayo_call_set_faxing(struct rayo_call *call, int faxing)
+{
+	if (!faxing || (faxing && !call->faxing)) {
+		call->faxing = faxing;
+		return 1;
+	}
+	return 0;
 }
 
 #define RAYO_MIXER_LOCATE(mixer_name) rayo_mixer_locate(mixer_name, __FILE__, __LINE__)
@@ -1105,12 +1132,22 @@ static struct rayo_call *_rayo_call_create(const char *uuid, const char *file, i
 }
 
 /**
+ * Mixer destructor
+ */
+static void rayo_mixer_cleanup(struct rayo_actor *actor)
+{
+	struct rayo_mixer *mixer = RAYO_MIXER(actor);
+	switch_core_hash_destroy(&mixer->members);
+	switch_core_hash_destroy(&mixer->subscribers);
+}
+
+/**
  * Initialize mixer
  */
 static struct rayo_mixer *rayo_mixer_init(struct rayo_mixer *mixer, switch_memory_pool_t *pool, const char *name, const char *file, int line)
 {
 	char *mixer_jid = switch_mprintf("%s@%s", name, RAYO_JID(globals.server));
-	rayo_actor_init(RAYO_ACTOR(mixer), pool, RAT_MIXER, "", name, mixer_jid, NULL, rayo_mixer_send, file, line);
+	rayo_actor_init(RAYO_ACTOR(mixer), pool, RAT_MIXER, "", name, mixer_jid, rayo_mixer_cleanup, rayo_mixer_send, file, line);
 	switch_core_hash_init(&mixer->members, pool);
 	switch_core_hash_init(&mixer->subscribers, pool);
 	switch_safe_free(mixer_jid);
@@ -1281,6 +1318,7 @@ static void rayo_peer_server_cleanup(struct rayo_actor *actor)
 		RAYO_UNLOCK(client);
 		RAYO_DESTROY(client);
 	}
+	switch_core_hash_destroy(&rserver->clients);
 	switch_mutex_unlock(globals.clients_mutex);
 }
 
@@ -1942,6 +1980,12 @@ static iks *on_rayo_join(struct rayo_actor *call, struct rayo_message *msg, void
 		goto done;
 	}
 
+	if (rayo_call_is_faxing(RAYO_CALL(call))) {
+		/* can't join a call while it's faxing */
+		response = iks_new_error_detailed(msg->payload, STANZA_ERROR_UNEXPECTED_REQUEST, "fax is in progress");
+		goto done;
+	}
+
 	if (RAYO_CALL(call)->pending_join_request) {
 		/* don't allow concurrent join requests */
 		response = iks_new_error_detailed(msg->payload, STANZA_ERROR_UNEXPECTED_REQUEST, "(un)join request is pending");
@@ -2339,11 +2383,14 @@ static iks *on_iq_get_xmpp_disco(struct rayo_actor *server, struct rayo_message 
 	iks *node = msg->payload;
 	iks *response = NULL;
 	iks *x;
+	iks *feature;
 	response = iks_new_iq_result(node);
 	x = iks_insert(response, "query");
 	iks_insert_attrib(x, "xmlns", IKS_NS_XMPP_DISCO);
-	x = iks_insert(x, "feature");
-	iks_insert_attrib(x, "var", RAYO_NS);
+	feature = iks_insert(x, "feature");
+	iks_insert_attrib(feature, "var", RAYO_NS);
+	feature = iks_insert(x, "feature");
+	iks_insert_attrib(feature, "var", RAYO_FAX_NS);
 
 	/* TODO The response MUST also include features for the application formats and transport methods supported by
 	 * the responding entity, as described in the relevant specifications.
@@ -3074,11 +3121,21 @@ static switch_status_t rayo_call_on_read_frame(switch_core_session_t *session, s
 		switch_time_t idle_start = call->idle_start_time;
 		int idle_duration_ms = (now - idle_start) / 1000;
 		/* detect idle session (rayo-client has stopped controlling call) and terminate call */
-		if (rayo_call_is_joined(call)) {
+		if (rayo_call_is_joined(call) || rayo_call_is_faxing(call)) {
 			call->idle_start_time = now;
 		} else if (idle_duration_ms > globals.max_idle_ms) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Ending abandoned call.  idle_duration_ms = %i ms\n", idle_duration_ms);
 			switch_channel_hangup(channel, RAYO_CAUSE_HANGUP);
+		}
+
+		/* check for break request */
+		{
+			const char *break_jid = switch_channel_get_variable(channel, "rayo_read_frame_interrupt");
+			struct rayo_actor *actor;
+			if (break_jid && (actor = RAYO_LOCATE(break_jid))) {
+				RAYO_UNLOCK(actor);
+				return SWITCH_STATUS_FALSE;
+			}
 		}
 	}
 	return SWITCH_STATUS_SUCCESS;

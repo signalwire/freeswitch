@@ -311,16 +311,17 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				if (!is_open || used >= source->prebuf || (source->total && used > source->samples * 2)) {
 					used = switch_buffer_read(audio_buffer, dist_buf, source->samples * 2);
 					if (source->total) {
-
+						uint32_t bused = 0;
 						switch_mutex_lock(source->mutex);
 						for (cp = source->context_list; cp && RUNNING; cp = cp->next) {
 							if (switch_test_flag(cp->handle, SWITCH_FILE_CALLBACK)) {
 								continue;
 							}
 							switch_mutex_lock(cp->audio_mutex);
-							if (switch_buffer_inuse(cp->audio_buffer) > source->samples * 768) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Leaking stream handle! [%s() %s:%d]\n", cp->func, cp->file,
-												  cp->line);
+							bused = switch_buffer_inuse(cp->audio_buffer);
+							if (bused > source->samples * 768) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Flushing Stream Handle Buffer [%s() %s:%d] size: %u samples: %ld\n", 
+												  cp->func, cp->file, cp->line, bused, (long)source->samples);
 								switch_buffer_zero(cp->audio_buffer);
 							} else {
 								switch_buffer_write(cp->audio_buffer, dist_buf, used);

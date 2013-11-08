@@ -3622,6 +3622,9 @@ static switch_call_cause_t pickup_outgoing_channel(switch_core_session_t *sessio
 	switch_core_session_set_private(nsession, tech_pvt);
 	
 	nchannel = switch_core_session_get_channel(nsession);
+	switch_channel_set_cap(nchannel, CC_PROXY_MEDIA);
+	switch_channel_set_cap(nchannel, CC_BYPASS_MEDIA);
+
 	caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
 	switch_channel_set_caller_profile(nchannel, caller_profile);
 
