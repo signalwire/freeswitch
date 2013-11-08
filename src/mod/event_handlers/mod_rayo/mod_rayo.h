@@ -155,7 +155,7 @@ extern void rayo_actor_destroy(struct rayo_actor *actor, const char *file, int l
 
 extern int rayo_call_is_joined(struct rayo_call *call);
 extern int rayo_call_is_faxing(struct rayo_call *call);
-extern int rayo_call_set_faxing(struct rayo_call *call, int faxing);
+extern void rayo_call_set_faxing(struct rayo_call *call, int faxing);
 extern const char *rayo_call_get_dcp_jid(struct rayo_call *call);
 
 #define rayo_mixer_get_name(mixer) RAYO_ID(mixer)
