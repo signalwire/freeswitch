@@ -1929,40 +1929,91 @@ SWITCH_STANDARD_API(cond_function)
 	}
 
 	a = argv[0];
+	while(*a == ' ' || *a == '\t') a++;
 
-	if ((expr = strchr(a, '!'))) {
-		*expr++ = '\0';
-		if (*expr == '=') {
-			o = O_NE;
-		}
-	} else if ((expr = strchr(a, '>'))) {
-		if (*(expr + 1) == '=') {
+	if (*a == '\'') {
+		if ((expr = switch_find_end_paren(a, '\'', '\''))) {
+			a++;
 			*expr++ = '\0';
-			o = O_GE;
 		} else {
-			o = O_GT;
+			goto error;
 		}
-	} else if ((expr = strchr(a, '<'))) {
-		if (*(expr + 1) == '=') {
+	} else {
+		if ((expr = strchr(a, ' '))) {
 			*expr++ = '\0';
-			o = O_LE;
 		} else {
-			o = O_LT;
-		}
-	} else if ((expr = strchr(a, '='))) {
-		*expr++ = '\0';
-		if (*expr == '=') {
-			o = O_EQ;
+			expr = a;
 		}
 	}
 
+	while(expr && *expr) {
+		switch(*expr) {
+		case '!':
+		case '<':
+		case '>':
+		case '=':
+		goto done;
+		default:
+			expr++;
+			break;
+		}
+	}
+
+ done:
+
+	switch(*expr) {
+	case '!':
+		*expr++ = '\0';
+		if (*expr == '=') {
+			o = O_NE;
+			*expr++ = '\0';
+		}
+		break;
+
+	case '>':
+		*expr++ = '\0';
+		if (*expr == '=') {
+			o = O_GE;
+			*expr++ = '\0';
+		} else {
+			o = O_GT;
+		}
+		break;
+
+	case '<':
+		*expr++ = '\0';
+		if (*expr == '=') {
+			o = O_LE;
+			*expr++ = '\0';
+		} else {
+			o = O_LT;
+		}
+		break;
+
+	case '=':
+		*expr++ = '\0';
+		if (*expr == '=') {
+			o = O_EQ;
+			*expr++ = '\0';
+		}
+		break;
+
+	default:
+		goto error;
+	}
+
+	
 	if (o) {
 		char *s_a = NULL, *s_b = NULL;
 		int a_is_num, b_is_num;
-		*expr++ = '\0';
+
+		expr++;
 		b = expr;
+
 		s_a = switch_strip_spaces(a, SWITCH_TRUE);
 		s_b = switch_strip_spaces(b, SWITCH_TRUE);
+
+
 		a_is_num = switch_is_number(s_a);
 		b_is_num = switch_is_number(s_b);
 
