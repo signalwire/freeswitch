@@ -1492,8 +1492,8 @@ static void our_sofia_event_callback(nua_event_t event,
 				
 
 				sofia_reg_check_socket(profile, sofia_private->call_id, sofia_private->network_ip, sofia_private->network_port);
+			        nua_handle_destroy(nh);
 			}
-			nua_handle_destroy(nh);
 		}
 		break;
 	case nua_r_authenticate:
@@ -3743,7 +3743,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					sofia_set_pflag(profile, PFLAG_DISABLE_100REL);
 					profile->auto_restart = 1;
 					sofia_set_media_flag(profile, SCMF_AUTOFIX_TIMING);
-					sofia_set_media_flag(profile, SCMF_AUTOFIX_PT);
+					sofia_set_media_flag(profile, SCMF_RENEG_ON_REINVITE);
 					sofia_set_media_flag(profile, SCMF_RTP_AUTOFLUSH_DURING_BRIDGE);
 					profile->contact_user = SOFIA_DEFAULT_CONTACT_USER;
 					sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
@@ -4380,12 +4380,6 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_set_media_flag(profile, SCMF_AUTOFIX_TIMING);
 						} else {
 							sofia_clear_media_flag(profile, SCMF_AUTOFIX_TIMING);
-						}
-					} else if (!strcasecmp(var, "rtp-autofix-pt")) {
-						if (switch_true(val)) {
-							sofia_set_media_flag(profile, SCMF_AUTOFIX_PT);
-						} else {
-							sofia_clear_media_flag(profile, SCMF_AUTOFIX_PT);
 						}
 					} else if (!strcasecmp(var, "contact-user")) {
 						profile->contact_user = switch_core_strdup(profile->pool, val);
@@ -5250,7 +5244,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 			sofia_update_callee_id(session, profile, sip, SWITCH_FALSE);
 
-			if (sofia_test_media_flag(tech_pvt->profile, SCMF_AUTOFIX_TIMING) || sofia_test_media_flag(tech_pvt->profile, SCMF_AUTOFIX_PT)) {
+			if (sofia_test_media_flag(tech_pvt->profile, SCMF_AUTOFIX_TIMING)) {
 				switch_core_media_reset_autofix(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO);
 			}
 
@@ -6204,7 +6198,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					} else {
 						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_NOSDP");
 						switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0);
-						switch_core_media_gen_local_sdp(session, NULL, 0, NULL, 0);
+						switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
 						sofia_set_flag_locked(tech_pvt, TFLAG_3PCC);
 						switch_channel_set_state(channel, CS_HIBERNATE);
 						if (sofia_use_soa(tech_pvt)) {
@@ -6321,7 +6315,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 										goto done;
 									}
 								}
-								switch_core_media_gen_local_sdp(session, NULL, 0, NULL, 1);
+								switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 1);
 
 								if (sofia_use_soa(tech_pvt)) {
 									nua_respond(tech_pvt->nh, SIP_200_OK,
@@ -6427,7 +6421,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 							goto done;
 						}
 
-						switch_core_media_gen_local_sdp(session, NULL, 0, NULL, 0);
+						switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
 
 						if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Reinvite RTP Error!\n");
@@ -6446,7 +6440,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				if (is_ok) {
 
 					if (switch_core_session_local_crypto_key(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
-						switch_core_media_gen_local_sdp(session, NULL, 0, NULL, 0);
+						switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
 					}
 					if (sofia_use_soa(tech_pvt)) {
 						nua_respond(tech_pvt->nh, SIP_200_OK,
@@ -6486,7 +6480,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				if (switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0) != SWITCH_STATUS_SUCCESS) {
 					goto done;
 				}
-				switch_core_media_gen_local_sdp(session, NULL, 0, NULL, 0);
+				switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Processing updated SDP\n");
 				switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);

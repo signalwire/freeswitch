@@ -37,6 +37,7 @@
 #define SWITCH_FRAME_H
 
 #include <switch.h>
+#include <switch_core_media.h>
 
 SWITCH_BEGIN_EXTERN_C
 /*! \brief An abstraction of a data frame */
@@ -71,6 +72,7 @@ SWITCH_BEGIN_EXTERN_C
 	/*! frame flags */
 	switch_frame_flag_t flags;
 	void *user_data;
+	payload_map_t *pmap;
 };
 
 SWITCH_END_EXTERN_C

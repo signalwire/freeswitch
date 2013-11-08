@@ -178,6 +178,7 @@ struct switch_core_session {
 	switch_size_t recur_buffer_len;
 
 	switch_media_handle_t *media_handle;
+	uint32_t decoder_errors;
 };
 
 struct switch_media_bug {

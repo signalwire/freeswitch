@@ -951,6 +951,21 @@ static FIO_GET_ALARMS_FUNCTION(zt_get_alarms)
 	return FTDM_SUCCESS;
 }
 
+#define ftdm_zt_set_event_pending(fchan) \
+	do { \
+		ftdm_set_io_flag(fchan, FTDM_CHANNEL_IO_EVENT); \
+		fchan->last_event_time = ftdm_current_time_in_ms(); \
+	} while (0);
+
+#define ftdm_zt_store_chan_event(fchan, revent) \
+	do { \
+		if (fchan->io_data) { \
+			ftdm_log_chan(fchan, FTDM_LOG_WARNING, "Dropping event %d, not retrieved on time\n", revent); \
+		} \
+		fchan->io_data = (void *)zt_event_id; \
+		ftdm_zt_set_event_pending(fchan); \
+	} while (0);
+
 /**
  * \brief Waits for an event on a Zaptel/DAHDI channel
  * \param ftdmchan Channel to open
@@ -1015,7 +1030,7 @@ pollagain:
 		*flags |= FTDM_WRITE;
 	}
 
-	if (inflags & POLLPRI) {
+	if ((inflags & POLLPRI) || (ftdmchan->io_data && (*flags & FTDM_EVENTS))) {
 		*flags |= FTDM_EVENTS;
 	}
 
@@ -1044,19 +1059,28 @@ FIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event)
 		j++;
 	}
 
-    r = poll(pfds, j, ms);
+	r = poll(pfds, j, ms);
 
 	if (r == 0) {
 		return FTDM_TIMEOUT;
-	} else if (r < 0 || (pfds[i-1].revents & POLLERR)) {
+	} else if (r < 0) {
 		snprintf(span->last_error, sizeof(span->last_error), "%s", strerror(errno));
 		return FTDM_FAIL;
 	}
 
 	for(i = 1; i <= span->chan_count; i++) {
-		if (pfds[i-1].revents & POLLPRI) {
-			ftdm_set_io_flag(span->channels[i], FTDM_CHANNEL_IO_EVENT);
-			span->channels[i]->last_event_time = ftdm_current_time_in_ms();
+
+		ftdm_channel_lock(span->channels[i]);
+
+ 		if (pfds[i-1].revents & POLLERR) {
+			ftdm_log_chan(span->channels[i], FTDM_LOG_ERROR, "POLLERR, flags=%d\n", pfds[i-1].events);
+
+			ftdm_channel_unlock(span->channels[i]);
+
+			continue;
+		}
+		if ((pfds[i-1].revents & POLLPRI) || (span->channels[i]->io_data)) {
+			ftdm_zt_set_event_pending(span->channels[i]);
 			k++;
 		}
 		if (pfds[i-1].revents & POLLIN) {
@@ -1065,6 +1089,9 @@ FIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event)
 		if (pfds[i-1].revents & POLLOUT) {
 			ftdm_set_io_flag(span->channels[i], FTDM_CHANNEL_IO_WRITE);
 		}
+
+		ftdm_channel_unlock(span->channels[i]);
+
 	}
 
 	if (!k) {
@@ -1243,7 +1270,10 @@ FIO_CHANNEL_NEXT_EVENT_FUNCTION(zt_channel_next_event)
 		ftdm_clear_io_flag(ftdmchan, FTDM_CHANNEL_IO_EVENT);
 	}
 
-	if (ioctl(ftdmchan->sockfd, codes.GETEVENT, &zt_event_id) == -1) {
+	if (ftdmchan->io_data) {
+		zt_event_id = (zt_event_t)ftdmchan->io_data;
+		ftdmchan->io_data = NULL;
+	} else if (ioctl(ftdmchan->sockfd, codes.GETEVENT, &zt_event_id) == -1) {
 		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Failed retrieving event from channel: %s\n",
 				strerror(errno));
 		return FTDM_FAIL;
@@ -1274,30 +1304,48 @@ FIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 	uint32_t i, event_id = FTDM_OOB_INVALID;
 	zt_event_t zt_event_id = 0;
 
-	for(i = 1; i <= span->chan_count; i++) {
+	for (i = 1; i <= span->chan_count; i++) {
 		ftdm_channel_t *fchan = span->channels[i];
-		if (ftdm_test_io_flag(fchan, FTDM_CHANNEL_IO_EVENT)) {
-			ftdm_clear_io_flag(fchan, FTDM_CHANNEL_IO_EVENT);
-			if (ioctl(fchan->sockfd, codes.GETEVENT, &zt_event_id) == -1) {
-				snprintf(span->last_error, sizeof(span->last_error), "%s", strerror(errno));
-				return FTDM_FAIL;
-			}
 
-			ftdm_channel_lock(fchan);
-			if ((zt_channel_process_event(fchan, &event_id, zt_event_id)) != FTDM_SUCCESS) {
-				ftdm_log_chan(fchan, FTDM_LOG_ERROR, "Failed to process DAHDI event %d from channel\n", zt_event_id);
-				ftdm_channel_unlock(fchan);
-				return FTDM_FAIL;
-			}
+		ftdm_channel_lock(fchan);
+
+		if (!ftdm_test_io_flag(fchan, FTDM_CHANNEL_IO_EVENT)) {
+
 			ftdm_channel_unlock(fchan);
 
-			fchan->last_event_time = 0;
-			span->event_header.e_type = FTDM_EVENT_OOB;
-			span->event_header.enum_id = event_id;
-			span->event_header.channel = fchan;
-			*event = &span->event_header;
-			return FTDM_SUCCESS;
+			continue;
 		}
+
+		ftdm_clear_io_flag(fchan, FTDM_CHANNEL_IO_EVENT);
+
+		if (fchan->io_data) {
+			zt_event_id = (zt_event_t)fchan->io_data;
+			fchan->io_data = NULL;
+		} else if (ioctl(fchan->sockfd, codes.GETEVENT, &zt_event_id) == -1) {
+			ftdm_log_chan(fchan, FTDM_LOG_ERROR, "Failed to retrieve DAHDI event from channel: %s\n", strerror(errno));
+
+			ftdm_channel_unlock(fchan);
+
+			continue;
+		}
+
+		if ((zt_channel_process_event(fchan, &event_id, zt_event_id)) != FTDM_SUCCESS) {
+			ftdm_log_chan(fchan, FTDM_LOG_ERROR, "Failed to process DAHDI event %d from channel\n", zt_event_id);
+
+			ftdm_channel_unlock(fchan);
+
+			return FTDM_FAIL;
+		}
+
+		fchan->last_event_time = 0;
+		span->event_header.e_type = FTDM_EVENT_OOB;
+		span->event_header.enum_id = event_id;
+		span->event_header.channel = fchan;
+		*event = &span->event_header;
+
+		ftdm_channel_unlock(fchan);
+
+		return FTDM_SUCCESS;
 	}
 
 	return FTDM_FAIL;
@@ -1348,11 +1396,13 @@ static FIO_READ_FUNCTION(zt_read)
 			}
 
 			if (handle_dtmf_event(ftdmchan, zt_event_id)) {
-				/* we should enqueue this event somewhere so it can be retrieved by the user, for now, dropping it to see what it is! */
-				ftdm_log_chan(ftdmchan, FTDM_LOG_WARNING, "Event %d is not dmtf related. Skipping one media read cycle\n", zt_event_id);
+				/* Enqueue this event for later */
+				ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Deferring event %d to be able to read data\n", zt_event_id);
+				ftdm_zt_store_chan_event(ftdmchan, zt_event_id);
+			} else {
+				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Skipping one IO read cycle due to DTMF event processing\n");
 			}
-			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_WARNING, "Skipping one IO read cycle due to events pending in the driver queue\n");
-			break;
+			continue;
 		}
 
 		/* Read error, keep going unless to many errors force us to abort ...*/
@@ -1405,8 +1455,9 @@ tryagain:
 		}
 
 		if (handle_dtmf_event(ftdmchan, zt_event_id)) {
-			/* we should enqueue this event somewhere so it can be retrieved by the user, for now, dropping it to see what it is! */
-			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Dropping event %d to be able to write data\n", zt_event_id);
+			/* Enqueue this event for later */
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Deferring event %d to be able to write data\n", zt_event_id);
+			ftdm_zt_store_chan_event(ftdmchan, zt_event_id);
 		}
 
 		goto tryagain;

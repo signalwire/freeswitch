@@ -114,7 +114,7 @@ SWITCH_DECLARE(switch_status_t) switch_frame_dup(switch_frame_t *orig, switch_fr
 
 	memcpy(new_frame->data, orig->data, orig->datalen);
 	new_frame->codec = NULL;
-
+	new_frame->pmap = NULL;
 	*clone = new_frame;
 
 	return SWITCH_STATUS_SUCCESS;

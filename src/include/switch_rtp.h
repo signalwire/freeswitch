@@ -485,7 +485,6 @@ SWITCH_DECLARE(void) switch_rtp_set_private(switch_rtp_t *rtp_session, void *pri
 */
 SWITCH_DECLARE(void) switch_rtp_set_telephony_event(switch_rtp_t *rtp_session, switch_payload_t te);
 SWITCH_DECLARE(void) switch_rtp_set_telephony_recv_event(switch_rtp_t *rtp_session, switch_payload_t te);
-SWITCH_DECLARE(void) switch_rtp_set_recv_pt(switch_rtp_t *rtp_session, switch_payload_t pt);
 
 /*! 
   \brief Set the payload type for comfort noise
@@ -500,7 +499,7 @@ SWITCH_DECLARE(void) switch_rtp_set_cng_pt(switch_rtp_t *rtp_session, switch_pay
   \return the pointer to the private data
 */
 SWITCH_DECLARE(void *) switch_rtp_get_private(switch_rtp_t *rtp_session);
-
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_payload_map(switch_rtp_t *rtp_session, payload_map_t **pmap);
 SWITCH_DECLARE(void) switch_rtp_intentional_bugs(switch_rtp_t *rtp_session, switch_rtp_bug_flag_t bugs);
 
 SWITCH_DECLARE(switch_rtp_stats_t *) switch_rtp_get_stats(switch_rtp_t *rtp_session, switch_memory_pool_t *pool);
