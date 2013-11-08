@@ -227,7 +227,7 @@ switch_status_t rayo_components_load(switch_loadable_module_interface_t **module
 		rayo_output_component_load(module_interface, pool, config_file) != SWITCH_STATUS_SUCCESS ||
 		rayo_prompt_component_load(module_interface, pool, config_file) != SWITCH_STATUS_SUCCESS ||
 		rayo_record_component_load(module_interface, pool, config_file) != SWITCH_STATUS_SUCCESS ||
-		rayo_receivefax_component_load(module_interface, pool, config_file) != SWITCH_STATUS_SUCCESS) {
+		rayo_fax_components_load(module_interface, pool, config_file) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_TERM;
 	}
 	return SWITCH_STATUS_SUCCESS;
@@ -242,7 +242,7 @@ switch_status_t rayo_components_shutdown(void)
 	rayo_output_component_shutdown();
 	rayo_prompt_component_shutdown();
 	rayo_record_component_shutdown();
-	rayo_receivefax_component_shutdown();
+	rayo_fax_components_shutdown();
 
 	return SWITCH_STATUS_SUCCESS;
 }

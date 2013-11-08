@@ -50,6 +50,17 @@ ELEMENT(RAYO_INPUT)
 ELEMENT_END
 
 /**
+ * <join> command validation
+ */
+ELEMENT(RAYO_JOIN)
+	ATTRIB(xmlns,, any)
+	STRING_ATTRIB(direction, duplex, "send,recv,duplex")
+	STRING_ATTRIB(media, bridge, "bridge,direct")
+	ATTRIB(call-uri,, any)
+	ATTRIB(mixer-name,, any)
+ELEMENT_END
+
+/**
  * <output> component validation
  */
 ELEMENT(RAYO_OUTPUT)
@@ -81,6 +92,13 @@ ELEMENT(RAYO_PROMPT)
 ELEMENT_END
 
 /**
+ * <receivefax> command validation
+ */
+ELEMENT(RAYO_RECEIVEFAX)
+	ATTRIB(xmlns,, any)
+ELEMENT_END
+
+/**
  * <record> component validation
  */
 ELEMENT(RAYO_RECORD)
@@ -97,22 +115,12 @@ ELEMENT(RAYO_RECORD)
 ELEMENT_END
 
 /**
- * <join> command validation
+ * <sendfax> command validation
  */
-ELEMENT(RAYO_JOIN)
+ELEMENT(RAYO_SENDFAX)
 	ATTRIB(xmlns,, any)
-	STRING_ATTRIB(direction, duplex, "send,recv,duplex")
-	STRING_ATTRIB(media, bridge, "bridge,direct")
-	ATTRIB(call-uri,, any)
-	ATTRIB(mixer-name,, any)
 ELEMENT_END
 
-/**
- * <receivefax> command validation
- */
-ELEMENT(RAYO_RECEIVEFAX)
-	ATTRIB(xmlns,, any)
-ELEMENT_END
 
 /* For Emacs:
  * Local Variables:

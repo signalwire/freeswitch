@@ -61,14 +61,14 @@ extern switch_status_t rayo_input_component_load(switch_loadable_module_interfac
 extern switch_status_t rayo_output_component_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file);
 extern switch_status_t rayo_prompt_component_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file);
 extern switch_status_t rayo_record_component_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file);
-extern switch_status_t rayo_receivefax_component_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file);
+extern switch_status_t rayo_fax_components_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file);
 
 extern switch_status_t rayo_components_shutdown(void);
 extern switch_status_t rayo_input_component_shutdown(void);
 extern switch_status_t rayo_output_component_shutdown(void);
 extern switch_status_t rayo_prompt_component_shutdown(void);
 extern switch_status_t rayo_record_component_shutdown(void);
-extern switch_status_t rayo_receivefax_component_shutdown(void);
+extern switch_status_t rayo_fax_components_shutdown(void);
 
 extern void rayo_component_send_start(struct rayo_component *component, iks *iq);
 extern void rayo_component_send_iq_error(struct rayo_component *component, iks *iq, const char *error_name, const char *error_type);

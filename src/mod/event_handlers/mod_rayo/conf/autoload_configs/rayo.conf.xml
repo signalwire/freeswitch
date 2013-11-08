@@ -16,11 +16,11 @@
 		<param name="default-recognizer" value="pocketsphinx"/>
 	</input>
 
-	<!-- receivefax component params -->
-	<receivefax>
+	<!-- send/receivefax component params -->
+	<fax>
 		<!-- where to store incoming faxes -->
-		<param name="file-prefix" value="/tmp/"/>
-	</receivefax>
+		<param name="receivefax-file-prefix" value="/tmp/"/>
+	</fax>
 
 	<!-- XMPP server domain -->
 	<domain name="$${rayo_domain_name}" shared-secret="ClueCon">
