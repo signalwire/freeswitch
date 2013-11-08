@@ -92,7 +92,7 @@ static iks *start_sendfax_component(struct rayo_actor *call, struct rayo_message
 		return iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, "can't send fax on a joined call");
 	}
 
-	if (!rayo_call_set_faxing(RAYO_CALL(call), 1)) {
+	if (rayo_call_is_faxing(RAYO_CALL(call))) {
 		return iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, "fax already in progress");
 	}
 
@@ -199,6 +199,8 @@ static iks *start_sendfax_component(struct rayo_actor *call, struct rayo_message
 	/* clear fax interrupt variable */
 	switch_channel_set_variable(switch_core_session_get_channel(session), "rayo_read_frame_interrupt", NULL);
 
+	rayo_call_set_faxing(RAYO_CALL(call), 1);
+
 	/* execute txfax APP */
 	if (switch_event_create(&execute_event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "call-command", "execute");
@@ -214,6 +216,7 @@ static iks *start_sendfax_component(struct rayo_actor *call, struct rayo_message
 			if (execute_event) {
 				switch_event_destroy(&execute_event);
 			}
+			rayo_call_set_faxing(RAYO_CALL(call), 0);
 			RAYO_UNLOCK(sendfax_component);
 		} else {
 			/* component starting... */
@@ -221,6 +224,7 @@ static iks *start_sendfax_component(struct rayo_actor *call, struct rayo_message
 		}
 	} else {
 		response = iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "failed to create txfax event");
+		rayo_call_set_faxing(RAYO_CALL(call), 0);
 		RAYO_UNLOCK(sendfax_component);
 	}
 
@@ -255,7 +259,7 @@ static iks *start_receivefax_component(struct rayo_actor *call, struct rayo_mess
 		return iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, "can't receive fax on a joined call");
 	}
 
-	if (!rayo_call_set_faxing(RAYO_CALL(call), 1)) {
+	if (rayo_call_is_faxing(RAYO_CALL(call))) {
 		return iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, "fax already in progress");
 	}
 
@@ -264,7 +268,7 @@ static iks *start_receivefax_component(struct rayo_actor *call, struct rayo_mess
 	receivefax_component = switch_core_alloc(pool, sizeof(*receivefax_component));
 	rayo_component_init((struct rayo_component *)receivefax_component, pool, RAT_CALL_COMPONENT, "receivefax", NULL, call, iks_find_attrib(iq, "from"));
 	file_no = rayo_actor_seq_next(call);
-	receivefax_component->filename = switch_core_sprintf(pool, "%s%s%s-%d",
+	receivefax_component->filename = switch_core_sprintf(pool, "%s%s%s-%d.tif",
 		globals.file_prefix, SWITCH_PATH_SEPARATOR, switch_core_session_get_uuid(session), file_no);
 	if (!strncmp(receivefax_component->filename, "http://", 7) || !strncmp(receivefax_component->filename, "https://", 8)) {
 		/* This is an HTTP URL, need to PUT after fax is received */
@@ -298,6 +302,8 @@ static iks *start_receivefax_component(struct rayo_actor *call, struct rayo_mess
 	/* clear fax interrupt variable */
 	switch_channel_set_variable(switch_core_session_get_channel(session), "rayo_read_frame_interrupt", NULL);
 
+	rayo_call_set_faxing(RAYO_CALL(call), 1);
+
 	/* execute rxfax APP */
 	if (switch_event_create(&execute_event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "call-command", "execute");
@@ -313,6 +319,7 @@ static iks *start_receivefax_component(struct rayo_actor *call, struct rayo_mess
 			if (execute_event) {
 				switch_event_destroy(&execute_event);
 			}
+			rayo_call_set_faxing(RAYO_CALL(call), 0);
 			RAYO_UNLOCK(receivefax_component);
 		} else {
 			/* component starting... */
@@ -320,6 +327,7 @@ static iks *start_receivefax_component(struct rayo_actor *call, struct rayo_mess
 		}
 	} else {
 		response = iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "failed to create rxfax event");
+		rayo_call_set_faxing(RAYO_CALL(call), 0);
 		RAYO_UNLOCK(receivefax_component);
 	}
 

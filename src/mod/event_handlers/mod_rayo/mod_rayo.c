@@ -983,18 +983,13 @@ int rayo_call_is_faxing(struct rayo_call *call)
 }
 
 /**
- * Set faxing flag if faxing is not in progress
+ * Set faxing flag
  * @param call the call to flag
  * @param faxing true if faxing is in progress
- * @return true if set, false if can't set because faxing is already in progress.  Reset always succeeds.
  */
-int rayo_call_set_faxing(struct rayo_call *call, int faxing)
+void rayo_call_set_faxing(struct rayo_call *call, int faxing)
 {
-	if (!faxing || (faxing && !call->faxing)) {
-		call->faxing = faxing;
-		return 1;
-	}
-	return 0;
+	call->faxing = faxing;
 }
 
 #define RAYO_MIXER_LOCATE(mixer_name) rayo_mixer_locate(mixer_name, __FILE__, __LINE__)
@@ -3174,18 +3169,17 @@ SWITCH_STANDARD_APP(rayo_app)
 			}
 		}
 		if (!call) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Missing rayo call!!\n");
-			goto done;
+			/* this scenario can only happen if a call was originated through a mechanism other than <dial> 
+			   and then the rayo APP was executed to offer control */
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Outbound call that wasn't created with <dial>, will try to offer control\n");
 		}
 		ok = 1;
-	} else {
-		/* inbound call - offer control */
+	}
+
+	if (!call) {
+		/* offer control */
 		switch_hash_index_t *hi = NULL;
 		iks *offer = NULL;
-		if (call) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Call is already under Rayo 3PCC!\n");
-			goto done;
-		}
 
 		call = rayo_call_create(switch_core_session_get_uuid(session));
 		switch_channel_set_variable(switch_core_session_get_channel(session), "rayo_call_jid", RAYO_JID(call));
