@@ -3218,6 +3218,7 @@ SWITCH_STANDARD_APP(rayo_app)
 
 		/* nobody to offer to */
 		if (!ok) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Rejecting rayo call - there are no online rayo clients to offer call to\n");
 			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE);
 		}
 	}
