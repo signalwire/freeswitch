@@ -8422,8 +8422,8 @@ SWITCH_STANDARD_APP(conference_function)
 	msg.from = __FILE__;
 
 	/* Tell the channel we are going to be in a bridge */
-	//msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
-	//switch_core_session_receive_message(session, &msg);
+	msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
+	switch_core_session_receive_message(session, &msg);
 
 	/* Run the conference loop */
 	conference_loop_output(&member);
