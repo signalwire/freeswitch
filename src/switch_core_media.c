@@ -495,6 +495,8 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 
 
 	if (!exists) {
+		switch_ssize_t hlen = -1;
+
 		if (engine->payload_map && !engine->payload_map->allocated) {
 			pmap = engine->payload_map;
 		} else {
@@ -507,6 +509,7 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 		pmap->rm_encoding = pmap->iananame;
 		pmap->ptime = ptime;
 		pmap->rate = rate;
+		pmap->hash = switch_ci_hashfunc_default(pmap->iananame, &hlen);
 	}
 
 	pmap->allocated = 1;
@@ -5643,6 +5646,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	switch_media_handle_t *smh;
 	ice_t *ice_out;
 	int vp8 = 0;
+	int red = 0;
 	payload_map_t *pmap;
 
 	switch_assert(session);
@@ -6216,6 +6220,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					vp8 = v_engine->cur_payload_map->pt;
 				}
 
+				if (!strcasecmp(v_engine->cur_payload_map->rm_encoding, "red")) {
+					red = v_engine->cur_payload_map->pt;
+				}
+
 				rate = v_engine->cur_payload_map->rm_rate;
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%ld\n",
 								v_engine->cur_payload_map->pt, v_engine->cur_payload_map->rm_encoding,
@@ -6299,6 +6307,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 						vp8 = ianacode;
 					}
 
+					if (!strcasecmp(imp->iananame, "red")) {
+						red = ianacode;
+					}
+
 					if (channels > 1) {
 						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d/%d\n", ianacode, imp->iananame,
 										imp->samples_per_second, channels);
@@ -6377,10 +6389,14 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "b=AS:%d\n", bw);
 				}
 
-
 				if (vp8) {
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
 									"a=rtcp-fb:%d ccm fir\n", vp8);
+				}
+
+				if (red) {
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
+									"a=rtcp-fb:%d nack\n", vp8);
 				}
 				
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u cname:%s\n", v_engine->ssrc, smh->cname);
