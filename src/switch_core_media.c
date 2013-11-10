@@ -162,6 +162,7 @@ struct switch_media_handle_s {
 	char *origin;
 
 	switch_mutex_t *mutex;
+	switch_mutex_t *sdp_mutex;
 
 	const switch_codec_implementation_t *negotiated_codecs[SWITCH_MAX_CODECS];
 	int num_negotiated_codecs;
@@ -459,6 +460,50 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_process_t38_passthru(switch_co
 
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_get_payload_code(switch_core_session_t *session,
+																	 switch_media_type_t type,
+																	 const char *iananame,
+																	 switch_payload_t *ptP,
+																	 switch_payload_t *recv_ptP)
+{
+	payload_map_t *pmap;
+	switch_media_handle_t *smh;
+	switch_rtp_engine_t *engine;
+	switch_payload_t pt = 0, recv_pt = 0;
+	int found = 0;
+
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	engine = &smh->engines[type];
+
+	switch_mutex_lock(smh->sdp_mutex);
+	for (pmap = engine->payload_map; pmap && pmap->allocated; pmap = pmap->next) {
+		if (!strcasecmp(pmap->iananame, iananame)) {
+			pt = pmap->pt;
+			recv_pt = pmap->recv_pt;
+			found++;
+		}
+	}
+	switch_mutex_lock(smh->sdp_mutex);
+
+	if (found) {
+		if (ptP) {
+			*ptP = pt;
+		}
+		if (recv_ptP) {
+			*recv_ptP = recv_pt; 
+		}
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+	
+}
+
 
 SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_session_t *session, 
 																  switch_media_type_t type,
@@ -482,7 +527,7 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 
 	engine = &smh->engines[type];
 
-	switch_mutex_lock(smh->mutex);
+	switch_mutex_lock(smh->sdp_mutex);
 
 
 	for (pmap = engine->payload_map; pmap && pmap->allocated; pmap = pmap->next) {
@@ -534,7 +579,7 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 		}
 	}
 	
-	switch_mutex_unlock(smh->mutex);
+	switch_mutex_unlock(smh->sdp_mutex);
 
 	return pmap;
 }
@@ -1144,6 +1189,7 @@ SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t
 
 
 		switch_mutex_init(&session->media_handle->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+		switch_mutex_init(&session->media_handle->sdp_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO].ssrc = 
 			(uint32_t) ((intptr_t) &session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO] + (uint32_t) time(NULL));
@@ -1638,7 +1684,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
 
 					/* search for payload type */
-					switch_mutex_lock(smh->mutex);
+					switch_mutex_lock(smh->sdp_mutex);
 					for (pmap = engine->cur_payload_map; pmap; pmap = pmap->next) {
 						if (engine->read_frame.payload == pmap->recv_pt) {
 							engine->cur_payload_map = pmap;
@@ -1652,7 +1698,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 							break;
 						}
 					}
-					switch_mutex_unlock(smh->mutex);
+					switch_mutex_unlock(smh->sdp_mutex);
 				
 					if (!engine->reset_codec) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
@@ -5609,10 +5655,10 @@ SWITCH_DECLARE(void)switch_core_media_set_local_sdp(switch_core_session_t *sessi
 		return;
 	}
 
-	if (smh->mutex) switch_mutex_lock(smh->mutex);
+	if (smh->sdp_mutex) switch_mutex_lock(smh->sdp_mutex);
 	smh->mparams->local_sdp_str = dup ? switch_core_session_strdup(session, sdp_str) : (char *) sdp_str;
 	switch_channel_set_variable(session->channel, "rtp_local_sdp_str", smh->mparams->local_sdp_str);
-	if (smh->mutex) switch_mutex_unlock(smh->mutex);
+	if (smh->sdp_mutex) switch_mutex_unlock(smh->sdp_mutex);
 }
 
 
@@ -5705,16 +5751,24 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		smh->mparams->cng_pt = 0;
 	}
 
+	
+
 
 	if (!smh->payload_space) {
 		int i;
 
+
 		smh->payload_space = 98;
 
 		if (sdp_type == SDP_TYPE_REQUEST) {
+			switch_core_session_t *orig_session = NULL;
+
+			switch_core_session_get_partner(session, &orig_session);			
+
 			for (i = 0; i < smh->mparams->num_codecs; i++) {
 				const switch_codec_implementation_t *imp = smh->codecs[i];
-				
+				switch_payload_t orig_pt = 0;
+
 				smh->ianacodes[i] = imp->ianacode;
 				
 				if (smh->ianacodes[i] > 64) {
@@ -5725,7 +5779,15 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 						smh->mparams->cng_pt && use_cng  && smh->mparams->cng_pt == smh->payload_space) {
 						smh->payload_space++;
 					}
-					smh->ianacodes[i] = (switch_payload_t)smh->payload_space++;
+
+					if (orig_session && 
+						switch_core_session_get_payload_code(orig_session, 
+															 imp->codec_type == SWITCH_CODEC_TYPE_AUDIO ? SWITCH_MEDIA_TYPE_AUDIO : SWITCH_MEDIA_TYPE_VIDEO,
+															 imp->iananame, NULL, &orig_pt) == SWITCH_STATUS_SUCCESS) {
+						smh->ianacodes[i] = orig_pt;
+					} else {
+						smh->ianacodes[i] = (switch_payload_t)smh->payload_space++;
+					}
 				}
 				
 
@@ -5739,6 +5801,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 												  SWITCH_FALSE);
 			}
 				
+
+			if (orig_session) {
+				switch_core_session_rwunlock(orig_session);
+			}
 		}
 	}
 
@@ -5850,13 +5916,13 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 		
 		if (switch_media_handle_test_media_flag(smh, SCMF_MULTI_ANSWER_AUDIO)) {
-			switch_mutex_lock(smh->mutex);
+			switch_mutex_lock(smh->sdp_mutex);
 			for (pmap = a_engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
 				if (pmap->pt != a_engine->cur_payload_map->pt) {
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", pmap->pt);
 				}
 			}
-			switch_mutex_unlock(smh->mutex);
+			switch_mutex_unlock(smh->sdp_mutex);
 		}
 
 		if ((smh->mparams->dtmf_type == DTMF_2833 || switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) || 
@@ -5890,7 +5956,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		}
 
 		if (switch_media_handle_test_media_flag(smh, SCMF_MULTI_ANSWER_AUDIO)) {
-			switch_mutex_lock(smh->mutex);
+			switch_mutex_lock(smh->sdp_mutex);
 			for (pmap = a_engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
 				if (pmap->pt != a_engine->cur_payload_map->pt) {
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%ld\n",
@@ -5898,7 +5964,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 									pmap->rate);
 				}
 			}
-			switch_mutex_unlock(smh->mutex);
+			switch_mutex_unlock(smh->sdp_mutex);
 		}
 
 
@@ -6169,13 +6235,13 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", v_engine->cur_payload_map->agreed_pt);
 				
 				if (switch_media_handle_test_media_flag(smh, SCMF_MULTI_ANSWER_VIDEO)) {
-					switch_mutex_lock(smh->mutex);
+					switch_mutex_lock(smh->sdp_mutex);
 					for (pmap = v_engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
 						if (pmap->pt != v_engine->cur_payload_map->pt) {
 							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", pmap->pt);
 						}
 					}
-					switch_mutex_unlock(smh->mutex);
+					switch_mutex_unlock(smh->sdp_mutex);
 				}
 
 			} else if (smh->mparams->num_codecs) {
@@ -6255,7 +6321,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 
 				if (switch_media_handle_test_media_flag(smh, SCMF_MULTI_ANSWER_VIDEO)) {
-					switch_mutex_lock(smh->mutex);
+					switch_mutex_lock(smh->sdp_mutex);
 					for (pmap = v_engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
 						if (pmap->pt != v_engine->cur_payload_map->pt) {
 							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%ld\n",
@@ -6263,7 +6329,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 							
 						}
 					}
-					switch_mutex_unlock(smh->mutex);
+					switch_mutex_unlock(smh->sdp_mutex);
 				}
 
 

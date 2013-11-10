@@ -305,6 +305,13 @@ SWITCH_DECLARE(void) switch_core_media_deinit(void);
 SWITCH_DECLARE(void) switch_core_media_set_stats(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_wake_video_thread(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_clear_crypto(switch_core_session_t *session);
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_get_payload_code(switch_core_session_t *session,
+																	 switch_media_type_t type,
+																	 const char *iananame,
+																	 switch_payload_t *ptP,
+																	 switch_payload_t *recv_ptP);
+
 SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_session_t *session, 
 																  switch_media_type_t type,
 																  const char *name, 
