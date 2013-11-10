@@ -488,7 +488,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_payload_code(switch_core
 			found++;
 		}
 	}
-	switch_mutex_lock(smh->sdp_mutex);
+	switch_mutex_unlock(smh->sdp_mutex);
 
 	if (found) {
 		if (ptP) {
@@ -5783,7 +5783,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					if (orig_session && 
 						switch_core_session_get_payload_code(orig_session, 
 															 imp->codec_type == SWITCH_CODEC_TYPE_AUDIO ? SWITCH_MEDIA_TYPE_AUDIO : SWITCH_MEDIA_TYPE_VIDEO,
-															 imp->iananame, NULL, &orig_pt) == SWITCH_STATUS_SUCCESS) {
+															 imp->iananame, &orig_pt, NULL) == SWITCH_STATUS_SUCCESS) {
 						smh->ianacodes[i] = orig_pt;
 					} else {
 						smh->ianacodes[i] = (switch_payload_t)smh->payload_space++;
