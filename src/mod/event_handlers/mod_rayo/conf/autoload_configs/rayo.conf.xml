@@ -49,8 +49,9 @@
 		<dial-gateway uriprefix="sip:" dialprefix="sofia/external/" strip="0"/>
 		<dial-gateway uriprefix="tel:" dialprefix="sofia/gateway/outbound/" strip="4"/>
 		<!-- pass through user and sofia unaltered -->
-		<dial-gateway uriprefix="user" dialprefix="" strip=""/>
-		<dial-gateway uriprefix="sofia" dialprefix="" strip=""/>
+		<dial-gateway uriprefix="user/" dialprefix="" strip=""/>
+		<dial-gateway uriprefix="sofia/" dialprefix="" strip=""/>
+		<dial-gateway uriprefix="loopback/" dialprefix="" strip=""/>
 	</dial-gateways>
 
 	<!-- IQ request aliases.  Used mainly for testing purposes or for controlling a rayo call via the console -->
