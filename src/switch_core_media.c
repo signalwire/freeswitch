@@ -40,9 +40,9 @@
 #include <sofia-sip/sdp.h>
 #include <sofia-sip/su.h>
 
-SWITCH_DECLARE(switch_t38_options_t *) switch_core_media_process_udptl(switch_core_session_t *session, sdp_session_t *sdp, sdp_media_t *m);
-SWITCH_DECLARE(void) switch_core_media_find_zrtp_hash(switch_core_session_t *session, sdp_session_t *sdp);
-SWITCH_DECLARE(void) switch_core_media_set_r_sdp_codec_string(switch_core_session_t *session, const char *codec_string, sdp_session_t *sdp);
+static switch_t38_options_t * switch_core_media_process_udptl(switch_core_session_t *session, sdp_session_t *sdp, sdp_media_t *m);
+static void switch_core_media_find_zrtp_hash(switch_core_session_t *session, sdp_session_t *sdp);
+static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *session, const char *codec_string, sdp_session_t *sdp, switch_sdp_type_t sdp_type);
 
 //#define GOOGLE_ICE
 #define RTCP_MUX
@@ -263,7 +263,7 @@ SWITCH_DECLARE(const char *) switch_core_media_get_zrtp_hash(switch_core_session
 
 }
 
-SWITCH_DECLARE(void) switch_core_media_find_zrtp_hash(switch_core_session_t *session, sdp_session_t *sdp)
+static void switch_core_media_find_zrtp_hash(switch_core_session_t *session, sdp_session_t *sdp)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_rtp_engine_t *audio_engine;
@@ -307,7 +307,7 @@ SWITCH_DECLARE(void) switch_core_media_find_zrtp_hash(switch_core_session_t *ses
 }
 
 
-SWITCH_DECLARE(switch_t38_options_t *) switch_core_media_process_udptl(switch_core_session_t *session, sdp_session_t *sdp, sdp_media_t *m)
+static switch_t38_options_t * switch_core_media_process_udptl(switch_core_session_t *session, sdp_session_t *sdp, sdp_media_t *m)
 {
 	switch_t38_options_t *t38_options = switch_channel_get_private(session->channel, "t38_options");
 	sdp_attribute_t *attr;
@@ -481,7 +481,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_payload_code(switch_core
 	engine = &smh->engines[type];
 
 	switch_mutex_lock(smh->sdp_mutex);
-	for (pmap = engine->payload_map; pmap && pmap->allocated; pmap = pmap->next) {
+	for (pmap = engine->payload_map; pmap ; pmap = pmap->next) {
+
+		if (!pmap->allocated) continue;
+
 		if (!strcasecmp(pmap->iananame, iananame)) {
 			pt = pmap->pt;
 			recv_pt = pmap->recv_pt;
@@ -548,13 +551,20 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 			pmap = switch_core_alloc(session->pool, sizeof(*pmap));
 		}
 
-		pmap->sdp_type = sdp_type;
 		pmap->type = type;
 		pmap->iananame = switch_core_strdup(session->pool, name);
 		pmap->rm_encoding = pmap->iananame;
-		pmap->ptime = ptime;
-		pmap->rate = rate;
 		pmap->hash = switch_ci_hashfunc_default(pmap->iananame, &hlen);
+	}
+
+	pmap->sdp_type = sdp_type;
+
+	if (ptime) {
+		pmap->ptime = ptime;
+	}
+
+	if (rate) {
+		pmap->rate = rate;
 	}
 
 	pmap->allocated = 1;
@@ -7701,7 +7711,7 @@ SWITCH_DECLARE(stfu_instance_t *) switch_core_media_get_jb(switch_core_session_t
 
 
 //?
-SWITCH_DECLARE(void) switch_core_media_set_sdp_codec_string(switch_core_session_t *session, const char *r_sdp)
+SWITCH_DECLARE(void) switch_core_media_set_sdp_codec_string(switch_core_session_t *session, const char *r_sdp, switch_sdp_type_t sdp_type)
 {
 	sdp_parser_t *parser;
 	sdp_session_t *sdp;
@@ -7717,7 +7727,7 @@ SWITCH_DECLARE(void) switch_core_media_set_sdp_codec_string(switch_core_session_
 	if ((parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
 
 		if ((sdp = sdp_session(parser))) {
-			switch_core_media_set_r_sdp_codec_string(session, switch_core_media_get_codec_string(session), sdp);
+			switch_core_media_set_r_sdp_codec_string(session, switch_core_media_get_codec_string(session), sdp, sdp_type);
 		}
 
 		sdp_parser_free(parser);
@@ -7781,7 +7791,7 @@ static void add_audio_codec(sdp_rtpmap_t *map, int ptime, char *buf, switch_size
 }
 
 
-SWITCH_DECLARE(void) switch_core_media_set_r_sdp_codec_string(switch_core_session_t *session, const char *codec_string, sdp_session_t *sdp)
+static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *session, const char *codec_string, sdp_session_t *sdp, switch_sdp_type_t sdp_type)
 {
 	char buf[1024] = { 0 };
 	sdp_media_t *m;
@@ -7840,7 +7850,24 @@ SWITCH_DECLARE(void) switch_core_media_set_r_sdp_codec_string(switch_core_sessio
 	switch_core_media_pass_zrtp_hash(session);
 
 	for (m = sdp->sdp_media; m; m = m->m_next) {
+		if ((m->m_type == sdp_media_audio || m->m_type == sdp_media_video) && m->m_port) {
+			for (map = m->m_rtpmaps; map; map = map->rm_next) {
+				
+				switch_core_media_add_payload_map(session, 
+												  m->m_type == sdp_media_audio ? SWITCH_MEDIA_TYPE_AUDIO : SWITCH_MEDIA_TYPE_VIDEO,
+												  map->rm_encoding,
+												  sdp_type,
+												  map->rm_pt,
+												  0,
+												  0,
+												  SWITCH_FALSE);
+			}
+		}
+	}
+
+	for (m = sdp->sdp_media; m; m = m->m_next) {
 		ptime = dptime;
+
 		if (m->m_type == sdp_media_image && m->m_port) {
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",t38");
 		} else if (m->m_type == sdp_media_audio && m->m_port) {

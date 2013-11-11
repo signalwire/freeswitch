@@ -5118,8 +5118,12 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		}
 
 		tech_pvt->mparams.last_sdp_str = NULL;
-		if (!sofia_use_soa(tech_pvt) && sip->sip_payload && sip->sip_payload->pl_data) {
-			tech_pvt->mparams.last_sdp_str = switch_core_session_strdup(session, sip->sip_payload->pl_data);
+		if (sip->sip_payload && sip->sip_payload->pl_data) {
+			switch_core_media_set_sdp_codec_string(session, sip->sip_payload->pl_data, SDP_TYPE_RESPONSE);
+			
+			if (!sofia_use_soa(tech_pvt)) {
+				tech_pvt->mparams.last_sdp_str = switch_core_session_strdup(session, sip->sip_payload->pl_data);
+			}
 		}
 
 
@@ -5867,9 +5871,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote SDP:\n%s\n", r_sdp);
 				tech_pvt->mparams.remote_sdp_str = switch_core_session_strdup(session, r_sdp);
 
-				if ((sofia_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) || switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND)) {
-					switch_core_media_set_sdp_codec_string(session, r_sdp);
-				}
+                //if ((sofia_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) || switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND)) {
+				//	switch_core_media_set_sdp_codec_string(session, r_sdp, status < 200 ? SDP_TYPE_REQUEST : SDP_TYPE_RESPONSE);
+				//}
 
 				sofia_glue_pass_sdp(tech_pvt, (char *) r_sdp);
 				sofia_set_flag(tech_pvt, TFLAG_NEW_SDP);
@@ -7882,8 +7886,13 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	const char *from_tag = "";
 	char *sql = NULL;
 	char *acl_context = NULL;
+	const char *r_sdp = NULL;
+
 	profile->ib_calls++;
 
+	if (sip->sip_payload && sip->sip_payload->pl_data) {
+		r_sdp = sip->sip_payload->pl_data;
+	}
 
 	if (!session || (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING))) {
 		nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
@@ -7909,6 +7918,12 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	if (sip && sip->sip_via && sip->sip_via->v_protocol && switch_stristr("sip/2.0/ws", sip->sip_via->v_protocol)) {
 		is_nat = "websockets";
 	}
+
+
+	if (r_sdp) {
+		switch_core_media_set_sdp_codec_string(session, r_sdp, SDP_TYPE_REQUEST);
+	}
+
 
 	if (sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION)) {
 		if (sip && sip->sip_via) {
