@@ -1513,6 +1513,10 @@ ESL_DECLARE(esl_status_t) esl_send_recv_timed(esl_handle_t *handle, const char *
 	}
 
  recv:	
+	
+	esl_event_safe_destroy(&handle->last_sr_event);
+
+	*handle->last_sr_reply = '\0';
 
 	status = esl_recv_event_timed(handle, ms, 0, &handle->last_sr_event);
 
