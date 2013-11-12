@@ -534,7 +534,7 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 
 
 	for (pmap = engine->payload_map; pmap && pmap->allocated; pmap = pmap->next) {
-		exists = (!strcasecmp(name, pmap->iananame) && rate == pmap->rate && pmap->ptime == ptime);
+		exists = (!strcasecmp(name, pmap->iananame) && (!pmap->rate || rate == pmap->rate) && (pmap->ptime || pmap->ptime == ptime));
 		
 		if (exists) {
 			break;
@@ -7850,16 +7850,26 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 	switch_core_media_pass_zrtp_hash(session);
 
 	for (m = sdp->sdp_media; m; m = m->m_next) {
+		ptime = dptime;
+		
 		if ((m->m_type == sdp_media_audio || m->m_type == sdp_media_video) && m->m_port) {
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
-				
+				for (attr = m->m_attributes; attr; attr = attr->a_next) {
+					if (zstr(attr->a_name)) {
+						continue;
+					}
+					if (!strcasecmp(attr->a_name, "ptime") && attr->a_value) {
+						ptime = atoi(attr->a_value);
+						break;
+					}
+				}
 				switch_core_media_add_payload_map(session, 
 												  m->m_type == sdp_media_audio ? SWITCH_MEDIA_TYPE_AUDIO : SWITCH_MEDIA_TYPE_VIDEO,
 												  map->rm_encoding,
 												  sdp_type,
 												  map->rm_pt,
-												  0,
-												  0,
+												  map->rm_rate,
+												  ptime,
 												  SWITCH_FALSE);
 			}
 		}
