@@ -6179,7 +6179,7 @@ static switch_status_t conf_api_sub_file_seek(conference_obj_t *conference, swit
 					step = 1000;
 				}
 					
-				samps = step * (conference->rate / 1000);
+				samps = step * (conference->fnode->fh.native_rate / 1000);
 				target = (int32_t)conference->fnode->fh.pos + samps;
 				
 				if (target < 0) {
@@ -6190,7 +6190,7 @@ static switch_status_t conf_api_sub_file_seek(conference_obj_t *conference, swit
 				switch_core_file_seek(&conference->fnode->fh, &pos, target, SEEK_SET);
 				
 			} else {
-				samps = switch_atoui(argv[2]) * (conference->rate / 1000);
+				samps = switch_atoui(argv[2]) * (conference->fnode->fh.native_rate / 1000);
 				stream->write_function(stream, "+OK seek to position %d\n", samps);
 				switch_core_file_seek(&conference->fnode->fh, &pos, samps, SEEK_SET);
 			}
