@@ -65,7 +65,7 @@ static void lua_uninit(lua_State * L)
 
 static int traceback(lua_State * L)
 {
-	lua_getfield(L, LUA_GLOBALSINDEX, "debug");
+	lua_getglobal(L, "debug");
 	if (!lua_istable(L, -1)) {
 		lua_pop(L, 1);
 		return 1;
@@ -113,7 +113,7 @@ int docall(lua_State * L, int narg, int nresults, int perror)
 
 static lua_State *lua_init(void)
 {
-	lua_State *L = lua_open();
+	lua_State *L = luaL_newstate();
 	int error = 0;
 
 	if (L) {
@@ -266,7 +266,7 @@ static switch_xml_t lua_fetch(const char *section,
 		    return NULL;
 		}
 
-		lua_getfield(L, LUA_GLOBALSINDEX, "XML_STRING");
+		lua_getglobal(L, "XML_STRING");
 		str = lua_tostring(L, 1);
 		
 		if (str) {
@@ -581,7 +581,7 @@ SWITCH_STANDARD_DIALPLAN(lua_dialplan_hunt)
 	lua_parse_and_execute(L, cmd);
 
 	/* expecting ACTIONS = { {"app1", "app_data1"}, { "app2" }, "app3" } -- each of three is valid */
-	lua_getfield(L, LUA_GLOBALSINDEX, "ACTIONS");
+	lua_getglobal(L, "ACTIONS");
 	if (!lua_istable(L, 1)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
 			"Global variable ACTIONS may only be a table\n");

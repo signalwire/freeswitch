@@ -7913,7 +7913,7 @@ static swig_lua_class _wrap_class_LUA_Dbh = { "Dbh", &SWIGTYPE_p_LUA__Dbh,_wrap_
 }
 #endif
 
-static const struct luaL_reg swig_commands[] = {
+static const struct luaL_Reg swig_commands[] = {
     { "setGlobalVariable", _wrap_setGlobalVariable},
     { "getGlobalVariable", _wrap_getGlobalVariable},
     { "consoleLog", _wrap_consoleLog},
@@ -8325,7 +8325,7 @@ SWIGEXPORT int SWIG_init(lua_State* L)
 {
   int i;
   /* start with global table */
-  lua_pushvalue(L,LUA_GLOBALSINDEX);
+  lua_pushglobaltable(L);
   /* SWIG's internal initalisation */
   SWIG_InitializeModule((void*)L);
   SWIG_PropagateClientData();

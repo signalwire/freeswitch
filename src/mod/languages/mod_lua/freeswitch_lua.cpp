@@ -81,7 +81,7 @@ void Session::setLUA(lua_State * state)
 
 	if (session && allocated && uuid) {
 		lua_setglobal(L, uuid);
-		lua_getfield(L, LUA_GLOBALSINDEX, uuid);
+		lua_getglobal(L, uuid);
 	}
 
 }
@@ -137,13 +137,13 @@ void Session::do_hangup_hook()
 			return;
 		}
 
-		lua_getfield(L, LUA_GLOBALSINDEX, (char *) hangup_func_str);
-		lua_getfield(L, LUA_GLOBALSINDEX, uuid);
+		lua_getglobal(L, (char *) hangup_func_str);
+		lua_getglobal(L, uuid);
 
 		lua_pushstring(L, hook_state == CS_HANGUP ? "hangup" : "transfer");
 
 		if (hangup_func_arg) {
-			lua_getfield(L, LUA_GLOBALSINDEX, (char *) hangup_func_arg);
+			lua_getglobal(L, (char *) hangup_func_arg);
 			arg_count++;
 		}
 
@@ -274,8 +274,8 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 			char str[3] = "";
 			int arg_count = 3;
 
-			lua_getfield(L, LUA_GLOBALSINDEX, (char *) cb_function);
-			lua_getfield(L, LUA_GLOBALSINDEX, uuid);
+			lua_getglobal(L, (char *) cb_function);
+			lua_getglobal(L, uuid);
 
 			lua_pushstring(L, "dtmf");
 
@@ -290,7 +290,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 			lua_rawset(L, -3);
 
 			if (!zstr(cb_arg)) {
-				lua_getfield(L, LUA_GLOBALSINDEX, (char *) cb_arg);
+				lua_getglobal(L, (char *) cb_arg);
 				arg_count++;
 			}
 
@@ -308,14 +308,14 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 			int arg_count = 3;
 
 
-			lua_getfield(L, LUA_GLOBALSINDEX, (char *) cb_function);
-			lua_getfield(L, LUA_GLOBALSINDEX, uuid);
+			lua_getglobal(L, (char *) cb_function);
+			lua_getglobal(L, uuid);
 			lua_pushstring(L, "event");
 			mod_lua_conjure_event(L, event, "__Input_Event__", 1);
-			lua_getfield(L, LUA_GLOBALSINDEX, "__Input_Event__");
+			lua_getglobal(L, "__Input_Event__");
 
 			if (!zstr(cb_arg)) {
-				lua_getfield(L, LUA_GLOBALSINDEX, (char *) cb_arg);
+				lua_getglobal(L, (char *) cb_arg);
 				arg_count++;
 			}
 
