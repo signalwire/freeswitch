@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
 	} else {
 		printf("Starting forking listener.\n");
 		fflush(stdout);
-		esl_listen(ip, port, my_forking_callback);
+		esl_listen(ip, port, my_forking_callback, NULL);
 	}
 
 	return 0;

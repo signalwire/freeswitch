@@ -394,7 +394,7 @@ ESL_DECLARE(esl_status_t) esl_attach_handle(esl_handle_t *handle, esl_socket_t s
     \param callback Callback that will be called upon data received
 */
 
-ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback);
+ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback, esl_socket_t *server_sockP);
 ESL_DECLARE(esl_status_t) esl_listen_threaded(const char *host, esl_port_t port, esl_listen_callback_t callback, int max);
 /*!
     \brief Executes application with sendmsg to a specific UUID. Used for outbound socket.

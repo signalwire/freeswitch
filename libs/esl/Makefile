@@ -16,7 +16,7 @@ SOLINK=-shared -Xlinker -x
 # comment the next line to disable c++ (no swig mods for you then)
 OBJS += src/esl_oop.o
 
-all: $(MYLIB) fs_cli testclient testserver ivrd
+all: $(MYLIB) fs_cli testclient testserver testserver_fork ivrd
 
 $(MYLIB): $(OBJS) $(HEADERS) $(SRC)
 	ar rcs $(MYLIB) $(OBJS)
@@ -24,6 +24,9 @@ $(MYLIB): $(OBJS) $(HEADERS) $(SRC)
 
 testserver: $(MYLIB) testserver.c
 	$(CC) $(CC_CFLAGS) $(CFLAGS) testserver.c -o testserver $(LDFLAGS) $(LIBS)
+
+testserver_fork: $(MYLIB) testserver_fork.c
+	$(CC) $(CC_CFLAGS) $(CFLAGS) testserver_fork.c -o testserver_fork $(LDFLAGS) $(LIBS)
 
 ivrd: $(MYLIB) ivrd.c
 	$(CC) $(CC_CFLAGS) $(CFLAGS) ivrd.c -o ivrd $(LDFLAGS) $(LIBS)
@@ -41,7 +44,7 @@ fs_cli: $(MYLIB) fs_cli.c
 	$(CXX) $(CXX_CFLAGS) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f *.o src/*.o testclient testserver ivrd fs_cli libesl.a *~ src/*~ src/include/*~
+	rm -f *.o src/*.o testclient testserver testserver_fork ivrd fs_cli libesl.a *~ src/*~ src/include/*~
 	$(MAKE) -C perl clean
 	$(MAKE) -C php clean
 	$(MAKE) -C lua clean
