@@ -672,6 +672,8 @@ static int prepare_sock(esl_socket_t sock)
 			r = -1;
 		}
 #endif
+
+		return r;
 	
 }
 
@@ -1132,7 +1134,9 @@ ESL_DECLARE(esl_status_t) esl_disconnect(esl_handle_t *handle)
 	while(ep) {
 		esl_event_t *e = ep;
 		ep = ep->next;
-		esl_event_safe_destroy(&e);
+		if (e) {
+			esl_event_destroy(&e);
+		}
 	}
 
 	esl_event_safe_destroy(&handle->last_event);
@@ -1248,7 +1252,6 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 	char *col;
 	char *cl;
 	esl_ssize_t len;
-	int zc = 0;
 
 	if (!handle || !handle->connected || handle->sock == ESL_SOCK_INVALID) {
 		return ESL_FAIL;
@@ -1326,7 +1329,6 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 		}
 
 		*((char *)handle->socket_buf + ESL_CLAMP(0, sizeof(handle->socket_buf) - 1, rrval)) = '\0';
-		zc = 0;
 
 		esl_buffer_write(handle->packet_buf, handle->socket_buf, rrval);
 	}
@@ -1361,8 +1363,6 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 				}
 
 				*((char *)handle->socket_buf + ESL_CLAMP(0, sizeof(handle->socket_buf) - 1, r)) = '\0';
-				zc = 0;
-				
 				esl_buffer_write(handle->packet_buf, handle->socket_buf, r);
 			}
 			
