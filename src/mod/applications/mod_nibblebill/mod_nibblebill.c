@@ -28,9 +28,10 @@
  * Contributor(s):
  * Darren Schreiber <d@d-man.org>
  * Rupa Schomaker <rupa@rupa.com>
+ * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
  *
  * mod_nibblebill.c - Nibble Billing
- * Purpose is to allow real-time debiting of credit or cash from a database while calls are in progress. I had the following goals: 
+ * Purpose is to allow real-time debiting of credit or cash from a database while calls are in progress. I had the following goals:
  *
  * Debit credit/cash from accounts real-time 
  * Allow for billing at different rates during a single call 
@@ -91,6 +92,10 @@ static struct {
 	/* Other options */
 	int global_heartbeat;		/* Supervise and bill every X seconds, 0 means off */
 
+	/* Channel variable name options */
+	char *var_name_rate;
+	char *var_name_account;
+
 	/* Database settings */
 	char *dbname;
 	char *odbc_dsn;
@@ -125,6 +130,8 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_custom_sql_lookup, globals.custom_s
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_percall_action, globals.percall_action);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_lowbal_action, globals.lowbal_action);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_nobal_action, globals.nobal_action);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_var_name_rate, globals.var_name_rate);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_var_name_account, globals.var_name_account);
 
 static switch_cache_db_handle_t *nibblebill_get_db_handle(void)
 {
@@ -242,6 +249,10 @@ static switch_status_t nibblebill_load_config(void)
 				set_global_nobal_action(val);
 			} else if (!strcasecmp(var, "nobal_amt")) {
 				globals.nobal_amt = atof(val);
+			} else if (!strcasecmp(var, "var_name_rate")) {
+				set_global_var_name_rate(val);
+			} else if (!strcasecmp(var, "var_name_account")) {
+				set_global_var_name_account(val);
 			} else if (!strcasecmp(var, "global_heartbeat")) {
 				globals.global_heartbeat = atoi(val);
 			}
@@ -259,6 +270,12 @@ static switch_status_t nibblebill_load_config(void)
 	}
 	if (zstr(globals.nobal_action)) {
 		set_global_nobal_action("hangup");
+	}
+	if (zstr(globals.var_name_rate)) {
+		set_global_var_name_rate("nibble_rate");
+	}
+	if (zstr(globals.var_name_account)) {
+		set_global_var_name_account("nibble_account");
 	}
 
 	if (globals.odbc_dsn) {
@@ -449,10 +466,10 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	}
 
 	/* Variables kept in FS but relevant only to this module */
-	billrate = switch_channel_get_variable(channel, "nibble_rate");
+	billrate = switch_channel_get_variable(channel, globals.var_name_rate);
 	billincrement = switch_channel_get_variable(channel, "nibble_increment");
-	billaccount = switch_channel_get_variable(channel, "nibble_account");
-	
+	billaccount = switch_channel_get_variable(channel, globals.var_name_account);
+
 	if (!zstr(switch_channel_get_variable(channel, "nobal_amt"))) {
 		nobal_amt = atof(switch_channel_get_variable(channel, "nobal_amt"));
 	}
@@ -707,7 +724,7 @@ static void nibblebill_resume(switch_core_session_t *session)
 		switch_mutex_lock(globals.mutex);
 	}
 
-	billrate = switch_channel_get_variable(channel, "nibble_rate");
+	billrate = switch_channel_get_variable(channel, globals.var_name_rate);
 
 	/* Calculate how much was "lost" to billings during pause - we do this here because you never know when the billrate may change during a call */
 	nibble_data->bill_adjustments += (atof(billrate) / 1000000 / 60) * ((ts - nibble_data->pausets));
@@ -800,7 +817,7 @@ static void nibblebill_adjust(switch_core_session_t *session, double amount)
 
 	/* Variables kept in FS but relevant only to this module */
 
-	billaccount = switch_channel_get_variable(channel, "nibble_account");
+	billaccount = switch_channel_get_variable(channel, globals.var_name_account);
 
 	/* Return if there's no billing information on this session */
 	if (!billaccount) {
@@ -900,9 +917,9 @@ static switch_status_t sched_billing(switch_core_session_t *session)
 	}
 
 	/* Variables kept in FS but relevant only to this module */
-	billrate = switch_channel_get_variable(channel, "nibble_rate");
-	billaccount = switch_channel_get_variable(channel, "nibble_account");
-	
+	billrate = switch_channel_get_variable(channel, globals.var_name_rate);
+	billaccount = switch_channel_get_variable(channel, globals.var_name_account);
+
 	/* Return if there's no billing information on this session */
 	if (!billrate || !billaccount) {
 		return SWITCH_STATUS_SUCCESS;
@@ -930,7 +947,7 @@ static switch_status_t process_hangup(switch_core_session_t *session)
 	/* Now go handle like normal billing */
 	do_billing(session);
 
-	billaccount = switch_channel_get_variable(channel, "nibble_account");
+	billaccount = switch_channel_get_variable(channel, globals.var_name_account);
 	if (billaccount) {
 		switch_channel_set_variable_printf(channel, "nibble_current_balance", "%f", get_balance(billaccount, channel));
 	}			
@@ -1012,6 +1029,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_nibblebill_shutdown)
 	switch_safe_free(globals.percall_action);
 	switch_safe_free(globals.lowbal_action);
 	switch_safe_free(globals.nobal_action);
+	switch_safe_free(globals.var_name_rate);
+	switch_safe_free(globals.var_name_account);
 
 	return SWITCH_STATUS_UNLOAD;
 }
