@@ -3587,8 +3587,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	int found_proto = 0;
 	const char *use_to_tag;
 	char to_tag[13] = "";
-	char buf[32] = "";
-	int subbed = 0;
+	char buf[80] = "";
 
 	if (!sip) {
 		return;
@@ -3751,8 +3750,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	}
 
 	if ((sub_state != nua_substate_terminated)) {
-		sql = switch_mprintf("select count(*) from sip_subscriptions where call_id='%q' and hostname='%q' and profile_name='%q'",
-							 call_id, mod_sofia_globals.hostname, profile->name);
+		sql = switch_mprintf("select call_id from sip_subscriptions where call_id='%q' and profile_name='%q' and hostname='%q'",
+							 call_id, profile->name, mod_sofia_globals.hostname);
 		sofia_glue_execute_sql2str(profile, profile->dbh_mutex, sql, buf, sizeof(buf));
 
 
@@ -3763,7 +3762,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		switch_safe_free(sql);
 
-		if ((subbed = atoi(buf)) > 0) {
+		if (!zstr(buf)) {
 			sub_state = nua_substate_active;
 		}
 	}
@@ -3774,9 +3773,9 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		sql = switch_mprintf("update sip_subscriptions "
 							 "set expires=%ld "
-							 "where hostname='%q' and profile_name='%q' and call_id='%q' and profile_name='%q'",
-							 (long) switch_epoch_time_now(NULL) + exp_delta, mod_sofia_globals.hostname, profile->name,
-							 call_id, profile->name);
+							 "where call_id='%q' and profile_name='%q' and hostname='%q'",
+							 (long) switch_epoch_time_now(NULL) + exp_delta, 
+							 call_id, profile->name, mod_sofia_globals.hostname);
 
 		if (mod_sofia_globals.debug_presence > 0 || mod_sofia_globals.debug_sla > 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
