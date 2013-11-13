@@ -399,7 +399,6 @@ struct switch_rtp {
 	switch_core_session_t *session;
 	payload_map_t **pmaps;
 	payload_map_t *pmap_tail;
-	int pmap_ttl;
 
 #ifdef ENABLE_ZRTP
 	zrtp_session_t *zrtp_session;
@@ -6200,10 +6199,10 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 		rtp_session->stats.outbound.packet_count++;
 	}
 
-	if (frame->pmap && rtp_session->pmaps && *rtp_session->pmaps && rtp_session->pmap_ttl > 1) {
+	if (frame->pmap && rtp_session->pmaps && *rtp_session->pmaps) {
 		payload_map_t *pmap;
-		switch_mutex_lock(rtp_session->flag_mutex);
 
+		switch_mutex_lock(rtp_session->flag_mutex);
 		for (pmap = *rtp_session->pmaps; pmap; pmap = pmap->next) {
 			if (pmap->hash == frame->pmap->hash && !strcmp(pmap->iananame, frame->pmap->iananame)) {
 				payload = pmap->recv_pt;

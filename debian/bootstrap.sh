@@ -36,6 +36,7 @@ avoid_mods=(
   xml_int/mod_xml_radius
 )
 avoid_mods_sid=(
+  languages/mod_java
 )
 avoid_mods_jessie=(
 )

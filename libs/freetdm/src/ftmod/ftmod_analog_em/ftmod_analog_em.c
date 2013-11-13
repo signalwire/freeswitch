@@ -656,9 +656,6 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 					if (ftdmchan->state == FTDM_CHANNEL_STATE_UP) {
 						cas_bits = 0;
 						ftdm_channel_command(ftdmchan, FTDM_COMMAND_GET_CAS_BITS, &cas_bits);
-						if (!(state_counter % 5000)) {
-							ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "CAS bits: 0x%X\n", cas_bits);
-						}
 						if (cas_bits == 0x0) {
 							cas_hangup += interval;
 							if (cas_hangup >= cas_hangup_ms) {

@@ -292,7 +292,7 @@ SWITCH_DECLARE(stfu_instance_t *) switch_core_media_get_jb(switch_core_session_t
 SWITCH_DECLARE(switch_rtp_stats_t *) switch_core_media_get_stats(switch_core_session_t *session, switch_media_type_t type, switch_memory_pool_t *pool);
 
 
-SWITCH_DECLARE(void) switch_core_media_set_sdp_codec_string(switch_core_session_t *session, const char *r_sdp);
+SWITCH_DECLARE(void) switch_core_media_set_sdp_codec_string(switch_core_session_t *session, const char *r_sdp, switch_sdp_type_t sdp_type);
 SWITCH_DECLARE(void) switch_core_media_reset_autofix(switch_core_session_t *session, switch_media_type_t type);
 SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_t *session, switch_core_session_t *o_session);
 SWITCH_DECLARE(switch_status_t) switch_core_media_codec_chosen(switch_core_session_t *session, switch_media_type_t media);
@@ -305,6 +305,13 @@ SWITCH_DECLARE(void) switch_core_media_deinit(void);
 SWITCH_DECLARE(void) switch_core_media_set_stats(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_wake_video_thread(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_clear_crypto(switch_core_session_t *session);
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_get_payload_code(switch_core_session_t *session,
+																	 switch_media_type_t type,
+																	 const char *iananame,
+																	 switch_payload_t *ptP,
+																	 switch_payload_t *recv_ptP);
+
 SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_session_t *session, 
 																  switch_media_type_t type,
 																  const char *name, 
