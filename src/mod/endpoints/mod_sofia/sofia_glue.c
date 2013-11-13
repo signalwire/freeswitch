@@ -6446,6 +6446,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"create index sr_orig_server_host on sip_registrations (orig_server_host)",
 		"create index sr_orig_hostname on sip_registrations (orig_hostname)",
 		"create index ss_call_id on sip_subscriptions (call_id)",
+		"create index ss_multi on sip_subscriptions (call_id, profile_name, hostname)",
 		"create index ss_hostname on sip_subscriptions (hostname)",
 		"create index ss_network_ip on sip_subscriptions (network_ip)",
 		"create index ss_sip_user on sip_subscriptions (sip_user)",
