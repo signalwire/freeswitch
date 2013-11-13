@@ -28,6 +28,7 @@
  * John Wehle (john@feith.com)
  * Raymond Chandler <intralanman@gmail.com>
  * Kristin King <kristin.king@quentustech.com>
+ * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
  *
  * mod_voicemail.c -- Voicemail Module
  *
@@ -3345,7 +3346,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	int send_mail = 0;
 	cc_t cc = { 0 };
 	char *read_flags = NORMAL_FLAG_STRING;
-	char *operator_ext = NULL;
+	const char *operator_ext = switch_channel_get_variable(channel, "vm_operator_extension");
 	char buf[2];
 	char key_buf[80];
 	char *greet_path = NULL;
@@ -3422,7 +3423,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 						vm_enabled = !switch_false(val);
 					} else if (!strcasecmp(var, "vm-message-ext")) {
 						vm_ext = switch_core_session_strdup(session, val);
-					} else if (!strcasecmp(var, "vm-operator-extension")) {
+					} else if (!strcasecmp(var, "vm-operator-extension") && (zstr(operator_ext))) {
 						operator_ext = switch_core_session_strdup(session, val);
 					}
 				}
