@@ -24,6 +24,7 @@
  * Contributor(s):
  *
  * Tamas Cseke <cstomi.levlist@gmail.com>
+ * Christopher Rienzo <crienzo@grasshopper.com>
  *
  * mod_mongo.cpp -- API for MongoDB 
  *
@@ -33,7 +34,7 @@
 #include "mod_mongo.h"
 
 #define DELIMITER ';'
-#define FIND_ONE_SYNTAX  "mongo_find_one ns; query; fields"
+#define FIND_ONE_SYNTAX  "mongo_find_one ns; query; fields; options"
 #define MAPREDUCE_SYNTAX "mongo_mapreduce ns; query"
 
 static struct {
