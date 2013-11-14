@@ -2028,7 +2028,7 @@ static iks *unjoin_call(struct rayo_call *call, switch_core_session_t *session, 
 		switch_ivr_park_session(session);
 	} else {
 		/* not bridged or wrong b-leg URI */
-		response = iks_new_error(node, STANZA_ERROR_SERVICE_UNAVAILABLE);
+		response = iks_new_error_detailed_printf(node, STANZA_ERROR_SERVICE_UNAVAILABLE, "expected URI: %s", call->joined_id);
 	}
 
 	return response;
@@ -2892,7 +2892,7 @@ static void on_call_bridge_event(struct rayo_client *rclient, switch_event_t *ev
 		b_call = RAYO_CALL_LOCATE_BY_ID(b_uuid);
 		if (b_call) {
 			b_call->joined = JOINED_CALL;
-			b_call->joined_id = switch_core_sprintf(RAYO_POOL(b_call), "xmpp:%s@s", a_uuid, RAYO_JID(globals.server));
+			b_call->joined_id = switch_core_sprintf(RAYO_POOL(b_call), "xmpp:%s@%s", a_uuid, RAYO_JID(globals.server));
 
 			/* send IQ result to client now. */
 			if (b_call->pending_join_request) {
@@ -2906,7 +2906,7 @@ static void on_call_bridge_event(struct rayo_client *rclient, switch_event_t *ev
 			/* send B-leg event */
 			revent = iks_new_presence("joined", RAYO_NS, RAYO_JID(b_call), rayo_call_get_dcp_jid(b_call));
 			joined = iks_find(revent, "joined");
-			iks_insert_attrib_printf(joined, "call-uri", "xmpp:%s@%s", a_uuid, RAYO_JID(globals.server));
+			iks_insert_attrib_printf(joined, "call-uri", "%s", b_call->joined_id);
 
 			RAYO_SEND_MESSAGE(b_call, rayo_call_get_dcp_jid(b_call), revent);
 			RAYO_UNLOCK(b_call);
@@ -2917,7 +2917,7 @@ static void on_call_bridge_event(struct rayo_client *rclient, switch_event_t *ev
 			switch_event_get_header(event, "variable_rayo_call_jid"),
 			switch_event_get_header(event, "variable_rayo_dcp_jid"));
 		joined = iks_find(revent, "joined");
-		iks_insert_attrib_printf(joined, "call-uri", "xmpp:%s@%s", b_uuid, RAYO_JID(globals.server));
+		iks_insert_attrib_printf(joined, "call-uri", "%s", call->joined_id);
 
 		RAYO_SEND_MESSAGE(call, RAYO_JID(rclient), revent);
 
