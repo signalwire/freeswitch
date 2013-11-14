@@ -1824,7 +1824,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_get_offered_pt(switch_core_ses
 
 	switch_assert(session);
 
-	if (!(smh = session->media_handle)) {
+	if (!(smh = session->media_handle) || !mimp) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -3347,7 +3347,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				if (!switch_true(mirror) && 
 					switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND && 
 					(!switch_channel_test_flag(session->channel, CF_REINVITE) || switch_media_handle_test_media_flag(smh, SCMF_RENEG_ON_REINVITE))) {
-					switch_core_media_get_offered_pt(session, mimp, &a_engine->cur_payload_map->recv_pt);
+					switch_core_media_get_offered_pt(session, matches[0].imp, &a_engine->cur_payload_map->recv_pt);
 				}
 				
 				switch_snprintf(tmp, sizeof(tmp), "%d", a_engine->cur_payload_map->recv_pt);
@@ -3558,7 +3558,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					
 					pmap->recv_pt = (switch_payload_t)map->rm_pt;
 						
-					if (!switch_true(mirror) && switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+					if (j == 0 && (!switch_true(mirror) && switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND)) {
 						switch_core_media_get_offered_pt(session, mimp, &pmap->recv_pt);
 					}
 				}
