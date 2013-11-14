@@ -1435,9 +1435,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 			engine->reset_codec = 0;
 					
 			if (switch_rtp_ready(engine->rtp_session)) {
-				if (switch_core_media_set_codec(session, 1, 0) != SWITCH_STATUS_SUCCESS) {
-					*frame = NULL;
-					switch_goto_status(SWITCH_STATUS_GENERR, end);
+				if (type == SWITCH_MEDIA_TYPE_VIDEO) {
+					switch_core_media_set_video_codec(session, 1);
+				} else {
+					if (switch_core_media_set_codec(session, 1, 0) != SWITCH_STATUS_SUCCESS) {
+						*frame = NULL;
+						switch_goto_status(SWITCH_STATUS_GENERR, end);
+					}
 				}
 
 				if ((val = switch_channel_get_variable(session->channel, "rtp_timeout_sec"))) {
@@ -3583,6 +3587,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				if (switch_core_media_set_video_codec(session, 0) == SWITCH_STATUS_SUCCESS) {
 					check_ice(smh, SWITCH_MEDIA_TYPE_VIDEO, sdp, m);
 				}
+				
 
 			}
 		}
