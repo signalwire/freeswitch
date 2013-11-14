@@ -3406,18 +3406,40 @@ static void on_xmpp_stream_destroy(struct xmpp_stream *stream)
 }
 
 /**
+ * A command alias
+ */
+struct rayo_cmd_alias {
+	/** number of additional arguments for alias */
+	int args;
+	/** the alias template */
+	const char *cmd;
+};
+
+/**
  * Add an alias to an API command
  * @param alias_name
  * @param alias_target
  * @param alias_cmd
+ * @param alias_args
  */
-static void rayo_add_cmd_alias(const char *alias_name, const char *alias_target, const char *alias_cmd)
+static void rayo_add_cmd_alias(const char *alias_name, const char *alias_target, const char *alias_cmd, const char *alias_args)
 {
+	struct rayo_cmd_alias *alias = switch_core_alloc(globals.pool, sizeof(*alias));
+	alias->args = 0;
+	if (switch_is_number(alias_args)) {
+		alias->args = atoi(alias_args);
+		if (alias->args < 0) {
+			alias->args = 0;
+		}
+	}
+	alias->cmd = alias_cmd;
+	switch_core_hash_insert(globals.cmd_aliases, alias_name, alias);
+
+	/* set up autocomplete of alias */
 	if (zstr(alias_target)) {
 		alias_target = "all";
 	}
 	switch_console_set_complete(switch_core_sprintf(globals.pool, "add rayo %s ::rayo::list_%s", alias_name, alias_target));
-	switch_core_hash_insert(globals.cmd_aliases, alias_name, alias_cmd);
 }
 
 /**
@@ -3614,8 +3636,9 @@ static switch_status_t do_config(switch_memory_pool_t *pool, const char *config_
 			for (alias = switch_xml_child(aliases, "alias"); alias; alias = alias->next) {
 				const char *alias_name = switch_xml_attr_soft(alias, "name");
 				const char *alias_target = switch_xml_attr_soft(alias, "target");
+				const char *alias_args = switch_xml_attr_soft(alias, "args");
 				if (!zstr(alias_name) && !zstr(alias->txt)) {
-					rayo_add_cmd_alias(alias_name, switch_core_strdup(pool, alias_target), switch_core_strdup(pool, alias->txt));
+					rayo_add_cmd_alias(alias_name, switch_core_strdup(pool, alias_target), switch_core_strdup(pool, alias->txt), switch_core_strdup(pool, alias_args));
 				}
 			}
 		}
@@ -3779,15 +3802,46 @@ static int command_api(char *cmd, switch_stream_handle_t *stream)
 /**
  * Send command to rayo actor
  */
-static int alias_api(const char *cmd, char *jid, switch_stream_handle_t *stream)
+static int alias_api(struct rayo_cmd_alias *alias, char *args, switch_stream_handle_t *stream)
 {
-	if (zstr(cmd) || zstr(jid)) {
-		return 0;
+	char *argv[10] = { 0 };
+	int argc, i;
+	char *cmd;
+	char *jid;
+
+	if (zstr(alias->cmd)) {
+		stream->write_function(stream, "-ERR missing alias template.  Check configuration.\n");
+	}
+
+	if (zstr(args)) {
+		stream->write_function(stream, "-ERR no args\n");
+		return 1;
+	}
+
+	/* check args */
+	argc = switch_separate_string(args, ' ', argv, sizeof(argv) / sizeof(argv[0]));
+	if (argc != alias->args + 1) {
+		stream->write_function(stream, "-ERR wrong number of args (%i/%i)\n", argc, alias->args + 1);
+		return 1;
+	}
+
+	jid = argv[0];
+
+	/* build command from args */
+	cmd = strdup(alias->cmd);
+	for (i = 1; i < argc; i++) {
+		char *cmd_new;
+		char to_replace[4] = { 0 };
+		sprintf(to_replace, "$%i", i);
+		cmd_new = switch_string_replace(cmd, to_replace, argv[i]);
+		free(cmd);
+		cmd = cmd_new;
 	}
 
 	/* send command */
 	send_console_command(globals.console, jid, cmd);
 	stream->write_function(stream, "+OK\n");
+	free(cmd);
 
 	return 1;
 }
@@ -3881,7 +3935,7 @@ static int presence_api(char *cmd, switch_stream_handle_t *stream)
 #define RAYO_API_SYNTAX "status | (<alias> <jid>) | (cmd <jid> <command>) | (msg <jid> <message text>) | (presence <jid> <online|offline>)"
 SWITCH_STANDARD_API(rayo_api)
 {
-	const char *alias;
+	struct rayo_cmd_alias *alias;
 	char *cmd_dup = strdup(cmd);
 	char *argv[2] = { 0 };
 	int success = 0;
@@ -3891,7 +3945,7 @@ SWITCH_STANDARD_API(rayo_api)
 	/* check if a command alias */
 	alias = switch_core_hash_find(globals.cmd_aliases, argv[0]);
 
-	if (!zstr(alias)) {
+	if (alias) {
 		success = alias_api(alias, argv[1], stream);
 	} else if (!strcmp("cmd", argv[0])) {
 		success = command_api(argv[1], stream);
