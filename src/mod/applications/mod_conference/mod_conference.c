@@ -203,7 +203,8 @@ typedef enum {
 	CFLAG_VIDEO_BRIDGE = (1 << 14),
 	CFLAG_AUDIO_ALWAYS = (1 << 15),
 	CFLAG_ENDCONF_FORCED = (1 << 16),
-	CFLAG_RFC4579 = (1 << 17)
+	CFLAG_RFC4579 = (1 << 17),
+	CFLAG_CONF_RESTART_AUTO_RECORD = (1 << 18)
 } conf_flag_t;
 
 typedef enum {
@@ -1228,7 +1229,7 @@ static switch_status_t conference_record_stop(conference_obj_t *conference, swit
 	switch_mutex_lock(conference->member_mutex);
 	for (member = conference->members; member; member = member->next) {
 		if (switch_test_flag(member, MFLAG_NOCHANNEL) && (!path || !strcmp(path, member->rec_path))) {
-			if (member->rec && member->rec->autorec) {
+			if (!switch_test_flag(conference, CFLAG_CONF_RESTART_AUTO_RECORD) && member->rec && member->rec->autorec) {
 				stream->write_function(stream, "Stopped AUTO recording file %s (Auto Recording Now Disabled)\n", member->rec_path);
 				conference->auto_record = 0;
 			} else {
@@ -7179,11 +7180,11 @@ static void set_cflags(const char *flags, uint32_t *f)
 				*f |= CFLAG_VIDEO_BRIDGE;
 			} else if (!strcasecmp(argv[i], "audio-always")) {
 				*f |= CFLAG_AUDIO_ALWAYS;
+			} else if (!strcasecmp(argv[i], "restart-auto-record")) {
+				*f |= CFLAG_CONF_RESTART_AUTO_RECORD;
 			} else if (!strcasecmp(argv[i], "rfc-4579")) {
 				*f |= CFLAG_RFC4579;
 			}
-
-			
 		}		
 
 		free(dup);
