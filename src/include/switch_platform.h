@@ -268,7 +268,7 @@ typedef intptr_t switch_ssize_t;
 #endif
 
 
-#if UINTPTR_MAX == 0xffffffffffffffff
+#if UINTPTR_MAX == 0xffffffffffffffff || defined(_WIN64)
 #define FS_64BIT 1
 #endif
 
