@@ -403,7 +403,7 @@ static switch_status_t timerfd_start_interval(interval_timer_t *it, int interval
 
 	it->tick = 0;
 
-	fd = timerfd_create(CLOCK_MONOTONIC, TFD_CLOEXEC);
+	fd = timerfd_create(CLOCK_MONOTONIC, 0);
 
 	if (fd < 0) {
 		return SWITCH_STATUS_GENERR;
