@@ -101,7 +101,7 @@ getlibs () {
   getlib http://downloads.mongodb.org/cxx-driver/mongodb-linux-x86_64-v1.8-latest.tgz
   getlib http://files.freeswitch.org/downloads/libs/json-c-0.9.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
-  getlib http://files.freeswitch.org/downloads/libs/soundtouch-1.6.0.tar.gz
+  getlib http://files.freeswitch.org/downloads/libs/soundtouch-1.7.1.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/flite-1.5.4-current.tar.bz2
   getlib http://files.freeswitch.org/downloads/libs/sphinxbase-0.7.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/pocketsphinx-0.7.tar.gz
