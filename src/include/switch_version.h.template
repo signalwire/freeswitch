@@ -37,7 +37,7 @@
 extern "C" {
 #endif
 
-#if UINTPTR_MAX == 0xffffffffffffffff
+#if UINTPTR_MAX == 0xffffffffffffffff || defined(_WIN64)
 #define _fs__bits "64bit"
 #else
 #define _fs__bits "32bit"

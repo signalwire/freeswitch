@@ -185,7 +185,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
   top:
 	
 	for(i = 0; i < 2; i++) {
-		if (session->dmachine[i] && !switch_channel_test_flag(session->channel, CF_BROADCAST)) {
+		if (session->dmachine[i]) {
 			switch_channel_dtmf_lock(session->channel);
 			switch_ivr_dmachine_ping(session->dmachine[i], NULL);
 			switch_channel_dtmf_unlock(session->channel);
@@ -1629,7 +1629,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_sessio
 	}
 	
 	if (!switch_test_flag(dtmf, DTMF_FLAG_SKIP_PROCESS)) {
-		if (session->dmachine[0] && !switch_channel_test_flag(session->channel, CF_BROADCAST)) {
+		if (session->dmachine[0]) {
 			char str[2] = { dtmf->digit, '\0' };
 			switch_ivr_dmachine_feed(session->dmachine[0], str, NULL);
 			fed = 1;
@@ -1694,8 +1694,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 				return SWITCH_STATUS_SUCCESS;
 			}
 		}
-
-		if (session->dmachine[1] && !switch_channel_test_flag(session->channel, CF_BROADCAST)) {
+		if (session->dmachine[1]) {
 			char str[2] = { new_dtmf.digit, '\0' };
 			switch_ivr_dmachine_feed(session->dmachine[1], str, NULL);
 			return SWITCH_STATUS_SUCCESS;

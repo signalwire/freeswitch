@@ -1435,9 +1435,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 			engine->reset_codec = 0;
 					
 			if (switch_rtp_ready(engine->rtp_session)) {
-				if (switch_core_media_set_codec(session, 1, 0) != SWITCH_STATUS_SUCCESS) {
-					*frame = NULL;
-					switch_goto_status(SWITCH_STATUS_GENERR, end);
+				if (type == SWITCH_MEDIA_TYPE_VIDEO) {
+					switch_core_media_set_video_codec(session, 1);
+				} else {
+					if (switch_core_media_set_codec(session, 1, 0) != SWITCH_STATUS_SUCCESS) {
+						*frame = NULL;
+						switch_goto_status(SWITCH_STATUS_GENERR, end);
+					}
 				}
 
 				if ((val = switch_channel_get_variable(session->channel, "rtp_timeout_sec"))) {
@@ -1469,29 +1473,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 						engine->read_impl.samples_per_packet;
 				}
 			}
-
 			
-			if (session->read_resampler) {
-				switch_mutex_lock(session->resample_mutex);
-				switch_resample_destroy(&session->read_resampler);
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Deactivating read resampler\n");
-				switch_mutex_unlock(session->resample_mutex);
-			}
-
-			if (session->write_resampler) {
-				switch_mutex_lock(session->resample_mutex);
-				switch_resample_destroy(&session->write_resampler);
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Deactivating write resampler\n");
-				switch_mutex_unlock(session->resample_mutex);
-			}
-
-			switch_core_session_reset(session, 0, 0);
-
-
 			engine->check_frames = 0;
 			engine->last_ts = 0;
 
-			switch_channel_audio_sync(session->channel);
 			do_cng = 1;
 		}
 
@@ -1843,7 +1828,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_get_offered_pt(switch_core_ses
 
 	switch_assert(session);
 
-	if (!(smh = session->media_handle)) {
+	if (!(smh = session->media_handle) || !mimp) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1995,6 +1980,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 			(uint32_t) a_engine->read_impl.microseconds_per_packet / 1000 != a_engine->cur_payload_map->codec_ms ||
 			a_engine->read_impl.samples_per_second != a_engine->cur_payload_map->rm_rate ) {
 			
+			if (session->read_resampler) {
+				switch_mutex_lock(session->resample_mutex);
+				switch_resample_destroy(&session->read_resampler);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Deactivating read resampler\n");
+				switch_mutex_unlock(session->resample_mutex);
+			}
+
+			if (session->write_resampler) {
+				switch_mutex_lock(session->resample_mutex);
+				switch_resample_destroy(&session->write_resampler);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Deactivating write resampler\n");
+				switch_mutex_unlock(session->resample_mutex);
+			}
+
+			switch_core_session_reset(session, 0, 0);
+			switch_channel_audio_sync(session->channel);
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
 							  "Changing Codec from %s@%dms@%dhz to %s@%dms@%luhz\n",
@@ -3350,7 +3351,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				if (!switch_true(mirror) && 
 					switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND && 
 					(!switch_channel_test_flag(session->channel, CF_REINVITE) || switch_media_handle_test_media_flag(smh, SCMF_RENEG_ON_REINVITE))) {
-					switch_core_media_get_offered_pt(session, mimp, &a_engine->cur_payload_map->recv_pt);
+					switch_core_media_get_offered_pt(session, matches[0].imp, &a_engine->cur_payload_map->recv_pt);
 				}
 				
 				switch_snprintf(tmp, sizeof(tmp), "%d", a_engine->cur_payload_map->recv_pt);
@@ -3561,7 +3562,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					
 					pmap->recv_pt = (switch_payload_t)map->rm_pt;
 						
-					if (!switch_true(mirror) && switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+					if (j == 0 && (!switch_true(mirror) && switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND)) {
 						switch_core_media_get_offered_pt(session, mimp, &pmap->recv_pt);
 					}
 				}
@@ -3586,6 +3587,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				if (switch_core_media_set_video_codec(session, 0) == SWITCH_STATUS_SUCCESS) {
 					check_ice(smh, SWITCH_MEDIA_TYPE_VIDEO, sdp, m);
 				}
+				
 
 			}
 		}

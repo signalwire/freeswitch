@@ -9,7 +9,14 @@ static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struc
 	esl_status_t status;
 	time_t exp = 0;
 
-	esl_attach_handle(&handle, client_sock, addr);
+	if (fork()) {
+		return;
+	}
+
+	if (esl_attach_handle(&handle, client_sock, addr) != ESL_SUCCESS) {
+		return;
+	}
+
 
 	esl_log(ESL_LOG_INFO, "Connected! %d\n", handle.sock);
 
@@ -45,10 +52,21 @@ static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struc
 	esl_disconnect(&handle);
 }
 
+static esl_socket_t server_sock = ESL_SOCK_INVALID;
+
+static void handle_sig(int sig)
+{
+	shutdown(server_sock, 2);
+
+}
+
 int main(void)
 {
+	signal(SIGINT, handle_sig);
+	signal(SIGCHLD, SIG_IGN);
+
 	esl_global_set_default_logger(7);
-	esl_listen_threaded("localhost", 8040, mycallback, 100000);
-	
+	esl_listen("localhost", 8040, mycallback, &server_sock);
+
 	return 0;
 }
