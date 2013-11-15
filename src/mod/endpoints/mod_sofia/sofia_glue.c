@@ -6253,6 +6253,10 @@ int sofia_recover_callback(switch_core_session_t *session)
 
  end:
 
+	if (profile) {
+		sofia_glue_release_profile(profile);
+	}
+
 	return r;
 
 }
