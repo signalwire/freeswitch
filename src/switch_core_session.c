@@ -37,6 +37,8 @@
 #include "switch_core.h"
 #include "private/switch_core_pvt.h"
 
+#define DEBUG_THREAD_POOL
+
 struct switch_session_manager session_manager;
 
 SWITCH_DECLARE(void) switch_core_session_set_dmachine(switch_core_session_t *session, switch_ivr_dmachine_t *dmachine, switch_digit_action_target_t target)
@@ -2984,6 +2986,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_refresh_video(switch_core_se
 	return SWITCH_STATUS_FALSE;
 }
 
+SWITCH_DECLARE(void) switch_core_session_debug_pool(switch_stream_handle_t *stream)
+{
+	stream->write_function(stream, "Thread pool: running:%d busy:%d popping:%d\n",
+		session_manager.running, session_manager.busy, session_manager.popping);
+}
 
 /* For Emacs:
  * Local Variables:

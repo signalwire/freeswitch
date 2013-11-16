@@ -2276,6 +2276,9 @@ SWITCH_STANDARD_API(ctl_function)
 			switch_core_session_ctl(command, &arg);
 			stream->write_function(stream, "+OK\n");
 
+		} else if (!strcasecmp(argv[0], "debug_pool")) {
+			switch_core_session_debug_pool(stream);
+
 		} else if (!strcasecmp(argv[0], "debug_sql")) {
 			int x = 0;
 			switch_core_session_ctl(SCSC_DEBUG_SQL, &x);
@@ -6535,6 +6538,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add complete del");
 	switch_console_set_complete("add db_cache status");
 	switch_console_set_complete("add fsctl debug_level");
+	switch_console_set_complete("add fsctl debug_pool");
 	switch_console_set_complete("add fsctl debug_sql");
 	switch_console_set_complete("add fsctl last_sps");
 	switch_console_set_complete("add fsctl default_dtmf_duration");

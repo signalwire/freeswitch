@@ -2601,6 +2601,7 @@ SWITCH_DECLARE(int) switch_stream_system_fork(const char *cmd, switch_stream_han
 SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t *stream);
 
 SWITCH_DECLARE(switch_call_direction_t) switch_ice_direction(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_session_debug_pool(switch_stream_handle_t *stream);
 
 SWITCH_END_EXTERN_C
 #endif
