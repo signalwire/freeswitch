@@ -676,9 +676,11 @@ static switch_status_t timer_init(switch_timer_t *timer)
 	timer_private_t *private_info;
 	int sanity = 0;
 
+#ifdef HAVE_TIMERFD_CREATE
 	if (TFD == 2) {
 		return _timerfd_init(timer);
 	}
+#endif
 
 	while (globals.STARTED == 0) {
 		do_sleep(100000);
@@ -741,9 +743,11 @@ static switch_status_t timer_step(switch_timer_t *timer)
 	timer_private_t *private_info;
 	uint64_t samples;
 
+#ifdef HAVE_TIMERFD_CREATE
 	if (TFD == 2) {
 		return _timerfd_step(timer);
 	}
+#endif
 
 	private_info = timer->private_info;
 
@@ -769,9 +773,11 @@ static switch_status_t timer_sync(switch_timer_t *timer)
 {
 	timer_private_t *private_info;
 
+#ifdef HAVE_TIMERFD_CREATE
 	if (TFD == 2) {
 		return _timerfd_sync(timer);
 	}
+#endif
 
 	private_info = timer->private_info;
 
@@ -800,9 +806,11 @@ static switch_status_t timer_next(switch_timer_t *timer)
 #endif
 	int delta;
 
+#ifdef HAVE_TIMERFD_CREATE
 	if (TFD == 2) {
 		return _timerfd_next(timer);
 	}
+#endif
 
 	private_info = timer->private_info;
 
@@ -851,9 +859,11 @@ static switch_status_t timer_check(switch_timer_t *timer, switch_bool_t step)
 	timer_private_t *private_info;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
+#ifdef HAVE_TIMERFD_CREATE
 	if (TFD == 2) {
 		return _timerfd_check(timer, step);
 	}
+#endif
 
 	private_info = timer->private_info;
 
@@ -885,9 +895,11 @@ static switch_status_t timer_destroy(switch_timer_t *timer)
 {
 	timer_private_t *private_info;
 
+#ifdef HAVE_TIMERFD_CREATE
 	if (TFD == 2) {
 		return _timerfd_destroy(timer);
 	}
+#endif
 
 	private_info = timer->private_info;
 
