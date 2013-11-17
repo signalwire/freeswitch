@@ -461,7 +461,7 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_finish_results_real(const cha
 	int done = 0;
 	do {
 		switch_pgsql_next_result(handle, &res);
-		if (res && res->err) {
+		if (res && res->err && !switch_stristr("already exists", res->err) && !switch_stristr("duplicate key name", res->err)) {
 			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "Error executing query:\n%s\n", res->err);
 			final_status = SWITCH_PGSQL_FAIL;
 		}
