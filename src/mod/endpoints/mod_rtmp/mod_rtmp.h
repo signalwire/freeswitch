@@ -336,6 +336,7 @@ struct mod_rtmp_globals {
 	switch_hash_t *session_hash;
 	switch_thread_rwlock_t *session_rwlock;
 	switch_hash_t *invoke_hash;
+	int running;
 };
 
 extern struct mod_rtmp_globals rtmp_globals;
@@ -605,6 +606,7 @@ void rtmp_profile_release(rtmp_profile_t *profile);
 switch_status_t rtmp_tcp_init(rtmp_profile_t *profile, const char *bindaddr, rtmp_io_t **new_io, switch_memory_pool_t *pool);
 switch_status_t rtmp_session_request(rtmp_profile_t *profile, rtmp_session_t **newsession);
 switch_status_t rtmp_session_destroy(rtmp_session_t **session);
+switch_status_t rtmp_real_session_destroy(rtmp_session_t **session);
 
 /**** Protocol ****/
 void rtmp_set_chunksize(rtmp_session_t *rsession, uint32_t chunksize);
