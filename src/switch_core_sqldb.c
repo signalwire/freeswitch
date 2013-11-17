@@ -52,6 +52,7 @@ struct switch_cache_db_handle {
 	char creator[CACHE_DB_LEN];
 	char last_user[CACHE_DB_LEN];
 	uint32_t use_count;
+	uint64_t total_used_count;
 	struct switch_cache_db_handle *next;
 };
 
@@ -102,6 +103,7 @@ static void add_handle(switch_cache_db_handle_t *dbh, const char *db_str, const 
 	dbh->thread_hash = switch_ci_hashfunc_default(thread_str, &hlen);
 
 	dbh->use_count++;
+	dbh->total_used_count++;
 	sql_manager.total_used_handles++;
 	dbh->next = sql_manager.handle_pool;
 
@@ -149,7 +151,7 @@ static switch_cache_db_handle_t *get_handle(const char *db_str, const char *user
 			r = dbh_ptr;
 		}
 	}
-			
+
 	if (!r) {
 		for (dbh_ptr = sql_manager.handle_pool; dbh_ptr; dbh_ptr = dbh_ptr->next) {
 			if (dbh_ptr->hash == hash && (dbh_ptr->type != SCDB_TYPE_PGSQL || !dbh_ptr->use_count) && !switch_test_flag(dbh_ptr, CDF_PRUNE) && 
@@ -162,6 +164,7 @@ static switch_cache_db_handle_t *get_handle(const char *db_str, const char *user
 	
 	if (r) {
 		r->use_count++;
+		r->total_used_count++;
 		sql_manager.total_used_handles++;
 		r->hash = switch_ci_hashfunc_default(db_str, &hlen);
 		r->thread_hash = thread_hash;
@@ -3489,11 +3492,12 @@ SWITCH_DECLARE(void) switch_cache_db_status(switch_stream_handle_t *stream)
 			used++;
 		}
 		
-		stream->write_function(stream, "%s\n\tType: %s\n\tLast used: %d\n\tFlags: %s, %s(%d)\n"
+		stream->write_function(stream, "%s\n\tType: %s\n\tLast used: %d\n\tTotal used: %ld\n\tFlags: %s, %s(%d)\n"
 							   "\tCreator: %s\n\tLast User: %s\n",
 							   cleankey_str,
 							   switch_cache_db_type_name(dbh->type),
 							   diff,
+							   dbh->total_used_count,
 							   locked ? "Locked" : "Unlocked",
 							   dbh->use_count ? "Attached" : "Detached", dbh->use_count, dbh->creator, dbh->last_user);
 	}
