@@ -511,6 +511,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_payload_code(switch_core
 SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_session_t *session, 
 																  switch_media_type_t type,
 																  const char *name, 
+																  const char *fmtp,
 																  switch_sdp_type_t sdp_type,
 																  uint32_t pt, 
 																  uint32_t rate, 
@@ -565,6 +566,10 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 
 	if (rate) {
 		pmap->rate = rate;
+	}
+
+	if (!zstr(fmtp) && (!pmap->rm_fmtp || strcmp(pmap->rm_fmtp, fmtp))) {
+		pmap->rm_fmtp = switch_core_strdup(session->pool, fmtp);
 	}
 
 	pmap->allocated = 1;
@@ -3285,7 +3290,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				for(j = 0; j < m_idx; j++) {
 					payload_map_t *pmap = switch_core_media_add_payload_map(session, 
 																			SWITCH_MEDIA_TYPE_AUDIO,
-																			matches[j].map->rm_encoding, 
+																			matches[j].map->rm_encoding,
+																			matches[j].map->rm_fmtp,
 																			sdp_type, 
 																			matches[j].map->rm_pt,
 																			matches[j].imp->samples_per_second,
@@ -3534,6 +3540,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					payload_map_t *pmap = switch_core_media_add_payload_map(session, 
 																			SWITCH_MEDIA_TYPE_VIDEO,
 																			matches[j].map->rm_encoding, 
+																			matches[j].map->rm_fmtp,
 																			sdp_type, 
 																			matches[j].map->rm_pt,
 																			matches[j].imp->samples_per_second,
@@ -5806,6 +5813,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				switch_core_media_add_payload_map(session,
 												  imp->codec_type == SWITCH_CODEC_TYPE_AUDIO ? SWITCH_MEDIA_TYPE_AUDIO : SWITCH_MEDIA_TYPE_VIDEO,
 												  imp->iananame,
+												  NULL,
 												  sdp_type,
 												  smh->ianacodes[i],
 												  imp->samples_per_second,
@@ -7868,6 +7876,7 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 				switch_core_media_add_payload_map(session, 
 												  m->m_type == sdp_media_audio ? SWITCH_MEDIA_TYPE_AUDIO : SWITCH_MEDIA_TYPE_VIDEO,
 												  map->rm_encoding,
+												  map->rm_fmtp,
 												  sdp_type,
 												  map->rm_pt,
 												  map->rm_rate,
