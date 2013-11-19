@@ -1142,6 +1142,18 @@ set_modules_non_dfsg () {
   done
 }
 
+conf_merge () {
+  local of="$1" if="$2"
+  if [ -s $if ]; then
+    grep -v '^##\|^$' $if | while xread x; do
+      touch $of
+      if ! grep -e "$x" $of >/dev/null; then
+        printf '%s\n' "$x" >> $of
+      fi
+    done
+  fi
+}
+
 codename="sid"
 modulelist_opt=""
 while getopts "c:m:" o; do
@@ -1194,14 +1206,7 @@ map_modules "mod_filter" \
 echo "Generating debian/ (-all package)..." >&2
 grep -e '^Package:' control | grep -v '^freeswitch-all$' | while xread l; do
   m="${l#*: }"
-  f=$m.install
-  if [ -s $f ]; then
-    grep -v '^##\|^$' $f | while xread x; do
-      if ! grep -e "$x" freeswitch-all.install >/dev/null; then
-        printf '%s\n' "$x" >> freeswitch-all.install
-      fi
-    done
-  fi
+  conf_merge freeswitch-all.install $m.install
 done
 for x in postinst postrm preinst prerm; do
   cp -a freeswitch.$x freeswitch-all.$x
