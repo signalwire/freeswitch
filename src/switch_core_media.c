@@ -3038,43 +3038,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			}
 
 			x = 0;
-			
-			if (a_engine->cur_payload_map->rm_encoding && !(switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) || 
-														switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF))) {	// && !switch_channel_test_flag(session->channel, CF_REINVITE)) {
-				char *remote_host = a_engine->cur_payload_map->remote_sdp_ip;
-				switch_port_t remote_port = a_engine->cur_payload_map->remote_sdp_port;
-				int same = 0;
-
-				if (switch_rtp_ready(a_engine->rtp_session)) {
-					remote_host = switch_rtp_get_remote_host(a_engine->rtp_session);
-					remote_port = switch_rtp_get_remote_port(a_engine->rtp_session);
-				}
-
-				for (map = m->m_rtpmaps; map; map = map->rm_next) {
-					if ((zstr(map->rm_encoding) || (smh->mparams->ndlb & SM_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
-						match = (map->rm_pt == a_engine->cur_payload_map->pt) ? 1 : 0;
-					} else {
-						match = strcasecmp(switch_str_nil(map->rm_encoding), a_engine->cur_payload_map->iananame) ? 0 : 1;
-					}
-
-					if (match && connection->c_address && remote_host && !strcmp(connection->c_address, remote_host) && m->m_port == remote_port) {
-						same = 1;
-					} else {
-						same = 0;
-						break;
-					}
-				}
-
-				if (same) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
-									  "Our existing sdp is still good [%s %s:%d], let's keep it.\n",
-									  a_engine->cur_payload_map->rm_encoding, a_engine->cur_payload_map->remote_sdp_ip, a_engine->cur_payload_map->remote_sdp_port);
-					got_audio = 1;
-				} else {
-					match = 0;
-					got_audio = 0;
-				}
-			}
 
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
 				int32_t i;
