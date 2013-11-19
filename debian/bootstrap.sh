@@ -1176,6 +1176,8 @@ echo "Parsing control-modules..." >&2
 parse_mod_control
 echo "Displaying includes/excludes..." >&2
 map_modules 'mod_filter_show' '' ''
+echo "Generating modules_.conf..." >&2
+genmodulesconf > modules_.conf
 echo "Generating control-modules.gen as sanity check..." >&2
 (echo "# -*- mode:debian-control -*-"; \
   echo "##### Author: Travis Cross <tc@traviscross.com>"; echo; \
@@ -1198,7 +1200,6 @@ echo "Generating debian/ (lang)..." >&2
 map_langs 'genlang'
 echo "Generating debian/ (modules)..." >&2
 (echo "### modules"; echo) >> control
-genmodulesconf > modules_.conf
 map_modules "mod_filter" \
   "gencontrol_per_cat" \
   "gencontrol_per_mod geninstall_per_mod genoverrides_per_mod"
