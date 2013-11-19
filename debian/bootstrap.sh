@@ -937,12 +937,11 @@ genoverrides_per_mod () {
   test -f $f.tmpl && cat $f.tmpl >> $f
 }
 
-genmodules_per_cat () {
-  echo "## $category" >> modules_.conf
-}
-
-genmodules_per_mod () {
-  echo "$module" >> modules_.conf
+genmodulesconf () {
+  genmodules_per_cat () { echo "## $category"; }
+  genmodules_per_mod () { echo "$module"; }
+  print_edit_warning
+  map_modules 'mod_filter' 'genmodules_per_cat' 'genmodules_per_mod'
 }
 
 genconf () {
@@ -1199,10 +1198,10 @@ echo "Generating debian/ (lang)..." >&2
 map_langs 'genlang'
 echo "Generating debian/ (modules)..." >&2
 (echo "### modules"; echo) >> control
-print_edit_warning > modules_.conf
+genmodulesconf > modules_.conf
 map_modules "mod_filter" \
-  "gencontrol_per_cat genmodules_per_cat" \
-  "gencontrol_per_mod geninstall_per_mod genoverrides_per_mod genmodules_per_mod"
+  "gencontrol_per_cat" \
+  "gencontrol_per_mod geninstall_per_mod genoverrides_per_mod"
 echo "Generating debian/ (-all package)..." >&2
 grep -e '^Package:' control | grep -v '^freeswitch-all$' | while xread l; do
   m="${l#*: }"
