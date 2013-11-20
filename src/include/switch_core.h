@@ -2312,7 +2312,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload);
 SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_token(const char *ip_str, const char *list_name, const char **token);
 #define switch_check_network_list_ip(_ip_str, _list_name) switch_check_network_list_ip_token(_ip_str, _list_name, NULL)
 SWITCH_DECLARE(void) switch_time_set_monotonic(switch_bool_t enable);
-SWITCH_DECLARE(void) switch_time_set_timerfd(switch_bool_t enable);
+SWITCH_DECLARE(void) switch_time_set_timerfd(int enable);
 SWITCH_DECLARE(void) switch_time_set_nanosleep(switch_bool_t enable);
 SWITCH_DECLARE(void) switch_time_set_matrix(switch_bool_t enable);
 SWITCH_DECLARE(void) switch_time_set_cond_yield(switch_bool_t enable);
@@ -2601,6 +2601,7 @@ SWITCH_DECLARE(int) switch_stream_system_fork(const char *cmd, switch_stream_han
 SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t *stream);
 
 SWITCH_DECLARE(switch_call_direction_t) switch_ice_direction(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_session_debug_pool(switch_stream_handle_t *stream);
 
 SWITCH_END_EXTERN_C
 #endif

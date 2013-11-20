@@ -167,6 +167,7 @@ struct switch_media_handle_s {
 	const switch_codec_implementation_t *negotiated_codecs[SWITCH_MAX_CODECS];
 	int num_negotiated_codecs;
 	switch_payload_t ianacodes[SWITCH_MAX_CODECS];
+	char *fmtps[SWITCH_MAX_CODECS];
 	int video_count;
 
 	uint32_t owner_id;
@@ -464,13 +465,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_payload_code(switch_core
 																	 switch_media_type_t type,
 																	 const char *iananame,
 																	 switch_payload_t *ptP,
-																	 switch_payload_t *recv_ptP)
+																	 switch_payload_t *recv_ptP,
+																	 char **fmtpP)
 {
 	payload_map_t *pmap;
 	switch_media_handle_t *smh;
 	switch_rtp_engine_t *engine;
 	switch_payload_t pt = 0, recv_pt = 0;
 	int found = 0;
+	char *fmtp = NULL;
 
 	switch_assert(session);
 
@@ -488,6 +491,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_payload_code(switch_core
 		if (!strcasecmp(pmap->iananame, iananame)) {
 			pt = pmap->pt;
 			recv_pt = pmap->recv_pt;
+			fmtp = pmap->rm_fmtp;
 			found++;
 		}
 	}
@@ -500,6 +504,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_payload_code(switch_core
 		if (recv_ptP) {
 			*recv_ptP = recv_pt; 
 		}
+		
+		if (!zstr(fmtp) && fmtpP) {
+			*fmtpP = fmtp;
+		}
+
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -511,6 +520,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_payload_code(switch_core
 SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_session_t *session, 
 																  switch_media_type_t type,
 																  const char *name, 
+																  const char *fmtp,
 																  switch_sdp_type_t sdp_type,
 																  uint32_t pt, 
 																  uint32_t rate, 
@@ -565,6 +575,10 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 
 	if (rate) {
 		pmap->rate = rate;
+	}
+
+	if (!zstr(fmtp) && (!pmap->rm_fmtp || strcmp(pmap->rm_fmtp, fmtp))) {
+		pmap->rm_fmtp = switch_core_strdup(session->pool, fmtp);
 	}
 
 	pmap->allocated = 1;
@@ -3033,43 +3047,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			}
 
 			x = 0;
-			
-			if (a_engine->cur_payload_map->rm_encoding && !(switch_media_handle_test_media_flag(smh, SCMF_LIBERAL_DTMF) || 
-														switch_channel_test_flag(session->channel, CF_LIBERAL_DTMF))) {	// && !switch_channel_test_flag(session->channel, CF_REINVITE)) {
-				char *remote_host = a_engine->cur_payload_map->remote_sdp_ip;
-				switch_port_t remote_port = a_engine->cur_payload_map->remote_sdp_port;
-				int same = 0;
-
-				if (switch_rtp_ready(a_engine->rtp_session)) {
-					remote_host = switch_rtp_get_remote_host(a_engine->rtp_session);
-					remote_port = switch_rtp_get_remote_port(a_engine->rtp_session);
-				}
-
-				for (map = m->m_rtpmaps; map; map = map->rm_next) {
-					if ((zstr(map->rm_encoding) || (smh->mparams->ndlb & SM_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
-						match = (map->rm_pt == a_engine->cur_payload_map->pt) ? 1 : 0;
-					} else {
-						match = strcasecmp(switch_str_nil(map->rm_encoding), a_engine->cur_payload_map->iananame) ? 0 : 1;
-					}
-
-					if (match && connection->c_address && remote_host && !strcmp(connection->c_address, remote_host) && m->m_port == remote_port) {
-						same = 1;
-					} else {
-						same = 0;
-						break;
-					}
-				}
-
-				if (same) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
-									  "Our existing sdp is still good [%s %s:%d], let's keep it.\n",
-									  a_engine->cur_payload_map->rm_encoding, a_engine->cur_payload_map->remote_sdp_ip, a_engine->cur_payload_map->remote_sdp_port);
-					got_audio = 1;
-				} else {
-					match = 0;
-					got_audio = 0;
-				}
-			}
 
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
 				int32_t i;
@@ -3285,7 +3262,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				for(j = 0; j < m_idx; j++) {
 					payload_map_t *pmap = switch_core_media_add_payload_map(session, 
 																			SWITCH_MEDIA_TYPE_AUDIO,
-																			matches[j].map->rm_encoding, 
+																			matches[j].map->rm_encoding,
+																			matches[j].map->rm_fmtp,
 																			sdp_type, 
 																			matches[j].map->rm_pt,
 																			matches[j].imp->samples_per_second,
@@ -3534,6 +3512,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					payload_map_t *pmap = switch_core_media_add_payload_map(session, 
 																			SWITCH_MEDIA_TYPE_VIDEO,
 																			matches[j].map->rm_encoding, 
+																			matches[j].map->rm_fmtp,
 																			sdp_type, 
 																			matches[j].map->rm_pt,
 																			matches[j].imp->samples_per_second,
@@ -5421,6 +5400,10 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 			}
 		}
 
+		if (smh->fmtps[i]) {
+			fmtp = smh->fmtps[i];
+		}
+
 		if (smh->ianacodes[i] > 95 || switch_channel_test_flag(session->channel, CF_VERBOSE_SDP)) {
 			int channels = get_channels(imp->iananame, imp->number_of_channels);
 
@@ -5695,7 +5678,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	const char *fmtp_out;
 	const char *fmtp_out_var = switch_channel_get_variable(session->channel, "rtp_force_audio_fmtp");
 	switch_event_t *map = NULL, *ptmap = NULL;
-	const char *b_sdp = NULL;
+	//const char *b_sdp = NULL;
 	const char *local_audio_crypto_key = switch_core_session_local_crypto_key(session, SWITCH_MEDIA_TYPE_AUDIO);
 	const char *local_sdp_audio_zrtp_hash = switch_core_media_get_zrtp_hash(session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_TRUE);
 	const char *local_sdp_video_zrtp_hash = switch_core_media_get_zrtp_hash(session, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_TRUE);
@@ -5780,6 +5763,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			for (i = 0; i < smh->mparams->num_codecs; i++) {
 				const switch_codec_implementation_t *imp = smh->codecs[i];
 				switch_payload_t orig_pt = 0;
+				char *orig_fmtp = NULL;
 
 				smh->ianacodes[i] = imp->ianacode;
 				
@@ -5795,8 +5779,12 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					if (orig_session && 
 						switch_core_session_get_payload_code(orig_session, 
 															 imp->codec_type == SWITCH_CODEC_TYPE_AUDIO ? SWITCH_MEDIA_TYPE_AUDIO : SWITCH_MEDIA_TYPE_VIDEO,
-															 imp->iananame, &orig_pt, NULL) == SWITCH_STATUS_SUCCESS) {
+															 imp->iananame, &orig_pt, NULL, &orig_fmtp) == SWITCH_STATUS_SUCCESS) {
 						smh->ianacodes[i] = orig_pt;
+						
+						if (orig_fmtp) {
+							smh->fmtps[i] = switch_core_session_strdup(session, orig_fmtp);
+						}
 					} else {
 						smh->ianacodes[i] = (switch_payload_t)smh->payload_space++;
 					}
@@ -5806,6 +5794,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				switch_core_media_add_payload_map(session,
 												  imp->codec_type == SWITCH_CODEC_TYPE_AUDIO ? SWITCH_MEDIA_TYPE_AUDIO : SWITCH_MEDIA_TYPE_VIDEO,
 												  imp->iananame,
+												  NULL,
 												  sdp_type,
 												  smh->ianacodes[i],
 												  imp->samples_per_second,
@@ -5858,9 +5847,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		return;
 	}
 
-	if (!a_engine->cur_payload_map->rm_encoding && (b_sdp = switch_channel_get_variable(session->channel, SWITCH_B_SDP_VARIABLE))) {
-		switch_core_media_sdp_map(b_sdp, &map, &ptmap);
-	}
+	//if (!a_engine->cur_payload_map->rm_encoding && (b_sdp = switch_channel_get_variable(session->channel, SWITCH_B_SDP_VARIABLE))) {
+	//switch_core_media_sdp_map(b_sdp, &map, &ptmap);
+	//}
 
 	if (zstr(sr)) {
 		if ((var_val = switch_channel_get_variable(session->channel, "media_audio_mode"))) {
@@ -6322,9 +6311,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 					if (ov_fmtp) {
 						pass_fmtp = ov_fmtp;
-					}// else { // seems to break eyebeam at least...
-						//pass_fmtp = switch_channel_get_variable(session->channel, "rtp_video_fmtp");
-					//}
+					} else if (switch_true(switch_channel_get_variable_dup(session->channel, "rtp_mirror_fmtp", SWITCH_FALSE, -1))) { 
+						// seems to break eyebeam at least...
+						pass_fmtp = switch_channel_get_variable(session->channel, "rtp_video_fmtp");
+					}
 				}
 
 				if (pass_fmtp) {
@@ -7868,6 +7858,7 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 				switch_core_media_add_payload_map(session, 
 												  m->m_type == sdp_media_audio ? SWITCH_MEDIA_TYPE_AUDIO : SWITCH_MEDIA_TYPE_VIDEO,
 												  map->rm_encoding,
+												  map->rm_fmtp,
 												  sdp_type,
 												  map->rm_pt,
 												  map->rm_rate,

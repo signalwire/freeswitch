@@ -937,12 +937,11 @@ genoverrides_per_mod () {
   test -f $f.tmpl && cat $f.tmpl >> $f
 }
 
-genmodules_per_cat () {
-  echo "## $category" >> modules_.conf
-}
-
-genmodules_per_mod () {
-  echo "$module" >> modules_.conf
+genmodulesconf () {
+  genmodules_per_cat () { echo "## $category"; }
+  genmodules_per_mod () { echo "$module"; }
+  print_edit_warning
+  map_modules 'mod_filter' 'genmodules_per_cat' 'genmodules_per_mod'
 }
 
 genconf () {
@@ -1142,6 +1141,18 @@ set_modules_non_dfsg () {
   done
 }
 
+conf_merge () {
+  local of="$1" if="$2"
+  if [ -s $if ]; then
+    grep -v '^##\|^$' $if | while xread x; do
+      touch $of
+      if ! grep -e "$x" $of >/dev/null; then
+        printf '%s\n' "$x" >> $of
+      fi
+    done
+  fi
+}
+
 codename="sid"
 modulelist_opt=""
 while getopts "c:m:" o; do
@@ -1165,6 +1176,8 @@ echo "Parsing control-modules..." >&2
 parse_mod_control
 echo "Displaying includes/excludes..." >&2
 map_modules 'mod_filter_show' '' ''
+echo "Generating modules_.conf..." >&2
+genmodulesconf > modules_.conf
 echo "Generating control-modules.gen as sanity check..." >&2
 (echo "# -*- mode:debian-control -*-"; \
   echo "##### Author: Travis Cross <tc@traviscross.com>"; echo; \
@@ -1187,21 +1200,13 @@ echo "Generating debian/ (lang)..." >&2
 map_langs 'genlang'
 echo "Generating debian/ (modules)..." >&2
 (echo "### modules"; echo) >> control
-print_edit_warning > modules_.conf
 map_modules "mod_filter" \
-  "gencontrol_per_cat genmodules_per_cat" \
-  "gencontrol_per_mod geninstall_per_mod genoverrides_per_mod genmodules_per_mod"
+  "gencontrol_per_cat" \
+  "gencontrol_per_mod geninstall_per_mod genoverrides_per_mod"
 echo "Generating debian/ (-all package)..." >&2
 grep -e '^Package:' control | grep -v '^freeswitch-all$' | while xread l; do
   m="${l#*: }"
-  f=$m.install
-  if [ -s $f ]; then
-    grep -v '^##\|^$' $f | while xread x; do
-      if ! grep -e "$x" freeswitch-all.install >/dev/null; then
-        printf '%s\n' "$x" >> freeswitch-all.install
-      fi
-    done
-  fi
+  conf_merge freeswitch-all.install $m.install
 done
 for x in postinst postrm preinst prerm; do
   cp -a freeswitch.$x freeswitch-all.$x
