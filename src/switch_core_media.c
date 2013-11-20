@@ -544,9 +544,17 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 
 
 	for (pmap = engine->payload_map; pmap && pmap->allocated; pmap = pmap->next) {
-		exists = (!strcasecmp(name, pmap->iananame) && (!pmap->rate || rate == pmap->rate) && (pmap->ptime || pmap->ptime == ptime));
+		exists = (!strcasecmp(name, pmap->iananame) && (!pmap->rate || rate == pmap->rate) && (!pmap->ptime || pmap->ptime == ptime));
 		
 		if (exists) {
+			
+			if (!zstr(fmtp) && !zstr(pmap->rm_fmtp)) {
+				if (strcmp(pmap->rm_fmtp, fmtp)) {
+					exists = 0;
+					continue;
+				}
+			}
+			
 			break;
 		}
 	}
@@ -3487,7 +3495,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						matches[m_idx].imp = imp;
 						matches[m_idx].map = map;
 
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Video Codec Compare [%s:%d] is saved as a match\n",
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Video Codec Compare [%s:%d] +++ is saved as a match\n",
 										  imp->iananame, imp->ianacode);
 						m_idx++;
 					}
