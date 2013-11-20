@@ -3650,6 +3650,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			switch_set_flag_locked(member, MFLAG_ACK_VIDEO);
 			switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
 			switch_core_session_refresh_video(member->session);
+			conference_set_video_floor_holder(member->conference, member, SWITCH_FALSE);
 		}
 
 		/* if we have caller digits, feed them to the parser to find an action */
