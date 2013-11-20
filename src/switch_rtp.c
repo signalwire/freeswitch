@@ -1459,7 +1459,7 @@ static void send_fir(switch_rtp_t *rtp_session)
 }
 
 
-#if 0
+
 static void send_pli(switch_rtp_t *rtp_session)
 {
 
@@ -1542,7 +1542,7 @@ static void send_pli(switch_rtp_t *rtp_session)
 
 	return;
 }
-#endif
+
 
 static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 {
@@ -1557,8 +1557,11 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 		}
 
 		if (rtp_session->fir_countdown == FIR_COUNTDOWN || rtp_session->fir_countdown == 1) {
-			send_fir(rtp_session);
-			//send_pli(rtp_session);
+			if (rtp_session->flags[SWITCH_RTP_FLAG_PLI]) {
+				send_pli(rtp_session);
+			} else {
+				send_fir(rtp_session);
+			}
 		}
 
 		rtp_session->fir_countdown--;
@@ -3460,9 +3463,9 @@ SWITCH_DECLARE(void) switch_rtp_flush(switch_rtp_t *rtp_session)
 
 SWITCH_DECLARE(void) switch_rtp_video_refresh(switch_rtp_t *rtp_session)
 {
-	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && rtp_session->ice.ice_user) {
+	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && 
+		(rtp_session->ice.ice_user || rtp_session->flags[SWITCH_RTP_FLAG_FIR] || rtp_session->flags[SWITCH_RTP_FLAG_PLI])) {
 		if (!rtp_session->fir_countdown) {
-			//send_fir(rtp_session);
 			rtp_session->fir_countdown = FIR_COUNTDOWN;
 		}
 	}

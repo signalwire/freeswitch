@@ -144,6 +144,10 @@ typedef struct switch_rtp_engine_s {
 
 	uint8_t reset_codec;
 	uint8_t codec_negotiated;
+
+	uint8_t fir;
+	uint8_t pli;
+
 } switch_rtp_engine_t;
 
 
@@ -3435,8 +3439,19 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				for (attr = m->m_attributes; attr; attr = attr->a_next) {
 					if (!strcasecmp(attr->a_name, "framerate") && attr->a_value) {
 						//framerate = atoi(attr->a_value);
-					}
-					if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value && !strcmp(attr->a_value, "1")) {
+					} else if (!strcasecmp(attr->a_name, "rtcp-fb")) {
+						if (!zstr(attr->a_value)) {
+							if (switch_stristr("fir", attr->a_value)) {
+								v_engine->fir++;
+							}
+							
+							if (switch_stristr("pli", attr->a_value)) {
+								v_engine->pli++;
+							}
+							
+							smh->mparams->rtcp_video_interval_msec = "10000";
+						}
+					} else if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value && !strcmp(attr->a_value, "1")) {
 						switch_channel_set_variable(session->channel, "rtp_remote_video_rtcp_port", attr->a_value);
 						v_engine->remote_rtcp_port = (switch_port_t)atoi(attr->a_value);
 					} else if (!got_video_crypto && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) {
@@ -5095,6 +5110,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			if (switch_rtp_ready(v_engine->rtp_session)) {
 				const char *ssrc;
 
+				if (v_engine->fir) {
+					switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_FIR);
+				}
+
+				if (v_engine->pli) {
+					switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_PLI);
+				}
+
 				switch_rtp_set_payload_map(v_engine->rtp_session, &v_engine->payload_map);
 
 				start_video_thread(session);
@@ -6436,6 +6459,12 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				}
 			}
 
+
+			if (v_engine->fir || v_engine->pli) {
+				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
+								"a=rtcp-fb:* %s%s\n", v_engine->fir ? "fir " : "", v_engine->pli ? "pli" : "");
+			}
+
 			//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u\n", v_engine->ssrc);
 
 			if (v_engine->ice_out.cands[0][0].ready) {
@@ -6465,11 +6494,11 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "b=AS:%d\n", bw);
 				}
 
-				if (vp8) {
+				if (vp8 && switch_channel_test_flag(session->channel, CF_WEBRTC)) {
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
 									"a=rtcp-fb:%d ccm fir\n", vp8);
 				}
-
+				
 				if (red) {
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
 									"a=rtcp-fb:%d nack\n", vp8);

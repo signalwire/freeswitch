@@ -1245,19 +1245,19 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
 		{
-			const char *pl = "<media_control><vc_primitive><to_encoder><picture_fast_update/></to_encoder></vc_primitive></media_control>";
-			time_t now = switch_epoch_time_now(NULL);
+			const char *pl = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<media_control>\n<vc_primitive>\n<to_encoder>\n<picture_fast_update>\n</picture_fast_update>\n</to_encoder>\n</vc_primitive>\n</media_control>";
+			//time_t now = switch_epoch_time_now(NULL);
 
-			if (!tech_pvt->last_vid_info || (now - tech_pvt->last_vid_info) > 5) {
-
-				tech_pvt->last_vid_info = now;
+			//if (!tech_pvt->last_vid_info || (now - tech_pvt->last_vid_info) > 5) {
+				
+			//	tech_pvt->last_vid_info = now;
 
 				if (!zstr(msg->string_arg)) {
 					pl = msg->string_arg;
 				}
 
 				nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("application/media_control+xml"), SIPTAG_PAYLOAD_STR(pl), TAG_END());
-			}
+				//}
 
 		}
 		break;
