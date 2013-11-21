@@ -1304,6 +1304,7 @@ SWITCH_DECLARE(switch_status_t) switch_mcast_join(switch_socket_t *sock, switch_
 SWITCH_DECLARE(switch_status_t) switch_mcast_hops(switch_socket_t *sock, uint8_t ttl);
 
 SWITCH_DECLARE(switch_status_t) switch_mcast_loopback(switch_socket_t *sock, uint8_t opt);
+SWITCH_DECLARE(switch_status_t) switch_mcast_interface(switch_socket_t *sock, switch_sockaddr_t *iface);
 
 /** @} */
 
