@@ -834,6 +834,12 @@ SWITCH_DECLARE(switch_status_t) switch_mcast_loopback(switch_socket_t *sock, uin
 	return apr_mcast_loopback(sock, opt);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_mcast_interface(switch_socket_t *sock, switch_sockaddr_t *iface)
+{
+	return apr_mcast_interface(sock, iface);
+}
+												 
+
 /* socket functions */
 
 SWITCH_DECLARE(const char *) switch_get_addr(char *buf, switch_size_t len, switch_sockaddr_t *in)

@@ -1999,6 +1999,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 {
 	switch_socket_t *new_sock = NULL, *old_sock = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	int j = 0;
 #ifndef WIN32
 	char o[5] = "TEST", i[5] = "";
 	switch_size_t len, ilen = 0;
@@ -2056,6 +2057,40 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 		*err = em;
 		goto done;
 	}
+
+
+	if ((j = atoi(host)) && j > 223 && j < 240) { /* mcast */
+		if (switch_mcast_interface(new_sock, rtp_session->local_addr) != SWITCH_STATUS_SUCCESS) {
+			*err = "Multicast Socket interface Error";
+			goto done;
+		}
+		
+		if (switch_mcast_join(new_sock, rtp_session->local_addr, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+			*err = "Multicast Error";
+			goto done;
+		}
+
+		if (rtp_session->session) {
+			switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
+			const char *var;
+
+			if ((var = switch_channel_get_variable(channel, "multicast_ttl"))) {
+				int ttl = atoi(var);
+
+				if (ttl > 0 && ttl < 256) {
+					if (switch_mcast_hops(new_sock, (uint8_t) ttl) != SWITCH_STATUS_SUCCESS) {
+						*err = "Mutlicast TTL set failed";
+						goto done;
+					}
+					
+				}
+			}
+
+		}
+
+	}
+
+
 
 #ifndef WIN32
 	len = sizeof(i);
