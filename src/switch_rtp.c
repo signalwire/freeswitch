@@ -4121,6 +4121,7 @@ static int check_recv_payload(switch_rtp_t *rtp_session)
 			if (!pmap->negotiated) {
 				continue;
 			}
+
 			if (rtp_session->recv_msg.header.pt == pmap->pt) {
 				ok = 1;
 			}
@@ -6242,7 +6243,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 
 		switch_mutex_lock(rtp_session->flag_mutex);
 		for (pmap = *rtp_session->pmaps; pmap; pmap = pmap->next) {
-			if (pmap->hash == frame->pmap->hash && !strcmp(pmap->iananame, frame->pmap->iananame)) {
+			if (pmap->negotiated && pmap->hash == frame->pmap->hash) {
 				payload = pmap->recv_pt;
 				break;
 			}
