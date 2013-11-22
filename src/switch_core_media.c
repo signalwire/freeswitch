@@ -7907,7 +7907,7 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 												  map->rm_pt,
 												  map->rm_rate,
 												  ptime,
-												  SWITCH_TRUE);
+												  SWITCH_FALSE);
 			}
 		}
 	}
