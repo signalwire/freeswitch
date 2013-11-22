@@ -1485,6 +1485,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 
 
 	if ((j = atoi(host)) && j > 223 && j < 240) { /* mcast */
+		switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
+
 		if (switch_mcast_interface(new_sock, rtp_session->local_addr) != SWITCH_STATUS_SUCCESS) {
 			*err = "Multicast Socket interface Error";
 			goto done;
@@ -1495,8 +1497,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 			goto done;
 		}
 
-		if (rtp_session->session) {
-			switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
+		if (session) {
+			switch_channel_t *channel = switch_core_session_get_channel(session);
 			const char *var;
 
 			if ((var = switch_channel_get_variable(channel, "multicast_ttl"))) {
