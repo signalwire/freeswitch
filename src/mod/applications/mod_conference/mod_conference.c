@@ -273,6 +273,7 @@ typedef struct conference_file_node {
 	uint32_t leadin;
 	struct conference_file_node *next;
 	char *file;
+	switch_bool_t mux;
 } conference_file_node_t;
 
 typedef enum {
@@ -540,7 +541,7 @@ static void launch_conference_video_thread(conference_obj_t *conference);
 static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *obj);
 static switch_status_t conference_local_play_file(conference_obj_t *conference, switch_core_session_t *session, char *path, uint32_t leadin, void *buf,
 												  uint32_t buflen);
-static switch_status_t conference_member_play_file(conference_member_t *member, char *file, uint32_t leadin);
+static switch_status_t conference_member_play_file(conference_member_t *member, char *file, uint32_t leadin, switch_bool_t mux);
 static switch_status_t conference_member_say(conference_member_t *member, char *text, uint32_t leadin);
 static uint32_t conference_member_stop_file(conference_member_t *member, file_stop_t stop);
 static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_core_session_t *session, switch_memory_pool_t *pool);
@@ -3160,7 +3161,7 @@ static void conference_loop_fn_energy_up(conference_member_t *member, caller_con
 	switch_snprintf(str, sizeof(str), "%d", abs(member->energy_level) / 200);
 	for (p = str; p && *p; p++) {
 		switch_snprintf(msg, sizeof(msg), "digits/%c.wav", *p);
-		conference_member_play_file(member, msg, 0);
+		conference_member_play_file(member, msg, 0, SWITCH_TRUE);
 	}
 
 
@@ -3192,7 +3193,7 @@ static void conference_loop_fn_energy_equ_conf(conference_member_t *member, call
 	switch_snprintf(str, sizeof(str), "%d", abs(member->energy_level) / 200);
 	for (p = str; p && *p; p++) {
 		switch_snprintf(msg, sizeof(msg), "digits/%c.wav", *p);
-		conference_member_play_file(member, msg, 0);
+		conference_member_play_file(member, msg, 0, SWITCH_TRUE);
 	}
 	
 }
@@ -3224,7 +3225,7 @@ static void conference_loop_fn_energy_dn(conference_member_t *member, caller_con
 	switch_snprintf(str, sizeof(str), "%d", abs(member->energy_level) / 200);
 	for (p = str; p && *p; p++) {
 		switch_snprintf(msg, sizeof(msg), "digits/%c.wav", *p);
-		conference_member_play_file(member, msg, 0);
+		conference_member_play_file(member, msg, 0, SWITCH_TRUE);
 	}
 	
 }
@@ -3253,11 +3254,11 @@ static void conference_loop_fn_volume_talk_up(conference_member_t *member, calle
 
 	if (member->volume_out_level < 0) {
 		switch_snprintf(msg, sizeof(msg), "currency/negative.wav", member->volume_out_level);
-		conference_member_play_file(member, msg, 0);
+		conference_member_play_file(member, msg, 0, SWITCH_TRUE);
 	}
 
 	switch_snprintf(msg, sizeof(msg), "digits/%d.wav", abs(member->volume_out_level));
-	conference_member_play_file(member, msg, 0);
+	conference_member_play_file(member, msg, 0, SWITCH_TRUE);
 
 }
 
@@ -3285,11 +3286,11 @@ static void conference_loop_fn_volume_talk_zero(conference_member_t *member, cal
 
 	if (member->volume_out_level < 0) {
 		switch_snprintf(msg, sizeof(msg), "currency/negative.wav", member->volume_out_level);
-		conference_member_play_file(member, msg, 0);
+		conference_member_play_file(member, msg, 0, SWITCH_TRUE);
 	}
 
 	switch_snprintf(msg, sizeof(msg), "digits/%d.wav", abs(member->volume_out_level));
-	conference_member_play_file(member, msg, 0);
+	conference_member_play_file(member, msg, 0, SWITCH_TRUE);
 }
 
 static void conference_loop_fn_volume_talk_dn(conference_member_t *member, caller_control_action_t *action)
@@ -3316,11 +3317,11 @@ static void conference_loop_fn_volume_talk_dn(conference_member_t *member, calle
 
 	if (member->volume_out_level < 0) {
 		switch_snprintf(msg, sizeof(msg), "currency/negative.wav", member->volume_out_level);
-		conference_member_play_file(member, msg, 0);
+		conference_member_play_file(member, msg, 0, SWITCH_TRUE);
 	}
 
 	switch_snprintf(msg, sizeof(msg), "digits/%d.wav", abs(member->volume_out_level));
-	conference_member_play_file(member, msg, 0);
+	conference_member_play_file(member, msg, 0, SWITCH_TRUE);
 }
 
 static void conference_loop_fn_volume_listen_up(conference_member_t *member, caller_control_action_t *action)
@@ -3347,11 +3348,11 @@ static void conference_loop_fn_volume_listen_up(conference_member_t *member, cal
 
 	if (member->volume_in_level < 0) {
 		switch_snprintf(msg, sizeof(msg), "currency/negative.wav", member->volume_in_level);
-		conference_member_play_file(member, msg, 0);
+		conference_member_play_file(member, msg, 0, SWITCH_TRUE);
 	}
 
 	switch_snprintf(msg, sizeof(msg), "digits/%d.wav", abs(member->volume_in_level));
-	conference_member_play_file(member, msg, 0);
+	conference_member_play_file(member, msg, 0, SWITCH_TRUE);
 
 }
 
@@ -3378,11 +3379,11 @@ static void conference_loop_fn_volume_listen_zero(conference_member_t *member, c
 
 	if (member->volume_in_level < 0) {
 		switch_snprintf(msg, sizeof(msg), "currency/negative.wav", member->volume_in_level);
-		conference_member_play_file(member, msg, 0);
+		conference_member_play_file(member, msg, 0, SWITCH_TRUE);
 	}
 
 	switch_snprintf(msg, sizeof(msg), "digits/%d.wav", abs(member->volume_in_level));
-	conference_member_play_file(member, msg, 0);
+	conference_member_play_file(member, msg, 0, SWITCH_TRUE);
 	
 }
 
@@ -3410,11 +3411,11 @@ static void conference_loop_fn_volume_listen_dn(conference_member_t *member, cal
 
 	if (member->volume_in_level < 0) {
 		switch_snprintf(msg, sizeof(msg), "currency/negative.wav", member->volume_in_level);
-		conference_member_play_file(member, msg, 0);
+		conference_member_play_file(member, msg, 0, SWITCH_TRUE);
 	}
 
     switch_snprintf(msg, sizeof(msg), "digits/%d.wav", abs(member->volume_in_level));
-    conference_member_play_file(member, msg, 0);
+    conference_member_play_file(member, msg, 0, SWITCH_TRUE);
 }
 
 static void conference_loop_fn_event(conference_member_t *member, caller_control_action_t *action)
@@ -4000,9 +4001,13 @@ static void member_add_file_data(conference_member_t *member, int16_t *data, swi
 				}
 
 				for (i = 0; i < file_sample_len; i++) {
-					sample = data[i] + file_frame[i];
-					switch_normalize_to_16bit(sample);
-					data[i] = sample;
+					if (member->fnode->mux) {
+						sample = data[i] + file_frame[i];
+						switch_normalize_to_16bit(sample);
+						data[i] = sample;
+					} else {
+						data[i] = file_frame[i];
+					}
 				}
 
 			}
@@ -4162,7 +4167,7 @@ static void conference_loop_output(conference_member_t *member)
 			goto end;
 		}
 			
-		conference_member_play_file(member, "tone_stream://%(500,0,640)", 0);
+		conference_member_play_file(member, "tone_stream://%(500,0,640)", 0, SWITCH_TRUE);
 	}
 	
 	if (!switch_test_flag(member->conference, CFLAG_ANSWERED)) {
@@ -4324,7 +4329,7 @@ static void conference_loop_output(conference_member_t *member)
 
 		if (switch_test_flag(member, MFLAG_INDICATE_MUTE)) {
 			if (!zstr(member->conference->muted_sound)) {
-				conference_member_play_file(member, member->conference->muted_sound, 0);
+				conference_member_play_file(member, member->conference->muted_sound, 0, SWITCH_TRUE);
 			} else {
 				char msg[512];
 				
@@ -4336,7 +4341,7 @@ static void conference_loop_output(conference_member_t *member)
 
 		if (switch_test_flag(member, MFLAG_INDICATE_MUTE_DETECT)) {
 			if (!zstr(member->conference->mute_detect_sound)) {
-				conference_member_play_file(member, member->conference->mute_detect_sound, 0);
+				conference_member_play_file(member, member->conference->mute_detect_sound, 0, SWITCH_TRUE);
 			} else {
 				char msg[512];
 				
@@ -4348,7 +4353,7 @@ static void conference_loop_output(conference_member_t *member)
 		
 		if (switch_test_flag(member, MFLAG_INDICATE_UNMUTE)) {
 			if (!zstr(member->conference->unmuted_sound)) {
-				conference_member_play_file(member, member->conference->unmuted_sound, 0);
+				conference_member_play_file(member, member->conference->unmuted_sound, 0, SWITCH_TRUE);
 			} else {
 				char msg[512];
 				
@@ -4850,7 +4855,7 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 }
 
 /* Play a file in the conference room to a member */
-static switch_status_t conference_member_play_file(conference_member_t *member, char *file, uint32_t leadin)
+static switch_status_t conference_member_play_file(conference_member_t *member, char *file, uint32_t leadin, switch_bool_t mux)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *dfile = NULL, *expanded = NULL;
@@ -4897,6 +4902,8 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 	}
 	fnode->type = NODE_TYPE_FILE;
 	fnode->leadin = leadin;
+	fnode->mux = mux;
+
 	/* Open the file */
 	fnode->fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 	if (switch_core_file_open(&fnode->fh,
@@ -6234,12 +6241,17 @@ static switch_status_t conf_api_sub_play(conference_obj_t *conference, switch_st
 			stream->write_function(stream, "(play) File: %s not found.\n", argv[2] ? argv[2] : "(unspecified)");
 		}
 		ret_status = SWITCH_STATUS_SUCCESS;
-	} else if (argc == 4) {
+	} else if (argc >= 4) {
 		uint32_t id = atoi(argv[3]);
 		conference_member_t *member;
+		switch_bool_t mux = SWITCH_TRUE;
+
+		if (argc > 4 && !strcasecmp(argv[4], "nomux")) {
+			mux = SWITCH_FALSE;
+		}
 
 		if ((member = conference_member_get(conference, id))) {
-			if (conference_member_play_file(member, argv[2], 0) == SWITCH_STATUS_SUCCESS) {
+			if (conference_member_play_file(member, argv[2], 0, mux) == SWITCH_STATUS_SUCCESS) {
 				stream->write_function(stream, "(play) Playing file %s to member %u\n", argv[2], id);
 				if (test_eflag(conference, EFLAG_PLAY_FILE_MEMBER) &&
 					switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
@@ -7040,7 +7052,7 @@ static api_command_t conf_api_sub_commands[] = {
 	{"energy", (void_fn_t) & conf_api_sub_energy, CONF_API_SUB_MEMBER_TARGET, "energy", "<member_id|all|last|non_moderator> [<newval>]"},
 	{"volume_in", (void_fn_t) & conf_api_sub_volume_in, CONF_API_SUB_MEMBER_TARGET, "volume_in", "<member_id|all|last|non_moderator> [<newval>]"},
 	{"volume_out", (void_fn_t) & conf_api_sub_volume_out, CONF_API_SUB_MEMBER_TARGET, "volume_out", "<member_id|all|last|non_moderator> [<newval>]"},
-	{"play", (void_fn_t) & conf_api_sub_play, CONF_API_SUB_ARGS_SPLIT, "play", "<file_path> [async|<member_id>]"},
+	{"play", (void_fn_t) & conf_api_sub_play, CONF_API_SUB_ARGS_SPLIT, "play", "<file_path> [async|<member_id> [nomux]]"},
 	{"pause_play", (void_fn_t) & conf_api_sub_pause_play, CONF_API_SUB_ARGS_SPLIT, "pause", ""},
 	{"file_seek", (void_fn_t) & conf_api_sub_file_seek, CONF_API_SUB_ARGS_SPLIT, "file_seek", "[+-]<val>"},
 	{"say", (void_fn_t) & conf_api_sub_say, CONF_API_SUB_ARGS_AS_ONE, "say", "<text>"},
