@@ -1724,7 +1724,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 					switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 					switch_assert(my_params);
 
-					status = switch_xml_locate_user_merged("id", vm_cc, cbt->domain, NULL, &x_user, my_params);
+					status = switch_xml_locate_user_merged("id:number-alias", vm_cc, cbt->domain, NULL, &x_user, my_params);
 					switch_event_destroy(&my_params);
 				
 					if (status != SWITCH_STATUS_SUCCESS) {
@@ -2440,7 +2440,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "destination_number", caller_profile->destination_number);
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "caller_id_number", caller_id_number);
 
-					if (switch_xml_locate_user_merged("id", myid, domain_name, switch_channel_get_variable(channel, "network_addr"),
+					if (switch_xml_locate_user_merged("id:number-alias", myid, domain_name, switch_channel_get_variable(channel, "network_addr"),
 											   &x_user, params) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", myid, domain_name);
 						ok = 0;
@@ -3388,7 +3388,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		switch_assert(locate_params);
 		switch_event_add_header_string(locate_params, SWITCH_STACK_BOTTOM, "action", "voicemail-lookup");
 
-		if (switch_xml_locate_user_merged("id", id, domain_name, switch_channel_get_variable(channel, "network_addr"),
+		if (switch_xml_locate_user_merged("id:number-alias", id, domain_name, switch_channel_get_variable(channel, "network_addr"),
 										  &x_user, locate_params) == SWITCH_STATUS_SUCCESS) {
 			id = switch_core_session_strdup(session, switch_xml_attr(x_user, "id"));
 
@@ -5689,7 +5689,7 @@ SWITCH_STANDARD_API(vm_fsdb_auth_login_function)
 	}
 
 	switch_event_create(&params, SWITCH_EVENT_GENERAL);
-	if (switch_xml_locate_user_merged("id", id, domain, NULL, &x_user, params) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate_user_merged("id:number-alias", id, domain, NULL, &x_user, params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", id, domain);
 		stream->write_function(stream, "-ERR User not found\n");
 	} else {
