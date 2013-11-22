@@ -3478,6 +3478,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
 						status = SWITCH_STATUS_SUCCESS;
 					} else {
+						switch_channel_pass_callee_id(peer_channel, caller_channel);
 						status = switch_channel_pre_answer(caller_channel);
 					}
 				} else {
