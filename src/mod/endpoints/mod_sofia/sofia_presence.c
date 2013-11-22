@@ -3772,9 +3772,12 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		sstr = switch_mprintf("active;expires=%ld", exp_delta);
 
 		sql = switch_mprintf("update sip_subscriptions "
-							 "set expires=%ld "
+							 "set expires=%ld, "
+							 "network_ip='%q',network_port='%q',sip_user='%q',sip_host='%q',full_via='%q',full_to='%q',full_from='%q',contact='%q' "
 							 "where call_id='%q' and profile_name='%q' and hostname='%q'",
 							 (long) switch_epoch_time_now(NULL) + exp_delta, 
+							 np.network_ip, np.network_port, from_user, from_host, full_via, full_to, full_from, contact_str,
+							 
 							 call_id, profile->name, mod_sofia_globals.hostname);
 
 		if (mod_sofia_globals.debug_presence > 0 || mod_sofia_globals.debug_sla > 0) {
