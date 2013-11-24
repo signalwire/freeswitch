@@ -2258,15 +2258,15 @@ static void dec_use_count(switch_core_session_t *session, const char *type)
 			}
 			hold_usec = originator_cp->times->hold_accum;
 			tt_usec = (switch_micro_time_now() - originator_cp->times->bridged) - hold_usec;
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Bridge-Time-us", "%lu", originator_cp->times->bridged);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Bridge-Time-ms", "%lu", (uint64_t)(originator_cp->times->bridged / 1000));
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Bridge-Time-s", "%lu", (uint64_t)(originator_cp->times->bridged / 1000000));
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Talk-Time-us", "%lu", tt_usec);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Talk-Time-ms", "%lu", (uint64_t)(tt_usec / 1000));
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Talk-Time-s", "%lu", (uint64_t)(tt_usec / 1000000));
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Hold-Time-us", "%lu", hold_usec);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Hold-Time-ms", "%lu", (uint64_t)(hold_usec / 1000));
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Hold-Time-s", "%lu", (uint64_t)(hold_usec / 1000000));
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Bridge-Time-us", "%"SWITCH_TIME_T_FMT, originator_cp->times->bridged);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Bridge-Time-ms", "%"SWITCH_TIME_T_FMT, (uint64_t)(originator_cp->times->bridged / 1000));
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Bridge-Time-s", "%"SWITCH_TIME_T_FMT, (uint64_t)(originator_cp->times->bridged / 1000000));
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Talk-Time-us", "%"SWITCH_TIME_T_FMT, tt_usec);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Talk-Time-ms", "%"SWITCH_TIME_T_FMT, (uint64_t)(tt_usec / 1000));
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Talk-Time-s", "%"SWITCH_TIME_T_FMT, (uint64_t)(tt_usec / 1000000));
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Hold-Time-us", "%"SWITCH_TIME_T_FMT, hold_usec);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Hold-Time-ms", "%"SWITCH_TIME_T_FMT, (uint64_t)(hold_usec / 1000));
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Hold-Time-s", "%"SWITCH_TIME_T_FMT, (uint64_t)(hold_usec / 1000000));
 
 			switch_event_fire(&event);
 		}
@@ -3287,15 +3287,15 @@ SWITCH_STANDARD_APP(fifo_function)
 					}
 					hold_usec = originator_cp->times->hold_accum;
 					tt_usec = (switch_micro_time_now() - originator_cp->times->bridged) - hold_usec;
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Bridge-Time-us", "%lu", originator_cp->times->bridged);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Bridge-Time-ms", "%lu", (uint64_t)(originator_cp->times->bridged / 1000));
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Bridge-Time-s", "%lu", (uint64_t)(originator_cp->times->bridged / 1000000));
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Talk-Time-us", "%lu", tt_usec);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Talk-Time-ms", "%lu", (uint64_t)(tt_usec / 1000));
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Talk-Time-s", "%lu", (uint64_t)(tt_usec / 1000000));
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Hold-Time-us", "%lu", hold_usec);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Hold-Time-ms", "%lu", (uint64_t)(hold_usec / 1000));
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Hold-Time-s", "%lu", (uint64_t)(hold_usec / 1000000));
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Bridge-Time-us", "%"SWITCH_TIME_T_FMT, originator_cp->times->bridged);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Bridge-Time-ms", "%"SWITCH_TIME_T_FMT, (uint64_t)(originator_cp->times->bridged / 1000));
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Bridge-Time-s", "%"SWITCH_TIME_T_FMT, (uint64_t)(originator_cp->times->bridged / 1000000));
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Talk-Time-us", "%"SWITCH_TIME_T_FMT, tt_usec);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Talk-Time-ms", "%"SWITCH_TIME_T_FMT, (uint64_t)(tt_usec / 1000));
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Talk-Time-s", "%"SWITCH_TIME_T_FMT, (uint64_t)(tt_usec / 1000000));
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Hold-Time-us", "%"SWITCH_TIME_T_FMT, hold_usec);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Hold-Time-ms", "%"SWITCH_TIME_T_FMT, (uint64_t)(hold_usec / 1000));
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Hold-Time-s", "%"SWITCH_TIME_T_FMT, (uint64_t)(hold_usec / 1000000));
 					
 					switch_event_fire(&event);
 				}
@@ -3321,12 +3321,12 @@ SWITCH_STANDARD_APP(fifo_function)
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "bridge-caller-stop");
 					hold_usec = originatee_cp->times->hold_accum;
 					tt_usec = (switch_micro_time_now() - originatee_cp->times->bridged) - hold_usec;
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Caller-Talk-Time-us", "%lu", tt_usec);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Caller-Talk-Time-ms", "%lu", (uint64_t)(tt_usec / 1000));
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Caller-Talk-Time-s", "%lu", (uint64_t)(tt_usec / 1000000));
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Caller-Hold-Time-us", "%lu", hold_usec);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Caller-Hold-Time-ms", "%lu", (uint64_t)(hold_usec / 1000));
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Caller-Hold-Time-s", "%lu", (uint64_t)(hold_usec / 1000000));
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Caller-Talk-Time-us", "%"SWITCH_TIME_T_FMT, tt_usec);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Caller-Talk-Time-ms", "%"SWITCH_TIME_T_FMT, (uint64_t)(tt_usec / 1000));
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Caller-Talk-Time-s", "%"SWITCH_TIME_T_FMT, (uint64_t)(tt_usec / 1000000));
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Caller-Hold-Time-us", "%"SWITCH_TIME_T_FMT, hold_usec);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Caller-Hold-Time-ms", "%"SWITCH_TIME_T_FMT, (uint64_t)(hold_usec / 1000));
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Caller-Hold-Time-s", "%"SWITCH_TIME_T_FMT, (uint64_t)(hold_usec / 1000000));
 					switch_event_fire(&event);
 				}
 
