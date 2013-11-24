@@ -976,18 +976,12 @@ static switch_status_t sb_on_dtmf(switch_core_session_t *session, const switch_d
 
 static switch_status_t hanguphook(switch_core_session_t *session)
 {
-	switch_core_session_message_t msg = { 0 };
+	switch_core_session_message_t *msg = NULL;
 	switch_channel_t *channel = NULL;
 	switch_event_t *event;
 
 	channel = switch_core_session_get_channel(session);
 
-
-	msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
-	msg.from = __FILE__;
-	msg.string_arg = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE);
-
-	
 	if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
 		switch_channel_clear_flag_recursive(channel, CF_BRIDGE_ORIGINATOR);
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
@@ -996,8 +990,14 @@ static switch_status_t hanguphook(switch_core_session_t *session)
 		}
 	}
 
+
+	msg = switch_core_session_alloc(session, sizeof(*msg));
+	MESSAGE_STAMP_FFL(msg);
+	msg->message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
+	msg->from = __FILE__;
+	msg->string_arg = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE);
+	switch_core_session_queue_message(session, msg);	
 	
-	switch_core_session_receive_message(session, &msg);
 	switch_core_event_hook_remove_state_change(session, hanguphook);
 
 	return SWITCH_STATUS_SUCCESS;
