@@ -1946,6 +1946,16 @@ SWITCH_STANDARD_API(cond_function)
 		}
 	}
 
+	if (strspn(a, "!<>=")) {
+		expr = a;
+	}
+
+	if (expr == a) {
+		a = "";
+	}
+
+	while (*expr == ' ') expr++;
+
 	while(expr && *expr) {
 		switch(*expr) {
 		case '!':
