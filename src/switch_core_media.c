@@ -497,6 +497,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_payload_code(switch_core
 			recv_pt = pmap->recv_pt;
 			fmtp = pmap->rm_fmtp;
 			found++;
+			break;
 		}
 	}
 	switch_mutex_unlock(smh->sdp_mutex);
@@ -602,7 +603,12 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 
 
 	if (sdp_type == SDP_TYPE_REQUEST || !exists) {
+		int b4 = pmap->pt;
 		pmap->pt = (switch_payload_t)  (local_pt ? local_pt : pt);
+
+		if (b4 == 97 && pmap->pt == 109) {
+			abort();
+		}
 	}
 
 	if (negotiated) {
@@ -6354,7 +6360,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 						pass_fmtp = switch_channel_get_variable(session->channel, "rtp_video_fmtp");
 					}
 				}
-
+				
 				if (pass_fmtp) {
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fmtp:%d %s\n", v_engine->cur_payload_map->pt, pass_fmtp);
 				}
@@ -6431,6 +6437,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					
 						if (map) {
 							fmtp = switch_event_get_header(map, imp->iananame);
+						}
+						
+						if (smh->fmtps[i]) {
+							fmtp = smh->fmtps[i];
 						}
 						
 						if (zstr(fmtp)) fmtp = imp->fmtp;

@@ -5047,6 +5047,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				payload_map_t *pmap;
 				switch_mutex_lock(rtp_session->flag_mutex);
 				for (pmap = *rtp_session->pmaps; pmap && pmap->allocated; pmap = pmap->next) {					
+					
 					if (!pmap->negotiated) {
 						continue;
 					}
@@ -5056,6 +5057,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 						if (pmapP) {
 							*pmapP = pmap;
 						}
+						break;
 					}
 				}
 				switch_mutex_unlock(rtp_session->flag_mutex);
@@ -5064,6 +5066,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if (!accept_packet &&
 				!(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PAYLOAD) && !(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS)) {
 				/* drop frames of incorrect payload number and return CNG frame instead */
+
 				return_cng_frame();
 			}
 		}
