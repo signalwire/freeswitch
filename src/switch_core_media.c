@@ -603,7 +603,6 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 
 
 	if (sdp_type == SDP_TYPE_REQUEST || !exists) {
-		int b4 = pmap->pt;
 		pmap->pt = (switch_payload_t)  (local_pt ? local_pt : pt);
 	}
 
