@@ -811,6 +811,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_signal_data(switch_core_ses
 	int i = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
+	if (!switch_core_session_in_thread(session)) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (switch_channel_test_flag(channel, CF_SIGNAL_DATA)) {
 		return SWITCH_STATUS_FALSE;
