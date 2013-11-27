@@ -740,6 +740,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 
 	switch_assert(session != NULL);
 
+	if (message->message_id == SWITCH_MESSAGE_INDICATE_SIGNAL_DATA) {
+		if (session->endpoint_interface->io_routines->receive_message) {
+			status = session->endpoint_interface->io_routines->receive_message(session, message);
+		}
+
+		switch_core_session_free_message(&message);
+		return status;
+	}
+
+
 	if ((status = switch_core_session_read_lock_hangup(session)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
