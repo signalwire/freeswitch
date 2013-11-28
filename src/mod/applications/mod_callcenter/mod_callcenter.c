@@ -1249,13 +1249,74 @@ end:
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t load_tier(const char *queue, const char *agent, const char *level, const char *position)
+{
+	/* Hack to check if an tier already exist */
+	if (cc_tier_update("unknown", "unknown", queue, agent) == CC_STATUS_TIER_NOT_FOUND) {
+			if (level && position) {
+				cc_tier_add(queue, agent, cc_tier_state2str(CC_TIER_STATE_READY), atoi(level), atoi(position));
+			} else {
+				/* default to level 1 and position 1 within the level */
+				cc_tier_add(queue, agent, cc_tier_state2str(CC_TIER_STATE_READY), 0, 0);
+			}
+	} else {
+		if (level) {
+			cc_tier_update("level", level, queue, agent);
+		}
+		if (position) {
+			cc_tier_update("position", position, queue, agent);
+		}
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t load_tiers(switch_bool_t load_all, const char *queue_name, const char *agent_name)
+{
+	switch_xml_t x_tiers, x_tier, cfg, xml;
+	switch_status_t result = SWITCH_STATUS_FALSE;
+
+	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!(x_tiers = switch_xml_child(cfg, "tiers"))) {
+		goto end;
+	}
+
+	/* Importing from XML config Agent Tiers */
+	for (x_tier = switch_xml_child(x_tiers, "tier"); x_tier; x_tier = x_tier->next) {
+		const char *agent = switch_xml_attr(x_tier, "agent");
+		const char *queue = switch_xml_attr(x_tier, "queue");
+		const char *level = switch_xml_attr(x_tier, "level");
+		const char *position = switch_xml_attr(x_tier, "position");
+		if (load_all == SWITCH_TRUE) {
+			result = load_tier(queue, agent, level, position);
+		} else if (!zstr(agent_name) && !zstr(queue_name) && !strcasecmp(agent, agent_name) && !strcasecmp(queue, queue_name)) {
+			result = load_tier(queue, agent, level, position);
+		} else if (zstr(agent_name) && !strcasecmp(queue, queue_name)) {
+			result = load_tier(queue, agent, level, position);
+		} else if (zstr(queue_name) && !strcasecmp(agent, agent_name)) {
+			result = load_tier(queue, agent, level, position);
+		}
+	}
+
+end:
+
+	if (xml) {
+		switch_xml_free(xml);
+	}
+
+	return result;
+}
+
 static switch_status_t load_config(void)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_xml_t cfg, xml, settings, param, x_queues, x_queue, x_agents, x_agent, x_tiers, x_tier;
+	switch_xml_t cfg, xml, settings, param, x_queues, x_queue, x_agents, x_agent;
 	switch_cache_db_handle_t *dbh = NULL;
 	char *sql = NULL;
-	
+
 	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
 		status = SWITCH_STATUS_TERM;
@@ -1323,32 +1384,7 @@ static switch_status_t load_config(void)
 	}
 
 	/* Importing from XML config Agent Tiers */
-	if ((x_tiers = switch_xml_child(cfg, "tiers"))) {
-		for (x_tier = switch_xml_child(x_tiers, "tier"); x_tier; x_tier = x_tier->next) {
-			const char *agent = switch_xml_attr(x_tier, "agent");
-			const char *queue_name = switch_xml_attr(x_tier, "queue");
-			const char *level = switch_xml_attr(x_tier, "level");
-			const char *position = switch_xml_attr(x_tier, "position");
-			if (agent && queue_name) {
-				/* Hack to check if an tier already exist */
-				if (cc_tier_update("unknown", "unknown", queue_name, agent) == CC_STATUS_TIER_NOT_FOUND) {
-					if (level && position) {
-						cc_tier_add(queue_name, agent, cc_tier_state2str(CC_TIER_STATE_READY), atoi(level), atoi(position));
-					} else {
-						/* default to level 1 and position 1 within the level */
-						cc_tier_add(queue_name, agent, cc_tier_state2str(CC_TIER_STATE_READY), 0, 0);
-					}
-				} else {
-					if (level) {
-						cc_tier_update("level", level, queue_name, agent);
-					}
-					if (position) {
-						cc_tier_update("position", position, queue_name, agent);
-					}
-				}
-			}
-		}
-	}
+	load_tiers(SWITCH_TRUE, NULL, NULL);
 
 end:
 	switch_mutex_unlock(globals.mutex);
@@ -2736,6 +2772,7 @@ static int list_result_callback(void *pArg, int argc, char **argv, char **column
 #define CC_CONFIG_API_SYNTAX "callcenter_config <target> <args>,\n"\
 "\tcallcenter_config agent add [name] [type] | \n" \
 "\tcallcenter_config agent del [name] | \n" \
+"\tcallcenter_config agent reload [name] | \n" \
 "\tcallcenter_config agent set status [agent_name] [status] | \n" \
 "\tcallcenter_config agent set state [agent_name] [state] | \n" \
 "\tcallcenter_config agent set contact [agent_name] [contact] | \n" \
@@ -2752,6 +2789,7 @@ static int list_result_callback(void *pArg, int argc, char **argv, char **column
 "\tcallcenter_config tier set level [queue_name] [agent_name] [level] | \n" \
 "\tcallcenter_config tier set position [queue_name] [agent_name] [position] | \n" \
 "\tcallcenter_config tier del [queue_name] [agent_name] | \n" \
+"\tcallcenter_config tier reload [queue_name] [agent_name] | \n" \
 "\tcallcenter_config tier list | \n" \
 "\tcallcenter_config queue load [queue_name] | \n" \
 "\tcallcenter_config queue unload [queue_name] | \n" \
@@ -2829,6 +2867,22 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				const char *agent = argv[0 + initial_argc];
 				switch (cc_agent_del(agent)) {
 					case CC_STATUS_SUCCESS:
+						stream->write_function(stream, "%s", "+OK\n");
+						break;
+					default:
+						stream->write_function(stream, "%s", "-ERR Unknown Error!\n");
+						goto done;
+				}
+			}
+
+		} else if (action && !strcasecmp(action, "reload")) {
+			if (argc-initial_argc < 1) {
+				stream->write_function(stream, "%s", "-ERR Invalid!\n");
+				goto done;
+			} else {
+				const char *agent = argv[0 + initial_argc];
+				switch (load_agent(agent)) {
+					case SWITCH_STATUS_SUCCESS:
 						stream->write_function(stream, "%s", "+OK\n");
 						break;
 					default:
@@ -2993,6 +3047,28 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				const char *agent = argv[1 + initial_argc];
 				switch (cc_tier_del(queue, agent)) {
 					case CC_STATUS_SUCCESS:
+						stream->write_function(stream, "%s", "+OK\n");
+						break;
+					default:
+						stream->write_function(stream, "%s", "-ERR Unknown Error!\n");
+						goto done;
+
+				}
+			}
+
+		} else if (action && !strcasecmp(action, "reload")) {
+			if (argc-initial_argc < 1) {
+				stream->write_function(stream, "%s", "-ERR Invalid!\n");
+				goto done;
+			} else {
+				const char *queue = argv[0 + initial_argc];
+				const char *agent = argv[1 + initial_argc];
+				switch_bool_t load_all = SWITCH_FALSE;
+				if (!strcasecmp(queue, "all")) {
+					load_all = SWITCH_TRUE;
+				}
+				switch (load_tiers(load_all, queue, agent)) {
+					case SWITCH_STATUS_SUCCESS:
 						stream->write_function(stream, "%s", "+OK\n");
 						break;
 					default:
@@ -3194,6 +3270,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 
 	switch_console_set_complete("add callcenter_config agent add");
 	switch_console_set_complete("add callcenter_config agent del");
+	switch_console_set_complete("add callcenter_config agent reload");
 	switch_console_set_complete("add callcenter_config agent set status");
 	switch_console_set_complete("add callcenter_config agent set state");
 	switch_console_set_complete("add callcenter_config agent set uuid");
@@ -3207,6 +3284,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 
 	switch_console_set_complete("add callcenter_config tier add");
 	switch_console_set_complete("add callcenter_config tier del");
+	switch_console_set_complete("add callcenter_config tier reload");
 	switch_console_set_complete("add callcenter_config tier set state");
 	switch_console_set_complete("add callcenter_config tier set level");
 	switch_console_set_complete("add callcenter_config tier set position");
