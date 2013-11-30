@@ -756,7 +756,7 @@ static switch_status_t timer_step(switch_timer_t *timer)
 	}
 
 	check_roll();
-	samples = timer->samples * (private_info->reference - private_info->start);
+	samples = (uint64_t)timer->samples * (private_info->reference - private_info->start);
 
 	if (samples > UINT32_MAX) {
 		private_info->start = private_info->reference - 1; /* Must have a diff */

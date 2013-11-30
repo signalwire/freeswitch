@@ -60,7 +60,9 @@
 #include <sofia-sip/su_string.h>
 
 #ifndef HAVE_STRTOULL
+#if !((defined(WIN32) || defined(_WIN32)) && (_MSC_VER >= 1800))
 unsigned longlong strtoull(const char *, char **, int);
+#endif
 #endif
 
 /**@defgroup su_tag Tag Item Lists
