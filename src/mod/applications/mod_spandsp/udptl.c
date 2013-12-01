@@ -170,8 +170,8 @@ int udptl_rx_packet(udptl_state_t *s, const uint8_t buf[], int len)
 	int count;
 	int total_count;
 	int seq_no;
-	const uint8_t *msg;
-	const uint8_t *data;
+	const uint8_t *msg = NULL;
+	const uint8_t *data = NULL;
 	int msg_len;
 	int repaired[16];
 	const uint8_t *bufs[16] = {0};
