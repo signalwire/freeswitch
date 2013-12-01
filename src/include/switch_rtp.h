@@ -96,7 +96,7 @@ typedef struct icand_s {
 	uint8_t ready;
 } icand_t;
 
-#define MAX_CAND 25
+#define MAX_CAND 50
 typedef struct ice_s {
 
 	icand_t cands[MAX_CAND][2];
