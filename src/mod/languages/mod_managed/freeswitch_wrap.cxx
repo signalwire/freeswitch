@@ -36574,7 +36574,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_MAX_CAND_get() {
   int jresult ;
   int result;
   
-  result = (int) 25;
+  result = (int) 50;
   
   jresult = result; 
   return jresult;
@@ -36591,7 +36591,7 @@ SWIGEXPORT void SWIGSTDCALL CSharp_ice_t_cands_set(void * jarg1, void * jarg2) {
     icand_t (*inp)[2] = (icand_t (*)[2])(arg2);
     icand_t (*dest)[2] = (icand_t (*)[2])(arg1->cands);
     size_t ii = 0;
-    for (; ii < 25; ++ii) {
+    for (; ii < 50; ++ii) {
       icand_t *ip = inp[ii];
       icand_t *dp = dest[ii];
       size_t jj = 0;
