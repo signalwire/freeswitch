@@ -2334,10 +2334,8 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 			data = switch_core_session_strdup(smh->session, attr->a_value);
 
 			argc = switch_split(data, ' ', fields);
-
-			engine->ice_in.cand_idx++;
 			
-			if (argc < 5 || engine->ice_in.cand_idx >= MAX_CAND) {
+			if (argc < 5 || engine->ice_in.cand_idx >= MAX_CAND - 1) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_WARNING, "Invalid data\n");
 				continue;
 			}
@@ -2352,6 +2350,8 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, 
 							  "Checking Candidate cid: %d proto: %s type: %s addr: %s:%s\n", cid+1, fields[2], fields[7], fields[4], fields[5]);
 
+
+			engine->ice_in.cand_idx++;
 
 			for (i = 0; i < engine->cand_acl_count; i++) {
 				if (!engine->ice_in.chosen[cid] && switch_check_network_list_ip(fields[4], engine->cand_acl[i])) {
