@@ -140,7 +140,7 @@ typedef struct switch_rtp_engine_s {
 
 	struct media_helper mh;
 	switch_thread_t *media_thread;
-	switch_mutex_t *read_mutex;
+	switch_mutex_t *read_mutex[2];
 
 	uint8_t reset_codec;
 	uint8_t codec_negotiated;
@@ -1427,7 +1427,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_mutex_trylock(engine->read_mutex) != SWITCH_STATUS_SUCCESS) {
+	if (engine->read_mutex[type] && switch_mutex_trylock(engine->read_mutex[type]) != SWITCH_STATUS_SUCCESS) {
 		/* return CNG, another thread is already reading  */
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "%s is already being read for %s\n", 
 						  switch_channel_get_name(session->channel), type2str(type));
@@ -1759,7 +1759,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
  end:
 
-	switch_mutex_unlock(engine->read_mutex);
+	if (engine->read_mutex[type]) {
+		switch_mutex_unlock(engine->read_mutex[type]);
+	}
 
 	return status;
 }
@@ -3853,7 +3855,7 @@ static switch_status_t start_video_thread(switch_core_session_t *session)
 	
 	switch_thread_cond_create(&v_engine->mh.cond, pool);
 	switch_mutex_init(&v_engine->mh.cond_mutex, SWITCH_MUTEX_NESTED, pool);
-	switch_mutex_init(&v_engine->read_mutex, SWITCH_MUTEX_NESTED, pool);
+	switch_mutex_init(&v_engine->read_mutex[SWITCH_MEDIA_TYPE_VIDEO], SWITCH_MUTEX_NESTED, pool);
 	switch_thread_create(&v_engine->media_thread, thd_attr, video_helper_thread, &v_engine->mh, switch_core_session_get_pool(session));
 
 	return SWITCH_STATUS_SUCCESS;
@@ -4665,7 +4667,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		uint8_t inb = switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND;
 		const char *ssrc;
 
-		switch_mutex_init(&a_engine->read_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+		switch_mutex_init(&a_engine->read_mutex[SWITCH_MEDIA_TYPE_AUDIO], SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 
 		//switch_core_media_set_rtp_session(session, SWITCH_MEDIA_TYPE_AUDIO, a_engine->rtp_session);
 
