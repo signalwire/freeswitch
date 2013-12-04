@@ -130,6 +130,7 @@ typedef struct {
 
 
 typedef enum {
+	IDX_XFER = -5,
 	IDX_KEY_CANCEL = -4,
 	IDX_TIMEOUT = -3,
 	IDX_CANCEL = -2,
@@ -3358,7 +3359,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						switch_channel_set_flag(peer_channel, CF_LAZY_ATTENDED_TRANSFER);
 						switch_ivr_uuid_bridge(holding, switch_core_session_get_uuid(peer_session));
 						holding = NULL;
-						oglobals.idx = IDX_NADA;
+						oglobals.idx = IDX_XFER;
 						if (caller_channel && switch_channel_up_nosig(caller_channel) && !switch_channel_test_flag(caller_channel, CF_INTERCEPTED)) {
 							switch_channel_hangup(caller_channel, SWITCH_CAUSE_ATTENDED_TRANSFER);
 						}
@@ -3668,8 +3669,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				} else if (oglobals.idx == IDX_TIMEOUT) {
 					*cause = SWITCH_CAUSE_NO_ANSWER;
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals.session), SWITCH_LOG_DEBUG,
-									  "Originate Resulted in Error Cause: %d [%s]\n", *cause, switch_channel_cause2str(*cause));
+					if (oglobals.idx == IDX_XFER) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals.session), SWITCH_LOG_DEBUG,
+										  "Originate Resulted in Attended Transfer Cause: %d [%s]\n", *cause, switch_channel_cause2str(*cause));
+						goto outer_for;
+					} else {
+
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals.session), SWITCH_LOG_DEBUG,
+										  "Originate Resulted in Error Cause: %d [%s]\n", *cause, switch_channel_cause2str(*cause));
+					}
 				}
 			}
 
