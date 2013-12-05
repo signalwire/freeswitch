@@ -28,7 +28,7 @@ run_tsb85_test()
     fi
 }
 
-for TEST in PPS-MPS-lost-PPS
+for TEST in PPS-MPS-lost-PPS V17-12000-V29-9600
 do
     run_tsb85_test
 done

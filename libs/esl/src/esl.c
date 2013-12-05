@@ -1123,6 +1123,12 @@ ESL_DECLARE(esl_status_t) esl_disconnect(esl_handle_t *handle)
 		return ESL_FAIL;
 	}
 
+	if (handle->sock != ESL_SOCK_INVALID) {
+		closesocket(handle->sock);
+		handle->sock = ESL_SOCK_INVALID;
+		status = ESL_SUCCESS;
+	}
+
 	if (mutex) {
 		esl_mutex_lock(mutex);
 	}
@@ -1145,12 +1151,6 @@ ESL_DECLARE(esl_status_t) esl_disconnect(esl_handle_t *handle)
 	esl_event_safe_destroy(&handle->last_ievent);
 	esl_event_safe_destroy(&handle->info_event);
 
-	if (handle->sock != ESL_SOCK_INVALID) {
-		closesocket(handle->sock);
-		handle->sock = ESL_SOCK_INVALID;
-		status = ESL_SUCCESS;
-	}
-	
 	if (mutex) {
 		esl_mutex_unlock(mutex);
 		esl_mutex_lock(mutex);
@@ -1231,8 +1231,9 @@ static esl_ssize_t handle_recv(esl_handle_t *handle, void *data, esl_size_t data
 			if ((activity & ESL_POLL_ERROR)) {
 				activity = -1;
 			} else if ((activity & ESL_POLL_READ)) {
-				activity = recv(handle->sock, data, datalen, 0);
-				if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
+				if (!(activity = recv(handle->sock, data, datalen, 0))) {
+					activity = -1;
+				} else if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
 					activity = 0;
 				}
 			}

@@ -6478,7 +6478,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
 
 			if (tech_pvt->mparams.num_codecs) {
-				match = sofia_media_negotiate_sdp(session, r_sdp, SDP_TYPE_REQUEST);
+				match = sofia_media_negotiate_sdp(session, r_sdp, SDP_TYPE_RESPONSE);
 			}
 			if (match) {
 				if (switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0) != SWITCH_STATUS_SUCCESS) {

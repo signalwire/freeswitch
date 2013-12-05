@@ -77,6 +77,10 @@
 #include "spandsp/v27ter_rx.h"
 #include "spandsp/v17tx.h"
 #include "spandsp/v17rx.h"
+#if defined(SPANDSP_SUPPORT_V34)
+#include "spandsp/bitstream.h"
+#include "spandsp/v34.h"
+#endif
 #include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
@@ -103,6 +107,10 @@
 #include "spandsp/private/fsk.h"
 #include "spandsp/private/modem_connect_tones.h"
 #include "spandsp/private/v8.h"
+#if defined(SPANDSP_SUPPORT_V34)
+#include "spandsp/private/bitstream.h"
+#include "spandsp/private/v34.h"
+#endif
 #include "spandsp/private/v17tx.h"
 #include "spandsp/private/v17rx.h"
 #include "spandsp/private/v27ter_tx.h"
@@ -248,8 +256,7 @@ static void fax_set_rx_type(void *user_data, int type, int bit_rate, int short_t
         return;
     t->current_rx_type = type;
     t->rx_bit_rate = bit_rate;
-    if (use_hdlc)
-        hdlc_rx_init(&t->hdlc_rx, false, true, HDLC_FRAMING_OK_THRESHOLD, t30_hdlc_accept, &s->t30);
+    hdlc_rx_init(&t->hdlc_rx, false, true, HDLC_FRAMING_OK_THRESHOLD, fax_modems_hdlc_accept, t);
 
     switch (type)
     {

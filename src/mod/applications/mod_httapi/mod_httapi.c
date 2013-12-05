@@ -1473,7 +1473,6 @@ static switch_status_t httapi_sync(client_t *client)
 
 	if (!put_file) {
 		switch_curl_process_form_post_params(client->params, curl_handle, &formpost);	
-		get_style_method = 1;
 	}
 
 	if (formpost) {

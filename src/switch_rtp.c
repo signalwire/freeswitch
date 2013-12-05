@@ -1459,7 +1459,7 @@ static void send_fir(switch_rtp_t *rtp_session)
 }
 
 
-#if 0
+
 static void send_pli(switch_rtp_t *rtp_session)
 {
 
@@ -1542,7 +1542,7 @@ static void send_pli(switch_rtp_t *rtp_session)
 
 	return;
 }
-#endif
+
 
 static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 {
@@ -1557,8 +1557,11 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 		}
 
 		if (rtp_session->fir_countdown == FIR_COUNTDOWN || rtp_session->fir_countdown == 1) {
-			send_fir(rtp_session);
-			//send_pli(rtp_session);
+			if (rtp_session->flags[SWITCH_RTP_FLAG_PLI]) {
+				send_pli(rtp_session);
+			} else {
+				send_fir(rtp_session);
+			}
 		}
 
 		rtp_session->fir_countdown--;
@@ -1996,6 +1999,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 {
 	switch_socket_t *new_sock = NULL, *old_sock = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	int j = 0;
 #ifndef WIN32
 	char o[5] = "TEST", i[5] = "";
 	switch_size_t len, ilen = 0;
@@ -2053,6 +2057,40 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 		*err = em;
 		goto done;
 	}
+
+
+	if ((j = atoi(host)) && j > 223 && j < 240) { /* mcast */
+		if (switch_mcast_interface(new_sock, rtp_session->local_addr) != SWITCH_STATUS_SUCCESS) {
+			*err = "Multicast Socket interface Error";
+			goto done;
+		}
+		
+		if (switch_mcast_join(new_sock, rtp_session->local_addr, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+			*err = "Multicast Error";
+			goto done;
+		}
+
+		if (rtp_session->session) {
+			switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
+			const char *var;
+
+			if ((var = switch_channel_get_variable(channel, "multicast_ttl"))) {
+				int ttl = atoi(var);
+
+				if (ttl > 0 && ttl < 256) {
+					if (switch_mcast_hops(new_sock, (uint8_t) ttl) != SWITCH_STATUS_SUCCESS) {
+						*err = "Mutlicast TTL set failed";
+						goto done;
+					}
+					
+				}
+			}
+
+		}
+
+	}
+
+
 
 #ifndef WIN32
 	len = sizeof(i);
@@ -3460,9 +3498,9 @@ SWITCH_DECLARE(void) switch_rtp_flush(switch_rtp_t *rtp_session)
 
 SWITCH_DECLARE(void) switch_rtp_video_refresh(switch_rtp_t *rtp_session)
 {
-	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && rtp_session->ice.ice_user) {
+	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && 
+		(rtp_session->ice.ice_user || rtp_session->flags[SWITCH_RTP_FLAG_FIR] || rtp_session->flags[SWITCH_RTP_FLAG_PLI])) {
 		if (!rtp_session->fir_countdown) {
-			//send_fir(rtp_session);
 			rtp_session->fir_countdown = FIR_COUNTDOWN;
 		}
 	}
@@ -4083,6 +4121,7 @@ static int check_recv_payload(switch_rtp_t *rtp_session)
 			if (!pmap->negotiated) {
 				continue;
 			}
+
 			if (rtp_session->recv_msg.header.pt == pmap->pt) {
 				ok = 1;
 			}
@@ -5008,6 +5047,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				payload_map_t *pmap;
 				switch_mutex_lock(rtp_session->flag_mutex);
 				for (pmap = *rtp_session->pmaps; pmap && pmap->allocated; pmap = pmap->next) {					
+					
 					if (!pmap->negotiated) {
 						continue;
 					}
@@ -5017,6 +5057,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 						if (pmapP) {
 							*pmapP = pmap;
 						}
+						break;
 					}
 				}
 				switch_mutex_unlock(rtp_session->flag_mutex);
@@ -5025,6 +5066,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if (!accept_packet &&
 				!(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PAYLOAD) && !(rtp_session->rtp_bugs & RTP_BUG_ACCEPT_ANY_PACKETS)) {
 				/* drop frames of incorrect payload number and return CNG frame instead */
+
 				return_cng_frame();
 			}
 		}
@@ -6204,7 +6246,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 
 		switch_mutex_lock(rtp_session->flag_mutex);
 		for (pmap = *rtp_session->pmaps; pmap; pmap = pmap->next) {
-			if (pmap->hash == frame->pmap->hash && !strcmp(pmap->iananame, frame->pmap->iananame)) {
+			if (pmap->negotiated && pmap->hash == frame->pmap->hash) {
 				payload = pmap->recv_pt;
 				break;
 			}

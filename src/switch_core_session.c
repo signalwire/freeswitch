@@ -766,6 +766,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 
 	switch_assert(session != NULL);
 
+	if (message->message_id == SWITCH_MESSAGE_INDICATE_SIGNAL_DATA) {
+		if (session->endpoint_interface->io_routines->receive_message) {
+			status = session->endpoint_interface->io_routines->receive_message(session, message);
+		}
+
+		switch_core_session_free_message(&message);
+		return status;
+	}
+
 	if ((status = switch_core_session_read_lock_hangup(session)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
@@ -821,7 +830,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 
 	}
 
-	if (switch_channel_down_nosig(session->channel) && message->message_id != SWITCH_MESSAGE_INDICATE_SIGNAL_DATA) {
+	if (switch_channel_down_nosig(session->channel)) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, message->_file, message->_func, message->_line,
 						  switch_core_session_get_uuid(session), SWITCH_LOG_DEBUG, "%s skip receive message [%s] (channel is hungup already)\n",
 						  switch_channel_get_name(session->channel), message_names[message->message_id]);
@@ -830,7 +839,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 		if (session->media_handle) {
 			status = switch_core_media_receive_message(session, message);
 		}
-		if (status == SWITCH_STATUS_SUCCESS || message->message_id == SWITCH_MESSAGE_INDICATE_SIGNAL_DATA) {
+		if (status == SWITCH_STATUS_SUCCESS) {
 			if (session->endpoint_interface->io_routines->receive_message) {
 				status = session->endpoint_interface->io_routines->receive_message(session, message);
 			}

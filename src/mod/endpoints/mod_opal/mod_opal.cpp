@@ -1031,7 +1031,7 @@ switch_status_t FSConnection::receive_message(switch_core_session_message_t *msg
       {
         PTRACE(2, "mod_opal\tRequesting switch to T.38");
         PSafePtr<OpalConnection> other = GetOtherPartyConnection();
-        if (other != NULL && other->SwitchT38(true))
+        if (other != NULL && other->SwitchFaxMediaStreams(true))
             switch_channel_set_flag(m_fsChannel, CF_REQ_MEDIA);
         else {
             PTRACE(1, "mod_opal\tMode change request to T.38 failed");

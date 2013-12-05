@@ -270,8 +270,10 @@ void nua_session_usage_remove(nua_handle_t *nh,
       ss->ss_reporting = 0;
     }
 
-    if (cr == du->du_cr && cr->cr_orq)
+    if (cr == du->du_cr && cr->cr_orq) {
+      nua_client_request_unref(cr);
       continue;
+    }
 
     if (cr->cr_status < 200) {
       nua_stack_event(nh->nh_nua, nh,

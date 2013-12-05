@@ -92,5 +92,97 @@
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
     </test>
+    <test name="V17-12000-V29-9600">
+        <!-- Tester calls, trying to provoke a crash seen in some versions of spandsp, when
+             an initial renegotiation to lower speed occurs for an ECM FAX -->
+        <step type="CALL"/>
+
+        <!--<step dir="T" type="CNG"/>-->
+
+        <step dir="R" type="CED"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="DIS" value="FF C8 01 ..." timeout="60000"/>
+        <step dir="R" type="SILENCE"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="DCS" value="FF C8 41 00 54 1F 20"/>
+        <step dir="T" type="POSTAMBLE"/>
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="TCF" modem="V.17/12000" value="2250"/>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="CFR" value="FF C8 21"/>
+        <step dir="R" type="SILENCE"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="DCS" value="FF C8 41 00 60 1F 20"/>
+        <step dir="T" type="POSTAMBLE"/>
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="TCF" modem="V.29/9600" value="1800"/>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="CFR" value="FF C8 21"/>
+        <step dir="R" type="SILENCE"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.29/9600"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" min_bits="141"/>
+        <step dir="T" type="POSTAMBLE"/>
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="PPS-NULL" value="FF C8 7D 00 00 00 08"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="MCF" value="FF C8 31"/>
+        <step dir="R" type="SILENCE"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.29/9600"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64"/>
+        <step dir="T" type="POSTAMBLE"/>
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="PPS-MPS" value="FF C8 7D 72 00 80 08"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <possible-step>
+            <step dir="R" type="HDLC" modem="V.21" tag="RNR" value="FF C8 37"/>
+            <step dir="R" type="SILENCE"/>
+
+            <step type="WAIT" value="75"/>
+            <step dir="T" type="PREAMBLE" modem="V.21"/>
+            <step dir="T" type="HDLC" tag="RR" value="FF C8 76"/>
+            <step dir="T" type="POSTAMBLE"/>
+        </possible-step>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="MCF" value="FF C8 31"/>
+        <step dir="R" type="SILENCE"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.29/9600"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_white.tif" frame_size="64"/>
+        <step dir="T" type="POSTAMBLE"/>
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="PPS-EOP" value="FF C8 7D 74 80 00 10"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <possible-step>
+            <step dir="R" type="HDLC" modem="V.21" tag="RNR" value="FF C8 37"/>
+            <step dir="R" type="SILENCE"/>
+
+            <step type="WAIT" value="75"/>
+            <step dir="T" type="PREAMBLE" modem="V.21"/>
+            <step dir="T" type="HDLC" tag="RR" value="FF C8 76"/>
+            <step dir="T" type="POSTAMBLE"/>
+        </possible-step>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="MCF" value="FF C8 31"/>
+        <step dir="R" type="SILENCE"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
+        <step dir="T" type="POSTAMBLE"/>
+    </test>
 </test-group>
 </fax-tests>
