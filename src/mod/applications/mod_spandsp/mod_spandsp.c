@@ -577,6 +577,26 @@ switch_status_t load_configuration(switch_bool_t reload)
 						spandsp_globals.disable_v17 = 1;
 					else
 						spandsp_globals.disable_v17 = 0;
+				} else if (!strcmp(name, "enable-colour")) {
+					if (switch_true(value))
+						spandsp_globals.enable_colour_fax = 1;
+					else
+						spandsp_globals.enable_colour_fax = 0;
+				} else if (!strcmp(name, "enable-image-resizing")) {
+					if (switch_true(value))
+						spandsp_globals.enable_image_resizing = 1;
+					else
+						spandsp_globals.enable_image_resizing = 0;
+				} else if (!strcmp(name, "enable-colour-to-bilevel")) {
+					if (switch_true(value))
+						spandsp_globals.enable_colour_to_bilevel = 1;
+					else
+						spandsp_globals.enable_colour_to_bilevel = 0;
+				} else if (!strcmp(name, "enable-grayscale-to-bilevel")) {
+					if (switch_true(value))
+						spandsp_globals.enable_grayscale_to_bilevel = 1;
+					else
+						spandsp_globals.enable_grayscale_to_bilevel = 0;
 				} else if (!strcmp(name, "enable-t38")) {
 					if (switch_true(value)) {
 						spandsp_globals.enable_t38= 1;
