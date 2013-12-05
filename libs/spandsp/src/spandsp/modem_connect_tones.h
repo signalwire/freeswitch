@@ -153,7 +153,7 @@ SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx_fillin(modem_connect_tones_rx_st
 
 /*! \brief Test if a modem_connect tone has been detected.
     \param s The context.
-    \return TRUE if tone is detected, else FALSE.
+    \return The code for the detected tone.
 */
 SPAN_DECLARE(int) modem_connect_tones_rx_get(modem_connect_tones_rx_state_t *s);
 

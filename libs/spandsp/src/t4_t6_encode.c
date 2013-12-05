@@ -57,8 +57,8 @@
 #include "config.h"
 #endif
 
-#include <stdlib.h>
 #include <inttypes.h>
+#include <stdlib.h>
 #include <limits.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -72,10 +72,16 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <tiffio.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/async.h"
@@ -86,9 +92,7 @@
 #include "spandsp/t81_t82_arith_coding.h"
 #include "spandsp/t85.h"
 #include "spandsp/t42.h"
-#if defined(SPANDSP_SUPPORT_T43)
 #include "spandsp/t43.h"
-#endif
 #include "spandsp/t4_t6_decode.h"
 #include "spandsp/t4_t6_encode.h"
 
@@ -96,9 +100,7 @@
 #include "spandsp/private/t81_t82_arith_coding.h"
 #include "spandsp/private/t85.h"
 #include "spandsp/private/t42.h"
-#if defined(SPANDSP_SUPPORT_T43)
 #include "spandsp/private/t43.h"
-#endif
 #include "spandsp/private/t4_t6_decode.h"
 #include "spandsp/private/t4_t6_encode.h"
 #include "spandsp/private/image_translate.h"
@@ -373,17 +375,17 @@ static int free_buffers(t4_t6_encode_state_t *s)
 {
     if (s->cur_runs)
     {
-        free(s->cur_runs);
+        span_free(s->cur_runs);
         s->cur_runs = NULL;
     }
     if (s->ref_runs)
     {
-        free(s->ref_runs);
+        span_free(s->ref_runs);
         s->ref_runs = NULL;
     }
     if (s->bitstream)
     {
-        free(s->bitstream);
+        span_free(s->bitstream);
         s->bitstream = NULL;
     }
     s->bytes_per_row = 0;
@@ -573,7 +575,7 @@ static void encode_eol(t4_t6_encode_state_t *s)
     uint32_t code;
     int length;
 
-    if (s->encoding == T4_COMPRESSION_ITU_T4_2D)
+    if (s->encoding == T4_COMPRESSION_T4_2D)
     {
         code = 0x0800 | ((!s->row_is_2d) << 12);
         length = 13;
@@ -589,7 +591,7 @@ static void encode_eol(t4_t6_encode_state_t *s)
         /* We may need to pad the row to a minimum length, unless we are in T.6 mode.
            In T.6 we only come here at the end of the page to add the EOFB marker, which
            is like two 1D EOLs. */
-        if (s->encoding != T4_COMPRESSION_ITU_T6)
+        if (s->encoding != T4_COMPRESSION_T6)
         {
             if (s->row_bits + length < s->min_bits_per_row)
                 put_encoded_bits(s, 0, s->min_bits_per_row - (s->row_bits + length));
@@ -823,14 +825,14 @@ static int encode_row(t4_t6_encode_state_t *s, const uint8_t *row_buf, size_t le
 {
     switch (s->encoding)
     {
-    case T4_COMPRESSION_ITU_T6:
+    case T4_COMPRESSION_T6:
         /* T.6 compression is a trivial step up from T.4 2D, so we just
            throw it in here. T.6 is only used with error correction,
            so it does not need independantly compressed (i.e. 1D) lines
            to recover from data errors. It doesn't need EOLs, either. */
         encode_2d_row(s, row_buf);
         break;
-    case T4_COMPRESSION_ITU_T4_2D:
+    case T4_COMPRESSION_T4_2D:
         encode_eol(s);
         if (s->row_is_2d)
         {
@@ -840,17 +842,17 @@ static int encode_row(t4_t6_encode_state_t *s, const uint8_t *row_buf, size_t le
         else
         {
             encode_1d_row(s, row_buf);
-            s->row_is_2d = TRUE;
+            s->row_is_2d = true;
         }
         if (s->rows_to_next_1d_row <= 0)
         {
             /* Insert a row of 1D encoding */
-            s->row_is_2d = FALSE;
+            s->row_is_2d = false;
             s->rows_to_next_1d_row = s->max_rows_to_next_1d_row - 1;
         }
         break;
     default:
-    case T4_COMPRESSION_ITU_T4_1D:
+    case T4_COMPRESSION_T4_1D:
         encode_eol(s);
         encode_1d_row(s, row_buf);
         break;
@@ -864,7 +866,7 @@ static int finalise_page(t4_t6_encode_state_t *s)
 {
     int i;
 
-    if (s->encoding == T4_COMPRESSION_ITU_T6)
+    if (s->encoding == T4_COMPRESSION_T6)
     {
         /* Attach an EOFB (end of facsimile block == 2 x EOLs) to the end of the page */
         for (i = 0;  i < EOLS_TO_END_T6_TX_PAGE;  i++)
@@ -873,7 +875,7 @@ static int finalise_page(t4_t6_encode_state_t *s)
     else
     {
         /* Attach an RTC (return to control == 6 x EOLs) to the end of the page */
-        s->row_is_2d = FALSE;
+        s->row_is_2d = false;
         for (i = 0;  i < EOLS_TO_END_T4_TX_PAGE;  i++)
             encode_eol(s);
     }
@@ -982,14 +984,16 @@ SPAN_DECLARE(int) t4_t6_encode_set_encoding(t4_t6_encode_state_t *s, int encodin
 {
     switch (encoding)
     {
-    case T4_COMPRESSION_ITU_T6:
-    case T4_COMPRESSION_ITU_T4_2D:
-    case T4_COMPRESSION_ITU_T4_1D:
+    case T4_COMPRESSION_T6:
+        s->min_bits_per_row = 0;
+        /* Fall through */
+    case T4_COMPRESSION_T4_2D:
+    case T4_COMPRESSION_T4_1D:
         s->encoding = encoding;
         /* Set this to the default value for the lowest resolution in the T.4 spec. */
         s->max_rows_to_next_1d_row = 2;
         s->rows_to_next_1d_row = s->max_rows_to_next_1d_row - 1;
-        s->row_is_2d = FALSE;
+        s->row_is_2d = (s->encoding == T4_COMPRESSION_T6);
         return 0;
     }
     return -1;
@@ -998,7 +1002,16 @@ SPAN_DECLARE(int) t4_t6_encode_set_encoding(t4_t6_encode_state_t *s, int encodin
 
 SPAN_DECLARE(void) t4_t6_encode_set_min_bits_per_row(t4_t6_encode_state_t *s, int bits)
 {
-    s->min_bits_per_row = bits;
+    switch (s->encoding)
+    {
+    case T4_COMPRESSION_T6:
+        s->min_bits_per_row = 0;
+        break;
+    case T4_COMPRESSION_T4_2D:
+    case T4_COMPRESSION_T4_1D:
+        s->min_bits_per_row = bits;
+        break;
+    }
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1015,16 +1028,22 @@ SPAN_DECLARE(int) t4_t6_encode_set_image_width(t4_t6_encode_state_t *s, int imag
         s->bytes_per_row = (s->image_width + 7)/8;
         run_space = (s->image_width + 4)*sizeof(uint32_t);
 
-        if ((bufptr = (uint32_t *) realloc(s->cur_runs, run_space)) == NULL)
+        if ((bufptr = (uint32_t *) span_realloc(s->cur_runs, run_space)) == NULL)
             return -1;
         s->cur_runs = bufptr;
-        if ((bufptr = (uint32_t *) realloc(s->ref_runs, run_space)) == NULL)
+        if ((bufptr = (uint32_t *) span_realloc(s->ref_runs, run_space)) == NULL)
             return -1;
         s->ref_runs = bufptr;
-        if ((bufptr8 = (uint8_t *) realloc(s->bitstream, (s->image_width + 1)*sizeof(uint16_t))) == NULL)
+        if ((bufptr8 = (uint8_t *) span_realloc(s->bitstream, (s->image_width + 1)*sizeof(uint16_t))) == NULL)
             return -1;
         s->bitstream = bufptr8;
     }
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) t4_t6_encode_set_image_length(t4_t6_encode_state_t *s, int image_length)
+{
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1056,9 +1075,12 @@ SPAN_DECLARE(void) t4_t6_encode_set_max_2d_rows_per_1d_row(t4_t6_encode_state_t 
     } y_res_table[] =
     {
         {T4_Y_RESOLUTION_STANDARD, 2},
+        {T4_Y_RESOLUTION_100, 2},
         {T4_Y_RESOLUTION_FINE, 4},
+        {T4_Y_RESOLUTION_200, 4},
         {T4_Y_RESOLUTION_300, 6},
         {T4_Y_RESOLUTION_SUPERFINE, 8},
+        {T4_Y_RESOLUTION_400, 8},
         {T4_Y_RESOLUTION_600, 12},
         {T4_Y_RESOLUTION_800, 16},
         {T4_Y_RESOLUTION_1200, 24},
@@ -1084,7 +1106,7 @@ SPAN_DECLARE(void) t4_t6_encode_set_max_2d_rows_per_1d_row(t4_t6_encode_state_t 
     }
     s->max_rows_to_next_1d_row = max;
     s->rows_to_next_1d_row = max - 1;
-    s->row_is_2d = FALSE;
+    s->row_is_2d = false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1094,11 +1116,11 @@ SPAN_DECLARE(logging_state_t *) t4_t6_encode_get_logging_state(t4_t6_encode_stat
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t4_t6_encode_restart(t4_t6_encode_state_t *s, int image_width)
+SPAN_DECLARE(int) t4_t6_encode_restart(t4_t6_encode_state_t *s, int image_width, int image_length)
 {
     /* Allow for pages being of different width. */
     t4_t6_encode_set_image_width(s, image_width);
-    s->row_is_2d = (s->encoding == T4_COMPRESSION_ITU_T6);
+    s->row_is_2d = (s->encoding == T4_COMPRESSION_T6);
     s->rows_to_next_1d_row = s->max_rows_to_next_1d_row - 1;
 
     s->tx_bitstream = 0;
@@ -1125,12 +1147,13 @@ SPAN_DECLARE(int) t4_t6_encode_restart(t4_t6_encode_state_t *s, int image_width)
 SPAN_DECLARE(t4_t6_encode_state_t *) t4_t6_encode_init(t4_t6_encode_state_t *s,
                                                        int encoding,
                                                        int image_width,
+                                                       int image_length,
                                                        t4_row_read_handler_t handler,
                                                        void *user_data)
 {
     if (s == NULL)
     {
-        if ((s = (t4_t6_encode_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (t4_t6_encode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -1142,7 +1165,7 @@ SPAN_DECLARE(t4_t6_encode_state_t *) t4_t6_encode_init(t4_t6_encode_state_t *s,
     s->row_read_user_data = user_data;
 
     s->max_rows_to_next_1d_row = 2;
-    t4_t6_encode_restart(s, image_width);
+    t4_t6_encode_restart(s, image_width, image_length);
 
     return s;
 }
@@ -1160,7 +1183,7 @@ SPAN_DECLARE(int) t4_t6_encode_free(t4_t6_encode_state_t *s)
     int ret;
 
     ret = t4_t6_encode_release(s);
-    free(s);
+    span_free(s);
     return ret;
 }
 /*- End of function --------------------------------------------------------*/

@@ -47,7 +47,8 @@ EXTRA_DIST = autogen.sh \
              unpack_g726_data.sh \
              unpack_gsm0610_data.sh \
              unpack_v56ter_data.sh \
-             wrapper.xsl
+             wrapper.xsl \
+             yum-prepare.sh
 
 if COND_DOC
     MAYBE_DOC=doc

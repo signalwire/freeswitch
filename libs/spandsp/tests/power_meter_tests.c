@@ -75,7 +75,7 @@ static int power_surge_detector_tests(void)
         exit(2);
     }
     sig = power_surge_detector_init(NULL, -50.0f, 5.0f);
-    prev_signal_present = FALSE;
+    prev_signal_present = false;
 
     phase_rate = dds_phase_rate(450.0f);
     phase_acc = 0;
@@ -178,7 +178,7 @@ static int power_surge_detector_file_test(const char *file)
         exit(2);
     }
     sig = power_surge_detector_init(NULL, -50.0f, 6.0f);
-    prev_signal_present = FALSE;
+    prev_signal_present = false;
 
     sample = 0;
     while ((inframes = sf_readf_short(inhandle, amp, 8000)))
@@ -271,7 +271,7 @@ static int power_meter_tests(void)
                              0,
                              0,
                              0,
-                             TRUE);
+                             true);
     tone_gen_init(&gen, &tone_desc);
     len = tone_gen(&gen, amp, 1000);
     for (i = 0;  i < len;  i++)
@@ -335,13 +335,13 @@ static int power_meter_tests(void)
 
 int main(int argc, char *argv[])
 {
-    int basic_tests;
-    int decode;
+    bool basic_tests;
+    bool decode;
     int opt;
     const char *in_file;
 
-    basic_tests = TRUE;
-    decode = FALSE;
+    basic_tests = true;
+    decode = false;
     in_file = IN_FILE_NAME;
     while ((opt = getopt(argc, argv, "d:")) != -1)
     {
@@ -349,8 +349,8 @@ int main(int argc, char *argv[])
         {
         case 'd':
             in_file = optarg;
-            basic_tests = FALSE;
-            decode = TRUE;
+            basic_tests = false;
+            decode = true;
             break;
         default:
             //usage();

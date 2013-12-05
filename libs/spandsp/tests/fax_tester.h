@@ -44,7 +44,7 @@ typedef void (*faxtester_flush_handler_t)(faxtester_state_t *s, void *user_data,
     \brief FAX tester real time frame handler.
     \param s The FAX tester context.
     \param user_data An opaque pointer.
-    \param direction TRUE for incoming, FALSE for outgoing.
+    \param direction True for incoming, false for outgoing.
     \param msg The HDLC message.
     \param len The length of the message.
 */
@@ -94,11 +94,11 @@ struct faxtester_state_s
     /*! \brief CED or CNG detector */
     modem_connect_tones_rx_state_t connect_rx;
 
-    /*! If TRUE, transmission is in progress */
-    int transmit;
+    /*! If true, transmission is in progress */
+    bool transmit;
 
-    /*! \brief TRUE is the short training sequence should be used. */
-    int short_train;
+    /*! \brief true if the short training sequence should be used. */
+    bool short_train;
 
     /*! \brief The currently select receiver type */
     int current_rx_type;
@@ -157,7 +157,7 @@ void faxtester_set_flush_handler(faxtester_state_t *s, faxtester_flush_handler_t
 /*! Select whether silent audio will be sent when FAX transmit is idle.
     \brief Select whether silent audio will be sent when FAX transmit is idle.
     \param s The FAX tester context.
-    \param transmit_on_idle TRUE if silent audio should be output when the FAX transmitter is
+    \param transmit_on_idle true if silent audio should be output when the FAX transmitter is
            idle. FALSE to transmit zero length audio when the FAX transmitter is idle. The default
            behaviour is FALSE.
 */
@@ -166,7 +166,7 @@ void faxtester_set_transmit_on_idle(faxtester_state_t *s, int transmit_on_idle);
 /*! Select whether talker echo protection tone will be sent for the image modems.
     \brief Select whether TEP will be sent for the image modems.
     \param s The FAX tester context.
-    \param use_tep TRUE if TEP should be sent.
+    \param use_tep true if TEP should be sent.
 */
 void faxtester_set_tep_mode(faxtester_state_t *s, int use_tep);
 
@@ -185,7 +185,7 @@ void faxtester_set_ecm_image_buffer(faxtester_state_t *s, const uint8_t *buf, in
 /*! Initialise a FAX context.
     \brief Initialise a FAX context.
     \param s The FAX tester context.
-    \param calling_party TRUE if the context is for a calling party. FALSE if the
+    \param calling_party true if the context is for a calling party. FALSE if the
            context is for an answering party.
     \return A pointer to the FAX context, or NULL if there was a problem.
 */

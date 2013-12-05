@@ -41,9 +41,15 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/lpc10.h"
 #include "spandsp/private/lpc10.h"
 
@@ -269,7 +275,7 @@ SPAN_DECLARE(lpc10_encode_state_t *) lpc10_encode_init(lpc10_encode_state_t *s, 
 
     if (s == NULL)
     {
-        if ((s = (lpc10_encode_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (lpc10_encode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
 
@@ -321,7 +327,7 @@ SPAN_DECLARE(lpc10_encode_state_t *) lpc10_encode_init(lpc10_encode_state_t *s, 
     s->l2sum1 = 0.0f;
     s->l2ptr1 = 1;
     s->l2ptr2 = 9;
-    s->hyst = FALSE;
+    s->hyst = false;
 
     /* State used by function lpc10_voicing */
     s->dither = 20.0f;
@@ -367,7 +373,7 @@ SPAN_DECLARE(int) lpc10_encode_release(lpc10_encode_state_t *s)
 
 SPAN_DECLARE(int) lpc10_encode_free(lpc10_encode_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

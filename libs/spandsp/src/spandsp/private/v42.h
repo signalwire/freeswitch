@@ -92,9 +92,9 @@ typedef struct
     uint8_t vr;
     int state;
     int configuring;
-    int local_busy;
-    int far_busy;
-    int rejected;
+    bool local_busy;
+    bool far_busy;
+    bool rejected;
     int retry_count;
 
     /* The control frame buffer, and its pointers */
@@ -131,11 +131,11 @@ typedef struct
 */
 struct v42_state_s
 {
-    /*! TRUE if we are the calling party, otherwise FALSE. */
-    int calling_party;
-    /*! TRUE if we should detect whether the far end is V.42 capable. FALSE if we go
+    /*! True if we are the calling party, otherwise false. */
+    bool calling_party;
+    /*! True if we should detect whether the far end is V.42 capable. false if we go
         directly to protocol establishment. */
-    int detect;
+    bool detect;
 
     /*! The bit rate, used to time events */
     int tx_bit_rate;

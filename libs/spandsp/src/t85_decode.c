@@ -33,8 +33,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/async.h"
 #include "spandsp/timezone.h"
@@ -47,10 +53,7 @@
 #include "spandsp/private/t81_t82_arith_coding.h"
 #include "spandsp/private/t85.h"
 
-#define FALSE 0
-#define TRUE (!FALSE)
-
-static __inline__ int32_t pack_32(uint8_t *s)
+static __inline__ int32_t pack_32(const uint8_t *s)
 {
     int32_t value;
 
@@ -78,7 +81,7 @@ static size_t decode_pscd(t85_decode_state_t *s, const uint8_t data[], size_t le
     s->s.pscd_ptr = data;
     s->s.pscd_end = data + len;
 
-    for (s->interrupt = FALSE;  s->i < s->l0  &&  s->y < s->yd  &&  !s->interrupt;  s->i++, s->y++)
+    for (s->interrupt = false;  s->i < s->l0  &&  s->y < s->yd  &&  !s->interrupt;  s->i++, s->y++)
     {
         /* Point to the current image bytes */
         for (i = 0;  i < 3;  i++)
@@ -126,7 +129,7 @@ static size_t decode_pscd(t85_decode_state_t *s, const uint8_t data[], size_t le
             }
             /* This row is 'not typical' and has to be coded completely */
         }
-        s->pseudo = FALSE;
+        s->pseudo = false;
 
         if (s->x == 0)
         {
@@ -223,7 +226,7 @@ static size_t decode_pscd(t85_decode_state_t *s, const uint8_t data[], size_t le
         *(hp[0] - 1) <<= (s->bytes_per_row*8 - s->xd);
         s->interrupt = s->row_write_handler(s->row_write_user_data, &s->row_buf[s->p[0]*s->bytes_per_row], s->bytes_per_row);
         s->x = 0;
-        s->pseudo = TRUE;
+        s->pseudo = true;
         /* Shuffle the row buffers */
         s->p[2] = s->p[1];
         s->p[1] = s->p[0];
@@ -237,7 +240,7 @@ static size_t decode_pscd(t85_decode_state_t *s, const uint8_t data[], size_t le
 static int finish_sde(t85_decode_state_t *s)
 {
     /* Decode final pixels based on trailing zero bytes */
-    s->s.nopadding = FALSE;
+    s->s.nopadding = false;
     if (decode_pscd(s, s->buffer, 2) != 2  &&  s->interrupt)
         return 1;
 
@@ -247,12 +250,12 @@ static int finish_sde(t85_decode_state_t *s)
 
     s->x = 0;
     s->i = 0;
-    s->pseudo = TRUE;
+    s->pseudo = true;
     s->at_moves = 0;
     if (s->buffer[1] == T82_SDRST)
     {
         s->tx = 0;
-        s->lntp = TRUE;
+        s->lntp = true;
         s->p[0] = 0;
         s->p[1] = -1;
         s->p[2] = -1;
@@ -262,7 +265,53 @@ static int finish_sde(t85_decode_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int check_bih(t85_decode_state_t *s)
+SPAN_DECLARE(bool) t85_analyse_header(uint32_t *width, uint32_t *length, const uint8_t data[], size_t len)
+{
+    uint32_t i;
+    uint32_t skip;
+
+    if (len < 20)
+    {
+        *width = 0;
+        *length = 0;
+        return false;
+    }
+    *width = pack_32(&data[6]);
+    *length = pack_32(&data[10]);
+    if ((data[19] & T85_VLENGTH))
+    {
+        /* There should be an image length sequence terminating the image later on. */
+        /* TODO: scan for a true length, instead of this fudge */
+        for (i = 20;  i < len - 6;  i++)
+        {
+            if (data[i] == T82_ESC)
+            {
+                if (data[i + 1] == T82_COMMENT)
+                {
+                    skip = pack_32(&data[2]);
+                    if ((skip + 6) > (len - i))
+                        break;
+                    i += (6 + skip - 1);
+                }
+                else if (data[i + 1] == T82_ATMOVE)
+                {
+                    i += (8 - 1);
+                }
+                else if (data[i + 1] == T82_NEWLEN)
+                {
+                    /* We are only allow to have one of these, so if we find one
+                       we should not look any further. */
+                    *length = pack_32(&data[i + 2]);
+                    break;
+                }
+            }
+        }
+    }
+    return true;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int extract_bih(t85_decode_state_t *s)
 {
     /* Check that the fixed parameters have the values they are expected to be
        fixed at - see T.85/Table 1 */
@@ -286,50 +335,75 @@ static int check_bih(t85_decode_state_t *s)
 #endif
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. Fixed bytes do not contain expected values.\n");
+        s->end_of_data = 2;
         return T4_DECODE_INVALID_DATA;
     }
     /* P - Number of bit planes */
-    if (s->buffer[2] < s->min_bit_planes  ||  s->buffer[2] > s->max_bit_planes)
-    {
-        span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. %d bit planes. Should be %d to %d.\n", s->buffer[2], s->min_bit_planes, s->max_bit_planes);
-        return T4_DECODE_INVALID_DATA;
-    }
     s->bit_planes = s->buffer[2];
     s->current_bit_plane = 0;
     /* Now look at the stuff which actually counts in a T.85 header. */
     /* XD - Horizontal image size at layer D */
     s->xd = pack_32(&s->buffer[4]);
+    /* YD - Vertical image size at layer D */
+    s->yd = pack_32(&s->buffer[8]);
+    /* L0 - Rows per stripe, at the lowest resolution */
+    s->l0 = pack_32(&s->buffer[12]);
+    /* MX - Maximum horizontal offset allowed for AT pixel */
+    s->mx = s->buffer[16];
+    /* Options byte */
+    s->options = s->buffer[19];
+
+    if (s->bit_planes < s->min_bit_planes  ||  s->bit_planes > s->max_bit_planes)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. %d bit planes. Should be %d to %d.\n", s->bit_planes, s->min_bit_planes, s->max_bit_planes);
+        s->end_of_data = 2;
+        return T4_DECODE_INVALID_DATA;
+    }
     if (s->xd == 0  ||  (s->max_xd  &&  s->xd > s->max_xd))
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. Width is %" PRIu32 "\n", s->xd);
+        s->end_of_data = 2;
         return T4_DECODE_INVALID_DATA;
     }
-    /* YD - Vertical image size at layer D */
-    s->yd = pack_32(&s->buffer[8]);
-    if (s->yd == 0  ||  (s->max_yd  &&  s->yd > s->max_yd))
+    if (s->yd == 0)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. Length is %" PRIu32 "\n", s->yd);
+        s->end_of_data = 2;
         return T4_DECODE_INVALID_DATA;
     }
-    /* L0 - Rows per stripe, at the lowest resolution */
-    s->l0 = pack_32(&s->buffer[12]);
+    if (s->max_yd)
+    {
+        if ((s->options & T85_VLENGTH))
+        {
+            if (s->yd > s->max_yd)
+                s->yd = s->max_yd;
+        }
+        else
+        {
+            if (s->yd > s->max_yd)
+            {
+                span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. Length is %" PRIu32 "\n", s->yd);
+                s->end_of_data = 2;
+                return T4_DECODE_INVALID_DATA;
+            }
+        }
+    }
     if (s->l0 == 0)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. L0 is %" PRIu32 "\n", s->l0);
+        s->end_of_data = 2;
         return T4_DECODE_INVALID_DATA;
     }
-    /* MX - Maximum horizontal offset allowed for AT pixel */
-    s->mx = s->buffer[16];
     if (s->mx > 127)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. MX is %d\n", s->mx);
+        s->end_of_data = 2;
         return T4_DECODE_INVALID_DATA;
     }
-    /* Options byte */
-    s->options = s->buffer[19];
-    if ((s->options & 0x97))
+    if ((s->options & ~(T85_LRLTWO | T85_VLENGTH | T85_TPBON)))
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "BIH invalid. Options are 0x%X\n", s->options);
+        s->end_of_data = 2;
         return T4_DECODE_INVALID_DATA;
     }
     span_log(&s->logging, SPAN_LOG_FLOW, "BIH is OK. Image is %" PRIu32 "x%" PRIu32 " pixels\n", s->xd, s->yd);
@@ -375,6 +449,8 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
     {
         if (s->y >= s->yd)
             return T4_DECODE_OK;
+        if (s->end_of_data > 0)
+            return T4_DECODE_INVALID_DATA;
         /* This is the end of image condition */
         s->end_of_data = 1;
     }
@@ -391,7 +467,7 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
         cnt = i;
         if (s->bie_len < 20)
             return T4_DECODE_MORE_DATA;
-        if ((ret = check_bih(s)) != T4_DECODE_OK)
+        if ((ret = extract_bih(s)) != T4_DECODE_OK)
             return ret;
         /* Set up the two/three row buffer */
         bytes_per_row = (s->xd + 7) >> 3;
@@ -399,7 +475,7 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
         if (min_len > s->row_buf_len)
         {
             /* We need to expand the 3 row buffer */
-            if ((buf = (uint8_t *) realloc(s->row_buf, min_len)) == NULL)
+            if ((buf = (uint8_t *) span_realloc(s->row_buf, min_len)) == NULL)
                 return T4_DECODE_NOMEM;
             s->row_buf = buf;
             s->row_buf_len = min_len;
@@ -409,7 +485,7 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
         s->s.nopadding = s->options & T85_VLENGTH;
         if (s->comment)
         {
-            free(s->comment);
+            span_free(s->comment);
             s->comment = NULL;
         }
         s->comment_len = 0;
@@ -419,10 +495,10 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
         s->x = 0;
         s->y = 0;
         s->i = 0;
-        s->pseudo = TRUE;
+        s->pseudo = true;
         s->at_moves = 0;
         s->tx = 0;
-        s->lntp = TRUE;
+        s->lntp = true;
         s->bytes_per_row = bytes_per_row;
         s->p[0] = 0;
         s->p[1] = -1;
@@ -455,7 +531,7 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                     s->interrupt = s->comment_handler(s->comment_user_data, s->comment, s->comment_len);
                 if (s->comment)
                 {
-                    free(s->comment);
+                    span_free(s->comment);
                     s->comment = NULL;
                 }
                 s->comment_len = 0;
@@ -489,7 +565,6 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                    the commonest thing for us to hit here. */
                 decode_pscd(s, s->buffer, 2);
                 s->buf_len = 0;
-
                 if (s->interrupt)
                     return T4_DECODE_INTERRUPT;
                 break;
@@ -506,12 +581,12 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                 s->comment_len = pack_32(&s->buffer[2]);
                 /* Only try to buffer and process the comment's contents if we have
                    a defined callback routine to do something with it. */
-                /* If this malloc fails we carry on working just fine, and don't try to
+                /* If this allocate fails we carry on working just fine, and don't try to
                    process the contents of the comment. That is fairly benign, as
                    the comments are not generally of critical importance, so let's
                    not worry. */
                 if (s->comment_handler  &&  s->comment_len > 0  &&  s->comment_len <= s->max_comment_len)
-                    s->comment = malloc(s->comment_len);
+                    s->comment = span_alloc(s->comment_len);
                 s->comment_progress = 0;
                 continue;
             case T82_ATMOVE:
@@ -520,9 +595,11 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                     continue;
                 s->buf_needed = 2;
                 s->buf_len = 0;
-
                 if (s->at_moves >= T85_ATMOVES_MAX)
+                {
+                    s->end_of_data = 2;
                     return T4_DECODE_INVALID_DATA;
+                }
                 s->at_row[s->at_moves] = pack_32(&s->buffer[2]);
                 s->at_tx[s->at_moves] = s->buffer[6];
                 if (s->at_tx[s->at_moves] > s->mx
@@ -531,6 +608,7 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                     ||
                     s->buffer[7] != 0)
                 {
+                    s->end_of_data = 2;
                     return T4_DECODE_INVALID_DATA;
                 }
                 s->at_moves++;
@@ -541,14 +619,19 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                     continue;
                 s->buf_needed = 2;
                 s->buf_len = 0;
-
                 if (!(s->options & T85_VLENGTH))
+                {
+                    s->end_of_data = 2;
                     return T4_DECODE_INVALID_DATA;
+                }
                 s->options &= ~T85_VLENGTH;
                 y = pack_32(&s->buffer[2]);
                 /* An update to the image length is not allowed to stretch it. */
                 if (y > s->yd)
+                {
+                    s->end_of_data = 2;
                     return T4_DECODE_INVALID_DATA;
+                }
                 s->yd = y;
                 break;
             case T82_SDNORM:
@@ -630,7 +713,10 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                 y = pack_32(&s->buffer[4]);
                 /* An update to the image length is not allowed to stretch it. */
                 if (y > s->yd)
+                {
+                    s->end_of_data = 2;
                     return T4_DECODE_INVALID_DATA;
+                }
                 /* Things look OK, so accept this new length, and proceed. */
                 s->yd = y;
                 /* Now process the T82_SDNORM or T82_SDRST */
@@ -644,6 +730,7 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
                 break;
             default:
                 s->buf_len = 0;
+                s->end_of_data = 2;
                 return T4_DECODE_INVALID_DATA;
             }
         }
@@ -657,13 +744,15 @@ SPAN_DECLARE(int) t85_decode_put(t85_decode_state_t *s, const uint8_t data[], si
             cnt += decode_pscd(s, data + cnt, len - cnt);
             if (s->interrupt)
                 return T4_DECODE_INTERRUPT;
-            /* We should only have stopped processing PSCD if
-               we ran out of data, or hit a T82_ESC */
+            /* We should only have stopped processing PSCD if we ran out of data,
+               or hit a T82_ESC */
             if (cnt < len  &&  data[cnt] != T82_ESC)
+            {
+                s->end_of_data = 2;
                 return T4_DECODE_INVALID_DATA;
+            }
         }
     }
-
     return T4_DECODE_MORE_DATA;
 }
 /*- End of function --------------------------------------------------------*/
@@ -732,20 +821,20 @@ SPAN_DECLARE(int) t85_decode_new_plane(t85_decode_state_t *s)
     memset(s->at_row, 0, sizeof(s->at_row));
     memset(s->at_tx, 0, sizeof(s->at_tx));
     memset(s->row_h, 0, sizeof(s->row_h));
-    s->pseudo = FALSE;
-    s->lntp = FALSE;
-    s->interrupt = FALSE;
+    s->pseudo = false;
+    s->lntp = false;
+    s->interrupt = false;
     s->end_of_data = 0;
     if (s->comment)
     {
-        free(s->comment);
+        span_free(s->comment);
         s->comment = NULL;
     }
     s->comment_len = 0;
     s->comment_progress = 0;
     s->compressed_image_size = 0;
 
-    t81_t82_arith_decode_restart(&s->s, FALSE);
+    t81_t82_arith_decode_restart(&s->s, false);
     s->s.nopadding = s->options & T85_VLENGTH;
 
     s->buf_len = 0;
@@ -753,10 +842,10 @@ SPAN_DECLARE(int) t85_decode_new_plane(t85_decode_state_t *s)
     s->x = 0;
     s->y = 0;
     s->i = 0;
-    s->pseudo = TRUE;
+    s->pseudo = true;
     s->at_moves = 0;
     s->tx = 0;
-    s->lntp = TRUE;
+    s->lntp = true;
     s->p[0] = 0;
     s->p[1] = -1;
     s->p[2] = -1;
@@ -780,20 +869,20 @@ SPAN_DECLARE(int) t85_decode_restart(t85_decode_state_t *s)
     memset(s->at_row, 0, sizeof(s->at_row));
     memset(s->at_tx, 0, sizeof(s->at_tx));
     memset(s->row_h, 0, sizeof(s->row_h));
-    s->pseudo = FALSE;
-    s->lntp = FALSE;
-    s->interrupt = FALSE;
+    s->pseudo = false;
+    s->lntp = false;
+    s->interrupt = false;
     s->end_of_data = 0;
     if (s->comment)
     {
-        free(s->comment);
+        span_free(s->comment);
         s->comment = NULL;
     }
     s->comment_len = 0;
     s->comment_progress = 0;
     s->compressed_image_size = 0;
 
-    t81_t82_arith_decode_restart(&s->s, FALSE);
+    t81_t82_arith_decode_restart(&s->s, false);
 
     return 0;
 }
@@ -811,7 +900,7 @@ SPAN_DECLARE(t85_decode_state_t *) t85_decode_init(t85_decode_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (t85_decode_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (t85_decode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -837,12 +926,12 @@ SPAN_DECLARE(int) t85_decode_release(t85_decode_state_t *s)
 {
     if (s->row_buf)
     {
-        free(s->row_buf);
+        span_free(s->row_buf);
         s->row_buf = NULL;
     }
     if (s->comment)
     {
-        free(s->comment);
+        span_free(s->comment);
         s->comment = NULL;
     }
     return 0;
@@ -854,7 +943,7 @@ SPAN_DECLARE(int) t85_decode_free(t85_decode_state_t *s)
     int ret;
 
     ret = t85_decode_release(s);
-    free(s);
+    span_free(s);
     return ret;
 }
 /*- End of function --------------------------------------------------------*/

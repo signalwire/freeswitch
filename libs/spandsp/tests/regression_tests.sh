@@ -43,6 +43,15 @@ then
 fi
 echo adsi_tests completed OK
 
+./alloc_tests >$STDOUT_DEST 2>$STDERR_DEST
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo alloc_tests failed!
+    exit $RETVAL
+fi
+echo alloc_tests completed OK
+
 ./async_tests >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?
 if [ $RETVAL != 0 ]

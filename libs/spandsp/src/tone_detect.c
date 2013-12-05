@@ -44,6 +44,7 @@
 #include <fcntl.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/complex.h"
 #include "spandsp/complex_vector_float.h"
 #include "spandsp/tone_detect.h"
@@ -72,7 +73,7 @@ SPAN_DECLARE(goertzel_state_t *) goertzel_init(goertzel_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (goertzel_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (goertzel_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -98,7 +99,7 @@ SPAN_DECLARE(int) goertzel_release(goertzel_state_t *s)
 SPAN_DECLARE(int) goertzel_free(goertzel_state_t *s)
 {
     if (s)
-        free(s);
+        span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

@@ -92,8 +92,8 @@ struct lpc10_encode_state_s
     int32_t l2ptr2;
     /*! \brief No initial value necessary */
     int32_t lasti;
-    /*! \brief Initial value FALSE */
-    int hyst;
+    /*! \brief Initial value false */
+    bool hyst;
 
     /* State used by function lpc10_voicing */
     /*! \brief Initial value 20.0f */
@@ -148,8 +148,8 @@ struct lpc10_decode_state_s
     /* State used by function decode */
     /*! \brief Initial value 60 */
     int32_t iptold;
-    /*! \brief Initial value TRUE */
-    int first;
+    /*! \brief Initial value true */
+    bool first;
     /*! \brief ??? */
     int32_t ivp2h;
     /*! \brief ??? */
@@ -172,18 +172,18 @@ struct lpc10_decode_state_s
     int32_t buflen;
 
     /* State used by function pitsyn */
-    /*! \brief No initial value necessary as long as first_pitsyn is initially TRUE */
+    /*! \brief No initial value necessary as long as first_pitsyn is initially true */
     int32_t ivoico;
-    /*! \brief  No initial value necessary as long as first_pitsyn is initially TRUE */
+    /*! \brief  No initial value necessary as long as first_pitsyn is initially true */
     int32_t ipito;
     /*! \brief Initial value 1.0f */
     float rmso;
-    /*! \brief No initial value necessary as long as first_pitsyn is initially TRUE */
+    /*! \brief No initial value necessary as long as first_pitsyn is initially true */
     float rco[10];
-    /*! \brief No initial value necessary as long as first_pitsyn is initially TRUE */
+    /*! \brief No initial value necessary as long as first_pitsyn is initially true */
     int32_t jsamp;
-    /*! \brief Initial value TRUE */
-    int first_pitsyn;
+    /*! \brief Initial value true */
+    bool first_pitsyn;
 
     /* State used by function bsynz */
     /*! \brief ??? */

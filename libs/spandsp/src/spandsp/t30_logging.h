@@ -53,6 +53,12 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *dis, in
     \return A pointer to the description. */
 SPAN_DECLARE(const char *) t30_completion_code_to_str(int result);
 
+/*! Convert a T.30 modem type to a short text description.
+    \brief Convert a T.30 modem type to a short text description.
+    \param modem The modem code.
+    \return A pointer to the description. */
+SPAN_DECLARE(const char *) t30_modem_to_str(int modem);
+
 #if defined(__cplusplus)
 }
 #endif

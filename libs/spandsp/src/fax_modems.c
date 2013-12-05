@@ -5,7 +5,7 @@
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
- * Copyright (C) 2003, 2005, 2006, 2008 Steve Underwood
+ * Copyright (C) 2003, 2005, 2006, 2008, 2013 Steve Underwood
  *
  * All rights reserved.
  *
@@ -39,6 +39,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <assert.h>
 #include <fcntl.h>
@@ -48,8 +53,10 @@
 #endif
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
+#include "spandsp/bitstream.h"
 #include "spandsp/dc_restore.h"
 #include "spandsp/queue.h"
 #include "spandsp/power_meter.h"
@@ -67,13 +74,21 @@
 #include "spandsp/v27ter_rx.h"
 #include "spandsp/v17tx.h"
 #include "spandsp/v17rx.h"
+#if defined(SPANDSP_SUPPORT_V34)
+#include "spandsp/v34.h"
+#endif
 #include "spandsp/super_tone_rx.h"
 #include "spandsp/modem_connect_tones.h"
 #include "spandsp/fax_modems.h"
 
 #include "spandsp/private/logging.h"
+#include "spandsp/private/bitstream.h"
 #include "spandsp/private/silence_gen.h"
+#include "spandsp/private/power_meter.h"
 #include "spandsp/private/fsk.h"
+#if defined(SPANDSP_SUPPORT_V34)
+#include "spandsp/private/v34.h"
+#endif
 #include "spandsp/private/v17tx.h"
 #include "spandsp/private/v17rx.h"
 #include "spandsp/private/v27ter_tx.h"
@@ -86,13 +101,64 @@
 
 #define HDLC_FRAMING_OK_THRESHOLD               5
 
-static void fax_modems_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
+SPAN_DECLARE(const char *) fax_modem_to_str(int modem)
+{
+    switch (modem)
+    {
+    case FAX_MODEM_NONE:
+        return "None";
+    case FAX_MODEM_FLUSH:
+        return "Flush";
+    case FAX_MODEM_SILENCE_TX:
+        return "Silence Tx";
+    case FAX_MODEM_SILENCE_RX:
+        return "Silence Rx";
+    case FAX_MODEM_CED_TONE_TX:
+        return "CED Tx";
+    case FAX_MODEM_CNG_TONE_TX:
+        return "CNG Tx";
+    case FAX_MODEM_NOCNG_TONE_TX:
+        return "No CNG Tx";
+    case FAX_MODEM_CED_TONE_RX:
+        return "CED Rx";
+    case FAX_MODEM_CNG_TONE_RX:
+        return "CNG Rx";
+    case FAX_MODEM_V21_TX:
+        return "V.21 Tx";
+    case FAX_MODEM_V17_TX:
+        return "V.17 Tx";
+    case FAX_MODEM_V27TER_TX:
+        return "V.27ter Tx";
+    case FAX_MODEM_V29_TX:
+        return "V.29 Tx";
+    case FAX_MODEM_V21_RX:
+        return "V.21 Rx";
+    case FAX_MODEM_V17_RX:
+        return "V.17 Rx";
+    case FAX_MODEM_V27TER_RX:
+        return "V.27ter Rx";
+    case FAX_MODEM_V29_RX:
+        return "V.29 Rx";
+#if defined(SPANDSP_SUPPORT_V34)
+    case FAX_MODEM_V34_TX:
+        return "V.34 HDX Tx";
+    case FAX_MODEM_V34_RX:
+        return "V.34 HDX Rx";
+#endif
+    }
+    /*endswitch*/
+    return "???";
+}
+/*- End of function --------------------------------------------------------*/
+
+//static void fax_modems_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
+SPAN_DECLARE(void) fax_modems_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
 {
     fax_modems_state_t *s;
 
     s = (fax_modems_state_t *) user_data;
-    if (ok)
-        s->rx_frame_received = TRUE;
+    if (len >= 0  &&  ok)
+        s->rx_frame_received = true;
     if (s->hdlc_accept)
         s->hdlc_accept(s->hdlc_accept_user_data, msg, len, ok);
 }
@@ -263,7 +329,7 @@ SPAN_DECLARE(void) fax_modems_start_slow_modem(fax_modems_state_t *s, int which)
         fsk_rx_init(&s->v21_rx, &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, (put_bit_func_t) hdlc_rx_put_bit, &s->hdlc_rx);
         fax_modems_set_rx_handler(s, (span_rx_handler_t) &fsk_rx, &s->v21_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &s->v21_rx);
         fsk_rx_signal_cutoff(&s->v21_rx, -39.09f);
-        s->rx_frame_received = FALSE;
+        //hdlc_rx_init(&s->hdlc_rx, false, true, HDLC_FRAMING_OK_THRESHOLD, fax_modems_hdlc_accept, s);
         break;
     case FAX_MODEM_CED_TONE_RX:
         modem_connect_tones_rx_init(&s->connect_rx, MODEM_CONNECT_TONES_FAX_CED, s->tone_callback, s->tone_callback_user_data);
@@ -289,6 +355,8 @@ SPAN_DECLARE(void) fax_modems_start_slow_modem(fax_modems_state_t *s, int which)
         fax_modems_set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
         break;
     }
+    /*endswitch*/
+    s->rx_frame_received = false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -306,6 +374,7 @@ SPAN_DECLARE(void) fax_modems_start_fast_modem(fax_modems_state_t *s, int which,
         get_bit_user_data = (void *) &s->hdlc_tx;
         put_bit = (put_bit_func_t) hdlc_rx_put_bit;
         put_bit_user_data = (void *) &s->hdlc_rx;
+        //hdlc_rx_init(&s->hdlc_rx, false, true, HDLC_FRAMING_OK_THRESHOLD, fax_modems_hdlc_accept, s);
     }
     else
     {
@@ -321,10 +390,8 @@ SPAN_DECLARE(void) fax_modems_start_fast_modem(fax_modems_state_t *s, int which,
     if (s->fast_modem != which)
     {
         s->current_rx_type = which;
-        s->short_train = FALSE;
+        s->short_train = false;
         s->fast_modem = which;
-        if (hdlc_mode)
-            s->rx_frame_received = FALSE;
         switch (s->fast_modem)
         {
         case FAX_MODEM_V27TER_RX:
@@ -358,6 +425,18 @@ SPAN_DECLARE(void) fax_modems_start_fast_modem(fax_modems_state_t *s, int which,
             fax_modems_set_tx_handler(s, (span_tx_handler_t) &v17_tx, &s->fast_modems.v17_tx);
             fax_modems_set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
             break;
+#if defined(SPANDSP_SUPPORT_V34)
+        case FAX_MODEM_V34_RX:
+            v34_init(&s->fast_modems.v34, 2400, s->bit_rate, true, false, NULL, NULL, put_bit, put_bit_user_data);
+            //fax_modems_set_tx_handler(s, (span_tx_handler_t) &v34_rx, &s->fast_modems.v34_rx);
+            fax_modems_set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+            break;
+        case FAX_MODEM_V34_TX:
+            v34_init(&s->fast_modems.v34, 2400, s->bit_rate, true, false, get_bit, get_bit_user_data, NULL, NULL);
+            //fax_modems_set_tx_handler(s, (span_tx_handler_t) &v34_tx, &s->fast_modems.v34_tx);
+            fax_modems_set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+            break;
+#endif
         }
         /*endswitch*/
     }
@@ -367,13 +446,13 @@ SPAN_DECLARE(void) fax_modems_start_fast_modem(fax_modems_state_t *s, int which,
         switch (s->fast_modem)
         {
         case FAX_MODEM_V27TER_RX:
-            v27ter_rx_restart(&s->fast_modems.v27ter_rx, s->bit_rate, FALSE);
+            v27ter_rx_restart(&s->fast_modems.v27ter_rx, s->bit_rate, false);
             v27ter_rx_set_put_bit(&s->fast_modems.v27ter_rx, put_bit, put_bit_user_data);
             v27ter_rx_set_modem_status_handler(&s->fast_modems.v27ter_rx, v27ter_rx_status_handler, s);
             fax_modems_set_rx_handler(s, (span_rx_handler_t) &fax_modems_v27ter_v21_rx, s, (span_rx_fillin_handler_t) &fax_modems_v27ter_v21_rx_fillin, s);
             break;
         case FAX_MODEM_V29_RX:
-            v29_rx_restart(&s->fast_modems.v29_rx, s->bit_rate, FALSE);
+            v29_rx_restart(&s->fast_modems.v29_rx, s->bit_rate, false);
             v29_rx_set_put_bit(&s->fast_modems.v29_rx, put_bit, put_bit_user_data);
             v29_rx_set_modem_status_handler(&s->fast_modems.v29_rx, v29_rx_status_handler, s);
             fax_modems_set_rx_handler(s, (span_rx_handler_t) &fax_modems_v29_v21_rx, s, (span_rx_fillin_handler_t) &fax_modems_v29_v21_rx_fillin, s);
@@ -402,10 +481,23 @@ SPAN_DECLARE(void) fax_modems_start_fast_modem(fax_modems_state_t *s, int which,
             fax_modems_set_tx_handler(s, (span_tx_handler_t) &v17_tx, &s->fast_modems.v17_tx);
             fax_modems_set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
             break;
+#if defined(SPANDSP_SUPPORT_V34)
+        case FAX_MODEM_V34_RX:
+            v34_restart(&s->fast_modems.v34, 2400, s->bit_rate, false);
+            //fax_modems_set_tx_handler(s, (span_tx_handler_t) &v34_rx, &s->fast_modems.v34_rx);
+            fax_modems_set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+            break;
+        case FAX_MODEM_V34_TX:
+            v34_restart(&s->fast_modems.v34, 2400, s->bit_rate, false);
+            //fax_modems_set_tx_handler(s, (span_tx_handler_t) &v34_tx, &s->fast_modems.v34_tx);
+            fax_modems_set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+            break;
+#endif
         }
         /*endswitch*/
     }
     /*endif*/
+    s->rx_frame_received = false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -474,6 +566,23 @@ SPAN_DECLARE(void) fax_modems_set_next_tx_handler(fax_modems_state_t *s, span_tx
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) fax_modems_set_next_tx_type(fax_modems_state_t *s)
+{
+    if (s->next_tx_handler)
+    {
+        fax_modems_set_tx_handler(s, s->next_tx_handler, s->next_tx_user_data);
+        fax_modems_set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+        return 0;
+    }
+    /* There is nothing else to change to, so use zero length silence */
+    silence_gen_alter(&s->silence_gen, 0);
+    fax_modems_set_tx_handler(s, (span_tx_handler_t) &silence_gen, &s->silence_gen);
+    fax_modems_set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+    s->transmit = false;
+    return -1;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(void) fax_modems_set_tep_mode(fax_modems_state_t *s, int use_tep)
 {
     s->use_tep = use_tep;
@@ -503,7 +612,7 @@ SPAN_DECLARE(fax_modems_state_t *) fax_modems_init(fax_modems_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (fax_modems_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (fax_modems_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     /*endif*/
@@ -511,6 +620,9 @@ SPAN_DECLARE(fax_modems_state_t *) fax_modems_init(fax_modems_state_t *s,
     s->use_tep = use_tep;
 
     modem_connect_tones_tx_init(&s->connect_tx, MODEM_CONNECT_TONES_FAX_CNG);
+    span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
+    span_log_set_protocol(&s->logging, "FAX modems");
+
     s->tone_callback = tone_callback;
     s->tone_callback_user_data = user_data;
     if (tone_callback)
@@ -521,9 +633,6 @@ SPAN_DECLARE(fax_modems_state_t *) fax_modems_init(fax_modems_state_t *s,
                                     s->tone_callback_user_data);
     }
     /*endif*/
-    span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
-    span_log_set_protocol(&s->logging, "FAX modems");
-
     dc_restore_init(&s->dc_restore);
 
     s->get_bit = non_ecm_get_bit;
@@ -534,15 +643,15 @@ SPAN_DECLARE(fax_modems_state_t *) fax_modems_init(fax_modems_state_t *s,
     s->hdlc_accept = hdlc_accept;
     s->hdlc_accept_user_data = user_data;
 
-    hdlc_rx_init(&s->hdlc_rx, FALSE, FALSE, HDLC_FRAMING_OK_THRESHOLD, fax_modems_hdlc_accept, s);
-    hdlc_tx_init(&s->hdlc_tx, FALSE, 2, FALSE, hdlc_tx_underflow, user_data);
+    hdlc_rx_init(&s->hdlc_rx, false, false, HDLC_FRAMING_OK_THRESHOLD, fax_modems_hdlc_accept, s);
+    hdlc_tx_init(&s->hdlc_tx, false, 2, false, hdlc_tx_underflow, user_data);
 
     fax_modems_start_slow_modem(s, FAX_MODEM_V21_RX);
     fsk_tx_init(&s->v21_tx, &preset_fsk_specs[FSK_V21CH2], (get_bit_func_t) hdlc_tx_get_bit, &s->hdlc_tx);
 
     silence_gen_init(&s->silence_gen, 0);
 
-    s->rx_signal_present = FALSE;
+    s->rx_signal_present = false;
     s->rx_handler = (span_rx_handler_t) &span_dummy_rx;
     s->rx_fillin_handler = (span_rx_fillin_handler_t) &span_dummy_rx;
     s->rx_user_data = NULL;
@@ -562,7 +671,7 @@ SPAN_DECLARE(int) fax_modems_release(fax_modems_state_t *s)
 SPAN_DECLARE(int) fax_modems_free(fax_modems_state_t *s)
 {
     if (s)
-        free(s);
+        span_free(s);
     /*endif*/
     return 0;
 }

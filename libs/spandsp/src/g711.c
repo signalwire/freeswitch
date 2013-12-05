@@ -35,6 +35,7 @@
 #include <assert.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/g711.h"
 #include "spandsp/private/g711.h"
@@ -171,7 +172,7 @@ SPAN_DECLARE(g711_state_t *) g711_init(g711_state_t *s, int mode)
 {
     if (s == NULL)
     {
-        if ((s = (g711_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (g711_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     s->mode = mode;
@@ -187,7 +188,7 @@ SPAN_DECLARE(int) g711_release(g711_state_t *s)
 
 SPAN_DECLARE(int) g711_free(g711_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

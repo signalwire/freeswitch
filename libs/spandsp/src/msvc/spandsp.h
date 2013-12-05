@@ -36,9 +36,10 @@
 
 #define SPANDSP_USE_EXPORT_CAPABILITY 1
 
-#undef SPANDSP_SUPPORT_T42
 #undef SPANDSP_SUPPORT_T43
+#undef SPANDSP_SUPPORT_V32BIS
 #undef SPANDSP_SUPPORT_V34
+#undef SPANDSP_SUPPORT_TIFF_FX
 
 #include <stdlib.h>
 #include <msvc/inttypes.h>
@@ -48,6 +49,9 @@
 #include <math.h>
 #include <tiffio.h>
 
+#if !defined(__cplusplus)
+#include <spandsp/stdbool.h>
+#endif
 #include <spandsp/telephony.h>
 #include <spandsp/fast_convert.h>
 #include <spandsp/logging.h>
@@ -114,9 +118,7 @@
 #include <spandsp/t81_t82_arith_coding.h>
 #include <spandsp/t85.h>
 #include <spandsp/t42.h>
-#if defined(SPANDSP_SUPPORT_T43)
 #include <spandsp/t43.h>
-#endif
 #include <spandsp/t30.h>
 #include <spandsp/t30_api.h>
 #include <spandsp/t30_fcf.h>

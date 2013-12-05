@@ -51,8 +51,8 @@ These tests exercise the T.38 core ASN.1 processing code.
 #define MAX_FIELDS      42
 #define MAX_FIELD_LEN   8192
 
+static bool succeeded = true;
 static int t38_version;
-static int succeeded = TRUE;
 static int ok_indicator_packets;
 static int bad_indicator_packets;
 static int ok_data_packets;
@@ -130,7 +130,7 @@ static int tx_packet_handler(t38_core_state_t *s, void *user_data, const uint8_t
     t = (t38_core_state_t *) user_data;
     span_log(t38_core_get_logging_state(s), SPAN_LOG_FLOW, "Send seq %d, len %d, count %d\n", s->tx_seq_no, len, count);
     if (t38_core_rx_ifp_packet(t, buf, len, seq_no) < 0)
-        succeeded = FALSE;
+        succeeded = false;
     seq_no++;
     return 0;
 }
@@ -400,7 +400,7 @@ static int encode_then_decode_tests(t38_core_state_t *a, t38_core_state_t *b)
     for (i = 0, seq_no = 0;  i < concat_len;  i += len)
     {
         if ((len = t38_core_rx_ifp_stream(b, &concat[i], concat_len - i, seq_no)) < 0)
-            succeeded = FALSE;
+            succeeded = false;
         seq_no++;
     }
 
@@ -597,8 +597,8 @@ int main(int argc, char *argv[])
         t38_set_t38_version(t38_core_a, t38_version);
         t38_set_t38_version(t38_core_b, t38_version);
 
-        t38_set_pace_transmission(t38_core_a, FALSE);
-        t38_set_pace_transmission(t38_core_b, FALSE);
+        t38_set_pace_transmission(t38_core_a, false);
+        t38_set_pace_transmission(t38_core_b, false);
 
         t38_set_data_transport_protocol(t38_core_a, T38_TRANSPORT_TCP);
         t38_set_data_transport_protocol(t38_core_b, T38_TRANSPORT_TCP);
@@ -629,7 +629,7 @@ int main(int argc, char *argv[])
 
         t38_set_t38_version(t38_core_a, t38_version);
 
-        t38_set_pace_transmission(t38_core_a, FALSE);
+        t38_set_pace_transmission(t38_core_a, false);
 
         t38_set_data_transport_protocol(t38_core_a, T38_TRANSPORT_TCP);
 
@@ -677,8 +677,8 @@ int main(int argc, char *argv[])
         t38_set_t38_version(t38_core_a, t38_version);
         t38_set_t38_version(t38_core_b, t38_version);
 
-        t38_set_pace_transmission(t38_core_a, FALSE);
-        t38_set_pace_transmission(t38_core_b, FALSE);
+        t38_set_pace_transmission(t38_core_a, false);
+        t38_set_pace_transmission(t38_core_b, false);
 
         t38_set_data_transport_protocol(t38_core_a, T38_TRANSPORT_TCP_TPKT);
         t38_set_data_transport_protocol(t38_core_b, T38_TRANSPORT_TCP_TPKT);
@@ -708,7 +708,7 @@ int main(int argc, char *argv[])
         }
         t38_set_t38_version(t38_core_a, t38_version);
 
-        t38_set_pace_transmission(t38_core_a, FALSE);
+        t38_set_pace_transmission(t38_core_a, false);
 
         t38_set_data_transport_protocol(t38_core_a, T38_TRANSPORT_TCP_TPKT);
 

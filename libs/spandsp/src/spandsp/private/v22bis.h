@@ -79,8 +79,8 @@ struct v22bis_state_s
 {
     /*! \brief The maximum permitted bit rate of the modem. Valid values are 1200 and 2400. */
     int bit_rate;
-    /*! \brief TRUE is this is the calling side modem. */
-    int calling_party;
+    /*! \brief True is this is the calling side modem. */
+    bool calling_party;
     /*! \brief The callback function used to get the next bit to be transmitted. */
     get_bit_func_t get_bit;
     /*! \brief A user specified opaque pointer passed to the get_bit callback routine. */

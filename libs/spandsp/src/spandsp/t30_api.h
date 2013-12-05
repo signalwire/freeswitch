@@ -225,6 +225,12 @@ SPAN_DECLARE(const char *) t30_get_tx_password(t30_state_t *s);
     \return A pointer to the password. */
 SPAN_DECLARE(const char *) t30_get_rx_password(t30_state_t *s);
 
+/*! Set the save bad quality pages handling associated with a T.30 context.
+    \brief Set the save bad quality pages handling associated with a T.30 context.
+    \param s The T.30 context.
+    \param keep_bad_pages True to save bad quality pages. */
+SPAN_DECLARE(void) t30_set_keep_bad_quality_pages(t30_state_t *s, bool keep_bad_pages);
+
 /*! Set the transmitted TSA (i.e. the one we will send to the far
     end) associated with a T.30 context.
     \brief Set the transmitted TSA associated with a T.30 context.
@@ -363,8 +369,8 @@ SPAN_DECLARE(size_t) t30_get_rx_csa(t30_state_t *s, int *type, const char *addre
 /*! Set page header extends or overlays the image mode.
     \brief Set page header overlay mode.
     \param s The T.30 context.
-    \param header_overlays_image TRUE for overlay, or FALSE for extend the page. */
-SPAN_DECLARE(int) t30_set_tx_page_header_overlays_image(t30_state_t *s, int header_overlays_image);
+    \param header_overlays_image True for overlay, or false for extend the page. */
+SPAN_DECLARE(int) t30_set_tx_page_header_overlays_image(t30_state_t *s, bool header_overlays_image);
 
 /*! Set the transmitted header information associated with a T.30 context.
     \brief Set the transmitted header information associated with a T.30 context.
@@ -426,25 +432,23 @@ SPAN_DECLARE(void) t30_set_tx_file(t30_state_t *s, const char *file, int start_p
 /*! Set Internet aware FAX (IAF) mode.
     \brief Set Internet aware FAX (IAF) mode.
     \param s The T.30 context.
-    \param iaf TRUE for IAF, or FALSE for non-IAF. */
-SPAN_DECLARE(void) t30_set_iaf_mode(t30_state_t *s, int iaf);
+    \param iaf True for IAF, or false for non-IAF. */
+SPAN_DECLARE(void) t30_set_iaf_mode(t30_state_t *s, bool iaf);
 
 /*! Specify if error correction mode (ECM) is allowed by a T.30 context.
     \brief Select ECM capability.
     \param s The T.30 context.
-    \param enabled TRUE for ECM capable, FALSE for not ECM capable.
+    \param enabled True for ECM capable, or false for not ECM capable.
     \return 0 if OK, else -1. */
-SPAN_DECLARE(int) t30_set_ecm_capability(t30_state_t *s, int enabled);
+SPAN_DECLARE(int) t30_set_ecm_capability(t30_state_t *s, bool enabled);
 
 /*! Specify the output encoding for TIFF files created during FAX reception.
     \brief Specify the output encoding for TIFF files created during FAX reception.
     \param s The T.30 context.
-    \param encoding The coding required. The options are T4_COMPRESSION_ITU_T4_1D,
-           T4_COMPRESSION_ITU_T4_2D, T4_COMPRESSION_ITU_T6. T6 is usually the
-           densest option, but support for it is broken in a number of software
-           packages.
+    \param supported_compressions Bit field list of the supported compression types, for
+           output of received page images.
     \return 0 if OK, else -1. */
-SPAN_DECLARE(int) t30_set_rx_encoding(t30_state_t *s, int encoding);
+SPAN_DECLARE(int) t30_set_supported_output_compressions(t30_state_t *s, int supported_compressions);
 
 /*! Specify the minimum scan line time supported by a T.30 context.
     \brief Specify minimum scan line time.
@@ -467,12 +471,19 @@ SPAN_DECLARE(int) t30_set_supported_modems(t30_state_t *s, int supported_modems)
     \return 0 if OK, else -1. */
 SPAN_DECLARE(int) t30_set_supported_compressions(t30_state_t *s, int supported_compressions);
 
-/*! Specify which resolutions are supported by a T.30 context.
-    \brief Specify supported resolutions.
+/*! Specify which bi-level resolutions are supported by a T.30 context.
+    \brief Specify supported bi-level resolutions.
     \param s The T.30 context.
     \param supported_resolutions Bit field list of the supported resolutions.
     \return 0 if OK, else -1. */
-SPAN_DECLARE(int) t30_set_supported_resolutions(t30_state_t *s, int supported_resolutions);
+SPAN_DECLARE(int) t30_set_supported_bilevel_resolutions(t30_state_t *s, int supported_resolutions);
+
+/*! Specify which colour resolutions are supported by a T.30 context.
+    \brief Specify supported colour resolutions.
+    \param s The T.30 context.
+    \param supported_resolutions Bit field list of the supported resolutions.
+    \return 0 if OK, else -1. */
+SPAN_DECLARE(int) t30_set_supported_colour_resolutions(t30_state_t *s, int supported_resolutions);
 
 /*! Specify which images sizes are supported by a T.30 context.
     \brief Specify supported image sizes.
@@ -537,6 +548,10 @@ SPAN_DECLARE(void) t30_set_document_handler(t30_state_t *s, t30_document_handler
     \param handler The callback function.
     \param user_data An opaque pointer passed to the callback function. */
 SPAN_DECLARE(void) t30_set_real_time_frame_handler(t30_state_t *s, t30_real_time_frame_handler_t handler, void *user_data);
+
+SPAN_DECLARE(void) t30_set_document_get_handler(t30_state_t *s, t30_document_get_handler_t handler, void *user_data);
+
+SPAN_DECLARE(void) t30_set_document_put_handler(t30_state_t *s, t30_document_put_handler_t handler, void *user_data);
 
 /*! Get a pointer to the logging context associated with a T.30 context.
     \brief Get a pointer to the logging context associated with a T.30 context.

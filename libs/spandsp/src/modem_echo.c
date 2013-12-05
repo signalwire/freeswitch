@@ -47,6 +47,7 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/dc_restore.h"
 #include "spandsp/modem_echo.h"
@@ -56,9 +57,9 @@
 SPAN_DECLARE(void) modem_echo_can_free(modem_echo_can_state_t *ec)
 {
     fir16_free(&ec->fir_state);
-    free(ec->fir_taps32);
-    free(ec->fir_taps16);
-    free(ec);
+    span_free(ec->fir_taps32);
+    span_free(ec->fir_taps16);
+    span_free(ec);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -66,29 +67,29 @@ SPAN_DECLARE(modem_echo_can_state_t *) modem_echo_can_init(int len)
 {
     modem_echo_can_state_t *ec;
 
-    if ((ec = (modem_echo_can_state_t *) malloc(sizeof(*ec))) == NULL)
+    if ((ec = (modem_echo_can_state_t *) span_alloc(sizeof(*ec))) == NULL)
         return NULL;
     memset(ec, 0, sizeof(*ec));
     ec->taps = len;
     ec->curr_pos = ec->taps - 1;
-    if ((ec->fir_taps32 = (int32_t *) malloc(ec->taps*sizeof(int32_t))) == NULL)
+    if ((ec->fir_taps32 = (int32_t *) span_alloc(ec->taps*sizeof(int32_t))) == NULL)
     {
-        free(ec);
+        span_free(ec);
         return NULL;
     }
     memset(ec->fir_taps32, 0, ec->taps*sizeof(int32_t));
-    if ((ec->fir_taps16 = (int16_t *) malloc(ec->taps*sizeof(int16_t))) == NULL)
+    if ((ec->fir_taps16 = (int16_t *) span_alloc(ec->taps*sizeof(int16_t))) == NULL)
     {
-        free(ec->fir_taps32);
-        free(ec);
+        span_free(ec->fir_taps32);
+        span_free(ec);
         return NULL;
     }
     memset(ec->fir_taps16, 0, ec->taps*sizeof(int16_t));
     if (fir16_create(&ec->fir_state, ec->fir_taps16, ec->taps) == NULL)
     {
-        free(ec->fir_taps16);
-        free(ec->fir_taps32);
-        free(ec);
+        span_free(ec->fir_taps16);
+        span_free(ec->fir_taps32);
+        span_free(ec);
         return NULL;
     }
     return ec;

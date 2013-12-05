@@ -69,8 +69,8 @@ struct async_rx_state_s
     int parity;
     /*! \brief The number of stop bits per character. */
     int stop_bits;
-    /*! \brief TRUE if V.14 rate adaption processing should be performed. */
-    int use_v14;
+    /*! \brief True if V.14 rate adaption processing should be performed. */
+    bool use_v14;
     /*! \brief A pointer to the callback routine used to handle received characters. */
     put_byte_func_t put_byte;
     /*! \brief An opaque pointer passed when calling put_byte. */

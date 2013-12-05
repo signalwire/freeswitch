@@ -61,6 +61,11 @@
 #include <inttypes.h>
 #include <ctype.h>
 #include <string.h>
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 
 #include "spandsp/telephony.h"
 #include "spandsp/bit_operations.h"
@@ -86,7 +91,7 @@ typedef struct
     int vendor_id_len;
     /*! The vendor's name */
     const char *vendor_name;
-    /*! TRUE if the station ID for this vendor is reversed */
+    /*! True if the station ID for this vendor is reversed */
     int inverse_station_id_order;
     /*! A pointer to a list of known models from this vendor */
     const model_data_t *known_models;
@@ -273,260 +278,260 @@ static const model_data_t Muratec48[] =
 static const nsf_data_t vendor_00[] =
 {
     /* Japan */
-    {"\x00\x00", 2, "Unknown - indeterminate", TRUE, NULL},
-    {"\x00\x01", 2, "Anritsu", FALSE, NULL},
-    {"\x00\x02", 2, "Nippon Telephone", FALSE, NULL},
-    {"\x00\x05", 2, "Mitsuba Electric", FALSE, NULL},
-    {"\x00\x06", 2, "Master Net", FALSE, NULL},
-    {"\x00\x09", 2, "Xerox/Toshiba", TRUE, Xerox},
-    {"\x00\x0A", 2, "Kokusai", FALSE, NULL},
-    {"\x00\x0D", 2, "Logic System International", FALSE, NULL},
-    {"\x00\x0E", 2, "Panasonic", FALSE, Panasonic0E},
-    {"\x00\x11", 2, "Canon", FALSE, Canon},
-    {"\x00\x15", 2, "Toyotsushen Machinery", FALSE, NULL},
-    {"\x00\x16", 2, "System House Mind", FALSE, NULL},
-    {"\x00\x19", 2, "Xerox", TRUE, NULL},
-    {"\x00\x1D", 2, "Hitachi Software", FALSE, NULL},
-    {"\x00\x21", 2, "OKI Electric/Lanier", TRUE, NULL},
-    {"\x00\x25", 2, "Ricoh", TRUE, Ricoh},
-    {"\x00\x26", 2, "Konica", FALSE, NULL},
-    {"\x00\x29", 2, "Japan Wireless", FALSE, NULL},
-    {"\x00\x2D", 2, "Sony", FALSE, NULL},
-    {"\x00\x31", 2, "Sharp/Olivetti", FALSE, Sharp},
-    {"\x00\x35", 2, "Kogyu", FALSE, NULL},
-    {"\x00\x36", 2, "Japan Telecom", FALSE, NULL},
-    {"\x00\x3D", 2, "IBM Japan", FALSE, NULL},
-    {"\x00\x39", 2, "Panasonic", FALSE, NULL},
-    {"\x00\x41", 2, "Swasaki Communication", FALSE, NULL},
-    {"\x00\x45", 2, "Muratec", FALSE, Muratec45},
-    {"\x00\x46", 2, "Pheonix", FALSE, NULL},
-    {"\x00\x48", 2, "Muratec", FALSE, Muratec48},           /* Not registered */
-    {"\x00\x49", 2, "Japan Electric", FALSE, NULL},
-    {"\x00\x4D", 2, "Okura Electric", FALSE, NULL},
-    {"\x00\x51", 2, "Sanyo", FALSE, Sanyo},
-    {"\x00\x55", 2, "Unknown - Japan 55", FALSE, NULL},
-    {"\x00\x56", 2, "Brother", FALSE, Brother},
-    {"\x00\x59", 2, "Fujitsu", FALSE, NULL},
-    {"\x00\x5D", 2, "Kuoni", FALSE, NULL},
-    {"\x00\x61", 2, "Casio", FALSE, NULL},
-    {"\x00\x65", 2, "Tateishi Electric", FALSE, NULL},
-    {"\x00\x66", 2, "Utax/Mita", TRUE, NULL},
-    {"\x00\x69", 2, "Hitachi Production", FALSE, NULL},
-    {"\x00\x6D", 2, "Hitachi Telecom", FALSE, NULL},
-    {"\x00\x71", 2, "Tamura Electric Works", FALSE, NULL},
-    {"\x00\x75", 2, "Tokyo Electric Corp.", FALSE, NULL},
-    {"\x00\x76", 2, "Advance", FALSE, NULL},
-    {"\x00\x79", 2, "Panasonic", FALSE, Panasonic79},
-    {"\x00\x7D", 2, "Seiko", FALSE, NULL},
-    {"\x08\x00", 2, "Daiko", FALSE, NULL},
-    {"\x10\x00", 2, "Funai Electric", FALSE, NULL},
-    {"\x20\x00", 2, "Eagle System", FALSE, NULL},
-    {"\x30\x00", 2, "Nippon Business Systems", FALSE, NULL},
-    {"\x40\x00", 2, "Comtron", FALSE, NULL},
-    {"\x48\x00", 2, "Cosmo Consulting", FALSE, NULL},
-    {"\x50\x00", 2, "Orion Electric", FALSE, NULL},
-    {"\x60\x00", 2, "Nagano Nippon", FALSE, NULL},
-    {"\x70\x00", 2, "Kyocera", FALSE, NULL},
-    {"\x80\x00", 2, "Kanda Networks", FALSE, NULL},
-    {"\x88\x00", 2, "Soft Front", FALSE, NULL},
-    {"\x90\x00", 2, "Arctic", FALSE, NULL},
-    {"\xA0\x00", 2, "Nakushima", FALSE, NULL},
-    {"\xB0\x00", 2, "Minolta", FALSE, NULL},
-    {"\xC0\x00", 2, "Tohoku Pioneer", FALSE, NULL},
-    {"\xD0\x00", 2, "USC", FALSE, NULL},
-    {"\xE0\x00", 2, "Hiboshi", FALSE, NULL},
-    {"\xF0\x00", 2, "Sumitomo Electric", FALSE, NULL},
-    {NULL, 0, NULL, FALSE, NULL}
+    {"\x00\x00", 2, "Unknown - indeterminate", true, NULL},
+    {"\x00\x01", 2, "Anritsu", false, NULL},
+    {"\x00\x02", 2, "Nippon Telephone", false, NULL},
+    {"\x00\x05", 2, "Mitsuba Electric", false, NULL},
+    {"\x00\x06", 2, "Master Net", false, NULL},
+    {"\x00\x09", 2, "Xerox/Toshiba", true, Xerox},
+    {"\x00\x0A", 2, "Kokusai", false, NULL},
+    {"\x00\x0D", 2, "Logic System International", false, NULL},
+    {"\x00\x0E", 2, "Panasonic", false, Panasonic0E},
+    {"\x00\x11", 2, "Canon", false, Canon},
+    {"\x00\x15", 2, "Toyotsushen Machinery", false, NULL},
+    {"\x00\x16", 2, "System House Mind", false, NULL},
+    {"\x00\x19", 2, "Xerox", true, NULL},
+    {"\x00\x1D", 2, "Hitachi Software", false, NULL},
+    {"\x00\x21", 2, "OKI Electric/Lanier", true, NULL},
+    {"\x00\x25", 2, "Ricoh", true, Ricoh},
+    {"\x00\x26", 2, "Konica", false, NULL},
+    {"\x00\x29", 2, "Japan Wireless", false, NULL},
+    {"\x00\x2D", 2, "Sony", false, NULL},
+    {"\x00\x31", 2, "Sharp/Olivetti", false, Sharp},
+    {"\x00\x35", 2, "Kogyu", false, NULL},
+    {"\x00\x36", 2, "Japan Telecom", false, NULL},
+    {"\x00\x3D", 2, "IBM Japan", false, NULL},
+    {"\x00\x39", 2, "Panasonic", false, NULL},
+    {"\x00\x41", 2, "Swasaki Communication", false, NULL},
+    {"\x00\x45", 2, "Muratec", false, Muratec45},
+    {"\x00\x46", 2, "Pheonix", false, NULL},
+    {"\x00\x48", 2, "Muratec", false, Muratec48},           /* Not registered */
+    {"\x00\x49", 2, "Japan Electric", false, NULL},
+    {"\x00\x4D", 2, "Okura Electric", false, NULL},
+    {"\x00\x51", 2, "Sanyo", false, Sanyo},
+    {"\x00\x55", 2, "Unknown - Japan 55", false, NULL},
+    {"\x00\x56", 2, "Brother", false, Brother},
+    {"\x00\x59", 2, "Fujitsu", false, NULL},
+    {"\x00\x5D", 2, "Kuoni", false, NULL},
+    {"\x00\x61", 2, "Casio", false, NULL},
+    {"\x00\x65", 2, "Tateishi Electric", false, NULL},
+    {"\x00\x66", 2, "Utax/Mita", true, NULL},
+    {"\x00\x69", 2, "Hitachi Production", false, NULL},
+    {"\x00\x6D", 2, "Hitachi Telecom", false, NULL},
+    {"\x00\x71", 2, "Tamura Electric Works", false, NULL},
+    {"\x00\x75", 2, "Tokyo Electric Corp.", false, NULL},
+    {"\x00\x76", 2, "Advance", false, NULL},
+    {"\x00\x79", 2, "Panasonic", false, Panasonic79},
+    {"\x00\x7D", 2, "Seiko", false, NULL},
+    {"\x08\x00", 2, "Daiko", false, NULL},
+    {"\x10\x00", 2, "Funai Electric", false, NULL},
+    {"\x20\x00", 2, "Eagle System", false, NULL},
+    {"\x30\x00", 2, "Nippon Business Systems", false, NULL},
+    {"\x40\x00", 2, "Comtron", false, NULL},
+    {"\x48\x00", 2, "Cosmo Consulting", false, NULL},
+    {"\x50\x00", 2, "Orion Electric", false, NULL},
+    {"\x60\x00", 2, "Nagano Nippon", false, NULL},
+    {"\x70\x00", 2, "Kyocera", false, NULL},
+    {"\x80\x00", 2, "Kanda Networks", false, NULL},
+    {"\x88\x00", 2, "Soft Front", false, NULL},
+    {"\x90\x00", 2, "Arctic", false, NULL},
+    {"\xA0\x00", 2, "Nakushima", false, NULL},
+    {"\xB0\x00", 2, "Minolta", false, NULL},
+    {"\xC0\x00", 2, "Tohoku Pioneer", false, NULL},
+    {"\xD0\x00", 2, "USC", false, NULL},
+    {"\xE0\x00", 2, "Hiboshi", false, NULL},
+    {"\xF0\x00", 2, "Sumitomo Electric", false, NULL},
+    {NULL, 0, NULL, false, NULL}
 };
 
 static const nsf_data_t vendor_20[] =
 {
     /* Germany */
-    {"\x09",     1, "ITK Institut für Telekommunikation GmbH & Co KG", FALSE, NULL},
-    {"\x11",     1, "Dr. Neuhaus Mikroelektronik", FALSE, NULL},
-    {"\x21",     1, "ITO Communication", FALSE, NULL},
-    {"\x31",     1, "mbp Kommunikationssysteme GmbH", FALSE, NULL},
-    {"\x41",     1, "Siemens", FALSE, NULL},
-    {"\x42",     1, "Deutsche Telekom AG", FALSE, NULL},
-    {"\x51",     1, "mps Software", FALSE, NULL},
-    {"\x61",     1, "Hauni Elektronik", FALSE, NULL},
-    {"\x71",     1, "Digitronic computersysteme gmbh", FALSE, NULL},
-    {"\x81\x00", 2, "Innovaphone GmbH", FALSE, NULL},
-    {"\x81\x40", 2, "TEDAS Gesellschaft für Telekommunikations-, Daten- und Audiosysteme mbH", FALSE, NULL},
-    {"\x81\x80", 2, "AVM Audiovisuelles Marketing und Computersysteme GmbH", FALSE, NULL},
-    {"\x81\xC0", 2, "EICON Technology Research GmbH", FALSE, NULL},
-    {"\xB1",     1, "Schneider Rundfunkwerke AG", FALSE, NULL},
-    {"\xC2",     1, "Deutsche Telekom AG", FALSE, NULL},
-    {"\xD1",     1, "Ferrari electronik GmbH", FALSE, NULL},
-    {"\xF1",     1, "DeTeWe - Deutsche Telephonwerke AG & Co", FALSE, NULL},
-    {"\xFF",     1, "Germany Regional Code", FALSE, NULL},
-    {NULL, 0, NULL, FALSE, NULL}
+    {"\x09",     1, "ITK Institut für Telekommunikation GmbH & Co KG", false, NULL},
+    {"\x11",     1, "Dr. Neuhaus Mikroelektronik", false, NULL},
+    {"\x21",     1, "ITO Communication", false, NULL},
+    {"\x31",     1, "mbp Kommunikationssysteme GmbH", false, NULL},
+    {"\x41",     1, "Siemens", false, NULL},
+    {"\x42",     1, "Deutsche Telekom AG", false, NULL},
+    {"\x51",     1, "mps Software", false, NULL},
+    {"\x61",     1, "Hauni Elektronik", false, NULL},
+    {"\x71",     1, "Digitronic computersysteme gmbh", false, NULL},
+    {"\x81\x00", 2, "Innovaphone GmbH", false, NULL},
+    {"\x81\x40", 2, "TEDAS Gesellschaft für Telekommunikations-, Daten- und Audiosysteme mbH", false, NULL},
+    {"\x81\x80", 2, "AVM Audiovisuelles Marketing und Computersysteme GmbH", false, NULL},
+    {"\x81\xC0", 2, "EICON Technology Research GmbH", false, NULL},
+    {"\xB1",     1, "Schneider Rundfunkwerke AG", false, NULL},
+    {"\xC2",     1, "Deutsche Telekom AG", false, NULL},
+    {"\xD1",     1, "Ferrari electronik GmbH", false, NULL},
+    {"\xF1",     1, "DeTeWe - Deutsche Telephonwerke AG & Co", false, NULL},
+    {"\xFF",     1, "Germany Regional Code", false, NULL},
+    {NULL, 0, NULL, false, NULL}
 };
 
 static const nsf_data_t vendor_64[] =
 {
     /* China (not Lebanon) */
-    {"\x00\x00", 2, "Unknown - China 00 00", FALSE, NULL},
-    {"\x01\x00", 2, "Unknown - China 01 00", FALSE, NULL},
-    {"\x01\x01", 2, "Unknown - China 01 01", FALSE, NULL},
-    {"\x01\x02", 2, "Unknown - China 01 02", FALSE, NULL},
-    {NULL, 0, NULL, FALSE, NULL}
+    {"\x00\x00", 2, "Unknown - China 00 00", false, NULL},
+    {"\x01\x00", 2, "Unknown - China 01 00", false, NULL},
+    {"\x01\x01", 2, "Unknown - China 01 01", false, NULL},
+    {"\x01\x02", 2, "Unknown - China 01 02", false, NULL},
+    {NULL, 0, NULL, false, NULL}
 };
 
 static const nsf_data_t vendor_61[] =
 {
     /* Korea */
-    {"\x00\x7A", 2, "Xerox", FALSE, NULL},
-    {NULL, 0, NULL, FALSE, NULL}
+    {"\x00\x7A", 2, "Xerox", false, NULL},
+    {NULL, 0, NULL, false, NULL}
 };
 
 static const nsf_data_t vendor_86[] =
 {
     /* Korea (not Papua New Guinea) */
-    {"\x00\x02", 2, "Unknown - Korea 02", FALSE, NULL},
-    {"\x00\x06", 2, "Unknown - Korea 06", FALSE, NULL},
-    {"\x00\x08", 2, "Unknown - Korea 08", FALSE, NULL},
-    {"\x00\x0A", 2, "Unknown - Korea 0A", FALSE, NULL},
-    {"\x00\x0E", 2, "Unknown - Korea 0E", FALSE, NULL},
-    {"\x00\x10", 2, "Samsung", FALSE, NULL},
-    {"\x00\x11", 2, "Unknown - Korea 11", FALSE, NULL},
-    {"\x00\x16", 2, "Samsung", FALSE, Samsung16},
-    {"\x00\x1A", 2, "Unknown - Korea 1A", FALSE, NULL},
-    {"\x00\x40", 2, "Unknown - Korea 40", FALSE, NULL},
-    {"\x00\x48", 2, "Unknown - Korea 48", FALSE, NULL},
-    {"\x00\x52", 2, "Unknown - Korea 52", FALSE, NULL},
-    {"\x00\x5A", 2, "Samsung", FALSE, Samsung5A},
-    {"\x00\x5E", 2, "Unknown - Korea 5E", FALSE, NULL},
-    {"\x00\x66", 2, "Unknown - Korea 66", FALSE, NULL},
-    {"\x00\x6E", 2, "Unknown - Korea 6E", FALSE, NULL},
-    {"\x00\x82", 2, "Unknown - Korea 82", FALSE, NULL},
-    {"\x00\x88", 2, "Unknown - Korea 88", FALSE, NULL},
-    {"\x00\x8A", 2, "Unknown - Korea 8A", FALSE, NULL},
-    {"\x00\x8C", 2, "Samsung", FALSE, Samsung8C},
-    {"\x00\x92", 2, "Unknown - Korea 92", FALSE, NULL},
-    {"\x00\x98", 2, "Samsung", FALSE, NULL},
-    {"\x00\xA2", 2, "Samsung", FALSE, SamsungA2},
-    {"\x00\xA4", 2, "Unknown - Korea A4", FALSE, NULL},
-    {"\x00\xC2", 2, "Samsung", FALSE, NULL},
-    {"\x00\xC9", 2, "Unknown - Korea C9", FALSE, NULL},
-    {"\x00\xCC", 2, "Unknown - Korea CC", FALSE, NULL},
-    {"\x00\xD2", 2, "Unknown - Korea D2", FALSE, NULL},
-    {"\x00\xDA", 2, "Xerox", FALSE, XeroxDA},
-    {"\x00\xE2", 2, "Unknown - Korea E2", FALSE, NULL},
-    {"\x00\xEC", 2, "Unknown - Korea EC", FALSE, NULL},
-    {"\x00\xEE", 2, "Unknown - Korea EE", FALSE, NULL},
-    {NULL, 0, NULL, FALSE, NULL}
+    {"\x00\x02", 2, "Unknown - Korea 02", false, NULL},
+    {"\x00\x06", 2, "Unknown - Korea 06", false, NULL},
+    {"\x00\x08", 2, "Unknown - Korea 08", false, NULL},
+    {"\x00\x0A", 2, "Unknown - Korea 0A", false, NULL},
+    {"\x00\x0E", 2, "Unknown - Korea 0E", false, NULL},
+    {"\x00\x10", 2, "Samsung", false, NULL},
+    {"\x00\x11", 2, "Unknown - Korea 11", false, NULL},
+    {"\x00\x16", 2, "Samsung", false, Samsung16},
+    {"\x00\x1A", 2, "Unknown - Korea 1A", false, NULL},
+    {"\x00\x40", 2, "Unknown - Korea 40", false, NULL},
+    {"\x00\x48", 2, "Unknown - Korea 48", false, NULL},
+    {"\x00\x52", 2, "Unknown - Korea 52", false, NULL},
+    {"\x00\x5A", 2, "Samsung", false, Samsung5A},
+    {"\x00\x5E", 2, "Unknown - Korea 5E", false, NULL},
+    {"\x00\x66", 2, "Unknown - Korea 66", false, NULL},
+    {"\x00\x6E", 2, "Unknown - Korea 6E", false, NULL},
+    {"\x00\x82", 2, "Unknown - Korea 82", false, NULL},
+    {"\x00\x88", 2, "Unknown - Korea 88", false, NULL},
+    {"\x00\x8A", 2, "Unknown - Korea 8A", false, NULL},
+    {"\x00\x8C", 2, "Samsung", false, Samsung8C},
+    {"\x00\x92", 2, "Unknown - Korea 92", false, NULL},
+    {"\x00\x98", 2, "Samsung", false, NULL},
+    {"\x00\xA2", 2, "Samsung", false, SamsungA2},
+    {"\x00\xA4", 2, "Unknown - Korea A4", false, NULL},
+    {"\x00\xC2", 2, "Samsung", false, NULL},
+    {"\x00\xC9", 2, "Unknown - Korea C9", false, NULL},
+    {"\x00\xCC", 2, "Unknown - Korea CC", false, NULL},
+    {"\x00\xD2", 2, "Unknown - Korea D2", false, NULL},
+    {"\x00\xDA", 2, "Xerox", false, XeroxDA},
+    {"\x00\xE2", 2, "Unknown - Korea E2", false, NULL},
+    {"\x00\xEC", 2, "Unknown - Korea EC", false, NULL},
+    {"\x00\xEE", 2, "Unknown - Korea EE", false, NULL},
+    {NULL, 0, NULL, false, NULL}
 };
 
 static const nsf_data_t vendor_bc[] =
 {
     /* France */
-    {"\x53\x01", 2, "Minolta", FALSE, NULL},
-    {NULL, 0, NULL, FALSE, NULL}
+    {"\x53\x01", 2, "Minolta", false, NULL},
+    {NULL, 0, NULL, false, NULL}
 };
 
 static const nsf_data_t vendor_ad[] =
 {
     /* United States (not Tunisia) */
-    {"\x00\x00", 2, "Pitney Bowes", FALSE, PitneyBowes},
-    {"\x00\x0C", 2, "Dialogic", FALSE, NULL},
-    {"\x00\x15", 2, "Lexmark", FALSE, Lexmark},
-    {"\x00\x16", 2, "JetFax", FALSE, JetFax},
-    {"\x00\x24", 2, "Octel", FALSE, NULL},
-    {"\x00\x36", 2, "HP", FALSE, HP},
-    {"\x00\x42", 2, "FaxTalk", FALSE, NULL},
-    {"\x00\x44", 2, NULL, TRUE, NULL},
-    {"\x00\x46", 2, "BrookTrout", FALSE, NULL},
-    {"\x00\x51", 2, "Telogy Networks", FALSE, NULL},
-    {"\x00\x55", 2, "HylaFAX", FALSE, NULL},
-    {"\x00\x5C", 2, "IBM", FALSE, NULL},
-    {"\x00\x98", 2, "Unknown - USA 98", TRUE, NULL},
-    {NULL, 0, NULL, FALSE, NULL}
+    {"\x00\x00", 2, "Pitney Bowes", false, PitneyBowes},
+    {"\x00\x0C", 2, "Dialogic", false, NULL},
+    {"\x00\x15", 2, "Lexmark", false, Lexmark},
+    {"\x00\x16", 2, "JetFax", false, JetFax},
+    {"\x00\x24", 2, "Octel", false, NULL},
+    {"\x00\x36", 2, "HP", false, HP},
+    {"\x00\x42", 2, "FaxTalk", false, NULL},
+    {"\x00\x44", 2, NULL, true, NULL},
+    {"\x00\x46", 2, "BrookTrout", false, NULL},
+    {"\x00\x51", 2, "Telogy Networks", false, NULL},
+    {"\x00\x55", 2, "HylaFAX", false, NULL},
+    {"\x00\x5C", 2, "IBM", false, NULL},
+    {"\x00\x98", 2, "Unknown - USA 98", true, NULL},
+    {NULL, 0, NULL, false, NULL}
 };
 
 static const nsf_data_t vendor_b4[] =
 {
     /* United Kingdom */
-    {"\x00\xB0", 2, "DCE", FALSE, NULL},
-    {"\x00\xB1", 2, "Hasler", FALSE, NULL},
-    {"\x00\xB2", 2, "Interquad", FALSE, NULL},
-    {"\x00\xB3", 2, "Comwave", FALSE, NULL},
-    {"\x00\xB4", 2, "Iconographic", FALSE, NULL},
-    {"\x00\xB5", 2, "Wordcraft", FALSE, NULL},
-    {"\x00\xB6", 2, "Acorn", FALSE, NULL},
-    {NULL, 0, NULL, FALSE, NULL}
+    {"\x00\xB0", 2, "DCE", false, NULL},
+    {"\x00\xB1", 2, "Hasler", false, NULL},
+    {"\x00\xB2", 2, "Interquad", false, NULL},
+    {"\x00\xB3", 2, "Comwave", false, NULL},
+    {"\x00\xB4", 2, "Iconographic", false, NULL},
+    {"\x00\xB5", 2, "Wordcraft", false, NULL},
+    {"\x00\xB6", 2, "Acorn", false, NULL},
+    {NULL, 0, NULL, false, NULL}
 };
 
 static const nsf_data_t vendor_b5[] =
 {
     /* United States */
-    {"\x00\x01", 2, "Picturetel", FALSE, NULL},
-    {"\x00\x20", 2, "Conexant", FALSE, NULL},
-    {"\x00\x22", 2, "Comsat", FALSE, NULL},
-    {"\x00\x24", 2, "Octel", FALSE, NULL},
-    {"\x00\x26", 2, "ROLM", FALSE, NULL},
-    {"\x00\x28", 2, "SOFNET", FALSE, NULL},
-    {"\x00\x29", 2, "TIA TR-29 Committee", FALSE, NULL},
-    {"\x00\x2A", 2, "STF Tech", FALSE, NULL},
-    {"\x00\x2C", 2, "HKB", FALSE, NULL},
-    {"\x00\x2E", 2, "Delrina", FALSE, NULL},
-    {"\x00\x30", 2, "Dialogic", FALSE, NULL},
-    {"\x00\x32", 2, "Applied Synergy", FALSE, NULL},
-    {"\x00\x34", 2, "Syncro Development", FALSE, NULL},
-    {"\x00\x36", 2, "Genoa", FALSE, NULL},
-    {"\x00\x38", 2, "Texas Instruments", FALSE, NULL},
-    {"\x00\x3A", 2, "IBM", FALSE, NULL},
-    {"\x00\x3C", 2, "ViaSat", FALSE, NULL},
-    {"\x00\x3E", 2, "Ericsson", FALSE, NULL},
-    {"\x00\x42", 2, "Bogosian", FALSE, NULL},
-    {"\x00\x44", 2, "Adobe", FALSE, NULL},
-    {"\x00\x46", 2, "Fremont Communications", FALSE, NULL},
-    {"\x00\x48", 2, "Hayes", FALSE, NULL},
-    {"\x00\x4A", 2, "Lucent", FALSE, NULL},
-    {"\x00\x4C", 2, "Data Race", FALSE, NULL},
-    {"\x00\x4E", 2, "TRW", FALSE, NULL},
-    {"\x00\x52", 2, "Audiofax", FALSE, NULL},
-    {"\x00\x54", 2, "Computer Automation", FALSE, NULL},
-    {"\x00\x56", 2, "Serca", FALSE, NULL},
-    {"\x00\x58", 2, "Octocom", FALSE, NULL},
-    {"\x00\x5C", 2, "Power Solutions", FALSE, NULL},
-    {"\x00\x5A", 2, "Digital Sound", FALSE, NULL},
-    {"\x00\x5E", 2, "Pacific Data", FALSE, NULL},
-    {"\x00\x60", 2, "Commetrex", FALSE, NULL},
-    {"\x00\x62", 2, "BrookTrout", FALSE, NULL},
-    {"\x00\x64", 2, "Gammalink", FALSE, NULL},
-    {"\x00\x66", 2, "Castelle", FALSE, NULL},
-    {"\x00\x68", 2, "Hybrid Fax", FALSE, NULL},
-    {"\x00\x6A", 2, "Omnifax", FALSE, NULL},
-    {"\x00\x6C", 2, "HP", FALSE, NULL},
-    {"\x00\x6E", 2, "Microsoft", FALSE, NULL},
-    {"\x00\x72", 2, "Speaking Devices", FALSE, NULL},
-    {"\x00\x74", 2, "Compaq", FALSE, NULL},
-    {"\x00\x76", 2, "Microsoft", FALSE, NULL},      /* uses LSB for country but MSB for manufacturer */
-    {"\x00\x78", 2, "Cylink", FALSE, NULL},
-    {"\x00\x7A", 2, "Pitney Bowes", FALSE, NULL},
-    {"\x00\x7C", 2, "Digiboard", FALSE, NULL},
-    {"\x00\x7E", 2, "Codex", FALSE, NULL},
-    {"\x00\x82", 2, "Wang Labs", FALSE, NULL},
-    {"\x00\x84", 2, "Netexpress Communications", FALSE, NULL},
-    {"\x00\x86", 2, "Cable-Sat", FALSE, NULL},
-    {"\x00\x88", 2, "MFPA", FALSE, NULL},
-    {"\x00\x8A", 2, "Telogy Networks", FALSE, NULL},
-    {"\x00\x8E", 2, "Telecom Multimedia Systems", FALSE, NULL},
-    {"\x00\x8C", 2, "AT&T", FALSE, NULL},
-    {"\x00\x92", 2, "Nuera", FALSE, NULL},
-    {"\x00\x94", 2, "K56flex", FALSE, NULL},
-    {"\x00\x96", 2, "MiBridge", FALSE, NULL},
-    {"\x00\x98", 2, "Xerox", FALSE, NULL},
-    {"\x00\x9A", 2, "Fujitsu", FALSE, NULL},
-    {"\x00\x9B", 2, "Fujitsu", FALSE, NULL},
-    {"\x00\x9C", 2, "Natural Microsystems", FALSE, NULL},
-    {"\x00\x9E", 2, "CopyTele", FALSE, NULL},
-    {"\x00\xA2", 2, "Murata", FALSE, NULL},
-    {"\x00\xA4", 2, "Lanier", FALSE, NULL},
-    {"\x00\xA6", 2, "Qualcomm", FALSE, NULL},
-    {"\x00\xAA", 2, "HylaFAX", FALSE, NULL},
-    {NULL, 0, NULL, FALSE, NULL}
+    {"\x00\x01", 2, "Picturetel", false, NULL},
+    {"\x00\x20", 2, "Conexant", false, NULL},
+    {"\x00\x22", 2, "Comsat", false, NULL},
+    {"\x00\x24", 2, "Octel", false, NULL},
+    {"\x00\x26", 2, "ROLM", false, NULL},
+    {"\x00\x28", 2, "SOFNET", false, NULL},
+    {"\x00\x29", 2, "TIA TR-29 Committee", false, NULL},
+    {"\x00\x2A", 2, "STF Tech", false, NULL},
+    {"\x00\x2C", 2, "HKB", false, NULL},
+    {"\x00\x2E", 2, "Delrina", false, NULL},
+    {"\x00\x30", 2, "Dialogic", false, NULL},
+    {"\x00\x32", 2, "Applied Synergy", false, NULL},
+    {"\x00\x34", 2, "Syncro Development", false, NULL},
+    {"\x00\x36", 2, "Genoa", false, NULL},
+    {"\x00\x38", 2, "Texas Instruments", false, NULL},
+    {"\x00\x3A", 2, "IBM", false, NULL},
+    {"\x00\x3C", 2, "ViaSat", false, NULL},
+    {"\x00\x3E", 2, "Ericsson", false, NULL},
+    {"\x00\x42", 2, "Bogosian", false, NULL},
+    {"\x00\x44", 2, "Adobe", false, NULL},
+    {"\x00\x46", 2, "Fremont Communications", false, NULL},
+    {"\x00\x48", 2, "Hayes", false, NULL},
+    {"\x00\x4A", 2, "Lucent", false, NULL},
+    {"\x00\x4C", 2, "Data Race", false, NULL},
+    {"\x00\x4E", 2, "TRW", false, NULL},
+    {"\x00\x52", 2, "Audiofax", false, NULL},
+    {"\x00\x54", 2, "Computer Automation", false, NULL},
+    {"\x00\x56", 2, "Serca", false, NULL},
+    {"\x00\x58", 2, "Octocom", false, NULL},
+    {"\x00\x5C", 2, "Power Solutions", false, NULL},
+    {"\x00\x5A", 2, "Digital Sound", false, NULL},
+    {"\x00\x5E", 2, "Pacific Data", false, NULL},
+    {"\x00\x60", 2, "Commetrex", false, NULL},
+    {"\x00\x62", 2, "BrookTrout", false, NULL},
+    {"\x00\x64", 2, "Gammalink", false, NULL},
+    {"\x00\x66", 2, "Castelle", false, NULL},
+    {"\x00\x68", 2, "Hybrid Fax", false, NULL},
+    {"\x00\x6A", 2, "Omnifax", false, NULL},
+    {"\x00\x6C", 2, "HP", false, NULL},
+    {"\x00\x6E", 2, "Microsoft", false, NULL},
+    {"\x00\x72", 2, "Speaking Devices", false, NULL},
+    {"\x00\x74", 2, "Compaq", false, NULL},
+    {"\x00\x76", 2, "Microsoft", false, NULL},      /* uses LSB for country but MSB for manufacturer */
+    {"\x00\x78", 2, "Cylink", false, NULL},
+    {"\x00\x7A", 2, "Pitney Bowes", false, NULL},
+    {"\x00\x7C", 2, "Digiboard", false, NULL},
+    {"\x00\x7E", 2, "Codex", false, NULL},
+    {"\x00\x82", 2, "Wang Labs", false, NULL},
+    {"\x00\x84", 2, "Netexpress Communications", false, NULL},
+    {"\x00\x86", 2, "Cable-Sat", false, NULL},
+    {"\x00\x88", 2, "MFPA", false, NULL},
+    {"\x00\x8A", 2, "Telogy Networks", false, NULL},
+    {"\x00\x8E", 2, "Telecom Multimedia Systems", false, NULL},
+    {"\x00\x8C", 2, "AT&T", false, NULL},
+    {"\x00\x92", 2, "Nuera", false, NULL},
+    {"\x00\x94", 2, "K56flex", false, NULL},
+    {"\x00\x96", 2, "MiBridge", false, NULL},
+    {"\x00\x98", 2, "Xerox", false, NULL},
+    {"\x00\x9A", 2, "Fujitsu", false, NULL},
+    {"\x00\x9B", 2, "Fujitsu", false, NULL},
+    {"\x00\x9C", 2, "Natural Microsystems", false, NULL},
+    {"\x00\x9E", 2, "CopyTele", false, NULL},
+    {"\x00\xA2", 2, "Murata", false, NULL},
+    {"\x00\xA4", 2, "Lanier", false, NULL},
+    {"\x00\xA6", 2, "Qualcomm", false, NULL},
+    {"\x00\xAA", 2, "HylaFAX", false, NULL},
+    {NULL, 0, NULL, false, NULL}
 };
 
 static const country_code_t t35_country_codes[255] =
@@ -904,7 +909,7 @@ SPAN_DECLARE(const char *) t35_vendor_to_str(const uint8_t *msg, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t35_decode(const uint8_t *msg, int len, const char **country, const char **vendor, const char **model)
+SPAN_DECLARE(bool) t35_decode(const uint8_t *msg, int len, const char **country, const char **vendor, const char **model)
 {
     const nsf_data_t *p;
     const model_data_t *pp;
@@ -917,7 +922,7 @@ SPAN_DECLARE(int) t35_decode(const uint8_t *msg, int len, const char **country, 
         *model = NULL;
 
     if ((p = find_vendor(msg, len)) == NULL)
-        return FALSE;
+        return false;
     if (vendor)
         *vendor = p->vendor_name;
     if (model  &&  p->known_models)
@@ -933,7 +938,7 @@ SPAN_DECLARE(int) t35_decode(const uint8_t *msg, int len, const char **country, 
             }
         }
     }
-    return TRUE;
+    return true;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

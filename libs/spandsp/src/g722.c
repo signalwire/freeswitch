@@ -21,12 +21,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * Based in part on a single channel G.722 codec which is:
- *
- * Copyright (c) CMU 1993
- * Computer Science, Speech Group
- * Chengxiang Lu and Alex Hauptmann
  */
 
 /*! \file */
@@ -44,9 +38,15 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/saturated.h"
 #include "spandsp/vector_int.h"
@@ -257,7 +257,7 @@ SPAN_DECLARE(g722_decode_state_t *) g722_decode_init(g722_decode_state_t *s, int
 {
     if (s == NULL)
     {
-        if ((s = (g722_decode_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (g722_decode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -268,11 +268,11 @@ SPAN_DECLARE(g722_decode_state_t *) g722_decode_init(g722_decode_state_t *s, int
     else
         s->bits_per_sample = 8;
     if ((options & G722_SAMPLE_RATE_8000))
-        s->eight_k = TRUE;
+        s->eight_k = true;
     if ((options & G722_PACKED)  &&  s->bits_per_sample != 8)
-        s->packed = TRUE;
+        s->packed = true;
     else
-        s->packed = FALSE;
+        s->packed = false;
     s->band[0].det = 32;
     s->band[1].det = 8;
     return s;
@@ -287,7 +287,7 @@ SPAN_DECLARE(int) g722_decode_release(g722_decode_state_t *s)
 
 SPAN_DECLARE(int) g722_decode_free(g722_decode_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -438,7 +438,7 @@ SPAN_DECLARE(g722_encode_state_t *) g722_encode_init(g722_encode_state_t *s, int
 {
     if (s == NULL)
     {
-        if ((s = (g722_encode_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (g722_encode_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -449,11 +449,11 @@ SPAN_DECLARE(g722_encode_state_t *) g722_encode_init(g722_encode_state_t *s, int
     else
         s->bits_per_sample = 8;
     if ((options & G722_SAMPLE_RATE_8000))
-        s->eight_k = TRUE;
+        s->eight_k = true;
     if ((options & G722_PACKED)  &&  s->bits_per_sample != 8)
-        s->packed = TRUE;
+        s->packed = true;
     else
-        s->packed = FALSE;
+        s->packed = false;
     s->band[0].det = 32;
     s->band[1].det = 8;
     return s;
@@ -468,7 +468,7 @@ SPAN_DECLARE(int) g722_encode_release(g722_encode_state_t *s)
 
 SPAN_DECLARE(int) g722_encode_free(g722_encode_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

@@ -19,7 +19,7 @@
 # @start 1
 
 AC_PREREQ([2.59])
-AC_INIT([spandsp], [0.0.7])
+AC_INIT([spandsp], [1.99.0])
 
 SPANDSP_LT_CURRENT=3
 SPANDSP_LT_REVISION=0
@@ -125,6 +125,9 @@ AC_TYPE_SIGNAL
 
 AC_ARG_ENABLE(doc,          [  --enable-doc         Build the documentation])
 AC_ARG_ENABLE(tests,        [  --enable-tests       Build the test programs])
+AC_ARG_ENABLE(t43,          [  --enable-t43         Enable T.43 support])
+AC_ARG_ENABLE(v32bis,       [  --enable-v32bis      Enable V.32bis support])
+AC_ARG_ENABLE(v34,          [  --enable-v34         Enable V.34 support])
 AC_ARG_ENABLE(mmx,          [  --enable-mmx         Enable MMX support])
 AC_ARG_ENABLE(sse,          [  --enable-sse         Enable SSE support])
 AC_ARG_ENABLE(sse2,         [  --enable-sse2        Enable SSE2 support])
@@ -135,8 +138,10 @@ AC_ARG_ENABLE(sse4_2,       [  --enable-sse4-2      Enable SSE4.2 support])
 AC_ARG_ENABLE(sse4a,        [  --enable-sse4a       Enable SSE4A support])
 AC_ARG_ENABLE(sse5,         [  --enable-sse5        Enable SSE5 support])
 AC_ARG_ENABLE(avx,          [  --enable-avx         Enable AVX support])
+AC_ARG_ENABLE(avx2,         [  --enable-avx2        Enable AVX2 support])
 AC_ARG_ENABLE(neon,         [  --enable-neon        Enable NEON support])
 AC_ARG_ENABLE(fixed_point,  [  --enable-fixed-point Enable fixed point support])
+
 # The following is for MSVC, where we may be using a local copy of libtiff, built alongside spandsp
 AC_ARG_ENABLE(builtin_tiff,
     [AC_HELP_STRING([--enable-builtin-tiff],[build with builtin libtiff])],[enable_builtin_tiff="$enableval"],[enable_builtin_tiff="no"])
@@ -162,6 +167,9 @@ fi
 
 AX_C99_FLEXIBLE_ARRAY
 
+AC_CHECK_FUNCS([aligned_alloc])
+AC_CHECK_FUNCS([memalign])
+AC_CHECK_FUNCS([posix_memalign])
 AC_CHECK_FUNCS([memmove])
 AC_CHECK_FUNCS([memset])
 AC_CHECK_FUNCS([select])
@@ -182,6 +190,9 @@ AC_HEADER_TIME
 AC_CHECK_HEADERS([socket.h])
 AC_CHECK_HEADERS([inttypes.h], [INSERT_INTTYPES_HEADER="#include <inttypes.h>"])
 AC_CHECK_HEADERS([stdint.h], [INSERT_STDINT_HEADER="#include <stdint.h>"])
+AC_CHECK_HEADERS([stdatomic.h])
+AC_CHECK_HEADERS([stdbool.h], [INSERT_STDBOOL_HEADER="#include <stdbool.h>"], [INSERT_STDBOOL_HEADER="#include <spandsp/stdbool.h>"])
+AC_CHECK_HEADERS([stdfix.h])
 AC_CHECK_HEADERS([unistd.h])
 AC_CHECK_HEADERS([stdlib.h])
 AC_CHECK_HEADERS([string.h])
@@ -257,13 +268,6 @@ then
     esac
 fi
 
-#AC_DEFINE([SPANDSP_SUPPORT_T42], [1], [Support T.42 JPEG compression])
-SPANDSP_SUPPORT_T42="#undef SPANDSP_SUPPORT_T42"
-#AC_DEFINE([SPANDSP_SUPPORT_T43], [1], [Support T.43 JBIG gray and colour compression])
-SPANDSP_SUPPORT_T43="#undef SPANDSP_SUPPORT_T43"
-#AC_DEFINE([SPANDSP_SUPPORT_V34], [1], [Support the V.34 FAX modem])
-SPANDSP_SUPPORT_V34="#undef SPANDSP_SUPPORT_V34"
-
 AC_CHECK_LIB([m], [cos])
 # Some platforms still seem to lack the basic single precision trig and power related functions.
 AC_SEARCH_LIBS([sinf], [m], AC_DEFINE([HAVE_SINF], [1], [Define to 1 if you have the sinf() function.]))
@@ -320,9 +324,11 @@ AX_CHECK_EXPORT_CAPABILITY([$host],
 
 saved_CFLAGS="$CFLAGS"
 AC_CACHE_CHECK([whether compiler supports -Wunused-but-set-variable], [ac_cv_gcc_unused_but_set_variable], [
-CFLAGS="$CFLAGS -Wunused-but-set-variable"
-AC_TRY_COMPILE([],[return 0;],[ac_cv_gcc_unused_but_set_variable=yes],[ac_cv_gcc_unused_but_set_variable=no])
-])
+    # We need to add -Werror here or clang doesn't fail (it just warns), even though it doesn't understand the
+    # -Wunused-but-set-variable tag
+    CFLAGS="$CFLAGS -Werror -Wunused-but-set-variable"
+    AC_TRY_COMPILE([],[return 0;],[ac_cv_gcc_unused_but_set_variable=yes],[ac_cv_gcc_unused_but_set_variable=no])
+    ])
 AC_MSG_RESULT($ac_cv_gcc_unused_but_set_variable)
 CFLAGS="$saved_CFLAGS"
 
@@ -336,6 +342,9 @@ gnu)
         [AC_DEFINE([SPANDSP_USE_ARM_NEON], [1], [Use the ARM NEON instruction set])])
     if test "$enable_neon" = "yes" ; then
         COMP_VENDOR_CFLAGS="-mfpu=neon $COMP_VENDOR_CFLAGS"
+    fi
+    if test "$enable_avx2" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-mavx2 $COMP_VENDOR_CFLAGS"
     fi
     if test "$enable_avx" = "yes" ; then
         COMP_VENDOR_CFLAGS="-mavx $COMP_VENDOR_CFLAGS"
@@ -401,6 +410,9 @@ intel)
     if test x"$ac_cv_gcc_unused_but_set_variable" = xyes ; then
         COMP_VENDOR_CFLAGS="-Wunused-but-set-variable $COMP_VENDOR_CFLAGS"
     fi
+    if test "$enable_avx2" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-mavx2 $COMP_VENDOR_CFLAGS"
+    fi
     if test "$enable_avx" = "yes" ; then
         COMP_VENDOR_CFLAGS="-mavx $COMP_VENDOR_CFLAGS"
     fi
@@ -462,6 +474,10 @@ armv7[bl] | armv7-*)
     fi
     ;;
 x86_64-* | i386-* | i686-*)
+    if test "$enable_avx2" = "yes" ; then
+        AC_DEFINE([SPANDSP_USE_AVX2], [1], [Use the AVX2 instruction set (i386 and x86_64 only).])
+        enable_avx="yes"
+    fi
     if test "$enable_avx" = "yes" ; then
         AC_DEFINE([SPANDSP_USE_AVX], [1], [Use the AVX instruction set (i386 and x86_64 only).])
         enable_sse5="yes"
@@ -504,20 +520,6 @@ x86_64-* | i386-* | i686-*)
     ;;
 esac
 
-AM_CONDITIONAL([COND_DOC], [test "$enable_doc" = yes])
-AM_CONDITIONAL([COND_TESTS], [test "$enable_tests" = yes])
-AM_CONDITIONAL([COND_MMX], [test "$enable_mmx" = yes])
-AM_CONDITIONAL([COND_SSE], [test "$enable_sse" = yes])
-AM_CONDITIONAL([COND_SSE2], [test "$enable_sse2" = yes])
-AM_CONDITIONAL([COND_SSE3], [test "$enable_sse3" = yes])
-AM_CONDITIONAL([COND_SSSE3], [test "$enable_ssse3" = yes])
-AM_CONDITIONAL([COND_SSE4_1], [test "$enable_sse4_1" = yes])
-AM_CONDITIONAL([COND_SSE4_2], [test "$enable_sse4_2" = yes])
-AM_CONDITIONAL([COND_SSE4A], [test "$enable_sse4a" = yes])
-AM_CONDITIONAL([COND_SSE5], [test "$enable_sse5" = yes])
-AM_CONDITIONAL([COND_AVX], [test "$enable_avx" = yes])
-AM_CONDITIONAL([COND_NEON], [test "$enable_neon" = yes])
-
 if test "$enable_builtin_tiff" = "yes" ; then
     abs_tiffdir="`cd $srcdir/../tiff-4.0.2/ && pwd`"
     save_CFLAGS=$CFLAGS
@@ -532,9 +534,7 @@ if test "$enable_builtin_tiff" = "yes" ; then
     AC_DEFINE([HAVE_LIBTIFF], [1], [Define to 1 if you have the `tiff' library (-ltiff).])
 else
     AC_CHECK_HEADERS([tiffio.h])
-    AC_CHECK_HEADERS([tif_dir.h], [], [], [#include <tiffio.h>
-])
-    AC_CHECK_LIB([tiff], [TIFFOpen], [TIFF_LIBS="-ltiff"], AC_MSG_ERROR("Cannot build without libtiff (does your system require a libtiff-devel package?)"), -lm)
+    AC_CHECK_LIB([tiff], [TIFFOpen], , AC_MSG_ERROR("Cannot build without libtiff (does your system require a libtiff-devel package?)"), -lm)
 fi
 
 AC_CHECK_LIB([tiff], [TIFFCreateCustomDirectory], [
@@ -553,6 +553,45 @@ LIBS="$LIBS $TIFF_LIBS $JPEG_LIBS"
 
 TESTLIBS="$SIMLIBS $TESTLIBS"
 
+if test "$enable_t43" = "yes" ; then
+    AC_DEFINE([SPANDSP_SUPPORT_T43], [1], [Support T.43 JBIG gray and colour compression])
+    SPANDSP_SUPPORT_T43="#define SPANDSP_SUPPORT_T43 1"
+else
+    SPANDSP_SUPPORT_T43="#undef SPANDSP_SUPPORT_T43"
+fi
+
+if test "$enable_v32bis" = "yes" ; then
+    AC_DEFINE([SPANDSP_SUPPORT_V32BIS], [1], [Support the V.32bis modem])
+    SPANDSP_SUPPORT_V32BIS="#define SPANDSP_SUPPORT_V32BIS 1"
+else
+    SPANDSP_SUPPORT_V32BIS="#undef SPANDSP_SUPPORT_V32BIS"
+fi
+
+if test "$enable_v34" = "yes" ; then
+    AC_DEFINE([SPANDSP_SUPPORT_V34], [1], [Support the V.34 FAX modem])
+    SPANDSP_SUPPORT_V34="#define SPANDSP_SUPPORT_V34 1"
+else
+    SPANDSP_SUPPORT_V34="#undef SPANDSP_SUPPORT_V34"
+fi
+
+AM_CONDITIONAL([COND_DOC], [test "$enable_doc" = yes])
+AM_CONDITIONAL([COND_TESTS], [test "$enable_tests" = yes])
+AM_CONDITIONAL([COND_MMX], [test "$enable_mmx" = yes])
+AM_CONDITIONAL([COND_SSE], [test "$enable_sse" = yes])
+AM_CONDITIONAL([COND_SSE2], [test "$enable_sse2" = yes])
+AM_CONDITIONAL([COND_SSE3], [test "$enable_sse3" = yes])
+AM_CONDITIONAL([COND_SSSE3], [test "$enable_ssse3" = yes])
+AM_CONDITIONAL([COND_SSE4_1], [test "$enable_sse4_1" = yes])
+AM_CONDITIONAL([COND_SSE4_2], [test "$enable_sse4_2" = yes])
+AM_CONDITIONAL([COND_SSE4A], [test "$enable_sse4a" = yes])
+AM_CONDITIONAL([COND_SSE5], [test "$enable_sse5" = yes])
+AM_CONDITIONAL([COND_AVX], [test "$enable_avx" = yes])
+AM_CONDITIONAL([COND_AVX2], [test "$enable_avx2" = yes])
+AM_CONDITIONAL([COND_NEON], [test "$enable_neon" = yes])
+
+AM_CONDITIONAL([COND_V32BIS], [test yes = xyes])
+AM_CONDITIONAL([COND_V34], [test yes = xyes])
+
 AC_SUBST(SPANDSP_LT_CURRENT)
 AC_SUBST(SPANDSP_LT_REVISION)
 AC_SUBST(SPANDSP_LT_AGE)
@@ -565,14 +604,15 @@ AC_SUBST(TESTLIBS)
 AC_SUBST(SPANDSP_USE_FIXED_POINT)
 AC_SUBST(SPANDSP_MISALIGNED_ACCESS_FAILS)
 AC_SUBST(SPANDSP_USE_EXPORT_CAPABILITY)
-AC_SUBST(SPANDSP_SUPPORT_T42)
 AC_SUBST(SPANDSP_SUPPORT_T43)
+AC_SUBST(SPANDSP_SUPPORT_V32BIS)
 AC_SUBST(SPANDSP_SUPPORT_V34)
 AC_SUBST(SPANDSP_SUPPORT_TIFF_FX)
 AC_SUBST(INSERT_INTTYPES_HEADER)
 AC_SUBST(INSERT_STDINT_HEADER)
 AC_SUBST(INSERT_TGMATH_HEADER)
 AC_SUBST(INSERT_MATH_HEADER)
+AC_SUBST(INSERT_STDBOOL_HEADER)
 
 AC_CONFIG_FILES([Makefile
                  doc/Makefile

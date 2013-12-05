@@ -83,12 +83,12 @@ static const struct
     {    0, 0, 0, 0}
 };
 
-int decode_test = FALSE;
+bool decode_test = false;
 int rx_bits = 0;
 
 t30_state_t t30_dummy;
 t4_rx_state_t t4_rx_state;
-int t4_up = FALSE;
+bool t4_up = false;
 
 hdlc_rx_state_t hdlcrx;
 
@@ -97,14 +97,14 @@ int fast_trained = FAX_NONE;
 uint8_t ecm_data[256][260];
 int16_t ecm_len[256];
 
-int line_encoding = T4_COMPRESSION_ITU_T4_1D;
+int line_encoding = T4_COMPRESSION_T4_1D;
 int x_resolution = T4_X_RESOLUTION_R8;
 int y_resolution = T4_Y_RESOLUTION_STANDARD;
 int image_width = 1728;
 int octets_per_ecm_frame = 256;
-int error_correcting_mode = FALSE;
+bool error_correcting_mode = false;
 int current_fallback = 0;
-int end_of_page_detected = FALSE;
+bool end_of_page_detected = false;
 
 static void decode_20digit_msg(const uint8_t *pkt, int len)
 {
@@ -221,11 +221,11 @@ static int check_rx_dcs(const uint8_t *msg, int len)
 
     /* Check which compression we will use. */
     if ((dcs_frame[6] & DISBIT7))
-        line_encoding = T4_COMPRESSION_ITU_T6;
+        line_encoding = T4_COMPRESSION_T6;
     else if ((dcs_frame[4] & DISBIT8))
-        line_encoding = T4_COMPRESSION_ITU_T4_2D;
+        line_encoding = T4_COMPRESSION_T4_2D;
     else
-        line_encoding = T4_COMPRESSION_ITU_T4_1D;
+        line_encoding = T4_COMPRESSION_T4_1D;
     fprintf(stderr, "Selected compression %d\n", line_encoding);
 
     if ((current_fallback = find_fallback_entry(dcs_frame[4] & (DISBIT6 | DISBIT5 | DISBIT4 | DISBIT3))) < 0)
@@ -294,8 +294,8 @@ static void t4_begin(void)
     t4_rx_set_image_width(&t4_rx_state, image_width);
 
     t4_rx_start_page(&t4_rx_state);
-    t4_up = TRUE;
-    end_of_page_detected = FALSE;
+    t4_up = true;
+    end_of_page_detected = false;
 
     for (i = 0;  i < 256;  i++)
         ecm_len[i] = -1;
@@ -326,7 +326,7 @@ static void t4_end(void)
     fprintf(stderr, "Image resolution = %dx%d\n", stats.x_resolution, stats.y_resolution);
     fprintf(stderr, "Bad rows = %d\n", stats.bad_rows);
     fprintf(stderr, "Longest bad row run = %d\n", stats.longest_bad_row_run);
-    t4_up = FALSE;
+    t4_up = false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -381,7 +381,7 @@ static void v17_put_bit(void *user_data, int bit)
             t4_end();
             if (!end_of_page_detected)
                 fprintf(stderr, "End of page detected\n");
-            end_of_page_detected = TRUE;
+            end_of_page_detected = true;
         }
     }
     //printf("V.17 Rx bit %d - %d\n", rx_bits++, bit);
@@ -419,7 +419,7 @@ static void v29_put_bit(void *user_data, int bit)
             t4_end();
             if (!end_of_page_detected)
                 fprintf(stderr, "End of page detected\n");
-            end_of_page_detected = TRUE;
+            end_of_page_detected = true;
         }
     }
     //printf("V.29 Rx bit %d - %d\n", rx_bits++, bit);
@@ -457,7 +457,7 @@ static void v27ter_put_bit(void *user_data, int bit)
             t4_end();
             if (!end_of_page_detected)
                 fprintf(stderr, "End of page detected\n");
-            end_of_page_detected = TRUE;
+            end_of_page_detected = true;
         }
     }
     //printf("V.27ter Rx bit %d - %d\n", rx_bits++, bit);
@@ -504,7 +504,7 @@ int main(int argc, char *argv[])
     span_log_init(&t30_dummy.logging, SPAN_LOG_FLOW, NULL);
     span_log_set_protocol(&t30_dummy.logging, "T.30");
 
-    hdlc_rx_init(&hdlcrx, FALSE, TRUE, 5, hdlc_accept, NULL);
+    hdlc_rx_init(&hdlcrx, false, true, 5, hdlc_accept, NULL);
     fsk = fsk_rx_init(NULL, &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, v21_put_bit, NULL);
     v17 = v17_rx_init(NULL, 14400, v17_put_bit, NULL);
     v29 = v29_rx_init(NULL, 9600, v29_put_bit, NULL);
@@ -540,7 +540,7 @@ int main(int argc, char *argv[])
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_FLOW);
 #endif
 
-    if (t4_rx_init(&t4_rx_state, "fax_decode.tif", T4_COMPRESSION_ITU_T4_2D) == NULL)
+    if (t4_rx_init(&t4_rx_state, "fax_decode.tif", T4_COMPRESSION_T4_2D) == NULL)
     {
         fprintf(stderr, "Failed to init\n");
         exit(0);

@@ -74,7 +74,9 @@
 
   #define _MMX_H_
 
+  #if !((defined(WIN32) || defined(_WIN32)) && (_MSC_VER >= 1800))
   #define cbrtf(value) pow((float)value, (float).333)
+  #endif
 
   #include <malloc.h> // To get alloca
 

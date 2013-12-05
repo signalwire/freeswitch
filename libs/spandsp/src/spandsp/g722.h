@@ -21,14 +21,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- * Based on a single channel G.722 codec which is:
- *
- *****    Copyright (c) CMU    1993      *****
- * Computer Science, Speech Group
- * Chengxiang Lu and Alex Hauptmann
  */
-
 
 /*! \file */
 

@@ -26,6 +26,8 @@
 #if !defined(_SPANDSP_PRIVATE_T4_RX_H_)
 #define _SPANDSP_PRIVATE_T4_RX_H_
 
+typedef int (*t4_image_put_handler_t)(void *user_data, const uint8_t buf[], size_t len);
+
 /*!
     TIFF specific state information to go with T.4 compression or decompression handling.
 */
@@ -39,7 +41,7 @@ typedef struct
     /*! Image type - bilevel, gray, colour */
     int image_type;
     /*! \brief The compression type for output to the TIFF file. */
-    int output_encoding;
+    int compression;
     /*! \brief The TIFF photometric setting for the current page. */
     uint16_t photo_metric;
     /*! \brief The TIFF fill order setting for the current page. */
@@ -65,6 +67,12 @@ typedef struct
 */
 typedef struct
 {
+    /*! \brief The type of compression used on the wire. */
+    int compression;
+    /*! \brief The width of the current page, in pixels. */
+    uint32_t image_width;
+    /*! \brief The length of the current page, in pixels. */
+    uint32_t image_length;
     /*! \brief Column-to-column (X) resolution in pixels per metre. */
     int x_resolution;
     /*! \brief Row-to-row (Y) resolution in pixels per metre. */
@@ -83,6 +91,13 @@ typedef struct
     const char *dcs;
 } t4_rx_metadata_t;
 
+typedef struct
+{
+    uint8_t *buf;
+    int buf_len;
+    int buf_ptr;
+} no_decoder_state_t;
+
 /*!
     T.4 FAX decompression descriptor. This defines the working state
     for a single instance of a T.4 FAX decompression channel.
@@ -94,29 +109,34 @@ struct t4_rx_state_s
     /*! \brief Opaque pointer passed to row_write_handler. */
     void *row_handler_user_data;
 
+    /*! \brief A bit mask of the currently supported image compression modes for writing
+               to the TIFF file. */
+    int supported_tiff_compressions;
+
     /*! \brief The number of pages transferred to date. */
     int current_page;
 
     /*! \brief The size of the compressed image on the line side, in bits. */
     int line_image_size;
 
-    /*! \brief The type of compression used between the FAX machines. */
-    int line_encoding;
-
-    /*! \brief The width of the current page, in pixels. */
-    uint32_t image_width;
-    /*! \brief The length of the current page, in pixels. */
-    uint32_t image_length;
-
     union
     {
+        no_decoder_state_t no_decoder;
         t4_t6_decode_state_t t4_t6;
-        t42_decode_state_t t42;
-#if defined(SPANDSP_SUPPORT_T43)
-        t43_decode_state_t t43;
-#endif
         t85_decode_state_t t85;
+#if defined(SPANDSP_SUPPORT_T88)
+        t88_decode_state_t t88;
+#endif
+        t42_decode_state_t t42;
+        t43_decode_state_t t43;
+#if defined(SPANDSP_SUPPORT_T45)
+        t45_decode_state_t t45;
+#endif
     } decoder;
+
+    t4_image_put_handler_t image_put_handler;
+
+    int current_decoder;
 
     /* Supporting information, like resolutions, which the backend may want. */
     t4_rx_metadata_t metadata;

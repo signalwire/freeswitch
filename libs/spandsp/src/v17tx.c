@@ -39,9 +39,15 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/logging.h"
 #include "spandsp/complex.h"
@@ -251,7 +257,7 @@ static __inline__ complexf_t getbaud(v17_tx_state_t *s)
             {
                 /* Training finished - commence normal operation. */
                 s->current_get_bit = s->get_bit;
-                s->in_training = FALSE;
+                s->in_training = false;
             }
         }
         else
@@ -279,7 +285,7 @@ static __inline__ complexf_t getbaud(v17_tx_state_t *s)
             if (s->status_handler)
                 s->status_handler(s->status_user_data, SIG_STATUS_END_OF_DATA);
             s->current_get_bit = fake_get_bit;
-            s->in_training = TRUE;
+            s->in_training = true;
             bit = 1;
         }
         bits |= (scramble(s, bit) << i);
@@ -380,7 +386,7 @@ SPAN_DECLARE(logging_state_t *) v17_tx_get_logging_state(v17_tx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) v17_tx_restart(v17_tx_state_t *s, int bit_rate, int tep, int short_train)
+SPAN_DECLARE(int) v17_tx_restart(v17_tx_state_t *s, int bit_rate, bool tep, bool short_train)
 {
     switch (bit_rate)
     {
@@ -422,7 +428,7 @@ SPAN_DECLARE(int) v17_tx_restart(v17_tx_state_t *s, int bit_rate, int tep, int s
     s->rrc_filter_step = 0;
     s->convolution = 0;
     s->scramble_reg = 0x2ECDD5;
-    s->in_training = TRUE;
+    s->in_training = true;
     s->short_train = short_train;
     s->training_step = (tep)  ?  V17_TRAINING_SEG_TEP_A  :  V17_TRAINING_SEG_1;
     s->carrier_phase = 0;
@@ -433,7 +439,7 @@ SPAN_DECLARE(int) v17_tx_restart(v17_tx_state_t *s, int bit_rate, int tep, int s
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(v17_tx_state_t *) v17_tx_init(v17_tx_state_t *s, int bit_rate, int tep, get_bit_func_t get_bit, void *user_data)
+SPAN_DECLARE(v17_tx_state_t *) v17_tx_init(v17_tx_state_t *s, int bit_rate, bool tep, get_bit_func_t get_bit, void *user_data)
 {
     switch (bit_rate)
     {
@@ -449,7 +455,7 @@ SPAN_DECLARE(v17_tx_state_t *) v17_tx_init(v17_tx_state_t *s, int bit_rate, int 
     }
     if (s == NULL)
     {
-        if ((s = (v17_tx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (v17_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -460,7 +466,7 @@ SPAN_DECLARE(v17_tx_state_t *) v17_tx_init(v17_tx_state_t *s, int bit_rate, int 
     s->scrambler_tap = 18 - 1;
     s->carrier_phase_rate = dds_phase_ratef(CARRIER_NOMINAL_FREQ);
     v17_tx_power(s, -14.0f);
-    v17_tx_restart(s, bit_rate, tep, FALSE);
+    v17_tx_restart(s, bit_rate, tep, false);
     return s;
 }
 /*- End of function --------------------------------------------------------*/
@@ -473,7 +479,7 @@ SPAN_DECLARE(int) v17_tx_release(v17_tx_state_t *s)
 
 SPAN_DECLARE(int) v17_tx_free(v17_tx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

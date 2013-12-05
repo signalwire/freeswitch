@@ -39,9 +39,15 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/logging.h"
 #include "spandsp/complex.h"
@@ -106,7 +112,7 @@ static __inline__ int get_scrambled_bit(v29_tx_state_t *s)
         if (s->status_handler)
             s->status_handler(s->status_user_data, SIG_STATUS_END_OF_DATA);
         s->current_get_bit = fake_get_bit;
-        s->in_training = TRUE;
+        s->in_training = true;
         bit = 1;
     }
     out_bit = (bit ^ (s->scramble_reg >> (18 - 1)) ^ (s->scramble_reg >> (23 - 1))) & 1;
@@ -174,7 +180,7 @@ static __inline__ complexf_t getbaud(v29_tx_state_t *s)
             /* Switch from the fake get_bit routine, to the user supplied real
                one, and we are up and running. */
             s->current_get_bit = s->get_bit;
-            s->in_training = FALSE;
+            s->in_training = false;
         }
         if (s->training_step == V29_TRAINING_SHUTDOWN_END)
         {
@@ -336,7 +342,7 @@ SPAN_DECLARE(logging_state_t *) v29_tx_get_logging_state(v29_tx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) v29_tx_restart(v29_tx_state_t *s, int bit_rate, int tep)
+SPAN_DECLARE(int) v29_tx_restart(v29_tx_state_t *s, int bit_rate, bool tep)
 {
     span_log(&s->logging, SPAN_LOG_FLOW, "Restarting V.29\n");
     s->bit_rate = bit_rate;
@@ -365,7 +371,7 @@ SPAN_DECLARE(int) v29_tx_restart(v29_tx_state_t *s, int bit_rate, int tep)
     s->rrc_filter_step = 0;
     s->scramble_reg = 0;
     s->training_scramble_reg = 0x2A;
-    s->in_training = TRUE;
+    s->in_training = true;
     s->training_step = (tep)  ?  V29_TRAINING_SEG_TEP  :  V29_TRAINING_SEG_1;
     s->carrier_phase = 0;
     s->baud_phase = 0;
@@ -375,7 +381,7 @@ SPAN_DECLARE(int) v29_tx_restart(v29_tx_state_t *s, int bit_rate, int tep)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(v29_tx_state_t *) v29_tx_init(v29_tx_state_t *s, int bit_rate, int tep, get_bit_func_t get_bit, void *user_data)
+SPAN_DECLARE(v29_tx_state_t *) v29_tx_init(v29_tx_state_t *s, int bit_rate, bool tep, get_bit_func_t get_bit, void *user_data)
 {
     switch (bit_rate)
     {
@@ -388,7 +394,7 @@ SPAN_DECLARE(v29_tx_state_t *) v29_tx_init(v29_tx_state_t *s, int bit_rate, int 
     }
     if (s == NULL)
     {
-        if ((s = (v29_tx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (v29_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -411,7 +417,7 @@ SPAN_DECLARE(int) v29_tx_release(v29_tx_state_t *s)
 
 SPAN_DECLARE(int) v29_tx_free(v29_tx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

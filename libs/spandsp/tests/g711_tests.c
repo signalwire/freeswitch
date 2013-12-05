@@ -353,10 +353,10 @@ int main(int argc, char *argv[])
     int16_t outdata[BLOCK_LEN];
     uint8_t g711data[BLOCK_LEN];
 
-    basic_tests = TRUE;
+    basic_tests = true;
     law = G711_ALAW;
-    encode = FALSE;
-    decode = FALSE;
+    encode = false;
+    decode = false;
     in_file = NULL;
     out_file = NULL;
     while ((opt = getopt(argc, argv, "ad:e:l:u")) != -1)
@@ -365,24 +365,24 @@ int main(int argc, char *argv[])
         {
         case 'a':
             law = G711_ALAW;
-            basic_tests = FALSE;
+            basic_tests = false;
             break;
         case 'd':
             in_file = optarg;
-            basic_tests = FALSE;
-            decode = TRUE;
+            basic_tests = false;
+            decode = true;
             break;
         case 'e':
             in_file = optarg;
-            basic_tests = FALSE;
-            encode = TRUE;
+            basic_tests = false;
+            encode = true;
             break;
         case 'l':
             out_file = optarg;
             break;
         case 'u':
             law = G711_ULAW;
-            basic_tests = FALSE;
+            basic_tests = false;
             break;
         default:
             //usage();
@@ -392,14 +392,14 @@ int main(int argc, char *argv[])
 
     if (basic_tests)
     {
-        compliance_tests(TRUE);
+        compliance_tests(true);
     }
     else
     {
         if (!decode  &&  !encode)
         {
             decode =
-            encode = TRUE;
+            encode = true;
         }
         if (in_file == NULL)
         {

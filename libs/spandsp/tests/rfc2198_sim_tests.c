@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
 #endif
 
 #if defined(ENABLE_GUI)
-    use_gui = FALSE;
+    use_gui = false;
 #endif
     model_no = MODEL_NO;
     speed_pattern_no = SPEED_PATTERN_NO;
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
         {
         case 'g':
 #if defined(ENABLE_GUI)
-            use_gui = TRUE;
+            use_gui = true;
 #else
             fprintf(stderr, "Graphical monitoring not available\n");
             exit(2);

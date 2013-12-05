@@ -258,7 +258,7 @@ static void itu_compliance_tests(void)
         }
         len = j - i;
         enc_state = g722_encode_init(NULL, 64000, 0);
-        enc_state->itu_test_mode = TRUE;
+        enc_state->itu_test_mode = true;
         len2 = g722_encode(enc_state, compressed, itu_data + i, len);
 
         /* Check the result against the ITU's reference output data */
@@ -324,7 +324,7 @@ static void itu_compliance_tests(void)
                 compressed[k] = itu_data[k + i] >> ((mode == 3)  ?  10  :  (mode == 2)  ?  9  :  8);
 
             dec_state = g722_decode_init(NULL, (mode == 3)  ?  48000  :  (mode == 2)  ?  56000  :  64000, 0);
-            dec_state->itu_test_mode = TRUE;
+            dec_state->itu_test_mode = true;
             len2 = g722_decode(dec_state, decompressed, compressed, len);
 
             /* Check the result against the ITU's reference output data */
@@ -358,8 +358,8 @@ static void signal_to_distortion_tests(void)
     g722_encode_state_t *enc_state;
     g722_decode_state_t *dec_state;
     swept_tone_state_t *swept;
-    power_meter_t in_meter;
-    power_meter_t out_meter;
+    power_meter_t *in_meter;
+    power_meter_t *out_meter;
     int16_t original[1024];
     uint8_t compressed[1024];
     int16_t decompressed[1024];
@@ -374,32 +374,32 @@ static void signal_to_distortion_tests(void)
        Figure 16/G.722, Figure A.1/G.722, and Figure A.2/G.722 */
     enc_state = g722_encode_init(NULL, 64000, 0);
     dec_state = g722_decode_init(NULL, 64000, 0);
-    power_meter_init(&in_meter, 7);
-    power_meter_init(&out_meter, 7);
+    in_meter = power_meter_init(NULL, 7);
+    out_meter = power_meter_init(NULL, 7);
 
     /* First some silence */
     len = 1024;
     memset(original, 0, len*sizeof(original[0]));
     for (i = 0;  i < len;  i++)
-        in_level = power_meter_update(&in_meter, original[i]);
+        in_level = power_meter_update(in_meter, original[i]);
     len2 = g722_encode(enc_state, compressed, original, len);
     len3 = g722_decode(dec_state, decompressed, compressed, len2);
     out_level = 0;
     for (i = 0;  i < len3;  i++)
-        out_level = power_meter_update(&out_meter, decompressed[i]);
+        out_level = power_meter_update(out_meter, decompressed[i]);
     printf("Silence produces %d at the output\n", out_level);
 
     /* Now a swept tone test */
-    swept = swept_tone_init(NULL, 25.0f, 3500.0f, -10.0f, 60*16000, FALSE);
+    swept = swept_tone_init(NULL, 25.0f, 3500.0f, -10.0f, 60*16000, false);
     do
     {
         len = swept_tone(swept, original, 1024);
         for (i = 0;  i < len;  i++)
-            in_level = power_meter_update(&in_meter, original[i]);
+            in_level = power_meter_update(in_meter, original[i]);
         len2 = g722_encode(enc_state, compressed, original, len);
         len3 = g722_decode(dec_state, decompressed, compressed, len2);
         for (i = 0;  i < len3;  i++)
-            out_level = power_meter_update(&out_meter, decompressed[i]);
+            out_level = power_meter_update(out_meter, decompressed[i]);
         printf("%10d, %10d, %f\n", in_level, out_level, (float) out_level/in_level);
     }
     while (len > 0);
@@ -437,12 +437,12 @@ int main(int argc, char *argv[])
     int32_t tone_phase_rate;
 
     bit_rate = 64000;
-    eight_k_in = FALSE;
-    eight_k_out = FALSE;
-    itutests = TRUE;
-    encode = FALSE;
-    decode = FALSE;
-    tone_test = FALSE;
+    eight_k_in = false;
+    eight_k_out = false;
+    itutests = true;
+    encode = false;
+    decode = false;
+    tone_test = false;
     in_file = NULL;
     out_file = NULL;
     while ((opt = getopt(argc, argv, "b:d:e:i:l:o:t")) != -1)
@@ -456,17 +456,17 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "Invalid bit rate selected. Only 48000, 56000 and 64000 are valid.\n");
                 exit(2);
             }
-            itutests = FALSE;
+            itutests = false;
             break;
         case 'd':
             in_file = optarg;
-            decode = TRUE;
-            itutests = FALSE;
+            decode = true;
+            itutests = false;
             break;
         case 'e':
             in_file = optarg;
-            encode = TRUE;
-            itutests = FALSE;
+            encode = true;
+            itutests = false;
             break;
         case 'i':
             i = atoi(optarg);
@@ -492,8 +492,8 @@ int main(int argc, char *argv[])
             eight_k_out = (i == 8000);
             break;
         case 't':
-            tone_test = TRUE;
-            itutests = FALSE;
+            tone_test = true;
+            itutests = false;
             break;
         default:
             //usage();
@@ -514,7 +514,7 @@ int main(int argc, char *argv[])
         if (!decode  &&  !encode)
         {
             decode =
-            encode = TRUE;
+            encode = true;
         }
         if (in_file == NULL)
         {

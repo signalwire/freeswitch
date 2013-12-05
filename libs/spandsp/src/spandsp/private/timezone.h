@@ -54,8 +54,8 @@ struct tz_ttinfo_s
     int32_t gmtoff;             /* UTC offset in seconds */
     int isdst;                  /* Used to set tm_isdst */
     int abbrind;                /* Abbreviation list index */
-    int ttisstd;                /* TRUE if transition is std time */
-    int ttisgmt;                /* TRUE if transition is UTC */
+    bool ttisstd;               /* True if transition is std time */
+    bool ttisgmt;               /* True if transition is UTC */
 };
 
 /* Leap second information */

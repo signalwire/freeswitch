@@ -62,36 +62,48 @@ ITU_TEST_PAGES = itu1.tif \
                  test3.tif \
                  test4.tif
 
-MIXED_SIZE_PAGES = R1200_1200_A4.tif \
-                   R1200_1200_B4.tif \
-                   R1200_1200_A3.tif \
-                   R600_1200_A4.tif \
-                   R600_1200_B4.tif \
-                   R600_1200_A3.tif \
-                   R600_600_A4.tif \
-                   R600_600_B4.tif \
-                   R600_600_A3.tif \
-                   R16_800_A4.tif \
-                   R16_800_B4.tif \
-                   R16_800_A3.tif \
-                   R16_154_A4.tif \
-                   R16_154_B4.tif \
-                   R16_154_A3.tif \
-                   R300_600_A4.tif \
-                   R300_600_B4.tif \
-                   R300_600_A3.tif \
-                   R300_300_A4.tif \
-                   R300_300_B4.tif \
-                   R300_300_A3.tif \
-                   R8_154_A4.tif \
-                   R8_154_B4.tif \
-                   R8_154_A3.tif \
-                   R8_77_A4.tif \
-                   R8_77_B4.tif \
-                   R8_77_A3.tif \
-                   R8_385_A4.tif \
-                   R8_385_B4.tif \
-                   R8_385_A3.tif
+MIXED_SIZE_PAGES = bilevel_1200_1200_A4.tif \
+                   bilevel_1200_1200_B4.tif \
+                   bilevel_1200_1200_A3.tif \
+                   bilevel_600_1200_A4.tif \
+                   bilevel_600_1200_B4.tif \
+                   bilevel_600_1200_A3.tif \
+                   bilevel_600_600_A4.tif \
+                   bilevel_600_600_B4.tif \
+                   bilevel_600_600_A3.tif \
+                   bilevel_400_800_A4.tif \
+                   bilevel_400_800_B4.tif \
+                   bilevel_400_800_A3.tif \
+                   bilevel_400_400_A4.tif \
+                   bilevel_400_400_B4.tif \
+                   bilevel_400_400_A3.tif \
+                   bilevel_300_600_A4.tif \
+                   bilevel_300_600_B4.tif \
+                   bilevel_300_600_A3.tif \
+                   bilevel_300_300_A4.tif \
+                   bilevel_300_300_B4.tif \
+                   bilevel_300_300_A3.tif \
+                   bilevel_200_400_A4.tif \
+                   bilevel_200_400_B4.tif \
+                   bilevel_200_400_A3.tif \
+                   bilevel_200_200_A4.tif \
+                   bilevel_200_200_B4.tif \
+                   bilevel_200_200_A3.tif \
+                   bilevel_200_100_A4.tif \
+                   bilevel_200_100_B4.tif \
+                   bilevel_200_100_A3.tif \
+                   bilevel_R16_154_A4.tif \
+                   bilevel_R16_154_B4.tif \
+                   bilevel_R16_154_A3.tif \
+                   bilevel_R8_154_A4.tif \
+                   bilevel_R8_154_B4.tif \
+                   bilevel_R8_154_A3.tif \
+                   bilevel_R8_77_A4.tif \
+                   bilevel_R8_77_B4.tif \
+                   bilevel_R8_77_A3.tif \
+                   bilevel_R8_385_A4.tif \
+                   bilevel_R8_385_B4.tif \
+                   bilevel_R8_385_A3.tif
 
 EXTRA_DIST = ${ITU_TEST_PAGES_PBM}
 

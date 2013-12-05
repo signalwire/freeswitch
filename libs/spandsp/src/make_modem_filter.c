@@ -24,38 +24,30 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#if defined(HAVE_CONFIG_H)
-#include "config.h"
-#endif
-
 #include <inttypes.h>
 #include <stdlib.h>
 #include <unistd.h>
-#if defined(HAVE_TGMATH_H)
-#include <tgmath.h>
-#endif
-#if defined(HAVE_MATH_H)
-#include <math.h>
-#endif
-#include "floating_fudge.h"
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
 #include <fcntl.h>
+#include <math.h>
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #if defined(__sunos)  ||  defined(__solaris)  ||  defined(__sun)
 #include <getopt.h>
+#endif
+
+#if defined (_MSC_VER)
+ #define __inline__ __inline
 #endif
 
 #include "spandsp/telephony.h"
 #include "spandsp/complex.h"
 #include "filter_tools.h"
-
-#if !defined(FALSE)
-#define FALSE 0
-#endif
-#if !defined(TRUE)
-#define TRUE (!FALSE)
-#endif
 
 //#define SAMPLE_RATE         8000.0
 #define MAX_COEFFS_PER_FILTER   128
@@ -84,7 +76,7 @@ static void make_tx_filter(int coeff_sets,
     alpha = baud_rate/(2.0*(double) (coeff_sets*baud_rate));
     beta = excess_bandwidth;
 
-    compute_raised_cosine_filter(coeffs, total_coeffs, TRUE, FALSE, alpha, beta);
+    compute_raised_cosine_filter(coeffs, total_coeffs, true, false, alpha, beta);
 
     /* Find the DC gain of the filter, and adjust the filter to unity gain. */
     floating_gain = 0.0;
@@ -180,7 +172,7 @@ static void make_rx_filter(int coeff_sets,
     beta = excess_bandwidth;
     carrier *= 2.0*3.1415926535/SAMPLE_RATE;
 
-    compute_raised_cosine_filter(coeffs, total_coeffs, TRUE, FALSE, alpha, beta);
+    compute_raised_cosine_filter(coeffs, total_coeffs, true, false, alpha, beta);
 
     /* Find the DC gain of the filter, and adjust the filter to unity gain. */
     floating_gain = 0.0;
@@ -284,7 +276,7 @@ int main(int argc, char **argv)
     const char *tx_tag;
     const char *modem;
 
-    transmit_modem = FALSE;
+    transmit_modem = false;
     modem = "";
     while ((opt = getopt(argc, argv, "m:rt")) != -1)
     {
@@ -294,10 +286,10 @@ int main(int argc, char **argv)
             modem = optarg;
             break;
         case 'r':
-            transmit_modem = FALSE;
+            transmit_modem = false;
             break;
         case 't':
-            transmit_modem = TRUE;
+            transmit_modem = true;
             break;
         default:
             usage();

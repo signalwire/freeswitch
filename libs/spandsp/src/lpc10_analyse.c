@@ -41,6 +41,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
@@ -349,7 +354,7 @@ static void onset(lpc10_encode_state_t *s,
                     osbuf[*osptr - 1] = i - 9;
                     (*osptr)++;
                 }
-                s->hyst = TRUE;
+                s->hyst = true;
             }
             s->lasti = i;
             /* After one onset detection, at least OSHYST sample times must go */
@@ -357,7 +362,7 @@ static void onset(lpc10_encode_state_t *s,
         }
         else if (s->hyst  &&  i - s->lasti >= 10)
         {
-            s->hyst = FALSE;
+            s->hyst = false;
         }
     }
 }

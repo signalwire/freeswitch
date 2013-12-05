@@ -205,8 +205,8 @@ static int detect_page_end(int bit, int page_ended)
         end_marks = 0;
 
         eol_zeros = 11;
-        eol_ones = (page_ended == T4_COMPRESSION_ITU_T4_2D)  ?  2  :  1;
-        expected_eols = (page_ended == T4_COMPRESSION_ITU_T6)  ?  2  :  6;
+        eol_ones = (page_ended == T4_COMPRESSION_T4_2D)  ?  2  :  1;
+        expected_eols = (page_ended == T4_COMPRESSION_T6)  ?  2  :  6;
         return 0;
     }
 
@@ -266,9 +266,9 @@ int main(int argc, char *argv[])
 {
     static const int compression_sequence[] =
     {
-        T4_COMPRESSION_ITU_T4_1D,
-        T4_COMPRESSION_ITU_T4_2D,
-        T4_COMPRESSION_ITU_T6,
+        T4_COMPRESSION_T4_1D,
+        T4_COMPRESSION_T4_2D,
+        T4_COMPRESSION_T6,
         -1
     };
     int bit;
@@ -303,17 +303,17 @@ int main(int argc, char *argv[])
         case 'c':
             if (strcmp(optarg, "T41D") == 0)
             {
-                compression = T4_COMPRESSION_ITU_T4_1D;
+                compression = T4_COMPRESSION_T4_1D;
                 compression_step = -1;
             }
             else if (strcmp(optarg, "T42D") == 0)
             {
-                compression = T4_COMPRESSION_ITU_T4_2D;
+                compression = T4_COMPRESSION_T4_2D;
                 compression_step = -1;
             }
             else if (strcmp(optarg, "T6") == 0)
             {
-                compression = T4_COMPRESSION_ITU_T6;
+                compression = T4_COMPRESSION_T6;
                 compression_step = -1;
             }
             break;
@@ -327,11 +327,11 @@ int main(int argc, char *argv[])
         }
     }
 
-    end_of_page = FALSE;
+    end_of_page = false;
 #if 1
     printf("Testing image_function->compress->decompress->image_function\n");
     /* Send end gets image from a function */
-    if ((send_state = t4_t6_encode_init(NULL, compression, 1728, row_read_handler, NULL)) == NULL)
+    if ((send_state = t4_t6_encode_init(NULL, compression, 1728, -1, row_read_handler, NULL)) == NULL)
     {
         printf("Failed to init T.4/T.6 encoder\n");
         exit(2);
@@ -364,7 +364,7 @@ int main(int argc, char *argv[])
         t4_t6_encode_set_encoding(send_state, compression);
         t4_t6_decode_set_encoding(receive_state, compression);
 
-        if (t4_t6_encode_restart(send_state, 1728))
+        if (t4_t6_encode_restart(send_state, 1728, -1))
             break;
         if (t4_t6_decode_restart(receive_state, 1728))
             break;
@@ -372,7 +372,7 @@ int main(int argc, char *argv[])
         switch (block_size)
         {
         case 0:
-            end_of_page = FALSE;
+            end_of_page = false;
             for (;;)
             {
                 bit = t4_t6_encode_get_bit(send_state);

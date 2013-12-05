@@ -81,11 +81,14 @@ int main(int argc, char *argv[])
     TIFFSetField(tiff_file, TIFFTAG_XRESOLUTION, 204.0f);
     TIFFSetField(tiff_file, TIFFTAG_YRESOLUTION, 196.0f);
     TIFFSetField(tiff_file, TIFFTAG_RESOLUTIONUNIT, RESUNIT_INCH);
-    TIFFSetField(tiff_file, TIFFTAG_SOFTWARE, "Spandsp");
-    TIFFSetField(tiff_file, TIFFTAG_HOSTCOMPUTER, "host");
     TIFFSetField(tiff_file, TIFFTAG_FAXSUBADDRESS, "1111");
+
+    if (gethostname(buf, sizeof(buf)) == 0)
+        TIFFSetField(tiff_file, TIFFTAG_HOSTCOMPUTER, buf);
+
+    TIFFSetField(tiff_file, TIFFTAG_SOFTWARE, "Spandsp");
     TIFFSetField(tiff_file, TIFFTAG_IMAGEDESCRIPTION, "Image in stripes");
-    TIFFSetField(tiff_file, TIFFTAG_MAKE, "spandsp");
+    TIFFSetField(tiff_file, TIFFTAG_MAKE, "soft-switch.org");
     TIFFSetField(tiff_file, TIFFTAG_MODEL, "testy");
 
     time(&now);
@@ -108,7 +111,7 @@ int main(int argc, char *argv[])
     image_size = IMAGE_WIDTH*ROWS_PER_STRIPE/8;
     memset(image_buffer, 0x18, image_size);
 
-    for (i = 0;  i < IMAGE_LENGTH/ROWS_PER_STRIPE;  i++)
+    for (i = 0;  i*ROWS_PER_STRIPE < IMAGE_LENGTH;  i++)
     {
         if (IMAGE_LENGTH > (i + 1)*ROWS_PER_STRIPE)
             image_size = IMAGE_WIDTH*ROWS_PER_STRIPE/8;

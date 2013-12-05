@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
     span_log_set_protocol(&logging, "Buffer");
 
     printf("1 - Impose no minimum for the bits per row\n");
-    t38_non_ecm_buffer_init(&buffer, TRUE, 0);
+    t38_non_ecm_buffer_init(&buffer, true, 0);
     n = 0;
     bit_no = 0;
     /* We should get ones until the buffers recognises an EOL */
@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
     t38_non_ecm_buffer_report_output_status(&buffer, &logging);
 
     printf("2 - Impose no minimum for the bits per row, different alignment\n");
-    t38_non_ecm_buffer_init(&buffer, TRUE, 0);
+    t38_non_ecm_buffer_init(&buffer, true, 0);
     n = 0;
     memset(buf, 0, sizeof(buf));
     /* The first one in this should be seen as the first EOL */
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
     t38_non_ecm_buffer_report_output_status(&buffer, &logging);
 
     printf("3 - Demand a fairly high minimum for the bits per row\n");
-    t38_non_ecm_buffer_init(&buffer, TRUE, 400);
+    t38_non_ecm_buffer_init(&buffer, true, 400);
     n = 0;
     memset(buf, 0, sizeof(buf));
     /* The first one in this should be seen as the first EOL */
@@ -300,7 +300,7 @@ int main(int argc, char *argv[])
     t38_non_ecm_buffer_report_output_status(&buffer, &logging);
 
     printf("4 - Take some time to get to the first row of the image, output ahead\n");
-    t38_non_ecm_buffer_init(&buffer, TRUE, 400);
+    t38_non_ecm_buffer_init(&buffer, true, 400);
     n = 0;
     /* Get some initial bits from an empty buffer. These should be ones */
     for (i = 0;  i < 1000;  i++)
@@ -448,7 +448,7 @@ int main(int argc, char *argv[])
     t38_non_ecm_buffer_report_output_status(&buffer, &logging);
 
     printf("5 - Take some time to get to the first row of the image, output behind\n");
-    t38_non_ecm_buffer_init(&buffer, TRUE, 400);
+    t38_non_ecm_buffer_init(&buffer, true, 400);
     n = 0;
     /* Inject some ones. */
     memset(buf, 0xFF, 100);
@@ -585,7 +585,7 @@ int main(int argc, char *argv[])
     t38_non_ecm_buffer_report_output_status(&buffer, &logging);
 
     printf("6 - TCF without leading ones\n");
-    t38_non_ecm_buffer_init(&buffer, FALSE, 400);
+    t38_non_ecm_buffer_init(&buffer, false, 400);
     n = 0;
     /* Get some initial bits from an empty buffer. These should be ones */
     for (i = 0;  i < 1000;  i++)
@@ -630,7 +630,7 @@ int main(int argc, char *argv[])
     t38_non_ecm_buffer_report_output_status(&buffer, &logging);
 
     printf("7 - TCF with leading ones\n");
-    t38_non_ecm_buffer_init(&buffer, FALSE, 400);
+    t38_non_ecm_buffer_init(&buffer, false, 400);
     n = 0;
     /* Get some initial bits from an empty buffer. These should be ones */
     for (i = 0;  i < 1000;  i++)

@@ -103,7 +103,7 @@ void fax_log_page_transfer_statistics(t30_state_t *s, const char *tag)
     printf("%s:   Pages in the file %d\n", tag, t.pages_in_file);
     printf("%s:   Bad rows %d, longest bad row run %d\n", tag, t.bad_rows, t.longest_bad_row_run);
     printf("%s:   Bad ECM frames %d\n", tag, t.error_correcting_mode_retries);
-    printf("%s:   Compression type %s (%d)\n", tag, t4_encoding_to_str(t.encoding), t.encoding);
+    printf("%s:   Compression type %s (%d)\n", tag, t4_compression_to_str(t.compression), t.compression);
     printf("%s:   Compressed image size %d bytes\n", tag, t.image_size);
     printf("%s:   Image type %s (%s in the file)\n", tag, t4_image_type_to_str(t.type), t4_image_type_to_str(t.image_type));
     printf("%s:   Image size %d pels x %d pels (%d pels x %d pels in the file)\n", tag, t.width, t.length, t.image_width, t.image_length);

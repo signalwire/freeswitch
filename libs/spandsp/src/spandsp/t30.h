@@ -32,7 +32,7 @@
 
 \section t30_page_sec_1 What does it do?
 The T.30 protocol is the core protocol used for FAX transmission. This module
-implements most of its key featrues. It does not interface to the outside work.
+implements most of its key features. It does not interface to the outside work.
 Seperate modules do that for T.38, analogue line, and other forms of FAX
 communication.
 
@@ -184,13 +184,13 @@ typedef void (*t30_phase_e_handler_t)(t30_state_t *s, void *user_data, int compl
     \brief T.30 real time frame handler.
     \param s The T.30 context.
     \param user_data An opaque pointer.
-    \param direction TRUE for incoming, FALSE for outgoing.
+    \param incoming True for incoming, false for outgoing.
     \param msg The HDLC message.
     \param len The length of the message.
 */
 typedef void (*t30_real_time_frame_handler_t)(t30_state_t *s,
                                               void *user_data,
-                                              int direction,
+                                              bool direction,
                                               const uint8_t msg[],
                                               int len);
 
@@ -209,8 +209,8 @@ typedef int (*t30_document_handler_t)(t30_state_t *s, void *user_data, int statu
     \param user_data An opaque pointer.
     \param type The modem, tone or silence to be sent or received.
     \param bit_rate The bit rate of the modem to be sent or received.
-    \param short_train TRUE if the short training sequence should be used (where one exists).
-    \param use_hdlc FALSE for bit stream, TRUE for HDLC framing.
+    \param short_train True if the short training sequence should be used (where one exists).
+    \param use_hdlc False for bit stream, true for HDLC framing.
 */
 typedef void (*t30_set_handler_t)(void *user_data, int type, int bit_rate, int short_train, int use_hdlc);
 
@@ -222,6 +222,26 @@ typedef void (*t30_set_handler_t)(void *user_data, int type, int bit_rate, int s
     \param len The length of the message.
 */
 typedef void (*t30_send_hdlc_handler_t)(void *user_data, const uint8_t msg[], int len);
+
+/*!
+    T.30 send document handler.
+    \brief T.30 send document handler.
+    \param user_data An opaque pointer.
+    \param msg The document chunk.
+    \param len The length of the chunk.
+    \return The actual length of the chunk.
+*/
+typedef int (*t30_document_get_handler_t)(void *user_data, uint8_t msg[], int len);
+
+/*!
+    T.30 deliver document handler.
+    \brief T.30 deliver handler.
+    \param user_data An opaque pointer.
+    \param msg The document chunk.
+    \param len The length of the chunk.
+    \return The delivery status.
+*/
+typedef int (*t30_document_put_handler_t)(void *user_data, const uint8_t msg[], int len);
 
 /*!
     T.30 protocol completion codes, at phase E.
@@ -325,19 +345,6 @@ enum
 
 enum
 {
-    T30_FRONT_END_SEND_STEP_COMPLETE = 0,
-    /*! The current receive has completed. This is only needed to report an
-        unexpected end of the receive operation, as might happen with T.38
-        dying. */
-    T30_FRONT_END_RECEIVE_COMPLETE,
-    T30_FRONT_END_SIGNAL_PRESENT,
-    T30_FRONT_END_SIGNAL_ABSENT,
-    T30_FRONT_END_CED_PRESENT,
-    T30_FRONT_END_CNG_PRESENT
-};
-
-enum
-{
     /*! Support the V.27ter modem (2400, and 4800bps) for image transfer. */
     T30_SUPPORT_V27TER = 0x01,
     /*! Support the V.29 modem (9600, and 7200bps) for image transfer. */
@@ -352,77 +359,15 @@ enum
 
 enum
 {
-    /*! No compression */
-    T30_SUPPORT_NO_COMPRESSION = 0x01,
-    /*! T.1 1D compression */
-    T30_SUPPORT_T4_1D_COMPRESSION = 0x02,
-    /*! T.4 2D compression */
-    T30_SUPPORT_T4_2D_COMPRESSION = 0x04,
-    /*! T.6 2D compression */
-    T30_SUPPORT_T6_COMPRESSION = 0x08,
-    /*! T.85 monochrome JBIG compression, with fixed L0 */
-    T30_SUPPORT_T85_COMPRESSION = 0x10,
-    /*! T.85 monochrome JBIG compression, with variable L0 */
-    T30_SUPPORT_T85_L0_COMPRESSION = 0x20,
-    /*! T.43 colour JBIG compression */
-    T30_SUPPORT_T43_COMPRESSION = 0x40,
-    /*! T.45 run length colour compression */
-    T30_SUPPORT_T45_COMPRESSION = 0x80,
-    /*! T.81 + T.30 Annex E colour JPEG compression */
-    T30_SUPPORT_T81_COMPRESSION = 0x100,
-    /*! T.81 + T.30 Annex K colour sYCC-JPEG compression */
-    T30_SUPPORT_SYCC_T81_COMPRESSION = 0x200,
-    /*! T.88 monochrome JBIG2 compression */
-    T30_SUPPORT_T88_COMPRESSION = 0x400,
-    /*! Dither a gray scale image down a simple bilevel image, with rescaling to fit a FAX page */
-    T30_SUPPORT_GRAY_TO_BILEVEL = 0x10000000,
-    /*! Dither a colour image down a simple bilevel image, with rescaling to fit a FAX page */
-    T30_SUPPORT_COLOUR_TO_BILEVEL = 0x20000000
-};
-
-enum
-{
-    /*! Support standard FAX Y-resolution 98/100dpi */
-    T30_SUPPORT_STANDARD_RESOLUTION = 0x01,
-    /*! Support fine FAX Y-resolution 196/200dpi */
-    T30_SUPPORT_FINE_RESOLUTION = 0x02,
-    /*! Support super-fine FAX Y-resolution 392/400dpi */
-    T30_SUPPORT_SUPERFINE_RESOLUTION = 0x04,
-
-    /*! Support half FAX X-resolution 100/102dpi */
-    T30_SUPPORT_R4_RESOLUTION = 0x10000,
-    /*! Support standard FAX X-resolution 200/204dpi */
-    T30_SUPPORT_R8_RESOLUTION = 0x20000,
-    /*! Support double FAX X-resolution 400dpi */
-    T30_SUPPORT_R16_RESOLUTION = 0x40000,
-
-    /*! Support 300dpi x 300 dpi */
-    T30_SUPPORT_300_300_RESOLUTION = 0x100000,
-    /*! Support 400dpi x 400 dpi */
-    T30_SUPPORT_400_400_RESOLUTION = 0x200000,
-    /*! Support 600dpi x 600 dpi */
-    T30_SUPPORT_600_600_RESOLUTION = 0x400000,
-    /*! Support 1200dpi x 1200 dpi */
-    T30_SUPPORT_1200_1200_RESOLUTION = 0x800000,
-    /*! Support 300dpi x 600 dpi */
-    T30_SUPPORT_300_600_RESOLUTION = 0x1000000,
-    /*! Support 400dpi x 800 dpi */
-    T30_SUPPORT_400_800_RESOLUTION = 0x2000000,
-    /*! Support 600dpi x 1200 dpi */
-    T30_SUPPORT_600_1200_RESOLUTION = 0x4000000
-};
-
-enum
-{
-    T30_SUPPORT_215MM_WIDTH = 0x01,
-    T30_SUPPORT_255MM_WIDTH = 0x02,
-    T30_SUPPORT_303MM_WIDTH = 0x04,
-
-    T30_SUPPORT_UNLIMITED_LENGTH = 0x10000,
-    T30_SUPPORT_A4_LENGTH = 0x20000,
-    T30_SUPPORT_B4_LENGTH = 0x40000,
-    T30_SUPPORT_US_LETTER_LENGTH = 0x80000,
-    T30_SUPPORT_US_LEGAL_LENGTH = 0x100000
+    T30_FRONT_END_SEND_STEP_COMPLETE = 0,
+    /*! The current receive has completed. This is only needed to report an
+        unexpected end of the receive operation, as might happen with T.38
+        dying. */
+    T30_FRONT_END_RECEIVE_COMPLETE,
+    T30_FRONT_END_SIGNAL_PRESENT,
+    T30_FRONT_END_SIGNAL_ABSENT,
+    T30_FRONT_END_CED_PRESENT,
+    T30_FRONT_END_CNG_PRESENT
 };
 
 enum
@@ -523,7 +468,7 @@ typedef struct
 {
     /*! \brief The current bit rate for image transfer. */
     int bit_rate;
-    /*! \brief TRUE if error correcting mode is used. */
+    /*! \brief True if error correcting mode is used. */
     int error_correcting_mode;
     /*! \brief The number of pages sent so far. */
     int pages_tx;
@@ -554,7 +499,7 @@ typedef struct
     /*! \brief The size of the image, in bytes */
     int image_size;
     /*! \brief The type of compression used between the FAX machines */
-    int encoding;
+    int compression;
     /*! \brief The number of bad pixel rows in the most recent page. */
     int bad_rows;
     /*! \brief The largest number of bad pixel rows in a block in the most recent page. */
@@ -577,7 +522,7 @@ extern "C"
 /*! Initialise a T.30 context.
     \brief Initialise a T.30 context.
     \param s The T.30 context.
-    \param calling_party TRUE if the context is for a calling party. FALSE if the
+    \param calling_party True if the context is for a calling party. False if the
            context is for an answering party.
     \param set_rx_type_handler
     \param set_rx_type_user_data
@@ -617,7 +562,7 @@ SPAN_DECLARE(int) t30_restart(t30_state_t *s);
     if the job has finished.
     \brief Check if a T.30 call is still active.
     \param s The T.30 context.
-    \return TRUE for call still active, or FALSE for call completed. */
+    \return True for call still active, or false for call completed. */
 SPAN_DECLARE(int) t30_call_active(t30_state_t *s);
 
 /*! Cleanup a T.30 context if the call terminates.
@@ -663,7 +608,7 @@ SPAN_DECLARE(void) t30_non_ecm_put(void *user_data, const uint8_t buf[], int len
     \param user_data The T.30 context.
     \param msg The HDLC message.
     \param len The length of the message, in octets.
-    \param ok TRUE if the frame was received without error. */
+    \param ok True if the frame was received without error. */
 SPAN_DECLARE_NONSTD(void) t30_hdlc_accept(void *user_data, const uint8_t msg[], int len, int ok);
 
 /*! Report the passage of time to the T.30 engine.
@@ -681,13 +626,13 @@ SPAN_DECLARE(void) t30_get_transfer_statistics(t30_state_t *s, t30_stats_t *t);
 /*! Request a local interrupt of FAX exchange.
     \brief Request a local interrupt of FAX exchange.
     \param s The T.30 context.
-    \param state TRUE to enable interrupt request, else FALSE. */
+    \param state True to enable interrupt request, else false. */
 SPAN_DECLARE(void) t30_local_interrupt_request(t30_state_t *s, int state);
 
 /*! Allow remote interrupts of FAX exchange.
     \brief Allow remote interrupts of FAX exchange.
     \param s The T.30 context.
-    \param state TRUE to allow interruptd, else FALSE. */
+    \param state True to allow interruptd, else false. */
 SPAN_DECLARE(void) t30_remote_interrupts_allowed(t30_state_t *s, int state);
 
 #if defined(__cplusplus)
