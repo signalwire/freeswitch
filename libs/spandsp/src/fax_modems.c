@@ -151,7 +151,8 @@ SPAN_DECLARE(const char *) fax_modem_to_str(int modem)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void fax_modems_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
+//static void fax_modems_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
+SPAN_DECLARE(void) fax_modems_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
 {
     fax_modems_state_t *s;
 
@@ -427,9 +428,13 @@ SPAN_DECLARE(void) fax_modems_start_fast_modem(fax_modems_state_t *s, int which,
 #if defined(SPANDSP_SUPPORT_V34)
         case FAX_MODEM_V34_RX:
             v34_init(&s->fast_modems.v34, 2400, s->bit_rate, true, false, NULL, NULL, put_bit, put_bit_user_data);
+            //fax_modems_set_tx_handler(s, (span_tx_handler_t) &v34_rx, &s->fast_modems.v34_rx);
+            fax_modems_set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
             break;
         case FAX_MODEM_V34_TX:
             v34_init(&s->fast_modems.v34, 2400, s->bit_rate, true, false, get_bit, get_bit_user_data, NULL, NULL);
+            //fax_modems_set_tx_handler(s, (span_tx_handler_t) &v34_tx, &s->fast_modems.v34_tx);
+            fax_modems_set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
             break;
 #endif
         }
@@ -476,6 +481,18 @@ SPAN_DECLARE(void) fax_modems_start_fast_modem(fax_modems_state_t *s, int which,
             fax_modems_set_tx_handler(s, (span_tx_handler_t) &v17_tx, &s->fast_modems.v17_tx);
             fax_modems_set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
             break;
+#if defined(SPANDSP_SUPPORT_V34)
+        case FAX_MODEM_V34_RX:
+            v34_restart(&s->fast_modems.v34, 2400, s->bit_rate, false);
+            //fax_modems_set_tx_handler(s, (span_tx_handler_t) &v34_rx, &s->fast_modems.v34_rx);
+            fax_modems_set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+            break;
+        case FAX_MODEM_V34_TX:
+            v34_restart(&s->fast_modems.v34, 2400, s->bit_rate, false);
+            //fax_modems_set_tx_handler(s, (span_tx_handler_t) &v34_tx, &s->fast_modems.v34_tx);
+            fax_modems_set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+            break;
+#endif
         }
         /*endswitch*/
     }

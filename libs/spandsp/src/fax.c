@@ -256,8 +256,7 @@ static void fax_set_rx_type(void *user_data, int type, int bit_rate, int short_t
         return;
     t->current_rx_type = type;
     t->rx_bit_rate = bit_rate;
-    if (use_hdlc)
-        hdlc_rx_init(&t->hdlc_rx, false, true, HDLC_FRAMING_OK_THRESHOLD, t30_hdlc_accept, &s->t30);
+    hdlc_rx_init(&t->hdlc_rx, false, true, HDLC_FRAMING_OK_THRESHOLD, fax_modems_hdlc_accept, t);
 
     switch (type)
     {
