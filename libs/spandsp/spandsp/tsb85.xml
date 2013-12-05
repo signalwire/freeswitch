@@ -423,7 +423,7 @@
         <step dir="T" type="HDLC" tag="DCS" value="FF C8 41 00 50 00"/>
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
-        <step dir="T" type="TCF" modem="V.27ter/4800" value="900" pattern="7"/> <!-- 01010 for 50 bits, and then zero for the test of the TCF -->
+        <step dir="T" type="TCF" modem="V.27ter/4800" value="900" pattern="7"/> <!-- 01010 for 50 bits, and then zero for the rest of the TCF -->
 
         <step dir="R" type="HDLC" modem="V.21" tag="CFR" value="FF C8 21"/>
         <step dir="R" type="SILENCE"/>

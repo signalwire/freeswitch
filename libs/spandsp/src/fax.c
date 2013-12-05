@@ -77,6 +77,10 @@
 #include "spandsp/v27ter_rx.h"
 #include "spandsp/v17tx.h"
 #include "spandsp/v17rx.h"
+#if defined(SPANDSP_SUPPORT_V34)
+#include "spandsp/bitstream.h"
+#include "spandsp/v34.h"
+#endif
 #include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
@@ -103,6 +107,10 @@
 #include "spandsp/private/fsk.h"
 #include "spandsp/private/modem_connect_tones.h"
 #include "spandsp/private/v8.h"
+#if defined(SPANDSP_SUPPORT_V34)
+#include "spandsp/private/bitstream.h"
+#include "spandsp/private/v34.h"
+#endif
 #include "spandsp/private/v17tx.h"
 #include "spandsp/private/v17rx.h"
 #include "spandsp/private/v27ter_tx.h"

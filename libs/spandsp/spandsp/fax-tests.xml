@@ -163,7 +163,7 @@
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
-        <step dir="T" type="HDLC" tag="PPS-MPS" value="FF C8 7D 72 80 00 08"/>
+        <step dir="T" type="HDLC" tag="PPS-EOP" value="FF C8 7D 74 80 00 10"/>
         <step dir="T" type="POSTAMBLE"/>
 
         <possible-step>
