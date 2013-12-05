@@ -4112,10 +4112,12 @@ static int jb_valid(switch_rtp_t *rtp_session)
 
 static int check_recv_payload(switch_rtp_t *rtp_session)
 {
-	int ok = 0;
+	int ok = 1;
 
 	if (rtp_session->pmaps && *rtp_session->pmaps) {
 		payload_map_t *pmap;
+		ok = 0;
+
 		switch_mutex_lock(rtp_session->flag_mutex);
 		for (pmap = *rtp_session->pmaps; pmap && pmap->allocated; pmap = pmap->next) {					
 			if (!pmap->negotiated) {
@@ -5040,11 +5042,13 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			rtp_session->recv_msg.header.pt != 13 && 
 			rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
 			(!rtp_session->cng_pt || rtp_session->recv_msg.header.pt != rtp_session->cng_pt)) {
-			int accept_packet = 0;
+			int accept_packet = 1;
 			
 
 			if (rtp_session->pmaps && *rtp_session->pmaps) {
 				payload_map_t *pmap;
+				accept_packet = 0;
+
 				switch_mutex_lock(rtp_session->flag_mutex);
 				for (pmap = *rtp_session->pmaps; pmap && pmap->allocated; pmap = pmap->next) {					
 					
