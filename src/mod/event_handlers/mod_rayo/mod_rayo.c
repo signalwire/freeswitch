@@ -3936,10 +3936,15 @@ static int presence_api(char *cmd, switch_stream_handle_t *stream)
 SWITCH_STANDARD_API(rayo_api)
 {
 	struct rayo_cmd_alias *alias;
-	char *cmd_dup = strdup(cmd);
+	char *cmd_dup = NULL;
 	char *argv[2] = { 0 };
 	int success = 0;
 
+	if (zstr(cmd) ) {
+		goto done;
+	}
+
+	cmd_dup = strdup(cmd);
 	switch_separate_string(cmd_dup, ' ', argv, sizeof(argv) / sizeof(argv[0]));
 
 	/* check if a command alias */
@@ -3957,11 +3962,12 @@ SWITCH_STANDARD_API(rayo_api)
 		success = presence_api(argv[1], stream);
 	}
 
+done:
 	if (!success) {
 		stream->write_function(stream, "-ERR: USAGE %s\n", RAYO_API_SYNTAX);
 	}
 
-	free(cmd_dup);
+	switch_safe_free(cmd_dup);
 
 	return SWITCH_STATUS_SUCCESS;
 }
