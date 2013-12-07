@@ -108,7 +108,7 @@ set_fs_ver () {
   if [ -n "$rev" ]; then
     [ -n "$hrev" ] || hrev="$rev"
     sed -e "s|\(AC_SUBST(SWITCH_VERSION_REVISION, \[\).*\(\])\)|\1$rev\2|" \
-      -e "s|\(AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, \[\).*\(\])\)|\1$hrev\2|" \
+      -e "s|\(AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, \[\).*\(\])\)|\1'$hrev'\2|" \
       -e "s|#\(AC_SUBST(SWITCH_VERSION_REVISION\)|\1|" \
       -e "s|#\(AC_SUBST(SWITCH_VERSION_REVISION_HUMAN\)|\1|" \
       configure.in > configure.in.$$
