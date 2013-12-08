@@ -46,6 +46,33 @@ avoid_mods_squeeze=(
   formats/mod_vlc
   languages/mod_managed
 )
+manual_pkgs=(
+freeswitch-all
+freeswitch
+libfreeswitch1
+freeswitch-meta-bare
+freeswitch-meta-default
+freeswitch-meta-vanilla
+freeswitch-meta-sorbet
+freeswitch-meta-all
+freeswitch-meta-codecs
+freeswitch-meta-conf
+freeswitch-meta-lang
+freeswitch-meta-mod-say
+freeswitch-all-dbg
+freeswitch-dbg
+libfreeswitch1-dbg
+libfreeswitch-dev
+freeswitch-doc
+freeswitch-init
+freeswitch-sysvinit
+freeswitch-systemd
+freeswitch-lang
+freeswitch-music
+freeswitch-sounds
+freeswitch-sounds-en
+freeswitch-sounds-en-us
+)
 
 err () {
   echo "$0 error: $1" >&2
@@ -59,6 +86,31 @@ xread () {
   local ret=$?
   IFS="$xIFS"
   return $ret
+}
+
+intersperse () {
+  local sep="$1"
+  awk "
+    BEGIN {
+      first=1;
+      sep=\"${sep}\";
+    }"'
+    /.*/ {
+      if (first == 0) {
+        printf "%s%s", sep, $0;
+      } else {
+        printf "%s", $0;
+      }
+      first=0;
+    }
+    END { printf "\n"; }'
+}
+
+postfix () {
+  local px="$1"
+  awk "
+    BEGIN { px=\"${px}\"; }"'
+    /.*/ { printf "%s%s\n", $0, px; }'
 }
 
 avoid_mod_filter () {
@@ -168,6 +220,60 @@ map_langs () {
   done
 }
 
+map_pkgs () {
+  local fsx="$1"
+  for x in "${manual_pkgs[@]}"; do
+    $fsx $x
+  done
+  map_pkgs_confs () { $fsx "freeswitch-conf-${conf//_/-}"; }
+  map_confs map_pkgs_confs
+  map_pkgs_langs () { $fsx "freeswitch-lang-${lang//_/-}"; }
+  map_langs map_pkgs_langs
+  map_pkgs_mods () {
+    $fsx "freeswitch-mod-${module//_/-}"
+    $fsx "freeswitch-mod-${module//_/-}-dbg"; }
+  map_modules map_pkgs_mods
+}
+
+list_pkgs () {
+  list_pkgs_thunk () { printf '%s\n' "$1"; }
+  map_pkgs list_pkgs_thunk
+}
+
+list_freeswitch_all_pkgs () {
+  list_pkgs \
+    | grep -v '^freeswitch-all$' \
+    | grep -v -- '-dbg$'
+}
+
+list_freeswitch_all_provides () {
+  list_freeswitch_all_pkgs \
+    | intersperse ',\n '
+}
+
+list_freeswitch_all_replaces () {
+  list_freeswitch_all_pkgs \
+    | postfix ' (<= ${binary:Version})' \
+    | intersperse ',\n '
+}
+
+list_freeswitch_all_dbg_pkgs () {
+  list_pkgs \
+    | grep -v '^freeswitch-all-dbg$' \
+    | grep -- '-dbg$'
+}
+
+list_freeswitch_all_dbg_provides () {
+  list_freeswitch_all_dbg_pkgs \
+    | intersperse ',\n '
+}
+
+list_freeswitch_all_dbg_replaces () {
+  list_freeswitch_all_dbg_pkgs \
+    | postfix ' (<= ${binary:Version})' \
+    | intersperse ',\n '
+}
+
 print_source_control () {
 cat <<EOF
 Source: freeswitch
@@ -207,17 +313,9 @@ print_core_control () {
 cat <<EOF
 Package: freeswitch-all
 Architecture: any
-Provides: freeswitch, libfreeswitch1, freeswitch-doc, freeswitch-init
-Replaces: freeswitch (<= \${binary:Version}),
- libfreeswitch1 (<= \${binary:Version}),
- freeswitch-doc (<= \${binary:Version}),
- freeswitch-sysvinit (<= \${binary:Version}),
- freeswitch-systemd (<= \${binary:Version})
-Breaks: freeswitch (<= \${binary:Version}),
- libfreeswitch1 (<= \${binary:Version}),
- freeswitch-doc (<= \${binary:Version}),
- freeswitch-sysvinit (<= \${binary:Version}),
- freeswitch-systemd (<= \${binary:Version})
+Provides: $(list_freeswitch_all_provides)
+Replaces: $(list_freeswitch_all_replaces)
+Conflicts: $(list_freeswitch_all_replaces)
 Depends: \${shlibs:Depends}, \${perl:Depends}, \${misc:Depends},
  freeswitch-music-default (>= 1.0.8),
  freeswitch-sounds-en-us-callie (>= 1.0.25) | freeswitch-sounds,
@@ -647,6 +745,9 @@ Package: freeswitch-all-dbg
 Section: debug
 Priority: extra
 Architecture: any
+Provides: $(list_freeswitch_all_dbg_provides)
+Replaces: $(list_freeswitch_all_dbg_replaces)
+Breaks: $(list_freeswitch_all_dbg_replaces)
 Depends: \${misc:Depends}, freeswitch (= \${binary:Version})
 Description: debugging symbols for FreeSWITCH
  $(debian_wrap "${fs_description}")
