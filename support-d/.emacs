@@ -6,7 +6,7 @@
 ;(setq cperl-hairy t)
 (global-unset-key "\C-h")
 (global-set-key "\C-h" 'delete-backward-char)
-(load "/usr/share/emacs/site-lisp/rng-auto.el")
+;(load "/usr/share/emacs/site-lisp/rng-auto.el")
 
 (require 'cc-mode)
 (defun my-build-tab-stop-list (width)
