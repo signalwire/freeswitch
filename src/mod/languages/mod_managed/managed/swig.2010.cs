@@ -2763,8 +2763,8 @@ public class freeswitch {
     freeswitchPINVOKE.switch_time_set_monotonic((int)enable);
   }
 
-  public static void switch_time_set_timerfd(switch_bool_t enable) {
-    freeswitchPINVOKE.switch_time_set_timerfd((int)enable);
+  public static void switch_time_set_timerfd(int enable) {
+    freeswitchPINVOKE.switch_time_set_timerfd(enable);
   }
 
   public static void switch_time_set_nanosleep(switch_bool_t enable) {
@@ -3158,6 +3158,10 @@ public class freeswitch {
   public static switch_call_direction_t switch_ice_direction(SWIGTYPE_p_switch_core_session session) {
     switch_call_direction_t ret = (switch_call_direction_t)freeswitchPINVOKE.switch_ice_direction(SWIGTYPE_p_switch_core_session.getCPtr(session));
     return ret;
+  }
+
+  public static void switch_core_session_debug_pool(switch_stream_handle stream) {
+    freeswitchPINVOKE.switch_core_session_debug_pool(switch_stream_handle.getCPtr(stream));
   }
 
   public static switch_status_t switch_loadable_module_init(switch_bool_t autoload) {
@@ -10722,6 +10726,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ice_direction")]
   public static extern int switch_ice_direction(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_debug_pool")]
+  public static extern void switch_core_session_debug_pool(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_module_name_set")]
   public static extern void switch_loadable_module_interface_module_name_set(HandleRef jarg1, string jarg2);
@@ -26726,6 +26733,7 @@ public enum switch_channel_flag_t {
   CF_VIDEO_ECHO,
   CF_SLA_INTERCEPT,
   CF_VIDEO_BREAK,
+  CF_MEDIA_PAUSE,
   CF_FLAG_MAX
 }
 
@@ -35305,6 +35313,8 @@ public enum switch_rtp_flag_t {
   SWITCH_RTP_FLAG_KILL_JB,
   SWITCH_RTP_FLAG_VIDEO_BREAK,
   SWITCH_RTP_FLAG_PAUSE,
+  SWITCH_RTP_FLAG_FIR,
+  SWITCH_RTP_FLAG_PLI,
   SWITCH_RTP_FLAG_INVALID
 }
 
