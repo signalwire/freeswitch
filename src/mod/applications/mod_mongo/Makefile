@@ -11,8 +11,8 @@ LOCAL_OBJS=
 
 LOCAL_CFLAGS=-I$(MONGO_CXX_DRIVER_SRC)/src
 LOCAL_LIBADD=$(LIBMONGOCLIENT_A)
-#LOCAL_LDFLAGS=-lboost_thread -lboost_filesystem-mt -lboost_system-mt
-LOCAL_LDFLAGS=-lboost_thread-mt -lboost_filesystem-mt -lboost_system-mt
+LOCAL_LDFLAGS=-lboost_thread -lboost_filesystem-mt -lboost_system-mt
+#LOCAL_LDFLAGS=-lboost_thread-mt -lboost_filesystem-mt -lboost_system-mt
 MODDIR=$(shell pwd)
 
 
