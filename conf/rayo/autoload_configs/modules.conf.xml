@@ -18,8 +18,6 @@
     <load module="mod_conference"/>
     <load module="mod_dptools"/>
     <load module="mod_expr"/>
-    <load module="mod_hash"/>
-    <!--<load module="mod_distributor"/>-->
     <load module="mod_esf"/>
     <load module="mod_fsv"/>
     <load module="mod_http_cache"/>
@@ -33,6 +31,8 @@
     <load module="mod_speex"/>
     <load module="mod_opus"/>
     <load module="mod_ilbc"/>
+    <load module="mod_h26x"/>
+    <load module="mod_vp8"/>
 
     <!-- File Format Interfaces -->
     <load module="mod_sndfile"/>
@@ -44,9 +44,6 @@
     <load module="mod_local_stream"/>
     <load module="mod_tone_stream"/>
     <load module="mod_ssml"/>
-
-    <!-- Languages -->
-    <load module="mod_lua"/>
 
     <!-- ASR /TTS -->
     <load module="mod_flite"/>
