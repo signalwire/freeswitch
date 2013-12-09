@@ -59,7 +59,7 @@ extern "C"
 {
 #endif
 
-SPAN_DECLARE(void) fax_modems_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok);
+SPAN_DECLARE_NONSTD(void) fax_modems_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok);
 
 /*! Convert a FAX modem type to a short text description.
     \brief Convert a FAX modem type to a short text description.
