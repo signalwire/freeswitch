@@ -788,7 +788,7 @@ switch_status_t skinny_session_start_media(switch_core_session_t *session, liste
 		send_open_receive_channel(listener,
 				tech_pvt->call_id, /* uint32_t conference_id, */
 				tech_pvt->call_id, /* uint32_t pass_thru_party_id, */
-				20, /* uint32_t ms_per_packet, */
+				SKINNY_PTIME, /* uint32_t ms_per_packet, */
 				SKINNY_CODEC_ULAW_64K, /* uint32_t payload_capacity, */
 				0, /* uint32_t echo_cancel_type, */
 				0, /* uint32_t g723_bitrate, */
@@ -854,7 +854,7 @@ switch_status_t skinny_session_unhold_line(switch_core_session_t *session, liste
 	send_open_receive_channel(listener,
 		tech_pvt->call_id, /* uint32_t conference_id, */
 		tech_pvt->call_id, /* uint32_t pass_thru_party_id, */
-		20, /* uint32_t ms_per_packet, */
+		SKINNY_PTIME, /* uint32_t ms_per_packet, */
 		SKINNY_CODEC_ULAW_64K, /* uint32_t payload_capacity, */
 		0, /* uint32_t echo_cancel_type, */
 		0, /* uint32_t g723_bitrate, */
@@ -1830,7 +1830,7 @@ switch_status_t skinny_handle_open_receive_channel_ack_message(listener_t *liste
 
 		/* Codec */
 		tech_pvt->iananame = "PCMU"; /* TODO */
-		tech_pvt->codec_ms = 20; /* TODO */
+		tech_pvt->codec_ms = SKINNY_PTIME; /* TODO */
 		tech_pvt->rm_rate = 8000; /* TODO */
 		tech_pvt->rm_fmtp = NULL; /* TODO */
 		tech_pvt->agreed_pt = (switch_payload_t) 0; /* TODO */
@@ -1879,7 +1879,7 @@ switch_status_t skinny_handle_open_receive_channel_ack_message(listener_t *liste
 				tech_pvt->party_id, /* uint32_t pass_thru_party_id, */
 				addr.s_addr, /* uint32_t remote_ip, */
 				tech_pvt->local_sdp_audio_port, /* uint32_t remote_port, */
-				20, /* uint32_t ms_per_packet, */
+				SKINNY_PTIME, /* uint32_t ms_per_packet, */
 				SKINNY_CODEC_ULAW_64K, /* uint32_t payload_capacity, */
 				184, /* uint32_t precedence, */
 				0, /* uint32_t silence_suppression, */
