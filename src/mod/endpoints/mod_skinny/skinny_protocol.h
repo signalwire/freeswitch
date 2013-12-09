@@ -39,6 +39,10 @@
 /*****************************************************************************/
 /* SKINNY TYPES */
 /*****************************************************************************/
+
+/* Hardcode ptime in one place until we make it dynamic */
+#define SKINNY_PTIME 20
+
 typedef enum {
 	SKINNY_CODEC_NONE = 0,
 	SKINNY_CODEC_NONSTANDARD = 1,
