@@ -649,7 +649,7 @@ pristine:
 	git clean -fdx
 	git reset --hard
 
-update-clean: clean libs/openzap/Makefile python-reconf
+update-clean: clean libs/openzap/Makefile python-reconf lua-reconf
 	cd libs/sofia-sip && $(MAKE) clean
 	cd libs/openzap && $(MAKE) clean
 	cd libs/portaudio && $(MAKE) clean
@@ -707,6 +707,10 @@ sofia-reconf:
 	cd libs/sofia-sip && sh ./autogen.sh
 	cd libs/sofia-sip && $(MAKE) clean
 	cd libs/sofia-sip && ./configure --prefix=$(prefix) --with-pic --with-glib=no --disable-shared
+
+lua-reconf:
+	cd src/mod/languages/mod_lua/lua && make clean
+	cd src/mod/languages/mod_lua && make clean
 
 cluecon:
 	@clear
