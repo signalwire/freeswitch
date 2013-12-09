@@ -6,12 +6,13 @@ MONGO_CXX_DRIVER_TARBALL=mongodb-linux-x86_64-$(MONGO_CXX_DRIVER_VERSION)-latest
 MONGO_CXX_DRIVER_SRC=$(BASE)/libs/mongo-cxx-driver-$(MONGO_CXX_DRIVER_VERSION)
 LIBMONGOCLIENT_A =$(MONGO_CXX_DRIVER_SRC)/libmongoclient.a
 
-LOCAL_SOURCES=mongo_conn.cpp
-LOCAL_OBJS=mongo_conn.o
+LOCAL_SOURCES=
+LOCAL_OBJS=
 
 LOCAL_CFLAGS=-I$(MONGO_CXX_DRIVER_SRC)/src
 LOCAL_LIBADD=$(LIBMONGOCLIENT_A)
-LOCAL_LDFLAGS=-lboost_thread -lboost_filesystem-mt -lboost_system-mt
+#LOCAL_LDFLAGS=-lboost_thread -lboost_filesystem-mt -lboost_system-mt
+LOCAL_LDFLAGS=-lboost_thread-mt -lboost_filesystem-mt -lboost_system-mt
 MODDIR=$(shell pwd)
 
 

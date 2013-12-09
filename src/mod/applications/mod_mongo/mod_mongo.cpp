@@ -31,17 +31,20 @@
  */
 
 #include <switch.h>
-#include "mod_mongo.h"
+#include <mongo/client/dbclient.h>
+
+using namespace mongo;
 
 #define DELIMITER ';'
 #define FIND_ONE_SYNTAX  "mongo_find_one ns; query; fields; options"
 #define MAPREDUCE_SYNTAX "mongo_mapreduce ns; query"
 
 static struct {
-	mongo_connection_pool_t *conn_pool;
-	char *map;
-	char *reduce;
-	char *finalize;
+	const char *map;
+	const char *reduce;
+	const char *finalize;
+	const char *conn_str;
+	double socket_timeout;
 } globals;
 
 static int parse_query_options(char *query_options_str)
@@ -86,6 +89,7 @@ SWITCH_STANDARD_API(mongo_mapreduce_function)
 
 	if (!zstr(ns) && !zstr(json_query)) {
 		try {
+			scoped_ptr<ScopedDbConnection> conn(ScopedDbConnection::getScopedDbConnection(string(globals.conn_str, globals.socket_timeout)));
 			BSONObj query = fromjson(json_query);
 			BSONObj out;
 			BSONObjBuilder cmd;
@@ -105,20 +109,19 @@ SWITCH_STANDARD_API(mongo_mapreduce_function)
 			}
 			cmd.append("out", BSON("inline" << 1));
 
-			conn = mongo_connection_pool_get(globals.conn_pool);
-			if (conn) {
-				conn->runCommand(nsGetDB(ns), cmd.done(), out);
-				mongo_connection_pool_put(globals.conn_pool, conn, SWITCH_FALSE);
-
+			try {
+				conn->get()->runCommand(nsGetDB(ns), cmd.done(), out);
 				stream->write_function(stream, "-OK\n%s\n", out.jsonString().c_str());
-			} else {
-				stream->write_function(stream, "-ERR\nNo connection\n");
+			} catch (DBException &e) {
+				stream->write_function(stream, "-ERR\n%s\n", e.toString().c_str());
+			} catch (...) {
+				stream->write_function(stream, "-ERR\nUnknown exception!\n");
 			}
+			conn->done();
 		} catch (DBException &e) {
-			if (conn) {
-				mongo_connection_pool_put(globals.conn_pool, conn, SWITCH_TRUE);
-			}
 			stream->write_function(stream, "-ERR\n%s\n", e.toString().c_str());
+		} catch (...) {
+			stream->write_function(stream, "-ERR\nUnknown exception!\n");
 		}
 	} else {
 		stream->write_function(stream, "-ERR\n%s\n", MAPREDUCE_SYNTAX);	  
@@ -134,7 +137,7 @@ SWITCH_STANDARD_API(mongo_find_one_function)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *ns = NULL, *json_query = NULL, *json_fields = NULL, *query_options_str = NULL;
 	int query_options = 0;
-
+	
 	ns = strdup(cmd);
 	switch_assert(ns != NULL);
 
@@ -152,29 +155,24 @@ SWITCH_STANDARD_API(mongo_find_one_function)
 	}
 
 	if (!zstr(ns) && !zstr(json_query) && !zstr(json_fields)) {
-
-		DBClientBase *conn = NULL;
-
 		try {
+			scoped_ptr<ScopedDbConnection> conn(ScopedDbConnection::getScopedDbConnection(string(globals.conn_str), globals.socket_timeout));
 			BSONObj query = fromjson(json_query);
 			BSONObj fields = fromjson(json_fields);
-
-			conn = mongo_connection_pool_get(globals.conn_pool);
-			if (conn) {
-				BSONObj res = conn->findOne(ns, Query(query), &fields, query_options);
-				mongo_connection_pool_put(globals.conn_pool, conn, SWITCH_FALSE);
-
+			try {
+				BSONObj res = conn->get()->findOne(ns, Query(query), &fields, query_options);
 				stream->write_function(stream, "-OK\n%s\n", res.jsonString().c_str());
-			} else {
-				stream->write_function(stream, "-ERR\nNo connection\n");
+			} catch (DBException &e) {
+				stream->write_function(stream, "-ERR\n%s\n", e.toString().c_str());
+			} catch (...) {
+				stream->write_function(stream, "-ERR\nUnknown exception!\n");
 			}
+			conn->done();
 		} catch (DBException &e) {
-			if (conn) {
-				mongo_connection_pool_put(globals.conn_pool, conn, SWITCH_TRUE);
-			}
 			stream->write_function(stream, "-ERR\n%s\n", e.toString().c_str());
+		} catch (...) {
+			stream->write_function(stream, "-ERR\nUnknown exception!\n");
 		}
-
 	} else {
 	  stream->write_function(stream, "-ERR\n%s\n", FIND_ONE_SYNTAX);	  
 	}
@@ -184,13 +182,18 @@ SWITCH_STANDARD_API(mongo_find_one_function)
 	return status;
 }
 
-static switch_status_t config(void)
+static switch_status_t config(switch_memory_pool_t *pool)
 {
 	const char *cf = "mongo.conf";
 	switch_xml_t cfg, xml, settings, param;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	const char *conn_str = "127.0.0.1";
-	switch_size_t min_connections = 1, max_connections = 1;
+
+	/* set defaults */
+	globals.map = "";
+	globals.reduce = "";
+	globals.finalize = "";
+	globals.conn_str = "";
+	globals.socket_timeout = 0.0;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
@@ -201,36 +204,69 @@ static switch_status_t config(void)
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
-			int tmp;
 
-			if (!strcmp(var, "host")) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "'host' is deprecated. use 'connection-string'\n"); 
-				conn_str = val;
-			} else if (!strcmp(var, "connection-string")) {
-				conn_str = val;
-			} else if (!strcmp(var, "min-connections")) {
-				if ((tmp = atoi(val)) > 0) {
-					min_connections = tmp;
-				}
-			} else if (!strcmp(var, "max-connections")) {
-				if ((tmp = atoi(val)) > 0) {
-					max_connections = tmp;
+			if (!strcmp(var, "connection-string")) {
+				if (zstr(val)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "missing connection-string value\n");
+					status = SWITCH_STATUS_GENERR;
+				} else {
+					try {
+						string errmsg;
+						ConnectionString cs = ConnectionString::parse(string(val), errmsg);
+						if (!cs.isValid()) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "connection-string \"%s\" is not valid: %s\n", val, errmsg.c_str());
+							status = SWITCH_STATUS_GENERR;
+						} else {
+							globals.conn_str = switch_core_strdup(pool, val);
+						}
+					} catch (DBException &e) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "connection-string \"%s\" is not valid: %s\n", val, e.toString().c_str());
+						status = SWITCH_STATUS_GENERR;
+					} catch (...) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "connection-string \"%s\" is not valid\n", val);
+						status = SWITCH_STATUS_GENERR;
+					}
 				}
 			} else if (!strcmp(var, "map")) {
-				globals.map = strdup(val);
+				if (!zstr(val)) {
+					globals.map = switch_core_strdup(pool, val);
+				}
 			} else if (!strcmp(var, "reduce")) {
-				globals.reduce = strdup(val);
+				if (!zstr(val)) {
+					globals.reduce = switch_core_strdup(pool, val);
+				}
 			} else if (!strcmp(var, "finalize")) {
-				globals.finalize = strdup(val);
+				if (!zstr(val)) {
+					globals.finalize = switch_core_strdup(pool, val);
+				}
+			} else if (!strcmp(var, "socket-timeout")) {
+				if (!zstr(val)) {
+					if (switch_is_number(val)) {
+						double timeout = atof(val);
+						if (timeout >= 0.0) {
+							globals.socket_timeout = timeout;
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "socket-timeout \"%s\" is not valid\n", val);
+						}
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "socket-timeout \"%s\" is not valid\n", val);
+					}
+				}
+			} else if (!strcmp(var, "max-connections")) {
+				if (!zstr(val)) {
+					if (switch_is_number(val)) {
+						int max_connections = atoi(val);
+						if (max_connections > 0) {
+							PoolForHost::setMaxPerHost(max_connections);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "max-connections \"%s\" is not valid\n", val);
+						}
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "max-connections \"%s\" is not valid\n", val);
+					}
+				}
 			}
 		}
-	}
-
-	if (mongo_connection_pool_create(&globals.conn_pool, min_connections, max_connections, conn_str) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Can't create connection pool\n");
-		status = SWITCH_STATUS_GENERR;
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Mongo connection pool created [%s %d/%d]\n", conn_str, (int)min_connections, (int)max_connections);
 	}
 
 	switch_xml_free(xml);
@@ -255,7 +291,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_mongo_load)
 
 	memset(&globals, 0, sizeof(globals));
 
-	if (config() != SWITCH_STATUS_SUCCESS) {
+	if (config(pool) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -267,11 +303,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_mongo_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_mongo_shutdown)
 {
-	mongo_connection_pool_destroy(&globals.conn_pool);
-	switch_safe_free(globals.map);
-	switch_safe_free(globals.reduce);
-	switch_safe_free(globals.finalize);
-
+	ScopedDbConnection::clearPool();
 	return SWITCH_STATUS_SUCCESS;
 }
 
