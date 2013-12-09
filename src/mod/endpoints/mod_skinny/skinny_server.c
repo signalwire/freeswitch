@@ -849,7 +849,25 @@ switch_status_t skinny_session_unhold_line(switch_core_session_t *session, liste
 	send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, tech_pvt->call_id);
 	send_set_speaker_mode(listener, SKINNY_SPEAKER_ON);
 	send_select_soft_keys(listener, line_instance, tech_pvt->call_id, SKINNY_KEY_SET_RING_OUT, 0xffff);
-	skinny_session_start_media(session, listener, line_instance);
+
+	send_stop_tone(listener, line_instance, tech_pvt->call_id);
+	send_open_receive_channel(listener,
+		tech_pvt->call_id, /* uint32_t conference_id, */
+		tech_pvt->call_id, /* uint32_t pass_thru_party_id, */
+		20, /* uint32_t ms_per_packet, */
+		SKINNY_CODEC_ULAW_64K, /* uint32_t payload_capacity, */
+		0, /* uint32_t echo_cancel_type, */
+		0, /* uint32_t g723_bitrate, */
+		0, /* uint32_t conference_id2, */
+		0 /* uint32_t reserved[10] */
+		);
+
+	skinny_line_set_state(listener, line_instance, tech_pvt->call_id, SKINNY_CONNECTED);
+	send_select_soft_keys(listener, line_instance, tech_pvt->call_id, SKINNY_KEY_SET_CONNECTED, 0xffff);
+
+	send_display_prompt_status_textid(listener, 0, SKINNY_TEXTID_CONNECTED, line_instance, tech_pvt->call_id);
+	skinny_session_send_call_info(session, listener, line_instance);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
