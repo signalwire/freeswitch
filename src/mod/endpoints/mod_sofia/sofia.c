@@ -337,6 +337,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 	switch_event_t *s_event = NULL;
 	sofia_gateway_subscription_t *gw_sub_ptr;
 	int sub_state;
+	sofia_gateway_t *gateway = NULL;
 
 	tl_gets(tags, NUTAG_SUBSTATE_REF(sub_state), TAG_END());
 
@@ -445,19 +446,25 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 		}
 	}
 
-	if (!sofia_private || !sofia_private->gateway) {
+	if (!sofia_private || zstr(sofia_private->gateway_name)) {
 		if (profile->debug) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Gateway information missing Subscription Event: %s\n",
 							  sip->sip_event->o_type);
 		}
 		goto error;
 	}
+	
+
+	if (!(gateway = sofia_reg_find_gateway(sofia_private->gateway_name))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Gateway information missing\n");
+		goto error;
+	}
 
 	/* find the corresponding gateway subscription (if any) */
-	if (!(gw_sub_ptr = sofia_find_gateway_subscription(sofia_private->gateway, sip->sip_event->o_type))) {
+	if (!(gw_sub_ptr = sofia_find_gateway_subscription(gateway, sip->sip_event->o_type))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 						  "Could not find gateway subscription.  Gateway: %s.  Subscription Event: %s\n",
-						  sofia_private->gateway->name, sip->sip_event->o_type);
+						  gateway->name, sip->sip_event->o_type);
 		goto error;
 	}
 
@@ -466,17 +473,28 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 		goto error;
 	}
 
+	if (sip->sip_subscription_state && sip->sip_subscription_state->ss_expires) {
+		int delta = atoi(sip->sip_subscription_state->ss_expires);
+
+		delta /= 2;
+
+		if (delta < 1) {
+			delta = 1;
+		}
+		gw_sub_ptr->expires = switch_epoch_time_now(NULL) + delta;
+	}
+
 	/* dispatch freeswitch event */
 	if (switch_event_create(&s_event, SWITCH_EVENT_NOTIFY_IN) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "event", sip->sip_event->o_type);
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "pl_data", sip->sip_payload ? sip->sip_payload->pl_data : "");
 		if ( sip->sip_content_type != NULL )
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "sip_content_type", sip->sip_content_type->c_type);
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "port", "%d", sofia_private->gateway->profile->sip_port);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "port", "%d", gateway->profile->sip_port);
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "module_name", "mod_sofia");
-		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile_name", sofia_private->gateway->profile->name);
-		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile_uri", sofia_private->gateway->profile->url);
-		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "gateway_name", sofia_private->gateway->name);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile_name", gateway->profile->name);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile_uri", gateway->profile->url);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "gateway_name", gateway->name);
 		if ( sip->sip_call_info != NULL ) {
 			sip_call_info_t *call_info = sip->sip_call_info;
 			int cur_len = 0;
@@ -565,10 +583,14 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 
   end:
 
-	if (sub_state == nua_substate_terminated && sofia_private && sofia_private != &mod_sofia_globals.destroy_private &&
+	if (!gateway && sub_state == nua_substate_terminated && sofia_private && sofia_private != &mod_sofia_globals.destroy_private &&
 		sofia_private != &mod_sofia_globals.keep_private) {
 		sofia_private->destroy_nh = 1;
 		sofia_private->destroy_me = 1;
+	}
+
+	if (gateway) {
+		sofia_reg_release_gateway(gateway);
 	}
 
 }
@@ -1049,9 +1071,9 @@ static void our_sofia_event_callback(nua_event_t event,
 
 
 	if (sofia_private && sofia_private != &mod_sofia_globals.destroy_private && sofia_private != &mod_sofia_globals.keep_private) {
-		if ((gateway = sofia_private->gateway)) {
-			/* Released in sofia_reg_release_gateway() */
-			if (sofia_reg_gateway_rdlock(gateway) != SWITCH_STATUS_SUCCESS) {
+
+		if (!zstr(sofia_private->gateway_name)) {
+			if (!(gateway = sofia_reg_find_gateway(sofia_private->gateway_name))) {
 				return;
 			}
 		} else if (!zstr(sofia_private->uuid)) {
@@ -1499,9 +1521,16 @@ static void our_sofia_event_callback(nua_event_t event,
 	case nua_r_authenticate:
 
 		if (status >= 500) {
-			if (sofia_private && sofia_private->gateway) {
-				nua_handle_destroy(sofia_private->gateway->nh);
-				sofia_private->gateway->nh = NULL;
+			if (sofia_private && !zstr(sofia_private->gateway_name)) {
+				sofia_gateway_t *gateway = NULL;
+
+				if ((gateway = sofia_reg_find_gateway(sofia_private->gateway_name))) {
+					nua_handle_bind(gateway->nh, NULL);
+					gateway->sofia_private = NULL;
+					nua_handle_destroy(gateway->nh);
+					gateway->nh = NULL;
+					sofia_reg_release_gateway(gateway);
+				}
 			} else {
 				nua_handle_destroy(nh);
 			}
@@ -2325,10 +2354,9 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 
 			if (++gateway_loops >= GATEWAY_SECONDS) {
 				sofia_reg_check_gateway(profile, switch_epoch_time_now(NULL));
+				sofia_sub_check_gateway(profile, switch_epoch_time_now(NULL));
 				gateway_loops = 0;
 			}
-
-			sofia_sub_check_gateway(profile, time(NULL));
 		}
 
 		switch_yield(1000000);

@@ -164,7 +164,6 @@ typedef struct sofia_dispatch_event_s {
 
 struct sofia_private {
 	char uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
-	sofia_gateway_t *gateway;
 	char gateway_name[256];
 	char auth_gateway_name[256];
 	char *call_id;
@@ -422,6 +421,7 @@ typedef enum {
 
 struct sofia_gateway_subscription {
 	sofia_gateway_t *gateway;
+	sofia_private_t *sofia_private;
 	nua_handle_t *nh;
 	char *expires_str;
 	char *event;				/* eg, 'message-summary' to subscribe to MWI events */
