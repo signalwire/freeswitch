@@ -22,6 +22,7 @@
 #                 Marc Olivier Chouinard
 #                 Raymond Chandler
 #                 Ken Rice <krice@freeswitch.org>
+#                 Chris Rienzo <crienzo@grasshopper.com>
 #
 # Maintainer(s): Ken Rice <krice@freeswitch.org>
 #
@@ -33,6 +34,8 @@
 %define build_py26_esl 0
 %define build_timerfd 0
 %define build_mod_esl 0
+%define build_mod_rayo 1
+%define build_mod_ssml 1
 
 %{?with_sang_tc:%define build_sng_tc 1 }
 %{?with_sang_isdn:%define build_sng_isdn 1 }
@@ -969,6 +972,17 @@ Requires:	%{name} = %{version}-%{release}
 %description event-json-cdr
 JSON CDR Logger for FreeSWITCH.
 
+%if %{build_mod_rayo}
+%package event-rayo
+Summary:        Rayo (XMPP 3PCC) server for the FreeSWITCH open source telephony platform
+Group:          System/Libraries
+Requires:	%{name} = %{version}-%{release}
+
+%description event-rayo
+Rayo 3PCC for FreeSWITCH.  http://rayo.org   http://xmpp.org/extensions/xep-0327.html
+Rayo is an XMPP protocol extension for third-party control of telephone calls.
+%endif
+
 %package event-snmp
 Summary:	SNMP stats reporter for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
@@ -1031,6 +1045,16 @@ Requires:	%{name} = %{version}-%{release}
 %description format-mod-shout
 Mod Shout is a FreeSWITCH module to allow you to stream audio from MP3s or a i
 shoutcast stream.
+
+%if %{build_mod_ssml}
+%package format-ssml
+Summary:        Adds Speech Synthesis Markup Language (SSML) parser format for the FreeSWITCH open source telephony platform
+Group:          System/Libraries
+Requires:       %{name} = %{version}-%{release}
+
+%description format-ssml
+mod_ssml is a FreeSWITCH module that renders SSML into audio.  This module requires a text-to-speech module for speech synthesis.
+%endif
 
 %package format-tone-stream
 Summary:	Implements TGML Tone Generation for the FreeSWITCH open source telephony platform
@@ -1368,6 +1392,9 @@ EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_pg_csv
 			event_handlers/mod_cdr_mongodb event_handlers/mod_erlang_event event_handlers/mod_event_multicast \
 			event_handlers/mod_event_socket event_handlers/mod_json_cdr \
 			event_handlers/mod_snmp"
+%if %{build_mod_rayo}
+EVENT_HANDLERS_MODULES+=" event_handlers/mod_rayo"
+%endif
 
 #### BUILD ISSUES NET RESOLVED FOR RELEASE event_handlers/mod_event_zmq 
 ######################################################################################################################
@@ -1377,6 +1404,9 @@ EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_pg_csv
 ######################################################################################################################
 FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_portaudio_stream \
                  formats/mod_shell_stream formats/mod_shout formats/mod_sndfile formats/mod_tone_stream"
+%if %{build_mod_ssml}
+FORMATS_MODULES+=" formats/mod_ssml"
+%endif
 
 ######################################################################################################################
 #
@@ -1696,8 +1726,7 @@ fi
 %{LIBDIR}/*.a
 %{LIBDIR}/*.la
 %{PKGCONFIGDIR}/*
-%{MODINSTDIR}/*.a
-%{MODINSTDIR}/*.la
+%{MODINSTDIR}/*.*a
 %{INCLUDEDIR}/*.h
 
 
@@ -2177,6 +2206,12 @@ fi
 %defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/mod_json_cdr.so*
 
+%if %{build_mod_rayo}
+%files event-rayo 
+%defattr(-, freeswitch, daemon)
+%{MODINSTDIR}/mod_rayo.so*
+%endif
+
 %files event-snmp
 %defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/mod_snmp.so*
@@ -2206,6 +2241,12 @@ fi
 %files format-mod-shout
 %defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/mod_shout.so*
+
+%if %{build_mod_ssml}
+%files format-ssml
+%defattr(-, freeswitch, daemon)
+%{MODINSTDIR}/mod_ssml.so*
+%endif
 
 %files format-tone-stream
 %defattr(-, freeswitch, daemon)
@@ -2373,6 +2414,9 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Mon Dec 09 2013 - crienzo@grasshopper.com
+- Add mod_ssml, mod_rayo
+- Fix build on master
 * Thu Sep 19 2012 - krice@freeswitch.org
 - Add support for Spanish and Portugese say language modules
 * Thu Jan 26 2012 - krice@freeswitch.org
