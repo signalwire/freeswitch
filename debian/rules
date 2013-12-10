@@ -133,4 +133,3 @@ binary-quicktest:
 	echo "applications/mod_commands" > debian/modules.conf
 	(cd debian && ./bootstrap.sh)
 	dh binary
-
