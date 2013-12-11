@@ -1346,16 +1346,16 @@ static int listen_callback(void *pArg, int argc, char **argv, char **columnNames
 
 static char *resolve_id(const char *myid, const char *domain_name, const char *action)
 {
-	switch_xml_t xx_user, xx_domain, xx_domain_root;
+	switch_xml_t xx_user;
 	switch_event_t *params;
 	char *ret = (char *) myid;
 
 	switch_event_create(&params, SWITCH_EVENT_GENERAL);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", action);
 
-	if (switch_xml_locate_user("id", myid, domain_name, NULL, &xx_domain_root, &xx_domain, &xx_user, NULL, params) == SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate_user_merged("id:number-alias", myid, domain_name, NULL, &xx_user, params) == SWITCH_STATUS_SUCCESS) {
 		ret = strdup(switch_xml_attr(xx_user, "id"));
-		switch_xml_free(xx_domain_root);
+		switch_xml_free(xx_user);
 	}
 
 	switch_event_destroy(&params);

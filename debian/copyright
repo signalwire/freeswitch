@@ -1427,7 +1427,7 @@ Files: libs/js/nsprpub/pr/tests/tmocon.c
  libs/js/nsprpub/pr/src/md/unix/os_ReliantUNIX.s
  libs/js/nsprpub/pr/src/md/unix/os_Darwin_ppc.s
  libs/js/nsprpub/pr/src/md/unix/os_SunOS_ultrasparc.s
- libs/js/nsprpub/pr/src/md/unix/os_Linux_ia64.s 
+ libs/js/nsprpub/pr/src/md/unix/os_Linux_ia64.s
  libs/js/nsprpub/pr/tests/testfile.c
  libs/js/nsprpub/pr/src/md/unix/os_Darwin_x86.s
  libs/js/nsprpub/pr/src/md/unix/os_AIX.s
@@ -1958,7 +1958,7 @@ License: LGPL
 
 Files: libs/libwebsockets/win32port/zlib/*
 Copyright: 1995-2010 Jean-loup Gailly
- 1995-2010 Mark Adler 
+ 1995-2010 Mark Adler
  1995-2010 Jean-loup Gailly and Mark Adler
  1995-2010 Jean-loup Gailly and Mark Adler ";
 License: zlib/libpng

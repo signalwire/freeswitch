@@ -12741,9 +12741,9 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_time_set_monotonic(int jarg1) {
 
 
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_time_set_timerfd(int jarg1) {
-  switch_bool_t arg1 ;
+  int arg1 ;
   
-  arg1 = (switch_bool_t)jarg1; 
+  arg1 = (int)jarg1; 
   switch_time_set_timerfd(arg1);
 }
 
@@ -14206,6 +14206,14 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ice_direction(void * jarg1) {
   result = (switch_call_direction_t)switch_ice_direction(arg1);
   jresult = result; 
   return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_debug_pool(void * jarg1) {
+  switch_stream_handle_t *arg1 = (switch_stream_handle_t *) 0 ;
+  
+  arg1 = (switch_stream_handle_t *)jarg1; 
+  switch_core_session_debug_pool(arg1);
 }
 
 
@@ -35686,7 +35694,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_MAX_CAND_get() {
   int jresult ;
   int result;
   
-  result = (int)(25);
+  result = (int)(50);
   jresult = result; 
   return jresult;
 }
@@ -35702,7 +35710,7 @@ SWIGEXPORT void SWIGSTDCALL CSharp_ice_t_cands_set(void * jarg1, void * jarg2) {
     icand_t (*inp)[2] = (icand_t (*)[2])(arg2);
     icand_t (*dest)[2] = (icand_t (*)[2])(arg1->cands);
     size_t ii = 0;
-    for (; ii < 25; ++ii) {
+    for (; ii < 50; ++ii) {
       icand_t *ip = inp[ii];
       icand_t *dp = dest[ii];
       size_t jj = 0;

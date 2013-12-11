@@ -152,7 +152,7 @@ SPAN_DECLARE(const char *) fax_modem_to_str(int modem)
 /*- End of function --------------------------------------------------------*/
 
 //static void fax_modems_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
-SPAN_DECLARE(void) fax_modems_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
+SPAN_DECLARE_NONSTD(void) fax_modems_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
 {
     fax_modems_state_t *s;
 

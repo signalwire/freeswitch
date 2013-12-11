@@ -2067,7 +2067,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_merged(const char *key, c
 			switch_xml_merge_user(x_user_dup, domain, group);
 
 			cacheable = switch_xml_attr(x_user_dup, "cacheable");
-			if (switch_true(cacheable)) {
+			if (!zstr(cacheable)) {
 				switch_time_t expires = 0;
 				switch_time_t time_now = 0;
 

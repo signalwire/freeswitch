@@ -467,7 +467,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			switch_channel_set_running_state(session->channel, state);
 			switch_channel_clear_flag(session->channel, CF_TRANSFER);
 			switch_channel_clear_flag(session->channel, CF_REDIRECT);
-			
+			switch_ivr_parse_all_messages(session);
+
 			if (session->endpoint_interface->io_routines->state_run) {
 				rstatus = session->endpoint_interface->io_routines->state_run(session);
 			}

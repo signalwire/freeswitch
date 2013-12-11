@@ -84,7 +84,7 @@ static __inline__ void normalise_history(plc_state_t *s)
     if (s->buf_ptr == 0)
         return;
     memcpy(tmp, s->history, sizeof(int16_t)*s->buf_ptr);
-    memcpy(s->history, s->history + s->buf_ptr, sizeof(int16_t)*(PLC_HISTORY_LEN - s->buf_ptr));
+    memmove(s->history, s->history + s->buf_ptr, sizeof(int16_t)*(PLC_HISTORY_LEN - s->buf_ptr));
     memcpy(s->history + PLC_HISTORY_LEN - s->buf_ptr, tmp, sizeof(int16_t)*s->buf_ptr);
     s->buf_ptr = 0;
 }
