@@ -126,7 +126,7 @@ Source8:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.7.tar.gz
 Source9:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
 Source10:	http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
 Source11:       http://files.freeswitch.org/downloads/libs/json-c-0.9.tar.gz
-Source12:       http://files.freeswitch.org/downloads/libs/opus-1.0.3.tar.gz
+Source12:       http://files.freeswitch.org/downloads/libs/opus-1.1.tar.gz
 Prefix:        	%{prefix}
 
 
