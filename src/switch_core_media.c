@@ -2844,6 +2844,13 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		}
 	}
 
+	if (session->bugs) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+						  "Session is connected to a media bug. "
+						  "Re-Negotiation implicitly disabled.\n");
+		reneg = 0;
+	}
+
 	if (!reneg && smh->num_negotiated_codecs) {
 		codec_array = smh->negotiated_codecs;
 		total_codecs = smh->num_negotiated_codecs;
@@ -3278,7 +3285,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 				match = 1;
 				a_engine->codec_negotiated = 1;
-				
+				smh->num_negotiated_codecs = 0;
+
 				for(j = 0; j < m_idx; j++) {
 					payload_map_t *pmap = switch_core_media_add_payload_map(session, 
 																			SWITCH_MEDIA_TYPE_AUDIO,
@@ -3329,7 +3337,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					pmap->rm_fmtp = switch_core_session_strdup(session, (char *) mmap->rm_fmtp);
 						
 					pmap->agreed_pt = (switch_payload_t) mmap->rm_pt;
-					smh->num_negotiated_codecs = 0;
 					smh->negotiated_codecs[smh->num_negotiated_codecs++] = mimp;
 					pmap->recv_pt = (switch_payload_t)mmap->rm_pt;
 						
