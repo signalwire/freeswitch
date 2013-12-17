@@ -274,6 +274,7 @@ typedef struct conference_file_node {
 	struct conference_file_node *next;
 	char *file;
 	switch_bool_t mux;
+	uint32_t member_id;
 } conference_file_node_t;
 
 typedef enum {
@@ -2108,6 +2109,48 @@ static void conference_set_floor_holder(conference_obj_t *conference, conference
 
 }
 
+static switch_status_t conference_file_close(conference_obj_t *conference, conference_file_node_t *node)
+{
+	switch_event_t *event;
+	conference_member_t *member = NULL;
+
+	if (test_eflag(conference, EFLAG_PLAY_FILE_DONE) &&
+		switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+		
+		conference_add_event_data(conference, event);
+
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "seconds", "%ld", (long) node->fh.samples_in / node->fh.native_rate);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "milliseconds", "%ld", (long) node->fh.samples_in / (node->fh.native_rate / 1000));
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "samples", "%ld", (long) node->fh.samples_in);
+
+		if (node->fh.params) {
+			switch_event_merge(event, node->fh.params);
+		}
+
+		if (node->member_id) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file-member-done");
+		
+			if ((member = conference_member_get(conference, node->member_id))) {
+				conference_add_event_member_data(member, event);
+				switch_thread_rwlock_unlock(member->rwlock);
+			}
+
+		} else {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file-done");
+		}
+
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", node->file);
+
+		if (node->async) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Async", "true");
+		}
+
+		switch_event_fire(&event);
+	}
+	
+	return switch_core_file_close(&node->fh);
+}
+
 /* Gain exclusive access and remove the member from the list */
 static switch_status_t conference_del_member(conference_obj_t *conference, conference_member_t *member)
 {
@@ -2177,7 +2220,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 			fnode = fnode->next;
 
 			if (cur->type != NODE_TYPE_SPEECH) {
-				switch_core_file_close(&cur->fh);
+				conference_file_close(conference, cur);
 			}
 
 			pool = cur->pool;
@@ -2662,18 +2705,12 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 					}
 				} else if (conference->fnode->type == NODE_TYPE_FILE) {
 					switch_core_file_read(&conference->fnode->fh, file_frame, &file_sample_len);
+					if (conference->fnode->fh.vol) {
+						switch_change_sln_volume_granular((void *)file_frame, file_sample_len, conference->fnode->fh.vol);
+					}
 				}
 
 				if (file_sample_len <= 0) {
-					if (test_eflag(conference, EFLAG_PLAY_FILE_DONE) &&
-						switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-						conference_add_event_data(conference, event);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file-done");
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", conference->fnode->file);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Async", "true");
-						switch_event_fire(&event);
-					}
-
 					conference->fnode->done++;
 				} else {
 					has_file_data = 1;
@@ -2690,14 +2727,6 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				switch_core_file_read(&conference->async_fnode->fh, async_file_frame, &file_sample_len);
 
 				if (file_sample_len <= 0) {
-					if (test_eflag(conference, EFLAG_PLAY_FILE) &&
-						switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-						conference_add_event_data(conference, event);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file-done");
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", conference->async_fnode->file);
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Async", "true");
-						switch_event_fire(&event);
-					}
 					conference->async_fnode->done++;
 				} else {
 					if (has_file_data) {
@@ -2852,7 +2881,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 
 		if (conference->async_fnode && conference->async_fnode->done) {
 			switch_memory_pool_t *pool;
-			switch_core_file_close(&conference->async_fnode->fh);
+			conference_file_close(conference, conference->async_fnode);
 			pool = conference->async_fnode->pool;
 			conference->async_fnode = NULL;
 			switch_core_destroy_memory_pool(&pool);
@@ -2863,7 +2892,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			switch_memory_pool_t *pool;
 
 			if (conference->fnode->type != NODE_TYPE_SPEECH) {
-				switch_core_file_close(&conference->fnode->fh);
+				conference_file_close(conference, conference->fnode);
 			}
 
 			fnode = conference->fnode;
@@ -2918,7 +2947,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			fnode = fnode->next;
 
 			if (cur->type != NODE_TYPE_SPEECH) {
-				switch_core_file_close(&cur->fh);
+				conference_file_close(conference, cur);
 			}
 
 			pool = cur->pool;
@@ -2929,7 +2958,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 
 	if (conference->async_fnode) {
 		switch_memory_pool_t *pool;
-		switch_core_file_close(&conference->async_fnode->fh);
+		conference_file_close(conference, conference->async_fnode);
 		pool = conference->async_fnode->pool;
 		conference->async_fnode = NULL;
 		switch_core_destroy_memory_pool(&pool);
@@ -3953,7 +3982,7 @@ static void member_add_file_data(conference_member_t *member, int16_t *data, swi
 		switch_memory_pool_t *pool;
 
 		if (member->fnode->type != NODE_TYPE_SPEECH) {
-			switch_core_file_close(&member->fnode->fh);
+			conference_file_close(member->conference, member->fnode);
 		}
 
 		fnode = member->fnode;
@@ -3981,17 +4010,7 @@ static void member_add_file_data(conference_member_t *member, int16_t *data, swi
 			}
 
 			if (file_sample_len <= 0) {
-				switch_event_t *event;
 				member->fnode->done++;
-
-				if (test_eflag(member->conference, EFLAG_PLAY_FILE) &&
-					switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-					conference_add_event_data(member->conference, event);
-					conference_add_event_member_data(member, event);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file-member-done");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", member->fnode->file);
-					switch_event_fire(&event);
-				}
 			} else {			/* there is file node data to mix into the frame */
 				int32_t i, sample;
 
@@ -4814,6 +4833,14 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 		goto done;
 	}
 
+	if (fnode->fh.params) {
+		const char *vol = switch_event_get_header(fnode->fh.params, "vol");
+
+		if (!zstr(vol)) {
+			fnode->fh.vol = atoi(vol);
+		}
+	}
+
 	fnode->pool = pool;
 	fnode->async = async;
 	fnode->file = switch_core_strdup(fnode->pool, file);
@@ -4829,7 +4856,7 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 
 		if (nptr) {
 			switch_memory_pool_t *tmppool;
-			switch_core_file_close(&nptr->fh);
+			conference_file_close(conference, nptr);
 			tmppool = nptr->pool;
 			switch_core_destroy_memory_pool(&tmppool);
 		}
@@ -4903,6 +4930,7 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 	fnode->type = NODE_TYPE_FILE;
 	fnode->leadin = leadin;
 	fnode->mux = mux;
+	fnode->member_id = member->id;
 
 	/* Open the file */
 	fnode->fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
@@ -6232,6 +6260,11 @@ static switch_status_t conf_api_sub_play(conference_obj_t *conference, switch_st
 			if (test_eflag(conference, EFLAG_PLAY_FILE) &&
 				switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 				conference_add_event_data(conference, event);
+
+				if (conference->fnode->fh.params) {
+					switch_event_merge(event, conference->fnode->fh.params);
+				}
+				
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", argv[2]);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Async", async ? "true" : "false");
@@ -6256,6 +6289,11 @@ static switch_status_t conf_api_sub_play(conference_obj_t *conference, switch_st
 				if (test_eflag(conference, EFLAG_PLAY_FILE_MEMBER) &&
 					switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 					conference_add_event_member_data(member, event);
+
+					if (member->fnode->fh.params) {
+						switch_event_merge(event, member->fnode->fh.params);
+					}
+
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file-member");
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", argv[2]);
 					switch_event_fire(&event);
@@ -6897,6 +6935,54 @@ static switch_status_t conf_api_sub_recording(conference_obj_t *conference, swit
 	}
 }
 
+static switch_status_t conf_api_sub_file_vol(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	if (argc >= 1) {
+		conference_file_node_t *fnode;
+		int vol = 0;
+		int ok = 0;
+
+		if (argc < 2) {
+			stream->write_function(stream, "missing args\n");
+			return SWITCH_STATUS_GENERR;
+		}
+
+		switch_mutex_lock(conference->mutex);
+
+		fnode = conference->fnode;
+
+		vol = atoi(argv[2]);
+
+		if (argc > 3) {
+			if (strcasecmp(argv[3], "async")) {
+				fnode = conference->async_fnode;
+			}
+		}
+
+		printf("WTF %p %p\n", (void *) conference, (void *) fnode);
+
+		if (fnode && fnode->type == NODE_TYPE_FILE) {
+			fnode->fh.vol = vol;
+			ok = 1;
+		}
+		switch_mutex_unlock(conference->mutex);
+		
+
+		if (ok) {
+			stream->write_function(stream, "volume changed\n");
+			return SWITCH_STATUS_SUCCESS;
+		} else {
+			stream->write_function(stream, "File not playing\n");
+			return SWITCH_STATUS_GENERR;
+		}
+
+
+	} else {
+		stream->write_function(stream, "Invalid parameters:\n");
+		return SWITCH_STATUS_GENERR;
+	}
+}
+
 static switch_status_t conf_api_sub_pin(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	switch_assert(conference != NULL);
@@ -7085,6 +7171,7 @@ static api_command_t conf_api_sub_commands[] = {
 	{"nopin", (void_fn_t) & conf_api_sub_pin, CONF_API_SUB_ARGS_SPLIT, "nopin", ""},
 	{"get", (void_fn_t) & conf_api_sub_get, CONF_API_SUB_ARGS_SPLIT, "get", "<parameter-name>"},
 	{"set", (void_fn_t) & conf_api_sub_set, CONF_API_SUB_ARGS_SPLIT, "set", "<max_members|sound_prefix|caller_id_name|caller_id_number|endconf_grace_time> <value>"},
+	{"file-vol", (void_fn_t) & conf_api_sub_file_vol, CONF_API_SUB_ARGS_SPLIT, "file-vol", "<vol#>"},
 	{"floor", (void_fn_t) & conf_api_sub_floor, CONF_API_SUB_MEMBER_TARGET, "floor", "<member_id|last>"},
 	{"vid-floor", (void_fn_t) & conf_api_sub_vid_floor, CONF_API_SUB_MEMBER_TARGET, "vid-floor", "<member_id|last> [force]"},
 	{"clear-vid-floor", (void_fn_t) & conf_api_sub_clear_vid_floor, CONF_API_SUB_ARGS_AS_ONE, "clear-vid-floor", ""}
@@ -9772,7 +9859,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load)
 		nl = strlen(conf_api_sub_commands[i].pcommand) + strlen(conf_api_sub_commands[i].psyntax) + 5;
 
 		switch_snprintf(cmd_str, sizeof(cmd_str), "add conference ::conference::list_conferences %s", conf_api_sub_commands[i].pcommand);
-
 		switch_console_set_complete(cmd_str);
 
 		if (p != NULL) {
