@@ -620,6 +620,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 					switch_channel_set_variable(channel, "app_uuid", event_uuid);
 				}
 
+				switch_channel_set_variable_printf(channel, "current_loop", "%d", x + 1);
+				switch_channel_set_variable_printf(channel, "total_loops", "%d", loops);
 
 				if (switch_core_session_execute_application(session, app_name, app_arg) != SWITCH_STATUS_SUCCESS) {
 					if (!inner || switch_channel_test_flag(channel, CF_STOP_BROADCAST)) switch_channel_clear_flag(channel, CF_BROADCAST);
@@ -631,6 +633,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 					break;
 				}
 			}
+
+			switch_channel_set_variable(channel, "current_loop", NULL);
+			switch_channel_set_variable(channel, "total_loops", NULL);
 
 			if (b_uuid) {
 				if ((b_session = switch_core_session_locate(b_uuid))) {
