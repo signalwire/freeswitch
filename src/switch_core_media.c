@@ -3717,6 +3717,8 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 		switch_channel_clear_flag(session->channel, CF_HOLD_LOCK);
 
 		if (switch_channel_test_flag(session->channel, CF_PROTO_HOLD)) {
+			const char *val;
+
 			switch_yield(250000);
 
 			if (a_engine->max_missed_packets) {
@@ -3733,6 +3735,13 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 					switch_channel_stop_broadcast(b_channel);
 					switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000, NULL);
 				}
+			}
+
+			if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) &&
+				!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val)) && 
+				!switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+				/* Reactivate the NAT buster flag. */
+				switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 			}
 
 			switch_channel_clear_flag(session->channel, CF_PROTO_HOLD);
