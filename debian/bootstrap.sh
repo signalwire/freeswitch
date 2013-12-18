@@ -230,8 +230,8 @@ map_pkgs () {
   map_pkgs_langs () { $fsx "freeswitch-lang-${lang//_/-}"; }
   map_langs map_pkgs_langs
   map_pkgs_mods () {
-    $fsx "freeswitch-mod-${module//_/-}"
-    $fsx "freeswitch-mod-${module//_/-}-dbg"; }
+    $fsx "freeswitch-${module//_/-}"
+    $fsx "freeswitch-${module//_/-}-dbg"; }
   map_modules map_pkgs_mods
 }
 
