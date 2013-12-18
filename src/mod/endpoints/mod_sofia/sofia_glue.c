@@ -4432,6 +4432,7 @@ int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 		sofia_clear_flag_locked(tech_pvt, TFLAG_HOLD_LOCK);
 
 		if (sofia_test_flag(tech_pvt, TFLAG_SIP_HOLD)) {
+			const char *val;
 
 			switch_yield(250000);
 
@@ -4450,6 +4451,12 @@ int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 					switch_channel_stop_broadcast(b_channel);
 					switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000, NULL);
 				}
+			}
+
+			if (!sofia_test_pflag(tech_pvt->profile, PFLAG_DISABLE_RTP_AUTOADJ) && !switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) &&
+				!((val = switch_channel_get_variable(tech_pvt->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
+				/* Reactivate the NAT buster flag. */
+				switch_rtp_set_flag(tech_pvt->video_rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 			}
 
 			sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
