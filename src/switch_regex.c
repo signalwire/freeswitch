@@ -79,6 +79,9 @@ SWITCH_DECLARE(int) switch_regex_perform(const char *field, const char *expressi
 		if ((opts = strrchr(tmp, '/'))) {
 			*opts++ = '\0';
 		} else {
+			/* Note our error */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+							  "Regular Expression Error expression[%s] missing ending '/' delimeter\n", expression);
 			goto end;
 		}
 		expression = tmp;
@@ -212,9 +215,35 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match_partial(const char *target, c
 	int match_count = 0;		/* Number of times the regex was matched                             */
 	int offset_vectors[255];	/* not used, but has to exist or pcre won't even try to find a match */
 	int pcre_flags = 0;
+	uint32_t flags = 0;
+	char *tmp = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (*expression == '/') {
+		char *opts = NULL;
+		tmp = strdup(expression + 1);
+		assert(tmp);
+		if ((opts = strrchr(tmp, '/'))) {
+			*opts++ = '\0';
+		} else {
+			/* Note our error */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+							  "Regular Expression Error expression[%s] missing ending '/' delimeter\n", expression);
+			goto end;
+		}
+		expression = tmp;
+		if (opts) {
+			if (strchr(opts, 'i')) {
+				flags |= PCRE_CASELESS;
+			}
+			if (strchr(opts, 's')) {
+				flags |= PCRE_DOTALL;
+			}
+		}
+	}
 
 	/* Compile the expression */
-	pcre_prepared = pcre_compile(expression, 0, &error, &error_offset, NULL);
+	pcre_prepared = pcre_compile(expression, flags, &error, &error_offset, NULL);
 
 	/* See if there was an error in the expression */
 	if (error != NULL) {
@@ -228,7 +257,7 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match_partial(const char *target, c
 						  "Regular Expression Error expression[%s] error[%s] location[%d]\n", expression, error, error_offset);
 
 		/* We definitely didn't match anything */
-		return SWITCH_STATUS_FALSE;
+		goto end;
 	}
 
 	if (*partial) {
@@ -250,14 +279,17 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match_partial(const char *target, c
 	/* Was it a match made in heaven? */
 	if (match_count > 0) {
 		*partial = 0;
-		return SWITCH_STATUS_SUCCESS;
+		switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 	} else if (match_count == PCRE_ERROR_PARTIAL || match_count == PCRE_ERROR_BADPARTIAL) {
 		/* yes it is already set, but the code is clearer this way */
 		*partial = 1;
-		return SWITCH_STATUS_SUCCESS;
+		switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 	} else {
-		return SWITCH_STATUS_FALSE;
+		goto end;
 	}
+ end:
+	switch_safe_free(tmp);
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_regex_match(const char *target, const char *expression)
