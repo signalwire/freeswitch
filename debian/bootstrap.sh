@@ -68,10 +68,6 @@ freeswitch-init
 freeswitch-sysvinit
 freeswitch-systemd
 freeswitch-lang
-freeswitch-music
-freeswitch-sounds
-freeswitch-sounds-en
-freeswitch-sounds-en-us
 )
 
 err () {
@@ -358,8 +354,8 @@ Recommends:
  freeswitch-mod-commands (= \${binary:Version}),
  freeswitch-init (= \${binary:Version}),
  freeswitch-lang (= \${binary:Version}),
- freeswitch-music (= \${binary:Version}),
- freeswitch-sounds (= \${binary:Version})
+ freeswitch-music,
+ freeswitch-sounds
 Suggests:
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  $(debian_wrap "${fs_description}")
@@ -392,8 +388,8 @@ Recommends:
  freeswitch-init (= \${binary:Version}),
  freeswitch-lang (= \${binary:Version}),
  freeswitch-meta-codecs (= \${binary:Version}),
- freeswitch-music (= \${binary:Version}),
- freeswitch-sounds (= \${binary:Version})
+ freeswitch-music,
+ freeswitch-sounds
 Suggests:
  freeswitch-mod-cidlookup (= \${binary:Version}),
  freeswitch-mod-curl (= \${binary:Version}),
@@ -447,8 +443,8 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
 Recommends:
  freeswitch-init (= \${binary:Version}),
  freeswitch-lang (= \${binary:Version}),
- freeswitch-music (= \${binary:Version}),
- freeswitch-sounds (= \${binary:Version}),
+ freeswitch-music,
+ freeswitch-sounds,
  freeswitch-conf-vanilla (= \${binary:Version}),
 Suggests:
  freeswitch-mod-spidermonkey (= \${binary:Version}),
@@ -465,8 +461,8 @@ Recommends:
  freeswitch-init (= \${binary:Version}),
  freeswitch-lang (= \${binary:Version}),
  freeswitch-meta-codecs (= \${binary:Version}),
- freeswitch-music (= \${binary:Version}),
- freeswitch-sounds (= \${binary:Version}),
+ freeswitch-music,
+ freeswitch-sounds,
  freeswitch-mod-abstraction (= \${binary:Version}),
  freeswitch-mod-avmd (= \${binary:Version}),
  freeswitch-mod-blacklist (= \${binary:Version}),
@@ -551,8 +547,8 @@ Recommends:
  freeswitch-meta-conf (= \${binary:Version}),
  freeswitch-meta-lang (= \${binary:Version}),
  freeswitch-meta-mod-say (= \${binary:Version}),
- freeswitch-music (= \${binary:Version}),
- freeswitch-sounds (= \${binary:Version}),
+ freeswitch-music,
+ freeswitch-sounds,
  freeswitch-mod-abstraction (= \${binary:Version}),
  freeswitch-mod-avmd (= \${binary:Version}),
  freeswitch-mod-blacklist (= \${binary:Version}),
@@ -834,48 +830,6 @@ Description: Language files for FreeSWITCH
  This is a metapackage which depends on the default language packages
  for FreeSWITCH.
 
-## sounds
-
-Package: freeswitch-music
-Architecture: all
-Depends: \${misc:Depends},
- freeswitch-music-default (>= 1.0.8)
-Description: Music on hold audio for FreeSWITCH
- $(debian_wrap "${fs_description}")
- .
- This is a metapackage which depends on the default music on hold
- packages for FreeSWITCH.
-
-Package: freeswitch-sounds
-Architecture: all
-Depends: \${misc:Depends},
- freeswitch-sounds-en (= \${binary:Version})
-Description: Sounds for FreeSWITCH
- $(debian_wrap "${fs_description}")
- .
- This is a metapackage which depends on the default sound packages for
- FreeSWITCH.
-
-Package: freeswitch-sounds-en
-Architecture: all
-Depends: \${misc:Depends},
- freeswitch-sounds-en-us (= \${binary:Version})
-Description: English sounds for FreeSWITCH
- $(debian_wrap "${fs_description}")
- .
- This is a metapackage which depends on the default English sound
- packages for FreeSWITCH.
-
-Package: freeswitch-sounds-en-us
-Architecture: all
-Depends: \${misc:Depends},
- freeswitch-sounds-en-us-callie (>= 1.0.18)
-Description: US English sounds for FreeSWITCH
- $(debian_wrap "${fs_description}")
- .
- This is a metapackage which depends on the default US/English sound
- packages for FreeSWITCH.
-
 EOF
 }
 
@@ -998,7 +952,7 @@ print_lang_control () {
 Package: freeswitch-lang-${lang//_/-}
 Architecture: all
 Depends: \${misc:Depends}
-Recommends: freeswitch-sounds-${lang} (= \${binary:Version})
+Recommends: freeswitch-sounds-${lang}
 Description: ${lang_name} language files for FreeSWITCH
  $(debian_wrap "${fs_description}")
  .
