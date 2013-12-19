@@ -15,8 +15,8 @@ rpmbuild --define "VERSION_NUMBER $1" \
   --define "_srcrpmdir %{_topdir}" \
   -ba freeswitch-config-rayo.spec
 
-mkdir $src_repo/RPMS
-mv $src_repo/rpmbuild/*/*.rpm $src_repo/RPMS/.
+mkdir -p $src_repo/RPMS
+mv $src_repo/rpmbuild/*/freeswitch-config-rayo*.rpm $src_repo/RPMS/.
 
 cat 1>&2 <<EOF
 ----------------------------------------------------------------------
