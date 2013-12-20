@@ -731,8 +731,9 @@ struct rayo_actor *rayo_actor_locate(const char *jid, const char *file, int line
 	if (actor) {
 		if (!actor->destroy) {
 			actor->ref_count++;
-			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, "", SWITCH_LOG_DEBUG, "Locate %s: ref count = %i\n", RAYO_JID(actor), actor->ref_count);
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, "", SWITCH_LOG_DEBUG, "Locate (jid) %s: ref count = %i\n", RAYO_JID(actor), actor->ref_count);
 		} else {
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, "", SWITCH_LOG_WARNING, "Locate (jid) %s: already marked for destruction!\n", jid);
 			actor = NULL;
 		}
 	}
@@ -754,8 +755,9 @@ struct rayo_actor *rayo_actor_locate_by_id(const char *id, const char *file, int
 		if (actor) {
 			if (!actor->destroy) {
 				actor->ref_count++;
-				switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, "", SWITCH_LOG_DEBUG, "Locate %s: ref count = %i\n", RAYO_JID(actor), actor->ref_count);
+				switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, "", SWITCH_LOG_DEBUG, "Locate (id) %s: ref count = %i\n", RAYO_JID(actor), actor->ref_count);
 			} else {
+				switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, "", SWITCH_LOG_WARNING, "Locate (id) %s: already marked for destruction!\n", id);
 				actor = NULL;
 			}
 		}
@@ -780,7 +782,12 @@ void rayo_actor_destroy(struct rayo_actor *actor, const char *file, int line)
 	}
 	actor->destroy = 1;
 	if (actor->ref_count <= 0) {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, "", SWITCH_LOG_DEBUG, "Destroying %s\n", RAYO_JID(actor));
+		if (actor->ref_count < 0) {
+			/* too many unlocks detected! */
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, "", SWITCH_LOG_WARNING, "Destroying %s, ref_count = %i\n", RAYO_JID(actor), actor->ref_count);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, "", SWITCH_LOG_DEBUG, "Destroying %s\n", RAYO_JID(actor));
+		}
 		if (actor->cleanup_fn) {
 			actor->cleanup_fn(actor);
 		}
@@ -813,7 +820,12 @@ void rayo_actor_unlock(struct rayo_actor *actor, const char *file, int line)
 	if (actor) {
 		switch_mutex_lock(globals.actors_mutex);
 		actor->ref_count--;
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, "", SWITCH_LOG_DEBUG, "Unlock %s: ref count = %i\n", RAYO_JID(actor), actor->ref_count);
+		if (actor->ref_count < 0) {
+			/* too many unlocks detected! */
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, "", SWITCH_LOG_WARNING, "Unlock %s: ref count = %i\n", RAYO_JID(actor), actor->ref_count);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, "", SWITCH_LOG_DEBUG, "Unlock %s: ref count = %i\n", RAYO_JID(actor), actor->ref_count);
+		}
 		if (actor->ref_count <= 0 && actor->destroy) {
 			rayo_actor_destroy(actor, file, line);
 		}
