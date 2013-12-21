@@ -40,6 +40,7 @@
 #include "hpOutput.h"
 #include "syntFilter.h"
 
+#if (defined(WIN32) || defined(_WIN32)) && (_MSC_VER < 1800)
 #if (defined(WIN32)  ||  defined(_WIN32)) && !defined(_WIN64)
     __inline long int rint(double dbl)
     {
@@ -62,6 +63,7 @@
 	return (long int) (x);
 #endif
     }
+#endif
 #endif
 
 /*----------------------------------------------------------------*

@@ -158,6 +158,7 @@
 	}
 
 #elif defined(_WIN64)
+#if (_MSC_VER < 1800)
     __inline long int lrint(double x)
     {
         return (long int) (x);
@@ -166,6 +167,7 @@
     {
         return (long int) (x);
     }
+#endif
 #elif (defined (__MWERKS__) && defined (macintosh))
 
 	/* This MacOS 9 solution was provided by Stephane Letz */
