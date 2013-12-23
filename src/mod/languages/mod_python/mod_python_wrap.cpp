@@ -8398,7 +8398,7 @@ SWIGINTERN PyObject *_wrap_msleep(PyObject *SWIGUNUSEDPARM(self), PyObject *args
     SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "msleep" "', argument " "1"" of type '" "unsigned int""'");
   } 
   arg1 = static_cast< unsigned int >(val1);
-  msleep(arg1);
+  switch_msleep(arg1);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:

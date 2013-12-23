@@ -398,7 +398,7 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 
 SWITCH_DECLARE(void) console_log(char *level_str, char *msg);
 SWITCH_DECLARE(void) console_clean_log(char *msg);
-SWITCH_DECLARE(void) msleep(unsigned ms);
+SWITCH_DECLARE(void) switch_msleep(unsigned ms);
 
 /** \brief bridge the audio of session_b into session_a
  * 
