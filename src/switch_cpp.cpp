@@ -1306,7 +1306,7 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers, char *body, char
     return false;
 }
 
-SWITCH_DECLARE(void) msleep(unsigned ms)
+SWITCH_DECLARE(void) switch_msleep(unsigned ms)
 {
 	switch_sleep(ms * 1000);
 	return;
