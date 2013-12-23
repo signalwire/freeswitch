@@ -5596,7 +5596,9 @@ SWIGINTERN PyObject *_wrap_EventConsumer_pop(PyObject *SWIGUNUSEDPARM(self), PyO
     } 
     arg3 = static_cast< int >(val3);
   }
+  Py_BEGIN_ALLOW_THREADS;
   result = (Event *)(arg1)->pop(arg2,arg3);
+  Py_END_ALLOW_THREADS;
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, SWIG_POINTER_OWN |  0 );
   return resultobj;
 fail:
