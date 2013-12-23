@@ -797,6 +797,7 @@ int cc_queue_count(const char *queue)
 
 cc_status_t cc_agent_add(const char *agent, const char *type)
 {
+	switch_event_t *event;
 	cc_status_t result = CC_STATUS_SUCCESS;
 	char *sql;
 
@@ -818,6 +819,14 @@ cc_status_t cc_agent_add(const char *agent, const char *type)
 				agent, type, cc_agent_status2str(CC_AGENT_STATUS_LOGGED_OUT), cc_agent_state2str(CC_AGENT_STATE_WAITING));
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
+		
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-Type", type);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-add");
+			switch_event_fire(&event);
+		}
+
 	} else {
 		result = CC_STATUS_AGENT_INVALID_TYPE;
 		goto done;
@@ -986,6 +995,13 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 		switch_safe_free(sql);
 
 		result = CC_STATUS_SUCCESS;
+
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-contact-change");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-Contact", value);
+			switch_event_fire(&event);
+		}
 	} else if (!strcasecmp(key, "ready_time")) {
 		sql = switch_mprintf("UPDATE agents SET ready_time = '%ld', system = 'single_box' WHERE name = '%q'", atol(value), agent);
 		cc_execute_sql(NULL, sql, NULL);
