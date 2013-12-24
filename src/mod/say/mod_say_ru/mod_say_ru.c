@@ -223,6 +223,20 @@ static switch_status_t ru_say_general_count(switch_say_file_handle_t *sh, char *
 	switch_status_t status;
 	cases_t cases;				//падеж
 	say_gender_t gender;		//тип произношения
+	char sbuf[128] = "";
+
+	if (say_args->method == SSM_ITERATED) {
+		if ((tosay = switch_strip_commas(tosay, sbuf, sizeof(sbuf)-1))) {
+			char *p;
+			for (p = tosay; p && *p; p++) {
+				switch_say_file(sh, "digits/%c", *p);
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
+			return SWITCH_STATUS_GENERR;
+		}
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	switch (say_args->type) {
 	case SST_MESSAGES:
