@@ -5637,6 +5637,9 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 	if (send_msg) {
 		bytes = datalen;
+
+		m = send_msg->header.m;
+
 		if (flags && *flags & SFF_RFC2833) {
 			send_msg->header.pt = rtp_session->te;
 		}
