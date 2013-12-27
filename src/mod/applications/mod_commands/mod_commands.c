@@ -284,7 +284,7 @@ static void dump_user(struct user_struct *us)
 	}
 
 	if(zstr(dname)) {
-		apip = switch_mprintf("%s",switch_xml_attr_soft(x_user_tag, "id"));
+		apip = switch_mprintf("*/%s",switch_xml_attr_soft(x_user_tag, "id"));
 	} else {
 		apip = switch_mprintf("%s@%s",switch_xml_attr_soft(x_user_tag, "id"), dname);
 	}
