@@ -87,7 +87,7 @@ static char *filter_uuid;
 static char *logfilter;
 static int timeout = 0;
 static int connect_timeout = 0;
-#ifndef WIN32
+#ifdef HAVE_EDITLINE
 static EditLine *el;
 static History *myhistory;
 static HistEvent ev;
@@ -114,6 +114,7 @@ static void sleep_s(int secs) { _sleep_ns(secs, 0); }
 
 static int process_command(esl_handle_t *handle, const char *cmd);
 
+#if defined(HAVE_EDITLINE) || defined(WIN32)
 static void clear_cli(void) {
 	if (global_profile->batch_mode) return;
 	putchar('\r');
@@ -121,6 +122,7 @@ static void clear_cli(void) {
 	printf("\033[K");
 	fflush(stdout);
 }
+#endif
 
 static void screen_size(int *x, int *y)
 {
@@ -147,6 +149,7 @@ static void screen_size(int *x, int *y)
 
 }
 
+#if defined(HAVE_EDITLINE) || defined(WIN32)
 /* If a fnkey is configured then process the command */
 static unsigned char console_fnkey_pressed(int i)
 {
@@ -164,6 +167,7 @@ static unsigned char console_fnkey_pressed(int i)
 	}
 	return CC_REDISPLAY;
 }
+#endif
 
 #ifdef HAVE_EDITLINE
 static char *prompt(EditLine *e) { return prompt_str; }
@@ -674,7 +678,7 @@ static void clear_line(void)
 
 static void redisplay(void)
 {
-#ifndef WIN32
+#ifdef HAVE_EDITLINE
 	const LineInfo *lf = el_line(el);
 	const char *c = lf->buffer;
 	if (global_profile->batch_mode) return;
@@ -1066,6 +1070,7 @@ static void set_fn_keys(cli_profile_t *profile)
 	profile->console_fnkeys[11] = "version";
 }
 
+#if defined(HAVE_EDITLINE) || defined(WIN32)
 static char* end_of_str(char *s) { return (*s == '\0' ? s : s + strlen(s) - 1); }
 
 static char* _strndup(const char *s, int n)
@@ -1154,6 +1159,7 @@ static unsigned char esl_console_complete(const char *buffer, const char *cursor
 	esl_safe_free(dup);
 	return ret;
 }
+#endif
 
 #ifdef HAVE_EDITLINE
 static unsigned char complete(EditLine *el, int ch)
