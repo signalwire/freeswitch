@@ -478,6 +478,15 @@ static void do_2833(switch_rtp_t *rtp_session);
 static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_size_t bytes, int *do_cng)
 {
 
+	if (rtp_session->flags[SWITCH_RTP_FLAG_DTMF_ON]) {
+		rtp_session->flags[SWITCH_RTP_FLAG_DTMF_ON]++;
+
+		if (rtp_session->flags[SWITCH_RTP_FLAG_DTMF_ON] > 1000) {
+			rtp_session->flags[SWITCH_RTP_FLAG_DTMF_ON] = 0;
+		}
+	}
+
+
 #ifdef DEBUG_2833
 	if (rtp_session->dtmf_data.in_digit_sanity && !(rtp_session->dtmf_data.in_digit_sanity % 100)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "sanity %d %ld\n", rtp_session->dtmf_data.in_digit_sanity, bytes);
@@ -496,8 +505,9 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 	   we put up with as much as we can so we don't have to deal with being punished for
 	   doing it right. Nice guys finish last!
 	*/
+	
 	if (bytes > rtp_header_len && !rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] &&
-		!rtp_session->flags[SWITCH_RTP_FLAG_PASS_RFC2833] && rtp_session->recv_te && rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
+		rtp_session->recv_te && rtp_session->recv_msg.header.pt == rtp_session->recv_te) {
 		switch_size_t len = bytes - rtp_header_len;
 		unsigned char *packet = (unsigned char *) RTP_BODY(rtp_session);
 		int end;
@@ -527,6 +537,17 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 		key = switch_rfc2833_to_char(packet[0]);
 		in_digit_seq = ntohs((uint16_t) rtp_session->recv_msg.header.seq);
 		ts = htonl(rtp_session->recv_msg.header.ts);
+
+		if (rtp_session->flags[SWITCH_RTP_FLAG_PASS_RFC2833]) {
+
+			if (end) {
+				rtp_session->flags[SWITCH_RTP_FLAG_DTMF_ON] = 998;
+			} else if (!rtp_session->flags[SWITCH_RTP_FLAG_DTMF_ON]) {
+				rtp_session->flags[SWITCH_RTP_FLAG_DTMF_ON] = 1;
+			}
+
+			return RESULT_CONTINUE;
+		}
 
 		if (in_digit_seq < rtp_session->dtmf_data.in_digit_seq) {
 			if (rtp_session->dtmf_data.in_digit_seq - in_digit_seq > 100) {
@@ -4031,7 +4052,8 @@ static void do_flush(switch_rtp_t *rtp_session, int force)
 	if (!force) {
 		if (rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] || 
 			rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ||
-			rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]
+			rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] ||
+			rtp_session->flags[SWITCH_RTP_FLAG_DTMF_ON]
 			) {
 			return;
 		}
