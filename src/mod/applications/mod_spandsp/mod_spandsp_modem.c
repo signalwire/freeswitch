@@ -1238,7 +1238,7 @@ static void *SWITCH_THREAD_FUNC modem_thread(switch_thread_t *thread, void *obj)
 	DWORD readBytes;
 	OVERLAPPED o;
 #endif
-	char buf[T31_TX_BUF_LEN], tmp[80];
+	char buf[T31_TX_BUF_LEN];
 
 	switch_mutex_lock(globals.mutex);
 	modem_init(modem, control_handler);
@@ -1298,18 +1298,8 @@ static void *SWITCH_THREAD_FUNC modem_thread(switch_thread_t *thread, void *obj)
 #endif
 			t31_at_rx(modem->t31_state, buf, r);
 
-			memset(tmp, 0, sizeof(tmp));
 			if (!strncasecmp(buf, "AT", 2)) {
-				int x;
-
-				strncpy(tmp, buf, r);
-				for (x = 0; x < r; x++) {
-					if (tmp[x] == '\r' || tmp[x] == '\n') {
-						tmp[x] = '\0';
-					}
-				}
-
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Command on %s [%s]\n", modem->devlink, tmp);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Command on %s [%s]\n", modem->devlink, buf);
 			}
 		}
 
