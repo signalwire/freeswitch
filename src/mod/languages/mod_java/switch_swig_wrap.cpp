@@ -3166,7 +3166,7 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_msleep(JNIEnv *je
   (void)jenv;
   (void)jcls;
   arg1 = (unsigned int)jarg1; 
-  msleep(arg1);
+  switch_msleep(arg1);
 }
 
 
