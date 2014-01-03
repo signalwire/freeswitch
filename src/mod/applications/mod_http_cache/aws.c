@@ -44,7 +44,7 @@
 int aws_s3_is_s3_url(const char *url)
 {
 	/* AWS bucket naming rules are complex... this match only supports virtual hosting of buckets */
-	return !zstr(url) && switch_regex_match(url, "^https?://[a-z0-9][-a-z0-9.]{1,61}[a-z0-9]\\.s3\\.amazonaws\\.com/.*$") == SWITCH_STATUS_SUCCESS;
+	return !zstr(url) && switch_regex_match(url, "^https?://[a-z0-9_][-a-z0-9._]{1,61}[a-z0-9_]\\.s3\\.amazonaws\\.com/.*$") == SWITCH_STATUS_SUCCESS;
 }
 
 /**
