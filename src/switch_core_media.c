@@ -4899,14 +4899,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			}
 		}
 
-		if ((val = switch_channel_get_variable(session->channel, "params->rtp_timeout_sec"))) {
+		if ((val = switch_channel_get_variable(session->channel, "rtp_timeout_sec"))) {
 			int v = atoi(val);
 			if (v >= 0) {
 				smh->mparams->rtp_timeout_sec = v;
 			}
 		}
 
-		if ((val = switch_channel_get_variable(session->channel, "params->rtp_hold_timeout_sec"))) {
+		if ((val = switch_channel_get_variable(session->channel, "rtp_hold_timeout_sec"))) {
 			int v = atoi(val);
 			if (v >= 0) {
 				smh->mparams->rtp_hold_timeout_sec = v;
