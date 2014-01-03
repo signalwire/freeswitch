@@ -1569,11 +1569,17 @@ static switch_bool_t auth_api_command(listener_t *listener, const char *api_cmd,
 static switch_status_t parse_command(listener_t *listener, switch_event_t **event, char *reply, uint32_t reply_len)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	char *cmd = switch_event_get_header(*event, "command");
+	char *cmd = NULL;
 	char unload_cheat[] = "api bgapi unload mod_event_socket";
 	char reload_cheat[] = "api bgapi reload mod_event_socket";
 
 	*reply = '\0';
+
+	if (!event || !*event || !(cmd = switch_event_get_header(*event, "command"))) {
+		switch_clear_flag_locked(listener, LFLAG_RUNNING);
+		switch_snprintf(reply, reply_len, "-ERR command parse error.");
+		goto done;
+	}
 
 	if (switch_stristr("unload", cmd) && switch_stristr("mod_event_socket", cmd)) {
 		cmd = unload_cheat;
