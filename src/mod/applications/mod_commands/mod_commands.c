@@ -3187,8 +3187,13 @@ SWITCH_STANDARD_API(uuid_answer_function)
 
 	if (uuid && (xsession = switch_core_session_locate(uuid))) {
 		switch_channel_t *channel = switch_core_session_get_channel(xsession);
-		switch_channel_answer(channel);
+		switch_status_t status = switch_channel_answer(channel);
 		switch_core_session_rwunlock(xsession);
+		if (status == SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "+OK\n");
+		} else {
+			stream->write_function(stream, "-ERROR\n");
+		}
 	} else {
 		stream->write_function(stream, "-ERROR\n");
 	}
