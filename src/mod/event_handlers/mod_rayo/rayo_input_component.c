@@ -27,6 +27,7 @@
  *
  */
 #include "rayo_components.h"
+#include "rayo_cpa_detector.h"
 #include "rayo_elements.h"
 #include "srgs.h"
 #include "nlsml.h"
@@ -760,7 +761,7 @@ switch_status_t rayo_input_component_load(switch_loadable_module_interface_t **m
 	rayo_actor_command_handler_add(RAT_CALL_COMPONENT, "input", "set:"RAYO_INPUT_NS":start-timers", start_timers_call_input_component);
 	switch_event_bind("rayo_input_component", SWITCH_EVENT_DETECTED_SPEECH, SWITCH_EVENT_SUBCLASS_ANY, on_detected_speech_event, NULL);
 
-	return SWITCH_STATUS_SUCCESS;
+	return rayo_cpa_detector_load(module_interface, pool, config_file);
 }
 
 /**
@@ -771,6 +772,9 @@ switch_status_t rayo_input_component_shutdown(void)
 {
 	srgs_parser_destroy(globals.parser);
 	switch_event_unbind_callback(on_detected_speech_event);
+
+	rayo_cpa_detector_shutdown();
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
