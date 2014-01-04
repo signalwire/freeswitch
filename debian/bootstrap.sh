@@ -744,7 +744,7 @@ Architecture: any
 Provides: $(list_freeswitch_all_dbg_provides)
 Replaces: $(list_freeswitch_all_dbg_replaces)
 Breaks: $(list_freeswitch_all_dbg_replaces)
-Depends: \${misc:Depends}, freeswitch (= \${binary:Version})
+Depends: \${misc:Depends}, freeswitch-all (= \${binary:Version})
 Description: debugging symbols for FreeSWITCH
  $(debian_wrap "${fs_description}")
  .
