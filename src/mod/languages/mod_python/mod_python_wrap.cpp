@@ -5596,7 +5596,9 @@ SWIGINTERN PyObject *_wrap_EventConsumer_pop(PyObject *SWIGUNUSEDPARM(self), PyO
     } 
     arg3 = static_cast< int >(val3);
   }
+  Py_BEGIN_ALLOW_THREADS;
   result = (Event *)(arg1)->pop(arg2,arg3);
+  Py_END_ALLOW_THREADS;
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, SWIG_POINTER_OWN |  0 );
   return resultobj;
 fail:
@@ -8398,7 +8400,7 @@ SWIGINTERN PyObject *_wrap_msleep(PyObject *SWIGUNUSEDPARM(self), PyObject *args
     SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "msleep" "', argument " "1"" of type '" "unsigned int""'");
   } 
   arg1 = static_cast< unsigned int >(val1);
-  msleep(arg1);
+  switch_msleep(arg1);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:

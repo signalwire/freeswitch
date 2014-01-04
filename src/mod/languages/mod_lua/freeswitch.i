@@ -19,6 +19,8 @@
 %}
 
 
+
+
 /* Lua function typemap */
 %typemap(in, checkfn = "lua_isfunction") SWIGLUA_FN {
   $1.L = L;

@@ -290,7 +290,7 @@ int ws_handshake(wsh_t *wsh)
 
 	ws_raw_write(wsh, respond, strlen(respond));
 	wsh->handshake = 1;
-	
+
 	return 0;
 
  err:
@@ -809,7 +809,7 @@ int xp_errno(void)
 
 int xp_is_blocking(int errcode)
 {
-  return errcode == EAGAIN || errcode == EWOULDBLOCK || errcode == EINPROGRESS || errcode == EINTR;
+  return errcode == EAGAIN || errcode == EWOULDBLOCK || errcode == EINPROGRESS || errcode == EINTR || errcode == ETIMEDOUT;
 }
 
 #endif

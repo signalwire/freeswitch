@@ -347,7 +347,7 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle_dsn(switch_cache_
 	} else if (!strncasecmp(dsn, "sqlite://", 9)) {
 		type = SCDB_TYPE_CORE_DB;
 		connection_options.core_db_options.db_path = (char *)(dsn + 9);
-	} else if ((!(i = strncasecmp(dsn, "odbc://", 7))) || strchr(dsn, ':')) {
+	} else if ((!(i = strncasecmp(dsn, "odbc://", 7))) || strchr(dsn+2, ':')) {
 		type = SCDB_TYPE_ODBC;
 
 		if (i) {

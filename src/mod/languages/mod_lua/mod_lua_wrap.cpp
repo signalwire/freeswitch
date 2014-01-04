@@ -6299,10 +6299,10 @@ static int _wrap_msleep(lua_State* L) {
   int SWIG_arg = -1;
   unsigned int arg1 ;
   
-  SWIG_check_num_args("msleep",1,1)
-  if(!lua_isnumber(L,1)) SWIG_fail_arg("msleep",1,"unsigned int");
+  SWIG_check_num_args("switch_msleep",1,1)
+  if(!lua_isnumber(L,1)) SWIG_fail_arg("switch_msleep",1,"unsigned int");
   arg1 = (unsigned int)lua_tonumber(L, 1);
-  msleep(arg1);
+  switch_msleep(arg1);
   SWIG_arg=0;
   
   return SWIG_arg;

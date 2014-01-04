@@ -2844,6 +2844,13 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		}
 	}
 
+	if (session->bugs) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+						  "Session is connected to a media bug. "
+						  "Re-Negotiation implicitly disabled.\n");
+		reneg = 0;
+	}
+
 	if (!reneg && smh->num_negotiated_codecs) {
 		codec_array = smh->negotiated_codecs;
 		total_codecs = smh->num_negotiated_codecs;
@@ -3278,7 +3285,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 				match = 1;
 				a_engine->codec_negotiated = 1;
-				
+				smh->num_negotiated_codecs = 0;
+
 				for(j = 0; j < m_idx; j++) {
 					payload_map_t *pmap = switch_core_media_add_payload_map(session, 
 																			SWITCH_MEDIA_TYPE_AUDIO,
@@ -3329,7 +3337,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					pmap->rm_fmtp = switch_core_session_strdup(session, (char *) mmap->rm_fmtp);
 						
 					pmap->agreed_pt = (switch_payload_t) mmap->rm_pt;
-					smh->num_negotiated_codecs = 0;
 					smh->negotiated_codecs[smh->num_negotiated_codecs++] = mimp;
 					pmap->recv_pt = (switch_payload_t)mmap->rm_pt;
 						
@@ -3710,6 +3717,8 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 		switch_channel_clear_flag(session->channel, CF_HOLD_LOCK);
 
 		if (switch_channel_test_flag(session->channel, CF_PROTO_HOLD)) {
+			const char *val;
+
 			switch_yield(250000);
 
 			if (a_engine->max_missed_packets) {
@@ -3725,6 +3734,20 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 				} else {
 					switch_channel_stop_broadcast(b_channel);
 					switch_channel_wait_for_flag(b_channel, CF_BROADCAST, SWITCH_FALSE, 5000, NULL);
+				}
+			}
+
+			if (!switch_media_handle_test_media_flag(smh, SCMF_DISABLE_RTP_AUTOADJ) &&
+				!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val)) && 
+				!switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+				/* Reactivate the NAT buster flag. */
+
+				if (a_engine->rtp_session) {
+					switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+				}
+
+				if (v_engine->rtp_session) {
+					switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 				}
 			}
 
@@ -4876,14 +4899,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			}
 		}
 
-		if ((val = switch_channel_get_variable(session->channel, "params->rtp_timeout_sec"))) {
+		if ((val = switch_channel_get_variable(session->channel, "rtp_timeout_sec"))) {
 			int v = atoi(val);
 			if (v >= 0) {
 				smh->mparams->rtp_timeout_sec = v;
 			}
 		}
 
-		if ((val = switch_channel_get_variable(session->channel, "params->rtp_hold_timeout_sec"))) {
+		if ((val = switch_channel_get_variable(session->channel, "rtp_hold_timeout_sec"))) {
 			int v = atoi(val);
 			if (v >= 0) {
 				smh->mparams->rtp_hold_timeout_sec = v;

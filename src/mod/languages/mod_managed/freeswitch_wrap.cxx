@@ -43119,7 +43119,7 @@ SWIGEXPORT void SWIGSTDCALL CSharp_msleep(unsigned int jarg1) {
   unsigned int arg1 ;
   
   arg1 = (unsigned int)jarg1; 
-  msleep(arg1);
+  switch_msleep(arg1);
 }
 
 

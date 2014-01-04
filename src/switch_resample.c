@@ -289,8 +289,8 @@ SWITCH_DECLARE(void) switch_mux_channels(int16_t *data, switch_size_t samples, u
 SWITCH_DECLARE(void) switch_change_sln_volume_granular(int16_t *data, uint32_t samples, int32_t vol)
 {
 	double newrate = 0;
-	double pos[12] = {1.25, 1.50, 1.75, 2.0, 2.25, 2.50, 2.75, 3.0, 3.25, 3.50, 3.75, 4.0};
-	double neg[12] = {.917, .834, .751, .668, .585, .502, .419, .336, .253, .017, .087, .004};
+	double pos[13] = {1.25, 1.50, 1.75, 2.0, 2.25, 2.50, 2.75, 3.0, 3.25, 3.50, 3.75, 4.0, 4.5};
+	double neg[13] = {.917, .834, .751, .668, .585, .502, .419, .336, .253, .087, .017, .004, 0.0};
 	double *chart;
 	uint32_t i;
 
@@ -306,7 +306,7 @@ SWITCH_DECLARE(void) switch_change_sln_volume_granular(int16_t *data, uint32_t s
 	
 	i = abs(vol) - 1;
 	
-	switch_assert(i < 12);
+	switch_assert(i < 13);
 
 	newrate = chart[i];
 
@@ -320,6 +320,8 @@ SWITCH_DECLARE(void) switch_change_sln_volume_granular(int16_t *data, uint32_t s
 			switch_normalize_to_16bit(tmp);
 			fp[x] = (int16_t) tmp;
 		}
+	} else {
+		memset(data, 0, samples * 2);
 	}
 }
 

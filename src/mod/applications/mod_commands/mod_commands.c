@@ -284,7 +284,7 @@ static void dump_user(struct user_struct *us)
 	}
 
 	if(zstr(dname)) {
-		apip = switch_mprintf("%s",switch_xml_attr_soft(x_user_tag, "id"));
+		apip = switch_mprintf("*/%s",switch_xml_attr_soft(x_user_tag, "id"));
 	} else {
 		apip = switch_mprintf("%s@%s",switch_xml_attr_soft(x_user_tag, "id"), dname);
 	}
@@ -3187,8 +3187,13 @@ SWITCH_STANDARD_API(uuid_answer_function)
 
 	if (uuid && (xsession = switch_core_session_locate(uuid))) {
 		switch_channel_t *channel = switch_core_session_get_channel(xsession);
-		switch_channel_answer(channel);
+		switch_status_t status = switch_channel_answer(channel);
 		switch_core_session_rwunlock(xsession);
+		if (status == SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "+OK\n");
+		} else {
+			stream->write_function(stream, "-ERROR\n");
+		}
 	} else {
 		stream->write_function(stream, "-ERROR\n");
 	}
@@ -3666,7 +3671,7 @@ SWITCH_STANDARD_API(uuid_video_refresh_function)
 }
 
 
-#define DEBUG_MEDIA_SYNTAX "<uuid> <read|write|both|vread|vwrite|vboth> <on|off>"
+#define DEBUG_MEDIA_SYNTAX "<uuid> <read|write|both|vread|vwrite|vboth|all> <on|off>"
 SWITCH_STANDARD_API(uuid_debug_media_function)
 {
 	char *mycmd = NULL, *argv[3] = { 0 };
@@ -3690,7 +3695,18 @@ SWITCH_STANDARD_API(uuid_debug_media_function)
 		msg.from = __FILE__;
 
 		if ((lsession = switch_core_session_locate(argv[0]))) {
+			if (!strcasecmp(argv[1], "all")) {
+				msg.string_array_arg[0] = "both";
+			}
+
+        again:
 			status = switch_core_session_receive_message(lsession, &msg);
+
+			if (status == SWITCH_STATUS_SUCCESS && !strcasecmp(argv[1], "all") && !strcmp(msg.string_array_arg[0], "both")) {
+				msg.string_array_arg[0] = "vboth";
+				goto again;
+			}
+
 			switch_core_session_rwunlock(lsession);
 		}
 	}

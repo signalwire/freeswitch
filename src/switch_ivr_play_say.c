@@ -1084,7 +1084,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 	arg_recursion_check_start(args);
 
-	if (!strcasecmp(read_impl.iananame, "l16")) {
+	if (!zstr(read_impl.iananame) && !strcasecmp(read_impl.iananame, "l16")) {
 		l16++;
 	}
 
@@ -1997,7 +1997,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 
 		switch_channel_set_variable(channel, SWITCH_READ_TERMINATOR_USED_VARIABLE, tb);
 
-		if ((p = strchr(valid_terminators, tb[0]))) {
+		if (!zstr(valid_terminators) && (p = strchr(valid_terminators, tb[0]))) {
 			if (p >= (valid_terminators + 1) && (*(p - 1) == '+' || *(p - 1) == 'x')) {
 				switch_snprintf(digit_buffer + strlen(digit_buffer), digit_buffer_length - strlen(digit_buffer), "%s", tb);
 				if (*(p - 1) == 'x') {

@@ -1102,9 +1102,16 @@ static switch_status_t switch_event_base_add_header(switch_event_t *event, switc
 				*header->value = '\0';
 			}
 
+			hv += strlen(header->value);
 			for(j = 0; j < header->idx; j++) {
-				switch_snprintf(header->value + strlen(header->value), len - strlen(header->value), "%s%s", j == 0 ? "" : "|:", header->array[j]);
+				if (j > 0) {
+					memcpy(hv, "|:", 2);
+					hv += 2;
+				}
+				memcpy(hv, header->array[j], strlen(header->array[j]));
+				hv += strlen(header->array[j]);
 			}
+			*hv = '\0';
 		}
 
 	} else {
