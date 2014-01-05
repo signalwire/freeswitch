@@ -1191,6 +1191,10 @@ static struct rayo_mixer *_rayo_mixer_create(const char *name, const char *file,
  */
 static void rayo_component_cleanup(struct rayo_actor *actor)
 {
+	if (RAYO_COMPONENT(actor)->cleanup_fn) {
+		RAYO_COMPONENT(actor)->cleanup_fn(actor);
+	}
+
 	/* parent can now be destroyed */
 	RAYO_UNLOCK(RAYO_COMPONENT(actor)->parent);
 }
@@ -1202,9 +1206,12 @@ static void rayo_component_cleanup(struct rayo_actor *actor)
  * @param id internal ID of this component
  * @param parent the parent that owns this component
  * @param client_jid the client that created this component
+ * @param cleanup optional cleanup function
+ * @param file file that called this function
+ * @param line line number that called this function
  * @return the component
  */
-struct rayo_component *_rayo_component_init(struct rayo_component *component, switch_memory_pool_t *pool, const char *type, const char *subtype, const char *id, struct rayo_actor *parent, const char *client_jid, const char *file, int line)
+struct rayo_component *_rayo_component_init(struct rayo_component *component, switch_memory_pool_t *pool, const char *type, const char *subtype, const char *id, struct rayo_actor *parent, const char *client_jid, rayo_actor_cleanup_fn cleanup, const char *file, int line)
 {
 	char *ref = switch_mprintf("%s-%d", subtype, rayo_actor_seq_next(parent));
 	char *jid = switch_mprintf("%s/%s", RAYO_JID(parent), ref);
@@ -1218,6 +1225,7 @@ struct rayo_component *_rayo_component_init(struct rayo_component *component, sw
 	component->client_jid = switch_core_strdup(pool, client_jid);
 	component->ref = switch_core_strdup(pool, ref);
 	component->parent = parent;
+	component->cleanup_fn = cleanup;
 
 	switch_safe_free(ref);
 	switch_safe_free(jid);
@@ -2442,6 +2450,8 @@ static iks *on_iq_get_xmpp_disco(struct rayo_actor *server, struct rayo_message 
 	iks_insert_attrib(x, "xmlns", IKS_NS_XMPP_DISCO);
 	feature = iks_insert(x, "feature");
 	iks_insert_attrib(feature, "var", RAYO_NS);
+	feature = iks_insert(x, "feature");
+	iks_insert_attrib(feature, "var", RAYO_CPA_NS);
 	feature = iks_insert(x, "feature");
 	iks_insert_attrib(feature, "var", RAYO_FAX_NS);
 

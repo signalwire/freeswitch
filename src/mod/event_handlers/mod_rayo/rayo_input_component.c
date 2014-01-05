@@ -27,7 +27,7 @@
  *
  */
 #include "rayo_components.h"
-#include "rayo_cpa_detector.h"
+#include "rayo_cpa_component.h"
 #include "rayo_elements.h"
 #include "srgs.h"
 #include "nlsml.h"
@@ -360,10 +360,14 @@ static iks *start_call_input(struct input_component *component, switch_core_sess
 	component->speech_mode = strcmp(iks_find_attrib_soft(input, "mode"), "dtmf");
 	if (component->speech_mode && handler->voice_component) {
 		/* don't allow multi voice input */
+		RAYO_UNLOCK(component);
+		RAYO_DESTROY(component);
 		return iks_new_error_detailed(iq, STANZA_ERROR_CONFLICT, "Multiple voice input is not allowed");
 	}
 	if (!component->speech_mode && handler->dtmf_component) {
 		/* don't allow multi dtmf input */
+		RAYO_UNLOCK(component);
+		RAYO_DESTROY(component);
 		return iks_new_error_detailed(iq, STANZA_ERROR_CONFLICT, "Multiple dtmf input is not allowed");
 	}
 
@@ -538,17 +542,20 @@ static iks *start_call_input_component(struct rayo_actor *call, struct rayo_mess
 	struct input_component *input_component = NULL;
 	const char *error = NULL;
 
+	/* Start CPA */
+	if (!strcmp(iks_find_attrib_soft(input, "mode"), "cpa")) {
+		return rayo_cpa_component_start(call, msg, session_data);
+	}
+
+	/* start input */
 	if (!validate_call_input(input, &error)) {
 		return iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, error);
 	}
 
-	/* create component */
 	switch_core_new_memory_pool(&pool);
 	input_component = switch_core_alloc(pool, sizeof(*input_component));
 	rayo_component_init(RAYO_COMPONENT(input_component), pool, RAT_CALL_COMPONENT, "input", component_id, call, iks_find_attrib(iq, "from"));
-
-	/* start input */
-	return start_call_input(input_component, session, iks_find(iq, "input"), iq, NULL, 0);
+	return start_call_input(input_component, session, input, iq, NULL, 0);
 }
 
 /**
@@ -761,7 +768,7 @@ switch_status_t rayo_input_component_load(switch_loadable_module_interface_t **m
 	rayo_actor_command_handler_add(RAT_CALL_COMPONENT, "input", "set:"RAYO_INPUT_NS":start-timers", start_timers_call_input_component);
 	switch_event_bind("rayo_input_component", SWITCH_EVENT_DETECTED_SPEECH, SWITCH_EVENT_SUBCLASS_ANY, on_detected_speech_event, NULL);
 
-	return rayo_cpa_detector_load(module_interface, pool, config_file);
+	return rayo_cpa_component_load(module_interface, pool, config_file);
 }
 
 /**
@@ -773,7 +780,7 @@ switch_status_t rayo_input_component_shutdown(void)
 	srgs_parser_destroy(globals.parser);
 	switch_event_unbind_callback(on_detected_speech_event);
 
-	rayo_cpa_detector_shutdown();
+	rayo_cpa_component_shutdown();
 
 	return SWITCH_STATUS_SUCCESS;
 }
