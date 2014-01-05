@@ -2,8 +2,8 @@
   <settings>
     <!-- See http://wiki.freeswitch.org/wiki/Mod_nibblebill for help with these options -->
 
-    <!-- Information for connecting to your database -->
-    <param name="odbc-dsn" value="bandwidth.com"/>
+    <!-- Information for connecting to your database. Use the format "database:username:password" -->
+    <param name="odbc-dsn" value="bandwidth.com:user:password"/>
 
     <!-- The database table where your CASH column is located -->
     <param name="db_table" value="accounts"/>
