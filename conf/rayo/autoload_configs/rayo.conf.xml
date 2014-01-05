@@ -109,6 +109,9 @@
 
 	<!-- IQ request aliases.  Used mainly for testing purposes or for controlling a rayo call via the console -->
 	<aliases>
+		<alias name="detect" target="call" args="1"><![CDATA[<input xmlns="urn:xmpp:rayo:input:1" mode="cpa"><grammar url="urn:xmpp:rayo:cpa:$1:1"/></input>]]></alias>
+		<alias name="detect-once" target="call" args="1"><![CDATA[<input xmlns="urn:xmpp:rayo:input:1" mode="cpa"><grammar url="urn:xmpp:rayo:cpa:$1:1?terminate=true"/></input>]]></alias>
+		<alias name="detect-tones" target="call"><![CDATA[<input xmlns="urn:xmpp:rayo:input:1" mode="cpa"><grammar url="urn:xmpp:rayo:cpa:busy:1"/><grammar url="urn:xmpp:rayo:cpa:congestion:1"/><grammar url="urn:xmpp:rayo:cpa:sit:1"/></input>]]></alias>
 		<alias name="ping" target="external"><![CDATA[<iq type="get"><ping xmlns="urn:xmpp:ping"/></iq>]]></alias>
 		<alias name="dial" target="server" args="2"><![CDATA[<dial xmlns="urn:xmpp:rayo:1" from="$1" to="$2"/>]]></alias>
 		<alias name="answer" target="call"><![CDATA[<answer xmlns="urn:xmpp:rayo:1"/>]]></alias>

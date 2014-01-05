@@ -23,20 +23,20 @@
  * Contributor(s):
  * Chris Rienzo <chris.rienzo@grasshopper.com>
  *
- * rayo_cpa_detector.h -- Rayo call progress analysis
+ * rayo_cpa_component.h -- Rayo call progress analysis component
  *
  */
-#ifndef RAYO_CPA_DETECTOR_H
-#define RAYO_CPA_DETECTOR_H
+#ifndef RAYO_CPA_COMPONENT_H
+#define RAYO_CPA_COMPONENT_H
 
 #include <switch.h>
+#include <iksemel.h>
 
 #include "mod_rayo.h"
 
-extern switch_status_t rayo_cpa_detector_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file);
-extern void rayo_cpa_detector_shutdown(void);
-extern int rayo_cpa_detector_start(const char *call_uuid, const char *signal_ns, const char **error_detail);
-extern void rayo_cpa_detector_stop(const char *call_uuid, const char *signal_ns);
+extern switch_status_t rayo_cpa_component_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool, const char *config_file);
+extern void rayo_cpa_component_shutdown(void);
+extern iks *rayo_cpa_component_start(struct rayo_actor *call, struct rayo_message *msg, void *session_data);
 
 #endif
 

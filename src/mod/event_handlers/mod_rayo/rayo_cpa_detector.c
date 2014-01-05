@@ -155,21 +155,27 @@ static void rayo_cpa_detector_event(switch_event_t *event)
 		}
 		if (!zstr(signal_type)) {
 			switch_event_t *cpa_event;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got Rayo CPA event %s\n", signal_type);
+			const char *uuid = switch_event_get_header(event, "Unique-ID");
+			if (zstr(uuid)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Detector %s %s event is missing call UUID!\n", detector->name, signal_type);
+				return;
+			}
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "Got Rayo CPA event %s\n", signal_type);
 			if (switch_event_create_subclass(&cpa_event, SWITCH_EVENT_CUSTOM, "rayo::cpa") == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(cpa_event, SWITCH_STACK_BOTTOM, "detector-name", detector->name);
-				switch_event_add_header(cpa_event, SWITCH_STACK_BOTTOM, "detector-uuid", detector->uuid);
-				switch_event_add_header(cpa_event, SWITCH_STACK_BOTTOM, "signal-type", signal_type);
+				switch_event_add_header_string(cpa_event, SWITCH_STACK_BOTTOM, "Unique-ID", uuid);
+				switch_event_add_header_string(cpa_event, SWITCH_STACK_BOTTOM, "detector-name", detector->name);
+				switch_event_add_header_string(cpa_event, SWITCH_STACK_BOTTOM, "detector-uuid", detector->uuid);
+				switch_event_add_header(cpa_event, SWITCH_STACK_BOTTOM, "signal-type", "%s%s:%s", RAYO_CPA_BASE, signal_type, RAYO_VERSION);
 				if (!zstr(detector->signal_value_header)) {
 					const char *value = switch_event_get_header(event, detector->signal_value_header);
 					if (!zstr(value)) {
-						switch_event_add_header(cpa_event, SWITCH_STACK_BOTTOM, "value", value);
+						switch_event_add_header_string(cpa_event, SWITCH_STACK_BOTTOM, "value", value);
 					}
 				}
 				if (!zstr(detector->signal_duration_header)) {
 					const char *duration = switch_event_get_header(event, detector->signal_duration_header);
 					if (!zstr(duration)) {
-						switch_event_add_header(cpa_event, SWITCH_STACK_BOTTOM, "duration", duration);
+						switch_event_add_header_string(cpa_event, SWITCH_STACK_BOTTOM, "duration", duration);
 					}
 				}
 				switch_event_fire(&cpa_event);
