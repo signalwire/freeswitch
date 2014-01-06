@@ -32,7 +32,7 @@
 #include "srgs.h"
 #include "nlsml.h"
 
-#define MAX_DTMF 64
+#define MAX_DTMF 256
 
 #define INPUT_MATCH_TAG "match"
 #define INPUT_MATCH INPUT_MATCH_TAG, RAYO_INPUT_COMPLETE_NS
@@ -183,12 +183,17 @@ static switch_status_t input_component_on_dtmf(switch_core_session_t *session, c
 
 		match = srgs_grammar_match(component->grammar, component->digits, &interpretation);
 
-		/* adjust result if terminating digit was pressed */
 		if (is_term_digit) {
+			/* finalize result if terminating digit was pressed */
 			if (match == SMT_MATCH_PARTIAL) {
 				match = SMT_NO_MATCH;
 			} else if (match == SMT_MATCH) {
 				match = SMT_MATCH_END;
+			}
+		} else if (component->num_digits >= MAX_DTMF) {
+			/* maximum digits collected and still not a definitive match */
+			if (match != SMT_MATCH_END) {
+				match = SMT_NO_MATCH;
 			}
 		}
 
