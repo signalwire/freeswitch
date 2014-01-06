@@ -1971,6 +1971,7 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 		}
 
 		switch_mutex_unlock(channel->profile_mutex);
+		switch_channel_set_callstate(channel, CCS_ACTIVE);
 	}
 
 	if (flag == CF_ORIGINATOR && switch_channel_test_flag(channel, CF_ANSWERED) && switch_channel_up_nosig(channel)) {
