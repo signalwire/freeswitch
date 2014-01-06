@@ -6129,10 +6129,6 @@ int sofia_recover_callback(switch_core_session_t *session)
 		sofia_set_flag(tech_pvt, TFLAG_CRYPTO_RECOVER);
 	}
 
-	if ((tmp = switch_channel_get_variable(channel, "sip_local_sdp_str"))) {
-		tech_pvt->local_sdp_str = switch_core_session_strdup(session, tmp);
-	}
-
 	if ((tmp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE))) {
 		tech_pvt->remote_sdp_str = switch_core_session_strdup(session, tmp);
 	}
