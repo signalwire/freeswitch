@@ -1108,7 +1108,7 @@ SWITCH_STANDARD_API(in_group_function)
 
 SWITCH_STANDARD_API(user_data_function)
 {
-	switch_xml_t x_domain, xml = NULL, x_user = NULL, x_group = NULL, x_param, x_params;
+	switch_xml_t x_user = NULL, x_param, x_params;
 	int argc;
 	char *mydata = NULL, *argv[3], *key = NULL, *type = NULL, *user, *domain, *dup_domain = NULL;
 	char delim = ' ';
@@ -1143,7 +1143,7 @@ SWITCH_STANDARD_API(user_data_function)
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "domain", domain);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "type", type);
 
-	if (key && type && switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, &x_group, params) == SWITCH_STATUS_SUCCESS) {
+	if (key && type && switch_xml_locate_user_merged("id:number-alias", user, domain, NULL, &x_user, params) == SWITCH_STATUS_SUCCESS) {
 		if (!strcmp(type, "attr")) {
 			const char *attr = switch_xml_attr_soft(x_user, key);
 			result = attr;
@@ -1153,29 +1153,6 @@ SWITCH_STANDARD_API(user_data_function)
 		if (!strcmp(type, "var")) {
 			container = "variables";
 			elem = "variable";
-		}
-
-		if ((x_params = switch_xml_child(x_domain, container))) {
-			for (x_param = switch_xml_child(x_params, elem); x_param; x_param = x_param->next) {
-				const char *var = switch_xml_attr(x_param, "name");
-				const char *val = switch_xml_attr(x_param, "value");
-
-				if (var && val && !strcasecmp(var, key)) {
-					result = val;
-				}
-
-			}
-		}
-
-		if (x_group && (x_params = switch_xml_child(x_group, container))) {
-			for (x_param = switch_xml_child(x_params, elem); x_param; x_param = x_param->next) {
-				const char *var = switch_xml_attr(x_param, "name");
-				const char *val = switch_xml_attr(x_param, "value");
-
-				if (var && val && !strcasecmp(var, key)) {
-					result = val;
-				}
-			}
 		}
 
 		if ((x_params = switch_xml_child(x_user, container))) {
@@ -1194,7 +1171,7 @@ SWITCH_STANDARD_API(user_data_function)
 	if (result) {
 		stream->write_function(stream, "%s", result);
 	}
-	switch_xml_free(xml);
+	switch_xml_free(x_user);
 	switch_safe_free(mydata);
 	switch_safe_free(dup_domain);
 	switch_event_destroy(&params);
@@ -1204,7 +1181,7 @@ SWITCH_STANDARD_API(user_data_function)
 
 static switch_status_t _find_user(const char *cmd, switch_core_session_t *session, switch_stream_handle_t *stream, switch_bool_t tf)
 {
-	switch_xml_t x_domain = NULL, x_user = NULL, xml = NULL;
+	switch_xml_t x_user = NULL;
 	int argc;
 	char *mydata = NULL, *argv[3];
 	char *key, *user, *domain;
@@ -1244,7 +1221,7 @@ static switch_status_t _find_user(const char *cmd, switch_core_session_t *sessio
 		goto end;
 	}
 
-	if (switch_xml_locate_user(key, user, domain, NULL, &xml, &x_domain, &x_user, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate_user_merged(key, user, domain, NULL, &x_user, NULL) != SWITCH_STATUS_SUCCESS) {
 		err = "can't find user";
 		goto end;
 	}
@@ -1274,7 +1251,7 @@ static switch_status_t _find_user(const char *cmd, switch_core_session_t *sessio
 		}
 	}
 
-	switch_xml_free(xml);
+	switch_xml_free(x_user);
 	switch_safe_free(mydata);
 	return SWITCH_STATUS_SUCCESS;
 }
