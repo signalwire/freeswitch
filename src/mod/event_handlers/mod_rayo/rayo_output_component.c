@@ -47,6 +47,8 @@ struct output_component {
 	switch_bool_t start_paused;
 	/** true if stopped */
 	int stop;
+	/** output renderer to use */
+	const char *renderer;
 };
 
 #define OUTPUT_FINISH "finish", RAYO_OUTPUT_COMPLETE_NS
@@ -71,6 +73,7 @@ static struct rayo_component *create_output_component(struct rayo_actor *actor, 
 	output_component->repeat_times = iks_find_int_attrib(output, "repeat-times");
 	output_component->max_time = iks_find_int_attrib(output, "max-time");
 	output_component->start_paused = iks_find_bool_attrib(output, "start-paused");
+	output_component->renderer = iks_find_attrib(output, "renderer");
 
 	return (struct rayo_component *)output_component;
 }
@@ -402,7 +405,13 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 		if (speak) {
 			/* <speak> is child node */
 			char *ssml_str = iks_string(NULL, speak);
-			context->ssml = switch_mprintf("ssml://%s", ssml_str);
+			if (zstr(output->renderer)) {
+				/* FS must parse the SSML */
+				context->ssml = switch_mprintf("ssml://%s", ssml_str);
+			} else {
+				/* renderer will parse the SSML */
+				context->ssml = switch_mprintf("tts://%s||%s", output->renderer, ssml_str);
+			}
 			iks_free(ssml_str);
 		} else if (iks_has_children(context->cur_doc)) {
 			/* check if <speak> is in CDATA */
@@ -415,7 +424,13 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Missing <document> CDATA\n");
 				return SWITCH_STATUS_FALSE;
 			}
-			context->ssml = switch_mprintf("ssml://%s", ssml_str);
+			if (zstr(output->renderer)) {
+				/* FS must parse the SSML */
+				context->ssml = switch_mprintf("ssml://%s", ssml_str);
+			} else {
+				/* renderer will parse the SSML */
+				context->ssml = switch_mprintf("tts://%s||%s", output->renderer, ssml_str);
+			}
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Missing <speak>\n");
 			return SWITCH_STATUS_FALSE;
