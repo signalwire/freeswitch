@@ -6,10 +6,10 @@ NAME = freeswitch
 AM_LIBAPR_CFLAGS := $(shell ./libs/apr/apr-1-config --cflags)
 AM_LIBAPR_CPPFLAGS := $(shell ./libs/apr/apr-1-config --cppflags --includes)
 AM_LIBAPR_LDFLAGS := $(shell ./libs/apr/apr-1-config --ldflags)
-AM_LIBAPR_LIBS := $(subst $(switch_srcdir)/,,$(shell ./libs/apr/apr-1-config \--link-libtool \--libs))
+AM_LIBAPR_LIBS := $(subst $(switch_srcdir)/,,$(shell ./libs/apr/apr-1-config \--libs))
 AM_LIBAPU_CPPFLAGS := $(shell ./libs/apr-util/apu-1-config --includes)
 AM_LIBAPU_LDFLAGS := $(shell ./libs/apr-util/apu-1-config --ldflags)
-AM_LIBAPU_LIBS := $(subst $(switch_srcdir)/,,$(shell ./libs/apr-util/apu-1-config \--link-libtool \--libs))
+AM_LIBAPU_LIBS := $(subst $(switch_srcdir)/,,$(shell ./libs/apr-util/apu-1-config \--libs))
 
 AM_CFLAGS   = $(SWITCH_AM_CFLAGS) $(SWITCH_ANSI_CFLAGS) 
 AM_CPPFLAGS = $(SWITCH_AM_CXXFLAGS) -Ilibs/sofia-sip/libsofia-sip-ua/sdp -Ilibs/sofia-sip/libsofia-sip-ua/su
@@ -120,7 +120,8 @@ CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/spandsp/src -I$(switch_srcdir)/libs/tiff-4.0.2/libtiff
 
-CORE_LIBS  = $(AM_LIBAPU_LIBS) $(AM_LIBAPR_LIBS)
+APR_LIBS   = $(AM_LIBAPU_LIBS) $(AM_LIBAPR_LIBS)
+CORE_LIBS  = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
 CORE_LIBS += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la
 
 if ENABLE_SRTP
@@ -155,7 +156,7 @@ endif
 lib_LTLIBRARIES	         = libfreeswitch.la
 libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(AM_CFLAGS)
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS)
-libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(PLATFORM_CORE_LIBS)
+libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(PLATFORM_CORE_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
 
 if HAVE_ODBC
@@ -342,7 +343,7 @@ endif
 fs_encode_SOURCES = src/fs_encode.c
 fs_encode_CFLAGS  = $(AM_CFLAGS)
 fs_encode_LDFLAGS = $(AM_LDFLAGS)
-fs_encode_LDADD   = libfreeswitch.la $(CORE_LIBS)
+fs_encode_LDADD   = libfreeswitch.la $(CORE_LIBS) $(APR_LIBS)
 
 if HAVE_ODBC
 fs_encode_LDADD += $(ODBC_LIB_FLAGS)
@@ -355,7 +356,7 @@ endif
 tone2wav_SOURCES = src/tone2wav.c
 tone2wav_CFLAGS  = $(AM_CFLAGS)
 tone2wav_LDFLAGS = $(AM_LDFLAGS)
-tone2wav_LDADD   = libfreeswitch.la $(CORE_LIBS)
+tone2wav_LDADD   = libfreeswitch.la $(CORE_LIBS) $(APR_LIBS)
 
 if HAVE_ODBC
 tone2wav_LDADD += $(ODBC_LIB_FLAGS)
