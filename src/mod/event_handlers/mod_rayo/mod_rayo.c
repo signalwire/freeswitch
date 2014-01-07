@@ -170,9 +170,9 @@ struct rayo_mixer_member {
  * A subscriber to mixer events
  */
 struct rayo_mixer_subscriber {
-	/** JID of subscriber */
+	/** JID of client */
 	const char *jid;
-	/** Number of controlled parties in mixer */
+	/** Number of client's calls in mixer */
 	int ref_count;
 };
 
@@ -250,6 +250,54 @@ typedef switch_bool_t (* rayo_actor_match_fn)(struct rayo_actor *);
 static switch_bool_t is_call_actor(struct rayo_actor *actor);
 
 
+/**
+ * Entity features returned by service discovery
+ */
+struct entity_identity {
+	/** identity category */
+	const char *category;
+	/** identity type */
+	const char *type;
+};
+
+static struct entity_identity rayo_server_identity = { "server", "im" };
+static const char *rayo_server_features[] = { IKS_NS_XMPP_ENTITY_CAPABILITIES, IKS_NS_XMPP_DISCO, RAYO_NS, RAYO_CPA_NS, RAYO_FAX_NS, 0 };
+
+static struct entity_identity rayo_mixer_identity = { "client", "rayo_mixer" };
+static const char *rayo_mixer_features[] = { 0 };
+
+static struct entity_identity rayo_call_identity = { "client", "rayo_call" };
+static const char *rayo_call_features[] = { 0 };
+
+/**
+ * Calculate SHA-1 hash of entity capabilities
+ * @param identity of entity
+ * @param features of identity (NULL terminated)
+ * @return base64 hash (free when done)
+ */
+static char *calculate_entity_sha1_ver(struct entity_identity *identity, const char **features)
+{
+	int i;
+	const char *feature;
+	char ver[SHA_1_HASH_BUF_SIZE + 1] = { 0 };
+	iksha *sha;
+
+	sha = iks_sha_new();
+	iks_sha_hash(sha, (const unsigned char *)identity->category, strlen(identity->category), 0);
+	iks_sha_hash(sha, (const unsigned char *)"/", 1, 0);
+	iks_sha_hash(sha, (const unsigned char *)identity->type, strlen(identity->type), 0);
+	iks_sha_hash(sha, (const unsigned char *)"//", 2, 0);
+	i = 0;
+	while ((feature = features[i++])) {
+		iks_sha_hash(sha, (const unsigned char *)"<", 1, 0);
+		iks_sha_hash(sha, (const unsigned char *)feature, strlen(feature), 0);
+	}
+	iks_sha_hash(sha, (const unsigned char *)"<", 1, 1);
+	iks_sha_print_base64(sha, ver);
+	iks_sha_delete(sha);
+
+	return strdup(ver);
+}
 
 /**
  * @param msg to check
@@ -406,6 +454,32 @@ static void add_header(iks *node, const char *name, const char *value)
 		iks_insert_attrib(header, "name", name);
 		iks_insert_attrib(header, "value", value);
 	}
+}
+
+/**
+ * Send event to clients
+ * @param from event sender
+ * @param rayo_event the event to send
+ * @param online_only only send to online clients
+ */
+static void broadcast_event(struct rayo_actor *from, iks *rayo_event, int online_only)
+{
+	switch_hash_index_t *hi = NULL;
+	switch_mutex_lock(globals.clients_mutex);
+	for (hi = switch_hash_first(NULL, globals.clients_roster); hi; hi = switch_hash_next(hi)) {
+		struct rayo_client *rclient;
+		const void *key;
+		void *val;
+		switch_hash_this(hi, &key, NULL, &val);
+		rclient = (struct rayo_client *)val;
+		switch_assert(rclient);
+
+		if (!online_only || rclient->availability == PS_ONLINE) {
+			iks_insert_attrib(rayo_event, "to", RAYO_JID(rclient));
+			RAYO_SEND_MESSAGE_DUP(from, RAYO_JID(rclient), rayo_event);
+		}
+	}
+	switch_mutex_unlock(globals.clients_mutex);
 }
 
 /**
@@ -2445,15 +2519,20 @@ static iks *on_iq_get_xmpp_disco(struct rayo_actor *server, struct rayo_message 
 	iks *response = NULL;
 	iks *x;
 	iks *feature;
+	iks *identity;
+	int i = 0;
+	const char *feature_string;
 	response = iks_new_iq_result(node);
 	x = iks_insert(response, "query");
 	iks_insert_attrib(x, "xmlns", IKS_NS_XMPP_DISCO);
-	feature = iks_insert(x, "feature");
-	iks_insert_attrib(feature, "var", RAYO_NS);
-	feature = iks_insert(x, "feature");
-	iks_insert_attrib(feature, "var", RAYO_CPA_NS);
-	feature = iks_insert(x, "feature");
-	iks_insert_attrib(feature, "var", RAYO_FAX_NS);
+	identity = iks_insert(x, "identity");
+	iks_insert_attrib(identity, "category", rayo_server_identity.category);
+	iks_insert_attrib(identity, "type", rayo_server_identity.type);
+	i = 0;
+	while((feature_string = rayo_server_features[i++])) {
+		feature = iks_insert(x, "feature");
+		iks_insert_attrib(feature, "var", feature_string);
+	}
 
 	/* TODO The response MUST also include features for the application formats and transport methods supported by
 	 * the responding entity, as described in the relevant specifications.
@@ -2669,6 +2748,15 @@ static void on_mixer_delete_member_event(struct rayo_mixer *mixer, switch_event_
 static void on_mixer_destroy_event(struct rayo_mixer *mixer, switch_event_t *event)
 {
 	if (mixer) {
+		iks *presence;
+
+		/* notify online clients of mixer destruction */
+		presence = iks_new("presence");
+		iks_insert_attrib(presence, "from", RAYO_JID(mixer));
+		iks_insert_attrib(presence, "type", "unavailable");
+		broadcast_event(RAYO_ACTOR(mixer), presence, 1);
+		iks_delete(presence);
+
 		/* remove from hash and destroy */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, destroying mixer: %s\n", RAYO_JID(mixer), rayo_mixer_get_name(mixer));
 		RAYO_UNLOCK(mixer); /* release original lock */
@@ -2688,10 +2776,25 @@ static void on_mixer_add_member_event(struct rayo_mixer *mixer, switch_event_t *
 	struct rayo_call *call = RAYO_CALL_LOCATE_BY_ID(uuid);
 
 	if (!mixer) {
+		char *ver;
+		iks *presence, *c;
+
 		/* new mixer */
 		const char *mixer_name = switch_event_get_header(event, "Conference-Name");
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "creating mixer: %s\n", mixer_name);
 		mixer = rayo_mixer_create(mixer_name);
+
+		/* notify online clients of mixer presence */
+		ver = calculate_entity_sha1_ver(&rayo_mixer_identity, rayo_mixer_features);
+
+		presence = iks_new_presence("c", IKS_NS_XMPP_ENTITY_CAPABILITIES, RAYO_JID(mixer), "");
+		c = iks_find(presence, "c");
+		iks_insert_attrib(c, "hash", "sha-1");
+		iks_insert_attrib(c, "node", RAYO_MIXER_NS);
+		iks_insert_attrib(c, "ver", ver);
+		free(ver);
+
+		broadcast_event(RAYO_ACTOR(mixer), presence, 1);
 	}
 
 	if (call) {
@@ -2719,6 +2822,9 @@ static void on_mixer_add_member_event(struct rayo_mixer *mixer, switch_event_t *
 		if (call->pending_join_request) {
 			iks *request = call->pending_join_request;
 			iks *result = iks_new_iq_result(request);
+			iks *ref = iks_insert(result, "ref");
+			iks_insert_attrib(ref, "xmlns", RAYO_NS);
+			iks_insert_attrib_printf(ref, "uri", "xmpp:%s", RAYO_JID(mixer));
 			call->pending_join_request = NULL;
 			RAYO_SEND_REPLY(call, iks_find_attrib_soft(request, "from"), result);
 			iks_delete(request);
@@ -3135,12 +3241,24 @@ static iks *rayo_create_offer(struct rayo_call *call, switch_core_session_t *ses
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_caller_profile_t *profile = switch_channel_get_caller_profile(channel);
 	iks *presence = iks_new("presence");
+	iks *c = iks_insert(presence, "c");
 	iks *offer = iks_insert(presence, "offer");
 	const char *val;
+	char *ver;
 
+	/* <presence> */
 	iks_insert_attrib(presence, "from", RAYO_JID(call));
-	iks_insert_attrib(offer, "xmlns", RAYO_NS);
 
+	/* <c> */
+	ver = calculate_entity_sha1_ver(&rayo_call_identity, rayo_call_features);
+	iks_insert_attrib(c, "xmlns", IKS_NS_XMPP_ENTITY_CAPABILITIES);
+	iks_insert_attrib(c, "hash", "sha-1");
+	iks_insert_attrib(c, "node", RAYO_CALL_NS);
+	iks_insert_attrib(c, "ver", ver);
+	free(ver);
+
+	/* <offer> */
+	iks_insert_attrib(offer, "xmlns", RAYO_NS);
 	if (globals.offer_uri && (val = switch_channel_get_variable(channel, "sip_from_uri"))) {
 		/* is a SIP call - pass the URI */
 		if (!strchr(val, ':')) {
@@ -3287,8 +3405,8 @@ SWITCH_STANDARD_APP(rayo_app)
 				RAYO_SEND_MESSAGE_DUP(call, RAYO_JID(rclient), offer);
 			}
 		}
-		iks_delete(offer);
 		switch_mutex_unlock(globals.clients_mutex);
+		iks_delete(offer);
 
 		/* nobody to offer to */
 		if (!ok) {
