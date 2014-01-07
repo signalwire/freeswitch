@@ -260,17 +260,6 @@ static int process_tag(struct ssml_parser *parser, const char *name, char **atts
 }
 
 /**
- * Handle tag attributes that are ignored
- * @param parser the parser
- * @param atts the attributes
- * @return IKS_OK
- */
-static int process_attribs_ignore(struct ssml_parser *parser, char **atts)
-{
-	return IKS_OK;
-}
-
-/**
  * Handle CDATA that is ignored
  * @param parser the parser
  * @param data the CDATA
@@ -393,6 +382,19 @@ static struct voice *find_tts_voice(struct ssml_node *cur_node)
 static struct voice *find_say_voice(struct ssml_node *cur_node)
 {
 	return find_voice(cur_node, globals.say_voice_map, "say", 1);
+}
+
+/**
+ * Handle tag attributes that are ignored
+ * @param parser the parser
+ * @param atts the attributes
+ * @return IKS_OK
+ */
+static int process_attribs_ignore(struct ssml_parser *parsed_data, char **atts)
+{
+	struct ssml_node *cur_node = parsed_data->cur_node;
+	cur_node->tts_voice = find_tts_voice(cur_node);
+	return IKS_OK;
 }
 
 /**
