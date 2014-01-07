@@ -26,6 +26,13 @@
 	<!-- Define CPA detectors.  These are sources for Rayo CPA signal events -->
 	<!-- Detectors must fire an event that can be translated by mod_rayo into a CPA signal event -->
 	<cpa>
+		<!-- map DTMF events to CPA -->
+		<detector name="core_dtmf_event">
+			<event class="DTMF" value-header="DTMF-Digit" duration-header="DTMF-Duration">
+				<signal-type value="dtmf"/>
+			</event>
+		</detector>
+
 		<!-- map mod_spandsp fax detector to the Rayo CPA events. Fires DETECTED_FAX_* event once and quits. -->
 		<detector name="mod_spandsp_fax_ced">
 			<start application="spandsp_start_fax_detect" data="event 'Event-Name=CUSTOM,Event-Subclass=DETECTED_FAX_CED' 500 ced"/>

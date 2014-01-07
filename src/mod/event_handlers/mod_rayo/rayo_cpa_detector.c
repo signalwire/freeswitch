@@ -79,8 +79,13 @@ struct rayo_cpa_detector_state {
 int rayo_cpa_detector_start(const char *call_uuid, const char *signal_ns, const char **error_detail)
 {
 	struct rayo_cpa_detector *detector = switch_core_hash_find(globals.detectors, signal_ns);
+	switch_core_session_t *session;
 	if (detector) {
-		switch_core_session_t *session = switch_core_session_locate(call_uuid);
+		if (zstr(detector->start_app)) {
+			/* nothing to do */
+			return 1;
+		}
+		session = switch_core_session_locate(call_uuid);
 		if (session) {
 			struct rayo_cpa_detector_state *detector_state = switch_channel_get_private(switch_core_session_get_channel(session), detector->uuid);
 			if (detector_state) {
@@ -114,8 +119,13 @@ int rayo_cpa_detector_start(const char *call_uuid, const char *signal_ns, const 
 void rayo_cpa_detector_stop(const char *call_uuid, const char *signal_ns)
 {
 	struct rayo_cpa_detector *detector = switch_core_hash_find(globals.detectors, signal_ns);
+	switch_core_session_t *session;
 	if (detector) {
-		switch_core_session_t *session = switch_core_session_locate(call_uuid);
+		if (zstr(detector->stop_app)) {
+			/* nothing to do */
+			return;
+		}
+		session = switch_core_session_locate(call_uuid);
 		if (session) {
 			struct rayo_cpa_detector_state *detector_state = switch_channel_get_private(switch_core_session_get_channel(session), detector->uuid);
 			if (detector_state) {
