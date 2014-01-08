@@ -1347,6 +1347,14 @@ static pvt_t *pvt_init(switch_core_session_t *session, mod_spandsp_fax_applicati
 	return pvt;
 }
 
+void mod_spandsp_fax_stop_fax(switch_core_session_t *session)
+{
+	pvt_t *pvt = switch_channel_get_private(switch_core_session_get_channel(session), "_fax_pvt");
+	if (pvt) {
+		pvt->done = 1;
+	}
+}
+
 void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *data, mod_spandsp_fax_application_mode_t app_mode)
 {
 	pvt_t *pvt;
@@ -1365,7 +1373,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 
 
 	pvt = pvt_init(session, app_mode);
-
+	switch_channel_set_private(channel, "_fax_pvt", pvt);
 
 	buf = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
 
@@ -1477,6 +1485,8 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 	while (switch_channel_ready(channel)) {
 		int tx = 0;
 		switch_status_t status;
+
+		switch_ivr_parse_all_events(session);
 
 		/*
 		   if we are in T.38 mode, we should: 1- initialize the ptv->t38_state stuff, if not done

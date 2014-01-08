@@ -64,6 +64,11 @@ SWITCH_STANDARD_APP(spanfax_rx_function)
 	mod_spandsp_fax_process_fax(session, data, FUNCTION_RX);
 }
 
+SWITCH_STANDARD_APP(spanfax_stop_function)
+{
+	mod_spandsp_fax_stop_fax(session);
+}
+
 SWITCH_STANDARD_APP(dtmf_session_function)
 {
 	spandsp_inband_dtmf_session(session);
@@ -740,6 +745,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spandsp_init)
 				   SAF_SUPPORT_NOMEDIA | SAF_NO_LOOPBACK);
 	SWITCH_ADD_APP(app_interface, "txfax", "FAX Transmit Application", "FAX Transmit Application", spanfax_tx_function, SPANFAX_TX_USAGE,
 				   SAF_SUPPORT_NOMEDIA | SAF_NO_LOOPBACK);
+	SWITCH_ADD_APP(app_interface, "stopfax", "Stop FAX Application", "Stop FAX Application", spanfax_stop_function, "", SAF_NONE);
 
 	SWITCH_ADD_APP(app_interface, "spandsp_stop_dtmf", "stop inband dtmf", "Stop detecting inband dtmf.", stop_dtmf_session_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "spandsp_start_dtmf", "Detect dtmf", "Detect inband dtmf on the session", dtmf_session_function, "", SAF_MEDIA_TAP);
