@@ -85,6 +85,8 @@ static int running = 1;
 static int thread_running = 0;
 static char *filter_uuid;
 static char *logfilter;
+static int timeout = 0;
+static int connect_timeout = 0;
 #ifndef WIN32
 static EditLine *el;
 static History *myhistory;
@@ -603,6 +605,7 @@ static const char *usage_str =
 	"  -d, --debug=level               Debug Level (0 - 7)\n"
 	"  -b, --batchmode                 Batch mode\n"
 	"  -t, --timeout                   Timeout for API commands (in miliseconds)\n"
+	"  -T, --connect-timeout           Timeout for socket connection (in miliseconds)\n"
 	"  -n, --no-color                  Disable color\n\n";
 
 static int usage(char *name){
@@ -1249,6 +1252,10 @@ static void read_config(const char *dft_cfile, const char *cfile) {
 						profiles[pcount-1].console_fnkeys[i - 1] = strdup(val);
 					}
 				}
+			} else if (!strcasecmp(var, "timeout")) {
+				timeout = atoi(val);
+			} else if (!strcasecmp(var, "connect-timeout")) {
+				connect_timeout = atoi(val);
 			}
 		}
 		esl_config_close_file(&cfg);
@@ -1301,6 +1308,7 @@ int main(int argc, char *argv[])
 		{"interrupt", 0, 0, 'i'},
 		{"reconnect", 0, 0, 'R'},
 		{"timeout", 1, 0, 't'},
+		{"connect-timeout", 1, 0, 'T'},
 		{0, 0, 0, 0}
 	};
 	char temp_host[128];
@@ -1319,7 +1327,7 @@ int main(int argc, char *argv[])
 	int argv_log_uuid = 0;
 	int argv_quiet = 0;
 	int argv_batch = 0;
-	int loops = 2, reconnect = 0, timeout = 0;
+	int loops = 2, reconnect = 0;
 	char *ccheck;
 
 #ifdef WIN32
@@ -1354,7 +1362,7 @@ int main(int argc, char *argv[])
 	esl_global_set_default_logger(6); /* default debug level to 6 (info) */
 	for(;;) {
 		int option_index = 0;
-		opt = getopt_long(argc, argv, "H:P:S:u:p:d:x:l:Ut:qrRhib?n", options, &option_index);
+		opt = getopt_long(argc, argv, "H:P:S:u:p:d:x:l:Ut:T:qrRhib?n", options, &option_index);
 		if (opt == -1) break;
 		switch (opt) {
 			case 'H':
@@ -1417,6 +1425,9 @@ int main(int argc, char *argv[])
 				break;
 			case 't':
 				timeout = atoi(optarg);
+				break;
+			case 'T':
+				connect_timeout = atoi(optarg);
 				break;
 			case 'h':
 			case '?':
@@ -1488,7 +1499,7 @@ int main(int argc, char *argv[])
 	connected = 0;
 	while (--loops > 0) {
 		memset(&handle, 0, sizeof(handle));
-		if (esl_connect(&handle, profile->host, profile->port, profile->user, profile->pass)) {
+		if (esl_connect_timeout(&handle, profile->host, profile->port, profile->user, profile->pass, connect_timeout)) {
 			esl_global_set_default_logger(7);
 			esl_log(ESL_LOG_ERROR, "Error Connecting [%s]\n", handle.err);
 			if (loops == 1) {

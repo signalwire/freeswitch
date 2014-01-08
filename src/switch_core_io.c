@@ -360,6 +360,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 	if (session->read_codec->implementation->impl_id != codec_impl.impl_id) {
 		need_codec = TRUE;
+		tap_only = 0;
 	} 
 	
 	if (codec_impl.actual_samples_per_second != session->read_impl.actual_samples_per_second) {

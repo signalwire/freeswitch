@@ -33,7 +33,7 @@
  */
 ELEMENT(RAYO_INPUT)
 	ATTRIB(xmlns,, any)
-	STRING_ATTRIB(mode, any, "any,dtmf,voice")
+	STRING_ATTRIB(mode, any, "any,dtmf,voice,cpa")
 	OPTIONAL_ATTRIB(terminator,, dtmf_digit)
 	ATTRIB(recognizer,, any)
 	ATTRIB(language, en-US, any)

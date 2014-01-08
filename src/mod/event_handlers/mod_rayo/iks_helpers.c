@@ -522,6 +522,29 @@ char *iks_server_dialback_key(const char *secret, const char *receiving_server, 
 	return NULL;
 }
 
+/**
+ * Print base 64 encoded SHA-1 hash
+ * @param sha hash to print
+ * @param buf to store baes 64 encoded hash
+ */
+void iks_sha_print_base64(iksha *sha, char *buf)
+{
+	int i;
+	char hex_digit[3] = { 0 };
+	char hex_buf[SHA_1_HASH_BUF_SIZE];
+	unsigned char bin_buf[SHA_1_HASH_BUF_SIZE / 2];
+	iks_sha_print(sha, hex_buf);
+
+	/* convert hex string to octets */
+	for (i = 0; i < SHA_1_HASH_BUF_SIZE; i += 2) {
+		hex_digit[0] = hex_buf[i];
+		hex_digit[1] = hex_buf[i + 1];
+		bin_buf[i / 2] = strtol(hex_digit, NULL, 16);
+	}
+	
+	switch_b64_encode(bin_buf, SHA_1_HASH_BUF_SIZE / 2, (unsigned char *)buf, SHA_1_HASH_BUF_SIZE);
+}
+
 /* For Emacs:
  * Local Variables:
  * mode:c

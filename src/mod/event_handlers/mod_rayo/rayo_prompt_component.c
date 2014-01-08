@@ -261,17 +261,32 @@ static iks *prompt_component_handle_input_error(struct rayo_actor *prompt, struc
 
 	switch (PROMPT_COMPONENT(prompt)->state) {
 		case PCS_START_INPUT_TIMERS:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, <input> error: %s\n", RAYO_JID(prompt), iks_string(iks_stack(iq), iq));
+			PROMPT_COMPONENT(prompt)->state = PCS_DONE;
+
+			/* forward IQ error to client */
+			iq = PROMPT_COMPONENT(prompt)->iq;
+			iks_insert_attrib(iq, "from", RAYO_JID(RAYO_COMPONENT(prompt)->parent));
+			iks_insert_attrib(iq, "to", RAYO_COMPONENT(prompt)->client_jid);
+			iks_insert_node(iq, iks_copy_within(error, iks_stack(iq)));
+			RAYO_SEND_REPLY(prompt, RAYO_COMPONENT(prompt)->client_jid, iq);
+
+			/* done */
+			RAYO_UNLOCK(prompt);
+			RAYO_DESTROY(prompt);
+
+			break;
+
 		case PCS_START_INPUT:
-			/* send error to client */
-			PROMPT_COMPONENT(prompt)-> state = PCS_DONE;
+			/* send presence error to client */
+			PROMPT_COMPONENT(prompt)->state = PCS_DONE;
 			iks_delete(PROMPT_COMPONENT(prompt)->iq);
 			rayo_component_send_complete(RAYO_COMPONENT(prompt), COMPONENT_COMPLETE_ERROR);
-			break;
 			break;
 		case PCS_START_INPUT_OUTPUT:
 			PROMPT_COMPONENT(prompt)->state = PCS_DONE_STOP_OUTPUT;
 
-			/* forward error to client */
+			/* forward IQ error to client */
 			iq = PROMPT_COMPONENT(prompt)->iq;
 			iks_insert_attrib(iq, "from", RAYO_JID(RAYO_COMPONENT(prompt)->parent));
 			iks_insert_attrib(iq, "to", RAYO_COMPONENT(prompt)->client_jid);
@@ -312,7 +327,7 @@ static iks *prompt_component_handle_output_error(struct rayo_actor *prompt, stru
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, <output> error: %s\n", RAYO_JID(prompt), iks_string(iks_stack(iq), iq));
 			PROMPT_COMPONENT(prompt)->state = PCS_DONE;
 
-			/* forward error to client */
+			/* forward IQ error to client */
 			iq = PROMPT_COMPONENT(prompt)->iq;
 			iks_insert_attrib(iq, "from", RAYO_JID(RAYO_COMPONENT(prompt)->parent));
 			iks_insert_attrib(iq, "to", RAYO_COMPONENT(prompt)->client_jid);
