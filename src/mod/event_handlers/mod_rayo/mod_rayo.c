@@ -3320,16 +3320,6 @@ static switch_status_t rayo_call_on_read_frame(switch_core_session_t *session, s
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Ending abandoned call.  idle_duration_ms = %i ms\n", idle_duration_ms);
 			switch_channel_hangup(channel, RAYO_CAUSE_HANGUP);
 		}
-
-		/* check for break request */
-		{
-			const char *break_jid = switch_channel_get_variable(channel, "rayo_read_frame_interrupt");
-			struct rayo_actor *actor;
-			if (break_jid && (actor = RAYO_LOCATE(break_jid))) {
-				RAYO_UNLOCK(actor);
-				return SWITCH_STATUS_FALSE;
-			}
-		}
 	}
 	return SWITCH_STATUS_SUCCESS;
 }

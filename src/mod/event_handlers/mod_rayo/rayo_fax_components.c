@@ -206,7 +206,6 @@ static iks *start_sendfax_component(struct rayo_actor *call, struct rayo_message
 		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "call-command", "execute");
 		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-name", "txfax");
 		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-arg", fax_document);
-		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "event-lock", "true");
 		if (!switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 			switch_channel_set_flag(channel, CF_BLOCK_BROADCAST_UNTIL_MEDIA);
 		}
@@ -309,7 +308,6 @@ static iks *start_receivefax_component(struct rayo_actor *call, struct rayo_mess
 		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "call-command", "execute");
 		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-name", "rxfax");
 		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-arg", receivefax_component->local_filename);
-		switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "event-lock", "true");
 		if (!switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 			switch_channel_set_flag(channel, CF_BLOCK_BROADCAST_UNTIL_MEDIA);
 		}
@@ -341,12 +339,11 @@ static iks *stop_fax_component(struct rayo_actor *component, struct rayo_message
 {
 	iks *iq = msg->payload;
 	switch_core_session_t *session = switch_core_session_locate(RAYO_COMPONENT(component)->parent->id);
+	FAX_COMPONENT(component)->stop = 1;
 	if (session) {
-		/* fail on read frame until component is destroyed */
-		switch_channel_set_variable(switch_core_session_get_channel(session), "rayo_read_frame_interrupt", RAYO_JID(component));
+		switch_core_session_execute_application_async(session, "stopfax", "");
 		switch_core_session_rwunlock(session);
 	}
-	FAX_COMPONENT(component)->stop = 1;
 	return iks_new_iq_result(iq);
 }
 
