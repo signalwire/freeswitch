@@ -1159,6 +1159,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/asr_tts/mod_unimrcp/Makefile
 		src/mod/languages/mod_java/Makefile
 		src/mod/languages/mod_lua/Makefile
+		src/mod/legacy/languages/mod_lua/Makefile
 		src/mod/languages/mod_python/Makefile
 		src/mod/languages/mod_spidermonkey/Makefile
 		src/mod/event_handlers/mod_erlang_event/Makefile
