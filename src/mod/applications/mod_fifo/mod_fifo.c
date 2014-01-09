@@ -1379,12 +1379,14 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 		struct call_helper *h = cbh->rows[i];
 		char *parsed = NULL;
 		int use_ent = 0;
+		char *expanded_originate_string = switch_event_expand_headers(ovars, h->originate_string);
 
-		if (strstr(h->originate_string, "user/")) {
-			switch_event_create_brackets(h->originate_string, '<', '>', ',', &ovars, &parsed, SWITCH_TRUE);
+
+		if (strstr(expanded_originate_string, "user/")) {
+			switch_event_create_brackets(expanded_originate_string, '<', '>', ',', &ovars, &parsed, SWITCH_TRUE);
 			use_ent = 1;
 		} else {
-			switch_event_create_brackets(h->originate_string, '{', '}', ',', &ovars, &parsed, SWITCH_TRUE);
+			switch_event_create_brackets(expanded_originate_string, '{', '}', ',', &ovars, &parsed, SWITCH_TRUE);
 		}
 
 		switch_event_del_header(ovars, "fifo_outbound_uuid");
@@ -1395,14 +1397,18 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 		if (use_ent) {
 			stream.write_function(&stream, "{ignore_early_media=true,outbound_redirect_fatal=true,leg_timeout=%d,fifo_outbound_uuid=%s,fifo_name=%s}%s%s",
 								  h->timeout, h->uuid, node->name, 
-								  parsed ? parsed : h->originate_string, (i == cbh->rowcount - 1) ? "" : SWITCH_ENT_ORIGINATE_DELIM);
+								  parsed ? parsed : expanded_originate_string, (i == cbh->rowcount - 1) ? "" : SWITCH_ENT_ORIGINATE_DELIM);
 		} else {
 			stream.write_function(&stream, "[leg_timeout=%d,fifo_outbound_uuid=%s,fifo_name=%s]%s,",
-								  h->timeout, h->uuid, node->name, parsed ? parsed : h->originate_string);
+								  h->timeout, h->uuid, node->name, parsed ? parsed : expanded_originate_string);
 		}
 
 		stream2.write_function(&stream2, "%s,", h->uuid);
 		switch_safe_free(parsed);
+
+		if (expanded_originate_string && expanded_originate_string != h->originate_string) {
+			switch_safe_free(expanded_originate_string);
+		}
 
 	}
 
@@ -1664,6 +1670,7 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_event_t *event = NULL;
 	char *sql = NULL;
+	char *expanded_originate_string = NULL;
 
 	if (!globals.running) return NULL;
 
@@ -1688,18 +1695,20 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 	switch_assert(ovars);
 	switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "originate_timeout", "%d", h->timeout);
 
-	if (switch_stristr("origination_caller", h->originate_string)) {
+	expanded_originate_string = switch_event_expand_headers(ovars, h->originate_string);
+
+	if (switch_stristr("origination_caller", expanded_originate_string)) {
 		originate_string = switch_mprintf("{execute_on_answer='unset fifo_hangup_check',fifo_name='%q',fifo_hangup_check='%q'}%s",
-										  node->name, node->name, h->originate_string);
+										  node->name, node->name, expanded_originate_string);
 	} else {
 		if (!zstr(node->outbound_name)) {
 			originate_string = switch_mprintf("{execute_on_answer='unset fifo_hangup_check',fifo_name='%q',fifo_hangup_check='%q',"
 											  "origination_caller_id_name=Queue,origination_caller_id_number='Queue: %q'}%s",
-											  node->name, node->name,  node->outbound_name, h->originate_string);
+											  node->name, node->name,  node->outbound_name, expanded_originate_string);
 		} else {
 			originate_string = switch_mprintf("{execute_on_answer='unset fifo_hangup_check',fifo_name='%q',fifo_hangup_check='%q',"
 											  "origination_caller_id_name=Queue,origination_caller_id_number='Queue: %q'}%s",
-											  node->name, node->name,  node->name, h->originate_string);
+											  node->name, node->name,  node->name, expanded_originate_string);
 		}
 
 	}
@@ -1776,6 +1785,10 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 
 	if ( originate_string ){
 		switch_safe_free(originate_string);
+	}
+
+	if (expanded_originate_string && expanded_originate_string != h->originate_string) {
+		switch_safe_free(expanded_originate_string);
 	}
 
 	switch_event_destroy(&ovars);
