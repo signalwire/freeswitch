@@ -4967,16 +4967,16 @@ static void general_event_handler(switch_event_t *event)
 			sofia_profile_t *profile;
 			nua_handle_t *nh;
 
-			if (!profile_name || !(profile = sofia_glue_find_profile(profile_name))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find profile %s\n", profile_name);
-				return;
-			}
-
 			if (ct && user && host) {
 				char *id = NULL;
 				char *contact, *p;
 				switch_console_callback_match_t *list = NULL;
 				switch_console_callback_match_node_t *m;
+
+				if (!profile_name || !(profile = sofia_glue_find_profile(profile_name))) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find profile %s\n", profile_name);
+					return;
+				}
 
 				if (!(list = sofia_reg_find_reg_url_multi(profile, user, host))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find registered user %s@%s\n", user, host);
