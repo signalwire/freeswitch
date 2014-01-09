@@ -1877,10 +1877,17 @@ static swig_lua_class _wrap_class_IVRMenu = { "IVRMenu", &SWIGTYPE_p_IVRMenu,_wr
 
 static int _wrap_new_API(lua_State* L) {
   int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) NULL ;
   API *result = 0 ;
   
-  SWIG_check_num_args("API",0,0)
-  result = (API *)new API();
+  SWIG_check_num_args("API",0,1)
+  if(lua_gettop(L)>=1 && !SWIG_isptrtype(L,1)) SWIG_fail_arg("API",1,"CoreSession *");
+  if(lua_gettop(L)>=1){
+    if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+      SWIG_fail_ptr("new_API",1,SWIGTYPE_p_CoreSession);
+    }
+  }
+  result = (API *)new API(arg1);
   SWIG_arg=0;
   SWIG_NewPointerObj(L,result,SWIGTYPE_p_API,1); SWIG_arg++; 
   return SWIG_arg;
