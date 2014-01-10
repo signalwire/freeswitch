@@ -4344,6 +4344,121 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 	return changed;
 }
 
+#define BUF_SIZE (352 * 288 * 3 / 2 * 4) // big enough for 4CIF, looks like C doesn't like huge array
+#define FPS 15
+#define WIDTH 352
+#define HEIGHT 288
+#define SIZE WIDTH * HEIGHT
+
+static switch_status_t video_bridge_callback(switch_core_session_t *session, switch_bool_t video_transcoding, uint32_t *ts)
+{
+	switch_frame_t *read_frame;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_core_session_t *session_b = switch_channel_get_private(session->channel, "_video_bridged_session_");
+	switch_codec_t *codec, *other_codec;
+
+	status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+
+	if (!SWITCH_READ_ACCEPTABLE(status)) {
+		switch_cond_next();
+		return status;
+	}
+
+	if (switch_channel_test_flag(session->channel, CF_VIDEO_REFRESH_REQ)) {
+		switch_core_session_refresh_video(session);
+		switch_channel_clear_flag(session->channel, CF_VIDEO_REFRESH_REQ);
+	}
+
+	if (switch_test_flag(read_frame, SFF_CNG)) {
+		return status;
+	}
+
+	if (!session_b || !switch_channel_up_nosig(session_b->channel)) { // echo and return
+		switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
+		return status;
+	}
+
+	codec = read_frame->codec;
+	other_codec = session_b->video_write_codec;
+
+	if (codec->implementation->impl_id == other_codec->implementation->impl_id) {
+		switch_core_session_write_video_frame(session_b, read_frame, SWITCH_IO_FLAG_NONE, 0);
+		return status;
+	}
+
+	if (!video_transcoding) { // echo back
+		switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
+		return status;
+	} else {
+		uint8_t raw_buff[BUF_SIZE];
+		uint8_t rtp_buff[1500] = { 0 };
+		uint32_t decoded_rate = 0;
+		uint32_t decoded_data_len = BUF_SIZE;
+		uint32_t flag = 0;
+		uint32_t encoded_data_len = 1500;
+		uint32_t encoded_rate = 0;
+		switch_frame_t write_frame;
+
+#if 0
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%d/%s != %d/%s need transcoding!!!\n",
+			codec->implementation->impl_id, codec->implementation->iananame,
+			other_codec->implementation->impl_id, other_codec->implementation->iananame);
+#endif
+		// uncomment to test only one leg
+		// if (!strcmp(codec->implementation->iananame, "VP8")) return status;
+		// if (!strcmp(codec->implementation->iananame, "H264")) return status;
+
+		codec->cur_frame = read_frame;
+		switch_core_codec_decode(codec, NULL, read_frame->data, read_frame->datalen, 0, raw_buff, &decoded_data_len, &decoded_rate, &flag);
+
+		if (decoded_data_len < 3) return SWITCH_STATUS_SUCCESS;
+
+		decoded_data_len = 152064;
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "decoded_data_len: %d %s\n", decoded_data_len, codec->implementation->iananame);
+
+		write_frame.packet = rtp_buff;
+		write_frame.data = rtp_buff + 12;
+
+		encoded_data_len = 1500;
+		switch_core_codec_encode(other_codec, NULL, raw_buff, decoded_data_len, 0, rtp_buff+12, &encoded_data_len, &encoded_rate, &flag);
+
+		while(encoded_data_len) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "encoded: %s [%d] flag=%d ts=%u\n", other_codec->implementation->iananame, encoded_data_len, flag, *ts);
+
+			write_frame.datalen = encoded_data_len;
+			write_frame.packetlen = write_frame.datalen + 12;
+			write_frame.m = flag;
+			write_frame.timestamp = *ts;
+			if (write_frame.m) *ts += 90000 / FPS;
+
+			if (1) {
+				/* set correct mark and ts */
+				switch_rtp_hdr_t *rtp = (switch_rtp_hdr_t *)write_frame.packet;
+
+				memset(rtp, 0, 12);
+				rtp->version = 2;
+				rtp->m = write_frame.m;
+				rtp->ts = htonl(write_frame.timestamp);
+				rtp->ssrc = (uint32_t) ((intptr_t) rtp + (uint32_t) switch_epoch_time_now(NULL));
+
+				switch_set_flag(&write_frame, SFF_RAW_RTP);
+			}
+
+			// switch_rtp_set_flag(session_b->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].rtp_session, SWITCH_RTP_FLAG_DEBUG_RTP_WRITE);
+			switch_rtp_set_flag(session_b->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].rtp_session, SWITCH_RTP_FLAG_RAW_WRITE);
+
+			switch_core_session_write_video_frame(session_b, &write_frame, SWITCH_IO_FLAG_NONE, 0);
+
+			encoded_data_len = 1500;
+			switch_core_codec_encode(other_codec, NULL, NULL, 0, 0, rtp_buff+12, &encoded_data_len, &encoded_rate, &flag);
+		}
+	}
+
+	return status;
+}
+
+
 static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, void *obj)
 {
 	struct media_helper *mh = obj;
@@ -4352,6 +4467,8 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	switch_status_t status;
 	switch_frame_t *read_frame;
 	switch_media_handle_t *smh;
+	uint32_t rtp_ts = 0;
+	switch_bool_t video_transcoding = SWITCH_FALSE;
 
 	if (!(smh = session->media_handle)) {
 		return NULL;
@@ -4365,6 +4482,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Video thread started. Echo is %s\n", 
 					  switch_channel_get_name(session->channel), switch_channel_test_flag(channel, CF_VIDEO_ECHO) ? "on" : "off");
 	switch_core_session_refresh_video(session);
+	video_transcoding = switch_true(switch_channel_get_variable(channel, "video_transcoding"));
 
 	while (switch_channel_up_nosig(channel)) {
 
@@ -4375,6 +4493,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Video thread resumed  Echo is %s\n", 
 							  switch_channel_get_name(session->channel), switch_channel_test_flag(channel, CF_VIDEO_ECHO) ? "on" : "off");
 			switch_core_session_refresh_video(session);
+			video_transcoding = switch_true(switch_channel_get_variable(channel, "video_transcoding"));
 		}
 
 		if (switch_channel_test_flag(channel, CF_VIDEO_PASSIVE)) {
@@ -4386,7 +4505,11 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			continue;
 		}
 
-		
+		if (switch_channel_test_flag(channel, CF_VIDEO_BRIDGE)) {
+			video_bridge_callback(session, video_transcoding, &rtp_ts);
+			continue;
+		}
+
 		status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
