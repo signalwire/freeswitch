@@ -607,7 +607,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 		}
 
 		dest = switch_core_session_sprintf(session, "%s%s%s%s"
-										   "set:valet_ticket=%s,set:valet_hold_music=%s,sleep:1000,valet_park:%s %s", 
+										   "set:valet_ticket=%s,set:valet_hold_music='%s',sleep:1000,valet_park:%s %s", 
 										   timeout_str,
 										   orbit_exten_str,
 										   orbit_dialplan_str,
