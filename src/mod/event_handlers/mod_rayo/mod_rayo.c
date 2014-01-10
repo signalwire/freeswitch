@@ -1621,16 +1621,35 @@ void rayo_server_send(struct rayo_actor *server, struct rayo_message *msg)
 void rayo_call_send(struct rayo_actor *call, struct rayo_message *msg)
 {
 	rayo_actor_xmpp_handler handler = NULL;
-	iks *iq = msg->payload;
+	iks *stanza = msg->payload;
 	switch_core_session_t *session;
 	iks *response = NULL;
+
+	if (!strcmp("message", iks_name(stanza))) {
+		char *type = iks_find_attrib(stanza, "type");
+
+		if (!strcmp("normal", type)) {
+			switch_event_t *event;
+
+			if (switch_event_create(&event, SWITCH_EVENT_SEND_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "content-type", "text/plain");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "uuid", rayo_call_get_uuid(RAYO_CALL(call)));
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", iks_find_cdata(stanza, "subject"));
+				switch_event_add_body(event, iks_find_cdata(stanza, "body"));
+				switch_event_fire(&event);
+			}
+		} else if (!msg->is_reply) {
+			RAYO_SEND_REPLY(call, msg->from_jid, iks_new_error(stanza, STANZA_ERROR_FEATURE_NOT_IMPLEMENTED));
+		}
+		return;
+	}
 
 	/* is this a command a call supports? */
 	handler = rayo_actor_command_handler_find(call, msg);
 	if (!handler) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, no handler function for command\n", RAYO_JID(call));
 		if (!msg->is_reply) {
-			RAYO_SEND_REPLY(call, msg->from_jid, iks_new_error(iq, STANZA_ERROR_FEATURE_NOT_IMPLEMENTED));
+			RAYO_SEND_REPLY(call, msg->from_jid, iks_new_error(stanza, STANZA_ERROR_FEATURE_NOT_IMPLEMENTED));
 		}
 		return;
 	}
@@ -1640,7 +1659,7 @@ void rayo_call_send(struct rayo_actor *call, struct rayo_message *msg)
 	if (!session) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, session not found\n", RAYO_JID(call));
 		if (!msg->is_reply) {
-			RAYO_SEND_REPLY(call, msg->from_jid, iks_new_error(iq, STANZA_ERROR_ITEM_NOT_FOUND));
+			RAYO_SEND_REPLY(call, msg->from_jid, iks_new_error(stanza, STANZA_ERROR_ITEM_NOT_FOUND));
 		}
 		return;
 	}
