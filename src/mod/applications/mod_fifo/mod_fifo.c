@@ -1307,6 +1307,7 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 	struct call_helper *rows[MAX_ROWS] = { 0 };
 	int rowcount = 0;
 	switch_memory_pool_t *pool;
+	char *export = NULL;
 
 	switch_mutex_lock(globals.mutex);
 	globals.threads++;
@@ -1471,6 +1472,28 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 	}
 
 	switch_event_add_header_string(ovars, SWITCH_STACK_BOTTOM, "fifo_originate_uuid", uuid_str);
+
+
+	if ((export = switch_event_get_header(pop, "variable_fifo_export"))) {
+		int argc;
+		char *argv[100] = { 0 };
+		char *mydata = strdup(export);
+		char *tmp;
+
+		argc = switch_split(mydata, ' ', argv);
+
+		for (x = 0; x < argc; x++) {
+			char *name = switch_mprintf("variable_%s", argv[x]);
+
+			if ((tmp = switch_event_get_header(pop, name))) {
+				switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, argv[x], tmp);
+			}
+
+			free(name);
+		}
+
+		switch_safe_free(mydata);
+	}
 
 
 	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
