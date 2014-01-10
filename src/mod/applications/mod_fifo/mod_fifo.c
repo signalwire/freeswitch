@@ -1480,7 +1480,7 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 		char *mydata = strdup(export);
 		char *tmp;
 
-		argc = switch_split(mydata, ' ', argv);
+		argc = switch_split(mydata, ',', argv);
 
 		for (x = 0; x < argc; x++) {
 			char *name = switch_mprintf("variable_%s", argv[x]);
