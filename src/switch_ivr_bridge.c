@@ -46,6 +46,7 @@ struct vid_helper {
 	int up;
 };
 
+#if 0
 static void *SWITCH_THREAD_FUNC video_bridge_thread(switch_thread_t *thread, void *obj)
 {
 	struct vid_helper *vh = obj;
@@ -108,9 +109,17 @@ static void *SWITCH_THREAD_FUNC video_bridge_thread(switch_thread_t *thread, voi
 	vh->up = 0;
 	return NULL;
 }
+#endif
 
 static switch_thread_t *launch_video(struct vid_helper *vh)
 {
+	switch_channel_t *channel = switch_core_session_get_channel(vh->session_a);
+
+	switch_channel_set_private(channel, "_video_bridged_session_", vh->session_b);
+	switch_channel_set_flag(channel, CF_VIDEO_BRIDGE);
+	return NULL;
+
+#if 0
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 
@@ -118,6 +127,8 @@ static switch_thread_t *launch_video(struct vid_helper *vh)
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, video_bridge_thread, vh, switch_core_session_get_pool(vh->session_a));
 	return thread;
+#endif
+
 }
 #endif
 
@@ -590,6 +601,10 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
   end_of_bridge_loop:
 
 #ifdef SWITCH_VIDEO_IN_THREADS
+
+	switch_channel_clear_flag(chan_a, CF_VIDEO_BRIDGE);
+	switch_channel_clear_flag(chan_b, CF_VIDEO_BRIDGE);
+
 	if (vid_thread) {
 		vh.up = -1;
 		switch_channel_set_flag(chan_a, CF_NOT_READY);
