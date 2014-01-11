@@ -102,8 +102,8 @@ struct input_handler {
 	switch_media_bug_t *bug;
 	/** active voice input component */
 	struct input_component *voice_component;
-	/** active dtmf input component */
-	struct input_component *dtmf_component;
+	/** active dtmf input components */
+	switch_hash_t *dtmf_components;
 	/** synchronizes media bug and dtmf callbacks */
 	switch_mutex_t *mutex;
 	/** last recognizer used */
@@ -147,84 +147,161 @@ static void send_barge_event(struct rayo_component *component)
 }
 
 /**
- * Process DTMF press
+ * Check if dtmf component has timed out
  */
-static switch_status_t input_component_on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf, switch_dtmf_direction_t direction)
+static switch_status_t dtmf_component_check_timeout(struct input_component *component, switch_core_session_t *session)
+{
+	/* check for stopped component */
+	if (component->stop) {
+		rayo_component_send_complete(RAYO_COMPONENT(component), COMPONENT_COMPLETE_STOP);
+
+		/* let handler know component is done */
+		return SWITCH_STATUS_FALSE;
+	}
+
+	/* check for timeout */
+	if (component->start_timers) {
+		int elapsed_ms = (switch_micro_time_now() - component->last_digit_time) / 1000;
+		if (component->num_digits && component->inter_digit_timeout > 0 && elapsed_ms > component->inter_digit_timeout) {
+			enum srgs_match_type match;
+			const char *interpretation = NULL;
+
+			/* we got some input, check for match */
+			match = srgs_grammar_match(component->grammar, component->digits, &interpretation);
+			if (match == SMT_MATCH || match == SMT_MATCH_END) {
+				iks *result = nlsml_create_dtmf_match(component->digits, interpretation);
+				/* notify of match */
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "MATCH = %s\n", component->digits);
+				send_match_event(RAYO_COMPONENT(component), result);
+				iks_delete(result);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "inter-digit-timeout\n");
+				rayo_component_send_complete(RAYO_COMPONENT(component), INPUT_NOMATCH);
+			}
+
+			/* let handler know component is done */
+			return SWITCH_STATUS_FALSE;
+		} else if (!component->num_digits && component->initial_timeout > 0 && elapsed_ms > component->initial_timeout) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "initial-timeout\n");
+			rayo_component_send_complete(RAYO_COMPONENT(component), INPUT_NOINPUT);
+
+			/* let handler know component is done */
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+/**
+ * Process DTMF press for a specific component
+ * @param component to receive DTMF
+ * @param session
+ * @param dtmf
+ * @param direction
+ * @return SWITCH_STATUS_FALSE if component is done
+ */
+static switch_status_t dtmf_component_on_dtmf(struct input_component *component, switch_core_session_t *session, const switch_dtmf_t *dtmf, switch_dtmf_direction_t direction)
+{
+	int is_term_digit = 0;
+	enum srgs_match_type match;
+	const char *interpretation = NULL;
+
+	is_term_digit = digit_test(component->term_digit, dtmf->digit);
+
+	if (!is_term_digit) {
+		component->digits[component->num_digits] = dtmf->digit;
+		component->num_digits++;
+		component->digits[component->num_digits] = '\0';
+		component->last_digit_time = switch_micro_time_now();
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Collected digits = \"%s\"\n", component->digits);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Collected term digit = \"%c\"\n", dtmf->digit);
+	}
+
+	match = srgs_grammar_match(component->grammar, component->digits, &interpretation);
+
+	if (is_term_digit) {
+		/* finalize result if terminating digit was pressed */
+		if (match == SMT_MATCH_PARTIAL) {
+			match = SMT_NO_MATCH;
+		} else if (match == SMT_MATCH) {
+			match = SMT_MATCH_END;
+		}
+	} else if (component->num_digits >= MAX_DTMF) {
+		/* maximum digits collected and still not a definitive match */
+		if (match != SMT_MATCH_END) {
+			match = SMT_NO_MATCH;
+		}
+	}
+
+	switch (match) {
+		case SMT_MATCH:
+		case SMT_MATCH_PARTIAL: {
+			/* need more digits */
+			if (component->num_digits == 1) {
+				send_barge_event(RAYO_COMPONENT(component));
+			}
+			break;
+		}
+		case SMT_NO_MATCH: {
+			/* notify of no-match and remove input component */
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "NO MATCH = %s\n", component->digits);
+			rayo_component_send_complete(RAYO_COMPONENT(component), INPUT_NOMATCH);
+
+			/* let handler know component is done */
+			return SWITCH_STATUS_FALSE;
+		}
+		case SMT_MATCH_END: {
+			iks *result = nlsml_create_dtmf_match(component->digits, interpretation);
+			/* notify of match and remove input component */
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "MATCH = %s\n", component->digits);
+			send_match_event(RAYO_COMPONENT(component), result);
+			iks_delete(result);
+
+			/* let handler know component is done */
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+
+	/* still need more input */
+	return SWITCH_STATUS_SUCCESS;
+}
+
+/**
+ * Process DTMF press on call
+ */
+static switch_status_t input_handler_on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf, switch_dtmf_direction_t direction)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	struct input_handler *handler = (struct input_handler *)switch_channel_get_private(channel, RAYO_INPUT_COMPONENT_PRIVATE_VAR);
 
 	if (handler) {
-		int is_term_digit = 0;
-		struct input_component *component;
-		enum srgs_match_type match;
-		const char *interpretation = NULL;
+		switch_event_t *components_to_remove = NULL;
+		switch_hash_index_t *hi;
 
 		switch_mutex_lock(handler->mutex);
-
-		component = handler->dtmf_component;
-		/* additional paranoia check */
-		if (!component) {
-			switch_mutex_unlock(handler->mutex);
-			return SWITCH_STATUS_SUCCESS;
-		}
-
-		is_term_digit = digit_test(component->term_digit, dtmf->digit);
-
-		if (!is_term_digit) {
-			component->digits[component->num_digits] = dtmf->digit;
-			component->num_digits++;
-			component->digits[component->num_digits] = '\0';
-			component->last_digit_time = switch_micro_time_now();
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Collected digits = \"%s\"\n", component->digits);
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Collected term digit = \"%c\"\n", dtmf->digit);
-		}
-
-		match = srgs_grammar_match(component->grammar, component->digits, &interpretation);
-
-		if (is_term_digit) {
-			/* finalize result if terminating digit was pressed */
-			if (match == SMT_MATCH_PARTIAL) {
-				match = SMT_NO_MATCH;
-			} else if (match == SMT_MATCH) {
-				match = SMT_MATCH_END;
-			}
-		} else if (component->num_digits >= MAX_DTMF) {
-			/* maximum digits collected and still not a definitive match */
-			if (match != SMT_MATCH_END) {
-				match = SMT_NO_MATCH;
-			}
-		}
-
-		switch (match) {
-			case SMT_MATCH:
-			case SMT_MATCH_PARTIAL: {
-				/* need more digits */
-				if (component->num_digits == 1) {
-					send_barge_event(RAYO_COMPONENT(component));
+	
+		/* check input on each component */
+		for (hi = switch_core_hash_first(handler->dtmf_components); hi; hi = switch_core_hash_next(hi)) {
+			const void *jid;
+			void *component;
+			switch_core_hash_this(hi, &jid, NULL, &component);
+			if (dtmf_component_on_dtmf(INPUT_COMPONENT(component), session, dtmf, direction) != SWITCH_STATUS_SUCCESS) {
+				if (!components_to_remove) {
+					switch_event_create_subclass(&components_to_remove, SWITCH_EVENT_CLONE, NULL);
 				}
-				break;
-			}
-			case SMT_NO_MATCH: {
-				/* notify of no-match and remove input component */
-				handler->dtmf_component = NULL;
-				switch_core_media_bug_remove(session, &handler->bug);
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "NO MATCH = %s\n", component->digits);
-				rayo_component_send_complete(RAYO_COMPONENT(component), INPUT_NOMATCH);
-				break;
-			}
-			case SMT_MATCH_END: {
-				iks *result = nlsml_create_dtmf_match(component->digits, interpretation);
-				/* notify of match and remove input component */
-				handler->dtmf_component = NULL;
-				switch_core_media_bug_remove(session, &handler->bug);
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "MATCH = %s\n", component->digits);
-				send_match_event(RAYO_COMPONENT(component), result);
-				iks_delete(result);
-				break;
+				switch_event_add_header_string(components_to_remove, SWITCH_STACK_BOTTOM, "done", RAYO_JID(component));
 			}
 		}
+
+		/* remove any finished components */
+		if (components_to_remove) {
+			switch_event_header_t *component_to_remove = NULL;
+			for (component_to_remove = components_to_remove->headers; component_to_remove; component_to_remove = component_to_remove->next) {
+				switch_core_hash_delete(handler->dtmf_components, component_to_remove->value);
+			}
+		}
+
 		switch_mutex_unlock(handler->mutex);
 	}
     return SWITCH_STATUS_SUCCESS;
@@ -233,67 +310,59 @@ static switch_status_t input_component_on_dtmf(switch_core_session_t *session, c
 /**
  * Monitor for input
  */
-static switch_bool_t input_component_bug_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+static switch_bool_t input_handler_bug_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
 	switch_core_session_t *session = switch_core_media_bug_get_session(bug);
 	struct input_handler *handler = (struct input_handler *)user_data;
-	struct input_component *component;
+	switch_hash_index_t *hi;
 
 	switch_mutex_lock(handler->mutex);
-	component = handler->dtmf_component;
 
 	switch(type) {
 		case SWITCH_ABC_TYPE_INIT: {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Adding DTMF callback\n");
-			switch_core_event_hook_add_recv_dtmf(session, input_component_on_dtmf);
+			switch_core_event_hook_add_recv_dtmf(session, input_handler_on_dtmf);
 			break;
 		}
 		case SWITCH_ABC_TYPE_READ_REPLACE: {
 			switch_frame_t *rframe = switch_core_media_bug_get_read_replace_frame(bug);
-			/* check for timeout */
-			if (component && component->start_timers) {
-				int elapsed_ms = (switch_micro_time_now() - component->last_digit_time) / 1000;
-				if (component->num_digits && component->inter_digit_timeout > 0 && elapsed_ms > component->inter_digit_timeout) {
-					enum srgs_match_type match;
-					const char *interpretation = NULL;
-					handler->dtmf_component = NULL;
-					switch_core_media_bug_set_flag(bug, SMBF_PRUNE);
+			switch_event_t *components_to_remove = NULL;
 
-					/* we got some input, check for match */
-					match = srgs_grammar_match(component->grammar, component->digits, &interpretation);
-					if (match == SMT_MATCH || match == SMT_MATCH_END) {
-						iks *result = nlsml_create_dtmf_match(component->digits, interpretation);
-						/* notify of match */
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "MATCH = %s\n", component->digits);
-						send_match_event(RAYO_COMPONENT(component), result);
-						iks_delete(result);
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "inter-digit-timeout\n");
-						rayo_component_send_complete(RAYO_COMPONENT(component), INPUT_NOMATCH);
+			/* check timeout/stop on each component */
+			for (hi = switch_core_hash_first(handler->dtmf_components); hi; hi = switch_core_hash_next(hi)) {
+				const void *jid;
+				void *component;
+				switch_core_hash_this(hi, &jid, NULL, &component);
+				if (dtmf_component_check_timeout(INPUT_COMPONENT(component), session) != SWITCH_STATUS_SUCCESS) {
+					if (!components_to_remove) {
+						switch_event_create_subclass(&components_to_remove, SWITCH_EVENT_CLONE, NULL);
 					}
-				} else if (!component->num_digits && component->initial_timeout > 0 && elapsed_ms > component->initial_timeout) {
-					handler->dtmf_component = NULL;
-					switch_core_media_bug_set_flag(bug, SMBF_PRUNE);
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "initial-timeout\n");
-					rayo_component_send_complete(RAYO_COMPONENT(component), INPUT_NOINPUT);
+					switch_event_add_header_string(components_to_remove, SWITCH_STACK_BOTTOM, "done", RAYO_JID(component));
 				}
 			}
+
+			/* remove any finished components */
+			if (components_to_remove) {
+				switch_event_header_t *component_to_remove = NULL;
+				for (component_to_remove = components_to_remove->headers; component_to_remove; component_to_remove = component_to_remove->next) {
+					switch_core_hash_delete(handler->dtmf_components, component_to_remove->value);
+				}
+			}
+
 			switch_core_media_bug_set_read_replace_frame(bug, rframe);
 			break;
 		}
 		case SWITCH_ABC_TYPE_CLOSE:
-			/* check for hangup */
-			if (component) {
-				if (component->stop) {
-					handler->dtmf_component = NULL;
-					rayo_component_send_complete(RAYO_COMPONENT(component), COMPONENT_COMPLETE_STOP);
-				} else {
-					handler->dtmf_component = NULL;
-					rayo_component_send_complete(RAYO_COMPONENT(component), COMPONENT_COMPLETE_HANGUP);
-				}
+			/* complete all components */
+			for (hi = switch_core_hash_first(handler->dtmf_components); hi; hi = switch_core_hash_next(hi)) {
+				const void *jid;
+				void *component;
+				switch_core_hash_this(hi, &jid, NULL, &component);
+				rayo_component_send_complete(RAYO_COMPONENT(component), COMPONENT_COMPLETE_STOP);
 			}
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Removing DTMF callback\n");
-			switch_core_event_hook_remove_recv_dtmf(session, input_component_on_dtmf);
+			switch_core_event_hook_remove_recv_dtmf(session, input_handler_on_dtmf);
+			switch_core_hash_destroy(&handler->dtmf_components);
 			break;
 		default:
 			break;
@@ -343,6 +412,140 @@ static int validate_call_input(iks *input, const char **error)
 }
 
 /**
+ * Start call input on voice resource
+ */
+static iks *start_call_voice_input(struct input_component *component, switch_core_session_t *session, iks *input, iks *iq, const char *output_file, int barge_in)
+{
+	struct input_handler *handler = component->handler;
+	switch_stream_handle_t grammar = { 0 };
+	SWITCH_STANDARD_STREAM(grammar);
+
+	if (component->speech_mode && handler->voice_component) {
+		/* don't allow multi voice input */
+		RAYO_UNLOCK(component);
+		RAYO_DESTROY(component);
+		return iks_new_error_detailed(iq, STANZA_ERROR_CONFLICT, "Multiple voice input is not allowed");
+	}
+
+	handler->voice_component = component;
+
+	if (zstr(component->recognizer)) {
+		component->recognizer = globals.default_recognizer;
+	}
+
+	/* if recognition engine is different, we can't handle this request */
+	if (!zstr(handler->last_recognizer) && strcmp(component->recognizer, handler->last_recognizer)) {
+		handler->voice_component = NULL;
+		RAYO_UNLOCK(component);
+		RAYO_DESTROY(component);
+		return iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "Must use the same recognizer for the entire call");
+	}
+	handler->last_recognizer = switch_core_session_strdup(session, component->recognizer);
+
+	if (!strcmp(component->recognizer, "pocketsphinx")) {
+		const char *jsgf_path;
+
+		/* transform SRGS grammar to JSGF */
+		if (!(component->grammar = srgs_parse(globals.parser, iks_find_cdata(input, "grammar")))) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Failed to parse grammar body\n");
+			handler->voice_component = NULL;
+			RAYO_UNLOCK(component);
+			RAYO_DESTROY(component);
+			return iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "Failed to parse grammar body");
+		}
+		jsgf_path = srgs_grammar_to_jsgf_file(component->grammar, SWITCH_GLOBAL_dirs.grammar_dir, "gram");
+		if (!jsgf_path) {
+			handler->voice_component = NULL;
+			RAYO_UNLOCK(component);
+			RAYO_DESTROY(component);
+			return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Grammar conversion to JSGF error");
+		}
+
+		/* build pocketsphinx grammar string */
+		grammar.write_function(&grammar,
+			"{start-input-timers=%s,no-input-timeout=%d,speech-timeout=%d,confidence-threshold=%d}%s",
+			component->start_timers ? "true" : "false",
+			component->initial_timeout,
+			component->max_silence,
+			(int)ceil(component->min_confidence * 100.0),
+			jsgf_path);
+	} else if (!strncmp(component->recognizer, "unimrcp", strlen("unimrcp"))) {
+		/* send inline grammar to unimrcp */
+		grammar.write_function(&grammar, "{start-input-timers=%s,confidence-threshold=%f,sensitivity-level=%f",
+								component->start_timers ? "true" : "false",
+								component->min_confidence,
+								component->sensitivity);
+
+		if (component->initial_timeout > 0) {
+			grammar.write_function(&grammar, ",no-input-timeout=%d",
+				component->initial_timeout);
+		}
+
+		if (component->max_silence > 0) {
+			grammar.write_function(&grammar, ",speech-complete-timeout=%d,speech-incomplete-timeout=%d",
+				component->max_silence,
+				component->max_silence);
+		}
+
+		if (!zstr(component->language)) {
+			grammar.write_function(&grammar, ",speech-language=%s", component->language);
+		}
+
+		if (!strcmp(iks_find_attrib_soft(input, "mode"), "any")) {
+			/* set dtmf params */
+			if (component->inter_digit_timeout > 0) {
+				grammar.write_function(&grammar, ",dtmf-interdigit-timeout=%d", component->inter_digit_timeout);
+			}
+			if (component->term_digit) {
+				grammar.write_function(&grammar, ",dtmf-term-char=%c", component->term_digit);
+			}
+		}
+
+		grammar.write_function(&grammar, "}inline:%s", iks_find_cdata(input, "grammar"));
+	} else {
+		/* passthrough to unknown ASR module */
+		grammar.write_function(&grammar, "%s", iks_find_cdata(input, "grammar"));
+	}
+
+	/* acknowledge command */
+	rayo_component_send_start(RAYO_COMPONENT(component), iq);
+
+	/* start speech detection */
+	switch_channel_set_variable(switch_core_session_get_channel(session), "fire_asr_events", "true");
+	if (switch_ivr_detect_speech(session, component->recognizer, grammar.data, "mod_rayo_grammar", "", NULL) != SWITCH_STATUS_SUCCESS) {
+		handler->voice_component = NULL;
+		rayo_component_send_complete(RAYO_COMPONENT(component), COMPONENT_COMPLETE_ERROR);
+	}
+	switch_safe_free(grammar.data);
+
+	return NULL;
+}
+
+/**
+ * Start call input on DTMF resource
+ */
+static iks *start_call_dtmf_input(struct input_component *component, switch_core_session_t *session, iks *input, iks *iq, const char *output_file, int barge_in)
+{
+	/* parse the grammar */
+	if (!(component->grammar = srgs_parse(globals.parser, iks_find_cdata(input, "grammar")))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Failed to parse grammar body\n");
+		RAYO_UNLOCK(component);
+		RAYO_DESTROY(component);
+		return iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "Failed to parse grammar body");
+	}
+
+	component->last_digit_time = switch_micro_time_now();
+
+	/* acknowledge command */
+	rayo_component_send_start(RAYO_COMPONENT(component), iq);
+
+	/* start dtmf input detection */
+	switch_core_hash_insert(component->handler->dtmf_components, RAYO_JID(component), component);
+
+	return NULL;
+}
+
+/**
  * Start call input for the given component
  * @param component the input or prompt component
  * @param session the session
@@ -351,35 +554,36 @@ static int validate_call_input(iks *input, const char **error)
  */
 static iks *start_call_input(struct input_component *component, switch_core_session_t *session, iks *input, iks *iq, const char *output_file, int barge_in)
 {
+	iks *result = NULL;
+
 	/* set up input component for new detection */
 	struct input_handler *handler = (struct input_handler *)switch_channel_get_private(switch_core_session_get_channel(session), RAYO_INPUT_COMPONENT_PRIVATE_VAR);
 	if (!handler) {
 		/* create input component */
 		handler = switch_core_session_alloc(session, sizeof(*handler));
 		switch_mutex_init(&handler->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+		switch_core_hash_init(&handler->dtmf_components, NULL);
 		switch_channel_set_private(switch_core_session_get_channel(session), RAYO_INPUT_COMPONENT_PRIVATE_VAR, handler);
 		handler->last_recognizer = "";
+
+		/* fire up media bug to monitor lifecycle */
+		if (switch_core_media_bug_add(session, "rayo_input_component", NULL, input_handler_bug_callback, handler, 0, SMBF_READ_REPLACE, &handler->bug) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Failed to create input handler media bug\n");
+			RAYO_UNLOCK(component);
+			RAYO_DESTROY(component);
+			return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Failed to create input handler media bug");
+		}
 	}
 
-	/* TODO break up this function by mode... dtmf/voice/fax/etc */
-	component->speech_mode = strcmp(iks_find_attrib_soft(input, "mode"), "dtmf");
-	if (component->speech_mode && handler->voice_component) {
-		/* don't allow multi voice input */
-		RAYO_UNLOCK(component);
-		RAYO_DESTROY(component);
-		return iks_new_error_detailed(iq, STANZA_ERROR_CONFLICT, "Multiple voice input is not allowed");
-	}
-	if (!component->speech_mode && handler->dtmf_component) {
-		/* don't allow multi dtmf input */
-		RAYO_UNLOCK(component);
-		RAYO_DESTROY(component);
-		return iks_new_error_detailed(iq, STANZA_ERROR_CONFLICT, "Multiple dtmf input is not allowed");
-	}
+	switch_mutex_lock(handler->mutex);
 
-	if (component->speech_mode) {
-		handler->voice_component = component;
-	} else {
-		handler->dtmf_component = component;
+	if (!handler->dtmf_components) {
+		/* handler bug was destroyed */
+		switch_mutex_unlock(handler->mutex);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Input handler media bug is closed\n");
+		RAYO_UNLOCK(component);
+		RAYO_DESTROY(component);
+		return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Input handler media bug is closed\n");
 	}
 
 	component->grammar = NULL;
@@ -397,123 +601,17 @@ static iks *start_call_input(struct input_component *component, switch_core_sess
 	component->recognizer = iks_find_attrib(input, "recognizer");
 	component->language = iks_find_attrib(input, "language");
 	component->handler = handler;
+	component->speech_mode = strcmp(iks_find_attrib_soft(input, "mode"), "dtmf");
 
-	/* is this voice or dtmf srgs grammar? */
-	if (!component->speech_mode) {
-
-		/* parse the grammar */
-		if (!(component->grammar = srgs_parse(globals.parser, iks_find_cdata(input, "grammar")))) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Failed to parse grammar body\n");
-			RAYO_UNLOCK(component);
-			RAYO_DESTROY(component);
-			return iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "Failed to parse grammar body");
-		}
-
-		component->last_digit_time = switch_micro_time_now();
-
-		/* acknowledge command */
-		rayo_component_send_start(RAYO_COMPONENT(component), iq);
-
-		/* start dtmf input detection */
-		if (switch_core_media_bug_add(session, "rayo_input_component", NULL, input_component_bug_callback, handler, 0, SMBF_READ_REPLACE, &handler->bug) != SWITCH_STATUS_SUCCESS) {
-			handler->dtmf_component = NULL;
-			rayo_component_send_complete(RAYO_COMPONENT(component), COMPONENT_COMPLETE_ERROR);
-		}
+	if (component->speech_mode) {
+		result = start_call_voice_input(component, session, input, iq, output_file, barge_in);
 	} else {
-		switch_stream_handle_t grammar = { 0 };
-		SWITCH_STANDARD_STREAM(grammar);
-
-		if (zstr(component->recognizer)) {
-			component->recognizer = globals.default_recognizer;
-		}
-
-		/* if recognition engine is different, we can't handle this request */
-		if (!zstr(handler->last_recognizer) && strcmp(component->recognizer, handler->last_recognizer)) {
-			handler->voice_component = NULL;
-			RAYO_UNLOCK(component);
-			RAYO_DESTROY(component);
-			return iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "Must use the same recognizer for the entire call");
-		}
-		handler->last_recognizer = switch_core_session_strdup(session, component->recognizer);
-
-		if (!strcmp(component->recognizer, "pocketsphinx")) {
-			const char *jsgf_path;
-
-			/* transform SRGS grammar to JSGF */
-			if (!(component->grammar = srgs_parse(globals.parser, iks_find_cdata(input, "grammar")))) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Failed to parse grammar body\n");
-				handler->voice_component = NULL;
-				RAYO_UNLOCK(component);
-				RAYO_DESTROY(component);
-				return iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "Failed to parse grammar body");
-			}
-			jsgf_path = srgs_grammar_to_jsgf_file(component->grammar, SWITCH_GLOBAL_dirs.grammar_dir, "gram");
-			if (!jsgf_path) {
-				handler->voice_component = NULL;
-				RAYO_UNLOCK(component);
-				RAYO_DESTROY(component);
-				return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Grammar conversion to JSGF error");
-			}
-
-			/* build pocketsphinx grammar string */
-			grammar.write_function(&grammar,
-				"{start-input-timers=%s,no-input-timeout=%d,speech-timeout=%d,confidence-threshold=%d}%s",
-				component->start_timers ? "true" : "false",
-				component->initial_timeout,
-				component->max_silence,
-				(int)ceil(component->min_confidence * 100.0),
-				jsgf_path);
-		} else if (!strncmp(component->recognizer, "unimrcp", strlen("unimrcp"))) {
-			/* send inline grammar to unimrcp */
-			grammar.write_function(&grammar, "{start-input-timers=%s,confidence-threshold=%f,sensitivity-level=%f",
-									component->start_timers ? "true" : "false",
-									component->min_confidence,
-									component->sensitivity);
-
-			if (component->initial_timeout > 0) {
-				grammar.write_function(&grammar, ",no-input-timeout=%d",
-					component->initial_timeout);
-			}
-
-			if (component->max_silence > 0) {
-				grammar.write_function(&grammar, ",speech-complete-timeout=%d,speech-incomplete-timeout=%d",
-					component->max_silence,
-					component->max_silence);
-			}
-
-			if (!zstr(component->language)) {
-				grammar.write_function(&grammar, ",speech-language=%s", component->language);
-			}
-
-			if (!strcmp(iks_find_attrib_soft(input, "mode"), "any")) {
-				/* set dtmf params */
-				if (component->inter_digit_timeout > 0) {
-					grammar.write_function(&grammar, ",dtmf-interdigit-timeout=%d", component->inter_digit_timeout);
-				}
-				if (component->term_digit) {
-					grammar.write_function(&grammar, ",dtmf-term-char=%c", component->term_digit);
-				}
-			}
-
-			grammar.write_function(&grammar, "}inline:%s", iks_find_cdata(input, "grammar"));
-		} else {
-			/* passthrough to unknown ASR module */
-			grammar.write_function(&grammar, "%s", iks_find_cdata(input, "grammar"));
-		}
-
-		/* acknowledge command */
-		rayo_component_send_start(RAYO_COMPONENT(component), iq);
-
-		/* start speech detection */
-		switch_channel_set_variable(switch_core_session_get_channel(session), "fire_asr_events", "true");
-		if (switch_ivr_detect_speech(session, component->recognizer, grammar.data, "mod_rayo_grammar", "", NULL) != SWITCH_STATUS_SUCCESS) {
-			handler->voice_component = NULL;
-			rayo_component_send_complete(RAYO_COMPONENT(component), COMPONENT_COMPLETE_ERROR);
-		}
-		switch_safe_free(grammar.data);
+		result = start_call_dtmf_input(component, session, input, iq, output_file, barge_in);
 	}
 
-	return NULL;
+	switch_mutex_unlock(handler->mutex);
+
+	return result;
 }
 
 /**
@@ -527,6 +625,9 @@ static char *create_input_component_id(switch_core_session_t *session, iks *inpu
 	const char *mode = "unk";
 	if (input) {
 		mode = iks_find_attrib_soft(input, "mode");
+		if (!strcmp(mode, "dtmf")) {
+			return NULL;
+		}
 		if (!strcmp(mode, "any")) {
 			mode = "voice";
 		}
@@ -575,13 +676,10 @@ static iks *stop_call_input_component(struct rayo_actor *component, struct rayo_
 		switch_core_session_t *session = switch_core_session_locate(RAYO_COMPONENT(component)->parent->id);
 		if (session) {
 			switch_mutex_lock(input_component->handler->mutex);
+			input_component->stop = 1;
 			if (input_component->speech_mode) {
-				input_component->stop = 1;
 				switch_ivr_stop_detect_speech(session);
 				rayo_component_send_complete(RAYO_COMPONENT(component), COMPONENT_COMPLETE_STOP);
-			} else if (input_component->handler->bug) {
-				input_component->stop = 1;
-				switch_core_media_bug_remove(session, &input_component->handler->bug);
 			}
 			switch_mutex_unlock(input_component->handler->mutex);
 			switch_core_session_rwunlock(session);
