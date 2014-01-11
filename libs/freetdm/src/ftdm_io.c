@@ -1502,7 +1502,7 @@ static __inline__ int chan_voice_is_avail(ftdm_channel_t *check)
 }
 
 static __inline__ int request_voice_channel(ftdm_channel_t *check, ftdm_channel_t **ftdmchan, 
-		ftdm_caller_data_t *caller_data, ftdm_direction_t direction)
+		ftdm_caller_data_t *caller_data, ftdm_hunt_direction_t direction)
 {
 	ftdm_status_t status;
 	if (chan_voice_is_avail(check)) {
@@ -1589,13 +1589,13 @@ static ftdm_status_t __inline__ get_best_rated(ftdm_channel_t **fchan, ftdm_chan
 	return FTDM_SUCCESS;
 }
 
-static uint32_t __inline__ rr_next(uint32_t last, uint32_t min, uint32_t max, ftdm_direction_t direction)
+static uint32_t __inline__ rr_next(uint32_t last, uint32_t min, uint32_t max, ftdm_hunt_direction_t direction)
 {
 	uint32_t next = min;
 
 	ftdm_log(FTDM_LOG_DEBUG, "last = %d, min = %d, max = %d\n", last, min, max);
 
-	if (direction == FTDM_RR_DOWN) {
+	if (direction == FTDM_HUNT_RR_UP) {
 		next = (last >= max) ? min : ++last;
 	} else {
 		next = (last <= min) ? max : --last;
@@ -1615,7 +1615,7 @@ FT_DECLARE(int) ftdm_channel_get_availability(ftdm_channel_t *ftdmchan)
 	return availability;
 }
 
-static ftdm_status_t _ftdm_channel_open_by_group(uint32_t group_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
+static ftdm_status_t _ftdm_channel_open_by_group(uint32_t group_id, ftdm_hunt_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
 {
 	ftdm_status_t status = FTDM_FAIL;
 	ftdm_channel_t *check = NULL;
@@ -1645,9 +1645,9 @@ static ftdm_status_t _ftdm_channel_open_by_group(uint32_t group_id, ftdm_directi
 	}
 
 	
-	if (direction == FTDM_TOP_DOWN) {
+	if (direction == FTDM_HUNT_BOTTOM_UP) {
 		i = 0;
-	} else if (direction == FTDM_RR_DOWN || direction == FTDM_RR_UP) {
+	} else if (direction == FTDM_HUNT_RR_DOWN || direction == FTDM_HUNT_RR_UP) {
 		i = rr_next(group->last_used_index, 0, group->chan_count - 1, direction);
 		first_channel = i;
 	} else {
@@ -1664,7 +1664,7 @@ static ftdm_status_t _ftdm_channel_open_by_group(uint32_t group_id, ftdm_directi
 
 		if (request_voice_channel(check, ftdmchan, caller_data, direction)) {
 			status = FTDM_SUCCESS;
-			if (direction == FTDM_RR_UP || direction == FTDM_RR_DOWN) {
+			if (direction == FTDM_HUNT_RR_UP || direction == FTDM_HUNT_RR_DOWN) {
 				group->last_used_index = i;
 			}
 			break;
@@ -1672,12 +1672,12 @@ static ftdm_status_t _ftdm_channel_open_by_group(uint32_t group_id, ftdm_directi
 
 		calculate_best_rate(check, &best_rated, &best_rate);
 
-		if (direction == FTDM_TOP_DOWN) {
+		if (direction == FTDM_HUNT_BOTTOM_UP) {
 			if (i >= (group->chan_count - 1)) {
 				break;
 			}
 			i++;
-		} else if (direction == FTDM_RR_DOWN || direction == FTDM_RR_UP) {
+		} else if (direction == FTDM_HUNT_RR_DOWN || direction == FTDM_HUNT_RR_UP) {
 			if (check == best_rated) {
 				group->last_used_index = i;
 			}
@@ -1701,7 +1701,7 @@ static ftdm_status_t _ftdm_channel_open_by_group(uint32_t group_id, ftdm_directi
 	return status;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
+FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_hunt_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
 {
 	ftdm_status_t status;
 	status = _ftdm_channel_open_by_group(group_id, direction, caller_data, ftdmchan);
@@ -1734,7 +1734,7 @@ FT_DECLARE(ftdm_status_t) ftdm_span_channel_use_count(ftdm_span_t *span, uint32_
 }
 
 /* Hunt a channel by span, if successful the channel is returned locked */
-static ftdm_status_t _ftdm_channel_open_by_span(uint32_t span_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
+static ftdm_status_t _ftdm_channel_open_by_span(uint32_t span_id, ftdm_hunt_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
 {
 	ftdm_status_t status = FTDM_FAIL;
 	ftdm_channel_t *check = NULL;
@@ -1773,9 +1773,9 @@ static ftdm_status_t _ftdm_channel_open_by_span(uint32_t span_id, ftdm_direction
 		
 	ftdm_mutex_lock(span->mutex);
 	
-	if (direction == FTDM_TOP_DOWN) {
+	if (direction == FTDM_HUNT_BOTTOM_UP) {
 		i = 1;
-	} else if (direction == FTDM_RR_DOWN || direction == FTDM_RR_UP) {
+	} else if (direction == FTDM_HUNT_RR_DOWN || direction == FTDM_HUNT_RR_UP) {
 		i = rr_next(span->last_used_index, 1, span->chan_count, direction);
 		first_channel = i;
 	} else {
@@ -1784,7 +1784,7 @@ static ftdm_status_t _ftdm_channel_open_by_span(uint32_t span_id, ftdm_direction
 		
 	for(;;) {
 
-		if (direction == FTDM_TOP_DOWN) {
+		if (direction == FTDM_HUNT_BOTTOM_UP) {
 			if (i > span->chan_count) {
 				break;
 			}
@@ -1801,7 +1801,7 @@ static ftdm_status_t _ftdm_channel_open_by_span(uint32_t span_id, ftdm_direction
 
 		if (request_voice_channel(check, ftdmchan, caller_data, direction)) {
 			status = FTDM_SUCCESS;
-			if (direction == FTDM_RR_UP || direction == FTDM_RR_DOWN) {
+			if (direction == FTDM_HUNT_RR_UP || direction == FTDM_HUNT_RR_DOWN) {
 				span->last_used_index = i;
 			}
 			break;
@@ -1809,9 +1809,9 @@ static ftdm_status_t _ftdm_channel_open_by_span(uint32_t span_id, ftdm_direction
 			
 		calculate_best_rate(check, &best_rated, &best_rate);
 
-		if (direction == FTDM_TOP_DOWN) {
+		if (direction == FTDM_HUNT_BOTTOM_UP) {
 			i++;
-		} else if (direction == FTDM_RR_DOWN || direction == FTDM_RR_UP) {
+		} else if (direction == FTDM_HUNT_RR_DOWN || direction == FTDM_HUNT_RR_UP) {
 			if (check == best_rated) {
 				span->last_used_index = i;
 			}
@@ -1833,7 +1833,7 @@ static ftdm_status_t _ftdm_channel_open_by_span(uint32_t span_id, ftdm_direction
 	return status;
 }
 
-FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
+FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_hunt_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
 {
 	ftdm_status_t status;
 	status = _ftdm_channel_open_by_span(span_id, direction, caller_data, ftdmchan);
