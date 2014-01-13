@@ -1039,6 +1039,7 @@ static void rayo_call_cleanup(struct rayo_actor *actor)
 	if (no_offered_clients && !zstr(dcp_jid)) {
 		/* send to DCP only */
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "Sending <end> to DCP %s\n", dcp_jid);
+		iks_insert_attrib(revent, "to", dcp_jid);
 		RAYO_SEND_MESSAGE_DUP(actor, dcp_jid, revent);
 	}
 
