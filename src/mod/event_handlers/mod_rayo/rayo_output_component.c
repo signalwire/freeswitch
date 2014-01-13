@@ -105,15 +105,19 @@ static iks *start_call_output(struct rayo_component *component, switch_core_sess
 	if (switch_ivr_displace_session(session, stream.data, 0, "m") == SWITCH_STATUS_SUCCESS) {
 		RAYO_UNLOCK(component);
 	} else {
-		if (OUTPUT_COMPONENT(component)->document) {
-			iks_delete(OUTPUT_COMPONENT(component)->document);
-		}
-		if (switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
-			rayo_component_send_complete(component, COMPONENT_COMPLETE_HANGUP);
-			component = NULL;
+		if (component->complete) {
+			/* component is already destroyed */
+			RAYO_UNLOCK(component);
 		} else {
-			rayo_component_send_complete(component, COMPONENT_COMPLETE_ERROR);
-			component = NULL;
+			/* need to destroy component */
+			if (OUTPUT_COMPONENT(component)->document) {
+				iks_delete(OUTPUT_COMPONENT(component)->document);
+			}
+			if (switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
+				rayo_component_send_complete(component, COMPONENT_COMPLETE_HANGUP);
+			} else {
+				rayo_component_send_complete(component, COMPONENT_COMPLETE_ERROR);
+			}
 		}
 	}
 	switch_safe_free(stream.data);

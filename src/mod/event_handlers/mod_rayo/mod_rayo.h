@@ -122,6 +122,8 @@ struct rayo_component {
 	const char *client_jid;
 	/** external ref */
 	const char *ref;
+	/** true if component has completed */
+	int complete;
 	/** optional cleanup */
 	rayo_actor_cleanup_fn cleanup_fn;
 };
