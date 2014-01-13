@@ -1291,7 +1291,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	int span_id = -1, group_id = -1, chan_id = 0;
 	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	ftdm_status_t status;
-	int direction = FTDM_TOP_DOWN;
+	ftdm_hunt_direction_t direction = FTDM_HUNT_BOTTOM_UP;
 	ftdm_caller_data_t caller_data = {{ 0 }};
 	char *span_name = NULL;
 	switch_event_header_t *h;
@@ -1348,14 +1348,14 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		span_name = argv[0];
 	}
 
-	if (*argv[1] == 'A') {
-		direction = FTDM_BOTTOM_UP;
-	} else if (*argv[1] == 'a') {
-		direction =  FTDM_TOP_DOWN;
-	} else if (*argv[1] == 'r') {
-		direction =  FTDM_RR_DOWN;
+	if (*argv[1] == 'a') {
+		direction = FTDM_HUNT_BOTTOM_UP;
+	} else if (*argv[1] == 'A') {
+		direction =  FTDM_HUNT_TOP_DOWN;
 	} else if (*argv[1] == 'R') {
-		direction =  FTDM_RR_UP;
+		direction =  FTDM_HUNT_RR_DOWN;
+	} else if (*argv[1] == 'r') {
+		direction =  FTDM_HUNT_RR_UP;
 	} else {
 		chan_id = atoi(argv[1]);
 	}
@@ -1390,7 +1390,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	}
 
 	if (group_id < 0 && chan_id < 0) {
-		direction = FTDM_BOTTOM_UP;
+		direction = FTDM_HUNT_BOTTOM_UP;
 		chan_id = 0;
 	}
 

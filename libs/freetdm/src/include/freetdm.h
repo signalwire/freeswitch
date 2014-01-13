@@ -166,10 +166,21 @@ typedef enum {
 
 /*! \brief Hunting direction (when hunting for free channels) */
 typedef enum {
-	FTDM_TOP_DOWN,
+	FTDM_HUNT_TOP_DOWN,
+	FTDM_HUNT_BOTTOM_UP,
+	FTDM_HUNT_RR_DOWN,
+	FTDM_HUNT_RR_UP,
+} ftdm_hunt_direction_t;
+
+/*! \brief Legacy Hunting direction (Top down and Bottom up were reversed), keep for source backwards compatibility of freetdm user applications
+ *  \deprecated
+ *  \see ftdm_hunt_direction_t
+ */
+typedef enum {
 	FTDM_BOTTOM_UP,
-	FTDM_RR_DOWN,
+	FTDM_TOP_DOWN,
 	FTDM_RR_UP,
+	FTDM_RR_DOWN,
 } ftdm_direction_t;
 
 /*! \brief I/O channel type */
@@ -404,13 +415,13 @@ typedef enum {
 /*! \brief Structure used for FTDM_HUNT_SPAN mode */
 typedef struct {
 	uint32_t span_id;
-	ftdm_direction_t direction;
+	ftdm_hunt_direction_t direction;
 } ftdm_span_hunt_t;
 
 /*! \brief Structure used for FTDM_HUNT_GROUP mode */
 typedef struct {
 	uint32_t group_id;
-	ftdm_direction_t direction;
+	ftdm_hunt_direction_t direction;
 } ftdm_group_hunt_t;
 
 /*! \brief Structure used for FTDM_HUNT_CHAN mode */
@@ -781,7 +792,7 @@ struct ftdm_memory_handler {
 
 /*! \brief FreeTDM I/O layer interface argument macros 
  * You don't need these unless your implementing an I/O interface module (most users don't) */
-#define FIO_CHANNEL_REQUEST_ARGS (ftdm_span_t *span, uint32_t chan_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
+#define FIO_CHANNEL_REQUEST_ARGS (ftdm_span_t *span, uint32_t chan_id, ftdm_hunt_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan)
 #define FIO_CHANNEL_OUTGOING_CALL_ARGS (ftdm_channel_t *ftdmchan)
 #define FIO_CHANNEL_INDICATE_ARGS (ftdm_channel_t *ftdmchan, ftdm_channel_indication_t indication)
 #define FIO_CHANNEL_SET_SIG_STATUS_ARGS (ftdm_channel_t *ftdmchan, ftdm_signaling_status_t status)
@@ -1440,7 +1451,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_ph(uint32_t span_id, uint32_t chan_i
  * \retval FTDM_SUCCESS success (a suitable channel was found available)
  * \retval FTDM_FAIL failure (no suitable channel was found available)
  */
-FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan);
+FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_hunt_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan);
 
 /*! 
  * \brief Hunts and opens a channel specifying group id
@@ -1458,7 +1469,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_span(uint32_t span_id, ftdm_direc
  * \retval FTDM_SUCCESS success (a suitable channel was found available)
  * \retval FTDM_FAIL failure (no suitable channel was found available)
  */
-FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan);
+FT_DECLARE(ftdm_status_t) ftdm_channel_open_by_group(uint32_t group_id, ftdm_hunt_direction_t direction, ftdm_caller_data_t *caller_data, ftdm_channel_t **ftdmchan);
 
 /*! 
  * \brief Close a previously open channel

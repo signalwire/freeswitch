@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013, Grasshopper
+ * Copyright (C) 2013-2014, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -185,6 +185,9 @@ static iks *start_mixer_output_component(struct rayo_actor *mixer, struct rayo_m
 		stream.write_function(&stream, ",timeout=%i", OUTPUT_COMPONENT(component)->max_time * 1000);
 	}
 	stream.write_function(&stream, "}fileman://rayo://%s", RAYO_JID(component));
+
+	/* acknowledge command */
+	rayo_component_send_start(component, iq);
 
 	rayo_component_api_execute_async(component, "conference", stream.data);
 

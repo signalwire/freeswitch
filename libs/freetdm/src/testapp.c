@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 	printf("FreeTDM loaded\n");
 
  top:
-	//if (ftdm_channel_open_any("wanpipe", 0, FTDM_TOP_DOWN, &chan) == FTDM_SUCCESS) {
+	//if (ftdm_channel_open_any("wanpipe", 0, FTDM_HUNT_BOTTOM_UP, &chan) == FTDM_SUCCESS) {
 	if (ftdm_channel_open(1, 1, &chan) == FTDM_SUCCESS) {
 		int x = 0;
 		spanid = ftdm_channel_get_span_id(chan);
