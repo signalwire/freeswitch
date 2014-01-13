@@ -112,6 +112,7 @@ iks *rayo_component_create_complete_event(struct rayo_component *component, cons
  */
 void rayo_component_send_complete_event(struct rayo_component *component, iks *response)
 {
+	component->complete = 1;
 	RAYO_SEND_REPLY(component, iks_find_attrib(response, "to"), response);
 	RAYO_UNLOCK(component);
 	RAYO_DESTROY(component);
