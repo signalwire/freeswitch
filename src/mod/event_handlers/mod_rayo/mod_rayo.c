@@ -964,15 +964,28 @@ static void rayo_call_cleanup(struct rayo_actor *actor)
 	switch_hash_index_t *hi = NULL;
 	iks *revent;
 	iks *end;
+	const char *dcp_jid = rayo_call_get_dcp_jid(call);
 
 	if (!event || call->dial_request_failed) {
 		/* destroyed before FS session was created (in originate, for example) */
 		goto done;
 	}
 
+	/* send call unjoined event, if not already sent */
+	if (call->joined && call->joined_id) {
+		if (!zstr(dcp_jid)) {
+			iks *unjoined;
+			iks *uevent = iks_new_presence("unjoined", RAYO_NS, RAYO_JID(call), dcp_jid);
+			unjoined = iks_find(uevent, "unjoined");
+			iks_insert_attrib_printf(unjoined, "call-uri", "%s", call->joined_id);
+			RAYO_SEND_MESSAGE(call, dcp_jid, uevent);
+		}
+	}
+
+	/* build call end event */
 	revent = iks_new_presence("end", RAYO_NS,
 		RAYO_JID(call),
-		rayo_call_get_dcp_jid(call));
+		"foo");
 	iks_insert_attrib(revent, "type", "unavailable");
 	end = iks_find(revent, "end");
 
@@ -1023,10 +1036,10 @@ static void rayo_call_cleanup(struct rayo_actor *actor)
 		no_offered_clients = 0;
 	}
 
-	if (no_offered_clients) {
+	if (no_offered_clients && !zstr(dcp_jid)) {
 		/* send to DCP only */
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "Sending <end> to DCP %s\n", rayo_call_get_dcp_jid(call));
-		RAYO_SEND_MESSAGE_DUP(actor, rayo_call_get_dcp_jid(call), revent);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "Sending <end> to DCP %s\n", dcp_jid);
+		RAYO_SEND_MESSAGE_DUP(actor, dcp_jid, revent);
 	}
 
 	iks_delete(revent);
@@ -3054,63 +3067,41 @@ static void on_call_bridge_event(struct rayo_client *rclient, switch_event_t *ev
 }
 
 /**
- * Handle call unbridge event
+ * Handle call park event - this is fired after unjoining a call
  * @param rclient the Rayo client
  * @param event the unbridge event
  */
-static void on_call_unbridge_event(struct rayo_client *rclient, switch_event_t *event)
+static void on_call_park_event(struct rayo_client *rclient, switch_event_t *event)
 {
 	const char *a_uuid = switch_event_get_header(event, "Unique-ID");
-	const char *b_uuid = switch_event_get_header(event, "Bridge-B-Unique-ID");
 	struct rayo_call *call = RAYO_CALL_LOCATE_BY_ID(a_uuid);
-	struct rayo_call *b_call;
 
 	if (call) {
-		iks *revent;
-		iks *joined;
+		if (call->joined) {
+			iks *revent;
+			iks *unjoined;
+			const char *joined_id = call->joined_id;
 
-		call->joined = 0;
-		call->joined_id = NULL;
-
-		/* send IQ result to client now. */
-		if (call->pending_join_request) {
-			iks *request = call->pending_join_request;
-			iks *result = iks_new_iq_result(request);
-			call->pending_join_request = NULL;
-			RAYO_SEND_REPLY(call, iks_find_attrib_soft(request, "from"), result);
-			iks_delete(request);
-		}
-
-		b_call = RAYO_CALL_LOCATE_BY_ID(b_uuid);
-		if (b_call) {
-			b_call->joined = 0;
-			b_call->joined_id = NULL;
+			call->joined = 0;
+			call->joined_id = NULL;
 
 			/* send IQ result to client now. */
-			if (b_call->pending_join_request) {
-				iks *request = b_call->pending_join_request;
+			if (call->pending_join_request) {
+				iks *request = call->pending_join_request;
 				iks *result = iks_new_iq_result(request);
-				b_call->pending_join_request = NULL;
-				RAYO_SEND_REPLY(b_call, iks_find_attrib_soft(request, "from"), result);
+				call->pending_join_request = NULL;
+				RAYO_SEND_REPLY(call, iks_find_attrib_soft(request, "from"), result);
 				iks_delete(request);
 			}
 
-			/* send B-leg event */
-			revent = iks_new_presence("unjoined", RAYO_NS, RAYO_JID(b_call), rayo_call_get_dcp_jid(b_call));
-			joined = iks_find(revent, "unjoined");
-			iks_insert_attrib_printf(joined, "call-uri", "xmpp:%s@%s", a_uuid, RAYO_JID(globals.server));
-			RAYO_SEND_MESSAGE(b_call, rayo_call_get_dcp_jid(b_call), revent);
-			RAYO_UNLOCK(b_call);
+			/* send A-leg event */
+			revent = iks_new_presence("unjoined", RAYO_NS,
+				switch_event_get_header(event, "variable_rayo_call_jid"),
+				switch_event_get_header(event, "variable_rayo_dcp_jid"));
+			unjoined = iks_find(revent, "unjoined");
+			iks_insert_attrib_printf(unjoined, "call-uri", "%s", joined_id);
+			RAYO_SEND_MESSAGE(call, RAYO_JID(rclient), revent);
 		}
-
-		/* send A-leg event */
-		revent = iks_new_presence("unjoined", RAYO_NS,
-			switch_event_get_header(event, "variable_rayo_call_jid"),
-			switch_event_get_header(event, "variable_rayo_dcp_jid"));
-		joined = iks_find(revent, "unjoined");
-		iks_insert_attrib_printf(joined, "call-uri", "xmpp:%s@%s", b_uuid, RAYO_JID(globals.server));
-		RAYO_SEND_MESSAGE(call, RAYO_JID(rclient), revent);
-
 		RAYO_UNLOCK(call);
 	}
 }
@@ -3168,8 +3159,8 @@ static void rayo_client_handle_event(struct rayo_client *rclient, switch_event_t
 		case SWITCH_EVENT_CHANNEL_BRIDGE:
 			on_call_bridge_event(rclient, event);
 			break;
-		case SWITCH_EVENT_CHANNEL_UNBRIDGE:
-			on_call_unbridge_event(rclient, event);
+		case SWITCH_EVENT_CHANNEL_PARK:
+			on_call_park_event(rclient, event);
 			break;
 		case SWITCH_EVENT_CHANNEL_EXECUTE:
 			on_call_execute_event(rclient, event);
@@ -3411,7 +3402,7 @@ done:
 		switch_channel_set_variable(channel, "hangup_after_bridge", "false");
 		switch_channel_set_variable(channel, "transfer_after_bridge", "");
 		switch_channel_set_variable(channel, "park_after_bridge", "true");
-		switch_channel_set_variable(channel, "hold_hangup_xfer_exten", "foo"); /* Icky hack to prevent unjoin of call on hold from hanging up b-leg. park_after_bridge will take precedence over the transfer_after_bridge variable that gets set by this var */
+		switch_channel_set_variable(channel, "hold_hangup_xfer_exten", "park:inline:");
 		switch_channel_set_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE, "-1"); /* required so that output mixing works */
 		switch_core_event_hook_add_read_frame(session, rayo_call_on_read_frame);
 		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
@@ -4323,7 +4314,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
 	switch_event_bind(modname, SWITCH_EVENT_CHANNEL_PROGRESS, NULL, route_call_event, NULL);
 	switch_event_bind(modname, SWITCH_EVENT_CHANNEL_ANSWER, NULL, route_call_event, NULL);
 	switch_event_bind(modname, SWITCH_EVENT_CHANNEL_BRIDGE, NULL, route_call_event, NULL);
-	switch_event_bind(modname, SWITCH_EVENT_CHANNEL_UNBRIDGE, NULL, route_call_event, NULL);
+	switch_event_bind(modname, SWITCH_EVENT_CHANNEL_PARK, NULL, route_call_event, NULL);
 	switch_event_bind(modname, SWITCH_EVENT_CHANNEL_EXECUTE, NULL, route_call_event, NULL);
 	switch_event_bind(modname, SWITCH_EVENT_CHANNEL_EXECUTE_COMPLETE, NULL, route_call_event, NULL);
 
