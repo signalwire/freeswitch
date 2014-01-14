@@ -169,6 +169,9 @@ Release/
 /src/mod/say/mod_say_nl/Makefile
 /src/mod/say/mod_say_th/Makefile
 /src/mod/say/mod_say_zh/Makefile
+/src/mod/languages/mod_v8/Makefile
+/src/mod/languages/mod_v8/Makefile.in
+/src/mod/languages/mod_v8/mod_v8.log
 
 BuildLog.htm
 

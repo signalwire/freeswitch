@@ -3,7 +3,7 @@
 # spec file for package freeswitch
 #
 # includes module(s): freeswitch-devel freeswitch-codec-passthru-amr freeswitch-codec-passthru-amrwb freeswitch-codec-passthru-g729 
-#                     freeswitch-codec-passthru-g7231 freeswitch-lua freeswitch-perl freeswitch-python freeswitch-spidermonkey
+#                     freeswitch-codec-passthru-g7231 freeswitch-lua freeswitch-perl freeswitch-python freeswitch-spidermonkey freeswitch-v8
 #                     freeswitch-lan-de freeswitch-lang-en freeswitch-lang-fr freeswitch-lang-hu freeswitch-lang-ru freeswitch-freetdm
 #
 # Initial Version Copyright (C) 2007 Peter Nixon and Michal Bielicki, All Rights Reserved.
@@ -127,6 +127,7 @@ Source9:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080
 Source10:	http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
 Source11:       http://files.freeswitch.org/downloads/libs/json-c-0.9.tar.gz
 Source12:       http://files.freeswitch.org/downloads/libs/opus-1.1.tar.gz
+Source13:       http://files.freeswitch.org/downloads/libs/v8-3.24.14.tar.bz2
 Prefix:        	%{prefix}
 
 
@@ -1102,9 +1103,16 @@ Requires:	python
 %package spidermonkey
 Summary:	JavaScript support for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
-Requires:	 %{name} = %{version}-%{release}
+Requires:	%{name} = %{version}-%{release}
 
 %description spidermonkey
+
+%package v8
+Summary:	JavaScript support for the FreeSWITCH open source telephony platform, using Google V8 JavaScript engine
+Group:		System/Libraries
+Requires:	%{name} = %{version}-%{release}
+
+%description v8
 
 ######################################################################################################################
 #				FreeSWITCH Say Modules
@@ -1421,7 +1429,7 @@ FORMATS_MODULES+=" formats/mod_ssml"
 #						Embedded Languages
 #
 ######################################################################################################################
-LANGUAGES_MODULES="languages/mod_lua languages/mod_perl languages/mod_python languages/mod_spidermonkey"
+LANGUAGES_MODULES="languages/mod_lua languages/mod_perl languages/mod_python languages/mod_spidermonkey languages/mod_v8"
 
 ######################################################################################################################
 #
@@ -2302,6 +2310,15 @@ fi
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/spidermonkey.conf.xml
 
+%files v8
+%defattr(-,freeswitch,daemon)
+%{MODINSTDIR}/mod_v8*.so*
+%{LIBDIR}/libv8.so
+%{LIBDIR}/libicui18n.so
+%{LIBDIR}/libicuuc.so
+%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/autoload_configs
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/v8.conf.xml
+
 ######################################################################################################################
 #
 #						Language Modules
@@ -2427,6 +2444,8 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Mon Jan 13 2014 - peter@olssononline.se
+- Add mod_v8
 * Mon Dec 09 2013 - crienzo@grasshopper.com
 - Add mod_ssml, mod_rayo
 - Fix build on master

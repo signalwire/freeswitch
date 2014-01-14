@@ -38,6 +38,7 @@ that much better:
  Juan Jose Comellas <juanjo@comellas.org> - Patch to switch_utils for arg parsing.
  Dale Thatcher <freeswitch at dalethatcher dot com> - Additions to mod_conference.
  Simon Perreault & Marc Blanchet from Viagenie.ca - IPv6 Support.
+ Peter Olsson <peter@olssononline.se> - mod_v8, and other various patches.
 
 A big THANK YOU goes to:
 

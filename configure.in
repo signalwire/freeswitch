@@ -1162,6 +1162,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/legacy/languages/mod_lua/Makefile
 		src/mod/languages/mod_python/Makefile
 		src/mod/languages/mod_spidermonkey/Makefile
+		src/mod/languages/mod_v8/Makefile
 		src/mod/event_handlers/mod_erlang_event/Makefile
 		src/include/switch_am_config.h
 		build/getsounds.sh

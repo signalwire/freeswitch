@@ -115,6 +115,7 @@ getlibs () {
   getlib http://files.freeswitch.org/downloads/libs/lame-3.98.4.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/mpg123-1.13.2.tar.gz
+  getlib http://files.freeswitch.org/downloads/libs/v8-3.24.14.tar.bz2
   # cleanup mongo
   (
     cd mongo-cxx-driver-v1.8

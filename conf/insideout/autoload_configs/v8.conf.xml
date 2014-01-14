@@ -1,0 +1,5 @@
+<configuration name="v8.conf" description="Google V8 JavaScript Plug-Ins">
+  <modules>
+    <!-- <load module="mod_v8_skel"/> -->
+  </modules>
+</configuration>
