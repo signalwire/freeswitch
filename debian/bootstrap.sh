@@ -147,6 +147,7 @@ map_fs_modules () {
   local filterfn="$1" percatfns="$2" permodfns="$3"
   for x in $mod_dir/*; do
     test -d $x || continue
+    test ! ${x##*/} = legacy || continue
     category=${x##*/} category_path=$x
     for f in $percatfns; do $f; done
     for y in $x/*; do
