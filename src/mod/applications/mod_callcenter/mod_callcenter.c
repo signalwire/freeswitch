@@ -661,11 +661,17 @@ static cc_queue_t *load_queue(const char *queue_name)
 	cc_queue_t *queue = NULL;
 	switch_xml_t x_queues, x_queue, cfg, xml;
 	switch_event_t *event = NULL;
+	switch_event_t *params = NULL;
 
-	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, NULL))) {
+	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
+	switch_assert(params);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "CC-Queue", queue_name);
+
+	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, params))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
-		return queue;
+		goto end;
 	}
+
 	if (!(x_queues = switch_xml_child(cfg, "queues"))) {
 		goto end;
 	}
@@ -716,6 +722,9 @@ end:
 	}
 	if (event) {
 		switch_event_destroy(&event);
+	}
+	if (params) {
+		switch_event_destroy(&params);
 	}
 	return queue;
 }
