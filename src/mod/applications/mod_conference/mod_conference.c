@@ -4622,6 +4622,9 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		conference_add_event_data(conference, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "stop-recording");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Path", rec->path);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Samples-Out", "%ld", (long) fh.samples_out);  
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Samplerate", "%ld", (long) fh.samplerate);  
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Milliseconds-Elapsed", "%ld", (long) fh.samples_out / (fh.samplerate / 1000));  
 		switch_event_fire(&event);
 	}
 
