@@ -146,20 +146,19 @@ mod_filter_show () {
 map_fs_modules () {
   local filterfn="$1" percatfns="$2" permodfns="$3"
   for x in $mod_dir/*; do
-    if test -d $x; then
-      category=${x##*/} category_path=$x
-      for f in $percatfns; do $f; done
-      for y in $x/*; do
-        module_name=${y##*/} module_path=$y
-        module=$category/$module_name
-        if $filterfn $category/$module; then
-          [ -f ${y}/module ] && . ${y}/module
-          for f in $permodfns; do $f; done
-        fi
-        unset module_name module_path module
-      done
-      unset category category_path
-    fi
+    test -d $x || continue
+    category=${x##*/} category_path=$x
+    for f in $percatfns; do $f; done
+    for y in $x/*; do
+      module_name=${y##*/} module_path=$y
+      module=$category/$module_name
+      if $filterfn $category/$module; then
+        [ -f ${y}/module ] && . ${y}/module
+        for f in $permodfns; do $f; done
+      fi
+      unset module_name module_path module
+    done
+    unset category category_path
   done
 }
 
