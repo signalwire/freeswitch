@@ -712,6 +712,45 @@ SWITCH_STANDARD_API(jsapi_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+SWITCH_STANDARD_JSON_API(json_function)
+{
+	char *json_text = NULL;
+	cJSON *path = NULL, *data = NULL;
+	switch_stream_handle_t stream = { 0 };
+
+	if ((data = cJSON_GetObjectItem(json, "data"))) {
+		path = cJSON_GetObjectItem(data, "path"); 
+	}
+
+	if (!(path && data)) {
+		goto end;
+	}
+
+	SWITCH_STANDARD_STREAM(stream);
+
+	json_text = cJSON_PrintUnformatted(data);
+	switch_event_create(&stream.param_event, SWITCH_EVENT_REQUEST_PARAMS);
+	switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "JSON", json_text);
+	switch_safe_free(json_text);
+
+	v8_parse_and_execute(session, (char *) path->valuestring, &stream, NULL);
+	
+	*json_reply = cJSON_Parse((char *)stream.data);
+
+ end:
+
+	if (!*json_reply) {
+		*json_reply = cJSON_CreateObject();
+		cJSON_AddItemToObject(*json_reply, "error", cJSON_CreateString("parse error in return val or invalid data supplied"));
+	}
+
+	switch_event_destroy(&stream.param_event);
+	switch_safe_free(stream.data);
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(launch_async)
 {
 	if (zstr(cmd)) {
@@ -728,6 +767,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_v8_load)
 {
 	switch_application_interface_t *app_interface;
 	switch_chat_application_interface_t *chat_app_interface;
+	switch_json_api_interface_t *json_api_interface;
 
 	if (load_modules() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -753,6 +793,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_v8_load)
 	SWITCH_ADD_API(jsapi_interface, "jsapi", "execute an api call", jsapi_function, "jsapi <script> [additional_vars [...]]");
 	SWITCH_ADD_APP(app_interface, "javascript", "Launch JS ivr", "Run a javascript ivr on a channel", v8_dp_function, "<script> [additional_vars [...]]", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "javascript", "execute a js script", "execute a js script", v8_chat_function, "<script>", SCAF_NONE);
+
+	SWITCH_ADD_JSON_API(json_api_interface, "jsjson", "JSON JS Gateway", json_function, "");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
