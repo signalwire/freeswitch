@@ -117,6 +117,7 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <EnablePREfast>false</EnablePREfast>
+      <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Link>
       <ImportLibrary>$(Platform)\$(Configuration)\$(ProjectName).lib</ImportLibrary>

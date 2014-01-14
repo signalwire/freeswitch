@@ -130,6 +130,7 @@
       <PrecompiledHeader>
       </PrecompiledHeader>
       <EnablePREfast>false</EnablePREfast>
+      <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Link>
       <OutputFile>$(SolutionDir)$(Platform)\$(Configuration)/mod/$(ProjectName).dll</OutputFile>
