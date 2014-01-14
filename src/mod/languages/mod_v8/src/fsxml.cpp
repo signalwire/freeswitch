@@ -402,7 +402,7 @@ JS_XML_SET_PROPERTY_IMPL(SetDataProperty)
 	switch_xml_set_txt_d(_xml, js_safe_str(*str));
 }
 
-JS_XML_GET_PROPERTY_IMPL(GetXmlErrorProperty)
+JS_XML_GET_PROPERTY_IMPL(GetErrorProperty)
 {
 	const char *data = switch_xml_error(_xml);
 	info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), js_safe_str(data)));
@@ -423,7 +423,7 @@ static const js_function_t xml_methods[] = {
 static const js_property_t xml_props[] = {
 	{"name", FSXML::GetNameProperty, JSBase::DefaultSetProperty},
 	{"data", FSXML::GetDataProperty, FSXML::SetDataProperty},
-	{"xmlError", FSXML::GetXmlErrorProperty, JSBase::DefaultSetProperty},
+	{"error", FSXML::GetErrorProperty, JSBase::DefaultSetProperty},
 	{0}
 };
 

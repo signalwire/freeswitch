@@ -79,7 +79,7 @@ public:
 	JS_XML_GET_PROPERTY_DEF(GetNameProperty);
 	JS_XML_GET_PROPERTY_DEF(GetDataProperty);
 	JS_XML_SET_PROPERTY_DEF(SetDataProperty);
-	JS_XML_GET_PROPERTY_DEF(GetXmlErrorProperty);
+	JS_XML_GET_PROPERTY_DEF(GetErrorProperty);
 };
 
 #endif /* FS_XML_H */
