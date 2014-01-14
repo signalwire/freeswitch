@@ -573,6 +573,10 @@ Description: mod_spidermonkey
  Adds mod_spidermonkey.
 Build-Depends: unixodbc-dev
 
+Module: languages/mod_v8
+Description: mod_v8
+ Adds mod_v8.
+
 Module: languages/mod_yaml
 Description: mod_yaml
  Adds mod_yaml.
