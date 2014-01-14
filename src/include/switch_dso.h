@@ -21,6 +21,8 @@
 #ifndef FREESWITCH_DSO_H
 #define FREESWITCH_DSO_H
 
+SWITCH_BEGIN_EXTERN_C
+
 typedef int (*switch_dso_func_t) (void);
 #ifdef WIN32
 typedef HINSTANCE switch_dso_lib_t;
@@ -35,6 +37,7 @@ SWITCH_DECLARE(switch_dso_lib_t) switch_dso_open(const char *path, int global, c
 SWITCH_DECLARE(switch_dso_func_t) switch_dso_func_sym(switch_dso_lib_t lib, const char *sym, char **err);
 SWITCH_DECLARE(void *) switch_dso_data_sym(switch_dso_lib_t lib, const char *sym, char **err);
 
+SWITCH_END_EXTERN_C
 
 #endif
 
