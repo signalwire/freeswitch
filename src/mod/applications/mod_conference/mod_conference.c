@@ -4775,8 +4775,9 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 	switch_mutex_unlock(conference->member_mutex);
 	switch_mutex_unlock(conference->mutex);
 
-	if (!count)
+	if (!count) {
 		return SWITCH_STATUS_FALSE;
+	}
 
 	if (channel) {
 		if ((expanded = switch_channel_expand_variables(channel, file)) != file) {
@@ -4831,6 +4832,23 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 	fnode->fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 	if (switch_core_file_open(&fnode->fh, file, (uint8_t) 1, conference->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, pool) !=
 		SWITCH_STATUS_SUCCESS) {
+		switch_event_t *event;
+
+		if (test_eflag(conference, EFLAG_PLAY_FILE) &&
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+			conference_add_event_data(conference, event);
+			
+			if (fnode->fh.params) {
+				switch_event_merge(event, conference->fnode->fh.params);
+			}
+			
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "play-file");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "File", file);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Async", async ? "true" : "false");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Error", "File could not be played");
+			switch_event_fire(&event);
+		}
+
 		switch_core_destroy_memory_pool(&pool);
 		status = SWITCH_STATUS_NOTFOUND;
 		goto done;
