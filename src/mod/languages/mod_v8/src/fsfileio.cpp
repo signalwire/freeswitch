@@ -140,7 +140,8 @@ JS_FILEIO_FUNCTION_IMPL(Read)
 
 	if (bytes) {
 		if (!_buf || _bufsize < bytes) {
-			_buf = (char *)switch_core_alloc(_pool, bytes);
+			_buf = (char *)switch_core_alloc(_pool, bytes+1);
+			memset(_buf, 0, bytes+1);
 			_bufsize = bytes;
 		}
 
@@ -156,7 +157,12 @@ JS_FILEIO_FUNCTION_IMPL(Read)
 JS_FILEIO_FUNCTION_IMPL(GetData)
 {
 	HandleScope handle_scope(info.GetIsolate());
-	info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), js_safe_str(_buf)));
+
+	if (!_buflen || !_buf) {
+		info.GetReturnValue().Set(false);
+	} else {
+		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), _buf));
+	}
 }
 
 JS_FILEIO_FUNCTION_IMPL(Write)
