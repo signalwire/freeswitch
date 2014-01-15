@@ -66,7 +66,7 @@ static int master(void)
 
     for (i = 0;  i < 10;  i++)
     {
-        if (psuedo_terminal_create(&modem[i]))
+        if (pseudo_terminal_create(&modem[i]))
         {
             printf("Failure\n");
             exit(2);
@@ -89,7 +89,7 @@ static int master(void)
 
     for (i = 0;  i < 10;  i++)
     {
-        if (psuedo_terminal_close(&modem[i]))
+        if (pseudo_terminal_close(&modem[i]))
         {
             printf("Failure\n");
             exit(2);

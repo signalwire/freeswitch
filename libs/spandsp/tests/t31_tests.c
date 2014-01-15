@@ -374,7 +374,7 @@ static int modem_call_control(t31_state_t *s, void *user_data, int op, const cha
 }
 /*- End of function --------------------------------------------------------*/
 
-static int at_tx_handler(at_state_t *s, void *user_data, const uint8_t *buf, size_t len)
+static int at_tx_handler(void *user_data, const uint8_t *buf, size_t len)
 {
     size_t i;
 

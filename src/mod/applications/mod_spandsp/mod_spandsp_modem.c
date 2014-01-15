@@ -81,7 +81,7 @@ static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uin
 	return 0;
 }
 
-static int t31_at_tx_handler(at_state_t *s, void *user_data, const uint8_t *buf, size_t len)
+static int t31_at_tx_handler(void *user_data, const uint8_t *buf, size_t len)
 {
 	modem_t *modem = user_data;
 
@@ -1024,7 +1024,6 @@ static void wake_modem_thread(modem_t *modem)
 static int control_handler(modem_t *modem, const char *num, int op)
 {
 	switch_core_session_t *session = NULL;
-	at_state_t *at_state;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Control Handler op:%d state:[%s] %s\n", 
 					  op, modem_state2name(modem_get_state(modem)), modem->devlink);
@@ -1103,16 +1102,14 @@ static int control_handler(modem_t *modem, const char *num, int op)
 			u_char x[1];
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1,
 							  "Modem %s [%s] - CTS %s\n", modem->devlink, modem_state2name(modem_get_state(modem)), (int) (intptr_t) num ? "XON" : "XOFF");
-
-			at_state = t31_get_at_state(modem->t31_state);
 			if (num) {
 				x[0] = 0x11;
-				t31_at_tx_handler(at_state, modem, x, 1);
+				t31_at_tx_handler(modem, x, 1);
 				switch_clear_flag(modem, MODEM_FLAG_XOFF);
 				wake_modem_thread(modem);
 			} else {
 				x[0] = 0x13;
-				t31_at_tx_handler(at_state, modem, x, 1);
+				t31_at_tx_handler(modem, x, 1);
 				switch_set_flag(modem, MODEM_FLAG_XOFF);
 			}
 		}

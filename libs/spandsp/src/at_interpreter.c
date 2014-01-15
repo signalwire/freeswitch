@@ -222,9 +222,9 @@ SPAN_DECLARE(void) at_put_response(at_state_t *s, const char *t)
     buf[1] = s->p.s_regs[4];
     buf[2] = '\0';
     if (s->p.result_code_format == ASCII_RESULT_CODES)
-        s->at_tx_handler(s, s->at_tx_user_data, buf, 2);
-    s->at_tx_handler(s, s->at_tx_user_data, (uint8_t *) t, strlen(t));
-    s->at_tx_handler(s, s->at_tx_user_data, buf, 2);
+        s->at_tx_handler(s->at_tx_user_data, buf, 2);
+    s->at_tx_handler(s->at_tx_user_data, (uint8_t *) t, strlen(t));
+    s->at_tx_handler(s->at_tx_user_data, buf, 2);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -249,7 +249,7 @@ SPAN_DECLARE(void) at_put_response_code(at_state_t *s, int code)
         break;
     case NUMERIC_RESULT_CODES:
         snprintf((char *) buf, sizeof(buf), "%d%c", code, s->p.s_regs[3]);
-        s->at_tx_handler(s, s->at_tx_user_data, buf, strlen((char *) buf));
+        s->at_tx_handler(s->at_tx_user_data, buf, strlen((char *) buf));
         break;
     default:
         /* No result codes */
@@ -361,7 +361,7 @@ SPAN_DECLARE(void) at_call_event(at_state_t *s, int event)
         {
             s->rx_data[s->rx_data_bytes++] = DLE;
             s->rx_data[s->rx_data_bytes++] = ETX;
-            s->at_tx_handler(s, s->at_tx_user_data, s->rx_data, s->rx_data_bytes);
+            s->at_tx_handler(s->at_tx_user_data, s->rx_data, s->rx_data_bytes);
             s->rx_data_bytes = 0;
         }
         if (s->at_rx_mode != AT_MODE_OFFHOOK_COMMAND  &&  s->at_rx_mode != AT_MODE_ONHOOK_COMMAND)
@@ -881,7 +881,7 @@ static int process_class1_cmd(at_state_t *s, const char **t)
 
     result = true;
     if (s->class1_handler)
-        result = s->class1_handler(s, s->class1_user_data, direction, operation, val);
+        result = s->class1_handler(s->class1_user_data, direction, operation, val);
     switch (result)
     {
     case 0:
@@ -5461,7 +5461,7 @@ SPAN_DECLARE(int) at_modem_control(at_state_t *s, int op, const char *num)
         break;
     }
     /*endswitch*/
-    return s->modem_control_handler(s, s->modem_control_user_data, op, num);
+    return s->modem_control_handler(s->modem_control_user_data, op, num);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -5474,7 +5474,7 @@ SPAN_DECLARE(void) at_interpreter(at_state_t *s, const char *cmd, int len)
     const char *t;
 
     if (s->p.echo)
-        s->at_tx_handler(s, s->at_tx_user_data, (uint8_t *) cmd, len);
+        s->at_tx_handler(s->at_tx_user_data, (uint8_t *) cmd, len);
 
     for (i = 0;  i < len;  i++)
     {
@@ -5579,6 +5579,15 @@ SPAN_DECLARE(void) at_set_class1_handler(at_state_t *s, at_class1_handler_t hand
 {
     s->class1_handler = handler;
     s->class1_user_data = user_data;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) at_set_modem_control_handler(at_state_t *s,
+                                                at_modem_control_handler_t modem_control_handler,
+                                                void *modem_control_user_data)
+{
+    s->modem_control_handler = modem_control_handler;
+    s->modem_control_user_data = modem_control_user_data;
 }
 /*- End of function --------------------------------------------------------*/
 

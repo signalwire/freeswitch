@@ -53,7 +53,7 @@
 int next_id = 0;
 const char *device_root_name = "/dev/spandsp";
 
-int psuedo_terminal_close(modem_t *modem)
+int pseudo_terminal_close(modem_t *modem)
 {
 #if defined(WIN32)
     if (modem->master)
@@ -84,7 +84,7 @@ int psuedo_terminal_close(modem_t *modem)
 }
 /*- End of function --------------------------------------------------------*/
 
-int psuedo_terminal_create(modem_t *modem)
+int pseudo_terminal_create(modem_t *modem)
 {
 #if defined(WIN32)
     COMMTIMEOUTS timeouts = {0};
@@ -170,7 +170,7 @@ int psuedo_terminal_create(modem_t *modem)
     if (!SetCommTimeouts(modem->master, &timeouts))
     {
         span_log(&modem->logging, SPAN_LOG_ERROR, "Cannot set up non-blocking read on %s\n", modem->devlink);
-        psuedo_terminal_close(modem);
+        pseudo_terminal_close(modem);
         return -1;
     }
     modem->threadAbort = CreateEvent(NULL, true, false, NULL);
@@ -184,14 +184,14 @@ int psuedo_terminal_create(modem_t *modem)
     if (symlink(modem->stty, modem->devlink))
     {
         span_log(&modem->logging, SPAN_LOG_ERROR, "Fatal error: failed to create %s symbolic link\n", modem->devlink);
-        psuedo_terminal_close(modem);
+        pseudo_terminal_close(modem);
         return -1;
     }
 
     if (fcntl(modem->master, F_SETFL, fcntl(modem->master, F_GETFL, 0) | O_NONBLOCK))
     {
         span_log(&modem->logging, SPAN_LOG_ERROR, "Cannot set up non-blocking read on %s\n", ttyname(modem->master));
-        psuedo_terminal_close(modem);
+        pseudo_terminal_close(modem);
         return -1;
     }
 #endif
