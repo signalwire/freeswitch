@@ -1015,7 +1015,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		}
 	}
 
-	if (ice->missed_count > 5) {
+	if (ice->missed_count > 5 && !(ice->type & ICE_GOOGLE_JINGLE)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "missed too many: %d, looking for new ICE dest.\n", 
 						  ice->missed_count);
 		ice->rready = 0;
@@ -3449,6 +3449,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 	if ((type & ICE_VANILLA)) {
 		switch_snprintf(ice_user, sizeof(ice_user), "%s:%s", login, rlogin);
 		switch_snprintf(user_ice, sizeof(user_ice), "%s:%s", rlogin, login);
+		ice->ready = ice->rready = 0;
 	} else {
 		switch_snprintf(ice_user, sizeof(ice_user), "%s%s", login, rlogin);
 		switch_snprintf(user_ice, sizeof(user_ice), "%s%s", rlogin, login);
@@ -3461,8 +3462,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 	ice->ice_params = ice_params;
 	ice->pass = "";
 	ice->rpass = "";
-	ice->ready = 0;
-	ice->rready = 0;
 	ice->next_run = switch_micro_time_now();
 
 	if (password) {
