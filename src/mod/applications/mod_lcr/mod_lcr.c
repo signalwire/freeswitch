@@ -191,9 +191,13 @@ static const char *do_cid(switch_memory_pool_t *pool, const char *cid, const cha
 		src++;
 		
 		/* break on first / */
-		dst = strchr(src, '/');
-		*dst = '\0';
-		dst++;
+		if((dst = strchr(src, '/'))) {
+			*dst = '\0';
+			dst++;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid destination part in regexp: %s\n", src);
+			goto done;
+		}
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "src: %s, dst: %s\n", src, dst);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Not a valid regexp: %s\n", src);
