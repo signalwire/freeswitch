@@ -55,6 +55,22 @@ void FSEvent::Init()
 	_freed = 0;
 }
 
+/* Check if a header is of the array type */
+bool FSEvent::IsArray(const char *var)
+{
+	bool ret = false;
+
+	if (!zstr(var)) {
+		const char *val = switch_event_get_header(_event, var);
+
+		if (val && !strncmp(val, "ARRAY", 5)) {
+			ret = true;
+		}
+	}
+
+	return ret;
+}
+
 void FSEvent::SetEvent(switch_event_t *event, int freed)
 {
 	/* Free existing event if it exists already */
@@ -129,6 +145,11 @@ void *FSEvent::Construct(const v8::FunctionCallbackInfo<Value>& info)
 				}
 			}
 
+			/* Third argument tells if the headers should be unique */
+			if (event && !info[2].IsEmpty() && info[2]->BooleanValue()) {
+				event->flags |= EF_UNIQ_HEADERS;
+			}
+
 			obj->_event = event;
 			obj->_freed = 0;
 
@@ -154,7 +175,14 @@ JS_EVENT_FUNCTION_IMPL(AddHeader)
 		String::Utf8Value str2(info[1]);
 		const char *hname = js_safe_str(*str1);
 		const char *hval = js_safe_str(*str2);
-		switch_event_add_header_string(_event, SWITCH_STACK_BOTTOM, hname, hval);
+		switch_stack_t stack_kind = SWITCH_STACK_BOTTOM;
+
+		/* Check if we should push this value to the end of an array */
+		if (!info[2].IsEmpty() && info[2]->BooleanValue()) {
+			stack_kind = SWITCH_STACK_PUSH;
+		}
+
+		switch_event_add_header_string(_event, stack_kind, hname, hval);
 		info.GetReturnValue().Set(true);
 		return;
 	}
@@ -174,13 +202,50 @@ JS_EVENT_FUNCTION_IMPL(GetHeader)
 	if (info.Length() > 0) {
 		String::Utf8Value str(info[0]);
 		const char *hname = js_safe_str(*str);
-		const char *val = switch_event_get_header(_event, hname);
-		if (!val) val = "";
-		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), val));
+		const char *val = NULL;
+		int idx = -1;
+
+		/* Check if caller expects to get data from an array */
+		if (info.Length() > 1 && !info[1].IsEmpty()) {
+			idx = info[1]->Int32Value();
+
+			if (idx < 0 || !IsArray(hname)) {
+				idx = -1;
+			}
+		}
+
+		if (idx > -1) {
+			val = switch_event_get_header_idx(_event, hname, idx);
+		} else {
+			val = switch_event_get_header(_event, hname);
+		}
+
+		if (!val && idx > -1) {
+			/* Return null if we fetched and array value that didn't exist (so we know when to exit a loop) */
+			info.GetReturnValue().Set(Null(info.GetIsolate()));
+		} else {
+			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), js_safe_str(val)));
+		}
+
 		return;
 	}
 
 	info.GetReturnValue().Set(false);
+}
+
+JS_EVENT_FUNCTION_IMPL(IsArrayHeader)
+{
+	if (!_event) {
+		info.GetReturnValue().Set(false);
+		return;
+	}
+
+	if (info.Length() > 0) {
+		String::Utf8Value str(info[0]);
+		info.GetReturnValue().Set(IsArray(js_safe_str(*str)));
+	} else {
+		info.GetReturnValue().Set(false);
+	}
 }
 
 JS_EVENT_FUNCTION_IMPL(AddBody)
@@ -355,6 +420,7 @@ JS_EVENT_GET_PROPERTY_IMPL(GetProperty)
 static const js_function_t event_proc[] = {
 	{"addHeader", FSEvent::AddHeader},
 	{"getHeader", FSEvent::GetHeader},
+	{"isArrayHeader", FSEvent::IsArrayHeader},
 	{"addBody", FSEvent::AddBody},
 	{"getBody", FSEvent::GetBody},
 	{"getType", FSEvent::GetType},

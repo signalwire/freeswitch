@@ -53,6 +53,7 @@ private:
 	int _freed;
 
 	void Init();
+	bool IsArray(const char *var);
 public:
 	FSEvent(JSMain *owner) : JSBase(owner) { Init(); }
 	FSEvent(const v8::FunctionCallbackInfo<v8::Value>& info) : JSBase(info) { Init(); }
@@ -69,6 +70,7 @@ public:
 	static v8::Handle<v8::Object> New(switch_event_t *event, const char *name, JSMain *js);
 	JS_EVENT_FUNCTION_DEF(AddHeader);
 	JS_EVENT_FUNCTION_DEF(GetHeader);
+	JS_EVENT_FUNCTION_DEF(IsArrayHeader);
 	JS_EVENT_FUNCTION_DEF(AddBody);
 	JS_EVENT_FUNCTION_DEF(GetBody);
 	JS_EVENT_FUNCTION_DEF(GetType);
