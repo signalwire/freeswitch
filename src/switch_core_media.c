@@ -6395,7 +6395,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				if (switch_media_handle_test_media_flag(smh, SCMF_MULTI_ANSWER_VIDEO)) {
 					switch_mutex_lock(smh->sdp_mutex);
 					for (pmap = v_engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
-						if (pmap->pt != v_engine->cur_payload_map->pt) {
+						if (pmap->pt != v_engine->cur_payload_map->pt && pmap->negotiated) {
 							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%ld\n",
 											pmap->pt, pmap->iananame, pmap->rate);
 							

@@ -54,7 +54,7 @@
 #include <switch_version.h>
 #include <switch_ssl.h>
 
-#define FIR_COUNTDOWN 25
+#define FIR_COUNTDOWN 50
 
 #define READ_INC(rtp_session) switch_mutex_lock(rtp_session->read_mutex); rtp_session->reading++
 #define READ_DEC(rtp_session)  switch_mutex_unlock(rtp_session->read_mutex); rtp_session->reading--
@@ -1573,11 +1573,11 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 
 	if (rtp_session->fir_countdown) {
-		if (rtp_session->fir_countdown == FIR_COUNTDOWN) {
-			do_flush(rtp_session, SWITCH_TRUE);
-		}
+		//if (rtp_session->fir_countdown == FIR_COUNTDOWN) {
+		//	do_flush(rtp_session, SWITCH_TRUE);
+		//}
 
-		if (rtp_session->fir_countdown == FIR_COUNTDOWN || rtp_session->fir_countdown == 1) {
+		if (rtp_session->fir_countdown == FIR_COUNTDOWN || (rtp_session->fir_countdown == FIR_COUNTDOWN / 2) || rtp_session->fir_countdown == 1) {
 			if (rtp_session->flags[SWITCH_RTP_FLAG_PLI]) {
 				send_pli(rtp_session);
 			} else {
@@ -4354,7 +4354,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		rtp_session->last_flush_packet_count = rtp_session->stats.inbound.flush_packet_count;
 		
 		
-		if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && now - rtp_session->last_read_time > 500000) {
+		if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && now - rtp_session->last_read_time > 5000000) {
 			switch_rtp_video_refresh(rtp_session);
 		}
 
@@ -5772,11 +5772,11 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 				rtp_session->ts_norm.delta_percent = (double)((double)rtp_session->ts_norm.delta / (double)rtp_session->ts_norm.delta_avg) * 100.0f;
 
 
-				if (rtp_session->ts_norm.delta_ct > 50 && rtp_session->ts_norm.delta_percent > 150.0) {
+				//if (rtp_session->ts_norm.delta_ct > 50 && rtp_session->ts_norm.delta_percent > 150.0) {
 					//printf("%s diff %d %d (%.2f)\n", switch_core_session_get_name(rtp_session->session),
 					//rtp_session->ts_norm.delta, rtp_session->ts_norm.delta_avg, rtp_session->ts_norm.delta_percent);
-					switch_rtp_video_refresh(rtp_session);
-				}
+					//switch_rtp_video_refresh(rtp_session);
+					//}
 			}
 			rtp_session->ts_norm.ts += rtp_session->ts_norm.delta;
 		}
