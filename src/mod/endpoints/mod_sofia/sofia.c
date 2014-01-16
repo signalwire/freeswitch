@@ -3742,7 +3742,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->auto_rtp_bugs = RTP_BUG_CISCO_SKIP_MARK_BIT_2833;// | RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833;
 
 					profile->pool = pool;
-					profile->user_agent = SOFIA_USER_AGENT;
+
+					profile->user_agent = switch_core_sprintf(profile->pool, "FreeSWITCH-mod_sofia/%s", switch_version_full());
 
 					profile->name = switch_core_strdup(profile->pool, xprofilename);
 					switch_snprintf(url, sizeof(url), "sofia_reg_%s", xprofilename);

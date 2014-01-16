@@ -40,7 +40,6 @@
 #include <switch_ssl.h>
 #include <switch_stun.h>
 #include <switch_nat.h>
-#include <switch_version.h>
 #include "private/switch_core_pvt.h"
 #include <switch_curl.h>
 #ifndef WIN32
@@ -83,7 +82,7 @@ static void send_heartbeat(void)
 								duration.sec, duration.sec == 1 ? "" : "s",
 								duration.ms, duration.ms == 1 ? "" : "s", duration.mms, duration.mms == 1 ? "" : "s");
 
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Version", SWITCH_VERSION_FULL);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Version", switch_version_full());
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Uptime-msec", "%"SWITCH_TIME_T_FMT, switch_core_uptime() / 1000);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Session-Count", "%u", switch_core_session_count());
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Max-Sessions", "%u", switch_core_session_limit(0));
@@ -2142,7 +2141,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
 					  "\nFreeSWITCH Version %s (%s)\n\nFreeSWITCH Started\nMax Sessions [%u]\nSession Rate [%d]\nSQL [%s]\n",
-					  SWITCH_VERSION_FULL, SWITCH_VERSION_REVISION_HUMAN,
+					  switch_version_full(), switch_version_revision_human(),
 					  switch_core_session_limit(0),
 					  switch_core_sessions_per_second(0), switch_test_flag((&runtime), SCF_USE_SQL) ? "Enabled" : "Disabled");
 

@@ -49,7 +49,6 @@
 #endif
 
 #include <switch.h>
-#include <switch_version.h>
 #include "private/switch_core_pvt.h"
 
 /* pid filename: Stores the process id of the freeswitch process */
@@ -676,7 +675,7 @@ int main(int argc, char *argv[])
 		}
 
 		else if (!strcmp(local_argv[x], "-version")) {
-			fprintf(stdout, "FreeSWITCH version: %s (%s)\n", SWITCH_VERSION_FULL, SWITCH_VERSION_REVISION_HUMAN);
+			fprintf(stdout, "FreeSWITCH version: %s (%s)\n", switch_version_full(), switch_version_revision_human());
 			exit(EXIT_SUCCESS);
 		}
 #endif

@@ -66,7 +66,6 @@
 #define     SAMPLERATE_GSMOPEN   8000
 
 #include <switch.h>
-#include <switch_version.h>
 #ifndef WIN32
 #include <termios.h>
 #include <sys/ioctl.h>
@@ -104,7 +103,7 @@
 #endif
 
 #ifndef GSMOPEN_SVN_VERSION
-#define GSMOPEN_SVN_VERSION SWITCH_VERSION_FULL
+#define GSMOPEN_SVN_VERSION switch_version_full()
 #endif /* GSMOPEN_SVN_VERSION */
 
 #include "ctb-0.16/ctb.h"

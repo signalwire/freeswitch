@@ -42,7 +42,6 @@
  */
 #include <switch.h>
 #include <switch_stun.h>
-#include <switch_version.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_commands_shutdown);
@@ -536,7 +535,7 @@ SWITCH_STANDARD_API(version_function)
 	char *mydata = NULL, *argv[2];
 
 	if (zstr(cmd)) {
-		stream->write_function(stream, "FreeSWITCH Version %s (%s)\n", SWITCH_VERSION_FULL, SWITCH_VERSION_REVISION_HUMAN);
+		stream->write_function(stream, "FreeSWITCH Version %s (%s)\n", switch_version_full(), switch_version_revision_human());
 		goto end;
 	}
 
@@ -546,9 +545,9 @@ SWITCH_STANDARD_API(version_function)
 	argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
 	if (argc > 0 && switch_stristr("short", argv[0])) {
-		stream->write_function(stream, "%s.%s.%s\n", SWITCH_VERSION_MAJOR,SWITCH_VERSION_MINOR,SWITCH_VERSION_MICRO);
+		stream->write_function(stream, "%s.%s.%s\n", switch_version_major(),switch_version_minor(),switch_version_micro());
 	} else {
-		stream->write_function(stream, "FreeSWITCH Version %s (%s)\n", SWITCH_VERSION_FULL, SWITCH_VERSION_FULL_HUMAN);
+		stream->write_function(stream, "FreeSWITCH Version %s (%s)\n", switch_version_full(), switch_version_full_human());
 	}
 
 	switch_safe_free(mydata);
@@ -2106,7 +2105,7 @@ SWITCH_STANDARD_API(status_function)
 						duration.sec, duration.sec == 1 ? "" : "s", duration.ms , duration.ms  == 1 ? "" : "s", duration.mms,
 						duration.mms == 1 ? "" : "s", nl);
 
-	stream->write_function(stream, "FreeSWITCH (Version %s) is %s%s", SWITCH_VERSION_FULL_HUMAN,
+	stream->write_function(stream, "FreeSWITCH (Version %s) is %s%s", switch_version_full_human(),
 						   switch_core_ready() ? "ready" : "not ready", nl);
 
 	stream->write_function(stream, "%" SWITCH_SIZE_T_FMT " session(s) since startup%s", switch_core_session_id() - 1, nl);
@@ -6268,7 +6267,7 @@ SWITCH_STANDARD_JSON_API(json_api_function)
 
 }
 
-#include <switch_version.h>
+
 SWITCH_STANDARD_JSON_API(json_status_function)
 {
 	cJSON *o, *oo, *reply = cJSON_CreateObject();
@@ -6298,7 +6297,7 @@ SWITCH_STANDARD_JSON_API(json_status_function)
 	cJSON_AddItemToObject(o, "microseconds", cJSON_CreateNumber(duration.mms));
 	
 	cJSON_AddItemToObject(reply, "uptime", o);
-	cJSON_AddItemToObject(reply, "version", cJSON_CreateString(SWITCH_VERSION_FULL_HUMAN));
+	cJSON_AddItemToObject(reply, "version", cJSON_CreateString(switch_version_full_human()));
 	
 	o = cJSON_CreateObject();
 	cJSON_AddItemToObject(reply, "sessions", o);

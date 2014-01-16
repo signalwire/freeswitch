@@ -2603,6 +2603,15 @@ SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t
 SWITCH_DECLARE(switch_call_direction_t) switch_ice_direction(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_debug_pool(switch_stream_handle_t *stream);
 
+SWITCH_DECLARE(const char *)switch_version_major(void);
+SWITCH_DECLARE(const char *)switch_version_minor(void);
+SWITCH_DECLARE(const char *)switch_version_micro(void);
+
+SWITCH_DECLARE(const char *)switch_version_revision(void);
+SWITCH_DECLARE(const char *)switch_version_revision_human(void);
+SWITCH_DECLARE(const char *)switch_version_full(void);
+SWITCH_DECLARE(const char *)switch_version_full_human(void);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

@@ -76,7 +76,6 @@
 #define GSMOPEN_ALSA
 #endif // NO_ALSA
 #include <switch.h>
-#include <switch_version.h>
 #ifndef WIN32
 #include <termios.h>
 #include <sys/ioctl.h>
@@ -132,7 +131,7 @@
 //#define SAMPLES_PER_FRAME SAMPLERATE_GSMOPEN/50
 
 #ifndef GSMOPEN_SVN_VERSION
-#define GSMOPEN_SVN_VERSION SWITCH_VERSION_FULL
+#define GSMOPEN_SVN_VERSION switch_version_full()
 #endif /* GSMOPEN_SVN_VERSION */
 
 typedef enum {

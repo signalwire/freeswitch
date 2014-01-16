@@ -251,6 +251,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_core_rwlock.c \
 	src/switch_core_port_allocator.c \
 	src/switch_core.c \
+	src/switch_version.c \
 	src/switch_core_media.c \
 	src/switch_sdp.c \
 	src/switch_scheduler.c \
@@ -306,8 +307,6 @@ libfreeswitch_la_SOURCES = \
 if ENABLE_CPP
 libfreeswitch_la_SOURCES += src/switch_cpp.cpp
 endif
-
-$(top_builddir)/libfreeswitch_la-switch_console.lo: src/include/switch_version.h
 
 $(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(switch_builddir)/quiet_libtool $(switch_builddir)/modules.conf  
 

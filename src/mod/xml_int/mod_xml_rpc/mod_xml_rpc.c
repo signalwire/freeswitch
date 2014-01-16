@@ -57,7 +57,6 @@
  *
  */
 #include <switch.h>
-#include <switch_version.h>
 #ifdef _MSC_VER
 #pragma warning(disable:4142)
 #endif
@@ -811,6 +810,7 @@ abyss_bool handler_hook(TSession * r)
 	const char *uri = 0;
 	TRequestInfo *info = 0;
 	switch_event_t *evnt = 0; /* shortcut to stream.param_event */
+	char v[256] = "";
 
 	if (!r || !(info = &r->requestInfo) || !(uri = info->uri)) {
 		return FALSE;
@@ -1008,7 +1008,8 @@ abyss_bool handler_hook(TSession * r)
 	}
 
 	/* Generation of the server field */
-	ResponseAddField(r, "Server", "FreeSWITCH-" SWITCH_VERSION_FULL "-mod_xml_rpc");
+	switch_sprintf(v, sizeof(v), "FreeSWITCH-%s-mod_xml_rpc", switch_version_full());
+	ResponseAddField(r, "Server", v);
 
 	if (html) {
 		ResponseAddField(r, "Content-Type", "text/html");

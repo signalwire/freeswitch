@@ -33,7 +33,6 @@
 
 
 #include <switch.h>
-#include <switch_version.h>
 
 #ifndef WIN32
 #include <sys/time.h>
@@ -85,7 +84,7 @@
 #endif
 
 #ifndef SKYPOPEN_SVN_VERSION
-#define SKYPOPEN_SVN_VERSION SWITCH_VERSION_FULL
+#define SKYPOPEN_SVN_VERSION switch_version_full()
 #endif /* SKYPOPEN_SVN_VERSION */
 
 typedef enum {

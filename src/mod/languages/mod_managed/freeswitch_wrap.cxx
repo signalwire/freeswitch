@@ -14626,6 +14626,76 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_debug_pool(void * jarg1) 
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_version_major() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *)switch_version_major();
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_version_minor() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *)switch_version_minor();
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_version_micro() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *)switch_version_micro();
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_version_revision() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *)switch_version_revision();
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_version_revision_human() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *)switch_version_revision_human();
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_version_full() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *)switch_version_full();
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_version_full_human() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *)switch_version_full_human();
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_loadable_module_interface_module_name_set(void * jarg1, char * jarg2) {
   switch_loadable_module_interface *arg1 = (switch_loadable_module_interface *) 0 ;
   char *arg2 = (char *) 0 ;

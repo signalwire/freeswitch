@@ -32,7 +32,6 @@
 
 #include <switch.h>
 #include <switch_console.h>
-#include <switch_version.h>
 #ifndef _MSC_VER
 #include <switch_private.h>
 #endif
