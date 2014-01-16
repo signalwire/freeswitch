@@ -1008,7 +1008,7 @@ abyss_bool handler_hook(TSession * r)
 	}
 
 	/* Generation of the server field */
-	switch_sprintf(v, sizeof(v), "FreeSWITCH-%s-mod_xml_rpc", switch_version_full());
+	switch_snprintf(v, sizeof(v), "FreeSWITCH-%s-mod_xml_rpc", switch_version_full());
 	ResponseAddField(r, "Server", v);
 
 	if (html) {
