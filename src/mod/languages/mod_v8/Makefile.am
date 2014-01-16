@@ -4,7 +4,21 @@ V8=v8-3.24.14
 
 V8_DIR=$(switch_srcdir)/libs/$(V8)
 V8_BUILDDIR=$(switch_builddir)/libs/$(V8)
-V8SO=$(V8_DIR)/out/native/lib.target/libv8.so
+
+if PLATFORM_MACOSX
+# For some reason V8 puts the libraries somewhere else on Mac OSX
+V8_LIBDIR=$(V8_DIR)/out/native
+V8_LIBEXT=dylib
+# Build with snapshot doesn't work for OSX right now
+V8_BUILDPARAMS=snapshot=off
+else
+V8_LIBDIR=$(V8_DIR)/out/native/lib.target
+V8_LIBEXT=so
+# Some gcc versions report warnings incorrectly
+V8_BUILDPARAMS=strictaliasing=off werror=no
+endif
+
+V8SO=$(V8_LIBDIR)/libv8.$(V8_LIBEXT)
 
 CURL_DIR=$(switch_srcdir)/libs/curl
 CURL_BUILDDIR=$(switch_builddir)/libs/curl
@@ -16,7 +30,7 @@ AM_CFLAGS  += -I. -I./include -I$(V8_DIR)/include
 AM_CPPFLAGS += -I. -I./include -I$(V8_DIR)/include 
 AM_LIBADD   = $(switch_builddir)/libfreeswitch.la -lv8 -licuuc -licui18n 
 AM_LDFLAGS += -avoid-version -module -no-undefined -shared 
-AM_LDFLAGS += -L$(V8_DIR)/out/native/lib.target 
+AM_LDFLAGS += -L$(V8_LIBDIR) 
 BUILT_SOURCES = $(V8SO) $(LIBCURL_DEPS)
 
 if HAVE_ODBC
@@ -45,15 +59,29 @@ $(V8_DIR):
 	$(GETLIB) $(V8).tar.bz2
         
 $(V8SO): $(V8_DIR)
-	cd $(V8_BUILDDIR) && $(MAKE) library=shared native
+	cd $(V8_BUILDDIR) && $(MAKE) library=shared $(V8_BUILDPARAMS) native
 
 $(CURLLA):
 	@cd $(CURL_BUILDDIR) && $(MAKE)
 	$(TOUCH_TARGET)
 
-install-exec-local: $(DESTDIR)$(libdir)/libv8.so
+# This is a temporary solution to force Mac OSX build to load the libraries at the right place
+if PLATFORM_MACOSX
+install-exec-local: $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT)
+	install_name_tool -change /usr/local/lib/libv8.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT) .libs/mod_v8.so
+	install_name_tool -change /usr/local/lib/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicuuc.$(V8_LIBEXT) .libs/mod_v8.so
+	install_name_tool -change /usr/local/lib/libicui18n.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicui18n.$(V8_LIBEXT) .libs/mod_v8.so
+	install_name_tool -change /usr/local/lib/libv8.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT)
+	install_name_tool -change /usr/local/lib/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT)
+	install_name_tool -change /usr/local/lib/libicui18n.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicui18n.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT)
+	install_name_tool -change /usr/local/lib/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicui18n.$(V8_LIBEXT)
+	install_name_tool -change /usr/local/lib/libicui18n.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicui18n.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicui18n.$(V8_LIBEXT)
+	install_name_tool -change /usr/local/lib/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicuuc.$(V8_LIBEXT)
+else
+install-exec-local: $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT)
+endif
 
-$(DESTDIR)$(libdir)/libv8.so: $(V8SO)
-	rm -f $(DESTDIR)$(libdir)/libv8.so && cp -a $(V8_DIR)/out/native/lib.target/libv8.so $(DESTDIR)$(libdir)/libv8.so
-	rm -f $(DESTDIR)$(libdir)/libicuuc.so && cp -a $(V8_DIR)/out/native/lib.target/libicuuc.so $(DESTDIR)$(libdir)/libicuuc.so
-	rm -f $(DESTDIR)$(libdir)/libicui18n.so && cp -a $(V8_DIR)/out/native/lib.target/libicui18n.so $(DESTDIR)$(libdir)/libicui18n.so
+$(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT): $(V8SO)
+	rm -f $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT) && cp -a $(V8_LIBDIR)/libv8.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT)
+	rm -f $(DESTDIR)$(libdir)/libicuuc.$(V8_LIBEXT) && cp -a $(V8_LIBDIR)/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicuuc.$(V8_LIBEXT)
+	rm -f $(DESTDIR)$(libdir)/libicui18n.$(V8_LIBEXT) && cp -a $(V8_LIBDIR)/libicui18n.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicui18n.$(V8_LIBEXT)
