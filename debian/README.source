@@ -80,9 +80,7 @@ squeeze on i386 and amd64, run the following as root from a clean
 Debian sid 'buildd' image:
 
   aptitude update && aptitude upgrade
-  aptitude install -y \
-    rsync git less cowbuilder ccache \
-    devscripts equivs build-essential
+  aptitude install -y git
   mkdir /usr/src/freeswitch
   git clone git://git.freeswitch.org/freeswitch /usr/src/freeswitch/src
   cd /usr/src/freeswitch/src
@@ -90,7 +88,7 @@ Debian sid 'buildd' image:
   # outside the source tree and add -f ../path/to/modules.conf to the
   # command below.  See ./debian/util.sh -h for further usage
   # information.
-  ./debian/util.sh build-all -bn -z9
+  ./debian/util.sh build-all -ibn -z9
 
 The source packages for sounds and music on hold are maintained in a
 separate repository.  Each set of sounds has a separate version number
@@ -104,4 +102,4 @@ freeswitch-music-*:
   git clone https://github.com/traviscross/freeswitch-sounds.git
   cd freeswitch-sounds && cat debian/README.source
 
- -- Travis Cross <tc@traviscross.com>, Fri, 29 Mar 2013 22:07:26 +0000
+ -- Travis Cross <tc@traviscross.com>, Fri, 17 Jan 2014 20:03:22 +0000
