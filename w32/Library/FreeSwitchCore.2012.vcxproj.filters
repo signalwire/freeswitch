@@ -220,6 +220,9 @@
     <ClCompile Include="..\..\libs\libtpl-1.5\src\win\mmap.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\switch_version.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\libs\miniupnpc\declspec.h">
