@@ -28,7 +28,6 @@ avoid_mods=(
   endpoints/mod_opal
   endpoints/mod_reference
   endpoints/mod_unicall
-  formats/mod_shout
   languages/mod_managed
   languages/mod_spidermonkey
   sdk/autotools
