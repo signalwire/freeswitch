@@ -318,9 +318,9 @@ build_debs () {
 
 build_all () {
   local OPTIND OPTARG
-  local orig_opts="" dsc_opts="" deb_opts=""
+  local orig_opts="" dsc_opts="" deb_opts="" modlist=""
   local archs="" distros="" orig="" depinst=false par=false
-  while getopts 'a:bc:df:ijm:no:s:v:z:' o "$@"; do
+  while getopts 'a:bc:df:ijl:m:no:s:v:z:' o "$@"; do
     case "$o" in
       a) archs="$archs $OPTARG";;
       b) orig_opts="$orig_opts -b";;
@@ -329,6 +329,7 @@ build_all () {
       f) dsc_opts="$dsc_opts -f$OPTARG";;
       i) depinst=true;;
       j) par=true;;
+      l) modlist="$OPTARG";;
       m) orig_opts="$orig_opts -m$OPTARG"; dsc_opts="$dsc_opts -m$OPTARG";;
       n) orig_opts="$orig_opts -n";;
       o) orig="$OPTARG";;
@@ -343,6 +344,12 @@ build_all () {
   ! $depinst || aptitude install -y \
     rsync git less cowbuilder ccache \
     devscripts equivs build-essential
+  [ -n "$orig" ] || orig="$(create_orig $orig_opts HEAD | tail -n1)"
+  if [ -n "$modlist" ]; then
+    local modtmp="$(mktemp /tmp/modules-XXXXXXXXXX.conf)"
+    > $modtmp
+    for m in "$modlist"; do printf '%s\n' "$m" >> $modtmp; done
+    dsc_opts="$dsc_opts -f${modtmp}"; fi
   [ -n "$orig" ] || orig="$(create_orig $orig_opts HEAD | tail -n1)"
   mkdir -p ../log
   > ../log/changes
@@ -371,6 +378,7 @@ build_all () {
     done
     ! $par || wait
   fi
+  [ -z "$modlist" ] || rm -f $modtmp
   trap - EXIT
   cat ../log/changes
 }
@@ -399,6 +407,7 @@ commands:
       Build only modules listed in this file
     -i Auto install build deps on host system
     -j Build debs in parallel
+    -l <modules>
     -m [ quicktest | non-dfsg ]
       Choose custom list of modules to build
     -n Nightly build
