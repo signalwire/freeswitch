@@ -196,12 +196,14 @@ int tport_tcp_init_secondary(tport_t *self, int socket, int accepted,
 #if defined(SO_KEEPALIVE)
   setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, (void *)&val, sizeof val);
 #endif
-  val = 30;
+  val = (int)(self->tp_params->tpp_keepalive);
 #if defined(TCP_KEEPIDLE)
-  setsockopt(socket, SOL_TCP, TCP_KEEPIDLE, (void *)&val, sizeof val);
+  if (val != 0 && val != UINT_MAX)
+    setsockopt(socket, SOL_TCP, TCP_KEEPIDLE, (void *)&val, sizeof val);
 #endif
 #if defined(TCP_KEEPINTVL)
-  setsockopt(socket, SOL_TCP, TCP_KEEPINTVL, (void *)&val, sizeof val);
+  if (val != 0 && val != UINT_MAX)
+    setsockopt(socket, SOL_TCP, TCP_KEEPINTVL, (void *)&val, sizeof val);
 #endif
 
   if (!accepted)
