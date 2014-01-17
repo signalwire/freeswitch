@@ -319,14 +319,15 @@ build_debs () {
 build_all () {
   local OPTIND OPTARG
   local orig_opts="" dsc_opts="" deb_opts=""
-  local archs="" distros="" orig="" par=false
-  while getopts 'a:bc:df:jm:no:s:v:z:' o "$@"; do
+  local archs="" distros="" orig="" depinst=false par=false
+  while getopts 'a:bc:df:ijm:no:s:v:z:' o "$@"; do
     case "$o" in
       a) archs="$archs $OPTARG";;
       b) orig_opts="$orig_opts -b";;
       c) distros="$distros $OPTARG";;
       d) deb_opts="$deb_opts -d";;
       f) dsc_opts="$dsc_opts -f$OPTARG";;
+      i) depinst=true;;
       j) par=true;;
       m) orig_opts="$orig_opts -m$OPTARG"; dsc_opts="$dsc_opts -m$OPTARG";;
       n) orig_opts="$orig_opts -n";;
@@ -339,6 +340,9 @@ build_all () {
   shift $(($OPTIND-1))
   [ -n "$archs" ] || archs="amd64 i386"
   [ -n "$distros" ] || distros="sid jessie wheezy squeeze"
+  ! $depinst || aptitude install -y \
+    rsync git less cowbuilder ccache \
+    devscripts equivs build-essential
   [ -n "$orig" ] || orig="$(create_orig $orig_opts HEAD | tail -n1)"
   mkdir -p ../log
   > ../log/changes
@@ -393,6 +397,7 @@ commands:
     -d Enable cowbuilder debug hook
     -f <modules.conf>
       Build only modules listed in this file
+    -i Auto install build deps on host system
     -j Build debs in parallel
     -m [ quicktest | non-dfsg ]
       Choose custom list of modules to build
