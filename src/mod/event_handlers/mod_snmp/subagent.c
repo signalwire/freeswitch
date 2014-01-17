@@ -174,7 +174,7 @@ int handle_identity(netsnmp_mib_handler *handler, netsnmp_handler_registration *
 {
 	netsnmp_request_info *request = NULL;
 	oid subid;
-	static char const version[] = switch_version_full();
+	const char *version = switch_version_full();
 	char uuid[40] = "";
 
 	switch(reqinfo->mode) {
