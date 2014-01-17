@@ -90,6 +90,11 @@ Debian sid 'buildd' image:
   # information.
   ./debian/util.sh build-all -ibn -z9
 
+If you need to build a small set of modules for compile testing in the
+pbuilder environment, run something like:
+
+   ./debian/util.sh build-all -dni -z1 -a amd64 -c sid -l "applications/mod_commands"
+
 The source packages for sounds and music on hold are maintained in a
 separate repository.  Each set of sounds has a separate version number
 and the processing of the sounds is quite different from what we're
@@ -102,4 +107,4 @@ freeswitch-music-*:
   git clone https://github.com/traviscross/freeswitch-sounds.git
   cd freeswitch-sounds && cat debian/README.source
 
- -- Travis Cross <tc@traviscross.com>, Fri, 17 Jan 2014 20:03:22 +0000
+ -- Travis Cross <tc@traviscross.com>, Fri, 17 Jan 2014 20:05:52 +0000
