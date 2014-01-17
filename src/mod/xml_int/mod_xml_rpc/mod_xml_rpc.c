@@ -594,7 +594,7 @@ abyss_bool websocket_hook(TSession *r)
 
 	wsh = ws_init(r);
 	if (!wsh) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "websocket error %d\n", ret);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "websocket memory error\n");
 		return FALSE;
 	}
 

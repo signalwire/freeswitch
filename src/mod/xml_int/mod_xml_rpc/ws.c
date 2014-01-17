@@ -93,7 +93,7 @@ void init_ssl(void) {
 	/* verify private key */
 	if ( !SSL_CTX_check_private_key(globals.ssl_ctx) ) {
 		abort();
-    }
+	}
 
 	SSL_CTX_set_cipher_list(globals.ssl_ctx, "HIGH:!DSS:!aNULL@STRENGTH");
 
@@ -119,27 +119,27 @@ static int cheezy_get_var(char *data, char *name, char *buf, size_t buflen)
    */
 
   do {
-    if(!strncmp(p,name,strlen(name)) && *(p+strlen(name))==':') break;
+	if(!strncmp(p,name,strlen(name)) && *(p+strlen(name))==':') break;
   } while((p = (strstr(p,"\n")+1))!=(char *)1);
 
 
   if (p != (char *)1 && *p!='\0') {
-    char *v, *e = 0;
+	char *v, *e = 0;
 
-    v = strchr(p, ':');
-    if (v) {
-      v++;
-      while(v && *v == ' ') {
+	v = strchr(p, ':');
+	if (v) {
+	  v++;
+	  while(v && *v == ' ') {
 	v++;
-      }
-      if (v)  {
+	  }
+	  if (v)  {
 	e = strchr(v, '\r');
 	if (!e) {
 	  e = strchr(v, '\n');
 	}
-      }
+	  }
 			
-      if (v && e) {
+	  if (v && e) {
 	int cplen;
 	size_t len = e - v;
 	
@@ -152,9 +152,9 @@ static int cheezy_get_var(char *data, char *name, char *buf, size_t buflen)
 	strncpy(buf, v, cplen);
 	*(buf+cplen) = '\0';
 	return 1;
-      }
-      
-    }
+	  }
+	  
+	}
   }
   return 0;
 }
@@ -267,7 +267,7 @@ issize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 {
 	issize_t r;
 	int x = 0;
- 	TConn *conn = wsh->tsession->connP;
+	TConn *conn = wsh->tsession->connP;
 
 	if (!wsh->handshake) {
 		r = wsh->tsession->connP->buffersize;
@@ -311,7 +311,6 @@ issize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 
 	}
 
-	return r;
 }
 
 issize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
@@ -331,13 +330,11 @@ issize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 	} else {
 		return 0;
 	}
-
-	return r;
 }
 
 wsh_t * ws_init(ws_tsession_t *tsession)
 {
-	wsh_t *wsh = malloc(sizeof(*wsh));
+	wsh_t *wsh = (wsh_t *)malloc(sizeof(*wsh));
 
 	if (!wsh) return NULL;
 
