@@ -69,16 +69,20 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <TargetName>silk_float</TargetName>
+    <IntDir>$(Platform)\$(Configuration)\silk_float\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetName>silk_float</TargetName>
+    <IntDir>$(Platform)\$(Configuration)\silk_float\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <TargetName>silk_float</TargetName>
+    <IntDir>$(Platform)\$(Configuration)\silk_float\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <CustomBuildBeforeTargets>Compile</CustomBuildBeforeTargets>
     <TargetName>silk_float</TargetName>
+    <IntDir>$(Platform)\$(Configuration)\silk_float\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
