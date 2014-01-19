@@ -20,6 +20,11 @@ endif
 
 V8SO=$(V8_LIBDIR)/libv8.$(V8_LIBEXT)
 
+# Try to find the target platform for our configured CXX compiler
+# Parse the result one extra time to handle different i386 platforms (i386, i486 etc)
+CXX_TARGET_PLATFORM := $(shell $(CXX) -v 2>&1 | grep Target | cut '-d:' -f2 | cut '-d-' -f1 | tr -d ' ')
+CXX_TARGET_PLATFORM_I386 := $(shell echo "$(CXX_TARGET_PLATFORM)" | sed 's/^\(.\{1\}\)\(.\{1\}\)/\13/')
+
 CURL_DIR=$(switch_srcdir)/libs/curl
 CURL_BUILDDIR=$(switch_builddir)/libs/curl
 CURLLA=${switch_builddir}/libs/curl/lib/libcurl.la
@@ -57,9 +62,20 @@ $(SOURCES): $(BUILT_SOURCES)
 
 $(V8_DIR):
 	$(GETLIB) $(V8).tar.bz2
-        
+
 $(V8SO): $(V8_DIR)
-	cd $(V8_BUILDDIR) && $(MAKE) library=shared $(V8_BUILDPARAMS) native
+	if test "$(CXX_TARGET_PLATFORM)" = "x86_64"; then \
+	   defines="v8_target_arch=x64 target_arch=x64"; \
+	else \
+	   if test "$(CXX_TARGET_PLATFORM)" = "arm"; then \
+	      defines="v8_target_arch=arm target_arch=arm"; \
+	   else \
+	      if test "$(CXX_TARGET_PLATFORM_I386)" = "i386"; then \
+	         defines="v8_target_arch=ia32 target_arch=ia32"; \
+	      fi; \
+	   fi; \
+	fi; \
+	cd $(V8_BUILDDIR) && GYP_DEFINES="$$defines" $(MAKE) library=shared $(V8_BUILDPARAMS) native
 
 $(CURLLA):
 	@cd $(CURL_BUILDDIR) && $(MAKE)
