@@ -2735,10 +2735,8 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		tech_pvt->session_refresher = nua_no_refresher;
 	}
 
-	if (tech_pvt->local_sdp_str) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG,
-						  "Local SDP:\n%s\n", tech_pvt->local_sdp_str);
-	}
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "%s sending invite version: %s\nLocal SDP:\n%s\n", 
+					  switch_channel_get_name(tech_pvt->channel), SWITCH_VERSION_FULL_HUMAN, tech_pvt->local_sdp_str ? tech_pvt->local_sdp_str : "NO SDP PRESENT\n");
 
 
 	if (sofia_use_soa(tech_pvt)) {

@@ -7831,6 +7831,10 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	
 	sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "%s receiving invite from %s:%d version: %s\n",
+					  switch_channel_get_name(tech_pvt->channel), network_ip, network_port, SWITCH_VERSION_FULL_HUMAN);
+
+
 	if (sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION)) {
 		if (sip && sip->sip_via) {
 			const char *port = sip->sip_via->v_port;
