@@ -2,7 +2,8 @@
 # -*- mode:makefile -*-
 ##### Author: Travis Cross <tc@traviscross.com>
 
-#export DH_VERBOSE=1
+export DH_VERBOSE=1
+export VERBOSE=1
 
 FS_CC?=gcc
 FS_CXX?=g++
