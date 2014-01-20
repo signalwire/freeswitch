@@ -5385,6 +5385,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, const char *r_s
 					switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE, tech_pvt->remote_sdp_audio_ip);
 					switch_channel_set_variable(tech_pvt->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
 					tech_pvt->audio_recv_pt = (switch_payload_t)map->rm_pt;
+					tech_pvt->channels = map->rm_params ? atoi(map->rm_params) : 1;
 
 					if (!strcasecmp((char *) map->rm_encoding, "opus")) {
 						if (tech_pvt->channels == 1) {
