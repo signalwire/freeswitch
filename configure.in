@@ -1018,6 +1018,10 @@ fi
 
 AX_CHECK_JAVA
 
+# Option to enable static linking of Google's V8 inside mod_v8
+AC_ARG_ENABLE(static-v8,
+[AS_HELP_STRING([--enable-static-v8], [Statically link V8 into mod_v8])], [enable_static_v8="$enableval"], [enable_static_v8="no"])
+AM_CONDITIONAL([ENABLE_STATIC_V8],[test "x$enable_static_v8" != "xno"])
 
 AM_CONDITIONAL([HAVE_ODBC],[test "x$enable_core_odbc_support" != "xno"])
 AM_CONDITIONAL([HAVE_LIBEDIT],[test "x$enable_core_libedit_support" != "xno"])

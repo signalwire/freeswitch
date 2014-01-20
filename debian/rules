@@ -79,7 +79,8 @@ override_dh_auto_clean:
 		--with-grammardir=/usr/share/freeswitch/grammar \
 		--with-certsdir=/etc/freeswitch/tls \
 		--with-scriptdir=/usr/share/freeswitch/scripts \
-		--with-recordingsdir=/var/lib/freeswitch/recordings
+		--with-recordingsdir=/var/lib/freeswitch/recordings \
+		--enable-static-v8
 	touch $@
 
 override_dh_auto_configure: .stamp-configure
