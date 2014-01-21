@@ -102,7 +102,7 @@ $(V8LIB): $(V8_DIR)
 	      fi; \
 	   fi; \
 	fi; \
-	cd $(V8_BUILDDIR) && CFLAGS="$(V8_CXXFLAGS)" CXXFLAGS="$(V8_CXXFLAGS)" GYP_DEFINES="$$defines" $(MAKE) $(V8_BUILDPARAMS) native
+	cd $(V8_BUILDDIR) && CFLAGS="$(V8_CXXFLAGS)" CXXFLAGS="$(V8_CXXFLAGS)" GYPFLAGS="--no-parallel" GYP_DEFINES="$$defines" $(MAKE) $(V8_BUILDPARAMS) native
 
 $(CURLLA):
 	@cd $(CURL_BUILDDIR) && $(MAKE)
