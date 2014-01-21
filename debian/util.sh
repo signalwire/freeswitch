@@ -209,12 +209,13 @@ EOF
 create_dsc () {
   {
     set -e
-    local OPTIND OPTARG modules_conf="" modules_list="" speed="normal" zl=9
-    while getopts 'f:m:s:z:' o "$@"; do
+    local OPTIND OPTARG modules_conf="" modules_list="" speed="normal" suite_postfix="" suite_postfix_p=false zl=9
+    while getopts 'f:m:s:u:z:' o "$@"; do
       case "$o" in
         f) modules_conf="$OPTARG";;
         m) modules_list="$OPTARG";;
         s) speed="$OPTARG";;
+        u) suite_postfix="$OPTARG"; suite_postfix_p=true; ;;
         z) zl="$OPTARG";;
       esac
     done
@@ -223,6 +224,7 @@ create_dsc () {
     local suite="$(find_suite $distro)"
     local orig_ver="$(echo "$orig" | sed -e 's/^.*_//' -e 's/\.orig\.tar.*$//')"
     local dver="${orig_ver}-1~${distro}+1"
+    $suite_postfix_p && { suite="${distro}${suite_postfix}"; }
     [ -x "$(which dch)" ] \
       || err "package devscripts isn't installed"
     if [ -n "$modules_conf" ]; then
@@ -320,7 +322,7 @@ build_all () {
   local OPTIND OPTARG
   local orig_opts="" dsc_opts="" deb_opts="" modlist=""
   local archs="" distros="" orig="" depinst=false par=false
-  while getopts 'a:bc:df:ijl:m:no:s:v:z:' o "$@"; do
+  while getopts 'a:bc:df:ijl:m:no:s:u:v:z:' o "$@"; do
     case "$o" in
       a) archs="$archs $OPTARG";;
       b) orig_opts="$orig_opts -b";;
@@ -334,6 +336,7 @@ build_all () {
       n) orig_opts="$orig_opts -n";;
       o) orig="$OPTARG";;
       s) dsc_opts="$dsc_opts -s$OPTARG";;
+      u) dsc_opts="$dsc_opts -u$OPTARG";;
       v) orig_opts="$orig_opts -v$OPTARG";;
       z) orig_opts="$orig_opts -z$OPTARG"; dsc_opts="$dsc_opts -z$OPTARG";;
     esac
@@ -415,6 +418,8 @@ commands:
       Specify existing .orig.tar.xz file
     -s [ paranoid | reckless ]
       Set FS bootstrap/build -j flags
+    -u <suite-postfix>
+      Specify a custom suite postfix
     -v Set version
     -z Set compression level
 
@@ -436,6 +441,8 @@ commands:
       Choose custom list of modules to build
     -s [ paranoid | reckless ]
       Set FS bootstrap/build -j flags
+    -u <suite-postfix>
+      Specify a custom suite postfix
     -z Set compression level
 
   create-orig <treeish>
