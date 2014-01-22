@@ -1902,10 +1902,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	switch_codec_implementation_t read_impl = { 0 };
 	const char *ani_override = NULL;
 	const char *aniii_override = NULL;
+	const char *ent_aleg_uuid = NULL;
+	switch_core_session_t *a_session = session, *l_session = NULL;
 
 	if (session) {
-		switch_channel_set_variable(switch_core_session_get_channel(session), "originated_legs", NULL);
-		switch_channel_set_variable(switch_core_session_get_channel(session), "originate_causes", NULL);
+		caller_channel = switch_core_session_get_channel(session);
+
+		if (switch_false(switch_channel_get_variable(caller_channel, "preserve_originated_vars"))) {
+			switch_channel_set_variable(caller_channel, "originated_legs", NULL);
+			switch_channel_set_variable(caller_channel, "originate_causes", NULL);
+		}
 	}
 	
 	
@@ -1924,7 +1930,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	if (caller_profile_override) {
 		oglobals.caller_profile_override = switch_caller_profile_dup(oglobals.pool, caller_profile_override);
 	} else if (session) {
-		switch_caller_profile_t *cp = switch_channel_get_caller_profile(switch_core_session_get_channel(session));
+		switch_caller_profile_t *cp = switch_channel_get_caller_profile(caller_channel);
 
 		if (cp) {
 			oglobals.caller_profile_override = switch_caller_profile_dup(oglobals.pool, cp);
@@ -1933,7 +1939,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	if (session) {
 		const char *to_var, *bypass_media = NULL, *proxy_media = NULL, *zrtp_passthru = NULL;
-		caller_channel = switch_core_session_get_channel(session);
 		switch_channel_set_flag(caller_channel, CF_ORIGINATOR);
 		oglobals.session = session;
 
@@ -2035,6 +2040,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			abort();
 		}
 	}
+
+	ent_aleg_uuid = switch_event_get_header(var_event, "ent_originate_aleg_uuid");
 
 	if (caller_channel) {
 		switch_channel_process_export(caller_channel, NULL, var_event, SWITCH_EXPORT_VARS_VARIABLE);
@@ -2841,21 +2848,31 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						}
 					}
 
-					if (session) {
-						switch_channel_t *channel = switch_core_session_get_channel(session);
+					if (!zstr(ent_aleg_uuid)) {
+						l_session = switch_core_session_locate(ent_aleg_uuid);
+						a_session = l_session;
+					}
+
+					if (a_session) {
+						switch_channel_t *channel = switch_core_session_get_channel(a_session);
 						char *val = 
-							switch_core_session_sprintf(session, "%s;%s;%s", 
+							switch_core_session_sprintf(a_session, "%s;%s;%s", 
 														switch_core_session_get_uuid(originate_status[i].peer_session),
 														switch_str_nil(switch_channel_get_variable(originate_status[i].peer_channel, "callee_id_name")),
 														switch_str_nil(switch_channel_get_variable(originate_status[i].peer_channel, "callee_id_number")));
 						
 
-						switch_channel_set_variable(originate_status[i].peer_channel, "originating_leg_uuid", switch_core_session_get_uuid(session));
+						switch_channel_set_variable(originate_status[i].peer_channel, "originating_leg_uuid", switch_core_session_get_uuid(a_session));
 						
 						switch_channel_add_variable_var_check(channel, "originated_legs", val, SWITCH_FALSE, SWITCH_STACK_PUSH);
 															  
 					}
 
+					if (l_session) {
+						switch_core_session_rwunlock(l_session);
+						l_session = NULL;
+					}
+					
 					switch_channel_execute_on(originate_status[i].peer_channel, SWITCH_CHANNEL_EXECUTE_ON_ORIGINATE_VARIABLE);
 					switch_channel_api_on(originate_status[i].peer_channel, SWITCH_CHANNEL_API_ON_ORIGINATE_VARIABLE);
 				}
