@@ -13,8 +13,8 @@
 		<!-- Maximum number of log files to keep before wrapping -->
 		<!-- If this parameter is enabled, the log filenames will not include a date stamp -->
 		<!-- <param name="maximum-rotate" value="32"/> -->
-		<!-- Uncomment to prefix all log lines by the session's uuid  -->
-		<!-- <param name="uuid" value="true" /> -->
+        <!-- Prefix all log lines by the session's uuid  -->
+        <param name="uuid" value="true" />
       </settings>
       <mappings>
 	<!-- 
