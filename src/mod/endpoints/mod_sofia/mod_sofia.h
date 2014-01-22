@@ -269,6 +269,7 @@ typedef enum {
 	PFLAG_TCP_KEEPALIVE,
 	PFLAG_TCP_PINGPONG,
 	PFLAG_TCP_PING2PONG,
+	PFLAG_MESSAGES_RESPOND_200_OK,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;

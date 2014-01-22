@@ -3838,6 +3838,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					} else if (!strcasecmp(var, "tcp-ping2pong") && !zstr(val)) {
 						profile->tcp_ping2pong = atoi(val);
 						sofia_set_pflag(profile, PFLAG_TCP_PING2PONG);
+					} else if (!strcasecmp(var, "sip-messages-respond-200-ok") && !zstr(val)) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_MESSAGES_RESPOND_200_OK);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_MESSAGES_RESPOND_200_OK);
+						}
 					} else if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
 						profile->odbc_dsn = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "db-pre-trans-execute") && !zstr(val)) {

@@ -182,6 +182,8 @@
     <!--<param name="all-reg-options-ping" value="true"/>-->
     <!-- Send an OPTIONS packet to NATed registered endpoints. Can be 'true' or 'udp-only'. -->
     <!--<param name="nat-options-ping" value="true"/>-->
+    <!--<param name="sip-options-respond-503-on-busy" value="true"/>-->
+    <!--<param name="sip-messages-respond-200-ok" value="true"/>-->
 
     <!-- TLS: disabled by default, set to "true" to enable -->
     <param name="tls" value="$${internal_ssl_enable}"/>
