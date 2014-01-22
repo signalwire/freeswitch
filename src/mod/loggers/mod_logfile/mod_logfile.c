@@ -325,6 +325,7 @@ static switch_status_t load_profile(switch_xml_t xml)
 	new_profile->name = switch_core_strdup(module_pool, switch_str_nil(name));
 
 	new_profile->suffix = 1;
+	new_profile->log_uuid = SWITCH_TRUE;
 
 	if ((settings = switch_xml_child(xml, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -339,8 +340,8 @@ static switch_status_t load_profile(switch_xml_t xml)
 				if (new_profile->max_rot == 0) {
 					new_profile->max_rot = MAX_ROT;
 				}
-			} else if (!strcmp(var, "uuid") && switch_true(val)) {
-				new_profile->log_uuid = SWITCH_TRUE;
+			} else if (!strcmp(var, "uuid")) {
+				new_profile->log_uuid = switch_true(val);
 			}
 		}
 	}
