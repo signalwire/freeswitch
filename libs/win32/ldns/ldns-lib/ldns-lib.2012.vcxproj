@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -91,12 +91,16 @@
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <DisableSpecificWarnings>4013;4101;4996;4267;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <PreBuildEvent>
       <Command>if not exist "$(ProjectDir)..\..\..\ldns\ldns\config.h" type "$(ProjectDir)\config.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\config.h"
 if not exist "$(ProjectDir)..\..\..\ldns\ldns\util.h" type "$(ProjectDir)\util.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\util.h"
 if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\net.h"</Command>
     </PreBuildEvent>
+    <Lib>
+      <AdditionalOptions>/ignore:4221 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -107,12 +111,16 @@ if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" 
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4013;4101;4996;4267;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <PreBuildEvent>
       <Command>if not exist "$(ProjectDir)..\..\..\ldns\ldns\config.h" type "$(ProjectDir)\config.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\config.h"
 if not exist "$(ProjectDir)..\..\..\ldns\ldns\util.h" type "$(ProjectDir)\util.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\util.h"
 if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\net.h"</Command>
     </PreBuildEvent>
+    <Lib>
+      <AdditionalOptions>/ignore:4221 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -124,6 +132,7 @@ if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" 
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <PreprocessorDefinitions>HAVE_STRUCT_ADDRINFO;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\ldns\;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4013;4101;4996;4267;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -136,6 +145,9 @@ if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" 
 if not exist "$(ProjectDir)..\..\..\ldns\ldns\util.h" type "$(ProjectDir)\util.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\util.h"
 if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\net.h"</Command>
     </PreBuildEvent>
+    <Lib>
+      <AdditionalOptions>/ignore:4221 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -147,6 +159,7 @@ if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" 
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <PreprocessorDefinitions>HAVE_STRUCT_ADDRINFO;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\ldns\;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4013;4101;4996;4267;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -159,6 +172,9 @@ if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" 
 if not exist "$(ProjectDir)..\..\..\ldns\ldns\util.h" type "$(ProjectDir)\util.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\util.h"
 if not exist "$(ProjectDir)..\..\..\ldns\ldns\net.h" type "$(ProjectDir)\net.h" &gt; "$(ProjectDir)..\..\..\ldns\ldns\net.h"</Command>
     </PreBuildEvent>
+    <Lib>
+      <AdditionalOptions>/ignore:4221 %(AdditionalOptions)</AdditionalOptions>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\ldns\compat\b32_ntop.c" />

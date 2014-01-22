@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -75,6 +75,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>false</TreatWarningAsError>
+      <DisableSpecificWarnings>4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalOptions>rpcrt4.lib  "..\..\..\..\libs\spandsp\src\Win32\Debug\libtiff.lib" "..\..\..\..\Win32\Debug\libspandsp.lib" %(AdditionalOptions)</AdditionalOptions>
@@ -90,6 +91,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>false</TreatWarningAsError>
+      <DisableSpecificWarnings>4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalOptions>rpcrt4.lib  "..\..\..\..\libs\spandsp\src\x64\Debug\libtiff.lib" "..\..\..\..\x64\Debug\libspandsp.lib" %(AdditionalOptions)</AdditionalOptions>
@@ -103,6 +105,7 @@
       <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\tiff-4.0.2\libtiff;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
+      <DisableSpecificWarnings>4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalOptions>rpcrt4.lib "..\..\..\..\libs\spandsp\src\Win32\Release\libtiff.lib" "..\..\..\..\Win32\Release\libspandsp.lib" %(AdditionalOptions)</AdditionalOptions>
@@ -116,6 +119,7 @@
       <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\tiff-4.0.2\libtiff;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
+      <DisableSpecificWarnings>4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <AdditionalOptions>rpcrt4.lib "..\..\..\..\libs\spandsp\src\x64\Release\libtiff.lib" "..\..\..\..\x64\Release\libspandsp.lib" %(AdditionalOptions)</AdditionalOptions>
@@ -125,8 +129,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="mod_skypopen.c" />
-    <ClCompile Include="skypopen_protocol.c" />
+    <ClCompile Include="mod_skypopen.c">
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">/analyze:stacksize65535</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">/analyze:stacksize65535</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">/analyze:stacksize65535</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">/analyze:stacksize65535</AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="skypopen_protocol.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4305;4306;28193;4244;4267;4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4305;4306;28193;4244;4267;4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4305;4306;28193;4244;4267;4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4305;4306;28193;4244;4267;4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">/analyze:stacksize32768</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">/analyze:stacksize32768</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">/analyze:stacksize32768</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">/analyze:stacksize32768</AdditionalOptions>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="skypopen.h" />

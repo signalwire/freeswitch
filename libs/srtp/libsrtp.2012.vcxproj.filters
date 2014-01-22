@@ -96,6 +96,9 @@
     <ClCompile Include="crypto\math\stat.c">
       <Filter>Source Files\Math</Filter>
     </ClCompile>
+    <ClCompile Include="srtp\ekt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="crypto\include\aes.h">
