@@ -1455,7 +1455,10 @@ char *sofia_glue_get_path_from_contact(char *buf)
 		}
 	}
 
-	if (!path) return NULL;
+	if (!path) {
+		free(contact);
+		return NULL;
+	}
 
 	if ((e = strrchr(path, ';'))) {
 		*e = '\0';
