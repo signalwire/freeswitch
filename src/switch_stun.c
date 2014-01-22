@@ -502,7 +502,7 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_integrity(switch_stun_p
 	xlen = ntohs(packet->header.length) + sizeof(switch_stun_packet_header_t);
 	packet->header.length += htons(sizeof(switch_stun_packet_attribute_t)) + attribute->length;
 
-	HMAC(EVP_sha1(), (unsigned char *)pass, strlen(pass), (void *)packet, xlen, (void *)attribute->value, NULL);
+	HMAC(EVP_sha1(), (unsigned char *)pass, (int)strlen(pass), (void *)packet, xlen, (void *)attribute->value, NULL);
 
 	return 1;
 }

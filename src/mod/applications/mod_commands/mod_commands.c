@@ -1407,7 +1407,7 @@ SWITCH_STANDARD_API(expand_function)
 		}
 	}
 
-	if ((arg = strchr(mycmd, ' '))) {
+	if (mycmd && (arg = strchr(mycmd, ' '))) {
 		*arg++ = '\0';
 	}
 
@@ -6305,7 +6305,7 @@ SWITCH_STANDARD_JSON_API(json_status_function)
 	oo = cJSON_CreateObject();
 	cJSON_AddItemToObject(o, "count", oo);
 
-	cJSON_AddItemToObject(oo, "total", cJSON_CreateNumber(switch_core_session_id() - 1));
+	cJSON_AddItemToObject(oo, "total", cJSON_CreateNumber((double)(switch_core_session_id() - 1)));
 	cJSON_AddItemToObject(oo, "active", cJSON_CreateNumber(switch_core_session_count()));
 	cJSON_AddItemToObject(oo, "peak", cJSON_CreateNumber(sessions_peak));
 	cJSON_AddItemToObject(oo, "peak5Min", cJSON_CreateNumber(sessions_peak_fivemin));
@@ -6332,8 +6332,8 @@ SWITCH_STANDARD_JSON_API(json_status_function)
 		o = cJSON_CreateObject();
 		cJSON_AddItemToObject(reply, "stackSizeKB", o);
 
-		cJSON_AddItemToObject(o, "current", cJSON_CreateNumber(cur / 1024));
-		cJSON_AddItemToObject(o, "max", cJSON_CreateNumber(max / 1024));
+		cJSON_AddItemToObject(o, "current", cJSON_CreateNumber((double)(cur / 1024)));
+		cJSON_AddItemToObject(o, "max", cJSON_CreateNumber((double)(max / 1024)));
 	}
 	
 

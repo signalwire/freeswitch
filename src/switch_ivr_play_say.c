@@ -1492,7 +1492,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					}
 				}
 
-				fh->offset_pos += switch_test_flag(fh, SWITCH_FILE_NATIVE) ? bread : bread / 2;
+				fh->offset_pos += (uint32_t)(switch_test_flag(fh, SWITCH_FILE_NATIVE) ? bread : bread / 2);
 
 				if (bread < framelen) {
 					memset(abuf + bread, 255, framelen - bread);
@@ -1538,7 +1538,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 				switch_buffer_write(fh->audio_buffer, abuf, switch_test_flag(fh, SWITCH_FILE_NATIVE) ? olen : olen * 2);
 				olen = switch_buffer_read(fh->audio_buffer, abuf, framelen);
-				fh->offset_pos += olen / 2;
+				fh->offset_pos += (uint32_t)(olen / 2);
 
 				if (!switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
 					olen /= 2;

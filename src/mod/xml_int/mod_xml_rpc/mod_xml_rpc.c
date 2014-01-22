@@ -375,7 +375,7 @@ static abyss_bool is_authorized(const TSession * r, const char *command)
 	switch_safe_free(dup);
 
 	if (!ok) {
-		ResponseStatus(r, err);
+		ResponseStatus(r, (xmlrpc_uint16_t)err);
 	}
 
 
@@ -546,8 +546,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 }
 
 void stop_hook_event_handler(switch_event_t *event) {
-	char *json;
-	wsh_t *wsh = (TSession *)event->bind_user_data;
+	wsh_t *wsh = (wsh_t *)event->bind_user_data;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "got websocket::stophook, closing\n");
 	wsh->down++;
@@ -555,7 +554,7 @@ void stop_hook_event_handler(switch_event_t *event) {
 
 void event_handler(switch_event_t *event) {
 	char *json;
-	wsh_t *wsh = (TSession *)event->bind_user_data;
+	wsh_t *wsh = (wsh_t *)event->bind_user_data;
 	switch_event_serialize_json(event, &json);
 	ws_write_frame(wsh, WSOC_TEXT, json, strlen(json));
 	free(json);

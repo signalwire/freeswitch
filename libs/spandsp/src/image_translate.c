@@ -685,7 +685,6 @@ static int image_format_to_bytes_per_pixel(int image_format)
     case T4_IMAGE_TYPE_4COLOUR_12BIT:
         return 8;
     }
-    return 1;
 }
 /*- End of function --------------------------------------------------------*/
 

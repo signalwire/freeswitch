@@ -399,7 +399,7 @@ static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_da
 		if (pvt->verbose) {
 			span_log_set_level(dtmf_rx_get_logging_state(pvt->dtmf_detect), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
 		}
-		dtmf_rx_parms(pvt->dtmf_detect, pvt->filter_dialtone, pvt->twist, pvt->reverse_twist, pvt->threshold);
+		dtmf_rx_parms(pvt->dtmf_detect, pvt->filter_dialtone, (float)pvt->twist, (float)pvt->reverse_twist, (float)pvt->threshold);
 		dtmf_rx_set_realtime_callback(pvt->dtmf_detect, spandsp_dtmf_rx_realtime_callback, pvt);
 		break;
 	}

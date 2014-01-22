@@ -1491,7 +1491,7 @@ static JSBool session_recordfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	check_hangup_hook(jss, &ret);
 	*rval = cb_state.ret;
 
-	return ret;
+	return (JSBool)ret;
 }
 
 static JSBool session_collect_input(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
@@ -1550,7 +1550,7 @@ static JSBool session_collect_input(JSContext * cx, JSObject * obj, uintN argc, 
 	check_hangup_hook(jss, &ret);
 	*rval = cb_state.ret;
 
-	return ret;
+	return (JSBool)ret;
 }
 
 /* session.sayphrase(phrase_name, phrase_data, language, dtmf_callback, dtmf_callback_args)*/
@@ -1626,7 +1626,7 @@ static JSBool session_sayphrase(JSContext * cx, JSObject * obj, uintN argc, jsva
 	check_hangup_hook(jss, &ret);
 	*rval = cb_state.ret;
 
-	return ret;
+	return (JSBool)ret;
 }
 
 static jsval check_hangup_hook(struct js_session *jss, jsval * rp)
@@ -1770,7 +1770,7 @@ static JSBool session_streamfile(JSContext * cx, JSObject * obj, uintN argc, jsv
 	switch_snprintf(posbuf, sizeof(posbuf), "%u", fh.offset_pos);
 	switch_channel_set_variable(channel, "last_file_position", posbuf);
 
-	return ret;
+	return (JSBool)ret;
 }
 
 
@@ -1834,7 +1834,7 @@ static JSBool session_sleep(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	check_hangup_hook(jss, &ret);
 	*rval = cb_state.ret;
 
-	return ret;
+	return (JSBool)ret;
 }
 
 static JSBool session_set_variable(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
@@ -2028,7 +2028,7 @@ static JSBool session_speak(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	check_hangup_hook(jss, &ret);
 	*rval = cb_state.ret;
 
-	return ret;
+	return (JSBool)ret;
 }
 
 static JSBool session_get_digits(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
@@ -2228,7 +2228,7 @@ static JSBool session_wait_for_media(JSContext * cx, JSObject * obj, uintN argc,
 	JS_ResumeRequest(cx, saveDepth);
 	check_hangup_hook(jss, &ret);
 
-	return ret;
+	return (JSBool)ret;
 }
 
 static JSBool session_wait_for_answer(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
@@ -2274,7 +2274,7 @@ static JSBool session_wait_for_answer(JSContext * cx, JSObject * obj, uintN argc
 	}
 	JS_ResumeRequest(cx, saveDepth);
 	check_hangup_hook(jss, &ret);
-	return ret;
+	return (JSBool)ret;
 }
 
 static JSBool session_detach(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
@@ -2311,7 +2311,7 @@ static JSBool session_detach(JSContext * cx, JSObject * obj, uintN argc, jsval *
 		*rval = JS_FALSE;
 	}
 
-	return ret;
+	return (JSBool)ret;
 }
 
 static JSBool session_execute(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
@@ -2354,7 +2354,7 @@ static JSBool session_execute(JSContext * cx, JSObject * obj, uintN argc, jsval 
 	}
 
 	*rval = BOOLEAN_TO_JSVAL(retval);
-	return ret;
+	return (JSBool)ret;
 }
 
 static JSBool session_get_event(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)

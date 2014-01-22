@@ -170,8 +170,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
                 *szpt = switch_event_get_header_nil(var_event, kPT);
     
     
-    switch_port_t local_port = !zstr(szlocal_port) ? atoi(szlocal_port) : 0,
-                 remote_port = !zstr(szremote_port) ? atoi(szremote_port) : 0;
+    switch_port_t local_port = !zstr(szlocal_port) ? (switch_port_t)atoi(szlocal_port) : 0,
+                 remote_port = !zstr(szremote_port) ? (switch_port_t)atoi(szremote_port) : 0;
     
     int ptime  = !zstr(szptime) ? atoi(szptime) : 0,
         //rfc2833_pt = !zstr(szrfc2833_pt) ? atoi(szrfc2833_pt) : 0,
@@ -203,7 +203,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     tech_pvt->remote_address = switch_core_session_strdup(*new_session, remote_addr);
     tech_pvt->remote_port = remote_port;
     tech_pvt->ptime = ptime;
-    tech_pvt->agreed_pt = pt;
+    tech_pvt->agreed_pt = (switch_payload_t)pt;
     tech_pvt->dtmf_type = DTMF_2833; /* XXX */
     
     if (zstr(local_addr) || local_port == 0) {
@@ -456,7 +456,7 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
             compare_var(event, channel, kREMOTEPORT)) {
 		char *remote_addr = switch_event_get_header(event, kREMOTEADDR);
 		char *szremote_port = switch_event_get_header(event, kREMOTEPORT);
-		switch_port_t remote_port = !zstr(szremote_port) ? atoi(szremote_port) : 0;
+		switch_port_t remote_port = !zstr(szremote_port) ? (switch_port_t)atoi(szremote_port) : 0;
 		const char *err;
 
 
@@ -512,7 +512,7 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
 			goto fail;
 		}
 
-		switch_rtp_set_default_payload(tech_pvt->rtp_session, pt);
+		switch_rtp_set_default_payload(tech_pvt->rtp_session, (switch_payload_t)pt);
 		//switch_rtp_set_recv_pt(tech_pvt->rtp_session, pt);
 	}
         
@@ -521,7 +521,7 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
             int pt = !zstr(szpt) ? atoi(szpt) : 0;
             
             switch_channel_set_variable(channel, kRFC2833PT, szpt);
-            switch_rtp_set_telephony_event(tech_pvt->rtp_session, pt);
+            switch_rtp_set_telephony_event(tech_pvt->rtp_session, (switch_payload_t)pt);
         }
     
     } else {

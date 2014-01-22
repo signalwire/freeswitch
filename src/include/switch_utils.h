@@ -434,6 +434,11 @@ static inline int switch_true(const char *expr)
 					   (switch_is_number(expr) && atoi(expr)))) ? SWITCH_TRUE : SWITCH_FALSE);
 }
 
+static inline switch_byte_t switch_true_byte(const char *expr)
+{
+	return (switch_byte_t)switch_true(expr);
+}
+
 #define switch_true_buf(expr)\
 ((( !strcasecmp(expr, "yes") ||\
 !strcasecmp(expr, "on") ||\

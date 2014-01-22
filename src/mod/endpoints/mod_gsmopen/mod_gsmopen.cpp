@@ -1233,7 +1233,7 @@ static switch_status_t load_config(int reload_type)
 
 			uint32_t interface_id = 0;
 			int controldevice_speed = 115200;	//FIXME TODO
-			int controldevice_audio_speed = 115200;	//FIXME TODO
+			//int controldevice_audio_speed = 115200;	//FIXME TODO
 			uint32_t controldevprotocol = PROTOCOL_AT;	//FIXME TODO
 			uint32_t running = 1;	//FIXME TODO
 			const char *gsmopen_serial_sync_period = "300";	//FIXME TODO
@@ -1472,7 +1472,7 @@ static switch_status_t load_config(int reload_type)
 
 			if (interface_id && interface_id < GSMOPEN_MAX_INTERFACES) {
 				private_t newconf;
-				int res = 0;
+				//int res = 0;
 
 				memset(&newconf, '\0', sizeof(newconf));
 				globals.GSMOPEN_INTERFACES[interface_id] = newconf;

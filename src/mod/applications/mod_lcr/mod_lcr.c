@@ -666,7 +666,7 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 		} else if (CF("lcr_limit_id")) {
 			additional->limit_id = switch_core_strdup(pool, switch_str_nil(argv[i]));
 		} else if (CF("lcr_limit_max")) {
-			additional->limit_max = (float)atof(switch_str_nil(argv[i]));
+			additional->limit_max = (int)(float)atof(switch_str_nil(argv[i]));
 		}
 		
 		/* add all fields to the fields event */
@@ -944,7 +944,7 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 		if ((channel = switch_core_session_get_channel(cb_struct->session))) {
 			const char *max_rate = switch_channel_get_variable(channel, "max_rate");
 			if (!zstr(max_rate)) {
-				cb_struct->max_rate = atof(max_rate);
+				cb_struct->max_rate = (float)atof(max_rate);
 			}
 			switch_channel_set_variable_var_check(channel, "lcr_rate_field", rate_field, SWITCH_FALSE);
 			switch_channel_set_variable_var_check(channel, "lcr_user_rate_field", user_rate_field, SWITCH_FALSE);
@@ -1611,7 +1611,7 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 		}
 	}
 
-	if (lcr_do_lookup(&routes) == SWITCH_STATUS_SUCCESS) {
+	if (caller_profile && lcr_do_lookup(&routes) == SWITCH_STATUS_SUCCESS) {
 		if ((extension = switch_caller_extension_new(session, caller_profile->destination_number, caller_profile->destination_number)) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "memory error!\n");
 			goto end;
@@ -1646,7 +1646,7 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 			switch_caller_extension_add_application(session, extension, app, argc);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "LCR lookup failed for %s using profile %s\n", caller_profile->destination_number, caller_profile->context);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "LCR lookup failed for %s using profile %s\n", caller_profile ? caller_profile->destination_number : "unknown", caller_profile ? caller_profile->context : "unknown");
 	}
 
 end:
@@ -1953,31 +1953,31 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 					stream->write_function(stream, "  <row id=\"%d\">\n", rowcount);
 				}
 				
-				write_data(stream, as_xml, "prefix", current->digit_str, 2, maximum_lengths.digit_str);
-				write_data(stream, as_xml, "carrier_name", current->carrier_name, 2, maximum_lengths.carrier_name);
-				write_data(stream, as_xml, "rate", current->rate_str, 2, maximum_lengths.rate);
+				write_data(stream, as_xml, "prefix", current->digit_str, 2, (int)maximum_lengths.digit_str);
+				write_data(stream, as_xml, "carrier_name", current->carrier_name, 2, (int)maximum_lengths.carrier_name);
+				write_data(stream, as_xml, "rate", current->rate_str, 2, (int)maximum_lengths.rate);
 				if (current->codec) {
-					write_data(stream, as_xml, "codec", current->codec, 2, maximum_lengths.codec);
+					write_data(stream, as_xml, "codec", current->codec, 2, (int)maximum_lengths.codec);
 				} else {
-					write_data(stream, as_xml, "codec", "", 2, maximum_lengths.codec);
+					write_data(stream, as_xml, "codec", "", 2, (int)maximum_lengths.codec);
 				}
 
 				if (current->cid) {
-					write_data(stream, as_xml, "cid", current->cid, 2, maximum_lengths.cid);
+					write_data(stream, as_xml, "cid", current->cid, 2, (int)maximum_lengths.cid);
 				} else {
-					write_data(stream, as_xml, "cid", "", 2, maximum_lengths.cid);
+					write_data(stream, as_xml, "cid", "", 2, (int)maximum_lengths.cid);
 				}
 				
 				if (current->limit_realm && current->limit_id) {
 					char *str = NULL;
 					str = switch_core_sprintf(pool, "%s %s %d", current->limit_realm, current->limit_id, current->limit_max);
 					
-					write_data(stream, as_xml, "limit", str, 2, maximum_lengths.limit);
+					write_data(stream, as_xml, "limit", str, 2, (int)maximum_lengths.limit);
 				} else {
-					write_data(stream, as_xml, "limit", "", 2, maximum_lengths.limit);
+					write_data(stream, as_xml, "limit", "", 2, (int)maximum_lengths.limit);
 				}
 				
-				write_data(stream, as_xml, "dialstring", current->dialstring, 2, maximum_lengths.dialstring);
+				write_data(stream, as_xml, "dialstring", current->dialstring, 2, (int)maximum_lengths.dialstring);
 				if (as_xml) {
 					event_xml = switch_event_xmlize(current->fields, SWITCH_VA_NONE);
 					event_str = switch_xml_toxml(event_xml, SWITCH_FALSE);

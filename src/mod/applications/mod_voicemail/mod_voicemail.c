@@ -710,7 +710,8 @@ static vm_profile_t *load_profile(const char *profile_name)
 
 	if ((x_profile = switch_xml_find_child(x_profiles, "profile", "name", profile_name))) {
 		switch_memory_pool_t *pool;
-		int x, count;
+		int x;
+		switch_size_t count;
 		char *errmsg;
 
 		if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
@@ -751,7 +752,7 @@ static vm_profile_t *load_profile(const char *profile_name)
 		}
 
 
-		if (switch_xml_config_parse_event(event, count, SWITCH_FALSE, profile->config) != SWITCH_STATUS_SUCCESS) {
+		if (switch_xml_config_parse_event(event, (int)count, SWITCH_FALSE, profile->config) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to process configuration\n");
 			switch_core_destroy_memory_pool(&pool);
 			goto end;
@@ -2845,7 +2846,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	if (!message_len) {
 		size_t len = 0;
 		if (measure_file_len(file_path, &len) == SWITCH_STATUS_SUCCESS) {
-			message_len = len;
+			message_len = (uint32_t)len;
 		}
 	}
 
@@ -3658,7 +3659,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 
 	if (x_user) {
 		switch_channel_get_variables(channel, &vars);
-		status = deliver_vm(profile, x_user, domain_name, file_path, message_len, read_flags, vars,
+		status = deliver_vm(profile, x_user, domain_name, file_path, (uint32_t)message_len, read_flags, vars,
 							switch_core_session_get_pool(session), caller_id_name, caller_id_number, NULL, SWITCH_FALSE,
 							session ? switch_core_session_get_uuid(session) : NULL, session);
 		switch_event_destroy(&vars);

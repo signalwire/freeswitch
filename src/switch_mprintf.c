@@ -457,7 +457,7 @@ static int vxprintf(void (*func) (void *, const char *, int),	/* Consumer of tex
 					longvalue = longvalue / base;
 				} while (longvalue > 0);
 			}
-			length = &buf[etBUFSIZE - 1] - bufpt;
+			length = (int)(&buf[etBUFSIZE - 1] - bufpt);
 			for (idx = precision - length; idx > 0; idx--) {
 				*(--bufpt) = '0';	/* Zero pad */
 			}
@@ -472,7 +472,7 @@ static int vxprintf(void (*func) (void *, const char *, int),	/* Consumer of tex
 						*(--bufpt) = x;
 				}
 			}
-			length = &buf[etBUFSIZE - 1] - bufpt;
+			length = (int)(&buf[etBUFSIZE - 1] - bufpt);
 			break;
 		case etFLOAT:
 		case etEXP:
@@ -625,7 +625,7 @@ static int vxprintf(void (*func) (void *, const char *, int),	/* Consumer of tex
 			/* The converted number is in buf[] and zero terminated. Output it.
 			 ** Note that the number is in the usual order, not reversed as with
 			 ** integer conversions. */
-			length = bufpt - buf;
+			length = (int)(bufpt - buf);
 			bufpt = buf;
 
 			/* Special case:  Add leading zeros if the flag_zeropad flag is
@@ -672,7 +672,7 @@ static int vxprintf(void (*func) (void *, const char *, int),	/* Consumer of tex
 			} else if (xtype == etDYNSTRING) {
 				zExtra = bufpt;
 			}
-			length = strlen(bufpt);
+			length = (int)strlen(bufpt);
 			if (precision >= 0 && precision < length)
 				length = precision;
 			break;

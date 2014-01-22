@@ -341,8 +341,8 @@ static int cr_readln(REDIS rhnd, int start, char **line, int *idx)
   *line = buf->data + buf->idx;
   if (idx)
     *idx = buf->idx;
-  len = nl - *line;
-  buf->idx = (nl - buf->data) + 2; /* skip "\r\n" */
+  len = (int)(nl - *line);
+  buf->idx = (int)((nl - buf->data) + 2); /* skip "\r\n" */
 
   DEBUG("size=%d, len=%d, idx=%d, start=%d, line=%s", 
         buf->size, buf->len, buf->idx, start, *line);

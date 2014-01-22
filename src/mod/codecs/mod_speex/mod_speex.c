@@ -236,12 +236,12 @@ static switch_status_t switch_speex_fmtp_parse(const char *fmtp, switch_codec_fm
 					}
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "choosing speex/8000 mode %s\n", mode_str);
 					codec_settings->quality = codec_settings->quality;
-					codec_settings->vbr_quality = codec_settings->quality;
+					codec_settings->vbr_quality = (float)codec_settings->quality;
 				} else {
 					if (mode_num >= 0 && mode_num <= 10) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "choosing speex/%d mode %s\n", codec_fmtp->actual_samples_per_second, mode_str);
 						codec_settings->quality = mode_num;
-						codec_settings->vbr_quality = mode_num;
+						codec_settings->vbr_quality = (float)mode_num;
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "ignoring invalid speex/%d mode %s\n", codec_fmtp->actual_samples_per_second, mode_str);
 						continue;
@@ -519,7 +519,7 @@ static void load_configuration()
 					default_codec_settings.vbr = switch_true(value);
 				} else if (!strcasecmp("vbr-quality", name)) {
 					/* variable bit rate quality, float 0-10 */
-					float tmp = atof(value);
+					float tmp = (float)atof(value);
 					if (switch_is_number(value) && tmp >= 0 && tmp <= 10) {
 						default_codec_settings.vbr_quality = tmp;
 					} else {
@@ -547,7 +547,7 @@ static void load_configuration()
 					default_codec_settings.pp_agc = switch_true(value);
 				} else if (!strcasecmp("pp-agc-level", name)) {
 					/* agc level, float */
-					float tmp = atof(value);
+					float tmp = (float)atof(value);
 					if (switch_is_number(value) && tmp >= 0.0f) {
 						default_codec_settings.pp_agc_level = tmp;
 					} else {
@@ -561,7 +561,7 @@ static void load_configuration()
 					default_codec_settings.pp_dereverb = switch_true(value);
 				} else if (!strcasecmp("pp-dereverb-decay", name)) {
 					/* reverberation removal decay, float */
-					float tmp = atof(value);
+					float tmp = (float)atof(value);
 					if (switch_is_number(value) && tmp >= 0.0f) {
 						default_codec_settings.pp_dereverb_decay = tmp;
 					} else {
@@ -569,7 +569,7 @@ static void load_configuration()
 					}
 				} else if (!strcasecmp("pp-dereverb-level", name)) {
 					/* reverberation removal level, float */
-					float tmp = atof(value);
+					float tmp = (float)atof(value);
 					if (switch_is_number(value) && tmp >= 0.0f) {
 						default_codec_settings.pp_dereverb_level = tmp;
 					} else {

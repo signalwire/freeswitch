@@ -1310,7 +1310,7 @@ int skypopen_pipe_read(switch_file_t *pipe, short *buf, int howmany)
 
 	switch_file_read(pipe, buf, &quantity);
 
-	howmany = quantity;
+	howmany = (int)quantity;
 
 	return howmany;
 }
@@ -1323,7 +1323,7 @@ int skypopen_pipe_write(switch_file_t *pipe, short *buf, int howmany)
 
 	switch_file_write(pipe, buf, &quantity);
 
-	howmany = quantity;
+	howmany = (int)quantity;
 
 	return howmany;
 }

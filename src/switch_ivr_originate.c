@@ -214,8 +214,8 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 		}
 		
 		status = switch_ivr_read(collect->session,
-								 len,
-								 len,
+								 (uint32_t)len,
+								 (uint32_t)len,
 								 collect->file, NULL, buf, sizeof(buf), collect->confirm_timeout, NULL, 0);
 		
 		
@@ -3150,12 +3150,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 									switch_buffer_peek(early_state.buffer, &mlen, sizeof(uint16_t));
 									if (buflen >= (mlen + sizeof(uint16_t))) {
 										switch_buffer_toss(early_state.buffer, sizeof(uint16_t));
-										write_frame.datalen = switch_buffer_read(early_state.buffer, write_frame.data, mlen);
+										write_frame.datalen = (uint32_t)switch_buffer_read(early_state.buffer, write_frame.data, mlen);
 									}
 								}
 							} else {
 								if (switch_buffer_inuse(early_state.buffer) >= write_frame.codec->implementation->decoded_bytes_per_packet) {
-									write_frame.datalen = switch_buffer_read(early_state.buffer, write_frame.data,
+									write_frame.datalen = (uint32_t)switch_buffer_read(early_state.buffer, write_frame.data,
 																			 write_frame.codec->implementation->decoded_bytes_per_packet);
 								}
 							}

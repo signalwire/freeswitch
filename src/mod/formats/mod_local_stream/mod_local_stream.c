@@ -216,7 +216,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				continue;
 			}
 
-			if (switch_core_timer_init(&timer, source->timer_name, source->interval, source->samples, temp_pool) != SWITCH_STATUS_SUCCESS) {
+			if (switch_core_timer_init(&timer, source->timer_name, source->interval, (int)source->samples, temp_pool) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't start timer.\n");
 				switch_dir_close(source->dir_handle);
 				source->dir_handle = NULL;
@@ -233,7 +233,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				if (source->chime_total) {
 
 					if (source->chime_counter > 0) {
-						source->chime_counter -= source->samples;
+						source->chime_counter -= (int32_t)source->samples;
 					}
 
 					if (!switch_test_flag((&source->chime_fh), SWITCH_FILE_OPEN) && source->chime_counter <= 0) {
@@ -272,7 +272,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 							source->chime_counter = source->rate * source->chime_freq;
 							use_fh = &fh;
 							goto retry;
-							switch_core_file_close(&fh);
+							//switch_core_file_close(&fh);
 						}
 					}
 				}
@@ -288,7 +288,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 						is_open = 0;
 					} else {
 						if (use_fh == &source->chime_fh && source->chime_max) {
-							source->chime_max_counter += source->samples;
+							source->chime_max_counter += (int32_t)source->samples;
 							if (source->chime_max_counter >= source->chime_max) {
 								source->chime_max_counter = 0;
 								switch_core_file_close(use_fh);
@@ -318,7 +318,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 								continue;
 							}
 							switch_mutex_lock(cp->audio_mutex);
-							bused = switch_buffer_inuse(cp->audio_buffer);
+							bused = (uint32_t)switch_buffer_inuse(cp->audio_buffer);
 							if (bused > source->samples * 768) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Flushing Stream Handle Buffer [%s() %s:%d] size: %u samples: %ld\n", 
 												  cp->func, cp->file, cp->line, bused, (long)source->samples);

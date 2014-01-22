@@ -1071,7 +1071,8 @@ static int debounce_check(sofia_profile_t *profile, const char *user, const char
 	int r = 0;
 	time_t *last, now = switch_epoch_time_now(NULL);
 
-	snprintf(key, sizeof(key), "%s%s", user, host);
+	snprintf(key, sizeof(key)-1, "%s%s", user, host);
+	key[sizeof(key)-1] = '\0';
 
 	switch_mutex_lock(profile->ireg_mutex);
 	if ((last = switch_core_hash_find(profile->mwi_debounce_hash, key))) {

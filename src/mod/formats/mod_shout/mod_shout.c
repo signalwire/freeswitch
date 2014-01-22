@@ -138,7 +138,7 @@ static void decode_fd(shout_context_t *context, void *data, size_t bytes);
 
 static inline void free_context(shout_context_t *context)
 {
-	int ret;
+	size_t ret;
 
 	if (context) {
 		switch_mutex_lock(context->audio_mutex);
@@ -370,8 +370,9 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	shout_context_t *context = data;
 	int decode_status = 0;
 	size_t usedlen;
-	uint32_t used, buf_size = 1024 * 128;	/* do not make this 64 or less, stutter will ensue after 
+	uint32_t buf_size = 1024 * 128;			/* do not make this 64 or less, stutter will ensue after 
 											   first 64k buffer is dry */
+	switch_size_t used;
 
 	if (context->prebuf) {
 		buf_size = context->prebuf;
@@ -553,13 +554,13 @@ static void *SWITCH_THREAD_FUNC write_stream_thread(switch_thread_t *thread, voi
 				r[i] = audio[j++];
 			}
 
-			if ((rlen = lame_encode_buffer(context->gfp, l, r, audio_read / 4, mp3buf, sizeof(mp3buf))) < 0) {
+			if ((rlen = lame_encode_buffer(context->gfp, l, r, (int)(audio_read / 4), mp3buf, sizeof(mp3buf))) < 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
 				goto error;
 			}
 
 		} else if (context->channels == 1) {
-			if ((rlen = lame_encode_buffer(context->gfp, (void *) audio, NULL, audio_read / sizeof(int16_t), mp3buf, sizeof(mp3buf))) < 0) {
+			if ((rlen = lame_encode_buffer(context->gfp, (void *) audio, NULL, (int)(audio_read / sizeof(int16_t)), mp3buf, sizeof(mp3buf))) < 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
 				goto error;
 			}
@@ -653,7 +654,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 		if (mpg123_format_all(context->mh) != MPG123_OK) {
 			MPGERROR();
 		}
-		if (mpg123_param(context->mh, MPG123_FORCE_RATE, context->samplerate, 0) != MPG123_OK) {
+		if (mpg123_param(context->mh, MPG123_FORCE_RATE, (long)context->samplerate, 0) != MPG123_OK) {
 			MPGERROR();
 		}
 
@@ -1017,13 +1018,13 @@ static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data
 			context->r[i] = audio[j++];
 		}
 
-		if ((rlen = lame_encode_buffer(context->gfp, context->l, context->r, nsamples, context->mp3buf, context->mp3buflen)) < 0) {
+		if ((rlen = lame_encode_buffer(context->gfp, context->l, context->r, (int)nsamples, context->mp3buf, (int)context->mp3buflen)) < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
 			return SWITCH_STATUS_FALSE;
 		}
 
 	} else if (handle->channels == 1) {
-		if ((rlen = lame_encode_buffer(context->gfp, audio, NULL, nsamples, context->mp3buf, context->mp3buflen)) < 0) {
+		if ((rlen = lame_encode_buffer(context->gfp, audio, NULL, (int)nsamples, context->mp3buf, (int)context->mp3buflen)) < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
 			return SWITCH_STATUS_FALSE;
 		}
@@ -1032,7 +1033,7 @@ static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data
 	}
 
 	if (rlen) {
-		int ret = fwrite(context->mp3buf, 1, rlen, context->fp);
+		int ret = (int)fwrite(context->mp3buf, 1, rlen, context->fp);
 		if (ret < 0) {
 			return SWITCH_STATUS_FALSE;
 		}
@@ -1268,7 +1269,7 @@ void do_telecast(switch_stream_handle_t *stream)
 				memset(buf, 0, bytes);
 			}
 
-			if ((rlen = lame_encode_buffer(gfp, (void *) buf, NULL, bytes / 2, mp3buf, sizeof(mp3buf))) < 0) {
+			if ((rlen = lame_encode_buffer(gfp, (void *) buf, NULL, (int)(bytes / 2), mp3buf, sizeof(mp3buf))) < 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
 				goto end;
 			}
@@ -1370,7 +1371,7 @@ void do_broadcast(switch_stream_handle_t *stream)
 			break;
 		}
 
-		if ((rlen = lame_encode_buffer(gfp, (void *) buf, NULL, samples, mp3buf, sizeof(mp3buf))) < 0) {
+		if ((rlen = lame_encode_buffer(gfp, (void *) buf, NULL, (int)samples, mp3buf, sizeof(mp3buf))) < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
 			goto end;
 		}

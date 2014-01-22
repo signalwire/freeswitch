@@ -28,7 +28,9 @@
 #include "udptl.h"
 
 #define FALSE 0
+#ifndef TRUE
 #define TRUE (!FALSE)
+#endif
 
 static int decode_length(const uint8_t *buf, int limit, int *len, int *pvalue)
 {

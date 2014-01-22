@@ -177,7 +177,7 @@ char *string_to_keypad_digit(const char *in)
 
 		while (*s) {
 			char c;
-			if ((c = digit_matching_keypad(*s++)) > 0) {
+			if ((c = (char)digit_matching_keypad(*s++)) > 0) {
 				*d++ = c + 48;
 			}
 		}
@@ -843,7 +843,7 @@ switch_status_t navigate_entrys(switch_core_session_t *session, dir_profile_t *p
 		params->try_again = 1;
 		status = SWITCH_STATUS_BREAK;
 		goto end;
-	} else if (profile->max_result != 0 && result_count > profile->max_result) {
+	} else if (profile->max_result != 0 && (uint32_t)result_count > profile->max_result) {
 		switch_ivr_phrase_macro(session, DIR_RESULT_COUNT_TOO_LARGE, NULL, NULL, NULL);
 		params->try_again = 1;
 		status = SWITCH_STATUS_BREAK;

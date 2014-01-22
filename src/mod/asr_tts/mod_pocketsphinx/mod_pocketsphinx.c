@@ -294,7 +294,7 @@ static switch_bool_t stop_detect(pocketsphinx_t *ps, int16_t *data, unsigned int
 
 	/* Check silence timeouts */
 	if (ps->silence_time && switch_test_flag(ps, PSFLAG_INPUT_TIMERS)) {
-		int elapsed_ms = (switch_micro_time_now() - ps->silence_time) / 1000;
+		switch_time_t elapsed_ms = (switch_micro_time_now() - ps->silence_time) / 1000;
 		if (switch_test_flag(ps, PSFLAG_START_OF_SPEECH)) {
 			if (ps->speech_timeout > 0 && !switch_test_flag(ps, PSFLAG_SPEECH_TIMEOUT) && elapsed_ms >= ps->speech_timeout) {
 				switch_set_flag_locked(ps, PSFLAG_SPEECH_TIMEOUT);

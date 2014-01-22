@@ -162,7 +162,8 @@ static int find_longest(valet_lot_t *lot, int min, int max)
 	const void *i_var;
 	void *i_val;
 	valet_token_t *token;
-	int longest = 0, cur = 0, longest_ext = 0;
+	int longest_ext = 0;
+	time_t longest = 0, cur = 0;
 	time_t now = switch_epoch_time_now(NULL);
 
 	switch_mutex_lock(lot->mutex);

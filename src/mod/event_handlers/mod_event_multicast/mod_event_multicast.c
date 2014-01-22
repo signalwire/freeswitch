@@ -412,7 +412,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 		switch_goto_status(SWITCH_STATUS_TERM, fail);
 	}
 
-	if (switch_mcast_loopback(globals.udp_socket, globals.loopback) != SWITCH_STATUS_SUCCESS) {
+	if (switch_mcast_loopback(globals.udp_socket, (uint8_t)globals.loopback) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set loopback to '%d'\n", globals.loopback);
 		switch_goto_status(SWITCH_STATUS_TERM, fail);
 	}
@@ -573,7 +573,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 			char *var, *val, *term = NULL, tmpname[128];
 			switch_event_add_header_string(local_event, SWITCH_STACK_BOTTOM, "Multicast", "yes");
 			var = packet;
-			while (*var) {
+			while (var && *var) {
 				if ((val = strchr(var, ':')) != 0) {
 					*val++ = '\0';
 					while (*val == ' ') {

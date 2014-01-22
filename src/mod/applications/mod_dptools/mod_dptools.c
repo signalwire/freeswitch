@@ -4749,7 +4749,7 @@ SWITCH_STANDARD_APP(blind_transfer_ack_function)
 	switch_bool_t val = 0;
 
 	if (data) {
-		val = switch_true((char *) val);
+		val = (switch_bool_t)switch_true((char *) data);
 	}
 
 	switch_ivr_blind_transfer_ack(session, val);
@@ -5233,7 +5233,7 @@ void *SWITCH_THREAD_FUNC call_monitor_thread(switch_thread_t *thread, void *obj)
 	switch_mutex_t *mutex;
 	uint32_t counter = 0;
 	switch_memory_pool_t *pool = cm->pool;
-	int size;
+	unsigned int size;
 	char *argv[512] = { 0 };
 	int busy = 0;
 	switch_event_t *var_event = NULL;

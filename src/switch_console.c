@@ -724,7 +724,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 	}
 
 	if (!zstr(cursor) && !zstr(line)) {
-		pos = (cursor - line);
+		pos = (int)(cursor - line);
 	}
 
 	h.out = console_out;
@@ -783,7 +783,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 		buf = lp + 1;
 	}
 
-	h.len = strlen(buf);
+	h.len = (int)strlen(buf);
 
 	if (h.out) {
 		fprintf(h.out, "\n\n");

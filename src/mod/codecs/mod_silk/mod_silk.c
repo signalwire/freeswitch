@@ -287,13 +287,13 @@ static switch_status_t switch_silk_encode(switch_codec_t *codec,
 {
 	struct silk_context *context = codec->private_info;
 	SKP_int16 ret;
-	SKP_int16 pktsz  = context->encoder_object.packetSize;
+	SKP_int16 pktsz  = (SKP_int16)context->encoder_object.packetSize;
 	SKP_int16 nBytes = MAX_BYTES_PER_FRAME * MAX_INPUT_FRAMES; 
 	SKP_int16 *lindata = (SKP_int16 *)decoded_data;
-	SKP_int16 samples = decoded_data_len /sizeof(SKP_int16);
+	SKP_int16 samples = (SKP_int16)(decoded_data_len /sizeof(SKP_int16));
 	*encoded_data_len = 0;
 	while (samples >= pktsz){
-		ret = SKP_Silk_SDK_Encode(context->enc_state,
+		ret = (SKP_int16)SKP_Silk_SDK_Encode(context->enc_state,
 							  &context->encoder_object,
 							  lindata,
 							  pktsz,
@@ -345,9 +345,9 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 		}
 		if (jb && codec && codec->cur_frame) {
 			for (i = 1; i <= MAX_LBRR_DELAY; i++) {
-				found_frame = stfu_n_copy_next_frame(jb, codec->cur_frame->timestamp, codec->cur_frame->seq, i, &next_frame);
+				found_frame = stfu_n_copy_next_frame(jb, (uint32_t)codec->cur_frame->timestamp, codec->cur_frame->seq, (uint16_t)i, &next_frame);
 				if (found_frame) {
-					SKP_Silk_SDK_search_for_LBRR(next_frame.data, next_frame.dlen, i, (SKP_uint8*) &recbuff, &reclen);
+					SKP_Silk_SDK_search_for_LBRR(next_frame.data, (const int)next_frame.dlen, i, (SKP_uint8*) &recbuff, &reclen);
 					if (reclen) {
 						encoded_data = &recbuff;
 						encoded_data_len = reclen;
@@ -361,7 +361,7 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 	}
 
 	do {
-		ret = SKP_Silk_SDK_Decode(context->dec_state,
+		ret = (SKP_int16)SKP_Silk_SDK_Decode(context->dec_state,
 								  &context->decoder_object,
 								  lost_flag,
 								  encoded_data,

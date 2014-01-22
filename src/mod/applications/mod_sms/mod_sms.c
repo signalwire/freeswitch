@@ -76,7 +76,7 @@ typedef enum {
 #define check_tz()														\
 	do {																\
 		tzoff = switch_event_get_header(event, "tod_tz_offset");		\
-		tzname = switch_event_get_header(event, "timezone");			\
+		tzname_ = switch_event_get_header(event, "timezone");			\
 		if (!zstr(tzoff) && switch_is_number(tzoff)) {					\
 			offset = atoi(tzoff);										\
 			break;														\
@@ -93,7 +93,7 @@ static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_
 	char *expression_expanded = NULL, *field_expanded = NULL;
 	switch_regex_t *re = NULL;
 	const char *to = switch_event_get_header(event, "to");
-	const char *tzoff = NULL, *tzname = NULL;
+	const char *tzoff = NULL, *tzname_ = NULL;
 	int offset = 0;
 
 	check_tz();
@@ -117,7 +117,7 @@ static int parse_exten(switch_event_t *event, switch_xml_t xexten, switch_event_
 		int time_match;
 
 		check_tz();
-		time_match = switch_xml_std_datetime_check(xcond, tzoff ? &offset : NULL, tzname);
+		time_match = switch_xml_std_datetime_check(xcond, tzoff ? &offset : NULL, tzname_);
 
 		switch_safe_free(field_expanded);
 		switch_safe_free(expression_expanded);

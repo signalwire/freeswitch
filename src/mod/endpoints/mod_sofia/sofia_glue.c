@@ -288,9 +288,9 @@ enum tport_tls_verify_policy sofia_glue_str2tls_verify_policy(const char * str){
 
 	while (ptr_cur) {
 		if ((ptr_next = strchr(ptr_cur, '|'))) {
-			len = ptr_next++ - ptr_cur;
+			len = (int)(ptr_next++ - ptr_cur);
 		} else {
-			len = strlen(ptr_cur);
+			len = (int)strlen(ptr_cur);
 		}
 		if (!strncasecmp(ptr_cur, "in",len)) {
 			ret |= TPTLS_VERIFY_IN;
@@ -483,7 +483,7 @@ void sofia_glue_get_addr(msg_t *msg, char *buf, size_t buflen, int *port)
 	su_addrinfo_t *addrinfo = msg_addrinfo(msg);
 
 	if (buf) {
-		get_addr(buf, buflen, addrinfo->ai_addr, addrinfo->ai_addrlen);
+		get_addr(buf, buflen, addrinfo->ai_addr, (socklen_t)addrinfo->ai_addrlen);
 	}
 
 	if (port) {
@@ -1834,14 +1834,14 @@ int sofia_recover_callback(switch_core_session_t *session)
 	if ((tmp = switch_channel_get_variable(tech_pvt->channel, "rtp_2833_send_payload"))) {
 		int te = atoi(tmp);
 		if (te > 64) {
-			tech_pvt->te = te;
+			tech_pvt->te = (switch_payload_t)te;
 		} 
 	}
 
 	if ((tmp = switch_channel_get_variable(tech_pvt->channel, "rtp_2833_recv_payload"))) {
 		int te = atoi(tmp);
 		if (te > 64) {
-			tech_pvt->recv_te = te;
+			tech_pvt->recv_te = (switch_payload_t)te;
 		} 
 	}
 

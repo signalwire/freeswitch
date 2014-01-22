@@ -86,7 +86,7 @@ static switch_status_t exec_app(switch_core_session_t *session, const char *app,
 #define check_tz()														\
 	do {																\
 		tzoff = switch_channel_get_variable(channel, "tod_tz_offset");		\
-		tzname = switch_channel_get_variable(channel, "timezone");			\
+		tzname_ = switch_channel_get_variable(channel, "timezone");			\
 		if (!zstr(tzoff) && switch_is_number(tzoff)) {					\
 			offset = atoi(tzoff);										\
 			break;														\
@@ -104,7 +104,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 	char *expression_expanded = NULL, *field_expanded = NULL;
 	switch_regex_t *re = NULL, *save_re = NULL;
 	int offset = 0;
-	const char *tmp, *tzoff = NULL, *tzname = NULL, *req_nesta = NULL;
+	const char *tmp, *tzoff = NULL, *tzname_ = NULL, *req_nesta = NULL;
 	char nbuf[128] = "";
 	int req_nest = 1;
 	char space[MAX_RECUR_SPACE] = "";
@@ -171,7 +171,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		int time_match;
 
 		check_tz();
-		time_match = switch_xml_std_datetime_check(xcond, tzoff ? &offset : NULL, tzname);
+		time_match = switch_xml_std_datetime_check(xcond, tzoff ? &offset : NULL, tzname_);
 
 		switch_safe_free(field_expanded);
 		switch_safe_free(expression_expanded);
@@ -227,7 +227,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 
 			for (xregex = switch_xml_child(xcond, "regex"); xregex; xregex = xregex->next) {
 				check_tz();
-				time_match = switch_xml_std_datetime_check(xregex, tzoff ? &offset : NULL, tzname);
+				time_match = switch_xml_std_datetime_check(xregex, tzoff ? &offset : NULL, tzname_);
 				
 				if (time_match == 1) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG,

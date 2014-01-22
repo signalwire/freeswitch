@@ -473,7 +473,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 		char digit_buffer[128] = "";
 		char *digits_regex = switch_core_session_sprintf(session, "^%s$", menu->pin);
 
-		if (switch_play_and_get_digits(session, strlen(menu->pin), strlen(menu->pin), 3, 3000, "#",
+		if (switch_play_and_get_digits(session, (uint32_t)strlen(menu->pin), (uint32_t)strlen(menu->pin), 3, 3000, "#",
 									   menu->prompt_pin_file, menu->bad_pin_file, NULL, digit_buffer, sizeof(digit_buffer), 
 									   digits_regex, 10000, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_goto_status(SWITCH_STATUS_FALSE, end);

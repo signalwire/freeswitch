@@ -593,9 +593,9 @@ static void send_disconnect(listener_t *listener, const char *message)
 	if (listener->session) {
 		switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\n"
 						"Controlled-Session-UUID: %s\n"
-						"Content-Disposition: disconnect\n" "Content-Length: %d\n\n", switch_core_session_get_uuid(listener->session), mlen);
+						"Content-Disposition: disconnect\n" "Content-Length: %d\n\n", switch_core_session_get_uuid(listener->session), (int)mlen);
 	} else {
-		switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\nContent-Length: %d\n\n", mlen);
+		switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\nContent-Length: %d\n\n", (int)mlen);
 	}
 
 	if (!listener->sock) return;
@@ -965,7 +965,7 @@ SWITCH_STANDARD_API(event_sink_function)
 
 			while (switch_queue_trypop(listener->log_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 				switch_log_node_t *dnode = (switch_log_node_t *) pop;
-				int encode_len = (strlen(dnode->data) * 3) + 1;
+				size_t encode_len = (strlen(dnode->data) * 3) + 1;
 				char *encode_buf = malloc(encode_len);
 
 				switch_assert(encode_buf);
@@ -1131,7 +1131,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 			char *tmp;
 			int pos;
 
-			pos = (ptr - mbuf);
+			pos = (int)(ptr - mbuf);
 			buf_len += block_len;
 			tmp = realloc(mbuf, buf_len);
 			switch_assert(tmp);
@@ -2294,7 +2294,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			listener->linger_timeout = linger_time;
 			switch_set_flag_locked(listener, LFLAG_LINGER);
 			if (listener->linger_timeout != (time_t) -1) {
-				switch_snprintf(reply, reply_len, "+OK will linger %d seconds", linger_time);
+				switch_snprintf(reply, reply_len, "+OK will linger %d seconds", (int)linger_time);
 			} else {
 				switch_snprintf(reply, reply_len, "+OK will linger");
 			}
@@ -2514,7 +2514,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		for (x = 0; x < prefs.acl_count; x++) {
 			if (!switch_check_network_list_ip(listener->remote_ip, prefs.acl[x])) {
 				const char message[] = "Access Denied, go away.\n";
-				int mlen = strlen(message);
+				int mlen = (int)strlen(message);
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "IP %s Rejected by acl \"%s\"\n", listener->remote_ip,
 								  prefs.acl[x]);

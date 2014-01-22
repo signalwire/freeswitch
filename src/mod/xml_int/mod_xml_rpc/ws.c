@@ -140,7 +140,7 @@ static int cheezy_get_var(char *data, char *name, char *buf, size_t buflen)
 	  }
 			
 	  if (v && e) {
-	int cplen;
+	size_t cplen;
 	size_t len = e - v;
 	
 	if (len > buflen - 1) {
@@ -266,7 +266,6 @@ int ws_handshake_kvp(wsh_t *wsh, char *key, char *version, char *proto)
 issize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 {
 	issize_t r;
-	int x = 0;
 	TConn *conn = wsh->tsession->connP;
 
 	if (!wsh->handshake) {
@@ -305,8 +304,8 @@ issize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 			return r;
 		} else {
 			memcpy(data, conn->buffer.b + conn->bufferpos, bytes);
-			conn->bufferpos += bytes;
-			return bytes;
+			conn->bufferpos += (uint32_t)bytes;
+			return (issize_t)bytes;
 		}
 
 	}
@@ -319,14 +318,14 @@ issize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 
 	if (wsh->ssl) {
 		do {
-			r = SSL_write(wsh->ssl, data, bytes);
-		} while (r == -1 && SSL_get_error(wsh->ssl, r) == SSL_ERROR_WANT_WRITE);
+			r = SSL_write(wsh->ssl, data, (int)bytes);
+		} while (r == -1 && SSL_get_error(wsh->ssl, (int)r) == SSL_ERROR_WANT_WRITE);
 
-		return r;
+		return (issize_t)r;
 	}
 
-	if (ConnWrite(wsh->tsession->connP, data, bytes)) {
-		return bytes;
+	if (ConnWrite(wsh->tsession->connP, data, (uint32_t)bytes)) {
+		return (issize_t)bytes;
 	} else {
 		return 0;
 	}
@@ -549,9 +548,9 @@ issize_t ws_feed_buf(wsh_t *wsh, void *data, size_t bytes)
 
 	memcpy(wsh->wbuffer + wsh->wdatalen, data, bytes);
 	
-	wsh->wdatalen += bytes;
+	wsh->wdatalen += (issize_t)bytes;
 
-	return bytes;
+	return (issize_t)bytes;
 }
 
 issize_t ws_send_buf(wsh_t *wsh, ws_opcode_t oc)
@@ -612,7 +611,7 @@ issize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes)
 		return -2;
 	}
 	
-	return bytes;
+	return (issize_t)bytes;
 }
 
 

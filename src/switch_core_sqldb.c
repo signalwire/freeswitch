@@ -605,7 +605,7 @@ static switch_status_t switch_cache_db_execute_sql_chunked(switch_cache_db_handl
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *p, *s, *e;
-	int chunk_count;
+	switch_size_t chunk_count;
 	switch_size_t len;
 
 	switch_assert(chunk_size);
@@ -1871,7 +1871,7 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 		
 		if (switch_test_flag((&runtime), SCF_DEBUG_SQL)) {
 			char line[128] = "";
-			int l;
+			switch_size_t l;
 			
 			switch_snprintf(line, sizeof(line), "%s RUN QUEUE [", qm->name);
 			

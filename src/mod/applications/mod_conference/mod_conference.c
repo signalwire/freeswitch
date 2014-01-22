@@ -2365,7 +2365,7 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 {
 	conference_obj_t *conference = (conference_obj_t *) obj;
 	conference_member_t *imember;
-	switch_frame_t *vid_frame;
+	switch_frame_t *vid_frame = NULL;
 	switch_status_t status;
 	int want_refresh = 0;
 	int yield = 0;
@@ -2706,7 +2706,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				} else if (conference->fnode->type == NODE_TYPE_FILE) {
 					switch_core_file_read(&conference->fnode->fh, file_frame, &file_sample_len);
 					if (conference->fnode->fh.vol) {
-						switch_change_sln_volume_granular((void *)file_frame, file_sample_len, conference->fnode->fh.vol);
+						switch_change_sln_volume_granular((void *)file_frame, (uint32_t)file_sample_len, conference->fnode->fh.vol);
 					}
 				}
 
@@ -3583,10 +3583,10 @@ static int noise_gate_check(conference_member_t *member)
 
 		if (target_score < 0) target_score = 0;
 
-		r = member->score > target_score;
+		r = (int)member->score > target_score;
 		
 	} else {
-		r = member->score > member->energy_level;
+		r = (int32_t)member->score > member->energy_level;
 	}
 
 	return r;
@@ -3607,11 +3607,11 @@ static void check_agc_levels(conference_member_t *member)
 
 	if (!member->avg_score) return;
 	
-	if (member->avg_score < member->conference->agc_level - 100) {
+	if ((int)member->avg_score < member->conference->agc_level - 100) {
 		member->agc_volume_in_level++;
 		switch_normalize_volume_granular(member->agc_volume_in_level);
 		x = 1;
-	} else if (member->avg_score > member->conference->agc_level + 100) {
+	} else if ((int)member->avg_score > member->conference->agc_level + 100) {
 		member->agc_volume_in_level--;
 		switch_normalize_volume_granular(member->agc_volume_in_level);
 		x = -1;
@@ -3743,7 +3743,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			goto do_continue;
 		}
 
-		if (member->nt_tally > (member->read_impl.actual_samples_per_second / member->read_impl.samples_per_packet) * 3) {
+		if (member->nt_tally > (int32_t)(member->read_impl.actual_samples_per_second / member->read_impl.samples_per_packet) * 3) {
 			member->agc_volume_in_level = 0;
 			clear_avg(member);
 		}
@@ -4016,14 +4016,14 @@ static void member_add_file_data(conference_member_t *member, int16_t *data, swi
 
 				/* Check for output volume adjustments */
 				if (member->volume_out_level) {
-					switch_change_sln_volume(file_frame, file_sample_len, member->volume_out_level);
+					switch_change_sln_volume(file_frame, (uint32_t)file_sample_len, member->volume_out_level);
 				}
 
 				for (i = 0; i < file_sample_len; i++) {
 					if (member->fnode->mux) {
 						sample = data[i] + file_frame[i];
 						switch_normalize_to_16bit(sample);
-						data[i] = sample;
+						data[i] = (int16_t)sample;
 					} else {
 						data[i] = file_frame[i];
 					}
@@ -8398,7 +8398,7 @@ SWITCH_STANDARD_APP(conference_function)
 			while (!pin_valid && pin_retries && status == SWITCH_STATUS_SUCCESS) {
 				size_t dpin_length = dpin ? strlen(dpin) : 0;
 				size_t mdpin_length = mdpin ? strlen(mdpin) : 0;
-				int maxpin = dpin_length > mdpin_length ? dpin_length : mdpin_length;
+				int maxpin = dpin_length > mdpin_length ? (int)dpin_length : (int)mdpin_length;
 				switch_status_t pstatus = SWITCH_STATUS_FALSE;
 
 				/* be friendly */

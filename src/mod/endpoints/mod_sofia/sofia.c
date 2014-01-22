@@ -500,12 +500,12 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 			int cur_len = 0;
 			char *tmp = NULL;
 			char *hold = strdup(sip_header_as_string(nua_handle_home(nh), (void *) call_info));
-			cur_len = strlen(hold);
+			cur_len = (int)strlen(hold);
 
 			while ( call_info->ci_next != NULL) {
 				call_info = call_info->ci_next;
 				tmp = strdup(sip_header_as_string(nua_handle_home(nh), (void *) call_info));
-				cur_len = cur_len + strlen(tmp) +2;
+				cur_len = cur_len + (int)strlen(tmp) +2;
 				hold = realloc(hold, cur_len);
 				switch_assert(hold);
 				strcat(hold,",");
@@ -1792,7 +1792,7 @@ void sofia_queue_message(sofia_dispatch_event_t *de)
 	}
 
 
-	if ((switch_queue_size(mod_sofia_globals.msg_queue) > (SOFIA_MSG_QUEUE_SIZE * msg_queue_threads))) {
+	if ((switch_queue_size(mod_sofia_globals.msg_queue) > (SOFIA_MSG_QUEUE_SIZE * (unsigned int)msg_queue_threads))) {
 		launch++;
 	}
 
@@ -1878,7 +1878,7 @@ void sofia_event_callback(nua_event_t event,
 		}
 
 
-		if (switch_queue_size(mod_sofia_globals.msg_queue) > critical) {
+		if (switch_queue_size(mod_sofia_globals.msg_queue) > (unsigned int)critical) {
 			nua_respond(nh, 503, "System Busy", SIPTAG_RETRY_AFTER_STR("300"), NUTAG_WITH_THIS(nua), TAG_END());
 			goto end;
 		}
@@ -2346,7 +2346,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 
 
 		if (!sofia_test_pflag(profile, PFLAG_STANDBY)) {
-			if (++ireg_loops >= profile->ireg_seconds) {
+			if (++ireg_loops >= (uint32_t)profile->ireg_seconds) {
 				time_t now = switch_epoch_time_now(NULL);
 				sofia_reg_check_expire(profile, now, 0);
 				ireg_loops = 0;
@@ -2630,13 +2630,13 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 		for (via = vias; via; via = via->v_next) {
 			if (sofia_test_pflag(profile, PFLAG_AUTO_ASSIGN_PORT) && !strcmp(via->v_protocol, "SIP/2.0/UDP")) {
-				profile->sip_port = atoi(via->v_port);
+				profile->sip_port = (switch_port_t)atoi(via->v_port);
 				if (!profile->extsipport) profile->extsipport = profile->sip_port;
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found auto sip port %d for %s\n", profile->sip_port, profile->name);
 			}
 
 			if (sofia_test_pflag(profile, PFLAG_AUTO_ASSIGN_TLS_PORT) && !strcmp(via->v_protocol, "SIP/2.0/TLS")) {
-				profile->tls_sip_port = atoi(via->v_port);
+				profile->tls_sip_port = (switch_port_t)atoi(via->v_port);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found auto sip port %d for %s (TLS)\n", profile->tls_sip_port, profile->name);
 			}
 
@@ -4216,7 +4216,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						profile->sipip = switch_core_strdup(profile->pool, ip);
 					} else if (!strcasecmp(var, "ext-sip-port") && val) {
 						int tmp = atoi(val);
-						if (tmp > 0) profile->extsipport = tmp;
+						if (tmp > 0) profile->extsipport = (switch_port_t)tmp;
 					} else if (!strcasecmp(var, "ext-sip-ip")) {
 						if (!zstr(val)) {
 							char *ip = mod_sofia_globals.guess_ip;

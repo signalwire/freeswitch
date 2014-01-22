@@ -1543,7 +1543,7 @@ static int do_tport_candidates(struct private_object *tech_pvt, ldl_transport_ty
 	cand->port = tech_pvt->transports[ttype].adv_local_port;
 	cand->address = address;
 
-	if (!strncasecmp(advip, "stun:", 5)) {
+	if (advip && !strncasecmp(advip, "stun:", 5)) {
 		char *stun_ip = advip + 5;
 
 		if (tech_pvt->transports[ttype].stun_ip) {
@@ -1665,7 +1665,7 @@ static char *lame(char *in)
 static void setup_codecs(struct private_object *tech_pvt)
 {
 	ldl_payload_t payloads[LDL_MAX_PAYLOADS] = { {0} };
-	int idx = 0, i = 0;
+	unsigned int idx = 0, i = 0;
 	int dft_audio = -1, dft_video = -1;
 
 	memset(payloads, 0, sizeof(payloads));
@@ -2203,7 +2203,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 				if (!switch_test_flag((&tech_pvt->transports[LDL_TPORT_RTP].read_frame), SFF_CNG)) {
 					if ((bytes = tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->encoded_bytes_per_packet)) {
-						frames = (tech_pvt->transports[LDL_TPORT_RTP].read_frame.datalen / bytes);
+						frames = (int)(tech_pvt->transports[LDL_TPORT_RTP].read_frame.datalen / bytes);
 					}
 					tech_pvt->transports[LDL_TPORT_RTP].read_frame.samples = (int) (frames * tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->samples_per_packet);
 				}
@@ -2936,7 +2936,9 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 			globals.auto_nat = 0;
 			ip = zstr(val) ? globals.guess_ip : val;
 		}
-		profile->extip = switch_core_strdup(module_pool, ip);
+		if (ip) {
+			profile->extip = switch_core_strdup(module_pool, ip);
+		}
 	} else if (!strcasecmp(var, "server") && !zstr(val)) {
 		profile->server = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "rtp-timer-name") && !zstr(val)) {

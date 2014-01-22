@@ -817,7 +817,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 	
 	memcpy(buf, data, cpylen);
-	packet = switch_stun_packet_parse(buf, cpylen);
+	packet = switch_stun_packet_parse(buf, (uint32_t)cpylen);
 	if (!packet) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Invalid STUN/ICE packet received %ld %d\n", (long)cpylen, *(uint8_t *) data);
 		goto end;
@@ -1676,7 +1676,7 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 			str_cname = switch_get_addr(bufa, sizeof(bufa), rtp_session->rtcp_local_addr);
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Setting RTCP src-1 to %s\n", str_cname);
-			sr->sr_desc_ssrc.length = strlen(str_cname);
+			sr->sr_desc_ssrc.length = (unsigned int)strlen(str_cname);
 			memcpy ((char*)sr->sr_desc_ssrc.text, str_cname, strlen(str_cname));
 		}
 
@@ -2504,7 +2504,7 @@ static int do_dtls(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 		//	
 		//}
 
-		if ((ret = BIO_write(dtls->read_bio, dtls->data, dtls->bytes)) != (int)dtls->bytes) {
+		if ((ret = BIO_write(dtls->read_bio, dtls->data, (int)dtls->bytes)) != (int)dtls->bytes) {
 			ret = SSL_get_error(dtls->ssl, ret);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s DTLS packet read err %d\n", rtp_type(rtp_session), ret);
 			dtls_set_state(dtls, DS_FAIL);
@@ -2512,7 +2512,7 @@ static int do_dtls(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 		}
 	}
 
-	if (SSL_read(dtls->ssl, dtls->data, dtls->bytes) == (int)dtls->bytes) {
+	if (SSL_read(dtls->ssl, dtls->data, (int)dtls->bytes) == (int)dtls->bytes) {
 		if (BIO_reset(dtls->read_bio));
 	}
 

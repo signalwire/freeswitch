@@ -90,11 +90,11 @@ static switch_status_t silence_stream_file_read(switch_file_handle_t *handle, vo
 			*len = sh->samples;
 		}
 
-		sh->samples -= *len;
+		sh->samples -= (int32_t)*len;
 	}
 
 	if (sh->silence) {
-		switch_generate_sln_silence((int16_t *) data, *len, sh->silence);
+		switch_generate_sln_silence((int16_t *) data, (uint32_t)*len, sh->silence);
 	} else {
 		memset(data, 0, *len * 2);
 	}

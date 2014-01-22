@@ -343,7 +343,8 @@ static const char *parse_array(cJSON *item,const char *value)
 static char *print_array(cJSON *item,int depth,int fmt)
 {
 	char **entries;
-	char *out=0,*ptr,*ret;int len=5;
+	char *out=0,*ptr,*ret;
+	size_t len=5;
 	cJSON *child=item->child;
 	int numentries=0,i=0,fail=0;
 	
@@ -430,7 +431,8 @@ static const char *parse_object(cJSON *item,const char *value)
 static char *print_object(cJSON *item,int depth,int fmt)
 {
 	char **entries=0,**names=0;
-	char *out=0,*ptr,*ret,*str;int len=7,i=0,j;
+	char *out=0,*ptr,*ret,*str;int i=0,j;
+	size_t len=7;
 	cJSON *child=item->child;
 	int numentries=0,fail=0;
 	/* Count the number of entries. */

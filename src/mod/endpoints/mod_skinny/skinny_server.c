@@ -1870,7 +1870,7 @@ switch_status_t skinny_handle_open_receive_channel_ack_message(listener_t *liste
 				tech_pvt->read_impl.microseconds_per_packet / 1000,
 				switch_rtp_ready(tech_pvt->rtp_session) ? "SUCCESS" : err);
 #ifdef WIN32
-		addr.s_addr = inet_addr((uint16_t) tech_pvt->local_sdp_audio_ip);
+		addr.s_addr = inet_addr(tech_pvt->local_sdp_audio_ip);
 #else
 		inet_aton(tech_pvt->local_sdp_audio_ip, &addr);
 #endif

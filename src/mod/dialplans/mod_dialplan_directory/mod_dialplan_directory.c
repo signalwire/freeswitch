@@ -131,7 +131,7 @@ SWITCH_STANDARD_DIALPLAN(directory_dialplan_hunt)
 				if ((data = strchr(app, ' ')) != 0) {
 					*data++ = '\0';
 				}
-				switch_caller_extension_add_application(session, extension, app, data);
+				switch_caller_extension_add_application(session, extension, app, data ? data : "");
 			}
 		}
 	}

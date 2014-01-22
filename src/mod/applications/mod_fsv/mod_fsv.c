@@ -690,7 +690,7 @@ end:
 
 static switch_status_t fsv_file_write(switch_file_handle_t *handle, void *data, size_t *len)
 {
-	uint32_t datalen = *len * 2;
+	size_t datalen = *len * 2;
 	size_t size;
 	switch_status_t status;
 
@@ -720,7 +720,7 @@ static switch_status_t fsv_file_write(switch_file_handle_t *handle, void *data, 
 
 static switch_status_t fsv_file_write_video(switch_file_handle_t *handle, void *data, size_t *len)
 {
-	uint32_t datalen = *len;
+	uint32_t datalen = (uint32_t)*len;
 	uint32_t bytes = datalen | VID_BIT;
 	size_t size;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;

@@ -695,7 +695,7 @@ static cc_queue_t *load_queue(const char *queue_name)
 		queue_set_config(queue);
 
 		/* Add the params to the event structure */
-		count = switch_event_import_xml(switch_xml_child(x_queue, "param"), "name", "value", &event);
+		count = (int)switch_event_import_xml(switch_xml_child(x_queue, "param"), "name", "value", &event);
 
 		if (switch_xml_config_parse_event(event, count, SWITCH_FALSE, queue->config) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to process configuration\n");
@@ -1938,11 +1938,11 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 		if (cbt->tier_rule_no_agent_no_wait == SWITCH_TRUE && cbt->tier_agent_available == 0) {
 			cbt->tier = atoi(agent_tier_level);
 			/* Multiple the tier level by the tier wait time */
-		} else if (cbt->tier_rule_wait_multiply_level == SWITCH_TRUE && (long) local_epoch_time_now(NULL) - atol(cbt->member_joined_epoch) >= atoi(agent_tier_level) * cbt->tier_rule_wait_second) {
+		} else if (cbt->tier_rule_wait_multiply_level == SWITCH_TRUE && (long) local_epoch_time_now(NULL) - atol(cbt->member_joined_epoch) >= atoi(agent_tier_level) * (int)cbt->tier_rule_wait_second) {
 			cbt->tier = atoi(agent_tier_level);
 			cbt->tier_agent_available = 0;
 			/* Just check if joined is bigger than next tier wait time */
-		} else if (cbt->tier_rule_wait_multiply_level == SWITCH_FALSE && (long) local_epoch_time_now(NULL) - atol(cbt->member_joined_epoch) >= cbt->tier_rule_wait_second) {
+		} else if (cbt->tier_rule_wait_multiply_level == SWITCH_FALSE && (long) local_epoch_time_now(NULL) - atol(cbt->member_joined_epoch) >= (int)cbt->tier_rule_wait_second) {
 			cbt->tier = atoi(agent_tier_level);
 			cbt->tier_agent_available = 0;
 		} else {
@@ -2069,8 +2069,6 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 				return 1;
 			}
 	}
-
-	return 0;
 }
 
 static int members_callback(void *pArg, int argc, char **argv, char **columnNames)

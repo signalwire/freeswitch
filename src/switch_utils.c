@@ -82,7 +82,7 @@ SWITCH_DECLARE(switch_status_t) switch_frame_alloc(switch_frame_t **frame, switc
 	switch_zmalloc(new_frame, sizeof(*new_frame));
 
 	switch_set_flag(new_frame, SFF_DYNAMIC);
-	new_frame->buflen = size;
+	new_frame->buflen = (uint32_t)size;
 	new_frame->data = malloc(size);
 	switch_assert(new_frame->data);
 
@@ -167,7 +167,7 @@ SWITCH_DECLARE(char *) switch_find_parameter(const char *str, const char *param,
 		next = strchr(ptr, ';');
 
 		if (!strncasecmp(ptr, param, len) && *e == '=') {
-			int mlen;
+			size_t mlen;
 
 			ptr = ++e;
 
@@ -2149,7 +2149,7 @@ SWITCH_DECLARE(char *) switch_escape_string(const char *in, char *out, switch_si
 
 SWITCH_DECLARE(char *) switch_escape_string_pool(const char *in, switch_memory_pool_t *pool)
 {
-	int len = strlen(in) * 2 + 1;
+	size_t len = strlen(in) * 2 + 1;
 	char *buf = switch_core_alloc(pool, len);
 	return switch_escape_string(in, buf, len);
 }

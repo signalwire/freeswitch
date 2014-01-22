@@ -232,7 +232,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle
 			}
 		}
 
-		switch_resample_process(sh->resampler, data, *datalen / 2);
+		switch_resample_process(sh->resampler, data, (uint32_t)(*datalen / 2));
 		if (sh->resampler->to_len < want / 2 || sh->resampler->to_len > orig_len / 2) {
 			if (!sh->buffer) {
 				int factor = sh->resampler->to_len * sh->samplerate / 1000;
