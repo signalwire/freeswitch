@@ -47,6 +47,7 @@ struct dist_node {
 	char *name;
 	int weight;
 	int cur_weight;
+	int wval;
 	struct dist_node *next;
 };
 
@@ -96,6 +97,21 @@ static struct {
 } globals;
 
 
+static void calc_weight(struct dist_list *lp)
+{
+	struct dist_node *np;
+
+	lp->target_weight = 0;
+
+	for (np = lp->nodes; np; np = np->next) {
+		lp->target_weight += np->wval;
+	}
+
+	for (np = lp->nodes; np; np = np->next) {
+		np->weight = np->cur_weight = (lp->target_weight - np->wval);
+	}
+}
+
 
 static int load_config(int reloading)
 {
@@ -121,8 +137,6 @@ static int load_config(int reloading)
 		const char *name = switch_xml_attr(list, "name");
 		const char *tweight = switch_xml_attr(list, "total-weight");
 		struct dist_node *node, *np = NULL;
-		int target_weight = 10;
-		int accum = 0;
 
 		if (zstr(name)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing NAME!\n");
@@ -130,14 +144,13 @@ static int load_config(int reloading)
 		}
 
 		if (!zstr(tweight)) {
-			target_weight = atoi(tweight);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "The total-weight attribute is no longer necessary.\n");
 		}
 
 		switch_zmalloc(new_list, sizeof(*new_list));
 
 		new_list->name = strdup(name);
 		new_list->last = -1;
-		new_list->target_weight = target_weight;
 
 		if (lp) {
 			lp->next = new_list;
@@ -150,39 +163,17 @@ static int load_config(int reloading)
 		for (param = switch_xml_child(list, "node"); param; param = param->next) {
 			char *name = (char *) switch_xml_attr_soft(param, "name");
 			char *weight_val = (char *) switch_xml_attr_soft(param, "weight");
-			int weight = 0, tmp;
+			int tmp;
 
 			if ((tmp = atoi(weight_val)) < 1) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Weight %d value incorrect, must be > 0\n", tmp);
 				continue;
 			}
 
-			if (tmp >= lp->target_weight && (lp->target_weight == 1 && tmp != 1)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Weight %d value incorrect, must be less than %d\n", tmp, lp->target_weight);
-				continue;
-			}
-
-			if (accum + tmp > lp->target_weight) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Target Weight %d already met, ignoring subsequent entries.\n",
-								  lp->target_weight);
-				continue;
-			}
-
-			accum += tmp;
-
-			weight = lp->target_weight - tmp;
-
-			if (weight < 0 || weight > lp->target_weight) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Weight %d value incorrect, must be between 1 and %d\n", weight,
-								  lp->target_weight);
-				continue;
-			}
-
 			switch_zmalloc(node, sizeof(*node));
 			node->name = strdup(name);
-			node->weight = node->cur_weight = weight;
-
-
+			node->wval = tmp;
+			
 			if (np) {
 				np->next = node;
 			} else {
@@ -193,18 +184,7 @@ static int load_config(int reloading)
 			lp->node_count++;
 		}
 
-		if (accum < lp->target_weight) {
-			struct dist_node *np1;
-			int remain = lp->target_weight - accum;
-			int ea = remain / (lp->node_count ? lp->node_count : 1);
-
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Total weight does not add up to total weight %d\n", lp->target_weight);
-
-			for (np1 = lp->nodes; np1; np1 = np1->next) {
-				np1->weight += lp->target_weight - ea;
-			}
-
-		}
+		calc_weight(lp);
 
 	}
 
@@ -369,18 +349,142 @@ SWITCH_STANDARD_API(distributor_function)
 
 }
 
+static struct dist_list *find_list(const char *name)
+{
+	struct dist_list *lp = NULL;
+
+	switch_mutex_lock(globals.mod_lock);
+	for (lp = globals.list; lp; lp = lp->next) {
+		if (!strcasecmp(name, lp->name)) {
+			break;
+		}
+	}
+	switch_mutex_unlock(globals.mod_lock);
+
+	return lp;
+}
+
+
+static struct dist_node *find_node(struct dist_list *list, const char *name)
+{
+	struct dist_node *np;
+
+	switch_mutex_lock(globals.mod_lock);
+	for (np = list->nodes; np; np = np->next) {
+		if (!strcasecmp(name, np->name)) {
+			break;
+		}
+	}
+	switch_mutex_unlock(globals.mod_lock);
+
+	return np;
+}
+
+#define MAX 50
 
 SWITCH_STANDARD_API(distributor_ctl_function)
 {
+	int argc = 0;
+	char *argv[MAX] = { 0 };
+	const char *err = "-error";
+	char *dup = NULL;
 
-	if (!zstr(cmd) && !strcasecmp(cmd, "reload")) {
-		if (load_config(SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
-			stream->write_function(stream, "+ok reloaded.\n");
-			return SWITCH_STATUS_SUCCESS;
-		}
+	switch_mutex_lock(globals.mod_lock);
+
+	if (zstr(cmd)) {
+		goto err;
 	}
 
-	stream->write_function(stream, "-error!\n");
+	dup = strdup(cmd);
+	argc = switch_split(dup, ' ', argv);
+
+	if (argc > 0) {
+		if (!strcasecmp(argv[0], "reload")) {
+			if (load_config(SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
+				stream->write_function(stream, "+ok reloaded.\n");
+				err = NULL;
+			}
+		} else if (!strcasecmp(argv[0], "dump")) {
+			if (argc > 1) {
+				const char *listname = argv[1];
+				struct dist_list *list = find_list(listname);
+
+				if (!list) {
+					err = "cannot find list";
+				} else {
+					struct dist_node *np;
+					stream->write_function(stream, "list: name=%s\n", list->name);
+
+					for (np = list->nodes; np; np = np->next) {
+						stream->write_function(stream, "node: name=%s weight=%d\n", np->name, np->wval);
+					}
+
+					err = NULL;
+				}
+
+			} else {
+				err = "missing list name";
+			}
+		} else if (!strcasecmp(argv[0], "modify")) {
+			if (argc > 1) {
+				const char *listname = argv[1];
+				struct dist_list *list = find_list(listname);
+
+				if (!list) {
+					err = "cannot find list";
+				} else {
+					struct dist_node *np;
+					int i = 2;
+					char *e;
+
+					for(i = 2; i < argc; i++) {
+						if ((e = strchr(argv[i], '='))) {
+							*e++ = '\0';
+							if ((np = find_node(list, argv[i]))) {
+								int tmp = -1;
+								
+								if (e) {
+									tmp = atoi(e);
+								}
+
+								if (tmp > 0) {
+									np->wval = tmp;
+								} else {
+									stream->write_function(stream, "error: name=%s, specified weight invalid\n", np->name);
+								}
+							} else {
+								stream->write_function(stream, "error: node %s not found\n", argv[i]);
+							}
+						}
+					}
+
+					calc_weight(list);
+					reset_list(list);
+
+					stream->write_function(stream, "list: name=%s\n", list->name);
+
+					for (np = list->nodes; np; np = np->next) {
+						stream->write_function(stream, "node: name=%s weight=%d\n", np->name, np->wval);
+					}
+
+					err = NULL;
+				}
+
+			} else {
+				err = "missing list name";
+			}
+		}
+	}
+	
+ err:
+
+	if (err) {
+		stream->write_function(stream, "%s\n", err);
+	}
+
+	switch_safe_free(dup);
+
+	switch_mutex_unlock(globals.mod_lock);
 
 	return SWITCH_STATUS_SUCCESS;
 }
