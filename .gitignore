@@ -196,3 +196,20 @@ ipch/
 *.aps
 /w32/Library/switch_version.inc
 /w32/Setup/Fragments
+
+/libs/portaudio/build/msvc/Win32/Debug DirectSound/portaudio.*.log
+/libs/portaudio/build/msvc/Win32/Release DirectSound/portaudio.*.log
+/libs/win32/mpg123/Win32/Debug_Generic/libmpg123.*.log
+/libs/win32/mpg123/Win32/Release_Generic/libmpg123.*.log
+/libs/win32/pthread/Win32/Debug DLL/pthread.*.log
+/libs/win32/pthread/Win32/Release DLL/pthread.*.log
+/src/mod/codecs/mod_amr/Win32/Debug Passthrough/mod_amr.*.log
+/src/mod/codecs/mod_amr/Win32/Release Passthrough/mod_amr.*.log
+/src/mod/codecs/mod_g723_1/Win32/Debug Passthrough/mod_g723_1.*.log
+/src/mod/codecs/mod_g723_1/Win32/Release Passthrough/mod_g723_1.*.log
+/src/mod/codecs/mod_g729/Win32/Debug Passthrough/mod_g729.*.log
+/src/mod/codecs/mod_g729/Win32/Release Passthrough/mod_g729.*.log
+/src/mod/directories/mod_ldap/Win32/Debug MS-LDAP/mod_ldap.*.log
+/src/mod/directories/mod_ldap/Win32/Release MS-LDAP/mod_ldap.*.log
+/src/mod/languages/mod_managed/Win32/Debug_CLR/mod_managed.*.log
+/src/mod/languages/mod_managed/Win32/Release_CLR/mod_managed.*.log
