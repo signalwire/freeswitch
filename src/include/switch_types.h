@@ -311,7 +311,9 @@ typedef uint32_t switch_originate_flag_t;
 typedef enum {
 	SPF_NONE = 0,
 	SPF_ODD = (1 << 0),
-	SPF_EVEN = (1 << 1)
+	SPF_EVEN = (1 << 1),
+	SPF_ROBUST_TCP = (1 << 2),
+	SPF_ROBUST_UDP = (1 << 3)
 } switch_port_flag_enum_t;
 typedef uint32_t switch_port_flag_t;
 

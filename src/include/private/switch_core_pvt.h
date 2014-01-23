@@ -277,6 +277,7 @@ struct switch_runtime {
 	char *core_db_inner_pre_trans_execute;
 	char *core_db_inner_post_trans_execute;
 	int events_use_dispatch;
+	uint32_t port_alloc_flags;
 };
 
 extern struct switch_runtime runtime;

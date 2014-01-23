@@ -415,7 +415,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_set_pre_buffer_framecount(
   \param new_allocator new pointer for the return value
   \return SWITCH_STATUS_SUCCESS if the operation was a success
 */
-SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(_In_ switch_port_t start,
+SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(_In_ const char *ip,
+															   _In_ switch_port_t start,
 															   _In_ switch_port_t end,
 															   _In_ switch_port_flag_t flags, _Out_ switch_core_port_allocator_t **new_allocator);
 

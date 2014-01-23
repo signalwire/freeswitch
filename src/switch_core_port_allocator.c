@@ -36,6 +36,7 @@
 #include "private/switch_core_pvt.h"
 
 struct switch_core_port_allocator {
+	char *ip;
 	switch_port_t start;
 	switch_port_t end;
 	switch_port_t next;
@@ -47,7 +48,7 @@ struct switch_core_port_allocator {
 	switch_memory_pool_t *pool;
 };
 
-SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t start,
+SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(const char *ip, switch_port_t start,
 															   switch_port_t end, switch_port_flag_t flags, switch_core_port_allocator_t **new_allocator)
 {
 	switch_status_t status;
@@ -65,8 +66,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t sta
 	}
 
 	alloc->flags = flags;
+	alloc->ip = switch_core_strdup(pool, ip);
 	even = switch_test_flag(alloc, SPF_EVEN);
 	odd = switch_test_flag(alloc, SPF_ODD);
+
+	alloc->flags |= runtime.port_alloc_flags;
+	
 
 	if (!(even && odd)) {
 		if (even) {
@@ -110,6 +115,31 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t sta
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_bool_t test_port(switch_core_port_allocator_t *alloc, int family, int type, switch_port_t port)
+{
+	switch_memory_pool_t *pool = NULL;
+	switch_sockaddr_t *local_addr = NULL;
+	switch_socket_t *sock = NULL;
+	switch_bool_t r = SWITCH_FALSE;
+
+	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_FALSE;
+	}
+	
+	if (switch_sockaddr_info_get(&local_addr, alloc->ip, SWITCH_UNSPEC, port, 0, pool) == SWITCH_STATUS_SUCCESS) {
+		if (switch_socket_create(&sock, family, type, 0, pool) == SWITCH_STATUS_SUCCESS) {
+			if (switch_socket_bind(sock, local_addr) == SWITCH_STATUS_SUCCESS) {
+				r = SWITCH_TRUE;
+			}
+			switch_socket_close(sock);
+		}
+	}
+	
+	switch_core_destroy_memory_pool(&pool);
+	
+	return r;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_core_port_allocator_t *alloc, switch_port_t *port_ptr)
 {
 	switch_port_t port = 0;
@@ -139,9 +169,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_c
 		}
 
 		if (tries < alloc->track_len) {
-			alloc->track[index] = 1;
-			alloc->track_used++;
-			status = SWITCH_STATUS_SUCCESS;
+			switch_bool_t r = SWITCH_TRUE;
 
 			if ((even && odd)) {
 				port = (switch_port_t) (index + alloc->start);
@@ -149,7 +177,25 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_c
 				port = (switch_port_t) (index + (alloc->start / 2));
 				port *= 2;
 			}
-			goto end;
+
+			if ((alloc->flags & SPF_ROBUST_UDP)) {
+				r = test_port(alloc, AF_INET, SOCK_DGRAM, port);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "UDP port robustness check for port %d %s\n", port, r ? "pass" : "fail");
+			}
+
+			if ((alloc->flags & SPF_ROBUST_TCP)) {
+				r = test_port(alloc, AF_INET, SOCK_STREAM, port);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TCP port robustness check for port %d %s\n", port, r ? "pass" : "fail");
+			}
+
+			if (r) {
+				alloc->track[index] = 1;
+				alloc->track_used++;
+				status = SWITCH_STATUS_SUCCESS;
+				goto end;
+			} else {
+				alloc->track[index] = -4;
+			}
 		}
 	}
 

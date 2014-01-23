@@ -1869,7 +1869,7 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(const char *ip)
 	switch_mutex_lock(port_lock);
 	alloc = switch_core_hash_find(alloc_hash, ip);
 	if (!alloc) {
-		if (switch_core_port_allocator_new(START_PORT, END_PORT, SPF_EVEN, &alloc) != SWITCH_STATUS_SUCCESS) {
+		if (switch_core_port_allocator_new(ip, START_PORT, END_PORT, SPF_EVEN, &alloc) != SWITCH_STATUS_SUCCESS) {
 			abort();
 		}
 
