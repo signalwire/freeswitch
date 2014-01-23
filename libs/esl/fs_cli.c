@@ -810,7 +810,7 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 			}
 			warn_stop = 0;
 		}
-		sleep_ms(1);
+		//sleep_ms(1);
 	}
 	thread_running = 0;
 	esl_log(ESL_LOG_DEBUG, "Thread Done\n");
