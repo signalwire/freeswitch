@@ -1510,7 +1510,7 @@ static int
 utf32_mbtowc(csconv_t *cv, const uchar *buf, int bufsize, ushort *wbuf, int *wbufsize)
 {
     int codepage = cv->codepage;
-    uint wc;
+    uint wc = 0;
 
     /* swap endian: 12000 <-> 12001 */
     if (cv->mode & UNICODE_MODE_SWAPPED)
@@ -1752,8 +1752,8 @@ iso2022jp_wctomb(csconv_t *cv, ushort *wbuf, int wbufsize, uchar *buf, int bufsi
     HRESULT hr;
     DWORD dummy = 0;
     int len;
-    int esc_len;
-    int cs;
+    int esc_len = 0;
+    int cs = 0;
     int shift;
     int i;
 

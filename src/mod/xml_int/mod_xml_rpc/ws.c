@@ -289,14 +289,14 @@ issize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 
 			if (readError) {
 				// printf("292 Read Error %s\n", readError);
-				xmlrpc_strfree(readError);
+				free((void *)readError);
 				return 0;
 			}
 
 			r = conn->buffersize - conn->bufferpos;
 		}
 
-		if (r <= bytes) {
+		if (r <= (issize_t)bytes) {
 			memcpy(data, conn->buffer.b + conn->bufferpos, r);
 			// ConnReadInit(conn);
 			conn->bufferpos = conn->buffersize;

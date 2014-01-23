@@ -4019,7 +4019,7 @@ static void member_add_file_data(conference_member_t *member, int16_t *data, swi
 					switch_change_sln_volume(file_frame, (uint32_t)file_sample_len, member->volume_out_level);
 				}
 
-				for (i = 0; i < file_sample_len; i++) {
+				for (i = 0; i < (int)file_sample_len; i++) {
 					if (member->fnode->mux) {
 						sample = data[i] + file_frame[i];
 						switch_normalize_to_16bit(sample);
@@ -8417,7 +8417,7 @@ SWITCH_STANDARD_APP(conference_function)
 				}
 
 				/* wait for them if neccessary */
-				if (strlen(pin_buf) < maxpin) {
+				if ((int)strlen(pin_buf) < maxpin) {
 					char *buf = pin_buf + strlen(pin_buf);
 					char term = '\0';
 

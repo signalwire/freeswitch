@@ -266,7 +266,7 @@ SWITCH_LIMIT_RESET(limit_reset_redis)
 				const char *key = uuids[i] + hostnamelen;
 				char *value;
 			
-				if (strlen(uuids[i]) <= hostnamelen) {
+				if ((int)strlen(uuids[i]) <= hostnamelen) {
 					continue; /* Sanity check */
 				}
 			

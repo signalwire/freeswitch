@@ -130,7 +130,7 @@ void dec_serno(void)
 SWITCH_STANDARD_APP(bcast_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_socket_t *socket, *polycom_socket = NULL;
+	switch_socket_t *socket = NULL, *polycom_socket = NULL;
 	switch_sockaddr_t *audio_addr = NULL, *control_packet_addr = NULL, *polycom_addr = NULL, *local_addr = NULL;
 	switch_frame_t *read_frame = NULL;
 	switch_status_t status;

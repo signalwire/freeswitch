@@ -100,7 +100,8 @@
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <AdditionalOptions>/analyze:stacksize32768</AdditionalOptions>
+      <AdditionalOptions>
+      </AdditionalOptions>
     </ClCompile>
     <Link>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -115,7 +116,8 @@
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <AdditionalOptions>/analyze:stacksize32768</AdditionalOptions>
+      <AdditionalOptions>
+      </AdditionalOptions>
     </ClCompile>
     <Link>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>

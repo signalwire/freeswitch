@@ -108,7 +108,7 @@ static char active_lines_sql[] =
 char *skinny_expand_textid(const char *str)
 {
 	char *tmp;
-	int i;
+	switch_size_t i;
 
 	/* Look for \200, if found, next character indicates string id */
 	char match = (char) 128;

@@ -1707,7 +1707,7 @@ static switch_status_t load_config(int reload_type)
 
 static switch_status_t chat_send(switch_event_t *message_event)
 {
-	char *user, *host, *f_user = NULL, *f_host = NULL, *f_resource = NULL;
+	char *user = NULL, *host, *f_user = NULL, *f_host = NULL, *f_resource = NULL;
 	private_t *tech_pvt = NULL;
 	int i = 0, found = 0;
 

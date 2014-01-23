@@ -270,7 +270,7 @@ const string JSMain::ExecuteString(const string& scriptData, const string& fileN
 			global->Set(String::NewFromUtf8(isolate, "require"), FunctionTemplate::New(isolate, Include));
 			global->Set(String::NewFromUtf8(isolate, "log"), FunctionTemplate::New(isolate, Log));
 
-			for (int i = 0; i < extenderFunctions->size(); i++) {
+			for (size_t i = 0; i < extenderFunctions->size(); i++) {
 				js_function_t *proc = (*extenderFunctions)[i];
 				global->Set(String::NewFromUtf8(isolate, proc->name), FunctionTemplate::New(isolate, proc->func));
 			}
@@ -286,12 +286,12 @@ const string JSMain::ExecuteString(const string& scriptData, const string& fileN
 			Context::Scope context_scope(context);
 
 			// Register all plugins.
-			for (int i = 0; i < extenderClasses->size(); i++) {
+			for (size_t i = 0; i < extenderClasses->size(); i++) {
 				JSBase::Register(isolate, (*extenderClasses)[i]);
 			}
 
 			// Register all instances.
-			for (int i = 0; i < extenderInstances->size(); i++) {
+			for (size_t i = 0; i < extenderInstances->size(); i++) {
 				registered_instance_t *inst = (*extenderInstances)[i];
 				inst->obj->RegisterInstance(isolate, inst->name, inst->auto_destroy);
 			}

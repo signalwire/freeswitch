@@ -1373,7 +1373,7 @@ SWITCH_STANDARD_API(expand_function)
 {
 	char *expanded;
 	char *dup;
-	char *arg;
+	char *arg = NULL;
 	char *mycmd;
 	switch_status_t status;
 	const char *p;

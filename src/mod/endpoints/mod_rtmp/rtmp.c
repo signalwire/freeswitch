@@ -601,7 +601,7 @@ switch_status_t rtmp_send_message(rtmp_session_t *rsession, uint8_t amfnumber, u
 	
 	/* Find out what is the smallest header we can use */
 	if (!(flags & MSG_FULLHEADER) && stream_id > 0 && state->stream_id == stream_id && timestamp >= state->ts) {
-		if (state->type == type && state->origlen == len) {
+		if (state->type == type && state->origlen == (int)len) {
 			if (state->ts == timestamp) {
 				/* Type 3: no header! */
 				hdrsize = 1;
@@ -930,7 +930,7 @@ switch_status_t rtmp_handle_data(rtmp_session_t *rsession)
 
 								
 								switch_mutex_lock(rsession->tech_pvt->readbuf_mutex);
-								if (rsession->tech_pvt->maxlen && switch_buffer_inuse(rsession->tech_pvt->readbuf) > rsession->tech_pvt->maxlen * 40) {
+								if (rsession->tech_pvt->maxlen && switch_buffer_inuse(rsession->tech_pvt->readbuf) > (switch_size_t)(rsession->tech_pvt->maxlen * 40)) {
 									rsession->tech_pvt->over_size++;
 								} else {
 									rsession->tech_pvt->over_size = 0;
