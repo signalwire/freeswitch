@@ -115,19 +115,19 @@
     <CustomBuild Include="cleancount">
       <FileType>Document</FileType>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Building Google V8</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)build-v8.bat x86 Release "$(ProjectDir)..\..\v8-$(V8Version)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)build-v8.bat x86 Release "$(ProjectDir)..\..\v8-$(V8Version)" 2010
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\..\v8-$(V8Version);%(Outputs)</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Building Google V8</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)build-v8.bat x86 Debug "$(ProjectDir)..\..\v8-$(V8Version)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)build-v8.bat x86 Debug "$(ProjectDir)..\..\v8-$(V8Version)" 2010
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\..\v8-$(V8Version);%(Outputs)</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Google V8</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)build-v8.bat x64 Release "$(ProjectDir)..\..\v8-$(V8Version)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)build-v8.bat x64 Release "$(ProjectDir)..\..\v8-$(V8Version)" 2010
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)..\..\v8-$(V8Version);%(Outputs)</Outputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Google V8</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)build-v8.bat x64 Debug "$(ProjectDir)..\..\v8-$(V8Version)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)build-v8.bat x64 Debug "$(ProjectDir)..\..\v8-$(V8Version)" 2010
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)..\..\v8-$(V8Version);%(Outputs)</Outputs>
     </CustomBuild>
