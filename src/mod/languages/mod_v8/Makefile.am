@@ -8,23 +8,23 @@ V8=v8-3.24.14
 V8_DIR=$(switch_srcdir)/libs/$(V8)
 V8_BUILDDIR=$(switch_builddir)/libs/$(V8)
 
-if PLATFORM_MACOSX
+if ISMAC
 V8_LIBDIR=$(V8_DIR)/out/native
 V8_LIBEXT=dylib
 # Build with snapshot doesn't work for OSX right now
-V8_BUILDPARAMS=snapshot=off
+V8_BUILDPARAMS=snapshot=off i18nsupport=off
 V8_SNAPSHOT=nosnapshot
 else
 V8_LIBDIR=$(V8_DIR)/out/native/lib.target
 V8_LIBEXT=so
 # Some gcc versions report warnings incorrectly
-V8_BUILDPARAMS=strictaliasing=off werror=no
+V8_BUILDPARAMS=strictaliasing=off werror=no i18nsupport=off
 V8_SNAPSHOT=snapshot
 endif
 
 if ENABLE_STATIC_V8
 # Build the static lib version of V8
-if PLATFORM_MACOSX
+if ISMAC
 V8_STATIC_DIR=$(V8_DIR)/out/native
 V8_ICU_STATIC_DIR=$(V8_DIR)/out/native
 V8_CXXFLAGS =
@@ -57,9 +57,9 @@ AM_LDFLAGS   += -avoid-version -module -no-undefined -shared
 
 if ENABLE_STATIC_V8
 AM_LIBADD     = $(switch_builddir)/libfreeswitch.la
-V8_LDFLAGS    = $(V8_STATIC_DIR)/libv8_{base*,$(V8_SNAPSHOT)*}.a $(V8_ICU_STATIC_DIR)/libicu{i18n,uc,data}.a $(SOLINK)
+V8_LDFLAGS    = $(V8_STATIC_DIR)/libv8_{base*,$(V8_SNAPSHOT)*}.a $(SOLINK) #$(V8_ICU_STATIC_DIR)/libicu{i18n,uc,data}.a $(SOLINK)
 else
-AM_LIBADD     = $(switch_builddir)/libfreeswitch.la -lv8 -licuuc -licui18n
+AM_LIBADD     = $(switch_builddir)/libfreeswitch.la -lv8 #-licuuc -licui18n
 AM_LDFLAGS   += -L$(V8_LIBDIR)
 endif
 
@@ -72,7 +72,26 @@ AM_LDFLAGS  += -DHAVE_ODBC
 endif
 
 mod_LTLIBRARIES    = mod_v8.la
-mod_v8_la_SOURCES  = mod_v8.cpp src/fscoredb.cpp src/fscurl.cpp src/fsdtmf.cpp src/fsevent.cpp src/fsfileio.cpp src/fsglobal.cpp src/fsodbc.cpp src/fspcre.cpp src/fsrequest.cpp src/fssession.cpp src/fssocket.cpp src/fsteletone.cpp src/fsxml.cpp src/fsfile.cpp src/jsbase.cpp src/jsmain.cpp
+
+mod_v8_la_SOURCES  = \
+	mod_v8.cpp \
+	src/jsmain.cpp \
+	src/jsbase.cpp \
+	src/fscoredb.cpp \
+	src/fscurl.cpp \
+	src/fsdtmf.cpp \
+	src/fsevent.cpp \
+	src/fsfileio.cpp \
+	src/fsglobal.cpp \
+	src/fsodbc.cpp \
+	src/fspcre.cpp \
+	src/fsrequest.cpp \
+	src/fssession.cpp \
+	src/fssocket.cpp \
+	src/fsteletone.cpp \
+	src/fsxml.cpp \
+	src/fsfile.cpp
+
 mod_v8_la_CFLAGS   = $(AM_CFLAGS) $(LIBCURL_CPPFLAGS) -I$(switch_srcdir)/libs/libteletone/src
 mod_v8_la_CPPFLAGS = $(AM_CPPFLAGS) $(LIBCURL_CPPFLAGS) -I$(switch_srcdir)/libs/libteletone/src
 mod_v8_la_LIBADD   = $(AM_LIBADD)
@@ -90,7 +109,12 @@ $(SOURCES): $(BUILT_SOURCES)
 $(V8_DIR):
 	$(GETLIB) $(V8).tar.bz2
 
-$(V8LIB): $(V8_DIR)
+# This target is just to force V8 to rebuild without I18N support, if it was built already
+$(V8_DIR)/.forcedrebuild:
+	cd $(V8_BUILDDIR) && $(MAKE) clean
+	touch $(V8_DIR)/.forcedrebuild
+
+$(V8LIB): $(V8_DIR) $(V8_DIR)/.forcedrebuild
 	if test "$(CXX_TARGET_PLATFORM)" = "x86_64"; then \
 	   defines="v8_target_arch=x64 target_arch=x64"; \
 	else \
@@ -112,7 +136,7 @@ if ENABLE_STATIC_V8
 install-exec-local: $(V8LIB)
 else
 # This is a temporary solution to force Mac OSX build to load the libraries at the right place
-if PLATFORM_MACOSX
+if ISMAC
 install-exec-local: $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT)
 	install_name_tool -change /usr/local/lib/libv8.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT) .libs/mod_v8.so
 	install_name_tool -change /usr/local/lib/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicuuc.$(V8_LIBEXT) .libs/mod_v8.so

@@ -501,7 +501,6 @@ PLATFORM_CORE_LIBS=
 # tweak platform specific flags
 case "$host" in
     *darwin12.*|*darwin11.*)
-        is_macosx=yes
         APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
         APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp -Wno-deprecated-declarations)
         APR_ADDTO(LDFLAGS, -pipe -bind_at_load)
@@ -513,7 +512,6 @@ case "$host" in
 	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl])
     ;;
     *darwin10.*)
-        is_macosx=yes
         APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
         APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp)
         APR_ADDTO(LDFLAGS, -pipe -bind_at_load)
@@ -525,7 +523,6 @@ case "$host" in
 	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl])
     ;;
     *darwin*)
-        is_macosx=yes
         APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
         APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
 	if test "x$enable_core_odbc_support" != "xno"; then
@@ -547,8 +544,6 @@ case "$host" in
 	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lcrypt -lrt])
     ;;
 esac
-
-AM_CONDITIONAL([PLATFORM_MACOSX],[test "x$is_macosx" == "xyes"])
 
 APR_REMOVEFROM(SWITCH_AM_CXXFLAGS, -std=c99)
 
