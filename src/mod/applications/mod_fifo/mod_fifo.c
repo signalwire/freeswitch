@@ -313,6 +313,7 @@ struct fifo_node {
 	int ring_timeout;
 	int default_lag;
 	char *domain_name;
+	int retry_delay;
 	struct fifo_node *next;
 };
 
@@ -1576,7 +1577,7 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 											   "outbound_fail_count=outbound_fail_count+1, "
 											   "outbound_fail_total_count = outbound_fail_total_count+1, "
 											   "next_avail=%ld + lag + 1 where uuid='%q' and ring_count > 0",
-											   (long) switch_epoch_time_now(NULL), h->uuid);
+											   (long) switch_epoch_time_now(NULL) + node->retry_delay, h->uuid);
 					fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
 
 				}
@@ -1755,7 +1756,7 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 
 		sql = switch_mprintf("update fifo_outbound set ring_count=ring_count-1, "
 							 "outbound_fail_count=outbound_fail_count+1, next_avail=%ld + lag + 1 where uuid='%q'",
-							 (long) switch_epoch_time_now(NULL), h->uuid);
+							 (long) switch_epoch_time_now(NULL) + node->retry_delay, h->uuid);
 		fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
@@ -4435,6 +4436,16 @@ static switch_status_t load_config(int reload, int del_all)
 					outbound_per_cycle = 1;
 				}
 				node->has_outbound = 1;
+			}
+
+			if ((val = switch_xml_attr(fifo, "retry_delay"))) {
+				int tmp;
+
+				if ((tmp = atoi(val)) < 0) {
+					tmp = 0;
+				}
+
+				node->retry_delay = tmp;
 			}
 
 			if ((val = switch_xml_attr(fifo, "outbound_priority"))) {
