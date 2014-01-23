@@ -31,7 +31,7 @@
  */
 #include <switch.h>
 #define CMD_BUFLEN 1024 * 1000
-#define MAX_QUEUE_LEN 25000
+#define MAX_QUEUE_LEN 100000
 #define MAX_MISSED 500
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown);
