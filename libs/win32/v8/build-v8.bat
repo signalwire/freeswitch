@@ -16,7 +16,7 @@ IF "%1-%2" == "%LAST_BUILD_INFO%" (
 SET LIB_DEST_DIR=
 
 IF "%1" == "x64" (
-	IF NOT "%COPY_FILES_ONLY%" == "1" .\third_party\python_26\python.exe build\gyp_v8 -Dtarget_arch=x64 -Dcomponent=shared_library
+	IF NOT "%COPY_FILES_ONLY%" == "1" .\third_party\python_26\python.exe build\gyp_v8 -Dtarget_arch=x64 -Dcomponent=shared_library -Dv8_use_snapshot=false
 	IF NOT ERRORLEVEL 0 GOTO Fail
 	SET LIB_DEST_DIR=..\..\x64\%2\
 )
