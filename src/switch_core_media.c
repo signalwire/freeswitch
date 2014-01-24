@@ -2694,6 +2694,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	const char *tmp;
 	int m_idx = 0;
 	int nm_idx = 0;
+	const char *var;
 
 	switch_assert(session);
 
@@ -2715,6 +2716,13 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		sdp_parser_free(parser);
 		return 0;
 	}
+
+	if ((var = switch_channel_get_variable(session->channel, "rtp_secure_media"))) {
+		if (!switch_true(var)) {
+			got_crypto = -1;
+		}
+	}
+
 
 	if (dtls_ok(session) && (tmp = switch_channel_get_variable(smh->session->channel, "webrtc_enable_dtls")) && switch_false(tmp)) {
 		switch_channel_clear_flag(smh->session->channel, CF_DTLS_OK);
@@ -3056,9 +3064,15 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				}
 			}
 
-			if (got_crypto && !got_avp) {
+			if (got_crypto > 0 && !got_avp) {
 				switch_channel_set_variable(session->channel, "rtp_crypto_mandatory", "true");
 				switch_channel_set_variable(session->channel, "rtp_secure_media", "true");
+			}
+
+			if (got_crypto == -1 && got_savp && !got_avp) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Declining invite with only SAVP because secure media is administratively disabled\n");
+				match = 0;
+				break;
 			}
 
 			connection = sdp->sdp_connection;
