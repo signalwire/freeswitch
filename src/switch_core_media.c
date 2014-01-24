@@ -1694,9 +1694,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
 				if (!engine->reset_codec &&
 					engine->codec_negotiated &&
-					engine->read_frame.payload != smh->mparams->cng_pt &&
-					engine->read_frame.payload != smh->mparams->recv_te &&
-					engine->read_frame.payload != smh->mparams->te &&
+					(!smh->mparams->cng_pt || engine->read_frame.payload != smh->mparams->cng_pt) &&
+					(!smh->mparams->recv_te || engine->read_frame.payload != smh->mparams->recv_te) &&
+					(!smh->mparams->te || engine->read_frame.payload != smh->mparams->te) &&
 					engine->read_frame.payload != engine->cur_payload_map->recv_pt &&
 					engine->read_frame.payload != engine->cur_payload_map->agreed_pt &&
 					engine->read_frame.payload != engine->cur_payload_map->pt) {
@@ -1711,7 +1711,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 
 					/* search for payload type */
 					switch_mutex_lock(smh->sdp_mutex);
-					for (pmap = engine->cur_payload_map; pmap; pmap = pmap->next) {
+					for (pmap = engine->payload_map; pmap; pmap = pmap->next) {
 						if (engine->read_frame.payload == pmap->recv_pt) {
 							engine->cur_payload_map = pmap;
 
