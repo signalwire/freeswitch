@@ -1386,8 +1386,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_core_port_allocator_new(ushort start, ushort end, uint flags, SWIGTYPE_p_p_switch_core_port_allocator new_allocator) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_port_allocator_new(start, end, flags, SWIGTYPE_p_p_switch_core_port_allocator.getCPtr(new_allocator));
+  public static switch_status_t switch_core_port_allocator_new(string ip, ushort start, ushort end, uint flags, SWIGTYPE_p_p_switch_core_port_allocator new_allocator) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_port_allocator_new(ip, start, end, flags, SWIGTYPE_p_p_switch_core_port_allocator.getCPtr(new_allocator));
     return ret;
   }
 
@@ -3164,6 +3164,41 @@ public class freeswitch {
     freeswitchPINVOKE.switch_core_session_debug_pool(switch_stream_handle.getCPtr(stream));
   }
 
+  public static string switch_version_major() {
+    string ret = freeswitchPINVOKE.switch_version_major();
+    return ret;
+  }
+
+  public static string switch_version_minor() {
+    string ret = freeswitchPINVOKE.switch_version_minor();
+    return ret;
+  }
+
+  public static string switch_version_micro() {
+    string ret = freeswitchPINVOKE.switch_version_micro();
+    return ret;
+  }
+
+  public static string switch_version_revision() {
+    string ret = freeswitchPINVOKE.switch_version_revision();
+    return ret;
+  }
+
+  public static string switch_version_revision_human() {
+    string ret = freeswitchPINVOKE.switch_version_revision_human();
+    return ret;
+  }
+
+  public static string switch_version_full() {
+    string ret = freeswitchPINVOKE.switch_version_full();
+    return ret;
+  }
+
+  public static string switch_version_full_human() {
+    string ret = freeswitchPINVOKE.switch_version_full_human();
+    return ret;
+  }
+
   public static switch_status_t switch_loadable_module_init(switch_bool_t autoload) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_loadable_module_init((int)autoload);
     return ret;
@@ -3635,6 +3670,11 @@ public class freeswitch {
 
   public static int switch_true(string expr) {
     int ret = freeswitchPINVOKE.switch_true(expr);
+    return ret;
+  }
+
+  public static byte switch_true_byte(string expr) {
+    byte ret = freeswitchPINVOKE.switch_true_byte(expr);
     return ret;
   }
 
@@ -9546,7 +9586,7 @@ class freeswitchPINVOKE {
   public static extern int switch_core_media_bug_set_pre_buffer_framecount(HandleRef jarg1, uint jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_port_allocator_new")]
-  public static extern int switch_core_port_allocator_new(ushort jarg1, ushort jarg2, uint jarg3, HandleRef jarg4);
+  public static extern int switch_core_port_allocator_new(string jarg1, ushort jarg2, ushort jarg3, uint jarg4, HandleRef jarg5);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_port_allocator_request_port")]
   public static extern int switch_core_port_allocator_request_port(HandleRef jarg1, HandleRef jarg2);
@@ -10730,6 +10770,27 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_debug_pool")]
   public static extern void switch_core_session_debug_pool(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_version_major")]
+  public static extern string switch_version_major();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_version_minor")]
+  public static extern string switch_version_minor();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_version_micro")]
+  public static extern string switch_version_micro();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_version_revision")]
+  public static extern string switch_version_revision();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_version_revision_human")]
+  public static extern string switch_version_revision_human();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_version_full")]
+  public static extern string switch_version_full();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_version_full_human")]
+  public static extern string switch_version_full_human();
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_interface_module_name_set")]
   public static extern void switch_loadable_module_interface_module_name_set(HandleRef jarg1, string jarg2);
 
@@ -11158,6 +11219,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_true")]
   public static extern int switch_true(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_true_byte")]
+  public static extern byte switch_true_byte(string jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_false")]
   public static extern int switch_false(string jarg1);
@@ -34867,7 +34931,9 @@ namespace FreeSWITCH.Native {
 [System.Flags] public enum switch_port_flag_enum_t {
   SPF_NONE = 0,
   SPF_ODD = (1 << 0),
-  SPF_EVEN = (1 << 1)
+  SPF_EVEN = (1 << 1),
+  SPF_ROBUST_TCP = (1 << 2),
+  SPF_ROBUST_UDP = (1 << 3)
 }
 
 }
@@ -35279,6 +35345,7 @@ namespace FreeSWITCH.Native {
 
 public enum switch_rtp_flag_t {
   SWITCH_RTP_FLAG_NOBLOCK = 0,
+  SWITCH_RTP_FLAG_DTMF_ON,
   SWITCH_RTP_FLAG_IO,
   SWITCH_RTP_FLAG_USE_TIMER,
   SWITCH_RTP_FLAG_RTCP_PASSTHRU,
