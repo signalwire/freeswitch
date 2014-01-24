@@ -1815,7 +1815,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_write_frame(switch_core_sessio
 
 	engine->timestamp_send += samples;
 
-	if (!switch_rtp_write_frame(engine->rtp_session, frame)) {
+	if (switch_rtp_write_frame(engine->rtp_session, frame) <= 0) {
 		status = SWITCH_STATUS_FALSE;
 	}
 

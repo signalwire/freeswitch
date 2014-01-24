@@ -2341,7 +2341,7 @@ static switch_status_t channel_write_video_frame(switch_core_session_t *session,
 		wrote = switch_rtp_write_frame(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, frame);
 	}
 
-	return wrote > 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_GENERR;
+	return wrote > -1 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_GENERR;
 }
 
 static switch_status_t channel_answer_channel(switch_core_session_t *session)

@@ -5639,6 +5639,26 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_sessi
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static int rtp_write_ready(switch_rtp_t *rtp_session, uint32_t bytes, int line)
+{
+	if (rtp_session->ice.ice_user && !(rtp_session->ice.rready)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Skip sending %s packet %ld bytes (ice not ready @ line %d!)\n", 
+						  rtp_type(rtp_session), (long)bytes, line);
+		return 0;
+	}
+
+	if (rtp_session->dtls && rtp_session->dtls->state != DS_READY) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Skip sending %s packet %ld bytes (dtls not ready @ line %d!)\n", 
+						  rtp_type(rtp_session), (long)bytes, line);
+		return 0;
+	}
+	
+	return 1;
+}
+
+
+
+
 static int rtp_common_write(switch_rtp_t *rtp_session,
 							rtp_msg_t *send_msg, void *data, uint32_t datalen, switch_payload_t payload, uint32_t timestamp, switch_frame_flag_t *flags)
 {
@@ -5650,7 +5670,11 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 	uint8_t m = 0;
 
 	if (!switch_rtp_ready(rtp_session)) {
-		return SWITCH_STATUS_FALSE;
+		return -1;
+	}
+
+	if (!rtp_write_ready(rtp_session, datalen, __LINE__)) {
+		return 0;
 	}
 
 	WRITE_INC(rtp_session);
@@ -5918,16 +5942,6 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		}
 	}
 
-	if (rtp_session->ice.ice_user && !(rtp_session->ice.rready)) {
-		send = 0;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Skip sending %s packet %ld bytes (ice not ready!)\n", rtp_type(rtp_session), (long)bytes);
-	}
-
-	if (rtp_session->dtls && rtp_session->dtls->state != DS_READY) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Skip sending %s packet %ld bytes (dtls not ready!)\n", rtp_type(rtp_session), (long)bytes);
-		send = 0;
-	}
-
 	if (rtp_session->flags[SWITCH_RTP_FLAG_PAUSE]) {
 		send = 0;
 	}
@@ -6148,6 +6162,10 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 	if (!switch_rtp_ready(rtp_session) || !rtp_session->remote_addr) {
 		return -1;
 	}
+
+	if (!rtp_write_ready(rtp_session, frame->datalen, __LINE__)) {
+		return 0;
+	}
 	
 	//if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
 	//	rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_READ]++;
@@ -6337,6 +6355,10 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 
 	if (!switch_rtp_ready(rtp_session) || !rtp_session->remote_addr || datalen > SWITCH_RTP_MAX_BUF_LEN) {
 		return -1;
+	}
+
+	if (!rtp_write_ready(rtp_session, datalen, __LINE__)) {
+		return 0;
 	}
 
 	WRITE_INC(rtp_session);
