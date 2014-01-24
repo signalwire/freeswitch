@@ -109,12 +109,7 @@ $(SOURCES): $(BUILT_SOURCES)
 $(V8_DIR):
 	$(GETLIB) $(V8).tar.bz2
 
-# This target is just to force V8 to rebuild without I18N support, if it was built already
-$(V8_DIR)/.forcedrebuild:
-	cd $(V8_BUILDDIR) && $(MAKE) clean
-	touch $(V8_DIR)/.forcedrebuild
-
-$(V8LIB): $(V8_DIR) $(V8_DIR)/.forcedrebuild
+$(V8LIB): $(V8_DIR)
 	if test "$(CXX_TARGET_PLATFORM)" = "x86_64"; then \
 	   defines="v8_target_arch=x64 target_arch=x64"; \
 	else \
