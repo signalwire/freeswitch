@@ -60,7 +60,7 @@ REM Just to make sure that everything is cleaned up
 rmdir /S /Q .\build\%2
 
 REM Build the V8 library
-devenv /build %2 "tools\gyp\v8.sln" /project "tools\gyp\v8.vcxproj" /projectconfig %2
+devenv /build %2 "tools\gyp\v8.sln" /project "v8" /projectconfig %2
 REM devenv /build %2 tools\gyp\v8.sln
 IF NOT ERRORLEVEL 0 GOTO Fail
 
