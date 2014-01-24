@@ -300,6 +300,7 @@ static switch_status_t input_handler_on_dtmf(switch_core_session_t *session, con
 			for (component_to_remove = components_to_remove->headers; component_to_remove; component_to_remove = component_to_remove->next) {
 				switch_core_hash_delete(handler->dtmf_components, component_to_remove->value);
 			}
+			switch_event_destroy(&components_to_remove);
 		}
 
 		switch_mutex_unlock(handler->mutex);
@@ -347,6 +348,7 @@ static switch_bool_t input_handler_bug_callback(switch_media_bug_t *bug, void *u
 				for (component_to_remove = components_to_remove->headers; component_to_remove; component_to_remove = component_to_remove->next) {
 					switch_core_hash_delete(handler->dtmf_components, component_to_remove->value);
 				}
+				switch_event_destroy(&components_to_remove);
 			}
 
 			switch_core_media_bug_set_read_replace_frame(bug, rframe);
