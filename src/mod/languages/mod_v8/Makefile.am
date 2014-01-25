@@ -134,19 +134,19 @@ else
 if ISMAC
 install-exec-local: $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT)
 	install_name_tool -change /usr/local/lib/libv8.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT) .libs/mod_v8.so
-	install_name_tool -change /usr/local/lib/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicuuc.$(V8_LIBEXT) .libs/mod_v8.so
-	install_name_tool -change /usr/local/lib/libicui18n.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicui18n.$(V8_LIBEXT) .libs/mod_v8.so
+#	install_name_tool -change /usr/local/lib/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicuuc.$(V8_LIBEXT) .libs/mod_v8.so
+#	install_name_tool -change /usr/local/lib/libicui18n.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicui18n.$(V8_LIBEXT) .libs/mod_v8.so
 	install_name_tool -change /usr/local/lib/libv8.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT)
-	install_name_tool -change /usr/local/lib/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT)
-	install_name_tool -change /usr/local/lib/libicui18n.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicui18n.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT)
-	install_name_tool -change /usr/local/lib/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicui18n.$(V8_LIBEXT)
-	install_name_tool -change /usr/local/lib/libicui18n.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicui18n.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicui18n.$(V8_LIBEXT)
-	install_name_tool -change /usr/local/lib/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicuuc.$(V8_LIBEXT)
+#	install_name_tool -change /usr/local/lib/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT)
+#	install_name_tool -change /usr/local/lib/libicui18n.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicui18n.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT)
+#	install_name_tool -change /usr/local/lib/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicui18n.$(V8_LIBEXT)
+#	install_name_tool -change /usr/local/lib/libicui18n.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicui18n.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicui18n.$(V8_LIBEXT)
+#	install_name_tool -change /usr/local/lib/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicuuc.$(V8_LIBEXT)
 else
 install-exec-local: $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT)
 endif
 $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT): $(V8LIB)
 	rm -f $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT) && cp -a $(V8_LIBDIR)/libv8.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libv8.$(V8_LIBEXT)
-	rm -f $(DESTDIR)$(libdir)/libicuuc.$(V8_LIBEXT) && cp -a $(V8_LIBDIR)/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicuuc.$(V8_LIBEXT)
-	rm -f $(DESTDIR)$(libdir)/libicui18n.$(V8_LIBEXT) && cp -a $(V8_LIBDIR)/libicui18n.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicui18n.$(V8_LIBEXT)
+#	rm -f $(DESTDIR)$(libdir)/libicuuc.$(V8_LIBEXT) && cp -a $(V8_LIBDIR)/libicuuc.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicuuc.$(V8_LIBEXT)
+#	rm -f $(DESTDIR)$(libdir)/libicui18n.$(V8_LIBEXT) && cp -a $(V8_LIBDIR)/libicui18n.$(V8_LIBEXT) $(DESTDIR)$(libdir)/libicui18n.$(V8_LIBEXT)
 endif
