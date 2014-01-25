@@ -6,13 +6,8 @@
     <param name="debug-presence" value="0"/>
   </global_settings>
 
-  <!--
-      The rabbit hole goes deep.  This includes all the
-      profiles in the sip_profiles directory that is up
-      one level from this directory.
-  -->
   <profiles>
-    <X-PRE-PROCESS cmd="include" data="../sip_profiles/*.xml"/>
+    <X-PRE-PROCESS cmd="include" data="../sbc_profiles/*.xml"/>
   </profiles>
 
 </configuration>
