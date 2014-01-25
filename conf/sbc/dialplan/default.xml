@@ -9,7 +9,6 @@
     will build the domains acl using this value.
 -->
 
-<?xml version="1.0" encoding="utf-8"?>
 <!-- http://wiki.freeswitch.org/wiki/Dialplan_XML -->
 <include>
   <context name="default">
