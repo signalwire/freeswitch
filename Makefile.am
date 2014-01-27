@@ -649,7 +649,7 @@ pristine:
 	git clean -fdx
 	git reset --hard
 
-update-clean: clean libs/openzap/Makefile python-reconf lua-reconf
+update-clean: clean libs/openzap/Makefile python-reconf lua-reconf spandsp-reconf
 	cd libs/sofia-sip && $(MAKE) clean
 	cd libs/openzap && $(MAKE) clean
 	cd libs/portaudio && $(MAKE) clean
