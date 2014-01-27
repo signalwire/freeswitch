@@ -110,7 +110,8 @@ static int initialized;
 static union state *
 get_state(void)
 {
-  static union state *retval, state0[1];
+  static union state state0[1];
+  union state *retval;
 
 #if SU_HAVE_PTHREADS
 
