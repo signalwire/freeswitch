@@ -3588,6 +3588,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	const char *use_to_tag;
 	char to_tag[13] = "";
 	char buf[80] = "";
+	char *orig_to_user = NULL;
 
 	if (!sip) {
 		return;
@@ -3712,6 +3713,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			goto end;
 		}
 	}
+
+	orig_to_user = su_strdup(nua_handle_home(nh), to_user);
 
 	if (to_user && strchr(to_user, '+')) {
 		char *h;
@@ -3922,9 +3925,9 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		if (contactstr && (p = strchr(contactstr, '@'))) {
 			if (strrchr(p, '>')) {
-				new_contactstr = switch_mprintf("<sip:%s%s", to_user, p);
+				new_contactstr = switch_mprintf("<sip:%s%s", orig_to_user, p);
 			} else {
-				new_contactstr = switch_mprintf("<sip:%s%s>", to_user, p);
+				new_contactstr = switch_mprintf("<sip:%s%s>", orig_to_user, p);
 			}
 		}
 
