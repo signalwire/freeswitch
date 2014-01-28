@@ -3576,6 +3576,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	const char *use_to_tag;
 	char to_tag[13] = "";
 	char buf[80] = "";
+	char *orig_to_user = NULL;
 
 	if (!sip) {
 		return;
@@ -3668,6 +3669,42 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 	switch_snprintf(exp_delta_str, sizeof(exp_delta_str), "%ld", exp_delta);
 
+	if (!strcmp("as-feature-event", event)) {
+		sip_authorization_t const *authorization = NULL;
+		auth_res_t auth_res = AUTH_FORBIDDEN;
+		char key[128] = "";
+		switch_event_t *v_event = NULL;
+
+
+		if (sip->sip_authorization) {
+			authorization = sip->sip_authorization;
+		} else if (sip->sip_proxy_authorization) {
+			authorization = sip->sip_proxy_authorization;
+		}
+
+		if (authorization) {
+			char network_ip[80];
+			sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), NULL);
+			auth_res = sofia_reg_parse_auth(profile, authorization, sip, de,
+											(char *) sip->sip_request->rq_method_name, key, sizeof(key), network_ip, &v_event, 0,
+											REG_REGISTER, to_user, NULL, NULL, NULL);
+		} else if ( sofia_reg_handle_register(nua, profile, nh, sip, de, REG_REGISTER, key, sizeof(key), &v_event, NULL, NULL, NULL)) {
+			if (v_event) {
+				switch_event_destroy(&v_event);
+			}
+
+			goto end;
+		}
+
+		if ((auth_res != AUTH_OK && auth_res != AUTH_RENEWED)) {
+			nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+			goto end;
+		}
+	}
+
+	orig_to_user = su_strdup(nua_handle_home(nh), to_user);
+
+>>>>>>> 8dccd21... FS-6085 --resolve
 	if (to_user && strchr(to_user, '+')) {
 		char *h;
 		if ((proto = (d_user = strdup(to_user)))) {
@@ -3877,9 +3914,9 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		if (contactstr && (p = strchr(contactstr, '@'))) {
 			if (strrchr(p, '>')) {
-				new_contactstr = switch_mprintf("<sip:%s%s", to_user, p);
+				new_contactstr = switch_mprintf("<sip:%s%s", orig_to_user, p);
 			} else {
-				new_contactstr = switch_mprintf("<sip:%s%s>", to_user, p);
+				new_contactstr = switch_mprintf("<sip:%s%s>", orig_to_user, p);
 			}
 		}
 		
