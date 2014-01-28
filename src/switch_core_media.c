@@ -1712,7 +1712,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 					/* search for payload type */
 					switch_mutex_lock(smh->sdp_mutex);
 					for (pmap = engine->payload_map; pmap; pmap = pmap->next) {
-						if (engine->read_frame.payload == pmap->recv_pt) {
+						if (engine->read_frame.payload == pmap->recv_pt && pmap->negotiated) {
 							engine->cur_payload_map = pmap;
 
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
