@@ -1814,22 +1814,37 @@ static iks *on_rayo_redirect(struct rayo_actor *call, struct rayo_message *msg, 
 {
 	iks *node = msg->payload;
 	switch_core_session_t *session = (switch_core_session_t *)session_data;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	iks *response = NULL;
 	iks *redirect = iks_find(node, "redirect");
 	char *redirect_to = iks_find_attrib(redirect, "to");
 
 	if (zstr(redirect_to)) {
 		response = iks_new_error_detailed(node, STANZA_ERROR_BAD_REQUEST, "Missing redirect to attrib");
-	} else {
+	} else if (switch_channel_test_flag(channel, CF_ANSWERED)) {
+		/* rayo spec says this is not allowed */
+		response = iks_new_error_detailed(node, STANZA_ERROR_NOT_ALLOWED, "Answered call cannot be redirected");
+#if 0
+		/* call is answered- must deflect */
 		switch_core_session_message_t msg = { 0 };
-		add_signaling_headers(session, redirect, RAYO_SIP_RESPONSE_HEADER);
-
-		/* Tell the channel to deflect the call */
+		add_signaling_headers(session, redirect, RAYO_SIP_REQUEST_HEADER);
 		msg.from = __FILE__;
 		msg.string_arg = switch_core_session_strdup(session, redirect_to);
 		msg.message_id = SWITCH_MESSAGE_INDICATE_DEFLECT;
 		switch_core_session_receive_message(session, &msg);
 		response = iks_new_iq_result(node);
+#endif
+	} else if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+		/* Inbound call not answered - redirect */
+		switch_core_session_message_t msg = { 0 };
+		add_signaling_headers(session, redirect, RAYO_SIP_RESPONSE_HEADER);
+		msg.from = __FILE__;
+		msg.string_arg = switch_core_session_strdup(session, redirect_to);
+		msg.message_id = SWITCH_MESSAGE_INDICATE_REDIRECT;
+		switch_core_session_receive_message(session, &msg);
+		response = iks_new_iq_result(node);
+	} else {
+		response = iks_new_error_detailed(node, STANZA_ERROR_NOT_ALLOWED, "Outbound call cannot be redirected");
 	}
 	return response;
 }
