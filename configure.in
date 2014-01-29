@@ -502,8 +502,8 @@ PLATFORM_CORE_LIBS=
 case "$host" in
     *darwin12.*|*darwin11.*)
         APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
-        APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp -Wno-deprecated-declarations)
-        APR_ADDTO(LDFLAGS, -pipe -bind_at_load)
+        APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp -Wno-deprecated-declarations -I/usr/local/opt/openssl/include)
+        APR_ADDTO(LDFLAGS, -pipe -bind_at_load -L/usr/local/opt/openssl/lib)
         APR_ADDTO(CXXFLAGS, -pipe)
         APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
 	if test "x$enable_core_odbc_support" != "xno"; then
@@ -513,8 +513,8 @@ case "$host" in
     ;;
     *darwin10.*)
         APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
-        APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp)
-        APR_ADDTO(LDFLAGS, -pipe -bind_at_load)
+        APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp -I/usr/local/opt/openssl/include)
+        APR_ADDTO(LDFLAGS, -pipe -bind_at_load -L/usr/local/opt/openssl/lib)
         APR_ADDTO(CXXFLAGS, -pipe)
         APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
 	if test "x$enable_core_odbc_support" != "xno"; then
@@ -523,6 +523,8 @@ case "$host" in
 	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl])
     ;;
     *darwin*)
+        APR_ADDTO(CFLAGS, -I/usr/local/opt/openssl/include)
+        APR_ADDTO(LDFLAGS, -L/usr/local/opt/openssl/lib)
         APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
         APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
 	if test "x$enable_core_odbc_support" != "xno"; then
@@ -1005,10 +1007,10 @@ SAC_OPENSSL
 if test x$HAVE_OPENSSL = x1; then
 	openssl_CFLAGS="$openssl_CFLAGS -DHAVE_OPENSSL";
 	APR_ADDTO(SWITCH_AM_CFLAGS, -DHAVE_OPENSSL)
-	AC_CHECK_LIB(ssl, SSL_CTX_set_tlsext_use_srtp, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS_SRTP, 1, HAVE_OPENSSL_DTLS_SRTP))
-	AC_CHECK_LIB(ssl, DTLSv1_method, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS, 1, HAVE_OPENSSL_DTLS), AC_MSG_WARN([OpenSSL version < 1.0.1e you might want to upgrade]))
+	AC_CHECK_LIB(ssl, SSL_CTX_set_tlsext_use_srtp, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS_SRTP, 1, HAVE_OPENSSL_DTLS_SRTP), AC_MSG_ERROR([OpenSSL >= 1.0.1e and associaed developement headers required]))
+	AC_CHECK_LIB(ssl, DTLSv1_method, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS, 1, HAVE_OPENSSL_DTLS), AC_MSG_ERROR([OpenSSL >= 1.0.1e and associaed developement headers required]))
 else
-	AC_MSG_ERROR([OpenSSL and associaed developement headers required])
+	AC_MSG_ERROR([OpenSSL >= 1.0.1e and associaed developement headers required])
 fi
 
 AX_CHECK_JAVA
