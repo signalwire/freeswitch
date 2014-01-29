@@ -516,9 +516,26 @@ static switch_status_t rayo_file_close(switch_file_handle_t *handle)
 		if (output->stop) {
 			rayo_component_send_complete(context->component, COMPONENT_COMPLETE_STOP);
 		} else {
-			rayo_component_send_complete(context->component, OUTPUT_FINISH);
+			if (!strcmp(RAYO_ACTOR(context->component)->type, RAT_CALL_COMPONENT)) {
+				/* call output... check for hangup */
+				switch_core_session_t *session = switch_core_session_locate(context->component->parent->id);
+				if (session) {
+					if (switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
+						rayo_component_send_complete(context->component, COMPONENT_COMPLETE_HANGUP);
+					} else {
+						rayo_component_send_complete(context->component, OUTPUT_FINISH);
+					}
+					switch_core_session_rwunlock(session);
+				} else {
+					/* session is gone */
+					rayo_component_send_complete(context->component, COMPONENT_COMPLETE_HANGUP);
+				}
+			} else {
+				/* mixer output... finished */
+				rayo_component_send_complete(context->component, OUTPUT_FINISH);
+			}
 		}
-		/* TODO hangup / timed out */
+		/* TODO timed out */
 
 		/* cleanup internals */
 		switch_safe_free(context->ssml);

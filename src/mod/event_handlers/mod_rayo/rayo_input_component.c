@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013, Grasshopper
+ * Copyright (C) 2013-2014, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -360,7 +360,7 @@ static switch_bool_t input_handler_bug_callback(switch_media_bug_t *bug, void *u
 				const void *jid;
 				void *component;
 				switch_core_hash_this(hi, &jid, NULL, &component);
-				rayo_component_send_complete(RAYO_COMPONENT(component), COMPONENT_COMPLETE_STOP);
+				rayo_component_send_complete(RAYO_COMPONENT(component), COMPONENT_COMPLETE_HANGUP);
 			}
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Removing DTMF callback\n");
 			switch_core_event_hook_remove_recv_dtmf(session, input_handler_on_dtmf);
