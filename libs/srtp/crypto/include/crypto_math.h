@@ -46,6 +46,10 @@
 #define MATH_H
 
 #include "datatypes.h"
+#ifndef SRTP_KERNEL
+# include <stdio.h>
+#endif
+
 
 unsigned char
 v32_weight(v32_t a);

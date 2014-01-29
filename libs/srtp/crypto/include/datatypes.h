@@ -53,7 +53,6 @@
 #include <stdarg.h>
 
 #ifndef SRTP_KERNEL
-# include <stdio.h>
 # include <string.h>
 # include <time.h>
 # ifdef HAVE_NETINET_IN_H
