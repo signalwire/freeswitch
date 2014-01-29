@@ -47,9 +47,6 @@
 #endif
 
 #include "err.h"
-#ifndef SRTP_KERNEL
-# include <stdio.h>
-#endif
 
 #ifdef ERR_REPORTING_SYSLOG
 # ifdef HAVE_SYSLOG_H
