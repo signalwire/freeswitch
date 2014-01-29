@@ -46,9 +46,6 @@
 #include "alloc.h"
 
 #include "crypto_kernel.h"
-#ifndef SRTP_KERNEL
-# include <stdio.h>
-#endif
 
 /* the debug module for the crypto_kernel */
 
