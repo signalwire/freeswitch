@@ -814,7 +814,6 @@ bitvector_get_bit(const bitvector_t *v, int bit_index) {
   
 }
 
-#include <stdio.h>
 
 int
 bitvector_print_hex(const bitvector_t *v, FILE *stream) {
