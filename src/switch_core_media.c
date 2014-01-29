@@ -7484,9 +7484,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 			}
 
 
-			if (!smh->mparams->local_sdp_str) {
-				switch_core_media_absorb_sdp(session);
-			}
+			//if (!smh->mparams->local_sdp_str) {
+			switch_core_media_absorb_sdp(session);
+			//}
 
 		}
 		break;
