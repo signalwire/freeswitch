@@ -437,7 +437,7 @@ $(switch_builddir)/quiet_libtool: $(switch_builddir)/libtool
 build/print_git_revision: build/print_git_revision.c
 	$(CC) -o $@ $<
 
-src/switch_version.c: src/include/switch_version.h
+src/switch_version.lo: src/include/switch_version.h
 
 src/include/switch_version.h: src/include/switch_version.h.in Makefile build/print_git_revision $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
 	@cat $< > $@; \
