@@ -114,8 +114,6 @@ struct rayo_actor {
 struct rayo_component {
 	/** base actor class */
 	struct rayo_actor base;
-	/** component type (input/output/prompt/etc) */
-	const char *type;
 	/** parent to this component */
 	struct rayo_actor *parent;
 	/** owning client JID */
