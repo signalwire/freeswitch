@@ -28,7 +28,7 @@ The configure script accepts the following options:
    --enable-console    use /dev/console for error reporting
    --gdoi              use GDOI key management (disabled at present)
 
-By default, debbuging is enabled and stdout is used for debugging.
+By default, debugging is enabled and stdout is used for debugging.
 You can use the above configure options to have the debugging output
 sent to syslog or the system console.  Alternatively, you can define
 ERR_REPORTING_FILE in include/conf.h to be any other file that can be
@@ -89,7 +89,7 @@ or     rtpw -l
 
   -s		(s)rtp sender - causes app to send words
 
-  -r		(s)rtp receive - causes app to receve words
+  -r		(s)rtp receive - causes app to receive words
 
   -k <key>      use srtp master key <key>, where the
 		key is a hexadecimal value (without the

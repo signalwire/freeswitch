@@ -304,6 +304,11 @@ srtp_shutdown(void);
  * packet, and assumes that the RTP packet is aligned on a 32-bit
  * boundary.
  *
+ * @warning This function assumes that it can write SRTP_MAX_TRAILER_LEN 
+ * into the location in memory immediately following the RTP packet.   
+ * Callers MUST ensure that this much writable memory is available in 
+ * the buffer that holds the RTP packet.
+ * 
  * @param ctx is the SRTP context to use in processing the packet.
  *
  * @param rtp_hdr is a pointer to the RTP packet (before the call); after
@@ -823,6 +828,11 @@ append_salt_to_key(unsigned char *key, unsigned int bytes_in_key,
  * packet, and assumes that the RTCP packet is aligned on a 32-bit
  * boundary.
  *
+ * @warning This function assumes that it can write SRTP_MAX_TRAILER_LEN+4 
+ * into the location in memory immediately following the RTCP packet.   
+ * Callers MUST ensure that this much writable memory is available in 
+ * the buffer that holds the RTCP packet.
+ * 
  * @param ctx is the SRTP context to use in processing the packet.
  *
  * @param rtcp_hdr is a pointer to the RTCP packet (before the call); after

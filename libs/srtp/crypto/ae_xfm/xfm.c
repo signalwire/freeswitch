@@ -177,7 +177,7 @@ aes_128_cbc_hmac_sha1_96_inv(void *key,
 
 #define ENC 1
 
-#define DEBUG 0
+#define DEBUG_PRINT 0
 
 err_status_t
 aes_128_cbc_hmac_sha1_96_enc(void *key,            
@@ -208,7 +208,7 @@ aes_128_cbc_hmac_sha1_96_enc(void *key,
 
   } else {
 
-#if DEBUG
+#if DEBUG_PRINT
     printf("ENC using key %s\n", octet_string_hex_string(key, KEY_LEN));
 #endif
 
@@ -236,7 +236,7 @@ aes_128_cbc_hmac_sha1_96_enc(void *key,
     status = aes_cbc_set_iv(&aes_ctx, iv);
     if (status) return status;
 
-#if DEBUG
+#if DEBUG_PRINT
     printf("plaintext len:  %d\n", *opaque_len);
     printf("iv:         %s\n", octet_string_hex_string(iv, IV_LEN));
     printf("plaintext:  %s\n", octet_string_hex_string(opaque, *opaque_len));
@@ -248,7 +248,7 @@ aes_128_cbc_hmac_sha1_96_enc(void *key,
     if (status) return status;
 #endif
 
-#if DEBUG
+#if DEBUG_PRINT
     printf("ciphertext len: %d\n", *opaque_len);
     printf("ciphertext: %s\n", octet_string_hex_string(opaque, *opaque_len));
 #endif
@@ -266,7 +266,7 @@ aes_128_cbc_hmac_sha1_96_enc(void *key,
 
     status = hmac_update(&hmac_ctx, clear, clear_len);
     if (status) return status;
-#if DEBUG
+#if DEBUG_PRINT
     printf("hmac input: %s\n", 
 	   octet_string_hex_string(clear, clear_len));
 #endif
@@ -274,14 +274,14 @@ aes_128_cbc_hmac_sha1_96_enc(void *key,
     auth_tag += *opaque_len;    
     status = hmac_compute(&hmac_ctx, opaque, *opaque_len, TAG_LEN, auth_tag);
     if (status) return status;
-#if DEBUG
+#if DEBUG_PRINT
     printf("hmac input: %s\n", 
 	   octet_string_hex_string(opaque, *opaque_len));
 #endif
     /* bump up the opaque_len to reflect the authentication tag */
     *opaque_len += TAG_LEN;
 
-#if DEBUG
+#if DEBUG_PRINT
     printf("prot data len:  %d\n", *opaque_len);
     printf("prot data: %s\n", octet_string_hex_string(opaque, *opaque_len));
 #endif
@@ -321,7 +321,7 @@ aes_128_cbc_hmac_sha1_96_dec(void *key,
     return err_status_fail;
 
   } else {
-#if DEBUG
+#if DEBUG_PRINT
     printf("DEC using key %s\n", octet_string_hex_string(key, KEY_LEN));
 #endif
 
@@ -336,7 +336,7 @@ aes_128_cbc_hmac_sha1_96_dec(void *key,
     status = hmac_compute(&hmac_ctx, "MAC", 3, MAC_KEY_LEN, mac_key);
     if (status) return status;
 
-#if DEBUG
+#if DEBUG_PRINT
     printf("prot data len:  %d\n", *opaque_len);
     printf("prot data: %s\n", octet_string_hex_string(opaque, *opaque_len));
 #endif
@@ -347,7 +347,7 @@ aes_128_cbc_hmac_sha1_96_dec(void *key,
      */
     ciphertext_len = *opaque_len - TAG_LEN;
 
-#if DEBUG
+#if DEBUG_PRINT
     printf("ciphertext len: %d\n", ciphertext_len);
 #endif    
     /* verify the authentication tag */
@@ -365,7 +365,7 @@ aes_128_cbc_hmac_sha1_96_dec(void *key,
     status = hmac_update(&hmac_ctx, clear, clear_len);
     if (status) return status;
 
-#if DEBUG
+#if DEBUG_PRINT
     printf("hmac input: %s\n", 
 	   octet_string_hex_string(clear, clear_len));
 #endif
@@ -373,7 +373,7 @@ aes_128_cbc_hmac_sha1_96_dec(void *key,
     status = hmac_compute(&hmac_ctx, opaque, ciphertext_len, TAG_LEN, tmp_tag);
     if (status) return status;
 
-#if DEBUG
+#if DEBUG_PRINT
     printf("hmac input: %s\n", 
 	   octet_string_hex_string(opaque, ciphertext_len));
 #endif
@@ -384,7 +384,7 @@ aes_128_cbc_hmac_sha1_96_dec(void *key,
      */
     auth_tag = (unsigned char *)opaque;
     auth_tag += ciphertext_len;  
-#if DEBUG
+#if DEBUG_PRINT
     printf("auth_tag: %s\n", octet_string_hex_string(auth_tag, TAG_LEN));
     printf("tmp_tag:  %s\n", octet_string_hex_string(tmp_tag, TAG_LEN));
 #endif
@@ -402,7 +402,7 @@ aes_128_cbc_hmac_sha1_96_dec(void *key,
     status = aes_cbc_set_iv(&aes_ctx, iv);
     if (status) return status;
 
-#if DEBUG
+#if DEBUG_PRINT
     printf("ciphertext: %s\n", octet_string_hex_string(opaque, *opaque_len));
     printf("iv:         %s\n", octet_string_hex_string(iv, IV_LEN));
 #endif
@@ -412,7 +412,7 @@ aes_128_cbc_hmac_sha1_96_dec(void *key,
     if (status) return status;
 #endif
 
-#if DEBUG
+#if DEBUG_PRINT
     printf("plaintext len:  %d\n", ciphertext_len);
     printf("plaintext:  %s\n", 
 	   octet_string_hex_string(opaque, ciphertext_len));
@@ -464,14 +464,14 @@ null_enc(void *key,
 
   } else {
 
-#if DEBUG
+#if DEBUG_PRINT
     printf("NULL ENC using key %s\n", octet_string_hex_string(key, KEY_LEN));
     printf("NULL_TAG_LEN:  %d\n", NULL_TAG_LEN);
     printf("plaintext len:  %d\n", *opaque_len);
 #endif
     for (i=0; i < IV_LEN; i++)
       init_vec[i] = i + (i * 16);
-#if DEBUG
+#if DEBUG_PRINT
     printf("iv:                %s\n", 
 	   octet_string_hex_string(iv, IV_LEN));
     printf("plaintext:         %s\n", 
@@ -482,7 +482,7 @@ null_enc(void *key,
     for (i=0; i < NULL_TAG_LEN; i++)
       auth_tag[i] = i + (i * 16);
     *opaque_len += NULL_TAG_LEN;
-#if DEBUG
+#if DEBUG_PRINT
     printf("protected data len: %d\n", *opaque_len);
     printf("protected data:    %s\n", 
 	   octet_string_hex_string(opaque, *opaque_len));
@@ -517,7 +517,7 @@ null_dec(void *key,
 
   } else {
 
-#if DEBUG
+#if DEBUG_PRINT
     printf("NULL DEC using key %s\n", octet_string_hex_string(key, KEY_LEN));
 
     printf("protected data len: %d\n", *opaque_len);
@@ -526,11 +526,11 @@ null_dec(void *key,
 #endif
     auth_tag = opaque;
     auth_tag += (*opaque_len - NULL_TAG_LEN);
-#if DEBUG
+#if DEBUG_PRINT
     printf("iv:         %s\n", octet_string_hex_string(iv, IV_LEN));
 #endif
     *opaque_len -= NULL_TAG_LEN;
-#if DEBUG
+#if DEBUG_PRINT
     printf("plaintext len:  %d\n", *opaque_len);
     printf("plaintext:  %s\n", 
 	   octet_string_hex_string(opaque, *opaque_len));

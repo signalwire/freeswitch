@@ -51,6 +51,7 @@ main (int argc, char *argv[]) {
 
   printf("statistical tests driver\n");
 
+  v128_set_to_zero(&nonce);
   for (i=0; i < 2500; i++)
     buffer[i] = 0;
 
