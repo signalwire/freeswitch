@@ -1349,7 +1349,7 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 		return;
 	}
 
-	if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) || switch_channel_test_flag(session->channel, CF_PROXY_MEDIA)) {
+	if (!force && (switch_channel_test_flag(session->channel, CF_PROXY_MODE) || switch_channel_test_flag(session->channel, CF_PROXY_MEDIA))) {
 		return;
 	}
 
@@ -2672,7 +2672,7 @@ static void clear_pmaps(switch_rtp_engine_t *engine)
 {
 	payload_map_t *pmap;
 
-	for (pmap = engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
+	for (pmap = engine->payload_map; pmap && pmap->allocated; pmap = pmap->next) {
 		pmap->negotiated = 0;
 	}
 }
@@ -7479,6 +7479,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 			switch_channel_set_flag(session->channel, CF_PROXY_MODE);
 
 			a_engine->codec_negotiated = 0;
+			v_engine->codec_negotiated = 0;
 
 			switch_core_media_set_local_sdp(session, NULL, SWITCH_FALSE);
 
@@ -7493,15 +7494,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 				ip = switch_channel_get_variable(other_channel, SWITCH_REMOTE_MEDIA_IP_VARIABLE);
 				port = switch_channel_get_variable(other_channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE);
 				switch_core_session_rwunlock(other_session);
+
 				if (ip && port) {
+					switch_core_media_prepare_codecs(session, 1);
+					clear_pmaps(a_engine);
+					clear_pmaps(v_engine);
 					switch_core_media_gen_local_sdp(session, SDP_TYPE_REQUEST, ip, (switch_port_t)atoi(port), NULL, 1);
 				}
 			}
 
 
-			//if (!smh->mparams->local_sdp_str) {
-			switch_core_media_absorb_sdp(session);
-			//}
+			if (!smh->mparams->local_sdp_str) {
+				switch_core_media_absorb_sdp(session);
+			}
 
 		}
 		break;
