@@ -38,6 +38,7 @@ fi
 
 AM_CONDITIONAL([WANT_DEBUG],[test "${enable_debug}" = "yes"])
 
+IN_LINE=inline
 
 case "$host" in
                 *-solaris2*)
