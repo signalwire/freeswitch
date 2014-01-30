@@ -900,6 +900,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 		case SWITCH_MESSAGE_INDICATE_BROADCAST:
 		case SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT:
 		case SWITCH_MESSAGE_INDICATE_DEFLECT:
+			switch_channel_set_flag(session->channel, CF_VIDEO_BREAK);
 			switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
 			break;
 		default:
