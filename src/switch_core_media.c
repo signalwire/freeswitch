@@ -1116,6 +1116,11 @@ SWITCH_DECLARE(void) switch_core_session_check_outgoing_crypto(switch_core_sessi
 	switch_snprintf(var_val, sizeof(var_val), "%" SWITCH_SIZE_T_FMT, _i); \
 	switch_channel_set_variable(channel, var_name, var_val)
 
+#define add_stat_double(_i, _s)												\
+	switch_snprintf(var_name, sizeof(var_name), "rtp_%s_%s", switch_str_nil(prefix), _s) ; \
+	switch_snprintf(var_val, sizeof(var_val), "%0.2f", _i); \
+	switch_channel_set_variable(channel, var_name, var_val)
+
 static void set_stats(switch_core_session_t *session, switch_media_type_t type, const char *prefix)
 {
 	switch_rtp_stats_t *stats = switch_core_media_get_stats(session, type, NULL);
@@ -1124,17 +1129,27 @@ static void set_stats(switch_core_session_t *session, switch_media_type_t type, 
 	char var_name[256] = "", var_val[35] = "";
 
 	if (stats) {
+		stats->inbound.std_deviation = sqrt(stats->inbound.variance);
 
 		add_stat(stats->inbound.raw_bytes, "in_raw_bytes");
 		add_stat(stats->inbound.media_bytes, "in_media_bytes");
 		add_stat(stats->inbound.packet_count, "in_packet_count");
 		add_stat(stats->inbound.media_packet_count, "in_media_packet_count");
 		add_stat(stats->inbound.skip_packet_count, "in_skip_packet_count");
-		add_stat(stats->inbound.jb_packet_count, "in_jb_packet_count");
+		add_stat(stats->inbound.jb_packet_count, "in_jitter_packet_count");
 		add_stat(stats->inbound.dtmf_packet_count, "in_dtmf_packet_count");
 		add_stat(stats->inbound.cng_packet_count, "in_cng_packet_count");
 		add_stat(stats->inbound.flush_packet_count, "in_flush_packet_count");
 		add_stat(stats->inbound.largest_jb_size, "in_largest_jb_size");
+		add_stat_double(stats->inbound.min_variance, "in_jitter_min_variance");
+		add_stat_double(stats->inbound.max_variance, "in_jitter_max_variance");
+		add_stat_double(stats->inbound.lossrate, "in_jitter_loss_rate");
+		add_stat_double(stats->inbound.burstrate, "in_jitter_burst_rate");
+		add_stat_double(stats->inbound.mean_interval, "in_mean_interval");
+		add_stat(stats->inbound.flaws, "in_flaw_total");
+		add_stat_double(stats->inbound.R, "in_quality_percentage");
+		add_stat_double(stats->inbound.mos, "in_mos");
+
 
 		add_stat(stats->outbound.raw_bytes, "out_raw_bytes");
 		add_stat(stats->outbound.media_bytes, "out_media_bytes");

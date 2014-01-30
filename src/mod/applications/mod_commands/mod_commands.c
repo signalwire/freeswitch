@@ -2928,6 +2928,130 @@ SWITCH_STANDARD_API(uuid_deflect)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+#define UUID_MEDIA_STATS_SYNTAX "<uuid>"
+SWITCH_STANDARD_API(uuid_set_media_stats)
+{
+	switch_core_session_t *tsession = NULL;
+	const char *uuid = cmd;
+
+	if (zstr(uuid)) {
+		stream->write_function(stream, "-USAGE: %s\n", UUID_MEDIA_STATS_SYNTAX);
+	} else {
+		if ((tsession = switch_core_session_locate(uuid))) {
+			switch_core_media_set_stats(tsession);
+			stream->write_function(stream, "+OK:\n");
+			switch_core_session_rwunlock(tsession);
+		} else {
+			stream->write_function(stream, "-ERR No such channel %s!\n", uuid);
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+#define add_stat(_i, _s) cJSON_AddItemToObject(jstats, _s, cJSON_CreateNumber(_i))
+
+static void jsonify_stats(cJSON *json, const char *name, switch_rtp_stats_t *stats)
+{
+	cJSON *jstats = cJSON_CreateObject();
+	cJSON_AddItemToObject(json, name, jstats);	
+
+	stats->inbound.std_deviation = sqrt(stats->inbound.variance);
+
+	add_stat(stats->inbound.raw_bytes, "in_raw_bytes");
+	add_stat(stats->inbound.media_bytes, "in_media_bytes");
+	add_stat(stats->inbound.packet_count, "in_packet_count");
+	add_stat(stats->inbound.media_packet_count, "in_media_packet_count");
+	add_stat(stats->inbound.skip_packet_count, "in_skip_packet_count");
+	add_stat(stats->inbound.jb_packet_count, "in_jitter_packet_count");
+	add_stat(stats->inbound.dtmf_packet_count, "in_dtmf_packet_count");
+	add_stat(stats->inbound.cng_packet_count, "in_cng_packet_count");
+	add_stat(stats->inbound.flush_packet_count, "in_flush_packet_count");
+	add_stat(stats->inbound.largest_jb_size, "in_largest_jb_size");
+
+	add_stat (stats->inbound.min_variance, "in_jitter_min_variance");
+	add_stat (stats->inbound.max_variance, "in_jitter_max_variance");
+	add_stat (stats->inbound.lossrate, "in_jitter_loss_rate");
+	add_stat (stats->inbound.burstrate, "in_jitter_burst_rate");
+	add_stat (stats->inbound.mean_interval, "in_mean_interval");
+
+	add_stat(stats->inbound.flaws, "in_flaw_total");
+
+	add_stat (stats->inbound.R, "in_quality_percentage");
+	add_stat (stats->inbound.mos, "in_mos");
+
+
+	add_stat(stats->outbound.raw_bytes, "out_raw_bytes");
+	add_stat(stats->outbound.media_bytes, "out_media_bytes");
+	add_stat(stats->outbound.packet_count, "out_packet_count");
+	add_stat(stats->outbound.media_packet_count, "out_media_packet_count");
+	add_stat(stats->outbound.skip_packet_count, "out_skip_packet_count");
+	add_stat(stats->outbound.dtmf_packet_count, "out_dtmf_packet_count");
+	add_stat(stats->outbound.cng_packet_count, "out_cng_packet_count");
+
+	add_stat(stats->rtcp.packet_count, "rtcp_packet_count");
+	add_stat(stats->rtcp.octet_count, "rtcp_octet_count");
+	
+}
+
+static switch_bool_t true_enough(cJSON *json)
+{
+	if (json && (json->type == cJSON_True || json->valueint || json->valuedouble || json->valuestring)) {
+		return SWITCH_TRUE;
+	}
+
+	return SWITCH_FALSE;
+}
+
+SWITCH_STANDARD_JSON_API(json_stats_function)
+{
+	cJSON *reply, *data = cJSON_GetObjectItem(json, "data");
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	const char *uuid = cJSON_GetObjectCstr(data, "uuid");
+	cJSON *cdata = cJSON_GetObjectItem(data, "channelData");
+
+	switch_core_session_t *tsession;
+
+	reply = cJSON_CreateObject();
+	*json_reply = reply;	
+
+	if (zstr(uuid)) {
+		cJSON_AddItemToObject(reply, "response", cJSON_CreateString("INVALID INPUT"));
+		goto end;
+	}
+
+	
+	if ((tsession = switch_core_session_locate(uuid))) {
+		cJSON *jevent;
+		switch_rtp_stats_t *audio_stats = NULL, *video_stats = NULL;
+
+		switch_core_media_set_stats(tsession);
+		
+		audio_stats = switch_core_media_get_stats(tsession, SWITCH_MEDIA_TYPE_AUDIO, switch_core_session_get_pool(tsession));
+		video_stats = switch_core_media_get_stats(tsession, SWITCH_MEDIA_TYPE_VIDEO, switch_core_session_get_pool(tsession));
+		
+		jsonify_stats(reply, "audio", audio_stats);
+		jsonify_stats(reply, "video", video_stats);
+		
+		if (true_enough(cdata) && switch_ivr_generate_json_cdr(tsession, &jevent, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
+			cJSON_AddItemToObject(reply, "channelData", jevent);
+		}
+
+		switch_core_session_rwunlock(tsession);
+		
+		status = SWITCH_STATUS_SUCCESS;
+	} else {
+		cJSON_AddItemToObject(reply, "response", cJSON_CreateString("Session does not exist"));
+		goto end;
+	}
+
+ end:
+
+	return status;
+}
+
+
 #define UUID_RECOVERY_REFRESH_SYNTAX "<uuid> <uri>"
 SWITCH_STANDARD_API(uuid_recovery_refresh)
 {
@@ -6494,6 +6618,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_kill", "Kill channel", kill_function, KILL_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_send_message", "Send MESSAGE to the endpoint", uuid_send_message_function, SEND_MESSAGE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_send_info", "Send info to the endpoint", uuid_send_info_function, INFO_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_set_media_stats", "Set media stats", uuid_set_media_stats, UUID_MEDIA_STATS_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_video_refresh", "Send video refresh.", uuid_video_refresh_function, VIDEO_REFRESH_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_outgoing_answer", "Answer outgoing channel", outgoing_answer_function, OUTGOING_ANSWER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_limit", "Increase limit resource", uuid_limit_function, LIMIT_SYNTAX);
@@ -6525,6 +6650,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "file_exists", "Check if a file exists on server", file_exists_function, "<file>");
 	SWITCH_ADD_API(commands_api_interface, "json", "JSON API", json_function, "JSON");
 
+	SWITCH_ADD_JSON_API(json_api_interface, "mediaStats", "JSON Media Stats", json_stats_function, "");
 
 	SWITCH_ADD_JSON_API(json_api_interface, "status", "JSON status API", json_status_function, "");
 	SWITCH_ADD_JSON_API(json_api_interface, "fsapi", "JSON FSAPI Gateway", json_api_function, "");

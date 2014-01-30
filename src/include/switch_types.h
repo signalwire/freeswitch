@@ -227,6 +227,15 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_MAX_TRANS 2000
 #define SWITCH_CORE_SESSION_MAX_PRIVATES 2
 
+/* Jitter */
+#define JITTER_VARIANCE_THRESHOLD 400.0
+/* IPDV */
+#define IPDV_THRESHOLD 1.0
+/* Burst and Lost Rate */
+#define LOST_BURST_ANALYZE 500
+/* Burst */
+#define LOST_BURST_CAPTURE 1024
+
 typedef uint8_t switch_byte_t;
 
 typedef enum {
@@ -591,6 +600,29 @@ typedef struct {
 	switch_size_t cng_packet_count;
 	switch_size_t flush_packet_count;
 	switch_size_t largest_jb_size;
+	/* Jitter */
+	int64_t last_proc_time;		
+	int64_t jitter_n;
+	int64_t jitter_add;
+	int64_t jitter_addsq;
+
+	double variance;
+	double min_variance;
+	double max_variance;
+	double std_deviation;
+
+	/* Burst and Packet Loss */
+	double lossrate;
+	double burstrate;
+	double mean_interval;
+	int loss[LOST_BURST_CAPTURE];
+	int last_loss;
+	int recved;	
+	int last_processed_seq;
+	switch_size_t flaws;
+	switch_size_t last_flaw;
+	double R;
+	double mos;
 } switch_rtp_numbers_t;
 
 

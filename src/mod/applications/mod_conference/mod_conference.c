@@ -3655,6 +3655,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 	switch_core_session_get_read_impl(session, &member->read_impl);
 
+	switch_channel_audio_sync(channel);
+
 	/* As long as we have a valid read, feed that data into an input buffer where the conference thread will take it 
 	   and mux it with any audio from other channels. */
 
@@ -8118,8 +8120,6 @@ SWITCH_STANDARD_APP(conference_function)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Pool Failure\n");
 		goto end;
 	}
-
-	
 
 	if ((flags_str = strstr(mydata, flags_prefix))) {
 		char *p;
