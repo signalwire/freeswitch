@@ -4751,7 +4751,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			rtp_session->recv_msg.header.seq = htons(jb_frame->seq);
 			status = SWITCH_STATUS_SUCCESS;
 			if (!xcheck_jitter) {
-				printf("XXX %d\n", __LINE__);
 				check_jitter(rtp_session);
 				xcheck_jitter = *bytes;
 			}
