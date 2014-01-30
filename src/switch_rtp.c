@@ -1575,7 +1575,7 @@ static void send_pli(switch_rtp_t *rtp_session)
 
 static void do_mos(switch_rtp_t *rtp_session, int force) {
 
-	if (rtp_session->stats.inbound.recved < rtp_session->stats.inbound.flaws) {
+	if ((switch_size_t)rtp_session->stats.inbound.recved < rtp_session->stats.inbound.flaws) {
 		rtp_session->stats.inbound.flaws = 0;
 	}
 
@@ -1599,7 +1599,7 @@ static void do_mos(switch_rtp_t *rtp_session, int force) {
 			rtp_session->stats.inbound.flaws += penalty;
 		}
 
-		R = ((double)((double)(rtp_session->stats.inbound.recved - rtp_session->stats.inbound.flaws) / (double)rtp_session->stats.inbound.recved) * 100.0);
+		R = (int)((double)((double)(rtp_session->stats.inbound.recved - rtp_session->stats.inbound.flaws) / (double)rtp_session->stats.inbound.recved) * 100.0);
 		
 		if (R < 0 || R > 100) R = 100;
 
@@ -1719,7 +1719,7 @@ static void check_jitter(switch_rtp_t *rtp_session)
 	rtp_session->stats.inbound.jitter_n++;
 	rtp_session->stats.inbound.jitter_add += diff_time;
 
-	cur_diff = diff_time - rtp_session->stats.inbound.mean_interval;
+	cur_diff = (int64_t)(diff_time - rtp_session->stats.inbound.mean_interval);
 	
 	rtp_session->stats.inbound.jitter_addsq += (cur_diff * cur_diff);
 	rtp_session->stats.inbound.last_proc_time = current_time;
