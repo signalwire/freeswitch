@@ -5485,7 +5485,6 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 			already_did[smh->ianacodes[i]] = 1;
 		}
 
-		
 		rate = imp->samples_per_second;
 
 		if (map) {
@@ -5853,6 +5852,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 		smh->payload_space = 98;
 
+		for (i = 0; i < smh->mparams->num_codecs; i++) {
+			smh->ianacodes[i] = smh->codecs[i]->ianacode;
+		}
+		
 		if (sdp_type == SDP_TYPE_REQUEST) {
 			switch_core_session_t *orig_session = NULL;
 
@@ -5863,7 +5866,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				switch_payload_t orig_pt = 0;
 				char *orig_fmtp = NULL;
 
-				smh->ianacodes[i] = imp->ianacode;
+				//smh->ianacodes[i] = imp->ianacode;
 				
 				if (smh->ianacodes[i] > 64) {
 					if (smh->mparams->dtmf_type == DTMF_2833 && smh->mparams->te > 95 && smh->mparams->te == smh->payload_space) {
@@ -5911,7 +5914,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		fmtp_out = fmtp_out_var;
 	}
 
-	if ((val = switch_channel_get_variable(session->channel, "verbose_sdp")) && switch_true(val)) {
+	val = switch_channel_get_variable(session->channel, "verbose_sdp");
+
+	if (!val || switch_true(val)) {
 		switch_channel_set_flag(session->channel, CF_VERBOSE_SDP);
 	}
 
