@@ -37,10 +37,12 @@ struct output_component {
 	struct rayo_component base;
 	/** document to play */
 	iks *document;
+	/** where to start playing in document */
+	int start_offset_ms;
 	/** maximum time to play */
-	int max_time;
+	int max_time_ms;
 	/** silence between repeats */
-	int repeat_interval;
+	int repeat_interval_ms;
 	/** number of times to repeat */
 	int repeat_times;
 	/** true if started paused */
@@ -69,9 +71,10 @@ static struct rayo_component *create_output_component(struct rayo_actor *actor, 
 	rayo_component_init((struct rayo_component *)output_component, pool, type, "output", NULL, actor, client_jid);
 
 	output_component->document = iks_copy(output);
-	output_component->repeat_interval = iks_find_int_attrib(output, "repeat-interval");
+	output_component->start_offset_ms = iks_find_int_attrib(output, "start-offset");
+	output_component->repeat_interval_ms = iks_find_int_attrib(output, "repeat-interval");
 	output_component->repeat_times = iks_find_int_attrib(output, "repeat-times");
-	output_component->max_time = iks_find_int_attrib(output, "max-time");
+	output_component->max_time_ms = iks_find_int_attrib(output, "max-time");
 	output_component->start_paused = iks_find_bool_attrib(output, "start-paused");
 	output_component->renderer = iks_find_attrib(output, "renderer");
 
@@ -97,8 +100,11 @@ static iks *start_call_output(struct rayo_component *component, switch_core_sess
 	stream.write_function(&stream, "{id=%s,session=%s,pause=%s",
 		RAYO_JID(component), switch_core_session_get_uuid(session),
 		OUTPUT_COMPONENT(component)->start_paused ? "true" : "false");
-	if (OUTPUT_COMPONENT(component)->max_time > 0) {
-		stream.write_function(&stream, ",timeout=%i", OUTPUT_COMPONENT(component)->max_time * 1000);
+	if (OUTPUT_COMPONENT(component)->max_time_ms > 0) {
+		stream.write_function(&stream, ",timeout=%i", OUTPUT_COMPONENT(component)->max_time_ms);
+	}
+	if (OUTPUT_COMPONENT(component)->start_offset_ms > 0) {
+		stream.write_function(&stream, ",start_offset_ms=%i", OUTPUT_COMPONENT(component)->start_offset_ms);
 	}
 	stream.write_function(&stream, "}fileman://rayo://%s", RAYO_JID(component));
 
@@ -181,8 +187,11 @@ static iks *start_mixer_output_component(struct rayo_actor *mixer, struct rayo_m
 	stream.write_function(&stream, "{id=%s,pause=%s",
 		RAYO_JID(component),
 		OUTPUT_COMPONENT(component)->start_paused ? "true" : "false");
-	if (OUTPUT_COMPONENT(component)->max_time > 0) {
-		stream.write_function(&stream, ",timeout=%i", OUTPUT_COMPONENT(component)->max_time * 1000);
+	if (OUTPUT_COMPONENT(component)->max_time_ms > 0) {
+		stream.write_function(&stream, ",timeout=%i", OUTPUT_COMPONENT(component)->max_time_ms);
+	}
+	if (OUTPUT_COMPONENT(component)->start_offset_ms > 0) {
+		stream.write_function(&stream, ",start_offset_ms=%i", OUTPUT_COMPONENT(component)->start_offset_ms);
 	}
 	stream.write_function(&stream, "}fileman://rayo://%s", RAYO_JID(component));
 
@@ -388,7 +397,7 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 	if (!context->cur_doc) {
 		if (output->repeat_times == 0 || ++context->play_count < output->repeat_times) {
 			/* repeat all document(s) */
-			if (!output->repeat_interval) {
+			if (!output->repeat_interval_ms) {
 				goto top;
 			}
 		} else {
@@ -401,7 +410,7 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 	if (!context->cur_doc) {
 		/* play silence between repeats */
 		switch_safe_free(context->ssml);
-		context->ssml = switch_mprintf("silence_stream://%i", output->repeat_interval);
+		context->ssml = switch_mprintf("silence_stream://%i", output->repeat_interval_ms);
 	} else {
 		/* play next document */
 		iks *speak = NULL;
@@ -645,6 +654,7 @@ struct fileman_file_context {
  */
 static switch_status_t fileman_file_open(switch_file_handle_t *handle, const char *path)
 {
+	int start_offset_ms = 0;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	struct fileman_file_context *context = switch_core_alloc(handle->memory_pool, sizeof(*context));
 	handle->private_info = context;
@@ -652,11 +662,18 @@ static switch_status_t fileman_file_open(switch_file_handle_t *handle, const cha
 	if (handle->params) {
 		const char *id = switch_event_get_header(handle->params, "id");
 		const char *uuid = switch_event_get_header(handle->params, "session");
+		const char *start_offset_ms_str = switch_event_get_header(handle->params, "start_offset_ms");
 		if (!zstr(id)) {
 			context->id = switch_core_strdup(handle->memory_pool, id);
 		}
 		if (!zstr(uuid)) {
 			context->uuid = switch_core_strdup(handle->memory_pool, uuid);
+		}
+		if (!zstr(start_offset_ms_str) && switch_is_number(start_offset_ms_str)) {
+			start_offset_ms = atoi(start_offset_ms_str);
+			if (start_offset_ms < 0) {
+				start_offset_ms = 0;
+			}
 		}
 	}
 
@@ -706,6 +723,13 @@ static switch_status_t fileman_file_open(switch_file_handle_t *handle, const cha
 
 	if (handle->params && switch_true(switch_event_get_header(handle->params, "pause"))) {
 		switch_set_flag(handle, SWITCH_FILE_PAUSE);
+	}
+
+	if (handle->seekable && start_offset_ms) {
+		unsigned int pos = 0;
+		int32_t target = start_offset_ms * (handle->samplerate / 1000);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(context->uuid), SWITCH_LOG_DEBUG, "seek to position %d\n", target);
+		switch_core_file_seek(&context->fh, &pos, target, SEEK_SET);
 	}
 
 	return status;
@@ -976,6 +1000,7 @@ static switch_status_t fileman_process_cmd(const char *cmd, switch_file_handle_t
 	}
 
 	if (fhp) {
+		struct fileman_file_context *context = (struct fileman_file_context *)fhp->private_info;
 		if (!switch_test_flag(fhp, SWITCH_FILE_OPEN)) {
 			return SWITCH_STATUS_FALSE;
 		}
@@ -1072,12 +1097,12 @@ static switch_status_t fileman_process_cmd(const char *cmd, switch_file_handle_t
 						target = 0;
 					}
 
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "seek to position %d\n", target);
+					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(context->uuid), SWITCH_LOG_DEBUG, "seek to position %d\n", target);
 					switch_core_file_seek(fhp, &pos, target, SEEK_SET);
 
 				} else {
 					samps = switch_atoui(p) * (fhp->samplerate / 1000);
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "seek to position %d\n", samps);
+					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(context->uuid), SWITCH_LOG_DEBUG, "seek to position %d\n", samps);
 					switch_core_file_seek(fhp, &pos, samps, SEEK_SET);
 				}
 			}
