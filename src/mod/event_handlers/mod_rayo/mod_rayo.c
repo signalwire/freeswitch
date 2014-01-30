@@ -993,12 +993,17 @@ static void rayo_call_cleanup(struct rayo_actor *actor)
 		iks_insert(end, RAYO_END_REASON_HANGUP_LOCAL);
 	} else {
 		/* remote hangup... translate to specific rayo reason */
+		iks *reason;
 		switch_call_cause_t cause = SWITCH_CAUSE_NONE;
 		char *cause_str = switch_event_get_header(event, "variable_hangup_cause");
+		char *cause_q850_str = switch_event_get_header(event, "variable_hangup_cause_q850");
 		if (cause_str) {
 			cause = switch_channel_str2cause(cause_str);
 		}
-		iks_insert(end, switch_cause_to_rayo_cause(cause));
+		reason = iks_insert(end, switch_cause_to_rayo_cause(cause));
+		if (!zstr(cause_q850_str)) {
+			iks_insert_attrib(reason, "platform-code", cause_q850_str);
+		}
 	}
 
 	#if 0
