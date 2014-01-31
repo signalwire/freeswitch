@@ -47,9 +47,6 @@
 #include "srtp_priv.h"
 #include "ekt.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable:4100)
-#endif
 
 extern debug_module_t mod_srtp;
 

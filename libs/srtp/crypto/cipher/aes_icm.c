@@ -49,9 +49,6 @@
 #include "aes_icm.h"
 #include "alloc.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable:4100)
-#endif
 
 debug_module_t mod_aes_icm = {
   0,                 /* debugging is off by default */
