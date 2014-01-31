@@ -48,9 +48,6 @@
 #include "null_cipher.h"
 #include "alloc.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable:4100)
-#endif
 
 /* the null_cipher uses the cipher debug module  */
 
