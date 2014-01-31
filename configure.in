@@ -402,6 +402,7 @@ AM_CONDITIONAL([ENABLE_ZRTP],[test "x$enable_zrtp" != "xno"])
 
 AM_CONDITIONAL([WANT_DEBUG],[test "${enable_debug}" = "yes"])
 
+enable_core_odbc_support="no"
 AC_ARG_ENABLE(core-odbc-support,     
 	[AS_HELP_STRING([--enable-core-odbc-support], [Compile with ODBC Support])],,[enable_core_odbc_support="no"])
 if test "x$enable_core_odbc_support" != "xno"; then
