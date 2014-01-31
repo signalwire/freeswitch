@@ -24,7 +24,7 @@ debug_module_t mod_stat = {
 err_status_t
 stat_test_monobit(uint8_t *data) {
   uint8_t *data_end = data + STAT_TEST_DATA_LEN;
-  uint16_t ones_count;
+  int ones_count;
 
   ones_count = 0;
   while (data < data_end) {

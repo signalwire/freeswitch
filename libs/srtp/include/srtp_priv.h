@@ -69,12 +69,12 @@
  */
 
 typedef struct {
-  unsigned char cc:4;	/* CSRC count             */
-  unsigned char x:1;	/* header extension flag  */
-  unsigned char p:1;	/* padding flag           */
-  unsigned char version:2; /* protocol version    */
-  unsigned char pt:7;	/* payload type           */
-  unsigned char m:1;	/* marker bit             */
+  unsigned cc:4;	/* CSRC count             */
+  unsigned x:1;	/* header extension flag  */
+  unsigned p:1;	/* padding flag           */
+  unsigned version:2; /* protocol version    */
+  unsigned pt:7;	/* payload type           */
+  unsigned m:1;	/* marker bit             */
   uint16_t seq;		/* sequence number        */
   uint32_t ts;		/* timestamp              */
   uint32_t ssrc;	/* synchronization source */
@@ -112,10 +112,10 @@ typedef struct {
 #ifndef WORDS_BIGENDIAN
 
 typedef struct {
-  unsigned char rc:5;		/* reception report count */
-  unsigned char p:1;		/* padding flag           */
-  unsigned char version:2;	/* protocol version       */
-  unsigned char pt:8;		/* payload type           */
+  unsigned rc:5;		/* reception report count */
+  unsigned p:1;		/* padding flag           */
+  unsigned version:2;	/* protocol version       */
+  unsigned pt:8;		/* payload type           */
   uint16_t len;			/* length                 */
   uint32_t ssrc;	       	/* synchronization source */
 } srtcp_hdr_t;
