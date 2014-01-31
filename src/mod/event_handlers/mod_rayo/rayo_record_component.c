@@ -122,8 +122,6 @@ static void complete_record(struct rayo_component *component, const char *reason
 	iks_insert_attrib_printf(recording, "size", "%"SWITCH_SIZE_T_FMT, file_size);
 	rayo_component_send_complete_with_metadata(component, reason, reason_namespace, recording, 1);
 	iks_delete(recording);
-
-	RAYO_UNLOCK(component);
 }
 
 /**
@@ -143,6 +141,7 @@ static void on_call_record_stop_event(switch_event_t *event)
 			/* TODO assume final timeout, for now */
 			complete_record(component, RECORD_COMPLETE_FINAL_TIMEOUT);
 		}
+		RAYO_UNLOCK(component);
 	}
 }
 
@@ -366,6 +365,7 @@ static void on_mixer_record_event(switch_event_t *event)
 				complete_record(component, RECORD_COMPLETE_FINAL_TIMEOUT);
 			}
 		}
+		RAYO_UNLOCK(component);
 	}
 }
 
