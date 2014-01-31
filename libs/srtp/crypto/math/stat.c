@@ -24,11 +24,11 @@ debug_module_t mod_stat = {
 err_status_t
 stat_test_monobit(uint8_t *data) {
   uint8_t *data_end = data + STAT_TEST_DATA_LEN;
-  int ones_count;
+  uint16_t ones_count;
 
   ones_count = 0;
   while (data < data_end) {
-    ones_count += octet_get_weight(*data);
+    ones_count += (uint16_t)octet_get_weight(*data);
     data++;
   }
 
