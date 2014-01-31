@@ -4006,14 +4006,14 @@ static int alias_api(struct rayo_cmd_alias *alias, char *args, switch_stream_han
 /**
  * Send message from console
  */
-static void send_console_message(struct rayo_client *client, const char *to, const char *message_str)
+static void send_console_message(struct rayo_client *client, const char *to, const char *type, const char *message_str)
 {
 	iks *message = NULL, *x;
 	message = iks_new("message");
 	iks_insert_attrib(message, "to", to);
 	iks_insert_attrib(message, "from", RAYO_JID(client));
 	iks_insert_attrib_printf(message, "id", "console-%i", RAYO_SEQ_NEXT(client));
-	iks_insert_attrib(message, "type", "chat");
+	iks_insert_attrib(message, "type", type);
 	x = iks_insert(message, "body");
 	iks_insert_cdata(x, message_str, strlen(message_str));
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nSEND: to %s, %s\n", to, iks_string(iks_stack(message), message));
@@ -4025,10 +4025,10 @@ static void send_console_message(struct rayo_client *client, const char *to, con
  */
 static int message_api(char *cmd, switch_stream_handle_t *stream)
 {
-	char *argv[2] = { 0 };
+	char *argv[3] = { 0 };
 	if (!zstr(cmd)) {
 		int argc = switch_separate_string(cmd, ' ', argv, sizeof(argv) / sizeof(argv[0]));
-		if (argc != 2) {
+		if (argc != 3) {
 			return 0;
 		}
 	} else {
@@ -4036,7 +4036,7 @@ static int message_api(char *cmd, switch_stream_handle_t *stream)
 	}
 
 	/* send message */
-	send_console_message(globals.console, argv[0], argv[1]);
+	send_console_message(globals.console, argv[0], argv[1], argv[2]);
 	stream->write_function(stream, "+OK\n");
 
 	return 1;
@@ -4383,8 +4383,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
 	globals.console = rayo_console_client_create();
 
 	switch_console_set_complete("add rayo status");
-	switch_console_set_complete("add rayo msg ::rayo::list_external");
-	switch_console_set_complete("add rayo cmd ::rayo::list_all");
+	switch_console_set_complete("add rayo msg ::rayo::list_all");
+	switch_console_set_complete("add rayo msg ::rayo::list_all chat");
+	switch_console_set_complete("add rayo msg ::rayo::list_all groupchat");
+	switch_console_set_complete("add rayo msg ::rayo::list_all headline");
+	switch_console_set_complete("add rayo msg ::rayo::list_all normal");
 	switch_console_set_complete("add rayo presence ::rayo::list_server online");
 	switch_console_set_complete("add rayo presence ::rayo::list_server offline");
 	switch_console_add_complete_func("::rayo::list_all", list_all);
