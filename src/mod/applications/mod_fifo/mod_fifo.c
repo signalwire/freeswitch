@@ -1756,7 +1756,7 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 
 		sql = switch_mprintf("update fifo_outbound set ring_count=ring_count-1, "
 							 "outbound_fail_count=outbound_fail_count+1, next_avail=%ld + lag + 1 where uuid='%q'",
-							 (long) switch_epoch_time_now(NULL) + node->retry_delay, h->uuid);
+							 (long) switch_epoch_time_now(NULL) + (node ? node->retry_delay : 0), h->uuid);
 		fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {

@@ -2950,7 +2950,7 @@ SWITCH_STANDARD_API(uuid_set_media_stats)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define add_stat(_i, _s) cJSON_AddItemToObject(jstats, _s, cJSON_CreateNumber(_i))
+#define add_stat(_i, _s) cJSON_AddItemToObject(jstats, _s, cJSON_CreateNumber(((double)_i)))
 
 static void jsonify_stats(cJSON *json, const char *name, switch_rtp_stats_t *stats)
 {
