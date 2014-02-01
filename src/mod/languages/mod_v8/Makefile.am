@@ -90,7 +90,8 @@ mod_v8_la_SOURCES  = \
 	src/fssocket.cpp \
 	src/fsteletone.cpp \
 	src/fsxml.cpp \
-	src/fsfile.cpp
+	src/fsfile.cpp \
+	src/fseventhandler.cpp
 
 mod_v8_la_CFLAGS   = $(AM_CFLAGS) $(LIBCURL_CPPFLAGS) -I$(switch_srcdir)/libs/libteletone/src
 mod_v8_la_CPPFLAGS = $(AM_CPPFLAGS) $(LIBCURL_CPPFLAGS) -I$(switch_srcdir)/libs/libteletone/src

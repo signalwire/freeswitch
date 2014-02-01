@@ -182,6 +182,7 @@
     <ClCompile Include=".\src\fsglobal.cpp" />
     <ClCompile Include=".\src\fsteletone.cpp" />
     <ClCompile Include="mod_v8.cpp" />
+    <ClCompile Include="src\fseventhandler.cpp" />
     <ClCompile Include="src\fsfile.cpp" />
     <ClCompile Include="src\fsxml.cpp" />
   </ItemGroup>
@@ -199,6 +200,7 @@
     <ClInclude Include=".\include\fssocket.hpp" />
     <ClInclude Include=".\include\fsglobal.hpp" />
     <ClInclude Include=".\include\fsteletone.hpp" />
+    <ClInclude Include="include\fseventhandler.hpp" />
     <ClInclude Include="include\fsfile.hpp" />
     <ClInclude Include="include\fsxml.hpp" />
     <ClInclude Include="mod_v8.h" />

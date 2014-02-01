@@ -50,6 +50,9 @@
     <ClCompile Include="src\fsxml.cpp">
       <Filter>FSClasses</Filter>
     </ClCompile>
+    <ClCompile Include="src\fseventhandler.cpp">
+      <Filter>FSClasses</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="mod_v8.h" />
@@ -96,6 +99,9 @@
       <Filter>FSClasses\include</Filter>
     </ClInclude>
     <ClInclude Include="include\fsxml.hpp">
+      <Filter>FSClasses\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\fseventhandler.hpp">
       <Filter>FSClasses\include</Filter>
     </ClInclude>
   </ItemGroup>

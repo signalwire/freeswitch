@@ -69,7 +69,7 @@ JSBase::~JSBase(void)
 	}
 
 	/* If the object is still alive inside V8, set the internal field to NULL. But only if we're actually inside a JS context */
-	if (!persistentHandle->IsNearDeath() && !GetIsolate()->GetCurrentContext().IsEmpty()) {
+	if (!persistentHandle->IsNearDeath() && !GetIsolate()->GetCurrentContext().IsEmpty() && (!js || !js->GetForcedTermination())) {
 		Handle<Object> jsObj = GetJavaScriptObject();
 		jsObj->SetInternalField(0, Null(GetIsolate()));
 	}

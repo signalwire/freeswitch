@@ -34,20 +34,21 @@
  * This module executes JavaScript using Google's V8 JavaScript engine.
  *
  * It extends the available JavaScript classes with the following FS related classes;
- * CoreDB    Adds features to access the core DB (SQLite) in FreeSWITCH. (on request only)
- * CURL      Adds some extra methods for CURL access. (on request only)
- * DTMF      Object that holds information about a DTMF event.
- * Event     Object that holds information about a FreeSWITCH event.
- * File      Class to reflect the Spidermonkey built-in class "File". Not yet implemented! (on request only)
- * FileIO    Simple class for basic file IO.
- * ODBC      Adds features to access any ODBC available database in the system. (on request only)
- * PCRE      Adds features to do regexp using the PCRE implementeation.
- * Request   Class for extra features during API call from FS (using 'jsapi' function). This class cannot be constructed from JS code!
- *           The Request class is only availble when started from 'jsapi' FS command, and only inside the predefined variable 'request'.
- * Session   Main FS class, includes all functions to handle a session.
- * Socket    Class for communicating over a TCP/IP socket. (on request only)
- * TeleTone  Class used to play tones to a FS channel. (on request only)
- * XML       XML parsing class, using the features from switch_xml. (on request only)
+ * CoreDB		Adds features to access the core DB (SQLite) in FreeSWITCH. (on request only)
+ * CURL			Adds some extra methods for CURL access. (on request only)
+ * DTMF			Object that holds information about a DTMF event.
+ * Event		Object that holds information about a FreeSWITCH event.
+ * EventHandler	Features for handling FS events.
+ * File			Class to reflect the Spidermonkey built-in class "File". Not yet implemented! (on request only)
+ * FileIO		Simple class for basic file IO.
+ * ODBC			Adds features to access any ODBC available database in the system. (on request only)
+ * PCRE			Adds features to do regexp using the PCRE implementeation.
+ * Request		Class for extra features during API call from FS (using 'jsapi' function). This class cannot be constructed from JS code!
+ *				The Request class is only availble when started from 'jsapi' FS command, and only inside the predefined variable 'request'.
+ * Session		Main FS class, includes all functions to handle a session.
+ * Socket		Class for communicating over a TCP/IP socket. (on request only)
+ * TeleTone		Class used to play tones to a FS channel. (on request only)
+ * XML			XML parsing class, using the features from switch_xml. (on request only)
  *
  * Some of the classes above are available on request only, using the command [use('Class');] before using the class for the first time.
  *
@@ -73,7 +74,7 @@
 #include "fsglobal.hpp"
 
 /* Common JavaScript classes */
-#include "fsrequest.hpp" /* Only loaded during 'jsapi' call */
+#include "fsrequest.hpp" /* Only loaded during 'jsapi' and 'jsjson' call */
 #include "fspcre.hpp"
 #include "fsevent.hpp"
 #include "fssession.hpp"
@@ -88,6 +89,9 @@
 #include "fsodbc.hpp"
 #include "fsxml.hpp"
 #include "fsfile.hpp"
+#include "fseventhandler.hpp"
+
+#include <set>
 
 using namespace std;
 using namespace v8;
@@ -106,7 +110,17 @@ static switch_api_interface_t *jsapi_interface = NULL;
 /* Module manager for loadable modules */
 module_manager_t module_manager = { 0 };
 
-/* Loadable module struct */
+/* Global data for this module */
+typedef struct {
+	switch_memory_pool_t *pool;
+	switch_mutex_t *event_mutex;
+	switch_event_node_t *event_node;
+	set<FSEventHandler *> *event_handlers;
+} mod_v8_global_t;
+
+mod_v8_global_t globals = { 0 };
+
+/* Loadable module struct, used for external extension modules */
 typedef struct {
 	char *filename;
 	void *lib;
@@ -258,7 +272,6 @@ static switch_status_t load_modules(void)
 	const char *EXT = ".SO";
 #endif
 
-	memset(&module_manager, 0, sizeof(module_manager));
 	switch_core_new_memory_pool(&module_manager.pool);
 
 	switch_core_hash_init(&module_manager.load_hash, module_manager.pool);
@@ -688,7 +701,52 @@ static void v8_thread_launch(const char *text)
 	switch_thread_create(&thread, thd_attr, v8_thread_run, task, pool);
 }
 
+void v8_add_event_handler(void *event_handler)
+{
+	FSEventHandler *eh = static_cast<FSEventHandler *>(event_handler);
+
+	if (eh) {
+		switch_mutex_lock(globals.event_mutex);
+		globals.event_handlers->insert(eh);
+		switch_mutex_unlock(globals.event_mutex);
+	}
+}
+
+void v8_remove_event_handler(void *event_handler)
+{
+	FSEventHandler *eh = static_cast<FSEventHandler *>(event_handler);
+
+	if (eh) {
+		switch_mutex_lock(globals.event_mutex);
+
+		set<FSEventHandler *>::iterator it = globals.event_handlers->find(eh);
+
+		if (it != globals.event_handlers->end()) {
+			globals.event_handlers->erase(it);
+		}
+
+		switch_mutex_unlock(globals.event_mutex);
+	}
+}
+
 SWITCH_BEGIN_EXTERN_C
+
+static void event_handler(switch_event_t *event)
+{
+	if (event) {
+		switch_mutex_lock(globals.event_mutex);
+
+		set<FSEventHandler *>::iterator it;
+
+		for (it = globals.event_handlers->begin(); it != globals.event_handlers->end(); ++it) {
+			if (*it) {
+				(*it)->QueueEvent(event);
+			}
+		}
+
+		switch_mutex_unlock(globals.event_mutex);
+	}
+}
 
 SWITCH_STANDARD_API(jsapi_function)
 {
@@ -769,6 +827,19 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_v8_load)
 	switch_chat_application_interface_t *chat_app_interface;
 	switch_json_api_interface_t *json_api_interface;
 
+	if (switch_event_bind_removable(modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL, &globals.event_node) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind to events\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (switch_core_new_memory_pool(&globals.pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	switch_mutex_init(&globals.event_mutex, SWITCH_MUTEX_NESTED, globals.pool);
+	globals.event_handlers = new set<FSEventHandler *>();
+
 	if (load_modules() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -786,6 +857,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_v8_load)
 	v8_mod_init_built_in(FSTeleTone::GetModuleInterface());
 	v8_mod_init_built_in(FSXML::GetModuleInterface());
 	v8_mod_init_built_in(FSFile::GetModuleInterface());
+	v8_mod_init_built_in(FSEventHandler::GetModuleInterface());
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -802,6 +874,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_v8_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_v8_shutdown)
 {
+	switch_event_unbind(&globals.event_node);
+
+	delete globals.event_handlers;
+	switch_mutex_destroy(globals.event_mutex);
+	switch_core_destroy_memory_pool(&globals.pool);
+
 	switch_core_hash_destroy(&module_manager.load_hash);
 
 	return SWITCH_STATUS_SUCCESS;

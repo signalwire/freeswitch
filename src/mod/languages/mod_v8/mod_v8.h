@@ -40,15 +40,19 @@ SWITCH_BEGIN_EXTERN_C
 #define JS_BUFFER_SIZE 1024 * 32
 #define JS_BLOCK_SIZE JS_BUFFER_SIZE
 
+/* Function definition for initialization of an extension module */
 typedef switch_status_t (*v8_mod_load_t) (const v8::FunctionCallbackInfo<v8::Value>& info);
 
+/* Extension module interface, stored inside the load_hash */
 typedef struct {
 	const char *name;
 	v8_mod_load_t v8_mod_load;
 } v8_mod_interface_t;
 
+/* Function definition for external extension module */
 typedef switch_status_t (*v8_mod_init_t) (const v8_mod_interface_t **module_interface);
 
+/* Struct that holds information about loadable extension modules */
 typedef struct {
 	switch_hash_t *load_hash;
 	switch_memory_pool_t *pool;
@@ -57,6 +61,9 @@ typedef struct {
 extern module_manager_t module_manager;
 
 SWITCH_END_EXTERN_C
+
+void v8_add_event_handler(void *event_handler);
+void v8_remove_event_handler(void *event_handler);
 
 #endif /* MOD_V8_H */
 
