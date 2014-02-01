@@ -173,7 +173,7 @@ void FSEventHandler::QueueEvent(switch_event_t *event)
 	}
 }
 
-static char *MARKER = "1";
+static const char *MARKER = "1";
 
 void FSEventHandler::DoSubscribe(const v8::FunctionCallbackInfo<v8::Value>& info)
 {
@@ -463,7 +463,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 	}
 
 	if (!reply) {
-		reply = "Command returned no output!";
+		reply = (char *)"Command returned no output!";
 	}
 
 	if (switch_event_create(&event, SWITCH_EVENT_BACKGROUND_JOB) == SWITCH_STATUS_SUCCESS) {
