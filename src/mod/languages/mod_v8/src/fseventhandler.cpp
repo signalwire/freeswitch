@@ -163,22 +163,12 @@ void FSEventHandler::QueueEvent(switch_event_t *event)
 
 	if (send) {
 		if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
-
-			if (switch_queue_trypush(_event_queue, clone) == SWITCH_STATUS_SUCCESS) {
-				// TODO
-				/*if (l->lost_events) {
-					int le = l->lost_events;
-					l->lost_events = 0;
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(l->session), SWITCH_LOG_CRIT, "Lost %d events!\n", le);
-				}*/
-			} else {
-				/*if (++l->lost_events > MAX_MISSED) {
-					kill_listener(l, NULL);
-				}*/
+			if (switch_queue_trypush(_event_queue, clone) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Lost event to JS EventHandler, you must read the events faster!\n");
 				switch_event_destroy(&clone);
 			}
 		} else {
-			////switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(l->session), SWITCH_LOG_ERROR, "Memory Error!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
 		}
 	}
 }
@@ -406,12 +396,10 @@ JS_EVENTHANDLER_FUNCTION_IMPL(SendEvent)
 						switch_core_session_rwunlock(session);
 					} else {
 						info.GetReturnValue().Set(false);
-						// TODO LOGGING
-						//switch_snprintf(reply, reply_len, "-ERR invalid session id [%s]", switch_str_nil(uuid));
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid session id [%s]\n", switch_str_nil(session_uuid.c_str()));
 					}
 				} else {
 					/* "Normal" event */
-					// TODO LOGGING
 					switch_event_fire(event);
 				}
 			}
