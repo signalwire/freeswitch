@@ -343,7 +343,7 @@ build_all () {
   done
   shift $(($OPTIND-1))
   [ -n "$archs" ] || archs="amd64 i386"
-  [ -n "$distros" ] || distros="sid jessie wheezy squeeze"
+  [ -n "$distros" ] || distros="sid jessie wheezy"
   ! $depinst || aptitude install -y \
     rsync git less cowbuilder ccache \
     devscripts equivs build-essential
