@@ -665,6 +665,10 @@ Module: say/mod_say_zh
 Description: mod_say_zh
  Adds mod_say_zh.
 
+Module: say/mod_say_sv
+Description: mod_say_sv
+ Adds mod_say_sv.
+
 ## mod/sdk
 
 Module: sdk/autotools

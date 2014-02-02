@@ -96,5 +96,6 @@
     <!-- Say -->
     <load module="mod_say_en"/>
     <!-- <load module="mod_say_zh"/> -->
+    <!-- <load module="mod_say_sv"/> -->
   </modules>
 </configuration>

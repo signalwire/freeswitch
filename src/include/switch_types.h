@@ -432,7 +432,8 @@ typedef enum {
 typedef enum {
 	SSG_MASCULINE,
 	SSG_FEMININE,
-	SSG_NEUTER
+	SSG_NEUTER,
+	SSG_UTRUM
 } switch_say_gender_t;
 
 typedef enum {

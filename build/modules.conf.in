@@ -140,6 +140,7 @@ say/mod_say_en
 #say/mod_say_ru
 #say/mod_say_th
 #say/mod_say_zh
+#say/mod_say_sv
 #timers/mod_posix_timer
 #timers/mod_timerfd
 xml_int/mod_xml_cdr

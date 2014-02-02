@@ -127,6 +127,7 @@
     <load module="mod_say_en"/>
     <!-- <load module="mod_say_ru"/> -->
     <!-- <load module="mod_say_zh"/> -->
+    <!-- <load module="mod_say_sv"/> -->
 
     <!-- Third party modules -->
     <!--<load module="mod_nibblebill"/>-->
