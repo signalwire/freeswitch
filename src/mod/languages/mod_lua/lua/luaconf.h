@@ -150,7 +150,12 @@
 
 #else				/* }{ */
 
-#define LUA_API		extern
+#if (defined(__GNUC__) || defined(__SUNPRO_CC) || defined (__SUNPRO_C)) && defined(HAVE_VISIBILITY) && (defined(LUA_CORE) || defined(LUA_LIB))
+#define LUA_API        __attribute__((visibility("default")))
+#else
+#define LUA_API                extern
+#endif
+#endif
 
 #endif				/* } */
 
