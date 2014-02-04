@@ -3480,14 +3480,15 @@ static void config_sofia_profile_urls(sofia_profile_t * profile)
 	}
 
 	if (profile->bind_params) {
-		char *bindurl = profile->bindurl;
+		char *bindurl;
 		if (!switch_stristr("transport=", profile->bind_params)) {
 			profile->bind_params = switch_core_sprintf(profile->pool, "%s;transport=udp,tcp", profile->bind_params);
 		}
-		profile->bindurl = switch_core_sprintf(profile->pool, "%s;%s", bindurl, profile->bind_params);
+		bindurl = switch_core_sprintf(profile->pool, "%s;%s", profile->bindurl, profile->bind_params);
+		profile->bindurl = bindurl;
 	} else {
-		char *bindurl = profile->bindurl;
-		profile->bindurl = switch_core_sprintf(profile->pool, "%s;transport=udp,tcp", bindurl);
+		char *bindurl = switch_core_sprintf(profile->pool, "%s;transport=udp,tcp", profile->bindurl);
+		profile->bindurl = bindurl;
 	}
 
 
