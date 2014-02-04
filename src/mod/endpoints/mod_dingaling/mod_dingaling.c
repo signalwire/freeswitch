@@ -1104,7 +1104,7 @@ static void try_secure(struct private_object *tech_pvt, ldl_transport_type_t tty
 	}
 
 
-	//if (tech_pvt->transports[ttype].crypto_type) {
+	if (tech_pvt->transports[ttype].crypto_type) {
 		switch_rtp_add_crypto_key(tech_pvt->transports[ttype].rtp_session, 
 								  SWITCH_RTP_CRYPTO_SEND, 1, tech_pvt->transports[ttype].crypto_type, 
 								  tech_pvt->transports[ttype].local_raw_key, SWITCH_RTP_KEY_LEN);
@@ -1120,7 +1120,7 @@ static void try_secure(struct private_object *tech_pvt, ldl_transport_type_t tty
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_NOTICE, 
 						  "%s %s crypto confirmed\n", ldl_transport_type_str(ttype), switch_core_session_get_name(tech_pvt->session));
 
-		//}
+		}
 
 }
 
