@@ -3404,8 +3404,8 @@ static void config_sofia_profile_urls(sofia_profile_t * profile)
 	}
 	
 	if (profile->bind_params) {
-		char *bindurl = profile->bindurl;
-		profile->bindurl = switch_core_sprintf(profile->pool, "%s;%s", bindurl, profile->bind_params);
+		char *bindurl = switch_core_sprintf(profile->pool, "%s;%s", profile->bindurl, profile->bind_params);
+		profile->bindurl = bindurl;
 	}
 	
 	/*
