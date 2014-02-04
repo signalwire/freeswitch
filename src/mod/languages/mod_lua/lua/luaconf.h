@@ -155,7 +155,6 @@
 #else
 #define LUA_API                extern
 #endif
-#endif
 
 #endif				/* } */
 
