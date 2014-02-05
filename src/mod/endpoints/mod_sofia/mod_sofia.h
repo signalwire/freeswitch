@@ -319,7 +319,6 @@ typedef enum {
 	TFLAG_CAPTURE,
 	TFLAG_REINVITED,
 	TFLAG_PASS_ACK,
-	TFLAG_BYPASS_MEDIA_AFTER_HOLD,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
@@ -509,7 +508,8 @@ typedef enum {
 typedef enum {
 	MEDIA_OPT_NONE = 0,
 	MEDIA_OPT_MEDIA_ON_HOLD = (1 << 0),
-	MEDIA_OPT_BYPASS_AFTER_ATT_XFER = (1 << 1)
+	MEDIA_OPT_BYPASS_AFTER_ATT_XFER = (1 << 1),
+	MEDIA_OPT_BYPASS_AFTER_HOLD = (1 << 2)
 } sofia_media_options_t;
 
 typedef enum {
