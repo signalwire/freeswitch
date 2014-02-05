@@ -3755,6 +3755,12 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 
 			switch_yield(250000);
 
+			if (b_channel && (switch_channel_test_flag(session->channel, CF_BYPASS_MEDIA_AFTER_HOLD) ||
+				switch_channel_test_flag(b_channel, CF_BYPASS_MEDIA_AFTER_HOLD))) {
+				/* try to stay out from media stream */
+				switch_ivr_nomedia(switch_core_session_get_uuid(session), SMF_REBRIDGE);
+			}
+
 			if (a_engine->max_missed_packets && a_engine->rtp_session) {
 				switch_rtp_reset_media_timer(a_engine->rtp_session);
 				switch_rtp_set_max_missed_packets(a_engine->rtp_session, a_engine->max_missed_packets);

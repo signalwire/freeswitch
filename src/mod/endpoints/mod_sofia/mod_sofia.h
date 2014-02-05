@@ -319,6 +319,7 @@ typedef enum {
 	TFLAG_CAPTURE,
 	TFLAG_REINVITED,
 	TFLAG_PASS_ACK,
+	TFLAG_BYPASS_MEDIA_AFTER_HOLD,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;

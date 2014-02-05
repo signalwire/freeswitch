@@ -37,6 +37,10 @@
         when you press the hold button.
     -->
     <!--<param name="media-option" value="resume-media-on-hold"/> -->
+
+    <!-- bypass again when hold is complete -->
+    <!-- <param ame="media-option" value="bypass-media-after-hold"/> -->
+
     <!--
         This will allow a call after an attended transfer go back to
         bypass media after an attended transfer.

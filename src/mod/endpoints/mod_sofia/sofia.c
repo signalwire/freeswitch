@@ -4306,6 +4306,13 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else if (!strcasecmp(val, "bypass-media-after-att-xfer")) {
 							profile->media_options |= MEDIA_OPT_BYPASS_AFTER_ATT_XFER;
 						}
+					} else if (!strcasecmp(var, "bypass-media-after-hold") && switch_true(val)) {
+						if(profile->media_options & MEDIA_OPT_MEDIA_ON_HOLD) {
+							sofia_set_flag(profile, TFLAG_BYPASS_MEDIA_AFTER_HOLD);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+										"bypass-media-after-hold can be set only with resume-media-on-hold media-option\n");
+						}
 					} else if (!strcasecmp(var, "pnp-provision-url")) {
 						profile->pnp_prov_url = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "manage-presence")) {
@@ -8539,6 +8546,10 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 	if (sofia_test_flag(tech_pvt, TFLAG_INB_NOMEDIA)) {
 		switch_channel_set_flag(channel, CF_PROXY_MODE);
+	}
+
+	if (sofia_test_flag(tech_pvt, TFLAG_BYPASS_MEDIA_AFTER_HOLD)) {
+		switch_channel_set_flag(channel, CF_BYPASS_MEDIA_AFTER_HOLD);
 	}
 
 	if (sofia_test_flag(tech_pvt, TFLAG_PROXY_MEDIA)) {
