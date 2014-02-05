@@ -73573,7 +73573,7 @@ index 679f29b..df87773 100644
 -/* 
 +/*
   * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
-  * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
   *
 @@ -22,7 +22,7 @@
   * the Initial Developer. All Rights Reserved.
@@ -75445,7 +75445,7 @@ index 9b20546..4489cfc 100644
 -/* 
 +/*
   * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
-  * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
   *
 @@ -22,13 +22,38 @@
   * the Initial Developer. All Rights Reserved.

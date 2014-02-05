@@ -3,8 +3,8 @@ Upstream-Name: freeswitch
 Source: http://freeswitch.org/
 
 Files: *
-Copyright: 2005-2012 Anthony Minessale II <anthm@freeswitch.org>
- 2005-2012 Anthony Minessale II
+Copyright: 2005-2014 Anthony Minessale II <anthm@freeswitch.org>
+ 2005-2014 Anthony Minessale II
 License: MPL-1.1
                            MOZILLA PUBLIC LICENSE
                                  Version 1.1
@@ -1262,8 +1262,8 @@ License: ISC
  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 Files: libs/freetdm/*
-Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
- 2005-2012, Anthony Minessale II
+Copyright: 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ 2005-2014, Anthony Minessale II
  2009,2010 Moises Silva <moy@sangoma.com>
  David Yat Sin <dyatsin@sangoma.com>
  2007, Jan Vidar Berger, Case Labs, Ltd.
@@ -1284,7 +1284,7 @@ License: BSD-3-clause
 
 Files: libs/freetdm/src/priserver.c
  libs/freetdm/src/sangoma_pri.?
-Copyright: 2005-2012, Anthony Minessale II
+Copyright: 2005-2014, Anthony Minessale II
  Nenad Corbic <ncorbic@sangoma.com>
 License: GPL-2+
 
@@ -1296,8 +1296,8 @@ Files: libs/freetdm/src/libteletone_detect.c
  libs/freetdm/src/libteletone_generate.c
  libs/libteletone/src/libteletone_detect.[ch]
  src/mod/applications/mod_spandsp/udptl.[ch]
-Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
- 2005-2012, Anthony Minessale II
+Copyright: 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ 2005-2014, Anthony Minessale II
  2001-2009, Steve Underwood <steveu@coppice.org>
 License: MPL-1.1
 
@@ -1538,7 +1538,7 @@ Copyright: 2005-2010, James Martelletti <james@nerdc0re.com>
 License: MPL-1.1
 
 Files: src/mod/event_handlers/mod_cdr_mongodb/mod_cdr_mongodb.c
-Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+Copyright: 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
 License: MPL-1.1
 
 Files: src/mod/event_handlers/mod_cdr_mongodb/driver/src/md5.[ch]
@@ -1552,7 +1552,7 @@ License: MPL-1.1
 Files: src/mod/say/mod_say_??/mod_say_??.c
  scripts/c/socket2me/socket2me.c
  src/mod/xml_int/mod_xml_scgi/xml_scgi_server.pl
-Copyright: 2007-2012, Anthony Minessale II <anthm@freeswitch.org>
+Copyright: 2007-2014, Anthony Minessale II <anthm@freeswitch.org>
  2007-2013, Anthony Minessale II
  2011-2012, Shahar Hadas
 License: BSD-3-clause
@@ -1595,7 +1595,7 @@ Copyright: 2002-2003 the Icecast team <team@icecast.org>
 License: LGPL-2+
 
 Files: */switch_xml.[ch]
-Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+Copyright: 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  2004-2006 Aaron Voisine <aaron@voisine.org>
 License: MPL-1.1 or BSD-like
 
@@ -1722,7 +1722,7 @@ Copyright: 2007-2010 Khomp Ind. & Com.
 License: MPL-1.1 or LGPL-2.1+
 
 Files: src/mod/endpoints/mod_khomp/mod_khomp.cpp
-Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+Copyright: 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
 License: MPL-1.1
 
 Files: src/mod/endpoints/mod_khomp/commons/base/atomic.hpp
@@ -1795,11 +1795,11 @@ License: Perl
 
 Files: src/mod/endpoints/mod_portaudio/*
 Copyright: 1999-2000 Ross Bencina and Phil Burk
- 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
 License: MIT/X11 (BSD like)
 
 Files: src/mod/endpoints/mod_portaudio/mod_portaudio.c
-Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+Copyright: 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
 License: MPL-1.1
 
 Files: src/mod/endpoints/mod_sofia/sip-dig.c
@@ -1834,7 +1834,7 @@ Copyright: 2006-2011, Skype Limited.
 License: BSD-2-clause
 
 Files: libs/libdingaling/*
-Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+Copyright: 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  2001-2003 Allan Saddi <allan@saddi.com>
 License: MPL-1.1
 
@@ -1870,7 +1870,7 @@ Copyright: 2011-2012 The WebRTC project authors
 License: BSD-3-clause
 
 Files: src/mod/codecs/mod_isac/mod_isac.c
-Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+Copyright: 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
 License: MPL-1.1
 
 Files: libs/srtp/*
@@ -1989,7 +1989,7 @@ License: ISC
 Files: libs/esl/*
 Copyright: 2007 Michael Jerris
  2002 Todd C. Miller <Todd.Miller@courtesan.com>
- 2007-2012, Anthony Minessale II
+ 2007-2014, Anthony Minessale II
  2000 The NetBSD Foundation, Inc.
 License: BSD-3-clause
 
@@ -2052,7 +2052,7 @@ Copyright: 1995 Abandoned Colin Plumb
 License: public-domain
 
 Files: libs/stfu/*
-Copyright: 2007-2012 Anthony Minessale II <anthm@freeswitch.org>
+Copyright: 2007-2014 Anthony Minessale II <anthm@freeswitch.org>
 License: MIT/X11 (BSD like)
 
 Files: libs/sqlite/*
@@ -2070,9 +2070,9 @@ Copyright: 1997-2008 University of Cambridge
 License: BSD-3-clause
 
 Files: libs/openzap/*
-Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
- 2007-2012, Anthony Minessale II, Nenad Corbic
- 2005-2012, Anthony Minessale II
+Copyright: 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ 2007-2014, Anthony Minessale II, Nenad Corbic
+ 2005-2014, Anthony Minessale II
  2006 Nenad Corbic <ncorbic@sangoma.com>
  2007 Jan Vidar Berger, Case Labs, Ltd.
  2007,2008 Michael Jerris
@@ -2098,13 +2098,13 @@ License: BSD-2-clause
 
 Files: libs/openzap/src/include/libteletone.h
  libs/openzap/mod_openzap/mod_openzap.c
-Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
- 2005-2012, Anthony Minessale II
+Copyright: 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
+ 2005-2014, Anthony Minessale II
 License: MPL-1.1
 
 Files: libs/openzap/src/sangoma_pri.[ch]
  libs/openzap/src/priserver.c
-Copyright: 2005-2012 Anthony Minessale II
+Copyright: 2005-2014 Anthony Minessale II
  2006 Nenad Corbic <ncorbic@sangoma.com>
 License: GPL-2+
 
