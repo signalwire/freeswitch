@@ -477,6 +477,7 @@ AM_CONDITIONAL([ENABLE_TIMERFD_WRAPPER],[test "x$enable_timer_fd_wrapper" != "xn
 AC_CHECK_LIB(z, inflateReset, have_libz=yes, AC_MSG_ERROR([no usable zlib; please install zlib devel package or equivalent]))
 if test "x$have_libz" = "xyes"  ; then
 APR_ADDTO(SWITCH_AM_LDFLAGS, -lz)
+APR_ADDTO([PLATFORM_CORE_LIBS], [-lz])
 fi
 
 AC_CHECK_LIB(jpeg, jpeg_std_error,, AC_MSG_ERROR([no usable libjpeg; please install libjpeg devel package or equivalent]))
