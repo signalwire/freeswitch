@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -377,6 +377,7 @@ typedef struct conference_obj {
 	int comfort_noise_level;
 	int auto_recording;
 	int record_count;
+	int min_recording_participants;
 	int video_running;
 	int ivr_dtmf_timeout;
 	int ivr_input_timeout;
@@ -2635,8 +2636,8 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			}
 		}
 
-		/* Start recording if there's more than one participant. */
-		if (conference->auto_record && !conference->auto_recording && conference->count > 1) {
+		/* Start auto recording if there's the minimum number of required participants. */
+		if (conference->auto_record && !conference->auto_recording && (conference->count >= conference->min_recording_participants)) {
 			conference->auto_recording++;
 			conference->record_count++;
 			imember = conference->members;
@@ -3904,7 +3905,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 		/* skip frames that are not actual media or when we are muted or silent */
 		if ((switch_test_flag(member, MFLAG_TALKING) || member->energy_level == 0 || switch_test_flag(member->conference, CFLAG_AUDIO_ALWAYS)) 
-			&& switch_test_flag(member, MFLAG_CAN_SPEAK) &&	!switch_test_flag(member->conference, CFLAG_WAIT_MOD) && member->conference->count > 1) {
+			&& switch_test_flag(member, MFLAG_CAN_SPEAK) &&	!switch_test_flag(member->conference, CFLAG_WAIT_MOD)
+			&& (member->conference->count > 1 || member->conference->record_count >= member->conference->min_recording_participants)) {
 			switch_audio_resampler_t *read_resampler = member->read_resampler;
 			void *data;
 			uint32_t datalen;
@@ -8902,6 +8904,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	char *suppress_events = NULL;
 	char *verbose_events = NULL;
 	char *auto_record = NULL;
+	int min_recording_participants = 2;
 	char *conference_log_dir = NULL;
 	char *cdr_event_mode = NULL;
 	char *terminate_on_silence = NULL;
@@ -9121,6 +9124,14 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 				verbose_events = val;
 			} else if (!strcasecmp(var, "auto-record") && !zstr(val)) {
 				auto_record = val;
+			} else if (!strcasecmp(var, "min-required-recording-participants") && !zstr(val)) {
+				if (!strcmp(val, "1")) {
+					min_recording_participants = 1;
+				} else if (!strcmp(val, "2")) {
+					min_recording_participants = 2;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "min-required-recording-participants is invalid, leaving set to %d\n", min_recording_participants);
+				}
 			} else if (!strcasecmp(var, "terminate-on-silence") && !zstr(val)) {
 				terminate_on_silence = val;
 			} else if (!strcasecmp(var, "endconf-grace-time") && !zstr(val)) {
@@ -9372,6 +9383,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	if (!zstr(auto_record)) {
 		conference->auto_record = switch_core_strdup(conference->pool, auto_record);
 	}
+
+	conference->min_recording_participants = min_recording_participants;
 
 	if (!zstr(desc)) {
 		conference->desc = switch_core_strdup(conference->pool, desc);
