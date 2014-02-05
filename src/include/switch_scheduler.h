@@ -47,6 +47,7 @@ SWITCH_BEGIN_EXTERN_C
 	char *group;
 	void *cmd_arg;
 	uint32_t task_id;
+	unsigned long hash;
 };
 
 
