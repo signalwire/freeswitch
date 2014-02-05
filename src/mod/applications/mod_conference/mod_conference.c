@@ -6295,7 +6295,7 @@ static switch_status_t conf_api_sub_play(conference_obj_t *conference, switch_st
 				switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 				conference_add_event_data(conference, event);
 
-				if (conference->fnode->fh.params) {
+				if (conference->fnode && conference->fnode->fh.params) {
 					switch_event_merge(event, conference->fnode->fh.params);
 				}
 				
