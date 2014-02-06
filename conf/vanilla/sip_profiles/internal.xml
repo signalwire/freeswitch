@@ -207,8 +207,11 @@
     <param name="tls-verify-depth" value="2"/>
     <!-- If the tls-verify-policy is set to subjects_all or subjects_in this sets which subjects are allowed, multiple subjects can be split with a '|' pipe -->
     <param name="tls-verify-in-subjects" value=""/>
-    <!-- TLS version ("sslv23" (default), "tlsv1"). NOTE: Phones may not work with TLSv1 -->
+    <!-- TLS version default: tlsv1,tlsv1.1,tlsv1.2 -->
     <param name="tls-version" value="$${sip_tls_version}"/>
+
+    <!-- TLS ciphers default: ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH  -->
+    <param name="tls-ciphers" value="$${sip_tls_ciphers}"/>
 
     <!-- turn on auto-flush during bridge (skip timer sleep when the socket already has data)
          (reduces delay on latent connections default true, must be disabled explicitly)-->
