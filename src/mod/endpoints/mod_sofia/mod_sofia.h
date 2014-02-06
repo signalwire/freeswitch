@@ -587,6 +587,7 @@ struct sofia_profile {
 	switch_port_t sip_port;
 	switch_port_t extsipport;
 	switch_port_t tls_sip_port;
+	char *tls_ciphers;
 	int tls_version;
 	unsigned int tls_timeout;
 	char *inbound_codec_string;

@@ -249,6 +249,8 @@
              sets which subjects are allowed, multiple subjects can be split
              with a '|' pipe -->
         <param name="tls-verify-in-subjects" value=""/>
+        <!-- Set the OpenSSL cipher suite list -->
+        <!-- <param name="tls-ciphers" value="!aNULL:!LOW:!EXP:!kECDH:!ECDSA:!DSS:!PSK:!SRP:ALL"/> -->
         <!-- TLS version ("sslv23" (default), "tlsv1"). NOTE: Phones may not
              work with TLSv1 -->
         <param name="tls-version" value="$${sip_tls_version}"/>
