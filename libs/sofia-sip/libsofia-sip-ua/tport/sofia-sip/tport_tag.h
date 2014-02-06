@@ -180,6 +180,14 @@ TPORT_DLL extern tag_typedef_t tptag_certificate;
 TPORT_DLL extern tag_typedef_t tptag_certificate_ref;
 #define TPTAG_CERTIFICATE_REF(x) tptag_certificate_ref, tag_str_vr(&(x))
 
+enum tport_tls_version {
+  TPTLS_VERSION_SSLv2 = (1 << 0),
+  TPTLS_VERSION_SSLv3 = (1 << 1),
+  TPTLS_VERSION_TLSv1 = (1 << 2),
+  TPTLS_VERSION_TLSv1_1 = (1 << 3),
+  TPTLS_VERSION_TLSv1_2 = (1 << 4),
+};
+
 TPORT_DLL extern tag_typedef_t tptag_tls_version;
 #define TPTAG_TLS_VERSION(x) tptag_tls_version, tag_uint_v((x))
 
