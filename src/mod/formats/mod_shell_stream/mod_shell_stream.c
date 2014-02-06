@@ -47,6 +47,7 @@ struct shell_stream_context {
 	switch_mutex_t *mutex;
 	switch_thread_rwlock_t *rwlock;
 	int running;
+	switch_thread_t *thread;
 };
 
 typedef struct shell_stream_context shell_stream_context_t;
@@ -91,7 +92,6 @@ static switch_status_t shell_stream_file_open(switch_file_handle_t *handle, cons
 {
 	shell_stream_context_t *context;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
@@ -127,9 +127,8 @@ static switch_status_t shell_stream_file_open(switch_file_handle_t *handle, cons
 			switch_mutex_init(&context->mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
 
 			switch_threadattr_create(&thd_attr, handle->memory_pool);
-			switch_threadattr_detach_set(thd_attr, 1);
 			switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-			switch_thread_create(&thread, thd_attr, buffer_thread_run, context, handle->memory_pool);
+			switch_thread_create(&context->thread, thd_attr, buffer_thread_run, context, handle->memory_pool);
 			context->running = 2;
 
 			while (context->running == 2) {
@@ -164,6 +163,7 @@ static switch_status_t shell_stream_file_open(switch_file_handle_t *handle, cons
 static switch_status_t shell_stream_file_close(switch_file_handle_t *handle)
 {
 	shell_stream_context_t *context = handle->private_info;
+	switch_status_t st;
 
 	context->running = 0;
 
@@ -171,6 +171,10 @@ static switch_status_t shell_stream_file_close(switch_file_handle_t *handle)
 		close(context->fds[0]);
 	}
 
+	if (context->thread) {
+		switch_thread_join(&st, context->thread);
+	}
+	
 	if (context->audio_buffer) {
 		switch_buffer_destroy(&context->audio_buffer);
 	}
