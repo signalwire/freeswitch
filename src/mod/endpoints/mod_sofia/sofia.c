@@ -5488,7 +5488,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		}
 
 		if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
-			switch_channel_clear_flag(tech_pvt->channel, CF_T38_PASSTHRU);
+			switch_channel_clear_flag(channel, CF_T38_PASSTHRU);
 			has_t38 = 0;
 		}
 
