@@ -270,6 +270,14 @@ tag_typedef_t tptag_certificate = STRTAG_TYPEDEF(certificate);
  */
 tag_typedef_t tptag_compartment = PTRTAG_TYPEDEF(compartment);
 
+/**@def TPTAG_TLS_CIPHERS(x)
+ *
+ * Sets the supported TLS cipher suites.
+ *
+ * Use with tport_tbind(), nua_create(), nta_agent_create(),
+ * nta_agent_add_tport(), nth_engine_create(), or initial nth_site_create().
+ */
+tag_typedef_t tptag_tls_ciphers = STRTAG_TYPEDEF(tls_ciphers);
 
 /**@def TPTAG_TLS_VERSION(x)
  *

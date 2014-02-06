@@ -202,7 +202,7 @@ void tls_set_default(tls_issues_t *i)
   i->key = i->key ? i->key : i->cert;
   i->randFile = i->randFile ? i->randFile : "tls_seed.dat";
   i->CAfile = i->CAfile ? i->CAfile : "cafile.pem";
-  i->cipher = i->cipher ? i->cipher : "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH";
+  i->ciphers = i->ciphers ? i->ciphers : "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH";
   /* Default SIP cipher */
   /* "RSA-WITH-AES-128-CBC-SHA"; */
   /* RFC-2543-compatibility ciphersuite */
@@ -385,7 +385,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
   SSL_CTX_set_verify_depth(tls->ctx, ti->verify_depth);
   SSL_CTX_set_verify(tls->ctx, verify, tls_verify_cb);
 
-  if (!SSL_CTX_set_cipher_list(tls->ctx, ti->cipher)) {
+  if (!SSL_CTX_set_cipher_list(tls->ctx, ti->ciphers)) {
     SU_DEBUG_1(("%s: error setting cipher list\n", "tls_init_context"));
     tls_log_errors(3, "tls_init_context", 0);
     errno = EIO;
