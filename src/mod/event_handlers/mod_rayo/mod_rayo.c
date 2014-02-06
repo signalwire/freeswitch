@@ -1635,7 +1635,7 @@ void rayo_call_send(struct rayo_actor *call, struct rayo_message *msg)
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "content-type", "text/plain");
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "uuid", rayo_call_get_uuid(RAYO_CALL(call)));
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", iks_find_cdata(stanza, "subject"));
-				switch_event_add_body(event, iks_find_cdata(stanza, "body"));
+				switch_event_add_body(event, "%s", iks_find_cdata(stanza, "body"));
 				switch_event_fire(&event);
 			}
 		} else if (!msg->is_reply) {
