@@ -270,10 +270,19 @@
   <X-PRE-PROCESS cmd="set" data="default_provider_contact=5000"/>
 
   <!--
-      SIP and TLS settings. http://wiki.freeswitch.org/wiki/Tls
-  -->
-  <X-PRE-PROCESS cmd="set" data="sip_tls_version=tlsv1"/>
+     SIP and TLS settings. http://wiki.freeswitch.org/wiki/Tls
+     
+     valid options: sslv2,sslv3,sslv23,tlsv1,tlsv1.1,tlsv1.2
 
+     default: tlsv1,tlsv1.1,tlsv1.2
+  -->
+  <X-PRE-PROCESS cmd="set" data="sip_tls_version=tlsv1,tlsv1.1,tlsv1.2"/>
+
+  <!--
+     TLS cipher suite: default ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH
+  -->
+  <X-PRE-PROCESS cmd="set" data="sip_tls_ciphers=ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"/>
+  
   <!-- Internal SIP Profile -->
   <X-PRE-PROCESS cmd="set" data="internal_auth_calls=true"/>
   <X-PRE-PROCESS cmd="set" data="internal_sip_port=5060"/>
