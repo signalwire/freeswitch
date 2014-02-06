@@ -2463,6 +2463,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS) && profile->tls_verify_in_subjects,
 									  TPTAG_TLS_VERIFY_SUBJECTS(profile->tls_verify_in_subjects)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
+									 TPTAG_TLS_CIPHERS(profile->tls_ciphers)),
+							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
 									 TPTAG_TLS_VERSION(profile->tls_version)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS) && profile->tls_timeout,
 									 TPTAG_TLS_TIMEOUT(profile->tls_timeout)),
@@ -3658,6 +3660,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->sip_force_expires = 0;
 					profile->sip_expires_max_deviation = 0;
 					profile->sip_subscription_max_deviation = 0;
+					profile->tls_ciphers = "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH";
 					profile->tls_version = SOFIA_TLS_VERSION_TLSv1;
 					profile->tls_version |= SOFIA_TLS_VERSION_TLSv1_1;
 					profile->tls_version |= SOFIA_TLS_VERSION_TLSv1_2;
@@ -4580,6 +4583,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						profile->tls_passphrase = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "tls-verify-in-subjects")) {
 						profile->tls_verify_in_subjects_str = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "tls-ciphers")) {
+						profile->tls_ciphers = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "tls-version")) {
 						char *ps = val, *pe;
 						profile->tls_version = 0;
