@@ -60,7 +60,7 @@ typedef struct tls_issues_s {
   char *randFile;       /* Seed file for the PRNG (default: tls_seed.dat) */
   char *CAfile;		/* PEM file of CA's                           */
   char *CApath;		/* PEM file path of CA's		      */
-  char *cipher;         /* Should be one of the above defined ciphers *
+  char *ciphers;         /* Should be one of the above defined ciphers *
 			 * or NULL (default: "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH
                          */
   int   version;	/* For tls1, version is 1. When ssl3/ssl2 is

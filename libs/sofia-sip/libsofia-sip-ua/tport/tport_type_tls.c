@@ -180,6 +180,7 @@ static int tport_tls_init_master(tport_primary_t *pri,
   char *homedir;
   char *tbf = NULL;
   char const *path = NULL;
+  char const *tls_ciphers = NULL;
   unsigned tls_version = 1;
   unsigned tls_timeout = 300;
   unsigned tls_verify = 0;
@@ -198,6 +199,7 @@ static int tport_tls_init_master(tport_primary_t *pri,
 
   tl_gets(tags,
 	  TPTAG_CERTIFICATE_REF(path),
+	  TPTAG_TLS_CIPHERS_REF(tls_ciphers),
 	  TPTAG_TLS_VERSION_REF(tls_version),
 	  TPTAG_TLS_TIMEOUT_REF(tls_timeout),
 	  TPTAG_TLS_VERIFY_PEER_REF(tls_verify),
@@ -225,6 +227,7 @@ static int tport_tls_init_master(tport_primary_t *pri,
     ti.passphrase = su_strdup(autohome, passphrase);
     ti.cert = ti.key;
     ti.CAfile = su_sprintf(autohome, "%s/%s", path, "cafile.pem");
+    if (tls_ciphers) ti.ciphers = su_strdup(autohome, tls_ciphers);
     ti.version = tls_version;
     ti.timeout = tls_timeout;
     ti.CApath = su_strdup(autohome, path);
