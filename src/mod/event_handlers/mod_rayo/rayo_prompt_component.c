@@ -473,7 +473,7 @@ static iks *prompt_component_handle_result(struct rayo_actor *prompt, struct ray
 		iks_insert_attrib(iq, "from", RAYO_JID(prompt));
 		iks_insert_attrib(iq, "to", RAYO_COMPONENT(prompt)->client_jid);
 		RAYO_SEND_REPLY_DUP(prompt, RAYO_COMPONENT(prompt)->client_jid, iq);
-	} else if (!strcmp(PROMPT_COMPONENT(prompt)->start_timers_request_id, id)) {
+	} else if (!zstr(PROMPT_COMPONENT(prompt)->start_timers_request_id) && !strcmp(PROMPT_COMPONENT(prompt)->start_timers_request_id, id)) {
 		rayo_component_send_input_timers_started_event(RAYO_COMPONENT(prompt));
 	}
 
