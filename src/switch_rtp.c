@@ -5258,7 +5258,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 								if ((other_rtp_session = switch_channel_get_private(other_channel, "__rtcp_audio_rtp_session")) && 
 									other_rtp_session->rtcp_sock_output &&
 									switch_rtp_test_flag(other_rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP)) {
-									*other_rtp_session->rtcp_send_msg.body = *rtp_session->rtcp_recv_msg_p->body;
+									other_rtp_session->rtcp_send_msg = rtp_session->rtcp_recv_msg;
 
 									if (rtp_session->rtcp_recv_msg_p->header.type == 206) {
 										rtcp_ext_msg_t *extp = (rtcp_ext_msg_t *) rtp_session->rtcp_recv_msg_p;
