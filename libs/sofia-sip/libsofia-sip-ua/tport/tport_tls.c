@@ -295,27 +295,23 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
   signal(SIGPIPE, SIG_IGN);
 #endif
 
-  if (tls->ctx == NULL) {
-    const SSL_METHOD *meth;
-
-    /* meth = SSLv3_method(); */
-    /* meth = SSLv23_method(); */
-
-    if (ti->version)
-      meth = TLSv1_method();
-    else
-      meth = SSLv23_method();
-
-    tls->ctx = SSL_CTX_new((SSL_METHOD*)meth);
-	SSL_CTX_sess_set_remove_cb(tls->ctx, NULL);
-  }
-
-  if (tls->ctx == NULL) {
-    tls_log_errors(1, "tls_init_context", 0);
-    errno = EIO;
-    return -1;
-  }
-
+  if (tls->ctx == NULL)
+    if (!(tls->ctx = SSL_CTX_new((SSL_METHOD*)SSLv23_method()))) {
+      tls_log_errors(1, "SSL_CTX_new() failed", 0);
+      errno = EIO;
+      return -1;
+    }
+  if (!(ti->version & TPTLS_VERSION_SSLv2))
+    SSL_CTX_set_options(tls->ctx, SSL_OP_NO_SSLv2);
+  if (!(ti->version & TPTLS_VERSION_SSLv3))
+    SSL_CTX_set_options(tls->ctx, SSL_OP_NO_SSLv3);
+  if (!(ti->version & TPTLS_VERSION_TLSv1))
+    SSL_CTX_set_options(tls->ctx, SSL_OP_NO_TLSv1);
+  if (!(ti->version & TPTLS_VERSION_TLSv1_1))
+    SSL_CTX_set_options(tls->ctx, SSL_OP_NO_TLSv1_1);
+  if (!(ti->version & TPTLS_VERSION_TLSv1_2))
+    SSL_CTX_set_options(tls->ctx, SSL_OP_NO_TLSv1_2);
+  SSL_CTX_sess_set_remove_cb(tls->ctx, NULL);
   SSL_CTX_set_timeout(tls->ctx, ti->timeout);
 
   /* Set callback if we have a passphrase */
