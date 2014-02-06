@@ -1626,17 +1626,21 @@ void rayo_call_send(struct rayo_actor *call, struct rayo_message *msg)
 	iks *response = NULL;
 
 	if (!strcmp("message", iks_name(stanza))) {
-		char *type = iks_find_attrib(stanza, "type");
+		const char *type = iks_find_attrib_soft(stanza, "type");
 
 		if (!strcmp("normal", type)) {
-			switch_event_t *event;
-
-			if (switch_event_create(&event, SWITCH_EVENT_SEND_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "content-type", "text/plain");
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "uuid", rayo_call_get_uuid(RAYO_CALL(call)));
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", iks_find_cdata(stanza, "subject"));
-				switch_event_add_body(event, "%s", iks_find_cdata(stanza, "body"));
-				switch_event_fire(&event);
+			const char *body = iks_find_cdata(stanza, "body");
+			if (!zstr(body)) {
+				switch_event_t *event;
+				if (switch_event_create(&event, SWITCH_EVENT_SEND_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "content-type", "text/plain");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "uuid", rayo_call_get_uuid(RAYO_CALL(call)));
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", iks_find_cdata(stanza, "subject"));
+					switch_event_add_body(event, "%s", body);
+					switch_event_fire(&event);
+				}
+			} else if (!msg->is_reply) {
+				RAYO_SEND_REPLY(call, msg->from_jid, iks_new_error_detailed(stanza, STANZA_ERROR_BAD_REQUEST, "missing body"));
 			}
 		} else if (!msg->is_reply) {
 			RAYO_SEND_REPLY(call, msg->from_jid, iks_new_error(stanza, STANZA_ERROR_FEATURE_NOT_IMPLEMENTED));
