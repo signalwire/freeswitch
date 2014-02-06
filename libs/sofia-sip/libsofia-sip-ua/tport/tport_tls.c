@@ -266,6 +266,8 @@ int tls_verify_cb(int ok, X509_STORE_CTX *store)
 static
 int tls_init_ecdh_curve(tls_t *tls)
 {
+#if OPENSSL_VERSION_NUMBER >= 0x0090800fL
+#ifndef OPENSSL_NO_ECDH
   int nid;
   EC_KEY *ecdh;
   if (!(nid = OBJ_sn2nid("prime256v1"))) {
@@ -282,6 +284,9 @@ int tls_init_ecdh_curve(tls_t *tls)
   SSL_CTX_set_tmp_ecdh(tls->ctx, ecdh);
   EC_KEY_free(ecdh);
   return 0;
+#endif
+#endif
+  return -1;
 }
 
 static
