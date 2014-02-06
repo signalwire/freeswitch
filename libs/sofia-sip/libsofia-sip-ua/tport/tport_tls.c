@@ -268,6 +268,27 @@ void tls_init(void) {
 }
 
 static
+int tls_init_ecdh_curve(tls_t *tls)
+{
+  int nid;
+  EC_KEY *ecdh;
+  if (!(nid = OBJ_sn2nid("prime256v1"))) {
+    tls_log_errors(1, "Couldn't find specified curve", 0);
+    errno = EIO;
+    return -1;
+  }
+  if (!(ecdh = EC_KEY_new_by_curve_name(nid))) {
+    tls_log_errors(1, "Couldn't create specified curve", 0);
+    errno = EIO;
+    return -1;
+  }
+  SSL_CTX_set_options(tls->ctx, SSL_OP_SINGLE_ECDH_USE);
+  SSL_CTX_set_tmp_ecdh(tls->ctx, ecdh);
+  EC_KEY_free(ecdh);
+  return 0;
+}
+
+static
 int tls_init_context(tls_t *tls, tls_issues_t const *ti)
 {
   int verify;
@@ -384,6 +405,12 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
 
   SSL_CTX_set_verify_depth(tls->ctx, ti->verify_depth);
   SSL_CTX_set_verify(tls->ctx, verify, tls_verify_cb);
+
+  if (tls_init_ecdh_curve(tls) == 0) {
+    SU_DEBUG_3(("%s\n", "tls: initialized ECDH"));
+  } else {
+    SU_DEBUG_3(("%s\n", "tls: failed to initialize ECDH"));
+  }
 
   if (!SSL_CTX_set_cipher_list(tls->ctx, ti->ciphers)) {
     SU_DEBUG_1(("%s: error setting cipher list\n", "tls_init_context"));
