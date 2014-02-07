@@ -2492,6 +2492,12 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 						stream->write_function(stream, "TLS-URL          \t%s\n", switch_str_nil(profile->tls_url));
 						stream->write_function(stream, "TLS-BIND-URL     \t%s\n", switch_str_nil(profile->tls_bindurl));
 					}
+					if (profile->ws_bindurl) {
+						stream->write_function(stream, "WS-BIND-URL     \t%s\n", switch_str_nil(profile->ws_bindurl));
+					}
+					if (profile->wss_bindurl) {
+						stream->write_function(stream, "WSS-BIND-URL     \t%s\n", switch_str_nil(profile->wss_bindurl));
+					}
 					stream->write_function(stream, "HOLD-MUSIC       \t%s\n", zstr(profile->hold_music) ? "N/A" : profile->hold_music);
 					stream->write_function(stream, "OUTBOUND-PROXY   \t%s\n", zstr(profile->outbound_proxy) ? "N/A" : profile->outbound_proxy);
 					stream->write_function(stream, "CODECS IN        \t%s\n", switch_str_nil(profile->inbound_codec_string));
@@ -2776,6 +2782,8 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					stream->write_function(stream, "    <bind-url>%s</bind-url>\n", switch_str_nil(profile->bindurl));
 					stream->write_function(stream, "    <tls-url>%s</tls-url>\n", switch_str_nil(profile->tls_url));
 					stream->write_function(stream, "    <tls-bind-url>%s</tls-bind-url>\n", switch_str_nil(profile->tls_bindurl));
+					stream->write_function(stream, "    <ws-bind-url>%s</ws-bind-url>\n", switch_str_nil(profile->ws_bindurl));
+					stream->write_function(stream, "    <wss-bind-url>%s</wss-bind-url>\n", switch_str_nil(profile->wss_bindurl));
 					stream->write_function(stream, "    <hold-music>%s</hold-music>\n", zstr(profile->hold_music) ? "N/A" : profile->hold_music);
 					stream->write_function(stream, "    <outbound-proxy>%s</outbound-proxy>\n",
 										   zstr(profile->outbound_proxy) ? "N/A" : profile->outbound_proxy);
@@ -2902,10 +2910,19 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 				}
 
 				if (sofia_test_pflag(profile, PFLAG_TLS)) {
-					stream->write_function(stream,
-										   "<profile>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s (%u) (TLS)</state>\n</profile>\n",
-										   profile->name, "profile", profile->tls_url, sofia_test_pflag(profile, PFLAG_RUNNING) ? "RUNNING" : "DOWN",
-										   profile->inuse);
+					stream->write_function(stream, "<profile>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s (%u) (TLS)</state>\n</profile>\n",
+									   profile->name, "profile", profile->tls_url, sofia_test_pflag(profile, PFLAG_RUNNING) ? "RUNNING" : "DOWN",
+									   profile->inuse);
+				}
+				if (profile->ws_bindurl){
+					stream->write_function(stream, "<profile>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s (%u) (WS)</state>\n</profile>\n",
+									   profile->name, "profile", profile->ws_bindurl, sofia_test_pflag(profile, PFLAG_RUNNING) ? "RUNNING" : "DOWN",
+									   profile->inuse);
+				}
+				if (profile->wss_bindurl){
+					stream->write_function(stream, "<profile>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s (%u) (WSS)</state>\n</profile>\n",
+									   profile->name, "profile", profile->wss_bindurl, sofia_test_pflag(profile, PFLAG_RUNNING) ? "RUNNING" : "DOWN",
+									   profile->inuse);
 				}
 
 				c++;
