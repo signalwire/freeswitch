@@ -5540,12 +5540,13 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 					} else if (status > 299) {
 						switch_channel_set_private(channel, "t38_options", NULL);
 						switch_channel_set_private(other_channel, "t38_options", NULL);
-						switch_channel_clear_flag(tech_pvt->channel, CF_T38_PASSTHRU);
-						switch_channel_clear_flag(other_tech_pvt->channel, CF_T38_PASSTHRU);
-						switch_channel_clear_app_flag_key("T38", tech_pvt->channel, CF_APP_T38);
-						switch_channel_clear_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_REQ);
-						switch_channel_set_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_FAIL);
-					} else if (status == 200 && switch_channel_test_flag(tech_pvt->channel, CF_T38_PASSTHRU) && has_t38 && sip->sip_payload && sip->sip_payload->pl_data) {
+						switch_channel_clear_flag(channel, CF_T38_PASSTHRU);
+						switch_channel_clear_flag(other_channel, CF_T38_PASSTHRU);
+						switch_channel_clear_app_flag_key("T38", channel, CF_APP_T38);
+						switch_channel_clear_app_flag_key("T38", channel, CF_APP_T38_REQ);
+						switch_channel_set_app_flag_key("T38", channel, CF_APP_T38_FAIL);
+					} else if (status == 200 && switch_channel_test_flag(channel, CF_T38_PASSTHRU) && 
+							   has_t38 && sip->sip_payload && sip->sip_payload->pl_data) {
 						switch_t38_options_t *t38_options = switch_core_media_extract_t38_options(session, sip->sip_payload->pl_data);
 
 						if (!t38_options) {
@@ -5573,11 +5574,11 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 						msg->pointer_arg_size = strlen(r_sdp);
 					}
 
-					if (status == 200 && switch_channel_test_flag(tech_pvt->channel, CF_T38_PASSTHRU) && has_t38) {
-						if (switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO) &&
-							switch_core_media_ready(other_tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
-							switch_channel_clear_flag(tech_pvt->channel, CF_NOTIMER_DURING_BRIDGE);
-							switch_core_media_udptl_mode(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO);
+					if (status == 200 && switch_channel_test_flag(channel, CF_T38_PASSTHRU) && has_t38) {
+						if (switch_core_media_ready(session, SWITCH_MEDIA_TYPE_AUDIO) &&
+							switch_core_media_ready(other_session, SWITCH_MEDIA_TYPE_AUDIO)) {
+							switch_channel_clear_flag(channel, CF_NOTIMER_DURING_BRIDGE);
+							switch_core_media_udptl_mode(session, SWITCH_MEDIA_TYPE_AUDIO);
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating T38 Passthru\n");
 						}
 					}
