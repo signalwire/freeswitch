@@ -37,6 +37,9 @@
 #define __USE_ISOC11
 #endif
 #include <stdlib.h>
+#if defined(__ISO_C_VISIBLE)  &&  __ISO_C_VISIBLE < 2011
+#define __ISO_C_VISIBLE 2011
+#endif
 #if defined(HAVE_MALLOC_H)
 #include <malloc.h>
 #endif
