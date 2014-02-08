@@ -185,7 +185,7 @@ static void *SWITCH_THREAD_FUNC switch_scheduler_task_thread(switch_thread_t *th
 		if (task_thread_loop(0)) {
 			break;
 		}
-		if (switch_queue_pop_timeout(globals.event_queue, &pop, 500) == SWITCH_STATUS_SUCCESS) {
+		if (switch_queue_pop_timeout(globals.event_queue, &pop, 500000) == SWITCH_STATUS_SUCCESS) {
 			switch_event_t *event = (switch_event_t *) pop;
 			switch_event_fire(&event);
 		}
