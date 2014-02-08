@@ -16096,6 +16096,12 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_scheduler_task_task_id_get")]
   public static extern uint switch_scheduler_task_task_id_get(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_scheduler_task_hash_set")]
+  public static extern void switch_scheduler_task_hash_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_scheduler_task_hash_get")]
+  public static extern uint switch_scheduler_task_hash_get(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_new_switch_scheduler_task")]
   public static extern IntPtr new_switch_scheduler_task();
 
@@ -34485,6 +34491,16 @@ public class switch_scheduler_task : IDisposable {
     } 
     get {
       uint ret = freeswitchPINVOKE.switch_scheduler_task_task_id_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint hash {
+    set {
+      freeswitchPINVOKE.switch_scheduler_task_hash_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_scheduler_task_hash_get(swigCPtr);
       return ret;
     } 
   }

@@ -39256,6 +39256,29 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_scheduler_task_task_id_get(vo
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_scheduler_task_hash_set(void * jarg1, unsigned long jarg2) {
+  switch_scheduler_task *arg1 = (switch_scheduler_task *) 0 ;
+  unsigned long arg2 ;
+  
+  arg1 = (switch_scheduler_task *)jarg1; 
+  arg2 = (unsigned long)jarg2; 
+  if (arg1) (arg1)->hash = arg2;
+  
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_scheduler_task_hash_get(void * jarg1) {
+  unsigned long jresult ;
+  switch_scheduler_task *arg1 = (switch_scheduler_task *) 0 ;
+  unsigned long result;
+  
+  arg1 = (switch_scheduler_task *)jarg1; 
+  result = (unsigned long) ((arg1)->hash);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_scheduler_task() {
   void * jresult ;
   switch_scheduler_task *result = 0 ;
