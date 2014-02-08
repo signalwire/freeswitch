@@ -64,8 +64,6 @@ struct g722_encode_state_s
 
     g722_band_t band[2];
 
-    uint32_t in_buffer;
-    int in_bits;
     uint32_t out_buffer;
     int out_bits;
 };
@@ -94,8 +92,6 @@ struct g722_decode_state_s
 
     uint32_t in_buffer;
     int in_bits;
-    uint32_t out_buffer;
-    int out_bits;
 };
 
 #endif
