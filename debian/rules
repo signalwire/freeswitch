@@ -11,11 +11,11 @@ FS_CFLAGS?=-g3 -O2 -fPIC
 FS_CPPFLAGS?=
 FS_CXXFLAGS?=$(FS_CFLAGS)
 export PATH?=/usr/lib/ccache:/usr/sbin:/usr/bin:/sbin:/bin
-export CC=$(FS_CC)
-export CXX=$(FS_CXX)
-export CFLAGS=$(FS_CFLAGS)
-export CPPFLAGS=$(FS_CPPFLAGS)
-export CXXFLAGS=$(FS_CXXFLAGS)
+export CC:=$(FS_CC)
+export CXX:=$(FS_CXX)
+export CFLAGS:=$(FS_CFLAGS)
+export CPPFLAGS:=$(FS_CPPFLAGS)
+export CXXFLAGS:=$(FS_CXXFLAGS)
 
 show_vars= \
 	echo; \
