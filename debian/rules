@@ -7,14 +7,14 @@ export VERBOSE=1
 
 FS_CC?=gcc
 FS_CXX?=g++
-FS_CFLAGS?=-g3 -O2 -fPIC
 FS_CPPFLAGS?=
+FS_CFLAGS?=-g3 -O2 -fPIC
 FS_CXXFLAGS?=$(FS_CFLAGS)
 export PATH?=/usr/lib/ccache:/usr/sbin:/usr/bin:/sbin:/bin
 export CC:=$(FS_CC)
 export CXX:=$(FS_CXX)
-export CFLAGS:=$(FS_CFLAGS)
 export CPPFLAGS:=$(FS_CPPFLAGS)
+export CFLAGS:=$(FS_CFLAGS)
 export CXXFLAGS:=$(FS_CXXFLAGS)
 
 show_vars= \
@@ -23,8 +23,8 @@ show_vars= \
 	echo "PATH='$(PATH)'"; \
 	echo "CC='$(CC)'"; \
 	echo "CXX='$(CXX)'"; \
-	echo "CFLAGS='$(CFLAGS)'"; \
 	echo "CPPFLAGS='$(CPPFLAGS)'"; \
+	echo "CFLAGS='$(CFLAGS)'"; \
 	echo "CXXFLAGS='$(CXXFLAGS)'"; \
 	echo "CCACHE_DIR='$(CCACHE_DIR)'"; \
 	echo;
