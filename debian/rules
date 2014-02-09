@@ -10,12 +10,14 @@ FS_CXX?=g++
 FS_CPPFLAGS?=
 FS_CFLAGS?=-g3 -O2 -fPIC
 FS_CXXFLAGS?=$(FS_CFLAGS)
+FS_LDFLAGS?=
 export PATH?=/usr/lib/ccache:/usr/sbin:/usr/bin:/sbin:/bin
 export CC:=$(FS_CC)
 export CXX:=$(FS_CXX)
 export CPPFLAGS:=$(FS_CPPFLAGS)
 export CFLAGS:=$(FS_CFLAGS)
 export CXXFLAGS:=$(FS_CXXFLAGS)
+export LDFLAGS:=$(FS_LDFLAGS)
 
 show_vars= \
 	echo; \
@@ -26,6 +28,7 @@ show_vars= \
 	echo "CPPFLAGS='$(CPPFLAGS)'"; \
 	echo "CFLAGS='$(CFLAGS)'"; \
 	echo "CXXFLAGS='$(CXXFLAGS)'"; \
+	echo "LDFLAGS='$(LDFLAGS)'"; \
 	echo "CCACHE_DIR='$(CCACHE_DIR)'"; \
 	echo;
 
