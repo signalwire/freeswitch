@@ -1,6 +1,6 @@
 From: "${voicemail_caller_id_name}" <${voicemail_caller_id_number}@${voicemail_domain}>
 Date: ${RFC2822_DATE}
-To: <${voicemail_email}>
+To: ${voicemail_email}
 Subject: Voicemail from "${voicemail_caller_id_name}" <${voicemail_caller_id_number}> ${voicemail_message_len}
 X-Priority: ${voicemail_priority}
 X-Mailer: FreeSWITCH
