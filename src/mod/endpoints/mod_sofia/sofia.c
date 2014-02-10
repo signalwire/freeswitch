@@ -1525,10 +1525,8 @@ static void our_sofia_event_callback(nua_event_t event,
 				sofia_gateway_t *gateway = NULL;
 
 				if ((gateway = sofia_reg_find_gateway(sofia_private->gateway_name))) {
-					nua_handle_bind(gateway->nh, NULL);
-					gateway->sofia_private = NULL;
-					nua_handle_destroy(gateway->nh);
-					gateway->nh = NULL;
+					gateway->state = REG_STATE_FAILED;
+					gateway->failure_status = status;
 					sofia_reg_release_gateway(gateway);
 				}
 			} else {
