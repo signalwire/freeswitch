@@ -863,8 +863,11 @@ static void do_dialog_probe(switch_event_t *event)
 
 		if (!profile && profile_name) {
 			profile = sofia_glue_find_profile(profile_name);
-		} else if (!profile) {
-			switch_safe_free(probe_user);
+		}
+		
+		if (!profile) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot find profile for domain %s\n", probe_host);
+			goto end;
 		}
 
 		// We need all dialogs with presence_id matching the subscription entity,
@@ -945,6 +948,8 @@ static void do_dialog_probe(switch_event_t *event)
 		h4235 = NULL;
 		switch_core_destroy_memory_pool(&pool);
 	}
+
+ end:
 
 	switch_safe_free(probe_user);
 }
@@ -1539,6 +1544,7 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 					if (switch_event_create(&s_event, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
 						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "login", profile->name);
+						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "sip_profile", profile->name);
 						switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from", "%s@%s", euser, host);
 						switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "to", "%s@%s", euser, host);
 						switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "event_type", "presence");
