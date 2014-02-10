@@ -329,10 +329,14 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
     SSL_CTX_set_options(tls->ctx, SSL_OP_NO_SSLv3);
   if (!(ti->version & TPTLS_VERSION_TLSv1))
     SSL_CTX_set_options(tls->ctx, SSL_OP_NO_TLSv1);
+#ifdef SSL_OP_NO_TLSv1_1
   if (!(ti->version & TPTLS_VERSION_TLSv1_1))
     SSL_CTX_set_options(tls->ctx, SSL_OP_NO_TLSv1_1);
+#endif
+#ifdef SSL_OP_NO_TLSv1_2
   if (!(ti->version & TPTLS_VERSION_TLSv1_2))
     SSL_CTX_set_options(tls->ctx, SSL_OP_NO_TLSv1_2);
+#endif
   SSL_CTX_sess_set_remove_cb(tls->ctx, NULL);
   SSL_CTX_set_timeout(tls->ctx, ti->timeout);
 
