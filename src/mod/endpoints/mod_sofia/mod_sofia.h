@@ -282,6 +282,7 @@ typedef enum {
 	PFLAG_FIRE_MESSAGE_EVENTS,
 	PFLAG_SEND_DISPLAY_UPDATE,
 	PFLAG_RUNNING_TRANS,
+	PFLAG_SOCKET_TCP_KEEPALIVE,
 	PFLAG_TCP_KEEPALIVE,
 	PFLAG_TCP_PINGPONG,
 	PFLAG_TCP_PING2PONG,
@@ -719,6 +720,7 @@ struct sofia_profile {
 	uint32_t rtp_digit_delay;
 	switch_queue_t *event_queue;
 	switch_thread_t *thread;		
+	int socket_tcp_keepalive;
 	int tcp_keepalive;
 	int tcp_pingpong;
 	int tcp_ping2pong;
