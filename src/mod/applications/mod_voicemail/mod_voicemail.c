@@ -2524,9 +2524,11 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						convert_ext = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "vm-storage-dir")) {
 						vm_storage_dir = switch_core_session_strdup(session, val);
+					} else if (!strcasecmp(var, "vm-domain-storage-dir")) {
+						storage_dir = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "storage-dir")) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
-										  "Using deprecated 'storage-dir' directory variable: Please use 'vm-storage-dir'.\n");
+										  "Using deprecated 'storage-dir' directory variable: Please use 'vm-domain-storage-dir'.\n");
 						storage_dir = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "timezone")) {
 						switch_channel_set_variable(channel, var, val);
@@ -2774,9 +2776,11 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 			send_mail++;
 		} else if (!strcasecmp(var, "vm-storage-dir")) {
 			vm_storage_dir = switch_core_strdup(pool, val);
+		} else if (!strcasecmp(var, "vm-domain-storage-dir")) {
+			storage_dir = switch_core_session_strdup(session, val);
 		} else if (!strcasecmp(var, "storage-dir")) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-							  "Using deprecated 'storage-dir' directory variable: Please use 'vm-storage-dir'.\n");
+							  "Using deprecated 'storage-dir' directory variable: Please use 'vm-domain-storage-dir'.\n");
 			storage_dir = switch_core_strdup(pool, val);
 		} else if (!strcasecmp(var, "vm-notify-email-all-messages") && (send_notify = switch_true(val))) {
 			send_mail++;
@@ -3405,9 +3409,11 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 						send_mail++;
 					} else if (!strcasecmp(var, "vm-storage-dir")) {
 						vm_storage_dir = switch_core_session_strdup(session, val);
+					} else if (!strcasecmp(var, "vm-domain-storage-dir")) {
+						storage_dir = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "storage-dir")) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
-										  "Using deprecated 'storage-dir' directory variable: Please use 'vm-storage-dir'.\n");
+										  "Using deprecated 'storage-dir' directory variable: Please use 'vm-domain-storage-dir'.\n");
 						storage_dir = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "vm-notify-email-all-messages") && (send_notify = switch_true(val))) {
 						send_mail++;
