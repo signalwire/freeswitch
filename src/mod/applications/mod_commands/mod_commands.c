@@ -529,7 +529,7 @@ SWITCH_STANDARD_API(gethost_api_function)
 
 		if (he) {
 			memcpy(&sa.sin_addr, he->h_addr, sizeof(struct in_addr));
-			ip = inet_ntop(AF_INET, &sa.sin_addr, buf, sizeof(buf));
+			ip = switch_inet_ntop(AF_INET, &sa.sin_addr, buf, sizeof(buf));
 			stream->write_function(stream, "%s", ip);
 			return SWITCH_STATUS_SUCCESS;
 		}
