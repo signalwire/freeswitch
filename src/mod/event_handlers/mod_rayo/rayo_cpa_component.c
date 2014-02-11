@@ -162,12 +162,12 @@ static void stop_cpa_detectors(struct cpa_component *cpa)
 	if (cpa->signals) {
 		switch_hash_index_t *hi = NULL;
 		for (hi = switch_core_hash_first(cpa->signals); hi; hi = switch_core_hash_next(hi)) {
-			const char *signal_type;
-			struct cpa_signal *cpa_signal = NULL;
-			switch_core_hash_this(hi, (const void **)&signal_type, NULL, (void **)&cpa_signal);
+			const void *signal_type;
+			void *cpa_signal = NULL;
+			switch_core_hash_this(hi, &signal_type, NULL, &cpa_signal);
 			if (cpa_signal) {
-				rayo_cpa_detector_stop(RAYO_COMPONENT(cpa)->parent->id, cpa_signal->name);
-				unsubscribe(RAYO_COMPONENT(cpa)->parent->id, cpa_signal->name, RAYO_JID(cpa));
+				rayo_cpa_detector_stop(RAYO_COMPONENT(cpa)->parent->id, ((struct cpa_signal *)cpa_signal)->name);
+				unsubscribe(RAYO_COMPONENT(cpa)->parent->id, ((struct cpa_signal *)cpa_signal)->name, RAYO_JID(cpa));
 			}
 		}
 		switch_core_hash_destroy(&cpa->signals);
