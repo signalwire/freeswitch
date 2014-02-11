@@ -179,6 +179,14 @@ tag_typedef_t tptag_idle = UINTTAG_TYPEDEF(idle);
  */
 tag_typedef_t tptag_timeout = UINTTAG_TYPEDEF(timeout);
 
+/**@def TPTAG_SOCKET_KEEPALIVE(x)
+ *
+ * Keepalive interval set on socket (where supported) in seconds.
+ *
+ * If 0 or UINT_MAX, do not use keepalives. Default value is 30.
+ */
+tag_typedef_t tptag_socket_keepalive = UINTTAG_TYPEDEF(socket_keepalive);
+
 /**@def TPTAG_KEEPALIVE(x)
  *
  * Keepalive interval in milliseconds.

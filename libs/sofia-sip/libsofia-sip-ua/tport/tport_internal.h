@@ -106,6 +106,7 @@ typedef struct {
   unsigned tpp_mtu;		/**< Maximum packet size */
   unsigned tpp_idle;		/**< Allowed connection idle time. */
   unsigned tpp_timeout;		/**< Allowed idle time for message. */
+  unsigned tpp_socket_keepalive;/**< Socket keepalive interval */
   unsigned tpp_keepalive;	/**< Keepalive PING interval */
   unsigned tpp_pingpong;	/**< PONG-to-PING interval */
 

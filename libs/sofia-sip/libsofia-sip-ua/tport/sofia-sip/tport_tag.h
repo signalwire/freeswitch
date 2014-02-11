@@ -142,6 +142,12 @@ TPORT_DLL extern tag_typedef_t tptag_timeout;
 TPORT_DLL extern tag_typedef_t tptag_timeout_ref;
 #define TPTAG_TIMEOUT_REF(x) tptag_timeout_ref, tag_uint_vr(&(x))
 
+TPORT_DLL extern tag_typedef_t tptag_socket_keepalive;
+#define TPTAG_SOCKET_KEEPALIVE(x) tptag_socket_keepalive, tag_uint_v((x))
+
+TPORT_DLL extern tag_typedef_t tptag_socket_keepalive_ref;
+#define TPTAG_SOCKET_KEEPALIVE_REF(x) tptag_socket_keepalive_ref, tag_uint_vr(&(x))
+
 TPORT_DLL extern tag_typedef_t tptag_keepalive;
 #define TPTAG_KEEPALIVE(x) tptag_keepalive, tag_uint_v((x))
 
