@@ -5094,7 +5094,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 				if (he) {
 					memcpy(&sa.sin_addr, he->h_addr, sizeof(struct in_addr));
-					ip = inet_ntop(AF_INET, &sa.sin_addr, buf, sizeof(buf));
+					ip = switch_inet_ntop(AF_INET, &sa.sin_addr, buf, sizeof(buf));
 					tmp = switch_string_replace(dest, host, ip);
 
 					switch_channel_set_variable_printf(nchannel, "sip_route_uri", "sip:%s", tmp);
