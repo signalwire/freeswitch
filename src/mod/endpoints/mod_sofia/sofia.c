@@ -2551,6 +2551,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 									 TPTAG_PINGPONG(profile->tcp_ping2pong)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_SRV503),
 									 NTATAG_SRV_503(0)),
+							  TAG_IF(sofia_test_pflag(profile, PFLAG_SOCKET_TCP_KEEPALIVE),
+									 TPTAG_KEEPALIVE(profile->socket_tcp_keepalive)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TCP_KEEPALIVE),
 									 TPTAG_KEEPALIVE(profile->tcp_keepalive)),
 							  NTATAG_DEFAULT_PROXY(profile->outbound_proxy),
@@ -3833,6 +3835,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					} else if (!strcasecmp(var, "sip-capture") && switch_true(val)) {
 						sofia_set_flag(profile, TFLAG_CAPTURE);
 						nua_set_params(profile->nua, TPTAG_CAPT(mod_sofia_globals.capture_server), TAG_END());
+					} else if (!strcasecmp(var, "socket-tcp-keepalive") && !zstr(val)) {
+						profile->socket_tcp_keepalive = atoi(val);
+						sofia_set_pflag(profile, PFLAG_SOCKET_TCP_KEEPALIVE);
 					} else if (!strcasecmp(var, "tcp-keepalive") && !zstr(val)) {
 						profile->tcp_keepalive = atoi(val);
 						sofia_set_pflag(profile, PFLAG_TCP_KEEPALIVE);
