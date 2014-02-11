@@ -196,7 +196,11 @@ int tport_tcp_init_secondary(tport_t *self, int socket, int accepted,
 #if defined(SO_KEEPALIVE)
   setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, (void *)&val, sizeof val);
 #endif
-  val = (int)(self->tp_params->tpp_keepalive);
+  val = (int)(self->tp_params->tpp_keepalive / 1000);
+  if (!val && (self->tp_params->tpp_keepalive > 0))
+    SU_DEBUG_1(("%s(%p): Ignoring TCP keepalive value %u (<1000)\n",
+                __func__, (void *)self,
+		self->tp_params->tpp_keepalive));
 #if defined(TCP_KEEPIDLE)
   if (val != 0 && val != UINT_MAX)
     setsockopt(socket, SOL_TCP, TCP_KEEPIDLE, (void *)&val, sizeof val);
