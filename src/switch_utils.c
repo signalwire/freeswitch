@@ -3115,19 +3115,29 @@ SWITCH_DECLARE(int) switch_tod_cmp(const char *exp, int val)
 
 SWITCH_DECLARE(int) switch_split_user_domain(char *in, char **user, char **domain)
 {
-	char *p = NULL, *h = NULL, *u = in;
+	char *p = NULL, *h = NULL, *u;
 
 	if (!in) {
 		return 0;
 	}
 
+	if (!strncasecmp(in, "sip", 3)) {
+		in += 3;
+		while(*in == ':' || *in == 's') in++;
+	}
+
+	u = in;
+
 	/* First isolate the host part from the user part */
 	if ((h = strchr(u, '@'))) {
 		*h++ = '\0';
+	} else {
+		u = NULL;
+		h = in;
 	}
 
 	/* Clean out the user part of its protocol prefix (if any) */
-	if ((p = strchr(u, ':'))) {
+	if (u && (p = strchr(u, ':'))) {
 		*p++ = '\0';
 		u = p;
 	}
