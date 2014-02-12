@@ -1552,7 +1552,7 @@ License: MPL-1.1
 Files: src/mod/say/mod_say_??/mod_say_??.c
  scripts/c/socket2me/socket2me.c
  src/mod/xml_int/mod_xml_scgi/xml_scgi_server.pl
-Copyright: 2007-2012, Anthony Minessale II <anthm@freeswitch.org>
+Copyright: 2007-2014, Anthony Minessale II <anthm@freeswitch.org>
  2007-2013, Anthony Minessale II
  2011-2012, Shahar Hadas
 License: BSD-3-clause
@@ -1989,7 +1989,7 @@ License: ISC
 Files: libs/esl/*
 Copyright: 2007 Michael Jerris
  2002 Todd C. Miller <Todd.Miller@courtesan.com>
- 2007-2012, Anthony Minessale II
+ 2007-2014, Anthony Minessale II
  2000 The NetBSD Foundation, Inc.
 License: BSD-3-clause
 
@@ -2052,7 +2052,7 @@ Copyright: 1995 Abandoned Colin Plumb
 License: public-domain
 
 Files: libs/stfu/*
-Copyright: 2007-2012 Anthony Minessale II <anthm@freeswitch.org>
+Copyright: 2007-2014 Anthony Minessale II <anthm@freeswitch.org>
 License: MIT/X11 (BSD like)
 
 Files: libs/sqlite/*
@@ -2071,7 +2071,7 @@ License: BSD-3-clause
 
 Files: libs/openzap/*
 Copyright: 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
- 2007-2012, Anthony Minessale II, Nenad Corbic
+ 2007-2014, Anthony Minessale II, Nenad Corbic
  2005-2012, Anthony Minessale II
  2006 Nenad Corbic <ncorbic@sangoma.com>
  2007 Jan Vidar Berger, Case Labs, Ltd.

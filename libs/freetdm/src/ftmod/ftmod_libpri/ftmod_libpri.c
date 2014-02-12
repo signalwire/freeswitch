@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007-2012, Anthony Minessale II
+ * Copyright (c) 2007-2014, Anthony Minessale II
  * Copyright (c) 2010, Stefan Knoblich <s.knoblich@axsentis.de>
  * Copyright (c) 2012-2013, Stefan Knoblich <stkn@openisdn.net>
  * All rights reserved.
