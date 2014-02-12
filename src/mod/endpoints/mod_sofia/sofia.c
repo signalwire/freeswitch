@@ -6086,6 +6086,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			} else {
 				if (sofia_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) &&  switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "DELAYED NEGOTIATION");
+				} else if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+					switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "PROXY MEDIA");
 				} else {
 					if (sofia_media_tech_media(tech_pvt, (char *) r_sdp) != SWITCH_STATUS_SUCCESS) {
 						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
