@@ -1259,8 +1259,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_core_port_allocator_new(ushort start, ushort end, uint flags, SWIGTYPE_p_p_switch_core_port_allocator new_allocator) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_port_allocator_new(start, end, flags, SWIGTYPE_p_p_switch_core_port_allocator.getCPtr(new_allocator));
+  public static switch_status_t switch_core_port_allocator_new(string ip, ushort start, ushort end, uint flags, SWIGTYPE_p_p_switch_core_port_allocator new_allocator) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_port_allocator_new(ip, start, end, flags, SWIGTYPE_p_p_switch_core_port_allocator.getCPtr(new_allocator));
     return ret;
   }
 
@@ -9147,7 +9147,7 @@ class freeswitchPINVOKE {
   public static extern int switch_core_media_bug_set_pre_buffer_framecount(HandleRef jarg1, uint jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_port_allocator_new")]
-  public static extern int switch_core_port_allocator_new(ushort jarg1, ushort jarg2, uint jarg3, HandleRef jarg4);
+  public static extern int switch_core_port_allocator_new(string jarg1, ushort jarg2, ushort jarg3, uint jarg4, HandleRef jarg5);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_port_allocator_request_port")]
   public static extern int switch_core_port_allocator_request_port(HandleRef jarg1, HandleRef jarg2);
@@ -16111,6 +16111,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_scheduler_task_task_id_get")]
   public static extern uint switch_scheduler_task_task_id_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_scheduler_task_hash_set")]
+  public static extern void switch_scheduler_task_hash_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_scheduler_task_hash_get")]
+  public static extern uint switch_scheduler_task_hash_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_new_switch_scheduler_task")]
   public static extern IntPtr new_switch_scheduler_task();
@@ -33319,7 +33325,9 @@ namespace FreeSWITCH.Native {
 [System.Flags] public enum switch_port_flag_enum_t {
   SPF_NONE = 0,
   SPF_ODD = (1 << 0),
-  SPF_EVEN = (1 << 1)
+  SPF_EVEN = (1 << 1),
+  SPF_ROBUST_TCP = (1 << 2),
+  SPF_ROBUST_UDP = (1 << 3)
 }
 
 }
@@ -34663,6 +34671,16 @@ public class switch_scheduler_task : IDisposable {
     } 
     get {
       uint ret = freeswitchPINVOKE.switch_scheduler_task_task_id_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint hash {
+    set {
+      freeswitchPINVOKE.switch_scheduler_task_hash_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_scheduler_task_hash_get(swigCPtr);
       return ret;
     } 
   }

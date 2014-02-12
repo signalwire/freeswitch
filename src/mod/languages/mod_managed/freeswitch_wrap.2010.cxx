@@ -8791,19 +8791,21 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_media_bug_set_pre_buffer_framecoun
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_port_allocator_new(unsigned short jarg1, unsigned short jarg2, unsigned long jarg3, void * jarg4) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_port_allocator_new(char * jarg1, unsigned short jarg2, unsigned short jarg3, unsigned long jarg4, void * jarg5) {
   int jresult ;
-  switch_port_t arg1 ;
+  char *arg1 = (char *) 0 ;
   switch_port_t arg2 ;
-  switch_port_flag_t arg3 ;
-  switch_core_port_allocator_t **arg4 = (switch_core_port_allocator_t **) 0 ;
+  switch_port_t arg3 ;
+  switch_port_flag_t arg4 ;
+  switch_core_port_allocator_t **arg5 = (switch_core_port_allocator_t **) 0 ;
   switch_status_t result;
   
-  arg1 = (switch_port_t)jarg1; 
+  arg1 = (char *)jarg1; 
   arg2 = (switch_port_t)jarg2; 
-  arg3 = (switch_port_flag_t)jarg3; 
-  arg4 = (switch_core_port_allocator_t **)jarg4; 
-  result = (switch_status_t)switch_core_port_allocator_new(arg1,arg2,arg3,arg4);
+  arg3 = (switch_port_t)jarg3; 
+  arg4 = (switch_port_flag_t)jarg4; 
+  arg5 = (switch_core_port_allocator_t **)jarg5; 
+  result = (switch_status_t)switch_core_port_allocator_new((char const *)arg1,arg2,arg3,arg4,arg5);
   jresult = result; 
   return jresult;
 }
@@ -38324,6 +38326,28 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_scheduler_task_task_id_get(vo
   
   arg1 = (switch_scheduler_task *)jarg1; 
   result = (uint32_t) ((arg1)->task_id);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_scheduler_task_hash_set(void * jarg1, unsigned long jarg2) {
+  switch_scheduler_task *arg1 = (switch_scheduler_task *) 0 ;
+  unsigned long arg2 ;
+  
+  arg1 = (switch_scheduler_task *)jarg1; 
+  arg2 = (unsigned long)jarg2; 
+  if (arg1) (arg1)->hash = arg2;
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_scheduler_task_hash_get(void * jarg1) {
+  unsigned long jresult ;
+  switch_scheduler_task *arg1 = (switch_scheduler_task *) 0 ;
+  unsigned long result;
+  
+  arg1 = (switch_scheduler_task *)jarg1; 
+  result = (unsigned long) ((arg1)->hash);
   jresult = (unsigned long)result; 
   return jresult;
 }
