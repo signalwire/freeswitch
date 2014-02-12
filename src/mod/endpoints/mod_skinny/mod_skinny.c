@@ -955,7 +955,7 @@ switch_status_t channel_on_hangup(switch_core_session_t *session)
 
 	skinny_session_walk_lines(tech_pvt->profile, switch_core_session_get_uuid(session), channel_on_hangup_callback, &helper);
 	if ((sql = switch_mprintf(
-					"DELETE FROM skinny_active_lines WHERE channel_uuid='%s'",
+					"DELETE FROM skinny_active_lines WHERE channel_uuid='%q'",
 					switch_core_session_get_uuid(session)
 				 ))) {
 		skinny_execute_sql(tech_pvt->profile, sql, tech_pvt->profile->sql_mutex);
@@ -1405,7 +1405,7 @@ void skinny_clean_device_from_db(listener_t *listener, char *device_name)
 
 		if ((sql = switch_mprintf(
 						"DELETE FROM skinny_devices "
-						"WHERE name='%s'",
+						"WHERE name='%q'",
 						device_name))) {
 			skinny_execute_sql(profile, sql, profile->sql_mutex);
 			switch_safe_free(sql);
@@ -1413,7 +1413,7 @@ void skinny_clean_device_from_db(listener_t *listener, char *device_name)
 
 		if ((sql = switch_mprintf(
 						"DELETE FROM skinny_lines "
-						"WHERE device_name='%s'",
+						"WHERE device_name='%q'",
 						device_name))) {
 			skinny_execute_sql(profile, sql, profile->sql_mutex);
 			switch_safe_free(sql);
@@ -1421,7 +1421,7 @@ void skinny_clean_device_from_db(listener_t *listener, char *device_name)
 
 		if ((sql = switch_mprintf(
 						"DELETE FROM skinny_buttons "
-						"WHERE device_name='%s'",
+						"WHERE device_name='%q'",
 						device_name))) {
 			skinny_execute_sql(profile, sql, profile->sql_mutex);
 			switch_safe_free(sql);
@@ -1429,7 +1429,7 @@ void skinny_clean_device_from_db(listener_t *listener, char *device_name)
 
 		if ((sql = switch_mprintf(
 						"DELETE FROM skinny_active_lines "
-						"WHERE device_name='%s'",
+						"WHERE device_name='%q'",
 						device_name))) {
 			skinny_execute_sql(profile, sql, profile->sql_mutex);
 			switch_safe_free(sql);
@@ -1453,7 +1453,7 @@ void skinny_clean_listener_from_db(listener_t *listener)
 
 		if ((sql = switch_mprintf(
 						"DELETE FROM skinny_devices "
-						"WHERE name='%s' and instance=%d",
+						"WHERE name='%q' and instance=%d",
 						listener->device_name, listener->device_instance))) {
 			skinny_execute_sql(profile, sql, profile->sql_mutex);
 			switch_safe_free(sql);
@@ -1461,7 +1461,7 @@ void skinny_clean_listener_from_db(listener_t *listener)
 
 		if ((sql = switch_mprintf(
 						"DELETE FROM skinny_lines "
-						"WHERE device_name='%s' and device_instance=%d",
+						"WHERE device_name='%q' and device_instance=%d",
 						listener->device_name, listener->device_instance))) {
 			skinny_execute_sql(profile, sql, profile->sql_mutex);
 			switch_safe_free(sql);
@@ -1469,7 +1469,7 @@ void skinny_clean_listener_from_db(listener_t *listener)
 
 		if ((sql = switch_mprintf(
 						"DELETE FROM skinny_buttons "
-						"WHERE device_name='%s' and device_instance=%d",
+						"WHERE device_name='%q' and device_instance=%d",
 						listener->device_name, listener->device_instance))) {
 			skinny_execute_sql(profile, sql, profile->sql_mutex);
 			switch_safe_free(sql);
@@ -1477,7 +1477,7 @@ void skinny_clean_listener_from_db(listener_t *listener)
 
 		if ((sql = switch_mprintf(
 						"DELETE FROM skinny_active_lines "
-						"WHERE device_name='%s' and device_instance=%d",
+						"WHERE device_name='%q' and device_instance=%d",
 						listener->device_name, listener->device_instance))) {
 			skinny_execute_sql(profile, sql, profile->sql_mutex);
 			switch_safe_free(sql);
@@ -2267,8 +2267,8 @@ static void skinny_call_state_event_handler(switch_event_t *event)
 				if ((sql = switch_mprintf(
 								"UPDATE skinny_active_lines "
 								"SET call_state=%d "
-								"WHERE device_name='%s' AND device_instance=%d "
-								"AND %s AND %s",
+								"WHERE device_name='%q' AND device_instance=%d "
+								"AND %q AND %q",
 								call_state,
 								listener->device_name, listener->device_instance,
 								line_instance_condition, call_id_condition
