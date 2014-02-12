@@ -2787,7 +2787,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		} else if (!strcasecmp(var, "vm-storage-dir")) {
 			vm_storage_dir = switch_core_strdup(pool, val);
 		} else if (!strcasecmp(var, "vm-domain-storage-dir")) {
-			storage_dir = switch_core_session_strdup(session, val);
+			storage_dir = switch_core_strdup(pool, val);
 		} else if (!strcasecmp(var, "storage-dir")) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 							  "Using deprecated 'storage-dir' directory variable: Please use 'vm-domain-storage-dir'.\n");
