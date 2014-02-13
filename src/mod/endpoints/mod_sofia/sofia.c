@@ -6092,7 +6092,10 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 						nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
 						switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
+					} else{
+						switch_channel_mark_pre_answered(channel);
 					}
+
 				} else {
 					if (sofia_media_tech_media(tech_pvt, (char *) r_sdp) != SWITCH_STATUS_SUCCESS) {
 						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
