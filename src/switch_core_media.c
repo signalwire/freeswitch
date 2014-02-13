@@ -4541,7 +4541,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 }
 
 
-static switch_status_t start_video_thread(switch_core_session_t *session)
+SWITCH_DECLARE(switch_status_t) switch_core_media_start_video_thread(switch_core_session_t *session)
 {
 	switch_threadattr_t *thd_attr = NULL;
 	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
@@ -4574,11 +4574,6 @@ static switch_status_t start_video_thread(switch_core_session_t *session)
 	switch_thread_create(&v_engine->media_thread, thd_attr, video_helper_thread, &v_engine->mh, switch_core_session_get_pool(session));
 
 	return SWITCH_STATUS_SUCCESS;
-}
-
-SWITCH_DECLARE(switch_status_t) switch_core_media_start_video_thread(switch_core_session_t *session)
-{
-	return start_video_thread(session);
 }
 
 //?
@@ -4712,7 +4707,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_proxy_remote_addr(switch_core_
 						!switch_channel_test_flag(session->channel, CF_WEBRTC)) {
 						/* Reactivate the NAT buster flag. */
 						switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
-						start_video_thread(session);
+						switch_core_media_start_video_thread(session);
 				
 					}
 					if (switch_media_handle_test_media_flag(smh, SCMF_AUTOFIX_TIMING)) {
@@ -5686,7 +5681,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 									  v_engine->cur_payload_map->remote_sdp_port, v_engine->cur_payload_map->agreed_pt);
 
 
-					start_video_thread(session);
+					switch_core_media_start_video_thread(session);
 					switch_rtp_set_default_payload(v_engine->rtp_session, v_engine->cur_payload_map->agreed_pt);
 				}
 			}
@@ -5719,7 +5714,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 						!((val = switch_channel_get_variable(session->channel, "disable_rtp_auto_adjust")) && switch_true(val))) {
 						/* Reactivate the NAT buster flag. */
 						switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
-						start_video_thread(session);
+						switch_core_media_start_video_thread(session);
 					}
 
 				}
@@ -5819,7 +5814,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				
 				switch_rtp_set_payload_map(v_engine->rtp_session, &v_engine->payload_map);
 
-				start_video_thread(session);
+				switch_core_media_start_video_thread(session);
 				switch_channel_set_flag(session->channel, CF_VIDEO);
 
 				if ((ssrc = switch_channel_get_variable(session->channel, "rtp_use_video_ssrc"))) {
