@@ -1940,6 +1940,7 @@ SWITCH_DECLARE(uint32_t) switch_xml_clear_user_cache(const char *key, const char
 	char mega_key[1024];
 	int r = 0;
 	switch_xml_t lookup;
+	char *expires_val = NULL;
 
 	switch_mutex_lock(CACHE_MUTEX);
 
@@ -1948,8 +1949,10 @@ SWITCH_DECLARE(uint32_t) switch_xml_clear_user_cache(const char *key, const char
 
 		if ((lookup = switch_core_hash_find(CACHE_HASH, mega_key))) {
 			switch_core_hash_delete(CACHE_HASH, mega_key);
-			if ((lookup = switch_core_hash_find(CACHE_EXPIRES_HASH, mega_key))) {
+			if ((expires_val = switch_core_hash_find(CACHE_EXPIRES_HASH, mega_key))) {
 				switch_core_hash_delete(CACHE_EXPIRES_HASH, mega_key);
+				free(expires_val);
+				expires_val = NULL;
 			}
 			switch_xml_free(lookup);
 			r++;
