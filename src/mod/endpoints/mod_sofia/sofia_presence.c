@@ -3968,7 +3968,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending NOTIFY with Expires [0] and State [%s]\n", sstr);
 			}
 
-			if (zstr(full_agent) || !switch_stristr("zoiper", full_agent)) {
+			if (zstr(full_agent) || (*full_agent != 'z' && *full_agent != 'Z')) {
 				/* supress endless loop bug with zoiper */
 				nua_notify(nh,
 						   SIPTAG_EXPIRES_STR("0"),
