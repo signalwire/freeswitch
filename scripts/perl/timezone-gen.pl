@@ -18,34 +18,34 @@ my $res = GetOptions(
     "output" => \$output
 );
 if ( !$res || $help ) {
-    print "$0 [--base=/usr/share/zoneinfo] [--output=timezones.conf.xml] [--debug] [--help]\n";
+    print
+"$0 [--base=/usr/share/zoneinfo] [--output=timezones.conf.xml] [--debug] [--help]\n";
     exit;
-  }
+}
 
 my @dirs = ($base);
 
-while ( @dirs )
-{
+while (@dirs) {
     my $dir = shift @dirs;
 
     opendir( my $top, $dir );
     while ( my $file = readdir($top) ) {
-      next if ( $file eq "." || $file eq ".." );
+        next if ( $file eq "." || $file eq ".." );
 
-    if ( -f "$dir/$file" ) {
-        $debug && print "Found $dir/$file\n";
+        if ( -f "$dir/$file" ) {
+            $debug && print "Found $dir/$file\n";
 
-        my $name = "$dir/$file";
-        $name =~ s|^${base}/||o;
-       
-        $name_to_file{$name} = "$dir/$file";
-      }
-    elsif ( -d "$dir/$file" ) {
-       $debug && print "Found subdir $dir/$file\n";
-       push(@dirs, "$dir/$file");
-	  }
-  }
-  closedir($top);
+            my $name = "$dir/$file";
+            $name =~ s|^${base}/||o;
+
+            $name_to_file{$name} = "$dir/$file";
+        }
+        elsif ( -d "$dir/$file" ) {
+            $debug && print "Found subdir $dir/$file\n";
+            push( @dirs, "$dir/$file" );
+        }
+    }
+    closedir($top);
 }
 
 foreach my $name ( sort( keys(%name_to_file) ) ) {
@@ -59,17 +59,18 @@ foreach my $name ( sort( keys(%name_to_file) ) ) {
     if ( $data !~ /^TZif2/o ) {
         $debug && print "Skipped $file\n";
         next;
-      }
+    }
 
     my $tmp = $data;
     $tmp =~ s/\n$//s;
     $tmp =~ s/.*\n//sgmo;
 
     $zones{$name} = $tmp;
-  }
+}
 
 open( my $out, ">$output" );
-print $out "<configuration name=\"timezones.conf\" description=\"Timezones\">\n";
+print $out
+  "<configuration name=\"timezones.conf\" description=\"Timezones\">\n";
 print $out " " x 4, "<timezones>\n";
 
 my $lastprefix = "";
@@ -81,11 +82,11 @@ foreach my $zone ( sort( keys(%zones) ) ) {
     $newprefix =~ s|/.*||go;
     if ( $newprefix ne $lastprefix && $lastprefix ne "" ) {
         print $out "\n";
-      }
+    }
     $lastprefix = $newprefix;
 
     print $out "\t<zone name=\"$zone\" value=\"$str\" />\n";
-  }
+}
 print $out " " x 4, "</timezones>\n";
 print $out "</configuration>\n";
 close($out);
