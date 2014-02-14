@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Marc Olivier Chouinard <mochouinard at moctel dot com>
+ * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
  *
  *
  * mod_directory.c -- Search by Name Directory IVR
@@ -95,6 +96,7 @@ struct dir_profile {
 	uint32_t max_menu_attempt;
 	uint32_t digit_timeout;
 	uint32_t max_result;
+	switch_bool_t use_number_alias;
 	switch_mutex_t *mutex;
 
 	switch_thread_rwlock_t *rwlock;
@@ -385,6 +387,8 @@ dir_profile_t *profile_set_config(dir_profile_t *profile)
 						   &profile->max_menu_attempt, 3, &config_int_ht_0, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "max-result", SWITCH_CONFIG_INT, CONFIG_RELOADABLE,
 						   &profile->max_result, 5, &config_int_ht_0, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "use-number-alias", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE,
+						   &profile->use_number_alias, SWITCH_FALSE, NULL, NULL, NULL);
 
 	return profile;
 
@@ -555,6 +559,8 @@ static switch_status_t populate_database(switch_core_session_t *session, dir_pro
 					int exten_visible = 1;
 					const char *type = switch_xml_attr_soft(ut, "type");
 					const char *id = switch_xml_attr_soft(ut, "id");
+					const char *number_alias = switch_xml_attr_soft(ut, "number-alias");
+					const char *extension = NULL;
 					char *fullName = NULL;
 					char *caller_name = NULL;
 					char *caller_name_override = NULL;
@@ -612,6 +618,13 @@ static switch_status_t populate_database(switch_core_session_t *session, dir_pro
 
 					/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "FullName %s firstName [%s] lastName [%s]\n", fullName, firstName, lastName); */
 
+					/* user number-alias instead of id if profile allows it */
+					if (profile->use_number_alias == SWITCH_TRUE && !zstr(number_alias)) {
+						extension = number_alias;
+					} else {
+						extension = id;
+					}
+
 					/* Generate Digits key mapping */
 					fullNameDigit = string_to_keypad_digit(fullName);
 					lastNameDigit = string_to_keypad_digit(lastName);
@@ -619,7 +632,7 @@ static switch_status_t populate_database(switch_core_session_t *session, dir_pro
 
 					/* add user into DB */
 					sql = switch_mprintf("insert into directory_search values('%q','%q','%q','%q','%q','%q','%q','%q','%q','%d','%d')",
-										 globals.hostname, switch_core_session_get_uuid(session), id, fullName, fullNameDigit, firstName, firstNameDigit,
+										 globals.hostname, switch_core_session_get_uuid(session), extension, fullName, fullNameDigit, firstName, firstNameDigit,
 										 lastName, lastNameDigit, name_visible, exten_visible);
 
 					if (sqlvalues) {
