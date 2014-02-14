@@ -18,31 +18,35 @@ my $res = GetOptions(
     "output" => \$output
 );
 if ( !$res || $help ) {
-    print "$0 [--base=/usr/share/zoneinfo] [--output=timezones.conf] [--debug] [--help]\n";
+    print "$0 [--base=/usr/share/zoneinfo] [--output=timezones.conf.xml] [--debug] [--help]\n";
     exit;
   }
 
-opendir( my $top, $base );
-while ( my $file = readdir($top) ) {
-    next if ( $file eq "." || $file eq "." );
+my @dirs = ($base);
 
-    if ( -f "$base/$file" ) {
-        $debug && print "Found $base/$file\n";
-        $name_to_file{$file} = "$base/$file";
+while ( @dirs )
+{
+    my $dir = shift @dirs;
+
+    opendir( my $top, $dir );
+    while ( my $file = readdir($top) ) {
+      next if ( $file eq "." || $file eq ".." );
+
+    if ( -f "$dir/$file" ) {
+        $debug && print "Found $dir/$file\n";
+
+        my $name = "$dir/$file";
+        $name =~ s|^${base}/||o;
+       
+        $name_to_file{$name} = "$dir/$file";
       }
-    elsif ( -d "$base/$file" ) {
-        opendir( my $sdir, "$base/$file" );
-        while ( my $subfile = readdir($sdir) ) {
-            next if ( $subfile eq "." || $subfile eq "." );
-            if ( -f "$base/$file/$subfile" ) {
-                $debug && print "Found $base/$file/$subfile...\n";
-                $name_to_file{"$file/$subfile"} = "$base/$file/$subfile";
-	      }
+    elsif ( -d "$dir/$file" ) {
+       $debug && print "Found subdir $dir/$file\n";
+       push(@dirs, "$dir/$file");
 	  }
-        closedir($sdir);
-      }
   }
-closedir($top);
+  closedir($top);
+}
 
 foreach my $name ( sort( keys(%name_to_file) ) ) {
     my $file = $name_to_file{$name};
