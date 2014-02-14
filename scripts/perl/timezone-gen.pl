@@ -18,8 +18,7 @@ my $res = GetOptions(
     "output" => \$output
 );
 if ( !$res || $help ) {
-    print
-"$0 [--base=/usr/share/zoneinfo] [--output=timezones.conf.xml] [--debug] [--help]\n";
+    print "$0 [--base=/usr/share/zoneinfo] [--output=timezones.conf.xml] [--debug] [--help]\n";
     exit;
 }
 
@@ -69,8 +68,7 @@ foreach my $name ( sort( keys(%name_to_file) ) ) {
 }
 
 open( my $out, ">$output" );
-print $out
-  "<configuration name=\"timezones.conf\" description=\"Timezones\">\n";
+print $out "<configuration name=\"timezones.conf\" description=\"Timezones\">\n";
 print $out " " x 4, "<timezones>\n";
 
 my $lastprefix = "";
