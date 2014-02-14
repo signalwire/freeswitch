@@ -1283,16 +1283,18 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 {
 	register unsigned int realsize = (unsigned int) (size * nmemb);
 	client_t *client = data;
+	char *zero = "\0";
 
 	client->bytes += realsize;
 
-	if (client->bytes > client->max_bytes) {
+	if (client->bytes > client->max_bytes - 1) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Oversized file detected [%d bytes]\n", (int) client->bytes);
 		client->err = 1;
 		return 0;
 	}
 
 	switch_buffer_write(client->buffer, ptr, realsize);
+	switch_buffer_write(client->buffer, zero, 1);
 	
 	return realsize;
 }
