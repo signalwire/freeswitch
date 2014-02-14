@@ -477,7 +477,7 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 					switch_time_exp_lt(&tm, time);
 
 					if ( GLOBAL_TIME_FORMAT == 1 ) {
-						av_value = switch_mprintf("%02u:%02u:%02u.%03u MSD %s %s %02u %04u",
+						av_value = switch_mprintf("%02u:%02u:%02u.%03u %s %s %s %02u %04u",
 												  tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec/1000,
 												  GLOBAL_TIME_FORMAT, radattrdays[tm.tm_wday], radattrmonths[tm.tm_mon],
 												  tm.tm_mday, tm.tm_year + 1900);
