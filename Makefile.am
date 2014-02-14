@@ -122,7 +122,7 @@ CORE_CFLAGS += -I$(switch_srcdir)/libs/spandsp/src -I$(switch_srcdir)/libs/tiff-
 
 APR_LIBS   = $(AM_LIBAPU_LIBS) $(AM_LIBAPR_LIBS)
 CORE_LIBS  = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
-CORE_LIBS += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la
+CORE_LIBS += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la libs/speex/libspeex/libspeex.la
 
 if ENABLE_SRTP
 CORE_CFLAGS += -DENABLE_SRTP
@@ -283,6 +283,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_limit.c \
 	src/g711.c \
 	src/switch_pcm.c \
+	src/switch_speex.c \
 	src/switch_profile.c \
 	src/switch_json.c \
 	src/switch_curl.c \

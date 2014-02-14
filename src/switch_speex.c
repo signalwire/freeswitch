@@ -27,7 +27,7 @@
  * Christopher M. Rienzo <chris@rienzo.com>
  *
  *
- * mod_speex.c -- Speex Codec Module
+ * core_speex.c -- Speex Codec Module
  *
  */
 
@@ -35,8 +35,8 @@
 #include <speex/speex.h>
 #include <speex/speex_preprocess.h>
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_speex_load);
-SWITCH_MODULE_DEFINITION(mod_speex, mod_speex_load, NULL, NULL);
+SWITCH_MODULE_LOAD_FUNCTION(core_speex_load);
+SWITCH_MODULE_DEFINITION(CORE_SPEEX_MODULE, core_speex_load, NULL, NULL);
 
 /* nobody has more setting than speex so we will let them set the standard */
 /*! \brief Various codec settings (currently only relevant to speex) */
@@ -584,7 +584,7 @@ static void load_configuration()
 	}
 }
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_speex_load)
+SWITCH_MODULE_LOAD_FUNCTION(core_speex_load)
 {
 	switch_codec_interface_t *codec_interface;
 	int mpf = 20000, spf = 160, bpf = 320, rate = 8000, counta, countb;
