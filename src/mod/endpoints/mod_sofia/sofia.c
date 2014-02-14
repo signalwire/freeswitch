@@ -7967,6 +7967,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	char *sql = NULL;
 	char *acl_context = NULL;
 	const char *r_sdp = NULL;
+	int broken_device = 0;
 
 	profile->ib_calls++;
 
@@ -8010,7 +8011,13 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	}
 
 
-	if (sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION)) {
+	if (profile->server_rport_level >= 2 && sip->sip_user_agent && sip->sip_user_agent->g_string &&
+		(!strncasecmp(sip->sip_user_agent->g_string, "Polycom", 7) || 
+		 !strncasecmp(sip->sip_user_agent->g_string, "KIRK Wireless Server", 20) )) {
+		broken_device = 1;
+	}
+
+	if (sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION) || broken_device) {
 		if (sip && sip->sip_via) {
 			const char *port = sip->sip_via->v_port;
 			const char *host = sip->sip_via->v_host;
