@@ -35,6 +35,10 @@
 #include <speex/speex.h>
 #include <speex/speex_preprocess.h>
 
+#ifdef WIN32
+#undef SWITCH_MOD_DECLARE_DATA
+#define SWITCH_MOD_DECLARE_DATA __declspec(dllexport)
+#endif
 SWITCH_MODULE_LOAD_FUNCTION(core_speex_load);
 SWITCH_MODULE_DEFINITION(CORE_SPEEX_MODULE, core_speex_load, NULL, NULL);
 
