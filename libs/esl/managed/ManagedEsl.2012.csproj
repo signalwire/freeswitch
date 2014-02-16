@@ -57,13 +57,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ESL.cs" />
-    <Compile Include="ESLconnection.cs" />
-    <Compile Include="ESLevent.cs" />
-    <Compile Include="ESLPINVOKE.cs" />
+    <Compile Include="ESL.2010.cs" />
+    <Compile Include="ESLconnection.2010.cs" />
+    <Compile Include="ESLevent.2010.cs" />
+    <Compile Include="ESLPINVOKE.2010.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SWIGTYPE_p_esl_event_t.cs" />
-    <Compile Include="SWIGTYPE_p_esl_priority_t.cs" />
+    <Compile Include="SWIGTYPE_p_esl_event_t.2010.cs" />
+    <Compile Include="SWIGTYPE_p_esl_priority_t.2010.cs" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
