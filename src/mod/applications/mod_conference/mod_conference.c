@@ -9389,7 +9389,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	if (!zstr(auto_gain_level)) {
 		int level = 0;
 
-		if (switch_true(auto_gain_level)) {
+		if (switch_true(auto_gain_level) && !switch_is_number(auto_gain_level)) {
 			level = DEFAULT_AGC_LEVEL;
 		} else {
 			level = atoi(auto_gain_level);
