@@ -188,7 +188,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\esl_oop.cpp" />
-    <ClCompile Include="esl_wrap.cpp" />
+    <ClCompile Include="esl_wrap.2010.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\include\esl_oop.h" />
