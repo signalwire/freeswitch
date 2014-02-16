@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <esl.h>
 
-static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in *addr)
+static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in *addr, void *user_data)
 {
 	esl_handle_t handle = {{0}};
 	int done = 0;
@@ -66,7 +66,7 @@ int main(void)
 	signal(SIGCHLD, SIG_IGN);
 
 	esl_global_set_default_logger(7);
-	esl_listen("localhost", 8040, mycallback, &server_sock);
+	esl_listen("localhost", 8040, mycallback, NULL, &server_sock);
 
 	return 0;
 }

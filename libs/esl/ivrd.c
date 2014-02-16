@@ -45,7 +45,7 @@ static void handle_SIGCHLD(int sig)
 	return;
 }
 
-static void my_forking_callback(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in *addr)
+static void my_forking_callback(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in *addr, void *user_data)
 {
 	esl_handle_t handle = {{0}};
 	char path_buffer[1024] = { 0 };
@@ -91,7 +91,7 @@ static void my_forking_callback(esl_socket_t server_sock, esl_socket_t client_so
 	exit(0);
 }
 
-static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in *addr)
+static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in *addr, void *user_data)
 {
 	esl_handle_t handle = {{0}};
 	const char *path;
@@ -162,11 +162,11 @@ int main(int argc, char *argv[])
 	if (thread) {
 		printf("Starting threaded listener.\n");
 		fflush(stdout);
-		esl_listen_threaded(ip, port, mycallback, 100000);
+		esl_listen_threaded(ip, port, mycallback, NULL, 100000);
 	} else {
 		printf("Starting forking listener.\n");
 		fflush(stdout);
-		esl_listen(ip, port, my_forking_callback, NULL);
+		esl_listen(ip, port, my_forking_callback, NULL, NULL);
 	}
 
 	return 0;

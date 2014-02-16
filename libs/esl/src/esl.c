@@ -645,13 +645,14 @@ struct thread_handler {
 	esl_socket_t server_sock;
 	esl_socket_t client_sock;
 	struct sockaddr_in addr;
+	void *user_data;
 };
 
 static void *client_thread(esl_thread_t *me, void *obj)
 {
 	struct thread_handler *handler = (struct thread_handler *) obj;
 
-	handler->callback(handler->server_sock, handler->client_sock, &handler->addr);
+	handler->callback(handler->server_sock, handler->client_sock, &handler->addr, handler->user_data);
 	free(handler);
 
 	return NULL;
@@ -679,7 +680,7 @@ static int prepare_sock(esl_socket_t sock)
 }
 
 
-ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback, esl_socket_t *server_sockP)
+ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback, void *user_data, esl_socket_t *server_sockP)
 {
 	esl_socket_t server_sock = ESL_SOCK_INVALID;
 	struct sockaddr_in addr;
@@ -728,7 +729,7 @@ ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_list
 			goto end;
 		}
 		prepare_sock(client_sock);
-		callback(server_sock, client_sock, &echoClntAddr);
+		callback(server_sock, client_sock, &echoClntAddr, user_data);
 	}
 
  end:
@@ -742,7 +743,7 @@ ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_list
 
 }
 
-ESL_DECLARE(esl_status_t) esl_listen_threaded(const char *host, esl_port_t port, esl_listen_callback_t callback, int max)
+ESL_DECLARE(esl_status_t) esl_listen_threaded(const char *host, esl_port_t port, esl_listen_callback_t callback, void *user_data, int max)
 {
 	esl_socket_t server_sock = ESL_SOCK_INVALID;
 	struct sockaddr_in addr;
@@ -796,6 +797,7 @@ ESL_DECLARE(esl_status_t) esl_listen_threaded(const char *host, esl_port_t port,
 		handler->server_sock = server_sock;
 		handler->client_sock = client_sock;
 		handler->addr = echoClntAddr;
+		handler->user_data = user_data;
 		esl_thread_create_detached(client_thread, handler);
 	}
 

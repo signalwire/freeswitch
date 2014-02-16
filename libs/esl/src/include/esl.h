@@ -379,7 +379,7 @@ ESL_DECLARE(int) esl_tolower(int c);
 ESL_DECLARE(int) esl_snprintf(char *buffer, size_t count, const char *fmt, ...);
 
 
-typedef void (*esl_listen_callback_t)(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in *addr);
+typedef void (*esl_listen_callback_t)(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in *addr, void *user_data);
 /*!
     \brief Attach a handle to an established socket connection
     \param handle Handle to be attached
@@ -394,8 +394,8 @@ ESL_DECLARE(esl_status_t) esl_attach_handle(esl_handle_t *handle, esl_socket_t s
     \param callback Callback that will be called upon data received
 */
 
-ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback, esl_socket_t *server_sockP);
-ESL_DECLARE(esl_status_t) esl_listen_threaded(const char *host, esl_port_t port, esl_listen_callback_t callback, int max);
+ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback, void *user_data, esl_socket_t *server_sockP);
+ESL_DECLARE(esl_status_t) esl_listen_threaded(const char *host, esl_port_t port, esl_listen_callback_t callback, void *user_data, int max);
 /*!
     \brief Executes application with sendmsg to a specific UUID. Used for outbound socket.
     \param handle Handle that the msg will be sent
