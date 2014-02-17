@@ -587,6 +587,7 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 	/* uint32_t call_state = atoi(argv[16]); */
 
 	listener_t *listener = NULL;
+	uint32_t active_calls = 0;
 
 	skinny_profile_find_listener_by_device_name_and_instance(helper->tech_pvt->profile, 
 			device_name, device_instance, &listener);
@@ -596,9 +597,12 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 		helper->lines_count++;
 		switch_channel_set_variable(channel, "effective_callee_id_number", value);
 		switch_channel_set_variable(channel, "effective_callee_id_name", caller_name);
+	
+		active_calls = skinny_line_count_active(listener);
 
-		skinny_log_l(listener, SWITCH_LOG_DEBUG, "Ring Lines Callback with Callee Number (%s), Caller Name (%s), Dest Number (%s)\n",
-			value, caller_name, helper->tech_pvt->caller_profile->destination_number);
+		skinny_log_l(listener, SWITCH_LOG_DEBUG, 
+			"Ring Lines Callback with Callee Number (%s), Caller Name (%s), Dest Number (%s), Active Calls (%d)\n",
+			value, caller_name, helper->tech_pvt->caller_profile->destination_number, active_calls);
 
 		if (helper->remote_session) {
 			switch_core_session_message_t msg = { 0 };
@@ -630,7 +634,13 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 		}
 		skinny_session_send_call_info(helper->tech_pvt->session, listener, line_instance);
 		send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_BLINK);
-		send_set_ringer(listener, SKINNY_RING_INSIDE, SKINNY_RING_FOREVER, 0, helper->tech_pvt->call_id);
+
+		if ( active_calls < 1 ) {
+			send_set_ringer(listener, SKINNY_RING_INSIDE, SKINNY_RING_FOREVER, 0, helper->tech_pvt->call_id);
+		} else {
+			send_start_tone(listener, SKINNY_TONE_CALLWAITTONE, 0, line_instance, helper->tech_pvt->call_id);
+			send_stop_tone(listener, line_instance, helper->tech_pvt->call_id);
+		}
 		switch_channel_ring_ready(channel);
 	}
 	return 0;
