@@ -3668,6 +3668,14 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 					  channel->name);
 
 
+	if ((var = switch_channel_get_variable(channel, "absolute_codec_string"))) {
+		/* inherit_codec == true will implicitly clear the absolute_codec_string 
+		   variable if used since it was the reason it was set in the first place and is no longer needed */
+		if (switch_true(switch_channel_get_variable(channel, "inherit_codec"))) {
+			switch_channel_set_variable(channel, "absolute_codec_string", NULL);
+		}
+	}
+
 	switch_channel_execute_on(channel, SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE);
 
 	if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {

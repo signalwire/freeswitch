@@ -1366,11 +1366,6 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 	switch_assert(smh->session != NULL);
 
 	if ((abs = switch_channel_get_variable(session->channel, "absolute_codec_string"))) {
-		/* inherit_codec == true will implicitly clear the absolute_codec_string 
-		   variable if used since it was the reason it was set in the first place and is no longer needed */
-		if (switch_true(switch_channel_get_variable(session->channel, "inherit_codec"))) {
-			switch_channel_set_variable(session->channel, "absolute_codec_string", NULL);
-		}
 		codec_string = abs;
 		goto ready;
 	}
