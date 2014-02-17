@@ -4078,6 +4078,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_proxy_remote_addr(switch_core_
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote address:port [%s:%d] has not changed.\n",
 							  a_engine->cur_payload_map->remote_sdp_ip, a_engine->cur_payload_map->remote_sdp_port);
 			switch_goto_status(SWITCH_STATUS_BREAK, end);
+		} else if (remote_host && ( (strcmp(remote_host, "0.0.0.0") == 0) ||
+									(strcmp(a_engine->cur_payload_map->remote_sdp_ip, "0.0.0.0") == 0))) {
+			
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+							  "Remote address changed from [%s] to [%s]. Ignoring...\n",
+							  a_engine->cur_payload_map->remote_sdp_ip, remote_host);
+			switch_goto_status(SWITCH_STATUS_BREAK, end);
 		}
 
 		if ((rport = switch_channel_get_variable(session->channel, "rtp_remote_audio_rtcp_port"))) {
