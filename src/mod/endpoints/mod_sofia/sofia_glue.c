@@ -1697,6 +1697,12 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt, co
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Remote address:port [%s:%d] has not changed.\n",
 							  tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
 			switch_goto_status(SWITCH_STATUS_BREAK, end);
+		} else if (remote_host && ( (strcmp(remote_host, "0.0.0.0") == 0) ||
+									(strcmp(tech_pvt->remote_sdp_audio_ip, "0.0.0.0") == 0))) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG,
+							  "Remote address changed from [%s] to [%s]. Ignoring...\n", 
+							  tech_pvt->remote_sdp_audio_ip, remote_host);
+			switch_goto_status(SWITCH_STATUS_BREAK, end);
 		}
 
 		if ((rport = switch_channel_get_variable(tech_pvt->channel, "sip_remote_audio_rtcp_port"))) {
