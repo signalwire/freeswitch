@@ -3682,7 +3682,7 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 			const char *info;
 
 			if ((switch_channel_test_flag(session->channel, CF_SLA_BARGE) || switch_channel_test_flag(session->channel, CF_SLA_BARGING)) && 
-				(!b_channel || switch_channel_test_flag(b_channel, CF_BROADCAST))) {
+				(!b_channel || switch_channel_test_flag(b_channel, CF_EVENT_LOCK_PRI))) {
 				switch_channel_mark_hold(session->channel, sendonly);
 				switch_channel_set_flag(session->channel, CF_PROTO_HOLD);
 				changed = 0;
@@ -3719,13 +3719,13 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 			}
 
 
-			if (stream && strcasecmp(stream, "silence") && (!b_channel || !switch_channel_test_flag(b_channel, CF_BROADCAST))) {
+			if (stream && strcasecmp(stream, "silence") && (!b_channel || !switch_channel_test_flag(b_channel, CF_EVENT_LOCK_PRI))) {
 				if (!strcasecmp(stream, "indicate_hold")) {
 					switch_channel_set_flag(session->channel, CF_SUSPEND);
 					switch_channel_set_flag(session->channel, CF_HOLD);
-					switch_ivr_hold_uuid(switch_channel_get_partner_uuid(session->channel), NULL, 0);
+					switch_ivr_hold_uuid(switch_core_session_get_uuid(b_session), NULL, 0);
 				} else {
-					switch_ivr_broadcast(switch_channel_get_partner_uuid(session->channel), stream,
+					switch_ivr_broadcast(switch_core_session_get_uuid(b_session), stream,
 										 SMF_ECHO_ALEG | SMF_LOOP | SMF_PRIORITY);
 					switch_yield(250000);
 				}
