@@ -4378,7 +4378,7 @@ int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 				const char *info;
 
 				if ((sofia_test_flag(tech_pvt, TFLAG_SLA_BARGE) || sofia_test_flag(tech_pvt, TFLAG_SLA_BARGING)) &&
-					(!b_channel || switch_channel_test_flag(b_channel, CF_BROADCAST))) {
+					(!b_channel || switch_channel_test_flag(b_channel, CF_EVENT_LOCK_PRI))) {
 					switch_channel_mark_hold(tech_pvt->channel, sendonly);
 					sofia_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 					changed = 0;
@@ -4408,7 +4408,7 @@ int sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 				stream = tech_pvt->profile->hold_music;
 			}
 
-			if (stream && strcasecmp(stream, "silence") && (!b_channel || !switch_channel_test_flag(b_channel, CF_BROADCAST))) {
+			if (stream && strcasecmp(stream, "silence") && (!b_channel || !switch_channel_test_flag(b_channel, CF_EVENT_LOCK_PRI))) {
 				if (!strcasecmp(stream, "indicate_hold")) {
 					switch_channel_set_flag(tech_pvt->channel, CF_SUSPEND);
 					switch_channel_set_flag(tech_pvt->channel, CF_HOLD);
