@@ -652,6 +652,10 @@ Module: say/mod_say_ru
 Description: mod_say_ru
  Adds mod_say_ru.
 
+Module: say/mod_say_sv
+Description: mod_say_sv
+ Adds mod_say_sv.
+
 Module: say/mod_say_th
 Description: mod_say_th
  Adds mod_say_th.
@@ -659,10 +663,6 @@ Description: mod_say_th
 Module: say/mod_say_zh
 Description: mod_say_zh
  Adds mod_say_zh.
-
-Module: say/mod_say_sv
-Description: mod_say_sv
- Adds mod_say_sv.
 
 ## mod/sdk
 
