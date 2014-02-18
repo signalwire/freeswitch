@@ -359,6 +359,7 @@ build_all () {
   echo; echo; echo; echo
   trap 'echo "Killing children...">&2; for x in $(jobs -p); do kill $x; done' EXIT
   if [ "${orig:0:2}" = ".." ]; then
+    echo "true" > ../log/builds-ok
     for distro in $distros; do
       echo "Creating $distro dsc..." >&2
       local dsc="$(create_dsc $dsc_opts $distro $orig 2>../log/$distro | tail -n1)"
@@ -372,6 +373,8 @@ build_all () {
             echo "Done building $distro-$arch debs." >&2
             if [ "${changes:0:2}" = ".." ]; then
               echo "$changes" >> ../log/changes
+            else
+              echo "false" > ../log/builds-ok
             fi
           } &
           $par || wait
@@ -384,6 +387,7 @@ build_all () {
   [ -z "$modlist" ] || rm -f $modtmp
   trap - EXIT
   cat ../log/changes
+  test "$(cat ../log/builds-ok)" = true || exit 1
 }
 
 usage () {
