@@ -338,11 +338,6 @@ Module: codecs/mod_skel_codec
 Description: mod_skel_codec
  Adds mod_skel_codec.
 
-Module: codecs/mod_speex
-Description: mod_speex
- Adds mod_speex.
-Build-Depends: libogg-dev
-
 Module: codecs/mod_theora
 Description: mod_theora
  Adds mod_theora.
