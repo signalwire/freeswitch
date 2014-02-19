@@ -1,3 +1,4 @@
+MAKEFLAGS=-j1
 BASE=../../../..
 XMLRPC_DIR=$(BASE)/libs/xmlrpc-c
 
