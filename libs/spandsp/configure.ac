@@ -198,7 +198,15 @@ AC_CHECK_HEADERS([stdlib.h])
 AC_CHECK_HEADERS([string.h])
 AC_CHECK_HEADERS([strings.h])
 AC_CHECK_HEADERS([malloc.h])
-AC_CHECK_HEADERS([tgmath.h], [INSERT_TGMATH_HEADER="#include <tgmath.h>"])
+
+case "$host" in
+    *freebsd*)
+    ;;
+    *)
+    AC_CHECK_HEADERS([tgmath.h], [INSERT_TGMATH_HEADER="#include <tgmath.h>"])
+    ;;
+esac
+
 AC_CHECK_HEADERS([math.h], [INSERT_MATH_HEADER="#include <math.h>"])
 AC_CHECK_HEADERS([float.h])
 AC_CHECK_HEADERS([fcntl.h])
