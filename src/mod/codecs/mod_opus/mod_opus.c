@@ -409,7 +409,7 @@ static switch_status_t opus_load_config(switch_bool_t reload)
 			char *key = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 			
-			if (!strcasecmp(key, "use_vbr") && !zstr(val)) {
+			if (!strcasecmp(key, "use-vbr") && !zstr(val)) {
 				opus_prefs.use_vbr = atoi(val);
 			} else if (!strcasecmp(key, "complexity")) {
 				opus_prefs.complexity = atoi(val);
