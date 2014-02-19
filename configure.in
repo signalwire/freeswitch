@@ -1188,6 +1188,7 @@ AC_CONFIG_FILES([Makefile
 
 AM_CONDITIONAL(ISLINUX, [test `uname -s` = Linux])
 AM_CONDITIONAL(ISMAC, [test `uname -s` = Darwin])
+AM_CONDITIONAL(ISFREEBSD, [test `uname -s` = FreeBSD])
 AM_CONDITIONAL(IS64BITLINUX, [test `uname -m` = x86_64])
 
 #some vars to sub into the Makefile.am's
