@@ -1255,9 +1255,10 @@ SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t
 
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO].payload_map = switch_core_alloc(session->pool, sizeof(payload_map_t));
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO].cur_payload_map = session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO].payload_map;
+		session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO].cur_payload_map->current = 1;
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].payload_map = switch_core_alloc(session->pool, sizeof(payload_map_t));
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].cur_payload_map = session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].payload_map;
-
+		session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].cur_payload_map->current = 1;
 
 		switch_channel_set_flag(session->channel, CF_DTLS_OK);
 
@@ -1724,7 +1725,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 					for (pmap = engine->payload_map; pmap; pmap = pmap->next) {
 						if (engine->read_frame.payload == pmap->recv_pt && pmap->negotiated) {
 							engine->cur_payload_map = pmap;
-
+							engine->cur_payload_map->current = 1;
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 											  "Changing current codec to %s (payload type %d).\n",
 											  pmap->iananame, pmap->pt);
@@ -2669,6 +2670,7 @@ static void clear_pmaps(switch_rtp_engine_t *engine)
 
 	for (pmap = engine->payload_map; pmap && pmap->allocated; pmap = pmap->next) {
 		pmap->negotiated = 0;
+		pmap->current = 0;
 	}
 }
 
@@ -3325,6 +3327,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			
 					if (j == 0) {
 						a_engine->cur_payload_map = pmap;
+						a_engine->cur_payload_map->current = 1;
+						if (a_engine->rtp_session) {
+							switch_rtp_set_default_payload(a_engine->rtp_session, pmap->pt);
+						}
 					}
 						
 					pmap->rm_encoding = switch_core_session_strdup(session, (char *) mmap->rm_encoding);
@@ -3583,6 +3589,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 																			SWITCH_TRUE);
 					if (j == 0) {
 						v_engine->cur_payload_map = pmap;
+						v_engine->cur_payload_map->current = 1;
+						if (v_engine->rtp_session) {
+							switch_rtp_set_default_payload(v_engine->rtp_session, pmap->pt);
+						}
 					}
 					
 					mimp = matches[j].imp;
@@ -8443,7 +8453,7 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 
 SWITCH_DECLARE(void) switch_core_media_init(void)
 {
-	switch_core_gen_certs(DTLS_SRTP_FNAME);	
+	switch_core_gen_certs(DTLS_SRTP_FNAME ".pem");	
 }
 
 SWITCH_DECLARE(void) switch_core_media_deinit(void)

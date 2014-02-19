@@ -252,6 +252,7 @@ typedef struct switch_dtls_s {
 	char *rsa;
 	char *pvt;
 	char *ca;
+	char *pem;
 	struct switch_rtp *rtp_session;
 } switch_dtls_t;
 
@@ -261,9 +262,9 @@ typedef int (*dtls_state_handler_t)(switch_rtp_t *, switch_dtls_t *);
 static int dtls_state_handshake(switch_rtp_t *rtp_session, switch_dtls_t *dtls);
 static int dtls_state_ready(switch_rtp_t *rtp_session, switch_dtls_t *dtls);
 static int dtls_state_setup(switch_rtp_t *rtp_session, switch_dtls_t *dtls);
-static int dtls_state_dummy(switch_rtp_t *rtp_session, switch_dtls_t *dtls);
+static int dtls_state_fail(switch_rtp_t *rtp_session, switch_dtls_t *dtls);
 
-dtls_state_handler_t dtls_states[DS_INVALID] = {dtls_state_handshake, dtls_state_setup, dtls_state_ready, dtls_state_dummy};
+dtls_state_handler_t dtls_states[DS_INVALID] = {dtls_state_handshake, dtls_state_setup, dtls_state_ready, dtls_state_fail};
 
 typedef struct ts_normalize_s {
 	uint32_t last_ssrc;
@@ -1066,7 +1067,6 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 			remote_ip = switch_get_addr(ipbuf, sizeof(ipbuf), from_addr);
 			switch_stun_packet_attribute_add_xor_binded_address(rpacket, (char *) remote_ip, switch_sockaddr_get_port(from_addr));
-
 
 			if (!switch_cmp_addr(from_addr, ice->addr)) {
 				host = switch_get_addr(buf, sizeof(buf), from_addr);
@@ -2567,11 +2567,6 @@ static const char *dtls_state_names(dtls_state_t s)
 
 #define dtls_set_state(_dtls, _state) switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "Changing %s DTLS state from %s to %s\n", rtp_type(rtp_session), dtls_state_names(_dtls->state), dtls_state_names(_state)); _dtls->new_state = 1; _dtls->last_state = _dtls->state; _dtls->state = _state
 
-static int dtls_state_dummy(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
-{
-	return -1;
-}
-
 #define cr_keylen 16
 #define cr_saltlen 14
 #define cr_kslen 30
@@ -2661,6 +2656,17 @@ static int dtls_state_ready(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 	return 0;
 }
 
+static int dtls_state_fail(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
+{
+	if (rtp_session->session) {
+		switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+	}
+
+	return -1;
+}
+
+
 static int dtls_state_handshake(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 {
 	int ret;
@@ -2708,39 +2714,32 @@ static void free_dtls(switch_dtls_t **dtlsp)
 static int do_dtls(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 {
 	int r = 0, ret = 0, len;
-	void *data;
 	switch_size_t bytes;
+	unsigned char buf[4096] = "";
+	int ready = rtp_session->ice.ice_user ? (rtp_session->ice.rready && rtp_session->ice.ready) : 1;
+	
 
-	if (dtls->bytes) {
-
-		//if (dtls->state == DS_READY) {
-		//	
-		//}
-
-		if ((ret = BIO_write(dtls->read_bio, dtls->data, (int)dtls->bytes)) != (int)dtls->bytes) {
-			ret = SSL_get_error(dtls->ssl, ret);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s DTLS packet read err %d\n", rtp_type(rtp_session), ret);
-			dtls_set_state(dtls, DS_FAIL);
-			return -1;
-		}
+	if (!dtls->bytes && !ready) {
+		printf("SKIP\n");
+		return 0;
 	}
 
-	if (SSL_read(dtls->ssl, dtls->data, (int)dtls->bytes) == (int)dtls->bytes) {
-		if (BIO_reset(dtls->read_bio));
+	if ((ret = BIO_write(dtls->read_bio, dtls->data, (int)dtls->bytes)) != (int)dtls->bytes && dtls->bytes > 0) {
+		ret = SSL_get_error(dtls->ssl, ret);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s DTLS packet read err %d\n", rtp_type(rtp_session), ret);
 	}
 
 	r = dtls_states[dtls->state](rtp_session, dtls);
 
-
-	if ((len = BIO_get_mem_data(dtls->write_bio, &data)) && data) {
+	if ((len = BIO_read(dtls->write_bio, buf, sizeof(buf))) > 0) {
 		bytes = len;
 
-		if (switch_socket_sendto(dtls->sock_output, dtls->remote_addr, 0, data, &bytes ) != SWITCH_STATUS_SUCCESS) {
+		if (switch_socket_sendto(dtls->sock_output, dtls->remote_addr, 0, (void *)buf, &bytes ) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s DTLS packet not written\n", rtp_type(rtp_session));
-		} else {
-			if (BIO_reset(dtls->write_bio));
 		}
 	}
+
+
 	
 	return r;
 }
@@ -2874,16 +2873,21 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 
 	dtls = switch_core_alloc(rtp_session->pool, sizeof(*dtls));
 
-		
-	dtls->pvt = switch_core_sprintf(rtp_session->pool, "%s%s%s.key", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, DTLS_SRTP_FNAME);
-	dtls->rsa = switch_core_sprintf(rtp_session->pool, "%s%s%s.crt", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, DTLS_SRTP_FNAME);
+	dtls->pem = switch_core_sprintf(rtp_session->pool, "%s%s%s.pem", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, DTLS_SRTP_FNAME);
+
+	if (switch_file_exists(dtls->pem, rtp_session->pool) == SWITCH_STATUS_SUCCESS) {
+		dtls->pvt = dtls->rsa = dtls->pem;
+	} else {
+		dtls->pvt = switch_core_sprintf(rtp_session->pool, "%s%s%s.key", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, DTLS_SRTP_FNAME);
+		dtls->rsa = switch_core_sprintf(rtp_session->pool, "%s%s%s.crt", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, DTLS_SRTP_FNAME);
+	}
+
 	dtls->ca = switch_core_sprintf(rtp_session->pool, "%s%sca-bundle.crt", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR);
 		
 	dtls->ssl_ctx = SSL_CTX_new(DTLSv1_method());
 	switch_assert(dtls->ssl_ctx);
 
 	SSL_CTX_set_mode(dtls->ssl_ctx, SSL_MODE_AUTO_RETRY);
-
 
 	//SSL_CTX_set_verify(dtls->ssl_ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
 	SSL_CTX_set_verify(dtls->ssl_ctx, SSL_VERIFY_NONE, NULL); 
@@ -2936,6 +2940,14 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	//SSL_set_verify(dtls->ssl, (SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT), cb_verify_peer);
 	SSL_set_verify(dtls->ssl, SSL_VERIFY_NONE, NULL);
 	SSL_set_app_data(dtls->ssl, dtls);
+
+	BIO_ctrl(dtls->read_bio, BIO_CTRL_DGRAM_SET_MTU, 1400, NULL);
+	BIO_ctrl(dtls->write_bio, BIO_CTRL_DGRAM_SET_MTU, 1400, NULL);
+	SSL_set_mtu(dtls->ssl, 1400);
+	BIO_ctrl(dtls->write_bio, BIO_C_SET_BUFF_SIZE, 1400, NULL);
+	BIO_ctrl(dtls->read_bio, BIO_C_SET_BUFF_SIZE, 1400, NULL);
+
+
 
 	dtls->local_fp = local_fp;
 	dtls->remote_fp = remote_fp;
@@ -4381,6 +4393,7 @@ static int check_recv_payload(switch_rtp_t *rtp_session)
 		ok = 0;
 
 		switch_mutex_lock(rtp_session->flag_mutex);
+
 		for (pmap = *rtp_session->pmaps; pmap && pmap->allocated; pmap = pmap->next) {					
 			if (!pmap->negotiated) {
 				continue;
@@ -6569,6 +6582,16 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 		}
 	} else {
 		payload = rtp_session->payload;
+#if 0
+		if (rtp_session->pmaps && *rtp_session->pmaps) {
+			payload_map_t *pmap;
+			for (pmap = *rtp_session->pmaps; pmap; pmap = pmap->next) {
+				if (pmap->current) {
+					payload = pmap->pt;
+				}
+			}
+		}
+#endif
 	}
 
 	if (switch_test_flag(frame, SFF_RTP_HEADER)) {

@@ -194,8 +194,12 @@ SWITCH_DECLARE(int) switch_core_cert_gen_fingerprint(const char *prefix, dtls_fi
 	int ret = 0;
 	char *rsa;
 
+	rsa = switch_mprintf("%s%s%s.pem", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, prefix);
 
-	rsa = switch_mprintf("%s%s%s.crt", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, prefix);
+	if (switch_file_exists(rsa, NULL) != SWITCH_STATUS_SUCCESS) {
+		free(rsa);
+		rsa = switch_mprintf("%s%s%s.crt", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, prefix);
+	}
 
 	if (!(bio = BIO_new(BIO_s_file()))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "FP BIO ERR!\n");
@@ -233,7 +237,6 @@ SWITCH_DECLARE(int) switch_core_cert_gen_fingerprint(const char *prefix, dtls_fi
 
 
 static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days);
-static int add_ext(X509 *cert, int nid, char *value);
 
 SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix)
 {
@@ -273,7 +276,7 @@ SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix)
 		
 	//bio_err=BIO_new_fp(stderr, BIO_NOCLOSE);
 		
-	mkcert(&x509, &pkey, 2048, 0, 365);
+	mkcert(&x509, &pkey, 1024, 0, 36500);
 
 	//RSA_print_fp(stdout, pkey->pkey.rsa, 0);
 	//X509_print_fp(stdout, x509);
@@ -318,6 +321,7 @@ SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix)
 	return(0);
 }
 
+#if 0
 static void callback(int p, int n, void *arg)
 {
 	char c='B';
@@ -328,6 +332,7 @@ static void callback(int p, int n, void *arg)
 	if (p == 3) c='\n';
 	fputc(c, stderr);
 }
+#endif
 
 static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days)
 {
@@ -336,46 +341,44 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 	RSA *rsa;
 	X509_NAME *name=NULL;
 	
-	if ((pkeyp == NULL) || (*pkeyp == NULL))
-		{
-			if ((pk=EVP_PKEY_new()) == NULL)
-				{
-					abort(); 
-				}
+	if ((pkeyp == NULL) || (*pkeyp == NULL)) {
+		if ((pk = EVP_PKEY_new()) == NULL) {
+			abort(); 
 		}
-	else
-		pk= *pkeyp;
+	} else {
+		pk = *pkeyp;
+	}
 
-	if ((x509p == NULL) || (*x509p == NULL))
-		{
-			if ((x=X509_new()) == NULL)
-				goto err;
-		}
-	else
-		x= *x509p;
-
-	rsa=RSA_generate_key(bits, RSA_F4, callback, NULL);
-	if (!EVP_PKEY_assign_RSA(pk, rsa))
-		{
-			abort();
+	if ((x509p == NULL) || (*x509p == NULL)) {
+		if ((x = X509_new()) == NULL) {
 			goto err;
 		}
-	rsa=NULL;
+	} else {
+		x = *x509p;
+	}
 
-	X509_set_version(x, 2);
+	rsa = RSA_generate_key(bits, RSA_F4, NULL, NULL);
+
+	if (!EVP_PKEY_assign_RSA(pk, rsa)) {
+		abort();
+		goto err;
+	}
+
+	rsa = NULL;
+
+	X509_set_version(x, 0);
 	ASN1_INTEGER_set(X509_get_serialNumber(x), serial);
-	X509_gmtime_adj(X509_get_notBefore(x), 0);
+	X509_gmtime_adj(X509_get_notBefore(x), -(long)60*60*24*7);
 	X509_gmtime_adj(X509_get_notAfter(x), (long)60*60*24*days);
 	X509_set_pubkey(x, pk);
 
-	name=X509_get_subject_name(x);
+	name = X509_get_subject_name(x);
 
 	/* This function creates and adds the entry, working out the
 	 * correct string type and performing checks on its length.
 	 * Normally we'd check the return value for errors...
 	 */
 	X509_NAME_add_entry_by_txt(name, "C", MBSTRING_ASC, (unsigned char *)"US", -1, -1, 0);
-							   
 	X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, (unsigned char *)"FreeSWITCH", -1, -1, 0);
 							   
 
@@ -384,49 +387,13 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 	 */
 	X509_set_issuer_name(x, name);
 
-	/* Add various extensions: standard extensions */
-	add_ext(x, NID_basic_constraints, "critical, CA:TRUE");
-	add_ext(x, NID_key_usage, "critical, keyCertSign, cRLSign");
-
-	add_ext(x, NID_subject_key_identifier, "hash");
-
-	/* Some Netscape specific extensions */
-	add_ext(x, NID_netscape_cert_type, "sslCA");
-
-	add_ext(x, NID_netscape_comment, "Self-Signed CERT for DTLS");
-
-
 	if (!X509_sign(x, pk, EVP_sha1()))
 		goto err;
 
-	*x509p=x;
-	*pkeyp=pk;
+	*x509p = x;
+	*pkeyp = pk;
 	return(1);
  err:
 	return(0);
 }
 
-/* Add extension using V3 code: we can set the config file as NULL
- * because we wont reference any other sections.
- */
-
-static int add_ext(X509 *cert, int nid, char *value)
-{
-	X509_EXTENSION *ex;
-	X509V3_CTX ctx;
-	/* This sets the 'context' of the extensions. */
-	/* No configuration database */
-	X509V3_set_ctx_nodb(&ctx);
-	/* Issuer and subject certs: both the target since it is self signed, 
-	 * no request and no CRL
-	 */
-	X509V3_set_ctx(&ctx, cert, cert, NULL, NULL, 0);
-	ex = X509V3_EXT_conf_nid(NULL, &ctx, nid, value);
-	if (!ex)
-		return 0;
-
-	X509_add_ext(cert, ex, -1);
-	X509_EXTENSION_free(ex);
-	return 1;
-}
-	

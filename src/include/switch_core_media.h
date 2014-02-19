@@ -157,19 +157,6 @@ typedef struct switch_core_media_params_s {
 
 } switch_core_media_params_t;
 
-typedef struct xpayload_map_s {
-	uint32_t pt;
-	uint32_t send_pt;
-	uint32_t rate;
-	uint32_t ptime;
-	switch_media_type_t type;
-	uint8_t negotiated;
-	char *name;
-	switch_sdp_type_t sdp_type;
-	unsigned long hash;
-	struct xpayload_map_s *next;
-} xpayload_map_t;
-
 typedef struct payload_map_s {
 	switch_media_type_t type;
 	switch_sdp_type_t sdp_type;
@@ -177,6 +164,7 @@ typedef struct payload_map_s {
 	uint32_t rate;
 	uint8_t allocated;
 	uint8_t negotiated;
+	uint8_t current;
 	unsigned long hash;
 
 	char *rm_encoding;
