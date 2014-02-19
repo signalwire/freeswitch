@@ -123,7 +123,7 @@ $(V8LIB): $(V8_DIR)
 	   fi; \
 	fi; \
 	cd $(V8_BUILDDIR) && CFLAGS="$(V8_CXXFLAGS)" CXXFLAGS="$(V8_CXXFLAGS)" \
-	GYPFLAGS="--no-parallel" GYP_DEFINES="$$defines" \
+	LINK=@CXX@ CXX=@CXX@ GYPFLAGS="--no-parallel" GYP_DEFINES="$$defines" \
 	PYTHONPATH="$(V8_BUILDDIR)/build/gyp/pylib:$(PYTHONPATH)" $(MAKE) $(V8_BUILDPARAMS) native
 
 $(CURLLA):
