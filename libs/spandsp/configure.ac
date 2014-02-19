@@ -533,6 +533,12 @@ if test "$enable_builtin_tiff" = "yes" ; then
     TIFF_LIBS="$abs_tiffdir/libtiff/libtiff.la"
     AC_DEFINE([HAVE_LIBTIFF], [1], [Define to 1 if you have the `tiff' library (-ltiff).])
 else
+    case "$host" in
+        *bsd*)
+            CFLAGS="$CFLAGS -I/usr/local/include"
+            LDFLAGS="$LDFLAGS -L/usr/local/lib"
+        ;;
+    esac
     AC_CHECK_HEADERS([tiffio.h])
     AC_CHECK_LIB([tiff], [TIFFOpen], , AC_MSG_ERROR("Cannot build without libtiff (does your system require a libtiff-devel package?)"), -lm)
 fi
