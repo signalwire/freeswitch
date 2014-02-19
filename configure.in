@@ -162,8 +162,6 @@ if test "${enable_optimizer}" = "yes" ; then
         AX_CC_MAXOPT
 fi
 
-AX_PATH_LIBGNUTLS()
-
 # set defaults for use on all platforms
 SWITCH_AM_CFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/include -I${switch_srcdir}/libs/libteletone/src -I${switch_srcdir}/libs/stfu"
 SWITCH_AM_CXXFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/include -I${switch_srcdir}/libs/libteletone/src -I${switch_srcdir}/libs/stfu"
@@ -542,6 +540,8 @@ case "$host" in
 	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lcrypt -lrt -lsendfile -lresolv -lsocket -lnsl -luuid])
     ;;
     *bsd*)
+        APR_ADDTO(CFLAGS, -I/usr/local/include)
+        APR_ADDTO(LDFLAGS, -L/usr/local/lib)
         APR_ADDTO(SWITCH_AM_CFLAGS, -I/usr/local/include)
 	APR_ADDTO([PLATFORM_CORE_LIBS], [-lcrypt -lrt])
     ;;
