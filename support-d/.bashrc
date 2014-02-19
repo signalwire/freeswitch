@@ -25,10 +25,10 @@ export GIT_SSL_NO_VERIFY=true
 
 umask 022
 alias e='emacs'
-alias tcommit='svn commit --no-auth-cache --username=anthm'
-alias mcommit='svn commit --no-auth-cache --username=mikej'
-alias bcommit='svn commit --no-auth-cache --username=brian'
-alias icommit='svn commit --no-auth-cache --username=intralanman'
+alias eamcs='emacs'
+alias emcas='emacs'
+alias meacs='emacs'
+alias mecas='emacs'
 alias bgit='git commit --author "Brian West <brian@freeswitch.org>"'
 alias mgit='git commit --author "Mike Jerris <mike@freeswitch.org>"'
 alias tgit='git commit --author "Anthony Minessale <anthm@freeswitch.org>"'
