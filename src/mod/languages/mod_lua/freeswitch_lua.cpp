@@ -4,7 +4,7 @@
 using namespace LUA;
 
 extern "C" {
-	int docall(lua_State * L, int narg, int nresults, int perror);
+	int docall(lua_State * L, int narg, int nresults, int perror, int fatal);
 };
 
 Session::Session():CoreSession()
@@ -147,7 +147,7 @@ void Session::do_hangup_hook()
 			arg_count++;
 		}
 
-		docall(L, arg_count, 1, 1);
+		docall(L, arg_count, 1, 1, 0);
 
 		const char *err = lua_tostring(L, -1);
 		
@@ -273,6 +273,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
 			char str[3] = "";
 			int arg_count = 3;
+			int r;
 
 			lua_getglobal(L, (char *) cb_function);
 			lua_getglobal(L, uuid);
@@ -294,10 +295,14 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 				arg_count++;
 			}
 
-			docall(L, arg_count, 1, 1);
+			r = docall(L, arg_count, 1, 1, 0);
 
-			ret = lua_tostring(L, -1);
-			lua_pop(L, 1);
+			if (!r) {
+				ret = lua_tostring(L, -1);
+				lua_pop(L, 1);
+			} else {
+				ret = "SCRIPT_ERROR";
+			}
 
 			return process_callback_result((char *) ret);
 		}
@@ -319,9 +324,12 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 				arg_count++;
 			}
 
-			docall(L, arg_count, 1, 1);
-			ret = lua_tostring(L, -1);
-			lua_pop(L, 1);
+			if (!docall(L, arg_count, 1, 1, 0)) {
+				ret = lua_tostring(L, -1);
+				lua_pop(L, 1);
+			} else {
+				ret = "SCRIPT_ERROR";
+			}
 
 			return process_callback_result((char *) ret);
 		}
@@ -407,14 +415,17 @@ int Dbh::query_callback(void *pArg, int argc, char **argv, char **cargv)
     lua_settable(lua_fun->L, -3);
   }
 
-	docall(lua_fun->L, 1, 1, 1);
-	ret = lua_tonumber(lua_fun->L, -1);
-	lua_pop(lua_fun->L, 1);
+  if (docall(lua_fun->L, 1, 1, 1, 0)) {
+	  return 1;
+  }
 
-	if (ret != 0) {
-		return 1;
-	}
-
+  ret = lua_tonumber(lua_fun->L, -1);
+  lua_pop(lua_fun->L, 1);
+  
+  if (ret != 0) {
+	  return 1;
+  }
+  
   return 0; /* 0 to continue with next row */
 }
 
