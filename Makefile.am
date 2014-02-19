@@ -481,18 +481,17 @@ libs/apr/Makefile: libs/apr/Makefile.in libs/apr/config.status libs/apr libs/apr
 	@$(TOUCH_TARGET)
 
 libs/apr/libapr-1.la: libs/apr/Makefile libs/apr/.update
-	touch src/include/switch.h
-	@cd libs/apr && $(MAKE)
-	@$(TOUCH_TARGET)
+	@if [ $(MAKELEVEL) = 0 ] ; then touch src/include/switch.h; cd libs/apr && $(MAKE) $(MFLAGS) && touch libapr-1.la; fi
 
-libs/apr-util/libaprutil-1.la: libs/apr-util libs/apr-util/.update libs/apr/libapr-1.la
-	touch src/include/switch.h
-	@cd libs/apr-util && $(MAKE)
-	@$(TOUCH_TARGET)
+libs/apr-util/libaprutil-1.la: libs/apr/libapr-1.la libs/apr-util libs/apr-util/.update
+	@if [ $(MAKELEVEL) = 0 ] ; then touch src/include/switch.h; cd libs/apr-util && $(MAKE) $(MFLAGS) && touch libaprutil-1.la; fi
+
+libs/speex/libspeex/libspeex.la:
+	@echo 
 
 libs/speex/libspeex/libspeexdsp.la: libs/speex/.update
 	touch src/include/switch.h
-	@cd libs/speex && $(MAKE)
+	@if [ $(MAKELEVEL) = 0 ] ; then cd libs/speex && $(MAKE) $(MFLAGS); fi
 	@$(TOUCH_TARGET)
 
 libs/sqlite/libsqlite3.la: libs/sqlite libs/sqlite/Makefile libs/sqlite/.update
@@ -607,7 +606,7 @@ nodepends: .nodepends
 yesdepends:
 	rm .nodepends
 
-core: $(switch_builddir)/modules.conf $(CORE_LIBS)
+core: $(switch_builddir)/modules.conf src/include/switch_version.h $(CORE_LIBS) 
 	$(MAKE) $(AM_MAKEFLAGS) libfreeswitch.la
 
 distclean: clean
