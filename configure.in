@@ -475,30 +475,6 @@ ESL_LDFLAGS=
 PLATFORM_CORE_LDFLAGS=
 PLATFORM_CORE_LIBS=
 
-AC_CHECK_LIB(z, inflateReset, have_libz=yes, AC_MSG_ERROR([no usable zlib; please install zlib devel package or equivalent]))
-if test "x$have_libz" = "xyes"  ; then
-APR_ADDTO([PLATFORM_CORE_LIBS], [-lz])
-fi
-
-AC_CHECK_LIB(jpeg, jpeg_std_error,, AC_MSG_ERROR([no usable libjpeg; please install libjpeg devel package or equivalent]))
-
-AC_CHECK_LIB(jbig, jbg_enc_out, have_libjbig=yes, have_libjbig=no)
-if test "x$have_libjbig" = "xyes"  ; then
-SPANDSP_LA_JBIG="-ljbig"
-AC_SUBST(SPANDSP_LA_JBIG)
-fi
-
-AC_CHECK_LIB(lzma, lzma_code, have_liblzma=yes, have_liblzma=no)
-if test "x$have_liblzma" = "xyes" ; then
-SPANDSP_LA_LZMA="-llzma"
-AC_SUBST(SPANDSP_LA_LZMA)
-fi
-
-AC_CHECK_LIB(resolv, res_init, have_libresolv=yes, have_libresolv=no)
-if test "x$have_libresolv" = "xyes"  ; then
-APR_ADDTO(SWITCH_AM_LDFLAGS, -lresolv)
-fi
-
 # tweak platform specific flags
 case "$host" in
     *darwin12.*|*darwin11.*)
@@ -551,6 +527,30 @@ case "$host" in
 esac
 
 APR_REMOVEFROM(SWITCH_AM_CXXFLAGS, -std=c99)
+
+AC_CHECK_LIB(z, inflateReset, have_libz=yes, AC_MSG_ERROR([no usable zlib; please install zlib devel package or equivalent]))
+if test "x$have_libz" = "xyes"  ; then
+APR_ADDTO([PLATFORM_CORE_LIBS], [-lz])
+fi
+
+AC_CHECK_LIB(jpeg, jpeg_std_error,, AC_MSG_ERROR([no usable libjpeg; please install libjpeg devel package or equivalent]))
+
+AC_CHECK_LIB(jbig, jbg_enc_out, have_libjbig=yes, have_libjbig=no)
+if test "x$have_libjbig" = "xyes"  ; then
+SPANDSP_LA_JBIG="-ljbig"
+AC_SUBST(SPANDSP_LA_JBIG)
+fi
+
+AC_CHECK_LIB(lzma, lzma_code, have_liblzma=yes, have_liblzma=no)
+if test "x$have_liblzma" = "xyes" ; then
+SPANDSP_LA_LZMA="-llzma"
+AC_SUBST(SPANDSP_LA_LZMA)
+fi
+
+AC_CHECK_LIB(resolv, res_init, have_libresolv=yes, have_libresolv=no)
+if test "x$have_libresolv" = "xyes"  ; then
+APR_ADDTO(SWITCH_AM_LDFLAGS, -lresolv)
+fi
 
 AC_SUBST(SWITCH_AM_CFLAGS)
 AC_SUBST(SWITCH_ANSI_CFLAGS)
