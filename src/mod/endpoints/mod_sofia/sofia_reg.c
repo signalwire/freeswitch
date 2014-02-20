@@ -1731,7 +1731,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		contact = sofia_glue_get_url_from_contact(contact_str, 1);
 		url = switch_mprintf("sofia/%q/%s:%q", profile->name, proto, sofia_glue_strip_proto(contact));
 		
-		switch_core_add_registration(to_user, reg_host, call_id, url, (long) reg_time + (long) exptime + 60,
+		switch_core_add_registration(to_user, reg_host, call_id, url, (long) reg_time + (long) exptime + profile->sip_expires_late_margin,
 									 network_ip, network_port_c, is_tls ? "tls" : is_tcp ? "tcp" : "udp", reg_meta);
 
 		switch_safe_free(url);
@@ -1777,7 +1777,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 					"mwi_user,mwi_host, orig_server_host, orig_hostname, sub_host) "
 					"values ('%q','%q', '%q','%q','%q','%q', '%q', %ld, '%q', '%q', '%q', '%q', '%q', '%q', '%q','%q','%q','%q','%q','%q','%q','%q')", 
 					call_id, to_user, reg_host, profile->presence_hosts ? profile->presence_hosts : "", 
-					contact_str, reg_desc, rpid, (long) reg_time + (long) exptime + 60, 
+					contact_str, reg_desc, rpid, (long) reg_time + (long) exptime + profile->sip_expires_late_margin,
 					agent, from_user, guess_ip4, profile->name, mod_sofia_globals.hostname, network_ip, network_port_c, username, realm, 
 								 mwi_user, mwi_host, guess_ip4, mod_sofia_globals.hostname, sub_host);
 		} else {
@@ -1789,7 +1789,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 								 call_id, sub_host, network_ip, network_port_c,
 								 profile->presence_hosts ? profile->presence_hosts : "", guess_ip4, guess_ip4,
                                                                  mod_sofia_globals.hostname, mod_sofia_globals.hostname,
-								 (long) reg_time + (long) exptime + 60, 
+								 (long) reg_time + (long) exptime + profile->sip_expires_late_margin,
 								 to_user, username, reg_host, contact_str);
 		}				 
 
@@ -1808,9 +1808,9 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 		if (multi_reg) {
 			if (multi_reg_contact) {
-				sql = switch_mprintf("delete from sip_registrations where contact='%q' and expires!=%ld", contact_str, (long) reg_time + (long) exptime + 60);
+				sql = switch_mprintf("delete from sip_registrations where contact='%q' and expires!=%ld", contact_str, (long) reg_time + (long) exptime + profile->sip_expires_late_margin);
 			} else {
-				sql = switch_mprintf("delete from sip_registrations where call_id='%q' and expires!=%ld", call_id, (long) reg_time + (long) exptime + 60);
+				sql = switch_mprintf("delete from sip_registrations where call_id='%q' and expires!=%ld", call_id, (long) reg_time + (long) exptime + profile->sip_expires_late_margin);
 			}
 			
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);

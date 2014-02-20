@@ -685,6 +685,7 @@ struct sofia_profile {
 	su_strlst_t *tls_verify_in_subjects;
 	uint32_t sip_force_expires;
 	uint32_t sip_expires_max_deviation;
+	uint32_t sip_expires_late_margin;
 	uint32_t sip_subscription_max_deviation;
 	int ireg_seconds;
 	sofia_paid_type_t paid_type;
