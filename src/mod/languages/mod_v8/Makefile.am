@@ -110,7 +110,7 @@ $(SOURCES): $(BUILT_SOURCES)
 $(V8_DIR):
 	$(GETLIB) $(V8).tar.bz2
 if ISFREEBSD
-	$(CP) -f gyp  $(V8_DIR)/build/gyp
+	/bin/cp -f gyp  $(V8_DIR)/build/gyp
 endif
 
 $(V8LIB): $(V8_DIR)
