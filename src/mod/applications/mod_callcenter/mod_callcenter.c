@@ -2377,10 +2377,14 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 			switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
 		}
 
-		if (queue->max_wait_time_with_no_agent > 0 && queue->last_agent_exist_check > queue->last_agent_exist) {
+		/* Check if max wait time no agent is Active AND if there is no Agent AND if the last agent check was after the member join */
+		if (queue->max_wait_time_with_no_agent > 0 && queue->last_agent_exist_check > queue->last_agent_exist && m->t_member_called <= queue->last_agent_exist_check) {
+			/* Check if the time without agent is bigger or equal than out threshold */
 			if (queue->last_agent_exist_check - queue->last_agent_exist >= queue->max_wait_time_with_no_agent) {
+				/* Check for grace period with no agent when member join */
 				if (queue->max_wait_time_with_no_agent_time_reached > 0) {
-					if (queue->last_agent_exist_check - m->t_member_called >= queue->max_wait_time_with_no_agent + queue->max_wait_time_with_no_agent_time_reached) {
+					/* Check if the last agent check was after the member join, and we waited atless the extra time  */
+					if (queue->last_agent_exist_check - m->t_member_called >= queue->max_wait_time_with_no_agent_time_reached + queue->max_wait_time_with_no_agent) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> in queue '%s' reached max wait of %d sec. with no agent plus join grace period of %d sec.\n", m->member_cid_name, m->member_cid_number, m->queue_name, queue->max_wait_time_with_no_agent, queue->max_wait_time_with_no_agent_time_reached);
 						m->member_cancel_reason = CC_MEMBER_CANCEL_REASON_NO_AGENT_TIMEOUT;
 						switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
