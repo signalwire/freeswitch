@@ -565,7 +565,7 @@ static int v8_parse_and_execute(switch_core_session_t *session, const char *inpu
 						TryCatch try_catch;
 
 						// Compile the source code.
-						Handle<Script> v8_script = Script::Compile(source, Handle<Value>::New(isolate, String::NewFromUtf8(isolate, script_file)));
+						Handle<Script> v8_script = Script::Compile(source, Local<Value>::New(isolate, String::NewFromUtf8(isolate, script_file)));
 
 						if (try_catch.HasCaught()) {
 							v8_error(isolate, &try_catch);

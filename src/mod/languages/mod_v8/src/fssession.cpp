@@ -213,11 +213,11 @@ switch_status_t FSSession::CommonCallback(switch_core_session_t *session, void *
 	HandleScope handle_scope(isolate);
 
 	if (cb_state->jss_a && cb_state->jss_a->_session && cb_state->jss_a->_session == session) {
-		argv[argc++] = Handle<Object>::New(isolate, cb_state->session_obj_a);
+		argv[argc++] = Local<Object>::New(isolate, cb_state->session_obj_a);
 	} else if (cb_state->jss_b && cb_state->jss_b->_session && cb_state->jss_b->_session == session) {
-		argv[argc++] = Handle<Object>::New(isolate, cb_state->session_obj_b);
+		argv[argc++] = Local<Object>::New(isolate, cb_state->session_obj_b);
 	} else {
-		argv[argc++] = Handle<Object>::New(isolate, cb_state->session_state->GetJavaScriptObject());
+		argv[argc++] = Local<Object>::New(isolate, cb_state->session_state->GetJavaScriptObject());
 	}
 
 	switch (itype) {
@@ -226,7 +226,7 @@ switch_status_t FSSession::CommonCallback(switch_core_session_t *session, void *
 			Event = FSEvent::New(event, "", cb_state->session_state->GetOwner());
 			if (!Event.IsEmpty()) {
 				argv[argc++] = String::NewFromUtf8(isolate, "event");
-				argv[argc++] = Handle<Object>::New(isolate, Event);
+				argv[argc++] = Local<Object>::New(isolate, Event);
 			}
 		}
 		if (Event.IsEmpty()) {
@@ -241,7 +241,7 @@ switch_status_t FSSession::CommonCallback(switch_core_session_t *session, void *
 				Event = FSDTMF::New(dtmf, "", cb_state->session_state->GetOwner());
 				if (!Event.IsEmpty()) {
 					argv[argc++] = String::NewFromUtf8(isolate, "dtmf");
-					argv[argc++] = Handle<Object>::New(isolate, Event);
+					argv[argc++] = Local<Object>::New(isolate, Event);
 				} else {
 					goto done;
 				}
@@ -251,14 +251,14 @@ switch_status_t FSSession::CommonCallback(switch_core_session_t *session, void *
 	}
 
 	if (!cb_state->arg.IsEmpty()) {
-		argv[argc++] = Handle<Value>::New(isolate, cb_state->arg);
+		argv[argc++] = Local<Value>::New(isolate, cb_state->arg);
 	}
 
 	CheckHangupHook(cb_state->session_state, &ret);
 
 	if (ret) {
 		if (!cb_state->function.IsEmpty()) {
-			Handle<Function> func = Handle<Function>::New(isolate, cb_state->function);
+			Handle<Function> func = Local<Function>::New(isolate, cb_state->function);
 
 			if (func->IsFunction()) {
 				Handle<Value> res = func->Call(isolate->GetCurrentContext()->Global(), argc, argv);
@@ -299,7 +299,7 @@ switch_status_t FSSession::StreamInputCallback(switch_core_session_t *session, v
 	}
 
 	if (!cb_state->ret.IsEmpty()) {
-		Handle<Value> tmp = Handle<Value>::New(obj->GetOwner()->GetIsolate(), cb_state->ret);
+		Handle<Value> tmp = Local<Value>::New(obj->GetOwner()->GetIsolate(), cb_state->ret);
 		String::Utf8Value str(tmp);
 		const char *ret = js_safe_str(*str);
 
@@ -410,7 +410,7 @@ switch_status_t FSSession::RecordInputCallback(switch_core_session_t *session, v
 	}
 
 	if (!cb_state->ret.IsEmpty()) {
-		Handle<Value> tmp = Handle<Value>::New(obj->GetOwner()->GetIsolate(), cb_state->ret);
+		Handle<Value> tmp = Local<Value>::New(obj->GetOwner()->GetIsolate(), cb_state->ret);
 		String::Utf8Value str(tmp);
 		const char *ret = js_safe_str(*str);
 
@@ -451,7 +451,7 @@ switch_status_t FSSession::CollectInputCallback(switch_core_session_t *session, 
 	}
 
 	if (!cb_state->ret.IsEmpty()) {
-		Handle<Value> tmp = Handle<Value>::New(obj->GetOwner()->GetIsolate(), cb_state->ret);
+		Handle<Value> tmp = Local<Value>::New(obj->GetOwner()->GetIsolate(), cb_state->ret);
 		String::Utf8Value str(tmp);
 		ret = js_safe_str(*str);
 
@@ -703,7 +703,7 @@ bool FSSession::CheckHangupHook(FSSession *obj, bool *ret)
 
 	if (obj && !obj->_check_state && !obj->_on_hangup.IsEmpty() && (obj->_hook_state == CS_HANGUP || obj->_hook_state == CS_ROUTING)) {
 		obj->_check_state++;
-		argv[argc++] = Handle<Object>::New(obj->GetOwner()->GetIsolate(), obj->GetJavaScriptObject());
+		argv[argc++] = Local<Object>::New(obj->GetOwner()->GetIsolate(), obj->GetJavaScriptObject());
 
 		if (obj->_hook_state == CS_HANGUP) {
 			argv[argc++] = String::NewFromUtf8(isolate, "hangup");
@@ -712,7 +712,7 @@ bool FSSession::CheckHangupHook(FSSession *obj, bool *ret)
 		}
 
 		// Run the hangup hook
-		Handle<Function> func = Handle<Function>::New(isolate, obj->_on_hangup);
+		Handle<Function> func = Local<Function>::New(isolate, obj->_on_hangup);
 
 		if (!func.IsEmpty() && func->IsFunction()) {
 			Handle<Value> res = func->Call(isolate->GetCurrentContext()->Global(), argc, argv);

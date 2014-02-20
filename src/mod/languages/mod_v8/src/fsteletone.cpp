@@ -275,10 +275,10 @@ JS_TELETONE_FUNCTION_IMPL(Generate)
 					aargv[aargc++] = String::NewFromUtf8(info.GetIsolate(), dtmf);
 
 					if (!_arg.IsEmpty()) {
-						aargv[aargc++] = Handle<Value>::New(info.GetIsolate(), _arg);
+						aargv[aargc++] = Local<Value>::New(info.GetIsolate(), _arg);
 					}
 
-					Handle<Function> func = Handle<Function>::New(info.GetIsolate(), _function);
+					Handle<Function> func = Local<Function>::New(info.GetIsolate(), _function);
 					Handle<Value> res = func->Call(info.GetIsolate()->GetCurrentContext()->Global(), aargc, aargv);
 
 					String::Utf8Value tmp(res);

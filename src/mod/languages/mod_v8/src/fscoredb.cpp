@@ -122,7 +122,7 @@ int FSCoreDB::Callback(void *pArg, int argc, char **argv, char **columnNames)
 	}
 
 	HandleScope scope(dbo->GetIsolate());
-	Handle<Function> func =  Handle<Function>::New(dbo->GetIsolate(), dbo->_callback);
+	Handle<Function> func =  Local<Function>::New(dbo->GetIsolate(), dbo->_callback);
 	Handle<Value> jsargv[1] = { arg };
 
 	func->Call(dbo->GetIsolate()->GetCurrentContext()->Global(), 1, jsargv);

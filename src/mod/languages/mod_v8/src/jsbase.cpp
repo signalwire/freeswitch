@@ -83,7 +83,7 @@ JSBase::~JSBase(void)
 Handle<Object> JSBase::GetJavaScriptObject()
 {
 	/* Returns the javascript object related to this C++ instance */
-	return Handle<Object>::New(GetIsolate(), *persistentHandle);
+	return Local<Object>::New(GetIsolate(), *persistentHandle);
 }
 
 void JSBase::AddInstance(Isolate *isolate, const Handle<Object>& handle, const Handle<External>& object, bool autoDestroy)

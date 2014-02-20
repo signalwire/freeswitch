@@ -302,7 +302,7 @@ const string JSMain::ExecuteString(const string& scriptData, const string& fileN
 			TryCatch try_catch;
 
 			// Compile the source code.
-			Handle<Script> script = Script::Compile(source, Handle<Value>::New(isolate, String::NewFromUtf8(isolate, fileName.c_str())));
+			Handle<Script> script = Script::Compile(source, Local<Value>::New(isolate, String::NewFromUtf8(isolate, fileName.c_str())));
 
 			if (try_catch.HasCaught()) {
 				res = JSMain::GetExceptionInfo(isolate, &try_catch);

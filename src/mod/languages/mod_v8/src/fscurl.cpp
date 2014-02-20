@@ -72,7 +72,7 @@ size_t FSCURL::FileCallback(void *ptr, size_t size, size_t nmemb, void *data)
 	Handle<Function> func;
 	
 	if (!obj->_function.IsEmpty()) {
-		func = Handle<Function>::New(obj->GetIsolate(), obj->_function);
+		func = Local<Function>::New(obj->GetIsolate(), obj->_function);
 	}
 
 	if (!func.IsEmpty()) {
@@ -83,7 +83,7 @@ size_t FSCURL::FileCallback(void *ptr, size_t size, size_t nmemb, void *data)
 			argv[argc++] = String::NewFromUtf8(obj->GetIsolate(), "");
 		}
 		if (!obj->_user_data.IsEmpty()) {
-			argv[argc++] = Handle<Value>::New(obj->GetIsolate(), Persistent<Value>::Cast(obj->_user_data));
+			argv[argc++] = Local<Value>::New(obj->GetIsolate(), Persistent<Value>::Cast(obj->_user_data));
 		}
 
 		Handle<Value> res = func->Call(obj->GetIsolate()->GetCurrentContext()->Global(), argc, argv);
@@ -94,7 +94,7 @@ size_t FSCURL::FileCallback(void *ptr, size_t size, size_t nmemb, void *data)
 			obj->_ret.Reset();
 		}
 
-		String::Utf8Value str(Handle<Value>::New(obj->GetIsolate(), res));
+		String::Utf8Value str(Local<Value>::New(obj->GetIsolate(), res));
 
 		if ((ret = *str)) {
 			if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
