@@ -762,14 +762,6 @@ see http://www.polycom.com/usa/en/company/about_us/technology/siren_g7221/siren_
 and http://www.polycom.com/usa/en/company/about_us/technology/siren14_g7221c/siren14_g7221c.html 
 At the time of this packaging, Polycom does not charge for licensing.
 
-%package codec-speex
-Summary:        Speex Codec support for FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description codec-speex
-Speex Codec support for FreeSWITCH open source telephony platform.
-
 %package codec-theora
 Summary:        Theora Video Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
@@ -1368,7 +1360,7 @@ ASR_TTS_MODULES="asr_tts/mod_flite asr_tts/mod_pocketsphinx asr_tts/mod_tts_comm
 ######################################################################################################################
 CODECS_MODULES="codecs/mod_amr codecs/mod_amrwb codecs/mod_bv codecs/mod_celt codecs/mod_codec2 codecs/mod_g723_1 \
 		codecs/mod_g729 codecs/mod_h26x codecs/mod_ilbc codecs/mod_isac codecs/mod_mp4v codecs/mod_opus codecs/mod_silk \
-		codecs/mod_siren codecs/mod_speex codecs/mod_theora codecs/mod_vp8"
+		codecs/mod_siren codecs/mod_theora codecs/mod_vp8"
 #
 %if %{build_sng_tc}
 CODECS_MODULES+="codecs/mod_sangoma_codec"
@@ -2107,10 +2099,6 @@ fi
 %defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_siren.so*
 
-%files codec-speex
-%defattr(-,freeswitch,daemon)
-%{MODINSTDIR}/mod_speex.so*
-
 %files codec-theora
 %defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_theora.so*
@@ -2454,6 +2442,8 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Wed Feb 19 2014 - crienzo@grasshopper.com
+- remove mod_speex
 * Sun Feb 02 2014 - jakob@mress.se
 - add support for building Swedish say language module
 * Mon Jan 13 2014 - peter@olssononline.se

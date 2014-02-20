@@ -87,7 +87,6 @@ Requires: freeswitch-codec-celt
 Requires: freeswitch-codec-h26x
 Requires: freeswitch-codec-ilbc
 Requires: freeswitch-codec-opus
-Requires: freeswitch-codec-speex
 Requires: freeswitch-codec-vp8
 Requires: freeswitch-event-rayo
 Requires: freeswitch-format-local-stream
