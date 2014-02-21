@@ -647,21 +647,24 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "BRIDGE THREAD DONE [%s]\n", switch_channel_get_name(chan_a));
 	switch_channel_clear_flag(chan_a, CF_BRIDGED);
 
-	if (switch_channel_test_flag(chan_a, CF_LEG_HOLDING) && switch_channel_ready(chan_b) && switch_channel_get_state(chan_b) != CS_PARK) {
-		const char *ext = switch_channel_get_variable(chan_a, "hold_hangup_xfer_exten");
+	if (switch_channel_test_flag(chan_a, CF_LEG_HOLDING)) {
 
-		switch_channel_stop_broadcast(chan_b);
+		if (switch_channel_ready(chan_b) && switch_channel_get_state(chan_b) != CS_PARK) {
+			const char *ext = switch_channel_get_variable(chan_a, "hold_hangup_xfer_exten");
 
-		if (zstr(ext)) {
-			switch_call_cause_t cause = switch_channel_get_cause(chan_b);
-			if (cause == SWITCH_CAUSE_NONE) {
-				cause = SWITCH_CAUSE_NORMAL_CLEARING;
+			switch_channel_stop_broadcast(chan_b);
+
+			if (zstr(ext)) {
+				switch_call_cause_t cause = switch_channel_get_cause(chan_b);
+				if (cause == SWITCH_CAUSE_NONE) {
+					cause = SWITCH_CAUSE_NORMAL_CLEARING;
+				}
+				switch_channel_hangup(chan_b, cause);
+			} else {
+				switch_channel_set_variable(chan_b, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE, ext);
 			}
-			switch_channel_hangup(chan_b, cause);
-		} else {
-			switch_channel_set_variable(chan_b, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE, ext);
 		}
-		switch_channel_clear_flag(chan_a, CF_LEG_HOLDING);
+		switch_channel_mark_hold(chan_a, SWITCH_FALSE);
 	}
 
 	if (switch_channel_test_flag(chan_a, CF_INTERCEPTED)) {
