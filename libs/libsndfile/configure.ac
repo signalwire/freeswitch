@@ -16,6 +16,7 @@ AC_CONFIG_MACRO_DIR([M4])
 AC_CONFIG_HEADERS([src/config.h])
 
 AM_INIT_AUTOMAKE
+AC_SUBST(ACLOCAL_AMFLAGS, "-I M4")
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 AC_LANG([C])
@@ -293,6 +294,8 @@ else
 HAVE_EXTERNAL_LIBS=0
 EXTERNAL_CFLAGS=""
 EXTERNAL_LIBS=""
+
+enable_external_libs=no
 
 # Check for pkg-config outside the if statement.
 PKG_PROG_PKG_CONFIG
