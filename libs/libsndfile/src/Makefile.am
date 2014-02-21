@@ -23,7 +23,7 @@ EXTRA_DIST = sndfile.h.in config.h.in test_endswap.tpl test_endswap.def \
 
 noinst_HEADERS = common.h sfconfig.h sfendian.h wav_w64.h sf_unistd.h ogg.h chanmap.h
 
-check_PROGRAMS = test_main G72x/g72x_test
+noinst_PROGRAMS =
 
 COMMON = common.c file_io.c command.c pcm.c ulaw.c alaw.c float32.c \
 		double64.c ima_adpcm.c ms_adpcm.c gsm610.c dwvw.c vox_adpcm.c \
@@ -76,22 +76,22 @@ ALAC_libalac_la_SOURCES = ALAC/ALACAudioTypes.h ALAC/ALACBitUtilities.h \
 #===============================================================================
 # Test programs.
 
-test_main_SOURCES = test_main.c test_main.h test_conversions.c test_float.c test_endswap.c \
-					test_audio_detect.c test_log_printf.c test_file_io.c test_ima_oki_adpcm.c \
-					test_strncpy_crlf.c test_broadcast_var.c test_cart_var.c
-test_main_LDADD = libcommon.la
+#test_main_SOURCES = test_main.c test_main.h test_conversions.c test_float.c test_endswap.c \
+#					test_audio_detect.c test_log_printf.c test_file_io.c test_ima_oki_adpcm.c \
+#					test_strncpy_crlf.c test_broadcast_var.c test_cart_var.c
+#test_main_LDADD = libcommon.la
 
-G72x_g72x_test_SOURCES = G72x/g72x_test.c
-G72x_g72x_test_LDADD = G72x/libg72x.la
+#G72x_g72x_test_SOURCES = G72x/g72x_test.c
+#G72x_g72x_test_LDADD = G72x/libg72x.la
 
-test_endswap.c: test_endswap.def test_endswap.tpl
-	cd $(srcdir) && autogen --writable test_endswap.def && cd $(abs_builddir)
+#test_endswap.c: test_endswap.def test_endswap.tpl
+#	cd $(srcdir) && autogen --writable test_endswap.def && cd $(abs_builddir)
 
-genfiles : $(SYMBOL_FILES) test_endswap.c
+genfiles : $(SYMBOL_FILES)
 
 check :
 	@if [ -x /usr/bin/python ]; then $(srcdir)/binheader_writef_check.py $(srcdir)/*.c ; fi
-	G72x/g72x_test$(EXEEXT) all
+#	G72x/g72x_test$(EXEEXT) all
 	./test_main$(EXEEXT)
 
 # Need this target to force building of test programs.
