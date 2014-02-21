@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2007-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2007-2012 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 #include "utils.h"
 #include "generate.h"
 
-#define	SF_MAX(x,y)		((x) > (y) ? (x) : (y))
+#define	SF_MAX(x, y)		((x) > (y) ? (x) : (y))
 
 static float crappy_snare (float *output, int len, int offset, float gain, float maxabs) ;
 
@@ -40,7 +40,7 @@ generate_file (const char * filename, int format, int len)
 	maxabs = crappy_snare (output, len, 0, 0.95, maxabs) ;
 	maxabs = crappy_snare (output, len, len / 4, 0.85, maxabs) ;
 	maxabs = crappy_snare (output, len, 2 * len / 4, 0.85, maxabs) ;
-	maxabs = crappy_snare (output, len, 3 * len / 4, 0.85, maxabs) ;
+	crappy_snare (output, len, 3 * len / 4, 0.85, maxabs) ;
 
 	write_mono_file (filename, format, 44100, output, len) ;
 

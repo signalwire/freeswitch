@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2012 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -47,14 +47,14 @@ static void d2alaw_array (const double *buffer, int count, unsigned char *ptr, d
 int
 alaw_init (SF_PRIVATE *psf)
 {
-	if (psf->mode == SFM_READ || psf->mode == SFM_RDWR)
+	if (psf->file.mode == SFM_READ || psf->file.mode == SFM_RDWR)
 	{	psf->read_short		= alaw_read_alaw2s ;
 		psf->read_int		= alaw_read_alaw2i ;
 		psf->read_float		= alaw_read_alaw2f ;
 		psf->read_double	= alaw_read_alaw2d ;
 		} ;
 
-	if (psf->mode == SFM_WRITE || psf->mode == SFM_RDWR)
+	if (psf->file.mode == SFM_WRITE || psf->file.mode == SFM_RDWR)
 	{	psf->write_short	= alaw_write_s2alaw ;
 		psf->write_int		= alaw_write_i2alaw ;
 		psf->write_float	= alaw_write_f2alaw ;
@@ -69,7 +69,7 @@ alaw_init (SF_PRIVATE *psf)
 	else
 		psf->datalength = 0 ;
 
-	psf->sf.frames = psf->datalength / psf->blockwidth ;
+	psf->sf.frames = psf->blockwidth > 0 ? psf->datalength / psf->blockwidth : 0 ;
 
 	return 0 ;
 } /* alaw_init */
@@ -286,7 +286,7 @@ unsigned char alaw_encode [2048 + 1] =
 	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
 	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
 	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
-	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0x2a
+	0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa
 } ; /* alaw_encode */
 
 static inline void
@@ -358,16 +358,17 @@ d2alaw_array (const double *ptr, int count, unsigned char *buffer, double normfa
 
 static sf_count_t
 alaw_read_alaw2s (SF_PRIVATE *psf, short *ptr, sf_count_t len)
-{	int			bufferlen, readcount ;
+{	BUF_UNION	ubuf ;
+	int			bufferlen, readcount ;
 	sf_count_t	total = 0 ;
 
-	bufferlen = ARRAY_LEN (psf->u.ucbuf) ;
+	bufferlen = ARRAY_LEN (ubuf.ucbuf) ;
 
 	while (len > 0)
 	{	if (len < bufferlen)
 			bufferlen = (int) len ;
-		readcount = psf_fread (psf->u.ucbuf, 1, bufferlen, psf) ;
-		alaw2s_array (psf->u.ucbuf, readcount, ptr + total) ;
+		readcount = psf_fread (ubuf.ucbuf, 1, bufferlen, psf) ;
+		alaw2s_array (ubuf.ucbuf, readcount, ptr + total) ;
 		total += readcount ;
 		if (readcount < bufferlen)
 			break ;
@@ -379,16 +380,17 @@ alaw_read_alaw2s (SF_PRIVATE *psf, short *ptr, sf_count_t len)
 
 static sf_count_t
 alaw_read_alaw2i (SF_PRIVATE *psf, int *ptr, sf_count_t len)
-{	int			bufferlen, readcount ;
+{	BUF_UNION	ubuf ;
+	int			bufferlen, readcount ;
 	sf_count_t	total = 0 ;
 
-	bufferlen = ARRAY_LEN (psf->u.ucbuf) ;
+	bufferlen = ARRAY_LEN (ubuf.ucbuf) ;
 
 	while (len > 0)
 	{	if (len < bufferlen)
 			bufferlen = (int) len ;
-		readcount = psf_fread (psf->u.ucbuf, 1, bufferlen, psf) ;
-		alaw2i_array (psf->u.ucbuf, readcount, ptr + total) ;
+		readcount = psf_fread (ubuf.ucbuf, 1, bufferlen, psf) ;
+		alaw2i_array (ubuf.ucbuf, readcount, ptr + total) ;
 		total += readcount ;
 		if (readcount < bufferlen)
 			break ;
@@ -400,19 +402,20 @@ alaw_read_alaw2i (SF_PRIVATE *psf, int *ptr, sf_count_t len)
 
 static sf_count_t
 alaw_read_alaw2f (SF_PRIVATE *psf, float *ptr, sf_count_t len)
-{	int			bufferlen, readcount ;
+{	BUF_UNION	ubuf ;
+	int			bufferlen, readcount ;
 	sf_count_t	total = 0 ;
 	float	normfact ;
 
 	normfact = (psf->norm_float == SF_TRUE) ? 1.0 / ((float) 0x8000) : 1.0 ;
 
-	bufferlen = ARRAY_LEN (psf->u.ucbuf) ;
+	bufferlen = ARRAY_LEN (ubuf.ucbuf) ;
 
 	while (len > 0)
 	{	if (len < bufferlen)
 			bufferlen = (int) len ;
-		readcount = psf_fread (psf->u.ucbuf, 1, bufferlen, psf) ;
-		alaw2f_array (psf->u.ucbuf, readcount, ptr + total, normfact) ;
+		readcount = psf_fread (ubuf.ucbuf, 1, bufferlen, psf) ;
+		alaw2f_array (ubuf.ucbuf, readcount, ptr + total, normfact) ;
 		total += readcount ;
 		if (readcount < bufferlen)
 			break ;
@@ -424,18 +427,19 @@ alaw_read_alaw2f (SF_PRIVATE *psf, float *ptr, sf_count_t len)
 
 static sf_count_t
 alaw_read_alaw2d (SF_PRIVATE *psf, double *ptr, sf_count_t len)
-{	int			bufferlen, readcount ;
+{	BUF_UNION	ubuf ;
+	int			bufferlen, readcount ;
 	sf_count_t	total = 0 ;
 	double	normfact ;
 
 	normfact = (psf->norm_double) ? 1.0 / ((double) 0x8000) : 1.0 ;
-	bufferlen = ARRAY_LEN (psf->u.ucbuf) ;
+	bufferlen = ARRAY_LEN (ubuf.ucbuf) ;
 
 	while (len > 0)
 	{	if (len < bufferlen)
 			bufferlen = (int) len ;
-		readcount = psf_fread (psf->u.ucbuf, 1, bufferlen, psf) ;
-		alaw2d_array (psf->u.ucbuf, readcount, ptr + total, normfact) ;
+		readcount = psf_fread (ubuf.ucbuf, 1, bufferlen, psf) ;
+		alaw2d_array (ubuf.ucbuf, readcount, ptr + total, normfact) ;
 		total += readcount ;
 		if (readcount < bufferlen)
 			break ;
@@ -450,16 +454,17 @@ alaw_read_alaw2d (SF_PRIVATE *psf, double *ptr, sf_count_t len)
 
 static sf_count_t
 alaw_write_s2alaw	(SF_PRIVATE *psf, const short *ptr, sf_count_t len)
-{	int			bufferlen, writecount ;
+{	BUF_UNION	ubuf ;
+	int			bufferlen, writecount ;
 	sf_count_t	total = 0 ;
 
-	bufferlen = ARRAY_LEN (psf->u.ucbuf) ;
+	bufferlen = ARRAY_LEN (ubuf.ucbuf) ;
 
 	while (len > 0)
 	{	if (len < bufferlen)
 			bufferlen = (int) len ;
-		s2alaw_array (ptr + total, bufferlen, psf->u.ucbuf) ;
-		writecount = psf_fwrite (psf->u.ucbuf, 1, bufferlen, psf) ;
+		s2alaw_array (ptr + total, bufferlen, ubuf.ucbuf) ;
+		writecount = psf_fwrite (ubuf.ucbuf, 1, bufferlen, psf) ;
 		total += writecount ;
 		if (writecount < bufferlen)
 			break ;
@@ -471,16 +476,17 @@ alaw_write_s2alaw	(SF_PRIVATE *psf, const short *ptr, sf_count_t len)
 
 static sf_count_t
 alaw_write_i2alaw	(SF_PRIVATE *psf, const int *ptr, sf_count_t len)
-{	int			bufferlen, writecount ;
+{	BUF_UNION	ubuf ;
+	int			bufferlen, writecount ;
 	sf_count_t	total = 0 ;
 
-	bufferlen = ARRAY_LEN (psf->u.ucbuf) ;
+	bufferlen = ARRAY_LEN (ubuf.ucbuf) ;
 
 	while (len > 0)
 	{	if (len < bufferlen)
 			bufferlen = (int) len ;
-		i2alaw_array (ptr + total, bufferlen, psf->u.ucbuf) ;
-		writecount = psf_fwrite (psf->u.ucbuf, 1, bufferlen, psf) ;
+		i2alaw_array (ptr + total, bufferlen, ubuf.ucbuf) ;
+		writecount = psf_fwrite (ubuf.ucbuf, 1, bufferlen, psf) ;
 		total += writecount ;
 		if (writecount < bufferlen)
 			break ;
@@ -492,19 +498,20 @@ alaw_write_i2alaw	(SF_PRIVATE *psf, const int *ptr, sf_count_t len)
 
 static sf_count_t
 alaw_write_f2alaw	(SF_PRIVATE *psf, const float *ptr, sf_count_t len)
-{	int			bufferlen, writecount ;
+{	BUF_UNION	ubuf ;
+	int			bufferlen, writecount ;
 	sf_count_t	total = 0 ;
 	float	normfact ;
 
 	normfact = (psf->norm_float == SF_TRUE) ? (1.0 * 0x7FFF) / 16.0 : 1.0 / 16 ;
 
-	bufferlen = ARRAY_LEN (psf->u.ucbuf) ;
+	bufferlen = ARRAY_LEN (ubuf.ucbuf) ;
 
 	while (len > 0)
 	{	if (len < bufferlen)
 			bufferlen = (int) len ;
-		f2alaw_array (ptr + total, bufferlen, psf->u.ucbuf, normfact) ;
-		writecount = psf_fwrite (psf->u.ucbuf, 1, bufferlen, psf) ;
+		f2alaw_array (ptr + total, bufferlen, ubuf.ucbuf, normfact) ;
+		writecount = psf_fwrite (ubuf.ucbuf, 1, bufferlen, psf) ;
 		total += writecount ;
 		if (writecount < bufferlen)
 			break ;
@@ -516,19 +523,20 @@ alaw_write_f2alaw	(SF_PRIVATE *psf, const float *ptr, sf_count_t len)
 
 static sf_count_t
 alaw_write_d2alaw	(SF_PRIVATE *psf, const double *ptr, sf_count_t len)
-{	int			bufferlen, writecount ;
+{	BUF_UNION	ubuf ;
+	int			bufferlen, writecount ;
 	sf_count_t	total = 0 ;
 	double	normfact ;
 
 	normfact = (psf->norm_double) ? (1.0 * 0x7FFF) / 16.0 : 1.0 / 16.0 ;
 
-	bufferlen = ARRAY_LEN (psf->u.ucbuf) ;
+	bufferlen = ARRAY_LEN (ubuf.ucbuf) ;
 
 	while (len > 0)
 	{	if (len < bufferlen)
 			bufferlen = (int) len ;
-		d2alaw_array (ptr + total, bufferlen, psf->u.ucbuf, normfact) ;
-		writecount = psf_fwrite (psf->u.ucbuf, 1, bufferlen, psf) ;
+		d2alaw_array (ptr + total, bufferlen, ubuf.ucbuf, normfact) ;
+		writecount = psf_fwrite (ubuf.ucbuf, 1, bufferlen, psf) ;
 		total += writecount ;
 		if (writecount < bufferlen)
 			break ;

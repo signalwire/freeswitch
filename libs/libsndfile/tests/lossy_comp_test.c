@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2012 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -22,6 +22,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <inttypes.h>
+
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
@@ -31,14 +33,14 @@
 
 #include "utils.h"
 
-#define	BUFFER_SIZE		(1<<14) /* Should be (1<<14) */
+#define	BUFFER_SIZE		(1 << 14)
 #define	SAMPLE_RATE		11025
 
 #ifndef		M_PI
 #define		M_PI		3.14159265358979323846264338
 #endif
 
-#define		LCT_MAX(x,y)	((x) > (y) ? (x) : (y))
+#define		LCT_MAX(x, y)	((x) > (y) ? (x) : (y))
 
 static	void	lcomp_test_short	(const char *filename, int filetype, int chan, double margin) ;
 static	void	lcomp_test_int		(const char *filename, int filetype, int chan, double margin) ;
@@ -556,7 +558,7 @@ lcomp_test_short (const char *filename, int filetype, int channels, double margi
 {	SNDFILE			*file ;
 	SF_INFO			sfinfo ;
 	int				k, m, seekpos, half_max_abs ;
-	long			datalen ;
+	sf_count_t		datalen ;
 	short			*orig, *data ;
 
 	print_test_name ("lcomp_test_short", filename) ;
@@ -593,12 +595,12 @@ lcomp_test_short (const char *filename, int filetype, int channels, double margi
 		} ;
 
 	if (sfinfo.frames < datalen / channels)
-	{	printf ("Too few frames in file. (%ld should be a little more than %ld)\n", SF_COUNT_TO_LONG (sfinfo.frames), datalen) ;
+	{	printf ("Too few frames in file. (%" PRId64 " should be a little more than %" PRId64 ")\n", sfinfo.frames, datalen) ;
 		exit (1) ;
 		} ;
 
 	if (sfinfo.frames > (datalen + datalen / 20))
-	{	printf ("Too many frames in file. (%ld should be a little more than %ld)\n", SF_COUNT_TO_LONG (sfinfo.frames), datalen) ;
+	{	printf ("Too many frames in file. (%" PRId64 " should be a little more than %" PRId64 ")\n", sfinfo.frames, datalen) ;
 		exit (1) ;
 		} ;
 
@@ -629,8 +631,8 @@ lcomp_test_short (const char *filename, int filetype, int channels, double margi
 		} ;
 
 	if ((k = sf_readf_short (file, data, datalen)) != sfinfo.frames - datalen)
-	{	printf ("\n\nLine %d: Incorrect read length (%ld should be %d).\n", __LINE__,
-			SF_COUNT_TO_LONG (channels * sfinfo.frames - datalen), k) ;
+	{	printf ("\n\nLine %d: Incorrect read length (%" PRId64 " should be %d).\n", __LINE__,
+			channels * sfinfo.frames - datalen, k) ;
 		exit (1) ;
 		} ;
 
@@ -742,7 +744,7 @@ lcomp_test_int (const char *filename, int filetype, int channels, double margin)
 {	SNDFILE			*file ;
 	SF_INFO			sfinfo ;
 	int				k, m, half_max_abs ;
-	long			datalen, seekpos ;
+	sf_count_t		datalen, seekpos ;
 	double			scale, max_val ;
 	int				*orig, *data ;
 
@@ -790,12 +792,12 @@ lcomp_test_int (const char *filename, int filetype, int channels, double margin)
 		} ;
 
 	if (sfinfo.frames < datalen / channels)
-	{	printf ("Too few.frames in file. (%ld should be a little more than %ld)\n", datalen, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("Too few.frames in file. (%" PRId64 " should be a little more than %" PRId64 ")\n", datalen, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 
 	if (sfinfo.frames > (datalen + datalen / 20))
-	{	printf ("Too many.frames in file. (%ld should be a little more than %ld)\n", datalen, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("Too many.frames in file. (%" PRId64 " should be a little more than %" PRId64 ")\n", datalen, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 
@@ -826,8 +828,8 @@ lcomp_test_int (const char *filename, int filetype, int channels, double margin)
 		} ;
 
 	if ((k = sf_readf_int (file, data, datalen)) != sfinfo.frames - datalen)
-	{	printf ("\n\nLine %d: Incorrect read length (%ld should be %d).\n", __LINE__,
-			SF_COUNT_TO_LONG (channels * sfinfo.frames - datalen), k) ;
+	{	printf ("\n\nLine %d: Incorrect read length (%" PRId64 " should be %d).\n", __LINE__,
+			channels * sfinfo.frames - datalen, k) ;
 		exit (1) ;
 		} ;
 
@@ -872,7 +874,7 @@ lcomp_test_int (const char *filename, int filetype, int channels, double margin)
 
 	/* Check seek from start of file. */
 	if ((k = sf_seek (file, seekpos, SEEK_SET)) != seekpos)
-	{	printf ("Seek to start of file + %ld failed (%d).\n", seekpos, k) ;
+	{	printf ("Seek to start of file + %" PRId64 " failed (%d).\n", seekpos, k) ;
 		exit (1) ;
 		} ;
 
@@ -884,7 +886,7 @@ lcomp_test_int (const char *filename, int filetype, int channels, double margin)
 		} ;
 
 	if ((k = sf_seek (file, 0, SEEK_CUR)) != seekpos + 1)
-	{	printf ("\n\nLine %d: sf_seek (SEEK_CUR) with 0 offset failed (%d should be %ld)\n", __LINE__, k, seekpos + 1) ;
+	{	printf ("\n\nLine %d: sf_seek (SEEK_CUR) with 0 offset failed (%d should be %" PRId64 ")\n", __LINE__, k, seekpos + 1) ;
 		exit (1) ;
 		} ;
 
@@ -892,7 +894,7 @@ lcomp_test_int (const char *filename, int filetype, int channels, double margin)
 	k = sf_seek (file, BUFFER_SIZE / 5, SEEK_CUR) ;
 	test_readf_int_or_die (file, 0, data, 1, __LINE__) ;
 	if (error_function (1.0 * data [0], 1.0 * orig [seekpos * channels], margin) || k != seekpos)
-	{	printf ("\nLine %d: sf_seek (forwards, SEEK_CUR) followed by sf_readf_int failed (%d, %d) (%d, %ld).\n", __LINE__, data [0], orig [seekpos * channels], k, seekpos + 1) ;
+	{	printf ("\nLine %d: sf_seek (forwards, SEEK_CUR) followed by sf_readf_int failed (%d, %d) (%d, %" PRId64 ").\n", __LINE__, data [0], orig [seekpos * channels], k, seekpos + 1) ;
 		exit (1) ;
 		} ;
 
@@ -901,7 +903,7 @@ lcomp_test_int (const char *filename, int filetype, int channels, double margin)
 	k = sf_seek (file, -20, SEEK_CUR) ;
 	test_readf_int_or_die (file, 0, data, 1, __LINE__) ;
 	if (error_function (1.0 * data [0], 1.0 * orig [seekpos * channels], margin) || k != seekpos)
-	{	printf ("\nLine %d: sf_seek (backwards, SEEK_CUR) followed by sf_readf_int failed (%d, %d) (%d, %ld).\n", __LINE__, data [0], orig [seekpos * channels], k, seekpos) ;
+	{	printf ("\nLine %d: sf_seek (backwards, SEEK_CUR) followed by sf_readf_int failed (%d, %d) (%d, %" PRId64 ").\n", __LINE__, data [0], orig [seekpos * channels], k, seekpos) ;
 		exit (1) ;
 		} ;
 
@@ -939,7 +941,7 @@ lcomp_test_float (const char *filename, int filetype, int channels, double margi
 {	SNDFILE			*file ;
 	SF_INFO			sfinfo ;
 	int				k, m, seekpos ;
-	long			datalen ;
+	sf_count_t		datalen ;
 	float			*orig, *data ;
 	double			half_max_abs ;
 
@@ -978,12 +980,12 @@ lcomp_test_float (const char *filename, int filetype, int channels, double margi
 		} ;
 
 	if (sfinfo.frames < datalen / channels)
-	{	printf ("Too few.frames in file. (%ld should be a little more than %ld)\n", datalen, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("Too few.frames in file. (%" PRId64 " should be a little more than %" PRId64 ")\n", datalen, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 
 	if (sfinfo.frames > (datalen + datalen / 20))
-	{	printf ("Too many.frames in file. (%ld should be a little more than %ld)\n", datalen, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("Too many.frames in file. (%" PRId64 " should be a little more than %" PRId64 ")\n", datalen, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 
@@ -1020,8 +1022,8 @@ lcomp_test_float (const char *filename, int filetype, int channels, double margi
 		} ;
 
 	if ((k = sf_readf_float (file, data, datalen)) != sfinfo.frames - datalen)
-	{	printf ("\n\nLine %d: Incorrect read length (%ld should be %d).\n", __LINE__,
-			SF_COUNT_TO_LONG (channels * sfinfo.frames - datalen), k) ;
+	{	printf ("\n\nLine %d: Incorrect read length (%" PRId64 " should be %d).\n", __LINE__,
+			channels * sfinfo.frames - datalen, k) ;
 		exit (1) ;
 		} ;
 
@@ -1133,7 +1135,7 @@ lcomp_test_double (const char *filename, int filetype, int channels, double marg
 {	SNDFILE			*file ;
 	SF_INFO			sfinfo ;
 	int				k, m, seekpos ;
-	long			datalen ;
+	sf_count_t		datalen ;
 	double			*orig, *data ;
 	double			half_max_abs ;
 
@@ -1172,12 +1174,12 @@ lcomp_test_double (const char *filename, int filetype, int channels, double marg
 		} ;
 
 	if (sfinfo.frames < datalen / channels)
-	{	printf ("Too few.frames in file. (%ld should be a little more than %ld)\n", datalen, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("Too few.frames in file. (%" PRId64 " should be a little more than %" PRId64 ")\n", datalen, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 
 	if (sfinfo.frames > (datalen + datalen / 20))
-	{	printf ("Too many.frames in file. (%ld should be a little more than %ld)\n", datalen, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("Too many.frames in file. (%" PRId64 " should be a little more than %" PRId64 ")\n", datalen, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 
@@ -1214,8 +1216,8 @@ lcomp_test_double (const char *filename, int filetype, int channels, double marg
 		} ;
 
 	if ((k = sf_readf_double (file, data, datalen)) != sfinfo.frames - datalen)
-	{	printf ("\n\nLine %d: Incorrect read length (%ld should be %d).\n", __LINE__,
-			SF_COUNT_TO_LONG (channels * sfinfo.frames - datalen), k) ;
+	{	printf ("\n\nLine %d: Incorrect read length (%" PRId64 " should be %d).\n", __LINE__,
+			channels * sfinfo.frames - datalen, k) ;
 		exit (1) ;
 		} ;
 
@@ -1328,7 +1330,7 @@ sdlcomp_test_short	(const char *filename, int filetype, int channels, double mar
 {	SNDFILE			*file ;
 	SF_INFO			sfinfo ;
 	int				k, m, seekpos, half_max_abs ;
-	long			datalen ;
+	sf_count_t		datalen ;
 	short			*orig, *data, *smooth ;
 
 channels = 1 ;
@@ -1386,12 +1388,12 @@ channels = 1 ;
 		} ;
 
 	if (sfinfo.frames < datalen / channels)
-	{	printf ("Too few.frames in file. (%ld should be a little more than %ld)\n", datalen, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("Too few.frames in file. (%" PRId64 " should be a little more than %" PRId64 ")\n", datalen, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 
 	if (sfinfo.frames > (datalen + 400))
-	{	printf ("Too many.frames in file. (%ld should be a little more than %ld)\n", SF_COUNT_TO_LONG (sfinfo.frames), datalen) ;
+	{	printf ("Too many.frames in file. (%" PRId64 " should be a little more than %" PRId64 ")\n", sfinfo.frames, datalen) ;
 		exit (1) ;
 		} ;
 
@@ -1428,7 +1430,7 @@ channels = 1 ;
 		} ;
 
 	if ((k = sf_read_short (file, data, datalen)) != sfinfo.frames - datalen)
-	{	printf ("\n\nLine %d: Incorrect read length (%d should be %ld).\n", __LINE__, k, SF_COUNT_TO_LONG (sfinfo.frames - datalen)) ;
+	{	printf ("\n\nLine %d: Incorrect read length (%d should be %" PRId64 ").\n", __LINE__, k, sfinfo.frames - datalen) ;
 		exit (1) ;
 		} ;
 
@@ -1436,7 +1438,7 @@ channels = 1 ;
 		(sfinfo.format & SF_FORMAT_SUBMASK) != SF_FORMAT_GSM610)
 		for (k = 0 ; k < sfinfo.frames - datalen ; k++)
 			if (abs (data [k]) > decay_response (k))
-			{	printf ("\n\nLine %d: Incorrect sample (#%ld : abs (%d) should be < %d).\n", __LINE__, datalen + k, data [k], decay_response (k)) ;
+			{	printf ("\n\nLine %d: Incorrect sample (#%" PRId64 " : abs (%d) should be < %d).\n", __LINE__, datalen + k, data [k], decay_response (k)) ;
 				exit (1) ;
 				} ;
 
@@ -1456,7 +1458,7 @@ channels = 1 ;
 
 			for (k = 0 ; k < datalen / 7 ; k++)
 				if (error_function (1.0 * data [k], 1.0 * smooth [k], margin))
-				{	printf ("\nLine %d: Incorrect sample C (#%d (%ld) : %d => %d).\n", __LINE__, k, k + m * (datalen / 7), smooth [k], data [k]) ;
+				{	printf ("\nLine %d: Incorrect sample C (#%d (%" PRId64 ") : %d => %d).\n", __LINE__, k, k + m * (datalen / 7), smooth [k], data [k]) ;
 					for (m = 0 ; m < 10 ; m++)
 						printf ("%d ", data [k]) ;
 					printf ("\n") ;
@@ -1503,10 +1505,10 @@ channels = 1 ;
 		/* Check that read past end of file returns number of items. */
 		sf_seek (file, sfinfo.frames, SEEK_SET) ;
 
-	 	if ((k = sf_read_short (file, data, datalen)) != 0)
-	 	{	printf ("\n\nLine %d: Return value from sf_read_short past end of file incorrect (%d).\n", __LINE__, k) ;
-	 		exit (1) ;
-	 		} ;
+		if ((k = sf_read_short (file, data, datalen)) != 0)
+		{	printf ("\n\nLine %d: Return value from sf_read_short past end of file incorrect (%d).\n", __LINE__, k) ;
+			exit (1) ;
+			} ;
 
 		/* Check seek backward from end. */
 
@@ -1533,7 +1535,7 @@ sdlcomp_test_int	(const char *filename, int filetype, int channels, double margi
 {	SNDFILE			*file ;
 	SF_INFO			sfinfo ;
 	int				k, m, seekpos, half_max_abs ;
-	long			datalen ;
+	sf_count_t		datalen ;
 	int				*orig, *data, *smooth ;
 	double			scale ;
 
@@ -1594,12 +1596,12 @@ channels = 1 ;
 		} ;
 
 	if (sfinfo.frames < datalen / channels)
-	{	printf ("Too few.frames in file. (%ld should be a little more than %ld)\n", datalen, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("Too few.frames in file. (%" PRId64 " should be a little more than %" PRId64 ")\n", datalen, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 
 	if (sfinfo.frames > (datalen + 400))
-	{	printf ("Too many.frames in file. (%ld should be a little more than %ld)\n", SF_COUNT_TO_LONG (sfinfo.frames), datalen) ;
+	{	printf ("Too many.frames in file. (%" PRId64 " should be a little more than %" PRId64 ")\n", sfinfo.frames, datalen) ;
 		exit (1) ;
 		} ;
 
@@ -1632,7 +1634,7 @@ channels = 1 ;
 		} ;
 
 	if ((k = sf_readf_int (file, data, datalen)) != sfinfo.frames - datalen)
-	{	printf ("\n\nLine %d: Incorrect read length (%d should be %ld).\n", __LINE__, k, SF_COUNT_TO_LONG (sfinfo.frames - datalen)) ;
+	{	printf ("\n\nLine %d: Incorrect read length (%d should be %" PRId64 ").\n", __LINE__, k, sfinfo.frames - datalen) ;
 		exit (1) ;
 		} ;
 
@@ -1643,7 +1645,7 @@ channels = 1 ;
 		(sfinfo.format & SF_FORMAT_SUBMASK) != SF_FORMAT_G723_24)
 		for (k = 0 ; k < sfinfo.frames - datalen ; k++)
 			if (abs (data [k]) > decay_response (k))
-			{	printf ("\n\nLine %d: Incorrect sample (#%ld : abs (%d) should be < %d).\n", __LINE__, datalen + k, data [k], decay_response (k)) ;
+			{	printf ("\n\nLine %d: Incorrect sample (#%" PRId64 " : abs (%d) should be < %d).\n", __LINE__, datalen + k, data [k], decay_response (k)) ;
 				exit (1) ;
 				} ;
 
@@ -1663,7 +1665,7 @@ channels = 1 ;
 
 			for (k = 0 ; k < datalen / 7 ; k++)
 				if (error_function (data [k] / scale, smooth [k] / scale, margin))
-				{	printf ("\nLine %d: Incorrect sample (#%d (%ld) : %d => %d).\n", __LINE__, k, k + m * (datalen / 7), smooth [k], data [k]) ;
+				{	printf ("\nLine %d: Incorrect sample (#%d (%" PRId64 ") : %d => %d).\n", __LINE__, k, k + m * (datalen / 7), smooth [k], data [k]) ;
 					for (m = 0 ; m < 10 ; m++)
 						printf ("%d ", data [k]) ;
 					printf ("\n") ;
@@ -1710,10 +1712,10 @@ channels = 1 ;
 		/* Check that read past end of file returns number of items. */
 		sf_seek (file, sfinfo.frames, SEEK_SET) ;
 
-	 	if ((k = sf_readf_int (file, data, datalen)) != 0)
-	 	{	printf ("\n\nLine %d: Return value from sf_readf_int past end of file incorrect (%d).\n", __LINE__, k) ;
-	 		exit (1) ;
-	 		} ;
+		if ((k = sf_readf_int (file, data, datalen)) != 0)
+		{	printf ("\n\nLine %d: Return value from sf_readf_int past end of file incorrect (%d).\n", __LINE__, k) ;
+			exit (1) ;
+			} ;
 
 		/* Check seek backward from end. */
 
@@ -1740,7 +1742,7 @@ sdlcomp_test_float	(const char *filename, int filetype, int channels, double mar
 {	SNDFILE			*file ;
 	SF_INFO			sfinfo ;
 	int				k, m, seekpos ;
-	long			datalen ;
+	sf_count_t		datalen ;
 	float			*orig, *data, *smooth ;
 	double			half_max_abs ;
 
@@ -1789,12 +1791,12 @@ printf ("** fix this ** ") ;
 		} ;
 
 	if (sfinfo.frames < datalen / channels)
-	{	printf ("Too few.frames in file. (%ld should be a little more than %ld)\n", datalen, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("Too few.frames in file. (%" PRId64 " should be a little more than %" PRId64 ")\n", datalen, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 
 	if (sfinfo.frames > (datalen + 400))
-	{	printf ("Too many.frames in file. (%ld should be a little more than %ld)\n", SF_COUNT_TO_LONG (sfinfo.frames), datalen) ;
+	{	printf ("Too many.frames in file. (%" PRId64 " should be a little more than %" PRId64 ")\n", sfinfo.frames, datalen) ;
 		exit (1) ;
 		} ;
 
@@ -1832,7 +1834,7 @@ printf ("** fix this ** ") ;
 		} ;
 
 	if ((k = sf_read_float (file, data, datalen)) != sfinfo.frames - datalen)
-	{	printf ("\n\nLine %d: Incorrect read length (%d should be %ld).\n", __LINE__, k, SF_COUNT_TO_LONG (sfinfo.frames - datalen)) ;
+	{	printf ("\n\nLine %d: Incorrect read length (%d should be %" PRId64 ").\n", __LINE__, k, sfinfo.frames - datalen) ;
 		exit (1) ;
 		} ;
 
@@ -1840,7 +1842,7 @@ printf ("** fix this ** ") ;
 		(sfinfo.format & SF_FORMAT_SUBMASK) != SF_FORMAT_GSM610)
 		for (k = 0 ; k < sfinfo.frames - datalen ; k++)
 			if (abs (data [k]) > decay_response (k))
-			{	printf ("\n\nLine %d: Incorrect sample (#%ld : abs (%d) should be < %d).\n", __LINE__, datalen + k, (int) data [k], (int) decay_response (k)) ;
+			{	printf ("\n\nLine %d: Incorrect sample (#%" PRId64 " : abs (%d) should be < %d).\n", __LINE__, datalen + k, (int) data [k], (int) decay_response (k)) ;
 				exit (1) ;
 				} ;
 
@@ -1860,7 +1862,7 @@ printf ("** fix this ** ") ;
 
 			for (k = 0 ; k < datalen / 7 ; k++)
 				if (error_function (data [k], smooth [k], margin))
-				{	printf ("\nLine %d: Incorrect sample C (#%d (%ld) : %d => %d).\n", __LINE__, k, k + m * (datalen / 7), (int) smooth [k], (int) data [k]) ;
+				{	printf ("\nLine %d: Incorrect sample C (#%d (%" PRId64 ") : %d => %d).\n", __LINE__, k, k + m * (datalen / 7), (int) smooth [k], (int) data [k]) ;
 					for (m = 0 ; m < 10 ; m++)
 						printf ("%d ", (int) data [k]) ;
 					printf ("\n") ;
@@ -1907,10 +1909,10 @@ printf ("** fix this ** ") ;
 		/* Check that read past end of file returns number of items. */
 		sf_seek (file, sfinfo.frames, SEEK_SET) ;
 
-	 	if ((k = sf_read_float (file, data, datalen)) != 0)
-	 	{	printf ("\n\nLine %d: Return value from sf_read_float past end of file incorrect (%d).\n", __LINE__, k) ;
-	 		exit (1) ;
-	 		} ;
+		if ((k = sf_read_float (file, data, datalen)) != 0)
+		{	printf ("\n\nLine %d: Return value from sf_read_float past end of file incorrect (%d).\n", __LINE__, k) ;
+			exit (1) ;
+			} ;
 
 		/* Check seek backward from end. */
 
@@ -1937,7 +1939,7 @@ sdlcomp_test_double	(const char *filename, int filetype, int channels, double ma
 {	SNDFILE			*file ;
 	SF_INFO			sfinfo ;
 	int				k, m, seekpos ;
-	long			datalen ;
+	sf_count_t		datalen ;
 	double			*orig, *data, *smooth, half_max_abs ;
 
 channels = 1 ;
@@ -1980,12 +1982,12 @@ channels = 1 ;
 		} ;
 
 	if (sfinfo.frames < datalen / channels)
-	{	printf ("Too few.frames in file. (%ld should be a little more than %ld)\n", datalen, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("Too few.frames in file. (%" PRId64 " should be a little more than %" PRId64 ")\n", datalen, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 
 	if (sfinfo.frames > (datalen + 400))
-	{	printf ("Too many.frames in file. (%ld should be a little more than %ld)\n", SF_COUNT_TO_LONG (sfinfo.frames), datalen) ;
+	{	printf ("Too many.frames in file. (%" PRId64 " should be a little more than %" PRId64 ")\n", sfinfo.frames, datalen) ;
 		exit (1) ;
 		} ;
 
@@ -2024,7 +2026,7 @@ channels = 1 ;
 		} ;
 
 	if ((k = sf_read_double (file, data, datalen)) != sfinfo.frames - datalen)
-	{	printf ("\n\nLine %d: Incorrect read length (%d should be %ld).\n", __LINE__, k, SF_COUNT_TO_LONG (sfinfo.frames - datalen)) ;
+	{	printf ("\n\nLine %d: Incorrect read length (%d should be %" PRId64 ").\n", __LINE__, k, sfinfo.frames - datalen) ;
 		exit (1) ;
 		} ;
 
@@ -2032,7 +2034,7 @@ channels = 1 ;
 		(sfinfo.format & SF_FORMAT_SUBMASK) != SF_FORMAT_GSM610)
 		for (k = 0 ; k < sfinfo.frames - datalen ; k++)
 			if (abs (data [k]) > decay_response (k))
-			{	printf ("\n\nLine %d: Incorrect sample (#%ld : abs (%d) should be < %d).\n", __LINE__, datalen + k, (int) data [k], (int) decay_response (k)) ;
+			{	printf ("\n\nLine %d: Incorrect sample (#%" PRId64 " : abs (%d) should be < %d).\n", __LINE__, datalen + k, (int) data [k], (int) decay_response (k)) ;
 				exit (1) ;
 				} ;
 
@@ -2052,7 +2054,7 @@ channels = 1 ;
 
 			for (k = 0 ; k < datalen / 7 ; k++)
 				if (error_function (data [k], smooth [k], margin))
-				{	printf ("\nLine %d: Incorrect sample C (#%d (%ld) : %d => %d).\n", __LINE__, k, k + m * (datalen / 7), (int) smooth [k], (int) data [k]) ;
+				{	printf ("\nLine %d: Incorrect sample C (#%d (%" PRId64 ") : %d => %d).\n", __LINE__, k, k + m * (datalen / 7), (int) smooth [k], (int) data [k]) ;
 					for (m = 0 ; m < 10 ; m++)
 						printf ("%d ", (int) data [k]) ;
 					printf ("\n") ;
@@ -2099,10 +2101,10 @@ channels = 1 ;
 		/* Check that read past end of file returns number of items. */
 		sf_seek (file, sfinfo.frames, SEEK_SET) ;
 
-	 	if ((k = sf_read_double (file, data, datalen)) != 0)
-	 	{	printf ("\n\nLine %d: Return value from sf_read_double past end of file incorrect (%d).\n", __LINE__, k) ;
-	 		exit (1) ;
-	 		} ;
+		if ((k = sf_read_double (file, data, datalen)) != 0)
+		{	printf ("\n\nLine %d: Return value from sf_read_double past end of file incorrect (%d).\n", __LINE__, k) ;
+			exit (1) ;
+			} ;
 
 		/* Check seek backward from end. */
 
@@ -2128,8 +2130,7 @@ static void
 read_raw_test (const char *filename, int filetype, int channels)
 {	SNDFILE			*file ;
 	SF_INFO			sfinfo ;
-	sf_count_t		count ;
-	long			datalen ;
+	sf_count_t		count, datalen ;
 	short			*orig, *data ;
 	int				k ;
 
@@ -2167,12 +2168,12 @@ read_raw_test (const char *filename, int filetype, int channels)
 		} ;
 
 	if (sfinfo.frames < datalen / channels)
-	{	printf ("Too few.frames in file. (%ld should be a little more than %ld)\n", datalen, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("Too few.frames in file. (%" PRId64 " should be a little more than %" PRId64 ")\n", datalen, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 
 	if (sfinfo.frames > (datalen + 400))
-	{	printf ("Too many.frames in file. (%ld should be a little more than %ld)\n", SF_COUNT_TO_LONG (sfinfo.frames), datalen) ;
+	{	printf ("Too many.frames in file. (%" PRId64 " should be a little more than %" PRId64 ")\n", sfinfo.frames, datalen) ;
 		exit (1) ;
 		} ;
 
@@ -2185,7 +2186,7 @@ read_raw_test (const char *filename, int filetype, int channels)
 
 	count = sf_read_raw (file, orig_buffer.c, datalen + 5 * channels) ;
 	if (count != sfinfo.channels * sfinfo.frames)
-	{	printf ("\nLine %d : sf_read_raw returned %ld should be %ld\n", __LINE__, SF_COUNT_TO_LONG (count), sfinfo.channels * SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("\nLine %d : sf_read_raw returned %" PRId64 " should be %" PRId64 "\n", __LINE__, count, sfinfo.channels * sfinfo.frames) ;
 		exit (1) ;
 		} ;
 

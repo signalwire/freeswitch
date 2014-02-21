@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2003-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2003-2013 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <inttypes.h>
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
@@ -39,6 +40,10 @@ static void	string_start_end_test (const char *filename, int typemajor) ;
 static void	string_multi_set_test (const char *filename, int typemajor) ;
 static void	string_rdwr_test (const char *filename, int typemajor) ;
 static void	string_short_rdwr_test (const char *filename, int typemajor) ;
+static void	string_rdwr_grow_test (const char *filename, int typemajor) ;
+static void	string_header_update (const char *filename, int typemajor) ;
+
+static void	software_string_test (const char *filename) ;
 
 static int str_count (const char * haystack, const char * needle) ;
 
@@ -58,13 +63,15 @@ main (int argc, char *argv [])
 		exit (1) ;
 		} ;
 
-	do_all =! strcmp (argv [1], "all") ;
+	do_all = ! strcmp (argv [1], "all") ;
 
 	if (do_all || ! strcmp (argv [1], "wav"))
 	{	string_start_end_test ("strings.wav", SF_FORMAT_WAV) ;
 		string_multi_set_test ("multi.wav", SF_FORMAT_WAV) ;
 		string_rdwr_test ("rdwr.wav", SF_FORMAT_WAV) ;
 		string_short_rdwr_test ("short_rdwr.wav", SF_FORMAT_WAV) ;
+		string_rdwr_grow_test ("rdwr_grow.wav", SF_FORMAT_WAV) ;
+		string_header_update ("header_update.wav", SF_FORMAT_WAV) ;
 
 		string_start_end_test ("strings.wavex", SF_FORMAT_WAVEX) ;
 		string_multi_set_test ("multi.wavex", SF_FORMAT_WAVEX) ;
@@ -75,16 +82,22 @@ main (int argc, char *argv [])
 		string_multi_set_test ("multi.rifx", SF_ENDIAN_BIG | SF_FORMAT_WAV) ;
 		string_rdwr_test ("rdwr.rifx", SF_ENDIAN_BIG | SF_FORMAT_WAV) ;
 		string_short_rdwr_test ("short_rdwr.rifx", SF_ENDIAN_BIG | SF_FORMAT_WAV) ;
+
+		software_string_test ("software_string.wav") ;
 		test_count++ ;
 		} ;
 
 	if (do_all || ! strcmp (argv [1], "aiff"))
 	{	string_start_end_test ("strings.aiff", SF_FORMAT_AIFF) ;
 		/*
+		TODO : Fix src/aiff.c so these tests pass.
 		string_multi_set_test ("multi.aiff", SF_FORMAT_AIFF) ;
 		string_rdwr_test ("rdwr.aiff", SF_FORMAT_AIFF) ;
 		string_short_rdwr_test ("short_rdwr.aiff", SF_FORMAT_AIFF) ;
+		string_rdwr_grow_test ("rdwr_grow.aiff", SF_FORMAT_AIFF) ;
+		string_header_update ("header_update.aiff", SF_FORMAT_AIFF) ;
 		*/
+
 		test_count++ ;
 		} ;
 
@@ -140,7 +153,9 @@ static const char
 	license		[]	= "The license",
 	title		[]	= "This is the title",
 	long_title	[]	= "This is a very long and very boring title for this file",
-	long_artist	[]	= "The artist who kept on changing its name" ;
+	long_artist	[]	= "The artist who kept on changing its name",
+	genre		[]	= "The genre",
+	trackno		[]	= "Track three" ;
 
 
 static	short	data_out [BUFFER_LEN] ;
@@ -150,18 +165,15 @@ string_start_end_test (const char *filename, int typemajor)
 {	const char	*cptr ;
 	SNDFILE		*file ;
 	SF_INFO		sfinfo ;
-	int			frames, errors = 0 ;
-
-	typemajor = typemajor ;
+	int			errors = 0 ;
 
 	print_test_name ("string_start_end_test", filename) ;
 
+	memset (&sfinfo, 0, sizeof (sfinfo)) ;
 	sfinfo.samplerate	= 44100 ;
 	sfinfo.channels		= 1 ;
 	sfinfo.frames		= 0 ;
 	sfinfo.format		= typemajor | SF_FORMAT_PCM_16 ;
-
-	frames = BUFFER_LEN / sfinfo.channels ;
 
 	file = test_open_file_or_die (filename, SFM_WRITE, &sfinfo, SF_TRUE, __LINE__) ;
 
@@ -169,6 +181,8 @@ string_start_end_test (const char *filename, int typemajor)
 	sf_set_string (file, SF_STR_TITLE, filename) ;
 	sf_set_string (file, SF_STR_SOFTWARE, software) ;
 	sf_set_string (file, SF_STR_ARTIST, artist) ;
+	sf_set_string (file, SF_STR_GENRE, genre) ;
+	sf_set_string (file, SF_STR_TRACKNUMBER, trackno) ;
 
 	/* Write data to file. */
 	test_write_short_or_die (file, 0, data_out, BUFFER_LEN, __LINE__) ;
@@ -240,6 +254,13 @@ string_start_end_test (const char *filename, int typemajor)
 				puts ("\n") ;
 			printf ("    Bad date      : %s\n", cptr) ;
 			} ;
+
+		cptr = sf_get_string (file, SF_STR_GENRE) ;
+		if (cptr == NULL || strcmp (genre, cptr) != 0)
+		{	if (errors++ == 0)
+				puts ("\n") ;
+			printf ("    Bad genre     : %s\n", cptr) ;
+			} ;
 		} ;
 
 	switch (typemajor)
@@ -264,6 +285,12 @@ string_start_end_test (const char *filename, int typemajor)
 				printf ("    Bad license : %s\n", cptr) ;
 				} ;
 
+			cptr = sf_get_string (file, SF_STR_TRACKNUMBER) ;
+			if (cptr == NULL || strcmp (genre, cptr) != 0)
+			{	if (errors++ == 0)
+					puts ("\n") ;
+				printf ("    Bad track no. : %s\n", cptr) ;
+				} ;
 			break ;
 		} ;
 
@@ -284,10 +311,11 @@ string_start_test (const char *filename, int typemajor)
 {	const char	*cptr ;
 	SNDFILE		*file ;
 	SF_INFO		sfinfo ;
-	int			frames, errors = 0 ;
+	int			errors = 0 ;
 
 	print_test_name ("string_start_test", filename) ;
 
+	memset (&sfinfo, 0, sizeof (sfinfo)) ;
 	sfinfo.samplerate	= 44100 ;
 	sfinfo.channels		= 1 ;
 	sfinfo.frames		= 0 ;
@@ -301,8 +329,6 @@ string_start_test (const char *filename, int typemajor)
 			sfinfo.format = typemajor | SF_FORMAT_PCM_16 ;
 			break ;
 		} ;
-
-	frames = BUFFER_LEN / sfinfo.channels ;
 
 	file = test_open_file_or_die (filename, SFM_WRITE, &sfinfo, SF_TRUE, __LINE__) ;
 
@@ -425,6 +451,7 @@ string_multi_set_test (const char *filename, int typemajor)
 
 	print_test_name (__func__, filename) ;
 
+	memset (&sfinfo, 0, sizeof (sfinfo)) ;
 	sfinfo.format		= typemajor | SF_FORMAT_PCM_16 ;
 	sfinfo.samplerate	= 44100 ;
 	sfinfo.channels		= 1 ;
@@ -501,7 +528,7 @@ string_rdwr_test (const char *filename, int typemajor)
 	sf_close (file) ;
 
 	file = test_open_file_or_die (filename, SFM_READ, &sfinfo, SF_FALSE, __LINE__) ;
-	exit_if_true (frames != sfinfo.frames, "\n\nLine %d : Frame count %lld should be %lld.\n", __LINE__, sfinfo.frames, frames) ;
+	exit_if_true (frames != sfinfo.frames, "\n\nLine %d : Frame count %" PRId64 " should be %" PRId64 ".\n", __LINE__, sfinfo.frames, frames) ;
 	str = sf_get_string (file, SF_STR_TITLE) ;
 	exit_if_true (str == NULL, "\n\nLine %d : SF_STR_TITLE string is NULL.\n", __LINE__) ;
 	exit_if_true (strcmp (str, title) != 0, "\n\nLine %d : SF_STR_TITLE doesn't match what was written.\n", __LINE__) ;
@@ -528,7 +555,7 @@ string_rdwr_test (const char *filename, int typemajor)
 	exit_if_true (str == NULL, "\n\nLine %d : SF_STR_TITLE string is NULL.\n", __LINE__) ;
 	exit_if_true (strcmp (str, title) != 0, "\n\nLine %d : SF_STR_TITLE doesn't match what was written.\n", __LINE__) ;
 
-	exit_if_true (frames != sfinfo.frames, "\n\nLine %d : Frame count %lld should be %lld.\n", __LINE__, sfinfo.frames, frames) ;
+	exit_if_true (frames != sfinfo.frames, "\n\nLine %d : Frame count %" PRId64 " should be %" PRId64 ".\n", __LINE__, sfinfo.frames, frames) ;
 
 	sf_close (file) ;
 	unlink (filename) ;
@@ -562,7 +589,7 @@ string_short_rdwr_test (const char *filename, int typemajor)
 
 	/* Open the file RDWR. */
 	file = test_open_file_or_die (filename, SFM_RDWR, &sfinfo, SF_FALSE, __LINE__) ;
-	exit_if_true (frames != sfinfo.frames, "\n\nLine %d : Frame count %lld should be %lld.\n", __LINE__, sfinfo.frames, frames) ;
+	exit_if_true (frames != sfinfo.frames, "\n\nLine %d : Frame count %" PRId64 " should be %" PRId64 ".\n", __LINE__, sfinfo.frames, frames) ;
 	str = sf_get_string (file, SF_STR_TITLE) ;
 	exit_if_true (str == NULL, "\n\nLine %d : SF_STR_TITLE string is NULL.\n", __LINE__) ;
 	exit_if_true (strcmp (str, long_title) != 0, "\n\nLine %d : SF_STR_TITLE doesn't match what was written.\n", __LINE__) ;
@@ -606,3 +633,163 @@ str_count (const char * haystack, const char * needle)
 	return count ;
 } /* str_count */
 
+#define MIN(a, b)	((a) < (b) ? (a) : (b))
+
+static void
+software_string_test (const char *filename)
+{	size_t k ;
+
+	print_test_name (__func__, filename) ;
+
+	for (k = 0 ; k < 50 ; k++)
+	{	const char *result ;
+		char sfname [64] = "" ;
+		SNDFILE *file ;
+		SF_INFO info ;
+
+		sf_info_setup (&info, SF_FORMAT_WAV | SF_FORMAT_PCM_16, 44100, 1) ;
+		file = test_open_file_or_die (filename, SFM_WRITE, &info, SF_TRUE, __LINE__) ;
+
+		snprintf (sfname, MIN (k, sizeof (sfname)), "%s", "abcdefghijklmnopqrestvwxyz0123456789abcdefghijklmnopqrestvwxyz") ;
+
+		exit_if_true (sf_set_string (file, SF_STR_SOFTWARE, sfname),
+			"\n\nLine %d : sf_set_string (f, SF_STR_SOFTWARE, '%s') failed : %s\n", __LINE__, sfname, sf_strerror (file)) ;
+
+		sf_close (file) ;
+
+		file = test_open_file_or_die (filename, SFM_READ, &info, SF_TRUE, __LINE__) ;
+		result = sf_get_string (file, SF_STR_SOFTWARE) ;
+
+		exit_if_true (result == NULL, "\n\nLine %d : sf_get_string (file, SF_STR_SOFTWARE) returned NULL.\n\n", __LINE__) ;
+
+		exit_if_true (strstr (result, sfname) != result,
+			"\n\nLine %d : Can't fine string '%s' in '%s'\n\n", __LINE__, sfname, result) ;
+		sf_close (file) ;
+		} ;
+
+	unlink (filename) ;
+	puts ("ok") ;
+} /* software_string_test */
+
+
+static void
+string_rdwr_grow_test (const char *filename, int typemajor)
+{	SNDFILE *file ;
+	SF_INFO sfinfo ;
+	sf_count_t frames ;
+	const char * str ;
+
+	print_test_name (__func__, filename) ;
+
+	/* Create a file that contains some strings. Then open the file in RDWR mode and
+		 grow the file by writing more audio data to it. Check that the audio data has
+		 been added to the file, and that the strings are still there. */
+
+	/* Create a short file that contains a string. */
+	memset (&sfinfo, 0, sizeof (sfinfo)) ;
+	sfinfo.samplerate	= 44100 ;
+	sfinfo.channels		= 2 ;
+	sfinfo.frames		= 0 ;
+	sfinfo.format		= typemajor | SF_FORMAT_PCM_16 ;
+
+	file = test_open_file_or_die (filename, SFM_WRITE, &sfinfo, SF_TRUE, __LINE__) ;
+	/* Write data to file. */
+	test_write_short_or_die (file, 0, data_out, BUFFER_LEN, __LINE__) ;
+
+	/* Write some strings at end of file. */
+	sf_set_string (file, SF_STR_TITLE , title) ;
+	sf_set_string (file, SF_STR_COMMENT, comment) ;
+	sf_close (file) ;
+
+
+	/* Now open file again in SFM_RDWR mode and write more audio data to it. */
+	file = test_open_file_or_die (filename, SFM_RDWR, &sfinfo, SF_TRUE, __LINE__) ;
+	/* Write more data to file.  */
+	test_write_short_or_die (file, 0, data_out, BUFFER_LEN, __LINE__) ;
+	sf_close (file) ;
+
+
+	/* Now open file again. It should now contain two BUFFER_LEN's worth of frames and the strings. */
+	frames = 2 * BUFFER_LEN / sfinfo.channels ;
+	file = test_open_file_or_die (filename, SFM_READ, &sfinfo, SF_TRUE, __LINE__) ;
+	exit_if_true (frames != sfinfo.frames, "\n\nLine %d : Frame count %" PRId64 " should be %" PRId64 ".\n", __LINE__, sfinfo.frames, frames) ;
+
+	/* Check the strings */
+	str = sf_get_string (file, SF_STR_TITLE) ;
+	exit_if_true (str == NULL, "\n\nLine %d : SF_STR_TITLE string is NULL.\n", __LINE__) ;
+	exit_if_true (strcmp (str, title) != 0, "\n\nLine %d : SF_STR_TITLE doesn't match what was written.\n", __LINE__) ;
+
+	str = sf_get_string (file, SF_STR_COMMENT) ;
+	exit_if_true (str == NULL, "\n\nLine %d : SF_STR_COMMENT string is NULL.\n", __LINE__) ;
+	exit_if_true (strcmp (str, comment) != 0, "\n\nLine %d : SF_STR_COMMENT doesn't match what was written.\n", __LINE__) ;
+
+	sf_close (file) ;
+	unlink (filename) ;
+
+	puts ("ok") ;
+} /* string_rdwr_grow_test */
+
+static void
+string_header_update (const char *filename, int typemajor)
+{	SNDFILE *file , *file1 ;
+	SF_INFO sfinfo , sfinfo1 ;
+	sf_count_t frames ;
+	const char * str ;
+	const int GROW_BUFFER_AMOUNT = 4 ; /* this should be less than half the size of the string header */
+
+	print_test_name (__func__, filename) ;
+
+	/* Create a short file. */
+	memset (&sfinfo, 0, sizeof (sfinfo)) ;
+	sfinfo.samplerate	= 44100 ;
+	sfinfo.channels		= 2 ;
+	sfinfo.frames		= 0 ;
+	sfinfo.format		= typemajor | SF_FORMAT_PCM_16 ;
+
+	file = test_open_file_or_die (filename, SFM_WRITE, &sfinfo, SF_TRUE, __LINE__) ;
+	test_write_short_or_die (file, 0, data_out, BUFFER_LEN, __LINE__) ;
+	sf_set_string (file, SF_STR_TITLE, long_title) ;
+	sf_close (file) ;
+
+
+	/* Check that SFC_UPDATE_HEADER_NOW correctly calculates datalength. */
+	file = test_open_file_or_die (filename, SFM_RDWR, &sfinfo, SF_TRUE, __LINE__) ;
+	/* Write a very small amount of new audio data that doesn't completely overwrite the existing header. */
+	test_write_short_or_die (file, 0, data_out, GROW_BUFFER_AMOUNT, __LINE__) ;
+
+	/* Update the header without closing the file. */
+	sf_command (file, SFC_UPDATE_HEADER_NOW, NULL, 0) ;
+
+	/* The file should now contain BUFFER_LEN + GROW_BUFFER_AMOUNT frames.
+		Open a second handle to the file and check the reported length. */
+	memset (&sfinfo1, 0, sizeof (sfinfo1)) ;
+	file1 = test_open_file_or_die (filename, SFM_READ, &sfinfo1, SF_TRUE, __LINE__) ;
+
+	frames = (BUFFER_LEN + GROW_BUFFER_AMOUNT) / sfinfo.channels ;
+	exit_if_true (frames != sfinfo1.frames, "\n\nLine %d : Frame count %" PRId64 " should be %" PRId64 ".\n", __LINE__, sfinfo1.frames, frames) ;
+
+	/* The strings are probably not readable by the second soundfile handle because write_tailer has not yet been called.
+		It's a design decision whether SFC_UPDATE_HEADER_NOW should write the tailer. I think it's fine that it doesn't.  */
+
+	sf_close (file1) ;
+	sf_close (file) ;
+
+
+	/* Check that sf_close correctly calculates datalength. */
+	file = test_open_file_or_die (filename, SFM_RDWR, &sfinfo, SF_TRUE, __LINE__) ;
+	/* Write a very small amount of new audio data that doesn't completely overwrite the existing header. */
+	test_write_short_or_die (file, 0, data_out, GROW_BUFFER_AMOUNT, __LINE__) ;
+	sf_close (file) ;
+
+
+	/* Open file again and verify data and string. */
+	file = test_open_file_or_die (filename, SFM_READ, &sfinfo, SF_TRUE, __LINE__) ;
+	frames = (BUFFER_LEN + 2*GROW_BUFFER_AMOUNT) / sfinfo.channels ;
+	exit_if_true (frames != sfinfo.frames, "\n\nLine %d : Frame count %" PRId64 " should be %" PRId64 ".\n", __LINE__, sfinfo.frames, frames) ;
+	str = sf_get_string (file, SF_STR_TITLE) ;
+	exit_if_true (str == NULL, "\n\nLine %d : SF_STR_TITLE string is NULL.\n", __LINE__) ;
+	exit_if_true (strcmp (str, long_title) != 0, "\n\nLine %d : SF_STR_TITLE doesn't match what was written.\n", __LINE__) ;
+	sf_close (file) ;
+	unlink (filename) ;
+	puts ("ok") ;
+} /* string_header_update */

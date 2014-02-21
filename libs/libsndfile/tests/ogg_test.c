@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2007-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2007-2013 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -89,6 +89,9 @@ ogg_short_test (void)
 	test_seek_or_die (file, 10, SEEK_SET, 10, sfinfo.channels, __LINE__) ;
 	test_read_short_or_die (file, 0, seek_data, ARRAY_LEN (seek_data), __LINE__) ;
 	compare_short_or_die (seek_data, data_in.s + 10, ARRAY_LEN (seek_data), __LINE__) ;
+
+	/* Test seek to end of file. */
+	test_seek_or_die (file, 0, SEEK_END, sfinfo.frames, sfinfo.channels, __LINE__) ;
 
 	sf_close (file) ;
 
@@ -266,7 +269,7 @@ ogg_stereo_seek_test (const char * filename, int format)
 	gen_windowed_sine_float (data, ARRAY_LEN (data), 0.95) ;
 	for (k = 0 ; k < ARRAY_LEN (data) ; k++)
 	{	stereo_out [2 * k] = data [k] ;
-   		stereo_out [2 * k + 1] = data [ARRAY_LEN (data) - k - 1] ;
+		stereo_out [2 * k + 1] = data [ARRAY_LEN (data) - k - 1] ;
 		} ;
 
 	memset (&sfinfo, 0, sizeof (sfinfo)) ;

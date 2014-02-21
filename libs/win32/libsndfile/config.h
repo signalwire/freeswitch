@@ -209,7 +209,7 @@
 #define PACKAGE_VERSION "1.0.12"
 
 /* Set to maximum allowed value of sf_count_t type. */
-#define SF_COUNT_MAX 0x7FFFFFFFFFFFFFFFi64
+//#define SF_COUNT_MAX 0x7FFFFFFFFFFFFFFFi64
 
 /* The size of a `double', as computed by sizeof. */
 #define SIZEOF_DOUBLE 8
@@ -265,6 +265,8 @@
 /* Version number of package */
 #define VERSION "1.0.18"
 
+#define HAVE_STDINT_H 1
+
 /* Number of bits in a file offset, on hosts where this is settable. */
 /* #undef _FILE_OFFSET_BITS */
 
@@ -280,6 +282,7 @@ typedef __int32 int32_t;
 typedef intptr_t ssize_t;
 typedef unsigned __int16 uint16_t;
 typedef unsigned __int32 uint32_t;
+#define PRId64 "I64d"
 
 #define __func__ __FUNCTION__
 #define snprintf _snprintf

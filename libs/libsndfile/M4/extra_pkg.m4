@@ -1,5 +1,6 @@
 # extra_pkg.m4 - Macros to locate and utilise pkg-config.   -*- Autoconf -*-
-# 
+#
+# Copyright (c) 2008-2012 Erik de Castro Lopo <erikd@mega-nerd.com>
 # Copyright (c) 2004 Scott James Remnant <scott@netsplit.com>.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -40,6 +41,25 @@ AC_MSG_CHECKING([for $2 ])
 _PKG_CONFIG([$1][_CFLAGS], [cflags], [$2])
 _PKG_CONFIG([$1][_LIBS], [libs], [$2])
 
+pkg_link_saved_CFLAGS=$CFLAGS
+pkg_link_saved_LIBS=$LIBS
+
+eval "pkg_CFLAGS=\${pkg_cv_[]$1[]_CFLAGS}"
+eval "pkg_LIBS=\${pkg_cv_[]$1[]_LIBS}"
+
+CFLAGS="$CFLAGS $pkg_CFLAGS"
+LIBS="$LIBS $pkg_LIBS"
+
+AC_TRY_LINK([], puts ("");, pkg_link=yes, pkg_link=no)
+
+CFLAGS=$pkg_link_saved_CFLAGS
+LIBS=$pkg_link_saved_LIBS
+
+if test $pkg_link = no ; then
+	$as_echo_n "link failed ... "
+	pkg_failed=yes
+	fi
+
 m4_define([_PKG_TEXT], [Alternatively, you may set the environment variables $1[]_CFLAGS
 and $1[]_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details.])
@@ -48,7 +68,7 @@ if test $pkg_failed = yes; then
         _PKG_SHORT_ERRORS_SUPPORTED
         if test $_pkg_short_errors_supported = yes; then
 	        $1[]_PKG_ERRORS=`$PKG_CONFIG --short-errors --errors-to-stdout --print-errors "$2"`
-        else 
+        else
 	        $1[]_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "$2"`
         fi
 	# Put the nasty error message in config.log where it belongs

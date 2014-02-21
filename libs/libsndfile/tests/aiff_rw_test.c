@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2003-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2003-2012 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -17,15 +17,17 @@
 */
 
 
-#include	<stdio.h>
-#include	<stdlib.h>
-#include	<string.h>
-#include	<unistd.h>
-#include	<math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <math.h>
+#include <inttypes.h>
 
-#include	<sndfile.h>
 
-#include	"utils.h"
+#include <sndfile.h>
+
+#include "utils.h"
 
 
 static unsigned char aifc_data [] =
@@ -152,8 +154,8 @@ rw_test (const char *filename)
 		} ;
 
 	if (sfinfo_rd.frames != sfinfo_rw.frames)
-	{	printf ("\n\nLine %d : frame count mismatch (rd %ld != rw %ld).\n\n", __LINE__,
-			SF_COUNT_TO_LONG (sfinfo_rd.frames), SF_COUNT_TO_LONG (sfinfo_rw.frames)) ;
+	{	printf ("\n\nLine %d : frame count mismatch (rd %" PRId64 " != rw %" PRId64 ").\n\n", __LINE__,
+			sfinfo_rd.frames, sfinfo_rw.frames) ;
 		exit (1) ;
 		} ;
 

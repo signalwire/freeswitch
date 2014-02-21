@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2001-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2001-2011 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software ; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -244,14 +244,12 @@ static void
 update_header_sub (const char *filename, int typemajor, int write_mode)
 {	SNDFILE		*outfile, *infile ;
 	SF_INFO		sfinfo ;
-	int			k, frames ;
+	int			k ;
 
 	sfinfo.samplerate = 44100 ;
 	sfinfo.format = (typemajor | SF_FORMAT_PCM_16) ;
 	sfinfo.channels = 1 ;
 	sfinfo.frames = 0 ;
-
-	frames = BUFFER_LEN / sfinfo.channels ;
 
 	outfile = test_open_file_or_die (filename, write_mode, &sfinfo, SF_TRUE, __LINE__) ;
 
@@ -642,7 +640,7 @@ header_shrink_test (const char *filename, int filetype)
 
 static void
 extra_header_test (const char *filename, int filetype)
-{	SNDFILE *outfile ;
+{	SNDFILE *outfile, *infile ;
 	SF_INFO sfinfo ;
     sf_count_t frames ;
     short buffer [8] ;
@@ -660,9 +658,9 @@ extra_header_test (const char *filename, int filetype)
 	frames = ARRAY_LEN (buffer) / sfinfo.channels ;
 
 	/* Test the file with extra header data. */
-	outfile = test_open_file_or_die (filename, SFM_WRITE, &sfinfo, SF_TRUE, 464) ;
+	outfile = test_open_file_or_die (filename, SFM_WRITE, &sfinfo, SF_TRUE, 462) ;
 	sf_set_string (outfile, SF_STR_TITLE, filename) ;
-	test_writef_short_or_die (outfile, k, buffer, frames, 466) ;
+	test_writef_short_or_die (outfile, k, buffer, frames, 464) ;
 	sf_set_string (outfile, SF_STR_COPYRIGHT, "(c) 1980 Erik") ;
 	sf_close (outfile) ;
 
@@ -676,7 +674,7 @@ extra_header_test (const char *filename, int filetype)
 	** integration is done.
 	*/
 
-	if (sf_open (filename, SFM_RDWR, &sfinfo) != NULL)
+	if ((infile = sf_open (filename, SFM_RDWR, &sfinfo)) != NULL)
 	{	printf ("\n\nError : should not be able to open this file in SFM_RDWR.\n\n") ;
 		exit (1) ;
 		} ;
@@ -689,7 +687,7 @@ extra_header_test (const char *filename, int filetype)
 	hexdump_file (filename, 0, 100000) ;
 
 	/* Open again for read/write. */
-	outfile = test_open_file_or_die (filename, SFM_RDWR, &sfinfo, 493) ;
+	outfile = test_open_file_or_die (filename, SFM_RDWR, &sfinfo, 491) ;
 
 	/*
 	** In auto header update mode, seeking to the end of the file with
@@ -710,26 +708,26 @@ extra_header_test (const char *filename, int filetype)
 		memset (buffer, 0xA0 + k, sizeof (buffer)) ;
 
 
-		test_seek_or_die (outfile, k * frames, SEEK_SET, k * frames, sfinfo.channels, 514) ;
-		test_seek_or_die (outfile, 0, SEEK_END, k * frames, sfinfo.channels, 515) ;
+		test_seek_or_die (outfile, k * frames, SEEK_SET, k * frames, sfinfo.channels, 512) ;
+		test_seek_or_die (outfile, 0, SEEK_END, k * frames, sfinfo.channels, 513) ;
 
 		/* Open file again and make sure no errors in log buffer. */
 		if (0)
-		{	infile = test_open_file_or_die (filename, SFM_READ, &sfinfo, 519) ;
-			check_log_buffer_or_die (infile, 520) ;
+		{	infile = test_open_file_or_die (filename, SFM_READ, &sfinfo, 517) ;
+			check_log_buffer_or_die (infile, 518) ;
 			sf_close (infile) ;
 			} ;
 
 		if (sfinfo.frames != k * frames)
-		{	printf ("\n\nLine %d : Incorrect sample count (%ld should be %ld)\n", 525, SF_COUNT_TO_LONG (sfinfo.frames), SF_COUNT_TO_LONG (k + frames)) ;
+		{	printf ("\n\nLine %d : Incorrect sample count (%ld should be %ld)\n", 523, SF_COUNT_TO_LONG (sfinfo.frames), SF_COUNT_TO_LONG (k + frames)) ;
 			dump_log_buffer (infile) ;
 			exit (1) ;
 			} ;
 
 		if ((k & 1) == 0)
-			test_write_short_or_die (outfile, k, buffer, sfinfo.channels * frames, 531) ;
+			test_write_short_or_die (outfile, k, buffer, sfinfo.channels * frames, 529) ;
 		else
-			test_writef_short_or_die (outfile, k, buffer, frames, 533) ;
+			test_writef_short_or_die (outfile, k, buffer, frames, 531) ;
 		hexdump_file (filename, 0, 100000) ;
 		} ;
 

@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2002-2013 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -76,7 +76,7 @@ int
 mat4_open	(SF_PRIVATE *psf)
 {	int		subformat, error = 0 ;
 
-	if (psf->mode == SFM_READ || (psf->mode == SFM_RDWR && psf->filelength > 0))
+	if (psf->file.mode == SFM_READ || (psf->file.mode == SFM_RDWR && psf->filelength > 0))
 	{	if ((error = mat4_read_header (psf)))
 			return error ;
 		} ;
@@ -86,7 +86,7 @@ mat4_open	(SF_PRIVATE *psf)
 
 	subformat = SF_CODEC (psf->sf.format) ;
 
-	if (psf->mode == SFM_WRITE || psf->mode == SFM_RDWR)
+	if (psf->file.mode == SFM_WRITE || psf->file.mode == SFM_RDWR)
 	{	if (psf->is_pipe)
 			return SFE_NO_PIPE_WRITE ;
 
@@ -135,7 +135,7 @@ mat4_open	(SF_PRIVATE *psf)
 static int
 mat4_close	(SF_PRIVATE *psf)
 {
-	if (psf->mode == SFM_WRITE || psf->mode == SFM_RDWR)
+	if (psf->file.mode == SFM_WRITE || psf->file.mode == SFM_RDWR)
 		mat4_write_header (psf, SF_TRUE) ;
 
 	return 0 ;
@@ -206,8 +206,9 @@ mat4_write_header (SF_PRIVATE *psf, int calc_length)
 
 static int
 mat4_read_header (SF_PRIVATE *psf)
-{	int		marker, rows, cols, imag ;
-	unsigned namesize ;
+{	char	buffer [256] ;
+	uint32_t marker, namesize ;
+	int		rows, cols, imag ;
 	double	value ;
 	const char *marker_str ;
 	char	name [64] ;
@@ -244,8 +245,8 @@ mat4_read_header (SF_PRIVATE *psf)
 
 	psf_binheader_readf (psf, "d", &value) ;
 
-	snprintf (psf->u.cbuf, sizeof (psf->u.cbuf), " Value : %f\n", value) ;
-	psf_log_printf (psf, psf->u.cbuf) ;
+	snprintf (buffer, sizeof (buffer), " Value : %f\n", value) ;
+	psf_log_printf (psf, buffer) ;
 
 	if ((rows != 1) || (cols != 1))
 		return SFE_MAT4_NO_SAMPLERATE ;

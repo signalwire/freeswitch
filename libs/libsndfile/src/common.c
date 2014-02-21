@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2013 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -20,30 +20,35 @@
 
 #include	<stdarg.h>
 #include	<string.h>
+
+#ifndef MSC_VER
+#include	<unistd.h>
+#endif
 #include	<ctype.h>
 #include	<math.h>
 #include	<time.h>
 #ifndef _MSC_VER
 #include	<sys/time.h>
 #endif
+
 #include	"sndfile.h"
 #include	"sfendian.h"
 #include	"common.h"
 
 /*-----------------------------------------------------------------------------------------------
-** psf_log_printf allows libsndfile internal functions to print to an internal logbuffer which
+** psf_log_printf allows libsndfile internal functions to print to an internal parselog which
 ** can later be displayed.
 ** The format specifiers are as for printf but without the field width and other modifiers.
-** Printing is performed to the logbuffer char array of the SF_PRIVATE struct.
+** Printing is performed to the parselog char array of the SF_PRIVATE struct.
 ** Printing is done in such a way as to guarantee that the log never overflows the end of the
-** logbuffer array.
+** parselog array.
 */
 
 static inline void
 log_putchar (SF_PRIVATE *psf, char ch)
-{	if (psf->logindex < SIGNED_SIZEOF (psf->logbuffer) - 1)
-	{	psf->logbuffer [psf->logindex++] = ch ;
-		psf->logbuffer [psf->logindex] = 0 ;
+{	if (psf->parselog.indx < SIGNED_SIZEOF (psf->parselog.buf) - 1)
+	{	psf->parselog.buf [psf->parselog.indx++] = ch ;
+		psf->parselog.buf [psf->parselog.indx] = 0 ;
 		} ;
 	return ;
 } /* log_putchar */
@@ -757,37 +762,37 @@ psf_binheader_writef (SF_PRIVATE *psf, const char *format, ...)
 
 #if (CPU_IS_BIG_ENDIAN == 1)
 #define	GET_MARKER(ptr)	(	((ptr) [0] << 24)	| ((ptr) [1] << 16) |	\
-							((ptr) [2] << 8)	| ((ptr) [3]) )
+							((ptr) [2] << 8)	| ((ptr) [3]))
 
 #elif (CPU_IS_LITTLE_ENDIAN == 1)
 #define	GET_MARKER(ptr)	(	((ptr) [0])			| ((ptr) [1] << 8) |	\
-							((ptr) [2] << 16)	| ((ptr) [3] << 24) )
+							((ptr) [2] << 16)	| ((ptr) [3] << 24))
 
 #else
 #	error "Cannot determine endian-ness of processor."
 #endif
 
-#define	GET_LE_SHORT(ptr)	( ((ptr) [1] << 8) | ((ptr) [0]) )
-#define	GET_BE_SHORT(ptr)	( ((ptr) [0] << 8) | ((ptr) [1]) )
+#define	GET_LE_SHORT(ptr)	(((ptr) [1] << 8) | ((ptr) [0]))
+#define	GET_BE_SHORT(ptr)	(((ptr) [0] << 8) | ((ptr) [1]))
 
-#define	GET_LE_3BYTE(ptr)	( 	((ptr) [2] << 16) | ((ptr) [1] << 8) | ((ptr) [0]) )
-#define	GET_BE_3BYTE(ptr)	( 	((ptr) [0] << 16) | ((ptr) [1] << 8) | ((ptr) [2]) )
+#define	GET_LE_3BYTE(ptr)	(	((ptr) [2] << 16) | ((ptr) [1] << 8) | ((ptr) [0]))
+#define	GET_BE_3BYTE(ptr)	(	((ptr) [0] << 16) | ((ptr) [1] << 8) | ((ptr) [2]))
 
-#define	GET_LE_INT(ptr)		( 	((ptr) [3] << 24)	| ((ptr) [2] << 16) |	\
-								((ptr) [1] << 8)	| ((ptr) [0]) )
+#define	GET_LE_INT(ptr)		(	((ptr) [3] << 24)	| ((ptr) [2] << 16) |	\
+								((ptr) [1] << 8)	| ((ptr) [0]))
 
-#define	GET_BE_INT(ptr)		( 	((ptr) [0] << 24)	| ((ptr) [1] << 16) |	\
-							 	((ptr) [2] << 8)	| ((ptr) [3]) )
+#define	GET_BE_INT(ptr)		(	((ptr) [0] << 24)	| ((ptr) [1] << 16) |	\
+								((ptr) [2] << 8)	| ((ptr) [3]))
 
-#define	GET_LE_8BYTE(ptr)	( 	(((sf_count_t) (ptr) [7]) << 56) | (((sf_count_t) (ptr) [6]) << 48) |	\
-							 	(((sf_count_t) (ptr) [5]) << 40) | (((sf_count_t) (ptr) [4]) << 32) |	\
-							 	(((sf_count_t) (ptr) [3]) << 24) | (((sf_count_t) (ptr) [2]) << 16) |	\
-							 	(((sf_count_t) (ptr) [1]) << 8 ) | ((ptr) [0]))
+#define	GET_LE_8BYTE(ptr)	(	(((sf_count_t) (ptr) [7]) << 56)	| (((sf_count_t) (ptr) [6]) << 48) |	\
+								(((sf_count_t) (ptr) [5]) << 40)	| (((sf_count_t) (ptr) [4]) << 32) |	\
+								(((sf_count_t) (ptr) [3]) << 24)	| (((sf_count_t) (ptr) [2]) << 16) |	\
+								(((sf_count_t) (ptr) [1]) << 8)		| ((ptr) [0]))
 
-#define	GET_BE_8BYTE(ptr)	( 	(((sf_count_t) (ptr) [0]) << 56) | (((sf_count_t) (ptr) [1]) << 48) |	\
-							 	(((sf_count_t) (ptr) [2]) << 40) | (((sf_count_t) (ptr) [3]) << 32) |	\
-							 	(((sf_count_t) (ptr) [4]) << 24) | (((sf_count_t) (ptr) [5]) << 16) |	\
-							 	(((sf_count_t) (ptr) [6]) << 8 ) | ((ptr) [7]))
+#define	GET_BE_8BYTE(ptr)	(	(((sf_count_t) (ptr) [0]) << 56)	| (((sf_count_t) (ptr) [1]) << 48) |	\
+								(((sf_count_t) (ptr) [2]) << 40)	| (((sf_count_t) (ptr) [3]) << 32) |	\
+								(((sf_count_t) (ptr) [4]) << 24)	| (((sf_count_t) (ptr) [5]) << 16) |	\
+								(((sf_count_t) (ptr) [6]) << 8)		| ((ptr) [7]))
 
 
 
@@ -1026,7 +1031,7 @@ psf_binheader_readf (SF_PRIVATE *psf, char const *format, ...)
 					strptr = va_arg (argptr, char *) ;
 					size   = strlen (strptr) + 1 ;
 					size  += (size & 1) ;
-					longdata = H2LE_INT (size) ;
+					longdata = H2LE_32 (size) ;
 					get_int (psf, longdata) ;
 					memcpy (&(psf->header [psf->headindex]), strptr, size) ;
 					psf->headindex += size ;
@@ -1035,14 +1040,14 @@ psf_binheader_readf (SF_PRIVATE *psf, char const *format, ...)
 
 			case 'b' :
 					charptr = va_arg (argptr, char*) ;
-					count = va_arg (argptr, int) ;
+					count = va_arg (argptr, size_t) ;
 					if (count > 0)
 						byte_count += header_read (psf, charptr, count) ;
 					break ;
 
 			case 'G' :
 					charptr = va_arg (argptr, char*) ;
-					count = va_arg (argptr, int) ;
+					count = va_arg (argptr, size_t) ;
 					if (count > 0)
 						byte_count += header_gets (psf, charptr, count) ;
 					break ;
@@ -1061,14 +1066,14 @@ psf_binheader_readf (SF_PRIVATE *psf, char const *format, ...)
 
 			case 'p' :
 					/* Get the seek position first. */
-					count = va_arg (argptr, int) ;
+					count = va_arg (argptr, size_t) ;
 					header_seek (psf, count, SEEK_SET) ;
 					byte_count = count ;
 					break ;
 
 			case 'j' :
 					/* Get the seek position first. */
-					count = va_arg (argptr, int) ;
+					count = va_arg (argptr, size_t) ;
 					header_seek (psf, count, SEEK_CUR) ;
 					byte_count += count ;
 					break ;
@@ -1133,7 +1138,7 @@ psf_hexdump (const void *ptr, int len)
 		printf ("%08X: ", k) ;
 		for (m = 0 ; m < 16 && k + m < len ; m++)
 		{	printf (m == 8 ? " %02X " : "%02X ", data [k + m] & 0xFF) ;
-			ascii [m] = isprint (data [k + m]) ? data [k + m] : '.' ;
+			ascii [m] = psf_isprint (data [k + m]) ? data [k + m] : '.' ;
 			} ;
 
 		if (m <= 8) printf (" ") ;
@@ -1151,7 +1156,10 @@ psf_log_SF_INFO (SF_PRIVATE *psf)
 {	psf_log_printf (psf, "---------------------------------\n") ;
 
 	psf_log_printf (psf, " Sample rate :   %d\n", psf->sf.samplerate) ;
-	psf_log_printf (psf, " Frames      :   %D\n", psf->sf.frames) ;
+	if (psf->sf.frames == SF_COUNT_MAX)
+		psf_log_printf (psf, " Frames      :   unknown\n") ;
+	else
+		psf_log_printf (psf, " Frames      :   %D\n", psf->sf.frames) ;
 	psf_log_printf (psf, " Channels    :   %d\n", psf->sf.channels) ;
 
 	psf_log_printf (psf, " Format      :   0x%X\n", psf->sf.format) ;
@@ -1208,7 +1216,7 @@ psf_sanitize_string (char * cptr, int len)
 	do
 	{
 		len -- ;
-		cptr [len] = isprint (cptr [len]) ? cptr [len] : '.' ;
+		cptr [len] = psf_isprint (cptr [len]) ? cptr [len] : '.' ;
 	}
 	while (len > 0) ;
 } /* psf_sanitize_string */
@@ -1315,6 +1323,79 @@ psf_rand_int32 (void)
 	return value ;
 } /* psf_rand_int32 */
 
+void
+append_snprintf (char * dest, size_t maxlen, const char * fmt, ...)
+{	size_t len = strlen (dest) ;
+
+	if (len < maxlen)
+	{	va_list ap ;
+
+		va_start (ap, fmt) ;
+		vsnprintf (dest + len, maxlen - len, fmt, ap) ;
+		va_end (ap) ;
+		} ;
+
+	return ;
+} /* append_snprintf */
+
+
+void
+psf_strlcpy_crlf (char *dest, const char *src, size_t destmax, size_t srcmax)
+{	/* Must be minus 2 so it can still expand a single trailing '\n' or '\r'. */
+	char * destend = dest + destmax - 2 ;
+	const char * srcend = src + srcmax ;
+
+	while (dest < destend && src < srcend)
+	{	if ((src [0] == '\r' && src [1] == '\n') || (src [0] == '\n' && src [1] == '\r'))
+		{	*dest++ = '\r' ;
+			*dest++ = '\n' ;
+			src += 2 ;
+			continue ;
+			} ;
+
+		if (src [0] == '\r')
+		{	*dest++ = '\r' ;
+			*dest++ = '\n' ;
+			src += 1 ;
+			continue ;
+			} ;
+
+		if (src [0] == '\n')
+		{	*dest++ = '\r' ;
+			*dest++ = '\n' ;
+			src += 1 ;
+			continue ;
+			} ;
+
+		*dest++ = *src++ ;
+		} ;
+
+	/* Make sure dest is terminated. */
+	*dest = 0 ;
+} /* psf_strlcpy_crlf */
+
+sf_count_t
+psf_decode_frame_count (SF_PRIVATE *psf)
+{	sf_count_t count, readlen, total = 0 ;
+	BUF_UNION	ubuf ;
+
+	/* If we're reading from a pipe or the file is too long, just return SF_COUNT_MAX. */
+	if (psf_is_pipe (psf) || psf->datalength > 0x1000000)
+		return SF_COUNT_MAX ;
+
+	psf_fseek (psf, psf->dataoffset, SEEK_SET) ;
+
+	readlen = ARRAY_LEN (ubuf.ibuf) / psf->sf.channels ;
+	readlen *= psf->sf.channels ;
+
+	while ((count = psf->read_int (psf, ubuf.ibuf, readlen)) > 0)
+		total += count ;
+
+	psf_fseek (psf, psf->dataoffset, SEEK_SET) ;
+
+	return total / psf->sf.channels ;
+} /* psf_decode_frame_count */
+
 /*==============================================================================
 */
 
@@ -1413,3 +1494,169 @@ str_of_endianness (int end)
 	/* Zero length string for SF_ENDIAN_FILE. */
 	return "" ;
 } /* str_of_endianness */
+
+/*==============================================================================
+*/
+
+void
+psf_f2s_array (const float *src, short *dest, int count, int normalize)
+{	float 			normfact ;
+
+	normfact = normalize ? (1.0 * 0x7FFF) : 1.0 ;
+	while (--count >= 0)
+		dest [count] = lrintf (src [count] * normfact) ;
+
+	return ;
+} /* psf_f2s_array */
+
+void
+psf_f2s_clip_array (const float *src, short *dest, int count, int normalize)
+{	float			normfact, scaled_value ;
+
+	normfact = normalize ? (1.0 * 0x8000) : 1.0 ;
+
+	while (--count >= 0)
+	{	scaled_value = src [count] * normfact ;
+		if (CPU_CLIPS_POSITIVE == 0 && scaled_value >= (1.0 * 0x7FFF))
+		{	dest [count] = 0x7FFF ;
+			continue ;
+			} ;
+		if (CPU_CLIPS_NEGATIVE == 0 && scaled_value <= (-8.0 * 0x1000))
+		{	dest [count] = 0x8000 ;
+			continue ;
+			} ;
+
+		dest [count] = lrintf (scaled_value) ;
+		} ;
+
+	return ;
+} /* psf_f2s_clip_array */
+
+void
+psf_d2s_array (const double *src, short *dest, int count, int normalize)
+{	double 			normfact ;
+
+	normfact = normalize ? (1.0 * 0x7FFF) : 1.0 ;
+	while (--count >= 0)
+		dest [count] = lrint (src [count] * normfact) ;
+
+	return ;
+} /* psf_f2s_array */
+
+void
+psf_d2s_clip_array (const double *src, short *dest, int count, int normalize)
+{	double			normfact, scaled_value ;
+
+	normfact = normalize ? (1.0 * 0x8000) : 1.0 ;
+
+	while (--count >= 0)
+	{	scaled_value = src [count] * normfact ;
+		if (CPU_CLIPS_POSITIVE == 0 && scaled_value >= (1.0 * 0x7FFF))
+		{	dest [count] = 0x7FFF ;
+			continue ;
+			} ;
+		if (CPU_CLIPS_NEGATIVE == 0 && scaled_value <= (-8.0 * 0x1000))
+		{	dest [count] = 0x8000 ;
+			continue ;
+			} ;
+
+		dest [count] = lrint (scaled_value) ;
+		} ;
+
+	return ;
+} /* psf_d2s_clip_array */
+
+
+void
+psf_f2i_array (const float *src, int *dest, int count, int normalize)
+{	float 			normfact ;
+
+	normfact = normalize ? (1.0 * 0x7FFFFFFF) : 1.0 ;
+	while (--count >= 0)
+		dest [count] = lrintf (src [count] * normfact) ;
+
+	return ;
+} /* psf_f2i_array */
+
+void
+psf_f2i_clip_array (const float *src, int *dest, int count, int normalize)
+{	float			normfact, scaled_value ;
+
+	normfact = normalize ? (8.0 * 0x10000000) : 1.0 ;
+
+	while (--count >= 0)
+	{	scaled_value = src [count] * normfact ;
+		if (CPU_CLIPS_POSITIVE == 0 && scaled_value >= (1.0 * 0x7FFFFFFF))
+		{	dest [count] = 0x7FFFFFFF ;
+			continue ;
+			} ;
+		if (CPU_CLIPS_NEGATIVE == 0 && scaled_value <= (-8.0 * 0x10000000))
+		{	dest [count] = 0x80000000 ;
+			continue ;
+			} ;
+
+		dest [count] = lrintf (scaled_value) ;
+		} ;
+
+	return ;
+} /* psf_f2i_clip_array */
+
+void
+psf_d2i_array (const double *src, int *dest, int count, int normalize)
+{	double 			normfact ;
+
+	normfact = normalize ? (1.0 * 0x7FFFFFFF) : 1.0 ;
+	while (--count >= 0)
+		dest [count] = lrint (src [count] * normfact) ;
+
+	return ;
+} /* psf_f2i_array */
+
+void
+psf_d2i_clip_array (const double *src, int *dest, int count, int normalize)
+{	double			normfact, scaled_value ;
+
+	normfact = normalize ? (8.0 * 0x10000000) : 1.0 ;
+
+	while (--count >= 0)
+	{	scaled_value = src [count] * normfact ;
+		if (CPU_CLIPS_POSITIVE == 0 && scaled_value >= (1.0 * 0x7FFFFFFF))
+		{	dest [count] = 0x7FFFFFFF ;
+			continue ;
+			} ;
+		if (CPU_CLIPS_NEGATIVE == 0 && scaled_value <= (-8.0 * 0x10000000))
+		{	dest [count] = 0x80000000 ;
+			continue ;
+			} ;
+
+		dest [count] = lrint (scaled_value) ;
+		} ;
+
+	return ;
+} /* psf_d2i_clip_array */
+
+FILE *
+psf_open_tmpfile (char * fname, size_t fnamelen)
+{	const char * tmpdir ;
+	FILE * file ;
+
+	if (OS_IS_WIN32)
+		tmpdir = getenv ("TEMP") ;
+	else
+	{	tmpdir = getenv ("TMPDIR") ;
+		tmpdir = tmpdir == NULL ? "/tmp" : tmpdir ;
+		} ;
+
+//	if (tmpdir && access (tmpdir, R_OK | W_OK | X_OK) == 0)
+	{	snprintf (fname, fnamelen, "%s/%x%x-alac.tmp", tmpdir, psf_rand_int32 (), psf_rand_int32 ()) ;
+		if ((file = fopen (fname, "wb+")) != NULL)
+			return file ;
+		} ;
+
+	snprintf (fname, fnamelen, "%x%x-alac.tmp", psf_rand_int32 (), psf_rand_int32 ()) ;
+	if ((file = fopen (fname, "wb+")) != NULL)
+		return file ;
+
+	memset (fname, 0, fnamelen) ;
+	return NULL ;
+} /* psf_open_tmpfile */

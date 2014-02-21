@@ -19,6 +19,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
+    <Filter Include="Source Files\ALLAC Sources">
+      <UniqueIdentifier>{f00f84d5-78ae-4996-bee3-00106a731232}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\libsndfile\src\aiff.c">
@@ -225,10 +228,58 @@
     <ClCompile Include="..\..\libsndfile\src\G72x\g72x.c">
       <Filter>Source Files\G72X Sources</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\libsndfile\src\id3.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libsndfile\src\chanmap.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libsndfile\src\cart.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libsndfile\src\alac.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libsndfile\src\ALAC\ag_dec.c">
+      <Filter>Source Files\ALLAC Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libsndfile\src\ALAC\ag_enc.c">
+      <Filter>Source Files\ALLAC Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libsndfile\src\ALAC\alac_encoder.c">
+      <Filter>Source Files\ALLAC Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libsndfile\src\ALAC\ALACBitUtilities.c">
+      <Filter>Source Files\ALLAC Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libsndfile\src\ALAC\dp_dec.c">
+      <Filter>Source Files\ALLAC Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libsndfile\src\ALAC\dp_enc.c">
+      <Filter>Source Files\ALLAC Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libsndfile\src\ALAC\matrix_dec.c">
+      <Filter>Source Files\ALLAC Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libsndfile\src\ALAC\matrix_enc.c">
+      <Filter>Source Files\ALLAC Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\libsndfile\src\ALAC\alac_decoder.c">
+      <Filter>Source Files\ALLAC Sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\libsndfile\src\ima_oki_adpcm.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libsndfile\src\chanmap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libsndfile\src\ALAC\ALACAudioTypes.h">
+      <Filter>Source Files\ALLAC Sources</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\libsndfile\src\ALAC\dplib.h">
+      <Filter>Source Files\ALLAC Sources</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

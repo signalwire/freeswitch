@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2001-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2001-2013 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <inttypes.h>
 #include <string.h>
 #include <time.h>
 
@@ -33,7 +35,7 @@
 
 #include "utils.h"
 
-#define	BUFFER_LEN		(1<<10)
+#define	BUFFER_LEN		(1 << 10)
 #define LOG_BUFFER_SIZE	1024
 
 static	void	float_norm_test			(const char *filename) ;
@@ -50,6 +52,10 @@ static	void	broadcast_test			(const char *filename, int filetype) ;
 static	void	broadcast_rdwr_test		(const char *filename, int filetype) ;
 static	void	broadcast_coding_history_test	(const char *filename) ;
 static	void	broadcast_coding_history_size	(const char *filename) ;
+
+/* Cart Chunk tests */
+static void	cart_test			(const char *filename, int filetype) ;
+static void	cart_rdwr_test			(const char *filename, int filetype) ;
 
 /* Force the start of this buffer to be double aligned. Sparc-solaris will
 ** choke if its not.
@@ -76,12 +82,13 @@ main (int argc, char *argv [])
 		printf ("           chanmap - test set/get of channel map data..\n") ;
 		printf ("           bext    - test set/get of SF_BROADCAST_INFO.\n") ;
 		printf ("           bextch  - test set/get of SF_BROADCAST_INFO coding_history.\n") ;
+		printf ("           cart    - test set/get of SF_CART_INFO.\n") ;
 		printf ("           rawend  - test SFC_RAW_NEEDS_ENDSWAP.\n") ;
 		printf ("           all     - perform all tests\n") ;
 		exit (1) ;
 		} ;
 
-	do_all =! strcmp (argv [1], "all") ;
+	do_all = ! strcmp (argv [1], "all") ;
 
 	if (do_all || strcmp (argv [1], "ver") == 0)
 	{	char buffer [128] ;
@@ -141,6 +148,17 @@ main (int argc, char *argv [])
 
 		broadcast_test ("broadcast.wavex", SF_FORMAT_WAVEX | SF_FORMAT_PCM_16) ;
 		broadcast_rdwr_test	("broadcast.wavex", SF_FORMAT_WAVEX | SF_FORMAT_PCM_16) ;
+
+		broadcast_test ("broadcast.rf64", SF_FORMAT_RF64 | SF_FORMAT_PCM_16) ;
+		broadcast_rdwr_test	("broadcast.rf64", SF_FORMAT_RF64 | SF_FORMAT_PCM_16) ;
+		test_count ++ ;
+		} ;
+
+	if (do_all || strcmp (argv [1], "cart") == 0)
+	{	cart_test ("cart.wav", SF_FORMAT_WAV | SF_FORMAT_PCM_16) ;
+		cart_rdwr_test ("cart.wav", SF_FORMAT_WAV | SF_FORMAT_PCM_16) ;
+		cart_test ("cart.rf64", SF_FORMAT_RF64 | SF_FORMAT_PCM_16) ;
+		cart_rdwr_test ("cart.rf64", SF_FORMAT_RF64 | SF_FORMAT_PCM_16) ;
 		test_count ++ ;
 		} ;
 
@@ -151,8 +169,10 @@ main (int argc, char *argv [])
 		} ;
 
 	if (do_all || strcmp (argv [1], "chanmap") == 0)
-	{	channel_map_test ("chanmap.wav", SF_FORMAT_WAV | SF_FORMAT_PCM_16) ;
-		channel_map_test ("chanmap.aiff" , SF_FORMAT_AIFF | SF_FORMAT_PCM_24) ;
+	{	channel_map_test ("chanmap.wavex", SF_FORMAT_WAVEX | SF_FORMAT_PCM_16) ;
+		channel_map_test ("chanmap.rf64", SF_FORMAT_RF64 | SF_FORMAT_PCM_16) ;
+		channel_map_test ("chanmap.aifc" , SF_FORMAT_AIFF | SF_FORMAT_PCM_16) ;
+		channel_map_test ("chanmap.caf" , SF_FORMAT_CAF | SF_FORMAT_PCM_16) ;
 		test_count ++ ;
 		} ;
 
@@ -236,7 +256,7 @@ float_norm_test (const char *filename)
 		} ;
 
 	if (sfinfo.frames != BUFFER_LEN)
-	{	printf ("\n\nLine %d: Incorrect number of.frames in file. (%d => %ld)\n", __LINE__, BUFFER_LEN, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("\n\nLine %d: Incorrect number of.frames in file. (%d => %" PRId64 ")\n", __LINE__, BUFFER_LEN, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 
@@ -352,7 +372,7 @@ double_norm_test (const char *filename)
 		} ;
 
 	if (sfinfo.frames != BUFFER_LEN)
-	{	printf ("\n\nLine %d: Incorrect number of.frames in file. (%d => %ld)\n", __LINE__, BUFFER_LEN, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("\n\nLine %d: Incorrect number of.frames in file. (%d => %" PRId64 ")\n", __LINE__, BUFFER_LEN, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 
@@ -541,7 +561,7 @@ calc_peak_test (int filetype, const char *filename)
 		} ;
 
 	if (sfinfo.frames != BUFFER_LEN)
-	{	printf ("\n\nLine %d: Incorrect number of.frames in file. (%d => %ld)\n", __LINE__, BUFFER_LEN, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("\n\nLine %d: Incorrect number of.frames in file. (%d => %" PRId64 ")\n", __LINE__, BUFFER_LEN, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 
@@ -588,7 +608,7 @@ calc_peak_test (int filetype, const char *filename)
 		} ;
 
 	if (sfinfo.frames != BUFFER_LEN)
-	{	printf ("\n\nLine %d: Incorrect number of.frames in file. (%d => %ld)\n", __LINE__, BUFFER_LEN, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("\n\nLine %d: Incorrect number of.frames in file. (%d => %" PRId64 ")\n", __LINE__, BUFFER_LEN, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 
@@ -694,8 +714,8 @@ instrument_test (const char *filename, int filetype)
 		}
 	} ;
 	SF_INSTRUMENT read_inst ;
-	SNDFILE	 *file ;
-	SF_INFO	 sfinfo ;
+	SNDFILE	*file ;
+	SF_INFO	sfinfo ;
 
 	print_test_name ("instrument_test", filename) ;
 
@@ -800,7 +820,6 @@ static	void
 current_sf_info_test	(const char *filename)
 {	SNDFILE *outfile, *infile ;
 	SF_INFO outinfo, ininfo ;
-	sf_count_t last_count ;
 
 	print_test_name ("current_sf_info_test", filename) ;
 
@@ -820,23 +839,21 @@ current_sf_info_test	(const char *filename)
 	sf_command (outfile, SFC_GET_CURRENT_SF_INFO, &outinfo, sizeof (outinfo)) ;
 
 	exit_if_true (outinfo.frames != BUFFER_LEN,
-		"\n\nLine %d : Initial sfinfo.frames (%ld) should be %d.\n\n", __LINE__,
-		SF_COUNT_TO_LONG (outinfo.frames), BUFFER_LEN
+		"\n\nLine %d : Initial sfinfo.frames (%" PRId64 ") should be %d.\n\n", __LINE__,
+		outinfo.frames, BUFFER_LEN
 		) ;
 
 	/* Read file making sure no channel map exists. */
 	memset (&ininfo, 0, sizeof (ininfo)) ;
 	infile = test_open_file_or_die (filename, SFM_READ, &ininfo, SF_TRUE, __LINE__) ;
 
-	last_count = ininfo.frames ;
-
 	test_write_double_or_die (outfile, 0, double_data, BUFFER_LEN, __LINE__) ;
 
 	sf_command (infile, SFC_GET_CURRENT_SF_INFO, &ininfo, sizeof (ininfo)) ;
 
 	exit_if_true (ininfo.frames != BUFFER_LEN,
-		"\n\nLine %d : Initial sfinfo.frames (%ld) should be %d.\n\n", __LINE__,
-		SF_COUNT_TO_LONG (ininfo.frames), BUFFER_LEN
+		"\n\nLine %d : Initial sfinfo.frames (%" PRId64 ") should be %d.\n\n", __LINE__,
+		ininfo.frames, BUFFER_LEN
 		) ;
 
 	sf_close (outfile) ;
@@ -849,8 +866,8 @@ current_sf_info_test	(const char *filename)
 static void
 broadcast_test (const char *filename, int filetype)
 {	static SF_BROADCAST_INFO bc_write, bc_read ;
-	SNDFILE	 *file ;
-	SF_INFO	 sfinfo ;
+	SNDFILE	*file ;
+	SF_INFO	sfinfo ;
 	int errors = 0 ;
 
 	print_test_name ("broadcast_test", filename) ;
@@ -965,7 +982,7 @@ broadcast_rdwr_test (const char *filename, int filetype)
 
 	file = test_open_file_or_die (filename, SFM_READ, &sfinfo, SF_TRUE, __LINE__) ;
 	sf_close (file) ;
-	exit_if_true (frames != sfinfo.frames, "\n\nLine %d : Frame count %lld should be %lld.\n", __LINE__, sfinfo.frames, frames) ;
+	exit_if_true (frames != sfinfo.frames, "\n\nLine %d : Frame count %" PRId64 " should be %" PRId64 ".\n", __LINE__, sfinfo.frames, frames) ;
 
 	unlink (filename) ;
 	puts ("ok") ;
@@ -974,8 +991,8 @@ broadcast_rdwr_test (const char *filename, int filetype)
 static void
 check_coding_history_newlines (const char *filename)
 {	static SF_BROADCAST_INFO bc_write, bc_read ;
-	SNDFILE	 *file ;
-	SF_INFO	 sfinfo ;
+	SNDFILE	*file ;
+	SF_INFO	sfinfo ;
 	unsigned k ;
 
 	sfinfo.samplerate	= 22050 ;
@@ -1044,8 +1061,8 @@ check_coding_history_newlines (const char *filename)
 static void
 broadcast_coding_history_test (const char *filename)
 {	static SF_BROADCAST_INFO bc_write, bc_read ;
-	SNDFILE	 *file ;
-	SF_INFO	 sfinfo ;
+	SNDFILE	*file ;
+	SF_INFO	sfinfo ;
 	const char *default_history = "A=PCM,F=22050,W=16,M=mono" ;
 	const char *supplied_history =
 					"A=PCM,F=44100,W=24,M=mono,T=other\r\n"
@@ -1093,7 +1110,9 @@ broadcast_coding_history_test (const char *filename)
 		} ;
 
 	if (bc_read.coding_history_size < strlen (default_history) || memcmp (bc_read.coding_history, default_history, strlen (default_history)) != 0)
-	{	printf ("\n\nLine %d : unexpected coding history '%.*s'.\n\n", __LINE__, bc_read.coding_history_size, bc_read.coding_history) ;
+	{	printf ("\n\n"
+				"Line %d : unexpected coding history '%.*s',\n"
+				"            should be '%s'\n\n", __LINE__, bc_read.coding_history_size, bc_read.coding_history, default_history) ;
 		exit (1) ;
 		} ;
 
@@ -1146,8 +1165,8 @@ broadcast_coding_history_size (const char *filename)
 {	/* SF_BROADCAST_INFO struct with coding_history field of 1024 bytes. */
 	static SF_BROADCAST_INFO_VAR (1024) bc_write ;
 	static SF_BROADCAST_INFO_VAR (1024) bc_read ;
-	SNDFILE	 *file ;
-	SF_INFO	 sfinfo ;
+	SNDFILE	*file ;
+	SF_INFO	sfinfo ;
 	int k ;
 
 	print_test_name (__func__, filename) ;
@@ -1206,14 +1225,225 @@ broadcast_coding_history_size (const char *filename)
 
 /*==============================================================================
 */
+static void
+cart_test (const char *filename, int filetype)
+{	static SF_CART_INFO ca_write, ca_read ;
+	SNDFILE	*file ;
+	SF_INFO	sfinfo ;
+	int errors = 0 ;
+
+	print_test_name ("cart_test", filename) ;
+
+	sfinfo.samplerate	= 11025 ;
+	sfinfo.format		= filetype ;
+	sfinfo.channels		= 1 ;
+	memset (&ca_write, 0, sizeof (ca_write)) ;
+
+	// example test data
+	snprintf (ca_write.artist, sizeof (ca_write.artist), "Test artist") ;
+	snprintf (ca_write.version, sizeof (ca_write.version), "Test version") ;
+	snprintf (ca_write.cut_id, sizeof (ca_write.cut_id), "Test cut ID") ;
+	snprintf (ca_write.client_id, sizeof (ca_write.client_id), "Test client ID") ;
+	snprintf (ca_write.category, sizeof (ca_write.category), "Test category") ;
+	snprintf (ca_write.classification, sizeof (ca_write.classification), "Test classification") ;
+	snprintf (ca_write.out_cue, sizeof (ca_write.out_cue), "Test out cue") ;
+	snprintf (ca_write.start_date, sizeof (ca_write.start_date), "%d/%02d/%02d", 2006, 3, 30) ;
+	snprintf (ca_write.start_time, sizeof (ca_write.start_time), "%02d:%02d:%02d", 20, 27, 0) ;
+	snprintf (ca_write.end_date, sizeof (ca_write.end_date), "%d/%02d/%02d", 2006, 3, 30) ;
+	snprintf (ca_write.end_time, sizeof (ca_write.end_time), "%02d:%02d:%02d", 20, 27, 0) ;
+	snprintf (ca_write.producer_app_id, sizeof (ca_write.producer_app_id), "Test producer app id") ;
+	snprintf (ca_write.producer_app_version, sizeof (ca_write.producer_app_version), "Test producer app version") ;
+	snprintf (ca_write.user_def, sizeof (ca_write.user_def), "test user def test test") ;
+	ca_write.level_reference = 42 ;
+	snprintf (ca_write.url, sizeof (ca_write.url), "http://www.test.com/test_url") ;
+	snprintf (ca_write.tag_text, sizeof (ca_write.tag_text), "tag text test! \r\n") ; // must be terminated \r\n to be valid
+	ca_write.tag_text_size = strlen (ca_write.tag_text) ;
+
+	file = test_open_file_or_die (filename, SFM_WRITE, &sfinfo, SF_TRUE, __LINE__) ;
+	if (sf_command (file, SFC_SET_CART_INFO, &ca_write, sizeof (ca_write)) == SF_FALSE)
+		exit (1) ;
+
+	test_write_double_or_die (file, 0, double_data, BUFFER_LEN, __LINE__) ;
+	sf_close (file) ;
+
+	memset (&ca_read, 0, sizeof (ca_read)) ;
+
+	file = test_open_file_or_die (filename, SFM_READ, &sfinfo, SF_TRUE, __LINE__) ;
+	if (sf_command (file, SFC_GET_CART_INFO, &ca_read, sizeof (ca_read)) == SF_FALSE)
+	{	printf ("\n\nLine %d : sf_command (SFC_GET_CART_INFO) failed.\n\n", __LINE__) ;
+		exit (1) ;
+		return ;
+		} ;
+	check_log_buffer_or_die (file, __LINE__) ;
+	sf_close (file) ;
+
+
+	if (memcmp (ca_write.artist, ca_read.artist, sizeof (ca_write.artist)) != 0)
+	{	printf ("\n\nLine %d : artist mismatch :\n\twrite : '%s'\n\tread  : '%s'\n\n", __LINE__, ca_write.artist, ca_read.artist) ;
+		errors ++ ;
+		} ;
+
+	if (memcmp (ca_write.version, ca_read.version, sizeof (ca_write.version)) != 0)
+	{	printf ("\n\nLine %d : version mismatch :\n\twrite : '%s'\n\tread  : '%s'\n\n", __LINE__, ca_write.version, ca_read.version) ;
+		errors ++ ;
+		} ;
+
+	if (memcmp (ca_write.title, ca_read.title, sizeof (ca_write.title)) != 0)
+	{	printf ("\n\nLine %d : title mismatch :\n\twrite : '%s'\n\tread  : '%s'\n\n", __LINE__, ca_write.title, ca_read.title) ;
+		errors ++ ;
+		} ;
+
+	if (memcmp (ca_write.cut_id, ca_read.cut_id, sizeof (ca_write.cut_id)) != 0)
+	{	printf ("\n\nLine %d : cut_id mismatch :\n\twrite : '%s'\n\tread  : '%s'\n\n", __LINE__, ca_write.cut_id, ca_read.cut_id) ;
+		errors ++ ;
+		} ;
+
+	if (memcmp (ca_write.client_id, ca_read.client_id, sizeof (ca_write.client_id)) != 0)
+	{	printf ("\n\nLine %d : client_id mismatch :\n\twrite : '%s'\n\tread  : '%s'\n\n", __LINE__, ca_write.client_id, ca_read.client_id) ;
+		errors ++ ;
+		} ;
+
+	if (memcmp (ca_write.category, ca_read.category, sizeof (ca_write.category)) != 0)
+	{	printf ("\n\nLine %d : category mismatch :\n\twrite : '%s'\n\tread  : '%s'\n\n", __LINE__, ca_write.category, ca_read.category) ;
+		errors ++ ;
+		} ;
+
+	if (memcmp (ca_write.out_cue, ca_read.out_cue, sizeof (ca_write.out_cue)) != 0)
+	{	printf ("\n\nLine %d : out_cue mismatch :\n\twrite : '%s'\n\tread  : '%s'\n\n", __LINE__, ca_write.out_cue, ca_read.out_cue) ;
+		errors ++ ;
+		} ;
+
+	if (memcmp (ca_write.start_date, ca_read.start_date, sizeof (ca_write.start_date)) != 0)
+	{	printf ("\n\nLine %d : start_date mismatch :\n\twrite : '%s'\n\tread  : '%s'\n\n", __LINE__, ca_write.start_date, ca_read.start_date) ;
+		errors ++ ;
+		} ;
+
+
+	if (memcmp (ca_write.start_time, ca_read.start_time, sizeof (ca_write.start_time)) != 0)
+	{	printf ("\n\nLine %d : start_time mismatch :\n\twrite : '%s'\n\tread  : '%s'\n\n", __LINE__, ca_write.start_time, ca_read.start_time) ;
+		errors ++ ;
+		} ;
+
+
+	if (memcmp (ca_write.end_date, ca_read.end_date, sizeof (ca_write.end_date)) != 0)
+	{	printf ("\n\nLine %d : end_date mismatch :\n\twrite : '%s'\n\tread  : '%s'\n\n", __LINE__, ca_write.end_date, ca_read.end_date) ;
+		errors ++ ;
+		} ;
+
+
+	if (memcmp (ca_write.end_time, ca_read.end_time, sizeof (ca_write.end_time)) != 0)
+	{	printf ("\n\nLine %d : end_time mismatch :\n\twrite : '%s'\n\tread  : '%s'\n\n", __LINE__, ca_write.end_time, ca_read.end_time) ;
+		errors ++ ;
+		} ;
+
+
+	if (memcmp (ca_write.producer_app_id, ca_read.producer_app_id, sizeof (ca_write.producer_app_id)) != 0)
+	{	printf ("\n\nLine %d : producer_app_id mismatch :\n\twrite : '%s'\n\tread  : '%s'\n\n", __LINE__, ca_write.producer_app_id, ca_read.producer_app_id) ;
+		errors ++ ;
+		} ;
+
+
+	if (memcmp (ca_write.producer_app_version, ca_read.producer_app_version, sizeof (ca_write.producer_app_version)) != 0)
+	{	printf ("\n\nLine %d : producer_app_version mismatch :\n\twrite : '%s'\n\tread  : '%s'\n\n", __LINE__, ca_write.producer_app_version, ca_read.producer_app_version) ;
+		errors ++ ;
+		} ;
+
+
+	if (memcmp (ca_write.user_def, ca_read.user_def, sizeof (ca_write.user_def)) != 0)
+	{	printf ("\n\nLine %d : user_def mismatch :\n\twrite : '%s'\n\tread  : '%s'\n\n", __LINE__, ca_write.user_def, ca_read.user_def) ;
+		errors ++ ;
+		} ;
+
+
+	if (ca_write.level_reference != ca_read.level_reference)
+	{	printf ("\n\nLine %d : level_reference mismatch :\n\twrite : '%d'\n\tread  : '%d'\n\n", __LINE__, ca_write.level_reference, ca_read.level_reference) ;
+		errors ++ ;
+		} ;
+
+	// TODO: make this more helpful
+	if (memcmp (ca_write.post_timers, ca_read.post_timers, sizeof (ca_write.post_timers)) != 0)
+	{	printf ("\n\nLine %d : post_timers mismatch :\n'\n\n", __LINE__) ;
+		errors ++ ;
+		} ;
+
+	if (memcmp (ca_write.url, ca_read.url, sizeof (ca_write.url)) != 0)
+	{	printf ("\n\nLine %d : url mismatch :\n\twrite : '%s'\n\tread  : '%s'\n\n", __LINE__, ca_write.url, ca_read.url) ;
+		errors ++ ;
+		} ;
+
+
+	if (memcmp (ca_write.tag_text, ca_read.tag_text, (size_t) (ca_read.tag_text_size)) != 0)
+	{	printf ("\n\nLine %d : tag_text mismatch :\n\twrite : '%s'\n\tread  : '%s'\n\n", __LINE__, ca_write.tag_text, ca_read.tag_text) ;
+		errors ++ ;
+		} ;
+
+
+	if (errors)
+		exit (1) ;
+
+	unlink (filename) ;
+	puts ("ok") ;
+} /* cart_test */
+
+static	void
+cart_rdwr_test (const char *filename, int filetype)
+{	SF_CART_INFO cinfo ;
+	SNDFILE *file ;
+	SF_INFO sfinfo ;
+	sf_count_t frames ;
+
+	print_test_name (__func__, filename) ;
+
+	create_short_sndfile (filename, filetype, 2) ;
+
+	memset (&sfinfo, 0, sizeof (sfinfo)) ;
+	memset (&cinfo, 0, sizeof (cinfo)) ;
+
+	snprintf (cinfo.artist, sizeof (cinfo.artist), "Test artist") ;
+	snprintf (cinfo.version, sizeof (cinfo.version), "Test version") ;
+	snprintf (cinfo.cut_id, sizeof (cinfo.cut_id), "Test cut ID") ;
+	snprintf (cinfo.client_id, sizeof (cinfo.client_id), "Test client ID") ;
+	snprintf (cinfo.category, sizeof (cinfo.category), "Test category") ;
+	snprintf (cinfo.classification, sizeof (cinfo.classification), "Test classification") ;
+	snprintf (cinfo.out_cue, sizeof (cinfo.out_cue), "Test out cue") ;
+	snprintf (cinfo.start_date, sizeof (cinfo.start_date), "%d/%02d/%02d", 2006, 3, 30) ;
+	snprintf (cinfo.start_time, sizeof (cinfo.start_time), "%02d:%02d:%02d", 20, 27, 0) ;
+	snprintf (cinfo.end_date, sizeof (cinfo.end_date), "%d/%02d/%02d", 2006, 3, 30) ;
+	snprintf (cinfo.end_time, sizeof (cinfo.end_time), "%02d:%02d:%02d", 20, 27, 0) ;
+	snprintf (cinfo.producer_app_id, sizeof (cinfo.producer_app_id), "Test producer app id") ;
+	snprintf (cinfo.producer_app_version, sizeof (cinfo.producer_app_version), "Test producer app version") ;
+	snprintf (cinfo.user_def, sizeof (cinfo.user_def), "test user def test test") ;
+	cinfo.level_reference = 42 ;
+	snprintf (cinfo.url, sizeof (cinfo.url), "http://www.test.com/test_url") ;
+	snprintf (cinfo.tag_text, sizeof (cinfo.tag_text), "tag text test!\r\n") ;
+	cinfo.tag_text_size = strlen (cinfo.tag_text) ;
+
+	file = test_open_file_or_die (filename, SFM_RDWR, &sfinfo, SF_TRUE, __LINE__) ;
+	frames = sfinfo.frames ;
+	if (sf_command (file, SFC_SET_CART_INFO, &cinfo, sizeof (cinfo)) != SF_FALSE)
+	{	printf ("\n\nLine %d : sf_command (SFC_SET_CART_INFO) should have failed but didn't.\n\n", __LINE__) ;
+		exit (1) ;
+		} ;
+	sf_close (file) ;
+
+	file = test_open_file_or_die (filename, SFM_READ, &sfinfo, SF_TRUE, __LINE__) ;
+	sf_close (file) ;
+	exit_if_true (frames != sfinfo.frames, "\n\nLine %d : Frame count %" PRId64 " should be %" PRId64 ".\n", __LINE__, sfinfo.frames, frames) ;
+
+	unlink (filename) ;
+	puts ("ok") ;
+} /* cart_rdwr_test */
+
+/*==============================================================================
+*/
 
 static	void
 channel_map_test (const char *filename, int filetype)
-{	SNDFILE	 *file ;
-	SF_INFO	 sfinfo ;
+{	SNDFILE	*file ;
+	SF_INFO	sfinfo ;
 	int channel_map_read [4], channel_map_write [4] =
-	{	SF_CHANNEL_MAP_FRONT_LEFT, SF_CHANNEL_MAP_FRONT_CENTER,
-		SF_CHANNEL_MAP_REAR_LEFT, SF_CHANNEL_MAP_REAR_RIGHT
+	{	SF_CHANNEL_MAP_LEFT, SF_CHANNEL_MAP_RIGHT, SF_CHANNEL_MAP_LFE,
+		SF_CHANNEL_MAP_REAR_CENTER
 		} ;
 
 	print_test_name ("channel_map_test", filename) ;
@@ -1223,27 +1453,36 @@ channel_map_test (const char *filename, int filetype)
 	sfinfo.format		= filetype ;
 	sfinfo.channels		= ARRAY_LEN (channel_map_read) ;
 
-	/* Write file without channel map. */
-	file = test_open_file_or_die (filename, SFM_WRITE, &sfinfo, SF_TRUE, __LINE__) ;
-	test_write_double_or_die (file, 0, double_data, BUFFER_LEN, __LINE__) ;
-	sf_close (file) ;
+	switch (filetype & SF_FORMAT_TYPEMASK)
+	{	/* WAVEX and RF64 have a default channel map, even if you don't specify one. */
+		case SF_FORMAT_WAVEX :
+		case SF_FORMAT_RF64 :
+			/* Write file without channel map. */
+			file = test_open_file_or_die (filename, SFM_WRITE, &sfinfo, SF_TRUE, __LINE__) ;
+			test_write_double_or_die (file, 0, double_data, BUFFER_LEN, __LINE__) ;
+			sf_close (file) ;
 
-	/* Read file making sure no channel map exists. */
-	file = test_open_file_or_die (filename, SFM_READ, &sfinfo, SF_TRUE, __LINE__) ;
-	exit_if_true (
-		sf_command (file, SFC_GET_CHANNEL_MAP_INFO, channel_map_read, sizeof (channel_map_read)) != SF_FALSE,
-		"\n\nLine %d : sf_command (SFC_GET_CHANNEL_MAP_INFO) should have failed.\n\n", __LINE__
-		) ;
-	check_log_buffer_or_die (file, __LINE__) ;
-	sf_close (file) ;
+			/* Read file making default channel map exists. */
+			file = test_open_file_or_die (filename, SFM_READ, &sfinfo, SF_TRUE, __LINE__) ;
+			exit_if_true (
+				sf_command (file, SFC_GET_CHANNEL_MAP_INFO, channel_map_read, sizeof (channel_map_read)) == SF_FALSE,
+				"\n\nLine %d : sf_command (SFC_GET_CHANNEL_MAP_INFO) should not have failed.\n\n", __LINE__
+				) ;
+			check_log_buffer_or_die (file, __LINE__) ;
+			sf_close (file) ;
+			break ;
+
+		default :
+			break ;
+		} ;
 
 	/* Write file with a channel map. */
 	file = test_open_file_or_die (filename, SFM_WRITE, &sfinfo, SF_TRUE, __LINE__) ;
-	test_write_double_or_die (file, 0, double_data, BUFFER_LEN, __LINE__) ;
 	exit_if_true (
 		sf_command (file, SFC_SET_CHANNEL_MAP_INFO, channel_map_write, sizeof (channel_map_write)) == SF_FALSE,
 		"\n\nLine %d : sf_command (SFC_SET_CHANNEL_MAP_INFO) failed.\n\n", __LINE__
 		) ;
+	test_write_double_or_die (file, 0, double_data, BUFFER_LEN, __LINE__) ;
 	sf_close (file) ;
 
 	/* Read file making sure no channel map exists. */
@@ -1270,8 +1509,8 @@ raw_needs_endswap_test (const char *filename, int filetype)
 	{	SF_FORMAT_FLOAT, SF_FORMAT_DOUBLE,
 		SF_FORMAT_PCM_16, SF_FORMAT_PCM_24, SF_FORMAT_PCM_32
 		} ;
-	SNDFILE	 *file ;
-	SF_INFO	 sfinfo ;
+	SNDFILE	*file ;
+	SF_INFO	sfinfo ;
 	unsigned k ;
 	int needs_endswap ;
 
