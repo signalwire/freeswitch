@@ -9,7 +9,12 @@ dnl Written by Paul Eggert <eggert@twinsun.com>.
 m4_include([M4/gcc_version.m4])
 m4_include([M4/octave.m4])
 m4_include([M4/mkoctfile_version.m4])
-
+m4_include([M4/extra_pkg.m4])
+m4_include([M4/lrint.m4])
+m4_include([M4/lrintf.m4])
+m4_include([M4/clang.m4])
+m4_include([M4/really_gcc.m4])
+m4_include([M4/stack_protectf.m4])
 
 dnl Internal subroutine of AC_SYS_EXTRA_LARGEFILE.
 dnl AC_SYS_EXTRA_LARGEFILE_FLAGS(FLAGSNAME)
