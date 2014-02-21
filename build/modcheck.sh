@@ -19,10 +19,11 @@ files=`ls *.dylib *.so 2>/dev/null`
 cd $here
 
 alert() {
-
-    /bin/echo -ne "\e[00;35m"
+    on='[01;00;35m'
+    off='[0m'
+    echo -n $on
     echo WARNING: $1
-    /bin/echo -ne '\e[00m'
+    echo -n $off
 }
 
 for i in $files ; do
