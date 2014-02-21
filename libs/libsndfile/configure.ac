@@ -303,15 +303,15 @@ if test -n "$PKG_CONFIG" ; then
 	if test x$enable_external_libs = xno ; then
 		AC_MSG_WARN([[*** External libs (FLAC, Ogg, Vorbis) disabled. ***]])
 	else
-		PKG_CHECK_MOD_VERSION([FLAC], flac >= 1.2.1, ac_cv_flac=yes, ac_cv_flac=no)
+		PKG_CHECK_MOD_VERSION([FLAC], [flac >= 1.2.1], [ac_cv_flac=yes], [ac_cv_flac=no])
 
 		# Make sure the FLAC_CFLAGS value is sane.
 		FLAC_CFLAGS=`echo $FLAC_CFLAGS | $SED "s|include/FLAC|include|"`
 
-		PKG_CHECK_MOD_VERSION([OGG], ogg >= 1.1.3, ac_cv_ogg=yes, ac_cv_ogg=no)
+		PKG_CHECK_MOD_VERSION([OGG], [ogg >= 1.1.3], [ac_cv_ogg=yes], [ac_cv_ogg=no])
 
 		if test x$enable_experimental = xyes ; then
-			PKG_CHECK_MOD_VERSION([SPEEX], speex >= 1.2, ac_cv_speex=yes, ac_cv_speex=no)
+			PKG_CHECK_MOD_VERSION([SPEEX], [speex >= 1.2], [ac_cv_speex=yes], [ac_cv_speex=no])
 		else
 			SPEEX_CFLAGS=""
 			SPEEX_LIBS=""
@@ -320,8 +320,8 @@ if test -n "$PKG_CONFIG" ; then
 		# Vorbis versions earlier than 1.2.3 have bugs that cause the libsndfile
 		# test suite to fail on MIPS, PowerPC and others.
 		# See: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=549899
-		PKG_CHECK_MOD_VERSION([VORBIS], vorbis >= 1.2.3, ac_cv_vorbis=yes, ac_cv_vorbis=no)
-		PKG_CHECK_MOD_VERSION([VORBISENC], vorbisenc >= 1.2.3, ac_cv_vorbisenc=yes, ac_cv_vorbisenc=no)
+		PKG_CHECK_MOD_VERSION([VORBIS], [vorbis >= 1.2.3], [ac_cv_vorbis=yes], [ac_cv_vorbis=no])
+		PKG_CHECK_MOD_VERSION([VORBISENC], [vorbisenc >= 1.2.3], [ac_cv_vorbisenc=yes], [ac_cv_vorbisenc=no])
 		enable_external_libs=yes
 		fi
 
@@ -351,7 +351,7 @@ AC_DEFINE_UNQUOTED([HAVE_EXTERNAL_LIBS], $HAVE_EXTERNAL_LIBS, [Will be set to 1 
 
 ac_cv_sqlite3=no
 if test x$enable_sqlite != xno ; then
-	PKG_CHECK_MOD_VERSION(SQLITE3, sqlite3 >= 3.2, ac_cv_sqlite3=yes, ac_cv_sqlite3=no)
+	PKG_CHECK_MOD_VERSION([SQLITE3], [sqlite3 >= 3.2], [ac_cv_sqlite3=yes], [ac_cv_sqlite3=no])
 	fi
 
 if test x$ac_cv_sqlite3 = "xyes" ; then
