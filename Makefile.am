@@ -481,17 +481,17 @@ libs/apr/Makefile: libs/apr/Makefile.in libs/apr/config.status libs/apr libs/apr
 	@$(TOUCH_TARGET)
 
 libs/apr/libapr-1.la: libs/apr/Makefile libs/apr/.update
-	@if [ $(MAKELEVEL) = 0 ] ; then touch src/include/switch.h; cd libs/apr && $(MAKE) $(MFLAGS) && touch libapr-1.la; fi
+	@if [ $(MAKELEVEL) = 0 -o -z "`echo "$(MAKEARGS)" | grep  "j"`" ] ; then touch src/include/switch.h; cd libs/apr && $(MAKE) $(MFLAGS) && touch libapr-1.la; fi
 
 libs/apr-util/libaprutil-1.la: libs/apr/libapr-1.la libs/apr-util libs/apr-util/.update
-	@if [ $(MAKELEVEL) = 0 ] ; then touch src/include/switch.h; cd libs/apr-util && $(MAKE) $(MFLAGS) && touch libaprutil-1.la; fi
+	@if [ $(MAKELEVEL) = 0 -o -z "`echo "$(MAKEARGS)" | grep  "j"`" ] ; then touch src/include/switch.h; cd libs/apr-util && $(MAKE) $(MFLAGS) && touch libaprutil-1.la; fi
 
 libs/speex/libspeex/libspeex.la:
 	@echo 
 
 libs/speex/libspeex/libspeexdsp.la: libs/speex/.update
 	touch src/include/switch.h
-	@if [ $(MAKELEVEL) = 0 ] ; then cd libs/speex && $(MAKE) $(MFLAGS); fi
+	@if [ $(MAKELEVEL) = 0 -o -z "`echo "$(MAKEARGS)" | grep  "j"`" ] ; then cd libs/speex && $(MAKE) $(MFLAGS); fi
 	@$(TOUCH_TARGET)
 
 libs/sqlite/libsqlite3.la: libs/sqlite libs/sqlite/Makefile libs/sqlite/.update
