@@ -68,7 +68,7 @@ SU_DLL void *su_home_new(isize_t size)
 #if (defined(HAVE_MEMLEAK_LOG) && (HAVE_MEMLEAK_LOG != 1))
 
 int _su_home_mutex_lock(su_home_t *home, const char *file, unsigned int line, const char *function);
-int _su_home_mutex_lock(su_home_t *home, const char *file, unsigned int line, const char *function);
+int _su_home_mutex_unlock(su_home_t *home, const char *file, unsigned int line, const char *function);
 
 #define su_home_mutex_lock(home) \
   _su_home_mutex_lock((home), __FILE__, __LINE__, __func__)
