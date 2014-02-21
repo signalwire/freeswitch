@@ -15,6 +15,8 @@ m4_include([M4/lrintf.m4])
 m4_include([M4/clang.m4])
 m4_include([M4/really_gcc.m4])
 m4_include([M4/stack_protect.m4])
+m4_include([M4/clip_mode.m4])
+m4_include([M4/add_cflags.m4])
 
 dnl Internal subroutine of AC_SYS_EXTRA_LARGEFILE.
 dnl AC_SYS_EXTRA_LARGEFILE_FLAGS(FLAGSNAME)
