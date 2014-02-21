@@ -311,7 +311,7 @@ issize_t sip_alert_info_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
  * {
  *   sip_common_t       rplyto_common[1]; // Common fragment info
 
- *   sip_error_t       *rplyto_next;	 // Dummy link to next header
+ *   sip_reply_to_t       *rplyto_next;	 // Dummy link to next header
  *   char const        *rplyto_display;	 // Display name
  *   url_t              rplyto_url[1];	 // Return URI
  *   msg_param_t const *rplyto_params;	 // List of optional parameters
