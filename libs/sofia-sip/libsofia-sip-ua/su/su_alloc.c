@@ -238,7 +238,7 @@ enum {
 };
 
 #define ALIGNMENT (8)
-#define ALIGN(n) (size_t)(((n) + (ALIGNMENT - 1)) & (size_t)~(ALIGNMENT - 1))
+#define _ALIGN(n) (size_t)(((n) + (ALIGNMENT - 1)) & (size_t)~(ALIGNMENT - 1))
 #define SIZEBITS (sizeof (unsigned) * 8 - 1)
 
 typedef struct {
@@ -478,7 +478,7 @@ void *sub_alloc(su_home_t *home,
       sub->sub_preload && size <= sub->sub_prsize) {
     /* Use preloaded memory */
     size_t prused = sub->sub_prused + size + MEMCHECK_EXTRA;
-    prused = ALIGN(prused);
+    prused = _ALIGN(prused);
     if (prused <= sub->sub_prsize) {
       preload = (char *)sub->sub_preload + sub->sub_prused;
       sub->sub_prused = (unsigned)prused;
@@ -1313,7 +1313,7 @@ void su_home_preload(su_home_t *home, isize_t n, isize_t isize)
     size_t size;
     void *preload;
 
-    size = n * ALIGN(isize);
+    size = n * _ALIGN(isize);
     if (size > 65535)		/* We have 16 bits... */
       size = 65535 & (ALIGNMENT - 1);
 
@@ -1334,13 +1334,13 @@ su_home_t *su_home_auto(void *area, isize_t size)
 {
   su_home_t *home;
   su_block_t *sub;
-  size_t homesize = ALIGN(sizeof *home);
-  size_t subsize = ALIGN(offsetof(su_block_t, sub_nodes[SUB_N_AUTO]));
+  size_t homesize = _ALIGN(sizeof *home);
+  size_t subsize = _ALIGN(offsetof(su_block_t, sub_nodes[SUB_N_AUTO]));
   size_t prepsize;
 
   char *p = area;
 
-  prepsize = homesize + subsize + (ALIGN((intptr_t)p) - (intptr_t)p);
+  prepsize = homesize + subsize + (_ALIGN((intptr_t)p) - (intptr_t)p);
 
   if (area == NULL || size < prepsize)
     return NULL;
@@ -1443,11 +1443,11 @@ void *su_realloc(su_home_t *home, void *data, isize_t size)
 
   p = (char *)data - home->suh_blocks->sub_preload;
   p += sua->sua_size + MEMCHECK_EXTRA;
-  p = ALIGN(p);
+  p = _ALIGN(p);
 
   if (p == sub->sub_prused) {
     size_t p2 = (char *)data - sub->sub_preload + size + MEMCHECK_EXTRA;
-    p2 = ALIGN(p2);
+    p2 = _ALIGN(p2);
     if (p2 <= sub->sub_prsize) {
       /* Extend/reduce existing preload */
       if (sub->sub_stats) {
@@ -1840,7 +1840,7 @@ void su_home_stats_alloc(su_block_t *sub, void *p, void *preload,
 {
   su_home_stat_t *hs = sub->sub_stats;
 
-  size_t rsize = ALIGN(size);
+  size_t rsize = _ALIGN(size);
 
   hs->hs_rehash += (sub->sub_n != hs->hs_blocksize);
   hs->hs_blocksize = sub->sub_n;
@@ -1869,7 +1869,7 @@ void su_home_stats_free(su_block_t *sub, void *p, void *preload,
 {
   su_home_stat_t *hs = sub->sub_stats;
 
-  size_t rsize = ALIGN(size);
+  size_t rsize = _ALIGN(size);
 
   if (preload) {
     hs->hs_frees.hsf_preload++;
