@@ -967,7 +967,7 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 	int err = WSAStartup(wVersionRequested, &wsaData);
 	if (err != 0) {
 		snprintf(handle->err, sizeof(handle->err), "WSAStartup Error");
-		return ESL_FAIL;
+		goto fail;
 	}
 
 #endif
@@ -1009,7 +1009,7 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 	
 	if (handle->sock == ESL_SOCK_INVALID) {
 		snprintf(handle->err, sizeof(handle->err), "Socket Error");
-		return ESL_FAIL;
+		goto fail;
 	}
 
 	if (timeout) {
@@ -1110,7 +1110,6 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
  fail:
 
 	handle->connected = 0;
-	esl_disconnect(handle);
 
 	return ESL_FAIL;
 }
