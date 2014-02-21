@@ -515,6 +515,11 @@ case "$host" in
         APR_ADDTO(ESL_LDFLAGS, -lnsl -lsocket)
 	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lcrypt -lrt -lsendfile -lresolv -lsocket -lnsl -luuid])
     ;;
+    *openbsd*)
+        APR_ADDTO(CFLAGS, -I/usr/local/include)
+        APR_ADDTO(LDFLAGS, -L/usr/local/lib)
+        APR_ADDTO(SWITCH_AM_CFLAGS, -I/usr/local/include)
+    ;;
     *bsd*)
         APR_ADDTO(CFLAGS, -I/usr/local/include)
         APR_ADDTO(LDFLAGS, -L/usr/local/lib)
