@@ -21,7 +21,7 @@
 #include	<stdarg.h>
 #include	<string.h>
 
-#ifndef MSC_VER
+#ifndef _MSC_VER
 #include	<unistd.h>
 #endif
 #include	<ctype.h>
