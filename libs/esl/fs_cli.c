@@ -1159,7 +1159,7 @@ static unsigned char esl_console_complete(const char *buffer, const char *cursor
 	esl_safe_free(dup);
 	return ret;
 }
-#endif
+#endif /* if defined(HAVE_EDITLINE) || defined(WIN32) */
 
 #ifdef HAVE_EDITLINE
 static unsigned char complete(EditLine *el, int ch)
