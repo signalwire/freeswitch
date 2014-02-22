@@ -24,6 +24,8 @@
 #pragma warning (disable : 4244)
 #pragma warning (disable : 4761)
 
+#include <malloc.h>
+
 /* Set to 1 if the compile is GNU GCC. */
 /* #undef COMPILER_IS_GCC */
 

@@ -169,12 +169,11 @@ alac_close	(SF_PRIVATE *psf)
 		SF_CHUNK_INFO chunk_info ;
 		sf_count_t readcount ;
 		uint32_t pakt_size = 0, saved_partial_block_frames ;
-		uint8_t *kuki_data = (uint8_t *)malloc (plac->kuki_size);
-
-		if (!kuki_data)
-		{
-			return SFE_MALLOC_FAILED ;
-		}
+#ifndef _MSC_VER
+		uint8_t *kuki_data [plac->kuki_size];
+#else
+		uint8_t *kuki_data = (uint8_t *)_alloca(plac->kuki_size);
+#endif
 
 		plac->final_write_block = 1 ;
 		saved_partial_block_frames = plac->partial_block_frames ;
@@ -428,12 +427,11 @@ static int
 alac_encode_block (SF_PRIVATE * psf, ALAC_PRIVATE *plac)
 {	ALAC_ENCODER *penc = &plac->encoder ;
 	uint32_t num_bytes = 0 ;
-	uint8_t* byte_buffer = (uint8_t*)malloc (psf->sf.channels * ALAC_BYTE_BUFFER_SIZE) ;
-
-	if (!byte_buffer)
-	{
-		return SFE_MALLOC_FAILED ;
-	}
+#ifndef _MSC_VER
+	uint8_t byte_buffer [psf->sf.channels * ALAC_BYTE_BUFFER_SIZE] ;
+#else
+	uint8_t* byte_buffer = (uint8_t*)_alloca (psf->sf.channels * ALAC_BYTE_BUFFER_SIZE) ;
+#endif
 
 	alac_encode (penc, plac->channels, plac->partial_block_frames, plac->buffer, byte_buffer, &num_bytes) ;
 
