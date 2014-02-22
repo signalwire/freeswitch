@@ -213,3 +213,14 @@ ipch/
 /src/mod/directories/mod_ldap/Win32/Release MS-LDAP/mod_ldap.*.log
 /src/mod/languages/mod_managed/Win32/Debug_CLR/mod_managed.*.log
 /src/mod/languages/mod_managed/Win32/Release_CLR/mod_managed.*.log
+
+libs/libsndfile/Scripts/build-test-tarball.mk
+libs/libsndfile/doc/libsndfile.css
+libs/libsndfile/echo-install-dirs
+libs/libsndfile/src/ALAC/.dirstamp
+libs/libsndfile/src/G72x/.dirstamp
+libs/libsndfile/src/GSM610/.dirstamp
+libs/libsndfile/src/Symbols.gnu-binutils
+libs/libsndfile/src/Symbols.static
+libs/libsndfile/src/version-metadata.rc
+libs/libsndfile/tests/pedantic-header-test.sh
