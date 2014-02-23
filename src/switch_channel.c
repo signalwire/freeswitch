@@ -278,11 +278,9 @@ SWITCH_DECLARE(void) switch_channel_perform_set_callstate(switch_channel_t *chan
 					  "(%s) Callstate Change %s -> %s\n", channel->name, 
 					  switch_channel_callstate2str(o_callstate), switch_channel_callstate2str(callstate));
 
-	switch_channel_check_device_state(channel, channel->callstate);
-
-	if (callstate == CCS_HANGUP) {
-		process_device_hup(channel);
-	}	
+	if (callstate != CCS_HANGUP) {
+		switch_channel_check_device_state(channel, channel->callstate);
+	}
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_CALLSTATE) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Original-Channel-Call-State", switch_channel_callstate2str(o_callstate));
@@ -4847,6 +4845,14 @@ SWITCH_DECLARE(void) switch_channel_clear_device_record(switch_channel_t *channe
 	switch_mutex_unlock(globals.device_mutex);
 	
 	
+}
+
+SWITCH_DECLARE(void) switch_channel_process_device_hangup(switch_channel_t *channel) 
+{
+
+	switch_channel_check_device_state(channel, channel->callstate);
+	process_device_hup(channel);
+
 }
 
 static void process_device_hup(switch_channel_t *channel)

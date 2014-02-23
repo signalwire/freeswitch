@@ -727,6 +727,7 @@ SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *ses
 	//switch_channel_presence(session->channel, "unknown", switch_channel_cause2str(cause), NULL);
 
 	switch_channel_set_timestamps(session->channel);
+	switch_channel_set_callstate(session->channel, CCS_HANGUP);
 
 	STATE_MACRO(hangup, "HANGUP");
 
@@ -741,7 +742,8 @@ SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *ses
 		api_hook(session, hook_var, use_session);
 	}
 
-	switch_channel_set_callstate(session->channel, CCS_HANGUP);
+	switch_channel_process_device_hangup(session->channel);
+	
 	switch_set_flag(session, SSF_HANGUP);
 
 }
