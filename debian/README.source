@@ -10,47 +10,6 @@ mostly in the file debian/bootstrap.sh.  This bootstrap needs to run
 before any other step of the packaging, though we do try to
 autogenerate it when possible.
 
-The debian/control-modules file
--------------------------------
-
-The build dependencies, runtime dependencies, and other details about
-modules can be configured in the debian/control-modules file.  Even
-though this file looks a bit like a debian control file and has a
-similar format, we are parsing this file ourselves so the format is a
-bit more restricted.
-
-debian/control-modules currently supports the following fields:
-
-    # lines that begin with the hash character are comments
-    #
-    # every block must start with a Module field
-    Module: <category>/<module_name>
-    Description: <short description>
-     <long description> # empty lines with "."s are not yet supported
-    Build-Depends: <build deps for this module>
-    Depends: <runtime deps for this module>
-    Recommends: <recommended packages>
-    Suggests: <suggested packages>
-    Distro-Conflicts: <distributions on which this module should not be built> # not yet implemented
-
-During bootstrap we build a file control-modules.gen.  If the
-control-modules file is properly formatted, this generated file should
-be identical.  This is a sanity check mechanism for our parsing, as
-well as a way to automatically reorganize the file.
-
-The debian/modules.conf file
-----------------------------
-
-If the file debian/modules.conf is present, we read that file and only
-build and package the files listed there.  Otherwise, we build every
-module except the ones that either should not be packaged, or for
-which we don't yet have good packaging.
-
-The format of debian/modules.conf is:
-
-    ## comments should start with two hash characters
-    <category>/<module_name>
-
 Getting the FreeSWITCH sources
 ------------------------------
 
@@ -87,6 +46,19 @@ dependencies are required to build FS.  Build as follows:
     mk-build-deps -i
     make -f debian/rules .stamp-configure && make
 
+The debian/modules.conf file
+----------------------------
+
+If the file debian/modules.conf is present, we read that file and only
+build and package the files listed there.  Otherwise, we build every
+module except the ones that either should not be packaged, or for
+which we don't yet have good packaging.
+
+The format of debian/modules.conf is:
+
+    ## comments should start with two hash characters
+    <category>/<module_name>
+
 Building the Debian packaging
 -----------------------------
 
@@ -122,6 +94,34 @@ The debian/util.sh has many options.  You can see the documentation
 for these options by running:
 
     ./debian/util.sh -h
+
+The debian/control-modules file
+-------------------------------
+
+The build dependencies, runtime dependencies, and other details about
+modules can be configured in the debian/control-modules file.  Even
+though this file looks a bit like a debian control file and has a
+similar format, we are parsing this file ourselves so the format is a
+bit more restricted.
+
+debian/control-modules currently supports the following fields:
+
+    # lines that begin with the hash character are comments
+    #
+    # every block must start with a Module field
+    Module: <category>/<module_name>
+    Description: <short description>
+     <long description> # empty lines with "."s are not yet supported
+    Build-Depends: <build deps for this module>
+    Depends: <runtime deps for this module>
+    Recommends: <recommended packages>
+    Suggests: <suggested packages>
+    Distro-Conflicts: <distributions on which this module should not be built> # not yet implemented
+
+During bootstrap we build a file control-modules.gen.  If the
+control-modules file is properly formatted, this generated file should
+be identical.  This is a sanity check mechanism for our parsing, as
+well as a way to automatically reorganize the file.
 
 Building Debian packages without util.sh
 ----------------------------------------
