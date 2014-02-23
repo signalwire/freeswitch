@@ -528,6 +528,11 @@ case "$host" in
         APR_ADDTO(LDFLAGS, -L/usr/local/lib)
         APR_ADDTO(SWITCH_AM_CFLAGS, -I/usr/local/include)
     ;;
+    *netbsd*)
+        APR_ADDTO(CFLAGS, -I/usr/pkg/include)
+        APR_ADDTO(LDFLAGS, -L/usr/pkg/lib)
+        APR_ADDTO(SWITCH_AM_CFLAGS, -I/usr/pkg/include)
+    ;;
     *bsd*)
         APR_ADDTO(CFLAGS, -I/usr/local/include)
         APR_ADDTO(LDFLAGS, -L/usr/local/lib)
