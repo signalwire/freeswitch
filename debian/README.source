@@ -4,10 +4,6 @@ FreeSWITCH for Debian
 Introduction
 ------------
 
-You may be reading this because you're wondering where all the files
-are in debian/, such as control.  You may also be here looking for the
-sound or music packages.  Read on.
-
 Because FreeSWITCH has so many modules it was necessary to create a
 system to autogenerate the majority of the packaging.  This in done
 mostly in the file debian/bootstrap.sh.  This bootstrap needs to run
