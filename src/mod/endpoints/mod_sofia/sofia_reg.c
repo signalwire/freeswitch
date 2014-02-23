@@ -1961,8 +1961,11 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				}
 			} else {
 				const char *username = "unknown";
+				const char *realm = "unknown";
+
 				if (auth_params) {
 					username = switch_event_get_header(auth_params, "sip_auth_username");
+					realm = switch_event_get_header(auth_params, "sip_auth_realm");
 				}
 
 				switch_core_del_registration(to_user, reg_host, call_id);
@@ -1975,6 +1978,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "contact", contact_str);
 					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "call-id", call_id);
 					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", rpid);
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "realm", realm);
 					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
 				}
 			}
