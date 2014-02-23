@@ -1,5 +1,5 @@
 FreeSWITCH for Debian
----------------------
+=====================
 
 This debian packaging breaks out every module of freeswitch into a
 separate package, so be sure to verify that you are actually
@@ -18,9 +18,9 @@ to /etc/freeswitch.
 If you just want to get a working demo system up quickly, I'd
 recommend doing the following:
 
-  aptitude install -y -r -o APT::Install-Suggests=true freeswitch-meta-vanilla
-  cp -a /usr/share/freeswitch/conf/vanilla /etc/freeswitch
-  /etc/init.d/freeswitch start
-  fs_cli
+    aptitude install -y -r -o APT::Install-Suggests=true freeswitch-meta-vanilla
+    cp -a /usr/share/freeswitch/conf/vanilla /etc/freeswitch
+    /etc/init.d/freeswitch start
+    fs_cli
 
- -- Travis Cross <tc@traviscross.com>, Wed,  3 Oct 2012 02:15:32 +0000
+ -- Travis Cross <tc@traviscross.com>, Sun, 23 Feb 2014 17:10:49 +0000
