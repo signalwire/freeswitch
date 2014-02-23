@@ -29080,7 +29080,7 @@ public class switch_device_node_t : IDisposable {
     } 
   }
 
-  public switch_event event {
+  public switch_event _event {
     set {
       freeswitchPINVOKE.switch_device_node_t_event_set(swigCPtr, switch_event.getCPtr(value));
     } 
@@ -31516,7 +31516,7 @@ public class switch_file_handle : IDisposable {
     } 
   }
 
-  public switch_event params {
+  public switch_event _params {
     set {
       freeswitchPINVOKE.switch_file_handle_params_set(swigCPtr, switch_event.getCPtr(value));
     } 
