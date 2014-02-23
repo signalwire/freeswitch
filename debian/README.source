@@ -43,6 +43,7 @@ dependencies are required to build FS.  Build as follows:
     aptitude update && aptitude install -y devscripts equivs build-essential
     my_release=$(awk '/deb .*\/debian/{print $3; exit}' /etc/apt/sources.list)
     (cd debian && ./bootstrap.sh -c $my_release)
+    sed -i debian/control -e '/^#/d' && sed -i debian/control -e '/^$/N;/^\n$/D'
     mk-build-deps -i
     make -f debian/rules .stamp-configure && make
 
@@ -168,4 +169,4 @@ freeswitch-music-*:
     git clone https://github.com/traviscross/freeswitch-sounds.git
     cd freeswitch-sounds && cat debian/README.source
 
- -- Travis Cross <tc@traviscross.com>, Sun, 23 Feb 2014 17:44:32 +0000
+ -- Travis Cross <tc@traviscross.com>, Sun, 23 Feb 2014 18:04:31 +0000
