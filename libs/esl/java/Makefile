@@ -15,7 +15,7 @@ libesljni.so: esl_wrap.o
 
 esl.jar: libesljni.so
 	mkdir -p classes
-	javac -sourcepath org -d classes $(CLASSES)
+	javac -sourcepath org -d classes -source 6 -target 6 $(CLASSES)
 	jar cf esl.jar -C classes org
 
 clean:
