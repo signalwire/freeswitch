@@ -137,11 +137,9 @@ if test "$enable_kernel_linux" = "yes"; then
 fi
 AC_MSG_RESULT($enable_kernel_linux)
 
-if test "$cross_compiling" != yes; then
-   dnl Check for /dev/urandom
-   AC_CHECK_FILE(/dev/urandom, DEV_URANDOM=/dev/urandom,
-      [AC_CHECK_FILE(/dev/random, DEV_URANDOM=/dev/random)])
-fi
+dnl Check for /dev/urandom
+AC_CHECK_FILE(/dev/urandom, DEV_URANDOM=/dev/urandom,
+   [AC_CHECK_FILE(/dev/random, DEV_URANDOM=/dev/random)])
 
 dnl Checks for header files.
 AC_HEADER_STDC
