@@ -16,7 +16,7 @@ OS_SPECIFIC_LINKS = @OS_SPECIFIC_LINKS@
 SYMBOL_FILES = Symbols.gnu-binutils Symbols.darwin libsndfile-1.def Symbols.os2 Symbols.static
 
 EXTRA_DIST = sndfile.h.in config.h.in test_endswap.tpl test_endswap.def \
-			$(SYMBOL_FILES) create_symbols_file.py binheader_writef_check.py \
+			create_symbols_file.py binheader_writef_check.py \
 			GSM610/README GSM610/COPYRIGHT GSM610/ChangeLog \
 			G72x/README G72x/README.original G72x/ChangeLog \
 			make-static-lib-hidden-privates.sh
@@ -87,7 +87,7 @@ ALAC_libalac_la_SOURCES = ALAC/ALACAudioTypes.h ALAC/ALACBitUtilities.h \
 #test_endswap.c: test_endswap.def test_endswap.tpl
 #	cd $(srcdir) && autogen --writable test_endswap.def && cd $(abs_builddir)
 
-genfiles : $(SYMBOL_FILES)
+genfiles : #$(SYMBOL_FILES)
 
 check :
 	@if [ -x /usr/bin/python ]; then $(srcdir)/binheader_writef_check.py $(srcdir)/*.c ; fi
@@ -118,7 +118,7 @@ Symbols.static: create_symbols_file.py
 	python $(srcdir)/create_symbols_file.py static $(VERSION) > $@
 
 # Fake dependancy to force the creation of these files.
-sndfile.o : $(SYMBOL_FILES)
+#sndfile.o : $(SYMBOL_FILES)
 
 #======================================================================
 # Building windows resource files (if needed).
