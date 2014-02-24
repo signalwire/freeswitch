@@ -77,7 +77,7 @@ typedef struct {
   unsigned m:1;	/* marker bit             */
   unsigned seq:16;		/* sequence number        */
   unsigned ts:32;		/* timestamp              */
-  unsigned ssrc:32;	/* synchronization source */
+  uint32_t ssrc;	/* synchronization source */
 } srtp_hdr_t;
 
 #else /*  BIG_ENDIAN */
@@ -91,7 +91,7 @@ typedef struct {
   unsigned pt:7;	/* payload type           */
   unsigned seq:16;		/* sequence number        */
   unsigned ts:32;		/* timestamp              */
-  unsigned ssrc:32;	/* synchronization source */
+  uint32_t ssrc;	/* synchronization source */
 } srtp_hdr_t;
 
 #endif
@@ -117,7 +117,7 @@ typedef struct {
   unsigned version:2;	/* protocol version       */
   unsigned pt:8;		/* payload type           */
   unsigned len:16;			/* length                 */
-  unsigned ssrc:32;	       	/* synchronization source */
+  uint32_t ssrc;	       	/* synchronization source */
 } srtcp_hdr_t;
 
 typedef struct {
@@ -220,6 +220,8 @@ typedef struct srtp_stream_ctx_t {
   direction_t direction;
   int        allow_repeat_tx;
   ekt_stream_t ekt; 
+  uint8_t    salt[SRTP_AEAD_SALT_LEN];   /* used with GCM mode for SRTP */
+  uint8_t    c_salt[SRTP_AEAD_SALT_LEN]; /* used with GCM mode for SRTCP */
   struct srtp_stream_ctx_t *next;   /* linked list of streams */
 } srtp_stream_ctx_t;
 

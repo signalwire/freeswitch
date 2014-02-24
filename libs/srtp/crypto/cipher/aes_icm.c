@@ -9,7 +9,7 @@
 
 /*
  *	
- * Copyright (c) 2001-2006, Cisco Systems, Inc.
+ * Copyright (c) 2001-2006,2013 Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -272,7 +272,7 @@ aes_icm_set_octet(aes_icm_ctx_t *c,
  */
 
 err_status_t
-aes_icm_set_iv(aes_icm_ctx_t *c, void *iv) {
+aes_icm_set_iv(aes_icm_ctx_t *c, void *iv, int direction) {
   v128_t *nonce = (v128_t *) iv;
 
   debug_print(mod_aes_icm, 
@@ -503,6 +503,8 @@ cipher_test_case_t aes_icm_test_case_0 = {
   aes_icm_test_case_0_plaintext,         /* plaintext                */
   32,                                    /* octets in ciphertext     */
   aes_icm_test_case_0_ciphertext,        /* ciphertext               */
+  0,
+  NULL,
   NULL                                   /* pointer to next testcase */
 };
 
@@ -542,6 +544,8 @@ cipher_test_case_t aes_icm_test_case_1 = {
   aes_icm_test_case_1_plaintext,         /* plaintext                */
   32,                                    /* octets in ciphertext     */
   aes_icm_test_case_1_ciphertext,        /* ciphertext               */
+  0,
+  NULL,
   &aes_icm_test_case_0                   /* pointer to next testcase */
 };
 
@@ -555,9 +559,11 @@ cipher_type_t aes_icm = {
   (cipher_alloc_func_t)          aes_icm_alloc,
   (cipher_dealloc_func_t)        aes_icm_dealloc,  
   (cipher_init_func_t)           aes_icm_context_init,
+  (cipher_set_aad_func_t)        0,
   (cipher_encrypt_func_t)        aes_icm_encrypt,
   (cipher_decrypt_func_t)        aes_icm_encrypt,
   (cipher_set_iv_func_t)         aes_icm_set_iv,
+  (cipher_get_tag_func_t)        0,
   (char *)                       aes_icm_description,
   (int)                          0,   /* instance count */
   (cipher_test_case_t *)        &aes_icm_test_case_1,

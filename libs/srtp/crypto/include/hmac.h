@@ -9,7 +9,7 @@
  */
 /*
  *	
- * Copyright (c) 2001-2006, Cisco Systems, Inc.
+ * Copyright (c) 2001-2006,2013, Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -53,6 +53,10 @@ typedef struct {
   uint8_t    opad[64];
   sha1_ctx_t ctx;
   sha1_ctx_t init_ctx;
+#ifdef OPENSSL
+  int ctx_initialized;
+  int init_ctx_initialized;
+#endif
 } hmac_ctx_t;
 
 err_status_t

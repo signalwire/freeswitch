@@ -92,6 +92,12 @@ typedef union {
   uint64_t v64[2];
 } v128_t;
 
+typedef union {
+    uint8_t v8[32];
+    uint16_t v16[16];
+    uint32_t v32[8];
+    uint64_t v64[4];
+} v256_t;
 
 
 /* some useful and simple math functions */

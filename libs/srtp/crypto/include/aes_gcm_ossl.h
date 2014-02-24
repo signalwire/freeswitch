@@ -1,14 +1,15 @@
 /*
- * ctr_prng.c 
+ * aes_gcm_ossl.h
  *
- * counter mode based pseudorandom source
+ * Header for AES Galois Counter Mode.
  *
- * David A. McGrew
+ * John A. Foley
  * Cisco Systems, Inc.
+ *
  */
 /*
  *	
- * Copyright(c) 2001-2006 Cisco Systems, Inc.
+ * Copyright (c) 2013, Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -42,71 +43,20 @@
  *
  */
 
+#ifndef AES_GCM_OSSL_H
+#define AES_GCM_OSSL_H
 
-#include "prng.h"
+#include "cipher.h"
+#include <openssl/evp.h>
+#include <openssl/aes.h>
 
-/* single, global prng structure */
+typedef struct {
+  v256_t   key;
+  int      key_size;
+  int      tag_len;
+  EVP_CIPHER_CTX ctx;
+  cipher_direction_t dir;
+} aes_gcm_ctx_t;
 
-ctr_prng_t ctr_prng;
+#endif /* AES_GCM_OSSL_H */
 
-err_status_t
-ctr_prng_init(rand_source_func_t random_source) {
-  uint8_t tmp_key[32];
-  err_status_t status;
-
-  /* initialize output count to zero */
-  ctr_prng.octet_count = 0;
-
-  /* set random source */
-  ctr_prng.rand = random_source;
-  
-  /* initialize secret key from random source */
-  status = random_source(tmp_key, 32);
-  if (status) 
-    return status;
-
-  /* initialize aes ctr context with random key */
-#ifdef OPENSSL
-  status = aes_icm_openssl_context_init(&ctr_prng.state, tmp_key, 30);
-#else
-  status = aes_icm_context_init(&ctr_prng.state, tmp_key, 30);
-#endif
-  if (status) 
-    return status;
-
-  return err_status_ok;
-}
-
-err_status_t
-ctr_prng_get_octet_string(void *dest, uint32_t len) {
-  err_status_t status;
-
-  /* 
-   * if we need to re-initialize the prng, do so now 
-   *
-   * avoid 32-bit overflows by subtracting instead of adding
-   */
-  if (ctr_prng.octet_count > MAX_PRNG_OUT_LEN - len) {
-    status = ctr_prng_init(ctr_prng.rand);    
-    if (status)
-      return status;
-  }
-  ctr_prng.octet_count += len;
-
-  /*
-   * write prng output 
-   */
-  status = aes_icm_output(&ctr_prng.state, (uint8_t*)dest, len);
-  if (status)
-    return status;
-  
-  return err_status_ok;
-}
-
-err_status_t
-ctr_prng_deinit(void) {
-
-  /* nothing */
-  
-  return err_status_ok;  
-}

@@ -80,6 +80,7 @@ main(void) {
   printf("using stdout for error reporting\t(ERR_REPORTING_STDOUT == 1)\n");
 #endif
 
+#ifndef OPENSSL
 #ifdef DEV_URANDOM
   str = DEV_URANDOM;
 #else
@@ -90,6 +91,7 @@ main(void) {
   if (strcmp("", str) == 0) {
     err_count++;
   }
+#endif
   
   if (err_count)
     printf("warning: configuration is probably in error "

@@ -8,10 +8,6 @@ RTPW=./rtpw
 DEST_PORT=9999
 DURATION=3
 
-key=2b2edc5034f61a72345ca5986d7bfd0189aa6dc2ecab32fd9af74df6dfc6
-
-ARGS="-k $key -a -e 128"
-
 # First, we run "killall" to get rid of all existing rtpw processes.
 # This step also enables this script to clean up after itself; if this
 # script is interrupted after the rtpw processes are started but before
@@ -22,9 +18,10 @@ killall rtpw 2>/dev/null
 
 if test -x $RTPW; then
 
-echo  $0 ": starting rtpw receiver process... "
+GCMARGS128="-k 012345678901234567890123456789012345678901234567890123456789 -g -e 128"
+echo  $0 ": starting GCM mode 128-bit rtpw receiver process... "
 
-$RTPW $* $ARGS -r 0.0.0.0 $DEST_PORT  &
+exec $RTPW $* $GCMARGS128 -r 127.0.0.1 $DEST_PORT &
 
 receiver_pid=$!
 
@@ -41,9 +38,9 @@ if [ $retval != 0 ]; then
     exit 254
 fi
 
-echo  $0 ": starting rtpw sender process..."
+echo  $0 ": starting GCM 128-bit rtpw sender process..."
 
-$RTPW $* $ARGS -s 127.0.0.1 $DEST_PORT  &
+exec $RTPW $* $GCMARGS128 -s 127.0.0.1 $DEST_PORT  &
 
 sender_pid=$!
 
@@ -63,17 +60,12 @@ sleep $DURATION
 kill $receiver_pid
 kill $sender_pid
 
-wait $receiver_pid
-wait $sender_pid
 
 
-key=033490ba9e82994fc21013395739038992b2edc5034f61a72345ca598d7bfd0189aa6dc2ecab32fd9af74df6dfc6
+GCMARGS256="-k 01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901 -g -e 256"
+echo  $0 ": starting GCM mode 256-bit rtpw receiver process... "
 
-ARGS="-k $key -a -e 256"
-
-echo  $0 ": starting rtpw receiver process... "
-
-$RTPW $* $ARGS -r 0.0.0.0 $DEST_PORT  &
+exec $RTPW $* $GCMARGS256 -r 127.0.0.1 $DEST_PORT &
 
 receiver_pid=$!
 
@@ -90,9 +82,9 @@ if [ $retval != 0 ]; then
     exit 254
 fi
 
-echo  $0 ": starting rtpw sender process..."
+echo  $0 ": starting GCM 256-bit rtpw sender process..."
 
-$RTPW $* $ARGS -s 127.0.0.1 $DEST_PORT  &
+exec $RTPW $* $GCMARGS256 -s 127.0.0.1 $DEST_PORT  &
 
 sender_pid=$!
 
@@ -112,8 +104,6 @@ sleep $DURATION
 kill $receiver_pid
 kill $sender_pid
 
-wait $receiver_pid
-wait $sender_pid
 
 echo $0 ": done (test passed)"
 
