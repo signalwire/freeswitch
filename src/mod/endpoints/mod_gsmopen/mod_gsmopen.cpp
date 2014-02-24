@@ -296,9 +296,11 @@ static switch_status_t remove_interface(char *the_interface)
 	switch_assert(the_interface);
 	interface_id = atoi(the_interface);
 
-	if (interface_id > 0 || (interface_id == 0 && strcmp(the_interface, "0") == 0)) {
-		/* take a number as interface id */
-		tech_pvt = &globals.GSMOPEN_INTERFACES[interface_id];
+	if ((interface_id > 0 && interface_id < GSMOPEN_MAX_INTERFACES) || (interface_id == 0 && strcmp(the_interface, "0") == 0)) {
+		if (strlen(globals.GSMOPEN_INTERFACES[interface_id].name)) {
+			/* take a number as interface id */
+			tech_pvt = &globals.GSMOPEN_INTERFACES[interface_id];
+		}
 	} else {
 
 		for (interface_id = 0; interface_id < GSMOPEN_MAX_INTERFACES; interface_id++) {
@@ -389,7 +391,6 @@ static switch_status_t remove_interface(char *the_interface)
 	switch_mutex_unlock(globals.mutex);
 
 	DEBUGA_GSMOPEN("interface '%s' deleted successfully\n", GSMOPEN_P_LOG, the_interface);
-	globals.GSMOPEN_INTERFACES[interface_id].running = 1;
 
   end:
 	return SWITCH_STATUS_SUCCESS;
