@@ -652,13 +652,14 @@ pristine:
 	git clean -fdx
 	git reset --hard
 
-update-clean: clean libs/openzap/Makefile python-reconf lua-reconf spandsp-reconf
+update-clean: clean libs/openzap/Makefile python-reconf lua-reconf spandsp-reconf srtp-reconf
 	cd libs/sofia-sip && $(MAKE) clean
 	cd libs/openzap && $(MAKE) clean
 	cd libs/portaudio && $(MAKE) clean
 	cd libs/speex && $(MAKE) clean
 	cd libs/esl && $(MAKE) clean
 	cd libs/sqlite && $(MAKE) clean
+	cd libs/srtp && $(MAKE) clean
 
 swigall:
 	@echo reswigging all
@@ -687,6 +688,10 @@ pa-reconf:
 	cd libs/portaudio && $(MAKE) clean
 	cd libs/portaudio && sh ./configure.gnu
 	$(MAKE) mod_portaudio-clean
+
+srtp-reconf:
+	cd libs/srtp && $(MAKE) clean
+	cd libs/srtp && sh ./configure.gnu
 
 oz-reconf:
 	cd libs/openzap && $(MAKE) clean
