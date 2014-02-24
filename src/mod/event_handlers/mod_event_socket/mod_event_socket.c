@@ -127,6 +127,7 @@ static struct {
 	uint32_t acl_count;
 	uint32_t id;
 	int nat_map;
+	int stop_on_bind_error;
 } prefs;
 
 
@@ -2740,6 +2741,8 @@ static int config(void)
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", MAX_ACL);
 					}
+				} else if (!strcasecmp(var, "stop-on-bind-error")) {
+					prefs.stop_on_bind_error = switch_true(val) ? 1 : 0;
 				}
 			}
 		}
@@ -2819,6 +2822,10 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		break;
 	  sock_fail:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error! Could not listen on %s:%u\n", prefs.ip, prefs.port);
+		if (prefs.stop_on_bind_error) {
+			prefs.done = 1;
+			goto fail;
+		}
 		switch_yield(100000);
 	}
 
