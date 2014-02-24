@@ -253,11 +253,7 @@ typedef intptr_t switch_ssize_t;
 #endif
 
 #ifndef SWITCH_INT64_T_FMT
-#ifdef __sun
-#define SWITCH_INT64_T_FMT          "ld"
-#else
 #define SWITCH_INT64_T_FMT          (sizeof (long) == 8 ? "ld" : "lld")
-#endif
 #endif
 
 #ifndef SWITCH_UINT64_T_FMT
