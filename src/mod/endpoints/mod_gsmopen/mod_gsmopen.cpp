@@ -1681,7 +1681,7 @@ static switch_status_t load_config(int reload_type)
 		for (i = 0; i < GSMOPEN_MAX_INTERFACES; i++) {
 			if (strlen(globals.GSMOPEN_INTERFACES[i].name)) {
 				/* How many real intterfaces */
-				globals.real_interfaces = i + 1;
+				globals.real_interfaces++;
 
 				tech_pvt = &globals.GSMOPEN_INTERFACES[i];
 
@@ -2226,7 +2226,7 @@ SWITCH_STANDARD_API(gsm_function)
 
 		}
 		stream->write_function(stream, "\nTotal Interfaces: %d  IB Calls(Failed/Total): %u/%u  OB Calls(Failed/Total): %u/%u\n",
-							   globals.real_interfaces > 0 ? globals.real_interfaces - 1 : 0, ib_failed, ib, ob_failed, ob);
+							   globals.real_interfaces > 0 ? globals.real_interfaces : 0, ib_failed, ib, ob_failed, ob);
 
 	} else if (!strcasecmp(argv[0], "console")) {
 		int i;
