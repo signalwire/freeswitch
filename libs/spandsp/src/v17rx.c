@@ -1392,7 +1392,7 @@ SPAN_DECLARE(logging_state_t *) v17_rx_get_logging_state(v17_rx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, bool short_train)
+SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_train)
 {
     int i;
 

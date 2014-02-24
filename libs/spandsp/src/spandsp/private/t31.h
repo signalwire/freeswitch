@@ -140,7 +140,7 @@ typedef struct
 
     /*! \brief True if we are using ECM mode. This is used to select HDLC faking, necessary
                with clunky class 1 modems. */
-    bool ecm_mode;
+    int ecm_mode;
 
     /*! \brief Counter for trailing non-ECM bytes, used to flush out the far end's modem. */
     int non_ecm_trailer_bytes;
