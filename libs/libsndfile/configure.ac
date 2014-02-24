@@ -296,53 +296,53 @@ EXTERNAL_CFLAGS=""
 EXTERNAL_LIBS=""
 
 # Check for pkg-config outside the if statement.
-PKG_PROG_PKG_CONFIG
-m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR], AC_SUBST([pkgconfigdir], ${libdir}/pkgconfig))
+#PKG_PROG_PKG_CONFIG
+#m4_ifdef([PKG_INSTALLDIR], [PKG_INSTALLDIR], AC_SUBST([pkgconfigdir], ${libdir}/pkgconfig))
 
-if test -n "$PKG_CONFIG" ; then
-	if test x$enable_external_libs = xno ; then
-		AC_MSG_WARN([[*** External libs (FLAC, Ogg, Vorbis) disabled. ***]])
-	else
-		PKG_CHECK_MOD_VERSION([FLAC], [flac >= 1.2.1], [ac_cv_flac=yes], [ac_cv_flac=no])
+#if test -n "$PKG_CONFIG" ; then
+#	if test x$enable_external_libs = xno ; then
+#		AC_MSG_WARN([[*** External libs (FLAC, Ogg, Vorbis) disabled. ***]])
+#	else
+#		PKG_CHECK_MOD_VERSION([FLAC], [flac >= 1.2.1], [ac_cv_flac=yes], [ac_cv_flac=no])
 
 		# Make sure the FLAC_CFLAGS value is sane.
-		FLAC_CFLAGS=`echo $FLAC_CFLAGS | $SED "s|include/FLAC|include|"`
+#		FLAC_CFLAGS=`echo $FLAC_CFLAGS | $SED "s|include/FLAC|include|"`
 
-		PKG_CHECK_MOD_VERSION([OGG], [ogg >= 1.1.3], [ac_cv_ogg=yes], [ac_cv_ogg=no])
+#		PKG_CHECK_MOD_VERSION([OGG], [ogg >= 1.1.3], [ac_cv_ogg=yes], [ac_cv_ogg=no])
 
-		if test x$enable_experimental = xyes ; then
-			PKG_CHECK_MOD_VERSION([SPEEX], [speex >= 1.2], [ac_cv_speex=yes], [ac_cv_speex=no])
-		else
-			SPEEX_CFLAGS=""
-			SPEEX_LIBS=""
-			fi
+#		if test x$enable_experimental = xyes ; then
+#			PKG_CHECK_MOD_VERSION([SPEEX], [speex >= 1.2], [ac_cv_speex=yes], [ac_cv_speex=no])
+#		else
+#			SPEEX_CFLAGS=""
+#			SPEEX_LIBS=""
+#			fi
 
 		# Vorbis versions earlier than 1.2.3 have bugs that cause the libsndfile
 		# test suite to fail on MIPS, PowerPC and others.
 		# See: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=549899
-		PKG_CHECK_MOD_VERSION([VORBIS], [vorbis >= 1.2.3], [ac_cv_vorbis=yes], [ac_cv_vorbis=no])
-		PKG_CHECK_MOD_VERSION([VORBISENC], [vorbisenc >= 1.2.3], [ac_cv_vorbisenc=yes], [ac_cv_vorbisenc=no])
-		enable_external_libs=yes
-		fi
+#		PKG_CHECK_MOD_VERSION([VORBIS], [vorbis >= 1.2.3], [ac_cv_vorbis=yes], [ac_cv_vorbis=no])
+#		PKG_CHECK_MOD_VERSION([VORBISENC], [vorbisenc >= 1.2.3], [ac_cv_vorbisenc=yes], [ac_cv_vorbisenc=no])
+#		enable_external_libs=yes
+#		fi
 
-	if test x$ac_cv_flac$ac_cv_ogg$ac_cv_vorbis$ac_cv_vorbisenc = "xyesyesyesyes" ; then
-		HAVE_EXTERNAL_LIBS=1
-		enable_external_libs=yes
+#	if test x$ac_cv_flac$ac_cv_ogg$ac_cv_vorbis$ac_cv_vorbisenc = "xyesyesyesyes" ; then
+#		HAVE_EXTERNAL_LIBS=1
+#		enable_external_libs=yes
 
-		EXTERNAL_CFLAGS="$FLAC_CFLAGS $OGG_CFLAGS $VORBIS_CFLAGS $VORBISENC_CFLAGS $SPEEX_CFLAGS"
-		EXTERNAL_LIBS="$FLAC_LIBS $OGG_LIBS $VORBIS_LIBS $VORBISENC_LIBS $SPEEX_LIBS "
-	else
-		echo
-		AC_MSG_WARN([[*** One or more of the external libraries (ie libflac, libogg and]])
-		AC_MSG_WARN([[*** libvorbis) is either missing (possibly only the development]])
-		AC_MSG_WARN([[*** headers) or is of an unsupported version.]])
-		AC_MSG_WARN([[***]])
-		AC_MSG_WARN([[*** Unfortunately, for ease of maintenance, the external libs]])
-		AC_MSG_WARN([[*** are an all or nothing affair.]])
-		echo
-		enable_external_libs=no
-		fi
-	fi
+#		EXTERNAL_CFLAGS="$FLAC_CFLAGS $OGG_CFLAGS $VORBIS_CFLAGS $VORBISENC_CFLAGS $SPEEX_CFLAGS"
+#		EXTERNAL_LIBS="$FLAC_LIBS $OGG_LIBS $VORBIS_LIBS $VORBISENC_LIBS $SPEEX_LIBS "
+#	else
+#		echo
+#		AC_MSG_WARN([[*** One or more of the external libraries (ie libflac, libogg and]])
+#		AC_MSG_WARN([[*** libvorbis) is either missing (possibly only the development]])
+#		AC_MSG_WARN([[*** headers) or is of an unsupported version.]])
+#		AC_MSG_WARN([[***]])
+#		AC_MSG_WARN([[*** Unfortunately, for ease of maintenance, the external libs]])
+#		AC_MSG_WARN([[*** are an all or nothing affair.]])
+#		echo
+#		enable_external_libs=no
+#		fi
+#	fi
 
 AC_DEFINE_UNQUOTED([HAVE_EXTERNAL_LIBS], $HAVE_EXTERNAL_LIBS, [Will be set to 1 if flac, ogg and vorbis are available.])
 
@@ -350,9 +350,9 @@ AC_DEFINE_UNQUOTED([HAVE_EXTERNAL_LIBS], $HAVE_EXTERNAL_LIBS, [Will be set to 1 
 # Check for libsqlite3 (only used in regtest).
 
 ac_cv_sqlite3=no
-if test x$enable_sqlite != xno ; then
-	PKG_CHECK_MOD_VERSION([SQLITE3], [sqlite3 >= 3.2], [ac_cv_sqlite3=yes], [ac_cv_sqlite3=no])
-	fi
+#if test x$enable_sqlite != xno ; then
+#	PKG_CHECK_MOD_VERSION([SQLITE3], [sqlite3 >= 3.2], [ac_cv_sqlite3=yes], [ac_cv_sqlite3=no])
+#	fi
 
 if test x$ac_cv_sqlite3 = "xyes" ; then
 	HAVE_SQLITE3=1
