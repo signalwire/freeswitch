@@ -35,7 +35,7 @@
 #undef HAVE_STDLIB_H
 #include "switch_private.h"
 #endif
-#if  !defined(__OpenBSD__) && (defined(HAVE_OPENPTY) || defined(HAVE_DEV_PTMX) || defined(HAVE_POSIX_OPENPT) || WIN32)
+#if  !defined(__OpenBSD__) && !defined(__DragonFly__) && (defined(HAVE_OPENPTY) || defined(HAVE_DEV_PTMX) || defined(HAVE_POSIX_OPENPT) || WIN32)
 #define MODEM_SUPPORT 1
 #if !defined(HAVE_POSIX_OPENPT) && !defined(HAVE_DEV_PTMX) && !defined(WIN32)
 #define USE_OPENPTY 1
