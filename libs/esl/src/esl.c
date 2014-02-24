@@ -834,6 +834,10 @@ ESL_DECLARE(int) esl_wait_sock(esl_socket_t sock, uint32_t ms, esl_poll_t flags)
 	fd_set efds;
 	struct timeval tv;
 
+        if (sock == ESL_SOCK_INVALID) {
+                return ESL_SOCK_INVALID;
+        }
+
 	FD_ZERO(&rfds);
 	FD_ZERO(&wfds);
 	FD_ZERO(&efds);
@@ -913,7 +917,11 @@ ESL_DECLARE(int) esl_wait_sock(esl_socket_t sock, uint32_t ms, esl_poll_t flags)
 {
 	struct pollfd pfds[2] = { { 0 } };
 	int s = 0, r = 0;
-	
+
+	if (sock == ESL_SOCK_INVALID) {
+		return ESL_SOCK_INVALID;
+	}	
+
 	pfds[0].fd = sock;
 
 	if ((flags & ESL_POLL_READ)) {
@@ -1229,7 +1237,9 @@ static esl_ssize_t handle_recv(esl_handle_t *handle, void *data, esl_size_t data
 	
 	if (handle->connected) {
 		if ((activity = esl_wait_sock(handle->sock, 1000, ESL_POLL_READ|ESL_POLL_ERROR)) > 0) {
-			if ((activity & ESL_POLL_ERROR)) {
+			if (activity < 0) {
+				activity = -1;
+			} else if ((activity & ESL_POLL_ERROR)) {
 				activity = -1;
 			} else if ((activity & ESL_POLL_READ)) {
 				if (!(activity = recv(handle->sock, data, datalen, 0))) {
