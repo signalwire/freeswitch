@@ -26,6 +26,7 @@ EXTRA_DIST=
 if ENABLE_OPENSSL
 libsrtp_la_SOURCES += crypto/cipher/aes_icm_ossl.c crypto/cipher/aes_gcm_ossl.c
 libsrtp_la_SOURCES += crypto/rng/rand_source_ossl.c
+libsrtp_la_SOURCES += crypto/hash/hmac_ossl.c
 else
 libsrtp_la_SOURCES += crypto/hash/sha1.c crypto/hash/hmac.c 
 libsrtp_la_SOURCES += crypto/cipher/aes_icm.c crypto/cipher/aes.c crypto/cipher/aes_cbc.c
