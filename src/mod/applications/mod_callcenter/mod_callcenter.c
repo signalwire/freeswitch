@@ -1496,13 +1496,24 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 	/* CallBack Mode */
 	if (!strcasecmp(h->agent_type, CC_AGENT_TYPE_CALLBACK)) {
 		switch_channel_t *member_channel = switch_core_session_get_channel(member_session);
-		char *cid_name = NULL;
+		const char *cid_name = NULL;
+		char *cid_name_freeable = NULL;
+		const char *cid_number = NULL;
 		const char *cid_name_prefix = NULL;
-		if ((cid_name_prefix = switch_channel_get_variable(member_channel, "cc_outbound_cid_name_prefix"))) {
-			cid_name = switch_mprintf("%s%s", cid_name_prefix, h->member_cid_name);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Setting outbound caller_id_name to: %s\n", cid_name);
-		}
 
+		if ((cid_name_prefix = switch_channel_get_variable(member_channel, "cc_outbound_cid_name_prefix"))) {
+			cid_name_freeable = switch_mprintf("%s%s", cid_name_prefix, h->member_cid_name);
+			cid_name = cid_name_freeable;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Setting outbound caller_id_name to: %s\n", cid_name);
+		} else {
+			if (!(cid_name = switch_channel_get_variable(member_channel, "effective_caller_id_name"))) {
+				cid_name = h->member_cid_name;
+			}
+
+			if (!(cid_number = switch_channel_get_variable(member_channel, "effective_caller_id_number"))) {
+				cid_number = h->member_cid_number;
+			}
+		}
 		switch_event_create(&ovars, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_queue", "%s", h->queue_name);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_member_uuid", "%s", h->member_uuid);
@@ -1520,11 +1531,11 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		t_agent_called = local_epoch_time_now(NULL);
 
 		dialstr = switch_channel_expand_variables(member_channel, h->originate_string);
-		status = switch_ivr_originate(NULL, &agent_session, &cause, dialstr, 60, NULL, cid_name ? cid_name : h->member_cid_name, h->member_cid_number, NULL, ovars, SOF_NONE, NULL);
+		status = switch_ivr_originate(NULL, &agent_session, &cause, dialstr, 60, NULL, cid_name ? cid_name : h->member_cid_name, cid_number ? cid_number : h->member_cid_number, NULL, ovars, SOF_NONE, NULL);
 		if (dialstr != h->originate_string) {
 			switch_safe_free(dialstr);
 		}
-		switch_safe_free(cid_name);
+		switch_safe_free(cid_name_freeable);
 
 		switch_event_destroy(&ovars);
 	/* UUID Standby Mode */
