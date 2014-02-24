@@ -275,7 +275,11 @@ typedef intptr_t switch_ssize_t;
 
 #endif
 
+#ifdef __sun
+#define SWITCH_TIME_T_FMT SWITCH_SIZE_T_FMT
+#else
 #define SWITCH_TIME_T_FMT SWITCH_INT64_T_FMT
+#endif
 
 SWITCH_END_EXTERN_C
 /* these includes must be outside the extern "C" block on windows or it will break compatibility with c++ modules*/
