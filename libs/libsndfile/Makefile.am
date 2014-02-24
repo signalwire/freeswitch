@@ -18,7 +18,7 @@ EXTRA_DIST = libsndfile.spec.in sndfile.pc.in Scripts/android-configure.sh \
 
 CLEANFILES = *~
 
-pkgconfig_DATA = sndfile.pc
+#pkgconfig_DATA = sndfile.pc
 
 m4datadir = $(datadir)/aclocal
 
