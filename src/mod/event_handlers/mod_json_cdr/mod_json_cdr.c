@@ -603,9 +603,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load)
 		}
 	}
 
-	if (globals.retries && globals.delay) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Retries set but delay 0 setting to 5000ms\n");
-		globals.delay = 5000;
+	if (globals.retries && !globals.delay) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Retries set but delay 0 setting to 5 seconds\n");
+		globals.delay = 5;
 	}
 
 	globals.retries++;
