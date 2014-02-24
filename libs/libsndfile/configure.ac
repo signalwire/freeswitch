@@ -631,7 +631,7 @@ AC_SUBST(LIBTOOL_DEPS)
 
 AC_CONFIG_FILES([ \
 	src/Makefile man/Makefile examples/Makefile tests/Makefile regtest/Makefile \
-	M4/Makefile doc/Makefile Win32/Makefile Octave/Makefile programs/Makefile \
+	M4/Makefile Win32/Makefile Octave/Makefile programs/Makefile \
 	Makefile \
 	src/version-metadata.rc tests/test_wrapper.sh tests/pedantic-header-test.sh \
 	doc/libsndfile.css Scripts/build-test-tarball.mk libsndfile.spec sndfile.pc \
