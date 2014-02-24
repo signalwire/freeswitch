@@ -397,6 +397,7 @@ struct private_object {
 	char sms_message[4800];
 	char sms_sender[256];
 	char sms_date[256];
+	char sms_userdataheader[256];
 	char sms_body[4800];
 	char sms_datacodingscheme[256];
 	char sms_servicecentreaddress[256];

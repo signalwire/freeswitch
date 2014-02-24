@@ -2779,6 +2779,7 @@ int sms_incoming(private_t *tech_pvt)
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", tech_pvt->sms_sender);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "date", tech_pvt->sms_date);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "userdataheader", tech_pvt->sms_userdataheader);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "datacodingscheme", tech_pvt->sms_datacodingscheme);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "servicecentreaddress", tech_pvt->sms_servicecentreaddress);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "messagetype", "%d", tech_pvt->sms_messagetype);
@@ -2798,6 +2799,7 @@ int sms_incoming(private_t *tech_pvt)
 	memset(tech_pvt->sms_message, '\0', sizeof(tech_pvt->sms_message));
 	memset(tech_pvt->sms_sender, '\0', sizeof(tech_pvt->sms_sender));
 	memset(tech_pvt->sms_date, '\0', sizeof(tech_pvt->sms_date));
+	memset(tech_pvt->sms_userdataheader, '\0', sizeof(tech_pvt->sms_userdataheader));
 	memset(tech_pvt->sms_body, '\0', sizeof(tech_pvt->sms_body));
 	memset(tech_pvt->sms_datacodingscheme, '\0', sizeof(tech_pvt->sms_datacodingscheme));
 	memset(tech_pvt->sms_servicecentreaddress, '\0', sizeof(tech_pvt->sms_servicecentreaddress));
