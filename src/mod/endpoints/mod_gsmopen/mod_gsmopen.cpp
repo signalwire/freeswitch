@@ -1579,7 +1579,7 @@ static switch_status_t load_config(int reload_type)
 				int res = 0;
 				int interface_id = i;
 
-			if (strlen(globals.GSMOPEN_INTERFACES[i].name)) {
+			if (strlen(globals.GSMOPEN_INTERFACES[i].name) && !globals.GSMOPEN_INTERFACES[i].active) {
 
 				WARNINGA("STARTING interface_id=%u\n", GSMOPEN_P_LOG, interface_id);
 				DEBUGA_GSMOPEN("id=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].id);
@@ -2989,7 +2989,7 @@ void find_ttyusb_devices(private_t *tech_pvt, const char *dirname)
 										usleep(200000); //0.2 seconds
 										read_count = serialPort_serial_control->Read(f.answer, AT_BUFSIZ);
 										if (read_count < 32) {
-											ERRORA("reading AT+GSN failed: |%s|, read_count=%d\n", GSMOPEN_P_LOG, f.answer, read_count);
+											ERRORA("reading AT+GSN failed: |%s|, read_count=%d, probably harmless in 'gsm reload'\n", GSMOPEN_P_LOG, f.answer, read_count);
 										} else {
 											strncpy(f.imei, f.answer+9, 15);
 											sprintf(at_command, "AT\r\n");
