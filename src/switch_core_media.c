@@ -2753,8 +2753,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		return 0;
 	}
 
-	if ((var = switch_channel_get_variable(session->channel, "rtp_secure_media"))) {
-		if (!switch_true(var)) {
+	if (sdp_type == SDP_TYPE_REQUEST && (var = switch_channel_get_variable(session->channel, "rtp_secure_media"))) {
+		if (!switch_true(var) && strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_32) && 
+			strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_80) && strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_8)) {
 			got_crypto = -1;
 		}
 	}
