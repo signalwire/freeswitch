@@ -425,6 +425,8 @@ struct cc_queue {
 
 	char *strategy;
 	char *moh;
+	char *announce;
+	uint32_t announce_freq;
 	char *record_template;
 	char *time_base_score;
 
@@ -536,6 +538,8 @@ cc_queue_t *queue_set_config(cc_queue_t *queue)
 	 */
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "strategy", SWITCH_CONFIG_STRING, 0, &queue->strategy, "longest-idle-agent", &queue->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "moh-sound", SWITCH_CONFIG_STRING, 0, &queue->moh, NULL, &queue->config_str_pool, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "announce-sound", SWITCH_CONFIG_STRING, 0, &queue->announce, NULL, &queue->config_str_pool, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "announce-frequency", SWITCH_CONFIG_INT, 0, &queue->announce_freq, 0, &config_int_0_86400, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "record-template", SWITCH_CONFIG_STRING, 0, &queue->record_template, NULL, &queue->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "time-base-score", SWITCH_CONFIG_STRING, 0, &queue->time_base_score, "queue", &queue->config_str_pool, NULL, NULL);
 
@@ -2351,6 +2355,8 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 	struct member_thread_helper *m = (struct member_thread_helper *) obj;
 	switch_core_session_t *member_session = switch_core_session_locate(m->member_session_uuid);
 	switch_channel_t *member_channel = NULL;
+	switch_time_t last_announce = local_epoch_time_now(NULL);
+	switch_bool_t announce_valid = SWITCH_TRUE;
 
 	if (member_session) {
 		member_channel = switch_core_session_get_channel(member_session);
@@ -2365,13 +2371,14 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 
 	while(switch_channel_ready(member_channel) && m->running && globals.running) {
 		cc_queue_t *queue = NULL;
+		switch_time_t time_now = local_epoch_time_now(NULL);
 
 		if (!m->queue_name || !(queue = get_queue(m->queue_name))) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_WARNING, "Queue %s not found\n", m->queue_name);
 			break;
 		}
 		/* Make the Caller Leave if he went over his max wait time */
-		if (queue->max_wait_time > 0 && queue->max_wait_time <= local_epoch_time_now(NULL) - m->t_member_called) {
+		if (queue->max_wait_time > 0 && queue->max_wait_time <=  time_now - m->t_member_called) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> in queue '%s' reached max wait time\n", m->member_cid_name, m->member_cid_number, m->queue_name);
 			m->member_cancel_reason = CC_MEMBER_CANCEL_REASON_TIMEOUT;
 			switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
@@ -2412,7 +2419,24 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 		 */
 
 		/* If Agent Logoff, we might need to recalculare score based on skill */
-		/* Play Announcement in order */
+		/* Play the periodic announcement if it is time to do so */
+		if (announce_valid == SWITCH_TRUE && queue->announce && queue->announce_freq > 0 &&
+			queue->announce_freq <= time_now - last_announce) {
+			switch_status_t status = SWITCH_STATUS_FALSE;
+			/* Stop previous announcement in case it's still running */
+			switch_ivr_stop_displace_session(member_session, queue->announce);
+			/* Play the announcement */
+			status = switch_ivr_displace_session(member_session, queue->announce, 0, NULL);
+
+			if (status != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_WARNING,
+								  "Couldn't play announcement '%s'\n", queue->announce);
+				announce_valid = SWITCH_FALSE;
+			}
+			else {
+				last_announce = time_now;
+			}
+		}
 
 		queue_rwunlock(queue);
 
