@@ -2881,6 +2881,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-File-Path", file_path);
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-Flags", read_flags);
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-Folder", myfolder);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-UUID", use_uuid);
 		switch_event_add_header(message_event, SWITCH_STACK_BOTTOM, "VM-Message-Len", "%u", message_len);
 		switch_event_add_header(message_event, SWITCH_STACK_BOTTOM, "VM-Timestamp", "%lu", (unsigned long) switch_epoch_time_now(NULL));
 
