@@ -5837,7 +5837,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtcp_zerocopy_read_frame(switch_rtp_t *rt
 		frame->packet_count =  ntohl(sr->sr_head.pc);
 		frame->octect_count = ntohl(sr->sr_head.oc);
 
-		for (i = 0; i < rtp_session->rtcp_recv_msg_p->header.count; i++) {
+		for (i = 0; i < (int)rtp_session->rtcp_recv_msg_p->header.count; i++) {
 			struct switch_rtcp_report_block* report = (struct switch_rtcp_report_block*) (rtp_session->rtcp_recv_msg_p->body + (sizeof(struct switch_rtcp_sr_head) + (i * sizeof(struct switch_rtcp_report_block))));
 			frame->reports[i].ssrc = ntohl(report->ssrc);
 			frame->reports[i].fraction = (uint8_t)ntohl(report->fraction);
