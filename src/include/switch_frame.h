@@ -37,7 +37,6 @@
 #define SWITCH_FRAME_H
 
 #include <switch.h>
-#include <switch_core_media.h>
 
 SWITCH_BEGIN_EXTERN_C
 /*! \brief An abstraction of a data frame */

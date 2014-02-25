@@ -33,6 +33,10 @@
 #include <switch_stun.h>
 #include <libdingaling.h>
 
+#define SWITCH_RTP_KEY_LEN 30
+#define SWITCH_RTP_CRYPTO_KEY_32 "AES_CM_128_HMAC_SHA1_32"
+#define SWITCH_RTP_CRYPTO_KEY_80 "AES_CM_128_HMAC_SHA1_80"
+
 #define MDL_RTCP_DUR 5000
 #define DL_CAND_WAIT 10000000
 #define DL_CAND_INITIAL_WAIT 2000000

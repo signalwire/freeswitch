@@ -183,6 +183,48 @@ struct switch_media_handle_s {
 
 };
 
+
+static switch_srtp_crypto_suite_t SUITES[CRYPTO_INVALID] = {
+	{ "AEAD_AES_256_GCM_8", AEAD_AES_256_GCM_8, 46},
+	{ "AEAD_AES_128_GCM_8", AEAD_AES_128_GCM_8, 30},    
+	{ "AES_CM_256_HMAC_SHA1_80", AES_CM_256_HMAC_SHA1_80, 46},
+	{ "AES_CM_192_HMAC_SHA1_80", AES_CM_192_HMAC_SHA1_80, 38},
+	{ "AES_CM_128_HMAC_SHA1_80", AES_CM_128_HMAC_SHA1_80, 30},
+	{ "AES_CM_256_HMAC_SHA1_32", AES_CM_256_HMAC_SHA1_32, 46},
+	{ "AES_CM_192_HMAC_SHA1_32", AES_CM_192_HMAC_SHA1_32, 38},
+	{ "AES_CM_128_HMAC_SHA1_32", AES_CM_128_HMAC_SHA1_32, 30},
+	{ "AES_CM_128_NULL_AUTH", AES_CM_128_NULL_AUTH, 30},
+	{ "NULL", NO_CRYPTO, 0 }
+};
+
+SWITCH_DECLARE(switch_rtp_crypto_key_type_t) switch_core_media_crypto_str2type(const char *str)
+{
+	int i;
+
+	for (i = 0; i < CRYPTO_INVALID; i++) {
+		if (!strncasecmp(str, SUITES[i].name, strlen(SUITES[i].name))) {
+			return SUITES[i].type;
+		}
+	}
+
+	return CRYPTO_INVALID;
+}
+
+
+SWITCH_DECLARE(const char *) switch_core_media_crypto_type2str(switch_rtp_crypto_key_type_t type)
+{
+	switch_assert(type < CRYPTO_INVALID);
+	return SUITES[type].name;
+}
+
+
+SWITCH_DECLARE(int) switch_core_media_crypto_keylen(switch_rtp_crypto_key_type_t type)
+{
+	switch_assert(type < CRYPTO_INVALID);
+	return SUITES[type].keylen;
+}
+
+
 static int get_channels(const char *name, int dft)
 {
 	if (!strcasecmp(name, "opus")) {
@@ -806,7 +848,6 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 													  int index, switch_rtp_crypto_key_type_t ctype, switch_rtp_crypto_direction_t direction, int force)
 {
 	unsigned char b64_key[512] = "";
-	const char *type_str;
 	unsigned char *key;
 	const char *val;
 	switch_channel_t *channel;
@@ -822,28 +863,16 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (ctype == AES_CM_128_HMAC_SHA1_80) {
-		type_str = SWITCH_RTP_CRYPTO_KEY_80;
-	} else if (ctype == AEAD_AES_256_GCM_8) {
-		type_str = SWITCH_RTP_CRYPTO_KEY_256_8;
-	} else if (ctype == AEAD_AES_128_GCM_8) {
-		type_str = SWITCH_RTP_CRYPTO_KEY_128_8;
-	} else if (ctype == AES_CM_256_HMAC_SHA1_80) {
-		type_str = SWITCH_RTP_CRYPTO_KEY_80;
-	} else if (ctype == AES_CM_192_HMAC_SHA1_80) {
-		type_str = SWITCH_RTP_CRYPTO_KEY_80;
-	} else {
-		type_str = SWITCH_RTP_CRYPTO_KEY_32;
-	}
+	
 
 //#define SAME_KEY
 #ifdef SAME_KEY
 	if (switch_channel_test_flag(channel, CF_WEBRTC) && type == SWITCH_MEDIA_TYPE_VIDEO) {
 		if (direction == SWITCH_RTP_CRYPTO_SEND) {
-			memcpy(engine->ssec.local_raw_key, smh->engines[SWITCH_MEDIA_TYPE_AUDIO].ssec.local_raw_key, SWITCH_RTP_KEY_LEN);
+			memcpy(engine->ssec.local_raw_key, smh->engines[SWITCH_MEDIA_TYPE_AUDIO].ssec.local_raw_key, SUITES[ctype].keylen);
 			key = engine->ssec.local_raw_key;
 		} else {
-			memcpy(engine->ssec.remote_raw_key, smh->engines[SWITCH_MEDIA_TYPE_AUDIO].ssec.remote_raw_key, SWITCH_RTP_KEY_LEN);
+			memcpy(engine->ssec.remote_raw_key, smh->engines[SWITCH_MEDIA_TYPE_AUDIO].ssec.remote_raw_key, SUITES[ctype].keylen);
 			key = engine->ssec.remote_raw_key;
 		}
 	} else {
@@ -854,19 +883,19 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 			key = engine->ssec.remote_raw_key;
 		}
 		
-		switch_rtp_get_random(key, SWITCH_RTP_KEY_LEN);
+		switch_rtp_get_random(key, SUITES[ctype].keylen);
 #ifdef SAME_KEY
 	}
 #endif
 
-	switch_b64_encode(key, SWITCH_RTP_KEY_LEN, b64_key, sizeof(b64_key));
+	switch_b64_encode(key, SUITES[ctype].keylen, b64_key, sizeof(b64_key));
 	p = strrchr((char *) b64_key, '=');
 
 	while (p && *p && *p == '=') {
 		*p-- = '\0';
 	}
 
-	engine->ssec.local_crypto_key = switch_core_session_sprintf(smh->session, "%d %s inline:%s", index, type_str, b64_key);
+	engine->ssec.local_crypto_key = switch_core_session_sprintf(smh->session, "%d %s inline:%s", index, SUITES[ctype].name, b64_key);
 	switch_channel_set_variable_name_printf(smh->session->channel, engine->ssec.local_crypto_key, "rtp_last_%s_local_crypto_key", type2str(type));
 
 
@@ -897,15 +926,10 @@ switch_status_t switch_core_media_add_crypto(switch_secure_settings_t *ssec, con
 
 	if (p && *p && *(p + 1)) {
 		p++;
-		if (!strncasecmp(p, SWITCH_RTP_CRYPTO_KEY_32, strlen(SWITCH_RTP_CRYPTO_KEY_32))) {
-			type = AES_CM_128_HMAC_SHA1_32;
-		} else if (!strncasecmp(p, SWITCH_RTP_CRYPTO_KEY_80, strlen(SWITCH_RTP_CRYPTO_KEY_80))) {
-			type = AES_CM_128_HMAC_SHA1_80;
-		} else if (!strncasecmp(p, SWITCH_RTP_CRYPTO_KEY_256_8, strlen(SWITCH_RTP_CRYPTO_KEY_256_8))) {
-			type = AEAD_AES_128_GCM_8;
-		} else if (!strncasecmp(p, SWITCH_RTP_CRYPTO_KEY_128_8, strlen(SWITCH_RTP_CRYPTO_KEY_128_8))) {
-			type = AEAD_AES_256_GCM_8;
-		} else {
+
+		type = switch_core_media_crypto_str2type(p);
+
+		if (type == CRYPTO_INVALID) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error near [%s]\n", p);
 			goto bad;
 		}
@@ -923,10 +947,10 @@ switch_status_t switch_core_media_add_crypto(switch_secure_settings_t *ssec, con
 
 			if (direction == SWITCH_RTP_CRYPTO_SEND) {
 				ssec->crypto_send_type = type;
-				memcpy(ssec->local_raw_key, key, SWITCH_RTP_KEY_LEN);
+				memcpy(ssec->local_raw_key, key, SUITES[type].keylen);
 			} else {
 				ssec->crypto_recv_type = type;
-				memcpy(ssec->remote_raw_key, key, SWITCH_RTP_KEY_LEN);
+				memcpy(ssec->remote_raw_key, key, SUITES[type].keylen);
 			}
 			return SWITCH_STATUS_SUCCESS;
 		}
@@ -1006,10 +1030,10 @@ static void switch_core_session_apply_crypto(switch_core_session_t *session, swi
 
 		
 		switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, 1,
-								  engine->ssec.crypto_type, engine->ssec.local_raw_key, SWITCH_RTP_KEY_LEN);
+								  engine->ssec.crypto_type, engine->ssec.local_raw_key, SUITES[engine->ssec.crypto_type].keylen);
 
 		switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_RECV, engine->ssec.crypto_tag,
-								  engine->ssec.crypto_type, engine->ssec.remote_raw_key, SWITCH_RTP_KEY_LEN);
+								  engine->ssec.crypto_type, engine->ssec.remote_raw_key, SUITES[engine->ssec.crypto_type].keylen);
 
 		switch_channel_set_variable(session->channel, varname, "true");
 	}
@@ -1022,46 +1046,52 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 															  switch_media_type_t type, const char *crypto, int crypto_tag, switch_sdp_type_t sdp_type)
 {
 	int got_crypto = 0;
-
+	int i = 0;
+	int ctype = 0;
+	const char *vval = NULL;
 	switch_rtp_engine_t *engine;
+	const char *suite = switch_channel_get_variable(session->channel, "rtp_secure_media");
+
 	if (!session->media_handle) return 0;
+
 	engine = &session->media_handle->engines[type];
+
+	if (zstr(suite) || (!switch_true(suite) && switch_core_media_crypto_str2type(suite) == CRYPTO_INVALID)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Crypto suite: [%s] not valid in this context.\n", crypto);
+		goto end;
+	}
+
+	if (switch_true(suite)) {
+		suite = NULL;
+	}
+
+	for (i = 0; i < CRYPTO_INVALID; i++) {
+		if ((zstr(suite) || switch_stristr(SUITES[i].name, suite)) && switch_stristr(SUITES[i].name, crypto)) {
+			ctype = SUITES[i].type;
+			vval = SUITES[i].name;
+			break;
+		}
+	}
 
 	if (engine->ssec.remote_crypto_key && switch_rtp_ready(engine->rtp_session)) {
 		/* Compare all the key. The tag may remain the same even if key changed */
 		if (crypto && !strcmp(crypto, engine->ssec.remote_crypto_key)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Existing key is still valid.\n");
+			got_crypto = 1;
 		} else {
-			const char *a = switch_stristr("AES", engine->ssec.remote_crypto_key);
-			const char *b = switch_stristr("AES", crypto);
+			const char *a = switch_stristr("AE", engine->ssec.remote_crypto_key);
+			const char *b = switch_stristr("AE", crypto);
 
-			/* Change our key every time we can */
-							
 			if (sdp_type == SDP_TYPE_REQUEST) {
-				if (switch_stristr(SWITCH_RTP_CRYPTO_KEY_32, crypto)) {
-					switch_channel_set_variable(session->channel, varname, SWITCH_RTP_CRYPTO_KEY_32);
-				
-					switch_core_media_build_crypto(session->media_handle, type, crypto_tag, AES_CM_128_HMAC_SHA1_32, SWITCH_RTP_CRYPTO_SEND, 1);
-					switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, atoi(crypto), engine->ssec.crypto_type,
-											  engine->ssec.local_raw_key, SWITCH_RTP_KEY_LEN);
-				} else if (switch_stristr(SWITCH_RTP_CRYPTO_KEY_80, crypto)) {
-					switch_channel_set_variable(session->channel, varname, SWITCH_RTP_CRYPTO_KEY_80);
-					switch_core_media_build_crypto(session->media_handle, type, crypto_tag, AES_CM_128_HMAC_SHA1_80, SWITCH_RTP_CRYPTO_SEND, 1);
-					switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, atoi(crypto), engine->ssec.crypto_type,
-											  engine->ssec.local_raw_key, SWITCH_RTP_KEY_LEN);
-				} else if (switch_stristr(SWITCH_RTP_CRYPTO_KEY_256_8, crypto)) {
-					switch_channel_set_variable(session->channel, varname, SWITCH_RTP_CRYPTO_KEY_256_8);
-					switch_core_media_build_crypto(session->media_handle, type, crypto_tag, AEAD_AES_256_GCM_8, SWITCH_RTP_CRYPTO_SEND, 1);
-					switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, atoi(crypto), engine->ssec.crypto_type,
-											  engine->ssec.local_raw_key, SWITCH_RTP_KEY_LEN);
-				} else if (switch_stristr(SWITCH_RTP_CRYPTO_KEY_128_8, crypto)) {
-					switch_channel_set_variable(session->channel, varname, SWITCH_RTP_CRYPTO_KEY_128_8);
-					switch_core_media_build_crypto(session->media_handle, type, crypto_tag, AEAD_AES_128_GCM_8, SWITCH_RTP_CRYPTO_SEND, 1);
-					switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, atoi(crypto), engine->ssec.crypto_type,
-											  engine->ssec.local_raw_key, SWITCH_RTP_KEY_LEN);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Crypto Setup Failed!.\n");
+				if (!vval) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Unsupported Crypto [%s]\n", crypto);
+					goto end;
 				}
+				switch_channel_set_variable(session->channel, varname, vval);
+
+				switch_core_media_build_crypto(session->media_handle, type, crypto_tag, ctype, SWITCH_RTP_CRYPTO_SEND, 1);
+				switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, atoi(crypto), engine->ssec.crypto_type,
+										  engine->ssec.local_raw_key, SUITES[ctype].keylen);
 			}
 
 			if (a && b && !strncasecmp(a, b, 23)) {
@@ -1074,7 +1104,7 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 				if (switch_rtp_ready(engine->rtp_session) && switch_channel_test_flag(session->channel, CF_SECURE)) {
 					switch_core_media_add_crypto(&engine->ssec, engine->ssec.remote_crypto_key, SWITCH_RTP_CRYPTO_RECV);
 					switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_RECV, engine->ssec.crypto_tag,
-											  engine->ssec.crypto_type, engine->ssec.remote_raw_key, SWITCH_RTP_KEY_LEN);
+											  engine->ssec.crypto_type, engine->ssec.remote_raw_key, SUITES[engine->ssec.crypto_type].keylen);
 				}
 				got_crypto++;
 			} else {
@@ -1082,30 +1112,29 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 			}
 		}
 	} else if (!switch_rtp_ready(engine->rtp_session)) {
+
+		if (!vval) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Unsupported Crypto [%s]\n", crypto);
+			goto end;
+		}
+
 		engine->ssec.remote_crypto_key = switch_core_session_strdup(session, crypto);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set Remote Key [%s]\n", engine->ssec.remote_crypto_key);
 		switch_channel_set_variable(session->channel, "srtp_remote_audio_crypto_key", crypto);
 		engine->ssec.crypto_tag = crypto_tag;
 		got_crypto++;
-
+		
 		if (zstr(engine->ssec.local_crypto_key)) {
-			if (switch_stristr(SWITCH_RTP_CRYPTO_KEY_32, crypto)) {
-				switch_channel_set_variable(session->channel, varname, SWITCH_RTP_CRYPTO_KEY_32);
-				switch_core_media_build_crypto(session->media_handle, type, crypto_tag, AES_CM_128_HMAC_SHA1_32, SWITCH_RTP_CRYPTO_SEND, 1);
-			} else if (switch_stristr(SWITCH_RTP_CRYPTO_KEY_80, crypto)) {
-				switch_channel_set_variable(session->channel, varname, SWITCH_RTP_CRYPTO_KEY_80);
-				switch_core_media_build_crypto(session->media_handle, type, crypto_tag, AES_CM_128_HMAC_SHA1_80, SWITCH_RTP_CRYPTO_SEND, 1);
-			} else if (switch_stristr(SWITCH_RTP_CRYPTO_KEY_256_8, crypto)) {
-				switch_channel_set_variable(session->channel, varname, SWITCH_RTP_CRYPTO_KEY_256_8);
-				switch_core_media_build_crypto(session->media_handle, type, crypto_tag, AEAD_AES_256_GCM_8, SWITCH_RTP_CRYPTO_SEND, 1);
-			} else if (switch_stristr(SWITCH_RTP_CRYPTO_KEY_128_8, crypto)) {
-				switch_channel_set_variable(session->channel, varname, SWITCH_RTP_CRYPTO_KEY_128_8);
-				switch_core_media_build_crypto(session->media_handle, type, crypto_tag, AEAD_AES_128_GCM_8, SWITCH_RTP_CRYPTO_SEND, 1);
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Crypto Setup Failed!.\n");
-			}
+			switch_channel_set_variable(session->channel, varname, vval);
+			switch_core_media_build_crypto(session->media_handle, type, crypto_tag, ctype, SWITCH_RTP_CRYPTO_SEND, 1);
 		}
-	}	
+	}
+
+ end:
+
+	if (got_crypto && vval && switch_true(switch_channel_get_variable(session->channel, "rtp_secure_media"))) {
+		switch_channel_set_variable(session->channel, "rtp_secure_media", vval);
+	}
 
 	return got_crypto;
 }
@@ -1121,31 +1150,26 @@ SWITCH_DECLARE(void) switch_core_session_check_outgoing_crypto(switch_core_sessi
 	}
 	
 	if ((var = switch_channel_get_variable(channel, sec_var)) && !zstr(var)) {
-		if (switch_true(var) || !strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_32)) {
+		int i;
+		switch_rtp_crypto_key_type_t ctype = CRYPTO_INVALID;
+		
+		if (switch_true(var)) {
+			ctype = AES_CM_128_HMAC_SHA1_32;
+		} else {
+			for (i = 0; i < CRYPTO_INVALID; i++) {
+				if (!strcasecmp(var, SUITES[i].name)) {
+					ctype = SUITES[i].type;
+					break;
+				}
+			}
+		}
 
+		if (ctype != CRYPTO_INVALID) {
 			switch_channel_set_flag(channel, CF_SECURE);
 			switch_core_media_build_crypto(session->media_handle,
-										   SWITCH_MEDIA_TYPE_AUDIO, 1, AES_CM_128_HMAC_SHA1_32, SWITCH_RTP_CRYPTO_SEND, 0);
+										   SWITCH_MEDIA_TYPE_AUDIO, 1, ctype, SWITCH_RTP_CRYPTO_SEND, 0);
 			switch_core_media_build_crypto(session->media_handle,
-										   SWITCH_MEDIA_TYPE_VIDEO, 1, AES_CM_128_HMAC_SHA1_32, SWITCH_RTP_CRYPTO_SEND, 0);
-		} else if (!strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_80)) {
-			switch_channel_set_flag(channel, CF_SECURE);
-			switch_core_media_build_crypto(session->media_handle,
-										   SWITCH_MEDIA_TYPE_AUDIO, 1, AES_CM_128_HMAC_SHA1_80, SWITCH_RTP_CRYPTO_SEND, 0);
-			switch_core_media_build_crypto(session->media_handle,
-										   SWITCH_MEDIA_TYPE_VIDEO, 1, AES_CM_128_HMAC_SHA1_80, SWITCH_RTP_CRYPTO_SEND, 0);
-		} else if (!strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_256_8)) {
-			switch_channel_set_flag(channel, CF_SECURE);
-			switch_core_media_build_crypto(session->media_handle,
-										   SWITCH_MEDIA_TYPE_AUDIO, 1, AEAD_AES_256_GCM_8, SWITCH_RTP_CRYPTO_SEND, 0);
-			switch_core_media_build_crypto(session->media_handle,
-										   SWITCH_MEDIA_TYPE_VIDEO, 1, AEAD_AES_256_GCM_8, SWITCH_RTP_CRYPTO_SEND, 0);
-		} else if (!strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_128_8)) {
-			switch_channel_set_flag(channel, CF_SECURE);
-			switch_core_media_build_crypto(session->media_handle,
-										   SWITCH_MEDIA_TYPE_AUDIO, 1, AEAD_AES_128_GCM_8, SWITCH_RTP_CRYPTO_SEND, 0);
-			switch_core_media_build_crypto(session->media_handle,
-										   SWITCH_MEDIA_TYPE_VIDEO, 1, AEAD_AES_128_GCM_8, SWITCH_RTP_CRYPTO_SEND, 0);
+										   SWITCH_MEDIA_TYPE_VIDEO, 1, ctype, SWITCH_RTP_CRYPTO_SEND, 0);
 		}
 	}
 	
@@ -2770,11 +2794,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	}
 
 	if (sdp_type == SDP_TYPE_REQUEST && (var = switch_channel_get_variable(session->channel, "rtp_secure_media"))) {
-		if (!switch_true(var)
-			&& strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_32) 
-			&& strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_80)
-			&& strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_128_8)
-			&& strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_256_8)) {
+		if (!switch_true(var) && switch_core_media_crypto_str2type(var) == CRYPTO_INVALID) {
 			got_crypto = -1;
 		}
 	}
@@ -3098,8 +3118,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					ptime = atoi(attr->a_value);
 				} else if (!strcasecmp(attr->a_name, "maxptime") && attr->a_value) {
 					maxptime = atoi(attr->a_value);
-				} else if (!got_crypto && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value) && 
-						   (!switch_channel_test_flag(session->channel, CF_WEBRTC) || switch_stristr(SWITCH_RTP_CRYPTO_KEY_80, attr->a_value))) {
+				} else if (!got_crypto && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) { //&& 
+					//(!switch_channel_test_flag(session->channel, CF_WEBRTC) || switch_stristr(SWITCH_RTP_CRYPTO_KEY_80, attr->a_value))) {
 					int crypto_tag;
 
 					if (!(smh->mparams->ndlb & SM_NDLB_ALLOW_CRYPTO_IN_AVP) && 
@@ -3113,7 +3133,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 					crypto = attr->a_value;
 					crypto_tag = atoi(crypto);
-
 					got_crypto = switch_core_session_check_incoming_crypto(session, 
 																		   "rtp_has_crypto", SWITCH_MEDIA_TYPE_AUDIO, crypto, crypto_tag, sdp_type);
 
@@ -3122,7 +3141,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 			if (got_crypto > 0 && !got_avp) {
 				switch_channel_set_variable(session->channel, "rtp_crypto_mandatory", "true");
-				switch_channel_set_variable(session->channel, "rtp_secure_media", "true");
+				//switch_channel_set_variable(session->channel, "rtp_secure_media", "true");
 			}
 
 			if (got_crypto == -1 && got_savp && !got_avp) {
@@ -3568,7 +3587,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				
 				if (got_video_crypto && !got_video_avp) {
 					switch_channel_set_variable(session->channel, "rtp_crypto_mandatory", "true");
-					switch_channel_set_variable(session->channel, "rtp_secure_media", "true");
+					//switch_channel_set_variable(session->channel, "rtp_secure_media", "true");
 				}
 
 				if (!(rm_encoding = map->rm_encoding)) {
@@ -4588,7 +4607,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		switch_rtp_reset_media_timer(a_engine->rtp_session);
 	}
 
-	if ((var = switch_channel_get_variable(session->channel, "rtp_secure_media")) && switch_true(var)) {
+	if ((var = switch_channel_get_variable(session->channel, "rtp_secure_media")) && (switch_true(var) || switch_core_media_crypto_str2type(var) != CRYPTO_INVALID)) {
 		switch_channel_set_flag(session->channel, CF_SECURE);
 	}
 
@@ -8480,10 +8499,10 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 		switch_channel_set_flag(smh->session->channel, CF_SECURE);
 		
 		switch_rtp_add_crypto_key(a_engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, idx,
-								  a_engine->ssec.crypto_send_type, a_engine->ssec.local_raw_key, SWITCH_RTP_KEY_LEN);
+								  a_engine->ssec.crypto_send_type, a_engine->ssec.local_raw_key, SUITES[a_engine->ssec.crypto_send_type].keylen);
 		
 		switch_rtp_add_crypto_key(a_engine->rtp_session, SWITCH_RTP_CRYPTO_RECV, a_engine->ssec.crypto_tag,
-								  a_engine->ssec.crypto_recv_type, a_engine->ssec.remote_raw_key, SWITCH_RTP_KEY_LEN);
+								  a_engine->ssec.crypto_recv_type, a_engine->ssec.remote_raw_key, SUITES[a_engine->ssec.crypto_recv_type].keylen);
 	}
 
 

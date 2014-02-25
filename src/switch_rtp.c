@@ -2731,7 +2731,6 @@ static int do_dtls(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 	
 
 	if (!dtls->bytes && !ready) {
-		printf("SKIP\n");
 		return 0;
 	}
 

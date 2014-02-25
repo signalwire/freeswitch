@@ -41,18 +41,16 @@
 
 SWITCH_BEGIN_EXTERN_C
 
-#include <switch_core_media.h>
-
 #define SWITCH_RTP_MAX_BUF_LEN 16384
 #define SWITCH_RTCP_MAX_BUF_LEN 16384
 #define SWITCH_RTP_MAX_BUF_LEN_WORDS 4094 /* (max / 4) - 2 */
 #define SWITCH_RTP_MAX_CRYPTO_LEN 64
-#define SWITCH_RTP_KEY_LEN 30
-#define SWITCH_RTP_CRYPTO_KEY_32 "AES_CM_128_HMAC_SHA1_32"
+//#define SWITCH_RTP_KEY_LEN 30
+//#define SWITCH_RTP_CRYPTO_KEY_32 "AES_CM_128_HMAC_SHA1_32"
 #define SWITCH_RTP_CRYPTO_KEY_80 "AES_CM_128_HMAC_SHA1_80"
-#define SWITCH_RTP_CRYPTO_KEY_128_8 "AEAD_AES_128_GCM_8"
-#define SWITCH_RTP_CRYPTO_KEY_256_8 "AEAD_AES_256_GCM_8"
-	typedef enum {
+
+
+typedef enum {
 	SWITCH_RTP_CRYPTO_SEND,
 	SWITCH_RTP_CRYPTO_RECV,
 	SWITCH_RTP_CRYPTO_SEND_RTCP,
@@ -60,16 +58,12 @@ SWITCH_BEGIN_EXTERN_C
 	SWITCH_RTP_CRYPTO_MAX
 } switch_rtp_crypto_direction_t;
 
-typedef enum {
-	NO_CRYPTO,
-	AES_CM_128_HMAC_SHA1_80,
-	AES_CM_128_HMAC_SHA1_32,
-	AES_CM_256_HMAC_SHA1_80,
-	AES_CM_192_HMAC_SHA1_80,
-	AEAD_AES_256_GCM_8,
-	AEAD_AES_128_GCM_8,
-	AES_CM_128_NULL_AUTH
-} switch_rtp_crypto_key_type_t;
+typedef struct switch_srtp_crypto_suite_s {
+	char *name;
+	switch_rtp_crypto_key_type_t type;
+	int keylen;
+} switch_srtp_crypto_suite_t;
+
 
 struct switch_rtp_crypto_key {
 	uint32_t index;

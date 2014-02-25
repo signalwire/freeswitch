@@ -2312,6 +2312,67 @@ typedef void (*switch_event_channel_func_t)(const char *event_channel, cJSON *js
 struct switch_live_array_s;
 typedef struct switch_live_array_s switch_live_array_t;
 
+typedef enum {
+	SDP_TYPE_REQUEST,
+	SDP_TYPE_RESPONSE
+} switch_sdp_type_t;
+
+
+typedef enum {
+	AEAD_AES_256_GCM_8,
+	AEAD_AES_128_GCM_8,
+	AES_CM_256_HMAC_SHA1_80,
+	AES_CM_192_HMAC_SHA1_80,
+	AES_CM_128_HMAC_SHA1_80,
+	AES_CM_256_HMAC_SHA1_32,
+	AES_CM_192_HMAC_SHA1_32,
+	AES_CM_128_HMAC_SHA1_32,
+	AES_CM_128_NULL_AUTH,
+	NO_CRYPTO,
+	CRYPTO_INVALID
+} switch_rtp_crypto_key_type_t;
+
+typedef struct payload_map_s {
+	switch_media_type_t type;
+	switch_sdp_type_t sdp_type;
+	uint32_t ptime;
+	uint32_t rate;
+	uint8_t allocated;
+	uint8_t negotiated;
+	uint8_t current;
+	unsigned long hash;
+
+	char *rm_encoding;
+	char *iananame;
+	switch_payload_t pt;
+	unsigned long rm_rate;
+	unsigned long adv_rm_rate;
+	uint32_t codec_ms;
+	uint32_t bitrate;
+
+	char *rm_fmtp;
+
+	switch_payload_t agreed_pt;
+	switch_payload_t recv_pt;
+
+	char *fmtp_out;
+
+	char *remote_sdp_ip;
+	switch_port_t remote_sdp_port;
+
+	int channels;
+	int adv_channels;
+
+	struct payload_map_s *next;
+
+} payload_map_t;
+
+typedef enum {
+	ICE_GOOGLE_JINGLE = (1 << 0),
+	ICE_VANILLA = (1 << 1),
+	ICE_CONTROLLED = (1 << 2)
+} switch_core_media_ice_type_t;
+
 
 
 SWITCH_END_EXTERN_C

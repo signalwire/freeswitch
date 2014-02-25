@@ -1220,7 +1220,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 			if (((var = switch_channel_get_variable(channel, SOFIA_SECURE_MEDIA_VARIABLE)) ||
 				 (var = switch_channel_get_variable(channel, "rtp_secure_media"))) &&
-				(switch_true(var) || !strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_32) || !strcasecmp(var, SWITCH_RTP_CRYPTO_KEY_80))) {
+				(switch_true(var) || switch_core_media_crypto_str2type(var) != CRYPTO_INVALID)) {
 				switch_channel_set_flag(tech_pvt->channel, CF_SECURE);
 			}
 

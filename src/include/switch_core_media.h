@@ -40,17 +40,6 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_MAX_CAND_ACL 25
 
 typedef enum {
-	SDP_TYPE_REQUEST,
-	SDP_TYPE_RESPONSE
-} switch_sdp_type_t;
-
-typedef enum {
-	ICE_GOOGLE_JINGLE = (1 << 0),
-	ICE_VANILLA = (1 << 1),
-	ICE_CONTROLLED = (1 << 2)
-} switch_core_media_ice_type_t;
-
-typedef enum {
 	DTMF_2833,
 	DTMF_INFO,
 	DTMF_NONE
@@ -156,41 +145,6 @@ typedef struct switch_core_media_params_s {
 	switch_payload_t cng_pt;
 
 } switch_core_media_params_t;
-
-typedef struct payload_map_s {
-	switch_media_type_t type;
-	switch_sdp_type_t sdp_type;
-	uint32_t ptime;
-	uint32_t rate;
-	uint8_t allocated;
-	uint8_t negotiated;
-	uint8_t current;
-	unsigned long hash;
-
-	char *rm_encoding;
-	char *iananame;
-	switch_payload_t pt;
-	unsigned long rm_rate;
-	unsigned long adv_rm_rate;
-	uint32_t codec_ms;
-	uint32_t bitrate;
-
-	char *rm_fmtp;
-
-	switch_payload_t agreed_pt;
-	switch_payload_t recv_pt;
-
-	char *fmtp_out;
-
-	char *remote_sdp_ip;
-	switch_port_t remote_sdp_port;
-
-	int channels;
-	int adv_channels;
-
-	struct payload_map_s *next;
-
-} payload_map_t;
 
 static inline const char *switch_media_type2str(switch_media_type_t type)
 {
@@ -310,6 +264,12 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 																  uint32_t rate, 
 																  uint32_t ptime, 
 																  uint8_t negotiated);
+
+
+SWITCH_DECLARE(switch_rtp_crypto_key_type_t) switch_core_media_crypto_str2type(const char *str);
+SWITCH_DECLARE(const char *) switch_core_media_crypto_type2str(switch_rtp_crypto_key_type_t type);
+SWITCH_DECLARE(int) switch_core_media_crypto_keylen(switch_rtp_crypto_key_type_t type);
+
 
 SWITCH_END_EXTERN_C
 #endif
