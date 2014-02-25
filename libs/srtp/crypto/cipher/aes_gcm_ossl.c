@@ -261,7 +261,7 @@ err_status_t aes_gcm_openssl_set_aad (aes_gcm_ctx_t *c, unsigned char *aad,
     EVP_CIPHER_CTX_ctrl(&c->ctx, EVP_CTRL_GCM_SET_TAG, c->tag_len, aad);
 
     rv = EVP_Cipher(&c->ctx, NULL, aad, aad_len);
-    if (rv != (int)aad_len) {
+    if (rv != aad_len) {
         return (err_status_algo_fail);
     } else {
         return (err_status_ok);
