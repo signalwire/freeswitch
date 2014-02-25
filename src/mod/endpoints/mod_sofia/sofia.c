@@ -8022,18 +8022,24 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 				if (!strcasecmp(rec_header, "on")) {
 					char *file = NULL, *tmp = NULL;
 
-					tmp = switch_mprintf("%s%s%s", profile->record_path ? profile->record_path : "${recordings_dir}",
-										 SWITCH_PATH_SEPARATOR, profile->record_template);
-					file = switch_channel_expand_variables(channel, tmp);
-					switch_ivr_record_session(session, file, 0, NULL);
-					switch_channel_set_variable(channel, "sofia_record_file", file);
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Recording %s to %s\n", switch_channel_get_name(channel),
-									  file);
-					switch_safe_free(tmp);
-					nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
-					if (file != profile->record_template) {
-						free(file);
-						file = NULL;
+					if (switch_true(switch_channel_get_variable(channel, "sip_disable_recording"))) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Record attempted but is disabled by sip_disable_recording variable.\n");
+						nua_respond(nh, 488, "Recording disabled for this channel", NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+					} else {
+
+						tmp = switch_mprintf("%s%s%s", profile->record_path ? profile->record_path : "${recordings_dir}",
+								SWITCH_PATH_SEPARATOR, profile->record_template);
+						file = switch_channel_expand_variables(channel, tmp);
+						switch_ivr_record_session(session, file, 0, NULL);
+						switch_channel_set_variable(channel, "sofia_record_file", file);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Recording %s to %s\n", switch_channel_get_name(channel),
+								file);
+						switch_safe_free(tmp);
+						nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+						if (file != profile->record_template) {
+							free(file);
+							file = NULL;
+						}
 					}
 				} else {
 					const char *file;
