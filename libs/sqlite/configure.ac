@@ -323,6 +323,7 @@ fi
 AC_SUBST(THREADSAFE)
 
 if test "$THREADSAFE" = "1"; then
+  CC=$TARGET_CC
   LIBS=""
   AC_CHECK_LIB(pthread, pthread_create)
   TARGET_THREAD_LIB="$LIBS"
