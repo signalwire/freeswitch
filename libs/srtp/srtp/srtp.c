@@ -2330,7 +2330,7 @@ srtp_unprotect_rtcp_aead (srtp_t ctx, srtp_stream_ctx_t *stream,
     tag_len = auth_get_tag_length(stream->rtcp_auth);
 
     /* Validate packet length */
-    if (*pkt_octet_len < (octets_in_rtcp_header + tag_len + 
+    if (*pkt_octet_len < (int)(octets_in_rtcp_header + tag_len + 
                           sizeof(srtcp_trailer_t))) {
         return err_status_bad_param;
     }
