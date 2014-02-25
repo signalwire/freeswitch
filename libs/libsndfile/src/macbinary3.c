@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2003-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2003-2012 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -25,7 +25,7 @@
 #include	"sfendian.h"
 #include	"common.h"
 
-#if (OS_IS_MACOSX == 1)
+#if (OSX_DARWIN_VERSION >= 1)
 
 int
 macbinary3_open (SF_PRIVATE * UNUSED (psf))
@@ -41,5 +41,5 @@ macbinary3_open (SF_PRIVATE * UNUSED (psf))
 	return 0 ;
 } /* macbinary3_open */
 
-#endif /* OS_IS_MACOSX */
+#endif /* OSX_DARWIN_VERSION */
 

@@ -296,9 +296,11 @@ static switch_status_t remove_interface(char *the_interface)
 	switch_assert(the_interface);
 	interface_id = atoi(the_interface);
 
-	if (interface_id > 0 || (interface_id == 0 && strcmp(the_interface, "0") == 0)) {
-		/* take a number as interface id */
-		tech_pvt = &globals.GSMOPEN_INTERFACES[interface_id];
+	if ((interface_id > 0 && interface_id < GSMOPEN_MAX_INTERFACES) || (interface_id == 0 && strcmp(the_interface, "0") == 0)) {
+		if (strlen(globals.GSMOPEN_INTERFACES[interface_id].name)) {
+			/* take a number as interface id */
+			tech_pvt = &globals.GSMOPEN_INTERFACES[interface_id];
+		}
 	} else {
 
 		for (interface_id = 0; interface_id < GSMOPEN_MAX_INTERFACES; interface_id++) {
@@ -389,7 +391,6 @@ static switch_status_t remove_interface(char *the_interface)
 	switch_mutex_unlock(globals.mutex);
 
 	DEBUGA_GSMOPEN("interface '%s' deleted successfully\n", GSMOPEN_P_LOG, the_interface);
-	globals.GSMOPEN_INTERFACES[interface_id].running = 1;
 
   end:
 	return SWITCH_STATUS_SUCCESS;
@@ -1233,7 +1234,7 @@ static switch_status_t load_config(int reload_type)
 
 			uint32_t interface_id = 0;
 			int controldevice_speed = 115200;	//FIXME TODO
-			int controldevice_audio_speed = 115200;	//FIXME TODO
+			//int controldevice_audio_speed = 115200;	//FIXME TODO
 			uint32_t controldevprotocol = PROTOCOL_AT;	//FIXME TODO
 			uint32_t running = 1;	//FIXME TODO
 			const char *gsmopen_serial_sync_period = "300";	//FIXME TODO
@@ -1472,7 +1473,7 @@ static switch_status_t load_config(int reload_type)
 
 			if (interface_id && interface_id < GSMOPEN_MAX_INTERFACES) {
 				private_t newconf;
-				int res = 0;
+				//int res = 0;
 
 				memset(&newconf, '\0', sizeof(newconf));
 				globals.GSMOPEN_INTERFACES[interface_id] = newconf;
@@ -1579,7 +1580,7 @@ static switch_status_t load_config(int reload_type)
 				int res = 0;
 				int interface_id = i;
 
-			if (strlen(globals.GSMOPEN_INTERFACES[i].name)) {
+			if (strlen(globals.GSMOPEN_INTERFACES[i].name) && !globals.GSMOPEN_INTERFACES[i].active) {
 
 				WARNINGA("STARTING interface_id=%u\n", GSMOPEN_P_LOG, interface_id);
 				DEBUGA_GSMOPEN("id=%s\n", GSMOPEN_P_LOG, globals.GSMOPEN_INTERFACES[interface_id].id);
@@ -1680,7 +1681,7 @@ static switch_status_t load_config(int reload_type)
 		for (i = 0; i < GSMOPEN_MAX_INTERFACES; i++) {
 			if (strlen(globals.GSMOPEN_INTERFACES[i].name)) {
 				/* How many real intterfaces */
-				globals.real_interfaces = i + 1;
+				globals.real_interfaces++;
 
 				tech_pvt = &globals.GSMOPEN_INTERFACES[i];
 
@@ -1707,7 +1708,7 @@ static switch_status_t load_config(int reload_type)
 
 static switch_status_t chat_send(switch_event_t *message_event)
 {
-	char *user, *host, *f_user = NULL, *f_host = NULL, *f_resource = NULL;
+	char *user = NULL, *host, *f_user = NULL, *f_host = NULL, *f_resource = NULL;
 	private_t *tech_pvt = NULL;
 	int i = 0, found = 0;
 
@@ -2225,7 +2226,7 @@ SWITCH_STANDARD_API(gsm_function)
 
 		}
 		stream->write_function(stream, "\nTotal Interfaces: %d  IB Calls(Failed/Total): %u/%u  OB Calls(Failed/Total): %u/%u\n",
-							   globals.real_interfaces > 0 ? globals.real_interfaces - 1 : 0, ib_failed, ib, ob_failed, ob);
+							   globals.real_interfaces > 0 ? globals.real_interfaces : 0, ib_failed, ib, ob_failed, ob);
 
 	} else if (!strcasecmp(argv[0], "console")) {
 		int i;
@@ -2778,6 +2779,7 @@ int sms_incoming(private_t *tech_pvt)
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", tech_pvt->sms_sender);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "date", tech_pvt->sms_date);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "userdataheader", tech_pvt->sms_userdataheader);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "datacodingscheme", tech_pvt->sms_datacodingscheme);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "servicecentreaddress", tech_pvt->sms_servicecentreaddress);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "messagetype", "%d", tech_pvt->sms_messagetype);
@@ -2797,6 +2799,7 @@ int sms_incoming(private_t *tech_pvt)
 	memset(tech_pvt->sms_message, '\0', sizeof(tech_pvt->sms_message));
 	memset(tech_pvt->sms_sender, '\0', sizeof(tech_pvt->sms_sender));
 	memset(tech_pvt->sms_date, '\0', sizeof(tech_pvt->sms_date));
+	memset(tech_pvt->sms_userdataheader, '\0', sizeof(tech_pvt->sms_userdataheader));
 	memset(tech_pvt->sms_body, '\0', sizeof(tech_pvt->sms_body));
 	memset(tech_pvt->sms_datacodingscheme, '\0', sizeof(tech_pvt->sms_datacodingscheme));
 	memset(tech_pvt->sms_servicecentreaddress, '\0', sizeof(tech_pvt->sms_servicecentreaddress));
@@ -2989,7 +2992,7 @@ void find_ttyusb_devices(private_t *tech_pvt, const char *dirname)
 										usleep(200000); //0.2 seconds
 										read_count = serialPort_serial_control->Read(f.answer, AT_BUFSIZ);
 										if (read_count < 32) {
-											ERRORA("reading AT+GSN failed: |%s|, read_count=%d\n", GSMOPEN_P_LOG, f.answer, read_count);
+											ERRORA("reading AT+GSN failed: |%s|, read_count=%d, probably harmless in 'gsm reload'\n", GSMOPEN_P_LOG, f.answer, read_count);
 										} else {
 											strncpy(f.imei, f.answer+9, 15);
 											sprintf(at_command, "AT\r\n");

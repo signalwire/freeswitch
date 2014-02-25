@@ -26,6 +26,7 @@ The configure script accepts the following options:
    --enable-syslog     use syslog for error reporting
    --disable-stdout    use stdout for error reporting
    --enable-console    use /dev/console for error reporting
+   --enable-openssl    use OpenSSL crypto primitives
    --gdoi              use GDOI key management (disabled at present)
 
 By default, debbuging is enabled and stdout is used for debugging.
@@ -77,7 +78,7 @@ Applications
   Manual srtp keying uses the -k option; automated key management
   using gdoi will be added later.
 
-usage: rtpw [-d <debug>]* [-k <key> [-a][-e]] [-s | -r] dest_ip dest_port
+usage: rtpw [-d <debug>]* [-k <key> [-a][-e <key size>][-g]] [-s | -r] dest_ip dest_port
 or     rtpw -l
 
   Either the -s (sender) or -r (receiver) option must be chosen.
@@ -86,25 +87,15 @@ or     rtpw -l
   which the dictionary will be sent, respectively.  
 
   options:
-
-  -s		(s)rtp sender - causes app to send words
-
-  -r		(s)rtp receive - causes app to receve words
-
-  -k <key>      use srtp master key <key>, where the
-		key is a hexadecimal value (without the
-                leading "0x")
-
-  -e            encrypt/decrypt (for data confidentiality)
-                (requires use of -k option as well)
-
-  -a            message authentication 
-                (requires use of -k option as well)
-
-  -l            list debug modules
-
-  -d <debug>    turn on debugging for module <debug>
-
+       -a use message authentication
+       -e <key size> use encryption (use 128, 192, or 256 for key size)
+       -g Use AES-GCM mode (must be used with -e) 
+       -k <key>  sets the srtp master key
+       -s act as rtp sender
+       -r act as rtp receiver
+       -l list debug modules
+       -d <debug> turn on debugging for module <debug>
+       -i specify input/output file
 
 In order to get random 30-byte values for use as key/salt pairs , you
 can use the following bash function to format the output of
@@ -119,7 +110,7 @@ An example of an SRTP session using two rtpw programs follows:
 
 set k=c1eec3717da76195bb878578790af71c4ee9f859e197a414a78d5abc7451
 
-[sh1]$ test/rtpw -s -k $k -ea 0.0.0.0 9999 
+[sh1]$ test/rtpw -s -k $k -e 128 -a 0.0.0.0 9999 
 Security services: confidentiality message authentication
 set master key/salt to C1EEC3717DA76195BB878578790AF71C/4EE9F859E197A414A78D5ABC7451
 setting SSRC to 2078917053
@@ -129,7 +120,7 @@ sending word: aa
 sending word: aal
 ...
 
-[sh2]$ test/rtpw -r -k $k -ea 0.0.0.0 9999 
+[sh2]$ test/rtpw -r -k $k -e 128 -a 0.0.0.0 9999 
 security services: confidentiality message authentication
 set master key/salt to C1EEC3717DA76195BB878578790AF71C/4EE9F859E197A414A78D5ABC7451
 19 octets received from SSRC 2078917053 word: A

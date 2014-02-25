@@ -5,11 +5,21 @@ dnl http://www.sas.com/standards/large.file/x_open.20Mar96.html
 
 dnl Written by Paul Eggert <eggert@twinsun.com>.
 
-
 m4_include([M4/gcc_version.m4])
 m4_include([M4/octave.m4])
 m4_include([M4/mkoctfile_version.m4])
-
+m4_include([M4/extra_pkg.m4])
+m4_include([M4/lrint.m4])
+m4_include([M4/lrintf.m4])
+m4_include([M4/clang.m4])
+m4_include([M4/really_gcc.m4])
+m4_include([M4/stack_protect.m4])
+m4_include([M4/clip_mode.m4])
+m4_include([M4/add_cflags.m4])
+m4_include([M4/add_cxxflags.m4])
+m4_include([M4/flexible_array.m4])
+m4_include([M4/endian.m4])
+m4_include([M4/extra_largefile.m4])
 
 dnl Internal subroutine of AC_SYS_EXTRA_LARGEFILE.
 dnl AC_SYS_EXTRA_LARGEFILE_FLAGS(FLAGSNAME)

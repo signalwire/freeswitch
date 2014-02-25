@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.5.6b], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.5.8b], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [5])
-AC_SUBST(SWITCH_VERSION_MICRO, [6b])
+AC_SUBST(SWITCH_VERSION_MICRO, [8b])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -162,8 +162,6 @@ if test "${enable_optimizer}" = "yes" ; then
         AX_CC_MAXOPT
 fi
 
-AX_PATH_LIBGNUTLS()
-
 # set defaults for use on all platforms
 SWITCH_AM_CFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/include -I${switch_srcdir}/libs/libteletone/src -I${switch_srcdir}/libs/stfu"
 SWITCH_AM_CXXFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/include -I${switch_srcdir}/libs/libteletone/src -I${switch_srcdir}/libs/stfu"
@@ -178,7 +176,7 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
             SOLINK="-dynamic -force-flat-namespace"
         ;;
         *)
-            AC_ERROR([Please update configure.in with SOLINK values for your compiler])
+            SOLINK="-shared -Xlinker -x"
         ;;
 
     esac
@@ -402,14 +400,17 @@ AM_CONDITIONAL([ENABLE_ZRTP],[test "x$enable_zrtp" != "xno"])
 
 AM_CONDITIONAL([WANT_DEBUG],[test "${enable_debug}" = "yes"])
 
-AC_ARG_ENABLE(core-odbc-support,     
-	[AS_HELP_STRING([--enable-core-odbc-support], [Compile with ODBC Support])],,[enable_core_odbc_support="no"])
-AX_LIB_ODBC
-if test "$ac_cv_found_odbc" = "yes" ; then
-  enable_core_odbc_support="yes"
-fi
-if test "x$enable_core_odbc_support" != "xno"; then
-  AC_CHECK_LIB([odbc], [SQLDisconnect],, AC_MSG_ERROR([no usable libodbc; please install unixodbc devel package or equivalent]))
+AC_ARG_ENABLE(core-odbc-support,
+  [AS_HELP_STRING([--enable-core-odbc-support], [Compile with ODBC Support (default is optional)])],,[enable_core_odbc_support="optional"])
+if ! test "$enable_core_odbc_support" = "no"; then
+  AX_LIB_ODBC
+  if test "$ac_cv_found_odbc" = "yes" ; then
+    enable_core_odbc_support="yes"
+  elif test "$enable_core_odbc_support" = "yes"; then
+    AC_MSG_ERROR([no usable libodbc; please install unixodbc devel package or equivalent])
+  else
+    enable_core_odbc_support="no"
+  fi
 fi
 
 CHECK_LIBUUID
@@ -424,39 +425,47 @@ AC_ARG_ENABLE(core-pgsql-pkgconfig,
 if test x"$enable_core_pgsql_support" = x"yes" ; then
   AC_PATH_PROG([PG_CONFIG], [pg_config], [no])
   AC_PATH_PROG([PKG_CONFIG], [pkg-config], [no])
-  if test "$PG_CONFIG" = "no"; then
-    AC_MSG_RESULT([no])
-    AC_MSG_FAILURE([Unabled to find pg_config in PATH. Is PostgreSQL installed?])
-  else
     if test "$PKG_CONFIG" = "no" \
        || test x"$enable_core_pgsql_pkgconfig" = x"no" \
        || ! pkg-config libpq; then
-      AC_MSG_CHECKING([for PostgreSQL libraries])
-      POSTGRESQL_CXXFLAGS="`$PG_CONFIG --cppflags` -I`$PG_CONFIG --includedir`"
-      POSTGRESQL_LDFLAGS="`$PG_CONFIG --ldflags|sed 's/ -Wl,--as-needed//g'` -L`$PG_CONFIG --libdir` -lpq"
-      POSTGRESQL_VERSION=`$PG_CONFIG --version | sed -e 's#PostgreSQL ##'`
-      POSTGRESQL_MAJOR_VERSION=`$PG_CONFIG --version | sed -e 's/devel//' | sed -re 's#PostgreSQL ([0-9]+).[0-9]+.?[0-9]+?#\1#'`
-      POSTGRESQL_MINOR_VERSION=`$PG_CONFIG --version | sed -e 's/devel//' | sed -re 's#PostgreSQL [0-9]+.([0-9]+).?[0-9]+?#\1#'`
-      POSTGRESQL_PATCH_VERSION=`$PG_CONFIG --version | sed -e 's/devel//' | sed -re 's#PostgreSQL [0-9]+.[0-9]+.?([0-9]+)?#\1#'`
+	if test "$PG_CONFIG" != "no"; then
+            AC_MSG_CHECKING([for PostgreSQL libraries via pg_config])
+            POSTGRESQL_CFLAGS="-I`$PG_CONFIG --includedir`"
+            POSTGRESQL_LIBDIR="-L`$PG_CONFIG --libdir`"
+            POSTGRESQL_LDFLAGS="-L`$PG_CONFIG --libdir` -lpq"
+            POSTGRESQL_VERSION=`$PG_CONFIG --version | sed -e 's#PostgreSQL ##'`
+            POSTGRESQL_MAJOR_VERSION=`$PG_CONFIG --version | sed -e 's/devel//' | sed -re 's#PostgreSQL ([0-9]+).[0-9]+.?[0-9]+?#\1#'`
+            POSTGRESQL_MINOR_VERSION=`$PG_CONFIG --version | sed -e 's/devel//' | sed -re 's#PostgreSQL [0-9]+.([0-9]+).?[0-9]+?#\1#'`
+            POSTGRESQL_PATCH_VERSION=`$PG_CONFIG --version | sed -e 's/devel//' | sed -re 's#PostgreSQL [0-9]+.[0-9]+.?([0-9]+)?#\1#'`	
+        else
+            AC_MSG_ERROR([no usable pkg-config or pg_config; please install libpq devel package or equivalent])
+        fi
     else
-      AC_MSG_CHECKING([for PostgreSQL libraries])
-      POSTGRESQL_CXXFLAGS="`$PKG_CONFIG --cflags libpq`"
+      AC_MSG_CHECKING([for PostgreSQL libraries via pkg_config])
+      POSTGRESQL_CFLAGS="`$PKG_CONFIG --cflags libpq`"
+      POSTGRESQL_LIBDIR="`$PKG_CONFIG libpq --libs-only-L`"
       POSTGRESQL_LDFLAGS="`$PKG_CONFIG --libs libpq`"
       POSTGRESQL_VERSION="`$PKG_CONFIG --modversion libpq`"
       POSTGRESQL_MAJOR_VERSION="`echo $POSTGRESQL_VERSION | cut -d. -f1`"
       POSTGRESQL_MINOR_VERSION="`echo $POSTGRESQL_VERSION | cut -d. -f2`"
       POSTGRESQL_PATCH_VERSION="`echo $POSTGRESQL_VERSION | cut -d. -f3`"
     fi
+    save_LIBS="$LIBS"
+    LIBS="$POSTGRESQL_LIBDIR $LIBS"
+    AC_MSG_RESULT([$POSTGRESQL_LIBDIR])
+
     AC_DEFINE([SWITCH_HAVE_PGSQL], [1], [Define to 1 if PostgreSQL libraries are available])
     AC_DEFINE_UNQUOTED([POSTGRESQL_VERSION], "${POSTGRESQL_VERSION}", [Specifies the version of PostgreSQL we are linking against])
     AC_DEFINE_UNQUOTED([POSTGRESQL_MAJOR_VERSION], ${POSTGRESQL_MAJOR_VERSION}, [Specifies the version of PostgreSQL we are linking against])
     AC_DEFINE_UNQUOTED([POSTGRESQL_MINOR_VERSION], ${POSTGRESQL_MINOR_VERSION}, [Specifies the version of PostgreSQL we are linking against])
     AC_DEFINE_UNQUOTED([POSTGRESQL_PATCH_VERSION], ${POSTGRESQL_PATCH_VERSION}, [Specifies the version of PostgreSQL we are linking against])
+
     AC_CHECK_LIB([pq], [PQgetvalue],, AC_MSG_ERROR([no usable libpq; please install PostgreSQL devel package or equivalent]))
     AC_MSG_RESULT([yes])
-    SWITCH_AM_CXXFLAGS="$POSTGRESQL_CXXFLAGS $SWITCH_AM_CXXFLAGS"
+    SWITCH_AM_CXXFLAGS="$POSTGRESQL_CFLAGS $SWITCH_AM_CXXFLAGS"
     SWITCH_AM_LDFLAGS="$POSTGRESQL_LDFLAGS $SWITCH_AM_LDFLAGS"
-  fi
+
+    LIBS="$save_LIBS"
 fi
 
 AC_ARG_ENABLE(deprecated-core-db-events,
@@ -470,10 +479,81 @@ AC_ARG_ENABLE(timerfd-wrapper,
 [AC_HELP_STRING([--enable-timerfd-wrapper],[timerfd is in the kernel but not in your libc])],[enable_timer_fd_wrapper="$enableval"],[enable_timer_fd_wrapper="no"])
 AM_CONDITIONAL([ENABLE_TIMERFD_WRAPPER],[test "x$enable_timer_fd_wrapper" != "xno"])
 
+ESL_LDFLAGS=
+PLATFORM_CORE_LDFLAGS=
+PLATFORM_CORE_LIBS=
+
+# tweak platform specific flags
+case "$host" in
+    *darwin12.*|*darwin11.*)
+        APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
+        APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp -Wno-deprecated-declarations -I/usr/local/opt/openssl/include)
+        APR_ADDTO(LDFLAGS, -pipe -bind_at_load -L/usr/local/opt/openssl/lib)
+        APR_ADDTO(CXXFLAGS, -pipe)
+        APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
+	if test "x$enable_core_odbc_support" != "xno"; then
+	        APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
+	fi
+	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl])
+    ;;
+    *darwin10.*)
+        APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
+        APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp -I/usr/local/opt/openssl/include)
+        APR_ADDTO(LDFLAGS, -pipe -bind_at_load -L/usr/local/opt/openssl/lib)
+        APR_ADDTO(CXXFLAGS, -pipe)
+        APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
+	if test "x$enable_core_odbc_support" != "xno"; then
+	        APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
+	fi
+	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl])
+    ;;
+    *darwin*)
+        APR_ADDTO(CFLAGS, -I/usr/local/opt/openssl/include)
+        APR_ADDTO(LDFLAGS, -L/usr/local/opt/openssl/lib)
+        APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
+        APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
+	if test "x$enable_core_odbc_support" != "xno"; then
+	        APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
+	fi
+	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl])
+    ;;
+    *-solaris2*)
+        APR_ADDTO(SWITCH_AM_CFLAGS, -DPATH_MAX=2048 -D__EXTENSIONS__)
+        APR_ADDTO(SWITCH_AM_LDFLAGS, -lsendfile -lresolv -lsocket -lnsl -luuid)
+        APR_ADDTO(ESL_LDFLAGS, -lnsl -lsocket)
+	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lcrypt -lrt -lsendfile -lresolv -lsocket -lnsl -luuid])
+    ;;
+    *dragonfly*)
+        APR_ADDTO(CFLAGS, -I/usr/local/include)
+        APR_ADDTO(LDFLAGS, -L/usr/local/lib)
+        APR_ADDTO(SWITCH_AM_CFLAGS, -I/usr/local/include)
+    ;;
+    *openbsd*)
+        APR_ADDTO(CFLAGS, -I/usr/local/include)
+        APR_ADDTO(LDFLAGS, -L/usr/local/lib)
+        APR_ADDTO(SWITCH_AM_CFLAGS, -I/usr/local/include)
+    ;;
+    *netbsd*)
+        APR_ADDTO(CFLAGS, -I/usr/pkg/include)
+        APR_ADDTO(LDFLAGS, -L/usr/pkg/lib)
+        APR_ADDTO(SWITCH_AM_CFLAGS, -I/usr/pkg/include)
+    ;;
+    *bsd*)
+        APR_ADDTO(CFLAGS, -I/usr/local/include)
+        APR_ADDTO(LDFLAGS, -L/usr/local/lib)
+        APR_ADDTO(SWITCH_AM_CFLAGS, -I/usr/local/include)
+	APR_ADDTO([PLATFORM_CORE_LIBS], [-lcrypt -lrt])
+    ;;
+    *linux*)
+	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lcrypt -lrt])
+    ;;
+esac
+
+APR_REMOVEFROM(SWITCH_AM_CXXFLAGS, -std=c99)
 
 AC_CHECK_LIB(z, inflateReset, have_libz=yes, AC_MSG_ERROR([no usable zlib; please install zlib devel package or equivalent]))
 if test "x$have_libz" = "xyes"  ; then
-APR_ADDTO(SWITCH_AM_LDFLAGS, -lz)
+APR_ADDTO([PLATFORM_CORE_LIBS], [-lz])
 fi
 
 AC_CHECK_LIB(jpeg, jpeg_std_error,, AC_MSG_ERROR([no usable libjpeg; please install libjpeg devel package or equivalent]))
@@ -494,58 +574,6 @@ AC_CHECK_LIB(resolv, res_init, have_libresolv=yes, have_libresolv=no)
 if test "x$have_libresolv" = "xyes"  ; then
 APR_ADDTO(SWITCH_AM_LDFLAGS, -lresolv)
 fi
-
-ESL_LDFLAGS=
-PLATFORM_CORE_LDFLAGS=
-PLATFORM_CORE_LIBS=
-# tweak platform specific flags
-case "$host" in
-    *darwin12.*|*darwin11.*)
-        APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
-        APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp -Wno-deprecated-declarations)
-        APR_ADDTO(LDFLAGS, -pipe -bind_at_load)
-        APR_ADDTO(CXXFLAGS, -pipe)
-        APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
-	if test "x$enable_core_odbc_support" != "xno"; then
-	        APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
-	fi
-	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl])
-    ;;
-    *darwin10.*)
-        APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
-        APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp)
-        APR_ADDTO(LDFLAGS, -pipe -bind_at_load)
-        APR_ADDTO(CXXFLAGS, -pipe)
-        APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
-	if test "x$enable_core_odbc_support" != "xno"; then
-	        APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
-	fi
-	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl])
-    ;;
-    *darwin*)
-        APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
-        APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
-	if test "x$enable_core_odbc_support" != "xno"; then
-	        APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
-	fi
-	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl])
-    ;;
-    *-solaris2*)
-        APR_ADDTO(SWITCH_AM_CFLAGS, -DPATH_MAX=2048 -D__EXTENSIONS__)
-        APR_ADDTO(SWITCH_AM_LDFLAGS, -lsendfile -lresolv -lsocket -lnsl -luuid)
-        APR_ADDTO(ESL_LDFLAGS, -lnsl -lsocket)
-	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lcrypt -lrt -lsendfile -lresolv -lsocket -lnsl -luuid])
-    ;;
-    *bsd*)
-        APR_ADDTO(SWITCH_AM_CFLAGS, -I/usr/local/include)
-	APR_ADDTO([PLATFORM_CORE_LIBS], [-lcrypt -lrt])
-    ;;
-    *linux*)
-	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lcrypt -lrt])
-    ;;
-esac
-
-APR_REMOVEFROM(SWITCH_AM_CXXFLAGS, -std=c99)
 
 AC_SUBST(SWITCH_AM_CFLAGS)
 AC_SUBST(SWITCH_ANSI_CFLAGS)
@@ -811,6 +839,8 @@ elif test "$ac_cv_sizeof_long" = "8"; then
     int64_value="long"
     long_value=long
     case "$host" in
+        *pc-solaris2*)
+        ;;
         *-solaris2*|*apple-darwin*|*-openbsd*)
 	    if test "$ac_cv_sizeof_long_long" = "8"; then
 	        int64_t_fmt='#define SWITCH_INT64_T_FMT "lld"'
@@ -1005,14 +1035,18 @@ SAC_OPENSSL
 if test x$HAVE_OPENSSL = x1; then
 	openssl_CFLAGS="$openssl_CFLAGS -DHAVE_OPENSSL";
 	APR_ADDTO(SWITCH_AM_CFLAGS, -DHAVE_OPENSSL)
-	AC_CHECK_LIB(ssl, SSL_CTX_set_tlsext_use_srtp, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS_SRTP, 1, HAVE_OPENSSL_DTLS_SRTP))
-	AC_CHECK_LIB(ssl, DTLSv1_method, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS, 1, HAVE_OPENSSL_DTLS), AC_MSG_WARN([OpenSSL version < 1.0.1e you might want to upgrade]))
+	AC_CHECK_LIB(ssl, SSL_CTX_set_tlsext_use_srtp, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS_SRTP, 1, HAVE_OPENSSL_DTLS_SRTP), AC_MSG_ERROR([OpenSSL >= 1.0.1e and associaed developement headers required]))
+	AC_CHECK_LIB(ssl, DTLSv1_method, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS, 1, HAVE_OPENSSL_DTLS), AC_MSG_ERROR([OpenSSL >= 1.0.1e and associaed developement headers required]))
 else
-	AC_MSG_ERROR([OpenSSL and associaed developement headers required])
+	AC_MSG_ERROR([OpenSSL >= 1.0.1e and associaed developement headers required])
 fi
 
 AX_CHECK_JAVA
 
+# Option to enable static linking of Google's V8 inside mod_v8
+AC_ARG_ENABLE(static-v8,
+[AS_HELP_STRING([--enable-static-v8], [Statically link V8 into mod_v8])], [enable_static_v8="$enableval"], [enable_static_v8="no"])
+AM_CONDITIONAL([ENABLE_STATIC_V8],[test "x$enable_static_v8" != "xno"])
 
 AM_CONDITIONAL([HAVE_ODBC],[test "x$enable_core_odbc_support" != "xno"])
 AM_CONDITIONAL([HAVE_LIBEDIT],[test "x$enable_core_libedit_support" != "xno"])
@@ -1159,8 +1193,10 @@ AC_CONFIG_FILES([Makefile
 		src/mod/asr_tts/mod_unimrcp/Makefile
 		src/mod/languages/mod_java/Makefile
 		src/mod/languages/mod_lua/Makefile
+		src/mod/legacy/languages/mod_lua/Makefile
 		src/mod/languages/mod_python/Makefile
 		src/mod/languages/mod_spidermonkey/Makefile
+		src/mod/languages/mod_v8/Makefile
 		src/mod/event_handlers/mod_erlang_event/Makefile
 		src/include/switch_am_config.h
 		build/getsounds.sh
@@ -1177,6 +1213,7 @@ AC_CONFIG_FILES([Makefile
 
 AM_CONDITIONAL(ISLINUX, [test `uname -s` = Linux])
 AM_CONDITIONAL(ISMAC, [test `uname -s` = Darwin])
+AM_CONDITIONAL(ISFREEBSD, [test `uname -s` = FreeBSD])
 AM_CONDITIONAL(IS64BITLINUX, [test `uname -m` = x86_64])
 
 #some vars to sub into the Makefile.am's
@@ -1227,7 +1264,9 @@ AC_CONFIG_SUBDIRS([libs/pcre])
 AC_CONFIG_SUBDIRS([libs/apr])
 AC_CONFIG_SUBDIRS([libs/apr-util])
 AC_CONFIG_SUBDIRS([libs/ilbc])
-AC_CONFIG_SUBDIRS([libs/curl])
+if test "$ac_cv_use_system_curl" != "yes"; then
+	AC_CONFIG_SUBDIRS([libs/curl])
+fi
 AC_CONFIG_SUBDIRS([libs/iksemel])
 AC_CONFIG_SUBDIRS([libs/js/nsprpub])
 AC_CONFIG_SUBDIRS([libs/js])
@@ -1272,14 +1311,7 @@ echo $ECHO_N ".$ECHO_C" 1>&6
 sleep 1
 echo $ECHO_N ".$ECHO_C" 1>&6
 sleep 1
-echo $ECHO_N ".$ECHO_C" 1>&6
-sleep 1
-echo $ECHO_N ".$ECHO_C" 1>&6
-sleep 1
-echo $ECHO_N ".$ECHO_C" 1>&6
-sleep 1
 AC_MSG_RESULT([ See you in August. ;-)])
-sleep 2
 echo ""
 fi
 

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -130,7 +130,10 @@
     <ClCompile Include="lapi.c" />
     <ClCompile Include="lauxlib.c" />
     <ClCompile Include="lbaselib.c" />
+    <ClCompile Include="lbitlib.c" />
     <ClCompile Include="lcode.c" />
+    <ClCompile Include="lcorolib.c" />
+    <ClCompile Include="lctype.c" />
     <ClCompile Include="ldblib.c" />
     <ClCompile Include="ldebug.c" />
     <ClCompile Include="ldo.c" />
@@ -161,6 +164,7 @@
     <ClInclude Include="lapi.h" />
     <ClInclude Include="lauxlib.h" />
     <ClInclude Include="lcode.h" />
+    <ClInclude Include="lctype.h" />
     <ClInclude Include="ldebug.h" />
     <ClInclude Include="ldo.h" />
     <ClInclude Include="lfunc.h" />
@@ -176,6 +180,7 @@
     <ClInclude Include="ltable.h" />
     <ClInclude Include="ltm.h" />
     <ClInclude Include="lua.h" />
+    <ClInclude Include="lua.hpp" />
     <ClInclude Include="luaconf.h" />
     <ClInclude Include="lualib.h" />
     <ClInclude Include="lundump.h" />

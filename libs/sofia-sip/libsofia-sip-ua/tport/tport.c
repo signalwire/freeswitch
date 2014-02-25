@@ -520,6 +520,7 @@ tport_t *tport_tcreate(tp_stack_t *stack,
   tpp->tpp_idle = UINT_MAX;
   tpp->tpp_timeout = UINT_MAX;
   tpp->tpp_sigcomp_lifetime = UINT_MAX;
+  tpp->tpp_socket_keepalive = 30;
   tpp->tpp_keepalive = 0;
   tpp->tpp_pingpong = 0;
   tpp->tpp_pong2ping = 0;
@@ -1218,6 +1219,7 @@ int tport_get_params(tport_t const *self,
 	       TPTAG_QUEUESIZE(tpp->tpp_qsize),
 	       TPTAG_IDLE(tpp->tpp_idle),
 	       TPTAG_TIMEOUT(tpp->tpp_timeout),
+	       TPTAG_SOCKET_KEEPALIVE(tpp->tpp_socket_keepalive),
 	       TPTAG_KEEPALIVE(tpp->tpp_keepalive),
 	       TPTAG_PINGPONG(tpp->tpp_pingpong),
 	       TPTAG_PONG2PING(tpp->tpp_pong2ping),
@@ -1283,6 +1285,7 @@ int tport_set_params(tport_t *self,
 	      TAG_IF(!self->tp_queue, TPTAG_QUEUESIZE_REF(tpp->tpp_qsize)),
 	      TPTAG_IDLE_REF(tpp->tpp_idle),
 	      TPTAG_TIMEOUT_REF(tpp->tpp_timeout),
+	      TPTAG_SOCKET_KEEPALIVE_REF(tpp->tpp_socket_keepalive),
 	      TPTAG_KEEPALIVE_REF(tpp->tpp_keepalive),
 	      TPTAG_PINGPONG_REF(tpp->tpp_pingpong),
 	      TPTAG_PONG2PING_REF(pong2ping),

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -109,6 +109,7 @@ typedef struct switch_device_stats_s {
 	uint32_t early;
 	uint32_t early_in;
 	uint32_t early_out;
+	uint32_t ring_wait;
 } switch_device_stats_t;
 
 
@@ -414,7 +415,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_set_pre_buffer_framecount(
   \param new_allocator new pointer for the return value
   \return SWITCH_STATUS_SUCCESS if the operation was a success
 */
-SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(_In_ switch_port_t start,
+SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(_In_ const char *ip,
+															   _In_ switch_port_t start,
 															   _In_ switch_port_t end,
 															   _In_ switch_port_flag_t flags, _Out_ switch_core_port_allocator_t **new_allocator);
 
@@ -2311,7 +2313,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload);
 SWITCH_DECLARE(switch_bool_t) switch_check_network_list_ip_token(const char *ip_str, const char *list_name, const char **token);
 #define switch_check_network_list_ip(_ip_str, _list_name) switch_check_network_list_ip_token(_ip_str, _list_name, NULL)
 SWITCH_DECLARE(void) switch_time_set_monotonic(switch_bool_t enable);
-SWITCH_DECLARE(void) switch_time_set_timerfd(switch_bool_t enable);
+SWITCH_DECLARE(void) switch_time_set_timerfd(int enable);
 SWITCH_DECLARE(void) switch_time_set_nanosleep(switch_bool_t enable);
 SWITCH_DECLARE(void) switch_time_set_matrix(switch_bool_t enable);
 SWITCH_DECLARE(void) switch_time_set_cond_yield(switch_bool_t enable);
@@ -2600,6 +2602,16 @@ SWITCH_DECLARE(int) switch_stream_system_fork(const char *cmd, switch_stream_han
 SWITCH_DECLARE(int) switch_stream_system(const char *cmd, switch_stream_handle_t *stream);
 
 SWITCH_DECLARE(switch_call_direction_t) switch_ice_direction(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_session_debug_pool(switch_stream_handle_t *stream);
+
+SWITCH_DECLARE(const char *)switch_version_major(void);
+SWITCH_DECLARE(const char *)switch_version_minor(void);
+SWITCH_DECLARE(const char *)switch_version_micro(void);
+
+SWITCH_DECLARE(const char *)switch_version_revision(void);
+SWITCH_DECLARE(const char *)switch_version_revision_human(void);
+SWITCH_DECLARE(const char *)switch_version_full(void);
+SWITCH_DECLARE(const char *)switch_version_full_human(void);
 
 SWITCH_END_EXTERN_C
 #endif

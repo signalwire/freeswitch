@@ -2095,6 +2095,8 @@ int gsmopen_serial_read_AT(private_t * tech_pvt, int look_for_ack, int timeout_u
 						DEBUGA_GSMOPEN("address=%s\n", GSMOPEN_P_LOG, sms->address().toString().c_str());
 						DEBUGA_GSMOPEN("serviceCentreAddress=%s\n", GSMOPEN_P_LOG, sms->serviceCentreAddress().toString().c_str());
 						DEBUGA_GSMOPEN("serviceCentreTimestamp=%s\n", GSMOPEN_P_LOG, sms->serviceCentreTimestamp().toString().c_str());
+						DEBUGA_GSMOPEN("UserDataHeader=%s\n", GSMOPEN_P_LOG, (char *)bufToHex((unsigned char *)
+						                                ((string) sms->userDataHeader()).data(), sms->userDataHeader().length()).c_str());
 						DEBUGA_GSMOPEN("messageType=%d\n", GSMOPEN_P_LOG, sms->messageType());
 						DEBUGA_GSMOPEN("userData= |||%s|||\n", GSMOPEN_P_LOG, content2);
 
@@ -2105,6 +2107,9 @@ int gsmopen_serial_read_AT(private_t * tech_pvt, int look_for_ack, int timeout_u
 						strncpy(tech_pvt->sms_body, sms_body, sizeof(tech_pvt->sms_body));
 						strncpy(tech_pvt->sms_sender, sms->address().toString().c_str(), sizeof(tech_pvt->sms_sender));
 						strncpy(tech_pvt->sms_date, sms->serviceCentreTimestamp().toString().c_str(), sizeof(tech_pvt->sms_date));
+						strncpy(tech_pvt->sms_userdataheader, (char *)
+						                        bufToHex((unsigned char *)((string) sms->userDataHeader()).data(), sms->userDataHeader().length()).c_str(),
+						                        sizeof(tech_pvt->sms_userdataheader));
 						strncpy(tech_pvt->sms_datacodingscheme, sms->dataCodingScheme().toString().c_str(), sizeof(tech_pvt->sms_datacodingscheme));
 						strncpy(tech_pvt->sms_servicecentreaddress, sms->serviceCentreAddress().toString().c_str(),
 								sizeof(tech_pvt->sms_servicecentreaddress));

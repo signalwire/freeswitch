@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2012 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
@@ -44,12 +45,11 @@ main (void)
 	const char	*filename ;
 	int			k ;
 
+	print_test_name ("alaw_test", "encoder") ;
+
 	filename = "test.raw" ;
 
-	sfinfo.format		= SF_FORMAT_RAW | SF_FORMAT_ALAW ;
-	sfinfo.samplerate	= 44100 ;
-	sfinfo.frames		= 123456789 ; /* Wrong length. Library should correct this on sf_close. */
-	sfinfo.channels		= 1 ;
+	sf_info_setup (&sfinfo, SF_FORMAT_RAW | SF_FORMAT_ALAW, 44100, 1) ;
 
 	if ((file = sf_open (filename, SFM_WRITE, &sfinfo)) == NULL)
 	{	printf ("sf_open_write failed with error : ") ;
@@ -94,8 +94,9 @@ main (void)
 
 	sf_close (file) ;
 
-	printf ("    alaw_test : encoder ... ok\n") ;
+	puts ("ok") ;
 
+	print_test_name ("alaw_test", "decoder") ;
 	/* Now generate a file containing all possible 8 bit encoded
 	** sample values and write it to disk as alaw encoded.frames.
 	*/
@@ -139,7 +140,7 @@ main (void)
 
 	sf_close (file) ;
 
-	printf ("    alaw_test : decoder ... ok\n") ;
+	puts ("ok") ;
 
 	unlink (filename) ;
 
@@ -188,48 +189,48 @@ unsigned char alaw_encode (int sample)
 		7, 7, 7, 7, 7, 7, 7, 7
 		} ;
 
-    int sign, exponent, mantissa ;
-    unsigned char Alawbyte ;
+	int sign, exponent, mantissa ;
+	unsigned char Alawbyte ;
 
-    /* Get the sample into sign-magnitude. */
-    sign = ((~sample) >> 8) & 0x80 ;			/* set aside the sign */
-    if (sign == 0)
+	/* Get the sample into sign-magnitude. */
+	sign = ((~sample) >> 8) & 0x80 ;			/* set aside the sign */
+	if (sign == 0)
 		sample = -sample ;		/* get magnitude */
-    if (sample > ACLIP)
+	if (sample > ACLIP)
 		sample = ACLIP ;						/* clip the magnitude */
 
-    /* Convert from 16 bit linear to ulaw. */
-    if (sample >= 256)
+	/* Convert from 16 bit linear to ulaw. */
+	if (sample >= 256)
 	{	exponent = exp_lut [(sample >> 8) & 0x7F] ;
-		mantissa = ( sample >> ( exponent + 3 ) ) & 0x0F ;
+		mantissa = (sample >> (exponent + 3)) & 0x0F ;
 		Alawbyte = ((exponent << 4) | mantissa) ;
 		}
-    else
+	else
 		Alawbyte = (sample >> 4) ;
 
 	Alawbyte ^= (sign ^ 0x55) ;
 
-    return Alawbyte ;
+	return Alawbyte ;
 } /* alaw_encode */
 
 static
 int alaw_decode (unsigned int Alawbyte)
 {	static int exp_lut [8] = { 0, 264, 528, 1056, 2112, 4224, 8448, 16896 } ;
-    int sign, exponent, mantissa, sample ;
+	int sign, exponent, mantissa, sample ;
 
-    Alawbyte ^= 0x55 ;
-    sign = (Alawbyte & 0x80) ;
-    Alawbyte &= 0x7f ;			/* get magnitude */
-    if (Alawbyte >= 16)
-	{	exponent = (Alawbyte >> 4 ) & 0x07 ;
+	Alawbyte ^= 0x55 ;
+	sign = (Alawbyte & 0x80) ;
+	Alawbyte &= 0x7f ;			/* get magnitude */
+	if (Alawbyte >= 16)
+	{	exponent = (Alawbyte >> 4) & 0x07 ;
 		mantissa = Alawbyte & 0x0F ;
-		sample = exp_lut [exponent] + (mantissa << ( exponent + 3 )) ;
+		sample = exp_lut [exponent] + (mantissa << (exponent + 3)) ;
 		}
-    else
+	else
 		sample = (Alawbyte << 4) + 8 ;
-    if (sign == 0)
+	if (sign == 0)
 		sample = -sample ;
 
-    return sample ;
+	return sample ;
 } /* alaw_decode */
 

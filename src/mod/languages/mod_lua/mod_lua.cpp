@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -45,7 +45,6 @@ SWITCH_MODULE_DEFINITION_EX(mod_lua, mod_lua_load, mod_lua_shutdown, NULL, SMODF
 static struct {
 	switch_memory_pool_t *pool;
 	char *xml_handler;
-	switch_event_node_t *node;
 } globals;
 
 int luaopen_freeswitch(lua_State * L);
@@ -66,7 +65,7 @@ static void lua_uninit(lua_State * L)
 
 static int traceback(lua_State * L)
 {
-	lua_getfield(L, LUA_GLOBALSINDEX, "debug");
+	lua_getglobal(L, "debug");
 	if (!lua_istable(L, -1)) {
 		lua_pop(L, 1);
 		return 1;
@@ -82,7 +81,7 @@ static int traceback(lua_State * L)
 	return 1;
 }
 
-int docall(lua_State * L, int narg, int nresults, int perror)
+int docall(lua_State * L, int narg, int nresults, int perror, int fatal)
 {
 	int status;
 	int base = lua_gettop(L) - narg;	/* function index */
@@ -103,9 +102,13 @@ int docall(lua_State * L, int narg, int nresults, int perror)
 		if (!zstr(err)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", err);
 		}
-		//lua_pop(L, 1); /* pop error message from the stack */
+		
 		// pass error up to top
-		lua_error(L);
+		if (fatal) {
+			lua_error(L);
+		} else {
+			lua_pop(L, 1); /* pop error message from the stack */
+		}
 	}
 
 	return status;
@@ -114,7 +117,7 @@ int docall(lua_State * L, int narg, int nresults, int perror)
 
 static lua_State *lua_init(void)
 {
-	lua_State *L = lua_open();
+	lua_State *L = luaL_newstate();
 	int error = 0;
 
 	if (L) {
@@ -124,7 +127,7 @@ static lua_State *lua_init(void)
 		luaopen_freeswitch(L);
 		lua_gc(L, LUA_GCRESTART, 0);
 		lua_atpanic(L, panic);
-		error = luaL_loadbuffer(L, buff, strlen(buff), "line") || docall(L, 0, 0, 0);
+		error = luaL_loadbuffer(L, buff, strlen(buff), "line") || docall(L, 0, 0, 0, 1);
 	}
 	return L;
 }
@@ -143,10 +146,10 @@ static int lua_parse_and_execute(lua_State * L, char *input_code)
 	
 	if (*input_code == '~') {
 		char *buff = input_code + 1;
-		error = luaL_loadbuffer(L, buff, strlen(buff), "line") || docall(L, 0, 0, 0);	//lua_pcall(L, 0, 0, 0);
+		error = luaL_loadbuffer(L, buff, strlen(buff), "line") || docall(L, 0, 0, 0, 1);	//lua_pcall(L, 0, 0, 0);
 	} else if (!strncasecmp(input_code, "#!/lua", 6)) {
 		char *buff = input_code + 6;
-		error = luaL_loadbuffer(L, buff, strlen(buff), "line") || docall(L, 0, 0, 0);	//lua_pcall(L, 0, 0, 0);
+		error = luaL_loadbuffer(L, buff, strlen(buff), "line") || docall(L, 0, 0, 0, 1);	//lua_pcall(L, 0, 0, 0);
 	} else {
 		char *args = strchr(input_code, ' ');
 		if (args) {
@@ -170,14 +173,14 @@ static int lua_parse_and_execute(lua_State * L, char *input_code)
 			}
 
 			if (code) {
-				error = luaL_loadbuffer(L, code, strlen(code), "line") || docall(L, 0, 0, 0);
+				error = luaL_loadbuffer(L, code, strlen(code), "line") || docall(L, 0, 0, 0, 1);
 				switch_safe_free(code);
 			}
 		} else {
 			// Force empty argv table
 			char *code = NULL;
 			code = switch_mprintf("argv = {[0]='%s'};", input_code);
-			error = luaL_loadbuffer(L, code, strlen(code), "line") || docall(L, 0, 0, 0);
+			error = luaL_loadbuffer(L, code, strlen(code), "line") || docall(L, 0, 0, 0, 1);
 			switch_safe_free(code);
 		}
 
@@ -189,7 +192,7 @@ static int lua_parse_and_execute(lua_State * L, char *input_code)
 				switch_assert(fdup);
 				file = fdup;
 			}
-			error = luaL_loadfile(L, file) || docall(L, 0, 0, 0);
+			error = luaL_loadfile(L, file) || docall(L, 0, 0, 0, 1);
 			switch_safe_free(fdup);
 		}
 	}
@@ -267,7 +270,7 @@ static switch_xml_t lua_fetch(const char *section,
 		    return NULL;
 		}
 
-		lua_getfield(L, LUA_GLOBALSINDEX, "XML_STRING");
+		lua_getglobal(L, "XML_STRING");
 		str = lua_tostring(L, 1);
 		
 		if (str) {
@@ -339,12 +342,16 @@ static switch_status_t do_config(void)
 			char *script = (char *) switch_xml_attr_soft(hook, "script");
 			switch_event_types_t evtype;
 
+			if (!zstr(script)) {
+				script = switch_core_strdup(globals.pool, script);
+			}
+
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "hook params: '%s' | '%s' | '%s'\n", event, subclass, script);
 
 			if (switch_name_event(event,&evtype) == SWITCH_STATUS_SUCCESS) {
 				if (!zstr(script)) {
-					if (switch_event_bind_removable(modname, evtype, !zstr(subclass) ? subclass : SWITCH_EVENT_SUBCLASS_ANY,
-							lua_event_handler, script, &globals.node) == SWITCH_STATUS_SUCCESS) {
+					if (switch_event_bind(modname, evtype, !zstr(subclass) ? subclass : SWITCH_EVENT_SUBCLASS_ANY,
+							lua_event_handler, script) == SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "event handler for '%s' set to '%s'\n", switch_event_name(evtype), script);
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set event handler: unsuccessful bind\n");
@@ -578,7 +585,7 @@ SWITCH_STANDARD_DIALPLAN(lua_dialplan_hunt)
 	lua_parse_and_execute(L, cmd);
 
 	/* expecting ACTIONS = { {"app1", "app_data1"}, { "app2" }, "app3" } -- each of three is valid */
-	lua_getfield(L, LUA_GLOBALSINDEX, "ACTIONS");
+	lua_getglobal(L, "ACTIONS");
 	if (!lua_istable(L, 1)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
 			"Global variable ACTIONS may only be a table\n");
@@ -691,7 +698,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_lua_shutdown)
 {
-	switch_event_unbind(&globals.node);
+	switch_event_unbind_callback(lua_event_handler);
 
 	return SWITCH_STATUS_SUCCESS;
 }

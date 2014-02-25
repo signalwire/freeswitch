@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -178,6 +178,7 @@ struct switch_core_session {
 	switch_size_t recur_buffer_len;
 
 	switch_media_handle_t *media_handle;
+	uint32_t decoder_errors;
 };
 
 struct switch_media_bug {
@@ -276,6 +277,7 @@ struct switch_runtime {
 	char *core_db_inner_pre_trans_execute;
 	char *core_db_inner_post_trans_execute;
 	int events_use_dispatch;
+	uint32_t port_alloc_flags;
 };
 
 extern struct switch_runtime runtime;

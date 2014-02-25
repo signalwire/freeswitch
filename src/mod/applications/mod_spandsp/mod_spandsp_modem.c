@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -81,7 +81,7 @@ static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uin
 	return 0;
 }
 
-static int t31_at_tx_handler(at_state_t *s, void *user_data, const uint8_t *buf, size_t len)
+static int t31_at_tx_handler(void *user_data, const uint8_t *buf, size_t len)
 {
 	modem_t *modem = user_data;
 
@@ -1024,7 +1024,6 @@ static void wake_modem_thread(modem_t *modem)
 static int control_handler(modem_t *modem, const char *num, int op)
 {
 	switch_core_session_t *session = NULL;
-	at_state_t *at_state;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Control Handler op:%d state:[%s] %s\n", 
 					  op, modem_state2name(modem_get_state(modem)), modem->devlink);
@@ -1103,16 +1102,14 @@ static int control_handler(modem_t *modem, const char *num, int op)
 			u_char x[1];
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1,
 							  "Modem %s [%s] - CTS %s\n", modem->devlink, modem_state2name(modem_get_state(modem)), (int) (intptr_t) num ? "XON" : "XOFF");
-
-			at_state = t31_get_at_state(modem->t31_state);
 			if (num) {
 				x[0] = 0x11;
-				t31_at_tx_handler(at_state, modem, x, 1);
+				t31_at_tx_handler(modem, x, 1);
 				switch_clear_flag(modem, MODEM_FLAG_XOFF);
 				wake_modem_thread(modem);
 			} else {
 				x[0] = 0x13;
-				t31_at_tx_handler(at_state, modem, x, 1);
+				t31_at_tx_handler(modem, x, 1);
 				switch_set_flag(modem, MODEM_FLAG_XOFF);
 			}
 		}
@@ -1238,7 +1235,7 @@ static void *SWITCH_THREAD_FUNC modem_thread(switch_thread_t *thread, void *obj)
 	DWORD readBytes;
 	OVERLAPPED o;
 #endif
-	char buf[T31_TX_BUF_LEN], tmp[80];
+	char buf[T31_TX_BUF_LEN];
 
 	switch_mutex_lock(globals.mutex);
 	modem_init(modem, control_handler);
@@ -1298,18 +1295,8 @@ static void *SWITCH_THREAD_FUNC modem_thread(switch_thread_t *thread, void *obj)
 #endif
 			t31_at_rx(modem->t31_state, buf, r);
 
-			memset(tmp, 0, sizeof(tmp));
 			if (!strncasecmp(buf, "AT", 2)) {
-				int x;
-
-				strncpy(tmp, buf, r);
-				for (x = 0; x < r; x++) {
-					if (tmp[x] == '\r' || tmp[x] == '\n') {
-						tmp[x] = '\0';
-					}
-				}
-
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Command on %s [%s]\n", modem->devlink, tmp);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Command on %s [%s]\n", modem->devlink, buf);
 			}
 		}
 

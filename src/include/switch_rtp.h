@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -50,6 +50,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_RTP_KEY_LEN 30
 #define SWITCH_RTP_CRYPTO_KEY_32 "AES_CM_128_HMAC_SHA1_32"
 #define SWITCH_RTP_CRYPTO_KEY_80 "AES_CM_128_HMAC_SHA1_80"
+#define SWITCH_RTP_CRYPTO_KEY_8 "AES_GCM_128_8"
 	typedef enum {
 	SWITCH_RTP_CRYPTO_SEND,
 	SWITCH_RTP_CRYPTO_RECV,
@@ -63,6 +64,9 @@ typedef enum {
 	AES_CM_128_HMAC_SHA1_80,
 	AES_CM_128_HMAC_SHA1_32,
 	AES_CM_256_HMAC_SHA1_80,
+	AES_CM_192_HMAC_SHA1_80,
+	AES_GCM_256_8,
+	AES_GCM_128_8,
 	AES_CM_128_NULL_AUTH
 } switch_rtp_crypto_key_type_t;
 
@@ -96,7 +100,7 @@ typedef struct icand_s {
 	uint8_t ready;
 } icand_t;
 
-#define MAX_CAND 25
+#define MAX_CAND 50
 typedef struct ice_s {
 
 	icand_t cands[MAX_CAND][2];
@@ -485,7 +489,6 @@ SWITCH_DECLARE(void) switch_rtp_set_private(switch_rtp_t *rtp_session, void *pri
 */
 SWITCH_DECLARE(void) switch_rtp_set_telephony_event(switch_rtp_t *rtp_session, switch_payload_t te);
 SWITCH_DECLARE(void) switch_rtp_set_telephony_recv_event(switch_rtp_t *rtp_session, switch_payload_t te);
-SWITCH_DECLARE(void) switch_rtp_set_recv_pt(switch_rtp_t *rtp_session, switch_payload_t pt);
 
 /*! 
   \brief Set the payload type for comfort noise
@@ -500,7 +503,7 @@ SWITCH_DECLARE(void) switch_rtp_set_cng_pt(switch_rtp_t *rtp_session, switch_pay
   \return the pointer to the private data
 */
 SWITCH_DECLARE(void *) switch_rtp_get_private(switch_rtp_t *rtp_session);
-
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_payload_map(switch_rtp_t *rtp_session, payload_map_t **pmap);
 SWITCH_DECLARE(void) switch_rtp_intentional_bugs(switch_rtp_t *rtp_session, switch_rtp_bug_flag_t bugs);
 
 SWITCH_DECLARE(switch_rtp_stats_t *) switch_rtp_get_stats(switch_rtp_t *rtp_session, switch_memory_pool_t *pool);

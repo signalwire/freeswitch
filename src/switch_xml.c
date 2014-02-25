@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -1940,6 +1940,7 @@ SWITCH_DECLARE(uint32_t) switch_xml_clear_user_cache(const char *key, const char
 	char mega_key[1024];
 	int r = 0;
 	switch_xml_t lookup;
+	char *expires_val = NULL;
 
 	switch_mutex_lock(CACHE_MUTEX);
 
@@ -1948,8 +1949,10 @@ SWITCH_DECLARE(uint32_t) switch_xml_clear_user_cache(const char *key, const char
 
 		if ((lookup = switch_core_hash_find(CACHE_HASH, mega_key))) {
 			switch_core_hash_delete(CACHE_HASH, mega_key);
-			if ((lookup = switch_core_hash_find(CACHE_EXPIRES_HASH, mega_key))) {
+			if ((expires_val = switch_core_hash_find(CACHE_EXPIRES_HASH, mega_key))) {
 				switch_core_hash_delete(CACHE_EXPIRES_HASH, mega_key);
+				free(expires_val);
+				expires_val = NULL;
 			}
 			switch_xml_free(lookup);
 			r++;
@@ -2044,33 +2047,51 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_merged(const char *key, c
 {
 	switch_xml_t xml, domain, group, x_user, x_user_dup;
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *kdup = NULL;
+	char *keys[10] = {0};
+	int i, nkeys;
 
-	if ((status = switch_xml_locate_user_cache(key, user_name, domain_name, &x_user)) == SWITCH_STATUS_SUCCESS) {
-		*user = x_user;
-	} else if ((status = switch_xml_locate_user(key, user_name, domain_name, ip, &xml, &domain, &x_user, &group, params)) == SWITCH_STATUS_SUCCESS) {
-		const char *cacheable = NULL;
-
-		x_user_dup = switch_xml_dup(x_user);
-		switch_xml_merge_user(x_user_dup, domain, group);
-
-		cacheable = switch_xml_attr(x_user_dup, "cacheable");
-		if (switch_true(cacheable)) {
-			switch_time_t expires = 0;
-			switch_time_t time_now = 0;
-
-			if (switch_is_number(cacheable)) {
-				int cache_ms = atol(cacheable);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "caching lookup for user %s@%s for %d milliseconds\n", user_name, domain_name, cache_ms);
-				time_now = switch_micro_time_now();
-				expires = time_now + (cache_ms * 1000);
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "caching lookup for user %s@%s indefinitely\n", user_name, domain_name);
-			}
-			switch_xml_user_cache(key, user_name, domain_name, x_user_dup, expires);
-		}
-		*user = x_user_dup;
-		switch_xml_free(xml);
+	if (strchr(key, ':')) {
+		kdup = strdup(key);
+		nkeys  = switch_split(kdup, ':', keys);
+	} else {
+		keys[0] = (char *)key;
+		nkeys = 1;
 	}
+
+	for(i = 0; i < nkeys; i++) {
+		if ((status = switch_xml_locate_user_cache(keys[i], user_name, domain_name, &x_user)) == SWITCH_STATUS_SUCCESS) {
+			*user = x_user;
+			break;
+		} else if ((status = switch_xml_locate_user(keys[i], user_name, domain_name, ip, &xml, &domain, &x_user, &group, params)) == SWITCH_STATUS_SUCCESS) {
+			const char *cacheable = NULL;
+
+			x_user_dup = switch_xml_dup(x_user);
+			switch_xml_merge_user(x_user_dup, domain, group);
+
+			cacheable = switch_xml_attr(x_user_dup, "cacheable");
+			if (!zstr(cacheable)) {
+				switch_time_t expires = 0;
+				switch_time_t time_now = 0;
+
+				if (switch_is_number(cacheable)) {
+					int cache_ms = atol(cacheable);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "caching lookup for user %s@%s for %d milliseconds\n", 
+									  user_name, domain_name, cache_ms);
+					time_now = switch_micro_time_now();
+					expires = time_now + (cache_ms * 1000);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "caching lookup for user %s@%s indefinitely\n", user_name, domain_name);
+				}
+				switch_xml_user_cache(keys[i], user_name, domain_name, x_user_dup, expires);
+			}
+			*user = x_user_dup;
+			switch_xml_free(xml);
+			break;
+		}
+	}
+
+	switch_safe_free(kdup);
 
 	return status;
 

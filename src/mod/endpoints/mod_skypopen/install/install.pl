@@ -1,9 +1,11 @@
 #!/usr/bin/perl
 
 my $myname ;
-my $skype_download_url = "http://mirrors.kernel.org/archlinux/community/os/i686/skype-oss-2.0.0.72-3-i686.pkg.tar.xz";
+#my $skype_download_url = "http://mirrors.kernel.org/archlinux/community/os/i686/skype-oss-2.0.0.72-3-i686.pkg.tar.xz";
+my $skype_download_url = "http://212.71.238.115:8080/skype-oss-2.0.0.72-3-i686.pkg.tar.xz";
 my $skype_download_pkg = "skype-oss-2.0.0.72-3-i686.pkg.tar.xz";
-my $skype_binary_dir = "/usr/bin";
+#my $skype_binary_dir = "/usr/bin";
+my $skype_binary_dir = "/usr/local/freeswitch/skypopen/skype-clients-symlinks-dir";
 my $skype_download_dir = "/tmp/skype_download";
 my $skype_share_dir = "/usr/share/skype";
 my $freeswitch_modules_config_dir = "/usr/local/freeswitch/conf/autoload_configs";

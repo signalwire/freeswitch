@@ -20,8 +20,8 @@ ac_cv_symbol_arm_neon="no"
 case "${ax_cv_c_compiler_vendor}" in
 gnu)
     save_CFLAGS="${CFLAGS}"
-    CFLAGS="${CFLAGS} -mfpu=neon"
-    AC_COMPILE_IFELSE(
+    CFLAGS="${CFLAGS} -mfpu=neon -mfloat-abi=hard"
+    AC_RUN_IFELSE(
         [AC_LANG_PROGRAM(
             [
                 #include <inttypes.h>
@@ -33,7 +33,7 @@ gnu)
                 }
             ],
             [
-                int32x4_t z;
+                volatile int32x4_t z;
                 int16_t x[[8]];
                 int16_t y[[8]];
                 z = testfunc(x, y);
@@ -45,6 +45,9 @@ gnu)
          COMP_VENDOR_CXXFLAGS="-mfpu=neon $COMP_VENDOR_CXXFLAGS"
          ac_cv_symbol_arm_neon="yes"],
 
+        [AC_MSG_RESULT([no])],
+
+        dnl Assume "no" if cross-compiling
         [AC_MSG_RESULT([no])]
     )
     CFLAGS="${save_CFLAGS}"

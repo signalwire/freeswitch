@@ -9,7 +9,7 @@
 
 /*
  *	
- * Copyright (c) 2001-2006, Cisco Systems, Inc.
+ * Copyright (c) 2001-2006,2013 Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -49,9 +49,6 @@
 #include "aes_icm.h"
 #include "alloc.h"
 
-#ifdef _MSC_VER
-#pragma warning(disable:4100)
-#endif
 
 debug_module_t mod_aes_icm = {
   0,                 /* debugging is off by default */
@@ -168,7 +165,7 @@ aes_icm_dealloc(cipher_t *c) {
 err_status_t
 aes_icm_context_init(aes_icm_ctx_t *c, const uint8_t *key, int key_len) {
   err_status_t status;
-  int base_key_len;
+  int base_key_len, copy_len;
 
   if (key_len > 16 && key_len < 30) /* Ismacryp */
     base_key_len = 16;
@@ -177,15 +174,21 @@ aes_icm_context_init(aes_icm_ctx_t *c, const uint8_t *key, int key_len) {
   else
     return err_status_bad_param;
 
-  /* set counter and initial values to 'offset' value */
-  /* Note this copies past the end of the 'key' array by 2 bytes! */
-  v128_copy_octet_string(&c->counter, key + base_key_len);
-  v128_copy_octet_string(&c->offset, key + base_key_len);
+  /*
+   * set counter and initial values to 'offset' value, being careful not to
+   * go past the end of the key buffer
+   */
+  v128_set_to_zero(&c->counter);
+  v128_set_to_zero(&c->offset);
 
-  /* force last two octets of the offset to zero (for srtp compatibility) */
-  c->offset.v8[14] = c->offset.v8[15] = 0;
-  c->counter.v8[14] = c->counter.v8[15] = 0;
-  
+  copy_len = key_len - base_key_len;
+  /* force last two octets of the offset to be left zero (for srtp compatibility) */
+  if (copy_len > 14)
+    copy_len = 14;
+
+  memcpy(&c->counter, key + base_key_len, copy_len);
+  memcpy(&c->offset, key + base_key_len, copy_len);
+
   debug_print(mod_aes_icm, 
 	      "key:  %s", octet_string_hex_string(key, base_key_len)); 
   debug_print(mod_aes_icm, 
@@ -269,7 +272,7 @@ aes_icm_set_octet(aes_icm_ctx_t *c,
  */
 
 err_status_t
-aes_icm_set_iv(aes_icm_ctx_t *c, void *iv) {
+aes_icm_set_iv(aes_icm_ctx_t *c, void *iv, int direction) {
   v128_t *nonce = (v128_t *) iv;
 
   debug_print(mod_aes_icm, 
@@ -500,6 +503,8 @@ cipher_test_case_t aes_icm_test_case_0 = {
   aes_icm_test_case_0_plaintext,         /* plaintext                */
   32,                                    /* octets in ciphertext     */
   aes_icm_test_case_0_ciphertext,        /* ciphertext               */
+  0,
+  NULL,
   NULL                                   /* pointer to next testcase */
 };
 
@@ -539,6 +544,8 @@ cipher_test_case_t aes_icm_test_case_1 = {
   aes_icm_test_case_1_plaintext,         /* plaintext                */
   32,                                    /* octets in ciphertext     */
   aes_icm_test_case_1_ciphertext,        /* ciphertext               */
+  0,
+  NULL,
   &aes_icm_test_case_0                   /* pointer to next testcase */
 };
 
@@ -552,9 +559,11 @@ cipher_type_t aes_icm = {
   (cipher_alloc_func_t)          aes_icm_alloc,
   (cipher_dealloc_func_t)        aes_icm_dealloc,  
   (cipher_init_func_t)           aes_icm_context_init,
+  (cipher_set_aad_func_t)        0,
   (cipher_encrypt_func_t)        aes_icm_encrypt,
   (cipher_decrypt_func_t)        aes_icm_encrypt,
   (cipher_set_iv_func_t)         aes_icm_set_iv,
+  (cipher_get_tag_func_t)        0,
   (char *)                       aes_icm_description,
   (int)                          0,   /* instance count */
   (cipher_test_case_t *)        &aes_icm_test_case_1,

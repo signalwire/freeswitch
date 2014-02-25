@@ -28,7 +28,6 @@ avoid_mods=(
   endpoints/mod_opal
   endpoints/mod_reference
   endpoints/mod_unicall
-  formats/mod_shout
   languages/mod_managed
   languages/mod_spidermonkey
   sdk/autotools
@@ -36,6 +35,7 @@ avoid_mods=(
   xml_int/mod_xml_radius
 )
 avoid_mods_sid=(
+  languages/mod_java
 )
 avoid_mods_jessie=(
 )
@@ -44,6 +44,29 @@ avoid_mods_wheezy=(
 avoid_mods_squeeze=(
   formats/mod_vlc
   languages/mod_managed
+)
+manual_pkgs=(
+freeswitch-all
+freeswitch
+libfreeswitch1
+freeswitch-meta-bare
+freeswitch-meta-default
+freeswitch-meta-vanilla
+freeswitch-meta-sorbet
+freeswitch-meta-all
+freeswitch-meta-codecs
+freeswitch-meta-conf
+freeswitch-meta-lang
+freeswitch-meta-mod-say
+freeswitch-all-dbg
+freeswitch-dbg
+libfreeswitch1-dbg
+libfreeswitch-dev
+freeswitch-doc
+freeswitch-init
+freeswitch-sysvinit
+freeswitch-systemd
+freeswitch-lang
 )
 
 err () {
@@ -58,6 +81,31 @@ xread () {
   local ret=$?
   IFS="$xIFS"
   return $ret
+}
+
+intersperse () {
+  local sep="$1"
+  awk "
+    BEGIN {
+      first=1;
+      sep=\"${sep}\";
+    }"'
+    /.*/ {
+      if (first == 0) {
+        printf "%s%s", sep, $0;
+      } else {
+        printf "%s", $0;
+      }
+      first=0;
+    }
+    END { printf "\n"; }'
+}
+
+postfix () {
+  local px="$1"
+  awk "
+    BEGIN { px=\"${px}\"; }"'
+    /.*/ { printf "%s%s\n", $0, px; }'
 }
 
 avoid_mod_filter () {
@@ -97,20 +145,20 @@ mod_filter_show () {
 map_fs_modules () {
   local filterfn="$1" percatfns="$2" permodfns="$3"
   for x in $mod_dir/*; do
-    if test -d $x; then
-      category=${x##*/} category_path=$x
-      for f in $percatfns; do $f; done
-      for y in $x/*; do
-        module_name=${y##*/} module_path=$y
-        module=$category/$module_name
-        if $filterfn $category/$module; then
-          [ -f ${y}/module ] && . ${y}/module
-          for f in $permodfns; do $f; done
-        fi
-        unset module_name module_path module
-      done
-      unset category category_path
-    fi
+    test -d $x || continue
+    test ! ${x##*/} = legacy || continue
+    category=${x##*/} category_path=$x
+    for f in $percatfns; do $f; done
+    for y in $x/*; do
+      module_name=${y##*/} module_path=$y
+      module=$category/$module_name
+      if $filterfn $category/$module; then
+        [ -f ${y}/module ] && . ${y}/module
+        for f in $permodfns; do $f; done
+      fi
+      unset module_name module_path module
+    done
+    unset category category_path
   done
 }
 
@@ -167,6 +215,60 @@ map_langs () {
   done
 }
 
+map_pkgs () {
+  local fsx="$1"
+  for x in "${manual_pkgs[@]}"; do
+    $fsx $x
+  done
+  map_pkgs_confs () { $fsx "freeswitch-conf-${conf//_/-}"; }
+  map_confs map_pkgs_confs
+  map_pkgs_langs () { $fsx "freeswitch-lang-${lang//_/-}"; }
+  map_langs map_pkgs_langs
+  map_pkgs_mods () {
+    $fsx "freeswitch-${module//_/-}"
+    $fsx "freeswitch-${module//_/-}-dbg"; }
+  map_modules map_pkgs_mods
+}
+
+list_pkgs () {
+  list_pkgs_thunk () { printf '%s\n' "$1"; }
+  map_pkgs list_pkgs_thunk
+}
+
+list_freeswitch_all_pkgs () {
+  list_pkgs \
+    | grep -v '^freeswitch-all$' \
+    | grep -v -- '-dbg$'
+}
+
+list_freeswitch_all_provides () {
+  list_freeswitch_all_pkgs \
+    | intersperse ',\n '
+}
+
+list_freeswitch_all_replaces () {
+  list_freeswitch_all_pkgs \
+    | postfix ' (<= ${binary:Version})' \
+    | intersperse ',\n '
+}
+
+list_freeswitch_all_dbg_pkgs () {
+  list_pkgs \
+    | grep -v '^freeswitch-all-dbg$' \
+    | grep -- '-dbg$'
+}
+
+list_freeswitch_all_dbg_provides () {
+  list_freeswitch_all_dbg_pkgs \
+    | intersperse ',\n '
+}
+
+list_freeswitch_all_dbg_replaces () {
+  list_freeswitch_all_dbg_pkgs \
+    | postfix ' (<= ${binary:Version})' \
+    | intersperse ',\n '
+}
+
 print_source_control () {
 cat <<EOF
 Source: freeswitch
@@ -182,6 +284,8 @@ Build-Depends:
  dpkg-dev (>= 1.15.8.12), gcc (>= 4:4.4.5), g++ (>= 4:4.4.5),
  libc6-dev (>= 2.11.3), make (>= 3.81),
  wget, pkg-config,
+# core codecs
+ libogg-dev,
 # configure options
  libssl-dev, unixodbc-dev, libpq-dev,
  libncurses5-dev, libjpeg62-dev | libjpeg8-dev,
@@ -206,17 +310,9 @@ print_core_control () {
 cat <<EOF
 Package: freeswitch-all
 Architecture: any
-Provides: freeswitch, libfreeswitch1, freeswitch-doc, freeswitch-init
-Replaces: freeswitch (<= \${binary:Version}),
- libfreeswitch1 (<= \${binary:Version}),
- freeswitch-doc (<= \${binary:Version}),
- freeswitch-sysvinit (<= \${binary:Version}),
- freeswitch-systemd (<= \${binary:Version})
-Breaks: freeswitch (<= \${binary:Version}),
- libfreeswitch1 (<= \${binary:Version}),
- freeswitch-doc (<= \${binary:Version}),
- freeswitch-sysvinit (<= \${binary:Version}),
- freeswitch-systemd (<= \${binary:Version})
+Provides: $(list_freeswitch_all_provides)
+Replaces: $(list_freeswitch_all_replaces)
+Conflicts: $(list_freeswitch_all_replaces)
 Depends: \${shlibs:Depends}, \${perl:Depends}, \${misc:Depends},
  freeswitch-music-default (>= 1.0.8),
  freeswitch-sounds-en-us-callie (>= 1.0.25) | freeswitch-sounds,
@@ -259,8 +355,8 @@ Recommends:
  freeswitch-mod-commands (= \${binary:Version}),
  freeswitch-init (= \${binary:Version}),
  freeswitch-lang (= \${binary:Version}),
- freeswitch-music (= \${binary:Version}),
- freeswitch-sounds (= \${binary:Version})
+ freeswitch-music,
+ freeswitch-sounds
 Suggests:
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  $(debian_wrap "${fs_description}")
@@ -293,8 +389,8 @@ Recommends:
  freeswitch-init (= \${binary:Version}),
  freeswitch-lang (= \${binary:Version}),
  freeswitch-meta-codecs (= \${binary:Version}),
- freeswitch-music (= \${binary:Version}),
- freeswitch-sounds (= \${binary:Version})
+ freeswitch-music,
+ freeswitch-sounds
 Suggests:
  freeswitch-mod-cidlookup (= \${binary:Version}),
  freeswitch-mod-curl (= \${binary:Version}),
@@ -337,7 +433,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-g723-1 (= \${binary:Version}),
  freeswitch-mod-g729 (= \${binary:Version}),
  freeswitch-mod-amr (= \${binary:Version}),
- freeswitch-mod-speex (= \${binary:Version}),
  freeswitch-mod-h26x (= \${binary:Version}),
  freeswitch-mod-sndfile (= \${binary:Version}),
  freeswitch-mod-native-file (= \${binary:Version}),
@@ -348,8 +443,8 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
 Recommends:
  freeswitch-init (= \${binary:Version}),
  freeswitch-lang (= \${binary:Version}),
- freeswitch-music (= \${binary:Version}),
- freeswitch-sounds (= \${binary:Version}),
+ freeswitch-music,
+ freeswitch-sounds,
  freeswitch-conf-vanilla (= \${binary:Version}),
 Suggests:
  freeswitch-mod-spidermonkey (= \${binary:Version}),
@@ -366,8 +461,8 @@ Recommends:
  freeswitch-init (= \${binary:Version}),
  freeswitch-lang (= \${binary:Version}),
  freeswitch-meta-codecs (= \${binary:Version}),
- freeswitch-music (= \${binary:Version}),
- freeswitch-sounds (= \${binary:Version}),
+ freeswitch-music,
+ freeswitch-sounds,
  freeswitch-mod-abstraction (= \${binary:Version}),
  freeswitch-mod-avmd (= \${binary:Version}),
  freeswitch-mod-blacklist (= \${binary:Version}),
@@ -452,8 +547,8 @@ Recommends:
  freeswitch-meta-conf (= \${binary:Version}),
  freeswitch-meta-lang (= \${binary:Version}),
  freeswitch-meta-mod-say (= \${binary:Version}),
- freeswitch-music (= \${binary:Version}),
- freeswitch-sounds (= \${binary:Version}),
+ freeswitch-music,
+ freeswitch-sounds,
  freeswitch-mod-abstraction (= \${binary:Version}),
  freeswitch-mod-avmd (= \${binary:Version}),
  freeswitch-mod-blacklist (= \${binary:Version}),
@@ -575,7 +670,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-opus (= \${binary:Version}),
  freeswitch-mod-silk (= \${binary:Version}),
  freeswitch-mod-spandsp (= \${binary:Version}),
- freeswitch-mod-speex (= \${binary:Version}),
  freeswitch-mod-theora (= \${binary:Version}),
  freeswitch-mod-vp8 (= \${binary:Version})
 Suggests:
@@ -646,7 +740,10 @@ Package: freeswitch-all-dbg
 Section: debug
 Priority: extra
 Architecture: any
-Depends: \${misc:Depends}, freeswitch (= \${binary:Version})
+Provides: $(list_freeswitch_all_dbg_provides)
+Replaces: $(list_freeswitch_all_dbg_replaces)
+Breaks: $(list_freeswitch_all_dbg_replaces)
+Depends: \${misc:Depends}, freeswitch-all (= \${binary:Version})
 Description: debugging symbols for FreeSWITCH
  $(debian_wrap "${fs_description}")
  .
@@ -731,48 +828,6 @@ Description: Language files for FreeSWITCH
  .
  This is a metapackage which depends on the default language packages
  for FreeSWITCH.
-
-## sounds
-
-Package: freeswitch-music
-Architecture: all
-Depends: \${misc:Depends},
- freeswitch-music-default (>= 1.0.8)
-Description: Music on hold audio for FreeSWITCH
- $(debian_wrap "${fs_description}")
- .
- This is a metapackage which depends on the default music on hold
- packages for FreeSWITCH.
-
-Package: freeswitch-sounds
-Architecture: all
-Depends: \${misc:Depends},
- freeswitch-sounds-en (= \${binary:Version})
-Description: Sounds for FreeSWITCH
- $(debian_wrap "${fs_description}")
- .
- This is a metapackage which depends on the default sound packages for
- FreeSWITCH.
-
-Package: freeswitch-sounds-en
-Architecture: all
-Depends: \${misc:Depends},
- freeswitch-sounds-en-us (= \${binary:Version})
-Description: English sounds for FreeSWITCH
- $(debian_wrap "${fs_description}")
- .
- This is a metapackage which depends on the default English sound
- packages for FreeSWITCH.
-
-Package: freeswitch-sounds-en-us
-Architecture: all
-Depends: \${misc:Depends},
- freeswitch-sounds-en-us-callie (>= 1.0.18)
-Description: US English sounds for FreeSWITCH
- $(debian_wrap "${fs_description}")
- .
- This is a metapackage which depends on the default US/English sound
- packages for FreeSWITCH.
 
 EOF
 }
@@ -896,7 +951,7 @@ print_lang_control () {
 Package: freeswitch-lang-${lang//_/-}
 Architecture: all
 Depends: \${misc:Depends}
-Recommends: freeswitch-sounds-${lang} (= \${binary:Version})
+Recommends: freeswitch-sounds-${lang}
 Description: ${lang_name} language files for FreeSWITCH
  $(debian_wrap "${fs_description}")
  .
@@ -916,7 +971,7 @@ print_edit_warning () {
 }
 
 gencontrol_per_mod () {
-  print_mod_control "$module_name" "$description" "$long_description" >> control  
+  print_mod_control "$module_name" "$description" "$long_description" >> control
 }
 
 gencontrol_per_cat () {
@@ -936,12 +991,11 @@ genoverrides_per_mod () {
   test -f $f.tmpl && cat $f.tmpl >> $f
 }
 
-genmodules_per_cat () {
-  echo "## $category" >> modules_.conf
-}
-
-genmodules_per_mod () {
-  echo "$module" >> modules_.conf
+genmodulesconf () {
+  genmodules_per_cat () { echo "## $category"; }
+  genmodules_per_mod () { echo "$module"; }
+  print_edit_warning
+  map_modules 'mod_filter' 'genmodules_per_cat' 'genmodules_per_mod'
 }
 
 genconf () {
@@ -1141,6 +1195,18 @@ set_modules_non_dfsg () {
   done
 }
 
+conf_merge () {
+  local of="$1" if="$2"
+  if [ -s $if ]; then
+    grep -v '^##\|^$' $if | while xread x; do
+      touch $of
+      if ! grep -e "$x" $of >/dev/null; then
+        printf '%s\n' "$x" >> $of
+      fi
+    done
+  fi
+}
+
 codename="sid"
 modulelist_opt=""
 while getopts "c:m:" o; do
@@ -1164,6 +1230,8 @@ echo "Parsing control-modules..." >&2
 parse_mod_control
 echo "Displaying includes/excludes..." >&2
 map_modules 'mod_filter_show' '' ''
+echo "Generating modules_.conf..." >&2
+genmodulesconf > modules_.conf
 echo "Generating control-modules.gen as sanity check..." >&2
 (echo "# -*- mode:debian-control -*-"; \
   echo "##### Author: Travis Cross <tc@traviscross.com>"; echo; \
@@ -1186,21 +1254,13 @@ echo "Generating debian/ (lang)..." >&2
 map_langs 'genlang'
 echo "Generating debian/ (modules)..." >&2
 (echo "### modules"; echo) >> control
-print_edit_warning > modules_.conf
 map_modules "mod_filter" \
-  "gencontrol_per_cat genmodules_per_cat" \
-  "gencontrol_per_mod geninstall_per_mod genoverrides_per_mod genmodules_per_mod"
+  "gencontrol_per_cat" \
+  "gencontrol_per_mod geninstall_per_mod genoverrides_per_mod"
 echo "Generating debian/ (-all package)..." >&2
 grep -e '^Package:' control | grep -v '^freeswitch-all$' | while xread l; do
   m="${l#*: }"
-  f=$m.install
-  if [ -s $f ]; then
-    grep -v '^##\|^$' $f | while xread x; do
-      if ! grep -e "$x" freeswitch-all.install >/dev/null; then
-        printf '%s\n' "$x" >> freeswitch-all.install
-      fi
-    done
-  fi
+  conf_merge freeswitch-all.install $m.install
 done
 for x in postinst postrm preinst prerm; do
   cp -a freeswitch.$x freeswitch-all.$x

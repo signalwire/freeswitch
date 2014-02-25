@@ -93,7 +93,7 @@ void init_ssl(void) {
 	/* verify private key */
 	if ( !SSL_CTX_check_private_key(globals.ssl_ctx) ) {
 		abort();
-    }
+	}
 
 	SSL_CTX_set_cipher_list(globals.ssl_ctx, "HIGH:!DSS:!aNULL@STRENGTH");
 
@@ -119,28 +119,28 @@ static int cheezy_get_var(char *data, char *name, char *buf, size_t buflen)
    */
 
   do {
-    if(!strncmp(p,name,strlen(name)) && *(p+strlen(name))==':') break;
+	if(!strncmp(p,name,strlen(name)) && *(p+strlen(name))==':') break;
   } while((p = (strstr(p,"\n")+1))!=(char *)1);
 
 
   if (p != (char *)1 && *p!='\0') {
-    char *v, *e = 0;
+	char *v, *e = 0;
 
-    v = strchr(p, ':');
-    if (v) {
-      v++;
-      while(v && *v == ' ') {
+	v = strchr(p, ':');
+	if (v) {
+	  v++;
+	  while(v && *v == ' ') {
 	v++;
-      }
-      if (v)  {
+	  }
+	  if (v)  {
 	e = strchr(v, '\r');
 	if (!e) {
 	  e = strchr(v, '\n');
 	}
-      }
+	  }
 			
-      if (v && e) {
-	int cplen;
+	  if (v && e) {
+	size_t cplen;
 	size_t len = e - v;
 	
 	if (len > buflen - 1) {
@@ -152,9 +152,9 @@ static int cheezy_get_var(char *data, char *name, char *buf, size_t buflen)
 	strncpy(buf, v, cplen);
 	*(buf+cplen) = '\0';
 	return 1;
-      }
-      
-    }
+	  }
+	  
+	}
   }
   return 0;
 }
@@ -266,8 +266,7 @@ int ws_handshake_kvp(wsh_t *wsh, char *key, char *version, char *proto)
 issize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 {
 	issize_t r;
-	int x = 0;
- 	TConn *conn = wsh->tsession->connP;
+	TConn *conn = wsh->tsession->connP;
 
 	if (!wsh->handshake) {
 		r = wsh->tsession->connP->buffersize;
@@ -290,14 +289,14 @@ issize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 
 			if (readError) {
 				// printf("292 Read Error %s\n", readError);
-				xmlrpc_strfree(readError);
+				free((void *)readError);
 				return 0;
 			}
 
 			r = conn->buffersize - conn->bufferpos;
 		}
 
-		if (r <= bytes) {
+		if (r <= (issize_t)bytes) {
 			memcpy(data, conn->buffer.b + conn->bufferpos, r);
 			// ConnReadInit(conn);
 			conn->bufferpos = conn->buffersize;
@@ -305,13 +304,12 @@ issize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 			return r;
 		} else {
 			memcpy(data, conn->buffer.b + conn->bufferpos, bytes);
-			conn->bufferpos += bytes;
-			return bytes;
+			conn->bufferpos += (uint32_t)bytes;
+			return (issize_t)bytes;
 		}
 
 	}
 
-	return r;
 }
 
 issize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
@@ -320,24 +318,22 @@ issize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 
 	if (wsh->ssl) {
 		do {
-			r = SSL_write(wsh->ssl, data, bytes);
-		} while (r == -1 && SSL_get_error(wsh->ssl, r) == SSL_ERROR_WANT_WRITE);
+			r = SSL_write(wsh->ssl, data, (int)bytes);
+		} while (r == -1 && SSL_get_error(wsh->ssl, (int)r) == SSL_ERROR_WANT_WRITE);
 
-		return r;
+		return (issize_t)r;
 	}
 
-	if (ConnWrite(wsh->tsession->connP, data, bytes)) {
-		return bytes;
+	if (ConnWrite(wsh->tsession->connP, data, (uint32_t)bytes)) {
+		return (issize_t)bytes;
 	} else {
 		return 0;
 	}
-
-	return r;
 }
 
 wsh_t * ws_init(ws_tsession_t *tsession)
 {
-	wsh_t *wsh = malloc(sizeof(*wsh));
+	wsh_t *wsh = (wsh_t *)malloc(sizeof(*wsh));
 
 	if (!wsh) return NULL;
 
@@ -552,9 +548,9 @@ issize_t ws_feed_buf(wsh_t *wsh, void *data, size_t bytes)
 
 	memcpy(wsh->wbuffer + wsh->wdatalen, data, bytes);
 	
-	wsh->wdatalen += bytes;
+	wsh->wdatalen += (issize_t)bytes;
 
-	return bytes;
+	return (issize_t)bytes;
 }
 
 issize_t ws_send_buf(wsh_t *wsh, ws_opcode_t oc)
@@ -615,7 +611,7 @@ issize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes)
 		return -2;
 	}
 	
-	return bytes;
+	return (issize_t)bytes;
 }
 
 

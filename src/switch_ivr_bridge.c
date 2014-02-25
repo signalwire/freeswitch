@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -647,21 +647,24 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "BRIDGE THREAD DONE [%s]\n", switch_channel_get_name(chan_a));
 	switch_channel_clear_flag(chan_a, CF_BRIDGED);
 
-	if (switch_channel_test_flag(chan_a, CF_LEG_HOLDING) && switch_channel_ready(chan_b) && switch_channel_get_state(chan_b) != CS_PARK) {
-		const char *ext = switch_channel_get_variable(chan_a, "hold_hangup_xfer_exten");
+	if (switch_channel_test_flag(chan_a, CF_LEG_HOLDING)) {
 
-		switch_channel_stop_broadcast(chan_b);
+		if (switch_channel_ready(chan_b) && switch_channel_get_state(chan_b) != CS_PARK) {
+			const char *ext = switch_channel_get_variable(chan_a, "hold_hangup_xfer_exten");
 
-		if (zstr(ext)) {
-			switch_call_cause_t cause = switch_channel_get_cause(chan_b);
-			if (cause == SWITCH_CAUSE_NONE) {
-				cause = SWITCH_CAUSE_NORMAL_CLEARING;
+			switch_channel_stop_broadcast(chan_b);
+
+			if (zstr(ext)) {
+				switch_call_cause_t cause = switch_channel_get_cause(chan_b);
+				if (cause == SWITCH_CAUSE_NONE) {
+					cause = SWITCH_CAUSE_NORMAL_CLEARING;
+				}
+				switch_channel_hangup(chan_b, cause);
+			} else {
+				switch_channel_set_variable(chan_b, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE, ext);
 			}
-			switch_channel_hangup(chan_b, cause);
-		} else {
-			switch_channel_set_variable(chan_b, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE, ext);
 		}
-		switch_channel_clear_flag(chan_a, CF_LEG_HOLDING);
+		switch_channel_mark_hold(chan_a, SWITCH_FALSE);
 	}
 
 	if (switch_channel_test_flag(chan_a, CF_INTERCEPTED)) {
@@ -976,18 +979,12 @@ static switch_status_t sb_on_dtmf(switch_core_session_t *session, const switch_d
 
 static switch_status_t hanguphook(switch_core_session_t *session)
 {
-	switch_core_session_message_t msg = { 0 };
+	switch_core_session_message_t *msg = NULL;
 	switch_channel_t *channel = NULL;
 	switch_event_t *event;
 
 	channel = switch_core_session_get_channel(session);
 
-
-	msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
-	msg.from = __FILE__;
-	msg.string_arg = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE);
-
-	
 	if (switch_channel_test_flag(channel, CF_BRIDGE_ORIGINATOR)) {
 		switch_channel_clear_flag_recursive(channel, CF_BRIDGE_ORIGINATOR);
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
@@ -996,8 +993,14 @@ static switch_status_t hanguphook(switch_core_session_t *session)
 		}
 	}
 
+
+	msg = switch_core_session_alloc(session, sizeof(*msg));
+	MESSAGE_STAMP_FFL(msg);
+	msg->message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
+	msg->from = __FILE__;
+	msg->string_arg = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE);
+	switch_core_session_queue_message(session, msg);	
 	
-	switch_core_session_receive_message(session, &msg);
 	switch_core_event_hook_remove_state_change(session, hanguphook);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1693,6 +1696,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 					switch_core_session_rwunlock(originatee_session);
 					return SWITCH_STATUS_FALSE;
 				}
+			}
+
+			if (switch_channel_direction(originatee_channel) == SWITCH_CALL_DIRECTION_OUTBOUND && switch_channel_test_flag(originatee_channel, CF_DIALPLAN)) {
+				switch_channel_clear_flag(originatee_channel, CF_DIALPLAN);
 			}
 
 			cleanup_proxy_mode_a(originator_session);

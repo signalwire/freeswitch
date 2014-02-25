@@ -32,13 +32,17 @@
 #endif
 
 #include <ptlib.h>
+#include <opal/manager.h>
 
-#if !defined(PTLIB_CHECK_VERSION)
-  #error PTLib is too old to use, must be >= 2.10.6
+#ifndef OPAL_CHECK_VERSION
+  #define OPAL_CHECK_VERSION(a,b,c) 0
 #endif
 
-#include <opal/manager.h>
-#include <opal/localep.h>
+#if !OPAL_CHECK_VERSION(3,12,8)
+  #error OPAL is too old to use, must be >= 2.12.8
+#endif
+
+#include <ep/localep.h>
 #include <h323/h323ep.h>
 #include <iax2/iax2ep.h>
 
@@ -53,11 +57,8 @@
 
 #define MODNAME "mod_opal"
 
-#ifndef OPAL_CHECK_VERSION
-  #define OPAL_CHECK_VERSION(a,b,c) 0
-#endif
+#define HAVE_T38 OPAL_T38_CAPABILITY
 
-#define HAVE_T38 (OPAL_CHECK_VERSION(3,11,2) && OPAL_T38_CAPABILITY)
 
 
 class FSEndPoint;

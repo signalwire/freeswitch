@@ -18,10 +18,10 @@ dnl Find the version of Octave.
 dnl @version 1.0	Aug 23 2007
 dnl @author Erik de Castro Lopo <erikd AT mega-nerd DOT com>
 dnl
-dnl Permission to use, copy, modify, distribute, and sell this file for any 
-dnl purpose is hereby granted without fee, provided that the above copyright 
+dnl Permission to use, copy, modify, distribute, and sell this file for any
+dnl purpose is hereby granted without fee, provided that the above copyright
 dnl and this permission notice appear in all copies.  No representations are
-dnl made about the suitability of this software for any purpose.  It is 
+dnl made about the suitability of this software for any purpose.  It is
 dnl provided "as is" without express or implied warranty.
 dnl
 
@@ -52,10 +52,10 @@ dnl Find the version of Octave.
 dnl @version 1.0	Aug 23 2007
 dnl @author Erik de Castro Lopo <erikd AT mega-nerd DOT com>
 dnl
-dnl Permission to use, copy, modify, distribute, and sell this file for any 
-dnl purpose is hereby granted without fee, provided that the above copyright 
+dnl Permission to use, copy, modify, distribute, and sell this file for any
+dnl purpose is hereby granted without fee, provided that the above copyright
 dnl and this permission notice appear in all copies.  No representations are
-dnl made about the suitability of this software for any purpose.  It is 
+dnl made about the suitability of this software for any purpose.  It is
 dnl provided "as is" without express or implied warranty.
 dnl
 
@@ -102,7 +102,7 @@ dnl Default to no.
 OCTAVE_BUILD=no
 
 AC_OCTAVE_VERSION
-AC_MKOCTFILE_VERSION
+OCTAVE_MKOCTFILE_VERSION
 AC_OCTAVE_CONFIG_VERSION
 
 prog_concat="$ac_cv_prog_HAVE_OCTAVE$ac_cv_prog_HAVE_OCTAVE_CONFIG$ac_cv_prog_HAVE_MKOCTFILE"
@@ -119,7 +119,7 @@ if test "x$prog_concat" = "xyesyesyes" ; then
 			2.*)
 				AC_MSG_WARN([Octave version 2.X is not supported.])
 				;;
-			3.0.*)
+			3.*)
 				OCTAVE_DEST_ODIR=`$OCTAVE_CONFIG --oct-site-dir | sed 's%^/usr%${prefix}%'`
 				OCTAVE_DEST_MDIR=`$OCTAVE_CONFIG --m-site-dir | sed 's%^/usr%${prefix}%'`
 

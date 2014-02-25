@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2001-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2001-2012 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@
 
 #include "utils.h"
 
-#define	BUFFER_LEN		(1<<16)
+#define	BUFFER_LEN		(1 << 16)
 
 static	void	stdin_test	(int typemajor, int count) ;
 
@@ -123,9 +123,9 @@ main (int argc, char *argv [])
 		} ;
 
 	if (test_count == 0)
-	{	fprintf (stderr, "************************************\n") ;
-		fprintf (stderr, "*  No '%s' test defined.\n", argv [1]) ;
-		fprintf (stderr, "************************************\n") ;
+	{	fprintf (stderr, "\n*****************************************\n") ;
+		fprintf (stderr, "*  stdin_test : No '%s' test defined.\n", argv [1]) ;
+		fprintf (stderr, "*****************************************\n") ;
 		return 1 ;
 		} ;
 
@@ -138,7 +138,7 @@ stdin_test	(int typemajor, int count)
 
 	SNDFILE		*file ;
 	SF_INFO		sfinfo ;
-	int			k, total ;
+	int			k, total, err ;
 
 	if (typemajor == SF_FORMAT_RAW)
 	{	sfinfo.samplerate	= 44100 ;
@@ -147,12 +147,18 @@ stdin_test	(int typemajor, int count)
 		sfinfo.frames		= 0 ;
 		}
 	else
-		sfinfo.format = 0 ;
+		memset (&sfinfo, 0, sizeof (sfinfo)) ;
 
-	if (! (file = sf_open ("-", SFM_READ, &sfinfo)))
-	{	fprintf (stderr, "sf_open_read failed with error : ") ;
+	if ((file = sf_open_fd (STDIN_FILENO, SFM_READ, &sfinfo, SF_TRUE)) == NULL)
+	{	fprintf (stderr, "sf_open_fd failed with error : ") ;
 		puts (sf_strerror (NULL)) ;
 		dump_log_buffer (NULL) ;
+		exit (1) ;
+		} ;
+
+	err = sf_error (file) ;
+	if (err != SF_ERR_NO_ERROR)
+	{	printf ("Line %d : unexpected error : %s\n", __LINE__, sf_error_number (err)) ;
 		exit (1) ;
 		} ;
 

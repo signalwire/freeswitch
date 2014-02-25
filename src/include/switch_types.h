@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -227,6 +227,15 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_MAX_TRANS 2000
 #define SWITCH_CORE_SESSION_MAX_PRIVATES 2
 
+/* Jitter */
+#define JITTER_VARIANCE_THRESHOLD 400.0
+/* IPDV */
+#define IPDV_THRESHOLD 1.0
+/* Burst and Lost Rate */
+#define LOST_BURST_ANALYZE 500
+/* Burst */
+#define LOST_BURST_CAPTURE 1024
+
 typedef uint8_t switch_byte_t;
 
 typedef enum {
@@ -311,7 +320,9 @@ typedef uint32_t switch_originate_flag_t;
 typedef enum {
 	SPF_NONE = 0,
 	SPF_ODD = (1 << 0),
-	SPF_EVEN = (1 << 1)
+	SPF_EVEN = (1 << 1),
+	SPF_ROBUST_TCP = (1 << 2),
+	SPF_ROBUST_UDP = (1 << 3)
 } switch_port_flag_enum_t;
 typedef uint32_t switch_port_flag_t;
 
@@ -421,7 +432,8 @@ typedef enum {
 typedef enum {
 	SSG_MASCULINE,
 	SSG_FEMININE,
-	SSG_NEUTER
+	SSG_NEUTER,
+	SSG_UTRUM
 } switch_say_gender_t;
 
 typedef enum {
@@ -589,6 +601,29 @@ typedef struct {
 	switch_size_t cng_packet_count;
 	switch_size_t flush_packet_count;
 	switch_size_t largest_jb_size;
+	/* Jitter */
+	int64_t last_proc_time;		
+	int64_t jitter_n;
+	int64_t jitter_add;
+	int64_t jitter_addsq;
+
+	double variance;
+	double min_variance;
+	double max_variance;
+	double std_deviation;
+
+	/* Burst and Packet Loss */
+	double lossrate;
+	double burstrate;
+	double mean_interval;
+	int loss[LOST_BURST_CAPTURE];
+	int last_loss;
+	int recved;	
+	int last_processed_seq;
+	switch_size_t flaws;
+	switch_size_t last_flaw;
+	double R;
+	double mos;
 } switch_rtp_numbers_t;
 
 
@@ -634,6 +669,7 @@ typedef enum {
  */
 typedef enum {
 	SWITCH_RTP_FLAG_NOBLOCK = 0,
+	SWITCH_RTP_FLAG_DTMF_ON,
 	SWITCH_RTP_FLAG_IO,
 	SWITCH_RTP_FLAG_USE_TIMER,
 	SWITCH_RTP_FLAG_RTCP_PASSTHRU,
@@ -668,6 +704,8 @@ typedef enum {
 	SWITCH_RTP_FLAG_KILL_JB,
 	SWITCH_RTP_FLAG_VIDEO_BREAK,
 	SWITCH_RTP_FLAG_PAUSE,
+	SWITCH_RTP_FLAG_FIR,
+	SWITCH_RTP_FLAG_PLI,
 	SWITCH_RTP_FLAG_INVALID
 } switch_rtp_flag_t;
 
@@ -1140,6 +1178,7 @@ typedef enum {
 	CCS_EARLY,
 	CCS_ACTIVE,
 	CCS_HELD,
+	CCS_RING_WAIT,
 	CCS_HANGUP,
 	CCS_UNHOLD
 } switch_channel_callstate_t;
@@ -1359,6 +1398,8 @@ typedef enum {
 	CF_VIDEO_ECHO,
 	CF_SLA_INTERCEPT,
 	CF_VIDEO_BREAK,
+	CF_MEDIA_PAUSE,
+	CF_BYPASS_MEDIA_AFTER_HOLD,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
 	CF_FLAG_MAX

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -68,7 +68,6 @@ typedef enum {
 	SCMF_RUNNING,
 	SCMF_DISABLE_TRANSCODING,
 	SCMF_AUTOFIX_TIMING,
-	SCMF_AUTOFIX_PT,
 	SCMF_CODEC_GREEDY,
 	SCMF_CODEC_SCROOGE,
 	SCMF_DISABLE_HOLD,
@@ -81,6 +80,8 @@ typedef enum {
 	SCMF_AUTOFLUSH,
 	SCMF_REWRITE_TIMESTAMPS,
 	SCMF_RTP_AUTOFLUSH_DURING_BRIDGE,
+	SCMF_MULTI_ANSWER_AUDIO,
+	SCMF_MULTI_ANSWER_VIDEO,
 	SCMF_MAX
 } switch_core_media_flag_t;
 
@@ -156,6 +157,41 @@ typedef struct switch_core_media_params_s {
 
 } switch_core_media_params_t;
 
+typedef struct payload_map_s {
+	switch_media_type_t type;
+	switch_sdp_type_t sdp_type;
+	uint32_t ptime;
+	uint32_t rate;
+	uint8_t allocated;
+	uint8_t negotiated;
+	uint8_t current;
+	unsigned long hash;
+
+	char *rm_encoding;
+	char *iananame;
+	switch_payload_t pt;
+	unsigned long rm_rate;
+	unsigned long adv_rm_rate;
+	uint32_t codec_ms;
+	uint32_t bitrate;
+
+	char *rm_fmtp;
+
+	switch_payload_t agreed_pt;
+	switch_payload_t recv_pt;
+
+	char *fmtp_out;
+
+	char *remote_sdp_ip;
+	switch_port_t remote_sdp_port;
+
+	int channels;
+	int adv_channels;
+
+	struct payload_map_s *next;
+
+} payload_map_t;
+
 static inline const char *switch_media_type2str(switch_media_type_t type)
 {
 	switch(type) {
@@ -216,7 +252,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 SWITCH_DECLARE(switch_status_t) switch_core_media_ext_address_lookup(switch_core_session_t *session, char **ip, switch_port_t *port, const char *sourceip);
 SWITCH_DECLARE(switch_status_t) switch_core_media_process_t38_passthru(switch_core_session_t *session, 
 																	   switch_core_session_t *other_session, switch_t38_options_t *t38_options);
-SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *session, const char *ip, switch_port_t port, const char *sr, int force);
+SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *session, switch_sdp_type_t sdp_type, 
+													 const char *ip, switch_port_t port, const char *sr, int force);
 SWITCH_DECLARE(void)switch_core_media_set_local_sdp(switch_core_session_t *session, const char *sdp_str, switch_bool_t dup);
 SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_media_set_udptl_image_sdp(switch_core_session_t *session, switch_t38_options_t *t38_options, int insist);
@@ -232,7 +269,6 @@ SWITCH_DECLARE(void) switch_core_media_kill_socket(switch_core_session_t *sessio
 SWITCH_DECLARE(switch_status_t) switch_core_media_queue_rfc2833(switch_core_session_t *session, switch_media_type_t type, const switch_dtmf_t *dtmf);
 SWITCH_DECLARE(switch_status_t) switch_core_media_queue_rfc2833_in(switch_core_session_t *session, switch_media_type_t type, const switch_dtmf_t *dtmf);
 SWITCH_DECLARE(uint8_t) switch_core_media_ready(switch_core_session_t *session, switch_media_type_t type);
-SWITCH_DECLARE(void) switch_core_media_set_recv_pt(switch_core_session_t *session, switch_media_type_t type, switch_payload_t pt);
 SWITCH_DECLARE(void) switch_core_media_set_telephony_event(switch_core_session_t *session, switch_media_type_t type, switch_payload_t te);
 SWITCH_DECLARE(void) switch_core_media_set_telephony_recv_event(switch_core_session_t *session, switch_media_type_t type, switch_payload_t te);
 SWITCH_DECLARE(switch_rtp_stats_t *) switch_core_media_stats(switch_core_session_t *session, switch_media_type_t type, switch_memory_pool_t *pool);
@@ -244,7 +280,7 @@ SWITCH_DECLARE(stfu_instance_t *) switch_core_media_get_jb(switch_core_session_t
 SWITCH_DECLARE(switch_rtp_stats_t *) switch_core_media_get_stats(switch_core_session_t *session, switch_media_type_t type, switch_memory_pool_t *pool);
 
 
-SWITCH_DECLARE(void) switch_core_media_set_sdp_codec_string(switch_core_session_t *session, const char *r_sdp);
+SWITCH_DECLARE(void) switch_core_media_set_sdp_codec_string(switch_core_session_t *session, const char *r_sdp, switch_sdp_type_t sdp_type);
 SWITCH_DECLARE(void) switch_core_media_reset_autofix(switch_core_session_t *session, switch_media_type_t type);
 SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_t *session, switch_core_session_t *o_session);
 SWITCH_DECLARE(switch_status_t) switch_core_media_codec_chosen(switch_core_session_t *session, switch_media_type_t media);
@@ -257,6 +293,23 @@ SWITCH_DECLARE(void) switch_core_media_deinit(void);
 SWITCH_DECLARE(void) switch_core_media_set_stats(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_wake_video_thread(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_clear_crypto(switch_core_session_t *session);
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_get_payload_code(switch_core_session_t *session,
+																	 switch_media_type_t type,
+																	 const char *iananame,
+																	 switch_payload_t *ptP,
+																	 switch_payload_t *recv_ptP,
+																	 char **fmtpP);
+
+SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_session_t *session, 
+																  switch_media_type_t type,
+																  const char *name, 
+																  const char *fmtp,
+																  switch_sdp_type_t sdp_type,
+																  uint32_t pt, 
+																  uint32_t rate, 
+																  uint32_t ptime, 
+																  uint8_t negotiated);
 
 SWITCH_END_EXTERN_C
 #endif

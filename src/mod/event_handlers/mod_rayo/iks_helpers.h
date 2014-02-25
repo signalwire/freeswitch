@@ -32,6 +32,8 @@
 #include <iksemel.h>
 #include <switch.h>
 
+#define SHA_1_HASH_BUF_SIZE 40
+
 #define IKS_JABBER_SERVER_PORT 5269
 
 #define IKS_NS_XMPP_DISCO "http://jabber.org/protocol/disco#info"
@@ -40,6 +42,7 @@
 #define IKS_NS_XMPP_STREAMS "http://etherx.jabber.org/streams"
 #define IKS_NS_XMPP_DIALBACK "jabber:server:dialback"
 #define IKS_NS_XMPP_TLS "urn:ietf:params:xml:ns:xmpp-tls"
+#define IKS_NS_XMPP_ENTITY_CAPABILITIES "http://jabber.org/protocol/caps"
 
 struct xmpp_error {
 	const char *name;
@@ -53,7 +56,6 @@ struct xmpp_error {
 #include "xmpp_errors.def"
 
 /* See RFC-3920 XMPP core for error definitions */
-
 extern iks *iks_new_presence(const char *name, const char *namespace, const char *from, const char *to);
 extern iks *iks_new_error(iks *iq, const struct xmpp_error *err);
 extern iks *iks_new_error_detailed(iks *iq, const struct xmpp_error *err, const char *detail_text);
@@ -70,6 +72,7 @@ extern const char *iks_net_error_to_string(int err);
 extern iks *iks_insert_attrib_printf(iks *xml, const char *name, const char *fmt, ...);
 
 extern char *iks_server_dialback_key(const char *secret, const char *receiving_server, const char *originating_server, const char *stream_id);
+extern void iks_sha_print_base64(iksha *sha, char *buf);
 
 /** A function to validate attribute value */
 typedef int (*iks_attrib_validation_function)(const char *);

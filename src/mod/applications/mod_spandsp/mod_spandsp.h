@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -132,6 +132,7 @@ void mod_spandsp_dsp_shutdown(void);
 
 void mod_spandsp_fax_event_handler(switch_event_t *event);
 void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *data, mod_spandsp_fax_application_mode_t app_mode);
+void mod_spandsp_fax_stop_fax(switch_core_session_t *session);
 switch_bool_t t38_gateway_start(switch_core_session_t *session, const char *app, const char *data);
 
 switch_status_t spandsp_stop_inband_dtmf_session(switch_core_session_t *session);

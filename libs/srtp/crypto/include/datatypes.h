@@ -92,6 +92,12 @@ typedef union {
   uint64_t v64[2];
 } v128_t;
 
+typedef union {
+    uint8_t v8[32];
+    uint16_t v16[16];
+    uint32_t v32[8];
+    uint64_t v64[4];
+} v256_t;
 
 
 /* some useful and simple math functions */
@@ -393,7 +399,7 @@ octet_string_set_to_zero(uint8_t *s, int len);
 # define be64_to_cpu(x)	bswap_64((x))
 #else
 
-#if defined(__GNUC__) && defined(HAVE_X86) && !defined(__FreeBSD__)
+#if defined(__GNUC__) && defined(HAVE_X86) && !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__NetBSD__) && !defined(__DragonFly__) && !defined(__sun)
 /* Fall back. */
 static inline uint32_t be32_to_cpu(uint32_t v) {
    /* optimized for x86. */
@@ -409,12 +415,16 @@ static inline uint32_t be32_to_cpu(uint32_t v) {
 #  define be32_to_cpu(x)	ntohl((x))
 # endif /* HAVE_X86 */
 
+static inline uint64_t be64_to_cpu(uint64_t v) {
 # ifdef NO_64BIT_MATH
    /* use the make64 functions to do 64-bit math */
-#  define be64_to_cpu(v) (make64(htonl(low32(v)),htonl(high32(v))))
+   v = make64(htonl(low32(v)),htonl(high32(v)));
 # else
-#  define be64_to_cpu(v) ((ntohl((uint32_t)(v >> 32))) | (((uint64_t)ntohl((uint32_t)v)) << 32))
+   /* use the native 64-bit math */
+   v= (uint64_t)((be32_to_cpu((uint32_t)(v >> 32))) | (((uint64_t)be32_to_cpu((uint32_t)v)) << 32));
 # endif
+   return v;
+}
 
 #endif /* ! SRTP_KERNEL_LINUX */
 

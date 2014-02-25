@@ -1358,55 +1358,54 @@ SPAN_DECLARE(int) t31_t38_send_timeout(t31_state_t *s, int samples)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int t31_modem_control_handler(at_state_t *s, void *user_data, int op, const char *num)
+static int t31_modem_control_handler(void *user_data, int op, const char *num)
 {
-    t31_state_t *t;
+    t31_state_t *s;
 
-    t = (t31_state_t *) user_data;
+    s = (t31_state_t *) user_data;
     switch (op)
     {
     case AT_MODEM_CONTROL_CALL:
-        t->call_samples = 0;
-        t38_core_restart(&t->t38_fe.t38);
+        s->call_samples = 0;
+        t38_core_restart(&s->t38_fe.t38);
         break;
     case AT_MODEM_CONTROL_ANSWER:
-        t->call_samples = 0;
-        t38_core_restart(&t->t38_fe.t38);
+        s->call_samples = 0;
+        t38_core_restart(&s->t38_fe.t38);
         break;
     case AT_MODEM_CONTROL_ONHOOK:
-        if (t->non_ecm_tx.holding)
+        if (s->non_ecm_tx.holding)
         {
-            t->non_ecm_tx.holding = false;
+            s->non_ecm_tx.holding = false;
             /* Tell the application to release further data */
-            at_modem_control(&t->at_state, AT_MODEM_CONTROL_CTS, (void *) 1);
+            at_modem_control(&s->at_state, AT_MODEM_CONTROL_CTS, (void *) 1);
         }
         /*endif*/
-        if (t->at_state.rx_signal_present)
+        if (s->at_state.rx_signal_present)
         {
-            t->at_state.rx_data[t->at_state.rx_data_bytes++] = DLE;
-            t->at_state.rx_data[t->at_state.rx_data_bytes++] = ETX;
-            t->at_state.at_tx_handler(&t->at_state,
-                                      t->at_state.at_tx_user_data,
-                                      t->at_state.rx_data,
-                                      t->at_state.rx_data_bytes);
-            t->at_state.rx_data_bytes = 0;
+            s->at_state.rx_data[s->at_state.rx_data_bytes++] = DLE;
+            s->at_state.rx_data[s->at_state.rx_data_bytes++] = ETX;
+            s->at_state.at_tx_handler(s->at_state.at_tx_user_data,
+                                      s->at_state.rx_data,
+                                      s->at_state.rx_data_bytes);
+            s->at_state.rx_data_bytes = 0;
         }
         /*endif*/
-        restart_modem(t, FAX_MODEM_SILENCE_TX);
+        restart_modem(s, FAX_MODEM_SILENCE_TX);
         break;
     case AT_MODEM_CONTROL_RESTART:
-        restart_modem(t, (int) (intptr_t) num);
+        restart_modem(s, (int) (intptr_t) num);
         return 0;
     case AT_MODEM_CONTROL_DTE_TIMEOUT:
         if (num)
-            t->dte_data_timeout = t->call_samples + ms_to_samples((intptr_t) num);
+            s->dte_data_timeout = s->call_samples + ms_to_samples((intptr_t) num);
         else
-            t->dte_data_timeout = 0;
+            s->dte_data_timeout = 0;
         /*endif*/
         return 0;
     }
     /*endswitch*/
-    return t->modem_control_handler(t, t->modem_control_user_data, op, num);
+    return s->modem_control_handler(s, s->modem_control_user_data, op, num);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1437,8 +1436,7 @@ static void non_ecm_rx_status(void *user_data, int status)
         {
             s->at_state.rx_data[s->at_state.rx_data_bytes++] = DLE;
             s->at_state.rx_data[s->at_state.rx_data_bytes++] = ETX;
-            s->at_state.at_tx_handler(&s->at_state,
-                                      s->at_state.at_tx_user_data,
+            s->at_state.at_tx_handler(s->at_state.at_tx_user_data,
                                       s->at_state.rx_data,
                                       s->at_state.rx_data_bytes);
             s->at_state.rx_data_bytes = 0;
@@ -1480,8 +1478,7 @@ static void non_ecm_put_bit(void *user_data, int bit)
         s->at_state.rx_data[s->at_state.rx_data_bytes++] = (uint8_t) s->audio.current_byte;
         if (s->at_state.rx_data_bytes >= 250)
         {
-            s->at_state.at_tx_handler(&s->at_state,
-                                      s->at_state.at_tx_user_data,
+            s->at_state.at_tx_handler(s->at_state.at_tx_user_data,
                                       s->at_state.rx_data,
                                       s->at_state.rx_data_bytes);
             s->at_state.rx_data_bytes = 0;
@@ -1515,8 +1512,7 @@ static void non_ecm_put(void *user_data, const uint8_t buf[], int len)
         s->at_state.rx_data[s->at_state.rx_data_bytes++] = buf[i];
         if (s->at_state.rx_data_bytes >= 250)
         {
-            s->at_state.at_tx_handler(&s->at_state,
-                                      s->at_state.at_tx_user_data,
+            s->at_state.at_tx_handler(s->at_state.at_tx_user_data,
                                       s->at_state.rx_data,
                                       s->at_state.rx_data_bytes);
             s->at_state.rx_data_bytes = 0;
@@ -1860,7 +1856,7 @@ static void hdlc_accept_frame(void *user_data, const uint8_t *msg, int len, int 
             /*endfor*/
             s->at_state.rx_data[s->at_state.rx_data_bytes++] = DLE;
             s->at_state.rx_data[s->at_state.rx_data_bytes++] = ETX;
-            s->at_state.at_tx_handler(&s->at_state, s->at_state.at_tx_user_data, s->at_state.rx_data, s->at_state.rx_data_bytes);
+            s->at_state.at_tx_handler(s->at_state.at_tx_user_data, s->at_state.rx_data, s->at_state.rx_data_bytes);
             s->at_state.rx_data_bytes = 0;
             if (msg[1] == 0x13  &&  ok)
             {
@@ -2025,8 +2021,8 @@ static void t31_v21_rx(t31_state_t *s)
     s->hdlc_tx.len = 0;
     s->hdlc_tx.final = false;
     s->dled = false;
-    hdlc_rx_init(&s->audio.modems.hdlc_rx, false, true, HDLC_FRAMING_OK_THRESHOLD, hdlc_accept_frame, s);
     fax_modems_start_slow_modem(&s->audio.modems, FAX_MODEM_V21_RX);
+    hdlc_rx_init(&s->audio.modems.hdlc_rx, false, true, HDLC_FRAMING_OK_THRESHOLD, hdlc_accept_frame, s);
     s->at_state.transmit = true;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2447,7 +2443,7 @@ static __inline__ void dle_unstuff(t31_state_t *s, const char *stuffed, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int process_class1_cmd(at_state_t *t, void *user_data, int direction, int operation, int val)
+static int process_class1_cmd(void *user_data, int direction, int operation, int val)
 {
     int new_modem;
     int new_transmit;
@@ -2549,7 +2545,7 @@ static int process_class1_cmd(at_state_t *t, void *user_data, int direction, int
                         /*endfor*/
                         s->at_state.rx_data[s->at_state.rx_data_bytes++] = DLE;
                         s->at_state.rx_data[s->at_state.rx_data_bytes++] = ETX;
-                        s->at_state.at_tx_handler(&s->at_state, s->at_state.at_tx_user_data, s->at_state.rx_data, s->at_state.rx_data_bytes);
+                        s->at_state.at_tx_handler(s->at_state.at_tx_user_data, s->at_state.rx_data, s->at_state.rx_data_bytes);
                         s->at_state.rx_data_bytes = 0;
                     }
                     /*endif*/
@@ -2710,7 +2706,7 @@ SPAN_DECLARE(int) t31_at_rx(t31_state_t *s, const char *t, int len)
             {
                 s->at_state.rx_data[s->at_state.rx_data_bytes++] = DLE;
                 s->at_state.rx_data[s->at_state.rx_data_bytes++] = ETX;
-                s->at_state.at_tx_handler(&s->at_state, s->at_state.at_tx_user_data, s->at_state.rx_data, s->at_state.rx_data_bytes);
+                s->at_state.at_tx_handler(s->at_state.at_tx_user_data, s->at_state.rx_data, s->at_state.rx_data_bytes);
             }
             /*endif*/
             s->at_state.rx_data_bytes = 0;
@@ -2983,6 +2979,7 @@ static int t31_t38_fe_init(t31_state_t *t,
 
     t->hdlc_tx.ptr = 0;
 
+    /* Prepare the non-ecm HDLC bit stream -> T.38 HDLC -> non-ecm HDLC bit stream path */
     hdlc_tx_init(&s->hdlc_tx_non_ecm, false, 1, false, hdlc_tx_underflow2, s);
     hdlc_rx_init(&s->hdlc_rx_non_ecm, false, true, 2, hdlc_accept_non_ecm_frame, t);
     return 0;

@@ -37,4 +37,16 @@
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\src\fifo.cpp" />
+    <ClCompile Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\src\getopt.cpp" />
+    <ClCompile Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\src\gpib.cpp" />
+    <ClCompile Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\src\iobase.cpp" />
+    <ClCompile Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\src\kbhit.cpp" />
+    <ClCompile Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\src\portscan.cpp" />
+    <ClCompile Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\src\serportx.cpp" />
+    <ClCompile Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\src\win32\getopt.cpp" />
+    <ClCompile Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\src\win32\serport.cpp" />
+    <ClCompile Include="..\..\..\src\mod\endpoints\mod_gsmopen\libctb-0.16\src\win32\timer.cpp" />
+  </ItemGroup>
 </Project>

@@ -85,7 +85,9 @@ static int running = 1;
 static int thread_running = 0;
 static char *filter_uuid;
 static char *logfilter;
-#ifndef WIN32
+static int timeout = 0;
+static int connect_timeout = 0;
+#ifdef HAVE_EDITLINE
 static EditLine *el;
 static History *myhistory;
 static HistEvent ev;
@@ -112,6 +114,7 @@ static void sleep_s(int secs) { _sleep_ns(secs, 0); }
 
 static int process_command(esl_handle_t *handle, const char *cmd);
 
+#if defined(HAVE_EDITLINE) || defined(WIN32)
 static void clear_cli(void) {
 	if (global_profile->batch_mode) return;
 	putchar('\r');
@@ -119,6 +122,7 @@ static void clear_cli(void) {
 	printf("\033[K");
 	fflush(stdout);
 }
+#endif
 
 static void screen_size(int *x, int *y)
 {
@@ -145,6 +149,7 @@ static void screen_size(int *x, int *y)
 
 }
 
+#if defined(HAVE_EDITLINE) || defined(WIN32)
 /* If a fnkey is configured then process the command */
 static unsigned char console_fnkey_pressed(int i)
 {
@@ -162,6 +167,7 @@ static unsigned char console_fnkey_pressed(int i)
 	}
 	return CC_REDISPLAY;
 }
+#endif
 
 #ifdef HAVE_EDITLINE
 static char *prompt(EditLine *e) { return prompt_str; }
@@ -603,6 +609,7 @@ static const char *usage_str =
 	"  -d, --debug=level               Debug Level (0 - 7)\n"
 	"  -b, --batchmode                 Batch mode\n"
 	"  -t, --timeout                   Timeout for API commands (in miliseconds)\n"
+	"  -T, --connect-timeout           Timeout for socket connection (in miliseconds)\n"
 	"  -n, --no-color                  Disable color\n\n";
 
 static int usage(char *name){
@@ -671,7 +678,7 @@ static void clear_line(void)
 
 static void redisplay(void)
 {
-#ifndef WIN32
+#ifdef HAVE_EDITLINE
 	const LineInfo *lf = el_line(el);
 	const char *c = lf->buffer;
 	if (global_profile->batch_mode) return;
@@ -807,7 +814,7 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 			}
 			warn_stop = 0;
 		}
-		sleep_ms(1);
+		//sleep_ms(1);
 	}
 	thread_running = 0;
 	esl_log(ESL_LOG_DEBUG, "Thread Done\n");
@@ -1063,6 +1070,7 @@ static void set_fn_keys(cli_profile_t *profile)
 	profile->console_fnkeys[11] = "version";
 }
 
+#if defined(HAVE_EDITLINE) || defined(WIN32)
 static char* end_of_str(char *s) { return (*s == '\0' ? s : s + strlen(s) - 1); }
 
 static char* _strndup(const char *s, int n)
@@ -1151,6 +1159,7 @@ static unsigned char esl_console_complete(const char *buffer, const char *cursor
 	esl_safe_free(dup);
 	return ret;
 }
+#endif /* if defined(HAVE_EDITLINE) || defined(WIN32) */
 
 #ifdef HAVE_EDITLINE
 static unsigned char complete(EditLine *el, int ch)
@@ -1249,6 +1258,10 @@ static void read_config(const char *dft_cfile, const char *cfile) {
 						profiles[pcount-1].console_fnkeys[i - 1] = strdup(val);
 					}
 				}
+			} else if (!strcasecmp(var, "timeout")) {
+				timeout = atoi(val);
+			} else if (!strcasecmp(var, "connect-timeout")) {
+				connect_timeout = atoi(val);
 			}
 		}
 		esl_config_close_file(&cfg);
@@ -1301,6 +1314,7 @@ int main(int argc, char *argv[])
 		{"interrupt", 0, 0, 'i'},
 		{"reconnect", 0, 0, 'R'},
 		{"timeout", 1, 0, 't'},
+		{"connect-timeout", 1, 0, 'T'},
 		{0, 0, 0, 0}
 	};
 	char temp_host[128];
@@ -1319,7 +1333,7 @@ int main(int argc, char *argv[])
 	int argv_log_uuid = 0;
 	int argv_quiet = 0;
 	int argv_batch = 0;
-	int loops = 2, reconnect = 0, timeout = 0;
+	int loops = 2, reconnect = 0;
 	char *ccheck;
 
 #ifdef WIN32
@@ -1354,7 +1368,7 @@ int main(int argc, char *argv[])
 	esl_global_set_default_logger(6); /* default debug level to 6 (info) */
 	for(;;) {
 		int option_index = 0;
-		opt = getopt_long(argc, argv, "H:P:S:u:p:d:x:l:Ut:qrRhib?n", options, &option_index);
+		opt = getopt_long(argc, argv, "H:P:S:u:p:d:x:l:Ut:T:qrRhib?n", options, &option_index);
 		if (opt == -1) break;
 		switch (opt) {
 			case 'H':
@@ -1417,6 +1431,9 @@ int main(int argc, char *argv[])
 				break;
 			case 't':
 				timeout = atoi(optarg);
+				break;
+			case 'T':
+				connect_timeout = atoi(optarg);
 				break;
 			case 'h':
 			case '?':
@@ -1488,7 +1505,7 @@ int main(int argc, char *argv[])
 	connected = 0;
 	while (--loops > 0) {
 		memset(&handle, 0, sizeof(handle));
-		if (esl_connect(&handle, profile->host, profile->port, profile->user, profile->pass)) {
+		if (esl_connect_timeout(&handle, profile->host, profile->port, profile->user, profile->pass, connect_timeout)) {
 			esl_global_set_default_logger(7);
 			esl_log(ESL_LOG_ERROR, "Error Connecting [%s]\n", handle.err);
 			if (loops == 1) {

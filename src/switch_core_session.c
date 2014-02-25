@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -36,6 +36,8 @@
 #include "switch.h"
 #include "switch_core.h"
 #include "private/switch_core_pvt.h"
+
+#define DEBUG_THREAD_POOL
 
 struct switch_session_manager session_manager;
 
@@ -764,6 +766,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 
 	switch_assert(session != NULL);
 
+	if (message->message_id == SWITCH_MESSAGE_INDICATE_SIGNAL_DATA) {
+		if (session->endpoint_interface->io_routines->receive_message) {
+			status = session->endpoint_interface->io_routines->receive_message(session, message);
+		}
+
+		switch_core_session_free_message(&message);
+		return status;
+	}
+
 	if ((status = switch_core_session_read_lock_hangup(session)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
@@ -819,7 +830,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 
 	}
 
-	if (switch_channel_down_nosig(session->channel) && message->message_id != SWITCH_MESSAGE_INDICATE_SIGNAL_DATA) {
+	if (switch_channel_down_nosig(session->channel)) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, message->_file, message->_func, message->_line,
 						  switch_core_session_get_uuid(session), SWITCH_LOG_DEBUG, "%s skip receive message [%s] (channel is hungup already)\n",
 						  switch_channel_get_name(session->channel), message_names[message->message_id]);
@@ -828,7 +839,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 		if (session->media_handle) {
 			status = switch_core_media_receive_message(session, message);
 		}
-		if (status == SWITCH_STATUS_SUCCESS || message->message_id == SWITCH_MESSAGE_INDICATE_SIGNAL_DATA) {
+		if (status == SWITCH_STATUS_SUCCESS) {
 			if (session->endpoint_interface->io_routines->receive_message) {
 				status = session->endpoint_interface->io_routines->receive_message(session, message);
 			}
@@ -889,6 +900,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 		case SWITCH_MESSAGE_INDICATE_BROADCAST:
 		case SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT:
 		case SWITCH_MESSAGE_INDICATE_DEFLECT:
+			switch_channel_set_flag(session->channel, CF_VIDEO_BREAK);
 			switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
 			break;
 		default:
@@ -2984,6 +2996,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_refresh_video(switch_core_se
 	return SWITCH_STATUS_FALSE;
 }
 
+SWITCH_DECLARE(void) switch_core_session_debug_pool(switch_stream_handle_t *stream)
+{
+	stream->write_function(stream, "Thread pool: running:%d busy:%d popping:%d\n",
+		session_manager.running, session_manager.busy, session_manager.popping);
+}
 
 /* For Emacs:
  * Local Variables:

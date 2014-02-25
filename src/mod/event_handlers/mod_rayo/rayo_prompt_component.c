@@ -64,6 +64,7 @@ struct prompt_component {
 	iks *complete;
 	const char *input_jid;
 	const char *output_jid;
+	const char *start_timers_request_id;
 };
 
 #define PROMPT_COMPONENT(x) ((struct prompt_component *)x)
@@ -84,6 +85,20 @@ static const char *prompt_component_state_to_string(enum prompt_component_state 
 		case PCS_DONE: return "DONE";
 	}
 	return "UNKNOWN";
+}
+
+/**
+ * Send input-timers-started event
+ */
+void rayo_component_send_input_timers_started_event(struct rayo_component *component)
+{
+	iks *event = iks_new("presence");
+	iks *x;
+	iks_insert_attrib(event, "from", RAYO_JID(component));
+	iks_insert_attrib(event, "to", component->client_jid);
+	x = iks_insert(event, "input-timers-started");
+	iks_insert_attrib(x, "xmlns", RAYO_PROMPT_NS);
+	RAYO_SEND_REPLY(component, component->client_jid, event);
 }
 
 /**
@@ -131,7 +146,8 @@ static void start_input_timers(struct prompt_component *prompt)
 	iks_insert_attrib(iq, "from", RAYO_JID(prompt));
 	iks_insert_attrib(iq, "to", prompt->input_jid);
 	iks_insert_attrib(iq, "type", "set");
-	iks_insert_attrib_printf(iq, "id", "mod_rayo-prompt-%d", RAYO_SEQ_NEXT(prompt));
+	prompt->start_timers_request_id = switch_core_sprintf(RAYO_POOL(prompt), "mod_rayo-prompt-%d", RAYO_SEQ_NEXT(prompt));
+	iks_insert_attrib(iq, "id", prompt->start_timers_request_id);
 	x = iks_insert(iq, "start-timers");
 	iks_insert_attrib(x, "xmlns", RAYO_INPUT_NS);
 	RAYO_SEND_MESSAGE(prompt, prompt->input_jid, iq);
@@ -186,20 +202,19 @@ static iks *prompt_component_handle_input_start(struct rayo_actor *prompt, struc
 		case PCS_START_INPUT:
 			PROMPT_COMPONENT(prompt)->input_jid = switch_core_strdup(RAYO_POOL(prompt), msg->from_jid);
 			PROMPT_COMPONENT(prompt)->state = PCS_INPUT;
+			rayo_component_send_input_timers_started_event(RAYO_COMPONENT(prompt));
 			break;
 		case PCS_START_INPUT_OUTPUT:
 			PROMPT_COMPONENT(prompt)->input_jid = switch_core_strdup(RAYO_POOL(prompt), msg->from_jid);
 			PROMPT_COMPONENT(prompt)->state = PCS_INPUT_OUTPUT;
 			/* send ref to client */
 			rayo_component_send_start(RAYO_COMPONENT(prompt), PROMPT_COMPONENT(prompt)->iq);
-			iks_delete(PROMPT_COMPONENT(prompt)->iq);
 			break;
 		case PCS_START_INPUT_TIMERS:
 			PROMPT_COMPONENT(prompt)->input_jid = switch_core_strdup(RAYO_POOL(prompt), msg->from_jid);
 			PROMPT_COMPONENT(prompt)->state = PCS_INPUT;
 			/* send ref to client */
 			rayo_component_send_start(RAYO_COMPONENT(prompt), PROMPT_COMPONENT(prompt)->iq);
-			iks_delete(PROMPT_COMPONENT(prompt)->iq);
 			start_input_timers(PROMPT_COMPONENT(prompt));
 			break;
 		case PCS_DONE:
@@ -237,7 +252,7 @@ static iks *prompt_component_handle_io_start(struct rayo_actor *prompt, struct r
 }
 
 /**
- * Handle barge event
+ * Handle failure to start timers
  */
 static iks *prompt_component_handle_input_start_timers_error(struct rayo_actor *prompt, struct rayo_message *msg, void *data)
 {
@@ -261,17 +276,38 @@ static iks *prompt_component_handle_input_error(struct rayo_actor *prompt, struc
 
 	switch (PROMPT_COMPONENT(prompt)->state) {
 		case PCS_START_INPUT_TIMERS:
-		case PCS_START_INPUT:
-			/* send error to client */
-			PROMPT_COMPONENT(prompt)-> state = PCS_DONE;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, <input> error: %s\n", RAYO_JID(prompt), iks_string(iks_stack(iq), iq));
+			PROMPT_COMPONENT(prompt)->state = PCS_DONE;
+
+			/* forward IQ error to client */
+			iq = PROMPT_COMPONENT(prompt)->iq;
+			iks_insert_attrib(iq, "from", RAYO_JID(RAYO_COMPONENT(prompt)->parent));
+			iks_insert_attrib(iq, "to", RAYO_COMPONENT(prompt)->client_jid);
+			iks_insert_node(iq, iks_copy_within(error, iks_stack(iq)));
+			RAYO_SEND_REPLY(prompt, RAYO_COMPONENT(prompt)->client_jid, iq);
+
+			/* done */
 			iks_delete(PROMPT_COMPONENT(prompt)->iq);
-			rayo_component_send_complete(RAYO_COMPONENT(prompt), COMPONENT_COMPLETE_ERROR);
+			RAYO_UNLOCK(prompt);
+			RAYO_DESTROY(prompt);
+
 			break;
+
+		case PCS_START_INPUT:
+			PROMPT_COMPONENT(prompt)->state = PCS_DONE;
+			iks_delete(PROMPT_COMPONENT(prompt)->iq);
+			if (iks_find(error, "item-not-found")) {
+				/* call is gone (hangup) */
+				rayo_component_send_complete(RAYO_COMPONENT(prompt), COMPONENT_COMPLETE_HANGUP);
+			} else {
+				/* send presence error to client */
+				rayo_component_send_complete(RAYO_COMPONENT(prompt), COMPONENT_COMPLETE_ERROR);
+			}
 			break;
 		case PCS_START_INPUT_OUTPUT:
 			PROMPT_COMPONENT(prompt)->state = PCS_DONE_STOP_OUTPUT;
 
-			/* forward error to client */
+			/* forward IQ error to client */
 			iq = PROMPT_COMPONENT(prompt)->iq;
 			iks_insert_attrib(iq, "from", RAYO_JID(RAYO_COMPONENT(prompt)->parent));
 			iks_insert_attrib(iq, "to", RAYO_COMPONENT(prompt)->client_jid);
@@ -312,7 +348,7 @@ static iks *prompt_component_handle_output_error(struct rayo_actor *prompt, stru
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, <output> error: %s\n", RAYO_JID(prompt), iks_string(iks_stack(iq), iq));
 			PROMPT_COMPONENT(prompt)->state = PCS_DONE;
 
-			/* forward error to client */
+			/* forward IQ error to client */
 			iq = PROMPT_COMPONENT(prompt)->iq;
 			iks_insert_attrib(iq, "from", RAYO_JID(RAYO_COMPONENT(prompt)->parent));
 			iks_insert_attrib(iq, "to", RAYO_COMPONENT(prompt)->client_jid);
@@ -320,6 +356,7 @@ static iks *prompt_component_handle_output_error(struct rayo_actor *prompt, stru
 			RAYO_SEND_REPLY(prompt, RAYO_COMPONENT(prompt)->client_jid, iq);
 
 			/* done */
+			iks_delete(PROMPT_COMPONENT(prompt)->iq);
 			RAYO_UNLOCK(prompt);
 			RAYO_DESTROY(prompt);
 
@@ -406,6 +443,7 @@ static iks *prompt_component_handle_input_complete(struct rayo_actor *prompt, st
 			presence = iks_copy(presence);
 			iks_insert_attrib(presence, "from", RAYO_JID(prompt));
 			iks_insert_attrib(presence, "to", RAYO_COMPONENT(prompt)->client_jid);
+			iks_delete(PROMPT_COMPONENT(prompt)->iq);
 			rayo_component_send_complete_event(RAYO_COMPONENT(prompt), presence);
 			break;
 		case PCS_OUTPUT:
@@ -430,11 +468,15 @@ static iks *prompt_component_handle_result(struct rayo_actor *prompt, struct ray
 	iks *iq = msg->payload;
 
 	/* forward all results, except for internal ones... */
-	if (strncmp("mod_rayo-prompt", iks_find_attrib_soft(iq, "id"), 15)) {
+	const char *id = iks_find_attrib_soft(iq, "id");
+	if (strncmp("mod_rayo-prompt", id, 15)) {
 		iks_insert_attrib(iq, "from", RAYO_JID(prompt));
 		iks_insert_attrib(iq, "to", RAYO_COMPONENT(prompt)->client_jid);
 		RAYO_SEND_REPLY_DUP(prompt, RAYO_COMPONENT(prompt)->client_jid, iq);
+	} else if (!zstr(PROMPT_COMPONENT(prompt)->start_timers_request_id) && !strcmp(PROMPT_COMPONENT(prompt)->start_timers_request_id, id)) {
+		rayo_component_send_input_timers_started_event(RAYO_COMPONENT(prompt));
 	}
+
 	return NULL;
 }
 
@@ -451,7 +493,6 @@ static iks *prompt_component_handle_output_complete(struct rayo_actor *prompt, s
 			PROMPT_COMPONENT(prompt)->state = PCS_START_INPUT;
 			/* start input with timers enabled and barge events disabled */
 			start_input(PROMPT_COMPONENT(prompt), 1, 0);
-			iks_delete(PROMPT_COMPONENT(prompt)->iq);
 			break;
 		case PCS_START_INPUT_OUTPUT:
 			/* output finished before input started */
@@ -467,6 +508,7 @@ static iks *prompt_component_handle_output_complete(struct rayo_actor *prompt, s
 			break;
 		case PCS_DONE_STOP_OUTPUT:
 			if (PROMPT_COMPONENT(prompt)->complete) {
+				iks_delete(PROMPT_COMPONENT(prompt)->iq);
 				rayo_component_send_complete_event(RAYO_COMPONENT(prompt), PROMPT_COMPONENT(prompt)->complete);
 			}
 			break;

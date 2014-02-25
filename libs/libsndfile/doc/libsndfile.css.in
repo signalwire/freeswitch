@@ -48,24 +48,32 @@ dl {
 	margin-left : 3% ;
 	margin-right : 3% ;
 }
-h1 { 
-	font-size : xx-large ; 
-	background : @HTML_BGCOLOUR@ ;
-	color : #5050FF ; 
-	text-align : left ;
-	margin-left : 3% ;
-	margin-right : 3% ;
-}
-h2 { 
-	font-size : x-large ; 
+h1 {
+	font-size : xx-large ;
 	background : @HTML_BGCOLOUR@ ;
 	color : #5050FF ;
 	text-align : left ;
 	margin-left : 3% ;
 	margin-right : 3% ;
 }
-h3 { 
-	font-size : large ; 
+h2 {
+	font-size : x-large ;
+	background : @HTML_BGCOLOUR@ ;
+	color : #5050FF ;
+	text-align : left ;
+	margin-left : 3% ;
+	margin-right : 3% ;
+}
+h3 {
+	font-size : large ;
+	background : @HTML_BGCOLOUR@ ;
+	color : #5050FF ;
+	text-align : left ;
+	margin-left : 3% ;
+	margin-right : 3% ;
+}
+h4 {
+	font-size : medium ;
 	background : @HTML_BGCOLOUR@ ;
 	color : #5050FF ;
 	text-align : left ;
@@ -75,6 +83,8 @@ h3 {
 pre {
 	font-family : courier, monospace ;
 	font-size : medium ;
+	margin-left : 6% ;
+	margin-right : 6% ;
 }
 a:link { color : #9090FF ; }
 a:visited { color : #5050FF ; }

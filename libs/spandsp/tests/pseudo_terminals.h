@@ -41,6 +41,6 @@ struct modem_s
 
 typedef struct modem_s modem_t;
 
-int psuedo_terminal_close(modem_t *modem);
+int pseudo_terminal_close(modem_t *modem);
 
-int psuedo_terminal_create(modem_t *modem);
+int pseudo_terminal_create(modem_t *modem);

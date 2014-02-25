@@ -1,4 +1,4 @@
-<include>
+<document type="freeswitch/xml">
   <!--#comment 
       All comments starting with #command will be preprocessed and never sent to the xml parser
       Valid instructions:
@@ -25,19 +25,7 @@
     <X-PRE-PROCESS cmd="include" data="dialplan/*.xml"/>
   </section>
 
-  <!-- mod_dingaling is reliant on the vcard data in the "directory" section. -->
-  <!-- mod_sofia is reliant on the user data for authorization --> 
-  <section name="directory" description="User Directory">
-    <X-PRE-PROCESS cmd="include" data="directory/*.xml"/>
-  </section>
-
-  <!-- phrases section (under development still) -->
-  <section name="phrases" description="Speech Phrase Management">
-    <macros>
-      <X-PRE-PROCESS cmd="include" data="lang/en/*.xml"/>
-    </macros>
-  </section>
-</include>
+</document>
 
 
 

@@ -37,6 +37,7 @@
         when you press the hold button.
     -->
     <!--<param name="media-option" value="resume-media-on-hold"/> -->
+
     <!--
         This will allow a call after an attended transfer go back to
         bypass media after an attended transfer.
@@ -182,6 +183,8 @@
     <!--<param name="all-reg-options-ping" value="true"/>-->
     <!-- Send an OPTIONS packet to NATed registered endpoints. Can be 'true' or 'udp-only'. -->
     <!--<param name="nat-options-ping" value="true"/>-->
+    <!--<param name="sip-options-respond-503-on-busy" value="true"/>-->
+    <!--<param name="sip-messages-respond-200-ok" value="true"/>-->
 
     <!-- TLS: disabled by default, set to "true" to enable -->
     <param name="tls" value="$${internal_ssl_enable}"/>
@@ -204,8 +207,11 @@
     <param name="tls-verify-depth" value="2"/>
     <!-- If the tls-verify-policy is set to subjects_all or subjects_in this sets which subjects are allowed, multiple subjects can be split with a '|' pipe -->
     <param name="tls-verify-in-subjects" value=""/>
-    <!-- TLS version ("sslv23" (default), "tlsv1"). NOTE: Phones may not work with TLSv1 -->
+    <!-- TLS version default: tlsv1,tlsv1.1,tlsv1.2 -->
     <param name="tls-version" value="$${sip_tls_version}"/>
+
+    <!-- TLS ciphers default: ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH  -->
+    <param name="tls-ciphers" value="$${sip_tls_ciphers}"/>
 
     <!-- turn on auto-flush during bridge (skip timer sleep when the socket already has data)
          (reduces delay on latent connections default true, must be disabled explicitly)-->

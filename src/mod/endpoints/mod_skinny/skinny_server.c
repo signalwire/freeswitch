@@ -163,9 +163,9 @@ switch_status_t skinny_create_incoming_session(listener_t *listener, uint32_t *l
 	if ((sql = switch_mprintf(
 					"INSERT INTO skinny_active_lines "
 					"(device_name, device_instance, line_instance, channel_uuid, call_id, call_state) "
-					"SELECT device_name, device_instance, line_instance, '%s', %d, %d "
+					"SELECT device_name, device_instance, line_instance, '%q', %d, %d "
 					"FROM skinny_lines "
-					"WHERE value='%s'",
+					"WHERE value='%q'",
 					switch_core_session_get_uuid(nsession), tech_pvt->call_id, SKINNY_ON_HOOK, button->shortname
 				 ))) {
 		skinny_execute_sql(listener->profile, sql, listener->profile->sql_mutex);
@@ -587,6 +587,7 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 	/* uint32_t call_state = atoi(argv[16]); */
 
 	listener_t *listener = NULL;
+	uint32_t active_calls = 0;
 
 	skinny_profile_find_listener_by_device_name_and_instance(helper->tech_pvt->profile, 
 			device_name, device_instance, &listener);
@@ -596,9 +597,12 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 		helper->lines_count++;
 		switch_channel_set_variable(channel, "effective_callee_id_number", value);
 		switch_channel_set_variable(channel, "effective_callee_id_name", caller_name);
+	
+		active_calls = skinny_line_count_active(listener);
 
-		skinny_log_l(listener, SWITCH_LOG_DEBUG, "Ring Lines Callback with Callee Number (%s), Caller Name (%s), Dest Number (%s)\n",
-			value, caller_name, helper->tech_pvt->caller_profile->destination_number);
+		skinny_log_l(listener, SWITCH_LOG_DEBUG, 
+			"Ring Lines Callback with Callee Number (%s), Caller Name (%s), Dest Number (%s), Active Calls (%d)\n",
+			value, caller_name, helper->tech_pvt->caller_profile->destination_number, active_calls);
 
 		if (helper->remote_session) {
 			switch_core_session_message_t msg = { 0 };
@@ -630,7 +634,13 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 		}
 		skinny_session_send_call_info(helper->tech_pvt->session, listener, line_instance);
 		send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_BLINK);
-		send_set_ringer(listener, SKINNY_RING_INSIDE, SKINNY_RING_FOREVER, 0, helper->tech_pvt->call_id);
+
+		if ( active_calls < 1 ) {
+			send_set_ringer(listener, SKINNY_RING_INSIDE, SKINNY_RING_FOREVER, 0, helper->tech_pvt->call_id);
+		} else {
+			send_start_tone(listener, SKINNY_TONE_CALLWAITTONE, 0, line_instance, helper->tech_pvt->call_id);
+			send_stop_tone(listener, line_instance, helper->tech_pvt->call_id);
+		}
 		switch_channel_ring_ready(channel);
 	}
 	return 0;
@@ -788,7 +798,7 @@ switch_status_t skinny_session_start_media(switch_core_session_t *session, liste
 		send_open_receive_channel(listener,
 				tech_pvt->call_id, /* uint32_t conference_id, */
 				tech_pvt->call_id, /* uint32_t pass_thru_party_id, */
-				20, /* uint32_t ms_per_packet, */
+				SKINNY_PTIME, /* uint32_t ms_per_packet, */
 				SKINNY_CODEC_ULAW_64K, /* uint32_t payload_capacity, */
 				0, /* uint32_t echo_cancel_type, */
 				0, /* uint32_t g723_bitrate, */
@@ -849,7 +859,25 @@ switch_status_t skinny_session_unhold_line(switch_core_session_t *session, liste
 	send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, tech_pvt->call_id);
 	send_set_speaker_mode(listener, SKINNY_SPEAKER_ON);
 	send_select_soft_keys(listener, line_instance, tech_pvt->call_id, SKINNY_KEY_SET_RING_OUT, 0xffff);
-	skinny_session_start_media(session, listener, line_instance);
+
+	send_stop_tone(listener, line_instance, tech_pvt->call_id);
+	send_open_receive_channel(listener,
+		tech_pvt->call_id, /* uint32_t conference_id, */
+		tech_pvt->call_id, /* uint32_t pass_thru_party_id, */
+		SKINNY_PTIME, /* uint32_t ms_per_packet, */
+		SKINNY_CODEC_ULAW_64K, /* uint32_t payload_capacity, */
+		0, /* uint32_t echo_cancel_type, */
+		0, /* uint32_t g723_bitrate, */
+		0, /* uint32_t conference_id2, */
+		0 /* uint32_t reserved[10] */
+		);
+
+	skinny_line_set_state(listener, line_instance, tech_pvt->call_id, SKINNY_CONNECTED);
+	send_select_soft_keys(listener, line_instance, tech_pvt->call_id, SKINNY_KEY_SET_CONNECTED, 0xffff);
+
+	send_display_prompt_status_textid(listener, 0, SKINNY_TEXTID_CONNECTED, line_instance, tech_pvt->call_id);
+	skinny_session_send_call_info(session, listener, line_instance);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1052,7 +1080,7 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 	if ((sql = switch_mprintf(
 					"INSERT INTO skinny_devices "
 					"(name, user_id, instance, ip, type, max_streams, codec_string) "
-					"VALUES ('%s','%d','%d', '%s', '%d', '%d', '%s')",
+					"VALUES ('%q','%d','%d', '%q', '%d', '%d', '%q')",
 					request->data.reg.device_name,
 					request->data.reg.user_id,
 					request->data.reg.instance,
@@ -1130,7 +1158,7 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 									"label, value, caller_name, "
 									"ring_on_idle, ring_on_active, busy_trigger, "
 									"forward_all, forward_busy, forward_noanswer, noanswer_duration) "
-									"VALUES('%s', %d, %d, %d, '%s', '%s', '%s', %d, %d, %d, '%s', '%s', '%s', %d)",
+									"VALUES('%q', %d, %d, %d, '%q', '%q', '%q', %d, %d, %d, '%q', '%q', '%q', %d)",
 									request->data.reg.device_name, request->data.reg.instance, position, line_instance,
 									label, value, caller_name,
 									ring_on_idle, ring_on_active, busy_trigger,
@@ -1158,7 +1186,7 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 					if ((sql = switch_mprintf(
 									"INSERT INTO skinny_buttons "
 									"(device_name, device_instance, position, type, label, value, settings) "
-									"VALUES('%s', %d, %d, %d, '%s', '%s', '%s')",
+									"VALUES('%q', %d, %d, %d, '%q', '%q', '%q')",
 									request->data.reg.device_name,
 									request->data.reg.instance,
 									position,
@@ -1212,7 +1240,7 @@ switch_status_t skinny_handle_port_message(listener_t *listener, skinny_message_
 	skinny_check_data_length(request, sizeof(request->data.as_uint16));
 
 	if ((sql = switch_mprintf(
-					"UPDATE skinny_devices SET port=%d WHERE name='%s' and instance=%d",
+					"UPDATE skinny_devices SET port=%d WHERE name='%q' and instance=%d",
 					request->data.port.port,
 					listener->device_name,
 					listener->device_instance
@@ -1757,7 +1785,7 @@ switch_status_t skinny_handle_capabilities_response(listener_t *listener, skinny
 	}
 	codec_string[string_len] = '\0';
 	if ((sql = switch_mprintf(
-					"UPDATE skinny_devices SET codec_string='%s' WHERE name='%s'",
+					"UPDATE skinny_devices SET codec_string='%q' WHERE name='%s'",
 					codec_string,
 					listener->device_name
 				 ))) {
@@ -1812,7 +1840,7 @@ switch_status_t skinny_handle_open_receive_channel_ack_message(listener_t *liste
 
 		/* Codec */
 		tech_pvt->iananame = "PCMU"; /* TODO */
-		tech_pvt->codec_ms = 20; /* TODO */
+		tech_pvt->codec_ms = SKINNY_PTIME; /* TODO */
 		tech_pvt->rm_rate = 8000; /* TODO */
 		tech_pvt->rm_fmtp = NULL; /* TODO */
 		tech_pvt->agreed_pt = (switch_payload_t) 0; /* TODO */
@@ -1852,7 +1880,7 @@ switch_status_t skinny_handle_open_receive_channel_ack_message(listener_t *liste
 				tech_pvt->read_impl.microseconds_per_packet / 1000,
 				switch_rtp_ready(tech_pvt->rtp_session) ? "SUCCESS" : err);
 #ifdef WIN32
-		addr.s_addr = inet_addr((uint16_t) tech_pvt->local_sdp_audio_ip);
+		addr.s_addr = inet_addr(tech_pvt->local_sdp_audio_ip);
 #else
 		inet_aton(tech_pvt->local_sdp_audio_ip, &addr);
 #endif
@@ -1861,7 +1889,7 @@ switch_status_t skinny_handle_open_receive_channel_ack_message(listener_t *liste
 				tech_pvt->party_id, /* uint32_t pass_thru_party_id, */
 				addr.s_addr, /* uint32_t remote_ip, */
 				tech_pvt->local_sdp_audio_port, /* uint32_t remote_port, */
-				20, /* uint32_t ms_per_packet, */
+				SKINNY_PTIME, /* uint32_t ms_per_packet, */
 				SKINNY_CODEC_ULAW_64K, /* uint32_t payload_capacity, */
 				184, /* uint32_t precedence, */
 				0, /* uint32_t silence_suppression, */
@@ -2083,7 +2111,7 @@ switch_status_t skinny_headset_status_message(listener_t *listener, skinny_messa
 	skinny_check_data_length(request, sizeof(request->data.headset_status));
 
 	if ((sql = switch_mprintf(
-					"UPDATE skinny_devices SET headset=%d WHERE name='%s' and instance=%d",
+					"UPDATE skinny_devices SET headset=%d WHERE name='%q' and instance=%d",
 					(request->data.headset_status.mode==1) ? SKINNY_ACCESSORY_STATE_OFFHOOK : SKINNY_ACCESSORY_STATE_ONHOOK,
 					listener->device_name,
 					listener->device_instance
@@ -2245,7 +2273,7 @@ switch_status_t skinny_handle_accessory_status_message(listener_t *listener, ski
 	switch(request->data.accessory_status.accessory_id) {
 		case SKINNY_ACCESSORY_HEADSET:
 			if ((sql = switch_mprintf(
-							"UPDATE skinny_devices SET headset=%d WHERE name='%s' and instance=%d",
+							"UPDATE skinny_devices SET headset=%d WHERE name='%q' and instance=%d",
 							request->data.accessory_status.accessory_status,
 							listener->device_name,
 							listener->device_instance
@@ -2256,7 +2284,7 @@ switch_status_t skinny_handle_accessory_status_message(listener_t *listener, ski
 			break;
 		case SKINNY_ACCESSORY_HANDSET:
 			if ((sql = switch_mprintf(
-							"UPDATE skinny_devices SET handset=%d WHERE name='%s' and instance=%d",
+							"UPDATE skinny_devices SET handset=%d WHERE name='%q' and instance=%d",
 							request->data.accessory_status.accessory_status,
 							listener->device_name,
 							listener->device_instance
@@ -2267,7 +2295,7 @@ switch_status_t skinny_handle_accessory_status_message(listener_t *listener, ski
 			break;
 		case SKINNY_ACCESSORY_SPEAKER:
 			if ((sql = switch_mprintf(
-							"UPDATE skinny_devices SET speaker=%d WHERE name='%s' and instance=%d",
+							"UPDATE skinny_devices SET speaker=%d WHERE name='%q' and instance=%d",
 							request->data.accessory_status.accessory_status,
 							listener->device_name,
 							listener->device_instance
@@ -2329,7 +2357,7 @@ switch_status_t skinny_handle_updatecapabilities(listener_t *listener, skinny_me
 	}
 	codec_string[string_len] = '\0';
 	if ((sql = switch_mprintf(
-					"UPDATE skinny_devices SET codec_string='%s' WHERE name='%s'",
+					"UPDATE skinny_devices SET codec_string='%q' WHERE name='%q'",
 					codec_string,
 					listener->device_name
 				 ))) {

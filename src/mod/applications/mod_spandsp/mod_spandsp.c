@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -62,6 +62,11 @@ SWITCH_STANDARD_APP(spanfax_tx_function)
 SWITCH_STANDARD_APP(spanfax_rx_function)
 {
 	mod_spandsp_fax_process_fax(session, data, FUNCTION_RX);
+}
+
+SWITCH_STANDARD_APP(spanfax_stop_function)
+{
+	mod_spandsp_fax_stop_fax(session);
 }
 
 SWITCH_STANDARD_APP(dtmf_session_function)
@@ -740,6 +745,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spandsp_init)
 				   SAF_SUPPORT_NOMEDIA | SAF_NO_LOOPBACK);
 	SWITCH_ADD_APP(app_interface, "txfax", "FAX Transmit Application", "FAX Transmit Application", spanfax_tx_function, SPANFAX_TX_USAGE,
 				   SAF_SUPPORT_NOMEDIA | SAF_NO_LOOPBACK);
+	SWITCH_ADD_APP(app_interface, "stopfax", "Stop FAX Application", "Stop FAX Application", spanfax_stop_function, "", SAF_NONE);
 
 	SWITCH_ADD_APP(app_interface, "spandsp_stop_dtmf", "stop inband dtmf", "Stop detecting inband dtmf.", stop_dtmf_session_function, "", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "spandsp_start_dtmf", "Detect dtmf", "Detect inband dtmf on the session", dtmf_session_function, "", SAF_MEDIA_TAP);
@@ -795,8 +801,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spandsp_init)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 	}
 
-
+#if defined(MODEM_SUPPORT)
 	modem_global_init(module_interface, pool);
+#endif
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mod_spandsp loaded, using spandsp library version [%s]\n", SPANDSP_RELEASE_DATETIME_STRING);
 
@@ -811,7 +818,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spandsp_shutdown)
 
 	mod_spandsp_fax_shutdown();
 	mod_spandsp_dsp_shutdown();
+#if defined(MODEM_SUPPORT)
 	modem_global_shutdown();
+#endif
 
 	if (spandsp_globals.tones) {
 		switch_core_hash_destroy(&spandsp_globals.tones);

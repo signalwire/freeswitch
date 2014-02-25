@@ -154,9 +154,15 @@ static const sig_tone_descriptor_t sig_tones[3] =
         },
         &flat_coeffs[NOTCH_COEFF_SET_2280HZ],
 
+#if defined(SPANDSP_USE_FIXED_POINT)
+        13,
+        -30,
+        -30
+#else
         13.0f,
         -30.0f,
         -30.0f
+#endif
     },
     {
         /* 2600Hz (e.g. many US protocols) */
@@ -176,9 +182,15 @@ static const sig_tone_descriptor_t sig_tones[3] =
         },
         NULL,
 
+#if defined(SPANDSP_USE_FIXED_POINT)
+        16,
+        -30,
+        -30
+#else
         15.6f,
         -30.0f,
         -30.0f
+#endif
     },
     {
         /* 2400Hz/2600Hz (e.g. SS5 and SS5bis) */
@@ -198,9 +210,15 @@ static const sig_tone_descriptor_t sig_tones[3] =
         },
         NULL,
 
+#if defined(SPANDSP_USE_FIXED_POINT)
+        16,
+        -30,
+        -30
+#else
         15.6f,
         -30.0f,
         -30.0f
+#endif
     }
 };
 

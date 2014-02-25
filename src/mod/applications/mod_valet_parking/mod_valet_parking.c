@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -162,7 +162,8 @@ static int find_longest(valet_lot_t *lot, int min, int max)
 	const void *i_var;
 	void *i_val;
 	valet_token_t *token;
-	int longest = 0, cur = 0, longest_ext = 0;
+	int longest_ext = 0;
+	time_t longest = 0, cur = 0;
 	time_t now = switch_epoch_time_now(NULL);
 
 	switch_mutex_lock(lot->mutex);
@@ -607,7 +608,7 @@ SWITCH_STANDARD_APP(valet_parking_function)
 		}
 
 		dest = switch_core_session_sprintf(session, "%s%s%s%s"
-										   "set:valet_ticket=%s,set:valet_hold_music=%s,sleep:1000,valet_park:%s %s", 
+										   "set:valet_ticket=%s,set:valet_hold_music='%s',sleep:1000,valet_park:%s %s", 
 										   timeout_str,
 										   orbit_exten_str,
 										   orbit_dialplan_str,
@@ -805,24 +806,22 @@ static void pres_event_handler(switch_event_t *event)
 
 		if (count) {
 			if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-				if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", lot_name);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", lot_name, domain_name);
 
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d caller%s)", count, count == 1 ? "" : "s");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "active");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", lot_name);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
-					switch_event_fire(&event);
-				}
-				found++;
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d caller%s)", count, count == 1 ? "" : "s");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "active");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", lot_name);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
+				switch_event_fire(&event);
 			}
+			found++;
 		} else {
 			if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VALET_PROTO);

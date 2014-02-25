@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -409,8 +409,8 @@ static long do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, cha
 
 	if (http_data.stream.data && !zstr((char *) http_data.stream.data) && strcmp(" ", http_data.stream.data)) {
 
-		/* don't return UNKNOWN */
-		if (strcmp("UNKNOWN", http_data.stream.data) || strcmp("UNAVAILABLE", http_data.stream.data)) {
+		/* don't return UNKNOWN or UNAVAILABLE */
+		if (strcasecmp("UNKNOWN", http_data.stream.data) && strcasecmp("UNAVAILABLE", http_data.stream.data)) {
 			*response = switch_core_strdup(pool, http_data.stream.data);
 		}
 	}

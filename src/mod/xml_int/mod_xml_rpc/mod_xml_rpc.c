@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -57,7 +57,6 @@
  *
  */
 #include <switch.h>
-#include <switch_version.h>
 #ifdef _MSC_VER
 #pragma warning(disable:4142)
 #endif
@@ -376,7 +375,7 @@ static abyss_bool is_authorized(const TSession * r, const char *command)
 	switch_safe_free(dup);
 
 	if (!ok) {
-		ResponseStatus(r, err);
+		ResponseStatus(r, (xmlrpc_uint16_t)err);
 	}
 
 
@@ -547,8 +546,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 }
 
 void stop_hook_event_handler(switch_event_t *event) {
-	char *json;
-	wsh_t *wsh = (TSession *)event->bind_user_data;
+	wsh_t *wsh = (wsh_t *)event->bind_user_data;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "got websocket::stophook, closing\n");
 	wsh->down++;
@@ -556,7 +554,7 @@ void stop_hook_event_handler(switch_event_t *event) {
 
 void event_handler(switch_event_t *event) {
 	char *json;
-	wsh_t *wsh = (TSession *)event->bind_user_data;
+	wsh_t *wsh = (wsh_t *)event->bind_user_data;
 	switch_event_serialize_json(event, &json);
 	ws_write_frame(wsh, WSOC_TEXT, json, strlen(json));
 	free(json);
@@ -595,7 +593,7 @@ abyss_bool websocket_hook(TSession *r)
 
 	wsh = ws_init(r);
 	if (!wsh) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "websocket error %d\n", ret);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "websocket memory error\n");
 		return FALSE;
 	}
 
@@ -811,6 +809,7 @@ abyss_bool handler_hook(TSession * r)
 	const char *uri = 0;
 	TRequestInfo *info = 0;
 	switch_event_t *evnt = 0; /* shortcut to stream.param_event */
+	char v[256] = "";
 
 	if (!r || !(info = &r->requestInfo) || !(uri = info->uri)) {
 		return FALSE;
@@ -1008,7 +1007,8 @@ abyss_bool handler_hook(TSession * r)
 	}
 
 	/* Generation of the server field */
-	ResponseAddField(r, "Server", "FreeSWITCH-" SWITCH_VERSION_FULL "-mod_xml_rpc");
+	switch_snprintf(v, sizeof(v), "FreeSWITCH-%s-mod_xml_rpc", switch_version_full());
+	ResponseAddField(r, "Server", v);
 
 	if (html) {
 		ResponseAddField(r, "Content-Type", "text/html");

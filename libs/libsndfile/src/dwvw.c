@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2002-2012 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -38,7 +38,7 @@
 #include	"common.h"
 
 typedef struct
-{	int		dwm_maxsize, bit_width, max_delta, span ;
+{	int		bit_width, dwm_maxsize, max_delta, span ;
 	int		samplecount ;
 	int		bit_count, bits, last_delta_width, last_sample ;
 	struct
@@ -61,7 +61,8 @@ static sf_count_t dwvw_write_f (SF_PRIVATE *psf, const float *ptr, sf_count_t le
 static sf_count_t dwvw_write_d (SF_PRIVATE *psf, const double *ptr, sf_count_t len) ;
 
 static sf_count_t	dwvw_seek	(SF_PRIVATE *psf, int mode, sf_count_t offset) ;
-static int	dwvw_close	(SF_PRIVATE *psf) ;
+static int	dwvw_close		(SF_PRIVATE *psf) ;
+static int	dwvw_byterate	(SF_PRIVATE *psf) ;
 
 static int	dwvw_decode_data (SF_PRIVATE *psf, DWVW_PRIVATE *pdwvw, int *ptr, int len) ;
 static int	dwvw_decode_load_bits (SF_PRIVATE *psf, DWVW_PRIVATE *pdwvw, int bit_count) ;
@@ -86,29 +87,24 @@ dwvw_init (SF_PRIVATE *psf, int bitwidth)
 	if (bitwidth > 24)
 		return SFE_DWVW_BAD_BITWIDTH ;
 
-	if (psf->mode == SFM_RDWR)
+	if (psf->file.mode == SFM_RDWR)
 		return SFE_BAD_MODE_RW ;
 
 	if ((pdwvw = calloc (1, sizeof (DWVW_PRIVATE))) == NULL)
 		return SFE_MALLOC_FAILED ;
 
 	psf->codec_data = (void*) pdwvw ;
-
 	pdwvw->bit_width 	= bitwidth ;
-	pdwvw->dwm_maxsize	= bitwidth / 2 ;
-	pdwvw->max_delta	= 1 << (bitwidth - 1) ;
-	pdwvw->span			= 1 << bitwidth ;
-
 	dwvw_read_reset (pdwvw) ;
 
-	if (psf->mode == SFM_READ)
+	if (psf->file.mode == SFM_READ)
 	{	psf->read_short		= dwvw_read_s ;
 		psf->read_int		= dwvw_read_i ;
 		psf->read_float		= dwvw_read_f ;
 		psf->read_double	= dwvw_read_d ;
 		} ;
 
-	if (psf->mode == SFM_WRITE)
+	if (psf->file.mode == SFM_WRITE)
 	{	psf->write_short	= dwvw_write_s ;
 		psf->write_int		= dwvw_write_i ;
 		psf->write_float	= dwvw_write_f ;
@@ -117,11 +113,12 @@ dwvw_init (SF_PRIVATE *psf, int bitwidth)
 
 	psf->codec_close = dwvw_close ;
 	psf->seek = dwvw_seek ;
+	psf->byterate = dwvw_byterate ;
 
-	/* FIXME : This is bogus. */
-	psf->sf.frames = SF_COUNT_MAX ;
-	psf->datalength = psf->sf.frames ;
-	/* EMXIF : This is bogus. */
+	if (psf->file.mode == SFM_READ)
+	{	psf->sf.frames = psf_decode_frame_count (psf) ;
+		dwvw_read_reset (pdwvw) ;
+		} ;
 
 	return 0 ;
 } /* dwvw_init */
@@ -137,7 +134,7 @@ dwvw_close (SF_PRIVATE *psf)
 		return 0 ;
 	pdwvw = (DWVW_PRIVATE*) psf->codec_data ;
 
-	if (psf->mode == SFM_WRITE)
+	if (psf->file.mode == SFM_WRITE)
 	{	static int last_values [12] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } ;
 
 		/* Write 8 zero samples to fully flush output. */
@@ -174,6 +171,14 @@ dwvw_seek	(SF_PRIVATE *psf, int UNUSED (mode), sf_count_t offset)
 	return	PSF_SEEK_ERROR ;
 } /* dwvw_seek */
 
+static int
+dwvw_byterate	(SF_PRIVATE *psf)
+{
+	if (psf->file.mode == SFM_READ)
+		return (psf->datalength * psf->sf.samplerate) / psf->sf.frames ;
+
+	return -1 ;
+} /* dwvw_byterate */
 
 /*==============================================================================
 */
@@ -181,6 +186,7 @@ dwvw_seek	(SF_PRIVATE *psf, int UNUSED (mode), sf_count_t offset)
 static sf_count_t
 dwvw_read_s (SF_PRIVATE *psf, short *ptr, sf_count_t len)
 {	DWVW_PRIVATE *pdwvw ;
+	BUF_UNION	ubuf ;
 	int		*iptr ;
 	int		k, bufferlen, readcount = 0, count ;
 	sf_count_t	total = 0 ;
@@ -189,8 +195,8 @@ dwvw_read_s (SF_PRIVATE *psf, short *ptr, sf_count_t len)
 		return 0 ;
 	pdwvw = (DWVW_PRIVATE*) psf->codec_data ;
 
-	iptr = psf->u.ibuf ;
-	bufferlen = ARRAY_LEN (psf->u.ibuf) ;
+	iptr = ubuf.ibuf ;
+	bufferlen = ARRAY_LEN (ubuf.ibuf) ;
 	while (len > 0)
 	{	readcount = (len >= bufferlen) ? bufferlen : len ;
 		count = dwvw_decode_data (psf, pdwvw, iptr, readcount) ;
@@ -234,8 +240,9 @@ dwvw_read_i (SF_PRIVATE *psf, int *ptr, sf_count_t len)
 static sf_count_t
 dwvw_read_f (SF_PRIVATE *psf, float *ptr, sf_count_t len)
 {	DWVW_PRIVATE *pdwvw ;
-	int		*iptr ;
-	int		k, bufferlen, readcount = 0, count ;
+	BUF_UNION	ubuf ;
+	int			*iptr ;
+	int			k, bufferlen, readcount = 0, count ;
 	sf_count_t	total = 0 ;
 	float	normfact ;
 
@@ -245,8 +252,8 @@ dwvw_read_f (SF_PRIVATE *psf, float *ptr, sf_count_t len)
 
 	normfact = (psf->norm_float == SF_TRUE) ? 1.0 / ((float) 0x80000000) : 1.0 ;
 
-	iptr = psf->u.ibuf ;
-	bufferlen = ARRAY_LEN (psf->u.ibuf) ;
+	iptr = ubuf.ibuf ;
+	bufferlen = ARRAY_LEN (ubuf.ibuf) ;
 	while (len > 0)
 	{	readcount = (len >= bufferlen) ? bufferlen : len ;
 		count = dwvw_decode_data (psf, pdwvw, iptr, readcount) ;
@@ -265,8 +272,9 @@ dwvw_read_f (SF_PRIVATE *psf, float *ptr, sf_count_t len)
 static sf_count_t
 dwvw_read_d (SF_PRIVATE *psf, double *ptr, sf_count_t len)
 {	DWVW_PRIVATE *pdwvw ;
-	int		*iptr ;
-	int		k, bufferlen, readcount = 0, count ;
+	BUF_UNION	ubuf ;
+	int			*iptr ;
+	int			k, bufferlen, readcount = 0, count ;
 	sf_count_t	total = 0 ;
 	double 	normfact ;
 
@@ -276,8 +284,8 @@ dwvw_read_d (SF_PRIVATE *psf, double *ptr, sf_count_t len)
 
 	normfact = (psf->norm_double == SF_TRUE) ? 1.0 / ((double) 0x80000000) : 1.0 ;
 
-	iptr = psf->u.ibuf ;
-	bufferlen = ARRAY_LEN (psf->u.ibuf) ;
+	iptr = ubuf.ibuf ;
+	bufferlen = ARRAY_LEN (ubuf.ibuf) ;
 	while (len > 0)
 	{	readcount = (len >= bufferlen) ? bufferlen : len ;
 		count = dwvw_decode_data (psf, pdwvw, iptr, readcount) ;
@@ -307,7 +315,7 @@ dwvw_decode_data (SF_PRIVATE *psf, DWVW_PRIVATE *pdwvw, int *ptr, int len)
 		delta_width_modifier = dwvw_decode_load_bits (psf, pdwvw, -1) ;
 
 		/* Check for end of input bit stream. Break loop if end. */
-		if (delta_width_modifier < 0)
+		if (delta_width_modifier < 0 || (pdwvw->b.end == 0 && count == 0))
 			break ;
 
 		if (delta_width_modifier && dwvw_decode_load_bits (psf, pdwvw, 1))
@@ -406,13 +414,14 @@ dwvw_decode_load_bits (SF_PRIVATE *psf, DWVW_PRIVATE *pdwvw, int bit_count)
 
 static void
 dwvw_read_reset (DWVW_PRIVATE *pdwvw)
-{	pdwvw->samplecount		= 0 ;
-	pdwvw->b.index			= 0 ;
-	pdwvw->b.end			= 0 ;
-	pdwvw->bit_count		= 0 ;
-	pdwvw->bits				= 0 ;
-	pdwvw->last_delta_width = 0 ;
-	pdwvw->last_sample		= 0 ;
+{	int bitwidth = pdwvw->bit_width ;
+
+	memset (pdwvw, 0, sizeof (DWVW_PRIVATE)) ;
+
+	pdwvw->bit_width	= bitwidth ;
+	pdwvw->dwm_maxsize	= bitwidth / 2 ;
+	pdwvw->max_delta	= 1 << (bitwidth - 1) ;
+	pdwvw->span			= 1 << bitwidth ;
 } /* dwvw_read_reset */
 
 static void
@@ -461,9 +470,9 @@ dump_bits (DWVW_PRIVATE *pdwvw)
 } /* dump_bits */
 #endif
 
-#define HIGHEST_BIT(x,count)		\
+#define HIGHEST_BIT(x, count)		\
 			{	int y = x ;			\
-				(count) = 0 ;	 	\
+				(count) = 0 ;		\
 				while (y)			\
 				{	(count) ++ ;	\
 					y >>= 1 ;		\
@@ -548,6 +557,7 @@ dwvw_encode_data (SF_PRIVATE *psf, DWVW_PRIVATE *pdwvw, const int *ptr, int len)
 static sf_count_t
 dwvw_write_s (SF_PRIVATE *psf, const short *ptr, sf_count_t len)
 {	DWVW_PRIVATE *pdwvw ;
+	BUF_UNION	ubuf ;
 	int		*iptr ;
 	int		k, bufferlen, writecount = 0, count ;
 	sf_count_t	total = 0 ;
@@ -556,8 +566,8 @@ dwvw_write_s (SF_PRIVATE *psf, const short *ptr, sf_count_t len)
 		return 0 ;
 	pdwvw = (DWVW_PRIVATE*) psf->codec_data ;
 
-	iptr = psf->u.ibuf ;
-	bufferlen = ARRAY_LEN (psf->u.ibuf) ;
+	iptr = ubuf.ibuf ;
+	bufferlen = ARRAY_LEN (ubuf.ibuf) ;
 	while (len > 0)
 	{	writecount = (len >= bufferlen) ? bufferlen : len ;
 		for (k = 0 ; k < writecount ; k++)
@@ -601,6 +611,7 @@ dwvw_write_i (SF_PRIVATE *psf, const int *ptr, sf_count_t len)
 static sf_count_t
 dwvw_write_f (SF_PRIVATE *psf, const float *ptr, sf_count_t len)
 {	DWVW_PRIVATE *pdwvw ;
+	BUF_UNION	ubuf ;
 	int			*iptr ;
 	int			k, bufferlen, writecount = 0, count ;
 	sf_count_t	total = 0 ;
@@ -612,8 +623,8 @@ dwvw_write_f (SF_PRIVATE *psf, const float *ptr, sf_count_t len)
 
 	normfact = (psf->norm_float == SF_TRUE) ? (1.0 * 0x7FFFFFFF) : 1.0 ;
 
-	iptr = psf->u.ibuf ;
-	bufferlen = ARRAY_LEN (psf->u.ibuf) ;
+	iptr = ubuf.ibuf ;
+	bufferlen = ARRAY_LEN (ubuf.ibuf) ;
 	while (len > 0)
 	{	writecount = (len >= bufferlen) ? bufferlen : len ;
 		for (k = 0 ; k < writecount ; k++)
@@ -632,6 +643,7 @@ dwvw_write_f (SF_PRIVATE *psf, const float *ptr, sf_count_t len)
 static sf_count_t
 dwvw_write_d (SF_PRIVATE *psf, const double *ptr, sf_count_t len)
 {	DWVW_PRIVATE *pdwvw ;
+	BUF_UNION	ubuf ;
 	int			*iptr ;
 	int			k, bufferlen, writecount = 0, count ;
 	sf_count_t	total = 0 ;
@@ -643,8 +655,8 @@ dwvw_write_d (SF_PRIVATE *psf, const double *ptr, sf_count_t len)
 
 	normfact = (psf->norm_double == SF_TRUE) ? (1.0 * 0x7FFFFFFF) : 1.0 ;
 
-	iptr = psf->u.ibuf ;
-	bufferlen = ARRAY_LEN (psf->u.ibuf) ;
+	iptr = ubuf.ibuf ;
+	bufferlen = ARRAY_LEN (ubuf.ibuf) ;
 	while (len > 0)
 	{	writecount = (len >= bufferlen) ? bufferlen : len ;
 		for (k = 0 ; k < writecount ; k++)

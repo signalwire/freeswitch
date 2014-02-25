@@ -78,6 +78,8 @@
         <!-- This will allow a call after an attended transfer go back to bypass
              media after an attended transfer. -->
         <!-- <param name="media-option" value="bypass-media-after-att-xfer"/> -->
+        <!-- bypass again when hold is complete -->
+        <!-- <param name="media-option" value="bypass-media-after-hold"/> -->
         <!-- <param name="user-agent-string" value="FreeSWITCH Rocks!"/> -->
         <param name="debug" value="0"/>
         <!-- If you want FreeSWITCH to shutdown if this profile fails to load,
@@ -247,6 +249,8 @@
              sets which subjects are allowed, multiple subjects can be split
              with a '|' pipe -->
         <param name="tls-verify-in-subjects" value=""/>
+        <!-- Set the OpenSSL cipher suite list -->
+        <!-- <param name="tls-ciphers" value="!aNULL:!LOW:!EXP:!kECDH:!ECDSA:!DSS:!PSK:!SRP:ALL"/> -->
         <!-- TLS version ("sslv23" (default), "tlsv1"). NOTE: Phones may not
              work with TLSv1 -->
         <param name="tls-version" value="$${sip_tls_version}"/>

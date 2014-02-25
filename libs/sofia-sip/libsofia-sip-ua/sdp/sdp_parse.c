@@ -1808,7 +1808,9 @@ static int parse_ul(sdp_parser_t *p, char **r,
 }
 
 #if !HAVE_STRTOULL
+#if !((defined(WIN32) || defined(_WIN32)) && (_MSC_VER >= 1800))
 unsigned long long strtoull(char const *string, char **return_end, int base);
+#endif
 #endif
 
 /*

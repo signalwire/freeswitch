@@ -1,11 +1,10 @@
-## no idea how to simply ask ruby which one to use
-LOCAL_CFLAGS=-I$(shell ruby -e 'require "rbconfig"; puts RbConfig::CONFIG["topdir"]')
-LOCAL_LDFLAGS=$(shell ruby -e 'require "rbconfig"; puts RbConfig::CONFIG["LIBS"]')
+LOCAL_LDFLAGS=$(shell ruby -rrbconfig -e 'puts RbConfig::CONFIG["LIBRUBYARG"]')
+LOCAL_CFLAGS=$(shell ruby cflags.rb)
 
 all: ESL.so
 
 esl_wrap.cpp:
-	swig -module ESL -ruby -c++ -DMULTIPLICITY -I../src/include -o esl_wrap.cpp ../ESL.i
+	swig2.0 -module ESL -ruby -c++ -DMULTIPLICITY -I../src/include -o esl_wrap.cpp ../ESL.i
 
 esl_wrap.o: esl_wrap.cpp
 	$(CXX) $(CXX_CFLAGS) $(CXXFLAGS) $(LOCAL_CFLAGS) -c esl_wrap.cpp -o esl_wrap.o
@@ -20,4 +19,3 @@ swigclean:
 	rm -f esl_wrap.* ESL.so
 
 reswig:	swigclean esl_wrap.cpp
-

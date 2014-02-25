@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -32,7 +32,6 @@
 
 #include <switch.h>
 #include <switch_console.h>
-#include <switch_version.h>
 #ifndef _MSC_VER
 #include <switch_private.h>
 #endif
@@ -725,7 +724,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 	}
 
 	if (!zstr(cursor) && !zstr(line)) {
-		pos = (cursor - line);
+		pos = (int)(cursor - line);
 	}
 
 	h.out = console_out;
@@ -784,7 +783,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 		buf = lp + 1;
 	}
 
-	h.len = strlen(buf);
+	h.len = (int)strlen(buf);
 
 	if (h.out) {
 		fprintf(h.out, "\n\n");
@@ -1920,6 +1919,11 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string)
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 2) {
 			switch_cache_db_handle_t *db = NULL;
 			char *sql = NULL;
+
+			if (!strcmp(argv[1], argv[2])) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Alias and command cannot be the same, this will cause loop!\n");
+				return SWITCH_STATUS_FALSE;
+			}
 
 			if (switch_core_db_handle(&db) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database Error\n");

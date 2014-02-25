@@ -291,13 +291,23 @@ static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(analog_em_set_channel_sig_status)
 		return FTDM_FAIL;
 	case FTDM_SIG_STATE_SUSPENDED:
 		if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SUSPENDED)) {
+			int cas_bits = 0xFF;
 			ftdm_set_flag(ftdmchan, FTDM_CHANNEL_SUSPENDED);
+			ftdm_channel_command(ftdmchan, FTDM_COMMAND_SET_CAS_BITS, &cas_bits);
+			if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OFFHOOK)) {
+				ftdm_channel_command(ftdmchan, FTDM_COMMAND_OFFHOOK, NULL);
+			}
 			ftdm_analog_set_chan_sig_status(ftdmchan, FTDM_SIG_STATE_SUSPENDED);
 		}
 		break;
 	case FTDM_SIG_STATE_UP:
 		if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SUSPENDED)) {
+			int cas_bits = 0x00;
 			ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_SUSPENDED);
+			ftdm_channel_command(ftdmchan, FTDM_COMMAND_SET_CAS_BITS, &cas_bits);
+			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OFFHOOK)) {
+				ftdm_channel_command(ftdmchan, FTDM_COMMAND_ONHOOK, NULL);
+			}
 			if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_IN_ALARM)) {
 				ftdm_analog_set_chan_sig_status(ftdmchan, FTDM_SIG_STATE_UP);
 			}
@@ -643,12 +653,9 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 			case FTDM_CHANNEL_STATE_RING:
 				{
 					ftdm_sleep(interval);
-					if (ftdmchan->state == FTDM_CHANNEL_STATE_UP && cas_answer) {
+					if (ftdmchan->state == FTDM_CHANNEL_STATE_UP) {
 						cas_bits = 0;
 						ftdm_channel_command(ftdmchan, FTDM_COMMAND_GET_CAS_BITS, &cas_bits);
-						if (!(state_counter % 5000)) {
-							ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "CAS bits: 0x%X\n", cas_bits);
-						}
 						if (cas_bits == 0x0) {
 							cas_hangup += interval;
 							if (cas_hangup >= cas_hangup_ms) {

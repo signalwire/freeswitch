@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2002-2012 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -86,7 +86,7 @@ int
 mat5_open	(SF_PRIVATE *psf)
 {	int		subformat, error = 0 ;
 
-	if (psf->mode == SFM_READ || (psf->mode == SFM_RDWR && psf->filelength > 0))
+	if (psf->file.mode == SFM_READ || (psf->file.mode == SFM_RDWR && psf->filelength > 0))
 	{	if ((error = mat5_read_header (psf)))
 			return error ;
 		} ;
@@ -96,7 +96,7 @@ mat5_open	(SF_PRIVATE *psf)
 
 	subformat = SF_CODEC (psf->sf.format) ;
 
-	if (psf->mode == SFM_WRITE || psf->mode == SFM_RDWR)
+	if (psf->file.mode == SFM_WRITE || psf->file.mode == SFM_RDWR)
 	{	if (psf->is_pipe)
 			return SFE_NO_PIPE_WRITE ;
 
@@ -143,7 +143,7 @@ mat5_open	(SF_PRIVATE *psf)
 static int
 mat5_close	(SF_PRIVATE *psf)
 {
-	if (psf->mode == SFM_WRITE || psf->mode == SFM_RDWR)
+	if (psf->file.mode == SFM_WRITE || psf->file.mode == SFM_RDWR)
 		mat5_write_header (psf, SF_TRUE) ;
 
 	return 0 ;
@@ -157,6 +157,7 @@ mat5_write_header (SF_PRIVATE *psf, int calc_length)
 {	static const char	*filename = "MATLAB 5.0 MAT-file, written by " PACKAGE "-" VERSION ", " ;
 	static const char	*sr_name = "samplerate\0\0\0\0\0\0\0\0\0\0\0" ;
 	static const char	*wd_name = "wavedata\0" ;
+	char		buffer [256] ;
 	sf_count_t	current, datasize ;
 	int			encoding ;
 
@@ -204,11 +205,11 @@ mat5_write_header (SF_PRIVATE *psf, int calc_length)
 	psf->headindex = 0 ;
 	psf_fseek (psf, 0, SEEK_SET) ;
 
-	psf_get_date_str (psf->u.cbuf, sizeof (psf->u.scbuf)) ;
-	psf_binheader_writef (psf, "bb", filename, strlen (filename), psf->u.cbuf, strlen (psf->u.cbuf) + 1) ;
+	psf_get_date_str (buffer, sizeof (buffer)) ;
+	psf_binheader_writef (psf, "bb", filename, strlen (filename), buffer, strlen (buffer) + 1) ;
 
-	memset (psf->u.scbuf, ' ', 124 - psf->headindex) ;
-	psf_binheader_writef (psf, "b", psf->u.scbuf, make_size_t (124 - psf->headindex)) ;
+	memset (buffer, ' ', 124 - psf->headindex) ;
+	psf_binheader_writef (psf, "b", buffer, make_size_t (124 - psf->headindex)) ;
 
 	psf->rwf_endian = psf->endian ;
 
@@ -257,38 +258,39 @@ mat5_write_header (SF_PRIVATE *psf, int calc_length)
 
 static int
 mat5_read_header (SF_PRIVATE *psf)
-{	char	name [32] ;
+{	char	buffer [256], name [32] ;
 	short	version, endian ;
 	int		type, flags1, flags2, rows, cols ;
 	unsigned size ;
+	int		have_samplerate = 1 ;
 
-	psf_binheader_readf (psf, "pb", 0, psf->u.cbuf, 124) ;
+	psf_binheader_readf (psf, "pb", 0, buffer, 124) ;
 
-	psf->u.scbuf [125] = 0 ;
+	buffer [125] = 0 ;
 
-	if (strlen (psf->u.cbuf) >= 124)
+	if (strlen (buffer) >= 124)
 		return SFE_UNIMPLEMENTED ;
 
-	if (strstr (psf->u.cbuf, "MATLAB 5.0 MAT-file") == psf->u.cbuf)
-		psf_log_printf (psf, "%s\n", psf->u.scbuf) ;
+	if (strstr (buffer, "MATLAB 5.0 MAT-file") == buffer)
+		psf_log_printf (psf, "%s\n", buffer) ;
 
 
 	psf_binheader_readf (psf, "E22", &version, &endian) ;
 
 	if (endian == MI_MARKER)
 	{	psf->endian = psf->rwf_endian = SF_ENDIAN_BIG ;
-		if (CPU_IS_LITTLE_ENDIAN) version = ENDSWAP_SHORT (version) ;
+		if (CPU_IS_LITTLE_ENDIAN) version = ENDSWAP_16 (version) ;
 		}
 	else if (endian == IM_MARKER)
 	{	psf->endian = psf->rwf_endian = SF_ENDIAN_LITTLE ;
-		if (CPU_IS_BIG_ENDIAN) version = ENDSWAP_SHORT (version) ;
+		if (CPU_IS_BIG_ENDIAN) version = ENDSWAP_16 (version) ;
 		}
 	else
 		return SFE_MAT5_BAD_ENDIAN ;
 
 	if ((CPU_IS_LITTLE_ENDIAN && endian == IM_MARKER) ||
 			(CPU_IS_BIG_ENDIAN && endian == MI_MARKER))
-		version = ENDSWAP_SHORT (version) ;
+		version = ENDSWAP_16 (version) ;
 
 	psf_log_printf (psf, "Version : 0x%04X\n", version) ;
 	psf_log_printf (psf, "Endian  : 0x%04X => %s\n", endian,
@@ -317,11 +319,13 @@ mat5_read_header (SF_PRIVATE *psf)
 		return SFE_MAT5_NO_BLOCK ;
 
 	psf_binheader_readf (psf, "44", &rows, &cols) ;
-	psf_log_printf (psf, "    Rows : %X    Cols : %d\n", rows, cols) ;
+	psf_log_printf (psf, "    Rows : %d    Cols : %d\n", rows, cols) ;
 
 	if (rows != 1 || cols != 1)
-		return SFE_MAT5_SAMPLE_RATE ;
-
+	{	if (psf->sf.samplerate == 0)
+			psf->sf.samplerate = 44100 ;
+		have_samplerate = 0 ;
+		}
 	psf_binheader_readf (psf, "4", &type) ;
 
 	if (type == MAT5_TYPE_SCHAR)
@@ -354,6 +358,9 @@ mat5_read_header (SF_PRIVATE *psf)
 	/*-----------------------------------------*/
 
 	psf_binheader_readf (psf, "44", &type, &size) ;
+
+	if (!have_samplerate)
+		goto skip_samplerate ;
 
 	switch (type)
 	{	case MAT5_TYPE_DOUBLE :
@@ -445,6 +452,7 @@ mat5_read_header (SF_PRIVATE *psf)
 	psf_binheader_readf (psf, "44", &type, &size) ;
 	psf_log_printf (psf, "    Type : %X    Size : %d\n", type, size) ;
 
+skip_samplerate :
 	/*++++++++++++++++++++++++++++++++++++++++++++++++++*/
 
 	if (rows == 0 && cols == 0)

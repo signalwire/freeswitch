@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -68,6 +68,26 @@ static switch_xml_config_item_t config_settings[] = {
 SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_mongodb_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cdr_mongodb_shutdown);
 SWITCH_MODULE_DEFINITION(mod_cdr_mongodb, mod_cdr_mongodb_load, mod_cdr_mongodb_shutdown, NULL);
+
+static void bson_append_value(bson *cdr, char *name, char *val)
+{
+		//Check the variable and insert it as int, long int or string depending on it's value
+        char* endptr;
+        long int lintValue = strtol(val, &endptr, 10);
+
+        if (!*endptr){
+                int intValue = lintValue;
+                if(intValue == lintValue){
+                        bson_append_int(cdr, name, intValue);
+                }else{
+                        bson_append_long(cdr, name, lintValue);
+                }
+        } else {
+                bson_append_string(cdr, name, val);
+        }
+
+}
+
 
 static void set_bson_profile_data(bson *b, switch_caller_profile_t *caller_profile)
 {
@@ -162,7 +182,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	if ((hi = switch_channel_variable_first(channel))) {
 		for (; hi; hi = hi->next) {
 			if (!zstr(hi->name) && !zstr(hi->value)) {
-				bson_append_string(&cdr, hi->name, hi->value);
+				bson_append_value(&cdr, hi->name, hi->value);
 			}
 		}
 		switch_channel_variable_last(channel);

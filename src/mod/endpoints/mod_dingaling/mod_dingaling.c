@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -1104,7 +1104,7 @@ static void try_secure(struct private_object *tech_pvt, ldl_transport_type_t tty
 	}
 
 
-	//if (tech_pvt->transports[ttype].crypto_type) {
+	if (tech_pvt->transports[ttype].crypto_type) {
 		switch_rtp_add_crypto_key(tech_pvt->transports[ttype].rtp_session, 
 								  SWITCH_RTP_CRYPTO_SEND, 1, tech_pvt->transports[ttype].crypto_type, 
 								  tech_pvt->transports[ttype].local_raw_key, SWITCH_RTP_KEY_LEN);
@@ -1120,7 +1120,7 @@ static void try_secure(struct private_object *tech_pvt, ldl_transport_type_t tty
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_NOTICE, 
 						  "%s %s crypto confirmed\n", ldl_transport_type_str(ttype), switch_core_session_get_name(tech_pvt->session));
 
-		//}
+		}
 
 }
 
@@ -1543,7 +1543,7 @@ static int do_tport_candidates(struct private_object *tech_pvt, ldl_transport_ty
 	cand->port = tech_pvt->transports[ttype].adv_local_port;
 	cand->address = address;
 
-	if (!strncasecmp(advip, "stun:", 5)) {
+	if (advip && !strncasecmp(advip, "stun:", 5)) {
 		char *stun_ip = advip + 5;
 
 		if (tech_pvt->transports[ttype].stun_ip) {
@@ -1665,7 +1665,7 @@ static char *lame(char *in)
 static void setup_codecs(struct private_object *tech_pvt)
 {
 	ldl_payload_t payloads[LDL_MAX_PAYLOADS] = { {0} };
-	int idx = 0, i = 0;
+	unsigned int idx = 0, i = 0;
 	int dft_audio = -1, dft_video = -1;
 
 	memset(payloads, 0, sizeof(payloads));
@@ -2203,7 +2203,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 				if (!switch_test_flag((&tech_pvt->transports[LDL_TPORT_RTP].read_frame), SFF_CNG)) {
 					if ((bytes = tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->encoded_bytes_per_packet)) {
-						frames = (tech_pvt->transports[LDL_TPORT_RTP].read_frame.datalen / bytes);
+						frames = (int)(tech_pvt->transports[LDL_TPORT_RTP].read_frame.datalen / bytes);
 					}
 					tech_pvt->transports[LDL_TPORT_RTP].read_frame.samples = (int) (frames * tech_pvt->transports[LDL_TPORT_RTP].read_codec.implementation->samples_per_packet);
 				}
@@ -2341,7 +2341,7 @@ static switch_status_t channel_write_video_frame(switch_core_session_t *session,
 		wrote = switch_rtp_write_frame(tech_pvt->transports[LDL_TPORT_VIDEO_RTP].rtp_session, frame);
 	}
 
-	return wrote > 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_GENERR;
+	return wrote > -1 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_GENERR;
 }
 
 static switch_status_t channel_answer_channel(switch_core_session_t *session)
@@ -2936,7 +2936,9 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 			globals.auto_nat = 0;
 			ip = zstr(val) ? globals.guess_ip : val;
 		}
-		profile->extip = switch_core_strdup(module_pool, ip);
+		if (ip) {
+			profile->extip = switch_core_strdup(module_pool, ip);
+		}
 	} else if (!strcasecmp(var, "server") && !zstr(val)) {
 		profile->server = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "rtp-timer-name") && !zstr(val)) {
@@ -4247,6 +4249,22 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				}
 
 				tech_pvt->them = switch_core_session_strdup(session, ldl_session_get_callee(dlsession));
+
+				if (tech_pvt->them && (tmp = strdup(tech_pvt->them))) {
+					char *p, *q;
+
+					if ((p = strchr(tmp, '@'))) {
+						*p++ = '\0';
+						if ((q = strchr(p, '/'))) {
+							*q = '\0';
+						}
+						switch_channel_set_variable(channel, "dl_to_user", tmp);
+						switch_channel_set_variable(channel, "dl_to_host", p);
+					}
+
+					switch_safe_free(tmp);
+				}
+
 				tech_pvt->us = switch_core_session_strdup(session, ldl_session_get_caller(dlsession));
 
 				if (tech_pvt->us && (tmp = strdup(tech_pvt->us))) {

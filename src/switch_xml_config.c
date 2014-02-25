@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -101,7 +101,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, switch
 {
 	switch_event_t *event = NULL;
 	switch_status_t result;
-	int count = switch_event_import_xml(xml, "name", "value", &event);
+	int count = (int)switch_event_import_xml(xml, "name", "value", &event);
 
 	result = switch_xml_config_parse_event(event, count, reload, instructions);
 

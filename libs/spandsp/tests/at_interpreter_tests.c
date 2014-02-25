@@ -478,7 +478,7 @@ static int general_test(at_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int modem_call_control(at_state_t *s, void *user_data, int op, const char *num)
+static int modem_call_control(void *user_data, int op, const char *num)
 {
     switch (op)
     {
@@ -534,7 +534,7 @@ static int modem_call_control(at_state_t *s, void *user_data, int op, const char
 }
 /*- End of function --------------------------------------------------------*/
 
-static int at_tx_handler(at_state_t *s, void *user_data, const uint8_t *buf, size_t len)
+static int at_tx_handler(void *user_data, const uint8_t *buf, size_t len)
 {
     int i;
 

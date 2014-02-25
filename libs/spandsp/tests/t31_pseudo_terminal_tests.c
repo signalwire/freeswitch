@@ -134,7 +134,7 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int at_tx_handler(at_state_t *s, void *user_data, const uint8_t *buf, size_t len)
+static int at_tx_handler(void *user_data, const uint8_t *buf, size_t len)
 {
 #if defined(WIN32)
     DWORD res;
@@ -220,7 +220,7 @@ static int t31_call_control(t31_state_t *s, void *user_data, int op, const char 
         {
         case 1:
             x[0] = (num)  ?  0x11  :  0x13;
-            at_tx_handler(&t31_state->at_state, user_data, x, 1);
+            at_tx_handler(user_data, x, 1);
             break;
         case 2:
             break;
@@ -815,7 +815,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (psuedo_terminal_create(&modem[0]))
+    if (pseudo_terminal_create(&modem[0]))
         printf("Failure\n");
 
 #if !defined(WIN32)
@@ -825,7 +825,7 @@ int main(int argc, char *argv[])
 #endif
 
     t30_tests(t38_mode, use_ecm, use_gui, log_audio, test_sending, g1050_model_no, g1050_speed_pattern_no);
-    if (psuedo_terminal_close(&modem[0]))
+    if (pseudo_terminal_close(&modem[0]))
         printf("Failure\n");
     printf("Tests passed\n");
     return 0;

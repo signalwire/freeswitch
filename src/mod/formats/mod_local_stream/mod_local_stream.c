@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -216,7 +216,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				continue;
 			}
 
-			if (switch_core_timer_init(&timer, source->timer_name, source->interval, source->samples, temp_pool) != SWITCH_STATUS_SUCCESS) {
+			if (switch_core_timer_init(&timer, source->timer_name, source->interval, (int)source->samples, temp_pool) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't start timer.\n");
 				switch_dir_close(source->dir_handle);
 				source->dir_handle = NULL;
@@ -233,7 +233,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				if (source->chime_total) {
 
 					if (source->chime_counter > 0) {
-						source->chime_counter -= source->samples;
+						source->chime_counter -= (int32_t)source->samples;
 					}
 
 					if (!switch_test_flag((&source->chime_fh), SWITCH_FILE_OPEN) && source->chime_counter <= 0) {
@@ -272,7 +272,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 							source->chime_counter = source->rate * source->chime_freq;
 							use_fh = &fh;
 							goto retry;
-							switch_core_file_close(&fh);
+							//switch_core_file_close(&fh);
 						}
 					}
 				}
@@ -288,7 +288,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 						is_open = 0;
 					} else {
 						if (use_fh == &source->chime_fh && source->chime_max) {
-							source->chime_max_counter += source->samples;
+							source->chime_max_counter += (int32_t)source->samples;
 							if (source->chime_max_counter >= source->chime_max) {
 								source->chime_max_counter = 0;
 								switch_core_file_close(use_fh);
@@ -311,16 +311,17 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				if (!is_open || used >= source->prebuf || (source->total && used > source->samples * 2)) {
 					used = switch_buffer_read(audio_buffer, dist_buf, source->samples * 2);
 					if (source->total) {
-
+						uint32_t bused = 0;
 						switch_mutex_lock(source->mutex);
 						for (cp = source->context_list; cp && RUNNING; cp = cp->next) {
 							if (switch_test_flag(cp->handle, SWITCH_FILE_CALLBACK)) {
 								continue;
 							}
 							switch_mutex_lock(cp->audio_mutex);
-							if (switch_buffer_inuse(cp->audio_buffer) > source->samples * 768) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Leaking stream handle! [%s() %s:%d]\n", cp->func, cp->file,
-												  cp->line);
+							bused = (uint32_t)switch_buffer_inuse(cp->audio_buffer);
+							if (bused > source->samples * 768) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Flushing Stream Handle Buffer [%s() %s:%d] size: %u samples: %ld\n", 
+												  cp->func, cp->file, cp->line, bused, (long)source->samples);
 								switch_buffer_zero(cp->audio_buffer);
 							} else {
 								switch_buffer_write(cp->audio_buffer, dist_buf, used);

@@ -867,6 +867,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\switch_speex.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\switch_pgsql.c"
 				>
 			</File>

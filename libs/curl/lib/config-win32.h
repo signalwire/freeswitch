@@ -296,7 +296,7 @@
 /* Define to 'int' if ssize_t is not an available 'typedefed' type */
 #if (defined(__WATCOMC__) && (__WATCOMC__ >= 1240)) || defined(__POCC__)
 #else
-#define ssize_t int
+#define ssize_t intptr_t
 #endif
 
 /* Define to 'int' if socklen_t is not an available 'typedefed' type */

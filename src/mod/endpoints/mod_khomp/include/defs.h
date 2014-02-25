@@ -45,7 +45,6 @@
 #define _DEFS_H_
 
 /* formatation macros */
-#include "switch_version.h"
 #include "revision.h"
 
 #define KHOMP_LOG __FILE__, __SWITCH_FUNC__, __LINE__

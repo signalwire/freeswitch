@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -633,6 +633,7 @@ SWITCH_DECLARE(int) switch_channel_test_app_flag_key(const char *app, switch_cha
 SWITCH_DECLARE(void) switch_channel_set_bridge_time(switch_channel_t *channel);
 SWITCH_DECLARE(void) switch_channel_set_hangup_time(switch_channel_t *channel);
 SWITCH_DECLARE(switch_call_direction_t) switch_channel_direction(switch_channel_t *channel);
+SWITCH_DECLARE(switch_call_direction_t) switch_channel_logical_direction(switch_channel_t *channel);
 SWITCH_DECLARE(void) switch_channel_set_direction(switch_channel_t *channel, switch_call_direction_t direction);
 
 SWITCH_DECLARE(switch_core_session_t *) switch_channel_get_session(switch_channel_t *channel);
@@ -652,7 +653,7 @@ SWITCH_DECLARE(void) switch_channel_mark_hold(switch_channel_t *channel, switch_
 
 SWITCH_DECLARE(switch_status_t) switch_channel_execute_on(switch_channel_t *channel, const char *variable_prefix);
 SWITCH_DECLARE(switch_status_t) switch_channel_api_on(switch_channel_t *channel, const char *variable_prefix);
-
+SWITCH_DECLARE(void) switch_channel_process_device_hangup(switch_channel_t *channel);
 SWITCH_DECLARE(switch_caller_extension_t *) switch_channel_get_queued_extension(switch_channel_t *channel);
 SWITCH_DECLARE(void) switch_channel_transfer_to_extension(switch_channel_t *channel, switch_caller_extension_t *caller_extension);
 SWITCH_DECLARE(const char *) switch_channel_get_partner_uuid(switch_channel_t *channel);

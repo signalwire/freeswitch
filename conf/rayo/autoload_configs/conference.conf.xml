@@ -207,6 +207,7 @@
       <param name="energy-level" value="200"/>
       <param name="moh-sound" value="silence"/>
       <param name="comfort-noise" value="true"/>
+      <param name="min-required-recording-participants" value="1"/>
     </profile>
 
   </profiles>

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -35,7 +35,7 @@
 #undef HAVE_STDLIB_H
 #include "switch_private.h"
 #endif
-#if defined(HAVE_OPENPTY) || defined(HAVE_DEV_PTMX) || defined(HAVE_POSIX_OPENPT) || WIN32
+#if  !defined(__OpenBSD__) && !defined(__DragonFly__) && (defined(HAVE_OPENPTY) || defined(HAVE_DEV_PTMX) || defined(HAVE_POSIX_OPENPT) || WIN32)
 #define MODEM_SUPPORT 1
 #if !defined(HAVE_POSIX_OPENPT) && !defined(HAVE_DEV_PTMX) && !defined(WIN32)
 #define USE_OPENPTY 1
@@ -55,6 +55,7 @@
 #include <termios.h>
 #elif defined(__SunOS)
 #include <termios.h>
+#elif defined(__OpenBSD__)
 #else
 #include <pty.h>
 #endif

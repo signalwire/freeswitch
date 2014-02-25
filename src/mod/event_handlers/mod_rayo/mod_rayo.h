@@ -42,6 +42,9 @@
 #define RAYO_CALL_NS RAYO_BASE "call:" RAYO_VERSION
 #define RAYO_MIXER_NS RAYO_BASE "mixer:" RAYO_VERSION
 
+#define RAYO_CPA_BASE RAYO_BASE "cpa:"
+#define RAYO_CPA_NS RAYO_CPA_BASE RAYO_VERSION
+
 #define RAT_CALL "CALL"
 #define RAT_COMPONENT "COMPONENT"
 #define RAT_CALL_COMPONENT RAT_COMPONENT"_CALL"
@@ -111,14 +114,16 @@ struct rayo_actor {
 struct rayo_component {
 	/** base actor class */
 	struct rayo_actor base;
-	/** component type (input/output/prompt/etc) */
-	const char *type;
 	/** parent to this component */
 	struct rayo_actor *parent;
 	/** owning client JID */
 	const char *client_jid;
 	/** external ref */
 	const char *ref;
+	/** true if component has completed */
+	int complete;
+	/** optional cleanup */
+	rayo_actor_cleanup_fn cleanup_fn;
 };
 
 #define RAYO_ACTOR(x) ((struct rayo_actor *)x)
@@ -153,12 +158,16 @@ extern void rayo_actor_destroy(struct rayo_actor *actor, const char *file, int l
 #define RAYO_DESTROY(x) rayo_actor_destroy(RAYO_ACTOR(x), __FILE__, __LINE__)
 #define RAYO_SEQ_NEXT(x) rayo_actor_seq_next(RAYO_ACTOR(x))
 
+extern int rayo_call_is_joined(struct rayo_call *call);
+extern int rayo_call_is_faxing(struct rayo_call *call);
+extern void rayo_call_set_faxing(struct rayo_call *call, int faxing);
 extern const char *rayo_call_get_dcp_jid(struct rayo_call *call);
 
 #define rayo_mixer_get_name(mixer) RAYO_ID(mixer)
 
-#define rayo_component_init(component, pool, type, subtype, id, parent, client_jid) _rayo_component_init(component, pool, type, subtype, id, parent, client_jid, __FILE__, __LINE__)
-extern struct rayo_component *_rayo_component_init(struct rayo_component *component, switch_memory_pool_t *pool, const char *type, const char *subtype, const char *id, struct rayo_actor *parent, const char *client_jid, const char *file, int line);
+#define rayo_component_init(component, pool, type, subtype, id, parent, client_jid) _rayo_component_init(component, pool, type, subtype, id, parent, client_jid, NULL, __FILE__, __LINE__)
+#define rayo_component_init_cleanup(component, pool, type, subtype, id, parent, client_jid, cleanup) _rayo_component_init(component, pool, type, subtype, id, parent, client_jid, cleanup, __FILE__, __LINE__)
+extern struct rayo_component *_rayo_component_init(struct rayo_component *component, switch_memory_pool_t *pool, const char *type, const char *subtype, const char *id, struct rayo_actor *parent, const char *client_jid, rayo_actor_cleanup_fn cleanup, const char *file, int line);
 extern switch_bool_t is_component_actor(struct rayo_actor *);
 
 typedef iks *(*rayo_actor_xmpp_handler)(struct rayo_actor *, struct rayo_message *, void *);

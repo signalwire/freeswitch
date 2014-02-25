@@ -612,7 +612,6 @@
     <ClInclude Include="..\..\..\include\speex\speex_echo.h" />
     <ClInclude Include="..\..\..\include\speex\speex_header.h" />
     <ClInclude Include="..\..\..\include\speex\speex_jitter.h" />
-    <ClInclude Include="..\..\..\include\speex\speex_noglobals.h" />
     <ClInclude Include="..\..\..\include\speex\speex_preprocess.h" />
     <ClInclude Include="..\..\..\include\speex\speex_stereo.h" />
     <ClInclude Include="..\..\..\include\speex\speex_types.h" />

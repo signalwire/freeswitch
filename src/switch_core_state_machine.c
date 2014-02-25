@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -467,7 +467,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			switch_channel_set_running_state(session->channel, state);
 			switch_channel_clear_flag(session->channel, CF_TRANSFER);
 			switch_channel_clear_flag(session->channel, CF_REDIRECT);
-			
+			switch_ivr_parse_all_messages(session);
+
 			if (session->endpoint_interface->io_routines->state_run) {
 				rstatus = session->endpoint_interface->io_routines->state_run(session);
 			}
@@ -726,6 +727,7 @@ SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *ses
 	//switch_channel_presence(session->channel, "unknown", switch_channel_cause2str(cause), NULL);
 
 	switch_channel_set_timestamps(session->channel);
+	switch_channel_set_callstate(session->channel, CCS_HANGUP);
 
 	STATE_MACRO(hangup, "HANGUP");
 
@@ -740,7 +742,8 @@ SWITCH_DECLARE(void) switch_core_session_hangup_state(switch_core_session_t *ses
 		api_hook(session, hook_var, use_session);
 	}
 
-	switch_channel_set_callstate(session->channel, CCS_HANGUP);
+	switch_channel_process_device_hangup(session->channel);
+	
 	switch_set_flag(session, SSF_HANGUP);
 
 }

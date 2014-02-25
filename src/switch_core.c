@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -40,7 +40,6 @@
 #include <switch_ssl.h>
 #include <switch_stun.h>
 #include <switch_nat.h>
-#include <switch_version.h>
 #include "private/switch_core_pvt.h"
 #include <switch_curl.h>
 #ifndef WIN32
@@ -83,7 +82,7 @@ static void send_heartbeat(void)
 								duration.sec, duration.sec == 1 ? "" : "s",
 								duration.ms, duration.ms == 1 ? "" : "s", duration.mms, duration.mms == 1 ? "" : "s");
 
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Version", SWITCH_VERSION_FULL);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Version", "%s", switch_version_full());
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Uptime-msec", "%"SWITCH_TIME_T_FMT, switch_core_uptime() / 1000);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Session-Count", "%u", switch_core_session_count());
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Max-Sessions", "%u", switch_core_session_limit(0));
@@ -1934,7 +1933,19 @@ static void switch_load_core_config(const char *file)
 				} else if (!strcasecmp(var, "enable-monotonic-timing")) {
 					switch_time_set_monotonic(switch_true(val));
 				} else if (!strcasecmp(var, "enable-softtimer-timerfd")) {
-					switch_time_set_timerfd(switch_true(val));
+					int ival = 0;
+					if (val) {
+						if (switch_true(val)) {
+							ival = 2;
+						} else {
+							if (strcasecmp(val, "broadcast")) {
+								ival = 1;
+							} else if (strcasecmp(val, "fd-per-timer")) {
+								ival = 2;
+							}
+						}
+					}
+					switch_time_set_timerfd(ival);
 				} else if (!strcasecmp(var, "enable-clock-nanosleep")) {
 					switch_time_set_nanosleep(switch_true(val));
 				} else if (!strcasecmp(var, "enable-cond-yield")) {
@@ -2003,6 +2014,8 @@ static void switch_load_core_config(const char *file)
 					switch_rtp_set_start_port((switch_port_t) atoi(val));
 				} else if (!strcasecmp(var, "rtp-end-port") && !zstr(val)) {
 					switch_rtp_set_end_port((switch_port_t) atoi(val));
+				} else if (!strcasecmp(var, "rtp-port-usage-robustness") && switch_true(val)) {
+					runtime.port_alloc_flags |= SPF_ROBUST_UDP;
 				} else if (!strcasecmp(var, "core-db-name") && !zstr(val)) {
 					runtime.dbname = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "core-db-dsn") && !zstr(val)) {
@@ -2128,9 +2141,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 #endif
 
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
 					  "\nFreeSWITCH Version %s (%s)\n\nFreeSWITCH Started\nMax Sessions [%u]\nSession Rate [%d]\nSQL [%s]\n",
-					  SWITCH_VERSION_FULL, SWITCH_VERSION_REVISION_HUMAN,
+					  switch_version_full(), switch_version_revision_human(),
 					  switch_core_session_limit(0),
 					  switch_core_sessions_per_second(0), switch_test_flag((&runtime), SCF_USE_SQL) ? "Enabled" : "Disabled");
 

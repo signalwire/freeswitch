@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -1172,6 +1172,13 @@ SWITCH_STANDARD_APP(delay_function)
 
 SWITCH_STANDARD_APP(eval_function)
 {
+	return;
+}
+
+SWITCH_STANDARD_APP(set_media_stats_function)
+{
+	switch_core_media_set_stats(session);
+
 	return;
 }
 
@@ -3622,6 +3629,9 @@ static switch_call_cause_t pickup_outgoing_channel(switch_core_session_t *sessio
 	switch_core_session_set_private(nsession, tech_pvt);
 	
 	nchannel = switch_core_session_get_channel(nsession);
+	switch_channel_set_cap(nchannel, CC_PROXY_MEDIA);
+	switch_channel_set_cap(nchannel, CC_BYPASS_MEDIA);
+
 	caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
 	switch_channel_set_caller_profile(nchannel, caller_profile);
 
@@ -4746,7 +4756,7 @@ SWITCH_STANDARD_APP(blind_transfer_ack_function)
 	switch_bool_t val = 0;
 
 	if (data) {
-		val = switch_true((char *) val);
+		val = (switch_bool_t)switch_true((char *) data);
 	}
 
 	switch_ivr_blind_transfer_ack(session, val);
@@ -5230,7 +5240,7 @@ void *SWITCH_THREAD_FUNC call_monitor_thread(switch_thread_t *thread, void *obj)
 	switch_mutex_t *mutex;
 	uint32_t counter = 0;
 	switch_memory_pool_t *pool = cm->pool;
-	int size;
+	unsigned int size;
 	char *argv[512] = { 0 };
 	int busy = 0;
 	switch_event_t *var_event = NULL;
@@ -5683,6 +5693,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "strftime", "strftime", "strftime", strftime_function, "[<epoch>|]<format string>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "phrase", "Say a Phrase", "Say a Phrase", phrase_function, "<macro_name>,<data>", SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "eval", "Do Nothing", "Do Nothing", eval_function, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
+	SWITCH_ADD_APP(app_interface, "set_media_stats", "Set Media Stats", "Set Media Stats", set_media_stats_function, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "stop", "Do Nothing", "Do Nothing", eval_function, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);
 	SWITCH_ADD_APP(app_interface, "set_zombie_exec", "Enable Zombie Execution", "Enable Zombie Execution", 
 				   zombie_function, "", SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC);

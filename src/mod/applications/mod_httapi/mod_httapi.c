@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -1283,16 +1283,18 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 {
 	register unsigned int realsize = (unsigned int) (size * nmemb);
 	client_t *client = data;
+	char *zero = "\0";
 
 	client->bytes += realsize;
 
-	if (client->bytes > client->max_bytes) {
+	if (client->bytes > client->max_bytes - 1) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Oversized file detected [%d bytes]\n", (int) client->bytes);
 		client->err = 1;
 		return 0;
 	}
 
 	switch_buffer_write(client->buffer, ptr, realsize);
+	switch_buffer_write(client->buffer, zero, 1);
 	
 	return realsize;
 }
@@ -1473,7 +1475,6 @@ static switch_status_t httapi_sync(client_t *client)
 
 	if (!put_file) {
 		switch_curl_process_form_post_params(client->params, curl_handle, &formpost);	
-		get_style_method = 1;
 	}
 
 	if (formpost) {
@@ -1893,15 +1894,15 @@ static switch_status_t do_config(void)
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 
 				if (!strcasecmp(var, "all")) {
-					switch_byte_t all = switch_true(val);
+					switch_byte_t all = switch_true_byte(val);
 					memset(&profile->perms, all, sizeof(profile->perms));
 				} else if (!strcasecmp(var, "none")) {
-					switch_byte_t none = switch_true(val);
+					switch_byte_t none = switch_true_byte(val);
 					memset(&profile->perms, none, sizeof(profile->perms));
 				} else if (!strcasecmp(var, "set-params")) {
-					profile->perms.set_params = switch_true(val);
+					profile->perms.set_params = switch_true_byte(val);
 				} else if (!strcasecmp(var, "set-vars")) {
-					profile->perms.set_vars = switch_true(val);
+					profile->perms.set_vars = switch_true_byte(val);
 
 					if (profile->perms.set_vars) {
 						switch_xml_t x_list, x_var;
@@ -1929,7 +1930,7 @@ static switch_status_t do_config(void)
 						}
 					}
 				} else if (!strcasecmp(var, "get-vars")) {
-					profile->perms.get_vars = switch_true(val);
+					profile->perms.get_vars = switch_true_byte(val);
 
 					if (profile->perms.get_vars) {
 						switch_xml_t x_list, x_var;
@@ -1957,9 +1958,9 @@ static switch_status_t do_config(void)
 						}
 					}
 				} else if (!strcasecmp(var, "extended-data")) {
-					profile->perms.extended_data = switch_true(val);
+					profile->perms.extended_data = switch_true_byte(val);
 				} else if (!strcasecmp(var, "execute-apps")) {
-					profile->perms.execute_apps = switch_true(val);
+					profile->perms.execute_apps = switch_true_byte(val);
 					
 					if (profile->perms.execute_apps) {
 						switch_xml_t x_list, x_app;
@@ -1988,7 +1989,7 @@ static switch_status_t do_config(void)
 					}
 					
 				} else if (!strcasecmp(var, "expand-vars")) {
-					profile->perms.expand_vars = switch_true(val);
+					profile->perms.expand_vars = switch_true_byte(val);
 
 					if (profile->perms.expand_vars) {
 						switch_xml_t x_list, x_var, x_api;
@@ -2040,27 +2041,27 @@ static switch_status_t do_config(void)
 					}
 
 				} else if (!strcasecmp(var, "dial")) {
-					profile->perms.dial.enabled = switch_true(val);
+					profile->perms.dial.enabled = switch_true_byte(val);
 				} else if (!strcasecmp(var, "dial-set-context")) {
 					if (switch_true(val)) profile->perms.dial.enabled = SWITCH_TRUE;
-					profile->perms.dial.set_context = switch_true(val);
+					profile->perms.dial.set_context = switch_true_byte(val);
 				} else if (!strcasecmp(var, "dial-set-dialplan")) {
 					if (switch_true(val)) profile->perms.dial.enabled = SWITCH_TRUE;
-					profile->perms.dial.set_dp = switch_true(val);
+					profile->perms.dial.set_dp = switch_true_byte(val);
 				} else if (!strcasecmp(var, "dial-set-cid-name")) {
 					if (switch_true(val)) profile->perms.dial.enabled = SWITCH_TRUE;
-					profile->perms.dial.set_cid_name = switch_true(val);
+					profile->perms.dial.set_cid_name = switch_true_byte(val);
 				} else if (!strcasecmp(var, "dial-set-cid-number")) {
 					if (switch_true(val)) profile->perms.dial.enabled = SWITCH_TRUE;
-					profile->perms.dial.set_cid_number = switch_true(val);
+					profile->perms.dial.set_cid_number = switch_true_byte(val);
 				} else if (!strcasecmp(var, "dial-full-originate")) {
 					if (switch_true(val)) profile->perms.dial.enabled = SWITCH_TRUE;
-					profile->perms.dial.full_originate = switch_true(val);
+					profile->perms.dial.full_originate = switch_true_byte(val);
 				} else if (!strcasecmp(var, "conference")) {
-					profile->perms.conference.enabled = switch_true(val);
+					profile->perms.conference.enabled = switch_true_byte(val);
 				} else if (!strcasecmp(var, "conference-set-profile")) {
 					if (switch_true(val)) profile->perms.conference.enabled = SWITCH_TRUE;
-					profile->perms.conference.set_profile = switch_true(val);
+					profile->perms.conference.set_profile = switch_true_byte(val);
 				}
 
 			}
@@ -2578,7 +2579,7 @@ static switch_status_t write_meta_file(http_file_context_t *context, const char 
 						data);
 		
 
-		status = write(fd, write_data, strlen(write_data) + 1) > 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+		status = write(fd, write_data, (int)strlen(write_data) + 1) > 0 ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 	}
 
 	close(fd);
@@ -2948,7 +2949,7 @@ static switch_status_t http_file_file_read(switch_file_handle_t *handle, void *d
 			*len = context->samples;
 		}
 
-		context->samples -= *len;
+		context->samples -= (int)*len;
 		memset(data, 255, *len *2);
 		status = SWITCH_STATUS_SUCCESS;
 	} else {

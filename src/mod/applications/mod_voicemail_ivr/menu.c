@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -96,6 +96,13 @@ void vmivr_menu_main(switch_core_session_t *session, vmivr_profile_t *profile) {
 
 		cmd = switch_core_session_sprintf(session, "json %s %s %s %s", profile->api_profile, profile->domain, profile->id, profile->folder_name);
 		jsonapi2event(session, menu.phrase_params, profile->api_msg_count, cmd);
+
+		/* Verify that phrases returned values, if not, exit */
+		if (!switch_event_get_header(menu.phrase_params, "VM-Total-New-Messages")) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Return from API is invalid. Check that the context exist on your DB backend\n");
+			menu_instance_free(&menu);
+			break;
+		}
 
 		ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "msg_count"), NULL, menu.phrase_params, NULL, 0);
 

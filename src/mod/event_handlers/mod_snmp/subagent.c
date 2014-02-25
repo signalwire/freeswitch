@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -31,7 +31,6 @@
  *
  */
 #include <switch.h>
-#include <switch_version.h>
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -175,7 +174,7 @@ int handle_identity(netsnmp_mib_handler *handler, netsnmp_handler_registration *
 {
 	netsnmp_request_info *request = NULL;
 	oid subid;
-	static char const version[] = SWITCH_VERSION_FULL;
+	const char *version = switch_version_full();
 	char uuid[40] = "";
 
 	switch(reqinfo->mode) {

@@ -1,6 +1,6 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Neal Horman <neal at wanlink dot com>
@@ -314,12 +314,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 					switch_ivr_sleep(session, pause, SWITCH_FALSE, NULL);
 					switch_safe_free(expanded);
 					switch_safe_free(substituted);
-					
+
 				}
 			}
 
 			switch_regex_safe_free(re);
-			
+
 			if ((match && do_break && switch_true(do_break)) || status == SWITCH_STATUS_BREAK) {
 				break;
 			}
@@ -389,29 +389,24 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	const char *prefix, *var;
 
 
+	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	prefix = switch_channel_get_variable(channel, "sound_prefix");
 
 	if (!prefix) {
 		prefix = SWITCH_GLOBAL_dirs.sounds_dir;
 	}
 
+	if (!switch_channel_media_ready(channel)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	switch_core_session_get_read_impl(session, &read_impl);
 
 	if (!(divisor = read_impl.actual_samples_per_second / 8000)) {
 		divisor = 1;
-	}
-
-
-	if (!switch_channel_ready(channel)) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if (switch_channel_answer(channel) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if (!switch_channel_media_ready(channel)) {
-		return SWITCH_STATUS_FALSE;
 	}
 
 	arg_recursion_check_start(args);
@@ -438,7 +433,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		}
 	}
 
-	
+
 	if ((vval = switch_channel_get_variable(channel, "record_fill_cng"))) {
 
 		if (!strcasecmp(vval, "true")) {
@@ -449,7 +444,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			}
 		}
 	}
-	
+
 
 	if ((vval = switch_channel_get_variable(channel, "record_waste_resources"))) {
 
@@ -539,7 +534,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	if (sample_start > 0) {
 		uint32_t pos = 0;
 		switch_core_file_seek(fh, &pos, sample_start, SEEK_SET);
-		switch_clear_flag(fh, SWITCH_FILE_SEEK);	
+		switch_clear_flag(fh, SWITCH_FILE_SEEK);
 		fh->samples = 0;
 	}
 
@@ -547,7 +542,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	if (switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
 		asis = 1;
 	}
-	
+
 	restart_limit_on_dtmf = switch_true(switch_channel_get_variable(channel, "record_restart_limit_on_dtmf"));
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_TITLE"))) {
@@ -655,7 +650,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 		if (args) {
 			/*
-			   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
+			   dtmf handler function you can hook up to be executed when a digit is dialed during playback
 			   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 			 */
 			if (switch_channel_has_dtmf(channel)) {
@@ -675,7 +670,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 					if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
 						break;
 					}
-				} 
+				}
 
 				if (args->input_callback) {
 					status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
@@ -693,7 +688,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 					if ((ostatus = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen)) != SWITCH_STATUS_SUCCESS) {
 						status = ostatus;
 					}
-					
+
 					switch_event_destroy(&event);
 				}
 			}
@@ -760,7 +755,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			len = write_frame.datalen / 2;
 			if (switch_core_file_write(fh, write_frame.data, &len) != SWITCH_STATUS_SUCCESS) {
 				break;
-			}			
+			}
 		}
 
 		if (waste_resources) {
@@ -782,22 +777,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		char *cmd = switch_core_session_strdup(session, var);
 		char *data, *expanded = NULL;
 		switch_stream_handle_t stream = { 0 };
-		
+
 		SWITCH_STANDARD_STREAM(stream);
-		
+
 		if ((data = strchr(cmd, ':'))) {
 			*data++ = '\0';
 			expanded = switch_channel_expand_variables(channel, data);
 		}
-		
+
 		switch_api_execute(cmd, expanded, session, &stream);
-		
+
 		if (expanded && expanded != data) {
 			free(expanded);
 		}
-		
+
 		switch_safe_free(stream.data);
-		
+
 	}
 
 	if (read_impl.actual_samples_per_second) {
@@ -916,7 +911,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 
 		if (args) {
 			/*
-			   dtmf handler function you can hook up to be executed when a digit is dialed during gentones 
+			   dtmf handler function you can hook up to be executed when a digit is dialed during gentones
 			   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 			 */
 			if (switch_channel_has_dtmf(channel)) {
@@ -931,7 +926,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 					if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
 						break;
 					}
-				} 
+				}
 
 				if (args->input_callback) {
 					status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
@@ -943,7 +938,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 
 			if (args->input_callback) {
 				switch_event_t *event;
-				
+
 				if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 					switch_status_t ostatus = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
 					if (ostatus != SWITCH_STATUS_SUCCESS) {
@@ -985,7 +980,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_get_file_handle(switch_core_session_t
 
 	*fh = NULL;
 	switch_core_session_io_read_lock(session);
-	
+
 	if ((fhp = switch_channel_get_private(channel, "__fh"))) {
 		*fh = fhp;
 		return SWITCH_STATUS_SUCCESS;
@@ -1089,7 +1084,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 	arg_recursion_check_start(args);
 
-	if (!strcasecmp(read_impl.iananame, "l16")) {
+	if (!zstr(read_impl.iananame) && !strcasecmp(read_impl.iananame, "l16")) {
 		l16++;
 	}
 
@@ -1105,12 +1100,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		fh = &lfh;
 		memset(fh, 0, sizeof(lfh));
 	}
-	
+
 	if (fh->samples > 0) {
 		sample_start = fh->samples;
 		fh->samples = 0;
 	}
-	
+
 
 
 
@@ -1122,9 +1117,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			fh->samples = sample_start = 0;
 			if (sleep_val_i) {
 				status = switch_ivr_sleep(session, sleep_val_i, SWITCH_FALSE, args);
-                                if(status != SWITCH_STATUS_SUCCESS) {
-                                        break;
-                                }
+								if(status != SWITCH_STATUS_SUCCESS) {
+										break;
+								}
 			}
 		}
 
@@ -1300,7 +1295,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			//date = switch_core_session_strdup(session, p);
 			switch_channel_set_variable(channel, "RECORD_DATE", p);
 		}
-		
+
 		interval = read_impl.microseconds_per_packet / 1000;
 
 		if (!fh->audio_buffer) {
@@ -1309,7 +1304,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		}
 
 		codec_name = "L16";
-		
+
 		if (!switch_core_codec_ready((&codec))) {
 			if (switch_core_codec_init(&codec,
 									   codec_name,
@@ -1318,17 +1313,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 									   interval, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, pool) == SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
 								  SWITCH_LOG_DEBUG, "Codec Activated %s@%uhz %u channels %dms\n", codec_name, fh->samplerate, fh->channels, interval);
-				
-				
+
+
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 								  "Raw Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name, fh->samplerate, fh->channels, interval);
 				switch_core_session_io_write_lock(session);
 				switch_channel_set_private(channel, "__fh", NULL);
 				switch_core_session_io_rwunlock(session);
-				
+
 				switch_core_file_close(fh);
-				
+
 				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
 				status = SWITCH_STATUS_GENERR;
 				continue;
@@ -1346,7 +1341,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			samples = codec.implementation->samples_per_packet;
 			framelen = codec.implementation->decoded_bytes_per_packet;
 		}
-		
+
 		last_native = test_native;
 
 		if (timer_name && !timer.samplecount) {
@@ -1395,7 +1390,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			int do_speed = 1;
 			int last_speed = -1;
 			int f;
-			
+
 			if (!switch_channel_ready(channel)) {
 				status = SWITCH_STATUS_FALSE;
 				break;
@@ -1414,7 +1409,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 			if (args) {
 				/*
-				   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
+				   dtmf handler function you can hook up to be executed when a digit is dialed during playback
 				   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 				 */
 				if (switch_channel_has_dtmf(channel)) {
@@ -1430,7 +1425,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 						if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
 							break;
 						}
-					} 
+					}
 
 					if (args->input_callback) {
 						status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
@@ -1497,7 +1492,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					}
 				}
 
-				fh->offset_pos += switch_test_flag(fh, SWITCH_FILE_NATIVE) ? bread : bread / 2;
+				fh->offset_pos += (uint32_t)(switch_test_flag(fh, SWITCH_FILE_NATIVE) ? bread : bread / 2);
 
 				if (bread < framelen) {
 					memset(abuf + bread, 255, framelen - bread);
@@ -1523,14 +1518,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					eof++;
 					continue;
 				}
-				
+
 				test_native = switch_test_flag(fh, SWITCH_FILE_NATIVE);
 
 				if (test_native != last_native) {
 					if (test_native) {
 						write_frame.codec = switch_core_session_get_read_codec(session);
 						samples = read_impl.samples_per_packet;
-						framelen = read_impl.encoded_bytes_per_packet;						
+						framelen = read_impl.encoded_bytes_per_packet;
 					} else {
 						write_frame.codec = &codec;
 						samples = codec.implementation->samples_per_packet;
@@ -1543,7 +1538,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 				switch_buffer_write(fh->audio_buffer, abuf, switch_test_flag(fh, SWITCH_FILE_NATIVE) ? olen : olen * 2);
 				olen = switch_buffer_read(fh->audio_buffer, abuf, framelen);
-				fh->offset_pos += olen / 2;
+				fh->offset_pos += (uint32_t)(olen / 2);
 
 				if (!switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
 					olen /= 2;
@@ -1616,7 +1611,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				last_speed = fh->speed;
 				continue;
 			}
-			
+
 			if (olen < llen) {
 				uint8_t *dp = (uint8_t *) write_frame.data;
 				memset(dp + (int) olen, 255, (int) (llen - olen));
@@ -1631,7 +1626,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				} else {			/* time off the channel (if you must) */
 					switch_frame_t *read_frame;
 					switch_status_t tstatus;
-					
+
 					while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_HOLD)) {
 						switch_ivr_parse_all_messages(session);
 						switch_yield(10000);
@@ -1704,7 +1699,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					break;
 				}
 			}
-			
+
 
 			if (status == SWITCH_STATUS_MORE_DATA) {
 				status = SWITCH_STATUS_SUCCESS;
@@ -1721,6 +1716,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		}
 
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "done playing file %s\n", file);
+		switch_channel_set_variable_printf(channel, "playback_last_offset_pos", "%d", fh->offset_pos); 
 
 		if (read_impl.samples_per_second) {
 			switch_channel_set_variable_printf(channel, "playback_seconds", "%d", fh->samples_in / fh->native_rate);
@@ -1853,26 +1849,32 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 		if (sample_count) {
 			sample_count -= raw_codec.implementation->samples_per_packet;
 			if (sample_count <= 0) {
+				switch_channel_set_variable(channel, "wait_for_silence_timeout", "true");
+				switch_channel_set_variable_printf(channel, "wait_for_silence_listenhits", "%d", listening);
+				switch_channel_set_variable_printf(channel, "wait_for_silence_silence_hits", "%d", silence_hits);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "switch_ivr_wait_for_silence: TIMEOUT %d\n", countdown);
 				break;
 			}
 		}
-
+		
 		if (abuf) {
 			switch_size_t olen = raw_codec.implementation->samples_per_packet;
-
+			
 			if (switch_core_file_read(&fh, abuf, &olen) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
-
+			
 			write_frame.samples = (uint32_t) olen;
 			write_frame.datalen = (uint32_t) (olen * sizeof(int16_t));
 			if ((status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0)) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
 		}
-
+		
 		if (countdown) {
 			if (!--countdown) {
+				switch_channel_set_variable(channel, "wait_for_silence_timeout", "false");
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "switch_ivr_wait_for_silence: SILENCE DETECTED\n");
 				break;
 			} else {
 				continue;
@@ -1919,9 +1921,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 												uint32_t max_digits,
 												const char *prompt_audio_file,
 												const char *var_name,
-												char *digit_buffer, 
-												switch_size_t digit_buffer_length, 
-												uint32_t timeout, 
+												char *digit_buffer,
+												switch_size_t digit_buffer_length,
+												uint32_t timeout,
 												const char *valid_terminators,
 												uint32_t digit_timeout)
 
@@ -1932,7 +1934,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 	size_t len = 0;
 	char tb[2] = "";
 	int term_required = 0;
-	
+
 
 	if (valid_terminators && *valid_terminators == '=') {
 		term_required = 1;
@@ -1985,7 +1987,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 	if ((min_digits && len < min_digits) || len < max_digits) {
 		args.buf = digit_buffer + len;
 		args.buflen = (uint32_t) (digit_buffer_length - len);
-		status = switch_ivr_collect_digits_count(session, digit_buffer, digit_buffer_length, max_digits, valid_terminators, &tb[0], 
+		status = switch_ivr_collect_digits_count(session, digit_buffer, digit_buffer_length, max_digits, valid_terminators, &tb[0],
 												 len ? digit_timeout : timeout, digit_timeout, 0);
 	}
 
@@ -1995,7 +1997,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 
 		switch_channel_set_variable(channel, SWITCH_READ_TERMINATOR_USED_VARIABLE, tb);
 
-		if ((p = strchr(valid_terminators, tb[0]))) {
+		if (!zstr(valid_terminators) && (p = strchr(valid_terminators, tb[0]))) {
 			if (p >= (valid_terminators + 1) && (*(p - 1) == '+' || *(p - 1) == 'x')) {
 				switch_snprintf(digit_buffer + strlen(digit_buffer), digit_buffer_length - strlen(digit_buffer), "%s", tb);
 				if (*(p - 1) == 'x') {
@@ -2048,8 +2050,8 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 														   const char *prompt_audio_file,
 														   const char *bad_input_audio_file,
 														   const char *var_name,
-														   char *digit_buffer, 
-														   uint32_t digit_buffer_length, 
+														   char *digit_buffer,
+														   uint32_t digit_buffer_length,
 														   const char *digits_regex,
 														   uint32_t digit_timeout,
 														   const char *transfer_on_failure)
@@ -2102,10 +2104,10 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 	}
 
 	memset(digit_buffer, 0, digit_buffer_length);
-	
+
 	/* If we get here then check for transfer-on-failure ext/dp/context */
 	/* split this arg on spaces to get ext, dp, and context */
-		
+
 	if (!zstr(transfer_on_failure)) {
 		const char *failure_ext = NULL;
 		const char *failure_dialplan = NULL;
@@ -2113,18 +2115,18 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 		char *target[4];
 		char *mydata = switch_core_session_strdup(session, transfer_on_failure);
 		int argc;
-		
+
 		argc = switch_separate_string(mydata, ' ', target, (sizeof(target) / sizeof(target[0])));
-		
+
 		if ( argc < 1 ) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,"Bad target for PAGD failure: [%s]\n", transfer_on_failure);
 			return SWITCH_STATUS_FALSE;
 		}
-		
+
 		if ( argc > 0 ) {
 			failure_ext = target[0];
 		}
-		
+
 		if ( argc > 1 ) {
 			failure_dialplan = target[1];
 		}
@@ -2133,14 +2135,14 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 			failure_context = target[2];
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 			"PAGD failure! Transfer to: %s / %s / %s\n", failure_ext, failure_dialplan, failure_context);
-			
+
 		switch_ivr_session_transfer(session,failure_ext, failure_dialplan, failure_context);
 		return SWITCH_STATUS_FALSE;
-	} 
-	
-	return SWITCH_STATUS_FALSE;	
+	}
+
+	return SWITCH_STATUS_FALSE;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session_t *session,
@@ -2275,7 +2277,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 		}
 
 		if (args) {
-			/* dtmf handler function you can hook up to be executed when a digit is dialed during playback 
+			/* dtmf handler function you can hook up to be executed when a digit is dialed during playback
 			 * if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 			 */
 			if (switch_channel_has_dtmf(channel)) {
@@ -2294,7 +2296,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 						if ((status = switch_ivr_dmachine_feed(args->dmachine, ds, NULL)) != SWITCH_STATUS_SUCCESS) {
 							break;
 						}
-					} 
+					}
 
 					if (args->input_callback) {
 						status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);

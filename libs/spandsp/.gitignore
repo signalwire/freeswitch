@@ -9,3 +9,4 @@ src/v27ter_tx_2400_rrc.h
 src/v27ter_tx_4800_rrc.h
 src/v29rx_rrc.h
 src/v29tx_rrc.h
+INSTALL

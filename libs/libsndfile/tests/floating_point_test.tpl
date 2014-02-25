@@ -1,6 +1,6 @@
 [+ AutoGen5 template c +]
 /*
-** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2013 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <inttypes.h>
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
@@ -60,7 +61,7 @@ main (int argc, char *argv [])
 	if (argc == 2 && ! strstr (argv [1], "no-exit"))
 		allow_exit = 0 ;
 
-#if ((HAVE_LRINTF == 0) && (HAVE_LRINT_REPLACEMENT == 0))
+#if (HAVE_LRINTF == 0)
 	puts ("*** Cannot run this test on this platform because it lacks lrintf().") ;
 	exit (0) ;
 #endif
@@ -106,6 +107,11 @@ main (int argc, char *argv [])
 	float_scaled_test	("pcm_16.sds", allow_exit, SF_FALSE, SF_FORMAT_SDS | SF_FORMAT_PCM_16, -140.0) ;
 	float_scaled_test	("pcm_24.sds", allow_exit, SF_FALSE, SF_FORMAT_SDS | SF_FORMAT_PCM_24, -170.0) ;
 
+	float_scaled_test	("alac_16.caf", allow_exit, SF_FALSE, SF_FORMAT_CAF | SF_FORMAT_ALAC_16, -90.0) ;
+	float_scaled_test	("alac_32.caf", allow_exit, SF_FALSE, SF_FORMAT_CAF | SF_FORMAT_ALAC_32, -181.0) ;
+	float_scaled_test	("alac_24.caf", allow_exit, SF_FALSE, SF_FORMAT_CAF | SF_FORMAT_ALAC_24, -160.0) ;
+	float_scaled_test	("alac_20.caf", allow_exit, SF_FALSE, SF_FORMAT_CAF | SF_FORMAT_ALAC_20, -134.0) ;
+
 #if HAVE_EXTERNAL_LIBS
 	float_scaled_test	("flac_8.flac", allow_exit, SF_FALSE, SF_FORMAT_FLAC | SF_FORMAT_PCM_S8, -39.0) ;
 	float_scaled_test	("flac_16.flac", allow_exit, SF_FALSE, SF_FORMAT_FLAC | SF_FORMAT_PCM_16, -87.0) ;
@@ -120,7 +126,7 @@ main (int argc, char *argv [])
 	** Double tests.
 	*/
 
-	double_scaled_test	("double.raw", allow_exit, SF_FALSE, SF_FORMAT_RAW | SF_FORMAT_DOUBLE, -300.0) ;
+	double_scaled_test	("double.raw", allow_exit, SF_FALSE, SF_FORMAT_RAW | SF_FORMAT_DOUBLE, -205.0) ;
 
 	/* Test both signed (AIFF) and unsigned (WAV) 8 bit files. */
 	double_scaled_test	("pcm_s8.raw", allow_exit, SF_FALSE, SF_FORMAT_RAW | SF_FORMAT_PCM_S8, -39.0) ;
@@ -158,6 +164,11 @@ main (int argc, char *argv [])
 	double_scaled_test	("pcm_16.sds", allow_exit, SF_FALSE, SF_FORMAT_SDS | SF_FORMAT_PCM_16, -140.0) ;
 	double_scaled_test	("pcm_24.sds", allow_exit, SF_FALSE, SF_FORMAT_SDS | SF_FORMAT_PCM_24, -180.0) ;
 
+	double_scaled_test	("alac_16.caf", allow_exit, SF_FALSE, SF_FORMAT_CAF | SF_FORMAT_ALAC_16, -90.0) ;
+	double_scaled_test	("alac_20.caf", allow_exit, SF_FALSE, SF_FORMAT_CAF | SF_FORMAT_ALAC_20, -134.0) ;
+	double_scaled_test	("alac_24.caf", allow_exit, SF_FALSE, SF_FORMAT_CAF | SF_FORMAT_ALAC_24, -158.0) ;
+	double_scaled_test	("alac_32.caf", allow_exit, SF_FALSE, SF_FORMAT_CAF | SF_FORMAT_ALAC_32, -186.0) ;
+
 #if HAVE_EXTERNAL_LIBS
 	double_scaled_test	("flac_8.flac", allow_exit, SF_FALSE, SF_FORMAT_FLAC | SF_FORMAT_PCM_S8, -39.0) ;
 	double_scaled_test	("flac_16.flac", allow_exit, SF_FALSE, SF_FORMAT_FLAC | SF_FORMAT_PCM_16, -87.0) ;
@@ -166,7 +177,7 @@ main (int argc, char *argv [])
 	double_scaled_test	("vorbis.oga", allow_exit, SF_FALSE, SF_FORMAT_OGG | SF_FORMAT_VORBIS, -29.0) ;
 #endif
 
-	double_scaled_test	("replace_double.raw", allow_exit, SF_TRUE, SF_FORMAT_RAW | SF_FORMAT_DOUBLE, -300.0) ;
+	double_scaled_test	("replace_double.raw", allow_exit, SF_TRUE, SF_FORMAT_RAW | SF_FORMAT_DOUBLE, -205.0) ;
 
 	putchar ('\n') ;
 	/* Float int tests. */
@@ -187,6 +198,7 @@ float_scaled_test (const char *filename, int allow_exit, int replace_float, int 
 {	SNDFILE		*file ;
 	SF_INFO		sfinfo ;
 	double		snr ;
+	int			byterate ;
 
 	print_test_name ("float_scaled_test", filename) ;
 
@@ -210,12 +222,15 @@ float_scaled_test (const char *filename, int allow_exit, int replace_float, int 
 	sf_command (file, SFC_TEST_IEEE_FLOAT_REPLACE, NULL, replace_float) ;
 
 	exit_if_true (sfinfo.format != filetype, "\n\nLine %d: Returned format incorrect (0x%08X => 0x%08X).\n", __LINE__, filetype, sfinfo.format) ;
-	exit_if_true (sfinfo.frames < DFT_DATA_LENGTH, "\n\nLine %d: Incorrect number of frames in file (too short). (%ld should be %d)\n", __LINE__, SF_COUNT_TO_LONG (sfinfo.frames), DFT_DATA_LENGTH) ;
+	exit_if_true (sfinfo.frames < DFT_DATA_LENGTH, "\n\nLine %d: Incorrect number of frames in file (too short). (%" PRId64 " should be %d)\n", __LINE__, sfinfo.frames, DFT_DATA_LENGTH) ;
 	exit_if_true (sfinfo.channels != 1, "\n\nLine %d: Incorrect number of channels in file.\n", __LINE__) ;
 
 	check_log_buffer_or_die (file, __LINE__) ;
 
 	test_read_float_or_die (file, 0, float_test, DFT_DATA_LENGTH, __LINE__) ;
+
+	byterate = sf_current_byterate (file) ;
+	exit_if_true (byterate <= 0, "\n\nLine %d: byterate is zero.\n", __LINE__) ;
 
 	sf_close (file) ;
 
@@ -235,6 +250,7 @@ double_scaled_test (const char *filename, int allow_exit, int replace_float, int
 {	SNDFILE		*file ;
 	SF_INFO		sfinfo ;
 	double		snr ;
+	int			byterate ;
 
 	print_test_name ("double_scaled_test", filename) ;
 
@@ -258,12 +274,15 @@ double_scaled_test (const char *filename, int allow_exit, int replace_float, int
 	sf_command (file, SFC_TEST_IEEE_FLOAT_REPLACE, NULL, replace_float) ;
 
 	exit_if_true (sfinfo.format != filetype, "\n\nLine %d: Returned format incorrect (0x%08X => 0x%08X).\n", __LINE__, filetype, sfinfo.format) ;
-	exit_if_true (sfinfo.frames < DFT_DATA_LENGTH, "\n\nLine %d: Incorrect number of frames in file (too short). (%ld should be %d)\n", __LINE__, SF_COUNT_TO_LONG (sfinfo.frames), DFT_DATA_LENGTH) ;
+	exit_if_true (sfinfo.frames < DFT_DATA_LENGTH, "\n\nLine %d: Incorrect number of frames in file (too short). (%" PRId64 " should be %d)\n", __LINE__, sfinfo.frames, DFT_DATA_LENGTH) ;
 	exit_if_true (sfinfo.channels != 1, "\n\nLine %d: Incorrect number of channels in file.\n", __LINE__) ;
 
 	check_log_buffer_or_die (file, __LINE__) ;
 
 	test_read_double_or_die (file, 0, double_test, DFT_DATA_LENGTH, __LINE__) ;
+
+	byterate = sf_current_byterate (file) ;
+	exit_if_true (byterate <= 0, "\n\nLine %d: byterate is zero.\n", __LINE__) ;
 
 	sf_close (file) ;
 
@@ -305,7 +324,7 @@ static void
 	file = test_open_file_or_die (filename, SFM_READ, &sfinfo, SF_TRUE, __LINE__) ;
 
 	if (sfinfo.frames != ARRAY_LEN ([+ (get "float_name") +]_data))
-	{	printf ("\n\nLine %d: Incorrect number of frames in file (too short). (%ld should be %d)\n", __LINE__, SF_COUNT_TO_LONG (sfinfo.frames), DFT_DATA_LENGTH) ;
+	{	printf ("\n\nLine %d: Incorrect number of frames in file (too short). (%" PRId64 " should be %d)\n", __LINE__, sfinfo.frames, DFT_DATA_LENGTH) ;
 		exit (1) ;
 		} ;
 

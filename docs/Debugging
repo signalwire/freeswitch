@@ -1,0 +1,19 @@
+How to Debug FreeSWITCH Issues
+==============================
+
+Dumping a core file
+-------------------
+
+Run:
+
+    sysctl -w kernel.core_pattern=/tmp/core.%t_%e_s%s
+    sysctl -w fs.suid_dumpable=1
+    ulimit -c unlimited
+    freeswitch -core
+
+Getting a backtrace from a core file
+------------------------------------
+
+Run:
+
+    ./debian/scripts/backtrace-from-corefile /tmp/<name-of-corefile>

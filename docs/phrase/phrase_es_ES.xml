@@ -35,6 +35,8 @@
     </ascii>
     <phonetic-ascii>
       <prompt phrase="Espacio" filename="32.wav"/>
+      <prompt phrase="Almohadilla" filename="35.wav"/>
+      <prompt phrase="Asterisco" filename="42.wav"/>
       <prompt phrase="Punto" filename="46.wav"/>
       <prompt phrase="Alpha" filename="97.wav"/>
       <prompt phrase="Bravo" filename="98.wav"/>
@@ -186,13 +188,13 @@
       <prompt phrase="Inicio de sesión incorrecto." filename="vm-fail_auth.wav"/>
       <prompt phrase="Bienvenido a su buzón de voz." filename="vm-hello.wav"/>
       <prompt phrase="Adiós" filename="vm-goodbye.wav"/>
-      <prompt phrase="Por favor grabe su nombre después de la señal, pulse cualquier tecla o deje de hablar para poner fin a la grabación." filename="vm-record_name1.wav"/>
+      <prompt phrase="Por favor grabe su nombre después de la señal. Pulse cualquier tecla o deje de hablar para poner fin a la grabación." filename="vm-record_name1.wav"/>
       <prompt phrase="Elija un saludo entre 1 y 9." filename="vm-choose_greeting_choose.wav"/>
       <prompt phrase="Valor inválido." filename="vm-choose_greeting_fail.wav"/>
       <prompt phrase="Demasiados intentos fallidos." filename="vm-abort.wav"/>
       <prompt phrase="Para cambiar su contraseña..." filename="vm-change_password.wav"/>
-      <prompt phrase="Grabe su saludo después de la señal, pulse cualquier tecla o deje de hablar para poner fin a la grabación." filename="vm-record_greeting.wav"/>
-      <prompt phrase="Grabe su mensaje después de la señal, pulse cualquier tecla o deje de hablar para poner fin a la grabación." filename="vm-record_message.wav"/>
+      <prompt phrase="Grabe su saludo después de la señal. Pulse cualquier tecla o deje de hablar para poner fin a la grabación." filename="vm-record_greeting.wav"/>
+      <prompt phrase="Grabe su mensaje después de la señal. Pulse cualquier tecla o deje de hablar para poner fin a la grabación." filename="vm-record_message.wav"/>
       <prompt phrase="...no está disponible." filename="vm-play_greeting.wav"/>
       <prompt phrase="Urgente nuevo." filename="vm-urgent-new.wav"/>
       <prompt phrase="Nuevo" filename="vm-new.wav"/>
@@ -222,34 +224,60 @@
       <prompt phrase="...no está disponible." filename="vm-not_available.wav"/>
       <prompt phrase="Mensaje número..." filename="vm-message_number.wav"/>
       <prompt phrase="Eliminado" filename="vm-deleted.wav"/>
-      <prompt phrase="Su grabación es demasiado corta, por favor intente de nuevo." filename="vm-too-small.wav"/>
+      <prompt phrase="Su grabación es demasiado corta. Por favor intente de nuevo." filename="vm-too-small.wav"/>
       <prompt phrase="...en la bandeja de entrada." filename="vm-in_folder.wav"/>
       <prompt phrase="Para devolver la llamada..." filename="vm-return_call.wav"/>
       <prompt phrase="Urgente" filename="vm-urgent.wav"/>
       <prompt phrase="Este buzón está lleno. Por favor intente llamar mas tarde." filename="vm-mailbox_full.wav"/>
       <prompt phrase="Bienvenido a su nuevo buzón de voz. Para escuchar el tutorial y configurar su buzón, pulse 1. Para saltarlo pulse 2." filename="vm-tutorial_yes_no.wav"/>
       <prompt phrase="Necesito grabar su nombre y apellido. Esta grabación se usará entre otros en el servicio de directorio." filename="vm-tutorial_record_name.wav"/>
-      <prompt phrase="Su número de identificación personal o PIN sirve para impedir a terceros el acceso a sus mensajes. Desea cambiar su PIN ahora?" filename="vm-tutorial_change_pin.wav"/>
+      <prompt phrase="Su número de identificación personal o PIN sirve para impedir a terceros el acceso a sus mensajes. ¿Desea cambiar su PIN ahora?" filename="vm-tutorial_change_pin.wav"/>
+      <prompt phrase="La persona con la que intenta hablar no está disponible y no tiene buzón de voz." filename="vm-not_available_no_voicemail.wav"/>
+      <prompt phrase="Por favor, introduzca la extensión de destino para remandar este mensaje." filename="vm-forward_enter_ext.wav"/>
+      <prompt phrase="...seguido de almohadilla." filename="vm-followed_by_pound.wav"/>
+      <prompt phrase="...seguido de..." filename="vm-followed_by.wav"/> 
+      <prompt phrase="...ha sido cambiado a..." filename="vm-has_been_changed_to.wav"/>
+      <prompt phrase="marcado nuevo" filename="vm-marked_new.wav"/>
+      <prompt phrase="Esa fue una extensión inválida." filename="vm-that_was_an_invalid_ext.wav"/>
+      <prompt phrase="No hay más mensajes." filename="vm-no_more_messages.wav"/>
+      <prompt phrase="de" filename="vm-from.wav"/>
+      <prompt phrase="último" filename="vm-last.wav"/>
+      <prompt phrase="siguiente" filename="vm-next.wav"/>
+      <prompt phrase="recibido" filename="vm-received.wav"/>
+      <prompt phrase="recuperado" filename="vm-undeleted.wav"/>
+      <prompt phrase="Para borrar este mensaje..." filename="vm-delete_message.wav"/>
+      <prompt phrase="Para añadir una introducción a este mensaje..." filename="vm-forward_add_intro.wav"/>
+      <prompt phrase="Para marcar este mensaje como nuevo..." filename="vm-mark_message_new.wav"/>
+      <prompt phrase="Para escuchar el encabezado del mensaje..." filename="vm-message_envelope.wav"/>
+      <prompt phrase="Para escuchar el mensaje siguiente..." filename="vm-play_next_message.wav"/>
+      <prompt phrase="Para escuchar el mensaje previo..." filename="vm-play_previous_message.wav"/>
+      <prompt phrase="Para repetir este mensaje..." filename="vm-repeat_message.wav"/>
+      <prompt phrase="Para guardar este mensaje..." filename="vm-save_message.wav"/>
+      <prompt phrase="Para mandar este mensaje ahora..." filename="vm-send_message_now.wav"/>
+      <prompt phrase="Para remandar este mensaje..." filename="vm-to_forward.wav"/>
+      <prompt phrase="Para grabar un saludo..." filename="vm-to_record_greeting.wav"/>
+      <prompt phrase="Para recuperar este mensaje..." filename="vm-undelete_message.wav"/>
     </voicemail>
     <directory>
       <prompt phrase="Por favor introduzca las primeras letras del nombre buscado." filename="dir-enter_person.wav"/>
       <prompt phrase="...apellido..." filename="dir-last_name.wav"/>
       <prompt phrase="Para buscar por..." filename="dir-to_search_by.wav"/>
       <prompt phrase="...nombre..." filename="dir-first_name.wav"/>
-      <prompt phrase="No hay resultados que coincidan con su busqueda." filename="dir-no_matching_results.wav"/>
-      <prompt phrase="...resultados coinciden con su busqueda." filename="dir-result_match.wav"/>
-      <prompt phrase="Su busqueda genera demasiados resultados." filename="dir-too_many_result.wav"/>
+      <prompt phrase="No hay resultados que coincidan con su búsqueda." filename="dir-no_matching_results.wav"/>
+      <prompt phrase="...resultados coinciden con su búsqueda." filename="dir-result_match.wav"/>
+      <prompt phrase="Su búsqueda genera demasiados resultados." filename="dir-too_many_result.wav"/>
       <prompt phrase="No hay más resultados." filename="dir-no_more_results.wav"/>
       <prompt phrase="Resultado número..." filename="dir-result_number.wav"/>
       <prompt phrase="...en la extensión..." filename="dir-at_extension.wav"/>
       <prompt phrase="Para seleccionar este resultado..." filename="dir-to_select_entry.wav"/>
       <prompt phrase="Para el resultado siguiente..." filename="dir-for_next.wav"/>
       <prompt phrase="Para el resultado previo..." filename="dir-for_prev.wav"/>
-      <prompt phrase="Para empezar una nueva busqueda..." filename="dir-start_new_search.wav"/>
+      <prompt phrase="Para empezar una nueva búsqueda..." filename="dir-start_new_search.wav"/>
       <prompt phrase="Necesita especificar un mínimo de..." filename="dir-specify_mininum.wav"/>
       <prompt phrase="...letras del nombre buscado." filename="dir-letters_of_person_name.wav"/>
       <prompt phrase="Por favor intente de nuevo." filename="dir-please_try_again.wav"/>
       <prompt phrase="Pulse..." filename="dir-press.wav" info="we can copy vm/vm-press.wav"/>
+      <prompt phrase="Por favor introduzca las primeras letras del nombre o apellido de la persona." filename="dir-enter_person_first_or_last.wav"/>
     </directory>
     <conference>
       <prompt phrase="NULL" filename="conf-ack.wav" type="tone"/>
@@ -264,16 +292,22 @@
       <prompt phrase="Esta conferencia está bloqueada." filename="conf-locked.wav"/>
       <prompt phrase="La conferencia está ahora bloqueada." filename="conf-is-locked.wav"/>
       <prompt phrase="La conferencia está ahora desbloqueada." filename="conf-is-unlocked.wav"/>
-      <prompt phrase="Por favor ingrese el PIN de la conferencia." filename="conf-pin.wav"/>
+      <prompt phrase="Por favor introduzca el PIN de la conferencia." filename="conf-pin.wav"/>
       <prompt phrase="PIN inválido, intente de nuevo." filename="conf-bad-pin.wav"/>
       <prompt phrase="Hasta luego." filename="conf-goodbye.wav"/>
       <prompt phrase="Bienvenido a la conferencia." filename="conf-welcome.wav"/>
+      <prompt phrase="Por favor introduzca el número de conferencia, seguido de la tecla almohadilla." filename="conf-enter_conf_number.wav"/>
+      <prompt phrase="Introduzca el PIN de la conferencia, seguido de la tecla almohadilla." filename="conf-enter_conf_pin.wav"/>
+      <prompt phrase="...se incorporó a la conferencia." filename="conf-has_joined.wav"/>
+      <prompt phrase="...ha abandonado la conferencia." filename="conf-has_left.wav"/>
+      <prompt phrase="Su llamada ya está silenciada." filename="conf-you_are_already_muted.wav"/>
+      <prompt phrase="Su llamada ha sido silenciada en ambos sentidos." filename="conf-you_are_now_bidirectionally_muted.wav"/>
     </conference>
     <ivr>
       <prompt phrase="Número de cuenta" filename="ivr-account_number.wav"/>
       <prompt phrase="Conectar con el llamante" filename="ivr-connect_to_caller.wav"/>
-      <prompt phrase="Si conoce la extensión de su destino, por favor marquela ahora." filename="ivr-enter_ext_pound.wav"/>
-      <prompt phrase="Por favor ingrese un número de extensión seguido por la tecla almohadilla." filename="ivr-enter_ext.wav"/>
+      <prompt phrase="Si conoce la extensión de su destino, por favor márquela ahora." filename="ivr-enter_ext_pound.wav"/>
+      <prompt phrase="Por favor introduzca un número de extensión seguido por la tecla almohadilla." filename="ivr-enter_ext.wav"/>
       <prompt phrase="Para esta persona..." filename="ivr-for_this_person.wav"/>
       <prompt phrase="Por favor espere mientras se conecta su llamada." filename="ivr-hold_connect_call.wav"/>
       <prompt phrase="Lo siento..." filename="ivr-im_sorry.wav"/>
@@ -338,7 +372,7 @@
       <prompt phrase="El tiempo estimado de espera es..." filename="ivr-estimated_hold_time.wav"/>
       <prompt phrase="Más de..." filename="ivr-more_than.wav"/>
       <prompt phrase="Menos de..." filename="ivr-less_than.wav"/>
-      <prompt phrase="Empieze a grabar." filename="ivr-begin_recording.wav "/>
+      <prompt phrase="Empiece a grabar." filename="ivr-begin_recording.wav "/>
       <prompt phrase="El desvío de llamada ha sido desactivado." filename="ivr-call_forwarding_has_been_cancelled.wav"/>
       <prompt phrase="El desvío de llamada ha sido activado." filename="ivr-call_forwarding_has_been_set.wav"/>
       <prompt phrase="Por favor introduzca el número de teléfono." filename="ivr-please_enter_the_phone_number.wav"/>
@@ -346,7 +380,7 @@
       <prompt phrase="Para aceptar, pulse 1. Para rechazar, pulse 2. Para enviar al buzón de voz, pulse 3." filename="ivr-accept_reject_voicemail.wav"/>
       <prompt phrase="Llamada entrante." filename="ivr-incoming_call.wav"/>
       <prompt phrase="Gracias por llamar." filename="ivr-thank_you_for_calling.wav"/>
-      <prompt phrase="Por favor mentengase a la espera. Su llamada será atendida en un momento." filename="ivr-stay_on_line_call_answered_momentarily.wav"/>
+      <prompt phrase="Por favor manténgase a la espera. Su llamada será atendida en un momento." filename="ivr-stay_on_line_call_answered_momentarily.wav"/>
       <prompt phrase="Su llamada está siendo procesada." filename="ivr-call_being_transferred.wav"/>
       <prompt phrase="Por favor disfrute de la música mientras su llamada está siendo procesada..." filename="ivr-enjoy_music_while_transfer.wav"/>
       <prompt phrase="Usted tiene una llamada de..." filename="ivr-call_from.wav"/>
@@ -368,9 +402,8 @@
       <prompt phrase="Número." filename="ivr-number.wav"/>
       <prompt phrase="...seguido de la tecla almohadilla." filename="ivr-followed_by_pound.wav"/>
       <prompt phrase="El balance de la cuenta es..." filename="ivr-account_balance_is.wav"/>
-      <prompt phrase="Gracias por llamar. Si conoce la extensión de su destino, por favor marquela ahora. Para acceder al directorio, pulse..." filename="ivr-generic_greeting.wav"/>
       <prompt phrase="...fichero..." filename="ivr-file.wav"/>
-      <prompt phrase="...ficheros..." filename="ivr-files-.wav"/>
+      <prompt phrase="...ficheros..." filename="ivr-files.wav"/>
       <prompt phrase="Para una llamada de despertador..." filename="ivr-for_a_wakeup_call.wav"/>
       <prompt phrase="Este es el servicio de despertador." filename="ivr-this_is_your_wakeup_call.wav"/>
       <prompt phrase="Para solicitar una llamada de despertador..." filename="ivr-request_wakeup_call.wav"/>
@@ -385,66 +418,46 @@
       <prompt phrase="Para una llamada de despertador única..." filename="ivr-for_one_time_wakeup_call.wav"/>
       <prompt phrase="Llamada de despertador única..." filename="ivr-one_time_wakeup_call.wav"/>
       <prompt phrase="...llamada de despertador..." filename="ivr-wakeup_call.wav"/>
-      <prompt phrase="¡Vamos despierta cielo!" filename="ivr-wakey_wakey_sunshine.wav"/>
+      <prompt phrase="¡Vamos, despierta cielo!" filename="ivr-wakey_wakey_sunshine.wav"/>
       <prompt phrase="Bienvenido." filename="ivr-welcome.wav"/>
       <prompt phrase="Bienvenido a..." filename="ivr-welcome_to.wav"/>
       <prompt phrase="Buenos días." filename="ivr-good_morning.wav"/>
       <prompt phrase="Buenas tardes." filename="ivr-good_afternoon.wav"/>
       <prompt phrase="Buenas noches." filename="ivr-good_evening.wav"/>
-      <prompt phrase="Gracias." filename="ivr-Thank_you.wav"/>
       <prompt phrase="Para..." filename="ivr-for.wav"/>
       <prompt phrase="El tiempo de espera esta siendo anormalmente elevado." filename="ivr-longer_than_usual_hold_times.wav"/>
       <prompt phrase="Usted es el..." filename="ivr-you_are_the.wav"/>
       <prompt phrase="Un momento por favor." filename="ivr-one_moment_please.wav"/>
       <prompt phrase="Su llamada será atendida según el orden de entrada." filename="ivr-call_answered_order_received.wav"/>
-      <prompt phrase="Por favor introduzca el número de conferencia, seguido de la tecla almohadilla." filename="conf-enter_conf_number.wav"/>
-      <prompt phrase="Introduzca el PIN de la conferencia, seguido de la tecla almohadilla." filename="conf-enter_conf_pin.wav"/>
-      <prompt phrase="...se incorporó a la conferencia." filename="conf-has_joined.wav"/>
-      <prompt phrase="...ha abandonado la conferencia." filename="conf-has_left.wav"/>
       <prompt phrase="Usted entró..." filename="ivr-you_entered.wav"/>
       <prompt phrase="Número de extensión..." filename="ivr-extension_number.wav"/>
-      <prompt phrase="Por favor mantengase a la espera mientras contactamos con su destino." filename="ivr-please_hold_while_party_contacted.wav"/>
+      <prompt phrase="Por favor manténgase a la espera mientras contactamos con su destino." filename="ivr-please_hold_while_party_contacted.wav"/>
       <prompt phrase="Por favor disfrute de la música mientras le conectamos con su destino." filename="ivr-please_enjoy_music_while_party_reached.wav"/>
-      <prompt phrase="Gracias por llamar. Si conoce la extensión de su destino, por favor marquela ahora, o marque nueve para el servicio de directorio." filename="ivr-generic_greeting.wav"/>
+      <prompt phrase="Gracias por llamar. Si conoce la extensión de su destino, por favor márquela ahora, o marque nueve para el servicio de directorio." filename="ivr-generic_greeting.wav"/>
       <prompt phrase="Si es correcto, pulse 1. Sino, pulse 2." filename="ivr-if_correct_one_if_not_two.wav"/>
       <prompt phrase="Para repetir esta información..." filename="ivr-repeat_this_information.wav"/>
-      <prompt phrase="No no no!" filename="ivr-no_no_no.wav"/>
-      <prompt phrase="Era su intención pulsar esta tecla?" filename="ivr-did_you_mean_to_press_key.wav"/>
-      <prompt phrase="Pensaba Usted DE VERDAD pulsar esta tecla?" filename="ivr-seriously_mean_to_press_key.wav"/>
+      <prompt phrase="¡No no no!" filename="ivr-no_no_no.wav"/>
+      <prompt phrase="¿Era su intención pulsar esta tecla?" filename="ivr-did_you_mean_to_press_key.wav"/>
+      <prompt phrase="¿Pensaba Usted DE VERDAD pulsar esta tecla?" filename="ivr-seriously_mean_to_press_key.wav"/>
       <prompt phrase="Oh DA IGUAL." filename="ivr-oh_whatever.wav"/>
-      <prompt phrase="Se acabó! Un error más y le colgaré a la cara." filename="ivr-one_more_mistake.wav"/>
-      <prompt phrase="Felicitaciones. Ha pulsado estrella. Esto no significa que ES una estrella. Tan solo significa que puede pulsar teclas y probablemente tiene dedos." filename="ivr-congratulations_you_pressed_star.wav"/>
+      <prompt phrase="¡Se acabó! Un error más y le colgaré a la cara." filename="ivr-one_more_mistake.wav"/>
+      <prompt phrase="¡Felicitaciones! Ha pulsado estrella. Esto no significa que ES una estrella. Tan solo significa que puede pulsar teclas y probablemente tiene dedos." filename="ivr-congratulations_you_pressed_star.wav"/>
       <prompt phrase="Todos nuestros ingenieros están ocupados en demostrar lo impresionante que es el CudaTel." filename="ivr-engineers_busy_assisting_other_sales.wav"/>
-      <prompt phrase="La persona con la que intenta hablar no está disponible y no tiene buzón de voz." filename="vm-not_available_no_voicemail.wav"/>
-      <prompt phrase="Este mensaje se auto-destruira en 5, 4, 3, 2, 1..." filename="ivr-message_self_destruct.wav"/>
-      <prompt phrase="Su llamada ya está silenciada." filename="conf-you_are_already_muted.wav"/>
-      <prompt phrase="Su llamada ha sido silenciada en ambos sentidos." filename="conf-you_are_now_bidirectionally_muted.wav"/>
+      <prompt phrase="Este mensaje se auto-destruirá en 5, 4, 3, 2, 1..." filename="ivr-message_self_destruct.wav"/>
       <prompt phrase="Todas sus llamadas nos pertenecen." filename="ivr-all_your_call_are_belong_to_us.wav"/>
-      <prompt phrase="Me encanta como está pulsando estas teclas!" filename="ivr-love_those_touch_tones.wav"/>
+      <prompt phrase="¡Me encanta como está pulsando estas teclas!" filename="ivr-love_those_touch_tones.wav"/>
       <prompt phrase="No, no tenemos bananas." filename="ivr-yes_we_have_no_bananas.wav"/>
-      <prompt phrase="Está haciendo el ridículo!" filename="ivr-dude_you_suck.wav"/>
-      <prompt phrase="Su llamada es muy importante para nosotros, pero su bienestar mental no lo es, así que estamos felices mantenerle a la espera, torturándole indefinidamente con nuestra pésima música en espera." filename="ivr-on_hold_indefinitely.wav"/>
+      <prompt phrase="¡Está haciendo el ridículo!" filename="ivr-dude_you_suck.wav"/>
+      <prompt phrase="Su llamada es muy importante para nosotros, pero su bienestar mental no lo es, así que estamos felices de mantenerle a la espera, torturándole indefinidamente con nuestra pésima música en espera." filename="ivr-on_hold_indefinitely.wav"/>
       <prompt phrase="...ha abandonado el edificio." filename="ivr-has_left_the_building.wav"/>
       <prompt phrase="Este teléfono no está asignado y no puede ser usado para realizar llamadas externas." filename="ivr-phone_is_unassigned.wav"/>
       <prompt phrase="Este teléfono no está configurado correctamente." filename="ivr-phone_not_configured.wav"/>
-      <prompt phrase="Felicitaciones! Este teléfono está configurado correctamente y puede ahora ser asociado a un usuario." filename="ivr-phone_is_configured_properly.wav"/>
+      <prompt phrase="¡Felicitaciones! Este teléfono está configurado correctamente y puede ahora ser asociado a un usuario." filename="ivr-phone_is_configured_properly.wav"/>
       <prompt phrase="Por favor contacte con el administrador del sistema para obtener asistencia." filename="ivr-contact_system_administrator.wav"/>	
       <prompt phrase="Barracuda Networks" filename="ivr-barracuda_networks.wav"/>
       <prompt phrase="CudaTel Communication Server" filename="ivr-cudatel_communication_server.wav"/>
-      <prompt phrase="Por favor introduzca las primeras letras del nombre o apellido de la persona." filename="dir-enter_person_first_or_last.wav"/>
       <prompt phrase="No hay llamadas en espera en esta cola." filename="ivr-no_calls_waiting_in_queue.wav"/>
-      <prompt phrase="Brian West" filename="misc-Brian_West.wav"/>
-      <prompt phrase="Anthony Minessale" filename="misc-Anthony_Minessale.wav"/>
-      <prompt phrase="Michael Jerris" filename="misc-Michael_Jerris.wav"/>
-      <prompt phrase="Raymond Chandler" filename="misc-Raymond_Chandler.wav"/>
-      <prompt phrase="Michael Collins" filename="misc-Michael_Collins.wav"/>
-      <prompt phrase="Mark Mann" filename="misc-Mark_Mann.wav"/>
-      <prompt phrase="William King" filename="misc-William_King.wav"/>
-      <prompt phrase="Rudy Fleminger" filename="misc-Rudy_Fleminger.wav"/>
-      <prompt phrase="Andrew Thompson" filename="misc-Andrew_Thompson.wav"/>
-      <prompt phrase="Graham Saathoff" filename="misc-Graham_Saathoff.wav"/>
-      <prompt phrase="Nicholaus Belluni" filename="misc-Nicholaus_Belluni.wav"/>
-      <prompt phrase="Sean Heiney" filename="misc-Sean_Heiney.wav"/>
+      <prompt phrase="Usted es el llamante prioritario. Por supuesto, todos nuestros llamantes son prioritarios, por lo que puede tener que esperar un poco." filename="ivr-youre_number_one.wav"/>
     </ivr>
     <misc>
       <prompt phrase="Esta llamada está ahora protegida." filename="call_secured.wav"/>
@@ -458,6 +471,12 @@
       <prompt phrase="Ha ocurrido un error, por favor contacte con el administrador." filename="error.wav"/>
       <prompt phrase="Su llamada será terminada en..." filename="misc-your_call_will_be_terminated_in.wav"/>
       <prompt phrase="Su llamada ha sido terminada." filename="misc-your_call_has_been_terminated.wav"/>
+      <prompt phrase="Por motivos de entrenamiento y calidad, esta llamada puede ser escuchada o grabada." filename="call_secured.wav"/>
+      <prompt phrase="Inglés" filename="en.wav"/>
+      <prompt phrase="Español" filename="es.wav"/>
+      <prompt phrase="Esa es una extensión inválida." filename="invalid_extension.wav"/>
+      <prompt phrase="Este teléfono no está autorizado para realizar llamadas hacia fuera." filename="phone_not_auth.wav"/>
+      <prompt phrase="Lo siento." filename="sorry.wav"/>
     </misc>
     <zrtp>
       <!-- base256 prompts for SAS -->
@@ -975,11 +994,11 @@
       <prompt phrase="yesteryear" filename="yesteryear.wav"/>
       <!-- Event prompts -->
       <prompt phrase="Bienvenidos al servicio de inscripción ZRTP." filename="zrtp-enroll_welcome.wav"/>
-      <prompt phrase="Usted debe verificar la cadena de carácteres con su destino. Si no coincide, indica la presencia de una escucha telefónica." filename="zrtp-check_sas.wav"/>
+      <prompt phrase="Usted debe verificar la cadena de caracteres con su destino. Si no coincide, indica la presencia de una escucha telefónica." filename="zrtp-check_sas.wav"/>
       <prompt phrase="Solo teléfonos autenticados pueden confiar en llamadas securizadas con ZRTP. Su teléfono no está autenticado con este sistema, por lo que esta llamada no estará securizada." filename="zrtp-enroll_not_sip_registered.wav"/>
-      <prompt phrase="Su teléfono indica que confia en este sistema para realizar llamadas seguras con ZRTP, no necesita hacer nada más." filename="zrtp-enroll_already_enrolled.wav"/>
-      <prompt phrase="Solo teléfonos soportando el protócolo ZRTP pueden usar esta extensión. Su teléfono no tiene ZRTP habilitado, por lo que esta llamada no estará securizada." filename="zrtp-enroll_notzrtp.wav"/>
-      <prompt phrase="Este sistema esta configurado para manejar llamadas cifradas con ZRTP. Decida si permite al sistema tener la posibilidad de interceptar o monitorizar su llamada. Puede colgar una vez confirmado." filename="zrtp-enroll_confirmed.wav"/>
+      <prompt phrase="Su teléfono indica que confía en este sistema para realizar llamadas seguras con ZRTP, no necesita hacer nada más." filename="zrtp-enroll_already_enrolled.wav"/>
+      <prompt phrase="Solo teléfonos soportando el protocolo ZRTP pueden usar esta extensión. Su teléfono no tiene ZRTP habilitado, por lo que esta llamada no estará securizada." filename="zrtp-enroll_notzrtp.wav"/>
+      <prompt phrase="Este sistema está configurado para manejar llamadas cifradas con ZRTP. Decida si permite al sistema tener la posibilidad de interceptar o monitorizar su llamada. Puede colgar una vez confirmado." filename="zrtp-enroll_confirmed.wav"/>
       <prompt phrase="Compara verbalmente este código de autenticación con su destino." filename="zrtp-is_secure.wav"/>
       <prompt phrase="El código de autenticación no está verificado." filename="zrtp-is_unverified.wav"/>
       <prompt phrase="El código de autenticación está verificado." filename="zrtp-is_verified.wav"/>

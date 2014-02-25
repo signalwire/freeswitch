@@ -29,7 +29,7 @@ aes_icm_context_init(aes_icm_ctx_t *c,
 		     int key_len); 
 
 err_status_t
-aes_icm_set_iv(aes_icm_ctx_t *c, void *iv);
+aes_icm_set_iv(aes_icm_ctx_t *c, void *iv, int direction);
 
 err_status_t
 aes_icm_encrypt(aes_icm_ctx_t *c,

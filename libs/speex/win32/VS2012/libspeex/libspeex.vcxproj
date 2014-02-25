@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug_RTL_dll|Win32">
@@ -626,7 +626,6 @@
     <ClInclude Include="..\..\..\include\speex\speex_echo.h" />
     <ClInclude Include="..\..\..\include\speex\speex_header.h" />
     <ClInclude Include="..\..\..\include\speex\speex_jitter.h" />
-    <ClInclude Include="..\..\..\include\speex\speex_noglobals.h" />
     <ClInclude Include="..\..\..\include\speex\speex_preprocess.h" />
     <ClInclude Include="..\..\..\include\speex\speex_stereo.h" />
     <ClInclude Include="..\..\..\include\speex\speex_types.h" />

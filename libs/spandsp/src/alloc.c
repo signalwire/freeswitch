@@ -36,8 +36,12 @@
 #if !defined(__USE_ISOC11)
 #define __USE_ISOC11
 #endif
+#if defined(__ISO_C_VISIBLE)  &&  __ISO_C_VISIBLE < 2011
+#undef __ISO_C_VISIBLE
+#define __ISO_C_VISIBLE 2011
+#endif
 #include <stdlib.h>
-#if defined(HAVE_MALLOC_H)
+#if defined(HAVE_MALLOC_H) && !defined(__OpenBSD__) && !defined(__DragonFly__)
 #include <malloc.h>
 #endif
 #include <inttypes.h>

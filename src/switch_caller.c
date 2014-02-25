@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -312,6 +312,10 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 
 	switch_snprintf(header_name, sizeof(header_name), "%s-Direction", prefix);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->direction == SWITCH_CALL_DIRECTION_INBOUND ? 
+								   "inbound" : "outbound");
+
+	switch_snprintf(header_name, sizeof(header_name), "%s-Logical-Direction", prefix);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->logical_direction == SWITCH_CALL_DIRECTION_INBOUND ? 
 								   "inbound" : "outbound");
 	
 	if (!zstr(caller_profile->username)) {

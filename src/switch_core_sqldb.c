@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -52,6 +52,7 @@ struct switch_cache_db_handle {
 	char creator[CACHE_DB_LEN];
 	char last_user[CACHE_DB_LEN];
 	uint32_t use_count;
+	uint64_t total_used_count;
 	struct switch_cache_db_handle *next;
 };
 
@@ -102,6 +103,7 @@ static void add_handle(switch_cache_db_handle_t *dbh, const char *db_str, const 
 	dbh->thread_hash = switch_ci_hashfunc_default(thread_str, &hlen);
 
 	dbh->use_count++;
+	dbh->total_used_count++;
 	sql_manager.total_used_handles++;
 	dbh->next = sql_manager.handle_pool;
 
@@ -149,7 +151,7 @@ static switch_cache_db_handle_t *get_handle(const char *db_str, const char *user
 			r = dbh_ptr;
 		}
 	}
-			
+
 	if (!r) {
 		for (dbh_ptr = sql_manager.handle_pool; dbh_ptr; dbh_ptr = dbh_ptr->next) {
 			if (dbh_ptr->hash == hash && (dbh_ptr->type != SCDB_TYPE_PGSQL || !dbh_ptr->use_count) && !switch_test_flag(dbh_ptr, CDF_PRUNE) && 
@@ -162,6 +164,7 @@ static switch_cache_db_handle_t *get_handle(const char *db_str, const char *user
 	
 	if (r) {
 		r->use_count++;
+		r->total_used_count++;
 		sql_manager.total_used_handles++;
 		r->hash = switch_ci_hashfunc_default(db_str, &hlen);
 		r->thread_hash = thread_hash;
@@ -344,7 +347,7 @@ SWITCH_DECLARE(switch_status_t) _switch_cache_db_get_db_handle_dsn(switch_cache_
 	} else if (!strncasecmp(dsn, "sqlite://", 9)) {
 		type = SCDB_TYPE_CORE_DB;
 		connection_options.core_db_options.db_path = (char *)(dsn + 9);
-	} else if ((!(i = strncasecmp(dsn, "odbc://", 7))) || strchr(dsn, ':')) {
+	} else if ((!(i = strncasecmp(dsn, "odbc://", 7))) || strchr(dsn+2, ':')) {
 		type = SCDB_TYPE_ODBC;
 
 		if (i) {
@@ -602,7 +605,7 @@ static switch_status_t switch_cache_db_execute_sql_chunked(switch_cache_db_handl
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *p, *s, *e;
-	int chunk_count;
+	switch_size_t chunk_count;
 	switch_size_t len;
 
 	switch_assert(chunk_size);
@@ -1868,7 +1871,7 @@ static void *SWITCH_THREAD_FUNC switch_user_sql_thread(switch_thread_t *thread, 
 		
 		if (switch_test_flag((&runtime), SCF_DEBUG_SQL)) {
 			char line[128] = "";
-			int l;
+			switch_size_t l;
 			
 			switch_snprintf(line, sizeof(line), "%s RUN QUEUE [", qm->name);
 			
@@ -3510,11 +3513,12 @@ SWITCH_DECLARE(void) switch_cache_db_status(switch_stream_handle_t *stream)
 			used++;
 		}
 		
-		stream->write_function(stream, "%s\n\tType: %s\n\tLast used: %d\n\tFlags: %s, %s(%d)\n"
+		stream->write_function(stream, "%s\n\tType: %s\n\tLast used: %d\n\tTotal used: %ld\n\tFlags: %s, %s(%d)\n"
 							   "\tCreator: %s\n\tLast User: %s\n",
 							   cleankey_str,
 							   switch_cache_db_type_name(dbh->type),
 							   diff,
+							   dbh->total_used_count,
 							   locked ? "Locked" : "Unlocked",
 							   dbh->use_count ? "Attached" : "Detached", dbh->use_count, dbh->creator, dbh->last_user);
 	}

@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -260,13 +260,13 @@ SWITCH_LIMIT_RESET(limit_reset_redis)
 	
 		if ((keyc = credis_keys(redis, rediskey, uuids, switch_arraylen(uuids))) > 0) {
 			int i = 0;
-			int hostnamelen = strlen(switch_core_get_switchname())+1;
+			int hostnamelen = (int)strlen(switch_core_get_switchname())+1;
 			
 			for (i = 0; i < keyc && uuids[i]; i++){
 				const char *key = uuids[i] + hostnamelen;
 				char *value;
 			
-				if (strlen(uuids[i]) <= hostnamelen) {
+				if ((int)strlen(uuids[i]) <= hostnamelen) {
 					continue; /* Sanity check */
 				}
 			

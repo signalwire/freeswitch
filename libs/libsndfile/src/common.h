@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2013 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -22,15 +22,16 @@
 #include "sfconfig.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #if HAVE_STDINT_H
 #include <stdint.h>
+#elif HAVE_INTTYPES_H
+#include <inttypes.h>
 #endif
 
 #ifndef SNDFILE_H
 #include "sndfile.h"
-#elif HAVE_INTTYPES_H
-#include <inttypes.h>
 #endif
 
 #ifdef __cplusplus
@@ -39,7 +40,9 @@
 
 #if (SIZEOF_LONG == 8)
 #	define	SF_PLATFORM_S64(x)		x##l
-#elif COMPILER_IS_GCC || __SUNPRO_C
+#elif (SIZEOF_LONG_LONG == 8)
+#	define	SF_PLATFORM_S64(x)		x##ll
+#elif COMPILER_IS_GCC
 #	define	SF_PLATFORM_S64(x)		x##ll
 #elif OS_IS_WIN32
 #	define	SF_PLATFORM_S64(x)		x##I64
@@ -67,15 +70,14 @@
 #	define WARN_UNUSED
 #endif
 
-#define	SF_BUFFER_LEN			(8192*2)
+#define	SF_BUFFER_LEN			(8192)
 #define	SF_FILENAME_LEN			(512)
 #define SF_SYSERR_LEN			(256)
 #define SF_MAX_STRINGS			(32)
-#define SF_STR_BUFFER_LEN		(8192)
-#define	SF_HEADER_LEN			(4100 + SF_STR_BUFFER_LEN)
+#define	SF_HEADER_LEN			(12292)
+#define	SF_PARSELOG_LEN			(2048)
 
 #define	PSF_SEEK_ERROR			((sf_count_t) -1)
-
 
 #define	BITWIDTH2BYTES(x)	(((x) + 7) / 8)
 
@@ -87,31 +89,39 @@
 
 #define		ARRAY_LEN(x)	((int) (sizeof (x) / sizeof ((x) [0])))
 
+#define		NOT(x)			(! (x))
+
 #if (COMPILER_IS_GCC == 1)
-#define		SF_MAX(x,y)		({ \
+#define		SF_MAX(x, y)	({ \
 								typeof (x) sf_max_x1 = (x) ; \
 								typeof (y) sf_max_y1 = (y) ; \
 								(void) (&sf_max_x1 == &sf_max_y1) ; \
 								sf_max_x1 > sf_max_y1 ? sf_max_x1 : sf_max_y1 ; })
 
-#define		SF_MIN(x,y)		({ \
+#define		SF_MIN(x, y)	({ \
 								typeof (x) sf_min_x2 = (x) ; \
 								typeof (y) sf_min_y2 = (y) ; \
 								(void) (&sf_min_x2 == &sf_min_y2) ; \
 								sf_min_x2 < sf_min_y2 ? sf_min_x2 : sf_min_y2 ; })
 #else
-#define		SF_MAX(a,b)		((a) > (b) ? (a) : (b))
-#define		SF_MIN(a,b)		((a) < (b) ? (a) : (b))
+#define		SF_MAX(a, b)	((a) > (b) ? (a) : (b))
+#define		SF_MIN(a, b)	((a) < (b) ? (a) : (b))
 #endif
 
+
+#define		COMPILE_TIME_ASSERT(e)	(sizeof (struct { int : - !! (e) ; }))
+
+
+#define		SF_MAX_CHANNELS	256
+
+
 /*
-*	Macros for spliting the format file of SF_INFI into contrainer type,
+*	Macros for spliting the format file of SF_INFO into container type,
 **	codec type and endian-ness.
 */
 #define SF_CONTAINER(x)		((x) & SF_FORMAT_TYPEMASK)
 #define SF_CODEC(x)			((x) & SF_FORMAT_SUBMASK)
 #define SF_ENDIAN(x)		((x) & SF_FORMAT_ENDMASK)
-
 
 enum
 {	/* PEAK chunk location. */
@@ -143,6 +153,8 @@ enum
 
 enum
 {	/* Work in progress. */
+	SF_FORMAT_SPEEX			= 0x5000000,
+	SF_FORMAT_OGGFLAC		= 0x5000001,
 
 	/* Formats supported read only. */
 	SF_FORMAT_TXW			= 0x4030000,		/* Yamaha TX16 sampler file */
@@ -161,6 +173,22 @@ enum
 
 	SF_FORMAT_PCM_N			= 0x1030
 } ;
+
+/*---------------------------------------------------------------------------------------
+*/
+
+typedef struct
+{	unsigned	kuki_offset ;
+	unsigned	pakt_offset ;
+
+	unsigned	bits_per_sample ;
+	unsigned	frames_per_packet ;
+
+	int64_t 	packets ;
+	int64_t 	valid_frames ;
+	int32_t 	priming_frames ;
+	int32_t 	remainder_frames ;
+} ALAC_DECODER_INFO ;
 
 /*---------------------------------------------------------------------------------------
 **	PEAK_CHUNK - This chunk type is common to both AIFF and WAVE files although their
@@ -183,19 +211,8 @@ typedef struct
 	/* CAF */
 	unsigned int	edit_number ;
 
-#if HAVE_FLEXIBLE_ARRAY
 	/* the per channel peak info */
 	PEAK_POS		peaks [] ;
-#else
-	/*
-	** This is not ISO compliant C. It works on some compilers which
-	** don't support the ISO standard flexible struct array which is
-	** used above. If your compiler doesn't like this I suggest you find
-	** youself a 1999 ISO C standards compilant compiler. GCC-3.X is
-	** highly recommended.
-	*/
-	PEAK_POS		peaks [0] ;
-#endif
 } PEAK_INFO ;
 
 static inline PEAK_INFO *
@@ -206,13 +223,74 @@ peak_info_calloc (int channels)
 typedef struct
 {	int		type ;
 	int		flags ;
-	char 	*str ;
+	size_t 	offset ;
 } STR_DATA ;
+
+typedef struct
+{	int64_t		hash ;
+	char		id [64] ;
+	unsigned	id_size ;
+	uint32_t	mark32 ;
+	sf_count_t	offset ;
+	uint32_t	len ;
+} READ_CHUNK ;
+
+typedef struct
+{	int64_t		hash ;
+	uint32_t	mark32 ;
+	uint32_t	len ;
+	void		*data ;
+} WRITE_CHUNK ;
+
+typedef struct
+{	uint32_t	count ;
+	uint32_t	used ;
+	READ_CHUNK	*chunks ;
+} READ_CHUNKS ;
+typedef struct
+{	uint32_t	count ;
+	uint32_t	used ;
+	WRITE_CHUNK	*chunks ;
+} WRITE_CHUNKS ;
+
+struct SF_CHUNK_ITERATOR
+{	uint32_t	current ;
+	int64_t		hash ;
+	char		id [64] ;
+	unsigned	id_size ;
+	SNDFILE		*sndfile ;
+} ;
 
 static inline size_t
 make_size_t (int x)
 {	return (size_t) x ;
 } /* size_t_of_int */
+
+typedef SF_BROADCAST_INFO_VAR (16 * 1024) SF_BROADCAST_INFO_16K ;
+
+typedef SF_CART_INFO_VAR (16 * 1024) SF_CART_INFO_16K ;
+
+#if SIZEOF_WCHAR_T == 2
+typedef wchar_t	sfwchar_t ;
+#else
+typedef int16_t sfwchar_t ;
+#endif
+
+
+static inline void *
+psf_memdup (const void *src, size_t n)
+{	void * mem = calloc (1, n & 3 ? n + 4 - (n & 3) : n) ;
+	return memcpy (mem, src, n) ;
+} /* psf_memdup */
+
+/*
+**	This version of isprint specifically ignores any locale info. Its used for
+**	determining which characters can be printed in things like hexdumps.
+*/
+static inline int
+psf_isprint (int ch)
+{	return (ch >= ' ' && ch <= '~') ;
+} /* psf_isprint */
 
 /*=======================================================================================
 **	SF_PRIVATE stuct - a pointer to this struct is passed back to the caller of the
@@ -220,80 +298,105 @@ make_size_t (int x)
 **	contents.
 */
 
-
 typedef struct
-{	int size ;
-	SF_BROADCAST_INFO binfo ;
-} SF_BROADCAST_VAR ;
-
-typedef struct sf_private_tag
 {
-	/* Canary in a coal mine. */
-	char canary [64] ;
-
-	/* Force the compiler to double align the start of buffer. */
 	union
-	{	double			dbuf	[SF_BUFFER_LEN / sizeof (double)] ;
-#if (defined (SIZEOF_INT64_T) && (SIZEOF_INT64_T == 8))
-		int64_t			lbuf	[SF_BUFFER_LEN / sizeof (int64_t)] ;
-#else
-		long			lbuf	[SF_BUFFER_LEN / sizeof (double)] ;
-#endif
-		float			fbuf	[SF_BUFFER_LEN / sizeof (float)] ;
-		int				ibuf	[SF_BUFFER_LEN / sizeof (int)] ;
-		short			sbuf	[SF_BUFFER_LEN / sizeof (short)] ;
-		char			cbuf	[SF_BUFFER_LEN / sizeof (char)] ;
-		signed char		scbuf	[SF_BUFFER_LEN / sizeof (signed char)] ;
-		unsigned char	ucbuf	[SF_BUFFER_LEN / sizeof (signed char)] ;
-		} u ;
+	{	char		c [SF_FILENAME_LEN] ;
+		sfwchar_t	wc [SF_FILENAME_LEN] ;
+	} path ;
 
-	char			filepath	[SF_FILENAME_LEN] ;
-	char			rsrcpath	[SF_FILENAME_LEN] ;
-	char			directory	[SF_FILENAME_LEN] ;
-	char			filename	[SF_FILENAME_LEN / 4] ;
+	union
+	{	char		c [SF_FILENAME_LEN] ;
+		sfwchar_t	wc [SF_FILENAME_LEN] ;
+	} dir ;
 
-	char			syserr		[SF_SYSERR_LEN] ;
-
-	/* logbuffer and logindex should only be changed within the logging functions
-	** of common.c
-	*/
-	char			logbuffer	[SF_BUFFER_LEN] ;
-	unsigned char	header		[SF_HEADER_LEN] ; /* Must be unsigned */
-	int				rwf_endian ;	/* Header endian-ness flag. */
-
-	/* Storage and housekeeping data for adding/reading strings from
-	** sound files.
-	*/
-	STR_DATA		strings [SF_MAX_STRINGS] ;
-	char			str_storage [SF_STR_BUFFER_LEN] ;
-	char			*str_end ;
-	int				str_flags ;
-
-	/* Guard value. If this changes the buffers above have overflowed. */
-	int				Magick ;
-
-	unsigned		unique_id ;
-
-	/* Index variables for maintaining logbuffer and header above. */
-	int				logindex ;
-	int				headindex, headend ;
-	int				has_text ;
-	int				do_not_close_descriptor ;
+	union
+	{	char		c [SF_FILENAME_LEN / 4] ;
+		sfwchar_t	wc [SF_FILENAME_LEN / 4] ;
+	} name ;
 
 #if USE_WINDOWS_API
 	/*
 	**	These fields can only be used in src/file_io.c.
 	**	They are basically the same as a windows file HANDLE.
 	*/
-	void 			*hfile, *hrsrc, *hsaved ;
+	void 			*handle, *hsaved ;
+
+	int				use_wchar ;
 #else
 	/* These fields can only be used in src/file_io.c. */
-	int 			filedes, rsrcdes, savedes ;
+	int 			filedes, savedes ;
 #endif
+
+	int				do_not_close_descriptor ;
+	int				mode ;			/* Open mode : SFM_READ, SFM_WRITE or SFM_RDWR. */
+} PSF_FILE ;
+
+
+
+typedef union
+{	double			dbuf	[SF_BUFFER_LEN / sizeof (double)] ;
+#if (defined (SIZEOF_INT64_T) && (SIZEOF_INT64_T == 8))
+	int64_t			lbuf	[SF_BUFFER_LEN / sizeof (int64_t)] ;
+#else
+	long			lbuf	[SF_BUFFER_LEN / sizeof (double)] ;
+#endif
+	float			fbuf	[SF_BUFFER_LEN / sizeof (float)] ;
+	int				ibuf	[SF_BUFFER_LEN / sizeof (int)] ;
+	short			sbuf	[SF_BUFFER_LEN / sizeof (short)] ;
+	char			cbuf	[SF_BUFFER_LEN / sizeof (char)] ;
+	signed char		scbuf	[SF_BUFFER_LEN / sizeof (signed char)] ;
+	unsigned char	ucbuf	[SF_BUFFER_LEN / sizeof (signed char)] ;
+} BUF_UNION ;
+
+
+
+typedef struct sf_private_tag
+{
+	/* Canary in a coal mine. */
+	union
+	{	/* Place a double here to encourage double alignment. */
+		double d [2] ;
+		char c [16] ;
+		} canary ;
+
+	PSF_FILE		file, rsrc ;
+
+	char			syserr		[SF_SYSERR_LEN] ;
+
+	/* parselog and indx should only be changed within the logging functions
+	** of common.c
+	*/
+	struct
+	{	char			buf	[SF_PARSELOG_LEN] ;
+		int				indx ;
+	} parselog ;
+
+	unsigned char	header		[SF_HEADER_LEN] ; /* Must be unsigned */
+	int				rwf_endian ;	/* Header endian-ness flag. */
+
+	/* Storage and housekeeping data for adding/reading strings from
+	** sound files.
+	*/
+	struct
+	{	STR_DATA	data [SF_MAX_STRINGS] ;
+		char		*storage ;
+		size_t		storage_len ;
+		size_t		storage_used ;
+		uint32_t	flags ;
+	} strings ;
+
+	/* Guard value. If this changes the buffers above have overflowed. */
+	int				Magick ;
+
+	unsigned		unique_id ;
+
+	/* Index variables for maintaining parselog and header above. */
+	int				headindex, headend ;
+	int				has_text ;
 
 	int				error ;
 
-	int				mode ;			/* Open mode : SFM_READ, SFM_WRITE or SFM_RDWR. */
 	int				endian ;		/* File endianness : SF_ENDIAN_LITTLE or SF_ENDIAN_BIG. */
 	int				data_endswap ;	/* Need to endswap data? */
 
@@ -323,7 +426,10 @@ typedef struct sf_private_tag
 	SF_INSTRUMENT	*instrument ;
 
 	/* Broadcast (EBU) Info */
-	SF_BROADCAST_VAR *broadcast_var ;
+	SF_BROADCAST_INFO_16K *broadcast_16k ;
+
+	/* Cart (AES46) Info */
+	SF_CART_INFO_16K *cart_16k ;
 
 	/* Channel map data (if present) : an array of ints. */
 	int				*channel_map ;
@@ -379,6 +485,7 @@ typedef struct sf_private_tag
 	sf_count_t		(*seek) 		(struct sf_private_tag*, int mode, sf_count_t samples_from_start) ;
 	int				(*write_header)	(struct sf_private_tag*, int calc_length) ;
 	int				(*command)		(struct sf_private_tag*, int command, void *data, int datasize) ;
+	int				(*byterate)		(struct sf_private_tag*) ;
 
 	/*
 	**	Separate close functions for the codec and the container.
@@ -393,6 +500,17 @@ typedef struct sf_private_tag
 	int					virtual_io ;
 	SF_VIRTUAL_IO		vio ;
 	void				*vio_user_data ;
+
+	/* Chunk get/set. */
+	SF_CHUNK_ITERATOR	*iterator ;
+
+	READ_CHUNKS			rchunks ;
+	WRITE_CHUNKS		wchunks ;
+
+	int					(*set_chunk)		(struct sf_private_tag*, const SF_CHUNK_INFO * chunk_info) ;
+	SF_CHUNK_ITERATOR *	(*next_chunk_iterator)	(struct sf_private_tag*, SF_CHUNK_ITERATOR * iterator) ;
+	int					(*get_chunk_size)	(struct sf_private_tag*, const SF_CHUNK_ITERATOR * iterator, SF_CHUNK_INFO * chunk_info) ;
+	int					(*get_chunk_data)	(struct sf_private_tag*, const SF_CHUNK_ITERATOR * iterator, SF_CHUNK_INFO * chunk_info) ;
 } SF_PRIVATE ;
 
 
@@ -415,6 +533,7 @@ enum
 	SFE_BAD_FILE_PTR,
 	SFE_BAD_INT_PTR,
 	SFE_BAD_STAT_SIZE,
+	SFE_NO_TEMP_DIR,
 	SFE_MALLOC_FAILED,
 	SFE_UNIMPLEMENTED,
 	SFE_BAD_READ_ALIGN,
@@ -453,6 +572,9 @@ enum
 	SFE_RDWR_BAD_HEADER,
 	SFE_CMD_HAS_DATA,
 	SFE_BAD_BROADCAST_INFO_SIZE,
+	SFE_BAD_BROADCAST_INFO_TOO_BIG,
+	SFE_BAD_CART_INFO_SIZE,
+	SFE_BAD_CART_INFO_TOO_BIG,
 
 	SFE_STR_NO_SUPPORT,
 	SFE_STR_NOT_WRITE,
@@ -506,6 +628,7 @@ enum
 	SFE_PAF_VERSION,
 	SFE_PAF_UNKNOWN_FORMAT,
 	SFE_PAF_SHORT_HEADER,
+	SFE_PAF_BAD_CHANNELS,
 
 	SFE_SVX_NO_FORM,
 	SFE_SVX_NO_BODY,
@@ -584,6 +707,13 @@ enum
 	SFE_VORBIS_ENCODER_BUG,
 
 	SFE_RF64_NOT_RF64,
+	SFE_BAD_CHUNK_PTR,
+	SFE_UNKNOWN_CHUNK,
+	SFE_BAD_CHUNK_FORMAT,
+	SFE_BAD_CHUNK_MARKER,
+	SFE_BAD_CHUNK_DATA_PTR,
+
+	SFE_ALAC_FAIL_TMPFILE,
 
 	SFE_MAX_ERROR			/* This must be last in list. */
 } ;
@@ -595,13 +725,13 @@ int u_bitwidth_to_subformat (int bits) ;
 /*  Functions for reading and writing floats and doubles on processors
 **	with non-IEEE floats/doubles.
 */
-float	float32_be_read		(unsigned char *cptr) ;
-float	float32_le_read		(unsigned char *cptr) ;
+float	float32_be_read		(const unsigned char *cptr) ;
+float	float32_le_read		(const unsigned char *cptr) ;
 void	float32_be_write	(float in, unsigned char *out) ;
 void	float32_le_write	(float in, unsigned char *out) ;
 
-double	double64_be_read	(unsigned char *cptr) ;
-double	double64_le_read	(unsigned char *cptr) ;
+double	double64_be_read	(const unsigned char *cptr) ;
+double	double64_le_read	(const unsigned char *cptr) ;
 void	double64_be_write	(double in, unsigned char *out) ;
 void	double64_le_write	(double in, unsigned char *out) ;
 
@@ -611,6 +741,11 @@ void	psf_log_printf		(SF_PRIVATE *psf, const char *format, ...) ;
 void	psf_log_SF_INFO 	(SF_PRIVATE *psf) ;
 
 int32_t	psf_rand_int32 (void) ;
+
+void append_snprintf (char * dest, size_t maxlen, const char * fmt, ...) ;
+void psf_strlcpy_crlf (char *dest, const char *src, size_t destmax, size_t srcmax) ;
+
+sf_count_t psf_decode_frame_count (SF_PRIVATE *psf) ;
 
 /* Functions used when writing file headers. */
 
@@ -665,12 +800,14 @@ int macos_guess_file_type (SF_PRIVATE *psf, const char *filename) ;
 **	some 32 bit OSes. Implementation in file_io.c.
 */
 
-int psf_fopen (SF_PRIVATE *psf, const char *pathname, int flags) ;
-int psf_set_stdio (SF_PRIVATE *psf, int mode) ;
+int psf_fopen (SF_PRIVATE *psf) ;
+int psf_set_stdio (SF_PRIVATE *psf) ;
 int psf_file_valid (SF_PRIVATE *psf) ;
 void psf_set_file (SF_PRIVATE *psf, int fd) ;
 void psf_init_files (SF_PRIVATE *psf) ;
 void psf_use_rsrc (SF_PRIVATE *psf, int on_off) ;
+
+SNDFILE * psf_open_file (SF_PRIVATE *psf, SF_INFO *sfinfo) ;
 
 sf_count_t psf_fseek (SF_PRIVATE *psf, sf_count_t offset, int whence) ;
 sf_count_t psf_fread (void *ptr, sf_count_t bytes, sf_count_t count, SF_PRIVATE *psf) ;
@@ -687,7 +824,7 @@ int psf_ftruncate (SF_PRIVATE *psf, sf_count_t len) ;
 int psf_fclose (SF_PRIVATE *psf) ;
 
 /* Open and close the resource fork of a file. */
-int psf_open_rsrc (SF_PRIVATE *psf, int mode) ;
+int psf_open_rsrc (SF_PRIVATE *psf) ;
 int psf_close_rsrc (SF_PRIVATE *psf) ;
 
 /*
@@ -722,10 +859,16 @@ int		caf_open	(SF_PRIVATE *psf) ;
 int		mpc2k_open	(SF_PRIVATE *psf) ;
 int		rf64_open	(SF_PRIVATE *psf) ;
 
+int		ogg_vorbis_open	(SF_PRIVATE *psf) ;
+int		ogg_speex_open	(SF_PRIVATE *psf) ;
+int		ogg_pcm_open	(SF_PRIVATE *psf) ;
+int		ogg_opus_open	(SF_PRIVATE *psf) ;
+int		ogg_open	(SF_PRIVATE *psf) ;
+
+
 /* In progress. Do not currently work. */
 
 int		mpeg_open	(SF_PRIVATE *psf) ;
-int		ogg_open	(SF_PRIVATE *psf) ;
 int		rx2_open	(SF_PRIVATE *psf) ;
 int		txw_open	(SF_PRIVATE *psf) ;
 int		wve_open	(SF_PRIVATE *psf) ;
@@ -747,6 +890,7 @@ int		gsm610_init		(SF_PRIVATE *psf) ;
 int		vox_adpcm_init	(SF_PRIVATE *psf) ;
 int		flac_init		(SF_PRIVATE *psf) ;
 int		g72x_init 		(SF_PRIVATE * psf) ;
+int		alac_init		(SF_PRIVATE *psf, const ALAC_DECODER_INFO * info) ;
 
 int 	dither_init		(SF_PRIVATE *psf, int mode) ;
 
@@ -761,18 +905,51 @@ int		interleave_init (SF_PRIVATE *psf) ;
 ** Chunk logging functions.
 */
 
-typedef struct
-{	struct
-	{	int chunk ;
-		sf_count_t offset ;
-		sf_count_t len ;
-	} l [100] ;
+SF_CHUNK_ITERATOR * psf_get_chunk_iterator (SF_PRIVATE * psf, const char * marker_str) ;
+SF_CHUNK_ITERATOR * psf_next_chunk_iterator (const READ_CHUNKS * pchk , SF_CHUNK_ITERATOR *iterator) ;
+int		psf_store_read_chunk_u32 (READ_CHUNKS * pchk, uint32_t marker, sf_count_t offset, uint32_t len) ;
+int		psf_store_read_chunk_str (READ_CHUNKS * pchk, const char * marker, sf_count_t offset, uint32_t len) ;
+int		psf_save_write_chunk (WRITE_CHUNKS * pchk, const SF_CHUNK_INFO * chunk_info) ;
+int		psf_find_read_chunk_str (const READ_CHUNKS * pchk, const char * marker) ;
+int		psf_find_read_chunk_m32 (const READ_CHUNKS * pchk, uint32_t marker) ;
+int		psf_find_read_chunk_iterator (const READ_CHUNKS * pchk, const SF_CHUNK_ITERATOR * marker) ;
 
-	int count ;
-} PRIV_CHUNK4 ;
+int		psf_find_write_chunk (WRITE_CHUNKS * pchk, const char * marker) ;
 
-void pchk4_store (PRIV_CHUNK4 * pchk, int marker, sf_count_t offset, sf_count_t len) ;
-int pchk4_find (PRIV_CHUNK4 * pchk, int marker) ;
+static inline int
+fourcc_to_marker (const SF_CHUNK_INFO * chunk_info)
+{	const unsigned char * cptr ;
+
+	if (chunk_info->id_size != 4)
+		return 0 ;
+
+	cptr = (const unsigned char *) chunk_info->id ;
+	return (cptr [3] << 24) + (cptr [2] << 16) + (cptr [1] << 8) + cptr [0] ;
+} /* fourcc_to_marker */
+
+/*------------------------------------------------------------------------------------
+** Functions that work like OpenBSD's strlcpy/strlcat to replace strncpy/strncat.
+**
+** See : http://www.gratisoft.us/todd/papers/strlcpy.html
+**
+** These functions are available on *BSD, but are not avaialble everywhere so we
+** implement them here.
+**
+** The argument order has been changed to that of strncpy/strncat to cause
+** compiler errors if code is carelessly converted from one to the other.
+*/
+
+static inline void
+psf_strlcat (char *dest, size_t n, const char *src)
+{	strncat (dest, src, n - strlen (dest) - 1) ;
+	dest [n - 1] = 0 ;
+} /* psf_strlcat */
+
+static inline void
+psf_strlcpy (char *dest, size_t n, const char *src)
+{	strncpy (dest, src, n - 1) ;
+	dest [n - 1] = 0 ;
+} /* psf_strlcpy */
 
 /*------------------------------------------------------------------------------------
 ** Other helper functions.
@@ -787,10 +964,14 @@ void	psf_sanitize_string (char * cptr, int len) ;
 /* Generate the current date as a string. */
 void	psf_get_date_str (char *str, int maxlen) ;
 
-SF_BROADCAST_VAR* broadcast_var_alloc (size_t datasize) ;
+SF_BROADCAST_INFO_16K * broadcast_var_alloc (void) ;
 int		broadcast_var_set (SF_PRIVATE *psf, const SF_BROADCAST_INFO * data, size_t datasize) ;
 int		broadcast_var_get (SF_PRIVATE *psf, SF_BROADCAST_INFO * data, size_t datasize) ;
 
+
+SF_CART_INFO_16K * cart_var_alloc (void) ;
+int 		cart_var_set (SF_PRIVATE *psf, const SF_CART_INFO * date, size_t datasize) ;
+int		cart_var_get (SF_PRIVATE *psf, SF_CART_INFO * data, size_t datasize) ;
 
 typedef struct
 {	int channels ;
@@ -798,7 +979,11 @@ typedef struct
 } AUDIO_DETECT ;
 
 int audio_detect (SF_PRIVATE * psf, AUDIO_DETECT *ad, const unsigned char * data, int datalen) ;
+int id3_skip (SF_PRIVATE * psf) ;
 
+void	alac_get_desc_chunk_items (int subformat, uint32_t *fmt_flags, uint32_t *frames_per_packet) ;
+
+FILE *	psf_open_tmpfile (char * fname, size_t fnamelen) ;
 
 /*------------------------------------------------------------------------------------
 ** Helper/debug functions.
@@ -833,6 +1018,27 @@ int sf_dither_int		(const SF_DITHER_INFO *dither, const int *in, int *out, int c
 int sf_dither_float		(const SF_DITHER_INFO *dither, const float *in, float *out, int count) ;
 int sf_dither_double	(const SF_DITHER_INFO *dither, const double *in, double *out, int count) ;
 #endif
+
+/*------------------------------------------------------------------------------------
+** Data conversion functions.
+*/
+
+static inline short
+psf_short_of_int (int x)
+{	return (x >> 16) ;
+}
+
+void psf_f2s_array (const float *src, short *dest, int count, int normalize) ;
+void psf_f2s_clip_array (const float *src, short *dest, int count, int normalize) ;
+
+void psf_d2s_array (const double *src, short *dest, int count, int normalize) ;
+void psf_d2s_clip_array (const double *src, short *dest, int count, int normalize) ;
+
+void psf_f2i_array (const float *src, int *dest, int count, int normalize) ;
+void psf_f2i_clip_array (const float *src, int *dest, int count, int normalize) ;
+
+void psf_d2i_array (const double *src, int *dest, int count, int normalize) ;
+void psf_d2i_clip_array (const double *src, int *dest, int count, int normalize) ;
 
 #endif /* SNDFILE_COMMON_H */
 

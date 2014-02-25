@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2001-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2001-2013 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -45,6 +45,10 @@ static SF_FORMAT_INFO const simple_formats [] =
 
 	{	SF_FORMAT_AU | SF_FORMAT_ULAW,
 		"AU (Sun/Next 8-bit u-law)", "au"
+		},
+
+	{	SF_FORMAT_CAF | SF_FORMAT_ALAC_16,
+		"CAF (Apple 16 bit ALAC)", "caf"
 		},
 
 	{	SF_FORMAT_CAF | SF_FORMAT_PCM_16,
@@ -115,28 +119,30 @@ static SF_FORMAT_INFO const major_formats [] =
 {
 	{	SF_FORMAT_AIFF,		"AIFF (Apple/SGI)",						"aiff" 	},
 	{	SF_FORMAT_AU,		"AU (Sun/NeXT)", 						"au"	},
-	{	SF_FORMAT_AVR,		"AVR (Audio Visual Research)",	 		"avr"	},
-	{	SF_FORMAT_CAF,		"CAF (Apple Core Audio File)",	 		"caf"	},
+	{	SF_FORMAT_AVR,		"AVR (Audio Visual Research)",			"avr"	},
+	{	SF_FORMAT_CAF,		"CAF (Apple Core Audio File)",			"caf"	},
 #if HAVE_EXTERNAL_LIBS
-	{	SF_FORMAT_FLAC,		"FLAC (FLAC Lossless Audio Codec)",	 	"flac"	},
+	{	SF_FORMAT_FLAC,		"FLAC (Free Lossless Audio Codec)",		"flac"	},
 #endif
 	{	SF_FORMAT_HTK,		"HTK (HMM Tool Kit)",					"htk"	},
 	{	SF_FORMAT_SVX,		"IFF (Amiga IFF/SVX8/SV16)",			"iff"	},
 	{	SF_FORMAT_MAT4,		"MAT4 (GNU Octave 2.0 / Matlab 4.2)",	"mat"	},
 	{	SF_FORMAT_MAT5,		"MAT5 (GNU Octave 2.1 / Matlab 5.0)",	"mat"	},
+	{	SF_FORMAT_MPC2K,	"MPC (Akai MPC 2k)",					"mpc"	},
 #if HAVE_EXTERNAL_LIBS
-	{	SF_FORMAT_OGG,		"OGG (OGG Container format)",		 	"oga"	},
+	{	SF_FORMAT_OGG,		"OGG (OGG Container format)",			"oga"	},
 #endif
 	{	SF_FORMAT_PAF,		"PAF (Ensoniq PARIS)", 					"paf"	},
 	{	SF_FORMAT_PVF,		"PVF (Portable Voice Format)",			"pvf"	},
-	{	SF_FORMAT_RAW,		"RAW (header-less)",				 	"raw"	},
+	{	SF_FORMAT_RAW,		"RAW (header-less)",					"raw"	},
+	{	SF_FORMAT_RF64,		"RF64 (RIFF 64)",						"rf64"	},
 	{	SF_FORMAT_SD2,		"SD2 (Sound Designer II)", 				"sd2"	},
 	{	SF_FORMAT_SDS,		"SDS (Midi Sample Dump Standard)", 		"sds"	},
 	{	SF_FORMAT_IRCAM,	"SF (Berkeley/IRCAM/CARL)",				"sf"	},
 	{	SF_FORMAT_VOC,		"VOC (Creative Labs)",					"voc"	},
 	{	SF_FORMAT_W64,		"W64 (SoundFoundry WAVE 64)",			"w64"	},
 	{	SF_FORMAT_WAV,		"WAV (Microsoft)",						"wav"	},
-	{	SF_FORMAT_NIST,		"WAV (NIST Sphere)",	 				"wav"	},
+	{	SF_FORMAT_NIST,		"WAV (NIST Sphere)",					"wav"	},
 	{	SF_FORMAT_WAVEX,	"WAVEX (Microsoft)",					"wav"	},
 	{	SF_FORMAT_WVE,		"WVE (Psion Series 3)",					"wve"	},
 	{	SF_FORMAT_XI,		"XI (FastTracker 2)",					"xi"	},
@@ -198,6 +204,11 @@ static SF_FORMAT_INFO subtype_formats [] =
 #if HAVE_EXTERNAL_LIBS
 	{	SF_FORMAT_VORBIS,		"Vorbis",				NULL 	},
 #endif
+
+	{	SF_FORMAT_ALAC_16,		"16 bit ALAC",			NULL	},
+	{	SF_FORMAT_ALAC_20,		"20 bit ALAC",			NULL	},
+	{	SF_FORMAT_ALAC_24,		"24 bit ALAC",			NULL	},
+	{	SF_FORMAT_ALAC_32,		"32 bit ALAC",			NULL	},
 } ; /* subtype_formats */
 
 int
@@ -210,7 +221,9 @@ psf_get_format_subtype (SF_FORMAT_INFO *data)
 {	int indx ;
 
 	if (data->format < 0 || data->format >= (SIGNED_SIZEOF (subtype_formats) / SIGNED_SIZEOF (SF_FORMAT_INFO)))
+	{	data->format = 0 ;
 		return SFE_BAD_COMMAND_PARAM ;
+		} ;
 
 	indx = data->format ;
 	memcpy (data, &(subtype_formats [indx]), sizeof (SF_FORMAT_INFO)) ;
@@ -256,7 +269,8 @@ psf_get_format_info (SF_FORMAT_INFO *data)
 
 double
 psf_calc_signal_max (SF_PRIVATE *psf, int normalize)
-{	sf_count_t	position ;
+{	BUF_UNION	ubuf ;
+	sf_count_t	position ;
 	double 		max_val, temp, *data ;
 	int			k, len, readcount, save_state ;
 
@@ -280,8 +294,9 @@ psf_calc_signal_max (SF_PRIVATE *psf, int normalize)
 	/* Go to start of file. */
 	sf_seek ((SNDFILE*) psf, 0, SEEK_SET) ;
 
-	data = psf->u.dbuf ;
-	len = ARRAY_LEN (psf->u.dbuf) ;
+	data = ubuf.dbuf ;
+	/* Make sure len is an integer multiple of the channel count. */
+	len = ARRAY_LEN (ubuf.dbuf) - (ARRAY_LEN (ubuf.dbuf) % psf->sf.channels) ;
 
 	for (readcount = 1, max_val = 0.0 ; readcount > 0 ; /* nothing */)
 	{	readcount = sf_read_double ((SNDFILE*) psf, data, len) ;
@@ -300,7 +315,8 @@ psf_calc_signal_max (SF_PRIVATE *psf, int normalize)
 
 int
 psf_calc_max_all_channels (SF_PRIVATE *psf, double *peaks, int normalize)
-{	sf_count_t	position ;
+{	BUF_UNION	ubuf ;
+	sf_count_t	position ;
 	double 		temp, *data ;
 	int			k, len, readcount, save_state ;
 	int			chan ;
@@ -321,9 +337,9 @@ psf_calc_max_all_channels (SF_PRIVATE *psf, double *peaks, int normalize)
 	position = sf_seek ((SNDFILE*) psf, 0, SEEK_CUR) ; /* Get current position in file */
 	sf_seek ((SNDFILE*) psf, 0, SEEK_SET) ;			/* Go to start of file. */
 
-	len = ARRAY_LEN (psf->u.dbuf) ;
+	len = ARRAY_LEN (ubuf.dbuf) ;
 
-	data = psf->u.dbuf ;
+	data = ubuf.dbuf ;
 
 	chan = 0 ;
 	readcount = len ;

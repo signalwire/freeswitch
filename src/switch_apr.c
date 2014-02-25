@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -833,6 +833,12 @@ SWITCH_DECLARE(switch_status_t) switch_mcast_loopback(switch_socket_t *sock, uin
 {
 	return apr_mcast_loopback(sock, opt);
 }
+
+SWITCH_DECLARE(switch_status_t) switch_mcast_interface(switch_socket_t *sock, switch_sockaddr_t *iface)
+{
+	return apr_mcast_interface(sock, iface);
+}
+												 
 
 /* socket functions */
 

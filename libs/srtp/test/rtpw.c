@@ -90,8 +90,7 @@
 #define USEC_RATE        (5e5)
 #define MAX_WORD_LEN     128  
 #define ADDR_IS_MULTICAST(a) IN_MULTICAST(htonl(a))
-#define MAX_KEY_LEN      64
-#define MASTER_KEY_LEN   30
+#define MAX_KEY_LEN      96
 
 
 #ifndef HAVE_USLEEP
@@ -153,6 +152,8 @@ main (int argc, char *argv[]) {
   sec_serv_t sec_servs = sec_serv_none;
   unsigned char ttl = 5;
   int c;
+  int key_size = 128;
+  int gcm_on = 0;
   char *input_key = NULL;
   char *address = NULL;
   char key[MAX_KEY_LEN];
@@ -187,7 +188,7 @@ main (int argc, char *argv[]) {
 
   /* check args */
   while (1) {
-    c = getopt_s(argc, argv, "k:rsaeld:");
+    c = getopt_s(argc, argv, "k:rsgae:ld:");
     if (c == -1) {
       break;
     }
@@ -196,9 +197,18 @@ main (int argc, char *argv[]) {
       input_key = optarg_s;
       break;
     case 'e':
+      key_size = atoi(optarg_s);
+      if (key_size != 128 && key_size != 256) {
+        printf("error: encryption key size must be 128 or 256 (%d)\n", key_size);
+        exit(1);
+      }
       sec_servs |= sec_serv_conf;
       break;
     case 'a':
+      sec_servs |= sec_serv_auth;
+      break;
+    case 'g':
+      gcm_on = 1;
       sec_servs |= sec_serv_auth;
       break;
     case 'r':
@@ -331,16 +341,73 @@ main (int argc, char *argv[]) {
      */
     switch (sec_servs) {
     case sec_serv_conf_and_auth:
-      crypto_policy_set_rtp_default(&policy.rtp);
-      crypto_policy_set_rtcp_default(&policy.rtcp);
+      if (gcm_on) {
+#ifdef OPENSSL
+	switch (key_size) {
+	case 128:
+	  crypto_policy_set_aes_gcm_128_8_auth(&policy.rtp);
+	  crypto_policy_set_aes_gcm_128_8_auth(&policy.rtcp);
+	  break;
+	case 256:
+	  crypto_policy_set_aes_gcm_256_8_auth(&policy.rtp);
+	  crypto_policy_set_aes_gcm_256_8_auth(&policy.rtcp);
+	  break;
+	}
+#else
+	printf("error: GCM mode only supported when using the OpenSSL crypto engine.\n");
+	return 0;
+#endif
+      } else {
+	switch (key_size) {
+	case 128:
+          crypto_policy_set_rtp_default(&policy.rtp);
+          crypto_policy_set_rtcp_default(&policy.rtcp);
+	  break;
+	case 256:
+          crypto_policy_set_aes_cm_256_hmac_sha1_80(&policy.rtp);
+          crypto_policy_set_rtcp_default(&policy.rtcp);
+	  break;
+	}
+      }
       break;
     case sec_serv_conf:
-      crypto_policy_set_aes_cm_128_null_auth(&policy.rtp);
-      crypto_policy_set_rtcp_default(&policy.rtcp);      
+      if (gcm_on) {
+	  printf("error: GCM mode must always be used with auth enabled\n");
+	  return -1;
+      } else {
+	switch (key_size) {
+	case 128:
+          crypto_policy_set_aes_cm_128_null_auth(&policy.rtp);
+          crypto_policy_set_rtcp_default(&policy.rtcp);      
+	  break;
+	case 256:
+          crypto_policy_set_aes_cm_256_null_auth(&policy.rtp);
+          crypto_policy_set_rtcp_default(&policy.rtcp);      
+	  break;
+	}
+      }
       break;
     case sec_serv_auth:
-      crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtp);
-      crypto_policy_set_rtcp_default(&policy.rtcp);
+      if (gcm_on) {
+#ifdef OPENSSL
+	switch (key_size) {
+	case 128:
+	  crypto_policy_set_aes_gcm_128_8_only_auth(&policy.rtp);
+	  crypto_policy_set_aes_gcm_128_8_only_auth(&policy.rtcp);
+	  break;
+	case 256:
+	  crypto_policy_set_aes_gcm_256_8_only_auth(&policy.rtp);
+	  crypto_policy_set_aes_gcm_256_8_only_auth(&policy.rtcp);
+	  break;
+	}
+#else
+	printf("error: GCM mode only supported when using the OpenSSL crypto engine.\n");
+	return 0;
+#endif
+      } else {
+        crypto_policy_set_null_cipher_hmac_sha1_80(&policy.rtp);
+        crypto_policy_set_rtcp_default(&policy.rtcp);
+      }
       break;
     default:
       printf("error: unknown security service requested\n");
@@ -359,21 +426,21 @@ main (int argc, char *argv[]) {
     /*
      * read key from hexadecimal on command line into an octet string
      */
-    len = hex_string_to_octet_string(key, input_key, MASTER_KEY_LEN*2);
+    len = hex_string_to_octet_string(key, input_key, policy.rtp.cipher_key_len*2);
     
     /* check that hex string is the right length */
-    if (len < MASTER_KEY_LEN*2) {
+    if (len < policy.rtp.cipher_key_len*2) {
       fprintf(stderr, 
 	      "error: too few digits in key/salt "
 	      "(should be %d hexadecimal digits, found %d)\n",
-	      MASTER_KEY_LEN*2, len);
+	      policy.rtp.cipher_key_len*2, len);
       exit(1);    
     } 
-    if (strlen(input_key) > MASTER_KEY_LEN*2) {
+    if (strlen(input_key) > policy.rtp.cipher_key_len*2) {
       fprintf(stderr, 
 	      "error: too many digits in key/salt "
 	      "(should be %d hexadecimal digits, found %u)\n",
-	      MASTER_KEY_LEN*2, (unsigned)strlen(input_key));
+	      policy.rtp.cipher_key_len*2, (unsigned)strlen(input_key));
       exit(1);    
     }
     
@@ -541,7 +608,8 @@ usage(char *string) {
 	 "[-s | -r] dest_ip dest_port\n"
 	 "or     %s -l\n"
 	 "where  -a use message authentication\n"
-	 "       -e use encryption\n"
+	 "       -e <key size> use encryption (use 128 or 256 for key size)\n"
+	 "       -g Use AES-GCM mode (must be used with -e)\n"
 	 "       -k <key>  sets the srtp master key\n"
 	 "       -s act as rtp sender\n"
 	 "       -r act as rtp receiver\n"

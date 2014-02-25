@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -28,6 +28,7 @@
  * John Wehle (john@feith.com)
  * Raymond Chandler <intralanman@gmail.com>
  * Kristin King <kristin.king@quentustech.com>
+ * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
  *
  * mod_voicemail.c -- Voicemail Module
  *
@@ -39,6 +40,9 @@
 #else
 #define TRY_CODE(code) do { status = code; if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) { goto end; } break;} while(status)
 #endif
+
+
+#define xml_safe_free(_x) if (_x) switch_xml_free(_x); _x = NULL
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_voicemail_shutdown);
@@ -151,6 +155,7 @@ struct vm_profile {
 	char *vmain_ext;
 	char *tone_spec;
 	char *storage_dir;
+	switch_bool_t storage_dir_shared;
 	char *callback_dialplan;
 	char *callback_context;
 	char *email_body;
@@ -625,6 +630,8 @@ vm_profile_t *profile_set_config(vm_profile_t *profile)
 						   &profile->tone_spec, "%(1000, 0, 640)", &profile->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "storage-dir", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
 						   &profile->storage_dir, "", &profile->config_str_pool, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "storage-dir-shared", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE,
+						   &profile->storage_dir_shared, SWITCH_FALSE, NULL, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "callback-dialplan", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
 						   &profile->callback_dialplan, "XML", &profile->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(profile->config[i++], "callback-context", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE,
@@ -706,7 +713,8 @@ static vm_profile_t *load_profile(const char *profile_name)
 
 	if ((x_profile = switch_xml_find_child(x_profiles, "profile", "name", profile_name))) {
 		switch_memory_pool_t *pool;
-		int x, count;
+		int x;
+		switch_size_t count;
 		char *errmsg;
 
 		if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
@@ -747,7 +755,7 @@ static vm_profile_t *load_profile(const char *profile_name)
 		}
 
 
-		if (switch_xml_config_parse_event(event, count, SWITCH_FALSE, profile->config) != SWITCH_STATUS_SUCCESS) {
+		if (switch_xml_config_parse_event(event, (int)count, SWITCH_FALSE, profile->config) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to process configuration\n");
 			switch_core_destroy_memory_pool(&pool);
 			goto end;
@@ -1345,16 +1353,16 @@ static int listen_callback(void *pArg, int argc, char **argv, char **columnNames
 
 static char *resolve_id(const char *myid, const char *domain_name, const char *action)
 {
-	switch_xml_t xx_user, xx_domain, xx_domain_root;
+	switch_xml_t xx_user;
 	switch_event_t *params;
 	char *ret = (char *) myid;
 
 	switch_event_create(&params, SWITCH_EVENT_GENERAL);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", action);
 
-	if (switch_xml_locate_user("id", myid, domain_name, NULL, &xx_domain_root, &xx_domain, &xx_user, NULL, params) == SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate_user_merged("id:number-alias", myid, domain_name, NULL, &xx_user, params) == SWITCH_STATUS_SUCCESS) {
 		ret = strdup(switch_xml_attr(xx_user, "id"));
-		switch_xml_free(xx_domain_root);
+		switch_xml_free(xx_user);
 	}
 
 	switch_event_destroy(&params);
@@ -1707,9 +1715,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 
 				while (!ok) {
 
-					if (x_user) {
-						switch_xml_free(x_user);
-					}
+					xml_safe_free(x_user);
 
 					switch_snprintf(macro_buf, sizeof(macro_buf), "phrase:%s:%s", VM_FORWARD_MESSAGE_ENTER_EXTENSION_MACRO, profile->terminator_key);
 					vm_cc[0] = '\0';
@@ -1723,7 +1729,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 					switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 					switch_assert(my_params);
 
-					status = switch_xml_locate_user_merged("id", vm_cc, cbt->domain, NULL, &x_user, my_params);
+					status = switch_xml_locate_user_merged("id:number-alias", vm_cc, cbt->domain, NULL, &x_user, my_params);
 					switch_event_destroy(&my_params);
 				
 					if (status != SWITCH_STATUS_SUCCESS) {
@@ -1762,8 +1768,9 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 							}
 						}
 					}
-				
-					switch_xml_free(x_user);
+
+					xml_safe_free(x_user);
+
 					break;
 				}
 
@@ -1952,9 +1959,6 @@ static void update_mwi(vm_profile_t *profile, const char *id, const char *domain
 	switch_event_fire(&message_event);
 }
 
-
-#define FREE_DOMAIN_ROOT() if (x_user) switch_xml_free(x_user); x_user = NULL
-
 static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *profile, const char *domain_name, const char *id, int auth, const char *uuid_in)
 {
 	vm_check_state_t vm_check_state = VM_CHECK_START;
@@ -2025,7 +2029,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				mypass = NULL;
 				myfolder = "inbox";
 				vm_check_state = VM_CHECK_AUTH;
-				FREE_DOMAIN_ROOT();
+				xml_safe_free(x_user);
 			}
 			break;
 		case VM_CHECK_FOLDER_SUMMARY:
@@ -2439,7 +2443,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "destination_number", caller_profile->destination_number);
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "caller_id_number", caller_id_number);
 
-					if (switch_xml_locate_user_merged("id", myid, domain_name, switch_channel_get_variable(channel, "network_addr"),
+					if (switch_xml_locate_user_merged("id:number-alias", myid, domain_name, switch_channel_get_variable(channel, "network_addr"),
 											   &x_user, params) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", myid, domain_name);
 						ok = 0;
@@ -2523,9 +2527,11 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						convert_ext = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "vm-storage-dir")) {
 						vm_storage_dir = switch_core_session_strdup(session, val);
+					} else if (!strcasecmp(var, "vm-domain-storage-dir")) {
+						storage_dir = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "storage-dir")) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
-										  "Using deprecated 'storage-dir' directory variable: Please use 'vm-storage-dir'.\n");
+										  "Using deprecated 'storage-dir' directory variable: Please use 'vm-domain-storage-dir'.\n");
 						storage_dir = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "timezone")) {
 						switch_channel_set_variable(channel, var, val);
@@ -2590,7 +2596,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				switch_channel_event_set_data(channel, event);
 				switch_event_fire(&event);
 
-				FREE_DOMAIN_ROOT();
+				xml_safe_free(x_user);
 
 				if (auth) {
 					if (!dir_path) {
@@ -2605,9 +2611,16 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						} else if (!zstr(storage_dir)) {
 							dir_path = switch_core_session_sprintf(session, "%s%s%s", storage_dir, SWITCH_PATH_SEPARATOR, myid);
 						} else if (!zstr(profile->storage_dir)) {
-							dir_path =
-								switch_core_session_sprintf(session, "%s%s%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, domain_name,
-															SWITCH_PATH_SEPARATOR, myid);
+							if (profile->storage_dir_shared) {
+								dir_path =
+									switch_core_session_sprintf(session, "%s%s%s%s%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, domain_name,
+																SWITCH_PATH_SEPARATOR, "voicemail",
+																SWITCH_PATH_SEPARATOR, myid);
+							} else {
+								dir_path =
+									switch_core_session_sprintf(session, "%s%s%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, domain_name,
+																SWITCH_PATH_SEPARATOR, myid);
+							}
 						} else {
 							dir_path = switch_core_session_sprintf(session, "%s%svoicemail%s%s%s%s%s%s", SWITCH_GLOBAL_dirs.storage_dir,
 																   SWITCH_PATH_SEPARATOR,
@@ -2634,7 +2647,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 
 			  failed:
 
-				FREE_DOMAIN_ROOT();
+				xml_safe_free(x_user);
 
 				status = switch_ivr_phrase_macro(session, VM_FAIL_AUTH_MACRO, NULL, NULL, NULL);
 				myid = id;
@@ -2677,11 +2690,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 		}
 	}
 
-	if (x_user) {
-		switch_xml_free(x_user);
-		x_user = NULL;
-	}
-
+	xml_safe_free(x_user);
 }
 
 
@@ -2777,9 +2786,11 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 			send_mail++;
 		} else if (!strcasecmp(var, "vm-storage-dir")) {
 			vm_storage_dir = switch_core_strdup(pool, val);
+		} else if (!strcasecmp(var, "vm-domain-storage-dir")) {
+			storage_dir = switch_core_strdup(pool, val);
 		} else if (!strcasecmp(var, "storage-dir")) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
-							  "Using deprecated 'storage-dir' directory variable: Please use 'vm-storage-dir'.\n");
+							  "Using deprecated 'storage-dir' directory variable: Please use 'vm-domain-storage-dir'.\n");
 			storage_dir = switch_core_strdup(pool, val);
 		} else if (!strcasecmp(var, "vm-notify-email-all-messages") && (send_notify = switch_true(val))) {
 			send_mail++;
@@ -2810,7 +2821,11 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	} else if (!zstr(storage_dir)) {
 		dir_path = switch_mprintf("%s%s%s", storage_dir, SWITCH_PATH_SEPARATOR, myid);
 	} else if (!zstr(profile->storage_dir)) {
-		dir_path = switch_mprintf("%s%s%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, domain_name, SWITCH_PATH_SEPARATOR, myid);
+		if (profile->storage_dir_shared) {
+			dir_path = switch_mprintf("%s%s%s%s%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, domain_name, SWITCH_PATH_SEPARATOR, "voicemail", SWITCH_PATH_SEPARATOR, myid);
+		} else {
+			dir_path = switch_mprintf("%s%s%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, domain_name, SWITCH_PATH_SEPARATOR, myid);
+		}
 	} else {
 		dir_path = switch_mprintf("%s%svoicemail%s%s%s%s%s%s", SWITCH_GLOBAL_dirs.storage_dir,
 								  SWITCH_PATH_SEPARATOR,
@@ -2849,7 +2864,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	if (!message_len) {
 		size_t len = 0;
 		if (measure_file_len(file_path, &len) == SWITCH_STATUS_SUCCESS) {
-			message_len = len;
+			message_len = (uint32_t)len;
 		}
 	}
 
@@ -2866,6 +2881,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-File-Path", file_path);
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-Flags", read_flags);
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-Folder", myfolder);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-UUID", use_uuid);
 		switch_event_add_header(message_event, SWITCH_STACK_BOTTOM, "VM-Message-Len", "%u", message_len);
 		switch_event_add_header(message_event, SWITCH_STACK_BOTTOM, "VM-Timestamp", "%lu", (unsigned long) switch_epoch_time_now(NULL));
 
@@ -3345,7 +3361,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	int send_mail = 0;
 	cc_t cc = { 0 };
 	char *read_flags = NORMAL_FLAG_STRING;
-	char *operator_ext = NULL;
+	const char *operator_ext = switch_channel_get_variable(channel, "vm_operator_extension");
 	char buf[2];
 	char key_buf[80];
 	char *greet_path = NULL;
@@ -3387,7 +3403,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		switch_assert(locate_params);
 		switch_event_add_header_string(locate_params, SWITCH_STACK_BOTTOM, "action", "voicemail-lookup");
 
-		if (switch_xml_locate_user_merged("id", id, domain_name, switch_channel_get_variable(channel, "network_addr"),
+		if (switch_xml_locate_user_merged("id:number-alias", id, domain_name, switch_channel_get_variable(channel, "network_addr"),
 										  &x_user, locate_params) == SWITCH_STATUS_SUCCESS) {
 			id = switch_core_session_strdup(session, switch_xml_attr(x_user, "id"));
 
@@ -3408,9 +3424,11 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 						send_mail++;
 					} else if (!strcasecmp(var, "vm-storage-dir")) {
 						vm_storage_dir = switch_core_session_strdup(session, val);
+					} else if (!strcasecmp(var, "vm-domain-storage-dir")) {
+						storage_dir = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "storage-dir")) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
-										  "Using deprecated 'storage-dir' directory variable: Please use 'vm-storage-dir'.\n");
+										  "Using deprecated 'storage-dir' directory variable: Please use 'vm-domain-storage-dir'.\n");
 						storage_dir = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "vm-notify-email-all-messages") && (send_notify = switch_true(val))) {
 						send_mail++;
@@ -3422,7 +3440,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 						vm_enabled = !switch_false(val);
 					} else if (!strcasecmp(var, "vm-message-ext")) {
 						vm_ext = switch_core_session_strdup(session, val);
-					} else if (!strcasecmp(var, "vm-operator-extension")) {
+					} else if (!strcasecmp(var, "vm-operator-extension") && (zstr(operator_ext))) {
 						operator_ext = switch_core_session_strdup(session, val);
 					}
 				}
@@ -3478,7 +3496,11 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	} else if (!zstr(storage_dir)) {
 		dir_path = switch_core_session_sprintf(session, "%s%s%s", storage_dir, SWITCH_PATH_SEPARATOR, id);
 	} else if (!zstr(profile->storage_dir)) {
-		dir_path = switch_core_session_sprintf(session, "%s%s%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, domain_name, SWITCH_PATH_SEPARATOR, id);
+		if (profile->storage_dir_shared) {
+			dir_path = switch_core_session_sprintf(session, "%s%s%s%s%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, domain_name, SWITCH_PATH_SEPARATOR, "voicemail", SWITCH_PATH_SEPARATOR, id);
+		} else {
+			dir_path = switch_core_session_sprintf(session, "%s%s%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, domain_name, SWITCH_PATH_SEPARATOR, id);
+		}
 	} else {
 		dir_path = switch_core_session_sprintf(session, "%s%svoicemail%s%s%s%s%s%s", SWITCH_GLOBAL_dirs.storage_dir,
 											   SWITCH_PATH_SEPARATOR,
@@ -3662,7 +3684,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 
 	if (x_user) {
 		switch_channel_get_variables(channel, &vars);
-		status = deliver_vm(profile, x_user, domain_name, file_path, message_len, read_flags, vars,
+		status = deliver_vm(profile, x_user, domain_name, file_path, (uint32_t)message_len, read_flags, vars,
 							switch_core_session_get_pool(session), caller_id_name, caller_id_number, NULL, SWITCH_FALSE,
 							session ? switch_core_session_get_uuid(session) : NULL, session);
 		switch_event_destroy(&vars);
@@ -3677,8 +3699,11 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 
 			switch_snprintf(duration_str, sizeof(duration_str), "%.2u:%.2u:%.2u", duration.hr, duration.min, duration.sec);
 
+			switch_channel_set_variable(channel, "voicemail_account", id);
+			switch_channel_set_variable(channel, "voicemail_domain", domain_name);
+			switch_channel_set_variable(channel, "voicemail_file_path", file_path);
+			switch_channel_set_variable(channel, "voicemail_read_flags", read_flags);
 			switch_channel_set_variable(channel, "voicemail_message_len", duration_str);
-
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to deliver message\n");
 			TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "deleted", NULL, NULL));
@@ -3688,10 +3713,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 
   end:
 
-	if (x_user) {
-		switch_xml_free(x_user);
-		x_user = NULL;
-	}
+	xml_safe_free(x_user);
 
 	switch_safe_free(file_path);
 
@@ -5688,7 +5710,7 @@ SWITCH_STANDARD_API(vm_fsdb_auth_login_function)
 	}
 
 	switch_event_create(&params, SWITCH_EVENT_GENERAL);
-	if (switch_xml_locate_user_merged("id", id, domain, NULL, &x_user, params) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate_user_merged("id:number-alias", id, domain, NULL, &x_user, params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", id, domain);
 		stream->write_function(stream, "-ERR User not found\n");
 	} else {
@@ -5743,7 +5765,8 @@ SWITCH_STANDARD_API(vm_fsdb_auth_login_function)
 		}
 	}
 
-	switch_xml_free(x_user);
+	xml_safe_free(x_user);
+
 	profile_rwunlock(profile);
 done:
 	switch_core_destroy_memory_pool(&pool);

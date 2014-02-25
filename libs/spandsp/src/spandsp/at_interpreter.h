@@ -38,9 +38,9 @@ modem control commands.
 
 typedef struct at_state_s at_state_t;
 
-typedef int (*at_modem_control_handler_t)(at_state_t *s, void *user_data, int op, const char *num);
-typedef int (*at_tx_handler_t)(at_state_t *s, void *user_data, const uint8_t *buf, size_t len);
-typedef int (*at_class1_handler_t)(at_state_t *s, void *user_data, int direction, int operation, int val);
+typedef int (*at_modem_control_handler_t)(void *user_data, int op, const char *num);
+typedef int (*at_tx_handler_t)(void *user_data, const uint8_t *buf, size_t len);
+typedef int (*at_class1_handler_t)(void *user_data, int direction, int operation, int val);
 
 enum at_rx_mode_e
 {
@@ -172,6 +172,11 @@ SPAN_DECLARE(void) at_set_class1_handler(at_state_t *s, at_class1_handler_t hand
     \param s The AT context.
     \return A pointer to the logging context */
 SPAN_DECLARE(logging_state_t *) at_get_logging_state(at_state_t *s);
+
+
+SPAN_DECLARE(void) at_set_modem_control_handler(at_state_t *s,
+                                                at_modem_control_handler_t modem_control_handler,
+                                                void *modem_control_user_data);
 
 /*! Initialise an AT interpreter context.
     \brief Initialise an AT interpreter context.

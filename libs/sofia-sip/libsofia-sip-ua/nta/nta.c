@@ -2142,6 +2142,7 @@ int nta_agent_add_tport(nta_agent_t *self,
   char const * const * tports = tports_sip;
   int error;
   ta_list ta;
+  char *tps[9] = {0};
 
   if (self == NULL) {
     su_seterrno(EINVAL);
@@ -2187,7 +2188,7 @@ int nta_agent_add_tport(nta_agent_t *self,
   if (url->url_params) {
     if (url_param(url->url_params, "transport", tp, sizeof(tp)) > 0) {
       if (strchr(tp, ',')) {
-		  int i; char *t, *tps[9] = {0};
+		  int i; char *t;
 
 	/* Split tp into transports */
 	for (i = 0, t = tp; t && i < 8; i++) {

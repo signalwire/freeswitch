@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -40,8 +40,6 @@
 #endif
 
 #include <switch.h>
-#include <switch_version.h>
-
 
 /* Picky compiler */
 #ifdef __ICC
@@ -130,6 +128,7 @@ int main(int argc, char *argv[])
 	
 	switch_loadable_module_init(SWITCH_FALSE);
 	switch_loadable_module_load_module("", "CORE_PCM_MODULE", SWITCH_TRUE, &err);
+	switch_loadable_module_load_module("", "CORE_SPEEX_MODULE", SWITCH_TRUE, &err);
 
 	for (i = 0; i < extra_modules_count; i++) {
 		if (switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) extra_modules[i], SWITCH_TRUE, &err) != SWITCH_STATUS_SUCCESS) {

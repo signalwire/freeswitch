@@ -88,7 +88,7 @@ static int iblockingIOCallback(const void *inputBuffer, void *outputBuffer,
 	if (inputBuffer != NULL) {
 		/* retrieve the data for each channel and put it in the ring buffer */
 		for (c = 0; c < data->channelCount; c++) {
-			for (i = 0, j = c; i < framesPerBuffer; j += data->channelCount, i++) {
+			for (i = 0, j = c; i < (int)framesPerBuffer; j += data->channelCount, i++) {
 				chanSamples[i] = inputSamples[j];
 			}
 			if (PaUtil_WriteRingBuffer(&data->inFIFOs[c], chanSamples, numBytes) != numBytes) {
@@ -114,7 +114,7 @@ static int oblockingIOCallback(const void *inputBuffer, void *outputBuffer,
 		for (c = 0; c < data->channelCount; c++) {
 			int numRead = PaUtil_ReadRingBuffer(&data->outFIFOs[c], chanSamples, numBytes);
 			numRead = numRead / sizeof(int16_t);
-			for (i = 0, j = c; i < framesPerBuffer; j += data->channelCount, i++) {
+			for (i = 0, j = c; i < (int)framesPerBuffer; j += data->channelCount, i++) {
 				if (i < numRead) {
 					outputSamples[j] = chanSamples[i];
 				} else {

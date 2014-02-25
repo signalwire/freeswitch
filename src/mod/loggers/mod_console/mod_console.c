@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -248,8 +248,8 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 				DWORD outbytes = 0;
 				SetConsoleTextAttribute(hStdout, COLORS[node->level]);
 				if (log_uuid && !zstr(node->userdata)) {
-					WriteFile(hStdout, node->userdata, strlen(node->userdata), &outbytes, NULL);
-					WriteFile(hStdout, " ", strlen(" "), &outbytes, NULL);
+					WriteFile(hStdout, node->userdata, (DWORD)strlen(node->userdata), &outbytes, NULL);
+					WriteFile(hStdout, " ", 1, &outbytes, NULL);
 				}
 				WriteFile(hStdout, node->data, len, &outbytes, NULL);
 				SetConsoleTextAttribute(hStdout, wOldColorAttrs);

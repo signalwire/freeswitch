@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2002-2012 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <inttypes.h>
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
@@ -31,7 +32,7 @@
 
 #include "utils.h"
 
-#define	BUFFER_LEN		(1<<10)
+#define	BUFFER_LEN		(1 << 10)
 #define LOG_BUFFER_SIZE	1024
 
 static	void	raw_offset_test (const char *filename, int typeminor) ;
@@ -60,7 +61,7 @@ raw_offset_test (const char *filename, int typeminor)
 {	SNDFILE		*sndfile ;
 	SF_INFO		sfinfo ;
 	sf_count_t	start ;
-	int			k, frames ;
+	int			k ;
 
 	print_test_name ("raw_offset_test", filename) ;
 
@@ -68,8 +69,6 @@ raw_offset_test (const char *filename, int typeminor)
 	sfinfo.format		= SF_FORMAT_RAW | typeminor ;
 	sfinfo.channels		= 1 ;
 	sfinfo.frames		= 0 ;
-
-	frames = BUFFER_LEN / sfinfo.channels ;
 
 	sndfile = test_open_file_or_die (filename, SFM_RDWR, &sfinfo, SF_TRUE, __LINE__) ;
 
@@ -86,7 +85,7 @@ raw_offset_test (const char *filename, int typeminor)
 	check_log_buffer_or_die (sndfile, __LINE__) ;
 
 	if (abs (BUFFER_LEN - sfinfo.frames) > 1)
-	{	printf ("\n\nLine %d : Incorrect sample count (%ld should be %d)\n", __LINE__, SF_COUNT_TO_LONG (sfinfo.frames), BUFFER_LEN) ;
+	{	printf ("\n\nLine %d : Incorrect sample count (%" PRId64 " should be %d)\n", __LINE__, sfinfo.frames, BUFFER_LEN) ;
 		dump_log_buffer (sndfile) ;
 		exit (1) ;
 		} ;

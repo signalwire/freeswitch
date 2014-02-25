@@ -1,0 +1,155 @@
+freeswitch(1) -- scalable multi-protocol softswitch
+===================================================
+
+## SYNOPSIS
+
+`freeswitch` [<options>]
+
+## DESCRIPTION
+
+`freeswitch` is a high-performance softswitch that supports many kinds
+of telephony applications.  It's commonly used as a PBX with SIP
+endpoints.
+
+`freeswitch` expects a set of configuration files to exist in
+/etc/freeswitch.  Example configurations can be found in
+/usr/share/freeswitch/conf.
+
+`freeswitch` is a modular system and modules can be loaded at runtime.
+
+`freeswitch` is started in the foreground by default but can also be
+started as a daemon.
+
+## OPTIONS
+
+  * `-h`:
+    Show inline help.
+
+  * `-version`:
+    Print the version and exit.
+
+  * `-nf`:
+    Stay in the foreground (default unless `-nc` is specified).
+
+  * `-reincarnate`:
+    Restart the switch in the event of an uncontrolled exit.
+
+  * `-reincarnate-reexec`:
+    Like `-reincarnate` but cause the switch binary to be run again
+    with execv.
+
+  * `-u` <user>:
+    Run setuid after starting the switch.
+
+  * `-g` <group>:
+    Run setgid after starting the switch.
+
+  * `-core`:
+    Cause the switch to dump a core when crashing; you'll need to
+    ensure your system ulimits allow this, and if you've set `-u` or
+    `-g` you may also need to run:
+
+      sysctl -w fs.suid_dumpable=1
+
+  * `-rp`:
+    Enable realtime priority.
+
+  * `-lp`:
+    Enable low priority.
+
+  * `-np`:
+    Enable normal priority.
+
+  * `-vg`:
+    Run under Valgrind.
+
+  * `-nosql`:
+    Disable the use of SQL for internal switch operations.
+
+  * `-heavy-timer`:
+    Use a more expensive system timer that may be more accurate, but
+    note this may also impose heavier loads on your system.
+
+  * `-nonat`:
+    When the switch starts, it runs checks to determine if it is
+    behind NAT; this flag disables these checks.
+
+  * `-nonatmap`:
+    Disable automatic NAT port mapping.
+
+  * `-nocal`:
+    When the switch starts, it calibrates itself to deviations in the
+    system clock; this flag disables this calibration.
+
+  * `-nort`:
+    Disable use of clock_realtime.
+
+  * `-stop`:
+    Stop the switch if running in the background.
+
+  * `-nc`:
+    Disable the interactive console and cause the switch to go into
+    the background unless `-nf` is also specified.
+
+  * `-ncwait`:
+    Like `-nc` but cause the parent process to wait until the switch
+    is started before exiting.
+
+  * `-c`:
+    Enable the interactive console and stay in the foreground (this is
+    the default).
+
+  * `-base` <basedir>:
+    Set the prefix directory.
+
+  * `-cfgname` <filename>:
+    Set the pathname to the main configuration file.
+
+  * `-conf` <directory>:
+    Set the directory for configuration files.
+
+  * `-log` <directory>:
+    Set the directory for log files.
+
+  * `-run` <directory>:
+    Set the directory for temporary runtime files.
+
+  * `-db` <directory>:
+    Set the directory for internal database files.
+
+  * `-mod` <directory>:
+    Set the directory for runtime modules.
+
+  * `-htdocs` <directory>:
+    Set the directory for htdocs.
+
+  * `-scripts` <directory>:
+    Set the directory for call control scripts.
+
+  * `-temp` <directory>:
+    Set the directory for temporary files.
+
+  * `-grammar` <directory>:
+    Set the directory for grammar files.
+
+  * `-recordings` <directory>:
+    Set the directory for call recordings.
+
+  * `-storage` <directory>:
+    Set the directory for voicemail storage.
+
+  * `-sounds` <directory>:
+    Set the directory for sound files.
+
+## AUTHORS
+
+FreeSWITCH was originally developed by `Anthony Minessale II
+<anthm@freeswitch.org>` with continued development by Anthony and a
+team of active contributors.
+
+This man page and the packaging for Debian was written by `Travis
+Cross <tc@traviscross.com>`.
+
+## SEE ALSO
+
+sysctl(8), ulimit(1posix)

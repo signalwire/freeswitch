@@ -1,3 +1,4 @@
+<include>
   <!-- Preprocessor Variables
        These are introduced when configuration strings must be consistent across modules. 
    -->
@@ -150,3 +151,4 @@
   <X-PRE-PROCESS cmd="set" data="external_tls_port=5081"/>
   <X-PRE-PROCESS cmd="set" data="external_ssl_enable=false"/>
   <X-PRE-PROCESS cmd="set" data="external_ssl_dir=$${base_dir}/conf/ssl"/>
+</include>

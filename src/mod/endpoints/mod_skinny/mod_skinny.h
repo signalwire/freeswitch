@@ -304,6 +304,7 @@ void skinny_line_perform_set_state(const char *file, const char *func, int line,
 #define  skinny_line_set_state(listener, line_instance, call_id, call_state)  skinny_line_perform_set_state(__FILE__, __SWITCH_FUNC__, __LINE__, listener, line_instance, call_id, call_state)
 
 uint32_t skinny_line_get_state(listener_t *listener, uint32_t line_instance, uint32_t call_id);
+uint32_t skinny_line_count_active(listener_t *listener);
 
 switch_status_t skinny_tech_set_codec(private_t *tech_pvt, int force);
 void tech_init(private_t *tech_pvt, skinny_profile_t *profile, switch_core_session_t *session);

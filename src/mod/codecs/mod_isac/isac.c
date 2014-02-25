@@ -2636,8 +2636,8 @@ WebRtc_Word16 WebRtcIsac_SetEncSampRate(
     {
       ISACUBStruct* instUB = &(instISAC->instUB);
       ISACLBStruct* instLB = &(instISAC->instLB);
-      double bottleneckLB;
-      double bottleneckUB;
+      double bottleneckLB = 0;
+      double bottleneckUB = 0;
       WebRtc_Word32 bottleneck = instISAC->bottleneck;
       WebRtc_Word16 codingMode = instISAC->codingMode;
       WebRtc_Word16 frameSizeMs = instLB->ISACencLB_obj.new_framelength / (FS / 1000);

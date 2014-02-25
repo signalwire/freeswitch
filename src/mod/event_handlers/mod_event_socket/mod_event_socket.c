@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -31,7 +31,7 @@
  */
 #include <switch.h>
 #define CMD_BUFLEN 1024 * 1000
-#define MAX_QUEUE_LEN 25000
+#define MAX_QUEUE_LEN 100000
 #define MAX_MISSED 500
 SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown);
@@ -127,6 +127,7 @@ static struct {
 	uint32_t acl_count;
 	uint32_t id;
 	int nat_map;
+	int stop_on_bind_error;
 } prefs;
 
 
@@ -593,9 +594,9 @@ static void send_disconnect(listener_t *listener, const char *message)
 	if (listener->session) {
 		switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\n"
 						"Controlled-Session-UUID: %s\n"
-						"Content-Disposition: disconnect\n" "Content-Length: %d\n\n", switch_core_session_get_uuid(listener->session), mlen);
+						"Content-Disposition: disconnect\n" "Content-Length: %d\n\n", switch_core_session_get_uuid(listener->session), (int)mlen);
 	} else {
-		switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\nContent-Length: %d\n\n", mlen);
+		switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\nContent-Length: %d\n\n", (int)mlen);
 	}
 
 	if (!listener->sock) return;
@@ -965,7 +966,7 @@ SWITCH_STANDARD_API(event_sink_function)
 
 			while (switch_queue_trypop(listener->log_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 				switch_log_node_t *dnode = (switch_log_node_t *) pop;
-				int encode_len = (strlen(dnode->data) * 3) + 1;
+				size_t encode_len = (strlen(dnode->data) * 3) + 1;
 				char *encode_buf = malloc(encode_len);
 
 				switch_assert(encode_buf);
@@ -1131,7 +1132,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 			char *tmp;
 			int pos;
 
-			pos = (ptr - mbuf);
+			pos = (int)(ptr - mbuf);
 			buf_len += block_len;
 			tmp = realloc(mbuf, buf_len);
 			switch_assert(tmp);
@@ -1569,11 +1570,17 @@ static switch_bool_t auth_api_command(listener_t *listener, const char *api_cmd,
 static switch_status_t parse_command(listener_t *listener, switch_event_t **event, char *reply, uint32_t reply_len)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	char *cmd = switch_event_get_header(*event, "command");
+	char *cmd = NULL;
 	char unload_cheat[] = "api bgapi unload mod_event_socket";
 	char reload_cheat[] = "api bgapi reload mod_event_socket";
 
 	*reply = '\0';
+
+	if (!event || !*event || !(cmd = switch_event_get_header(*event, "command"))) {
+		switch_clear_flag_locked(listener, LFLAG_RUNNING);
+		switch_snprintf(reply, reply_len, "-ERR command parse error.");
+		goto done;
+	}
 
 	if (switch_stristr("unload", cmd) && switch_stristr("mod_event_socket", cmd)) {
 		cmd = unload_cheat;
@@ -2288,7 +2295,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			listener->linger_timeout = linger_time;
 			switch_set_flag_locked(listener, LFLAG_LINGER);
 			if (listener->linger_timeout != (time_t) -1) {
-				switch_snprintf(reply, reply_len, "+OK will linger %d seconds", linger_time);
+				switch_snprintf(reply, reply_len, "+OK will linger %d seconds", (int)linger_time);
 			} else {
 				switch_snprintf(reply, reply_len, "+OK will linger");
 			}
@@ -2508,7 +2515,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		for (x = 0; x < prefs.acl_count; x++) {
 			if (!switch_check_network_list_ip(listener->remote_ip, prefs.acl[x])) {
 				const char message[] = "Access Denied, go away.\n";
-				int mlen = strlen(message);
+				int mlen = (int)strlen(message);
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "IP %s Rejected by acl \"%s\"\n", listener->remote_ip,
 								  prefs.acl[x]);
@@ -2734,6 +2741,8 @@ static int config(void)
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", MAX_ACL);
 					}
+				} else if (!strcasecmp(var, "stop-on-bind-error")) {
+					prefs.stop_on_bind_error = switch_true(val) ? 1 : 0;
 				}
 			}
 		}
@@ -2813,6 +2822,10 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		break;
 	  sock_fail:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error! Could not listen on %s:%u\n", prefs.ip, prefs.port);
+		if (prefs.stop_on_bind_error) {
+			prefs.done = 1;
+			goto fail;
+		}
 		switch_yield(100000);
 	}
 

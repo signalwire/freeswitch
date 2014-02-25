@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2012 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** All rights reserved.
 **
@@ -91,6 +91,6 @@ main (void)
 		puts (sf_strerror (file)) ;
 
 	sf_close (file) ;
-	return	 0 ;
+	return 0 ;
 } /* main */
 

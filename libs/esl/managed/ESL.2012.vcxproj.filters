@@ -18,7 +18,7 @@
     <ClCompile Include="..\src\esl_oop.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="esl_wrap.cpp">
+    <ClCompile Include="esl_wrap.2010.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

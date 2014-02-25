@@ -3,9 +3,17 @@ SUBDIRS = . src
 AUTOMAKE_OPTIONS = foreign
 NAME = freeswitch
 
+AM_LIBAPR_CFLAGS := $(shell ./libs/apr/apr-1-config --cflags)
+AM_LIBAPR_CPPFLAGS := $(shell ./libs/apr/apr-1-config --cppflags --includes)
+AM_LIBAPR_LDFLAGS := $(shell ./libs/apr/apr-1-config --ldflags)
+AM_LIBAPR_LIBS := $(subst $(switch_srcdir)/,,$(shell ./libs/apr/apr-1-config \--libs))
+AM_LIBAPU_CPPFLAGS := $(shell ./libs/apr-util/apu-1-config --includes)
+AM_LIBAPU_LDFLAGS := $(shell ./libs/apr-util/apu-1-config --ldflags)
+AM_LIBAPU_LIBS := $(subst $(switch_srcdir)/,,$(shell ./libs/apr-util/apu-1-config \--libs))
+
 AM_CFLAGS   = $(SWITCH_AM_CFLAGS) $(SWITCH_ANSI_CFLAGS) 
 AM_CPPFLAGS = $(SWITCH_AM_CXXFLAGS) -Ilibs/sofia-sip/libsofia-sip-ua/sdp -Ilibs/sofia-sip/libsofia-sip-ua/su
-AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS)
+AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS) $(AM_LIBAPR_LDFLAGS) $(AM_LIBAPU_LDFLAGS)
 
 DEFAULT_SOUNDS=en-us-callie-8000
 
@@ -101,8 +109,8 @@ $(RECURSIVE_TARGETS): freeswitch
 	   exit 1; \
 	fi ;
 
-CORE_CFLAGS  = `$(switch_builddir)/libs/apr/apr-1-config --cflags --cppflags --includes`
-CORE_CFLAGS += `$(switch_builddir)/libs/apr-util/apu-1-config --includes`
+CORE_CFLAGS  = $(AM_LIBAPR_CFLAGS) $(AM_LIBAPR_CPPFLAGS)
+CORE_CFLAGS += $(AM_LIBAPU_CPPFLAGS)
 CORE_CFLAGS += -I$(switch_srcdir)/libs/libtpl-1.5/src
 CORE_CFLAGS += -I$(switch_srcdir)/libs/stfu
 CORE_CFLAGS += -I$(switch_builddir)/libs/sqlite
@@ -112,8 +120,9 @@ CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/spandsp/src -I$(switch_srcdir)/libs/tiff-4.0.2/libtiff
 
+APR_LIBS   = $(AM_LIBAPU_LIBS) $(AM_LIBAPR_LIBS)
 CORE_LIBS  = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
-CORE_LIBS += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la
+CORE_LIBS += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la libs/speex/libspeex/libspeex.la
 
 if ENABLE_SRTP
 CORE_CFLAGS += -DENABLE_SRTP
@@ -147,7 +156,7 @@ endif
 lib_LTLIBRARIES	         = libfreeswitch.la
 libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(AM_CFLAGS)
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS)
-libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(PLATFORM_CORE_LIBS)
+libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(PLATFORM_CORE_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
 
 if HAVE_ODBC
@@ -202,6 +211,7 @@ library_include_HEADERS = \
 	src/include/switch_xml.h \
 	src/include/switch_xml_config.h \
 	src/include/switch_cpp.h \
+	src/include/switch_curl.h \
 	src/include/switch_json.h \
 	libs/stfu/stfu.h \
 	libs/libteletone/src/libteletone_detect.h \
@@ -242,6 +252,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_core_rwlock.c \
 	src/switch_core_port_allocator.c \
 	src/switch_core.c \
+	src/switch_version.c \
 	src/switch_core_media.c \
 	src/switch_sdp.c \
 	src/switch_scheduler.c \
@@ -272,6 +283,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_limit.c \
 	src/g711.c \
 	src/switch_pcm.c \
+	src/switch_speex.c \
 	src/switch_profile.c \
 	src/switch_json.c \
 	src/switch_curl.c \
@@ -297,8 +309,6 @@ libfreeswitch_la_SOURCES = \
 if ENABLE_CPP
 libfreeswitch_la_SOURCES += src/switch_cpp.cpp
 endif
-
-$(top_builddir)/libfreeswitch_la-switch_console.lo: src/include/switch_version.h
 
 $(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(switch_builddir)/quiet_libtool $(switch_builddir)/modules.conf  
 
@@ -334,7 +344,7 @@ endif
 fs_encode_SOURCES = src/fs_encode.c
 fs_encode_CFLAGS  = $(AM_CFLAGS)
 fs_encode_LDFLAGS = $(AM_LDFLAGS)
-fs_encode_LDADD   = libfreeswitch.la $(CORE_LIBS)
+fs_encode_LDADD   = libfreeswitch.la $(CORE_LIBS) $(APR_LIBS)
 
 if HAVE_ODBC
 fs_encode_LDADD += $(ODBC_LIB_FLAGS)
@@ -347,7 +357,7 @@ endif
 tone2wav_SOURCES = src/tone2wav.c
 tone2wav_CFLAGS  = $(AM_CFLAGS)
 tone2wav_LDFLAGS = $(AM_LDFLAGS)
-tone2wav_LDADD   = libfreeswitch.la $(CORE_LIBS)
+tone2wav_LDADD   = libfreeswitch.la $(CORE_LIBS) $(APR_LIBS)
 
 if HAVE_ODBC
 tone2wav_LDADD += $(ODBC_LIB_FLAGS)
@@ -429,6 +439,8 @@ $(switch_builddir)/quiet_libtool: $(switch_builddir)/libtool
 build/print_git_revision: build/print_git_revision.c
 	$(CC) -o $@ $<
 
+src/switch_version.lo: src/include/switch_version.h
+
 src/include/switch_version.h: src/include/switch_version.h.in Makefile build/print_git_revision $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
 	@cat $< > $@; \
 	if [ -d .git ] && [ -n "$$(which git)" ]; then \
@@ -469,18 +481,17 @@ libs/apr/Makefile: libs/apr/Makefile.in libs/apr/config.status libs/apr libs/apr
 	@$(TOUCH_TARGET)
 
 libs/apr/libapr-1.la: libs/apr/Makefile libs/apr/.update
-	touch src/include/switch.h
-	@cd libs/apr && $(MAKE)
-	@$(TOUCH_TARGET)
+	@if [ $(MAKELEVEL) = 0 -o -z "`echo "$(MAKEARGS)" | grep  "j"`" ] ; then touch src/include/switch.h; cd libs/apr && $(MAKE) $(MFLAGS) && touch libapr-1.la; fi
 
-libs/apr-util/libaprutil-1.la: libs/apr-util libs/apr-util/.update libs/apr/libapr-1.la
-	touch src/include/switch.h
-	@cd libs/apr-util && $(MAKE)
-	@$(TOUCH_TARGET)
+libs/apr-util/libaprutil-1.la: libs/apr/libapr-1.la libs/apr-util libs/apr-util/.update
+	@if [ $(MAKELEVEL) = 0 -o -z "`echo "$(MAKEARGS)" | grep  "j"`" ] ; then touch src/include/switch.h; cd libs/apr-util && $(MAKE) $(MFLAGS) && touch libaprutil-1.la; fi
+
+libs/speex/libspeex/libspeex.la:
+	@echo 
 
 libs/speex/libspeex/libspeexdsp.la: libs/speex/.update
 	touch src/include/switch.h
-	@cd libs/speex && $(MAKE)
+	@if [ $(MAKELEVEL) = 0 -o -z "`echo "$(MAKEARGS)" | grep  "j"`" ] ; then cd libs/speex && $(MAKE) $(MFLAGS); fi
 	@$(TOUCH_TARGET)
 
 libs/sqlite/libsqlite3.la: libs/sqlite libs/sqlite/Makefile libs/sqlite/.update
@@ -595,7 +606,7 @@ nodepends: .nodepends
 yesdepends:
 	rm .nodepends
 
-core: $(switch_builddir)/modules.conf $(CORE_LIBS)
+core: $(switch_builddir)/modules.conf src/include/switch_version.h $(CORE_LIBS) 
 	$(MAKE) $(AM_MAKEFLAGS) libfreeswitch.la
 
 distclean: clean
@@ -641,13 +652,14 @@ pristine:
 	git clean -fdx
 	git reset --hard
 
-update-clean: clean libs/openzap/Makefile python-reconf
+update-clean: clean libs/openzap/Makefile python-reconf lua-reconf spandsp-reconf srtp-reconf
 	cd libs/sofia-sip && $(MAKE) clean
 	cd libs/openzap && $(MAKE) clean
 	cd libs/portaudio && $(MAKE) clean
 	cd libs/speex && $(MAKE) clean
 	cd libs/esl && $(MAKE) clean
 	cd libs/sqlite && $(MAKE) clean
+	cd libs/srtp && $(MAKE) clean
 
 swigall:
 	@echo reswigging all
@@ -677,6 +689,10 @@ pa-reconf:
 	cd libs/portaudio && sh ./configure.gnu
 	$(MAKE) mod_portaudio-clean
 
+srtp-reconf:
+	cd libs/srtp && $(MAKE) clean
+	cd libs/srtp && sh ./configure.gnu
+
 oz-reconf:
 	cd libs/openzap && $(MAKE) clean
 	cd libs/openzap && autoreconf -fi
@@ -699,6 +715,10 @@ sofia-reconf:
 	cd libs/sofia-sip && sh ./autogen.sh
 	cd libs/sofia-sip && $(MAKE) clean
 	cd libs/sofia-sip && ./configure --prefix=$(prefix) --with-pic --with-glib=no --disable-shared
+
+lua-reconf:
+	cd src/mod/languages/mod_lua/lua && make clean
+	cd src/mod/languages/mod_lua && make clean
 
 cluecon:
 	@clear
@@ -761,6 +781,7 @@ eclean: clean
 	rm -f *.tar *.tgz *.gz 
 
 megaclean: eclean modclean
+	rm -f `find ./libs -name \*.o`
 	rm -f `find ./libs -name \*.la`
 
 libclean:

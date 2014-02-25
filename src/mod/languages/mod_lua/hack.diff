@@ -1,38 +1,56 @@
---- mod_lua_wrap.cpp.orig	2010-09-05 16:39:26.000000000 +0200
-+++ mod_lua_wrap.cpp	2010-09-05 16:39:44.000000000 +0200
-@@ -4913,7 +4913,7 @@
-   
+--- mod_lua_wrap.cpp.orig	2013-11-13 07:48:40.587304736 +0500
++++ mod_lua_wrap.cpp	2013-11-13 07:43:09.059309154 +0500
+@@ -6427,7 +6427,7 @@
+   SWIG_check_num_args("LUA::Session",0,0)
    result = (LUA::Session *)new LUA::Session();
    SWIG_arg=0;
 -  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; 
 +  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; result->setLUA(L);
    return SWIG_arg;
    
- fail:
-@@ -4934,7 +4934,7 @@
-   arg2=(CoreSession *)SWIG_MustGetPtr(L,2,SWIGTYPE_p_CoreSession,0,2,"new_Session");
+   if(0) SWIG_fail;
+@@ -6455,7 +6455,7 @@
+   
    result = (LUA::Session *)new LUA::Session(arg1,arg2);
    SWIG_arg=0;
 -  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; 
 +  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; result->setLUA(L);
    return SWIG_arg;
    
- fail:
-@@ -4952,7 +4952,7 @@
-   arg1 = (char*)lua_tostring(L, 1);
+   if(0) SWIG_fail;
+@@ -6476,7 +6476,7 @@
+   arg1 = (char *)lua_tostring(L, 1);
    result = (LUA::Session *)new LUA::Session(arg1);
    SWIG_arg=0;
 -  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; 
 +  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; result->setLUA(L);
    return SWIG_arg;
    
- fail:
-@@ -4970,7 +4970,7 @@
-   arg1=(switch_core_session_t *)SWIG_MustGetPtr(L,1,SWIGTYPE_p_switch_core_session_t,0,1,"new_Session");
+   if(0) SWIG_fail;
+@@ -6501,7 +6501,7 @@
+   
    result = (LUA::Session *)new LUA::Session(arg1);
    SWIG_arg=0;
 -  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; 
 +  SWIG_NewPointerObj(L,result,SWIGTYPE_p_LUA__Session,1); SWIG_arg++; result->setLUA(L);
    return SWIG_arg;
    
- fail:
+   if(0) SWIG_fail;
+@@ -7913,7 +7913,7 @@
+ }
+ #endif
+ 
+-static const struct luaL_reg swig_commands[] = {
++static const struct luaL_Reg swig_commands[] = {
+     { "setGlobalVariable", _wrap_setGlobalVariable},
+     { "getGlobalVariable", _wrap_getGlobalVariable},
+     { "consoleLog", _wrap_consoleLog},
+@@ -8325,7 +8325,7 @@
+ {
+   int i;
+   /* start with global table */
+-  lua_pushvalue(L,LUA_GLOBALSINDEX);
++  lua_pushglobaltable(L);
+   /* SWIG's internal initalisation */
+   SWIG_InitializeModule((void*)L);
+   SWIG_PropagateClientData();

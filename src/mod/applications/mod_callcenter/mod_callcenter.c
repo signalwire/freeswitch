@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -425,6 +425,8 @@ struct cc_queue {
 
 	char *strategy;
 	char *moh;
+	char *announce;
+	uint32_t announce_freq;
 	char *record_template;
 	char *time_base_score;
 
@@ -536,6 +538,8 @@ cc_queue_t *queue_set_config(cc_queue_t *queue)
 	 */
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "strategy", SWITCH_CONFIG_STRING, 0, &queue->strategy, "longest-idle-agent", &queue->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "moh-sound", SWITCH_CONFIG_STRING, 0, &queue->moh, NULL, &queue->config_str_pool, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "announce-sound", SWITCH_CONFIG_STRING, 0, &queue->announce, NULL, &queue->config_str_pool, NULL, NULL);
+	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "announce-frequency", SWITCH_CONFIG_INT, 0, &queue->announce_freq, 0, &config_int_0_86400, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "record-template", SWITCH_CONFIG_STRING, 0, &queue->record_template, NULL, &queue->config_str_pool, NULL, NULL);
 	SWITCH_CONFIG_SET_ITEM(queue->config[i++], "time-base-score", SWITCH_CONFIG_STRING, 0, &queue->time_base_score, "queue", &queue->config_str_pool, NULL, NULL);
 
@@ -661,11 +665,17 @@ static cc_queue_t *load_queue(const char *queue_name)
 	cc_queue_t *queue = NULL;
 	switch_xml_t x_queues, x_queue, cfg, xml;
 	switch_event_t *event = NULL;
+	switch_event_t *params = NULL;
 
-	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, NULL))) {
+	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
+	switch_assert(params);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "CC-Queue", queue_name);
+
+	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, params))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
-		return queue;
+		goto end;
 	}
+
 	if (!(x_queues = switch_xml_child(cfg, "queues"))) {
 		goto end;
 	}
@@ -689,7 +699,7 @@ static cc_queue_t *load_queue(const char *queue_name)
 		queue_set_config(queue);
 
 		/* Add the params to the event structure */
-		count = switch_event_import_xml(switch_xml_child(x_queue, "param"), "name", "value", &event);
+		count = (int)switch_event_import_xml(switch_xml_child(x_queue, "param"), "name", "value", &event);
 
 		if (switch_xml_config_parse_event(event, count, SWITCH_FALSE, queue->config) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to process configuration\n");
@@ -716,6 +726,9 @@ end:
 	}
 	if (event) {
 		switch_event_destroy(&event);
+	}
+	if (params) {
+		switch_event_destroy(&params);
 	}
 	return queue;
 }
@@ -797,6 +810,7 @@ int cc_queue_count(const char *queue)
 
 cc_status_t cc_agent_add(const char *agent, const char *type)
 {
+	switch_event_t *event;
 	cc_status_t result = CC_STATUS_SUCCESS;
 	char *sql;
 
@@ -818,6 +832,14 @@ cc_status_t cc_agent_add(const char *agent, const char *type)
 				agent, type, cc_agent_status2str(CC_AGENT_STATUS_LOGGED_OUT), cc_agent_state2str(CC_AGENT_STATE_WAITING));
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
+		
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-Type", type);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-add");
+			switch_event_fire(&event);
+		}
+
 	} else {
 		result = CC_STATUS_AGENT_INVALID_TYPE;
 		goto done;
@@ -986,6 +1008,13 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 		switch_safe_free(sql);
 
 		result = CC_STATUS_SUCCESS;
+
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CALLCENTER_EVENT) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Action", "agent-contact-change");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "CC-Agent-Contact", value);
+			switch_event_fire(&event);
+		}
 	} else if (!strcasecmp(key, "ready_time")) {
 		sql = switch_mprintf("UPDATE agents SET ready_time = '%ld', system = 'single_box' WHERE name = '%q'", atol(value), agent);
 		cc_execute_sql(NULL, sql, NULL);
@@ -1249,13 +1278,74 @@ end:
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t load_tier(const char *queue, const char *agent, const char *level, const char *position)
+{
+	/* Hack to check if an tier already exist */
+	if (cc_tier_update("unknown", "unknown", queue, agent) == CC_STATUS_TIER_NOT_FOUND) {
+			if (level && position) {
+				cc_tier_add(queue, agent, cc_tier_state2str(CC_TIER_STATE_READY), atoi(level), atoi(position));
+			} else {
+				/* default to level 1 and position 1 within the level */
+				cc_tier_add(queue, agent, cc_tier_state2str(CC_TIER_STATE_READY), 0, 0);
+			}
+	} else {
+		if (level) {
+			cc_tier_update("level", level, queue, agent);
+		}
+		if (position) {
+			cc_tier_update("position", position, queue, agent);
+		}
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t load_tiers(switch_bool_t load_all, const char *queue_name, const char *agent_name)
+{
+	switch_xml_t x_tiers, x_tier, cfg, xml;
+	switch_status_t result = SWITCH_STATUS_FALSE;
+
+	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!(x_tiers = switch_xml_child(cfg, "tiers"))) {
+		goto end;
+	}
+
+	/* Importing from XML config Agent Tiers */
+	for (x_tier = switch_xml_child(x_tiers, "tier"); x_tier; x_tier = x_tier->next) {
+		const char *agent = switch_xml_attr(x_tier, "agent");
+		const char *queue = switch_xml_attr(x_tier, "queue");
+		const char *level = switch_xml_attr(x_tier, "level");
+		const char *position = switch_xml_attr(x_tier, "position");
+		if (load_all == SWITCH_TRUE) {
+			result = load_tier(queue, agent, level, position);
+		} else if (!zstr(agent_name) && !zstr(queue_name) && !strcasecmp(agent, agent_name) && !strcasecmp(queue, queue_name)) {
+			result = load_tier(queue, agent, level, position);
+		} else if (zstr(agent_name) && !strcasecmp(queue, queue_name)) {
+			result = load_tier(queue, agent, level, position);
+		} else if (zstr(queue_name) && !strcasecmp(agent, agent_name)) {
+			result = load_tier(queue, agent, level, position);
+		}
+	}
+
+end:
+
+	if (xml) {
+		switch_xml_free(xml);
+	}
+
+	return result;
+}
+
 static switch_status_t load_config(void)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_xml_t cfg, xml, settings, param, x_queues, x_queue, x_agents, x_agent, x_tiers, x_tier;
+	switch_xml_t cfg, xml, settings, param, x_queues, x_queue, x_agents, x_agent;
 	switch_cache_db_handle_t *dbh = NULL;
 	char *sql = NULL;
-	
+
 	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
 		status = SWITCH_STATUS_TERM;
@@ -1323,32 +1413,7 @@ static switch_status_t load_config(void)
 	}
 
 	/* Importing from XML config Agent Tiers */
-	if ((x_tiers = switch_xml_child(cfg, "tiers"))) {
-		for (x_tier = switch_xml_child(x_tiers, "tier"); x_tier; x_tier = x_tier->next) {
-			const char *agent = switch_xml_attr(x_tier, "agent");
-			const char *queue_name = switch_xml_attr(x_tier, "queue");
-			const char *level = switch_xml_attr(x_tier, "level");
-			const char *position = switch_xml_attr(x_tier, "position");
-			if (agent && queue_name) {
-				/* Hack to check if an tier already exist */
-				if (cc_tier_update("unknown", "unknown", queue_name, agent) == CC_STATUS_TIER_NOT_FOUND) {
-					if (level && position) {
-						cc_tier_add(queue_name, agent, cc_tier_state2str(CC_TIER_STATE_READY), atoi(level), atoi(position));
-					} else {
-						/* default to level 1 and position 1 within the level */
-						cc_tier_add(queue_name, agent, cc_tier_state2str(CC_TIER_STATE_READY), 0, 0);
-					}
-				} else {
-					if (level) {
-						cc_tier_update("level", level, queue_name, agent);
-					}
-					if (position) {
-						cc_tier_update("position", position, queue_name, agent);
-					}
-				}
-			}
-		}
-	}
+	load_tiers(SWITCH_TRUE, NULL, NULL);
 
 end:
 	switch_mutex_unlock(globals.mutex);
@@ -1431,13 +1496,24 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 	/* CallBack Mode */
 	if (!strcasecmp(h->agent_type, CC_AGENT_TYPE_CALLBACK)) {
 		switch_channel_t *member_channel = switch_core_session_get_channel(member_session);
-		char *cid_name = NULL;
+		const char *cid_name = NULL;
+		char *cid_name_freeable = NULL;
+		const char *cid_number = NULL;
 		const char *cid_name_prefix = NULL;
-		if ((cid_name_prefix = switch_channel_get_variable(member_channel, "cc_outbound_cid_name_prefix"))) {
-			cid_name = switch_mprintf("%s%s", cid_name_prefix, h->member_cid_name);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Setting outbound caller_id_name to: %s\n", cid_name);
-		}
 
+		if ((cid_name_prefix = switch_channel_get_variable(member_channel, "cc_outbound_cid_name_prefix"))) {
+			cid_name_freeable = switch_mprintf("%s%s", cid_name_prefix, h->member_cid_name);
+			cid_name = cid_name_freeable;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Setting outbound caller_id_name to: %s\n", cid_name);
+		} else {
+			if (!(cid_name = switch_channel_get_variable(member_channel, "effective_caller_id_name"))) {
+				cid_name = h->member_cid_name;
+			}
+
+			if (!(cid_number = switch_channel_get_variable(member_channel, "effective_caller_id_number"))) {
+				cid_number = h->member_cid_number;
+			}
+		}
 		switch_event_create(&ovars, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_queue", "%s", h->queue_name);
 		switch_event_add_header(ovars, SWITCH_STACK_BOTTOM, "cc_member_uuid", "%s", h->member_uuid);
@@ -1455,11 +1531,11 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		t_agent_called = local_epoch_time_now(NULL);
 
 		dialstr = switch_channel_expand_variables(member_channel, h->originate_string);
-		status = switch_ivr_originate(NULL, &agent_session, &cause, dialstr, 60, NULL, cid_name ? cid_name : h->member_cid_name, h->member_cid_number, NULL, ovars, SOF_NONE, NULL);
+		status = switch_ivr_originate(NULL, &agent_session, &cause, dialstr, 60, NULL, cid_name ? cid_name : h->member_cid_name, cid_number ? cid_number : h->member_cid_number, NULL, ovars, SOF_NONE, NULL);
 		if (dialstr != h->originate_string) {
 			switch_safe_free(dialstr);
 		}
-		switch_safe_free(cid_name);
+		switch_safe_free(cid_name_freeable);
 
 		switch_event_destroy(&ovars);
 	/* UUID Standby Mode */
@@ -1584,7 +1660,7 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 			if (atoi(res) == 0) {
 				goto done;
 			}
-			switch_core_session_hupall_matching_var("cc_member_pre_answer_uuid", h->member_uuid, SWITCH_CAUSE_ORIGINATOR_CANCEL);
+			switch_core_session_hupall_matching_var("cc_member_pre_answer_uuid", h->member_uuid, SWITCH_CAUSE_LOSE_RACE);
 
 		}
 		t_agent_answered = local_epoch_time_now(NULL);
@@ -1877,11 +1953,11 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 		if (cbt->tier_rule_no_agent_no_wait == SWITCH_TRUE && cbt->tier_agent_available == 0) {
 			cbt->tier = atoi(agent_tier_level);
 			/* Multiple the tier level by the tier wait time */
-		} else if (cbt->tier_rule_wait_multiply_level == SWITCH_TRUE && (long) local_epoch_time_now(NULL) - atol(cbt->member_joined_epoch) >= atoi(agent_tier_level) * cbt->tier_rule_wait_second) {
+		} else if (cbt->tier_rule_wait_multiply_level == SWITCH_TRUE && (long) local_epoch_time_now(NULL) - atol(cbt->member_joined_epoch) >= atoi(agent_tier_level) * (int)cbt->tier_rule_wait_second) {
 			cbt->tier = atoi(agent_tier_level);
 			cbt->tier_agent_available = 0;
 			/* Just check if joined is bigger than next tier wait time */
-		} else if (cbt->tier_rule_wait_multiply_level == SWITCH_FALSE && (long) local_epoch_time_now(NULL) - atol(cbt->member_joined_epoch) >= cbt->tier_rule_wait_second) {
+		} else if (cbt->tier_rule_wait_multiply_level == SWITCH_FALSE && (long) local_epoch_time_now(NULL) - atol(cbt->member_joined_epoch) >= (int)cbt->tier_rule_wait_second) {
 			cbt->tier = atoi(agent_tier_level);
 			cbt->tier_agent_available = 0;
 		} else {
@@ -2008,8 +2084,6 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 				return 1;
 			}
 	}
-
-	return 0;
 }
 
 static int members_callback(void *pArg, int argc, char **argv, char **columnNames)
@@ -2292,6 +2366,8 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 	struct member_thread_helper *m = (struct member_thread_helper *) obj;
 	switch_core_session_t *member_session = switch_core_session_locate(m->member_session_uuid);
 	switch_channel_t *member_channel = NULL;
+	switch_time_t last_announce = local_epoch_time_now(NULL);
+	switch_bool_t announce_valid = SWITCH_TRUE;
 
 	if (member_session) {
 		member_channel = switch_core_session_get_channel(member_session);
@@ -2306,22 +2382,27 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 
 	while(switch_channel_ready(member_channel) && m->running && globals.running) {
 		cc_queue_t *queue = NULL;
+		switch_time_t time_now = local_epoch_time_now(NULL);
 
 		if (!m->queue_name || !(queue = get_queue(m->queue_name))) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_WARNING, "Queue %s not found\n", m->queue_name);
 			break;
 		}
 		/* Make the Caller Leave if he went over his max wait time */
-		if (queue->max_wait_time > 0 && queue->max_wait_time <= local_epoch_time_now(NULL) - m->t_member_called) {
+		if (queue->max_wait_time > 0 && queue->max_wait_time <=  time_now - m->t_member_called) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> in queue '%s' reached max wait time\n", m->member_cid_name, m->member_cid_number, m->queue_name);
 			m->member_cancel_reason = CC_MEMBER_CANCEL_REASON_TIMEOUT;
 			switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
 		}
 
-		if (queue->max_wait_time_with_no_agent > 0 && queue->last_agent_exist_check > queue->last_agent_exist) {
+		/* Check if max wait time no agent is Active AND if there is no Agent AND if the last agent check was after the member join */
+		if (queue->max_wait_time_with_no_agent > 0 && queue->last_agent_exist_check > queue->last_agent_exist && m->t_member_called <= queue->last_agent_exist_check) {
+			/* Check if the time without agent is bigger or equal than out threshold */
 			if (queue->last_agent_exist_check - queue->last_agent_exist >= queue->max_wait_time_with_no_agent) {
+				/* Check for grace period with no agent when member join */
 				if (queue->max_wait_time_with_no_agent_time_reached > 0) {
-					if (queue->last_agent_exist_check - m->t_member_called >= queue->max_wait_time_with_no_agent + queue->max_wait_time_with_no_agent_time_reached) {
+					/* Check if the last agent check was after the member join, and we waited atless the extra time  */
+					if (queue->last_agent_exist_check - m->t_member_called >= queue->max_wait_time_with_no_agent_time_reached + queue->max_wait_time_with_no_agent) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_DEBUG, "Member %s <%s> in queue '%s' reached max wait of %d sec. with no agent plus join grace period of %d sec.\n", m->member_cid_name, m->member_cid_number, m->queue_name, queue->max_wait_time_with_no_agent, queue->max_wait_time_with_no_agent_time_reached);
 						m->member_cancel_reason = CC_MEMBER_CANCEL_REASON_NO_AGENT_TIMEOUT;
 						switch_channel_set_flag_value(member_channel, CF_BREAK, 2);
@@ -2349,7 +2430,24 @@ void *SWITCH_THREAD_FUNC cc_member_thread_run(switch_thread_t *thread, void *obj
 		 */
 
 		/* If Agent Logoff, we might need to recalculare score based on skill */
-		/* Play Announcement in order */
+		/* Play the periodic announcement if it is time to do so */
+		if (announce_valid == SWITCH_TRUE && queue->announce && queue->announce_freq > 0 &&
+			queue->announce_freq <= time_now - last_announce) {
+			switch_status_t status = SWITCH_STATUS_FALSE;
+			/* Stop previous announcement in case it's still running */
+			switch_ivr_stop_displace_session(member_session, queue->announce);
+			/* Play the announcement */
+			status = switch_ivr_displace_session(member_session, queue->announce, 0, NULL);
+
+			if (status != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member_session), SWITCH_LOG_WARNING,
+								  "Couldn't play announcement '%s'\n", queue->announce);
+				announce_valid = SWITCH_FALSE;
+			}
+			else {
+				last_announce = time_now;
+			}
+		}
 
 		queue_rwunlock(queue);
 
@@ -2736,6 +2834,7 @@ static int list_result_callback(void *pArg, int argc, char **argv, char **column
 #define CC_CONFIG_API_SYNTAX "callcenter_config <target> <args>,\n"\
 "\tcallcenter_config agent add [name] [type] | \n" \
 "\tcallcenter_config agent del [name] | \n" \
+"\tcallcenter_config agent reload [name] | \n" \
 "\tcallcenter_config agent set status [agent_name] [status] | \n" \
 "\tcallcenter_config agent set state [agent_name] [state] | \n" \
 "\tcallcenter_config agent set contact [agent_name] [contact] | \n" \
@@ -2752,6 +2851,7 @@ static int list_result_callback(void *pArg, int argc, char **argv, char **column
 "\tcallcenter_config tier set level [queue_name] [agent_name] [level] | \n" \
 "\tcallcenter_config tier set position [queue_name] [agent_name] [position] | \n" \
 "\tcallcenter_config tier del [queue_name] [agent_name] | \n" \
+"\tcallcenter_config tier reload [queue_name] [agent_name] | \n" \
 "\tcallcenter_config tier list | \n" \
 "\tcallcenter_config queue load [queue_name] | \n" \
 "\tcallcenter_config queue unload [queue_name] | \n" \
@@ -2829,6 +2929,22 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				const char *agent = argv[0 + initial_argc];
 				switch (cc_agent_del(agent)) {
 					case CC_STATUS_SUCCESS:
+						stream->write_function(stream, "%s", "+OK\n");
+						break;
+					default:
+						stream->write_function(stream, "%s", "-ERR Unknown Error!\n");
+						goto done;
+				}
+			}
+
+		} else if (action && !strcasecmp(action, "reload")) {
+			if (argc-initial_argc < 1) {
+				stream->write_function(stream, "%s", "-ERR Invalid!\n");
+				goto done;
+			} else {
+				const char *agent = argv[0 + initial_argc];
+				switch (load_agent(agent)) {
+					case SWITCH_STATUS_SUCCESS:
 						stream->write_function(stream, "%s", "+OK\n");
 						break;
 					default:
@@ -2993,6 +3109,28 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				const char *agent = argv[1 + initial_argc];
 				switch (cc_tier_del(queue, agent)) {
 					case CC_STATUS_SUCCESS:
+						stream->write_function(stream, "%s", "+OK\n");
+						break;
+					default:
+						stream->write_function(stream, "%s", "-ERR Unknown Error!\n");
+						goto done;
+
+				}
+			}
+
+		} else if (action && !strcasecmp(action, "reload")) {
+			if (argc-initial_argc < 1) {
+				stream->write_function(stream, "%s", "-ERR Invalid!\n");
+				goto done;
+			} else {
+				const char *queue = argv[0 + initial_argc];
+				const char *agent = argv[1 + initial_argc];
+				switch_bool_t load_all = SWITCH_FALSE;
+				if (!strcasecmp(queue, "all")) {
+					load_all = SWITCH_TRUE;
+				}
+				switch (load_tiers(load_all, queue, agent)) {
+					case SWITCH_STATUS_SUCCESS:
 						stream->write_function(stream, "%s", "+OK\n");
 						break;
 					default:
@@ -3194,6 +3332,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 
 	switch_console_set_complete("add callcenter_config agent add");
 	switch_console_set_complete("add callcenter_config agent del");
+	switch_console_set_complete("add callcenter_config agent reload");
 	switch_console_set_complete("add callcenter_config agent set status");
 	switch_console_set_complete("add callcenter_config agent set state");
 	switch_console_set_complete("add callcenter_config agent set uuid");
@@ -3207,6 +3346,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 
 	switch_console_set_complete("add callcenter_config tier add");
 	switch_console_set_complete("add callcenter_config tier del");
+	switch_console_set_complete("add callcenter_config tier reload");
 	switch_console_set_complete("add callcenter_config tier set state");
 	switch_console_set_complete("add callcenter_config tier set level");
 	switch_console_set_complete("add callcenter_config tier set position");

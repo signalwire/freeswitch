@@ -116,12 +116,24 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\libsndfile\src\aiff.c" />
+    <ClCompile Include="..\..\libsndfile\src\alac.c" />
+    <ClCompile Include="..\..\libsndfile\src\ALAC\ag_dec.c" />
+    <ClCompile Include="..\..\libsndfile\src\ALAC\ag_enc.c" />
+    <ClCompile Include="..\..\libsndfile\src\ALAC\ALACBitUtilities.c" />
+    <ClCompile Include="..\..\libsndfile\src\ALAC\alac_decoder.c" />
+    <ClCompile Include="..\..\libsndfile\src\ALAC\alac_encoder.c" />
+    <ClCompile Include="..\..\libsndfile\src\ALAC\dp_dec.c" />
+    <ClCompile Include="..\..\libsndfile\src\ALAC\dp_enc.c" />
+    <ClCompile Include="..\..\libsndfile\src\ALAC\matrix_dec.c" />
+    <ClCompile Include="..\..\libsndfile\src\ALAC\matrix_enc.c" />
     <ClCompile Include="..\..\libsndfile\src\alaw.c" />
     <ClCompile Include="..\..\libsndfile\src\au.c" />
     <ClCompile Include="..\..\libsndfile\src\audio_detect.c" />
     <ClCompile Include="..\..\libsndfile\src\avr.c" />
     <ClCompile Include="..\..\libsndfile\src\broadcast.c" />
     <ClCompile Include="..\..\libsndfile\src\caf.c" />
+    <ClCompile Include="..\..\libsndfile\src\cart.c" />
+    <ClCompile Include="..\..\libsndfile\src\chanmap.c" />
     <ClCompile Include="..\..\libsndfile\src\chunk.c" />
     <ClCompile Include="..\..\libsndfile\src\command.c" />
     <ClCompile Include="..\..\libsndfile\src\common.c" />
@@ -144,6 +156,7 @@
     </ClCompile>
     <ClCompile Include="..\..\libsndfile\src\gsm610.c" />
     <ClCompile Include="..\..\libsndfile\src\htk.c" />
+    <ClCompile Include="..\..\libsndfile\src\id3.c" />
     <ClCompile Include="..\..\libsndfile\src\ima_adpcm.c" />
     <ClCompile Include="..\..\libsndfile\src\ima_oki_adpcm.c" />
     <ClCompile Include="..\..\libsndfile\src\ircam.c" />
@@ -194,6 +207,9 @@
     <ClCompile Include="..\..\libsndfile\src\G72x\g72x.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\libsndfile\src\ALAC\ALACAudioTypes.h" />
+    <ClInclude Include="..\..\libsndfile\src\ALAC\dplib.h" />
+    <ClInclude Include="..\..\libsndfile\src\chanmap.h" />
     <ClInclude Include="..\..\libsndfile\src\ima_oki_adpcm.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

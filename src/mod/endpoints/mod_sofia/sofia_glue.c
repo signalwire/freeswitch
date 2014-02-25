@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -288,9 +288,9 @@ enum tport_tls_verify_policy sofia_glue_str2tls_verify_policy(const char * str){
 
 	while (ptr_cur) {
 		if ((ptr_next = strchr(ptr_cur, '|'))) {
-			len = ptr_next++ - ptr_cur;
+			len = (int)(ptr_next++ - ptr_cur);
 		} else {
-			len = strlen(ptr_cur);
+			len = (int)strlen(ptr_cur);
 		}
 		if (!strncasecmp(ptr_cur, "in",len)) {
 			ret |= TPTLS_VERIFY_IN;
@@ -483,7 +483,7 @@ void sofia_glue_get_addr(msg_t *msg, char *buf, size_t buflen, int *port)
 	su_addrinfo_t *addrinfo = msg_addrinfo(msg);
 
 	if (buf) {
-		get_addr(buf, buflen, addrinfo->ai_addr, addrinfo->ai_addrlen);
+		get_addr(buf, buflen, addrinfo->ai_addr, (socklen_t)addrinfo->ai_addrlen);
 	}
 
 	if (port) {
@@ -752,7 +752,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	}
 
 	if (!switch_channel_get_private(tech_pvt->channel, "t38_options") || zstr(tech_pvt->mparams.local_sdp_str)) {
-		switch_core_media_gen_local_sdp(session, NULL, 0, NULL, 0);
+		switch_core_media_gen_local_sdp(session, SDP_TYPE_REQUEST, NULL, 0, NULL, 0);
 	}
 
 	sofia_set_flag_locked(tech_pvt, TFLAG_READY);
@@ -1221,10 +1221,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		tech_pvt->session_refresher = nua_no_refresher;
 	}
 
-	if (tech_pvt->mparams.local_sdp_str) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG,
-						  "Local SDP:\n%s\n", tech_pvt->mparams.local_sdp_str);
-	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "%s sending invite version: %s\nLocal SDP:\n%s\n",
+					  switch_channel_get_name(tech_pvt->channel), switch_version_full_human(), 
+					  tech_pvt->mparams.local_sdp_str ? tech_pvt->mparams.local_sdp_str : "NO SDP PRESENT\n");
 
 
 	if (sofia_use_soa(tech_pvt)) {
@@ -1455,7 +1455,10 @@ char *sofia_glue_get_path_from_contact(char *buf)
 		}
 	}
 
-	if (!path) return NULL;
+	if (!path) {
+		free(contact);
+		return NULL;
+	}
 
 	if ((e = strrchr(path, ';'))) {
 		*e = '\0';
@@ -1834,14 +1837,14 @@ int sofia_recover_callback(switch_core_session_t *session)
 	if ((tmp = switch_channel_get_variable(tech_pvt->channel, "rtp_2833_send_payload"))) {
 		int te = atoi(tmp);
 		if (te > 64) {
-			tech_pvt->te = te;
+			tech_pvt->te = (switch_payload_t)te;
 		} 
 	}
 
 	if ((tmp = switch_channel_get_variable(tech_pvt->channel, "rtp_2833_recv_payload"))) {
 		int te = atoi(tmp);
 		if (te > 64) {
-			tech_pvt->recv_te = te;
+			tech_pvt->recv_te = (switch_payload_t)te;
 		} 
 	}
 
@@ -1910,6 +1913,11 @@ int sofia_recover_callback(switch_core_session_t *session)
 	}
 
 	r++;
+
+	if (profile) {
+		sofia_glue_release_profile(profile);
+	}
+
 
 	return r;
 
@@ -2106,6 +2114,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"create index sr_orig_server_host on sip_registrations (orig_server_host)",
 		"create index sr_orig_hostname on sip_registrations (orig_hostname)",
 		"create index ss_call_id on sip_subscriptions (call_id)",
+		"create index ss_multi on sip_subscriptions (call_id, profile_name, hostname)",
 		"create index ss_hostname on sip_subscriptions (hostname)",
 		"create index ss_network_ip on sip_subscriptions (network_ip)",
 		"create index ss_sip_user on sip_subscriptions (sip_user)",

@@ -21,6 +21,10 @@
 AC_PREREQ([2.59])
 AC_INIT([spandsp], [1.99.0])
 
+CFLAGS="$CFLAGS $CONFIGURE_CFLAGS"
+CXXFLAGS="$CXXFLAGS $CONFIGURE_CXXFLAGS"
+LDFLAGS="$LDFLAGS $CONFIGURE_LDFLAGS"
+
 SPANDSP_LT_CURRENT=3
 SPANDSP_LT_REVISION=0
 SPANDSP_LT_AGE=0
@@ -198,7 +202,17 @@ AC_CHECK_HEADERS([stdlib.h])
 AC_CHECK_HEADERS([string.h])
 AC_CHECK_HEADERS([strings.h])
 AC_CHECK_HEADERS([malloc.h])
-AC_CHECK_HEADERS([tgmath.h], [INSERT_TGMATH_HEADER="#include <tgmath.h>"])
+
+case "$host" in
+    *freebsd*)
+    ;;
+    *dragonfly*)
+    ;;
+    *)
+    AC_CHECK_HEADERS([tgmath.h], [INSERT_TGMATH_HEADER="#include <tgmath.h>"])
+    ;;
+esac
+
 AC_CHECK_HEADERS([math.h], [INSERT_MATH_HEADER="#include <math.h>"])
 AC_CHECK_HEADERS([float.h])
 AC_CHECK_HEADERS([fcntl.h])
@@ -324,9 +338,11 @@ AX_CHECK_EXPORT_CAPABILITY([$host],
 
 saved_CFLAGS="$CFLAGS"
 AC_CACHE_CHECK([whether compiler supports -Wunused-but-set-variable], [ac_cv_gcc_unused_but_set_variable], [
-CFLAGS="$CFLAGS -Wunused-but-set-variable"
-AC_TRY_COMPILE([],[return 0;],[ac_cv_gcc_unused_but_set_variable=yes],[ac_cv_gcc_unused_but_set_variable=no])
-])
+    # We need to add -Werror here or clang doesn't fail (it just warns), even though it doesn't understand the
+    # -Wunused-but-set-variable tag
+    CFLAGS="$CFLAGS -Werror -Wunused-but-set-variable"
+    AC_TRY_COMPILE([],[return 0;],[ac_cv_gcc_unused_but_set_variable=yes],[ac_cv_gcc_unused_but_set_variable=no])
+    ])
 AC_MSG_RESULT($ac_cv_gcc_unused_but_set_variable)
 CFLAGS="$saved_CFLAGS"
 
@@ -515,6 +531,13 @@ x86_64-* | i386-* | i686-*)
     if test "$enable_mmx" = "yes" ; then
         AC_DEFINE([SPANDSP_USE_MMX], [1], [Use the MMX instruction set (i386 and x86_64 only).])
     fi
+    ;;
+esac
+
+case "$host" in
+    *bsd*)
+        CFLAGS="$CFLAGS -I/usr/local/include"
+        LDFLAGS="$LDFLAGS -L/usr/local/lib"
     ;;
 esac
 

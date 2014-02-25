@@ -314,7 +314,7 @@ static switch_status_t interface_exists(char *the_interface)
 /* CLOUDTREE (Thomas Hazel) static */ switch_status_t remove_interface(char *the_interface, /* CLOUDTREE (Thomas Hazel) */ switch_bool_t force)
 {
 	int x = 10;
-	unsigned int howmany = 8;
+	switch_size_t howmany = 8;
 	int interface_id = -1;
 	private_t *tech_pvt = NULL;
 	switch_status_t status;
@@ -884,7 +884,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		switch_mutex_lock(tech_pvt->mutex_audio_srv);
 		if (tech_pvt->read_buffer && switch_buffer_inuse(tech_pvt->read_buffer)) {
 			bytes_read = switch_buffer_read(tech_pvt->read_buffer, tech_pvt->read_frame.data, BYTES_PER_FRAME);
-			tech_pvt->read_frame.datalen = bytes_read;
+			tech_pvt->read_frame.datalen = (uint32_t)bytes_read;
 		}
 		switch_mutex_unlock(tech_pvt->mutex_audio_srv);
 
@@ -2069,7 +2069,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypopen_shutdown)
 	int x;
 	private_t *tech_pvt = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	unsigned int howmany = 8;
+	switch_size_t howmany = 8;
 	int interface_id;
 
 	running = 0;

@@ -3,14 +3,14 @@
 # spec file for package freeswitch
 #
 # includes module(s): freeswitch-devel freeswitch-codec-passthru-amr freeswitch-codec-passthru-amrwb freeswitch-codec-passthru-g729 
-#                     freeswitch-codec-passthru-g7231 freeswitch-lua freeswitch-perl freeswitch-python freeswitch-spidermonkey
+#                     freeswitch-codec-passthru-g7231 freeswitch-lua freeswitch-perl freeswitch-python freeswitch-spidermonkey freeswitch-v8
 #                     freeswitch-lan-de freeswitch-lang-en freeswitch-lang-fr freeswitch-lang-hu freeswitch-lang-ru freeswitch-freetdm
 #
 # Initial Version Copyright (C) 2007 Peter Nixon and Michal Bielicki, All Rights Reserved.
 #
 # This file is part of:
 # FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
-# Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+# Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
 #
 # This file and all modifications and additions to the pristine package are under the same license as the package itself.
 #
@@ -22,6 +22,7 @@
 #                 Marc Olivier Chouinard
 #                 Raymond Chandler
 #                 Ken Rice <krice@freeswitch.org>
+#                 Chris Rienzo <crienzo@grasshopper.com>
 #
 # Maintainer(s): Ken Rice <krice@freeswitch.org>
 #
@@ -33,6 +34,8 @@
 %define build_py26_esl 0
 %define build_timerfd 0
 %define build_mod_esl 0
+%define build_mod_rayo 1
+%define build_mod_ssml 1
 
 %{?with_sang_tc:%define build_sng_tc 1 }
 %{?with_sang_isdn:%define build_sng_isdn 1 }
@@ -112,18 +115,19 @@ Vendor:       	http://www.freeswitch.org/
 ######################################################################################################################
 Source0:        http://files.freeswitch.org/%{name}-%{version}.tar.bz2
 Source1:	http://files.freeswitch.org/downloads/libs/celt-0.10.0.tar.gz
-Source2:	http://files.freeswitch.org/downloads/libs/flite-1.5.1-current.tar.bz2
-Source3:	http://files.freeswitch.org/downloads/libs/lame-3.97.tar.gz
+Source2:	http://files.freeswitch.org/downloads/libs/flite-1.5.4-current.tar.bz2
+Source3:	http://files.freeswitch.org/downloads/libs/lame-3.98.4.tar.gz
 Source4:	http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
 Source5:	http://files.freeswitch.org/downloads/libs/mpg123-1.13.2.tar.gz
 #Source6:	http://files.freeswitch.org/downloads/libs/openldap-2.4.11.tar.gz
 Source6:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.7.tar.gz
-Source7:	http://files.freeswitch.org/downloads/libs/soundtouch-1.6.0.tar.gz
+Source7:	http://files.freeswitch.org/downloads/libs/soundtouch-1.7.1.tar.gz
 Source8:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.7.tar.gz
 Source9:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
 Source10:	http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
 Source11:       http://files.freeswitch.org/downloads/libs/json-c-0.9.tar.gz
-Source12:       http://files.freeswitch.org/downloads/libs/opus-0.9.0.tar.gz
+Source12:       http://files.freeswitch.org/downloads/libs/opus-1.1.tar.gz
+Source13:       http://files.freeswitch.org/downloads/libs/v8-3.24.14.tar.bz2
 Prefix:        	%{prefix}
 
 
@@ -758,14 +762,6 @@ see http://www.polycom.com/usa/en/company/about_us/technology/siren_g7221/siren_
 and http://www.polycom.com/usa/en/company/about_us/technology/siren14_g7221c/siren14_g7221c.html 
 At the time of this packaging, Polycom does not charge for licensing.
 
-%package codec-speex
-Summary:        Speex Codec support for FreeSWITCH open source telephony platform
-Group:          System/Libraries
-Requires:       %{name} = %{version}-%{release}
-
-%description codec-speex
-Speex Codec support for FreeSWITCH open source telephony platform.
-
 %package codec-theora
 Summary:        Theora Video Codec support for FreeSWITCH open source telephony platform
 Group:          System/Libraries
@@ -977,6 +973,17 @@ Requires:	%{name} = %{version}-%{release}
 %description event-json-cdr
 JSON CDR Logger for FreeSWITCH.
 
+%if %{build_mod_rayo}
+%package event-rayo
+Summary:        Rayo (XMPP 3PCC) server for the FreeSWITCH open source telephony platform
+Group:          System/Libraries
+Requires:	%{name} = %{version}-%{release}
+
+%description event-rayo
+Rayo 3PCC for FreeSWITCH.  http://rayo.org   http://xmpp.org/extensions/xep-0327.html
+Rayo is an XMPP protocol extension for third-party control of telephone calls.
+%endif
+
 %package event-snmp
 Summary:	SNMP stats reporter for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
@@ -1040,6 +1047,16 @@ Requires:	%{name} = %{version}-%{release}
 Mod Shout is a FreeSWITCH module to allow you to stream audio from MP3s or a i
 shoutcast stream.
 
+%if %{build_mod_ssml}
+%package format-ssml
+Summary:        Adds Speech Synthesis Markup Language (SSML) parser format for the FreeSWITCH open source telephony platform
+Group:          System/Libraries
+Requires:       %{name} = %{version}-%{release}
+
+%description format-ssml
+mod_ssml is a FreeSWITCH module that renders SSML into audio.  This module requires a text-to-speech module for speech synthesis.
+%endif
+
 %package format-tone-stream
 Summary:	Implements TGML Tone Generation for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
@@ -1078,9 +1095,16 @@ Requires:	python
 %package spidermonkey
 Summary:	JavaScript support for the FreeSWITCH open source telephony platform
 Group:		System/Libraries
-Requires:	 %{name} = %{version}-%{release}
+Requires:	%{name} = %{version}-%{release}
 
 %description spidermonkey
+
+%package v8
+Summary:	JavaScript support for the FreeSWITCH open source telephony platform, using Google V8 JavaScript engine
+Group:		System/Libraries
+Requires:	%{name} = %{version}-%{release}
+
+%description v8
 
 ######################################################################################################################
 #				FreeSWITCH Say Modules
@@ -1140,7 +1164,15 @@ Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
 %description lang-pt
-Hebrew language phrases module and directory structure for say module and voicemail
+Portugese language phrases module and directory structure for say module and voicemail
+
+%package lang-sv
+Summary:        Provides Swedish language dependend modules and speech config for the FreeSWITCH Open Source telephone platform.
+Group:          System/Libraries
+Requires:        %{name} = %{version}-%{release}
+
+%description lang-sv
+Swedish language phrases module and directory structure for say module and voicemail
 
 ######################################################################################################################
 #				FreeSWITCH Timer Modules
@@ -1244,7 +1276,6 @@ Requires:	freeswitch-codec-passthru-g729
 Requires:	freeswitch-codec-h26x
 Requires:	freeswitch-codec-ilbc
 Requires:	freeswitch-codec-siren
-Requires:	freeswitch-codec-speex
 Requires:	freeswitch-format-local-stream
 Requires:	freeswitch-format-native-file
 Requires:	freeswitch-format-portaudio-stream
@@ -1336,7 +1367,7 @@ ASR_TTS_MODULES="asr_tts/mod_flite asr_tts/mod_pocketsphinx asr_tts/mod_tts_comm
 ######################################################################################################################
 CODECS_MODULES="codecs/mod_amr codecs/mod_amrwb codecs/mod_bv codecs/mod_celt codecs/mod_codec2 codecs/mod_g723_1 \
 		codecs/mod_g729 codecs/mod_h26x codecs/mod_ilbc codecs/mod_isac codecs/mod_mp4v codecs/mod_opus codecs/mod_silk \
-		codecs/mod_siren codecs/mod_speex codecs/mod_theora codecs/mod_vp8"
+		codecs/mod_siren codecs/mod_theora codecs/mod_vp8"
 #
 %if %{build_sng_tc}
 CODECS_MODULES+="codecs/mod_sangoma_codec"
@@ -1376,6 +1407,9 @@ EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_pg_csv
 			event_handlers/mod_cdr_mongodb event_handlers/mod_erlang_event event_handlers/mod_event_multicast \
 			event_handlers/mod_event_socket event_handlers/mod_json_cdr \
 			event_handlers/mod_snmp"
+%if %{build_mod_rayo}
+EVENT_HANDLERS_MODULES+=" event_handlers/mod_rayo"
+%endif
 
 #### BUILD ISSUES NET RESOLVED FOR RELEASE event_handlers/mod_event_zmq 
 ######################################################################################################################
@@ -1385,13 +1419,17 @@ EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_pg_csv
 ######################################################################################################################
 FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_portaudio_stream \
                  formats/mod_shell_stream formats/mod_shout formats/mod_sndfile formats/mod_tone_stream"
+%if %{build_mod_ssml}
+FORMATS_MODULES+=" formats/mod_ssml"
+%endif
 
 ######################################################################################################################
 #
 #						Embedded Languages
 #
 ######################################################################################################################
-LANGUAGES_MODULES="languages/mod_lua languages/mod_perl languages/mod_python languages/mod_spidermonkey"
+LANGUAGES_MODULES="languages/mod_lua languages/mod_perl languages/mod_python languages/mod_spidermonkey "
+#LANGUAGES_MODULES+="languages/mod_v8"
 
 ######################################################################################################################
 #
@@ -1405,7 +1443,7 @@ LOGGERS_MODULES="loggers/mod_console loggers/mod_logfile loggers/mod_syslog"
 #						Phrase engine language modules
 #
 ######################################################################################################################
-SAY_MODULES="say/mod_say_de say/mod_say_en say/mod_say_fr say/mod_say_he say/mod_say_ru"
+SAY_MODULES="say/mod_say_de say/mod_say_en say/mod_say_fr say/mod_say_he say/mod_say_ru say/mod_say_sv"
 
 ######################################################################################################################
 #
@@ -1606,7 +1644,8 @@ fi
 #			What to install where ... first set default permissions
 #
 ######################################################################################################################
-%defattr(-,freeswitch,daemon)
+%defattr(-,root,root)
+
 ######################################################################################################################
 #
 #							Directories
@@ -1618,11 +1657,11 @@ fi
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}
 %dir %attr(0750, freeswitch, daemon) %{LOCALSTATEDIR}
 %dir %attr(0750, freeswitch, daemon) %{DBDIR}
-%dir %attr(0750, freeswitch, daemon) %{GRAMMARDIR}
-%dir %attr(0750, freeswitch, daemon) %{HTDOCSDIR}
+%dir %attr(0755, -, -) %{GRAMMARDIR}
+%dir %attr(0755, -, -) %{HTDOCSDIR}
 %dir %attr(0750, freeswitch, daemon) %{logfiledir}
 %dir %attr(0750, freeswitch, daemon) %{runtimedir}
-%dir %attr(0750, freeswitch, daemon) %{SCRIPTDIR}
+%dir %attr(0755, -, -) %{SCRIPTDIR}
 #
 #################################### Config Directory Structure #######################################################
 #
@@ -1643,19 +1682,15 @@ fi
 #
 #################################### Grammar Directory Structure #####################################################
 #
-%dir %attr(0750, freeswitch, daemon) %{GRAMMARDIR}/model
-%dir %attr(0750, freeswitch, daemon) %{GRAMMARDIR}/model/communicator
-%ifos linux
-%config(noreplace) %attr(0644, freeswitch, daemon) /etc/monit.d/freeswitch.monitrc
-%endif
-
+%dir %attr(0755, -, -) %{GRAMMARDIR}/model
+%dir %attr(0755, -, -) %{GRAMMARDIR}/model/communicator
 
 ######################################################################################################################
 #
-#						Other Fíles
+#						Other Files
 #
 ######################################################################################################################
-%config(noreplace) %attr(0640, freeswitch, daemon) %{HTDOCSDIR}/*
+%config(noreplace) %attr(0644,-,-) %{HTDOCSDIR}/*
 %ifos linux
 /etc/rc.d/init.d/freeswitch
 /etc/sysconfig/freeswitch
@@ -1664,14 +1699,16 @@ fi
 %endif
 %endif
 %ifos linux
-%dir %attr(0750, root, root) /etc/monit.d
+%dir %attr(0750,-,-) /etc/monit.d
+%config(noreplace) %attr(0644,-,-) /etc/monit.d/freeswitch.monitrc
 %endif
+
 ######################################################################################################################
 #
 #						Binaries
 #
 ######################################################################################################################
-%attr(0755, freeswitch, daemon) %{prefix}/bin/*
+%attr(0755,-,-) %{prefix}/bin/*
 %{LIBDIR}/libfreeswitch*.so*
 ######################################################################################################################
 #
@@ -1700,12 +1737,10 @@ fi
 #
 ######################################################################################################################
 %files devel
-%defattr(-, freeswitch, daemon)
 %{LIBDIR}/*.a
 %{LIBDIR}/*.la
 %{PKGCONFIGDIR}/*
-%{MODINSTDIR}/*.a
-%{MODINSTDIR}/*.la
+%{MODINSTDIR}/*.*a
 %{INCLUDEDIR}/*.h
 
 
@@ -1743,6 +1778,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/event_socket.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/fax.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/fifo.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/format_cdr.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/hash.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/httapi.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/http_cache.conf.xml
@@ -1819,8 +1855,8 @@ fi
 ######################################################################################################################
 #						Grammar Files
 ######################################################################################################################
-%config(noreplace) %attr(0640, freeswitch, daemon) %{GRAMMARDIR}/default.dic
-%config(noreplace) %attr(0640, freeswitch, daemon) %{GRAMMARDIR}/model/communicator/*
+%config(noreplace) %attr(0644, -, -) %{GRAMMARDIR}/default.dic
+%config(noreplace) %attr(0644, -, -) %{GRAMMARDIR}/model/communicator/*
 
 ### END OF config-vanilla
 
@@ -1830,170 +1866,130 @@ fi
 #
 ######################################################################################################################
 %files application-abstraction
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_abstraction.so*
 
 %files application-avmd
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_avmd.so*
 
 %files application-blacklist
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_blacklist.so*
 
 %files application-callcenter
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_callcenter.so*
 
 %files application-cidlookup
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_cidlookup.so*
 
 %files application-conference
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_conference.so*
 
 %files application-curl
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_curl.so*
 
 %files application-db
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_db.so*
 
 %files application-directory
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_directory.so*
 
 %files application-distributor
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_distributor.so*
 
 %files application-easyroute
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_easyroute.so*
 
 %files application-enum
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_enum.so*
 
 %files application-esf
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_esf.so*
 
 %if %{build_mod_esl}
 %files application-esl
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_esl.so*
 %endif
 
 %files application-expr
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_expr.so*
 
 %files application-fifo
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_fifo.so*
 
 %files application-fsk
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_fsk.so*
 
 %files application-fsv
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_fsv.so*
 
 %files application-hash
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_hash.so*
 
 %files application-httapi
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_httapi.so*
 
 %files application-http-cache
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_http_cache.so*
 
 %files application-lcr
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_lcr.so*
 
 %files application-limit
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_limit.so*
 
 %files application-memcache
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_memcache.so*
 
 %files application-nibblebill
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_nibblebill.so*
 
 %files application-redis
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_redis.so*
 
 %files application-rss
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_rss.so*
 
 %files application-sms
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_sms.so*
 
 %files application-snapshot
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_snapshot.so*
 
 %files application-snom
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_snom.so*
 
 %files application-soundtouch
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_soundtouch.so*
 
 %files application-spy
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_spy.so*
 
 %files application-stress
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_stress.so*
 
 %files application-valet_parking
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_valet_parking.so*
 
 %files application-voicemail
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_voicemail.so*
 
 %files application-voicemail-ivr
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_voicemail_ivr.so*
 
 ######################################################################################################################
 #
-#						ASR RRS Packages
+#						ASR TTS Packages
 #
 ######################################################################################################################
 %files asrtts-flite
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_flite.so*
 
 %files asrtts-pocketsphinx
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_pocketsphinx.so*
 
 %files asrtts-tts-commandline
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_tts_commandline.so*
 
 %files asrtts-unimrcp
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_unimrcp.so*
 
 ######################################################################################################################
@@ -2003,78 +1999,58 @@ fi
 ######################################################################################################################
 
 %files codec-passthru-amr
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_amr.so*
 
 %files codec-passthru-amrwb
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_amrwb.so*
 
 %files codec-bv
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_bv.so*
 
 %files codec-celt
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_celt.so*
 
 %files codec-codec2
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_codec2.so*
 
 
 %files codec-passthru-g723_1
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_g723_1.so*
 
 %files codec-passthru-g729
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_g729.so*
 
 %files codec-h26x
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_h26x.so*
 
 %files codec-ilbc
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_ilbc.so*
 
 %files codec-isac
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_isac.so*
 
 %files codec-mp4v
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_mp4v.so*
 
 %files codec-vp8
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_vp8.so*
 
 %files codec-opus
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_opus.so*
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/opus.conf.xml
 
 %if %{build_sng_tc}
 %files sangoma-codec
-%defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/mod_sangoma_codec.so*
 %endif
 
 %files codec-silk
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_silk.so*
 
 %files codec-siren
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_siren.so*
 
-%files codec-speex
-%defattr(-,freeswitch,daemon)
-%{MODINSTDIR}/mod_speex.so*
-
 %files codec-theora
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_theora.so*
 
 ######################################################################################################################
@@ -2084,8 +2060,7 @@ fi
 ######################################################################################################################
 
 #%files directory-ldap
-#%defattr(-,freeswitch,daemon)
-#%{MODINSTDIR}/mod_theora.so*
+#%{MODINSTDIR}/mod_ldap.so*
 
 ######################################################################################################################
 #
@@ -2094,35 +2069,27 @@ fi
 ######################################################################################################################
 
 %files endpoint-dingaling
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_dingaling.so*
 
 #%files endpoint-gsmopen
-#%defattr(-,freeswitch,daemon)
 #%{MODINSTDIR}/mod_gsmopen.so*
 
 #%files endpoint-h323
-#%defattr(-,freeswitch,daemon)
 #%{MODINSTDIR}/mod_h323.so*
 
 #%files endpoint-khomp
-#%defattr(-,freeswitch,daemon)
 #%{MODINSTDIR}/mod_khomp.so*
 
 %files endpoint-portaudio
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_portaudio.so*
 
 %files endpoint-rtmp
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_rtmp.so*
 
 %files endpoint-skinny
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_skinny.so*
 
 %files endpoint-skypopen
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_skypopen.so*
 
 ######################################################################################################################
@@ -2131,7 +2098,6 @@ fi
 #
 ######################################################################################################################
 %files freetdm
-%defattr(-, freeswitch, daemon)
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/tones.conf
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/freetdm.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/pika.conf
@@ -2145,13 +2111,11 @@ fi
 
 %if %{build_sng_ss7}
 %files freetdm-sng-ss7
-%defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/ftmod_sangoma_ss7.so*
 %endif
 
 %if %{build_sng_isdn}
 %files freetdm-sng-isdn
-%defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/ftmod_sangoma_isdn.so*
 %endif
 
@@ -2162,35 +2126,32 @@ fi
 ######################################################################################################################
 
 %files event-cdr-mongodb
-%defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/mod_cdr_mongodb.so*
 
 %files event-cdr-pg-csv
-%defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/mod_cdr_pg_csv.so*
 
 %files event-cdr-sqlite
-%defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/mod_cdr_sqlite.so*
 
 %files event-erlang-event
-%defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/mod_erlang_event.so*
 
 %files event-multicast
-%defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/mod_event_multicast.so*
 
 #%files event-zmq
-#%defattr(-, freeswitch, daemon)
 #%{MODINSTDIR}/mod_xmq.so*
 
 %files event-json-cdr
-%defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/mod_json_cdr.so*
 
+%if %{build_mod_rayo}
+%files event-rayo 
+%{MODINSTDIR}/mod_rayo.so*
+%endif
+
 %files event-snmp
-%defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/mod_snmp.so*
 
 ######################################################################################################################
@@ -2200,27 +2161,26 @@ fi
 ######################################################################################################################
 
 %files format-local-stream
-%defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/mod_local_stream.so*
 
 %files format-native-file
-%defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/mod_native_file.so*
 
 %files format-portaudio-stream
-%defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/mod_portaudio_stream.so*
 
 %files format-shell-stream
-%defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/mod_shell_stream.so*
 
 %files format-mod-shout
-%defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/mod_shout.so*
 
+%if %{build_mod_ssml}
+%files format-ssml
+%{MODINSTDIR}/mod_ssml.so*
+%endif
+
 %files format-tone-stream
-%defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/mod_tone_stream.so*
 
 ######################################################################################################################
@@ -2229,20 +2189,17 @@ fi
 #
 ######################################################################################################################
 %files lua
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_lua*.so*
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/lua.conf.xml
 
 %files perl
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_perl*.so*
 %{prefix}/perl/*
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/perl.conf.xml
 
 %files python
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_python*.so*
 %attr(0644, root, bin) /usr/lib/python*/site-packages/freeswitch.py*
 %attr(0755, root, bin) /usr/lib/python*/site-packages/_ESL.so*
@@ -2251,7 +2208,6 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/python.conf.xml
 
 %files spidermonkey
-%defattr(-,freeswitch,daemon)
 %{MODINSTDIR}/mod_spidermonkey*.so*
 %{LIBDIR}/libjs.so*
 %{LIBDIR}/libnspr4.so
@@ -2260,13 +2216,20 @@ fi
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/spidermonkey.conf.xml
 
+%files v8
+#%{MODINSTDIR}/mod_v8*.so*
+#%{LIBDIR}/libv8.so
+#%{LIBDIR}/libicui18n.so
+#%{LIBDIR}/libicuuc.so
+#%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/autoload_configs
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/v8.conf.xml
+
 ######################################################################################################################
 #
 #						Language Modules
 #
 ######################################################################################################################
 %files lang-en
-%defattr(-, freeswitch, daemon)
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/en
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/en/demo
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/en/vm
@@ -2280,7 +2243,6 @@ fi
 %{MODINSTDIR}/mod_say_en.so*
 
 %files lang-de
-%defattr(-, freeswitch, daemon)
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/de
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/de/demo
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/de/vm
@@ -2290,7 +2252,6 @@ fi
 %{MODINSTDIR}/mod_say_de.so*
 
 %files lang-fr
-%defattr(-, freeswitch, daemon)
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/fr
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/fr/demo
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/fr/vm
@@ -2302,7 +2263,6 @@ fi
 %{MODINSTDIR}/mod_say_fr.so*
 
 %files lang-ru
-%defattr(-, freeswitch, daemon)
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/ru
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/ru/demo
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/ru/vm
@@ -2314,7 +2274,6 @@ fi
 %{MODINSTDIR}/mod_say_ru.so*
 
 %files lang-he
-%defattr(-, freeswitch, daemon)
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/he/
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/he/demo
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/he/vm
@@ -2326,7 +2285,6 @@ fi
 %{MODINSTDIR}/mod_say_he.so*
 
 %files lang-es
-%defattr(-, freeswitch, daemon)
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/es
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/es/demo
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/es/vm
@@ -2338,7 +2296,6 @@ fi
 %{MODINSTDIR}/mod_say_en.so*
 
 %files lang-pt
-%defattr(-, freeswitch, daemon)
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/pt
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/pt/demo
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/pt/vm
@@ -2349,6 +2306,13 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/lang/pt/dir/*.xml
 %{MODINSTDIR}/mod_say_en.so*
 
+%files lang-sv
+%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/sv
+%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/lang/sv/vm
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/lang/sv/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/lang/sv/vm/*.xml
+%{MODINSTDIR}/mod_say_sv.so*
+
 ######################################################################################################################
 #
 #					Timer Modules
@@ -2356,12 +2320,10 @@ fi
 ######################################################################################################################
 
 %files timer-posix
-%defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/mod_posix_timer.so*
 
 %if %{build_timerfd}
 %files timer-timerfd
-%defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/mod_timerfd.so*
 %endif
 
@@ -2372,11 +2334,9 @@ fi
 ######################################################################################################################
 
 %files xml-cdr
-%defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/mod_xml_cdr.so*
 
 %files xml-curl
-%defattr(-, freeswitch, daemon)
 %{MODINSTDIR}/mod_xml_curl.so*
 
 ######################################################################################################################
@@ -2385,6 +2345,17 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Fri Feb 21 2014 - crienzo@grasshopper.com
+- change file owner to root
+* Wed Feb 19 2014 - crienzo@grasshopper.com
+- remove mod_speex
+* Sun Feb 02 2014 - jakob@mress.se
+- add support for building Swedish say language module
+* Mon Jan 13 2014 - peter@olssononline.se
+- Add mod_v8
+* Mon Dec 09 2013 - crienzo@grasshopper.com
+- Add mod_ssml, mod_rayo
+- Fix build on master
 * Thu Jun 28 2013 - krice@freeswitch.org
 - Add module for VP8
 * Thu Jun 19 2013 - krice@freeswitch.org

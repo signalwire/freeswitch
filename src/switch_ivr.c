@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -620,6 +620,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 					switch_channel_set_variable(channel, "app_uuid", event_uuid);
 				}
 
+				switch_channel_set_variable_printf(channel, "current_loop", "%d", x + 1);
+				switch_channel_set_variable_printf(channel, "total_loops", "%d", loops);
 
 				if (switch_core_session_execute_application(session, app_name, app_arg) != SWITCH_STATUS_SUCCESS) {
 					if (!inner || switch_channel_test_flag(channel, CF_STOP_BROADCAST)) switch_channel_clear_flag(channel, CF_BROADCAST);
@@ -631,6 +633,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 					break;
 				}
 			}
+
+			switch_channel_set_variable(channel, "current_loop", NULL);
+			switch_channel_set_variable(channel, "total_loops", NULL);
 
 			if (b_uuid) {
 				if ((b_session = switch_core_session_locate(b_uuid))) {
@@ -811,6 +816,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_all_signal_data(switch_core_ses
 	int i = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
+	if (!switch_core_session_in_thread(session)) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (switch_channel_test_flag(channel, CF_SIGNAL_DATA)) {
 		return SWITCH_STATUS_FALSE;

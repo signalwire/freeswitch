@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2008-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2008-2012 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** All rights reserved.
 **
@@ -68,9 +68,9 @@ convert_to_text (SNDFILE * infile, FILE * outfile, int channels)
 int
 main (int argc, char * argv [])
 {	char 		*progname, *infilename, *outfilename ;
-	SNDFILE	 	*infile = NULL ;
+	SNDFILE		*infile = NULL ;
 	FILE		*outfile = NULL ;
-	SF_INFO	 	sfinfo ;
+	SF_INFO		sfinfo ;
 
 	progname = strrchr (argv [0], '/') ;
 	progname = progname ? progname + 1 : argv [0] ;
@@ -100,6 +100,8 @@ main (int argc, char * argv [])
 		print_usage (progname) ;
 		return 1 ;
 		} ;
+
+	memset (&sfinfo, 0, sizeof (sfinfo)) ;
 
 	if ((infile = sf_open (infilename, SFM_READ, &sfinfo)) == NULL)
 	{	printf ("Not able to open input file %s.\n", infilename) ;

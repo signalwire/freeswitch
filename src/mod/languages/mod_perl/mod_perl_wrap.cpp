@@ -8195,7 +8195,7 @@ XS(_wrap_msleep) {
       SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "msleep" "', argument " "1"" of type '" "unsigned int""'");
     } 
     arg1 = static_cast< unsigned int >(val1);
-    msleep(arg1);
+    switch_msleep(arg1);
     
     
     XSRETURN(argvi);

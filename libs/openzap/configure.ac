@@ -86,7 +86,7 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
             SOLINK="-dynamic -bundle -force-flat-namespace"
         ;;
         *)
-            AC_ERROR([Please update configure.in with SOLINK values for your compiler])
+            SOLINK="-shared -Xlinker -x"
         ;;
     esac
 elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then

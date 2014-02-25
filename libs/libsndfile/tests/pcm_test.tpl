@@ -1,6 +1,6 @@
 [+ AutoGen5 template c +]
 /*
-** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2013 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <inttypes.h>
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
@@ -32,7 +33,7 @@
 
 #include "utils.h"
 
-#define	BUFFER_SIZE		(1<<12)
+#define	BUFFER_SIZE		(1 << 12)
 
 static void	lrintf_test (void) ;
 
@@ -79,8 +80,6 @@ main (void)
 
 	pcm_test_double	("le-double.raw", SF_ENDIAN_LITTLE	| SF_FORMAT_RAW | SF_FORMAT_DOUBLE, 0xc682726f958f669cLL, SF_FALSE) ;
 	pcm_test_double	("be-double.raw", SF_ENDIAN_BIG	| SF_FORMAT_RAW | SF_FORMAT_DOUBLE, 0xd9a3583f8ee51164LL, SF_FALSE) ;
-
-	puts ("Test IEEE replacement code.") ;
 
 	pcm_test_float	("le-float.raw", SF_ENDIAN_LITTLE	| SF_FORMAT_RAW | SF_FORMAT_FLOAT, 0x3c2ad04f7554267aLL, SF_TRUE) ;
 	pcm_test_float	("be-float.raw", SF_ENDIAN_BIG		| SF_FORMAT_RAW | SF_FORMAT_FLOAT, 0x074de3e248fa9186LL, SF_TRUE) ;
@@ -176,7 +175,7 @@ pcm_test_[+ (get "name") +] (const char *filename, int filetype, uint64_t hash)
 		} ;
 
 	if (sfinfo.frames != items)
-	{	printf ("\n\nLine %d: Incorrect number of frames in file. (%d => %ld)\n", __LINE__, items, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("\n\nLine %d: Incorrect number of frames in file. (%d => %" PRId64 ")\n", __LINE__, items, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 
@@ -238,7 +237,7 @@ pcm_test_[+ (get "name") +] (const char *filename, int filetype, uint64_t hash)
 		} ;
 
 	if (sfinfo.frames != items)
-	{	printf ("\n\nLine %d: Incorrect number of frames in file. (%d => %ld)\n", __LINE__, items, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("\n\nLine %d: Incorrect number of frames in file. (%d => %" PRId64 ")\n", __LINE__, items, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 
@@ -300,7 +299,7 @@ pcm_test_[+ (get "name") +] (const char *filename, int filetype, uint64_t hash)
 		} ;
 
 	if (sfinfo.frames != items)
-	{	printf ("\n\nLine %d: Incorrect number of frames in file. (%d => %ld)\n", __LINE__, items, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("\n\nLine %d: Incorrect number of frames in file. (%d => %" PRId64 ")\n", __LINE__, items, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 
@@ -319,7 +318,6 @@ pcm_test_[+ (get "name") +] (const char *filename, int filetype, uint64_t hash)
 		if (fabs (float_out [k] - float_in [k]) > 1e-10)
 		{	printf ("\n\nLine %d: float : Incorrect sample (#%d : %f => %f).\n", __LINE__, k, (double) float_out [k], (double) float_in [k]) ;
 			exit (1) ;
-			break ;
 			} ;
 
 	sf_close (file) ;
@@ -364,7 +362,7 @@ pcm_test_[+ (get "name") +] (const char *filename, int filetype, uint64_t hash)
 		} ;
 
 	if (sfinfo.frames != items)
-	{	printf ("\n\nLine %d: Incorrect number of frames in file. (%d => %ld)\n", __LINE__, items, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("\n\nLine %d: Incorrect number of frames in file. (%d => %" PRId64 ")\n", __LINE__, items, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 
@@ -406,7 +404,7 @@ pcm_test_float (const char *filename, int filetype, uint64_t hash, int replace_f
 	int				sign ;
 	double			*data, error ;
 
-	print_test_name ("pcm_test_float", filename) ;
+	print_test_name (replace_float ? "pcm_test_float (replace)" : "pcm_test_float", filename) ;
 
 	items = BUFFER_SIZE ;
 
@@ -454,7 +452,7 @@ pcm_test_float (const char *filename, int filetype, uint64_t hash, int replace_f
 		} ;
 
 	if (sfinfo.frames != items)
-	{	printf ("\n\nError (%s:%d) Mono : Incorrect number of frames in file. (%d => %ld)\n", __FILE__, __LINE__, items, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("\n\nError (%s:%d) Mono : Incorrect number of frames in file. (%d => %" PRId64 ")\n", __FILE__, __LINE__, items, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 
@@ -474,6 +472,9 @@ pcm_test_float (const char *filename, int filetype, uint64_t hash, int replace_f
 			exit (1) ;
 			} ;
 		} ;
+
+	/* Seek to end of file. */
+	test_seek_or_die (file, 0, SEEK_END, sfinfo.frames, sfinfo.channels, __LINE__) ;
 
 	/* Seek to start of file. */
 	test_seek_or_die (file, 0, SEEK_SET, 0, sfinfo.channels, __LINE__) ;
@@ -578,7 +579,7 @@ pcm_test_float (const char *filename, int filetype, uint64_t hash, int replace_f
 		} ;
 
 	if (sfinfo.frames != frames)
-	{	printf ("\n\nError (%s:%d) Stereo : Incorrect number of frames in file. (%d => %ld)\n", __FILE__, __LINE__, frames, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("\n\nError (%s:%d) Stereo : Incorrect number of frames in file. (%d => %" PRId64 ")\n", __FILE__, __LINE__, frames, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 
@@ -662,7 +663,7 @@ pcm_test_double (const char *filename, int	filetype, uint64_t hash, int replace_
 
 	/* This is the best test routine. Other should be brought up to this standard. */
 
-	print_test_name ("pcm_test_double", filename) ;
+	print_test_name (replace_float ? "pcm_test_double (replace)" : "pcm_test_double", filename) ;
 
 	items = BUFFER_SIZE ;
 
@@ -717,7 +718,7 @@ pcm_test_double (const char *filename, int	filetype, uint64_t hash, int replace_
 		} ;
 
 	if (sfinfo.frames != items)
-	{	printf ("\n\nError (%s:%d) Mono : Incorrect number of frames in file. (%d => %ld)\n", __FILE__, __LINE__, items, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("\n\nError (%s:%d) Mono : Incorrect number of frames in file. (%d => %" PRId64 ")\n", __FILE__, __LINE__, items, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 
@@ -851,7 +852,7 @@ pcm_test_double (const char *filename, int	filetype, uint64_t hash, int replace_
 		} ;
 
 	if (sfinfo.frames != frames)
-	{	printf ("\n\nError (%s:%d) Stereo : Incorrect number of frames in file. (%d => %ld)\n", __FILE__, __LINE__, frames, SF_COUNT_TO_LONG (sfinfo.frames)) ;
+	{	printf ("\n\nError (%s:%d) Stereo : Incorrect number of frames in file. (%d => %" PRId64 ")\n", __FILE__, __LINE__, frames, sfinfo.frames) ;
 		exit (1) ;
 		} ;
 

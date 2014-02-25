@@ -50,9 +50,6 @@
 # endif
 #endif
 
-#ifdef _MSC_VER
-#pragma warning(disable:4100)
-#endif
 
 /*  err_level reflects the level of errors that are reported  */
 

@@ -32,7 +32,8 @@
  * <input> component validation
  */
 ELEMENT(RAYO_INPUT)
-	STRING_ATTRIB(mode, any, "any,dtmf,voice")
+	ATTRIB(xmlns,, any)
+	STRING_ATTRIB(mode, any, "any,dtmf,voice,cpa")
 	OPTIONAL_ATTRIB(terminator,, dtmf_digit)
 	ATTRIB(recognizer,, any)
 	ATTRIB(language, en-US, any)
@@ -49,9 +50,21 @@ ELEMENT(RAYO_INPUT)
 ELEMENT_END
 
 /**
+ * <join> command validation
+ */
+ELEMENT(RAYO_JOIN)
+	ATTRIB(xmlns,, any)
+	STRING_ATTRIB(direction, duplex, "send,recv,duplex")
+	STRING_ATTRIB(media, bridge, "bridge,direct")
+	ATTRIB(call-uri,, any)
+	ATTRIB(mixer-name,, any)
+ELEMENT_END
+
+/**
  * <output> component validation
  */
 ELEMENT(RAYO_OUTPUT)
+	ATTRIB(xmlns,, any)
 	ATTRIB(start-offset, 0, not_negative)
 	ATTRIB(start-paused, false, bool)
 	ATTRIB(repeat-interval, 0, not_negative)
@@ -65,6 +78,7 @@ ELEMENT_END
  * <output><seek> validation
  */
 ELEMENT(RAYO_OUTPUT_SEEK)
+	ATTRIB(xmlns,, any)
 	STRING_ATTRIB(direction,, "forward,back")
 	ATTRIB(amount,-1, positive)
 ELEMENT_END
@@ -73,14 +87,23 @@ ELEMENT_END
  * <prompt> component validation
  */
 ELEMENT(RAYO_PROMPT)
+	ATTRIB(xmlns,, any)
 	ATTRIB(barge-in, true, bool)
+ELEMENT_END
+
+/**
+ * <receivefax> command validation
+ */
+ELEMENT(RAYO_RECEIVEFAX)
+	ATTRIB(xmlns,, any)
 ELEMENT_END
 
 /**
  * <record> component validation
  */
 ELEMENT(RAYO_RECORD)
-	ATTRIB(format, mp3, any)
+	ATTRIB(xmlns,, any)
+	ATTRIB(format, wav, any)
 	ATTRIB(start-beep, false, bool)
 	ATTRIB(stop-beep, false, bool)
 	ATTRIB(start-paused, false, bool)
@@ -92,13 +115,10 @@ ELEMENT(RAYO_RECORD)
 ELEMENT_END
 
 /**
- * <join> command validation
+ * <sendfax> command validation
  */
-ELEMENT(RAYO_JOIN)
-	STRING_ATTRIB(direction, duplex, "send,recv,duplex")
-	STRING_ATTRIB(media, bridge, "bridge,direct")
-	ATTRIB(call-uri,, any)
-	ATTRIB(mixer-name,, any)
+ELEMENT(RAYO_SENDFAX)
+	ATTRIB(xmlns,, any)
 ELEMENT_END
 
 

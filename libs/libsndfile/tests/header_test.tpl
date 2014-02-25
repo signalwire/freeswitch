@@ -1,6 +1,6 @@
 [+ AutoGen5 template c +]
 /*
-** Copyright (C) 2001-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2001-2012 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software ; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -22,9 +22,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
+#include <math.h>
 
 #include <sys/stat.h>
-#include <math.h>
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
@@ -43,7 +44,7 @@
 
 #include	"utils.h"
 
-#define	BUFFER_LEN		(1<<10)
+#define	BUFFER_LEN		(1 << 10)
 #define LOG_BUFFER_SIZE	1024
 
 static void	update_header_test (const char *filename, int typemajor) ;
@@ -77,7 +78,7 @@ main (int argc, char *argv [])
 		exit (1) ;
 		} ;
 
-	do_all=!strcmp (argv [1], "all") ;
+	do_all= !strcmp (argv [1], "all") ;
 
 	if (do_all || ! strcmp (argv [1], "wav"))
 	{	update_header_test ("header.wav", SF_FORMAT_WAV) ;
@@ -244,14 +245,12 @@ static void
 update_header_sub (const char *filename, int typemajor, int write_mode)
 {	SNDFILE		*outfile, *infile ;
 	SF_INFO		sfinfo ;
-	int			k, frames ;
+	int			k ;
 
 	sfinfo.samplerate = 44100 ;
 	sfinfo.format = (typemajor | SF_FORMAT_PCM_16) ;
 	sfinfo.channels = 1 ;
 	sfinfo.frames = 0 ;
-
-	frames = BUFFER_LEN / sfinfo.channels ;
 
 	outfile = test_open_file_or_die (filename, write_mode, &sfinfo, SF_TRUE, __LINE__) ;
 
@@ -275,7 +274,7 @@ update_header_sub (const char *filename, int typemajor, int write_mode)
 	check_log_buffer_or_die (infile, __LINE__) ;
 
 	if (sfinfo.frames < BUFFER_LEN || sfinfo.frames > BUFFER_LEN + 50)
-	{	printf ("\n\nLine %d : Incorrect sample count (%ld should be %d)\n", __LINE__, SF_COUNT_TO_LONG (sfinfo.frames), BUFFER_LEN) ;
+	{	printf ("\n\nLine %d : Incorrect sample count (%" PRId64 " should be %d)\n", __LINE__, sfinfo.frames, BUFFER_LEN) ;
 		dump_log_buffer (infile) ;
 		exit (1) ;
 		} ;
@@ -300,7 +299,7 @@ update_header_sub (const char *filename, int typemajor, int write_mode)
 	check_log_buffer_or_die (infile, __LINE__) ;
 
 	if (sfinfo.frames < 2 * BUFFER_LEN || sfinfo.frames > 2 * BUFFER_LEN + 50)
-	{	printf ("\n\nLine %d : Incorrect sample count (%ld should be %d)\n", __LINE__, SF_COUNT_TO_LONG (sfinfo.frames), 2 * BUFFER_LEN) ;
+	{	printf ("\n\nLine %d : Incorrect sample count (%" PRId64 " should be %d)\n", __LINE__, sfinfo.frames, 2 * BUFFER_LEN) ;
 		dump_log_buffer (infile) ;
 		exit (1) ;
 		} ;
@@ -332,8 +331,8 @@ update_header_test (const char *filename, int typemajor)
 update_seek_[+ (get "name") +]_test	(const char *filename, int filetype)
 {	SNDFILE *outfile, *infile ;
 	SF_INFO sfinfo ;
-    sf_count_t frames ;
-    [+ (get "name") +] buffer [8] ;
+	sf_count_t frames ;
+	[+ (get "name") +] buffer [8] ;
 	int k ;
 
 	print_test_name ("update_seek_[+ (get "name") +]_test", filename) ;
@@ -356,11 +355,11 @@ update_seek_[+ (get "name") +]_test	(const char *filename, int filetype)
 
 	/*
 	** In auto header update mode, seeking to the end of the file with
-    ** SEEK_SET will fail from the 2nd seek on.  seeking to 0, SEEK_END
+	** SEEK_SET will fail from the 2nd seek on.  seeking to 0, SEEK_END
 	** will seek to 0 anyway
 	*/
 	if (sf_command (outfile, SFC_SET_UPDATE_HEADER_AUTO, NULL, SF_TRUE) == 0)
-    {	printf ("\n\nError : sf_command (SFC_SET_UPDATE_HEADER_AUTO) return error : %s\n\n", sf_strerror (outfile)) ;
+	{	printf ("\n\nError : sf_command (SFC_SET_UPDATE_HEADER_AUTO) return error : %s\n\n", sf_strerror (outfile)) ;
 		exit (1) ;
 		} ;
 
@@ -377,7 +376,7 @@ update_seek_[+ (get "name") +]_test	(const char *filename, int filetype)
 		sf_close (infile) ;
 
 		if (sfinfo.frames != k * frames)
-		{	printf ("\n\nLine %d : Incorrect sample count (%ld should be %ld)\n", __LINE__, SF_COUNT_TO_LONG (sfinfo.frames), SF_COUNT_TO_LONG (k + frames)) ;
+		{	printf ("\n\nLine %d : Incorrect sample count (%" PRId64 " should be %" PRId64 ")\n", __LINE__, sfinfo.frames, k + frames) ;
 			dump_log_buffer (infile) ;
 			exit (1) ;
 			} ;
@@ -445,8 +444,8 @@ static void
 extra_header_test (const char *filename, int filetype)
 {	SNDFILE *outfile, *infile ;
 	SF_INFO sfinfo ;
-    sf_count_t frames ;
-    short buffer [8] ;
+	sf_count_t frames ;
+	short buffer [8] ;
 	int k = 0 ;
 
 	print_test_name ("extra_header_test", filename) ;
@@ -494,11 +493,11 @@ extra_header_test (const char *filename, int filetype)
 
 	/*
 	** In auto header update mode, seeking to the end of the file with
-    ** SEEK_SET will fail from the 2nd seek on.  seeking to 0, SEEK_END
+	** SEEK_SET will fail from the 2nd seek on.  seeking to 0, SEEK_END
 	** will seek to 0 anyway
 	*/
 	if (sf_command (outfile, SFC_SET_UPDATE_HEADER_AUTO, NULL, SF_TRUE) == 0)
-    {	printf ("\n\nError : sf_command (SFC_SET_UPDATE_HEADER_AUTO) return error : %s\n\n", sf_strerror (outfile)) ;
+	{	printf ("\n\nError : sf_command (SFC_SET_UPDATE_HEADER_AUTO) return error : %s\n\n", sf_strerror (outfile)) ;
 		exit (1) ;
 		} ;
 
@@ -522,7 +521,7 @@ extra_header_test (const char *filename, int filetype)
 			} ;
 
 		if (sfinfo.frames != k * frames)
-		{	printf ("\n\nLine %d : Incorrect sample count (%ld should be %ld)\n", [+ (tpl-file-line "%2$d") +], SF_COUNT_TO_LONG (sfinfo.frames), SF_COUNT_TO_LONG (k + frames)) ;
+		{	printf ("\n\nLine %d : Incorrect sample count (%" PRId64 " should be %" PRId64 ")\n", [+ (tpl-file-line "%2$d") +], sfinfo.frames, k + frames) ;
 			dump_log_buffer (infile) ;
 			exit (1) ;
 			} ;

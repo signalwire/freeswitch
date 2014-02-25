@@ -331,7 +331,7 @@ static switch_status_t http_put(url_cache_t *cache, http_profile_t *profile, swi
 	switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
 	switch_curl_easy_cleanup(curl_handle);
 
-	if (httpRes == 200 || httpRes == 201 || httpRes == 204) {
+	if (httpRes == 200 || httpRes == 201 || httpRes == 202 || httpRes == 204) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s saved to %s\n", filename, url);
 		if (cache_local_file) {
 			cached_url_t *u = NULL;

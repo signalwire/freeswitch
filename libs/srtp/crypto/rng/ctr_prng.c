@@ -66,7 +66,11 @@ ctr_prng_init(rand_source_func_t random_source) {
     return status;
 
   /* initialize aes ctr context with random key */
+#ifdef OPENSSL
+  status = aes_icm_openssl_context_init(&ctr_prng.state, tmp_key, 30);
+#else
   status = aes_icm_context_init(&ctr_prng.state, tmp_key, 30);
+#endif
   if (status) 
     return status;
 

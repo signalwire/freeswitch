@@ -61,7 +61,6 @@
 
 #define HAVE_APR
 #include <switch.h>
-#include <switch_version.h>
 #define MODNAME "mod_h323"
 #define OpalT38_IFP_COR       GetOpalT38_IFP_COR()
 #define OpalT38_IFP_PRE       GetOpalT38_IFP_PRE()

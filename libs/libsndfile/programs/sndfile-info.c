@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2013 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** All rights reserved.
 **
@@ -45,15 +45,16 @@
 
 #if (defined (WIN32) || defined (_WIN32))
 #include <windows.h>
-#define	snprintf	_snprintf
 #endif
 
 static void print_version (void) ;
-static void print_usage (const char *progname) ;
+static void usage_exit (const char *progname) ;
 
 static void info_dump (const char *filename) ;
 static int	instrument_dump (const char *filename) ;
 static int	broadcast_dump (const char *filename) ;
+static int	chanmap_dump (const char *filename) ;
+static int	cart_dump (const char *filename) ;
 static void total_dump (void) ;
 
 static double total_seconds = 0.0 ;
@@ -65,16 +66,11 @@ main (int argc, char *argv [])
 	print_version () ;
 
 	if (argc < 2 || strcmp (argv [1], "--help") == 0 || strcmp (argv [1], "-h") == 0)
-	{	char *progname ;
-
-		progname = strrchr (argv [0], '/') ;
-		progname = progname ? progname + 1 : argv [0] ;
-
-		print_usage (progname) ;
+	{	usage_exit (program_name (argv [0])) ;
 		return 1 ;
 		} ;
 
-	if (strcmp (argv [1], "-i") == 0)
+	if (strcmp (argv [1], "--instrument") == 0)
 	{	int error = 0 ;
 
 		for (k = 2 ; k < argc ; k++)
@@ -82,11 +78,27 @@ main (int argc, char *argv [])
 		return error ;
 		} ;
 
-	if (strcmp (argv [1], "-b") == 0)
+	if (strcmp (argv [1], "--broadcast") == 0)
 	{	int error = 0 ;
 
 		for (k = 2 ; k < argc ; k++)
 			error += broadcast_dump (argv [k]) ;
+		return error ;
+		} ;
+
+	if (strcmp (argv [1], "--channel-map") == 0)
+	{	int error = 0 ;
+
+		for (k = 2 ; k < argc ; k++)
+			error += chanmap_dump (argv [k]) ;
+		return error ;
+		} ;
+
+	if (strcmp (argv [1], "--cart") == 0)
+	{	int error = 0 ;
+
+		for (k = 2 ; k < argc ; k++)
+			error += cart_dump (argv [k]) ;
 		return error ;
 		} ;
 
@@ -115,13 +127,17 @@ print_version (void)
 
 
 static void
-print_usage (const char *progname)
+usage_exit (const char *progname)
 {	printf ("Usage :\n  %s <file> ...\n", progname) ;
 	printf ("    Prints out information about one or more sound files.\n\n") ;
-	printf ("  %s -i <file>\n", progname) ;
+	printf ("  %s --instrument <file>\n", progname) ;
 	printf ("    Prints out the instrument data for the given file.\n\n") ;
-	printf ("  %s -b <file>\n", progname) ;
+	printf ("  %s --broadcast <file>\n", progname) ;
 	printf ("    Prints out the broadcast WAV info for the given file.\n\n") ;
+	printf ("  %s --channel-map <file>\n", progname) ;
+	printf ("    Prints out the channel map for the given file.\n\n") ;
+	printf ("  %s --cart <file>\n", progname) ;
+	printf ("    Prints out the cart chunk WAV info for the given file.\n\n") ;
 #if (defined (_WIN32) || defined (WIN32))
 		printf ("This is a Unix style command line application which\n"
 				"should be run in a MSDOS box or Command Shell window.\n\n") ;
@@ -135,22 +151,14 @@ print_usage (const char *progname)
 		*/
 		Sleep (5 * 1000) ;
 #endif
-} /* print_usage */
+	exit (0) ;
+} /* usage_exit */
 
 /*==============================================================================
 **	Dumping of sndfile info.
 */
 
 static double	data [BUFFER_LEN] ;
-
-static double
-get_signal_max (SNDFILE *file)
-{	double	max ;
-
-	sf_command (file, SFC_CALC_SIGNAL_MAX, &max, sizeof (max)) ;
-
-	return max ;
-} /* get_signal_max */
 
 static double
 calc_decibels (SF_INFO * sfinfo, double max)
@@ -226,8 +234,8 @@ generate_duration_str (SF_INFO *sfinfo)
 static void
 info_dump (const char *filename)
 {	static	char	strbuffer [BUFFER_LEN] ;
-	SNDFILE	 	*file ;
-	SF_INFO	 	sfinfo ;
+	SNDFILE		*file ;
+	SF_INFO		sfinfo ;
 	double		signal_max, decibels ;
 
 	memset (&sfinfo, 0, sizeof (sfinfo)) ;
@@ -248,7 +256,12 @@ info_dump (const char *filename)
 	printf ("----------------------------------------\n") ;
 
 	printf ("Sample Rate : %d\n", sfinfo.samplerate) ;
-	printf ("Frames      : %" PRId64 "\n", sfinfo.frames) ;
+
+	if (sfinfo.frames == SF_COUNT_MAX)
+		printf ("Frames      : unknown\n") ;
+	else
+		printf ("Frames      : %" PRId64 "\n", sfinfo.frames) ;
+
 	printf ("Channels    : %d\n", sfinfo.channels) ;
 	printf ("Format      : 0x%08X\n", sfinfo.format) ;
 	printf ("Sections    : %d\n", sfinfo.sections) ;
@@ -257,7 +270,7 @@ info_dump (const char *filename)
 
 	if (sfinfo.frames < 100 * 1024 * 1024)
 	{	/* Do not use sf_signal_max because it doesn't work for non-seekable files . */
-		signal_max = get_signal_max (file) ;
+		sf_command (file, SFC_CALC_SIGNAL_MAX, &signal_max, sizeof (signal_max)) ;
 		decibels = calc_decibels (&sfinfo, signal_max) ;
 		printf ("Signal Max  : %g (%4.2f dB)\n", signal_max, decibels) ;
 		} ;
@@ -286,8 +299,8 @@ str_of_type (int mode)
 
 static int
 instrument_dump (const char *filename)
-{	SNDFILE	 *file ;
-	SF_INFO	 sfinfo ;
+{	SNDFILE	*file ;
+	SF_INFO	sfinfo ;
 	SF_INSTRUMENT inst ;
 	int got_inst, k ;
 
@@ -325,8 +338,8 @@ instrument_dump (const char *filename)
 
 static int
 broadcast_dump (const char *filename)
-{	SNDFILE	 *file ;
-	SF_INFO	 sfinfo ;
+{	SNDFILE	*file ;
+	SF_INFO	sfinfo ;
 	SF_BROADCAST_INFO_2K bext ;
 	double time_ref_sec ;
 	int got_bext ;
@@ -378,6 +391,136 @@ broadcast_dump (const char *filename)
 
 	return 0 ;
 } /* broadcast_dump */
+
+static int
+chanmap_dump (const char *filename)
+{	SNDFILE	*file ;
+	SF_INFO	sfinfo ;
+	int * channel_map ;
+	int got_chanmap, k ;
+
+	memset (&sfinfo, 0, sizeof (sfinfo)) ;
+
+	if ((file = sf_open (filename, SFM_READ, &sfinfo)) == NULL)
+	{	printf ("Error : Not able to open input file %s.\n", filename) ;
+		fflush (stdout) ;
+		memset (data, 0, sizeof (data)) ;
+		puts (sf_strerror (NULL)) ;
+		return 1 ;
+		} ;
+
+	if ((channel_map = calloc (sfinfo.channels, sizeof (int))) == NULL)
+	{	printf ("Error : malloc failed.\n\n") ;
+		return 1 ;
+		} ;
+
+	got_chanmap = sf_command (file, SFC_GET_CHANNEL_MAP_INFO, channel_map, sfinfo.channels * sizeof (int)) ;
+	sf_close (file) ;
+
+	if (got_chanmap == SF_FALSE)
+	{	printf ("Error : File '%s' does not contain channel map information.\n\n", filename) ;
+		free (channel_map) ;
+		return 1 ;
+		} ;
+
+	printf ("File : %s\n\n", filename) ;
+
+	puts ("    Chan    Position") ;
+	for (k = 0 ; k < sfinfo.channels ; k ++)
+	{	const char * name ;
+
+#define CASE_NAME(x)	case x : name = #x ; break ;
+		switch (channel_map [k])
+		{	CASE_NAME (SF_CHANNEL_MAP_INVALID) ;
+			CASE_NAME (SF_CHANNEL_MAP_MONO) ;
+			CASE_NAME (SF_CHANNEL_MAP_LEFT) ;
+			CASE_NAME (SF_CHANNEL_MAP_RIGHT) ;
+			CASE_NAME (SF_CHANNEL_MAP_CENTER) ;
+			CASE_NAME (SF_CHANNEL_MAP_FRONT_LEFT) ;
+			CASE_NAME (SF_CHANNEL_MAP_FRONT_RIGHT) ;
+			CASE_NAME (SF_CHANNEL_MAP_FRONT_CENTER) ;
+			CASE_NAME (SF_CHANNEL_MAP_REAR_CENTER) ;
+			CASE_NAME (SF_CHANNEL_MAP_REAR_LEFT) ;
+			CASE_NAME (SF_CHANNEL_MAP_REAR_RIGHT) ;
+			CASE_NAME (SF_CHANNEL_MAP_LFE) ;
+			CASE_NAME (SF_CHANNEL_MAP_FRONT_LEFT_OF_CENTER) ;
+			CASE_NAME (SF_CHANNEL_MAP_FRONT_RIGHT_OF_CENTER) ;
+			CASE_NAME (SF_CHANNEL_MAP_SIDE_LEFT) ;
+			CASE_NAME (SF_CHANNEL_MAP_SIDE_RIGHT) ;
+			CASE_NAME (SF_CHANNEL_MAP_TOP_CENTER) ;
+			CASE_NAME (SF_CHANNEL_MAP_TOP_FRONT_LEFT) ;
+			CASE_NAME (SF_CHANNEL_MAP_TOP_FRONT_RIGHT) ;
+			CASE_NAME (SF_CHANNEL_MAP_TOP_FRONT_CENTER) ;
+			CASE_NAME (SF_CHANNEL_MAP_TOP_REAR_LEFT) ;
+			CASE_NAME (SF_CHANNEL_MAP_TOP_REAR_RIGHT) ;
+			CASE_NAME (SF_CHANNEL_MAP_TOP_REAR_CENTER) ;
+			CASE_NAME (SF_CHANNEL_MAP_MAX) ;
+			default : name = "default" ;
+				break ;
+			} ;
+
+		printf ("    %3d     %s\n", k, name) ;
+		} ;
+
+	putchar ('\n') ;
+	free (channel_map) ;
+
+	return 0 ;
+} /* chanmap_dump */
+
+static int
+cart_dump (const char *filename)
+{	SNDFILE	*file ;
+	SF_INFO	sfinfo ;
+	SF_CART_INFO_VAR (1024) cart ;
+	int got_cart, k ;
+
+	memset (&sfinfo, 0, sizeof (sfinfo)) ;
+	memset (&cart, 0, sizeof (cart)) ;
+
+	if ((file = sf_open (filename, SFM_READ, &sfinfo)) == NULL)
+	{	printf ("Error : Not able to open input file %s.\n", filename) ;
+		fflush (stdout) ;
+		memset (data, 0, sizeof (data)) ;
+		puts (sf_strerror (NULL)) ;
+		return 1 ;
+		} ;
+
+	got_cart = sf_command (file, SFC_GET_CART_INFO, &cart, sizeof (cart)) ;
+	sf_close (file) ;
+
+	if (got_cart == SF_FALSE)
+	{	printf ("Error : File '%s' does not contain cart information.\n\n", filename) ;
+		return 1 ;
+		} ;
+
+	printf ("Version        : %.*s\n", (int) sizeof (cart.version), cart.version) ;
+	printf ("Title          : %.*s\n", (int) sizeof (cart.title), cart.title) ;
+	printf ("Artist         : %.*s\n", (int) sizeof (cart.artist), cart.artist) ;
+	printf ("Cut id         : %.*s\n", (int) sizeof (cart.cut_id), cart.cut_id) ;
+	printf ("Category       : %.*s\n", (int) sizeof (cart.category), cart.category) ;
+	printf ("Classification : %.*s\n", (int) sizeof (cart.classification), cart.classification) ;
+	printf ("Out cue        : %.*s\n", (int) sizeof (cart.out_cue), cart.out_cue) ;
+	printf ("Start date     : %.*s\n", (int) sizeof (cart.start_date), cart.start_date) ;
+	printf ("Start time     : %.*s\n", (int) sizeof (cart.start_time), cart.start_time) ;
+	printf ("End date       : %.*s\n", (int) sizeof (cart.end_date), cart.end_date) ;
+	printf ("End time       : %.*s\n", (int) sizeof (cart.end_time), cart.end_time) ;
+	printf ("App id         : %.*s\n", (int) sizeof (cart.producer_app_id), cart.producer_app_id) ;
+	printf ("App version    : %.*s\n", (int) sizeof (cart.producer_app_version), cart.producer_app_version) ;
+	printf ("User defined   : %.*s\n", (int) sizeof (cart.user_def), cart.user_def) ;
+	printf ("Level ref.     : %d\n", cart.level_reference) ;
+	printf ("Post timers    :\n") ;
+
+	for (k = 0 ; k < ARRAY_LEN (cart.post_timers) ; k++)
+		if (cart.post_timers [k].usage [0])
+			printf ("  %d   %.*s    %d\n", k, (int) sizeof (cart.post_timers [k].usage), cart.post_timers [k].usage, cart.post_timers [k].value) ;
+
+	printf ("Reserved       : %.*s\n", (int) sizeof (cart.reserved), cart.reserved) ;
+	printf ("Url            : %.*s\n", (int) sizeof (cart.url), cart.url) ;
+	printf ("Tag text       : %.*s\n", cart.tag_text_size, cart.tag_text) ;
+
+	return 0 ;
+} /* cart_dump */
 
 static void
 total_dump (void)

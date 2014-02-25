@@ -29,6 +29,7 @@ Description: Caller ID name lookup
 Module: applications/mod_cluechoo
 Description: Clue Choo
  This demo module renders a Clue Choo train on the FreeSWITCH console.
+Build-Depends: libncurses5-dev
 
 Module: applications/mod_commands
 Description: Command module
@@ -337,11 +338,6 @@ Module: codecs/mod_skel_codec
 Description: mod_skel_codec
  Adds mod_skel_codec.
 
-Module: codecs/mod_speex
-Description: mod_speex
- Adds mod_speex.
-Build-Depends: libogg-dev
-
 Module: codecs/mod_theora
 Description: mod_theora
  Adds mod_theora.
@@ -540,6 +536,8 @@ Module: formats/mod_vlc
 Description: VLC streaming
  This module provides VLC streaming.
 Build-Depends: libvlc-dev (>= 2.0.0)
+Depends: vlc-nox
+Suggests: vlc-dbg
 Distro-Conflicts: squeeze
 
 ## mod/languages
@@ -572,6 +570,10 @@ Module: languages/mod_spidermonkey
 Description: mod_spidermonkey
  Adds mod_spidermonkey.
 Build-Depends: unixodbc-dev
+
+Module: languages/mod_v8
+Description: mod_v8
+ Adds mod_v8.
 
 Module: languages/mod_yaml
 Description: mod_yaml
@@ -649,6 +651,10 @@ Description: mod_say_pt
 Module: say/mod_say_ru
 Description: mod_say_ru
  Adds mod_say_ru.
+
+Module: say/mod_say_sv
+Description: mod_say_sv
+ Adds mod_say_sv.
 
 Module: say/mod_say_th
 Description: mod_say_th

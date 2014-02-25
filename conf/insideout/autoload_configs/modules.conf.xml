@@ -62,7 +62,6 @@
     <load module="mod_g729"/>
     <load module="mod_amr"/>
     <!--<load module="mod_ilbc"/>-->
-    <load module="mod_speex"/>
     <load module="mod_h26x"/>
     <load module="mod_vp8"/>
     <!--<load module="mod_siren"/>-->
@@ -79,7 +78,8 @@
     <!-- Timers -->
 
     <!-- Languages -->
-    <load module="mod_spidermonkey"/>
+    <!-- <load module="mod_spidermonkey"/> -->
+    <load module="mod_v8"/>
     <!-- <load module="mod_perl"/> -->
     <!-- <load module="mod_python"/> -->
     <!-- <load module="mod_java"/> -->
@@ -95,5 +95,6 @@
     <!-- Say -->
     <load module="mod_say_en"/>
     <!-- <load module="mod_say_zh"/> -->
+    <!-- <load module="mod_say_sv"/> -->
   </modules>
 </configuration>
