@@ -60,9 +60,6 @@
     <ClCompile Include="crypto\cipher\aes_cbc.c">
       <Filter>Source Files\Ciphers</Filter>
     </ClCompile>
-    <ClCompile Include="crypto\cipher\aes_icm.c">
-      <Filter>Source Files\Ciphers</Filter>
-    </ClCompile>
     <ClCompile Include="crypto\cipher\cipher.c">
       <Filter>Source Files\Ciphers</Filter>
     </ClCompile>
@@ -72,13 +69,7 @@
     <ClCompile Include="crypto\hash\auth.c">
       <Filter>Source Files\Hashes</Filter>
     </ClCompile>
-    <ClCompile Include="crypto\hash\hmac.c">
-      <Filter>Source Files\Hashes</Filter>
-    </ClCompile>
     <ClCompile Include="crypto\hash\null_auth.c">
-      <Filter>Source Files\Hashes</Filter>
-    </ClCompile>
-    <ClCompile Include="crypto\hash\sha1.c">
       <Filter>Source Files\Hashes</Filter>
     </ClCompile>
     <ClCompile Include="crypto\replay\rdb.c">
@@ -95,6 +86,18 @@
     </ClCompile>
     <ClCompile Include="crypto\math\stat.c">
       <Filter>Source Files\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="srtp\ekt.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto\hash\hmac_ossl.c">
+      <Filter>Source Files\Hashes</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto\cipher\aes_gcm_ossl.c">
+      <Filter>Source Files\Ciphers</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto\cipher\aes_icm_ossl.c">
+      <Filter>Source Files\Ciphers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -189,6 +192,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="crypto\include\xfm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crypto\include\aes_gcm_ossl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crypto\include\aes_icm_ossl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
