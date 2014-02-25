@@ -64,6 +64,7 @@ static struct {
 	uint32_t enable_ssl_verifyhost;
 	int encode;
 	int log_http_and_disk;
+	switch_bool_t log_errors_to_disk;
 	int log_b;
 	int prefix_a;
 	int disable100continue;
@@ -386,36 +387,40 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		curl_handle = NULL;
 
 		/* if we are here the web post failed for some reason */
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to post to web server, writing to file\n");
+		if (globals.log_errors_to_disk) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to post to web server, writing to file\n");
 
-		for (err_dir_index = 0; err_dir_index < globals.err_dir_count; err_dir_index++) {
-			switch_thread_rwlock_rdlock(globals.log_path_lock);
-			path = switch_mprintf("%s%s%s%s.cdr.json", globals.err_log_dir[err_dir_index], SWITCH_PATH_SEPARATOR, a_prefix, switch_core_session_get_uuid(session));
-			switch_thread_rwlock_unlock(globals.log_path_lock);
-			if (path) {
+			for (err_dir_index = 0; err_dir_index < globals.err_dir_count; err_dir_index++) {
+				switch_thread_rwlock_rdlock(globals.log_path_lock);
+				path = switch_mprintf("%s%s%s%s.cdr.json", globals.err_log_dir[err_dir_index], SWITCH_PATH_SEPARATOR, a_prefix, switch_core_session_get_uuid(session));
+				switch_thread_rwlock_unlock(globals.log_path_lock);
+				if (path) {
 #ifdef _MSC_VER
-				if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
+					if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 #else
-				if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) > -1) {
+						if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) > -1) {
 #endif
-					int wrote;
-					wrote = write(fd, json_text, (unsigned) strlen(json_text));
-					close(fd);
-					fd = -1;
-					if(wrote < 0) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error writing [%s]\n",path);
+							int wrote;
+							wrote = write(fd, json_text, (unsigned) strlen(json_text));
+							close(fd);
+							fd = -1;
+							if(wrote < 0) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error writing [%s]\n",path);
+							}
+							break;
+						} else {
+							char ebuf[512] = { 0 };
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open %s! [%s]\n",
+									path, switch_strerror_r(errno, ebuf, sizeof(ebuf)));
+
+						}
+
+						switch_safe_free(path);
 					}
-					break;
-				} else {
-					char ebuf[512] = { 0 };
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open %s! [%s]\n",
-							path, switch_strerror_r(errno, ebuf, sizeof(ebuf)));
-
 				}
-
-				switch_safe_free(path);
-			}
-		}	
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to post to web server, not writing to file\n");
+			}	
 	}
   success:
 	status = SWITCH_STATUS_SUCCESS;
@@ -484,6 +489,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load)
 	}
 
 	globals.log_http_and_disk = 0;
+	globals.log_errors_to_disk = SWITCH_TRUE;
 	globals.log_b = 1;
 	globals.disable100continue = 0;
 	globals.pool = pool;
@@ -513,6 +519,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load)
 				}
 			} else if (!strcasecmp(var, "log-http-and-disk")) {
 				globals.log_http_and_disk = switch_true(val);
+			} else if (!strcasecmp(var, "log-errors-to-disk")) {
+				globals.log_errors_to_disk = !switch_false(val);
 			} else if (!strcasecmp(var, "delay") && !zstr(val)) {
 				globals.delay = (uint32_t) atoi(val);
 			} else if (!strcasecmp(var, "log-b-leg")) {
