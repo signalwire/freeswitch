@@ -46,7 +46,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_channel_test_flag(session->channel, CF_MEDIA_PAUSE)) {
+	if (switch_channel_test_flag(session->channel, CF_VIDEO_PAUSE)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -74,7 +74,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_channel_test_flag(session->channel, CF_MEDIA_PAUSE)) {
+	if (switch_channel_test_flag(session->channel, CF_VIDEO_PAUSE)) {
 		*frame = &runtime.dummy_cng_frame;
 		switch_yield(20000);
 		return SWITCH_STATUS_SUCCESS;
@@ -177,7 +177,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			return SWITCH_STATUS_SUCCESS;
 		}
 
-		if (switch_channel_test_flag(session->channel, CF_MEDIA_PAUSE)) {
+		if (switch_channel_test_flag(session->channel, CF_AUDIO_PAUSE)) {
 			switch_yield(20000);
 			*frame = &runtime.dummy_cng_frame;
 			// switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Media Paused!!!!\n");
@@ -1053,7 +1053,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		}
 	}
 
-	if (switch_channel_test_flag(session->channel, CF_MEDIA_PAUSE)) {
+	if (switch_channel_test_flag(session->channel, CF_AUDIO_PAUSE)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 

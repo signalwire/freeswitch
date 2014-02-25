@@ -1267,6 +1267,10 @@ CF_EVENT_LOCK		- Don't parse events
 CF_RESET			- Tell extension parser to reset
 CF_ORIGINATING		- Channel is originating
 CF_STOP_BROADCAST	- Signal to stop broadcast
+
+CF_AUDIO_PAUSE      - Audio is not ready to read/write
+CF_VIDEO_PAUSE      - Video is not ready to read/write
+
 </pre>
  */
 
@@ -1398,7 +1402,8 @@ typedef enum {
 	CF_VIDEO_ECHO,
 	CF_SLA_INTERCEPT,
 	CF_VIDEO_BREAK,
-	CF_MEDIA_PAUSE,
+	CF_AUDIO_PAUSE,
+	CF_VIDEO_PAUSE,
 	CF_BYPASS_MEDIA_AFTER_HOLD,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
