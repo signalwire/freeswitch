@@ -36,6 +36,7 @@ install:
 	@echo " +       Install non english sounds:               +"
 	@echo " +       replace XX with language                  +"
 	@echo " +       (ru : Russian)                            +"
+	@echo " +       (fr : French)                             +"
 	@echo " +       ------------------------------------      +"
 	@echo " +               $(MK) cd-sounds-XX-install        +"
 	@echo " +               $(MK) uhd-sounds-XX-install       +"
