@@ -1509,8 +1509,9 @@ static void send_fir(switch_rtp_t *rtp_session)
 		}
 	}
 
-
+#ifdef ENABLE_SRTP
  end:
+#endif
 
 	return;
 }
@@ -1594,9 +1595,9 @@ static void send_pli(switch_rtp_t *rtp_session)
 		}
 	}
 
-
+#ifdef ENABLE_SRTP
  end:
-
+#endif
 	return;
 }
 
@@ -3884,7 +3885,9 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 {
 	void *pop;
 	switch_socket_t *sock;
+#ifdef ENABLE_SRTP
 	int x;
+#endif
 
 	if (!rtp_session || !*rtp_session || !(*rtp_session)->ready) {
 		return;
