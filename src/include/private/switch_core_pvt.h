@@ -259,6 +259,7 @@ struct switch_runtime {
 	uint32_t debug_level;
 	uint32_t runlevel;
 	uint32_t tipping_point;
+	uint32_t cpu_idle_smoothing_depth;
 	uint32_t microseconds_per_tick;
 	int32_t timer_affinity;
 	switch_profile_timer_t *profile_timer;

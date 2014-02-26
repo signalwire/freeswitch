@@ -32,7 +32,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include "switch.h"
-#include "switch_profile.h"
+#include "private/switch_core_pvt.h"
 
 #ifdef __linux__
 #include <stdio.h>
@@ -51,6 +51,9 @@ struct profile_timer
 
 	/* last calculated percentage of idle time */
 	double last_percentage_of_idle_time;
+	double *percentage_of_idle_time_ring;
+        unsigned int last_idle_time_index;
+        unsigned int cpu_idle_smoothing_depth;
 
 #ifdef __linux__
 	/* the cpu feature gets disabled on errors */
@@ -207,8 +210,21 @@ SWITCH_DECLARE(switch_bool_t) switch_get_system_idle_time(switch_profile_timer_t
 
 	halftime = totaltime / 2UL;
 
-	p->last_percentage_of_idle_time = ((100 * idletime + halftime) / totaltime);
+	p->last_idle_time_index += 1;
+	if ( p->last_idle_time_index >= p->cpu_idle_smoothing_depth ) {
+	  p->last_idle_time_index = 0;
+	}
+	p->percentage_of_idle_time_ring[p->last_idle_time_index] = ((100 * idletime + halftime) / totaltime);
+
+	p->last_percentage_of_idle_time = 0;
+	for ( int x = 0; x < p->cpu_idle_smoothing_depth; x++ ) {
+	  //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "IDLE TIME: (%d)[%lf]\n", x, p->percentage_of_idle_time_ring[x]);
+	  p->last_percentage_of_idle_time += p->percentage_of_idle_time_ring[x];
+	}
+	p->last_percentage_of_idle_time /= p->cpu_idle_smoothing_depth;
+
 	*idle_percentage = p->last_percentage_of_idle_time;
+	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "IDLE TIME finalized:   [%lf]\n", *idle_percentage);
 
 	p->last_user_time = user;
 	p->last_nice_time = nice;
@@ -246,7 +262,18 @@ SWITCH_DECLARE(switch_bool_t) switch_get_system_idle_time(switch_profile_timer_t
 		__int64 i64Kernel = i64KernelTime - p->i64LastKernelTime;
 		__int64 i64Idle = i64IdleTime - p->i64LastIdleTime;
 		__int64 i64System = i64User + i64Kernel;
-		*idle_percentage = 100.0 * i64Idle / i64System;
+
+		p->last_idle_time_index += 1;
+		if ( p->last_idle_time_index >= p->cpu_idle_smoothing_depth ) {
+		  p->last_idle_time_index = 0;
+		}
+		p->percentage_of_idle_time_ring[p->last_idle_time_index] = 100.0 * i64Idle / i64System;
+
+		*idle_percentage = 0;
+		for ( int x = 0; x < p->cpu_idle_smoothing_depth; x++ ) {
+		  *idle_percentage += p->percentage_of_idle_time_ring[x];
+		}
+		*idle_percentage /= p->cpu_idle_smoothing_depth;
 	} else {
 		*idle_percentage = 100.0;
 		p->valid_last_times = 1;
@@ -274,7 +301,21 @@ SWITCH_DECLARE(switch_bool_t) switch_get_system_idle_time(switch_profile_timer_t
 
 SWITCH_DECLARE(switch_profile_timer_t *)switch_new_profile_timer(void)
 {
-	return calloc(1, sizeof(switch_profile_timer_t));
+  switch_profile_timer_t *p = calloc(1, sizeof(switch_profile_timer_t));
+
+  if ( runtime.cpu_idle_smoothing_depth && runtime.cpu_idle_smoothing_depth > 0 ) {
+    p->cpu_idle_smoothing_depth = runtime.cpu_idle_smoothing_depth;
+  } else {
+    p->cpu_idle_smoothing_depth = 30;
+  }
+
+  p->percentage_of_idle_time_ring = calloc(1, sizeof(double) * p->cpu_idle_smoothing_depth);
+
+  for ( int x = 0; x < p->cpu_idle_smoothing_depth; x++ ) {
+    p->percentage_of_idle_time_ring[x] = 100.0;
+  }
+
+  return p;
 }
 
 SWITCH_DECLARE(void) switch_delete_profile_timer(switch_profile_timer_t **p)
@@ -284,6 +325,7 @@ SWITCH_DECLARE(void) switch_delete_profile_timer(switch_profile_timer_t **p)
 #ifdef __linux__
 	close((*p)->procfd);
 #endif
+	free((*p)->percentage_of_idle_time_ring);
 	free(*p);
 	*p = NULL;
 }

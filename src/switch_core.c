@@ -1976,6 +1976,8 @@ static void switch_load_core_config(const char *file)
 					switch_core_min_idle_cpu(atof(val));
 				} else if (!strcasecmp(var, "tipping-point") && !zstr(val)) {
 					runtime.tipping_point = atoi(val);
+				} else if (!strcasecmp(var, "cpu-idle-smoothing-depth") && !zstr(val)) {
+					runtime.cpu_idle_smoothing_depth = atoi(val);
 				} else if (!strcasecmp(var, "events-use-dispatch") && !zstr(val)) {
 					runtime.events_use_dispatch = switch_true(val);
 				} else if (!strcasecmp(var, "initial-event-threads") && !zstr(val)) {

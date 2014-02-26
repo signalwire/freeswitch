@@ -34,6 +34,8 @@
 	as different hostnames.
     -->
     <!-- <param name="switchname" value="freeswitch"/> -->
+    <!-- <param name="cpu-idle-smoothing-depth" value="30"/> -->
+
 
     <!-- Maximum number of simultaneous DB handles open -->
     <param name="max-db-handles" value="50"/>
