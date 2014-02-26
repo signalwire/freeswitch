@@ -3160,6 +3160,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 
 	if (switch_channel_test_flag(channel, CF_LEG_HOLDING)) {
 		switch_channel_mark_hold(channel, SWITCH_FALSE);
+		switch_channel_set_flag(channel, CF_HANGUP_HELD);
 	}
 
 	if (!ok) {
