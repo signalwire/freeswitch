@@ -34,6 +34,7 @@
  * Joseph Sullivan <jossulli@amazon.com>
  * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
  * William King <william.king@quentustech.com>
+ * David Knell <david.knell@telng.com>
  *
  * sofia.c -- SOFIA SIP Endpoint (sofia code)
  *
@@ -1316,9 +1317,10 @@ static void our_sofia_event_callback(nua_event_t event,
 
 		if (authorization) {
 			char network_ip[80];
-			sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), NULL);
+			int network_port;
+			sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 			auth_res = sofia_reg_parse_auth(profile, authorization, sip, de,
-											(char *) sip->sip_request->rq_method_name, tech_pvt->key, strlen(tech_pvt->key), network_ip, NULL, 0,
+											(char *) sip->sip_request->rq_method_name, tech_pvt->key, strlen(tech_pvt->key), network_ip, network_port, NULL, 0,
 											REG_INVITE, NULL, NULL, NULL, NULL);
 		}
 

@@ -30,6 +30,7 @@
  * Raymond Chandler <intralanman@freeswitch.org>
  * William King <william.king@quentustech.com>
  * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
+ * David Knell <david.knell@telng.com>
  *
  * sofia_presence.c -- SOFIA SIP Endpoint (presence code)
  *
@@ -3714,9 +3715,10 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		if (authorization) {
 			char network_ip[80];
-			sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), NULL);
+			int network_port;
+			sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 			auth_res = sofia_reg_parse_auth(profile, authorization, sip, de,
-											(char *) sip->sip_request->rq_method_name, key, sizeof(key), network_ip, &v_event, 0,
+											(char *) sip->sip_request->rq_method_name, key, sizeof(key), network_ip, network_port, &v_event, 0,
 											REG_REGISTER, to_user, NULL, NULL, NULL);
 		} else if ( sofia_reg_handle_register(nua, profile, nh, sip, de, REG_REGISTER, key, sizeof(key), &v_event, NULL, NULL, NULL)) {
 			if (v_event) {
@@ -4648,9 +4650,10 @@ void sofia_presence_handle_sip_i_message(int status,
 
 			if (authorization) {
 				char network_ip[80];
-				sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), NULL);
+				int network_port;
+				sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
 				auth_res = sofia_reg_parse_auth(profile, authorization, sip, de,
-												(char *) sip->sip_request->rq_method_name, key, keylen, network_ip, NULL, 0,
+												(char *) sip->sip_request->rq_method_name, key, keylen, network_ip, network_port, NULL, 0,
 												REG_INVITE, NULL, NULL, NULL, NULL);
 			} else if ( sofia_reg_handle_register(nua, profile, nh, sip, de, REG_INVITE, key, (uint32_t)keylen, &v_event, NULL, NULL, NULL)) {
 				if (v_event) {

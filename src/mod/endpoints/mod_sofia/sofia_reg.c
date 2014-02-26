@@ -28,7 +28,7 @@
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
- * David Knell <>
+ * David Knell <david.knell@telng.com>
  * Eliot Gable <egable AT.AT broadvox.com>
  * Leon de Rooij <leon@scarlet-internet.nl>
  * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
@@ -1401,7 +1401,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		const char *username = "unknown";
 		const char *realm = reg_host;
 		if ((auth_res = sofia_reg_parse_auth(profile, authorization, sip, de, sip->sip_request->rq_method_name,
-											 key, keylen, network_ip, v_event, exptime, regtype, to_user, &auth_params, &reg_count, user_xml)) == AUTH_STALE) {
+											 key, keylen, network_ip, network_port, v_event, exptime, regtype, to_user, &auth_params, &reg_count, user_xml)) == AUTH_STALE) {
 			stale = 1;
 		}
 
@@ -2488,6 +2488,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 								char *np,
 								size_t nplen,
 								char *ip,
+								int network_port,
 								switch_event_t **v_event,
 								long exptime, sofia_regtype_t regtype, const char *to_user, switch_event_t **auth_params, long *reg_count, switch_xml_t *user_xml)
 {
@@ -2516,6 +2517,8 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	const char *user_agent = NULL;
 	const char *user_agent_filter = profile->user_agent_filter;
 	uint32_t max_registrations_perext = profile->max_registrations_perext;
+	char client_port[16];
+	snprintf(client_port, 15, "%d", network_port);
 
 	username = realm = nonce = uri = qop = cnonce = nc = response = NULL;
 
@@ -2684,6 +2687,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_method", (sip && sip->sip_request) ? sip->sip_request->rq_method_name : NULL);
 
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "client_port", client_port);
 	if (auth_params) {
 		switch_event_dup(auth_params, params);
 	}
