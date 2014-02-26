@@ -1157,12 +1157,12 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, 
 	switch_thread_rwlock_unlock(listener->session_rwlock);
 
 	if (found) {
-		ei_x_encode_atom(rbuf, "ok");
-	} else {
-		ei_x_encode_tuple_header(rbuf, 2);
-		ei_x_encode_atom(rbuf, "error");
-		ei_x_encode_atom(rbuf, "notfound");
-	}
+		return SWITCH_STATUS_FALSE;
+	} 
+
+	ei_x_encode_tuple_header(rbuf, 2);
+	ei_x_encode_atom(rbuf, "error");
+	ei_x_encode_atom(rbuf, "notfound");
 
 	return SWITCH_STATUS_SUCCESS;
 }
