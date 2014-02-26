@@ -3144,7 +3144,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				//switch_channel_set_variable(session->channel, "rtp_secure_media", "true");
 			}
 
-			if (got_crypto == -1 && got_savp && !got_avp) {
+			if (got_crypto == -1 && got_savp && !got_avp && !got_webrtc) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Declining invite with only SAVP because secure media is administratively disabled\n");
 				match = 0;
 				break;
