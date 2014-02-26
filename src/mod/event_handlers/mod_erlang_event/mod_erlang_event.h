@@ -59,6 +59,8 @@ enum reply_state { reply_not_ready, reply_waiting, reply_found, reply_timeout };
 
 struct fetch_reply_struct
 {
+	const char *uuid_str;
+	switch_memory_pool_t *pool;
 	switch_thread_cond_t *ready_or_found;
 	switch_mutex_t *mutex;
 	enum reply_state state;
@@ -266,6 +268,8 @@ session_elem_t *attach_call_to_pid(listener_t *listener, erlang_pid * pid, switc
 session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *module, char *function, switch_core_session_t *session);
 session_elem_t *find_session_elem_by_pid(listener_t *listener, erlang_pid *pid);
 void put_reply_unlock(fetch_reply_t *p, char *uuid_str);
+
+fetch_reply_t *find_fetch_reply(const char *uuid);
 
 /* For Emacs:
  * Local Variables:

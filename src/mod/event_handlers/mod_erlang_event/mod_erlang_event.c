@@ -377,6 +377,58 @@ session_elem_t *find_session_elem_by_pid(listener_t *listener, erlang_pid *pid)
 	return session;
 }
 
+static fetch_reply_t *new_fetch_reply(const char *uuid_str) 
+{
+	fetch_reply_t *reply = NULL;
+	switch_memory_pool_t *pool = NULL;
+
+	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
+		abort();
+	}
+	switch_assert(pool != NULL);
+	reply = switch_core_alloc(pool, sizeof(*reply));
+	switch_assert(reply != NULL);
+	memset(reply, 0, sizeof(*reply));
+	
+	reply->uuid_str = switch_core_strdup(pool, uuid_str);
+	reply->pool = pool;
+	switch_thread_cond_create(&reply->ready_or_found, pool);
+	switch_mutex_init(&reply->mutex, SWITCH_MUTEX_UNNESTED, pool);
+	reply->state = reply_not_ready;
+	reply->reply = NULL;
+	switch_core_hash_insert_locked(globals.fetch_reply_hash, uuid_str, reply, globals.fetch_reply_mutex);
+	reply->state = reply_waiting;
+
+	return reply;
+}
+
+static void destroy_fetch_reply(fetch_reply_t *reply) 
+{
+	switch_core_hash_delete_locked(globals.fetch_reply_hash, reply->uuid_str, globals.fetch_reply_mutex);
+	/* lock so nothing can have it while we delete it */
+	switch_mutex_lock(reply->mutex);
+	switch_mutex_unlock(reply->mutex);
+
+	switch_mutex_destroy(reply->mutex);
+	switch_thread_cond_destroy(reply->ready_or_found);
+	switch_safe_free(reply->reply);
+	switch_core_destroy_memory_pool(&(reply->pool));
+}
+
+fetch_reply_t *find_fetch_reply(const char *uuid) 
+{
+	fetch_reply_t *reply = NULL;
+
+	switch_mutex_lock(globals.fetch_reply_mutex);
+	if ((reply = switch_core_hash_find(globals.fetch_reply_hash, uuid))) {
+		if (switch_mutex_trylock(reply->mutex) != SWITCH_STATUS_SUCCESS) {
+			reply = NULL;
+		}
+	}
+	switch_mutex_unlock(globals.fetch_reply_mutex);
+	return reply;
+}
 
 static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, const char *key_name, const char *key_value,
 								 switch_event_t *params, void *user_data)
@@ -437,15 +489,7 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 		}
 
 		if (!p) {
-			/* Create a new fetch object. */
-			p = malloc(sizeof(*p));
-			switch_thread_cond_create(&p->ready_or_found, module_pool);
-			/* TODO module pool */
-			switch_mutex_init(&p->mutex, SWITCH_MUTEX_UNNESTED, module_pool);
-			p->state = reply_not_ready;
-			p->reply = NULL;
-			switch_core_hash_insert_locked(globals.fetch_reply_hash, uuid_str, p, globals.fetch_reply_mutex);
-			p->state = reply_waiting;
+			p = new_fetch_reply(uuid_str);
 			now = switch_micro_time_now();
 		}
 		/* We don't need to lock here because everybody is waiting
@@ -517,14 +561,7 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 	/* cleanup */
  cleanup:
 	if (p) {
-		/* lock so nothing can have it while we delete it */
-		switch_mutex_lock(p->mutex);
-		switch_core_hash_delete_locked(globals.fetch_reply_hash, uuid_str, globals.fetch_reply_mutex);
-		switch_mutex_unlock(p->mutex);
-		switch_mutex_destroy(p->mutex);
-		switch_thread_cond_destroy(p->ready_or_found);
-		switch_safe_free(p->reply);
-		switch_safe_free(p);
+		destroy_fetch_reply(p);
 	}
 
 	return xml;

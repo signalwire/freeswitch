@@ -176,66 +176,58 @@ static switch_status_t handle_msg_fetch_reply(listener_t *listener, ei_x_buff * 
 		ei_x_encode_atom(rbuf, "error");
 		ei_x_encode_atom(rbuf, "badarg");
 	} else {
-		/* TODO - maybe use a rwlock instead */
-		if ((p = switch_core_hash_find_locked(globals.fetch_reply_hash, uuid_str, globals.fetch_reply_mutex))) {
-			/* try to lock the mutex, so no other responder can */
-			if (switch_mutex_trylock(p->mutex) == SWITCH_STATUS_SUCCESS) {
-				if (p->state == reply_waiting) {
-					/* alright, we've got the lock and we're the first to reply */
 
+		/* reply mutex is locked */
+		if ((p = find_fetch_reply(uuid_str))) {
+			switch (p->state) {
+			case reply_waiting: 
+				{
 					/* clone the reply so it doesn't get destroyed on us */
 					ei_x_buff *nbuf = malloc(sizeof(*nbuf));
 					nbuf->buff = malloc(buf->buffsz);
 					memcpy(nbuf->buff, buf->buff, buf->buffsz);
 					nbuf->index = buf->index;
 					nbuf->buffsz = buf->buffsz;
-
+					
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got reply for %s\n", uuid_str);
-
+					
 					/* copy info into the reply struct */
 					p->state = reply_found;
 					p->reply = nbuf;
 					strncpy(p->winner, listener->peer_nodename, MAXNODELEN);
-
+					
 					/* signal waiting thread that its time to wake up */
 					switch_thread_cond_signal(p->ready_or_found);
-
 					/* reply OK */
 					ei_x_encode_tuple_header(rbuf, 2);
 					ei_x_encode_atom(rbuf, "ok");
 					_ei_x_encode_string(rbuf, uuid_str);
-
-					/* unlock */
-					switch_mutex_unlock(p->mutex);
-				} else {
-					if (p->state == reply_found) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Reply for already complete request %s\n", uuid_str);
-						ei_x_encode_tuple_header(rbuf, 3);
-						ei_x_encode_atom(rbuf, "error");
-						_ei_x_encode_string(rbuf, uuid_str);
-						ei_x_encode_atom(rbuf, "duplicate_response");
-					} else if (p->state == reply_timeout) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Reply for timed out request %s\n", uuid_str);
-						ei_x_encode_tuple_header(rbuf, 3);
-						ei_x_encode_atom(rbuf, "error");
-						_ei_x_encode_string(rbuf, uuid_str);
-						ei_x_encode_atom(rbuf, "timeout");
-					} else if (p->state == reply_not_ready) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Request %s is not ready?!\n", uuid_str);
-						ei_x_encode_tuple_header(rbuf, 3);
-						ei_x_encode_atom(rbuf, "error");
-						_ei_x_encode_string(rbuf, uuid_str);
-						ei_x_encode_atom(rbuf, "not_ready");
-					}
-					switch_mutex_unlock(p->mutex);
-				}
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not lock mutex for reply %s\n", uuid_str);
+					break;
+				};
+			case reply_found:
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Reply for already complete request %s\n", uuid_str);
 				ei_x_encode_tuple_header(rbuf, 3);
 				ei_x_encode_atom(rbuf, "error");
 				_ei_x_encode_string(rbuf, uuid_str);
 				ei_x_encode_atom(rbuf, "duplicate_response");
+				break;
+			case reply_timeout:
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Reply for timed out request %s\n", uuid_str);
+				ei_x_encode_tuple_header(rbuf, 3);
+				ei_x_encode_atom(rbuf, "error");
+				_ei_x_encode_string(rbuf, uuid_str);
+				ei_x_encode_atom(rbuf, "timeout");
+				break;
+			case reply_not_ready:
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Request %s is not ready?!\n", uuid_str);
+				ei_x_encode_tuple_header(rbuf, 3);
+				ei_x_encode_atom(rbuf, "error");
+				_ei_x_encode_string(rbuf, uuid_str);
+				ei_x_encode_atom(rbuf, "not_ready");
+				break;
 			}
+
+			switch_mutex_unlock(p->mutex);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not find request for reply %s\n", uuid_str);
 			ei_x_encode_tuple_header(rbuf, 2);
