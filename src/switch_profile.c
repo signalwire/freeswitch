@@ -262,6 +262,7 @@ SWITCH_DECLARE(switch_bool_t) switch_get_system_idle_time(switch_profile_timer_t
 		__int64 i64Kernel = i64KernelTime - p->i64LastKernelTime;
 		__int64 i64Idle = i64IdleTime - p->i64LastIdleTime;
 		__int64 i64System = i64User + i64Kernel;
+		 int x;
 
 		p->last_idle_time_index += 1;
 		if ( p->last_idle_time_index >= p->cpu_idle_smoothing_depth ) {
@@ -270,7 +271,7 @@ SWITCH_DECLARE(switch_bool_t) switch_get_system_idle_time(switch_profile_timer_t
 		p->percentage_of_idle_time_ring[p->last_idle_time_index] = 100.0 * i64Idle / i64System;
 
 		*idle_percentage = 0;
-		for ( int x = 0; x < p->cpu_idle_smoothing_depth; x++ ) {
+		for (x = 0; x < p->cpu_idle_smoothing_depth; x++ ) {
 		  *idle_percentage += p->percentage_of_idle_time_ring[x];
 		}
 		*idle_percentage /= p->cpu_idle_smoothing_depth;
@@ -301,6 +302,7 @@ SWITCH_DECLARE(switch_bool_t) switch_get_system_idle_time(switch_profile_timer_t
 
 SWITCH_DECLARE(switch_profile_timer_t *)switch_new_profile_timer(void)
 {
+  int x;
   switch_profile_timer_t *p = calloc(1, sizeof(switch_profile_timer_t));
 
   if ( runtime.cpu_idle_smoothing_depth && runtime.cpu_idle_smoothing_depth > 0 ) {
@@ -311,7 +313,7 @@ SWITCH_DECLARE(switch_profile_timer_t *)switch_new_profile_timer(void)
 
   p->percentage_of_idle_time_ring = calloc(1, sizeof(double) * p->cpu_idle_smoothing_depth);
 
-  for ( int x = 0; x < p->cpu_idle_smoothing_depth; x++ ) {
+  for ( x = 0; x < p->cpu_idle_smoothing_depth; x++ ) {
     p->percentage_of_idle_time_ring[x] = 100.0;
   }
 
