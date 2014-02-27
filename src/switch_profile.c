@@ -262,7 +262,7 @@ SWITCH_DECLARE(switch_bool_t) switch_get_system_idle_time(switch_profile_timer_t
 		__int64 i64Kernel = i64KernelTime - p->i64LastKernelTime;
 		__int64 i64Idle = i64IdleTime - p->i64LastIdleTime;
 		__int64 i64System = i64User + i64Kernel;
-		 int x;
+		 unsigned int x;
 
 		p->last_idle_time_index += 1;
 		if ( p->last_idle_time_index >= p->cpu_idle_smoothing_depth ) {
