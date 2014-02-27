@@ -397,6 +397,8 @@ static fetch_reply_t *new_fetch_reply(const char *uuid_str)
 	switch_mutex_init(&reply->mutex, SWITCH_MUTEX_UNNESTED, pool);
 	reply->state = reply_not_ready;
 	reply->reply = NULL;
+
+	switch_mutex_lock(reply->mutex);
 	switch_core_hash_insert_locked(globals.fetch_reply_hash, uuid_str, reply, globals.fetch_reply_mutex);
 	reply->state = reply_waiting;
 
@@ -422,7 +424,7 @@ fetch_reply_t *find_fetch_reply(const char *uuid)
 
 	switch_mutex_lock(globals.fetch_reply_mutex);
 	if ((reply = switch_core_hash_find(globals.fetch_reply_hash, uuid))) {
-		if (switch_mutex_trylock(reply->mutex) != SWITCH_STATUS_SUCCESS) {
+		if (switch_mutex_lock(reply->mutex) != SWITCH_STATUS_SUCCESS) {
 			reply = NULL;
 		}
 	}
@@ -512,9 +514,7 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 		goto cleanup;
 	}
 
-	/* Tell the threads to be ready, and wait five seconds for a reply. */
-	switch_mutex_lock(p->mutex);
-	//p->state = reply_waiting;
+	/* Wait five seconds for a reply. */
 	switch_thread_cond_timedwait(p->ready_or_found, p->mutex, 5000000);
 	if (!p->reply) {
 		p->state = reply_timeout;
