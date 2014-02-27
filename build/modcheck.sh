@@ -6,7 +6,7 @@ on='[01;00;35m'
 off='[0m'
 
 prefix=`cat ../config.log | grep ^prefix=\' | awk -F \' '{print $2}'`
-mods=${prefix}/mod;
+mods=${DESTDIR}${prefix}/mod;
 
 if [ -z $mods ] ; then
     mods="/usr/local/freeswitch/mod"
