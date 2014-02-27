@@ -26,8 +26,8 @@
  * mod_cdr_csv.c -- Asterisk Compatible CDR Module
  *
  */
-#include <sys/stat.h>
 #include <switch.h>
+#include <sys/stat.h>
 
 typedef enum {
 	CDR_LEG_A = (1 << 0),

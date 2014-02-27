@@ -5,6 +5,7 @@
 
 /*****************************************************************************/
 
+#include "switch.h"
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,7 +16,6 @@
 #include "ladspa.h"
 #include "utils.h"
 #include "inttypes.h"
-#include "switch.h"
 /*****************************************************************************/
 
 /* This function provides a wrapping of dlopen(). When the filename is

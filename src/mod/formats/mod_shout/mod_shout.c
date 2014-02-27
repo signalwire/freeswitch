@@ -32,8 +32,8 @@
  * example filename: shout://user:pass@host.com/mount.mp3
  *
  */
-#include "libmpg123/mpg123.h"
 #include <switch.h>
+#include "libmpg123/mpg123.h"
 #include <shout/shout.h>
 #include <lame.h>
 #include <switch_curl.h>

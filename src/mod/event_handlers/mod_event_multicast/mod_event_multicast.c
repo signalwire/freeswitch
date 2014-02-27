@@ -29,10 +29,10 @@
  * mod_event_multicast.c -- Multicast Events
  *
  */
+#include <switch.h>
 #ifdef HAVE_OPENSSL
 #include <openssl/evp.h>
 #endif
-#include <switch.h>
 
 #define MULTICAST_BUFFSIZE 65536
 

@@ -35,6 +35,10 @@ extern "C" {
 }
 #endif
 
+#if !defined(MACOSX) && !defined(_XOPEN_SOURCE) && !defined(__OpenBSD__) && !defined(__NetBSD__) && !defined(__cplusplus)
+#define _XOPEN_SOURCE 600
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

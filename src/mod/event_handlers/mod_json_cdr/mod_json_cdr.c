@@ -30,8 +30,8 @@
  * mod_json_cdr.c -- JSON CDR Module to files or curl
  *
  */
-#include <sys/stat.h>
 #include <switch.h>
+#include <sys/stat.h>
 #include <switch_curl.h>
 
 #define MAX_URLS 20
