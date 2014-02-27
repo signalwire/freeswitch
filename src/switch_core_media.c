@@ -60,8 +60,6 @@ typedef struct secure_settings_s {
 	int crypto_tag;
 	unsigned char local_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
 	unsigned char remote_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
-	switch_rtp_crypto_key_type_t crypto_send_type;
-	switch_rtp_crypto_key_type_t crypto_recv_type;
 	switch_rtp_crypto_key_type_t crypto_type;
 	char *local_crypto_key;
 	char *remote_crypto_key;
@@ -78,7 +76,9 @@ struct media_helper {
 
 
 typedef struct switch_rtp_engine_s {
-	switch_secure_settings_t ssec;
+	switch_secure_settings_t ssec[CRYPTO_INVALID+1];
+	switch_rtp_crypto_key_type_t crypto_type;
+
 	switch_media_type_t type;
 
 	switch_rtp_t *rtp_session;
@@ -146,7 +146,7 @@ typedef struct switch_rtp_engine_s {
 
 	uint8_t fir;
 	uint8_t pli;
-
+	uint8_t no_crypto;
 } switch_rtp_engine_t;
 
 
@@ -193,8 +193,7 @@ static switch_srtp_crypto_suite_t SUITES[CRYPTO_INVALID] = {
 	{ "AES_CM_256_HMAC_SHA1_32", AES_CM_256_HMAC_SHA1_32, 46},
 	{ "AES_CM_192_HMAC_SHA1_32", AES_CM_192_HMAC_SHA1_32, 38},
 	{ "AES_CM_128_HMAC_SHA1_32", AES_CM_128_HMAC_SHA1_32, 30},
-	{ "AES_CM_128_NULL_AUTH", AES_CM_128_NULL_AUTH, 30},
-	{ "NULL", NO_CRYPTO, 0 }
+	{ "AES_CM_128_NULL_AUTH", AES_CM_128_NULL_AUTH, 30}
 };
 
 SWITCH_DECLARE(switch_rtp_crypto_key_type_t) switch_core_media_crypto_str2type(const char *str)
@@ -709,8 +708,10 @@ SWITCH_DECLARE(void) switch_core_session_clear_crypto(switch_core_session_t *ses
 	const char *vars[] = { "rtp_last_audio_local_crypto_key",
 						   "srtp_remote_audio_crypto_key",
 						   "srtp_remote_audio_crypto_tag",
+						   "srtp_remote_audio_crypto_type",
 						   "srtp_remote_video_crypto_key",
 						   "srtp_remote_video_crypto_tag",
+						   "srtp_remote_video_crypto_type",
 						   "rtp_secure_media",
 						   NULL};
 
@@ -721,9 +722,10 @@ SWITCH_DECLARE(void) switch_core_session_clear_crypto(switch_core_session_t *ses
 	if (!(smh = session->media_handle)) {
 		return;
 	}
-
-	memset(&smh->engines[SWITCH_MEDIA_TYPE_AUDIO].ssec, 0, sizeof(smh->engines[SWITCH_MEDIA_TYPE_AUDIO].ssec));
-	memset(&smh->engines[SWITCH_MEDIA_TYPE_VIDEO].ssec, 0, sizeof(smh->engines[SWITCH_MEDIA_TYPE_VIDEO].ssec));
+	for (i = 0; i < CRYPTO_INVALID; i++) {
+		memset(&smh->engines[SWITCH_MEDIA_TYPE_AUDIO].ssec[i], 0, sizeof(smh->engines[SWITCH_MEDIA_TYPE_AUDIO].ssec[i]));
+		memset(&smh->engines[SWITCH_MEDIA_TYPE_VIDEO].ssec[i], 0, sizeof(smh->engines[SWITCH_MEDIA_TYPE_VIDEO].ssec[i]));
+	}
 
 }
 
@@ -733,7 +735,7 @@ SWITCH_DECLARE(const char *) switch_core_session_local_crypto_key(switch_core_se
 		return NULL;
 	}
 
-	return session->media_handle->engines[type].ssec.local_crypto_key;
+	return session->media_handle->engines[type].ssec[session->media_handle->engines[type].crypto_type].local_crypto_key;
 }
 
 
@@ -859,7 +861,7 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 
 	engine = &smh->engines[type];
 
-	if (!force && engine->ssec.local_raw_key[0]) {
+	if (!force && engine->ssec[ctype].local_raw_key[0]) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -869,18 +871,18 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 #ifdef SAME_KEY
 	if (switch_channel_test_flag(channel, CF_WEBRTC) && type == SWITCH_MEDIA_TYPE_VIDEO) {
 		if (direction == SWITCH_RTP_CRYPTO_SEND) {
-			memcpy(engine->ssec.local_raw_key, smh->engines[SWITCH_MEDIA_TYPE_AUDIO].ssec.local_raw_key, SUITES[ctype].keylen);
-			key = engine->ssec.local_raw_key;
+			memcpy(engine->ssec[ctype].local_raw_key, smh->engines[SWITCH_MEDIA_TYPE_AUDIO].ssec.local_raw_key, SUITES[ctype].keylen);
+			key = engine->ssec[ctype].local_raw_key;
 		} else {
-			memcpy(engine->ssec.remote_raw_key, smh->engines[SWITCH_MEDIA_TYPE_AUDIO].ssec.remote_raw_key, SUITES[ctype].keylen);
-			key = engine->ssec.remote_raw_key;
+			memcpy(engine->ssec[ctype].remote_raw_key, smh->engines[SWITCH_MEDIA_TYPE_AUDIO].ssec.remote_raw_key, SUITES[ctype].keylen);
+			key = engine->ssec[ctype].remote_raw_key;
 		}
 	} else {
 #endif
 		if (direction == SWITCH_RTP_CRYPTO_SEND) {
-			key = engine->ssec.local_raw_key;
+			key = engine->ssec[ctype].local_raw_key;
 		} else {
-			key = engine->ssec.remote_raw_key;
+			key = engine->ssec[ctype].remote_raw_key;
 		}
 		
 		switch_rtp_get_random(key, SUITES[ctype].keylen);
@@ -895,17 +897,21 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 		*p-- = '\0';
 	}
 
-	engine->ssec.local_crypto_key = switch_core_session_sprintf(smh->session, "%d %s inline:%s", index, SUITES[ctype].name, b64_key);
-	switch_channel_set_variable_name_printf(smh->session->channel, engine->ssec.local_crypto_key, "rtp_last_%s_local_crypto_key", type2str(type));
+	if (!index) index = ctype + 1;
+
+	engine->ssec[ctype].local_crypto_key = switch_core_session_sprintf(smh->session, "%d %s inline:%s", index, SUITES[ctype].name, b64_key);
+	switch_channel_set_variable_name_printf(smh->session->channel, engine->ssec[ctype].local_crypto_key, "rtp_last_%s_local_crypto_key", type2str(type));
 
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "Set Local Key [%s]\n", engine->ssec.local_crypto_key);
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "Set Local %s crypto Key [%s]\n", 
+					  type2str(type),
+					  engine->ssec[ctype].local_crypto_key);
 
 	if (!(smh->mparams->ndlb & SM_NDLB_DISABLE_SRTP_AUTH) &&
 		!((val = switch_channel_get_variable(channel, "NDLB_support_asterisk_missing_srtp_auth")) && switch_true(val))) {
-		engine->ssec.crypto_type = ctype;
+		engine->ssec[ctype].crypto_type = ctype;
 	} else {
-		engine->ssec.crypto_type = AES_CM_128_NULL_AUTH;
+		engine->ssec[ctype].crypto_type = AES_CM_128_NULL_AUTH;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -946,10 +952,8 @@ switch_status_t switch_core_media_add_crypto(switch_secure_settings_t *ssec, con
 			switch_b64_decode(p, (char *) key, sizeof(key));
 
 			if (direction == SWITCH_RTP_CRYPTO_SEND) {
-				ssec->crypto_send_type = type;
 				memcpy(ssec->local_raw_key, key, SUITES[type].keylen);
 			} else {
-				ssec->crypto_recv_type = type;
 				memcpy(ssec->remote_raw_key, key, SUITES[type].keylen);
 			}
 			return SWITCH_STATUS_SUCCESS;
@@ -978,7 +982,7 @@ static void switch_core_session_get_recovery_crypto_key(switch_core_session_t *s
 {
 	const char *tmp;
 	switch_rtp_engine_t *engine;
-	char *keyvar, *tagvar;
+	char *keyvar, *tagvar, *ctypevar;
 
 	if (!session->media_handle) return;
 	engine = &session->media_handle->engines[type];
@@ -986,20 +990,25 @@ static void switch_core_session_get_recovery_crypto_key(switch_core_session_t *s
 	if (type == SWITCH_MEDIA_TYPE_AUDIO) {
 		keyvar = "srtp_remote_audio_crypto_key";
 		tagvar = "srtp_remote_audio_crypto_tag";
+		ctypevar = "srtp_remote_audio_crypto_type";
 	} else {
 		keyvar = "srtp_remote_video_crypto_key";
 		tagvar = "srtp_remote_video_crypto_tag";
+		ctypevar = "srtp_remote_video_crypto_type";
 	}
 
-
 	if ((tmp = switch_channel_get_variable(session->channel, keyvar))) {
-		engine->ssec.remote_crypto_key = switch_core_session_strdup(session, tmp);
+		if ((tmp = switch_channel_get_variable(session->channel, ctypevar))) {
+			engine->crypto_type = switch_core_media_crypto_str2type(tmp);
+		}
+
+		engine->ssec[engine->crypto_type].remote_crypto_key = switch_core_session_strdup(session, tmp);
 
 		if ((tmp = switch_channel_get_variable(session->channel, tagvar))) {
 			int tv = atoi(tmp);
-			engine->ssec.crypto_tag = tv;
+			engine->ssec[engine->crypto_type].crypto_tag = tv;
 		} else {
-			engine->ssec.crypto_tag = 1;
+			engine->ssec[engine->crypto_type].crypto_tag = 1;
 		}
 
 		switch_channel_set_flag(session->channel, CF_SECURE);
@@ -1025,15 +1034,20 @@ static void switch_core_session_apply_crypto(switch_core_session_t *session, swi
 		return;
 	}
 
-	if (engine->ssec.remote_crypto_key && switch_channel_test_flag(session->channel, CF_SECURE)) {
-		switch_core_media_add_crypto(&engine->ssec, engine->ssec.remote_crypto_key, SWITCH_RTP_CRYPTO_RECV);
+	if (engine->ssec[engine->crypto_type].remote_crypto_key && switch_channel_test_flag(session->channel, CF_SECURE)) {
+		switch_core_media_add_crypto(&engine->ssec[engine->crypto_type], engine->ssec[engine->crypto_type].remote_crypto_key, SWITCH_RTP_CRYPTO_RECV);
 
 		
 		switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, 1,
-								  engine->ssec.crypto_type, engine->ssec.local_raw_key, SUITES[engine->ssec.crypto_type].keylen);
+								  engine->ssec[engine->crypto_type].crypto_type, 
+								  engine->ssec[engine->crypto_type].local_raw_key, 
+								  SUITES[engine->ssec[engine->crypto_type].crypto_type].keylen);
 
-		switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_RECV, engine->ssec.crypto_tag,
-								  engine->ssec.crypto_type, engine->ssec.remote_raw_key, SUITES[engine->ssec.crypto_type].keylen);
+		switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_RECV, 
+								  engine->ssec[engine->crypto_type].crypto_tag,
+								  engine->ssec[engine->crypto_type].crypto_type, 
+								  engine->ssec[engine->crypto_type].remote_raw_key, 
+								  SUITES[engine->ssec[engine->crypto_type].crypto_type].keylen);
 
 		switch_channel_set_variable(session->channel, varname, "true");
 	}
@@ -1056,6 +1070,10 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 
 	engine = &session->media_handle->engines[type];
 
+	if (suite && !strcasecmp(suite, "optional")) {
+		suite = "true";
+	}
+
 	if (zstr(suite) || (!switch_true(suite) && switch_core_media_crypto_str2type(suite) == CRYPTO_INVALID)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Crypto suite: [%s] not valid in this context.\n", crypto);
 		goto end;
@@ -1073,40 +1091,53 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 		}
 	}
 
-	if (engine->ssec.remote_crypto_key && switch_rtp_ready(engine->rtp_session)) {
+	if (engine->ssec[engine->crypto_type].remote_crypto_key && switch_rtp_ready(engine->rtp_session)) {
 		/* Compare all the key. The tag may remain the same even if key changed */
-		if (crypto && !strcmp(crypto, engine->ssec.remote_crypto_key)) {
+		if (crypto && engine->crypto_type != CRYPTO_INVALID && !strcmp(crypto, engine->ssec[engine->crypto_type].remote_crypto_key)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Existing key is still valid.\n");
 			got_crypto = 1;
 		} else {
-			const char *a = switch_stristr("AE", engine->ssec.remote_crypto_key);
+			const char *a = switch_stristr("AE", engine->ssec[engine->crypto_type].remote_crypto_key);
 			const char *b = switch_stristr("AE", crypto);
 
 			if (sdp_type == SDP_TYPE_REQUEST) {
 				if (!vval) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Unsupported Crypto [%s]\n", crypto);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Unsupported Crypto [%s]\n", crypto);
 					goto end;
 				}
 				switch_channel_set_variable(session->channel, varname, vval);
 
 				switch_core_media_build_crypto(session->media_handle, type, crypto_tag, ctype, SWITCH_RTP_CRYPTO_SEND, 1);
-				switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, atoi(crypto), engine->ssec.crypto_type,
-										  engine->ssec.local_raw_key, SUITES[ctype].keylen);
+				switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, atoi(crypto), engine->ssec[engine->crypto_type].crypto_type,
+										  engine->ssec[engine->crypto_type].local_raw_key, SUITES[ctype].keylen);
 			}
 
 			if (a && b && !strncasecmp(a, b, 23)) {
+				engine->crypto_type = ctype;
+
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Change Remote key to [%s]\n", crypto);
-				engine->ssec.remote_crypto_key = switch_core_session_strdup(session, crypto);
-				switch_channel_set_variable(session->channel, "srtp_remote_audio_crypto_key", crypto);
-				switch_channel_set_variable_printf(session->channel, "srtp_remote_audio_crypto_tag", "%d", crypto_tag);
-				engine->ssec.crypto_tag = crypto_tag;
+				engine->ssec[engine->crypto_type].remote_crypto_key = switch_core_session_strdup(session, crypto);
+				
+				if (engine->type == SWITCH_MEDIA_TYPE_AUDIO) {
+					switch_channel_set_variable(session->channel, "srtp_remote_audio_crypto_key", crypto);
+					switch_channel_set_variable_printf(session->channel, "srtp_remote_audio_crypto_tag", "%d", crypto_tag);
+					switch_channel_set_variable_printf(session->channel, "srtp_remote_audio_crypto_type", "%s", switch_core_media_crypto_type2str(ctype));
+				} else if (engine->type == SWITCH_MEDIA_TYPE_VIDEO) {
+					switch_channel_set_variable(session->channel, "srtp_remote_video_crypto_key", crypto);
+					switch_channel_set_variable_printf(session->channel, "srtp_remote_video_crypto_tag", "%d", crypto_tag);
+					switch_channel_set_variable_printf(session->channel, "srtp_remote_video_crypto_type", "%s", switch_core_media_crypto_type2str(ctype));
+				}
+
+				engine->ssec[engine->crypto_type].crypto_tag = crypto_tag;
 								
+				
 				if (switch_rtp_ready(engine->rtp_session) && switch_channel_test_flag(session->channel, CF_SECURE)) {
-					switch_core_media_add_crypto(&engine->ssec, engine->ssec.remote_crypto_key, SWITCH_RTP_CRYPTO_RECV);
-					switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_RECV, engine->ssec.crypto_tag,
-											  engine->ssec.crypto_type, engine->ssec.remote_raw_key, SUITES[engine->ssec.crypto_type].keylen);
+					switch_core_media_add_crypto(&engine->ssec[engine->crypto_type], engine->ssec[engine->crypto_type].remote_crypto_key, SWITCH_RTP_CRYPTO_RECV);
+					switch_rtp_add_crypto_key(engine->rtp_session, SWITCH_RTP_CRYPTO_RECV, engine->ssec[engine->crypto_type].crypto_tag,
+											  engine->ssec[engine->crypto_type].crypto_type, engine->ssec[engine->crypto_type].remote_raw_key, SUITES[engine->ssec[engine->crypto_type].crypto_type].keylen);
 				}
 				got_crypto++;
+				
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Ignoring unacceptable key\n");
 			}
@@ -1114,17 +1145,26 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 	} else if (!switch_rtp_ready(engine->rtp_session)) {
 
 		if (!vval) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Unsupported Crypto [%s]\n", crypto);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Unsupported Crypto [%s]\n", crypto);
 			goto end;
 		}
 
-		engine->ssec.remote_crypto_key = switch_core_session_strdup(session, crypto);
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set Remote Key [%s]\n", engine->ssec.remote_crypto_key);
-		switch_channel_set_variable(session->channel, "srtp_remote_audio_crypto_key", crypto);
-		engine->ssec.crypto_tag = crypto_tag;
+		engine->crypto_type = ctype;
+		engine->ssec[engine->crypto_type].remote_crypto_key = switch_core_session_strdup(session, crypto);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set Remote Key [%s]\n", engine->ssec[engine->crypto_type].remote_crypto_key);
+		if (engine->type == SWITCH_MEDIA_TYPE_AUDIO) {
+			switch_channel_set_variable(session->channel, "srtp_remote_audio_crypto_key", crypto);
+			switch_channel_set_variable_printf(session->channel, "srtp_remote_audio_crypto_type", "%s", switch_core_media_crypto_type2str(ctype));
+		} else if (engine->type == SWITCH_MEDIA_TYPE_VIDEO) {
+			switch_channel_set_variable(session->channel, "srtp_remote_video_crypto_key", crypto);
+			switch_channel_set_variable_printf(session->channel, "srtp_remote_video_crypto_type", "%s", switch_core_media_crypto_type2str(ctype));
+		}
+
+		engine->ssec[engine->crypto_type].crypto_tag = crypto_tag;
 		got_crypto++;
 		
-		if (zstr(engine->ssec.local_crypto_key)) {
+
+		if (zstr(engine->ssec[engine->crypto_type].local_crypto_key)) {
 			switch_channel_set_variable(session->channel, varname, vval);
 			switch_core_media_build_crypto(session->media_handle, type, crypto_tag, ctype, SWITCH_RTP_CRYPTO_SEND, 1);
 		}
@@ -1143,36 +1183,28 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 SWITCH_DECLARE(void) switch_core_session_check_outgoing_crypto(switch_core_session_t *session, const char *sec_var)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	const char *var;
 
 	if (!switch_core_session_media_handle_ready(session) == SWITCH_STATUS_SUCCESS) {
 		return;
 	}
 	
-	if ((var = switch_channel_get_variable(channel, sec_var)) && !zstr(var)) {
+	if (!zstr(sec_var)) {
 		int i;
-		switch_rtp_crypto_key_type_t ctype = CRYPTO_INVALID;
-		
-		if (switch_true(var)) {
-			ctype = AES_CM_128_HMAC_SHA1_32;
-		} else {
-			for (i = 0; i < CRYPTO_INVALID; i++) {
-				if (!strcasecmp(var, SUITES[i].name)) {
-					ctype = SUITES[i].type;
-					break;
-				}
+		int all = switch_true(sec_var) || !strcasecmp(sec_var, "optional");
+
+		for (i = 0; i < CRYPTO_INVALID; i++) {
+			if (all || switch_stristr(SUITES[i].name, sec_var)) {
+
+				switch_channel_set_flag(channel, CF_SECURE);
+
+				switch_core_media_build_crypto(session->media_handle,
+											   SWITCH_MEDIA_TYPE_AUDIO, 0, SUITES[i].type, SWITCH_RTP_CRYPTO_SEND, 0);
+
+				switch_core_media_build_crypto(session->media_handle,
+											   SWITCH_MEDIA_TYPE_VIDEO, 0, SUITES[i].type, SWITCH_RTP_CRYPTO_SEND, 0);
 			}
 		}
-
-		if (ctype != CRYPTO_INVALID) {
-			switch_channel_set_flag(channel, CF_SECURE);
-			switch_core_media_build_crypto(session->media_handle,
-										   SWITCH_MEDIA_TYPE_AUDIO, 1, ctype, SWITCH_RTP_CRYPTO_SEND, 0);
-			switch_core_media_build_crypto(session->media_handle,
-										   SWITCH_MEDIA_TYPE_VIDEO, 1, ctype, SWITCH_RTP_CRYPTO_SEND, 0);
-		}
 	}
-	
 }
 
 #define add_stat(_i, _s)												\
@@ -1286,6 +1318,8 @@ SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_media_handle_t *smh = NULL;
+	int i;
+
 	*smhp = NULL;
 
 	if (zstr(params->sdp_username)) {
@@ -1302,10 +1336,21 @@ SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t
 		session->media_handle->media_flags[SCMF_RUNNING] = 1;
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO].read_frame.buflen = SWITCH_RTP_MAX_BUF_LEN;
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO].type = SWITCH_MEDIA_TYPE_AUDIO;
+		session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO].crypto_type = CRYPTO_INVALID;
+		for (i = 0; i < CRYPTO_INVALID; i++) {
+			session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO].ssec[i].crypto_type = i;
+		}
+
+
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].read_frame.buflen = SWITCH_RTP_MAX_BUF_LEN;
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].type = SWITCH_MEDIA_TYPE_VIDEO;
-		session->media_handle->mparams = params;
+		session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].crypto_type = CRYPTO_INVALID;
+		for (i = 0; i < CRYPTO_INVALID; i++) {
+			session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].ssec[i].crypto_type = i;
+		}
 
+		session->media_handle->mparams = params;
+		
 
 
 		switch_mutex_init(&session->media_handle->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
@@ -2770,8 +2815,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	const char *tmp;
 	int m_idx = 0;
 	int nm_idx = 0;
+	int needs_crypto = 0;
 	const char *var;
-
+	
 	switch_assert(session);
 
 	if (!(smh = session->media_handle)) {
@@ -2793,9 +2839,17 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		return 0;
 	}
 
-	if (sdp_type == SDP_TYPE_REQUEST && (var = switch_channel_get_variable(session->channel, "rtp_secure_media"))) {
-		if (!switch_true(var) && switch_core_media_crypto_str2type(var) == CRYPTO_INVALID) {
-			got_crypto = -1;
+	if (!switch_channel_test_flag(session->channel, CF_DTLS) && (var = switch_channel_get_variable(session->channel, "rtp_secure_media"))) {
+		if (strcasecmp(var, "optional")) {
+			needs_crypto = 1;
+
+			switch_channel_set_variable(session->channel, "rtp_crypto_mandatory", "true");
+
+			if (sdp_type == SDP_TYPE_REQUEST) {
+				if (!switch_true(var) && switch_core_media_crypto_str2type(var) == CRYPTO_INVALID) {
+					got_crypto = -1;
+				}
+			}
 		}
 	}
 
@@ -2807,7 +2861,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 	clear_pmaps(a_engine);
 	clear_pmaps(v_engine);
-
 
 	if (proceed) *proceed = 1;
 
@@ -3114,11 +3167,14 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value) {
 					switch_channel_set_variable(session->channel, "rtp_remote_audio_rtcp_port", attr->a_value);
 					a_engine->remote_rtcp_port = (switch_port_t)atoi(attr->a_value);
+					if (!smh->mparams->rtcp_audio_interval_msec) {
+						smh->mparams->rtcp_audio_interval_msec = "5000";
+					}
 				} else if (!strcasecmp(attr->a_name, "ptime") && attr->a_value) {
 					ptime = atoi(attr->a_value);
 				} else if (!strcasecmp(attr->a_name, "maxptime") && attr->a_value) {
 					maxptime = atoi(attr->a_value);
-				} else if (!got_crypto && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) { //&& 
+				} else if (got_crypto < 1 && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) { //&& 
 					//(!switch_channel_test_flag(session->channel, CF_WEBRTC) || switch_stristr(SWITCH_RTP_CRYPTO_KEY_80, attr->a_value))) {
 					int crypto_tag;
 
@@ -3137,11 +3193,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 																		   "rtp_has_crypto", SWITCH_MEDIA_TYPE_AUDIO, crypto, crypto_tag, sdp_type);
 
 				}
-			}
-
-			if (got_crypto > 0 && !got_avp) {
-				switch_channel_set_variable(session->channel, "rtp_crypto_mandatory", "true");
-				//switch_channel_set_variable(session->channel, "rtp_secure_media", "true");
 			}
 
 			if (got_crypto == -1 && got_savp && !got_avp && !got_webrtc) {
@@ -3321,6 +3372,13 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					break;
 				}
 			}
+
+			if (needs_crypto && got_crypto < 1) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Crypto not negotiated but required.\n");
+				match = 0;
+				m_idx = nm_idx = 0;
+			}
+
 
 			if (!m_idx && nm_idx) {
 				int j;
@@ -3563,6 +3621,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					} else if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value && !strcmp(attr->a_value, "1")) {
 						switch_channel_set_variable(session->channel, "rtp_remote_video_rtcp_port", attr->a_value);
 						v_engine->remote_rtcp_port = (switch_port_t)atoi(attr->a_value);
+						if (!smh->mparams->rtcp_video_interval_msec) {
+							smh->mparams->rtcp_video_interval_msec = "5000";
+						}
 					} else if (!got_video_crypto && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) {
 						int crypto_tag;
 						
@@ -3585,11 +3646,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					}
 				}
 				
-				if (got_video_crypto && !got_video_avp) {
-					switch_channel_set_variable(session->channel, "rtp_crypto_mandatory", "true");
-					//switch_channel_set_variable(session->channel, "rtp_secure_media", "true");
-				}
-
 				if (!(rm_encoding = map->rm_encoding)) {
 					rm_encoding = "";
 				}
@@ -3626,6 +3682,12 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 					vmatch = 0;
 				}
+			}
+
+			if (needs_crypto && got_video_crypto < 1) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Crypto not negotiated but required.\n");
+				vmatch = 0;
+				m_idx = 0;
 			}
 
 			if (m_idx) {
@@ -4607,7 +4669,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		switch_rtp_reset_media_timer(a_engine->rtp_session);
 	}
 
-	if ((var = switch_channel_get_variable(session->channel, "rtp_secure_media")) && (switch_true(var) || switch_core_media_crypto_str2type(var) != CRYPTO_INVALID)) {
+	if (!switch_channel_test_flag(session->channel, CF_SECURE) && (var = switch_channel_get_variable(session->channel, "rtp_secure_media")) && 
+		(switch_true(var) || switch_core_media_crypto_str2type(var) != CRYPTO_INVALID)) {
 		switch_channel_set_flag(session->channel, CF_SECURE);
 	}
 
@@ -4947,11 +5010,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 
 			xtype = DTLS_TYPE_RTP;
-			if (a_engine->rtcp_mux > 0) xtype |= DTLS_TYPE_RTCP;
+			if (a_engine->rtcp_mux > 0 && smh->mparams->rtcp_audio_interval_msec) xtype |= DTLS_TYPE_RTCP;
 		
 			switch_rtp_add_dtls(a_engine->rtp_session, &a_engine->local_dtls_fingerprint, &a_engine->remote_dtls_fingerprint, dtype | xtype);
 
-			if (a_engine->rtcp_mux < 1) {
+			if (a_engine->rtcp_mux < 1 && smh->mparams->rtcp_audio_interval_msec) {
 				xtype = DTLS_TYPE_RTCP;
 				switch_rtp_add_dtls(a_engine->rtp_session, &a_engine->local_dtls_fingerprint, &a_engine->remote_dtls_fingerprint, dtype | xtype);
 			}
@@ -5367,11 +5430,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 					dtls_type_t xtype, 
 						dtype = switch_channel_direction(smh->session->channel) == SWITCH_CALL_DIRECTION_INBOUND ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
 					xtype = DTLS_TYPE_RTP;
-					if (v_engine->rtcp_mux > 0) xtype |= DTLS_TYPE_RTCP;
+					if (v_engine->rtcp_mux > 0 && smh->mparams->rtcp_video_interval_msec) xtype |= DTLS_TYPE_RTCP;
 					
 					switch_rtp_add_dtls(v_engine->rtp_session, &v_engine->local_dtls_fingerprint, &v_engine->remote_dtls_fingerprint, dtype | xtype);
 					
-					if (v_engine->rtcp_mux < 1) {
+					if (v_engine->rtcp_mux < 1 && smh->mparams->rtcp_video_interval_msec) {
 						xtype = DTLS_TYPE_RTCP;
 						switch_rtp_add_dtls(v_engine->rtp_session, &v_engine->local_dtls_fingerprint, &v_engine->remote_dtls_fingerprint, dtype | xtype);
 					}
@@ -5464,7 +5527,7 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	int rate;
 	int already_did[128] = { 0 };
 	int ptime = 0, noptime = 0;
-	const char *local_audio_crypto_key = switch_core_session_local_crypto_key(session, SWITCH_MEDIA_TYPE_AUDIO);
+	//const char *local_audio_crypto_key = switch_core_session_local_crypto_key(session, SWITCH_MEDIA_TYPE_AUDIO);
 	const char *local_sdp_audio_zrtp_hash;
 	switch_media_handle_t *smh;
 	switch_rtp_engine_t *a_engine;
@@ -5480,7 +5543,10 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	//switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "m=audio %d RTP/%sAVP%s", 
 	//port, secure ? "S" : "", switch_channel_test_flag(session->channel, CF_WEBRTC) ? "F" : "");
 
-	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "m=audio %d %s", port, get_media_profile_name(session, secure));
+	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "m=audio %d %s", port, 
+					get_media_profile_name(session, 
+										   (secure && switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) || 
+										   a_engine->crypto_type != CRYPTO_INVALID));
 	
 
 	for (i = 0; i < smh->mparams->num_codecs; i++) {
@@ -5698,8 +5764,14 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	}
 
 
-	if (secure && !zstr(local_audio_crypto_key)) {
-		switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=crypto:%s\n", local_audio_crypto_key);
+	if (secure && !switch_channel_test_flag(session->channel, CF_DTLS)) {
+		int i;
+		
+		for (i = 0; i < CRYPTO_INVALID; i++) {
+			if ((a_engine->crypto_type == i || a_engine->crypto_type == CRYPTO_INVALID) && !zstr(a_engine->ssec[i].local_crypto_key)) {
+				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=crypto:%s\n", a_engine->ssec[i].local_crypto_key);
+			}
+		}
 		//switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=encryption:optional\n");
 	}
 
@@ -5857,7 +5929,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	const char *fmtp_out_var = switch_channel_get_variable(session->channel, "rtp_force_audio_fmtp");
 	switch_event_t *map = NULL, *ptmap = NULL;
 	//const char *b_sdp = NULL;
-	const char *local_audio_crypto_key = switch_core_session_local_crypto_key(session, SWITCH_MEDIA_TYPE_AUDIO);
+	//const char *local_audio_crypto_key = switch_core_session_local_crypto_key(session, SWITCH_MEDIA_TYPE_AUDIO);
 	const char *local_sdp_audio_zrtp_hash = switch_core_media_get_zrtp_hash(session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_TRUE);
 	const char *local_sdp_video_zrtp_hash = switch_core_media_get_zrtp_hash(session, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_TRUE);
 	const char *tmp;
@@ -5867,6 +5939,14 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	int vp8 = 0;
 	int red = 0;
 	payload_map_t *pmap;
+	int is_outbound = switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND;
+	const char *secure_media_var = switch_channel_get_variable(session->channel, "rtp_secure_media");
+	int secure_only = 0;
+
+
+	if (!zstr(secure_media_var) && is_outbound && strcasecmp(secure_media_var, "optional")) {
+		secure_only = 0;
+	}
 
 	switch_assert(session);
 
@@ -5877,12 +5957,25 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 
+	if (switch_true(switch_channel_get_variable(session->channel, "rtcp_mux"))) {
+		a_engine->rtcp_mux = 1;
+		v_engine->rtcp_mux = 1;
+	}
+
+	if (!smh->mparams->rtcp_audio_interval_msec) {
+		smh->mparams->rtcp_audio_interval_msec = (char *)switch_channel_get_variable(session->channel, "rtcp_audio_interval_msec");
+	}
+
+	if (!smh->mparams->rtcp_video_interval_msec) {
+		smh->mparams->rtcp_video_interval_msec = (char *)switch_channel_get_variable(session->channel, "rtcp_video_interval_msec");
+	}
+
 	if (dtls_ok(session) && (tmp = switch_channel_get_variable(smh->session->channel, "webrtc_enable_dtls")) && switch_false(tmp)) {
 		switch_channel_clear_flag(smh->session->channel, CF_DTLS_OK);
 		switch_channel_clear_flag(smh->session->channel, CF_DTLS);
 	}
 
-	if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND || switch_channel_test_flag(session->channel, CF_RECOVERING)) {
+	if (is_outbound || switch_channel_test_flag(session->channel, CF_RECOVERING)) {
 		if (!switch_channel_test_flag(session->channel, CF_WEBRTC) && 
 			switch_true(switch_channel_get_variable(session->channel, "media_webrtc"))) {
 			switch_channel_set_flag(session->channel, CF_WEBRTC);
@@ -5900,12 +5993,11 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			}
 		}
 		
-		switch_core_session_check_outgoing_crypto(session, "rtp_secure_media");
-		local_audio_crypto_key = switch_core_session_local_crypto_key(session, SWITCH_MEDIA_TYPE_AUDIO);
+		switch_core_session_check_outgoing_crypto(session, secure_media_var);
 
 	} else {
 		if (switch_channel_test_flag(smh->session->channel, CF_DTLS)) {
-			local_audio_crypto_key = NULL;
+			a_engine->no_crypto = 1;
 		}
 	}
 
@@ -6083,18 +6175,12 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 
 	if (a_engine->codec_negotiated) {
-		/*
-		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=audio %d RTP/%sAVP%s", 
-						port, ((!zstr(local_audio_crypto_key) || switch_channel_test_flag(session->channel, CF_DTLS)) && 
-							   switch_channel_test_flag(session->channel, CF_SECURE)) ? "S" : "",
-						switch_channel_test_flag(session->channel, CF_WEBRTC) ? "F" : "");
-		*/
 
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=audio %d %s", port, 
 						get_media_profile_name(session, 
-											   ((!zstr(local_audio_crypto_key) || switch_channel_test_flag(session->channel, CF_DTLS)) &&
-												switch_channel_test_flag(session->channel, CF_SECURE))
-											   ));
+											   ((!a_engine->no_crypto || switch_channel_test_flag(session->channel, CF_DTLS)) &&
+												a_engine->crypto_type != CRYPTO_INVALID
+												)));
 		
 		
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", a_engine->cur_payload_map->pt);
@@ -6258,7 +6344,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			}
 
 
-			if (a_engine->rtcp_mux < 1 || switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND || 
+			if (a_engine->rtcp_mux < 1 || is_outbound || 
 				switch_channel_test_flag(session->channel, CF_RECOVERING)) {
 
 				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\n", 
@@ -6289,9 +6375,11 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 
 
-		if (!zstr(local_audio_crypto_key) && switch_channel_test_flag(session->channel, CF_SECURE)) {
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=crypto:%s\n", local_audio_crypto_key);
-			//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=encryption:optional\n");
+		if (a_engine->crypto_type != CRYPTO_INVALID && !switch_channel_test_flag(session->channel, CF_DTLS) &&
+			!zstr(a_engine->ssec[a_engine->crypto_type].local_crypto_key) && switch_channel_test_flag(session->channel, CF_SECURE)) {
+
+			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=crypto:%s\n", a_engine->ssec[a_engine->crypto_type].local_crypto_key);
+		//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=encryption:optional\n");
 		}
 
 	} else if (smh->mparams->num_codecs) {
@@ -6314,7 +6402,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			char *bp = buf;
 			int both = switch_channel_test_flag(session->channel, CF_WEBRTC) ? 0 : 1;
 
-			if ((!zstr(local_audio_crypto_key) && switch_channel_test_flag(session->channel, CF_SECURE)) || 
+			if ((!a_engine->no_crypto && switch_channel_test_flag(session->channel, CF_SECURE)) || 
 				switch_channel_test_flag(session->channel, CF_DTLS)) {
 				generate_m(session, buf, SDPBUFLEN, port, family, ip, 0, append_audio, sr, use_cng, cng_type, map, 1, sdp_type);
 				bp = (buf + strlen(buf));
@@ -6326,7 +6414,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 			}
 
-			if (both) {
+			if (both && !secure_only) {
 				generate_m(session, bp, SDPBUFLEN - strlen(buf), port, family, ip, 0, append_audio, sr, use_cng, cng_type, map, 0, sdp_type);
 			}
 
@@ -6351,7 +6439,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 					cur_ptime = this_ptime;			
 					
-					if ((!zstr(local_audio_crypto_key) && switch_channel_test_flag(session->channel, CF_SECURE)) || 
+					if ((!a_engine->no_crypto && switch_channel_test_flag(session->channel, CF_SECURE)) || 
 						switch_channel_test_flag(session->channel, CF_DTLS)) {
 						generate_m(session, bp, SDPBUFLEN - strlen(buf), port, family, ip, cur_ptime, append_audio, sr, use_cng, cng_type, map, 1, sdp_type);
 						bp = (buf + strlen(buf));
@@ -6366,7 +6454,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 						both = 0;
 					}
 
-					if (both) {
+					if (both && !secure_only) {
 						generate_m(session, bp, SDPBUFLEN - strlen(buf), port, family, ip, cur_ptime, append_audio, sr, use_cng, cng_type, map, 0, sdp_type);
 					}
 				}
@@ -6377,11 +6465,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	}
 	
 	if (switch_channel_test_flag(session->channel, CF_VIDEO_POSSIBLE)) {
-		const char *local_video_crypto_key = switch_core_session_local_crypto_key(session, SWITCH_MEDIA_TYPE_VIDEO);
-
 		if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 			if (switch_channel_test_flag(smh->session->channel, CF_DTLS)) {
-				local_video_crypto_key = NULL;
+				v_engine->no_crypto = 1;
 			}
 		}
 
@@ -6408,8 +6494,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=video %d %s", 
 							v_port, get_media_profile_name(session,
-														   (!zstr(local_video_crypto_key) || switch_channel_test_flag(session->channel, CF_DTLS))
-														   && switch_channel_test_flag(session->channel, CF_SECURE)));
+														   (!v_engine->no_crypto || switch_channel_test_flag(session->channel, CF_DTLS))
+														   && v_engine->crypto_type != CRYPTO_INVALID));
 							
 			
 
@@ -6595,7 +6681,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				
 			}
 
-			if ((switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND || switch_channel_test_flag(session->channel, CF_RECOVERING))
+			if ((is_outbound || switch_channel_test_flag(session->channel, CF_RECOVERING))
 				&& switch_channel_test_flag(smh->session->channel, CF_DTLS)) {
 				generate_local_fingerprint(smh, SWITCH_MEDIA_TYPE_VIDEO);
 			}
@@ -6689,7 +6775,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				}
 
 
-				if (v_engine->rtcp_mux < 1 || switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND || 
+				if (v_engine->rtcp_mux < 1 || is_outbound || 
 					switch_channel_test_flag(session->channel, CF_RECOVERING)) {
 
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\n", 
@@ -6720,8 +6806,10 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				
 
 
-			if (switch_channel_test_flag(session->channel, CF_SECURE) && !zstr(local_video_crypto_key)){
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=crypto:%s\n", local_video_crypto_key);
+			if (switch_channel_test_flag(session->channel, CF_SECURE) && !switch_channel_test_flag(session->channel, CF_DTLS) &&
+				v_engine->crypto_type != CRYPTO_INVALID &&
+				!zstr(v_engine->ssec[v_engine->crypto_type].local_crypto_key)) {
+				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=crypto:%s\n", v_engine->ssec[v_engine->crypto_type].local_crypto_key);
 				//switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=encryption:optional\n");
 			}			
 
@@ -6746,6 +6834,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 	switch_safe_free(buf);
 }
+
+
 
 //?
 SWITCH_DECLARE(void) switch_core_media_absorb_sdp(switch_core_session_t *session)
@@ -8490,19 +8580,24 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 	switch_core_session_get_recovery_crypto_key(session, SWITCH_MEDIA_TYPE_VIDEO);
 
 
-	if ((tmp = switch_channel_get_variable(session->channel, "rtp_last_audio_local_crypto_key")) && a_engine->ssec.remote_crypto_key) {
+	if ((tmp = switch_channel_get_variable(session->channel, "rtp_last_audio_local_crypto_key")) && a_engine->ssec[a_engine->crypto_type].remote_crypto_key) {
 		int idx = atoi(tmp);
 
-		a_engine->ssec.local_crypto_key = switch_core_session_strdup(session, tmp);
-		switch_core_media_add_crypto(&a_engine->ssec, a_engine->ssec.local_crypto_key, SWITCH_RTP_CRYPTO_SEND);
-		switch_core_media_add_crypto(&a_engine->ssec, a_engine->ssec.remote_crypto_key, SWITCH_RTP_CRYPTO_RECV);
+		a_engine->ssec[a_engine->crypto_type].local_crypto_key = switch_core_session_strdup(session, tmp);
+		switch_core_media_add_crypto(&a_engine->ssec[a_engine->crypto_type], a_engine->ssec[a_engine->crypto_type].local_crypto_key, SWITCH_RTP_CRYPTO_SEND);
+		switch_core_media_add_crypto(&a_engine->ssec[a_engine->crypto_type], a_engine->ssec[a_engine->crypto_type].remote_crypto_key, SWITCH_RTP_CRYPTO_RECV);
 		switch_channel_set_flag(smh->session->channel, CF_SECURE);
 		
 		switch_rtp_add_crypto_key(a_engine->rtp_session, SWITCH_RTP_CRYPTO_SEND, idx,
-								  a_engine->ssec.crypto_send_type, a_engine->ssec.local_raw_key, SUITES[a_engine->ssec.crypto_send_type].keylen);
+								  a_engine->crypto_type,
+								  a_engine->ssec[a_engine->crypto_type].local_raw_key, 
+								  SUITES[a_engine->crypto_type].keylen);
 		
-		switch_rtp_add_crypto_key(a_engine->rtp_session, SWITCH_RTP_CRYPTO_RECV, a_engine->ssec.crypto_tag,
-								  a_engine->ssec.crypto_recv_type, a_engine->ssec.remote_raw_key, SUITES[a_engine->ssec.crypto_recv_type].keylen);
+		switch_rtp_add_crypto_key(a_engine->rtp_session, SWITCH_RTP_CRYPTO_RECV, 
+								  a_engine->ssec[a_engine->crypto_type].crypto_tag,
+								  a_engine->crypto_type, 
+								  a_engine->ssec[a_engine->crypto_type].remote_raw_key, 
+								  SUITES[a_engine->crypto_type].keylen);
 	}
 
 
