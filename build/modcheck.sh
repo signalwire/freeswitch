@@ -5,9 +5,6 @@ mods=$1
 on='[01;00;35m'
 off='[0m'
 
-prefix=`cat ../config.log | grep ^prefix=\' | awk -F \' '{print $2}'`
-mods=${DESTDIR}${prefix}/mod;
-
 if [ -z $mods ] ; then
     mods="/usr/local/freeswitch/mod"
 fi
@@ -18,7 +15,7 @@ echo
 here=`pwd`
 
 cd $mods
-files=`ls mod_*.dylib mod_*.so 2>/dev/null`
+files=`ls *.dylib *.so 2>/dev/null`
 cd $here
 
 for i in $files ; do
