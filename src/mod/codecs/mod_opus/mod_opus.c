@@ -401,7 +401,7 @@ static switch_status_t opus_load_config(switch_bool_t reload)
     
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Opening of %s failed\n", cf);
-		status = SWITCH_STATUS_TERM;
+		return status;
 	}
     
 	if ((settings = switch_xml_child(cfg, "settings"))) {
