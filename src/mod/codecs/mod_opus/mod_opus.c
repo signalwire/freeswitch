@@ -284,9 +284,13 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 			opus_encoder_ctl(context->encoder_object, OPUS_SET_BANDWIDTH(OPUS_BANDWIDTH_FULLBAND));
 		}
         
-		opus_encoder_ctl(context->encoder_object, OPUS_SET_VBR(use_vbr));
-		opus_encoder_ctl(context->encoder_object, OPUS_SET_COMPLEXITY(complexity));
-        
+		if (use_vbr) {
+			opus_encoder_ctl(context->encoder_object, OPUS_SET_VBR(use_vbr));
+		}
+		if (complexity) {
+			opus_encoder_ctl(context->encoder_object, OPUS_SET_COMPLEXITY(complexity));
+        }
+
 		if (opus_codec_settings.useinbandfec) {
 			opus_encoder_ctl(context->encoder_object, OPUS_SET_INBAND_FEC(opus_codec_settings.useinbandfec));
 		}
