@@ -527,7 +527,7 @@ void sqlite3VdbeChangeP3(Vdbe *p, int addr, const char *zP3, int n){
     pOp->p3 = (char*)pKeyInfo;
     if( pKeyInfo ){
       unsigned char *aSortOrder;
-      memcpy(pKeyInfo, zP3, nByte);
+      memcpy(pKeyInfo, zP3, nByte - nField);
       aSortOrder = pKeyInfo->aSortOrder;
       if( aSortOrder ){
         pKeyInfo->aSortOrder = (unsigned char*)&pKeyInfo->aColl[nField];
