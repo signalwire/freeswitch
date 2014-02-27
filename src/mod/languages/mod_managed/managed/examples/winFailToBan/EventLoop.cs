@@ -36,7 +36,7 @@ namespace winFailToBan
                 ec.bind("HEARTBEAT", String.Empty);
                 while (Running)
                 {
-                    var evt = ec.pop(0, 0);
+                    var evt = ec.pop(1, 0);
                     if (evt == null)
                         continue;
 
