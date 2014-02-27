@@ -302,7 +302,7 @@ SWITCH_DECLARE(switch_bool_t) switch_get_system_idle_time(switch_profile_timer_t
 
 SWITCH_DECLARE(switch_profile_timer_t *)switch_new_profile_timer(void)
 {
-  int x;
+  unsigned int x;
   switch_profile_timer_t *p = calloc(1, sizeof(switch_profile_timer_t));
 
   if ( runtime.cpu_idle_smoothing_depth && runtime.cpu_idle_smoothing_depth > 0 ) {
