@@ -2167,7 +2167,14 @@ void sofia_reg_handle_sip_r_challenge(int status,
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Missing Authenticate Header!\n");
 		goto end;
 	}
+
+
 	scheme = (char const *) authenticate->au_scheme;
+
+	if (zstr(scheme)) {
+		scheme = "Digest";
+	}
+
 	if (authenticate->au_params) {
 		for (indexnum = 0; (cur = (char *) authenticate->au_params[indexnum]); indexnum++) {
 			if ((realm = strstr(cur, "realm="))) {
@@ -2175,6 +2182,18 @@ void sofia_reg_handle_sip_r_challenge(int status,
 				break;
 			}
 		}
+
+		if (zstr(realm)) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Realm: [%s] is invalid\n", switch_str_nil(realm));
+
+			for (indexnum = 0; (cur = (char *) authenticate->au_params[indexnum]); indexnum++) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "DUMP: [%s]\n", cur);
+			}
+			goto end;
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "NO AUTHENTICATE PARAMS\n");
+		goto end;
 	}
 
 	if (!gateway) {
@@ -2241,11 +2260,6 @@ void sofia_reg_handle_sip_r_challenge(int status,
 		}
 
 		switch_event_destroy(&locate_params);
-	}
-
-	if (!(scheme && realm)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No scheme and realm!\n");
-		goto end;
 	}
 
 	if (sip_auth_username && sip_auth_password) {
