@@ -1680,7 +1680,7 @@ size_t msg_header_prepare(msg_mclass_t const *mc, int flags,
     n += m;
 
     if (hc->hc_name) {
-      if (!comma_list || !next || next == *return_next)
+      if (!hc->hc_name[0] || !comma_list || !next || next == *return_next)
 	s = CRLF, m = 2;
       /* Else encode continuation */
       else if (compact)
