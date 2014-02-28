@@ -3041,7 +3041,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 
 	memset(policy, 0, sizeof(*policy));
 
-	switch_channel_set_variable(channel, "send_silence_when_idle", "400");
+	switch_channel_set_variable(channel, "send_silence_when_idle", "-1");
 
 	switch (crypto_key->type) {
 	case AES_CM_128_HMAC_SHA1_80:
