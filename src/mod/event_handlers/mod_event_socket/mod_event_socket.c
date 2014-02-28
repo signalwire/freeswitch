@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
+ * Seven Du <dujinfang@gmail.com>
  *
  *
  * mod_event_socket.c -- Socket Controlled Event Handler
@@ -688,20 +689,24 @@ SWITCH_STANDARD_API(event_sink_function)
 		stream->write_function(stream, "This is a web application!\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
-	stream->write_function(stream, "Content-Type: text/xml\n\n");
-
-	stream->write_function(stream, "<?xml version=\"1.0\"?>\n");
-	stream->write_function(stream, "<root>\n");
-
-	if (!wcmd) {
-		stream->write_function(stream, "<data><reply type=\"error\">Missing command parameter!</reply></data>\n");
-		goto end;
-	}
 
 	if (!format) {
 		format = "xml";
 	}
 
+	if (switch_stristr("json", format)) {
+		stream->write_function(stream, "Content-Type: application/json\n\n");
+	} else {
+		stream->write_function(stream, "Content-Type: text/xml\n\n");
+
+		stream->write_function(stream, "<?xml version=\"1.0\"?>\n");
+		stream->write_function(stream, "<root>\n");
+	}
+
+	if (!wcmd) {
+		stream->write_function(stream, "<data><reply type=\"error\">Missing command parameter!</reply></data>\n");
+		goto end;
+	}
 
 	if (!strcasecmp(wcmd, "filter")) {
 		char *action = switch_event_get_header(stream->param_event, "action");
@@ -818,7 +823,11 @@ SWITCH_STANDARD_API(event_sink_function)
 		char *edup;
 
 		if (zstr(events) && zstr(loglevel)) {
-			stream->write_function(stream, "<data><reply type=\"error\">Missing parameter!</reply></data>\n");
+			if (switch_stristr("json", format)) {
+				stream->write_function(stream, "{\"reply\": \"error\", \"reply_text\":\"Missing parameter!\"}");
+			} else {
+				stream->write_function(stream, "<data><reply type=\"error\">Missing parameter!</reply></data>\n");
+			}
 			goto end;
 		}
 
@@ -900,17 +909,37 @@ SWITCH_STANDARD_API(event_sink_function)
 			if (!key_count) {
 				switch_core_hash_destroy(&listener->event_hash);
 				switch_core_destroy_memory_pool(&listener->pool);
-				stream->write_function(stream, "<data><reply type=\"error\">No keywords supplied</reply></data>\n");
+				if (listener->format == EVENT_FORMAT_JSON) {
+					stream->write_function(stream, "{\"reply\": \"error\", \"reply_text\":\"No keywords supplied\"}");
+				} else {
+					stream->write_function(stream, "<data><reply type=\"error\">No keywords supplied</reply></data>\n");
+				}
 				goto end;
 			}
 		}
 
 		switch_set_flag_locked(listener, LFLAG_EVENTS);
 		add_listener(listener);
-		stream->write_function(stream, "<data>\n");
-		stream->write_function(stream, " <reply type=\"success\">Listener %u Created</reply>\n", listener->id);
-		xmlize_listener(listener, stream);
-		stream->write_function(stream, "</data>\n");
+		if (listener->format == EVENT_FORMAT_JSON) {
+			cJSON *cj, *cjlistener;
+			char *p;
+
+			cj = cJSON_CreateObject();
+			cjlistener = cJSON_CreateObject();
+			cJSON_AddNumberToObject(cjlistener, "listen-id", listener->id);
+			cJSON_AddItemToObject(cjlistener, "format", cJSON_CreateString(format2str(listener->format)));
+			cJSON_AddNumberToObject(cjlistener, "timeout", listener->timeout);
+			cJSON_AddItemToObject(cj, "listener", cjlistener);
+			p = cJSON_Print(cj);
+			stream->write_function(stream, p);
+			switch_safe_free(p);
+			cJSON_Delete(cj);
+		} else {
+			stream->write_function(stream, "<data>\n");
+			stream->write_function(stream, " <reply type=\"success\">Listener %u Created</reply>\n", listener->id);
+			xmlize_listener(listener, stream);
+			stream->write_function(stream, "</data>\n");
+		}
 
 		if (globals.debug > 0) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Creating event-sink listener [%u]\n", listener->id);
@@ -947,19 +976,35 @@ SWITCH_STANDARD_API(event_sink_function)
 		uint32_t idl = 0;
 		void *pop;
 		switch_event_t *pevent = NULL;
+		cJSON *cj = NULL, *cjevents = NULL;
 
 		if (id) {
 			idl = (uint32_t) atol(id);
 		}
 
 		if (!(listener = find_listener(idl))) {
-			stream->write_function(stream, "<data><reply type=\"error\">Can't find listener</reply></data>\n");
+			if (switch_stristr("json", format)) {
+				stream->write_function(stream, "{\"reply\": \"error\", \"reply_text\":\"Can't find listener\"}");
+			} else {
+				stream->write_function(stream, "<data><reply type=\"error\">Can't find listener</reply></data>\n");
+			}
 			goto end;
 		}
 
 		listener->last_flush = switch_epoch_time_now(NULL);
-		stream->write_function(stream, "<data>\n <reply type=\"success\">Current Events Follow</reply>\n");
-		xmlize_listener(listener, stream);
+
+		if (listener->format == EVENT_FORMAT_JSON) {
+			cJSON *cjlistener;
+			cj = cJSON_CreateObject();
+			cjlistener = cJSON_CreateObject();
+			cJSON_AddNumberToObject(cjlistener, "listen-id", listener->id);
+			cJSON_AddItemToObject(cjlistener, "format", cJSON_CreateString(format2str(listener->format)));
+			cJSON_AddNumberToObject(cjlistener, "timeout", listener->timeout);
+			cJSON_AddItemToObject(cj, "listener", cjlistener);
+		} else {
+			stream->write_function(stream, "<data>\n <reply type=\"success\">Current Events Follow</reply>\n");
+			xmlize_listener(listener, stream);
+		}
 
 		if (switch_test_flag(listener, LFLAG_LOG)) {
 			stream->write_function(stream, "<log_data>\n");
@@ -985,7 +1030,11 @@ SWITCH_STANDARD_API(event_sink_function)
 			stream->write_function(stream, "</log_data>\n");
 		}
 
-		stream->write_function(stream, "<events>\n");
+		if (listener->format == EVENT_FORMAT_JSON) {
+			cjevents = cJSON_CreateArray();
+		} else {
+			stream->write_function(stream, "<events>\n");
+		}
 
 		while (switch_queue_trypop(listener->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			//char *etype;
@@ -997,7 +1046,10 @@ SWITCH_STANDARD_API(event_sink_function)
 				stream->write_function(stream, "<event type=\"plain\">\n%s</event>", listener->ebuf);
 			} else if (listener->format == EVENT_FORMAT_JSON) {
 				//etype = "json";
-				switch_event_serialize_json(pevent, &listener->ebuf);
+				cJSON *cjevent = NULL;
+
+				switch_event_serialize_json_obj(pevent, &cjevent);
+				cJSON_AddItemToArray(cjevents, cjevent);
 			} else {
 				switch_xml_t xml;
 				//etype = "xml";
@@ -1017,7 +1069,17 @@ SWITCH_STANDARD_API(event_sink_function)
 			switch_event_destroy(&pevent);
 		}
 
-		stream->write_function(stream, " </events>\n</data>\n");
+		if (listener->format == EVENT_FORMAT_JSON) {
+			char *p = "{}";
+			cJSON_AddItemToObject(cj, "events", cjevents);
+			p = cJSON_Print(cj);
+			if (cj && p) stream->write_function(stream, p);
+			switch_safe_free(p);
+			cJSON_Delete(cj);
+			cj = NULL;
+		} else {
+			stream->write_function(stream, " </events>\n</data>\n");
+		}
 
 		if (pevent) {
 			switch_event_destroy(&pevent);
@@ -1056,7 +1118,10 @@ SWITCH_STANDARD_API(event_sink_function)
 
   end:
 
-	stream->write_function(stream, "</root>\n\n");
+	if (switch_stristr("json", format)) {
+	} else {
+		stream->write_function(stream, "</root>\n\n");
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
