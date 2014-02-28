@@ -199,6 +199,8 @@ struct switch_ivr_bridge_data {
 	switch_input_callback_function_t input_callback;
 	void *session_data;
 	int clean_exit;
+	int done;
+	struct switch_ivr_bridge_data *other_leg_data;
 };
 typedef struct switch_ivr_bridge_data switch_ivr_bridge_data_t;
 
@@ -358,6 +360,9 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		}
 
 		if (!switch_channel_ready(chan_a)) {
+			if (switch_channel_up(chan_a)) {
+				data->clean_exit = 1;
+			}
 			goto end_of_bridge_loop;
 		}
 
@@ -648,7 +653,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	switch_channel_clear_flag(chan_a, CF_BRIDGED);
 	
 	if (switch_channel_test_flag(chan_a, CF_LEG_HOLDING) || switch_channel_test_flag(chan_a, CF_HANGUP_HELD)) {
-		if (switch_channel_ready(chan_b) && switch_channel_get_state(chan_b) != CS_PARK) {
+		if (switch_channel_ready(chan_b) && switch_channel_get_state(chan_b) != CS_PARK && !data->other_leg_data->clean_exit) {
 			const char *ext = switch_channel_get_variable(chan_a, "hold_hangup_xfer_exten");
 			
 			switch_channel_stop_broadcast(chan_b);
@@ -675,6 +680,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 
 	switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
+	data->done = 1;
 	switch_core_session_rwunlock(session_b);
 	return NULL;
 }
@@ -1313,6 +1319,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	b_leg->input_callback = input_callback;
 	b_leg->session_data = peer_session_data;
 	b_leg->clean_exit = 0;
+	b_leg->other_leg_data = a_leg;
 
 	a_leg->session = session;
 	switch_copy_string(a_leg->b_uuid, switch_core_session_get_uuid(peer_session), sizeof(a_leg->b_uuid));
@@ -1320,6 +1327,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	a_leg->input_callback = input_callback;
 	a_leg->session_data = session_data;
 	a_leg->clean_exit = 0;
+	a_leg->other_leg_data = b_leg;
 
 	switch_channel_add_state_handler(peer_channel, &audio_bridge_peer_state_handlers);
 
