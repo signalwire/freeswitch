@@ -49,9 +49,6 @@
     <None Include="skel.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\..\FreeSWITCH.Managed.2012.csproj">
       <Project>{834e2b2f-5483-4b80-8fe3-fe48ff76e5c0}</Project>
       <Name>FreeSWITCH.Managed.2012</Name>
