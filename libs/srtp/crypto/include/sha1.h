@@ -67,18 +67,18 @@ typedef EVP_MD_CTX sha1_ctx_t;
  *
  */
 
-void inline sha1_init (sha1_ctx_t *ctx)
+static inline void sha1_init (sha1_ctx_t *ctx)
 {
     EVP_MD_CTX_init(ctx);
     EVP_DigestInit(ctx, EVP_sha1());
 }
 
-void inline sha1_update (sha1_ctx_t *ctx, const uint8_t *M, int octets_in_msg)
+static inline void sha1_update (sha1_ctx_t *ctx, const uint8_t *M, int octets_in_msg)
 {
     EVP_DigestUpdate(ctx, M, octets_in_msg);
 }
 
-void inline sha1_final (sha1_ctx_t *ctx, uint32_t *output)
+static inline void sha1_final (sha1_ctx_t *ctx, uint32_t *output)
 {
     unsigned int len = 0;
 
