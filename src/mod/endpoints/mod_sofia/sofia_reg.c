@@ -2870,7 +2870,8 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		}
 	}
 
-	if (max_registrations_perext > 0 && (sip && sip->sip_contact && (sip->sip_contact->m_expires == NULL || atol(sip->sip_contact->m_expires) > 0))) {
+	/* The max-registrations-per-extension-option only affects REGISTER-authentications */
+	if ((REG_REGISTER == regtype || REG_AUTO_REGISTER == regtype) && max_registrations_perext > 0 && (sip && sip->sip_contact && (sip->sip_contact->m_expires == NULL || atol(sip->sip_contact->m_expires) > 0))) {
 		/* if expires is null still process */
 		/* expires == 0 means the phone is going to unregiser, so don't count against max */
 		uint32_t count = 0;
