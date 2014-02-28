@@ -90,6 +90,8 @@
       <param name="exit-sound" value="tone_stream://%(500,0,300,200,100,50,25)"/>
       <!-- File to play when you are ejected from the conference -->
       <param name="kicked-sound" value="conference/conf-kicked.wav"/>
+      <!-- File to play when try to join a non-existing conference with "join-only" flag -->
+      <!-- <param name="join-only-sound" value="conference/conf-joinonly.wav"/> -->
       <!-- File to play when the conference is locked -->
       <param name="locked-sound" value="conference/conf-locked.wav"/>
       <!-- File to play when the conference is locked during the call-->

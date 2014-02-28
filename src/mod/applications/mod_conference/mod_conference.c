@@ -188,7 +188,8 @@ typedef enum {
 	MFLAG_PAUSE_RECORDING = (1 << 22),
 	MFLAG_ACK_VIDEO = (1 << 23),
 	MFLAG_TOOL = (1 << 24),
-	MFLAG_GHOST = (1 << 25)
+	MFLAG_GHOST = (1 << 25),
+	MFLAG_JOIN_ONLY = (1 << 26)
 } member_flag_t;
 
 typedef enum {
@@ -332,6 +333,7 @@ typedef struct conference_obj {
 	char *is_locked_sound;
 	char *is_unlocked_sound;
 	char *kicked_sound;
+	char *join_only_sound;
 	char *caller_id_name;
 	char *caller_id_number;
 	char *sound_prefix;
@@ -7888,6 +7890,8 @@ static void set_mflags(const char *flags, member_flag_t *f)
 				*f |= MFLAG_VIDEO_BRIDGE;
 			} else if (!strcasecmp(argv[i], "ghost")) {
 				*f |= MFLAG_GHOST;
+			} else if (!strcasecmp(argv[i], "join-only")) {
+				*f |= MFLAG_JOIN_ONLY;
 			}
 		}
 
@@ -8359,6 +8363,34 @@ SWITCH_STANDARD_APP(conference_function)
 			const char *max_members_str;
 			const char *endconf_grace_time_str;
 			const char *auto_record_str;
+
+			/* no conference yet, so check for join-only flag */
+			if (flags_str) {
+				set_mflags(flags_str,&mflags);
+				if (mflags & MFLAG_JOIN_ONLY) {
+					switch_event_t *event;
+					switch_xml_t jos_xml;
+					char *val;
+					/* send event */
+					switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT);
+					switch_channel_event_set_basic_data(channel, event);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Name", conf_name);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Profile-Name", profile_name);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "rejected-join-only");
+					switch_event_fire(&event);
+					/* check what sound file to play */
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Cannot create a conference since join-only flag is set\n");
+					jos_xml = switch_xml_find_child(xml_cfg.profile, "param", "name", "join-only-sound");
+					if (jos_xml && (val = (char *) switch_xml_attr_soft(jos_xml, "value"))) {
+							switch_channel_answer(channel);
+							switch_ivr_play_file(session, NULL, val, NULL);
+					}
+					if (!switch_false(switch_channel_get_variable(channel, "hangup_after_conference"))) {
+						switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+					}
+					goto done;
+				}
+			}
 
 			/* couldn't find the conference, create one */
 			conference = conference_new(conf_name, xml_cfg, session, NULL);
@@ -8967,6 +8999,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	char *is_locked_sound = NULL;
 	char *is_unlocked_sound = NULL;
 	char *kicked_sound = NULL;
+	char *join_only_sound = NULL;
 	char *pin = NULL;
 	char *mpin = NULL;
 	char *pin_sound = NULL;
@@ -9139,6 +9172,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 				cdr_event_mode = val;
 			} else if (!strcasecmp(var, "kicked-sound") && !zstr(val)) {
 				kicked_sound = val;
+			} else if (!strcasecmp(var, "join-only-sound") && !zstr(val)) {
+				join_only_sound = val;
 			} else if (!strcasecmp(var, "pin") && !zstr(val)) {
 				pin = val;
 			} else if (!strcasecmp(var, "moderator-pin") && !zstr(val)) {
@@ -9384,6 +9419,10 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 
 	if (!zstr(kicked_sound)) {
 		conference->kicked_sound = switch_core_strdup(conference->pool, kicked_sound);
+	}
+
+	if (!zstr(join_only_sound)) {
+		conference->join_only_sound = switch_core_strdup(conference->pool, join_only_sound);
 	}
 
 	if (!zstr(pin_sound)) {
