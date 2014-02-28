@@ -1704,7 +1704,7 @@ static void check_jitter(switch_rtp_t *rtp_session)
 
 	diff_time = (current_time - rtp_session->stats.inbound.last_proc_time);
 	seq = (int)(uint16_t) ntohs((uint16_t) rtp_session->recv_msg.header.seq);
-	
+
 	/* Burst and Packet Loss */
 	rtp_session->stats.inbound.recved++;
 
@@ -4466,12 +4466,12 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		rtp_session->missed_count = 0;
 	}
 
-
-	if (*bytes > rtp_header_len && (rtp_session->recv_msg.header.version == 2 && check_recv_payload(rtp_session))) {
-		xcheck_jitter = *bytes;
-		check_jitter(rtp_session);
+	if (!rtp_session->jb || rtp_session->pause_jb || !jb_valid(rtp_session)) {
+		if (*bytes > rtp_header_len && (rtp_session->recv_msg.header.version == 2 && check_recv_payload(rtp_session))) {
+			xcheck_jitter = *bytes;
+			check_jitter(rtp_session);
+		}
 	}
-
 
 	if (check_rtcp_and_ice(rtp_session) == -1) {
 		return SWITCH_STATUS_GENERR;
