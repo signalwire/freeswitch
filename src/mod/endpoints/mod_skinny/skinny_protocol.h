@@ -683,7 +683,9 @@ struct PACKED open_receive_channel_message {
 	uint32_t echo_cancel_type;
 	uint32_t g723_bitrate;
 	uint32_t conference_id2;
-	uint32_t reserved[10];
+	uint32_t reserved[14];
+	uint32_t rtpdtmfpayload;
+	uint32_t rtptimeout;
 };
 
 /* CloseReceiveChannelMessage */

@@ -802,7 +802,7 @@ switch_status_t skinny_session_start_media(switch_core_session_t *session, liste
 				SKINNY_CODEC_ULAW_64K, /* uint32_t payload_capacity, */
 				0, /* uint32_t echo_cancel_type, */
 				0, /* uint32_t g723_bitrate, */
-				0, /* uint32_t conference_id2, */
+				tech_pvt->call_id, /* uint32_t conference_id2, */
 				0 /* uint32_t reserved[10] */
 				);
 	}
@@ -868,7 +868,7 @@ switch_status_t skinny_session_unhold_line(switch_core_session_t *session, liste
 		SKINNY_CODEC_ULAW_64K, /* uint32_t payload_capacity, */
 		0, /* uint32_t echo_cancel_type, */
 		0, /* uint32_t g723_bitrate, */
-		0, /* uint32_t conference_id2, */
+		tech_pvt->call_id, /* uint32_t conference_id2, */
 		0 /* uint32_t reserved[10] */
 		);
 
