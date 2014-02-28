@@ -1142,7 +1142,7 @@ switch_status_t channel_answer_channel(switch_core_session_t *session)
 		/* Wait for media */
 		while(!switch_test_flag(tech_pvt, TFLAG_IO)) {
 			switch_cond_next();
-			if (++x > 1000) {
+			if (++x > 5000) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Wait tooo long to answer %s:%s\n",
 						switch_channel_get_variable(channel, "skinny_device_name"), switch_channel_get_variable(channel, "skinny_device_instance"));
 				return SWITCH_STATUS_FALSE;
