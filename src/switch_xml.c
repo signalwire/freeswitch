@@ -1198,7 +1198,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd)
 {
 	switch_xml_root_t root;
 	struct stat st;
-	switch_size_t l;
+	switch_ssize_t l;
 	void *m;
 
 	if (fd < 0)
@@ -1212,8 +1212,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd)
 	m = malloc(st.st_size);
 	if (!m)
 		return NULL;
-	l = read(fd, m, st.st_size);
-	if (!l || !(root = (switch_xml_root_t) switch_xml_parse_str((char *) m, l))) {
+	if (!(0<(l = read(fd, m, st.st_size)))
+		|| !(root = (switch_xml_root_t) switch_xml_parse_str((char *) m, l))) {
 		free(m);
 		return NULL;
 	}
@@ -1583,7 +1583,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file_simple(const char *file)
 {
 	int fd = -1;
 	struct stat st;
-	switch_size_t l;
+	switch_ssize_t l;
 	void *m;
 	switch_xml_root_t root;
 
@@ -1592,7 +1592,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file_simple(const char *file)
 		if (!st.st_size) goto error;
 		m = malloc(st.st_size);
 		switch_assert(m);
-		if (!(l = read(fd, m, st.st_size))) goto error;
+		if (!(0<(l = read(fd, m, st.st_size)))) goto error;
 		if (!(root = (switch_xml_root_t) switch_xml_parse_str((char *) m, l))) goto error;
 		root->dynamic = 1;
 		close(fd);
