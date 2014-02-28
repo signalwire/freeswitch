@@ -542,10 +542,29 @@ su_inline
 int tls_post_connection_check(tport_t *self, tls_t *tls)
 {
   X509 *cert;
+  const SSL_CIPHER *cipher;
+  char cipher_description[256];
+  int cipher_bits, alg_bits;
   int extcount;
   int i, j, error;
 
   if (!tls) return -1;
+
+  if (!(cipher = SSL_get_current_cipher(tls->con))) {
+    SU_DEBUG_7(("%s(%p): %s\n", __func__, (void*)self,
+                "OpenSSL failed to return an SSL_CIPHER object to us."));
+    return SSL_ERROR_SSL;
+  }
+  SU_DEBUG_9(("%s(%p): TLS cipher chosen (name): %s\n", __func__, (void*)self,
+              SSL_CIPHER_get_name(cipher)));
+  SU_DEBUG_9(("%s(%p): TLS cipher chosen (version): %s\n", __func__, (void*)self,
+              SSL_CIPHER_get_version(cipher)));
+  cipher_bits = SSL_CIPHER_get_bits(cipher, &alg_bits);
+  SU_DEBUG_9(("%s(%p): TLS cipher chosen (bits/alg_bits): %d/%d\n", __func__, (void*)self,
+              cipher_bits, alg_bits));
+  SSL_CIPHER_description(cipher, cipher_description, sizeof(cipher_description));
+  SU_DEBUG_9(("%s(%p): TLS cipher chosen (description): %s\n", __func__, (void*)self,
+              cipher_description));
 
   cert = SSL_get_peer_certificate(tls->con);
   if (!cert) {
