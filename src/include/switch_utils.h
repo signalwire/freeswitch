@@ -284,6 +284,8 @@ static inline char *switch_strchr_strict(const char *in, char find, const char *
 
 	p = in;
 
+	if (!*p) return NULL;
+
 	while(p && *p) {
 		const char *a = allowed;
 		int acceptable = 0;
