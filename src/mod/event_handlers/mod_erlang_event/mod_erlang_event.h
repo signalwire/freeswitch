@@ -136,8 +136,12 @@ struct listener {
 	switch_thread_rwlock_t *session_rwlock;
 	//session_elem_t *session_list;
 	switch_hash_t *sessions;
+	uint64_t total_events;
+	uint64_t total_logs;
 	int lost_events;
 	int lost_logs;
+	int create;
+	int hangup;
 	uint32_t id;
 	char remote_ip[50];
 	/*switch_port_t remote_port; */
