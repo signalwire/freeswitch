@@ -41,7 +41,7 @@ switch_cache_db_handle_t *_sofia_glue_get_db_handle(sofia_profile_t *profile, co
 
 static int get_channels(const char *name, int dft)
 {
-	if (!strcasecmp(name, "opus")) {
+	if (switch_false(switch_core_get_variable("NDLB_broken_opus_sdp")) && !strcasecmp(name, "opus")) {
 		return 2; /* IKR???*/
 	}
 
