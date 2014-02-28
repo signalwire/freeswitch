@@ -61,7 +61,6 @@
 #define MASTER_KEY_LEN   30
 #define RTP_MAGIC_NUMBER 42
 #define MAX_SRTP_ERRS 10
-#define RTP_TS_RESET 1
 
 static switch_port_t START_PORT = RTP_START_PORT;
 static switch_port_t END_PORT = RTP_END_PORT;
@@ -215,6 +214,7 @@ struct switch_rtp {
 	uint32_t max_next_write_samplecount;
 	uint32_t queue_delay;
 	switch_time_t last_write_timestamp;
+	uint8_t write_reset;
 	uint32_t flags;
 	switch_memory_pool_t *pool;
 	switch_sockaddr_t *from_addr, *rtcp_from_addr;
@@ -2842,7 +2842,8 @@ static void do_2833(switch_rtp_t *rtp_session, switch_core_session_t *session)
 
 			rtp_session->dtmf_data.timestamp_dtmf = rtp_session->last_write_ts + samples;
 			rtp_session->last_write_ts = rtp_session->dtmf_data.timestamp_dtmf;
-			
+			rtp_session->write_reset = 0;
+
 			wrote = switch_rtp_write_manual(rtp_session,
 											rtp_session->dtmf_data.out_digit_packet,
 											4,
@@ -2875,7 +2876,7 @@ SWITCH_DECLARE(void) rtp_flush_read_buffer(switch_rtp_t *rtp_session, switch_rtp
 
 
 	if (switch_rtp_ready(rtp_session)) {
-		rtp_session->last_write_ts = RTP_TS_RESET;
+		rtp_session->write_reset = 1;
 		switch_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 
 		switch (flush) {
@@ -4257,7 +4258,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 	if ((rtp_session->rtp_bugs & RTP_BUG_NEVER_SEND_MARKER)) {
 		m = 0;
 	} else {
-		if ((rtp_session->last_write_ts != RTP_TS_RESET && rtp_session->ts > (rtp_session->last_write_ts + (rtp_session->samples_per_interval * 10)))
+		if ((!rtp_session->write_reset && rtp_session->ts > (rtp_session->last_write_ts + (rtp_session->samples_per_interval * 10)))
 			|| rtp_session->ts == rtp_session->samples_per_interval) {
 			m++;
 		}
@@ -4284,13 +4285,13 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 	}
 
 	if (m) {
-		rtp_session->last_write_ts = RTP_TS_RESET;
+		rtp_session->write_reset = 1;
 		rtp_session->ts = 0;
 	}
 
 	/* If the marker was set, and the timestamp seems to have started over - set a new SSRC, to indicate this is a new stream */
 	if (m && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_SEND) && (rtp_session->rtp_bugs & RTP_BUG_CHANGE_SSRC_ON_MARKER) && 
-		(rtp_session->last_write_ts == RTP_TS_RESET || (rtp_session->ts <= rtp_session->last_write_ts && rtp_session->last_write_ts > 0))) {
+		(rtp_session->write_reset || (rtp_session->ts <= rtp_session->last_write_ts && rtp_session->last_write_ts > 0))) {
 		switch_rtp_set_ssrc(rtp_session, (uint32_t) ((intptr_t) rtp_session + (uint32_t) switch_epoch_time_now(NULL)));
 	}
 
@@ -4414,11 +4415,11 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 	this_ts = ntohl(send_msg->header.ts);
 
 	if (abs(rtp_session->last_write_ts - this_ts) > 16000) {
-		rtp_session->last_write_ts = RTP_TS_RESET;
+		rtp_session->write_reset = 1;
 	}
 
 	if (!switch_rtp_ready(rtp_session) || rtp_session->sending_dtmf || !this_ts || 
-		(rtp_session->last_write_ts > RTP_TS_RESET && this_ts < rtp_session->last_write_ts)) {
+		(!rtp_session->write_reset && this_ts < rtp_session->last_write_ts)) {
 		send = 0;
 	}
 
@@ -4528,6 +4529,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			goto end;
 		}
 		rtp_session->last_write_ts = this_ts;
+		rtp_session->write_reset = 0;
 
 		if (rtp_session->queue_delay) {
 			rtp_session->delay_samples = rtp_session->queue_delay;
@@ -4741,7 +4743,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 		switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Generating RTP locally but timestamp passthru is configured, disabling....\n");
 		switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE);
-		rtp_session->last_write_ts = RTP_TS_RESET;
+		rtp_session->write_reset = 1;
 	}
 
 	switch_assert(frame != NULL);
@@ -4889,6 +4891,7 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 
 	if (((*flags) & SFF_RTP_HEADER)) {
 		rtp_session->last_write_ts = ts;
+		rtp_session->write_reset = 0;
 	}
 
 	ret = (int) bytes;
