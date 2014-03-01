@@ -223,7 +223,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	const char *silence_var;
 	int silence_val = 0, bypass_media_after_bridge = 0;
 	const char *bridge_answer_timeout = NULL;
-	int answer_timeout, sent_update = 0;
+	int bridge_filter_dtmf, answer_timeout, sent_update = 0;
 	time_t answer_limit = 0;
 	const char *exec_app = NULL;
 	const char *exec_data = NULL;
@@ -339,6 +339,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			}
 		}
 	}
+
+	bridge_filter_dtmf = switch_true(switch_channel_get_variable(chan_a, "bridge_filter_dtmf"));
 
 	for (;;) {
 		switch_channel_state_t b_state;
@@ -456,6 +458,11 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 						switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 						goto end_of_bridge_loop;
 					}
+				}
+
+				if (bridge_filter_dtmf) {
+					send_dtmf = 0;
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "Dropping filtered DTMF received on %s\n", switch_channel_get_name(chan_a));
 				}
 
 				if (send_dtmf) {
