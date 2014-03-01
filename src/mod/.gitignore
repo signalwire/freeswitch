@@ -75,3 +75,4 @@
 /say/mod_say_ru/Makefile
 /timers/mod_posix_timer/Makefile
 /timers/mod_timerfd/Makefile
+/endpoints/mod_unicall/Makefile
