@@ -179,11 +179,6 @@ static switch_status_t v8_mod_load_file(const char *filename)
 
 	v8_mod_init = (v8_mod_init_t) (intptr_t) function_handle;
 
-	if (v8_mod_init == NULL) {
-		err = "Cannot Load";
-		goto err;
-	}
-
 	if (v8_mod_init(&module_interface) != SWITCH_STATUS_SUCCESS) {
 		err = "Module load routine returned an error";
 		goto err;

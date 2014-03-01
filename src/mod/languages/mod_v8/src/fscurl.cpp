@@ -60,7 +60,6 @@ string FSCURL::GetJSClassName()
 size_t FSCURL::FileCallback(void *ptr, size_t size, size_t nmemb, void *data)
 {
 	FSCURL *obj = static_cast<FSCURL *>(data);
-	HandleScope handle_scope(obj->GetIsolate());
 	register unsigned int realsize = (unsigned int) (size * nmemb);
 	uint32_t argc = 0;
 	Handle<Value> argv[4];
@@ -69,6 +68,7 @@ size_t FSCURL::FileCallback(void *ptr, size_t size, size_t nmemb, void *data)
 		return 0;
 	}
 
+	HandleScope handle_scope(obj->GetIsolate());
 	Handle<Function> func;
 	
 	if (!obj->_function.IsEmpty()) {

@@ -694,6 +694,10 @@ JS_SESSION_FUNCTION_IMPL(SayPhrase)
 
 bool FSSession::CheckHangupHook(FSSession *obj, bool *ret)
 {
+	if (!obj) {
+		return true;
+	}
+
 	Isolate *isolate = obj->GetIsolate();
 	HandleScope handle_scope(isolate);
 	Handle<Value> argv[2];
@@ -701,7 +705,7 @@ bool FSSession::CheckHangupHook(FSSession *obj, bool *ret)
 	bool res = true;
 	string resp;
 
-	if (obj && !obj->_check_state && !obj->_on_hangup.IsEmpty() && (obj->_hook_state == CS_HANGUP || obj->_hook_state == CS_ROUTING)) {
+	if (!obj->_check_state && !obj->_on_hangup.IsEmpty() && (obj->_hook_state == CS_HANGUP || obj->_hook_state == CS_ROUTING)) {
 		obj->_check_state++;
 		argv[argc++] = Local<Object>::New(obj->GetOwner()->GetIsolate(), obj->GetJavaScriptObject());
 
@@ -1499,18 +1503,14 @@ JS_SESSION_GET_PROPERTY_IMPL(GetProperty)
 	if (!strcmp(prop, "cause")) {
 		if (channel) {
 			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), switch_channel_cause2str(switch_channel_get_cause(channel))));
-		} else if (this) {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), switch_channel_cause2str(this->_cause)));
 		} else {
-			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), ""));
+			info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), switch_channel_cause2str(this->_cause)));
 		}
 	} else if (!strcmp(prop, "causecode")) {
 		if (channel) {
 			info.GetReturnValue().Set(Integer::New(info.GetIsolate(), switch_channel_get_cause(channel)));
-		} else if (this) {
-			info.GetReturnValue().Set(Integer::New(info.GetIsolate(), this->_cause));
 		} else {
-			info.GetReturnValue().Set(Integer::New(info.GetIsolate(), 0));
+			info.GetReturnValue().Set(Integer::New(info.GetIsolate(), this->_cause));
 		}
 	} else if (!strcmp(prop, "name")) {
 		info.GetReturnValue().Set(String::NewFromUtf8(info.GetIsolate(), switch_channel_get_name(channel)));

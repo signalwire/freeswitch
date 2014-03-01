@@ -101,12 +101,13 @@ void *FSCoreDB::Construct(const v8::FunctionCallbackInfo<Value>& info)
 int FSCoreDB::Callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	FSCoreDB *dbo = static_cast<FSCoreDB *>(pArg);
-	HandleScope handle_scope(dbo->GetIsolate());
 	int x = 0;
 
 	if (!dbo) {
 		return 0;
 	}
+
+	HandleScope handle_scope(dbo->GetIsolate());
 
 	if (dbo->_callback.IsEmpty()) {
 		dbo->GetIsolate()->ThrowException(String::NewFromUtf8(dbo->GetIsolate(), "No callback specified"));

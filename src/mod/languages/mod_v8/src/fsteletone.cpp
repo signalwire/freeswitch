@@ -304,7 +304,7 @@ JS_TELETONE_FUNCTION_IMPL(Generate)
 					break;
 				}
 			}
-			if ((write_frame.datalen = (uint32_t) switch_buffer_read_loop(_audio_buffer,
+			if (!_audio_buffer || (write_frame.datalen = (uint32_t) switch_buffer_read_loop(_audio_buffer,
 																		  fdata, write_frame.codec->implementation->decoded_bytes_per_packet)) <= 0) {
 				break;
 			}
