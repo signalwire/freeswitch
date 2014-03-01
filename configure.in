@@ -632,7 +632,6 @@ AC_STRUCT_TM
 
 # Checks for library functions.
 AC_PROG_GCC_TRADITIONAL
-AC_FUNC_MALLOC
 AC_TYPE_SIGNAL
 AC_FUNC_STRFTIME
 AC_CHECK_FUNCS([gethostname vasprintf mmap mlock mlockall usleep getifaddrs timerfd_create getdtablesize posix_openpt])
@@ -952,9 +951,13 @@ case $host in
    *-openbsd*)
        # OpenBSD's gunzip and friends don't like -d because its redundant, only gzip does
        AC_PATH_PROGS(ZCAT, gzip)
+       AC_FUNC_MALLOC
+       ;;
+   *-netbsd*)
        ;;
     *)
        AC_PATH_PROGS(ZCAT, gunzip gzcat gzip zcat)
+       AC_FUNC_MALLOC
        ;;
 esac
 
