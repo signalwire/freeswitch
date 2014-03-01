@@ -625,6 +625,15 @@ struct apr_threadattr_t {
     apr_size_t stacksize;
     int priority;
 };
+struct apr_thread_t {
+    apr_pool_t *pool;
+    HANDLE td;
+    apr_int32_t cancel;
+    apr_int32_t cancel_how;
+    void *data;
+    apr_thread_start_t func;
+    apr_status_t exitval;
+};
 #endif
 
 
@@ -666,7 +675,7 @@ SWITCH_DECLARE(switch_status_t) switch_thread_create(switch_thread_t ** new_thre
 	status = apr_thread_create(new_thread, attr, func, data, cont);
 #ifdef WIN32
 	if (attr->priority == SWITCH_PRI_REALTIME) {
-		SetThreadPriority(new_thread, THREAD_PRIORITY_HIGHEST);
+		SetThreadPriority(((apr_thread_t*)*new_thread)->td, THREAD_PRIORITY_HIGHEST);
 	}
 #endif
 	return (switch_status_t)status;
