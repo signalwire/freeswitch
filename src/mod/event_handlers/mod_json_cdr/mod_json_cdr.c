@@ -217,6 +217,8 @@ static void backup_cdr(cdr_data_t *data)
 					switch_ssize_t wrote = 0, x;
 					do { x = write(fd, json_text, json_len);
 					} while (!(x<0) && json_len > (wrote += x));
+					if (!(x<0)) do { x = write(fd, "\n", 1);
+						} while (!(x<0) && x<1);
 					close(fd); fd = -1;
 					if (x < 0) {
 						switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Error writing [%s]\n",path);
@@ -281,6 +283,8 @@ static void process_cdr(cdr_data_t *data)
 				switch_ssize_t wrote = 0, x;
 				do { x = write(fd, data->json_text, json_len);
 				} while (!(x<0) && json_len > (wrote += x));
+				if (!(x<0)) do { x = write(fd, "\n", 1);
+					} while (!(x<0) && x<1);
 				close(fd); fd = -1;
 				if (x < 0) {
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Error writing [%s]\n",path);
