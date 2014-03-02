@@ -3115,55 +3115,24 @@ SWITCH_DECLARE(int) switch_tod_cmp(const char *exp, int val)
 
 SWITCH_DECLARE(int) switch_split_user_domain(char *in, char **user, char **domain)
 {
-	char *p = NULL, *h = NULL, *u;
+	char *p = NULL, *h = NULL, *u = NULL;
 
-	if (!in) {
-		return 0;
-	}
+	if (!in) return 0;
 
-	if (!strncasecmp(in, "sip", 3)) {
-		in += 3;
-		if (*in == 's') in++;
-		if (*in == ':') in++;
-	}
+	/* Remove URL scheme */
+	if (!strncasecmp(in, "sip:", 4)) in += 4;
+	if (!strncasecmp(in, "sips:", 5)) in += 5;
 
-	u = in;
-
-	/* First isolate the host part from the user part */
-	if ((h = strchr(u, '@'))) {
-		*h++ = '\0';
-	} else {
-		u = NULL;
-		h = in;
-	}
-
-	/* Clean out the user part of its protocol prefix (if any) */
-	if (u && (p = strchr(u, ':'))) {
-		*p++ = '\0';
-		u = p;
-	}
+	/* Isolate the host part from the user part */
+	if ((h = in, p = strchr(h, '@'))) *p = '\0', u = in, h = p+1;
 
 	/* Clean out the host part of any suffix */
-	if (h) {
-		if ((p = strchr(h, ':'))) {
-			*p = '\0';
-		}
+	if ((p = strchr(h, ':'))) *p = '\0';
+	if ((p = strchr(h, ';'))) *p = '\0';
+	if ((p = strchr(h, ' '))) *p = '\0';
 
-		if ((p = strchr(h, ';'))) {
-			*p = '\0';
-		}
-
-		if ((p = strchr(h, ' '))) {
-			*p = '\0';
-		}
-	}
-	if (user) {
-		*user = u;
-	}
-	if (domain) {
-		*domain = h;
-	}
-
+	if (user) *user = u;
+	if (domain) *domain = h;
 	return 1;
 }
 
