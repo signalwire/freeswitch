@@ -213,11 +213,15 @@ static void backup_cdr(cdr_data_t *data)
 				mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
 #endif 
 				if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, mode)) > -1) { 
-					int wrote = write(fd, json_text, (unsigned) strlen(json_text));
-					close(fd);
-					fd = -1;
-					if (wrote < 0) {
+					switch_size_t json_len = strlen(json_text);
+					switch_ssize_t wrote = 0, x;
+					do { x = write(fd, json_text, json_len);
+					} while (!(x<0) && json_len > (wrote += x));
+					close(fd); fd = -1;
+					if (x < 0) {
 						switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Error writing [%s]\n",path);
+						if (0 > unlink(path))
+							switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Error unlinking [%s]\n",path);
 					}
 					switch_safe_free(path);
 					break;
@@ -273,11 +277,15 @@ static void process_cdr(cdr_data_t *data)
 #else
 			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) > -1) {
 #endif
-				int wrote = write(fd, data->json_text, (unsigned) strlen(data->json_text));
-				close(fd);
-				fd = -1;
-				if (wrote < 0) {
+				switch_size_t json_len = strlen(data->json_text);
+				switch_ssize_t wrote = 0, x;
+				do { x = write(fd, data->json_text, json_len);
+				} while (!(x<0) && json_len > (wrote += x));
+				close(fd); fd = -1;
+				if (x < 0) {
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Error writing [%s]\n",path);
+					if (0 > unlink(path))
+						switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Error unlinking [%s]\n",path);
 				}
 			} else {
 				char ebuf[512] = { 0 };
