@@ -555,6 +555,7 @@ static char *format_custom_sql(const char *custom_sql, callback_t *cb_struct, co
 	/* first replace %s with digits to maintain backward compat */
 	if (cb_struct->profile->custom_sql_has_percent == SWITCH_TRUE) {
 		newSQL = switch_string_replace(custom_sql, "%q", digits);
+		custom_sql = newSQL;
 	}
 
 	/* expand the vars */
