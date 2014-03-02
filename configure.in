@@ -61,7 +61,8 @@ default_soundsdir="$prefix/sounds"
 default_storagedir="$prefix/storage"
 
 if test "$enable_fhs" = yes; then
-  prefix="/usr"
+  prefix="/usr" exec_prefix="$prefix"
+  libdir="$(eval echo "$libdir")"
   sysconfdir="/etc/freeswitch"
   localstatedir="/var"
   default_certsdir="/etc/freeswitch/tls"
