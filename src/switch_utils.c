@@ -3123,7 +3123,8 @@ SWITCH_DECLARE(int) switch_split_user_domain(char *in, char **user, char **domai
 
 	if (!strncasecmp(in, "sip", 3)) {
 		in += 3;
-		while(*in == ':') in++;
+		if (*in == 's') in++;
+		if (*in == ':') in++;
 	}
 
 	u = in;
