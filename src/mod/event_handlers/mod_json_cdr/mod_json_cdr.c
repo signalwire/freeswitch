@@ -219,6 +219,7 @@ static void backup_cdr(cdr_data_t *data)
 					if (wrote < 0) {
 						switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Error writing [%s]\n",path);
 					}
+					switch_safe_free(path);
 					break;
 				} else {
 					char ebuf[512] = { 0 };
