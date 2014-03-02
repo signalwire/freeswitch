@@ -3127,9 +3127,10 @@ SWITCH_DECLARE(int) switch_split_user_domain(char *in, char **user, char **domai
 	if ((h = in, p = strchr(h, '@'))) *p = '\0', u = in, h = p+1;
 
 	/* Clean out the host part of any suffix */
-	if ((p = strchr(h, ':'))) *p = '\0';
-	if ((p = strchr(h, ';'))) *p = '\0';
-	if ((p = strchr(h, ' '))) *p = '\0';
+	for (p = h; *p; p++)
+		if (*p == ':' || *p == ';' || *p == ' ') {
+			*p = '\0'; break;
+		}
 
 	if (user) *user = u;
 	if (domain) *domain = h;
