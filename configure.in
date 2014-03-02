@@ -62,7 +62,7 @@ default_storagedir="$prefix/storage"
 
 if test "$enable_fhs" = yes; then
   prefix="/usr"
-  sysconfdir="/etc"
+  sysconfdir="/etc/freeswitch"
   localstatedir="/var"
   default_certsdir="/etc/freeswitch/tls"
   default_dbdir="/var/lib/freeswitch/db"
