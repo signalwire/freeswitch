@@ -3011,6 +3011,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 	switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
 	switch_event_t *fsevent = NULL;
 	int idx = 0;
+	const char *var;
 
 	if (direction >= SWITCH_RTP_CRYPTO_MAX || keylen > SWITCH_RTP_MAX_CRYPTO_LEN) {
 		return SWITCH_STATUS_FALSE;
@@ -3040,7 +3041,11 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 
 	memset(policy, 0, sizeof(*policy));
 
-	switch_channel_set_variable(channel, "send_silence_when_idle", "-1");
+	/* many devices can't handle gaps in SRTP streams */
+	if (!(var = switch_channel_get_variable(channel, "send_silence_when_idle"))
+		|| !(atoi(var))) {
+		switch_channel_set_variable(channel, "send_silence_when_idle", "-1");
+	}
 
 	switch (crypto_key->type) {
 	case AES_CM_128_HMAC_SHA1_80:
