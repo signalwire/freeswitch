@@ -171,7 +171,7 @@ AC_PROG_CXX
 #check if the g++ compiler works
 AC_CACHE_CHECK([whether the C++ compiler works], [ac_cv_sys_cxx_works], [
     AC_LANG_PUSH([C++])
-    AC_COMPILE_IFELSE([int main() { }], [ac_cv_sys_cxx_works=yes],
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([int main() { }])], [ac_cv_sys_cxx_works=yes],
         [ac_cv_sys_cxx_works=no])
     AC_LANG_POP([C++])
     ])

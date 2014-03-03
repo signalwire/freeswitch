@@ -93,10 +93,10 @@ dnl Check if extra inc is required
   CPPFLAGS="$CPPFLAGS -I$JAVA_HOME/$java_inc_dir"
   AC_LANG_SAVE
   AC_LANG_C
-  AC_COMPILE_IFELSE(
+  AC_COMPILE_IFELSE([
     AC_LANG_SOURCE(
       [[#include <jni.h>]]
-    ),
+    )],
     passed=`expr $passed + 1`,failed=`expr $failed + 1`
   )
   AC_LANG_RESTORE
@@ -110,10 +110,10 @@ dnl Check if extra inc is required
     CPPFLAGS="$CPPFLAGS -I$JAVA_HOME/$java_inc_dir -I$JAVA_HOME/$java_inc_dir/$java_extra_inc"
     AC_LANG_SAVE
     AC_LANG_C
-    AC_COMPILE_IFELSE(
+    AC_COMPILE_IFELSE([
       AC_LANG_SOURCE(
 	[[#include <jni.h>]]
-      ),
+      )],
       passed=`expr $passed + 1`,failed=`expr $failed + 1`
     )
     AC_LANG_RESTORE
