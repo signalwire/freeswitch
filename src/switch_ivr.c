@@ -166,9 +166,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 		switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 	}
 
-	var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE);
-	if (var) {
-		sval = atoi(var);
+	if ((var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE))
+		&& (sval = atoi(var))) {
 		SWITCH_IVR_VERIFY_SILENCE_DIVISOR(sval);
 	}
 
