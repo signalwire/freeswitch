@@ -22,6 +22,7 @@ Contributors:
 	Seven Du <dujinfang@gmail.com>
 */
 
+#include <switch.h>
 #include "mp4_helper.hpp"
 
 namespace MP4
