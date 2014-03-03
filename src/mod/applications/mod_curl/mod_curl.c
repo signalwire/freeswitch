@@ -51,7 +51,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_curl_load);
  */
 SWITCH_MODULE_DEFINITION(mod_curl, mod_curl_load, mod_curl_shutdown, NULL);
 
-static char *SYNTAX = "curl url [headers|json|content-type <mime-type>] [get|head|post [post_data]]";
+static char *SYNTAX = "curl url [headers|json|content-type <mime-type>|timeout <seconds>] [get|head|post [post_data]]";
 
 #define HTTP_SENDFILE_ACK_EVENT "curl_sendfile::ack"
 #define HTTP_SENDFILE_RESPONSE_SIZE 32768
@@ -830,6 +830,7 @@ SWITCH_STANDARD_API(curl_function)
 	int i = 0;
 
 	switch_memory_pool_t *pool = NULL;
+	curl_options_t options = { 0 };
 
 	if (zstr(cmd)) {
 		switch_goto_status(SWITCH_STATUS_SUCCESS, usage);
@@ -868,10 +869,20 @@ SWITCH_STANDARD_API(curl_function)
 				if (++i < argc) {
 					content_type = switch_core_strdup(pool, argv[i]);
 				}
+			} else if (!strcasecmp("timeout", argv[i])) {
+				if (++i < argc) {
+					int tmp = atoi(argv[i]);
+
+					if (tmp > 0) {
+						options.connect_timeout = tmp;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invalid timeout!\n");
+					}
+				}
 			}
 		}
 
-		http_data = do_lookup_url(pool, url, method, postdata, content_type, NULL);
+		http_data = do_lookup_url(pool, url, method, postdata, content_type, &options);
 		if (do_json) {
 			stream->write_function(stream, "%s", print_json(pool, http_data));
 		} else {
