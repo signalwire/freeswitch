@@ -18,7 +18,7 @@
 
 # @start 1
 
-AC_INIT
+AC_INIT([g722_1], [0.2.0]);
 
 m4_include(config/ax_compiler_vendor.m4)
 m4_include(config/ax_check_real_file.m4)
@@ -44,7 +44,7 @@ AC_SUBST(G722_1_LT_AGE)
 AC_CONFIG_SRCDIR([src/encoder.c])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_HEADERS([src/config.h:config-h.in])
-AM_INIT_AUTOMAKE($PACKAGE, $VERSION)
+AM_INIT_AUTOMAKE
 
 AC_CANONICAL_HOST
 #AC_CANONICAL_BUILD

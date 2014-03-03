@@ -74,7 +74,7 @@ Makefile: $(srcdir)/Makefile.in $(top_blddir)/config.status
 $(top_blddir)/config.status: $(top_srcdir)/configure
 	$(SHELL) ./config.status --recheck
 
-$(top_srcdir)/configure:  $(top_srcdir)/configure.in
+$(top_srcdir)/configure:  $(top_srcdir)/configure.ac
 	cd $(srcdir) && autoconf
 	cd $(srcdir) && autoheader
 

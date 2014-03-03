@@ -2,9 +2,9 @@
 # Process this file with autoconf to produce a configure script.
 
 
-AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
+AC_INIT(libdingaling, 0.1)
 AC_CONFIG_AUX_DIR(build)
-AM_INIT_AUTOMAKE(libdingaling,0.1)
+AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADERS([src/config.h])
 

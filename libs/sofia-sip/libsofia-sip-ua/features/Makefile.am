@@ -8,7 +8,7 @@
 # ----------------------------------------------------------------------
 # Header paths
 
-INCLUDES =		$(INTERNAL_INCLUDES)
+AM_CPPFLAGS =		$(INTERNAL_INCLUDES)
 
 # ----------------------------------------------------------------------
 # Build targets

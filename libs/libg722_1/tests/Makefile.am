@@ -25,7 +25,7 @@ EXTRA_DIST = regression_tests.sh
 
 MAINTAINERCLEANFILES = Makefile.in
 
-INCLUDES = -I$(top_builddir)/src -DDATADIR="\"$(pkgdatadir)\""
+AM_CPPFLAGS = -I$(top_builddir)/src -DDATADIR="\"$(pkgdatadir)\""
 
 LIBDIR = -L$(top_builddir)/src
 

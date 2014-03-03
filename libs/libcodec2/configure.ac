@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.59])
 AC_INIT(codec2, 0.2, david@rowetel.com)
-AM_INIT_AUTOMAKE(codec2,0.2)
+AM_INIT_AUTOMAKE
 
 # Checks for programs.
 AC_PROG_CC

@@ -89,7 +89,7 @@ dnl ======================================================================
 
 AC_DEFUN([SAC_TOOL_CC], [
 AC_REQUIRE([SAC_CANONICAL_SYSTEM_CACHE_CHECK])
-AC_BEFORE([$0], [AC_PROG_CPP])dnl
+#AC_BEFORE([$0], [AC_PROG_CPP])dnl
 
 AC_CHECK_TOOL(CC, gcc, gcc)
 if test -z "$CC"; then
@@ -351,7 +351,7 @@ dnl ======================================================================
 AC_DEFUN([AC_CHECK_COMPILATION_ENVIRONMENT], [
 AC_REQUIRE([AC_PROG_CC])
 AC_CACHE_CHECK([for compilation environment],
-  ac_cc_environment, [
+  ac_cv_cc_environment, [
 machine=`$CC -dumpmachine`
 if test "$machine" = mingw32 ; then
   ac_cc_environment=$machine

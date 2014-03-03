@@ -328,6 +328,7 @@ fi
 if test "$USE_WINSOCK" = 1; then
 	AC_CHECK_TOOL(WINDRES, windres)
 fi
+
 ACX_FUNC_IOCTLSOCKET
 
 #AC_SEARCH_LIBS(RSA_new, [crypto])

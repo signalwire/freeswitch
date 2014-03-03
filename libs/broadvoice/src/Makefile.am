@@ -41,8 +41,8 @@ EXTRA_DIST = libbroadvoice.dsp \
              msvc/vc9proj.foot \
              msvc/vc9proj.head \
              broadvoice/version.h.in
-             
-INCLUDES = -I$(top_builddir) -I$(srcdir)/floating/common -I$(srcdir)/floating/bv16 -I$(srcdir)/floating/bv32
+
+AM_CPPFLAGS = -I$(top_builddir) -I$(srcdir)/floating/common -I$(srcdir)/floating/bv16 -I$(srcdir)/floating/bv32
 
 lib_LTLIBRARIES = libbroadvoice.la
 

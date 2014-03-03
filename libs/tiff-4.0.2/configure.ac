@@ -106,6 +106,7 @@ AC_SUBST(LIBTIFF_RELEASE_DATE)
 
 dnl Checks for programs.
 AC_PROG_CC
+AC_PROG_CXX
 AM_PROG_CC_C_O
 
 dnl We want warnings. As many warnings as possible.

@@ -1,9 +1,9 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT
+AC_INIT(iksemel,1.3)
 AC_PREREQ(2.50)
 AC_CONFIG_AUX_DIR(build)
 AC_CONFIG_SRCDIR([configure.ac])
-AM_INIT_AUTOMAKE(iksemel,1.3)
+AM_INIT_AUTOMAKE
 AC_CONFIG_HEADERS(include/config.h)
 
 CFLAGS="$CFLAGS $CONFIGURE_CFLAGS"

@@ -62,7 +62,8 @@ fi
 
 dnl figure out the libcurl version
 VERSION=`$SED -ne 's/^#define LIBCURL_VERSION "\(.*\)"/\1/p' ${srcdir}/include/curl/curlver.h`
-AM_INIT_AUTOMAKE(curl,$VERSION)
+AC_INIT(curl,7.16.0)
+AM_INIT_AUTOMAKE
 AC_MSG_CHECKING([curl version])
 AC_MSG_RESULT($VERSION)
 
@@ -592,12 +593,12 @@ dnl **********************************************************************
 
 AC_MSG_CHECKING([if argv can be written to])
 AC_CACHE_VAL(curl_cv_writable_argv, [
-AC_RUN_IFELSE([[
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 int main(int argc, char ** argv) {
 	argv[0][0] = ' ';
 	return (argv[0][0] == ' ')?0:1;
 }
-	]],
+	]])],
 	curl_cv_writable_argv=yes,
 	curl_cv_writable_argv=no,
 	curl_cv_writable_argv=cross)
@@ -1334,13 +1335,13 @@ OPT_THREAD=on
 dnl detect AIX 4.3 or later
 dnl see full docs on this reasoning in the lib/hostip.c source file
 AC_MSG_CHECKING([AIX 4.3 or later])
-AC_PREPROC_IFELSE([
+AC_PREPROC_IFELSE([AC_LANG_SOURCE([[
 #if defined(_AIX) && defined(_AIX43)
 printf("just fine");
 #else
 #error "this is not AIX 4.3 or later"
 #endif
-],
+]])],
  [ AC_MSG_RESULT([yes])
    RECENTAIX=yes
    OPT_THREAD=off ],
@@ -1431,7 +1432,7 @@ if test x$cross_compiling != xyes; then
     dnl it.
 
     AC_MSG_CHECKING([if gmtime_r exists and works])
-    AC_RUN_IFELSE([[
+    AC_RUN_IFELSE([AC_LANG_SOURCE([[
     #include <time.h>
     int main(void)
     {
@@ -1446,7 +1447,7 @@ if test x$cross_compiling != xyes; then
     }
     return 1; /* failure */
     }
-     ]],
+     ]])],
      dnl success, do nothing
      AC_MSG_RESULT(yes)
      AC_DEFINE(HAVE_GMTIME_R, 1, [if you have (a working) gmtime_r])
@@ -1558,7 +1559,7 @@ AC_CHECK_TYPE(long long,
 
 if test "xyes" = "x$longlong"; then
   AC_MSG_CHECKING([if numberLL works])
-  AC_COMPILE_IFELSE([long long val = 1000LL;],
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([[long long val = 1000LL;]])],
    [AC_DEFINE(HAVE_LL, 1, [if your compiler supports LL])]
    AC_MSG_RESULT(yes),
    AC_MSG_RESULT(no)
@@ -1743,7 +1744,7 @@ if test "$disable_poll" = "no"; then
   dnl to find out we make an extra check here!
   if test "$ac_cv_func_poll" = "yes"; then
     AC_MSG_CHECKING([if poll works with NULL inputs])
-    AC_RUN_IFELSE([
+    AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #ifdef HAVE_SYS_POLL_H
 #include <sys/poll.h>
 #endif
@@ -1753,7 +1754,7 @@ if test "$disable_poll" = "no"; then
     /* make this return 0 == timeout since there's nothing to read from */
     return poll((void *)0, 0, 10 /*ms*/);
   }
-],
+]])],
     AC_MSG_RESULT(yes)
     AC_DEFINE(HAVE_POLL_FINE, 1, [If you have a fine poll]),
     AC_MSG_RESULT(no),
@@ -1863,7 +1864,7 @@ AC_HELP_STRING([--disable-ares],[Disable ares for name lookups]),
          dnl out and don't use the "embedded" ares dir (in which case we don't
          dnl check it because it might not have been built yet)
          AC_MSG_CHECKING([that c-ares is good and recent enough])
-         AC_LINK_IFELSE( [
+         AC_LINK_IFELSE( [AC_LANG_SOURCE([[
 #include <ares.h>
 /* provide a set of dummy functions in case c-ares was built with debug */
 void curl_dofree() { }
@@ -1876,7 +1877,7 @@ int main(void)
   ares_cancel(channel);
   return 0;
 }
-],
+]])],
           AC_MSG_RESULT(yes),
           AC_MSG_RESULT(no)
           AC_MSG_ERROR([c-ares library defective or too old])

@@ -2,12 +2,12 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT([freetdm], [pre-alpha], [bugs@freeswitch.org])
+AC_INIT([freetdm], [0.1], [bugs@freeswitch.org])
 AC_CONFIG_SRCDIR([src/ftdm_io.c])
 
 AC_CONFIG_AUX_DIR([build])
 AC_CONFIG_MACRO_DIR([build])
-AM_INIT_AUTOMAKE([libfreetdm], [0.1])
+AM_INIT_AUTOMAKE
 
 # >=automake-1.11
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])

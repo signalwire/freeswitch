@@ -9,7 +9,7 @@ VERBOSE=false
 BASEDIR=`pwd`;
 LIBDIR=${BASEDIR}/libs;
 SUBDIRS="apr \
-  libzrtp ilbc curl iksemel js js/nsprpub ldns libdingaling libedit libsndfile pcre sofia-sip libwebsockets \
+  libzrtp ilbc curl iksemel js js/nsprpub ldns libdingaling libedit libsndfile pcre sofia-sip \
   speex sqlite srtp openzap freetdm spandsp libg722_1 portaudio unimrcp tiff-4.0.2 broadvoice silk libcodec2 \
   fs";
 

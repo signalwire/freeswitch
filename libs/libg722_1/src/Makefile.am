@@ -41,7 +41,7 @@ EXTRA_DIST = make_tables.c \
              msvc/vc9proj.head \
              msvc/vc9proj.foot
 
-INCLUDES = -I$(top_builddir)
+AM_CPPFLAGS = -I$(top_builddir)
 
 lib_LTLIBRARIES = libg722_1.la
 

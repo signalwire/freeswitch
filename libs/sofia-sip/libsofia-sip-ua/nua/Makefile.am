@@ -81,6 +81,6 @@ EXTRA_DIST =		nua.docs $(BUILT_SOURCES)
 
 include $(top_srcdir)/rules/sofia.am
 
-INCLUDES = ${INTERNAL_INCLUDES} -I$(top_srcdir)/s2check
+AM_CPPFLAGS = ${INTERNAL_INCLUDES} -I$(top_srcdir)/s2check
 
 TAG_DLL_FLAGS =		LIST=nua_tag_list

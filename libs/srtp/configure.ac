@@ -1,7 +1,7 @@
 AC_PREREQ(2.59)
 AC_INIT(srtp, 1.4.2, mcgrew@cisco.com)
 AC_CONFIG_AUX_DIR(build)
-AM_INIT_AUTOMAKE(libsrtp,1.4.2)
+AM_INIT_AUTOMAKE
 
 CFLAGS="$CFLAGS $CONFIGURE_CFLAGS"
 CXXFLAGS="$CXXFLAGS $CONFIGURE_CXXFLAGS"
@@ -152,13 +152,13 @@ AC_CHECK_HEADERS(sys/types.h)
 AC_CHECK_HEADERS(machine/types.h)
 AC_CHECK_HEADERS(sys/int_types.h)
 
-AC_LINK_IFELSE(AC_LANG_PROGRAM([
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <inttypes.h>
 #include <byteswap.h>
-],[
+]],[[
 uint64_t y = 0x1122334455667788LL;
 bswap_64(y);
-]),byteswap_cv_bswap_64_usable=yes,byteswap_cv_bswap_64_usable=no)
+]])],byteswap_cv_bswap_64_usable=yes,byteswap_cv_bswap_64_usable=no)
 
 if test "x${byteswap_cv_bswap_64_usable}" = "xyes" ; then
 AC_DEFINE([HAVE_BYTESWAP_H],1,[define if you have a usable bswap_64 in byteswap.h])

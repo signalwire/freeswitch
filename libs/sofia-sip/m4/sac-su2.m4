@@ -594,7 +594,7 @@ Define to 1 if you have working pthread_rwlock_t implementation.
 
 if test x$HAVE_PTHREADS = x1 ; then
 
-AC_RUN_IFELSE([
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #define _XOPEN_SOURCE (500)
 
 #include <pthread.h>
@@ -610,7 +610,7 @@ int main()
   /* pthread_rwlock_trywrlock() should fail (not return 0) */
   return pthread_rwlock_trywrlock(&rw) != 0 ? 0  : 1;
 }
-],[AC_DEFINE_HAVE_PTHREAD_RWLOCK],[
+]])],[AC_DEFINE_HAVE_PTHREAD_RWLOCK],[
 AC_MSG_WARN([Recursive pthread_rwlock_rdlock() does not work!!! ])
 ],[AC_DEFINE_HAVE_PTHREAD_RWLOCK])
 

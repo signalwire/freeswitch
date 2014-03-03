@@ -2,7 +2,7 @@
 ## Process this file with automake to produce Makefile.in
 ##
 
-INCLUDES = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include
 
 lib_LTLIBRARIES = libiksemel.la
 

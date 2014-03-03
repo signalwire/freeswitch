@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script. -*-m4-*-
 
-AC_INIT(libspeex/speex.c)
+AC_INIT(speex, 1.2rc1)
 
 AC_CONFIG_HEADERS([config.h])
 
@@ -26,7 +26,7 @@ PACKAGE=speex
 
 AC_SUBST(SPEEX_VERSION)
 
-AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
+AM_INIT_AUTOMAKE([no-define])
 AM_MAINTAINER_MODE
 
 CFLAGS="$CFLAGS $CONFIGURE_CFLAGS"

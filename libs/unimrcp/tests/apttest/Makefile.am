@@ -1,6 +1,6 @@
 MAINTAINERCLEANFILES = Makefile.in
 
-INCLUDES             = -I$(top_srcdir)/libs/apr-toolkit/include \
+AM_CPPFLAGS          = -I$(top_srcdir)/libs/apr-toolkit/include \
                        $(UNIMRCP_APR_INCLUDES) $(UNIMRCP_APU_INCLUDES)
 
 noinst_PROGRAMS      = apttest

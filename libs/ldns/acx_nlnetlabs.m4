@@ -753,7 +753,7 @@ AC_DEFUN([ACX_CHECK_GETADDRINFO_WITH_INCLUDES],
 [AC_REQUIRE([AC_PROG_CC])
 AC_MSG_CHECKING(for getaddrinfo)
 ac_cv_func_getaddrinfo=no
-AC_LINK_IFELSE(
+AC_LINK_IFELSE([AC_LANG_SOURCE([
 [
 #ifdef __cplusplus
 extern "C"
@@ -768,19 +768,19 @@ int main() {
         ;
         return 0;
 }
-],
+]])],
 dnl this case on linux, solaris, bsd
 [ac_cv_func_getaddrinfo="yes"],
 dnl no quick getaddrinfo, try mingw32 and winsock2 library.
 ORIGLIBS="$LIBS"
 LIBS="$LIBS -lws2_32"
-AC_LINK_IFELSE(
+AC_LINK_IFELSE([
 AC_LANG_PROGRAM(
-[
+[[
 #ifdef HAVE_WS2TCPIP_H
 #include <ws2tcpip.h>
 #endif
-],
+]])],
 [
         (void)getaddrinfo(NULL, NULL, NULL, NULL);
 ]
@@ -848,7 +848,7 @@ if echo $target | grep mingw32 >/dev/null; then
 	AC_MSG_RESULT([no (windows)])
 	AC_DEFINE([NONBLOCKING_IS_BROKEN], 1, [Define if the network stack does not fully support nonblocking io (causes lower performance).])
 else
-AC_RUN_IFELSE(AC_LANG_PROGRAM([
+AC_RUN_IFELSE([AC_LANG_PROGRAM([[
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -872,7 +872,7 @@ AC_RUN_IFELSE(AC_LANG_PROGRAM([
 #ifdef HAVE_TIME_H
 #include <time.h>
 #endif
-],[[
+]],[[
 	int port;
 	int sfd, cfd;
 	int num = 10;
@@ -965,7 +965,7 @@ AC_RUN_IFELSE(AC_LANG_PROGRAM([
 
 	close(sfd);
 	close(cfd);
-]]), [
+]])], [
 	AC_MSG_RESULT([yes])
 ], [
 	AC_MSG_RESULT([no])
@@ -1005,13 +1005,13 @@ AC_DEFUN([ACX_FUNC_IOCTLSOCKET],
 [
 # check ioctlsocket
 AC_MSG_CHECKING(for ioctlsocket)
-AC_LINK_IFELSE(AC_LANG_PROGRAM([
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
 #endif
-], [
-	(void)ioctlsocket(0, 0, NULL);
-]), [
+]],[[
+(void)ioctlsocket(0, 0, NULL);
+]])], [
 AC_MSG_RESULT(yes)
 AC_DEFINE(HAVE_IOCTLSOCKET, 1, [if the function 'ioctlsocket' is available])
 ],[AC_MSG_RESULT(no)])

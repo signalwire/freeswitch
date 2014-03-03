@@ -47,6 +47,7 @@ echo "================================ done  ===================================
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_RANLIB
+AM_PROG_CC_C_O
 
 # Checks for header files.
 AC_HEADER_STDC

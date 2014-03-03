@@ -42,7 +42,7 @@ do
   shift
 done
 
-if [ -f "$apr_src_dir/configure.in" ]; then
+if [ -f "$apr_src_dir/configure.ac" ]; then
   cd $apr_src_dir
 else
   echo "The apr source could not be found within $apr_src_dir"

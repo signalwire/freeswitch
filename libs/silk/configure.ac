@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.59])
 AC_INIT(libSKP_SILK_SDK, 1.0.8, brian@freeswitch.org, libSKP_SILK_SDK)
-AM_INIT_AUTOMAKE(libSKP_SILK_SDK,1.0.8)
+AM_INIT_AUTOMAKE
 
 # Checks for programs.
 AC_PROG_CC

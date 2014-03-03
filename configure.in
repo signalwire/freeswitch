@@ -13,7 +13,7 @@ AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 AC_CONFIG_FILES([src/include/switch_version.h.in:src/include/switch_version.h.template])
 
 AC_CONFIG_AUX_DIR(build/config)
-AM_INIT_AUTOMAKE(libfreeswitch,0.1)
+AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([src/switch.c])
 AC_CONFIG_HEADER([src/include/switch_private.h])
 AC_CONFIG_HEADER([libs/xmlrpc-c/xmlrpc_amconfig.h])
@@ -1468,7 +1468,6 @@ AC_CONFIG_SUBDIRS([libs/libcodec2])
 if test "x${enable_zrtp}" = "xyes"; then
    AC_CONFIG_SUBDIRS([libs/libzrtp])
 fi
-AC_CONFIG_SUBDIRS([libs/libwebsockets])
 
 case $host in
    *-openbsd*)

@@ -4,7 +4,7 @@
 
 EXTRA_DIST=echo_diagnostic.m
 
-INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_builddir)  @FFT_CFLAGS@
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_builddir)  @FFT_CFLAGS@
 
 lib_LTLIBRARIES = libspeex.la libspeexdsp.la
 
