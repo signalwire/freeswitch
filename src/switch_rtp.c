@@ -3042,7 +3042,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 	memset(policy, 0, sizeof(*policy));
 
 	/* many devices can't handle gaps in SRTP streams */
-	if (!((var = switch_channel_get_variable(channel, "force_send_silence_when_idle"))
+	if (!((var = switch_channel_get_variable(channel, "srtp_allow_idle_gaps"))
 		  && switch_true(var))
 		&& (!(var = switch_channel_get_variable(channel, "send_silence_when_idle"))
 			|| !(atoi(var)))) {
