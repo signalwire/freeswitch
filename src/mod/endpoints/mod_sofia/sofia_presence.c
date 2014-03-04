@@ -3875,8 +3875,11 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			switch_event_t *params = NULL;
 			/* Grandstream REALLY uses a header called Message Body */
 			extra_headers = switch_mprintf("MessageBody: %s\r\n", profile->pnp_prov_url);
-
-			nua_respond(nh, SIP_202_ACCEPTED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+			if (sofia_test_pflag(profile, PFLAG_SUBSCRIBE_RESPOND_200_OK)) {
+				nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+			} else {
+				nua_respond(nh, SIP_202_ACCEPTED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+			}
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sending pnp NOTIFY for %s to provision to %s\n", uri, profile->pnp_prov_url);
 
@@ -3956,11 +3959,19 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		if (mod_sofia_globals.debug_presence > 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding to SUBSCRIBE with 202 Accepted\n");
 		}
-		nua_respond(nh, SIP_202_ACCEPTED,
-					SIPTAG_TO(sip->sip_to),
-					TAG_IF(new_contactstr, SIPTAG_CONTACT_STR(new_contactstr)),
-					NUTAG_WITH_THIS_MSG(de->data->e_msg),
-					SIPTAG_SUBSCRIPTION_STATE_STR(sstr), SIPTAG_EXPIRES_STR(exp_delta_str), TAG_IF(sticky, NUTAG_PROXY(sticky)), TAG_END());
+		if (sofia_test_pflag(profile, PFLAG_SUBSCRIBE_RESPOND_200_OK)) {
+			nua_respond(nh, SIP_200_OK,
+						SIPTAG_TO(sip->sip_to),
+						TAG_IF(new_contactstr, SIPTAG_CONTACT_STR(new_contactstr)),
+						NUTAG_WITH_THIS_MSG(de->data->e_msg),
+						SIPTAG_SUBSCRIPTION_STATE_STR(sstr), SIPTAG_EXPIRES_STR(exp_delta_str), TAG_IF(sticky, NUTAG_PROXY(sticky)), TAG_END());
+		} else {
+			nua_respond(nh, SIP_202_ACCEPTED,
+						SIPTAG_TO(sip->sip_to),
+						TAG_IF(new_contactstr, SIPTAG_CONTACT_STR(new_contactstr)),
+						NUTAG_WITH_THIS_MSG(de->data->e_msg),
+						SIPTAG_SUBSCRIPTION_STATE_STR(sstr), SIPTAG_EXPIRES_STR(exp_delta_str), TAG_IF(sticky, NUTAG_PROXY(sticky)), TAG_END());
+		}
 
 		switch_safe_free(new_contactstr);
 		switch_safe_free(sticky);

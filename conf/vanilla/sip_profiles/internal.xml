@@ -185,6 +185,7 @@
     <!--<param name="nat-options-ping" value="true"/>-->
     <!--<param name="sip-options-respond-503-on-busy" value="true"/>-->
     <!--<param name="sip-messages-respond-200-ok" value="true"/>-->
+    <!--<param name="sip-subscribe-respond-200-ok" value="true"/>-->
 
     <!-- TLS: disabled by default, set to "true" to enable -->
     <param name="tls" value="$${internal_ssl_enable}"/>

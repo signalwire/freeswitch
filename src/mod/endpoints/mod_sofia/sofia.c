@@ -4045,6 +4045,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_MESSAGES_RESPOND_200_OK);
 						}
+					} else if (!strcasecmp(var, "sip-subscribe-respond-200-ok") && !zstr(val)) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_SUBSCRIBE_RESPOND_200_OK);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_SUBSCRIBE_RESPOND_200_OK);
+						}
 					} else if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
 						profile->odbc_dsn = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "db-pre-trans-execute") && !zstr(val)) {
