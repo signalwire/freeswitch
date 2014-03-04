@@ -312,7 +312,7 @@ static iks *prompt_component_handle_input_error(struct rayo_actor *prompt, struc
 			iks_insert_attrib(iq, "from", RAYO_JID(RAYO_COMPONENT(prompt)->parent));
 			iks_insert_attrib(iq, "to", RAYO_COMPONENT(prompt)->client_jid);
 			iks_insert_node(iq, iks_copy_within(error, iks_stack(iq)));
-			PROMPT_COMPONENT(prompt)->complete = iq;
+			PROMPT_COMPONENT(prompt)->complete = iks_copy(iq);
 
 			rayo_component_send_stop(prompt, PROMPT_COMPONENT(prompt)->output_jid);
 			break;
