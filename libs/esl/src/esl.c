@@ -995,8 +995,8 @@ ESL_DECLARE(esl_status_t) esl_connect_timeout(esl_handle_t *handle, const char *
 		goto fail;
 	}
 
-	memcpy(&handle->sockaddr, result->ai_addr, sizeof(handle->sockaddr));	
-        switch(handle->sockaddr.ss_family) {
+	memcpy(&handle->sockaddr, result->ai_addr, result->ai_addrlen);	
+	switch(handle->sockaddr.ss_family) {
 		case AF_INET:
 			sockaddr_in = (struct sockaddr_in*)&(handle->sockaddr);
 			sockaddr_in->sin_port = htons(port);
