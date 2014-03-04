@@ -284,9 +284,12 @@ int tls_init_ecdh_curve(tls_t *tls)
   SSL_CTX_set_tmp_ecdh(tls->ctx, ecdh);
   EC_KEY_free(ecdh);
   return 0;
-#endif
-#endif
+#else
   return -1;
+#endif
+#else
+  return -1;
+#endif
 }
 
 static
