@@ -153,6 +153,9 @@ static switch_status_t my_on_routing(switch_core_session_t *session)
 	switch_time_exp_t tm;
 	char buffer[32];
 
+	char *radius_avpair_data;
+	char *delim;
+
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "[mod_radius_cdr] Entering my_on_routing\n");
 
 	if (globals.shutdown) {
@@ -203,6 +206,7 @@ static switch_status_t my_on_routing(switch_core_session_t *session)
 	if (channel) {
 		/*switch_call_cause_t   cause; */
 		switch_caller_profile_t *profile;
+		const char *radius_avpair = switch_channel_get_variable(channel, "radius_avpair");
 
 		/*
 		   cause = switch_channel_get_cause(channel);
@@ -365,6 +369,29 @@ static switch_status_t my_on_routing(switch_core_session_t *session)
 					goto end;
 				}
 			}
+
+			if (radius_avpair) {
+				radius_avpair_data = strdup(radius_avpair + (strncmp(radius_avpair, "ARRAY::", 7) ? 0 : 7));
+				do {
+					delim = strstr(radius_avpair_data, "|:");
+
+					if (delim) {
+						*delim = '\0';
+					}
+
+					if (rc_avpair_add(rad_config, &send, PW_FS_AVPAIR, (void *) radius_avpair_data, -1, PW_FS_PEC) == NULL) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed adding Freeswitch-AVPair: %s\n", radius_avpair_data);
+						rc_destroy(rad_config);
+						goto end;
+					}
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "added Freeswitch-AVPair: %s\n", radius_avpair_data);
+
+					if (delim) {
+						radius_avpair_data = delim + 2;
+					}
+				} while (delim);
+			}
+
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "profile == NULL\n");
 		}
@@ -405,6 +432,9 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 
 	switch_time_exp_t tm;
 	char buffer[32] = "";
+
+	char *radius_avpair_data;
+	char *delim;
 
 	if (globals.shutdown) {
 		return SWITCH_STATUS_FALSE;
@@ -457,6 +487,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	if (channel) {
 		switch_call_cause_t cause;
 		switch_caller_profile_t *profile;
+		const char *radius_avpair = switch_channel_get_variable(channel, "radius_avpair");
 
 		cause = switch_channel_get_cause(channel);
 		if (rc_avpair_add(rad_config, &send, PW_FS_HANGUPCAUSE, &cause, -1, PW_FS_PEC) == NULL) {
@@ -648,7 +679,29 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 					goto end;
 				}
 			}
-			
+
+			if (radius_avpair) {
+				radius_avpair_data = strdup(radius_avpair + (strncmp(radius_avpair, "ARRAY::", 7) ? 0 : 7));
+				do {
+					delim = strstr(radius_avpair_data, "|:");
+
+					if (delim) {
+						*delim = '\0';
+					}
+
+					if (rc_avpair_add(rad_config, &send, PW_FS_AVPAIR, (void *) radius_avpair_data, -1, PW_FS_PEC) == NULL) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed adding Freeswitch-AVPair: %s\n", radius_avpair_data);
+						rc_destroy(rad_config);
+						goto end;
+					}
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "added Freeswitch-AVPair: %s\n", radius_avpair_data);
+
+					if (delim) {
+						radius_avpair_data = delim + 2;
+					}
+				} while (delim);
+			}
+
 		} else {				/* no profile, can't create data to send */
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "profile == NULL\n");
 		}
