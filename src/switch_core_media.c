@@ -2840,7 +2840,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	}
 
 	if (!switch_channel_test_flag(session->channel, CF_DTLS) && (var = switch_channel_get_variable(session->channel, "rtp_secure_media"))) {
-		if (strcasecmp(var, "optional")) {
+		if (!(switch_false(var) || !strcasecmp(var, "optional"))) {
 			needs_crypto = 1;
 
 			switch_channel_set_variable(session->channel, "rtp_crypto_mandatory", "true");
