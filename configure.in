@@ -575,7 +575,7 @@ case "$host" in
     ;;
     *netbsd*)
         APR_ADDTO(CFLAGS, -I/usr/pkg/include)
-        APR_ADDTO(LDFLAGS, -L/usr/pkg/lib)
+        APR_ADDTO(LDFLAGS, [-L/usr/pkg/lib -Wl,-rpath,/usr/pkg/lib])
         APR_ADDTO(SWITCH_AM_CFLAGS, -I/usr/pkg/include)
     ;;
     *bsd*)
