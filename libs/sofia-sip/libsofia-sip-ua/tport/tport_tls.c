@@ -202,7 +202,7 @@ void tls_set_default(tls_issues_t *i)
   i->key = i->key ? i->key : i->cert;
   i->randFile = i->randFile ? i->randFile : "tls_seed.dat";
   i->CAfile = i->CAfile ? i->CAfile : "cafile.pem";
-  i->ciphers = i->ciphers ? i->ciphers : "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH";
+  i->ciphers = i->ciphers ? i->ciphers : "!eNULL:!aNULL:!EXP:!LOW:!MD5:ALL:@STRENGTH";
   /* Default SIP cipher */
   /* "RSA-WITH-AES-128-CBC-SHA"; */
   /* RFC-2543-compatibility ciphersuite */
