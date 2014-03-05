@@ -32,7 +32,6 @@
  * David Weekly <david@weekly.org>
  * Joao Mesquita <jmesquita@gmail.com>
  * Raymond Chandler <intralanman@freeswitch.org>
- * Ken Rice <krice@freeswitch.org>
  * Seven Du <dujinfang@gmail.com>
  * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
  *
@@ -187,9 +186,8 @@ typedef enum {
 	MFLAG_INDICATE_MUTE_DETECT = (1 << 21),
 	MFLAG_PAUSE_RECORDING = (1 << 22),
 	MFLAG_ACK_VIDEO = (1 << 23),
-	MFLAG_TOOL = (1 << 24),
-	MFLAG_GHOST = (1 << 25),
-	MFLAG_JOIN_ONLY = (1 << 26)
+	MFLAG_GHOST = (1 << 24),
+	MFLAG_JOIN_ONLY = (1 << 25)
 } member_flag_t;
 
 typedef enum {
@@ -567,8 +565,6 @@ static void conference_member_itterator(conference_obj_t *conference, switch_str
 static switch_status_t conf_api_sub_mute(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 static switch_status_t conf_api_sub_tmute(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 static switch_status_t conf_api_sub_unmute(conference_member_t *member, switch_stream_handle_t *stream, void *data);
-static switch_status_t conf_api_sub_tool(conference_member_t *member, switch_stream_handle_t *stream, void *data);
-static switch_status_t conf_api_sub_untool(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 static switch_status_t conf_api_sub_deaf(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 static switch_status_t conf_api_sub_undeaf(conference_member_t *member, switch_stream_handle_t *stream, void *data);
 static switch_status_t conference_add_event_data(conference_obj_t *conference, switch_event_t *event);
@@ -2803,10 +2799,6 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 					continue;
 				}
 
-				if (switch_test_flag(omember, MFLAG_TOOL) && (rand() % 20) > 9){
-					continue;
-				}
-
 				if (conference->agc_level) {
 					if (switch_test_flag(omember, MFLAG_TALKING) && switch_test_flag(omember, MFLAG_CAN_SPEAK)) {
 						member_score_sum += omember->score;
@@ -2851,11 +2843,6 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				if (!switch_test_flag(omember, MFLAG_CAN_HEAR)) {
 					continue;
 				}
-
-				if (switch_test_flag(omember, MFLAG_TOOL) && (rand() % 20) > 9) {
-					continue;
-				}
-
 
 				bptr = (int16_t *) omember->frame;
 				for (x = 0; x < bytes / 2; x++) {
@@ -5390,34 +5377,6 @@ static void conference_list_count_only(conference_obj_t *conference, switch_stre
 	stream->write_function(stream, "%d", conference->count);
 }
 
-static switch_status_t conf_api_sub_untool(conference_member_t *member, switch_stream_handle_t *stream, void *data)
-{
-	if (member == NULL)
-		return SWITCH_STATUS_GENERR;
-
-	switch_clear_flag_locked(member, MFLAG_TOOL);
-
-	if (stream != NULL) {
-		stream->write_function(stream, "OK untooled %u\n", member->id);
-	}
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status_t conf_api_sub_tool(conference_member_t *member, switch_stream_handle_t *stream, void *data)
-{
-	if (member == NULL)
-		return SWITCH_STATUS_GENERR;
-
-	switch_set_flag_locked(member, MFLAG_TOOL);
-
-	if (stream != NULL) {
-		stream->write_function(stream, "OK tooled %u\n", member->id);
-	}
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
 static switch_status_t conf_api_sub_mute(conference_member_t *member, switch_stream_handle_t *stream, void *data)
 {
 	switch_event_t *event;
@@ -7274,8 +7233,6 @@ static api_command_t conf_api_sub_commands[] = {
 	{"unmute", (void_fn_t) & conf_api_sub_unmute, CONF_API_SUB_MEMBER_TARGET, "unmute", "<[member_id|all]|last|non_moderator> [<quiet>]"},
 	{"deaf", (void_fn_t) & conf_api_sub_deaf, CONF_API_SUB_MEMBER_TARGET, "deaf", "<[member_id|all]|last|non_moderator>"},
 	{"undeaf", (void_fn_t) & conf_api_sub_undeaf, CONF_API_SUB_MEMBER_TARGET, "undeaf", "<[member_id|all]|last|non_moderator>"},
-	{"tool", (void_fn_t) & conf_api_sub_tool, CONF_API_SUB_MEMBER_TARGET, "", ""},
-	{"untool", (void_fn_t) & conf_api_sub_untool, CONF_API_SUB_MEMBER_TARGET, "", ""},
 	{"relate", (void_fn_t) & conf_api_sub_relate, CONF_API_SUB_ARGS_SPLIT, "relate", "<member_id> <other_member_id> [nospeak|nohear|clear]"},
 	{"lock", (void_fn_t) & conf_api_sub_lock, CONF_API_SUB_ARGS_SPLIT, "lock", ""},
 	{"unlock", (void_fn_t) & conf_api_sub_unlock, CONF_API_SUB_ARGS_SPLIT, "unlock", ""},
@@ -7491,9 +7448,7 @@ SWITCH_STANDARD_API(conf_api_main)
 		int i;
 
 		for (i = 0; i < CONFFUNCAPISIZE; i++) {
-			if (!switch_strlen_zero(conf_api_sub_commands[i].psyntax)) {
-				stream->write_function(stream, "<conf name> %s %s\n", conf_api_sub_commands[i].pcommand, conf_api_sub_commands[i].psyntax);
-			}
+			stream->write_function(stream, "<conf name> %s %s\n", conf_api_sub_commands[i].pcommand, conf_api_sub_commands[i].psyntax);
 		}
 	}
 
