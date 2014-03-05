@@ -14,6 +14,7 @@ INCLUDES = 		-I$(srcdir)/../bnf -I../bnf \
 			-I$(srcdir)/../msg -I../msg \
 			-I$(srcdir)/../http -I../http \
 			-I$(srcdir)/../url -I../url \
+			-I$(srcdir)/../sip -I../sip \
 			-I$(srcdir)/../su -I../su
 
 # ----------------------------------------------------------------------

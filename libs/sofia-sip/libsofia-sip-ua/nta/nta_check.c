@@ -248,7 +248,9 @@ int nta_check_session_content(nta_incoming_t *irq,
   if (!sip->sip_content_encoding ||
       !sip->sip_content_encoding->k_items ||
       !sip->sip_content_encoding->k_items[0] ||
-      !sip->sip_content_encoding->k_items[0][0])
+      !sip->sip_content_encoding->k_items[0][0] ||
+	  !strcasecmp(sip->sip_content_encoding->k_items[0], "gzip") ||
+	  !strcasecmp(sip->sip_content_encoding->k_items[0], "deflate"))
     acceptable_encoding = 1;
 
   if (acceptable_type && acceptable_encoding)
