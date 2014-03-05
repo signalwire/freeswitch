@@ -2939,19 +2939,16 @@ done:
  */
 static void on_call_originate_event(struct rayo_client *rclient, switch_event_t *event)
 {
-	switch_core_session_t *session = NULL;
 	const char *uuid = switch_event_get_header(event, "Unique-ID");
 	struct rayo_call *call = RAYO_CALL_LOCATE_BY_ID(uuid);
 
-	if (call && (session = switch_core_session_locate(uuid))) {
+	if (call) {
 		iks *response, *ref;
 
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(RAYO_ID(call)), SWITCH_LOG_DEBUG, "Got originate event\n");
 
 		switch_mutex_lock(RAYO_ACTOR(call)->mutex);
 		if (call->dial_request_id) {
-			switch_channel_set_private(switch_core_session_get_channel(session), "rayo_call_private", call);
-
 			/* send response to DCP */
 			response = iks_new("iq");
 			iks_insert_attrib(response, "from", RAYO_JID(globals.server));
@@ -2966,7 +2963,6 @@ static void on_call_originate_event(struct rayo_client *rclient, switch_event_t 
 			call->dial_request_id = NULL;
 		}
 		switch_mutex_unlock(RAYO_ACTOR(call)->mutex);
-		switch_core_session_rwunlock(session);
 	}
 	RAYO_UNLOCK(call);
 }
@@ -3363,9 +3359,14 @@ SWITCH_STANDARD_APP(rayo_app)
 {
 	int ok = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	struct rayo_call *call = (struct rayo_call *)switch_channel_get_private(channel, "rayo_call_private");
+        struct rayo_call *call = RAYO_CALL_LOCATE_BY_ID(switch_core_session_get_uuid(session));
 	const char *app = ""; /* optional app to execute */
 	const char *app_args = ""; /* app args */
+
+	/* don't need to keep call reference count incremented in session- call is destroyed after all apps finish */
+	if (call) {
+		RAYO_UNLOCK(call);
+	}
 
 	/* is outbound call already under control? */
 	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
@@ -3402,7 +3403,6 @@ SWITCH_STANDARD_APP(rayo_app)
 
 		call = rayo_call_create(switch_core_session_get_uuid(session));
 		switch_channel_set_variable(switch_core_session_get_channel(session), "rayo_call_jid", RAYO_JID(call));
-		switch_channel_set_private(switch_core_session_get_channel(session), "rayo_call_private", call);
 
 		offer = rayo_create_offer(call, session);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Offering call for Rayo 3PCC\n");
@@ -3439,6 +3439,7 @@ SWITCH_STANDARD_APP(rayo_app)
 done:
 
 	if (ok) {
+		switch_channel_set_private(switch_core_session_get_channel(session), "rayo_call_private", call);
 		switch_channel_set_variable(channel, "hangup_after_bridge", "false");
 		switch_channel_set_variable(channel, "transfer_after_bridge", "");
 		switch_channel_set_variable(channel, "park_after_bridge", "true");
