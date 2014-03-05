@@ -106,10 +106,10 @@ void su_time(su_time_t *tv)
 		ltv.tv_usec = ctv.tv_nsec / 1000;
     }
 #elif HAVE_GETTIMEOFDAY
-
-    gettimeofday((struct timeval *)&ltv, NULL);
-    ltv.tv_sec += NTP_EPOCH;
-
+	struct timeval tmp_tv = {0,0};
+    gettimeofday(&tmp_tv, NULL);
+	ltv.tv_sec = tmp_tv.tv_sec + NTP_EPOCH;
+	ltv.tv_usec = (unsigned long)tmp_tv.tv_usec;
 #elif HAVE_FILETIME
 
   GetSystemTimeAsFileTime(date.ft);
