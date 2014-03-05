@@ -395,7 +395,7 @@ static int tport_ws_init_primary_secure(tport_primary_t *pri,
 	  goto done;
   }
 
-  SSL_CTX_set_cipher_list(wspri->ssl_ctx, "HIGH:!DSS:!aNULL@STRENGTH");
+  SSL_CTX_set_cipher_list(wspri->ssl_ctx, "!eNULL:!aNULL:!DSS:HIGH:@STRENGTH");
 
   ret = tport_ws_init_primary(pri, tpn, ai, tags, return_culprit);
 
