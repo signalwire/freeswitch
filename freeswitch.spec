@@ -1680,7 +1680,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{HTDOCSDIR}/*
 %ifos linux
 /etc/rc.d/init.d/freeswitch
-/etc/sysconfig/freeswitch
+%config(noreplace) /etc/sysconfig/freeswitch
 %if 0%{?suse_version} > 100
 /usr/sbin/rcfreeswitch
 %endif
