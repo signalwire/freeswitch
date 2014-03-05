@@ -1,0 +1,9 @@
+On kernels < 2.6.34 the option modem driver, needed by your dongle, is unstable.
+
+In this directory you can build an option.ko module for kernels 2.6.32.* (eg: Proxmox, OpenVZ) and 2.6.34.*
+
+To install it:
+
+make clean ; make
+cp /lib/modules/$(uname -r)/kernel/drivers/usb/serial/option.ko /lib/modules/$(uname -r)/kernel/drivers/usb/serial/option.ko-backup
+cp option.ko /lib/modules/$(uname -r)/kernel/drivers/usb/serial/
