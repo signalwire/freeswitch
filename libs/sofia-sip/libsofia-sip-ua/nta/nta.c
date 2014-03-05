@@ -2799,6 +2799,10 @@ int sip_content_encoding_Xflate(msg_t *msg, sip_t *sip, int inflate, int check)
 	unsigned cseq = sip->sip_cseq ? sip->sip_cseq->cs_seq : 0;
 	int ok = !check;
 
+	if (!sip->sip_payload) {
+		return 0;
+	}
+
 	if (sip->sip_request) {
 		method_name = sip->sip_request->rq_method_name;
 	} else if (sip->sip_cseq) {
@@ -2808,7 +2812,7 @@ int sip_content_encoding_Xflate(msg_t *msg, sip_t *sip, int inflate, int check)
 	}
 
 	if (!ok) {
-		if (sip->sip_content_encoding && sip->sip_content_encoding->k_items && sip->sip_payload) {
+		if (sip->sip_content_encoding && sip->sip_content_encoding->k_items) {
 			const char *val = sip->sip_content_encoding->k_items[0];
 			if (val && (!strcasecmp(val, "gzip") || !strcasecmp(val, "deflate"))) {
 				ok = 1;
