@@ -2840,13 +2840,14 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	}
 
 	if (!switch_channel_test_flag(session->channel, CF_DTLS) && (var = switch_channel_get_variable(session->channel, "rtp_secure_media"))) {
-		if (!(switch_false(var) || !strcasecmp(var, "optional"))) {
-			needs_crypto = 1;
-
-			switch_channel_set_variable(session->channel, "rtp_crypto_mandatory", "true");
+		if (strcasecmp(var, "optional")) {
+			if (switch_true(var) || switch_core_media_crypto_str2type(var) != CRYPTO_INVALID) {
+				needs_crypto = 1;
+				switch_channel_set_variable(session->channel, "rtp_crypto_mandatory", "true");
+			}
 
 			if (sdp_type == SDP_TYPE_REQUEST) {
-				if (!switch_true(var) && switch_core_media_crypto_str2type(var) == CRYPTO_INVALID) {
+				if (switch_false(var) || switch_core_media_crypto_str2type(var) == CRYPTO_INVALID) {
 					got_crypto = -1;
 				}
 			}
@@ -5941,12 +5942,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	payload_map_t *pmap;
 	int is_outbound = switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND;
 	const char *secure_media_var = switch_channel_get_variable(session->channel, "rtp_secure_media");
-	int secure_only = 0;
-
-
-	if (!zstr(secure_media_var) && is_outbound && strcasecmp(secure_media_var, "optional")) {
-		secure_only = 0;
-	}
 
 	switch_assert(session);
 
@@ -6414,7 +6409,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 
 			}
 
-			if (both && !secure_only) {
+			if (both) {
 				generate_m(session, bp, SDPBUFLEN - strlen(buf), port, family, ip, 0, append_audio, sr, use_cng, cng_type, map, 0, sdp_type);
 			}
 
@@ -6454,7 +6449,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 						both = 0;
 					}
 
-					if (both && !secure_only) {
+					if (both) {
 						generate_m(session, bp, SDPBUFLEN - strlen(buf), port, family, ip, cur_ptime, append_audio, sr, use_cng, cng_type, map, 0, sdp_type);
 					}
 				}
