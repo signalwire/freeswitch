@@ -2838,6 +2838,7 @@ int sip_content_encoding_Xflate(msg_t *msg, sip_t *sip, int inflate, int check)
 		}
 		  
 		sip->sip_payload = sip_payload_create(msg_home(msg), decoded, n);
+		sip->sip_content_encoding = sip_content_encoding_make(msg_home(msg), "deflate");
 
 		if (sip->sip_call_id) {
 			id = sip->sip_call_id->i_id;
