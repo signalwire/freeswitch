@@ -3001,6 +3001,7 @@ struct lemon *lemp;
   FILE *in;
   char *tpltname;
   char *cp;
+  extern int access();
 
   cp = strrchr(lemp->filename,'.');
   if( cp ){
