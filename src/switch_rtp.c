@@ -3594,7 +3594,7 @@ static void jb_logger(const char *file, const char *func, int line, int level, c
 	va_start(ap, fmt);
 	ret = switch_vasprintf(&data, fmt, ap);
 	if (ret != -1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "%s", data);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%s", data);
 		free(data);
 	}
 
@@ -4331,6 +4331,22 @@ SWITCH_DECLARE(void) rtp_flush_read_buffer(switch_rtp_t *rtp_session, switch_rtp
 	}
 }
 
+static int jb_valid(switch_rtp_t *rtp_session)
+{
+	if (rtp_session->ice.ice_user) {
+		if (!rtp_session->ice.ready && rtp_session->ice.rready) {
+			return 0;
+		}
+	}
+
+	if (rtp_session->dtls && rtp_session->dtls->state != DS_READY) {
+		return 0;
+	}
+
+	return 1;
+}
+
+
 static void do_flush(switch_rtp_t *rtp_session, int force)
 {
 	int was_blocking = 0;
@@ -4354,8 +4370,12 @@ static void do_flush(switch_rtp_t *rtp_session, int force)
 	
 	READ_INC(rtp_session);
 
-	if (switch_rtp_ready(rtp_session)) {
-		
+	if (switch_rtp_ready(rtp_session) ) {
+
+		if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session)) {
+			return;
+		}
+
 		if (rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_READ]) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session),
 				  SWITCH_LOG_CONSOLE, "%s FLUSH\n",
@@ -4396,10 +4416,12 @@ static void do_flush(switch_rtp_t *rtp_session, int force)
 			}
 		} while (bytes > 0);
 
+#if 0
 		if (rtp_session->jb && flushed) {
 			stfu_n_sync(rtp_session->jb, flushed);
 			reset_jitter_seq(rtp_session);
 		}
+#endif
 
 		if (was_blocking && switch_rtp_ready(rtp_session)) {
 			switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
@@ -4408,21 +4430,6 @@ static void do_flush(switch_rtp_t *rtp_session, int force)
 	}
 
 	READ_DEC(rtp_session);
-}
-
-static int jb_valid(switch_rtp_t *rtp_session)
-{
-	if (rtp_session->ice.ice_user) {
-		if (!rtp_session->ice.ready && rtp_session->ice.rready) {
-			return 0;
-		}
-	}
-
-	if (rtp_session->dtls && rtp_session->dtls->state != DS_READY) {
-		return 0;
-	}
-
-	return 1;
 }
 
 static int check_recv_payload(switch_rtp_t *rtp_session)
@@ -4804,10 +4811,12 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		}
 
 		status = SWITCH_STATUS_FALSE;
+		*bytes = 0;
+
 		if (!return_jb_packet) {
 			return status;
 		}
-		*bytes = 0;
+
 	}
 
 	if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session)) {
@@ -5047,15 +5056,35 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		bytes = 0;
 
-		if (rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER]) {
-			if ((rtp_session->flags[SWITCH_RTP_FLAG_AUTOFLUSH] || rtp_session->flags[SWITCH_RTP_FLAG_STICKY_FLUSH]) &&
-				!rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] && 
-				!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && 
-				!rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
-				//!rtp_session->flags[SWITCH_RTP_FLAG_RTCP_MUX] && 
-				//!rtp_session->dtls && 
-				rtp_session->read_pollfd) {
+		if (rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] &&
+			!rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] && 
+			!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && 
+			!rtp_session->flags[SWITCH_RTP_FLAG_UDPTL] &&
+			rtp_session->read_pollfd) {
+			
+			if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session)) {
+				while (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
+					status = read_rtp_packet(rtp_session, &bytes, flags, SWITCH_FALSE);
 
+					if (status == SWITCH_STATUS_GENERR) {
+						ret = -1;
+						goto end;
+					}
+
+					if ((*flags & SFF_RTCP)) {
+						*flags &= ~SFF_RTCP;
+						has_rtcp = 1;
+						read_pretriggered = 0;
+						goto rtcp;
+					}
+					
+					if (status != SWITCH_STATUS_FALSE) {
+						read_pretriggered = 1;
+					}
+				}
+				
+			} else if ((rtp_session->flags[SWITCH_RTP_FLAG_AUTOFLUSH] || rtp_session->flags[SWITCH_RTP_FLAG_STICKY_FLUSH])) {
+				
 				if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 0) == SWITCH_STATUS_SUCCESS) {
 					status = read_rtp_packet(rtp_session, &bytes, flags, SWITCH_FALSE);
 					if (status == SWITCH_STATUS_GENERR) {
