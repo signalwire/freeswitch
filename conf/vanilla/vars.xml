@@ -60,7 +60,6 @@
   <!--
       Supported SRTP Crypto Suites:
 
-
       AEAD_AES_256_GCM_8
       ____________________________________________________________________________
       This algorithm is identical to AEAD_AES_256_GCM (see Section 5.2 of
@@ -95,10 +94,11 @@
       salt value for this crypto-suite MUST be 30 octets i.e., 240 bits; otherwise,
       the crypto attribute is considered invalid.
 
+
       AES_CM_128_NULL_AUTH
       ____________________________________________________________________________
       The SRTP default cipher (AES-128 Counter Mode), but to use no authentication
-      method.  This policy is NOT RECOMMENDED unless it is unavoidable; see 
+      method.  This policy is NOT RECOMMENDED unless it is unavoidable; see
       Section 7.5 of [RFC3711].
 
 
@@ -108,7 +108,7 @@
       ____________________________________________________________________________
       possible values:
           mandatory - Accept/Offer SAVP negotiation ONLY
-          optional  - Accept/Offer SAVP/AVP with SAVP preferred 
+          optional  - Accept/Offer SAVP/AVP with SAVP preferred
           forbidden - More useful for inbound to deny SAVP negotiation
           false     - implies forbidden
           true      - implies mandatory
@@ -116,11 +116,11 @@
 	  default if not set is accept SAVP inbound if offered.
 
 
-
       rtp_secure_media_inbound | rtp_secure_media_outbound
       ____________________________________________________________________________
       This is the same as rtp_secure_media, but would apply to either inbound
       or outbound offers specifically.
+
 
       How to specify crypto suites:
       ____________________________________________________________________________
