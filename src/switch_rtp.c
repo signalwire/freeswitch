@@ -4378,7 +4378,7 @@ static void do_flush(switch_rtp_t *rtp_session, int force)
 	if (switch_rtp_ready(rtp_session) ) {
 
 		if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session)) {
-			return;
+			goto end;
 		}
 
 		if (rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_READ]) {
@@ -4433,6 +4433,8 @@ static void do_flush(switch_rtp_t *rtp_session, int force)
 			switch_socket_opt_set(rtp_session->sock_input, SWITCH_SO_NONBLOCK, FALSE);
 		}
 	}
+
+ end:
 
 	READ_DEC(rtp_session);
 }
