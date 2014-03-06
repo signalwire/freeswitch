@@ -188,8 +188,6 @@ struct switch_media_handle_s {
 
 	switch_rtp_crypto_mode_t crypto_mode;
 	switch_rtp_crypto_key_type_t crypto_suite_order[CRYPTO_INVALID+1];
-	uint8_t crypto_suite_enabled[CRYPTO_INVALID+1];
-
 };
 
 
@@ -1123,7 +1121,6 @@ static void switch_core_session_parse_crypto_prefs(switch_core_session_t *sessio
 			for (j = 0; j < CRYPTO_INVALID; j++) {
 				if (!strcasecmp(fields[i], SUITES[j].name)) {
 					smh->crypto_suite_order[k++] = SUITES[j].type;
-					smh->crypto_suite_enabled[SUITES[i].type] = 1;
 					ok++;
 					break;
 				}
@@ -1137,7 +1134,6 @@ static void switch_core_session_parse_crypto_prefs(switch_core_session_t *sessio
 	} else {
 		for (i = 0; i < CRYPTO_INVALID; i++) {
 			smh->crypto_suite_order[k++] = SUITES[i].type;
-			smh->crypto_suite_enabled[SUITES[i].type] = 1;
 		}
 	}
 }
