@@ -911,7 +911,7 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 
 	engine->ssec[ctype].local_crypto_key = switch_core_session_sprintf(smh->session, "%d %s inline:%s", index, SUITES[ctype].name, b64_key);
 	switch_channel_set_variable_name_printf(smh->session->channel, engine->ssec[ctype].local_crypto_key, "rtp_last_%s_local_crypto_key", type2str(type));
-
+	switch_channel_set_flag(smh->session->channel, CF_SECURE);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_DEBUG, "Set Local %s crypto Key [%s]\n", 
 					  type2str(type),
@@ -1252,6 +1252,7 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 		got_crypto++;
 		
 		switch_channel_set_variable(session->channel, varname, vval);
+		switch_channel_set_flag(smh->session->channel, CF_SECURE);
 
 		if (zstr(engine->ssec[engine->crypto_type].local_crypto_key)) {
 			switch_core_media_build_crypto(session->media_handle, type, crypto_tag, ctype, SWITCH_RTP_CRYPTO_SEND, 1);
@@ -6435,9 +6436,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-options:google-ice\n");
 #endif
 		}
-
-
-
 
 		if (a_engine->crypto_type != CRYPTO_INVALID && !switch_channel_test_flag(session->channel, CF_DTLS) &&
 			!zstr(a_engine->ssec[a_engine->crypto_type].local_crypto_key) && switch_channel_test_flag(session->channel, CF_SECURE)) {
