@@ -144,6 +144,13 @@
           rtp_secure_media_inbound=mandatory:AEAD_AES_256_GCM_8
           rtp_secure_media_outbound=true:AEAD_AES_128_GCM_8
           rtp_secure_media_outbound=optional:AEAD_AES_128_GCM_8
+      
+
+      rtp_secure_media_suites
+      ____________________________________________________________________________
+      Optionaly you can use rtp_secure_media_suites to dictate the suite list 
+      and only use rtp_secure_media=[optional|mandatory|false|true] without having
+      to dictate the suite list with the rtp_secure_media* variables.
   -->
   <!-- 
        Examples of codec options: (module must be compiled and loaded)
