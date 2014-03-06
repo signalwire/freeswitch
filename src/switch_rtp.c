@@ -3092,6 +3092,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 			switch_channel_set_variable(channel, "rtp_has_crypto", "AES_CM_256_HMAC_SHA1_80");
 		}
+		break;
 	case AES_CM_128_NULL_AUTH:
 		crypto_policy_set_aes_cm_128_null_auth(&policy->rtp);
 		crypto_policy_set_aes_cm_128_null_auth(&policy->rtcp);
@@ -3355,9 +3356,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 
 		int initiator = 0;
 		const char *zrtp_enabled = switch_channel_get_variable(channel, "zrtp_secure_media");
-		const char *srtp_enabled = switch_channel_get_variable(channel, "rtp_secure_media");
+		int srtp_enabled = switch_channel_test_flag(channel, CF_SECURE);
 
-		if (switch_true(srtp_enabled) && switch_true(zrtp_enabled)) {
+		if (srtp_enabled && switch_true(zrtp_enabled)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
 							  "You can not have ZRTP and SRTP enabled simultaneously, ZRTP will be disabled for this call!\n");
 			switch_channel_set_variable(channel, "zrtp_secure_media", NULL);

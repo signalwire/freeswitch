@@ -74,6 +74,11 @@ struct media_helper {
 	int up;
 };
 
+typedef enum {
+	CRYPTO_MODE_OPTIONAL,
+	CRYPTO_MODE_MANDATORY,
+	CRYPTO_MODE_FORBIDDEN
+} switch_rtp_crypto_mode_t;
 
 typedef struct switch_rtp_engine_s {
 	switch_secure_settings_t ssec[CRYPTO_INVALID+1];
@@ -181,6 +186,10 @@ struct switch_media_handle_s {
 	char *msid;
 	char *cname;
 
+	switch_rtp_crypto_mode_t crypto_mode;
+	switch_rtp_crypto_key_type_t crypto_suite_order[CRYPTO_INVALID+1];
+	uint8_t crypto_suite_enabled[CRYPTO_INVALID+1];
+
 };
 
 
@@ -226,6 +235,7 @@ SWITCH_DECLARE(int) switch_core_media_crypto_keylen(switch_rtp_crypto_key_type_t
 
 static int get_channels(const char *name, int dft)
 {
+
 	if (!switch_true(switch_core_get_variable("NDLB_broken_opus_sdp")) && !strcasecmp(name, "opus")) {
 		return 2; /* IKR???*/
 	}
@@ -713,6 +723,8 @@ SWITCH_DECLARE(void) switch_core_session_clear_crypto(switch_core_session_t *ses
 						   "srtp_remote_video_crypto_tag",
 						   "srtp_remote_video_crypto_type",
 						   "rtp_secure_media",
+						   "rtp_secure_media_inbound",
+						   "rtp_secure_media_outbound",
 						   NULL};
 
 	for(i = 0; vars[i] ;i++) {
@@ -934,7 +946,7 @@ switch_status_t switch_core_media_add_crypto(switch_secure_settings_t *ssec, con
 		p++;
 
 		type = switch_core_media_crypto_str2type(p);
-
+		
 		if (type == CRYPTO_INVALID) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error near [%s]\n", p);
 			goto bad;
@@ -1028,6 +1040,7 @@ static void switch_core_session_apply_crypto(switch_core_session_t *session, swi
 	}
 
 	if (!session->media_handle) return;
+
 	engine = &session->media_handle->engines[type];
 
 	if (switch_channel_test_flag(session->channel, CF_RECOVERING)) {
@@ -1050,9 +1063,85 @@ static void switch_core_session_apply_crypto(switch_core_session_t *session, swi
 								  SUITES[engine->ssec[engine->crypto_type].crypto_type].keylen);
 
 		switch_channel_set_variable(session->channel, varname, "true");
+
+
+		switch_channel_set_variable(session->channel, "rtp_secure_media_negotiated", SUITES[engine->crypto_type].name);
+
 	}
 
 }
+
+static void switch_core_session_parse_crypto_prefs(switch_core_session_t *session)
+{
+	const char *var = NULL;
+	const char *val = NULL;
+	char *suites = NULL;
+	switch_media_handle_t *smh;
+	char *fields[CRYPTO_INVALID+1];
+	int argc = 0, i = 0, j = 0, k = 0;
+	
+	if (!(smh = session->media_handle)) {
+		return;
+	}
+
+	if (switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+		return;
+	}
+
+	if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+		var = "rtp_secure_media_inbound";
+	} else {
+		var = "rtp_secure_media_outbound";
+	}
+
+	if (!(val = switch_channel_get_variable(session->channel, var))) {
+		var = "rtp_secure_media";
+		val = switch_channel_get_variable(session->channel, var);
+	}
+	
+	if (!zstr(val) && (suites = strchr(val, ':'))) {
+		*suites++ = '\0';
+	}
+
+	if (zstr(val) || !strcasecmp(val, "optional")) {
+		smh->crypto_mode = CRYPTO_MODE_OPTIONAL;
+	} else if (switch_true(val) || !strcasecmp(val, "mandatory")) {
+		smh->crypto_mode = CRYPTO_MODE_MANDATORY;
+	} else {
+		smh->crypto_mode = CRYPTO_MODE_FORBIDDEN;
+		if (!switch_false(val) && strcasecmp(val, "forbidden")) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "INVALID VALUE FOR %s defaulting to 'forbidden'\n", var);
+		}
+	}
+
+	if (smh->crypto_mode != CRYPTO_MODE_FORBIDDEN && !zstr(suites)) {
+		argc = switch_split((char *)suites, ':', fields);
+		
+		for (i = 0; i < argc; i++) {
+			int ok = 0;
+			
+			for (j = 0; j < CRYPTO_INVALID; j++) {
+				if (!strcasecmp(fields[i], SUITES[j].name)) {
+					smh->crypto_suite_order[k++] = SUITES[j].type;
+					smh->crypto_suite_enabled[SUITES[i].type] = 1;
+					ok++;
+					break;
+				}
+			}
+			
+			if (!ok) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "INVALID SUITE SUPPLIED\n");
+			}
+
+		}
+	} else {
+		for (i = 0; i < CRYPTO_INVALID; i++) {
+			smh->crypto_suite_order[k++] = SUITES[i].type;
+			smh->crypto_suite_enabled[SUITES[i].type] = 1;
+		}
+	}
+}
+
 
 
 SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_session_t *session, 
@@ -1064,29 +1153,28 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 	int ctype = 0;
 	const char *vval = NULL;
 	switch_rtp_engine_t *engine;
-	const char *suite = switch_channel_get_variable(session->channel, "rtp_secure_media");
+	switch_media_handle_t *smh;
 
-	if (!session->media_handle) return 0;
+	if (!(smh = session->media_handle)) {
+		return 0;
+	}
 
+	if (smh->crypto_mode == CRYPTO_MODE_FORBIDDEN) {
+		return -1;
+	}
+	
 	engine = &session->media_handle->engines[type];
-
-	if (suite && !strcasecmp(suite, "optional")) {
-		suite = "true";
-	}
-
-	if (zstr(suite) || (!switch_true(suite) && switch_core_media_crypto_str2type(suite) == CRYPTO_INVALID)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Crypto suite: [%s] not valid in this context.\n", crypto);
-		goto end;
-	}
-
-	if (switch_true(suite)) {
-		suite = NULL;
-	}
-
-	for (i = 0; i < CRYPTO_INVALID; i++) {
-		if ((zstr(suite) || switch_stristr(SUITES[i].name, suite)) && switch_stristr(SUITES[i].name, crypto)) {
-			ctype = SUITES[i].type;
-			vval = SUITES[i].name;
+	
+	for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
+		switch_rtp_crypto_key_type_t j = SUITES[smh->crypto_suite_order[i]].type;
+		
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,"looking for crypto suite [%s] in [%s]\n", SUITES[j].name, crypto);
+		
+		if (switch_stristr(SUITES[j].name, crypto)) {
+			ctype = SUITES[j].type;
+			vval = SUITES[j].name;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Found suite %s\n", vval);
+			switch_channel_set_variable(session->channel, "rtp_secure_media_negotiated", vval);
 			break;
 		}
 	}
@@ -1163,48 +1251,47 @@ SWITCH_DECLARE(int) switch_core_session_check_incoming_crypto(switch_core_sessio
 		engine->ssec[engine->crypto_type].crypto_tag = crypto_tag;
 		got_crypto++;
 		
+		switch_channel_set_variable(session->channel, varname, vval);
 
 		if (zstr(engine->ssec[engine->crypto_type].local_crypto_key)) {
-			switch_channel_set_variable(session->channel, varname, vval);
 			switch_core_media_build_crypto(session->media_handle, type, crypto_tag, ctype, SWITCH_RTP_CRYPTO_SEND, 1);
 		}
 	}
 
  end:
 
-	if (got_crypto && vval && switch_true(switch_channel_get_variable(session->channel, "rtp_secure_media"))) {
-		switch_channel_set_variable(session->channel, "rtp_secure_media", vval);
-	}
-
 	return got_crypto;
 }
 
 
-SWITCH_DECLARE(void) switch_core_session_check_outgoing_crypto(switch_core_session_t *session, const char *sec_var)
+SWITCH_DECLARE(void) switch_core_session_check_outgoing_crypto(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_media_handle_t *smh;
+	int i;
 
 	if (!switch_core_session_media_handle_ready(session) == SWITCH_STATUS_SUCCESS) {
 		return;
 	}
-	
-	if (!zstr(sec_var)) {
-		int i;
-		int all = switch_true(sec_var) || !strcasecmp(sec_var, "optional");
 
-		for (i = 0; i < CRYPTO_INVALID; i++) {
-			if (all || switch_stristr(SUITES[i].name, sec_var)) {
-
-				switch_channel_set_flag(channel, CF_SECURE);
-
-				switch_core_media_build_crypto(session->media_handle,
-											   SWITCH_MEDIA_TYPE_AUDIO, 0, SUITES[i].type, SWITCH_RTP_CRYPTO_SEND, 0);
-
-				switch_core_media_build_crypto(session->media_handle,
-											   SWITCH_MEDIA_TYPE_VIDEO, 0, SUITES[i].type, SWITCH_RTP_CRYPTO_SEND, 0);
-			}
-		}
+	if (!(smh = session->media_handle)) {
+		return;
 	}
+
+	if (!(smh->crypto_mode == CRYPTO_MODE_OPTIONAL || smh->crypto_mode == CRYPTO_MODE_MANDATORY)) {
+		return;
+	}
+
+	switch_channel_set_flag(channel, CF_SECURE);
+
+	for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
+		switch_core_media_build_crypto(session->media_handle,
+									   SWITCH_MEDIA_TYPE_AUDIO, 0, smh->crypto_suite_order[i], SWITCH_RTP_CRYPTO_SEND, 0);
+
+		switch_core_media_build_crypto(session->media_handle,
+									   SWITCH_MEDIA_TYPE_VIDEO, 0, smh->crypto_suite_order[i], SWITCH_RTP_CRYPTO_SEND, 0);
+	}
+
 }
 
 #define add_stat(_i, _s)												\
@@ -1337,21 +1424,24 @@ SWITCH_DECLARE(switch_status_t) switch_media_handle_create(switch_media_handle_t
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO].read_frame.buflen = SWITCH_RTP_MAX_BUF_LEN;
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO].type = SWITCH_MEDIA_TYPE_AUDIO;
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO].crypto_type = CRYPTO_INVALID;
+
 		for (i = 0; i < CRYPTO_INVALID; i++) {
 			session->media_handle->engines[SWITCH_MEDIA_TYPE_AUDIO].ssec[i].crypto_type = i;
 		}
 
-
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].read_frame.buflen = SWITCH_RTP_MAX_BUF_LEN;
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].type = SWITCH_MEDIA_TYPE_VIDEO;
 		session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].crypto_type = CRYPTO_INVALID;
+
 		for (i = 0; i < CRYPTO_INVALID; i++) {
 			session->media_handle->engines[SWITCH_MEDIA_TYPE_VIDEO].ssec[i].crypto_type = i;
 		}
 
 		session->media_handle->mparams = params;
-		
 
+		for (i = 0; i <= CRYPTO_INVALID; i++) {
+			session->media_handle->crypto_suite_order[i] = CRYPTO_INVALID;
+		}
 
 		switch_mutex_init(&session->media_handle->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 		switch_mutex_init(&session->media_handle->sdp_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
@@ -2815,8 +2905,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	const char *tmp;
 	int m_idx = 0;
 	int nm_idx = 0;
-	int needs_crypto = 0;
-	const char *var;
 	
 	switch_assert(session);
 
@@ -2839,26 +2927,12 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		return 0;
 	}
 
-	if (!switch_channel_test_flag(session->channel, CF_DTLS) && (var = switch_channel_get_variable(session->channel, "rtp_secure_media"))) {
-		if (strcasecmp(var, "optional")) {
-			if (switch_true(var) || switch_core_media_crypto_str2type(var) != CRYPTO_INVALID) {
-				needs_crypto = 1;
-				switch_channel_set_variable(session->channel, "rtp_crypto_mandatory", "true");
-			}
-
-			if (sdp_type == SDP_TYPE_REQUEST) {
-				if (switch_false(var) || switch_core_media_crypto_str2type(var) == CRYPTO_INVALID) {
-					got_crypto = -1;
-				}
-			}
-		}
-	}
-
-
 	if (dtls_ok(session) && (tmp = switch_channel_get_variable(smh->session->channel, "webrtc_enable_dtls")) && switch_false(tmp)) {
 		switch_channel_clear_flag(smh->session->channel, CF_DTLS_OK);
 		switch_channel_clear_flag(smh->session->channel, CF_DTLS);
 	}
+
+	switch_core_session_parse_crypto_prefs(session);
 
 	clear_pmaps(a_engine);
 	clear_pmaps(v_engine);
@@ -2872,15 +2946,12 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		if (!strcasecmp(val, "generous")) {
 			greedy = 0;
 			scrooge = 0;
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "rtp_codec_negotiation overriding sofia inbound-codec-negotiation : generous\n" );
 		} else if (!strcasecmp(val, "greedy")) {
 			greedy = 1;
 			scrooge = 0;
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "rtp_codec_negotiation overriding sofia inbound-codec-negotiation : greedy\n" );
 		} else if (!strcasecmp(val, "scrooge")) {
 			scrooge = 1;
 			greedy = 1;
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "rtp_codec_negotiation overriding sofia inbound-codec-negotiation : scrooge\n" );
 		} else {
 		    switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "rtp_codec_negotiation ignored invalid value : '%s' \n", val );	
 		}		
@@ -3093,7 +3164,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
                                           SWITCH_LOG_WARNING, "%s Error Passing T.38 to unanswered channel %s\n",
                                           switch_channel_get_name(session->channel), switch_channel_get_name(other_channel));
                         switch_core_session_rwunlock(other_session);
-                        //sofia_set_flag(session, TFLAG_NOREPLY);
+
                         pass = 0;
                         match = 0;
                         goto done;
@@ -3175,8 +3246,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					ptime = atoi(attr->a_value);
 				} else if (!strcasecmp(attr->a_name, "maxptime") && attr->a_value) {
 					maxptime = atoi(attr->a_value);
-				} else if (got_crypto < 1 && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) { //&& 
-					//(!switch_channel_test_flag(session->channel, CF_WEBRTC) || switch_stristr(SWITCH_RTP_CRYPTO_KEY_80, attr->a_value))) {
+				} else if (got_crypto < 1 && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) {
 					int crypto_tag;
 
 					if (!(smh->mparams->ndlb & SM_NDLB_ALLOW_CRYPTO_IN_AVP) && 
@@ -3374,7 +3444,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				}
 			}
 
-			if (needs_crypto && got_crypto < 1) {
+			if (smh->crypto_mode == CRYPTO_MODE_MANDATORY && got_crypto < 1) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Crypto not negotiated but required.\n");
 				match = 0;
 				m_idx = nm_idx = 0;
@@ -3685,7 +3755,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				}
 			}
 
-			if (needs_crypto && got_video_crypto < 1) {
+			if (smh->crypto_mode == CRYPTO_MODE_MANDATORY && got_video_crypto < 1) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Crypto not negotiated but required.\n");
 				vmatch = 0;
 				m_idx = 0;
@@ -4670,8 +4740,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		switch_rtp_reset_media_timer(a_engine->rtp_session);
 	}
 
-	if (!switch_channel_test_flag(session->channel, CF_SECURE) && (var = switch_channel_get_variable(session->channel, "rtp_secure_media")) && 
-		(switch_true(var) || switch_core_media_crypto_str2type(var) != CRYPTO_INVALID)) {
+	if (a_engine->crypto_type) {
 		switch_channel_set_flag(session->channel, CF_SECURE);
 	}
 
@@ -5528,7 +5597,6 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 	int rate;
 	int already_did[128] = { 0 };
 	int ptime = 0, noptime = 0;
-	//const char *local_audio_crypto_key = switch_core_session_local_crypto_key(session, SWITCH_MEDIA_TYPE_AUDIO);
 	const char *local_sdp_audio_zrtp_hash;
 	switch_media_handle_t *smh;
 	switch_rtp_engine_t *a_engine;
@@ -5767,10 +5835,12 @@ static void generate_m(switch_core_session_t *session, char *buf, size_t buflen,
 
 	if (secure && !switch_channel_test_flag(session->channel, CF_DTLS)) {
 		int i;
-		
-		for (i = 0; i < CRYPTO_INVALID; i++) {
-			if ((a_engine->crypto_type == i || a_engine->crypto_type == CRYPTO_INVALID) && !zstr(a_engine->ssec[i].local_crypto_key)) {
-				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=crypto:%s\n", a_engine->ssec[i].local_crypto_key);
+
+		for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
+			switch_rtp_crypto_key_type_t j = SUITES[smh->crypto_suite_order[i]].type;
+
+			if ((a_engine->crypto_type == j || a_engine->crypto_type == CRYPTO_INVALID) && !zstr(a_engine->ssec[j].local_crypto_key)) {
+				switch_snprintf(buf + strlen(buf), buflen - strlen(buf), "a=crypto:%s\n", a_engine->ssec[j].local_crypto_key);
 			}
 		}
 		//switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=encryption:optional\n");
@@ -5941,7 +6011,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	int red = 0;
 	payload_map_t *pmap;
 	int is_outbound = switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND;
-	const char *secure_media_var = switch_channel_get_variable(session->channel, "rtp_secure_media");
 
 	switch_assert(session);
 
@@ -5987,8 +6056,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				generate_local_fingerprint(smh, SWITCH_MEDIA_TYPE_AUDIO);
 			}
 		}
-		
-		switch_core_session_check_outgoing_crypto(session, secure_media_var);
+		switch_core_session_parse_crypto_prefs(session);
+		switch_core_session_check_outgoing_crypto(session);
 
 	} else {
 		if (switch_channel_test_flag(smh->session->channel, CF_DTLS)) {
@@ -6402,8 +6471,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				generate_m(session, buf, SDPBUFLEN, port, family, ip, 0, append_audio, sr, use_cng, cng_type, map, 1, sdp_type);
 				bp = (buf + strlen(buf));
 
-				/* asterisk can't handle AVP and SAVP in sep streams, way to blow off the spec....*/
-				if (switch_true(switch_channel_get_variable(session->channel, "sdp_secure_savp_only"))) {
+				if (smh->crypto_mode == CRYPTO_MODE_MANDATORY) {
 					both = 0;
 				}
 
@@ -6439,8 +6507,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 						generate_m(session, bp, SDPBUFLEN - strlen(buf), port, family, ip, cur_ptime, append_audio, sr, use_cng, cng_type, map, 1, sdp_type);
 						bp = (buf + strlen(buf));
 
-						/* asterisk can't handle AVP and SAVP in sep streams, way to blow off the spec....*/
-						if (switch_true(switch_channel_get_variable(session->channel, "sdp_secure_savp_only"))) {
+						if (smh->crypto_mode == CRYPTO_MODE_MANDATORY) {
 							both = 0;
 						}
 					}
@@ -6476,344 +6543,359 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		}
 
 		if ((v_port = v_engine->adv_sdp_port)) {
+			int loops;
 
-			if (switch_channel_test_flag(smh->session->channel, CF_ICE)) {
-				gen_ice(session, SWITCH_MEDIA_TYPE_VIDEO, ip, (switch_port_t)v_port);
-			}
-			/*
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=video %d RTP/%sAVP%s", 
-							v_port, ((!zstr(local_video_crypto_key) || switch_channel_test_flag(session->channel, CF_DTLS)) 
-									 && switch_channel_test_flag(session->channel, CF_SECURE)) ? "S" : "",
-							switch_channel_test_flag(session->channel, CF_WEBRTC) ? "F" : "");
-			*/
+			for (loops = 0; loops < 2; loops++) {
 
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=video %d %s", 
-							v_port, get_media_profile_name(session,
-														   (!v_engine->no_crypto || switch_channel_test_flag(session->channel, CF_DTLS))
-														   && v_engine->crypto_type != CRYPTO_INVALID));
+				if (switch_channel_test_flag(smh->session->channel, CF_ICE)) {
+					gen_ice(session, SWITCH_MEDIA_TYPE_VIDEO, ip, (switch_port_t)v_port);
+				}
+
+
+				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=video %d %s", 
+								v_port, 
+								get_media_profile_name(session, 
+													   (loops == 0 && switch_channel_test_flag(session->channel, CF_SECURE) 
+														&& switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) || 
+													   a_engine->crypto_type != CRYPTO_INVALID));
+			
 							
 			
 
-			/*****************************/
-			if (v_engine->codec_negotiated) {
-				payload_map_t *pmap;
-				switch_core_media_set_video_codec(session, 0);
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", v_engine->cur_payload_map->agreed_pt);
+				/*****************************/
+				if (v_engine->codec_negotiated) {
+					payload_map_t *pmap;
+					switch_core_media_set_video_codec(session, 0);
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", v_engine->cur_payload_map->agreed_pt);
 				
-				if (switch_media_handle_test_media_flag(smh, SCMF_MULTI_ANSWER_VIDEO)) {
-					switch_mutex_lock(smh->sdp_mutex);
-					for (pmap = v_engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
-						if (pmap->pt != v_engine->cur_payload_map->pt) {
-							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", pmap->pt);
+					if (switch_media_handle_test_media_flag(smh, SCMF_MULTI_ANSWER_VIDEO)) {
+						switch_mutex_lock(smh->sdp_mutex);
+						for (pmap = v_engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
+							if (pmap->pt != v_engine->cur_payload_map->pt) {
+								switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", pmap->pt);
+							}
 						}
+						switch_mutex_unlock(smh->sdp_mutex);
 					}
-					switch_mutex_unlock(smh->sdp_mutex);
-				}
 
-			} else if (smh->mparams->num_codecs) {
-				int i;
-				int already_did[128] = { 0 };
-				for (i = 0; i < smh->mparams->num_codecs; i++) {
-					const switch_codec_implementation_t *imp = smh->codecs[i];
+				} else if (smh->mparams->num_codecs) {
+					int i;
+					int already_did[128] = { 0 };
+					for (i = 0; i < smh->mparams->num_codecs; i++) {
+						const switch_codec_implementation_t *imp = smh->codecs[i];
 					
 
-					if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
-						continue;
-					}
-
-					if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND &&
-						switch_channel_test_flag(session->channel, CF_NOVIDEO)) {
-						continue;
-					}
-
-					if (smh->ianacodes[i] < 128) {
-						if (already_did[smh->ianacodes[i]]) {
+						if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
 							continue;
 						}
-						already_did[smh->ianacodes[i]] = 1;
-					}
 
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", smh->ianacodes[i]);
+						if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND &&
+							switch_channel_test_flag(session->channel, CF_NOVIDEO)) {
+							continue;
+						}
 
-					if (!ptime) {
-						ptime = imp->microseconds_per_packet / 1000;
+						if (smh->ianacodes[i] < 128) {
+							if (already_did[smh->ianacodes[i]]) {
+								continue;
+							}
+							already_did[smh->ianacodes[i]] = 1;
+						}
+
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", smh->ianacodes[i]);
+
+						if (!ptime) {
+							ptime = imp->microseconds_per_packet / 1000;
+						}
 					}
 				}
-			}
 
-			switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "\n");
+				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "\n");
 
 			
-			if (v_engine->codec_negotiated) {
-				const char *of;
-				payload_map_t *pmap;
+				if (v_engine->codec_negotiated) {
+					const char *of;
+					payload_map_t *pmap;
 
-				if (!strcasecmp(v_engine->cur_payload_map->rm_encoding, "VP8")) {
-					vp8 = v_engine->cur_payload_map->pt;
-				}
+					if (!strcasecmp(v_engine->cur_payload_map->rm_encoding, "VP8")) {
+						vp8 = v_engine->cur_payload_map->pt;
+					}
 
-				if (!strcasecmp(v_engine->cur_payload_map->rm_encoding, "red")) {
-					red = v_engine->cur_payload_map->pt;
-				}
+					if (!strcasecmp(v_engine->cur_payload_map->rm_encoding, "red")) {
+						red = v_engine->cur_payload_map->pt;
+					}
 
-				rate = v_engine->cur_payload_map->rm_rate;
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%ld\n",
-								v_engine->cur_payload_map->pt, v_engine->cur_payload_map->rm_encoding,
-								v_engine->cur_payload_map->rm_rate);
+					rate = v_engine->cur_payload_map->rm_rate;
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%ld\n",
+									v_engine->cur_payload_map->pt, v_engine->cur_payload_map->rm_encoding,
+									v_engine->cur_payload_map->rm_rate);
 
 
-				if (switch_channel_test_flag(session->channel, CF_RECOVERING)) {
-					pass_fmtp = v_engine->cur_payload_map->rm_fmtp;
-				} else {
+					if (switch_channel_test_flag(session->channel, CF_RECOVERING)) {
+						pass_fmtp = v_engine->cur_payload_map->rm_fmtp;
+					} else {
 
-					pass_fmtp = NULL;
+						pass_fmtp = NULL;
 
-					if (switch_channel_get_partner_uuid(session->channel)) {
-						if ((of = switch_channel_get_variable_partner(session->channel, "rtp_video_fmtp"))) {
-							pass_fmtp = of;
+						if (switch_channel_get_partner_uuid(session->channel)) {
+							if ((of = switch_channel_get_variable_partner(session->channel, "rtp_video_fmtp"))) {
+								pass_fmtp = of;
+							}
+						}
+
+						if (ov_fmtp) {
+							pass_fmtp = ov_fmtp;
+						} else { //if (switch_true(switch_channel_get_variable_dup(session->channel, "rtp_mirror_fmtp", SWITCH_FALSE, -1))) { 
+							// seems to break eyebeam at least...
+							pass_fmtp = switch_channel_get_variable(session->channel, "rtp_video_fmtp");
 						}
 					}
-
-					if (ov_fmtp) {
-						pass_fmtp = ov_fmtp;
-					} else { //if (switch_true(switch_channel_get_variable_dup(session->channel, "rtp_mirror_fmtp", SWITCH_FALSE, -1))) { 
-						// seems to break eyebeam at least...
-						pass_fmtp = switch_channel_get_variable(session->channel, "rtp_video_fmtp");
-					}
-				}
 				
-				if (pass_fmtp) {
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fmtp:%d %s\n", v_engine->cur_payload_map->pt, pass_fmtp);
-				}
+					if (pass_fmtp) {
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fmtp:%d %s\n", v_engine->cur_payload_map->pt, pass_fmtp);
+					}
 
 
-				if (switch_media_handle_test_media_flag(smh, SCMF_MULTI_ANSWER_VIDEO)) {
-					switch_mutex_lock(smh->sdp_mutex);
-					for (pmap = v_engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
-						if (pmap->pt != v_engine->cur_payload_map->pt && pmap->negotiated) {
-							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%ld\n",
-											pmap->pt, pmap->iananame, pmap->rate);
+					if (switch_media_handle_test_media_flag(smh, SCMF_MULTI_ANSWER_VIDEO)) {
+						switch_mutex_lock(smh->sdp_mutex);
+						for (pmap = v_engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
+							if (pmap->pt != v_engine->cur_payload_map->pt && pmap->negotiated) {
+								switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%ld\n",
+												pmap->pt, pmap->iananame, pmap->rate);
 							
+							}
 						}
-					}
-					switch_mutex_unlock(smh->sdp_mutex);
-				}
-
-
-				if (append_video) {
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "%s%s", append_video, end_of(append_video) == '\n' ? "" : "\n");
-				}
-
-			} else if (smh->mparams->num_codecs) {
-				int i;
-				int already_did[128] = { 0 };
-
-				for (i = 0; i < smh->mparams->num_codecs; i++) {
-					const switch_codec_implementation_t *imp = smh->codecs[i];
-					char *fmtp = NULL;
-					uint32_t ianacode = smh->ianacodes[i];
-					int channels;
-
-					if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
-						continue;
+						switch_mutex_unlock(smh->sdp_mutex);
 					}
 
-					if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND &&
-						switch_channel_test_flag(session->channel, CF_NOVIDEO)) {
-						continue;
+
+					if (append_video) {
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "%s%s", append_video, end_of(append_video) == '\n' ? "" : "\n");
 					}
 
-					if (ianacode < 128) {
-						if (already_did[ianacode]) {
+				} else if (smh->mparams->num_codecs) {
+					int i;
+					int already_did[128] = { 0 };
+
+					for (i = 0; i < smh->mparams->num_codecs; i++) {
+						const switch_codec_implementation_t *imp = smh->codecs[i];
+						char *fmtp = NULL;
+						uint32_t ianacode = smh->ianacodes[i];
+						int channels;
+
+						if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
 							continue;
 						}
-						already_did[ianacode] = 1;
-					}
 
-					if (!rate) {
-						rate = imp->samples_per_second;
-					}
-					
-					channels = get_channels(imp->iananame, imp->number_of_channels);
-
-					if (!strcasecmp(imp->iananame, "VP8")) {
-						vp8 = ianacode;
-					}
-
-					if (!strcasecmp(imp->iananame, "red")) {
-						red = ianacode;
-					}
-
-					if (channels > 1) {
-						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d/%d\n", ianacode, imp->iananame,
-										imp->samples_per_second, channels);
-					} else {
-						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d\n", ianacode, imp->iananame,
-										imp->samples_per_second);
-					}
-					
-					if (!zstr(ov_fmtp)) {
-						fmtp = (char *) ov_fmtp;
-					} else {
-					
-						if (map) {
-							fmtp = switch_event_get_header(map, imp->iananame);
+						if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND &&
+							switch_channel_test_flag(session->channel, CF_NOVIDEO)) {
+							continue;
 						}
-						
-						if (smh->fmtps[i]) {
-							fmtp = smh->fmtps[i];
+
+						if (ianacode < 128) {
+							if (already_did[ianacode]) {
+								continue;
+							}
+							already_did[ianacode] = 1;
 						}
+
+						if (!rate) {
+							rate = imp->samples_per_second;
+						}
+					
+						channels = get_channels(imp->iananame, imp->number_of_channels);
+
+						if (!strcasecmp(imp->iananame, "VP8")) {
+							vp8 = ianacode;
+						}
+
+						if (!strcasecmp(imp->iananame, "red")) {
+							red = ianacode;
+						}
+
+						if (channels > 1) {
+							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d/%d\n", ianacode, imp->iananame,
+											imp->samples_per_second, channels);
+						} else {
+							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d\n", ianacode, imp->iananame,
+											imp->samples_per_second);
+						}
+					
+						if (!zstr(ov_fmtp)) {
+							fmtp = (char *) ov_fmtp;
+						} else {
+					
+							if (map) {
+								fmtp = switch_event_get_header(map, imp->iananame);
+							}
 						
-						if (zstr(fmtp)) fmtp = imp->fmtp;
-
-						if (zstr(fmtp)) fmtp = (char *) pass_fmtp;
-					}
-					
-					if (!zstr(fmtp) && strcasecmp(fmtp, "_blank_")) {
-						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fmtp:%d %s\n", ianacode, fmtp);
-					}
-				}
-				
-			}
-
-			if ((is_outbound || switch_channel_test_flag(session->channel, CF_RECOVERING))
-				&& switch_channel_test_flag(smh->session->channel, CF_DTLS)) {
-				generate_local_fingerprint(smh, SWITCH_MEDIA_TYPE_VIDEO);
-			}
-
-
-			if (!zstr(v_engine->local_dtls_fingerprint.type)) {
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\n", v_engine->local_dtls_fingerprint.type, 
-								v_engine->local_dtls_fingerprint.str);
-			}
-
-
-			if (smh->mparams->rtcp_video_interval_msec) {
-				if (v_engine->rtcp_mux > 0) {
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp-mux\n");
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp:%d IN %s %s\n", v_port, family, ip);
-				} else {
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp:%d IN %s %s\n", v_port + 1, family, ip);
-				}
-			}
-
-
-			if (v_engine->fir || v_engine->pli) {
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
-								"a=rtcp-fb:* %s%s\n", v_engine->fir ? "fir " : "", v_engine->pli ? "pli" : "");
-			}
-
-			//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u\n", v_engine->ssrc);
-
-			if (v_engine->ice_out.cands[0][0].ready) {
-				char tmp1[11] = "";
-				char tmp2[11] = "";
-				uint32_t c1 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 1);
-				uint32_t c2 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 2);
-				uint32_t c3 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 1);
-				uint32_t c4 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 2);
-				const char *vbw;
-				int bw = 256;
-				
-				tmp1[10] = '\0';
-				tmp2[10] = '\0';
-				switch_stun_random_string(tmp1, 10, "0123456789");
-				switch_stun_random_string(tmp2, 10, "0123456789");
-
-				ice_out = &v_engine->ice_out;
-
-
-				if ((vbw = switch_channel_get_variable(smh->session->channel, "rtp_video_max_bandwidth"))) {
-					int v = atoi(vbw);
-					bw = v;
-				}
-				
-				if (bw > 0) {
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "b=AS:%d\n", bw);
-				}
-
-				if (vp8 && switch_channel_test_flag(session->channel, CF_WEBRTC)) {
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
-									"a=rtcp-fb:%d ccm fir\n", vp8);
-				}
-				
-				if (red) {
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
-									"a=rtcp-fb:%d nack\n", vp8);
-				}
-				
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u cname:%s\n", v_engine->ssrc, smh->cname);
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u msid:%s v0\n", v_engine->ssrc, smh->msid);
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u mslabel:%s\n", v_engine->ssrc, smh->msid);
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u label:%sv0\n", v_engine->ssrc, smh->msid);
-				
-
-				
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-ufrag:%s\n", ice_out->ufrag);
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-pwd:%s\n", ice_out->pwd);
-
-
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\n", 
-								tmp1, ice_out->cands[0][0].transport, c1,
-								ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port
-								);
-
-				if (!zstr(v_engine->local_sdp_ip) && !zstr(ice_out->cands[0][0].con_addr) && 
-					strcmp(v_engine->local_sdp_ip, ice_out->cands[0][0].con_addr)
-					&& v_engine->local_sdp_port != ice_out->cands[0][0].con_port) {
-
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ srflx raddr %s rport %d generation 0\n", 
-									tmp2, ice_out->cands[0][0].transport, c3,
-									ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port,
-									v_engine->local_sdp_ip, v_engine->local_sdp_port
-									);
-				}
-
-
-				if (v_engine->rtcp_mux < 1 || is_outbound || 
-					switch_channel_test_flag(session->channel, CF_RECOVERING)) {
-
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\n", 
-									tmp1, ice_out->cands[0][0].transport, c2,
-									ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port + (v_engine->rtcp_mux > 0 ? 0 : 1)
-									);
-					
-					
-					if (!zstr(v_engine->local_sdp_ip) && !zstr(ice_out->cands[0][1].con_addr) && 
-						strcmp(v_engine->local_sdp_ip, ice_out->cands[0][1].con_addr)
-						&& v_engine->local_sdp_port != ice_out->cands[0][1].con_port) {
+							if (smh->fmtps[i]) {
+								fmtp = smh->fmtps[i];
+							}
 						
-						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ srflx generation 0\n", 
-										tmp2, ice_out->cands[0][0].transport, c4,
-										ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port + (v_engine->rtcp_mux > 0 ? 0 : 1),
-										v_engine->local_sdp_ip, v_engine->local_sdp_port + (v_engine->rtcp_mux > 0 ? 0 : 1)
+							if (zstr(fmtp)) fmtp = imp->fmtp;
+
+							if (zstr(fmtp)) fmtp = (char *) pass_fmtp;
+						}
+					
+						if (!zstr(fmtp) && strcasecmp(fmtp, "_blank_")) {
+							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fmtp:%d %s\n", ianacode, fmtp);
+						}
+					}
+				
+				}
+
+				if ((is_outbound || switch_channel_test_flag(session->channel, CF_RECOVERING))
+					&& switch_channel_test_flag(smh->session->channel, CF_DTLS)) {
+					generate_local_fingerprint(smh, SWITCH_MEDIA_TYPE_VIDEO);
+				}
+
+
+				if (!zstr(v_engine->local_dtls_fingerprint.type)) {
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=fingerprint:%s %s\n", v_engine->local_dtls_fingerprint.type, 
+									v_engine->local_dtls_fingerprint.str);
+				}
+
+
+				if (smh->mparams->rtcp_video_interval_msec) {
+					if (v_engine->rtcp_mux > 0) {
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp-mux\n");
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp:%d IN %s %s\n", v_port, family, ip);
+					} else {
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtcp:%d IN %s %s\n", v_port + 1, family, ip);
+					}
+				}
+
+
+				if (v_engine->fir || v_engine->pli) {
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
+									"a=rtcp-fb:* %s%s\n", v_engine->fir ? "fir " : "", v_engine->pli ? "pli" : "");
+				}
+
+				//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u\n", v_engine->ssrc);
+
+				if (v_engine->ice_out.cands[0][0].ready) {
+					char tmp1[11] = "";
+					char tmp2[11] = "";
+					uint32_t c1 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 1);
+					uint32_t c2 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 2);
+					uint32_t c3 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 1);
+					uint32_t c4 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 2);
+					const char *vbw;
+					int bw = 256;
+				
+					tmp1[10] = '\0';
+					tmp2[10] = '\0';
+					switch_stun_random_string(tmp1, 10, "0123456789");
+					switch_stun_random_string(tmp2, 10, "0123456789");
+
+					ice_out = &v_engine->ice_out;
+
+
+					if ((vbw = switch_channel_get_variable(smh->session->channel, "rtp_video_max_bandwidth"))) {
+						int v = atoi(vbw);
+						bw = v;
+					}
+				
+					if (bw > 0) {
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "b=AS:%d\n", bw);
+					}
+
+					if (vp8 && switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
+										"a=rtcp-fb:%d ccm fir\n", vp8);
+					}
+				
+					if (red) {
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
+										"a=rtcp-fb:%d nack\n", vp8);
+					}
+				
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u cname:%s\n", v_engine->ssrc, smh->cname);
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u msid:%s v0\n", v_engine->ssrc, smh->msid);
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u mslabel:%s\n", v_engine->ssrc, smh->msid);
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u label:%sv0\n", v_engine->ssrc, smh->msid);
+				
+
+				
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-ufrag:%s\n", ice_out->ufrag);
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-pwd:%s\n", ice_out->pwd);
+
+
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ host generation 0\n", 
+									tmp1, ice_out->cands[0][0].transport, c1,
+									ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port
+									);
+
+					if (!zstr(v_engine->local_sdp_ip) && !zstr(ice_out->cands[0][0].con_addr) && 
+						strcmp(v_engine->local_sdp_ip, ice_out->cands[0][0].con_addr)
+						&& v_engine->local_sdp_port != ice_out->cands[0][0].con_port) {
+
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 1 %s %u %s %d typ srflx raddr %s rport %d generation 0\n", 
+										tmp2, ice_out->cands[0][0].transport, c3,
+										ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port,
+										v_engine->local_sdp_ip, v_engine->local_sdp_port
 										);
 					}
-				}
+
+
+					if (v_engine->rtcp_mux < 1 || is_outbound || 
+						switch_channel_test_flag(session->channel, CF_RECOVERING)) {
+
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ host generation 0\n", 
+										tmp1, ice_out->cands[0][0].transport, c2,
+										ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port + (v_engine->rtcp_mux > 0 ? 0 : 1)
+										);
+					
+					
+						if (!zstr(v_engine->local_sdp_ip) && !zstr(ice_out->cands[0][1].con_addr) && 
+							strcmp(v_engine->local_sdp_ip, ice_out->cands[0][1].con_addr)
+							&& v_engine->local_sdp_port != ice_out->cands[0][1].con_port) {
+						
+							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=candidate:%s 2 %s %u %s %d typ srflx generation 0\n", 
+											tmp2, ice_out->cands[0][0].transport, c4,
+											ice_out->cands[0][0].con_addr, ice_out->cands[0][0].con_port + (v_engine->rtcp_mux > 0 ? 0 : 1),
+											v_engine->local_sdp_ip, v_engine->local_sdp_port + (v_engine->rtcp_mux > 0 ? 0 : 1)
+											);
+						}
+					}
 
 			
 				
 #ifdef GOOGLE_ICE
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-options:google-ice\n");
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ice-options:google-ice\n");
 #endif
-			}
+				}
 
 				
 
+				if (loops == 0 && switch_channel_test_flag(session->channel, CF_SECURE) && !switch_channel_test_flag(session->channel, CF_DTLS)) {
+					int i;
+				
+					for (i = 0; smh->crypto_suite_order[i] != CRYPTO_INVALID; i++) {
+						switch_rtp_crypto_key_type_t j = SUITES[smh->crypto_suite_order[i]].type;
+					
+						if ((a_engine->crypto_type == j || a_engine->crypto_type == CRYPTO_INVALID) && !zstr(a_engine->ssec[j].local_crypto_key)) {
+							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=crypto:%s\n", v_engine->ssec[j].local_crypto_key);
+						}
+					}
+					//switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=encryption:optional\n");
+				}
 
-			if (switch_channel_test_flag(session->channel, CF_SECURE) && !switch_channel_test_flag(session->channel, CF_DTLS) &&
-				v_engine->crypto_type != CRYPTO_INVALID &&
-				!zstr(v_engine->ssec[v_engine->crypto_type].local_crypto_key)) {
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=crypto:%s\n", v_engine->ssec[v_engine->crypto_type].local_crypto_key);
-				//switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=encryption:optional\n");
-			}			
 
-			
-			if (local_sdp_video_zrtp_hash) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Adding video a=zrtp-hash:%s\n", local_sdp_video_zrtp_hash);
-				switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=zrtp-hash:%s\n", local_sdp_video_zrtp_hash);
+				if (local_sdp_video_zrtp_hash) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Adding video a=zrtp-hash:%s\n", local_sdp_video_zrtp_hash);
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=zrtp-hash:%s\n", local_sdp_video_zrtp_hash);
+				}
+
+
+				if (switch_channel_test_flag(session->channel, CF_DTLS) || 
+					!switch_channel_test_flag(session->channel, CF_SECURE) || 
+					smh->crypto_mode == CRYPTO_MODE_MANDATORY || smh->crypto_mode == CRYPTO_MODE_FORBIDDEN) {
+					break;
+				}
 			}
 		}
+
 	}
 
 
