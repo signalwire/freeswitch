@@ -660,7 +660,10 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 					rtp_session->dtmf_data.in_digit_ts = 0;
 					rtp_session->dtmf_data.in_digit_sanity = 0;
 					rtp_session->dtmf_data.in_digit_queued = 0;
-					*do_cng = 1;
+
+					if (!switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
+						*do_cng = 1;
+					}
 				} else {
 					if (!switch_rtp_ready(rtp_session)) {
 						return RESULT_GOTO_END;
@@ -705,7 +708,9 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 				return RESULT_GOTO_RECVFROM;
 			}
 		} else {
-			*do_cng = 1;
+			if (switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
+				*do_cng = 1;
+			}
 			return RESULT_GOTO_TIMERCHECK;
 		}
 	}
@@ -5080,6 +5085,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					
 					if (status != SWITCH_STATUS_FALSE) {
 						read_pretriggered = 1;
+						break;
 					}
 				}
 				
