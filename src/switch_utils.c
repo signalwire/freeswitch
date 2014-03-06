@@ -3121,7 +3121,7 @@ SWITCH_DECLARE(int) switch_split_user_domain(char *in, char **user, char **domai
 
 	/* Remove URL scheme */
 	if (!strncasecmp(in, "sip:", 4)) in += 4;
-	if (!strncasecmp(in, "sips:", 5)) in += 5;
+	else if (!strncasecmp(in, "sips:", 5)) in += 5;
 
 	/* Isolate the host part from the user part */
 	if ((h = in, p = strchr(h, '@'))) *p = '\0', u = in, h = p+1;
