@@ -1101,6 +1101,10 @@ static void switch_core_session_parse_crypto_prefs(switch_core_session_t *sessio
 		*suites++ = '\0';
 	}
 
+	if (zstr(suites)) {
+		suites = (char *) switch_channel_get_variable(session->channel, "rtp_secure_media_suites");
+	}
+
 	if (zstr(val) || !strcasecmp(val, "optional")) {
 		smh->crypto_mode = CRYPTO_MODE_OPTIONAL;
 	} else if (switch_true(val) || !strcasecmp(val, "mandatory")) {
