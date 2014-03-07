@@ -1106,7 +1106,7 @@ static void switch_core_session_parse_crypto_prefs(switch_core_session_t *sessio
 	}
 
 	if (zstr(val)) {
-		if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+		if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND && !switch_channel_test_flag(session->channel, CF_RECOVERING)) {
 			val = "optional";
 		} else {
 			val = "forbidden";
