@@ -6090,8 +6090,11 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	if (!smh->payload_space) {
 		int i;
 
-
-		smh->payload_space = 98;
+		if (switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+			smh->payload_space = 102;
+		} else {
+			smh->payload_space = 98;
+		}
 
 		for (i = 0; i < smh->mparams->num_codecs; i++) {
 			smh->ianacodes[i] = smh->codecs[i]->ianacode;
