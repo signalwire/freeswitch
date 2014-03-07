@@ -7479,6 +7479,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 
 	switch (msg->message_id) {
 
+	case SWITCH_MESSAGE_RESAMPLE_EVENT:
+		{
+			if (switch_channel_test_flag(session->channel, CF_CONFERENCE)) {
+				switch_channel_set_flag(session->channel, CF_CONFERENCE_RESET_MEDIA);
+			}
+		}
+		break;
+
 	case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
 		{
 			if (v_engine->rtp_session) {

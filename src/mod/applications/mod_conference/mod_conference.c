@@ -485,6 +485,7 @@ struct conference_member {
 	switch_thread_t *input_thread;
 	cJSON *json;
 	cJSON *status_field;
+	uint8_t loop_loop;
 };
 
 typedef enum {
@@ -3659,7 +3660,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 	switch_frame_t *read_frame = NULL;
 	uint32_t hangover = 40, hangunder = 5, hangover_hits = 0, hangunder_hits = 0, diff_level = 400;
 	switch_core_session_t *session = member->session;
-	uint32_t flush_len;
+	uint32_t flush_len, loops = 0;
 
 	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
 		goto end;
@@ -3922,6 +3923,18 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			member->last_score = member->score;
 		}
 
+		if (switch_channel_test_flag(member->channel, CF_CONFERENCE_RESET_MEDIA)) {
+			switch_channel_clear_flag(member->channel, CF_CONFERENCE_RESET_MEDIA);
+			if (++loops > 500) {
+				member->loop_loop = 1;
+
+				if (setup_media(member, member->conference)) {
+					break;
+				}
+			}
+
+		}
+
 		/* skip frames that are not actual media or when we are muted or silent */
 		if ((switch_test_flag(member, MFLAG_TALKING) || member->energy_level == 0 || switch_test_flag(member->conference, CFLAG_AUDIO_ALWAYS)) 
 			&& switch_test_flag(member, MFLAG_CAN_SPEAK) &&	!switch_test_flag(member->conference, CFLAG_WAIT_MOD)
@@ -4072,7 +4085,7 @@ static void launch_conference_loop_input(conference_member_t *member, switch_mem
 {
 	switch_threadattr_t *thd_attr = NULL;
 
-	if (member == NULL)
+	if (member == NULL || member->input_thread)
 		return;
 
 	switch_threadattr_create(&thd_attr, pool);
@@ -4116,7 +4129,7 @@ static void conference_loop_output(conference_member_t *member)
 	call_list = NULL;
 	cp = NULL;
 
-
+	member->loop_loop = 0;
 
 	switch_assert(member->conference != NULL);
 
@@ -4229,7 +4242,7 @@ static void conference_loop_output(conference_member_t *member)
 
 	/* Fair WARNING, If you expect the caller to hear anything or for digit handling to be processed,      */
 	/* you better not block this thread loop for more than the duration of member->conference->timer_name!  */
-	while (switch_test_flag(member, MFLAG_RUNNING) && switch_test_flag(member, MFLAG_ITHREAD)
+	while (!member->loop_loop && switch_test_flag(member, MFLAG_RUNNING) && switch_test_flag(member, MFLAG_ITHREAD)
 		   && switch_channel_ready(channel)) {
 		switch_event_t *event;
 		int use_timer = 0;
@@ -4429,14 +4442,20 @@ static void conference_loop_output(conference_member_t *member)
 
  end:
 
-	switch_clear_flag_locked(member, MFLAG_RUNNING);
+	if (!member->loop_loop) {
+		switch_clear_flag_locked(member, MFLAG_RUNNING);
 
-	/* Wait for the input thread to end */
-	if (member->input_thread) {
-		switch_thread_join(&st, member->input_thread);
+		/* Wait for the input thread to end */
+		if (member->input_thread) {
+			switch_thread_join(&st, member->input_thread);
+		}
 	}
 
 	switch_core_timer_destroy(&timer);
+
+	if (member->loop_loop) {
+		return;
+	}
 
 	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, "Channel leaving conference, cause: %s\n",
 					  switch_channel_cause2str(switch_channel_get_cause(channel)));
@@ -8006,10 +8025,14 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_core_session_get_read_impl(member->session, &read_impl);
 
-	switch_core_session_reset(member->session, SWITCH_TRUE, SWITCH_FALSE);
-
 	if (switch_core_codec_ready(&member->read_codec)) {
 		switch_core_codec_destroy(&member->read_codec);
+		memset(&member->read_codec, 0, sizeof(&member->read_codec));
+	}
+
+	if (switch_core_codec_ready(&member->write_codec)) {
+		switch_core_codec_destroy(&member->write_codec);
+		memset(&member->write_codec, 0, sizeof(&member->write_codec));
 	}
 
 	if (member->read_resampler) {
@@ -8640,7 +8663,10 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_core_session_receive_message(session, &msg);
 
 	/* Run the conference loop */
-	conference_loop_output(&member);
+	do {
+		conference_loop_output(&member);
+	} while (member.loop_loop);
+
 	switch_channel_set_private(channel, "_conference_autocall_list_", NULL);
 
 	/* Tell the channel we are no longer going to be in a bridge */

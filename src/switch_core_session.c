@@ -754,6 +754,7 @@ static const char *message_names[] = {
 	"ANSWER_EVENT",
 	"PROGRESS_EVENT",
 	"RING_EVENT",
+	"RESAMPLE_EVENT",
 	"INVALID"
 };
 
