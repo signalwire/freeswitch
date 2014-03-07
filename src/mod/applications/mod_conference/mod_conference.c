@@ -3923,9 +3923,12 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			member->last_score = member->score;
 		}
 
+		loops++;
+
 		if (switch_channel_test_flag(member->channel, CF_CONFERENCE_RESET_MEDIA)) {
 			switch_channel_clear_flag(member->channel, CF_CONFERENCE_RESET_MEDIA);
-			if (++loops > 500) {
+
+			if (loops > 500) {
 				member->loop_loop = 1;
 
 				if (setup_media(member, member->conference)) {
@@ -7055,8 +7058,6 @@ static switch_status_t conf_api_sub_file_vol(conference_obj_t *conference, switc
 				fnode = conference->async_fnode;
 			}
 		}
-
-		printf("WTF %p %p\n", (void *) conference, (void *) fnode);
 
 		if (fnode && fnode->type == NODE_TYPE_FILE) {
 			fnode->fh.vol = vol;
