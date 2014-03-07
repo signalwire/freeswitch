@@ -7702,6 +7702,10 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 						   SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"),
 						   SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK\r\n"), SIPTAG_EVENT_STR(etmp), TAG_END());
 			}
+            
+            if (refer_to->r_url->url_params) {
+                switch_channel_set_variable(b_channel, "sip_h_X-FS-Refer-Params", refer_to->r_url->url_params);
+            }
 
 			switch_ivr_session_transfer(b_session, exten, NULL, NULL);
 			switch_core_session_rwunlock(b_session);
