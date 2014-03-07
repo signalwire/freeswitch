@@ -4749,7 +4749,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		switch_rtp_reset_media_timer(a_engine->rtp_session);
 	}
 
-	if (a_engine->crypto_type) {
+	if (a_engine->crypto_type != CRYPTO_INVALID) {
 		switch_channel_set_flag(session->channel, CF_SECURE);
 	}
 
