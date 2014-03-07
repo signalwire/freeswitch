@@ -170,21 +170,20 @@ static struct rayo_component *record_component_create(struct rayo_actor *actor, 
 
 	switch_core_new_memory_pool(&pool);
 	record_component = switch_core_alloc(pool, sizeof(*record_component));
-	record_component = RECORD_COMPONENT(rayo_component_init(RAYO_COMPONENT(record_component), pool, type, "record", fs_file_path, actor, client_jid));
-	if (!record_component) {
+	record_component = RECORD_COMPONENT(rayo_component_init(RAYO_COMPONENT(record_component), pool, type, "record", fs_file_path, actor, client_jid));\
+	if (record_component) {
+		record_component->max_duration = iks_find_int_attrib(record, "max-duration");
+		record_component->initial_timeout = iks_find_int_attrib(record, "initial-timeout");
+		record_component->final_timeout = iks_find_int_attrib(record, "final-timeout");
+		record_component->direction = switch_core_strdup(RAYO_POOL(record_component), iks_find_attrib_soft(record, "direction"));
+		record_component->mix = iks_find_bool_attrib(record, "mix");
+		record_component->start_beep = iks_find_bool_attrib(record, "start-beep");
+		record_component->stop_beep = iks_find_bool_attrib(record, "stop-beep");
+		record_component->start_time = start_paused ? 0 : switch_micro_time_now();
+		record_component->local_file_path = switch_core_strdup(RAYO_POOL(record_component), local_file_path);
+	} else {
 		switch_core_destroy_memory_pool(&pool);
-		return NULL;
 	}
-
-	record_component->max_duration = iks_find_int_attrib(record, "max-duration");
-	record_component->initial_timeout = iks_find_int_attrib(record, "initial-timeout");
-	record_component->final_timeout = iks_find_int_attrib(record, "final-timeout");
-	record_component->direction = switch_core_strdup(RAYO_POOL(record_component), iks_find_attrib_soft(record, "direction"));
-	record_component->mix = iks_find_bool_attrib(record, "mix");
-	record_component->start_beep = iks_find_bool_attrib(record, "start-beep");
-	record_component->stop_beep = iks_find_bool_attrib(record, "stop-beep");
-	record_component->start_time = start_paused ? 0 : switch_micro_time_now();
-	record_component->local_file_path = switch_core_strdup(RAYO_POOL(record_component), local_file_path);
 
 	switch_safe_free(local_file_path);
 	switch_safe_free(fs_file_path);

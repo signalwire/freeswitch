@@ -69,20 +69,19 @@ static struct rayo_component *create_output_component(struct rayo_actor *actor, 
 	switch_core_new_memory_pool(&pool);
 	output_component = switch_core_alloc(pool, sizeof(*output_component));
 	output_component = OUTPUT_COMPONENT(rayo_component_init((struct rayo_component *)output_component, pool, type, "output", NULL, actor, client_jid));
-	if (!output_component) {
+	if (output_component) {
+		output_component->document = iks_copy(output);
+		output_component->start_offset_ms = iks_find_int_attrib(output, "start-offset");
+		output_component->repeat_interval_ms = iks_find_int_attrib(output, "repeat-interval");
+		output_component->repeat_times = iks_find_int_attrib(output, "repeat-times");
+		output_component->max_time_ms = iks_find_int_attrib(output, "max-time");
+		output_component->start_paused = iks_find_bool_attrib(output, "start-paused");
+		output_component->renderer = iks_find_attrib(output, "renderer");
+	} else {
 		switch_core_destroy_memory_pool(&pool);
-		return NULL;
 	}
 
-	output_component->document = iks_copy(output);
-	output_component->start_offset_ms = iks_find_int_attrib(output, "start-offset");
-	output_component->repeat_interval_ms = iks_find_int_attrib(output, "repeat-interval");
-	output_component->repeat_times = iks_find_int_attrib(output, "repeat-times");
-	output_component->max_time_ms = iks_find_int_attrib(output, "max-time");
-	output_component->start_paused = iks_find_bool_attrib(output, "start-paused");
-	output_component->renderer = iks_find_attrib(output, "renderer");
-
-	return (struct rayo_component *)output_component;
+	return RAYO_COMPONENT(output_component);
 }
 
 /**
