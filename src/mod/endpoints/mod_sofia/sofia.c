@@ -8232,7 +8232,8 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	}
 
 
-	if (profile->server_rport_level >= 2 && sip->sip_user_agent && sip->sip_user_agent->g_string &&
+	if (!switch_check_network_list_ip(network_ip, profile->local_network) &&
+		profile->server_rport_level >= 2 && sip->sip_user_agent && sip->sip_user_agent->g_string &&
 		(!strncasecmp(sip->sip_user_agent->g_string, "Polycom", 7) || 
 		 !strncasecmp(sip->sip_user_agent->g_string, "KIRK Wireless Server", 20) )) {
 		broken_device = 1;
