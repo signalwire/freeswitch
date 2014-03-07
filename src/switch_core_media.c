@@ -1105,7 +1105,15 @@ static void switch_core_session_parse_crypto_prefs(switch_core_session_t *sessio
 		suites = (char *) switch_channel_get_variable(session->channel, "rtp_secure_media_suites");
 	}
 
-	if (zstr(val) || !strcasecmp(val, "optional")) {
+	if (zstr(val)) {
+		if (switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+			val = "optional";
+		} else {
+			val = "forbidden";
+		}
+	}
+
+	if (!strcasecmp(val, "optional")) {
 		smh->crypto_mode = CRYPTO_MODE_OPTIONAL;
 	} else if (switch_true(val) || !strcasecmp(val, "mandatory")) {
 		smh->crypto_mode = CRYPTO_MODE_MANDATORY;
