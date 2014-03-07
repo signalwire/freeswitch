@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013, Grasshopper
+ * Copyright (C) 2013-2014, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -177,7 +177,11 @@ static iks *start_sendfax_component(struct rayo_actor *call, struct rayo_message
 	/* create sendfax component */
 	switch_core_new_memory_pool(&pool);
 	sendfax_component = switch_core_alloc(pool, sizeof(*sendfax_component));
-	rayo_component_init((struct rayo_component *)sendfax_component, pool, RAT_CALL_COMPONENT, "sendfax", NULL, call, iks_find_attrib(iq, "from"));
+	sendfax_component = FAX_COMPONENT(rayo_component_init((struct rayo_component *)sendfax_component, pool, RAT_CALL_COMPONENT, "sendfax", NULL, call, iks_find_attrib(iq, "from")));
+	if (!sendfax_component) {
+		switch_core_destroy_memory_pool(&pool);
+		return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Failed to create sendfax entity");
+	}
 
 	/* add channel variable so that fax component can be located from fax events */
 	switch_channel_set_variable(channel, "rayo_fax_jid", RAYO_JID(sendfax_component));
@@ -265,7 +269,11 @@ static iks *start_receivefax_component(struct rayo_actor *call, struct rayo_mess
 	/* create receivefax component */
 	switch_core_new_memory_pool(&pool);
 	receivefax_component = switch_core_alloc(pool, sizeof(*receivefax_component));
-	rayo_component_init((struct rayo_component *)receivefax_component, pool, RAT_CALL_COMPONENT, "receivefax", NULL, call, iks_find_attrib(iq, "from"));
+	receivefax_component = RECEIVEFAX_COMPONENT(rayo_component_init((struct rayo_component *)receivefax_component, pool, RAT_CALL_COMPONENT, "receivefax", NULL, call, iks_find_attrib(iq, "from")));
+	if (!receivefax_component) {
+		switch_core_destroy_memory_pool(&pool);
+		return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Failed to create sendfax entity");
+	}
 	file_no = rayo_actor_seq_next(call);
 	receivefax_component->filename = switch_core_sprintf(pool, "%s%s%s-%d.tif",
 		globals.file_prefix, SWITCH_PATH_SEPARATOR, switch_core_session_get_uuid(session), file_no);

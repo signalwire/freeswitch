@@ -285,7 +285,10 @@ iks *rayo_cpa_component_start(struct rayo_actor *call, struct rayo_message *msg,
 	/* create CPA component */
 	switch_core_new_memory_pool(&pool);
 	component = switch_core_alloc(pool, sizeof(*component));
-	rayo_component_init((struct rayo_component *)component, pool, RAT_CALL_COMPONENT, "cpa", NULL, call, iks_find_attrib(iq, "from"));
+	component = CPA_COMPONENT(rayo_component_init((struct rayo_component *)component, pool, RAT_CALL_COMPONENT, "cpa", NULL, call, iks_find_attrib(iq, "from")));
+	if (!component) {
+		return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Failed to create CPA entity");
+	}
 
 	switch_core_hash_init(&component->signals, pool);
 
