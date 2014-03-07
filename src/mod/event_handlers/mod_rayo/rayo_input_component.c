@@ -662,7 +662,11 @@ static iks *start_call_input_component(struct rayo_actor *call, struct rayo_mess
 
 	switch_core_new_memory_pool(&pool);
 	input_component = switch_core_alloc(pool, sizeof(*input_component));
-	rayo_component_init(RAYO_COMPONENT(input_component), pool, RAT_CALL_COMPONENT, "input", component_id, call, iks_find_attrib(iq, "from"));
+	input_component = INPUT_COMPONENT(rayo_component_init(RAYO_COMPONENT(input_component), pool, RAT_CALL_COMPONENT, "input", component_id, call, iks_find_attrib(iq, "from")));
+	if (!input_component) {
+		switch_core_destroy_memory_pool(&pool);
+		return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Failed to create input entity");
+	}
 	return start_call_input(input_component, session, input, iq, NULL, 0);
 }
 

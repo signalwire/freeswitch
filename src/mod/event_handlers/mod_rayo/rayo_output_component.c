@@ -68,7 +68,11 @@ static struct rayo_component *create_output_component(struct rayo_actor *actor, 
 
 	switch_core_new_memory_pool(&pool);
 	output_component = switch_core_alloc(pool, sizeof(*output_component));
-	rayo_component_init((struct rayo_component *)output_component, pool, type, "output", NULL, actor, client_jid);
+	output_component = OUTPUT_COMPONENT(rayo_component_init((struct rayo_component *)output_component, pool, type, "output", NULL, actor, client_jid));
+	if (!output_component) {
+		switch_core_destroy_memory_pool(&pool);
+		return NULL;
+	}
 
 	output_component->document = iks_copy(output);
 	output_component->start_offset_ms = iks_find_int_attrib(output, "start-offset");
@@ -153,6 +157,9 @@ static iks *start_call_output_component(struct rayo_actor *call, struct rayo_mes
 	}
 
 	output_component = create_output_component(call, RAT_CALL_COMPONENT, output, iks_find_attrib(iq, "from"));
+	if (!output_component) {
+		return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Failed to create output entity");
+	}
 	return start_call_output(output_component, session, output, iq);
 }
 
@@ -179,6 +186,9 @@ static iks *start_mixer_output_component(struct rayo_actor *mixer, struct rayo_m
 	}
 
 	component = create_output_component(mixer, RAT_MIXER_COMPONENT, output, iks_find_attrib(iq, "from"));
+	if (!component) {
+		return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Failed to create output entity");
+	}
 
 	/* build conference command */
 	SWITCH_STANDARD_STREAM(stream);
