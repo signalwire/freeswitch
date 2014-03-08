@@ -25,7 +25,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.57)
 
 dnl We don't know the version number "staticly" so we use a dash here
-AC_INIT(curl, [-], [a suitable curl mailing list => http://curl.haxx.se/mail/])
+AC_INIT(curl,7.16.0)
 
 CFLAGS="$CFLAGS $CONFIGURE_CFLAGS"
 CXXFLAGS="$CXXFLAGS $CONFIGURE_CXXFLAGS"
@@ -62,7 +62,6 @@ fi
 
 dnl figure out the libcurl version
 VERSION=`$SED -ne 's/^#define LIBCURL_VERSION "\(.*\)"/\1/p' ${srcdir}/include/curl/curlver.h`
-AC_INIT(curl,7.16.0)
 AM_INIT_AUTOMAKE
 AC_MSG_CHECKING([curl version])
 AC_MSG_RESULT($VERSION)
