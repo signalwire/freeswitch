@@ -220,7 +220,8 @@ library_include_HEADERS = \
 	libs/libtpl-1.5/src/tpl.h \
 	src/include/switch_limit.h \
 	src/include/switch_odbc.h \
-	src/include/switch_pgsql.h
+	src/include/switch_pgsql.h \
+	src/include/switch_hashtable.h
 
 nodist_libfreeswitch_la_SOURCES = \
 	src/include/switch_frame.h \
@@ -287,6 +288,7 @@ libfreeswitch_la_SOURCES = \
 	src/switch_profile.c \
 	src/switch_json.c \
 	src/switch_curl.c \
+	src/switch_hashtable.c\
 	libs/libtpl-1.5/src/tpl.c \
 	libs/stfu/stfu.c \
 	libs/libteletone/src/libteletone_detect.c \
