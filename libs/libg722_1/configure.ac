@@ -18,7 +18,7 @@
 
 # @start 1
 
-AC_INIT([g722_1], [0.2.0]);
+AC_INIT([g722_1], [0.2.0])
 
 m4_include(config/ax_compiler_vendor.m4)
 m4_include(config/ax_check_real_file.m4)
