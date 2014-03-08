@@ -780,11 +780,9 @@ AC_LANG_PROGRAM(
 #ifdef HAVE_WS2TCPIP_H
 #include <ws2tcpip.h>
 #endif
-]])],
-[[
+]],[[
         (void)getaddrinfo(NULL, NULL, NULL, NULL);
-]]
-),
+]])],
 [
 ac_cv_func_getaddrinfo="yes"
 dnl already: LIBS="$LIBS -lws2_32"
