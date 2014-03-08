@@ -279,8 +279,8 @@ static void do_rotate_all()
 	}
 
 	switch_mutex_lock(globals.mutex);
-	for (hi = switch_hash_first(NULL, globals.fd_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &val);
+	for (hi = switch_core_hash_first( globals.fd_hash); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, NULL, NULL, &val);
 		fd = (cdr_fd_t *) val;
 		switch_mutex_lock(fd->mutex);
 		do_rotate(fd);
@@ -296,8 +296,8 @@ static void do_teardown()
 	void *val;
 	cdr_fd_t *fd;
 	switch_mutex_lock(globals.mutex);
-	for (hi = switch_hash_first(NULL, globals.fd_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &val);
+	for (hi = switch_core_hash_first( globals.fd_hash); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, NULL, NULL, &val);
 		fd = (cdr_fd_t *) val;
 		switch_mutex_lock(fd->mutex);
 		if (fd->fd > -1) {
@@ -355,8 +355,8 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	memset(&globals, 0, sizeof(globals));
-	switch_core_hash_init(&globals.fd_hash, pool);
-	switch_core_hash_init(&globals.template_hash, pool);
+	switch_core_hash_init(&globals.fd_hash);
+	switch_core_hash_init(&globals.template_hash);
 
 	globals.pool = pool;
 

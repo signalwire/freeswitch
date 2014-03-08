@@ -387,7 +387,7 @@ static struct srgs_node *sn_insert_string(switch_memory_pool_t *pool, struct srg
 static struct tag_def *add_tag_def(const char *tag, tag_attribs_fn attribs_fn, tag_cdata_fn cdata_fn, const char *children_tags)
 {
 	struct tag_def *def = switch_core_alloc(globals.pool, sizeof(*def));
-	switch_core_hash_init(&def->children_tags, globals.pool);
+	switch_core_hash_init(&def->children_tags);
 	if (!zstr(children_tags)) {
 		char *children_tags_dup = switch_core_strdup(globals.pool, children_tags);
 		char *tags[32] = { 0 };
@@ -821,7 +821,7 @@ struct srgs_grammar *srgs_grammar_new(struct srgs_parser *parser)
 	grammar->root = NULL;
 	grammar->cur = NULL;
 	grammar->uuid = (parser && !zstr(parser->uuid)) ? switch_core_strdup(pool, parser->uuid) : "";
-	switch_core_hash_init(&grammar->rules, pool);
+	switch_core_hash_init(&grammar->rules);
 	switch_mutex_init(&grammar->mutex, SWITCH_MUTEX_NESTED, pool);
 	return grammar;
 }
@@ -856,7 +856,7 @@ struct srgs_parser *srgs_parser_new(const char *uuid)
 		parser = switch_core_alloc(pool, sizeof(*parser));
 		parser->pool = pool;
 		parser->uuid = zstr(uuid) ? "" : switch_core_strdup(pool, uuid);
-		switch_core_hash_init(&parser->cache, pool);
+		switch_core_hash_init(&parser->cache);
 		switch_mutex_init(&parser->mutex, SWITCH_MUTEX_NESTED, pool);
 	}
 	return parser;
@@ -1611,7 +1611,7 @@ int srgs_init(void)
 
 	globals.init = SWITCH_TRUE;
 	switch_core_new_memory_pool(&globals.pool);
-	switch_core_hash_init(&globals.tag_defs, globals.pool);
+	switch_core_hash_init(&globals.tag_defs);
 
 	add_root_tag_def("grammar", process_grammar, process_cdata_bad, "meta,metadata,lexicon,tag,rule");
 	add_tag_def("ruleref", process_ruleref, process_cdata_bad, "");

@@ -900,7 +900,7 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 	}
 
 	/* allocate the dedup hash */
-	if (switch_core_hash_init(&cb_struct->dedup_hash, cb_struct->pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_hash_init(&cb_struct->dedup_hash) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(cb_struct->session), SWITCH_LOG_ERROR, "Error initializing the dedup hash\n");
 		return SWITCH_STATUS_GENERR;
 	}
@@ -1067,7 +1067,7 @@ static switch_status_t lcr_load_config()
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to determine database RANDOM function\n");
 	};
 
-	switch_core_hash_init(&globals.profile_hash, globals.pool);
+	switch_core_hash_init(&globals.profile_hash);
 	if ((x_profiles = switch_xml_child(cfg, "profiles"))) {
 		for (x_profile = switch_xml_child(x_profiles, "profile"); x_profile; x_profile = x_profile->next) {
 			char *name = (char *) switch_xml_attr_soft(x_profile, "name");
@@ -2038,8 +2038,8 @@ SWITCH_STANDARD_API(dialplan_lcr_admin_function)
 		}
 		switch_assert(argv[0]);
 		if (!strcasecmp(argv[0], "show") && !strcasecmp(argv[1], "profiles")) {
-			for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-				switch_hash_this(hi, NULL, NULL, &val);
+			for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+				switch_core_hash_this(hi, NULL, NULL, &val);
 				profile = (profile_t *) val;
 
 				stream->write_function(stream, "Name:\t\t%s\n", profile->name);

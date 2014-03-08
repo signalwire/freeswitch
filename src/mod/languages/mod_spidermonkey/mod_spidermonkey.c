@@ -1040,8 +1040,8 @@ static switch_status_t load_modules(void)
 	memset(&module_manager, 0, sizeof(module_manager));
 	switch_core_new_memory_pool(&module_manager.pool);
 
-	switch_core_hash_init(&module_manager.mod_hash, module_manager.pool);
-	switch_core_hash_init(&module_manager.load_hash, module_manager.pool);
+	switch_core_hash_init(&module_manager.mod_hash);
+	switch_core_hash_init(&module_manager.load_hash);
 
 	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_xml_t mods, ld;

@@ -788,7 +788,7 @@ switch_status_t rtmp_session_request(rtmp_profile_t *profile, rtmp_session_t **n
 	switch_core_hash_insert_wrlock(rtmp_globals.session_hash, (*newsession)->uuid, *newsession, rtmp_globals.session_rwlock);
 	switch_core_hash_insert_wrlock(profile->session_hash, (*newsession)->uuid, *newsession, profile->session_rwlock);
 	
-	switch_core_hash_init(&(*newsession)->session_hash, pool);
+	switch_core_hash_init(&(*newsession)->session_hash);
 	switch_thread_rwlock_create(&(*newsession)->session_rwlock, pool);
 
 #ifdef RTMP_DEBUG_IO
@@ -827,13 +827,13 @@ static void rtmp_garbage_colletor(void)
 
  top:
 
-	for (hi = switch_hash_first(NULL, rtmp_globals.session_hash); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_core_hash_first( rtmp_globals.session_hash); hi; hi = switch_core_hash_next(hi)) {
 		void *val;	
 		const void *key;
 		switch_ssize_t keylen;
 		rtmp_session_t *rsession;
 
-		switch_hash_this(hi, &key, &keylen, &val);
+		switch_core_hash_this(hi, &key, &keylen, &val);
 		rsession = (rtmp_session_t *) val;
 
 		if (rsession->state == RS_DESTROY) {
@@ -868,14 +868,14 @@ switch_status_t rtmp_real_session_destroy(rtmp_session_t **rsession)
 	int sess = 0;
 
 	switch_thread_rwlock_rdlock((*rsession)->session_rwlock);
-	for (hi = switch_hash_first(NULL, (*rsession)->session_hash); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_core_hash_first( (*rsession)->session_hash); hi; hi = switch_core_hash_next(hi)) {
 		void *val;	
 		const void *key;
 		switch_ssize_t keylen;
 		switch_channel_t *channel;
 		switch_core_session_t *session;
 
-		switch_hash_this(hi, &key, &keylen, &val);		
+		switch_core_hash_this(hi, &key, &keylen, &val);		
 		
 		/* If there are any sessions attached, abort the destroy operation */
 		if ((session = switch_core_session_locate((char *)key)) != NULL ) {
@@ -1050,10 +1050,10 @@ switch_status_t rtmp_profile_start(const char *profilename)
 
 	switch_thread_rwlock_create(&profile->rwlock, pool);
 	switch_mutex_init(&profile->mutex, SWITCH_MUTEX_NESTED, pool);
-	switch_core_hash_init(&profile->session_hash, pool);
+	switch_core_hash_init(&profile->session_hash);
 	switch_thread_rwlock_create(&profile->session_rwlock, pool);
 	switch_thread_rwlock_create(&profile->reg_rwlock, pool);
-	switch_core_hash_init(&profile->reg_hash, pool);
+	switch_core_hash_init(&profile->reg_hash);
 	
 	if (!strcmp(profile->io_name, "tcp")) {
 		if (rtmp_tcp_init(profile, profile->bind_address, &profile->io, pool) != SWITCH_STATUS_SUCCESS) {
@@ -1086,12 +1086,12 @@ switch_status_t rtmp_profile_destroy(rtmp_profile_t **profile) {
 	switch_thread_rwlock_wrlock((*profile)->rwlock);
 	
 	/* Kill all sessions */	
-	while ((hi = switch_hash_first(NULL, (*profile)->session_hash))) {
+	while ((hi = switch_core_hash_first( (*profile)->session_hash))) {
 		void *val;
 		rtmp_session_t *session;
 		const void *key;
 		switch_ssize_t keylen;
-		switch_hash_this(hi, &key, &keylen, &val);
+		switch_core_hash_this(hi, &key, &keylen, &val);
 		
 		session = val;				
 			
@@ -1633,12 +1633,12 @@ SWITCH_STANDARD_API(rtmp_function)
 					stream->write_function(stream, "\nSessions:\n");
 					stream->write_function(stream, "uuid,address,user,domain,flashVer,state\n");
 					switch_thread_rwlock_rdlock(profile->session_rwlock);
-					for (hi = switch_hash_first(NULL, profile->session_hash); hi; hi = switch_hash_next(hi)) {
+					for (hi = switch_core_hash_first( profile->session_hash); hi; hi = switch_core_hash_next(hi)) {
 						void *val;	
 						const void *key;
 						switch_ssize_t keylen;
 						rtmp_session_t *item;
-						switch_hash_this(hi, &key, &keylen, &val);
+						switch_core_hash_this(hi, &key, &keylen, &val);
 											
 						item = (rtmp_session_t *)val;
 						stream->write_function(stream, "%s,%s:%d,%s,%s,%s,%s\n", 
@@ -1655,12 +1655,12 @@ SWITCH_STANDARD_API(rtmp_function)
 					stream->write_function(stream, "user,nickname,uuid\n");
 					
 					switch_thread_rwlock_rdlock(profile->reg_rwlock);
-					for (hi = switch_hash_first(NULL, profile->reg_hash); hi; hi = switch_hash_next(hi)) {
+					for (hi = switch_core_hash_first( profile->reg_hash); hi; hi = switch_core_hash_next(hi)) {
 						void *val;	
 						const void *key;
 						switch_ssize_t keylen;
 						rtmp_reg_t *item;
-						switch_hash_this(hi, &key, &keylen, &val);
+						switch_core_hash_this(hi, &key, &keylen, &val);
 											
 						item = (rtmp_reg_t *)val;
 						for (;item;item = item->next) {
@@ -1681,12 +1681,12 @@ SWITCH_STANDARD_API(rtmp_function)
 		} else {
 			switch_hash_index_t *hi;
 			switch_thread_rwlock_rdlock(rtmp_globals.profile_rwlock);
-			for (hi = switch_hash_first(NULL, rtmp_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+			for (hi = switch_core_hash_first( rtmp_globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
 				void *val;	
 				const void *key;
 				switch_ssize_t keylen;
 				rtmp_profile_t *item;
-				switch_hash_this(hi, &key, &keylen, &val);
+				switch_core_hash_this(hi, &key, &keylen, &val);
 									
 				item = (rtmp_profile_t *)val;
 				stream->write_function(stream, "%s\t%s:%s\tprofile\n", item->name, item->io->name, item->io->address);
@@ -1805,8 +1805,8 @@ static switch_status_t console_complete_hashtable(switch_hash_t *hash, const cha
 	switch_console_callback_match_t *my_matches = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	for (hi = switch_hash_first(NULL, hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, &vvar, NULL, &val);
+	for (hi = switch_core_hash_first( hash); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, &vvar, NULL, &val);
 		switch_console_push_match(&my_matches, (const char *) vvar);
 	}
 
@@ -1845,9 +1845,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rtmp_load)
 	memset(&rtmp_globals, 0, sizeof(rtmp_globals));
 
 	switch_mutex_init(&rtmp_globals.mutex, SWITCH_MUTEX_NESTED, pool);
-	switch_core_hash_init(&rtmp_globals.profile_hash, pool);
-	switch_core_hash_init(&rtmp_globals.session_hash, pool);
-	switch_core_hash_init(&rtmp_globals.invoke_hash, pool);
+	switch_core_hash_init(&rtmp_globals.profile_hash);
+	switch_core_hash_init(&rtmp_globals.session_hash);
+	switch_core_hash_init(&rtmp_globals.invoke_hash);
 	switch_thread_rwlock_create(&rtmp_globals.profile_rwlock, pool);
 	switch_thread_rwlock_create(&rtmp_globals.session_rwlock, pool);
 		
@@ -1933,12 +1933,12 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_rtmp_shutdown)
 	switch_hash_index_t *hi;
 
 	switch_mutex_lock(rtmp_globals.mutex);
-	while ((hi = switch_hash_first(NULL, rtmp_globals.profile_hash))) {
+	while ((hi = switch_core_hash_first( rtmp_globals.profile_hash))) {
 		void *val;	
 		const void *key;
 		switch_ssize_t keylen;
 		rtmp_profile_t *item;
-		switch_hash_this(hi, &key, &keylen, &val);
+		switch_core_hash_this(hi, &key, &keylen, &val);
 							
 		item = (rtmp_profile_t *)val;
 		

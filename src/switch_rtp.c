@@ -1356,7 +1356,7 @@ SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 	if (global_init) {
 		return;
 	}
-	switch_core_hash_init(&alloc_hash, pool);
+	switch_core_hash_init(&alloc_hash);
 #ifdef ENABLE_ZRTP
 	if (zrtp_on) {
 		uint32_t cache_len;
@@ -2022,8 +2022,8 @@ SWITCH_DECLARE(void) switch_rtp_shutdown(void)
 
 	switch_mutex_lock(port_lock);
 
-	for (hi = switch_hash_first(NULL, alloc_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, &var, NULL, &val);
+	for (hi = switch_core_hash_first( alloc_hash); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, &var, NULL, &val);
 		if ((alloc = (switch_core_port_allocator_t *) val)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroy port allocator for %s\n", (char *) var);
 			switch_core_port_allocator_destroy(&alloc);

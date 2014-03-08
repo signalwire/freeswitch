@@ -3950,9 +3950,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					}
 
 					profile->dbname = switch_core_strdup(profile->pool, url);
-					switch_core_hash_init(&profile->chat_hash, profile->pool);
-					switch_core_hash_init(&profile->reg_nh_hash, profile->pool);
-					switch_core_hash_init(&profile->mwi_debounce_hash, profile->pool);
+					switch_core_hash_init(&profile->chat_hash);
+					switch_core_hash_init(&profile->reg_nh_hash);
+					switch_core_hash_init(&profile->mwi_debounce_hash);
 					switch_thread_rwlock_create(&profile->rwlock, profile->pool);
 					switch_mutex_init(&profile->flag_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 					profile->dtmf_duration = 100;
@@ -7149,8 +7149,8 @@ nua_handle_t *sofia_global_nua_handle_by_replaces(sip_replaces_t *replaces)
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if (mod_sofia_globals.profile_hash) {
-		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, &var, NULL, &val);
+		for (hi = switch_core_hash_first( mod_sofia_globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+			switch_core_hash_this(hi, &var, NULL, &val);
 			if ((profile = (sofia_profile_t *) val)) {
 				if (!(nh = nua_handle_by_replaces(profile->nua, replaces))) {
 					nh = nua_handle_by_call_id(profile->nua, replaces->rp_call_id);

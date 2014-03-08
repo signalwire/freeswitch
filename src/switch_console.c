@@ -1660,7 +1660,7 @@ static struct {
 SWITCH_DECLARE(switch_status_t) switch_console_init(switch_memory_pool_t *pool)
 {
 	switch_mutex_init(&globals.func_mutex, SWITCH_MUTEX_NESTED, pool);
-	switch_core_hash_init(&globals.func_hash, pool);
+	switch_core_hash_init(&globals.func_hash);
 	switch_console_add_complete_func("::console::list_available_modules", (switch_console_complete_callback_t) switch_console_list_available_modules);
 	switch_console_add_complete_func("::console::list_loaded_modules", (switch_console_complete_callback_t) switch_console_list_loaded_modules);
 	switch_console_add_complete_func("::console::list_interfaces", (switch_console_complete_callback_t) switch_console_list_interfaces);

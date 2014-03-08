@@ -1750,8 +1750,8 @@ struct xmpp_stream_context *xmpp_stream_context_create(const char *domain, const
 	context = switch_core_alloc(pool, sizeof(*context));
 	context->pool = pool;
 	switch_mutex_init(&context->streams_mutex, SWITCH_MUTEX_NESTED, context->pool);
-	switch_core_hash_init(&context->routes, context->pool);
-	switch_core_hash_init(&context->streams, context->pool);
+	switch_core_hash_init(&context->routes);
+	switch_core_hash_init(&context->streams);
 	context->dialback_secret = switch_core_strdup(context->pool, domain_secret);
 	context->ready_callback = ready;
 	context->destroy_callback = destroy;
@@ -1759,7 +1759,7 @@ struct xmpp_stream_context *xmpp_stream_context_create(const char *domain, const
 	context->shutdown = 0;
 	context->domain = switch_core_strdup(context->pool, domain);
 	switch_thread_rwlock_create(&context->shutdown_rwlock, context->pool);
-	switch_core_hash_init(&context->users, context->pool);
+	switch_core_hash_init(&context->users);
 
 	return context;
 }

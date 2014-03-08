@@ -2239,9 +2239,10 @@ typedef switch_xml_t(*switch_xml_search_function_t) (const char *section,
 													 const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params,
 													 void *user_data);
 
-typedef struct switch_hash switch_hash_t;
-struct HashElem;
-typedef struct HashElem switch_hash_index_t;
+struct switch_hashtable;
+struct switch_hashtable_iterator;
+typedef struct switch_hashtable switch_hash_t;
+typedef struct switch_hashtable_iterator switch_hash_index_t;
 
 struct switch_network_list;
 typedef struct switch_network_list switch_network_list_t;

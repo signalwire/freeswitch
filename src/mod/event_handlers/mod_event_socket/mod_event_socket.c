@@ -473,7 +473,7 @@ SWITCH_STANDARD_APP(socket_function)
 	switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 	switch_mutex_init(&listener->filter_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 
-	switch_core_hash_init(&listener->event_hash, listener->pool);
+	switch_core_hash_init(&listener->event_hash);
 	switch_set_flag(listener, LFLAG_AUTHED);
 	switch_set_flag(listener, LFLAG_OUTBOUND);
 	for (x = 1; x < argc; x++) {
@@ -839,7 +839,7 @@ SWITCH_STANDARD_API(event_sink_function)
 		switch_mutex_init(&listener->filter_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 
 
-		switch_core_hash_init(&listener->event_hash, listener->pool);
+		switch_core_hash_init(&listener->event_hash);
 		switch_set_flag(listener, LFLAG_AUTHED);
 		switch_set_flag(listener, LFLAG_STATEFUL);
 		switch_set_flag(listener, LFLAG_ALLOW_LOG);
@@ -1773,7 +1773,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 					switch_snprintf(event_reply, sizeof(event_reply), "Allowed-Events: %s\n", allowed_events);
 
-					switch_core_hash_init(&listener->allowed_event_hash, listener->pool);
+					switch_core_hash_init(&listener->allowed_event_hash);
 
 					edup = strdup(allowed_events);
 					cur = edup;
@@ -1828,7 +1828,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 					switch_snprintf(api_reply, sizeof(api_reply), "Allowed-API: %s\n", allowed_api);
 
-					switch_core_hash_init(&listener->allowed_api_hash, listener->pool);
+					switch_core_hash_init(&listener->allowed_api_hash);
 
 					edup = strdup(allowed_api);
 					cur = edup;
@@ -2522,7 +2522,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			}
 			/* wipe the hash */
 			switch_core_hash_destroy(&listener->event_hash);
-			switch_core_hash_init(&listener->event_hash, listener->pool);
+			switch_core_hash_init(&listener->event_hash);
 			switch_snprintf(reply, reply_len, "+OK no longer listening for events");
 		} else {
 			switch_snprintf(reply, reply_len, "-ERR not listening for events");
@@ -2939,7 +2939,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 		switch_mutex_init(&listener->filter_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 
-		switch_core_hash_init(&listener->event_hash, listener->pool);
+		switch_core_hash_init(&listener->event_hash);
 		switch_socket_create_pollset(&listener->pollfd, listener->sock, SWITCH_POLLIN | SWITCH_POLLERR, listener->pool);
 
 

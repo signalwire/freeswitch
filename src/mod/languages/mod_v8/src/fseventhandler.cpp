@@ -77,7 +77,7 @@ void FSEventHandler::Init()
 	}
 
 	switch_mutex_init(&_mutex, SWITCH_MUTEX_NESTED, _pool);
-	switch_core_hash_init(&_event_hash, _pool);
+	switch_core_hash_init(&_event_hash);
 	switch_queue_create(&_event_queue, MAX_QUEUE_LEN, _pool);
 
 	_filters = NULL;

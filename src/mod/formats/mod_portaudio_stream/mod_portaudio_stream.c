@@ -582,7 +582,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_stream_load)
 	globals.running = 1;
 	globals.threads = 0;
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
-	switch_core_hash_init(&globals.source_hash, module_pool);
+	switch_core_hash_init(&globals.source_hash);
 
 
 	/* indicate that the module should continue to be loaded */

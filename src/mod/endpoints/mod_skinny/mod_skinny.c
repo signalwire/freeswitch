@@ -197,8 +197,8 @@ skinny_profile_t *skinny_find_profile_by_domain(const char *domain_name)
 	skinny_profile_t *profile = NULL, *tmp_profile;
 
 	switch_mutex_lock(globals.mutex);
-	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &val);
+	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, NULL, NULL, &val);
 		tmp_profile = (skinny_profile_t *) val;
 
 		switch_mutex_lock(tmp_profile->listener_mutex);
@@ -1401,8 +1401,8 @@ static void walk_listeners(skinny_listener_callback_func_t callback, void *pvt)
 
 	/* walk listeners */
 	switch_mutex_lock(globals.mutex);
-	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &val);
+	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, NULL, NULL, &val);
 		profile = (skinny_profile_t *) val;
 
 		profile_walk_listeners(profile, callback, pvt);
@@ -2086,7 +2086,7 @@ static switch_status_t load_skinny_config(void)
 				}
 
 				/* Soft Key Set Sets */
-				switch_core_hash_init(&profile->soft_key_set_sets_hash, profile->pool);
+				switch_core_hash_init(&profile->soft_key_set_sets_hash);
 				if ((xsoft_key_set_sets = switch_xml_child(xprofile, "soft-key-set-sets"))) {
 					switch_xml_t xsoft_key_set_set;
 					for (xsoft_key_set_set = switch_xml_child(xsoft_key_set_sets, "soft-key-set-set"); xsoft_key_set_set; xsoft_key_set_set = xsoft_key_set_set->next) {
@@ -2154,7 +2154,7 @@ static switch_status_t load_skinny_config(void)
 
 
 				/* Device types */
-				switch_core_hash_init(&profile->device_type_params_hash, profile->pool);
+				switch_core_hash_init(&profile->device_type_params_hash);
 				if ((xdevice_types = switch_xml_child(xprofile, "device-types"))) {
 					switch_xml_t xdevice_type;
 					for (xdevice_type = switch_xml_child(xdevice_types, "device-type"); xdevice_type; xdevice_type = xdevice_type->next) {
@@ -2441,8 +2441,8 @@ static void skinny_trap_event_handler(switch_event_t *event)
 
 		switch_mutex_lock(globals.mutex);
 		if (globals.profile_hash) {
-			for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-				switch_hash_this(hi, &var, NULL, &val);
+			for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+				switch_core_hash_this(hi, &var, NULL, &val);
 				if ((profile = (skinny_profile_t *) val) && profile->auto_restart) {
 					if (!strcmp(profile->ip, old_ip4)) {
 						skinny_profile_set(profile, "ip", new_ip4);
@@ -2470,14 +2470,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 		return SWITCH_STATUS_TERM;
 	}
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
-	switch_core_hash_init(&globals.profile_hash, globals.pool);
+	switch_core_hash_init(&globals.profile_hash);
 	globals.running = 1;
 	globals.auto_restart = SWITCH_TRUE;
 
 	load_skinny_config();
 
 	/* at least one profile */
-	if (!switch_hash_first(NULL, globals.profile_hash)) {
+	if (!switch_core_hash_first( globals.profile_hash)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No profile found!\n");
 		return SWITCH_STATUS_TERM;
 	}
@@ -2540,11 +2540,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 
 	/* launch listeners */
 	switch_mutex_lock(globals.mutex);
-	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
 		void *val;
 		skinny_profile_t *profile;
 
-		switch_hash_this(hi, NULL, NULL, &val);
+		switch_core_hash_this(hi, NULL, NULL, &val);
 		profile = (skinny_profile_t *) val;
 
 		launch_skinny_profile_thread(profile);
@@ -2587,9 +2587,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 
 	/* close sockets */
 	switch_mutex_lock(globals.mutex);
-	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
 		skinny_profile_t *profile;
-		switch_hash_this(hi, NULL, NULL, &val);
+		switch_core_hash_this(hi, NULL, NULL, &val);
 		profile = (skinny_profile_t *) val;
 
 		close_socket(&profile->sock, profile);

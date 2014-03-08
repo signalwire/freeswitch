@@ -11550,7 +11550,7 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_hash_this(void * jarg1, void * ja
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_switch_hash_first(char * jarg1, void * jarg2) {
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_hash_first(char * jarg1, void * jarg2) {
   void * jresult ;
   char *arg1 = (char *) 0 ;
   switch_hash_t *arg2 = (switch_hash_t *) 0 ;
@@ -11558,25 +11558,25 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_hash_first(char * jarg1, void * jarg
   
   arg1 = (char *)jarg1; 
   arg2 = (switch_hash_t *)jarg2; 
-  result = (switch_hash_index_t *)switch_hash_first(arg1,arg2);
+  result = (switch_hash_index_t *)switch_core_hash_first(arg1,arg2);
   jresult = (void *)result; 
   return jresult;
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_switch_hash_next(void * jarg1) {
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_hash_next(void * jarg1) {
   void * jresult ;
   switch_hash_index_t *arg1 = (switch_hash_index_t *) 0 ;
   switch_hash_index_t *result = 0 ;
   
   arg1 = (switch_hash_index_t *)jarg1; 
-  result = (switch_hash_index_t *)switch_hash_next(arg1);
+  result = (switch_hash_index_t *)switch_core_hash_next(arg1);
   jresult = (void *)result; 
   return jresult;
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_hash_this(void * jarg1, void * jarg2, void * jarg3, void * jarg4) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_hash_this(void * jarg1, void * jarg2, void * jarg3, void * jarg4) {
   switch_hash_index_t *arg1 = (switch_hash_index_t *) 0 ;
   void **arg2 = (void **) 0 ;
   switch_ssize_t *arg3 = (switch_ssize_t *) 0 ;
@@ -11586,7 +11586,7 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_hash_this(void * jarg1, void * jarg2, 
   arg2 = (void **)jarg2; 
   arg3 = (switch_ssize_t *)jarg3; 
   arg4 = (void **)jarg4; 
-  switch_hash_this(arg1,(void const **)arg2,arg3,arg4);
+  switch_core_hash_this(arg1,(void const **)arg2,arg3,arg4);
 }
 
 

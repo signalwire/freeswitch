@@ -538,8 +538,8 @@ static switch_status_t profile_create(profile_t ** profile, const char *name, sw
 		lprofile->gsl_mime_type = "application/x-nuance-gsl";
 		lprofile->jsgf_mime_type = "application/x-jsgf";
 		lprofile->ssml_mime_type = "application/ssml+xml";
-		switch_core_hash_init(&lprofile->default_synth_params, pool);
-		switch_core_hash_init(&lprofile->default_recog_params, pool);
+		switch_core_hash_init(&lprofile->default_synth_params);
+		switch_core_hash_init(&lprofile->default_recog_params);
 		*profile = lprofile;
 
 		if (globals.enable_profile_events && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_PROFILE_CREATE) == SWITCH_STATUS_SUCCESS) {
@@ -873,7 +873,7 @@ static switch_status_t speech_channel_create(speech_channel_t ** schannel, const
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
-	switch_core_hash_init(&schan->params, pool);
+	switch_core_hash_init(&schan->params);
 	schan->data = NULL;
 	if (zstr(name)) {
 		schan->name = "";
@@ -1155,11 +1155,11 @@ static switch_status_t synth_channel_set_params(speech_channel_t *schannel, mrcp
 {
 	/* loop through each param and add to synth header or vendor-specific-params */
 	switch_hash_index_t *hi = NULL;
-	for (hi = switch_hash_first(NULL, schannel->params); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_core_hash_first( schannel->params); hi; hi = switch_core_hash_next(hi)) {
 		char *param_name = NULL, *param_val = NULL;
 		const void *key;
 		void *val;
-		switch_hash_this(hi, &key, NULL, &val);
+		switch_core_hash_this(hi, &key, NULL, &val);
 		param_name = (char *) key;
 		param_val = (char *) val;
 		if (!zstr(param_name) && !zstr(param_val)) {
@@ -1630,11 +1630,11 @@ static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char 
 	}
 
 	/* Set default TTS params */
-	for (hi = switch_hash_first(NULL, profile->default_synth_params); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_core_hash_first( profile->default_synth_params); hi; hi = switch_core_hash_next(hi)) {
 		char *param_name = NULL, *param_val = NULL;
 		const void *key;
 		void *val;
-		switch_hash_this(hi, &key, NULL, &val);
+		switch_core_hash_this(hi, &key, NULL, &val);
 		param_name = (char *) key;
 		param_val = (char *) val;
 		speech_channel_set_param(schannel, param_name, param_val);
@@ -2192,12 +2192,12 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel)
 	r->timers_started = zstr(start_input_timers) || strcasecmp(start_input_timers, "false");
 
 	/* count enabled grammars */
-	for (egk = switch_hash_first(NULL, r->enabled_grammars); egk; egk = switch_hash_next(egk)) {
+	for (egk = switch_core_hash_first( r->enabled_grammars); egk; egk = switch_core_hash_next(egk)) {
 		// NOTE: This postponed type check is necessary to allow a non-URI-list grammar to execute alone
 		if (grammar_uri_count == 1 && grammar->type != GRAMMAR_TYPE_URI)
 			goto no_grammar_alone;
 		++grammar_uri_count;
-		switch_hash_this(egk, (void *) &key, NULL, (void *) &grammar);
+		switch_core_hash_this(egk, (void *) &key, NULL, (void *) &grammar);
 		if (grammar->type != GRAMMAR_TYPE_URI && grammar_uri_count != 1) {
 		      no_grammar_alone:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Grammar '%s' can only be used alone (not a URI list)\n", schannel->name, key);
@@ -2224,8 +2224,8 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel)
 		/* get the enabled grammars list */
 		grammar_uri_list = switch_core_alloc(schannel->memory_pool, grammar_uri_list_len + 1);
 		grammar_uri_list_len = 0;
-		for (egk = switch_hash_first(NULL, r->enabled_grammars); egk; egk = switch_hash_next(egk)) {
-			switch_hash_this(egk, (void *) &key, NULL, (void *) &grammar);
+		for (egk = switch_core_hash_first( r->enabled_grammars); egk; egk = switch_core_hash_next(egk)) {
+			switch_core_hash_this(egk, (void *) &key, NULL, (void *) &grammar);
 			len = strlen(grammar->data);
 			if (!len)
 				continue;
@@ -2497,7 +2497,7 @@ static switch_status_t recog_channel_disable_all_grammars(speech_channel_t *scha
 	recognizer_data_t *r = (recognizer_data_t *) schannel->data;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Disabling all grammars\n", schannel->name);
 	switch_core_hash_destroy(&r->enabled_grammars);
-	switch_core_hash_init(&r->enabled_grammars, schannel->memory_pool);
+	switch_core_hash_init(&r->enabled_grammars);
 
 	return status;
 }
@@ -2807,11 +2807,11 @@ static switch_status_t recog_channel_set_params(speech_channel_t *schannel, mrcp
 {
 	/* loop through each param and add to recog header or vendor-specific-params */
 	switch_hash_index_t *hi = NULL;
-	for (hi = switch_hash_first(NULL, schannel->params); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_core_hash_first( schannel->params); hi; hi = switch_core_hash_next(hi)) {
 		char *param_name = NULL, *param_val = NULL;
 		const void *key;
 		void *val;
-		switch_hash_this(hi, &key, NULL, &val);
+		switch_core_hash_this(hi, &key, NULL, &val);
 		param_name = (char *) key;
 		param_val = (char *) val;
 		if (!zstr(param_name) && !zstr(param_val)) {
@@ -3111,8 +3111,8 @@ static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec
 	r = (recognizer_data_t *) switch_core_alloc(ah->memory_pool, sizeof(recognizer_data_t));
 	schannel->data = r;
 	memset(r, 0, sizeof(recognizer_data_t));
-	switch_core_hash_init(&r->grammars, ah->memory_pool);
-	switch_core_hash_init(&r->enabled_grammars, ah->memory_pool);
+	switch_core_hash_init(&r->grammars);
+	switch_core_hash_init(&r->enabled_grammars);
 
 	/* Open the channel */
 	if (zstr(profile_name)) {
@@ -3129,11 +3129,11 @@ static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec
 	}
 
 	/* Set default ASR params */
-	for (hi = switch_hash_first(NULL, profile->default_recog_params); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_core_hash_first( profile->default_recog_params); hi; hi = switch_core_hash_next(hi)) {
 		char *param_name = NULL, *param_val = NULL;
 		const void *key;
 		void *val;
-		switch_hash_this(hi, &key, NULL, &val);
+		switch_core_hash_this(hi, &key, NULL, &val);
 		param_name = (char *) key;
 		param_val = (char *) val;
 		speech_channel_set_param(schannel, param_name, param_val);

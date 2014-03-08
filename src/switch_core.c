@@ -1022,7 +1022,7 @@ SWITCH_DECLARE(const char *) switch_core_mime_ext2type(const char *ext)
 
 SWITCH_DECLARE(switch_hash_index_t *) switch_core_mime_index(void)
 {
-	return switch_hash_first(NULL, runtime.mime_types);
+	return switch_core_hash_first( runtime.mime_types);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_mime_add_type(const char *type, const char *ext)
@@ -1250,7 +1250,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 
 	memset(&IP_LIST, 0, sizeof(IP_LIST));
 	switch_core_new_memory_pool(&IP_LIST.pool);
-	switch_core_hash_init(&IP_LIST.hash, IP_LIST.pool);
+	switch_core_hash_init(&IP_LIST.hash);
 
 
 	tmp_name = "rfc1918.auto";
@@ -1646,8 +1646,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_core_set_globals();
 	switch_core_session_init(runtime.memory_pool);
 	switch_event_create_plain(&runtime.global_vars, SWITCH_EVENT_CHANNEL_DATA);
-	switch_core_hash_init(&runtime.mime_types, runtime.memory_pool);
-	switch_core_hash_init_case(&runtime.ptimes, runtime.memory_pool, SWITCH_FALSE);
+	switch_core_hash_init(&runtime.mime_types);
+	switch_core_hash_init_case(&runtime.ptimes, SWITCH_FALSE);
 	load_mime_types();
 	runtime.flags |= flags;
 	runtime.sps_total = 30;

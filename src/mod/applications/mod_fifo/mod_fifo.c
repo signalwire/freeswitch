@@ -660,7 +660,7 @@ static void fifo_init_use_count(void)
 	if (globals.use_hash) {
 		switch_core_hash_destroy(&globals.use_hash);
 	}
-	switch_core_hash_init(&globals.use_hash, globals.pool);
+	switch_core_hash_init(&globals.use_hash);
 	switch_mutex_unlock(globals.use_mutex);
 }
 
@@ -935,7 +935,7 @@ static fifo_node_t *create_node(const char *name, uint32_t importance, switch_mu
 		switch_assert(node->fifo_list[x]);
 	}
 
-	switch_core_hash_init(&node->consumer_hash, node->pool);
+	switch_core_hash_init(&node->consumer_hash);
 	switch_thread_rwlock_create(&node->rwlock, node->pool);
 	switch_mutex_init(&node->mutex, SWITCH_MUTEX_NESTED, node->pool);
 	switch_mutex_init(&node->update_mutex, SWITCH_MUTEX_NESTED, node->pool);
@@ -975,8 +975,8 @@ static int node_idle_consumers(fifo_node_t *node)
 	int total = 0;
 
 	switch_mutex_lock(node->mutex);
-	for (hi = switch_hash_first(NULL, node->consumer_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, &var, NULL, &val);
+	for (hi = switch_core_hash_first( node->consumer_hash); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, &var, NULL, &val);
 		session = (switch_core_session_t *) val;
 		channel = switch_core_session_get_channel(session);
 		if (!switch_channel_test_flag(channel, CF_BRIDGED)) {
@@ -3802,14 +3802,14 @@ static int xml_hash(switch_xml_t xml, switch_hash_t *hash, char *container, char
 	x_tmp = switch_xml_add_child_d(xml, container, cc_off++);
 	switch_assert(x_tmp);
 
-	for (hi = switch_hash_first(NULL, hash); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_core_hash_first( hash); hi; hi = switch_core_hash_next(hi)) {
 		int c_off = 0, d_off = 0;
 		const char *status;
 		const char *ts;
 		char url_buf[512] = "";
 		char *encoded;
 
-		switch_hash_this(hi, &var, NULL, &val);
+		switch_core_hash_this(hi, &var, NULL, &val);
 		session = (switch_core_session_t *) val;
 		channel = switch_core_session_get_channel(session);
 		x_caller = switch_xml_add_child_d(x_tmp, tag, c_off++);
@@ -3987,8 +3987,8 @@ void dump_hash(switch_hash_t *hash, switch_stream_handle_t *stream)
 	const void *var;
 
 	switch_mutex_lock(globals.mutex);
-	for (hi = switch_hash_first(NULL, hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, &var, NULL, &val);
+	for (hi = switch_core_hash_first( hash); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, &var, NULL, &val);
 		stream->write_function(stream, "  %s\n", (char *)var);
 	}
 	switch_mutex_unlock(globals.mutex);
@@ -4002,8 +4002,8 @@ void node_dump(switch_stream_handle_t *stream)
 	fifo_node_t *node;
 	void *val;
 	switch_mutex_lock(globals.mutex);
-	for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &val);
+	for (hi = switch_core_hash_first( globals.fifo_hash); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, NULL, NULL, &val);
 		if ((node = (fifo_node_t *) val)) {
 			stream->write_function(stream, "node: %s\n"
 								   " outbound_name: %s\n"
@@ -4100,8 +4100,8 @@ SWITCH_STANDARD_API(fifo_api_function)
 		switch_assert(x_report);
 
 		if (argc < 2) {
-			for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_next(hi)) {
-				switch_hash_this(hi, &var, NULL, &val);
+			for (hi = switch_core_hash_first( globals.fifo_hash); hi; hi = switch_core_hash_next(hi)) {
+				switch_core_hash_this(hi, &var, NULL, &val);
 				node = (fifo_node_t *) val;
 
 				switch_mutex_lock(node->mutex);
@@ -4137,8 +4137,8 @@ SWITCH_STANDARD_API(fifo_api_function)
 		}
 	} else if (!strcasecmp(argv[0], "count")) {
 		if (argc < 2) {
-			for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_next(hi)) {
-				switch_hash_this(hi, &var, NULL, &val);
+			for (hi = switch_core_hash_first( globals.fifo_hash); hi; hi = switch_core_hash_next(hi)) {
+				switch_core_hash_this(hi, &var, NULL, &val);
 				node = (fifo_node_t *) val;
 				switch_mutex_lock(node->update_mutex);
 				stream->write_function(stream, "%s:%d:%d:%d:%d:%d\n", (char *) var, node->consumer_count, node_caller_count(node), node->member_count, node->ring_consumer_count, node_idle_consumers(node));
@@ -4158,8 +4158,8 @@ SWITCH_STANDARD_API(fifo_api_function)
 		}
 	} else if (!strcasecmp(argv[0], "has_outbound")) {
 		if (argc < 2) {
-			for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_next(hi)) {
-				switch_hash_this(hi, &var, NULL, &val);
+			for (hi = switch_core_hash_first( globals.fifo_hash); hi; hi = switch_core_hash_next(hi)) {
+				switch_core_hash_this(hi, &var, NULL, &val);
 				node = (fifo_node_t *) val;
 				switch_mutex_lock(node->update_mutex);
 				stream->write_function(stream, "%s:%d\n", (char *) var, node->has_outbound);
@@ -4359,8 +4359,8 @@ static switch_status_t load_config(int reload, int del_all)
 		fifo_node_t *node;
 		void *val;
 		switch_mutex_lock(globals.mutex);
-		for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, NULL, NULL, &val);
+		for (hi = switch_core_hash_first( globals.fifo_hash); hi; hi = switch_core_hash_next(hi)) {
+			switch_core_hash_this(hi, NULL, NULL, &val);
 			if ((node = (fifo_node_t *) val) && node->is_static && node->ready == 1) {
 				node->ready = -1;
 			}
@@ -4775,12 +4775,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fifo_load)
 	}
 
 	globals.pool = pool;
-	switch_core_hash_init(&globals.fifo_hash, globals.pool);
+	switch_core_hash_init(&globals.fifo_hash);
 
-	switch_core_hash_init(&globals.caller_orig_hash, globals.pool);
-	switch_core_hash_init(&globals.consumer_orig_hash, globals.pool);
-	switch_core_hash_init(&globals.bridge_hash, globals.pool);
-	switch_core_hash_init(&globals.use_hash, globals.pool);
+	switch_core_hash_init(&globals.caller_orig_hash);
+	switch_core_hash_init(&globals.consumer_orig_hash);
+	switch_core_hash_init(&globals.bridge_hash);
+	switch_core_hash_init(&globals.use_hash);
 	switch_mutex_init(&globals.caller_orig_mutex, SWITCH_MUTEX_NESTED, globals.pool);
 	switch_mutex_init(&globals.consumer_orig_mutex, SWITCH_MUTEX_NESTED, globals.pool);
 	switch_mutex_init(&globals.bridge_mutex, SWITCH_MUTEX_NESTED, globals.pool);

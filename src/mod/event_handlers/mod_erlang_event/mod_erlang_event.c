@@ -364,8 +364,8 @@ session_elem_t *find_session_elem_by_pid(listener_t *listener, erlang_pid *pid)
 	session_elem_t *session = NULL;
 
 	switch_thread_rwlock_rdlock(listener->session_rwlock);
-	for (iter = switch_hash_first(NULL, listener->sessions); iter; iter = switch_hash_next(iter)) {
-		switch_hash_this(iter, &key, NULL, &val);
+	for (iter = switch_core_hash_first( listener->sessions); iter; iter = switch_core_hash_next(iter)) {
+		switch_core_hash_this(iter, &key, NULL, &val);
 		
 		if (((session_elem_t*)val)->process.type == ERLANG_PID && !ei_compare_pids(pid, &((session_elem_t*)val)->process.pid)) {
 			session = (session_elem_t*)val;
@@ -644,8 +644,8 @@ static switch_status_t check_attached_sessions(listener_t *listener, int *msgs_s
 
 	/* TODO try to minimize critical section */
 	switch_thread_rwlock_rdlock(listener->session_rwlock);
-	for (iter = switch_hash_first(NULL, listener->sessions); iter; iter = switch_hash_next(iter)) {
-		switch_hash_this(iter, &key, NULL, &value);
+	for (iter = switch_core_hash_first( listener->sessions); iter; iter = switch_core_hash_next(iter)) {
+		switch_core_hash_this(iter, &key, NULL, &value);
 		sp = (session_elem_t*)value;
 		if (switch_test_flag(sp, LFLAG_WAITING_FOR_PID)) {
 			continue;
@@ -1270,8 +1270,8 @@ static listener_t *new_listener(struct ei_cnode_s *ec, int clientfd)
 	switch_thread_rwlock_create(&listener->event_rwlock, pool);
 	switch_thread_rwlock_create(&listener->session_rwlock, listener->pool);
 
-	switch_core_hash_init(&listener->event_hash, listener->pool);
-	switch_core_hash_init(&listener->sessions, listener->pool);
+	switch_core_hash_init(&listener->event_hash);
+	switch_core_hash_init(&listener->sessions);
 
 	return listener;
 }
@@ -1326,8 +1326,8 @@ void destroy_listener(listener_t * listener)
 
 	/* clean up all the attached sessions */
 	switch_thread_rwlock_wrlock(listener->session_rwlock);
-	for (iter = switch_hash_first(NULL, listener->sessions); iter; iter = switch_hash_next(iter)) {
-		switch_hash_this(iter, &key, NULL, &value);
+	for (iter = switch_core_hash_first( listener->sessions); iter; iter = switch_core_hash_next(iter)) {
+		switch_core_hash_this(iter, &key, NULL, &value);
 		s = (session_elem_t*)value;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Orphaning call %s\n", s->uuid_str);
 		destroy_session_elem(s);
@@ -1383,7 +1383,7 @@ session_elem_t *session_elem_create(listener_t *listener, switch_core_session_t 
 
 	switch_queue_create(&session_element->event_queue, SWITCH_CORE_QUEUE_LEN, session_element->pool);
 	switch_mutex_init(&session_element->flag_mutex, SWITCH_MUTEX_NESTED, session_element->pool);
-	switch_core_hash_init(&session_element->event_hash, session_element->pool);
+	switch_core_hash_init(&session_element->event_hash);
 	session_element->spawn_reply = NULL;
 
 	for (x = 0; x <= SWITCH_EVENT_ALL; x++) {
@@ -1522,7 +1522,7 @@ int count_listener_sessions(listener_t *listener)
 	switch_hash_index_t *iter;
 
 	switch_thread_rwlock_rdlock(listener->session_rwlock);
-	for (iter = switch_hash_first(NULL, listener->sessions); iter; iter = switch_hash_next(iter)) {
+	for (iter = switch_core_hash_first( listener->sessions); iter; iter = switch_core_hash_next(iter)) {
 		count++;
 	}
 	switch_thread_rwlock_unlock(listener->session_rwlock);
@@ -1743,9 +1743,9 @@ SWITCH_STANDARD_API(erlang_cmd)
 
 				found = 1;
 				switch_thread_rwlock_rdlock(l->session_rwlock);
-				for (iter = switch_hash_first(NULL, l->sessions); iter; iter = switch_hash_next(iter)) {
+				for (iter = switch_core_hash_first( l->sessions); iter; iter = switch_core_hash_next(iter)) {
 					empty = 0;
-					switch_hash_this(iter, &key, NULL, &value);
+					switch_core_hash_this(iter, &key, NULL, &value);
 					sp = (session_elem_t*)value;
 					stream->write_function(stream, "Outbound session for %s in state %s\n", sp->uuid_str,
 							switch_channel_state_name(sp->channel_state));
@@ -1784,8 +1784,8 @@ SWITCH_STANDARD_API(erlang_cmd)
 					}
 					stream->write_function(stream, "CUSTOM:\n", switch_event_name(x));
 
-					for (iter = switch_hash_first(NULL, l->event_hash); iter; iter = switch_hash_next(iter)) {
-						switch_hash_this(iter, &key, NULL, &val);
+					for (iter = switch_core_hash_first( l->event_hash); iter; iter = switch_core_hash_next(iter)) {
+						switch_core_hash_this(iter, &key, NULL, &val);
 						stream->write_function(stream, "\t%s\n", (char *)key);
 					}
 					stream->write_function(stream, "\n", (char *)key);
@@ -1863,7 +1863,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_erlang_event_load)
 	switch_thread_rwlock_create(&globals.bindings_rwlock, pool);
 	switch_mutex_init(&globals.fetch_reply_mutex, SWITCH_MUTEX_DEFAULT, pool);
 	switch_mutex_init(&globals.listener_count_mutex, SWITCH_MUTEX_UNNESTED, pool);
-	switch_core_hash_init(&globals.fetch_reply_hash, pool);
+	switch_core_hash_init(&globals.fetch_reply_hash);
 
 	/* intialize the unique reference stuff */
 	switch_mutex_init(&globals.ref_mutex, SWITCH_MUTEX_NESTED, pool);

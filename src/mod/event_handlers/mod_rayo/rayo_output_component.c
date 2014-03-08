@@ -1204,7 +1204,7 @@ switch_status_t rayo_output_component_load(switch_loadable_module_interface_t **
 	file_interface->file_seek = rayo_file_seek;
 
 	switch_mutex_init(&fileman_globals.mutex, SWITCH_MUTEX_NESTED, pool);
-	switch_core_hash_init(&fileman_globals.hash, pool);
+	switch_core_hash_init(&fileman_globals.hash);
 
 	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
 	file_interface->interface_name = "mod_rayo";

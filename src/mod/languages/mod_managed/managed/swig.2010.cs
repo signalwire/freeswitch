@@ -2147,20 +2147,20 @@ public class freeswitch {
     freeswitchPINVOKE.switch_core_hash_this(SWIGTYPE_p_HashElem.getCPtr(hi), SWIGTYPE_p_p_void.getCPtr(key), SWIGTYPE_p_switch_ssize_t.getCPtr(klen), SWIGTYPE_p_p_void.getCPtr(val));
   }
 
-  public static SWIGTYPE_p_HashElem switch_hash_first(string deprecate_me, SWIGTYPE_p_switch_hash hash) {
-    IntPtr cPtr = freeswitchPINVOKE.switch_hash_first(deprecate_me, SWIGTYPE_p_switch_hash.getCPtr(hash));
+  public static SWIGTYPE_p_HashElem switch_core_hash_first(string deprecate_me, SWIGTYPE_p_switch_hash hash) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_core_hash_first(deprecate_me, SWIGTYPE_p_switch_hash.getCPtr(hash));
     SWIGTYPE_p_HashElem ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_HashElem(cPtr, false);
     return ret;
   }
 
-  public static SWIGTYPE_p_HashElem switch_hash_next(SWIGTYPE_p_HashElem hi) {
-    IntPtr cPtr = freeswitchPINVOKE.switch_hash_next(SWIGTYPE_p_HashElem.getCPtr(hi));
+  public static SWIGTYPE_p_HashElem switch_core_hash_next(SWIGTYPE_p_HashElem hi) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_core_hash_next(SWIGTYPE_p_HashElem.getCPtr(hi));
     SWIGTYPE_p_HashElem ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_HashElem(cPtr, false);
     return ret;
   }
 
-  public static void switch_hash_this(SWIGTYPE_p_HashElem hi, SWIGTYPE_p_p_void key, SWIGTYPE_p_switch_ssize_t klen, SWIGTYPE_p_p_void val) {
-    freeswitchPINVOKE.switch_hash_this(SWIGTYPE_p_HashElem.getCPtr(hi), SWIGTYPE_p_p_void.getCPtr(key), SWIGTYPE_p_switch_ssize_t.getCPtr(klen), SWIGTYPE_p_p_void.getCPtr(val));
+  public static void switch_core_hash_this(SWIGTYPE_p_HashElem hi, SWIGTYPE_p_p_void key, SWIGTYPE_p_switch_ssize_t klen, SWIGTYPE_p_p_void val) {
+    freeswitchPINVOKE.switch_core_hash_this(SWIGTYPE_p_HashElem.getCPtr(hi), SWIGTYPE_p_p_void.getCPtr(key), SWIGTYPE_p_switch_ssize_t.getCPtr(klen), SWIGTYPE_p_p_void.getCPtr(val));
   }
 
   public static switch_status_t switch_core_timer_init(switch_timer timer, string timer_name, int interval, int samples, SWIGTYPE_p_apr_pool_t pool) {
@@ -10171,14 +10171,14 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_hash_this")]
   public static extern void switch_core_hash_this(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_hash_first")]
-  public static extern IntPtr switch_hash_first(string jarg1, HandleRef jarg2);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_hash_first")]
+  public static extern IntPtr switch_core_hash_first(string jarg1, HandleRef jarg2);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_hash_next")]
-  public static extern IntPtr switch_hash_next(HandleRef jarg1);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_hash_next")]
+  public static extern IntPtr switch_core_hash_next(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_hash_this")]
-  public static extern void switch_hash_this(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_hash_this")]
+  public static extern void switch_core_hash_this(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_timer_init")]
   public static extern int switch_core_timer_init(HandleRef jarg1, string jarg2, int jarg3, int jarg4, HandleRef jarg5);

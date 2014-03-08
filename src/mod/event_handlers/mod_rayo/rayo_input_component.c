@@ -564,7 +564,7 @@ static iks *start_call_input(struct input_component *component, switch_core_sess
 		/* create input component */
 		handler = switch_core_session_alloc(session, sizeof(*handler));
 		switch_mutex_init(&handler->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
-		switch_core_hash_init(&handler->dtmf_components, NULL);
+		switch_core_hash_init(&handler->dtmf_components);
 		switch_channel_set_private(switch_core_session_get_channel(session), RAYO_INPUT_COMPONENT_PRIVATE_VAR, handler);
 		handler->last_recognizer = "";
 

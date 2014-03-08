@@ -569,8 +569,8 @@ static void pres_event_handler(switch_event_t *event)
 		switch_mprintf("select sub_from, sub_to,'%q','%q','%q','%q' from jabber_subscriptions where sub_to = '%q%q'", type, rpid, status, proto, pstr,
 					   from);
 
-	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &val);
+	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, NULL, NULL, &val);
 		profile = (mdl_profile_t *) val;
 
 		if (!(profile->user_flags & LDL_FLAG_COMPONENT)) {
@@ -701,8 +701,8 @@ static void roster_event_handler(switch_event_t *event)
 		sql = switch_mprintf("select *,'%q' from jabber_subscriptions", status ? status : "");
 	}
 
-	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &val);
+	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, NULL, NULL, &val);
 		profile = (mdl_profile_t *) val;
 
 		if (!(profile->user_flags & LDL_FLAG_COMPONENT)) {
@@ -738,8 +738,8 @@ static void ipchanged_event_handler(switch_event_t *event)
 		mdl_profile_t *profile;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "IP change detected [%s]->[%s]\n", old_ip4, new_ip4);
 		if (globals.profile_hash) {
-			for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-				switch_hash_this(hi, NULL, NULL, &val);
+			for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+				switch_core_hash_this(hi, NULL, NULL, &val);
 				profile = (mdl_profile_t *) val;
 				if (old_ip4 && profile->extip && !strcmp(profile->extip, old_ip4)) {
 					tmp = profile->extip;
@@ -799,8 +799,8 @@ static void sign_off(void)
 	sql = switch_mprintf("select * from jabber_subscriptions");
 
 
-	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &val);
+	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, NULL, NULL, &val);
 		profile = (mdl_profile_t *) val;
 
 		if (!(profile->user_flags & LDL_FLAG_COMPONENT)) {
@@ -2684,8 +2684,8 @@ static switch_status_t list_profiles(const char *line, const char *cursor, switc
 	switch_console_callback_match_t *my_matches = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, &vvar, NULL, &val);
+	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, &vvar, NULL, &val);
 		profile = (mdl_profile_t *) val;
 		if (!strncmp("dl_logout", line, 9)) {
 			if (profile->handle) {
@@ -3090,8 +3090,8 @@ SWITCH_STANDARD_API(dingaling)
 	if (argv[0] && !strncasecmp(argv[0], "status", 6)) {
 		stream->write_function(stream, "--DingaLing status--\n");
 		stream->write_function(stream, "login	|	connected\n");
-		for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, NULL, NULL, &val);
+		for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+			switch_core_hash_this(hi, NULL, NULL, &val);
 			profile = (mdl_profile_t *) val;
 			stream->write_function(stream, "%s	|	", profile->login);
 			if (profile->handle && ldl_handle_authorized(profile->handle)) {
@@ -3276,7 +3276,7 @@ static switch_status_t soft_reload(void)
 	void *data = NULL;
 	switch_hash_t *name_hash;
 	switch_hash_index_t *hi;
-	switch_core_hash_init(&name_hash, module_pool);
+	switch_core_hash_init(&name_hash);
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
@@ -3345,8 +3345,8 @@ static switch_status_t soft_reload(void)
 
 	switch_xml_free(xml);
 
-	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &data);
+	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, NULL, NULL, &data);
 		profile = (mdl_profile_t *) data;
 
 		if (switch_core_hash_find(name_hash, profile->name)) {
@@ -3356,8 +3356,8 @@ static switch_status_t soft_reload(void)
 		}
 	}
 
-	for (hi = switch_hash_first(NULL, name_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &data);
+	for (hi = switch_core_hash_first( name_hash); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, NULL, NULL, &data);
 
 		if ((profile = switch_core_hash_find(globals.profile_hash, (char *) data))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleting unused profile %s [%s]\n", profile->name, profile->login);
@@ -3382,7 +3382,7 @@ static switch_status_t load_config(void)
 
 	switch_find_local_ip(globals.guess_ip, sizeof(globals.guess_ip), NULL, AF_INET);
 
-	switch_core_hash_init(&globals.profile_hash, module_pool);
+	switch_core_hash_init(&globals.profile_hash);
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);

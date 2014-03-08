@@ -34,50 +34,27 @@
 
 #include <switch.h>
 #include "private/switch_core_pvt.h"
-#include <sqlite3.h>
-#include "../../../libs/sqlite/src/hash.h"
+#include "private/switch_hashtable_private.h"
 
-struct switch_hash {
-	Hash table;
-	switch_memory_pool_t *pool;
-};
-
-SWITCH_DECLARE(switch_status_t) switch_core_hash_init_case(switch_hash_t **hash, switch_memory_pool_t *pool, switch_bool_t case_sensitive)
+SWITCH_DECLARE(switch_status_t) switch_core_hash_init_case(switch_hash_t **hash, switch_bool_t case_sensitive)
 {
-	switch_hash_t *newhash;
-
-	if (pool) {
-		newhash = switch_core_alloc(pool, sizeof(*newhash));
-		newhash->pool = pool;
-	} else {
-		switch_zmalloc(newhash, sizeof(*newhash));
-	}
-
-	switch_assert(newhash);
-
-	sqlite3HashInit(&newhash->table, case_sensitive ? SQLITE_HASH_BINARY : SQLITE_HASH_STRING, 1);
-	*hash = newhash;
-
-	return SWITCH_STATUS_SUCCESS;
+	return switch_create_hashtable(hash, 16, case_sensitive ? switch_hash_default : switch_hash_default_ci, switch_hash_equalkeys);
 }
+
 
 SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(switch_hash_t **hash)
 {
 	switch_assert(hash != NULL && *hash != NULL);
-	sqlite3HashClear(&(*hash)->table);
 
-	if (!(*hash)->pool) {
-		free(*hash);
-	}
-
-	*hash = NULL;
+	switch_hashtable_destroy(hash);
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_hash_insert(switch_hash_t *hash, const char *key, const void *data)
 {
-	sqlite3HashInsert(&hash->table, key, (int) strlen(key) + 1, (void *) data);
+	switch_hashtable_insert(hash, strdup(key), (void *)data, HASHTABLE_FLAG_FREE_KEY);
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -87,7 +64,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_locked(switch_hash_t *ha
 		switch_mutex_lock(mutex);
 	}
 
-	sqlite3HashInsert(&hash->table, key, (int) strlen(key) + 1, (void *) data);
+	switch_core_hash_insert(hash, key, data);
 
 	if (mutex) {
 		switch_mutex_unlock(mutex);
@@ -102,7 +79,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_wrlock(switch_hash_t *ha
 		switch_thread_rwlock_wrlock(rwlock);
 	}
 
-	sqlite3HashInsert(&hash->table, key, (int) strlen(key) + 1, (void *) data);
+	switch_core_hash_insert(hash, key, data);
 
 	if (rwlock) {
 		switch_thread_rwlock_unlock(rwlock);
@@ -113,7 +90,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_wrlock(switch_hash_t *ha
 
 SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(switch_hash_t *hash, const char *key)
 {
-	sqlite3HashInsert(&hash->table, key, (int) strlen(key) + 1, NULL);
+	switch_hashtable_remove(hash, (void *)key);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -123,7 +101,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_locked(switch_hash_t *ha
 		switch_mutex_lock(mutex);
 	}
 
-	sqlite3HashInsert(&hash->table, key, (int) strlen(key) + 1, NULL);
+	switch_core_hash_delete(hash, key);
 
 	if (mutex) {
 		switch_mutex_unlock(mutex);
@@ -138,7 +116,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_wrlock(switch_hash_t *ha
 		switch_thread_rwlock_wrlock(rwlock);
 	}
 
-	sqlite3HashInsert(&hash->table, key, (int) strlen(key) + 1, NULL);
+	switch_core_hash_delete(hash, key);
 
 	if (rwlock) {
 		switch_thread_rwlock_unlock(rwlock);
@@ -161,10 +139,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_multi(switch_hash_t *has
 	   When done, iterate through the list deleting hash entries
 	 */
 	
-	for (hi = switch_hash_first(NULL, hash); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_core_hash_first(hash); hi; hi = switch_core_hash_next(hi)) {
 		const void *key;
 		void *val;
-		switch_hash_this(hi, &key, NULL, &val);
+		switch_core_hash_this(hi, &key, NULL, &val);
 		if (!callback || callback(key, val, pData)) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delete", (const char *) key);
 		}
@@ -185,7 +163,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_delete_multi(switch_hash_t *has
 
 SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash_t *hash, const char *key)
 {
-	return sqlite3HashFind(&hash->table, key, (int) strlen(key) + 1);
+	return switch_hashtable_search(hash, (void *)key);
 }
 
 SWITCH_DECLARE(void *) switch_core_hash_find_locked(switch_hash_t *hash, const char *key, switch_mutex_t *mutex)
@@ -196,7 +174,8 @@ SWITCH_DECLARE(void *) switch_core_hash_find_locked(switch_hash_t *hash, const c
 		switch_mutex_lock(mutex);
 	}
 
-	val = sqlite3HashFind(&hash->table, key, (int) strlen(key) + 1);
+	val = switch_core_hash_find(hash, key);
+
 
 	if (mutex) {
 		switch_mutex_unlock(mutex);
@@ -213,7 +192,7 @@ SWITCH_DECLARE(void *) switch_core_hash_find_rdlock(switch_hash_t *hash, const c
 		switch_thread_rwlock_rdlock(rwlock);
 	}
 
-	val = sqlite3HashFind(&hash->table, key, (int) strlen(key) + 1);
+	val = switch_core_hash_find(hash, key);
 
 	if (rwlock) {
 		switch_thread_rwlock_unlock(rwlock);
@@ -224,44 +203,19 @@ SWITCH_DECLARE(void *) switch_core_hash_find_rdlock(switch_hash_t *hash, const c
 
 SWITCH_DECLARE(switch_hash_index_t *) switch_core_hash_first(switch_hash_t *hash)
 {
-	return (switch_hash_index_t *) sqliteHashFirst(&hash->table);
+	return switch_hashtable_first(hash);
 }
 
 SWITCH_DECLARE(switch_hash_index_t *) switch_core_hash_next(switch_hash_index_t *hi)
 {
-	return (switch_hash_index_t *) sqliteHashNext((HashElem *) hi);
+	return switch_hashtable_next(hi);
 }
 
 SWITCH_DECLARE(void) switch_core_hash_this(switch_hash_index_t *hi, const void **key, switch_ssize_t *klen, void **val)
 {
-	if (key) {
-		*key = sqliteHashKey((HashElem *) hi);
-		if (klen) {
-			*klen = strlen((char *) *key) + 1;
-		}
-	}
-	if (val) {
-		*val = sqliteHashData((HashElem *) hi);
-	}
+	switch_hashtable_this(hi, key, klen, val);
 }
 
-/* Deprecated */
-SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(char *deprecate_me, switch_hash_t *hash)
-{
-	return switch_core_hash_first(hash);
-}
-
-/* Deprecated */
-SWITCH_DECLARE(switch_hash_index_t *) switch_hash_next(switch_hash_index_t *hi)
-{
-	return switch_core_hash_next(hi);
-}
-
-/* Deprecated */
-SWITCH_DECLARE(void) switch_hash_this(switch_hash_index_t *hi, const void **key, switch_ssize_t *klen, void **val)
-{
-	switch_core_hash_this(hi, key, klen, val);
-}
 
 /* For Emacs:
  * Local Variables:

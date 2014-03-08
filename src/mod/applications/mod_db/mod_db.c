@@ -652,7 +652,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_db_load)
 
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 	switch_mutex_init(&globals.db_hash_mutex, SWITCH_MUTEX_NESTED, globals.pool);
-	switch_core_hash_init(&globals.db_hash, pool);
+	switch_core_hash_init(&globals.db_hash);
 
 	status = switch_event_reserve_subclass(LIMIT_EVENT_USAGE);
 	if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_INUSE) {

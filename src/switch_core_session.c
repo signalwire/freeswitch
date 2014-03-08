@@ -222,8 +222,8 @@ SWITCH_DECLARE(uint32_t) switch_core_session_hupall_matching_var_ans(const char 
 		return r;
 
 	switch_mutex_lock(runtime.session_hash_mutex);
-	for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &val);
+	for (hi = switch_core_hash_first( session_manager.session_table); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, NULL, NULL, &val);
 		if (val) {
 			session = (switch_core_session_t *) val;
 			if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
@@ -275,8 +275,8 @@ SWITCH_DECLARE(switch_console_callback_match_t *) switch_core_session_findall_ma
 	switch_core_new_memory_pool(&pool);
 
 	switch_mutex_lock(runtime.session_hash_mutex);
-	for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &val);
+	for (hi = switch_core_hash_first( session_manager.session_table); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, NULL, NULL, &val);
 		if (val) {
 			session = (switch_core_session_t *) val;
 			if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
@@ -319,8 +319,8 @@ SWITCH_DECLARE(void) switch_core_session_hupall_endpoint(const switch_endpoint_i
 	switch_core_new_memory_pool(&pool);
 	
 	switch_mutex_lock(runtime.session_hash_mutex);
-	for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &val);
+	for (hi = switch_core_hash_first( session_manager.session_table); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, NULL, NULL, &val);
 		if (val) {
 			session = (switch_core_session_t *) val;
 			if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
@@ -359,8 +359,8 @@ SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
 
 
 	switch_mutex_lock(runtime.session_hash_mutex);
-	for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &val);
+	for (hi = switch_core_hash_first( session_manager.session_table); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, NULL, NULL, &val);
 		if (val) {
 			session = (switch_core_session_t *) val;
 			if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
@@ -394,8 +394,8 @@ SWITCH_DECLARE(switch_console_callback_match_t *) switch_core_session_findall(vo
 	switch_console_callback_match_t *my_matches = NULL;
 
 	switch_mutex_lock(runtime.session_hash_mutex);
-	for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &val);
+	for (hi = switch_core_hash_first( session_manager.session_table); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, NULL, NULL, &val);
 		if (val) {
 			session = (switch_core_session_t *) val;
 			if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
@@ -2515,7 +2515,7 @@ void switch_core_session_init(switch_memory_pool_t *pool)
 	session_manager.session_limit = 1000;
 	session_manager.session_id = 1;
 	session_manager.memory_pool = pool;
-	switch_core_hash_init(&session_manager.session_table, session_manager.memory_pool);
+	switch_core_hash_init(&session_manager.session_table);
 	
 	if (switch_test_flag((&runtime), SCF_SESSION_THREAD_POOL)) {
 		switch_threadattr_t *thd_attr;

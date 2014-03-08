@@ -1822,7 +1822,7 @@ static switch_status_t do_config(void)
 					cookie_file = val;
 				} else if (!strcasecmp(var, "enable-post-var")) {
 					if (!vars_map && need_vars_map == 0) {
-						if (switch_core_hash_init(&vars_map, globals.pool) != SWITCH_STATUS_SUCCESS) {
+						if (switch_core_hash_init(&vars_map) != SWITCH_STATUS_SUCCESS) {
 							need_vars_map = -1;
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't init params hash!\n");
 							continue;
@@ -3011,8 +3011,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_httapi_load)
 	switch_dir_make_recursive(globals.cache_path, SWITCH_DEFAULT_DIR_PERMS, pool);
 
 	
-	switch_core_hash_init(&globals.profile_hash, globals.pool);
-	switch_core_hash_init_case(&globals.parse_hash, globals.pool, SWITCH_FALSE);
+	switch_core_hash_init(&globals.profile_hash);
+	switch_core_hash_init_case(&globals.parse_hash, SWITCH_FALSE);
 
 	bind_parser("execute", parse_execute);
 	bind_parser("sms", parse_sms);
@@ -3063,8 +3063,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_httapi_shutdown)
 	void *val;
 	const void *vvar;
 
-	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, &vvar, NULL, &val);
+	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, &vvar, NULL, &val);
 		profile = (client_profile_t *) val;
 		switch_event_destroy(&profile->dial_params.app_list);
 		switch_event_destroy(&profile->var_params.expand_var_list);

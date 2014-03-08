@@ -161,7 +161,7 @@ SWITCH_LIMIT_INCR(limit_incr_hash)
 		/* This is the first limit check on this channel, create a hashtable, set our prviate data */
 		pvt = (limit_hash_private_t *) switch_core_session_alloc(session, sizeof(limit_hash_private_t));
 		memset(pvt, 0, sizeof(limit_hash_private_t));
-		switch_core_hash_init(&pvt->hash, switch_core_session_get_pool(session));
+		switch_core_hash_init(&pvt->hash);
 		switch_channel_set_private(channel, "limit_hash", pvt);
 	}
 
@@ -291,13 +291,13 @@ SWITCH_LIMIT_RELEASE(limit_release_hash)
 	/* clear for uuid */
 	if (realm == NULL && resource == NULL) {
 		/* Loop through the channel's hashtable which contains mapping to all the limit_hash_item_t referenced by that channel */
-		while ((hi = switch_hash_first(NULL, pvt->hash))) {
+		while ((hi = switch_core_hash_first( pvt->hash))) {
 			void *val = NULL;
 			const void *key;
 			switch_ssize_t keylen;
 			limit_hash_item_t *item = NULL;
 
-			switch_hash_this(hi, &key, &keylen, &val);
+			switch_core_hash_this(hi, &key, &keylen, &val);
 
 			item = (limit_hash_item_t *) val;
 			item->total_usage--;
@@ -391,7 +391,7 @@ SWITCH_LIMIT_STATUS(limit_status_hash)
 	
 	switch_thread_rwlock_rdlock(globals.limit_hash_rwlock);
 	
-	for (hi = switch_hash_first(NULL, globals.limit_hash); hi; switch_hash_next(hi)) {
+	for (hi = switch_core_hash_first( globals.limit_hash); hi; switch_core_hash_next(hi)) {
 		count++;
 	}
 	
@@ -623,12 +623,12 @@ SWITCH_STANDARD_API(hash_dump_function)
 	
 	if (mode & 1) {
 		switch_thread_rwlock_rdlock(globals.limit_hash_rwlock);
-		for (hi = switch_hash_first(NULL, globals.limit_hash); hi; hi = switch_hash_next(hi)) {
+		for (hi = switch_core_hash_first( globals.limit_hash); hi; hi = switch_core_hash_next(hi)) {
 			void *val = NULL;
 			const void *key;
 			switch_ssize_t keylen;
 			limit_hash_item_t *item;
-			switch_hash_this(hi, &key, &keylen, &val);
+			switch_core_hash_this(hi, &key, &keylen, &val);
 						
 			item = (limit_hash_item_t *)val;
 
@@ -639,11 +639,11 @@ SWITCH_STANDARD_API(hash_dump_function)
 	
 	if (mode & 2) {
 		switch_thread_rwlock_rdlock(globals.db_hash_rwlock);
-		for (hi = switch_hash_first(NULL, globals.db_hash); hi; hi = switch_hash_next(hi)) {
+		for (hi = switch_core_hash_first( globals.db_hash); hi; hi = switch_core_hash_next(hi)) {
 			void *val = NULL;
 			const void *key;
 			switch_ssize_t keylen;
-			switch_hash_this(hi, &key, &keylen, &val);
+			switch_core_hash_this(hi, &key, &keylen, &val);
 			if (realm) {
 				if (strstr(key, realmvalue)) {
 					stream->write_function(stream, "D/%s/%s\n", key, (char*)val);
@@ -679,12 +679,12 @@ SWITCH_STANDARD_API(hash_remote_function)
 		stream->write_function(stream, "Remote connections:\nName\t\t\tState\n");
 		
 		switch_thread_rwlock_rdlock(globals.remote_hash_rwlock);
-		for (hi = switch_hash_first(NULL, globals.remote_hash); hi; hi = switch_hash_next(hi)) {
+		for (hi = switch_core_hash_first( globals.remote_hash); hi; hi = switch_core_hash_next(hi)) {
 			void *val;	
 			const void *key;
 			switch_ssize_t keylen;
 			limit_remote_t *item;
-			switch_hash_this(hi, &key, &keylen, &val);
+			switch_core_hash_this(hi, &key, &keylen, &val);
 								
 			item = (limit_remote_t *)val;
 			stream->write_function(stream, "%s\t\t\t%s\n", item->name, state_str(item->state));	
@@ -756,7 +756,7 @@ limit_remote_t *limit_remote_create(const char *name, const char *host, uint16_t
 	r->interval = interval;
 	
 	switch_thread_rwlock_create(&r->rwlock, pool);
-	switch_core_hash_init(&r->index, pool);
+	switch_core_hash_init(&r->index);
 	
 	switch_thread_rwlock_rdlock(globals.remote_hash_rwlock);
 	switch_core_hash_insert(globals.remote_hash, name, r);
@@ -780,11 +780,11 @@ void limit_remote_destroy(limit_remote_t **r)
 		switch_thread_rwlock_wrlock((*r)->rwlock);
 
 		/* Free hashtable data */
-		for (hi = switch_hash_first(NULL, (*r)->index); hi; hi = switch_hash_next(hi)) {
+		for (hi = switch_core_hash_first( (*r)->index); hi; hi = switch_core_hash_next(hi)) {
 			void *val;	
 			const void *key;
 			switch_ssize_t keylen;
-			switch_hash_this(hi, &key, &keylen, &val);
+			switch_core_hash_this(hi, &key, &keylen, &val);
 
 			free(val);
 		}
@@ -803,13 +803,13 @@ static limit_hash_item_t get_remote_usage(const char *key) {
 	switch_hash_index_t *hi;
 	
 	switch_thread_rwlock_rdlock(globals.remote_hash_rwlock);
-	for (hi = switch_hash_first(NULL, globals.remote_hash); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_core_hash_first( globals.remote_hash); hi; hi = switch_core_hash_next(hi)) {
 		void *val;	
 		const void *hashkey;
 		switch_ssize_t keylen;
 		limit_remote_t *remote;
 		limit_hash_item_t *item;
-		switch_hash_this(hi, &hashkey, &keylen, &val);
+		switch_core_hash_this(hi, &hashkey, &keylen, &val);
 							
 		remote = (limit_remote_t *)val;
 		if (remote->state != REMOTE_UP) {
@@ -983,9 +983,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_hash_load)
 	switch_thread_rwlock_create(&globals.limit_hash_rwlock, globals.pool);
 	switch_thread_rwlock_create(&globals.db_hash_rwlock, globals.pool);
 	switch_thread_rwlock_create(&globals.remote_hash_rwlock, globals.pool);
-	switch_core_hash_init(&globals.limit_hash, pool);
-	switch_core_hash_init(&globals.db_hash, pool);
-	switch_core_hash_init(&globals.remote_hash, globals.pool);
+	switch_core_hash_init(&globals.limit_hash);
+	switch_core_hash_init(&globals.db_hash);
+	switch_core_hash_init(&globals.remote_hash);
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -1031,8 +1031,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_hash_shutdown)
 		limit_remote_t *item = NULL;
 		
 		switch_thread_rwlock_rdlock(globals.remote_hash_rwlock);
-		if ((hi = switch_hash_first(NULL, globals.remote_hash))) {
-			switch_hash_this(hi, &key, &keylen, &val);
+		if ((hi = switch_core_hash_first( globals.remote_hash))) {
+			switch_core_hash_this(hi, &key, &keylen, &val);
 			item = (limit_remote_t *)val;
 		}
 		switch_thread_rwlock_unlock(globals.remote_hash_rwlock);
@@ -1050,20 +1050,20 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_hash_shutdown)
 	switch_thread_rwlock_wrlock(globals.limit_hash_rwlock);
 	switch_thread_rwlock_wrlock(globals.db_hash_rwlock);
 	
-	while ((hi = switch_hash_first(NULL, globals.limit_hash))) {
+	while ((hi = switch_core_hash_first( globals.limit_hash))) {
 		void *val = NULL;
 		const void *key;
 		switch_ssize_t keylen;
-		switch_hash_this(hi, &key, &keylen, &val);
+		switch_core_hash_this(hi, &key, &keylen, &val);
 		free(val);
 		switch_core_hash_delete(globals.limit_hash, key);
 	}
 	
-	while ((hi = switch_hash_first(NULL, globals.db_hash))) {
+	while ((hi = switch_core_hash_first( globals.db_hash))) {
 		void *val = NULL;
 		const void *key;
 		switch_ssize_t keylen;
-		switch_hash_this(hi, &key, &keylen, &val);
+		switch_core_hash_this(hi, &key, &keylen, &val);
 		free(val);
 		switch_core_hash_delete(globals.db_hash, key);
 	}

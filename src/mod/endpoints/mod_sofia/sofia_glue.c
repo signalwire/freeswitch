@@ -1653,8 +1653,8 @@ void sofia_glue_restart_all_profiles(void)
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if (mod_sofia_globals.profile_hash) {
-		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, &var, NULL, &val);
+		for (hi = switch_core_hash_first( mod_sofia_globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+			switch_core_hash_this(hi, &var, NULL, &val);
 			if ((pptr = (sofia_profile_t *) val)) {
 				int rsec = 10;
 				int diff = (int) (switch_epoch_time_now(NULL) - pptr->started);
@@ -1688,8 +1688,8 @@ void sofia_glue_global_siptrace(switch_bool_t on)
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if (mod_sofia_globals.profile_hash) {
-		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, &var, NULL, &val);
+		for (hi = switch_core_hash_first( mod_sofia_globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+			switch_core_hash_this(hi, &var, NULL, &val);
 			if ((pptr = (sofia_profile_t *) val)) {
 				nua_set_params(pptr->nua, TPTAG_LOG(on), TAG_END());				
 			}
@@ -1708,8 +1708,8 @@ void sofia_glue_global_standby(switch_bool_t on)
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if (mod_sofia_globals.profile_hash) {
-		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, &var, NULL, &val);
+		for (hi = switch_core_hash_first( mod_sofia_globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+			switch_core_hash_this(hi, &var, NULL, &val);
 			if ((pptr = (sofia_profile_t *) val)) {
 				if (on) {
 					sofia_set_pflag_locked(pptr, PFLAG_STANDBY);
@@ -1732,8 +1732,8 @@ void sofia_glue_global_capture(switch_bool_t on)
 
        switch_mutex_lock(mod_sofia_globals.hash_mutex);
        if (mod_sofia_globals.profile_hash) {
-               for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-                       switch_hash_this(hi, &var, NULL, &val);
+               for (hi = switch_core_hash_first( mod_sofia_globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+                       switch_core_hash_this(hi, &var, NULL, &val);
                        if ((pptr = (sofia_profile_t *) val)) {
                                nua_set_params(pptr->nua, TPTAG_CAPT(on ? mod_sofia_globals.capture_server : NULL), TAG_END());
                        }
@@ -1753,8 +1753,8 @@ void sofia_glue_global_watchdog(switch_bool_t on)
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if (mod_sofia_globals.profile_hash) {
-		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, &var, NULL, &val);
+		for (hi = switch_core_hash_first( mod_sofia_globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+			switch_core_hash_this(hi, &var, NULL, &val);
 			if ((pptr = (sofia_profile_t *) val)) {
 				pptr->watchdog_enabled = (on ? 1 : 0);
 			}
@@ -1776,8 +1776,8 @@ void sofia_glue_del_profile(sofia_profile_t *profile)
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if (mod_sofia_globals.profile_hash) {
-		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, &var, NULL, &val);
+		for (hi = switch_core_hash_first( mod_sofia_globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+			switch_core_hash_this(hi, &var, NULL, &val);
 			if ((pptr = (sofia_profile_t *) val) && pptr == profile) {
 				aliases[i++] = strdup((char *) var);
 				if (i == 512) {

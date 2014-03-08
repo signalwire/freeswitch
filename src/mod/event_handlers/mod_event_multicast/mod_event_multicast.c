@@ -228,7 +228,7 @@ static void event_handler(switch_event_t *event)
 			switch_safe_free(globals.psk);
 			globals.psk = NULL;
 		}
-		switch_core_hash_init(&globals.event_hash, module_pool);
+		switch_core_hash_init(&globals.event_hash);
 		memset(globals.event_list, 0, SWITCH_EVENT_ALL + 1);
 		if (load_config() != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to reload config file\n");
@@ -247,8 +247,8 @@ static void event_handler(switch_event_t *event)
 		struct peer_status *last;
 		char *host;
 
-		for (cur = switch_hash_first(NULL, globals.peer_hash); cur; cur = switch_hash_next(cur)) {
-			switch_hash_this(cur, &key, &keylen, &value);
+		for (cur = switch_core_hash_first( globals.peer_hash); cur; cur = switch_core_hash_next(cur)) {
+			switch_core_hash_this(cur, &key, &keylen, &value);
 			host = (char *) key;
 			last = (struct peer_status *) value;
 			if (last->active && (now - (last->lastseen)) > 60) {
@@ -351,8 +351,8 @@ SWITCH_STANDARD_API(multicast_peers)
 	char *host;
 	int i = 0;
 
-	for (cur = switch_hash_first(NULL, globals.peer_hash); cur; cur = switch_hash_next(cur)) {
-		switch_hash_this(cur, &key, &keylen, &value);
+	for (cur = switch_core_hash_first( globals.peer_hash); cur; cur = switch_core_hash_next(cur)) {
+		switch_core_hash_this(cur, &key, &keylen, &value);
 		host = (char *) key;
 		last = (struct peer_status *) value;
 
@@ -377,8 +377,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_multicast_load)
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, pool);
 	module_pool = pool;
 
-	switch_core_hash_init(&globals.event_hash, module_pool);
-	switch_core_hash_init(&globals.peer_hash, module_pool);
+	switch_core_hash_init(&globals.event_hash);
+	switch_core_hash_init(&globals.peer_hash);
 
 	globals.key_count = 0;
 

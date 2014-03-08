@@ -1960,15 +1960,15 @@ SWITCH_DECLARE(uint32_t) switch_xml_clear_user_cache(const char *key, const char
 
 	} else {
 
-		while ((hi = switch_hash_first(NULL, CACHE_HASH))) {
-			switch_hash_this(hi, &var, NULL, &val);
+		while ((hi = switch_core_hash_first( CACHE_HASH))) {
+			switch_core_hash_this(hi, &var, NULL, &val);
 			switch_xml_free(val);
 			switch_core_hash_delete(CACHE_HASH, var);
 			r++;
 		}
 
-		while ((hi = switch_hash_first(NULL, CACHE_EXPIRES_HASH))) {
-			switch_hash_this(hi, &var, NULL, &val);
+		while ((hi = switch_core_hash_first( CACHE_EXPIRES_HASH))) {
+			switch_core_hash_this(hi, &var, NULL, &val);
 			switch_safe_free(val);
 			switch_core_hash_delete(CACHE_EXPIRES_HASH, var);
 		}
@@ -2352,8 +2352,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, cons
 	switch_mutex_init(&REFLOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
 	switch_mutex_init(&FILE_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
 	switch_mutex_init(&XML_GEN_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
-	switch_core_hash_init(&CACHE_HASH, XML_MEMORY_POOL);
-	switch_core_hash_init(&CACHE_EXPIRES_HASH, XML_MEMORY_POOL);
+	switch_core_hash_init(&CACHE_HASH);
+	switch_core_hash_init(&CACHE_EXPIRES_HASH);
 
 	switch_thread_rwlock_create(&B_RWLOCK, XML_MEMORY_POOL);
 

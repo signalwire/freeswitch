@@ -1930,7 +1930,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_new(switch_memory
 			(*parser)->pool_auto_created = pool_auto_created;
 			(*parser)->pool = pool;
 			(*parser)->digit_timeout_ms = 1000;
-			switch_core_hash_init(&(*parser)->hash, (*parser)->pool);
+			switch_core_hash_init(&(*parser)->hash);
 
 			status = SWITCH_STATUS_SUCCESS;
 		} else {

@@ -261,7 +261,7 @@ static switch_status_t do_config(switch_memory_pool_t *pool, const char *config_
 		return SWITCH_STATUS_TERM;
 	}
 
-	switch_core_hash_init(&bound_events, pool);
+	switch_core_hash_init(&bound_events);
 
 	cpa_xml = switch_xml_child(cfg, "cpa");
 	if (cpa_xml) {
@@ -279,7 +279,7 @@ static switch_status_t do_config(switch_memory_pool_t *pool, const char *config_
 			}
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CPA detector: %s\n", name);
 			detector = switch_core_alloc(pool, sizeof(*detector));
-			switch_core_hash_init(&detector->signal_type_map, pool);
+			switch_core_hash_init(&detector->signal_type_map);
 			detector->name = switch_core_strdup(pool, name);
 			switch_uuid_str(id, sizeof(id));
 			detector->uuid = switch_core_strdup(pool, id);
@@ -390,8 +390,8 @@ static switch_status_t rayo_cpa_detector_signal_types(const char *line, const ch
 	const void *vvar;
 	switch_console_callback_match_t *my_matches = NULL;
 
-	for (hi = switch_hash_first(NULL, globals.detectors); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, &vvar, NULL, &val);
+	for (hi = switch_core_hash_first( globals.detectors); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, &vvar, NULL, &val);
 		switch_console_push_match(&my_matches, (const char *) vvar);
 	}
 
@@ -420,7 +420,7 @@ switch_status_t rayo_cpa_detector_load(switch_loadable_module_interface_t **modu
 	switch_console_set_complete("add rayo_cpa ::console::list_uuid ::rayo_cpa::list_signal_types stop");
 	switch_console_add_complete_func("::rayo_cpa::list_signal_types", rayo_cpa_detector_signal_types);
 
-	switch_core_hash_init(&globals.detectors, pool);
+	switch_core_hash_init(&globals.detectors);
 	if (do_config(pool, config_file) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_TERM;
 	}

@@ -466,11 +466,11 @@ static void broadcast_event(struct rayo_actor *from, iks *rayo_event, int online
 {
 	switch_hash_index_t *hi = NULL;
 	switch_mutex_lock(globals.clients_mutex);
-	for (hi = switch_hash_first(NULL, globals.clients_roster); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_core_hash_first( globals.clients_roster); hi; hi = switch_core_hash_next(hi)) {
 		struct rayo_client *rclient;
 		const void *key;
 		void *val;
-		switch_hash_this(hi, &key, NULL, &val);
+		switch_core_hash_this(hi, &key, NULL, &val);
 		rclient = (struct rayo_client *)val;
 		switch_assert(rclient);
 
@@ -1028,11 +1028,11 @@ static void rayo_call_cleanup(struct rayo_actor *actor)
 	}
 
 	/* send <end> to all offered clients */
-	for (hi = switch_hash_first(NULL, call->pcps); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_core_hash_first( call->pcps); hi; hi = switch_core_hash_next(hi)) {
 		const void *key;
 		void *val;
 		const char *client_jid = NULL;
-		switch_hash_this(hi, &key, NULL, &val);
+		switch_core_hash_this(hi, &key, NULL, &val);
 		client_jid = (const char *)key;
 		switch_assert(client_jid);
 		iks_insert_attrib(revent, "to", client_jid);
@@ -1229,7 +1229,7 @@ static struct rayo_call *rayo_call_init(struct rayo_call *call, switch_memory_po
 		call->dial_request_id = NULL;
 		call->end_event = NULL;
 		call->dial_request_failed = 0;
-		switch_core_hash_init(&call->pcps, pool);
+		switch_core_hash_init(&call->pcps);
 	}
 
 	switch_safe_free(call_jid);
@@ -1277,8 +1277,8 @@ static struct rayo_mixer *rayo_mixer_init(struct rayo_mixer *mixer, switch_memor
 	char *mixer_jid = switch_mprintf("%s@%s", name, RAYO_JID(globals.server));
 	mixer = RAYO_MIXER(rayo_actor_init(RAYO_ACTOR(mixer), pool, RAT_MIXER, "", name, mixer_jid, rayo_mixer_cleanup, rayo_mixer_send, file, line));
 	if (mixer) {
-		switch_core_hash_init(&mixer->members, pool);
-		switch_core_hash_init(&mixer->subscribers, pool);
+		switch_core_hash_init(&mixer->members);
+		switch_core_hash_init(&mixer->subscribers);
 	}
 	switch_safe_free(mixer_jid);
 	return mixer;
@@ -1486,7 +1486,7 @@ static struct rayo_peer_server *rayo_peer_server_create(const char *jid)
 	}
 	rserver = RAYO_PEER_SERVER(RAYO_ACTOR_INIT(RAYO_ACTOR(rserver), pool, RAT_PEER_SERVER, "", jid, jid, rayo_peer_server_cleanup, rayo_peer_server_send));
 	if (rserver) {
-		switch_core_hash_init(&rserver->clients, pool);
+		switch_core_hash_init(&rserver->clients);
 	} else {
 		switch_core_destroy_memory_pool(&pool);
 	}
@@ -3523,11 +3523,11 @@ SWITCH_STANDARD_APP(rayo_app)
 		/* Offer call to all ONLINE clients */
 		/* TODO load balance offers so first session doesn't always get offer first? */
 		switch_mutex_lock(globals.clients_mutex);
-		for (hi = switch_hash_first(NULL, globals.clients_roster); hi; hi = switch_hash_next(hi)) {
+		for (hi = switch_core_hash_first( globals.clients_roster); hi; hi = switch_core_hash_next(hi)) {
 			struct rayo_client *rclient;
 			const void *key;
 			void *val;
-			switch_hash_this(hi, &key, NULL, &val);
+			switch_core_hash_this(hi, &key, NULL, &val);
 			rclient = (struct rayo_client *)val;
 			switch_assert(rclient);
 
@@ -4272,8 +4272,8 @@ static switch_status_t list_actors(const char *line, const char *cursor, switch_
 	struct rayo_actor *actor;
 
 	switch_mutex_lock(globals.actors_mutex);
-	for (hi = switch_hash_first(NULL, globals.actors); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, &vvar, NULL, &val);
+	for (hi = switch_core_hash_first( globals.actors); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, &vvar, NULL, &val);
 
 		actor = (struct rayo_actor *) val;
 		if (match(actor)) {
@@ -4448,16 +4448,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
 
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
-	switch_core_hash_init(&globals.command_handlers, pool);
-	switch_core_hash_init(&globals.event_handlers, pool);
-	switch_core_hash_init(&globals.clients_roster, pool);
+	switch_core_hash_init(&globals.command_handlers);
+	switch_core_hash_init(&globals.event_handlers);
+	switch_core_hash_init(&globals.clients_roster);
 	switch_mutex_init(&globals.clients_mutex, SWITCH_MUTEX_NESTED, pool);
-	switch_core_hash_init(&globals.actors, pool);
-	switch_core_hash_init(&globals.destroy_actors, pool);
-	switch_core_hash_init(&globals.actors_by_id, pool);
+	switch_core_hash_init(&globals.actors);
+	switch_core_hash_init(&globals.destroy_actors);
+	switch_core_hash_init(&globals.actors_by_id);
 	switch_mutex_init(&globals.actors_mutex, SWITCH_MUTEX_NESTED, pool);
-	switch_core_hash_init(&globals.dial_gateways, pool);
-	switch_core_hash_init(&globals.cmd_aliases, pool);
+	switch_core_hash_init(&globals.dial_gateways);
+	switch_core_hash_init(&globals.cmd_aliases);
 	switch_thread_rwlock_create(&globals.shutdown_rwlock, pool);
 	switch_queue_create(&globals.msg_queue, 25000, pool);
 

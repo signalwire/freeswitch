@@ -77,7 +77,7 @@ void FSXML::InitRootObject()
 {
 	/* Create hash and pool - for the root object only */
 	if (switch_core_new_memory_pool(&_pool) == SWITCH_STATUS_SUCCESS && _pool) {
-		if (switch_core_hash_init(&_obj_hash, _pool) != SWITCH_STATUS_SUCCESS) {
+		if (switch_core_hash_init(&_obj_hash) != SWITCH_STATUS_SUCCESS) {
 			switch_core_destroy_memory_pool(&_pool);
 			_obj_hash = NULL;
 			_pool = NULL;
@@ -198,12 +198,12 @@ void FSXML::DestroyHash()
 	}
 
 	/* First destroy all objects in the hash */
-	for (hi = switch_hash_first(NULL, tmp); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_core_hash_first( tmp); hi; hi = switch_core_hash_next(hi)) {
 		const void *var = NULL;
 		void *val = NULL;
 		FSXML *obj;
 
-		switch_hash_this(hi, &var, NULL, &val);
+		switch_core_hash_this(hi, &var, NULL, &val);
 
 		if (val) {
 			obj = static_cast<FSXML *>(val);

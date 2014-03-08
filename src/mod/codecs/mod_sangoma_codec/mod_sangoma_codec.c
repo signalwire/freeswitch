@@ -930,7 +930,7 @@ SWITCH_STANDARD_API(sangoma_function)
 #define STATS_FORMAT "%-10.10s %-10.10s %-10.10s %-10.10s %-10.10s %-10.10s %-10.10s %-10.10s %-10.10s %-10.10s %-15.15s %-15.15s\n"
 		stream->write_function(stream, STATS_FORMAT,
 				"Session", "Codec", "Enc", "Dec", "Enc Tx", "Enc Rx", "Dec Tx", "Dec Rx", "Enc Lost", "Dec Lost", "Enc AvgRxMs", "Dec AvgRxMs");
-		for (hi = switch_hash_first(NULL, g_sessions_hash); hi; hi = switch_hash_next(hi)) {
+		for (hi = switch_core_hash_first( g_sessions_hash); hi; hi = switch_core_hash_next(hi)) {
 			struct sangoma_transcoding_session *sess;
 			char sessid_str[25];
 			char encoder_tx_str[25];
@@ -942,7 +942,7 @@ SWITCH_STANDARD_API(sangoma_function)
 			char encoder_avgrxus_str[25];
 			char decoder_avgrxus_str[25];
 
-			switch_hash_this(hi, &var, NULL, &val);
+			switch_core_hash_this(hi, &var, NULL, &val);
 			sess = val;
 
 			snprintf(sessid_str, sizeof(sessid_str), "%lu", sess->sessid);
@@ -1236,7 +1236,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sangoma_codec_load)
 
 	switch_mutex_init(&g_sessions_lock, SWITCH_MUTEX_UNNESTED, pool);
 
-	switch_core_hash_init(&g_sessions_hash, pool);
+	switch_core_hash_init(&g_sessions_hash);
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 

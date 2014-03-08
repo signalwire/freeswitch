@@ -1864,7 +1864,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_unicall_load)
 	module_pool = pool;
 
 	memset(&globals, 0, sizeof(globals));
-	switch_core_hash_init(&globals.call_hash, module_pool);
+	switch_core_hash_init(&globals.call_hash);
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
 	switch_mutex_init(&globals.hash_mutex, SWITCH_MUTEX_NESTED, module_pool);
 	switch_mutex_init(&globals.channel_mutex, SWITCH_MUTEX_NESTED, module_pool);

@@ -97,7 +97,7 @@ SWITCH_LIMIT_INCR(limit_incr_redis)
 	} else {
 		/* This is the first limit check on this channel, create a hashtable, set our prviate data and add a state handler */
 		pvt = (limit_redis_private_t *) switch_core_session_alloc(session, sizeof(limit_redis_private_t));
-		switch_core_hash_init(&pvt->hash, switch_core_session_get_pool(session));
+		switch_core_hash_init(&pvt->hash));
 		switch_mutex_init(&pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 		switch_channel_set_private(channel, "limit_redis", pvt);
 	}
@@ -172,13 +172,13 @@ SWITCH_LIMIT_RELEASE(limit_release_redis)
 	/* clear for uuid */
 	if (realm == NULL && resource == NULL) {
 		/* Loop through the channel's hashtable which contains mapping to all the limit_redis_item_t referenced by that channel */
-		while ((hi = switch_hash_first(NULL, pvt->hash))) {
+		while ((hi = switch_core_hash_first( pvt->hash))) {
 			void *p_val = NULL;
 			const void *p_key;
 			char *p_uuid_key = NULL;
 			switch_ssize_t keylen;
 			
-			switch_hash_this(hi, &p_key, &keylen, &p_val);
+			switch_core_hash_this(hi, &p_key, &keylen, &p_val);
 			
 			if (credis_decr(redis, (const char*)p_key, &val) != 0) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Couldn't decrement value corresponding to %s\n", (char *)p_key);

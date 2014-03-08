@@ -1038,7 +1038,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_directory_load)
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
 
-	switch_core_hash_init(&globals.profile_hash, globals.pool);
+	switch_core_hash_init(&globals.profile_hash);
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
 	if ((status = load_config(SWITCH_FALSE)) != SWITCH_STATUS_SUCCESS) {
@@ -1070,8 +1070,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_directory_shutdown)
 
 	switch_mutex_lock(globals.mutex);
 
-	while ((hi = switch_hash_first(NULL, globals.profile_hash))) {
-		switch_hash_this(hi, &key, &keylen, &val);
+	while ((hi = switch_core_hash_first( globals.profile_hash))) {
+		switch_core_hash_this(hi, &key, &keylen, &val);
 		profile = (dir_profile_t *) val;
 
 		switch_core_hash_delete(globals.profile_hash, profile->name);

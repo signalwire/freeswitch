@@ -497,7 +497,7 @@ static switch_status_t handle_msg_setevent(listener_t *listener, erlang_msg *msg
 		}
 
 		/* create new hash */
-		switch_core_hash_init(&event_hash, listener->pool);
+		switch_core_hash_init(&event_hash);
 
 		if(!switch_test_flag(listener, LFLAG_EVENTS)) {
 			switch_set_flag_locked(listener, LFLAG_EVENTS);
@@ -562,7 +562,7 @@ static switch_status_t handle_msg_session_setevent(listener_t *listener, erlang_
 			}
 
 			/* create new hash */
-			switch_core_hash_init(&event_hash, session->pool);
+			switch_core_hash_init(&event_hash);
 
 			for (i = 1; i < arity; i++){
 				if (!ei_decode_atom(buf->buff, &buf->index, atom)) {
@@ -1132,8 +1132,8 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hashed ref to %s\n", hash);
 
 	switch_thread_rwlock_rdlock(listener->session_rwlock);
-	for (iter = switch_hash_first(NULL, listener->sessions); iter; iter = switch_hash_next(iter)) {
-		switch_hash_this(iter, &key, NULL, &val);
+	for (iter = switch_core_hash_first( listener->sessions); iter; iter = switch_core_hash_next(iter)) {
+		switch_core_hash_this(iter, &key, NULL, &val);
 		se = (session_elem_t*)val;
 		if (se->spawn_reply && !strncmp(se->spawn_reply->hash, hash, 100)) {
 			

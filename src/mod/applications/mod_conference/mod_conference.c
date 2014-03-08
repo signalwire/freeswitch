@@ -5278,8 +5278,8 @@ static switch_status_t list_conferences(const char *line, const char *cursor, sw
 	const void *vvar;
 
 	switch_mutex_lock(globals.hash_mutex);
-	for (hi = switch_hash_first(NULL, globals.conference_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, &vvar, NULL, &val);
+	for (hi = switch_core_hash_first( globals.conference_hash); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, &vvar, NULL, &val);
 		switch_console_push_match(&my_matches, (const char *) vvar);		
 	}
 	switch_mutex_unlock(globals.hash_mutex);
@@ -5770,9 +5770,9 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
 
 	if (conference == NULL) {
 		switch_mutex_lock(globals.hash_mutex);
-		for (hi = switch_hash_first(NULL, globals.conference_hash); hi; hi = switch_hash_next(hi)) {
+		for (hi = switch_core_hash_first( globals.conference_hash); hi; hi = switch_core_hash_next(hi)) {
 			int fcount = 0;
-			switch_hash_this(hi, NULL, NULL, &val);
+			switch_core_hash_this(hi, NULL, NULL, &val);
 			conference = (conference_obj_t *) val;
 
 			stream->write_function(stream, "Conference %s (%u member%s rate: %u%s flags: ",
@@ -6249,8 +6249,8 @@ static switch_status_t conf_api_sub_xml_list(conference_obj_t *conference, switc
 
 	if (conference == NULL) {
 		switch_mutex_lock(globals.hash_mutex);
-		for (hi = switch_hash_first(NULL, globals.conference_hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, NULL, NULL, &val);
+		for (hi = switch_core_hash_first( globals.conference_hash); hi; hi = switch_core_hash_next(hi)) {
+			switch_core_hash_this(hi, NULL, NULL, &val);
 			conference = (conference_obj_t *) val;
 
 			x_conference = switch_xml_add_child_d(x_conferences, "conference", off++);
@@ -10050,7 +10050,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load)
 	globals.conference_pool = pool;
 
 	/* Setup a hash to store conferences by name */
-	switch_core_hash_init(&globals.conference_hash, globals.conference_pool);
+	switch_core_hash_init(&globals.conference_hash);
 	switch_mutex_init(&globals.conference_mutex, SWITCH_MUTEX_NESTED, globals.conference_pool);
 	switch_mutex_init(&globals.id_mutex, SWITCH_MUTEX_NESTED, globals.conference_pool);
 	switch_mutex_init(&globals.hash_mutex, SWITCH_MUTEX_NESTED, globals.conference_pool);

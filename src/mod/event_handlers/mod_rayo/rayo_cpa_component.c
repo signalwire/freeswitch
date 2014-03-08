@@ -82,7 +82,7 @@ static void subscribe(const char *uuid, const char *signal_type, const char *jid
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "Subscribe %s => %s\n", signal_type, jid);
 		if (!signal_subscribers) {
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "Create %s subscriber hash\n", signal_type);
-			switch_core_hash_init(&signal_subscribers, NULL);
+			switch_core_hash_init(&signal_subscribers);
 			switch_core_hash_insert(globals.subscribers, key, signal_subscribers);
 		}
 		switch_core_hash_insert(signal_subscribers, jid, "1");
@@ -291,7 +291,7 @@ iks *rayo_cpa_component_start(struct rayo_actor *call, struct rayo_message *msg,
 		return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Failed to create CPA entity");
 	}
 
-	switch_core_hash_init(&component->signals, pool);
+	switch_core_hash_init(&component->signals);
 
 	/* start CPA detectors */
 	for (grammar = iks_find(input, "grammar"); grammar; grammar = iks_next_tag(grammar)) {
@@ -376,7 +376,7 @@ switch_status_t rayo_cpa_component_load(switch_loadable_module_interface_t **mod
 	switch_event_bind("rayo_cpa_component", SWITCH_EVENT_CHANNEL_HANGUP_COMPLETE, NULL, on_channel_hangup_complete_event, NULL);
 	
 	globals.pool = pool;
-	switch_core_hash_init(&globals.subscribers, pool);
+	switch_core_hash_init(&globals.subscribers);
 	switch_mutex_init(&globals.subscribers_mutex, SWITCH_MUTEX_NESTED, pool);
 
 	return rayo_cpa_detector_load(module_interface, pool, config_file);

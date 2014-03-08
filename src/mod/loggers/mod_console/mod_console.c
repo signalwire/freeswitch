@@ -107,7 +107,7 @@ static switch_status_t config_logger(void)
 		switch_core_hash_destroy(&log_hash);
 	}
 
-	switch_core_hash_init(&log_hash, module_pool);
+	switch_core_hash_init(&log_hash);
 
 	if ((settings = switch_xml_child(cfg, "mappings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
