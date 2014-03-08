@@ -369,11 +369,11 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 
 	Wscript.echo("Checking if we're building a newer git version")
 
-	strVerMajor = FindVersionStringInConfigure(VersionDir & "configure.in", "SWITCH_VERSION_MAJOR")
-	strVerMinor = FindVersionStringInConfigure(VersionDir & "configure.in", "SWITCH_VERSION_MINOR")
-	strVerMicro = FindVersionStringInConfigure(VersionDir & "configure.in", "SWITCH_VERSION_MICRO")
-	strVerRev   = FindVersionStringInConfigure(VersionDir & "configure.in", "SWITCH_VERSION_REVISION")
-	strVerHuman = FindVersionStringInConfigure(VersionDir & "configure.in", "SWITCH_VERSION_REVISION_HUMAN")
+	strVerMajor = FindVersionStringInConfigure(VersionDir & "configure.ac", "SWITCH_VERSION_MAJOR")
+	strVerMinor = FindVersionStringInConfigure(VersionDir & "configure.ac", "SWITCH_VERSION_MINOR")
+	strVerMicro = FindVersionStringInConfigure(VersionDir & "configure.ac", "SWITCH_VERSION_MICRO")
+	strVerRev   = FindVersionStringInConfigure(VersionDir & "configure.ac", "SWITCH_VERSION_REVISION")
+	strVerHuman = FindVersionStringInConfigure(VersionDir & "configure.ac", "SWITCH_VERSION_REVISION_HUMAN")
 
 	'Set version to the one reported by configure.in
 	If strVerRev <> "" Then
