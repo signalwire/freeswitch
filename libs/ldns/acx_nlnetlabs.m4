@@ -781,9 +781,9 @@ AC_LANG_PROGRAM(
 #include <ws2tcpip.h>
 #endif
 ]])],
-[
+[[
         (void)getaddrinfo(NULL, NULL, NULL, NULL);
-]
+]]
 ),
 [
 ac_cv_func_getaddrinfo="yes"
