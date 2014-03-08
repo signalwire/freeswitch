@@ -97,7 +97,7 @@ SWITCH_LIMIT_INCR(limit_incr_redis)
 	} else {
 		/* This is the first limit check on this channel, create a hashtable, set our prviate data and add a state handler */
 		pvt = (limit_redis_private_t *) switch_core_session_alloc(session, sizeof(limit_redis_private_t));
-		switch_core_hash_init(&pvt->hash));
+		switch_core_hash_init(&pvt->hash);
 		switch_mutex_init(&pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 		switch_channel_set_private(channel, "limit_redis", pvt);
 	}
