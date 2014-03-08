@@ -1,6 +1,6 @@
 include $(top_srcdir)/build/modmake.rulesam
 
-AUTOMAKE_OPTIONS = foreign
+AUTOMAKE_OPTIONS += foreign
 
 # V8 version to use
 V8=v8-3.24.14

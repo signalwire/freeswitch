@@ -1,6 +1,6 @@
 include $(top_srcdir)/build/modmake.rulesam
 
-AUTOMAKE_OPTIONS = foreign
+AUTOMAKE_OPTIONS += foreign
 MODNAME=mod_curl
 
 JSON_C=json-c-0.9
