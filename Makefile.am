@@ -1,6 +1,6 @@
 EXTRA_DIST =
 SUBDIRS = . src
-AUTOMAKE_OPTIONS = foreign
+AUTOMAKE_OPTIONS = foreign subdir-objects
 NAME = freeswitch
 
 AM_LIBAPR_CFLAGS := $(shell ./libs/apr/apr-1-config --cflags)
