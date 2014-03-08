@@ -8028,12 +8028,12 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 
 	if (switch_core_codec_ready(&member->read_codec)) {
 		switch_core_codec_destroy(&member->read_codec);
-		memset(&member->read_codec, 0, sizeof(&member->read_codec));
+		memset(&member->read_codec, 0, sizeof(member->read_codec));
 	}
 
 	if (switch_core_codec_ready(&member->write_codec)) {
 		switch_core_codec_destroy(&member->write_codec);
-		memset(&member->write_codec, 0, sizeof(&member->write_codec));
+		memset(&member->write_codec, 0, sizeof(member->write_codec));
 	}
 
 	if (member->read_resampler) {
