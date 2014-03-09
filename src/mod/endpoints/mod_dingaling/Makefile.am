@@ -6,7 +6,7 @@ IKS_LA=$(IKS_BUILDDIR)/src/libiksemel.la
 DING_DIR=$(switch_srcdir)/libs/libdingaling
 
 mod_LTLIBRARIES = mod_dingaling.la
-mod_dingaling_la_SOURCES  = mod_dingaling.c $(DING_DIR)/src/libdingaling.c $(DING_DIR)/src/sha1.c
+mod_dingaling_la_SOURCES  = mod_dingaling.c ../../../../libs/libdingaling/src/libdingaling.c ../../../../libs/libdingaling/src/sha1.c
 mod_dingaling_la_CFLAGS   = $(AM_CFLAGS)
 mod_dingaling_la_CFLAGS  += `$(switch_srcdir)/libs/apr/apr-1-config --cflags --cppflags --includes`
 mod_dingaling_la_CFLAGS  += `$(switch_srcdir)/libs/apr-util/apu-1-config --includes` 
