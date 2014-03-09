@@ -2047,11 +2047,11 @@ static switch_status_t synth_load(switch_loadable_module_interface_t *module_int
 	mrcp_client_application_register(globals.mrcp_client, globals.synth.app, "synth");
 
 	/* map FreeSWITCH params to MRCP param */
-	switch_core_hash_init_nocase(&globals.synth.fs_param_map, pool);
+	switch_core_hash_init_nocase(&globals.synth.fs_param_map);
 	switch_core_hash_insert(globals.synth.fs_param_map, "voice", "voice-name");
 
 	/* map MRCP params to UniMRCP ID */
-	switch_core_hash_init_nocase(&globals.synth.param_id_map, pool);
+	switch_core_hash_init_nocase(&globals.synth.param_id_map);
 	switch_core_hash_insert(globals.synth.param_id_map, "jump-size", unimrcp_param_id_create(SYNTHESIZER_HEADER_JUMP_SIZE, pool));
 	switch_core_hash_insert(globals.synth.param_id_map, "kill-on-barge-in", unimrcp_param_id_create(SYNTHESIZER_HEADER_KILL_ON_BARGE_IN, pool));
 	switch_core_hash_insert(globals.synth.param_id_map, "speaker-profile", unimrcp_param_id_create(SYNTHESIZER_HEADER_SPEAKER_PROFILE, pool));
@@ -3794,12 +3794,12 @@ static switch_status_t recog_load(switch_loadable_module_interface_t *module_int
 	mrcp_client_application_register(globals.mrcp_client, globals.recog.app, "recog");
 
 	/* map FreeSWITCH params or old params to MRCPv2 param */
-	switch_core_hash_init_nocase(&globals.recog.fs_param_map, pool);
+	switch_core_hash_init_nocase(&globals.recog.fs_param_map);
 	/* MRCPv1 param */
 	switch_core_hash_insert(globals.recog.fs_param_map, "recognizer-start-timers", "start-input-timers");
 
 	/* map MRCP params to UniMRCP ID */
-	switch_core_hash_init_nocase(&globals.recog.param_id_map, pool);
+	switch_core_hash_init_nocase(&globals.recog.param_id_map);
 	switch_core_hash_insert(globals.recog.param_id_map, "Confidence-Threshold", unimrcp_param_id_create(RECOGNIZER_HEADER_CONFIDENCE_THRESHOLD, pool));
 	switch_core_hash_insert(globals.recog.param_id_map, "Sensitivity-Level", unimrcp_param_id_create(RECOGNIZER_HEADER_SENSITIVITY_LEVEL, pool));
 	switch_core_hash_insert(globals.recog.param_id_map, "Speed-Vs-Accuracy", unimrcp_param_id_create(RECOGNIZER_HEADER_SPEED_VS_ACCURACY, pool));
@@ -4332,7 +4332,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_unimrcp_load)
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_UNNESTED, pool);
 	globals.speech_channel_number = 0;
-	switch_core_hash_init_nocase(&globals.profiles, pool);
+	switch_core_hash_init_nocase(&globals.profiles);
 
 	/* get MRCP module configuration */
 	mod_unimrcp_do_config();
