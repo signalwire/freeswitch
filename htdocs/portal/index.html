@@ -41,7 +41,8 @@
 	<meta name="author" content="">
 
 	<!-- Le styles -->
-	<link href="assets/bootstrap/css/bootstrap.css" rel="stylesheet">
+	<link href="assets/bootstrap-3.1.1/css/bootstrap.min.css" rel="stylesheet">
+	<link href="assets/bs_for_ember/css/bs-growl-notifications.min.css" rel="stylesheet">
 	<style>
 		body {
 			padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
@@ -70,29 +71,32 @@
 
 <body>
 
-	<div class="navbar navbar-inverse navbar-fixed-top">
-		<div class="navbar-inner">
-			<div class="container">
-				<button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+	<header class="navbar navbar-inverse navbar-fixed-top bs-docs-nav" role="banner">
+		<div class="container">
+			<div class="pull-right" id='ws-status' style="padding-top:5px"></div>
+
+			<div class="navbar-header">
+				<button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".bs-navbar-collapse">
+					<span class="sr-only">Toggle navigation</span>
 					<span class="icon-bar"></span>
 					<span class="icon-bar"></span>
 					<span class="icon-bar"></span>
 				</button>
-				<a class="brand" href="#">FreeSWITCH Portal</a>
-				<div class="pull-right" id='ws-status' style="padding-top:5px"></div>
-				<div class="nav-collapse collapse">
-					<ul class="nav">
-						<li class="active"><a href="#">Home</a></li>
-						<li><a id="menu-users" href="#users">Users</a></li>
-						<li><a id="menu-calls" href="#calls">Calls</a></li>
-						<li><a id="menu-channels" href="#channels">Channels</a></li>
-						<li><a href="#show">Show</a></li>
-						<li><a href="#about">About</a></li>
-					</ul>
-				</div><!--/.nav-collapse -->
+				<a class="navbar-brand" href="#">FreeSWITCH Portal</a>
 			</div>
+
+			<nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
+				<ul class="nav navbar-nav">
+					<li><a href="#">Home</a></li>
+					<li><a id="menu-users" href="#users">Users</a></li>
+					<li><a id="menu-calls" href="#calls">Calls</a></li>
+					<li><a id="menu-channels" href="#channels">Channels</a></li>
+					<li><a href="#show">Show</a></li>
+					<li><a href="#about">About</a></li>
+				</ul>
+			</nav>
 		</div>
-	</div>
+	</header>
 
 	<div class="container" id="container">
 		<div id="main">
@@ -688,10 +692,26 @@
 ================================================== -->
 <!-- Placed at the end of the document so the pages load faster -->
 <script src="assets/js/ie-console.js"></script>
-<script src="assets/js/jquery-1.9.1.min.js"></script>
-<script src="assets/js/handlebars.js"></script>
-<script src="assets/js/ember-1.0.0-rc.1.js"></script>
-<script src="assets/js/ember-data.js"></script>
+<script src="assets/js/jquery.min.js"></script>
+<script src="assets/js/handlebars.min.js"></script>
+<script src="assets/js/ember.min.js"></script>
+<!-- <script src="assets/js/ember-data.min.js"></script> -->
+<script src="assets/bs_for_ember/js/bs-core.min.js"></script>
+<script src="assets/bs_for_ember/js/bs-alert.min.js"></script>
+<script src="assets/bs_for_ember/js/bs-badge.min.js"></script>
+<script src="assets/bs_for_ember/js/bs-basic.min.js"></script>
+<script src="assets/bs_for_ember/js/bs-button.min.js"></script>
+<script src="assets/bs_for_ember/js/bs-growl-notifications.min.js"></script>
+<script src="assets/bs_for_ember/js/bs-items-action-bar.min.js"></script>
+<script src="assets/bs_for_ember/js/bs-label.min.js"></script>
+<script src="assets/bs_for_ember/js/bs-list-group.min.js"></script>
+<script src="assets/bs_for_ember/js/bs-modal.min.js"></script>
+<script src="assets/bs_for_ember/js/bs-nav.min.js"></script>
+<script src="assets/bs_for_ember/js/bs-notifications.min.js"></script>
+<script src="assets/bs_for_ember/js/bs-progressbar.min.js"></script>
+<script src="assets/bs_for_ember/js/bs-wizard.min.js"></script>
+
+
 <script src="assets/js/fsportal.js"></script>
 <!--
 <script src="assets/js/bootstrap-transition.js"></script>

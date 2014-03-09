@@ -714,7 +714,7 @@ App.usersController = Ember.ArrayController.create({
 	}
 });
 
-App.initialize();
+// App.initialize();
 var global_debug_event = false;
 var global_background_job = false;
 
