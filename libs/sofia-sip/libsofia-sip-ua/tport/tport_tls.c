@@ -550,7 +550,11 @@ su_inline
 int tls_post_connection_check(tport_t *self, tls_t *tls)
 {
   X509 *cert;
+#if OPENSSL_VERSION_NUMBER < 0x009080bfL
+  SSL_CIPHER *cipher;
+#else
   const SSL_CIPHER *cipher;
+#endif
   char cipher_description[256];
   int cipher_bits, alg_bits;
   int extcount;
