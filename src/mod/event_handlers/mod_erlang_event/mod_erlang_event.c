@@ -755,7 +755,7 @@ static int check_log_queue(listener_t *listener)
 
 	/* send out any pending crap in the log queue */
 	if (switch_test_flag(listener, LFLAG_LOG)) {
-		while (msgs_sent < 100 && switch_queue_trypop(listener->log_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+		while (msgs_sent < prefs.max_log_bulk && switch_queue_trypop(listener->log_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_log_node_t *dnode = (switch_log_node_t *) pop;
 
 			if (dnode->data) {
@@ -817,7 +817,7 @@ static int check_event_queue(listener_t *listener)
 
 	/* send out any pending crap in the event queue */
 	if (switch_test_flag(listener, LFLAG_EVENTS)) {
-		while (msgs_sent < 100 && switch_queue_trypop(listener->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+		while (msgs_sent < prefs.max_event_bulk && switch_queue_trypop(listener->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 
 			switch_event_t *pevent = (switch_event_t *) pop;
 
@@ -998,7 +998,7 @@ static void listener_main_loop(listener_t *listener)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%d messages sent in a loop\n", msgs_sent);
 #endif
 		} else { /* no more messages right now, relax */
-			switch_yield(100000);
+			switch_yield(10000);
 		}
 	}
 	if (prefs.done) {
@@ -1157,6 +1157,9 @@ static int config(void)
 	prefs.shortname = SWITCH_TRUE;
 	prefs.encoding = ERLANG_STRING;
 	prefs.compat_rel = 0;
+	prefs.max_event_bulk = 1;
+	prefs.max_log_bulk = 1;
+	
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
@@ -1199,6 +1202,10 @@ static int config(void)
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", MAX_ACL);
 					}
+				} else if (!strcasecmp(var, "max-event-bulk") && !zstr(val)) {
+					prefs.max_event_bulk = atoi(val);
+				} else if (!strcasecmp(var, "max-log-bulk") && !zstr(val)) {
+					prefs.max_log_bulk = atoi(val);
 				}
 			}
 		}
