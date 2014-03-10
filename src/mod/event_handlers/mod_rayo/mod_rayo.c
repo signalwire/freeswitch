@@ -1973,7 +1973,7 @@ static iks *join_call(struct rayo_call *call, switch_core_session_t *session, st
 	struct rayo_call *b_call = RAYO_CALL_LOCATE(call_uri);
 	if (!b_call) {
 		/* not a rayo call */
-		response = iks_new_error_detailed(node, STANZA_ERROR_SERVICE_UNAVAILABLE, "b-leg is not a rayo call");
+		response = iks_new_error_detailed(node, STANZA_ERROR_SERVICE_UNAVAILABLE, "b-leg is gone");
 	} else if (!has_call_control(b_call, msg)) {
 		/* not allowed to join to this call */
 		response = iks_new_error(node, STANZA_ERROR_NOT_ALLOWED);
@@ -1990,7 +1990,7 @@ static iks *join_call(struct rayo_call *call, switch_core_session_t *session, st
 		call->pending_join_request = iks_copy(node);
 		if (switch_ivr_uuid_bridge(rayo_call_get_uuid(call), rayo_call_get_uuid(b_call)) != SWITCH_STATUS_SUCCESS) {
 			iks *request = call->pending_join_request;
-			iks *result = iks_new_error_detailed(request, STANZA_ERROR_ITEM_NOT_FOUND, "failed to bridge call");
+			iks *result = iks_new_error(request, STANZA_ERROR_SERVICE_UNAVAILABLE);
 			call->pending_join_request = NULL;
 			RAYO_SEND_REPLY(call, iks_find_attrib_soft(request, "from"), result);
 			iks_delete(call->pending_join_request);
