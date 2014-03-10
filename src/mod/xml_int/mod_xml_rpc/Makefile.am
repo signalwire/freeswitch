@@ -78,6 +78,7 @@ BUILT_SOURCES=$(XMLRPC_DIR)/version.h $(XMLRPC_DIR)/lib/expat/xmltok/nametab.h
 $(XMLRPC_DIR)/lib/expat/xmltok/xmltok.o: $(XMLRPC_DIR)/lib/expat/xmltok/nametab.h
 
 $(XMLRPC_DIR)/lib/expat/xmltok/nametab.h:
+	cd $(XMLRPC_DIR)/lib/expat/gennmtab && $(MAKE) dep
 	cd $(XMLRPC_DIR)/lib/expat/gennmtab && $(MAKE)
 	cd $(XMLRPC_DIR)/lib/expat/xmltok   && ../gennmtab/gennmtab > nametab.h
 
