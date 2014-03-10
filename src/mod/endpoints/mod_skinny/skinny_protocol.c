@@ -911,6 +911,7 @@ switch_status_t perform_send_open_receive_channel(listener_t *listener,
 	message->data.open_receive_channel.echo_cancel_type = echo_cancel_type;
 	message->data.open_receive_channel.g723_bitrate = g723_bitrate;
 	message->data.open_receive_channel.conference_id2 = conference_id2;
+	message->data.open_receive_channel.rtptimeout = htonl(0x0a);
 	/*
 	   message->data.open_receive_channel.reserved[0] = reserved[0];
 	   message->data.open_receive_channel.reserved[1] = reserved[1];
