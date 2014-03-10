@@ -31,7 +31,7 @@ $(MPG123_DIR):
 
 $(MPG123_BUILDDIR)/Makefile: $(MPG123_DIR)
 	mkdir -p $(MPG123_BUILDDIR)
-	cd $(MPG123_BUILDDIR) && $(DEFAULT_VARS) $(MPG123_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(MPG123_DIR) CPPFLAGS= LDFLAGS=
+	cd $(MPG123_BUILDDIR) && $(DEFAULT_VARS) $(MPG123_DIR)/configure $(DEFAULT_ARGS) --disable-shared --with-pic --srcdir=$(MPG123_DIR) CPPFLAGS= LDFLAGS=
 	$(TOUCH_TARGET)
 
 $(MPG123LA): $(MPG123_BUILDDIR)/Makefile
@@ -43,7 +43,7 @@ $(LAME_DIR):
 
 $(LAME_BUILDDIR)/Makefile: $(LAME_DIR)
 	mkdir -p $(LAME_BUILDDIR)
-	cd $(LAME_BUILDDIR) && $(DEFAULT_VARS) $(LAME_DIR)/configure $(DEFAULT_ARGS) --disable-decoder --srcdir=$(LAME_DIR) CPPFLAGS= LDFLAGS=
+	cd $(LAME_BUILDDIR) && $(DEFAULT_VARS) $(LAME_DIR)/configure $(DEFAULT_ARGS) --disable-shared --with-pic --disable-decoder --srcdir=$(LAME_DIR) CPPFLAGS= LDFLAGS=
 	$(TOUCH_TARGET)
 
 $(LAMELA): $(LAME_BUILDDIR)/Makefile
@@ -56,7 +56,7 @@ $(SHOUT_DIR):
 
 $(SHOUT_BUILDDIR)/Makefile: $(SHOUT_DIR)
 	mkdir -p $(SHOUT_BUILDDIR)
-	cd $(SHOUT_BUILDDIR) && $(DEFAULT_VARS) $(SHOUT_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(SHOUT_DIR) --without-speex --without-vorbis --without-ogg CPPFLAGS= LDFLAGS=
+	cd $(SHOUT_BUILDDIR) && $(DEFAULT_VARS) $(SHOUT_DIR)/configure $(DEFAULT_ARGS) --disable-shared --with-pic --srcdir=$(SHOUT_DIR) --without-speex --without-vorbis --without-ogg CPPFLAGS= LDFLAGS=
 	$(TOUCH_TARGET)
 
 $(SHOUTLA): $(SHOUT_BUILDDIR)/Makefile
