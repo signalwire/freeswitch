@@ -2317,9 +2317,23 @@ SWITCH_STANDARD_APP(httapi_function)
 
 /* HTTP FILE INTERFACE */
 
+static const char *find_ext(const char *in)
+{
+	const char *p = in + (strlen(in) - 1);
+	
+	while(p >= in && *p) {
+		if (*p == '/') return NULL;
+		if (*p == '.') return (p+1);
+		p--;
+	}
+
+	return NULL;
+}
+
 static char *load_cache_data(http_file_context_t *context, const char *url)
 {
-	char *ext = NULL, *dext = NULL, *p;
+	const char *ext = NULL;
+	char *dext = NULL, *p;
 	char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
 	char meta_buffer[1024] = "";
 	int fd;
@@ -2332,11 +2346,7 @@ static char *load_cache_data(http_file_context_t *context, const char *url)
 	}
 	
 	if (zstr(ext)) {
-		if ((ext = strrchr(url, '.'))) {
-			ext++;
-		} else {
-			ext = "wav";
-		}
+		ext = find_ext(url);
 	}
 	
 	if (ext && (p = strchr(ext, '?'))) {
@@ -2348,9 +2358,8 @@ static char *load_cache_data(http_file_context_t *context, const char *url)
 	}
 
 	context->cache_file_base = switch_core_sprintf(context->pool, "%s%s%s", globals.cache_path, SWITCH_PATH_SEPARATOR, digest);
-	context->cache_file = switch_core_sprintf(context->pool, "%s%s%s.%s", globals.cache_path, SWITCH_PATH_SEPARATOR, digest, ext);
-	context->meta_file = switch_core_sprintf(context->pool, "%s.meta", context->cache_file);
-	context->lock_file = switch_core_sprintf(context->pool, "%s.lock", context->cache_file);
+	context->meta_file = switch_core_sprintf(context->pool, "%s%s%s.meta", globals.cache_path, SWITCH_PATH_SEPARATOR, digest);
+	context->lock_file = switch_core_sprintf(context->pool, "%s%s%s.lock", globals.cache_path, SWITCH_PATH_SEPARATOR, digest);
 
 	if (switch_file_exists(context->meta_file, context->pool) == SWITCH_STATUS_SUCCESS && ((fd = open(context->meta_file, O_RDONLY, 0)) > -1)) {
 		if ((bytes = read(fd, meta_buffer, sizeof(meta_buffer))) > 0) {
@@ -2363,9 +2372,19 @@ static char *load_cache_data(http_file_context_t *context, const char *url)
 				}
 				context->metadata = switch_core_strdup(context->pool, p);
 			}
+
+			if ((p = strrchr(context->metadata, ':'))) {
+				p++;
+				if (!zstr(p)) {
+					ext = p;
+				}
+			}
+
 		}
 		close(fd);
 	}
+
+	context->cache_file = switch_core_sprintf(context->pool, "%s%s%s%s%s", globals.cache_path, SWITCH_PATH_SEPARATOR, digest, ext ? "." : "", ext ? ext : "");
 
 	switch_safe_free(dext);
 
@@ -2626,6 +2645,7 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	time_t now = switch_epoch_time_now(NULL);
 	char *metadata;
+	const char *ext = NULL;
 
 	load_cache_data(context, url);
 
@@ -2634,6 +2654,10 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 	}
 
 	lock_file(context, SWITCH_TRUE);
+
+	if (context->url_params) {
+		ext = switch_event_get_header(context->url_params, "ext");
+	}
 
 	if (!context->url_params || !switch_true(switch_event_get_header(context->url_params, "nohead"))) {
 		const char *ct = NULL;
@@ -2650,8 +2674,7 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 			}
 		}
 		
-		if ((!context->url_params || !switch_event_get_header(context->url_params, "ext")) 
-			&& headers && (ct = switch_event_get_header(headers, "content-type"))) {
+		if (zstr(ext) && headers && (ct = switch_event_get_header(headers, "content-type"))) {
 			if (switch_strcasecmp_any(ct, "audio/mpeg", "audio/x-mpeg", "audio/mp3", "audio/x-mp3", "audio/mpeg3", 
 									  "audio/x-mpeg3", "audio/mpg", "audio/x-mpg", "audio/x-mpegaudio", NULL)) {
 				newext = "mp3";
@@ -2660,14 +2683,14 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 			}
 		}
 
+		if (newext) {
+			ext = newext;
+		} else if (zstr(ext)) {
+			ext = find_ext(context->cache_file);
+		}
+
 
 		if (newext) {
-			char *p;
-
-			if ((p = strrchr(context->cache_file, '.'))) {
-				*p = '\0';
-			}
-			
 			context->cache_file = switch_core_sprintf(context->pool, "%s.%s", context->cache_file, newext);
 		}
 
@@ -2678,11 +2701,12 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 		}
 		
 		if (!unreachable && !zstr(context->metadata)) {
-			metadata = switch_core_sprintf(context->pool, "%s:%s:%s:%s",
+			metadata = switch_core_sprintf(context->pool, "%s:%s:%s:%s:%s",
 										   url,
 										   switch_event_get_header_nil(headers, "last-modified"),
 										   switch_event_get_header_nil(headers, "etag"),
-										   switch_event_get_header_nil(headers, "content-length")
+										   switch_event_get_header_nil(headers, "content-length"),
+										   ext
 										   );
 
 			if (!strcmp(metadata, context->metadata)) {
@@ -2701,11 +2725,12 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 	}
 
 
-	metadata = switch_core_sprintf(context->pool, "%s:%s:%s:%s",
+	metadata = switch_core_sprintf(context->pool, "%s:%s:%s:%s:%s",
 								   url,
 								   switch_event_get_header_nil(headers, "last-modified"),
 								   switch_event_get_header_nil(headers, "etag"),
-								   switch_event_get_header_nil(headers, "content-length")
+								   switch_event_get_header_nil(headers, "content-length"),
+								   ext
 								   );
 	
 	write_meta_file(context, metadata, headers);
