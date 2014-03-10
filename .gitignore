@@ -214,6 +214,9 @@ ipch/
 /src/mod/languages/mod_managed/Win32/Debug_CLR/mod_managed.*.log
 /src/mod/languages/mod_managed/Win32/Release_CLR/mod_managed.*.log
 
+/src/.dirstamp
+/src/mod/languages/mod_v8/src/.dirstamp
+
 libs/libsndfile/Scripts/build-test-tarball.mk
 libs/libsndfile/doc/libsndfile.css
 libs/libsndfile/echo-install-dirs
