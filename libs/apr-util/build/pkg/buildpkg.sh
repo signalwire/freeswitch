@@ -56,7 +56,7 @@ do
   shift
 done
 
-if [ -f "$apr_util_src_dir/configure.in" ]; then
+if [ -f "$apr_util_src_dir/configure.ac" ]; then
   cd $apr_util_src_dir
 else
   echo "The apr-util source could not be found within $apr_util_src_dir"
@@ -64,7 +64,7 @@ else
   exit 1
 fi
 
-if [ ! -f "$apr_src_dir/configure.in" ]; then
+if [ ! -f "$apr_src_dir/configure.ac" ]; then
   echo "The apr source could not be found within $apr_src_dir"
   echo "Usage: buildpkg [--with-apr=dir] [--with-apr-util=dir] [--with-expat=dir]"
   exit 1

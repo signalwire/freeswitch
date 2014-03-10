@@ -829,7 +829,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_alsa_load)
 
 
 
-	switch_core_hash_init(&globals.call_hash, module_pool);
+	switch_core_hash_init(&globals.call_hash);
 	switch_mutex_init(&globals.device_lock, SWITCH_MUTEX_NESTED, module_pool);
 	switch_mutex_init(&globals.pvt_lock, SWITCH_MUTEX_NESTED, module_pool);
 	switch_mutex_init(&globals.flag_mutex, SWITCH_MUTEX_NESTED, module_pool);

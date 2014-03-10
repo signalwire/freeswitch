@@ -186,7 +186,7 @@ SWITCH_DECLARE(char *) switch_copy_string(_Out_z_cap_(dst_size)
  * progress at the same time.
 
  */
-SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(switch_memory_pool_t *p, switch_hash_t *ht);
+SWITCH_DECLARE(switch_hash_index_t *) switch_core_hash_first(switch_memory_pool_t *p, switch_hash_t *ht);
 
 /**
  * Continue iterating over the entries in a hash table.
@@ -194,7 +194,7 @@ SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(switch_memory_pool_t *p,
  * @return a pointer to the updated iteration state.  NULL if there are no more  
  *         entries.
  */
-SWITCH_DECLARE(switch_hash_index_t *) switch_hash_next(switch_hash_index_t *ht);
+SWITCH_DECLARE(switch_hash_index_t *) switch_core_hash_next(switch_hash_index_t *ht);
 
 /**
  * Get the current entry's details from the iteration state.
@@ -205,7 +205,7 @@ SWITCH_DECLARE(switch_hash_index_t *) switch_hash_next(switch_hash_index_t *ht);
  * @remark The return pointers should point to a variable that will be set to the
  *         corresponding data, or they may be NULL if the data isn't interesting.
  */
-SWITCH_DECLARE(void) switch_hash_this(switch_hash_index_t *hi, const void **key, switch_ssize_t *klen, void **val);
+SWITCH_DECLARE(void) switch_core_hash_this(switch_hash_index_t *hi, const void **key, switch_ssize_t *klen, void **val);
 
 
 

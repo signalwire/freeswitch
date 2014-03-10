@@ -1,6 +1,7 @@
+#include "amf0.h"
+
 #include <string.h>
 
-#include "amf0.h"
 #include "io.h"
 #include "types.h"
 

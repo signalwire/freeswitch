@@ -76183,7 +76183,7 @@ index 9b20546..4489cfc 100644
 -	MIMETypeAdd("text/html", "html");
 +
  	for (hi = switch_core_mime_index(); hi; hi = switch_hash_next(hi)) {
- 		switch_hash_this(hi, &var, NULL, &val);
+ 		switch_core_hash_this(hi, &var, NULL, &val);
  		if (var && val) {
 @@ -955,38 +1042,52 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
  	switch_snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, "freeswitch_http.log");

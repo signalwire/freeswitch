@@ -12,7 +12,7 @@
 
 include $(top_srcdir)/rules/sofia.am
 
-INCLUDES = 	${INTERNAL_INCLUDES}
+AM_CPPFLAGS = 	${INTERNAL_INCLUDES}
 
 # ----------------------------------------------------------------------
 # Build targets

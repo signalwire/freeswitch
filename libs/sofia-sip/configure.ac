@@ -255,7 +255,11 @@ fi
 AC_CHECK_HEADERS([fnmatch.h])
 
 AC_CHECK_LIB(pthread, pthread_setschedparam, [AC_DEFINE(HAVE_PTHREAD_SETSCHEDPARAM, 1, [Define if you have pthread_setschedparam()])])
-
+AC_CHECK_LIB(z, compress, [have_zlib=yes],[have_zlib=no])
+if test x"$have_zlib" = "xyes"; then
+   AC_DEFINE(HAVE_ZLIB_COMPRESS, 1, [Define if you have zlib compress])
+fi
+AM_CONDITIONAL([HAVE_ZLIB], [test "x$have_zlib" = xyes])
 
 dnl dl is currently used only in testing
 AC_CHECK_LIB([dl], [dlopen], [

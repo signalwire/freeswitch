@@ -493,13 +493,13 @@ AC_DEFUN([APR_TRY_COMPILE_NO_WARNING],
  if test "$ac_cv_prog_gcc" = "yes"; then 
    CFLAGS="$CFLAGS -Werror"
  fi
- AC_COMPILE_IFELSE(
+ AC_COMPILE_IFELSE([AC_LANG_SOURCE([
   [#include "confdefs.h"
   ]
   [[$1]]
   [int main(int argc, const char *const *argv) {]
   [[$2]]
-  [   return 0; }],
+  [   return 0; }]])],
   [$3], [$4])
  CFLAGS=$apr_save_CFLAGS
 ])

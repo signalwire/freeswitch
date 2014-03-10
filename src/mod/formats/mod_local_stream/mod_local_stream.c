@@ -810,8 +810,8 @@ SWITCH_STANDARD_API(show_local_stream_function)
 	switch_mutex_lock(globals.mutex);
 
 	if (zstr(cmd)) {
-		for (hi = switch_hash_first(NULL, globals.source_hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, &var, NULL, &val);
+		for (hi = switch_core_hash_first( globals.source_hash); hi; hi = switch_core_hash_next(hi)) {
+			switch_core_hash_this(hi, &var, NULL, &val);
 			if ((source = (local_stream_source_t *) val)) {
 				stream->write_function(stream, "%s,%s\n", source->name, source->location);
 			}
@@ -981,7 +981,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_local_stream_load)
 
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, pool);
-	switch_core_hash_init(&globals.source_hash, pool);
+	switch_core_hash_init(&globals.source_hash);
 	if (!launch_streams(NULL)) {
 		return SWITCH_STATUS_GENERR;
 	}

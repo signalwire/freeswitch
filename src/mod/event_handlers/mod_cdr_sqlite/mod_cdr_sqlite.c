@@ -196,7 +196,7 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	memset(&globals, 0, sizeof(globals));
-	switch_core_hash_init(&globals.template_hash, pool);
+	switch_core_hash_init(&globals.template_hash);
 
 	globals.pool = pool;
 

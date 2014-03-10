@@ -29,8 +29,8 @@
  *
  */
 
-#include <unistd.h>
 #include <switch.h>
+#include <unistd.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_tts_commandline_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_tts_commandline_shutdown);

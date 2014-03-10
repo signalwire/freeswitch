@@ -198,7 +198,7 @@ struct ssml_context {
 static struct tag_def *add_tag_def(const char *tag, tag_attribs_fn attribs_fn, tag_cdata_fn cdata_fn, const char *children_tags)
 {
 	struct tag_def *def = switch_core_alloc(globals.pool, sizeof(*def));
-	switch_core_hash_init(&def->children_tags, globals.pool);
+	switch_core_hash_init(&def->children_tags);
 	if (!zstr(children_tags)) {
 		char *children_tags_dup = switch_core_strdup(globals.pool, children_tags);
 		char *tags[32] = { 0 };
@@ -339,12 +339,12 @@ static struct voice *find_voice(struct ssml_node *cur_node, switch_hash_t *map, 
 	}
 
 	/* find best language, name, gender match */
-	for (hi = switch_hash_first(NULL, map); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_core_hash_first( map); hi; hi = switch_core_hash_next(hi)) {
 		const void *key;
 		void *val;
 		struct voice *candidate;
 		int candidate_score = 0;
-		switch_hash_this(hi, &key, NULL, &val);
+		switch_core_hash_this(hi, &key, NULL, &val);
 		candidate = (struct voice *)val;
 		candidate_score = score_voice(candidate, cur_node, lang_required);
 		if (candidate_score > 0 && candidate_score > best_score) {
@@ -1110,12 +1110,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_ssml_load)
 	 */
 
 	globals.pool = pool;
-	switch_core_hash_init(&globals.voice_cache, pool);
-	switch_core_hash_init(&globals.tts_voice_map, pool);
-	switch_core_hash_init(&globals.say_voice_map, pool);
-	switch_core_hash_init(&globals.interpret_as_map, pool);
-	switch_core_hash_init(&globals.language_map, pool);
-	switch_core_hash_init(&globals.tag_defs, pool);
+	switch_core_hash_init(&globals.voice_cache);
+	switch_core_hash_init(&globals.tts_voice_map);
+	switch_core_hash_init(&globals.say_voice_map);
+	switch_core_hash_init(&globals.interpret_as_map);
+	switch_core_hash_init(&globals.language_map);
+	switch_core_hash_init(&globals.tag_defs);
 
 	add_root_tag_def("speak", process_xml_lang, process_cdata_tts, "audio,break,emphasis,mark,phoneme,prosody,say-as,voice,sub,p,s,lexicon,metadata,meta");
 	add_tag_def("p", process_xml_lang, process_cdata_tts, "audio,break,emphasis,mark,phoneme,prosody,say-as,voice,sub,s");

@@ -8,7 +8,7 @@
 # ----------------------------------------------------------------------
 # Header paths
 
-INCLUDES = 		-I$(srcdir)/../bnf -I../bnf \
+AM_CPPFLAGS = 		-I$(srcdir)/../bnf -I../bnf \
 	 		-I$(srcdir)/../ipt -I../ipt \
 	 		-I$(srcdir)/../http -I../http \
 			-I$(srcdir)/../msg -I../msg \

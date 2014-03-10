@@ -493,7 +493,7 @@ switch_status_t load_configuration(switch_bool_t reload)
 	}
 
 	switch_core_new_memory_pool(&spandsp_globals.config_pool);
-	switch_core_hash_init(&spandsp_globals.tones, spandsp_globals.config_pool);
+	switch_core_hash_init(&spandsp_globals.tones);
 
 	spandsp_globals.modem_dialplan = "XML";
 	spandsp_globals.modem_context = "default";

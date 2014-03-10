@@ -416,7 +416,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel,
 
 	switch_event_create_plain(&(*channel)->variables, SWITCH_EVENT_CHANNEL_DATA);
 
-	switch_core_hash_init(&(*channel)->private_hash, pool);
+	switch_core_hash_init(&(*channel)->private_hash);
 	switch_queue_create(&(*channel)->dtmf_queue, SWITCH_DTMF_LOG_LEN, pool);
 	switch_queue_create(&(*channel)->dtmf_log_queue, SWITCH_DTMF_LOG_LEN, pool);
 
@@ -1862,7 +1862,7 @@ SWITCH_DECLARE(void) switch_channel_set_app_flag_key(const char *key, switch_cha
 	switch_mutex_lock(channel->flag_mutex);
 
 	if (!channel->app_flag_hash) {
-		switch_core_hash_init(&channel->app_flag_hash, switch_core_session_get_pool(channel->session));
+		switch_core_hash_init(&channel->app_flag_hash);
 		new++;
 	}
 	
@@ -4686,7 +4686,7 @@ SWITCH_DECLARE(void) switch_channel_global_init(switch_memory_pool_t *pool)
 	globals.pool = pool;
 
 	switch_mutex_init(&globals.device_mutex, SWITCH_MUTEX_NESTED, pool);
-	switch_core_hash_init(&globals.device_hash, globals.pool);
+	switch_core_hash_init(&globals.device_hash);
 }
 
 SWITCH_DECLARE(void) switch_channel_global_uninit(void)

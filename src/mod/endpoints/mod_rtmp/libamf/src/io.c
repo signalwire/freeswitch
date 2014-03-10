@@ -1,7 +1,7 @@
+#include "io.h"
+
 #include <stdio.h>
 #include <string.h>
-
-#include "io.h"
 
 /* callback function to mimic fread using a memory buffer */
 size_t buffer_read(void * out_buffer, size_t size, void * user_data) {

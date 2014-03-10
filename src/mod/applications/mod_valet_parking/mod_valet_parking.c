@@ -71,7 +71,7 @@ static valet_lot_t *valet_find_lot(const char *name, switch_bool_t create)
 		switch_zmalloc(lot, sizeof(*lot));
 		lot->name = strdup(name);
 		switch_mutex_init(&lot->mutex, SWITCH_MUTEX_NESTED, globals.pool);
-		switch_core_hash_init(&lot->hash, NULL);
+		switch_core_hash_init(&lot->hash);
 		switch_core_hash_insert(globals.hash, name, lot);
 	}
 	switch_mutex_unlock(globals.mutex);
@@ -120,8 +120,8 @@ static void check_timeouts(void)
 	}
 
 	globals.last_timeout_check = now;
-	for (hi = switch_hash_first(NULL, globals.hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, &var, NULL, &val);
+	for (hi = switch_core_hash_first( globals.hash); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, &var, NULL, &val);
 		switch_console_push_match(&matches, (const char *) var);
 	}
 	switch_mutex_unlock(globals.mutex);
@@ -135,8 +135,8 @@ static void check_timeouts(void)
 
 		top:
 		
-			for (i_hi = switch_hash_first(NULL, lot->hash); i_hi; i_hi = switch_hash_next(i_hi)) {
-				switch_hash_this(i_hi, &i_var, NULL, &i_val);
+			for (i_hi = switch_core_hash_first( lot->hash); i_hi; i_hi = switch_core_hash_next(i_hi)) {
+				switch_core_hash_this(i_hi, &i_var, NULL, &i_val);
 				i_ext = (char *) i_var;
 				token = (valet_token_t *) i_val;
 
@@ -167,9 +167,9 @@ static int find_longest(valet_lot_t *lot, int min, int max)
 	time_t now = switch_epoch_time_now(NULL);
 
 	switch_mutex_lock(lot->mutex);
-	for (i_hi = switch_hash_first(NULL, lot->hash); i_hi; i_hi = switch_hash_next(i_hi)) {
+	for (i_hi = switch_core_hash_first( lot->hash); i_hi; i_hi = switch_core_hash_next(i_hi)) {
 		int i;
-		switch_hash_this(i_hi, &i_var, NULL, &i_val);
+		switch_core_hash_this(i_hi, &i_var, NULL, &i_val);
 		token = (valet_token_t *) i_val;
 		cur = (now - token->start_time);
 		i = atoi(token->ext);
@@ -257,8 +257,8 @@ static int valet_lot_count(valet_lot_t *lot)
 	now = switch_epoch_time_now(NULL);
 
 	switch_mutex_lock(lot->mutex);
-	for (i_hi = switch_hash_first(NULL, lot->hash); i_hi; i_hi = switch_hash_next(i_hi)) {
-		switch_hash_this(i_hi, &i_var, NULL, &i_val);
+	for (i_hi = switch_core_hash_first( lot->hash); i_hi; i_hi = switch_core_hash_next(i_hi)) {
+		switch_core_hash_this(i_hi, &i_var, NULL, &i_val);
 		token = (valet_token_t *) i_val;
 		if (token->timeout > 0 && (token->timeout < now || token->timeout == 1)) {
 			continue;
@@ -738,13 +738,13 @@ SWITCH_STANDARD_API(valet_info_function)
 	stream->write_function(stream, "<lots>\n");
 
 	switch_mutex_lock(globals.mutex);
-	for (hi = switch_hash_first(NULL, globals.hash); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_core_hash_first( globals.hash); hi; hi = switch_core_hash_next(hi)) {
 		switch_hash_index_t *i_hi;
 		const void *i_var;
 		void *i_val;
 		char *i_ext;
 
-		switch_hash_this(hi, &var, NULL, &val);
+		switch_core_hash_this(hi, &var, NULL, &val);
 		name = (char *) var;
 		lot = (valet_lot_t *) val;
 
@@ -754,10 +754,10 @@ SWITCH_STANDARD_API(valet_info_function)
 		stream->write_function(stream, "  <lot name=\"%s\">\n", name);
 
 		switch_mutex_lock(lot->mutex);
-		for (i_hi = switch_hash_first(NULL, lot->hash); i_hi; i_hi = switch_hash_next(i_hi)) {
+		for (i_hi = switch_core_hash_first( lot->hash); i_hi; i_hi = switch_core_hash_next(i_hi)) {
 			valet_token_t *token;
 
-			switch_hash_this(i_hi, &i_var, NULL, &i_val);
+			switch_core_hash_this(i_hi, &i_var, NULL, &i_val);
 			i_ext = (char *) i_var;
 			token = (valet_token_t *) i_val;
 
@@ -848,8 +848,8 @@ static void pres_event_handler(switch_event_t *event)
 		const char *nvar;
 
 		switch_mutex_lock(globals.mutex);
-		for (hi = switch_hash_first(NULL, globals.hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, &var, NULL, &val);
+		for (hi = switch_core_hash_first( globals.hash); hi; hi = switch_core_hash_next(hi)) {
+			switch_core_hash_this(hi, &var, NULL, &val);
 			nvar = (const char *) var;
 
 			if (!strchr(nvar, '@') || switch_stristr(domain_name, nvar)) {
@@ -930,7 +930,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_valet_parking_load)
 	memset(&globals, 0, sizeof(globals));
 
 	globals.pool = pool;
-	switch_core_hash_init(&globals.hash, NULL);
+	switch_core_hash_init(&globals.hash);
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
 	/* connect my internal structure to the blank pointer passed to me */

@@ -5591,9 +5591,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	switch_file_interface_t *file_interface;
 
 	globals.pool = pool;
-	switch_core_hash_init(&globals.pickup_hash, globals.pool);
+	switch_core_hash_init(&globals.pickup_hash);
 	switch_mutex_init(&globals.pickup_mutex, SWITCH_MUTEX_NESTED, globals.pool);
-	switch_core_hash_init(&globals.mutex_hash, globals.pool);
+	switch_core_hash_init(&globals.mutex_hash);
 	switch_mutex_init(&globals.mutex_mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
 	/* connect my internal structure to the blank pointer passed to me */

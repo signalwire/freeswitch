@@ -83,7 +83,7 @@ LIBXMLRPC_MODS = \
 	parse_datetime \
 	parse_value \
         resource \
-	trace \
+	xml_trace \
 	version \
 	xmlrpc_data \
 	xmlrpc_datetime \

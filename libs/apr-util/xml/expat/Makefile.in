@@ -98,7 +98,7 @@ config.status: configure
 		$(SHELL) configure ; \
 	fi
 
-configure: configure.in
+configure: configure.ac
 	$(AUTOCONF)
 
 config.h: config.h.in config.status

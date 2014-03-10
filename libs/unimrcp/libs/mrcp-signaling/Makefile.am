@@ -1,6 +1,6 @@
 MAINTAINERCLEANFILES 	    = Makefile.in
 
-INCLUDES                    = -I$(top_srcdir)/libs/mrcp-signaling/include \
+AM_CPPFLAGS                 = -I$(top_srcdir)/libs/mrcp-signaling/include \
                               -I$(top_srcdir)/libs/mrcp/include \
                               -I$(top_srcdir)/libs/mpf/include \
                               -I$(top_srcdir)/libs/apr-toolkit/include \

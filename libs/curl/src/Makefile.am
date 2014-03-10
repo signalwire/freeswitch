@@ -27,11 +27,11 @@ AUTOMAKE_OPTIONS = foreign nostdinc
 # we use builddir/src for the generated include files to get found
 # we use srcdir/lib for the header files we "borrow" from the lib
 
-INCLUDES = -I$(top_srcdir)/include \
-           -I$(top_builddir)/lib   \
-           -I$(top_builddir)/src   \
-           -I$(top_srcdir)/lib     \
-           -I$(top_srcdir)/src
+AM_CPPFLAGS = -I$(top_srcdir)/include \
+              -I$(top_builddir)/lib   \
+              -I$(top_builddir)/src   \
+              -I$(top_srcdir)/lib     \
+              -I$(top_srcdir)/src
 
 include Makefile.inc
 

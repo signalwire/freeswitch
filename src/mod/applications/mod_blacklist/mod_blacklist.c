@@ -63,7 +63,7 @@ blacklist_t *blacklist_create(const char *name)
 	switch_assert(bl);
 	bl->pool = pool;
 	
-	switch_core_hash_init(&bl->list, pool);
+	switch_core_hash_init(&bl->list);
 	switch_mutex_init(&bl->list_mutex, SWITCH_MUTEX_NESTED, pool);
 	
 	return bl;
@@ -126,10 +126,10 @@ static switch_status_t do_config(switch_bool_t reload)
 	switch_mutex_lock(globals.lists_mutex);
 	
 	/* Destroy any active lists */
-	while ((hi = switch_hash_first(NULL, globals.lists))) {
+	while ((hi = switch_core_hash_first( globals.lists))) {
 		const void *key;
 		void *val;
-		switch_hash_this(hi, &key, NULL, &val);
+		switch_core_hash_this(hi, &key, NULL, &val);
 		blacklist_free((blacklist_t*)val);
 		switch_core_hash_delete(globals.lists, (const char*)key);
 	}
@@ -282,8 +282,8 @@ SWITCH_STANDARD_API(blacklist_api_function)
 		switch_mutex_lock(globals.lists_mutex);
 		if (switch_file_open(&fd, filename, SWITCH_FOPEN_WRITE | SWITCH_FOPEN_TRUNCATE | SWITCH_FOPEN_CREATE, SWITCH_FPROT_OS_DEFAULT, globals.pool)
 			== SWITCH_STATUS_SUCCESS) {
-			for (hi = switch_hash_first(NULL, bl->list); hi; hi = switch_hash_next(hi)) {
-				switch_hash_this(hi, &var, NULL, &val);
+			for (hi = switch_core_hash_first( bl->list); hi; hi = switch_core_hash_next(hi)) {
+				switch_core_hash_this(hi, &var, NULL, &val);
 				switch_file_printf(fd, "%s\n", (char *)var);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "adding %s to the dump file\n", (char *)var);
 			}
@@ -317,10 +317,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_blacklist_load)
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
 
-	switch_core_hash_init(&globals.files, globals.pool);
+	switch_core_hash_init(&globals.files);
 	switch_mutex_init(&globals.files_mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
-	switch_core_hash_init(&globals.lists, globals.pool);
+	switch_core_hash_init(&globals.lists);
 	switch_mutex_init(&globals.lists_mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
 	do_config(SWITCH_FALSE);

@@ -44,9 +44,9 @@ lib_LTLIBRARIES = libcurl.la
 # we use builddir/lib for the generated lib/config.h file to get found
 # we use srcdir/lib for the lib-private header files
 
-INCLUDES = -I$(top_srcdir)/include \
-           -I$(top_builddir)/lib   \
-           -I$(top_srcdir)/lib
+AM_CPPFLAGS = -I$(top_srcdir)/include \
+              -I$(top_builddir)/lib   \
+              -I$(top_srcdir)/lib
 
 VERSION=-version-info 4:0:0
 

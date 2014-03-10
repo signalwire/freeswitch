@@ -22,7 +22,7 @@ AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 
 MAINTAINERCLEANFILES = Makefile.in
 
-INCLUDES = -I$(top_builddir)
+AM_CPPFLAGS = -I$(top_builddir)
 
 lib_LTLIBRARIES = libilbc.la
 

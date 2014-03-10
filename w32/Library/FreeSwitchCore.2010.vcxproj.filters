@@ -226,6 +226,9 @@
     <ClCompile Include="..\..\src\switch_version.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\switch_hashtable.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\libs\miniupnpc\declspec.h">
@@ -352,6 +355,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\libs\libtpl-1.5\src\tpl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\include\switch_hashtable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

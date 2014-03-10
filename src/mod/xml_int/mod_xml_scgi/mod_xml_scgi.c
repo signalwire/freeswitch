@@ -282,7 +282,7 @@ static switch_status_t do_config(void)
 				}
 			} else if (!strcasecmp(var, "enable-post-var")) {
 				if (!vars_map && need_vars_map == 0) {
-					if (switch_core_hash_init(&vars_map, globals.pool) != SWITCH_STATUS_SUCCESS) {
+					if (switch_core_hash_init(&vars_map) != SWITCH_STATUS_SUCCESS) {
 						need_vars_map = -1;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't init params hash!\n");
 						continue;

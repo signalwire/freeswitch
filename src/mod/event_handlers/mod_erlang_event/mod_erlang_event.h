@@ -216,6 +216,8 @@ struct prefs_struct {
 	uint32_t id;
 	erlang_encoding_t encoding;
 	int compat_rel;
+	int max_event_bulk;
+	int max_log_bulk;
 };
 typedef struct prefs_struct prefs_t;
 

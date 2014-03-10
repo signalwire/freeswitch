@@ -1,6 +1,6 @@
 MAINTAINERCLEANFILES = Makefile.in
 
-INCLUDES             = -I$(top_srcdir)/libs/mpf/include \
+AM_CPPFLAGS          = -I$(top_srcdir)/libs/mpf/include \
                        -I$(top_srcdir)/libs/apr-toolkit/include \
                        $(UNIMRCP_APR_INCLUDES) $(UNIMRCP_APU_INCLUDES)
 

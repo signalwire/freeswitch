@@ -170,13 +170,13 @@ static void do_unload(void) {
 
 	switch_mutex_lock(MUTEX);
 
-	while ((hi = switch_hash_first(NULL, globals.translate_profiles))) {
+	while ((hi = switch_core_hash_first( globals.translate_profiles))) {
 		void *val = NULL;
 		const void *key;
 		switch_ssize_t keylen;
 		translate_rule_t *rl, *nrl;
 
-		switch_hash_this(hi, &key, &keylen, &val);
+		switch_core_hash_this(hi, &key, &keylen, &val);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "deleting translate profile [%s]\n", (char *) key);
 
 		for (nrl = val; rl;) {
@@ -201,7 +201,7 @@ static void do_load(void)
 {
 	switch_mutex_lock(MUTEX);
 
-	switch_core_hash_init(&globals.translate_profiles, globals.pool);
+	switch_core_hash_init(&globals.translate_profiles);
 	switch_thread_rwlock_create(&globals.profile_hash_rwlock, globals.pool);
 	load_config();
 

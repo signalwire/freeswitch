@@ -912,7 +912,7 @@ static void do_dialog_probe(switch_event_t *event)
 		h4235 = switch_core_alloc(pool, sizeof(*h4235));
 		h4235->pool = pool;
 		h4235->profile = profile;
-		switch_core_hash_init(&h4235->hash, h4235->pool);
+		switch_core_hash_init(&h4235->hash);
 		sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sofia_dialog_probe_callback, h4235);
 		switch_safe_free(sql);
 		if (mod_sofia_globals.debug_presence > 0) {
@@ -3499,7 +3499,7 @@ static int sync_sla(sofia_profile_t *profile, const char *to_user, const char *t
 	switch_core_new_memory_pool(&pool);
 	sh = switch_core_alloc(pool, sizeof(*sh));
 	sh->pool = pool;
-	switch_core_hash_init(&sh->hash, sh->pool);
+	switch_core_hash_init(&sh->hash);
 
 	sql = switch_mprintf("select sip_from_user,sip_from_host,call_info,call_info_state,uuid from sip_dialogs "
 						 "where call_info_state is not null and call_info_state != '' and call_info_state != 'idle' and hostname='%q' and profile_name='%q' "

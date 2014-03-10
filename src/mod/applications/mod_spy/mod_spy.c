@@ -139,8 +139,8 @@ SWITCH_STANDARD_API(dump_hash)
 
 	switch_thread_rwlock_rdlock(globals.spy_hash_lock);
 
-	for (hi = switch_hash_first(NULL, globals.spy_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, &key, NULL, &val);
+	for (hi = switch_core_hash_first( globals.spy_hash); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, &key, NULL, &val);
 		spy = (spy_t *) val;
 
 		stream->write_function(stream, "%s :");
@@ -319,7 +319,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spy_load)
 
 	globals.pool = pool;
 
-	switch_core_hash_init(&globals.spy_hash, pool);
+	switch_core_hash_init(&globals.spy_hash);
 	switch_thread_rwlock_create(&globals.spy_hash_lock, pool);
 	globals.spy_count = 0;
 

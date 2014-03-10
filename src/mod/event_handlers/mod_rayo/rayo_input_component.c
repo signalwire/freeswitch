@@ -568,7 +568,7 @@ static iks *start_call_input(struct input_component *component, switch_core_sess
 		/* create input component */
 		handler = switch_core_session_alloc(session, sizeof(*handler));
 		switch_mutex_init(&handler->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
-		switch_core_hash_init(&handler->dtmf_components, NULL);
+		switch_core_hash_init(&handler->dtmf_components);
 		switch_channel_set_private(switch_core_session_get_channel(session), RAYO_INPUT_COMPONENT_PRIVATE_VAR, handler);
 		handler->last_recognizer = "";
 
@@ -666,7 +666,11 @@ static iks *start_call_input_component(struct rayo_actor *call, struct rayo_mess
 
 	switch_core_new_memory_pool(&pool);
 	input_component = switch_core_alloc(pool, sizeof(*input_component));
-	rayo_component_init(RAYO_COMPONENT(input_component), pool, RAT_CALL_COMPONENT, "input", component_id, call, iks_find_attrib(iq, "from"));
+	input_component = INPUT_COMPONENT(rayo_component_init(RAYO_COMPONENT(input_component), pool, RAT_CALL_COMPONENT, "input", component_id, call, iks_find_attrib(iq, "from")));
+	if (!input_component) {
+		switch_core_destroy_memory_pool(&pool);
+		return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Failed to create input entity");
+	}
 	return start_call_input(input_component, session, input, iq, NULL, 0);
 }
 

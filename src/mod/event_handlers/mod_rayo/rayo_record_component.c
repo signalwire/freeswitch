@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013, Grasshopper
+ * Copyright (C) 2013-2014, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -156,11 +156,6 @@ static struct rayo_component *record_component_create(struct rayo_actor *actor, 
 	char *fs_file_path;
 	switch_bool_t start_paused;
 
-	/* validate record attributes */
-	if (!VALIDATE_RAYO_RECORD(record)) {
-		return NULL;
-	}
-
 	start_paused = iks_find_bool_attrib(record, "start-paused");
 
 	/* create record filename from session UUID and ref */
@@ -175,16 +170,20 @@ static struct rayo_component *record_component_create(struct rayo_actor *actor, 
 
 	switch_core_new_memory_pool(&pool);
 	record_component = switch_core_alloc(pool, sizeof(*record_component));
-	rayo_component_init(RAYO_COMPONENT(record_component), pool, type, "record", fs_file_path, actor, client_jid);
-	record_component->max_duration = iks_find_int_attrib(record, "max-duration");
-	record_component->initial_timeout = iks_find_int_attrib(record, "initial-timeout");
-	record_component->final_timeout = iks_find_int_attrib(record, "final-timeout");
-	record_component->direction = switch_core_strdup(RAYO_POOL(record_component), iks_find_attrib_soft(record, "direction"));
-	record_component->mix = iks_find_bool_attrib(record, "mix");
-	record_component->start_beep = iks_find_bool_attrib(record, "start-beep");
-	record_component->stop_beep = iks_find_bool_attrib(record, "stop-beep");
-	record_component->start_time = start_paused ? 0 : switch_micro_time_now();
-	record_component->local_file_path = switch_core_strdup(RAYO_POOL(record_component), local_file_path);
+	record_component = RECORD_COMPONENT(rayo_component_init(RAYO_COMPONENT(record_component), pool, type, "record", fs_file_path, actor, client_jid));\
+	if (record_component) {
+		record_component->max_duration = iks_find_int_attrib(record, "max-duration");
+		record_component->initial_timeout = iks_find_int_attrib(record, "initial-timeout");
+		record_component->final_timeout = iks_find_int_attrib(record, "final-timeout");
+		record_component->direction = switch_core_strdup(RAYO_POOL(record_component), iks_find_attrib_soft(record, "direction"));
+		record_component->mix = iks_find_bool_attrib(record, "mix");
+		record_component->start_beep = iks_find_bool_attrib(record, "start-beep");
+		record_component->stop_beep = iks_find_bool_attrib(record, "stop-beep");
+		record_component->start_time = start_paused ? 0 : switch_micro_time_now();
+		record_component->local_file_path = switch_core_strdup(RAYO_POOL(record_component), local_file_path);
+	} else {
+		switch_core_destroy_memory_pool(&pool);
+	}
 
 	switch_safe_free(local_file_path);
 	switch_safe_free(fs_file_path);
@@ -270,9 +269,14 @@ static iks *start_call_record_component(struct rayo_actor *call, struct rayo_mes
 	struct rayo_component *component = NULL;
 	iks *record = iks_find(iq, "record");
 
+	/* validate record attributes */
+	if (!VALIDATE_RAYO_RECORD(record)) {
+		return iks_new_error(iq, STANZA_ERROR_BAD_REQUEST);
+	}
+
 	component = record_component_create(call, RAT_CALL_COMPONENT, iks_find_attrib(iq, "from"), record);
 	if (!component) {
-		return iks_new_error(iq, STANZA_ERROR_BAD_REQUEST);
+		return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Failed to create record entity");
 	}
 
 	if (start_call_record(session, component)) {
@@ -396,9 +400,14 @@ static iks *start_mixer_record_component(struct rayo_actor *mixer, struct rayo_m
 	struct rayo_component *component = NULL;
 	iks *record = iks_find(iq, "record");
 
+	/* validate record attributes */
+	if (!VALIDATE_RAYO_RECORD(record)) {
+		return iks_new_error(iq, STANZA_ERROR_BAD_REQUEST);
+	}
+
 	component = record_component_create(mixer, RAT_MIXER_COMPONENT, iks_find_attrib(iq, "from"), record);
 	if (!component) {
-		return iks_new_error(iq, STANZA_ERROR_BAD_REQUEST);
+		return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Failed to create record entity");
 	}
 
 	/* mixer doesn't allow "send" */

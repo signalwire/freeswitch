@@ -12,7 +12,7 @@
 S_BASE = $(top_srcdir)/libsofia-sip-ua
 B_BASE = $(top_builddir)/libsofia-sip-ua
 
-INCLUDES =		-I$(S_BASE)/su -I$(B_BASE)/su $(GLIB_CFLAGS) \
+AM_CPPFLAGS =		-I$(S_BASE)/su -I$(B_BASE)/su $(GLIB_CFLAGS) \
 			$(SOFIA_GLIB_CFLAGS)
 
 # ----------------------------------------------------------------------

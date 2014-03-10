@@ -146,7 +146,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_create(switch_ivr_dmachine_t
 	dmachine->name = switch_core_strdup(dmachine->pool, name);
 	switch_mutex_init(&dmachine->mutex, SWITCH_MUTEX_NESTED, dmachine->pool);
 	
-	switch_core_hash_init(&dmachine->binding_hash, dmachine->pool);
+	switch_core_hash_init(&dmachine->binding_hash);
 	
 	if (match_callback) {
 		dmachine->match_callback = match_callback;

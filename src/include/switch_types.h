@@ -1013,6 +1013,7 @@ typedef enum {
 	SWITCH_MESSAGE_ANSWER_EVENT,
 	SWITCH_MESSAGE_PROGRESS_EVENT,
 	SWITCH_MESSAGE_RING_EVENT,
+	SWITCH_MESSAGE_RESAMPLE_EVENT,
 	SWITCH_MESSAGE_INVALID
 } switch_core_session_message_types_t;
 
@@ -1407,6 +1408,7 @@ typedef enum {
 	CF_VIDEO_PAUSE,
 	CF_BYPASS_MEDIA_AFTER_HOLD,
 	CF_HANGUP_HELD,
+	CF_CONFERENCE_RESET_MEDIA,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
 	CF_FLAG_MAX
@@ -2237,9 +2239,10 @@ typedef switch_xml_t(*switch_xml_search_function_t) (const char *section,
 													 const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params,
 													 void *user_data);
 
-typedef struct switch_hash switch_hash_t;
-struct HashElem;
-typedef struct HashElem switch_hash_index_t;
+struct switch_hashtable;
+struct switch_hashtable_iterator;
+typedef struct switch_hashtable switch_hash_t;
+typedef struct switch_hashtable_iterator switch_hash_index_t;
 
 struct switch_network_list;
 typedef struct switch_network_list switch_network_list_t;

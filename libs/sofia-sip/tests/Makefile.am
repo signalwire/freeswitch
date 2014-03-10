@@ -56,4 +56,4 @@ CLEANFILES =            tmp_sippasswd.??????
 
 include $(top_srcdir)/rules/sofia.am
 
-INCLUDES = ${INTERNAL_INCLUDES}
+AM_CPPFLAGS = ${INTERNAL_INCLUDES}

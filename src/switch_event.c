@@ -576,9 +576,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 		}
 	}
 
-	for (hi = switch_hash_first(NULL, CUSTOM_HASH); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_core_hash_first( CUSTOM_HASH); hi; hi = switch_core_hash_next(hi)) {
 		switch_event_subclass_t *subclass;
-		switch_hash_this(hi, &var, NULL, &val);
+		switch_core_hash_this(hi, &var, NULL, &val);
 		if ((subclass = (switch_event_subclass_t *) val)) {
 			FREE(subclass->name);
 			FREE(subclass->owner);
@@ -671,14 +671,14 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 	switch_mutex_init(&BLOCK, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
 	switch_mutex_init(&POOL_LOCK, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
 	switch_mutex_init(&EVENT_QUEUE_MUTEX, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
-	switch_core_hash_init(&CUSTOM_HASH, RUNTIME_POOL);
+	switch_core_hash_init(&CUSTOM_HASH);
 
-	switch_core_hash_init(&event_channel_manager.lahash, RUNTIME_POOL);
+	switch_core_hash_init(&event_channel_manager.lahash);
 	switch_mutex_init(&event_channel_manager.lamutex, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
 
 	switch_thread_rwlock_create(&event_channel_manager.rwlock, RUNTIME_POOL);
-	switch_core_hash_init(&event_channel_manager.hash, RUNTIME_POOL);
-	switch_core_hash_init(&event_channel_manager.perm_hash, RUNTIME_POOL);
+	switch_core_hash_init(&event_channel_manager.hash);
+	switch_core_hash_init(&event_channel_manager.perm_hash);
 	event_channel_manager.ID = 1;
 
 	switch_mutex_lock(EVENT_QUEUE_MUTEX);
@@ -2693,16 +2693,16 @@ static void unsub_all_switch_event_channel(void)
 
 	switch_thread_rwlock_wrlock(event_channel_manager.rwlock);
 
-	while ((hi = switch_hash_first(NULL, event_channel_manager.perm_hash))) {
+	while ((hi = switch_core_hash_first( event_channel_manager.perm_hash))) {
 		switch_event_t *vals = NULL;
-		switch_hash_this(hi, &var, NULL, &val);
+		switch_core_hash_this(hi, &var, NULL, &val);
 		vals = (switch_event_t *) val;
 		switch_core_hash_delete(event_channel_manager.perm_hash, var);
 		switch_event_destroy(&vals);
 	}
 
-	while ((hi = switch_hash_first(NULL, event_channel_manager.hash))) {
-		switch_hash_this(hi, NULL, NULL, &val);
+	while ((hi = switch_core_hash_first( event_channel_manager.hash))) {
+		switch_core_hash_this(hi, NULL, NULL, &val);
 		head = (switch_event_channel_sub_node_head_t *) val;
 		switch_event_channel_unsub_head(NULL, head);
 		switch_core_hash_delete(event_channel_manager.hash, head->event_channel);
@@ -2724,8 +2724,8 @@ static uint32_t switch_event_channel_unsub_channel(switch_event_channel_func_t f
 		switch_hash_index_t *hi;
 		void *val;
 
-		for (hi = switch_hash_first(NULL, event_channel_manager.hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, NULL, NULL, &val);
+		for (hi = switch_core_hash_first( event_channel_manager.hash); hi; hi = switch_core_hash_next(hi)) {
+			switch_core_hash_this(hi, NULL, NULL, &val);
 
 			if (val) {
 				head = (switch_event_channel_sub_node_head_t *) val;
@@ -3357,7 +3357,7 @@ SWITCH_DECLARE(switch_status_t) switch_live_array_create(const char *event_chann
 		la->key = key;
 		la->new = SWITCH_TRUE;
 		la->channel_id = channel_id;
-		switch_core_hash_init(&la->hash, la->pool);
+		switch_core_hash_init(&la->hash);
 		switch_mutex_init(&la->mutex, SWITCH_MUTEX_NESTED, la->pool);
 		
 		switch_mutex_lock(event_channel_manager.lamutex);

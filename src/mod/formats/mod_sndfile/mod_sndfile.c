@@ -434,7 +434,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sndfile_load)
 {
 	switch_file_interface_t *file_interface;
 
-	switch_core_hash_init(&globals.format_hash, pool);
+	switch_core_hash_init(&globals.format_hash);
 
 	if (setup_formats() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;

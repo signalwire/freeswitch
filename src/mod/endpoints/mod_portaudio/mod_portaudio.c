@@ -1308,9 +1308,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 
 	memset(&globals, 0, sizeof(globals));
 
-	switch_core_hash_init(&globals.call_hash, module_pool);
-	switch_core_hash_init(&globals.sh_streams, module_pool);
-	switch_core_hash_init(&globals.endpoints, module_pool);
+	switch_core_hash_init(&globals.call_hash);
+	switch_core_hash_init(&globals.sh_streams);
+	switch_core_hash_init(&globals.endpoints);
 	switch_mutex_init(&globals.device_lock, SWITCH_MUTEX_NESTED, module_pool);
 	switch_mutex_init(&globals.pvt_lock, SWITCH_MUTEX_NESTED, module_pool);
 	switch_mutex_init(&globals.streams_lock, SWITCH_MUTEX_NESTED, module_pool);
@@ -2491,11 +2491,11 @@ static switch_status_t list_shared_streams(char **argv, int argc, switch_stream_
 {
 	switch_hash_index_t *hi;
 	int cnt = 0;
-	for (hi = switch_hash_first(NULL, globals.sh_streams); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_core_hash_first( globals.sh_streams); hi; hi = switch_core_hash_next(hi)) {
 		const void *var;
 		void *val;
 		shared_audio_stream_t *s = NULL;
-		switch_hash_this(hi, &var, NULL, &val);
+		switch_core_hash_this(hi, &var, NULL, &val);
 		s = val;
 		stream->write_function(stream, "%s> indev: %d, outdev: %d, sample-rate: %d, codec-ms: %d, channels: %d\n",
 				s->name, s->indev, s->outdev, s->sample_rate, s->codec_ms, s->channels);
@@ -2509,11 +2509,11 @@ static switch_status_t list_endpoints(char **argv, int argc, switch_stream_handl
 {
 	switch_hash_index_t *hi;
 	int cnt = 0;
-	for (hi = switch_hash_first(NULL, globals.endpoints); hi; hi = switch_hash_next(hi)) {
+	for (hi = switch_core_hash_first( globals.endpoints); hi; hi = switch_core_hash_next(hi)) {
 		const void *var;
 		void *val;
 		audio_endpoint_t *e = NULL;
-		switch_hash_this(hi, &var, NULL, &val);
+		switch_core_hash_this(hi, &var, NULL, &val);
 		e = val;
 		stream->write_function(stream, "%s> instream: %s, outstream: %s\n",
 				e->name, e->in_stream ? e->in_stream->name : "(none)", 

@@ -1,10 +1,10 @@
 #ifndef __AMF0_H__
 #define __AMF0_H__
 
+#include "amf.h"
+
 #include <stdio.h>
 #include <time.h>
-
-#include "amf.h"
 
 /* AMF data types */
 #define AMF0_TYPE_NUMBER                0x00

@@ -99,7 +99,7 @@ struct nlsml_parser {
 static struct tag_def *add_tag_def(const char *tag, tag_attribs_fn attribs_fn, tag_cdata_fn cdata_fn, const char *children_tags)
 {
 	struct tag_def *def = switch_core_alloc(globals.pool, sizeof(*def));
-	switch_core_hash_init(&def->children_tags, globals.pool);
+	switch_core_hash_init(&def->children_tags);
 	if (!zstr(children_tags)) {
 		char *children_tags_dup = switch_core_strdup(globals.pool, children_tags);
 		char *tags[32] = { 0 };
@@ -451,7 +451,7 @@ int nlsml_init(void)
 
 	globals.init = SWITCH_TRUE;
 	switch_core_new_memory_pool(&globals.pool);
-	switch_core_hash_init(&globals.tag_defs, globals.pool);
+	switch_core_hash_init(&globals.tag_defs);
 
 	add_root_tag_def("result", process_attribs_ignore, process_cdata_ignore, "interpretation");
 	add_tag_def("interpretation", process_attribs_ignore, process_cdata_ignore, "input,model,xf:model,instance,xf:instance");

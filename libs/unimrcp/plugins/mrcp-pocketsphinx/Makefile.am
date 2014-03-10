@@ -1,6 +1,6 @@
 MAINTAINERCLEANFILES 	    = Makefile.in
 
-INCLUDES                    = -Iinclude \
+AM_CPPFLAGS                 = -Iinclude \
                               -I$(top_srcdir)/libs/mrcp-engine/include \
                               -I$(top_srcdir)/libs/mrcp/include \
                               -I$(top_srcdir)/libs/mrcp/message/include \

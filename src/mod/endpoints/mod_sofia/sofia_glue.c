@@ -691,6 +691,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	const char *handle_full_to = switch_channel_get_variable(tech_pvt->channel, "sip_handle_full_to");
 	const char *force_full_from = switch_channel_get_variable(tech_pvt->channel, "sip_force_full_from");
 	const char *force_full_to = switch_channel_get_variable(tech_pvt->channel, "sip_force_full_to");
+	const char *content_encoding = switch_channel_get_variable(tech_pvt->channel, "sip_content_encoding");
 	char *mp = NULL, *mp_type = NULL;
 	char *record_route = NULL;
 	const char *recover_via = NULL;
@@ -1255,6 +1256,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(!zstr(route), SIPTAG_ROUTE_STR(route)),
 				   TAG_IF(tech_pvt->profile->minimum_session_expires, NUTAG_MIN_SE(tech_pvt->profile->minimum_session_expires)),
 				   TAG_IF(cseq, SIPTAG_CSEQ(cseq)),
+				   TAG_IF(content_encoding, SIPTAG_CONTENT_ENCODING_STR(content_encoding)),
 				   TAG_IF(zstr(tech_pvt->mparams.local_sdp_str), SIPTAG_PAYLOAD_STR("")),
 				   TAG_IF(!zstr(tech_pvt->mparams.local_sdp_str), SOATAG_ADDRESS(tech_pvt->mparams.adv_sdp_audio_ip)),
 				   TAG_IF(!zstr(tech_pvt->mparams.local_sdp_str), SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str)),
@@ -1291,6 +1293,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(tech_pvt->profile->minimum_session_expires, NUTAG_MIN_SE(tech_pvt->profile->minimum_session_expires)),
 				   TAG_IF(!require_timer, NUTAG_TIMER_AUTOREQUIRE(0)),
 				   TAG_IF(cseq, SIPTAG_CSEQ(cseq)),
+				   TAG_IF(content_encoding, SIPTAG_CONTENT_ENCODING_STR(content_encoding)),
 				   NUTAG_MEDIA_ENABLE(0),
 				   SIPTAG_CONTENT_TYPE_STR(mp_type ? mp_type : "application/sdp"),
 				   SIPTAG_PAYLOAD_STR(mp ? mp : tech_pvt->mparams.local_sdp_str), TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), SOATAG_HOLD(holdstr), TAG_END());
@@ -1650,8 +1653,8 @@ void sofia_glue_restart_all_profiles(void)
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if (mod_sofia_globals.profile_hash) {
-		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, &var, NULL, &val);
+		for (hi = switch_core_hash_first( mod_sofia_globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+			switch_core_hash_this(hi, &var, NULL, &val);
 			if ((pptr = (sofia_profile_t *) val)) {
 				int rsec = 10;
 				int diff = (int) (switch_epoch_time_now(NULL) - pptr->started);
@@ -1685,8 +1688,8 @@ void sofia_glue_global_siptrace(switch_bool_t on)
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if (mod_sofia_globals.profile_hash) {
-		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, &var, NULL, &val);
+		for (hi = switch_core_hash_first( mod_sofia_globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+			switch_core_hash_this(hi, &var, NULL, &val);
 			if ((pptr = (sofia_profile_t *) val)) {
 				nua_set_params(pptr->nua, TPTAG_LOG(on), TAG_END());				
 			}
@@ -1705,8 +1708,8 @@ void sofia_glue_global_standby(switch_bool_t on)
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if (mod_sofia_globals.profile_hash) {
-		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, &var, NULL, &val);
+		for (hi = switch_core_hash_first( mod_sofia_globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+			switch_core_hash_this(hi, &var, NULL, &val);
 			if ((pptr = (sofia_profile_t *) val)) {
 				if (on) {
 					sofia_set_pflag_locked(pptr, PFLAG_STANDBY);
@@ -1729,8 +1732,8 @@ void sofia_glue_global_capture(switch_bool_t on)
 
        switch_mutex_lock(mod_sofia_globals.hash_mutex);
        if (mod_sofia_globals.profile_hash) {
-               for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-                       switch_hash_this(hi, &var, NULL, &val);
+               for (hi = switch_core_hash_first( mod_sofia_globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+                       switch_core_hash_this(hi, &var, NULL, &val);
                        if ((pptr = (sofia_profile_t *) val)) {
                                nua_set_params(pptr->nua, TPTAG_CAPT(on ? mod_sofia_globals.capture_server : NULL), TAG_END());
                        }
@@ -1750,8 +1753,8 @@ void sofia_glue_global_watchdog(switch_bool_t on)
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if (mod_sofia_globals.profile_hash) {
-		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, &var, NULL, &val);
+		for (hi = switch_core_hash_first( mod_sofia_globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+			switch_core_hash_this(hi, &var, NULL, &val);
 			if ((pptr = (sofia_profile_t *) val)) {
 				pptr->watchdog_enabled = (on ? 1 : 0);
 			}
@@ -1773,8 +1776,8 @@ void sofia_glue_del_profile(sofia_profile_t *profile)
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if (mod_sofia_globals.profile_hash) {
-		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, &var, NULL, &val);
+		for (hi = switch_core_hash_first( mod_sofia_globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+			switch_core_hash_this(hi, &var, NULL, &val);
 			if ((pptr = (sofia_profile_t *) val) && pptr == profile) {
 				aliases[i++] = strdup((char *) var);
 				if (i == 512) {

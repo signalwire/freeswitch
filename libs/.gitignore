@@ -19,6 +19,11 @@ opal
 *_manifest.rc
 *.pc
 
+*/.dirstamp
+*/*/.dirstamp
+*/*/*/.dirstamp
+*/*/*/*/.dirstamp
+
 /*.tar.*
 
 /*/*.dSYM/
@@ -977,6 +982,8 @@ opal
 /yaml/tests/run-loader
 /yaml/tests/run-parser
 /yaml/tests/run-scanner
+
+/broadvoice/broadvoice.spec
 
 /zeromq-*/
 /jpeg-8d/

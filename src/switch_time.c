@@ -1342,7 +1342,7 @@ void switch_load_timezones(switch_bool_t reload)
 
 	memset(&TIMEZONES_LIST, 0, sizeof(TIMEZONES_LIST));
 	switch_core_new_memory_pool(&TIMEZONES_LIST.pool);
-	switch_core_hash_init(&TIMEZONES_LIST.hash, TIMEZONES_LIST.pool);
+	switch_core_hash_init(&TIMEZONES_LIST.hash);
 
 	if ((xml = switch_xml_open_cfg("timezones.conf", &cfg, NULL))) {
 		if ((x_lists = switch_xml_child(cfg, "timezones"))) {

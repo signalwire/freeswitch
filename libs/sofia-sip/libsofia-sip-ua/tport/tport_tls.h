@@ -61,7 +61,7 @@ typedef struct tls_issues_s {
   char *CAfile;		/* PEM file of CA's                           */
   char *CApath;		/* PEM file path of CA's		      */
   char *ciphers;         /* Should be one of the above defined ciphers *
-			 * or NULL (default: "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH
+			 * or NULL (default: !eNULL:!aNULL:!EXP:!LOW:!MD5:ALL:@STRENGTH)
                          */
   int   version;	/* For tls1, version is 1. When ssl3/ssl2 is
 			 * used, it is 0. */

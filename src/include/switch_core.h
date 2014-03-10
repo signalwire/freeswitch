@@ -1350,9 +1350,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(_In_ switch_core_s
   \param pool the pool to use for the new hash
   \return SWITCH_STATUS_SUCCESS if the hash is created
 */
-SWITCH_DECLARE(switch_status_t) switch_core_hash_init_case(_Out_ switch_hash_t **hash, _In_ switch_memory_pool_t *pool, switch_bool_t case_sensitive);
-#define switch_core_hash_init(_hash, _pool) switch_core_hash_init_case(_hash, _pool, SWITCH_TRUE)
-#define switch_core_hash_init_nocase(_hash, _pool) switch_core_hash_init_case(_hash, _pool, SWITCH_FALSE)
+SWITCH_DECLARE(switch_status_t) switch_core_hash_init_case(_Out_ switch_hash_t **hash, switch_bool_t case_sensitive);
+#define switch_core_hash_init(_hash) switch_core_hash_init_case(_hash, SWITCH_TRUE)
+#define switch_core_hash_init_nocase(_hash) switch_core_hash_init_case(_hash, SWITCH_FALSE)
 
 
 
@@ -1479,30 +1479,7 @@ SWITCH_DECLARE(switch_hash_index_t *) switch_core_hash_next(_In_ switch_hash_ind
 SWITCH_DECLARE(void) switch_core_hash_this(_In_ switch_hash_index_t *hi, _Out_opt_ptrdiff_cap_(klen)
 									  const void **key, _Out_opt_ switch_ssize_t *klen, _Out_ void **val);
 
-/*!
- \brief DEPRECATED in favor of switch_core_hash_first(). Gets the first element of a hashtable.
- \param deprecate_me [deprecated] NULL
- \param hash the hashtable to use
- \return The element, or NULL if it wasn't found 
-*/
-SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(char *deprecate_me, _In_ switch_hash_t *hash);
 
-/*!
- \brief DEPRECATED in favor of switch_core_hash_next(). Gets the next element of a hashtable.
- \param hi The current element
- \return The next element, or NULL if there are no more
-*/
-SWITCH_DECLARE(switch_hash_index_t *) switch_hash_next(_In_ switch_hash_index_t *hi);
-
-/*!
- \brief DEPRECATED in favor of switch_core_hash_this(). Gets the key and value of the current hash element.
- \param hi The current element 
- \param key [out] the key
- \param klen [out] the key's size
- \param val [out] the value 
-*/
-SWITCH_DECLARE(void) switch_hash_this(_In_ switch_hash_index_t *hi, _Out_opt_ptrdiff_cap_(klen)
-									  const void **key, _Out_opt_ switch_ssize_t *klen, _Out_ void **val);
 
 ///\}
 

@@ -478,7 +478,7 @@ void tport_log_msg(tport_t *self, msg_t *msg,
   size_t i, iovlen = msg_iovec(msg, iov, 80);
   size_t linelen = 0, n, logged = 0, truncated = 0;
   int skip_lf = 0;
-
+  int j, unprintable = 0;
 
 #define MSG_SEPARATOR \
   "------------------------------------------------------------------------\n"
@@ -496,39 +496,57 @@ void tport_log_msg(tport_t *self, msg_t *msg,
     if (skip_lf && s < end && s[0] == '\n') { s++; logged++; skip_lf = 0; }
 
     while (s < end) {
-      if (s[0] == '\0') {
-	truncated = logged;
-	break;
-      }
+		if (s[0] == '\0') {
+			truncated = logged;
+			break;
+		}
 
-      n = su_strncspn(s, end - s, "\r\n");
+		n = su_strncspn(s, end - s, "\r\n");
 
-      if (linelen + n > MAX_LINELEN) {
-	n = MAX_LINELEN - linelen;
-	truncated = logged + n;
-      }
+		if (linelen + n > MAX_LINELEN) {
+			n = MAX_LINELEN - linelen;
+			truncated = logged + n;
+		}
+		
+		if (!unprintable) {
+			for (j = 0; j < 4; j++) {
+				if (s[j] == 0) break;
+				if (s[j] != 9 && s[j] != 10 && s[j] != 13 && (s[j] < 32 || s[j] > 126)) {
+					unprintable++;
+				}
+			}
+		}
 
-      su_log("%s%.*s", linelen > 0 ? "" : "   ", (int)n, s);
-      s += n, linelen += n, logged += n;
+		if (unprintable) {
+			if (unprintable == 1)
+				su_log("\n   <ENCODED DATA>");
+			unprintable++;
+		} else {
+			su_log("%s%.*s", linelen > 0 ? "" : "   ", (int)n, s);
+		}
 
-      if (truncated)
-	break;
-      if (s == end)
-	break;
+		s += n, linelen += n, logged += n;
 
-      linelen = 0;
-      su_log("\n");
+		if (truncated)
+			break;
+		if (s == end)
+			break;
+		
+		linelen = 0;
+		su_log("\n");
+		
+		/* Skip eol */
+		if (s[0] == '\r') {
+			s++, logged++;
+			if (s == end) {
+				skip_lf = 1;
+				continue;
+			}
+		}
 
-      /* Skip eol */
-      if (s[0] == '\r') {
-	s++, logged++;
-	if (s == end) {
-	  skip_lf = 1;
-	  continue;
-	}
-      }
-      if (s[0] == '\n')
-	s++, logged++;
+		if (s[0] == '\n') {
+			s++, logged++;
+		}
     }
   }
 

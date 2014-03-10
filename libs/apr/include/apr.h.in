@@ -342,7 +342,7 @@ typedef  @socklen_t_value@       apr_socklen_t;
  * if ssize_t is neither we declare an error here.
  * I looked for a better way to define this here, but couldn't find one, so
  * to find the logic for this definition search for "ssize_t_fmt" in
- * configure.in.
+ * configure.ac.
  */
 @ssize_t_fmt@
 

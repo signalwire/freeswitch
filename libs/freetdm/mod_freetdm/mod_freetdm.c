@@ -3511,7 +3511,7 @@ static switch_status_t load_config(void)
 		parse_gsm_spans(cfg, spans);
 	}
 
-	switch_core_hash_init(&globals.ss7_configs, module_pool);
+	switch_core_hash_init(&globals.ss7_configs);
 	if ((spans = switch_xml_child(cfg, "sangoma_ss7_spans"))) {
 		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
 			ftdm_status_t zstatus = FTDM_FAIL;
@@ -5530,8 +5530,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_freetdm_shutdown)
 	void *val;
 
 	/* destroy ss7 configs */
-	for (hi = switch_hash_first(NULL, globals.ss7_configs); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, &var, NULL, &val);
+	for (hi = switch_core_hash_first( globals.ss7_configs); hi; hi = switch_core_hash_next(hi)) {
+		switch_core_hash_this(hi, &var, NULL, &val);
 		ftdm_conf_node_destroy(val);
 	}
 

@@ -68,17 +68,20 @@ static struct rayo_component *create_output_component(struct rayo_actor *actor, 
 
 	switch_core_new_memory_pool(&pool);
 	output_component = switch_core_alloc(pool, sizeof(*output_component));
-	rayo_component_init((struct rayo_component *)output_component, pool, type, "output", NULL, actor, client_jid);
+	output_component = OUTPUT_COMPONENT(rayo_component_init((struct rayo_component *)output_component, pool, type, "output", NULL, actor, client_jid));
+	if (output_component) {
+		output_component->document = iks_copy(output);
+		output_component->start_offset_ms = iks_find_int_attrib(output, "start-offset");
+		output_component->repeat_interval_ms = iks_find_int_attrib(output, "repeat-interval");
+		output_component->repeat_times = iks_find_int_attrib(output, "repeat-times");
+		output_component->max_time_ms = iks_find_int_attrib(output, "max-time");
+		output_component->start_paused = iks_find_bool_attrib(output, "start-paused");
+		output_component->renderer = iks_find_attrib(output, "renderer");
+	} else {
+		switch_core_destroy_memory_pool(&pool);
+	}
 
-	output_component->document = iks_copy(output);
-	output_component->start_offset_ms = iks_find_int_attrib(output, "start-offset");
-	output_component->repeat_interval_ms = iks_find_int_attrib(output, "repeat-interval");
-	output_component->repeat_times = iks_find_int_attrib(output, "repeat-times");
-	output_component->max_time_ms = iks_find_int_attrib(output, "max-time");
-	output_component->start_paused = iks_find_bool_attrib(output, "start-paused");
-	output_component->renderer = iks_find_attrib(output, "renderer");
-
-	return (struct rayo_component *)output_component;
+	return RAYO_COMPONENT(output_component);
 }
 
 /**
@@ -153,6 +156,9 @@ static iks *start_call_output_component(struct rayo_actor *call, struct rayo_mes
 	}
 
 	output_component = create_output_component(call, RAT_CALL_COMPONENT, output, iks_find_attrib(iq, "from"));
+	if (!output_component) {
+		return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Failed to create output entity");
+	}
 	return start_call_output(output_component, session, output, iq);
 }
 
@@ -179,6 +185,9 @@ static iks *start_mixer_output_component(struct rayo_actor *mixer, struct rayo_m
 	}
 
 	component = create_output_component(mixer, RAT_MIXER_COMPONENT, output, iks_find_attrib(iq, "from"));
+	if (!component) {
+		return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Failed to create output entity");
+	}
 
 	/* build conference command */
 	SWITCH_STANDARD_STREAM(stream);
@@ -1195,7 +1204,7 @@ switch_status_t rayo_output_component_load(switch_loadable_module_interface_t **
 	file_interface->file_seek = rayo_file_seek;
 
 	switch_mutex_init(&fileman_globals.mutex, SWITCH_MUTEX_NESTED, pool);
-	switch_core_hash_init(&fileman_globals.hash, pool);
+	switch_core_hash_init(&fileman_globals.hash);
 
 	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
 	file_interface->interface_name = "mod_rayo";

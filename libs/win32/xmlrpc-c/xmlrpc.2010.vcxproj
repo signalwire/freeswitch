@@ -214,7 +214,7 @@
     <ClCompile Include="..\..\xmlrpc-c\src\registry.c" />
     <ClCompile Include="..\..\xmlrpc-c\src\resource.c" />
     <ClCompile Include="..\..\xmlrpc-c\src\system_method.c" />
-    <ClCompile Include="..\..\xmlrpc-c\src\trace.c" />
+    <ClCompile Include="..\..\xmlrpc-c\src\xml_trace.c" />
     <ClCompile Include="..\..\xmlrpc-c\src\version.c" />
     <ClCompile Include="..\..\xmlrpc-c\src\xmlrpc_array.c" />
     <ClCompile Include="..\..\xmlrpc-c\src\xmlrpc_authcookie.c" />

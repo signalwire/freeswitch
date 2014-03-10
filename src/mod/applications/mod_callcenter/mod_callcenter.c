@@ -3198,12 +3198,12 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				switch_hash_index_t *hi;
 				stream->write_function(stream, "%s", "name|strategy|moh_sound|time_base_score|tier_rules_apply|tier_rule_wait_second|tier_rule_wait_multiply_level|tier_rule_no_agent_no_wait|discard_abandoned_after|abandoned_resume_allowed|max_wait_time|max_wait_time_with_no_agent|max_wait_time_with_no_agent_time_reached|record_template\n");
 				switch_mutex_lock(globals.mutex);
-				for (hi = switch_hash_first(NULL, globals.queue_hash); hi; hi = switch_hash_next(hi)) {
+				for (hi = switch_core_hash_first( globals.queue_hash); hi; hi = switch_core_hash_next(hi)) {
 					void *val = NULL;
 					const void *key;
 					switch_ssize_t keylen;
 					cc_queue_t *queue;
-					switch_hash_this(hi, &key, &keylen, &val);
+					switch_core_hash_this(hi, &key, &keylen, &val);
 					queue = (cc_queue_t *) val;
 					stream->write_function(stream, "%s|%s|%s|%s|%s|%d|%s|%s|%d|%s|%d|%d|%d|%s\n", queue->name, queue->strategy, queue->moh, queue->time_base_score, (queue->tier_rules_apply?"true":"false"), queue->tier_rule_wait_second, (queue->tier_rule_wait_multiply_level?"true":"false"), (queue->tier_rule_no_agent_no_wait?"true":"false"), queue->discard_abandoned_after, (queue->abandoned_resume_allowed?"true":"false"), queue->max_wait_time, queue->max_wait_time_with_no_agent, queue->max_wait_time_with_no_agent_time_reached, queue->record_template);
 					queue = NULL;
@@ -3251,7 +3251,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				switch_hash_index_t *hi;
 				int queue_count = 0;
 				switch_mutex_lock(globals.mutex);
-				for (hi = switch_hash_first(NULL, globals.queue_hash); hi; hi = switch_hash_next(hi)) {
+				for (hi = switch_core_hash_first( globals.queue_hash); hi; hi = switch_core_hash_next(hi)) {
 					queue_count++;
 				}
 				switch_mutex_unlock(globals.mutex);
@@ -3309,7 +3309,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_callcenter_load)
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
 
-	switch_core_hash_init(&globals.queue_hash, globals.pool);
+	switch_core_hash_init(&globals.queue_hash);
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
 	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
@@ -3394,8 +3394,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_callcenter_shutdown)
 	}
 
 	switch_mutex_lock(globals.mutex);
-	while ((hi = switch_hash_first(NULL, globals.queue_hash))) {
-		switch_hash_this(hi, &key, &keylen, &val);
+	while ((hi = switch_core_hash_first( globals.queue_hash))) {
+		switch_core_hash_this(hi, &key, &keylen, &val);
 		queue = (cc_queue_t *) val;
 
 		switch_core_hash_delete(globals.queue_hash, queue->name);
