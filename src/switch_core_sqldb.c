@@ -3158,7 +3158,7 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 	switch_cache_db_test_reactive(sql_manager.dbh, "select hostname from aliases", "DROP TABLE aliases", create_alias_sql);
 	switch_cache_db_test_reactive(sql_manager.dbh, "select hostname from complete", "DROP TABLE complete", create_complete_sql);
 	switch_cache_db_test_reactive(sql_manager.dbh, "select hostname from nat", "DROP TABLE nat", create_nat_sql);
-	switch_cache_db_test_reactive(sql_manager.dbh, "delete from registrations where reg_user='' or network_proto='tcp' or network_proto='tls'", 
+	switch_cache_db_test_reactive(sql_manager.dbh, "delete from registrations where reg_user=''", 
 								  "DROP TABLE registrations", create_registrations_sql);
 
 	switch_cache_db_test_reactive(sql_manager.dbh, "select metadata from registrations", NULL, "ALTER TABLE registrations ADD COLUMN metadata VARCHAR(256)");
@@ -3185,11 +3185,11 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 			switch_cache_db_test_reactive(sql_manager.dbh, "select * from basic_calls where sent_callee_name=''", "DROP VIEW basic_calls", basic_calls_sql);
 			switch_cache_db_test_reactive(sql_manager.dbh, "select call_uuid from calls", "DROP TABLE calls", create_calls_sql);
 			if (runtime.odbc_dbtype == DBTYPE_DEFAULT) {
-				switch_cache_db_test_reactive(sql_manager.dbh, "delete from registrations where reg_user='' or network_proto='tcp' or network_proto='tls'", 
+				switch_cache_db_test_reactive(sql_manager.dbh, "delete from registrations where reg_user=''", 
 											  "DROP TABLE registrations", create_registrations_sql);
 			} else {
 				char *tmp = switch_string_replace(create_registrations_sql, "url      TEXT", "url      VARCHAR(max)");
-				switch_cache_db_test_reactive(sql_manager.dbh, "delete from registrations where reg_user='' or network_proto='tcp' or network_proto='tls'", 
+				switch_cache_db_test_reactive(sql_manager.dbh, "delete from registrations where reg_user=''", 
 											  "DROP TABLE registrations", tmp);
 				free(tmp);
 			}
