@@ -11176,7 +11176,6 @@ nta_reliable_t *reliable_find(nta_agent_t const *agent,
 	if (rel->rel_rseq == rack->ra_response)
 	  return (nta_reliable_t  *)rel;
 
-      return NULL;
     }
   }
 
