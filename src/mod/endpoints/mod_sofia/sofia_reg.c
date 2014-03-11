@@ -1469,7 +1469,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 				to_user = force_user;
 			}
 
-			if (profile->server_rport_level >= 2 && sip->sip_user_agent &&
+			if (!is_tcp && !is_tls && (zstr(network_ip) || !switch_check_network_list_ip(network_ip, profile->local_network)) &&
+				profile->server_rport_level >= 2 && sip->sip_user_agent &&
 				sip->sip_user_agent->g_string &&
 				( !strncasecmp(sip->sip_user_agent->g_string, "Polycom", 7) || !strncasecmp(sip->sip_user_agent->g_string, "KIRK Wireless Server", 20) )) {
 				if (sip && sip->sip_via) {
