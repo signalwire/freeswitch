@@ -595,8 +595,23 @@
 		<br>
 	</script>
 
-	<script type="text/x-handlebars" data-template-name="users">
+	<script type="text/x-handlebars" data-template-name="users" id="users/index">
+		<div class="pull-right">
+			{{#bs-button type="primary" clicked="newUser"}}Create User{{/bs-button}}
+		</div>
+
+		{{#bs-modal name="newUserForm" fade="true" footerButtonsBinding="newUserButtons" title="Create User (Experimental)"}}
+			<p>
+				User ID: <input name="user_id" id="user_id"></input><br>
+			</p>
+			<div class="modal-footer">
+				{{#bs-button type="primary" clicked="submit"}}Create{{/bs-button}}
+				{{#bs-button clicked="cancel"}}Cancel{{/bs-button}}
+			</div>
+		{{/bs-modal}}
+
 		<h1>Users</h1>
+
 		<div>
 			<table class="table">
 			<tr>

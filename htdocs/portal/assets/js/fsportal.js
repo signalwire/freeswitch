@@ -41,6 +41,17 @@ var App = Ember.Application.create({
 	}
 });
 
+App.ApplicationRoute = Ember.Route.extend({
+	setupController: function(controller) {
+		// alert("setupController");
+	},
+	actions: {
+		newUser: function() {
+			return Bootstrap.ModalManager.show('newUserForm');
+		}
+	}
+});
+
 App.CallsRoute = Ember.Route.extend({
 	setupController: function(controller) {
 		// Set the IndexController's `title`
@@ -196,6 +207,17 @@ App.UsersRoute = Ember.Route.extend({
 	}
 });
 
+App.newUserRoute = Ember.Route.extend({
+	setupController: function(Controller) {
+		alert("auto_update_calls");
+	},
+	actions: {
+		show: function(controller) {
+			App.newUserController.show();
+		}
+	}
+});
+
 App.Router.map(function(){
 	this.route("calls");
 	this.route("channels");
@@ -218,6 +240,7 @@ App.Router.map(function(){
 	this.route("showLimits");
 	this.route("show");
 	this.route("users");
+	this.route("newUser");
 	this.route("about", { path: "/about" });
 });
 
@@ -241,6 +264,14 @@ App.Channel = Em.Object.extend({
 	cidName: null,
 	cidNumber: null
 
+});
+
+App.ApplicationController = Ember.ObjectController.extend({
+	actions: {
+		newUser: function() {
+			alert("ApplicationController");
+		}
+	}
 });
 
 App.callsController = Ember.ArrayController.create({
@@ -712,6 +743,39 @@ App.usersController = Ember.ArrayController.create({
 				me.pushObjects(users);
 		});
 	}
+});
+
+
+App.UsersController = Ember.ObjectController.extend({
+  xnewUserButtons: [
+    {title: 'Submit', clicked: "submit"},
+    {title: 'Cancel', clicked: "cancel", dismiss: 'modal'}
+  ],
+
+  actions: {
+    //Submit the modal
+    submit: function() {
+	$.post("/txtapi/lua?create_user.lua%20" + $("#user_id").val(), {
+		data: "user_id=xxxx",
+		success: function() { },
+		error: function(e) { }
+	});
+
+	// Bootstrap.NM.push('Successfully submitted modal', 'success');
+	return Bootstrap.ModalManager.hide('newUserForm');
+    },
+
+    //Cancel the modal, we don't need to hide the model manually because we set {..., dismiss: 'modal'} on the button meta data
+    cancel: function() {
+		Bootstrap.ModalManager.hide('newUserForm');
+		return Bootstrap.NM.push('Modal was cancelled', 'info');
+    },
+
+    //Show the modal
+    newUser: function() {
+		return Bootstrap.ModalManager.show('newUserForm');
+    }
+  }
 });
 
 // App.initialize();
