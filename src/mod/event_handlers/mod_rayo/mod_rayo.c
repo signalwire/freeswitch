@@ -763,6 +763,7 @@ static void stop_deliver_message_threads(void)
  */
 void rayo_message_send(struct rayo_actor *from, const char *to, iks *payload, int dup, int reply, const char *file, int line)
 {
+	const char *msg_name;
 	struct rayo_message *msg = malloc(sizeof(*msg));
 	if (dup) {
 		msg->payload = iks_copy(payload);
@@ -782,6 +783,21 @@ void rayo_message_send(struct rayo_actor *from, const char *to, iks *payload, in
 	msg->from_subtype = strdup(zstr(from->subtype) ? "" : from->subtype);
 	msg->file = strdup(file);
 	msg->line = line;
+
+	/* add timestamp to presence events */
+	msg_name = iks_name(msg->payload);
+	if (!zstr(msg_name) && !strcmp("presence", msg_name)) {
+		iks *delay = iks_insert(msg->payload, "delay");
+		switch_time_exp_t tm;
+		char timestamp[80];
+		switch_size_t retsize;
+
+		iks_insert_attrib(delay, "xmlns", "urn:xmpp:delay");
+
+		switch_time_exp_tz(&tm, switch_time_now(), 0);
+		switch_strftime_nocheck(timestamp, &retsize, sizeof(timestamp), "%Y-%m-%dT%TZ", &tm);
+		iks_insert_attrib_printf(delay, "stamp", "%s", timestamp);
+	}
 
 	if (switch_queue_trypush(globals.msg_queue, msg) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "failed to queue message!\n");
