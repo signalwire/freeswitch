@@ -1187,10 +1187,10 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	if (sip && sip->sip_via && (vproto = sip->sip_via->v_protocol)) {
 		if (!strcasecmp(vproto, "sip/2.0/ws")) {
 			is_ws = 1;
-			is_nat++;
+			is_nat = "ws";
 		} else if (!strcasecmp(vproto, "sip/2.0/wss")) {
 			is_wss = 1;
-			is_nat++;
+			is_nat = "wss";
 
 			if (uparams && (p = switch_stristr("transport=ws", uparams))) {
 				if (p[12] != 's') {
@@ -1269,24 +1269,29 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 		if (uparams && switch_stristr("transport=tls", uparams)) {
 			is_tls += 1;
-			is_nat++;
+			if (sofia_test_pflag(profile, PFLAG_TLS_ALWAYS_NAT)) {
+				is_nat = "tls";
+			}
 		}
 
 		if (!is_wss && !is_ws && uparams && switch_stristr("transport=ws", uparams)) {
-			is_nat++;
+			is_nat = "ws";
 			is_ws += 1;
 		}
 
 		if (sip->sip_contact->m_url->url_type == url_sips) {
 			proto = "sips";
 			is_tls += 2;
-			is_nat++;
+			if (sofia_test_pflag(profile, PFLAG_TLS_ALWAYS_NAT)) {
+				is_nat = "tls";
+			}
 		}
-
 
 		if (uparams && switch_stristr("transport=tcp", uparams)) {
 			is_tcp = 1;
-			is_nat++;
+			if (sofia_test_pflag(profile, PFLAG_TCP_ALWAYS_NAT)) {
+				is_nat = "tcp";
+			}
 		}
 
 		display = contact->m_display;
@@ -1737,9 +1742,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		switch_safe_free(url);
 		switch_safe_free(contact);
 		
-
-		
-		if ((is_wss || is_ws || is_tcp || is_tls) && !sofia_private && call_id) {
+		if ((is_wss || is_ws || (sofia_test_pflag(profile, PFLAG_TCP_UNREG_ON_SOCKET_CLOSE) && (is_tcp || is_tls))) && !sofia_private && call_id) {
 			char key[256] = "";
 			nua_handle_t *hnh;
 			switch_snprintf(key, sizeof(key), "%s%s%s", call_id, network_ip, network_port_c);
