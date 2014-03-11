@@ -199,6 +199,11 @@ static inline int switch_hash_equalkeys(void *k1, void *k2)
     return strcmp((char *) k1, (char *) k2) ? 0 : 1;
 }
 
+static inline int switch_hash_equalkeys_ci(void *k1, void *k2)
+{
+    return strcasecmp((char *) k1, (char *) k2) ? 0 : 1;
+}
+
 static inline uint32_t switch_hash_default(void *ky)
 {
 	unsigned char *str = (unsigned char *) ky;
