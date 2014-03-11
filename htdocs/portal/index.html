@@ -92,6 +92,7 @@
 					<li><a id="menu-calls" href="#calls">Calls</a></li>
 					<li><a id="menu-channels" href="#channels">Channels</a></li>
 					<li><a href="#show">Show</a></li>
+					<li><a href="#sofiaStatus">Sofia</a></li>
 					<li><a href="#about">About</a></li>
 				</ul>
 			</nav>
@@ -634,6 +635,66 @@
 				<td>{{ callgroup }}</td>
 				<td>{{ cid_name }}</td>
 				<td>{{ cid_number }}</td>
+			</tr>
+			{{/each}}
+			</table>
+		</div>
+	</script>
+
+	<script type="text/x-handlebars" data-template-name="sofiaStatus">
+		<div class="pull-right">
+			{{#bs-button type="primary" clicked="addGateway"}}Add Gateway{{/bs-button}}
+		</div>
+
+		{{#bs-modal name="newUserForm" fade="true" footerButtonsBinding="addGatewayButtons" title="Add Gateway"}}
+			<div class="control-group">
+				<label class="control-label" for="gateway_name">Name</label>
+				<div class="controls">
+					<input type="text" class="input-xlarge" name="gateway_name" value="">
+				</div>
+			</div>
+			<div class="control-group">
+				<label class="control-label" for="gateway_realm">Realm</label>
+				<div class="controls">
+					<input type="text" class="input-xlarge" name="gateway_realm" value="">
+				</div>
+			</div>
+			<div class="control-group">
+				<label class="control-label" for="gateway_name">Username</label>
+				<div class="controls">
+					<input type="text" class="input-xlarge" name="gateway_username" value="">
+				</div>
+			</div>
+			<div class="control-group">
+				<label class="control-label" for="gateway_name">Password</label>
+				<div class="controls">
+					<input type="text" class="input-xlarge" name="gateway_password" value="">
+				</div>
+			</div>
+			<div class="modal-footer">
+				{{#bs-button type="primary" clicked="submit"}}Add{{/bs-button}}
+				{{#bs-button clicked="cancel"}}Cancel{{/bs-button}}
+			</div>
+		{{/bs-modal}}
+
+		<h1>Sofia Status</h1>
+
+		<div>
+			<table class="table">
+			<tr>
+				<th>Type</th>
+				<th>Name</th>
+				<th>Data</th>
+				<th>State</th>
+				<th>Action</th>
+			</tr>
+			{{#each App.sofiaStatusController.content}}
+			<tr>
+				<td>{{ type }}</td>
+				<td>{{ name }}</td>
+				<td>{{ data }}</td>
+				<td>{{ state }}</td>
+				<td>{{ actions }}</td>
 			</tr>
 			{{/each}}
 			</table>

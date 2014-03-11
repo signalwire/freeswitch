@@ -218,6 +218,12 @@ App.newUserRoute = Ember.Route.extend({
 	}
 });
 
+App.SofiaStatusRoute = Ember.Route.extend({
+	setupController: function(controller) {
+		App.sofiaStatusController.load();
+	}
+});
+
 App.Router.map(function(){
 	this.route("calls");
 	this.route("channels");
@@ -241,6 +247,8 @@ App.Router.map(function(){
 	this.route("show");
 	this.route("users");
 	this.route("newUser");
+	this.route("sofiaStatus");
+	this.route("addGateway");
 	this.route("about", { path: "/about" });
 });
 
@@ -776,6 +784,95 @@ App.UsersController = Ember.ObjectController.extend({
 		return Bootstrap.ModalManager.show('newUserForm');
     }
   }
+});
+
+App.sofiaStatusController = Ember.ArrayController.create({
+	content: [],
+	init: function(){
+	},
+	load: function() {
+		var me = this;
+		$.get("/xmlapi/sofia?xmlstatus", function(data){
+			console.log(data);
+			var row_count = 0;
+			var aliases = data.getElementsByTagName("alias");
+			var profiles = data.getElementsByTagName("profile");
+			var gateways = data.getElementsByTagName("gateway");
+
+			me.content.clear();
+
+			for (var i=0; i<aliases.length; i++) {
+				var row = {};
+				row.name = aliases[i].getElementsByTagName("name")[0].textContent;
+				row.type = aliases[i].getElementsByTagName("type")[0].textContent;
+				row.data = aliases[i].getElementsByTagName("data")[0].textContent;
+				row.state = aliases[i].getElementsByTagName("state")[0].textContent;
+				console.log(row)
+				row_count++;
+				me.pushObject(row);
+			}
+
+			for (var i=0; i<profiles.length; i++) {
+				var row = {};
+				row.name = profiles[i].getElementsByTagName("name")[0].textContent;
+				row.type = profiles[i].getElementsByTagName("type")[0].textContent;
+				row.data = profiles[i].getElementsByTagName("data")[0].textContent;
+				row.state = profiles[i].getElementsByTagName("state")[0].textContent;
+				row.actions = "Start | Stop | Restart | More ...";
+				console.log(row)
+				row_count++;
+				me.pushObject(row);
+			}
+
+			for (var i=0; i<gateways.length; i++) {
+				var row = {};
+				row.name = gateways[i].getElementsByTagName("name")[0].textContent;
+				row.type = gateways[i].getElementsByTagName("type")[0].textContent;
+				row.data = gateways[i].getElementsByTagName("data")[0].textContent;
+				row.state = gateways[i].getElementsByTagName("state")[0].textContent;
+				row.actions = "Reg | UnReg | Delete";
+				console.log(row)
+				row_count++;
+				me.pushObject(row);
+			}
+
+			me.set('total', row_count);
+		});
+
+	}
+});
+
+App.SofiaStatusController = Ember.ObjectController.extend({
+	newGatewayButtons: [
+		{title: 'Submit', clicked: "submit"},
+		{title: 'Cancel', clicked: "cancel", dismiss: 'modal'}
+	],
+
+	actions: {
+		//Submit the modal
+		submit: function() {
+			alert("Not implemented");
+			return false;
+			$.post("/txtapi/lua?create_gw.lua%20" + $("#gateway_name").val(), {
+				success: function() { },
+				error: function(e) { }
+			});
+
+			// Bootstrap.NM.push('Successfully submitted modal', 'success');
+			return Bootstrap.ModalManager.hide('newUserForm');
+		},
+
+		//Cancel the modal, we don't need to hide the model manually because we set {..., dismiss: 'modal'} on the button meta data
+		cancel: function() {
+			Bootstrap.ModalManager.hide('newUserForm');
+			return Bootstrap.NM.push('Modal was cancelled', 'info');
+		},
+
+		//Show the modal
+		addGateway: function() {
+			return Bootstrap.ModalManager.show('newUserForm');
+		}
+	}
 });
 
 // App.initialize();
