@@ -35,7 +35,7 @@
 
 
 static switch_memory_pool_t *memoryPool = NULL;
-static switch_dso_handle_t *javaVMHandle = NULL;
+static switch_dso_lib_t javaVMHandle = NULL;
 
 JavaVM *javaVM = NULL;
 jclass launcherClass = NULL;
@@ -188,6 +188,7 @@ static switch_status_t load_config(JavaVMOption **javaOptions, int *optionCount,
 {
     switch_xml_t cfg, xml;
     switch_status_t status;
+	char *derr = NULL;
 
     xml = switch_xml_open_cfg("java.conf", &cfg, NULL);
     if (xml)
@@ -203,9 +204,10 @@ static switch_status_t load_config(JavaVMOption **javaOptions, int *optionCount,
             const char *path = switch_xml_attr_soft(javavm, "path");
             if (path != NULL)
             {
-                status = switch_dso_load(&javaVMHandle, path, memoryPool);
-                if (status != SWITCH_STATUS_SUCCESS)
+				javaVMHandle = switch_dso_open(path, 0, &derr);
+				if (derr || !dso) {
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error loading %s\n", path);
+				}
             }
             else
             {
@@ -291,9 +293,11 @@ static switch_status_t create_java_vm(JavaVMOption *options, int optionCount, vm
 {
     jint (JNICALL *pJNI_CreateJavaVM)(JavaVM**,void**,void*);
     switch_status_t status;
+	char *derr = NULL;
 
-    status = switch_dso_sym((void*) &pJNI_CreateJavaVM, javaVMHandle, "JNI_CreateJavaVM");
-    if (status == SWITCH_STATUS_SUCCESS)
+	pJNI_CreateJavaVM = (void *)switch_dso_func_sym(javaVMHandle, "JNI_CreateJavaVM", &derr)
+		
+    if (!derr)
     {
         JNIEnv *env;
         JavaVMInitArgs initArgs;
@@ -380,7 +384,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_java_load)
                 }
 			}
 
-            switch_dso_unload(javaVMHandle);
+			if (javaVMHandle) {
+				switch_dso_destroy(&javaVMHandle);
+			}
         }
         switch_core_destroy_memory_pool(&memoryPool);
     }
@@ -398,7 +404,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_java_shutdown)
     exec_user_method(&vmControl.shutdown);
     (*javaVM)->DestroyJavaVM(javaVM);
     javaVM = NULL;
-    switch_dso_unload(javaVMHandle);
+	if (javaVMHandle) {
+		switch_dso_destroy(&javaVMHandle);
+	}
     switch_core_destroy_memory_pool(&memoryPool);
     return SWITCH_STATUS_SUCCESS;
 }

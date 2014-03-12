@@ -51,7 +51,6 @@
 #include <apr_thread_rwlock.h>
 #include <apr_file_io.h>
 #include <apr_poll.h>
-#include <apr_dso.h>
 #include <apr_strings.h>
 #define APR_WANT_STDIO
 #define APR_WANT_STRFUNC
@@ -121,28 +120,6 @@ SWITCH_DECLARE(unsigned int) switch_ci_hashfunc_default(const char *char_key, sw
 SWITCH_DECLARE(unsigned int) switch_hashfunc_default(const char *key, switch_ssize_t *klen)
 {
 	return apr_hashfunc_default(key, klen);
-}
-
-/* DSO functions */
-
-SWITCH_DECLARE(switch_status_t) switch_dso_load(switch_dso_handle_t ** res_handle, const char *path, switch_memory_pool_t *ctx)
-{
-	return apr_dso_load(res_handle, path, ctx);
-}
-
-SWITCH_DECLARE(switch_status_t) switch_dso_unload(switch_dso_handle_t *handle)
-{
-	return apr_dso_unload(handle);
-}
-
-SWITCH_DECLARE(switch_status_t) switch_dso_sym(switch_dso_handle_sym_t *ressym, switch_dso_handle_t *handle, const char *symname)
-{
-	return apr_dso_sym(ressym, handle, symname);
-}
-
-SWITCH_DECLARE(const char *) switch_dso_error(switch_dso_handle_t *dso, char *buf, size_t bufsize)
-{
-	return apr_dso_error(dso, buf, bufsize);
 }
 
 /* string functions */

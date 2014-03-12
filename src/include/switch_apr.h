@@ -89,55 +89,6 @@ SWITCH_DECLARE(void) switch_pool_clear(switch_memory_pool_t *p);
 /** @} */
 
 /**
- * @defgroup switch_dso Dynamic Object Handling Routines
- * @ingroup switch_apr 
- * @{
- */
-/**
- * Structure for referencing dynamic objects
- */
-	 typedef struct apr_dso_handle_t switch_dso_handle_t;
-
-/**
- * Structure for referencing symbols from dynamic objects
- */
-	 typedef void *switch_dso_handle_sym_t;
-
-/**
- * Load a DSO library.
- * @param res_handle Location to store new handle for the DSO.
- * @param path Path to the DSO library
- * @param ctx Pool to use.
- * @bug We aught to provide an alternative to RTLD_GLOBAL, which
- * is the only supported method of loading DSOs today.
- */
-SWITCH_DECLARE(switch_status_t) switch_dso_load(switch_dso_handle_t ** res_handle, const char *path, switch_memory_pool_t *ctx);
-
-/**
- * Close a DSO library.
- * @param handle handle to close.
- */
-SWITCH_DECLARE(switch_status_t) switch_dso_unload(switch_dso_handle_t *handle);
-
-/**
- * Load a symbol from a DSO handle.
- * @param ressym Location to store the loaded symbol
- * @param handle handle to load the symbol from.
- * @param symname Name of the symbol to load.
- */
-SWITCH_DECLARE(switch_status_t) switch_dso_sym(switch_dso_handle_sym_t *ressym, switch_dso_handle_t *handle, const char *symname);
-
-/**
- * Report more information when a DSO function fails.
- * @param dso The dso handle that has been opened
- * @param buf Location to store the dso error
- * @param bufsize The size of the provided buffer
- */
-SWITCH_DECLARE(const char *) switch_dso_error(switch_dso_handle_t *dso, char *buf, size_t bufsize);
-
-/** @} */
-
-/**
  * @defgroup switch_string String Handling funcions
  * @ingroup switch_apr
  * @{
