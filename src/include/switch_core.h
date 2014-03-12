@@ -1355,7 +1355,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_init_case(_Out_ switch_hash_t *
 #define switch_core_hash_init_nocase(_hash) switch_core_hash_init_case(_hash, SWITCH_FALSE)
 
 
-
 /*! 
   \brief Destroy an existing hash table
   \param hash the hash to destroy
@@ -2540,6 +2539,9 @@ SWITCH_DECLARE(int) switch_core_recovery_recover(const char *technology, const c
 SWITCH_DECLARE(void) switch_core_recovery_untrack(switch_core_session_t *session, switch_bool_t force);
 SWITCH_DECLARE(void) switch_core_recovery_track(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_recovery_flush(const char *technology, const char *profile_name);
+
+SWITCH_DECLARE(void) switch_sql_queue_manager_pause(switch_sql_queue_manager_t *qm, switch_bool_t flush);
+SWITCH_DECLARE(void) switch_sql_queue_manager_resume(switch_sql_queue_manager_t *qm);
 
 SWITCH_DECLARE(int) switch_sql_queue_manager_size(switch_sql_queue_manager_t *qm, uint32_t index);
 SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push_confirm(switch_sql_queue_manager_t *qm, const char *sql, uint32_t pos, switch_bool_t dup);
