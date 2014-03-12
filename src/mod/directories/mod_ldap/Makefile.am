@@ -12,7 +12,7 @@ mod_ldap_la_CFLAGS   = $(AM_CFLAGS) -DWITH_OPENLDAP -DLDAP_DEPRECATED -I$(LDAP_D
 mod_ldap_la_LIBADD   = $(switch_builddir)/libfreeswitch.la $(LDAPLA) $(LIBLBERLA)
 mod_ldap_la_LDFLAGS  = -avoid-version -module -no-undefined -shared
 
-DEFAULT_ARGS= --disable-slapd --disable-bdb --disable-hdb
+MY_DEFAULT_ARGS= --disable-slapd --disable-bdb --disable-hdb
 
 $(MODNAME).lo: $(LDAPLA) $(LIBLBERLA)
 
@@ -21,7 +21,7 @@ $(LDAP_DIR):
 
 $(LDAP_BUILDDIR)/Makefile: $(LDAP_DIR)
 	mkdir -p $(LDAP_BUILDDIR)
-	cd $(LDAP_BUILDDIR) && $(DEFAULT_VARS) $(LDAP_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(LDAP_DIR)
+	cd $(LDAP_BUILDDIR) && $(MY_DEFAULT_VARS) $(LDAP_DIR)/configure $(MY_DEFAULT_ARGS) --srcdir=$(LDAP_DIR)
 	$(TOUCH_TARGET)
 
 $(LDAPLA) $(LIBLBERLA): $(LDAP_BUILDDIR)/Makefile
