@@ -4103,6 +4103,24 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_MWI_USE_REG_CALLID);
 						}
+					} else if (!strcasecmp(var, "tcp-unreg-on-socket-close")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_TCP_UNREG_ON_SOCKET_CLOSE);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_TCP_UNREG_ON_SOCKET_CLOSE);
+						}
+					} else if (!strcasecmp(var, "tcp-always-nat")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_TCP_ALWAYS_NAT);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_TCP_ALWAYS_NAT);
+						}
+					} else if (!strcasecmp(var, "tls-always-nat")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_TCP_ALWAYS_NAT);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_TCP_ALWAYS_NAT);
+						}
 					} else if (!strcasecmp(var, "presence-proto-lookup")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_PRESENCE_MAP);
@@ -8195,7 +8213,24 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	char *sql = NULL;
 	char *acl_context = NULL;
 	const char *r_sdp = NULL;
-	int broken_device = 0;
+	int is_tcp = 0, is_tls = 0;
+	const char *uparams = NULL;
+
+
+	if (sip && sip->sip_contact && sip->sip_contact->m_url && sip->sip_contact->m_url->url_params) {
+		uparams = sip->sip_contact->m_url->url_params;
+	} else {
+		uparams = NULL;
+	}
+
+	
+	if (uparams) {
+		if (switch_stristr("transport=tcp", uparams)) {
+			is_tcp = 1;
+		} else if (switch_stristr("transport=tls", uparams)) {
+			is_tls = 1;
+		}
+	}
 
 	profile->ib_calls++;
 
@@ -8239,14 +8274,13 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	}
 
 
-	if (!switch_check_network_list_ip(network_ip, profile->local_network) &&
-		profile->server_rport_level >= 2 && sip->sip_user_agent && sip->sip_user_agent->g_string &&
-		(!strncasecmp(sip->sip_user_agent->g_string, "Polycom", 7) || 
-		 !strncasecmp(sip->sip_user_agent->g_string, "KIRK Wireless Server", 20) )) {
-		broken_device = 1;
-	}
-
-	if (sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION) || broken_device) {
+	if (sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION) || 
+		(sofia_test_pflag(profile, PFLAG_TLS_ALWAYS_NAT) && (is_tcp || is_tls)) || 
+		(!is_tcp && !is_tls && (zstr(network_ip) || !switch_check_network_list_ip(network_ip, profile->local_network)) && 
+		 profile->server_rport_level >= 2 && sip->sip_user_agent && 
+		 sip->sip_user_agent->g_string && 
+		 (!strncasecmp(sip->sip_user_agent->g_string, "Polycom", 7) || !strncasecmp(sip->sip_user_agent->g_string, "KIRK Wireless Server", 20)))
+		) {
 		if (sip && sip->sip_via) {
 			const char *port = sip->sip_via->v_port;
 			const char *host = sip->sip_via->v_host;

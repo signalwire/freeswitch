@@ -16,7 +16,7 @@ BUILT_SOURCES=$(LDNS_BUILDDIR)/ldns/util.h
 
 $(LDNS_BUILDDIR)/ldns/util.h $(LDNS_BUILDDIR)/Makefile: $(LDNS_DIR)/Makefile.in
 	mkdir -p $(LDNS_BUILDDIR)
-	cd $(LDNS_BUILDDIR) && $(DEFAULT_VARS) $(LDNS_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(LDNS_DIR) --disable-gost --without-ssl --disable-sha2
+	cd $(LDNS_BUILDDIR) && $(DEFAULT_VARS) $(LDNS_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(LDNS_DIR) --disable-gost --without-ssl --disable-sha2 --disable-shared --with-pic
 	$(TOUCH_TARGET)
 
 $(LDNS_LA): $(LDNS_BUILDDIR)/Makefile

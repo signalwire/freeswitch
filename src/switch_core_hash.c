@@ -38,7 +38,11 @@
 
 SWITCH_DECLARE(switch_status_t) switch_core_hash_init_case(switch_hash_t **hash, switch_bool_t case_sensitive)
 {
-	return switch_create_hashtable(hash, 16, case_sensitive ? switch_hash_default : switch_hash_default_ci, switch_hash_equalkeys);
+	if (case_sensitive) {
+		return switch_create_hashtable(hash, 16, switch_hash_default, switch_hash_equalkeys);
+	} else {
+		return switch_create_hashtable(hash, 16, switch_hash_default_ci, switch_hash_equalkeys_ci);
+	}
 }
 
 

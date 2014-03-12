@@ -1,6 +1,6 @@
 MAINTAINERCLEANFILES 	      = Makefile.in
 
-AM_CPPFLAG                    = -I$(top_srcdir)/libs/mrcpv2-transport/include \
+AM_CPPFLAGS                   = -I$(top_srcdir)/libs/mrcpv2-transport/include \
                                 -I$(top_srcdir)/libs/mrcp/include \
                                 -I$(top_srcdir)/libs/mrcp/message/include \
                                 -I$(top_srcdir)/libs/mrcp/control/include \

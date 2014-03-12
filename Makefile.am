@@ -139,7 +139,7 @@ endif
 
 if HAVE_LIBEDIT
 CORE_CFLAGS += -I$(switch_srcdir)/libs/libedit/src -DSWITCH_HAVE_LIBEDIT
-CORE_LIBS   += libs/libedit/src/.libs/libedit.a $(TINFO_LIBS)
+CORE_LIBS   += libs/libedit/src/.libs/libedit.a
 endif
 
 if ENABLE_TIMERFD_WRAPPER
@@ -158,6 +158,10 @@ libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(AM_CFLAGS)
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS)
 libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(PLATFORM_CORE_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
+
+if HAVE_LIBEDIT
+libfreeswitch_la_LIBADD += $(TINFO_LIBS)
+endif
 
 if HAVE_ODBC
 libfreeswitch_la_LDFLAGS += $(ODBC_LIB_FLAGS)

@@ -514,9 +514,13 @@ static iks *start_call_voice_input(struct input_component *component, switch_cor
 
 	/* start speech detection */
 	switch_channel_set_variable(switch_core_session_get_channel(session), "fire_asr_events", "true");
+	switch_mutex_unlock(handler->mutex); /* unlock handler mutex, otherwise deadlock will happen when switch_ivr_detect_speech adds a new media bug */
 	if (switch_ivr_detect_speech(session, component->recognizer, grammar.data, "mod_rayo_grammar", "", NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_mutex_lock(handler->mutex);
 		handler->voice_component = NULL;
 		rayo_component_send_complete(RAYO_COMPONENT(component), COMPONENT_COMPLETE_ERROR);
+	} else {
+		switch_mutex_lock(handler->mutex);
 	}
 	switch_safe_free(grammar.data);
 

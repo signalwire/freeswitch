@@ -763,6 +763,7 @@ static void stop_deliver_message_threads(void)
  */
 void rayo_message_send(struct rayo_actor *from, const char *to, iks *payload, int dup, int reply, const char *file, int line)
 {
+	const char *msg_name;
 	struct rayo_message *msg = malloc(sizeof(*msg));
 	if (dup) {
 		msg->payload = iks_copy(payload);
@@ -782,6 +783,21 @@ void rayo_message_send(struct rayo_actor *from, const char *to, iks *payload, in
 	msg->from_subtype = strdup(zstr(from->subtype) ? "" : from->subtype);
 	msg->file = strdup(file);
 	msg->line = line;
+
+	/* add timestamp to presence events */
+	msg_name = iks_name(msg->payload);
+	if (!zstr(msg_name) && !strcmp("presence", msg_name)) {
+		iks *delay = iks_insert(msg->payload, "delay");
+		switch_time_exp_t tm;
+		char timestamp[80];
+		switch_size_t retsize;
+
+		iks_insert_attrib(delay, "xmlns", "urn:xmpp:delay");
+
+		switch_time_exp_tz(&tm, switch_time_now(), 0);
+		switch_strftime_nocheck(timestamp, &retsize, sizeof(timestamp), "%Y-%m-%dT%TZ", &tm);
+		iks_insert_attrib_printf(delay, "stamp", "%s", timestamp);
+	}
 
 	if (switch_queue_trypush(globals.msg_queue, msg) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "failed to queue message!\n");
@@ -1973,7 +1989,7 @@ static iks *join_call(struct rayo_call *call, switch_core_session_t *session, st
 	struct rayo_call *b_call = RAYO_CALL_LOCATE(call_uri);
 	if (!b_call) {
 		/* not a rayo call */
-		response = iks_new_error_detailed(node, STANZA_ERROR_SERVICE_UNAVAILABLE, "b-leg is not a rayo call");
+		response = iks_new_error_detailed(node, STANZA_ERROR_SERVICE_UNAVAILABLE, "b-leg is gone");
 	} else if (!has_call_control(b_call, msg)) {
 		/* not allowed to join to this call */
 		response = iks_new_error(node, STANZA_ERROR_NOT_ALLOWED);
@@ -1990,7 +2006,7 @@ static iks *join_call(struct rayo_call *call, switch_core_session_t *session, st
 		call->pending_join_request = iks_copy(node);
 		if (switch_ivr_uuid_bridge(rayo_call_get_uuid(call), rayo_call_get_uuid(b_call)) != SWITCH_STATUS_SUCCESS) {
 			iks *request = call->pending_join_request;
-			iks *result = iks_new_error_detailed(request, STANZA_ERROR_ITEM_NOT_FOUND, "failed to bridge call");
+			iks *result = iks_new_error(request, STANZA_ERROR_SERVICE_UNAVAILABLE);
 			call->pending_join_request = NULL;
 			RAYO_SEND_REPLY(call, iks_find_attrib_soft(request, "from"), result);
 			iks_delete(call->pending_join_request);
