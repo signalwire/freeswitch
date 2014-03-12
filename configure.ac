@@ -1030,7 +1030,7 @@ fi
 
 if test "$ac_cv_use_system_curl" = "yes" ; then
 AC_CACHE_CHECK([whether to use system libcurl library], [ac_cv_curl_usable], [
-  AC_CHECK_LIB(curl, Curl_setopt, [ac_cv_curl_usable="yes"], [ac_cv_curl_usable="no"])
+  AC_CHECK_LIB(curl, curl_easy_setopt, [ac_cv_curl_usable="yes"], [ac_cv_curl_usable="no"])
 ])
 fi
 

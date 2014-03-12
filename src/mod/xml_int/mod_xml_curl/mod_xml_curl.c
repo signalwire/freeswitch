@@ -57,7 +57,7 @@ struct xml_binding {
 	char *cookie_file;
 	switch_hash_t *vars_map;
 	int use_dynamic_url;
-	int auth_scheme;
+	long auth_scheme;
 	int timeout;
 };
 
@@ -368,7 +368,7 @@ static switch_status_t do_config(void)
 		uint32_t enable_ssl_verifyhost = 0;
 		char *cookie_file = NULL;
 		hash_node_t *hash_node;
-		int auth_scheme = CURLAUTH_BASIC;
+		long auth_scheme = CURLAUTH_BASIC;
 		need_vars_map = 0;
 		vars_map = NULL;
 
@@ -399,7 +399,7 @@ static switch_status_t do_config(void)
 				} else if (!strcasecmp(val, "GSS-NEGOTIATE")) {
 					auth_scheme |= CURLAUTH_GSSNEGOTIATE;
 				} else if (!strcasecmp(val, "any")) {
-					auth_scheme = CURLAUTH_ANY;
+					auth_scheme = (long)CURLAUTH_ANY;
 				}
 			} else if (!strcasecmp(var, "disable-100-continue") && !switch_true(val)) {
 				disable100continue = 0;

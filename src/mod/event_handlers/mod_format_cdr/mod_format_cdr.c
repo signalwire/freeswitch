@@ -79,7 +79,7 @@ struct cdr_profile {
 	int prefix_a;
 	int disable100continue;
 	int rotate;
-	int auth_scheme;
+	long auth_scheme;
 	int timeout;
 	switch_memory_pool_t *pool;
 };
@@ -671,7 +671,7 @@ switch_status_t mod_format_cdr_load_profile_xml(switch_xml_t xprofile)
 				} else if (!strcasecmp(val, "GSS-NEGOTIATE")) {
 					profile->auth_scheme |= CURLAUTH_GSSNEGOTIATE;
 				} else if (!strcasecmp(val, "any")) {
-					profile->auth_scheme = CURLAUTH_ANY;
+					profile->auth_scheme = (long)CURLAUTH_ANY;
 				}
 			} else if (!strcasecmp(var, "encode-values") && !zstr(val)) {
 				profile->encode_values = switch_true(val) ? ENCODING_DEFAULT : ENCODING_NONE;

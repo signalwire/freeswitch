@@ -165,7 +165,7 @@ JS_CURL_FUNCTION_IMPL(Run)
 		String::Utf8Value str4(info[5]);
 		cred = js_safe_str(*str4);
 		if (cred.length() > 0) {
-			switch_curl_easy_setopt(_curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+			switch_curl_easy_setopt(_curl_handle, CURLOPT_HTTPAUTH, (long)CURLAUTH_ANY);
 			switch_curl_easy_setopt(_curl_handle, CURLOPT_USERPWD, cred.c_str());
 		}
 	}

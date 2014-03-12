@@ -69,7 +69,7 @@ static struct {
 	int prefix_a;
 	int disable100continue;
 	int rotate;
-	int auth_scheme;
+	long auth_scheme;
 	switch_memory_pool_t *pool;
 	switch_event_node_t *node;
 	int encode_values;
@@ -689,7 +689,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load)
 				} else if (!strcasecmp(val, "GSS-NEGOTIATE")) {
 					globals.auth_scheme |= CURLAUTH_GSSNEGOTIATE;
 				} else if (!strcasecmp(val, "any")) {
-					globals.auth_scheme = CURLAUTH_ANY;
+					globals.auth_scheme = (long)CURLAUTH_ANY;
 				}
 			} else if (!strcasecmp(var, "encode-values") && !zstr(val)) {
 				globals.encode_values = switch_true(val) ? ENCODING_DEFAULT : ENCODING_NONE;

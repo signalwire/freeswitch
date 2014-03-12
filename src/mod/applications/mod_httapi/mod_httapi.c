@@ -86,7 +86,7 @@ typedef struct client_profile_s {
 	uint32_t enable_ssl_verifyhost;
 	char *cookie_file;
 	switch_hash_t *vars_map;
-	int auth_scheme;
+	long auth_scheme;
 	int timeout;
 	profile_perms_t perms;
 	char *ua;
@@ -1749,7 +1749,7 @@ static switch_status_t do_config(void)
 		char *cookie_file = NULL;
 		char *ua = "mod_httapi/1.0";
 		hash_node_t *hash_node;
-		int auth_scheme = CURLAUTH_BASIC;
+		long auth_scheme = CURLAUTH_BASIC;
 		need_vars_map = 0;
 		vars_map = NULL;
 
@@ -1791,7 +1791,7 @@ static switch_status_t do_config(void)
 					} else if (!strcasecmp(val, "GSS-NEGOTIATE")) {
 						auth_scheme |= CURLAUTH_GSSNEGOTIATE;
 					} else if (!strcasecmp(val, "any")) {
-						auth_scheme = CURLAUTH_ANY;
+						auth_scheme = (long)CURLAUTH_ANY;
 					}
 				} else if (!strcasecmp(var, "disable-100-continue") && !switch_true(val)) {
 					disable100continue = 0;

@@ -146,7 +146,7 @@ static JSBool curl_run(JSContext * cx, JSObject * obj, uintN argc, jsval * argv,
 	if (argc > 5) {
 		cred = JS_GetStringBytes(JS_ValueToString(cx, argv[5]));
 		if (!zstr(cred)) {
-			switch_curl_easy_setopt(co->curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+			switch_curl_easy_setopt(co->curl_handle, CURLOPT_HTTPAUTH, (long)CURLAUTH_ANY);
 			switch_curl_easy_setopt(co->curl_handle, CURLOPT_USERPWD, cred);
 		}
 	}

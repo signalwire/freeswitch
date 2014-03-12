@@ -66,7 +66,7 @@ static struct {
 	int prefix_a;
 	int disable100continue;
 	int rotate;
-	int auth_scheme;
+	long auth_scheme;
 	int timeout;
 	switch_memory_pool_t *pool;
 	switch_event_node_t *node;
@@ -576,7 +576,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				} else if (!strcasecmp(val, "GSS-NEGOTIATE")) {
 					globals.auth_scheme |= CURLAUTH_GSSNEGOTIATE;
 				} else if (!strcasecmp(val, "any")) {
-					globals.auth_scheme = CURLAUTH_ANY;
+					globals.auth_scheme = (long)CURLAUTH_ANY;
 				}
 			}
 		}
