@@ -295,6 +295,7 @@ Build-Depends:
 # for APR (not essential for build)
  uuid-dev, libexpat1-dev, libgdbm-dev, libdb-dev,
 # used by many modules
+ libcurl4-openssl-dev | libcurl4-gnutls-dev | libcurl-dev,
  bison, zlib1g-dev,
 # module build-depends
  $(debian_wrap "${mod_build_depends}")
