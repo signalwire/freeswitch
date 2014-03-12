@@ -197,6 +197,12 @@ typedef enum {
 
 #define GSMOPEN_MAX_INTERFACES 64
 
+#define USSD_ENCODING_AUTO 		0
+#define USSD_ENCODING_PLAIN 	1
+#define USSD_ENCODING_HEX_7BIT	2
+#define USSD_ENCODING_HEX_8BIT	3
+#define USSD_ENCODING_UCS2		4
+
 #ifndef WIN32
 struct GSMopenHandles {
 	int currentuserhandle;
@@ -405,6 +411,14 @@ struct private_object {
 	int sms_cnmi_not_supported;
 	int sms_pdu_not_supported;
 
+	int  ussd_request_encoding;
+	int  ussd_response_encoding;
+	int  ussd_request_hex;
+	int  ussd_received;
+	int  ussd_status;
+	char ussd_message[1024];
+	char ussd_dcs[256];
+
 	struct timeval call_incoming_time;
 	switch_mutex_t *controldev_lock;
 
@@ -561,3 +575,5 @@ int serial_audio_shutdown(private_t *tech_pvt);
 #ifndef WIN32
 void find_ttyusb_devices(private_t *tech_pvt, const char *dirname);
 #endif// WIN32
+int gsmopen_ussd(private_t *tech_pvt, char *ussd, int waittime);
+int ussd_incoming(private_t *tech_pvt);

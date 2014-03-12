@@ -49,6 +49,8 @@ SWITCH_STANDARD_API(sendsms_function);
 #define SENDSMS_SYNTAX "gsmopen_sendsms interface_name destination_number SMS_text"
 SWITCH_STANDARD_API(gsmopen_dump_function);
 #define GSMOPEN_DUMP_SYNTAX "gsmopen_dump <interface_name|list>"
+SWITCH_STANDARD_API(gsmopen_ussd_function);
+#define USSD_SYNTAX "gsmopen_ussd <interface_name> <ussd_code> [nowait]"
 #define FULL_RELOAD 0
 #define SOFT_RELOAD 1
 
@@ -1231,6 +1233,8 @@ static switch_status_t load_config(int reload_type)
 			const char *portaudiopindex = "1";
 			const char *speexecho = "1";
 			const char *speexpreprocess = "1";
+			const char *ussd_request_encoding = "auto";
+			const char *ussd_response_encoding = "auto";
 
 			uint32_t interface_id = 0;
 			int controldevice_speed = 115200;	//FIXME TODO
@@ -1403,6 +1407,10 @@ static switch_status_t load_config(int reload_type)
 					imei = val;
 				} else if (!strcasecmp(var, "gsmopen_serial_sync_period")) {
 					gsmopen_serial_sync_period = val;
+				} else if (!strcasecmp(var, "ussd_request_encoding")) {
+					ussd_request_encoding = val;
+				} else if (!strcasecmp(var, "ussd_response_encoding")) {
+					ussd_response_encoding = val;
 				}
 
 			}
@@ -1553,6 +1561,18 @@ static switch_status_t load_config(int reload_type)
 				globals.GSMOPEN_INTERFACES[interface_id].playback_boost = atoi(playback_boost);
 				globals.GSMOPEN_INTERFACES[interface_id].no_sound = atoi(no_sound);
 				globals.GSMOPEN_INTERFACES[interface_id].gsmopen_serial_sync_period = atoi(gsmopen_serial_sync_period);
+
+				globals.GSMOPEN_INTERFACES[interface_id].ussd_request_encoding =
+					strcasecmp(ussd_request_encoding, "plain") == 0 ? USSD_ENCODING_PLAIN : 
+					strcasecmp(ussd_request_encoding, "hex7") == 0 ? USSD_ENCODING_HEX_7BIT : 
+					strcasecmp(ussd_request_encoding, "hex8") == 0 ? USSD_ENCODING_HEX_8BIT : 
+					strcasecmp(ussd_request_encoding, "ucs2") == 0 ? USSD_ENCODING_UCS2 : USSD_ENCODING_AUTO;
+
+				globals.GSMOPEN_INTERFACES[interface_id].ussd_response_encoding =
+					strcasecmp(ussd_response_encoding, "plain") == 0 ? USSD_ENCODING_PLAIN : 
+					strcasecmp(ussd_response_encoding, "hex7") == 0 ? USSD_ENCODING_HEX_7BIT : 
+					strcasecmp(ussd_response_encoding, "hex8") == 0 ? USSD_ENCODING_HEX_8BIT : 
+					strcasecmp(ussd_response_encoding, "ucs2") == 0 ? USSD_ENCODING_UCS2 : USSD_ENCODING_AUTO;
 
 				globals.GSMOPEN_INTERFACES[interface_id].controldevice_speed = controldevice_speed;	//FIXME
 				globals.GSMOPEN_INTERFACES[interface_id].controldevprotocol = controldevprotocol;	//FIXME
@@ -1781,7 +1801,12 @@ static switch_status_t chat_send(switch_event_t *message_event)
 				   from ? from : "NULL");
 			goto end;
 		} else {
-			gsmopen_sendsms(tech_pvt, (char *) to, (char *) body);
+			if (strcasecmp(to, "ussd") == 0) {
+				gsmopen_ussd(tech_pvt, (char *) body, 0);
+			} else {
+				gsmopen_sendsms(tech_pvt, (char *) to, (char *) body);
+			}
+
 		}
 	}
   end:
@@ -1852,6 +1877,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_gsmopen_load)
 					   GSMOPEN_BOOST_AUDIO_SYNTAX);
 		SWITCH_ADD_API(commands_api_interface, "gsmopen_dump", "gsmopen_dump interface", gsmopen_dump_function, GSMOPEN_DUMP_SYNTAX);
 		SWITCH_ADD_API(commands_api_interface, "gsmopen_sendsms", "gsmopen_sendsms interface destination_number SMS_text", sendsms_function,
+					   SENDSMS_SYNTAX);
+		SWITCH_ADD_API(commands_api_interface, "gsmopen_ussd", "gsmopen_ussd interface ussd_code wait_seconds", gsmopen_ussd_function,
 					   SENDSMS_SYNTAX);
 		SWITCH_ADD_CHAT(chat_interface, GSMOPEN_CHAT_PROTO, chat_send);
 
@@ -2660,6 +2687,79 @@ SWITCH_STANDARD_API(sendsms_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(gsmopen_ussd_function)
+{
+	char *mycmd = NULL, *argv[3] = { 0 };
+	int argc = 0;
+	int waittime = 20;
+	private_t *tech_pvt = NULL;
+
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (!argc) {
+		stream->write_function(stream, "ERROR, usage: %s", USSD_SYNTAX);
+		goto end;
+	}
+
+	if (argc < 2) {
+		stream->write_function(stream, "ERROR, usage: %s", USSD_SYNTAX);
+		goto end;
+	}
+	
+	if (argc >= 3 && strcasecmp(argv[2], "nowait")==0) {
+		waittime = 0;
+	}
+
+	if (argv[0]) {
+		int i;
+		int found = 0;
+
+		for (i = 0; !found && i < GSMOPEN_MAX_INTERFACES; i++) {
+			/* we've been asked for a normal interface name, or we have not found idle interfaces to serve as the "ANY" interface */
+			if (strlen(globals.GSMOPEN_INTERFACES[i].name)
+				&& (strncmp(globals.GSMOPEN_INTERFACES[i].name, argv[0], strlen(argv[0])) == 0)) {
+				tech_pvt = &globals.GSMOPEN_INTERFACES[i];
+				NOTICA("Trying to send USSD request: interface=%s, ussd=%s\n", GSMOPEN_P_LOG, argv[0], argv[1]);
+				found = 1;
+				break;
+			}
+
+		}
+		if (!found) {
+			stream->write_function(stream, "ERROR: A GSMopen interface with name='%s' was not found\n", argv[0]);
+			switch_safe_free(mycmd);
+
+			return SWITCH_STATUS_SUCCESS;
+		} else {
+			int err = gsmopen_ussd(tech_pvt, (char *) argv[1], waittime);
+			if (err == AT_ERROR) {
+				stream->write_function(stream, "ERROR: command failed\n");
+			} else if (!waittime) {
+				stream->write_function(stream, "USSD request has been sent\n");
+			} else if (err) {
+				stream->write_function(stream, "ERROR: USSD request timeout (%d)\n", err);
+			} else if (!tech_pvt->ussd_received) {
+				stream->write_function(stream, "ERROR: no response received\n");
+			} else {
+				stream->write_function(stream, "Status: %d%s\n", tech_pvt->ussd_status,
+				tech_pvt->ussd_status == 0 ? " - completed" : 
+				tech_pvt->ussd_status == 1 ? " - action required" : 
+				tech_pvt->ussd_status == 2 ? " - error" : "");
+				if (strlen(tech_pvt->ussd_message) != 0) 
+					stream->write_function(stream, "Text: %s\n", tech_pvt->ussd_message);
+			}
+		}
+	} else {
+		stream->write_function(stream, "ERROR, usage: %s", USSD_SYNTAX);
+	}
+  end:
+	switch_safe_free(mycmd);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 int dump_event_full(private_t *tech_pvt, int is_alarm, int alarm_code, const char *alarm_message)
 {
 	switch_event_t *event;
@@ -2807,7 +2907,44 @@ int sms_incoming(private_t *tech_pvt)
 	return 0;
 }
 
+int ussd_incoming(private_t *tech_pvt)
+{
+	switch_event_t *event;
+	switch_core_session_t *session = NULL;
+	int event_sent_to_esl = 0;
 
+	DEBUGA_GSMOPEN("received USSD on interface %s: TEXT=%s|\n", GSMOPEN_P_LOG, tech_pvt->name, tech_pvt->ussd_message);
+
+/* mod_sms begin */
+	if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", GSMOPEN_CHAT_PROTO);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", tech_pvt->name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", "ussd");
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "date", tech_pvt->sms_date);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "datacodingscheme", tech_pvt->ussd_dcs);
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "servicecentreaddress", tech_pvt->sms_servicecentreaddress);
+		//switch_event_add_header(event, SWITCH_STACK_BOTTOM, "messagetype", "%d", tech_pvt->sms_messagetype);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subject", "USSD MESSAGE");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to", tech_pvt->name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "hint", tech_pvt->name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_proto", GSMOPEN_CHAT_PROTO);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_user", "ussd");
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_host", "from_host");
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_full", "from_full");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_user", tech_pvt->name);
+		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_host", "to_host");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "ussd_status", "%d", tech_pvt->ussd_status);
+		switch_event_add_body(event, "%s\n", tech_pvt->ussd_message);
+		//switch_core_chat_send("GLOBAL", event); /* mod_sms */
+		switch_core_chat_send("GLOBAL", event);	/* mod_sms */
+	} else {
+
+		ERRORA("cannot create event on interface %s. WHY?????\n", GSMOPEN_P_LOG, tech_pvt->name);
+	}
+	/* mod_sms end */
+
+	return 0;
+}
 
 #ifndef WIN32
 #define PATH_MAX_GIOVA PATH_MAX

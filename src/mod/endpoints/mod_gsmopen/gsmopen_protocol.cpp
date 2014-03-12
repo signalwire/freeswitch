@@ -1392,6 +1392,69 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 				}
 
 			}
+			if ((strncmp(tech_pvt->line_array.result[i], "+CUSD:", 6) == 0)) {
+				if (option_debug > 1)
+					DEBUGA_GSMOPEN("|%s| USSD received\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
+				int res = 0, status = 0;
+				unsigned int dcs = 0;
+				char ussd_msg[1024];
+				memset(tech_pvt->ussd_message, '\0', sizeof(tech_pvt->ussd_message));
+				memset(tech_pvt->ussd_dcs, '\0', sizeof(tech_pvt->ussd_dcs));
+				res = sscanf(&tech_pvt->line_array.result[i][6], "%d,\"%1023[0-9A-F]\",%d", &status, ussd_msg, &dcs);
+				if (res == 1) {
+					NOTICA("received +CUSD with status %d\n", GSMOPEN_P_LOG, status);
+					tech_pvt->ussd_received = 1;
+					tech_pvt->ussd_status = status;
+				} else if (res == 3) {
+					tech_pvt->ussd_received = 1;
+					tech_pvt->ussd_status = status;
+
+					//identifying dcs alphabet according to GSM 03.38 Cell Broadcast Data Coding Scheme
+					//CBDataCodingScheme should be used here, but it appears to be buggy (ucs2 messages are not recognized)
+					int alphabet = DCS_RESERVED_ALPHABET;  
+					if (dcs == 0x11) { 
+						alphabet = DCS_SIXTEEN_BIT_ALPHABET;
+					} else if ((dcs & 0xF0) <= 0x30){
+						alphabet = DCS_DEFAULT_ALPHABET;
+					} else if ((dcs & 0xC0) == 0x40 || (dcs & 0xF0) == 0x90) {
+						alphabet = dcs & (3 << 2);
+					};
+
+					if ( (tech_pvt->ussd_response_encoding == USSD_ENCODING_AUTO && alphabet == DCS_DEFAULT_ALPHABET)
+							|| tech_pvt->ussd_response_encoding == USSD_ENCODING_HEX_7BIT ) {
+						SMSDecoder d(ussd_msg);
+						d.markSeptet();
+						string ussd_dec = gsmToLatin1(d.getString(strlen(ussd_msg) / 2 * 8 / 7));
+						iso_8859_1_to_utf8(tech_pvt, (char *) ussd_dec.c_str(), tech_pvt->ussd_message, sizeof(tech_pvt->ussd_message));
+						strcpy(tech_pvt->ussd_dcs, "default alphabet");
+					} else if ( (tech_pvt->ussd_response_encoding == USSD_ENCODING_AUTO && alphabet == DCS_SIXTEEN_BIT_ALPHABET)
+								|| tech_pvt->ussd_response_encoding == USSD_ENCODING_UCS2 ) {
+						ucs2_to_utf8(tech_pvt, ussd_msg, tech_pvt->ussd_message, sizeof(tech_pvt->ussd_message));
+						strcpy(tech_pvt->ussd_dcs, "16-bit alphabet");
+					} else if ( (tech_pvt->ussd_response_encoding == USSD_ENCODING_AUTO && alphabet == DCS_EIGHT_BIT_ALPHABET)
+								|| tech_pvt->ussd_response_encoding == USSD_ENCODING_HEX_8BIT ) {
+						char ussd_dec[1024];
+						memset(ussd_dec, '\0', sizeof(ussd_dec));
+						hexToBuf(ussd_msg, (unsigned char*)ussd_dec);
+						iso_8859_1_to_utf8(tech_pvt, (char *) ussd_dec, tech_pvt->ussd_message, sizeof(tech_pvt->ussd_message));
+						strcpy(tech_pvt->ussd_dcs, "8-bit alphabet");
+					} else if ( tech_pvt->ussd_response_encoding == USSD_ENCODING_PLAIN ) {
+						string ussd_dec = gsmToLatin1(ussd_msg);
+						iso_8859_1_to_utf8(tech_pvt, (char *) ussd_dec.c_str(), tech_pvt->ussd_message, sizeof(tech_pvt->ussd_message));
+						strcpy(tech_pvt->ussd_dcs, "default alphabet");
+					} else {
+						ERRORA("USSD data coding scheme not supported=%d\n", GSMOPEN_P_LOG, dcs);
+					}
+
+					NOTICA("USSD received: status=%d, message='%s', dcs='%d'\n", 
+						GSMOPEN_P_LOG, tech_pvt->ussd_status, tech_pvt->ussd_message, dcs);
+
+					ussd_incoming(tech_pvt);
+				} else {
+					ERRORA ("res=%d, +CUSD command has wrong format: %s\n",
+								 GSMOPEN_P_LOG, res, tech_pvt->line_array.result[i]);
+				}
+			}
 
 			if ((strncmp(tech_pvt->line_array.result[i], "*ECAV", 5) == 0) || (strncmp(tech_pvt->line_array.result[i], "*ECAM", 5) == 0)) {	/* sony-ericsson call processing unsolicited messages */
 				int res, ccid, ccstatus, calltype, processid, exitcause, number, type;
@@ -2856,6 +2919,57 @@ int gsmopen_sendsms(private_t *tech_pvt, char *dest, char *text)
 		return -1;
 	else
 		return RESULT_SUCCESS;
+}
+
+int gsmopen_ussd(private_t *tech_pvt, char *ussd, int waittime)
+{
+	int res = 0;
+	DEBUGA_GSMOPEN("gsmopen_ussd: %s\n", GSMOPEN_P_LOG, ussd);
+	if (tech_pvt->controldevprotocol == PROTOCOL_AT) {
+		char at_command[1024];
+
+		string ussd_enc = latin1ToGsm(ussd);
+		SMSEncoder e;
+		e.markSeptet();
+		e.setString(ussd_enc);
+		string ussd_hex = e.getHexString();
+
+		memset(at_command, '\0', sizeof(at_command));
+		tech_pvt->ussd_received = 0;
+		if (tech_pvt->ussd_request_encoding == USSD_ENCODING_PLAIN  
+					||tech_pvt->ussd_request_encoding == USSD_ENCODING_AUTO) {
+			snprintf(at_command, sizeof(at_command), "AT+CUSD=1,\"%s\",15", ussd_enc.c_str());
+			res = gsmopen_serial_write_AT_ack(tech_pvt, at_command);
+			if (res && tech_pvt->ussd_request_encoding == USSD_ENCODING_AUTO) {
+				DEBUGA_GSMOPEN("Plain request failed, trying HEX7 encoding...\n", GSMOPEN_P_LOG);
+				snprintf(at_command, sizeof(at_command), "AT+CUSD=1,\"%s\",15", ussd_hex.c_str());
+				res = gsmopen_serial_write_AT_ack(tech_pvt, at_command);
+				if (res == 0) {
+					DEBUGA_GSMOPEN("HEX 7-bit request encoding will be used from now on\n", GSMOPEN_P_LOG);
+					tech_pvt->ussd_request_encoding = USSD_ENCODING_HEX_7BIT;
+				}
+			}
+		} else if (tech_pvt->ussd_request_encoding == USSD_ENCODING_HEX_7BIT) {
+			snprintf(at_command, sizeof(at_command), "AT+CUSD=1,\"%s\",15", ussd_hex.c_str());
+			res = gsmopen_serial_write_AT_ack(tech_pvt, at_command);
+		} else if (tech_pvt->ussd_request_encoding == USSD_ENCODING_HEX_8BIT) {
+			string ussd_h8 = bufToHex((const unsigned char*)ussd_enc.c_str(), ussd_enc.length()); 
+			snprintf(at_command, sizeof(at_command), "AT+CUSD=1,\"%s\",15", ussd_h8.c_str());
+			res = gsmopen_serial_write_AT_ack(tech_pvt, at_command);
+		} else if (tech_pvt->ussd_request_encoding == USSD_ENCODING_UCS2) {
+			char ussd_ucs2[1000];
+			memset(ussd_ucs2, '\0', sizeof(ussd_ucs2));
+			utf8_to_ucs2(tech_pvt, ussd, strlen(ussd), ussd_ucs2, sizeof(ussd_ucs2));
+			snprintf(at_command, sizeof(at_command), "AT+CUSD=1,\"%s\",15", ussd_ucs2);
+			res = gsmopen_serial_write_AT_ack(tech_pvt, at_command);
+		}
+		if (res) {
+			return res;
+		}
+		if (waittime > 0)
+			res = gsmopen_serial_read_AT(tech_pvt, 1, 0, waittime, "+CUSD", 1);
+	}
+	return res;
 }
 
 /************************************************/
