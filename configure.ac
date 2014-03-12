@@ -297,6 +297,9 @@ if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
         APR_ADDTO(SWITCH_AM_LDFLAGS, -m64)
 	LIBS="$LIBS -m64"
     fi
+elif test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
+    APR_ADDTO(SWITCH_AM_CFLAGS, -fPIC)
+    APR_ADDTO(SWITCH_AM_CXXFLAGS, -fPIC)
 elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     APR_ADDTO(SWITCH_AM_CFLAGS, -fPIC)
     APR_ADDTO(SWITCH_AM_CXXFLAGS, -fPIC)
