@@ -1116,9 +1116,9 @@ void sofia_reg_close_handles(sofia_profile_t *profile)
 }
 
 
-uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip,
+uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip,
 								sofia_dispatch_event_t *de, sofia_regtype_t regtype, char *key,
-								  uint32_t keylen, switch_event_t **v_event, const char *is_nat, sofia_private_t **sofia_private_p, switch_xml_t *user_xml)
+								  uint32_t keylen, switch_event_t **v_event, const char *is_nat, sofia_private_t **sofia_private_p, switch_xml_t *user_xml, char *sw_acl_token)
 {
 	sip_to_t const *to = NULL;
 	sip_from_t const *from = NULL;
@@ -1172,6 +1172,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	const char *p;
 	char *utmp = NULL;
 	sofia_private_t *sofia_private = NULL;
+	char *sw_to_user;
+	char *sw_reg_host;
 
 	if (sofia_private_p) {
 		sofia_private = *sofia_private_p;
@@ -1398,6 +1400,11 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 	if (regtype == REG_AUTO_REGISTER || (regtype == REG_REGISTER && sofia_test_pflag(profile, PFLAG_BLIND_REG))) {
 		regtype = REG_REGISTER;
+		if (sw_acl_token) {
+			switch_split_user_domain(sw_acl_token, &sw_to_user, &sw_reg_host);
+			to_user = sw_to_user;
+			reg_host = sw_reg_host;
+		}
 		goto reg;
 	}
 
@@ -2067,6 +2074,7 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 	sofia_regtype_t type = REG_REGISTER;
 	int network_port = 0;
 	char *is_nat = NULL;
+	char acl_token[512] = "";
 
 
 #if 0 /* This seems to cause undesirable effects so nevermind */
@@ -2144,16 +2152,20 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 		uint32_t x = 0;
 		int ok = 1;
 		char *last_acl = NULL;
+		const char *token_sw = NULL;
 
 		for (x = 0; x < profile->reg_acl_count; x++) {
 			last_acl = profile->reg_acl[x];
-			if (!(ok = switch_check_network_list_ip(network_ip, last_acl))) {
+			if (!(ok = switch_check_network_list_ip_token(network_ip, last_acl, &token_sw))) {
 				break;
 			}
 		}
 
 		if (ok && !sofia_test_pflag(profile, PFLAG_BLIND_REG)) {
 			type = REG_AUTO_REGISTER;
+			if (token_sw) {
+				switch_set_string(acl_token, token_sw);
+			}
 		} else if (!ok) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by register acl \"%s\"\n", network_ip, profile->reg_acl[x]);
 			nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
@@ -2174,7 +2186,7 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 		is_nat = NULL;
 	}
 
-	sofia_reg_handle_register(nua, profile, nh, sip, de, type, key, sizeof(key), &v_event, is_nat, sofia_private_p, NULL);
+	sofia_reg_handle_register_token(nua, profile, nh, sip, de, type, key, sizeof(key), &v_event, is_nat, sofia_private_p, NULL, acl_token);
 
 	if (v_event) {
 		switch_event_destroy(&v_event);
