@@ -87,6 +87,7 @@ APR_DECLARE(apr_status_t) apr_thread_create(apr_thread_t **new,
     apr_status_t stat;
 	unsigned temp;
     HANDLE handle;
+    int priority = THREAD_PRIORITY_NORMAL;
 
     (*new) = (apr_thread_t *)apr_palloc(pool, sizeof(apr_thread_t));
 
@@ -101,6 +102,18 @@ APR_DECLARE(apr_status_t) apr_thread_create(apr_thread_t **new,
     stat = apr_pool_create(&(*new)->pool, pool);
     if (stat != APR_SUCCESS) {
         return stat;
+    }
+
+    if (attr && attr->priority && attr->priority > 0) {
+        if (attr->priority >= 99) {
+            priority = THREAD_PRIORITY_TIME_CRITICAL;
+        } else if (attr->priority >= 50) {
+            priority = THREAD_PRIORITY_ABOVE_NORMAL;
+        } else if (attr->priority >= 10) {
+            priority = THREAD_PRIORITY_NORMAL;
+        } else if (attr->priority >= 1) {
+            priority = THREAD_PRIORITY_LOWEST;
+        }
     }
 
     /* Use 0 for Thread Stack Size, because that will default the stack to the
@@ -121,6 +134,11 @@ APR_DECLARE(apr_status_t) apr_thread_create(apr_thread_t **new,
         return apr_get_os_error();
     }
 #endif
+
+   if (priority) {
+       SetThreadPriority(handle, priority);
+   }
+
     if (attr && attr->detach) {
         CloseHandle(handle);
     }
