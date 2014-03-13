@@ -29,7 +29,7 @@ verbose_traits.hpp verbose_traits.cpp:
 		bash ./commons/tools/generate-verbose-headers.sh commons/base/ include/k3l.h ;\
 	fi;
 
-install:
+install-data-local:
 	@if test "w`kserver --version 2>/dev/null | grep 2.1`" == "w" ; then \
 		echo "###############################################################################" ;\
 		echo "Install k3l from KHOMP." ;\

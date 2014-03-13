@@ -37,7 +37,7 @@ BUILT_SOURCE=freeswitch.$(LIBTOOL_LIB_EXTEN)
 clean:
 	rm -fr *~ .perlok .libs freeswitch.$(LIBTOOL_LIB_EXTEN) 2>/dev/null
 
-install:
+install-data-local:
 	mkdir -p $(DESTDIR)$(prefix)/perl
 	$(LTINSTALL) freeswitch.$(LIBTOOL_LIB_EXTEN) freeswitch.pm $(DESTDIR)$(prefix)/perl
 	if [ ! -f $(DESTDIR)$(prefix)/perl/freeswitch.pm ] ; then $(LTINSTALL) freeswitch.pm $(DESTDIR)$(prefix)/perl ; fi

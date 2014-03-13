@@ -24,7 +24,7 @@ mod_python_wrap.cpp: mod_python_extra.c hack.diff
 	which swig 2>&1 >>/dev/null && echo "#include \"mod_python_extra.c\"" >> mod_python_wrap.cpp
 	which swig 2>&1 >>/dev/null && patch -s -p0 -i hack.diff
 
-install:
+install-data-local:
 	mkdir -m755 -p $(DESTDIR)$(PYTHON_SITE_DIR)
 	cp -f freeswitch.py $(DESTDIR)$(PYTHON_SITE_DIR)
 
