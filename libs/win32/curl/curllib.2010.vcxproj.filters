@@ -49,13 +49,7 @@
     <ClCompile Include="..\..\curl-7.35.0\lib\getinfo.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\curl-7.35.0\lib\gtls.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\curl-7.35.0\lib\hash.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\curl-7.35.0\lib\hostares.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\curl-7.35.0\lib\hostasyn.c">
@@ -73,9 +67,6 @@
     <ClCompile Include="..\..\curl-7.35.0\lib\hostsyn.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\curl-7.35.0\lib\hostthre.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\curl-7.35.0\lib\http.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -88,9 +79,6 @@
     <ClCompile Include="..\..\curl-7.35.0\lib\http_negotiate.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\curl-7.35.0\lib\http_ntlm.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\curl-7.35.0\lib\if2ip.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -98,9 +86,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\curl-7.35.0\lib\inet_pton.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\curl-7.35.0\lib\krb4.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\curl-7.35.0\lib\ldap.c">
@@ -151,12 +136,6 @@
     <ClCompile Include="..\..\curl-7.35.0\lib\splay.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\curl-7.35.0\lib\sslgen.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\curl-7.35.0\lib\ssluse.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\curl-7.35.0\lib\strequal.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -187,6 +166,44 @@
     <ClCompile Include="..\..\curl-7.35.0\lib\version.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\curl-7.35.0\lib\asyn-ares.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\asyn-thread.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\bundles.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\conncache.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_addrinfo.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_fnmatch.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_gethostname.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_gssapi.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_memrchr.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_multibyte.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_ntlm.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_ntlm_core.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_ntlm_msgs.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_ntlm_wb.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_rtmp.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_sasl.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\curl_threads.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\dotdot.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\fileinfo.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\ftplistparser.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\gopher.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\hmac.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\hostcheck.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\http_proxy.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\imap.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\non-ascii.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\nonblock.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\pingpong.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\pipeline.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\pop3.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\rawstr.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\rtsp.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\slist.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\smtp.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\vtls\openssl.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\vtls\vtls.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\warnless.c" />
+    <ClCompile Include="..\..\curl-7.35.0\lib\wildcard.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\curl-7.35.0\lib\arpa_telnet.h">
@@ -354,5 +371,6 @@
     <ClInclude Include="..\..\curl-7.35.0\lib\urldata.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\curl-7.35.0\lib\config-mac.h" />
   </ItemGroup>
 </Project>
