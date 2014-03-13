@@ -787,16 +787,18 @@ void rayo_message_send(struct rayo_actor *from, const char *to, iks *payload, in
 	/* add timestamp to presence events */
 	msg_name = iks_name(msg->payload);
 	if (!zstr(msg_name) && !strcmp("presence", msg_name)) {
-		iks *delay = iks_insert(msg->payload, "delay");
-		switch_time_exp_t tm;
-		char timestamp[80];
-		switch_size_t retsize;
-
-		iks_insert_attrib(delay, "xmlns", "urn:xmpp:delay");
-
-		switch_time_exp_tz(&tm, switch_time_now(), 0);
-		switch_strftime_nocheck(timestamp, &retsize, sizeof(timestamp), "%Y-%m-%dT%TZ", &tm);
-		iks_insert_attrib_printf(delay, "stamp", "%s", timestamp);
+		/* don't add timestamp if there already is one */
+		iks *delay = iks_find(msg->payload, "delay");
+		if (!delay || strcmp("urn:xmpp:delay", iks_find_attrib_soft(delay, "xmlns"))) {
+			switch_time_exp_t tm;
+			char timestamp[80];
+			switch_size_t retsize;
+			delay = iks_insert(msg->payload, "delay");
+			iks_insert_attrib(delay, "xmlns", "urn:xmpp:delay");
+			switch_time_exp_tz(&tm, switch_time_now(), 0);
+			switch_strftime_nocheck(timestamp, &retsize, sizeof(timestamp), "%Y-%m-%dT%TZ", &tm);
+			iks_insert_attrib_printf(delay, "stamp", "%s", timestamp);
+		}
 	}
 
 	if (switch_queue_trypush(globals.msg_queue, msg) != SWITCH_STATUS_SUCCESS) {
