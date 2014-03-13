@@ -440,6 +440,9 @@ static const char *grammar_type_to_mime(grammar_type_t type, profile_t *profile)
  * RECOGNIZER : UniMRCP <--> FreeSWITCH asr interface
  */
 
+#define START_OF_INPUT_RECEIVED 1
+#define START_OF_INPUT_REPORTED 2
+
 /**
  * Data specific to the recognizer
  */
@@ -2515,7 +2518,7 @@ static switch_status_t recog_channel_check_results(speech_channel_t *schannel)
 	r = (recognizer_data_t *) schannel->data;
 	if (!zstr(r->result)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) SUCCESS, have result\n", schannel->name);
-	} else if (r->start_of_input) {
+	} else if (r->start_of_input == START_OF_INPUT_RECEIVED) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) SUCCESS, start of input\n", schannel->name);
 	} else {
 		status = SWITCH_STATUS_FALSE;
@@ -2536,7 +2539,7 @@ static switch_status_t recog_channel_start_input_timers(speech_channel_t *schann
 	recognizer_data_t *r = (recognizer_data_t *) schannel->data;
 	switch_mutex_lock(schannel->mutex);
 
-	if (schannel->state == SPEECH_CHANNEL_PROCESSING && !r->timers_started) {
+	if (schannel->state == SPEECH_CHANNEL_PROCESSING && !r->timers_started && !r->start_of_input) {
 		mrcp_message_t *mrcp_message;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Starting input timers\n", schannel->name);
 		/* Send START-INPUT-TIMERS to MRCP server */
@@ -2568,7 +2571,7 @@ static switch_status_t recog_channel_set_start_of_input(speech_channel_t *schann
 	recognizer_data_t *r;
 	switch_mutex_lock(schannel->mutex);
 	r = (recognizer_data_t *) schannel->data;
-	r->start_of_input = 1;
+	r->start_of_input = START_OF_INPUT_RECEIVED;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) start of input\n", schannel->name);
 	switch_mutex_unlock(schannel->mutex);
 	return status;
@@ -2757,11 +2760,11 @@ static switch_status_t recog_channel_get_results(speech_channel_t *schannel, cha
 		*result = strdup(r->result);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) result:\n\n%s\n", schannel->name, *result ? *result : "");
 		r->result = NULL;
-		r->start_of_input = 0;
-	} else if (r->start_of_input) {
+		r->start_of_input = START_OF_INPUT_REPORTED;
+	} else if (r->start_of_input == START_OF_INPUT_RECEIVED) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) start of input\n", schannel->name);
 		status = SWITCH_STATUS_BREAK;
-		r->start_of_input = 0;
+		r->start_of_input = START_OF_INPUT_REPORTED;
 	} else {
 		status = SWITCH_STATUS_FALSE;
 	}
