@@ -1612,6 +1612,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 	FILE *write_fd = NULL;
 	switch_xml_t xml = NULL;
 	char *new_file = NULL;
+	char *new_file_tmp = NULL;
 	const char *abs, *absw;
 
 	abs = strrchr(file, '/');
@@ -1628,7 +1629,11 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 		goto done;
 	}
 
-	if ((write_fd = fopen(new_file, "w+")) == NULL) {
+	if (!(new_file_tmp = switch_mprintf("%s%s%s.fsxml.tmp", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, abs))) {
+		goto done;
+	}
+
+	if ((write_fd = fopen(new_file_tmp, "w+")) == NULL) {
 		goto done;
 	}
 
@@ -1637,6 +1642,9 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 	if (preprocess(SWITCH_GLOBAL_dirs.conf_dir, file, write_fd, 0) > -1) {
 		fclose(write_fd);
 		write_fd = NULL;
+		if ( rename(new_file_tmp,new_file) ) {
+			goto done;
+		}
 		if ((fd = open(new_file, O_RDONLY, 0)) > -1) {
 			if ((xml = switch_xml_parse_fd(fd))) {
 				if (strcmp(abs, SWITCH_GLOBAL_filenames.conf_name)) {
@@ -1662,6 +1670,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 		close(fd);
 	}
 
+	switch_safe_free(new_file_tmp);
 	switch_safe_free(new_file);
 
 	return xml;
