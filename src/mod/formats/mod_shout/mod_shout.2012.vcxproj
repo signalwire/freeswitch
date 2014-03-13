@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -182,6 +182,12 @@
     <ProjectReference Include="..\..\..\..\libs\win32\mpg123\libmpg123.2012.vcxproj">
       <Project>{419c8f80-d858-4b48-a25c-af4007608137}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\libs\win32\openssl\libeay32.2012.vcxproj">
+      <Project>{d331904d-a00a-4694-a5a3-fcff64ab5dbe}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\..\libs\win32\openssl\ssleay32.2012.vcxproj">
+      <Project>{b4b62169-5ad4-4559-8707-3d933ac5db39}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\libs\win32\pthread\pthread.2012.vcxproj">
       <Project>{df018947-0fff-4eb3-bdee-441dc81da7a4}</Project>
