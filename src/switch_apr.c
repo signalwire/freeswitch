@@ -601,6 +601,7 @@ struct apr_threadattr_t {
     apr_pool_t *pool;
     apr_int32_t detach;
     apr_size_t stacksize;
+	int priority;
 };
 #endif
 
@@ -610,9 +611,9 @@ SWITCH_DECLARE(switch_status_t) switch_threadattr_create(switch_threadattr_t ** 
 	switch_status_t status;
 
 	if ((status = apr_threadattr_create(new_attr, pool)) == SWITCH_STATUS_SUCCESS) {
-#ifndef WIN32
+
 		(*new_attr)->priority = SWITCH_PRI_LOW;
-#endif
+
 	}
 
 	return status;
@@ -630,9 +631,9 @@ SWITCH_DECLARE(switch_status_t) switch_threadattr_stacksize_set(switch_threadatt
 
 SWITCH_DECLARE(switch_status_t) switch_threadattr_priority_set(switch_threadattr_t *attr, switch_thread_priority_t priority)
 {
-#ifndef WIN32
+
 	attr->priority = priority;
-#endif
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
