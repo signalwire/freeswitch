@@ -595,21 +595,12 @@ struct apr_threadattr_t {
 	int priority;
 };
 #else
-/* we are implementing our own windows support for thread priority settings because apr does not*/
+/* this needs to be revisited when apr for windows supports thread priority settings */
+/* search for WIN32 in this file */
 struct apr_threadattr_t {
     apr_pool_t *pool;
     apr_int32_t detach;
     apr_size_t stacksize;
-    int priority;
-};
-struct apr_thread_t {
-    apr_pool_t *pool;
-    HANDLE td;
-    apr_int32_t cancel;
-    apr_int32_t cancel_how;
-    void *data;
-    apr_thread_start_t func;
-    apr_status_t exitval;
 };
 #endif
 
@@ -619,7 +610,9 @@ SWITCH_DECLARE(switch_status_t) switch_threadattr_create(switch_threadattr_t ** 
 	switch_status_t status;
 
 	if ((status = apr_threadattr_create(new_attr, pool)) == SWITCH_STATUS_SUCCESS) {
+#ifndef WIN32
 		(*new_attr)->priority = SWITCH_PRI_LOW;
+#endif
 	}
 
 	return status;
@@ -637,7 +630,9 @@ SWITCH_DECLARE(switch_status_t) switch_threadattr_stacksize_set(switch_threadatt
 
 SWITCH_DECLARE(switch_status_t) switch_threadattr_priority_set(switch_threadattr_t *attr, switch_thread_priority_t priority)
 {
+#ifndef WIN32
 	attr->priority = priority;
+#endif
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -646,16 +641,8 @@ static char TT_KEY[] = "1";
 SWITCH_DECLARE(switch_status_t) switch_thread_create(switch_thread_t ** new_thread, switch_threadattr_t *attr,
 													 switch_thread_start_t func, void *data, switch_memory_pool_t *cont)
 {
-	apr_status_t status;
-
 	switch_core_memory_pool_set_data(cont, "_in_thread", TT_KEY);
-	status = apr_thread_create(new_thread, attr, func, data, cont);
-#ifdef WIN32
-	if (attr->priority == SWITCH_PRI_REALTIME) {
-		SetThreadPriority(((apr_thread_t*)*new_thread)->td, THREAD_PRIORITY_HIGHEST);
-	}
-#endif
-	return (switch_status_t)status;
+	return apr_thread_create(new_thread, attr, func, data, cont);
 }
 
 /* socket stubs */
