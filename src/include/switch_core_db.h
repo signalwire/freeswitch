@@ -54,6 +54,7 @@ SWITCH_BEGIN_EXTERN_C
 typedef struct sqlite3_stmt switch_core_db_stmt_t;
 
 typedef int (*switch_core_db_callback_func_t) (void *pArg, int argc, char **argv, char **columnNames);
+typedef int (*switch_core_db_err_callback_func_t) (void *pArg, const char *errmsg);
 
 /*
 ** These are special value for the destructor that is passed in as the

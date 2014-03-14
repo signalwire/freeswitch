@@ -2448,6 +2448,20 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql(switch_cache_db_hand
 SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback(switch_cache_db_handle_t *dbh, const char *sql,
 																	 switch_core_db_callback_func_t callback, void *pdata, char **err);
 
+/*! 
+ \brief Executes the sql and uses callback for row-by-row processing
+ \param [in] dbh The handle
+ \param [in] sql - sql to run
+ \param [in] callback - function pointer to callback
+ \param [in] err_callback - function pointer to callback when error occurs
+ \param [in] pdata - data to pass to callback
+ \param [out] err - Error if it exists
+*/
+SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback_err(switch_cache_db_handle_t *dbh, const char *sql,
+																	 switch_core_db_callback_func_t callback,
+																	 switch_core_db_err_callback_func_t err_callback,
+																	 void *pdata, char **err);
+
 /*!
  \brief Get the affected rows of the last performed query
  \param [in] dbh The handle
@@ -2562,11 +2576,21 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_stop(switch_sql_queue_m
 SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_event_callback(switch_cache_db_handle_t *dbh,
 																		   const char *sql, switch_core_db_event_callback_func_t callback, void *pdata, char **err);
 
-SWITCH_DECLARE(void) switch_sql_queue_manger_execute_sql_callback(switch_sql_queue_manager_t *qm, 
-																  const char *sql, switch_core_db_callback_func_t callback, void *pdata);
+SWITCH_DECLARE(void) switch_sql_queue_manager_execute_sql_callback(switch_sql_queue_manager_t *qm, const char *sql,
+																   switch_core_db_callback_func_t callback,
+																   void *pdata);
+SWITCH_DECLARE(void) switch_sql_queue_manager_execute_sql_callback_err(switch_sql_queue_manager_t *qm, const char *sql,
+																	   switch_core_db_callback_func_t callback,
+																	   switch_core_db_err_callback_func_t err_callback,
+																	   void *pdata);
 
-SWITCH_DECLARE(void) switch_sql_queue_manger_execute_sql_event_callback(switch_sql_queue_manager_t *qm, 
-																		const char *sql, switch_core_db_event_callback_func_t callback, void *pdata);
+SWITCH_DECLARE(void) switch_sql_queue_manager_execute_sql_event_callback(switch_sql_queue_manager_t *qm, const char *sql,
+																		 switch_core_db_event_callback_func_t callback,
+																		 void *pdata);
+SWITCH_DECLARE(void) switch_sql_queue_manager_execute_sql_event_callback_err(switch_sql_queue_manager_t *qm, const char *sql,
+																			 switch_core_db_event_callback_func_t callback,
+																			 switch_core_db_err_callback_func_t err_callback,
+																			 void *pdata);
 							
 SWITCH_DECLARE(pid_t) switch_fork(void);
 
