@@ -222,6 +222,8 @@ static struct {
 	switch_thread_rwlock_t *shutdown_rwlock;
 	/** if true, URI is put in from/to of offer if available */
 	int offer_uri;
+	/** if true, pause inbound calling if all clients are offline */
+	int pause_when_offline;
 } globals;
 
 /**
@@ -1368,6 +1370,30 @@ struct rayo_component *_rayo_component_init(struct rayo_component *component, sw
 }
 
 /**
+ * @return true if at least one rayo client is online
+ */
+static int is_rayo_client_online(void)
+{
+	int is_online = 0;
+	switch_hash_index_t *hi;
+
+	switch_mutex_lock(globals.clients_mutex);
+	
+	for (hi = switch_core_hash_first(globals.clients_roster); hi; hi = switch_core_hash_next(hi)) {
+		const void *key;
+		void *client;
+		switch_core_hash_this(hi, &key, NULL, &client);
+		switch_assert(client);
+		if (RAYO_CLIENT(client)->availability == PS_ONLINE) {
+			is_online = 1;
+			break;
+		}
+	}
+	switch_mutex_unlock(globals.clients_mutex);
+	return is_online;
+}
+
+/**
  * Send XMPP message to client
  */
 void rayo_client_send(struct rayo_actor *client, struct rayo_message *msg)
@@ -1390,6 +1416,12 @@ static void rayo_client_cleanup(struct rayo_actor *actor)
 		}
 	}
 	switch_mutex_unlock(globals.clients_mutex);
+
+	if (globals.pause_when_offline && !is_rayo_client_online()) {
+		/* pause inbound calling */
+		int32_t arg = 1;
+		switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
+	}
 }
 
 /**
@@ -1422,6 +1454,13 @@ static struct rayo_client *rayo_client_init(struct rayo_client *client, switch_m
 		}
 		switch_mutex_unlock(globals.clients_mutex);
 	}
+
+	if (globals.pause_when_offline && is_rayo_client_online()) {
+		/* resume inbound calling */
+		int32_t arg = 0;
+		switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
+	}
+
 	return client;
 }
 
@@ -2782,6 +2821,18 @@ static void on_client_presence(struct rayo_client *rclient, iks *node)
 		RAYO_DESTROY(rclient);
 		RAYO_UNLOCK(rclient);
 	}
+
+	if (globals.pause_when_offline) {
+		if (is_rayo_client_online()) {
+			/* resume inbound calling */
+			int32_t arg = 0;
+			switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
+		} else {
+			/* pause inbound calling */
+			int32_t arg = 1;
+			switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
+		}
+	}
 }
 
 /**
@@ -3769,6 +3820,7 @@ static switch_status_t do_config(switch_memory_pool_t *pool, const char *config_
 	globals.mixer_conf_profile = "sla";
 	globals.num_message_threads = 8;
 	globals.offer_uri = 1;
+	globals.pause_when_offline = 0;
 
 	/* get params */
 	{
@@ -3800,6 +3852,10 @@ static switch_status_t do_config(switch_memory_pool_t *pool, const char *config_
 				} else if (!strcasecmp(var, "offer-uri")) {
 					if (switch_false(val)) {
 						globals.offer_uri = 0;
+					}
+				} else if (!strcasecmp(var, "pause-when-offline")) {
+					if (switch_true(val)) {
+						globals.pause_when_offline = 1;
 					}
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unsupported param: %s\n", var);
