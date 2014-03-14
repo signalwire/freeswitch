@@ -755,9 +755,9 @@ App.usersController = Ember.ArrayController.create({
 
 
 App.UsersController = Ember.ObjectController.extend({
-  xnewUserButtons: [
-    {title: 'Submit', clicked: "submit"},
-    {title: 'Cancel', clicked: "cancel", dismiss: 'modal'}
+  newUserButtons: [
+    Ember.Object.create({title: 'Create', clicked:"submit", type:"primary"}),
+    Ember.Object.create({title: 'Cancel', clicked: "cancel", dismiss: 'modal'})
   ],
 
   actions: {
@@ -843,9 +843,9 @@ App.sofiaStatusController = Ember.ArrayController.create({
 });
 
 App.SofiaStatusController = Ember.ObjectController.extend({
-	newGatewayButtons: [
-		{title: 'Submit', clicked: "submit"},
-		{title: 'Cancel', clicked: "cancel", dismiss: 'modal'}
+	addGatewayButtons: [
+		Ember.Object.create({title: 'Add', clicked:"submit", type:"primary"}),
+		Ember.Object.create({title: 'Cancel', clicked: "cancel", dismiss: 'modal'})
 	],
 
 	actions: {
