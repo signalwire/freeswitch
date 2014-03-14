@@ -1610,7 +1610,7 @@ static void *SWITCH_THREAD_FUNC xmpp_listener_thread(switch_thread_t *thread, vo
 
 			/* check if connection is allowed */
 			if (listener->acl) {
-				if (switch_check_network_list_ip(remote_ip, listener->acl)) {
+				if (!switch_check_network_list_ip(remote_ip, listener->acl)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ACL %s denies access to %s.\n", listener->acl, remote_ip);
 					switch_socket_shutdown(socket, SWITCH_SHUTDOWN_READWRITE);
 					switch_socket_close(socket);
