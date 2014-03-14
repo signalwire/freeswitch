@@ -187,8 +187,8 @@ static void on_stream_log(void *user_data, const char *data, size_t size, int is
 {
 	if (size > 0) {
 		struct xmpp_stream *stream = (struct xmpp_stream *)user_data;
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s_%s %s %s %s\n", stream->s2s ? "s2s" : "c2s",
-			stream->incoming ? "in" : "out", stream->jid, is_incoming ? "RECV" : "SEND", data);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s, %s:%i, %s_%s %s %s\n", stream->jid, stream->address, stream->port, stream->s2s ? "s2s" : "c2s",
+			stream->incoming ? "in" : "out", is_incoming ? "RECV" : "SEND", data);
 	}
 }
 
@@ -284,12 +284,12 @@ static void on_stream_presence(struct xmpp_stream *stream, iks *node)
 	struct xmpp_stream_context *context = stream->context;
 	const char *from = iks_find_attrib(node, "from");
 
-	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s, presence, state = %s\n", stream->jid, xmpp_stream_state_to_string(stream->state));
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s, %s:%i, presence, state = %s\n", stream->jid, stream->address, stream->port, xmpp_stream_state_to_string(stream->state));
 
 	if (!from) {
 		if (stream->s2s) {
 			/* from is required in s2s connections */
-			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s, no presence from JID\n", stream->jid);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s, %s:%i, no presence from JID\n", stream->jid, stream->address, stream->port);
 			return;
 		}
 
@@ -297,7 +297,7 @@ static void on_stream_presence(struct xmpp_stream *stream, iks *node)
 		from = stream->jid;
 		if (zstr(from)) {
 			/* error */
-			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s, no presence from JID\n", stream->jid);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s, %s:%i, no presence from JID\n", stream->jid, stream->address, stream->port);
 			return;
 		}
 		iks_insert_attrib(node, "from", from);
@@ -468,11 +468,11 @@ static void on_stream_auth(struct xmpp_stream *stream, iks *node)
 	const char *xmlns, *mechanism;
 	iks *auth_body;
 
-	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s, auth, state = %s\n", stream->jid, xmpp_stream_state_to_string(stream->state));
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s, %s:%i, auth, state = %s\n", stream->jid, stream->address, stream->port, xmpp_stream_state_to_string(stream->state));
 
 	/* wrong state for authentication */
 	if (stream->state != XSS_SECURE) {
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_WARNING, "%s, auth UNEXPECTED, state = %s\n", stream->jid, xmpp_stream_state_to_string(stream->state));
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_WARNING, "%s, %s:%i, auth UNEXPECTED, state = %s\n", stream->jid, stream->address, stream->port, xmpp_stream_state_to_string(stream->state));
 		/* on_auth unexpected error */
 		stream->state = XSS_ERROR;
 		return;
@@ -481,7 +481,7 @@ static void on_stream_auth(struct xmpp_stream *stream, iks *node)
 	/* unsupported authentication type */
 	xmlns = iks_find_attrib_soft(node, "xmlns");
 	if (strcmp(IKS_NS_XMPP_SASL, xmlns)) {
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_WARNING, "%s, auth, state = %s, unsupported namespace: %s!\n", stream->jid, xmpp_stream_state_to_string(stream->state), xmlns);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_WARNING, "%s, %s:%i, auth, state = %s, unsupported namespace: %s!\n", stream->jid, stream->address, stream->port, xmpp_stream_state_to_string(stream->state), xmlns);
 		/* on_auth namespace error */
 		stream->state = XSS_ERROR;
 		return;
@@ -490,7 +490,7 @@ static void on_stream_auth(struct xmpp_stream *stream, iks *node)
 	/* unsupported SASL authentication mechanism */
 	mechanism = iks_find_attrib_soft(node, "mechanism");
 	if (strcmp("PLAIN", mechanism)) {
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_WARNING, "%s, auth, state = %s, unsupported SASL mechanism: %s!\n", stream->jid, xmpp_stream_state_to_string(stream->state), mechanism);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_WARNING, "%s, %s:%i, auth, state = %s, unsupported SASL mechanism: %s!\n", stream->jid, stream->address, stream->port, xmpp_stream_state_to_string(stream->state), mechanism);
 		xmpp_send_auth_failure(stream, "invalid-mechanism");
 		stream->state = XSS_ERROR;
 		return;
@@ -502,7 +502,7 @@ static void on_stream_auth(struct xmpp_stream *stream, iks *node)
 		char *authzid = NULL, *authcid, *password;
 		/* TODO use library for SASL! */
 		parse_plain_auth_message(message, &authzid, &authcid, &password);
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s, auth, state = %s, SASL/PLAIN decoded authzid = \"%s\" authcid = \"%s\"\n", stream->jid, xmpp_stream_state_to_string(stream->state), authzid, authcid);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s, %s:%i, auth, state = %s, SASL/PLAIN decoded authzid = \"%s\" authcid = \"%s\"\n", stream->jid, stream->address, stream->port, xmpp_stream_state_to_string(stream->state), authzid, authcid);
 		if (verify_plain_auth(context, authzid, authcid, password)) {
 			stream->jid = switch_core_strdup(stream->pool, authzid);
 			if (!stream->s2s && !strchr(stream->jid, '@')) {
@@ -513,7 +513,7 @@ static void on_stream_auth(struct xmpp_stream *stream, iks *node)
 			xmpp_send_auth_success(stream);
 			stream->state = XSS_AUTHENTICATED;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_WARNING, "%s, auth, state = %s, invalid user or password!\n", stream->jid, xmpp_stream_state_to_string(stream->state));
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_WARNING, "%s, %s:%i, auth, state = %s, invalid user or password!\n", stream->jid, stream->address, stream->port, xmpp_stream_state_to_string(stream->state));
 			xmpp_send_auth_failure(stream, "not-authorized");
 			stream->state = XSS_ERROR;
 		}
@@ -555,7 +555,7 @@ static iks *on_iq_set_xmpp_session(struct xmpp_stream *stream, iks *node)
 		case XSS_AUTHENTICATED:
 		case XSS_READY:
 		default:
-			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_WARNING, "%s, iq UNEXPECTED <session>, state = %s\n", stream->jid, xmpp_stream_state_to_string(stream->state));
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_WARNING, "%s, %s:%i, iq UNEXPECTED <session>, state = %s\n", stream->jid, stream->address, stream->port, xmpp_stream_state_to_string(stream->state));
 			reply = iks_new_error(node, STANZA_ERROR_SERVICE_UNAVAILABLE);
 			break;
 	}
@@ -596,7 +596,7 @@ static iks *on_iq_set_xmpp_bind(struct xmpp_stream *stream, iks *node)
 			break;
 		}
 		default:
-			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_WARNING, "%s, iq UNEXPECTED <bind>\n", stream->jid);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_WARNING, "%s, %s:%i, iq UNEXPECTED <bind>\n", stream->jid, stream->address, stream->port);
 			reply = iks_new_error(node, STANZA_ERROR_NOT_ALLOWED);
 			break;
 	}
@@ -683,14 +683,14 @@ static void on_client_stream_start(struct xmpp_stream *stream, iks *node)
 
 	/* to is optional, must be server domain if set */
 	if (!zstr(to) && strcmp(context->domain, to)) {
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, wrong server domain!\n", stream->jid);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, wrong server domain!\n", stream->jid, stream->address, stream->port);
 		stream->state = XSS_ERROR;
 		return;
 	}
 
 	/* xmlns = client */
 	if (zstr(xmlns) || strcmp(xmlns, IKS_NS_CLIENT)) {
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, wrong stream namespace!\n", stream->jid);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, wrong stream namespace!\n", stream->jid, stream->address, stream->port);
 		stream->state = XSS_ERROR;
 		return;
 	}
@@ -716,7 +716,7 @@ static void on_client_stream_start(struct xmpp_stream *stream, iks *node)
 		case XSS_ERROR:
 		case XSS_DESTROY:
 			/* bad state */
-			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, bad state!\n", stream->jid);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, bad state!\n", stream->jid, stream->address, stream->port);
 			stream->state = XSS_ERROR;
 			break;
 	}
@@ -730,7 +730,7 @@ static void on_stream_dialback_result_valid(struct xmpp_stream *stream, iks *nod
 	struct xmpp_stream_context *context = stream->context;
 
 	/* TODO check domain pair and allow access if pending request exists */
-	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s, valid dialback result\n", stream->jid);
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s, %s:%i, valid dialback result\n", stream->jid, stream->address, stream->port);
 
 	/* this stream is routable */
 	stream->state = XSS_READY;
@@ -752,7 +752,7 @@ static void on_stream_dialback_result_invalid(struct xmpp_stream *stream, iks *n
 {
 	/* close stream */
 	stream->state = XSS_ERROR;
-	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, invalid dialback result!\n", stream->jid);
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, invalid dialback result!\n", stream->jid, stream->address, stream->port);
 }
 
 /**
@@ -762,7 +762,7 @@ static void on_stream_dialback_result_error(struct xmpp_stream *stream, iks *nod
 {
 	/* close stream */
 	stream->state = XSS_ERROR;
-	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, error dialback result!\n", stream->jid);
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, error dialback result!\n", stream->jid, stream->address, stream->port);
 }
 
 /**
@@ -782,7 +782,7 @@ static void on_stream_dialback_result_key(struct xmpp_stream *stream, iks *node)
 	}
 	if (zstr(dialback_key)) {
 		iks *error = iks_new_error_detailed(node, STANZA_ERROR_BAD_REQUEST, "Missing dialback key");
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, dialback result missing key!\n", stream->jid);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, dialback result missing key!\n", stream->jid, stream->address, stream->port);
 		iks_send(stream->parser, error);
 		iks_delete(error);
 		stream->state = XSS_ERROR;
@@ -791,7 +791,7 @@ static void on_stream_dialback_result_key(struct xmpp_stream *stream, iks *node)
 
 	if (zstr(from)) {
 		iks *error = iks_new_error_detailed(node, STANZA_ERROR_BAD_REQUEST, "Missing from");
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, dialback result missing from!\n", stream->jid);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, dialback result missing from!\n", stream->jid, stream->address, stream->port);
 		iks_send(stream->parser, error);
 		iks_delete(error);
 		stream->state = XSS_ERROR;
@@ -800,7 +800,7 @@ static void on_stream_dialback_result_key(struct xmpp_stream *stream, iks *node)
 
 	if (zstr(to)) {
 		iks *error = iks_new_error_detailed(node, STANZA_ERROR_BAD_REQUEST, "Missing to");
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, dialback result missing to!\n", stream->jid);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, dialback result missing to!\n", stream->jid, stream->address, stream->port);
 		iks_send(stream->parser, error);
 		iks_delete(error);
 		stream->state = XSS_ERROR;
@@ -809,7 +809,7 @@ static void on_stream_dialback_result_key(struct xmpp_stream *stream, iks *node)
 
 	if (strcmp(context->domain, to)) {
 		iks *error = iks_new_error(node, STANZA_ERROR_ITEM_NOT_FOUND);
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, invalid domain!\n", stream->jid);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, invalid domain!\n", stream->jid, stream->address, stream->port);
 		iks_send(stream->parser, error);
 		iks_delete(error);
 		stream->state = XSS_ERROR;
@@ -881,7 +881,7 @@ static void on_stream_dialback_verify(struct xmpp_stream *stream, iks *node)
 	}
 	if (zstr(dialback_key)) {
 		iks *error = iks_new_error_detailed(node, STANZA_ERROR_BAD_REQUEST, "Missing dialback key");
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, dialback verify missing key!\n", stream->jid);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, dialback verify missing key!\n", stream->jid, stream->address, stream->port);
 		iks_send(stream->parser, error);
 		iks_delete(error);
 		return;
@@ -889,7 +889,7 @@ static void on_stream_dialback_verify(struct xmpp_stream *stream, iks *node)
 
 	if (zstr(id)) {
 		iks *error = iks_new_error_detailed(node, STANZA_ERROR_BAD_REQUEST, "Missing id");
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, dialback verify missing stream ID!\n", stream->jid);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, dialback verify missing stream ID!\n", stream->jid, stream->address, stream->port);
 		iks_send(stream->parser, error);
 		iks_delete(error);
 		return;
@@ -897,7 +897,7 @@ static void on_stream_dialback_verify(struct xmpp_stream *stream, iks *node)
 
 	if (zstr(from)) {
 		iks *error = iks_new_error_detailed(node, STANZA_ERROR_BAD_REQUEST, "Missing from");
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, dialback verify missing from!\n", stream->jid);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, dialback verify missing from!\n", stream->jid, stream->address, stream->port);
 		iks_send(stream->parser, error);
 		iks_delete(error);
 		return;
@@ -905,7 +905,7 @@ static void on_stream_dialback_verify(struct xmpp_stream *stream, iks *node)
 
 	if (zstr(to)) {
 		iks *error = iks_new_error_detailed(node, STANZA_ERROR_BAD_REQUEST, "Missing to");
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, dialback verify missing to!\n", stream->jid);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, dialback verify missing to!\n", stream->jid, stream->address, stream->port);
 		iks_send(stream->parser, error);
 		iks_delete(error);
 		return;
@@ -913,7 +913,7 @@ static void on_stream_dialback_verify(struct xmpp_stream *stream, iks *node)
 
 	if (strcmp(context->domain, to)) {
 		iks *error = iks_new_error(node, STANZA_ERROR_ITEM_NOT_FOUND);
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, invalid domain!\n", stream->jid);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, invalid domain!\n", stream->jid, stream->address, stream->port);
 		iks_send(stream->parser, error);
 		iks_delete(error);
 		return;
@@ -946,7 +946,7 @@ static void on_outbound_server_stream_start(struct xmpp_stream *stream, iks *nod
 
 	/* xmlns = server */
 	if (zstr(xmlns) || strcmp(xmlns, IKS_NS_SERVER)) {
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, wrong stream namespace!\n", stream->jid);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, wrong stream namespace!\n", stream->jid, stream->address, stream->port);
 		stream->state = XSS_ERROR;
 		return;
 	}
@@ -956,7 +956,7 @@ static void on_outbound_server_stream_start(struct xmpp_stream *stream, iks *nod
 			/* get stream ID and send dialback */
 			const char *id = iks_find_attrib_soft(node, "id");
 			if (zstr(id)) {
-				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, missing stream ID!\n", stream->jid);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, missing stream ID!\n", stream->jid, stream->address, stream->port);
 				stream->state = XSS_ERROR;
 				return;
 			}
@@ -995,14 +995,14 @@ static void on_inbound_server_stream_start(struct xmpp_stream *stream, iks *node
 
 	/* to is required, must be server domain */
 	if (zstr(to) || strcmp(context->domain, to)) {
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, wrong server domain!\n", stream->jid);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, wrong server domain!\n", stream->jid, stream->address, stream->port);
 		stream->state = XSS_ERROR;
 		return;
 	}
 
 	/* xmlns = server */
 	if (zstr(xmlns) || strcmp(xmlns, IKS_NS_SERVER)) {
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, wrong stream namespace!\n", stream->jid);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, wrong stream namespace!\n", stream->jid, stream->address, stream->port);
 		stream->state = XSS_ERROR;
 		return;
 	}
@@ -1055,7 +1055,7 @@ static int on_stream(void *user_data, int type, iks *node)
 
 	stream->idle = 0;
 
-	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s, state = %s, node type = %s\n", stream->jid, xmpp_stream_state_to_string(stream->state), iks_node_type_to_string(type));
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s, %s:%i, state = %s, node type = %s\n", stream->jid, stream->address, stream->port, xmpp_stream_state_to_string(stream->state), iks_node_type_to_string(type));
 
 	switch(type) {
 		case IKS_NODE_START:
@@ -1072,7 +1072,7 @@ static int on_stream(void *user_data, int type, iks *node)
 				}
 			} else {
 				stream->state = XSS_ERROR;
-				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, missing node!\n", stream->jid);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, missing node!\n", stream->jid, stream->address, stream->port);
 			}
 			break;
 		case IKS_NODE_NORMAL:
@@ -1093,7 +1093,7 @@ static int on_stream(void *user_data, int type, iks *node)
 					on_stream_dialback_verify(stream, node);
 				} else {
 					/* unknown first-level element */
-					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s, unknown first-level element: %s\n", stream->jid, name);
+					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s, %s:%i, unknown first-level element: %s\n", stream->jid, stream->address, stream->port, name);
 				}
 			}
 			break;
@@ -1186,7 +1186,7 @@ static void *SWITCH_THREAD_FUNC xmpp_stream_thread(switch_thread_t *thread, void
 		switch_thread_rwlock_rdlock(context->shutdown_rwlock);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "New %s_%s stream\n", stream->s2s ? "s2s" : "c2s", stream->incoming ? "in" : "out");
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s:%i, New %s_%s stream\n", stream->address, stream->port, stream->s2s ? "s2s" : "c2s", stream->incoming ? "in" : "out");
 
 	if (stream->s2s && !stream->incoming) {
 		xmpp_send_outbound_server_header(stream);
@@ -1208,15 +1208,15 @@ static void *SWITCH_THREAD_FUNC xmpp_stream_thread(switch_thread_t *thread, void
 		case IKS_NET_RWERR:
 		case IKS_NET_NOCONN:
 		case IKS_NET_NOSOCK:
-			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, iks_recv() error = %s, ending session\n", stream->jid, iks_net_error_to_string(result));
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, iks_recv() error = %s, ending session\n", stream->jid, stream->address, stream->port, iks_net_error_to_string(result));
 			stream->state = XSS_ERROR;
 			goto done;
 		default:
 			if (err_count++ == 0) {
-				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, iks_recv() error = %s\n", stream->jid, iks_net_error_to_string(result));
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, iks_recv() error = %s\n", stream->jid, stream->address, stream->port, iks_net_error_to_string(result));
 			}
 			if (err_count >= 50) {
-				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, too many iks_recv() error = %s, ending session\n", stream->jid, iks_net_error_to_string(result));
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, too many iks_recv() error = %s, ending session\n", stream->jid, stream->address, stream->port, iks_net_error_to_string(result));
 				stream->state = XSS_ERROR;
 				goto done;
 			}
@@ -1237,7 +1237,7 @@ static void *SWITCH_THREAD_FUNC xmpp_stream_thread(switch_thread_t *thread, void
 
 		/* check for shutdown */
 		if (stream->state != XSS_DESTROY && context->shutdown && stream->state != XSS_SHUTDOWN) {
-			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, detected shutdown\n", stream->jid);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_INFO, "%s, %s:%i, detected shutdown\n", stream->jid, stream->address, stream->port);
 			iks_send_raw(stream->parser, "</stream:stream>");
 			stream->state = XSS_SHUTDOWN;
 			stream->idle = 0;
@@ -1250,7 +1250,7 @@ static void *SWITCH_THREAD_FUNC xmpp_stream_thread(switch_thread_t *thread, void
 			if (stream->s2s && !stream->incoming && stream->state == XSS_READY && now - last_activity > KEEP_ALIVE_INTERVAL_NS) {
 				char *ping = switch_mprintf("<iq to=\"%s\" from=\"%s\" type=\"get\" id=\"internal-%d\"><ping xmlns=\""IKS_NS_XMPP_PING"\"/></iq>",
 					stream->jid, stream->context->domain, ping_id++);
-				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s, keep alive\n", stream->jid);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(stream->id), SWITCH_LOG_DEBUG, "%s, %s:%i, keep alive\n", stream->jid, stream->address, stream->port);
 				last_activity = now;
 				iks_send_raw(stream->parser, ping);
 				free(ping);
@@ -1278,8 +1278,8 @@ static void *SWITCH_THREAD_FUNC xmpp_stream_thread(switch_thread_t *thread, void
  * @param context the stream context
  * @param stream the stream to initialize
  * @param pool for this stream
- * @param address remote address (outbound streams only)
- * @param port remote port (outbound streams only)
+ * @param address remote address
+ * @param port remote port
  * @param s2s true if a server-to-server stream
  * @param incoming true if incoming stream
  * @return the stream
@@ -1315,8 +1315,8 @@ static struct xmpp_stream *xmpp_stream_init(struct xmpp_stream_context *context,
  * Create a new xmpp stream
  * @param context the stream context
  * @param pool the memory pool for this stream
- * @param address remote address (outbound streams only)
- * @param port remote port (outbound streams only)
+ * @param address remote address
+ * @param port remote port
  * @param s2s true if server-to-server stream
  * @param incoming true if incoming stream
  * @return the new stream or NULL
@@ -1589,19 +1589,28 @@ static void *SWITCH_THREAD_FUNC xmpp_listener_thread(switch_thread_t *thread, vo
 			switch_thread_t *thread;
 			switch_threadattr_t *thd_attr = NULL;
 			struct xmpp_stream *stream;
+			switch_sockaddr_t *sa = NULL;
+			char remote_ip[50] = { 0 };
+			int remote_port = 0;
 
 			errs = 0;
 
+			/* get remote address and port */
+			if (switch_socket_addr_get(&sa, SWITCH_TRUE, socket) == SWITCH_STATUS_SUCCESS && sa) {
+				switch_get_addr(remote_ip, sizeof(remote_ip), sa);
+				remote_port = switch_sockaddr_get_port(sa);
+			}
+
+			if (zstr_buf(remote_ip)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to get IP of incoming connection.\n");
+				switch_socket_shutdown(socket, SWITCH_SHUTDOWN_READWRITE);
+				switch_socket_close(socket);
+				continue;
+			}
+
 			/* check if connection is allowed */
 			if (listener->acl) {
-				switch_sockaddr_t *sa = NULL;
-				int allowed = 0;
-				char remote_ip[50] = { 0 };
-				if (switch_socket_addr_get(&sa, SWITCH_TRUE, socket) == SWITCH_STATUS_SUCCESS && sa) {
-					switch_get_addr(remote_ip, sizeof(remote_ip), sa);
-					allowed = switch_check_network_list_ip(remote_ip, listener->acl);
-				}
-				if (!allowed) {
+				if (switch_check_network_list_ip(remote_ip, listener->acl)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ACL %s denies access to %s.\n", listener->acl, remote_ip);
 					switch_socket_shutdown(socket, SWITCH_SHUTDOWN_READWRITE);
 					switch_socket_close(socket);
@@ -1610,7 +1619,7 @@ static void *SWITCH_THREAD_FUNC xmpp_listener_thread(switch_thread_t *thread, vo
 			}
 
 			/* start connection thread */
-			if (!(stream = xmpp_stream_create(context, pool, NULL, 0, listener->s2s, 1))) {
+			if (!(stream = xmpp_stream_create(context, pool, remote_ip, remote_port, listener->s2s, 1))) {
 				switch_socket_shutdown(socket, SWITCH_SHUTDOWN_READWRITE);
 				switch_socket_close(socket);
 				break;
@@ -1696,7 +1705,7 @@ void xmpp_stream_context_send(struct xmpp_stream_context *context, const char *j
 			if (stream) {
 				char *raw = iks_string(NULL, msg);
 				if (switch_queue_trypush(stream->msg_queue, raw) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "failed to deliver outbound message via %s!\n", jid);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "%s, %s:%i, failed to deliver outbound message via %s!\n", stream->jid, stream->address, stream->port, jid);
 					iks_free(raw);
 				}
 			} else {
@@ -1727,7 +1736,7 @@ void xmpp_stream_context_dump(struct xmpp_stream_context *context, switch_stream
 		switch_core_hash_this(hi, &key, NULL, &val);
 		s = (struct xmpp_stream *)val;
 		switch_assert(s);
-		stream->write_function(stream, "        TYPE='%s_%s',ID='%s',JID='%s',STATE='%s'\n", s->s2s ? "s2s" : "c2s", s->incoming ? "in" : "out", s->id, s->jid, xmpp_stream_state_to_string(s->state));
+		stream->write_function(stream, "        TYPE='%s_%s',ID='%s',JID='%s',REMOTE_ADDRESS='%s',REMOTE_PORT=%i,STATE='%s'\n", s->s2s ? "s2s" : "c2s", s->incoming ? "in" : "out", s->id, s->jid, s->address, s->port, xmpp_stream_state_to_string(s->state));
 	}
 	switch_mutex_unlock(context->streams_mutex);
 }
