@@ -7848,6 +7848,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	char *sql = NULL;
 	char *acl_context = NULL;
 	int broken_device = 0;
+	char *name_params = NULL;
 
 	profile->ib_calls++;
 
@@ -8280,6 +8281,11 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 	if (from_user) {
 		check_decode(from_user, session);
+
+		if ((name_params = strchr(from_user, ';'))) {
+			*name_params++ = '\0';
+			switch_channel_set_variable(channel, "sip_name_params", name_params);
+		}
 	}
 
 	extract_header_vars(profile, sip, session, nh);
