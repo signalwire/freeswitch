@@ -4372,8 +4372,6 @@ void sofia_presence_handle_sip_r_subscribe(int status,
 	default:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "status (%d) != 200, updated state to SUB_STATE_FAILED.\n", status);
 		gw_sub_ptr->state = SUB_STATE_FAILED;
-		gw_sub_ptr->expires = switch_epoch_time_now(NULL);
-		gw_sub_ptr->retry = switch_epoch_time_now(NULL);
 
 		if (!sofia_private) {
 			nua_handle_destroy(nh);

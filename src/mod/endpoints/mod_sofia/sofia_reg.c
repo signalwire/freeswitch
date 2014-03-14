@@ -253,6 +253,15 @@ void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now)
 				break;
 
 			case SUB_STATE_FAILED:
+				gw_sub_ptr->expires = now;
+				gw_sub_ptr->retry = now + gw_sub_ptr->retry_seconds;
+				gw_sub_ptr->state = SUB_STATE_FAIL_WAIT;
+				break;
+			case SUB_STATE_FAIL_WAIT:
+				if (!gw_sub_ptr->retry || now >= gw_sub_ptr->retry) {
+					gw_sub_ptr->state = SUB_STATE_UNSUBED;
+				}
+				break;
 			case SUB_STATE_TRYING:
 				if (gw_sub_ptr->retry && now >= gw_sub_ptr->retry) {
 					gw_sub_ptr->state = SUB_STATE_UNSUBED;
