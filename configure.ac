@@ -236,16 +236,6 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
 else
     AC_ERROR([Please update configure.in with SOLINK values for your compiler])
 fi
-# set DYNAMIC_LIB_EXTEN
-# we should really be using libtool so we don't need to do this
-case "$host" in
-    *cygwin* | *mingw*)
-        DYNAMIC_LIB_EXTEN="dll"
-    ;;
-    *)
-        DYNAMIC_LIB_EXTEN="so"
-    ;;
-esac
 
 ##
 # detect libtool major version,
@@ -263,7 +253,7 @@ if test -z "$LIBTOOL_MAJOR_VERSION" ; then
 fi
 AC_MSG_RESULT([${LIBTOOL_MAJOR_VERSION}])
 
-LIBTOOL_LIB_EXTEN="$DYNAMIC_LIB_EXTEN"
+LIBTOOL_LIB_EXTEN=so
 
 if test "${LIBTOOL_MAJOR_VERSION}" = "2" ; then
    LIBTOOL_LIB_EXTEN="la"
@@ -626,7 +616,6 @@ AC_SUBST(ESL_LDFLAGS)
 AC_SUBST(PLATFORM_CORE_LDFLAGS)
 AC_SUBST(PLATFORM_CORE_LIBS)
 AC_SUBST(SOLINK)
-AC_SUBST(DYNAMIC_LIB_EXTEN)
 AC_SUBST(LIBTOOL_LIB_EXTEN)
 
 # Checks for header files.

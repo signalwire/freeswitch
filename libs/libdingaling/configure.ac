@@ -58,7 +58,6 @@ case "$host" in
                                 new_AM_LDFLAGS=""
                                 IN_LINE=inline
                         fi
-                        DYNAMIC_LIB_EXTEN="so"
                 ;;
                 *-darwin*)
                         if test "x${ax_cv_c_compiler_vendor}"="xgnu" ; then
@@ -66,7 +65,6 @@ case "$host" in
                                 new_AM_CFLAGS="-DMACOSX"
                                 new_AM_LDFLAGS=""
                         fi
-                        DYNAMIC_LIB_EXTEN="dylib"
                         IN_LINE=inline
                 ;;
                 x86_64-*-linux-gnu)
@@ -80,7 +78,6 @@ case "$host" in
                                 new_AM_CFLAGS="-fPIC"
                                 new_AM_LDFLAGS=""
                         fi
-                        DYNAMIC_LIB_EXTEN="so"
                         IN_LINE=inline
                 ;;
                 i*6-*-linux-gnu)
@@ -94,7 +91,6 @@ case "$host" in
                                 new_AM_CFLAGS="-fpic"
                                 new_AM_LDFLAGS=""
                         fi
-                        DYNAMIC_LIB_EXTEN="so"
                         IN_LINE=inline
                 ;;
                 *)
@@ -108,7 +104,6 @@ case "$host" in
                                 new_AM_CFLAGS="-fPIC"
                                 new_AM_LDFLAGS=""
                         fi
-                        DYNAMIC_LIB_EXTEN="so"
                         IN_LINE=inline
 esac
 
@@ -125,7 +120,6 @@ fi
 AC_SUBST(new_AM_CFLAGS)
 AC_SUBST(new_AM_LDFLAGS)
 AC_SUBST(SOLINK)
-AC_SUBST(DYNAMIC_LIB_EXTEN)
 AC_DEFINE_UNQUOTED([__inline__],[$IN_LINE],[sunpro is bad at inline])
 
 # Checks for header files.

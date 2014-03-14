@@ -773,7 +773,7 @@ modclean: $(switch_builddir)/modules.conf
 	@cd src/mod && $(MAKE) $(AM_MAKEFLAGS) clean
 
 modwipe:
-	rm -f $(modulesdir)/*.${DYNAMIC_LIB_EXTEN} $(modulesdir)/*.la
+	rm -f $(modulesdir)/*.so $(modulesdir)/*.la $(modulesdir)/*.dll $(modulesdir)/*.dylib
 
 dox:
 	cd docs && doxygen $(PWD)/docs/Doxygen.conf

@@ -270,16 +270,16 @@ endif
 dox doxygen:
 	doxygen $(FT_SRCDIR)/docs/Doxygen.conf
 
-mod_freetdm/mod_freetdm.$(DYNAMIC_LIB_EXTEN): libfreetdm.la mod_freetdm/mod_freetdm.c
+mod_freetdm/mod_freetdm.so: libfreetdm.la mod_freetdm/mod_freetdm.c
 	$(MAKE) -C mod_freetdm
 
-mod_freetdm: mod_freetdm/mod_freetdm.$(DYNAMIC_LIB_EXTEN)
+mod_freetdm: mod_freetdm/mod_freetdm.so
 
 mod_freetdm-install: mod_freetdm
 	$(MAKE) -C mod_freetdm install
 
 mod_freetdm-clean:
-	@if [ -f mod_freetdm/mod_freetdm.$(DYNAMIC_LIB_EXTEN) ] ; then \
+	@if [ -f mod_freetdm/mod_freetdm.so ] ; then \
 		$(MAKE) -C mod_freetdm clean ; \
 	fi
 

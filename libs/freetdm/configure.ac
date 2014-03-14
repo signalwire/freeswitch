@@ -120,18 +120,6 @@ if test "${enable_debug}" != "no"; then
 fi
 AC_SUBST([COMP_VENDOR_CFLAGS])
 
-# set DYNAMIC_LIB_EXTEN
-# we should really be using libtool so we don't need to do this
-case "$host" in
-*cygwin* | *mingw*)
-	DYNAMIC_LIB_EXTEN="dll"
-	;;
-*)
-	DYNAMIC_LIB_EXTEN="so"
-	;;
-esac
-AC_SUBST([DYNAMIC_LIB_EXTEN])
-
 AC_CHECK_LIB([dl], [dlopen])
 AC_CHECK_LIB([pthread], [pthread_create])
 AC_CHECK_LIB([m], [cos])

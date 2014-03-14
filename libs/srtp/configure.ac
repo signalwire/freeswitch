@@ -54,7 +54,6 @@ case "$host" in
                                 new_AM_LDFLAGS=""
                                 IN_LINE=inline
                         fi
-                        DYNAMIC_LIB_EXTEN="so"
                 ;;
                 *-darwin*)
                         if test "x${ax_cv_c_compiler_vendor}"="xgnu" ; then
@@ -62,7 +61,6 @@ case "$host" in
                                 new_AM_CFLAGS="-DMACOSX"
                                 new_AM_LDFLAGS=""
                         fi
-                        DYNAMIC_LIB_EXTEN="dylib"
                 ;;
                 x86_64-*-linux-gnu)
                         if test "x${ax_cv_c_compiler_vendor}" = "xsun" ; then
@@ -75,7 +73,6 @@ case "$host" in
                                 new_AM_CFLAGS="-fPIC -Wall -O4 -fexpensive-optimizations -funroll-loops"
                                 new_AM_LDFLAGS=""
                         fi
-                        DYNAMIC_LIB_EXTEN="so"
                 ;;
                 i*6-*-linux-gnu)
                         if test "x${ax_cv_c_compiler_vendor}" = "xsun" ; then
@@ -88,19 +85,16 @@ case "$host" in
                                 new_AM_CFLAGS="-fpic -Wall -O4 -fexpensive-optimizations -funroll-loops"
                                 new_AM_LDFLAGS=""
                         fi
-                        DYNAMIC_LIB_EXTEN="so"
                 ;;
 		i*6*-*-freebsd*)
                         SOLINK="-shared -Xlinker -x"
                         new_AM_CFLAGS="-fPIC -Wall -O4 -fexpensive-optimizations -funroll-loops"
                         new_AM_LDFLAGS=""
-                        DYNAMIC_LIB_EXTEN="so"
 		;;
 		x86_64-*-freebsd*|amd64-*-freebsd*)
                         SOLINK="-shared -Xlinker -x"
                         new_AM_CFLAGS="-fPIC -Wall -O4 -fexpensive-optimizations -funroll-loops"
                         new_AM_LDFLAGS=""
-                        DYNAMIC_LIB_EXTEN="so"
 		;;
 esac
 
@@ -117,7 +111,6 @@ fi
 AC_SUBST(new_AM_CFLAGS)
 AC_SUBST(new_AM_LDFLAGS)
 AC_SUBST(SOLINK)
-AC_SUBST(DYNAMIC_LIB_EXTEN)
 if test "x$FUNC_DEF" != "x"; then
    AC_DEFINE_UNQUOTED([__FUNCTION__],[$FUNC_DEF],[define it the right way ;)])
 fi

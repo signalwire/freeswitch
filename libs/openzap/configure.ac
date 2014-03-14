@@ -105,22 +105,11 @@ else
     AC_ERROR([Please update configure.in with SOLINK values for your compiler])
 fi
 
-# set DYNAMIC_LIB_EXTEN
-# we should really be using libtool so we don't need to do this
-case "$host" in
-    *cygwin* | *mingw*)
-        DYNAMIC_LIB_EXTEN="dll"
-    ;;
-    *)
-        DYNAMIC_LIB_EXTEN="so"
-    ;;
-esac
 
 DEFAULT_INCLUDES="-I. -I./src/include -I$(srcdir)"
 
 AC_SUBST(SOLINK)
 AC_SUBST(DEFAULT_INCLUDES)
-AC_SUBST(DYNAMIC_LIB_EXTEN)
 
 AC_CHECK_LIB([dl], [dlopen])
 AC_CHECK_LIB([pthread], [pthread_create])
