@@ -8215,6 +8215,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	const char *r_sdp = NULL;
 	int is_tcp = 0, is_tls = 0;
 	const char *uparams = NULL;
+	char *name_params = NULL;
 
 
 	if (sip && sip->sip_contact && sip->sip_contact->m_url && sip->sip_contact->m_url->url_params) {
@@ -8682,6 +8683,11 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 	if (from_user) {
 		check_decode(from_user, session);
+
+		if ((name_params = strchr(from_user, ';'))) {
+			*name_params++ = '\0';
+			switch_channel_set_variable(channel, "sip_name_params", name_params);
+		}
 	}
 
 	extract_header_vars(profile, sip, session, nh);
