@@ -851,9 +851,15 @@ App.SofiaStatusController = Ember.ObjectController.extend({
 	actions: {
 		//Submit the modal
 		submit: function() {
-			alert("Not implemented");
-			return false;
-			$.post("/txtapi/lua?create_gw.lua%20" + $("#gateway_name").val(), {
+			// alert("Not implemented");
+			// return false;
+			url = "/txtapi/lua?create_gateway.lua%20" +
+				$("#gateway_name").val() + "%20" +
+				$("#gateway_realm").val() + "%20" +
+				$("#gateway_username").val() + "%20" +
+				$("#gateway_password").val() + "%20" +
+				$("#gateway_register").is(":checked");
+			$.post(url, {
 				success: function() { },
 				error: function(e) { }
 			});

@@ -643,30 +643,37 @@
 		</div>
 
 		{{#bs-modal name="newUserForm" fade="true" footerButtonsBinding="addGatewayButtons" title="Add Gateway"}}
-			<div class="form-group form-horizontal">
-				<label class="control-label" for="gateway_name">Name</label>
-				<div class="controls">
-					<input type="text" name="gateway_name" value="">
+		<form class="form-horizontal" role="form">
+			<div class="form-group">
+				<label class="col-sm-2 control-label" for="gateway_name">Name</label>
+				<div class="col-sm-10">
+					<input class="form-control" type="text" id="gateway_name" placeholder="gw1">
 				</div>
 			</div>
 			<div class="form-group">
-				<label class="control-label" for="gateway_realm">Realm</label>
-				<div class="controls">
-					<input type="text" name="gateway_realm" value="">
+				<label class="col-sm-2 control-label" for="gateway_realm">Realm</label>
+				<div class="col-sm-10">
+					<input class="form-control" type="text" id="gateway_realm" placeholder="example.com">
 				</div>
 			</div>
 			<div class="form-group">
-				<label class="control-label" for="gateway_name">Username</label>
-				<div class="controls">
-					<input type="text" name="gateway_username" value="">
+				<label class="col-sm-2 control-label" for="gateway_username">Username</label>
+				<div class="col-sm-10">
+					<input class="form-control" type="text" id="gateway_username" placeholder="username">
 				</div>
 			</div>
 			<div class="form-group">
-				<label class="control-label" for="gateway_name">Password</label>
-				<div class="controls">
-					<input type="text" name="gateway_password" value="">
+				<label class="col-sm-2 control-label" for="gateway_password">Password</label>
+				<div class="col-sm-10">
+					<input class="form-control" type="text" id="gateway_password" placeholder="password">
 				</div>
 			</div>
+			<div class="form-group">
+				<label class="col-sm-2 control-label" for="gateway_register">Register?</label>
+				<input type="checkbox" checked id="gateway_register"/>
+			</div>
+
+		</form>
 		{{/bs-modal}}
 
 		<h1>Sofia Status</h1>
