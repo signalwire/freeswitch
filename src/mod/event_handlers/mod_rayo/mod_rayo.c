@@ -36,7 +36,8 @@
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_rayo_shutdown);
 SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load);
-SWITCH_MODULE_DEFINITION(mod_rayo, mod_rayo_load, mod_rayo_shutdown, NULL);
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_rayo_runtime);
+SWITCH_MODULE_DEFINITION(mod_rayo, mod_rayo_load, mod_rayo_shutdown, mod_rayo_runtime);
 
 #define RAYO_CAUSE_HANGUP SWITCH_CAUSE_NORMAL_CLEARING
 #define RAYO_CAUSE_DECLINE SWITCH_CAUSE_CALL_REJECTED
@@ -224,6 +225,8 @@ static struct {
 	int offer_uri;
 	/** if true, pause inbound calling if all clients are offline */
 	int pause_when_offline;
+	/** flag to reduce log noise */
+	int offline_logged;
 } globals;
 
 /**
@@ -455,6 +458,62 @@ static void add_header(iks *node, const char *name, const char *value)
 		iks *header = iks_insert(node, "header");
 		iks_insert_attrib(header, "name", name);
 		iks_insert_attrib(header, "value", value);
+	}
+}
+
+static void pause_inbound_calling(void)
+{
+	int32_t arg = 1;
+	switch_mutex_lock(globals.clients_mutex);
+	switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
+	if (!globals.offline_logged) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Pausing inbound calling\n");
+		globals.offline_logged = 1;
+	}
+	switch_mutex_unlock(globals.clients_mutex);
+}
+
+static void resume_inbound_calling(void)
+{
+	int32_t arg = 0;
+	switch_mutex_lock(globals.clients_mutex);
+	switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
+	if (globals.offline_logged) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Resuming inbound calling\n");
+		globals.offline_logged = 0;
+	}
+	switch_mutex_unlock(globals.clients_mutex);
+}
+
+/**
+ * Check online status of rayo client(s) and pause/resume the server
+ */
+static void pause_when_offline(void)
+{
+	if (globals.pause_when_offline) {
+		int is_online = 0;
+		switch_hash_index_t *hi;
+
+		switch_mutex_lock(globals.clients_mutex);
+
+		for (hi = switch_core_hash_first(globals.clients_roster); hi; hi = switch_core_hash_next(hi)) {
+			const void *key;
+			void *client;
+			switch_core_hash_this(hi, &key, NULL, &client);
+			switch_assert(client);
+			if (RAYO_CLIENT(client)->availability == PS_ONLINE) {
+				is_online = 1;
+				break;
+			}
+		}
+
+		if (is_online) {
+			resume_inbound_calling();
+		} else {
+			pause_inbound_calling();
+		}
+
+		switch_mutex_unlock(globals.clients_mutex);
 	}
 }
 
@@ -1370,30 +1429,6 @@ struct rayo_component *_rayo_component_init(struct rayo_component *component, sw
 }
 
 /**
- * @return true if at least one rayo client is online
- */
-static int is_rayo_client_online(void)
-{
-	int is_online = 0;
-	switch_hash_index_t *hi;
-
-	switch_mutex_lock(globals.clients_mutex);
-	
-	for (hi = switch_core_hash_first(globals.clients_roster); hi; hi = switch_core_hash_next(hi)) {
-		const void *key;
-		void *client;
-		switch_core_hash_this(hi, &key, NULL, &client);
-		switch_assert(client);
-		if (RAYO_CLIENT(client)->availability == PS_ONLINE) {
-			is_online = 1;
-			break;
-		}
-	}
-	switch_mutex_unlock(globals.clients_mutex);
-	return is_online;
-}
-
-/**
  * Send XMPP message to client
  */
 void rayo_client_send(struct rayo_actor *client, struct rayo_message *msg)
@@ -1417,11 +1452,7 @@ static void rayo_client_cleanup(struct rayo_actor *actor)
 	}
 	switch_mutex_unlock(globals.clients_mutex);
 
-	if (globals.pause_when_offline && !is_rayo_client_online()) {
-		/* pause inbound calling */
-		int32_t arg = 1;
-		switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
-	}
+	pause_when_offline();
 }
 
 /**
@@ -1455,11 +1486,7 @@ static struct rayo_client *rayo_client_init(struct rayo_client *client, switch_m
 		switch_mutex_unlock(globals.clients_mutex);
 	}
 
-	if (globals.pause_when_offline && is_rayo_client_online()) {
-		/* resume inbound calling */
-		int32_t arg = 0;
-		switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
-	}
+	pause_when_offline();
 
 	return client;
 }
@@ -2822,17 +2849,7 @@ static void on_client_presence(struct rayo_client *rclient, iks *node)
 		RAYO_UNLOCK(rclient);
 	}
 
-	if (globals.pause_when_offline) {
-		if (is_rayo_client_online()) {
-			/* resume inbound calling */
-			int32_t arg = 0;
-			switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
-		} else {
-			/* pause inbound calling */
-			int32_t arg = 1;
-			switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
-		}
-	}
+	pause_when_offline();
 }
 
 /**
@@ -3613,6 +3630,7 @@ SWITCH_STANDARD_APP(rayo_app)
 
 		/* nobody to offer to */
 		if (!ok) {
+			pause_when_offline();
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "Rejecting rayo call - there are no online rayo clients to offer call to\n");
 			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE);
 		}
@@ -4534,6 +4552,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
 	switch_core_hash_init(&globals.cmd_aliases);
 	switch_thread_rwlock_create(&globals.shutdown_rwlock, pool);
 	switch_queue_create(&globals.msg_queue, 25000, pool);
+	globals.offline_logged = 1;
 
 	/* server commands */
 	rayo_actor_command_handler_add(RAT_SERVER, "", "get:"IKS_NS_XMPP_PING":ping", on_iq_xmpp_ping);
@@ -4666,6 +4685,23 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_rayo_shutdown)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Module shutdown\n");
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+/**
+ * Checks status of connected clients
+ */
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_rayo_runtime)
+{
+	if (globals.pause_when_offline) {
+		switch_thread_rwlock_rdlock(globals.shutdown_rwlock);
+		while (!globals.shutdown) {
+			switch_sleep(1000 * 1000); /* 1 second */
+			pause_when_offline();
+		}
+		switch_thread_rwlock_unlock(globals.shutdown_rwlock);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Runtime thread is done\n");
+	}
+	return SWITCH_STATUS_TERM;
 }
 
 /* For Emacs:
