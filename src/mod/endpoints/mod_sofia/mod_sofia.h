@@ -953,7 +953,7 @@ void sofia_glue_do_xfer_invite(switch_core_session_t *session);
 uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip,
 								  sofia_dispatch_event_t *de,
 								  sofia_regtype_t regtype, char *key,
-								  uint32_t keylen, switch_event_t **v_event, const char *is_nat, sofia_private_t **sofia_private_p, switch_xml_t *user_xml, char *sw_acl_token);
+								  uint32_t keylen, switch_event_t **v_event, const char *is_nat, sofia_private_t **sofia_private_p, switch_xml_t *user_xml, const char *sw_acl_token);
 #define sofia_reg_handle_register(_nua_, _profile_, _nh_, _sip_, _de_, _regtype_, _key_, _keylen_, _v_event_, _is_nat_, _sofia_private_p_, _user_xml_) sofia_reg_handle_register_token(_nua_, _profile_, _nh_, _sip_, _de_, _regtype_, _key_, _keylen_, _v_event_, _is_nat_, _sofia_private_p_, _user_xml_, NULL)
 extern switch_endpoint_interface_t *sofia_endpoint_interface;
 void sofia_presence_set_chat_hash(private_object_t *tech_pvt, sip_t const *sip);
