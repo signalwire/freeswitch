@@ -763,7 +763,7 @@ App.UsersController = Ember.ObjectController.extend({
   actions: {
     //Submit the modal
     submit: function() {
-	$.post("/txtapi/lua?create_user.lua%20" + $("#user_id").val(), {
+	$.post("/txtapi/lua?portal/create_user.lua%20" + $("#user_id").val(), {
 		data: "user_id=xxxx",
 		success: function() { },
 		error: function(e) { }
@@ -853,7 +853,7 @@ App.SofiaStatusController = Ember.ObjectController.extend({
 		submit: function() {
 			// alert("Not implemented");
 			// return false;
-			url = "/txtapi/lua?create_gateway.lua%20" +
+			url = "/txtapi/lua?portal/create_gateway.lua%20" +
 				$("#gateway_name").val() + "%20" +
 				$("#gateway_realm").val() + "%20" +
 				$("#gateway_username").val() + "%20" +
