@@ -2892,6 +2892,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_status_t switch_cache_db_execute_sql_callback_err(SWIGTYPE_p_switch_cache_db_handle dbh, string sql, SWIGTYPE_p_f_p_void_int_p_p_char_p_p_char__int callback, SWIGTYPE_p_f_p_void_p_q_const__char__int err_callback, SWIGTYPE_p_void pdata, ref string err) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_cache_db_execute_sql_callback_err(SWIGTYPE_p_switch_cache_db_handle.getCPtr(dbh), sql, SWIGTYPE_p_f_p_void_int_p_p_char_p_p_char__int.getCPtr(callback), SWIGTYPE_p_f_p_void_p_q_const__char__int.getCPtr(err_callback), SWIGTYPE_p_void.getCPtr(pdata), ref err);
+    return ret;
+  }
+
   public static int switch_cache_db_affected_rows(SWIGTYPE_p_switch_cache_db_handle dbh) {
     int ret = freeswitchPINVOKE.switch_cache_db_affected_rows(SWIGTYPE_p_switch_cache_db_handle.getCPtr(dbh));
     return ret;
@@ -3056,6 +3061,14 @@ public class freeswitch {
     freeswitchPINVOKE.switch_core_recovery_flush(technology, profile_name);
   }
 
+  public static void switch_sql_queue_manager_pause(SWIGTYPE_p_switch_sql_queue_manager qm, switch_bool_t flush) {
+    freeswitchPINVOKE.switch_sql_queue_manager_pause(SWIGTYPE_p_switch_sql_queue_manager.getCPtr(qm), (int)flush);
+  }
+
+  public static void switch_sql_queue_manager_resume(SWIGTYPE_p_switch_sql_queue_manager qm) {
+    freeswitchPINVOKE.switch_sql_queue_manager_resume(SWIGTYPE_p_switch_sql_queue_manager.getCPtr(qm));
+  }
+
   public static int switch_sql_queue_manager_size(SWIGTYPE_p_switch_sql_queue_manager qm, uint index) {
     int ret = freeswitchPINVOKE.switch_sql_queue_manager_size(SWIGTYPE_p_switch_sql_queue_manager.getCPtr(qm), index);
     return ret;
@@ -3096,12 +3109,20 @@ public class freeswitch {
     return ret;
   }
 
-  public static void switch_sql_queue_manger_execute_sql_callback(SWIGTYPE_p_switch_sql_queue_manager qm, string sql, SWIGTYPE_p_f_p_void_int_p_p_char_p_p_char__int callback, SWIGTYPE_p_void pdata) {
-    freeswitchPINVOKE.switch_sql_queue_manger_execute_sql_callback(SWIGTYPE_p_switch_sql_queue_manager.getCPtr(qm), sql, SWIGTYPE_p_f_p_void_int_p_p_char_p_p_char__int.getCPtr(callback), SWIGTYPE_p_void.getCPtr(pdata));
+  public static void switch_sql_queue_manager_execute_sql_callback(SWIGTYPE_p_switch_sql_queue_manager qm, string sql, SWIGTYPE_p_f_p_void_int_p_p_char_p_p_char__int callback, SWIGTYPE_p_void pdata) {
+    freeswitchPINVOKE.switch_sql_queue_manager_execute_sql_callback(SWIGTYPE_p_switch_sql_queue_manager.getCPtr(qm), sql, SWIGTYPE_p_f_p_void_int_p_p_char_p_p_char__int.getCPtr(callback), SWIGTYPE_p_void.getCPtr(pdata));
   }
 
-  public static void switch_sql_queue_manger_execute_sql_event_callback(SWIGTYPE_p_switch_sql_queue_manager qm, string sql, SWIGTYPE_p_f_p_void_p_switch_event__int callback, SWIGTYPE_p_void pdata) {
-    freeswitchPINVOKE.switch_sql_queue_manger_execute_sql_event_callback(SWIGTYPE_p_switch_sql_queue_manager.getCPtr(qm), sql, SWIGTYPE_p_f_p_void_p_switch_event__int.getCPtr(callback), SWIGTYPE_p_void.getCPtr(pdata));
+  public static void switch_sql_queue_manager_execute_sql_callback_err(SWIGTYPE_p_switch_sql_queue_manager qm, string sql, SWIGTYPE_p_f_p_void_int_p_p_char_p_p_char__int callback, SWIGTYPE_p_f_p_void_p_q_const__char__int err_callback, SWIGTYPE_p_void pdata) {
+    freeswitchPINVOKE.switch_sql_queue_manager_execute_sql_callback_err(SWIGTYPE_p_switch_sql_queue_manager.getCPtr(qm), sql, SWIGTYPE_p_f_p_void_int_p_p_char_p_p_char__int.getCPtr(callback), SWIGTYPE_p_f_p_void_p_q_const__char__int.getCPtr(err_callback), SWIGTYPE_p_void.getCPtr(pdata));
+  }
+
+  public static void switch_sql_queue_manager_execute_sql_event_callback(SWIGTYPE_p_switch_sql_queue_manager qm, string sql, SWIGTYPE_p_f_p_void_p_switch_event__int callback, SWIGTYPE_p_void pdata) {
+    freeswitchPINVOKE.switch_sql_queue_manager_execute_sql_event_callback(SWIGTYPE_p_switch_sql_queue_manager.getCPtr(qm), sql, SWIGTYPE_p_f_p_void_p_switch_event__int.getCPtr(callback), SWIGTYPE_p_void.getCPtr(pdata));
+  }
+
+  public static void switch_sql_queue_manager_execute_sql_event_callback_err(SWIGTYPE_p_switch_sql_queue_manager qm, string sql, SWIGTYPE_p_f_p_void_p_switch_event__int callback, SWIGTYPE_p_f_p_void_p_q_const__char__int err_callback, SWIGTYPE_p_void pdata) {
+    freeswitchPINVOKE.switch_sql_queue_manager_execute_sql_event_callback_err(SWIGTYPE_p_switch_sql_queue_manager.getCPtr(qm), sql, SWIGTYPE_p_f_p_void_p_switch_event__int.getCPtr(callback), SWIGTYPE_p_f_p_void_p_q_const__char__int.getCPtr(err_callback), SWIGTYPE_p_void.getCPtr(pdata));
   }
 
   public static SWIGTYPE_p_pid_t switch_fork() {
@@ -10864,6 +10885,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_cache_db_execute_sql_callback")]
   public static extern int switch_cache_db_execute_sql_callback(HandleRef jarg1, string jarg2, HandleRef jarg3, HandleRef jarg4, ref string jarg5);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_cache_db_execute_sql_callback_err")]
+  public static extern int switch_cache_db_execute_sql_callback_err(HandleRef jarg1, string jarg2, HandleRef jarg3, HandleRef jarg4, HandleRef jarg5, ref string jarg6);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_cache_db_affected_rows")]
   public static extern int switch_cache_db_affected_rows(HandleRef jarg1);
 
@@ -10969,6 +10993,12 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_recovery_flush")]
   public static extern void switch_core_recovery_flush(string jarg1, string jarg2);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_sql_queue_manager_pause")]
+  public static extern void switch_sql_queue_manager_pause(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_sql_queue_manager_resume")]
+  public static extern void switch_sql_queue_manager_resume(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_sql_queue_manager_size")]
   public static extern int switch_sql_queue_manager_size(HandleRef jarg1, uint jarg2);
 
@@ -10993,11 +11023,17 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_cache_db_execute_sql_event_callback")]
   public static extern int switch_cache_db_execute_sql_event_callback(HandleRef jarg1, string jarg2, HandleRef jarg3, HandleRef jarg4, ref string jarg5);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_sql_queue_manger_execute_sql_callback")]
-  public static extern void switch_sql_queue_manger_execute_sql_callback(HandleRef jarg1, string jarg2, HandleRef jarg3, HandleRef jarg4);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_sql_queue_manager_execute_sql_callback")]
+  public static extern void switch_sql_queue_manager_execute_sql_callback(HandleRef jarg1, string jarg2, HandleRef jarg3, HandleRef jarg4);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_sql_queue_manger_execute_sql_event_callback")]
-  public static extern void switch_sql_queue_manger_execute_sql_event_callback(HandleRef jarg1, string jarg2, HandleRef jarg3, HandleRef jarg4);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_sql_queue_manager_execute_sql_callback_err")]
+  public static extern void switch_sql_queue_manager_execute_sql_callback_err(HandleRef jarg1, string jarg2, HandleRef jarg3, HandleRef jarg4, HandleRef jarg5);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_sql_queue_manager_execute_sql_event_callback")]
+  public static extern void switch_sql_queue_manager_execute_sql_event_callback(HandleRef jarg1, string jarg2, HandleRef jarg3, HandleRef jarg4);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_sql_queue_manager_execute_sql_event_callback_err")]
+  public static extern void switch_sql_queue_manager_execute_sql_event_callback_err(HandleRef jarg1, string jarg2, HandleRef jarg3, HandleRef jarg4, HandleRef jarg5);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_fork")]
   public static extern IntPtr switch_fork();

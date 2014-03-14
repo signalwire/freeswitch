@@ -14529,6 +14529,28 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_cache_db_execute_sql_callback(void * ja
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_cache_db_execute_sql_callback_err(void * jarg1, char * jarg2, void * jarg3, void * jarg4, void * jarg5, void * jarg6) {
+  int jresult ;
+  switch_cache_db_handle_t *arg1 = (switch_cache_db_handle_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_core_db_callback_func_t arg3 = (switch_core_db_callback_func_t) 0 ;
+  switch_core_db_err_callback_func_t arg4 = (switch_core_db_err_callback_func_t) 0 ;
+  void *arg5 = (void *) 0 ;
+  char **arg6 = (char **) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_cache_db_handle_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (switch_core_db_callback_func_t)jarg3; 
+  arg4 = (switch_core_db_err_callback_func_t)jarg4; 
+  arg5 = (void *)jarg5; 
+  arg6 = (char **)jarg6; 
+  result = (switch_status_t)switch_cache_db_execute_sql_callback_err(arg1,(char const *)arg2,arg3,arg4,arg5,arg6);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_cache_db_affected_rows(void * jarg1) {
   int jresult ;
   switch_cache_db_handle_t *arg1 = (switch_cache_db_handle_t *) 0 ;
@@ -14967,6 +14989,24 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_recovery_flush(char * jarg1, char
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_sql_queue_manager_pause(void * jarg1, int jarg2) {
+  switch_sql_queue_manager_t *arg1 = (switch_sql_queue_manager_t *) 0 ;
+  switch_bool_t arg2 ;
+  
+  arg1 = (switch_sql_queue_manager_t *)jarg1; 
+  arg2 = (switch_bool_t)jarg2; 
+  switch_sql_queue_manager_pause(arg1,arg2);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_sql_queue_manager_resume(void * jarg1) {
+  switch_sql_queue_manager_t *arg1 = (switch_sql_queue_manager_t *) 0 ;
+  
+  arg1 = (switch_sql_queue_manager_t *)jarg1; 
+  switch_sql_queue_manager_resume(arg1);
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_sql_queue_manager_size(void * jarg1, unsigned long jarg2) {
   int jresult ;
   switch_sql_queue_manager_t *arg1 = (switch_sql_queue_manager_t *) 0 ;
@@ -15101,7 +15141,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_cache_db_execute_sql_event_callback(voi
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_sql_queue_manger_execute_sql_callback(void * jarg1, char * jarg2, void * jarg3, void * jarg4) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_sql_queue_manager_execute_sql_callback(void * jarg1, char * jarg2, void * jarg3, void * jarg4) {
   switch_sql_queue_manager_t *arg1 = (switch_sql_queue_manager_t *) 0 ;
   char *arg2 = (char *) 0 ;
   switch_core_db_callback_func_t arg3 = (switch_core_db_callback_func_t) 0 ;
@@ -15111,11 +15151,27 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_sql_queue_manger_execute_sql_callback(
   arg2 = (char *)jarg2; 
   arg3 = (switch_core_db_callback_func_t)jarg3; 
   arg4 = (void *)jarg4; 
-  switch_sql_queue_manger_execute_sql_callback(arg1,(char const *)arg2,arg3,arg4);
+  switch_sql_queue_manager_execute_sql_callback(arg1,(char const *)arg2,arg3,arg4);
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_sql_queue_manger_execute_sql_event_callback(void * jarg1, char * jarg2, void * jarg3, void * jarg4) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_sql_queue_manager_execute_sql_callback_err(void * jarg1, char * jarg2, void * jarg3, void * jarg4, void * jarg5) {
+  switch_sql_queue_manager_t *arg1 = (switch_sql_queue_manager_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_core_db_callback_func_t arg3 = (switch_core_db_callback_func_t) 0 ;
+  switch_core_db_err_callback_func_t arg4 = (switch_core_db_err_callback_func_t) 0 ;
+  void *arg5 = (void *) 0 ;
+  
+  arg1 = (switch_sql_queue_manager_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (switch_core_db_callback_func_t)jarg3; 
+  arg4 = (switch_core_db_err_callback_func_t)jarg4; 
+  arg5 = (void *)jarg5; 
+  switch_sql_queue_manager_execute_sql_callback_err(arg1,(char const *)arg2,arg3,arg4,arg5);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_sql_queue_manager_execute_sql_event_callback(void * jarg1, char * jarg2, void * jarg3, void * jarg4) {
   switch_sql_queue_manager_t *arg1 = (switch_sql_queue_manager_t *) 0 ;
   char *arg2 = (char *) 0 ;
   switch_core_db_event_callback_func_t arg3 = (switch_core_db_event_callback_func_t) 0 ;
@@ -15125,7 +15181,23 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_sql_queue_manger_execute_sql_event_cal
   arg2 = (char *)jarg2; 
   arg3 = (switch_core_db_event_callback_func_t)jarg3; 
   arg4 = (void *)jarg4; 
-  switch_sql_queue_manger_execute_sql_event_callback(arg1,(char const *)arg2,arg3,arg4);
+  switch_sql_queue_manager_execute_sql_event_callback(arg1,(char const *)arg2,arg3,arg4);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_sql_queue_manager_execute_sql_event_callback_err(void * jarg1, char * jarg2, void * jarg3, void * jarg4, void * jarg5) {
+  switch_sql_queue_manager_t *arg1 = (switch_sql_queue_manager_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  switch_core_db_event_callback_func_t arg3 = (switch_core_db_event_callback_func_t) 0 ;
+  switch_core_db_err_callback_func_t arg4 = (switch_core_db_err_callback_func_t) 0 ;
+  void *arg5 = (void *) 0 ;
+  
+  arg1 = (switch_sql_queue_manager_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (switch_core_db_event_callback_func_t)jarg3; 
+  arg4 = (switch_core_db_err_callback_func_t)jarg4; 
+  arg5 = (void *)jarg5; 
+  switch_sql_queue_manager_execute_sql_event_callback_err(arg1,(char const *)arg2,arg3,arg4,arg5);
 }
 
 
