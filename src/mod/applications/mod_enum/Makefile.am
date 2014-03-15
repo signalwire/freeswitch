@@ -8,7 +8,7 @@ LDNS_LA=$(LDNS_BUILDDIR)/libldns.la
 
 mod_LTLIBRARIES = mod_enum.la
 mod_enum_la_SOURCES  = mod_enum.c
-mod_enum_la_CFLAGS   = $(AM_CFLAGS) -I$(LDNS_DIR) -I$(LDNS_DIR)/include
+mod_enum_la_CFLAGS   = $(AM_CFLAGS) -I$(LDNS_DIR) -I$(LDNS_DIR)/include -I$(LDNS_BUILDDIR)
 mod_enum_la_LIBADD   = $(switch_builddir)/libfreeswitch.la $(LDNS_LA)
 mod_enum_la_LDFLAGS  = -avoid-version -module -no-undefined -shared
 
