@@ -3,12 +3,13 @@ include $(top_srcdir)/build/modmake.rulesam
 
 MODNAME=mod_lua
 
-LIBLUA_A=lua/liblua.a
+LUA_DIR=$(switch_srcdir)/src/mod/languages/mod_lua/lua
+LIBLUA_A=$(LUA_DIR)/liblua.a
 
 AM_CFLAGS += $(CFLAGS) -D_GNU_SOURCE
 mod_LTLIBRARIES = mod_lua.la
 mod_lua_la_SOURCES = mod_lua.cpp freeswitch_lua.cpp mod_lua_wrap.cpp
-mod_lua_la_CXXFLAGS = -Ilua $(AM_CPPFLAGS)
+mod_lua_la_CXXFLAGS = -I$(LUA_DIR) $(AM_CPPFLAGS)
 mod_lua_la_LIBADD = $(switch_builddir)/libfreeswitch.la 
 mod_lua_la_LDFLAGS = -avoid-version -module -no-undefined -shared -lm $(AM_LDFLAGS) $(LIBLUA_A) $(SOLINK)
 
@@ -16,12 +17,12 @@ BUILT_SOURCES = $(LIBLUA_A)
 $(mod_lua_la_SOURCES) : $(BUILT_SOURCES)
 
 $(LIBLUA_A):
-	cd lua && $(MAKE) CC="$(CC)" AR="$(AR) rcu" CFLAGS="$(AM_CFLAGS) -DLUA_USE_LINUX -w" liblua.a
+	cd $(LUA_DIR) && $(MAKE) CC="$(CC)" AR="$(AR) rcu" CFLAGS="$(AM_CFLAGS) -DLUA_USE_LINUX -w" liblua.a
 
 reswig: swigclean lua_wrap
 
 luaclean:
-	cd lua && $(MAKE) clean
+	cd $(LUA_DIR) && $(MAKE) clean
 
 allclean: clean luaclean
 

@@ -11,7 +11,7 @@ all:
 	@echo " + http://www.cluecon.com                        +"
 	@echo " +                                               +"
 	@echo " +-----------------------------------------------+"
-	@cat ../cluecon2.tmpl
+	@cat $(switch_srcdir)/cluecon2.tmpl
 
 install:
 	@echo " +---------- FreeSWITCH install Complete ----------+"
@@ -70,7 +70,7 @@ install:
 	@echo " +       http://www.cluecon.com                    +"
 	@echo " +                                                 +"
 	@echo " +-------------------------------------------------+"
-	@cat ../cluecon2.tmpl
+	@cat $(switch_srcdir)/cluecon2.tmpl
 	@sh modcheck.sh $(modulesdir)
 
 .PHONY: check dvi html info install-data \

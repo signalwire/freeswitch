@@ -542,7 +542,7 @@ case "$host" in
 esac
 
 if test "$enable_builtin_tiff" = "yes" ; then
-    abs_tiffdir="`cd $srcdir/../tiff-4.0.2/ && pwd`"
+    abs_tiffdir="`cd ../tiff-4.0.2/ && pwd`"
     save_CFLAGS=$CFLAGS
     CFLAGS="$CFLAGS -I$abs_tiffdir/libtiff"
     AC_CHECK_HEADERS([tiffio.h])
