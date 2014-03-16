@@ -123,6 +123,7 @@ opal
 /curl/src/Makefile
 /curl/src/Makefile.in
 /curl/src/stamp-h2
+/curl-*/
 /esl/Debug/
 /esl/Release/
 /flite-*/
@@ -420,6 +421,7 @@ opal
 /pcre/pcre_stringpiece_unittest
 /pcre/pcretest
 /pcre/stamp-h1
+/pcre-*/
 /pocketsphinx-*/
 /portaudio/bin/
 /portaudio/bin-stamp
