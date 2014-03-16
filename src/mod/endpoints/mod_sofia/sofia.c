@@ -611,7 +611,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 					if (status_val == 200) {
 						switch_channel_hangup(channel, SWITCH_CAUSE_BLIND_TRANSFER);
 					}
-					if (tech_pvt->want_event == 9999) {
+					if ((int)tech_pvt->want_event == 9999) {
 						tech_pvt->want_event = 0;
 					}
 				}
