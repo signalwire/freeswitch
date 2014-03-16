@@ -282,8 +282,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\curl-7.35.0\lib\arpa_telnet.h" />
-    <ClInclude Include="..\..\curl-7.35.0\lib\base64.h" />
-    <ClInclude Include="..\..\curl-7.35.0\lib\ca-bundle.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\config-mac.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\config-win32.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\connect.h" />
@@ -297,36 +295,26 @@
     <ClInclude Include="..\..\curl-7.35.0\lib\formdata.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\ftp.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\getinfo.h" />
-    <ClInclude Include="..\..\curl-7.35.0\lib\gtls.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\hash.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\hostip.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\http.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\http_chunks.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\http_digest.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\http_negotiate.h" />
-    <ClInclude Include="..\..\curl-7.35.0\lib\http_ntlm.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\if2ip.h" />
-    <ClInclude Include="..\..\curl-7.35.0\lib\inet_ntoa_r.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\inet_ntop.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\inet_pton.h" />
-    <ClInclude Include="..\..\curl-7.35.0\lib\krb4.h" />
-    <ClInclude Include="..\..\curl-7.35.0\lib\ldap.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\llist.h" />
-    <ClInclude Include="..\..\curl-7.35.0\lib\md5.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\memdebug.h" />
-    <ClInclude Include="..\..\curl-7.35.0\lib\memory.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\multiif.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\netrc.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\parsedate.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\progress.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\select.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\sendf.h" />
-    <ClInclude Include="..\..\curl-7.35.0\lib\setup.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\share.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\sockaddr.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\speedcheck.h" />
-    <ClInclude Include="..\..\curl-7.35.0\lib\sslgen.h" />
-    <ClInclude Include="..\..\curl-7.35.0\lib\ssluse.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\strequal.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\strerror.h" />
     <ClInclude Include="..\..\curl-7.35.0\lib\strtok.h" />

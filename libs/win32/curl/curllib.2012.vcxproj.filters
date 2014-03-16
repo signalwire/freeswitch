@@ -285,12 +285,6 @@
     <ClInclude Include="..\..\curl-7.35.0\lib\arpa_telnet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\curl-7.35.0\lib\base64.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\curl-7.35.0\lib\ca-bundle.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\curl-7.35.0\lib\config-win32.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -327,9 +321,6 @@
     <ClInclude Include="..\..\curl-7.35.0\lib\getinfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\curl-7.35.0\lib\gtls.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\curl-7.35.0\lib\hash.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -348,13 +339,7 @@
     <ClInclude Include="..\..\curl-7.35.0\lib\http_negotiate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\curl-7.35.0\lib\http_ntlm.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\curl-7.35.0\lib\if2ip.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\curl-7.35.0\lib\inet_ntoa_r.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\curl-7.35.0\lib\inet_ntop.h">
@@ -363,22 +348,10 @@
     <ClInclude Include="..\..\curl-7.35.0\lib\inet_pton.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\curl-7.35.0\lib\krb4.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\curl-7.35.0\lib\ldap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\curl-7.35.0\lib\llist.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\curl-7.35.0\lib\md5.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\curl-7.35.0\lib\memdebug.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\curl-7.35.0\lib\memory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\curl-7.35.0\lib\multiif.h">
@@ -399,9 +372,6 @@
     <ClInclude Include="..\..\curl-7.35.0\lib\sendf.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\curl-7.35.0\lib\setup.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\curl-7.35.0\lib\share.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -409,12 +379,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\curl-7.35.0\lib\speedcheck.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\curl-7.35.0\lib\sslgen.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\curl-7.35.0\lib\ssluse.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\curl-7.35.0\lib\strequal.h">
