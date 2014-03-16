@@ -342,6 +342,10 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
 #endif
   SSL_CTX_sess_set_remove_cb(tls->ctx, NULL);
   SSL_CTX_set_timeout(tls->ctx, ti->timeout);
+#ifdef SSL_OP_NO_COMPRESSION
+  /* CRIME (CVE-2012-4929) mitigation */
+  SSL_CTX_set_options(tls->ctx, SSL_OP_NO_COMPRESSION);
+#endif
 
   /* Set callback if we have a passphrase */
   if (ti->passphrase != NULL) {
