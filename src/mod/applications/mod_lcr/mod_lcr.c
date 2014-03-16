@@ -581,16 +581,16 @@ static char *format_custom_sql(const char *custom_sql, callback_t *cb_struct, co
 	return (char *) custom_sql;
 }
 
-static switch_bool_t lcr_execute_sql_callback(char *sql, switch_core_db_callback_func_t callback, void *pdata)
+static switch_status_t lcr_execute_sql_callback(char *sql, switch_core_db_callback_func_t callback, void *pdata)
 {
-	switch_bool_t retval = SWITCH_FALSE;
+	switch_status_t retval = SWITCH_STATUS_GENERR;
 	switch_cache_db_handle_t *dbh = NULL;
 
 	if (globals.odbc_dsn && (dbh = lcr_get_db_handle())) {
 		if (switch_cache_db_execute_sql_callback(dbh, sql, callback, pdata, NULL) != SWITCH_STATUS_SUCCESS) {
-			retval = SWITCH_FALSE;
+			retval = SWITCH_STATUS_GENERR;
 		} else {
-			retval = SWITCH_TRUE;
+			retval = SWITCH_STATUS_SUCCESS;
 		}
 	}
 	switch_cache_db_release_db_handle(&dbh);
@@ -885,7 +885,7 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 	char *digits_expanded = NULL;
 	char *lrn_digits_expanded = NULL;
 	profile_t *profile = cb_struct->profile;
-	switch_bool_t lookup_status;
+	switch_status_t lookup_status;
 	switch_channel_t *channel;
 	char *id_str;
 	char *safe_sql = NULL;
@@ -987,11 +987,7 @@ static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 	switch_safe_free(sql_stream.data);
 	switch_core_hash_destroy(&cb_struct->dedup_hash);
 
-	if (lookup_status) {
-		return SWITCH_STATUS_SUCCESS;
-	} else {
-		return SWITCH_STATUS_GENERR;
-	}
+	return lookup_status;
 }
 
 static switch_bool_t test_profile(char *lcr_profile)
@@ -1175,7 +1171,7 @@ static switch_status_t lcr_load_config()
 						if (db_check("ALTER TABLE carrier_gateway add codec varchar(255);") == SWITCH_TRUE) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "adding codec field your lcr carrier_gateway database schema.\n");
 						} else {
-							return SWITCH_FALSE;
+							return SWITCH_STATUS_FALSE;
 						}
 					}
 
@@ -1186,7 +1182,7 @@ static switch_status_t lcr_load_config()
 						if (db_check("ALTER TABLE lcr add cid varchar(32);") == SWITCH_TRUE) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "adding cid field to your lcr database schema.\n");
 						} else {
-							return SWITCH_FALSE;
+							return SWITCH_STATUS_FALSE;
 						}
 					}
 
@@ -1194,7 +1190,7 @@ static switch_status_t lcr_load_config()
 						if (db_check("ALTER TABLE lcr ADD lrn BOOLEAN NOT NULL DEFAULT false")) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "adding lrn field to your lcr database schema.\n");
 						} else {
-							return SWITCH_FALSE;
+							return SWITCH_STATUS_FALSE;
 						}
 					}
 
