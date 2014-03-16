@@ -53,21 +53,26 @@ IF "%LIB_DEST_DIR%" == "" GOTO Fail
 IF "%COPY_FILES_ONLY%" == "1" GOTO CopyFiles
 
 REM Clean build before we continue
-devenv /clean %2 tools\gyp\v8.sln
+REM First try to clean using the solution path (works for most VS versions)
+msbuild "tools\gyp\v8.sln" /t:"_tools_\_gyp_\v8:Clean" /p:Configuration=%2
+IF ERRORLEVEL 0 GOTO CleanDone
+REM If clean using solution path didn't work, try to build without the path (works for some VS versions...)
+msbuild "tools\gyp\v8.sln" /t:v8:Clean /p:Configuration=%2
 IF NOT ERRORLEVEL 0 GOTO Fail
+:CleanDone
 
 REM Just to make sure that everything is cleaned up
 rmdir /S /Q .\build\%2
 
 REM Build the V8 library
-devenv /build %2 "tools\gyp\v8.sln" /project "v8" /projectconfig %2
-REM devenv /build %2 tools\gyp\v8.sln
+REM First try to build using the solution path (works for most VS versions)
+msbuild "tools\gyp\v8.sln" /t:"_tools_\_gyp_\v8:Rebuild" /p:Configuration=%2
+IF ERRORLEVEL 0 GOTO CopyFiles
+REM If build using solution path didn't work, try to build without the path (works for some VS versions...)
+msbuild "tools\gyp\v8.sln" /t:v8:Rebuild /p:Configuration=%2
 IF NOT ERRORLEVEL 0 GOTO Fail
 
 :CopyFiles
-
-REM xcopy /C /F /R /Y .\build\%2\icudt.dll %LIB_DEST_DIR%
-REM IF NOT ERRORLEVEL 0 GOTO Fail
 
 xcopy /C /F /R /Y .\build\%2\icui18n.dll %LIB_DEST_DIR%
 IF NOT ERRORLEVEL 0 GOTO Fail
