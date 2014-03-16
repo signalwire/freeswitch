@@ -14,64 +14,55 @@
     <ClCompile Include="pcre_chartables.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pcre\pcre_compile.c">
+    <ClCompile Include="..\..\pcre-8.34\pcre_compile.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pcre\pcre_config.c">
+    <ClCompile Include="..\..\pcre-8.34\pcre_config.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pcre\pcre_dfa_exec.c">
+    <ClCompile Include="..\..\pcre-8.34\pcre_dfa_exec.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pcre\pcre_exec.c">
+    <ClCompile Include="..\..\pcre-8.34\pcre_exec.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pcre\pcre_fullinfo.c">
+    <ClCompile Include="..\..\pcre-8.34\pcre_fullinfo.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pcre\pcre_get.c">
+    <ClCompile Include="..\..\pcre-8.34\pcre_get.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pcre\pcre_globals.c">
+    <ClCompile Include="..\..\pcre-8.34\pcre_globals.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pcre\pcre_info.c">
+    <ClCompile Include="..\..\pcre-8.34\pcre_maketables.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pcre\pcre_maketables.c">
+    <ClCompile Include="..\..\pcre-8.34\pcre_ord2utf8.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pcre\pcre_ord2utf8.c">
+    <ClCompile Include="..\..\pcre-8.34\pcre_refcount.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pcre\pcre_refcount.c">
+    <ClCompile Include="..\..\pcre-8.34\pcre_study.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pcre\pcre_study.c">
+    <ClCompile Include="..\..\pcre-8.34\pcre_tables.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pcre\pcre_tables.c">
+    <ClCompile Include="..\..\pcre-8.34\pcre_newline.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pcre\pcre_try_flipped.c">
+    <ClCompile Include="..\..\pcre-8.34\pcre_ucd.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pcre\pcre_newline.c">
+    <ClCompile Include="..\..\pcre-8.34\pcre_valid_utf8.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pcre\pcre_ucd.c">
+    <ClCompile Include="..\..\pcre-8.34\pcre_version.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\pcre\pcre_ucp_searchfuncs.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\pcre\pcre_valid_utf8.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\pcre\pcre_version.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\pcre\pcre_xclass.c">
+    <ClCompile Include="..\..\pcre-8.34\pcre_xclass.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -79,16 +70,13 @@
     <ClInclude Include="config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pcre\internal.h">
+    <ClInclude Include="..\..\pcre-8.34\pcre.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pcre\pcre.h">
+    <ClInclude Include="..\..\pcre-8.34\pcre_internal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\pcre\pcre_internal.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\pcre\pcreposix.h">
+    <ClInclude Include="..\..\pcre-8.34\pcreposix.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

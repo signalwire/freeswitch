@@ -11,9 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>Download CURL</ProjectName>
-    <ProjectGuid>{3970BCDE-BE1A-4CF3-A65F-5264BA2E47B5}</ProjectGuid>
-    <RootNamespace>Download CURL</RootNamespace>
+    <ProjectName>Download PCRE</ProjectName>
+    <ProjectGuid>{B1E7E876-347F-4DC9-9BEA-D1AFBD9DFF8A}</ProjectGuid>
+    <RootNamespace>Download PCRE</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -68,14 +68,14 @@
   <ItemGroup>
     <CustomBuild Include="cleancount">
       <FileType>Document</FileType>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Downloading Curl.</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">if not exist "$(ProjectDir)..\curl-7.35.0" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/curl-7.35.0.tar.gz "$(ProjectDir).."
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Downloading PCRE.</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">if not exist "$(ProjectDir)..\pcre-8.34" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/pcre-8.34.tar.gz "$(ProjectDir).."
 </Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\curl-7.35.0;%(Outputs)</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Downloading Curl.</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">if not exist "$(ProjectDir)..\curl-7.35.0" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/curl-7.35.0.tar.gz "$(ProjectDir).."
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\pcre-8.34;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Downloading PCRE.</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">if not exist "$(ProjectDir)..\pcre-8.34" cscript /nologo "$(ProjectDir)util.vbs" GetUnzip http://files.freeswitch.org/downloads/libs/pcre-8.34.tar.gz "$(ProjectDir).."
 </Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\curl-7.35.0;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\pcre-8.34;%(Outputs)</Outputs>
     </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

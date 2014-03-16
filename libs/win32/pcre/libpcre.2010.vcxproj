@@ -107,22 +107,22 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug DLL|Win32'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug DLL|Win32'">$(Platform)\pcre\$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug DLL|Win32'">$(Platform)\pcre-8.34\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug DLL|Win32'">false</LinkIncremental>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug DLL|x64'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug DLL|x64'">$(Platform)\pcre\$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug DLL|x64'">$(Platform)\pcre-8.34\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug DLL|x64'">false</LinkIncremental>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release DLL|Win32'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release DLL|Win32'">$(Platform)\pcre\$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release DLL|Win32'">$(Platform)\pcre-8.34\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release DLL|Win32'">false</LinkIncremental>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release DLL|x64'">$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release DLL|x64'">$(Platform)\pcre\$(Configuration)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release DLL|x64'">$(Platform)\pcre-8.34\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release DLL|x64'">false</LinkIncremental>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\pcre;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\pcre-8.34;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WIN32;WIN32;_DEBUG;_WINDOWS;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;DEBUG;PCRE_DEFINITION;PCRE_STATIC;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -137,7 +137,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\pcre;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\pcre-8.34;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WIN32;WIN32;_DEBUG;_WINDOWS;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;DEBUG;PCRE_DEFINITION;PCRE_STATIC;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -145,12 +145,15 @@
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </ClCompile>
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\pcre-8.34\pcre.h" type "$(ProjectDir)\pcre.h" &gt; "$(ProjectDir)..\..\pcre-8.34\pcre.h"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\pcre;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\pcre-8.34;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WIN32;WIN32;NDEBUG;_WINDOWS;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;PCRE_DEFINITION;PCRE_STATIC;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -158,6 +161,9 @@
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </ClCompile>
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\pcre-8.34\pcre.h" type "$(ProjectDir)\pcre.h" &gt; "$(ProjectDir)..\..\pcre-8.34\pcre.h"</Command>
+    </PreBuildEvent>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </Bscmake>
@@ -166,7 +172,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\pcre;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\pcre-8.34;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WIN32;WIN32;NDEBUG;_WINDOWS;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;PCRE_DEFINITION;PCRE_STATIC;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -174,6 +180,9 @@
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </ClCompile>
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\pcre-8.34\pcre.h" type "$(ProjectDir)\pcre.h" &gt; "$(ProjectDir)..\..\pcre-8.34\pcre.h"</Command>
+    </PreBuildEvent>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </Bscmake>
@@ -202,7 +211,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\pcre;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\pcre-8.34;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;DEBUG;PCRE_DEFINITION;DLL_EXPORT;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -215,6 +224,9 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\pcre-8.34\pcre.h" type "$(ProjectDir)\pcre.h" &gt; "$(ProjectDir)..\..\pcre-8.34\pcre.h"</Command>
+    </PreBuildEvent>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x0409</Culture>
@@ -223,7 +235,7 @@
       <AdditionalDependencies>odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <ModuleDefinitionFile>$(ProjectDir)..\..\pcre\pcre.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>$(ProjectDir)..\..\pcre-8.34\pcre.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -264,7 +276,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\pcre;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\pcre-8.34;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;DEBUG;PCRE_DEFINITION;DLL_EXPORT;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -277,6 +289,9 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\pcre-8.34\pcre.h" type "$(ProjectDir)\pcre.h" &gt; "$(ProjectDir)..\..\pcre-8.34\pcre.h"</Command>
+    </PreBuildEvent>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x0409</Culture>
@@ -285,7 +300,7 @@
       <AdditionalDependencies>odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <ModuleDefinitionFile>$(ProjectDir)..\..\pcre\pcre.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>$(ProjectDir)..\..\pcre-8.34\pcre.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -327,7 +342,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\pcre;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\pcre-8.34;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;PCRE_DEFINITION;DLL_EXPORT;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -339,6 +354,9 @@
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </ClCompile>
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\pcre-8.34\pcre.h" type "$(ProjectDir)\pcre.h" &gt; "$(ProjectDir)..\..\pcre-8.34\pcre.h"</Command>
+    </PreBuildEvent>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x0409</Culture>
@@ -347,7 +365,7 @@
       <AdditionalDependencies>odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <ModuleDefinitionFile>$(ProjectDir)..\..\pcre\pcre.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>$(ProjectDir)..\..\pcre-8.34\pcre.def</ModuleDefinitionFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -388,7 +406,7 @@
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\pcre;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\pcre-8.34;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;PCRE_DEFINITION;DLL_EXPORT;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -400,6 +418,9 @@
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </ClCompile>
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\pcre-8.34\pcre.h" type "$(ProjectDir)\pcre.h" &gt; "$(ProjectDir)..\..\pcre-8.34\pcre.h"</Command>
+    </PreBuildEvent>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x0409</Culture>
@@ -408,7 +429,7 @@
       <AdditionalDependencies>odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(ProjectName).dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <ModuleDefinitionFile>$(ProjectDir)..\..\pcre\pcre.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>$(ProjectDir)..\..\pcre-8.34\pcre.def</ModuleDefinitionFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -426,35 +447,34 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="pcre_chartables.c" />
-    <ClCompile Include="..\..\pcre\pcre_compile.c" />
-    <ClCompile Include="..\..\pcre\pcre_config.c" />
-    <ClCompile Include="..\..\pcre\pcre_dfa_exec.c" />
-    <ClCompile Include="..\..\pcre\pcre_exec.c" />
-    <ClCompile Include="..\..\pcre\pcre_fullinfo.c" />
-    <ClCompile Include="..\..\pcre\pcre_get.c" />
-    <ClCompile Include="..\..\pcre\pcre_globals.c" />
-    <ClCompile Include="..\..\pcre\pcre_info.c" />
-    <ClCompile Include="..\..\pcre\pcre_maketables.c" />
-    <ClCompile Include="..\..\pcre\pcre_ord2utf8.c" />
-    <ClCompile Include="..\..\pcre\pcre_refcount.c" />
-    <ClCompile Include="..\..\pcre\pcre_study.c" />
-    <ClCompile Include="..\..\pcre\pcre_tables.c" />
-    <ClCompile Include="..\..\pcre\pcre_try_flipped.c" />
-    <ClCompile Include="..\..\pcre\pcre_newline.c" />
-    <ClCompile Include="..\..\pcre\pcre_ucd.c" />
-    <ClCompile Include="..\..\pcre\pcre_ucp_searchfuncs.c" />
-    <ClCompile Include="..\..\pcre\pcre_valid_utf8.c" />
-    <ClCompile Include="..\..\pcre\pcre_version.c" />
-    <ClCompile Include="..\..\pcre\pcre_xclass.c" />
+    <ClCompile Include="..\..\pcre-8.34\pcre_compile.c" />
+    <ClCompile Include="..\..\pcre-8.34\pcre_config.c" />
+    <ClCompile Include="..\..\pcre-8.34\pcre_dfa_exec.c" />
+    <ClCompile Include="..\..\pcre-8.34\pcre_exec.c" />
+    <ClCompile Include="..\..\pcre-8.34\pcre_fullinfo.c" />
+    <ClCompile Include="..\..\pcre-8.34\pcre_get.c" />
+    <ClCompile Include="..\..\pcre-8.34\pcre_globals.c" />
+    <ClCompile Include="..\..\pcre-8.34\pcre_maketables.c" />
+    <ClCompile Include="..\..\pcre-8.34\pcre_ord2utf8.c" />
+    <ClCompile Include="..\..\pcre-8.34\pcre_refcount.c" />
+    <ClCompile Include="..\..\pcre-8.34\pcre_study.c" />
+    <ClCompile Include="..\..\pcre-8.34\pcre_tables.c" />
+    <ClCompile Include="..\..\pcre-8.34\pcre_newline.c" />
+    <ClCompile Include="..\..\pcre-8.34\pcre_ucd.c" />
+    <ClCompile Include="..\..\pcre-8.34\pcre_valid_utf8.c" />
+    <ClCompile Include="..\..\pcre-8.34\pcre_version.c" />
+    <ClCompile Include="..\..\pcre-8.34\pcre_xclass.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h" />
-    <ClInclude Include="..\..\pcre\internal.h" />
-    <ClInclude Include="..\..\pcre\pcre.h" />
-    <ClInclude Include="..\..\pcre\pcre_internal.h" />
-    <ClInclude Include="..\..\pcre\pcreposix.h" />
+    <ClInclude Include="..\..\pcre-8.34\pcre.h" />
+    <ClInclude Include="..\..\pcre-8.34\pcre_internal.h" />
+    <ClInclude Include="..\..\pcre-8.34\pcreposix.h" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Download PCRE.2010.vcxproj">
+      <Project>{b1e7e876-347f-4dc9-9bea-d1afbd9dff8a}</Project>
+    </ProjectReference>
     <ProjectReference Include="pcre_chartables.c.2010.vcxproj">
       <Project>{1ced5987-a529-46dc-b30f-870d85ff9c94}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
