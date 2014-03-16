@@ -179,6 +179,11 @@
   <ItemGroup>
     <ClCompile Include="dftables.c" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Download PCRE.2012.vcxproj">
+      <Project>{b1e7e876-347f-4dc9-9bea-d1afbd9dff8a}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
