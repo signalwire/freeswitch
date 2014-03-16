@@ -488,21 +488,21 @@ libs/apr/Makefile: libs/apr/Makefile.in libs/apr/config.status libs/apr libs/apr
 	@$(TOUCH_TARGET)
 
 libs/apr/libapr-1.la: libs/apr/Makefile libs/apr/.update
-	@if [ $(MAKELEVEL) = 0 -o -z "`echo "$(MAKEARGS)" | grep  "j"`" ] ; then touch $(switch_builddir)/src/include/switch.h; cd libs/apr && $(MAKE) $(MFLAGS) && touch libapr-1.la; fi
+	@if [ $(MAKELEVEL) = 0 -o -z "`echo "$(MAKEARGS)" | grep  "j"`" ] ; then touch $(switch_srcdir)/src/include/switch.h; cd libs/apr && $(MAKE) $(MFLAGS) && touch libapr-1.la; fi
 
 libs/apr-util/libaprutil-1.la: libs/apr/libapr-1.la libs/apr-util libs/apr-util/.update
-	@if [ $(MAKELEVEL) = 0 -o -z "`echo "$(MAKEARGS)" | grep  "j"`" ] ; then touch $(switch_builddir)/src/include/switch.h; cd libs/apr-util && $(MAKE) $(MFLAGS) && touch libaprutil-1.la; fi
+	@if [ $(MAKELEVEL) = 0 -o -z "`echo "$(MAKEARGS)" | grep  "j"`" ] ; then touch $(switch_srcdir)/src/include/switch.h; cd libs/apr-util && $(MAKE) $(MFLAGS) && touch libaprutil-1.la; fi
 
 libs/speex/libspeex/libspeex.la:
 	@echo 
 
 libs/speex/libspeex/libspeexdsp.la: libs/speex/.update
-	touch $(switch_builddir)/src/include/switch.h
+	touch $(switch_srcdir)/src/include/switch.h
 	@if [ $(MAKELEVEL) = 0 -o -z "`echo "$(MAKEARGS)" | grep  "j"`" ] ; then cd libs/speex && $(MAKE) $(MFLAGS); fi
 	@$(TOUCH_TARGET)
 
 libs/sqlite/libsqlite3.la: libs/sqlite libs/sqlite/Makefile libs/sqlite/.update
-	touch $(switch_builddir)/src/include/switch.h
+	touch $(switch_srcdir)/src/include/switch.h
 	@cd libs/sqlite && $(MAKE) CFLAGS="$(SWITCH_AM_CFLAGS)"
 	@$(TOUCH_TARGET)
 
@@ -513,7 +513,7 @@ libs/sqlite/Makefile: libs/sqlite/configure.ac
 	@$(TOUCH_TARGET)
 
 libs/pcre/libpcre.la: libs/pcre libs/pcre/.update
-	touch $(switch_builddir)/src/include/switch.h
+	touch $(switch_srcdir)/src/include/switch.h
 	@cd libs/pcre && $(MAKE)
 	@$(TOUCH_TARGET)
 
@@ -530,7 +530,7 @@ SRTP_SRC =	libs/srtp/srtp/srtp.c libs/srtp/srtp/ekt.c libs/srtp/crypto/cipher/ci
 		libs/srtp/crypto/replay/rdb.c libs/srtp/crypto/replay/rdbx.c libs/srtp/crypto/replay/ut_sim.c 
 
 libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update $(SRTP_SRC)
-	touch $(switch_builddir)/src/include/switch.h
+	touch $(switch_srcdir)/src/include/switch.h
 	@cd libs/srtp && $(MAKE)
 	@$(TOUCH_TARGET)
 
