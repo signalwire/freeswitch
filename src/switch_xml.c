@@ -1642,9 +1642,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 	if (preprocess(SWITCH_GLOBAL_dirs.conf_dir, file, write_fd, 0) > -1) {
 		fclose(write_fd);
 		write_fd = NULL;
-		if ( unlink (new_file)) {
-			goto done;
-		}
+		unlink (new_file);
+
 		if ( rename(new_file_tmp,new_file) ) {
 			goto done;
 		}
