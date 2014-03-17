@@ -52,7 +52,7 @@ $(LAMELA): $(LAME_BUILDDIR)/Makefile
 
 $(SHOUT_DIR):
 	$(GETLIB) $(SHOUT).tar.gz
-	patch -p 6 -d $(switch_srcdir)/libs/libshout-2.2.2 < $(switch_srcdir)src/mod/formats/mod_shout/hack_out_ogg.diff
+	patch -p 6 -d $(switch_srcdir)/libs/libshout-2.2.2 < $(switch_srcdir)/src/mod/formats/mod_shout/hack_out_ogg.diff
 
 $(SHOUT_BUILDDIR)/Makefile: $(SHOUT_DIR)
 	mkdir -p $(SHOUT_BUILDDIR)
