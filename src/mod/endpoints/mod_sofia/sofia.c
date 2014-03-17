@@ -6580,7 +6580,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	case nua_callstate_early:
 		if (answer_recv) {
 			uint8_t match = 0;
-			int is_ok = 0;
 			sofia_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
 			switch_channel_mark_pre_answered(channel);
 			sofia_set_flag(tech_pvt, TFLAG_SDP);
@@ -6600,14 +6599,12 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 				if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Early Media RTP Error!\n");
-					is_ok = 0;
 					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				}
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Processing updated SDP\n");
 			} else {
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Early Media Codec Error!\n");
-				is_ok = 0;
 			}
 		}
 		break;
