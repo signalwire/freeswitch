@@ -84,7 +84,6 @@ CORE_CFLAGS  = $(AM_LIBAPR_CFLAGS) $(AM_LIBAPR_CPPFLAGS)
 CORE_CFLAGS += $(AM_LIBAPU_CPPFLAGS)
 CORE_CFLAGS += -I$(switch_srcdir)/libs/libtpl-1.5/src
 CORE_CFLAGS += -I$(switch_builddir)/libs/sqlite
-CORE_CFLAGS += -I$(switch_srcdir)/libs/pcre
 CORE_CFLAGS += -I$(switch_srcdir)/libs/speex/include -Ilibs/speex/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
@@ -93,7 +92,7 @@ CORE_CFLAGS += -I$(switch_builddir)/libs/tiff-4.0.2/libtiff -I$(switch_srcdir)/l
 
 APR_LIBS   = $(AM_LIBAPU_LIBS) $(AM_LIBAPR_LIBS)
 CORE_LIBS  = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
-CORE_LIBS += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la libs/speex/libspeex/libspeex.la
+CORE_LIBS += libs/sqlite/libsqlite3.la libs/speex/libspeex/libspeexdsp.la libs/speex/libspeex/libspeex.la
 
 if ENABLE_SRTP
 CORE_CFLAGS += -DENABLE_SRTP
@@ -125,9 +124,9 @@ libfreeswitch_spandsp_la_SOURCES = libs/spandsp/src/plc.c libs/spandsp/src/alloc
 libfreeswitch_spandsp_la_CFLAGS  = -Ilibs/spandsp/src $(CORE_CFLAGS) $(AM_CFLAGS)
 CORE_LIBS+=libfreeswitch_spandsp.la
 lib_LTLIBRARIES	         = libfreeswitch.la
-libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(AM_CFLAGS)
+libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(PCRE_CFLAGS) $(AM_CFLAGS)
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS) -shared -no-undefined
-libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(PLATFORM_CORE_LIBS)
+libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(PCRE_LIBS) $(PLATFORM_CORE_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
 
 if CURL_BUILTIN
@@ -480,11 +479,6 @@ libs/sqlite/Makefile: libs/sqlite/configure.ac
 	cd libs/sqlite && autoconf
 	cd libs/sqlite && ./config.status --recheck
 	cd libs/sqlite && ./config.status
-	@$(TOUCH_TARGET)
-
-libs/pcre/libpcre.la: libs/pcre libs/pcre/.update
-	touch $(switch_srcdir)/src/include/switch.h
-	@cd libs/pcre && $(MAKE)
 	@$(TOUCH_TARGET)
 
 SRTP_SRC =	libs/srtp/srtp/srtp.c libs/srtp/srtp/ekt.c libs/srtp/crypto/cipher/cipher.c libs/srtp/crypto/cipher/null_cipher.c \

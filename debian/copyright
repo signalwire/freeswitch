@@ -1821,14 +1821,6 @@ Copyright: 2008-2010, Eric des Courtis <eric.des.courtis@benbria.com>
  Benbria.
 License: MPL-1.1
 
-Files: libs/pcre/*
-Copyright: 1997-2009 University of Cambridge
- 2003 and onwards Google Inc.
- 2005-2006, Google Inc
- 2001 Alexander Tokarev <dwalin@dwalin.ru>
- 2001 Peter S. Voronov aka Chem O'Dun <petervrn@yahoo.com>
-License: BSD-3-clause
-
 Files: libs/silk/*
 Copyright: 2006-2011, Skype Limited.
 License: BSD-2-clause
