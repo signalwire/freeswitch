@@ -146,18 +146,21 @@ if ENABLE_TIMERFD_WRAPPER
 CORE_CFLAGS += -DTIMERFD_WRAP
 endif
 
-if CURL_BUILTIN
-CORE_LIBS += libs/curl/lib/libcurl.la
-endif
-
 ##
 ## libfreeswitch
 ##
 lib_LTLIBRARIES	         = libfreeswitch.la
 libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(AM_CFLAGS)
-libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS)
+libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS) -shared -no-undefined
 libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(PLATFORM_CORE_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
+
+
+if CURL_BUILTIN
+CORE_LIBS += libs/curl/lib/libcurl.la
+else
+libfreeswitch_la_LDFLAGS += -lcurl
+endif
 
 if HAVE_LIBEDIT
 libfreeswitch_la_LIBADD += $(TINFO_LIBS)
