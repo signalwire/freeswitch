@@ -404,6 +404,19 @@ AC_ARG_ENABLE(cpp,
 
 AM_CONDITIONAL([ENABLE_CPP],[test "${enable_cpp}" = "yes"])
 
+AC_ARG_ENABLE([system-xmlrpc-c],
+  [AS_HELP_STRING([--enable-system-xmlrpc-c],
+    [use system lib for xmlrpc-c])],,
+  [enable_xmlrpcc="no"])
+
+if test "${enable_xmlrpcc}" = "yes" ; then
+SYS_XMLRPC_CFLAGS=`xmlrpc-c-config --cflags`
+SYS_XMLRPC_LDFLAGS=`xmlrpc-c-config --libs`
+fi
+AC_SUBST(SYS_XMLRPC_CFLAGS)
+AC_SUBST(SYS_XMLRPC_LDFLAGS)
+AM_CONDITIONAL([SYSTEM_XMLRPCC],[test "${enable_xmlrpcc}" = "yes"])
+
 AC_ARG_ENABLE(srtp,
 [AC_HELP_STRING([--disable-srtp],[build without srtp support])],[enable_srtp="$enableval"],[enable_srtp="yes"])
 
