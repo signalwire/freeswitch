@@ -218,7 +218,7 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_add_task(time_t task_runtime,
 	}
 
 	container->func = func;
-	container->task.created = switch_epoch_time_now(NULL);
+	container->task.created = now;
 	container->task.runtime = task_runtime;
 	container->task.group = strdup(group ? group : "none");
 	container->task.cmd_id = cmd_id;
