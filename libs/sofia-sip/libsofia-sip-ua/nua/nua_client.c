@@ -1209,7 +1209,7 @@ int nua_base_client_check_restart(nua_client_request_t *cr,
       cr->cr_status = 0, cr->cr_phrase = NULL;
       nua_client_request_unref(cr);
 
-      return 0;
+      return !invalid;
     }
   }
   /* GriGiu : RFC-3261 status supported Retry-After */
