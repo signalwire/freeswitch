@@ -1197,9 +1197,13 @@ int nua_base_client_check_restart(nua_client_request_t *cr,
 
       cr->cr_challenged = 1;
 
-      if (!invalid && auc_has_authorization(&nh->nh_auth)) {
-		  return nua_client_restart(cr, 100, "Request Authorized by Cache");
-	  }
+      if (invalid) {
+	/* Bad username/password */
+	SU_DEBUG_7(("nua(%p): bad credentials, clearing them\n", (void *)nh));
+	auc_clear_credentials(&nh->nh_auth, NULL, NULL);
+      }
+      else if (auc_has_authorization(&nh->nh_auth))
+	return nua_client_restart(cr, 100, "Request Authorized by Cache");
 
       orq = cr->cr_orq, cr->cr_orq = NULL;
 
@@ -1209,7 +1213,7 @@ int nua_base_client_check_restart(nua_client_request_t *cr,
       cr->cr_status = 0, cr->cr_phrase = NULL;
       nua_client_request_unref(cr);
 
-      return 0;
+      return 1;
     }
   }
   /* GriGiu : RFC-3261 status supported Retry-After */
