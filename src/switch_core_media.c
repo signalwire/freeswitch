@@ -2455,6 +2455,10 @@ SWITCH_DECLARE(switch_call_direction_t) switch_ice_direction(switch_core_session
 {
 	switch_call_direction_t r = switch_channel_direction(session->channel);
 
+	if (switch_channel_test_flag(session->channel, CF_3PCC)) {
+		r = (r == SWITCH_CALL_DIRECTION_INBOUND) ? SWITCH_CALL_DIRECTION_OUTBOUND : SWITCH_CALL_DIRECTION_INBOUND;
+	}
+
 	if ((switch_channel_test_flag(session->channel, CF_REINVITE) || switch_channel_test_flag(session->channel, CF_RECOVERING)) 
 		&& switch_channel_test_flag(session->channel, CF_WEBRTC)) {
 		r = SWITCH_CALL_DIRECTION_OUTBOUND;
@@ -5087,6 +5091,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		if (!zstr(a_engine->local_dtls_fingerprint.str) && switch_rtp_has_dtls() && dtls_ok(smh->session)) {
 			dtls_type_t xtype, dtype = switch_channel_direction(smh->session->channel) == SWITCH_CALL_DIRECTION_INBOUND ? DTLS_TYPE_CLIENT : DTLS_TYPE_SERVER;
 
+			if (switch_channel_test_flag(smh->session->channel, CF_3PCC)) {
+				dtype = (dtype == DTLS_TYPE_CLIENT) ? DTLS_TYPE_SERVER : DTLS_TYPE_CLIENT;
+			}
 
 			xtype = DTLS_TYPE_RTP;
 			if (a_engine->rtcp_mux > 0 && smh->mparams->rtcp_audio_interval_msec) xtype |= DTLS_TYPE_RTCP;
@@ -6048,7 +6055,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		switch_channel_clear_flag(smh->session->channel, CF_DTLS);
 	}
 
-	if (is_outbound || switch_channel_test_flag(session->channel, CF_RECOVERING)) {
+	if (is_outbound || switch_channel_test_flag(session->channel, CF_RECOVERING) ||
+		switch_channel_test_flag(session->channel, CF_3PCC)) {
 		if (!switch_channel_test_flag(session->channel, CF_WEBRTC) && 
 			switch_true(switch_channel_get_variable(session->channel, "media_webrtc"))) {
 			switch_channel_set_flag(session->channel, CF_WEBRTC);

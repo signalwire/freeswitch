@@ -6578,6 +6578,38 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 		break;
 	case nua_callstate_early:
+		if (answer_recv) {
+			uint8_t match = 0;
+			int is_ok = 0;
+			sofia_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
+			switch_channel_mark_pre_answered(channel);
+			sofia_set_flag(tech_pvt, TFLAG_SDP);
+
+			if (sofia_test_flag(tech_pvt, TFLAG_3PCC) && sofia_test_pflag(profile, PFLAG_3PCC_PROXY)) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY, Got my PRACK\n");
+				sofia_set_flag(tech_pvt, TFLAG_3PCC_HAS_ACK);
+			}
+
+			match = sofia_media_negotiate_sdp(session, r_sdp, SDP_TYPE_RESPONSE);
+			if (match) {
+				if (switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0) != SWITCH_STATUS_SUCCESS) {
+					goto done;
+				}
+
+				switch_core_media_gen_local_sdp(session, SDP_TYPE_RESPONSE, NULL, 0, NULL, 0);
+
+				if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Early Media RTP Error!\n");
+					is_ok = 0;
+					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				}
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Processing updated SDP\n");
+			} else {
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Early Media Codec Error!\n");
+				is_ok = 0;
+			}
+		}
 		break;
 	case nua_callstate_completed:
 		if (r_sdp) {

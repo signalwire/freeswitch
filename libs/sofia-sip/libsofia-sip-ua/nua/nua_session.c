@@ -2952,7 +2952,7 @@ int nua_prack_server_report(nua_server_request_t *sr, tagi_t const *tags)
   nua_session_usage_t *ss = nua_dialog_usage_private(sr->sr_usage);
   nua_server_request_t *sri = nta_incoming_magic(sr->sr_irq, NULL);
   int status = sr->sr_status; char const *phrase = sr->sr_phrase;
-  int offer_recv_or_answer_sent = sr->sr_offer_recv || sr->sr_answer_sent;
+  int offer_recv_or_answer_sent = sr->sr_offer_recv || sr->sr_answer_sent || sr->sr_offer_sent || sr->sr_answer_recv;
   int retval;
 
   retval = nua_base_server_report(sr, tags), sr = NULL; /* destroys sr */
