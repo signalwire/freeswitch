@@ -1476,8 +1476,8 @@ if test "x${enable_zrtp}" = "xyes"; then
 fi
 
 case $host in
-   *-openbsd*)
-       # libtool won't link static libs against shared ones on OpenBSD unless we tell it not to be stupid
+   *-openbsd*|*-netbsd*)
+       # libtool won't link static libs against shared ones on NetBSD/OpenBSD unless we tell it not to be stupid
        AC_CONFIG_COMMANDS([hacklibtool], [cp libtool libtool.orig  && sed -e "s/deplibs_check_method=.*/deplibs_check_method=pass_all/g" libtool.orig > libtool])
        ;;
 esac
