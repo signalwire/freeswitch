@@ -47,7 +47,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\stfu;..\..\libs\speex\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;"
+				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\speex\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;PCRE_STATIC;STATICLIB;TPL_NOLIB;STFU_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -141,7 +141,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\stfu;..\..\libs\speex\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;"
+				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\speex\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;PCRE_STATIC;STATICLIB;TPL_NOLIB;STFU_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -234,7 +234,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\stfu;..\..\libs\speex\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;"
+				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\speex\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;CRASH_PROT;PCRE_STATIC;TPL_NOLIB;STFU_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="2"
@@ -324,7 +324,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\stfu;..\..\libs\speex\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;"
+				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\speex\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\tiff-4.0.2\libtiff;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;CRASH_PROT;PCRE_STATIC;TPL_NOLIB;STFU_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="2"
@@ -515,7 +515,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\libs\stfu\stfu.c"
+				RelativePath="..\..\src\switch_stfu.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1517,7 +1517,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\libs\stfu\stfu.h"
+				RelativePath="..\..\src\include\switch_stfu.h"
 				>
 			</File>
 			<File

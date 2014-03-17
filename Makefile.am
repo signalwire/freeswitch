@@ -112,7 +112,6 @@ $(RECURSIVE_TARGETS): freeswitch
 CORE_CFLAGS  = $(AM_LIBAPR_CFLAGS) $(AM_LIBAPR_CPPFLAGS)
 CORE_CFLAGS += $(AM_LIBAPU_CPPFLAGS)
 CORE_CFLAGS += -I$(switch_srcdir)/libs/libtpl-1.5/src
-CORE_CFLAGS += -I$(switch_srcdir)/libs/stfu
 CORE_CFLAGS += -I$(switch_builddir)/libs/sqlite
 CORE_CFLAGS += -I$(switch_srcdir)/libs/pcre
 CORE_CFLAGS += -I$(switch_srcdir)/libs/speex/include -Ilibs/speex/include
@@ -218,7 +217,7 @@ library_include_HEADERS = \
 	src/include/switch_cpp.h \
 	src/include/switch_curl.h \
 	src/include/switch_json.h \
-	libs/stfu/stfu.h \
+	src/include/switch_stfu.h \
 	libs/libteletone/src/libteletone_detect.h \
 	libs/libteletone/src/libteletone_generate.h \
 	libs/libteletone/src/libteletone.h \
@@ -294,8 +293,8 @@ libfreeswitch_la_SOURCES = \
 	src/switch_json.c \
 	src/switch_curl.c \
 	src/switch_hashtable.c\
+	src/switch_stfu.c \
 	libs/libtpl-1.5/src/tpl.c \
-	libs/stfu/stfu.c \
 	libs/libteletone/src/libteletone_detect.c \
 	libs/libteletone/src/libteletone_generate.c \
 	libs/miniupnpc/miniwget.c \

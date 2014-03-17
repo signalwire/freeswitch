@@ -37,7 +37,6 @@
 
 #include <switch.h>
 #include <switch_ivr.h>
-#include "stfu.h"
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_sound_test(switch_core_session_t *session)
 {

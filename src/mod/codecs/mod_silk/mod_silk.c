@@ -31,11 +31,6 @@
  */
 
 #include "switch.h"
-#ifndef WIN32
-#include "stfu.h"
-#else
-#include "../../../libs/stfu/stfu.h"
-#endif
 #include "SKP_Silk_SDK_API.h"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_silk_load);

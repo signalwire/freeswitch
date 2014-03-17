@@ -106,11 +106,7 @@
 #include <signal.h>
 #include <errno.h>
 
-#ifndef WIN32
-#include "stfu.h"
-#else
-#include "../../../libs/stfu/stfu.h"
-#endif
+#include "switch_stfu.h"
 #include "switch_platform.h"
 #include "switch_types.h"
 #include "switch_apr.h"

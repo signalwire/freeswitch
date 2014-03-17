@@ -10,7 +10,7 @@ LIBMONGOCLIENT_A =$(MONGO_CXX_DRIVER_SRC)/libmongoclient.a
 mod_LTLIBRARIES = mod_mongo.la
 mod_mongo_la_SOURCES  = mod_mongo.cpp
 mod_mongo_la_CFLAGS   = $(AM_CFLAGS)
-mod_mongo_la_CPPFLAGS = -I$(MONGO_CXX_DRIVER_SRC)/src  -I$(switch_srcdir)/libs/stfu/ -I$(switch_srcdir)/libs/libteletone/src/                                   
+mod_mongo_la_CPPFLAGS = -I$(MONGO_CXX_DRIVER_SRC)/src -I$(switch_srcdir)/libs/libteletone/src/
 mod_mongo_la_LIBADD   = $(switch_builddir)/libfreeswitch.la $(LIBMONGOCLIENT_A)
 mod_mongo_la_LDFLAGS  = -avoid-version -module -no-undefined -shared -lboost_thread -lboost_filesystem-mt -lboost_system-mt
 

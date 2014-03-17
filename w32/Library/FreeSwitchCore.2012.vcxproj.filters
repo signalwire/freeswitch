@@ -34,7 +34,7 @@
     <ClCompile Include="..\..\libs\libnatpmp\natpmp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\libs\stfu\stfu.c">
+    <ClCompile Include="..\..\src\switch_stfu.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\switch_apr.c">
@@ -255,7 +255,7 @@
     <ClInclude Include="..\..\src\include\switch_caller.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\libs\stfu\stfu.h">
+    <ClInclude Include="..\..\src\include\switch_stfu.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\include\switch_channel.h">

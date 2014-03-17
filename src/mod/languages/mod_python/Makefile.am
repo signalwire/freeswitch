@@ -10,7 +10,7 @@ SWIGIFILE=../../../switch_swig.i
 mod_LTLIBRARIES = mod_python.la
 mod_python_la_SOURCES  = mod_python.c freeswitch_python.cpp mod_python_wrap.cpp
 mod_python_la_CFLAGS   = $(AM_CFLAGS)
-mod_python_la_CPPFLAGS = @PYTHON_CFLAGS@ -I$(switch_srcdir)/libs/stfu/ -I$(switch_srcdir)/libs/libteletone/src/ 
+mod_python_la_CPPFLAGS = @PYTHON_CFLAGS@ -I$(switch_srcdir)/libs/libteletone/src/ 
 mod_python_la_LIBADD   = $(switch_builddir)/libfreeswitch.la
 mod_python_la_LDFLAGS  = -avoid-version -module -no-undefined -shared @PYTHON_LDFLAGS@
 

@@ -25,7 +25,7 @@
  *
  * THOSE WHO DISAGREE MAY CERTAINLY STFU
  */
-#include "stfu.h"
+#include "switch_stfu.h"
 
 //#define DB_JB 1
 

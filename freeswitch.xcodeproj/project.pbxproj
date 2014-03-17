@@ -71,7 +71,7 @@
 		4BDD804BDD804BDD80000000 /* switch_xml.c in Sources */ = {isa = PBXBuildFile; fileRef = 4BD8404BD8404BD840000000 /* switch_xml.c */; settings = {COMPILER_FLAGS = ""; }; };
 		4BE7E04BE7E04BE7E0000000 /* switch_config.c in Sources */ = {isa = PBXBuildFile; fileRef = 4BE3004BE3004BE300000000 /* switch_config.c */; settings = {COMPILER_FLAGS = ""; }; };
 		4BF3004BF3004BF300000000 /* switch_time.c in Sources */ = {isa = PBXBuildFile; fileRef = 4BEDC04BEDC04BEDC0000000 /* switch_time.c */; settings = {COMPILER_FLAGS = ""; }; };
-		4BFDC04BFDC04BFDC0000000 /* stfu.c in Sources */ = {isa = PBXBuildFile; fileRef = 4BF8804BF8804BF880000000 /* stfu.c */; settings = {COMPILER_FLAGS = ""; }; };
+		4BFDC04BFDC04BFDC0000000 /* switch_stfu.c in Sources */ = {isa = PBXBuildFile; fileRef = 4BF8804BF8804BF880000000 /* switch_stfu.c */; settings = {COMPILER_FLAGS = ""; }; };
 		4C08204C08204C0820000000 /* switch_cpp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4C03404C03404C0340000000 /* switch_cpp.cpp */; settings = {COMPILER_FLAGS = ""; }; };
 		4C12A04C12A04C12A0000000 /* g711.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C0E004C0E004C0E00000000 /* g711.c */; settings = {COMPILER_FLAGS = ""; }; };
 		4C1DA04C1DA04C1DA0000000 /* switch_pcm.c in Sources */ = {isa = PBXBuildFile; fileRef = 4C1CB04C1CB04C1CB0000000 /* switch_pcm.c */; settings = {COMPILER_FLAGS = ""; }; };
@@ -99,7 +99,7 @@
 		607C60607C60607C60000000 /* pcre_info.c in Sources */ = {isa = PBXBuildFile; fileRef = 6077B06077B06077B0000000 /* pcre_info.c */; settings = {COMPILER_FLAGS = ""; }; };
 		609CD0609CD0609CD0000000 /* pcre_maketables.c in Sources */ = {isa = PBXBuildFile; fileRef = 609810609810609810000000 /* pcre_maketables.c */; settings = {COMPILER_FLAGS = ""; }; };
 		60B26060B26060B260000000 /* pcre_ord2utf8.c in Sources */ = {isa = PBXBuildFile; fileRef = 60ADA060ADA060ADA0000000 /* pcre_ord2utf8.c */; settings = {COMPILER_FLAGS = ""; }; };
-		60B8B060B8B060B8B0000000 /* stfu.c in Sources */ = {isa = PBXBuildFile; fileRef = 4BF8804BF8804BF880000000 /* stfu.c */; settings = {COMPILER_FLAGS = ""; }; };
+		60B8B060B8B060B8B0000000 /* switch_stfu.c in Sources */ = {isa = PBXBuildFile; fileRef = 4BF8804BF8804BF880000000 /* switch_stfu.c */; settings = {COMPILER_FLAGS = ""; }; };
 		60BDE060BDE060BDE0000000 /* pcredemo.c in Sources */ = {isa = PBXBuildFile; fileRef = 60BD2060BD2060BD20000000 /* pcredemo.c */; settings = {COMPILER_FLAGS = ""; }; };
 		60C8C060C8C060C8C0000000 /* pcre_refcount.c in Sources */ = {isa = PBXBuildFile; fileRef = 60C3A060C3A060C3A0000000 /* pcre_refcount.c */; settings = {COMPILER_FLAGS = ""; }; };
 		60D30060D30060D300000000 /* pcregrep.c in Sources */ = {isa = PBXBuildFile; fileRef = 60CE5060CE5060CE50000000 /* pcregrep.c */; settings = {COMPILER_FLAGS = ""; }; };
@@ -200,7 +200,7 @@
 		4BD8404BD8404BD840000000 /* switch_xml.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_xml.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_xml.c"; sourceTree = "<absolute>"; };
 		4BE3004BE3004BE300000000 /* switch_config.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_config.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_config.c"; sourceTree = "<absolute>"; };
 		4BEDC04BEDC04BEDC0000000 /* switch_time.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_time.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_time.c"; sourceTree = "<absolute>"; };
-		4BF8804BF8804BF880000000 /* stfu.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = stfu.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/stfu/stfu.c"; sourceTree = "<absolute>"; };
+		4BF8804BF8804BF880000000 /* switc_stfu.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_stfu.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_stfu.c"; sourceTree = "<absolute>"; };
 		4C03404C03404C0340000000 /* switch_cpp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = switch_cpp.cpp; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_cpp.cpp"; sourceTree = "<absolute>"; };
 		4C0E004C0E004C0E00000000 /* g711.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = g711.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/g711.c"; sourceTree = "<absolute>"; };
 		4C1CB04C1CB04C1CB0000000 /* switch_pcm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = switch_pcm.c; path = "/Users/shaneburrell/freeswitch-svn-real/src/switch_pcm.c"; sourceTree = "<absolute>"; };
@@ -279,7 +279,7 @@
 		613A60613A60613A60000000 /* ucpinternal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = ucpinternal.h; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/ucpinternal.h"; sourceTree = "<absolute>"; };
 		613ED0613ED0613ED0000000 /* pcre_chartables.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = pcre_chartables.c; path = "/Users/shaneburrell/freeswitch-svn-real/libs/pcre/pcre_chartables.c"; sourceTree = "<absolute>"; };
 		61E47061E47061E470000000 /* libpcre.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libpcre.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		61F2B061F2B061F2B0000000 /* stfu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = stfu.h; path = "/Users/shaneburrell/freeswitch-svn-real/libs/stfu/stfu.h"; sourceTree = "<absolute>"; };
+		61F2B061F2B061F2B0000000 /* switch_stfu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = switch_stfu.h; path = "/Users/shaneburrell/freeswitch-svn-real/src/include/switch_stfu.h"; sourceTree = "<absolute>"; };
 		628790628790628790000000 /* libstfu.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libstfu.a; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -414,7 +414,7 @@
 				4BD8404BD8404BD840000000 /* switch_xml.c */,
 				4BE3004BE3004BE300000000 /* switch_config.c */,
 				4BEDC04BEDC04BEDC0000000 /* switch_time.c */,
-				4BF8804BF8804BF880000000 /* stfu.c */,
+				4BF8804BF8804BF880000000 /* switch_stfu.c */,
 				4C03404C03404C0340000000 /* switch_cpp.cpp */,
 				4C0E004C0E004C0E00000000 /* g711.c */,
 				4C1CB04C1CB04C1CB0000000 /* switch_pcm.c */,
@@ -578,7 +578,7 @@
 		48FA9048FA9048FA90000000 /* Source Files */ = {
 			isa = PBXGroup;
 			children = (
-				4BF8804BF8804BF880000000 /* stfu.c */,
+				4BF8804BF8804BF880000000 /* switch_stfu.c */,
 			);
 			name = "Source Files";
 			sourceTree = "<group>";
@@ -586,7 +586,7 @@
 		48FEE048FEE048FEE0000000 /* Header Files */ = {
 			isa = PBXGroup;
 			children = (
-				61F2B061F2B061F2B0000000 /* stfu.h */,
+				61F2B061F2B061F2B0000000 /* switch_stfu.h */,
 			);
 			name = "Header Files";
 			sourceTree = "<group>";
@@ -922,7 +922,7 @@
 				4BDD804BDD804BDD80000000 /* switch_xml.c in Sources */,
 				4BE7E04BE7E04BE7E0000000 /* switch_config.c in Sources */,
 				4BF3004BF3004BF300000000 /* switch_time.c in Sources */,
-				4BFDC04BFDC04BFDC0000000 /* stfu.c in Sources */,
+				4BFDC04BFDC04BFDC0000000 /* switch_stfu.c in Sources */,
 				4C08204C08204C0820000000 /* switch_cpp.cpp in Sources */,
 				4C12A04C12A04C12A0000000 /* g711.c in Sources */,
 				4C1DA04C1DA04C1DA0000000 /* switch_pcm.c in Sources */,
@@ -985,7 +985,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				60B8B060B8B060B8B0000000 /* stfu.c in Sources */,
+				60B8B060B8B060B8B0000000 /* switch_stfu.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1071,7 +1071,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 				);
@@ -1113,7 +1112,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 				);
@@ -1155,7 +1153,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 				);
@@ -1197,7 +1194,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 				);
@@ -1241,7 +1237,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 				);
@@ -1313,7 +1308,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 				);
@@ -1385,7 +1379,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 				);
@@ -1457,7 +1450,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 				);
@@ -1531,7 +1523,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 					"/Users/shaneburrell/freeswitch-svn-real/src/../libs/libresample/include",
@@ -1583,7 +1574,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 					"/Users/shaneburrell/freeswitch-svn-real/src/../libs/libresample/include",
@@ -1635,7 +1625,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 					"/Users/shaneburrell/freeswitch-svn-real/src/../libs/libresample/include",
@@ -1687,7 +1676,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 					"/Users/shaneburrell/freeswitch-svn-real/src/../libs/libresample/include",
@@ -1737,7 +1725,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libresample/include",
@@ -1784,7 +1771,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libresample/include",
@@ -1831,7 +1817,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libresample/include",
@@ -1878,7 +1863,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libresample/include",
@@ -1925,7 +1909,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/include",
@@ -1972,7 +1955,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/include",
@@ -2019,7 +2001,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/include",
@@ -2066,7 +2047,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/include",
@@ -2113,7 +2093,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/pcre/include",
@@ -2161,7 +2140,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/pcre/include",
@@ -2209,7 +2187,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/pcre/include",
@@ -2257,7 +2234,6 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/pcre/include",
@@ -2305,10 +2281,8 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu/include",
 				);
 				INSTALL_PATH = "";
 				LIBRARY_STYLE = STATIC;
@@ -2352,10 +2326,8 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu/include",
 				);
 				INSTALL_PATH = "";
 				LIBRARY_STYLE = STATIC;
@@ -2399,10 +2371,8 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu/include",
 				);
 				INSTALL_PATH = "";
 				LIBRARY_STYLE = STATIC;
@@ -2446,10 +2416,8 @@
 					"/Users/shaneburrell/freeswitch-svn-real/libs/voipcodecs/src",
 					"/Users/shaneburrell/freeswitch-svn-real/src/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/libteletone/src",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr/include",
 					"/Users/shaneburrell/freeswitch-svn-real/libs/apr-util/include",
-					"/Users/shaneburrell/freeswitch-svn-real/libs/stfu/include",
 				);
 				INSTALL_PATH = "";
 				LIBRARY_STYLE = STATIC;

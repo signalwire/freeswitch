@@ -52,7 +52,7 @@ switch_log.c
 switch_xml.c
 switch_config.c
 switch_time.c
-../libs/stfu/stfu.c
+switch_stfu.c
 switch_cpp.cpp
 g711.c
 switch_pcm.c
