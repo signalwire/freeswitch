@@ -14,5 +14,6 @@ mod_silk_la_LDFLAGS  = -avoid-version -module -no-undefined -shared
 BUILT_SOURCES=$(SILK_LA)
 
 $(SILK_LA): $(SILK_DIR)/.update	
-	cd $(SILK_BUILDDIR) && ./configure --disable-shared && make clean && $(MAKE)
+	mkdir -p $(SILK_BUILDDIR)
+	cd $(SILK_BUILDDIR) && $(DEFAULT_VARS) $(SILK_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(SILK_DIR) --disable-shared && make clean && $(MAKE)
 	$(TOUCH_TARGET)

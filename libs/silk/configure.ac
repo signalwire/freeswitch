@@ -22,5 +22,11 @@ AC_TYPE_SIZE_T
 AC_FUNC_MALLOC
 AC_CHECK_LIB([m],[pow])
 
+# Absolute source/build directory
+abs_srcdir=`(cd $srcdir && pwd)`
+abs_builddir=`pwd`
+AC_SUBST(abs_srcdir)
+AC_SUBST(abs_builddir)
+
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
