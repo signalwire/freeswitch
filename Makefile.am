@@ -316,7 +316,7 @@ if ENABLE_CPP
 libfreeswitch_la_SOURCES += src/switch_cpp.cpp
 endif
 
-$(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(switch_builddir)/quiet_libtool $(switch_builddir)/modules.conf  
+$(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(switch_builddir)/modules.conf  
 
 src/include/switch_swigable_cpp.h: $(switch_srcdir)/src/include/switch_cpp.h
 	cat $(switch_srcdir)/src/include/switch_cpp.h | perl $(switch_srcdir)/build/strip.pl > $(switch_srcdir)/src/include/switch_swigable_cpp.h
@@ -438,9 +438,6 @@ $(OUR_MODULES): $(switch_builddir)/modules.conf libfreeswitch.la
 	(cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@) \
 	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
 	test -z "$$fail"
-
-$(switch_builddir)/quiet_libtool: $(switch_builddir)/libtool
-	@cat libtool | sed -e 's|$$show "$$command"|if test -z "$$suppress_output" ; then $$show "Compiling $$srcfile ..." ; fi|' > $(switch_builddir)/quiet_libtool
 
 build/print_git_revision: build/print_git_revision.c
 	$(CC) -o $@ $<

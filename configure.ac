@@ -14,6 +14,7 @@ AC_CONFIG_FILES([src/include/switch_version.h.in:src/include/switch_version.h.te
 
 AC_CONFIG_AUX_DIR(build/config)
 AM_INIT_AUTOMAKE
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([src/switch.c])
 AC_CONFIG_HEADER([src/include/switch_private.h])
 AC_CONFIG_HEADER([libs/xmlrpc-c/xmlrpc_amconfig.h])
@@ -1391,7 +1392,6 @@ AM_CONDITIONAL(HAVE_G729, [ test -d ${switch_srcdir}/libs/libg729 ])
 
 #some vars to sub into the Makefile.am's
 #LIBS+=> core.log || error="yes";if test -n "$(VERBOSE)" -o "$$error" = "yes";then cat core.log;fi;if test "$$error" = "yes";then exit 1;fi
-LIBTOOL='`if test -z "$(VERBOSE)" ; then echo $(SHELL) $(switch_builddir)/quiet_libtool ;else echo $(switch_builddir)/libtool; fi;`'
 TOUCH_TARGET='if test -f "$@";then touch "$@";fi;'
 CONF_MODULES='$$(grep -v "\#" $(switch_builddir)/modules.conf | sed -e "s|^.*/||" | sort | uniq )'
 CONF_DISABLED_MODULES='$$(grep "\#" $(switch_builddir)/modules.conf | grep -v "\#\#" | sed -e "s|^.*/||" | sort | uniq )'
