@@ -75,23 +75,6 @@ mod_xml_rpc_la_SOURCES += ../../../../libs/xmlrpc-c/src/version.c\
 ../../../../libs/xmlrpc-c/src/xmlrpc_string.c\
 ../../../../libs/xmlrpc-c/src/xmlrpc_struct.c\
 ../../../../libs/xmlrpc-c/lib/expat/xmltok/xmltok.c
-
-BUILT_SOURCES=$(XMLRPC_DIR)/version.h $(XMLRPC_DIR)/lib/expat/xmltok/nametab.h
-$(XMLRPC_DIR)/lib/expat/xmltok/xmltok.o: $(XMLRPC_DIR)/lib/expat/xmltok/nametab.h
-
-$(XMLRPC_DIR)/lib/expat/xmltok/nametab.h:
-	cd $(XMLRPC_DIR)/lib/expat/gennmtab && $(MAKE) dep
-	cd $(XMLRPC_DIR)/lib/expat/gennmtab && $(MAKE)
-	cd $(XMLRPC_DIR)/lib/expat/xmltok   && ../gennmtab/gennmtab > nametab.h
-
-$(XMLRPC_DIR)/src/version.o: $(XMLRPC_DIR)/version.h
-
-$(XMLRPC_DIR)/version.h:
-	cd $(XMLRPC_DIR) && $(MAKE) version.h
-	cd $(XMLRPC_DIR)/include && $(MAKE) xmlrpc-c/config.h
-
-clean:
-	cd $(XMLRPC_DIR) && $(MAKE) clean
 endif
 
 

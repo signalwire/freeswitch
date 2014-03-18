@@ -939,7 +939,6 @@ opal
 /xmlrpc-c/examples/config.h
 /xmlrpc-c/include/xmlrpc-c/config.h
 /xmlrpc-c/transport_config.h
-/xmlrpc-c/version.h
 /xmlrpc-c/xmlrpc_config.h
 /xmlrpc-c/xmlrpc_amconfig.h
 /xmlrpc-c/config.mk
