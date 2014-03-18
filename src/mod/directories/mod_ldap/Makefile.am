@@ -1,5 +1,6 @@
 include $(top_srcdir)/build/modmake.rulesam
 MODNAME=mod_ldap
+MAKEFLAGS=-j1
 LDAP=openldap-2.4.19
 LDAP_DIR=$(switch_srcdir)/libs/$(LDAP)
 LDAP_BUILDDIR=$(switch_builddir)/libs/$(LDAP)
