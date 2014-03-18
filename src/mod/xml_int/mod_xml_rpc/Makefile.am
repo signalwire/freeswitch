@@ -3,18 +3,19 @@ MODNAME=mod_xml_rpc
 
 mod_LTLIBRARIES = mod_xml_rpc.la
 mod_xml_rpc_la_SOURCES  = mod_xml_rpc.c ws.c
-mod_xml_rpc_la_CFLAGS   = $(AM_CFLAGS) -I. -w
 mod_xml_rpc_la_LIBADD   = $(switch_builddir)/libfreeswitch.la
 mod_xml_rpc_la_LDFLAGS  = -avoid-version -module -no-undefined -shared
 
 if SYSTEM_XMLRPCC
-mod_xml_rpc_la_CFLAGS+=$(SYS_XMLRPC_CFLAGS)
+mod_xml_rpc_la_CFLAGS=$(SYS_XMLRPC_CFLAGS)
 mod_xml_rpc_la_LDFLAGS+=$(SYS_XMLRPC_LDFLAGS)
 else
 MAKEFLAGS=-j1
 XMLRPC_DIR=$(switch_srcdir)/libs/xmlrpc-c
-mod_xml_rpc_la_CFLAGS  +=  -I$(XMLRPC_DIR)/lib/expat/xmlparse -I$(XMLRPC_DIR)/lib/expat/xmltok -I$(XMLRPC_DIR) -I$(XMLRPC_DIR)/include 
+XMLRPC_BUILDDIR=$(switch_builddir)/libs/xmlrpc-c
+mod_xml_rpc_la_CFLAGS  = -I$(XMLRPC_DIR)/lib/expat/xmlparse -I$(XMLRPC_DIR)/lib/expat/xmltok -I$(XMLRPC_DIR) -I$(XMLRPC_DIR)/include
 mod_xml_rpc_la_CFLAGS  += -I$(XMLRPC_DIR)/lib/abyss/src -I$(XMLRPC_DIR)/lib/util/include -D_THREAD -D__EXTENSIONS__ -D_GNU_SOURCE
+mod_xml_rpc_la_CFLAGS  += -I$(XMLRPC_BUILDDIR)/include 
 mod_xml_rpc_la_SOURCES += ../../../../libs/xmlrpc-c/src/version.c\
 ../../../../libs/xmlrpc-c/lib/libutil/asprintf.c\
 ../../../../libs/xmlrpc-c/lib/util/casprintf.c\
@@ -77,4 +78,5 @@ mod_xml_rpc_la_SOURCES += ../../../../libs/xmlrpc-c/src/version.c\
 ../../../../libs/xmlrpc-c/lib/expat/xmltok/xmltok.c
 endif
 
+mod_xml_rpc_la_CFLAGS  += $(AM_CFLAGS) -I. -w
 
