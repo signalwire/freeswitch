@@ -15,12 +15,14 @@ BUILT_SOURCES=$(OPUS_LA)
 $(OPUS_DIR):
 	$(GETLIB) $(OPUS).tar.gz
 
-$(OPUS_DIR)/Makefile: $(OPUS_DIR)
+$(OPUS_BUILDDIR)/Makefile: $(OPUS_DIR)
+	mkdir -p $(OPUS_BUILDDIR)
 	cd $(OPUS_BUILDDIR) && $(DEFAULT_VARS) $(OPUS_DIR)/configure --disable-shared --with-pic --srcdir=$(OPUS_DIR)
 	$(TOUCH_TARGET)
 
-$(OPUS_LA): $(OPUS_DIR)/Makefile
+$(OPUS_LA): $(OPUS_BUILDDIR)/Makefile
 	cd $(OPUS_BUILDDIR) && $(MAKE)
+	$(TOUCH_TARGET)
 
 $(MODNAME).lo: $(OPUS_LA)
 
