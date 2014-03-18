@@ -1,5 +1,6 @@
 include $(top_srcdir)/build/modmake.rulesam
 MODNAME=mod_managed
+MANAGED_DIR=$(switch_srcdir)/src/mod/languages/mod_managed/managed
 
 mod_LTLIBRARIES = mod_managed.la
 mod_managed_la_SOURCES  = mod_managed.cpp freeswitch_managed.cpp freeswitch_wrap.cpp
@@ -18,18 +19,18 @@ freeswitch_wrap.cpp: freeswitch_wrap.cxx
 reswig: swigclean freeswitch_wrap.cxx
 
 local_depend:
-	cd managed && $(MAKE)
+	cd $(MANAGED_DIR) && $(MAKE)
 
 install-data-local: $(DESTDIR)$(modulesdir)/mod_managed.$(LIBTOOL_LIB_EXTEN)
 	mkdir -p $(DESTDIR)$(modulesdir)/managed
-	cd managed && $(MAKE) INSTALL="$(LTINSTALL)" MODINSTDIR=$(modulesdir) DESTDIR=$(DESTDIR) install
+	cd $(MANAGED_DIR) && $(MAKE) INSTALL="$(LTINSTALL)" MODINSTDIR=$(modulesdir) DESTDIR=$(DESTDIR) install
 
 uninstall:
 	rm -fr $(DESTDIR)$(modulesdir)/mod_managed.so
-	cd managed && $(MAKE) UNINSTALL="$(LTUNINSTALL)" MODINSTDIR=$(modulesdir) uninstall
+	cd $(MANAGED_DIR) && $(MAKE) UNINSTALL="$(LTUNINSTALL)" MODINSTDIR=$(modulesdir) uninstall
 
 clean:
-	cd managed && $(MAKE) clean
+	cd $(MANAGED_DIR) && $(MAKE) clean
 
 swigclean: clean
 	rm -f freeswitch_wrap.cxx freeswitch_wrap.cpp managed/swig.cs
