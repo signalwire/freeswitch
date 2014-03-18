@@ -1031,3 +1031,13 @@ opal
 !/yaml/config/ltmain.sh
 !/yaml/config/missing
 !/yaml/configure
+broadvoice/config/compile
+curl/compile
+ilbc/config/compile
+libedit/compile
+libg722_1/config/compile
+pcre/compile
+spandsp/config/compile
+speex/compile
+srtp/build/compile
+unimrcp/build/compile
