@@ -9,6 +9,11 @@ mod_managed_la_CPPFLAGS = `/usr/bin/pkg-config mono-2 --cflags` -I$(switch_srcdi
 mod_managed_la_LIBADD   = $(switch_builddir)/libfreeswitch.la
 mod_managed_la_LDFLAGS  = -avoid-version -module -no-undefined -shared `/usr/bin/pkg-config mono-2 --libs`
 
+BUILT_SOURCES=FreeSWITCH.Managed.dll
+CS_SRC=managed/AssemblyInfo.cs managed/Extensions.cs managed/Loader.cs managed/Log.cs managed/ManagedSession.cs managed/PluginInterfaces.cs
+CS_SRC+=managed/PluginManager.cs managed/ScriptPluginManager.cs managed/ChannelVariables.cs managed/Util.cs
+CS_SRC+=managed/swig.cs managed/XmlSearchBinding.cs
+
 freeswitch_managed.o: freeswitch_managed.h freeswitch_managed.cpp
 
 freeswitch_wrap.o: freeswitch_wrap.cpp
@@ -18,19 +23,20 @@ freeswitch_wrap.cpp: freeswitch_wrap.cxx
 
 reswig: swigclean freeswitch_wrap.cxx
 
-local_depend:
-	cd $(MANAGED_DIR) && $(MAKE)
+FreeSWITCH.Managed.dll: $(CS_SRC)
+	dmcs -target:library -out:FreeSWITCH.Managed.dll $(CS_SRC)
 
-install-data-local: $(DESTDIR)$(modulesdir)/mod_managed.$(LIBTOOL_LIB_EXTEN)
+install-data-local: FreeSWITCH.Managed.dll
 	mkdir -p $(DESTDIR)$(modulesdir)/managed
-	cd $(MANAGED_DIR) && $(MAKE) INSTALL="$(LTINSTALL)" MODINSTDIR=$(modulesdir) DESTDIR=$(DESTDIR) install
+	$(INSTALL) FreeSWITCH.Managed.dll $(DESTDIR)$(modulesdir)
 
 uninstall:
 	rm -fr $(DESTDIR)$(modulesdir)/mod_managed.so
 	cd $(MANAGED_DIR) && $(MAKE) UNINSTALL="$(LTUNINSTALL)" MODINSTDIR=$(modulesdir) uninstall
+	$(UNINSTALL) $(MODINSTDIR)/FreeSWITCH.Managed.dll
 
-clean:
-	cd $(MANAGED_DIR) && $(MAKE) clean
+#clean:
+#	rm -fr FreeSWITCH.Managed.dll
 
 swigclean: clean
 	rm -f freeswitch_wrap.cxx freeswitch_wrap.cpp managed/swig.cs
