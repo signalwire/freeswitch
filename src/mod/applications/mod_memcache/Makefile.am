@@ -14,6 +14,8 @@ mod_memcache_la_LDFLAGS  = -avoid-version -module -no-undefined -shared
 
 MY_DEFAULT_ARGS=--build=$(build) --host=$(host) --target=$(target) --disable-shared --with-pic
 
+BUILT_SOURCES=$(MEMCACHEDLA)
+
 $(MEMCACHED_DIR):
 	$(GETLIB) $(MEMCACHED).tar.gz
 
