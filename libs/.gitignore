@@ -715,6 +715,7 @@ opal
 /speex/win32/VS2008/speexenc/Makefile.in
 /speex/win32/VS2008/tests/Makefile
 /speex/win32/VS2008/tests/Makefile.in
+/speex-*/
 /sphinxbase-*/
 /sqlite/keywordhash.h
 /sqlite/lemon
