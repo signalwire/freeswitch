@@ -7,7 +7,7 @@ CODEC2LA=$(CODEC2_BUILDDIR)/src/libcodec2.la
 
 mod_LTLIBRARIES = mod_codec2.la
 mod_codec2_la_SOURCES  = mod_codec2.c
-mod_codec2_la_CFLAGS   = $(AM_CFLAGS) -I$(CODEC2_DIR)/include -I$(CODEC2_BUILDDIR)/src
+mod_codec2_la_CFLAGS   = $(AM_CFLAGS) -I$(CODEC2_DIR)/include -I$(CODEC2_BUILDDIR)/src -I$(CODEC2_DIR)/src
 mod_codec2_la_LIBADD   = $(switch_builddir)/libfreeswitch.la $(CODEC2LA)
 mod_codec2_la_LDFLAGS  = -avoid-version -module -no-undefined -shared
 

@@ -3,7 +3,7 @@ AUTOMAKE_OPTS = gnu
 NAME = codec2
 AM_CPPFLAGS = $(AM_CFLAGS)
 
-D=codebook
+D=$(abs_srcdir)/codebook
 
 # lsp quantisers
 
