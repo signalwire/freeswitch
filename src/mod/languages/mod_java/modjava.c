@@ -205,7 +205,7 @@ static switch_status_t load_config(JavaVMOption **javaOptions, int *optionCount,
             if (path != NULL)
             {
 				javaVMHandle = switch_dso_open(path, 0, &derr);
-				if (derr || !dso) {
+				if (derr || !javaVMHandle) {
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error loading %s\n", path);
 				}
             }
