@@ -16,6 +16,7 @@ BUILT_SOURCES=$(LA)
 
 $(SNDT_SRC):
 	$(GETLIB) $(VERSION).tar.gz
+	sed -i'' -e 's/-fcheck-new//' $(top_srcdir)/libs/soundtouch/source/SoundTouch/Makefile.am
 
 $(SNDT_BUILD)/Makefile: $(SNDT_SRC)
 	mkdir -p $(SNDT_BUILD)/config/m4
