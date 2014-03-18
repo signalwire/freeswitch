@@ -120,12 +120,15 @@ endif
 ##
 ## libfreeswitch
 ##
+noinst_LTLIBRARIES        = libfreeswitch_spandsp.la
+libfreeswitch_spandsp_la_SOURCES = libs/spandsp/src/plc.c libs/spandsp/src/alloc.c libs/spandsp/src/bit_operations.c
+libfreeswitch_spandsp_la_CFLAGS  = -Ilibs/spandsp/src $(CORE_CFLAGS) $(AM_CFLAGS)
+CORE_LIBS+=libfreeswitch_spandsp.la
 lib_LTLIBRARIES	         = libfreeswitch.la
 libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(AM_CFLAGS)
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS) -shared -no-undefined
 libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(PLATFORM_CORE_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
-
 
 if CURL_BUILTIN
 CORE_LIBS += libs/curl/lib/libcurl.la
@@ -281,10 +284,7 @@ libfreeswitch_la_SOURCES = \
 	libs/miniupnpc/minissdpc.c \
 	libs/miniupnpc/upnperrors.c \
 	libs/libnatpmp/natpmp.c \
-	libs/libnatpmp/getgateway.c\
-	libs/spandsp/src/plc.c \
-	libs/spandsp/src/alloc.c \
-	libs/spandsp/src/bit_operations.c
+	libs/libnatpmp/getgateway.c
 
 if ENABLE_CPP
 libfreeswitch_la_SOURCES += src/switch_cpp.cpp
@@ -594,7 +594,9 @@ core-install: core_install
 
 clean_core: clean-libLTLIBRARIES
 	rm -f $(libfreeswitch_la_OBJECTS)
+	rm -f $(libfreeswitch_spandsp_la_OBJECTS)
 	rm -f `echo $(libfreeswitch_la_OBJECTS) | sed -e's|.lo|.o|g'`
+	rm -f `echo $(libfreeswitch_spandsp_la_OBJECTS) | sed -e's|.lo|.o|g'`
 
 install_core: install-libLTLIBRARIES
 
