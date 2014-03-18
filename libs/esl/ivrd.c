@@ -36,6 +36,7 @@
 #include <esl.h>
 #include <errno.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 static void handle_SIGCHLD(int sig)
 {
