@@ -129,7 +129,7 @@ static iks *start_sendfax_component(struct rayo_actor *call, struct rayo_message
 	}
 
 	/* does document exist? */
-	if (switch_file_exists(fax_document, pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_file_exists(fax_document, NULL) != SWITCH_STATUS_SUCCESS) {
 		return iks_new_error_detailed_printf(iq, STANZA_ERROR_BAD_REQUEST, "file not found: %s", fax_document);
 	}
 
