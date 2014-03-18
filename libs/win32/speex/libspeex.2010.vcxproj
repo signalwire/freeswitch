@@ -62,6 +62,7 @@
     <ProjectGuid>{E972C52F-9E85-4D65-B19C-031E511E9DB4}</ProjectGuid>
     <RootNamespace>libspeex</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <ProjectName>libspeex</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_RTL_dll|Win32'" Label="Configuration">
@@ -610,7 +611,7 @@
     <ClInclude Include="config.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download SPEEX.2012.vcxproj">
+    <ProjectReference Include="..\Download SPEEX.2010.vcxproj">
       <Project>{1bdab935-27dc-47e3-95ea-17e024d39c31}</Project>
     </ProjectReference>
   </ItemGroup>

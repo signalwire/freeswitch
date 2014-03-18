@@ -37,6 +37,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{03207781-0D1C-4DB3-A71D-45C608F28DBD}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
+    <ProjectName>libspeexdsp</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Static_SSE|Win32'" Label="Configuration">
@@ -345,7 +346,7 @@
     <ClInclude Include="..\..\speex-1.2rc1\libspeex\smallft.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Download SPEEX.2012.vcxproj">
+    <ProjectReference Include="..\Download SPEEX.2010.vcxproj">
       <Project>{1bdab935-27dc-47e3-95ea-17e024d39c31}</Project>
     </ProjectReference>
   </ItemGroup>

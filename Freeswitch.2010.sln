@@ -603,7 +603,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download CURL", "libs\win32
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download PCRE", "libs\win32\Download PCRE.2010.vcxproj", "{B1E7E876-347F-4DC9-9BEA-D1AFBD9DFF8A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download SPEEX", "libs\win32\Download SPEEX.2012.vcxproj", "{1BDAB935-27DC-47E3-95EA-17E024D39C31}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Download SPEEX", "libs\win32\Download SPEEX.2010.vcxproj", "{1BDAB935-27DC-47E3-95EA-17E024D39C31}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
