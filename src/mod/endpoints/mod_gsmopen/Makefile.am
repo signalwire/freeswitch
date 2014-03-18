@@ -15,6 +15,8 @@ mod_gsmopen_la_CFLAGS   = $(AM_CFLAGS) -I$(SPANDSP_DIR)/src -I$(TIFF_DIR)/libtif
 mod_gsmopen_la_LIBADD   = $(switch_builddir)/libfreeswitch.la $(SPANDSP_LA) $(TIFF_LA)
 mod_gsmopen_la_LDFLAGS  = -avoid-version -module -no-undefined -lctb-0.16 -lgsmme
 
+BUILT_SOURCES = $(TIFF_LA) $(SPANDSP_LA)
+
 $(SPANDSP_LA): $(TIFF_LA) $(SPANDSP_DIR) $(SPANDSP_DIR)/.update
 	cd $(SPANDSP_BUILDDIR) && $(MAKE) -j1 CFLAGS="$(CFLAGS) -I$(TIFF_BUILDDIR)/libtiff -I$(TIFF_DIR)/libtiff"
 	$(TOUCH_TARGET)
