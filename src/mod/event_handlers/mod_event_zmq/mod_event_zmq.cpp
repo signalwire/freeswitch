@@ -187,6 +187,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(shutdown) {
 	} catch(...) { // Exceptions must not propogate to C caller
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown error shutting down module\n");
 	}
+	return SWITCH_STATUS_SUCCESS;
 }
 
 }
