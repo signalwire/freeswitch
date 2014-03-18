@@ -96,12 +96,6 @@
 #define		AT_BUFSIZ AT_MESG_MAX_LENGTH
 #define AT_MESG_MAX_LINES 20	/* 256 lines, so it can contains the results of AT+CLAC, that gives all the AT commands the phone supports */
 
-#ifdef GSMOPEN_C_VER
-#ifdef MODGSMOPEN_C_VER
-#define GSMOPEN_SVN_VERSION MODGSMOPEN_C_VER"|"GSMOPEN_C_VER
-#endif
-#endif
-
 #ifndef GSMOPEN_SVN_VERSION
 #define GSMOPEN_SVN_VERSION switch_version_full()
 #endif /* GSMOPEN_SVN_VERSION */
