@@ -10,7 +10,8 @@ mod_khomp_la_CFLAGS  += -DFS_VERSION_MINOR=`./tools/getversion.sh "SWITCH_VERSIO
 mod_khomp_la_CFLAGS  += -DFS_VERSION_MICRO=`./tools/getversion.sh "SWITCH_VERSION_MICRO" $(switch_srcdir)` 
 mod_khomp_la_LIBADD   = $(switch_builddir)/libfreeswitch.la
 mod_khomp_la_LDFLAGS  = -avoid-version -module -no-undefined -shared -lk3l
-
+KHOMP_MODDIR=$(switch_srcdir)/src/mod/endpoints/mod_khomp
+TOOLS_DIR=$(KHOMP_MODDIR)/commons/tools
 
 mod_khomp_la_SOURCES += ./commons/base/k3lapi.cpp ./commons/base/k3lutil.cpp ./commons/base/config_options.cpp ./commons/base/format.cpp ./commons/base/strings.cpp ./commons/base/ringbuffer.cpp ./commons/base/verbose.cpp ./commons/base/saved_condition.cpp ./commons/base/regex.cpp ./commons/base/timer.cpp ./commons/base/configurator/configfile.cpp ./commons/base/configurator/option.cpp ./commons/base/configurator/section.cpp ./commons/base/configurator/restriction.cpp ./commons/base/verbose_traits.cpp 
 mod_khomp_la_SOURCES += ./support/klog-config.cpp ./support/klog-options.cpp ./support/config_defaults.cpp
@@ -24,9 +25,9 @@ conf_file_install = $(sysconfdir)/autoload_configs
 BUILT_SOURCES=verbose_traits.hpp verbose_traits.cpp
 
 verbose_traits.hpp verbose_traits.cpp:
-	@if test ! -f ./commons/base/verbose_traits.hpp || test ! -f ./commons/base/verbose_traits.cpp ; then \
+	@if test ! -f $(KHOMP_MODDIR)/commons/base/verbose_traits.hpp || test ! -f $(KHOMP_MODDIR)/commons/base/verbose_traits.cpp ; then \
 		echo "Generating verbose_traits" ;\
-		bash ./commons/tools/generate-verbose-headers.sh commons/base/ include/k3l.h ;\
+		bash $(TOOLS_DIR)/generate-verbose-headers.sh $(KHOMP_MODDIR)/commons/base/ include/k3l.h ;\
 	fi;
 
 install-data-local:
