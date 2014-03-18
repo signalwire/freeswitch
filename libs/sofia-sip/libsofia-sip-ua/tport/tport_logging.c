@@ -359,7 +359,11 @@ void tport_capt_msg(tport_t const *self, msg_t *msg, size_t n,
    int buflen = 0, error;
    su_sockaddr_t const *su, *su_self;
    struct hep_hdr hep_header;
+#if __sun__
+   struct hep_iphdr hep_ipheader = {{{{0}}}};
+#else
    struct hep_iphdr hep_ipheader = {{0}};   
+#endif
 #if SU_HAVE_IN6
    struct hep_ip6hdr hep_ip6header = {{{{0}}}};
 #endif   
