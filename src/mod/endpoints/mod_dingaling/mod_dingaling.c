@@ -1690,7 +1690,7 @@ static void setup_codecs(struct private_object *tech_pvt)
 
 	idx = 0;
 
-	payloads[0].type = LDL_TPORT_RTP;
+	payloads[0].type = LDL_PAYLOAD_AUDIO;
 	if (tech_pvt->transports[LDL_TPORT_RTP].codec_index < 0) {
 		if (dft_audio > -1) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Don't have my audio codec yet here's one\n");
@@ -1719,7 +1719,7 @@ static void setup_codecs(struct private_object *tech_pvt)
 	}
 
 
-	payloads[1].type = LDL_TPORT_VIDEO_RTP;
+	payloads[1].type = LDL_PAYLOAD_VIDEO;
 	if (tech_pvt->transports[LDL_TPORT_VIDEO_RTP].codec_index < 0) {
 		if (dft_video > -1) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Don't have my video codec yet here's one\n");
@@ -3555,7 +3555,7 @@ static void do_vcard(ldl_handle_t *handle, char *to, char *from, char *id)
 	switch_safe_free(xmlstr);
 }
 
-static switch_status_t parse_candidates(ldl_session_t *dlsession, switch_core_session_t *session, ldl_transport_type_t ttype, const char *subject) 
+static ldl_status parse_candidates(ldl_session_t *dlsession, switch_core_session_t *session, ldl_transport_type_t ttype, const char *subject) 
 {
 	
 	ldl_candidate_t *candidates;
@@ -3563,10 +3563,10 @@ static switch_status_t parse_candidates(ldl_session_t *dlsession, switch_core_se
 	unsigned int x, choice = 0, ok = 0;
 	uint8_t lanaddr = 0;
 	struct private_object *tech_pvt = NULL;
-	switch_status_t status = LDL_STATUS_SUCCESS;
+	ldl_status status = LDL_STATUS_SUCCESS;
 
 	if (!(tech_pvt = switch_core_session_get_private(session))) {
-		return SWITCH_STATUS_FALSE;
+		return LDL_STATUS_FALSE;
 	}
 
 	if (ldl_session_get_candidates(dlsession, ttype, &candidates, &len) != LDL_STATUS_SUCCESS) {
@@ -3757,7 +3757,7 @@ static ldl_status parse_payloads_type(ldl_session_t *dlsession, switch_core_sess
 										ldl_transport_type_t ttype, ldl_payload_t *payloads, unsigned int len)
 {
 	struct private_object *tech_pvt = NULL;
-	switch_status_t status = LDL_STATUS_SUCCESS;
+	ldl_status status = LDL_STATUS_SUCCESS;
 	unsigned int x, y;
 	int match = 0;
 
@@ -4427,7 +4427,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		break;
 	case LDL_SIGNAL_CANDIDATES:
 		if (dl_signal) {
-			status = SWITCH_STATUS_SUCCESS;
+			status = LDL_STATUS_SUCCESS;
 
 			status = parse_candidates(dlsession, session, LDL_TPORT_RTP, subject);
 			status = parse_candidates(dlsession, session, LDL_TPORT_VIDEO_RTP, subject); 
