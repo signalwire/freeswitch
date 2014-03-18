@@ -21,7 +21,6 @@ avoid_mods=(
   codecs/mod_sangoma_codec
   codecs/mod_siren
   codecs/mod_skel_codec
-  codecs/mod_voipcodecs
   endpoints/mod_gsmopen
   endpoints/mod_h323
   endpoints/mod_khomp
