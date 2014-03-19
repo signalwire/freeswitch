@@ -2862,6 +2862,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->answered);
 			cJSON_AddItemToObject(j_times, "answered_time", cJSON_CreateString(tmp));
 
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->bridged);
+			cJSON_AddItemToObject(j_times, "bridged_time", cJSON_CreateString(tmp));
+
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->last_hold);
+			cJSON_AddItemToObject(j_times, "last_hold_time", cJSON_CreateString(tmp));
+
+			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->hold_accum);
+			cJSON_AddItemToObject(j_times, "hold_accum_time", cJSON_CreateString(tmp));
+
 			switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->hungup);
 			cJSON_AddItemToObject(j_times, "hangup_time", cJSON_CreateString(tmp));
 
