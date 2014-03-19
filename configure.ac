@@ -304,7 +304,6 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
 		;;
              *-solaris2*)
 		APR_ADDTO(CFLAGS, -m64)
-		APR_ADDTO(LTCFLAGS, -m64)
 		APR_ADDTO(LDFLAGS, -m64)
 		APR_ADDTO(CXXFLAGS, -m64)
 	        ;;
@@ -573,12 +572,12 @@ case "$host" in
     *-solaris2*)
 	if test "${enable_64}" = "yes"; then
            APR_ADDTO(CFLAGS, [-I/opt/64/include])
-           APR_ADDTO(LTCFLAGS, [-I/opt/64/include])
            APR_ADDTO(CXXFLAGS, [-I/opt/64/include])
            APR_ADDTO(LDFLAGS, [-L/opt/64/lib -Wl,-rpath,/opt/64/lib])
+           APR_ADDTO(SWITCH_AM_CFLAGS, [-I/opt/include])
+           APR_ADDTO(SWITCH_AM_LDFLAGS, [-L/opt/lib -Wl,-rpath,/opt/lib])
 	else
            APR_ADDTO(CFLAGS, [-I/opt/include])
-           APR_ADDTO(LTCFLAGS, [-I/opt/include])
            APR_ADDTO(CXXFLAGS, -I/opt/include)
            APR_ADDTO(LDFLAGS, [-L/opt/lib -Wl,-rpath,/opt/lib])
            APR_ADDTO(SWITCH_AM_CFLAGS, [-I/opt/include])
