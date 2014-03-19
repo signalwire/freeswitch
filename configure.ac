@@ -33,6 +33,29 @@ switch_builddir=`pwd`
 AC_SUBST(switch_srcdir)
 AC_SUBST(switch_builddir)
 
+#
+# --enable-64 has been moved up higher prior to AC_PROG_CC so that we can tuck in the -m64 flag 
+# so devs on with Solaris wanting to build 64bit can not bother with adding any additional 
+# flags on the ./configure line.  User friendly.
+#
+
+#  Enable 64 bit build
+AC_ARG_ENABLE(64,
+[AC_HELP_STRING([--enable-64],[build with 64 bit support])],[enable_64="$enable_64"],[enable_64="no"])
+
+if test "${enable_64}" = "yes"; then
+   case "$host" in
+        *-solaris2*)
+	    # All three have to have -m64 for AC_PROG_CC to pick the right libtool
+            CFLAGS="$CFLAGS -m64"
+            LDFLAGS="$LDFLAGS -m64"
+            CXXFLAGS="$CXXFLAGS -m64"
+        ;;
+        *)
+        ;;
+   esac
+fi
+
 # Whether to follow FHS
 AC_ARG_ENABLE([fhs],
   [AS_HELP_STRING([--enable-fhs],
@@ -261,10 +284,6 @@ if test "${LIBTOOL_MAJOR_VERSION}" = "2" ; then
 fi
 AC_MSG_RESULT([using libtool library extension... ${LIBTOOL_LIB_EXTEN}])
 
-
-#  Enable 64 bit build
-AC_ARG_ENABLE(64,
-[AC_HELP_STRING([--enable-64],[build with 64 bit support])],[enable_64="$enable_64"],[enable_64="no"])
 
 # tweak compiler specific flags
 if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
