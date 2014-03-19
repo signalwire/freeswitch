@@ -2052,7 +2052,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 					switch_core_media_patch_sdp(tech_pvt->session);
 					if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
-						return SWITCH_STATUS_FALSE;
+						status = SWITCH_STATUS_FALSE;
+						goto end_lock;
 					}
 				}
 			} else {
@@ -2073,7 +2074,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							switch_core_media_patch_sdp(tech_pvt->session);
 							if (sofia_media_activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "failed to activate rtp\n");
-								return SWITCH_STATUS_FALSE;
+								status = SWITCH_STATUS_FALSE;
+								goto end_lock;
 							}
 						}
 					}
@@ -2129,7 +2131,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					}
 
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY, Done waiting for PRACK\n");
-					return SWITCH_STATUS_SUCCESS;
+					status = SWITCH_STATUS_SUCCESS;
+					goto end_lock;
 				}
 			}
 
