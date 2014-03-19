@@ -40,17 +40,17 @@ sed -e "s|\(AC_SUBST(SWITCH_VERSION_MAJOR, \[\).*\(\])\)|\1$major\2|" \
   -e "s|\(AC_SUBST(SWITCH_VERSION_MINOR, \[\).*\(\])\)|\1$minor\2|" \
   -e "s|\(AC_SUBST(SWITCH_VERSION_MICRO, \[\).*\(\])\)|\1$micro\2|" \
   -e "s|\(AC_INIT(\[freeswitch\], \[\).*\(\], BUG-REPORT-ADDRESS)\)|\1$major.$minor.$micro\2|" \
-  -i configure.in
+  -i configure.ac
 
 if [ -n "$rev" ]; then
   sed -e "s|\(AC_SUBST(SWITCH_VERSION_REVISION, \[\).*\(\])\)|\1$rev\2|" \
     -e "s|\(AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, \[\).*\(\])\)|\1$rev\2|" \
     -e "s|#\(AC_SUBST(SWITCH_VERSION_REVISION\)|\1|" \
     -e "s|#\(AC_SUBST(SWITCH_VERSION_REVISION_HUMAN\)|\1|" \
-    -i configure.in
+    -i configure.ac
 fi
 
-#git add configure.in
+#git add configure.ac
 #git commit -m "Release freeswitch-$ver"
 #git tag -a -m "freeswitch-$ver release" v$ver
 

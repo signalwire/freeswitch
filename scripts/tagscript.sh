@@ -130,11 +130,11 @@ echo "Setting next-release version ($next_ver)..." >&2
 echo "${next_ver}" > build/next-release.txt
 git add build/next-release.txt
 
-echo "Changing the version of configure.in..." >&2
+echo "Changing the version of configure.ac..." >&2
 set_fs_ver "$gver" "$gmajor" "$gminor" "$gmicro" "$grev"
 
 echo "Committing the new version..." >&2
-git add configure.in
+git add configure.ac
 if ! (git commit --allow-empty -m "release FreeSWITCH $gver"); then
   cat >&2 <<EOF
 Committing the new version failed for some reason.  Definitely look
