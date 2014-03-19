@@ -1,7 +1,7 @@
 MAINTAINERCLEANFILES 	    = Makefile.in
 
 AM_CPPFLAGS                 = -I$(top_srcdir)/platforms/libunimrcp-client/include \
-                              -I$(top_srcdir)/modules/mrcp-sofiasip/include \
+                              -I$(unimrcp_srcdir)/modules/mrcp-sofiasip/include \
                               -I$(top_srcdir)/modules/mrcp-unirtsp/include \
                               -I$(top_srcdir)/libs/mrcp-client/include \
                               -I$(top_srcdir)/libs/mrcp-signaling/include \

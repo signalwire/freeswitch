@@ -40,6 +40,12 @@ AC_SUBST(UNI_DOTTED_VERSION)
 AC_SUBST(UNI_LT_VERSION)
 AC_SUBST(PLUGIN_LT_VERSION)
 
+# Absolute source/build directory
+unimrcp_srcdir=`(cd $srcdir && pwd)`
+unimrcp_builddir=`pwd`
+AC_SUBST(unimrcp_srcdir)
+AC_SUBST(unimrcp_builddir)
+
 echo "UniMRCP Version: ${UNI_DOTTED_VERSION}"
 
 # Check APR

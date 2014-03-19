@@ -17,6 +17,7 @@ AC_DEFUN([UNIMRCP_CHECK_SOFIA],
     sofiasrcdir="libsofia-sip-ua"
     for dir in $sofia_path ; do
         cd $dir && sofiadir=`pwd` && cd - > /dev/null
+	sofiadirsrc=`(cd $srcdir/$dir && pwd)`
         if test -f "$dir/$sofiaconfig"; then
             found_sofia="yes"
             UNIMRCP_SOFIA_INCLUDES="`pkg-config --cflags $dir/$sofiaconfig`"
@@ -26,7 +27,7 @@ AC_DEFUN([UNIMRCP_CHECK_SOFIA],
         fi
         if test -d "$dir/$sofiasrcdir"; then
             found_sofia="yes"
-            UNIMRCP_SOFIA_INCLUDES="-I$sofiadir/$sofiasrcdir -I$sofiadir/$sofiasrcdir/bnf -I$sofiadir/$sofiasrcdir/features -I$sofiadir/$sofiasrcdir/http -I$sofiadir/$sofiasrcdir/ipt -I$sofiadir/$sofiasrcdir/iptsec -I$sofiadir/$sofiasrcdir/msg -I$sofiadir/$sofiasrcdir/nea -I$sofiadir/$sofiasrcdir/nta -I$sofiadir/$sofiasrcdir/nth -I$sofiadir/$sofiasrcdir/nua -I$sofiadir/$sofiasrcdir/sdp -I$sofiadir/$sofiasrcdir/sip -I$sofiadir/$sofiasrcdir/soa -I$sofiadir/$sofiasrcdir/sresolv -I$sofiadir/$sofiasrcdir/stun -I$sofiadir/$sofiasrcdir/su -I$sofiadir/$sofiasrcdir/tport -I$sofiadir/$sofiasrcdir/url"
+            UNIMRCP_SOFIA_INCLUDES="-I$sofiadir/$sofiasrcdir -I$sofiadir/$sofiasrcdir/bnf -I$sofiadir/$sofiasrcdir/features -I$sofiadir/$sofiasrcdir/http -I$sofiadir/$sofiasrcdir/ipt -I$sofiadir/$sofiasrcdir/iptsec -I$sofiadir/$sofiasrcdir/msg -I$sofiadir/$sofiasrcdir/nea -I$sofiadir/$sofiasrcdir/nta -I$sofiadir/$sofiasrcdir/nth -I$sofiadir/$sofiasrcdir/nua -I$sofiadir/$sofiasrcdir/sdp -I$sofiadir/$sofiasrcdir/sip -I$sofiadir/$sofiasrcdir/soa -I$sofiadir/$sofiasrcdir/sresolv -I$sofiadir/$sofiasrcdir/stun -I$sofiadir/$sofiasrcdir/su -I$sofiadir/$sofiasrcdir/tport -I$sofiadir/$sofiasrcdir/url -I$sofiadirsrc/$sofiasrcdir -I$sofiadirsrc/$sofiasrcdir/bnf -I$sofiadirsrc/$sofiasrcdir/features -I$sofiadirsrc/$sofiasrcdir/http -I$sofiadirsrc/$sofiasrcdir/ipt -I$sofiadirsrc/$sofiasrcdir/iptsec -I$sofiadirsrc/$sofiasrcdir/msg -I$sofiadirsrc/$sofiasrcdir/nea -I$sofiadirsrc/$sofiasrcdir/nta -I$sofiadirsrc/$sofiasrcdir/nth -I$sofiadirsrc/$sofiasrcdir/nua -I$sofiadirsrc/$sofiasrcdir/sdp -I$sofiadirsrc/$sofiasrcdir/sip -I$sofiadirsrc/$sofiasrcdir/soa -I$sofiadirsrc/$sofiasrcdir/sresolv -I$sofiadirsrc/$sofiasrcdir/stun -I$sofiadirsrc/$sofiasrcdir/su -I$sofiadirsrc/$sofiasrcdir/tport -I$sofiadirsrc/$sofiasrcdir/url"
             UNIMRCP_SOFIA_LIBS="$sofiadir/$sofiasrcdir/libsofia-sip-ua.la"
 	    sofia_version="`pkg-config --modversion $sofiadir/packages/sofia-sip-ua.pc`"
             break
