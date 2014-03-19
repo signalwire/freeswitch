@@ -295,7 +295,7 @@ static switch_status_t create_java_vm(JavaVMOption *options, int optionCount, vm
     switch_status_t status;
 	char *derr = NULL;
 
-	pJNI_CreateJavaVM = (void *)switch_dso_func_sym(javaVMHandle, "JNI_CreateJavaVM", &derr)
+	pJNI_CreateJavaVM = (jint (*)(JavaVM **, void **, void *))switch_dso_func_sym(javaVMHandle, "JNI_CreateJavaVM", &derr);
 		
     if (!derr)
     {
