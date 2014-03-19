@@ -23,7 +23,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define TPL_VERSION 1.5
 
-static const char id[]="$Id: tpl.c 192 2009-04-24 10:35:30Z thanson $";
+//static const char id[]="$Id: tpl.c 192 2009-04-24 10:35:30Z thanson $";
 
 
 #include <stdlib.h>  /* malloc */
@@ -229,7 +229,7 @@ tpl_hook_t tpl_hook = {
 };
 
 static const char tpl_fmt_chars[] = "AS($)BiucsfIUjv#"; /* valid format chars */
-static const char tpl_S_fmt_chars[] = "iucsfIUjv#$()"; /* valid within S(...) */
+//static const char tpl_S_fmt_chars[] = "iucsfIUjv#$()"; /* valid within S(...) */
 static const char tpl_datapeek_ok_chars[] = "iucsfIUjv"; /* valid in datapeek */
 static const struct tpl_type_t tpl_types[] = {
     /* [TPL_TYPE_ROOT] =   */  {'r', 0},
