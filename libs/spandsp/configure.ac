@@ -204,9 +204,11 @@ AC_CHECK_HEADERS([strings.h])
 AC_CHECK_HEADERS([malloc.h])
 
 case "$host" in
+    *dragonfly*)
+    ;;
     *freebsd*)
     ;;
-    *dragonfly*)
+    *netbsd*)
     ;;
     *)
     AC_CHECK_HEADERS([tgmath.h], [INSERT_TGMATH_HEADER="#include <tgmath.h>"])
