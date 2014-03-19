@@ -257,6 +257,12 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
             SOLINK="-shared -Xlinker -x"
         ;;
     esac
+elif test "x${ax_cv_c_compiler_vendor}" = "xintel" ; then
+    case "$host" in
+        *)
+            SOLINK="-shared -Xlinker -x"
+        ;;
+    esac
 else
     AC_ERROR([Please update configure.in with SOLINK values for your compiler])
 fi
