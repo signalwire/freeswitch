@@ -10,7 +10,7 @@ JS_DIR=$(switch_srcdir)/libs/js
 JS_BUILDDIR=$(switch_builddir)/libs/js
 JSLA=$(JS_BUILDDIR)/libjs.la
 
-AM_CFLAGS  += -I. -I$(JS_DIR)/src -I$(JS_DIR)/nsprpub/dist/include/nspr
+AM_CFLAGS  += -I. -I$(JS_DIR)/src -I$(JS_DIR)/nsprpub/dist/include/nspr -I$(JS_BUILDDIR)/src -I$(JS_BUILDDIR)/nsprpub/dist/include/nspr
 AM_CFLAGS  += -DXP_UNIX  -DJS_THREADSAFE -DJS_HAS_FILE_OBJECT=1 -DJS_HAS_XML_SUPPORT=1
 AM_LIBADD   = $(switch_builddir)/libfreeswitch.la $(JSLA) -lnspr4 $(JS_BUILDDIR)/nsprpub/pr/src/libnspr4.*
 AM_LDFLAGS += -avoid-version -module -no-undefined -shared 
@@ -52,7 +52,7 @@ mod_LTLIBRARIES             += mod_spidermonkey_odbc.la
 mod_spidermonkey_odbc_la_SOURCES  = mod_spidermonkey_odbc.c
 mod_spidermonkey_odbc_la_CFLAGS   = $(AM_CFLAGS) $(ODBC_INC_FLAGS)
 mod_spidermonkey_odbc_la_LIBADD   = $(AM_LIBADD)
-mod_spidermonkey_odbc_la_LDFLAGS  = $(AM_LDFLAGS)
+mod_spidermonkey_odbc_la_LDFLAGS  = $(AM_LDFLAGS) -lodbc
 endif
 
 $(SOURCES): $(BUILT_SOURCES)
