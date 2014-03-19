@@ -29,9 +29,9 @@ m4_defun([AC_PROG_F77],[])
 AC_PROG_LIBTOOL
 
 # Get version information
-get_version="build/get-version.sh"
-version_hdr="build/uni_version.h"
-plugin_version_hdr="libs/mrcp-engine/include/mrcp_engine_plugin.h"
+get_version="$srcdir/build/get-version.sh"
+version_hdr="$srcdir/build/uni_version.h"
+plugin_version_hdr="$srcdir/libs/mrcp-engine/include/mrcp_engine_plugin.h"
 UNI_DOTTED_VERSION="`$get_version all $version_hdr UNI`"
 UNI_LT_VERSION="-version-info `$get_version libtool $version_hdr UNI`"
 PLUGIN_LT_VERSION="-version-info `$get_version libtool $plugin_version_hdr PLUGIN`"
@@ -40,13 +40,13 @@ AC_SUBST(UNI_DOTTED_VERSION)
 AC_SUBST(UNI_LT_VERSION)
 AC_SUBST(PLUGIN_LT_VERSION)
 
+echo "UniMRCP Version: ${UNI_DOTTED_VERSION}"
+
 # Absolute source/build directory
 unimrcp_srcdir=`(cd $srcdir && pwd)`
 unimrcp_builddir=`pwd`
 AC_SUBST(unimrcp_srcdir)
 AC_SUBST(unimrcp_builddir)
-
-echo "UniMRCP Version: ${UNI_DOTTED_VERSION}"
 
 # Check APR
 UNIMRCP_CHECK_APR
