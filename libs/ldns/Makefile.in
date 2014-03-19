@@ -66,7 +66,7 @@ LINTFLAGS+="-Dsigset_t=long"
 # FreeBSD8
 LINTFLAGS+="-D__uint16_t=uint16_t"
 
-INSTALL = $(srcdir)/install-sh 
+INSTALL = $(SHELL) $(srcdir)/install-sh 
 
 LIBDNS_SOURCES	=	rdata.c util.c rr.c packet.c wire2host.c \
 			host2str.c buffer.c str2host.c tsig.c resolver.c \

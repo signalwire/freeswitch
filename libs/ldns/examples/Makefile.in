@@ -22,7 +22,7 @@ LIBS = @LIBS@
 RUNTIME_PATH = @RUNTIME_PATH@
 LDNSDIR = @LDNSDIR@
 
-INSTALL = $(srcdir)/../install-sh 
+INSTALL = $(SHELL) $(srcdir)/../install-sh 
 
 COMPILE         = $(CC) $(CPPFLAGS) $(LIBSSL_CPPFLAGS) $(CFLAGS)
 LINK		= $(libtool) --tag=CC --quiet --mode=link $(CC) $(CFLAGS) $(LDFLAGS) $(LIBS) $(RUNTIME_PATH)

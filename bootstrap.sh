@@ -432,6 +432,7 @@ bootstrap_libs_post() {
       if test ! -x install-sh; then
         ex ${AUTOMAKE:-automake} --add-missing --copy
         ex rm -rf autom4te*.cache
+        chmod a+x install-sh
       fi
       ;;
   esac
