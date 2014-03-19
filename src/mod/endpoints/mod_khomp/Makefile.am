@@ -1,7 +1,7 @@
 include $(top_srcdir)/build/modmake.rulesam
 MODNAME=mod_khomp
 mod_LTLIBRARIES = mod_khomp.la
-mod_khomp_la_SOURCES  = mod_khomp.c
+mod_khomp_la_SOURCES  = mod_khomp.cpp
 mod_khomp_la_CFLAGS   = $(AM_CFLAGS)
 mod_khomp_la_CFLAGS  += -I./ -I./include -I./commons -I./commons/base -I./support 
 mod_khomp_la_CFLAGS  += -D_REENTRANT -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -DK3L_HOSTSYSTEM -DCOMMONS_LIBRARY_USING_FREESWITCH
