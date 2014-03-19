@@ -136,7 +136,7 @@ packages can be built:
     ver="$(cat build/next-release.txt | sed -e 's/-/~/g')~n$(date +%Y%m%dT%H%M%SZ)-1~${distro}+1"
     git clean -fdx && git reset --hard origin/master
     ./build/set-fs-version.sh "$ver"
-    git add configure.in && git commit -m "bump to custom v$ver"
+    git add configure.ac && git commit -m "bump to custom v$ver"
     (cd debian && ./bootstrap.sh -c $distro)
     dch -b -m -v "$ver" --force-distribution -D "unstable" "Custom build."
     dpkg-buildpackage -b -us -uc -Zxz -z9
@@ -149,7 +149,7 @@ To build for a stable branch, do this:
     ver="$(echo "$stable_ver" | sed -e 's/-/~/g')~n$(date +%Y%m%dT%H%M%SZ)-1~${distro}+1"
     git clean -fdx && git reset --hard refs/tags/v${stable_ver}
     ./build/set-fs-version.sh "$ver"
-    git add configure.in && git commit -m "bump to custom v$ver"
+    git add configure.ac && git commit -m "bump to custom v$ver"
     (cd debian && ./bootstrap.sh -c $distro)
     dch -b -m -v "$ver" --force-distribution -D "unstable" "Custom build."
     dpkg-buildpackage -b -us -uc -Zxz -z9
@@ -170,4 +170,4 @@ freeswitch-music-*:
     git clone https://github.com/traviscross/freeswitch-sounds.git
     cd freeswitch-sounds && cat debian/README.source
 
- -- Travis Cross <tc@traviscross.com>, Sun, 23 Feb 2014 18:08:08 +0000
+ -- Travis Cross <tc@traviscross.com>, Wed, 19 Mar 2014 19:07:23 +0000

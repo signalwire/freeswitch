@@ -136,7 +136,7 @@ check_repo_clean () {
 }
 
 get_last_release_ver () {
-  grep -m1 -e '^AC_INIT' configure.in \
+  grep -m1 -e '^AC_INIT' configure.ac \
     | cut -d, -f2 \
     | sed -e 's/\[//' -e 's/\]//' -e 's/ //g'
 }
@@ -185,7 +185,7 @@ create_orig () {
       (cd libs && getlibs)
       git add -f libs
     fi
-    ./build/set-fs-version.sh "$uver" "$hrev" && git add configure.in
+    ./build/set-fs-version.sh "$uver" "$hrev" && git add configure.ac
     echo "$uver" > .version && git add -f .version
     git commit --allow-empty -m "nightly v$uver"
     git archive -v \
