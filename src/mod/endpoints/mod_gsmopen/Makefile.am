@@ -11,7 +11,7 @@ SPANDSP_LA=$(SPANDSP_BUILDDIR)/src/libspandsp.la
 
 mod_LTLIBRARIES = mod_gsmopen.la
 mod_gsmopen_la_SOURCES  = mod_gsmopen.cpp gsmopen_protocol.cpp 
-mod_gsmopen_la_CXXFLAGS = $(AM_CFLAGS)
+mod_gsmopen_la_CXXFLAGS = $(SWITCH_AM_CXXFLAGS)
 mod_gsmopen_la_CPPFLAGS = -I$(SPANDSP_DIR)/src -I$(TIFF_DIR)/libtiff -I$(SPANDSP_BUILDDIR)/src -I$(TIFF_BUILDDIR)/libtiff -I.
 mod_gsmopen_la_LIBADD   = $(switch_builddir)/libfreeswitch.la $(SPANDSP_LA) $(TIFF_LA)
 mod_gsmopen_la_LDFLAGS  = -avoid-version -module -no-undefined -lctb-0.16 -lgsmme
