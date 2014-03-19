@@ -402,6 +402,7 @@ Description: mod_loopback
 Module: endpoints/mod_opal
 Description: mod_opal
  Adds mod_opal.
+Build-Depends: libopal-dev
 
 Module: endpoints/mod_portaudio
 Description: mod_portaudio
