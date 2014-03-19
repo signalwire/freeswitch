@@ -574,8 +574,8 @@ case "$host" in
            APR_ADDTO(CFLAGS, [-I/opt/64/include])
            APR_ADDTO(CXXFLAGS, [-I/opt/64/include])
            APR_ADDTO(LDFLAGS, [-L/opt/64/lib -Wl,-rpath,/opt/64/lib])
-           APR_ADDTO(SWITCH_AM_CFLAGS, [-I/opt/include])
-           APR_ADDTO(SWITCH_AM_LDFLAGS, [-L/opt/lib -Wl,-rpath,/opt/lib])
+           APR_ADDTO(SWITCH_AM_CFLAGS, [-I/opt/64/include])
+           APR_ADDTO(SWITCH_AM_LDFLAGS, [-L/opt/64/lib -Wl,-rpath,/opt/64/lib])
 	else
            APR_ADDTO(CFLAGS, [-I/opt/include])
            APR_ADDTO(CXXFLAGS, -I/opt/include)
