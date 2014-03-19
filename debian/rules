@@ -4,6 +4,7 @@
 
 export DH_VERBOSE=1
 export VERBOSE=1
+export V=1
 
 FS_CC?=gcc
 FS_CXX?=g++
