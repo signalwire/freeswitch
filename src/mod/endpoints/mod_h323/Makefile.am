@@ -12,5 +12,5 @@ mod_h323_la_LIBADD   = $(switch_builddir)/libfreeswitch.la
 mod_h323_la_LDFLAGS  = -avoid-version -module -no-undefined -shared -L/usr/lib -lopenh323 -lpt -lrt 
 
 if IS64BITLINUX
-mod_h323_la_CFLAGS += -DP_64BIT
+mod_h323_la_CPPFLAGS += -DP_64BIT
 endif
