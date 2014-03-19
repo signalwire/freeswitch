@@ -183,7 +183,7 @@ bm_memcasemem_study0(char const *needle, size_t nlen, bm_fwd_table_t *fwd)
     fwd->table[i] = (unsigned char)nlen;
 
   for (i = 0; i < nlen; i++) {
-    unsigned char n = tolower(needle[i]);
+    unsigned char n = tolower((const unsigned char)needle[i]);
     fwd->table[n] = (unsigned char)(nlen - i - 1);
   }
 

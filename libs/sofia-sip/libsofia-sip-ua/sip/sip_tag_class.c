@@ -381,8 +381,8 @@ char const *append_escaped(su_strlst_t *l,
       return NULL;
 
     for (;*n; n++)
-      if (isupper(*n))
-	*n = tolower(*n);
+      if (isupper(*(const unsigned char *)n))
+	*n = tolower(*(const unsigned char *)n);
 
     slen = strlen(s); elen = url_esclen(s, HNV_RESERVED);
 

@@ -1375,6 +1375,9 @@ case $host in
    *-solaris*)
        pid_t_fmt='#define APR_PID_T_FMT "ld"'
        ;;
+   *-netbsd*)
+       pid_t_fmt='#define APR_PID_T_FMT "ld"'
+       ;;
    *aix4*|*aix5*)
        ssize_t_fmt='#define APR_SSIZE_T_FMT "ld"'
        size_t_fmt='#define APR_SIZE_T_FMT "ld"'

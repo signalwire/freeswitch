@@ -384,7 +384,7 @@ static inline int switch_dtmftoi(char *s)
 	switch_assert(s);
 
 	if (!(r = atoi(s))) {
-		int l = tolower(*s);
+		int l = tolower((unsigned char)*s);
 		if (l > 96 && l < 101) {
 			r = l - 87;
 		}
