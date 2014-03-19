@@ -1086,7 +1086,7 @@ if test "$ac_cv_use_system_curl" != "yes" ; then
  LIBCURL='${switch_builddir}/libs/curl/lib/libcurl.la'
  LIBCURL_CPPFLAGS='-I${switch_srcdir}/libs/curl/include'
 else
- SWITCH_AM_LDFLAGS="$LIBCURL $SWITCH_AM_LDFLAGS"
+ SWITCH_AM_LDFLAGS="$SWITCH_AM_LDFLAGS $LIBCURL"
 fi
 
 SWITCH_AM_CFLAGS="$LIBCURL_CPPFLAGS $SWITCH_AM_CFLAGS"
