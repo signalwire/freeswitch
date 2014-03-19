@@ -9,6 +9,7 @@
 *.rej
 .libs
 .deps
+*.dirstamp
 .\#*
 \#*
 *.user
