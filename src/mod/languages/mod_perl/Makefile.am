@@ -4,7 +4,7 @@ PERL        = perl
 PERL_LIBDIR =-L`perl -MConfig -e 'print $$Config{archlib}'`/CORE
 PERL_LIBS   =`perl -MConfig -e 'print $$Config{libs}'`
 
-perldir=$(DESTDIR)$(prefix)/perl
+perldir=$(prefix)/perl
 mod_LTLIBRARIES = mod_perl.la
 perl_LTLIBRARIES = freeswitch.la
 mod_perl_la_SOURCES  = mod_perl.c freeswitch_perl.cpp mod_perl_wrap.cpp perlxsi.c
@@ -36,6 +36,6 @@ orig: mod_perl_wrap.cpp
 	@touch .perlok
 
 install-data-local:
-	mkdir -p $(DESTDIR)$(prefix)/perl
-	$(INSTALL) freeswitch.pm $(DESTDIR)$(prefix)/perl
-	if [ ! -f $(DESTDIR)$(prefix)/perl/freeswitch.pm ] ; then $(INSTALL) freeswitch.pm $(DESTDIR)$(prefix)/perl ; fi
+	mkdir -p $(DESTDIR)$(perldir)
+	$(INSTALL) freeswitch.pm $(DESTDIR)$(perldir)
+	if [ ! -f $(DESTDIR)$(perldir)/freeswitch.pm ] ; then $(INSTALL) freeswitch.pm $(DESTDIR)$(perldir) ; fi
