@@ -267,6 +267,7 @@ void tls_init(void) {
   ONCE_INIT(tls_init_once);
 }
 
+#ifndef OPENSSL_NO_EC
 static
 int tls_init_ecdh_curve(tls_t *tls)
 {
@@ -287,6 +288,7 @@ int tls_init_ecdh_curve(tls_t *tls)
   EC_KEY_free(ecdh);
   return 0;
 }
+#endif
 
 static
 int tls_init_context(tls_t *tls, tls_issues_t const *ti)
@@ -407,13 +409,13 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
 
   SSL_CTX_set_verify_depth(tls->ctx, ti->verify_depth);
   SSL_CTX_set_verify(tls->ctx, verify, tls_verify_cb);
-
+#ifndef OPENSSL_NO_EC
   if (tls_init_ecdh_curve(tls) == 0) {
     SU_DEBUG_3(("%s\n", "tls: initialized ECDH"));
   } else {
     SU_DEBUG_3(("%s\n", "tls: failed to initialize ECDH"));
   }
-
+#endif
   if (!SSL_CTX_set_cipher_list(tls->ctx, ti->ciphers)) {
     SU_DEBUG_1(("%s: error setting cipher list\n", "tls_init_context"));
     tls_log_errors(3, "tls_init_context", 0);
