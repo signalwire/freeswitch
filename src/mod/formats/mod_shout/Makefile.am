@@ -20,7 +20,7 @@ MPG123LA=$(MPG123_BUILDDIR)/src/libmpg123/libmpg123.la
 mod_LTLIBRARIES = mod_shout.la
 mod_shout_la_SOURCES  = mod_shout.c
 mod_shout_la_CFLAGS   = $(AM_CFLAGS)
-mod_shout_la_CFLAGS  += -I$(SHOUT_DIR)/include -I$(LAME_DIR)/include -I$(MPG123_DIR)/src  -I$(MPG123_BUILDDIR)/src -I$(SHOUT_BUILDDIR)/include
+mod_shout_la_CPPFLAGS = $(AM_CPPFLAGS) -I$(SHOUT_DIR)/include -I$(LAME_DIR)/include -I$(MPG123_DIR)/src  -I$(MPG123_BUILDDIR)/src -I$(SHOUT_BUILDDIR)/include
 mod_shout_la_LIBADD   = $(switch_builddir)/libfreeswitch.la $(LAMELA) $(SHOUTLA) $(MPG123LA)
 mod_shout_la_LDFLAGS  = -avoid-version -module -no-undefined -shared `cat $(SHOUT_BUILDDIR)/Makefile | grep SPEEX_LIBS | sed -e 's|^SPEEX_LIBS =||'`  `cat $(SHOUTLA) | grep dependency_libs  | sed -e 's|^dependency_libs=||' | sed -e "s|'||g"`
 

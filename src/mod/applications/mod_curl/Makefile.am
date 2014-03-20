@@ -11,6 +11,7 @@ JSONLA=$(JSON_BUILDDIR)/libjson.la
 mod_LTLIBRARIES = mod_curl.la
 mod_curl_la_SOURCES  = mod_curl.c
 mod_curl_la_CFLAGS   = $(AM_CFLAGS) -I$(JSON_DIR)
+mod_curl_la_CPPFLAGS = $(AM_CPPFLAGS)
 mod_curl_la_LIBADD   = $(switch_builddir)/libfreeswitch.la $(JSONLA)
 mod_curl_la_LDFLAGS  = -avoid-version -module -no-undefined -shared
 
