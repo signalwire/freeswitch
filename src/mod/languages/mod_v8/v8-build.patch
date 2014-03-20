@@ -1,0 +1,11 @@
+--- Makefile~	2014-01-11 14:45:55.000000000 +0100
++++ Makefile	2014-03-19 09:25:47.700136526 +0100
+@@ -292,7 +292,7 @@
+ native: $(OUTDIR)/Makefile.native
+ 	@$(MAKE) -C "$(OUTDIR)" -f Makefile.native \
+ 	         CXX="$(CXX)" LINK="$(LINK)" BUILDTYPE=Release \
+-	         builddir="$(shell pwd)/$(OUTDIR)/$@"
++	         builddir="$(OUTDIR)/$@"
+ 
+ $(ANDROID_ARCHES): $(addprefix $$@.,$(MODES))
+ 

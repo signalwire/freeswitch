@@ -9,13 +9,13 @@ V8_DIR=$(switch_srcdir)/libs/$(V8)
 V8_BUILDDIR=$(switch_builddir)/libs/$(V8)
 
 if ISMAC
-V8_LIBDIR=$(V8_DIR)/out/native
+V8_LIBDIR=$(V8_BUILDDIR)/out/native
 V8_LIBEXT=dylib
 # Build with snapshot doesn't work for OSX right now
 V8_BUILDPARAMS=snapshot=off i18nsupport=off
 V8_SNAPSHOT=nosnapshot
 else
-V8_LIBDIR=$(V8_DIR)/out/native/lib.target
+V8_LIBDIR=$(V8_BUILDDIR)/out/native/lib.target
 V8_LIBEXT=so
 # Some gcc versions report warnings incorrectly
 V8_BUILDPARAMS=strictaliasing=off werror=no i18nsupport=off
@@ -25,12 +25,12 @@ endif
 if ENABLE_STATIC_V8
 # Build the static lib version of V8
 if ISMAC
-V8_STATIC_DIR=$(V8_DIR)/out/native
-V8_ICU_STATIC_DIR=$(V8_DIR)/out/native
+V8_STATIC_DIR=$(V8_BUILDDIR)/out/native
+V8_ICU_STATIC_DIR=$(V8_BUILDDIR)/out/native
 V8_CXXFLAGS =
 else
-V8_STATIC_DIR=$(V8_DIR)/out/native/obj.target/tools/gyp
-V8_ICU_STATIC_DIR=$(V8_DIR)/out/native/obj.target/third_party/icu
+V8_STATIC_DIR=$(V8_BUILDDIR)/out/native/obj.target/tools/gyp
+V8_ICU_STATIC_DIR=$(V8_BUILDDIR)/out/native/obj.target/third_party/icu
 V8_CXXFLAGS = -fPIC
 endif
 V8LIB=$(V8_STATIC_DIR)/libv8_base*.a
@@ -51,8 +51,8 @@ CURLLA=${switch_builddir}/libs/curl/lib/libcurl.la
 
 MODNAME=mod_v8
 
-AM_CFLAGS    += -I. -I./include -I$(V8_DIR)/include
-AM_CPPFLAGS  += -I. -I./include -I$(V8_DIR)/include
+AM_CFLAGS    += -I. -I./include -I$(switch_srcdir)/src/mod/languages/mod_v8/include -I$(V8_DIR)/include
+AM_CPPFLAGS  += -I. -I./include -I$(switch_srcdir)/src/mod/languages/mod_v8/include -I$(V8_DIR)/include
 AM_LDFLAGS   += -avoid-version -module -no-undefined -shared
 
 if ENABLE_STATIC_V8
@@ -109,11 +109,13 @@ $(SOURCES): $(BUILT_SOURCES)
 
 $(V8_DIR):
 	$(GETLIB) $(V8).tar.bz2
+	cd $(V8_DIR) && patch -s -p0 < $(switch_srcdir)/src/mod/languages/mod_v8/v8-build.patch
 if ISFREEBSD
 	/bin/cp -f gyp  $(V8_DIR)/build/gyp
 endif
 
 $(V8LIB): $(V8_DIR)
+	mkdir -p $(V8_BUILDDIR)
 	if test "$(CXX_TARGET_PLATFORM)" = "x86_64"; then \
 	   defines="v8_target_arch=x64 target_arch=x64"; \
 	else \
@@ -127,7 +129,8 @@ $(V8LIB): $(V8_DIR)
 	fi; \
 	cd $(V8_BUILDDIR) && CFLAGS="$(V8_CXXFLAGS)" CXXFLAGS="$(V8_CXXFLAGS)" \
 	LINK=@CXX@ CXX=@CXX@ GYPFLAGS="--no-parallel" GYP_DEFINES="$$defines" \
-	PYTHONPATH="$(V8_BUILDDIR)/build/gyp/pylib:$(PYTHONPATH)" $(MAKE) $(V8_BUILDPARAMS) native
+	OUTDIR=$(V8_BUILDDIR)/out \
+	PYTHONPATH="$(V8_DIR)/build/gyp/pylib:$(PYTHONPATH)" $(MAKE) -C $(V8_DIR) $(V8_BUILDPARAMS) native
 
 $(CURLLA):
 	@cd $(CURL_BUILDDIR) && $(MAKE)
