@@ -1102,7 +1102,7 @@ AM_CONDITIONAL([CURL_BUILTIN],[test "${ac_cv_use_system_curl}" != "yes"])
 
 AC_SUBST(LIBCURL_DEPS)
 
-PKG_CHECK_MODULES([PCRE], [libpcre >= 7.9])
+PKG_CHECK_MODULES([PCRE], [libpcre >= 7.8])
 PKG_CHECK_MODULES([SPEEX], [speex >= 1.2rc1 speexdsp >= 1.2rc1])
 
 AC_ARG_ENABLE(core-libedit-support,     
