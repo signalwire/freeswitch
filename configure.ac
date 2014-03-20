@@ -566,7 +566,7 @@ path_remove () {
 path_push_unique () {
   x="$(eval echo \$$1)"
   x="$(path_remove "$x" "$2")"
-  eval $1="$2:$x"
+  eval export $1="$2:$x"
 }
 
 # tweak platform specific flags
