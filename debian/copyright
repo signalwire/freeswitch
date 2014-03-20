@@ -1453,29 +1453,6 @@ Files: libs/js/nsprpub/pr/tests/tmocon.c
 Copyright: 1998-2004 Netscape Communications Corporation
 License: MPL-1.1 or GPL-2+
 
-Files: libs/speex/*
-Copyright: 2002-2008     Xiph.org Foundation
- 2002-2008 Jean-Marc Valin
- 2006-2008 CSIRO, Jean-Marc Valin, Xiph.Org Foundation
- 2005 Jean-Marc Valin, CSIRO, Christopher Montgomery
- 1994-2001 the XIPHOPHORUS Company
- 2002 Jean-Marc Valin & David Rowe
- 2003-2004, Mark Borgerding
- 2005-2007     Analog Devices Inc.
- 2005-2008     Commonwealth Scientific and Industrial Research Organisation (CSIRO)
- 1993, 2002, 2006 David Rowe
- 2003-2006     EpicGames
- 2003 Epic Games (written by Jean-Marc Valin)
- 1992-1994     Jutta Degener, Carsten Bormann
- 2008      Thorvald Natvig
- 2002, John Edwards
- 2005-2007 Psi Systems, Inc.
-License: BSD-3-clause
-
-Files: libs/speex/src/getopt*
-Copyright: 1987-1999 Free Software Foundation, Inc.
-License: LGPL-2+
-
 Files: libs/spandsp/*
 Copyright: 2001-2012, Steve Underwood
  2006 Michael Jerris

@@ -29,27 +29,6 @@ Rules:
    Copyright: Nokia Corporation
    License: LGPL-2.1+
   -
-   Glob: libs/speex/include/speex/speex_types.h
-   Copyright: Xiph.Org Foundation
-  -
-   Glob: libs/speex/libspeex/lsp.c
-   Copyright: Jean-Marc Valin
-  -
-   Glob: libs/speex/libspeex/smallft.[ch]
-   Copyright: the XIPHOPHORUS Company
-  -
-   Glob: libs/speex/src/getopt1.c
-   Matches: Copyright\s\(C\)\s1987,88,89,90,91,92,93,94,96,97,98
-   Copyright: 1987-1998 Free Software Foundation, Inc.
-  -
-   Glob: libs/speex/src/getopt.c
-   Matches: Copyright\s\(C\)\s1987,\s88,\s89,\s90,\s91,\s92,\s93,\s94,\s95,\s96,\s97,\s98,\s99
-   Copyright: 1987-1999 Free Software Foundation, Inc.
-  -
-   Glob: libs/speex/src/getopt_win.h
-   Matches: Copyright\s\(C\)\s1989,90,91,92,93,94,96,97,98\sFree\sSoftware\sFoundation,\sInc.
-   Copyright: 1989-1998 Free Software Foundation, Inc.
-  -
    Glob: libs/srtp/update.sh
    Copyright: Ingate Systems AB
   -

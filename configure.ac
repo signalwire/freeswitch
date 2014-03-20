@@ -1103,6 +1103,7 @@ AM_CONDITIONAL([CURL_BUILTIN],[test "${ac_cv_use_system_curl}" != "yes"])
 AC_SUBST(LIBCURL_DEPS)
 
 PKG_CHECK_MODULES([PCRE], [libpcre >= 7.9])
+PKG_CHECK_MODULES([SPEEX], [speex >= 1.2rc1 speexdsp >= 1.2rc1])
 
 AC_ARG_ENABLE(core-libedit-support,     
 	[AS_HELP_STRING([--disable-core-libedit-support], [Compile without libedit Support])], [enable_core_libedit_support="$enableval"], [enable_core_libedit_support="yes"])
@@ -1505,7 +1506,6 @@ AC_CONFIG_SUBDIRS([libs/js])
 AC_CONFIG_SUBDIRS([libs/libdingaling])
 AC_CONFIG_SUBDIRS([libs/libsndfile])
 AC_CONFIG_SUBDIRS([libs/sofia-sip])
-AC_CONFIG_SUBDIRS([libs/speex])
 AC_CONFIG_SUBDIRS([libs/portaudio])
 AC_CONFIG_SUBDIRS([libs/openzap])
 AC_CONFIG_SUBDIRS([libs/freetdm])
