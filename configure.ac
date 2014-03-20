@@ -1102,6 +1102,7 @@ AM_CONDITIONAL([CURL_BUILTIN],[test "${ac_cv_use_system_curl}" != "yes"])
 
 AC_SUBST(LIBCURL_DEPS)
 
+PKG_CHECK_MODULES([PCRE], [libpcre >= 7.9])
 
 AC_ARG_ENABLE(core-libedit-support,     
 	[AS_HELP_STRING([--disable-core-libedit-support], [Compile without libedit Support])], [enable_core_libedit_support="$enableval"], [enable_core_libedit_support="yes"])
@@ -1492,7 +1493,6 @@ if test "$enable_core_libedit_support" = "yes" ; then
     AC_CONFIG_SUBDIRS([libs/libedit])
 fi
 
-AC_CONFIG_SUBDIRS([libs/pcre])
 AC_CONFIG_SUBDIRS([libs/apr])
 AC_CONFIG_SUBDIRS([libs/apr-util])
 AC_CONFIG_SUBDIRS([libs/ilbc])
