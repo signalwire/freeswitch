@@ -28,6 +28,7 @@ avoid_mods=(
   endpoints/mod_reference
   endpoints/mod_unicall
   languages/mod_managed
+  languages/mod_perl
   languages/mod_spidermonkey
   sdk/autotools
   xml_int/mod_xml_ldap
