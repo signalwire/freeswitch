@@ -30,7 +30,7 @@
 
 #ifndef __SWITCH_CURL_H
 #define __SWITCH_CURL_H
-#include "curl/curl.h"
+#include <curl/curl.h>
 
 SWITCH_BEGIN_EXTERN_C
 

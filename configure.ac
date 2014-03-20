@@ -1059,49 +1059,7 @@ AC_SUBST(GETG729)
 GETSOUNDS="${SHELL} $switch_builddir/build/getsounds.sh"
 AC_SUBST(GETSOUNDS)
 
-
-LIBCURL_DEPS=
-
-AC_ARG_WITH(libcurl,
- AC_HELP_STRING([--with-libcurl=DIR],[look for the curl library in DIR]),
- [_libcurl_with=$withval],[_libcurl_with=ifelse([$1],,[yes],[$1])])
-
-AC_CACHE_CHECK([whether to use system libcurl library], [ac_cv_use_system_curl], [
-  LIBCURL_CHECK_CONFIG([yes], [7.13.0], [ac_cv_use_system_curl='yes'], [ac_cv_use_system_curl='no']) 
-])
-
-if test "$_libcurl_with" = "no" ; then
-  ac_cv_use_system_curl=no;
-fi
-if test "$_libcurl_with" = "yes" ; then
-  ac_cv_use_system_curl=yes;
-fi
-
-if test "$ac_cv_use_system_curl" = "yes" ; then
-AC_CACHE_CHECK([whether to use system libcurl library], [ac_cv_curl_usable], [
-  AC_CHECK_LIB(curl, curl_easy_setopt, [ac_cv_curl_usable="yes"], [ac_cv_curl_usable="no"])
-])
-fi
-
-if test "$ac_cv_curl_usable" != "yes" ; then
-  ac_cv_use_system_curl=no;
-fi
-
-if test "$ac_cv_use_system_curl" != "yes" ; then
- LIBCURL_DEPS='${switch_builddir}/libs/curl/lib/libcurl.la'
- LIBCURL='${switch_builddir}/libs/curl/lib/libcurl.la'
- LIBCURL_CPPFLAGS='-I${switch_srcdir}/libs/curl/include'
-else
- SWITCH_AM_LDFLAGS="$SWITCH_AM_LDFLAGS $LIBCURL"
-fi
-
-SWITCH_AM_CFLAGS="$LIBCURL_CPPFLAGS $SWITCH_AM_CFLAGS"
-SWITCH_AM_CXXFLAGS="$LIBCURL_CPPFLAGS $SWITCH_AM_CXXFLAGS"
-
-AM_CONDITIONAL([CURL_BUILTIN],[test "${ac_cv_use_system_curl}" != "yes"])
-
-AC_SUBST(LIBCURL_DEPS)
-
+PKG_CHECK_MODULES([CURL], [libcurl >= 7.26])
 PKG_CHECK_MODULES([PCRE], [libpcre >= 7.8])
 PKG_CHECK_MODULES([SPEEX], [speex >= 1.2rc1 speexdsp >= 1.2rc1])
 
@@ -1497,9 +1455,6 @@ fi
 AC_CONFIG_SUBDIRS([libs/apr])
 AC_CONFIG_SUBDIRS([libs/apr-util])
 AC_CONFIG_SUBDIRS([libs/ilbc])
-if test "$ac_cv_use_system_curl" != "yes"; then
-	AC_CONFIG_SUBDIRS([libs/curl])
-fi
 AC_CONFIG_SUBDIRS([libs/iksemel])
 AC_CONFIG_SUBDIRS([libs/js/nsprpub])
 AC_CONFIG_SUBDIRS([libs/js])

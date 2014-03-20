@@ -45,10 +45,6 @@ endif
 CXX_TARGET_PLATFORM := $(shell $(CXX) -v 2>&1 | grep Target | cut '-d:' -f2 | cut '-d-' -f1 | tr -d ' ')
 CXX_TARGET_PLATFORM_I386 := $(shell echo "$(CXX_TARGET_PLATFORM)" | sed 's/^\(.\{1\}\)\(.\{1\}\)/\13/')
 
-CURL_DIR=$(switch_srcdir)/libs/curl
-CURL_BUILDDIR=$(switch_builddir)/libs/curl
-CURLLA=${switch_builddir}/libs/curl/lib/libcurl.la
-
 MODNAME=mod_v8
 
 AM_CFLAGS    += -I. -I./include -I$(switch_srcdir)/src/mod/languages/mod_v8/include -I$(V8_DIR)/include
@@ -63,7 +59,7 @@ AM_LIBADD     = $(switch_builddir)/libfreeswitch.la -lv8 #-licuuc -licui18n
 AM_LDFLAGS   += -L$(V8_LIBDIR)
 endif
 
-BUILT_SOURCES = $(V8LIB) $(LIBCURL_DEPS)
+BUILT_SOURCES = $(V8LIB)
 
 if HAVE_ODBC
 AM_CFLAGS   += -DHAVE_ODBC $(ODBC_INC_FLAGS)
@@ -93,10 +89,10 @@ mod_v8_la_SOURCES  = \
 	src/fsfile.cpp \
 	src/fseventhandler.cpp
 
-mod_v8_la_CFLAGS   = $(AM_CFLAGS) $(LIBCURL_CPPFLAGS) -I$(switch_srcdir)/libs/libteletone/src
-mod_v8_la_CPPFLAGS = $(AM_CPPFLAGS) $(LIBCURL_CPPFLAGS) -I$(switch_srcdir)/libs/libteletone/src
+mod_v8_la_CFLAGS   = $(AM_CFLAGS) -I$(switch_srcdir)/libs/libteletone/src
+mod_v8_la_CPPFLAGS = $(CURL_CFLAGS) $(AM_CPPFLAGS) -I$(switch_srcdir)/libs/libteletone/src
 mod_v8_la_LIBADD   = $(AM_LIBADD)
-mod_v8_la_LDFLAGS  = $(AM_LDFLAGS) $(LIBCURL) $(V8_LDFLAGS)
+mod_v8_la_LDFLAGS  = $(CURL_LIBS) $(AM_LDFLAGS) $(V8_LDFLAGS)
 
 #mod_LTLIBRARIES        += mod_v8_skel.la
 #mod_v8_skel_la_SOURCES  = mod_v8_skel.cpp
@@ -131,10 +127,6 @@ $(V8LIB): $(V8_DIR)
 	LINK=@CXX@ CXX=@CXX@ GYPFLAGS="--no-parallel" GYP_DEFINES="$$defines" \
 	OUTDIR=$(V8_BUILDDIR)/out \
 	PYTHONPATH="$(V8_DIR)/build/gyp/pylib:$(PYTHONPATH)" $(MAKE) -C $(V8_DIR) $(V8_BUILDPARAMS) native
-
-$(CURLLA):
-	@cd $(CURL_BUILDDIR) && $(MAKE)
-	$(TOUCH_TARGET)
 
 if ENABLE_STATIC_V8
 install-exec-local: $(V8LIB)

@@ -32,12 +32,6 @@ LTUNINSTALL=$(LIBTOOL) --mode=uninstall rm -f
 CCLD = $(CC)
 CXXLD = $(CXX)
 
-LIBCURL_DEPS=@LIBCURL_DEPS@
-LIBCURL=@LIBCURL@
-LIBCURL_CPPFLAGS=@LIBCURL_CPPFLAGS@
-CURL_DIR=$(switch_srcdir)/libs/curl
-CURLLA=$(switch_builddir)/libs/curl/lib/libcurl.la
-
 OPENSSL_LIBS=@openssl_LIBS@
 OPENSSL_CFLAGS=@openssl_CFLAGS@
 
@@ -120,9 +114,6 @@ Makefile:
 	  echo BASE=$$rulesdir > Makefile ; \
 	  echo 'include $$(BASE)/build/modmake.rules' >> Makefile ; \
 	fi ;
-
-$(CURLLA):
-	@cd $(CURL_DIR) && $(MAKE)
 
 LINK_OUTPUT_REDIR=> .libs/$(MODNAME).log || error="yes" ; \
 			if test -n "$(VERBOSE)" -o "$$error" = "yes"; then \

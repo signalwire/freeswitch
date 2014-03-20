@@ -245,10 +245,6 @@ Rules:
    Matches: This\scode\sis\sderived\sfrom\ssoftware\scontributed\sto\sThe\sNetBSD\sFoundation
    License: BSD-2-clause
   -
-   Glob: libs/curl/lib/md5.c
-   Matches: Copyright\s\(C\)\s1991-2,\sRSA\sData\sSecurity,\sInc.\sCreated\s1991.
-   Copyright: 1991-1992, RSA Data Security, Inc.
-  -
    Glob: libs/silk/*
    Matches: Copyright\s\(c\)\s2006-2011,\sSkype\sLimited.
    Matches: THIS\sSOFTWARE\sIS\sPROVIDED\sBY\sTHE\sCOPYRIGHT\sHOLDERS\sAND

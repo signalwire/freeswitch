@@ -2,10 +2,6 @@ include $(top_srcdir)/build/modmake.rulesam
 
 MODNAME=mod_spidermonkey
 
-CURL_DIR=$(switch_srcdir)/libs/curl
-CURL_BUILDDIR=$(switch_builddir)/libs/curl
-CURLLA=${switch_builddir}/libs/curl/lib/libcurl.la
-
 JS_DIR=$(switch_srcdir)/libs/js
 JS_BUILDDIR=$(switch_builddir)/libs/js
 JSLA=$(JS_BUILDDIR)/libjs.la
@@ -15,19 +11,21 @@ AM_CFLAGS  += -DXP_UNIX  -DJS_THREADSAFE -DJS_HAS_FILE_OBJECT=1 -DJS_HAS_XML_SUP
 AM_LIBADD   = $(switch_builddir)/libfreeswitch.la $(JSLA) -lnspr4 $(JS_BUILDDIR)/nsprpub/pr/src/libnspr4.*
 AM_LDFLAGS += -avoid-version -module -no-undefined -shared 
 AM_LDFLAGS += -L$(JS_BUILDDIR)/nsprpub/dist/lib
-BUILT_SOURCES = $(JSLA) $(LIBCURL_DEPS)
+BUILT_SOURCES = $(JSLA)
 
 mod_LTLIBRARIES              = mod_spidermonkey.la 
 mod_spidermonkey_la_SOURCES  = mod_spidermonkey.c
-mod_spidermonkey_la_CFLAGS   = $(AM_CFLAGS) $(LIBCURL_CPPFLAGS)
+mod_spidermonkey_la_CFLAGS   = $(AM_CFLAGS)
+mod_spidermonkey_la_CPPFLAGS = $(CURL_CFLAGS) $(AM_CPPFLAGS)
 mod_spidermonkey_la_LIBADD   = $(AM_LIBADD)
-mod_spidermonkey_la_LDFLAGS  = $(AM_LDFLAGS) $(LIBCURL)
+mod_spidermonkey_la_LDFLAGS  = $(CURL_LIBS) $(AM_LDFLAGS)
 
 mod_LTLIBRARIES             += mod_spidermonkey_curl.la
 mod_spidermonkey_curl_la_SOURCES  = mod_spidermonkey_curl.c
-mod_spidermonkey_curl_la_CFLAGS   = $(AM_CFLAGS) $(LIBCURL_CPPFLAGS)
+mod_spidermonkey_curl_la_CFLAGS   = $(AM_CFLAGS)
+mod_spidermonkey_curl_la_CPPFLAGS = $(CURL_CFLAGS) $(AM_CPPFLAGS)
 mod_spidermonkey_curl_la_LIBADD   = $(AM_LIBADD)
-mod_spidermonkey_curl_la_LDFLAGS  = $(AM_LDFLAGS) $(LIBCURL)
+mod_spidermonkey_curl_la_LDFLAGS  = $(CURL_LIBS) $(AM_LDFLAGS)
 
 mod_LTLIBRARIES             += mod_spidermonkey_socket.la
 mod_spidermonkey_socket_la_SOURCES  = mod_spidermonkey_socket.c
@@ -59,10 +57,6 @@ $(SOURCES): $(BUILT_SOURCES)
 
 $(JSLA): $(JS_DIR) $(JS_DIR)/.update
 	cd $(JS_BUILDDIR)/nsprpub && $(MAKE) -j1 && cd $(JS_BUILDDIR) && $(MAKE)
-	$(TOUCH_TARGET)
-
-$(CURLLA):
-	@cd $(CURL_BUILDDIR) && $(MAKE)
 	$(TOUCH_TARGET)
 
 install-exec-local: $(DESTDIR)$(libdir)/libjs.la

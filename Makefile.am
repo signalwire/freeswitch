@@ -123,16 +123,10 @@ libfreeswitch_spandsp_la_SOURCES = libs/spandsp/src/plc.c libs/spandsp/src/alloc
 libfreeswitch_spandsp_la_CFLAGS  = -Ilibs/spandsp/src $(CORE_CFLAGS) $(AM_CFLAGS)
 CORE_LIBS+=libfreeswitch_spandsp.la
 lib_LTLIBRARIES	         = libfreeswitch.la
-libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(PCRE_CFLAGS) $(SPEEX_CFLAGS) $(AM_CFLAGS)
+libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(CURL_CFLAGS) $(PCRE_CFLAGS) $(SPEEX_CFLAGS) $(AM_CFLAGS)
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS) -no-undefined
-libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(PCRE_LIBS) $(SPEEX_LIBS) $(PLATFORM_CORE_LIBS)
+libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(CURL_LIBS) $(PCRE_LIBS) $(SPEEX_LIBS) $(PLATFORM_CORE_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
-
-if CURL_BUILTIN
-CORE_LIBS += libs/curl/lib/libcurl.la
-else
-libfreeswitch_la_LDFLAGS += -lcurl
-endif
 
 if HAVE_LIBEDIT
 libfreeswitch_la_LIBADD += $(TINFO_LIBS)
@@ -442,13 +436,6 @@ libs/sofia-sip/Makefile:
 libs/sofia-sip/libsofia-sip-ua/sdp/.libs/libsdp.a libs/sofia-sip/libsofia-sip-ua/su/.libs/libsu.a: libs/sofia-sip/.update libs/sofia-sip/Makefile
 	@cd libs/sofia-sip && $(MAKE) noop
 	@cd libs/sofia-sip && $(MAKE) SOFIA_CFLAGS="$(SWITCH_AM_CFLAGS)"
-	@$(TOUCH_TARGET)
-
-libs/curl/Makefile:
-	cd libs/curl && sh ./configure.gnu --prefix=$(prefix)
-
-libs/curl/lib/libcurl.la: libs/curl libs/curl/Makefile
-	@cd libs/curl && $(MAKE)
 	@$(TOUCH_TARGET)
 
 libs/apr/Makefile: libs/apr/Makefile.in libs/apr/config.status libs/apr libs/apr/.update
