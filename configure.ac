@@ -602,7 +602,6 @@ case "$host" in
 	        APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
 	fi
 	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl])
-        path_push_unique PKG_CONFIG_PATH /usr/local/opt/curl/lib/pkgconfig
     ;;
     *-solaris2*)
 	if test "${enable_64}" = "yes"; then
@@ -1068,6 +1067,12 @@ GETG729="cd $switch_srcdir/libs && ${SHELL} $switch_builddir/build/getg729.sh"
 AC_SUBST(GETG729)
 GETSOUNDS="${SHELL} $switch_builddir/build/getsounds.sh"
 AC_SUBST(GETSOUNDS)
+
+case $host in
+   *-darwin*)
+        path_push_unique PKG_CONFIG_PATH /usr/local/opt/curl/lib/pkgconfig
+       ;;
+esac
 
 PKG_CHECK_MODULES([CURL], [libcurl >= 7.26])
 PKG_CHECK_MODULES([PCRE], [libpcre >= 7.8])
