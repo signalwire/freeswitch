@@ -3,23 +3,21 @@ MODNAME=mod_managed
 MANAGED_DIR=$(switch_srcdir)/src/mod/languages/mod_managed/managed
 
 mod_LTLIBRARIES = mod_managed.la
-mod_managed_la_SOURCES  = mod_managed.cpp freeswitch_managed.cpp freeswitch_wrap.cpp
+mod_managed_la_SOURCES  = mod_managed.cpp freeswitch_managed.cpp freeswitch_wrap.cxx
 mod_managed_la_CFLAGS   = $(AM_CFLAGS)
-mod_managed_la_CPPFLAGS = `/usr/bin/pkg-config mono-2 --cflags` -I$(switch_srcdir)/libs/libteletone/src/ 
+mod_managed_la_CXXFLAGS = $(AM_CXXFLAGS)
+mod_managed_la_CPPFLAGS = `/usr/bin/pkg-config mono-2 --cflags` -I$(switch_srcdir)/libs/libteletone/src/  -I$(switch_srcdir)/src/include
 mod_managed_la_LIBADD   = $(switch_builddir)/libfreeswitch.la
 mod_managed_la_LDFLAGS  = -avoid-version -module -no-undefined -shared `/usr/bin/pkg-config mono-2 --libs`
 
+MANAGED_SRCDIR=$(abs_srcdir)/managed
 BUILT_SOURCES=FreeSWITCH.Managed.dll
-CS_SRC=managed/AssemblyInfo.cs managed/Extensions.cs managed/Loader.cs managed/Log.cs managed/ManagedSession.cs managed/PluginInterfaces.cs
-CS_SRC+=managed/PluginManager.cs managed/ScriptPluginManager.cs managed/ChannelVariables.cs managed/Util.cs
-CS_SRC+=managed/swig.cs managed/XmlSearchBinding.cs
+CS_SRC=$(MANAGED_SRCDIR)/AssemblyInfo.cs $(MANAGED_SRCDIR)/Extensions.cs $(MANAGED_SRCDIR)/Loader.cs $(MANAGED_SRCDIR)/Log.cs
+CS_SRC+=$(MANAGED_SRCDIR)/ManagedSession.cs $(MANAGED_SRCDIR)/PluginInterfaces.cs
+CS_SRC+=$(MANAGED_SRCDIR)/PluginManager.cs $(MANAGED_SRCDIR)/ScriptPluginManager.cs $(MANAGED_SRCDIR)/ChannelVariables.cs $(MANAGED_SRCDIR)/Util.cs
+CS_SRC+=$(MANAGED_SRCDIR)/swig.cs $(MANAGED_SRCDIR)/XmlSearchBinding.cs
 
 freeswitch_managed.o: freeswitch_managed.h freeswitch_managed.cpp
-
-freeswitch_wrap.o: freeswitch_wrap.cpp
-
-freeswitch_wrap.cpp: freeswitch_wrap.cxx
-	cp freeswitch_wrap.cxx freeswitch_wrap.cpp
 
 reswig: swigclean freeswitch_wrap.cxx
 
@@ -38,7 +36,7 @@ uninstall:
 #	rm -fr FreeSWITCH.Managed.dll
 
 swigclean: clean
-	rm -f freeswitch_wrap.cxx freeswitch_wrap.cpp managed/swig.cs
+	rm -f freeswitch_wrap.cxx managed/swig.cs
 
 freeswitch_wrap.cxx:
 	swig2.0 -I../../../include -v -O -c++ -csharp -namespace FreeSWITCH.Native -dllimport mod_managed -DSWIG_CSHARP_NO_STRING_HELPER freeswitch.i
