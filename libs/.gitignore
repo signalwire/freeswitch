@@ -955,3 +955,5 @@ pcre/compile
 spandsp/config/compile
 srtp/build/compile
 unimrcp/build/compile
+/pcre-*/
+/speex-*/
