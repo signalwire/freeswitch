@@ -21,13 +21,13 @@ mod_LTLIBRARIES              = mod_spidermonkey.la
 mod_spidermonkey_la_SOURCES  = mod_spidermonkey.c
 mod_spidermonkey_la_CFLAGS   = $(AM_CFLAGS) $(LIBCURL_CPPFLAGS)
 mod_spidermonkey_la_LIBADD   = $(AM_LIBADD)
-mod_spidermonkey_la_LDFLAGS  = $(AM_LDFLAGS) $(LIBCURL)
+mod_spidermonkey_la_LDFLAGS  = $(LIBCURL) $(AM_LDFLAGS)
 
 mod_LTLIBRARIES             += mod_spidermonkey_curl.la
 mod_spidermonkey_curl_la_SOURCES  = mod_spidermonkey_curl.c
 mod_spidermonkey_curl_la_CFLAGS   = $(AM_CFLAGS) $(LIBCURL_CPPFLAGS)
 mod_spidermonkey_curl_la_LIBADD   = $(AM_LIBADD)
-mod_spidermonkey_curl_la_LDFLAGS  = $(AM_LDFLAGS) $(LIBCURL)
+mod_spidermonkey_curl_la_LDFLAGS  = $(LIBCURL) $(AM_LDFLAGS)
 
 mod_LTLIBRARIES             += mod_spidermonkey_socket.la
 mod_spidermonkey_socket_la_SOURCES  = mod_spidermonkey_socket.c
