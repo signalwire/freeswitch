@@ -560,6 +560,15 @@ ESL_LDFLAGS=
 PLATFORM_CORE_LDFLAGS=
 PLATFORM_CORE_LIBS=
 
+path_remove () {
+  echo "$1" | sed 's/:/\n/g' | grep -Fxv "$2" | tr '\n' ':' | sed 's/:$/\n/'
+}
+path_push_unique () {
+  x="$(eval echo \$$1)"
+  x="$(path_remove "$x" "$2")"
+  eval $1="$2:$x"
+}
+
 # tweak platform specific flags
 case "$host" in
     *darwin13.*|*darwin12.*|*darwin11.*)
@@ -593,6 +602,7 @@ case "$host" in
 	        APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
 	fi
 	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl])
+        path_push_unique PKG_CONFIG_PATH /usr/local/opt/curl/lib/pkgconfig
     ;;
     *-solaris2*)
 	if test "${enable_64}" = "yes"; then
