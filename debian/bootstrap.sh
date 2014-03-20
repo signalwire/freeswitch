@@ -286,7 +286,7 @@ Build-Depends:
  libpcre3-dev,
  wget, pkg-config,
 # core codecs
- libogg-dev,
+ libogg-dev, libspeex-dev, libspeexdsp-dev,
 # configure options
  libssl-dev, unixodbc-dev, libpq-dev,
  libncurses5-dev, libjpeg62-dev | libjpeg8-dev,
