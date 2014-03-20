@@ -1075,6 +1075,7 @@ case $host in
        ;;
 esac
 
+PKG_CHECK_MODULES([SQLITE], [sqlite3 >= 3.8.3.1])
 PKG_CHECK_MODULES([CURL], [libcurl >= 7.19])
 PKG_CHECK_MODULES([PCRE], [libpcre >= 7.8])
 PKG_CHECK_MODULES([SPEEX], [speex >= 1.2rc1 speexdsp >= 1.2rc1])
@@ -1524,7 +1525,6 @@ ac_configure_args="$ac_configure_args CONFIGURE_CFLAGS='$CFLAGS' CONFIGURE_CXXFL
 
 # Run configure in all the subdirs
 AC_CONFIG_SUBDIRS([libs/srtp])
-AC_CONFIG_SUBDIRS([libs/sqlite])
 AC_CONFIG_SUBDIRS([libs/apr])
 AC_CONFIG_SUBDIRS([libs/apr-util])
 AC_CONFIG_SUBDIRS([libs/ilbc])

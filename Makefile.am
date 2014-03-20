@@ -83,7 +83,6 @@ install-recursive: install-libLTLIBRARIES install-binPROGRAMS
 CORE_CFLAGS  = $(AM_LIBAPR_CFLAGS) $(AM_LIBAPR_CPPFLAGS)
 CORE_CFLAGS += $(AM_LIBAPU_CPPFLAGS)
 CORE_CFLAGS += -I$(switch_srcdir)/libs/libtpl-1.5/src
-CORE_CFLAGS += -I$(switch_builddir)/libs/sqlite
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/include
 CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
 CORE_CFLAGS += -I$(switch_builddir)/libs/spandsp/src -I$(switch_srcdir)/libs/spandsp/src 
@@ -91,7 +90,6 @@ CORE_CFLAGS += -I$(switch_builddir)/libs/tiff-4.0.2/libtiff -I$(switch_srcdir)/l
 
 APR_LIBS   = $(AM_LIBAPU_LIBS) $(AM_LIBAPR_LIBS)
 CORE_LIBS  = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
-CORE_LIBS += libs/sqlite/libsqlite3.la
 
 if ENABLE_SRTP
 CORE_CFLAGS += -DENABLE_SRTP
@@ -118,9 +116,9 @@ libfreeswitch_spandsp_la_SOURCES = libs/spandsp/src/plc.c libs/spandsp/src/alloc
 libfreeswitch_spandsp_la_CFLAGS  = -Ilibs/spandsp/src $(CORE_CFLAGS) $(AM_CFLAGS)
 CORE_LIBS+=libfreeswitch_spandsp.la
 lib_LTLIBRARIES	         = libfreeswitch.la
-libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(CURL_CFLAGS) $(PCRE_CFLAGS) $(SPEEX_CFLAGS) $(LIBEDIT_CFLAGS) $(AM_CFLAGS)
+libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(SQLITE_CFLAGS) $(CURL_CFLAGS) $(PCRE_CFLAGS) $(SPEEX_CFLAGS) $(LIBEDIT_CFLAGS) $(AM_CFLAGS)
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS) -no-undefined
-libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(CURL_LIBS) $(PCRE_LIBS) $(SPEEX_LIBS) $(LIBEDIT_LIBS) $(PLATFORM_CORE_LIBS)
+libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(SQLITE_LIBS) $(CURL_LIBS) $(PCRE_LIBS) $(SPEEX_LIBS) $(LIBEDIT_LIBS) $(PLATFORM_CORE_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
 
 if HAVE_ODBC
@@ -429,17 +427,6 @@ libs/apr/libapr-1.la: libs/apr/Makefile libs/apr/.update
 libs/apr-util/libaprutil-1.la: libs/apr/libapr-1.la libs/apr-util libs/apr-util/.update
 	@if [ $(MAKELEVEL) = 0 -o -z "`echo "$(MAKEARGS)" | grep  "j"`" ] ; then touch $(switch_srcdir)/src/include/switch.h; cd libs/apr-util && $(MAKE) $(MFLAGS) && touch libaprutil-1.la; fi
 
-libs/sqlite/libsqlite3.la: libs/sqlite libs/sqlite/Makefile libs/sqlite/.update
-	touch $(switch_srcdir)/src/include/switch.h
-	@cd libs/sqlite && $(MAKE) CFLAGS="$(SWITCH_AM_CFLAGS)"
-	@$(TOUCH_TARGET)
-
-libs/sqlite/Makefile: libs/sqlite/configure.ac
-	cd libs/sqlite && autoconf
-	cd libs/sqlite && ./config.status --recheck
-	cd libs/sqlite && ./config.status
-	@$(TOUCH_TARGET)
-
 SRTP_SRC =	libs/srtp/srtp/srtp.c libs/srtp/srtp/ekt.c libs/srtp/crypto/cipher/cipher.c libs/srtp/crypto/cipher/null_cipher.c \
 		libs/srtp/crypto/cipher/aes.c libs/srtp/crypto/cipher/aes_icm.c \
 		libs/srtp/crypto/cipher/aes_cbc.c \
@@ -589,7 +576,6 @@ update-clean: clean libs/openzap/Makefile python-reconf lua-reconf spandsp-recon
 	cd libs/openzap && $(MAKE) clean
 	cd libs/portaudio && $(MAKE) clean
 	cd libs/esl && $(MAKE) clean
-	cd libs/sqlite && $(MAKE) clean
 	cd libs/srtp && $(MAKE) clean
 
 swigall:

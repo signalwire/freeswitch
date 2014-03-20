@@ -49,6 +49,7 @@
 #endif
 #endif
 #include <errno.h>
+#include <sqlite3.h>
 
 
 SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs = { 0 };
@@ -1608,6 +1609,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	if (!runtime.cpu_count) runtime.cpu_count = 1;
 
+	if (sqlite3_initialize() != SQLITE_OK) {
+		*err = "FATAL ERROR! Could not initialize SQLite\n";
+		return SWITCH_STATUS_MEMERR;
+	}
 
 	/* INIT APR and Create the pool context */
 	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
@@ -2679,6 +2684,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 		apr_pool_destroy(runtime.memory_pool);
 		apr_terminate();
 	}
+
+	sqlite3_shutdown();
 
 	return switch_test_flag((&runtime), SCF_RESTART) ? SWITCH_STATUS_RESTART : SWITCH_STATUS_SUCCESS;
 }

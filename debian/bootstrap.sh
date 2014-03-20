@@ -286,6 +286,7 @@ Build-Depends:
  libc6-dev (>= 2.11.3), make (>= 3.81),
  libpcre3-dev,
  libedit-dev (>= 2.11),
+ libsqlite3-dev,
  wget, pkg-config,
 # core codecs
  libogg-dev, libspeex-dev, libspeexdsp-dev,

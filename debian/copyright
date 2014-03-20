@@ -1896,11 +1896,6 @@ Files: libs/libzrtp/third_party/bnlib/test/md5.c
 Copyright: 1995 Abandoned Colin Plumb
 License: public-domain
 
-Files: libs/sqlite/*
-Copyright: 2006 Abandoned D. Richard Hipp <drh@hwaci.com>
- 1993 Abandoned Colin Plumb
-License: public-domain
-
 Files: libs/win32/sqlite/sqlite3.[ch]
  libs/win32/sqlite/parse.c
 Copyright: 2006 Abandoned D. Richard Hipp <drh@hwaci.com>
