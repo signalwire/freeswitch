@@ -96,7 +96,7 @@ mod_v8_la_SOURCES  = \
 mod_v8_la_CFLAGS   = $(AM_CFLAGS) $(LIBCURL_CPPFLAGS) -I$(switch_srcdir)/libs/libteletone/src
 mod_v8_la_CPPFLAGS = $(AM_CPPFLAGS) $(LIBCURL_CPPFLAGS) -I$(switch_srcdir)/libs/libteletone/src
 mod_v8_la_LIBADD   = $(AM_LIBADD)
-mod_v8_la_LDFLAGS  = $(LIBCURL) $(V8_LDFLAGS) $(AM_LDFLAGS)
+mod_v8_la_LDFLAGS  = $(AM_LDFLAGS) $(LIBCURL) $(V8_LDFLAGS)
 
 #mod_LTLIBRARIES        += mod_v8_skel.la
 #mod_v8_skel_la_SOURCES  = mod_v8_skel.cpp
