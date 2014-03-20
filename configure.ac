@@ -562,7 +562,7 @@ PLATFORM_CORE_LIBS=
 
 # tweak platform specific flags
 case "$host" in
-    *darwin12.*|*darwin11.*)
+    *darwin13.*|*darwin12.*|*darwin11.*)
         APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
         APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp -Wno-deprecated-declarations -I/usr/local/opt/openssl/include)
         APR_ADDTO(LDFLAGS, -pipe -bind_at_load -L/usr/local/opt/openssl/lib)
