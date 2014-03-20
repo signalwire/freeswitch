@@ -1430,7 +1430,7 @@ AC_CONFIG_FILES([Makefile
 		build/getg729.sh
 		build/freeswitch.pc
 		build/modmake.rules
-                libs/esl/eslmake.rules
+                libs/esl/Makefile
 		libs/xmlrpc-c/include/xmlrpc-c/config.h
 		libs/xmlrpc-c/xmlrpc_config.h
 		libs/xmlrpc-c/config.mk
