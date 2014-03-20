@@ -1074,7 +1074,7 @@ case $host in
        ;;
 esac
 
-PKG_CHECK_MODULES([CURL], [libcurl >= 7.26])
+PKG_CHECK_MODULES([CURL], [libcurl >= 7.19])
 PKG_CHECK_MODULES([PCRE], [libpcre >= 7.8])
 PKG_CHECK_MODULES([SPEEX], [speex >= 1.2rc1 speexdsp >= 1.2rc1])
 
