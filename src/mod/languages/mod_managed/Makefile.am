@@ -32,8 +32,7 @@ install-data-local: FreeSWITCH.Managed.dll
 
 uninstall:
 	rm -fr $(DESTDIR)$(modulesdir)/mod_managed.so
-	cd $(MANAGED_DIR) && $(MAKE) UNINSTALL="$(LTUNINSTALL)" MODINSTDIR=$(modulesdir) uninstall
-	$(UNINSTALL) $(MODINSTDIR)/FreeSWITCH.Managed.dll
+	rm -fr $(DESTDIR)$(modulesdir)/FreeSWITCH.Managed.dll
 
 #clean:
 #	rm -fr FreeSWITCH.Managed.dll
