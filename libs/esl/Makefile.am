@@ -49,6 +49,25 @@ ivrd_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include
 ivrd_LDFLAGS = $(AM_LDFLAGS) $(LDFLAGS) $(LIBS)
 ivrd_LDADD   = libesl.la 
 
+if HAVE_PERL
+perldir = $(PERL_SITEDIR)
+perl_LTLIBRARIES = ESL.la
+ESL_la_SOURCES   = perl/esl_wrap.cpp perl/perlxsi.c
+ESL_la_CFLAGS    = $(CC_CFLAGS) $(CFLAGS) -I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CFLAGS) $(PERL_CFLAGS)
+ESL_la_CXXFLAGS  = -I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CXXFLAGS) $(CXXFLAGS) -w $(PERL_INC)
+ESL_la_LDFLAGS   = -avoid-version -module -no-undefined -shared $(PERL_LDFLAGS)
+ESL_la_LIBADD    = libesl.la
+
+perlmod: ESL.la
+
+install-data-local: perlmod-install
+
+perlmod-install: install-perlLTLIBRARIES
+	install -m 755 perl/ESL.pm $(PERL_SITEDIR)
+	install -d -m 755 ESL $(PERL_SITEDIR)/ESL
+	install -m 755 perl/ESL/* $(PERL_SITEDIR)/ESL
+endif
+
 reswig:	swigclean
 	$(MAKE) -C perl reswig
 	$(MAKE) -C php reswig
@@ -66,9 +85,6 @@ swigclean: clean
 	$(MAKE) -C ruby swigclean
 	$(MAKE) -C java swigclean
 	$(MAKE) -C managed swigclean
-
-perlmod: $(MYLIB)
-	$(MAKE) -C perl
 
 phpmod: $(MYLIB)
 	$(MAKE) MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="-I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CFLAGS)" CXXFLAGS="-I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C php 
@@ -90,9 +106,6 @@ javamod: $(MYLIB)
 
 managedmod: $(MYLIB)
 	$(MAKE) MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="-I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CFLAGS)" CXXFLAGS="-I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C managed
-
-perlmod-install: perlmod
-	$(MAKE) -C perl install
 
 phpmod-install: phpmod
 	$(MAKE) -C php install
