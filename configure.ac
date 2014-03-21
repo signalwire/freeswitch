@@ -1124,6 +1124,7 @@ AC_CHECK_PROG(PERL,perl,[ac_cv_have_perl=yes],[ac_cv_have_perl=no])
 AM_CONDITIONAL([HAVE_PERL],[test "x$ac_cv_have_perl" != "xno"])
 
 if test "x$ac_cv_have_perl" != "xno" ; then
+   PERL=perl
    PERL_SITEDIR="`$PERL -MConfig -e 'print $Config{sitelibexp}'`"
    PERL_LIBDIR="-L`$PERL -MConfig -e 'print $Config{archlib}'`/CORE"
    PERL_LIBS="`$PERL -MConfig -e 'print $Config{libs}'`"
