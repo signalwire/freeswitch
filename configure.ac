@@ -1116,6 +1116,24 @@ AM_CONDITIONAL([HAVE_ODBC],[test "x$enable_core_odbc_support" != "xno"])
 AM_CONDITIONAL([HAVE_LIBEDIT],[test "x$enable_core_libedit_support" != "xno"])
 AM_CONDITIONAL([HAVE_MYSQL],[test "$found_mysql" = "yes"])
 
+AC_CHECK_PROG(PERL,perl,[ac_cv_have_perl=yes],[ac_cv_have_perl=no])
+AM_CONDITIONAL([HAVE_PERL],[test "x$ac_cv_have_perl" != "xno"])
+
+if test "x$ac_cv_have_perl" != "xno" ; then
+   PERL_SITEDIR="`$PERL -MConfig -e 'print $Config{sitelibexp}'`"
+   PERL_LIBDIR="-L`$PERL -MConfig -e 'print $Config{archlib}'`/CORE"
+   PERL_LIBS="`$PERL -MConfig -e 'print $Config{libs}'`"
+   PERL_CFLAGS="-w -DMULTIPLICITY `$PERL -MExtUtils::Embed -e ccopts` -DEMBED_PERL"
+   PERL_LDFLAGS="`$PERL -MExtUtils::Embed -e ldopts` `$PERL -MConfig -e 'print $Config{libs}'`"
+   PERL_INC="`$PERL -MExtUtils::Embed -e perl_inc`"
+   AC_SUBST(PERL_SITEDIR)
+   AC_SUBST(PERL_LIBDIR)
+   AC_SUBST(PERL_LIBS)
+   AC_SUBST(PERL_CFLAGS)
+   AC_SUBST(PERL_LDFLAGS)
+   AC_SUBST(PERL_INC)
+fi
+
 #
 # Python checks for mod_python
 #
@@ -1406,6 +1424,7 @@ AC_CONFIG_FILES([Makefile
 		build/freeswitch.pc
 		build/modmake.rules
                 libs/esl/Makefile
+                libs/esl/perl/Makefile
 		libs/xmlrpc-c/include/xmlrpc-c/config.h
 		libs/xmlrpc-c/xmlrpc_config.h
 		libs/xmlrpc-c/config.mk
