@@ -13,7 +13,7 @@ esl_wrap.o: esl_wrap.cpp
 	$(CXX) -I$(switch_srcdir)/libs/esl/src/include $(SWITCH_AM_CXXFLAGS) $(CXXFLAGS) -w $(PERL_INC) -c esl_wrap.cpp -o esl_wrap.o
 
 ESL.so: esl_wrap.o perlxsi.o
-	$(CXX) $(SOLINK) esl_wrap.o perlxsi.o ../.libs/libesl.a $(PERL__LDFLAGS) -o ESL.so -L. $(LIBS)
+	$(CXX) $(SOLINK) esl_wrap.o perlxsi.o ../.libs/libesl.a $(PERL_LDFLAGS) -o ESL.so -L. $(LIBS)
 
 clean:
 	rm -f *.o *.so *~
