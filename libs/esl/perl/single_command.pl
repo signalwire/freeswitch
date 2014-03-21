@@ -1,3 +1,4 @@
+#!/usr/bin/perl
 require ESL;
 
 my $command = shift;
