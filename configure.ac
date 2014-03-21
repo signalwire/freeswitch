@@ -1116,6 +1116,10 @@ AM_CONDITIONAL([HAVE_ODBC],[test "x$enable_core_odbc_support" != "xno"])
 AM_CONDITIONAL([HAVE_LIBEDIT],[test "x$enable_core_libedit_support" != "xno"])
 AM_CONDITIONAL([HAVE_MYSQL],[test "$found_mysql" = "yes"])
 
+#
+# perl checks
+#
+
 AC_CHECK_PROG(PERL,perl,[ac_cv_have_perl=yes],[ac_cv_have_perl=no])
 AM_CONDITIONAL([HAVE_PERL],[test "x$ac_cv_have_perl" != "xno"])
 
@@ -1132,6 +1136,31 @@ if test "x$ac_cv_have_perl" != "xno" ; then
    AC_SUBST(PERL_CFLAGS)
    AC_SUBST(PERL_LDFLAGS)
    AC_SUBST(PERL_INC)
+fi
+
+#
+# php checks
+#
+
+AC_CHECK_PROG(PHP,php,[ac_cv_have_php=yes],[ac_cv_have_php=no])
+AC_CHECK_PROG(PHP_CONFIG,php-config,[ac_cv_have_php_config=yes],[ac_cv_have_php_config=no])
+AM_CONDITIONAL([HAVE_PHP],[test "x$ac_cv_have_php" != "xno" -a "x$ac_cv_have_php_config" != "xno"])
+
+if test "x$ac_cv_have_php" != "xno" -a "x$ac_cv_have_php_config" != "xno"; then
+   PHP=php
+   PHP_CONFIG=php-config
+   PHP_LDFLAGS="`$PHP_CONFIG --ldflags`"
+   PHP_LIBS="`$PHP_CONFIG --libs | sed -r 's/ ?-l(bz2|pcre|xml2|gssapi_krb5|krb5|k5crypto|com_err|history|z|readline|gmp|ssl|crypto)//g'`"
+   PHP_EXT_DIR="`$PHP_CONFIG --extension-dir`"
+   PHP_INC_DIR="`$PHP -r 'echo ini_get("include_path");' | cut -d: -f2`"
+   PHP_INI_DIR="`$PHP_CONFIG --configure-options | tr " " "\n" | grep -- --with-config-file-scan-dir | cut -f2 -d=`"
+   PHP_CFLAGS="`$PHP_CONFIG --includes`"
+   AC_SUBST(PHP_LDFLAGS)
+   AC_SUBST(PHP_LIBS)
+   AC_SUBST(PHP_EXT_DIR)
+   AC_SUBST(PHP_INC_DIR)
+   AC_SUBST(PHP_INI_DIR)
+   AC_SUBST(PHP_CFLAGS)
 fi
 
 #
@@ -1425,6 +1454,7 @@ AC_CONFIG_FILES([Makefile
 		build/modmake.rules
                 libs/esl/Makefile
                 libs/esl/perl/Makefile
+                libs/esl/php/Makefile
 		libs/xmlrpc-c/include/xmlrpc-c/config.h
 		libs/xmlrpc-c/xmlrpc_config.h
 		libs/xmlrpc-c/config.mk
