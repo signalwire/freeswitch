@@ -16,7 +16,8 @@ endif
 
 $(MYLIB): libesl.la
 
-bin_PROGRAMS = fs_cli testclient testserver testserver_fork ivrd 
+bin_PROGRAMS = fs_cli ivrd
+noinst_PROGRAMS = testclient testserver testserver_fork
 
 fs_cli_SOURCES = fs_cli.c
 fs_cli_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include 
