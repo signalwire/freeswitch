@@ -933,6 +933,11 @@ static void conference_cdr_render(conference_obj_t *conference)
 	}
 	switch_xml_set_txt_d(x_ptr, conference->name);
 	
+	if (!(x_ptr = switch_xml_add_child_d(x_conference, "hostname", conf_off++))) {
+		abort();
+	}
+	switch_xml_set_txt_d(x_ptr, switch_core_get_hostname());
+	
 	if (!(x_ptr = switch_xml_add_child_d(x_conference, "rate", conf_off++))) {
 		abort();
 	}
