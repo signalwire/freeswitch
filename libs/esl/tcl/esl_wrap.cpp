@@ -2155,14 +2155,17 @@ SWIGINTERN int
 _wrap_ESLevent_getHeader(ClientData clientData SWIGUNUSED, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]) {
   ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) 0 ;
+  int arg3 = (int) -1 ;
   char *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   int res2 ;
   char *buf2 = 0 ;
   int alloc2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
   
-  if (SWIG_GetArgs(interp, objc, objv,"oo:ESLevent_getHeader self header_name ",(void *)0,(void *)0) == TCL_ERROR) SWIG_fail;
+  if (SWIG_GetArgs(interp, objc, objv,"oo|o:ESLevent_getHeader self header_name ?idx? ",(void *)0,(void *)0,(void *)0) == TCL_ERROR) SWIG_fail;
   res1 = SWIG_ConvertPtr(objv[1], &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_getHeader" "', argument " "1"" of type '" "ESLevent *""'"); 
@@ -2173,7 +2176,14 @@ _wrap_ESLevent_getHeader(ClientData clientData SWIGUNUSED, Tcl_Interp *interp, i
     SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_getHeader" "', argument " "2"" of type '" "char const *""'");
   }
   arg2 = reinterpret_cast< char * >(buf2);
-  result = (char *)(arg1)->getHeader((char const *)arg2);
+  if (objc > 3) {
+    ecode3 = SWIG_AsVal_int SWIG_TCL_CALL_ARGS_2(objv[3], &val3);
+    if (!SWIG_IsOK(ecode3)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "ESLevent_getHeader" "', argument " "3"" of type '" "int""'");
+    } 
+    arg3 = static_cast< int >(val3);
+  }
+  result = (char *)(arg1)->getHeader((char const *)arg2,arg3);
   Tcl_SetObjResult(interp,SWIG_FromCharPtr((const char *)result));
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   return TCL_OK;
@@ -2301,6 +2311,92 @@ fail:
 
 
 SWIGINTERN int
+_wrap_ESLevent_pushHeader(ClientData clientData SWIGUNUSED, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]) {
+  ESLevent *arg1 = (ESLevent *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  bool result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  int res3 ;
+  char *buf3 = 0 ;
+  int alloc3 = 0 ;
+  
+  if (SWIG_GetArgs(interp, objc, objv,"ooo:ESLevent_pushHeader self header_name value ",(void *)0,(void *)0,(void *)0) == TCL_ERROR) SWIG_fail;
+  res1 = SWIG_ConvertPtr(objv[1], &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_pushHeader" "', argument " "1"" of type '" "ESLevent *""'"); 
+  }
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(objv[2], &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_pushHeader" "', argument " "2"" of type '" "char const *""'");
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  res3 = SWIG_AsCharPtrAndSize(objv[3], &buf3, NULL, &alloc3);
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "ESLevent_pushHeader" "', argument " "3"" of type '" "char const *""'");
+  }
+  arg3 = reinterpret_cast< char * >(buf3);
+  result = (bool)(arg1)->pushHeader((char const *)arg2,(char const *)arg3);
+  Tcl_SetObjResult(interp,SWIG_From_bool(static_cast< bool >(result)));
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return TCL_OK;
+fail:
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return TCL_ERROR;
+}
+
+
+SWIGINTERN int
+_wrap_ESLevent_unshiftHeader(ClientData clientData SWIGUNUSED, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]) {
+  ESLevent *arg1 = (ESLevent *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  bool result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  int res3 ;
+  char *buf3 = 0 ;
+  int alloc3 = 0 ;
+  
+  if (SWIG_GetArgs(interp, objc, objv,"ooo:ESLevent_unshiftHeader self header_name value ",(void *)0,(void *)0,(void *)0) == TCL_ERROR) SWIG_fail;
+  res1 = SWIG_ConvertPtr(objv[1], &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_unshiftHeader" "', argument " "1"" of type '" "ESLevent *""'"); 
+  }
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(objv[2], &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_unshiftHeader" "', argument " "2"" of type '" "char const *""'");
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  res3 = SWIG_AsCharPtrAndSize(objv[3], &buf3, NULL, &alloc3);
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "ESLevent_unshiftHeader" "', argument " "3"" of type '" "char const *""'");
+  }
+  arg3 = reinterpret_cast< char * >(buf3);
+  result = (bool)(arg1)->unshiftHeader((char const *)arg2,(char const *)arg3);
+  Tcl_SetObjResult(interp,SWIG_From_bool(static_cast< bool >(result)));
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return TCL_OK;
+fail:
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return TCL_ERROR;
+}
+
+
+SWIGINTERN int
 _wrap_ESLevent_delHeader(ClientData clientData SWIGUNUSED, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]) {
   ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -2386,6 +2482,8 @@ static swig_method swig_ESLevent_methods[] = {
     {"getType", _wrap_ESLevent_getType}, 
     {"addBody", _wrap_ESLevent_addBody}, 
     {"addHeader", _wrap_ESLevent_addHeader}, 
+    {"pushHeader", _wrap_ESLevent_pushHeader}, 
+    {"unshiftHeader", _wrap_ESLevent_unshiftHeader}, 
     {"delHeader", _wrap_ESLevent_delHeader}, 
     {"firstHeader", _wrap_ESLevent_firstHeader}, 
     {"nextHeader", _wrap_ESLevent_nextHeader}, 
@@ -2402,6 +2500,103 @@ static const char * swig_ESLevent_base_names[] = {0};
 static swig_class _wrap_class_ESLevent = { "ESLevent", &SWIGTYPE_p_ESLevent,_wrap_new_ESLevent, swig_delete_ESLevent, swig_ESLevent_methods, swig_ESLevent_attributes, swig_ESLevent_bases,swig_ESLevent_base_names, &swig_module };
 SWIGINTERN int
 _wrap_new_ESLconnection__SWIG_0(ClientData clientData SWIGUNUSED, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]) {
+  char *arg1 = (char *) 0 ;
+  int arg2 ;
+  char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
+  ESLconnection *result = 0 ;
+  int res1 ;
+  char *buf1 = 0 ;
+  int alloc1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  int res3 ;
+  char *buf3 = 0 ;
+  int alloc3 = 0 ;
+  int res4 ;
+  char *buf4 = 0 ;
+  int alloc4 = 0 ;
+  
+  if (SWIG_GetArgs(interp, objc, objv,"oooo:new_ESLconnection host port user password ",(void *)0,(void *)0,(void *)0,(void *)0) == TCL_ERROR) SWIG_fail;
+  res1 = SWIG_AsCharPtrAndSize(objv[1], &buf1, NULL, &alloc1);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_ESLconnection" "', argument " "1"" of type '" "char const *""'");
+  }
+  arg1 = reinterpret_cast< char * >(buf1);
+  ecode2 = SWIG_AsVal_int SWIG_TCL_CALL_ARGS_2(objv[2], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "new_ESLconnection" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  res3 = SWIG_AsCharPtrAndSize(objv[3], &buf3, NULL, &alloc3);
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "new_ESLconnection" "', argument " "3"" of type '" "char const *""'");
+  }
+  arg3 = reinterpret_cast< char * >(buf3);
+  res4 = SWIG_AsCharPtrAndSize(objv[4], &buf4, NULL, &alloc4);
+  if (!SWIG_IsOK(res4)) {
+    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "new_ESLconnection" "', argument " "4"" of type '" "char const *""'");
+  }
+  arg4 = reinterpret_cast< char * >(buf4);
+  result = (ESLconnection *)new ESLconnection((char const *)arg1,arg2,(char const *)arg3,(char const *)arg4);
+  Tcl_SetObjResult(interp, SWIG_NewInstanceObj( SWIG_as_voidptr(result), SWIGTYPE_p_ESLconnection,0));
+  if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+  return TCL_OK;
+fail:
+  if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+  return TCL_ERROR;
+}
+
+
+SWIGINTERN int
+_wrap_new_ESLconnection__SWIG_1(ClientData clientData SWIGUNUSED, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]) {
+  char *arg1 = (char *) 0 ;
+  int arg2 ;
+  char *arg3 = (char *) 0 ;
+  ESLconnection *result = 0 ;
+  int res1 ;
+  char *buf1 = 0 ;
+  int alloc1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  int res3 ;
+  char *buf3 = 0 ;
+  int alloc3 = 0 ;
+  
+  if (SWIG_GetArgs(interp, objc, objv,"ooo:new_ESLconnection host port password ",(void *)0,(void *)0,(void *)0) == TCL_ERROR) SWIG_fail;
+  res1 = SWIG_AsCharPtrAndSize(objv[1], &buf1, NULL, &alloc1);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_ESLconnection" "', argument " "1"" of type '" "char const *""'");
+  }
+  arg1 = reinterpret_cast< char * >(buf1);
+  ecode2 = SWIG_AsVal_int SWIG_TCL_CALL_ARGS_2(objv[2], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "new_ESLconnection" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  res3 = SWIG_AsCharPtrAndSize(objv[3], &buf3, NULL, &alloc3);
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "new_ESLconnection" "', argument " "3"" of type '" "char const *""'");
+  }
+  arg3 = reinterpret_cast< char * >(buf3);
+  result = (ESLconnection *)new ESLconnection((char const *)arg1,arg2,(char const *)arg3);
+  Tcl_SetObjResult(interp, SWIG_NewInstanceObj( SWIG_as_voidptr(result), SWIGTYPE_p_ESLconnection,0));
+  if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return TCL_OK;
+fail:
+  if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return TCL_ERROR;
+}
+
+
+SWIGINTERN int
+_wrap_new_ESLconnection__SWIG_2(ClientData clientData SWIGUNUSED, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]) {
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
@@ -2458,7 +2653,7 @@ fail:
 
 
 SWIGINTERN int
-_wrap_new_ESLconnection__SWIG_1(ClientData clientData SWIGUNUSED, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]) {
+_wrap_new_ESLconnection__SWIG_3(ClientData clientData SWIGUNUSED, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]) {
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
@@ -2504,7 +2699,7 @@ fail:
 
 
 SWIGINTERN int
-_wrap_new_ESLconnection__SWIG_2(ClientData clientData SWIGUNUSED, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]) {
+_wrap_new_ESLconnection__SWIG_4(ClientData clientData SWIGUNUSED, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]) {
   int arg1 ;
   ESLconnection *result = 0 ;
   int val1 ;
@@ -2535,7 +2730,25 @@ _wrap_new_ESLconnection(ClientData clientData SWIGUNUSED, Tcl_Interp *interp, in
       _v = SWIG_CheckState(res);
     }
     if (_v) {
-      return _wrap_new_ESLconnection__SWIG_2(clientData, interp, objc, argv - 1);
+      return _wrap_new_ESLconnection__SWIG_4(clientData, interp, objc, argv - 1);
+    }
+  }
+  if (argc == 3) {
+    int _v;
+    int res = SWIG_AsCharPtrAndSize(argv[0], 0, NULL, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int SWIG_TCL_CALL_ARGS_2(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        int res = SWIG_AsCharPtrAndSize(argv[2], 0, NULL, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+          return _wrap_new_ESLconnection__SWIG_1(clientData, interp, objc, argv - 1);
+        }
+      }
     }
   }
   if (argc == 3) {
@@ -2549,7 +2762,29 @@ _wrap_new_ESLconnection(ClientData clientData SWIGUNUSED, Tcl_Interp *interp, in
         int res = SWIG_AsCharPtrAndSize(argv[2], 0, NULL, 0);
         _v = SWIG_CheckState(res);
         if (_v) {
-          return _wrap_new_ESLconnection__SWIG_1(clientData, interp, objc, argv - 1);
+          return _wrap_new_ESLconnection__SWIG_3(clientData, interp, objc, argv - 1);
+        }
+      }
+    }
+  }
+  if (argc == 4) {
+    int _v;
+    int res = SWIG_AsCharPtrAndSize(argv[0], 0, NULL, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int SWIG_TCL_CALL_ARGS_2(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        int res = SWIG_AsCharPtrAndSize(argv[2], 0, NULL, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+          int res = SWIG_AsCharPtrAndSize(argv[3], 0, NULL, 0);
+          _v = SWIG_CheckState(res);
+          if (_v) {
+            return _wrap_new_ESLconnection__SWIG_0(clientData, interp, objc, argv - 1);
+          }
         }
       }
     }
@@ -2568,7 +2803,7 @@ _wrap_new_ESLconnection(ClientData clientData SWIGUNUSED, Tcl_Interp *interp, in
           int res = SWIG_AsCharPtrAndSize(argv[3], 0, NULL, 0);
           _v = SWIG_CheckState(res);
           if (_v) {
-            return _wrap_new_ESLconnection__SWIG_0(clientData, interp, objc, argv - 1);
+            return _wrap_new_ESLconnection__SWIG_2(clientData, interp, objc, argv - 1);
           }
         }
       }
@@ -2778,6 +3013,7 @@ _wrap_ESLconnection_bgapi(ClientData clientData SWIGUNUSED, Tcl_Interp *interp, 
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) NULL ;
+  char *arg4 = (char *) NULL ;
   ESLevent *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -2787,8 +3023,11 @@ _wrap_ESLconnection_bgapi(ClientData clientData SWIGUNUSED, Tcl_Interp *interp, 
   int res3 ;
   char *buf3 = 0 ;
   int alloc3 = 0 ;
+  int res4 ;
+  char *buf4 = 0 ;
+  int alloc4 = 0 ;
   
-  if (SWIG_GetArgs(interp, objc, objv,"oo|o:ESLconnection_bgapi self cmd ?arg? ",(void *)0,(void *)0,(void *)0) == TCL_ERROR) SWIG_fail;
+  if (SWIG_GetArgs(interp, objc, objv,"oo|oo:ESLconnection_bgapi self cmd ?arg? ?job_uuid? ",(void *)0,(void *)0,(void *)0,(void *)0) == TCL_ERROR) SWIG_fail;
   res1 = SWIG_ConvertPtr(objv[1], &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_bgapi" "', argument " "1"" of type '" "ESLconnection *""'"); 
@@ -2806,14 +3045,23 @@ _wrap_ESLconnection_bgapi(ClientData clientData SWIGUNUSED, Tcl_Interp *interp, 
     }
     arg3 = reinterpret_cast< char * >(buf3);
   }
-  result = (ESLevent *)(arg1)->bgapi((char const *)arg2,(char const *)arg3);
+  if (objc > 4) {
+    res4 = SWIG_AsCharPtrAndSize(objv[4], &buf4, NULL, &alloc4);
+    if (!SWIG_IsOK(res4)) {
+      SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "ESLconnection_bgapi" "', argument " "4"" of type '" "char const *""'");
+    }
+    arg4 = reinterpret_cast< char * >(buf4);
+  }
+  result = (ESLevent *)(arg1)->bgapi((char const *)arg2,(char const *)arg3,(char const *)arg4);
   Tcl_SetObjResult(interp, SWIG_NewInstanceObj( SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent,0));
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
   return TCL_OK;
 fail:
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
   return TCL_ERROR;
 }
 
@@ -2822,7 +3070,7 @@ SWIGINTERN int
 _wrap_ESLconnection_sendEvent(ClientData clientData SWIGUNUSED, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   ESLevent *arg2 = (ESLevent *) 0 ;
-  int result;
+  ESLevent *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   void *argp2 = 0 ;
@@ -2839,10 +3087,52 @@ _wrap_ESLconnection_sendEvent(ClientData clientData SWIGUNUSED, Tcl_Interp *inte
     SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLconnection_sendEvent" "', argument " "2"" of type '" "ESLevent *""'"); 
   }
   arg2 = reinterpret_cast< ESLevent * >(argp2);
-  result = (int)(arg1)->sendEvent(arg2);
-  Tcl_SetObjResult(interp,SWIG_From_int(static_cast< int >(result)));
+  result = (ESLevent *)(arg1)->sendEvent(arg2);
+  Tcl_SetObjResult(interp, SWIG_NewInstanceObj( SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent,0));
   return TCL_OK;
 fail:
+  return TCL_ERROR;
+}
+
+
+SWIGINTERN int
+_wrap_ESLconnection_sendMSG(ClientData clientData SWIGUNUSED, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  ESLevent *arg2 = (ESLevent *) 0 ;
+  char *arg3 = (char *) NULL ;
+  int result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  int res3 ;
+  char *buf3 = 0 ;
+  int alloc3 = 0 ;
+  
+  if (SWIG_GetArgs(interp, objc, objv,"oo|o:ESLconnection_sendMSG self send_me ?uuid? ",(void *)0,(void *)0,(void *)0) == TCL_ERROR) SWIG_fail;
+  res1 = SWIG_ConvertPtr(objv[1], &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_sendMSG" "', argument " "1"" of type '" "ESLconnection *""'"); 
+  }
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  res2 = SWIG_ConvertPtr(objv[2], &argp2,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLconnection_sendMSG" "', argument " "2"" of type '" "ESLevent *""'"); 
+  }
+  arg2 = reinterpret_cast< ESLevent * >(argp2);
+  if (objc > 3) {
+    res3 = SWIG_AsCharPtrAndSize(objv[3], &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "ESLconnection_sendMSG" "', argument " "3"" of type '" "char const *""'");
+    }
+    arg3 = reinterpret_cast< char * >(buf3);
+  }
+  result = (int)(arg1)->sendMSG(arg2,(char const *)arg3);
+  Tcl_SetObjResult(interp,SWIG_From_int(static_cast< int >(result)));
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return TCL_OK;
+fail:
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
   return TCL_ERROR;
 }
 
@@ -3197,6 +3487,7 @@ static swig_method swig_ESLconnection_methods[] = {
     {"api", _wrap_ESLconnection_api}, 
     {"bgapi", _wrap_ESLconnection_bgapi}, 
     {"sendEvent", _wrap_ESLconnection_sendEvent}, 
+    {"sendMSG", _wrap_ESLconnection_sendMSG}, 
     {"recvEvent", _wrap_ESLconnection_recvEvent}, 
     {"recvEventTimed", _wrap_ESLconnection_recvEventTimed}, 
     {"filter", _wrap_ESLconnection_filter}, 
@@ -3251,6 +3542,8 @@ static swig_command_info swig_commands[] = {
     { SWIG_prefix "ESLevent_getType", (swig_wrapper_func) _wrap_ESLevent_getType, NULL},
     { SWIG_prefix "ESLevent_addBody", (swig_wrapper_func) _wrap_ESLevent_addBody, NULL},
     { SWIG_prefix "ESLevent_addHeader", (swig_wrapper_func) _wrap_ESLevent_addHeader, NULL},
+    { SWIG_prefix "ESLevent_pushHeader", (swig_wrapper_func) _wrap_ESLevent_pushHeader, NULL},
+    { SWIG_prefix "ESLevent_unshiftHeader", (swig_wrapper_func) _wrap_ESLevent_unshiftHeader, NULL},
     { SWIG_prefix "ESLevent_delHeader", (swig_wrapper_func) _wrap_ESLevent_delHeader, NULL},
     { SWIG_prefix "ESLevent_firstHeader", (swig_wrapper_func) _wrap_ESLevent_firstHeader, NULL},
     { SWIG_prefix "ESLevent_nextHeader", (swig_wrapper_func) _wrap_ESLevent_nextHeader, NULL},
@@ -3265,6 +3558,7 @@ static swig_command_info swig_commands[] = {
     { SWIG_prefix "ESLconnection_api", (swig_wrapper_func) _wrap_ESLconnection_api, NULL},
     { SWIG_prefix "ESLconnection_bgapi", (swig_wrapper_func) _wrap_ESLconnection_bgapi, NULL},
     { SWIG_prefix "ESLconnection_sendEvent", (swig_wrapper_func) _wrap_ESLconnection_sendEvent, NULL},
+    { SWIG_prefix "ESLconnection_sendMSG", (swig_wrapper_func) _wrap_ESLconnection_sendMSG, NULL},
     { SWIG_prefix "ESLconnection_recvEvent", (swig_wrapper_func) _wrap_ESLconnection_recvEvent, NULL},
     { SWIG_prefix "ESLconnection_recvEventTimed", (swig_wrapper_func) _wrap_ESLconnection_recvEventTimed, NULL},
     { SWIG_prefix "ESLconnection_filter", (swig_wrapper_func) _wrap_ESLconnection_filter, NULL},
