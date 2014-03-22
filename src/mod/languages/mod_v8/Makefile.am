@@ -110,7 +110,8 @@ if ISFREEBSD
 endif
 
 $(V8_DIR)/.stamp-patch: $(V8_DIR)
-	cd $(V8_DIR) && patch -p0 < $(switch_srcdir)/src/mod/languages/mod_v8/v8-build.patch && touch $@
+	cd $(V8_DIR) && (test -f .stamp-patch || patch -t -p0 < $(switch_srcdir)/src/mod/languages/mod_v8/v8-build.patch)
+	touch $@
 
 $(V8LIB): $(V8_DIR) $(V8_DIR)/.stamp-patch
 	mkdir -p $(V8_BUILDDIR)
