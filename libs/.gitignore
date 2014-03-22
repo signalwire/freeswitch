@@ -913,3 +913,4 @@ srtp/build/compile
 unimrcp/build/compile
 /pcre-*/
 /speex-*/
+/curl-*/
