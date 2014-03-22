@@ -105,12 +105,14 @@ $(SOURCES): $(BUILT_SOURCES)
 
 $(V8_DIR):
 	$(GETLIB) $(V8).tar.bz2
-	cd $(V8_DIR) && patch -s -p0 < $(switch_srcdir)/src/mod/languages/mod_v8/v8-build.patch
 if ISFREEBSD
 	/bin/cp -f gyp  $(V8_DIR)/build/gyp
 endif
 
-$(V8LIB): $(V8_DIR)
+$(V8_DIR)/.stamp-patch: $(V8_DIR)
+	cd $(V8_DIR) && patch -p0 < $(switch_srcdir)/src/mod/languages/mod_v8/v8-build.patch && touch $@
+
+$(V8LIB): $(V8_DIR) $(V8_DIR)/.stamp-patch
 	mkdir -p $(V8_BUILDDIR)
 	if test "$(CXX_TARGET_PLATFORM)" = "x86_64"; then \
 	   defines="v8_target_arch=x64 target_arch=x64"; \
