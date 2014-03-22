@@ -11,6 +11,7 @@
 #define CMD_BUFLEN 1024
 
 #ifndef WIN32
+#include <esl_config_auto.h>
 #include <sys/select.h>
 #include <unistd.h>
 #include <time.h>
@@ -44,7 +45,7 @@ static int console_bufferInput (char *buf, int len, char *cmd, int key);
 static unsigned char esl_console_complete(const char *buffer, const char *cursor, const char *lastchar);
 #endif
 
-#ifdef HAVE_EDITLINE
+#ifdef HAVE_LIBEDIT
 #include <histedit.h>
 #endif
 
@@ -87,7 +88,7 @@ static char *filter_uuid;
 static char *logfilter;
 static int timeout = 0;
 static int connect_timeout = 0;
-#ifdef HAVE_EDITLINE
+#ifdef HAVE_LIBEDIT
 static EditLine *el;
 static History *myhistory;
 static HistEvent ev;
@@ -114,7 +115,7 @@ static void sleep_s(int secs) { _sleep_ns(secs, 0); }
 
 static int process_command(esl_handle_t *handle, const char *cmd);
 
-#if defined(HAVE_EDITLINE) || defined(WIN32)
+#if defined(HAVE_LIBEDIT) || defined(WIN32)
 static void clear_cli(void) {
 	if (global_profile->batch_mode) return;
 	putchar('\r');
@@ -149,7 +150,7 @@ static void screen_size(int *x, int *y)
 
 }
 
-#if defined(HAVE_EDITLINE) || defined(WIN32)
+#if defined(HAVE_LIBEDIT) || defined(WIN32)
 /* If a fnkey is configured then process the command */
 static unsigned char console_fnkey_pressed(int i)
 {
@@ -169,7 +170,7 @@ static unsigned char console_fnkey_pressed(int i)
 }
 #endif
 
-#ifdef HAVE_EDITLINE
+#ifdef HAVE_LIBEDIT
 static char *prompt(EditLine *e) { return prompt_str; }
 static unsigned char console_f1key(EditLine *el, int ch) { return console_fnkey_pressed(1); }
 static unsigned char console_f2key(EditLine *el, int ch) { return console_fnkey_pressed(2); }
@@ -678,7 +679,20 @@ static void clear_line(void)
 
 static void redisplay(void)
 {
-#ifdef HAVE_EDITLINE
+#ifdef HAVE_LIBEDIT
+#ifdef HAVE_DECL_EL_REFRESH
+#ifdef HAVE_EL_WSET
+	/* Current libedit versions don't implement EL_REFRESH in eln.c so
+	 * use the wide version instead. */
+	el_wset(el, EL_REFRESH);
+#else
+	/* This will work on future libedit versions and versions built
+	 * without wide character support. */
+	el_set(el, EL_REFRESH);
+#endif
+#else
+	/* Old libedit versions don't implement EL_REFRESH at all so use
+	 * our own implementation instead. */
 	const LineInfo *lf = el_line(el);
 	const char *c = lf->buffer;
 	if (global_profile->batch_mode) return;
@@ -698,6 +712,7 @@ static void redisplay(void)
 	}
  done:
 	return;
+#endif
 #endif
 }
 
@@ -1070,7 +1085,7 @@ static void set_fn_keys(cli_profile_t *profile)
 	profile->console_fnkeys[11] = "version";
 }
 
-#if defined(HAVE_EDITLINE) || defined(WIN32)
+#if defined(HAVE_LIBEDIT) || defined(WIN32)
 static char* end_of_str(char *s) { return (*s == '\0' ? s : s + strlen(s) - 1); }
 
 static char* _strndup(const char *s, int n)
@@ -1102,7 +1117,7 @@ static unsigned char esl_console_complete(const char *buffer, const char *cursor
 		buf++;
 		sc++;
 	}
-#ifdef HAVE_EDITLINE
+#ifdef HAVE_LIBEDIT
 	if (!*buf && sc) {
 		el_deletestr(el, sc);
 		sc = 0;
@@ -1113,7 +1128,7 @@ static unsigned char esl_console_complete(const char *buffer, const char *cursor
 		sc++;
 		p--;
 	}
-#ifdef HAVE_EDITLINE
+#ifdef HAVE_LIBEDIT
 	if (sc > 1) {
 		el_deletestr(el, sc - 1);
 		*(p + 2) = '\0';
@@ -1138,7 +1153,7 @@ static unsigned char esl_console_complete(const char *buffer, const char *cursor
 					w = p1+ 1;
 				}
 				printf("%s\n\n\n", r);
-#ifdef HAVE_EDITLINE
+#ifdef HAVE_LIBEDIT
 				el_deletestr(el, len);
 				el_insertstr(el, w);
 #else
@@ -1159,9 +1174,9 @@ static unsigned char esl_console_complete(const char *buffer, const char *cursor
 	esl_safe_free(dup);
 	return ret;
 }
-#endif /* if defined(HAVE_EDITLINE) || defined(WIN32) */
+#endif /* if defined(HAVE_LIBEDIT) || defined(WIN32) */
 
-#ifdef HAVE_EDITLINE
+#ifdef HAVE_LIBEDIT
 static unsigned char complete(EditLine *el, int ch)
 {
 	const LineInfo *lf = el_line(el);
@@ -1269,7 +1284,7 @@ static void read_config(const char *dft_cfile, const char *cfile) {
 }
 
 static void clear_el_buffer(void) {
-#ifdef HAVE_EDITLINE
+#ifdef HAVE_LIBEDIT
 	const LineInfo *lf = el_line(el);
 	int len = (int)(lf->lastchar - lf->buffer);
 	if (global_profile->batch_mode) return;
@@ -1497,7 +1512,11 @@ int main(int argc, char *argv[])
 	}
 	bare_prompt_str_len = (int)strlen(bare_prompt_str);
 	if (feature_level) {
+#ifdef HAVE_DECL_EL_PROMPT_ESC
+		snprintf(prompt_str, sizeof(prompt_str), "\1%s\1%s\1%s\1", prompt_color, bare_prompt_str, input_text_color);
+#else
 		snprintf(prompt_str, sizeof(prompt_str), "%s%s%s", prompt_color, bare_prompt_str, input_text_color);
+#endif
 	} else {
 		snprintf(prompt_str, sizeof(prompt_str), "%s", bare_prompt_str);
 	}
@@ -1557,9 +1576,13 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-#ifdef HAVE_EDITLINE
+#ifdef HAVE_LIBEDIT
 	el = el_init(__FILE__, stdin, stdout, stderr);
+#ifdef HAVE_DECL_EL_PROMPT_ESC
+	el_set(el, EL_PROMPT_ESC, &prompt, '\1');
+#else
 	el_set(el, EL_PROMPT, &prompt);
+#endif
 	el_set(el, EL_EDITOR, "emacs");
 
 	el_set(el, EL_ADDFN, "f1-key", "F1 KEY PRESS", console_f1key);
@@ -1637,13 +1660,13 @@ int main(int argc, char *argv[])
 	output_printf("%s\n", handle.last_sr_reply);
 	while (running > 0) {
 		int r;
-#ifdef HAVE_EDITLINE
+#ifdef HAVE_LIBEDIT
 		if (!(global_profile->batch_mode)) {
 			line = el_gets(el, &count);
 		} else {
 #endif
 		line = basic_gets(&count);
-#ifdef HAVE_EDITLINE
+#ifdef HAVE_LIBEDIT
 		}
 #endif
 		if (count > 1 && !esl_strlen_zero(line)) {
@@ -1652,7 +1675,7 @@ int main(int argc, char *argv[])
 			if ((p = strrchr(cmd, '\r')) || (p = strrchr(cmd, '\n'))) {
 				*p = '\0';
 			}
-#ifdef HAVE_EDITLINE
+#ifdef HAVE_LIBEDIT
 			history(myhistory, &ev, H_ENTER, line);
 #endif
 			if ((r = process_command(&handle, cmd))) {
@@ -1668,7 +1691,7 @@ int main(int argc, char *argv[])
 		loops = 120;
 		goto connect;
 	}
-#ifdef HAVE_EDITLINE
+#ifdef HAVE_LIBEDIT
  done:
 	history(myhistory, &ev, H_SAVE, hfile);
 	history_end(myhistory);

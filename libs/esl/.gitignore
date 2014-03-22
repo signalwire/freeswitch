@@ -2,3 +2,4 @@ eslmake.rules
 testserver_fork
 Makefile
 Makefile.in
+/src/include/esl_config_auto.h

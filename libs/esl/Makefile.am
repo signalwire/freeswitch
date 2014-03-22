@@ -21,14 +21,9 @@ bin_PROGRAMS = fs_cli ivrd
 noinst_PROGRAMS = testclient testserver testserver_fork
 
 fs_cli_SOURCES = fs_cli.c
-fs_cli_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include 
-fs_cli_LDFLAGS = $(AM_LDFLAGS) $(LDFLAGS) $(LIBS) 
-fs_cli_LDADD   = libesl.la 
-
-if HAVE_LIBEDIT
-fs_cli_CFLAGS += -DHAVE_EDITLINE -I$(switch_srcdir)/libs/libedit/src
-fs_cli_LDADD  += ../libedit/src/.libs/libedit.a $(TINFO_LIBS)
-endif
+fs_cli_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include $(LIBEDIT_CFLAGS)
+fs_cli_LDFLAGS = $(AM_LDFLAGS) $(LDFLAGS) $(LIBS) $(LIBEDIT_LIBS)
+fs_cli_LDADD   = libesl.la
 
 testclient_SOURCES = testclient.c
 testclient_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include

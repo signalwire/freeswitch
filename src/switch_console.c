@@ -37,7 +37,7 @@
 #endif
 #define CMD_BUFLEN 1024
 
-#ifdef SWITCH_HAVE_LIBEDIT
+#ifdef HAVE_LIBEDIT
 #include <histedit.h>
 
 static EditLine *el;
@@ -710,7 +710,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 	int pos = 0;
 	int sc = 0;
 
-#ifndef SWITCH_HAVE_LIBEDIT
+#ifndef HAVE_LIBEDIT
 #ifndef _MSC_VER
 	if (!stream) {
 		return CC_ERROR;
@@ -745,7 +745,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 	}
 
 	if (!*buf) {
-#ifdef SWITCH_HAVE_LIBEDIT
+#ifdef HAVE_LIBEDIT
 		if (h.out && sc) {
 			el_deletestr(el, sc);
 		}
@@ -760,7 +760,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 	}
 
 	if (sc > 1) {
-#ifdef SWITCH_HAVE_LIBEDIT
+#ifdef HAVE_LIBEDIT
 		if (h.out) {
 			el_deletestr(el, sc - 1);
 		}
@@ -898,7 +898,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 			switch_xml_set_txt_d(x_write, h.partial);
 		}
 	}
-#ifdef SWITCH_HAVE_LIBEDIT
+#ifdef HAVE_LIBEDIT
 	if (h.out) {
 		if (h.hits == 1 && !zstr(h.last)) {
 			el_deletestr(el, h.len);
@@ -941,7 +941,7 @@ SWITCH_DECLARE(unsigned char) switch_console_complete(const char *line, const ch
 }
 
 
-#if defined(SWITCH_HAVE_LIBEDIT) || defined(_MSC_VER)
+#if defined(HAVE_LIBEDIT) || defined(_MSC_VER)
 /*
  * If a fnkey is configured then process the command
  */
@@ -971,14 +971,14 @@ static unsigned char console_fnkey_pressed(int i)
 
 SWITCH_DECLARE(void) switch_console_save_history(void)
 {
-#ifdef SWITCH_HAVE_LIBEDIT
+#ifdef HAVE_LIBEDIT
 	history(myhistory, &ev, H_SAVE, hfile);
 #else
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "NOT IMPLEMENTED!\n");
 #endif
 }
 
-#ifdef SWITCH_HAVE_LIBEDIT
+#ifdef HAVE_LIBEDIT
 static char prompt_str[512] = "";
 
 static unsigned char console_f1key(EditLine * el, int ch)

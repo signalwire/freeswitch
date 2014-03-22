@@ -17,6 +17,7 @@ AM_INIT_AUTOMAKE
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_SRCDIR([src/switch.c])
 AC_CONFIG_HEADER([src/include/switch_private.h])
+AC_CONFIG_HEADER([libs/esl/src/include/esl_config_auto.h])
 AC_CONFIG_HEADER([libs/xmlrpc-c/xmlrpc_amconfig.h])
 
 AC_PREFIX_DEFAULT(/usr/local/freeswitch)
@@ -1079,20 +1080,27 @@ PKG_CHECK_MODULES([PCRE], [libpcre >= 7.8])
 PKG_CHECK_MODULES([SPEEX], [speex >= 1.2rc1 speexdsp >= 1.2rc1])
 
 AC_ARG_ENABLE(core-libedit-support,     
-	[AS_HELP_STRING([--disable-core-libedit-support], [Compile without libedit Support])], [enable_core_libedit_support="$enableval"], [enable_core_libedit_support="yes"])
+  [AS_HELP_STRING([--disable-core-libedit-support], [Compile without libedit Support])])
 
-if test "$enable_core_libedit_support" = "yes" ; then
-    AC_CHECK_LIB(tinfo, tgetent, [have_libtinfo="yes"], [have_libtinfo="no"])
-    if test "$have_libtinfo" == "yes" ; then
-       TINFO_LIBS="-ltinfo"
-    else
-       TINFO_LIBS=""
-       AC_CHECK_LIB(ncurses, tgetent,,
-          [AC_CHECK_LIB(curses, tgetent,,
-	     [AC_MSG_ERROR([libtermcap, libcurses or libncurses are required!])] )] )
-    fi
-    AC_SUBST(TINFO_LIBS)
-fi
+case x$enable_core_libedit_support in
+  xno) ;;
+  xyes) PKG_CHECK_MODULES([LIBEDIT], [libedit >= 2.11]) ;;
+  *) PKG_CHECK_MODULES([LIBEDIT], [libedit >= 2.11],, [AC_MSG_RESULT([no]); enable_core_libedit_support=no]) ;;
+esac
+
+AS_IF([test "x$enable_core_libedit_support" != "xno"], [
+  # If making changes here, don't forget to run autoheader and
+  # update libs/esl/src/include/esl_config_auto.h.in manually.
+  AC_DEFINE([HAVE_LIBEDIT], [1], [Define to 1 if you have libedit is available])
+  save_LIBS="${LIBS}"
+  save_CPPFLAGS="${CPPFLAGS}"
+  LIBS="${LIBEDIT_LIBS}"
+  CPPFLAGS="${LIBEDIT_CFLAGS}"
+  AC_CHECK_DECLS([EL_PROMPT_ESC, EL_REFRESH],,, [[#include <histedit.h>]])
+  AC_CHECK_FUNCS([el_wset])
+  LIBS="${save_LIBS}"
+  CPPFLAGS="${save_CPPFLAGS}"
+])
 
 SAC_OPENSSL
 
@@ -1118,7 +1126,6 @@ AC_ARG_ENABLE(parallel-build-v8,
 AM_CONDITIONAL([ENABLE_PARALLEL_BUILD_V8],[test "x$enable_parallel_build_v8" != "xno"])
 
 AM_CONDITIONAL([HAVE_ODBC],[test "x$enable_core_odbc_support" != "xno"])
-AM_CONDITIONAL([HAVE_LIBEDIT],[test "x$enable_core_libedit_support" != "xno"])
 AM_CONDITIONAL([HAVE_MYSQL],[test "$found_mysql" = "yes"])
 
 #
@@ -1518,10 +1525,6 @@ ac_configure_args="$ac_configure_args CONFIGURE_CFLAGS='$CFLAGS' CONFIGURE_CXXFL
 # Run configure in all the subdirs
 AC_CONFIG_SUBDIRS([libs/srtp])
 AC_CONFIG_SUBDIRS([libs/sqlite])
-if test "$enable_core_libedit_support" = "yes" ; then
-    AC_CONFIG_SUBDIRS([libs/libedit])
-fi
-
 AC_CONFIG_SUBDIRS([libs/apr])
 AC_CONFIG_SUBDIRS([libs/apr-util])
 AC_CONFIG_SUBDIRS([libs/ilbc])

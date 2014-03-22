@@ -1,0 +1,13 @@
+/* Define to 1 if you have libedit available */
+#undef HAVE_LIBEDIT
+
+/* Define to 1 if you have the declaration `EL_PROMPT_ESC', and to 0
+   if you don't. */
+#undef HAVE_DECL_EL_PROMPT_ESC
+
+/* Define to 1 if you have the declaration `EL_REFRESH', and to 0 if
+   you don't. */
+#undef HAVE_DECL_EL_REFRESH
+
+/* Define to 1 if you have the `el_wset' function. */
+#undef HAVE_EL_WSET

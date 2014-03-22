@@ -285,6 +285,7 @@ Build-Depends:
  dpkg-dev (>= 1.15.8.12), gcc (>= 4:4.4.5), g++ (>= 4:4.4.5),
  libc6-dev (>= 2.11.3), make (>= 3.81),
  libpcre3-dev,
+ libedit-dev (>= 2.11),
  wget, pkg-config,
 # core codecs
  libogg-dev, libspeex-dev, libspeexdsp-dev,

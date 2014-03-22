@@ -106,11 +106,6 @@ if HAVE_ODBC
 CORE_CFLAGS += -DSWITCH_HAVE_ODBC $(ODBC_INC_FLAGS)
 endif
 
-if HAVE_LIBEDIT
-CORE_CFLAGS += -I$(switch_srcdir)/libs/libedit/src -DSWITCH_HAVE_LIBEDIT
-CORE_LIBS   += libs/libedit/src/.libs/libedit.a
-endif
-
 if ENABLE_TIMERFD_WRAPPER
 CORE_CFLAGS += -DTIMERFD_WRAP
 endif
@@ -123,14 +118,10 @@ libfreeswitch_spandsp_la_SOURCES = libs/spandsp/src/plc.c libs/spandsp/src/alloc
 libfreeswitch_spandsp_la_CFLAGS  = -Ilibs/spandsp/src $(CORE_CFLAGS) $(AM_CFLAGS)
 CORE_LIBS+=libfreeswitch_spandsp.la
 lib_LTLIBRARIES	         = libfreeswitch.la
-libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(CURL_CFLAGS) $(PCRE_CFLAGS) $(SPEEX_CFLAGS) $(AM_CFLAGS)
+libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(CURL_CFLAGS) $(PCRE_CFLAGS) $(SPEEX_CFLAGS) $(LIBEDIT_CFLAGS) $(AM_CFLAGS)
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS) -no-undefined
-libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(CURL_LIBS) $(PCRE_LIBS) $(SPEEX_LIBS) $(PLATFORM_CORE_LIBS)
+libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(CURL_LIBS) $(PCRE_LIBS) $(SPEEX_LIBS) $(LIBEDIT_LIBS) $(PLATFORM_CORE_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
-
-if HAVE_LIBEDIT
-libfreeswitch_la_LIBADD += $(TINFO_LIBS)
-endif
 
 if HAVE_ODBC
 libfreeswitch_la_LDFLAGS += $(ODBC_LIB_FLAGS)
@@ -301,13 +292,8 @@ bin_PROGRAMS = freeswitch fs_cli fs_ivrd tone2wav fs_encode
 ##
 fs_cli_SOURCES = libs/esl/src/esl.c libs/esl/src/esl_config.c libs/esl/src/esl_event.c \
 	libs/esl/src/esl_threadmutex.c libs/esl/fs_cli.c libs/esl/src/esl_json.c libs/esl/src/esl_buffer.c
-fs_cli_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include 
-fs_cli_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS) -lm
-
-if HAVE_LIBEDIT
-fs_cli_CFLAGS += -DHAVE_EDITLINE -I$(switch_srcdir)/libs/libedit/src
-fs_cli_LDADD   = libs/libedit/src/.libs/libedit.a $(TINFO_LIBS)
-endif
+fs_cli_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include $(LIBEDIT_CFLAGS)
+fs_cli_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS) -lm $(LIBEDIT_LIBS)
 
 
 ##
@@ -352,11 +338,6 @@ freeswitch_SOURCES = src/switch.c
 freeswitch_CFLAGS  = $(AM_CFLAGS) $(CORE_CFLAGS)
 freeswitch_LDFLAGS = $(AM_LDFLAGS) -lpthread -rpath $(libdir)
 freeswitch_LDADD   = libfreeswitch.la libs/apr/libapr-1.la
-
-if HAVE_LIBEDIT
-freeswitch_CFLAGS += -Ilibs/libedit/src -DSWITCH_HAVE_LIBEDIT
-freeswitch_LDADD  += libs/libedit/src/.libs/libedit.a $(TINFO_LIBS)
-endif
 
 if HAVE_ODBC
 freeswitch_LDADD += $(ODBC_LIB_FLAGS)
