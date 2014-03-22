@@ -30,6 +30,7 @@ avoid_mods=(
   languages/mod_managed
   languages/mod_perl
   languages/mod_spidermonkey
+  languages/mod_v8
   sdk/autotools
   xml_int/mod_xml_ldap
   xml_int/mod_xml_radius
