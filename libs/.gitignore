@@ -914,3 +914,5 @@ unimrcp/build/compile
 /pcre-*/
 /speex-*/
 /curl-*/
+/sqlite-*.zip
+/sqlite-*/
