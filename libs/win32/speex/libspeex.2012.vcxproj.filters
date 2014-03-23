@@ -143,9 +143,6 @@
     <ClInclude Include="..\..\speex-1.2rc1\libspeex\math_approx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\speex-1.2rc1\libspeex\misc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\speex-1.2rc1\libspeex\modes.h">
       <Filter>Header Files</Filter>
     </ClInclude>

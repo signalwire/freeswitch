@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug DLL|Win32">
@@ -130,17 +130,10 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <PreBuildEvent>
-      <Command>if exist "$(ProjectDir)..\..\sqlite\src\sqlite3.h" del "$(ProjectDir)..\..\sqlite\src\sqlite3.h"
-if exist "$(ProjectDir)..\..\sqlite\src\parse.h" del "$(ProjectDir)..\..\sqlite\src\parse.h"
-if exist "$(ProjectDir)..\..\sqlite\src\parse.c" del "$(ProjectDir)..\..\sqlite\src\parse.c"
-if exist "$(ProjectDir)..\..\sqlite\src\opcodes.h" del "$(ProjectDir)..\..\sqlite\src\opcodes.h"
-if exist "$(ProjectDir)..\..\sqlite\src\opcodes.c" del "$(ProjectDir)..\..\sqlite\src\opcodes.c"
-if exist "$(ProjectDir)..\..\sqlite\src\keywordhash.h" del "$(ProjectDir)..\..\sqlite\src\keywordhash.h"
-</Command>
     </PreBuildEvent>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\sqlite\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;_DEBUG;_LIB;SQLITE_DEBUG;THREADSAFE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -154,20 +147,13 @@ if exist "$(ProjectDir)..\..\sqlite\src\keywordhash.h" del "$(ProjectDir)..\..\s
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <PreBuildEvent>
-      <Command>if exist "$(ProjectDir)..\..\sqlite\src\sqlite3.h" del "$(ProjectDir)..\..\sqlite\src\sqlite3.h"
-if exist "$(ProjectDir)..\..\sqlite\src\parse.h" del "$(ProjectDir)..\..\sqlite\src\parse.h"
-if exist "$(ProjectDir)..\..\sqlite\src\parse.c" del "$(ProjectDir)..\..\sqlite\src\parse.c"
-if exist "$(ProjectDir)..\..\sqlite\src\opcodes.h" del "$(ProjectDir)..\..\sqlite\src\opcodes.h"
-if exist "$(ProjectDir)..\..\sqlite\src\opcodes.c" del "$(ProjectDir)..\..\sqlite\src\opcodes.c"
-if exist "$(ProjectDir)..\..\sqlite\src\keywordhash.h" del "$(ProjectDir)..\..\sqlite\src\keywordhash.h"
-</Command>
     </PreBuildEvent>
     <Midl>
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\sqlite\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;_DEBUG;_LIB;SQLITE_DEBUG;THREADSAFE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -181,16 +167,9 @@ if exist "$(ProjectDir)..\..\sqlite\src\keywordhash.h" del "$(ProjectDir)..\..\s
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <PreBuildEvent>
-      <Command>if exist "$(ProjectDir)..\..\sqlite\src\sqlite3.h" del "$(ProjectDir)..\..\sqlite\src\sqlite3.h"
-if exist "$(ProjectDir)..\..\sqlite\src\parse.h" del "$(ProjectDir)..\..\sqlite\src\parse.h"
-if exist "$(ProjectDir)..\..\sqlite\src\parse.c" del "$(ProjectDir)..\..\sqlite\src\parse.c"
-if exist "$(ProjectDir)..\..\sqlite\src\opcodes.h" del "$(ProjectDir)..\..\sqlite\src\opcodes.h"
-if exist "$(ProjectDir)..\..\sqlite\src\opcodes.c" del "$(ProjectDir)..\..\sqlite\src\opcodes.c"
-if exist "$(ProjectDir)..\..\sqlite\src\keywordhash.h" del "$(ProjectDir)..\..\sqlite\src\keywordhash.h"
-</Command>
     </PreBuildEvent>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\sqlite\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;NDEBUG;_LIB;THREADSAFE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
@@ -202,19 +181,12 @@ if exist "$(ProjectDir)..\..\sqlite\src\keywordhash.h" del "$(ProjectDir)..\..\s
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <PreBuildEvent>
-      <Command>if exist "$(ProjectDir)..\..\sqlite\src\sqlite3.h" del "$(ProjectDir)..\..\sqlite\src\sqlite3.h"
-if exist "$(ProjectDir)..\..\sqlite\src\parse.h" del "$(ProjectDir)..\..\sqlite\src\parse.h"
-if exist "$(ProjectDir)..\..\sqlite\src\parse.c" del "$(ProjectDir)..\..\sqlite\src\parse.c"
-if exist "$(ProjectDir)..\..\sqlite\src\opcodes.h" del "$(ProjectDir)..\..\sqlite\src\opcodes.h"
-if exist "$(ProjectDir)..\..\sqlite\src\opcodes.c" del "$(ProjectDir)..\..\sqlite\src\opcodes.c"
-if exist "$(ProjectDir)..\..\sqlite\src\keywordhash.h" del "$(ProjectDir)..\..\sqlite\src\keywordhash.h"
-</Command>
     </PreBuildEvent>
     <Midl>
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\sqlite\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;NDEBUG;_LIB;THREADSAFE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
@@ -226,17 +198,10 @@ if exist "$(ProjectDir)..\..\sqlite\src\keywordhash.h" del "$(ProjectDir)..\..\s
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|Win32'">
     <PreBuildEvent>
-      <Command>if exist "$(ProjectDir)..\..\sqlite\src\sqlite3.h" del "$(ProjectDir)..\..\sqlite\src\sqlite3.h"
-if exist "$(ProjectDir)..\..\sqlite\src\parse.h" del "$(ProjectDir)..\..\sqlite\src\parse.h"
-if exist "$(ProjectDir)..\..\sqlite\src\parse.c" del "$(ProjectDir)..\..\sqlite\src\parse.c"
-if exist "$(ProjectDir)..\..\sqlite\src\opcodes.h" del "$(ProjectDir)..\..\sqlite\src\opcodes.h"
-if exist "$(ProjectDir)..\..\sqlite\src\opcodes.c" del "$(ProjectDir)..\..\sqlite\src\opcodes.c"
-if exist "$(ProjectDir)..\..\sqlite\src\keywordhash.h" del "$(ProjectDir)..\..\sqlite\src\keywordhash.h"
-</Command>
     </PreBuildEvent>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\sqlite\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;_DEBUG;_LIB;SQLITE_DEBUG;THREADSAFE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -264,20 +229,13 @@ if exist "$(ProjectDir)..\..\sqlite\src\keywordhash.h" del "$(ProjectDir)..\..\s
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug DLL|x64'">
     <PreBuildEvent>
-      <Command>if exist "$(ProjectDir)..\..\sqlite\src\sqlite3.h" del "$(ProjectDir)..\..\sqlite\src\sqlite3.h"
-if exist "$(ProjectDir)..\..\sqlite\src\parse.h" del "$(ProjectDir)..\..\sqlite\src\parse.h"
-if exist "$(ProjectDir)..\..\sqlite\src\parse.c" del "$(ProjectDir)..\..\sqlite\src\parse.c"
-if exist "$(ProjectDir)..\..\sqlite\src\opcodes.h" del "$(ProjectDir)..\..\sqlite\src\opcodes.h"
-if exist "$(ProjectDir)..\..\sqlite\src\opcodes.c" del "$(ProjectDir)..\..\sqlite\src\opcodes.c"
-if exist "$(ProjectDir)..\..\sqlite\src\keywordhash.h" del "$(ProjectDir)..\..\sqlite\src\keywordhash.h"
-</Command>
     </PreBuildEvent>
     <Midl>
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\sqlite\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;_DEBUG;_LIB;SQLITE_DEBUG;THREADSAFE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -305,16 +263,9 @@ if exist "$(ProjectDir)..\..\sqlite\src\keywordhash.h" del "$(ProjectDir)..\..\s
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release DLL|Win32'">
     <PreBuildEvent>
-      <Command>if exist "$(ProjectDir)..\..\sqlite\src\sqlite3.h" del "$(ProjectDir)..\..\sqlite\src\sqlite3.h"
-if exist "$(ProjectDir)..\..\sqlite\src\parse.h" del "$(ProjectDir)..\..\sqlite\src\parse.h"
-if exist "$(ProjectDir)..\..\sqlite\src\parse.c" del "$(ProjectDir)..\..\sqlite\src\parse.c"
-if exist "$(ProjectDir)..\..\sqlite\src\opcodes.h" del "$(ProjectDir)..\..\sqlite\src\opcodes.h"
-if exist "$(ProjectDir)..\..\sqlite\src\opcodes.c" del "$(ProjectDir)..\..\sqlite\src\opcodes.c"
-if exist "$(ProjectDir)..\..\sqlite\src\keywordhash.h" del "$(ProjectDir)..\..\sqlite\src\keywordhash.h"
-</Command>
     </PreBuildEvent>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\sqlite\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;NDEBUG;_LIB;THREADSAFE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>
@@ -336,19 +287,12 @@ if exist "$(ProjectDir)..\..\sqlite\src\keywordhash.h" del "$(ProjectDir)..\..\s
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release DLL|x64'">
     <PreBuildEvent>
-      <Command>if exist "$(ProjectDir)..\..\sqlite\src\sqlite3.h" del "$(ProjectDir)..\..\sqlite\src\sqlite3.h"
-if exist "$(ProjectDir)..\..\sqlite\src\parse.h" del "$(ProjectDir)..\..\sqlite\src\parse.h"
-if exist "$(ProjectDir)..\..\sqlite\src\parse.c" del "$(ProjectDir)..\..\sqlite\src\parse.c"
-if exist "$(ProjectDir)..\..\sqlite\src\opcodes.h" del "$(ProjectDir)..\..\sqlite\src\opcodes.h"
-if exist "$(ProjectDir)..\..\sqlite\src\opcodes.c" del "$(ProjectDir)..\..\sqlite\src\opcodes.c"
-if exist "$(ProjectDir)..\..\sqlite\src\keywordhash.h" del "$(ProjectDir)..\..\sqlite\src\keywordhash.h"
-</Command>
     </PreBuildEvent>
     <Midl>
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\..\sqlite\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;NDEBUG;_LIB;THREADSAFE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>
@@ -370,72 +314,15 @@ if exist "$(ProjectDir)..\..\sqlite\src\keywordhash.h" del "$(ProjectDir)..\..\s
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\sqlite\src\alter.c" />
-    <ClCompile Include="..\..\sqlite\src\analyze.c" />
-    <ClCompile Include="..\..\sqlite\src\attach.c" />
-    <ClCompile Include="..\..\sqlite\src\auth.c" />
-    <ClCompile Include="..\..\sqlite\src\btree.c" />
-    <ClCompile Include="..\..\sqlite\src\build.c" />
-    <ClCompile Include="..\..\sqlite\src\callback.c" />
-    <ClCompile Include="..\..\sqlite\src\complete.c" />
-    <ClCompile Include="..\..\sqlite\src\date.c" />
-    <ClCompile Include="..\..\sqlite\src\delete.c" />
-    <ClCompile Include="..\..\sqlite\src\expr.c" />
-    <ClCompile Include="..\..\sqlite\src\func.c" />
-    <ClCompile Include="..\..\sqlite\src\hash.c" />
-    <ClCompile Include="..\..\sqlite\src\insert.c" />
-    <ClCompile Include="..\..\sqlite\src\legacy.c" />
-    <ClCompile Include="..\..\sqlite\src\loadext.c" />
-    <ClCompile Include="..\..\sqlite\src\main.c" />
-    <ClCompile Include="opcodes.c" />
-    <ClCompile Include="..\..\sqlite\src\os.c" />
-    <ClCompile Include="..\..\sqlite\src\os_unix.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug DLL|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug DLL|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release DLL|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release DLL|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\..\sqlite\src\os_win.c" />
-    <ClCompile Include="..\..\sqlite\src\pager.c" />
-    <ClCompile Include="parse.c" />
-    <ClCompile Include="..\..\sqlite\src\pragma.c" />
-    <ClCompile Include="..\..\sqlite\src\prepare.c" />
-    <ClCompile Include="..\..\sqlite\src\printf.c" />
-    <ClCompile Include="..\..\sqlite\src\random.c" />
-    <ClCompile Include="..\..\sqlite\src\select.c" />
-    <ClCompile Include="..\..\sqlite\src\shell.c" />
-    <ClCompile Include="..\..\sqlite\src\table.c" />
-    <ClCompile Include="..\..\sqlite\src\tokenize.c" />
-    <ClCompile Include="..\..\sqlite\src\trigger.c" />
-    <ClCompile Include="..\..\sqlite\src\update.c" />
-    <ClCompile Include="..\..\sqlite\src\utf.c" />
-    <ClCompile Include="..\..\sqlite\src\util.c" />
-    <ClCompile Include="..\..\sqlite\src\vacuum.c" />
-    <ClCompile Include="..\..\sqlite\src\vdbe.c" />
-    <ClCompile Include="..\..\sqlite\src\vdbeapi.c" />
-    <ClCompile Include="..\..\sqlite\src\vdbeaux.c" />
-    <ClCompile Include="..\..\sqlite\src\vdbefifo.c" />
-    <ClCompile Include="..\..\sqlite\src\vdbemem.c" />
-    <ClCompile Include="..\..\sqlite\src\vtab.c" />
-    <ClCompile Include="..\..\sqlite\src\where.c" />
+    <ClCompile Include="..\..\sqlite-amalgamation-3080401\sqlite3.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\sqlite\src\btree.h" />
-    <ClInclude Include="..\..\sqlite\src\hash.h" />
-    <ClInclude Include="keywordhash.h" />
-    <ClInclude Include="opcodes.h" />
-    <ClInclude Include="..\..\sqlite\src\os.h" />
-    <ClInclude Include="..\..\sqlite\src\os_common.h" />
-    <ClInclude Include="..\..\sqlite\src\pager.h" />
-    <ClInclude Include="parse.h" />
-    <ClInclude Include="sqlite3.h" />
-    <ClInclude Include="..\..\sqlite\src\sqliteInt.h" />
-    <ClInclude Include="..\..\sqlite\src\vdbe.h" />
-    <ClInclude Include="..\..\sqlite\src\vdbeInt.h" />
+    <ClInclude Include="..\..\sqlite-amalgamation-3080401\sqlite3.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Download SQLITE.2012.vcxproj">
+      <Project>{97d25665-34cd-4e0c-96e7-88f0795b8883}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

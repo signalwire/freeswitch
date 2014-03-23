@@ -613,7 +613,6 @@
     <ClInclude Include="..\..\speex-1.2rc1\libspeex\ltp.h" />
     <ClInclude Include="..\..\speex-1.2rc1\libspeex\ltp_sse.h" />
     <ClInclude Include="..\..\speex-1.2rc1\libspeex\math_approx.h" />
-    <ClInclude Include="..\..\speex-1.2rc1\libspeex\misc.h" />
     <ClInclude Include="..\..\speex-1.2rc1\libspeex\modes.h" />
     <ClInclude Include="..\..\speex-1.2rc1\libspeex\nb_celp.h" />
     <ClInclude Include="..\..\speex-1.2rc1\libspeex\pseudofloat.h" />

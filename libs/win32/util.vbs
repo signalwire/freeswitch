@@ -85,7 +85,7 @@ Sub WgetUnCompress(URL, DestFolder)
 	fileext = Right(filename, Len(filename) - NameEnd)
 	Wget URL, DestFolder
 	If fileext = "zip" Then
-		UnCompress Destfolder & filename, DestFolder & filebase
+		UnCompress Destfolder & filename, DestFolder
 	Else
 		UnCompress Destfolder & filename, DestFolder
 	End If
