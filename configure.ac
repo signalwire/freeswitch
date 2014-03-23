@@ -1112,6 +1112,11 @@ AC_ARG_ENABLE(static-v8,
 [AS_HELP_STRING([--enable-static-v8], [Statically link V8 into mod_v8])], [enable_static_v8="$enableval"], [enable_static_v8="no"])
 AM_CONDITIONAL([ENABLE_STATIC_V8],[test "x$enable_static_v8" != "xno"])
 
+# Option to disable parallel build of Google's V8
+AC_ARG_ENABLE(parallel-build-v8,
+[AS_HELP_STRING([--disable-parallel-build-v8], [Disable parallel build of V8])], [enable_parallel_build_v8="$enableval"], [enable_parallel_build_v8="yes"])
+AM_CONDITIONAL([ENABLE_PARALLEL_BUILD_V8],[test "x$enable_parallel_build_v8" != "xno"])
+
 AM_CONDITIONAL([HAVE_ODBC],[test "x$enable_core_odbc_support" != "xno"])
 AM_CONDITIONAL([HAVE_LIBEDIT],[test "x$enable_core_libedit_support" != "xno"])
 AM_CONDITIONAL([HAVE_MYSQL],[test "$found_mysql" = "yes"])

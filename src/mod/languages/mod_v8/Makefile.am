@@ -40,6 +40,12 @@ V8_BUILDPARAMS += library=shared
 V8LIB=$(V8_LIBDIR)/libv8.$(V8_LIBEXT)
 endif
 
+if ENABLE_PARALLEL_BUILD_V8
+V8_EXTRA_BUILD_PARAMS=
+else
+V8_EXTRA_BUILD_PARAMS=--no-parallel
+endif
+
 # Try to find the target platform for our configured CXX compiler
 # Parse the result one extra time to handle different i386 platforms (i386, i486 etc)
 CXX_TARGET_PLATFORM := $(shell $(CXX) -v 2>&1 | grep Target | cut '-d:' -f2 | cut '-d-' -f1 | tr -d ' ')
@@ -127,7 +133,7 @@ $(V8LIB): $(V8_DIR) $(V8_DIR)/.stamp-patch
 	   fi; \
 	fi; \
 	cd $(V8_BUILDDIR) && CFLAGS="$(V8_CXXFLAGS)" CXXFLAGS="$(V8_CXXFLAGS)" \
-	LINK=@CXX@ CXX=@CXX@ GYPFLAGS="--no-parallel" GYP_DEFINES="$$defines" \
+	LINK=@CXX@ CXX=@CXX@ GYPFLAGS="$(V8_EXTRA_BUILD_PARAMS)" GYP_DEFINES="$$defines" \
 	OUTDIR=$(V8_BUILDDIR)/out \
 	PYTHONPATH="$(V8_DIR)/build/gyp/pylib:$(PYTHONPATH)" $(MAKE) -C $(V8_DIR) $(V8_BUILDPARAMS) native
 
