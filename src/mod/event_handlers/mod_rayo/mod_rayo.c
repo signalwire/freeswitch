@@ -207,6 +207,8 @@ static struct {
 	char *mixer_conf_profile;
 	/** to URI prefixes mapped to gateways */
 	switch_hash_t *dial_gateways;
+	/** synchronizes access to dial gateways */
+	switch_mutex_t *dial_gateways_mutex;
 	/** console command aliases */
 	switch_hash_t *cmd_aliases;
 	/** global console */
@@ -527,7 +529,7 @@ static void broadcast_event(struct rayo_actor *from, iks *rayo_event, int online
 {
 	switch_hash_index_t *hi = NULL;
 	switch_mutex_lock(globals.clients_mutex);
-	for (hi = switch_core_hash_first( globals.clients_roster); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first(globals.clients_roster); hi; hi = switch_core_hash_next(hi)) {
 		struct rayo_client *rclient;
 		const void *key;
 		void *val;
@@ -569,6 +571,7 @@ static struct dial_gateway *dial_gateway_find(const char *uri)
 	struct dial_gateway *gateway = (struct dial_gateway *)switch_core_hash_find(globals.dial_gateways, "default");
 
 	/* find longest prefix match */
+	switch_mutex_lock(globals.dial_gateways_mutex);
 	for (hi = switch_core_hash_first(globals.dial_gateways); hi; hi = switch_core_hash_next(hi)) {
 		struct dial_gateway *candidate = NULL;
 		const void *prefix;
@@ -584,6 +587,7 @@ static struct dial_gateway *dial_gateway_find(const char *uri)
 			gateway = candidate;
 		}
 	}
+	switch_mutex_unlock(globals.dial_gateways_mutex);
 	return gateway;
 }
 
@@ -1107,7 +1111,7 @@ static void rayo_call_cleanup(struct rayo_actor *actor)
 	}
 
 	/* send <end> to all offered clients */
-	for (hi = switch_core_hash_first( call->pcps); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first(call->pcps); hi; hi = switch_core_hash_next(hi)) {
 		const void *key;
 		void *val;
 		const char *client_jid = NULL;
@@ -2893,6 +2897,7 @@ static void rayo_client_command_recv(struct rayo_client *rclient, iks *iq)
 static void broadcast_mixer_event(struct rayo_mixer *mixer, iks *rayo_event)
 {
 	switch_hash_index_t *hi = NULL;
+	switch_mutex_lock(RAYO_ACTOR(mixer)->mutex);
 	for (hi = switch_core_hash_first(mixer->subscribers); hi; hi = switch_core_hash_next(hi)) {
 		const void *key;
 		void *val;
@@ -2903,6 +2908,7 @@ static void broadcast_mixer_event(struct rayo_mixer *mixer, iks *rayo_event)
 		iks_insert_attrib(rayo_event, "to", subscriber->jid);
 		RAYO_SEND_MESSAGE_DUP(mixer, subscriber->jid, rayo_event);
 	}
+	switch_mutex_unlock(RAYO_ACTOR(mixer)->mutex);
 }
 
 /**
@@ -3609,7 +3615,7 @@ SWITCH_STANDARD_APP(rayo_app)
 		/* Offer call to all ONLINE clients */
 		/* TODO load balance offers so first session doesn't always get offer first? */
 		switch_mutex_lock(globals.clients_mutex);
-		for (hi = switch_core_hash_first( globals.clients_roster); hi; hi = switch_core_hash_next(hi)) {
+		for (hi = switch_core_hash_first(globals.clients_roster); hi; hi = switch_core_hash_next(hi)) {
 			struct rayo_client *rclient;
 			const void *key;
 			void *val;
@@ -4364,7 +4370,7 @@ static switch_status_t list_actors(const char *line, const char *cursor, switch_
 	struct rayo_actor *actor;
 
 	switch_mutex_lock(globals.actors_mutex);
-	for (hi = switch_core_hash_first( globals.actors); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first(globals.actors); hi; hi = switch_core_hash_next(hi)) {
 		switch_core_hash_this(hi, &vvar, NULL, &val);
 
 		actor = (struct rayo_actor *) val;
@@ -4549,6 +4555,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_rayo_load)
 	switch_core_hash_init(&globals.actors_by_id);
 	switch_mutex_init(&globals.actors_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_core_hash_init(&globals.dial_gateways);
+	switch_mutex_init(&globals.dial_gateways_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_core_hash_init(&globals.cmd_aliases);
 	switch_thread_rwlock_create(&globals.shutdown_rwlock, pool);
 	switch_queue_create(&globals.msg_queue, 25000, pool);

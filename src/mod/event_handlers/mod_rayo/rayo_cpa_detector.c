@@ -31,6 +31,8 @@
 static struct {
 	/** detectors supported by this module mapped by signal-type */
 	switch_hash_t *detectors;
+	/** synchronizes access to detectors */
+	switch_mutex_t *detectors_mutex;
 } globals;
 
 struct rayo_cpa_detector;
@@ -390,10 +392,12 @@ static switch_status_t rayo_cpa_detector_signal_types(const char *line, const ch
 	const void *vvar;
 	switch_console_callback_match_t *my_matches = NULL;
 
-	for (hi = switch_core_hash_first( globals.detectors); hi; hi = switch_core_hash_next(hi)) {
+	switch_mutex_lock(globals.detectors_mutex);
+	for (hi = switch_core_hash_first(globals.detectors); hi; hi = switch_core_hash_next(hi)) {
 		switch_core_hash_this(hi, &vvar, NULL, &val);
 		switch_console_push_match(&my_matches, (const char *) vvar);
 	}
+	switch_mutex_unlock(globals.detectors_mutex);
 
 	if (my_matches) {
 		*matches = my_matches;
@@ -414,16 +418,19 @@ switch_status_t rayo_cpa_detector_load(switch_loadable_module_interface_t **modu
 {
 	switch_api_interface_t *api_interface;
 
+	switch_core_hash_init(&globals.detectors);
+	switch_mutex_init(&globals.detectors_mutex, SWITCH_MUTEX_NESTED, pool);
+
+	if (do_config(pool, config_file) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_TERM;
+	}
+
 	SWITCH_ADD_API(api_interface, "rayo_cpa", "Query rayo status", rayo_cpa_detector_api, RAYO_CPA_DETECTOR_SYNTAX);
 
 	switch_console_set_complete("add rayo_cpa ::console::list_uuid ::rayo_cpa::list_signal_types start");
 	switch_console_set_complete("add rayo_cpa ::console::list_uuid ::rayo_cpa::list_signal_types stop");
 	switch_console_add_complete_func("::rayo_cpa::list_signal_types", rayo_cpa_detector_signal_types);
 
-	switch_core_hash_init(&globals.detectors);
-	if (do_config(pool, config_file) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_TERM;
-	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
