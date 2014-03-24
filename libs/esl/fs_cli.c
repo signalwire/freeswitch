@@ -1512,7 +1512,7 @@ int main(int argc, char *argv[])
 	}
 	bare_prompt_str_len = (int)strlen(bare_prompt_str);
 	if (feature_level) {
-#ifdef HAVE_DECL_EL_PROMPT_ESC
+#if HAVE_DECL_EL_PROMPT_ESC
 		snprintf(prompt_str, sizeof(prompt_str), "\1%s\1%s\1%s\1", prompt_color, bare_prompt_str, input_text_color);
 #else
 		snprintf(prompt_str, sizeof(prompt_str), "%s%s%s", prompt_color, bare_prompt_str, input_text_color);
@@ -1578,7 +1578,7 @@ int main(int argc, char *argv[])
 
 #ifdef HAVE_LIBEDIT
 	el = el_init(__FILE__, stdin, stdout, stderr);
-#ifdef HAVE_DECL_EL_PROMPT_ESC
+#if HAVE_DECL_EL_PROMPT_ESC
 	el_set(el, EL_PROMPT_ESC, &prompt, '\1');
 #else
 	el_set(el, EL_PROMPT, &prompt);
