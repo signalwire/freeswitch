@@ -2,14 +2,9 @@
   <settings>
     <!-- 
       connection-string handles different ways to connect to mongo
-      samples:
-         server:port
-         foo/server:port,server:port   SET
+      mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]
     -->
-    <param name="connection-string" value="127.0.0.1:27017"/>
-    <param name="max-connections" value="100"/>
-    <!-- Timeout in seconds.  0 means no timeout -->
-    <param name="socket-timeout" value="0"/>
+    <param name="connection-string" value="mongodb://127.0.0.1:27017/?connectTimeoutMS=5000"/>
 
 <!--
     <param name="map" value="function() { emit(this.a, 1); }"/>
