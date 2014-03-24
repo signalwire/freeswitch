@@ -112,7 +112,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </Bscmake>
     <PreBuildEvent>
-      <Command>if not exist "$(XMLRPCDir)version.h" (
+      <Command>if not exist "$(XMLRPCDir)xmlrpc_config.h" (
 pushd $(XMLRPCDir)Windows
 "ConfigureWin32.bat"
 popd
@@ -154,7 +154,7 @@ popd
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </Bscmake>
     <PreBuildEvent>
-      <Command>if not exist "$(XMLRPCDir)version.h" (
+      <Command>if not exist "$(XMLRPCDir)xmlrpc_config.h" (
 pushd $(XMLRPCDir)Windows
 "ConfigureWin32.bat"
 popd
@@ -193,7 +193,7 @@ popd
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </Bscmake>
     <PreBuildEvent>
-      <Command>if not exist "$(XMLRPCDir)version.h" (
+      <Command>if not exist "$(XMLRPCDir)xmlrpc_config.h" (
 pushd $(XMLRPCDir)Windows
 "ConfigureWin32.bat"
 popd
