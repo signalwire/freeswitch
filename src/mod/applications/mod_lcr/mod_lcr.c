@@ -1171,7 +1171,7 @@ static switch_status_t lcr_load_config()
 						if (db_check("ALTER TABLE carrier_gateway add codec varchar(255);") == SWITCH_TRUE) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "adding codec field your lcr carrier_gateway database schema.\n");
 						} else {
-							return SWITCH_STATUS_FALSE;
+							switch_goto_status(SWITCH_STATUS_FALSE, done);
 						}
 					}
 
@@ -1182,7 +1182,7 @@ static switch_status_t lcr_load_config()
 						if (db_check("ALTER TABLE lcr add cid varchar(32);") == SWITCH_TRUE) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "adding cid field to your lcr database schema.\n");
 						} else {
-							return SWITCH_STATUS_FALSE;
+							switch_goto_status(SWITCH_STATUS_FALSE, done);
 						}
 					}
 
@@ -1190,7 +1190,7 @@ static switch_status_t lcr_load_config()
 						if (db_check("ALTER TABLE lcr ADD lrn BOOLEAN NOT NULL DEFAULT false")) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "adding lrn field to your lcr database schema.\n");
 						} else {
-							return SWITCH_STATUS_FALSE;
+							switch_goto_status(SWITCH_STATUS_FALSE, done);
 						}
 					}
 
