@@ -50,10 +50,9 @@ ESLconnection::ESLconnection(int socket)
 
 ESLconnection::~ESLconnection()
 {
-	if (handle.connected) {
+	if (!handle.destroyed) {
 		esl_disconnect(&handle);
 	}
-
 }
 
 int ESLconnection::socketDescriptor()
@@ -68,7 +67,7 @@ int ESLconnection::socketDescriptor()
 
 int ESLconnection::disconnect()
 {
-	if (handle.connected) {
+	if (!handle.destroyed) {
         return esl_disconnect(&handle);
     }
 
