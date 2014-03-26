@@ -23,7 +23,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_event_multicast", "src\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libteletone", "libs\libteletone\libteletone.2010.vcxproj", "{89385C74-5860-4174-9CAF-A39E7C48909C}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey", "src\mod\languages\mod_spidermonkey\mod_spidermonkey.2010.vcxproj", "{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey", "src\mod\legacy\languages\mod_spidermonkey\mod_spidermonkey.2010.vcxproj", "{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_cepstral", "src\mod\asr_tts\mod_cepstral\mod_cepstral.2010.vcxproj", "{692F6330-4D87-4C82-81DF-40DB5892636E}"
 EndProject
@@ -87,13 +87,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_g723_1", "src\mod\codec
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_native_file", "src\mod\formats\mod_native_file\mod_native_file.2010.vcxproj", "{9254C4B0-6F60-42B6-BB3A-36D63FC001C7}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_core_db", "src\mod\languages\mod_spidermonkey\mod_spidermonkey_core_db.2010.vcxproj", "{ACFFF684-4D19-4D48-AF12-88EA1D778BDF}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_core_db", "src\mod\legacy\languages\mod_spidermonkey\mod_spidermonkey_core_db.2010.vcxproj", "{ACFFF684-4D19-4D48-AF12-88EA1D778BDF}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_teletone", "src\mod\languages\mod_spidermonkey\mod_spidermonkey_teletone.2010.vcxproj", "{8F992C49-6C51-412F-B2A3-34EAB708EB65}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_teletone", "src\mod\legacy\languages\mod_spidermonkey\mod_spidermonkey_teletone.2010.vcxproj", "{8F992C49-6C51-412F-B2A3-34EAB708EB65}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_enum", "src\mod\applications\mod_enum\mod_enum.2010.vcxproj", "{71A967D5-0E99-4CEF-A587-98836EE6F2EF}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_odbc", "src\mod\languages\mod_spidermonkey\mod_spidermonkey_odbc.2010.vcxproj", "{0A6B5EA5-6E9B-4A51-931F-ED25AA87B4DF}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_odbc", "src\mod\legacy\languages\mod_spidermonkey\mod_spidermonkey_odbc.2010.vcxproj", "{0A6B5EA5-6E9B-4A51-931F-ED25AA87B4DF}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_xml_curl", "src\mod\xml_int\mod_xml_curl\mod_xml_curl.2010.vcxproj", "{AB91A099-7690-4ECF-8994-E458F4EA1ED4}"
 EndProject
@@ -111,7 +111,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_esf", "src\mod\applicat
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_local_stream", "src\mod\formats\mod_local_stream\mod_local_stream.2010.vcxproj", "{2CA40887-1622-46A1-A7F9-17FD7E7E545B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_socket", "src\mod\languages\mod_spidermonkey\mod_spidermonkey_socket.2010.vcxproj", "{028C7278-05D7-4E18-82FE-BE231B844F41}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_socket", "src\mod\legacy\languages\mod_spidermonkey\mod_spidermonkey_socket.2010.vcxproj", "{028C7278-05D7-4E18-82FE-BE231B844F41}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_voicemail", "src\mod\applications\mod_voicemail\mod_voicemail.2010.vcxproj", "{D7F1E3F2-A3F4-474C-8555-15122571AF52}"
 EndProject
@@ -141,7 +141,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_tone_stream", "src\mod\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_fsv", "src\mod\applications\mod_fsv\mod_fsv.2010.vcxproj", "{E3246D17-E29B-4AB5-962A-C69B0C5837BB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_curl", "src\mod\languages\mod_spidermonkey\mod_spidermonkey_curl.2010.vcxproj", "{36E854E3-CE12-4348-A125-CCF3F9D74813}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_curl", "src\mod\legacy\languages\mod_spidermonkey\mod_spidermonkey_curl.2010.vcxproj", "{36E854E3-CE12-4348-A125-CCF3F9D74813}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_lua", "src\mod\languages\mod_lua\mod_lua.2010.vcxproj", "{7B077E7F-1BE7-4291-AB86-55E527B25CAC}"
 EndProject

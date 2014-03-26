@@ -46,27 +46,27 @@
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\..\w32\winlibs.props" />
-    <Import Project="..\..\..\..\w32\module_release.props" />
-    <Import Project="..\..\..\..\w32\spidermonkey.props" />
+    <Import Project="..\..\..\..\..\w32\winlibs.props" />
+    <Import Project="..\..\..\..\..\w32\module_release.props" />
+    <Import Project="..\..\..\..\..\w32\spidermonkey.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\..\w32\winlibs.props" />
-    <Import Project="..\..\..\..\w32\module_debug.props" />
-    <Import Project="..\..\..\..\w32\spidermonkey.props" />
+    <Import Project="..\..\..\..\..\w32\winlibs.props" />
+    <Import Project="..\..\..\..\..\w32\module_debug.props" />
+    <Import Project="..\..\..\..\..\w32\spidermonkey.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\..\w32\winlibs.props" />
-    <Import Project="..\..\..\..\w32\module_release.props" />
-    <Import Project="..\..\..\..\w32\spidermonkey.props" />
+    <Import Project="..\..\..\..\..\w32\winlibs.props" />
+    <Import Project="..\..\..\..\..\w32\module_release.props" />
+    <Import Project="..\..\..\..\..\w32\spidermonkey.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\..\w32\winlibs.props" />
-    <Import Project="..\..\..\..\w32\module_debug.props" />
-    <Import Project="..\..\..\..\w32\spidermonkey.props" />
+    <Import Project="..\..\..\..\..\w32\winlibs.props" />
+    <Import Project="..\..\..\..\..\w32\module_debug.props" />
+    <Import Project="..\..\..\..\..\w32\spidermonkey.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
@@ -82,7 +82,7 @@
       </Command>
     </PreBuildEvent>
     <ClCompile>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\libteletone\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\..\libs\libteletone\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
     </ClCompile>
@@ -102,7 +102,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\libteletone\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\..\libs\libteletone\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
     </ClCompile>
@@ -121,7 +121,7 @@
       </Command>
     </PreBuildEvent>
     <ClCompile>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\libteletone\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\..\libs\libteletone\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
     </ClCompile>
@@ -144,7 +144,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\libteletone\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\..\libs\libteletone\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
     </ClCompile>
@@ -164,19 +164,19 @@
     <ClCompile Include="mod_spidermonkey_teletone.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\libteletone\libteletone.2010.vcxproj">
+    <ProjectReference Include="..\..\..\..\..\libs\libteletone\libteletone.2010.vcxproj">
       <Project>{89385c74-5860-4174-9caf-a39e7c48909c}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\apr\libapr.2010.vcxproj">
+    <ProjectReference Include="..\..\..\..\..\libs\win32\apr\libapr.2010.vcxproj">
       <Project>{f6c55d93-b927-4483-bb69-15aef3dd2dff}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\js\js.2010.vcxproj">
+    <ProjectReference Include="..\..\..\..\..\libs\win32\js\js.2010.vcxproj">
       <Project>{204fa0de-305d-4414-ae2e-f195a23f390d}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2010.vcxproj">
+    <ProjectReference Include="..\..\..\..\..\w32\Library\FreeSwitchCore.2010.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

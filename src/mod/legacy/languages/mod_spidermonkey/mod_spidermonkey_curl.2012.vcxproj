@@ -50,27 +50,27 @@
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\..\w32\winlibs.props" />
-    <Import Project="..\..\..\..\w32\module_release.props" />
-    <Import Project="..\..\..\..\w32\spidermonkey.props" />
+    <Import Project="..\..\..\..\..\w32\winlibs.props" />
+    <Import Project="..\..\..\..\..\w32\module_release.props" />
+    <Import Project="..\..\..\..\..\w32\spidermonkey.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\..\w32\winlibs.props" />
-    <Import Project="..\..\..\..\w32\module_debug.props" />
-    <Import Project="..\..\..\..\w32\spidermonkey.props" />
+    <Import Project="..\..\..\..\..\w32\winlibs.props" />
+    <Import Project="..\..\..\..\..\w32\module_debug.props" />
+    <Import Project="..\..\..\..\..\w32\spidermonkey.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\..\w32\winlibs.props" />
-    <Import Project="..\..\..\..\w32\module_release.props" />
-    <Import Project="..\..\..\..\w32\spidermonkey.props" />
+    <Import Project="..\..\..\..\..\w32\winlibs.props" />
+    <Import Project="..\..\..\..\..\w32\module_release.props" />
+    <Import Project="..\..\..\..\..\w32\spidermonkey.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\..\..\w32\winlibs.props" />
-    <Import Project="..\..\..\..\w32\module_debug.props" />
-    <Import Project="..\..\..\..\w32\spidermonkey.props" />
+    <Import Project="..\..\..\..\..\w32\winlibs.props" />
+    <Import Project="..\..\..\..\..\w32\module_debug.props" />
+    <Import Project="..\..\..\..\..\w32\spidermonkey.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
@@ -86,7 +86,7 @@
       </Command>
     </PreBuildEvent>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\libs\curl-7.35.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\..\libs\curl-7.35.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
     </ClCompile>
@@ -106,7 +106,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\libs\curl-7.35.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\..\libs\curl-7.35.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
     </ClCompile>
@@ -125,7 +125,7 @@
       </Command>
     </PreBuildEvent>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\libs\curl-7.35.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\..\libs\curl-7.35.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
     </ClCompile>
@@ -145,7 +145,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\..\..\libs\curl-7.35.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\..\..\libs\curl-7.35.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
     </ClCompile>
@@ -162,21 +162,21 @@
     <ClCompile Include="mod_spidermonkey_curl.c" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\win32\curl\curllib.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\..\libs\win32\curl\curllib.2012.vcxproj">
       <Project>{87ee9da4-de1e-4448-8324-183c98dca588}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\js\js.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\..\libs\win32\js\js.2012.vcxproj">
       <Project>{204fa0de-305d-4414-ae2e-f195a23f390d}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\openssl\libeay32.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\..\libs\win32\openssl\libeay32.2012.vcxproj">
       <Project>{d331904d-a00a-4694-a5a3-fcff64ab5dbe}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\openssl\ssleay32.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\..\libs\win32\openssl\ssleay32.2012.vcxproj">
       <Project>{b4b62169-5ad4-4559-8707-3d933ac5db39}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2012.vcxproj">
+    <ProjectReference Include="..\..\..\..\..\w32\Library\FreeSwitchCore.2012.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
