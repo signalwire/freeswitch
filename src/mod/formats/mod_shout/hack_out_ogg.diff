@@ -1,6 +1,6 @@
-diff -r -u ../../../../libs/libshout-2.2.2/Makefile.am ../../../../libs/libshout-2.2.2a/Makefile.am
---- ../../../../libs/libshout-2.2.2/Makefile.am	2006-01-30 19:42:43.000000000 -0600
-+++ ../../../../libs/libshout-2.2.2a/Makefile.am	2010-10-22 12:07:22.000000000 -0500
+diff -r -u ../../../../libs/libshout-2.2.2a/Makefile.am ../../../../libs/libshout-2.2.2/Makefile.am
+--- ../../../../libs/libshout-2.2.2a/Makefile.am	2006-01-30 20:42:43.000000000 -0500
++++ ../../../../libs/libshout-2.2.2/Makefile.am	2014-03-26 14:45:00.000000000 -0400
 @@ -3,16 +3,14 @@
  AUTOMAKE_OPTIONS = 1.6 foreign
  ACLOCAL_AMFLAGS = -I m4
@@ -21,9 +21,9 @@ diff -r -u ../../../../libs/libshout-2.2.2/Makefile.am ../../../../libs/libshout
  
  m4datadir = $(datadir)/aclocal
  m4data_DATA = m4/shout.m4
-diff -r -u ../../../../libs/libshout-2.2.2/Makefile.in ../../../../libs/libshout-2.2.2a/Makefile.in
---- ../../../../libs/libshout-2.2.2/Makefile.in	2006-06-19 15:36:36.000000000 -0500
-+++ ../../../../libs/libshout-2.2.2a/Makefile.in	2010-10-22 12:09:46.000000000 -0500
+diff -r -u ../../../../libs/libshout-2.2.2a/Makefile.in ../../../../libs/libshout-2.2.2/Makefile.in
+--- ../../../../libs/libshout-2.2.2a/Makefile.in	2006-06-19 16:36:36.000000000 -0400
++++ ../../../../libs/libshout-2.2.2/Makefile.in	2014-03-26 14:45:00.000000000 -0400
 @@ -246,14 +246,14 @@
  target_alias = @target_alias@
  AUTOMAKE_OPTIONS = 1.6 foreign
@@ -41,9 +41,9 @@ diff -r -u ../../../../libs/libshout-2.2.2/Makefile.in ../../../../libs/libshout
  m4datadir = $(datadir)/aclocal
  m4data_DATA = m4/shout.m4
  @HAVE_PKGCONFIG_TRUE@pkgconfigdir = $(libdir)/pkgconfig
-diff -r -u ../../../../libs/libshout-2.2.2/configure ../../../../libs/libshout-2.2.2a/configure
---- ../../../../libs/libshout-2.2.2/configure	2006-06-19 15:36:37.000000000 -0500
-+++ ../../../../libs/libshout-2.2.2a/configure	2010-10-22 12:08:39.000000000 -0500
+diff -r -u ../../../../libs/libshout-2.2.2a/configure ../../../../libs/libshout-2.2.2/configure
+--- ../../../../libs/libshout-2.2.2a/configure	2006-06-19 16:36:37.000000000 -0400
++++ ../../../../libs/libshout-2.2.2/configure	2014-03-26 14:45:00.000000000 -0400
 @@ -22911,7 +22911,7 @@
  
  fi
@@ -154,9 +154,18 @@ diff -r -u ../../../../libs/libshout-2.2.2/configure ../../../../libs/libshout-2
    "win32/Makefile" ) CONFIG_FILES="$CONFIG_FILES win32/Makefile" ;;
    "shout-config" ) CONFIG_FILES="$CONFIG_FILES shout-config" ;;
    "shout.pc" ) CONFIG_FILES="$CONFIG_FILES shout.pc" ;;
-diff -r -u ../../../../libs/libshout-2.2.2/src/Makefile.am ../../../../libs/libshout-2.2.2a/src/Makefile.am
---- ../../../../libs/libshout-2.2.2/src/Makefile.am	2006-01-30 19:42:42.000000000 -0600
-+++ ../../../../libs/libshout-2.2.2a/src/Makefile.am	2010-10-22 11:59:57.000000000 -0500
+diff -r -u ../../../../libs/libshout-2.2.2a/src/Makefile.am ../../../../libs/libshout-2.2.2/src/Makefile.am
+--- ../../../../libs/libshout-2.2.2a/src/Makefile.am	2006-01-30 20:42:42.000000000 -0500
++++ ../../../../libs/libshout-2.2.2/src/Makefile.am	2014-03-26 14:45:29.000000000 -0400
+@@ -12,7 +12,7 @@
+ endif
+ 
+ if HAVE_SPEEX
+-  MAYBE_SPEEX = speex.c
++  MAYBE_SPEEX =
+ endif
+ 
+ SUBDIRS = avl net timing httpp $(MAYBE_THREAD)
 @@ -20,9 +20,9 @@
  lib_LTLIBRARIES = libshout.la
  libshout_la_LDFLAGS = -version-info 5:0:2
@@ -170,9 +179,10 @@ diff -r -u ../../../../libs/libshout-2.2.2/src/Makefile.am ../../../../libs/libs
  AM_CFLAGS = @XIPH_CFLAGS@
  
  libshout_la_LIBADD = net/libicenet.la timing/libicetiming.la avl/libiceavl.la\
-diff -r -u ../../../../libs/libshout-2.2.2/src/Makefile.in ../../../../libs/libshout-2.2.2a/src/Makefile.in
---- ../../../../libs/libshout-2.2.2/src/Makefile.in	2006-06-19 15:36:32.000000000 -0500
-+++ ../../../../libs/libshout-2.2.2a/src/Makefile.in	2010-10-22 12:04:24.000000000 -0500
+Only in ../../../../libs/libshout-2.2.2/src: Makefile.am~
+diff -r -u ../../../../libs/libshout-2.2.2a/src/Makefile.in ../../../../libs/libshout-2.2.2/src/Makefile.in
+--- ../../../../libs/libshout-2.2.2a/src/Makefile.in	2006-06-19 16:36:32.000000000 -0400
++++ ../../../../libs/libshout-2.2.2/src/Makefile.in	2014-03-26 14:46:26.000000000 -0400
 @@ -42,10 +42,7 @@
  	$(srcdir)/Makefile.in
  ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -185,7 +195,7 @@ diff -r -u ../../../../libs/libshout-2.2.2/src/Makefile.in ../../../../libs/libs
  	$(top_srcdir)/configure.ac
  am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
  	$(ACLOCAL_M4)
-@@ -66,11 +63,11 @@
+@@ -66,12 +63,11 @@
  libshout_la_DEPENDENCIES = net/libicenet.la timing/libicetiming.la \
  	avl/libiceavl.la httpp/libicehttpp.la $(am__DEPENDENCIES_1) \
  	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_2)
@@ -193,13 +203,15 @@ diff -r -u ../../../../libs/libshout-2.2.2/src/Makefile.in ../../../../libs/libs
 +am__libshout_la_SOURCES_DIST = shout.c util.c mp3.c \
  	theora.c speex.c
  @HAVE_THEORA_TRUE@am__objects_1 = theora.lo
- @HAVE_SPEEX_TRUE@am__objects_2 = speex.lo
+-@HAVE_SPEEX_TRUE@am__objects_2 = speex.lo
 -am_libshout_la_OBJECTS = shout.lo util.lo ogg.lo vorbis.lo mp3.lo \
+-	$(am__objects_1) $(am__objects_2)
 +am_libshout_la_OBJECTS = shout.lo util.lo mp3.lo \
- 	$(am__objects_1) $(am__objects_2)
++	$(am__objects_1)
  libshout_la_OBJECTS = $(am_libshout_la_OBJECTS)
  DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
-@@ -152,10 +149,6 @@
+ depcomp = $(SHELL) $(top_srcdir)/depcomp
+@@ -152,10 +148,6 @@
  MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
  MAKEINFO = @MAKEINFO@
  OBJEXT = @OBJEXT@
@@ -210,7 +222,13 @@ diff -r -u ../../../../libs/libshout-2.2.2/src/Makefile.in ../../../../libs/libs
  OPT = @OPT@
  PACKAGE = @PACKAGE@
  PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
-@@ -257,8 +250,8 @@
+@@ -252,13 +244,13 @@
+ @HAVE_THREAD_TRUE@MAYBE_THREAD = thread
+ @HAVE_THREAD_TRUE@MAYBE_THREAD_LIB = thread/libicethread.la
+ @HAVE_THEORA_TRUE@MAYBE_THEORA = theora.c
+-@HAVE_SPEEX_TRUE@MAYBE_SPEEX = speex.c
++@HAVE_SPEEX_TRUE@MAYBE_SPEEX =
+ SUBDIRS = avl net timing httpp $(MAYBE_THREAD)
  lib_LTLIBRARIES = libshout.la
  libshout_la_LDFLAGS = -version-info 5:0:2
  EXTRA_DIST = theora.c speex.c
@@ -221,7 +239,7 @@ diff -r -u ../../../../libs/libshout-2.2.2/src/Makefile.in ../../../../libs/libs
  AM_CFLAGS = @XIPH_CFLAGS@
  libshout_la_LIBADD = net/libicenet.la timing/libicetiming.la avl/libiceavl.la\
  		httpp/libicehttpp.la $(MAYBE_THREAD_LIB) $(THEORA_LIBS) $(VORBIS_LIBS)
-@@ -334,7 +327,7 @@
+@@ -334,7 +326,7 @@
  	-rm -f *.tab.c
  
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mp3.Plo@am__quote@
@@ -230,9 +248,10 @@ diff -r -u ../../../../libs/libshout-2.2.2/src/Makefile.in ../../../../libs/libs
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shout.Plo@am__quote@
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/speex.Plo@am__quote@
  @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/theora.Plo@am__quote@
-diff -r -u ../../../../libs/libshout-2.2.2/src/shout.c ../../../../libs/libshout-2.2.2a/src/shout.c
---- ../../../../libs/libshout-2.2.2/src/shout.c	2008-07-28 11:33:56.000000000 -0500
-+++ ../../../../libs/libshout-2.2.2a/src/shout.c	2010-10-22 12:12:46.000000000 -0500
+Only in ../../../../libs/libshout-2.2.2/src: Makefile.in~
+diff -r -u ../../../../libs/libshout-2.2.2a/src/shout.c ../../../../libs/libshout-2.2.2/src/shout.c
+--- ../../../../libs/libshout-2.2.2a/src/shout.c	2008-07-28 12:33:56.000000000 -0400
++++ ../../../../libs/libshout-2.2.2/src/shout.c	2014-03-26 14:45:00.000000000 -0400
 @@ -994,10 +994,7 @@
  		if ((rc = parse_response(self)) != SHOUTERR_SUCCESS)
                          goto failure;
