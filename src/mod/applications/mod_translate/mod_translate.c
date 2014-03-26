@@ -179,7 +179,7 @@ static void do_unload(void) {
 		switch_core_hash_this(hi, &key, &keylen, &val);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "deleting translate profile [%s]\n", (char *) key);
 
-		for (rl = nrl = val; rl;) {
+		for (nrl = val; rl;) {
 			rl = nrl;
 			nrl = nrl->next;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "deleting rule for [%s]\n", rl->regex);
