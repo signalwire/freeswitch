@@ -29,7 +29,6 @@ avoid_mods=(
   endpoints/mod_unicall
   languages/mod_managed
   languages/mod_perl
-  languages/mod_spidermonkey
   languages/mod_v8
   sdk/autotools
   xml_int/mod_xml_ldap
@@ -451,8 +450,6 @@ Recommends:
  freeswitch-music,
  freeswitch-sounds,
  freeswitch-conf-vanilla (= \${binary:Version}),
-Suggests:
- freeswitch-mod-spidermonkey (= \${binary:Version}),
 Description: Cross-Platform Scalable Multi-Protocol Soft Switch
  $(debian_wrap "${fs_description}")
  .

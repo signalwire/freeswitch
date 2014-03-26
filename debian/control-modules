@@ -563,11 +563,6 @@ Description: mod_python
  Adds mod_python.
 Build-Depends: python-dev
 
-Module: languages/mod_spidermonkey
-Description: mod_spidermonkey
- Adds mod_spidermonkey.
-Build-Depends: unixodbc-dev
-
 Module: languages/mod_v8
 Description: mod_v8
  Adds mod_v8.
