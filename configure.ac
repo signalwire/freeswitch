@@ -218,6 +218,14 @@ AC_PROG_LIBTOOL
 #Check for compiler vendor
 AX_COMPILER_VENDOR
 
+# Set CC_FOR_BUILD
+if test "x${cross_compiling}" = "xyes"; then
+    CC_FOR_BUILD=${CC_FOR_BUILD-gcc}
+else
+    CC_FOR_BUILD='$(CC)'
+fi
+AC_SUBST(CC_FOR_BUILD)
+
 #  Optimize
 AC_ARG_ENABLE(optimization,
 [AC_HELP_STRING([--enable-optimization],[Set if you want us to add max optimising compiler flags])],[enable_optimizer="$enableval"],[enable_optimizer="no"])

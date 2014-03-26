@@ -410,7 +410,7 @@ $(OUR_MODULES): $(switch_builddir)/modules.conf libfreeswitch.la
 	test -z "$$fail"
 
 build/print_git_revision: build/print_git_revision.c
-	$(CC) -o $@ $<
+	$(CC_FOR_BUILD) -o $@ $<
 
 src/switch_version.lo: src/include/switch_version.h
 
