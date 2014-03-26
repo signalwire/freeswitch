@@ -212,14 +212,18 @@ static const char *do_cid(switch_memory_pool_t *pool, const char *cid, const cha
 		if (switch_string_var_check_const(src) || switch_string_has_escaped_data(src)) {
 			tmp_regex = switch_channel_expand_variables(channel, src);
 			src_regex = switch_core_strdup(pool, tmp_regex);
-			switch_safe_free(tmp_regex);
+			if ( tmp_regex != src ) {
+				switch_safe_free(tmp_regex);
+			}
 			src = src_regex;
 		}
 
 		if (switch_string_var_check_const(dst) || switch_string_has_escaped_data(dst)) {
 			tmp_regex = switch_channel_expand_variables(channel, dst);
 			dst_regex = switch_core_strdup(pool, tmp_regex);
-			switch_safe_free(tmp_regex);
+			if ( tmp_regex != dst ) {
+				switch_safe_free(tmp_regex);
+			}
 			dst = dst_regex;
 		}
 
@@ -258,6 +262,7 @@ static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, ch
 	char *header = NULL;
 	char *user_rate = NULL;
 	char *export_fields = NULL;
+	char *expanded = NULL;
 
 	destination_number = switch_core_strdup(pool, dialed_number);
 
@@ -332,12 +337,24 @@ static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, ch
 	}
 
 	if (session && (switch_string_var_check_const(data) || switch_string_has_escaped_data(data))) {
-		data = switch_channel_expand_variables(switch_core_session_get_channel(session), data);
+		expanded = switch_channel_expand_variables(switch_core_session_get_channel(session), data);
+		if (expanded == data ) {
+			expanded = NULL;
+		} else {
+			data = switch_core_strdup( pool, expanded );
+		}
 	}
 
 	if (session && (switch_string_var_check_const(data) || switch_string_has_escaped_data(data))) {
-		data = switch_channel_expand_variables(switch_core_session_get_channel(session), data);
+		expanded = switch_channel_expand_variables(switch_core_session_get_channel(session), data);
+		if (expanded == data ) {
+			expanded = NULL;
+		} else {
+			data = switch_core_strdup( pool, expanded );
+		}
 	}
+
+	switch_safe_free(expanded);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Returning Dialstring %s\n", data);
 
@@ -549,13 +566,13 @@ static char *expand_digits(switch_memory_pool_t *pool, char *digits, switch_bool
 /* format the custom sql */
 static char *format_custom_sql(const char *custom_sql, callback_t *cb_struct, const char *digits)
 {
-	char * newSQL = NULL;
+	char *replace = NULL;
 	switch_channel_t *channel;
 
 	/* first replace %s with digits to maintain backward compat */
 	if (cb_struct->profile->custom_sql_has_percent == SWITCH_TRUE) {
-		newSQL = switch_string_replace(custom_sql, "%q", digits);
-		custom_sql = newSQL;
+		replace = switch_string_replace(custom_sql, "%q", digits);
+		custom_sql = replace;
 	}
 
 	/* expand the vars */
@@ -563,21 +580,22 @@ static char *format_custom_sql(const char *custom_sql, callback_t *cb_struct, co
 		if (cb_struct->session) {
 			channel = switch_core_session_get_channel(cb_struct->session);
 			switch_assert(channel);
-			newSQL = switch_channel_expand_variables(channel, newSQL ? newSQL : custom_sql);
-			custom_sql = newSQL;
+			custom_sql = switch_channel_expand_variables(channel, custom_sql);
+			if ( custom_sql != replace ) {
+				switch_safe_free(replace);
+			}
 		} else if (cb_struct->event) {
 			/* use event system to expand vars */
-			newSQL = switch_event_expand_headers(cb_struct->event, newSQL ? newSQL : custom_sql);
-			custom_sql = newSQL;
+			custom_sql = switch_event_expand_headers(cb_struct->event, custom_sql);
+			if ( custom_sql != replace ) {
+				switch_safe_free(replace);
+			}
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(cb_struct->session), SWITCH_LOG_CRIT,
 								"mod_lcr called without a valid session while using a custom_sql that has channel variables.\n");
 		}
 	}
 
-	if (newSQL == NULL) {
-		switch_safe_free(newSQL);
-	}
 	return (char *) custom_sql;
 }
 
