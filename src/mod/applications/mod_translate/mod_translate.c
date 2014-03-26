@@ -174,7 +174,7 @@ static void do_unload(void) {
 		void *val = NULL;
 		const void *key;
 		switch_ssize_t keylen;
-		translate_rule_t *rl, *nrl;
+		translate_rule_t *rl = NULL, *nrl;
 
 		switch_core_hash_this(hi, &key, &keylen, &val);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "deleting translate profile [%s]\n", (char *) key);
