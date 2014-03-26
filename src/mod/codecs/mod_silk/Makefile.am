@@ -15,5 +15,5 @@ BUILT_SOURCES=$(SILK_LA)
 
 $(SILK_LA): $(SILK_DIR)/.update	
 	mkdir -p $(SILK_BUILDDIR)
-	cd $(SILK_BUILDDIR) && $(DEFAULT_VARS) $(SILK_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(SILK_DIR) --disable-shared && make clean && $(MAKE)
+	cd $(SILK_BUILDDIR) && $(DEFAULT_VARS) $(SILK_DIR)/configure $(DEFAULT_ARGS) --srcdir=$(SILK_DIR) --disable-shared && $(MAKE) clean && $(MAKE)
 	$(TOUCH_TARGET)
