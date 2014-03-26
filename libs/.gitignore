@@ -808,22 +808,6 @@ opal
 /sipcc/Makefile
 /sipcc/Makefile.in
 
-/yaml/Makefile
-/yaml/config.h
-/yaml/include/Makefile
-/yaml/src/Makefile
-/yaml/stamp-h1
-/yaml/tests/Makefile
-/yaml/tests/example-deconstructor
-/yaml/tests/example-deconstructor-alt
-/yaml/tests/example-reformatter
-/yaml/tests/example-reformatter-alt
-/yaml/tests/run-dumper
-/yaml/tests/run-emitter
-/yaml/tests/run-loader
-/yaml/tests/run-parser
-/yaml/tests/run-scanner
-
 /broadvoice/broadvoice.spec
 
 /zeromq-*/
@@ -859,15 +843,6 @@ opal
 !/tiff-*/config/missing
 !/xmlrpc-c/install-sh
 !/xmlrpc-c/missing
-!/yaml/aclocal.m4
-!/yaml/config.h.in
-!/yaml/config/config.guess
-!/yaml/config/config.sub
-!/yaml/config/depcomp
-!/yaml/config/install-sh
-!/yaml/config/ltmain.sh
-!/yaml/config/missing
-!/yaml/configure
 broadvoice/config/compile
 ilbc/config/compile
 libg722_1/config/compile

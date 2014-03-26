@@ -1608,7 +1608,6 @@ License: MPL-1.1
 Files: src/mod/endpoints/mod_gsmopen/gsmlib/gsmlib-1.10-patched-13ubuntu/*
  src/mod/languages/mod_lua/lua-mode.el
  libs/iksemel/ltmain.sh
- libs/yaml/config/ltmain.sh
 Copyright: 1995-2007 Free Software Foundation, Inc.
 License: GPL-2+
 
