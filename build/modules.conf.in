@@ -117,7 +117,6 @@ languages/mod_lua
 #languages/mod_managed
 #languages/mod_perl
 #languages/mod_python
-#languages/mod_spidermonkey
 #languages/mod_v8
 #languages/mod_yaml
 loggers/mod_console

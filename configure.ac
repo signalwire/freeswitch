@@ -1434,10 +1434,10 @@ AC_CONFIG_FILES([Makefile
 		src/mod/languages/mod_managed/Makefile
 		src/mod/languages/mod_perl/Makefile
 		src/mod/languages/mod_python/Makefile
-		src/mod/languages/mod_spidermonkey/Makefile
 		src/mod/languages/mod_v8/Makefile
 		src/mod/languages/mod_yaml/Makefile
 		src/mod/legacy/languages/mod_lua/Makefile
+		src/mod/legacy/languages/mod_spidermonkey/Makefile
 		src/mod/loggers/mod_console/Makefile
 		src/mod/loggers/mod_logfile/Makefile
 		src/mod/loggers/mod_syslog/Makefile

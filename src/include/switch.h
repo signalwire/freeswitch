@@ -232,9 +232,6 @@
  *		- libsndfile (http://www.mega-nerd.com/libsndfile/)
  *
  *  Languages
- *	mod_spidermonkey
- *		- spidermonkey (http://www.mozilla.org/js/spidermonkey/)
- *
  *	mod_perl
  *		- perl (http://www.perl.org/)
  *
