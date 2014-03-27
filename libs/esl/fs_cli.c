@@ -47,7 +47,6 @@ static unsigned char esl_console_complete(const char *buffer, const char *cursor
 
 #ifdef HAVE_LIBEDIT
 #include <histedit.h>
-#undef HAVE_DECL_EL_REFRESH
 #endif
 
 typedef struct {
