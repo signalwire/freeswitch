@@ -1352,10 +1352,22 @@ int main(int argc, char *argv[])
 	int loops = 2, reconnect = 0;
 	char *ccheck;
 
-#ifdef WIN32
+#if HAVE_DECL_EL_PROMPT_ESC
 	feature_level = 0;
 #else
-	feature_level = 1;
+	{
+		char *term = getenv("TERM");
+		if (term && (!strncasecmp("screen", term, 6) ||
+					 !strncasecmp("vt100", term, 5))) {
+			feature_level = 1;
+		} else {
+			feature_level = 0;
+		}
+	}
+#endif
+
+#ifdef WIN32
+	feature_level = 0;
 #endif
 
 	if ((ccheck = getenv("FS_CLI_COLOR"))) {
