@@ -1353,7 +1353,7 @@ int main(int argc, char *argv[])
 	char *ccheck;
 
 #if HAVE_DECL_EL_PROMPT_ESC
-	feature_level = 0;
+	feature_level = 1;
 #else
 	{
 		char *term = getenv("TERM");
