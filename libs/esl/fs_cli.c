@@ -775,7 +775,19 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 								if (global_profile->log_uuid && !esl_strlen_zero(userdata)) {
 									printf("%s ", userdata);
 								}
+#if HAVE_DECL_EL_REFRESH
+								if (strcmp("\n",handle->last_event->body)) {
+									char *c = handle->last_event->body;
+									printf("%s", handle->last_event->body);
+									if (*c) {
+										while (*c) ++c; c--;
+										if (*c != '\n')
+											printf("\n");
+									}
+								}
+#else
 								printf("%s", handle->last_event->body);
+#endif
 								if(!(global_profile->batch_mode)) {
 									if (!feature_level) printf("%s", ESL_SEQ_DEFAULT_COLOR);
 								}
