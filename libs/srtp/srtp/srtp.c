@@ -796,27 +796,22 @@ static void srtp_calc_aead_iv(srtp_stream_ctx_t *stream, v128_t *iv,
 {
     v128_t	in;
     v128_t	salt;
-    v128_t      roc_seq;
+
+#ifdef NO_64BIT_MATH
+    uint32_t local_roc = ((high32(*seq) << 16) |
+                         (low32(*seq) >> 16));
+    uint16_t local_seq = (uint16_t) (low32(*seq));
+#else
+    uint32_t local_roc = (uint32_t)(*seq >> 16);
+    uint16_t local_seq = (uint16_t) *seq;
+#endif
 
     memset(&in, 0, sizeof(v128_t));
     memset(&salt, 0, sizeof(v128_t));
 
-    /*
-     * Convert seq# to v128_t so we can manipulate the byte order
-     */
-    v128_copy_octet_string(&roc_seq, (const uint8_t *)seq);
-    debug_print(mod_srtp, "GCM/CCM ROC/SEQ = %s\n", v128_hex_string(&roc_seq));
-
-    /*
-     * Now move ROC and SEQ into input array in the
-     * proper order
-     */
-    in.v8[11] = roc_seq.v8[0];
-    in.v8[10] = roc_seq.v8[1];
-    in.v8[9] = roc_seq.v8[2];
-    in.v8[8] = roc_seq.v8[3];
-    in.v8[7] = roc_seq.v8[4];
-    in.v8[6] = roc_seq.v8[5];
+    in.v16[5] = htons(local_seq);
+    local_roc = htonl(local_roc);
+    memcpy(&in.v16[3], &local_roc, sizeof(local_roc));
 
     /*
      * Copy in the RTP SSRC value
