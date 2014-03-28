@@ -58,6 +58,10 @@
   -->
   <X-PRE-PROCESS cmd="set" data="zrtp_secure_media=true"/>
   <!--
+      NOTICE: When using SRTP it's critical that you do not offer or accept
+      variable bit rate codecs, doing so would leak information and possibly
+      compromise your SRTP stream. (FS-6404)
+
       Supported SRTP Crypto Suites:
 
       AEAD_AES_256_GCM_8
