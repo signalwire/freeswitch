@@ -639,25 +639,6 @@ static int stdout_writable(void)
 #endif
 }
 
-#ifndef WIN32
-static int write_str(const char *s) {
-	int n, left = strlen(s);
-	while (1) {
-		n = write(STDOUT_FILENO, s, left);
-		if (n == left) return 1;
-		if (n < 0) return 0;
-		s += n; left -= n;
-	}
-	return 1;
-}
-
-static int write_char(int c) {
-	char s[2] = { c, 0 };
-	return write_str(s);
-}
-#endif
-
-#ifdef WIN32
 static void clear_line(void)
 {
 	if (global_profile->batch_mode) return;
@@ -666,16 +647,6 @@ static void clear_line(void)
 	fflush(stdout);
 	return;
 }
-#else
-static void clear_line(void)
-{
-	if (global_profile->batch_mode) return;
-	if (!(write_char('\r'))) goto done;
-	if (!(write_str("\033[K"))) goto done;
- done:
-	return;
-}
-#endif
 
 static void redisplay(void)
 {
@@ -696,21 +667,20 @@ static void redisplay(void)
 	const LineInfo *lf = el_line(el);
 	const char *c = lf->buffer;
 	if (global_profile->batch_mode) return;
-	if (!(write_str(prompt_str))) goto done;
+	printf("%s",prompt_str);
 	while (c < lf->lastchar && *c) {
-		if (!(write_char(*c))) goto done;
+		putchar(*c);
 		c++;
 	}
 	{
 		int pos = (int)(lf->cursor - lf->buffer);
 		char s1[12], s2[12];
-		if (!(write_char('\r'))) goto done;
+		putchar('\r');
 		snprintf(s1, sizeof(s1), "\033[%dC", bare_prompt_str_len);
 		snprintf(s2, sizeof(s2), "\033[%dC", pos);
-		if (!(write_str(s1))) goto done;
-		if (pos > 0) if (!(write_str(s2))) goto done;
+		printf("%s%s",s1,s2);
 	}
- done:
+	fflush(stdout);
 	return;
 #endif
 #endif
@@ -774,7 +744,6 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 								if (global_profile->log_uuid && !esl_strlen_zero(userdata)) {
 									printf("%s ", userdata);
 								}
-#if HAVE_DECL_EL_REFRESH
 								if (strcmp("\n",handle->last_event->body)) {
 									char *c = handle->last_event->body;
 									printf("%s", handle->last_event->body);
@@ -784,9 +753,6 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 											printf("\n");
 									}
 								}
-#else
-								printf("%s", handle->last_event->body);
-#endif
 								if(!(global_profile->batch_mode)) {
 									if (!feature_level) printf("%s", ESL_SEQ_DEFAULT_COLOR);
 								}
