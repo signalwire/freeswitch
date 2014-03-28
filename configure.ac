@@ -1102,8 +1102,10 @@ AC_ARG_ENABLE(core-libedit-support,
 
 case x$enable_core_libedit_support in
   xno) ;;
-  xyes) PKG_CHECK_MODULES([LIBEDIT], [libedit >= 2.11]) ;;
-  *) PKG_CHECK_MODULES([LIBEDIT], [libedit >= 2.11],, [AC_MSG_RESULT([no]); enable_core_libedit_support=no]) ;;
+  xyes|*)
+    PKG_CHECK_MODULES([LIBEDIT], [libedit >= 2.11],,
+      [AC_MSG_ERROR([You need to either install libedit-dev (>= 2.11) or configure with --disable-core-libedit-support])])
+    ;;
 esac
 
 AS_IF([test "x$enable_core_libedit_support" != "xno"], [
