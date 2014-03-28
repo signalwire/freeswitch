@@ -1319,6 +1319,9 @@ fi
 
 CHECK_ERLANG
 
+# we never use this, and hard setting it will make cross compile work better
+ac_cv_file_dbd_apr_dbd_mysql_c=no
+
 AC_CONFIG_FILES([Makefile
 		build/Makefile
 		src/Makefile
