@@ -152,15 +152,16 @@
  * Freeswitch has been built on the following platforms:
  *
  *  - Linux (x86 & x86_64)
- *  - Windows (MSVC 2008 & VC++ EE 2008)
- *  - Windows (MSVC 2010 & VC++ EE 2010)
- *  - Mac OS X (intel & ppc )
- *  - FreeBSD 6
+ *  - Windows (MSVC 2012/2013 & VC++ EE 2012/2013)
+ *  - Mac OS X 10.7/10.8/10.9 (x86_64 Intel)
+ *  - FreeBSD 8/9/10
+ *  - NetBSD 6.x
+ *  - OpenBSD 5.x
  *
  * \section depends Dependencies
  *  Freeswitch makes heavy use of external libraries.  
  *
- *  libFreeSwitch:
+ *  libFreeSWITCH:
  *		- APR (http://apr.apache.org)
  *		- APR-Util (http://apr.apache.org)
  *		- SQLite (http://www.sqlite.org)
@@ -185,6 +186,23 @@
  *
  *
  *  Codecs
+ *  mod_amr
+ *      - Passthru codec for amr narrowband (8kHz)
+ *
+ *  mod_amrwb
+ *      - Passthru codec for amr wideband (16kHz)
+ *
+ *  mod_b64
+ *      - Base64 codec tranfers data base64 encoded (http://www.b64codec.org)
+ * 
+ *  mod_bv
+ *      - BroadVoice16 (8kHz) and BroadVoice32 (16kHz) (https://www.broadcom.com/support/broadvoice)
+ *  mod_celt
+ *      - Ultra-low delay audio codec (48kHz) (http://celt-codec.org)
+ *
+ *  mod_codec2
+ *      - Codec2 is an open source low bit rate speech at 2400 bit/s and below. (http://www.rowetel.com/blog/?page_id=452)
+ *
  *	mod_speex
  *		- libspeex (http://www.speex.org/)
  *
@@ -195,17 +213,14 @@
  *		- libg722_1 (http://www.polycom.com/company/about_us/technology/siren22/index.html)
  *
  * Digital Signal Processing
- *	mod_fax
- *		- spandsp (http://www.soft-switch.org/)
+ *	mod_spandsp
+ *		- codec, fax and modem (http://www.soft-switch.org/)
  *
  *  Directories
  *	mod_ldap
  *		- openldap (*nix only http://www.openldap.org/)
  * 
  *  Endpoints
- *	mod_iax
- *		- libiax2 (forked from http://iaxclient.sourceforge.net/)
- *
  *	mod_portaudio
  *		- portaudio (http://www.portaudio.com/)
  *
@@ -220,8 +235,8 @@
  *	mod_opal
  *		- libopal (http://www.opalvoip.org)
  *
- *	mod_openzap
- *		- openzap (http://wiki.freeswitch.org/wiki/OpenZAP)
+ *	mod_freetdm
+ *		- freetdm (http://wiki.freeswitch.org/wiki/FreeTDM)
  *
  *  Event Hanlders
  *	mod_xmpp_event
