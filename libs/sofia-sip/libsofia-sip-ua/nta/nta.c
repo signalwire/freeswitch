@@ -1280,17 +1280,15 @@ void agent_timer(su_root_magic_t *rm, su_timer_t *timer, nta_agent_t *agent)
 
   if (next == latest) {
     /* Do not set timer? */
-    SU_DEBUG_9(("nta: timer not set\n" VA_NONE));
-    assert(!agent->sa_out.completed->q_head);
-    assert(!agent->sa_out.trying->q_head);
-    assert(!agent->sa_out.inv_calling->q_head);
-    assert(!agent->sa_out.re_list);
-    assert(!agent->sa_in.inv_confirmed->q_head);
-    assert(!agent->sa_in.preliminary->q_head);
-    assert(!agent->sa_in.completed->q_head);
-    assert(!agent->sa_in.inv_completed->q_head);
-    assert(!agent->sa_in.re_list);
-    return;
+	/* check it there are still things queued, if there are, that means everything scheduled is > 15 days in the future */
+    /* in this case, we had a large time shift, we should schedule for 15 days in the future (which is probably still before now) */
+	/* and this should sort itself out on the next run through */
+    if ( !agent->sa_out.completed->q_head && !agent->sa_out.trying->q_head && !agent->sa_out.inv_calling->q_head &&
+		 !agent->sa_out.re_list && !agent->sa_in.inv_confirmed->q_head && !agent->sa_in.preliminary->q_head &&
+		 !agent->sa_in.completed->q_head && !agent->sa_in.inv_completed->q_head && !agent->sa_in.re_list ) {
+		SU_DEBUG_9(("nta: timer not set\n" VA_NONE));
+		return;
+	}
   }
 
   if (next == now) if (++next == 0) ++next;
