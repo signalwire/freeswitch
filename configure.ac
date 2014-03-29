@@ -613,7 +613,8 @@ path_push_unique () {
 case "$host" in
     *darwin13.*|*darwin12.*|*darwin11.*)
         APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
-        APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp -Wno-deprecated-declarations -I/usr/local/opt/openssl/include)
+        APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp -Wno-deprecated-declarations)
+        APR_ADDTO(CPPFLAGS, -I/usr/local/opt/openssl/include)
         APR_ADDTO(LDFLAGS, -pipe -bind_at_load -L/usr/local/opt/openssl/lib)
         APR_ADDTO(CXXFLAGS, -pipe)
         APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
@@ -624,7 +625,8 @@ case "$host" in
     ;;
     *darwin10.*)
         APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
-        APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp -I/usr/local/opt/openssl/include)
+        APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp)
+        APR_ADDTO(CPPFLAGS, -I/usr/local/opt/openssl/include)
         APR_ADDTO(LDFLAGS, -pipe -bind_at_load -L/usr/local/opt/openssl/lib)
         APR_ADDTO(CXXFLAGS, -pipe)
         APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
@@ -634,7 +636,7 @@ case "$host" in
 	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl])
     ;;
     *darwin*)
-        APR_ADDTO(CFLAGS, -I/usr/local/opt/openssl/include)
+        APR_ADDTO(CPPFLAGS, -I/usr/local/opt/openssl/include)
         APR_ADDTO(LDFLAGS, -L/usr/local/opt/openssl/lib)
         APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
         APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
@@ -645,14 +647,12 @@ case "$host" in
     ;;
     *-solaris2*)
 	if test "${enable_64}" = "yes"; then
-           APR_ADDTO(CFLAGS, [-I/opt/64/include])
-           APR_ADDTO(CXXFLAGS, [-I/opt/64/include])
+           APR_ADDTO(CPPFLAGS, [-I/opt/64/include])
            APR_ADDTO(LDFLAGS, [-L/opt/64/lib -Wl,-rpath,/opt/64/lib])
            APR_ADDTO(SWITCH_AM_CFLAGS, [-I/opt/64/include])
            APR_ADDTO(SWITCH_AM_LDFLAGS, [-L/opt/64/lib -Wl,-rpath,/opt/64/lib])
 	else
-           APR_ADDTO(CFLAGS, [-I/opt/include])
-           APR_ADDTO(CXXFLAGS, -I/opt/include)
+           APR_ADDTO(CPPFLAGS, [-I/opt/include])
            APR_ADDTO(LDFLAGS, [-L/opt/lib -Wl,-rpath,/opt/lib])
            APR_ADDTO(SWITCH_AM_CFLAGS, [-I/opt/include])
            APR_ADDTO(SWITCH_AM_LDFLAGS, [-L/opt/lib -Wl,-rpath,/opt/lib])
@@ -663,22 +663,22 @@ case "$host" in
 	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl -lcrypt -lrt -lsendfile -lresolv -lsocket -lnsl -luuid])
     ;;
     *dragonfly*)
-        APR_ADDTO(CFLAGS, -I/usr/local/include)
+        APR_ADDTO(CPPFLAGS, -I/usr/local/include)
         APR_ADDTO(LDFLAGS, -L/usr/local/lib)
         APR_ADDTO(SWITCH_AM_CFLAGS, -I/usr/local/include)
     ;;
     *openbsd*)
-        APR_ADDTO(CFLAGS, -I/usr/local/include)
+        APR_ADDTO(CPPFLAGS, -I/usr/local/include)
         APR_ADDTO(LDFLAGS, -L/usr/local/lib)
         APR_ADDTO(SWITCH_AM_CFLAGS, -I/usr/local/include)
     ;;
     *netbsd*)
-        APR_ADDTO(CFLAGS, -I/usr/pkg/include)
+        APR_ADDTO(CPPFLAGS, -I/usr/pkg/include)
         APR_ADDTO(LDFLAGS, [-L/usr/pkg/lib -Wl,-rpath,/usr/pkg/lib])
         APR_ADDTO(SWITCH_AM_CFLAGS, -I/usr/pkg/include)
     ;;
     *bsd*)
-        APR_ADDTO(CFLAGS, -I/usr/local/include)
+        APR_ADDTO(CPPFLAGS, -I/usr/local/include)
         APR_ADDTO(LDFLAGS, -L/usr/local/lib)
         APR_ADDTO(SWITCH_AM_CFLAGS, -I/usr/local/include)
 	APR_ADDTO([PLATFORM_CORE_LIBS], [-lcrypt -lrt])
