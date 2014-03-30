@@ -74,9 +74,13 @@ switch_bool_t sonar_ping_callback(switch_core_session_t *session, const char *ap
 	sonar_ping_helper_t *ph = switch_channel_get_private(channel, "__sonar_ping__");
 	int diff;
 
-	if (!ph) return SWITCH_TRUE;
+	if (!ph) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not locate private sonar helper data\n");
+		return SWITCH_TRUE;
+	}
 
 	if ( ph->end ) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sonar not yet reset. Likely a repeat detection.\n");
 		return SWITCH_TRUE;
 	}
 
@@ -125,7 +129,7 @@ SWITCH_STANDARD_APP(sonar_app)
 	switch_channel_set_private(channel, "__sonar_ping__", &ph);
 
 	switch_ivr_tone_detect_session(session, 
-								   "ping", "1004",
+								   "soar_ping", "1004",
 								   "r", 0, 
 								   1, NULL, NULL, sonar_ping_callback);
 	
@@ -133,6 +137,7 @@ SWITCH_STANDARD_APP(sonar_app)
 
 	ph.min = 999999;
 	for( x = 0; x < loops; x++ ) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending sonar ping\n");
 		ph.end = 0;
 		ph.start = switch_time_now();
 		switch_ivr_gentones(session, tone, 1, NULL);
