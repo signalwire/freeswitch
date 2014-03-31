@@ -233,15 +233,11 @@ static switch_status_t hu_say_time(switch_core_session_t *session, char *tosay, 
 		if (hours) {
 			say_num(hours, SSM_PRONOUNCED);
 			say_file("time/hour.wav");
-		} else {
-			say_file("digits/0.wav");
-			say_file("time/hour.wav");
-		}
-
+		} 
 		if (minutes) {
 			say_num(minutes, SSM_PRONOUNCED);
 			say_file("time/minute.wav");
-		} else {
+		} else if (hours) {
 			say_file("digits/0.wav");
 			say_file("time/minute.wav");
 		}
