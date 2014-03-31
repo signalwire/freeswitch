@@ -4666,7 +4666,6 @@ static int notify_csta_callback(void *pArg, int argc, char **argv, char **column
 	char *contact;
 	sip_cseq_t *cseq = NULL;
 	uint32_t callsequence;
-	uint32_t now = (uint32_t) switch_epoch_time_now(NULL);
 	sofia_destination_t *dst = NULL;
 	char *route_uri = NULL;
 
@@ -4691,12 +4690,7 @@ static int notify_csta_callback(void *pArg, int argc, char **argv, char **column
 		route_uri = sofia_glue_strip_uri(dst->route_uri);
 	}
 
-	switch_mutex_lock(profile->ireg_mutex);
-	if (!profile->cseq_base) {
-		profile->cseq_base = (now - 1312693200) * 10;
-	}
-	callsequence = ++profile->cseq_base;
-	switch_mutex_unlock(profile->ireg_mutex);
+	callsequence = sofia_presence_get_cseq(profile);
 
 	//nh = nua_handle(profile->nua, NULL, NUTAG_URL(dst->contact), SIPTAG_FROM_STR(id), SIPTAG_TO_STR(id), SIPTAG_CONTACT_STR(profile->url), TAG_END());
 	nh = nua_handle(profile->nua, NULL, NUTAG_URL(dst->contact), SIPTAG_FROM_STR(full_to), SIPTAG_TO_STR(full_from), SIPTAG_CONTACT_STR(profile->url), TAG_END());
@@ -5528,6 +5522,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_management_interface_t *management_interface;
 	switch_application_interface_t *app_interface;
 	struct in_addr in;
+	struct tm tm = {0};
+	time_t now;
 
 	memset(&mod_sofia_globals, 0, sizeof(mod_sofia_globals));
 	mod_sofia_globals.destroy_private.destroy_nh = 1;
@@ -5535,6 +5531,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	mod_sofia_globals.keep_private.is_static = 1;
 	mod_sofia_globals.pool = pool;
 	switch_mutex_init(&mod_sofia_globals.mutex, SWITCH_MUTEX_NESTED, mod_sofia_globals.pool);
+
+	now = switch_epoch_time_now(NULL);
+	tm = *(localtime(&now));
+
+	mod_sofia_globals.presence_epoch = now - (tm.tm_yday * 86400);
 
 	switch_find_local_ip(mod_sofia_globals.guess_ip, sizeof(mod_sofia_globals.guess_ip), &mod_sofia_globals.guess_mask, AF_INET);
 	in.s_addr = mod_sofia_globals.guess_mask;

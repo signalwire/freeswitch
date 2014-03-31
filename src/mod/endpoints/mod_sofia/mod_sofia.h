@@ -361,6 +361,7 @@ struct mod_sofia_globals {
 	int presence_flush;
 	switch_thread_t *presence_thread;
 	uint32_t max_reg_threads;
+	time_t presence_epoch;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 
@@ -678,7 +679,7 @@ struct sofia_profile {
 	int watchdog_enabled;
 	switch_mutex_t *gw_mutex;
 	uint32_t queued_events;
-	uint32_t cseq_base;
+	uint32_t last_cseq;
 	int tls_only;
 	int tls_verify_date;
 	enum tport_tls_verify_policy tls_verify_policy;
@@ -1111,6 +1112,7 @@ switch_bool_t sofia_glue_profile_exists(const char *key);
 void sofia_glue_global_siptrace(switch_bool_t on);
 void sofia_glue_global_capture(switch_bool_t on);
 void sofia_glue_global_watchdog(switch_bool_t on);
+uint32_t sofia_presence_get_cseq(sofia_profile_t *profile);
 
 void sofia_glue_build_vid_refresh_message(switch_core_session_t *session, const char *pl);
 char *sofia_glue_gen_contact_str(sofia_profile_t *profile, sip_t const *sip, nua_handle_t *nh, sofia_dispatch_event_t *de, sofia_nat_parse_t *np);

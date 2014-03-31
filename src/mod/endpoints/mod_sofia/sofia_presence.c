@@ -2114,6 +2114,28 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 	return 0;
 }
 
+uint32_t sofia_presence_get_cseq(sofia_profile_t *profile)
+{
+	uint32_t callsequence;
+	uint32_t now = (uint32_t) switch_epoch_time_now(NULL);
+
+	switch_mutex_lock(profile->ireg_mutex);
+
+	callsequence = (now - mod_sofia_globals.presence_epoch) * 100;
+
+	if (profile->last_cseq && callsequence <= profile->last_cseq) {
+		callsequence = ++profile->last_cseq;
+	}
+
+	profile->last_cseq = callsequence;
+
+	switch_mutex_unlock(profile->ireg_mutex);
+
+	return callsequence;
+
+}
+
+
 #define send_presence_notify(_a,_b,_c,_d,_e,_f,_g,_h,_i,_j,_k,_l) \
 _send_presence_notify(_a,_b,_c,_d,_e,_f,_g,_h,_i,_j,_k,_l,__FILE__, __SWITCH_FUNC__, __LINE__)
 
@@ -2286,19 +2308,12 @@ static void _send_presence_notify(sofia_profile_t *profile,
 	}
 
 
-	switch_mutex_lock(profile->ireg_mutex);
-	if (!profile->cseq_base) {
-		profile->cseq_base = (now - 1312693200) * 10;
-	}
-	callsequence = ++profile->cseq_base;
-	switch_mutex_unlock(profile->ireg_mutex);
+	callsequence = sofia_presence_get_cseq(profile);
 
 	if (cparams) {
 		send_contact = switch_mprintf("%s;%s", contact_str, cparams);
 		contact_str = send_contact;
 	}
-
-
 
 	nh = nua_handle(profile->nua, NULL, NUTAG_URL(contact), SIPTAG_CONTACT_STR(contact_str), TAG_END());
 	cseq = sip_cseq_create(nh->nh_home, callsequence, SIP_METHOD_NOTIFY);
