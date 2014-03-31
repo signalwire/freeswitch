@@ -578,6 +578,12 @@ path_push_unique () {
   eval export $1="$2:$x"
 }
 
+if test -n $lt_sysroot ; then
+   APR_ADDTO(CFLAGS, --sysroot=$lt_sysroot)
+   APR_ADDTO(CXXFLAGS, --sysroot=$lt_sysroot)
+   APR_ADDTO(LDFLAGS, --sysroot=$lt_sysroot)
+fi
+
 # tweak platform specific flags
 case "$host" in
     *darwin13.*|*darwin12.*|*darwin11.*)
