@@ -1484,6 +1484,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/languages/mod_python/Makefile
 		src/mod/languages/mod_v8/Makefile
 		src/mod/languages/mod_yaml/Makefile
+		src/mod/languages/mod_basic/Makefile
 		src/mod/legacy/languages/mod_lua/Makefile
 		src/mod/legacy/languages/mod_spidermonkey/Makefile
 		src/mod/loggers/mod_console/Makefile
