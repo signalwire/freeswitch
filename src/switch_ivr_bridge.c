@@ -199,7 +199,6 @@ struct switch_ivr_bridge_data {
 	switch_input_callback_function_t input_callback;
 	void *session_data;
 	int clean_exit;
-	int state_done;
 	int done;
 	struct switch_ivr_bridge_data *other_leg_data;
 };
@@ -228,7 +227,6 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	time_t answer_limit = 0;
 	const char *exec_app = NULL;
 	const char *exec_data = NULL;
-	int sanity = 500;
 
 #ifdef SWITCH_VIDEO_IN_THREADS
 	switch_thread_t *vid_thread = NULL;
@@ -661,10 +659,6 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "BRIDGE THREAD DONE [%s]\n", switch_channel_get_name(chan_a));
 	switch_channel_clear_flag(chan_a, CF_BRIDGED);
 	
-	while(--sanity > 0 && !data->other_leg_data->state_done) {
-		switch_yield(10000);
-	}
-
 	if (switch_channel_test_flag(chan_a, CF_LEG_HOLDING) || switch_channel_test_flag(chan_a, CF_HANGUP_HELD)) {
 		if (switch_channel_ready(chan_b) && switch_channel_get_state(chan_b) != CS_PARK && !data->other_leg_data->clean_exit) {
 			const char *ext = switch_channel_get_variable(chan_a, "hold_hangup_xfer_exten");
@@ -748,8 +742,6 @@ static switch_status_t audio_bridge_on_exchange_media(switch_core_session_t *ses
 			if (switch_channel_test_flag(channel, CF_INTERCEPTED)) {
 				switch_channel_clear_flag(channel, CF_INTERCEPT);
 				switch_channel_clear_flag(channel, CF_INTERCEPTED);
-				bd->clean_exit = 1;
-				bd->state_done = 1;
 				return SWITCH_STATUS_FALSE;
 			} else {
 				if (switch_channel_test_flag(channel, CF_INTERCEPT)) {
@@ -765,14 +757,10 @@ static switch_status_t audio_bridge_on_exchange_media(switch_core_session_t *ses
 		}
 	}
 
-	bd->clean_exit = 1;
-
 	if (switch_channel_get_state(channel) == CS_EXCHANGE_MEDIA) {
 		switch_channel_set_variable(channel, "park_timeout", "3");
 		switch_channel_set_state(channel, CS_PARK);
 	}
-
-	bd->state_done = 1;
 
 	return SWITCH_STATUS_FALSE;
 }
@@ -1477,7 +1465,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
 			switch_channel_stop_broadcast(peer_channel);
 
-			a_leg->state_done = 1;
 
 			while (switch_channel_get_state(peer_channel) == CS_EXCHANGE_MEDIA) {
 				switch_ivr_parse_all_messages(session);
