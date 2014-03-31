@@ -77,6 +77,7 @@ static int fun_execute(mb_interpreter_t* s, void** l)
 	fs_data_t *fsdata = (fs_data_t *) mb_get_user_data(s);
 	mb_value_t app;
 	mb_value_t arg;
+	int null_arg = 0;
 
 	mb_assert(s && l);
 
@@ -87,11 +88,12 @@ static int fun_execute(mb_interpreter_t* s, void** l)
 	}
 
 	if ((result = mb_pop_value(s, l, &arg)) != MB_FUNC_OK) {
-		goto end;
+		null_arg++;
+		result = 0;
 	}
 
-	if (app.type == MB_DT_STRING && arg.type == MB_DT_STRING && fsdata->session) {
-		switch_core_session_execute_application(fsdata->session, app.value.string, arg.value.string);
+	if (app.type == MB_DT_STRING && (arg.type == MB_DT_STRING || null_arg) && fsdata->session) {
+		switch_core_session_execute_application(fsdata->session, app.value.string, null_arg ? NULL : arg.value.string);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bad args or no fsdata->session\n");
 		result = MB_FUNC_WARNING;
