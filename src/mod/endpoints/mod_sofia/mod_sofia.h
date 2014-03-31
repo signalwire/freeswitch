@@ -400,6 +400,7 @@ struct mod_sofia_globals {
 	int presence_flush;
 	switch_thread_t *presence_thread;
 	uint32_t max_reg_threads;
+	time_t presence_epoch;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 
@@ -705,7 +706,7 @@ struct sofia_profile {
 	int watchdog_enabled;
 	switch_mutex_t *gw_mutex;
 	uint32_t queued_events;
-	uint32_t cseq_base;
+	uint32_t last_cseq;
 	int tls_only;
 	int tls_verify_date;
 	enum tport_tls_verify_policy tls_verify_policy;
