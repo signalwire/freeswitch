@@ -221,10 +221,37 @@ AX_COMPILER_VENDOR
 # Set CC_FOR_BUILD
 if test "x${cross_compiling}" = "xyes"; then
     CC_FOR_BUILD=${CC_FOR_BUILD-gcc}
+    case "$host" in
+    	 arm-linux-gnueabi*|arm-*-linux-gnueabi*)
+		# spandsp modem
+		ac_cv_file__dev_ptmx=yes
+		# srtp
+		ac_cv_file__dev_urandom=yes
+		# rpl_malloc
+		ac_cv_func_realloc_0_nonnull=yes
+		ac_cv_func_malloc_0_nonnull=yes
+		# apr
+		ac_cv_func_setpgrp_void=yes
+		ac_cv_file__dev_zero=yes
+		apr_cv_tcp_nodelay_with_cork=yes
+		ac_cv_file_dbd_apr_dbd_mysql_c=no
+		ac_cv_sizeof_ssize_t=4
+		apr_cv_mutex_recursive=yes
+		ac_cv_func_pthread_rwlock_init=yes
+		apr_cv_type_rwlock_t=yes
+	 ;;
+    esac
 else
     CC_FOR_BUILD='$(CC)'
 fi
 AC_SUBST(CC_FOR_BUILD)
+
+if test -n "$lt_sysroot" ; then
+   APR_ADDTO(CFLAGS, --sysroot=$lt_sysroot)
+   APR_ADDTO(CXXFLAGS, --sysroot=$lt_sysroot)
+   APR_ADDTO(LDFLAGS, --sysroot=$lt_sysroot)
+   PKG_CONFIG_SYSROOT_DIR=$lt_sysroot
+fi
 
 #  Optimize
 AC_ARG_ENABLE(optimization,
@@ -577,12 +604,6 @@ path_push_unique () {
   x="$(path_remove "$x" "$2")"
   eval export $1="$2:$x"
 }
-
-if test -n $lt_sysroot ; then
-   APR_ADDTO(CFLAGS, --sysroot=$lt_sysroot)
-   APR_ADDTO(CXXFLAGS, --sysroot=$lt_sysroot)
-   APR_ADDTO(LDFLAGS, --sysroot=$lt_sysroot)
-fi
 
 # tweak platform specific flags
 case "$host" in
