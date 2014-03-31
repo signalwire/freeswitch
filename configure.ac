@@ -222,7 +222,7 @@ AX_COMPILER_VENDOR
 if test "x${cross_compiling}" = "xyes"; then
     CC_FOR_BUILD=${CC_FOR_BUILD-gcc}
     case "$host" in
-    	 arm-linux-gnueabi*|arm-*-linux-gnueabi*)
+    	 arm*-linux-gnueabi*|arm*-*-linux-gnueabi*)
 		# spandsp modem
 		ac_cv_file__dev_ptmx=yes
 		# srtp
