@@ -3287,6 +3287,43 @@ SWITCH_STANDARD_API(uuid_early_ok_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define RING_READY_SYNTAX "<uuid> [queued]"
+SWITCH_STANDARD_API(uuid_ring_ready_function)
+{
+	char *uuid = NULL, *mycmd = NULL, *argv[2] = { 0 };
+	switch_core_session_t *xsession;
+	int argc = 0, queued = 0;
+
+	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv,
+									  (sizeof(argv) / sizeof(argv[0])));
+	}
+	if (zstr(cmd) || argc < 1) goto usage;
+	uuid = argv[0];
+	if (argc > 1) {
+		if (!strcasecmp(argv[1], "queued")) {
+			queued = 1;
+		} else goto usage;
+	}
+	if (!uuid || !(xsession = switch_core_session_locate(uuid)))
+		goto error;
+	switch_channel_ring_ready_value(switch_core_session_get_channel(xsession),
+									queued ? SWITCH_RING_READY_QUEUED
+									: SWITCH_RING_READY_RINGING);
+	switch_core_session_rwunlock(xsession);
+	stream->write_function(stream, "+OK\n");
+	goto done;
+ usage:
+	stream->write_function(stream, "-USAGE: %s\n", RING_READY_SYNTAX);
+	goto done;
+ error:
+	stream->write_function(stream, "-ERROR\n");
+	goto done;
+ done:
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(uuid_pre_answer_function)
 {
 	char *uuid = (char *) cmd;
@@ -6654,6 +6691,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_park", "Park channel", park_function, PARK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_pause", "Pause media on a channel", pause_function, PAUSE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_phone_event", "Send an event to the phone", uuid_phone_event_function, PHONE_EVENT_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_ring_ready", "Sending ringing to a channel", uuid_ring_ready_function, RING_READY_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_pre_answer", "pre_answer", uuid_pre_answer_function, "<uuid>");
 	SWITCH_ADD_API(commands_api_interface, "uuid_preprocess", "Pre-process Channel", preprocess_function, PREPROCESS_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_record", "Record session audio", session_record_function, SESS_REC_SYNTAX);
@@ -6794,6 +6832,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add uuid_display ::console::list_uuid");
 	switch_console_set_complete("add uuid_dump ::console::list_uuid");
 	switch_console_set_complete("add uuid_answer ::console::list_uuid");
+	switch_console_set_complete("add uuid_ring_ready ::console::list_uuid queued");
 	switch_console_set_complete("add uuid_pre_answer ::console::list_uuid");
 	switch_console_set_complete("add uuid_early_ok ::console::list_uuid");
 	switch_console_set_complete("add uuid_exists ::console::list_uuid");
