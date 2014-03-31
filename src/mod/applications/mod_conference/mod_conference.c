@@ -1839,6 +1839,14 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 			}
 			/* Tell the channel to request a fresh vid frame */
 			switch_core_session_refresh_video(member->session);
+
+			if (conference->video_floor_holder) {
+				switch_mutex_lock(conference->mutex);
+				if (conference->video_floor_holder) {
+					switch_core_session_refresh_video(conference->video_floor_holder->session);
+				}
+				switch_mutex_unlock(conference->mutex);
+			}
 		}
 
 		if (!switch_channel_get_variable(channel, "conference_call_key")) {
