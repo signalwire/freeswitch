@@ -836,7 +836,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 	memcpy(buf, data, cpylen);
 	packet = switch_stun_packet_parse(buf, (uint32_t)cpylen);
 	if (!packet) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Invalid STUN/ICE packet received %ld %d\n", (long)cpylen, *(uint8_t *) data);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Invalid STUN/ICE packet received %ld bytes\n", (long)cpylen);
 		goto end;
 
 	}
