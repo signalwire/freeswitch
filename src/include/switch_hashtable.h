@@ -191,7 +191,7 @@ SWITCH_DECLARE(void)
 switch_hashtable_destroy(switch_hashtable_t **h);
 
 SWITCH_DECLARE(switch_hashtable_iterator_t*) switch_hashtable_first(switch_hashtable_t *h);
-SWITCH_DECLARE(switch_hashtable_iterator_t*) switch_hashtable_next(switch_hashtable_iterator_t *i);
+SWITCH_DECLARE(switch_hashtable_iterator_t*) switch_hashtable_next(switch_hashtable_iterator_t **iP);
 SWITCH_DECLARE(void) switch_hashtable_this(switch_hashtable_iterator_t *i, const void **key, switch_ssize_t *klen, void **val);
 
 static inline int switch_hash_equalkeys(void *k1, void *k2)

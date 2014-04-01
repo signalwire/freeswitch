@@ -1466,7 +1466,7 @@ SWITCH_DECLARE(switch_hash_index_t *) switch_core_hash_first(_In_ switch_hash_t 
  \param hi The current element
  \return The next element, or NULL if there are no more
 */
-SWITCH_DECLARE(switch_hash_index_t *) switch_core_hash_next(_In_ switch_hash_index_t *hi);
+SWITCH_DECLARE(switch_hash_index_t *) switch_core_hash_next(_In_ switch_hash_index_t **hi);
 
 /*!
  \brief Gets the key and value of the current hash element

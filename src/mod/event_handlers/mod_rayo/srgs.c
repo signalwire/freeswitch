@@ -872,7 +872,7 @@ void srgs_parser_destroy(struct srgs_parser *parser)
 	switch_hash_index_t *hi = NULL;
 
 	/* clean up all cached grammars */
-	for (hi = switch_core_hash_first(parser->cache); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first(parser->cache); hi; hi = switch_core_hash_next(&hi)) {
 		struct srgs_grammar *grammar = NULL;
 		const void *key;
 		void *val;

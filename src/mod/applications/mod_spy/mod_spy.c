@@ -139,7 +139,7 @@ SWITCH_STANDARD_API(dump_hash)
 
 	switch_thread_rwlock_rdlock(globals.spy_hash_lock);
 
-	for (hi = switch_core_hash_first( globals.spy_hash); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first( globals.spy_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, &key, NULL, &val);
 		spy = (spy_t *) val;
 

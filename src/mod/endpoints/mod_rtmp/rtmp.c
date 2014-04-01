@@ -243,7 +243,7 @@ switch_status_t rtmp_check_auth(rtmp_session_t *rsession, const char *user, cons
     if (disallow_multiple_registration) {
         switch_hash_index_t *hi;
         switch_thread_rwlock_rdlock(rsession->profile->session_rwlock);
-        for (hi = switch_core_hash_first( rsession->profile->session_hash); hi; hi = switch_core_hash_next(hi)) {
+        for (hi = switch_core_hash_first( rsession->profile->session_hash); hi; hi = switch_core_hash_next(&hi)) {
             void *val;	
             const void *key;
             switch_ssize_t keylen;

@@ -279,7 +279,7 @@ static void do_rotate_all()
 	}
 
 	switch_mutex_lock(globals.mutex);
-	for (hi = switch_core_hash_first( globals.fd_hash); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first( globals.fd_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		fd = (cdr_fd_t *) val;
 		switch_mutex_lock(fd->mutex);
@@ -296,7 +296,7 @@ static void do_teardown()
 	void *val;
 	cdr_fd_t *fd;
 	switch_mutex_lock(globals.mutex);
-	for (hi = switch_core_hash_first( globals.fd_hash); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first( globals.fd_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		fd = (cdr_fd_t *) val;
 		switch_mutex_lock(fd->mutex);

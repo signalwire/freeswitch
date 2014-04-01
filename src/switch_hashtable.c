@@ -261,9 +261,11 @@ switch_hashtable_destroy(switch_hashtable_t **h)
 	*h = NULL;
 }
 
-SWITCH_DECLARE(switch_hashtable_iterator_t *) switch_hashtable_next(switch_hashtable_iterator_t *i)
+SWITCH_DECLARE(switch_hashtable_iterator_t *) switch_hashtable_next(switch_hashtable_iterator_t **iP)
 {
 
+	switch_hashtable_iterator_t *i = *iP;
+	
 	if (i->e) {
 		if ((i->e = i->e->next) != 0) { 
 			return i;
@@ -277,22 +279,33 @@ SWITCH_DECLARE(switch_hashtable_iterator_t *) switch_hashtable_next(switch_hasht
 	}
 	
 	if (i->pos >= i->h->tablelength) {
-		return NULL;
+		goto end;
 	}
 	
 	if ((i->e = i->h->table[i->pos]) != 0) { 
 		return i;
 	}
 
+ end:
+
+	free(i);
+	*iP = NULL;
+
 	return NULL;
 }
 
 SWITCH_DECLARE(switch_hashtable_iterator_t *) switch_hashtable_first(switch_hashtable_t *h)
 {
-	h->iterator.pos = 0;
-	h->iterator.e = NULL;
-	h->iterator.h = h;
-	return switch_hashtable_next(&h->iterator);
+	switch_hashtable_iterator_t *iterator;
+
+	switch_zmalloc(iterator, sizeof(*iterator));
+	switch_assert(iterator);
+
+	iterator->pos = 0;
+	iterator->e = NULL;
+	iterator->h = h;
+
+	return switch_hashtable_next(&iterator);
 }
 
 

@@ -1158,7 +1158,7 @@ static switch_status_t synth_channel_set_params(speech_channel_t *schannel, mrcp
 {
 	/* loop through each param and add to synth header or vendor-specific-params */
 	switch_hash_index_t *hi = NULL;
-	for (hi = switch_core_hash_first( schannel->params); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first( schannel->params); hi; hi = switch_core_hash_next(&hi)) {
 		char *param_name = NULL, *param_val = NULL;
 		const void *key;
 		void *val;
@@ -1633,7 +1633,7 @@ static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char 
 	}
 
 	/* Set default TTS params */
-	for (hi = switch_core_hash_first( profile->default_synth_params); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first( profile->default_synth_params); hi; hi = switch_core_hash_next(&hi)) {
 		char *param_name = NULL, *param_val = NULL;
 		const void *key;
 		void *val;
@@ -2195,7 +2195,7 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel)
 	r->timers_started = zstr(start_input_timers) || strcasecmp(start_input_timers, "false");
 
 	/* count enabled grammars */
-	for (egk = switch_core_hash_first( r->enabled_grammars); egk; egk = switch_core_hash_next(egk)) {
+	for (egk = switch_core_hash_first( r->enabled_grammars); egk; egk = switch_core_hash_next(&egk)) {
 		// NOTE: This postponed type check is necessary to allow a non-URI-list grammar to execute alone
 		if (grammar_uri_count == 1 && grammar->type != GRAMMAR_TYPE_URI)
 			goto no_grammar_alone;
@@ -2227,7 +2227,7 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel)
 		/* get the enabled grammars list */
 		grammar_uri_list = switch_core_alloc(schannel->memory_pool, grammar_uri_list_len + 1);
 		grammar_uri_list_len = 0;
-		for (egk = switch_core_hash_first( r->enabled_grammars); egk; egk = switch_core_hash_next(egk)) {
+		for (egk = switch_core_hash_first( r->enabled_grammars); egk; egk = switch_core_hash_next(&egk)) {
 			switch_core_hash_this(egk, (void *) &key, NULL, (void *) &grammar);
 			len = strlen(grammar->data);
 			if (!len)
@@ -2810,7 +2810,7 @@ static switch_status_t recog_channel_set_params(speech_channel_t *schannel, mrcp
 {
 	/* loop through each param and add to recog header or vendor-specific-params */
 	switch_hash_index_t *hi = NULL;
-	for (hi = switch_core_hash_first( schannel->params); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first( schannel->params); hi; hi = switch_core_hash_next(&hi)) {
 		char *param_name = NULL, *param_val = NULL;
 		const void *key;
 		void *val;
@@ -3132,7 +3132,7 @@ static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec
 	}
 
 	/* Set default ASR params */
-	for (hi = switch_core_hash_first( profile->default_recog_params); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first( profile->default_recog_params); hi; hi = switch_core_hash_next(&hi)) {
 		char *param_name = NULL, *param_val = NULL;
 		const void *key;
 		void *val;

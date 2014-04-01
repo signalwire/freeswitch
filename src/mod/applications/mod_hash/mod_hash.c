@@ -623,7 +623,7 @@ SWITCH_STANDARD_API(hash_dump_function)
 	
 	if (mode & 1) {
 		switch_thread_rwlock_rdlock(globals.limit_hash_rwlock);
-		for (hi = switch_core_hash_first( globals.limit_hash); hi; hi = switch_core_hash_next(hi)) {
+		for (hi = switch_core_hash_first( globals.limit_hash); hi; hi = switch_core_hash_next(&hi)) {
 			void *val = NULL;
 			const void *key;
 			switch_ssize_t keylen;
@@ -639,7 +639,7 @@ SWITCH_STANDARD_API(hash_dump_function)
 	
 	if (mode & 2) {
 		switch_thread_rwlock_rdlock(globals.db_hash_rwlock);
-		for (hi = switch_core_hash_first( globals.db_hash); hi; hi = switch_core_hash_next(hi)) {
+		for (hi = switch_core_hash_first( globals.db_hash); hi; hi = switch_core_hash_next(&hi)) {
 			void *val = NULL;
 			const void *key;
 			switch_ssize_t keylen;
@@ -679,7 +679,7 @@ SWITCH_STANDARD_API(hash_remote_function)
 		stream->write_function(stream, "Remote connections:\nName\t\t\tState\n");
 		
 		switch_thread_rwlock_rdlock(globals.remote_hash_rwlock);
-		for (hi = switch_core_hash_first( globals.remote_hash); hi; hi = switch_core_hash_next(hi)) {
+		for (hi = switch_core_hash_first( globals.remote_hash); hi; hi = switch_core_hash_next(&hi)) {
 			void *val;	
 			const void *key;
 			switch_ssize_t keylen;
@@ -780,7 +780,7 @@ void limit_remote_destroy(limit_remote_t **r)
 		switch_thread_rwlock_wrlock((*r)->rwlock);
 
 		/* Free hashtable data */
-		for (hi = switch_core_hash_first( (*r)->index); hi; hi = switch_core_hash_next(hi)) {
+		for (hi = switch_core_hash_first( (*r)->index); hi; hi = switch_core_hash_next(&hi)) {
 			void *val;	
 			const void *key;
 			switch_ssize_t keylen;
@@ -803,7 +803,7 @@ static limit_hash_item_t get_remote_usage(const char *key) {
 	switch_hash_index_t *hi;
 	
 	switch_thread_rwlock_rdlock(globals.remote_hash_rwlock);
-	for (hi = switch_core_hash_first( globals.remote_hash); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first( globals.remote_hash); hi; hi = switch_core_hash_next(&hi)) {
 		void *val;	
 		const void *hashkey;
 		switch_ssize_t keylen;

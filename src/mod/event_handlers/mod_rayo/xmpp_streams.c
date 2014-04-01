@@ -1729,7 +1729,7 @@ void xmpp_stream_context_dump(struct xmpp_stream_context *context, switch_stream
 	switch_hash_index_t *hi;
 	switch_mutex_lock(context->streams_mutex);
 	stream->write_function(stream, "\nACTIVE STREAMS\n");
-	for (hi = switch_core_hash_first(context->streams); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first(context->streams); hi; hi = switch_core_hash_next(&hi)) {
 		struct xmpp_stream *s = NULL;
 		const void *key;
 		void *val;

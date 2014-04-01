@@ -498,7 +498,7 @@ static void pause_when_offline(void)
 
 		switch_mutex_lock(globals.clients_mutex);
 
-		for (hi = switch_core_hash_first(globals.clients_roster); hi; hi = switch_core_hash_next(hi)) {
+		for (hi = switch_core_hash_first(globals.clients_roster); hi; hi = switch_core_hash_next(&hi)) {
 			const void *key;
 			void *client;
 			switch_core_hash_this(hi, &key, NULL, &client);
@@ -529,7 +529,7 @@ static void broadcast_event(struct rayo_actor *from, iks *rayo_event, int online
 {
 	switch_hash_index_t *hi = NULL;
 	switch_mutex_lock(globals.clients_mutex);
-	for (hi = switch_core_hash_first(globals.clients_roster); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first(globals.clients_roster); hi; hi = switch_core_hash_next(&hi)) {
 		struct rayo_client *rclient;
 		const void *key;
 		void *val;
@@ -572,7 +572,7 @@ static struct dial_gateway *dial_gateway_find(const char *uri)
 
 	/* find longest prefix match */
 	switch_mutex_lock(globals.dial_gateways_mutex);
-	for (hi = switch_core_hash_first(globals.dial_gateways); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first(globals.dial_gateways); hi; hi = switch_core_hash_next(&hi)) {
 		struct dial_gateway *candidate = NULL;
 		const void *prefix;
 		int prefix_len = 0;
@@ -1111,7 +1111,7 @@ static void rayo_call_cleanup(struct rayo_actor *actor)
 	}
 
 	/* send <end> to all offered clients */
-	for (hi = switch_core_hash_first(call->pcps); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first(call->pcps); hi; hi = switch_core_hash_next(&hi)) {
 		const void *key;
 		void *val;
 		const char *client_jid = NULL;
@@ -2898,7 +2898,7 @@ static void broadcast_mixer_event(struct rayo_mixer *mixer, iks *rayo_event)
 {
 	switch_hash_index_t *hi = NULL;
 	switch_mutex_lock(RAYO_ACTOR(mixer)->mutex);
-	for (hi = switch_core_hash_first(mixer->subscribers); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first(mixer->subscribers); hi; hi = switch_core_hash_next(&hi)) {
 		const void *key;
 		void *val;
 		struct rayo_mixer_subscriber *subscriber;
@@ -3615,7 +3615,7 @@ SWITCH_STANDARD_APP(rayo_app)
 		/* Offer call to all ONLINE clients */
 		/* TODO load balance offers so first session doesn't always get offer first? */
 		switch_mutex_lock(globals.clients_mutex);
-		for (hi = switch_core_hash_first(globals.clients_roster); hi; hi = switch_core_hash_next(hi)) {
+		for (hi = switch_core_hash_first(globals.clients_roster); hi; hi = switch_core_hash_next(&hi)) {
 			struct rayo_client *rclient;
 			const void *key;
 			void *val;
@@ -4059,7 +4059,7 @@ static int dump_api(const char *cmd, switch_stream_handle_t *stream)
 
 	stream->write_function(stream, "\nENTITIES\n");
 	switch_mutex_lock(globals.actors_mutex);
-	for (hi = switch_core_hash_first(globals.actors); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first(globals.actors); hi; hi = switch_core_hash_next(&hi)) {
 		struct rayo_actor *actor = NULL;
 		const void *key;
 		void *val;
@@ -4071,7 +4071,7 @@ static int dump_api(const char *cmd, switch_stream_handle_t *stream)
 		stream->write_function(stream, "\n");
 	}
 
-	for (hi = switch_core_hash_first(globals.destroy_actors); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first(globals.destroy_actors); hi; hi = switch_core_hash_next(&hi)) {
 		struct rayo_actor *actor = NULL;
 		const void *key;
 		void *val;
@@ -4370,7 +4370,7 @@ static switch_status_t list_actors(const char *line, const char *cursor, switch_
 	struct rayo_actor *actor;
 
 	switch_mutex_lock(globals.actors_mutex);
-	for (hi = switch_core_hash_first(globals.actors); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first(globals.actors); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, &vvar, NULL, &val);
 
 		actor = (struct rayo_actor *) val;

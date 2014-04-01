@@ -393,7 +393,7 @@ static switch_status_t rayo_cpa_detector_signal_types(const char *line, const ch
 	switch_console_callback_match_t *my_matches = NULL;
 
 	switch_mutex_lock(globals.detectors_mutex);
-	for (hi = switch_core_hash_first(globals.detectors); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first(globals.detectors); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, &vvar, NULL, &val);
 		switch_console_push_match(&my_matches, (const char *) vvar);
 	}

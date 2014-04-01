@@ -39,7 +39,6 @@ struct switch_hashtable {
     unsigned int primeindex;
     unsigned int (*hashfn) (void *k);
     int (*eqfn) (void *k1, void *k2);
-	struct switch_hashtable_iterator iterator;
 };
 
 /*****************************************************************************/

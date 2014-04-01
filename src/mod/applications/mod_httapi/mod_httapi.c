@@ -3088,7 +3088,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_httapi_shutdown)
 	void *val;
 	const void *vvar;
 
-	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, &vvar, NULL, &val);
 		profile = (client_profile_t *) val;
 		switch_event_destroy(&profile->dial_params.app_list);

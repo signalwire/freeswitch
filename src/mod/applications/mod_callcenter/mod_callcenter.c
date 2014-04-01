@@ -3198,7 +3198,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				switch_hash_index_t *hi;
 				stream->write_function(stream, "%s", "name|strategy|moh_sound|time_base_score|tier_rules_apply|tier_rule_wait_second|tier_rule_wait_multiply_level|tier_rule_no_agent_no_wait|discard_abandoned_after|abandoned_resume_allowed|max_wait_time|max_wait_time_with_no_agent|max_wait_time_with_no_agent_time_reached|record_template\n");
 				switch_mutex_lock(globals.mutex);
-				for (hi = switch_core_hash_first( globals.queue_hash); hi; hi = switch_core_hash_next(hi)) {
+				for (hi = switch_core_hash_first( globals.queue_hash); hi; hi = switch_core_hash_next(&hi)) {
 					void *val = NULL;
 					const void *key;
 					switch_ssize_t keylen;
@@ -3251,7 +3251,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				switch_hash_index_t *hi;
 				int queue_count = 0;
 				switch_mutex_lock(globals.mutex);
-				for (hi = switch_core_hash_first( globals.queue_hash); hi; hi = switch_core_hash_next(hi)) {
+				for (hi = switch_core_hash_first( globals.queue_hash); hi; hi = switch_core_hash_next(&hi)) {
 					queue_count++;
 				}
 				switch_mutex_unlock(globals.mutex);

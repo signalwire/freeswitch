@@ -4020,7 +4020,7 @@ static void actual_message_query_handler(switch_event_t *event)
 								  "Cound not find a profile for domain: [%s] Returning 0 messages\nWhen message-query-exact-match is enabled you must have a dedicated vm profile per distinct domain name you wish to use.\n", domain);
 			}
 		} else {
-			for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+			for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 				switch_core_hash_this(hi, NULL, NULL, &val);
 				profile = (vm_profile_t *) val;
 				parse_profile();
@@ -4923,7 +4923,7 @@ SWITCH_STANDARD_API(voicemail_api_function)
 		} else if (!strcasecmp(argv[0], "status")) {
 			stream->write_function(stream, "============================\n");
 			switch_mutex_lock(globals.mutex);
-			for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+			for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 				switch_core_hash_this(hi, NULL, NULL, &val);
 				profile = (vm_profile_t *) val;
 				stream->write_function(stream, "Profile: %s\n", profile->name);
@@ -4958,7 +4958,7 @@ SWITCH_STANDARD_API(voicemail_api_function)
 		void *value;
 
 		switch_mutex_lock(globals.mutex);
-		for (index = switch_core_hash_first( globals.profile_hash); index; index = switch_core_hash_next(index)) {
+		for (index = switch_core_hash_first( globals.profile_hash); index; index = switch_core_hash_next(&index)) {
 			switch_core_hash_this(index, NULL, NULL, &value);
 			profile = (vm_profile_t *) value;
 			if (profile) {

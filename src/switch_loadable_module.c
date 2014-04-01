@@ -118,7 +118,7 @@ static void switch_loadable_module_runtime(void)
 	switch_loadable_module_t *module;
 
 	switch_mutex_lock(loadable_modules.mutex);
-	for (hi = switch_core_hash_first( loadable_modules.module_hash); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first( loadable_modules.module_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		module = (switch_loadable_module_t *) val;
 
@@ -620,7 +620,7 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 	
 	if (!switch_true(replying) && !switch_stristr("global", proto) && !switch_true(switch_event_get_header(message_event, "skip_global_process"))) {
 		switch_mutex_lock(loadable_modules.mutex);
-		for (hi = switch_core_hash_first( loadable_modules.chat_hash); hi; hi = switch_core_hash_next(hi)) {
+		for (hi = switch_core_hash_first( loadable_modules.chat_hash); hi; hi = switch_core_hash_next(&hi)) {
 			switch_core_hash_this(hi, &var, NULL, &val);
 			
 			if ((ci = (switch_chat_interface_t *) val)) {
@@ -1639,7 +1639,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_enumerate_loaded(switch_m
 	switch_loadable_module_t *module;
 
 	switch_mutex_lock(loadable_modules.mutex);
-	for (hi = switch_core_hash_first( loadable_modules.module_hash); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first( loadable_modules.module_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		module = (switch_loadable_module_t *) val;
 
@@ -1986,7 +1986,7 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 	}
 
 
-	for (hi = switch_core_hash_first( loadable_modules.module_hash); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first( loadable_modules.module_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		module = (switch_loadable_module_t *) val;
 		if (!module->perm) {
@@ -1996,7 +1996,7 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 
 	switch_yield(1000000);
 
-	for (hi = switch_core_hash_first( loadable_modules.module_hash); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first( loadable_modules.module_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		module = (switch_loadable_module_t *) val;
 		if (!module->perm) {
@@ -2196,7 +2196,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 	const switch_codec_implementation_t *imp;
 
 	switch_mutex_lock(loadable_modules.mutex);
-	for (hi = switch_core_hash_first( loadable_modules.codec_hash); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first( loadable_modules.codec_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		codec_interface = (switch_codec_interface_t *) val;
 		

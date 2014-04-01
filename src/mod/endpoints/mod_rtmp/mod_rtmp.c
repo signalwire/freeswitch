@@ -827,7 +827,7 @@ static void rtmp_garbage_colletor(void)
 
  top:
 
-	for (hi = switch_core_hash_first( rtmp_globals.session_hash); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first( rtmp_globals.session_hash); hi; hi = switch_core_hash_next(&hi)) {
 		void *val;	
 		const void *key;
 		switch_ssize_t keylen;
@@ -868,7 +868,7 @@ switch_status_t rtmp_real_session_destroy(rtmp_session_t **rsession)
 	int sess = 0;
 
 	switch_thread_rwlock_rdlock((*rsession)->session_rwlock);
-	for (hi = switch_core_hash_first( (*rsession)->session_hash); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first( (*rsession)->session_hash); hi; hi = switch_core_hash_next(&hi)) {
 		void *val;	
 		const void *key;
 		switch_ssize_t keylen;
@@ -1633,7 +1633,7 @@ SWITCH_STANDARD_API(rtmp_function)
 					stream->write_function(stream, "\nSessions:\n");
 					stream->write_function(stream, "uuid,address,user,domain,flashVer,state\n");
 					switch_thread_rwlock_rdlock(profile->session_rwlock);
-					for (hi = switch_core_hash_first( profile->session_hash); hi; hi = switch_core_hash_next(hi)) {
+					for (hi = switch_core_hash_first( profile->session_hash); hi; hi = switch_core_hash_next(&hi)) {
 						void *val;	
 						const void *key;
 						switch_ssize_t keylen;
@@ -1655,7 +1655,7 @@ SWITCH_STANDARD_API(rtmp_function)
 					stream->write_function(stream, "user,nickname,uuid\n");
 					
 					switch_thread_rwlock_rdlock(profile->reg_rwlock);
-					for (hi = switch_core_hash_first( profile->reg_hash); hi; hi = switch_core_hash_next(hi)) {
+					for (hi = switch_core_hash_first( profile->reg_hash); hi; hi = switch_core_hash_next(&hi)) {
 						void *val;	
 						const void *key;
 						switch_ssize_t keylen;
@@ -1681,7 +1681,7 @@ SWITCH_STANDARD_API(rtmp_function)
 		} else {
 			switch_hash_index_t *hi;
 			switch_thread_rwlock_rdlock(rtmp_globals.profile_rwlock);
-			for (hi = switch_core_hash_first( rtmp_globals.profile_hash); hi; hi = switch_core_hash_next(hi)) {
+			for (hi = switch_core_hash_first( rtmp_globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 				void *val;	
 				const void *key;
 				switch_ssize_t keylen;
@@ -1805,7 +1805,7 @@ static switch_status_t console_complete_hashtable(switch_hash_t *hash, const cha
 	switch_console_callback_match_t *my_matches = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	for (hi = switch_core_hash_first( hash); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first( hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, &vvar, NULL, &val);
 		switch_console_push_match(&my_matches, (const char *) vvar);
 	}

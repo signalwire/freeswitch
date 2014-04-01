@@ -282,7 +282,7 @@ SWITCH_STANDARD_API(blacklist_api_function)
 		switch_mutex_lock(globals.lists_mutex);
 		if (switch_file_open(&fd, filename, SWITCH_FOPEN_WRITE | SWITCH_FOPEN_TRUNCATE | SWITCH_FOPEN_CREATE, SWITCH_FPROT_OS_DEFAULT, globals.pool)
 			== SWITCH_STATUS_SUCCESS) {
-			for (hi = switch_core_hash_first( bl->list); hi; hi = switch_core_hash_next(hi)) {
+			for (hi = switch_core_hash_first( bl->list); hi; hi = switch_core_hash_next(&hi)) {
 				switch_core_hash_this(hi, &var, NULL, &val);
 				switch_file_printf(fd, "%s\n", (char *)var);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "adding %s to the dump file\n", (char *)var);

@@ -5530,7 +5530,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_freetdm_shutdown)
 	void *val;
 
 	/* destroy ss7 configs */
-	for (hi = switch_core_hash_first( globals.ss7_configs); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first( globals.ss7_configs); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, &var, NULL, &val);
 		ftdm_conf_node_destroy(val);
 	}

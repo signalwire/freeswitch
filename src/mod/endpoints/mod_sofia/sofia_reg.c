@@ -1109,7 +1109,7 @@ void sofia_reg_close_handles(sofia_profile_t *profile)
 	switch_mutex_lock(profile->flag_mutex);
 	if (profile->reg_nh_hash) {
 	top:
-		for (hi = switch_core_hash_first( profile->reg_nh_hash); hi; hi = switch_core_hash_next(hi)) {
+		for (hi = switch_core_hash_first( profile->reg_nh_hash); hi; hi = switch_core_hash_next(&hi)) {
 			switch_core_hash_this(hi, &var, NULL, &val);
 			if ((nh = (nua_handle_t *) val)) {
 				nua_handle_unref(nh);
@@ -3155,7 +3155,7 @@ sofia_gateway_t *sofia_reg_find_gateway_by_realm__(const char *file, const char 
 	void *val;
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
-	for (hi = switch_core_hash_first( mod_sofia_globals.gateway_hash); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_hash_first( mod_sofia_globals.gateway_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, &var, NULL, &val);
 		if (key && (gateway = (sofia_gateway_t *) val) && !gateway->deleted && gateway->register_realm && !strcasecmp(gateway->register_realm, key)) {
 			break;

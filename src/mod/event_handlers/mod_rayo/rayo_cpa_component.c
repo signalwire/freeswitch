@@ -133,7 +133,7 @@ static void subscriber_execute(const char *uuid, const char *signal_type, subscr
 		switch_hash_index_t *hi = NULL;
 		switch_hash_t *signal_subscribers = switch_core_hash_find(globals.subscribers, key);
 		if (signal_subscribers) {
-			for (hi = switch_core_hash_first(signal_subscribers); hi; hi = switch_core_hash_next(hi)) {
+			for (hi = switch_core_hash_first(signal_subscribers); hi; hi = switch_core_hash_next(&hi)) {
 				const void *jid;
 				void *dont_care;
 				switch_core_hash_this(hi, &jid, NULL, &dont_care);
@@ -161,7 +161,7 @@ static void stop_cpa_detectors(struct cpa_component *cpa)
 {
 	if (cpa->signals) {
 		switch_hash_index_t *hi = NULL;
-		for (hi = switch_core_hash_first(cpa->signals); hi; hi = switch_core_hash_next(hi)) {
+		for (hi = switch_core_hash_first(cpa->signals); hi; hi = switch_core_hash_next(&hi)) {
 			const void *signal_type;
 			void *cpa_signal = NULL;
 			switch_core_hash_this(hi, &signal_type, NULL, &cpa_signal);

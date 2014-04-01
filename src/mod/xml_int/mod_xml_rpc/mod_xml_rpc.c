@@ -1196,7 +1196,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
 
 	MIMETypeInit();
 
-	for (hi = switch_core_mime_index(); hi; hi = switch_core_hash_next(hi)) {
+	for (hi = switch_core_mime_index(); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, &var, NULL, &val);
 		if (var && val) {
 			MIMETypeAdd((char *) val, (char *) var);

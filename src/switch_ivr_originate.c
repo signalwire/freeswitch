@@ -2189,7 +2189,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		}
 		/*
 		   if ((hi = switch_channel_variable_first(caller_channel))) {
-		   for (; hi; hi = switch_core_hash_next(hi)) {
+		   for (; hi; hi = switch_core_hash_next(&hi)) {
 		   switch_core_hash_this(hi, &vvar, NULL, &vval);
 		   if (vvar && vval) {
 		   switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, (void *) vvar, (char *) vval);

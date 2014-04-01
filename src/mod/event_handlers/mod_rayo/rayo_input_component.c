@@ -282,7 +282,7 @@ static switch_status_t input_handler_on_dtmf(switch_core_session_t *session, con
 		switch_mutex_lock(handler->mutex);
 	
 		/* check input on each component */
-		for (hi = switch_core_hash_first(handler->dtmf_components); hi; hi = switch_core_hash_next(hi)) {
+		for (hi = switch_core_hash_first(handler->dtmf_components); hi; hi = switch_core_hash_next(&hi)) {
 			const void *jid;
 			void *component;
 			switch_core_hash_this(hi, &jid, NULL, &component);
@@ -330,7 +330,7 @@ static switch_bool_t input_handler_bug_callback(switch_media_bug_t *bug, void *u
 			switch_event_t *components_to_remove = NULL;
 
 			/* check timeout/stop on each component */
-			for (hi = switch_core_hash_first(handler->dtmf_components); hi; hi = switch_core_hash_next(hi)) {
+			for (hi = switch_core_hash_first(handler->dtmf_components); hi; hi = switch_core_hash_next(&hi)) {
 				const void *jid;
 				void *component;
 				switch_core_hash_this(hi, &jid, NULL, &component);
@@ -356,7 +356,7 @@ static switch_bool_t input_handler_bug_callback(switch_media_bug_t *bug, void *u
 		}
 		case SWITCH_ABC_TYPE_CLOSE:
 			/* complete all components */
-			for (hi = switch_core_hash_first(handler->dtmf_components); hi; hi = switch_core_hash_next(hi)) {
+			for (hi = switch_core_hash_first(handler->dtmf_components); hi; hi = switch_core_hash_next(&hi)) {
 				const void *jid;
 				void *component;
 				switch_core_hash_this(hi, &jid, NULL, &component);
