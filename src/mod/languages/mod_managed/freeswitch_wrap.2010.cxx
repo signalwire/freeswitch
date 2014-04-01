@@ -12096,24 +12096,38 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_hash_find_rdlock(void * jarg1, 
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_hash_first(void * jarg1) {
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_hash_first_iter(void * jarg1, void * jarg2) {
   void * jresult ;
   switch_hash_t *arg1 = (switch_hash_t *) 0 ;
+  switch_hash_index_t *arg2 = (switch_hash_index_t *) 0 ;
   switch_hash_index_t *result = 0 ;
   
   arg1 = (switch_hash_t *)jarg1; 
-  result = (switch_hash_index_t *)switch_core_hash_first(arg1);
+  arg2 = (switch_hash_index_t *)jarg2; 
+  result = (switch_hash_index_t *)switch_core_hash_first_iter(arg1,arg2);
   jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_hash_empty(void * jarg1) {
+  int jresult ;
+  switch_hash_t *arg1 = (switch_hash_t *) 0 ;
+  switch_bool_t result;
+  
+  arg1 = (switch_hash_t *)jarg1; 
+  result = (switch_bool_t)switch_core_hash_empty(arg1);
+  jresult = result; 
   return jresult;
 }
 
 
 SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_hash_next(void * jarg1) {
   void * jresult ;
-  switch_hash_index_t *arg1 = (switch_hash_index_t *) 0 ;
+  switch_hash_index_t **arg1 = (switch_hash_index_t **) 0 ;
   switch_hash_index_t *result = 0 ;
   
-  arg1 = (switch_hash_index_t *)jarg1; 
+  arg1 = (switch_hash_index_t **)jarg1; 
   result = (switch_hash_index_t *)switch_core_hash_next(arg1);
   jresult = (void *)result; 
   return jresult;
