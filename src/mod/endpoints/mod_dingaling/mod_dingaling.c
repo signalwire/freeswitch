@@ -569,7 +569,7 @@ static void pres_event_handler(switch_event_t *event)
 		switch_mprintf("select sub_from, sub_to,'%q','%q','%q','%q' from jabber_subscriptions where sub_to = '%q%q'", type, rpid, status, proto, pstr,
 					   from);
 
-	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		profile = (mdl_profile_t *) val;
 
@@ -701,7 +701,7 @@ static void roster_event_handler(switch_event_t *event)
 		sql = switch_mprintf("select *,'%q' from jabber_subscriptions", status ? status : "");
 	}
 
-	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		profile = (mdl_profile_t *) val;
 
@@ -738,7 +738,7 @@ static void ipchanged_event_handler(switch_event_t *event)
 		mdl_profile_t *profile;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "IP change detected [%s]->[%s]\n", old_ip4, new_ip4);
 		if (globals.profile_hash) {
-			for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+			for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 				switch_core_hash_this(hi, NULL, NULL, &val);
 				profile = (mdl_profile_t *) val;
 				if (old_ip4 && profile->extip && !strcmp(profile->extip, old_ip4)) {
@@ -799,7 +799,7 @@ static void sign_off(void)
 	sql = switch_mprintf("select * from jabber_subscriptions");
 
 
-	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		profile = (mdl_profile_t *) val;
 
@@ -2684,7 +2684,7 @@ static switch_status_t list_profiles(const char *line, const char *cursor, switc
 	switch_console_callback_match_t *my_matches = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, &vvar, NULL, &val);
 		profile = (mdl_profile_t *) val;
 		if (!strncmp("dl_logout", line, 9)) {
@@ -3090,7 +3090,7 @@ SWITCH_STANDARD_API(dingaling)
 	if (argv[0] && !strncasecmp(argv[0], "status", 6)) {
 		stream->write_function(stream, "--DingaLing status--\n");
 		stream->write_function(stream, "login	|	connected\n");
-		for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+		for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 			switch_core_hash_this(hi, NULL, NULL, &val);
 			profile = (mdl_profile_t *) val;
 			stream->write_function(stream, "%s	|	", profile->login);
@@ -3345,7 +3345,7 @@ static switch_status_t soft_reload(void)
 
 	switch_xml_free(xml);
 
-	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &data);
 		profile = (mdl_profile_t *) data;
 
@@ -3356,7 +3356,7 @@ static switch_status_t soft_reload(void)
 		}
 	}
 
-	for (hi = switch_core_hash_first( name_hash); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(name_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &data);
 
 		if ((profile = switch_core_hash_find(globals.profile_hash, (char *) data))) {

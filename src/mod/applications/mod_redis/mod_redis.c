@@ -172,7 +172,7 @@ SWITCH_LIMIT_RELEASE(limit_release_redis)
 	/* clear for uuid */
 	if (realm == NULL && resource == NULL) {
 		/* Loop through the channel's hashtable which contains mapping to all the limit_redis_item_t referenced by that channel */
-		while ((hi = switch_core_hash_first( pvt->hash))) {
+		while ((hi = switch_core_hash_first(pvt->hash))) {
 			void *p_val = NULL;
 			const void *p_key;
 			char *p_uuid_key = NULL;

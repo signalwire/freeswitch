@@ -198,7 +198,7 @@ void FSXML::DestroyHash()
 	}
 
 	/* First destroy all objects in the hash */
-	for (hi = switch_core_hash_first( tmp); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(tmp); hi; hi = switch_core_hash_next(&hi)) {
 		const void *var = NULL;
 		void *val = NULL;
 		FSXML *obj;

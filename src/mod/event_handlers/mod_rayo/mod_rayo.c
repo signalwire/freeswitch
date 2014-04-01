@@ -508,6 +508,7 @@ static void pause_when_offline(void)
 				break;
 			}
 		}
+		switch_safe_free(hi);
 
 		if (is_online) {
 			resume_inbound_calling();

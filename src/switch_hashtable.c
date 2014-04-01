@@ -294,11 +294,16 @@ SWITCH_DECLARE(switch_hashtable_iterator_t *) switch_hashtable_next(switch_hasht
 	return NULL;
 }
 
-SWITCH_DECLARE(switch_hashtable_iterator_t *) switch_hashtable_first(switch_hashtable_t *h)
+SWITCH_DECLARE(switch_hashtable_iterator_t *) switch_hashtable_first_iter(switch_hashtable_t *h, switch_hashtable_iterator_t *it)
 {
 	switch_hashtable_iterator_t *iterator;
 
-	switch_zmalloc(iterator, sizeof(*iterator));
+	if (it) {
+		iterator = it;
+	} else {
+		switch_zmalloc(iterator, sizeof(*iterator));
+	}
+
 	switch_assert(iterator);
 
 	iterator->pos = 0;

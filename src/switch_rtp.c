@@ -2017,7 +2017,7 @@ SWITCH_DECLARE(void) switch_rtp_shutdown(void)
 
 	switch_mutex_lock(port_lock);
 
-	for (hi = switch_core_hash_first( alloc_hash); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(alloc_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, &var, NULL, &val);
 		if ((alloc = (switch_core_port_allocator_t *) val)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroy port allocator for %s\n", (char *) var);

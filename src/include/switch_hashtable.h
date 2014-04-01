@@ -190,7 +190,8 @@ switch_hashtable_count(switch_hashtable_t *h);
 SWITCH_DECLARE(void)
 switch_hashtable_destroy(switch_hashtable_t **h);
 
-SWITCH_DECLARE(switch_hashtable_iterator_t*) switch_hashtable_first(switch_hashtable_t *h);
+SWITCH_DECLARE(switch_hashtable_iterator_t*) switch_hashtable_first_iter(switch_hashtable_t *h, switch_hashtable_iterator_t *it);
+#define switch_hashtable_first(_h) switch_hashtable_first_iter(_h, NULL)
 SWITCH_DECLARE(switch_hashtable_iterator_t*) switch_hashtable_next(switch_hashtable_iterator_t **iP);
 SWITCH_DECLARE(void) switch_hashtable_this(switch_hashtable_iterator_t *i, const void **key, switch_ssize_t *klen, void **val);
 

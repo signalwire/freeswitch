@@ -930,7 +930,7 @@ SWITCH_STANDARD_API(sangoma_function)
 #define STATS_FORMAT "%-10.10s %-10.10s %-10.10s %-10.10s %-10.10s %-10.10s %-10.10s %-10.10s %-10.10s %-10.10s %-15.15s %-15.15s\n"
 		stream->write_function(stream, STATS_FORMAT,
 				"Session", "Codec", "Enc", "Dec", "Enc Tx", "Enc Rx", "Dec Tx", "Dec Rx", "Enc Lost", "Dec Lost", "Enc AvgRxMs", "Dec AvgRxMs");
-		for (hi = switch_core_hash_first( g_sessions_hash); hi; hi = switch_core_hash_next(&hi)) {
+		for (hi = switch_core_hash_first(g_sessions_hash); hi; hi = switch_core_hash_next(&hi)) {
 			struct sangoma_transcoding_session *sess;
 			char sessid_str[25];
 			char encoder_tx_str[25];

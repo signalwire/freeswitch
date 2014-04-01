@@ -7196,7 +7196,7 @@ nua_handle_t *sofia_global_nua_handle_by_replaces(sip_replaces_t *replaces)
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if (mod_sofia_globals.profile_hash) {
-		for (hi = switch_core_hash_first( mod_sofia_globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+		for (hi = switch_core_hash_first(mod_sofia_globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 			switch_core_hash_this(hi, &var, NULL, &val);
 			if ((profile = (sofia_profile_t *) val)) {
 				if (!(nh = nua_handle_by_replaces(profile->nua, replaces))) {
@@ -7206,6 +7206,7 @@ nua_handle_t *sofia_global_nua_handle_by_replaces(sip_replaces_t *replaces)
 					break;
 			}
 		}
+		switch_safe_free(hi);
 	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 

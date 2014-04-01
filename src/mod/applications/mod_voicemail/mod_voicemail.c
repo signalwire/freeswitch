@@ -3866,7 +3866,7 @@ SWITCH_STANDARD_API(boxcount_api_function)
 			/* Kept for backwards-compatibility */
 			switch_hash_index_t *hi;
 			switch_mutex_lock(globals.mutex);
-			if ((hi = switch_core_hash_first( globals.profile_hash))) {
+			if ((hi = switch_core_hash_first(globals.profile_hash))) {
 				void *val;
 				switch_core_hash_this(hi, NULL, NULL, &val);
 				profile = (vm_profile_t *) val;
@@ -4020,7 +4020,7 @@ static void actual_message_query_handler(switch_event_t *event)
 								  "Cound not find a profile for domain: [%s] Returning 0 messages\nWhen message-query-exact-match is enabled you must have a dedicated vm profile per distinct domain name you wish to use.\n", domain);
 			}
 		} else {
-			for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+			for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 				switch_core_hash_this(hi, NULL, NULL, &val);
 				profile = (vm_profile_t *) val;
 				parse_profile();
@@ -4029,6 +4029,7 @@ static void actual_message_query_handler(switch_event_t *event)
 					break;
 				}
 			}
+			switch_safe_free(hi);
 		}
 
 		switch_safe_free(dup);
@@ -4923,7 +4924,7 @@ SWITCH_STANDARD_API(voicemail_api_function)
 		} else if (!strcasecmp(argv[0], "status")) {
 			stream->write_function(stream, "============================\n");
 			switch_mutex_lock(globals.mutex);
-			for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+			for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 				switch_core_hash_this(hi, NULL, NULL, &val);
 				profile = (vm_profile_t *) val;
 				stream->write_function(stream, "Profile: %s\n", profile->name);
@@ -4958,7 +4959,7 @@ SWITCH_STANDARD_API(voicemail_api_function)
 		void *value;
 
 		switch_mutex_lock(globals.mutex);
-		for (index = switch_core_hash_first( globals.profile_hash); index; index = switch_core_hash_next(&index)) {
+		for (index = switch_core_hash_first(globals.profile_hash); index; index = switch_core_hash_next(&index)) {
 			switch_core_hash_this(index, NULL, NULL, &value);
 			profile = (vm_profile_t *) value;
 			if (profile) {
@@ -4966,6 +4967,7 @@ SWITCH_STANDARD_API(voicemail_api_function)
 				break;
 			}
 		}
+		switch_safe_free(index);
 		switch_mutex_unlock(globals.mutex);
 	}
 
@@ -6237,7 +6239,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_voicemail_shutdown)
 {
-	switch_hash_index_t *hi;
+	switch_hash_index_t *hi = NULL;
 	vm_profile_t *profile;
 	void *val = NULL;
 	const void *key;
@@ -6261,7 +6263,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_voicemail_shutdown)
 	}
 
 	switch_mutex_lock(globals.mutex);
-	while ((hi = switch_core_hash_first( globals.profile_hash))) {
+	while ((hi = switch_core_hash_first_iter( globals.profile_hash, hi))) {
 		switch_core_hash_this(hi, &key, &keylen, &val);
 		profile = (vm_profile_t *) val;
 

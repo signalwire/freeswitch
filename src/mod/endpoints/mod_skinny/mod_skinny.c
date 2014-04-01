@@ -197,7 +197,7 @@ skinny_profile_t *skinny_find_profile_by_domain(const char *domain_name)
 	skinny_profile_t *profile = NULL, *tmp_profile;
 
 	switch_mutex_lock(globals.mutex);
-	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		tmp_profile = (skinny_profile_t *) val;
 
@@ -210,6 +210,7 @@ skinny_profile_t *skinny_find_profile_by_domain(const char *domain_name)
 			break;
 		}
 	}
+	switch_safe_free(hi);
 	switch_mutex_unlock(globals.mutex);
 
 	return profile;
@@ -1401,7 +1402,7 @@ static void walk_listeners(skinny_listener_callback_func_t callback, void *pvt)
 
 	/* walk listeners */
 	switch_mutex_lock(globals.mutex);
-	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		profile = (skinny_profile_t *) val;
 
@@ -2441,7 +2442,7 @@ static void skinny_trap_event_handler(switch_event_t *event)
 
 		switch_mutex_lock(globals.mutex);
 		if (globals.profile_hash) {
-			for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+			for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 				switch_core_hash_this(hi, &var, NULL, &val);
 				if ((profile = (skinny_profile_t *) val) && profile->auto_restart) {
 					if (!strcmp(profile->ip, old_ip4)) {
@@ -2477,7 +2478,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 	load_skinny_config();
 
 	/* at least one profile */
-	if (!switch_core_hash_first( globals.profile_hash)) {
+	if (switch_core_hash_empty( globals.profile_hash)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No profile found!\n");
 		return SWITCH_STATUS_TERM;
 	}
@@ -2540,7 +2541,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skinny_load)
 
 	/* launch listeners */
 	switch_mutex_lock(globals.mutex);
-	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 		void *val;
 		skinny_profile_t *profile;
 
@@ -2587,7 +2588,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skinny_shutdown)
 
 	/* close sockets */
 	switch_mutex_lock(globals.mutex);
-	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 		skinny_profile_t *profile;
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		profile = (skinny_profile_t *) val;

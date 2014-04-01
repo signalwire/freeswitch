@@ -105,7 +105,7 @@ static void unsubscribe(const char *uuid, const char *signal_type, const char *j
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "Unsubscribe %s => %s\n", signal_type, jid);
 
 			/* clean up hash if empty */
-			if (!switch_core_hash_first(signal_subscribers)) {
+			if (switch_core_hash_empty(signal_subscribers)) {
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "Destroy %s subscriber hash\n", signal_type);
 				switch_core_hash_destroy(&signal_subscribers);
 				switch_core_hash_delete(globals.subscribers, key);

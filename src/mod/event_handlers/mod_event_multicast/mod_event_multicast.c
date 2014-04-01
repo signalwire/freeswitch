@@ -247,7 +247,7 @@ static void event_handler(switch_event_t *event)
 		struct peer_status *last;
 		char *host;
 
-		for (cur = switch_core_hash_first( globals.peer_hash); cur; cur = switch_core_hash_next(&cur)) {
+		for (cur = switch_core_hash_first(globals.peer_hash); cur; cur = switch_core_hash_next(&cur)) {
 			switch_core_hash_this(cur, &key, &keylen, &value);
 			host = (char *) key;
 			last = (struct peer_status *) value;
@@ -351,7 +351,7 @@ SWITCH_STANDARD_API(multicast_peers)
 	char *host;
 	int i = 0;
 
-	for (cur = switch_core_hash_first( globals.peer_hash); cur; cur = switch_core_hash_next(&cur)) {
+	for (cur = switch_core_hash_first(globals.peer_hash); cur; cur = switch_core_hash_next(&cur)) {
 		switch_core_hash_this(cur, &key, &keylen, &value);
 		host = (char *) key;
 		last = (struct peer_status *) value;

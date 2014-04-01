@@ -116,7 +116,7 @@ static switch_status_t do_config(switch_bool_t reload)
 {
 	/* Load up blacklists */
 	switch_xml_t xml, cfg, lists, list;
-	switch_hash_index_t *hi;
+	switch_hash_index_t *hi = NULL;
 	
 	if (!(xml = switch_xml_open_cfg("mod_blacklist.conf", &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't load configuration section\n");
@@ -126,7 +126,7 @@ static switch_status_t do_config(switch_bool_t reload)
 	switch_mutex_lock(globals.lists_mutex);
 	
 	/* Destroy any active lists */
-	while ((hi = switch_core_hash_first( globals.lists))) {
+	while ((hi = switch_core_hash_first_iter( globals.lists, hi))) {
 		const void *key;
 		void *val;
 		switch_core_hash_this(hi, &key, NULL, &val);
@@ -282,7 +282,7 @@ SWITCH_STANDARD_API(blacklist_api_function)
 		switch_mutex_lock(globals.lists_mutex);
 		if (switch_file_open(&fd, filename, SWITCH_FOPEN_WRITE | SWITCH_FOPEN_TRUNCATE | SWITCH_FOPEN_CREATE, SWITCH_FPROT_OS_DEFAULT, globals.pool)
 			== SWITCH_STATUS_SUCCESS) {
-			for (hi = switch_core_hash_first( bl->list); hi; hi = switch_core_hash_next(&hi)) {
+			for (hi = switch_core_hash_first(bl->list); hi; hi = switch_core_hash_next(&hi)) {
 				switch_core_hash_this(hi, &var, NULL, &val);
 				switch_file_printf(fd, "%s\n", (char *)var);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "adding %s to the dump file\n", (char *)var);

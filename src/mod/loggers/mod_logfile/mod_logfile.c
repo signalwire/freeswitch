@@ -264,7 +264,7 @@ static switch_status_t process_node(const switch_log_node_t *node, switch_log_le
 	const void *var;
 	logfile_profile_t *profile;
 
-	for (hi = switch_core_hash_first( profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 		size_t mask = 0;
 		size_t ok = 0;
 
@@ -380,14 +380,14 @@ static void event_handler(switch_event_t *event)
 
 	if (sig && !strcmp(sig, "HUP")) {
 		if (globals.rotate) {
-			for (hi = switch_core_hash_first( profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+			for (hi = switch_core_hash_first(profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 				switch_core_hash_this(hi, &var, NULL, &val);
 				profile = val;
 				mod_logfile_rotate(profile);
 			}
 		} else {
 			switch_mutex_lock(globals.mutex);
-			for (hi = switch_core_hash_first( profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+			for (hi = switch_core_hash_first(profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 				switch_core_hash_this(hi, &var, NULL, &val);
 				profile = val;
 				switch_file_close(profile->log_afd);
@@ -461,7 +461,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_logfile_shutdown)
 	switch_log_unbind_logger(mod_logfile_logger);
 	switch_event_unbind(&globals.node);
 
-	for (hi = switch_core_hash_first( profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 		logfile_profile_t *profile;
 		switch_core_hash_this(hi, &var, NULL, &val);
 		if ((profile = (logfile_profile_t *) val)) {

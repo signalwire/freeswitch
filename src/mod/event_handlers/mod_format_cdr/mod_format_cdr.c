@@ -495,7 +495,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 
 	status = SWITCH_STATUS_SUCCESS;
 
-	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 		cdr_profile_t *profile;
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		profile = (cdr_profile_t *) val;
@@ -518,7 +518,7 @@ static void event_handler(switch_event_t *event)
 	const char *sig = switch_event_get_header(event, "Trapped-Signal");
 
 	if (sig && !strcmp(sig, "HUP")) {
-		for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+		for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 			cdr_profile_t *profile;
 			switch_core_hash_this(hi, NULL, NULL, &val);
 			profile = (cdr_profile_t *) val;
@@ -785,7 +785,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_format_cdr_shutdown)
 	switch_event_unbind(&globals.node);
 	switch_core_remove_state_handler(&state_handlers);
 
-	for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 		cdr_profile_t *profile;
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		profile = (cdr_profile_t *) val;

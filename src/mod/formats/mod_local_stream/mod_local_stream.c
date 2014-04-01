@@ -810,7 +810,7 @@ SWITCH_STANDARD_API(show_local_stream_function)
 	switch_mutex_lock(globals.mutex);
 
 	if (zstr(cmd)) {
-		for (hi = switch_core_hash_first( globals.source_hash); hi; hi = switch_core_hash_next(&hi)) {
+		for (hi = switch_core_hash_first(globals.source_hash); hi; hi = switch_core_hash_next(&hi)) {
 			switch_core_hash_this(hi, &var, NULL, &val);
 			if ((source = (local_stream_source_t *) val)) {
 				stream->write_function(stream, "%s,%s\n", source->name, source->location);

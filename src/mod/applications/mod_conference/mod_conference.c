@@ -5291,7 +5291,7 @@ static switch_status_t list_conferences(const char *line, const char *cursor, sw
 	const void *vvar;
 
 	switch_mutex_lock(globals.hash_mutex);
-	for (hi = switch_core_hash_first( globals.conference_hash); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(globals.conference_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, &vvar, NULL, &val);
 		switch_console_push_match(&my_matches, (const char *) vvar);		
 	}
@@ -5783,7 +5783,7 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
 
 	if (conference == NULL) {
 		switch_mutex_lock(globals.hash_mutex);
-		for (hi = switch_core_hash_first( globals.conference_hash); hi; hi = switch_core_hash_next(&hi)) {
+		for (hi = switch_core_hash_first(globals.conference_hash); hi; hi = switch_core_hash_next(&hi)) {
 			int fcount = 0;
 			switch_core_hash_this(hi, NULL, NULL, &val);
 			conference = (conference_obj_t *) val;
@@ -6262,7 +6262,7 @@ static switch_status_t conf_api_sub_xml_list(conference_obj_t *conference, switc
 
 	if (conference == NULL) {
 		switch_mutex_lock(globals.hash_mutex);
-		for (hi = switch_core_hash_first( globals.conference_hash); hi; hi = switch_core_hash_next(&hi)) {
+		for (hi = switch_core_hash_first(globals.conference_hash); hi; hi = switch_core_hash_next(&hi)) {
 			switch_core_hash_this(hi, NULL, NULL, &val);
 			conference = (conference_obj_t *) val;
 

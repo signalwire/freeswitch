@@ -1132,7 +1132,7 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hashed ref to %s\n", hash);
 
 	switch_thread_rwlock_rdlock(listener->session_rwlock);
-	for (iter = switch_core_hash_first( listener->sessions); iter; iter = switch_core_hash_next(&iter)) {
+	for (iter = switch_core_hash_first(listener->sessions); iter; iter = switch_core_hash_next(&iter)) {
 		switch_core_hash_this(iter, &key, NULL, &val);
 		se = (session_elem_t*)val;
 		if (se->spawn_reply && !strncmp(se->spawn_reply->hash, hash, 100)) {
@@ -1154,6 +1154,7 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, 
 			break;
 		}
 	}
+	switch_safe_free(iter);
 	switch_thread_rwlock_unlock(listener->session_rwlock);
 
 	if (found) {

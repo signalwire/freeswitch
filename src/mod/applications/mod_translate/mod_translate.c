@@ -170,7 +170,7 @@ static void do_unload(void) {
 
 	switch_mutex_lock(MUTEX);
 
-	while ((hi = switch_core_hash_first( globals.translate_profiles))) {
+	while ((hi = switch_core_hash_first_iter( globals.translate_profiles, hi))) {
 		void *val = NULL;
 		const void *key;
 		switch_ssize_t keylen;

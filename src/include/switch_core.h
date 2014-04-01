@@ -1459,7 +1459,15 @@ SWITCH_DECLARE(void *) switch_core_hash_find_rdlock(_In_ switch_hash_t *hash, _I
  \param hash the hashtable to use
  \return The element, or NULL if it wasn't found 
 */
-SWITCH_DECLARE(switch_hash_index_t *) switch_core_hash_first(_In_ switch_hash_t *hash);
+SWITCH_DECLARE(switch_hash_index_t *) switch_core_hash_first_iter(_In_ switch_hash_t *hash, switch_hash_index_t *hi);
+#define switch_core_hash_first(_h) switch_core_hash_first_iter(_h, NULL)
+
+/*!
+ \brief tells if a hash is empty
+ \param hash the hashtable
+ \return TRUE or FALSE depending on if the hash is empty
+*/
+SWITCH_DECLARE(switch_bool_t) switch_core_hash_empty(switch_hash_t *hash);
 
 /*!
  \brief Gets the next element of a hashtable

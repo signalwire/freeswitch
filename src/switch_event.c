@@ -576,7 +576,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 		}
 	}
 
-	for (hi = switch_core_hash_first( CUSTOM_HASH); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(CUSTOM_HASH); hi; hi = switch_core_hash_next(&hi)) {
 		switch_event_subclass_t *subclass;
 		switch_core_hash_this(hi, &var, NULL, &val);
 		if ((subclass = (switch_event_subclass_t *) val)) {
@@ -2686,14 +2686,14 @@ static uint32_t switch_event_channel_unsub_head(switch_event_channel_func_t func
 
 static void unsub_all_switch_event_channel(void)
 {
-	switch_hash_index_t *hi;
+	switch_hash_index_t *hi = NULL;
 	const void *var;
 	void *val;
 	switch_event_channel_sub_node_head_t *head;
 
 	switch_thread_rwlock_wrlock(event_channel_manager.rwlock);
 
-	while ((hi = switch_core_hash_first( event_channel_manager.perm_hash))) {
+	while ((hi = switch_core_hash_first_iter( event_channel_manager.perm_hash, hi))) {
 		switch_event_t *vals = NULL;
 		switch_core_hash_this(hi, &var, NULL, &val);
 		vals = (switch_event_t *) val;
@@ -2701,7 +2701,7 @@ static void unsub_all_switch_event_channel(void)
 		switch_event_destroy(&vals);
 	}
 
-	while ((hi = switch_core_hash_first( event_channel_manager.hash))) {
+	while ((hi = switch_core_hash_first_iter( event_channel_manager.hash, hi))) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
 		head = (switch_event_channel_sub_node_head_t *) val;
 		switch_event_channel_unsub_head(NULL, head);
@@ -2724,7 +2724,7 @@ static uint32_t switch_event_channel_unsub_channel(switch_event_channel_func_t f
 		switch_hash_index_t *hi;
 		void *val;
 
-		for (hi = switch_core_hash_first( event_channel_manager.hash); hi; hi = switch_core_hash_next(&hi)) {
+		for (hi = switch_core_hash_first(event_channel_manager.hash); hi; hi = switch_core_hash_next(&hi)) {
 			switch_core_hash_this(hi, NULL, NULL, &val);
 
 			if (val) {

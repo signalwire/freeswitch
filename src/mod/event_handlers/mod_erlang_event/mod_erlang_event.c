@@ -364,7 +364,7 @@ session_elem_t *find_session_elem_by_pid(listener_t *listener, erlang_pid *pid)
 	session_elem_t *session = NULL;
 
 	switch_thread_rwlock_rdlock(listener->session_rwlock);
-	for (iter = switch_core_hash_first( listener->sessions); iter; iter = switch_core_hash_next(&iter)) {
+	for (iter = switch_core_hash_first(listener->sessions); iter; iter = switch_core_hash_next(&iter)) {
 		switch_core_hash_this(iter, &key, NULL, &val);
 		
 		if (((session_elem_t*)val)->process.type == ERLANG_PID && !ei_compare_pids(pid, &((session_elem_t*)val)->process.pid)) {
@@ -373,6 +373,7 @@ session_elem_t *find_session_elem_by_pid(listener_t *listener, erlang_pid *pid)
 			break;
 		}
 	}
+	switch_safe_free(iter);
 	switch_thread_rwlock_unlock(listener->session_rwlock);
 
 	return session;
@@ -644,7 +645,7 @@ static switch_status_t check_attached_sessions(listener_t *listener, int *msgs_s
 
 	/* TODO try to minimize critical section */
 	switch_thread_rwlock_rdlock(listener->session_rwlock);
-	for (iter = switch_core_hash_first( listener->sessions); iter; iter = switch_core_hash_next(&iter)) {
+	for (iter = switch_core_hash_first(listener->sessions); iter; iter = switch_core_hash_next(&iter)) {
 		switch_core_hash_this(iter, &key, NULL, &value);
 		sp = (session_elem_t*)value;
 		if (switch_test_flag(sp, LFLAG_WAITING_FOR_PID)) {
@@ -1333,7 +1334,7 @@ void destroy_listener(listener_t * listener)
 
 	/* clean up all the attached sessions */
 	switch_thread_rwlock_wrlock(listener->session_rwlock);
-	for (iter = switch_core_hash_first( listener->sessions); iter; iter = switch_core_hash_next(&iter)) {
+	for (iter = switch_core_hash_first(listener->sessions); iter; iter = switch_core_hash_next(&iter)) {
 		switch_core_hash_this(iter, &key, NULL, &value);
 		s = (session_elem_t*)value;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Orphaning call %s\n", s->uuid_str);
@@ -1529,7 +1530,7 @@ int count_listener_sessions(listener_t *listener)
 	switch_hash_index_t *iter;
 
 	switch_thread_rwlock_rdlock(listener->session_rwlock);
-	for (iter = switch_core_hash_first( listener->sessions); iter; iter = switch_core_hash_next(&iter)) {
+	for (iter = switch_core_hash_first(listener->sessions); iter; iter = switch_core_hash_next(&iter)) {
 		count++;
 	}
 	switch_thread_rwlock_unlock(listener->session_rwlock);
@@ -1750,7 +1751,7 @@ SWITCH_STANDARD_API(erlang_cmd)
 
 				found = 1;
 				switch_thread_rwlock_rdlock(l->session_rwlock);
-				for (iter = switch_core_hash_first( l->sessions); iter; iter = switch_core_hash_next(&iter)) {
+				for (iter = switch_core_hash_first(l->sessions); iter; iter = switch_core_hash_next(&iter)) {
 					empty = 0;
 					switch_core_hash_this(iter, &key, NULL, &value);
 					sp = (session_elem_t*)value;
@@ -1791,7 +1792,7 @@ SWITCH_STANDARD_API(erlang_cmd)
 					}
 					stream->write_function(stream, "CUSTOM:\n", switch_event_name(x));
 
-					for (iter = switch_core_hash_first( l->event_hash); iter; iter = switch_core_hash_next(&iter)) {
+					for (iter = switch_core_hash_first(l->event_hash); iter; iter = switch_core_hash_next(&iter)) {
 						switch_core_hash_this(iter, &key, NULL, &val);
 						stream->write_function(stream, "\t%s\n", (char *)key);
 					}

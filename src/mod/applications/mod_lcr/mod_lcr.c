@@ -2052,7 +2052,7 @@ SWITCH_STANDARD_API(dialplan_lcr_admin_function)
 		}
 		switch_assert(argv[0]);
 		if (!strcasecmp(argv[0], "show") && !strcasecmp(argv[1], "profiles")) {
-			for (hi = switch_core_hash_first( globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
+			for (hi = switch_core_hash_first(globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
 				switch_core_hash_this(hi, NULL, NULL, &val);
 				profile = (profile_t *) val;
 

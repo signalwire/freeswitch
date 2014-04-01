@@ -105,7 +105,7 @@ static void check_timeouts(void)
 	valet_lot_t *lot;
 	switch_console_callback_match_t *matches = NULL;
 	switch_console_callback_match_node_t *m;
-	switch_hash_index_t *i_hi;
+	switch_hash_index_t *i_hi = NULL;
 	const void *i_var;
 	void *i_val;
 	char *i_ext;
@@ -120,7 +120,7 @@ static void check_timeouts(void)
 	}
 
 	globals.last_timeout_check = now;
-	for (hi = switch_core_hash_first( globals.hash); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(globals.hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, &var, NULL, &val);
 		switch_console_push_match(&matches, (const char *) var);
 	}
@@ -135,7 +135,7 @@ static void check_timeouts(void)
 
 		top:
 		
-			for (i_hi = switch_core_hash_first( lot->hash); i_hi; i_hi = switch_core_hash_next(&i_hi)) {
+			for (i_hi = switch_core_hash_first_iter( lot->hash, i_hi); i_hi; i_hi = switch_core_hash_next(&i_hi)) {
 				switch_core_hash_this(i_hi, &i_var, NULL, &i_val);
 				i_ext = (char *) i_var;
 				token = (valet_token_t *) i_val;
@@ -146,6 +146,7 @@ static void check_timeouts(void)
 					goto top;
 				}
 			}
+			switch_safe_free(i_hi);
 
 			switch_mutex_unlock(lot->mutex);
 		}
@@ -167,7 +168,7 @@ static int find_longest(valet_lot_t *lot, int min, int max)
 	time_t now = switch_epoch_time_now(NULL);
 
 	switch_mutex_lock(lot->mutex);
-	for (i_hi = switch_core_hash_first( lot->hash); i_hi; i_hi = switch_core_hash_next(&i_hi)) {
+	for (i_hi = switch_core_hash_first(lot->hash); i_hi; i_hi = switch_core_hash_next(&i_hi)) {
 		int i;
 		switch_core_hash_this(i_hi, &i_var, NULL, &i_val);
 		token = (valet_token_t *) i_val;
@@ -257,7 +258,7 @@ static int valet_lot_count(valet_lot_t *lot)
 	now = switch_epoch_time_now(NULL);
 
 	switch_mutex_lock(lot->mutex);
-	for (i_hi = switch_core_hash_first( lot->hash); i_hi; i_hi = switch_core_hash_next(&i_hi)) {
+	for (i_hi = switch_core_hash_first(lot->hash); i_hi; i_hi = switch_core_hash_next(&i_hi)) {
 		switch_core_hash_this(i_hi, &i_var, NULL, &i_val);
 		token = (valet_token_t *) i_val;
 		if (token->timeout > 0 && (token->timeout < now || token->timeout == 1)) {
@@ -738,7 +739,7 @@ SWITCH_STANDARD_API(valet_info_function)
 	stream->write_function(stream, "<lots>\n");
 
 	switch_mutex_lock(globals.mutex);
-	for (hi = switch_core_hash_first( globals.hash); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(globals.hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_hash_index_t *i_hi;
 		const void *i_var;
 		void *i_val;
@@ -754,7 +755,7 @@ SWITCH_STANDARD_API(valet_info_function)
 		stream->write_function(stream, "  <lot name=\"%s\">\n", name);
 
 		switch_mutex_lock(lot->mutex);
-		for (i_hi = switch_core_hash_first( lot->hash); i_hi; i_hi = switch_core_hash_next(&i_hi)) {
+		for (i_hi = switch_core_hash_first(lot->hash); i_hi; i_hi = switch_core_hash_next(&i_hi)) {
 			valet_token_t *token;
 
 			switch_core_hash_this(i_hi, &i_var, NULL, &i_val);
@@ -848,7 +849,7 @@ static void pres_event_handler(switch_event_t *event)
 		const char *nvar;
 
 		switch_mutex_lock(globals.mutex);
-		for (hi = switch_core_hash_first( globals.hash); hi; hi = switch_core_hash_next(&hi)) {
+		for (hi = switch_core_hash_first(globals.hash); hi; hi = switch_core_hash_next(&hi)) {
 			switch_core_hash_this(hi, &var, NULL, &val);
 			nvar = (const char *) var;
 

@@ -1023,7 +1023,7 @@ SWITCH_DECLARE(const char *) switch_core_mime_ext2type(const char *ext)
 
 SWITCH_DECLARE(switch_hash_index_t *) switch_core_mime_index(void)
 {
-	return switch_core_hash_first( runtime.mime_types);
+	return switch_core_hash_first(runtime.mime_types);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_mime_add_type(const char *type, const char *ext)

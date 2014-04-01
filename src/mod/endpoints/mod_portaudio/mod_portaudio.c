@@ -2491,7 +2491,7 @@ static switch_status_t list_shared_streams(char **argv, int argc, switch_stream_
 {
 	switch_hash_index_t *hi;
 	int cnt = 0;
-	for (hi = switch_core_hash_first( globals.sh_streams); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(globals.sh_streams); hi; hi = switch_core_hash_next(&hi)) {
 		const void *var;
 		void *val;
 		shared_audio_stream_t *s = NULL;
@@ -2509,7 +2509,7 @@ static switch_status_t list_endpoints(char **argv, int argc, switch_stream_handl
 {
 	switch_hash_index_t *hi;
 	int cnt = 0;
-	for (hi = switch_core_hash_first( globals.endpoints); hi; hi = switch_core_hash_next(&hi)) {
+	for (hi = switch_core_hash_first(globals.endpoints); hi; hi = switch_core_hash_next(&hi)) {
 		const void *var;
 		void *val;
 		audio_endpoint_t *e = NULL;

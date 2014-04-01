@@ -1945,7 +1945,7 @@ SWITCH_DECLARE(void) switch_xml_merge_user(switch_xml_t user, switch_xml_t domai
 
 SWITCH_DECLARE(uint32_t) switch_xml_clear_user_cache(const char *key, const char *user_name, const char *domain_name)
 {
-	switch_hash_index_t *hi;
+	switch_hash_index_t *hi = NULL;
 	void *val;
 	const void *var;
 	char mega_key[1024];
@@ -1971,18 +1971,20 @@ SWITCH_DECLARE(uint32_t) switch_xml_clear_user_cache(const char *key, const char
 
 	} else {
 
-		while ((hi = switch_core_hash_first( CACHE_HASH))) {
+		while ((hi = switch_core_hash_first_iter( CACHE_HASH, hi))) {
 			switch_core_hash_this(hi, &var, NULL, &val);
 			switch_xml_free(val);
 			switch_core_hash_delete(CACHE_HASH, var);
 			r++;
 		}
 
-		while ((hi = switch_core_hash_first( CACHE_EXPIRES_HASH))) {
+		while ((hi = switch_core_hash_first_iter( CACHE_EXPIRES_HASH, hi))) {
 			switch_core_hash_this(hi, &var, NULL, &val);
 			switch_safe_free(val);
 			switch_core_hash_delete(CACHE_EXPIRES_HASH, var);
 		}
+
+		switch_safe_free(hi);
 	}
 
 	switch_mutex_unlock(CACHE_MUTEX);

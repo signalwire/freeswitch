@@ -1070,7 +1070,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_directory_shutdown)
 
 	switch_mutex_lock(globals.mutex);
 
-	while ((hi = switch_core_hash_first( globals.profile_hash))) {
+	while ((hi = switch_core_hash_first(globals.profile_hash))) {
 		switch_core_hash_this(hi, &key, &keylen, &val);
 		profile = (dir_profile_t *) val;
 

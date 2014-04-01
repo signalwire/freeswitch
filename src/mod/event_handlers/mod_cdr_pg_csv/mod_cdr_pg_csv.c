@@ -401,7 +401,7 @@ static void event_handler(switch_event_t *event)
 	}
 
 	if (sig && !strcmp(sig, "HUP")) {
-		for (hi = switch_core_hash_first( globals.fd_hash); hi; hi = switch_core_hash_next(&hi)) {
+		for (hi = switch_core_hash_first(globals.fd_hash); hi; hi = switch_core_hash_next(&hi)) {
 			switch_core_hash_this(hi, NULL, NULL, &val);
 			fd = (cdr_fd_t *) val;
 			switch_mutex_lock(fd->mutex);
