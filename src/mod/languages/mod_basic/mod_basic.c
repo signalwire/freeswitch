@@ -319,7 +319,7 @@ SWITCH_STANDARD_APP(basic_function)
 
 	if (zstr(file)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "missing file\n");
-		goto DONE;
+		goto end;
 	}
 
 	if (!switch_is_file_path(file)) {
@@ -349,7 +349,7 @@ SWITCH_STANDARD_APP(basic_function)
 
 	mb_close(&bi);
 
-DONE:
+ end:
 	switch_safe_free(fdup);
 	switch_safe_free(mydata);
 }
