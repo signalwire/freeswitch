@@ -2385,7 +2385,6 @@ static char *load_cache_data(http_file_context_t *context, const char *url)
 	}
 
 	context->cache_file = switch_core_sprintf(context->pool, "%s%s%s%s%s", globals.cache_path, SWITCH_PATH_SEPARATOR, digest, ext ? "." : "", ext ? ext : "");
-
 	switch_safe_free(dext);
 
 	return context->cache_file;
@@ -2658,6 +2657,10 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 	if (context->url_params) {
 		ext = switch_event_get_header(context->url_params, "ext");
 	}
+	
+	if (zstr(ext)) {
+		ext = find_ext(context->cache_file);
+	}
 
 	if (!context->url_params || !switch_true(switch_event_get_header(context->url_params, "nohead"))) {
 		const char *ct = NULL;
@@ -2685,12 +2688,6 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 
 		if (newext) {
 			ext = newext;
-		} else if (zstr(ext)) {
-			ext = find_ext(context->cache_file);
-		}
-
-
-		if (newext) {
 			context->cache_file = switch_core_sprintf(context->pool, "%s.%s", context->cache_file, newext);
 		}
 
