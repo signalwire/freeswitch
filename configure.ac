@@ -253,6 +253,7 @@ AC_SUBST(CC_FOR_BUILD)
 if test -n "$lt_sysroot" ; then
    APR_ADDTO(CFLAGS, --sysroot=$lt_sysroot)
    APR_ADDTO(CXXFLAGS, --sysroot=$lt_sysroot)
+   APR_ADDTO(CPPFLAGS, --sysroot=$lt_sysroot)
    APR_ADDTO(LDFLAGS, --sysroot=$lt_sysroot)
    PKG_CONFIG_SYSROOT_DIR=$lt_sysroot
 fi
