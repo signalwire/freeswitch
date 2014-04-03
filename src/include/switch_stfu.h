@@ -28,6 +28,9 @@
 
 #ifndef STFU_H
 #define STFU_H
+
+#include <switch.h> 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -75,8 +78,6 @@ typedef unsigned long   in_addr_t;
 #endif
 #include <assert.h>
 
-
-
 #ifdef WIN32
 #include <winsock2.h>
 #include <windows.h>
@@ -95,23 +96,7 @@ typedef intptr_t stfu_ssize_t;
 typedef int stfu_filehandle_t;
 #define STFU_SOCK_INVALID INVALID_SOCKET
 #define strerror_r(num, buf, size) strerror_s(buf, size, num)
-#if defined(STFU_DECLARE_STATIC)
-#define STFU_DECLARE(type)			type __stdcall
-#define STFU_DECLARE_NONSTD(type)		type __cdecl
-#define STFU_DECLARE_DATA
-#elif defined(STFU_EXPORTS)
-#define STFU_DECLARE(type)			__declspec(dllexport) type __stdcall
-#define STFU_DECLARE_NONSTD(type)		__declspec(dllexport) type __cdecl
-#define STFU_DECLARE_DATA				__declspec(dllexport)
 #else
-#define STFU_DECLARE(type)			__declspec(dllimport) type __stdcall
-#define STFU_DECLARE_NONSTD(type)		__declspec(dllimport) type __cdecl
-#define STFU_DECLARE_DATA				__declspec(dllimport)
-#endif
-#else
-#define STFU_DECLARE(type) type
-#define STFU_DECLARE_NONSTD(type) type
-#define STFU_DECLARE_DATA
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -197,7 +182,7 @@ stfu_instance_t *stfu_n_init(uint32_t qlen, uint32_t max_qlen, uint32_t samples_
 stfu_status_t stfu_n_resize(stfu_instance_t *i, uint32_t qlen);
 stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uint32_t pt, void *data, size_t datalen, uint32_t timer_ts, int last);
 stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i);
-STFU_DECLARE(int32_t) stfu_n_copy_next_frame(stfu_instance_t *jb, uint32_t timestamp, uint16_t seq, uint16_t distance, stfu_frame_t *next_frame);
+SWITCH_DECLARE(int32_t) stfu_n_copy_next_frame(stfu_instance_t *jb, uint32_t timestamp, uint16_t seq, uint16_t distance, stfu_frame_t *next_frame);
 void _stfu_n_reset(stfu_instance_t *i, const char *file, const char *func, int line);
 #define stfu_n_reset(_i) _stfu_n_reset(_i, STFU_PRE)
 stfu_status_t stfu_n_sync(stfu_instance_t *i, uint32_t packets);

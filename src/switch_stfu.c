@@ -25,6 +25,8 @@
  *
  * THOSE WHO DISAGREE MAY CERTAINLY STFU
  */
+
+#include "switch.h"
 #include "switch_stfu.h"
 
 //#define DB_JB 1
@@ -824,7 +826,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
     return rframe;
 }
 
-STFU_DECLARE(int32_t) stfu_n_copy_next_frame(stfu_instance_t *jb, uint32_t timestamp, uint16_t seq, uint16_t distance, stfu_frame_t *next_frame)
+SWITCH_DECLARE(int32_t) stfu_n_copy_next_frame(stfu_instance_t *jb, uint32_t timestamp, uint16_t seq, uint16_t distance, stfu_frame_t *next_frame)
 {
 	uint32_t i = 0, j = 0;
 #ifdef WIN32
