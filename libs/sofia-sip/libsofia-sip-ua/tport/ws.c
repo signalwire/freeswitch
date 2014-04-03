@@ -5,6 +5,12 @@
 #include <fcntl.h>
 #endif
 
+#ifndef _MSC_VER
+#define ms_sleep(x)	usleep( x * 1000);
+#else
+#define ms_sleep(x) Sleep( x );
+#endif				
+
 #define SHA1_HASH_SIZE 20
 struct ws_globals_s ws_globals;
 
@@ -418,11 +424,93 @@ static int restore_socket(ws_socket_t sock)
 #endif
 
 
+static int establish_logical_layer(wsh_t *wsh)
+{
 
-int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock)
+	if (!wsh->sanity) {
+		return -1;
+	}
+
+	if (wsh->logical_established) {
+		return 0;
+	}
+
+	if (wsh->secure && !wsh->secure_established) {
+		int code;
+
+		if (!wsh->ssl) {
+			wsh->ssl = SSL_new(wsh->ssl_ctx);
+			assert(wsh->ssl);
+
+			SSL_set_fd(wsh->ssl, wsh->sock);
+		}
+
+		do {
+			code = SSL_accept(wsh->ssl);
+
+			if (code == 1) {
+				wsh->secure_established = 1;
+				break;
+			}
+
+			if (code == 0) {
+				return -1;
+			}
+			
+			if (code < 0) {
+				if (code == -1 && SSL_get_error(wsh->ssl, code) != SSL_ERROR_WANT_READ) {
+					return -1;
+				}
+			}
+
+			if (wsh->block) {
+				ms_sleep(10);
+			} else {
+				ms_sleep(1);
+			}
+
+			wsh->sanity--;
+
+			if (!wsh->block) {
+				return -2;
+			}
+
+		} while (wsh->sanity > 0);
+		
+		if (!wsh->sanity) {
+			return -1;
+		}
+		
+	}
+
+	while (!wsh->down && !wsh->handshake) {
+		int r = ws_handshake(wsh);
+
+		if (r < 0) {
+			wsh->down = 1;
+			return -1;
+		}
+
+		if (!wsh->handshake && !wsh->block) {
+			return -2;
+		}
+
+	}
+
+	wsh->logical_established = 1;
+	
+	return 0;
+}
+
+
+int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock, int block)
 {
 	memset(wsh, 0, sizeof(*wsh));
+
 	wsh->sock = sock;
+	wsh->block = block;
+	wsh->sanity = 5000;
+	wsh->ssl_ctx = ssl_ctx;
 
 	if (!ssl_ctx) {
 		ssl_ctx = ws_globals.ssl_ctx;
@@ -437,52 +525,8 @@ int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock)
 
 	setup_socket(sock);
 
-	if (wsh->secure) {
-		int code;
-		int sanity = 500;
-		
-		wsh->ssl = SSL_new(ssl_ctx);
-		assert(wsh->ssl);
-
-		SSL_set_fd(wsh->ssl, wsh->sock);
-
-		do {
-			code = SSL_accept(wsh->ssl);
-
-			if (code == 1) {
-				break;
-			}
-
-			if (code == 0) {
-				return -1;
-			}
-			
-			if (code < 0) {
-				if (code == -1 && SSL_get_error(wsh->ssl, code) != SSL_ERROR_WANT_READ) {
-					return -1;
-				}
-			}
-#ifndef _MSC_VER
-				usleep(10000);
-#else
-				Sleep(10);
-#endif				
-				
-		} while (--sanity > 0);
-		
-		if (!sanity) {
-			return -1;
-		}
-		
-	}
-
-	while (!wsh->down && !wsh->handshake) {
-		int r = ws_handshake(wsh);
-
-		if (r < 0) {
-			wsh->down = 1;
-			return -1;
-		}
+	if (establish_logical_layer(wsh) == -1) {
+		return -1;
 	}
 
 	if (wsh->down) {
@@ -555,11 +599,18 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 	
 	ssize_t need = 2;
 	char *maskp;
+	int ll = 0;
 
  again:
 	need = 2;
 	maskp = NULL;
 	*data = NULL;
+
+	ll = establish_logical_layer(wsh);
+
+	if (ll < 0) {
+		return ll;
+	}
 
 	if (wsh->down) {
 		return -1;

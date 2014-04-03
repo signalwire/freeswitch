@@ -467,7 +467,7 @@ int tport_ws_init_secondary(tport_t *self, int socket, int accepted,
 
   memset(&wstp->ws, 0, sizeof(wstp->ws));
 
-  if (ws_init(&wstp->ws, socket, wstp->ws_secure ? wspri->ssl_ctx : NULL, 0) < 0) {
+  if (ws_init(&wstp->ws, socket, wstp->ws_secure ? wspri->ssl_ctx : NULL, 0, 0) < 0) {
 	  ws_destroy(&wstp->ws);
 	  wstp->ws_initialized = -1;
 	  return *return_reason = "WS_INIT", -1;
