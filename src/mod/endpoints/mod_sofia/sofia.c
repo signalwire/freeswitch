@@ -2746,7 +2746,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_SRV503),
 									 NTATAG_SRV_503(0)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_SOCKET_TCP_KEEPALIVE),
-									 TPTAG_KEEPALIVE(profile->socket_tcp_keepalive)),
+									 TPTAG_SOCKET_KEEPALIVE(profile->socket_tcp_keepalive)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TCP_KEEPALIVE),
 									 TPTAG_KEEPALIVE(profile->tcp_keepalive)),
 							  NTATAG_DEFAULT_PROXY(profile->outbound_proxy),
