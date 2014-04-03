@@ -179,7 +179,6 @@ static switch_mutex_t *XML_LOCK = NULL;
 static switch_mutex_t *CACHE_MUTEX = NULL;
 static switch_mutex_t *REFLOCK = NULL;
 static switch_mutex_t *FILE_LOCK = NULL;
-static switch_mutex_t *XML_GEN_LOCK = NULL;
 
 SWITCH_DECLARE_NONSTD(switch_xml_t) __switch_xml_open_root(uint8_t reload, const char **err, void *user_data);
 
@@ -445,11 +444,6 @@ SWITCH_DECLARE(const char *) switch_xml_attr(switch_xml_t xml, const char *attr)
 
 	while (root->xml.parent)
 		root = (switch_xml_root_t) root->xml.parent;	/* root tag */
-
-	/* Make sure root is really a switch_xml_root_t (Issues with switch_xml_toxml) */
-	if (!root->xml.is_switch_xml_root_t) {
-		return NULL;
-	}
 
 	if (!root->attr) {
 		return NULL;
@@ -2364,7 +2358,6 @@ SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, cons
 	switch_mutex_init(&XML_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
 	switch_mutex_init(&REFLOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
 	switch_mutex_init(&FILE_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
-	switch_mutex_init(&XML_GEN_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
 	switch_core_hash_init(&CACHE_HASH);
 	switch_core_hash_init(&CACHE_EXPIRES_HASH);
 
@@ -2532,17 +2525,26 @@ static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, 
 /* Recursively converts each tag to xml appending it to *s. Reallocates *s if
    its length exceeds max. start is the location of the previous tag in the
    parent tag's character content. Returns *s. */
-static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, switch_size_t *max, switch_size_t start, char ***attr, uint32_t *count)
+static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, switch_size_t *max, switch_size_t start, char ***attr, uint32_t *count, int isroot)
 {
 	int i, j;
 	char *txt;
 	switch_size_t off;
 	uint32_t lcount;
+	uint32_t loops = 0;
 
   tailrecurse:
 	off = 0;
 	lcount = 0;
-	txt = (char *) (xml->parent) ? xml->parent->txt : (char *) "";
+	txt = "";
+
+	if (loops++) {
+		isroot = 0;
+	}
+
+	if (!isroot && xml->parent) {
+		txt = (char *) xml->parent->txt;
+	}
 
 	/* parent character content up to this tag */
 	*s = switch_xml_ampencode(txt + start, xml->off - start, s, len, max, 0);
@@ -2597,7 +2599,7 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 
 	if (xml->child) {
 		(*count)++;
-		*s = switch_xml_toxml_r(xml->child, s, len, max, 0, attr, count);
+		*s = switch_xml_toxml_r(xml->child, s, len, max, 0, attr, count, 0);
 
 	} else {
 		*s = switch_xml_ampencode(xml->txt, 0, s, len, max, 0);	/* data */
@@ -2622,7 +2624,7 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 	while (txt[off] && off < xml->off)
 		off++;					/* make sure off is within bounds */
 
-	if (xml->ordered) {
+	if (!isroot && xml->ordered) {
 		xml = xml->ordered;
 		start = off;
 		goto tailrecurse;
@@ -2651,9 +2653,8 @@ SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml, switch_bool_t prn_head
 	s = (char *) malloc(SWITCH_XML_BUFSIZE);
 	switch_assert(s);
 
-	switch_mutex_lock(XML_GEN_LOCK);
 	r = switch_xml_toxml_buf(xml, s, SWITCH_XML_BUFSIZE, 0, prn_header);
-	switch_mutex_unlock(XML_GEN_LOCK);
+
 	return r;
 }
 
@@ -2662,7 +2663,6 @@ SWITCH_DECLARE(char *) switch_xml_tohtml(switch_xml_t xml, switch_bool_t prn_hea
 	char *r, *s, *h;
 	switch_size_t rlen = 0;
 	switch_size_t len = SWITCH_XML_BUFSIZE;
-	switch_mutex_lock(XML_GEN_LOCK);
 	s = (char *) malloc(SWITCH_XML_BUFSIZE);
 	switch_assert(s);
 	h = (char *) malloc(SWITCH_XML_BUFSIZE);
@@ -2670,7 +2670,6 @@ SWITCH_DECLARE(char *) switch_xml_tohtml(switch_xml_t xml, switch_bool_t prn_hea
 	r = switch_xml_toxml_buf(xml, s, SWITCH_XML_BUFSIZE, 0, prn_header);
 	h = switch_xml_ampencode(r, 0, &h, &rlen, &len, 1);
 	switch_safe_free(r);
-	switch_mutex_unlock(XML_GEN_LOCK);
 	return h;
 }
 
@@ -2678,7 +2677,7 @@ SWITCH_DECLARE(char *) switch_xml_tohtml(switch_xml_t xml, switch_bool_t prn_hea
    must be freed */
 SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_size_t buflen, switch_size_t offset, switch_bool_t prn_header)
 {
-	switch_xml_t p = (xml) ? xml->parent : NULL, o = (xml) ? xml->ordered : NULL;
+	switch_xml_t p = (xml) ? xml->parent : NULL;
 	switch_xml_root_t root = (switch_xml_root_t) xml;
 	switch_size_t len = 0, max = buflen;
 	char *s, *t, *n, *r;
@@ -2720,10 +2719,7 @@ SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_
 		}
 	}
 
-	xml->parent = xml->ordered = NULL;
-	s = switch_xml_toxml_r(xml, &s, &len, &max, 0, root->attr, &count);
-	xml->parent = p;
-	xml->ordered = o;
+	s = switch_xml_toxml_r(xml, &s, &len, &max, 0, root->attr, &count, 1);
 
 	for (i = 0; !p && root->pi[i]; i++) {	/* post-root processing instructions */
 		for (k = 2; root->pi[i][k - 1]; k++);
@@ -2856,7 +2852,6 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_new(const char *name)
 	strcpy(root->err, root->xml.txt = (char *) "");
 	root->ent = (char **) memcpy(malloc(sizeof(ent)), ent, sizeof(ent));
 	root->attr = root->pi = (char ***) (root->xml.attr = SWITCH_XML_NIL);
-	root->xml.is_switch_xml_root_t = SWITCH_TRUE;
 	return &root->xml;
 }
 
