@@ -185,6 +185,10 @@ int ca_challenge(auth_client_t *ca,
 
   if (ca->ca_auc->auc_challenge)
     stale = ca->ca_auc->auc_challenge(ca, ch);
+
+  if (AUTH_CLIENT_IS_EXTENDED(ca))
+	  ca->ca_clear = 0;
+
   if (stale < 0)
     return -1;
 
@@ -863,7 +867,7 @@ static int auc_digest_challenge(auth_client_t *ca, msg_auth_t const *ch)
 
   stale = ac->ac_stale || cda->cda_ac->ac_nonce == NULL;
 
-  if (ac->ac_qop && (cda->cda_cnonce == NULL || ac->ac_stale)) {
+  if (ac->ac_qop && (cda->cda_cnonce == NULL || ac->ac_stale || ca->ca_clear )) {
     su_guid_t guid[1];
     char *cnonce;
     size_t b64len = BASE64_MINSIZE(sizeof(guid)) + 1;
