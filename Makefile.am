@@ -416,9 +416,9 @@ src/switch_version.lo: src/include/switch_version.h
 
 src/include/switch_version.h: src/include/switch_version.h.in Makefile $(switch_builddir)/build/print_git_revision $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
 	@cat $< > $@; \
-	if [ -d .git ] && [ -n "$$(which git)" ]; then \
+	if [ -d $(switch_srcdir)/.git ] && [ -n "$$(which git)" ]; then \
 	  xver="$$(cd $(switch_srcdir)/ && $(switch_builddir)/build/print_git_revision)"; \
-	  xhver="$$(cd $(switch_srcdir)/ $(switch_builddir)/build/print_git_revision -h)"; \
+	  xhver="$$(cd $(switch_srcdir)/ && $(switch_builddir)/build/print_git_revision -h)"; \
 	  sed \
 	    -e "/#define *SWITCH_VERSION_REVISION[^a-zA-Z0-9_]/{s/\"\([^\"]*\)\"/\"\1$$xver\"/;}" \
 	    -e "/#define *SWITCH_VERSION_REVISION_HUMAN[^a-zA-Z0-9_]/{s/\"\([^\"]*\)\"/\"\1$$xhver\"/;}" \
