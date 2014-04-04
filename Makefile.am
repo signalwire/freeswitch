@@ -409,16 +409,16 @@ $(OUR_MODULES): $(switch_builddir)/modules.conf libfreeswitch.la
 	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
 	test -z "$$fail"
 
-build/print_git_revision: build/print_git_revision.c
+$(switch_builddir)/build/print_git_revision: $(switch_srcdir)/build/print_git_revision.c
 	$(CC_FOR_BUILD) -o $@ $<
 
 src/switch_version.lo: src/include/switch_version.h
 
-src/include/switch_version.h: src/include/switch_version.h.in Makefile build/print_git_revision $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
+src/include/switch_version.h: src/include/switch_version.h.in Makefile $(switch_builddir)/build/print_git_revision $(libfreeswitch_la_SOURCES) $(library_include_HEADERS)
 	@cat $< > $@; \
 	if [ -d .git ] && [ -n "$$(which git)" ]; then \
-	  xver="$$(./build/print_git_revision)"; \
-	  xhver="$$(./build/print_git_revision -h)"; \
+	  xver="$$(cd $(switch_srcdir)/ && $(switch_builddir)/build/print_git_revision)"; \
+	  xhver="$$(cd $(switch_srcdir)/ $(switch_builddir)/build/print_git_revision -h)"; \
 	  sed \
 	    -e "/#define *SWITCH_VERSION_REVISION[^a-zA-Z0-9_]/{s/\"\([^\"]*\)\"/\"\1$$xver\"/;}" \
 	    -e "/#define *SWITCH_VERSION_REVISION_HUMAN[^a-zA-Z0-9_]/{s/\"\([^\"]*\)\"/\"\1$$xhver\"/;}" \
