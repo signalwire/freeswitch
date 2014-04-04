@@ -3646,11 +3646,14 @@ int mb_load_file(mb_interpreter_t* s, const char* f) {
 		fseek(fp, curpos, SEEK_SET);
 		buf = (char*)mb_malloc((size_t)(l + 1));
 		mb_assert(buf);
-		fread(buf, 1, l, fp);
+		if(fread(buf, 1, l, fp) == l ) {
+			buf[l] = '\0';
+			result = mb_load_string(s, buf);
+		} else {
+			_set_current_error(s, SE_PS_FILE_OPEN_FAILED);
+			++result;
+		}
 		fclose(fp);
-		buf[l] = '\0';
-
-		result = mb_load_string(s, buf);
 		mb_free(buf);
 		if(result) {
 			goto _exit;
@@ -5637,7 +5640,10 @@ int _std_input(mb_interpreter_t* s, void** l) {
 	obj = (_object_t*)(ast->data);
 
 	if(obj->data.variable->data->type == _DT_INT || obj->data.variable->data->type == _DT_REAL) {
-		gets(line);
+		if(!gets(line)) {
+			result = MB_FUNC_ERR;
+			goto _exit;
+		}
 		obj->data.variable->data->type = _DT_INT;
 		obj->data.variable->data->data.integer = (int_t)strtol(line, &conv_suc, 0);
 		if(*conv_suc != '\0') {
@@ -5654,8 +5660,12 @@ int _std_input(mb_interpreter_t* s, void** l) {
 		}
 		obj->data.variable->data->data.string = (char*)mb_malloc(256);
 		memset(obj->data.variable->data->data.string, 0, 256);
-		gets(line);
-		strcpy(obj->data.variable->data->data.string, line);
+		if(gets(line)) {
+			strcpy(obj->data.variable->data->data.string, line);
+		} else {
+			result = MB_FUNC_ERR;
+			goto _exit;
+		}
 	} else {
 		result = MB_FUNC_ERR;
 		goto _exit;
