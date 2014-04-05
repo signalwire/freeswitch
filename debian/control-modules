@@ -539,6 +539,10 @@ Distro-Conflicts: squeeze
 
 ## mod/languages
 
+Module: languages/mod_basic
+Description: Adds mod_basic.
+ Adds mod_basic.
+
 Module: languages/mod_java
 Description: mod_java
  Adds mod_java.
