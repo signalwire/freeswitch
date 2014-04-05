@@ -29921,6 +29921,14 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_api_on(void * jarg1, char * jar
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_process_device_hangup(void * jarg1) {
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  switch_channel_process_device_hangup(arg1);
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_switch_channel_get_queued_extension(void * jarg1) {
   void * jresult ;
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;

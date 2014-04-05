@@ -4453,6 +4453,10 @@ public class freeswitch {
     return ret;
   }
 
+  public static void switch_channel_process_device_hangup(SWIGTYPE_p_switch_channel channel) {
+    freeswitchPINVOKE.switch_channel_process_device_hangup(SWIGTYPE_p_switch_channel.getCPtr(channel));
+  }
+
   public static switch_caller_extension switch_channel_get_queued_extension(SWIGTYPE_p_switch_channel channel) {
     IntPtr cPtr = freeswitchPINVOKE.switch_channel_get_queued_extension(SWIGTYPE_p_switch_channel.getCPtr(channel));
     switch_caller_extension ret = (cPtr == IntPtr.Zero) ? null : new switch_caller_extension(cPtr, false);
@@ -14040,6 +14044,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_api_on")]
   public static extern int switch_channel_api_on(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_process_device_hangup")]
+  public static extern void switch_channel_process_device_hangup(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_queued_extension")]
   public static extern IntPtr switch_channel_get_queued_extension(HandleRef jarg1);
@@ -25316,6 +25323,7 @@ public enum switch_channel_flag_t {
   CF_NOVIDEO,
   CF_VIDEO_ECHO,
   CF_SLA_INTERCEPT,
+  CF_HANGUP_HELD,
   CF_FLAG_MAX
 }
 
