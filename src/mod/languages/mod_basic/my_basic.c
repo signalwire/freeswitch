@@ -5640,7 +5640,7 @@ int _std_input(mb_interpreter_t* s, void** l) {
 	obj = (_object_t*)(ast->data);
 
 	if(obj->data.variable->data->type == _DT_INT || obj->data.variable->data->type == _DT_REAL) {
-		if(!gets(line)) {
+		if(!fgets(line, sizeof(line), stdin)) {
 			result = MB_FUNC_ERR;
 			goto _exit;
 		}
@@ -5660,7 +5660,7 @@ int _std_input(mb_interpreter_t* s, void** l) {
 		}
 		obj->data.variable->data->data.string = (char*)mb_malloc(256);
 		memset(obj->data.variable->data->data.string, 0, 256);
-		if(gets(line)) {
+		if(fgets(line, sizeof(line), stdin)) {
 			strcpy(obj->data.variable->data->data.string, line);
 		} else {
 			result = MB_FUNC_ERR;
