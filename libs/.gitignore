@@ -775,6 +775,7 @@ opal
 /win32/tmp*.bat
 !/xmlrpc-c/include/xmlrpc-c/config.h.in
 /xmlrpc-c/stamp-h2
+/xmlrpc-c/stamp-h3
 /xmlrpc-c/examples/config.h
 /xmlrpc-c/include/xmlrpc-c/config.h
 /xmlrpc-c/transport_config.h

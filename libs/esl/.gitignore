@@ -3,3 +3,10 @@ testserver_fork
 Makefile
 Makefile.in
 /src/include/esl_config_auto.h
+/src/include/stamp-h2
+!java/Makefile
+!lua/Makefile
+!managed/Makefile
+!python/Makefile
+!ruby/Makefile
+!tcl/Makefile
