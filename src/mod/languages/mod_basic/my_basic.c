@@ -3785,7 +3785,7 @@ void *mb_get_user_data(mb_interpreter_t* s)
 {
 	mb_assert(s);
 	return s->userdata;
-}     
+}
 
 /* ========================================================} */
 
