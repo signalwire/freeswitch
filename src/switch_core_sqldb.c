@@ -3483,18 +3483,19 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 
 	if (switch_test_flag((&runtime), SCF_CLEAR_SQL)) {
 		char sql[512] = "";
-		char *tables[] = { "complete", "interfaces", NULL };
+		char *tables[] = { "complete", "aliases", "nat", NULL };
 		int i;
 		const char *hostname = switch_core_get_hostname();
 
 		for (i = 0; tables[i]; i++) {
-			switch_snprintfv(sql, sizeof(sql), "delete from %q where hostname='%q'", tables[i], hostname);
+			switch_snprintfv(sql, sizeof(sql), "delete from %q where sticky=0 and hostname='%q'", tables[i], hostname);
 			switch_cache_db_execute_sql(sql_manager.dbh, sql, NULL);
 		}
+
+		switch_snprintfv(sql, sizeof(sql), "delete from interfaces where hostname='%q'", hostname);
+		switch_cache_db_execute_sql(sql_manager.dbh, sql, NULL);
 	}
 
-	switch_cache_db_execute_sql(sql_manager.dbh, "delete from aliases where sticky=0", NULL);
-	switch_cache_db_execute_sql(sql_manager.dbh, "delete from nat where sticky=0", NULL);
 	switch_cache_db_execute_sql(sql_manager.dbh, "create index alias1 on aliases (alias)", NULL);
 	switch_cache_db_execute_sql(sql_manager.dbh, "create index tasks1 on tasks (hostname,task_id)", NULL);
 	switch_cache_db_execute_sql(sql_manager.dbh, "create index complete1 on complete (a1,hostname)", NULL);
