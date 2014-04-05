@@ -1920,7 +1920,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string)
 			switch_cache_db_handle_t *db = NULL;
 			char *sql = NULL;
 
-			if (!strcmp(argv[1], argv[2])) {
+			if (argc > 2 && !strcmp(argv[1], argv[2])) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Alias and command cannot be the same, this will cause loop!\n");
 				return SWITCH_STATUS_FALSE;
 			}
