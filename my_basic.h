@@ -3,7 +3,7 @@
 **
 ** For the latest info, see http://code.google.com/p/my-basic/
 **
-** Copyright (c) 2011 - 2013 Tony & Tony's Toy Game Development Team
+** Copyright (c) 2011 - 2014 paladin_t
 **
 ** Permission is hereby granted, free of charge, to any person obtaining a copy of
 ** this software and associated documentation files (the "Software"), to deal in
@@ -141,12 +141,15 @@ typedef enum mb_error_e {
 	SE_RN_INTEGER_EXPECTED,
 	SE_RN_ELSE_EXPECTED,
 	SE_RN_TO_EXPECTED,
+	SE_RN_NEXT_EXPECTED,
 	SE_RN_UNTIL_EXPECTED,
 	SE_RN_LOOP_VAR_EXPECTED,
 	SE_RN_JUMP_LABEL_EXPECTED,
+	SE_RN_VARIABLE_EXPECTED,
 	SE_RN_INVALID_ID_USAGE,
 	SE_RN_CALCULATION_ERROR,
 	SE_RN_DIVIDE_BY_ZERO,
+	SE_RN_MOD_BY_ZERO,
 	SE_RN_INVALID_EXPRESSION,
 	SE_RN_OUT_OF_MEMORY,
 	/** Extended abort */
@@ -225,6 +228,8 @@ MBAPI mb_error_e mb_get_last_error(mb_interpreter_t* s);
 MBAPI const char* mb_get_error_desc(mb_error_e err);
 MBAPI int mb_set_error_handler(mb_interpreter_t* s, mb_error_handler_t h);
 MBAPI int mb_set_printer(mb_interpreter_t* s, mb_print_func_t p);
+
+MBAPI int mb_gets(char* buf, int s);
 
 #ifdef MB_COMPACT_MODE
 #	pragma pack()
