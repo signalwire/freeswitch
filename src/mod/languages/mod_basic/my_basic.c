@@ -3,7 +3,7 @@
 **
 ** For the latest info, see http://code.google.com/p/my-basic/
 **
-** Copyright (c) 2011 - 2013 Tony & Tony's Toy Game Development Team
+** Copyright (c) 2011 - 2014 paladin_t
 **
 ** Permission is hereby granted, free of charge, to any person obtaining a copy of
 ** this software and associated documentation files (the "Software"), to deal in
@@ -66,9 +66,9 @@ extern "C" {
 /** Macros */
 #define _VER_MAJOR 1
 #define _VER_MINOR 0
-#define _VER_REVISION 37
+#define _VER_REVISION 40
 #define _MB_VERSION ((_VER_MAJOR * 0x01000000) + (_VER_MINOR * 0x00010000) + (_VER_REVISION))
-#define _MB_VERSION_STRING "1.0.0037"
+#define _MB_VERSION_STRING "1.0.0040"
 
 /* Uncomment this line to treat warnings as error */
 /*#define _WARING_AS_ERROR*/
@@ -198,12 +198,15 @@ static const char* _ERR_DESC[] = {
 	"Integer expected",
 	"ELSE statement expected",
 	"TO statement expected",
+	"NEXT statement expected",
 	"UNTIL statement expected",
 	"Loop variable expected",
 	"Jump label expected",
+	"Variable expected",
 	"Invalid identifier usage",
 	"Calculation error",
 	"Divide by zero",
+	"MOD by zero",
 	"Invalid expression",
 	"Out of memory",
 	/** Extended abort */
@@ -469,7 +472,7 @@ static _object_t* _exp_assign = 0;
 		val->data.integer = strcmp(_str1, _str2) __optr 0; \
 	} while(0)
 
-#define _proc_div_by_zero(__s, __tuple, __exit, __result) \
+#define _proc_div_by_zero(__s, __tuple, __exit, __result, __kind) \
 	do { \
 		_object_t opndv1; \
 		_object_t opndv2; \
@@ -493,7 +496,7 @@ static _object_t* _exp_assign = 0;
 				val->type = _DT_REAL; \
 				val->data.integer = _FINF; \
 			} \
-			_handle_error_on_obj((__s), SE_RN_DIVIDE_BY_ZERO, ((__tuple) && *(__tuple)) ? ((_object_t*)(((_tuple3_t*)(*(__tuple)))->e1)) : 0, MB_FUNC_WARNING, __exit, __result); \
+			_handle_error_on_obj((__s), __kind, ((__tuple) && *(__tuple)) ? ((_object_t*)(((_tuple3_t*)(*(__tuple)))->e1)) : 0, MB_FUNC_WARNING, __exit, __result); \
 		} \
 	} while(0)
 
@@ -1885,7 +1888,9 @@ void _set_current_error(mb_interpreter_t* s, mb_error_e err) {
 	/* Set current error information */
 	mb_assert(s && err >= 0 && err < _countof(_ERR_DESC));
 
-	s->last_error = err;
+	if(s->last_error == SE_NO_ERR) {
+		s->last_error = err;
+	}
 }
 
 const char* _get_error_desc(mb_error_e err) {
@@ -3775,6 +3780,20 @@ int mb_set_printer(mb_interpreter_t* s, mb_print_func_t p) {
 	return result;
 }
 
+int mb_gets(char* buf, int s) {
+	/* Safe stdin reader function */
+	int result = 0;
+	if(fgets(buf, s, stdin) == 0) {
+		fprintf(stderr, "Error reading.\n");
+		exit(1);
+	}
+	result = (int)strlen(buf);
+	if(buf[result - 1] == '\n')
+		buf[result - 1] = '\0';
+
+	return result;
+}
+
 void mb_set_user_data(mb_interpreter_t* s, void *ptr)
 {
 	mb_assert(s);
@@ -3855,7 +3874,7 @@ int _core_div(mb_interpreter_t* s, void** l) {
 
 	mb_assert(s && l);
 
-	_proc_div_by_zero(s, l, _exit, result);
+	_proc_div_by_zero(s, l, _exit, result, SE_RN_DIVIDE_BY_ZERO);
 	_instruct_num_op_num(/, l);
 
 _exit:
@@ -3868,8 +3887,10 @@ int _core_mod(mb_interpreter_t* s, void** l) {
 
 	mb_assert(s && l);
 
+	_proc_div_by_zero(s, l, _exit, result, SE_RN_MOD_BY_ZERO);
 	_instruct_int_op_int(%, l);
 
+_exit:
 	return result;
 }
 
@@ -4529,6 +4550,9 @@ _to:
 				goto _exit;
 			}
 
+			if(!ast) {
+				_handle_error_on_obj(s, SE_RN_NEXT_EXPECTED, DON(ast), MB_FUNC_ERR, _exit, result);
+			}
 			obj = (_object_t*)(ast->data);
 		}
 
@@ -5639,6 +5663,9 @@ int _std_input(mb_interpreter_t* s, void** l) {
 	ast = (_ls_node_t*)(*l);
 	obj = (_object_t*)(ast->data);
 
+	if(!obj || obj->type != _DT_VAR) {
+		_handle_error_on_obj(s, SE_RN_VARIABLE_EXPECTED, DON(ast), MB_FUNC_ERR, _exit, result);
+	}
 	if(obj->data.variable->data->type == _DT_INT || obj->data.variable->data->type == _DT_REAL) {
 		if(!fgets(line, sizeof(line), stdin)) {
 			result = MB_FUNC_ERR;
