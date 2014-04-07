@@ -96,4 +96,7 @@ phpmod-install: phpmod
 pymod-install: pymod
 	$(MAKE) -C python install
 
+rubymod-install: rubymod
+	$(MAKE) -C ruby install
+
 everymod: perlmod phpmod luamod pymod rubymod javamod managedmod
