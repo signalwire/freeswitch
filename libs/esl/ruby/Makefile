@@ -1,5 +1,7 @@
-LOCAL_LDFLAGS=$(shell ruby -rrbconfig -e 'puts RbConfig::CONFIG["LIBRUBYARG"]')
-LOCAL_CFLAGS=$(shell ruby cflags.rb)
+RUBY:=ruby
+LOCAL_LDFLAGS=$(shell $(RUBY) -rrbconfig -e 'puts RbConfig::CONFIG["LIBRUBYARG"]')
+LOCAL_CFLAGS=$(shell $(RUBY) cflags.rb)
+RUBY_GEM_DIR=$(shell $(RUBY) -e 'puts Gem.dir')
 
 all: ESL.so
 
@@ -11,6 +13,10 @@ esl_wrap.o: esl_wrap.cpp
 
 ESL.so: esl_wrap.o
 	$(CXX) $(SOLINK) esl_wrap.o $(MYLIB) $(LOCAL_LDFLAGS) -o ESL.so -L. $(LIBS)
+
+
+install: ESL.so
+	install -m 755 ESL.so $(RUBY_GEM_DIR)
 
 clean:
 	rm -f *.o *.so *~
