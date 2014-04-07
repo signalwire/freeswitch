@@ -1127,7 +1127,7 @@ PKG_CHECK_MODULES([PCRE], [libpcre >= 7.8])
 PKG_CHECK_MODULES([SPEEX], [speex >= 1.2rc1 speexdsp >= 1.2rc1])
 PKG_CHECK_MODULES([YAML], [yaml-0.1 >= 0.1.4],[
   AM_CONDITIONAL([HAVE_YAML],[true])],[
-  AM_CONDITIONAL([HAVE_YAML],[false])])
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_YAML],[false])])
 
 AC_ARG_ENABLE(core-libedit-support,     
   [AS_HELP_STRING([--disable-core-libedit-support], [Compile without libedit Support])])
