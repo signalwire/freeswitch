@@ -170,7 +170,7 @@ static struct rayo_component *record_component_create(struct rayo_actor *actor, 
 
 	switch_core_new_memory_pool(&pool);
 	record_component = switch_core_alloc(pool, sizeof(*record_component));
-	record_component = RECORD_COMPONENT(rayo_component_init(RAYO_COMPONENT(record_component), pool, type, "record", fs_file_path, actor, client_jid));\
+	record_component = RECORD_COMPONENT(rayo_component_init(RAYO_COMPONENT(record_component), pool, type, "record", fs_file_path, actor, client_jid));
 	if (record_component) {
 		record_component->max_duration = iks_find_int_attrib(record, "max-duration");
 		record_component->initial_timeout = iks_find_int_attrib(record, "initial-timeout");
