@@ -306,6 +306,15 @@ static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 		break;
 	case SST_SHORT_DATE_TIME:
 		say_time = 1;
+		//Time is in the future
+		if ((tm.tm_year > tm_now.tm_year) || 
+		    (tm.tm_year == tm_now.tm_year && tm.tm_mon > tm_now.tm_mon) || 
+		    (tm.tm_year == tm_now.tm_year && tm.tm_mon == tm_now.tm_mon && tm.tm_mday > tm_now.tm_mday))
+		{
+			say_date = 1;
+			break;
+		}
+		//Time is today or earlier
 		if (tm.tm_year != tm_now.tm_year) {
 			say_date = 1;
 			break;
