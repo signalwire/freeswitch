@@ -605,6 +605,22 @@ static void conference_cdr_add(conference_member_t *member)
 	
 }
 
+
+static const char *audio_flow(conference_member_t *member)
+{
+	const char *flow = "sendrecv";
+
+	if (!switch_test_flag(member, MFLAG_CAN_SPEAK)) {
+		flow = "recvonly";
+	}
+
+	if (member->session && switch_channel_test_flag(switch_core_session_get_channel(member->session), CF_HOLD)) {
+		flow = "sendonly";
+	}
+
+	return flow;
+} 
+
 static void conference_cdr_rejected(conference_obj_t *conference, switch_channel_t *channel, cdr_reject_reason_t reason)
 {
 	conference_cdr_reject_t *rp;
@@ -837,7 +853,7 @@ static char *conference_rfc4579_render(conference_obj_t *conference, switch_even
 			if (!(x_tag4 = switch_xml_add_child_d(x_tag3, "status", off4++))) {
 				abort();
 			}
-			switch_xml_set_txt_d(x_tag4, switch_channel_test_flag(channel, CF_HOLD) ? "sendonly" : "sendrecv");
+			switch_xml_set_txt_d(x_tag4, audio_flow(np->member));
 			
 			
 			if (switch_channel_test_flag(channel, CF_VIDEO)) {
