@@ -1,5 +1,5 @@
 #! /usr/bin/ruby
-require_relative './ESL' 
+require 'ESL' 
 
 HOST     = '127.0.0.1'.to_s 
 PORT     = '8021'.to_s 
