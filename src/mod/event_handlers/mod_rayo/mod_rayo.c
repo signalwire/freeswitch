@@ -2467,7 +2467,7 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 		goto done;
 	}
 	call->dcp_jid = switch_core_strdup(RAYO_POOL(call), dcp_jid);
-	call->dial_request_id = iks_find_attrib(iq, "id");
+	call->dial_request_id = switch_core_strdup(RAYO_POOL(call), iks_find_attrib_soft(iq, "id"));
 	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_INFO, "%s has control of call\n", dcp_jid);
 	uuid = switch_core_strdup(dtdata->pool, rayo_call_get_uuid(call));
 
@@ -2576,7 +2576,7 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 			if (strncmp("+OK", api_stream.data, strlen("+OK"))) {
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_INFO, "Failed to originate call\n");
 
-				if (call->dial_request_id) {
+				if (!zstr(call->dial_request_id)) {
 					call->dial_request_failed = 1;
 					call->dial_request_id = NULL;
 
@@ -2613,7 +2613,7 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 			switch_mutex_unlock(RAYO_ACTOR(call)->mutex);
 		} else {
 			switch_mutex_lock(RAYO_ACTOR(call)->mutex);
-			if (call->dial_request_id) {
+			if (!zstr(call->dial_request_id)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Failed to exec originate API\n");
 				call->dial_request_failed = 1;
 				call->dial_request_id = NULL;
@@ -3147,7 +3147,7 @@ static void on_call_originate_event(struct rayo_client *rclient, switch_event_t 
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(RAYO_ID(call)), SWITCH_LOG_DEBUG, "Got originate event\n");
 
 		switch_mutex_lock(RAYO_ACTOR(call)->mutex);
-		if (call->dial_request_id) {
+		if (!zstr(call->dial_request_id)) {
 			/* send response to DCP */
 			response = iks_new("iq");
 			iks_insert_attrib(response, "from", RAYO_JID(globals.server));
@@ -3185,7 +3185,7 @@ static void on_call_end_event(switch_event_t *event)
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(RAYO_ID(call)), SWITCH_LOG_DEBUG, "Got channel destroy event\n");
 
 		switch_mutex_lock(RAYO_ACTOR(call)->mutex);
-		if (!call->dial_request_id && !call->dial_request_failed) {
+		if (zstr(call->dial_request_id) && !call->dial_request_failed) {
 			switch_event_dup(&call->end_event, event);
 			RAYO_DESTROY(call);
 			RAYO_UNLOCK(call); /* decrement ref from creation */

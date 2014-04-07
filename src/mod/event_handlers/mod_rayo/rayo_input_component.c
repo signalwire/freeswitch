@@ -604,8 +604,8 @@ static iks *start_call_input(struct input_component *component, switch_core_sess
 	component->barge_event = iks_find_bool_attrib(input, "barge-event");
 	component->start_timers = iks_find_bool_attrib(input, "start-timers");
 	component->term_digit = iks_find_char_attrib(input, "terminator");
-	component->recognizer = iks_find_attrib(input, "recognizer");
-	component->language = iks_find_attrib(input, "language");
+	component->recognizer = switch_core_strdup(RAYO_POOL(input), iks_find_attrib_soft(input, "recognizer"));
+	component->language = switch_core_strdup(RAYO_POOL(input), iks_find_attrib_soft(input, "language"));
 	component->handler = handler;
 	component->speech_mode = strcmp(iks_find_attrib_soft(input, "mode"), "dtmf");
 
