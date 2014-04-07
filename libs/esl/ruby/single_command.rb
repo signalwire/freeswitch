@@ -1,5 +1,4 @@
 #! /usr/bin/ruby
-
 require "ESL"
 
 command = ARGV.join(" ")

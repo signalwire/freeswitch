@@ -1,7 +1,7 @@
 RUBY:=ruby
 LOCAL_LDFLAGS=$(shell $(RUBY) -rrbconfig -e 'puts RbConfig::CONFIG["LIBRUBYARG"]')
 LOCAL_CFLAGS=$(shell $(RUBY) cflags.rb)
-RUBY_GEM_DIR=$(shell $(RUBY) -e 'puts Gem.dir')
+RUBY_GEM_DIR=$(shell $(RUBY) -e 'puts RbConfig::CONFIG["rubylibdir"]')
 
 all: ESL.so
 
