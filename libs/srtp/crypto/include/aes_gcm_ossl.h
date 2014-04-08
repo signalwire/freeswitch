@@ -47,6 +47,7 @@
 #define AES_GCM_OSSL_H
 
 #include "cipher.h"
+#include "srtp.h"
 #include <openssl/evp.h>
 #include <openssl/aes.h>
 

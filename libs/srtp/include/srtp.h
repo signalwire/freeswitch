@@ -94,6 +94,10 @@ extern "C" {
  * as part of the IV formation logic applied to each RTP packet.
  */
 #define SRTP_AEAD_SALT_LEN	12
+#define AES_128_GCM_KEYSIZE_WSALT   SRTP_AEAD_SALT_LEN + 16
+#define AES_192_GCM_KEYSIZE_WSALT   SRTP_AEAD_SALT_LEN + 24
+#define AES_256_GCM_KEYSIZE_WSALT   SRTP_AEAD_SALT_LEN + 32
+
 
 /* 
  * nota bene: since libSRTP doesn't support the use of the MKI, the

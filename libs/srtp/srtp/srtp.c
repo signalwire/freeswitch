@@ -46,6 +46,9 @@
 #include "srtp.h"
 #include "ekt.h"             /* for SRTP Encrypted Key Transport */
 #include "alloc.h"           /* for crypto_alloc()          */
+#ifdef OPENSSL
+#include "aes_gcm_ossl.h"    /* for AES GCM mode  */
+#endif
 
 #ifndef SRTP_KERNEL
 # include <limits.h>
@@ -451,24 +454,37 @@ srtp_stream_init_keys(srtp_stream_ctx_t *srtp, const void *key) {
   /* TODO: kdf algorithm, master key length, and master salt length should
    * be part of srtp_policy_t. */
   rtp_keylen = cipher_get_key_length(srtp->rtp_cipher);
-  if (rtp_keylen > kdf_keylen)
-    kdf_keylen = rtp_keylen;
-
   rtcp_keylen = cipher_get_key_length(srtp->rtcp_cipher);
-  if (rtcp_keylen > kdf_keylen)
-    kdf_keylen = rtcp_keylen;
+  rtp_base_key_len = base_key_length(srtp->rtp_cipher->type, rtp_keylen);
+  rtp_salt_len = rtp_keylen - rtp_base_key_len;
+
+  if (rtp_keylen > kdf_keylen) {
+    kdf_keylen = 46;  /* AES-CTR mode is always used for KDF */
+  }
+
+  if (rtcp_keylen > kdf_keylen) {
+    kdf_keylen = 46;  /* AES-CTR mode is always used for KDF */
+  }
+
   debug_print(mod_srtp, "srtp key len: %d", rtp_keylen);
   debug_print(mod_srtp, "srtcp key len: %d", rtcp_keylen);
+  debug_print(mod_srtp, "base key len: %d", rtp_base_key_len);
+  debug_print(mod_srtp, "kdf key len: %d", kdf_keylen);
+  debug_print(mod_srtp, "rtp salt len: %d", rtp_salt_len);
+
+  /* 
+   * Make sure the key given to us is 'zero' appended.  GCM
+   * mode uses a shorter master SALT (96 bits), but still relies on 
+   * the legacy CTR mode KDF, which uses a 112 bit master SALT.
+   */
+  memset(tmp_key, 0x0, MAX_SRTP_KEY_LEN);
+  memcpy(tmp_key, key, (rtp_base_key_len + rtp_salt_len));
 
   /* initialize KDF state     */
-  stat = srtp_kdf_init(&kdf, AES_ICM, (const uint8_t *)key, kdf_keylen);
+  stat = srtp_kdf_init(&kdf, AES_ICM, (const uint8_t *)tmp_key, kdf_keylen);
   if (stat) {
     return err_status_init_fail;
   }
-
-  rtp_base_key_len = base_key_length(srtp->rtp_cipher->type, rtp_keylen);
-  rtp_salt_len = rtp_keylen - rtp_base_key_len;
-  debug_print(mod_srtp, "rtp salt len: %d", rtp_salt_len);
   
   /* generate encryption key  */
   stat = srtp_kdf_generate(&kdf, label_rtp_encryption, 
@@ -478,6 +494,8 @@ srtp_stream_init_keys(srtp_stream_ctx_t *srtp, const void *key) {
     octet_string_set_to_zero(tmp_key, MAX_SRTP_KEY_LEN);
     return err_status_init_fail;
   }
+  debug_print(mod_srtp, "cipher key: %s", 
+	      octet_string_hex_string(tmp_key, rtp_base_key_len));
 
   /* 
    * if the cipher in the srtp context uses a salt, then we need
@@ -496,8 +514,6 @@ srtp_stream_init_keys(srtp_stream_ctx_t *srtp, const void *key) {
     }
     memcpy(srtp->salt, tmp_key + rtp_base_key_len, SRTP_AEAD_SALT_LEN);
   }
-  debug_print(mod_srtp, "cipher key: %s", 
-	      octet_string_hex_string(tmp_key, rtp_base_key_len));
   if (rtp_salt_len > 0) {
     debug_print(mod_srtp, "cipher salt: %s",
 		octet_string_hex_string(tmp_key + rtp_base_key_len, rtp_salt_len));
@@ -2049,7 +2065,7 @@ crypto_policy_set_aes_cm_256_null_auth (crypto_policy_t *p)
 void
 crypto_policy_set_aes_gcm_128_8_auth(crypto_policy_t *p) {
   p->cipher_type     = AES_128_GCM;           
-  p->cipher_key_len  = AES_128_KEYSIZE_WSALT; 
+  p->cipher_key_len  = AES_128_GCM_KEYSIZE_WSALT; 
   p->auth_type       = NULL_AUTH; /* GCM handles the auth for us */            
   p->auth_key_len    = 0; 
   p->auth_tag_len    = 8;   /* 8 octet tag length */
@@ -2062,7 +2078,7 @@ crypto_policy_set_aes_gcm_128_8_auth(crypto_policy_t *p) {
 void
 crypto_policy_set_aes_gcm_256_8_auth(crypto_policy_t *p) {
   p->cipher_type     = AES_256_GCM;           
-  p->cipher_key_len  = AES_256_KEYSIZE_WSALT; 
+  p->cipher_key_len  = AES_256_GCM_KEYSIZE_WSALT; 
   p->auth_type       = NULL_AUTH; /* GCM handles the auth for us */ 
   p->auth_key_len    = 0; 
   p->auth_tag_len    = 8;   /* 8 octet tag length */
@@ -2075,7 +2091,7 @@ crypto_policy_set_aes_gcm_256_8_auth(crypto_policy_t *p) {
 void
 crypto_policy_set_aes_gcm_128_8_only_auth(crypto_policy_t *p) {
   p->cipher_type     = AES_128_GCM;           
-  p->cipher_key_len  = AES_128_KEYSIZE_WSALT; 
+  p->cipher_key_len  = AES_128_GCM_KEYSIZE_WSALT; 
   p->auth_type       = NULL_AUTH; /* GCM handles the auth for us */ 
   p->auth_key_len    = 0; 
   p->auth_tag_len    = 8;   /* 8 octet tag length */
@@ -2088,7 +2104,7 @@ crypto_policy_set_aes_gcm_128_8_only_auth(crypto_policy_t *p) {
 void
 crypto_policy_set_aes_gcm_256_8_only_auth(crypto_policy_t *p) {
   p->cipher_type     = AES_256_GCM;           
-  p->cipher_key_len  = AES_256_KEYSIZE_WSALT; 
+  p->cipher_key_len  = AES_256_GCM_KEYSIZE_WSALT; 
   p->auth_type       = NULL_AUTH; /* GCM handles the auth for us */ 
   p->auth_key_len    = 0; 
   p->auth_tag_len    = 8;   /* 8 octet tag length */

@@ -1670,7 +1670,7 @@ const srtp_policy_t aes128_gcm_8_policy = {
     { ssrc_any_outbound, 0 },  /* SSRC                           */
     {                      /* SRTP policy                    */                  
         AES_128_GCM,            /* cipher type                 */
-        30,                     /* cipher key length in octets */
+        AES_128_GCM_KEYSIZE_WSALT,  /* cipher key length in octets */
         NULL_AUTH,              /* authentication func type    */
         0,                      /* auth key length in octets   */
         8,                      /* auth tag length in octets   */
@@ -1678,7 +1678,7 @@ const srtp_policy_t aes128_gcm_8_policy = {
     },
     {                      /* SRTCP policy                   */
         AES_128_GCM,            /* cipher type                 */
-        30,                     /* cipher key length in octets */
+        AES_128_GCM_KEYSIZE_WSALT,  /* cipher key length in octets */
         NULL_AUTH,              /* authentication func type    */
         0,                      /* auth key length in octets   */
         8,                      /* auth tag length in octets   */
@@ -1695,7 +1695,7 @@ const srtp_policy_t aes128_gcm_8_cauth_policy = {
     { ssrc_any_outbound, 0 },  /* SSRC                           */
     {                      /* SRTP policy                    */                  
         AES_128_GCM,            /* cipher type                 */
-        30,                     /* cipher key length in octets */
+        AES_128_GCM_KEYSIZE_WSALT,  /* cipher key length in octets */
         NULL_AUTH,              /* authentication func type    */
         0,                      /* auth key length in octets   */
         8,                      /* auth tag length in octets   */
@@ -1703,7 +1703,7 @@ const srtp_policy_t aes128_gcm_8_cauth_policy = {
     },
     {                      /* SRTCP policy                   */
         AES_128_GCM,            /* cipher type                 */
-        30,                     /* cipher key length in octets */
+        AES_128_GCM_KEYSIZE_WSALT,  /* cipher key length in octets */
         NULL_AUTH,              /* authentication func type    */
         0,                      /* auth key length in octets   */
         8,                      /* auth tag length in octets   */
@@ -1720,7 +1720,7 @@ const srtp_policy_t aes256_gcm_8_policy = {
     { ssrc_any_outbound, 0 },  /* SSRC                           */
     {                      /* SRTP policy                    */                  
         AES_256_GCM,            /* cipher type                 */
-        46,                     /* cipher key length in octets */
+        AES_256_GCM_KEYSIZE_WSALT,  /* cipher key length in octets */
         NULL_AUTH,              /* authentication func type    */
         0,                      /* auth key length in octets   */
         8,                      /* auth tag length in octets   */
@@ -1728,7 +1728,7 @@ const srtp_policy_t aes256_gcm_8_policy = {
     },
     {                      /* SRTCP policy                   */
         AES_256_GCM,            /* cipher type                 */
-        46,                     /* cipher key length in octets */
+        AES_256_GCM_KEYSIZE_WSALT,  /* cipher key length in octets */
         NULL_AUTH,              /* authentication func type    */
         0,                      /* auth key length in octets   */
         8,                      /* auth tag length in octets   */
@@ -1745,7 +1745,7 @@ const srtp_policy_t aes256_gcm_8_cauth_policy = {
     { ssrc_any_outbound, 0 },  /* SSRC                           */
     {                      /* SRTP policy                    */                  
         AES_256_GCM,            /* cipher type                 */
-        46,                     /* cipher key length in octets */
+        AES_256_GCM_KEYSIZE_WSALT,  /* cipher key length in octets */
         NULL_AUTH,              /* authentication func type    */
         0,                      /* auth key length in octets   */
         8,                      /* auth tag length in octets   */
@@ -1753,7 +1753,7 @@ const srtp_policy_t aes256_gcm_8_cauth_policy = {
     },
     {                      /* SRTCP policy                   */
         AES_256_GCM,            /* cipher type                 */
-        46,                     /* cipher key length in octets */
+        AES_256_GCM_KEYSIZE_WSALT,  /* cipher key length in octets */
         NULL_AUTH,              /* authentication func type    */
         0,                      /* auth key length in octets   */
         8,                      /* auth tag length in octets   */
