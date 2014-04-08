@@ -32,6 +32,7 @@
  * Cesar Cepeda <cesar@auronix.com>
  * Christopher M. Rienzo <chris@rienzo.com>
  * Seven Du <dujinfang@gmail.com>
+ * William King <william.king@quentustech.com>
  *
  * mod_dptools.c -- Raw Audio File Streaming Application Module
  *
@@ -3545,7 +3546,8 @@ static switch_status_t pickup_event_handler(switch_core_session_t *session)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_state_t state = switch_channel_get_running_state(channel);
 	pickup_pvt_t *tech_pvt = switch_core_session_get_private(session);
-	
+	char *uuid = NULL;
+
 	switch(state) {
 	case CS_DESTROY:
 		if (tech_pvt->vars) {
@@ -3569,7 +3571,8 @@ static switch_status_t pickup_event_handler(switch_core_session_t *session)
 				switch_channel_clear_flag(channel, CF_CHANNEL_SWAP);
 			}
 
-			pickup_pop_uuid(tech_pvt->key, switch_core_session_get_uuid(session));
+			uuid = pickup_pop_uuid(tech_pvt->key, switch_core_session_get_uuid(session));
+			switch_safe_free(uuid);
 		}
 		break;
 	default:
