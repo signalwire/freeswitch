@@ -357,6 +357,9 @@ SWITCH_DECLARE(void) switch_scheduler_task_thread_stop(void)
 			}
 		}
 	}
+	
+	switch_core_destroy_memory_pool(&globals.memory_pool);
+
 }
 
 /* For Emacs:
