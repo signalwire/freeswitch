@@ -5,6 +5,7 @@
 # includes module(s): freeswitch-devel freeswitch-codec-passthru-amr freeswitch-codec-passthru-amrwb freeswitch-codec-passthru-g729 
 #                     freeswitch-codec-passthru-g7231 freeswitch-lua freeswitch-perl freeswitch-python freeswitch-spidermonkey freeswitch-v8
 #                     freeswitch-lan-de freeswitch-lang-en freeswitch-lang-fr freeswitch-lang-hu freeswitch-lang-ru freeswitch-freetdm
+#		      and others
 #
 # Initial Version Copyright (C) 2007 Peter Nixon and Michal Bielicki, All Rights Reserved.
 #
