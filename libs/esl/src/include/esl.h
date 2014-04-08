@@ -301,7 +301,7 @@ typedef struct {
 	char socket_buf[65536];
 	/*! Last command reply */
 	char last_reply[1024];
-	/*! Las command reply when called with esl_send_recv */
+	/*! Last command reply when called with esl_send_recv */
 	char last_sr_reply[1024];
 	/*! Last event received. Only populated when **save_event is NULL */
 	esl_event_t *last_event;
