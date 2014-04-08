@@ -827,10 +827,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_v8_load)
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (switch_core_new_memory_pool(&globals.pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
-		return SWITCH_STATUS_GENERR;
-	}
+	globals.pool = pool;
 
 	switch_mutex_init(&globals.event_mutex, SWITCH_MUTEX_NESTED, globals.pool);
 	globals.event_handlers = new set<FSEventHandler *>();
@@ -873,7 +870,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_v8_shutdown)
 
 	delete globals.event_handlers;
 	switch_mutex_destroy(globals.event_mutex);
-	switch_core_destroy_memory_pool(&globals.pool);
 
 	switch_core_hash_destroy(&module_manager.load_hash);
 
