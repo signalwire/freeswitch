@@ -3696,9 +3696,9 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 								v_engine->fir++;
 							}
 							
-							if (switch_stristr("pli", attr->a_value)) {
-								v_engine->pli++;
-							}
+							//if (switch_stristr("pli", attr->a_value)) {
+							//	v_engine->pli++;
+							//}
 							
 							smh->mparams->rtcp_video_interval_msec = "10000";
 						}
