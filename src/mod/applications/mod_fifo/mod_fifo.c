@@ -4870,6 +4870,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_fifo_shutdown)
 	}
 
 	switch_core_hash_destroy(&globals.fifo_hash);
+	switch_core_hash_destroy(&globals.caller_orig_hash);
+	switch_core_hash_destroy(&globals.consumer_orig_hash);
+	switch_core_hash_destroy(&globals.bridge_hash);
+	switch_core_hash_destroy(&globals.use_hash);
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_unlock(mutex);
 
