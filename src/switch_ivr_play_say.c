@@ -317,12 +317,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 		}
 
 		switch_regex_safe_free(re);
+		switch_safe_free(field_expanded_alloc);
 
 		if ((match && do_break && switch_true(do_break)) || status == SWITCH_STATUS_BREAK) {
 			break;
 		}
-
-		switch_safe_free(field_expanded_alloc);
 
 		if (status != SWITCH_STATUS_SUCCESS) {
 			done = 1;
