@@ -312,6 +312,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 				switch_ivr_sleep(session, pause, SWITCH_FALSE, NULL);
 				switch_safe_free(expanded);
 				switch_safe_free(substituted);
+				if (done) break;
 			}
 		}
 
