@@ -1279,6 +1279,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 				goto end;
 			} else {
 				(void) vm_macro_get(session, VM_RECORD_FILE_CHECK_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout);
+				if (!switch_channel_ready(channel)) goto end;
 			}
 
 			if (!strcmp(input, profile->listen_file_key)) {
@@ -3673,6 +3674,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		switch_snprintf(key_buf, sizeof(key_buf), "%s:%s", profile->urgent_key, profile->terminator_key);
 		if (!skip_record_urgent_check) {
 			(void) vm_macro_get(session, VM_RECORD_URGENT_CHECK_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout);
+			if (!switch_channel_ready(channel)) goto deliver;
 			if (*profile->urgent_key == *input) {
 				read_flags = URGENT_FLAG_STRING;
 				(void) switch_ivr_phrase_macro(session, VM_ACK_MACRO, "marked-urgent", NULL, NULL);
@@ -3682,6 +3684,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		}
 	}
 
+ deliver:
 	if (x_user) {
 		switch_channel_get_variables(channel, &vars);
 		status = deliver_vm(profile, x_user, domain_name, file_path, (uint32_t)message_len, read_flags, vars,
