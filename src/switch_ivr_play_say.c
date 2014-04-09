@@ -324,7 +324,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 		}
 
 		if (status != SWITCH_STATUS_SUCCESS) {
-			done = 1;
 			break;
 		}
 
