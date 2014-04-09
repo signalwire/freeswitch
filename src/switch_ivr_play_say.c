@@ -177,6 +177,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 		const char *do_break = switch_xml_attr_soft(input, "break_on_match");
 		char *field_expanded = NULL;
 		char *field_expanded_alloc = NULL;
+		switch_regex_t *re = NULL;
+		int proceed = 0, ovector[100];
+		switch_xml_t match = NULL;
 
 		searched = 1;
 		if (!field) {
@@ -199,132 +202,124 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 			pattern = ".*";
 		}
 
-		if (pattern) {
-			switch_regex_t *re = NULL;
-			int proceed = 0, ovector[100];
-			switch_xml_t match = NULL;
+		status = SWITCH_STATUS_SUCCESS;
 
-			status = SWITCH_STATUS_SUCCESS;
+		if ((proceed = switch_regex_perform(field_expanded, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+			match = switch_xml_child(input, "match");
+		} else {
+			match = switch_xml_child(input, "nomatch");
+		}
 
-			if ((proceed = switch_regex_perform(field_expanded, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
-				match = switch_xml_child(input, "match");
-			} else {
-				match = switch_xml_child(input, "nomatch");
-			}
+		if (match) {
+			matches++;
+			for (action = switch_xml_child(match, "action"); action && status == SWITCH_STATUS_SUCCESS; action = action->next) {
+				char *adata = (char *) switch_xml_attr_soft(action, "data");
+				char *func = (char *) switch_xml_attr_soft(action, "function");
+				char *substituted = NULL;
+				uint32_t len = 0;
+				char *odata = NULL;
+				char *expanded = NULL;
 
-			if (match) {
-				matches++;
-				for (action = switch_xml_child(match, "action"); action && status == SWITCH_STATUS_SUCCESS; action = action->next) {
-					char *adata = (char *) switch_xml_attr_soft(action, "data");
-					char *func = (char *) switch_xml_attr_soft(action, "function");
-					char *substituted = NULL;
-					uint32_t len = 0;
-					char *odata = NULL;
-					char *expanded = NULL;
-
-					if (strchr(pattern, '(') && strchr(adata, '$') && proceed > 0) {
-						len = (uint32_t) (strlen(data) + strlen(adata) + 10) * proceed;
-						if (!(substituted = malloc(len))) {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Memory Error!\n");
-							switch_regex_safe_free(re);
-							switch_safe_free(field_expanded_alloc);
-							goto done;
-						}
-						memset(substituted, 0, len);
-						switch_perform_substitution(re, proceed, adata, field_expanded, substituted, len, ovector);
-						odata = substituted;
-					} else {
-						odata = adata;
+				if (strchr(pattern, '(') && strchr(adata, '$') && proceed > 0) {
+					len = (uint32_t) (strlen(data) + strlen(adata) + 10) * proceed;
+					if (!(substituted = malloc(len))) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Memory Error!\n");
+						switch_regex_safe_free(re);
+						switch_safe_free(field_expanded_alloc);
+						goto done;
 					}
-
-					if (event) {
-						expanded = switch_event_expand_headers(event, odata);
-					} else {
-						expanded = switch_channel_expand_variables(channel, odata);
-					}
-
-					if (expanded == odata) {
-						expanded = NULL;
-					} else {
-						odata = expanded;
-					}
-
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Handle %s:[%s] (%s:%s)\n", func, odata, chan_lang,
-									  module_name);
-
-					if (!strcasecmp(func, "play-file")) {
-						status = switch_ivr_play_file(session, NULL, odata, args);
-					} else if (!strcasecmp(func, "phrase")) {
-						char *name = (char *) switch_xml_attr_soft(action, "phrase");
-						status = switch_ivr_phrase_macro(session, name, odata, chan_lang, args);
-					} else if (!strcasecmp(func, "break")) {
-						done = 1;
-						/* must allow the switch_safe_free below to execute or we leak - do not break here */
-					} else if (!strcasecmp(func, "execute")) {
-						switch_application_interface_t *app;
-						char *cmd, *cmd_args;
-						status = SWITCH_STATUS_FALSE;
-
-						cmd = switch_core_session_strdup(session, odata);
-						cmd_args = switch_separate_paren_args(cmd);
-
-						if (!cmd_args) {
-							cmd_args = "";
-						}
-
-						if ((app = switch_loadable_module_get_application_interface(cmd)) != NULL) {
-							status = switch_core_session_exec(session, app, cmd_args);
-							UNPROTECT_INTERFACE(app);
-						} else {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Application %s\n", cmd);
-						}
-					} else if (!strcasecmp(func, "say")) {
-						switch_say_interface_t *si;
-						if ((si = switch_loadable_module_get_say_interface(module_name))) {
-							char *say_type = (char *) switch_xml_attr_soft(action, "type");
-							char *say_method = (char *) switch_xml_attr_soft(action, "method");
-							char *say_gender = (char *) switch_xml_attr_soft(action, "gender");
-							switch_say_args_t say_args = {0};
-
-							say_args.type = switch_ivr_get_say_type_by_name(say_type);
-							say_args.method = switch_ivr_get_say_method_by_name(say_method);
-							say_args.gender = switch_ivr_get_say_gender_by_name(say_gender);
-
-							status = si->say_function(session, odata, &say_args, args);
-						} else {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid SAY Interface [%s]!\n", module_name);
-						}
-					} else if (!strcasecmp(func, "speak-text")) {
-						const char *my_tts_engine = switch_xml_attr(action, "tts-engine");
-						const char *my_tts_voice = switch_xml_attr(action, "tts-voice");
-
-						if (!my_tts_engine) {
-							my_tts_engine = tts_engine;
-						}
-
-						if (!my_tts_voice) {
-							my_tts_voice = tts_voice;
-						}
-						if (zstr(tts_engine) || zstr(tts_voice)) {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "TTS is not configured\n");
-						} else {
-							status = switch_ivr_speak_text(session, my_tts_engine, my_tts_voice, odata, args);
-						}
-					}
-
-					switch_ivr_sleep(session, pause, SWITCH_FALSE, NULL);
-					switch_safe_free(expanded);
-					switch_safe_free(substituted);
-
+					memset(substituted, 0, len);
+					switch_perform_substitution(re, proceed, adata, field_expanded, substituted, len, ovector);
+					odata = substituted;
+				} else {
+					odata = adata;
 				}
+
+				if (event) {
+					expanded = switch_event_expand_headers(event, odata);
+				} else {
+					expanded = switch_channel_expand_variables(channel, odata);
+				}
+
+				if (expanded == odata) {
+					expanded = NULL;
+				} else {
+					odata = expanded;
+				}
+
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Handle %s:[%s] (%s:%s)\n", func, odata, chan_lang,
+								  module_name);
+
+				if (!strcasecmp(func, "play-file")) {
+					status = switch_ivr_play_file(session, NULL, odata, args);
+				} else if (!strcasecmp(func, "phrase")) {
+					char *name = (char *) switch_xml_attr_soft(action, "phrase");
+					status = switch_ivr_phrase_macro(session, name, odata, chan_lang, args);
+				} else if (!strcasecmp(func, "break")) {
+					done = 1;
+					/* must allow the switch_safe_free below to execute or we leak - do not break here */
+				} else if (!strcasecmp(func, "execute")) {
+					switch_application_interface_t *app;
+					char *cmd, *cmd_args;
+					status = SWITCH_STATUS_FALSE;
+
+					cmd = switch_core_session_strdup(session, odata);
+					cmd_args = switch_separate_paren_args(cmd);
+
+					if (!cmd_args) {
+						cmd_args = "";
+					}
+
+					if ((app = switch_loadable_module_get_application_interface(cmd)) != NULL) {
+						status = switch_core_session_exec(session, app, cmd_args);
+						UNPROTECT_INTERFACE(app);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid Application %s\n", cmd);
+					}
+				} else if (!strcasecmp(func, "say")) {
+					switch_say_interface_t *si;
+					if ((si = switch_loadable_module_get_say_interface(module_name))) {
+						char *say_type = (char *) switch_xml_attr_soft(action, "type");
+						char *say_method = (char *) switch_xml_attr_soft(action, "method");
+						char *say_gender = (char *) switch_xml_attr_soft(action, "gender");
+						switch_say_args_t say_args = {0};
+
+						say_args.type = switch_ivr_get_say_type_by_name(say_type);
+						say_args.method = switch_ivr_get_say_method_by_name(say_method);
+						say_args.gender = switch_ivr_get_say_gender_by_name(say_gender);
+
+						status = si->say_function(session, odata, &say_args, args);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid SAY Interface [%s]!\n", module_name);
+					}
+				} else if (!strcasecmp(func, "speak-text")) {
+					const char *my_tts_engine = switch_xml_attr(action, "tts-engine");
+					const char *my_tts_voice = switch_xml_attr(action, "tts-voice");
+
+					if (!my_tts_engine) {
+						my_tts_engine = tts_engine;
+					}
+
+					if (!my_tts_voice) {
+						my_tts_voice = tts_voice;
+					}
+					if (zstr(tts_engine) || zstr(tts_voice)) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "TTS is not configured\n");
+					} else {
+						status = switch_ivr_speak_text(session, my_tts_engine, my_tts_voice, odata, args);
+					}
+				}
+
+				switch_ivr_sleep(session, pause, SWITCH_FALSE, NULL);
+				switch_safe_free(expanded);
+				switch_safe_free(substituted);
 			}
+		}
 
-			switch_regex_safe_free(re);
+		switch_regex_safe_free(re);
 
-			if ((match && do_break && switch_true(do_break)) || status == SWITCH_STATUS_BREAK) {
-				break;
-			}
-
+		if ((match && do_break && switch_true(do_break)) || status == SWITCH_STATUS_BREAK) {
+			break;
 		}
 
 		switch_safe_free(field_expanded_alloc);
