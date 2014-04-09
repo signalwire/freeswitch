@@ -202,10 +202,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 		if (pattern) {
 			switch_regex_t *re = NULL;
 			int proceed = 0, ovector[100];
-			char *substituted = NULL;
-			uint32_t len = 0;
-			char *odata = NULL;
-			char *expanded = NULL;
 			switch_xml_t match = NULL;
 
 			status = SWITCH_STATUS_SUCCESS;
@@ -221,6 +217,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 				for (action = switch_xml_child(match, "action"); action && status == SWITCH_STATUS_SUCCESS; action = action->next) {
 					char *adata = (char *) switch_xml_attr_soft(action, "data");
 					char *func = (char *) switch_xml_attr_soft(action, "function");
+					char *substituted = NULL;
+					uint32_t len = 0;
+					char *odata = NULL;
+					char *expanded = NULL;
 
 					if (strchr(pattern, '(') && strchr(adata, '$') && proceed > 0) {
 						len = (uint32_t) (strlen(data) + strlen(adata) + 10) * proceed;
