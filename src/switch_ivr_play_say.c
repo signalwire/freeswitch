@@ -45,7 +45,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 	const char *old_sound_prefix = NULL, *sound_path = NULL, *tts_engine = NULL, *tts_voice = NULL;
 	const char *module_name = NULL, *chan_lang = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	uint8_t done = 0;
+	uint8_t done = 0, searched = 0;
 	int matches = 0;
 	const char *pause_val;
 	int pause = 100;
@@ -178,6 +178,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 		char *field_expanded = NULL;
 		char *field_expanded_alloc = NULL;
 
+		searched = 1;
 		if (!field) {
 			field = (char *) data;
 		}
@@ -344,7 +345,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 		switch_event_destroy(&hint_data);
 	}
 
-	if (!matches) {
+	if (searched && !matches) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Macro [%s]: '%s' did not match any patterns\n", macro_name, data);
 	}
 
