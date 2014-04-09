@@ -875,7 +875,7 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in);
   \param vname the name of the global pointer to modify with the new function
 */
 #define SWITCH_DECLARE_GLOBAL_STRING_FUNC(fname, vname) static void fname(const char *string) { if (!string) return;\
-		if (vname) {free(vname); vname = NULL;}vname = strdup(string);} static void fname(const char *string)
+		if (vname) {vname = NULL;}vname = switch_core_permanent_strdup(string);} static void fname(const char *string)
 
 /*!
   \brief Separate a string into an array based on a character delimiter

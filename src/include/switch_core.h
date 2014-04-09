@@ -1370,7 +1370,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(_Inout_ switch_hash_t *
   \return SWITCH_STATUS_SUCCESS if the data is added
   \note the string key must be a constant or a dynamic string
 */
-SWITCH_DECLARE(switch_status_t) switch_core_hash_insert(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_opt_ const void *data);
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_destructor(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_opt_ const void *data, hashtable_destructor_t destructor);
+#define switch_core_hash_insert(_h, _k, _d) switch_core_hash_insert_destructor(_h, _k, _d, NULL)
+
 
 /*! 
   \brief Insert data into a hash

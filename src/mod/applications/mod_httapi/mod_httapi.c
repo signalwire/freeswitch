@@ -2071,49 +2071,49 @@ static switch_status_t do_config(void)
 
 		profile->auth_scheme = auth_scheme;
 		profile->timeout = timeout;
-		profile->url = strdup(url);
+		profile->url = switch_core_strdup(globals.pool, url);
 		switch_assert(profile->url);
 
 		if (bind_local != NULL) {
-			profile->bind_local = strdup(bind_local);
+			profile->bind_local = switch_core_strdup(globals.pool, bind_local);
 		}
 		if (method != NULL) {
-			profile->method = strdup(method);
+			profile->method = switch_core_strdup(globals.pool, method);
 		} else {
 			profile->method = NULL;
 		}
 
 		if (bind_cred) {
-			profile->cred = strdup(bind_cred);
+			profile->cred = switch_core_strdup(globals.pool, bind_cred);
 		}
 
 		profile->disable100continue = disable100continue;
 		profile->enable_cacert_check = enable_cacert_check;
 
 		if (ssl_cert_file) {
-			profile->ssl_cert_file = strdup(ssl_cert_file);
+			profile->ssl_cert_file = switch_core_strdup(globals.pool, ssl_cert_file);
 		}
 
 		if (ssl_key_file) {
-			profile->ssl_key_file = strdup(ssl_key_file);
+			profile->ssl_key_file = switch_core_strdup(globals.pool, ssl_key_file);
 		}
 
 		if (ssl_key_password) {
-			profile->ssl_key_password = strdup(ssl_key_password);
+			profile->ssl_key_password = switch_core_strdup(globals.pool, ssl_key_password);
 		}
 
 		if (ssl_version) {
-			profile->ssl_version = strdup(ssl_version);
+			profile->ssl_version = switch_core_strdup(globals.pool, ssl_version);
 		}
 
 		if (ssl_cacert_file) {
-			profile->ssl_cacert_file = strdup(ssl_cacert_file);
+			profile->ssl_cacert_file = switch_core_strdup(globals.pool, ssl_cacert_file);
 		}
 
 		profile->enable_ssl_verifyhost = enable_ssl_verifyhost;
 
 		if (cookie_file) {
-			profile->cookie_file = strdup(cookie_file);
+			profile->cookie_file = switch_core_strdup(globals.pool, cookie_file);
 		}
 
 		profile->vars_map = vars_map;
@@ -2138,7 +2138,7 @@ static switch_status_t do_config(void)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Profile [%s] JSON Function [%s]\n",
 						  zstr(bname) ? "N/A" : bname, profile->url);
 
-		profile->name = strdup(bname);
+		profile->name = switch_core_strdup(globals.pool, bname);
 
 		switch_core_hash_insert(globals.profile_hash, bname, profile);
 

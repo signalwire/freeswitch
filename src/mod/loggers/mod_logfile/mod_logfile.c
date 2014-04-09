@@ -313,6 +313,17 @@ static switch_status_t mod_logfile_logger(const switch_log_node_t *node, switch_
 	return process_node(node, level);
 }
 
+static void cleanup_profile(void *ptr)
+{
+	logfile_profile_t *profile = (logfile_profile_t *) ptr;
+
+	switch_core_hash_destroy(&profile->log_hash);
+	switch_file_close(profile->log_afd);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Closing %s\n", profile->logfile);
+	switch_safe_free(profile->logfile);
+
+}
+
 static switch_status_t load_profile(switch_xml_t xml)
 {
 	switch_xml_t param, settings;
@@ -365,7 +376,7 @@ static switch_status_t load_profile(switch_xml_t xml)
 		return SWITCH_STATUS_GENERR;
 	}
 
-	switch_core_hash_insert(profile_hash, new_profile->name, (void *) new_profile);
+	switch_core_hash_insert_destructor(profile_hash, new_profile->name, (void *) new_profile, cleanup_profile);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -454,26 +465,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_logfile_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_logfile_shutdown)
 {
-	switch_hash_index_t *hi;
-	const void *var;
-	void *val;
-
 	switch_log_unbind_logger(mod_logfile_logger);
 	switch_event_unbind(&globals.node);
-
-	for (hi = switch_core_hash_first(profile_hash); hi; hi = switch_core_hash_next(&hi)) {
-		logfile_profile_t *profile;
-		switch_core_hash_this(hi, &var, NULL, &val);
-		if ((profile = (logfile_profile_t *) val)) {
-			switch_file_close(profile->log_afd);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Closing %s\n", profile->logfile);
-			switch_safe_free(profile->logfile);
-		}
-	}
-
 	switch_core_hash_destroy(&profile_hash);
-
-
 	return SWITCH_STATUS_SUCCESS;
 }
 

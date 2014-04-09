@@ -1645,7 +1645,6 @@ void mod_spandsp_fax_shutdown(void)
 	t38_state_list.thread_running = 0;
 	wake_thread(1);
 	switch_thread_join(&tstatus, t38_state_list.thread);
-	memset(&spandsp_globals, 0, sizeof(spandsp_globals));
 }
 
 static const switch_state_handler_table_t t38_gateway_state_handlers;

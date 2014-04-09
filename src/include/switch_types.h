@@ -2079,6 +2079,8 @@ typedef struct switch_core_port_allocator switch_core_port_allocator_t;
 typedef struct switch_media_bug switch_media_bug_t;
 typedef struct switch_limit_interface switch_limit_interface_t;
 
+typedef void (*hashtable_destructor_t)(void *ptr);
+
 struct switch_console_callback_match_node {
 	char *val;
 	struct switch_console_callback_match_node *next;

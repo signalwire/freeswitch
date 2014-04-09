@@ -872,6 +872,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_v8_shutdown)
 	switch_mutex_destroy(globals.event_mutex);
 
 	switch_core_hash_destroy(&module_manager.load_hash);
+	switch_core_destroy_memory_pool(&module_manager.pool);
 
 	return SWITCH_STATUS_SUCCESS;
 }

@@ -155,7 +155,7 @@ switch_hashtable_count(switch_hashtable_t *h)
 
 /*****************************************************************************/
 SWITCH_DECLARE(int)
-switch_hashtable_insert(switch_hashtable_t *h, void *k, void *v, hashtable_flag_t flags)
+switch_hashtable_insert_destructor(switch_hashtable_t *h, void *k, void *v, hashtable_flag_t flags, hashtable_destructor_t destructor)
 {
     /* This method allows duplicate keys - but they shouldn't be used */
     unsigned int index;
@@ -175,6 +175,7 @@ switch_hashtable_insert(switch_hashtable_t *h, void *k, void *v, hashtable_flag_
     e->k = k;
     e->v = v;
 	e->flags = flags;
+	e->destructor = destructor;
     e->next = h->table[index];
     h->table[index] = e;
     return -1;
@@ -222,6 +223,12 @@ switch_hashtable_remove(switch_hashtable_t *h, void *k)
 			if (e->flags & HASHTABLE_FLAG_FREE_KEY) {
 				freekey(e->k);
 			}
+			if (e->flags & HASHTABLE_FLAG_FREE_VALUE) {
+				switch_safe_free(e->v); 
+			} else if (e->destructor) {
+				e->destructor(e->v);
+				e->v = NULL;
+			}
 			switch_safe_free(e);
 			return v;
 		}
@@ -251,6 +258,9 @@ switch_hashtable_destroy(switch_hashtable_t **h)
 			
 			if (f->flags & HASHTABLE_FLAG_FREE_VALUE) {
 				switch_safe_free(f->v); 
+			} else if (f->destructor) {
+				f->destructor(f->v);
+				f->v = NULL;
 			}
 			switch_safe_free(f); 
 		}

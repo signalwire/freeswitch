@@ -476,6 +476,12 @@ void mod_spandsp_indicate_data(switch_core_session_t *session, switch_bool_t sel
 /* **************************************************************************
    CONFIGURATION
    ************************************************************************* */
+static void destroy_descriptor(void *ptr)
+{
+    tone_descriptor_t *d = (tone_descriptor_t *) ptr;
+
+    super_tone_rx_free_descriptor(d->spandsp_tone_descriptor);
+}
 
 switch_status_t load_configuration(switch_bool_t reload)
 {
@@ -657,7 +663,8 @@ switch_status_t load_configuration(switch_bool_t reload)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to allocate tone_descriptor: %s\n", name);
 					switch_goto_status(SWITCH_STATUS_FALSE, done);
 				}
-				switch_core_hash_insert(spandsp_globals.tones, name, descriptor);
+
+				switch_core_hash_insert_destructor(spandsp_globals.tones, name, descriptor, destroy_descriptor);
 
 				/* add tones to descriptor */
 				for (tone = switch_xml_child(xdescriptor, "tone"); tone; tone = switch_xml_next(tone)) {
@@ -829,6 +836,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spandsp_shutdown)
 	if (spandsp_globals.config_pool) {
 		switch_core_destroy_memory_pool(&spandsp_globals.config_pool);
 	}
+
+	memset(&spandsp_globals, 0, sizeof(spandsp_globals));
 
 	return SWITCH_STATUS_UNLOAD;
 }

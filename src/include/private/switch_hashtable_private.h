@@ -22,6 +22,7 @@ struct entry
     void *k, *v;
     unsigned int h;
 	hashtable_flag_t flags;
+	hashtable_destructor_t destructor;
     struct entry *next;
 };
 
