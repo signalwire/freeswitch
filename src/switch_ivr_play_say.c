@@ -171,7 +171,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 		goto done;
 	}
 
-	while (input && !done) {
+	while (input) {
 		char *field = (char *) switch_xml_attr(input, "field");
 		char *pattern = (char *) switch_xml_attr(input, "pattern");
 		const char *do_break = switch_xml_attr_soft(input, "break_on_match");
@@ -212,7 +212,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 
 		if (match) {
 			matches++;
-			for (action = switch_xml_child(match, "action"); action && status == SWITCH_STATUS_SUCCESS; action = action->next) {
+			for (action = switch_xml_child(match, "action"); action; action = action->next) {
 				char *adata = (char *) switch_xml_attr_soft(action, "data");
 				char *func = (char *) switch_xml_attr_soft(action, "function");
 				char *substituted = NULL;
@@ -312,15 +312,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 				switch_ivr_sleep(session, pause, SWITCH_FALSE, NULL);
 				switch_safe_free(expanded);
 				switch_safe_free(substituted);
-				if (done) break;
+				if (done || status != SWITCH_STATUS_SUCCESS) break;
 			}
 		}
 
 		switch_regex_safe_free(re);
 		switch_safe_free(field_expanded_alloc);
 
-		if ((match && do_break && switch_true(do_break))
-			|| status != SWITCH_STATUS_SUCCESS) {
+		if (done || status != SWITCH_STATUS_SUCCESS
+			|| (match && do_break && switch_true(do_break))) {
 			break;
 		}
 
