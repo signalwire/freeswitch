@@ -256,8 +256,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 					char *name = (char *) switch_xml_attr_soft(action, "phrase");
 					status = switch_ivr_phrase_macro(session, name, odata, chan_lang, args);
 				} else if (!strcasecmp(func, "break")) {
-					done = 1;
-					/* must allow the switch_safe_free below to execute or we leak - do not break here */
+					done = 1; /* don't break or we leak memory */
 				} else if (!strcasecmp(func, "execute")) {
 					switch_application_interface_t *app;
 					char *cmd, *cmd_args;
