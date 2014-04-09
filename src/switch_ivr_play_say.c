@@ -227,7 +227,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro_event(switch_core_sessio
 						if (!(substituted = malloc(len))) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Memory Error!\n");
 							switch_regex_safe_free(re);
-							switch_safe_free(expanded);
+							switch_safe_free(field_expanded_alloc);
 							goto done;
 						}
 						memset(substituted, 0, len);
