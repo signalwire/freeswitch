@@ -153,13 +153,54 @@ switch_hashtable_count(switch_hashtable_t *h)
     return h->entrycount;
 }
 
+static void * _switch_hashtable_remove(switch_hashtable_t *h, void *k, unsigned int hashvalue, unsigned int index) {
+    /* TODO: consider compacting the table when the load factor drops enough,
+     *       or provide a 'compact' method. */
+
+    struct entry *e;
+    struct entry **pE;
+    void *v;
+
+
+    pE = &(h->table[index]);
+    e = *pE;
+    while (NULL != e) {
+		/* Check hash value to short circuit heavier comparison */
+		if ((hashvalue == e->h) && (h->eqfn(k, e->k))) {
+			*pE = e->next;
+			h->entrycount--;
+			v = e->v;
+			if (e->flags & HASHTABLE_FLAG_FREE_KEY) {
+				freekey(e->k);
+			}
+			if (e->flags & HASHTABLE_FLAG_FREE_VALUE) {
+				switch_safe_free(e->v); 
+				v = NULL;
+			} else if (e->destructor) {
+				e->destructor(e->v);
+				v = e->v = NULL;
+			}
+			switch_safe_free(e);
+			return v;
+		}
+		pE = &(e->next);
+		e = e->next;
+	}
+    return NULL;
+}
+
 /*****************************************************************************/
 SWITCH_DECLARE(int)
 switch_hashtable_insert_destructor(switch_hashtable_t *h, void *k, void *v, hashtable_flag_t flags, hashtable_destructor_t destructor)
 {
-    /* This method allows duplicate keys - but they shouldn't be used */
-    unsigned int index;
     struct entry *e;
+	unsigned int hashvalue = hash(h, k);
+    unsigned index = indexFor(h->tablelength, hashvalue);
+
+	if (flags & HASHTABLE_DUP_CHECK) {
+		_switch_hashtable_remove(h, k, hashvalue, index);
+	}
+
     if (++(h->entrycount) > h->loadlimit)
 		{
 			/* Ignore the return value. If expand fails, we should
@@ -167,11 +208,11 @@ switch_hashtable_insert_destructor(switch_hashtable_t *h, void *k, void *v, hash
 			 * -- we may not have memory for a larger table, but one more
 			 * element may be ok. Next time we insert, we'll try expanding again.*/
 			hashtable_expand(h);
+			index = indexFor(h->tablelength, hashvalue);
 		}
     e = (struct entry *)malloc(sizeof(struct entry));
     if (NULL == e) { --(h->entrycount); return 0; } /*oom*/
-    e->h = hash(h,k);
-    index = indexFor(h->tablelength,e->h);
+    e->h = hashvalue;
     e->k = k;
     e->v = v;
 	e->flags = flags;
@@ -202,40 +243,8 @@ switch_hashtable_search(switch_hashtable_t *h, void *k)
 SWITCH_DECLARE(void *) /* returns value associated with key */
 switch_hashtable_remove(switch_hashtable_t *h, void *k)
 {
-    /* TODO: consider compacting the table when the load factor drops enough,
-     *       or provide a 'compact' method. */
-
-    struct entry *e;
-    struct entry **pE;
-    void *v;
-    unsigned int hashvalue, index;
-
-    hashvalue = hash(h,k);
-    index = indexFor(h->tablelength,hashvalue);
-    pE = &(h->table[index]);
-    e = *pE;
-    while (NULL != e) {
-		/* Check hash value to short circuit heavier comparison */
-		if ((hashvalue == e->h) && (h->eqfn(k, e->k))) {
-			*pE = e->next;
-			h->entrycount--;
-			v = e->v;
-			if (e->flags & HASHTABLE_FLAG_FREE_KEY) {
-				freekey(e->k);
-			}
-			if (e->flags & HASHTABLE_FLAG_FREE_VALUE) {
-				switch_safe_free(e->v); 
-			} else if (e->destructor) {
-				e->destructor(e->v);
-				e->v = NULL;
-			}
-			switch_safe_free(e);
-			return v;
-		}
-		pE = &(e->next);
-		e = e->next;
-	}
-    return NULL;
+	unsigned int hashvalue = hash(h,k);
+	return _switch_hashtable_remove(h, k, hashvalue, indexFor(h->tablelength,hashvalue));
 }
 
 /*****************************************************************************/

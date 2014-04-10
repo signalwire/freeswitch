@@ -119,7 +119,8 @@ switch_create_hashtable(switch_hashtable_t **hp, unsigned int minsize,
 typedef enum {
 	HASHTABLE_FLAG_NONE = 0,
 	HASHTABLE_FLAG_FREE_KEY = (1 << 0),
-	HASHTABLE_FLAG_FREE_VALUE = (1 << 1)
+	HASHTABLE_FLAG_FREE_VALUE = (1 << 1),
+	HASHTABLE_DUP_CHECK = (1 << 2)
 } hashtable_flag_t;
 
 SWITCH_DECLARE(int)
