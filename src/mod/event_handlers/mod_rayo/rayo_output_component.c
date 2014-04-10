@@ -76,7 +76,7 @@ static struct rayo_component *create_output_component(struct rayo_actor *actor, 
 		output_component->repeat_times = iks_find_int_attrib(output, "repeat-times");
 		output_component->max_time_ms = iks_find_int_attrib(output, "max-time");
 		output_component->start_paused = iks_find_bool_attrib(output, "start-paused");
-		output_component->renderer = switch_core_strdup(RAYO_POOL(actor), iks_find_attrib_soft(output, "renderer"));
+		output_component->renderer = switch_core_strdup(RAYO_POOL(output_component), iks_find_attrib_soft(output, "renderer"));
 	} else {
 		switch_core_destroy_memory_pool(&pool);
 	}
