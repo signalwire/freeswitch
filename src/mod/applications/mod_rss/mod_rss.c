@@ -312,24 +312,23 @@ SWITCH_STANDARD_APP(rss_function)
 			jumpto = -1;
 		} else {
 			switch_core_speech_flush_tts(&sh);
+			switch_ivr_sleep(session, 500, SWITCH_FALSE, NULL);
+
 #ifdef MATCH_COUNT
 			switch_snprintf(buf + len, sizeof(buf) - len, "%s",
-							",<break time=\"500ms\"/>Main Menu. <break time=\"600ms\"/> "
-							"Select one of the following news sources, or press 0 to exit. " ",<break time=\"600ms\"/>");
+							", Main Menu."
+							"Select one of the following news sources, or press 0 to exit. ");
 #else
 			switch_snprintf(buf + len, sizeof(buf) - len, "%s",
-							",<break time=\"500ms\"/>Main Menu. <break time=\"600ms\"/> "
-							"Select one of the following news sources, followed by the pound key or press 0 to exit. " ",<break time=\"600ms\"/>");
+							",Main Menu. "
+							"Select one of the following news sources, followed by the pound key or press 0 to exit. ");
 #endif
 			len = (int32_t) strlen(buf);
 
 			for (idx = 0; idx < feed_index; idx++) {
-				switch_snprintf(buf + len, sizeof(buf) - len, "%d: %s. <break time=\"600ms\"/>", idx + 1, feed_names[idx]);
+				switch_snprintf(buf + len, sizeof(buf) - len, "%d: %s. />", idx + 1, feed_names[idx]);
 				len = (int32_t) strlen(buf);
 			}
-
-			switch_snprintf(buf + len, sizeof(buf) - len, "%s", "<break time=\"2000ms\"/>");
-			len = (int32_t) strlen(buf);
 
 			args.input_callback = NULL;
 			args.buf = cmd;
@@ -483,9 +482,10 @@ SWITCH_STANDARD_APP(rss_function)
 			switch_time_exp_lt(&tm, switch_micro_time_now());
 			switch_strftime_nocheck(date, &retsize, sizeof(date), "%I:%M %p", &tm);
 
+			switch_ivr_sleep(session, 500, SWITCH_FALSE, NULL);
 
 			switch_snprintf(buf, sizeof(buf),
-							",<break time=\"500ms\"/>%s. %s. %s. local time: %s, Press 0 for options, 5 to change voice, or pound to return to the main menu. ",
+							",%s. %s. %s. local time: %s, Press 0 for options, 5 to change voice, or pound to return to the main menu. ",
 							title_txt, description_txt, rights_txt, date);
 			args.input_callback = NULL;
 			args.buf = dtmf;
