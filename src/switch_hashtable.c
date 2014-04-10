@@ -211,7 +211,7 @@ switch_hashtable_remove(switch_hashtable_t *h, void *k)
     unsigned int hashvalue, index;
 
     hashvalue = hash(h,k);
-    index = indexFor(h->tablelength,hash(h,k));
+    index = indexFor(h->tablelength,hashvalue);
     pE = &(h->table[index]);
     e = *pE;
     while (NULL != e) {
