@@ -29,6 +29,7 @@
  *
  */
 #include <switch.h>
+#include <switch_private.h>
 #include <libmemcached/memcached.h>
 
 /* Prototypes */
@@ -138,6 +139,81 @@ static void event_handler(switch_event_t *event)
 	do_config(SWITCH_TRUE);
 }
 
+#if HAVE_MEMCACHED_SERVER_NAME
+#if HAVE_MEMCACHED_INSTANCE_STP
+#define MCD_SERVER memcached_instance_st*
+#else
+#define MCD_SERVER memcached_server_instance_st
+#endif
+#define MCD_SERVER_NAME memcached_server_name(server)
+#define MCD_SERVER_PORT memcached_server_port(server)
+#else
+#define MCD_SERVER memcached_server_st*
+#define MCD_SERVER_NAME memcached_server_name(ptr, *server)
+#define MCD_SERVER_PORT memcached_server_port(ptr, *server)
+#endif
+
+struct stream_server
+{
+	switch_stream_handle_t *stream;
+	MCD_SERVER server;
+};
+
+static memcached_return server_show(const memcached_st *ptr, const MCD_SERVER server, void *context)
+{
+	struct stream_server *ss = (struct stream_server*) context;
+	ss->stream->write_function(ss->stream, "  %s (%u)\n", MCD_SERVER_NAME, MCD_SERVER_PORT);
+	return MEMCACHED_SUCCESS;
+}
+
+static memcached_return server_stat(const MCD_SERVER server, const char *key, size_t key_length, const char *value, size_t value_length, void *context)
+{
+	struct stream_server *ss = (struct stream_server*) context;
+
+	if (ss->server != server) {
+		server_show(NULL, server, context);
+		ss->server = (MCD_SERVER) server;
+	}
+
+	ss->stream->write_function(ss->stream, "    %s: %s\n", key, value);
+	return MEMCACHED_SUCCESS;
+}
+
+#if !HAVE_MEMCACHED_STAT_EXECUTE
+static memcached_return server_stats(memcached_st *ptr, MCD_SERVER server, void *context)
+{
+	char **keys, **key, *value;
+	memcached_stat_st stat;
+	memcached_return rc;
+
+	struct stream_server *ss = (struct stream_server*) context;
+
+	rc = memcached_stat_servername(&stat, NULL, MCD_SERVER_NAME, MCD_SERVER_PORT);
+	if (rc != MEMCACHED_SUCCESS) goto mcache_error;
+
+	keys = memcached_stat_get_keys(ptr, &stat, &rc);
+	if (rc != MEMCACHED_SUCCESS) goto mcache_error;
+
+	for (key = keys; *key; key++) {
+		value = memcached_stat_get_value(ptr, &stat, *key, &rc);
+
+		if (rc == MEMCACHED_SUCCESS && value) {
+			server_stat(server, *key, 0, value, 0, context);
+			switch_safe_free(value);
+		} else {
+			server_stat(server, *key, 0, "N/A", 0, context);
+		}
+	}
+
+	switch_safe_free(keys);
+	return MEMCACHED_SUCCESS;
+
+mcache_error:
+	ss->stream->write_function(ss->stream, "-ERR %s\n", memcached_strerror(ptr, rc));
+	return MEMCACHED_SUCCESS;
+}
+#endif
+
 SWITCH_STANDARD_API(memcache_function)
 {
 	switch_status_t status;
@@ -157,7 +233,6 @@ SWITCH_STANDARD_API(memcache_function)
 	memcached_return rc;
 	memcached_st *memcached = NULL;
 	memcached_stat_st *stat = NULL;
-	memcached_server_st *server_list;
 
 	if (zstr(cmd)) {
 		goto usage;
@@ -303,41 +378,29 @@ SWITCH_STANDARD_API(memcache_function)
 				switch_goto_status(SWITCH_STATUS_SUCCESS, mcache_error);
 			}
 		} else if (!strcasecmp(subcmd, "status")) {
-			switch_bool_t verbose = SWITCH_FALSE;
-			int x;
-
-			if (argc > 1) {
-				if (!strcasecmp(argv[1], "verbose")) {
-					verbose = SWITCH_TRUE;
-				}
-			}
+			struct stream_server ss;
+			ss.stream = stream;
+			ss.server = NULL;
 
 			stream->write_function(stream, "Lib version: %s\n", memcached_lib_version());
-			stat = memcached_stat(memcached, NULL, &rc);
-			if (rc != MEMCACHED_SUCCESS && rc != MEMCACHED_SOME_ERRORS) {
-				stream->write_function(stream, "-ERR Error communicating with servers (%s)\n", memcached_strerror(memcached, rc));
-			}
-			server_list = memcached_server_list(memcached);
+
 			server_count = memcached_server_count(memcached);
 			stream->write_function(stream, "Servers: %d\n", server_count);
-			for (x = 0; x < server_count; x++) {
-				stream->write_function(stream, "  %s (%u)\n", memcached_server_name(memcached, server_list[x]),
-									   memcached_server_port(memcached, server_list[x]));
-				if (verbose == SWITCH_TRUE) {
-					char **list;
-					char **ptr;
-					char *value;
-					memcached_return rc2;
 
-					list = memcached_stat_get_keys(memcached, &stat[x], &rc);
-					for (ptr = list; *ptr; ptr++) {
-						value = memcached_stat_get_value(memcached, &stat[x], *ptr, &rc2);
-						stream->write_function(stream, "    %s: %s\n", *ptr, value);
-						switch_safe_free(value);
-					}
-					switch_safe_free(list);
-					stream->write_function(stream, "\n");
-				}
+			if (argc > 1 && !strcasecmp(argv[1], "verbose")) {
+#if HAVE_MEMCACHED_STAT_EXECUTE
+				rc = memcached_stat_execute(memcached, NULL, server_stat, (void*) &ss);
+#else
+				memcached_server_function callbacks[] = { (memcached_server_function) server_stats };
+				rc = memcached_server_cursor(memcached, callbacks, (void*) &ss, 1);
+#endif
+			} else {
+				memcached_server_function callbacks[] = { (memcached_server_function) server_show };
+				rc = memcached_server_cursor(memcached, callbacks, (void*) &ss, 1);
+			}
+
+			if (rc != MEMCACHED_SUCCESS) {
+				switch_goto_status(SWITCH_STATUS_SUCCESS, mcache_error);
 			}
 		} else {
 			goto usage;

@@ -1129,6 +1129,22 @@ PKG_CHECK_MODULES([YAML], [yaml-0.1 >= 0.1.4],[
   AM_CONDITIONAL([HAVE_YAML],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_YAML],[false])])
 
+PKG_CHECK_MODULES([MEMCACHED], [libmemcached >= 0.31],[
+  AM_CONDITIONAL([HAVE_MEMCACHED],[true])
+  MEMCACHED_LIBS="${MEMCACHED_LIBS} -lpthread"
+  save_LIBS="${LIBS}"
+  save_CPPFLAGS="${CPPFLAGS}"
+  LIBS="${MEMCACHED_LIBS}"
+  CPPFLAGS="${MEMCACHED_CFLAGS}"
+  AC_CHECK_FUNCS([memcached_server_name memcached_stat_execute])
+  AC_CHECK_TYPES([memcached_instance_st*],,, [[#include <libmemcached/memcached.h>]])
+  LIBS="${save_LIBS}"
+  CPPFLAGS="${save_CPPFLAGS}"
+],[
+  AC_MSG_RESULT([no])
+  AM_CONDITIONAL([HAVE_MEMCACHED],[false])
+])
+
 AC_ARG_ENABLE(core-libedit-support,     
   [AS_HELP_STRING([--disable-core-libedit-support], [Compile without libedit Support])])
 
