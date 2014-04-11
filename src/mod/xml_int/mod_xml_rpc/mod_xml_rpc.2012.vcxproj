@@ -86,7 +86,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)libs\openssl-1.0.1f\include;$(SolutionDir)libs\xmlrpc-c\include;$(SolutionDir)libs\xmlrpc-c\lib\abyss\src;$(SolutionDir)libs\xmlrpc-c\lib\util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)libs\openssl-1.0.1g\include;$(SolutionDir)libs\xmlrpc-c\include;$(SolutionDir)libs\xmlrpc-c\lib\abyss\src;$(SolutionDir)libs\xmlrpc-c\lib\util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ABYSS_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -105,7 +105,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)libs\openssl-1.0.1f\include;$(SolutionDir)libs\xmlrpc-c\include;$(SolutionDir)libs\xmlrpc-c\lib\abyss\src;$(SolutionDir)libs\xmlrpc-c\lib\util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)libs\openssl-1.0.1g\include;$(SolutionDir)libs\xmlrpc-c\include;$(SolutionDir)libs\xmlrpc-c\lib\abyss\src;$(SolutionDir)libs\xmlrpc-c\lib\util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ABYSS_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -122,7 +122,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)libs\openssl-1.0.1f\include;$(SolutionDir)libs\xmlrpc-c\include;$(SolutionDir)libs\xmlrpc-c\lib\abyss\src;$(SolutionDir)libs\xmlrpc-c\lib\util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)libs\openssl-1.0.1g\include;$(SolutionDir)libs\xmlrpc-c\include;$(SolutionDir)libs\xmlrpc-c\lib\abyss\src;$(SolutionDir)libs\xmlrpc-c\lib\util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ABYSS_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -141,7 +141,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)libs\openssl-1.0.1f\include;$(SolutionDir)libs\xmlrpc-c\include;$(SolutionDir)libs\xmlrpc-c\lib\abyss\src;$(SolutionDir)libs\xmlrpc-c\lib\util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)libs\openssl-1.0.1g\include;$(SolutionDir)libs\xmlrpc-c\include;$(SolutionDir)libs\xmlrpc-c\lib\abyss\src;$(SolutionDir)libs\xmlrpc-c\lib\util\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ABYSS_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
