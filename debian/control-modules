@@ -126,6 +126,7 @@ Description: Limit compatibility module
 Module: applications/mod_memcache
 Description: Memcache
  This module provides an interface to memcache servers.
+Build-Depends: libmemcached-dev
 
 Module: applications/mod_mongo
 Description: MongoDB
