@@ -142,6 +142,9 @@
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </Bscmake>
+    <PreBuildEvent>
+      <Command>if not exist "$(ProjectDir)..\..\pcre-8.34\pcre.h" type "$(ProjectDir)\pcre.h" &gt; "$(ProjectDir)..\..\pcre-8.34\pcre.h"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
