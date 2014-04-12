@@ -230,7 +230,7 @@ SWITCH_STANDARD_API(memcache_function)
 	uint32_t flags = 0;
 	unsigned int server_count = 0;
 
-	memcached_return rc;
+	memcached_return rc = 0;
 	memcached_st *memcached = NULL;
 	memcached_stat_st *stat = NULL;
 
