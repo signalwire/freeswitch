@@ -3736,11 +3736,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 											(char *) sip->sip_request->rq_method_name, key, sizeof(key), network_ip, network_port, &v_event, 0,
 											REG_REGISTER, to_user, NULL, NULL, NULL);
 			if (v_event) switch_event_destroy(&v_event);
-		} else if ( sofia_reg_handle_register(nua, profile, nh, sip, de, REG_REGISTER, key, sizeof(key), &v_event, NULL, NULL, NULL)) {
-			if (v_event) {
-				switch_event_destroy(&v_event);
-			}
-
+		} else if (sofia_reg_handle_register(nua, profile, nh, sip, de, REG_REGISTER, key, sizeof(key), &v_event, NULL, NULL, NULL)) {
+			if (v_event) switch_event_destroy(&v_event);
 			goto end;
 		}
 
