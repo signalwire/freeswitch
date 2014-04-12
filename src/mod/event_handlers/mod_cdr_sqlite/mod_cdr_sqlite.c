@@ -297,6 +297,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cdr_sqlite_shutdown)
 {
 	globals.shutdown = 1;
 	switch_core_remove_state_handler(&state_handlers);
+	switch_core_hash_destroy(&globals.template_hash);
 
 	return SWITCH_STATUS_SUCCESS;
 }
