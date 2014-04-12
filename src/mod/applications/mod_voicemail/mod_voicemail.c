@@ -6280,7 +6280,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_voicemail_shutdown)
 		switch_core_destroy_memory_pool(&profile->pool);
 		profile = NULL;
 	}
+	switch_core_hash_destroy(&globals.profile_hash);
 	switch_mutex_unlock(globals.mutex);
+	switch_mutex_destroy(globals.mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
