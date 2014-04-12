@@ -5581,6 +5581,10 @@ SWITCH_STANDARD_API(page_api_function)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_dptools_shutdown)
 {
 	switch_event_unbind_callback(pickup_pres_event_handler);
+	switch_mutex_destroy(globals.pickup_mutex);
+	switch_core_hash_destroy(&globals.pickup_hash);
+	switch_mutex_destroy(globals.mutex_mutex);
+	switch_core_hash_destroy(&globals.mutex_hash);
 
 	return SWITCH_STATUS_SUCCESS;
 }
