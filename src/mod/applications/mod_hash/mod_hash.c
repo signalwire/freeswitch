@@ -1070,12 +1070,14 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_hash_shutdown)
 
 	switch_core_hash_destroy(&globals.limit_hash);
 	switch_core_hash_destroy(&globals.db_hash);	
+	switch_core_hash_destroy(&globals.remote_hash);
 
 	switch_thread_rwlock_unlock(globals.limit_hash_rwlock);
 	switch_thread_rwlock_unlock(globals.db_hash_rwlock);
 
 	switch_thread_rwlock_destroy(globals.db_hash_rwlock);
 	switch_thread_rwlock_destroy(globals.limit_hash_rwlock);
+	switch_thread_rwlock_destroy(globals.remote_hash_rwlock);
 
 
 	return SWITCH_STATUS_SUCCESS;
