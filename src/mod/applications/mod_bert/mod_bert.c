@@ -45,6 +45,7 @@ typedef struct {
 	uint32_t window_ms;
 	uint32_t window_samples;
 	uint32_t stats_sync_lost_cnt;
+	uint32_t stats_cng_cnt;
 	uint8_t sequence_sample;
 	uint8_t predicted_sample;
 	float max_err;
@@ -270,6 +271,7 @@ SWITCH_STANDARD_APP(bert_test_function)
 			read_frame->samples = read_impl.samples_per_packet;
 			read_frame->datalen = read_impl.samples_per_packet;
 			memset(read_frame->data, G711_ULAW_IDLE_OCTET, read_frame->datalen);
+			bert.stats_cng_cnt++;
 		}
 
 		if (read_frame->samples != read_impl.samples_per_packet || !read_frame->datalen) {
@@ -300,8 +302,8 @@ SWITCH_STANDARD_APP(bert_test_function)
 					if (bert.in_sync) {
 						bert.in_sync = 0;
 						bert.stats_sync_lost_cnt++;
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "BERT Sync Lost: %f%% loss (count=%u, err_samples=%u, session=%s)\n",
-								err, bert.stats_sync_lost_cnt, bert.err_samples, switch_core_session_get_uuid(session));
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "BERT Sync Lost: %f%% loss (count=%u, cng_count=%d, err_samples=%u, session=%s)\n",
+								err, bert.stats_sync_lost_cnt, bert.stats_cng_cnt, bert.err_samples, switch_core_session_get_uuid(session));
 						switch_channel_set_variable_printf(channel, BERT_STATS_VAR_SYNC_LOST_CNT, "%u", bert.stats_sync_lost_cnt);
 						switch_channel_set_variable(channel, BERT_STATS_VAR_SYNC_LOST, "true");
 						if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, BERT_EVENT_LOST_SYNC) == SWITCH_STATUS_SUCCESS) {
@@ -317,6 +319,7 @@ SWITCH_STANDARD_APP(bert_test_function)
 					bert.in_sync = 1;
 					synced = 1;
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "BERT Sync Success\n");
+					bert.stats_cng_cnt = 0;
 					bert.timeout = 0;
 				}
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "Err=%f%% (%u/%u)\n", err, bert.err_samples, bert.processed_samples);
