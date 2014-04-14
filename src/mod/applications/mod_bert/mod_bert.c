@@ -34,6 +34,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_bert_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_bert_shutdown);
 SWITCH_MODULE_DEFINITION(mod_bert, mod_bert_load, mod_bert_shutdown, NULL);
 
+#define G711_ULAW_IDLE_OCTET        0xFF
+
 /* http://en.wikipedia.org/wiki/Digital_milliwatt */
 unsigned char ulaw_digital_milliwatt[8] = { 0x1e, 0x0b, 0x0b, 0x1e, 0x9e, 0x8b, 0x8b, 0x9e };
 
@@ -263,12 +265,14 @@ SWITCH_STANDARD_APP(bert_test_function)
 			}
 		}
 
-		/* Ignore confort noise, TODO: we should probably deal with this and treat it as a full frame of silence?? */
-		if (switch_test_flag(read_frame, SFF_CNG) || !read_frame->datalen) {
-			continue;
+		/* Treat CNG as silence */
+		if (switch_test_flag(read_frame, SFF_CNG)) {
+			read_frame->samples = read_impl.samples_per_packet;
+			read_frame->datalen = read_impl.samples_per_packet;
+			memset(read_frame->data, G711_ULAW_IDLE_OCTET, read_frame->datalen);
 		}
 
-		if (read_frame->samples != read_impl.samples_per_packet) {
+		if (read_frame->samples != read_impl.samples_per_packet || !read_frame->datalen) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Read %d samples, expected %d!\n", read_frame->samples, read_impl.samples_per_packet);
 			continue;
 		}
