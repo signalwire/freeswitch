@@ -890,8 +890,11 @@ switch_status_t rayo_input_component_load(switch_loadable_module_interface_t **m
  */
 switch_status_t rayo_input_component_shutdown(void)
 {
-	srgs_parser_destroy(globals.parser);
 	switch_event_unbind_callback(on_detected_speech_event);
+
+	srgs_parser_destroy(globals.parser);
+	srgs_destroy();
+	nlsml_destroy();
 
 	rayo_cpa_component_shutdown();
 

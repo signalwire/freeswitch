@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013, Grasshopper
+ * Copyright (C) 2013-2014, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -46,6 +46,7 @@ enum srgs_match_type {
 };
 
 extern int srgs_init(void);
+extern void srgs_destroy(void);
 extern struct srgs_parser *srgs_parser_new(const char *uuid);
 extern struct srgs_grammar *srgs_parse(struct srgs_parser *parser, const char *document);
 extern const char *srgs_grammar_to_regex(struct srgs_grammar *grammar);

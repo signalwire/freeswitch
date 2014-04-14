@@ -53,14 +53,15 @@ struct tag_def {
 /**
  * library configuration
  */
-static struct {
+typedef struct {
 	/** true if initialized */
 	switch_bool_t init;
 	/** Mapping of tag name to definition */
 	switch_hash_t *tag_defs;
 	/** library memory pool */
 	switch_memory_pool_t *pool;
-} globals;
+} srgs_globals;
+static srgs_globals globals = { 0 };
 
 /**
  * SRGS node types
@@ -377,6 +378,17 @@ static struct srgs_node *sn_insert_string(switch_memory_pool_t *pool, struct srg
 }
 
 /**
+ * Tag def destructor
+ */
+static void destroy_tag_def(void *ptr)
+{
+    struct tag_def *tag = (struct tag_def *) ptr;
+	if (tag->children_tags) {
+		switch_core_hash_destroy(&tag->children_tags);
+	}
+}
+
+/**
  * Add a definition for a tag
  * @param tag the name
  * @param attribs_fn the function to handle the tag attributes
@@ -402,7 +414,7 @@ static struct tag_def *add_tag_def(const char *tag, tag_attribs_fn attribs_fn, t
 	def->attribs_fn = attribs_fn;
 	def->cdata_fn = cdata_fn;
 	def->is_root = SWITCH_FALSE;
-	switch_core_hash_insert(globals.tag_defs, tag, def);
+	switch_core_hash_insert_destructor(globals.tag_defs, tag, def, destroy_tag_def);
 	return def;
 }
 
@@ -871,15 +883,18 @@ void srgs_parser_destroy(struct srgs_parser *parser)
 	switch_memory_pool_t *pool = parser->pool;
 	switch_hash_index_t *hi = NULL;
 
-	/* clean up all cached grammars */
-	for (hi = switch_core_hash_first(parser->cache); hi; hi = switch_core_hash_next(&hi)) {
-		struct srgs_grammar *grammar = NULL;
-		const void *key;
-		void *val;
-		switch_core_hash_this(hi, &key, NULL, &val);
-		grammar = (struct srgs_grammar *)val;
-		switch_assert(grammar);
-		srgs_grammar_destroy(grammar);
+	if (parser->cache) {
+		/* clean up all cached grammars */
+		for (hi = switch_core_hash_first(parser->cache); hi; hi = switch_core_hash_next(&hi)) {
+			struct srgs_grammar *grammar = NULL;
+			const void *key;
+			void *val;
+			switch_core_hash_this(hi, &key, NULL, &val);
+			grammar = (struct srgs_grammar *)val;
+			switch_assert(grammar);
+			srgs_grammar_destroy(grammar);
+		}
+		switch_core_hash_destroy(&parser->cache);
 	}
 	switch_core_destroy_memory_pool(&pool);
 }
@@ -1627,6 +1642,24 @@ int srgs_init(void)
 	add_tag_def("ANY", process_attribs_ignore, process_cdata_ignore, "ANY");
 
 	return 1;
+}
+
+/**
+ * Destruction of SRGS parser environment
+ */
+void srgs_destroy(void)
+{
+	if (globals.init) {
+		if (globals.tag_defs) {
+			switch_core_hash_destroy(&globals.tag_defs);
+			globals.tag_defs = NULL;
+		}
+		if (globals.pool) {
+			switch_core_destroy_memory_pool(&globals.pool);
+			globals.pool = NULL;
+		}
+		globals.init = SWITCH_FALSE;
+	}
 }
 
 /* For Emacs:

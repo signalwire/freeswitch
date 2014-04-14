@@ -1226,6 +1226,8 @@ switch_status_t rayo_output_component_load(switch_loadable_module_interface_t **
  */
 switch_status_t rayo_output_component_shutdown(void)
 {
+	switch_core_hash_destroy(&fileman_globals.hash);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

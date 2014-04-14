@@ -249,6 +249,17 @@ done:
 }
 
 /**
+ * Detector definition destructor
+ */
+static void destroy_detector(void *ptr)
+{
+    struct rayo_cpa_detector *detector = (struct rayo_cpa_detector *) ptr;
+	if (detector->signal_type_map) {
+		switch_core_hash_destroy(&detector->signal_type_map);
+	}
+}
+
+/**
  * Configure CPA
  */
 static switch_status_t do_config(switch_memory_pool_t *pool, const char *config_file)
@@ -353,7 +364,7 @@ static switch_status_t do_config(switch_memory_pool_t *pool, const char *config_
 						/* add signal-type to detector mapping */
 						const char *signal_type_ns = switch_core_sprintf(pool, "%s%s:%s", RAYO_CPA_BASE, signal_type, RAYO_VERSION);
 						event_ok = 1;
-						switch_core_hash_insert(globals.detectors, signal_type_ns, detector);
+						switch_core_hash_insert_destructor(globals.detectors, signal_type_ns, detector, destroy_detector);
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding CPA %s => %s\n", signal_type_ns, detector->name);
 					}
 
