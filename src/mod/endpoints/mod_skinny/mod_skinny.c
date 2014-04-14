@@ -2176,6 +2176,7 @@ static switch_status_t load_skinny_config(void)
 								}
 							} /* param */
 							switch_core_hash_insert(profile->device_type_params_hash, id_str, params);
+							switch_safe_free(id_str);
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 									"Unknow device type %s in profile %s.\n", switch_xml_attr_soft(xdevice_type, "id"), profile->name);
