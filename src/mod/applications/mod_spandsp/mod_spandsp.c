@@ -477,16 +477,31 @@ void mod_spandsp_indicate_data(switch_core_session_t *session, switch_bool_t sel
    CONFIGURATION
    ************************************************************************* */
 
+static void destroy_tones(void)
+{
+	if (spandsp_globals.tones) {
+        switch_hash_index_t *hi;
+        void *val;
+        const void *vvar;
+        tone_descriptor_t *d;
+
+        for (hi = switch_hash_first(NULL, spandsp_globals.tones); hi; hi = switch_hash_next(hi)) {
+            switch_hash_this(hi, &vvar, NULL, &val);
+
+            d = (tone_descriptor_t *) val;
+            super_tone_rx_free_descriptor(d->spandsp_tone_descriptor);
+        }
+
+		switch_core_hash_destroy(&spandsp_globals.tones);
+	}
+}
+
 switch_status_t load_configuration(switch_bool_t reload)
 {
 	switch_xml_t xml = NULL, x_lists = NULL, x_list = NULL, cfg = NULL, callprogress = NULL, xdescriptor = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	switch_mutex_lock(spandsp_globals.mutex);
-
-	if (spandsp_globals.tones) {
-		switch_core_hash_destroy(&spandsp_globals.tones);
-	}
 
 	if (spandsp_globals.config_pool) {
 		switch_core_destroy_memory_pool(&spandsp_globals.config_pool);
@@ -819,9 +834,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spandsp_shutdown)
 	mod_spandsp_dsp_shutdown();
 	modem_global_shutdown();
 
-	if (spandsp_globals.tones) {
-		switch_core_hash_destroy(&spandsp_globals.tones);
-	}
+    destroy_tones();
+
 
 	if (spandsp_globals.config_pool) {
 		switch_core_destroy_memory_pool(&spandsp_globals.config_pool);
