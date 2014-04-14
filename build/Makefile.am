@@ -71,7 +71,7 @@ install:
 	@echo " +                                                 +"
 	@echo " +-------------------------------------------------+"
 	@cat $(switch_srcdir)/cluecon2.tmpl
-	@sh modcheck.sh $(modulesdir)
+	@sh $(switch_srcdir)/build/modcheck.sh $(modulesdir)
 
 .PHONY: check dvi html info install-data \
         install-dvi install-exec install-html install-info install-pdf install-ps installcheck installdirs pdf \
