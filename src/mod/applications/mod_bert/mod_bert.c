@@ -94,6 +94,7 @@ typedef struct {
 
 #define BERT_EVENT_TIMEOUT "mod_bert::timeout"
 #define BERT_EVENT_LOST_SYNC "mod_bert::lost_sync"
+#define BERT_EVENT_IN_SYNC "mod_bert::in_sync"
 
 #define BERT_DEFAULT_WINDOW_MS 1000
 #define BERT_DEFAULT_MAX_ERR 10.0
@@ -180,7 +181,7 @@ SWITCH_STANDARD_APP(bert_test_function)
 	if (timer_name) {
 		interval = read_impl.microseconds_per_packet / 1000;
 		samples = switch_samples_per_packet(read_impl.samples_per_second, interval);
-		if (switch_core_timer_init(&bert.timer, "soft", interval, samples, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+		if (switch_core_timer_init(&bert.timer, timer_name, interval, samples, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setup timer success interval: %u  samples: %u\n", interval, samples);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer Setup Failed.  BERT cannot start!\n");
@@ -321,6 +322,10 @@ SWITCH_STANDARD_APP(bert_test_function)
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "BERT Sync Success\n");
 					bert.stats_cng_cnt = 0;
 					bert.timeout = 0;
+					if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, BERT_EVENT_IN_SYNC) == SWITCH_STATUS_SUCCESS) {
+						switch_channel_event_set_basic_data(channel, event);
+						switch_event_fire(&event);
+					}
 				}
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "Err=%f%% (%u/%u)\n", err, bert.err_samples, bert.processed_samples);
 				if (synced && err > bert.max_err_hit) {
