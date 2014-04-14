@@ -256,6 +256,8 @@ typedef switch_bool_t (* rayo_actor_match_fn)(struct rayo_actor *);
 
 static switch_bool_t is_call_actor(struct rayo_actor *actor);
 
+static void rayo_call_send_end(struct rayo_call *call, switch_event_t *event, int local_hangup, const char *cause_str, const char *cause_q850_str);
+
 
 /**
  * Entity features returned by service discovery
@@ -1038,50 +1040,28 @@ static struct rayo_call *rayo_call_locate_by_id(const char *call_uuid, const cha
 }
 
 /**
- * Fire <end> event when call is cleaned up completely
+ * Send <end> event to DCP and PCPs
  */
-static void rayo_call_cleanup(struct rayo_actor *actor)
+static void rayo_call_send_end(struct rayo_call *call, switch_event_t *event, int local_hangup, const char *cause_str, const char *cause_q850_str)
 {
-	struct rayo_call *call = RAYO_CALL(actor);
-	switch_event_t *event = call->end_event;
 	int no_offered_clients = 1;
 	switch_hash_index_t *hi = NULL;
 	iks *revent;
 	iks *end;
 	const char *dcp_jid = rayo_call_get_dcp_jid(call);
 
-	if (!event || call->dial_request_failed) {
-		/* destroyed before FS session was created (in originate, for example) */
-		goto done;
-	}
-
-	/* send call unjoined event, if not already sent */
-	if (call->joined && call->joined_id) {
-		if (!zstr(dcp_jid)) {
-			iks *unjoined;
-			iks *uevent = iks_new_presence("unjoined", RAYO_NS, RAYO_JID(call), dcp_jid);
-			unjoined = iks_find(uevent, "unjoined");
-			iks_insert_attrib_printf(unjoined, "call-uri", "%s", call->joined_id);
-			RAYO_SEND_MESSAGE(call, dcp_jid, uevent);
-		}
-	}
-
 	/* build call end event */
-	revent = iks_new_presence("end", RAYO_NS,
-		RAYO_JID(call),
-		"foo");
+	revent = iks_new_presence("end", RAYO_NS, RAYO_JID(call), "foo");
 	iks_insert_attrib(revent, "type", "unavailable");
 	end = iks_find(revent, "end");
 
-	if (switch_true(switch_event_get_header(event, "variable_rayo_local_hangup"))) {
+	if (local_hangup) {
 		iks_insert(end, RAYO_END_REASON_HANGUP_LOCAL);
 	} else {
 		/* remote hangup... translate to specific rayo reason */
 		iks *reason;
 		switch_call_cause_t cause = SWITCH_CAUSE_NONE;
-		char *cause_str = switch_event_get_header(event, "variable_hangup_cause");
-		char *cause_q850_str = switch_event_get_header(event, "variable_hangup_cause_q850");
-		if (cause_str) {
+		if (!zstr(cause_str)) {
 			cause = switch_channel_str2cause(cause_str);
 		}
 		reason = iks_insert(end, switch_cause_to_rayo_cause(cause));
@@ -1091,7 +1071,7 @@ static void rayo_call_cleanup(struct rayo_actor *actor)
 	}
 
 	#if 0
-	{
+	if (event) {
 		char *event_str;
 		if (switch_event_serialize(event, &event_str, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "%s\n", event_str);
@@ -1101,7 +1081,7 @@ static void rayo_call_cleanup(struct rayo_actor *actor)
 	#endif
 
 	/* add signaling headers */
-	{
+	if (event) {
 		switch_event_header_t *header;
 		/* get all variables prefixed with sip_h_ */
 		for (header = event->headers; header; header = header->next) {
@@ -1121,7 +1101,7 @@ static void rayo_call_cleanup(struct rayo_actor *actor)
 		switch_assert(client_jid);
 		iks_insert_attrib(revent, "to", client_jid);
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "Sending <end> to offered client %s\n", client_jid);
-		RAYO_SEND_MESSAGE_DUP(actor, client_jid, revent);
+		RAYO_SEND_MESSAGE_DUP(call, client_jid, revent);
 		no_offered_clients = 0;
 	}
 
@@ -1129,10 +1109,42 @@ static void rayo_call_cleanup(struct rayo_actor *actor)
 		/* send to DCP only */
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "Sending <end> to DCP %s\n", dcp_jid);
 		iks_insert_attrib(revent, "to", dcp_jid);
-		RAYO_SEND_MESSAGE_DUP(actor, dcp_jid, revent);
+		RAYO_SEND_MESSAGE_DUP(call, dcp_jid, revent);
 	}
 
 	iks_delete(revent);
+}
+
+/**
+ * Fire <end> event when call is cleaned up completely
+ */
+static void rayo_call_cleanup(struct rayo_actor *actor)
+{
+	struct rayo_call *call = RAYO_CALL(actor);
+	switch_event_t *event = call->end_event;
+	const char *dcp_jid = rayo_call_get_dcp_jid(call);
+
+	if (!event || call->dial_request_failed) {
+		/* destroyed before FS session was created (in originate, for example) */
+		goto done;
+	}
+
+	/* send call unjoined event, if not already sent */
+	if (call->joined && call->joined_id) {
+		if (!zstr(dcp_jid)) {
+			iks *unjoined;
+			iks *uevent = iks_new_presence("unjoined", RAYO_NS, RAYO_JID(call), dcp_jid);
+			unjoined = iks_find(uevent, "unjoined");
+			iks_insert_attrib_printf(unjoined, "call-uri", "%s", call->joined_id);
+			RAYO_SEND_MESSAGE(call, dcp_jid, uevent);
+		}
+	}
+
+	rayo_call_send_end(call,
+		event,
+		switch_true(switch_event_get_header(event, "variable_rayo_local_hangup")),
+		switch_event_get_header(event, "variable_hangup_cause"),
+		switch_event_get_header(event, "variable_hangup_cause_q850"));
 
 done:
 
@@ -2585,7 +2597,26 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 						/* out of sessions, typically */
 						response = iks_new_error_detailed(iq, STANZA_ERROR_RESOURCE_CONSTRAINT, (char *)api_stream.data);
 					} else if (!strncmp("-ERR USER_NOT_REGISTERED", api_stream.data, strlen("-ERR USER_NOT_REGISTERED"))) {
-						response = iks_new_error_detailed(iq, STANZA_ERROR_UNEXPECTED_REQUEST, (char *)api_stream.data);
+						/* call session was never created, so we must fake it so that a call error is sent and
+						   not a dial error */
+						/* send ref response to DCP immediately followed with failure */
+						iks *ref;
+						iks *ref_response = iks_new("iq");
+						iks_insert_attrib(ref_response, "from", RAYO_JID(globals.server));
+						iks_insert_attrib(ref_response, "to", dcp_jid);
+						iks_insert_attrib(ref_response, "id", iks_find_attrib_soft(iq, "id"));
+						iks_insert_attrib(ref_response, "type", "result");
+						ref = iks_insert(ref_response, "ref");
+						iks_insert_attrib(ref, "xmlns", RAYO_NS);
+						iks_insert_attrib_printf(ref, "uri", "xmpp:%s", RAYO_JID(call));
+						RAYO_SEND_MESSAGE(globals.server, dcp_jid, ref_response);
+
+						/* send subscriber-absent call hangup reason */
+						rayo_call_send_end(call, NULL, 0, "SUBSCRIBER_ABSENT", "20");
+
+						/* destroy call */
+						RAYO_DESTROY(call);
+						RAYO_UNLOCK(call);
 					} else if (!strncmp("-ERR EXCHANGE_ROUTING_ERROR", api_stream.data, strlen("-ERR EXCHANGE_ROUTING_ERROR"))) {
 						/* max forwards */
 						response = iks_new_error_detailed(iq, STANZA_ERROR_RESOURCE_CONSTRAINT, (char *)api_stream.data);
