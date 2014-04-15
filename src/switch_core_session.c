@@ -755,6 +755,7 @@ static const char *message_names[] = {
 	"PROGRESS_EVENT",
 	"RING_EVENT",
 	"RESAMPLE_EVENT",
+	"HEARTBEAT_EVENT",
 	"INVALID"
 };
 
@@ -1494,6 +1495,7 @@ SWITCH_STANDARD_SCHED_FUNC(sch_heartbeat_callback)
 	switch_event_t *event;
 	switch_core_session_t *session;
 	char *uuid = task->cmd_arg;
+	switch_core_session_message_t msg = { 0 }; 
 
 	if ((session = switch_core_session_locate(uuid))) {
 		switch_event_create(&event, SWITCH_EVENT_SESSION_HEARTBEAT);
@@ -1502,6 +1504,9 @@ SWITCH_STANDARD_SCHED_FUNC(sch_heartbeat_callback)
 
 		/* reschedule this task */
 		task->runtime = switch_epoch_time_now(NULL) + session->track_duration;
+
+		msg.message_id = SWITCH_MESSAGE_HEARTBEAT_EVENT;
+		switch_core_session_receive_message(session, &msg);
 
 		switch_core_session_rwunlock(session);
 	}
