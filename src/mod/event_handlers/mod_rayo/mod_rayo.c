@@ -2400,6 +2400,130 @@ static iks *on_rayo_unjoin(struct rayo_actor *call, struct rayo_message *msg, vo
 	return response;
 }
 
+/**
+ * @return 1 if display name is valid
+ */
+static int is_valid_display_name(char *display)
+{
+	if (zstr(display)) {
+		return 0;
+	}
+	return 1;
+}
+
+/**
+ * @return 1 if SIP URI is valid
+ */
+static int is_valid_sip_uri(char *uri)
+{
+	/* just some basic checks to prevent failure when passing URI as caller ID */
+	if (zstr(uri) || strchr(uri, '<') || strchr(uri, '>')) {
+		return 0;
+	}
+	return 1;
+}
+
+/**
+ * @return 1 if tel URI is valid
+ */
+static int is_valid_tel_uri(char *uri)
+{
+	if (!zstr(uri)) {
+		/* alphanumeric only for now */
+		int i;
+		int len = strlen(uri);
+		for (i = 0; i < len; i++) {
+			if (!isalnum(uri[i])) {
+				return 0;
+			}
+		}
+		return 1;
+	}
+	return 0;
+}
+
+#define RAYO_URI_SCHEME_UNKNOWN 0
+#define RAYO_URI_SCHEME_TEL 1
+#define RAYO_URI_SCHEME_SIP 2
+
+/**
+ * Parse dial "from" parameter
+ * @param pool to use
+ * @param from the parameter to parse
+ * @param uri the URI
+ * @param display the display name
+ * @return scheme
+ */
+static int parse_dial_from(switch_memory_pool_t *pool, const char *from, char **uri, char **display)
+{
+	if (!zstr(from)) {
+		char *l_display = switch_core_strdup(pool, from);
+		char *l_uri;
+
+		*display = NULL;
+		*uri = NULL;
+
+		/* TODO regex would be better */
+
+		/* split display-name and URI */
+		l_uri = strrchr(l_display, ' ');
+		if (l_uri) {
+			*l_uri++ = '\0';
+			if (!zstr(l_display)) {
+				/* remove "" from display-name */
+				if (l_display[0] == '"') {
+					int len;
+					*l_display++ = '\0';
+					len = strlen(l_display);
+					if (len < 2 || l_display[len - 1] != '"') {
+						return RAYO_URI_SCHEME_UNKNOWN;
+					}
+					l_display[len - 1] = '\0';
+				}
+				if (!is_valid_display_name(l_display)) {
+					return RAYO_URI_SCHEME_UNKNOWN;
+				}
+				*display = l_display;
+			}
+		} else {
+			l_uri = l_display;
+		}
+		if (zstr(l_uri)) {
+			return RAYO_URI_SCHEME_UNKNOWN;
+		}
+
+		/* remove <> from URI */
+		if (l_uri[0] == '<') {
+			int len;
+			*l_uri++ = '\0';
+			len = strlen(l_uri);
+			if (len < 2 || l_uri[len - 1] != '>') {
+				return RAYO_URI_SCHEME_UNKNOWN;
+			}
+			l_uri[len - 1] = '\0';
+			if (zstr(l_uri)) {
+				return RAYO_URI_SCHEME_UNKNOWN;
+			}
+		}
+		*uri = l_uri;
+
+		/* figure out URI scheme and validate it */
+		if (!strncmp("sip:", l_uri, 4) || !strncmp("sips:", l_uri, 5)) {
+			/* validate SIP URI */
+			if (is_valid_sip_uri(l_uri)) {
+				return RAYO_URI_SCHEME_SIP;
+			}
+		} else if (!strncmp("tel:", l_uri, 4)) {
+			l_uri += 4;
+			*uri = l_uri;
+		}
+		if (is_valid_tel_uri(l_uri)) {
+			return RAYO_URI_SCHEME_TEL;
+		}
+	}
+	return RAYO_URI_SCHEME_UNKNOWN;
+}
+
 struct dial_thread_data {
 	switch_memory_pool_t *pool;
 	iks *node;
@@ -2425,10 +2549,12 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 	const char *dial_timeout_ms = iks_find_attrib(dial, "timeout");
 	const char *requested_call_uri = iks_find_attrib(dial, "uri");
 	const char *uuid = NULL;
+	switch_event_t *originate_vars = NULL;
 	struct dial_gateway *gateway = NULL;
 	struct rayo_call *call = NULL;
-	switch_stream_handle_t stream = { 0 };
-	SWITCH_STANDARD_STREAM(stream);
+	uint32_t dial_timeout_sec = 0;
+
+	/* TODO dial_to needs validation */
 
 	/* Check if optional URI is valid. */
 	if (!zstr(requested_call_uri)) {
@@ -2483,38 +2609,52 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_INFO, "%s has control of call\n", dcp_jid);
 	uuid = switch_core_strdup(dtdata->pool, rayo_call_get_uuid(call));
 
-	/* set rayo channel variables so channel originate event can be identified as coming from Rayo */
-	stream.write_function(&stream, "{origination_uuid=%s,rayo_dcp_jid=%s,rayo_call_jid=%s",
-		rayo_call_get_uuid(call), dcp_jid, RAYO_JID(call));
+	/* create container for origination variables */
+	if (switch_event_create_plain(&originate_vars, SWITCH_EVENT_CHANNEL_DATA) != SWITCH_STATUS_SUCCESS) {
+		abort();
+	}
 
-	/* parse optional params from dialstring and append to  */
+	/* add dialstring vars to origination variables */
 	if (*dial_to == '{') {
-		switch_event_t *params = NULL;
 		dial_to_dup = switch_core_strdup(dtdata->pool, dial_to);
-		switch_event_create_brackets(dial_to_dup, '{', '}', ',', &params, (char **)&dial_to, SWITCH_FALSE);
-		if (params) {
-			switch_event_header_t *param;
-			for(param = params->headers; param; param = param->next) {
-				if (strchr(param->value, ',')) {
-					stream.write_function(&stream, ",%s=\\'%s\\'", param->name, param->value);
-				} else {
-					stream.write_function(&stream, ",%s=%s", param->name, param->value);
-				}
-			}
-			switch_event_destroy(&params);
-		}
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "dial: parsing dialstring channel variables\n");
+		switch_event_create_brackets(dial_to_dup, '{', '}', ',', &originate_vars, (char **)&dial_to, SWITCH_FALSE);
 	}
 
 	/* set originate channel variables */
+	switch_event_add_header_string(originate_vars, SWITCH_STACK_BOTTOM, "origination_uuid", rayo_call_get_uuid(call));
+	switch_event_add_header_string(originate_vars, SWITCH_STACK_BOTTOM, "rayo_dcp_jid", dcp_jid);
+	switch_event_add_header_string(originate_vars, SWITCH_STACK_BOTTOM, "rayo_call_jid", RAYO_JID(call));
+
 	if (!zstr(dial_from)) {
-		/* caller ID */
-		/* TODO parse caller ID name and number from URI */
-		stream.write_function(&stream, ",origination_caller_id_number=%s,origination_caller_id_name=%s", dial_from, dial_from);
+		char *from_uri = NULL;
+		char *from_display;
+		int scheme = parse_dial_from(dtdata->pool, dial_from, &from_uri, &from_display);
+		if (scheme == RAYO_URI_SCHEME_UNKNOWN) {
+			response = iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "Bad from URI");
+			goto done;
+		} else if (scheme == RAYO_URI_SCHEME_SIP) {
+			/* SIP URI */
+			if (!zstr(from_uri)) {
+				switch_event_add_header_string(originate_vars, SWITCH_STACK_BOTTOM, "sip_from_uri", from_uri);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "dial: sip_from_uri=%s\n", from_uri);
+			}
+			if (!zstr(from_display)) {
+				switch_event_add_header_string(originate_vars, SWITCH_STACK_BOTTOM, "sip_from_display", from_display);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "dial: sip_from_display=%s\n", from_display);
+			}
+		}
+		if (!zstr(from_uri)) {
+			switch_event_add_header_string(originate_vars, SWITCH_STACK_BOTTOM, "origination_caller_id_number", from_uri);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "dial: origination_caller_id_number=%s\n", from_uri);
+		}
+		if (!zstr(from_display)) {
+			switch_event_add_header_string(originate_vars, SWITCH_STACK_BOTTOM, "origination_caller_id_name", from_display);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "dial: origination_caller_id_name=%s\n", from_display);
+		}
 	}
 	if (!zstr(dial_timeout_ms) && switch_is_number(dial_timeout_ms)) {
-		/* timeout */
-		int dial_timeout_sec = round((double)atoi(dial_timeout_ms) / 1000.0);
-		stream.write_function(&stream, ",originate_timeout=%i", dial_timeout_sec);
+		dial_timeout_sec = round((double)atoi(dial_timeout_ms) / 1000.0);
 	}
 
 	/* set outbound signaling headers - only works on SIP */
@@ -2525,22 +2665,24 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 				const char *name = iks_find_attrib_soft(header, "name");
 				const char *value = iks_find_attrib_soft(header, "value");
 				if (!zstr(name) && !zstr(value)) {
-					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "Adding header: %s: %s\n", name, value);
-					stream.write_function(&stream, ",%s%s=%s", RAYO_SIP_REQUEST_HEADER, name, value);
+					char *header_name = switch_core_sprintf(dtdata->pool, "%s%s", RAYO_SIP_REQUEST_HEADER, name);
+					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "dial: Adding SIP header: %s: %s\n", name, value);
+					switch_event_add_header_string(originate_vars, SWITCH_STACK_BOTTOM, header_name, value);
 				}
 			}
 		}
 	}
-
-	stream.write_function(&stream, "}");
 
 	/* build dialstring and dial call */
 	gateway = dial_gateway_find(dial_to);
 	if (gateway) {
 		iks *join = iks_find(dial, "join");
 		const char *dial_to_stripped = dial_to + gateway->strip;
-		switch_stream_handle_t api_stream = { 0 };
-		SWITCH_STANDARD_STREAM(api_stream);
+		switch_core_session_t *caller_session = NULL;
+		switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
+		const char *dialstring = NULL;
+		const char *app = NULL;
+		const char *app_args = NULL;
 
 		if (join) {
 			/* check join args */
@@ -2567,36 +2709,51 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 					RAYO_UNLOCK(b_call);
 					goto done;
 				}
-				stream.write_function(&stream, "%s%s &rayo(bridge %s)", gateway->dial_prefix, dial_to_stripped, rayo_call_get_uuid(b_call));
+				app = "bridge";
+				app_args = switch_core_strdup(dtdata->pool, rayo_call_get_uuid(b_call));
 				RAYO_UNLOCK(b_call);
 			} else {
 				/* conference */
-				stream.write_function(&stream, "%s%s &rayo(conference %s@%s)", gateway->dial_prefix, dial_to_stripped, mixer_name, globals.mixer_conf_profile);
+				app = "conference";
+				app_args = switch_core_sprintf(dtdata->pool, "%s@%s", mixer_name, globals.mixer_conf_profile);
 			}
 		} else {
-			stream.write_function(&stream, "%s%s &rayo", gateway->dial_prefix, dial_to_stripped);
+			/* default one-legged call */
+			app = "rayo";
+			app_args = "";
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "Using dialstring: %s\n", (char *)stream.data);
+		dialstring = switch_core_sprintf(dtdata->pool, "%s%s", gateway->dial_prefix, dial_to_stripped);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "dial: Using dialstring: %s\n", dialstring);
 
 		/* <iq><ref> response will be sent when originate event is received- otherwise error is returned */
-		if (switch_api_execute("originate", stream.data, NULL, &api_stream) == SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "Got originate result: %s\n", (char *)api_stream.data);
-
+		if (switch_ivr_originate(NULL, &caller_session, &cause, dialstring, dial_timeout_sec, NULL, NULL, NULL, NULL, originate_vars, SOF_NONE, NULL) == SWITCH_STATUS_SUCCESS && caller_session) {
+			/* start APP */
+			switch_caller_extension_t *extension = NULL;
+			switch_channel_t *caller_channel = switch_core_session_get_channel(caller_session);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "dial: Call originated\n");
+			if ((extension = switch_caller_extension_new(caller_session, app, app_args)) == 0) {
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_CRIT, "Memory Error!\n");
+				abort();
+			}
+			switch_caller_extension_add_application(caller_session, extension, app, app_args);
+			switch_channel_set_caller_extension(caller_channel, extension);
+			switch_channel_set_state(caller_channel, CS_EXECUTE);
+			switch_core_session_rwunlock(caller_session);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "dial: Failed to originate call: %s\n", switch_channel_cause2str(cause));
 			switch_mutex_lock(RAYO_ACTOR(call)->mutex);
-			/* check for failure */
-			if (strncmp("+OK", api_stream.data, strlen("+OK"))) {
-				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_INFO, "Failed to originate call\n");
+			if (!zstr(call->dial_request_id)) {
+				call->dial_request_failed = 1;
+				call->dial_request_id = NULL;
 
-				if (!zstr(call->dial_request_id)) {
-					call->dial_request_failed = 1;
-					call->dial_request_id = NULL;
-
-					/* map failure reason to iq error */
-					if (!strncmp("-ERR DESTINATION_OUT_OF_ORDER", api_stream.data, strlen("-ERR DESTINATION_OUT_OF_ORDER"))) {
+				/* map failure reason to iq error */
+				switch (cause) {
+					case SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER:
 						/* out of sessions, typically */
-						response = iks_new_error_detailed(iq, STANZA_ERROR_RESOURCE_CONSTRAINT, (char *)api_stream.data);
-					} else if (!strncmp("-ERR USER_NOT_REGISTERED", api_stream.data, strlen("-ERR USER_NOT_REGISTERED"))) {
+						response = iks_new_error_detailed(iq, STANZA_ERROR_RESOURCE_CONSTRAINT, "DESTINATION_OUT_OF_ORDER");
+						break;
+					case SWITCH_CAUSE_USER_NOT_REGISTERED: {
 						/* call session was never created, so we must fake it so that a call error is sent and
 						   not a dial error */
 						/* send ref response to DCP immediately followed with failure */
@@ -2617,49 +2774,47 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 						/* destroy call */
 						RAYO_DESTROY(call);
 						RAYO_UNLOCK(call);
-					} else if (!strncmp("-ERR EXCHANGE_ROUTING_ERROR", api_stream.data, strlen("-ERR EXCHANGE_ROUTING_ERROR"))) {
-						/* max forwards */
-						response = iks_new_error_detailed(iq, STANZA_ERROR_RESOURCE_CONSTRAINT, (char *)api_stream.data);
-					} else if (!strncmp("-ERR CHAN_NOT_IMPLEMENTED", api_stream.data, strlen("-ERR CHAN_NOT_IMPLEMENTED"))) {
-						/* unsupported endpoint type */
-						response = iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, (char *)api_stream.data);
-					} else if (!strncmp("-ERR INVALID_URL", api_stream.data, strlen("-ERR INVALID_URL"))) {
-						response = iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, (char *)api_stream.data);
-					} else if (!strncmp("-ERR INVALID_GATEWAY", api_stream.data, strlen("-ERR INVALID_GATEWAY"))) {
-						response = iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, (char *)api_stream.data);
-					} else if (!strncmp("-ERR INVALID_PROFILE", api_stream.data, strlen("-ERR INVALID_PROFILE"))) {
-						response = iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, (char *)api_stream.data);
-					} else if (!strncmp("-ERR SYSTEM_SHUTDOWN", api_stream.data, strlen("-ERR SYSTEM_SHUTDOWN"))) {
-						response = iks_new_error_detailed(iq, STANZA_ERROR_RESOURCE_CONSTRAINT, (char *)api_stream.data);
-					} else if (!strncmp("-ERR GATEWAY_DOWN", api_stream.data, strlen("-ERR GATEWAY_DOWN"))) {
-						response = iks_new_error_detailed(iq, STANZA_ERROR_RESOURCE_CONSTRAINT, (char *)api_stream.data);
-					} else if (!strncmp("-ERR INVALID_NUMBER_FORMAT", api_stream.data, strlen("-ERR INVALID_NUMBER_FORMAT"))) {
-						response = iks_new_error_detailed(iq, STANZA_ERROR_RESOURCE_CONSTRAINT, (char *)api_stream.data);
-					} else {
-						/* other unspecified error */
-						response = iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, (char *)api_stream.data);
+						break;
 					}
+					case SWITCH_CAUSE_EXCHANGE_ROUTING_ERROR:
+						/* max forwards */
+						response = iks_new_error_detailed(iq, STANZA_ERROR_RESOURCE_CONSTRAINT, "EXCHANGE_ROUTING_ERROR");
+						break;
+					case SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED:
+						/* unsupported endpoint type */
+						response = iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "CHAN_NOT_IMPLEMENTED");
+						break;
+					case SWITCH_CAUSE_INVALID_URL:
+						response = iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "INVALID_URL");
+						break;
+					case SWITCH_CAUSE_INVALID_GATEWAY:
+						response = iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "INVALID_GATEWAY");
+						break;
+					case SWITCH_CAUSE_INVALID_PROFILE:
+						response = iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "INVALID_PROFILE");
+						break;
+					case SWITCH_CAUSE_SYSTEM_SHUTDOWN:
+						response = iks_new_error_detailed(iq, STANZA_ERROR_RESOURCE_CONSTRAINT, "SYSTEM_SHUTDOWN");
+						break;
+					case SWITCH_CAUSE_GATEWAY_DOWN:
+						response = iks_new_error_detailed(iq, STANZA_ERROR_RESOURCE_CONSTRAINT, "GATEWAY_DOWN");
+						break;
+					case SWITCH_CAUSE_INVALID_NUMBER_FORMAT:
+						response = iks_new_error_detailed(iq, STANZA_ERROR_RESOURCE_CONSTRAINT, "INVALID_NUMBER_FORMAT");
+						break;
+					default:
+						response = iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, switch_channel_cause2str(cause));
+						break;
 				}
 			}
 			switch_mutex_unlock(RAYO_ACTOR(call)->mutex);
-		} else {
-			switch_mutex_lock(RAYO_ACTOR(call)->mutex);
-			if (!zstr(call->dial_request_id)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Failed to exec originate API\n");
-				call->dial_request_failed = 1;
-				call->dial_request_id = NULL;
-				response = iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Failed to execute originate API");
-			}
-			switch_mutex_unlock(RAYO_ACTOR(call)->mutex);
 		}
-
-		switch_safe_free(api_stream.data);
 	} else {
 		/* will only happen if misconfigured */
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_CRIT, "No dial gateway found for %s!\n", dial_to);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_CRIT, "dial: No dial gateway found for %s!\n", dial_to);
 		call->dial_request_failed = 1;
 		call->dial_request_id = NULL;
-		response = iks_new_error_detailed_printf(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "No dial gateway found for %s!\n", dial_to);
+		response = iks_new_error_detailed_printf(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "dial: No dial gateway found for %s!\n", dial_to);
 		goto done;
 	}
 
@@ -2678,7 +2833,10 @@ done:
 	}
 
 	iks_delete(iq);
-	switch_safe_free(stream.data);
+
+	if (originate_vars) {
+		switch_event_destroy(&originate_vars);
+	}
 
 	{
 		switch_memory_pool_t *pool = dtdata->pool;
