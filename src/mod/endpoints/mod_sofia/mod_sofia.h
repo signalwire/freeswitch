@@ -536,6 +536,7 @@ typedef enum {
 
 struct sofia_profile {
 	int debug;
+	int parse_invite_tel_params;
 	char *name;
 	char *domain_name;
 	char *dbname;

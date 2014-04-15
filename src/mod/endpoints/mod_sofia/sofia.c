@@ -4023,6 +4023,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 
 					if (!strcasecmp(var, "debug")) {
 						profile->debug = atoi(val);
+					} else if (!strcasecmp(var, "parse-invite-tel-params")) {
+						profile->parse_invite_tel_params = switch_true(val);
 					} else if (!strcasecmp(var, "shutdown-on-fail")) {
 						profile->shutdown_type = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "sip-trace") && switch_true(val)) {
@@ -8724,10 +8726,39 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 	if (sip->sip_request->rq_url) {
 		const char *req_uri = url_set_chanvars(session, sip->sip_request->rq_url, sip_req);
+		char *user = NULL;
+		if (sip->sip_request->rq_url->url_user) {
+
+			user = switch_core_session_strdup(session, sip->sip_request->rq_url->url_user);
+			if (profile->parse_invite_tel_params) {
+				if (strchr(user, ';')) {
+					int argc1, x1 = 0;
+					char *argv1[32] = { 0 };
+
+					if ((argc1 = switch_separate_string(user, ';', argv1, (sizeof(argv1) / sizeof(argv1[0]))))) {
+						for (x1 = 0; x1 < argc1; x1++) {
+							if (x1 == 0) {
+								switch_channel_set_variable(channel, "sip_req_user", argv1[0]);
+							} else {
+								int argc2 = 0;
+								char *argv2[2] = { 0 };
+								if ((argc2 = switch_separate_string(argv1[x1], '=', argv2, (sizeof(argv2) / sizeof(argv2[0]))))) {
+									char *var_name = NULL;
+									var_name = switch_mprintf("sip_invite_%s", argv2[0]);
+									switch_channel_set_variable(channel, var_name, argv2[1]);
+									switch_safe_free( var_name );
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
 		if (sofia_test_pflag(profile, PFLAG_FULL_ID)) {
 			destination_number = req_uri;
 		} else {
-			destination_number = sip->sip_request->rq_url->url_user;
+			destination_number = user;
 		}
 		if (sip->sip_request->rq_url->url_params && (sofia_glue_find_parameter(sip->sip_request->rq_url->url_params, "intercom=true"))) {
 			switch_channel_set_variable(channel, "sip_auto_answer_detected", "true");
