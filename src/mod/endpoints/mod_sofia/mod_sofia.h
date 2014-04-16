@@ -322,6 +322,7 @@ typedef enum {
 	TFLAG_CAPTURE,
 	TFLAG_REINVITED,
 	TFLAG_PASS_ACK,
+	TFLAG_KEEPALIVE,
 	/* No new flags below this line */
 	TFLAG_MAX
 } TFLAGS;
@@ -534,6 +535,11 @@ typedef enum {
 
 #define MAX_RTPIP 50
 
+typedef enum {
+	KA_MESSAGE,
+	KA_INFO
+} ka_type_t;
+
 struct sofia_profile {
 	int debug;
 	int parse_invite_tel_params;
@@ -706,6 +712,7 @@ struct sofia_profile {
 	int tcp_keepalive;
 	int tcp_pingpong;
 	int tcp_ping2pong;
+	ka_type_t keepalive;
 };
 
 
@@ -772,6 +779,7 @@ struct private_object {
 	int respond_code;
 	char *respond_dest;
 	time_t last_vid_info;
+	uint32_t keepalive;
 };
 
 

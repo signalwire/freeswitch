@@ -4025,6 +4025,14 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						profile->debug = atoi(val);
 					} else if (!strcasecmp(var, "parse-invite-tel-params")) {
 						profile->parse_invite_tel_params = switch_true(val);
+					} else if (!strcasecmp(var, "keepalive-method")) {
+						if (!zstr(val)) {
+							if (!strcasecmp(val, "info")) {
+								profile->keepalive = KA_INFO;
+							} else {
+								profile->keepalive = KA_MESSAGE;								
+							}
+						}
 					} else if (!strcasecmp(var, "shutdown-on-fail")) {
 						profile->shutdown_type = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "sip-trace") && switch_true(val)) {

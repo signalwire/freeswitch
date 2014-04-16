@@ -1124,6 +1124,38 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	/* ones that do not need to lock sofia mutex */
 	switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_KEEPALIVE:
+		{
+			if (msg->numeric_arg) {
+				sofia_set_flag_locked(tech_pvt, TFLAG_KEEPALIVE);
+			} else {
+				sofia_clear_flag_locked(tech_pvt, TFLAG_KEEPALIVE);
+			}
+		}
+		break;
+	case SWITCH_MESSAGE_HEARTBEAT_EVENT:
+		{
+			char pl[160] = "";
+
+			switch_snprintf(pl, sizeof(pl), "KEEP-ALIVE %d\n", ++tech_pvt->keepalive);
+
+			if (sofia_test_flag(tech_pvt, TFLAG_KEEPALIVE)) {
+				if (tech_pvt->profile->keepalive == KA_MESSAGE) {
+					nua_message(tech_pvt->nh,
+								SIPTAG_CONTENT_TYPE_STR("text/plain"),
+								TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+								SIPTAG_PAYLOAD_STR(pl),
+								TAG_END());
+				} else if (tech_pvt->profile->keepalive == KA_INFO) {
+					nua_info(tech_pvt->nh,
+							 SIPTAG_CONTENT_TYPE_STR("text/plain"),
+							 TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+							 SIPTAG_PAYLOAD_STR(pl),
+							 TAG_END());
+				}
+			}
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_RECOVERY_REFRESH:
 	case SWITCH_MESSAGE_INDICATE_APPLICATION_EXEC:
 		break;

@@ -552,6 +552,31 @@ SWITCH_STANDARD_APP(heartbeat_function)
 	if (data) {
 		seconds = atoi(data);
 		if (seconds >= 0) {
+
+			switch_core_session_enable_heartbeat(session, seconds);
+			return;
+		}
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Usage: %s\n", HEARTBEAT_SYNTAX);
+
+}
+
+
+#define KEEPALIVE_SYNTAX "[0|<seconds>]"
+SWITCH_STANDARD_APP(keepalive_function)
+{
+	int seconds = 0;
+
+	if (data) {
+		seconds = atoi(data);
+		if (seconds >= 0) {
+			switch_core_session_message_t msg = { 0 };
+
+			msg.message_id = SWITCH_MESSAGE_INDICATE_KEEPALIVE;
+			msg.numeric_arg = seconds;
+			switch_core_session_receive_message(session, &msg);
+			
 			switch_core_session_enable_heartbeat(session, seconds);
 			return;
 		}
@@ -5777,6 +5802,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   sched_heartbeat_function, SCHED_HEARTBEAT_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "enable_heartbeat", "Enable Media Heartbeat", "Enable Media Heartbeat",
 				   heartbeat_function, HEARTBEAT_SYNTAX, SAF_SUPPORT_NOMEDIA);
+
+	SWITCH_ADD_APP(app_interface, "enable_keepalive", "Enable Keepalive", "Enable Keepalive",
+				   keepalive_function, KEEPALIVE_SYNTAX, SAF_SUPPORT_NOMEDIA);
+
 	SWITCH_ADD_APP(app_interface, "media_reset", "Reset all bypass/proxy media flags", "Reset all bypass/proxy media flags", media_reset_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "mkdir", "Create a directory", "Create a directory", mkdir_function, MKDIR_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "rename", "Rename file", "Rename file", rename_function, RENAME_SYNTAX, SAF_SUPPORT_NOMEDIA | SAF_ZOMBIE_EXEC);
