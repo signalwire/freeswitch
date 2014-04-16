@@ -2061,6 +2061,16 @@ void sofia_event_callback(nua_event_t event,
 	case nua_i_notify:
 	case nua_i_info:
 
+		
+		if (event == nua_i_invite) {
+			if (sip->sip_min_se && profile->minimum_session_expires) {
+				if (sip->sip_min_se->min_delta < profile->minimum_session_expires) {
+					nua_respond(nh, SIP_422_SESSION_TIMER_TOO_SMALL, NUTAG_MIN_SE(profile->minimum_session_expires), TAG_END());
+					goto end;
+				}
+			}
+		}
+
 		if (!sofia_private) {
 			if (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING) || !switch_core_ready_inbound()) {
 				nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), NUTAG_WITH_THIS(nua), TAG_END());
@@ -2801,6 +2811,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 #endif
 				   NUTAG_APPL_METHOD("MESSAGE"),
 
+				   TAG_IF(profile->session_timeout && profile->minimum_session_expires, NUTAG_MIN_SE(profile->minimum_session_expires)),
 				   NUTAG_SESSION_TIMER(profile->session_timeout),
 				   NTATAG_MAX_PROCEEDING(profile->max_proceeding),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW("PUBLISH")),
