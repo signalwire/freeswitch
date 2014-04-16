@@ -3689,7 +3689,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					if (oglobals.idx == IDX_XFER) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals.session), SWITCH_LOG_DEBUG,
 										  "Originate Resulted in Attended Transfer Cause: %d [%s]\n", *cause, switch_channel_cause2str(*cause));
-						goto outer_for;
 					} else {
 
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(oglobals.session), SWITCH_LOG_DEBUG,
@@ -3788,7 +3787,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				switch_core_session_rwunlock(originate_status[i].peer_session);
 			}
 
-			if (status == SWITCH_STATUS_SUCCESS) {
+			if (status == SWITCH_STATUS_SUCCESS || oglobals.idx == IDX_XFER) {
 				goto outer_for;
 			} else {
 				int ok = 1;
