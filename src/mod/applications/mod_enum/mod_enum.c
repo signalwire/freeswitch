@@ -796,6 +796,8 @@ static void do_load(void)
 		switch_core_destroy_memory_pool(&globals.pool);
 	}
 
+	switch_safe_free(globals.root);
+	switch_safe_free(globals.isn_root);
 	memset(&globals, 0, sizeof(globals));
 	switch_core_new_memory_pool(&globals.pool);
 	globals.timeout = 10;
