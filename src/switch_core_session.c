@@ -1538,6 +1538,8 @@ SWITCH_DECLARE(void) switch_core_session_enable_heartbeat(switch_core_session_t 
 		seconds = 60;
 	}
 
+
+	session->read_frame_count = (session->read_impl.actual_samples_per_second / session->read_impl.samples_per_packet) * seconds;
 	session->track_duration = seconds;
 
 	if (switch_channel_test_flag(session->channel, CF_PROXY_MODE)) {
@@ -1551,8 +1553,6 @@ SWITCH_DECLARE(void) switch_core_session_enable_heartbeat(switch_core_session_t 
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s setting session heartbeat to %u second(s).\n",
 					  switch_channel_get_name(session->channel), seconds);
-
-	session->read_frame_count = 0;
 
 }
 
