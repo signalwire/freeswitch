@@ -58,7 +58,6 @@ sub render_event($;$) {
     if ($self->{_decode}) {
       $val =~ s/\%([A-Fa-f0-9]{2})/pack('C', hex($1))/seg;
     }
-    $h =~ s/^variable_//;
     $self->{event_hash}->{lc($h)} = $val;
     $h = $event->nextHeader();
   }
