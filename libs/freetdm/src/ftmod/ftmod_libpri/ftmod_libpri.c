@@ -1166,7 +1166,7 @@ static ftdm_status_t state_advance(ftdm_channel_t *chan)
 				return FTDM_SUCCESS;
 			}
 
-			caller_ton = caller_data->ani.type;
+			caller_ton = caller_data->cid_num.type;
 			switch (caller_ton) {
 			case FTDM_TON_NATIONAL:
 				caller_ton = PRI_NATIONAL_ISDN;
