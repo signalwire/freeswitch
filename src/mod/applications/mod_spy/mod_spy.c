@@ -160,8 +160,8 @@ static switch_status_t process_event(switch_event_t *event)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_core_session_t *session = NULL;
-	char *username[3] = { NULL };
-	char *domain[3] = { NULL };
+	char *username[4] = { NULL };
+	char *domain[4] = { NULL };
 	char key[512];
 	char *uuid = NULL, *my_uuid = NULL;
 	int i;
@@ -183,7 +183,10 @@ static switch_status_t process_event(switch_event_t *event)
 	username[2] = switch_event_get_header(event, "variable_user_name");
 	domain[2] = switch_event_get_header(event, "variable_domain_name");
 
-	for (i = 0; i < 3; i++) {
+	username[3] = switch_event_get_header(event, "variable_sip_to_user");
+	domain[3] = switch_event_get_header(event, "variable_domain_name");
+
+	for (i = 0; i < 4; i++) {
 
 		if (username[i] && domain[i]) {
 			spy_t *spy = NULL;
