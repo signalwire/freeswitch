@@ -4292,7 +4292,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 			rtp_session->stats.outbound.raw_bytes += wrote;
 			rtp_session->stats.outbound.dtmf_packet_count++;
 			
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Send start packet for [%c] ts=%u dur=%d/%d/%d seq=%d lw=%d\n",
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Send start packet for [%c] ts=%u dur=%d/%d/%d seq=%d lw=%u\n",
 							  rtp_session->dtmf_data.out_digit,
 							  rtp_session->dtmf_data.timestamp_dtmf,
 							  rtp_session->dtmf_data.out_digit_sofar,
