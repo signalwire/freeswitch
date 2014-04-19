@@ -3982,6 +3982,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->client_rport_level = 1;
 					profile->tls_cert_dir = SWITCH_GLOBAL_dirs.certs_dir;
 					sofia_set_pflag(profile, PFLAG_DISABLE_100REL);
+					sofia_set_pflag(profile, PFLAG_ENABLE_CHAT);
 					profile->auto_restart = 1;
 					sofia_set_media_flag(profile, SCMF_AUTOFIX_TIMING);
 					sofia_set_media_flag(profile, SCMF_RENEG_ON_REINVITE);
@@ -4178,6 +4179,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_IN_DIALOG_CHAT);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_IN_DIALOG_CHAT);
+						}
+					} else if (!strcasecmp(var, "enable-chat")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_ENABLE_CHAT);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_ENABLE_CHAT);
 						}
 					} else if (!strcasecmp(var, "fire-message-events")) {
 						if (switch_true(val)) {

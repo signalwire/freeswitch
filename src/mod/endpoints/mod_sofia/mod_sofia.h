@@ -273,6 +273,7 @@ typedef enum {
 	PFLAG_TCP_UNREG_ON_SOCKET_CLOSE,
 	PFLAG_TLS_ALWAYS_NAT,
 	PFLAG_TCP_ALWAYS_NAT,
+	PFLAG_ENABLE_CHAT,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;

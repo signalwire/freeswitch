@@ -1434,6 +1434,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 						if (ostatus != SWITCH_STATUS_SUCCESS) {
 							status = ostatus;
 						}
+						
 						switch_event_destroy(&event);
 					}
 				}
