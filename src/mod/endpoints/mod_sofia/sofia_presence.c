@@ -150,7 +150,7 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 	network_port = switch_event_get_header(message_event, "to_sip_port");
 
 	extra_headers = sofia_glue_get_extra_headers_from_event(message_event, SOFIA_SIP_HEADER_PREFIX);
-	abort();
+
 	if (!to) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing To: header.\n");
 		goto end;
