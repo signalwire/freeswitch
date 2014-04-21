@@ -528,10 +528,10 @@ ESL_DECLARE(esl_status_t) esl_execute(esl_handle_t *handle, const char *app, con
 {
 	char cmd_buf[128] = "sendmsg";
 	char app_buf[512] = "";
-	char arg_buf[512] = "";
+	char arg_buf[4096] = "";
 	const char *el_buf = "event-lock: true\n";
 	const char *bl_buf = "async: true\n";
-	char send_buf[1292] = "";
+	char send_buf[5120] = "";
 	
     if (!handle || !handle->connected || handle->sock == ESL_SOCK_INVALID) {
         return ESL_FAIL;
