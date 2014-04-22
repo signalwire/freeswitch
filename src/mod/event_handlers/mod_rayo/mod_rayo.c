@@ -2423,25 +2423,6 @@ static int is_valid_sip_uri(char *uri)
 	return 1;
 }
 
-/**
- * @return 1 if tel URI is valid
- */
-static int is_valid_tel_uri(char *uri)
-{
-	if (!zstr(uri)) {
-		/* alphanumeric only for now */
-		int i;
-		int len = strlen(uri);
-		for (i = 0; i < len; i++) {
-			if (!isalnum(uri[i])) {
-				return 0;
-			}
-		}
-		return 1;
-	}
-	return 0;
-}
-
 #define RAYO_URI_SCHEME_UNKNOWN 0
 #define RAYO_URI_SCHEME_TEL 1
 #define RAYO_URI_SCHEME_SIP 2
@@ -2517,7 +2498,7 @@ static int parse_dial_from(switch_memory_pool_t *pool, const char *from, char **
 			l_uri += 4;
 			*uri = l_uri;
 		}
-		if (is_valid_tel_uri(l_uri)) {
+		if (!zstr(l_uri)) {
 			return RAYO_URI_SCHEME_TEL;
 		}
 	}
