@@ -88,6 +88,7 @@ typedef struct wsh_s {
 	int sanity;
 	int secure_established;
 	int logical_established;
+	int x;
 } wsh_t;
 
 ssize_t ws_send_buf(wsh_t *wsh, ws_opcode_t oc);

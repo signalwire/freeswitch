@@ -318,17 +318,26 @@ int ws_handshake(wsh_t *wsh)
 ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 {
 	ssize_t r;
-	int x = 0;
+	int err = 0;
 
 	if (wsh->ssl) {
 		do {
 			r = SSL_read(wsh->ssl, data, bytes);
 #ifndef _MSC_VER
-			if (x++) usleep(10000);
+			if (wsh->x++) usleep(10000);
 #else
-			if (x++) Sleep(10);
+			if (wsh->x++) Sleep(10);
 #endif
-		} while (r == -1 && SSL_get_error(wsh->ssl, r) == SSL_ERROR_WANT_READ && x < 100);
+			if (r == -1) {
+				err = SSL_get_error(wsh->ssl, r);
+
+				if (wsh->handshake && err == SSL_ERROR_WANT_READ) {
+					r = -2;
+					goto end;
+				}
+			}
+
+		} while (r == -1 && err == SSL_ERROR_WANT_READ && wsh->x < 100);
 
 		goto end;
 	}
@@ -336,13 +345,13 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 	do {
 		r = recv(wsh->sock, data, bytes, 0);
 #ifndef _MSC_VER
-		if (x++) usleep(10000);
+		if (wsh->x++) usleep(10000);
 #else
-		if (x++) Sleep(10);
+		if (wsh->x++) Sleep(10);
 #endif
-	} while (r == -1 && xp_is_blocking(xp_errno()) && x < 100);
+	} while (r == -1 && xp_is_blocking(xp_errno()) && wsh->x < 100);
 	
-	if (x >= 100) {
+	if (wsh->x >= 100) {
 		r = -1;
 	}
 
@@ -352,6 +361,10 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 		*((char *)data + r) = '\0';
 	}
 
+	if (r >= 0) {
+		wsh->x = 0;
+	}
+	
 	return r;
 }
 
@@ -621,6 +634,9 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 	}
 
 	if ((wsh->datalen = ws_raw_read(wsh, wsh->buffer, 9)) < 0) {
+		if (wsh->datalen == -2) {
+			return -2;
+		}
 		return ws_close(wsh, WS_PROTO_ERR);
 	}
 	
