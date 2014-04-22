@@ -652,7 +652,7 @@ static const char *audio_flow(conference_member_t *member)
 	}
 
 	if (member->channel && switch_channel_test_flag(member->channel, CF_HOLD)) {
-		flow = "sendonly";
+		flow = switch_test_flag(member, MFLAG_CAN_SPEAK) ? "sendonly" : "inactive";
 	}
 
 	return flow;
