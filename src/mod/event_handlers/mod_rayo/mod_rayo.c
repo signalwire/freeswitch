@@ -2632,6 +2632,10 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 		if (!zstr(from_display)) {
 			switch_event_add_header_string(originate_vars, SWITCH_STACK_BOTTOM, "origination_caller_id_name", from_display);
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "dial: origination_caller_id_name=%s\n", from_display);
+		} else if (scheme == RAYO_URI_SCHEME_TEL && !zstr(from_uri)) {
+			/* set caller ID name to same as number if telephone number and a name wasn't specified */
+			switch_event_add_header_string(originate_vars, SWITCH_STACK_BOTTOM, "origination_caller_id_name", from_uri);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "dial: origination_caller_id_name=%s\n", from_uri);
 		}
 	}
 	if (!zstr(dial_timeout_ms) && switch_is_number(dial_timeout_ms)) {
