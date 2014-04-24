@@ -13,40 +13,30 @@
 #include <sys/socket.h>
 #else
 #pragma warning(disable:4996)
+#define snprintf _snprintf
 #endif
 #include <string.h>
-#include <unistd.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <errno.h>
-//#include "sha1.h"
 #include <openssl/ssl.h>
+#include <../lib/abyss/src/session.h>
+#include <../lib/abyss/src/conn.h>
 
-#ifdef _MSC_VER
-#define strncasecmp _strnicmp
-#define snprintf _snprintf
-#ifdef _WIN64
-#define WS_SSIZE_T __int64
-#elif _MSC_VER >= 1400
-#define WS_SSIZE_T __int32 __w64
-#else
-#define WS_SSIZE_T __int32
-#endif
-typedef WS_SSIZE_T ssize_t;
-#endif
+typedef TSession ws_tsession_t;
+typedef int issize_t;
 
-
-struct ws_globals_s {
+struct globals_s {
 	const SSL_METHOD *ssl_method;
 	SSL_CTX *ssl_ctx;
 	char cert[512];
 	char key[512];
 };
 
-extern struct ws_globals_s ws_globals;
+// extern struct globals_s globals;
 
 typedef int ws_socket_t;
 #define ws_sock_invalid -1
@@ -69,44 +59,36 @@ typedef enum {
 } ws_opcode_t;
 
 typedef struct wsh_s {
-	ws_socket_t sock;
+	ws_tsession_t *tsession;
 	char buffer[65536];
 	char wbuffer[65536];
 	size_t buflen;
-	ssize_t datalen;
-	ssize_t wdatalen;
+	issize_t datalen;
+	issize_t wdatalen;
 	char *payload;
-	ssize_t plen;
-	ssize_t rplen;
+	issize_t plen;
+	issize_t rplen;
 	SSL *ssl;
 	int handshake;
 	uint8_t down;
 	int secure;
 	uint8_t close_sock;
-	SSL_CTX *ssl_ctx;
-	int block;
-	int sanity;
-	int secure_established;
-	int logical_established;
-	int x;
 } wsh_t;
 
-ssize_t ws_send_buf(wsh_t *wsh, ws_opcode_t oc);
-ssize_t ws_feed_buf(wsh_t *wsh, void *data, size_t bytes);
+issize_t ws_send_buf(wsh_t *wsh, ws_opcode_t oc);
+issize_t ws_feed_buf(wsh_t *wsh, void *data, size_t bytes);
 
 
-ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes);
-ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes);
-ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data);
-ssize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes);
-int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock, int block);
-ssize_t ws_close(wsh_t *wsh, int16_t reason);
+issize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes);
+issize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes);
+issize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data);
+issize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes);
+wsh_t * ws_init(ws_tsession_t *tsession);
+issize_t ws_close(wsh_t *wsh, int16_t reason);
 void ws_destroy(wsh_t *wsh);
 void init_ssl(void);
 void deinit_ssl(void);
-int xp_errno(void);
-int xp_is_blocking(int errcode);
-
+int ws_handshake_kvp(wsh_t *wsh, char *key, char *version, char *proto);
 
 
 #ifndef _MSC_VER
