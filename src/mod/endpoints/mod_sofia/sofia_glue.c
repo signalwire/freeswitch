@@ -2630,6 +2630,7 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 	sofia_destination_t *dst = NULL;
 	char *contact_str, *contact, *user_via = NULL;
 	char *route_uri = NULL, *p;
+	char *ptr;
 
 	contact = sofia_glue_get_url_from_contact((char *) o_contact, 1);
 
@@ -2638,16 +2639,12 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 	}
 
 	if (!zstr(network_ip) && sofia_glue_check_nat(profile, network_ip)) {
-		char *ptr = NULL;
-		//const char *transport_str = NULL;
-
-
 		id = switch_mprintf("sip:%s@%s", user, profile->extsipip);
 		switch_assert(id);
 
 		if ((ptr = sofia_glue_find_parameter(o_contact, "transport="))) {
-			sofia_transport_t transport = sofia_glue_str2transport(ptr);
-			//transport_str = sofia_glue_transport2str(transport);
+			sofia_transport_t transport = sofia_glue_str2transport( ptr + 10 );
+
 			switch (transport) {
 			case SOFIA_TRANSPORT_TCP:
 				contact_str = profile->tcp_public_contact;
@@ -2662,12 +2659,30 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 			user_via = sofia_glue_create_external_via(NULL, profile, transport);
 		} else {
 			user_via = sofia_glue_create_external_via(NULL, profile, SOFIA_TRANSPORT_UDP);
-			contact_str = profile->public_url;
+			contact_str = profile->public_url;		
 		}
-
 	} else {
-		contact_str = profile->url;
 		id = switch_mprintf("sip:%s@%s", user, host);
+		switch_assert(id);
+		
+		if ((ptr = sofia_glue_find_parameter(o_contact, "transport="))) {
+			sofia_transport_t transport = sofia_glue_str2transport( ptr + 10 );
+
+			switch (transport) {
+			case SOFIA_TRANSPORT_TCP:
+				contact_str = profile->tcp_contact;
+				break;
+			case SOFIA_TRANSPORT_TCP_TLS:
+				contact_str = profile->tls_contact;
+				break;
+			default:
+				contact_str = profile->url;
+				break;
+			}
+		} else {
+			user_via = sofia_glue_create_external_via(NULL, profile, SOFIA_TRANSPORT_UDP);
+			contact_str = profile->url;
+		}
 	}
 
 	dst = sofia_glue_get_destination((char *) o_contact);

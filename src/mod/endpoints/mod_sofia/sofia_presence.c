@@ -309,18 +309,8 @@ switch_status_t sofia_presence_chat_send(switch_event_t *message_event)
 
 		if (!zstr(remote_ip) && sofia_glue_check_nat(profile, remote_ip)) {
 			char *ptr = NULL;
-			//const char *transport_str = NULL;
 			if ((ptr = sofia_glue_find_parameter(dst->contact, "transport="))) {
-				sofia_transport_t transport = sofia_glue_str2transport(ptr);
-				//transport_str = sofia_glue_transport2str(transport);
-				switch (transport) {
-				case SOFIA_TRANSPORT_TCP:
-					break;
-				case SOFIA_TRANSPORT_TCP_TLS:
-					break;
-				default:
-					break;
-				}
+				sofia_transport_t transport = sofia_glue_str2transport( ptr + 10 );
 				user_via = sofia_glue_create_external_via(NULL, profile, transport);
 			} else {
 				user_via = sofia_glue_create_external_via(NULL, profile, SOFIA_TRANSPORT_UDP);
@@ -2202,30 +2192,33 @@ static void _send_presence_notify(sofia_profile_t *profile,
 
 
    	if (!zstr(remote_ip) && sofia_glue_check_nat(profile, remote_ip)) {
-		char *ptr = NULL;
-
-		if ((ptr = sofia_glue_find_parameter(o_contact, "transport="))) {
-			sofia_transport_t transport = sofia_glue_str2transport(ptr);
-
-			switch (transport) {
-			case SOFIA_TRANSPORT_TCP:
-				contact_str = profile->tcp_public_contact;
-				break;
-			case SOFIA_TRANSPORT_TCP_TLS:
-				contact_str = profile->tls_public_contact;
-				break;
-			default:
-				contact_str = profile->public_url;
-				break;
-			}
-			user_via = sofia_glue_create_external_via(NULL, profile, transport);
-		} else {
-			user_via = sofia_glue_create_external_via(NULL, profile, SOFIA_TRANSPORT_UDP);
+		sofia_transport_t transport = sofia_glue_str2transport(tp);
+		
+		switch (transport) {
+		case SOFIA_TRANSPORT_TCP:
+			contact_str = profile->tcp_public_contact;
+			break;
+		case SOFIA_TRANSPORT_TCP_TLS:
+			contact_str = profile->tls_public_contact;
+			break;
+		default:
 			contact_str = profile->public_url;
+			break;
 		}
-
+		user_via = sofia_glue_create_external_via(NULL, profile, transport);
 	} else {
-		contact_str = our_contact;
+		sofia_transport_t transport = sofia_glue_str2transport(tp);
+		switch (transport) {
+		case SOFIA_TRANSPORT_TCP:
+			contact_str = profile->tcp_contact;
+			break;
+		case SOFIA_TRANSPORT_TCP_TLS:
+			contact_str = profile->tls_contact;
+			break;
+		default:
+			contact_str = profile->url;
+			break;
+		}
 	}
 
 
@@ -2585,7 +2578,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	struct presence_helper *helper = (struct presence_helper *) pArg;
 	char *pl = NULL;
 	char *clean_id = NULL, *id = NULL;
-
 	char *proto = argv[0];
 	char *user = argv[1];
 	char *host = argv[2];
@@ -2595,7 +2587,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	char *call_id = argv[7];
 	char *full_from = argv[8];
 	//char *full_via = argv[9];
-
 	char *expires = argv[10];
 	char *user_agent = argv[11];
 	char *profile_name = argv[13];
@@ -2631,7 +2622,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	const char *astate = NULL;
 	const char *event_status = NULL;
 	const char *force_event_status = NULL;
-
+	char *contact_str, *contact_stripped;
 
 	if (mod_sofia_globals.debug_presence > 0) {
 		int i;
@@ -2660,6 +2651,46 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		full_to = argv[25];
 		ip = argv[26];
 		port = argv[27];
+	}
+
+	if (!zstr(ip) && sofia_glue_check_nat(profile, ip)) {
+		char *ptr;
+		if ((ptr = sofia_glue_find_parameter(contact, "transport="))) {
+			sofia_transport_t transport = sofia_glue_str2transport( ptr + 10 );
+
+			switch (transport) {
+			case SOFIA_TRANSPORT_TCP:
+				contact_str = profile->tcp_public_contact;
+				break;
+			case SOFIA_TRANSPORT_TCP_TLS:
+				contact_str = profile->tls_public_contact;
+				break;
+			default:
+				contact_str = profile->public_url;
+				break;
+			}
+		} else {
+			contact_str = profile->public_url;		
+		}
+	} else {
+		char *ptr;
+		if ((ptr = sofia_glue_find_parameter(contact, "transport="))) {
+			sofia_transport_t transport = sofia_glue_str2transport( ptr + 10 );
+
+			switch (transport) {
+			case SOFIA_TRANSPORT_TCP:
+				contact_str = profile->tcp_contact;
+				break;
+			case SOFIA_TRANSPORT_TCP_TLS:
+				contact_str = profile->tls_contact;
+				break;
+			default:
+				contact_str = profile->url;
+				break;
+			}
+		} else {
+			contact_str = profile->url;
+		}
 	}
 
 
@@ -3111,18 +3142,17 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 				switch_set_string(status_line, status);
 			}
 
-
-
 			if (!zstr(force_event_status)) {
 				switch_set_string(status_line, force_event_status);
 			}
-
 
 			if (!zstr(dialog_rpid)) {
 				prpid = rpid = dialog_rpid;
 			}
 
-			pl = gen_pidf(user_agent, clean_id, profile->url, open, rpid, prpid, status_line, &ct);
+			contact_stripped = sofia_glue_strip_uri(contact_str);
+			pl = gen_pidf(user_agent, clean_id, contact_stripped, open, rpid, prpid, status_line, &ct);
+			free(contact_stripped);
 		}
 
 	} else {
@@ -3146,8 +3176,9 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			prpid = rpid = dialog_rpid;
 		}
 
-
-		pl = gen_pidf(user_agent, clean_id, profile->url, open, rpid, prpid, status, &ct);
+		contact_stripped = sofia_glue_strip_uri(contact_str); 
+		pl = gen_pidf(user_agent, clean_id, contact_stripped, open, rpid, prpid, status, &ct);
+		free(contact_stripped);
 	}
 
 
