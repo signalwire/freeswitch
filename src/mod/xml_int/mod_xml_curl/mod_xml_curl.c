@@ -142,6 +142,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 {
 	char filename[512] = "";
 	switch_CURL *curl_handle = NULL;
+	switch_CURLcode cc;
 	struct config_data config_data;
 	switch_xml_t xml = NULL;
 	char *data = NULL;
@@ -286,6 +287,11 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 
 		if (binding->bind_local) {
 			curl_easy_setopt(curl_handle, CURLOPT_INTERFACE, binding->bind_local);
+		}
+
+		cc = switch_curl_easy_perform(curl_handle);
+		if (cc && cc != CURLE_WRITE_ERROR) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "CURL returned error:[%d] %s\n", cc, switch_curl_easy_strerror(cc));
 		}
 
 		switch_curl_easy_perform(curl_handle);
