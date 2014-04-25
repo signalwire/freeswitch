@@ -294,7 +294,6 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "CURL returned error:[%d] %s\n", cc, switch_curl_easy_strerror(cc));
 		}
 
-		switch_curl_easy_perform(curl_handle);
 		switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
 		switch_curl_easy_cleanup(curl_handle);
 		switch_curl_slist_free_all(headers);
