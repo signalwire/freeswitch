@@ -8773,6 +8773,11 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 									var_name = switch_mprintf("sip_invite_%s", argv2[0]);
 									switch_channel_set_variable(channel, var_name, argv2[1]);
 									switch_safe_free( var_name );
+								} else {
+									char *var_name = NULL;
+									var_name = switch_mprintf("sip_invite_%s", argv2[0]);
+									switch_channel_set_variable(channel, var_name, "true");
+									switch_safe_free( var_name );									
 								}
 							}
 						}
