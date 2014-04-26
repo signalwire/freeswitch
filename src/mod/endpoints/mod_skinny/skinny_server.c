@@ -2316,7 +2316,7 @@ switch_status_t skinny_handle_updatecapabilities(listener_t *listener, skinny_me
 
 	uint32_t i = 0;
 	uint32_t n = 0;
-	char *codec_order[SWITCH_MAX_CODECS];
+	char *codec_order[SKINNY_MAX_CAPABILITIES];
 	char *codec_string;
 
 	size_t string_len, string_pos, pos;
@@ -2329,8 +2329,8 @@ switch_status_t skinny_handle_updatecapabilities(listener_t *listener, skinny_me
 	skinny_check_data_length(request, sizeof(request->data.upd_cap.audio_cap_count));
 
 	n = request->data.upd_cap.audio_cap_count;
-	if (n > SWITCH_MAX_CODECS) {
-		n = SWITCH_MAX_CODECS;
+	if (n > SKINNY_MAX_CAPABILITIES) {
+		n = SKINNY_MAX_CAPABILITIES;
 	}
 	string_len = -1;
 
