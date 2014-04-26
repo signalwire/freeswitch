@@ -5341,10 +5341,10 @@ static void general_event_handler(switch_event_t *event)
 void write_csta_xml_chunk(switch_event_t *event, switch_stream_handle_t stream, const char *csta_event, char *fwdtype)
 {
 	const char *device = switch_event_get_header(event, "device");
+	
+	switch_assert(csta_event);
 
-	if (csta_event) {
-		stream.write_function(&stream, "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n<%s xmlns=\"http://www.ecma-international.org/standards/ecma-323/csta/ed3\">\n", csta_event);
-	}
+	stream.write_function(&stream, "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n<%s xmlns=\"http://www.ecma-international.org/standards/ecma-323/csta/ed3\">\n", csta_event);
 
 	if (device) {
 		stream.write_function(&stream, "  <device>%s</device>\n", device);
@@ -5389,9 +5389,7 @@ void write_csta_xml_chunk(switch_event_t *event, switch_stream_handle_t stream, 
 		}
 	}
 
-	if (csta_event) {
-		stream.write_function(&stream, "</%s>\n", csta_event);
-	}
+	stream.write_function(&stream, "</%s>\n", csta_event);
 }
 
 switch_status_t list_profiles_full(const char *line, const char *cursor, switch_console_callback_match_t **matches, switch_bool_t show_aliases)
