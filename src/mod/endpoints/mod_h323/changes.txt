@@ -1,3 +1,4 @@
+fix memory leaks, thanks Sharath from packetizer forum.
 fix stale calls then fax send/recv in some circumstance 
 remove SWITCH_RTP_FLAG_AUTO_CNG - works incorrectly.
 moves the switch_rtp_request_port() call from the contructor to FSH323Connection::CreateRealTimeLogicalChannel() - fix 

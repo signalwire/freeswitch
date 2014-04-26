@@ -189,6 +189,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_h323_shutdown)
 	switch_safe_free(mod_h323_globals.context);
 	switch_safe_free(mod_h323_globals.dialplan);
 	switch_safe_free(mod_h323_globals.codec_string);
+	switch_safe_free(mod_h323_globals.rtp_timer_name);
 
 	delete h323_process;
 	h323_process = NULL;
@@ -768,6 +769,7 @@ FSH323Connection::~FSH323Connection()
 	tech_pvt->active_connection = false;
 //	switch_mutex_unlock(tech_pvt->h323_mutex);
 //	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"------------->h323_mutex_unlock\n");
+	switch_safe_free(tech_pvt->token);
 }	
 
 void FSH323Connection::AttachSignalChannel(const PString & token,
