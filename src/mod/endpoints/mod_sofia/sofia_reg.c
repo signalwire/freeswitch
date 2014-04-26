@@ -1274,7 +1274,7 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 		sub_host = to_host;
 	}
 
-	if (contact && contact->m_url) {
+	if (contact) {
 		const char *port = contact->m_url->url_port;
 		char new_port[25] = "";
 		const char *contact_host = contact->m_url->url_host;
