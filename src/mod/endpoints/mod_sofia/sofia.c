@@ -4736,6 +4736,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_BLIND_REG);
 						}
+					} else if (!strcasecmp(var, "3pcc-reinvite-bridged-on-ack")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_3PCC_REINVITE_BRIDGED_ON_ACK);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_3PCC_REINVITE_BRIDGED_ON_ACK);
+						}
 					} else if (!strcasecmp(var, "enable-3pcc")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_3PCC);
@@ -6892,11 +6898,14 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					} else {
 						switch_core_session_message_t *msg;
 
-						msg = switch_core_session_alloc(other_session, sizeof(*msg));
-						msg->message_id = SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT;
-						msg->from = __FILE__;
-						msg->string_arg = switch_core_session_strdup(other_session, r_sdp);
-						switch_core_session_queue_message(other_session, msg);
+						if (sofia_test_pflag(profile, PFLAG_3PCC_REINVITE_BRIDGED_ON_ACK)) {
+							msg = switch_core_session_alloc(other_session, sizeof(*msg));
+							msg->message_id = SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT;
+							msg->from = __FILE__;
+							msg->string_arg = switch_core_session_strdup(other_session, r_sdp);
+							switch_core_session_queue_message(other_session, msg);
+						}
+
 						switch_core_session_queue_indication(other_session, SWITCH_MESSAGE_INDICATE_ANSWER);
 					}
 
