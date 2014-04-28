@@ -507,7 +507,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				if (session->plc) {
 					plc_fillin(session->plc, session->raw_read_frame.data, read_frame->codec->implementation->decoded_bytes_per_packet / 2);
 					is_cng = 0;
-					flag &= !SFF_CNG;
+					flag &= ~SFF_CNG;
 				} else {
 					memset(session->raw_read_frame.data, 255, read_frame->codec->implementation->decoded_bytes_per_packet);
 				}
