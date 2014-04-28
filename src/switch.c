@@ -341,18 +341,21 @@ static void daemonize(int *fds)
 	}
 	/* redirect std* to null */
 	fd = open("/dev/null", O_RDONLY);
+	switch_assert( fd >= 0 );
 	if (fd != 0) {
 		dup2(fd, 0);
 		close(fd);
 	}
 
 	fd = open("/dev/null", O_WRONLY);
+	switch_assert( fd >= 0 );
 	if (fd != 1) {
 		dup2(fd, 1);
 		close(fd);
 	}
 
 	fd = open("/dev/null", O_WRONLY);
+	switch_assert( fd >= 0 );
 	if (fd != 2) {
 		dup2(fd, 2);
 		close(fd);
