@@ -368,7 +368,7 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
 		int proceed = 0, ovector[30];
 		char *substituted = NULL;
 		char *substituted_2 = NULL;
-		char *uri;
+		char *orig_uri;
 		char *uri_expanded = NULL;
 		enum_route_t *route;
 		int supported = 0;
@@ -385,13 +385,15 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
 				memset(substituted, 0, len);
 
 				switch_perform_substitution(re, proceed, replace, number, substituted, len, ovector);
-				uri = substituted;
+				orig_uri = substituted;
 			} else {
-				uri = replace;
+				orig_uri = replace;
 			}
 			
 			switch_mutex_lock(MUTEX);
 			for (route = globals.route_order; route; route = route->next) {
+				char *uri = orig_uri;
+				
 				if (strcasecmp(service, route->service)) {
 					continue;
 				}
@@ -437,7 +439,7 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
 			switch_mutex_unlock(MUTEX);			
 
 			if (!supported) {
-				add_result(results, order, preference, service, uri, 0);
+				add_result(results, order, preference, service, orig_uri, 0);
 			}
 
 			switch_safe_free(substituted);
