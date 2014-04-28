@@ -5047,13 +5047,12 @@ static void general_event_handler(switch_event_t *event)
 						ct = switch_mprintf("multipart/mixed; boundary=\"%s\"", boundary_string);
 					} else {
 						char *fwd_type = NULL;
-						char *header_name = NULL;
 
-						if ((header_name = switch_event_get_header(event, "forward_immediate"))) {
+						if (switch_event_get_header(event, "forward_immediate")) {
 							fwd_type = "forwardImmediate";
-						} else if ((header_name = switch_event_get_header(event, "forward_busy"))) {
+						} else if (switch_event_get_header(event, "forward_busy")) {
 							fwd_type = "forwardBusy";
-						} else if ((header_name = switch_event_get_header(event, "forward_no_answer"))) {
+						} else if (switch_event_get_header(event, "forward_no_answer")) {
 							fwd_type = "forwardNoAns";
 						}
 
