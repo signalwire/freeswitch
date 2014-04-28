@@ -7742,6 +7742,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 		}
 		goto end;
 
+	case SWITCH_MESSAGE_INDICATE_MEDIA:
+		{
+			if (session->track_duration) {
+				switch_core_session_enable_heartbeat(session, session->track_duration);
+			}
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_NOMEDIA:
 		{
 			const char *uuid;
@@ -7779,6 +7786,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 
 			if (!smh->mparams->local_sdp_str) {
 				switch_core_media_absorb_sdp(session);
+			}
+
+			if (session->track_duration) {
+				switch_core_session_enable_heartbeat(session, session->track_duration);
 			}
 
 		}

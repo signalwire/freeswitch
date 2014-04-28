@@ -1541,6 +1541,7 @@ SWITCH_DECLARE(void) switch_core_session_enable_heartbeat(switch_core_session_t 
 	session->track_duration = seconds;
 
 	if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) || 
+		switch_true(switch_channel_get_variable_dup(session->channel, "heartbeat_use_scheduler", SWITCH_FALSE, -1)) ||
 		switch_true(switch_channel_get_variable_dup(session->channel, "bypass_media", SWITCH_FALSE, -1)) ||
 		switch_true(switch_channel_get_variable_dup(session->channel, "bypass_media_after_bridge", SWITCH_FALSE, -1))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s using scheduler due to bypass_media mode\n",
