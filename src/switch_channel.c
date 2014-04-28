@@ -3519,6 +3519,9 @@ static void do_execute_on(switch_channel_t *channel, const char *variable)
 		}
 	}
 	
+	if (!strncasecmp(app, "perl", 4)) {
+		bg++;
+	}
 	
 	if (bg) {
 		switch_core_session_execute_application_async(channel->session, app, arg);
