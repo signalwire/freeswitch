@@ -721,6 +721,7 @@ SWITCH_DECLARE(void) switch_channel_perform_presence(switch_channel_t *channel, 
 
 	if (!status) {
 		type = SWITCH_EVENT_PRESENCE_OUT;
+		status = "idle";
 	}
 
 	if (!id) {
