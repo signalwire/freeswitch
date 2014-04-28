@@ -4869,7 +4869,7 @@ static void process_device_hup(switch_channel_t *channel)
 
 		if (!node->hold_record) {
 			node->hold_record = newhr;
-		} else {
+		} else if (last) {
 			last->next = newhr;
 		}
 
