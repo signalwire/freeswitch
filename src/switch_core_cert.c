@@ -289,12 +289,12 @@ SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix)
 		}
 
 	} else {
-		if ((fp = fopen(pvt, "w"))) {
+		if (pvt && (fp = fopen(pvt, "w"))) {
 			PEM_write_PrivateKey(fp, pkey, NULL, NULL, 0, NULL, NULL);
 			fclose(fp);
 		}
 		
-		if ((fp = fopen(rsa, "w"))) {
+		if (rsa && (fp = fopen(rsa, "w"))) {
 			PEM_write_X509(fp, x509);
 			fclose(fp);
 		}
@@ -341,7 +341,10 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 	RSA *rsa;
 	X509_NAME *name=NULL;
 	
-	if ((pkeyp == NULL) || (*pkeyp == NULL)) {
+	switch_assert(pkeyp);
+	switch_assert(x509p);
+
+	if (*pkeyp == NULL) {
 		if ((pk = EVP_PKEY_new()) == NULL) {
 			abort(); 
 		}
@@ -349,7 +352,7 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 		pk = *pkeyp;
 	}
 
-	if ((x509p == NULL) || (*x509p == NULL)) {
+	if (*x509p == NULL) {
 		if ((x = X509_new()) == NULL) {
 			goto err;
 		}
