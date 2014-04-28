@@ -105,7 +105,7 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config_t *cfg, char **var, ch
 
 	*var = *val = NULL;
 
-	if ( !cfg->path || (cfg->path && cfg->path[0] != '\0' )) {
+	if ( !cfg->path[0] ){
 		return 0;
 	}
 
