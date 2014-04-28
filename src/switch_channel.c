@@ -4215,7 +4215,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	const char *cid_buf = NULL;
-	switch_caller_profile_t *caller_profile, *ocp;
+	switch_caller_profile_t *caller_profile;
 	switch_app_log_t *app_log, *ap;
 	char *last_app = NULL, *last_arg = NULL;
 	char start[80] = "", resurrect[80] = "", answer[80] = "", hold[80], 
@@ -4250,10 +4250,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		for (ap = app_log; ap && ap->next; ap = ap->next);
 		last_app = ap->app;
 		last_arg = ap->arg;
-	}
-
-	if (!(ocp = switch_channel_get_originatee_caller_profile(channel))) {
-		ocp = switch_channel_get_originator_caller_profile(channel);
 	}
 
 	if (!zstr(caller_profile->caller_id_name)) {
