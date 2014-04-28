@@ -420,7 +420,7 @@ static switch_status_t pl_say_money(switch_say_file_handle_t *sh, char *tosay, s
 	char *dollars = NULL;
 	char *cents = NULL;
 
-	if (strlen(tosay) > 15 || !(tosay = switch_strip_nonnumerics(tosay, sbuf, sizeof(sbuf)-1))) {
+	if (strlen(tosay) > 15 || !switch_strip_nonnumerics(tosay, sbuf, sizeof(sbuf)-1)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
 		return SWITCH_STATUS_GENERR;
 	}
