@@ -48,7 +48,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	const char *spool_path = NULL;
 	int is_stream = 0;
 	char *fp = NULL;
-	switch_event_t *params = NULL;
 	int to = 0;
 
 	if (switch_test_flag(fh, SWITCH_FILE_OPEN)) {
@@ -180,10 +179,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	}
 
 	file_path = fh->spool_path ? fh->spool_path : fh->file_path;
-
-	if (params) {
-		fh->params = params;
-	}
 
 	if ((status = fh->file_interface->file_open(fh, file_path)) != SWITCH_STATUS_SUCCESS) {
 		if (fh->spool_path) {
