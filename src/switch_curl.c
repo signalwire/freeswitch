@@ -81,21 +81,21 @@ SWITCH_DECLARE(switch_status_t) switch_curl_process_form_post_params(switch_even
 
 		if (!strncasecmp(hp->name, "attach_file:", 12)) {
 			char *pname = strdup(hp->name + 12);
-			char *fname = strchr(pname, ':');
 			
-			if (fname && pname) {
-				*fname++ = '\0';
+			if (pname) {
+				char *fname = strchr(pname, ':');
+				if (fname) {
+					*fname++ = '\0';
 
-				curl_formadd(&formpost,
-							 &lastptr,
-							 CURLFORM_COPYNAME, pname,
-							 CURLFORM_FILENAME, fname,
-							 CURLFORM_FILE, hp->value,
-							 CURLFORM_END);
+					curl_formadd(&formpost,
+								 &lastptr,
+								 CURLFORM_COPYNAME, pname,
+								 CURLFORM_FILENAME, fname,
+								 CURLFORM_FILE, hp->value,
+								 CURLFORM_END);
+				}
+				free(pname);
 			}
-
-			free(pname);
-
 		} else {
 			curl_formadd(&formpost,
 						 &lastptr,
