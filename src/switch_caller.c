@@ -520,17 +520,17 @@ SWITCH_DECLARE(void) switch_caller_extension_add_application_printf(switch_core_
 	switch_vasprintf(&data, fmt, ap);
 	va_end(ap);
 
-	if (data) {
-		char *p;
-
-		if ((p = strstr(data, "\\'"))) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "App not added, Invalid character sequence in data string [%s]\n", data);
-			free(data);
-			return;
-		}
-		switch_caller_extension_add_application(session, caller_extension, application_name, data);
-		free(data);
+	if (!data) {
+		return;
 	}
+
+	if (strstr(data, "\\'")) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "App not added, Invalid character sequence in data string [%s]\n", data);
+	} else {
+		switch_caller_extension_add_application(session, caller_extension, application_name, data);
+	}
+
+	free(data);
 }
 
 
@@ -539,7 +539,6 @@ SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session
 															 const char *application_data)
 {
 	switch_caller_application_t *caller_application = NULL;
-	char *p;
 
 	switch_assert(session != NULL);
 
@@ -549,7 +548,7 @@ SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session
 
 
 
-		if (caller_application->application_data && (p = strstr(caller_application->application_data, "\\'"))) {
+		if (caller_application->application_data && strstr(caller_application->application_data, "\\'")) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "App not added, Invalid character sequence in data string [%s]\n", 
 							  caller_application->application_data);
 			return;
