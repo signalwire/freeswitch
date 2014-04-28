@@ -1,0 +1,107 @@
+#!/bin/sh
+##### -*- mode:shell-script; indent-tabs-mode:nil; sh-basic-offset:2 -*-
+##### Author: Travis Cross <tc@traviscross.com>
+
+log1 () { printf '%s' "$1">&2; }
+log () { printf '%s\n' "$1">&2; }
+err () { log "$1"; exit 1; }
+
+usage () {
+  log "usage: $0"
+}
+
+while getopts "h" o; do
+  case "$o" in
+    h) usage; exit 0; ;;
+  esac
+done
+shift $(($OPTIND-1))
+
+runscript=$(mktemp /tmp/bisectrunXXXXXXXX)
+touch $runscript
+chmod +x $runscript
+cat > $runscript <<'EOF'
+#!/bin/sh
+##### -*- mode:shell-script; indent-tabs-mode:nil; sh-basic-offset:2 -*-
+##### Author: Travis Cross <tc@traviscross.com>
+
+build_fs () (
+  set -e
+  unset CC CXX CPPFLAGS CFLAGS CXXFLAGS LDFLAGS CCACHE_DIR V VERBOSE
+  export V=1 VERBOSE=1
+  git clean -fdx
+  git reset --hard HEAD
+  { git describe HEAD \
+    && ./bootstrap.sh -j \
+    && ./configure -C --enable-fhs \
+    && make; } 2>&1 | tee build.log
+)
+
+good () { exit 0; }
+bad () { exit 1; }
+skip () { exit 125; }
+
+printf "Building FS...\n"
+if ! build_fs; then
+  printf "FS didn't build correctly, skipping this revision...\n"
+  skip
+fi
+printf "OK, now 'make install' if needed and test for the issue...\n"
+printf "When done, type 'exit'\n"
+bash
+tested=""
+while test -z "$tested"; do
+  printf "Were you able to test the issue at this revision? [y/n]: "
+  read tested
+done
+if test "$tested" != "y"; then
+  printf "OK, we're skipping this revision then...\n"
+  skip
+fi
+reproduced=""
+while test -z "$reproduced"; do
+  printf "Did the issue reproduce at this revision? [y/n]: "
+  read reproduced
+done
+if test "$reproduced" = "y"; then
+  printf "OK, marking this as a bad revision...\n"
+  bad
+else
+  printf "OK, marking this as a good revision...\n"
+  good
+fi
+EOF
+
+run_bisect () {
+  goods=""
+  bad=""
+  paths=""
+  while test -z "$bad"; do
+    printf "Enter git hash of earliest known bad revision: "
+    read bad_
+    [ -z "$bad_" ] || bad="$bad_"
+  done
+  good_=""
+  while test -z "$goods" || ! test -z "$good_"; do
+    printf "Enter git hash of latest known good revisions ('.' to end): "
+    read good_
+    [ "$good_" = "." ] && good_=""
+    [ -z "$good_" ] || goods="$good_ "
+  done
+  path_="_"
+  while ! test -z "$path_"; do
+    printf "(optional) Enter source path related to issue ('.' to end): "
+    read path_
+    [ "$path_" = "." ] && path_=""
+    [ -z "$path_" ] || paths="$path_ "
+  done
+  printf "Starting git bisect...\n"
+  git bisect start $bad $goods -- $paths
+  git bisect run $runscript
+  rm -f $runscript
+  git bisect reset
+}
+
+bisectlog=/tmp/$(date -u +%Y%m%dT%H%M%SZ)-bisect_log.txt
+run_bisect | tee $bisectlog
+printf "\n\nNow please upload $bisectlog to JIRA.\n"
