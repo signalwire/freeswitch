@@ -68,6 +68,7 @@ null_cipher_alloc(cipher_t **c, int key_len) {
 
   /* set pointers */
   *c = (cipher_t *)pointer;
+  (*c)->algorithm = NULL_CIPHER;
   (*c)->type = &null_cipher;
   (*c)->state = pointer + sizeof(cipher_t);
 
