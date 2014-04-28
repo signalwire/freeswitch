@@ -39,7 +39,7 @@
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
  * Michael B. Murdock <mike@mmurdock.org>
- * AntÛnio Silva <asilva@wirelessmundi.com>
+ * Ant√≥nio Silva <asilva@wirelessmundi.com>
  *
  * mod_say_pt.c -- Say for Portuguese
  *
@@ -184,7 +184,7 @@ static switch_status_t pt_say_general_count(switch_core_session_t *session,	char
 		switch (say_args->method) {
 		case SSM_COUNTED:
 		case SSM_PRONOUNCED:
-			/* specific case, one million => um milh„o */
+			/* specific case, one million => um milh√£o */
 			if (!places[8] && !places[7] && (places[6] == 1)) {
 				say_file("digits/1.wav");
 				say_file("digits/million.wav");
@@ -233,9 +233,7 @@ static switch_status_t pt_say_time(switch_core_session_t *session, char *tosay, 
 				if ((p = strchr(tme, ':'))) {
 					*p++ = '\0';
 					minutes = atoi(p);
-					if (tme) {
-						hours = atoi(tme);
-					}
+					hours = atoi(tme);
 				} else {
 					minutes = atoi(tme);
 				}

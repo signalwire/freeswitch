@@ -368,9 +368,7 @@ static switch_status_t ru_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 				if ((p = strchr(tme, ':'))) {
 					*p++ = '\0';
 					minutes = atoi(p);
-					if (tme) {
-						hours = atoi(tme);
-					}
+					hours = atoi(tme);
 				} else {
 					minutes = atoi(tme);
 				}

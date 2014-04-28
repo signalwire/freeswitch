@@ -242,9 +242,7 @@ static switch_status_t fa_say_time(switch_core_session_t *session, char *tosay, 
 				if ((p = strchr(tme, ':'))) {
 					*p++ = '\0';
 					minutes = atoi(p);
-					if (tme) {
-						hours = atoi(tme);
-					}
+					hours = atoi(tme);
 				} else {
 					minutes = atoi(tme);
 				}
