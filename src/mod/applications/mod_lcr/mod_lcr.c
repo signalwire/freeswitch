@@ -345,15 +345,6 @@ static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, ch
 		}
 	}
 
-	if (session && (switch_string_var_check_const(data) || switch_string_has_escaped_data(data))) {
-		expanded = switch_channel_expand_variables(switch_core_session_get_channel(session), data);
-		if (expanded == data ) {
-			expanded = NULL;
-		} else {
-			data = switch_core_strdup( pool, expanded );
-		}
-	}
-
 	switch_safe_free(expanded);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Returning Dialstring %s\n", data);
