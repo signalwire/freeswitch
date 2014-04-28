@@ -3335,7 +3335,6 @@ SWITCH_DECLARE(void) switch_channel_check_zrtp(switch_channel_t *channel)
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_channel_t *channel, const char *file, const char *func, int line)
 {
 	switch_event_t *event;
-	const char *var = NULL;
 
 	if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED)) {
 		const char *uuid;
@@ -3376,7 +3375,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 		switch_channel_api_on(channel, SWITCH_CHANNEL_API_ON_PRE_ANSWER_VARIABLE);
 		switch_channel_api_on(channel, SWITCH_CHANNEL_API_ON_MEDIA_VARIABLE);
 
-		if ((var = switch_channel_get_variable(channel, SWITCH_PASSTHRU_PTIME_MISMATCH_VARIABLE)) && switch_true(var)) {
+		if (switch_true(switch_channel_get_variable(channel, SWITCH_PASSTHRU_PTIME_MISMATCH_VARIABLE))) {
 			switch_channel_set_flag(channel, CF_PASSTHRU_PTIME_MISMATCH);
 		}
 
@@ -3630,7 +3629,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 		switch_core_session_rwunlock(other_session);
 	}
 
-	if ((var = switch_channel_get_variable(channel, SWITCH_PASSTHRU_PTIME_MISMATCH_VARIABLE))) {
+	if (switch_true(switch_channel_get_variable(channel, SWITCH_PASSTHRU_PTIME_MISMATCH_VARIABLE))) {
 		switch_channel_set_flag(channel, CF_PASSTHRU_PTIME_MISMATCH);
 	}
 
@@ -3657,7 +3656,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 					  channel->name);
 
 
-	if ((var = switch_channel_get_variable(channel, "absolute_codec_string"))) {
+	if (switch_channel_get_variable(channel, "absolute_codec_string")) {
 		/* inherit_codec == true will implicitly clear the absolute_codec_string 
 		   variable if used since it was the reason it was set in the first place and is no longer needed */
 		if (switch_true(switch_channel_get_variable(channel, "inherit_codec"))) {
