@@ -239,7 +239,6 @@ static switch_status_t switch_speex_fmtp_parse(const char *fmtp, switch_codec_fm
 						continue;
 					}
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "choosing speex/8000 mode %s\n", mode_str);
-					codec_settings->quality = codec_settings->quality;
 					codec_settings->vbr_quality = (float)codec_settings->quality;
 				} else {
 					if (mode_num >= 0 && mode_num <= 10) {
