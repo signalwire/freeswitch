@@ -572,7 +572,7 @@ http_sendfile_app_usage:
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failure:  Usage: <data=\"%s\">\nOr you can set chanvars curl_senfile_url, curl_sendfile_filename_element, curl_sendfile_filename, curl_sendfile_extrapost\n", HTTP_SENDFILE_APP_SYNTAX);
 	
 http_sendfile_app_done:
-	if (http_data && http_data->headers)
+	if (http_data->headers)
 	{
 		switch_curl_slist_free_all(http_data->headers);
 	}
@@ -715,7 +715,7 @@ SWITCH_STANDARD_APP(curl_app_function)
 	int argc;
 	char *mydata = NULL;
 
-	switch_memory_pool_t *pool = NULL;
+	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *url = NULL;
 	char *method = NULL;
@@ -730,11 +730,6 @@ SWITCH_STANDARD_APP(curl_app_function)
 	curl_options_t options = { 0 };
 	const char *curl_timeout;
 
-	if (session) {
-		pool = switch_core_session_get_pool(session);
-	} else {
-		switch_core_new_memory_pool(&pool);
-	}
 	if (!(mydata = switch_core_session_strdup(session, data))) {
 		return;
 	}
