@@ -8777,14 +8777,14 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 							} else {
 								int argc2 = 0;
 								char *argv2[2] = { 0 };
-								if ((argc2 = switch_separate_string(argv1[x1], '=', argv2, (sizeof(argv2) / sizeof(argv2[0]))))) {
+								if ((argc2 = switch_separate_string(argv1[x1], '=', argv2, (sizeof(argv2) / sizeof(argv2[0])))) == 2) {
 									char *var_name = NULL;
 									var_name = switch_mprintf("sip_invite_%s", argv2[0]);
 									switch_channel_set_variable(channel, var_name, argv2[1]);
 									switch_safe_free( var_name );
 								} else {
 									char *var_name = NULL;
-									var_name = switch_mprintf("sip_invite_%s", argv2[0]);
+									var_name = switch_mprintf("sip_invite_%s", argv1[x1]);
 									switch_channel_set_variable(channel, var_name, "true");
 									switch_safe_free( var_name );									
 								}
