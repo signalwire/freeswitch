@@ -11,6 +11,9 @@
 #define ms_sleep(x) Sleep( x );
 #endif				
 
+#define WS_BLOCK 1
+#define WS_NOBLOCK 0
+
 #define SHA1_HASH_SIZE 20
 struct ws_globals_s ws_globals;
 
@@ -242,7 +245,7 @@ int ws_handshake(wsh_t *wsh)
 		return -3;
 	}
 
-	while((bytes = ws_raw_read(wsh, wsh->buffer + wsh->datalen, wsh->buflen - wsh->datalen)) > 0) {
+	while((bytes = ws_raw_read(wsh, wsh->buffer + wsh->datalen, wsh->buflen - wsh->datalen, WS_BLOCK)) > 0) {
 		wsh->datalen += bytes;
 		if (strstr(wsh->buffer, "\r\n\r\n") || strstr(wsh->buffer, "\n\n")) {
 			break;
@@ -315,7 +318,7 @@ int ws_handshake(wsh_t *wsh)
 
 }
 
-ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
+ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block)
 {
 	ssize_t r;
 	int err = 0;
@@ -323,15 +326,13 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 	if (wsh->ssl) {
 		do {
 			r = SSL_read(wsh->ssl, data, bytes);
-#ifndef _MSC_VER
-			if (wsh->x++) usleep(10000);
-#else
-			if (wsh->x++) Sleep(10);
-#endif
+
+			ms_sleep(10);
+
 			if (r == -1) {
 				err = SSL_get_error(wsh->ssl, r);
 
-				if (wsh->handshake && err == SSL_ERROR_WANT_READ) {
+				if (!block && err == SSL_ERROR_WANT_READ) {
 					r = -2;
 					goto end;
 				}
@@ -344,11 +345,7 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes)
 
 	do {
 		r = recv(wsh->sock, data, bytes, 0);
-#ifndef _MSC_VER
-		if (wsh->x++) usleep(10000);
-#else
-		if (wsh->x++) Sleep(10);
-#endif
+		ms_sleep(10);
 	} while (r == -1 && xp_is_blocking(xp_errno()) && wsh->x < 100);
 	
 	if (wsh->x >= 100) {
@@ -633,7 +630,7 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 		return ws_close(wsh, WS_PROTO_ERR);
 	}
 
-	if ((wsh->datalen = ws_raw_read(wsh, wsh->buffer, 9)) < 0) {
+	if ((wsh->datalen = ws_raw_read(wsh, wsh->buffer, 9, WS_NOBLOCK)) < 0) {
 		if (wsh->datalen == -2) {
 			return -2;
 		}
@@ -641,7 +638,7 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 	}
 	
 	if (wsh->datalen < need) {
-		if ((wsh->datalen += ws_raw_read(wsh, wsh->buffer + wsh->datalen, 9 - wsh->datalen)) < need) {
+		if ((wsh->datalen += ws_raw_read(wsh, wsh->buffer + wsh->datalen, 9 - wsh->datalen, WS_BLOCK)) < need) {
 			/* too small - protocol err */
 			return ws_close(wsh, WS_PROTO_ERR);
 		}
@@ -733,7 +730,7 @@ ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data)
 			wsh->rplen = wsh->plen - need;
 
 			while(need) {
-				ssize_t r = ws_raw_read(wsh, wsh->payload + wsh->rplen, need);
+				ssize_t r = ws_raw_read(wsh, wsh->payload + wsh->rplen, need, WS_BLOCK);
 
 				if (r < 1) {
 					/* invalid read - protocol err .. */

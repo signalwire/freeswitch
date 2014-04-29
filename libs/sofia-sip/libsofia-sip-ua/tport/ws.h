@@ -95,7 +95,7 @@ ssize_t ws_send_buf(wsh_t *wsh, ws_opcode_t oc);
 ssize_t ws_feed_buf(wsh_t *wsh, void *data, size_t bytes);
 
 
-ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes);
+ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block);
 ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes);
 ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data);
 ssize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes);
