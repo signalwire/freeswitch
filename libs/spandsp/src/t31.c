@@ -2118,7 +2118,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
             s->t38_fe.next_tx_indicator = T38_IND_V21_PREAMBLE;
             s->t38_fe.current_tx_data_type = T38_DATA_V21;
             use_hdlc = true;
-            s->t38_fe.timed_step = (use_hdlc)  ?  T38_TIMED_STEP_HDLC_MODEM  :  T38_TIMED_STEP_NON_ECM_MODEM;
+            s->t38_fe.timed_step = T38_TIMED_STEP_HDLC_MODEM;
             set_octets_per_data_packet(s, 300);
         }
         else
