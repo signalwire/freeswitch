@@ -834,6 +834,7 @@ SPAN_DECLARE_NONSTD(int) v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], in
     complexf_t sample;
     float v;
 #endif
+    int32_t root_power;
     int32_t power;
 
     if (s->bit_rate == 4800)
@@ -858,10 +859,12 @@ SPAN_DECLARE_NONSTD(int) v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], in
                 if (s->training_stage == TRAINING_STAGE_SYMBOL_ACQUISITION)
                 {
                     /* Only AGC during the initial training */
+                    if ((root_power = fixed_sqrt32(power)) == 0)
+                        root_power = 1;
 #if defined(SPANDSP_USE_FIXED_POINT)
-                    s->agc_scaling = saturate16(((int32_t) (FP_SCALE(1.414f)*1024.0f))/fixed_sqrt32(power));
+                    s->agc_scaling = saturate16(((int32_t) (FP_SCALE(1.414f)*1024.0f))/root_power);
 #else
-                    s->agc_scaling = (FP_SCALE(1.414f)/RX_PULSESHAPER_4800_GAIN)/fixed_sqrt32(power);
+                    s->agc_scaling = (FP_SCALE(1.414f)/RX_PULSESHAPER_4800_GAIN)/root_power;
 #endif
                 }
                 /* Pulse shape while still at the carrier frequency, using a quadrature
@@ -920,10 +923,12 @@ SPAN_DECLARE_NONSTD(int) v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], in
                 if (s->training_stage == TRAINING_STAGE_SYMBOL_ACQUISITION)
                 {
                     /* Only AGC during the initial training */
+                    if ((root_power = fixed_sqrt32(power)) == 0)
+                        root_power = 1;
 #if defined(SPANDSP_USE_FIXED_POINT)
-                    s->agc_scaling = saturate16(((int32_t) (FP_SCALE(1.414f)*1024.0f))/fixed_sqrt32(power));
+                    s->agc_scaling = saturate16(((int32_t) (FP_SCALE(1.414f)*1024.0f))/root_power);
 #else
-                    s->agc_scaling = (FP_SCALE(1.414f)/RX_PULSESHAPER_2400_GAIN)/fixed_sqrt32(power);
+                    s->agc_scaling = (FP_SCALE(1.414f)/RX_PULSESHAPER_2400_GAIN)/root_power;
 #endif
                 }
                 /* Pulse shape while still at the carrier frequency, using a quadrature

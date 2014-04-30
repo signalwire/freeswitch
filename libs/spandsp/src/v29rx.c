@@ -908,6 +908,7 @@ SPAN_DECLARE_NONSTD(int) v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
     complexf_t sample;
     float v;
 #endif
+    int32_t root_power;
     int32_t power;
 
     for (i = 0;  i < len;  i++)
@@ -970,10 +971,12 @@ SPAN_DECLARE_NONSTD(int) v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
             /* Only AGC until we have locked down the setting. */
             if (s->agc_scaling_save == FP_SCALE(0.0f))
             {
+                if ((root_power = fixed_sqrt32(power)) == 0)
+                    root_power = 1;
 #if defined(SPANDSP_USE_FIXED_POINT)
-                s->agc_scaling = saturate16(((int32_t) (FP_SCALE(1.25f)*1024.0f))/fixed_sqrt32(power));
+                s->agc_scaling = saturate16(((int32_t) (FP_SCALE(1.25f)*1024.0f))/root_power);
 #else
-                s->agc_scaling = (FP_SCALE(1.25f)/RX_PULSESHAPER_GAIN)/fixed_sqrt32(power);
+                s->agc_scaling = (FP_SCALE(1.25f)/RX_PULSESHAPER_GAIN)/root_power;
 #endif
             }
             /* Pulse shape while still at the carrier frequency, using a quadrature

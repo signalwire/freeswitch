@@ -1252,6 +1252,7 @@ SPAN_DECLARE_NONSTD(int) v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
     complexf_t sample;
     float v;
 #endif
+    int32_t root_power;
     int32_t power;
 
     for (i = 0;  i < len;  i++)
@@ -1309,11 +1310,15 @@ SPAN_DECLARE_NONSTD(int) v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
         {
             /* Only AGC until we have locked down the setting. */
             if (s->agc_scaling_save == FP_SCALE(0.0f))
+            {
+                if ((root_power = fixed_sqrt32(power)) == 0)
+                    root_power = 1;
 #if defined(SPANDSP_USE_FIXED_POINTx)
-                s->agc_scaling = saturate16(((int32_t) (FP_SCALE(2.17f)*1024.0f))/fixed_sqrt32(power));
+                s->agc_scaling = saturate16(((int32_t) (FP_SCALE(2.17f)*1024.0f))/root_power);
 #else
-                s->agc_scaling = (FP_SCALE(2.17f)/RX_PULSESHAPER_GAIN)/sqrtf(power);
+                s->agc_scaling = (FP_SCALE(2.17f)/RX_PULSESHAPER_GAIN)/root_power;
 #endif
+            }
             /* Pulse shape while still at the carrier frequency, using a quadrature
                pair of filters. This results in a properly bandpass filtered complex
                signal, which can be brought directly to baseband by complex mixing.

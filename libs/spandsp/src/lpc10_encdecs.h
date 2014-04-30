@@ -78,7 +78,7 @@ static __inline__ int32_t pow_ii(int32_t x, int32_t n)
         if (n == 0  ||  x == 1)
             return 1;
         if (x != -1)
-            return (x == 0)  ?  1/x  :  0;
+            return (x != 0)  ?  1/x  :  0;
         n = -n;
     }
     u = n;

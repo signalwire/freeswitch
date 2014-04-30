@@ -799,6 +799,7 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int l
     float ii;
     float qq;
 #endif
+    int32_t root_power;
     int32_t power;
 
     for (i = 0;  i < len;  i++)
@@ -860,10 +861,12 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int l
             if (s->rx.training == V22BIS_RX_TRAINING_STAGE_SYMBOL_ACQUISITION)
             {
                 /* Only AGC during the initial symbol acquisition, and then lock the gain. */
+                if ((root_power = fixed_sqrt32(power)) == 0)
+                    root_power = 1;
 #if defined(SPANDSP_USE_FIXED_POINT)
-                s->rx.agc_scaling = saturate16(((int32_t) (FP_SCALE(0.18f)*FP_SCALE(3.60f)))/fixed_sqrt32(power));
+                s->rx.agc_scaling = saturate16(((int32_t) (FP_SCALE(0.18f)*FP_SCALE(3.60f)))/root_power);
 #else
-                s->rx.agc_scaling = FP_SCALE(0.18f)*FP_SCALE(3.60f)/fixed_sqrt32(power);
+                s->rx.agc_scaling = FP_SCALE(0.18f)*FP_SCALE(3.60f)/root_power;
 #endif
             }
             /* Pulse shape while still at the carrier frequency, using a quadrature
