@@ -1370,6 +1370,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 				if (r < 0) {
 					if (!(strerror_r(handle->errnum, handle->err, sizeof(handle->err))))
 						*(handle->err)=0;
+					free(body);
 					goto fail;
 				} else if (r == 0) {
 					continue;
