@@ -1702,6 +1702,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_http_cache_shutdown)
 	gcache.shutdown = 1;
 	switch_queue_interrupt_all(gcache.prefetch_queue);
 	switch_thread_rwlock_wrlock(gcache.shutdown_lock);
+	switch_thread_rwlock_unlock(gcache.shutdown_lock);
 
 	url_cache_clear(&gcache, NULL);
 	switch_core_hash_destroy(&gcache.map);
