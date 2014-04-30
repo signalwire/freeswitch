@@ -377,11 +377,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		switch_media_bug_t *bp;
 		switch_bool_t ok = SWITCH_TRUE;
 		int prune = 0;		
-		
-		need_codec = 0;
-		do_resample = 0;
-		do_bugs = 0;
-		
+
 		if (session->bugs && switch_test_flag((*frame), SFF_CNG)) {
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
 			for (bp = session->bugs; bp; bp = bp->next) {
@@ -522,7 +518,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				if (do_bugs) {
 					switch_thread_rwlock_wrlock(session->bug_rwlock);
 					if (!session->bugs) {
-						do_bugs = 0;
 						switch_thread_rwlock_unlock(session->bug_rwlock);
 						goto done;
 					}
