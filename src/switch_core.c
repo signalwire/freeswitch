@@ -1538,12 +1538,10 @@ static void switch_core_set_serial(void)
 			bytes = write(write_fd, buf, sizeof(buf));
 			bytes++;
 			close(write_fd);
-			write_fd = -1;
 		}
 	} else {
 		bytes = read(fd, buf, sizeof(buf));
 		close(fd);
-		fd = -1;
 	}
 
 	switch_core_set_variable("switch_serial", buf);
