@@ -993,7 +993,6 @@ SWITCH_DECLARE(void) switch_core_runtime_loop(int bg)
 	char path[256] = "";
 #endif
 	if (bg) {
-		bg = 0;
 #ifdef WIN32
 		switch_snprintf(path, sizeof(path), "Global\\Freeswitch.%d", getpid());
 		shutdown_event = CreateEvent(NULL, FALSE, FALSE, path);
