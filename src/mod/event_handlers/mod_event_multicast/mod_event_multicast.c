@@ -502,10 +502,10 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 	globals.running = 1;
 	while (globals.running == 1) {
 		char *myaddr;
-		size_t len = MULTICAST_BUFFSIZE;
+		size_t len = MULTICAST_BUFFSIZE - 1;
 		char *packet;
 		switch_status_t status;
-		memset(buf, 0, len);
+		memset(buf, 0, len + 1);
 
 		switch_sockaddr_ip_get(&myaddr, globals.addr);
 		if ((status = switch_socket_recvfrom(addr, globals.udp_socket, 0, buf, &len)) != SWITCH_STATUS_SUCCESS || !len || !globals.running) {
