@@ -905,6 +905,7 @@ static void dl_logger(char *file, const char *func, int line, int level, char *f
 										  "%s:\n-------------------------------------------------------------------------------\n" "%s\n", ll, form);
 						switch_xml_free(xml);
 						free(data);
+						switch_safe_free(form);
 					}
 				}
 			}
