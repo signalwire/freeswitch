@@ -226,6 +226,8 @@ SWITCH_STANDARD_APP(translate_app_function)
 	switch_memory_pool_t *pool;
 	switch_event_t *event = NULL;
 
+	switch_assert(session);
+
 	if (!(mydata = switch_core_session_strdup(session, data))) {
 		goto end;
 	}
@@ -255,11 +257,10 @@ SWITCH_STANDARD_APP(translate_app_function)
 	}
 
 end:
-	if (!session) {
-		if (pool) {
-			switch_core_destroy_memory_pool(&pool);
-		}
+	if (pool) {
+		switch_core_destroy_memory_pool(&pool);
 	}
+
 	return;
 }
 
