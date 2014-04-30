@@ -1682,7 +1682,7 @@ SWITCH_STANDARD_APP(lcr_app_function)
 	switch_caller_profile_t *caller_profile = NULL;
 	callback_t routes = { 0 };
 	lcr_route cur_route = { 0 };
-	switch_memory_pool_t *pool;
+	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
 	switch_event_t *event;
 	const char *intra = NULL;
 	const char *lrn = NULL;
@@ -1691,17 +1691,8 @@ SWITCH_STANDARD_APP(lcr_app_function)
 		return;
 	}
 
-	if (session) {
-		pool = switch_core_session_get_pool(session);
-		routes.session = session;
-	} else {
-		switch_core_new_memory_pool(&pool);
-		switch_event_create(&event, SWITCH_EVENT_MESSAGE);
-		routes.event = event;
-	}
-
+	routes.session = session;
 	routes.pool = pool;
-
 
 	lrn = switch_channel_get_variable(channel, "lrn");
 	routes.lrn_number = (char *) lrn;
