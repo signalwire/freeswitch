@@ -1099,8 +1099,6 @@ SPAN_DECLARE_NONSTD(void) lapm_receive(void *user_data, const uint8_t *frame, in
         else
             rx_unnumbered_rsp_frame(ss, frame, len);
         break;
-    default:
-        break;
     }
 }
 /*- End of function --------------------------------------------------------*/

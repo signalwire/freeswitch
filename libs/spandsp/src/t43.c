@@ -381,7 +381,7 @@ SPAN_DECLARE(int) t43_encode_free(t43_encode_state_t *s)
 {
     int ret;
 
-    t85_encode_free(&s->t85);
+    t85_encode_release(&s->t85);
     ret = t43_encode_release(s);
     span_free(s);
     return ret;

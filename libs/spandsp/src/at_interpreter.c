@@ -726,11 +726,18 @@ static int parse_string_list_out(at_state_t *s, const char **t, int *target, int
         val = (target)  ?  *target  :  0;
         while (val--  &&  (def = strchr(def, ',')))
             def++;
-        if ((tmp = strchr(def, ',')))
-            len = tmp - def;
+        if (def)
+        {
+            if ((tmp = strchr(def, ',')))
+                len = tmp - def;
+            else
+                len = strlen(def);
+            snprintf(buf, sizeof(buf), "%s%.*s", (prefix)  ?  prefix  :  "", (int) len, def);
+        }
         else
-            len = strlen(def);
-        snprintf(buf, sizeof(buf), "%s%.*s", (prefix)  ?  prefix  :  "", (int) len, def);
+        {
+            buf[0] = '\0';
+        }
         at_put_response(s, buf);
         break;
     default:
