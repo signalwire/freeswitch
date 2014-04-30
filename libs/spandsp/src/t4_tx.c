@@ -325,7 +325,7 @@ static int best_colour_resolution(float actual, int allowed_resolutions)
         return -1;
 
     best_ratio = 0.0f;
-    best_entry = -1;
+    best_entry = 0;
     for (i = 0;  x_res_table[i].resolution > 0.0f;  i++)
     {
         if (!(allowed_resolutions & x_res_table[i].resolution_code))

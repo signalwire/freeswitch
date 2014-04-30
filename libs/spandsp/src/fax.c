@@ -274,6 +274,7 @@ static void fax_set_rx_type(void *user_data, int type, int bit_rate, int short_t
         break;
     case T30_MODEM_DONE:
         span_log(&s->logging, SPAN_LOG_FLOW, "FAX exchange complete\n");
+        /* Fall through */
     default:
         fax_modems_set_rx_handler(t, (span_rx_handler_t) &span_dummy_rx, s, (span_rx_fillin_handler_t) &span_dummy_rx_fillin, s);
         break;

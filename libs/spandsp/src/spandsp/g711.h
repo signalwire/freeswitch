@@ -226,7 +226,7 @@ static __inline__ uint8_t linear_to_alaw(int linear)
             return (uint8_t) (0x7F ^ mask);
         }
         /* We must be just a tiny step below zero */
-        return (uint8_t) (0x00 ^ mask);
+        return (uint8_t) mask;
     }
     /* Combine the sign, segment, and quantization bits. */
     return (uint8_t) (((seg << 4) | ((linear >> ((seg)  ?  (seg + 3)  :  4)) & 0x0F)) ^ mask);

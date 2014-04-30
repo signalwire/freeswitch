@@ -964,7 +964,7 @@ static int send_nsf_frame(t30_state_t *s)
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending user supplied NSF - %d octets\n", s->tx_info.nsf_len);
         s->tx_info.nsf[0] = ADDRESS_FIELD;
         s->tx_info.nsf[1] = CONTROL_FIELD_NON_FINAL_FRAME;
-        s->tx_info.nsf[2] = (uint8_t) (T30_NSF | s->dis_received);
+        s->tx_info.nsf[2] = T30_NSF;
         send_frame(s, s->tx_info.nsf, s->tx_info.nsf_len + 3);
         return true;
     }
@@ -996,7 +996,7 @@ static int send_nsc_frame(t30_state_t *s)
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending user supplied NSC - %d octets\n", s->tx_info.nsc_len);
         s->tx_info.nsc[0] = ADDRESS_FIELD;
         s->tx_info.nsc[1] = CONTROL_FIELD_NON_FINAL_FRAME;
-        s->tx_info.nsc[2] = (uint8_t) (T30_NSC | s->dis_received);
+        s->tx_info.nsc[2] = T30_NSC;
         send_frame(s, s->tx_info.nsc, s->tx_info.nsc_len + 3);
         return true;
     }

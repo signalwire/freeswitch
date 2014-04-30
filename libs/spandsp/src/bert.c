@@ -149,7 +149,7 @@ static void assess_error_rate(bert_state_t *s)
        (i.e. we look for >=10 errors in 1000 bits). We make an assessment every 100 bits, using a sliding
        window over the last 1000 bits. We assess the 1 in 1000 rate over 10000 bits in a similar way, and
        so on for the lower error rates. */
-    test = false;
+    test = true;
     for (i = 2;  i <= 7;  i++)
     {
         if (++s->decade_ptr[i] < 10)

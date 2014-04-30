@@ -771,8 +771,8 @@ static int parse_string_out(at_state_t *s, const char **t, char **target, const 
     default:
         return false;
     }
-    while (*t)
-        t++;
+    while (**t)
+        (*t)++;
     return true;
 }
 /*- End of function --------------------------------------------------------*/
