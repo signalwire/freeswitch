@@ -1555,20 +1555,13 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	callback_t routes = { 0 };
 	lcr_route cur_route = { 0 };
-	switch_memory_pool_t *pool = NULL;
+	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
 	switch_event_t *event = NULL;
 	const char *intrastate = NULL;
 	const char *intralata = NULL;
 	const char *lrn = NULL;
 
-	if (session) {
-		pool = switch_core_session_get_pool(session);
-		routes.session = session;
-	} else {
-		switch_core_new_memory_pool(&pool);
-		switch_event_create(&event, SWITCH_EVENT_MESSAGE);
-		routes.event = event;
-	}
+	routes.session = session;
 	routes.pool = pool;
 
 	intrastate = switch_channel_get_variable(channel, "intrastate");
