@@ -3041,7 +3041,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 	if (switch_media_handle_test_media_flag(smh, SCMF_DISABLE_HOLD) ||
 		((val = switch_channel_get_variable(session->channel, "rtp_disable_hold")) && switch_true(val))) {
-		sendonly = 0;
 	} else {
 
 		if (!smh->mparams->hold_laps) {
