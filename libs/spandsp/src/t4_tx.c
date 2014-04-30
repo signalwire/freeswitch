@@ -300,6 +300,7 @@ static int match_resolution(float actual, const float table[])
 }
 /*- End of function --------------------------------------------------------*/
 
+#if 0
 static int best_colour_resolution(float actual, int allowed_resolutions)
 {
     static const struct
@@ -343,6 +344,7 @@ static int best_colour_resolution(float actual, int allowed_resolutions)
     return x_res_table[best_entry].resolution_code;
 }
 /*- End of function --------------------------------------------------------*/
+#endif
 
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
 static int read_colour_map(t4_tx_state_t *s, int bits_per_sample)
@@ -949,6 +951,7 @@ static int read_tiff_t85_image(t4_tx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+#if defined(SPANDSP_SUPPORT_T43)
 static int read_tiff_t43_image(t4_tx_state_t *s)
 {
     int biggest;
@@ -1026,6 +1029,7 @@ static int read_tiff_t43_image(t4_tx_state_t *s)
     return s->tiff.image_size;
 }
 /*- End of function --------------------------------------------------------*/
+#endif
 
 static int read_tiff_t42_t81_image(t4_tx_state_t *s)
 {

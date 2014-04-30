@@ -110,6 +110,7 @@ static __inline__ uint32_t pack_32(const uint8_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+#if 0
 static __inline__ int unpack_16(uint8_t *s, uint16_t value)
 {
     s[0] = (value >> 8) & 0xFF;
@@ -118,7 +119,6 @@ static __inline__ int unpack_16(uint8_t *s, uint16_t value)
 }
 /*- End of function --------------------------------------------------------*/
 
-#if 0
 static __inline__ int unpack_32(uint8_t *s, uint32_t value)
 {
     s[0] = (value >> 24) & 0xFF;
