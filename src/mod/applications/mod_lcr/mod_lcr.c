@@ -374,13 +374,13 @@ static profile_t *locate_profile(const char *profile_name)
 
 static void init_max_lens(max_len maxes)
 {
-	maxes->digit_str = (headers[LCR_HEADERS_DIGITS] == NULL ? 0 : strlen(headers[LCR_HEADERS_DIGITS]));
-	maxes->carrier_name = (headers[LCR_HEADERS_CARRIER] == NULL ? 0 : strlen(headers[LCR_HEADERS_CARRIER]));
-	maxes->dialstring = (headers[LCR_HEADERS_DIALSTRING] == NULL ? 0 : strlen(headers[LCR_HEADERS_DIALSTRING]));
+	maxes->digit_str = strlen(headers[LCR_HEADERS_DIGITS]);
+	maxes->carrier_name = strlen(headers[LCR_HEADERS_CARRIER]);
+	maxes->dialstring = strlen(headers[LCR_HEADERS_DIALSTRING]);
 	maxes->rate = 8;
-	maxes->codec = (headers[LCR_HEADERS_CODEC] == NULL ? 0 : strlen(headers[LCR_HEADERS_CODEC]));
-	maxes->cid = (headers[LCR_HEADERS_CID] == NULL ? 0 : strlen(headers[LCR_HEADERS_CID]));
-	maxes->limit = (headers[LCR_HEADERS_LIMIT] == NULL ? 0 : strlen(headers[LCR_HEADERS_LIMIT]));
+	maxes->codec = strlen(headers[LCR_HEADERS_CODEC]);
+	maxes->cid = strlen(headers[LCR_HEADERS_CID]);
+	maxes->limit = strlen(headers[LCR_HEADERS_LIMIT]);
 }
 
 static switch_status_t process_max_lengths(max_obj_t *maxes, lcr_route routes, char *destination_number)
