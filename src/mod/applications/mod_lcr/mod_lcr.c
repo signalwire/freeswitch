@@ -1594,6 +1594,11 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 		caller_profile = switch_channel_get_caller_profile(channel);
 	}
 
+	if (!caller_profile) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No caller profile!\n");
+		goto end;
+	}
+
 	if (!(routes.profile = locate_profile(caller_profile->context))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Unknown profile: %s\n", caller_profile->context);
 		goto end;
@@ -1602,14 +1607,12 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "LCR Lookup on %s using profile %s\n", caller_profile->destination_number, caller_profile->context);
 	routes.lookup_number = caller_profile->destination_number;
 
-	if (caller_profile) {
-		routes.cid = (char *) switch_channel_get_variable(channel, "effective_caller_id_number");
-		if (!routes.cid) {
-			routes.cid = (char *) caller_profile->caller_id_number;
-		}
+	routes.cid = (char *) switch_channel_get_variable(channel, "effective_caller_id_number");
+	if (!routes.cid) {
+		routes.cid = (char *) caller_profile->caller_id_number;
 	}
 
-	if (caller_profile && lcr_do_lookup(&routes) == SWITCH_STATUS_SUCCESS) {
+	if (lcr_do_lookup(&routes) == SWITCH_STATUS_SUCCESS) {
 		if ((extension = switch_caller_extension_new(session, caller_profile->destination_number, caller_profile->destination_number)) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "memory error!\n");
 			goto end;
@@ -1644,7 +1647,8 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 			switch_caller_extension_add_application(session, extension, app, argc);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "LCR lookup failed for %s using profile %s\n", caller_profile ? caller_profile->destination_number : "unknown", caller_profile ? caller_profile->context : "unknown");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "LCR lookup failed for %s using profile %s\n",
+						  caller_profile->destination_number, caller_profile->context);
 	}
 
 end:
