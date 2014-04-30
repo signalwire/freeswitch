@@ -588,7 +588,7 @@ static switch_status_t switch_cache_db_execute_sql_real(switch_cache_db_handle_t
 		if (err) {
 			*err = errmsg;
 		} else {
-			free(errmsg);
+			switch_safe_free(errmsg);
 		}
 	}
 
@@ -860,7 +860,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans_full(sw
 		switch_cache_db_execute_sql_real(dbh, pre_trans_execute, &errmsg);
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL PRE TRANS EXEC %s [%s]\n", pre_trans_execute, errmsg);
-			free(errmsg);
+			switch_safe_free(errmsg);
 		}
 	}
 
@@ -906,8 +906,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans_full(sw
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL Retry [%s]\n", errmsg);
 			}
-			free(errmsg);
-			errmsg = NULL;
+			switch_safe_free(errmsg);
 
 			if (again) {
 				switch(dbh->type) {
@@ -951,7 +950,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans_full(sw
 		switch_cache_db_execute_sql_real(dbh, inner_pre_trans_execute, &errmsg);
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL PRE TRANS EXEC %s [%s]\n", inner_pre_trans_execute, errmsg);
-			free(errmsg);
+			switch_safe_free(errmsg);
 		}
 	}
 
@@ -961,7 +960,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans_full(sw
 
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n", errmsg);
-			free(errmsg);
+			switch_safe_free(errmsg);
 			errmsg = NULL;
 			switch_yield(100000);
 			retries--;
@@ -979,7 +978,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans_full(sw
 		switch_cache_db_execute_sql_real(dbh, inner_post_trans_execute, &errmsg);
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL POST TRANS EXEC %s [%s]\n", inner_post_trans_execute, errmsg);
-			free(errmsg);
+			switch_safe_free(errmsg);
 		}
 	}
 
@@ -1010,7 +1009,7 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_persistant_execute_trans_full(sw
 		switch_cache_db_execute_sql_real(dbh, post_trans_execute, &errmsg);
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL POST TRANS EXEC %s [%s]\n", post_trans_execute, errmsg);
-			free(errmsg);
+			switch_safe_free(errmsg);
 		}
 	}
 
@@ -1472,7 +1471,7 @@ static void *SWITCH_THREAD_FUNC sql_in_thread (switch_thread_t *thread, void *ob
 
 	if (err) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", job->sql, err);
-		free(err);
+		switch_safe_free(err);
 	}
 	
 	switch_cache_db_release_db_handle(&dbh);
@@ -1575,7 +1574,7 @@ static void do_flush(switch_sql_queue_manager_t *qm, int i, switch_cache_db_hand
 			if (dbh) {
 				switch_cache_db_execute_sql(dbh, (char *) pop, NULL);
 			}
-			free(pop);
+			switch_safe_free(pop);
 		}
 	}
 	switch_mutex_unlock(qm->mutex);
@@ -1871,7 +1870,7 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 		switch_cache_db_execute_sql_real(qm->event_db, qm->pre_trans_execute, &errmsg);
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL PRE TRANS EXEC %s [%s]\n", qm->pre_trans_execute, errmsg);
-			free(errmsg); errmsg = NULL;
+			switch_safe_free(errmsg);
 		}
 	}
 
@@ -1907,7 +1906,7 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 
 	if (errmsg) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "ERROR [%s]\n", errmsg);
-		free(errmsg);
+		switch_safe_free(errmsg);
 		goto end;
 	}
 
@@ -1916,7 +1915,7 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 		switch_cache_db_execute_sql_real(qm->event_db, qm->inner_pre_trans_execute, &errmsg);
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL PRE TRANS EXEC %s [%s]\n", qm->inner_pre_trans_execute, errmsg);
-			free(errmsg);
+			switch_safe_free(errmsg);
 		}
 	}
 
@@ -1938,8 +1937,7 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 				switch_mutex_unlock(qm->mutex);
 				ttl++;
 			}
-			free(pop);
-			pop = NULL;
+			switch_safe_free(pop);
 			if (status != SWITCH_STATUS_SUCCESS) break;
 		} else {
 			break;
@@ -1950,7 +1948,7 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 		switch_cache_db_execute_sql_real(qm->event_db, qm->inner_post_trans_execute, &errmsg);
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL POST TRANS EXEC %s [%s]\n", qm->inner_post_trans_execute, errmsg);
-			free(errmsg);
+			switch_safe_free(errmsg);
 		}
 	}
 
@@ -1983,7 +1981,7 @@ static uint32_t do_trans(switch_sql_queue_manager_t *qm)
 		switch_cache_db_execute_sql_real(qm->event_db, qm->post_trans_execute, &errmsg);
 		if (errmsg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL POST TRANS EXEC %s [%s]\n", qm->post_trans_execute, errmsg);
-			free(errmsg);
+			switch_safe_free(errmsg);
 		}
 	}
 
@@ -2472,7 +2470,7 @@ static void core_event_handler(switch_event_t *event)
 
 			if (uuid && (extra_cols = parse_presence_data_cols(event))) {
 				new_sql() = switch_mprintf("update channels set %s where uuid='%s'", extra_cols, uuid);
-				free(extra_cols);
+				switch_safe_free(extra_cols);
 			} 
 
 			new_sql() = switch_mprintf("update channels set call_uuid='%q' where uuid='%s' or uuid='%s'",
@@ -2498,7 +2496,7 @@ static void core_event_handler(switch_event_t *event)
 
 			if (uuid && (extra_cols = parse_presence_data_cols(event))) {
 				new_sql() = switch_mprintf("update channels set %s where uuid='%s'", extra_cols, uuid);
-				free(extra_cols);
+				switch_safe_free(extra_cols);
 			} 
 
 			new_sql() = switch_mprintf("update channels set call_uuid=uuid where call_uuid='%s'",
@@ -3031,7 +3029,7 @@ SWITCH_DECLARE(int) switch_core_recovery_recover(const char *technology, const c
 	
 	if (errmsg) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR: [%s] %s\n", sql, errmsg);
-		free(errmsg);
+		switch_safe_free(errmsg);
 	}
 
 	switch_safe_free(sql);
@@ -3169,7 +3167,7 @@ SWITCH_DECLARE(void) switch_core_recovery_track(switch_core_session_t *session)
 
 		switch_sql_queue_manager_push(sql_manager.qm, sql, 2, SWITCH_FALSE);
 
-		free(xml_cdr_text);
+		switch_safe_free(xml_cdr_text);
 		switch_channel_set_flag(channel, CF_TRACKED);
 		
 	}
@@ -3461,9 +3459,9 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Database Error [%s]\n", err);
 				//switch_cache_db_release_db_handle(&sql_manager.dbh);
                                 if (switch_stristr("read-only", err)) { 
-                                        free(err);
+                                        switch_safe_free(err);
                                 } else {
-                                        free(err);
+                                        switch_safe_free(err);
                                         goto top;
                                 }
 			}
