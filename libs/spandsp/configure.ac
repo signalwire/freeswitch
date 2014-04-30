@@ -462,7 +462,10 @@ intel)
     COMP_VENDOR_LDFLAGS=
     ;;
 *)
-    COMP_VENDOR_CFLAGS="-std=c99 -Wall -Wunused-variable -Wunused-but-set-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes $COMP_VENDOR_CFLAGS"
+    COMP_VENDOR_CFLAGS="-std=c99 -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes $COMP_VENDOR_CFLAGS"
+    if test x"$ac_cv_gcc_unused_but_set_variable" = xyes ; then
+        COMP_VENDOR_CFLAGS="-Wunused-but-set-variable $COMP_VENDOR_CFLAGS"
+    fi
     COMP_VENDOR_LDFLAGS=
     ;;
 esac
