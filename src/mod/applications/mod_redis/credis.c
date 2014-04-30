@@ -604,7 +604,7 @@ REDIS credis_connect(const char *host, int port, int timeout)
   return rhnd;
 
  error:
-  if (fd > 0)
+  if (fd >= 0)
     close(fd);
   cr_delete(rhnd);
   return NULL;
