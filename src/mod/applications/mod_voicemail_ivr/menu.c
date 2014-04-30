@@ -736,7 +736,7 @@ char *vmivr_menu_get_input_set(switch_core_session_t *session, vmivr_profile_t *
 		switch_event_add_header(menu.phrase_params, SWITCH_STACK_BOTTOM, "IVR-Retry-Left", "%d", retry);
 
 		/* Find the last entry and append this one to it */
-		for (i=0; menu.dtmfa[i] && i < 16; i++){
+		for (i=0; i < 16 && menu.dtmfa[i]; i++){
 		}
 		menu.dtmfa[i] = (char *) input_mask;
 
