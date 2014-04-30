@@ -624,6 +624,12 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 	switch_memory_pool_t *pool = cbt->pool;
 
 	additional = switch_core_alloc(pool, sizeof(lcr_obj_t));
+
+	if (!additional) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error allocating in route_add_callback\n");
+		goto end;
+	}
+
 	switch_event_create(&additional->fields, SWITCH_EVENT_REQUEST_PARAMS);
 
 	for (i = 0; i < argc ; i++) {
