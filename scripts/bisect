@@ -27,7 +27,7 @@ cat > $runscript <<'EOF'
 
 build_fs () (
   set -e
-  unset CC CXX CPPFLAGS CFLAGS CXXFLAGS LDFLAGS CCACHE_DIR V VERBOSE
+  unset CC CXX CPPFLAGS CFLAGS CXXFLAGS LDFLAGS V VERBOSE
   export V=1 VERBOSE=1
   git clean -fdx
   git reset --hard HEAD
