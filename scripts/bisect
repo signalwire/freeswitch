@@ -34,7 +34,7 @@ build_fs () (
   { git describe HEAD \
     && ./bootstrap.sh -j \
     && ./configure -C --enable-fhs \
-    && make; } 2>&1 | tee build.log
+    && make -j; } 2>&1 | tee build.log
 )
 
 good () { exit 0; }
