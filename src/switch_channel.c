@@ -4014,7 +4014,6 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *c
 				switch_safe_free(expanded_sub_val);
 				sub_val = NULL;
 				vname = NULL;
-				vtype = 0;
 				br = 0;
 			}
 			if (len + 1 >= olen) {
