@@ -1140,7 +1140,7 @@ int main(int argc, char *argv[])
 
 	if (switch_file_open(&fd, pid_path, SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, pool) == SWITCH_STATUS_SUCCESS) {
 
-		old_pid_len = sizeof(old_pid_buffer);
+		old_pid_len = sizeof(old_pid_buffer) -1;
 		switch_file_read(fd, old_pid_buffer, &old_pid_len);
 		switch_file_close(fd);
 	}
