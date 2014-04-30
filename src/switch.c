@@ -1203,14 +1203,13 @@ int main(int argc, char *argv[])
 		int j = 0;
 
 		switch_sleep(1000000);
-		ret = (int) execv(argv[0], argv);
-		fprintf(stderr, "Restart Failed [%s] resorting to plan b\n", strerror(errno));
-
-		for (j = 0; j < argc; j++) {
-			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s ", argv[j]);
+		if (execv(argv[0], argv) == -1) {
+			fprintf(stderr, "Restart Failed [%s] resorting to plan b\n", strerror(errno));
+			for (j = 0; j < argc; j++) {
+				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s ", argv[j]);
+			}
+			ret = system(buf);
 		}
-
-		ret = system(buf);
 	}
 
 	return ret;
