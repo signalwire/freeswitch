@@ -3919,8 +3919,6 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables_check(switch_channel_t *c
 						idx = atoi(ptr);
 					}
 					
-					if (!sub_val) sub_val = vname;
-
 					if ((sub_val = (char *) switch_channel_get_variable_dup(channel, vname, SWITCH_TRUE, idx))) {
 						if (var_list && !switch_event_check_permission_list(var_list, vname)) {
 							sub_val = "<Variable Expansion Permission Denied>";
