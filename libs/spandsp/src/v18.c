@@ -366,6 +366,7 @@ static const char *ascii_to_dtmf[128] =
     "*0"        /* DEL >> BACK SPACE */
 };
 
+#if 0
 static const uint8_t txp[] = "1111111111000101011100001101110000010101";
 
 /* XCI is:
@@ -546,6 +547,7 @@ static const int automoding_sequences[][6] =
         V18_MODE_BELL103
     }
 };
+#endif
 
 static uint16_t encode_baudot(v18_state_t *s, uint8_t ch)
 {

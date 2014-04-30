@@ -118,6 +118,7 @@ static __inline__ int unpack_16(uint8_t *s, uint16_t value)
 }
 /*- End of function --------------------------------------------------------*/
 
+#if 0
 static __inline__ int unpack_32(uint8_t *s, uint32_t value)
 {
     s[0] = (value >> 24) & 0xFF;
@@ -247,6 +248,7 @@ static int t43_create_header(t43_encode_state_t *s, uint8_t data[], size_t len)
     return pos;
 }
 /*- End of function --------------------------------------------------------*/
+#endif
 
 SPAN_DECLARE(void) t43_encode_set_options(t43_encode_state_t *s,
                                           uint32_t l0,

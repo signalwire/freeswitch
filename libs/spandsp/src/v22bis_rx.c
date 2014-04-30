@@ -136,14 +136,6 @@ static const uint8_t phase_steps[4] =
     1, 0, 2, 3
 };
 
-static const uint8_t ones[] =
-{
-    0, 1, 1, 2,
-    1, 2, 2, 3,
-    1, 2, 2, 3,
-    2, 3, 3, 4
-};
-
 SPAN_DECLARE(float) v22bis_rx_carrier_frequency(v22bis_state_t *s)
 {
     return dds_frequencyf(s->rx.carrier_phase_rate);

@@ -111,12 +111,21 @@ typedef struct
     /*! \brief The coefficients for the single bi-quad flat mode filter. */
     const sig_tone_flat_coeffs_t *flat;
 
+#if defined(SPANDSP_USE_FIXED_POINT)
     /*! \brief Minimum signalling tone to total power ratio, in dB */
     int16_t detection_ratio;
     /*! \brief Minimum total power for detection in sharp mode, in dB */
     int16_t sharp_detection_threshold;
     /*! \brief Minimum total power for detection in flat mode, in dB */
     int16_t flat_detection_threshold;
+#else
+    /*! \brief Minimum signalling tone to total power ratio, in dB */
+    float detection_ratio;
+    /*! \brief Minimum total power for detection in sharp mode, in dB */
+    float sharp_detection_threshold;
+    /*! \brief Minimum total power for detection in flat mode, in dB */
+    float flat_detection_threshold;
+#endif
 } sig_tone_descriptor_t;
 
 /*!

@@ -213,6 +213,7 @@ static __inline__ uint16_t pack_16(const uint8_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+#if 0
 static __inline__ uint32_t pack_32(const uint8_t *s)
 {
     uint32_t value;
@@ -221,6 +222,7 @@ static __inline__ uint32_t pack_32(const uint8_t *s)
     return value;
 }
 /*- End of function --------------------------------------------------------*/
+#endif
 
 static __inline__ int unpack_16(uint8_t *s, uint16_t value)
 {

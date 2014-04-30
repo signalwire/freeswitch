@@ -368,6 +368,13 @@ static const nsf_data_t vendor_20[] =
     {NULL, 0, NULL, false, NULL}
 };
 
+static const nsf_data_t vendor_61[] =
+{
+    /* Korea */
+    {"\x00\x7A", 2, "Xerox", false, NULL},
+    {NULL, 0, NULL, false, NULL}
+};
+
 static const nsf_data_t vendor_64[] =
 {
     /* China (not Lebanon) */
@@ -375,13 +382,6 @@ static const nsf_data_t vendor_64[] =
     {"\x01\x00", 2, "Unknown - China 01 00", false, NULL},
     {"\x01\x01", 2, "Unknown - China 01 01", false, NULL},
     {"\x01\x02", 2, "Unknown - China 01 02", false, NULL},
-    {NULL, 0, NULL, false, NULL}
-};
-
-static const nsf_data_t vendor_61[] =
-{
-    /* Korea */
-    {"\x00\x7A", 2, "Xerox", false, NULL},
     {NULL, 0, NULL, false, NULL}
 };
 
@@ -423,18 +423,11 @@ static const nsf_data_t vendor_86[] =
     {NULL, 0, NULL, false, NULL}
 };
 
-static const nsf_data_t vendor_bc[] =
-{
-    /* France */
-    {"\x53\x01", 2, "Minolta", false, NULL},
-    {NULL, 0, NULL, false, NULL}
-};
-
 static const nsf_data_t vendor_ad[] =
 {
     /* United States (not Tunisia) */
     {"\x00\x00", 2, "Pitney Bowes", false, PitneyBowes},
-    {"\x00\x0C", 2, "Dialogic", false, NULL},
+    {"\x00\x0C", 2, "Dialogic", false, Dialogic},
     {"\x00\x15", 2, "Lexmark", false, Lexmark},
     {"\x00\x16", 2, "JetFax", false, JetFax},
     {"\x00\x24", 2, "Octel", false, NULL},
@@ -475,7 +468,7 @@ static const nsf_data_t vendor_b5[] =
     {"\x00\x2A", 2, "STF Tech", false, NULL},
     {"\x00\x2C", 2, "HKB", false, NULL},
     {"\x00\x2E", 2, "Delrina", false, NULL},
-    {"\x00\x30", 2, "Dialogic", false, NULL},
+    {"\x00\x30", 2, "Dialogic", false, Dialogic},
     {"\x00\x32", 2, "Applied Synergy", false, NULL},
     {"\x00\x34", 2, "Syncro Development", false, NULL},
     {"\x00\x36", 2, "Genoa", false, NULL},
@@ -531,6 +524,13 @@ static const nsf_data_t vendor_b5[] =
     {"\x00\xA4", 2, "Lanier", false, NULL},
     {"\x00\xA6", 2, "Qualcomm", false, NULL},
     {"\x00\xAA", 2, "HylaFAX", false, NULL},
+    {NULL, 0, NULL, false, NULL}
+};
+
+static const nsf_data_t vendor_bc[] =
+{
+    /* France (not Vietnam) */
+    {"\x53\x01", 2, "Minolta", false, NULL},
     {NULL, 0, NULL, false, NULL}
 };
 
@@ -724,7 +724,7 @@ static const country_code_t t35_country_codes[255] =
     {"Vanuatu", NULL},
     {"Vatican City State", NULL},
     {"Venezuela", NULL},
-    {"Viet Nam", NULL},
+    {"Viet Nam", vendor_bc},
     {"Wallis and Futuna", NULL},
     {"Western Samoa", NULL},
     {"Yemen (Republic of)", NULL},
