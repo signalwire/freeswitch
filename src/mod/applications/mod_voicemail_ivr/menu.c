@@ -95,7 +95,7 @@ void vmivr_menu_main(switch_core_session_t *session, vmivr_profile_t *profile) {
 		ivre_init(&menu.ivre_d, menu.dtmfa);
 
 		cmd = switch_core_session_sprintf(session, "json %s %s %s %s", profile->api_profile, profile->domain, profile->id, profile->folder_name);
-		jsonapi2event(session, menu.phrase_params, profile->api_msg_count, cmd);
+		jsonapi_populate_event(session, menu.phrase_params, profile->api_msg_count, cmd);
 
 		/* Verify that phrases returned values, if not, exit */
 		if (!switch_event_get_header(menu.phrase_params, "VM-Total-New-Messages")) {
@@ -192,7 +192,7 @@ void vmivr_menu_navigator(switch_core_session_t *session, vmivr_profile_t *profi
 
 	/* Get VoiceMail List And update msg count */
 	cmd = switch_core_session_sprintf(session, "json %s %s %s %s %s", profile->api_profile, profile->domain, profile->id, profile->folder_name, profile->folder_filter);
-	msg_list_params = jsonapi2event(session, NULL, profile->api_msg_list, cmd);
+	msg_list_params = jsonapi2event(session, profile->api_msg_list, cmd);
 	if (msg_list_params) {
 		msg_count = atol(switch_event_get_header(msg_list_params,"VM-List-Count"));
 		if (msg_count == 0) {
@@ -266,7 +266,7 @@ void vmivr_menu_navigator(switch_core_session_t *session, vmivr_profile_t *profi
 		if (!skip_header) {
 			if (!initial_count_played) {
 				cmd = switch_core_session_sprintf(session, "json %s %s %s", profile->api_profile, profile->domain, profile->id);
-				jsonapi2event(session, menu.phrase_params, profile->api_msg_count, cmd);
+				jsonapi_populate_event(session, menu.phrase_params, profile->api_msg_count, cmd);
 				initial_count_played = SWITCH_TRUE;
 				// TODO ivre_playback(session, &menu.ivre_d, switch_event_get_header(menu.event_phrases, "msg_count"), NULL, menu.phrase_params, NULL, 0);
 			}
@@ -597,7 +597,7 @@ void vmivr_menu_select_greeting_slot(switch_core_session_t *session, vmivr_profi
 		if (vmivr_api_execute(session, profile->api_pref_greeting_set, cmd) == SWITCH_STATUS_SUCCESS) {
 			char *str_num = switch_core_session_sprintf(session, "%d", gnum);
 			char *cmd = switch_core_session_sprintf(session, "json %s %s %s %d %s", profile->api_profile, profile->domain, profile->id);
-			switch_event_t *phrases = jsonapi2event(session, NULL, profile->api_pref_greeting_get, cmd);
+			switch_event_t *phrases = jsonapi2event(session, profile->api_pref_greeting_get, cmd);
 
 			ivre_playback_dtmf_buffered(session, switch_event_get_header(menu.event_phrases, "selected_slot"), str_num, phrases, NULL, 0);
 
