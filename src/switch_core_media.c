@@ -3038,21 +3038,16 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		switch_channel_set_variable(session->channel, "media_audio_mode", NULL);
 	}
 
-
-	if (switch_media_handle_test_media_flag(smh, SCMF_DISABLE_HOLD) ||
-		((val = switch_channel_get_variable(session->channel, "rtp_disable_hold")) && switch_true(val))) {
-	} else {
-
-		if (!smh->mparams->hold_laps) {
-			smh->mparams->hold_laps++;
-			if (switch_core_media_toggle_hold(session, sendonly)) {
-				reneg = switch_media_handle_test_media_flag(smh, SCMF_RENEG_ON_HOLD);
-				
-				if ((val = switch_channel_get_variable(session->channel, "rtp_renegotiate_codec_on_hold"))) {
-					reneg = switch_true(val);
-				}
+	if (!(switch_media_handle_test_media_flag(smh, SCMF_DISABLE_HOLD)
+		  || ((val = switch_channel_get_variable(session->channel, "rtp_disable_hold"))
+			  && switch_true(val)))
+		&& !smh->mparams->hold_laps) {
+		smh->mparams->hold_laps++;
+		if (switch_core_media_toggle_hold(session, sendonly)) {
+			reneg = switch_media_handle_test_media_flag(smh, SCMF_RENEG_ON_HOLD);
+			if ((val = switch_channel_get_variable(session->channel, "rtp_renegotiate_codec_on_hold"))) {
+				reneg = switch_true(val);
 			}
-			
 		}
 	}
 
