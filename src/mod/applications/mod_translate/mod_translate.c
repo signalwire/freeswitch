@@ -88,7 +88,6 @@ static switch_status_t load_config(void)
 
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Replace number matching [%s] with [%s]\n", regex, replace);
 					if (rules_list == NULL) {
-						rules_list = switch_core_alloc(globals.pool, sizeof(translate_rule_t));
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "starting with an empty list\n");
 						rules_list = this_rule;
 					} else {
