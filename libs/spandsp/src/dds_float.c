@@ -2100,6 +2100,12 @@ static const float sine_table[SINELEN] =
     -0.00306796f
 };
 
+SPAN_DECLARE(float) dds_phase_to_radians(uint32_t phase)
+{
+    return phase*2.0f*3.1415926f/(65536.0f*65536.0f);
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int32_t) dds_phase_ratef(float frequency)
 {
     return (int32_t) (frequency*65536.0f*65536.0f/SAMPLE_RATE);
@@ -2124,6 +2130,24 @@ SPAN_DECLARE(float) dds_scaling_dbovf(float level)
 }
 /*- End of function --------------------------------------------------------*/
 
+static __inline__ float dds_lookupx(uint32_t phase)
+{
+    return sine_table[phase >> (32 - SLENK)];
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(float) dds_lookupf(uint32_t phase)
+{
+    return dds_lookupx(phase);
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(float) dds_offsetf(uint32_t phase_acc, int32_t phase_offset)
+{
+    return dds_lookupx(phase_acc + phase_offset);
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(void) dds_advancef(uint32_t *phase_acc, int32_t phase_rate)
 {
     *phase_acc += phase_rate;
@@ -2134,15 +2158,9 @@ SPAN_DECLARE(float) ddsf(uint32_t *phase_acc, int32_t phase_rate)
 {
     float amp;
 
-    amp = sine_table[*phase_acc >> (32 - SLENK)];
+    amp = dds_lookupx(*phase_acc);
     *phase_acc += phase_rate;
     return amp;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(float) dds_lookupf(uint32_t phase)
-{
-    return sine_table[phase >> (32 - SLENK)];
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -2150,18 +2168,7 @@ SPAN_DECLARE(float) dds_modf(uint32_t *phase_acc, int32_t phase_rate, float scal
 {
     float amp;
 
-    amp = sine_table[*(phase_acc + phase) >> (32 - SLENK)]*scale;
-    *phase_acc += phase_rate;
-    return amp;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(complexf_t) dds_complexf(uint32_t *phase_acc, int32_t phase_rate)
-{
-    complexf_t amp;
-
-    amp = complex_setf(sine_table[(*phase_acc + (1 << 30)) >> (32 - SLENK)],
-                       sine_table[*phase_acc >> (32 - SLENK)]);
+    amp = dds_lookupx(*phase_acc + phase)*scale;
     *phase_acc += phase_rate;
     return amp;
 }
@@ -2169,8 +2176,17 @@ SPAN_DECLARE(complexf_t) dds_complexf(uint32_t *phase_acc, int32_t phase_rate)
 
 SPAN_DECLARE(complexf_t) dds_lookup_complexf(uint32_t phase)
 {
-    return complex_setf(sine_table[(phase + (1 << 30)) >> (32 - SLENK)],
-                        sine_table[phase >> (32 - SLENK)]);
+    return complex_setf(dds_lookupx(phase + (1 << 30)), dds_lookupx(phase));
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(complexf_t) dds_complexf(uint32_t *phase_acc, int32_t phase_rate)
+{
+    complexf_t amp;
+
+    amp = complex_setf(dds_lookupx(*phase_acc + (1 << 30)), dds_lookupx(*phase_acc));
+    *phase_acc += phase_rate;
+    return amp;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -2178,8 +2194,8 @@ SPAN_DECLARE(complexf_t) dds_complex_modf(uint32_t *phase_acc, int32_t phase_rat
 {
     complexf_t amp;
 
-    amp = complex_setf(sine_table[(*phase_acc + phase + (1 << 30)) >> (32 - SLENK)]*scale,
-                       sine_table[(*phase_acc + phase) >> (32 - SLENK)]*scale);
+    amp = complex_setf(dds_lookupx(*phase_acc + phase + (1 << 30))*scale,
+                       dds_lookupx(*phase_acc + phase)*scale);
     *phase_acc += phase_rate;
     return amp;
 }

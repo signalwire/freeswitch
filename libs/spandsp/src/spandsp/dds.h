@@ -36,6 +36,12 @@ extern "C"
 {
 #endif
 
+/*! \brief Convert a 32 bit phase angle to an angle in radians, between 0 and 2*PI
+    \param phase The angle to convert.
+    \return The angle in radians.
+*/
+SPAN_DECLARE(float) dds_phase_to_radians(uint32_t phase);
+
 /*! \brief Find the phase rate value to achieve a particular frequency.
     \param frequency The desired frequency, in Hz.
     \return The phase rate which while achieve the desired frequency.
@@ -220,6 +226,13 @@ SPAN_DECLARE(float) ddsf(uint32_t *phase_acc, int32_t phase_rate);
     \return The signal amplitude, between -1.0 and 1.0.
 */
 SPAN_DECLARE(float) dds_lookupf(uint32_t phase);
+
+/*! \brief Lookup the floating point value of a particular phase offset from an accumulated phase.
+    \param phase_acc The accumulated phase.
+    \param phase_offset The phase offset.
+    \return The signal amplitude.
+*/
+SPAN_DECLARE(float) dds_offsetf(uint32_t phase_acc, int32_t phase_offset);
 
 /*! \brief Generate a floating point tone sample, with modulation.
     \param phase_acc A pointer to a phase accumulator value.
