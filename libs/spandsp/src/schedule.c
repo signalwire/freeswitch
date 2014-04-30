@@ -156,9 +156,11 @@ SPAN_DECLARE(int) span_schedule_release(span_sched_state_t *s)
 
 SPAN_DECLARE(int) span_schedule_free(span_sched_state_t *s)
 {
-    span_schedule_release(s);
     if (s)
+    {
+        span_schedule_release(s);
         span_free(s);
+    }
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

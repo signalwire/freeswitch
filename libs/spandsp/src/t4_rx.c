@@ -733,7 +733,10 @@ static int close_tiff_output_file(t4_rx_state_t *s)
         /* Try not to leave a file behind, if we didn't receive any pages to
            put in it. */
         if (s->current_page == 0)
-            remove(s->tiff.file);
+        {
+            if (remove(s->tiff.file) < 0)
+                span_log(&s->logging, SPAN_LOG_WARNING, "%s: Failed to remove file.\n", s->tiff.file);
+        }
         span_free((char *) s->tiff.file);
     }
     s->tiff.file = NULL;
