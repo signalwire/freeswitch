@@ -41,10 +41,10 @@ static int match_dtmf(switch_core_session_t *session, ivre_data_t *loc) {
 	loc->completeMatch = NULL;
 	loc->potentialMatchCount = 0;
 
-	for (i = 0; i < loc->dtmf_received; i++) {
+	for (i = 0; i < 16 && i < loc->dtmf_received; i++) {
 		int j;
 		loc->potentialMatchCount = 0;
-		for (j = 0; !zstr(loc->dtmf_accepted[j]) && j < 128; j++) {
+		for (j = 0; j < 128 && !zstr(loc->dtmf_accepted[j]); j++) {
 			switch_bool_t cMatch = SWITCH_FALSE;
 			char test[2] = { 0 };
 

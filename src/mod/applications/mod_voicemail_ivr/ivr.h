@@ -36,7 +36,7 @@
 struct ivre_data {
 	char dtmf_stored[128];
 	int dtmf_received;
-	char dtmf_accepted[16][128];
+	char dtmf_accepted[128][16];
 	int result;
 	switch_bool_t audio_stopped;
 	switch_bool_t recorded_audio;
