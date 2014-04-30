@@ -163,6 +163,7 @@ SWITCH_DECLARE(switch_bool_t) switch_get_system_idle_time(switch_profile_timer_t
 {
 	unsigned long long user, nice, system, idle, iowait, irq, softirq, steal;
 	unsigned long long usertime, kerneltime, idletime, totaltime, halftime;
+	int x;
 
 	*idle_percentage = 100.0;
 	if (p->disabled) {
@@ -217,7 +218,7 @@ SWITCH_DECLARE(switch_bool_t) switch_get_system_idle_time(switch_profile_timer_t
 	p->percentage_of_idle_time_ring[p->last_idle_time_index] = ((100 * idletime + halftime) / totaltime);
 
 	p->last_percentage_of_idle_time = 0;
-	for ( int x = 0; x < p->cpu_idle_smoothing_depth; x++ ) {
+	for ( x = 0; x < p->cpu_idle_smoothing_depth; x++ ) {
 	  //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "IDLE TIME: (%d)[%lf]\n", x, p->percentage_of_idle_time_ring[x]);
 	  p->last_percentage_of_idle_time += p->percentage_of_idle_time_ring[x];
 	}
