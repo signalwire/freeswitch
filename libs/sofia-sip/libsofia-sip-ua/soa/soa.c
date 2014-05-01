@@ -559,8 +559,9 @@ int soa_base_set_params(soa_session_t *ss, tagi_t const *tags)
   ss->ss_srtp_integrity = srtp_integrity;
 
   if (!su_casematch(media_address, ss->ss_address)) {
-    su_free(ss->ss_home, (void *)ss->ss_address);
+    char const *addr = ss->ss_address;
     ss->ss_address = su_strdup(ss->ss_home, media_address);
+    su_free(ss->ss_home, (void *)addr);
     change_session = 1;
   }
 
@@ -568,8 +569,9 @@ int soa_base_set_params(soa_session_t *ss, tagi_t const *tags)
     hold = "*";
 
   if (!su_casematch(hold, ss->ss_hold)) {
-    su_free(ss->ss_home, (void *)ss->ss_hold);
+    char const *h = ss->ss_hold;
     ss->ss_hold = su_strdup(ss->ss_home, hold);
+    su_free(ss->ss_home, (void *)h);
     change_session = 1;
   }
 
