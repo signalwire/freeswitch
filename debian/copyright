@@ -1264,36 +1264,6 @@ Files: libs/miniupnpc/bsdqueue.h
 Copyright: 1991,1993, The Regents of the University of California
 License: BSD-3-clause
 
-Files: libs/ldns/*
-Copyright: 2001-2010, NLnet Labs
- 2000-2001, Aaron D. Gifford
- 2000-2003 Damien Miller
- 1999 WIDE Project
- 1998 Todd C. Miller <Todd.Miller@courtesan.com>
- 1996, 1998 Internet Software Consortium.
- 1995 International Business Machines
-License: BSD-2-clause
-
-Files: libs/ldns/compat/fake-rfc2553.[ch]
- libs/ldns/examples/fake-rfc2553.h
- libs/ldns/ldns/rbtree.h
- libs/ldns/rbtree.c
- libs/win32/ldns/ldns-lib/util.h
-Copyright: 2001-2010, NLnet Labs
- 2000-2003 Damien Miller
- 1999 WIDE Project
-License: BSD-3-clause
-
-Files: libs/ldns/compat/b32_pton.c
- libs/ldns/compat/strlcpy.c
- libs/ldns/compat/b32_ntop.c
- libs/ldns/compat/b64_ntop.c
- libs/ldns/compat/inet_pton.c
-Copyright: 1996, 1998 Internet Software Consortium.
- 1995 International Business Machines, Inc.
- 1998 Todd C. Miller <Todd.Miller@courtesan.com>
-License: ISC
-
 Files: libs/js/*
 Copyright: 1998-2006 Mozilla <http://www.mozilla.org/>
  1996-2000 Netscape Communications Corporation

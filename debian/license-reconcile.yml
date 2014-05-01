@@ -1,14 +1,6 @@
 Rules:
  rules:
   -
-   Glob: libs/ldns/*
-   Matches: NLnet\s*Labs,?\s*(20\d\d(|\s*-\s*20\d\d)|All\sright\sreserved)
-   Copyright: 2004-2010, NLnet Labs
-  -
-   Glob: libs/win32/ldns/ldns-lib/util.h
-   Matches: NLnet\s*Labs,?\s*(20\d\d(|\s*-\s*20\d\d)|All\sright\sreserved)
-   Copyright: 2004-2010, NLnet Labs
-  -
    Glob: libs/miniupnpc/*
    Matches: Thomas\sBERNARD
    Copyright: Thomas Bernard

@@ -1121,6 +1121,11 @@ case $host in
        ;;
 esac
 
+# temporary workaround for Debian libldns-dev package bug
+if test -f /usr/lib/pkg-config/libldns.pc; then
+  path_push_unique PKG_CONFIG_PATH /usr/lib/pkg-config
+fi
+
 PKG_CHECK_MODULES([SQLITE], [sqlite3 >= 3.6.20])
 PKG_CHECK_MODULES([CURL], [libcurl >= 7.19])
 PKG_CHECK_MODULES([PCRE], [libpcre >= 7.8])
@@ -1128,6 +1133,9 @@ PKG_CHECK_MODULES([SPEEX], [speex >= 1.2rc1 speexdsp >= 1.2rc1])
 PKG_CHECK_MODULES([YAML], [yaml-0.1 >= 0.1.4],[
   AM_CONDITIONAL([HAVE_YAML],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_YAML],[false])])
+PKG_CHECK_MODULES([LDNS], [libldns >= 1.6.6],[
+  AM_CONDITIONAL([HAVE_LDNS],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_LDNS],[false])])
 
 PKG_CHECK_MODULES([MEMCACHED], [libmemcached >= 0.31],[
   AM_CONDITIONAL([HAVE_MEMCACHED],[true])
