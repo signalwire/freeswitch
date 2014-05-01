@@ -115,10 +115,10 @@ su_inline int tp_cmp(tport_t const *a, tport_t const *b)
   return memcmp(a->tp_addr, b->tp_addr, a->tp_addrlen);
 }
 
-su_inline int tprb_is_inserted(tport_t const *a)
-{
-  return a->tp_dad != 0 || a->tp_left != 0 || a->tp_right != 0;
-}
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+#endif
 
 RBTREE_PROTOS(su_inline, tprb, tport_t);
 
@@ -126,6 +126,10 @@ RBTREE_BODIES(su_inline, tprb, tport_t,
 	      TP_LEFT, TP_RIGHT, TP_PARENT,
 	      TP_IS_RED, TP_SET_RED, TP_IS_BLACK, TP_SET_BLACK, TP_COPY_COLOR,
 	      tp_cmp, TP_INSERT, TP_REMOVE);
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 static void tplist_insert(tport_t **list, tport_t *tp)
 {
@@ -311,12 +315,6 @@ inline int tport_is_shutdown(tport_t const *self)
   return self->tp_closed || self->tp_send_close || self->tp_recv_close;
 }
 
-/** Test if transport is bound */
-su_inline int tport_is_bound(tport_t const *self)
-{
-  return self->tp_protoname != NULL;
-}
-
 /** Test if transport connection has been established. @NEW_1_12_5. */
 int tport_is_connected(tport_t const *self)
 {
@@ -346,12 +344,6 @@ int tport_has_queued(tport_t const *self)
 su_inline unsigned tport_mtu(tport_t const *self)
 {
   return self->tp_params->tpp_mtu;
-}
-
-su_inline
-int tport_has_sigcomp(tport_t const *self)
-{
-  return self->tp_name->tpn_comp != NULL;
 }
 
 /** Set IP TOS for socket */

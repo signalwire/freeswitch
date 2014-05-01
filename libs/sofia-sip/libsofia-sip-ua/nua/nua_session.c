@@ -4590,12 +4590,6 @@ session_timer_set(nua_session_usage_t *ss, int uas)
   }
 }
 
-su_inline int
-session_timer_has_been_set(struct session_timer const *t)
-{
-  return t->timer_set;
-}
-
 /* ======================================================================== */
 
 /** Get SDP from a SIP message.

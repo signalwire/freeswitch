@@ -203,8 +203,17 @@ su_inline void *timers_alloc(void *argument, void *memory, size_t size)
     return free(memory), NULL;
 }
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+#endif
+
 HEAP_BODIES(su_inline, su_timer_queue_t, timers_, su_timer_t *,
 	    timers_less, timers_set, timers_alloc, NULL);
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 /**@internal Set the timer.
  *

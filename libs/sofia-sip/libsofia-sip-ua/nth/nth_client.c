@@ -243,8 +243,18 @@ static int hc_recv(nth_client_t * hc, msg_t *msg, http_t * http);
 HTABLE_PROTOS_WITH(hc_htable, hct, nth_client_t, uintptr_t, size_t);
 
 #define HTABLE_HASH_CLIENT(hc) ((uintptr_t)(hc)->hc_tport)
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+#endif
+
 HTABLE_BODIES_WITH(hc_htable, hct, nth_client_t, HTABLE_HASH_CLIENT,
 		   uintptr_t, size_t);
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 static url_string_t const *hc_request_complete(nth_client_t * hc,
 					       msg_t *msg, http_t * http,

@@ -1705,8 +1705,17 @@ sres_resolver_destructor(void *arg)
     res->res_updcb(res->res_async, INVALID_SOCKET, INVALID_SOCKET);
 }
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+#endif
+
 HTABLE_BODIES_WITH(sres_qtable, qt, sres_query_t, SRES_QUERY_HASH,
 		   unsigned, size_t);
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 /** Allocate a query structure */
 static

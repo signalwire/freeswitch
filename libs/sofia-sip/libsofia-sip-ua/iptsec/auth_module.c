@@ -80,9 +80,18 @@ char const auth_internal_server_error[] = "Internal server error";
 static void auth_call_scheme_destructor(void *);
 static void auth_md5_hmac_key(auth_mod_t *am);
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+#endif
+
 HTABLE_PROTOS_WITH(auth_htable, aht, auth_passwd_t, usize_t, unsigned);
 HTABLE_BODIES_WITH(auth_htable, aht, auth_passwd_t, APW_HASH,
 		   usize_t, unsigned);
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 /**Allocate an authentication module instance.
  *

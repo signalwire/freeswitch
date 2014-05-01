@@ -4124,7 +4124,18 @@ static int leg_route(nta_leg_t *leg,
 static int leg_callback_default(nta_leg_magic_t*, nta_leg_t*,
 				nta_incoming_t*, sip_t const *);
 #define HTABLE_HASH_LEG(leg) ((leg)->leg_hash)
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+#endif
+
 HTABLE_BODIES_WITH(leg_htable, lht, nta_leg_t, HTABLE_HASH_LEG, size_t, hash_value_t);
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+
 su_inline
 hash_value_t hash_istring(char const *, char const *, hash_value_t);
 
@@ -4881,6 +4892,7 @@ void leg_recv(nta_leg_t *leg, msg_t *msg, sip_t *sip, tport_t *tport)
     nta_incoming_destroy(irq);
 }
 
+#if 0
 /**Compare two SIP from/to fields.
  *
  * @retval nonzero if matching.
@@ -4897,6 +4909,7 @@ int addr_cmp(url_t const *a, url_t const *b)
       su_strcmp(a->url_port, b->url_port) ||
       su_strcmp(a->url_user, b->url_user);
 }
+#endif
 
 /** Get a leg by dialog.
  *
@@ -7207,8 +7220,17 @@ size_t incoming_mass_destroy(nta_agent_t *sa, incoming_queue_t *q)
 
 #define HTABLE_HASH_ORQ(orq) ((orq)->orq_hash)
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+#endif
+
 HTABLE_BODIES_WITH(outgoing_htable, oht, nta_outgoing_t, HTABLE_HASH_ORQ,
 		   size_t, hash_value_t);
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 static int outgoing_features(nta_agent_t *agent, nta_outgoing_t *orq,
 			      msg_t *msg, sip_t *sip,
@@ -10224,8 +10246,7 @@ su_inline void outgoing_destroy_resolver(nta_outgoing_t *orq)
 
   assert(orq->orq_resolver);
 
-  if (sr->sr_query)    /* Cancel resolver query */
-    sres_query_bind(sr->sr_query, NULL, NULL), sr->sr_query = NULL;
+  outgoing_cancel_resolver(orq);
 
   su_free(orq->orq_agent->sa_home, sr);
 

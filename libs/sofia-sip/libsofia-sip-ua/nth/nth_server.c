@@ -200,9 +200,6 @@ static char const __func__[] = "nth";
 static server_t *server_create(url_t const *url,
 			       tag_type_t tag, tag_value_t value, ...);
 void server_destroy(server_t *srv);
-su_inline int server_timer_init(server_t *srv);
-static void server_timer(su_root_magic_t *rm, su_timer_t *timer, server_t *srv);
-su_inline uint32_t server_now(server_t const *srv);
 static void server_request(server_t *srv, tport_t *tport, msg_t *msg,
 				    void *arg, su_time_t now);
 static nth_site_t **site_get_host(nth_site_t **, char const *host, char const *port);
@@ -773,44 +770,6 @@ void server_destroy(server_t *srv)
   tport_destroy(srv->srv_tports);
   su_timer_destroy(srv->srv_timer);
   su_home_unref(srv->srv_home);
-}
-
-/** Initialize server timer. */
-su_inline
-int server_timer_init(server_t *srv)
-{
-  if (0) {
-    srv->srv_timer = su_timer_create(su_root_task(srv->srv_root), SERVER_TICK);
-    return su_timer_set(srv->srv_timer, server_timer, srv);
-  }
-  return 0;
-}
-
-/**
- * Server timer routine.
- */
-static
-void server_timer(su_root_magic_t *rm, su_timer_t *timer, server_t *srv)
-{
-  uint32_t now;
-
-  su_timer_set(timer, server_timer, srv);
-
-  now = su_time_ms(su_now()); now += now == 0; srv->srv_now = now;
-
-  /* Xyzzy */
-
-  srv->srv_now = 0;
-}
-
-/** Get current timestamp in milliseconds */
-su_inline
-uint32_t server_now(server_t const *srv)
-{
-  if (srv->srv_now)
-    return srv->srv_now;
-  else
-    return su_time_ms(su_now());
 }
 
 /** Process incoming request message */

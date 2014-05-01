@@ -648,8 +648,17 @@ int sres_cache_set_srv_priority(sres_cache_t *cache,
   return ret;
 }
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+#endif
+
 HTABLE_BODIES_WITH(sres_htable, ht, sres_rr_hash_entry_t, SRES_HENTRY_HASH,
 		   unsigned, size_t);
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 static inline
 int sres_heap_earlier_entry(sres_rr_hash_entry_t const *a,
@@ -667,6 +676,11 @@ void sres_heap_set_entry(sres_rr_hash_entry_t **heap,
   heap[index] = entry;
 }
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+#endif
+
 HEAP_BODIES(static inline,
 	    sres_heap_t,
 	    sres_heap_,
@@ -675,3 +689,7 @@ HEAP_BODIES(static inline,
 	    sres_heap_set_entry,
 	    su_realloc,
 	    NULL);
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif

@@ -63,7 +63,9 @@
 
 #include <sofia-sip/su_wait.h>
 
+#if 0
 su_inline int can_redirect(sip_contact_t const *m, sip_method_t method);
+#endif
 
 /**@internal
  *
@@ -1259,6 +1261,7 @@ int nua_base_client_check_restart(nua_client_request_t *cr,
   return 0;  /* This was a final response that cannot be restarted. */
 }
 
+#if 0
 su_inline
 int can_redirect(sip_contact_t const *m, sip_method_t method)
 {
@@ -1274,6 +1277,7 @@ int can_redirect(sip_contact_t const *m, sip_method_t method)
   }
   return 0;
 }
+#endif
 
 /** @internal Add authorization data */
 static int nh_authorize(nua_handle_t *nh, tag_type_t tag, tag_value_t value, ...)
