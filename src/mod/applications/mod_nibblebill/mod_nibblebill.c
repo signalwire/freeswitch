@@ -680,7 +680,7 @@ static void nibblebill_pause(switch_core_session_t *session)
 
 	if (!nibble_data) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Can't pause - channel is not initialized for billing!\n");
-		return;
+		goto end;
 	}
 
 	/* Set pause counter if not already set */
@@ -689,6 +689,7 @@ static void nibblebill_pause(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Paused billing timestamp!\n");
 
+ end:
 	/* Done checking - release lock */
 	if (globals.mutex) {
 		switch_mutex_unlock(globals.mutex);
