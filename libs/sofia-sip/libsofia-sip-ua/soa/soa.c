@@ -75,8 +75,6 @@ static char const __func__[] = "soa";
 /* ======================================================================== */
 
 /* Internal prototypes */
-su_inline int soa_media_is_ready(soa_session_t const *ss);
-
 enum soa_sdp_kind {
   soa_capability_sdp_kind,
   soa_user_sdp_kind,
@@ -1897,14 +1895,6 @@ int soa_set_warning(soa_session_t *ss, int code, char const *text)
   if (ss)
     ss->ss_wcode = code, ss->ss_warning = text;
   return -1;
-}
-
-su_inline
-int soa_media_is_ready(soa_session_t const *ss)
-{
-  XXX;
-  return 0;
-  /* return ss && ss->ss_session != NULL; */
 }
 
 void soa_set_activity(soa_session_t *ss,
