@@ -338,7 +338,7 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 		if (session) {
 			jb = switch_core_session_get_jb(session, SWITCH_MEDIA_TYPE_AUDIO);
 		}
-		if (jb && codec && codec->cur_frame) {
+		if (jb && codec->cur_frame) {
 			for (i = 1; i <= MAX_LBRR_DELAY; i++) {
 				found_frame = stfu_n_copy_next_frame(jb, (uint32_t)codec->cur_frame->timestamp, codec->cur_frame->seq, (uint16_t)i, &next_frame);
 				if (found_frame) {
