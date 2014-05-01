@@ -49,6 +49,8 @@ extern "C" {
 #endif
 
 typedef enum {
+	FTDM_CHANNEL_STATE_ANY = -1,
+	FTDM_CHANNEL_STATE_END = -1,
 	FTDM_CHANNEL_STATE_DOWN,
 	FTDM_CHANNEL_STATE_HOLD,
 	FTDM_CHANNEL_STATE_SUSPENDED,
@@ -77,6 +79,7 @@ typedef enum {
 	FTDM_CHANNEL_STATE_RESET,
 	FTDM_CHANNEL_STATE_INVALID
 } ftdm_channel_state_t;
+/* Purposely not adding ANY (-1) and END (-1) since FTDM_STR2ENUM_P works only on enums starting at zero */
 #define CHANNEL_STATE_STRINGS "DOWN", "HOLD", "SUSPENDED", "DIALTONE", "COLLECT", \
 		"RING", "RINGING", "BUSY", "ATTN", "GENRING", "DIALING", "GET_CALLERID", "CALLWAITING", \
 		"RESTART", "PROCEED", "PROGRESS", "PROGRESS_MEDIA", "UP", "TRANSFER", "IDLE", "TERMINATING", "CANCEL", \

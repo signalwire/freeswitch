@@ -66,9 +66,6 @@ extern "C" {
 #define FTDM_DEFAULT_DTMF_ON 250
 #define FTDM_DEFAULT_DTMF_OFF 50
 
-#define FTDM_END -1
-#define FTDM_ANY_STATE -1
-
 typedef enum {
 	FTDM_ENDIAN_BIG = 1,
 	FTDM_ENDIAN_LITTLE = -1

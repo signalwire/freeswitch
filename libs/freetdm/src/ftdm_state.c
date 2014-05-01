@@ -149,7 +149,7 @@ static int ftdm_parse_state_map(ftdm_channel_t *ftdmchan, ftdm_channel_state_t s
 			continue;
 		}
 		
-		if (state_map->nodes[x].check_states[0] == FTDM_ANY_STATE) {
+		if (state_map->nodes[x].check_states[0] == FTDM_CHANNEL_STATE_ANY) {
 			proceed = 1;
 		} else {
 			for(i = 0; i < FTDM_MAP_MAX; i++) {
@@ -166,7 +166,7 @@ static int ftdm_parse_state_map(ftdm_channel_t *ftdmchan, ftdm_channel_state_t s
 		
 		for(i = 0; i < FTDM_MAP_MAX; i++) {
 			ok = (state_map->nodes[x].type == ZSM_ACCEPTABLE);
-			if (state_map->nodes[x].states[i] == FTDM_END) {
+			if (state_map->nodes[x].states[i] == FTDM_CHANNEL_STATE_END) {
 				break;
 			}
 			if (state_map->nodes[x].states[i] == state) {
