@@ -78,6 +78,7 @@ end:
 void jsonapi_populate_event(switch_core_session_t *session, switch_event_t *apply_event, const char *api, const char *data) {
 	switch_event_t *phrases_event = NULL;
 	switch_stream_handle_t stream = { 0 };
+	switch_event_header_t *hp;
 
 	switch_assert(apply_event);
 	SWITCH_STANDARD_STREAM(stream);
@@ -85,7 +86,6 @@ void jsonapi_populate_event(switch_core_session_t *session, switch_event_t *appl
 	switch_event_create_json(&phrases_event, (char *) stream.data);
 	switch_safe_free(stream.data);
 
-	switch_event_header_t *hp;
 	for (hp = phrases_event->headers; hp; hp = hp->next) {
 		if (!strncasecmp(hp->name, "VM-", 3)) {
 			switch_event_add_header(apply_event, SWITCH_STACK_BOTTOM, hp->name, "%s", hp->value);
