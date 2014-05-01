@@ -259,7 +259,7 @@ stfu_status_t stfu_n_resize(stfu_instance_t *i, uint32_t qlen)
     }
 
     if ((s = stfu_n_resize_aqueue(&i->a_queue, qlen)) == STFU_IT_WORKED) {
-        s = stfu_n_resize_aqueue(&i->b_queue, qlen);
+        stfu_n_resize_aqueue(&i->b_queue, qlen);
         s = stfu_n_resize_aqueue(&i->c_queue, qlen);
 
         if (qlen > i->most_qlen) {
