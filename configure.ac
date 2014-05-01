@@ -1122,7 +1122,7 @@ case $host in
 esac
 
 # temporary workaround for Debian libldns-dev package bug
-if test -f /usr/lib/pkg-config/libldns.pc; then
+if test "$cross_compiling" != "yes" && test -f /usr/lib/pkg-config/libldns.pc; then
   path_push_unique PKG_CONFIG_PATH /usr/lib/pkg-config
 fi
 
