@@ -1432,11 +1432,7 @@ static switch_status_t speech_channel_set_param(speech_channel_t *schannel, cons
 		if (!p) {
 			p = switch_core_strdup(schannel->memory_pool, param);
 		}
-		if (val) {
-			v = switch_core_strdup(schannel->memory_pool, val);
-		} else {
-			v = val;
-		}
+		v = switch_core_strdup(schannel->memory_pool, val);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) param = %s, val = %s\n", schannel->name, p, v);
 		switch_core_hash_insert(schannel->params, p, v);
 	}
