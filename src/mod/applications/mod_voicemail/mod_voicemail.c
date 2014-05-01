@@ -1978,7 +1978,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 	int total_saved_messages = 0;
 	int total_new_urgent_messages = 0;
 	int total_saved_urgent_messages = 0;
-	int heard_auto_saved = 0, heard_auto_new = 0;
+	int heard_auto_new = 0;
 	char *vm_email = NULL, *email_addr = NULL;
 	char *convert_cmd = profile->convert_cmd;
 	char *convert_ext = profile->convert_ext;
@@ -1986,14 +1986,9 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 	char *storage_dir = NULL;
 	char global_buf[2] = "";
 	switch_input_args_t args = { 0 };
-	const char *caller_id_name = NULL;
 	const char *caller_id_number = NULL;
 	int auth_only = 0, authed = 0;
 	switch_event_t *event;
-
-	if (!(caller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name"))) {
-		caller_id_name = caller_profile->caller_id_name;
-	}
 
 	if (!(caller_id_number = switch_channel_get_variable(channel, "effective_caller_id_number"))) {
 		caller_id_number = caller_profile->caller_id_number;
@@ -2008,7 +2003,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 
 	timeout = profile->digit_timeout;
 	attempts = profile->max_login_attempts;
-	status = switch_ivr_phrase_macro(session, VM_HELLO_MACRO, NULL, NULL, &args);
+	switch_ivr_phrase_macro(session, VM_HELLO_MACRO, NULL, NULL, &args);
 	*global_buf = '\0';
 
 	while (switch_channel_ready(channel)) {
@@ -2021,7 +2016,6 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				total_saved_messages = 0;
 				total_new_urgent_messages = 0;
 				total_saved_urgent_messages = 0;
-				heard_auto_saved = 0;
 				heard_auto_new = 0;
 				play_msg_type = MSG_NONE;
 				attempts = profile->max_login_attempts;
@@ -2125,7 +2119,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 										" order by read_flags, created_epoch %s", myid, domain_name,
 										profile->play_new_messages_lifo ? "desc" : "asc");
 						total_messages = total_new_messages;
-						heard_auto_new = heard_auto_saved = 1;
+						heard_auto_new = 1;
 					}
 					break;
 				case MSG_SAVED:
@@ -2136,7 +2130,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 										" order by read_flags, created_epoch %s", myid, domain_name,
 										profile->play_saved_messages_lifo ? "desc" : "asc");
 						total_messages = total_saved_messages;
-						heard_auto_new = heard_auto_saved = 1;
+						heard_auto_new = 1;
 					}
 					break;
 				}
@@ -2650,7 +2644,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 
 				xml_safe_free(x_user);
 
-				status = switch_ivr_phrase_macro(session, VM_FAIL_AUTH_MACRO, NULL, NULL, NULL);
+				switch_ivr_phrase_macro(session, VM_FAIL_AUTH_MACRO, NULL, NULL, NULL);
 				myid = id;
 				mypass = NULL;
 				continue;
@@ -2673,9 +2667,9 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 
 	if (switch_channel_ready(channel) && (!auth_only || !authed)) {
 		if (failed) {
-			status = switch_ivr_phrase_macro(session, VM_ABORT_MACRO, NULL, NULL, NULL);
+			switch_ivr_phrase_macro(session, VM_ABORT_MACRO, NULL, NULL, NULL);
 		}
-		status = switch_ivr_phrase_macro(session, VM_GOODBYE_MACRO, NULL, NULL, NULL);
+		switch_ivr_phrase_macro(session, VM_GOODBYE_MACRO, NULL, NULL, NULL);
 	}
 
 	if (auth_only) {
