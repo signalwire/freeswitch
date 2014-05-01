@@ -286,6 +286,8 @@ static switch_status_t nibblebill_load_config(void)
 		if (!(dbh = nibblebill_get_db_handle())) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
 			switch_goto_status(SWITCH_STATUS_FALSE, done);
+		} else {
+			switch_cache_db_release_db_handle(&dbh);
 		}
 	}
 
