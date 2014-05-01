@@ -1562,7 +1562,6 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 	callback_t routes = { 0 };
 	lcr_route cur_route = { 0 };
 	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
-	switch_event_t *event = NULL;
 	const char *intrastate = NULL;
 	const char *intralata = NULL;
 	const char *lrn = NULL;
@@ -1652,9 +1651,6 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 
 end:
 	lcr_destroy(routes.head);
-	if (event) {
-		switch_event_destroy(&event);
-	}
 	if (!session) {
 		switch_core_destroy_memory_pool(&pool);
 	}
