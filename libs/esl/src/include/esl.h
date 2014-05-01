@@ -194,7 +194,7 @@ typedef enum {
 #include <sys/types.h>
 #include <sys/select.h>
 #include <netinet/tcp.h>
-#include <sys/signal.h>
+#include <signal.h>
 #include <unistd.h>
 #include <ctype.h>
 #endif

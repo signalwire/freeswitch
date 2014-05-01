@@ -89,7 +89,7 @@
 	(uint64_t)bswap_32((uint32_t)((value) >> 32)))
 #endif
 #include <sys/time.h>
-#include <sys/signal.h>
+#include <signal.h>
 #endif
 #include <sys/types.h>
 #include <sys/stat.h>

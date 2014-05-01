@@ -30,7 +30,7 @@
 
 #define TZ_MAX_LEAPS            50      /* Maximum number of leap second corrections */
 
-#define TZNAME_MAX              255
+#define SPANDSP_TZNAME_MAX              255
 
 /* The TZ_MAX_TIMES value below is enough to handle a bit more than a
  * year's worth of solar time (corrected daily to the nearest second) or
@@ -74,14 +74,14 @@ struct tz_state_s
     time_t ats[TZ_MAX_TIMES];
     uint8_t types[TZ_MAX_TIMES];
     struct tz_ttinfo_s ttis[TZ_MAX_TYPES];
-    char chars[TZ_BIGGEST(TZ_MAX_CHARS + 1, (2*(TZNAME_MAX + 1)))];
+    char chars[TZ_BIGGEST(TZ_MAX_CHARS + 1, (2*(SPANDSP_TZNAME_MAX + 1)))];
     struct tz_lsinfo_s lsis[TZ_MAX_LEAPS];
 };
 
 struct tz_s
 {
     struct tz_state_s state;
-    char lcl_tzname[TZNAME_MAX + 1];
+    char lcl_tzname[SPANDSP_TZNAME_MAX + 1];
     int lcl_is_set;
     const char *tzname[2];
 };

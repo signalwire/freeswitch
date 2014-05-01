@@ -47,7 +47,7 @@
 #endif
 
 #if SU_HAVE_POLL
-#include <sys/poll.h>
+#include <poll.h>
 #endif
 
 SOFIA_BEGIN_DECLS
