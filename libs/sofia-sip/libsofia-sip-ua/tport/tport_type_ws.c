@@ -543,8 +543,6 @@ int tport_ws_ping(tport_t *self, su_time_t now)
       tport_error_report(self, error, NULL);
     else
       why = " blocking";
-
-    return -1;
   }
 
   SU_DEBUG_7(("%s(%p): %s to " TPN_FORMAT "%s\n",
