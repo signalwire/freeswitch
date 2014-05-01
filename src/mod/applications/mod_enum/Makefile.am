@@ -12,5 +12,5 @@ else
 install: error
 all: error
 error:
-	$(error You must install libdns-dev to build mod_enum)
+	$(error You must install libldns-dev to build mod_enum)
 endif
