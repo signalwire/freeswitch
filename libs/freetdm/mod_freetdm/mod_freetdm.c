@@ -2804,7 +2804,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_analog_signal)
 {
 	uint32_t spanid, chanid;
 	ftdm_chan_type_t type;
-	switch_status_t status = SWITCH_STATUS_FALSE;
+	ftdm_status_t status = FTDM_FAIL;
 
 	spanid = ftdm_channel_get_span_id(sigmsg->channel);
 	chanid = ftdm_channel_get_span_id(sigmsg->channel);
