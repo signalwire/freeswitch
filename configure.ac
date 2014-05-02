@@ -1118,6 +1118,7 @@ case $host in
    *-darwin*)
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/curl/lib/pkgconfig
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/sqlite/lib/pkgconfig/
+        path_push_unique PKG_CONFIG_PATH /usr/local/opt/ldns/lib/pkgconfig/
        ;;
 esac
 
