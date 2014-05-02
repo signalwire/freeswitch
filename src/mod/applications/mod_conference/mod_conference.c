@@ -4515,14 +4515,13 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	int lead_in = 20;
 	switch_size_t len = 0;
 
-	data_buf_len = samples * sizeof(int16_t);
-
-	switch_zmalloc(data_buf, data_buf_len);
-
 	if (switch_thread_rwlock_tryrdlock(conference->rwlock) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read Lock Fail\n");
 		return NULL;
 	}
+
+	data_buf_len = samples * sizeof(int16_t);
+	switch_zmalloc(data_buf, data_buf_len);
 
 	switch_mutex_lock(globals.hash_mutex);
 	globals.threads++;
