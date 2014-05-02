@@ -579,7 +579,6 @@ SCGI_DECLARE(scgi_status_t) scgi_bind(const char *host, scgi_port_t port, scgi_s
 	if (status == SCGI_FAIL) {
 		if (server_sock != SCGI_SOCK_INVALID) {
 			closesocket(server_sock);
-			server_sock = SCGI_SOCK_INVALID;
 		} 
 	} else {
 		*socketp = server_sock;
