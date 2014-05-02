@@ -1071,6 +1071,10 @@ static void *ftdm_gsm_run(ftdm_thread_t *me, void *obj)
 					memset(buffer, 0, sizeof(buffer));
 
 					n = read_channel(gsm_data->dchan, buffer, sizeof(buffer)-1);
+					if (n < 0) {
+						ftdm_log(FTDM_LOG_ERROR, "Failed to read from GSM data channel on span %s\n", span->name);
+						continue;
+					}
 					m = strlen(buffer);	
 					wat_span_process_read(span->span_id, buffer, m);
 #if 	 LOG_SIG_DATA
@@ -1180,8 +1184,8 @@ COMMAND_HANDLER(status)
 	const wat_chip_info_t *chip_info = NULL;
 	const wat_sim_info_t *sim_info = NULL;
 	const wat_net_info_t *net_info = NULL;
-	const wat_sig_info_t *sig_info = NULL;
-	const wat_pin_stat_t *pin_stat = NULL;
+	//const wat_sig_info_t *sig_info = NULL;
+	//const wat_pin_stat_t *pin_stat = NULL;
 
 	
 	span_id = atoi(argv[0]);
@@ -1198,8 +1202,8 @@ COMMAND_HANDLER(status)
 	chip_info = wat_span_get_chip_info(span->span_id);	
 	sim_info = wat_span_get_sim_info(span->span_id);
 	net_info = wat_span_get_net_info(span->span_id);
-	sig_info = wat_span_get_sig_info(span->span_id);
-	pin_stat = wat_span_get_pin_info(span->span_id);
+	//sig_info = wat_span_get_sig_info(span->span_id);
+	//pin_stat = wat_span_get_pin_info(span->span_id);
 	
 	stream->write_function(stream, "Span %d (%s):\n",  span->span_id, span->name);
 
