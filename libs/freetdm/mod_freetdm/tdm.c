@@ -391,17 +391,17 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
     
 	if (FTDM_SUCCESS != ftdm_channel_command(chan, FTDM_COMMAND_GET_CODEC, &codec)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to retrieve channel codec.\n");
-		return SWITCH_STATUS_GENERR;
+		return SWITCH_CAUSE_NETWORK_OUT_OF_ORDER;
 	}
     
     if (FTDM_SUCCESS != ftdm_channel_command(chan, FTDM_COMMAND_GET_INTERVAL, &interval)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to retrieve channel interval.\n");
-		return SWITCH_STATUS_GENERR;
+		return SWITCH_CAUSE_NETWORK_OUT_OF_ORDER;
 	}
     
     if (FTDM_SUCCESS != ftdm_channel_command(chan, FTDM_COMMAND_SET_PRE_BUFFER_SIZE, &tech_pvt->prebuffer_len)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set channel pre buffer size.\n");
-		return SWITCH_STATUS_GENERR;        
+		return SWITCH_CAUSE_NETWORK_OUT_OF_ORDER;
     }
 
     if (FTDM_SUCCESS != ftdm_channel_command(tech_pvt->ftdm_channel, FTDM_COMMAND_ENABLE_ECHOCANCEL, NULL)) {
