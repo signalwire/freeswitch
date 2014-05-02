@@ -5,7 +5,7 @@
 #define _BSD_SOURCE
 #include "private/ftdm_core.h"
 
-#ifdef HAVE_EXECINFO_H
+#if defined(HAVE_EXECINFO_H) && !defined(__FreeBSD__)
 #include <stdlib.h>
 #include <unistd.h>
 #include <execinfo.h>
