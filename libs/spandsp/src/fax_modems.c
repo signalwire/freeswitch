@@ -157,6 +157,8 @@ SPAN_DECLARE_NONSTD(void) fax_modems_hdlc_accept(void *user_data, const uint8_t 
     fax_modems_state_t *s;
 
     s = (fax_modems_state_t *) user_data;
+    /* If this is a good frame report - i.e. not a status report, or a bad frame - we can
+       say the current signal source is valid. */
     if (len >= 0  &&  ok)
         s->rx_frame_received = true;
     if (s->hdlc_accept)

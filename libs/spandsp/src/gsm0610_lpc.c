@@ -290,11 +290,11 @@ static void autocorrelation(int16_t amp[GSM0610_FRAME_LEN], int32_t L_ACF[9])
     /* Dynamic scaling of the array  s[0..159] */
     /* Search for the maximum. */
 #if defined(__GNUC__)  &&  defined(SPANDSP_USE_MMX)
-    smax = saturate(vec_min_maxi16(amp, GSM0610_FRAME_LEN, NULL));
+    smax = saturate16(vec_min_maxi16(amp, GSM0610_FRAME_LEN, NULL));
 #else
     for (smax = 0, k = 0;  k < GSM0610_FRAME_LEN;  k++)
     {
-        temp = saturated_abs16(amp[k]);
+        temp = sat_abs16(amp[k]);
         if (temp > smax)
             smax = (int16_t) temp;
         /*endif*/
@@ -462,7 +462,7 @@ static void reflection_coefficients(int32_t L_ACF[9], int16_t r[8])
     for (n = 1;  n <= 8;  n++, r++)
     {
         temp = P[1];
-        temp = saturated_abs16(temp);
+        temp = sat_abs16(temp);
         if (P[0] < temp)
         {
             for (i = n;  i <= 8;  i++)
@@ -485,15 +485,15 @@ static void reflection_coefficients(int32_t L_ACF[9], int16_t r[8])
 
         /* Schur recursion */
         temp = gsm_mult_r(P[1], *r);
-        P[0] = saturated_add16(P[0], temp);
+        P[0] = sat_add16(P[0], temp);
 
         for (m = 1;  m <= 8 - n;  m++)
         {
             temp = gsm_mult_r(K[m], *r);
-            P[m] = saturated_add16(P[m + 1], temp);
+            P[m] = sat_add16(P[m + 1], temp);
 
             temp = gsm_mult_r(P[m + 1], *r);
-            K[m] = saturated_add16(K[m], temp);
+            K[m] = sat_add16(K[m], temp);
         }
         /*endfor*/
     }
@@ -517,7 +517,7 @@ static void transform_to_log_area_ratios(int16_t r[8])
     /* Computation of the LAR[0..7] from the r[0..7] */
     for (i = 1;  i <= 8;  i++, r++)
     {
-        temp = saturated_abs16(*r);
+        temp = sat_abs16(*r);
         assert(temp >= 0);
 
         if (temp < 22118)
@@ -559,8 +559,8 @@ static void quantization_and_coding(int16_t LAR[8])
 
 #undef STEP
 #define STEP(A,B,MAC,MIC)                                       \
-        temp = saturated_mul16(A, *LAR);                        \
-        temp = saturated_add16(temp, (B + 256));                \
+        temp = sat_mul16(A, *LAR);                              \
+        temp = sat_add16(temp, (B + 256));                      \
         temp >>= 9;                                             \
         *LAR  = (int16_t) ((temp > MAC)                         \
                          ?                                      \

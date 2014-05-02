@@ -556,6 +556,7 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "    Unexpected number of channels in audio file '%s'\n", in_file);
                     exit(2);
                 }
+                enc_state = g722_encode_init(NULL, bit_rate, G722_PACKED | G722_SAMPLE_RATE_8000);
             }
             else
             {
@@ -574,11 +575,8 @@ int main(int argc, char *argv[])
                     fprintf(stderr, "    Unexpected number of channels in audio file '%s'\n", in_file);
                     exit(2);
                 }
-            }
-            if (eight_k_in)
-                enc_state = g722_encode_init(NULL, bit_rate, G722_PACKED | G722_SAMPLE_RATE_8000);
-            else
                 enc_state = g722_encode_init(NULL, bit_rate, G722_PACKED);
+            }
         }
         else
         {

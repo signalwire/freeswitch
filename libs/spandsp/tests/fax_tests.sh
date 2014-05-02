@@ -94,32 +94,32 @@ LOCALTESTS_DIR=../test-data/local
 TIFFCMP=tiffcmp
 
 # Colour/gray -> bilevel by not allowing ECM
-for OPTS in "-p AA" "-p TT" "-p GG" "-p TG" "-p GT"
-do
-    IN_FILE="${LOCALTESTS_DIR}/lenna-colour.tif"
-    OUT_FILE="${LOCALTESTS_DIR}/lenna-colour-bilevel.tif"
-    run_colour_fax_test
+#for OPTS in "-p AA" "-p TT" "-p GG" "-p TG" "-p GT"
+#do
+#    IN_FILE="${LOCALTESTS_DIR}/lenna-colour.tif"
+#    OUT_FILE="${LOCALTESTS_DIR}/lenna-colour-bilevel.tif"
+#    run_colour_fax_test
 
-    IN_FILE="${LOCALTESTS_DIR}/lenna-bw.tif"
-    OUT_FILE="${LOCALTESTS_DIR}/lenna-bw-bilevel.tif"
-    run_colour_fax_test
+#    IN_FILE="${LOCALTESTS_DIR}/lenna-bw.tif"
+#    OUT_FILE="${LOCALTESTS_DIR}/lenna-bw-bilevel.tif"
+#    run_colour_fax_test
 
-    IN_FILE="${TIFFFX_DIR}/c03x_02x.tif"
-    OUT_FILE="${TIFFFX_DIR}/c03x_02x-bilevel.tif"
-    run_colour_fax_test
+#    IN_FILE="${TIFFFX_DIR}/c03x_02x.tif"
+#    OUT_FILE="${TIFFFX_DIR}/c03x_02x-bilevel.tif"
+#    run_colour_fax_test
 
-    IN_FILE="${TIFFFX_DIR}/l02x_02x.tif"
-    OUT_FILE="${TIFFFX_DIR}/l02x_02x-bilevel.tif"
-    run_colour_fax_test
+#    IN_FILE="${TIFFFX_DIR}/l02x_02x.tif"
+#    OUT_FILE="${TIFFFX_DIR}/l02x_02x-bilevel.tif"
+#    run_colour_fax_test
 
-    IN_FILE="${TIFFFX_DIR}/l04x_02x.tif"
-    OUT_FILE="${TIFFFX_DIR}/l04x_02x-bilevel.tif"
-    run_colour_fax_test
-done
+#    IN_FILE="${TIFFFX_DIR}/l04x_02x.tif"
+#    OUT_FILE="${TIFFFX_DIR}/l04x_02x-bilevel.tif"
+#    run_colour_fax_test
+#done
 
 # Colour/gray -> colour/gray
-for OPTS in "-p AA -C -e" "-p TT -C -e" "-p GG -C -e" "-p TG -C -e" "-p GT -C -e"
-do
+#for OPTS in "-p AA -C -e" "-p TT -C -e" "-p GG -C -e" "-p TG -C -e" "-p GT -C -e"
+#do
 #    IN_FILE="${LOCALTESTS_DIR}/lenna-colour.tif"
 #    OUT_FILE="${LOCALTESTS_DIR}/lenna-colour-out.tif"
 #    run_colour_fax_test
@@ -132,14 +132,14 @@ do
 #    OUT_FILE="${TIFFFX_DIR}/c03x_02x-out.tif"
 #    run_colour_fax_test
 
-    IN_FILE="${TIFFFX_DIR}/l02x_02x.tif"
-    OUT_FILE="${TIFFFX_DIR}/l02x_02x.tif"
-    run_colour_fax_test
+#    IN_FILE="${TIFFFX_DIR}/l02x_02x.tif"
+#    OUT_FILE="${TIFFFX_DIR}/l02x_02x.tif"
+#    run_colour_fax_test
 
 #    IN_FILE="${TIFFFX_DIR}/l04x_02x.tif"
 #    OUT_FILE="${TIFFFX_DIR}/l04x_02x.tif"
 #    run_colour_fax_test
-done
+#done
 
 # Bi-level tests with image squashing
 for OPTS in "-p AA" "-p AA -e" "-p TT" "-p TT -e" "-p GG" "-p GG -e" "-p TG" "-p TG -e" "-p GT" "-p GT -e"
@@ -398,3 +398,4 @@ done
 
 echo
 echo All fax tests successfully completed
+

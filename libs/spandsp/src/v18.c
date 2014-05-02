@@ -898,7 +898,6 @@ static int decode_dtmf(v18_state_t *s, char msg[], const char dtmf[])
         if (ss)
         {
             len = strlen(ss->dtmf);
-            t += len;
             *u++ = ss->ascii;
             return len;
         }

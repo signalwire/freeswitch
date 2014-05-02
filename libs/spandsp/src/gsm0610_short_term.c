@@ -68,10 +68,10 @@ static void decode_log_area_ratios(int16_t LARc[8], int16_t *LARpp)
 
 #undef STEP
 #define STEP(B,MIC,INVA)                            \
-    temp1 = saturated_add16(*LARc++, MIC) << 10;    \
-    temp1 = saturated_sub16(temp1, B << 1);         \
+    temp1 = sat_add16(*LARc++, MIC) << 10;          \
+    temp1 = sat_sub16(temp1, B << 1);               \
     temp1 = gsm_mult_r(INVA, temp1);                \
-    *LARpp++ = saturated_add16(temp1, temp1);
+    *LARpp++ = sat_add16(temp1, temp1);
 
     STEP(    0,  -32,  13107);
     STEP(    0,  -32,  13107);
@@ -109,8 +109,8 @@ static void coefficients_0_12(int16_t *LARpp_j_1,
 
     for (i = 1;  i <= 8;  i++, LARp++, LARpp_j_1++, LARpp_j++)
     {
-        *LARp = saturated_add16(*LARpp_j_1 >> 2, *LARpp_j >> 2);
-        *LARp = saturated_add16(*LARp, *LARpp_j_1 >> 1);
+        *LARp = sat_add16(*LARpp_j_1 >> 2, *LARpp_j >> 2);
+        *LARp = sat_add16(*LARp, *LARpp_j_1 >> 1);
     }
     /*endfor*/
 }
@@ -123,7 +123,7 @@ static void coefficients_13_26(int16_t *LARpp_j_1,
     int i;
 
     for (i = 1;  i <= 8;  i++, LARpp_j_1++, LARpp_j++, LARp++)
-        *LARp = saturated_add16(*LARpp_j_1 >> 1, *LARpp_j >> 1);
+        *LARp = sat_add16(*LARpp_j_1 >> 1, *LARpp_j >> 1);
     /*endfor*/
 }
 /*- End of function --------------------------------------------------------*/
@@ -136,8 +136,8 @@ static void coefficients_27_39(int16_t *LARpp_j_1,
 
     for (i = 1;  i <= 8;  i++, LARpp_j_1++, LARpp_j++, LARp++)
     {
-        *LARp = saturated_add16(*LARpp_j_1 >> 2, *LARpp_j >> 2);
-        *LARp = saturated_add16(*LARp, *LARpp_j >> 1);
+        *LARp = sat_add16(*LARpp_j_1 >> 2, *LARpp_j >> 2);
+        *LARp = sat_add16(*LARp, *LARpp_j >> 1);
     }
     /*endfor*/
 }
@@ -181,7 +181,7 @@ static void larp_to_rp(int16_t LARp[8])
             else if (temp < 20070)
                 temp += 11059;
             else
-                temp = saturated_add16(temp >> 2, 26112);
+                temp = sat_add16(temp >> 2, 26112);
             /*endif*/
             *LARpx = -temp;
         }
@@ -192,7 +192,7 @@ static void larp_to_rp(int16_t LARp[8])
             else if (temp < 20070)
                 temp += 11059;
             else
-                temp = saturated_add16(temp >> 2, 26112);
+                temp = sat_add16(temp >> 2, 26112);
             /*endif*/
             *LARpx = temp;
         }
@@ -242,8 +242,8 @@ static void short_term_analysis_filtering(gsm0610_state_t *s,
             rpi = *rpx++;
             u_out = ui + (((rpi*di) + 0x4000) >> 15);
             di = di + (((rpi*ui) + 0x4000) >> 15);
-            u_out = saturate(u_out);
-            di = saturate(di);
+            u_out = saturate16(u_out);
+            di = saturate16(di);
         }
         /*endfor*/
         amp[i] = (int16_t) di;
@@ -278,7 +278,7 @@ static void short_term_synthesis_filtering(gsm0610_state_t *s,
                    :
                    (int16_t) (((int32_t) tmp1*(int32_t) tmp2 + 16384) >> 15) & 0xFFFF);
 
-            sri = saturated_sub16(sri, tmp2);
+            sri = sat_sub16(sri, tmp2);
 
             tmp1 = ((tmp1 == INT16_MIN  &&  sri == INT16_MIN)
                     ?
@@ -286,7 +286,7 @@ static void short_term_synthesis_filtering(gsm0610_state_t *s,
                     :
                     (int16_t) (((int32_t) tmp1*(int32_t) sri + 16384) >> 15) & 0xFFFF);
 
-            v[i + 1] = saturated_add16(v[i], tmp1);
+            v[i + 1] = sat_add16(v[i], tmp1);
         }
         /*endfor*/
         *sr++ =

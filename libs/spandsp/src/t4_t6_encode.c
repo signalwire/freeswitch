@@ -899,7 +899,6 @@ static int get_next_row(t4_t6_encode_state_t *s)
 
     if (s->row_bits < 0  ||  s->row_read_handler == NULL)
         return -1;
-    len = -1;
     s->bitstream_iptr = 0;
     s->bitstream_optr = 0;
     s->bit_pos = 7;

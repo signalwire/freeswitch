@@ -269,7 +269,6 @@ static int pitsyn(lpc10_decode_state_t *s,
     *ratio = *rms/(s->rmso + 8.0f);
     if (s->first_pitsyn)
     {
-        lsamp = 0;
         ivoice = voice[1];
         if (ivoice == 0)
             *pitch = LPC10_SAMPLES_PER_FRAME/4;
@@ -291,7 +290,6 @@ static int pitsyn(lpc10_decode_state_t *s,
     {
         vflag = 0;
         lsamp = LPC10_SAMPLES_PER_FRAME + s->jsamp;
-        slope = (*pitch - s->ipito)/(float) lsamp;
         *nout = 0;
         jused = 0;
         istart = 1;
@@ -335,7 +333,6 @@ static int pitsyn(lpc10_decode_state_t *s,
                     rci[i + (rci_dim1 << 1) + 1] = s->rco[i];
                     s->rco[i] = rc[i];
                 }
-                slope = 0.0f;
                 *nout = 2;
                 s->ipito = *pitch;
                 jused = nl;
@@ -360,9 +357,9 @@ static int pitsyn(lpc10_decode_state_t *s,
                     rc[i] = s->rco[i];
                 }
                 ivoice = 1;
-                slope = 0.0f;
                 vflag = 1;
             }
+            slope = 0.0f;
         }
         /* Here is the value of most variables that are used below, depending on */
         /* the values of IVOICO, VOICE(1), and VOICE(2).  VOICE(1) and VOICE(2) */

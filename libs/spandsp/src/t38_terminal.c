@@ -167,7 +167,6 @@ static int extra_bits_in_stuffed_frame(const uint8_t buf[], int len)
     int i;
     int j;
 
-    bitstream = 0;
     ones = 0;
     stuffed = 0;
     /* We should really append the CRC, and include the stuffed bits for that, to get
@@ -929,7 +928,6 @@ static int stream_hdlc(t38_terminal_state_t *s)
                     data_fields[0].field_len = i;
 
                     /* Now see about the next HDLC frame. This will tell us whether to send FCS_OK or FCS_OK_SIG_END */
-                    previous = fe->current_tx_data_type;
                     fe->hdlc_tx.ptr = 0;
                     fe->hdlc_tx.len = 0;
                     if (front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE) < 0)

@@ -175,7 +175,9 @@ SPAN_DECLARE(fsk_tx_state_t *) fsk_tx_init(fsk_tx_state_t *s,
     {
         if ((s = (fsk_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
 
     s->get_bit = get_bit;
@@ -205,6 +207,7 @@ SPAN_DECLARE_NONSTD(int) fsk_tx(fsk_tx_state_t *s, int16_t amp[], int len)
 
     if (s->shutdown)
         return 0;
+    /*endif*/
     /* Make the transitions between 0 and 1 phase coherent, but instantaneous
        jumps. There is currently no interpolation for bauds that end mid-sample.
        Mainstream users will not care. Some specialist users might have a problem
@@ -218,15 +221,20 @@ SPAN_DECLARE_NONSTD(int) fsk_tx(fsk_tx_state_t *s, int16_t amp[], int len)
             {
                 if (s->status_handler)
                     s->status_handler(s->status_user_data, SIG_STATUS_END_OF_DATA);
+                /*endif*/
                 if (s->status_handler)
                     s->status_handler(s->status_user_data, SIG_STATUS_SHUTDOWN_COMPLETE);
+                /*endif*/
                 s->shutdown = true;
                 break;
             }
+            /*endif*/
             s->current_phase_rate = s->phase_rates[bit & 1];
         }
-        amp[sample] = dds_mod(&(s->phase_acc), s->current_phase_rate, s->scaling, 0);
+        /*endif*/
+        amp[sample] = dds_mod(&s->phase_acc, s->current_phase_rate, s->scaling, 0);
     }
+    /*endfor*/
     return sample;
 }
 /*- End of function --------------------------------------------------------*/
@@ -304,6 +312,7 @@ SPAN_DECLARE(int) fsk_rx_restart(fsk_rx_state_t *s, const fsk_spec_t *spec, int 
        buffer. */
     if (s->correlation_span > FSK_MAX_WINDOW_LEN)
         s->correlation_span = FSK_MAX_WINDOW_LEN;
+    /*endif*/
 
     /* We need to scale, to avoid overflow in the correlation. */
     s->scaling_shift = 0;
@@ -313,6 +322,7 @@ SPAN_DECLARE(int) fsk_rx_restart(fsk_rx_state_t *s, const fsk_spec_t *spec, int 
         s->scaling_shift++;
         chop >>= 1;
     }
+    /*endwhile*/
 
     /* Initialise the baud/bit rate tracking. */
     s->baud_phase = 0;
@@ -321,7 +331,7 @@ SPAN_DECLARE(int) fsk_rx_restart(fsk_rx_state_t *s, const fsk_spec_t *spec, int 
     s->last_bit = 0;
 
     /* Initialise a power detector, so sense when a signal is present. */
-    power_meter_init(&(s->power), 4);
+    power_meter_init(&s->power, 4);
     s->signal_present = 0;
     return 0;
 }
@@ -337,7 +347,9 @@ SPAN_DECLARE(fsk_rx_state_t *) fsk_rx_init(fsk_rx_state_t *s,
     {
         if ((s = (fsk_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
 
     s->put_bit = put_bit;
@@ -366,6 +378,7 @@ static void report_status_change(fsk_rx_state_t *s, int status)
         s->status_handler(s->status_user_data, status);
     else if (s->put_bit)
         s->put_bit(s->put_bit_user_data, status);
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -382,7 +395,6 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
     complexi_t ph;
 
     buf_ptr = s->buf_ptr;
-
     for (i = 0;  i < len;  i++)
     {
         /* The *totally* asynchronous character to character behaviour of these
@@ -393,7 +405,7 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
             s->dot[j].re -= s->window[j][buf_ptr].re;
             s->dot[j].im -= s->window[j][buf_ptr].im;
 
-            ph = dds_complexi(&(s->phase_acc[j]), s->phase_rate[j]);
+            ph = dds_complexi(&s->phase_acc[j], s->phase_rate[j]);
             s->window[j][buf_ptr].re = (ph.re*amp[i]) >> s->scaling_shift;
             s->window[j][buf_ptr].im = (ph.im*amp[i]) >> s->scaling_shift;
 
@@ -405,13 +417,14 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
             dot = s->dot[j].im >> 15;
             sum[j] += dot*dot;
         }
+        /*endfor*/
         /* If there isn't much signal, don't demodulate - it will only produce
            useless junk results. */
         /* There should be no DC in the signal, but sometimes there is.
            We need to measure the power with the DC blocked, but not using
            a slow to respond DC blocker. Use the most elementary HPF. */
         x = amp[i] >> 1;
-        power = power_meter_update(&(s->power), x - s->last_sample);
+        power = power_meter_update(&s->power, x - s->last_sample);
         s->last_sample = x;
         if (s->signal_present)
         {
@@ -426,7 +439,9 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
                     s->baud_phase = 0;
                     continue;
                 }
+                /*endif*/
             }
+            /*endif*/
         }
         else
         {
@@ -436,11 +451,13 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
                 s->baud_phase = 0;
                 continue;
             }
+            /*endif*/
             if (s->baud_phase < (s->correlation_span >> 1) - 30)
             {
                 s->baud_phase++;
                 continue;
             }
+            /*endif*/
             s->signal_present = 1;
             /* Initialise the baud/bit rate tracking. */
             s->baud_phase = 0;
@@ -449,6 +466,7 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
             s->last_bit = 0;
             report_status_change(s, SIG_STATUS_CARRIER_UP);
         }
+        /*endif*/
         /* Non-coherent FSK demodulation by correlation with the target tones
            over a one baud interval. The slow V.xx specs. are too open ended
            to allow anything fancier to be used. The dot products are calculated
@@ -469,7 +487,9 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
                     s->baud_phase += (s->baud_rate >> 3);
                 else
                     s->baud_phase -= (s->baud_rate >> 3);
+                /*endif*/
             }
+            /*endif*/
             if ((s->baud_phase += s->baud_rate) >= (SAMPLE_RATE*100))
             {
                 /* We should be in the middle of a baud now, so report the current
@@ -477,6 +497,7 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
                 s->baud_phase -= (SAMPLE_RATE*100);
                 s->put_bit(s->put_bit_user_data, baudstate);
             }
+            /*endif*/
             break;
         case FSK_FRAME_MODE_ASYNC:
             /* Fully asynchronous mode */
@@ -492,6 +513,7 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
                    the most accurate baud alignment we can do. */
                 s->baud_phase = SAMPLE_RATE*50;
             }
+            /*endif*/
             if ((s->baud_phase += s->baud_rate) >= (SAMPLE_RATE*100))
             {
                 /* We should be in the middle of a baud now, so report the current
@@ -499,6 +521,7 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
                 s->baud_phase -= (SAMPLE_RATE*100);
                 s->put_bit(s->put_bit_user_data, baudstate);
             }
+            /*endif*/
             break;
         case FSK_FRAME_MODE_5N1_FRAMES:
         case FSK_FRAME_MODE_7N1_FRAMES:
@@ -517,6 +540,7 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
                     s->frame_bits = 0;
                     s->last_bit = -1;
                 }
+                /*endif*/
             }
             else if (s->frame_state == -1)
             {
@@ -535,7 +559,9 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
                         s->frame_state = 1;
                         s->last_bit = baudstate;
                     }
+                    /*endif*/
                 }
+                /*endif*/
             }
             else
             {
@@ -544,6 +570,7 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
                 {
                     if (s->last_bit < 0)
                         s->last_bit = baudstate;
+                    /*endif*/
                     /* Look for the bit being consistent over the central 20% of the bit time. */
                     if (s->last_bit != baudstate)
                     {
@@ -563,6 +590,7 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
                                     /* Drop the start bit, and pass the rest back */
                                     s->put_bit(s->put_bit_user_data, s->frame_bits >> 2);
                                 }
+                                /*endif*/
                                 s->frame_state = 0;
                             }
                             else
@@ -570,21 +598,29 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
                                 s->frame_bits |= (baudstate << s->framing_mode);
                                 s->frame_bits >>= 1;
                             }
+                            /*endif*/
                             s->baud_phase -= (SAMPLE_RATE*100);
                         }
                         else
                         {
                             s->frame_state = 0;
                         }
+                        /*endif*/
                         s->last_bit = -1;
                     }
+                    /*endif*/
                 }
+                /*endif*/
             }
+            /*endif*/
             break;
         }
+        /*endswitch*/
         if (++buf_ptr >= s->correlation_span)
             buf_ptr = 0;
+        /*endif*/
     }
+    /*endfor*/
     s->buf_ptr = buf_ptr;
     return 0;
 }
@@ -592,10 +628,33 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
 
 SPAN_DECLARE_NONSTD(int) fsk_rx_fillin(fsk_rx_state_t *s, int len)
 {
+    int buf_ptr;
+    int i;
+    int j;
+
     /* The valid choice here is probably to do nothing. We don't change state
       (i.e carrier on<->carrier off), and we'll just output less bits than we
       should. */
-    /* TODO: Advance the symbol phase the appropriate amount */
+    buf_ptr = s->buf_ptr;
+    for (i = 0;  i < len;  i++)
+    {
+        for (j = 0;  j < 2;  j++)
+        {
+            s->dot[j].re -= s->window[j][buf_ptr].re;
+            s->dot[j].im -= s->window[j][buf_ptr].im;
+
+            dds_advance(&s->phase_acc[j], s->phase_rate[j]);
+
+            s->window[j][buf_ptr].re = 0;
+            s->window[j][buf_ptr].im = 0;
+
+            s->dot[j].re += s->window[j][buf_ptr].re;
+            s->dot[j].im += s->window[j][buf_ptr].im;
+        }
+        /*endfor*/
+    }
+    /*endfor*/
+    s->buf_ptr = buf_ptr;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

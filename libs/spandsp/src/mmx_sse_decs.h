@@ -53,6 +53,12 @@
 #if defined(SPANDSP_USE_SSE5)
 #include <bmmintrin.h>
 #endif
+#if defined(SPANDSP_USE_AVX)
+#include <immintrin.h>
+#endif
+#if defined(SPANDSP_USE_AVX2)
+#include <x86intrin.h>
+#endif
 
 #endif
 

@@ -357,7 +357,6 @@ void lpc10_voicing(lpc10_encode_state_t *s,
     /* a consistent value from one call to the next when HALF .EQ. 1. */
     /* The value of VSTATE is not used for any other purpose when this is */
     /* true. */
-    vstate = -1;
     if (half != 0)
     {
         /* Voicing decision smoothing rules (override of linear combination): */

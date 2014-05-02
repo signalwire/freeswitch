@@ -479,7 +479,6 @@ SPAN_DECLARE(int) bell_mf_rx(bell_mf_rx_state_t *s, const int16_t amp[], int sam
     int limit;
     uint8_t hit;
 
-    hit = 0;
     for (sample = 0;  sample < samples;  sample = limit)
     {
         if ((samples - sample) >= (BELL_MF_SAMPLES_PER_BLOCK - s->current_sample))
@@ -700,8 +699,6 @@ SPAN_DECLARE(int) r2_mf_rx(r2_mf_rx_state_t *s, const int16_t amp[], int samples
     int hit_digit;
     int limit;
 
-    hit = 0;
-    hit_digit = 0;
     for (sample = 0;  sample < samples;  sample = limit)
     {
         if ((samples - sample) >= (R2_MF_SAMPLES_PER_BLOCK - s->current_sample))

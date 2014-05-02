@@ -131,7 +131,6 @@ SPAN_DECLARE(int) dtmf_rx(dtmf_rx_state_t *s, const int16_t amp[], int samples)
     int limit;
     uint8_t hit;
 
-    hit = 0;
     for (sample = 0;  sample < samples;  sample = limit)
     {
         /* The block length is optimised to meet the DTMF specs. */

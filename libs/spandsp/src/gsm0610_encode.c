@@ -93,7 +93,7 @@ static void encode_a_frame(gsm0610_state_t *s, gsm0610_frame_t *f, const int16_t
         gsm0610_rpe_encoding(s, s->e + 5, &f->xmaxc[k], &f->Mc[k], f->xMc[k]);
 
         for (i = 0;  i < 40;  i++)
-            dp[i] = saturated_add16(s->e[5 + i], dpp[i]);
+            dp[i] = sat_add16(s->e[5 + i], dpp[i]);
         /*endfor*/
         dp += 40;
         dpp += 40;

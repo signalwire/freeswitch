@@ -65,9 +65,9 @@ static void postprocessing(gsm0610_state_t *s, int16_t amp[])
     {
         tmp = gsm_mult_r(msr, 28180);
         /* De-emphasis */
-        msr = saturated_add16(amp[k], tmp);
-        /* Truncation & upscaling */
-        amp[k] = (int16_t) (saturated_add16(msr, msr) & 0xFFF8);
+        msr = sat_add16(amp[k], tmp);
+        /* Truncation and upscaling */
+        amp[k] = (int16_t) (sat_add16(msr, msr) & 0xFFF8);
     }
     /*endfor*/
     s->msr = msr;
@@ -162,7 +162,6 @@ SPAN_DECLARE(int) gsm0610_unpack_wav49(gsm0610_frame_t *s, const uint8_t c[])
         s->xmaxc[i] = sr & 0x3F;
         sr >>= 6;
         s->xMc[i][0] = sr & 0x7;
-        sr >>= 3;
         sr = *c++;
         s->xMc[i][1] = sr & 0x7;
         sr >>= 3;
@@ -181,7 +180,6 @@ SPAN_DECLARE(int) gsm0610_unpack_wav49(gsm0610_frame_t *s, const uint8_t c[])
         s->xMc[i][7] = sr & 0x7;
         sr >>= 3;
         s->xMc[i][8] = sr & 0x7;
-        sr >>= 3;
         sr = *c++;
         s->xMc[i][9] = sr & 0x7;
         sr >>= 3;
@@ -199,7 +197,6 @@ SPAN_DECLARE(int) gsm0610_unpack_wav49(gsm0610_frame_t *s, const uint8_t c[])
     s->LARc[0] = sr & 0x3F;
     sr >>= 6;
     s->LARc[1] = sr & 0x3F;
-    sr >>= 6;
     sr = *c++;
     s->LARc[2] = sr & 0x1F;
     sr >>= 5;
@@ -214,7 +211,6 @@ SPAN_DECLARE(int) gsm0610_unpack_wav49(gsm0610_frame_t *s, const uint8_t c[])
     s->LARc[6] = sr & 0x7;
     sr >>= 3;
     s->LARc[7] = sr & 0x7;
-    sr >>= 3;
 
     for (i = 0;  i < 4;  i++)
     {
@@ -239,7 +235,6 @@ SPAN_DECLARE(int) gsm0610_unpack_wav49(gsm0610_frame_t *s, const uint8_t c[])
         s->xMc[i][3] = sr & 0x7;
         sr >>= 3;
         s->xMc[i][4] = sr & 0x7;
-        sr >>= 3;
         sr = *c++;
         s->xMc[i][5] = sr & 0x7;
         sr >>= 3;
@@ -258,7 +253,6 @@ SPAN_DECLARE(int) gsm0610_unpack_wav49(gsm0610_frame_t *s, const uint8_t c[])
         s->xMc[i][11] = sr & 0x7;
         sr >>= 3;
         s->xMc[i][12] = sr & 0x7;
-        sr >>= 3;
     }
     return 65;
 }

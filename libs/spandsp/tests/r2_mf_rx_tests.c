@@ -518,7 +518,7 @@ static int test_a_tone_set(int fwd)
             {
                 len = my_mf_generate(amp, digit);
                 for (sample = 0;  sample < len;  sample++)
-                    amp[sample] = saturate(amp[sample] + awgn(noise_source));
+                    amp[sample] = sat_add16(amp[sample], awgn(noise_source));
                 codec_munge(amp, len);
                 r2_mf_rx(mf_state, amp, len);
                 if (r2_mf_rx_get(mf_state) != digit)
@@ -550,13 +550,13 @@ static int test_a_tone_set(int fwd)
         digit = *s++;
         len = my_mf_generate(amp, digit);
         for (sample = 0;  sample < len;  sample++)
-            amp[sample] = saturate(amp[sample] + awgn(noise_source));
+            amp[sample] = sat_add16(amp[sample], awgn(noise_source));
         codec_munge(amp, len);
         r2_mf_rx(mf_state, amp, len);
         len = 160;
         memset(amp, '\0', len*sizeof(int16_t));
         for (sample = 0;  sample < len;  sample++)
-            amp[sample] = saturate(amp[sample] + awgn(noise_source));
+            amp[sample] = sat_add16(amp[sample], awgn(noise_source));
         codec_munge(amp, len);
         r2_mf_rx(mf_state, amp, len);
     }

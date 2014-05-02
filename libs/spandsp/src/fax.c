@@ -171,8 +171,10 @@ SPAN_DECLARE_NONSTD(int) fax_rx(fax_state_t *s, int16_t *amp, int len)
 #endif
     for (i = 0;  i < len;  i++)
         amp[i] = dc_restore(&s->modems.dc_restore, amp[i]);
+    /*endfor*/
     if (s->modems.rx_handler)
         s->modems.rx_handler(s->modems.rx_user_data, amp, len);
+    /*endif*/
     t30_timer_update(&s->t30, len);
     return 0;
 }
@@ -198,6 +200,7 @@ SPAN_DECLARE_NONSTD(int) fax_rx_fillin(fax_state_t *s, int len)
         vec_zeroi16(amp, len);
         write(s->modems.audio_rx_log, amp, len*sizeof(int16_t));
     }
+    /*endif*/
 #endif
     /* Call the fillin function of the current modem (if there is one). */
     s->modems.rx_fillin_handler(s->modems.rx_fillin_user_data, len);
@@ -254,6 +257,7 @@ static void fax_set_rx_type(void *user_data, int type, int bit_rate, int short_t
     span_log(&s->logging, SPAN_LOG_FLOW, "Set rx type %d\n", type);
     if (t->current_rx_type == type)
         return;
+    /*endif*/
     t->current_rx_type = type;
     t->rx_bit_rate = bit_rate;
     hdlc_rx_init(&t->hdlc_rx, false, true, HDLC_FRAMING_OK_THRESHOLD, fax_modems_hdlc_accept, t);
@@ -279,6 +283,7 @@ static void fax_set_rx_type(void *user_data, int type, int bit_rate, int short_t
         fax_modems_set_rx_handler(t, (span_rx_handler_t) &span_dummy_rx, s, (span_rx_fillin_handler_t) &span_dummy_rx_fillin, s);
         break;
     }
+    /*endswitch*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -293,7 +298,7 @@ static void fax_set_tx_type(void *user_data, int type, int bit_rate, int short_t
     span_log(&s->logging, SPAN_LOG_FLOW, "Set tx type %d\n", type);
     if (t->current_tx_type == type)
         return;
-
+    /*endif*/
     switch (type)
     {
     case T30_MODEM_PAUSE:
@@ -359,6 +364,7 @@ static void fax_set_tx_type(void *user_data, int type, int bit_rate, int short_t
         t->transmit = false;
         break;
     }
+    /*endswitch*/
     t->tx_bit_rate = bit_rate;
     t->current_tx_type = type;
 }
@@ -398,12 +404,16 @@ SPAN_DECLARE(int) fax_restart(fax_state_t *s, int calling_party)
     v8_parms.modulations = V8_MOD_V21;
     if (s->t30.supported_modems & T30_SUPPORT_V27TER)
         v8_parms.modulations |= V8_MOD_V27TER;
+    /*endif*/
     if (s->t30.supported_modems & T30_SUPPORT_V29)
         v8_parms.modulations |= V8_MOD_V29;
+    /*endif*/
     if (s->t30.supported_modems & T30_SUPPORT_V17)
         v8_parms.modulations |= V8_MOD_V17;
+    /*endif*/
     if (s->t30.supported_modems & T30_SUPPORT_V34HDX)
         v8_parms.modulations |= V8_MOD_V34HDX;
+    /*endif*/
     v8_parms.protocol = V8_PROTOCOL_NONE;
     v8_parms.pcm_modem_availability = 0;
     v8_parms.pstn_access = 0;
@@ -453,7 +463,9 @@ SPAN_DECLARE(fax_state_t *) fax_init(fax_state_t *s, int calling_party)
     {
         if ((s = (fax_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "FAX");
@@ -479,12 +491,16 @@ SPAN_DECLARE(fax_state_t *) fax_init(fax_state_t *s, int calling_party)
     v8_parms.modulations = V8_MOD_V21;
     if (s->t30.supported_modems & T30_SUPPORT_V27TER)
         v8_parms.modulations |= V8_MOD_V27TER;
+    /*endif*/
     if (s->t30.supported_modems & T30_SUPPORT_V29)
         v8_parms.modulations |= V8_MOD_V29;
+    /*endif*/
     if (s->t30.supported_modems & T30_SUPPORT_V17)
         v8_parms.modulations |= V8_MOD_V17;
+    /*endif*/
     if (s->t30.supported_modems & T30_SUPPORT_V34HDX)
         v8_parms.modulations |= V8_MOD_V34HDX;
+    /*endif*/
     v8_parms.protocol = V8_PROTOCOL_NONE;
     v8_parms.pcm_modem_availability = 0;
     v8_parms.pstn_access = 0;

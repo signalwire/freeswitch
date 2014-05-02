@@ -208,11 +208,8 @@ static int v8_calls_v8_tests(SNDFILE *outhandle)
     v8_call_parms.pstn_access = 0;
     v8_call_parms.nsf = -1;
     v8_call_parms.t66 = -1;
-    v8_caller = v8_init(NULL,
-                        true,
-                        &v8_call_parms,
-                        handler,
-                        (void *) "caller");
+    v8_caller = v8_init(NULL, true, &v8_call_parms, handler, (void *) "caller");
+
     v8_answer_parms.modem_connect_tone = MODEM_CONNECT_TONES_ANSAM_PR;
     v8_answer_parms.send_ci = true;
     v8_answer_parms.v92 = -1;
@@ -223,11 +220,8 @@ static int v8_calls_v8_tests(SNDFILE *outhandle)
     v8_answer_parms.pstn_access = 0;
     v8_answer_parms.nsf = -1;
     v8_answer_parms.t66 = -1;
-    v8_answerer = v8_init(NULL,
-                          false,
-                          &v8_answer_parms,
-                          handler,
-                          (void *) "answerer");
+    v8_answerer = v8_init(NULL, false, &v8_answer_parms, handler, (void *) "answerer");
+
     caller_logging = v8_get_logging_state(v8_caller);
     span_log_set_level(caller_logging, SPAN_LOG_FLOW | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
     span_log_set_tag(caller_logging, "caller");
@@ -239,6 +233,7 @@ static int v8_calls_v8_tests(SNDFILE *outhandle)
         samples = v8_tx(v8_caller, amp, SAMPLES_PER_CHUNK);
         if (samples < SAMPLES_PER_CHUNK)
         {
+printf("Caller silence %d\n", SAMPLES_PER_CHUNK - samples);
             vec_zeroi16(amp + samples, SAMPLES_PER_CHUNK - samples);
             samples = SAMPLES_PER_CHUNK;
         }
@@ -252,6 +247,7 @@ static int v8_calls_v8_tests(SNDFILE *outhandle)
         samples = v8_tx(v8_answerer, amp, SAMPLES_PER_CHUNK);
         if (samples < SAMPLES_PER_CHUNK)
         {
+printf("Answerer silence %d\n", SAMPLES_PER_CHUNK - samples);
             vec_zeroi16(amp + samples, SAMPLES_PER_CHUNK - samples);
             samples = SAMPLES_PER_CHUNK;
         }

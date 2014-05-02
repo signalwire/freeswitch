@@ -46,7 +46,11 @@ enum
     FAX_MODEM_V21_RX,
     FAX_MODEM_V17_RX,
     FAX_MODEM_V27TER_RX,
-    FAX_MODEM_V29_RX
+    FAX_MODEM_V29_RX,
+#if defined(SPANDSP_SUPPORT_V34)
+    FAX_MODEM_V34_TX,
+    FAX_MODEM_V34_RX
+#endif
 };
 
 /*!
@@ -59,6 +63,7 @@ extern "C"
 {
 #endif
 
+/* TEMPORARY FUDGE */
 SPAN_DECLARE_NONSTD(void) fax_modems_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok);
 
 /*! Convert a FAX modem type to a short text description.

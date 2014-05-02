@@ -75,7 +75,7 @@ SPAN_DECLARE(int16_t) noise(noise_state_t *s)
            simple approx. leaves the signal about 0.35dB low. */
         val = s->state << 1;
     }
-    return saturate((val*s->rms) >> 10);
+    return saturate16((val*s->rms) >> 10);
 }
 /*- End of function --------------------------------------------------------*/
 

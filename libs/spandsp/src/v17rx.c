@@ -73,7 +73,7 @@
 #include "spandsp/private/v17rx.h"
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
-#define FP_SCALE(x)                     FP_Q_6_10(x)
+#define FP_SCALE(x)                     FP_Q6_10(x)
 #define FP_FACTOR                       1024
 #define FP_SHIFT_FACTOR                 12
 #else
@@ -81,8 +81,8 @@
 #endif
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
-#define FP_SYNC_SCALE(x)                FP_Q_6_10(x)
-#define FP_SYNC_SCALE_32(x)             FP_Q_6_10_32(x)
+#define FP_SYNC_SCALE(x)                FP_Q6_10(x)
+#define FP_SYNC_SCALE_32(x)             FP_Q22_10(x)
 #define FP_SYNC_SHIFT_FACTOR            10
 #else
 #define FP_SYNC_SCALE(x)                (x)
@@ -746,21 +746,22 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             /* We should already know the accurate carrier frequency. All we need to sort
                out is the phase. */
             /* Check if we just saw A or B */
+            /* atan(1/3) = 18.433 degrees */
             if ((uint32_t) (angle - s->last_angles[0]) < 0x80000000U)
             {
                 angle = s->last_angles[0];
-                s->last_angles[0] = 0xC0000000 + 219937506;
-                s->last_angles[1] = 0x80000000 + 219937506;
+                s->last_angles[0] = DDS_PHASE(270.0f + 18.433f);
+                s->last_angles[1] = DDS_PHASE(180.0f + 18.433f);
             }
             else
             {
-                s->last_angles[0] = 0x80000000 + 219937506;
-                s->last_angles[1] = 0xC0000000 + 219937506;
+                s->last_angles[0] = DDS_PHASE(180.0f + 18.433f);
+                s->last_angles[1] = DDS_PHASE(270.0f + 18.433f);
             }
             /* Make a step shift in the phase, to pull it into line. We need to rotate the equalizer
                buffer, as well as the carrier phase, for this to play out nicely. */
             /* angle is now the difference between where A is, and where it should be */
-            phase_step = 0x80000000 + angle - 219937506;
+            phase_step = angle - DDS_PHASE(180.0f + 18.433f);
 #if defined(SPANDSP_USE_FIXED_POINTx)
             ip = phase_step >> 16;
             span_log(&s->logging, SPAN_LOG_FLOW, "Spin (short) by %d\n", ip);
@@ -769,7 +770,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
                 s->eq_buf[i] = complex_mul_q1_15(&s->eq_buf[i], &z16);
             s->carrier_track_p = 500000;
 #else
-            p = phase_step*2.0f*3.14159f/(65536.0f*65536.0f);
+            p = dds_phase_to_radians(phase_step);
             span_log(&s->logging, SPAN_LOG_FLOW, "Spin (short) by %.5f rads\n", p);
             zz = complex_setf(cosf(p), -sinf(p));
             for (i = 0;  i < V17_EQUALIZER_LEN;  i++)
@@ -828,7 +829,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             /* Make a step shift in the phase, to pull it into line. We need to rotate the equalizer buffer,
                as well as the carrier phase, for this to play out nicely. */
             /* angle is now the difference between where C is, and where it should be */
-            phase_step = angle - 219937506;
+            phase_step = angle - DDS_PHASE(18.433f);
 #if defined(SPANDSP_USE_FIXED_POINTx)
             ip = phase_step >> 16;
             span_log(&s->logging, SPAN_LOG_FLOW, "Spin (long) by %d\n", ip);
@@ -836,7 +837,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             for (i = 0;  i < V17_EQUALIZER_LEN;  i++)
                 s->eq_buf[i] = complex_mul_q1_15(&s->eq_buf[i], &z16);
 #else
-            p = phase_step*2.0f*3.14159f/(65536.0f*65536.0f);
+            p = dds_phase_to_radians(phase_step);
             span_log(&s->logging, SPAN_LOG_FLOW, "Spin (long) by %.5f rads\n", p);
             zz = complex_setf(cosf(p), -sinf(p));
             for (i = 0;  i < V17_EQUALIZER_LEN;  i++)
@@ -1179,7 +1180,7 @@ static __inline__ int signal_detect(v17_rx_state_t *s, int16_t amp)
     /* There could be overflow here, but it isn't a problem in practice */
     diff = x - s->last_sample;
     s->last_sample = x;
-    power = power_meter_update(&(s->power), diff);
+    power = power_meter_update(&s->power, diff);
 #if defined(IAXMODEM_STUFF)
     /* Quick power drop fudge */
     diff = abs(diff);

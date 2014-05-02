@@ -71,7 +71,7 @@
 #include "spandsp/private/v29rx.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-#define FP_SCALE(x)                     FP_Q_4_12(x)
+#define FP_SCALE(x)                     FP_Q4_12(x)
 #define FP_FACTOR                       4096
 #define FP_SHIFT_FACTOR                 12
 #else
@@ -79,8 +79,8 @@
 #endif
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-#define FP_SYNC_SCALE(x)                FP_Q_6_10(x)
-#define FP_SYNC_SCALE_32(x)             FP_Q_6_10_32(x)
+#define FP_SYNC_SCALE(x)                FP_Q6_10(x)
+#define FP_SYNC_SCALE_32(x)             FP_Q22_10(x)
 #define FP_SYNC_SHIFT_FACTOR            10
 #else
 #define FP_SYNC_SCALE(x)                (x)
@@ -206,8 +206,13 @@ SPAN_DECLARE(int) v29_rx_equalizer_state(v29_rx_state_t *s, complexi16_t **coeff
 SPAN_DECLARE(int) v29_rx_equalizer_state(v29_rx_state_t *s, complexf_t **coeffs)
 #endif
 {
+#if defined(SPANDSP_USE_FIXED_POINT)
+    *coeffs = NULL;
+    return 0;
+#else
     *coeffs = s->eq_coeff;
     return V29_EQUALIZER_LEN;
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -539,7 +544,6 @@ static __inline__ void symbol_sync(v29_rx_state_t *s)
         i = (v > FP_SYNC_SCALE_32(1000.0f))  ?  5  :  1;
         if (s->baud_phase < FP_SYNC_SCALE_32(0.0f))
             i = -i;
-        //printf("v = %10.5f %5d - %f %f %d\n", v, i, p, s->baud_phase, s->total_baud_timing_correction);
         s->eq_put_step += i;
         s->total_baud_timing_correction += i;
     }
@@ -674,7 +678,7 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
             for (i = 0;  i < V29_EQUALIZER_LEN;  i++)
                 s->eq_buf[i] = complex_mul_q1_15(&s->eq_buf[i], &z16);
 #else
-            p = angle*2.0f*3.14159f/(65536.0f*65536.0f);
+            p = dds_phase_to_radians(angle);
             span_log(&s->logging, SPAN_LOG_FLOW, "Spin by %.5f rads\n", p);
             zz = complex_setf(cosf(p), -sinf(p));
             for (i = 0;  i < V29_EQUALIZER_LEN;  i++)
@@ -817,7 +821,20 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
         break;
     }
     if (s->qam_report)
+    {
+#if defined(SPANDSP_USE_FIXED_POINT)
+        complexi16_t zi;
+        complexi16_t targeti;
+
+        zi.re = z.re*1024.0f;
+        zi.im = z.im*1024.0f;
+        targeti.re = target->re*1024.0f;
+        targeti.im = target->im*1024.0f;
+        s->qam_report(s->qam_user_data, &zi, &targeti, s->constellation_state);
+#else
         s->qam_report(s->qam_user_data, &z, target, s->constellation_state);
+#endif
+    }
 }
 /*- End of function --------------------------------------------------------*/
 

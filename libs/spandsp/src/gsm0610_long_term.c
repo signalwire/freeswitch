@@ -269,7 +269,7 @@ static int16_t evaluate_ltp_parameters(int16_t d[40],
     for (k = 0;  k < 40;  k++)
     {
         temp = d[k];
-        temp = saturated_abs16(temp);
+        temp = sat_abs16(temp);
         if (temp > dmax)
             dmax = temp;
         /*endif*/
@@ -337,7 +337,7 @@ static int16_t evaluate_ltp_parameters(int16_t d[40],
        quantization of the LTP gain b to get the coded version bc. */
     for (bc = 0;  bc <= 2;  bc++)
     {
-        if (R <= saturated_mul16(S, gsm_DLB[bc]))
+        if (R <= sat_mul16(S, gsm_DLB[bc]))
             break;
         /*endif*/
     }
@@ -363,7 +363,7 @@ static void long_term_analysis_filtering(int16_t bc,
     for (k = 0;  k < 40;  k++)
     {
         dpp[k] = gsm_mult_r(gsm_QLB[bc], dp[k - Nc]);
-        e[k] = saturated_sub16(d[k], dpp[k]);
+        e[k] = sat_sub16(d[k], dpp[k]);
     }
     /*endfor*/
 }
@@ -421,7 +421,7 @@ void gsm0610_long_term_synthesis_filtering(gsm0610_state_t *s,
     for (k = 0;  k < 40;  k++)
     {
         drpp = gsm_mult_r(brp, drp[k - Nr]);
-        drp[k] = saturated_add16(erp[k], drpp);
+        drp[k] = sat_add16(erp[k], drpp);
     }
     /*endfor*/
 

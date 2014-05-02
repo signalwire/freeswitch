@@ -551,7 +551,8 @@ static void trie_add(trie_t *s, const char *u, size_t len)
         /* Is there a child node for this character? */
         if (t->child_list[index] == NULL)
         {
-            t->child_list[index] = trie_node_create();
+            if ((t->child_list[index] = trie_node_create()) == NULL)
+                exit(2);
             if (index < t->first)
                 t->first = index;
             if (index > t->last)
@@ -609,7 +610,12 @@ int main(int argc, char *argv[])
     trie_t *s;
     int i;
 
-    s = trie_create();
+    if ((s = trie_create()) == NULL)
+        exit(2);
+
+    printf("/* THIS FILE WAS AUTOMATICALLY GENERATED - ANY MODIFICATIONS MADE TO THIS");
+    printf("   FILE MAY BE OVERWRITTEN DURING FUTURE BUILDS OF THE SOFTWARE */\n");
+    printf("\n");
 
     for (i = 0;  wordlist[i];  i++)
         trie_add(s, wordlist[i], strlen(wordlist[i]));

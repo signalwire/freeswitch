@@ -1066,7 +1066,6 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
             if (len <= 0  ||  buf[0] != 0xFF)
                 s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in].flags |= HDLC_FLAG_MISSING_DATA;
             /*endif*/
-            hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
         }
         /*endif*/
         if (len > 0)
@@ -1313,10 +1312,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         xx->current_rx_field_class = T38_FIELD_CLASS_NON_ECM;
         hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
         if (hdlc_buf->contents != (data_type | FLAG_DATA))
-        {
             queue_missing_indicator(s, data_type);
-            hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
-        }
         /*endif*/
         if (len > 0)
             t38_non_ecm_buffer_inject(&s->core.non_ecm_to_modem, buf, len);
@@ -1349,10 +1345,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
                 }
                 /*endif*/
                 if (hdlc_buf->contents != (data_type | FLAG_DATA))
-                {
                     queue_missing_indicator(s, data_type);
-                    hdlc_buf = &s->core.hdlc_to_modem.buf[s->core.hdlc_to_modem.in];
-                }
                 /*endif*/
                 /* Don't flow control the data any more. Just pump out the remainder as fast as we can. */
                 t38_non_ecm_buffer_push(&s->core.non_ecm_to_modem);
@@ -1590,7 +1583,9 @@ static void non_ecm_push_residue(t38_gateway_state_t *t)
         s->data[s->data_ptr++] = (uint8_t) (s->bit_stream << (8 - s->bit_no));
     }
     /*endif*/
-    t38_core_send_data(&t->t38x.t38, t->t38x.current_tx_data_type, T38_FIELD_T4_NON_ECM_SIG_END, s->data, s->data_ptr, T38_PACKET_CATEGORY_IMAGE_DATA_END);
+    if (t38_core_send_data(&t->t38x.t38, t->t38x.current_tx_data_type, T38_FIELD_T4_NON_ECM_SIG_END, s->data, s->data_ptr, T38_PACKET_CATEGORY_IMAGE_DATA_END) < 0)
+        span_log(&t->logging, SPAN_LOG_WARNING, "T.38 send failed\n");
+    /*endif*/
     s->in_bits += s->bits_absorbed;
     s->out_octets += s->data_ptr;
     s->data_ptr = 0;
@@ -1604,7 +1599,9 @@ static void non_ecm_push(t38_gateway_state_t *t)
     s = &t->core.to_t38;
     if (s->data_ptr)
     {
-        t38_core_send_data(&t->t38x.t38, t->t38x.current_tx_data_type, T38_FIELD_T4_NON_ECM_DATA, s->data, s->data_ptr, T38_PACKET_CATEGORY_IMAGE_DATA);
+        if (t38_core_send_data(&t->t38x.t38, t->t38x.current_tx_data_type, T38_FIELD_T4_NON_ECM_DATA, s->data, s->data_ptr, T38_PACKET_CATEGORY_IMAGE_DATA) < 0)
+            span_log(&t->logging, SPAN_LOG_WARNING, "T.38 send failed\n");
+        /*endif*/
         s->in_bits += s->bits_absorbed;
         s->out_octets += s->data_ptr;
         s->bits_absorbed = 0;
@@ -1727,7 +1724,9 @@ static void hdlc_rx_status(hdlc_rx_state_t *t, int status)
         if (t->framing_ok_announced)
         {
             category = (s->t38x.current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA_END  :  T38_PACKET_CATEGORY_IMAGE_DATA_END;
-            t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_SIG_END, NULL, 0, category);
+            if (t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_SIG_END, NULL, 0, category) < 0)
+                span_log(&s->logging, SPAN_LOG_WARNING, "T.38 send failed\n");
+            /*endif*/
             t38_core_send_indicator(&s->t38x.t38, T38_IND_NO_SIGNAL);
             t->framing_ok_announced = false;
         }
@@ -1785,7 +1784,9 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
                     if (u->data_ptr)
                     {
                         bit_reverse(u->data, t->buffer + t->len - 2 - u->data_ptr, u->data_ptr);
-                        t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_DATA, u->data, u->data_ptr, category);
+                        if (t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_DATA, u->data, u->data_ptr, category) < 0)
+                            span_log(&s->logging, SPAN_LOG_WARNING, "T.38 send failed\n");
+                        /*endif*/
                     }
                     /*endif*/
                     if (t->num_bits != 7)
@@ -1795,7 +1796,11 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
                         /* It seems some boxes may not like us sending a _SIG_END here, and then another
                            when the carrier actually drops. Lets just send T38_FIELD_HDLC_FCS_OK here. */
                         if (t->len > 2)
-                            t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_FCS_BAD, NULL, 0, category);
+                        {
+                            if (t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_FCS_BAD, NULL, 0, category) < 0)
+                                span_log(&s->logging, SPAN_LOG_WARNING, "T.38 send failed\n");
+                            /*endif*/
+                        }
                         /*endif*/
                     }
                     else if ((u->crc & 0xFFFF) != 0xF0B8)
@@ -1805,7 +1810,11 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
                         /* It seems some boxes may not like us sending a _SIG_END here, and then another
                            when the carrier actually drops. Lets just send T38_FIELD_HDLC_FCS_OK here. */
                         if (t->len > 2)
-                            t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_FCS_BAD, NULL, 0, category);
+                        {
+                            if (t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_FCS_BAD, NULL, 0, category) < 0)
+                                span_log(&s->logging, SPAN_LOG_WARNING, "T.38 send failed\n");
+                            /*endif*/
+                        }
                         /*endif*/
                     }
                     else
@@ -1830,7 +1839,9 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
                         /*endif*/
                         /* It seems some boxes may not like us sending a _SIG_END here, and then another
                            when the carrier actually drops. Lets just send T38_FIELD_HDLC_FCS_OK here. */
-                        t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_FCS_OK, NULL, 0, category);
+                        if (t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_FCS_OK, NULL, 0, category) < 0)
+                            span_log(&s->logging, SPAN_LOG_WARNING, "T.38 send failed\n");
+                        /*endif*/
                     }
                     /*endif*/
                 }
@@ -1936,7 +1947,9 @@ static void t38_hdlc_rx_put_bit(hdlc_rx_state_t *t, int new_bit)
     {
         bit_reverse(u->data, t->buffer + t->len - 2 - u->data_ptr, u->data_ptr);
         category = (s->t38x.current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA  :  T38_PACKET_CATEGORY_IMAGE_DATA;
-        t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_DATA, u->data, u->data_ptr, category);
+        if (t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_DATA, u->data, u->data_ptr, category) < 0)
+            span_log(&s->logging, SPAN_LOG_WARNING, "T.38 send failed\n");
+        /*endif*/
         /* Since we delay transmission by 2 octets, we should now have sent the last of the data octets when
            we have just received the last of the CRC octets. */
         u->data_ptr = 0;
@@ -2107,7 +2120,6 @@ SPAN_DECLARE_NONSTD(int) t38_gateway_tx(t38_gateway_state_t *s, int16_t amp[], i
 
     required_len = max_len;
 #endif
-    len = 0;
     if ((len = s->audio.modems.tx_handler(s->audio.modems.tx_user_data, amp, max_len)) < max_len)
     {
         if (set_next_tx_type(s))

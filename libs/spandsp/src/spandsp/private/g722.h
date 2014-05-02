@@ -47,12 +47,12 @@ typedef struct
  */
 struct g722_encode_state_s
 {
-    /*! True if the operating in the special ITU test mode, with the band split filters
+    /*! True if operating in the special ITU test mode, with the band split filters
              disabled. */
     bool itu_test_mode;
     /*! True if the G.722 data is packed */
     bool packed;
-    /*! True if encode from 8k samples/second */
+    /*! True if encoding from 8k samples/second */
     bool eight_k;
     /*! 6 for 48000kbps, 7 for 56000kbps, or 8 for 64000kbps. */
     int bits_per_sample;
@@ -73,12 +73,12 @@ struct g722_encode_state_s
  */
 struct g722_decode_state_s
 {
-    /*! True if the operating in the special ITU test mode, with the band split filters
+    /*! True if operating in the special ITU test mode, with the band split filters
              disabled. */
     bool itu_test_mode;
     /*! True if the G.722 data is packed */
     bool packed;
-    /*! True if decode to 8k samples/second */
+    /*! True if decoding to 8k samples/second */
     bool eight_k;
     /*! 6 for 48000kbps, 7 for 56000kbps, or 8 for 64000kbps. */
     int bits_per_sample;

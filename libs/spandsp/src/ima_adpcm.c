@@ -194,7 +194,7 @@ static int16_t decode(ima_adpcm_state_t *s, uint8_t adpcm)
     int ss;
     int16_t linear;
 
-    /* e = (adpcm+0.5)*step/4 */
+    /* e = (adpcm + 0.5)*step/4 */
     ss = step_size[s->step_index];
     e = ss >> 3;
     if (adpcm & 0x01)
@@ -209,7 +209,7 @@ static int16_t decode(ima_adpcm_state_t *s, uint8_t adpcm)
     if (adpcm & 0x08)
         e = -e;
     /*endif*/
-    linear = saturate(s->last + e);
+    linear = saturate16(s->last + e);
     s->last = linear;
     s->step_index += step_adjustment[adpcm & 0x07];
     if (s->step_index < 0)
@@ -266,7 +266,7 @@ static uint8_t encode(ima_adpcm_state_t *s, int16_t linear)
     else
         diff = diff + initial_e - e;
     /*endif*/
-    s->last = saturate(diff + s->last);
+    s->last = saturate16(diff + s->last);
     s->step_index += step_adjustment[adpcm & 0x07];
     if (s->step_index < 0)
         s->step_index = 0;

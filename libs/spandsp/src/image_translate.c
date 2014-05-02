@@ -461,7 +461,6 @@ static int image_resize_row(image_translate_state_t *s, uint8_t buf[])
     case T4_IMAGE_TYPE_GRAY_12BIT:
         row16[0] = (uint16_t *) s->raw_pixel_row[0];
         row16[1] = (uint16_t *) s->raw_pixel_row[1];
-        buf16 = (uint16_t *) buf;
         for (i = 0;  i < output_width;  i++)
         {
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -668,7 +667,6 @@ static int image_format_to_bytes_per_pixel(int image_format)
 {
     switch (image_format)
     {
-    default:
     case T4_IMAGE_TYPE_BILEVEL:
     case T4_IMAGE_TYPE_GRAY_8BIT:
         return 1;
@@ -685,6 +683,7 @@ static int image_format_to_bytes_per_pixel(int image_format)
     case T4_IMAGE_TYPE_4COLOUR_12BIT:
         return 8;
     }
+    return 1;
 }
 /*- End of function --------------------------------------------------------*/
 

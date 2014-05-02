@@ -30,7 +30,7 @@
 
 #define TZ_MAX_LEAPS            50      /* Maximum number of leap second corrections */
 
-#define SPANDSP_TZNAME_MAX              255
+#define SPANDSP_TZNAME_MAX      255
 
 /* The TZ_MAX_TIMES value below is enough to handle a bit more than a
  * year's worth of solar time (corrected daily to the nearest second) or

@@ -121,7 +121,7 @@ void gsm0610_preprocess(gsm0610_state_t *s, const int16_t amp[GSM0610_FRAME_LEN]
          * L_temp = (++L_temp) >> 1;
          * L_z2 = L_z2 - L_temp;
          */
-        L_z2 = saturated_add32(L_z2, L_s2);
+        L_z2 = sat_add32(L_z2, L_s2);
 #else
         /* This does L_z2  = L_z2 * 0x7FD5/0x8000 + L_s2 */
         msp = (int16_t) (L_z2 >> 15);
@@ -129,16 +129,16 @@ void gsm0610_preprocess(gsm0610_state_t *s, const int16_t amp[GSM0610_FRAME_LEN]
 
         L_s2 += gsm_mult_r(lsp, 32735);
         L_temp = (int32_t) msp*32735;
-        L_z2 = saturated_add32(L_temp, L_s2);
+        L_z2 = sat_add32(L_temp, L_s2);
 #endif
 
         /* Compute sof[k] with rounding */
-        L_temp = saturated_add32(L_z2, 16384);
+        L_temp = sat_add32(L_z2, 16384);
 
         /* 4.2.3  Preemphasis */
         msp = gsm_mult_r(mp, -28180);
         mp = (int16_t) (L_temp >> 15);
-        so[k] = saturated_add16(mp, msp);
+        so[k] = sat_add16(mp, msp);
     }
     /*endfor*/
 

@@ -72,7 +72,7 @@
 #include "spandsp/private/v27ter_rx.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-#define FP_SCALE(x)                     FP_Q_6_10(x)
+#define FP_SCALE(x)                     FP_Q6_10(x)
 #define FP_FACTOR                       4096
 #define FP_SHIFT_FACTOR                 12
 #else
@@ -553,7 +553,6 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
     z = equalizer_get(s);
 
     //span_log(&s->logging, SPAN_LOG_FLOW, "Equalized symbol - %15.5f %15.5f\n", z.re, z.im);
-    constellation_state = s->constellation_state;
     switch (s->training_stage)
     {
     case TRAINING_STAGE_NORMAL_OPERATION:
@@ -625,13 +624,13 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
 
             /* Make a step shift in the phase, to pull it into line. We need to rotate the equalizer
                buffer, as well as the carrier phase, for this to play out nicely. */
-            angle += 0x80000000;
+            angle += DDS_PHASE(180.0f);
 #if defined(SPANDSP_USE_FIXED_POINT)
             z16 = complex_seti16(fixed_cos(angle >> 16), -fixed_sin(angle >> 16));
             for (i = 0;  i < V27TER_EQUALIZER_LEN;  i++)
                 s->eq_buf[i] = complex_mul_q1_15(&s->eq_buf[i], &z16);
 #else
-            p = angle*2.0f*3.14159f/(65536.0f*65536.0f);
+            p = dds_phase_to_radians(angle);
             zz = complex_setf(cosf(p), -sinf(p));
             for (i = 0;  i < V27TER_EQUALIZER_LEN;  i++)
                 s->eq_buf[i] = complex_mulf(&s->eq_buf[i], &zz);
@@ -643,9 +642,8 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
             s->training_bc ^= descramble(s, 1);
             descramble(s, 1);
             descramble(s, 1);
-            constellation_state =
             s->constellation_state = abab_pos[s->training_bc];
-            target = &v27ter_constellation[constellation_state];
+            target = &v27ter_constellation[s->constellation_state];
             s->training_count = 1;
             s->training_stage = TRAINING_STAGE_TRAIN_ON_ABAB;
             report_status_change(s, SIG_STATUS_TRAINING_IN_PROGRESS);
@@ -665,9 +663,8 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
         s->training_bc ^= descramble(s, 1);
         descramble(s, 1);
         descramble(s, 1);
-        constellation_state =
         s->constellation_state = abab_pos[s->training_bc];
-        target = &v27ter_constellation[constellation_state];
+        target = &v27ter_constellation[s->constellation_state];
         track_carrier(s, &z, target);
         tune_equalizer(s, &z, target);
 
@@ -680,7 +677,6 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
 #endif
         if (++s->training_count >= V27TER_TRAINING_SEG_5_LEN)
         {
-            constellation_state = 4;
             s->constellation_state = (s->bit_rate == 4800)  ?  4  :  2;
             s->training_count = 0;
             s->training_stage = TRAINING_STAGE_TEST_ONES;
@@ -743,7 +739,20 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
         break;
     }
     if (s->qam_report)
+    {
+#if defined(SPANDSP_USE_FIXED_POINT)
+        complexi16_t zi;
+        complexi16_t targeti;
+
+        zi.re = z.re*1024.0f;
+        zi.im = z.im*1024.0f;
+        targeti.re = target->re*1024.0f;
+        targeti.im = target->im*1024.0f;
+        s->qam_report(s->qam_user_data, &zi, &targeti, s->constellation_state);
+#else
         s->qam_report(s->qam_user_data, &z, target, s->constellation_state);
+#endif
+    }
 }
 /*- End of function --------------------------------------------------------*/
 

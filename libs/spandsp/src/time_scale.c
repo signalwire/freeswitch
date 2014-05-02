@@ -202,7 +202,7 @@ SPAN_DECLARE(int) time_scale(time_scale_state_t *s, int16_t out[], int16_t in[],
     {
         while (s->lcp >= s->buf_len)
         {
-            memcpy(out + out_len, s->buf, sizeof(int16_t)*s->buf_len);
+            memcpy(&out[out_len], s->buf, sizeof(int16_t)*s->buf_len);
             out_len += s->buf_len;
             if (len - in_len < s->buf_len)
             {
@@ -218,7 +218,7 @@ SPAN_DECLARE(int) time_scale(time_scale_state_t *s, int16_t out[], int16_t in[],
         }
         if (s->lcp > 0)
         {
-            memcpy(out + out_len, s->buf, sizeof(int16_t)*s->lcp);
+            memcpy(&out[out_len], s->buf, sizeof(int16_t)*s->lcp);
             out_len += s->lcp;
             memcpy(s->buf, s->buf + s->lcp, sizeof(int16_t)*(s->buf_len - s->lcp));
             if (len - in_len < s->lcp)
@@ -273,7 +273,7 @@ SPAN_DECLARE(int) time_scale(time_scale_state_t *s, int16_t out[], int16_t in[],
             else
             {
                 /* Slow down - insert a chunk of data */
-                memcpy(out + out_len, s->buf, sizeof(int16_t)*pitch);
+                memcpy(&out[out_len], s->buf, sizeof(int16_t)*pitch);
                 out_len += pitch;
                 overlap_add(s->buf + pitch, s->buf, pitch);
             }

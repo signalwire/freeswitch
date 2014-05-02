@@ -53,6 +53,13 @@ static __inline__ int top_bit(uint32_t bits)
              : [res] "=&r" (res)
              : [bits] "rm" (bits));
     return res;
+#elif defined(__GNUC__x)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
+    int res;
+
+    __asm__("clz %[res], %[bits]"
+            : [res] "=r" (res)
+            : [bits] "r" (bits));
+    return res;
 #elif defined(__ppc__)  ||   defined(__powerpc__)
     int res;
 

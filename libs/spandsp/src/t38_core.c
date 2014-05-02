@@ -462,7 +462,6 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
         /* Do a dummy run through the fields to check we have a complete and uncorrupted packet. */
         prev_ptr = ptr;
         other_half = false;
-        t30_field_type = 0;
         for (i = 0;  i < (int) count;  i++)
         {
             if (ptr >= pkt_len)
@@ -514,7 +513,7 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
                 }
                 else
                 {
-                    t30_field_type = (buf[ptr++] >> 3) & 0x7;
+                    ptr++;
                 }
             }
             /* Decode field_data */
@@ -523,13 +522,7 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
                 if ((ptr + 2) > pkt_len)
                     return ret;
                 numocts = ((buf[ptr] << 8) | buf[ptr + 1]) + 1;
-                msg = buf + ptr + 2;
                 ptr += numocts + 2;
-            }
-            else
-            {
-                numocts = 0;
-                msg = NULL;
             }
             if (ptr > pkt_len)
                 return ret;
@@ -766,7 +759,6 @@ static int t38_encode_data(t38_core_state_t *s, uint8_t buf[], int data_type, co
     /* There seems no valid reason why a packet would ever be generated without a data field present */
     data_field_present = (fields > 0)  ?  0x80  :  0x00;
 
-    data_field_no = 0;
     /* Data field present */
     /* Data packet */
     /* Type of data */

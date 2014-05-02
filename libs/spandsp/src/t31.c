@@ -267,7 +267,6 @@ static int extra_bits_in_stuffed_frame(const uint8_t buf[], int len)
     int i;
     int j;
 
-    bitstream = 0;
     ones = 0;
     stuffed = 0;
     /* We should really append the CRC, and include the stuffed bits for that, to get
@@ -1100,7 +1099,6 @@ static int stream_hdlc(t31_state_t *s)
                     data_fields[0].field_len = i;
 
                     /* Now see about the next HDLC frame. This will tell us whether to send FCS_OK or FCS_OK_SIG_END */
-                    previous = fe->current_tx_data_type;
                     s->hdlc_tx.ptr = 0;
                     s->hdlc_tx.len = 0;
                     if (front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE) < 0)
@@ -2117,7 +2115,6 @@ static int restart_modem(t31_state_t *s, int new_modem)
         {
             s->t38_fe.next_tx_indicator = T38_IND_V21_PREAMBLE;
             s->t38_fe.current_tx_data_type = T38_DATA_V21;
-            use_hdlc = true;
             s->t38_fe.timed_step = T38_TIMED_STEP_HDLC_MODEM;
             set_octets_per_data_packet(s, 300);
         }
@@ -2449,13 +2446,11 @@ static int process_class1_cmd(void *user_data, int direction, int operation, int
     int new_transmit;
     int i;
     int len;
-    int immediate_response;
     t31_state_t *s;
     uint8_t msg[256];
 
     s = (t31_state_t *) user_data;
     new_transmit = direction;
-    immediate_response = true;
     switch (operation)
     {
     case 'S':
@@ -2489,7 +2484,6 @@ static int process_class1_cmd(void *user_data, int direction, int operation, int
             /*endif*/
         }
         /*endif*/
-        immediate_response = false;
         span_log(&s->logging, SPAN_LOG_FLOW, "Silence %dms\n", val*10);
         break;
     case 'H':
@@ -2506,10 +2500,7 @@ static int process_class1_cmd(void *user_data, int direction, int operation, int
         /*endswitch*/
         span_log(&s->logging, SPAN_LOG_FLOW, "HDLC\n");
         if (new_modem != s->modem)
-        {
             restart_modem(s, new_modem);
-            immediate_response = false;
-        }
         /*endif*/
         s->at_state.transmit = new_transmit;
         if (new_transmit)
@@ -2561,7 +2552,6 @@ static int process_class1_cmd(void *user_data, int direction, int operation, int
             while (msg[0] == AT_RESPONSE_CODE_CONNECT);
         }
         /*endif*/
-        immediate_response = false;
         break;
     default:
         switch (val)
@@ -2666,11 +2656,10 @@ static int process_class1_cmd(void *user_data, int direction, int operation, int
         }
         /*endif*/
         restart_modem(s, new_modem);
-        immediate_response = false;
         break;
     }
     /*endswitch*/
-    return immediate_response;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 

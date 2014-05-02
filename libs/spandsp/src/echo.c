@@ -392,7 +392,7 @@ static __inline__ int16_t echo_can_hpf(int32_t coeff[2], int16_t amp)
     coeff[1] = z;
     z = coeff[0] >> 15;
 
-    return saturate(z);
+    return saturate16(z);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -498,7 +498,7 @@ printf("Rotate to %d at %d\n", ec->tap_set, sample_no);
                 /* ... and we are not in the dwell time from previous speech. */
                 if ((ec->adaption_mode & ECHO_CAN_USE_ADAPTION)  &&   ec->narrowband_score == 0)
                 {
-                    //nsuppr = saturate((clean_rx << 16)/ec->tx_power[1]);
+                    //nsuppr = saturate16((clean_rx << 16)/ec->tx_power[1]);
                     //nsuppr = clean_rx/ec->tx_power[1];
                     /* If a sudden surge in signal level (e.g. the onset of a tone
                        burst) cause an abnormally high instantaneous to average

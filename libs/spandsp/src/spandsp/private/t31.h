@@ -138,8 +138,8 @@ typedef struct
 
     t31_hdlc_state_t hdlc_from_t31;
 
-    /*! \brief True if we are using ECM mode. This is used to select HDLC faking, necessary
-               with clunky class 1 modems. */
+    /*! \brief True if we are using ECM mode. This is used to select HDLC faking, which is
+               necessary with clunky class 1 modems. */
     int ecm_mode;
 
     /*! \brief Counter for trailing non-ECM bytes, used to flush out the far end's modem. */

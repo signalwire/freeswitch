@@ -33,6 +33,7 @@
 #include "config.h"
 #endif
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -450,7 +451,7 @@ static int file_decode_tests(super_tone_rx_state_t *super, const char *file_name
     {
         /* Add some noise to the signal for a more meaningful test. */
         //for (sample = 0;  sample < frames;  sample++)
-        //    amp[sample] += saturate(amp[sample] + awgn (&noise_source));
+        //    amp[sample] += sat_add16(amp[sample], awgn (&noise_source));
         for (sample = 0;  sample < frames;  )
         {
             x = super_tone_rx(super, amp + sample, frames - sample);

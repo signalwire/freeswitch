@@ -554,7 +554,7 @@ faxtester_state_t *faxtester_init(faxtester_state_t *s, int calling_party)
     span_log_set_protocol(&s->logging, "TST");
     fax_modems_init(&s->modems,
                     false,
-                    NULL,
+                    hdlc_accept,
                     hdlc_underflow_handler,
                     non_ecm_put_bit,
                     t38_non_ecm_buffer_get_bit,

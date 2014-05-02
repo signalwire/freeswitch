@@ -64,18 +64,22 @@ struct fax_modems_state_s
         /*! \brief A V.29 modem context used when receiving FAXes at 7200bps, 9600bps
                    12000bps or 14400bps */
         v17_rx_state_t v17_rx;
-        /*! \brief A V.29 modem context used when sending FAXes at 7200bps or
-                   9600bps */
-        v29_tx_state_t v29_tx;
-        /*! \brief A V.29 modem context used when receiving FAXes at 7200bps or
-                   9600bps */
-        v29_rx_state_t v29_rx;
         /*! \brief A V.27ter modem context used when sending FAXes at 2400bps or
                    4800bps */
         v27ter_tx_state_t v27ter_tx;
         /*! \brief A V.27ter modem context used when receiving FAXes at 2400bps or
                    4800bps */
         v27ter_rx_state_t v27ter_rx;
+        /*! \brief A V.29 modem context used when sending FAXes at 7200bps or
+                   9600bps */
+        v29_tx_state_t v29_tx;
+        /*! \brief A V.29 modem context used when receiving FAXes at 7200bps or
+                   9600bps */
+        v29_rx_state_t v29_rx;
+#if defined(SPANDSP_SUPPORT_V34)
+        /*! \brief A V.34 modem context used when sending or receiving Super-G3 FAXes */
+        v34_state_t v34;
+#endif
     } fast_modems;
     /*! \brief Used to insert timed silences. */
     silence_gen_state_t silence_gen;

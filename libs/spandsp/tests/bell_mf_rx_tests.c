@@ -495,7 +495,7 @@ int main(int argc, char *argv[])
         {
             len = my_mf_generate(amp, ALL_POSSIBLE_DIGITS);
             for (sample = 0;  sample < len;  sample++)
-                amp[sample] = saturate(amp[sample] + awgn(&noise_source));
+                amp[sample] = sat_add16(amp[sample], awgn(&noise_source));
             codec_munge(amp, len);
             bell_mf_rx(mf_state, amp, len);
             if (bell_mf_rx_get(mf_state, buf, 128) != 15)

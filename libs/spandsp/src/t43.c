@@ -768,8 +768,6 @@ SPAN_DECLARE(int) t43_decode_put(t43_decode_state_t *s, const uint8_t data[], si
     result = 0;
     while (s->current_bit_plane < s->t85.bit_planes)
     {
-        j = s->current_bit_plane;
-
         result = t85_decode_put(&s->t85, data, len);
         if (result != T4_DECODE_OK)
         {
@@ -783,10 +781,10 @@ SPAN_DECLARE(int) t43_decode_put(t43_decode_state_t *s, const uint8_t data[], si
 
         /* Start the next plane */
         s->bit_plane_mask >>= 1;
-        s->current_bit_plane++;
         s->ptr = 0;
         s->row = 0;
         s->plane_ptr = 0;
+        s->current_bit_plane++;
         t85_decode_new_plane(&s->t85);
     }
     /* Apply the colour map, and produce the RGB data from the collected bit-planes */

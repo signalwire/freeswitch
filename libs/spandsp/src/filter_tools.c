@@ -195,6 +195,11 @@ void compute_hilbert_transform(double coeffs[], int len)
             coeffs[h + i] = -x;
             coeffs[h - i] = x;
         }
+        else
+        {
+            coeffs[h + i] =
+            coeffs[h - i] = 0.0;
+        }
     }
 }
 /*- End of function --------------------------------------------------------*/

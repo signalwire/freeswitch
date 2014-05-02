@@ -46,6 +46,10 @@ int main(int argc, char *argv[])
     uint8_t srgb;
     int i;
 
+    printf("/* THIS FILE WAS AUTOMATICALLY GENERATED - ANY MODIFICATIONS MADE TO THIS");
+    printf("   FILE MAY BE OVERWRITTEN DURING FUTURE BUILDS OF THE SOFTWARE */\n");
+    printf("\n");
+
     printf("static const float srgb_to_linear[256] =\n");
     printf("{\n");
     for (i = 0;  i < 256;  i++)

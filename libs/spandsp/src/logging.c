@@ -143,7 +143,7 @@ SPAN_DECLARE(int) span_log(logging_state_t *s, int level, const char *format, ..
             /*endif*/
         }
         /*endif*/
-        len += vsnprintf(msg + len, 1024 - len, format, arg_ptr);
+        vsnprintf(msg + len, 1024 - len, format, arg_ptr);
         if (s->span_message)
             s->span_message(s->user_data, level, msg);
         else if (__span_message)
@@ -170,10 +170,16 @@ SPAN_DECLARE(int) span_log_buf(logging_state_t *s, int level, const char *tag, c
             msg_len += snprintf(msg + msg_len, 1024 - msg_len, "%s", tag);
         for (i = 0;  i < len  &&  msg_len < 800;  i++)
             msg_len += snprintf(msg + msg_len, 1024 - msg_len, " %02x", buf[i]);
-        msg_len += snprintf(msg + msg_len, 1024 - msg_len, "\n");
+        snprintf(msg + msg_len, 1024 - msg_len, "\n");
         return span_log(s, level, msg);
     }
     return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) span_log_get_level(logging_state_t *s)
+{
+    return s->level;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -185,11 +191,23 @@ SPAN_DECLARE(int) span_log_set_level(logging_state_t *s, int level)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(const char *) span_log_get_tag(logging_state_t *s)
+{
+    return s->tag;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) span_log_set_tag(logging_state_t *s, const char *tag)
 {
     s->tag = tag;
 
     return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(const char *) span_log_get_protocol(logging_state_t *s)
+{
+    return s->protocol;
 }
 /*- End of function --------------------------------------------------------*/
 

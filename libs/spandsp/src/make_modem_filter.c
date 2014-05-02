@@ -103,6 +103,9 @@ static void make_tx_filter(int coeff_sets,
 
     /* Churn out the data as a C source code header file, which can be directly included by the
        modem code. */
+    printf("/* THIS FILE WAS AUTOMATICALLY GENERATED - ANY MODIFICATIONS MADE TO THIS");
+    printf("   FILE MAY BE OVERWRITTEN DURING FUTURE BUILDS OF THE SOFTWARE */\n");
+    printf("\n");
     printf("#if defined(SPANDSP_USE_FIXED_POINT)\n");
     printf("#define TX_PULSESHAPER%s_SCALE(x)    ((int16_t) (%f*x + ((x >= 0.0)  ?  0.5  :  -0.5)))\n", tag, fixed_scaling);
     printf("#define TX_PULSESHAPER%s_GAIN        %ff\n", tag, fixed_gain);

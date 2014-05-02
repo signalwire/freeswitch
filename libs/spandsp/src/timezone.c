@@ -643,7 +643,6 @@ static int tzparse(const char *name, struct tz_state_s * const sp, const int las
             }
             /* Initially we're assumed to be in standard time. */
             isdst = false;
-            theiroffset = theirstdoffset;
             /* Now juggle transition times and types tracking offsets as you do. */
             for (i = 0;  i < sp->timecnt;  i++)
             {

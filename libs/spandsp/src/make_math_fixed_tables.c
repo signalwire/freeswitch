@@ -37,6 +37,10 @@ int main(int argc, char *argv[])
     double val;
     int ival;
 
+    printf("/* THIS FILE WAS AUTOMATICALLY GENERATED - ANY MODIFICATIONS MADE TO THIS");
+    printf("   FILE MAY BE OVERWRITTEN DURING FUTURE BUILDS OF THE SOFTWARE */\n");
+    printf("\n");
+
     printf("static const uint16_t fixed_reciprocal_table[129] =\n");
     printf("{\n");
     for (i = 0;  i < 129;  i++)

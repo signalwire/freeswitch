@@ -110,6 +110,8 @@ static __inline__ int scramble(v17_tx_state_t *s, int in_bit)
 {
     int out_bit;
 
+    /* One of the scrambler taps is a variable, so it can be adjusted for caller or answerer operation
+       when used for V.32bis. */
     out_bit = (in_bit ^ (s->scramble_reg >> s->scrambler_tap) ^ (s->scramble_reg >> (23 - 1))) & 1;
     s->scramble_reg = (s->scramble_reg << 1) | out_bit;
     return out_bit;

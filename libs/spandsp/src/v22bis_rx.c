@@ -79,7 +79,7 @@
 #include "spandsp/private/v22bis.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-#define FP_SCALE(x)                     FP_Q_6_10(x)
+#define FP_SCALE(x)                     FP_Q6_10(x)
 #define FP_SHIFT_FACTOR                 10
 #else
 #define FP_SCALE(x)                     (x)
@@ -185,7 +185,7 @@ void v22bis_equalizer_coefficient_reset(v22bis_state_t *s)
 {
     /* Start with an equalizer based on everything being perfect */
 #if defined(SPANDSP_USE_FIXED_POINT)
-    static const complexi16_t x = {FP_Q_6_10(3.0f), FP_Q_6_10(0.0f)};
+    static const complexi16_t x = {FP_Q6_10(3.0f), FP_Q6_10(0.0f)};
 
     cvec_zeroi16(s->rx.eq_coeff, V22BIS_EQUALIZER_LEN);
     s->rx.eq_coeff[V22BIS_EQUALIZER_PRE_LEN] = x;
@@ -378,7 +378,7 @@ static __inline__ void symbol_sync(v22bis_state_t *s)
     complexi16_t a;
     complexi16_t b;
     complexi16_t c;
-    static const complexi16_t x = {FP_Q_1_15(0.894427f), FP_Q_1_15(0.44721f)};
+    static const complexi16_t x = {FP_Q1_15(0.894427f), FP_Q1_15(0.44721f)};
 #else
     float p;
     float q;
@@ -453,7 +453,7 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
     complexi16_t z;
     complexi16_t zz;
     const complexi16_t *target;
-    static const complexi16_t x = {FP_Q_1_15(0.894427f), FP_Q_1_15(0.44721f)};
+    static const complexi16_t x = {FP_Q1_15(0.894427f), FP_Q1_15(0.44721f)};
 #else
     complexf_t z;
     complexf_t zz;
@@ -487,8 +487,8 @@ static __inline__ void process_half_baud(v22bis_state_t *s, const complexf_t *sa
     if (s->rx.sixteen_way_decisions)
     {
 #if defined(SPANDSP_USE_FIXED_POINT)
-        re = (z.re + FP_Q_6_10(3.0f)) >> FP_SHIFT_FACTOR;
-        im = (z.im + FP_Q_6_10(3.0f)) >> FP_SHIFT_FACTOR;
+        re = (z.re + FP_Q6_10(3.0f)) >> FP_SHIFT_FACTOR;
+        im = (z.im + FP_Q6_10(3.0f)) >> FP_SHIFT_FACTOR;
 #else
         re = (int) (z.re + 3.0f);
         im = (int) (z.im + 3.0f);

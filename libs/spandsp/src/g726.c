@@ -295,7 +295,7 @@ static int step_size(g726_state_t *s)
  */
 static int16_t quantize(int d,                  /* Raw difference signal sample */
                         int y,                  /* Step size multiplier */
-                        const int table[],     /* quantization table */
+                        const int table[],      /* quantization table */
                         int quantizer_states)   /* table size of int16_t integers */
 {
     int16_t dqm;    /* Magnitude of 'd' */

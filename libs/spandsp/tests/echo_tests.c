@@ -463,7 +463,7 @@ static int16_t channel_model(channel_model_state_t *chan, int16_t rout, int16_t 
        the G.168 spec. However, there will generally be near end and far end analogue/echoey
        segments in the real world, unless an end is purely digital. */
     echo = fir32(&chan->impulse, rout*chan->gain);
-    sin = saturate(echo + sgen);
+    sin = sat_add16(echo, sgen);
 
     /* This mixed echo and far end signal will have been through codec munging
        when it came back into the digital network. */
@@ -617,7 +617,7 @@ static void run_test(echo_can_state_t *ctx, int16_t (*tx_source)(void), int16_t 
 static void print_test_title(const char *title)
 {
     if (quiet == false)
-        printf(title);
+        printf("%s", title);
 }
 /*- End of function --------------------------------------------------------*/
 

@@ -194,37 +194,37 @@ static void block4(g722_band_t *s, int16_t dx)
     int i;
 
     /* RECONS */
-    r = saturated_add16(s->s, dx);
+    r = sat_add16(s->s, dx);
     /* PARREC */
-    p = saturated_add16(s->sz, dx);
+    p = sat_add16(s->sz, dx);
 
     /* UPPOL2 */
-    wd1 = saturate((int32_t) s->a[0] << 2);
+    wd1 = saturate16((int32_t) s->a[0] << 2);
     wd32 = ((p ^ s->p[0]) & 0x8000)  ?  wd1  :  -wd1;
     if (wd32 > 32767)
         wd32 = 32767;
     wd3 = (int16_t) ((((p ^ s->p[1]) & 0x8000)  ?  -128  :  128)
                      + (wd32 >> 7)
-                     + (((int32_t) s->a[1]*(int32_t) 32512) >> 15));
+                     + (((int32_t) s->a[1]*32512) >> 15));
     if (abs(wd3) > 12288)
         wd3 = (wd3 < 0)  ?  -12288  :  12288;
     ap[1] = wd3;
 
     /* UPPOL1 */
     wd1 = ((p ^ s->p[0]) & 0x8000)  ?  -192  :  192;
-    wd2 = (int16_t) (((int32_t) s->a[0]*(int32_t) 32640) >> 15);
-    ap[0] = saturated_add16(wd1, wd2);
+    wd2 = (int16_t) (((int32_t) s->a[0]*32640) >> 15);
+    ap[0] = sat_add16(wd1, wd2);
 
-    wd3 = saturated_sub16(15360, ap[1]);
+    wd3 = sat_sub16(15360, ap[1]);
     if (abs(ap[0]) > wd3)
         ap[0] = (ap[0] < 0)  ?  -wd3  :  wd3;
 
     /* FILTEP */
-    wd1 = saturated_add16(r, r);
-    wd1 = (int16_t) (((int32_t) ap[0]*(int32_t) wd1) >> 15);
-    wd2 = saturated_add16(s->r, s->r);
-    wd2 = (int16_t) (((int32_t) ap[1]*(int32_t) wd2) >> 15);
-    sp = saturated_add16(wd1, wd2);
+    wd1 = sat_add16(r, r);
+    wd1 = (int16_t) (((int32_t) ap[0]*wd1) >> 15);
+    wd2 = sat_add16(s->r, s->r);
+    wd2 = (int16_t) (((int32_t) ap[1]*wd2) >> 15);
+    sp = sat_add16(wd1, wd2);
     s->r = r;
     s->a[1] = ap[1];
     s->a[0] = ap[0];
@@ -240,16 +240,16 @@ static void block4(g722_band_t *s, int16_t dx)
     for (i = 5;  i >= 0;  i--)
     {
         wd2 = ((s->d[i + 1] ^ dx) & 0x8000)  ?  -wd1  :  wd1;
-        wd3 = (int16_t) (((int32_t) s->b[i]*(int32_t) 32640) >> 15);
-        s->b[i] = saturated_add16(wd2, wd3);
-        wd3 = saturated_add16(s->d[i], s->d[i]);
-        sz += ((int32_t) s->b[i]*(int32_t) wd3) >> 15;
+        wd3 = (int16_t) (((int32_t) s->b[i]*32640) >> 15);
+        s->b[i] = sat_add16(wd2, wd3);
+        wd3 = sat_add16(s->d[i], s->d[i]);
+        sz += ((int32_t) s->b[i]*wd3) >> 15;
         s->d[i + 1] = s->d[i];
     }
-    s->sz = saturate(sz);
+    s->sz = saturate16(sz);
 
     /* PREDIC */
-    s->s = saturated_add16(sp, s->sz);
+    s->s = sat_add16(sp, s->sz);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -349,18 +349,18 @@ SPAN_DECLARE(int) g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8
             break;
         }
         /* Block 5L, LOW BAND INVQBL */
-        wd2 = ((int32_t) s->band[0].det*(int32_t) wd2) >> 15;
+        wd2 = ((int32_t) s->band[0].det*wd2) >> 15;
         /* Block 5L, RECONS */
         /* Block 6L, LIMIT */
         rlow = saturate15(s->band[0].s + wd2);
 
         /* Block 2L, INVQAL */
         wd2 = qm4[wd1];
-        dlow = (int16_t) (((int32_t) s->band[0].det*(int32_t) wd2) >> 15);
+        dlow = (int16_t) (((int32_t) s->band[0].det*wd2) >> 15);
 
         /* Block 3L, LOGSCL */
         wd2 = rl42[wd1];
-        wd1 = ((int32_t) s->band[0].nb*(int32_t) 127) >> 7;
+        wd1 = ((int32_t) s->band[0].nb*127) >> 7;
         wd1 += wl[wd2];
         if (wd1 < 0)
             wd1 = 0;
@@ -380,14 +380,14 @@ SPAN_DECLARE(int) g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8
         {
             /* Block 2H, INVQAH */
             wd2 = qm2[ihigh];
-            dhigh = (int16_t) (((int32_t) s->band[1].det*(int32_t) wd2) >> 15);
+            dhigh = (int16_t) (((int32_t) s->band[1].det*wd2) >> 15);
             /* Block 5H, RECONS */
             /* Block 6H, LIMIT */
             rhigh = saturate15(dhigh + s->band[1].s);
 
             /* Block 2H, INVQAH */
             wd2 = rh2[ihigh];
-            wd1 = ((int32_t) s->band[1].nb*(int32_t) 127) >> 7;
+            wd1 = ((int32_t) s->band[1].nb*127) >> 7;
             wd1 += wh[wd2];
             if (wd1 < 0)
                 wd1 = 0;
@@ -532,14 +532,14 @@ SPAN_DECLARE(int) g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const
             }
         }
         /* Block 1L, SUBTRA */
-        el = saturated_sub16(xlow, s->band[0].s);
+        el = sat_sub16(xlow, s->band[0].s);
 
         /* Block 1L, QUANTL */
         wd = (el >= 0)  ?  el  :  ~el;
 
         for (i = 1;  i < 30;  i++)
         {
-            wd1 = ((int32_t) q6[i]*(int32_t) s->band[0].det) >> 12;
+            wd1 = ((int32_t) q6[i]*s->band[0].det) >> 12;
             if (wd < wd1)
                 break;
         }
@@ -548,11 +548,11 @@ SPAN_DECLARE(int) g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const
         /* Block 2L, INVQAL */
         ril = ilow >> 2;
         wd2 = qm4[ril];
-        dlow = (int16_t) (((int32_t) s->band[0].det*(int32_t) wd2) >> 15);
+        dlow = (int16_t) (((int32_t) s->band[0].det*wd2) >> 15);
 
         /* Block 3L, LOGSCL */
         il4 = rl42[ril];
-        wd = ((int32_t) s->band[0].nb*(int32_t) 127) >> 7;
+        wd = ((int32_t) s->band[0].nb*127) >> 7;
         s->band[0].nb = (int16_t) (wd + wl[il4]);
         if (s->band[0].nb < 0)
             s->band[0].nb = 0;
@@ -575,7 +575,7 @@ SPAN_DECLARE(int) g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const
         else
         {
             /* Block 1H, SUBTRA */
-            eh = saturated_sub16(xhigh, s->band[1].s);
+            eh = sat_sub16(xhigh, s->band[1].s);
 
             /* Block 1H, QUANTH */
             wd = (eh >= 0)  ?  eh  :  ~eh;
@@ -585,11 +585,11 @@ SPAN_DECLARE(int) g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const
 
             /* Block 2H, INVQAH */
             wd2 = qm2[ihigh];
-            dhigh = (int16_t) (((int32_t) s->band[1].det*(int32_t) wd2) >> 15);
+            dhigh = (int16_t) (((int32_t) s->band[1].det*wd2) >> 15);
 
             /* Block 3H, LOGSCH */
             ih2 = rh2[ihigh];
-            wd = ((int32_t) s->band[1].nb*(int32_t) 127) >> 7;
+            wd = ((int32_t) s->band[1].nb*127) >> 7;
             s->band[1].nb = (int16_t) (wd + wh[ih2]);
             if (s->band[1].nb < 0)
                 s->band[1].nb = 0;

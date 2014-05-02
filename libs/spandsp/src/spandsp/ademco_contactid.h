@@ -1,5 +1,5 @@
 /*
- * SpanDSP  a series of DSP components for telephony
+ * SpanDSP - a series of DSP components for telephony
  *
  * ademco_contactid.h  Ademco ContactID alarm protocol
  *

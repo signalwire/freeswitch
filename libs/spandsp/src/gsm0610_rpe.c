@@ -196,8 +196,8 @@ static void weighting_filter(int16_t x[40],
 
         /* for (i = 0; i <= 10; i++)
          * {
-         *      temp   = saturated_mul16_32(wt[k + i], gsm_H[i]);
-         *      result = saturated_add32(result, temp);
+         *      temp   = sat_mul16_32(wt[k + i], gsm_H[i]);
+         *      result = sat_add32(result, temp);
          * }
          */
 
@@ -223,7 +223,7 @@ static void weighting_filter(int16_t x[40],
         /* 2 adds vs. >> 16 => 14, minus one shift to compensate for
            those we lost when replacing L_MULT by '*'. */
         result >>= 13;
-        x[k] = saturate(result);
+        x[k] = saturate16(result);
     }
     /*endfor*/
 #endif
@@ -242,7 +242,6 @@ static void rpe_grid_selection(int16_t x[40], int16_t xM[13], int16_t *Mc_out)
 
     /* The signal x[0..39] is used to select the RPE grid which is
        represented by Mc. */
-
     EM = 0;
     Mc = 0;
 
@@ -327,10 +326,7 @@ static void rpe_grid_selection(int16_t x[40], int16_t xM[13], int16_t *Mc_out)
     STEP(3, 12);
     L_result <<= 1;
     if (L_result > EM)
-    {
         Mc = 3;
-        EM = L_result;
-    }
     /*endif*/
 
     /* Down-sampling by a factor 3 to get the selected xM[0..12]
@@ -408,7 +404,7 @@ static void apcm_quantization(int16_t xM[13],
     for (i = 0;  i < 13;  i++)
     {
         temp = xM[i];
-        temp = saturated_abs16(temp);
+        temp = sat_abs16(temp);
         if (temp > xmax)
             xmax = temp;
         /*endif*/
@@ -436,7 +432,7 @@ static void apcm_quantization(int16_t xM[13],
     temp = (int16_t) (exp + 5);
 
     assert(temp <= 11  &&  temp >= 0);
-    xmaxc = saturated_add16((xmax >> temp), exp << 3);
+    xmaxc = sat_add16((xmax >> temp), exp << 3);
 
     /* Quantizing and coding of the xM[0..12] RPE sequence
        to get the xMc[0..12] */
@@ -463,7 +459,7 @@ static void apcm_quantization(int16_t xM[13],
         assert(temp1 >= 0  &&  temp1 < 16);
 
         temp = xM[i] << temp1;
-        temp = saturated_mul16(temp, temp2);
+        temp = sat_mul16(temp, temp2);
         temp >>= 12;
         xMc[i] = (int16_t) (temp + 4);      /* See note below */
     }
@@ -483,7 +479,7 @@ static void apcm_inverse_quantization(int16_t xMc[13],
                                       int16_t xMp[13])
 {
     /* Table 4.6   Normalized direct mantissa used to compute xM/xmax */
-    static const int16_t gsm_FAC[8] =
+    static const int16_t gsm_fac[8] =
     {
         18431, 20479, 22527, 24575, 26623, 28671, 30719, 32767
     };
@@ -501,9 +497,9 @@ static void apcm_inverse_quantization(int16_t xMc[13],
     assert(mant >= 0  &&  mant <= 7);
 #endif
 
-    temp1 = gsm_FAC[mant];                  /* See 4.2-15 for mant */
-    temp2 = saturated_sub16(6, exp);        /* See 4.2-15 for exp */
-    temp3 = gsm_asl(1, saturated_sub16(temp2, 1));
+    temp1 = gsm_fac[mant];                      /* See 4.2-15 for mant */
+    temp2 = sat_sub16(6, exp);                  /* See 4.2-15 for exp */
+    temp3 = gsm_asl(1, sat_sub16(temp2, 1));
 
     for (i = 0;  i < 13;  i++)
     {
@@ -514,7 +510,7 @@ static void apcm_inverse_quantization(int16_t xMc[13],
 
         temp <<= 12;                            /* 16 bit signed */
         temp = gsm_mult_r(temp1, temp);
-        temp = saturated_add16(temp, temp3);
+        temp = sat_add16(temp, temp3);
         xMp[i] = gsm_asr(temp, temp2);
     }
     /*endfor*/

@@ -460,6 +460,8 @@ int main(int argc, char *argv[])
                 printf("Failed to convert to ITULAB\n");
                 return 1;
             }
+#else
+            outptr = 0;
 #endif
             free(data);
             data = (uint8_t *) outptr;

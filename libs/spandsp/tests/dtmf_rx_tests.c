@@ -596,7 +596,7 @@ static void mitel_cm7291_side_1_tests(void)
 
             // TODO: Clip
             for (sample = 0;  sample < len;  sample++)
-                amp[sample] = saturate(amp[sample] + awgn(&noise_source));
+                amp[sample] = sat_add16(amp[sample], awgn(&noise_source));
 
             codec_munge(munge, amp, len);
             dtmf_rx(dtmf_state, amp, len);
@@ -722,7 +722,7 @@ static void dial_tone_tolerance_tests(void)
             tone_gen(&dial_tone, amp2, len);
 
             for (sample = 0;  sample < len;  sample++)
-                amp[sample] = saturate(amp[sample] + amp2[sample]);
+                amp[sample] = sat_add16(amp[sample], amp2[sample]);
             codec_munge(munge, amp, len);
             dtmf_rx(dtmf_state, amp, len);
 

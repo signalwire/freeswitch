@@ -41,7 +41,7 @@
 #define __ISO_C_VISIBLE 2011
 #endif
 #include <stdlib.h>
-#if defined(HAVE_MALLOC_H) && !defined(__OpenBSD__) && !defined(__DragonFly__)
+#if defined(HAVE_MALLOC_H)  &&  !defined(__OpenBSD__)  &&  !defined(__DragonFly__)
 #include <malloc.h>
 #endif
 #include <inttypes.h>

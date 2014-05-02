@@ -273,13 +273,13 @@ static void set_working_gain(v29_tx_state_t *s)
     switch (s->bit_rate)
     {
     case 9600:
-        s->gain = ((int32_t) FP_Q_4_12(0.387f)*s->base_gain) >> 12;
+        s->gain = ((int32_t) FP_Q4_12(0.387f)*s->base_gain) >> 12;
         break;
     case 7200:
-        s->gain = ((int32_t) FP_Q_4_12(0.605f)*s->base_gain) >> 12;
+        s->gain = ((int32_t) FP_Q4_12(0.605f)*s->base_gain) >> 12;
         break;
     case 4800:
-        s->gain = ((int32_t) FP_Q_4_12(0.470f)*s->base_gain) >> 12;
+        s->gain = ((int32_t) FP_Q4_12(0.470f)*s->base_gain) >> 12;
         break;
     default:
         break;

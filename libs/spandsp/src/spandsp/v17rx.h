@@ -239,7 +239,9 @@ SPAN_DECLARE(v17_rx_state_t *) v17_rx_init(v17_rx_state_t *s, int bit_rate, put_
     \brief Reinitialise an existing V.17 modem receive context.
     \param s The modem context.
     \param bit_rate The bit rate of the modem. Valid values are 7200, 9600, 12000 and 14400.
-    \param short_train True if a short training sequence is expected.
+    \param short_train 0 if a long training sequence is expected.
+                       1 if a short training sequence is expected.
+                       2 if the expected training sequence is automatically selected.
     \return 0 for OK, -1 for bad parameter */
 SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_train);
 

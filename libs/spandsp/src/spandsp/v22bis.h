@@ -172,8 +172,9 @@ SPAN_DECLARE(int) v22bis_get_current_bit_rate(v22bis_state_t *s);
     \param guard The guard tone option. 0 = none, 1 = 550Hz, 2 = 1800Hz.
     \param calling_party True if this is the calling modem.
     \param get_bit The callback routine used to get the data to be transmitted.
-    \param put_bit The callback routine used to get the data to be transmitted.
-    \param user_data An opaque pointer, passed in calls to the get and put routines.
+    \param get_bit_user_data An opaque pointer, passed in calls to the get_bit routine.
+    \param put_bit The callback routine used to put the data received.
+    \param put_bit_user_data An opaque pointer, passed in calls to the put_bit routine.
     \return A pointer to the modem context, or NULL if there was a problem. */
 SPAN_DECLARE(v22bis_state_t *) v22bis_init(v22bis_state_t *s,
                                            int bit_rate,

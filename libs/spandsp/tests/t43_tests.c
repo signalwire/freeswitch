@@ -1174,6 +1174,8 @@ int main(int argc, char *argv[])
                     printf("Failed to convert to ITULAB (C).\n");
                     return 1;
                 }
+#else
+                outsize = 0;
 #endif
                 free(data);
                 data = (uint8_t *) outptr;

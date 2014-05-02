@@ -42,32 +42,6 @@ extern "C"
 {
 #endif
 
-/* This is the same as saturate16(), but is here for historic reasons */
-static __inline__ int16_t saturate(int32_t amp)
-{
-#if defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
-    int16_t z;
-
-    __asm__ __volatile__(
-        " ssat %[z],#16,%[amp];\n"
-        : [z] "=r" (z)
-        : [amp] "r" (amp)
-    );
-    return z;
-#else
-    int16_t z;
-
-    /* Hopefully this is optimised for the common case - not clipping */
-    z = (int16_t) amp;
-    if (amp == z)
-        return z;
-    if (amp > INT16_MAX)
-        return INT16_MAX;
-    return INT16_MIN;
-#endif
-}
-/*- End of function --------------------------------------------------------*/
-
 static __inline__ int16_t saturate16(int32_t amp)
 {
 #if defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
@@ -229,152 +203,141 @@ static __inline__ double ffsaturate(double famp)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int16_t saturated_add16(int16_t a, int16_t b)
+static __inline__ int16_t sat_add16(int16_t x, int16_t y)
 {
 #if defined(__GNUC__)  &&  (defined(__i386__)  ||  defined(__x86_64__))
-    __asm__ __volatile__(
-        " addw %2,%0;\n"
-        " jno 0f;\n"
-        " movw $0x7fff,%0;\n"
-        " adcw $0,%0;\n"
-        "0:"
-        : "=r" (a)
-        : "0" (a), "ir" (b)
-        : "cc"
-    );
-    return a;
+    __asm__ __volatile__(" addw %[y],%[x];\n"
+                         " jno 0f;\n"
+                         " movw $0x7FFF,%[x];\n"
+                         " adcw $0,%[x];\n"
+                         "0:"
+                         : [x] "+r" (x)
+                         : [y] "ir" (y)
+                         : "cc");
+    return x;
 #elif defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
     int16_t z;
 
     __asm__ __volatile__(
-        " qadd16 %[z],%[a],%[b];\n"
+        " qadd16 %[z],%[c],%[y];\n"
         : [z] "=r" (z)
-        : [a] "r" (a), [b] "r" (b)
+        : [x] "r" (x), [y] "r" (y)
     );
     return z;
+//#elif defined(__GNUC__)  &&  defined(__ARM_ARCH_5T__)
 #else
-    return saturate((int32_t) a + (int32_t) b);
+    return saturate16((int32_t) x + y);
 #endif
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int32_t saturated_add32(int32_t a, int32_t b)
+static __inline__ int32_t sat_add32(int32_t x, int32_t y)
 {
 #if defined(__GNUC__)  &&  (defined(__i386__)  ||  defined(__x86_64__))
-    __asm__ __volatile__(
-        " addl %2,%0;\n"
-        " jno 0f;\n"
-        " movl $0x7fffffff,%0;\n"
-        " adcl $0,%0;\n"
-        "0:"
-        : "=r" (a)
-        : "0" (a), "ir" (b)
-        : "cc"
-    );
-    return a;
+    __asm__ __volatile__(" addl %[y],%[x];\n"
+                         " jno 0f;\n"
+                         " movl $0x7FFFFFFF,%[x];\n"
+                         " adcl $0,%[x];\n"
+                         "0:"
+                         : [x] "+r" (x)
+                         : [y] "ir" (y)
+                         : "cc");
+    return x;
 #elif defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
     int32_t z;
 
-    __asm__ __volatile__(
-        " qadd %[z],%[a],%[b];\n"
-        : [z] "=r" (z)
-        : [a] "r" (a), [b] "r" (b)
-    );
+    __asm__ __volatile__(" qadd %[z],%[x],%[y];\n"
+                         : [z] "=r" (z)
+                         : [x] "r" (x), [y] "r" (y));
     return z;
+//#elif defined(__GNUC__)  &&  defined(__ARM_ARCH_5T__)
 #else
     int32_t z;
 
-    z = a + b;
-    if ((a ^ b) >= 0)
+    z = x + y;
+    if ((x ^ y) >= 0)
     {
-        if ((z ^ a) < 0)
-            z = (a < 0)  ?  INT32_MIN  :  INT32_MAX;
+        if ((z ^ x) < 0)
+            z = (x < 0)  ?  INT32_MIN  :  INT32_MAX;
     }
     return z;
 #endif
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int16_t saturated_sub16(int16_t a, int16_t b)
+static __inline__ int16_t sat_sub16(int16_t x, int16_t y)
 {
 #if defined(__GNUC__)  &&  (defined(__i386__)  ||  defined(__x86_64__))
-    __asm__ __volatile__(
-        " subw %2,%0;\n"
-        " jno 0f;\n"
-        " movw $0x8000,%0;\n"
-        " sbbw $0,%0;\n"
-        "0:"
-        : "=r" (a)
-        : "0" (a), "ir" (b)
-        : "cc"
-    );
-    return a;
+    __asm__ __volatile__(" subw %[y],%[x];\n"
+                         " jno 0f;\n"
+                         " movw $0x8000,%[x];\n"
+                         " sbbw $0,%[x];\n"
+                         "0:"
+                         : [x] "+r" (x)
+                         : [y] "ir" (y)
+                         : "cc");
+    return x;
 #elif defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
     int16_t z;
 
-    __asm__ __volatile__(
-        " qsub16 %[z],%[a],%[b];\n"
-        : [z] "=r" (z)
-        : [a] "r" (a), [b] "r" (b)
-    );
+    __asm__ __volatile__(" qsub16 %[z],%[x],%[y];\n"
+                         : [z] "=r" (z)
+                         : [x] "r" (x), [y] "r" (y));
     return z;
+//#elif defined(__GNUC__)  &&  defined(__ARM_ARCH_5T__)
 #else
-    return saturate((int32_t) a - (int32_t) b);
+    return saturate16((int32_t) x - y);
 #endif
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int32_t saturated_sub32(int32_t a, int32_t b)
+static __inline__ int32_t sat_sub32(int32_t x, int32_t y)
 {
 #if defined(__GNUC__)  &&  (defined(__i386__)  ||  defined(__x86_64__))
-    __asm__ __volatile__(
-        " subl %2,%0;\n"
-        " jno 0f;\n"
-        " movl $0x80000000,%0;\n"
-        " sbbl $0,%0;\n"
-        "0:"
-        : "=r" (a)
-        : "0" (a), "ir" (b)
-        : "cc"
-    );
-    return a;
+    __asm__ __volatile__(" subl %[y],%[x];\n"
+                         " jno 0f;\n"
+                         " movl $0x80000000,%[x];\n"
+                         " sbbl $0,%[x];\n"
+                         "0:"
+                         : [x] "+r" (x)
+                         : [y] "ir" (y)
+                         : "cc");
+    return x;
 #elif defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
     int32_t z;
 
-    __asm__ __volatile__(
-        " qsub %[z],%[a],%[b];\n"
-        : [z] "=r" (z)
-        : [a] "r" (a), [b] "r" (b)
-    );
+    __asm__ __volatile__(" qsub %[z],%[x],%[y];\n"
+                         : [z] "=r" (z)
+                         : [x] "r" (x), [y] "r" (y));
     return z;
+//#elif defined(__GNUC__)  &&  defined(__ARM_ARCH_5T__)
 #else
     int32_t z;
 
-    z = a - b;
-    if ((a ^ b) < 0)
+    z = x - y;
+    if ((x ^ y) < 0)
     {
-        if ((z ^ a) & INT32_MIN)
-            z = (a < 0L)  ?  INT32_MIN  :  INT32_MAX;
+        if ((z ^ x) < 0)
+            z = (x < 0L)  ?  INT32_MIN  :  INT32_MAX;
     }
     return z;
 #endif
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int16_t saturated_mul16(int16_t a, int16_t b)
+static __inline__ int16_t sat_mul16(int16_t x, int16_t y)
 {
     int32_t z;
 
 #if defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
-    __asm__ __volatile__(
-        " smulbb %[z],%[a],%[b];\n"
-        " qadd %[z],%[z],%[z];\n"
-        : [z] "=r" (z)
-        : [a] "r" (a), [b] "r" (b)
-    );
+    __asm__ __volatile__(" smulbb %[z],%[c],%[y];\n"
+                         " qadd %[z],%[z],%[z];\n"
+                         : [z] "=r" (z)
+                         : [x] "r" (x), [y] "r" (y));
+    /* The qadd added one to the shift of 15 */
     return (int16_t) (z >> 16);
 #else
-    z = (int32_t) a*b;
+    z = (int32_t) x*y;
     if (z == 0x40000000)
         return INT16_MAX;
     /*endif*/
@@ -383,20 +346,18 @@ static __inline__ int16_t saturated_mul16(int16_t a, int16_t b)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int32_t saturated_mul16_32(int16_t a, int16_t b)
+static __inline__ int32_t sat_mul32_16(int16_t x, int16_t y)
 {
     int32_t z;
 
 #if defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
-    __asm__ __volatile__(
-        " smulbb %[z],%[a],%[b];\n"
-        " qadd %[z],%[z],%[z];\n"
-        : [z] "=r" (z)
-        : [a] "r" (a), [b] "r" (b)
-    );
+    __asm__ __volatile__(" smulbb %[z],%[x],%[y];\n"
+                         " qadd %[z],%[z],%[z];\n"
+                         : [z] "=r" (z)
+                         : [x] "r" (x), [y] "r" (y));
     return z;
 #else
-    z = (int32_t) a*b;
+    z = (int32_t) x*y;
     if (z == 0x40000000)
         return INT32_MAX;
     return z << 1;
@@ -404,45 +365,51 @@ static __inline__ int32_t saturated_mul16_32(int16_t a, int16_t b)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int32_t saturated_mac16_32(int32_t z, int16_t a, int16_t b)
+static __inline__ int32_t sat_mac32_16(int32_t z, int16_t x, int16_t y)
 {
 #if defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
     int32_t product;
 
-    __asm__ __volatile__(
-        " smulbb %[p],%[a],%[b];\n"
-        " qdadd %[z],%[z],%[p];\n"
-        : [z] "=r" (z)
-        : "[z]" (z), [a] "r" (a), [b] "r" (b), [p] "r"(product)
-    );
+    __asm__ __volatile__(" smulbb %[p],%[x],%[y];\n"
+                         " qdadd %[z],%[z],%[p];\n"
+                         : [z] "+r" (z)
+                         : [x] "r" (x), [y] "r" (y), [p] "r" (product));
     return z;
 #else
-    return saturated_add32(z, saturated_mul16_32(a, b));
+    return sat_add32(z, sat_mul32_16(x, y));
 #endif
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int32_t saturated_msu16_32(int32_t z, int16_t a, int16_t b)
+static __inline__ int32_t sat_msu32_16(int32_t z, int16_t x, int16_t y)
 {
 #if defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
     int32_t product;
 
-    __asm__ __volatile__(
-        " smulbb %[p],%[a],%[b];\n"
-        " qdsub %[z],%[z],%[p];\n"
-        : [z] "=r" (z)
-        : "[z]" (z), [a] "r" (a), [b] "r" (b), [p] "r" (product)
-    );
+    __asm__ __volatile__(" smulbb %[p],%[x],%[y];\n"
+                         " qdsub %[z],%[z],%[p];\n"
+                         : [z] "+r" (z)
+                         : [x] "r" (x), [y] "r" (y), [p] "r" (product));
     return z;
 #else
-    return saturated_sub32(z, saturated_mul16_32(a, b));
+    return sat_sub32(z, sat_mul32_16(x, y));
 #endif
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int16_t saturated_abs16(int16_t a)
+static __inline__ int16_t sat_abs16(int16_t x)
 {
-    return (a == INT16_MIN)  ?  INT16_MAX  :  (int16_t) abs(a);
+    if (x == INT16_MIN)
+        return INT16_MAX;
+    return (int16_t) abs(x);
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ int32_t sat_abs32(int32_t x)
+{
+    if (x == INT32_MIN)
+        return INT32_MAX;
+    return abs(x);
 }
 /*- End of function --------------------------------------------------------*/
 

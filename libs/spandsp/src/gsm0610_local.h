@@ -53,7 +53,7 @@ static __inline__ int16_t gsm_add(int16_t a, int16_t b)
     int32_t sum;
 
     sum = (int32_t) a + (int32_t) b;
-    return  saturate(sum);
+    return  saturate16(sum);
 #endif
 }
 /*- End of function --------------------------------------------------------*/
@@ -98,7 +98,7 @@ static __inline__ int16_t gsm_sub(int16_t a, int16_t b)
     int32_t diff;
 
     diff = (int32_t) a - (int32_t) b;
-    return  saturate(diff);
+    return  saturate16(diff);
 }
 /*- End of function --------------------------------------------------------*/
 
