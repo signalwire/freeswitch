@@ -1136,7 +1136,10 @@ PKG_CHECK_MODULES([YAML], [yaml-0.1 >= 0.1.4],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_YAML],[false])])
 PKG_CHECK_MODULES([LDNS], [libldns >= 1.6.6],[
   AM_CONDITIONAL([HAVE_LDNS],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_LDNS],[false])])
+  AC_CHECK_LIB([ldns], [ldns_str2rdf_a], [LDNS_LIBS=-lldns])
+  AS_IF([test -z "$LDNS_LIBS"],[
+    AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_LDNS],[false])],[
+    AM_CONDITIONAL([HAVE_LDNS],[true])])])
 
 PKG_CHECK_MODULES([MEMCACHED], [libmemcached >= 0.31],[
   AM_CONDITIONAL([HAVE_MEMCACHED],[true])
