@@ -825,12 +825,10 @@ ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, es
 
 		if ((len + llen) > dlen) {
 			char *m;
-			char *old = buf;
 			dlen += (blocksize + (len + llen));
 			if ((m = realloc(buf, dlen))) {
 				buf = m;
 			} else {
-				buf = old;
 				abort();
 			}
 		}
@@ -854,12 +852,10 @@ ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, es
 
 		if ((len + llen) > dlen) {
 			char *m;
-			char *old = buf;
 			dlen += (blocksize + (len + llen));
 			if ((m = realloc(buf, dlen))) {
 				buf = m;
 			} else {
-				buf = old;
 				abort();
 			}
 		}

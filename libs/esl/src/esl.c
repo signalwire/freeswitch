@@ -736,7 +736,6 @@ ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_list
 
 	if (server_sock != ESL_SOCK_INVALID) {
 		closesocket(server_sock);
-		server_sock = ESL_SOCK_INVALID;
 	}
 
 	return status;
@@ -805,7 +804,6 @@ ESL_DECLARE(esl_status_t) esl_listen_threaded(const char *host, esl_port_t port,
 
 	if (server_sock != ESL_SOCK_INVALID) {
 		closesocket(server_sock);
-		server_sock = ESL_SOCK_INVALID;
 	}
 
 	return status;
