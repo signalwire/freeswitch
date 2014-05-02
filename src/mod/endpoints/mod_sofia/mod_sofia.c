@@ -5564,7 +5564,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	now = switch_epoch_time_now(NULL);
 	tm = *(localtime(&now));
 
-	mod_sofia_globals.presence_epoch = now - (tm.tm_yday * 86400);
+	mod_sofia_globals.presence_epoch = now - (tm.tm_yday * 86400) - (tm.tm_hour * 60 * 60) - (tm.tm_min * 60) - tm.tm_sec;
 
 	switch_find_local_ip(mod_sofia_globals.guess_ip, sizeof(mod_sofia_globals.guess_ip), &mod_sofia_globals.guess_mask, AF_INET);
 	in.s_addr = mod_sofia_globals.guess_mask;
