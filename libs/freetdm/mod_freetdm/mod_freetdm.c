@@ -606,9 +606,12 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	case FTDM_CHAN_TYPE_B:
 		{
 			const char *var = NULL;
-			ftdm_call_cause_t hcause = switch_channel_get_cause_q850(channel);
-			if (hcause  < 1 || hcause > 127) {
+			switch_call_cause_t ccause = switch_channel_get_cause_q850(channel);
+			ftdm_call_cause_t hcause;
+			if (ccause  < 1 || ccause > 127) {
 				hcause = FTDM_CAUSE_DESTINATION_OUT_OF_ORDER;
+			} else {
+				hcause = (ftdm_call_cause_t)ccause;
 			}
 			var = switch_channel_get_variable(channel, "ss7_rel_loc");
 			if (var) {
