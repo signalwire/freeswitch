@@ -315,6 +315,7 @@
         <!-- <param name="NDLB-received-in-nat-reg-contact" value="true"/> -->
         <param name="auth-calls" value="$${internal_auth_calls}"/>
         <!-- <param name="auth-messages" value="false"/> -->
+        <!-- <param name="auth-subscriptions" value="false"/> -->
         <!-- Force the user and auth-user to match. -->
         <param name="inbound-reg-force-matching-username" value="true"/>
         <!-- on authed calls, authenticate *all* the packets not just invite -->

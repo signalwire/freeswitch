@@ -275,6 +275,7 @@ typedef enum {
 	PFLAG_TLS_ALWAYS_NAT,
 	PFLAG_TCP_ALWAYS_NAT,
 	PFLAG_ENABLE_CHAT,
+	PFLAG_AUTH_SUBSCRIPTIONS,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
