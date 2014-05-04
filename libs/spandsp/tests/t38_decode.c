@@ -70,27 +70,31 @@ static int done = false;
 static int started = false;
 static int64_t current = 0;
 
-static int phase_b_handler(t30_state_t *s, void *user_data, int result)
+static int phase_b_handler(void *user_data, int result)
 {
-    int i;
+    int ch;
+    t30_state_t *s;
     char tag[20];
 
-    i = (int) (intptr_t) user_data;
-    snprintf(tag, sizeof(tag), "%c: Phase B", i);
-    printf("%c: Phase B handler on channel %c - (0x%X) %s\n", i, i, result, t30_frametype(result));
+    ch = 'A';
+    s = (t30_state_t *) user_data;
+    snprintf(tag, sizeof(tag), "%c: Phase B", ch);
+    printf("%c: Phase B handler on channel %c - (0x%X) %s\n", ch, ch, result, t30_frametype(result));
     fax_log_rx_parameters(s, tag);
     return T30_ERR_OK;
 }
 /*- End of function --------------------------------------------------------*/
 
-static int phase_d_handler(t30_state_t *s, void *user_data, int result)
+static int phase_d_handler(void *user_data, int result)
 {
-    int i;
+    int ch;
+    t30_state_t *s;
     char tag[20];
 
-    i = (int) (intptr_t) user_data;
-    snprintf(tag, sizeof(tag), "%c: Phase D", i);
-    printf("%c: Phase D handler on channel %c - (0x%X) %s\n", i, i, result, t30_frametype(result));
+    ch = 'A';
+    s = (t30_state_t *) user_data;
+    snprintf(tag, sizeof(tag), "%c: Phase D", ch);
+    printf("%c: Phase D handler on channel %c - (0x%X) %s\n", ch, ch, result, t30_frametype(result));
     fax_log_page_transfer_statistics(s, tag);
     fax_log_tx_parameters(s, tag);
     fax_log_rx_parameters(s, tag);
@@ -98,15 +102,17 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int result)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void phase_e_handler(t30_state_t *s, void *user_data, int result)
+static void phase_e_handler(void *user_data, int result)
 {
-    int i;
+    int ch;
     t30_stats_t t;
+    t30_state_t *s;
     char tag[20];
 
-    i = (int) (intptr_t) user_data;
-    snprintf(tag, sizeof(tag), "%c: Phase E", i);
-    printf("%c: Phase E handler on channel %c - (%d) %s\n", i, i, result, t30_completion_code_to_str(result));
+    ch = 'A';
+    s = (t30_state_t *) user_data;
+    snprintf(tag, sizeof(tag), "%c: Phase E", ch);
+    printf("%c: Phase E handler on channel %c - (%d) %s\n", ch, ch, result, t30_completion_code_to_str(result));
     fax_log_final_transfer_statistics(s, tag);
     fax_log_tx_parameters(s, tag);
     fax_log_rx_parameters(s, tag);
@@ -319,6 +325,7 @@ int main(int argc, char *argv[])
     t30_state_t *t30;
     logging_state_t *logging;
     const char *input_file_name;
+    const char *input_tiff_file_name;
     int t38_version;
     int caller;
     int use_ecm;
@@ -338,6 +345,7 @@ int main(int argc, char *argv[])
     t38_version = 0;
     options = 0;
     input_file_name = INPUT_FILE_NAME;
+    input_tiff_file_name = INPUT_TIFF_FILE_NAME;
     fill_removal = false;
     use_tep = false;
     use_transmit_on_idle = true;
@@ -348,7 +356,7 @@ int main(int argc, char *argv[])
     src_port = 0;
     dest_addr = 0;
     dest_port = 0;
-    while ((opt = getopt(argc, argv, "cD:d:eFGi:lm:oS:s:tv:")) != -1)
+    while ((opt = getopt(argc, argv, "cD:d:eFGi:lm:oS:s:T:tv:")) != -1)
     {
         switch (opt)
         {
@@ -387,6 +395,9 @@ int main(int argc, char *argv[])
             break;
         case 's':
             src_port = atoi(optarg);
+            break;
+        case 'T':
+            input_tiff_file_name = optarg;
             break;
         case 't':
             use_tep = true;
@@ -433,12 +444,12 @@ int main(int argc, char *argv[])
         t30_set_tx_ident(t30, "11111111");
         t30_set_tx_nsf(t30, (const uint8_t *) "\x50\x00\x00\x00Spandsp\x00", 12);
         if (caller)
-            t30_set_tx_file(t30, INPUT_TIFF_FILE_NAME, -1, -1);
+            t30_set_tx_file(t30, input_tiff_file_name, -1, -1);
         else
             t30_set_rx_file(t30, OUTPUT_TIFF_FILE_NAME, -1);
-        t30_set_phase_b_handler(t30, phase_b_handler, (void *) (intptr_t) 'A');
-        t30_set_phase_d_handler(t30, phase_d_handler, (void *) (intptr_t) 'A');
-        t30_set_phase_e_handler(t30, phase_e_handler, (void *) (intptr_t) 'A');
+        t30_set_phase_b_handler(t30, phase_b_handler, (void *) t30);
+        t30_set_phase_d_handler(t30, phase_d_handler, (void *) t30);
+        t30_set_phase_e_handler(t30, phase_e_handler, (void *) t30);
         t30_set_ecm_capability(t30, use_ecm);
         t30_set_supported_compressions(t30,
                                        T4_COMPRESSION_T4_1D
@@ -519,12 +530,12 @@ int main(int argc, char *argv[])
         t30_set_tx_ident(t30, "22222222");
         t30_set_tx_nsf(t30, (const uint8_t *) "\x50\x00\x00\x00Spandsp\x00", 12);
         if (caller)
-            t30_set_tx_file(t30, INPUT_TIFF_FILE_NAME, -1, -1);
+            t30_set_tx_file(t30, input_tiff_file_name, -1, -1);
         else
             t30_set_rx_file(t30, OUTPUT_TIFF_FILE_NAME, -1);
-        t30_set_phase_b_handler(t30, phase_b_handler, (void *) (intptr_t) 'B');
-        t30_set_phase_d_handler(t30, phase_d_handler, (void *) (intptr_t) 'B');
-        t30_set_phase_e_handler(t30, phase_e_handler, (void *) (intptr_t) 'B');
+        t30_set_phase_b_handler(t30, phase_b_handler, (void *) t30);
+        t30_set_phase_d_handler(t30, phase_d_handler, (void *) t30);
+        t30_set_phase_e_handler(t30, phase_e_handler, (void *) t30);
         t30_set_ecm_capability(t30, use_ecm);
         t30_set_supported_compressions(t30,
                                        T4_COMPRESSION_T4_1D

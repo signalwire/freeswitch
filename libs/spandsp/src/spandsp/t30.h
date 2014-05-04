@@ -153,43 +153,38 @@ typedef struct t30_state_s t30_state_t;
     can access whatever additional information might have been received, using
     t30_get_received_info().
     \brief T.30 phase B callback handler.
-    \param s The T.30 context.
     \param user_data An opaque pointer.
     \param result The phase B event code.
     \return The new status. Normally, T30_ERR_OK is returned.
 */
-typedef int (*t30_phase_b_handler_t)(t30_state_t *s, void *user_data, int result);
+typedef int (*t30_phase_b_handler_t)(void *user_data, int result);
 
 /*!
     T.30 phase D callback handler.
     \brief T.30 phase D callback handler.
-    \param s The T.30 context.
     \param user_data An opaque pointer.
     \param result The phase D event code.
     \return The new status. Normally, T30_ERR_OK is returned.
 */
-typedef int (*t30_phase_d_handler_t)(t30_state_t *s, void *user_data, int result);
+typedef int (*t30_phase_d_handler_t)(void *user_data, int result);
 
 /*!
     T.30 phase E callback handler.
     \brief T.30 phase E callback handler.
-    \param s The T.30 context.
     \param user_data An opaque pointer.
     \param completion_code The phase E completion code.
 */
-typedef void (*t30_phase_e_handler_t)(t30_state_t *s, void *user_data, int completion_code);
+typedef void (*t30_phase_e_handler_t)(void *user_data, int completion_code);
 
 /*!
     T.30 real time frame handler.
     \brief T.30 real time frame handler.
-    \param s The T.30 context.
     \param user_data An opaque pointer.
     \param incoming True for incoming, false for outgoing.
     \param msg The HDLC message.
     \param len The length of the message.
 */
-typedef void (*t30_real_time_frame_handler_t)(t30_state_t *s,
-                                              void *user_data,
+typedef void (*t30_real_time_frame_handler_t)(void *user_data,
                                               bool direction,
                                               const uint8_t msg[],
                                               int len);
@@ -197,11 +192,10 @@ typedef void (*t30_real_time_frame_handler_t)(t30_state_t *s,
 /*!
     T.30 document handler.
     \brief T.30 document handler.
-    \param s The T.30 context.
     \param user_data An opaque pointer.
     \param result The document event code.
 */
-typedef int (*t30_document_handler_t)(t30_state_t *s, void *user_data, int status);
+typedef int (*t30_document_handler_t)(void *user_data, int status);
 
 /*!
     T.30 set a receive or transmit type handler.

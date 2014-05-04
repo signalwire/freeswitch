@@ -94,20 +94,22 @@ char next_tx_file[1000];
 
 static int next_step(faxtester_state_t *s);
 
-static int phase_b_handler(t30_state_t *s, void *user_data, int result)
+static int phase_b_handler(void *user_data, int result)
 {
-    int i;
+    int ch;
     int status;
+    t30_state_t *s;
     const char *u;
 
-    i = (intptr_t) user_data;
+    s = (t30_state_t *) user_data;
+    ch = 'A';
     status = T30_ERR_OK;
     if ((u = t30_get_rx_ident(s)))
     {
-        printf("%c: Phase B: remote ident '%s'\n", i, u);
+        printf("%c: Phase B: remote ident '%s'\n", ch, u);
         if (expected_rx_info.ident[0]  &&  strcmp(expected_rx_info.ident, u))
         {
-            printf("%c: Phase B: remote ident incorrect! - expected '%s'\n", i, expected_rx_info.ident);
+            printf("%c: Phase B: remote ident incorrect! - expected '%s'\n", ch, expected_rx_info.ident);
             status = T30_ERR_IDENT_UNACCEPTABLE;
         }
     }
@@ -115,16 +117,16 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
     {
         if (expected_rx_info.ident[0])
         {
-            printf("%c: Phase B: remote ident missing!\n", i);
+            printf("%c: Phase B: remote ident missing!\n", ch);
             status = T30_ERR_IDENT_UNACCEPTABLE;
         }
     }
     if ((u = t30_get_rx_sub_address(s)))
     {
-        printf("%c: Phase B: remote sub-address '%s'\n", i, u);
+        printf("%c: Phase B: remote sub-address '%s'\n", ch, u);
         if (expected_rx_info.sub_address[0]  &&  strcmp(expected_rx_info.sub_address, u))
         {
-            printf("%c: Phase B: remote sub-address incorrect! - expected '%s'\n", i, expected_rx_info.sub_address);
+            printf("%c: Phase B: remote sub-address incorrect! - expected '%s'\n", ch, expected_rx_info.sub_address);
             status = T30_ERR_SUB_UNACCEPTABLE;
         }
     }
@@ -132,16 +134,16 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
     {
         if (expected_rx_info.sub_address[0])
         {
-            printf("%c: Phase B: remote sub-address missing!\n", i);
+            printf("%c: Phase B: remote sub-address missing!\n", ch);
             status = T30_ERR_SUB_UNACCEPTABLE;
         }
     }
     if ((u = t30_get_rx_polled_sub_address(s)))
     {
-        printf("%c: Phase B: remote polled sub-address '%s'\n", i, u);
+        printf("%c: Phase B: remote polled sub-address '%s'\n", ch, u);
         if (expected_rx_info.polled_sub_address[0]  &&  strcmp(expected_rx_info.polled_sub_address, u))
         {
-            printf("%c: Phase B: remote polled sub-address incorrect! - expected '%s'\n", i, expected_rx_info.polled_sub_address);
+            printf("%c: Phase B: remote polled sub-address incorrect! - expected '%s'\n", ch, expected_rx_info.polled_sub_address);
             status = T30_ERR_PSA_UNACCEPTABLE;
         }
     }
@@ -149,16 +151,16 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
     {
         if (expected_rx_info.polled_sub_address[0])
         {
-            printf("%c: Phase B: remote polled sub-address missing!\n", i);
+            printf("%c: Phase B: remote polled sub-address missing!\n", ch);
             status = T30_ERR_PSA_UNACCEPTABLE;
         }
     }
     if ((u = t30_get_rx_selective_polling_address(s)))
     {
-        printf("%c: Phase B: remote selective polling address '%s'\n", i, u);
+        printf("%c: Phase B: remote selective polling address '%s'\n", ch, u);
         if (expected_rx_info.selective_polling_address[0]  &&  strcmp(expected_rx_info.selective_polling_address, u))
         {
-            printf("%c: Phase B: remote selective polling address incorrect! - expected '%s'\n", i, expected_rx_info.selective_polling_address);
+            printf("%c: Phase B: remote selective polling address incorrect! - expected '%s'\n", ch, expected_rx_info.selective_polling_address);
             status = T30_ERR_SEP_UNACCEPTABLE;
         }
     }
@@ -166,16 +168,16 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
     {
         if (expected_rx_info.selective_polling_address[0])
         {
-            printf("%c: Phase B: remote selective polling address missing!\n", i);
+            printf("%c: Phase B: remote selective polling address missing!\n", ch);
             status = T30_ERR_SEP_UNACCEPTABLE;
         }
     }
     if ((u = t30_get_rx_sender_ident(s)))
     {
-        printf("%c: Phase B: remote sender ident '%s'\n", i, u);
+        printf("%c: Phase B: remote sender ident '%s'\n", ch, u);
         if (expected_rx_info.sender_ident[0]  &&  strcmp(expected_rx_info.sender_ident, u))
         {
-            printf("%c: Phase B: remote sender ident incorrect! - expected '%s'\n", i, expected_rx_info.sender_ident);
+            printf("%c: Phase B: remote sender ident incorrect! - expected '%s'\n", ch, expected_rx_info.sender_ident);
             status = T30_ERR_SID_UNACCEPTABLE;
         }
     }
@@ -183,16 +185,16 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
     {
         if (expected_rx_info.sender_ident[0])
         {
-            printf("%c: Phase B: remote sender ident missing!\n", i);
+            printf("%c: Phase B: remote sender ident missing!\n", ch);
             status = T30_ERR_SID_UNACCEPTABLE;
         }
     }
     if ((u = t30_get_rx_password(s)))
     {
-        printf("%c: Phase B: remote password '%s'\n", i, u);
+        printf("%c: Phase B: remote password '%s'\n", ch, u);
         if (expected_rx_info.password[0]  &&  strcmp(expected_rx_info.password, u))
         {
-            printf("%c: Phase B: remote password incorrect! - expected '%s'\n", i, expected_rx_info.password);
+            printf("%c: Phase B: remote password incorrect! - expected '%s'\n", ch, expected_rx_info.password);
             status = T30_ERR_PWD_UNACCEPTABLE;
         }
     }
@@ -200,24 +202,27 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
     {
         if (expected_rx_info.password[0])
         {
-            printf("%c: Phase B: remote password missing!\n", i);
+            printf("%c: Phase B: remote password missing!\n", ch);
             status = T30_ERR_PWD_UNACCEPTABLE;
         }
     }
-    printf("%c: Phase B handler on channel %d - (0x%X) %s\n", i, i, result, t30_frametype(result));
+    printf("%c: Phase B handler on channel %d - (0x%X) %s\n", ch, ch, result, t30_frametype(result));
     return status;
 }
 /*- End of function --------------------------------------------------------*/
 
-static int phase_d_handler(t30_state_t *s, void *user_data, int result)
+static int phase_d_handler(void *user_data, int result)
 {
     int i;
+    int ch;
+    t30_state_t *s;
     char tag[20];
 
-    i = (intptr_t) user_data;
-    snprintf(tag, sizeof(tag), "%c: Phase D", i);
-
-    printf("%c: Phase D handler on channel %c - (0x%X) %s\n", i, i, result, t30_frametype(result));
+    i = 0;
+    s = (t30_state_t *) user_data;
+    ch = i + 'A';
+    snprintf(tag, sizeof(tag), "%c: Phase D", ch);
+    printf("%c: Phase D handler on channel %c - (0x%X) %s\n", ch, ch, result, t30_frametype(result));
     fax_log_page_transfer_statistics(s, tag);
     fax_log_tx_parameters(s, tag);
     fax_log_rx_parameters(s, tag);
@@ -227,9 +232,9 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int result)
 
     if (test_local_interrupt)
     {
-        if (i == 'A')
+        if (i == 0)
         {
-            printf("%c: Initiating interrupt request\n", i);
+            printf("%c: Initiating interrupt request\n", ch);
             t30_local_interrupt_request(s, true);
         }
         else
@@ -240,7 +245,7 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int result)
             case T30_PRI_MPS:
             case T30_PRI_EOM:
             case T30_PRI_EOP:
-                printf("%c: Accepting interrupt request\n", i);
+                printf("%c: Accepting interrupt request\n", ch);
                 t30_local_interrupt_request(s, true);
                 break;
             case T30_PIN:
@@ -252,22 +257,23 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int result)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void phase_e_handler(t30_state_t *s, void *user_data, int result)
+static void phase_e_handler(void *user_data, int result)
 {
-    int i;
+    int ch;
+    t30_state_t *s;
     char tag[20];
 
-    i = (intptr_t) user_data;
-    snprintf(tag, sizeof(tag), "%c: Phase E", i);
-    printf("%c: Phase E handler on channel %c - (%d) %s\n", i, i, result, t30_completion_code_to_str(result));
+    ch = 'A';
+    s = (t30_state_t *) user_data;
+    snprintf(tag, sizeof(tag), "%c: Phase E", ch);
+    printf("%c: Phase E handler on channel %c - (%d) %s\n", ch, ch, result, t30_completion_code_to_str(result));
     fax_log_final_transfer_statistics(s, tag);
     fax_log_tx_parameters(s, tag);
     fax_log_rx_parameters(s, tag);
 }
 /*- End of function --------------------------------------------------------*/
 
-static void t30_real_time_frame_handler(t30_state_t *s,
-                                        void *user_data,
+static void t30_real_time_frame_handler(void *user_data,
                                         bool incoming,
                                         const uint8_t *msg,
                                         int len)
@@ -286,12 +292,14 @@ static void t30_real_time_frame_handler(t30_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-static int document_handler(t30_state_t *s, void *user_data, int event)
+static int document_handler(void *user_data, int event)
 {
-    int i;
+    int ch;
+    t30_state_t *s;
 
-    i = (intptr_t) user_data;
-    fprintf(stderr, "%d: Document handler on channel %d - event %d\n", i, i, event);
+    ch = 'A';
+    s = (t30_state_t *) user_data;
+    fprintf(stderr, "%d: Document handler on channel %d - event %d\n", ch, ch, event);
     if (next_tx_file[0])
     {
         t30_set_tx_file(s, next_tx_file, -1, -1);
@@ -411,11 +419,11 @@ static void fax_prepare(void)
     t30_set_supported_colour_resolutions(t30, 0);
     t30_set_supported_modems(t30, T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17);
     t30_set_supported_compressions(t30, T4_COMPRESSION_T4_1D | T4_COMPRESSION_T4_2D | T4_COMPRESSION_T6);
-    t30_set_phase_b_handler(t30, phase_b_handler, (void *) (intptr_t) 'A');
-    t30_set_phase_d_handler(t30, phase_d_handler, (void *) (intptr_t) 'A');
-    t30_set_phase_e_handler(t30, phase_e_handler, (void *) (intptr_t) 'A');
-    t30_set_real_time_frame_handler(t30, t30_real_time_frame_handler, (void *) (intptr_t) 'A');
-    t30_set_document_handler(t30, document_handler, (void *) (intptr_t) 'A');
+    t30_set_phase_b_handler(t30, phase_b_handler, (void *) t30);
+    t30_set_phase_d_handler(t30, phase_d_handler, (void *) t30);
+    t30_set_phase_e_handler(t30, phase_e_handler, (void *) t30);
+    t30_set_real_time_frame_handler(t30, t30_real_time_frame_handler, (void *) t30);
+    t30_set_document_handler(t30, document_handler, (void *) t30);
 
     logging = fax_get_logging_state(fax);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);

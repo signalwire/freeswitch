@@ -98,7 +98,13 @@ enum
 {
     AUDIO_FAX,
     T38_TERMINAL_FAX,
-    T38_GATEWAY_FAX
+    T38_GATEWAY_FAX,
+    T31_AUDIO_FAX,
+    T31_T38_TERMINAL_FAX,
+    T31_T38_GATEWAY_FAX,
+    TSB85_AUDIO_FAX,
+    TSB85_T38_TERMINAL_FAX,
+    TSB85_T38_GATEWAY_FAX
 };
 
 int mode[2] = {AUDIO_FAX, AUDIO_FAX};
@@ -127,17 +133,19 @@ bool succeeded[2] = {false, false};
 
 bool t38_simulate_incrementing_repeats = false;
 
-static int phase_b_handler(t30_state_t *s, void *user_data, int result)
+static int phase_b_handler(void *user_data, int result)
 {
     int i;
     int ch;
     int status;
     int len;
+    t30_state_t *s;
     char tag[20];
     const char *u;
     const uint8_t *v;
 
     i = (int) (intptr_t) user_data;
+    s = t30_state[i];
     ch = i + 'A';
     snprintf(tag, sizeof(tag), "%c: Phase B", ch);
     printf("%c: Phase B handler - (0x%X) %s\n", ch, result, t30_frametype(result));
@@ -296,14 +304,18 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int phase_d_handler(t30_state_t *s, void *user_data, int result)
+static int phase_d_handler(void *user_data, int result)
 {
     int i;
+    int ch;
+    t30_state_t *s;
     char tag[20];
 
     i = (int) (intptr_t) user_data;
-    snprintf(tag, sizeof(tag), "%c: Phase D", i + 'A');
-    printf("%c: Phase D handler - (0x%X) %s\n", i + 'A', result, t30_frametype(result));
+    s = t30_state[i];
+    ch = i + 'A';
+    snprintf(tag, sizeof(tag), "%c: Phase D", ch);
+    printf("%c: Phase D handler - (0x%X) %s\n", ch, result, t30_frametype(result));
     fax_log_page_transfer_statistics(s, tag);
     fax_log_tx_parameters(s, tag);
     fax_log_rx_parameters(s, tag);
@@ -313,9 +325,9 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int result)
 
     if (test_local_interrupt)
     {
-        if (i == 'A')
+        if (i == 0)
         {
-            printf("%c: Initiating interrupt request\n", i);
+            printf("%c: Initiating interrupt request\n", ch);
             t30_local_interrupt_request(s, true);
         }
         else
@@ -326,7 +338,7 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int result)
             case T30_PRI_MPS:
             case T30_PRI_EOM:
             case T30_PRI_EOP:
-                printf("%c: Accepting interrupt request\n", i);
+                printf("%c: Accepting interrupt request\n", ch);
                 t30_local_interrupt_request(s, true);
                 break;
             case T30_PIN:
@@ -338,15 +350,19 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int result)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void phase_e_handler(t30_state_t *s, void *user_data, int result)
+static void phase_e_handler(void *user_data, int result)
 {
     int i;
+    int ch;
     t30_stats_t t;
+    t30_state_t *s;
     char tag[20];
 
     i = (int) (intptr_t) user_data;
-    snprintf(tag, sizeof(tag), "%c: Phase E", i + 'A');
-    printf("%c: Phase E handler - (%d) %s\n", i + 'A', result, t30_completion_code_to_str(result));
+    s = t30_state[i];
+    ch = i + 'A';
+    snprintf(tag, sizeof(tag), "%c: Phase E", ch);
+    printf("%c: Phase E handler - (%d) %s\n", ch, result, t30_completion_code_to_str(result));
     fax_log_final_transfer_statistics(s, tag);
     fax_log_tx_parameters(s, tag);
     fax_log_rx_parameters(s, tag);
@@ -356,29 +372,32 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void real_time_frame_handler(t30_state_t *s,
-                                    void *user_data,
+static void real_time_frame_handler(void *user_data,
                                     bool incoming,
                                     const uint8_t *msg,
                                     int len)
 {
     int i;
+    int ch;
 
     i = (intptr_t) user_data;
+    ch = i + 'A';
     printf("%c: Real time frame handler - %s, %s, length = %d\n",
-           i + 'A',
+           ch,
            (incoming)  ?  "line->T.30"  : "T.30->line",
            t30_frametype(msg[2]),
            len);
 }
 /*- End of function --------------------------------------------------------*/
 
-static int document_handler(t30_state_t *s, void *user_data, int event)
+static int document_handler(void *user_data, int event)
 {
     int i;
+    int ch;
 
     i = (intptr_t) user_data;
-    printf("%c: Document handler - event %d\n", i + 'A', event);
+    ch = i + 'A';
+    printf("%c: Document handler - event %d\n", ch, event);
     return false;
 }
 /*- End of function --------------------------------------------------------*/

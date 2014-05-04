@@ -75,6 +75,7 @@ struct pvt_s {
 
 	mod_spandsp_fax_application_mode_t app_mode;
 
+	t30_state_t *t30;
 	fax_state_t *fax_state;
 	t38_terminal_state_t *t38_state;
 	t38_gateway_state_t *t38_gateway_state;
@@ -292,7 +293,7 @@ void mod_spandsp_log_message(void *user_data, int level, const char *msg)
 	}
 }
 
-static int phase_b_handler(t30_state_t *s, void *user_data, int result)
+static int phase_b_handler(void *user_data, int result)
 {
 	t30_stats_t t30_stats;
 	switch_core_session_t *session;
@@ -312,10 +313,10 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel);
 
-	t30_get_transfer_statistics(s, &t30_stats);
+	t30_get_transfer_statistics(pvt->t30, &t30_stats);
 
-	local_ident = switch_str_nil(t30_get_tx_ident(s));
-	far_ident = switch_str_nil(t30_get_rx_ident(s));
+	local_ident = switch_str_nil(t30_get_tx_ident(pvt->t30));
+	far_ident = switch_str_nil(t30_get_rx_ident(pvt->t30));
 
 	fax_transfer_rate = switch_core_session_sprintf(session, "%i", t30_stats.bit_rate);
 	if (fax_transfer_rate) {
@@ -324,9 +325,9 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 	switch_channel_set_variable(channel, "fax_ecm_used", (t30_stats.error_correcting_mode) ? "on" : "off");
 	switch_channel_set_variable(channel, "fax_local_station_id", local_ident);
 	switch_channel_set_variable(channel, "fax_remote_station_id", far_ident);
-	switch_channel_set_variable(channel, "fax_remote_country", switch_str_nil(t30_get_rx_country(s)));
-	switch_channel_set_variable(channel, "fax_remote_vendor", switch_str_nil(t30_get_rx_vendor(s)));
-	switch_channel_set_variable(channel, "fax_remote_model", switch_str_nil(t30_get_rx_model(s)));
+	switch_channel_set_variable(channel, "fax_remote_country", switch_str_nil(t30_get_rx_country(pvt->t30)));
+	switch_channel_set_variable(channel, "fax_remote_vendor", switch_str_nil(t30_get_rx_vendor(pvt->t30)));
+	switch_channel_set_variable(channel, "fax_remote_model", switch_str_nil(t30_get_rx_model(pvt->t30)));
 
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "=== Negotiation Result =======================================================\n");
@@ -335,9 +336,9 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Transfer Rate:     %i\n", t30_stats.bit_rate);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "ECM status         %s\n", (t30_stats.error_correcting_mode) ? "on" : "off");
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote country:   %s\n", switch_str_nil(t30_get_rx_country(s)));
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote vendor:    %s\n", switch_str_nil(t30_get_rx_vendor(s)));
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote model:     %s\n", switch_str_nil(t30_get_rx_model(s)));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote country:   %s\n", switch_str_nil(t30_get_rx_country(pvt->t30)));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote vendor:    %s\n", switch_str_nil(t30_get_rx_vendor(pvt->t30)));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote model:     %s\n", switch_str_nil(t30_get_rx_model(pvt->t30)));
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==============================================================================\n");
 
@@ -353,16 +354,16 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-ecm-used", (t30_stats.error_correcting_mode) ? "on" : "off");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-local-station-id", local_ident);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-station-id", far_ident);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-country", switch_str_nil(t30_get_rx_country(s)));
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-vendor", switch_str_nil(t30_get_rx_vendor(s)));
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-model", switch_str_nil(t30_get_rx_model(s)));
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-country", switch_str_nil(t30_get_rx_country(pvt->t30)));
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-vendor", switch_str_nil(t30_get_rx_vendor(pvt->t30)));
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fax-remote-model", switch_str_nil(t30_get_rx_model(pvt->t30)));
 		switch_event_fire(&event);
 	}
 
 	return T30_ERR_OK;
 }
 
-static int phase_d_handler(t30_state_t *s, void *user_data, int msg)
+static int phase_d_handler(void *user_data, int msg)
 {
 	t30_stats_t t30_stats;
 	char *fax_file_image_resolution = NULL;
@@ -388,7 +389,7 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int msg)
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel);
 
-	t30_get_transfer_statistics(s, &t30_stats);
+	t30_get_transfer_statistics(pvt->t30, &t30_stats);
 
 	/* Set Channel Variable */
 
@@ -476,7 +477,7 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int msg)
 /*
  * Called at the end of the document
  */
-static void phase_e_handler(t30_state_t *s, void *user_data, int result)
+static void phase_e_handler(void *user_data, int result)
 {
 	t30_stats_t t;
 	const char *local_ident;
@@ -504,9 +505,9 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel);
 
-	t30_get_transfer_statistics(s, &t);
-	local_ident = switch_str_nil(t30_get_tx_ident(s));
-	far_ident = switch_str_nil(t30_get_rx_ident(s));
+	t30_get_transfer_statistics(pvt->t30, &t);
+	local_ident = switch_str_nil(t30_get_tx_ident(pvt->t30));
+	far_ident = switch_str_nil(t30_get_rx_ident(pvt->t30));
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==============================================================================\n");
 
@@ -519,7 +520,6 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fax successfully managed. How ?\n");
 		}
 		switch_channel_set_variable(channel, "fax_success", "1");
-
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fax processing not successful - result (%d) %s.\n", result,
 						  t30_completion_code_to_str(result));
@@ -535,9 +535,9 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Transfer Rate:     %i\n", t.bit_rate);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "ECM status         %s\n", (t.error_correcting_mode) ? "on" : "off");
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote country:   %s\n", switch_str_nil(t30_get_rx_country(s)));
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote vendor:    %s\n", switch_str_nil(t30_get_rx_vendor(s)));
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote model:     %s\n", switch_str_nil(t30_get_rx_model(s)));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote country:   %s\n", switch_str_nil(t30_get_rx_country(pvt->t30)));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote vendor:    %s\n", switch_str_nil(t30_get_rx_vendor(pvt->t30)));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "remote model:     %s\n", switch_str_nil(t30_get_rx_model(pvt->t30)));
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "==============================================================================\n");
 
@@ -687,7 +687,6 @@ static int t38_tx_packet_handler(t38_core_state_t *s, void *user_data, const uin
 
 static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 {
-
 	switch_core_session_t *session;
 	switch_channel_t *channel;
 	fax_state_t *fax;
@@ -698,7 +697,6 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 	int fec_entries = DEFAULT_FEC_ENTRIES;
 	int fec_span = DEFAULT_FEC_SPAN;
 	int compressions;
-
 
 	session = (switch_core_session_t *) pvt->session;
 	switch_assert(session);
@@ -724,7 +722,8 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 		}
 
 		fax = pvt->fax_state;
-		t30 = fax_get_t30_state(fax);
+		pvt->t30 = fax_get_t30_state(fax);
+		t30 = pvt->t30;
 
 		memset(fax, 0, sizeof(fax_state_t));
 		if (fax_init(fax, pvt->caller) == NULL) {
@@ -762,7 +761,8 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 			}
 
 			t38 = pvt->t38_state;
-			t30 = t38_terminal_get_t30_state(t38);
+			pvt->t30 = t38_terminal_get_t30_state(t38);
+            t30 = pvt->t30;
 
 			memset(t38, 0, sizeof(t38_terminal_state_t));
 
@@ -856,7 +856,6 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 		t38_gateway_set_ecm_capability(pvt->t38_gateway_state, 1);
 
 		return SWITCH_STATUS_SUCCESS;
-
 	default:
 		assert(0);				/* What? */
 		return SWITCH_STATUS_SUCCESS;
@@ -975,7 +974,6 @@ static switch_status_t spanfax_destroy(pvt_t *pvt)
 		}
 
 		t30 = t38_terminal_get_t30_state(pvt->t38_state);
-
 		if (terminate && t30) {
 			t30_terminate(t30);
 		}

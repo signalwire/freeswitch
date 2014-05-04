@@ -280,27 +280,31 @@ int test_seq_ptr = 0;
 
 t31_state_t *t31_state;
 
-static int phase_b_handler(t30_state_t *s, void *user_data, int result)
+static int phase_b_handler(void *user_data, int result)
 {
-    int i;
+    int ch;
+    t30_state_t *s;
     char tag[20];
 
-    i = (int) (intptr_t) user_data;
-    snprintf(tag, sizeof(tag), "%c: Phase B", i);
-    printf("%c: Phase B handler on channel %c - (0x%X) %s\n", i, i, result, t30_frametype(result));
+    ch = 'A';
+    s = (t30_state_t *) user_data;
+    snprintf(tag, sizeof(tag), "%c: Phase B", ch);
+    printf("%c: Phase B handler on channel %c - (0x%X) %s\n", ch, ch, result, t30_frametype(result));
     fax_log_rx_parameters(s, tag);
     return T30_ERR_OK;
 }
 /*- End of function --------------------------------------------------------*/
 
-static int phase_d_handler(t30_state_t *s, void *user_data, int result)
+static int phase_d_handler(void *user_data, int result)
 {
-    int i;
+    int ch;
+    t30_state_t *s;
     char tag[20];
 
-    i = (int) (intptr_t) user_data;
-    snprintf(tag, sizeof(tag), "%c: Phase D", i);
-    printf("%c: Phase D handler on channel %c - (0x%X) %s\n", i, i, result, t30_frametype(result));
+    ch = 'A';
+    s = (t30_state_t *) user_data;
+    snprintf(tag, sizeof(tag), "%c: Phase D", ch);
+    printf("%c: Phase D handler on channel %c - (0x%X) %s\n", ch, ch, result, t30_frametype(result));
     fax_log_page_transfer_statistics(s, tag);
     fax_log_tx_parameters(s, tag);
     fax_log_rx_parameters(s, tag);
@@ -308,18 +312,19 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int result)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void phase_e_handler(t30_state_t *s, void *user_data, int result)
+static void phase_e_handler(void *user_data, int result)
 {
-    int i;
+    int ch;
+    t30_state_t *s;
     char tag[20];
 
-    i = (intptr_t) user_data;
-    snprintf(tag, sizeof(tag), "%c: Phase E", i);
-    printf("Phase E handler on channel %c\n", i);
+    ch = 'A';
+    s = (t30_state_t *) user_data;
+    snprintf(tag, sizeof(tag), "%c: Phase E", ch);
+    printf("Phase E handler on channel %c\n", ch);
     fax_log_final_transfer_statistics(s, tag);
     fax_log_tx_parameters(s, tag);
     fax_log_rx_parameters(s, tag);
-    //exit(0);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -600,9 +605,9 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
     t30_set_tx_ident(t30, "11111111");
     t30_set_supported_modems(t30, T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17);
     //t30_set_tx_nsf(t30, (const uint8_t *) "\x50\x00\x00\x00Spandsp\x00", 12);
-    t30_set_phase_b_handler(t30, phase_b_handler, (void *) 'A');
-    t30_set_phase_d_handler(t30, phase_d_handler, (void *) 'A');
-    t30_set_phase_e_handler(t30, phase_e_handler, (void *) 'A');
+    t30_set_phase_b_handler(t30, phase_b_handler, (void *) t30);
+    t30_set_phase_d_handler(t30, phase_d_handler, (void *) t30);
+    t30_set_phase_e_handler(t30, phase_e_handler, (void *) t30);
 
     if (t38_mode)
         logging = t38_terminal_get_logging_state(t38_state);
