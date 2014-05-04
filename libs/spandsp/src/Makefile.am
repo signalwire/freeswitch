@@ -44,7 +44,7 @@ EXTRA_DIST = floating_fudge.h \
              libspandsp.2005.vcproj \
              libspandsp.2008.vcproj \
              libspandsp.2010.vcproj \
-             libspandsp.2012.vcproj \
+             libspandsp.2012.vcxproj \
              libtiff.2005.vcproj \
              libtiff.2008.vcproj \
              filter_tools.c \
@@ -74,6 +74,10 @@ EXTRA_DIST = floating_fudge.h \
              msvc/vc8proj.head \
              msvc/vc9proj.foot \
              msvc/vc9proj.head \
+             msvc/vc10proj.foot \
+             msvc/vc10proj.head \
+             msvc/vc12proj.foot \
+             msvc/vc12proj.head \
              msvc/sys/time.h \
              spandsp/private/README \
              spandsp/version.h.in
@@ -364,13 +368,13 @@ noinst_HEADERS = cielab_luts.h \
                  v29tx_constellation_maps.h
 
 make_at_dictionary$(EXEEXT): $(top_srcdir)/src/make_at_dictionary.c
-	$(CC_FOR_BUILD) -o make_at_dictionary$(EXEEXT) $(top_srcdir)/src/make_at_dictionary.c  -DHAVE_CONFIG_H -I$(top_builddir)/src
+	$(CC_FOR_BUILD) -o make_at_dictionary$(EXEEXT) $(top_srcdir)/src/make_at_dictionary.c -DHAVE_CONFIG_H -I$(top_builddir)/src
 
 make_cielab_luts$(EXEEXT): $(top_srcdir)/src/make_cielab_luts.c
 	$(CC_FOR_BUILD) -o make_cielab_luts$(EXEEXT) $(top_srcdir)/src/make_cielab_luts.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
 
 make_math_fixed_tables$(EXEEXT): $(top_srcdir)/src/make_math_fixed_tables.c
-	$(CC_FOR_BUILD) -o make_math_fixed_tables$(EXEEXT) $(top_srcdir)/src/make_math_fixed_tables.c  -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
+	$(CC_FOR_BUILD) -o make_math_fixed_tables$(EXEEXT) $(top_srcdir)/src/make_math_fixed_tables.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
 
 make_modem_filter$(EXEEXT): $(top_srcdir)/src/make_modem_filter.c $(top_srcdir)/src/filter_tools.c
 	$(CC_FOR_BUILD) -o make_modem_filter$(EXEEXT) $(top_srcdir)/src/make_modem_filter.c $(top_srcdir)/src/filter_tools.c -DHAVE_CONFIG_H -I$(top_builddir)/src -lm
@@ -498,7 +502,7 @@ v29tx_rrc.h: make_modem_filter$(EXEEXT)
 VCPROJ8 = libspandsp.2005.vcproj
 VCPROJ9 = libspandsp.2008.vcproj
 VCPROJ10 = libspandsp.2010.vcproj
-VCPROJ12 = libspandsp.2012.vcproj
+VCPROJ12 = libspandsp.2012.vcxproj
 
 WIN32SOURCES = $(libspandsp_la_SOURCES) .\\msvc\\gettimeofday.c
 WIN32HEADERS = $(nobase_include_HEADERS) spandsp.h

@@ -48,29 +48,33 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "t38_core_tests", "..\tests\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "t38_non_ecm_buffer_tests", "..\tests\msvc\t38_non_ecm_buffer_tests.2012.vcxproj", "{80A3D9D9-3846-4DA5-8676-F940D725EA62}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vector_int_tests", "..\tests\msvc\vector_int_tests.2012.vcxproj", "{80A60464-29E8-4EE8-BAFA-8708B7C08CC3}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vector_float_tests", "..\tests\msvc\vector_float_tests.2012.vcxproj", "{EA745FF7-9E4B-4C13-BA19-2EE8165A6245}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "complex_tests", "..\tests\msvc\complex_tests.2012.vcxproj", "{A349379F-0FEA-49C8-9535-05F39663337B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "complex_vector_float_tests", "..\tests\msvc\complex_vector_float_tests.2012.vcxproj", "{2B0D705C-1CF2-401C-BFBC-A43FB806908C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "complex_vector_int_tests", "..\tests\msvc\complex_vector_int_tests.2012.vcxproj", "{C2E8B4D1-A398-4D57-94F8-B61F20C7D514}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "queue_tests", "..\tests\msvc\queue_tests.2012.vcxproj", "{D9C0F575-83E7-4C15-BF71-D7A0D44A26BF}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dtmf_rx_tests", "..\tests\msvc\dtmf_rx_tests.2012.vcxproj", "{24E7EF80-7854-4A21-80FB-31C4E71109DE}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dtmf_tx_tests", "..\tests\msvc\dtmf_tx_tests.2012.vcxproj", "{1577F41D-9A06-45DD-87D4-9ADCC9CCDAD5}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dtmf_rx_tests", "..\tests\msvc\dtmf_rx_tests.2012.vcxproj", "{24E7EF80-7854-4A21-80FB-31C4E71109DE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "queue_tests", "..\tests\msvc\queue_tests.2012.vcxproj", "{D9C0F575-83E7-4C15-BF71-D7A0D44A26BF}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "v29_tests", "..\tests\msvc\v29_tests.2012.vcxproj", "{323BD962-4581-4561-8105-8C166A9FA933}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "t38_core_tests", "..\tests\msvc\t38_core_tests.2012.vcxproj", "{A34A9D0E-A7E2-4A04-B044-7BB2FE709EF3}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "v80_tests", "..\tests\msvc\v80_tests.2012.vcxproj", "{10263F04-37DD-4E4A-AE4F-0641B018B714}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "t38_non_ecm_buffer_tests", "..\tests\msvc\t38_non_ecm_buffer_tests.2012.vcxproj", "{80A3D9D9-3846-4DA5-8676-F940D725EA62}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "v22bis_tests", "..\tests\msvc\v22bis_tests.2012.vcxproj", "{DA4DB99F-E5BA-48BD-BB6B-3595CE24CBAE}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "v29_tests", "..\tests\msvc\v29_tests.2012.vcxproj", "{323BD962-4581-4561-8105-8C166A9FA933}"
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "v8_tests", "..\tests\msvc\v8_tests.2012.vcxproj", "{0C69B8C2-0CE1-4CD4-870C-1C13FB3F9B34}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "v80_tests", "..\tests\msvc\v80_tests.2012.vcxproj", "{10263F04-37DD-4E4A-AE4F-0641B018B714}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vector_int_tests", "..\tests\msvc\vector_int_tests.2012.vcxproj", "{80A60464-29E8-4EE8-BAFA-8708B7C08CC3}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vector_float_tests", "..\tests\msvc\vector_float_tests.2012.vcxproj", "{EA745FF7-9E4B-4C13-BA19-2EE8165A6245}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C84E437E-9D4C-46C8-9724-DF301C849E61}"
 EndProject
