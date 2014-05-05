@@ -1348,19 +1348,24 @@ SWITCH_DECLARE(void) bridge(CoreSession &session_a, CoreSession &session_b)
 
 SWITCH_DECLARE_NONSTD(switch_status_t) hanguphook(switch_core_session_t *session_hungup) 
 {
-	switch_channel_t *channel = switch_core_session_get_channel(session_hungup);
-	CoreSession *coresession = NULL;
-	switch_channel_state_t state = switch_channel_get_state(channel);
+	if (session_hungup) {
+		switch_channel_t *channel = switch_core_session_get_channel(session_hungup);
+		CoreSession *coresession = NULL;
+		switch_channel_state_t state = switch_channel_get_state(channel);
 
-	if ((coresession = (CoreSession *) switch_channel_get_private(channel, "CoreSession"))) {
-		if (coresession->hook_state != state) {
-			coresession->cause = switch_channel_get_cause(channel);
-			coresession->hook_state = state;
-			coresession->check_hangup_hook();
+		if ((coresession = (CoreSession *) switch_channel_get_private(channel, "CoreSession"))) {
+			if (coresession->hook_state != state) {
+				coresession->cause = switch_channel_get_cause(channel);
+				coresession->hook_state = state;
+				coresession->check_hangup_hook();
+			}
 		}
-	}
 
-	return SWITCH_STATUS_SUCCESS;
+		return SWITCH_STATUS_SUCCESS;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hangup hook called with null session, something is horribly wrong\n");
+		return SWITCH_STATUS_FALSE;
+	}
 }
 
 
