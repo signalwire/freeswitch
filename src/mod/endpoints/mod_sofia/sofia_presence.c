@@ -2253,10 +2253,6 @@ static void _send_presence_notify(sofia_profile_t *profile,
 
 	if (dst->route_uri) {
 		route_uri = sofia_glue_strip_uri(dst->route_uri);
-	} else {
-		if (remote_ip && remote_port) {
-			route_uri = switch_mprintf("sip:user@%s:%s;transport=%s", remote_ip, remote_port, tp);
-		}
 	}
 
 	if (expires) {
