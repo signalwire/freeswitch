@@ -61,6 +61,8 @@ sounds: sounds-en-us-callie-8000
 sounds-install: sounds-en-us-callie-8000-install
 sounds-ru: sounds-ru-RU-elena-8000
 sounds-ru-install: sounds-ru-RU-elena-8000-install
+sounds-fr: sounds-fr-ca-june-8000
+sounds-fr-install: sounds-fr-ca-june-8000-install
 moh: sounds-music-8000
 moh-install: sounds-music-8000-install
 
@@ -68,6 +70,8 @@ hd-sounds: sounds sounds-en-us-callie-16000
 hd-sounds-install: sounds-install sounds-en-us-callie-16000-install
 hd-sounds-ru: sounds-ru sounds-ru-RU-elena-16000
 hd-sounds-ru-install: sounds-ru-install sounds-ru-RU-elena-16000-install
+hd-sounds-fr: sounds-fr-ca-june-16000
+hd-sounds-fr-install: sounds-fr-ca-june-16000-install
 hd-moh: moh sounds-music-16000
 hd-moh-install: moh-install sounds-music-16000-install
 
@@ -75,6 +79,8 @@ uhd-sounds: hd-sounds sounds-en-us-callie-32000
 uhd-sounds-install: hd-sounds-install sounds-en-us-callie-32000-install
 uhd-sounds-ru: hd-sounds-ru sounds-ru-RU-elena-32000
 uhd-sounds-ru-install: hd-sounds-ru-install sounds-ru-RU-elena-32000-install
+uhd-sounds-fr: sounds-fr-ca-june-32000
+uhd-sounds-fr-install: sounds-fr-ca-june-32000-install
 uhd-moh: hd-moh sounds-music-32000
 uhd-moh-install: hd-moh-install sounds-music-32000-install
 
@@ -82,6 +88,8 @@ cd-sounds: uhd-sounds sounds-en-us-callie-48000
 cd-sounds-install: uhd-sounds-install sounds-en-us-callie-48000-install
 cd-sounds-ru: uhd-sounds-ru sounds-ru-RU-elena-48000
 cd-sounds-ru-install: uhd-sounds-ru-install sounds-ru-RU-elena-48000-install
+cd-sounds-fr: sounds-fr-ca-june-48000
+cd-sounds-fr-install: sounds-fr-ca-june-48000-install
 cd-moh: uhd-moh sounds-music-48000
 cd-moh-install: uhd-moh-install sounds-music-48000-install
 
