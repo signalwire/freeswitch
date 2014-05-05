@@ -219,7 +219,7 @@ static __inline__ int16_t sat_add16(int16_t x, int16_t y)
     int16_t z;
 
     __asm__ __volatile__(
-        " qadd16 %[z],%[c],%[y];\n"
+        " qadd16 %[z],%[x],%[y];\n"
         : [z] "=r" (z)
         : [x] "r" (x), [y] "r" (y)
     );
@@ -330,7 +330,7 @@ static __inline__ int16_t sat_mul16(int16_t x, int16_t y)
     int32_t z;
 
 #if defined(__GNUC__)  &&  (defined(__ARM_ARCH_6__)  ||  defined(__ARM_ARCH_7A__))
-    __asm__ __volatile__(" smulbb %[z],%[c],%[y];\n"
+    __asm__ __volatile__(" smulbb %[z],%[x],%[y];\n"
                          " qadd %[z],%[z],%[z];\n"
                          : [z] "=r" (z)
                          : [x] "r" (x), [y] "r" (y));
