@@ -620,6 +620,7 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
 
     /* If global parameters are present they should only be on the first page of the file.
        However, as we scan the file we might as well look for them on any page. */
+    diroff = 0;
     if (TIFFGetField(t->tiff_file, TIFFTAG_GLOBALPARAMETERSIFD, &diroff))
     {
         if (!TIFFReadCustomDirectory(t->tiff_file, diroff, &tiff_fx_field_array))
