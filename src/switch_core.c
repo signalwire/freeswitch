@@ -1356,6 +1356,10 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 
 						switch_event_destroy(&my_params);
 
+						if ((ut = switch_xml_child(x_domain, "users"))) {
+							x_domain = ut;
+						}
+
 						for (ut = switch_xml_child(x_domain, "user"); ut; ut = ut->next) {
 							const char *user_cidr = switch_xml_attr(ut, "cidr");
 							const char *id = switch_xml_attr(ut, "id");
