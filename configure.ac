@@ -602,12 +602,16 @@ PLATFORM_CORE_LDFLAGS=
 PLATFORM_CORE_LIBS=
 
 path_remove () {
-  echo "$1" | sed 's/:/\n/g' | grep -Fxv "$2" | tr '\n' ':' | sed 's/:$/\n/'
+  echo "$1" | tr ':' '\n' | grep -Fxv "$2" | tr '\n' ':' | sed 's/:$//'
 }
 path_push_unique () {
   x="$(eval echo \$$1)"
   x="$(path_remove "$x" "$2")"
-  eval export $1="$2:$x"
+  if test -z "$x"; then
+    eval export $1="$2"
+  else
+    eval export $1="$2:$x"
+  fi
 }
 
 # tweak platform specific flags
