@@ -185,7 +185,7 @@ int write_file(meta_t *meta, int page, const uint8_t buf[])
     uint8_t *out_buf2;
     packer_t packer;
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
-    uint64_t offset;
+    toff_t diroff;
 #endif
 
     tif = meta->tif;
@@ -319,13 +319,13 @@ int write_file(meta_t *meta, int page, const uint8_t buf[])
         TIFFSetField(tif, TIFFTAG_VERSIONYEAR, "1998");
         TIFFSetField(tif, TIFFTAG_MODENUMBER, 3);
 
-        offset = 0;
-        if (!TIFFWriteCustomDirectory(tif, &offset))
+        diroff = 0;
+        if (!TIFFWriteCustomDirectory(tif, &diroff))
             printf("Failed to write custom directory.\n");
 
         if (!TIFFSetDirectory(tif, (tdir_t) page))
             printf("Failed to set directory.\n");
-        if (!TIFFSetField(tif, TIFFTAG_GLOBALPARAMETERSIFD, offset))
+        if (!TIFFSetField(tif, TIFFTAG_GLOBALPARAMETERSIFD, diroff))
             printf("Failed to set global parameters IFD.\n");
         if (!TIFFWriteDirectory(tif))
             printf("Failed to write directory.\n");
@@ -354,7 +354,7 @@ int read_file(meta_t *meta, int page)
     float *fl_parms;
     char uu[10];
     char *u;
-    uint64_t offset;
+    toff_t diroff;
 #endif
     TIFF *tif;
     uint16_t *map_L;
@@ -434,10 +434,10 @@ int read_file(meta_t *meta, int page)
 
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
     printf("Trying to get global parameters\n");
-    if (TIFFGetField(tif, TIFFTAG_GLOBALPARAMETERSIFD, &offset))
+    if (TIFFGetField(tif, TIFFTAG_GLOBALPARAMETERSIFD, &diroff))
     {
-        printf("Got global parameters - %" PRIu64 "\n", offset);
-        if (!TIFFReadCustomDirectory(tif, offset, &tiff_fx_field_array))
+        printf("Got global parameters - %" PRIu64 "\n", (uint64_t) diroff);
+        if (!TIFFReadCustomDirectory(tif, diroff, &tiff_fx_field_array))
         {
             printf("Failed to set global parameters IFD.\n");
         }
@@ -893,7 +893,7 @@ int main(int argc, char *argv[])
     int output_compression;
     int page_no;
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
-    uint64_t offset;
+    toff_t diroff;
 #endif
 
     source_file = (argc > 1)  ?  argv[1]  :  IN_FILE_NAME;
@@ -1385,13 +1385,13 @@ int main(int argc, char *argv[])
         TIFFSetField(tif, TIFFTAG_VERSIONYEAR, "1998");
         TIFFSetField(tif, TIFFTAG_MODENUMBER, 3);
 
-        offset = 0;
-        if (!TIFFWriteCustomDirectory(tif, &offset))
+        diroff = 0;
+        if (!TIFFWriteCustomDirectory(tif, &diroff))
             printf("Failed to write custom directory.\n");
 
         if (!TIFFSetDirectory(tif, (tdir_t) page_no))
             printf("Failed to set directory.\n");
-        if (!TIFFSetField(tif, TIFFTAG_GLOBALPARAMETERSIFD, offset))
+        if (!TIFFSetField(tif, TIFFTAG_GLOBALPARAMETERSIFD, diroff))
             printf("Failed to set global parameters IFD.\n");
         if (!TIFFWriteDirectory(tif))
             printf("Failed to write directory.\n");

@@ -616,7 +616,7 @@ static int write_tiff_image(t4_rx_state_t *s)
 {
     t4_rx_tiff_state_t *t;
 #if defined(SPANDSP_SUPPORT_TIFF_FX)
-    uint64_t offset;
+    toff_t diroff;
 #endif
 
     t = &s->tiff;
@@ -686,14 +686,14 @@ static int write_tiff_image(t4_rx_state_t *s)
             TIFFSetField(t->tiff_file, TIFFTAG_VERSIONYEAR, "1998");
             TIFFSetField(t->tiff_file, TIFFTAG_MODENUMBER, 3);
 
-            offset = 0;
-            if (!TIFFWriteCustomDirectory(t->tiff_file, &offset))
+            diroff = 0;
+            if (!TIFFWriteCustomDirectory(t->tiff_file, &diroff))
                 span_log(&s->logging, SPAN_LOG_WARNING, "Failed to write custom directory.\n");
 
             /* Now go back and patch in the pointer to the new IFD */
             if (!TIFFSetDirectory(t->tiff_file, s->current_page))
                 span_log(&s->logging, SPAN_LOG_WARNING, "Failed to set directory.\n");
-            if (!TIFFSetField(t->tiff_file, TIFFTAG_GLOBALPARAMETERSIFD, offset))
+            if (!TIFFSetField(t->tiff_file, TIFFTAG_GLOBALPARAMETERSIFD, diroff))
                 span_log(&s->logging, SPAN_LOG_WARNING, "Failed to set field.\n");
             if (!TIFFWriteDirectory(t->tiff_file))
                 span_log(&s->logging, SPAN_LOG_WARNING, "%s: Failed to write directory for page %d.\n", t->file, s->current_page);

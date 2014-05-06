@@ -409,7 +409,7 @@ static int get_tiff_directory_info(t4_tx_state_t *s)
     char *u;
     char uu[10];
     float *fl_parms;
-    uint64_t diroff;
+    toff_t diroff;
     float lmin;
     float lmax;
     float amin;
