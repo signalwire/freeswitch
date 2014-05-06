@@ -1874,45 +1874,6 @@ Files: libs/win32/pcre/dftables.c
 Copyright: 1997-2008 University of Cambridge
 License: BSD-3-clause
 
-Files: libs/openzap/*
-Copyright: 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
- 2007-2014, Anthony Minessale II, Nenad Corbic
- 2005-2014, Anthony Minessale II
- 2006 Nenad Corbic <ncorbic@sangoma.com>
- 2007 Jan Vidar Berger, Case Labs, Ltd.
- 2007,2008 Michael Jerris
- 2008 Shane Burrell
- 2007 Michael S. Collins
- 2001 Steve Underwood <steveu@coppice.org>
- 2001 Steve Underwood
- 2002,2004 Christopher Clark <firstname.lastname@cl.cam.ac.uk>
- 2002 Christopher Clark
- 1984-2007 Sangoma Technologies Inc.
- 2007-2009, Sangoma Technologies
- 2009, Moises Silva <moy@sangoma.com>
- 2008, Stefan Knoblich, axsentis GmbH.
- 2005  Xygnada Technology, Inc.
-License: BSD-3-clause
-
-Files: libs/openzap/src/fsk.c
- libs/openzap/src/include/uart.h
- libs/openzap/src/uart.c
-Copyright: 2009-2012, Anthony Minessale II
- 2005 Robert Krten
-License: BSD-2-clause
-
-Files: libs/openzap/src/include/libteletone.h
- libs/openzap/mod_openzap/mod_openzap.c
-Copyright: 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
- 2005-2014, Anthony Minessale II
-License: MPL-1.1
-
-Files: libs/openzap/src/sangoma_pri.[ch]
- libs/openzap/src/priserver.c
-Copyright: 2005-2014 Anthony Minessale II
- 2006 Nenad Corbic <ncorbic@sangoma.com>
-License: GPL-2+
-
 Files: libs/ilbc/*
 Copyright: 2007-2008, Steve Underwood
  2006 Michael Jerris

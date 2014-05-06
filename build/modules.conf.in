@@ -150,7 +150,6 @@ xml_int/mod_xml_rpc
 xml_int/mod_xml_scgi
 
 #../../libs/freetdm/mod_freetdm
-#../../libs/openzap/mod_openzap
 
 ## Experimental Modules (don't cry if they're broken)
 #../../contrib/mod/xml_int/mod_xml_odbc

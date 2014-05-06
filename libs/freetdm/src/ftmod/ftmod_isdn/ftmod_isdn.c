@@ -607,7 +607,7 @@ static void ftdm_isdn_call_event(struct Q931_Call *call, struct Q931_CallEvent *
 									ftdm_channel_get_id(ftdmchan));
 
 						/*
-						 * Send hangup signal to mod_openzap
+						 * Send hangup signal to mod_freetdm
 						 */
 						if (!sig.channel->caller_data.hangup_cause) {
 							sig.channel->caller_data.hangup_cause = FTDM_CAUSE_NORMAL_CLEARING;
@@ -653,7 +653,7 @@ static void ftdm_isdn_call_event(struct Q931_Call *call, struct Q931_CallEvent *
 								ftdm_channel_get_id(ftdmchan));
 
 					/*
-					 * Send signal to mod_openzap
+					 * Send signal to mod_freetdm
 					 */
 					sig.channel->caller_data.hangup_cause = FTDM_CAUSE_NETWORK_OUT_OF_ORDER;
 

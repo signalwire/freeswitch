@@ -222,16 +222,6 @@ Rules:
    Matches: THIS\sSOFTWARE\sIS\sPROVIDED\sBY\sTHE\sCOPYRIGHT\sHOLDERS\sAND
    Copyright: 2006-2011, Skype Limited.
   -
-   Glob: libs/openzap/src/ozmod/ozmod_wanpipe/wanpipe_tdm_api_iface.h
-   Matches: Copyright\s\(c\)\s2007\s-\s08,\sSangoma\sTechnologies
-   Copyright: 2007-2008, Sangoma Technologies
-  -
-   Glob: libs/openzap/src/testm3ua.c
-   Matches: Created\sby\sShane\sBurrell\son\s4/8/08.
-   Matches: Copyright\s2008\s__MyCompanyName__.
-   Copyright: 2008, Shane Burrell
-   Justification: I presume that __MyCompanyName__ is nonsense, which is why I'm crediting Shane Burrell
-  -
    Glob: debian/*
    Copyright: 2012 Travis Cross <tc@traviscross.com>
    License: MPL-1.1 or GPL-2+

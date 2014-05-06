@@ -329,10 +329,6 @@ opal
 /libmpg123/
 /openldap-*/
 /openssl-*/
-/openzap/build/compile
-/openzap/COPYING
-/openzap/INSTALL
-/openzap/Makefile.in
 /opus-*/
 /pocketsphinx-*/
 /portaudio/bin/

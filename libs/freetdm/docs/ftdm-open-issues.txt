@@ -2,7 +2,7 @@
 
 1. FreeTDM open channels immediately.
 
-Yes, this seems to come from the early days of OpenZAP where probably the analog modules were implemented first and was dragged incorrectly to ISDN.
+Yes, this seems to come from the early days of Freetdm where probably the analog modules were implemented first and was dragged incorrectly to ISDN.
 The open API also sets the flag in use so others cannot use it. We should decouple this open and reserve operations. Does not seem very hard to do, 
 I'll take a look at it on my way back to Toronto this week or earlier if possible, I'll create a git branch for it and send you the url for peer review. 
 Feel free to do the opposite if you are in a hurry.
@@ -15,7 +15,7 @@ was not properly closing the channel, if that is what you mean, then it means th
 
 Now, a more lengthy response ...
 
-When we, Sangoma, took over openzap and renamed it to freetdm, it was not just a name change, many API cleanups were done so API users cannot access
+When we, Sangoma, took over freetdm and renamed it to freetdm, it was not just a name change, many API cleanups were done so API users cannot access
 
 the internal data structures and cannot explicitly move between channel states. Also, some order on the state transitions has been put into place. 
 
@@ -43,7 +43,7 @@ Having said that, there is a major architectural change coming, probably early 2
 We've also found that the concept of a channel and a call are unnecesarily coupled together in FreeTDM. I've never asked Anthony the reasoning 
 for this, but it seems the API was meant to be used with, or without calls. That is, a user should be able to just 'open' a channel and start 
 reading and writing raw data without ever launching one of the provided signaling stacks on top, may be just because the user is using their 
-own signaling stack and just needs freetdm/openzap as an I/O API. In fact, signaling modules work like this (but there are defects there).  
+own signaling stack and just needs freetdm as an I/O API. In fact, signaling modules work like this (but there are defects there).  
 The problem is, as you have noticed, the way ftdm_channel_open_xx APIs has been implemented is abusing this concept. 
 
 Problems with current implementation.

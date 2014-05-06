@@ -34,7 +34,7 @@
     <load module="mod_sofia"/>
     <load module="mod_loopback"/>
     <!-- <load module="mod_woomera"/> -->
-    <!-- <load module="mod_openzap"/> -->
+    <!-- <load module="mod_freetdm"/> -->
 
     <!-- Applications -->
     <load module="mod_commands"/>

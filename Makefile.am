@@ -591,10 +591,6 @@ speedy-sync: is-scm
 	$(MAKE) update
 	$(MAKE) -j install
 
-libs/openzap/Makefile:
-	cd libs/openzap && autoconf
-	cd libs/openzap && ./configure
-
 version:
 	git log -1  | head -3
 
@@ -604,9 +600,8 @@ pristine:
 	git clean -fdx
 	git reset --hard
 
-update-clean: clean libs/openzap/Makefile python-reconf lua-reconf spandsp-reconf srtp-reconf
+update-clean: clean python-reconf lua-reconf spandsp-reconf srtp-reconf
 	cd libs/sofia-sip && $(MAKE) clean
-	cd libs/openzap && $(MAKE) clean
 	cd libs/portaudio && $(MAKE) clean
 	cd libs/esl && $(MAKE) clean
 	cd libs/srtp && $(MAKE) clean
@@ -637,12 +632,6 @@ pa-reconf:
 srtp-reconf:
 	cd libs/srtp && $(MAKE) clean
 	cd libs/srtp && sh ./configure.gnu
-
-oz-reconf:
-	cd libs/openzap && $(MAKE) clean
-	cd libs/openzap && autoreconf -fi
-	cd libs/openzap && sh ./configure.gnu --prefix=$(prefix)
-	$(MAKE) mod_openzap-clean
 
 iks-reconf:
 	cd libs/iksemel && $(MAKE) clean

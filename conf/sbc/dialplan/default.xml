@@ -35,9 +35,9 @@
     </extension>
 
     <!-- Set the domain -->
-    <extension name="set_domain_openzap" continue="true">
+    <extension name="set_domain_freetdm" continue="true">
       <condition field="${domain_name}" expression="^$"/>
-      <condition field="source" expression="mod_openzap">
+      <condition field="source" expression="mod_freetdm">
 	<action application="set" data="domain_name=$${domain}"/>
       </condition>
     </extension>
