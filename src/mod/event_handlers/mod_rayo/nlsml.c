@@ -325,29 +325,37 @@ static int cdata_hook(void *user_data, char *data, size_t len)
 enum nlsml_match_type nlsml_parse(const char *result, const char *uuid)
 {
 	struct nlsml_parser parser = { 0 };
+	int result = NMT_BAD_XML;
+	iksparser *p = NULL;
 	parser.uuid = uuid;
+
 	if (!zstr(result)) {
-		iksparser *p = iks_sax_new(&parser, tag_hook, cdata_hook);
+		p = iks_sax_new(&parser, tag_hook, cdata_hook);
 		if (iks_parse(p, result, 0, 1) == IKS_OK) {
 			/* check result */
 			if (parser.match) {
-				return NMT_MATCH;
+				result = NMT_MATCH;
+				goto end;
 			}
 			if (parser.nomatch) {
-				return NMT_NOMATCH;
+				result = NMT_NOMATCH;
+				goto end;
 			}
 			if (parser.noinput) {
-				return NMT_NOINPUT;
+				result = NMT_NOINPUT;
+				goto end;
 			}
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(parser.uuid), SWITCH_LOG_INFO, "NLSML result does not have match/noinput/nomatch!\n");
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(parser.uuid), SWITCH_LOG_INFO, "Failed to parse NLSML!\n");
 		}
-		iks_parser_delete(p);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(parser.uuid), SWITCH_LOG_INFO, "Missing NLSML result\n");
 	}
-	return NMT_BAD_XML;
+ end:
+	if ( p )
+		iks_parser_delete(p);
+	return result;
 }
 
 #define NLSML_NS "http://www.ietf.org/xml/ns/mrcpv2"
