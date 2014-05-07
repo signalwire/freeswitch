@@ -440,6 +440,7 @@ static switch_status_t it_say_money(switch_core_session_t *session, char *tosay,
 	char sbuf[16] = "";			/* enough for 999,999,999,999.99 (w/o the commas or leading $) */
 	char *dollars = NULL;
 	char *cents = NULL;
+	switch_status_t status;
 
 	if (strlen(tosay) > 15 || !switch_strip_nonnumerics(tosay, sbuf, sizeof(sbuf)-1)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
@@ -467,7 +468,10 @@ static switch_status_t it_say_money(switch_core_session_t *session, char *tosay,
 	}
 
 	/* Say dollar amount */
-	it_say_general_count(session, dollars, say_args, args);
+	if (( status = it_say_general_count(session, dollars, say_args, args) ) != SWITCH_STATUS_SUCCESS ) {
+		return status;
+	}
+
 	if (atoi(dollars) == 1) {
 		say_file("currency/dollar.wav");
 	} else {
@@ -479,7 +483,9 @@ static switch_status_t it_say_money(switch_core_session_t *session, char *tosay,
 
 	/* Say cents */
 	if (cents) {
-		it_say_general_count(session, cents, say_args, args);
+		if (( status = it_say_general_count(session, cents, say_args, args) ) != SWITCH_STATUS_SUCCESS ) {
+			return status;
+		}
 		if (atoi(cents) == 1) {
 			say_file("currency/cent.wav");
 		} else {

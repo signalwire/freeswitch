@@ -357,6 +357,7 @@ static switch_status_t hu_say_money(switch_core_session_t *session, char *tosay,
 {
 	char sbuf[16] = "";
 	char *forint;
+	switch_status_t status;
 
 	if (strlen(tosay) > 15 || !switch_strip_nonnumerics(tosay, sbuf, sizeof(sbuf)-1)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
@@ -374,7 +375,9 @@ static switch_status_t hu_say_money(switch_core_session_t *session, char *tosay,
 		forint++;
 	}
 
-	hu_say_general_count(session, forint, say_args, args);
+	if (( status = hu_say_general_count(session, forint, say_args, args)) != SWITCH_STATUS_SUCCESS ) {
+		return status;
+	}
 	say_file("currency/forint.wav");
 
 	return SWITCH_STATUS_SUCCESS;
