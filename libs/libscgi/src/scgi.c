@@ -693,8 +693,6 @@ SCGI_DECLARE(scgi_status_t) scgi_parse(scgi_socket_t sock, scgi_handle_t *handle
 	while(p < end) {
 		next_str(p, e);
 
-		if (!e) break;
-
 		if (!loops++) {
 			if (!strcasecmp(p, "CONTENT_LENGTH") && e) {
 				clen = atoi(e);
