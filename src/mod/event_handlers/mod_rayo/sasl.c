@@ -46,16 +46,16 @@ void parse_plain_auth_message(const char *message, char **authzid, char **authci
 	*authcid = NULL;
 	*password = NULL;
 	if (decoded == NULL) {
-		return;
+		goto end;
 	}
 	pos = strlen(decoded) + 1;
 	if (pos >= maxlen) {
-		return;
+		goto end;
 	}
 	*authcid = strdup(decoded + pos);
 	pos += strlen(*authcid) + 1;
 	if (pos >= maxlen) {
-		return;
+		goto end;
 	}
 	*password = strdup(decoded + pos);
 	if (zstr(decoded)) {
@@ -63,7 +63,9 @@ void parse_plain_auth_message(const char *message, char **authzid, char **authci
 	} else {
 		*authzid = strdup(decoded);
 	}
-	free(decoded);
+	
+ end:
+	switch_safe_free(decoded);
 }
 
 /* For Emacs:
