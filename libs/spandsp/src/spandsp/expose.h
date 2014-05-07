@@ -82,7 +82,7 @@
 #include <spandsp/private/v42.h>
 #include <spandsp/private/v42bis.h>
 #include <spandsp/private/at_interpreter.h>
-//#include <spandsp/private/data_modems.h>
+#include <spandsp/private/data_modems.h>
 #include <spandsp/private/fax_modems.h>
 #include <spandsp/private/timezone.h>
 #include <spandsp/private/image_translate.h>

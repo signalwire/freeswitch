@@ -70,7 +70,7 @@
 
 enum
 {
-    V8_WAIT_1S,         /* Start point when sending CI */
+    V8_WAIT_1S = 0,     /* Start point when sending CI */
     V8_AWAIT_ANSAM,     /* Start point when sending initial silence */
     V8_CI_ON,
     V8_CI_OFF,
@@ -539,16 +539,16 @@ static void put_bit(void *user_data, int bit)
                 switch (s->preamble_type)
                 {
                 case V8_SYNC_CI:
-                    tag = "CI: ";
+                    tag = ">CI: ";
                     break;
                 case V8_SYNC_CM_JM:
-                    tag = (s->calling_party)  ?  "JM: "  :  "CM: ";
+                    tag = (s->calling_party)  ?  ">JM: "  :  ">CM: ";
                     break;
                 case V8_SYNC_V92:
-                    tag = "V92: ";
+                    tag = ">V.92: ";
                     break;
                 default:
-                    tag = "??: ";
+                    tag = ">??: ";
                     break;
                 }
                 span_log_buf(&s->logging, SPAN_LOG_FLOW, tag, s->rx_data, s->rx_data_ptr);
@@ -639,20 +639,26 @@ static void v8_put_preamble(v8_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void v8_put_byte(v8_state_t *s, int data)
+static void v8_put_bytes(v8_state_t *s, uint8_t buf[], int len)
 {
     int i;
+    int j;
+    uint8_t byte;
     uint8_t bits[10];
 
     /* Insert start & stop bits */
-    bits[0] = 0;
-    for (i = 1;  i < 9;  i++)
+    for (i = 0;  i < len;  i++)
     {
-        bits[i] = (uint8_t) (data & 1);
-        data >>= 1;
+        bits[0] = 0;
+        byte = buf[i];
+        for (j = 1;  j < 9;  j++)
+        {
+            bits[j] = byte & 1;
+            byte >>= 1;
+        }
+        bits[9] = 1;
+        queue_write(s->tx_queue, bits, 10);
     }
-    bits[9] = 1;
-    queue_write(s->tx_queue, bits, 10);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -661,12 +667,15 @@ static void send_cm_jm(v8_state_t *s)
     int val;
     unsigned int offered_modulations;
     int bytes;
+    uint8_t buf[10];
+    int ptr;
 
     /* Send a CM, or a JM as appropriate */
     v8_put_preamble(s);
-    v8_put_byte(s, V8_CM_JM_SYNC_OCTET);
+    ptr = 0;
+    buf[ptr++] = V8_CM_JM_SYNC_OCTET;
     /* Data call */
-    v8_put_byte(s, (s->result.call_function << 5) | V8_CALL_FUNCTION_TAG);
+    buf[ptr++] = (s->result.call_function << 5) | V8_CALL_FUNCTION_TAG;
 
     /* Supported modulations */
     offered_modulations = s->result.modulations;
@@ -676,7 +685,9 @@ static void send_cm_jm(v8_state_t *s)
         val |= 0x20;
     if (offered_modulations & V8_MOD_V34)
         val |= 0x40;
-    v8_put_byte(s, val);
+    if (offered_modulations & V8_MOD_V34HDX)
+        val |= 0x80;
+    buf[ptr++] = val;
     if (++bytes < s->modulation_bytes)
     {
         val = 0x10;
@@ -690,7 +701,7 @@ static void send_cm_jm(v8_state_t *s)
             val |= 0x40;
         if (offered_modulations & V8_MOD_V27TER)
             val |= 0x80;
-        v8_put_byte(s, val);
+        buf[ptr++] = val;
     }
     if (++bytes < s->modulation_bytes)
     {
@@ -705,19 +716,21 @@ static void send_cm_jm(v8_state_t *s)
             val |= 0x40;
         if (offered_modulations & V8_MOD_V21)
             val |= 0x80;
-        v8_put_byte(s, val);
+        buf[ptr++] = val;
     }
 
     if (s->parms.protocol)
-        v8_put_byte(s, (s->parms.protocol << 5) | V8_PROTOCOLS_TAG);
+        buf[ptr++] = (s->parms.protocol << 5) | V8_PROTOCOLS_TAG;
     if (s->parms.pstn_access)
-        v8_put_byte(s, (s->parms.pstn_access << 5) | V8_PSTN_ACCESS_TAG);
+        buf[ptr++] = (s->parms.pstn_access << 5) | V8_PSTN_ACCESS_TAG;
     if (s->parms.pcm_modem_availability)
-        v8_put_byte(s, (s->parms.pcm_modem_availability << 5) | V8_PCM_MODEM_AVAILABILITY_TAG);
+        buf[ptr++] = (s->parms.pcm_modem_availability << 5) | V8_PCM_MODEM_AVAILABILITY_TAG;
     if (s->parms.t66 >= 0)
-        v8_put_byte(s, (s->parms.t66 << 5) | V8_T66_TAG);
+        buf[ptr++] = (s->parms.t66 << 5) | V8_T66_TAG;
     /* No NSF */
-    //v8_put_byte(s, (0 << 5) | V8_NSF_TAG);
+    //buf[ptr++] = (0 << 5) | V8_NSF_TAG;
+    span_log_buf(&s->logging, SPAN_LOG_FLOW, (s->calling_party)  ?  "<CM: "  :  "<JM: ", &buf[1], ptr - 1);
+    v8_put_bytes(s, buf, ptr);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -729,7 +742,15 @@ SPAN_DECLARE_NONSTD(int) v8_tx(v8_state_t *s, int16_t *amp, int max_len)
     len = 0;
     if (s->modem_connect_tone_tx_on)
     {
-        if (s->modem_connect_tone_tx_on > ms_to_samples(75))
+        if (s->modem_connect_tone_tx_on == (ms_to_samples(75) + 2))
+        {
+            if (s->fsk_tx_on)
+            {
+                /* The initial silence is over */
+                s->modem_connect_tone_tx_on = 0;
+            }
+        }
+        else if (s->modem_connect_tone_tx_on == (ms_to_samples(75) + 1))
         {
             /* Send the ANSam tone */
             len = modem_connect_tones_tx(&s->ansam_tx, amp, max_len);
@@ -752,13 +773,18 @@ SPAN_DECLARE_NONSTD(int) v8_tx(v8_state_t *s, int16_t *amp, int max_len)
     }
     if (s->fsk_tx_on  &&  len < max_len)
     {
-        max_len -= len;
-        len = fsk_tx(&s->v21tx, amp + len, max_len);
+        len += fsk_tx(&s->v21tx, &amp[len], max_len - len);
         if (len < max_len)
         {
-            span_log(&s->logging, SPAN_LOG_FLOW, "FSK ends\n");
+            span_log(&s->logging, SPAN_LOG_FLOW, "FSK ends (%d/%d) %d %d\n", len, max_len, s->fsk_tx_on, s->state);
             s->fsk_tx_on = false;
+            //s->state = V8_PARKED;
         }
+    }
+    if (s->state != V8_PARKED  &&  len < max_len)
+    {
+        vec_zeroi16(&amp[len], max_len - len);
+        len = max_len;
     }
     return len;
 }
@@ -767,6 +793,7 @@ SPAN_DECLARE_NONSTD(int) v8_tx(v8_state_t *s, int16_t *amp, int max_len)
 static void send_v92(v8_state_t *s)
 {
     int i;
+    uint8_t buf[2];
 
     if (s->result.v92 >= 0)
     {
@@ -774,8 +801,10 @@ static void send_v92(v8_state_t *s)
         for (i = 0;  i < 2;  i++)
         {
             v8_put_preamble(s);
-            v8_put_byte(s, V8_V92_SYNC_OCTET);
-            v8_put_byte(s, s->result.v92);
+            buf[0] = V8_V92_SYNC_OCTET;
+            buf[1] = s->result.v92;
+            span_log_buf(&s->logging, SPAN_LOG_FLOW, "<V.92: ", &buf[1], 1);
+            v8_put_bytes(s, buf, 2);
         }
     }
 }
@@ -784,13 +813,16 @@ static void send_v92(v8_state_t *s)
 static void send_ci(v8_state_t *s)
 {
     int i;
+    uint8_t buf[2];
 
     /* Send 4 CI packets in a burst (the spec says at least 3) */
     for (i = 0;  i < 4;  i++)
     {
         v8_put_preamble(s);
-        v8_put_byte(s, V8_CI_SYNC_OCTET);
-        v8_put_byte(s, (s->result.call_function << 5) | V8_CALL_FUNCTION_TAG);
+        buf[0] = V8_CI_SYNC_OCTET;
+        buf[1] = (s->result.call_function << 5) | V8_CALL_FUNCTION_TAG;
+        span_log_buf(&s->logging, SPAN_LOG_FLOW, "<CI: ", &buf[1], 1);
+        v8_put_bytes(s, buf, 2);
     }
 }
 /*- End of function --------------------------------------------------------*/
@@ -822,9 +854,9 @@ static void handle_modem_connect_tone(v8_state_t *s, int tone)
 
 SPAN_DECLARE_NONSTD(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
 {
-    int i;
     int residual_samples;
     int tone;
+    uint8_t buf[3];
 
     //span_log(&s->logging, SPAN_LOG_FLOW, "v8_rx state %d\n", s->state);
     residual_samples = 0;
@@ -911,8 +943,9 @@ SPAN_DECLARE_NONSTD(int) v8_rx(v8_state_t *s, const int16_t *amp, int len)
             /* Now JM has been detected, we send CJ and wait for 75 ms
                before finishing the V.8 analysis. */
             fsk_tx_restart(&s->v21tx, &preset_fsk_specs[FSK_V21CH1]);
-            for (i = 0;  i < 3;  i++)
-                v8_put_byte(s, 0);
+            memset(buf, 0, 3);
+            v8_put_bytes(s, buf, 3);
+            span_log_buf(&s->logging, SPAN_LOG_FLOW, "<CJ: ", &buf[1], 2);
             s->state = V8_CJ_ON;
             s->fsk_tx_on = true;
             break;
@@ -1060,6 +1093,7 @@ SPAN_DECLARE(int) v8_restart(v8_state_t *s, bool calling_party, v8_parms_t *parm
         }
         modem_connect_tones_rx_init(&s->ansam_rx, MODEM_CONNECT_TONES_ANS_PR, NULL, NULL);
         fsk_tx_init(&s->v21tx, &preset_fsk_specs[FSK_V21CH1], get_bit, s);
+        s->modem_connect_tone_tx_on = ms_to_samples(75) + 2;
     }
     else
     {

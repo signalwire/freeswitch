@@ -124,6 +124,7 @@
 #include <spandsp/t30_logging.h>
 #include <spandsp/t35.h>
 #include <spandsp/at_interpreter.h>
+#include <spandsp/data_modems.h>
 #include <spandsp/fax_modems.h>
 #include <spandsp/fax.h>
 #include <spandsp/t38_core.h>

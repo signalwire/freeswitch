@@ -1,5 +1,4 @@
-:
-
+#!/bin/sh
 #
 # Install the things which need adding to a fresh Fedora or Centos install to make it ready to build
 # spandsp and its test suite
@@ -19,7 +18,7 @@ yum install fftw-devel \
             sox \
             gcc-c++ \
             libtool \
-            autconf \
+            autoconf \
             automake \
             m4 \
             netpbm \

@@ -202,6 +202,18 @@ AC_CHECK_HEADERS([stdlib.h])
 AC_CHECK_HEADERS([string.h])
 AC_CHECK_HEADERS([strings.h])
 AC_CHECK_HEADERS([malloc.h])
+AC_CHECK_HEADERS([math.h], [INSERT_MATH_HEADER="#include <math.h>"])
+AC_CHECK_HEADERS([float.h])
+AC_CHECK_HEADERS([fcntl.h])
+AC_CHECK_HEADERS([sys/time.h])
+AC_CHECK_HEADERS([sys/select.h])
+AC_CHECK_HEADERS([sys/ioctl.h])
+AC_CHECK_HEADERS([sys/fcntl.h])
+AC_CHECK_HEADERS([sndfile.h])
+AC_CHECK_HEADERS([fenv.h])
+AC_CHECK_HEADERS([fftw3.h], , [AC_CHECK_HEADERS([fftw.h])])
+AC_CHECK_HEADERS([pcap.h])
+AC_CHECK_HEADERS([pthread.h])
 
 case "$host" in
     *dragonfly*)
@@ -215,18 +227,6 @@ case "$host" in
     ;;
 esac
 
-AC_CHECK_HEADERS([math.h], [INSERT_MATH_HEADER="#include <math.h>"])
-AC_CHECK_HEADERS([float.h])
-AC_CHECK_HEADERS([fcntl.h])
-AC_CHECK_HEADERS([sys/time.h])
-AC_CHECK_HEADERS([sys/select.h])
-AC_CHECK_HEADERS([sys/ioctl.h])
-AC_CHECK_HEADERS([sys/fcntl.h])
-AC_CHECK_HEADERS([sndfile.h])
-AC_CHECK_HEADERS([fenv.h])
-AC_CHECK_HEADERS([fftw3.h], , [AC_CHECK_HEADERS([fftw.h])])
-AC_CHECK_HEADERS([pcap.h])
-AC_CHECK_HEADERS([pthread.h])
 if test "${build}" == "${host}"
 then
     AC_CHECK_HEADERS([X11/X.h])

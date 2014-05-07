@@ -110,6 +110,7 @@ libspandsp_la_SOURCES = ademco_contactid.c \
                         complex_vector_float.c \
                         complex_vector_int.c \
                         crc.c \
+                        data_modems.c \
                         dds_float.c \
                         dds_int.c \
                         dtmf.c \
@@ -210,6 +211,7 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/complex_filters.h \
                          spandsp/complex_vector_float.h \
                          spandsp/complex_vector_int.h \
+                         spandsp/data_modems.h \
                          spandsp/dc_restore.h \
                          spandsp/dds.h \
                          spandsp/dtmf.h \
@@ -292,6 +294,7 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/private/bell_r2_mf.h \
                          spandsp/private/bert.h \
                          spandsp/private/bitstream.h \
+                         spandsp/private/data_modems.h \
                          spandsp/private/dtmf.h \
                          spandsp/private/echo.h \
                          spandsp/private/fax.h \

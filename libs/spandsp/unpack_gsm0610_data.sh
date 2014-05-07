@@ -53,7 +53,7 @@ else
     cd gsm0610
 fi
 
-if [ $1x =  --no-exe-runx ]
+if [ $1x == --no-exe-runx ]
 then
     # Run the .exe files, which should be here
     ./FR_A.EXE
@@ -77,7 +77,7 @@ rm -rf READ_FRA.TXT
 rm -rf ACTION
 rm -rf unpacked
 
-if [ $1x =  --no-exex ]
+if [ $1x == --no-exex ]
 then
     # We need to prepare the .exe files to be run separately
     rm -rf *.INP

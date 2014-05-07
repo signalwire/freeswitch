@@ -65,7 +65,7 @@
 #include "spandsp/private/v27ter_tx.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-#define FP_SCALE                        FP_Q6_10
+#define FP_SCALE(x)                     FP_Q6_10(x)
 #else
 #define FP_SCALE(x)                     (x)
 #endif

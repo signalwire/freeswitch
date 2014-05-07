@@ -29,15 +29,21 @@
 \section fax_tests_page_sec_1 What does it do?
 These tests exercise the following FAX to FAX paths:
 
-         +--Modems-+-----------TDM/RTP-----------+-Modems--+
-         |          \                           /          |
-         |           \                         /           |
-T.30 <---+      T.38 gateway            T.38 gateway       +--->T.30
-         |             \                     /             |
-         |              \                   /              |
-         +---T.38---+----+----UDPTL/RTP----+----+---T.38---+
-                     \                         /
-                      +----------TCP----------+
+TSB85 <-----------+                                     +-----------> TSB85
+                   \                                   /
+ T.31 <-----------+ \                                 / +-----------> T.31
+                   \ \                               / /
+          +--Modems-+-+-----------TDM/RTP-----------+-+-Modems--+
+          |            \                           /            |
+          |             \                         /             |
+ T.30 <---+        T.38 gateway            T.38 gateway         +---> T.30
+          |               \                     /               |
+          |                \                   /                |
+          +---T.38---+-+----+----UDPTL/RTP----+----+ +---T.38---+
+                    / / \                         / \ \
+ T.31 <------------/ /   +----------TCP----------+   \ +------------> T.31
+                    /                                 \
+TSB85 <------------+                                   +------------> TSB85
 
 T.30<->Modems<-------------------------TDM/RTP------------------------->Modems<->T.30
 T.30<->Modems<-TDM/RTP->T.38 gateway<-UDPTL/RTP->T.38 gateway<-TDM/RTP->Modems<->T.30
@@ -45,6 +51,7 @@ T.30<->Modems<-TDM/RTP->T.38 gateway<-UDPTL/RTP-------------------------->T.38<-
 T.30<->T.38<--------------------------UDPTL/RTP->T.38 gateway<-TDM/RTP->Modems<->T.30
 T.30<->T.38<--------------------------UDPTL/RTP-------------------------->T.38<->T.30
 
+The T.31 and TSB85 parts are incomplete right now.
 */
 
 #if defined(HAVE_CONFIG_H)
@@ -520,6 +527,7 @@ int main(int argc, char *argv[])
     char *page_header_info;
     char *page_header_tz;
     const char *tag;
+    const char *xml_file_name;
     char buf[132 + 1];
 #if defined(ENABLE_GUI)
     int use_gui;
@@ -557,7 +565,8 @@ int main(int argc, char *argv[])
     colour_enabled = false;
     t37_like_output = false;
     t38_transport = T38_TRANSPORT_UDPTL;
-    while ((opt = getopt(argc, argv, "7b:c:Cd:D:efFgH:i:Ilm:M:n:p:s:S:tT:u:v:z:")) != -1)
+    xml_file_name = "../spandsp/tsb85.xml";
+    while ((opt = getopt(argc, argv, "7b:c:Cd:D:efFgH:i:Ilm:M:n:p:s:S:tT:u:v:x:z:")) != -1)
     {
         switch (opt)
         {
@@ -682,6 +691,9 @@ int main(int argc, char *argv[])
         case 'v':
             t38_version = atoi(optarg);
             break;
+        case 'x':
+            xml_file_name = optarg;
+            break;
         case 'z':
             page_header_tz = optarg;
             break;
@@ -736,8 +748,9 @@ int main(int argc, char *argv[])
         tag = (i == 0)  ?  "A"  :  "B";
 
         memset(&expected_rx_info[i], 0, sizeof(expected_rx_info[i]));
-        if (mode[i] == T38_TERMINAL_FAX)
+        switch (mode[i])
         {
+        case T38_TERMINAL_FAX:
             if ((t38_state[i] = t38_terminal_init(NULL, (i == 0), tx_packet_handler, (void *) (intptr_t) i)) == NULL)
             {
                 fprintf(stderr, "Cannot start the T.38 terminal instance\n");
@@ -757,9 +770,9 @@ int main(int argc, char *argv[])
             logging = t30_get_logging_state(t30_state[i]);
             span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
             span_log_set_tag(logging, tag);
-        }
-        else
-        {
+            break;
+        case AUDIO_FAX:
+        case T38_GATEWAY_FAX:
             if ((fax_state[i] = fax_init(NULL, (i == 0))) == NULL)
             {
                 fprintf(stderr, "Cannot start FAX instance\n");
@@ -783,7 +796,7 @@ int main(int argc, char *argv[])
             {
                 if ((t38_gateway_state[i] = t38_gateway_init(NULL, tx_packet_handler, (void *) (intptr_t) i)) == NULL)
                 {
-                    fprintf(stderr, "Cannot start the T.38 gateway instancel\n");
+                    fprintf(stderr, "Cannot start the T.38 gateway instance\n");
                     exit(2);
                 }
                 t38_core_state[i] = t38_gateway_get_t38_core_state(t38_gateway_state[i]);
@@ -820,6 +833,17 @@ int main(int argc, char *argv[])
                 signal_scaling = powf(10.0f, signal_level/20.0f);
                 printf("Signal scaling %f\n", signal_scaling);
             }
+            break;
+        case T31_AUDIO_FAX:
+            break;
+        case T31_T38_TERMINAL_FAX:
+        case T31_T38_GATEWAY_FAX:
+            break;
+        case TSB85_AUDIO_FAX:
+            break;
+        case TSB85_T38_TERMINAL_FAX:
+        case TSB85_T38_GATEWAY_FAX:
+            break;
         }
         set_t30_callbacks(t30_state[i], i);
     }
