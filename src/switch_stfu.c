@@ -77,7 +77,6 @@ struct stfu_instance {
 	uint32_t samples_per_packet;
 	uint32_t samples_per_second;
 	uint32_t miss_count;
-	uint32_t max_plc;
     uint32_t qlen;
     uint32_t most_qlen;
     uint32_t max_qlen;
@@ -267,7 +266,6 @@ stfu_status_t stfu_n_resize(stfu_instance_t *i, uint32_t qlen)
         }
 
         i->qlen = qlen;
-        i->max_plc = 5;
         i->last_frame = NULL;
     }
     
@@ -304,8 +302,6 @@ stfu_instance_t *stfu_n_init(uint32_t qlen, uint32_t max_qlen, uint32_t samples_
 	i->old_queue = &i->c_queue;
     i->name = strdup("none");
     
-    i->max_plc = i->qlen / 2;
-
     i->samples_per_second = samples_per_second ? samples_per_second : 8000;
     
     i->period_time = ((i->samples_per_second * 20) / i->samples_per_packet);
@@ -754,11 +750,6 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
             stfu_log(STFU_LOG_EMERG, "%s\n\n\n", i->name);
 
         }
-
-        if (delay < 0) {
-            stfu_n_reset(i);
-            return NULL;
-        }
     }
 
     if (stfu_log != null_logger && i->debug) {
@@ -794,7 +785,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
             i->cur_ts = rframe->ts;
             i->cur_seq = rframe->seq;
             i->last_wr_ts = i->cur_ts;
-            i->miss_count++;
+            i->miss_count = 0;
 
             if (stfu_log != null_logger && i->debug) {
                 stfu_log(STFU_LOG_EMERG, "%s AUTOCORRECT %d %d %ld %u:%u\n", i->name, 
@@ -809,16 +800,18 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
             rframe->ts = i->cur_ts;
             rframe->seq = i->cur_seq;
             i->miss_count++;
-            
+
             if (stfu_log != null_logger && i->debug) {
-                stfu_log(STFU_LOG_EMERG, "%s PLC %d %d %ld %u:%u\n", i->name, 
-                         i->miss_count, rframe->plc, rframe->dlen, rframe->ts, rframe->ts / i->samples_per_packet);
+                stfu_log(STFU_LOG_EMERG, "%s PLC %d/%d %d %ld %u:%u\n", i->name, 
+                         i->miss_count, i->max_qlen, rframe->plc, rframe->dlen, rframe->ts, rframe->ts / i->samples_per_packet);
             }
         }
 
-        if (i->miss_count > i->max_plc) {
-            stfu_n_reset(i);
-            rframe = NULL;
+        if (i->miss_count > i->max_qlen) {
+            if (stfu_log != null_logger && i->debug) {
+                stfu_log(STFU_LOG_EMERG, "%s TOO MANY MISS %d/%d SYNC...\n", i->name, i->miss_count, i->max_qlen);
+            }
+            stfu_n_sync(i, 1);
         }
         
     }
