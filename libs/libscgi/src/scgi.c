@@ -721,6 +721,7 @@ SCGI_DECLARE(scgi_status_t) scgi_parse(scgi_socket_t sock, scgi_handle_t *handle
  end:
 
 	scgi_safe_free(headers);
+	scgi_safe_free(body);
 
 	return status;
 }
