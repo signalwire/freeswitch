@@ -223,7 +223,7 @@ SWITCH_STANDARD_APP(translate_app_function)
 	char *mydata = NULL;
 	char *translated = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_memory_pool_t *pool;
+	switch_memory_pool_t *pool = NULL;
 	switch_event_t *event = NULL;
 
 	switch_assert(session);
