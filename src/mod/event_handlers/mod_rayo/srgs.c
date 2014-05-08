@@ -1588,7 +1588,7 @@ const char *srgs_grammar_to_jsgf(struct srgs_grammar *grammar)
 const char *srgs_grammar_to_jsgf_file(struct srgs_grammar *grammar, const char *basedir, const char *ext)
 {
 	if (!grammar) {
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(grammar->uuid), SWITCH_LOG_CRIT, "grammar is NULL!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "grammar is NULL!\n");
 		return NULL;
 	}
 	switch_mutex_lock(grammar->mutex);
