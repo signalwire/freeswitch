@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013, Grasshopper
+ * Copyright (C) 2013-2014, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -512,7 +512,7 @@ char *iks_server_dialback_key(const char *secret, const char *receiving_server, 
 	if (!zstr(secret) && !zstr(receiving_server) && !zstr(originating_server) && !zstr(stream_id)) {
 		unsigned char secret_hash[IKS_SHA256_HEX_DIGEST_LENGTH];
 		unsigned char *message = NULL;
-		unsigned char *dialback_key = malloc(sizeof(unsigned char *) * IKS_SHA256_HEX_DIGEST_LENGTH);
+		unsigned char *dialback_key = malloc(sizeof(unsigned char) * IKS_SHA256_HEX_DIGEST_LENGTH);
 		iks_sha256_hex_string((unsigned char *)secret, strlen(secret), secret_hash);
 		message = (unsigned char *)switch_mprintf("%s %s %s", receiving_server, originating_server, stream_id);
 		iks_hmac_sha256_hex_string(secret_hash, strlen((char *)secret_hash), message, strlen((char *)message), dialback_key);
