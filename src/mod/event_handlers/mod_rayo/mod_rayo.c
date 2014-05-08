@@ -336,8 +336,7 @@ static const char *presence_status_to_string(enum presence_status status)
 	switch(status) {
 		case PS_OFFLINE: return "OFFLINE";
 		case PS_ONLINE: return "ONLINE";
-		case PS_UNKNOWN:
-		default: return "UNKNOWN";
+		case PS_UNKNOWN: return "UNKNOWN";
 	}
 	return "UNKNOWN";
 }
