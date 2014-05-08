@@ -819,7 +819,6 @@ static switch_status_t fileman_file_read(switch_file_handle_t *handle, void *dat
 
 	for (;;) {
 		int do_speed = 1;
-		int last_speed = -1;
 		size_t read_bytes = 0;
 
 		if (switch_test_flag(handle, SWITCH_FILE_PAUSE)) {
@@ -912,11 +911,6 @@ static switch_status_t fileman_file_read(switch_file_handle_t *handle, void *dat
 			handle->speed = -2;
 		}
 
-		if (fh->audio_buffer && last_speed > -1 && last_speed != handle->speed) {
-			/* speed has changed, flush the buffer */
-			switch_buffer_zero(fh->sp_audio_buffer);
-		}
-
 		if (switch_test_flag(fh, SWITCH_FILE_SEEK)) {
 			/* file position has changed flush the buffer */
 			switch_buffer_zero(fh->audio_buffer);
@@ -964,7 +958,6 @@ static switch_status_t fileman_file_read(switch_file_handle_t *handle, void *dat
 				switch_buffer_write(fh->sp_audio_buffer, bp, r_len * 2);
 				wrote_len += r_len;
 			}
-			last_speed = handle->speed;
 			continue;
 		}
 
