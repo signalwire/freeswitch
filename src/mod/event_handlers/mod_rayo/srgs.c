@@ -1089,7 +1089,7 @@ static pcre *get_compiled_regex(struct srgs_grammar *grammar)
 	const char *regex;
 
 	if (!grammar) {
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(grammar->uuid), SWITCH_LOG_CRIT, "grammar is NULL!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "grammar is NULL!\n");
 		return NULL;
 	}
 
