@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013, Grasshopper
+ * Copyright (C) 2013-2014, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -1241,6 +1241,10 @@ static int is_match_end(pcre *compiled_regex, const char *input)
 	const char *search_set = "0123456789#*ABCD";
 	const char *search = strchr(search_set, input[input_size - 1]); /* start with last digit in input */
 	int i = 0;
+
+	if (!search) {
+		return 0;
+	}
 
 	/* For each digit in search_set, check if input + search_set digit is a potential match.
 	   If so, then this is not a match end.
