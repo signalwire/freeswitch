@@ -32,7 +32,7 @@ AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS) $(AM_LIBAPR_LDFLAGS) $(AM_LIBAPU_LDFLAGS)
 
 DEFAULT_SOUNDS=en-us-callie-8000
 
-.DEFAULT: $(switch_builddir)/modules.conf
+.DEFAULT: $(switch_builddir)/modules.conf src/mod/modules.inc
 	@target=`echo $@ | sed -e 's|^.*-||'`; \
 	 target_prefix=`echo $@ | sed -e 's|-.*$$||'`; \
 	 sound_perfix=`echo $@ | sed -e 's|-.*||'`; \
@@ -131,7 +131,7 @@ endif
 
 MOD_LINK      = $(switch_srcdir)/libfreeswitch.la
 CLEANFILES    = src/include/switch_version.h src/include/switch_swigable_cpp.h
-BUILT_SOURCES = src/include/switch_version.h src/include/switch_swigable_cpp.h
+BUILT_SOURCES = src/mod/modules.inc src/include/switch_version.h src/include/switch_swigable_cpp.h 
 
 if HAVE_ODBC
 CORE_CFLAGS += -DSWITCH_HAVE_ODBC $(ODBC_INC_FLAGS)
@@ -411,7 +411,17 @@ pkgconfig_DATA = build/freeswitch.pc
 $(switch_builddir)/modules.conf:
 	if test -f $@; then touch $@; else cp $(switch_srcdir)/build/modules.conf.in $@ ;fi
 
-$(OUR_MODULES): $(switch_builddir)/modules.conf libfreeswitch.la
+src/mod/modules.inc: $(switch_builddir)/modules.conf
+	@echo "OUR_MODULES=$(OUR_MODS)" > $(switch_builddir)/src/mod/modules.inc
+	@echo "OUR_CLEAN_MODULES=$(OUR_CLEAN_MODS)" >> $(switch_builddir)/src/mod/modules.inc
+	@echo "OUR_INSTALL_MODULES=$(OUR_INSTALL_MODS)" >> $(switch_builddir)/src/mod/modules.inc
+	@echo "OUR_UNINSTALL_MODULES=$(OUR_UNINSTALL_MODS)" >> $(switch_builddir)/src/mod/modules.inc
+	@echo "OUR_DISABLED_MODULES=$(OUR_DISABLED_MODS)" >> $(switch_builddir)/src/mod/modules.inc
+	@echo "OUR_DISABLED_CLEAN_MODULES=$(OUR_DISABLED_CLEAN_MODS)" >> $(switch_builddir)/src/mod/modules.inc
+	@echo "OUR_DISABLED_INSTALL_MODULES=$(OUR_DISABLED_INSTALL_MODS)" >> $(switch_builddir)/src/mod/modules.inc
+	@echo "OUR_DISABLED_UNINSTALL_MODULES=$(OUR_DISABLED_UNINSTALL_MODS)" >> $(switch_builddir)/src/mod/modules.inc
+
+$(OUR_MODULES): $(switch_builddir)/modules.conf libfreeswitch.la src/mod/modules.inc
 	@set fnord $$MAKEFLAGS; amf=$$2; \
 	(cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@) \
 	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
@@ -684,20 +694,20 @@ speedy-current: update-clean is-scm
 
 wayclean: clean
 
-modules: libfreeswitch.la $(switch_builddir)/modules.conf 
+modules: libfreeswitch.la $(switch_builddir)/modules.conf src/mod/modules.inc
 	@cd src/mod && $(MAKE) $(AM_MAKEFLAGS)
 
-install_mod: libfreeswitch.la $(switch_builddir)/modules.conf
+install_mod: libfreeswitch.la $(switch_builddir)/modules.conf src/mod/modules.inc
 	@cd src/mod && $(MAKE) $(AM_MAKEFLAGS) install
 
 mod_install: install_mod
 
-uninstall_mod: $(switch_builddir)/modules.conf
+uninstall_mod: $(switch_builddir)/modules.conf src/mod/modules.inc
 	@cd src/mod && $(MAKE) $(AM_MAKEFLAGS) uninstall
 
 mod_uninstall: uninstall_mod
 
-modclean: $(switch_builddir)/modules.conf
+modclean: $(switch_builddir)/modules.conf src/mod/modules.inc
 	@cd src/mod && $(MAKE) $(AM_MAKEFLAGS) clean
 
 modwipe:

@@ -1,3 +1,5 @@
+-include modules.inc
+
 all: $(OUR_MODULES)
 clean: $(OUR_CLEAN_MODULES) $(OUR_DISABLED_CLEAN_MODULES)
 install: $(OUR_INSTALL_MODULES)
