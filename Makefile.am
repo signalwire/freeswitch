@@ -43,7 +43,8 @@ DEFAULT_SOUNDS=en-us-callie-8000
 	 sounds_version=`grep $$base_sound_dir $(switch_srcdir)/build/sounds_version.txt | cut -d ' '  -f2`;\
 	 soundfile=`echo freeswitch-sounds-$$full_sound_dir-$$moh_version.tar.gz`; \
 	 echo $$full_sound_dir | grep  music  >/dev/null || soundfile=`echo freeswitch-sounds-$$full_sound_dir-$$sounds_version.tar.gz`; \
-         if test "$$target_prefix" = "sounds"; then \
+         if [[ $@ != -l* ]] ; then \
+	 if test "$$target_prefix" = "sounds"; then \
 	   if test "$$target" = "install"; then \
 	      $(GETSOUNDS) $$soundfile $(DESTDIR)$(soundsdir)/;\
 	   else \
@@ -55,7 +56,7 @@ DEFAULT_SOUNDS=en-us-callie-8000
 	   else \
 	      $(MAKE) $(AM_MAKEFLAGS) core && cd src/mod && $(MAKE) $(AM_MAKEFLAGS) $@ ;\
 	   fi; \
-	 fi
+	 fi; fi
 
 sounds: sounds-en-us-callie-8000
 sounds-install: sounds-en-us-callie-8000-install
@@ -150,8 +151,8 @@ libfreeswitch_spandsp_la_CFLAGS  = -Ilibs/spandsp/src $(CORE_CFLAGS) $(AM_CFLAGS
 CORE_LIBS+=libfreeswitch_spandsp.la
 lib_LTLIBRARIES	         = libfreeswitch.la
 libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(SQLITE_CFLAGS) $(CURL_CFLAGS) $(PCRE_CFLAGS) $(SPEEX_CFLAGS) $(LIBEDIT_CFLAGS) $(openssl_CFLAGS) $(AM_CFLAGS)
-libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS) -no-undefined $(APR_LIBS)
-libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(SQLITE_LIBS) $(CURL_LIBS) $(PCRE_LIBS) $(SPEEX_LIBS) $(LIBEDIT_LIBS) $(openssl_LIBS) $(PLATFORM_CORE_LIBS)
+libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS) -no-undefined
+libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(SQLITE_LIBS) $(CURL_LIBS) $(PCRE_LIBS) $(SPEEX_LIBS) $(LIBEDIT_LIBS) $(openssl_LIBS) $(PLATFORM_CORE_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
 
 if HAVE_ODBC
@@ -332,8 +333,8 @@ fs_cli_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS) -lm $(LIBEDIT_LIBS)
 ##
 fs_encode_SOURCES = src/fs_encode.c
 fs_encode_CFLAGS  = $(AM_CFLAGS)
-fs_encode_LDFLAGS = $(AM_LDFLAGS) $(APR_LIBS)
-fs_encode_LDADD   = libfreeswitch.la $(CORE_LIBS)
+fs_encode_LDFLAGS = $(AM_LDFLAGS)
+fs_encode_LDADD   = libfreeswitch.la $(CORE_LIBS) $(APR_LIBS)
 
 if HAVE_ODBC
 fs_encode_LDADD += $(ODBC_LIB_FLAGS)
@@ -345,8 +346,8 @@ endif
 ##
 tone2wav_SOURCES = src/tone2wav.c
 tone2wav_CFLAGS  = $(AM_CFLAGS)
-tone2wav_LDFLAGS = $(AM_LDFLAGS) $(APR_LIBS)
-tone2wav_LDADD   = libfreeswitch.la $(CORE_LIBS)
+tone2wav_LDFLAGS = $(AM_LDFLAGS)
+tone2wav_LDADD   = libfreeswitch.la $(CORE_LIBS) $(APR_LIBS)
 
 if HAVE_ODBC
 tone2wav_LDADD += $(ODBC_LIB_FLAGS)
