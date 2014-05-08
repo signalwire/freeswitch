@@ -43,7 +43,7 @@ DEFAULT_SOUNDS=en-us-callie-8000
 	 sounds_version=`grep $$base_sound_dir $(switch_srcdir)/build/sounds_version.txt | cut -d ' '  -f2`;\
 	 soundfile=`echo freeswitch-sounds-$$full_sound_dir-$$moh_version.tar.gz`; \
 	 echo $$full_sound_dir | grep  music  >/dev/null || soundfile=`echo freeswitch-sounds-$$full_sound_dir-$$sounds_version.tar.gz`; \
-         if [[ $@ != -l* ]] ; then \
+	 if [[ $@ != -l* ]] ; then \
 	 if test "$$target_prefix" = "sounds"; then \
 	   if test "$$target" = "install"; then \
 	      $(GETSOUNDS) $$soundfile $(DESTDIR)$(soundsdir)/;\
