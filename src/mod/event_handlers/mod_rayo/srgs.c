@@ -787,7 +787,7 @@ static int process_cdata_tokens(struct srgs_grammar *grammar, char *data, size_t
 				*end = '\0';
 			}
 			if (!zstr(start)) {
-				string = sn_insert_string(grammar->pool, string, start);
+				sn_insert_string(grammar->pool, string, start);
 			}
 		}
 	}
