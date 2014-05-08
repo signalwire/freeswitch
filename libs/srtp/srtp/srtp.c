@@ -96,7 +96,8 @@ srtp_stream_alloc(srtp_stream_ctx_t **str_ptr,
   /* allocate cipher */
   stat = crypto_kernel_alloc_cipher(p->rtp.cipher_type, 
 				    &str->rtp_cipher, 
-				    p->rtp.cipher_key_len); 
+				    p->rtp.cipher_key_len,
+				    p->rtp.auth_tag_len); 
   if (stat) {
     crypto_free(str);
     return stat;
@@ -128,7 +129,8 @@ srtp_stream_alloc(srtp_stream_ctx_t **str_ptr,
    */
   stat = crypto_kernel_alloc_cipher(p->rtcp.cipher_type, 
 				    &str->rtcp_cipher, 
-				    p->rtcp.cipher_key_len); 
+				    p->rtcp.cipher_key_len, 
+				    p->rtcp.auth_tag_len); 
   if (stat) {
     auth_dealloc(str->rtp_auth);
     cipher_dealloc(str->rtp_cipher);
@@ -359,7 +361,7 @@ err_status_t
 srtp_kdf_init(srtp_kdf_t *kdf, cipher_type_id_t cipher_id, const uint8_t *key, int length) {
 
   err_status_t stat;
-  stat = crypto_kernel_alloc_cipher(cipher_id, &kdf->cipher, length);
+  stat = crypto_kernel_alloc_cipher(cipher_id, &kdf->cipher, length, 0);
   if (stat)
     return stat;
 
@@ -1018,6 +1020,15 @@ srtp_unprotect_aead (srtp_ctx_t *ctx, srtp_stream_ctx_t *stream, int delta,
      */
     enc_octet_len = (unsigned int) *pkt_octet_len - 
                     ((enc_start - (uint32_t *)hdr) << 2);
+
+    /*
+     * Sanity check the encrypted payload length against
+     * the tag size.  It must always be at least as large
+     * as the tag length.
+     */
+    if (enc_octet_len < tag_len) {
+        return err_status_cipher_fail;
+    }
 
     /*
      * update the key usage limit, and check it to make sure that we
@@ -2107,6 +2118,33 @@ crypto_policy_set_aes_gcm_256_8_only_auth(crypto_policy_t *p) {
   p->auth_tag_len    = 8;   /* 8 octet tag length */
   p->sec_serv        = sec_serv_auth;  /* This only applies to RTCP */
 }
+
+/*
+ * AES-128 GCM mode with 16 octet auth tag. 
+ */
+void
+crypto_policy_set_aes_gcm_128_16_auth(crypto_policy_t *p) {
+  p->cipher_type     = AES_128_GCM;           
+  p->cipher_key_len  = AES_128_GCM_KEYSIZE_WSALT; 
+  p->auth_type       = NULL_AUTH; /* GCM handles the auth for us */            
+  p->auth_key_len    = 0; 
+  p->auth_tag_len    = 16;   /* 16 octet tag length */
+  p->sec_serv        = sec_serv_conf_and_auth;
+}
+
+/*
+ * AES-256 GCM mode with 16 octet auth tag. 
+ */
+void
+crypto_policy_set_aes_gcm_256_16_auth(crypto_policy_t *p) {
+  p->cipher_type     = AES_256_GCM;           
+  p->cipher_key_len  = AES_256_GCM_KEYSIZE_WSALT; 
+  p->auth_type       = NULL_AUTH; /* GCM handles the auth for us */ 
+  p->auth_key_len    = 0; 
+  p->auth_tag_len    = 16;   /* 16 octet tag length */
+  p->sec_serv        = sec_serv_conf_and_auth;
+}
+
 #endif
 
 /* 

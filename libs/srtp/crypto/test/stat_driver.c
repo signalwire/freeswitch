@@ -77,7 +77,7 @@ main (int argc, char *argv[]) {
   /* set buffer to cipher output */
   for (i=0; i < 2500; i++)
     buffer[i] = 0;
-  err_check(cipher_type_alloc(&aes_icm, &c, 30));
+  err_check(cipher_type_alloc(&aes_icm, &c, 30, 0));
   err_check(cipher_init(c, key));
   err_check(cipher_set_iv(c, &nonce, direction_encrypt));
   err_check(cipher_encrypt(c, buffer, &buf_len));
@@ -111,7 +111,7 @@ main (int argc, char *argv[]) {
   /* set buffer to cipher output */
   for (i=0; i < 2500; i++)
     buffer[i] = 0;
-  err_check(cipher_type_alloc(&aes_icm, &c, 46));
+  err_check(cipher_type_alloc(&aes_icm, &c, 46, 0));
   err_check(cipher_init(c, key));
   err_check(cipher_set_iv(c, &nonce, direction_encrypt));
   err_check(cipher_encrypt(c, buffer, &buf_len));
@@ -142,7 +142,7 @@ main (int argc, char *argv[]) {
     for (i=0; i < 2500; i++) {
 	buffer[i] = 0;
     }
-    err_check(cipher_type_alloc(&aes_gcm_128_openssl, &c, AES_128_GCM_KEYSIZE_WSALT));
+    err_check(cipher_type_alloc(&aes_gcm_128_openssl, &c, AES_128_GCM_KEYSIZE_WSALT, 8));
     err_check(cipher_init(c, key));
     err_check(cipher_set_iv(c, &nonce, direction_encrypt));
     err_check(cipher_encrypt(c, buffer, &buf_len));
@@ -171,7 +171,7 @@ main (int argc, char *argv[]) {
     for (i=0; i < 2500; i++) {
 	buffer[i] = 0;
     }
-    err_check(cipher_type_alloc(&aes_gcm_256_openssl, &c, AES_256_GCM_KEYSIZE_WSALT));
+    err_check(cipher_type_alloc(&aes_gcm_256_openssl, &c, AES_256_GCM_KEYSIZE_WSALT, 16));
     err_check(cipher_init(c, key));
     err_check(cipher_set_iv(c, &nonce, direction_encrypt));
     err_check(cipher_encrypt(c, buffer, &buf_len));

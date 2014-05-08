@@ -223,7 +223,7 @@ main(int argc, char *argv[]) {
   }
 
   /* do timing and/or buffer_test on null_cipher */
-  status = cipher_type_alloc(&null_cipher, &c, 0); 
+  status = cipher_type_alloc(&null_cipher, &c, 0, 0); 
   check_status(status);
 
   status = cipher_init(c, NULL);
@@ -240,7 +240,7 @@ main(int argc, char *argv[]) {
   
 
   /* run the throughput test on the aes_icm cipher (128-bit key) */
-    status = cipher_type_alloc(&aes_icm, &c, 30);  
+    status = cipher_type_alloc(&aes_icm, &c, 30, 0);  
     if (status) {
       fprintf(stderr, "error: can't allocate cipher\n");
       exit(status);
@@ -262,9 +262,9 @@ main(int argc, char *argv[]) {
 
   /* repeat the tests with 256-bit keys */
 #ifndef OPENSSL
-    status = cipher_type_alloc(&aes_icm, &c, 46);  
+    status = cipher_type_alloc(&aes_icm, &c, 46, 0);  
 #else
-    status = cipher_type_alloc(&aes_icm_256, &c, 46);  
+    status = cipher_type_alloc(&aes_icm_256, &c, 46, 0);  
 #endif
     if (status) {
       fprintf(stderr, "error: can't allocate cipher\n");
@@ -287,7 +287,7 @@ main(int argc, char *argv[]) {
 
 #ifdef OPENSSL
     /* run the throughput test on the aes_gcm_128_openssl cipher */
-    status = cipher_type_alloc(&aes_gcm_128_openssl, &c, AES_128_GCM_KEYSIZE_WSALT);
+    status = cipher_type_alloc(&aes_gcm_128_openssl, &c, AES_128_GCM_KEYSIZE_WSALT, 8);
     if (status) {
         fprintf(stderr, "error: can't allocate GCM 128 cipher\n");
         exit(status);
@@ -306,7 +306,7 @@ main(int argc, char *argv[]) {
     check_status(status);
 
     /* run the throughput test on the aes_gcm_256_openssl cipher */
-    status = cipher_type_alloc(&aes_gcm_256_openssl, &c, AES_256_GCM_KEYSIZE_WSALT);
+    status = cipher_type_alloc(&aes_gcm_256_openssl, &c, AES_256_GCM_KEYSIZE_WSALT, 16);
     if (status) {
         fprintf(stderr, "error: can't allocate GCM 256 cipher\n");
         exit(status);
@@ -479,7 +479,7 @@ cipher_array_alloc_init(cipher_t ***ca, int num_ciphers,
   for (i=0; i < num_ciphers; i++) {
 
     /* allocate cipher */
-    status = cipher_type_alloc(ctype, cipher_array, klen);
+    status = cipher_type_alloc(ctype, cipher_array, klen, 16);
     if (status)
       return status;
     

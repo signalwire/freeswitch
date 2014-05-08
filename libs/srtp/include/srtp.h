@@ -798,6 +798,54 @@ crypto_policy_set_aes_gcm_128_8_only_auth(crypto_policy_t *p);
 void
 crypto_policy_set_aes_gcm_256_8_only_auth(crypto_policy_t *p);
 
+/**
+ * @brief crypto_policy_set_aes_gcm_128_16_auth() sets a crypto
+ * policy structure to an AEAD encryption policy.
+ *
+ * @param p is a pointer to the policy structure to be set 
+ * 
+ * The function call crypto_policy_set_aes_gcm_128_16_auth(&p) sets
+ * the crypto_policy_t at location p to use the SRTP default cipher
+ * (AES-128 Galois Counter Mode) with 16 octet auth tag.  This
+ * policy applies confidentiality and authentication to both the
+ * RTP and RTCP packets.
+ * 
+ * This function is a convenience that helps to avoid dealing directly
+ * with the policy data structure.  You are encouraged to initialize
+ * policy elements with this function call.  Doing so may allow your
+ * code to be forward compatible with later versions of libSRTP that
+ * include more elements in the crypto_policy_t datatype.
+ *
+ * @return void.
+ * 
+ */
+void
+crypto_policy_set_aes_gcm_128_16_auth(crypto_policy_t *p);
+
+/**
+ * @brief crypto_policy_set_aes_gcm_256_16_auth() sets a crypto
+ * policy structure to an AEAD encryption policy
+ *
+ * @param p is a pointer to the policy structure to be set 
+ * 
+ * The function call crypto_policy_set_aes_gcm_256_16_auth(&p) sets
+ * the crypto_policy_t at location p to use the SRTP default cipher
+ * (AES-256 Galois Counter Mode) with 16 octet auth tag.  This 
+ * policy applies confidentiality and authentication to both the
+ * RTP and RTCP packets.
+ * 
+ * This function is a convenience that helps to avoid dealing directly
+ * with the policy data structure.  You are encouraged to initialize
+ * policy elements with this function call.  Doing so may allow your
+ * code to be forward compatible with later versions of libSRTP that
+ * include more elements in the crypto_policy_t datatype.
+ *
+ * @return void.
+ * 
+ */
+void
+crypto_policy_set_aes_gcm_256_16_auth(crypto_policy_t *p);
+
 
 /**
  * @brief srtp_dealloc() deallocates storage for an SRTP session

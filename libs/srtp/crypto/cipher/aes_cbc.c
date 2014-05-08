@@ -55,7 +55,7 @@ debug_module_t mod_aes_cbc = {
 
 
 err_status_t
-aes_cbc_alloc(cipher_t **c, int key_len) {
+aes_cbc_alloc(cipher_t **c, int key_len, int tlen) {
   extern cipher_type_t aes_cbc;
   uint8_t *pointer;
   int tmp;
@@ -384,6 +384,7 @@ cipher_test_case_t aes_cbc_test_case_0 = {
   aes_cbc_test_case_0_ciphertext,        /* ciphertext               */
   0,
   NULL,
+  0,
   NULL                                   /* pointer to next testcase */
 };
 
@@ -437,6 +438,7 @@ cipher_test_case_t aes_cbc_test_case_1 = {
   aes_cbc_test_case_1_ciphertext,        /* ciphertext               */
   0,
   NULL,
+  0,
   &aes_cbc_test_case_0                    /* pointer to next testcase */
 };
 
@@ -480,6 +482,7 @@ cipher_test_case_t aes_cbc_test_case_2 = {
   aes_cbc_test_case_2_ciphertext,        /* ciphertext               */
   0,
   NULL,
+  0,
   &aes_cbc_test_case_1                   /* pointer to next testcase */
 };
 
@@ -535,6 +538,7 @@ cipher_test_case_t aes_cbc_test_case_3 = {
   aes_cbc_test_case_3_ciphertext,        /* ciphertext               */
   0,
   NULL,
+  0,
   &aes_cbc_test_case_2                    /* pointer to next testcase */
 };
 

@@ -516,6 +516,7 @@ cipher_test_case_t aes_icm_test_case_0 = {
   aes_icm_test_case_0_ciphertext,        /* ciphertext               */
   0,
   NULL,
+  0,
   NULL                                   /* pointer to next testcase */
 };
 
@@ -557,6 +558,7 @@ cipher_test_case_t aes_icm_test_case_1 = {
   aes_icm_test_case_1_ciphertext,        /* ciphertext               */
   0,
   NULL,
+  0,
   &aes_icm_test_case_0                   /* pointer to next testcase */
 };
 

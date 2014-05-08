@@ -54,7 +54,7 @@
 extern debug_module_t mod_cipher;
 
 err_status_t
-null_cipher_alloc(cipher_t **c, int key_len) {
+null_cipher_alloc(cipher_t **c, int key_len, int tlen) {
   extern cipher_type_t null_cipher;
   uint8_t *pointer;
   
@@ -133,6 +133,7 @@ null_cipher_test_0 = {
   NULL,              /* ciphertext               */
   0,
   NULL,
+  0,
   NULL               /* pointer to next testcase */
 };
 

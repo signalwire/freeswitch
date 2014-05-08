@@ -60,6 +60,48 @@ sleep $DURATION
 kill $receiver_pid
 kill $sender_pid
 
+GCMARGS128="-k 01234567890123456789012345678901234567890123456789012345 -g -t 16 -e 128"
+echo  $0 ": starting GCM mode 128-bit (16 byte tag) rtpw receiver process... "
+
+exec $RTPW $* $GCMARGS128 -r 127.0.0.1 $DEST_PORT &
+
+receiver_pid=$!
+
+echo $0 ": receiver PID = $receiver_pid"
+
+sleep 1 
+
+# verify that the background job is running
+ps | grep -q $receiver_pid
+retval=$?
+echo $retval
+if [ $retval != 0 ]; then
+    echo $0 ": error"
+    exit 254
+fi
+
+echo  $0 ": starting GCM 128-bit (16 byte tag) rtpw sender process..."
+
+exec $RTPW $* $GCMARGS128 -s 127.0.0.1 $DEST_PORT  &
+
+sender_pid=$!
+
+echo $0 ": sender PID = $sender_pid"
+
+# verify that the background job is running
+ps | grep -q $sender_pid
+retval=$?
+echo $retval
+if [ $retval != 0 ]; then
+    echo $0 ": error"
+    exit 255
+fi
+
+sleep $DURATION
+
+kill $receiver_pid
+kill $sender_pid
+
 
 
 GCMARGS256="-k 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567 -g -e 256"
@@ -83,6 +125,49 @@ if [ $retval != 0 ]; then
 fi
 
 echo  $0 ": starting GCM 256-bit rtpw sender process..."
+
+exec $RTPW $* $GCMARGS256 -s 127.0.0.1 $DEST_PORT  &
+
+sender_pid=$!
+
+echo $0 ": sender PID = $sender_pid"
+
+# verify that the background job is running
+ps | grep -q $sender_pid
+retval=$?
+echo $retval
+if [ $retval != 0 ]; then
+    echo $0 ": error"
+    exit 255
+fi
+
+sleep $DURATION
+
+kill $receiver_pid
+kill $sender_pid
+
+
+GCMARGS256="-k a123456789012345678901234567890123456789012345678901234567890123456789012345678901234567 -g -t 16 -e 256"
+echo  $0 ": starting GCM mode 256-bit (16 byte tag) rtpw receiver process... "
+
+exec $RTPW $* $GCMARGS256 -r 127.0.0.1 $DEST_PORT &
+
+receiver_pid=$!
+
+echo $0 ": receiver PID = $receiver_pid"
+
+sleep 1 
+
+# verify that the background job is running
+ps | grep -q $receiver_pid
+retval=$?
+echo $retval
+if [ $retval != 0 ]; then
+    echo $0 ": error"
+    exit 254
+fi
+
+echo  $0 ": starting GCM 256-bit (16 byte tag) rtpw sender process..."
 
 exec $RTPW $* $GCMARGS256 -s 127.0.0.1 $DEST_PORT  &
 
