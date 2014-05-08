@@ -1,6 +1,6 @@
 /*
  * mod_rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013, Grasshopper
+ * Copyright (C) 2013-2014, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -318,20 +318,20 @@ static int cdata_hook(void *user_data, char *data, size_t len)
 
 /**
  * Parse the result, looking for noinput/nomatch/match
- * @param result the NLSML result to parse
+ * @param nlsml_result the NLSML result to parse
  * @param uuid optional UUID for logging
  * @return true if successful
  */
-enum nlsml_match_type nlsml_parse(const char *result, const char *uuid)
+enum nlsml_match_type nlsml_parse(const char *nlsml_result, const char *uuid)
 {
 	struct nlsml_parser parser = { 0 };
 	int result = NMT_BAD_XML;
 	iksparser *p = NULL;
 	parser.uuid = uuid;
 
-	if (!zstr(result)) {
+	if (!zstr(nlsml_result)) {
 		p = iks_sax_new(&parser, tag_hook, cdata_hook);
-		if (iks_parse(p, result, 0, 1) == IKS_OK) {
+		if (iks_parse(p, nlsml_result, 0, 1) == IKS_OK) {
 			/* check result */
 			if (parser.match) {
 				result = NMT_MATCH;
@@ -353,8 +353,10 @@ enum nlsml_match_type nlsml_parse(const char *result, const char *uuid)
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(parser.uuid), SWITCH_LOG_INFO, "Missing NLSML result\n");
 	}
  end:
-	if ( p )
+
+	if ( p ) {
 		iks_parser_delete(p);
+	}
 	return result;
 }
 
