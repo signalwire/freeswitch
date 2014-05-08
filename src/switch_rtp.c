@@ -816,6 +816,8 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 	int ok = 1;
 	uint32_t *pri = NULL;
 	int is_rtcp = ice == &rtp_session->rtcp_ice;
+	uint32_t elapsed;
+
 
 	if (!switch_rtp_ready(rtp_session) || zstr(ice->user_ice) || zstr(ice->ice_user)) {
 		return;
@@ -839,6 +841,12 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Invalid STUN/ICE packet received %ld bytes\n", (long)cpylen);
 		goto end;
 
+	}
+
+	if (!rtp_session->last_stun) {
+		elapsed = 0;
+	} else {
+		elapsed = (unsigned int) ((switch_micro_time_now() - rtp_session->last_stun) / 1000);
 	}
 
 	end_buf = buf + ((sizeof(buf) > packet->header.length) ? packet->header.length : sizeof(buf));
@@ -945,7 +953,6 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		if (ok) {
 			ice->missed_count = 0;
 		} else {
-			uint32_t elapsed = (unsigned int) ((switch_micro_time_now() - rtp_session->last_stun) / 1000);
 			switch_rtp_ice_t *icep[2] = { &rtp_session->ice, &rtp_session->rtcp_ice };
 			switch_port_t port = 0;
 			char *host = NULL;
@@ -1114,17 +1121,24 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				ice->missed_count = 0;
 				ice->rready = 1;
 
+
+
+
 				for (i = 0; i <= ice->ice_params->cand_idx; i++) {
 					if (ice->ice_params->cands[i][ice->proto].con_port == port) {
 						if (!strcmp(ice->ice_params->cands[i][ice->proto].con_addr, host) && 
 							!strcmp(ice->ice_params->cands[i][ice->proto].cand_type, "relay")) {
 
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
-											  "Skiping RELAY stun/%s/dtls port change from %s:%u to %s:%u\n", is_rtcp ? "rtcp" : "rtp", 
-											  host2, port2,
-											  host, port);
+							if (elapsed != 0 && elapsed < 5000) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
+												  "Skiping RELAY stun/%s/dtls port change from %s:%u to %s:%u\n", is_rtcp ? "rtcp" : "rtp", 
+												  host2, port2,
+												  host, port);
+							
+								goto end;
+							}
 
-							goto end;
+							break;
 						}
 					}
 				}
