@@ -32,6 +32,8 @@ AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS) $(AM_LIBAPR_LDFLAGS) $(AM_LIBAPU_LDFLAGS)
 
 DEFAULT_SOUNDS=en-us-callie-8000
 
+.INTERMEDIATE: -ldl -liconv -lpthread
+
 .DEFAULT: $(switch_builddir)/modules.conf src/mod/modules.inc
 	@target=`echo $@ | sed -e 's|^.*-||'`; \
 	 target_prefix=`echo $@ | sed -e 's|-.*$$||'`; \
