@@ -1126,7 +1126,7 @@ case $host in
        ;;
 esac
 
-if ! test -x "$(which pkg-config)"; then
+if ! test -x "$PKG_CONFIG" || ! test -x "$(which pkg-config)"; then
   AC_MSG_ERROR([You need to install pkg-config to configure FreeSWITCH.])
 fi
 
