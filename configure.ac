@@ -1126,6 +1126,10 @@ case $host in
        ;;
 esac
 
+if ! test -x "$(which pkg-config)"; then
+  AC_MSG_ERROR([You need to install pkg-config to configure FreeSWITCH.])
+fi
+
 # temporary workaround for Debian libldns-dev package bug
 if test "$cross_compiling" != "yes" && test -f /usr/lib/pkg-config/libldns.pc; then
   path_push_unique PKG_CONFIG_PATH /usr/lib/pkg-config
