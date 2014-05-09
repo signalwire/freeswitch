@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.5.12], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.5.13b], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [5])
-AC_SUBST(SWITCH_VERSION_MICRO, [12])
+AC_SUBST(SWITCH_VERSION_MICRO, [13b])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
