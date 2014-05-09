@@ -1319,6 +1319,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 			if (strchr(terminators, buf[i]) && terminator != NULL) {
 				*terminator = buf[i];
 				buf[i] = '\0';
+				switch_safe_free(abuf);
 				return SWITCH_STATUS_SUCCESS;
 			}
 		}
@@ -1382,6 +1383,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 
 				if (!zstr(terminators) && strchr(terminators, dtmf.digit) && terminator != NULL) {
 					*terminator = dtmf.digit;
+					switch_safe_free(abuf);
 					return SWITCH_STATUS_SUCCESS;
 				}
 
@@ -1390,6 +1392,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 				buf[x] = '\0';
 
 				if (x >= buflen || x >= maxdigits) {
+					switch_safe_free(abuf);
 					return SWITCH_STATUS_SUCCESS;
 				}
 			}
