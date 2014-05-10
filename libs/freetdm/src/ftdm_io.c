@@ -1009,7 +1009,7 @@ static void reset_gain_table(uint8_t *gain_table, float new_gain, ftdm_codec_t c
 
 	/* gain tables are only for alaw and ulaw */
 	if (codec_gain != FTDM_CODEC_ALAW && codec_gain != FTDM_CODEC_ULAW) {
-		ftdm_log(FTDM_LOG_WARNING, "Not resetting gain table because codec is not ALAW or ULAW but %d\n", codec_gain);
+		ftdm_log(FTDM_LOG_DEBUG, "Not resetting gain table because codec is not ALAW or ULAW but %d\n", codec_gain);
 		return;
 	}
 
@@ -5440,7 +5440,8 @@ static ftdm_status_t process_module_config(ftdm_io_interface_t *fio)
 	}
 
 	if (!ftdm_config_open_file(&cfg, filename)) {
-		ftdm_log(FTDM_LOG_ERROR, "Cannot open %s\n", filename);	
+		/* This is normal if the user did not provide a configuration for this module */
+		ftdm_log(FTDM_LOG_DEBUG, "File %s is not available\n", filename);
 		return FTDM_FAIL;
 	}
 

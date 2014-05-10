@@ -2131,7 +2131,7 @@ static FIO_SIGNAL_CB_FUNCTION(on_common_signal)
 			ftdm_caller_data_t *caller_data = ftdm_channel_get_caller_data(sigmsg->channel);
 			ftdm_sms_data_t *sms = (ftdm_sms_data_t*) caller_data->priv;
 
-			ftdm_log(FTDM_LOG_INFO,"FTDM_SIGEVENT_SMS from %s: %s", sms->from, sms->body);
+			ftdm_log(FTDM_LOG_INFO, "SMS received on %d:%d from %s: %s", spanid, chanid, sms->from, sms->body);
 			if (switch_event_create(&event, SWITCH_EVENT_TRAP) != SWITCH_STATUS_SUCCESS) {
 				ftdm_log(FTDM_LOG_ERROR, "failed to create SMS event\n");
 				return FTDM_FAIL;

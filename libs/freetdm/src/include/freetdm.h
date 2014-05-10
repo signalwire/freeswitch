@@ -219,6 +219,7 @@ FTDM_STR2ENUM_P(ftdm_str2ftdm_chan_type, ftdm_chan_type2str, ftdm_chan_type_t)
 	((span)->trunk_type == FTDM_TRUNK_E1 || \
 	 (span)->trunk_type == FTDM_TRUNK_T1 || \
 	 (span)->trunk_type == FTDM_TRUNK_J1 || \
+	 (span)->trunk_type == FTDM_TRUNK_GSM || \
 	 (span)->trunk_type == FTDM_TRUNK_BRI || \
 	 (span)->trunk_type == FTDM_TRUNK_BRI_PTMP)
 
