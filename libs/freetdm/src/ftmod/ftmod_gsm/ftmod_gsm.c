@@ -1295,7 +1295,7 @@ WAT_AT_CMD_RESPONSE_FUNC(gsm_exec_cb)
 	}
 
 	helper->cmd_pending = 0;
-	return 0;
+	return i;
 }
 
 // AT Command Handler
