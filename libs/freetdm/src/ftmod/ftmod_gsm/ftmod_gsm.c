@@ -964,6 +964,8 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_gsm_configure_span_signaling)
 				continue;
 			}
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring GSM span %s with moduletype %s\n", span->name, val);
+		} else if (!strcasecmp(var, "debug")) {
+			span_config.debug_mask = wat_str2debug(val);
 		} else {
 			ftdm_log(FTDM_LOG_ERROR, "Ignoring unknown GSM parameter '%s'", var);
 		}
