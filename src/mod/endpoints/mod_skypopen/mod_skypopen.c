@@ -3129,6 +3129,7 @@ int incoming_chatmessage(private_t *tech_pvt, int which)
 		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_full", "from_full");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_user", tech_pvt->name);
 		//switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "to_host", "to_host");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "context", tech_pvt->context);
 /* mod_sms end */
 
 		switch_event_add_body(event, "%s", tech_pvt->chatmessages[which].body);
