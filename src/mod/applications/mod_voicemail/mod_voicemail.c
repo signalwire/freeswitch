@@ -3199,7 +3199,7 @@ static switch_status_t voicemail_inject(const char *data, switch_core_session_t 
 		profile_name = domain;
 	}
 
-	if (!(user && domain)) {
+	if (!domain) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid syntax [%s][%s]\n", switch_str_nil(user), switch_str_nil(domain));
 		status = SWITCH_STATUS_FALSE;
 		goto end;
@@ -3670,7 +3670,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		switch_channel_get_variables(channel, &vars);
 		status = deliver_vm(profile, x_user, domain_name, file_path, (uint32_t)message_len, read_flags, vars,
 							switch_core_session_get_pool(session), caller_id_name, caller_id_number, NULL, SWITCH_FALSE,
-							session ? switch_core_session_get_uuid(session) : NULL, session);
+							switch_core_session_get_uuid(session), session);
 		switch_event_destroy(&vars);
 		if (status == SWITCH_STATUS_SUCCESS) {
 			switch_core_time_duration_t duration;
@@ -4610,6 +4610,11 @@ SWITCH_STANDARD_API(voicemail_delete_api_function)
 
 	id = strdup(cmd);
 	
+	if (!id) {
+		stream->write_function(stream, "Allocation Error\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	if ((p = strchr(id, '@'))) {
 		*p++ = '\0';
 		domain = e = p;
@@ -4626,7 +4631,7 @@ SWITCH_STANDARD_API(voicemail_delete_api_function)
 	}
 
 
-	if (id && domain && profile_name && (profile = get_profile(profile_name))) {
+	if (domain && profile_name && (profile = get_profile(profile_name))) {
 		
 		if (uuid) {
 			sql = switch_mprintf("select username, domain, in_folder, file_path from voicemail_msgs where uuid='%q'", uuid);
@@ -4677,6 +4682,11 @@ SWITCH_STANDARD_API(voicemail_read_api_function)
 	}
 
 	id = strdup(cmd);
+
+	if (!id) {
+		stream->write_function(stream, "Allocation failure\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
 	
 	if ((p = strchr(id, '@'))) {
 		*p++ = '\0';
@@ -4709,7 +4719,7 @@ SWITCH_STANDARD_API(voicemail_read_api_function)
 	}
 
 
-	if (mread > -1 && id && domain && profile_name && (profile = get_profile(profile_name))) {
+	if (mread > -1 && domain && profile_name && (profile = get_profile(profile_name))) {
 		
 		if (mread) {
 			if (uuid) {
@@ -4784,6 +4794,12 @@ SWITCH_STANDARD_API(voicemail_list_api_function)
 
 	id = strdup(cmd);
 	
+	if (!id) {
+		stream->write_function(stream, "Allocation Error\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	id = strdup(cmd);
 	if ((p = strchr(id, '@'))) {
 		*p++ = '\0';
 		domain = e = p;
@@ -4804,7 +4820,7 @@ SWITCH_STANDARD_API(voicemail_list_api_function)
 		uuid = p;
 	}
 
-	if (id && domain && profile_name && (profile = get_profile(profile_name))) {
+	if (domain && profile_name && (profile = get_profile(profile_name))) {
 		if (uuid) {
 			sql = switch_mprintf("select created_epoch, read_epoch, username, domain, in_folder, file_path, uuid, cid_name, cid_number, message_len, "
 								 "'%q' from voicemail_msgs where username='%q' and domain='%q' and uuid='%q'", 
