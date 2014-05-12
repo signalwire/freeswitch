@@ -45,8 +45,8 @@ void vmivr_menu_record_greeting_with_slot(switch_core_session_t *session, vmivr_
 void vmivr_menu_preference(switch_core_session_t *session, vmivr_profile_t *profile);
 void vmivr_menu_forward(switch_core_session_t *session, vmivr_profile_t *profile);
 
-switch_status_t vmivr_menu_record(switch_core_session_t *session, vmivr_profile_t *profile, vmivr_menu_t menu, const char *file_name);
-char *vmivr_menu_get_input_set(switch_core_session_t *session, vmivr_profile_t *profile, vmivr_menu_t menu, const char *input_mask);
+switch_status_t vmivr_menu_record(switch_core_session_t *session, vmivr_profile_t *profile, vmivr_menu_t *menu, const char *file_name);
+char *vmivr_menu_get_input_set(switch_core_session_t *session, vmivr_profile_t *profile, vmivr_menu_t *menu, const char *input_mask);
 
 
 struct vmivr_menu_function {
