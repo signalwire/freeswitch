@@ -1365,9 +1365,9 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			char name[128];
 
 			if (strncmp("ANY", outbound_profile->destination_number, 3) == 0) {
-				snprintf(name, sizeof(name), "skypopen/ANY/%s%s", tech_pvt->name, outbound_profile->destination_number + 3);
+				snprintf(name, sizeof(name), "skypopen/%s%s", tech_pvt->name, outbound_profile->destination_number + 3);
 			} else if (strncmp("RR", outbound_profile->destination_number, 2) == 0) {
-				snprintf(name, sizeof(name), "skypopen/RR/%s%s", tech_pvt->name, outbound_profile->destination_number + 2);
+				snprintf(name, sizeof(name), "skypopen/%s%s", tech_pvt->name, outbound_profile->destination_number + 2);
 			} else {
 				snprintf(name, sizeof(name), "skypopen/%s", outbound_profile->destination_number);
 			}
