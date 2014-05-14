@@ -50,10 +50,6 @@ SWITCH_DECLARE(int) switch_config_open_file(switch_config_t *cfg, char *file_pat
 		path = path_buf;
 	}
 
-	if (!path) {
-		return 0;
-	}
-
 	memset(cfg, 0, sizeof(*cfg));
 	cfg->lockto = -1;
 
