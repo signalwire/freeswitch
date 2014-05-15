@@ -330,7 +330,7 @@ static int score_voice(struct voice *voice, struct ssml_node *cur_node, int lang
 static struct voice *find_voice(struct ssml_node *cur_node, switch_hash_t *map, char *type, int lang_required)
 {
 	switch_hash_index_t *hi = NULL;
-	struct voice *voice = (struct voice *)switch_core_hash_find(map, cur_node->name);
+	struct voice *voice = NULL;
 	char *lang_name_gender = NULL;
 	int best_score = 0;
 
