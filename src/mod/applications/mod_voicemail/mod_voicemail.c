@@ -4799,7 +4799,6 @@ SWITCH_STANDARD_API(voicemail_list_api_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	id = strdup(cmd);
 	if ((p = strchr(id, '@'))) {
 		*p++ = '\0';
 		domain = e = p;
