@@ -501,18 +501,23 @@ SWITCH_STANDARD_CHAT_APP(set_function)
 {
 	char *var, *val;
 
-	if (data) {
-		var = strdup(data);
-		if ((val = strchr(var, '='))) {
-			*val++ = '\0';
-		}
- 
-		if (zstr(val)) {
-			switch_event_del_header(message, var);
-		} else {
-			switch_event_add_header_string(message, SWITCH_STACK_BOTTOM, var, val);
-		}
+	if (!data) return SWITCH_STATUS_SUCCESS;
+
+	var = strdup(data);
+
+	if (!var) return SWITCH_STATUS_SUCCESS;
+
+	if ((val = strchr(var, '='))) {
+		*val++ = '\0';
 	}
+ 
+	if (zstr(val)) {
+		switch_event_del_header(message, var);
+	} else {
+		switch_event_add_header_string(message, SWITCH_STACK_BOTTOM, var, val);
+	}
+
+	free(var);
 
 	return SWITCH_STATUS_SUCCESS;
 }
