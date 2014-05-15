@@ -3030,7 +3030,10 @@ SWITCH_STANDARD_APP(fifo_function)
 				const char *o_announce = NULL;
 
 				if ((o_announce = switch_channel_get_variable(channel, "fifo_outbound_announce"))) {
-					switch_ivr_play_file(session, NULL, o_announce, NULL);
+					status = switch_ivr_play_file(session, NULL, o_announce, NULL);
+					if (!SWITCH_READ_ACCEPTABLE(status)) {
+						break;
+					}
 				}
 
 				if (switch_ivr_originate(session, &other_session, &cause, url, 120, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL) != SWITCH_STATUS_SUCCESS) {
@@ -3094,8 +3097,12 @@ SWITCH_STANDARD_APP(fifo_function)
 				}
 
 				if (announce) {
-					switch_ivr_play_file(session, NULL, announce, NULL);
+					status = switch_ivr_play_file(session, NULL, announce, NULL);
+					if (!SWITCH_READ_ACCEPTABLE(status)) {
+						break;
+					}
 				}
+
 
 				switch_channel_set_variable(other_channel, "fifo_serviced_by", my_id);
 				switch_channel_set_variable(other_channel, "fifo_serviced_uuid", switch_core_session_get_uuid(session));
@@ -3434,7 +3441,10 @@ SWITCH_STANDARD_APP(fifo_function)
 					memset(&args, 0, sizeof(args));
 					args.buf = buf;
 					args.buflen = sizeof(buf);
-					switch_ivr_play_file(session, NULL, fifo_consumer_wrapup_sound, &args);
+					status = switch_ivr_play_file(session, NULL, fifo_consumer_wrapup_sound, &args);
+					if (!SWITCH_READ_ACCEPTABLE(status)) {
+						break;
+					}
 				}
 
 				if (fifo_consumer_wrapup_time) {
