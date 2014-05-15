@@ -1164,7 +1164,6 @@ SWITCH_DECLARE(int) CoreSession::recordFile(char *file_name, int time_limit, int
 SWITCH_DECLARE(int) CoreSession::flushEvents() 
 {
 	switch_event_t *event;
-	switch_channel_t *channel;
 
 	this_check(-1);
 	sanity_check(-1);
@@ -1172,7 +1171,6 @@ SWITCH_DECLARE(int) CoreSession::flushEvents()
 	if (!session) {
 		return SWITCH_STATUS_FALSE;
 	}
-	channel = switch_core_session_get_channel(session);
 
 	while (switch_core_session_dequeue_event(session, &event, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
 		switch_event_destroy(&event);
