@@ -4274,7 +4274,7 @@ static switch_status_t load_config(int reload, int del_all)
 	switch_cache_db_handle_t *dbh = NULL;
 	fifo_node_t *node;
 
-	strncpy(globals.hostname, switch_core_get_switchname(), sizeof(globals.hostname));
+	strncpy(globals.hostname, switch_core_get_switchname(), sizeof(globals.hostname) - 1);
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
