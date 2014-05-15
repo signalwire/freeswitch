@@ -1863,7 +1863,7 @@ static apt_bool_t speech_on_channel_add(mrcp_application_t *application, mrcp_se
 	}
 
 	if (descriptor->name.length) {
-		strncpy(codec_name, descriptor->name.buf, sizeof(codec_name));
+		strncpy(codec_name, descriptor->name.buf, sizeof(codec_name) - 1 );
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) %s channel is ready, codec = %s, sample rate = %d\n", schannel->name,
 		speech_channel_type_to_string(schannel->type), codec_name, schannel->rate);
