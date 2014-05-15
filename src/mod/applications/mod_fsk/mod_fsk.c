@@ -164,6 +164,7 @@ SWITCH_STANDARD_APP(fsk_send_function) {
 		switch_core_session_write_frame(sdata.session, &sdata.write_frame, SWITCH_IO_FLAG_NONE, 0);
 	}
 
+	switch_event_destroy(&event);
 	switch_buffer_destroy(&buffer);
 	switch_core_codec_destroy(&sdata.codec);
 	switch_core_session_set_read_codec(session, NULL);
