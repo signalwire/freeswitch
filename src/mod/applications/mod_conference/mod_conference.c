@@ -9097,7 +9097,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 			char buf[128] = "";
 			char *p;
 
-			if ((p = strchr(var, '_'))) {
+			if (strchr(var, '_')) {
 				switch_copy_string(buf, var, sizeof(buf));
 				for (p = buf; *p; p++) {
 					if (*p == '_') {
