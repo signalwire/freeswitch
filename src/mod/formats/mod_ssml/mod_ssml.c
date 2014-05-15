@@ -616,10 +616,10 @@ static int tag_hook(void *user_data, char *name, char **atts, int type)
 {
 	int result = IKS_OK;
 	struct ssml_parser *parsed_data = (struct ssml_parser *)user_data;
-	struct ssml_node *new_node = malloc(sizeof *new_node);
 	struct ssml_node *parent_node = parsed_data->cur_node;
 
 	if (type == IKS_OPEN || type == IKS_SINGLE) {
+		struct ssml_node *new_node = malloc(sizeof *new_node);
 		if (parent_node) {
 			/* inherit parent attribs */
 			*new_node = *parent_node;
