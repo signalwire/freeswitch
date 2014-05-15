@@ -1420,6 +1420,7 @@ SWITCH_STANDARD_API(expand_function)
 
 	if (zstr(mycmd)) {
 		stream->write_function(stream, "-ERR No input\n");
+		switch_safe_free(dup);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
