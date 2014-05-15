@@ -2828,6 +2828,11 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *path,
 			}	
 		}
 
+		if (!context->write.file_name) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No file name specified.\n");
+			return SWITCH_STATUS_GENERR;
+		}
+
 		if ((ext = strrchr(context->write.file_name, '.'))) {
 			ext++;
 		} else {
