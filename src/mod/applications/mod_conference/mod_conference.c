@@ -1302,7 +1302,8 @@ static void conference_event_channel_handler(const char *event_channel, cJSON *j
 	conference_obj_t *conference = NULL;
 	cJSON *data, *reply = NULL, *conf_desc = NULL;
 	const char *action = NULL;
-	
+	char *dup = NULL;
+
 	if ((data = cJSON_GetObjectItem(json, "data"))) {
 		action = cJSON_GetObjectCstr(data, "action");
 	}
@@ -1313,9 +1314,9 @@ static void conference_event_channel_handler(const char *event_channel, cJSON *j
 	cJSON_DeleteItemFromObject(reply, "data");
 
 	if ((name = strchr(event_channel, '.'))) {
-		char *tmp = strdup(name + 1);
-		switch_assert(tmp);
-		name = tmp;
+		dup = strdup(name + 1);
+		switch_assert(dup);
+		name = dup;
 
 		if ((domain = strchr(name, '@'))) {
 			*domain++ = '\0';
@@ -1341,8 +1342,9 @@ static void conference_event_channel_handler(const char *event_channel, cJSON *j
 	
 	cJSON_AddItemToObject(reply, "data", conf_desc);
 
+	switch_safe_free(dup);
+
 	switch_event_channel_broadcast(event_channel, &reply, modname, globals.event_channel_id);
-	
 }
 
 
