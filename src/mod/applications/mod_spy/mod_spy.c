@@ -59,6 +59,11 @@ static switch_status_t spy_on_hangup(switch_core_session_t *session)
 	const char *uuid = switch_core_session_get_uuid(session);
 	spy_t *spy = NULL, *p = NULL, *prev = NULL;
 
+	if (!data) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't call mod_spy hangup hook due to missing private data\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	switch_thread_rwlock_wrlock(globals.spy_hash_lock);
 
 	spy = switch_core_hash_find(globals.spy_hash, data);
