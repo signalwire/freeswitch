@@ -5007,11 +5007,10 @@ static void general_event_handler(switch_event_t *event)
 					if (!strcmp(csta_event, "init")) {
 						char *boundary_string = "UniqueFreeSWITCHBoundary";
 						switch_stream_handle_t dnd_stream = { 0 };
-						char *header_name = NULL;
 
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending multipart with DND and CFWD\n");
 
-						if ((header_name = switch_event_get_header(event, "forward_immediate"))) {
+						if (switch_event_get_header(event, "forward_immediate")) {
 							switch_stream_handle_t fwdi_stream = { 0 };
 							SWITCH_STANDARD_STREAM(fwdi_stream);
 							write_csta_xml_chunk(event, fwdi_stream, "ForwardingEvent", "forwardImmediate");
@@ -5019,7 +5018,7 @@ static void general_event_handler(switch_event_t *event)
 							stream.write_function(&stream, "--%s\r\nContent-Type: application/x-as-feature-event+xml\r\nContent-Length: %d\r\nContent-ID: <%si@%s>\r\n\r\n%s", boundary_string, strlen(fwdi_stream.data), user, host, fwdi_stream.data);
 							switch_safe_free(fwdi_stream.data);
 						}
-						if ((header_name = switch_event_get_header(event, "forward_busy"))) {
+						if (switch_event_get_header(event, "forward_busy")) {
 							switch_stream_handle_t fwdb_stream = { 0 };
 							SWITCH_STANDARD_STREAM(fwdb_stream);
 							write_csta_xml_chunk(event, fwdb_stream, "ForwardingEvent", "forwardBusy");
@@ -5027,7 +5026,7 @@ static void general_event_handler(switch_event_t *event)
 							stream.write_function(&stream, "--%s\r\nContent-Type: application/x-as-feature-event+xml\r\nContent-Length: %d\r\nContent-ID: <%sb@%s>\r\n\r\n%s", boundary_string, strlen(fwdb_stream.data), user, host, fwdb_stream.data);
 							switch_safe_free(fwdb_stream.data);
 						}
-						if ((header_name = switch_event_get_header(event, "forward_no_answer"))) {
+						if (switch_event_get_header(event, "forward_no_answer")) {
 							switch_stream_handle_t fwdna_stream = { 0 };
 							SWITCH_STANDARD_STREAM(fwdna_stream);
 							write_csta_xml_chunk(event, fwdna_stream, "ForwardingEvent", "forwardNoAns");
