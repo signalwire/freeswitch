@@ -4297,10 +4297,9 @@ static void conference_loop_output(conference_member_t *member)
 				char *from = switch_event_get_header(event, "from");
 				char *to = switch_event_get_header(event, "to");
 				char *body = switch_event_get_body(event);
-				char *p;
 
 				if (to && from && body) {
-					if ((p = strchr(to, '+')) && strncmp(to, CONF_CHAT_PROTO, strlen(CONF_CHAT_PROTO))) {
+					if (strchr(to, '+') && strncmp(to, CONF_CHAT_PROTO, strlen(CONF_CHAT_PROTO))) {
 						switch_event_del_header(event, "to");
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM,
 												"to", "%s+%s@%s", CONF_CHAT_PROTO, member->conference->name, member->conference->domain);
