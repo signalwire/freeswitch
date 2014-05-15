@@ -529,22 +529,19 @@ static switch_status_t channel_receive_event(switch_core_session_t *session, swi
     }
 
     return SWITCH_STATUS_SUCCESS;
-fail:
-     if (tech_pvt) {
-        if (tech_pvt->read_codec.implementation) {
-			switch_core_codec_destroy(&tech_pvt->read_codec);
-		}
-		
-		if (tech_pvt->write_codec.implementation) {
-			switch_core_codec_destroy(&tech_pvt->write_codec);
-		}
-    }
-    
-    if (session) {
-        switch_core_session_destroy(&session);
-    }
-    return SWITCH_STATUS_FALSE;
 
+fail:
+	if (tech_pvt->read_codec.implementation) {
+		switch_core_codec_destroy(&tech_pvt->read_codec);
+	}
+	
+	if (tech_pvt->write_codec.implementation) {
+		switch_core_codec_destroy(&tech_pvt->write_codec);
+	}
+
+	switch_core_session_destroy(&session);
+
+    return SWITCH_STATUS_FALSE;
 }
 
 static switch_status_t channel_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
