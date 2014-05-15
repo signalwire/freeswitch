@@ -1499,22 +1499,32 @@ static switch_status_t httapi_sync(client_t *client)
 		char *r, *q, *p = strstr(dynamic_url, "://");
 		use_url++;
 
-		dup_creds = strdup(p+3);
+		if (p) {
+			dup_creds = strdup(p+3);
 
-		if ((q = strchr(dup_creds, '@'))) *q = '\0';
+			if ((q = strchr(dup_creds, '@'))) *q = '\0';
 
-		q = strdup(url);
-		r = strchr(q, '@');
-		r++;
+			q = strdup(url);
 
-		if ((p = strstr(q, "://"))) {
-			*(p+3) = '\0';
-		}
+			if (q) {
+				r = strchr(q, '@');
+
+				if (r) {
+					r++;
+
+					if ((p = strstr(q, "://"))) {
+						*(p+3) = '\0';
+					}
 		
-		p = switch_mprintf("%s%s", q, r);
-		free(dynamic_url);
-		dynamic_url = p;
-		free(q);
+					p = switch_mprintf("%s%s", q, r);
+					if (p) {
+						free(dynamic_url);
+						dynamic_url = p;
+					}
+				}
+				free(q);
+			}
+		}
 	}
 
 
