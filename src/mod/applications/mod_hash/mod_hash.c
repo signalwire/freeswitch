@@ -597,14 +597,14 @@ SWITCH_STANDARD_API(hash_dump_function)
 		mydata = strdup(cmd);
 		switch_assert(mydata);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+		cmd = argv[0];
 	} else {
 		realmvalue = "test";
 		realm = 0;
 		stream->write_function(stream, "Usage: "HASH_DUMP_SYNTAX"\n");
-		return SWITCH_STATUS_SUCCESS;
+		goto done;
 	}	
 
-	cmd = strdup(argv[0]);
 	if (argc == 2) {
 		realm = 1;
 		realmvalue = switch_mprintf("%s_", argv[1]);
@@ -618,7 +618,7 @@ SWITCH_STANDARD_API(hash_dump_function)
 		mode = 2;
 	} else {
 		stream->write_function(stream, "Usage: "HASH_DUMP_SYNTAX"\n");
-		return SWITCH_STATUS_SUCCESS;
+		goto done;
 	}
 	
 	if (mode & 1) {
@@ -655,7 +655,10 @@ SWITCH_STANDARD_API(hash_dump_function)
 		switch_thread_rwlock_unlock(globals.db_hash_rwlock);
 	}
 	
-	
+ done:
+	switch_safe_free(mydata);
+	switch_safe_free(realmvalue);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -723,9 +726,9 @@ SWITCH_STANDARD_API(hash_remote_function)
 	}
 	
 done:
-	if (dup) {
-		free(dup);
-	}
+
+	switch_safe_free(dup);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
