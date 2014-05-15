@@ -175,6 +175,8 @@ Release/
 /src/mod/languages/mod_v8/mod_v8.log
 /src/mod/legacy/languages/mod_lua/Makefile
 
+src/mod/modules.inc
+
 BuildLog.htm
 
 !/libs/win32/
