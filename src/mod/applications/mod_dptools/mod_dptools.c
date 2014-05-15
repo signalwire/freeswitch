@@ -3409,6 +3409,7 @@ static void pickup_pres_event_handler(switch_event_t *event)
 
 	if (zstr(domain_name)) {
 		switch_safe_free(dup_to);
+		switch_safe_free(dup_domain_name);
 		return;
 	}
 
