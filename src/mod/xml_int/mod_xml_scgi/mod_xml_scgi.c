@@ -145,7 +145,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	switch_stream_handle_t stream = { 0 };
 	char *txt = NULL;
 
-	strncpy(hostname, switch_core_get_switchname(), sizeof(hostname));
+	strncpy(hostname, switch_core_get_switchname(), sizeof(hostname) - 1);
 
 	if (!binding) {
 		return NULL;
