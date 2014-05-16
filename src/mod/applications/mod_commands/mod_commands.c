@@ -2108,7 +2108,7 @@ SWITCH_STANDARD_API(status_function)
 
 	if (html) {
 		/* don't bother cli with heading and timestamp */
-		stream->write_function(stream, "%sFreeSWITCH Status%s", html?"<h1>":"", html?"</h1>\n":"\n");
+		stream->write_function(stream, "%sFreeSWITCH Status%s", "<h1>", "</h1>\n");
 		stream->write_function(stream, "%s%s", switch_event_get_header(stream->param_event,"Event-Date-Local"), nl);
 	}
 
