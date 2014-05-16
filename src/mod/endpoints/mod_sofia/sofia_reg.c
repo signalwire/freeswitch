@@ -2581,21 +2581,21 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 						*p = '\0';
 					}
 
-					if (!strcasecmp(var, "username")) {
+					if (!strcasecmp(var, "username") && !username) {
 						username = strdup(val);
-					} else if (!strcasecmp(var, "realm")) {
+					} else if (!strcasecmp(var, "realm") && !realm) {
 						realm = strdup(val);
-					} else if (!strcasecmp(var, "nonce")) {
+					} else if (!strcasecmp(var, "nonce") && !nonce) {
 						nonce = strdup(val);
-					} else if (!strcasecmp(var, "uri")) {
+					} else if (!strcasecmp(var, "uri") && !uri) {
 						uri = strdup(val);
-					} else if (!strcasecmp(var, "qop")) {
+					} else if (!strcasecmp(var, "qop") && !qop) {
 						qop = strdup(val);
-					} else if (!strcasecmp(var, "cnonce")) {
+					} else if (!strcasecmp(var, "cnonce") && !cnonce) {
 						cnonce = strdup(val);
-					} else if (!strcasecmp(var, "response")) {
+					} else if (!strcasecmp(var, "response") && !response) {
 						response = strdup(val);
-					} else if (!strcasecmp(var, "nc")) {
+					} else if (!strcasecmp(var, "nc") && !nc) {
 						nc = strdup(val);
 					}
 				}
