@@ -1850,7 +1850,6 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 	if (rtp_session->rtcp_sock_output && rtcp_ok && rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP] && !rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU]) {
 		struct switch_rtcp_senderinfo *sr = (struct switch_rtcp_senderinfo*) rtp_session->rtcp_send_msg.body;
-		const char* str_cname=NULL;
 		//rtp_msg_t *send_msg = &rtp_session->send_msg;
 		switch_size_t rtcp_bytes;
 		switch_byte_t *ptr = (switch_byte_t *)rtp_session->rtcp_send_msg.body;
@@ -1906,16 +1905,18 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 		sr->sr_desc_ssrc.cname = 0x1; 
 		{
 			char bufa[30];
-			str_cname = switch_get_addr(bufa, sizeof(bufa), rtp_session->rtcp_local_addr);
+			const char* str_cname = switch_get_addr(bufa, sizeof(bufa), rtp_session->rtcp_local_addr);
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Setting RTCP src-1 to %s\n", str_cname);
 			sr->sr_desc_ssrc.length = (unsigned int)strlen(str_cname);
 			memcpy ((char*)sr->sr_desc_ssrc.text, str_cname, strlen(str_cname));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Setting RTCP src-1 LENGTH  to %d (%d, %s)\n",
+							  sr->sr_desc_ssrc.length, sr->sr_desc_head.length, str_cname);
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Setting RTCP src-1 LENGTH  to %d (%d, %s)\n", sr->sr_desc_ssrc.length, sr->sr_desc_head.length, str_cname);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Setting msw = %d, lsw = %d \n", sr->sr_head.ntp_msw, sr->sr_head.ntp_lsw);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "now = %"SWITCH_TIME_T_FMT", now lo = %d, now hi = %d\n", when, (int32_t)(when&0xFFFFFFFF), (int32_t)((when>>32&0xFFFFFFFF)));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "now = %"SWITCH_TIME_T_FMT", now lo = %d, now hi = %d\n",
+						  when, (int32_t)(when&0xFFFFFFFF), (int32_t)((when>>32&0xFFFFFFFF)));
 
 		{
 			size_t sr_length = sizeof(switch_rtcp_hdr_t) + sizeof(struct switch_rtcp_sr_head) + (1 * sizeof(struct switch_rtcp_report_block));
