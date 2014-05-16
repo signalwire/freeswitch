@@ -12,10 +12,10 @@ mod_opus_la_LIBADD   = $(switch_builddir)/libfreeswitch.la $(OPUS_LA)
 mod_opus_la_LDFLAGS  = -avoid-version -module -no-undefined -shared -lm -lz
 
 BUILT_SOURCES=$(OPUS_LA)
-$(OPUS_DIR):
+$(OPUS_DIR)/configure:
 	$(GETLIB) $(OPUS).tar.gz
 
-$(OPUS_BUILDDIR)/Makefile: $(OPUS_DIR)
+$(OPUS_BUILDDIR)/Makefile: $(OPUS_DIR)/configure
 	mkdir -p $(OPUS_BUILDDIR)
 	cd $(OPUS_BUILDDIR) && $(DEFAULT_VARS) $(OPUS_DIR)/configure --disable-shared --with-pic --srcdir=$(OPUS_DIR)
 	$(TOUCH_TARGET)
