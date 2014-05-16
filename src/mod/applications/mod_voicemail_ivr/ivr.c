@@ -151,8 +151,8 @@ switch_status_t ivre_init(ivre_data_t *loc, char **dtmf_accepted) {
 
 	memset(loc, 0, sizeof(*loc));
 
-	for (i = 0; dtmf_accepted[i] && i < 16; i++) {
-		strncpy(loc->dtmf_accepted[i], dtmf_accepted[i], 128);
+	for (i = 0; dtmf_accepted[i] && i < 128; i++) {
+		strncpy(loc->dtmf_accepted[i], dtmf_accepted[i], 16);
 	}
 	loc->record_tone = "%(1000, 0, 640)";
 
