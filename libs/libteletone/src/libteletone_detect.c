@@ -141,6 +141,10 @@ TELETONE_API(void) teletone_dtmf_detect_init (teletone_dtmf_detect_state_t *dtmf
 	int i;
 	float theta;
 
+	if (!sample_rate) {
+		sample_rate = 8000;
+	}
+
 	dtmf_detect_state->hit1 = dtmf_detect_state->hit2 = 0;
 
 	for (i = 0;	 i < GRID_FACTOR;  i++) {
