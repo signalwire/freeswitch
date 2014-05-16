@@ -657,11 +657,7 @@ SWITCH_STANDARD_APP(cidlookup_app_function)
 	switch_bool_t skipurl = SWITCH_FALSE;
 	switch_bool_t skipcitystate = SWITCH_FALSE;
 
-	if (session) {
-		pool = switch_core_session_get_pool(session);
-	} else {
-		switch_core_new_memory_pool(&pool);
-	}
+	pool = switch_core_session_get_pool(session);
 	switch_event_create(&event, SWITCH_EVENT_MESSAGE);
 
 	if (!(mydata = switch_core_session_strdup(session, data))) {
