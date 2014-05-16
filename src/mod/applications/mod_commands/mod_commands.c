@@ -849,7 +849,7 @@ SWITCH_STANDARD_API(timer_test_function)
 
 	switch_yield(250000);
 
-	stream->write_function(stream, "Avg: %0.3fms Total Time: %0.3fms\n", (float) ((float) (total / (x > 1 ? x - 1 : 1)) / 1000),
+	stream->write_function(stream, "Avg: %0.3fms Total Time: %0.3fms\n", (float) ((float) (total / (x - 1)) / 1000),
 						   (float) ((float) (end - start) / 1000));
 
   end:
