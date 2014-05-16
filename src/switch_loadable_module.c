@@ -1364,9 +1364,10 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 		interface_struct_handle = switch_dso_data_sym(dso, struct_name, &derr);
 	}
 
-	switch_safe_free(derr)
+	switch_safe_free(derr);
 
-		if (!interface_struct_handle) {
+	if (!interface_struct_handle) {
+		if (dso) switch_dso_destroy(&dso);
 		dso = switch_dso_open(path, load_global, &derr);
 	}
 
