@@ -1616,7 +1616,6 @@ SWITCH_STANDARD_API(xml_locate_function)
 	switch_event_t *params = NULL;
 	char *xmlstr;
 	char delim = ' ';
-	char *host = NULL;
 	const char *err = NULL;
 
 	stream_format format = { 0 };
@@ -1677,11 +1676,7 @@ SWITCH_STANDARD_API(xml_locate_function)
 
   end:
 	if (err) {
-		if (host) {
-			stream->write_function(stream, "<error>%s</error>\n", err);
-		} else {
-			stream->write_function(stream, "-ERR %s\n", err);
-		}
+		stream->write_function(stream, "-ERR %s\n", err);
 	}
 
 	if (obj) {
