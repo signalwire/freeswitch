@@ -696,13 +696,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 			
 			if (!strcasecmp(hp->name, "application")) {
 				app = strdup(hp->value);
-				data = strchr(app, ' ');
-			
-				if (data) {
-					*data++ = '\0';
+				if (app) {
+					data = strchr(app, ' ');
+
+					if (data) {
+						*data++ = '\0';
+					}
+
+					switch_caller_extension_add_application(session, extension, app, data);
+					free(app);
 				}
-			
-				switch_caller_extension_add_application(session, extension, app, data);
 			}
 		}
 
