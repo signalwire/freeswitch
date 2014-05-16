@@ -594,7 +594,7 @@ static void pres_event_handler(switch_event_t *event)
 
 static switch_status_t chat_send(switch_event_t *message_event)
 {
-	char *user, *host, *f_user = NULL, *ffrom = NULL, *f_host = NULL, *f_resource = NULL;
+	char *user = NULL, *host, *f_user = NULL, *ffrom = NULL, *f_host = NULL, *f_resource = NULL;
 	mdl_profile_t *profile = NULL;
 	const char *proto;
 	const char *from; 
@@ -604,6 +604,7 @@ static switch_status_t chat_send(switch_event_t *message_event)
 	const char *body;
 	const char *hint;
 	const char *profile_name;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	proto = switch_event_get_header(message_event, "proto");
 	from = switch_event_get_header(message_event, "from");
@@ -662,12 +663,14 @@ static switch_status_t chat_send(switch_event_t *message_event)
 			switch_safe_free(ffrom);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile %s\n", f_host ? f_host : "NULL");
-			return SWITCH_STATUS_FALSE;
+			status = SWITCH_STATUS_FALSE;
+			goto done;
 		}
-
-		switch_safe_free(user);
-		switch_safe_free(f_user);
 	}
+
+ done:
+	switch_safe_free(user);
+	switch_safe_free(f_user);
 
 	return SWITCH_STATUS_SUCCESS;
 }
