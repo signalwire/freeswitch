@@ -4300,7 +4300,6 @@ SWITCH_STANDARD_APP(limit_function)
 	char *xfer_exten = NULL;
 	int max = -1;
 	int interval = 0;
-	switch_limit_interface_t *limit = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	/* Parse application data  */
@@ -4320,7 +4319,7 @@ SWITCH_STANDARD_APP(limit_function)
 	/* if this is an invalid backend, fallback to db backend */
 	/* TODO: remove this when we can! */
 	if (switch_true(switch_channel_get_variable(channel, "switch_limit_backwards_compat_flag")) && 
-			!(limit = switch_loadable_module_get_limit_interface(backend))) {
+			!switch_loadable_module_get_limit_interface(backend)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown backend '%s'.  To maintain backwards compatability, falling back on db backend and shifting argumens. Either update your diaplan to include the backend, fix the typo, or load the appropriate limit implementation module.\n", backend);
 		mydata = switch_core_session_sprintf(session, "db %s", data);
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
