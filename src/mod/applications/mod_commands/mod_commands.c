@@ -1076,7 +1076,7 @@ SWITCH_STANDARD_API(group_call_function)
 
 SWITCH_STANDARD_API(in_group_function)
 {
-	switch_xml_t x_domain, xml = NULL, x_user = NULL, x_group;
+	switch_xml_t x_domain, xml = NULL, x_group;
 	int argc;
 	char *mydata = NULL, *argv[2], *user, *domain, *dup_domain = NULL;
 	char delim = ',';
@@ -1110,7 +1110,7 @@ SWITCH_STANDARD_API(in_group_function)
 	if (switch_xml_locate_group(group, domain, &xml, &x_domain, &x_group, params) == SWITCH_STATUS_SUCCESS) {
 		switch_xml_t x_users;
 		if ((x_users = switch_xml_child(x_group, "users"))) {
-			if ((x_user = switch_xml_find_child(x_users, "user", "id", user))) {
+			if (switch_xml_find_child(x_users, "user", "id", user)) {
 				rval = "true";
 			}
 		}
