@@ -1543,7 +1543,7 @@ static void switch_core_set_serial(void)
 			close(write_fd);
 		}
 	} else {
-		bytes = read(fd, buf, sizeof(buf));
+		bytes = read(fd, buf, sizeof(buf) - 1);
 		close(fd);
 	}
 
