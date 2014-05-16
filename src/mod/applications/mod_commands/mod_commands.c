@@ -4252,7 +4252,6 @@ SWITCH_STANDARD_API(originate_function)
 	char *aleg, *exten, *dp, *context, *cid_name, *cid_num;
 	uint32_t timeout = 60;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
-	uint8_t machine = 1;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (zstr(cmd)) {
@@ -4280,11 +4279,6 @@ SWITCH_STANDARD_API(originate_function)
 		}
 	}
 
-	if (argv[0] && !strcasecmp(argv[0], "machine")) {
-		machine = 1;
-		i++;
-	}
-
 	aleg = argv[i++];
 	exten = argv[i++];
 	dp = argv[i++];
@@ -4306,11 +4300,7 @@ SWITCH_STANDARD_API(originate_function)
 
 	if (switch_ivr_originate(NULL, &caller_session, &cause, aleg, timeout, NULL, cid_name, cid_num, NULL, NULL, SOF_NONE, NULL) != SWITCH_STATUS_SUCCESS
 		|| !caller_session) {
-		if (machine) {
 			stream->write_function(stream, "-ERR %s\n", switch_channel_cause2str(cause));
-		} else {
-			stream->write_function(stream, "-ERR Cannot create outgoing channel! [%s] cause: %s\n", aleg, switch_channel_cause2str(cause));
-		}
 		goto done;
 	}
 
@@ -4340,11 +4330,7 @@ SWITCH_STANDARD_API(originate_function)
 		switch_ivr_session_transfer(caller_session, exten, dp, context);
 	}
 
-	if (machine) {
-		stream->write_function(stream, "+OK %s\n", switch_core_session_get_uuid(caller_session));
-	} else {
-		stream->write_function(stream, "+OK Created session: %s\n", switch_core_session_get_uuid(caller_session));
-	}
+	stream->write_function(stream, "+OK %s\n", switch_core_session_get_uuid(caller_session));
 
 	switch_core_session_rwunlock(caller_session);
 
