@@ -3184,7 +3184,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 					}
 
 					if (fail) {
-						int64_t wait = campon_sleep * 1000000;
+						int64_t wait = (int64_t)campon_sleep * 1000000;
 						
 						while (stake.running && wait > 0 && switch_channel_ready(caller_channel)) {
 							switch_yield(100000);
