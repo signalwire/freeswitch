@@ -183,7 +183,7 @@ static switch_bool_t cidlookup_execute_sql_callback(char *sql, switch_core_db_ca
 			retval = SWITCH_TRUE;
 		}
 	} else {
-		*err = switch_core_sprintf(cbt->pool, "Unable to get database handle.  dsn: %s, dbh is %s\n", globals.odbc_dsn, dbh ? "not null" : "null");
+		*err = switch_core_sprintf(cbt->pool, "Unable to get database handle.  dsn: [%s]\n", switch_str_nil(globals.odbc_dsn));
 	}
 
 	switch_cache_db_release_db_handle(&dbh);
