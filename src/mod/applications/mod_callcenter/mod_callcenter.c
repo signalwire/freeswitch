@@ -1420,20 +1420,30 @@ end:
 	return status;
 }
 
-static void playback_array(switch_core_session_t *session, const char *str) {
+static switch_status_t playback_array(switch_core_session_t *session, const char *str) {
+	switch_status_t status = SWITCH_STATUS_FALSE;
 	if (str && !strncmp(str, "ARRAY::", 7)) {
 		char *i = (char*) str + 7, *j = i;
 		while (1) {
 			if ((j = strstr(i, "::"))) {
 				*j = 0;
 			}
-			switch_ivr_play_file(session, NULL, i, NULL);
+			status = switch_ivr_play_file(session, NULL, i, NULL);
+			if (status == SWITCH_STATUS_FALSE /* Invalid Recording */ && SWITCH_READ_ACCEPTABLE(status)) {
+				/* Sadly, there doesn't seem to be a return to switch_ivr_play_file that tell you the file wasn't found.  FALSE also mean that the channel got switch to BRAKE state, so we check for read acceptable */
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Couldn't play file '%s'\n", i);
+			} else if (!SWITCH_READ_ACCEPTABLE(status)) {
+				break;
+			}
+
 			if (!j) break;
 			i = j + 2;
 		}
 	} else {
-		switch_ivr_play_file(session, NULL, str, NULL);
+		status = switch_ivr_play_file(session, NULL, str, NULL);
 	}
+
+	return status;
 }
 
 static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *thread, void *obj)
