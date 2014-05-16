@@ -120,10 +120,7 @@ static switch_status_t select_url(const char *user,
 	}
 
 	switch_safe_free(sql);
-
-	if (db) {
-		switch_cache_db_release_db_handle(&db);
-	}
+	switch_cache_db_release_db_handle(&db);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -5167,10 +5164,7 @@ SWITCH_STANDARD_API(show_function)
   end:
 
 	switch_safe_free(mydata);
-
-	if (db) {
-		switch_cache_db_release_db_handle(&db);
-	}
+	switch_cache_db_release_db_handle(&db);
 
 	return status;
 }
