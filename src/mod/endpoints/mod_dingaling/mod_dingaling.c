@@ -672,7 +672,7 @@ static switch_status_t chat_send(switch_event_t *message_event)
 	switch_safe_free(user);
 	switch_safe_free(f_user);
 
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 
