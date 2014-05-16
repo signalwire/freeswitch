@@ -474,7 +474,7 @@ static void queue_rwunlock(cc_queue_t *queue)
 	}
 }
 
-static void destroy_queue(const char *queue_name, switch_bool_t block)
+static void destroy_queue(const char *queue_name)
 {
 	cc_queue_t *queue = NULL;
 	switch_mutex_lock(globals.mutex);
@@ -488,17 +488,12 @@ static void destroy_queue(const char *queue_name, switch_bool_t block)
 		return;
 	}
 
-	if (block) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%s] Waiting for write lock\n", queue->name);
-		switch_thread_rwlock_wrlock(queue->rwlock);
-	} else {
-		if (switch_thread_rwlock_trywrlock(queue->rwlock) != SWITCH_STATUS_SUCCESS) {
-			/* Lock failed, set the destroy flag so it'll be destroyed whenever its not in use anymore */
-			switch_set_flag(queue, PFLAG_DESTROY);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%s] queue is in use, memory will be freed whenever its no longer in use\n",
-					queue->name);
-			return;
-		}
+	if (switch_thread_rwlock_trywrlock(queue->rwlock) != SWITCH_STATUS_SUCCESS) {
+		/* Lock failed, set the destroy flag so it'll be destroyed whenever its not in use anymore */
+		switch_set_flag(queue, PFLAG_DESTROY);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[%s] queue is in use, memory will be freed whenever its no longer in use\n",
+				queue->name);
+		return;
 	}
 
 	free_queue(queue);
@@ -3171,7 +3166,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				goto done;
 			} else {
 				const char *queue_name = argv[0 + initial_argc];
-				destroy_queue(queue_name, SWITCH_FALSE);
+				destroy_queue(queue_name);
 				stream->write_function(stream, "%s", "+OK\n");
 
 			}
@@ -3183,7 +3178,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 			} else {
 				const char *queue_name = argv[0 + initial_argc];
 				cc_queue_t *queue = NULL;
-				destroy_queue(queue_name, SWITCH_FALSE);
+				destroy_queue(queue_name);
 				if ((queue = get_queue(queue_name))) {
 					queue_rwunlock(queue);
 					stream->write_function(stream, "%s", "+OK\n");
