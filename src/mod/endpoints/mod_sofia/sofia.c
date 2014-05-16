@@ -687,23 +687,22 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "gateway_name", gateway->name);
 		if ( sip->sip_call_info != NULL ) {
 			sip_call_info_t *call_info = sip->sip_call_info;
-			int cur_len = 0;
-			char *tmp = NULL;
-			char *hold = strdup(sip_header_as_string(nua_handle_home(nh), (void *) call_info));
-			cur_len = (int)strlen(hold);
+			char *nua_hold = sip_header_as_string(nua_handle_home(nh), (void *) call_info);
+			size_t cur_len = strlen(nua_hold);
+			char *hold = strdup(nua_hold);
+			su_free(nua_handle_home(nh), nua_hold);
 
-			while ( call_info->ci_next != NULL) {
-				call_info = call_info->ci_next;
-				tmp = strdup(sip_header_as_string(nua_handle_home(nh), (void *) call_info));
-				cur_len = cur_len + (int)strlen(tmp) +2;
-				hold = realloc(hold, cur_len);
+			while ((call_info = call_info->ci_next) != NULL) {
+				char *tmp = sip_header_as_string(nua_handle_home(nh), (void *) call_info);
+				size_t tmp_len = strlen(tmp);
+				hold = realloc(hold, cur_len + tmp_len + 2);
 				switch_assert(hold);
-				strcat(hold,",");
-				strcat(hold, tmp);
-				free(tmp);
+				strncpy(hold + cur_len, ",", 2);
+				strncpy(hold + cur_len + 1, tmp, tmp_len +1);
+				su_free(nua_handle_home(nh), tmp);
+				cur_len = cur_len + tmp_len + 2;
 			}
-			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Call-Info", hold);
-			free(hold);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, "Call-Info", hold);
 		}
 		switch_event_fire(&s_event);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "dispatched freeswitch event for message-summary NOTIFY\n");
