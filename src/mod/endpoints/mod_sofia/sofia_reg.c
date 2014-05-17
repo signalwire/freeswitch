@@ -1354,6 +1354,7 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 		if (sip->sip_path) {
 			if ((path_val = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_path))) {
 				char *path_stripped = sofia_glue_get_url_from_contact(path_val, SWITCH_TRUE);
+				su_free(nua_handle_home(nh), path_val);
 				path_val = path_stripped;
 				path_encoded_len = (int)(strlen(path_val) * 3) + 1;
 				switch_zmalloc(path_encoded, path_encoded_len);
