@@ -167,7 +167,7 @@ static switch_status_t zh_say_general_count(switch_core_session_t *session, char
 				case 8:
 					/* Hundred thousands or tens column */
 					if (digits[i] != '0') {
-						if (digits[i] != '1')
+						if (digits[i] != '1'  ||  (digits[i] == '1'  &&  digits[i - 1] > '0'))
 							say_file("digits/%c.wav", digits[i]);
 						say_file("digits/10.wav");
 					} else {
