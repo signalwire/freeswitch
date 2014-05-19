@@ -1550,7 +1550,7 @@ SWITCH_DECLARE(void) switch_core_session_enable_heartbeat(switch_core_session_t 
 		return;
 	}
 
-	session->read_frame_count = (session->read_impl.actual_samples_per_second / session->read_impl.samples_per_packet) * seconds;
+	session->read_frame_count = (session->read_impl.samples_per_second / session->read_impl.samples_per_packet) * seconds;
 
 
 	switch_core_session_unsched_heartbeat(session);
