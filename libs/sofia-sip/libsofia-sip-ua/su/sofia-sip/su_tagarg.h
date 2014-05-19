@@ -189,12 +189,12 @@ typedef struct {
  * @hideinitializer
  */
 #if SU_HAVE_TAGSTACK
-#define ta_end(ta) (va_end((ta).ap), (ta).tl->t_tag = NULL, 0)
+#define ta_end(ta) (va_end((ta).ap), (ta).tl->t_tag = NULL)
 #else
 #define ta_end(ta)					   \
   ((((ta).tl[1].t_value) ?				   \
     (tl_vfree((tagi_t *)((ta).tl[1].t_value))) : (void)0), \
-   (ta).tl[1].t_value = 0, va_end((ta).ap), 0)
+   (ta).tl[1].t_value = 0, va_end((ta).ap))
 #endif
 
 SOFIA_END_DECLS
