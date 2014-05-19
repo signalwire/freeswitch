@@ -551,10 +551,10 @@ if test x"$enable_core_pgsql_support" = x"yes" ; then
             POSTGRESQL_CFLAGS="-I`$PG_CONFIG --includedir`"
             POSTGRESQL_LIBDIR="-L`$PG_CONFIG --libdir`"
             POSTGRESQL_LDFLAGS="-L`$PG_CONFIG --libdir` -lpq"
-            POSTGRESQL_VERSION=`$PG_CONFIG --version | sed -e 's#PostgreSQL ##'`
-            POSTGRESQL_MAJOR_VERSION=`$PG_CONFIG --version | sed -e 's/devel//' | sed -re 's#PostgreSQL ([0-9]+).[0-9]+.?[0-9]+?#\1#'`
-            POSTGRESQL_MINOR_VERSION=`$PG_CONFIG --version | sed -e 's/devel//' | sed -re 's#PostgreSQL [0-9]+.([0-9]+).?[0-9]+?#\1#'`
-            POSTGRESQL_PATCH_VERSION=`$PG_CONFIG --version | sed -e 's/devel//' | sed -re 's#PostgreSQL [0-9]+.[0-9]+.?([0-9]+)?#\1#'`	
+            POSTGRESQL_VERSION=`$PG_CONFIG --version | awk '{ print $NF }'`
+            POSTGRESQL_MAJOR_VERSION=`$PG_CONFIG --version | awk '{ print $NF }' | awk -F. '{ print $1 }'`
+            POSTGRESQL_MINOR_VERSION=`$PG_CONFIG --version | awk '{ print $NF }' | awk -F. '{ print $2 }'`
+            POSTGRESQL_PATCH_VERSION=`$PG_CONFIG --version | awk '{ print $NF }' | awk -F. '{ print $3 }'`
         else
             AC_MSG_ERROR([no usable pkg-config or pg_config; please install libpq devel package or equivalent])
         fi
