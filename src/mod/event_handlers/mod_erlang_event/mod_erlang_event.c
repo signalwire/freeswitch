@@ -1466,6 +1466,8 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 	add_session_elem_to_listener(listener, session_element);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Added session to listener\n");
+
+	switch_mutex_lock(p->mutex);
 	
 	if (!strcmp(function, "!")) {
 		/* send a message to request a pid */
@@ -1499,7 +1501,6 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Waiting for reply %s %s\n", hash, session_element->uuid_str);
-	switch_mutex_lock(p->mutex);
 	switch_thread_cond_timedwait(p->ready_or_found, p->mutex, 5000000);
 	switch_mutex_unlock(p->mutex);
 	if (!p->pid) {
