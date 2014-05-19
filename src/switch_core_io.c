@@ -228,7 +228,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch_event_t *event;
 			switch_core_session_message_t msg = { 0 };
 
-			session->read_frame_count = (session->read_impl.actual_samples_per_second / session->read_impl.samples_per_packet) * session->track_duration;
+			session->read_frame_count = (session->read_impl.samples_per_second / session->read_impl.samples_per_packet) * session->track_duration;
 
 			msg.message_id = SWITCH_MESSAGE_HEARTBEAT_EVENT;
 			msg.numeric_arg = session->track_duration;
