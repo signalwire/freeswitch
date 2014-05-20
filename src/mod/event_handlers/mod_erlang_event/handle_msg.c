@@ -358,6 +358,7 @@ static switch_status_t handle_msg_session_event(listener_t *listener, erlang_msg
 			}
 
 			switch_thread_rwlock_unlock(session->event_rwlock);
+			switch_thread_rwlock_unlock(session->rwlock);
 			
 			ei_x_encode_atom(rbuf, "ok");
 		} else {
@@ -462,6 +463,7 @@ static switch_status_t handle_msg_session_nixevent(listener_t *listener, erlang_
 				}
 			}
 			switch_thread_rwlock_unlock(session->event_rwlock);
+			switch_thread_rwlock_unlock(session->rwlock);
 
 			ei_x_encode_atom(rbuf, "ok");
 		} else { /* no session for this pid */
@@ -593,6 +595,8 @@ static switch_status_t handle_msg_session_setevent(listener_t *listener, erlang_
 			switch_core_hash_destroy(&session->event_hash);
 			session->event_hash = event_hash;
 			switch_thread_rwlock_unlock(session->event_rwlock);
+
+			switch_thread_rwlock_unlock(session->rwlock);
 
 			/* TODO - we should flush any non-matching events from the queue */
 			ei_x_encode_atom(rbuf, "ok");
@@ -1075,6 +1079,8 @@ static switch_status_t handle_msg_atom(listener_t *listener, erlang_msg * msg, e
 			/* wipe the hash */
 			switch_core_hash_delete_multi(session->event_hash, NULL, NULL);
 			switch_thread_rwlock_unlock(session->event_rwlock);
+
+			switch_thread_rwlock_unlock(session->rwlock);
 
 			ei_x_encode_atom(rbuf, "ok");
 		} else {
