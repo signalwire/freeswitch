@@ -50,7 +50,8 @@ typedef enum {
 	SM_NDLB_ALLOW_NONDUP_SDP = (1 << 1),
 	SM_NDLB_ALLOW_CRYPTO_IN_AVP = (1 << 2),
 	SM_NDLB_DISABLE_SRTP_AUTH = (1 << 3),
-	SM_NDLB_SENDRECV_IN_SESSION = (1 << 4)
+	SM_NDLB_SENDRECV_IN_SESSION = (1 << 4),
+	SM_NDLB_NEVER_PATCH_REINVITE = (1 << 5)
 } switch_core_media_NDLB_t;
 
 typedef enum {

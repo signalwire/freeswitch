@@ -7148,10 +7148,12 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 
 	len = strlen(smh->mparams->local_sdp_str) * 2;
 
-	if (switch_channel_test_flag(session->channel, CF_ANSWERED) &&
-		(switch_stristr("sendonly", smh->mparams->local_sdp_str) || switch_stristr("0.0.0.0", smh->mparams->local_sdp_str))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Skip patch on hold SDP\n");
-		return;
+	if (!(smh->mparams->ndlb & SM_NDLB_NEVER_PATCH_REINVITE)) {
+		if (switch_channel_test_flag(session->channel, CF_ANSWERED) &&
+			(switch_stristr("sendonly", smh->mparams->local_sdp_str) || switch_stristr("0.0.0.0", smh->mparams->local_sdp_str))) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Skip patch on hold SDP\n");
+			return;
+		}
 	}
 
 	if (zstr(a_engine->local_sdp_ip) || !a_engine->local_sdp_port) {// || switch_channel_test_flag(session->channel, CF_PROXY_MEDIA)) {

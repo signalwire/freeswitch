@@ -4091,6 +4091,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_FORWARD_MWI_NOTIFY);
 						}
+					} else if (!strcasecmp(var, "NDLB-proxy-never-patch-reinvites")) {
+						if (switch_true(val)) {
+							profile->mndlb |= SM_NDLB_NEVER_PATCH_REINVITE;
+						} else {
+							profile->mndlb &= ~SM_NDLB_NEVER_PATCH_REINVITE;
+						}
 					} else if (!strcasecmp(var, "registration-thread-frequency")) {
 						profile->ireg_seconds = atoi(val);
 						if (profile->ireg_seconds < 0) {
@@ -6722,7 +6728,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 							}
 						}
 
-						if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+						if (switch_channel_test_flag(channel, CF_PROXY_MEDIA) && !(tech_pvt->profile->mndlb & SM_NDLB_NEVER_PATCH_REINVITE)) {
 							if (switch_core_media_proxy_remote_addr(session, r_sdp) == SWITCH_STATUS_SUCCESS && !is_t38) {
 								nua_respond(tech_pvt->nh, SIP_200_OK, TAG_END());
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio params changed, NOT proxying re-invite.\n");
