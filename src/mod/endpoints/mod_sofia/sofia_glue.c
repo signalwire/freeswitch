@@ -1751,10 +1751,12 @@ void sofia_glue_tech_patch_sdp(private_object_t *tech_pvt)
 
 	len = strlen(tech_pvt->local_sdp_str) * 2;
 
-	if (switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED) &&
-		(switch_stristr("sendonly", tech_pvt->local_sdp_str) || switch_stristr("0.0.0.0", tech_pvt->local_sdp_str))) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Skip patch on hold SDP\n");
-		return;
+	if (!(tech_pvt->profile->ndlb & PFLAG_NDLB_NEVER_PATCH_REINVITE)) {
+		if (switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED) &&
+			(switch_stristr("sendonly", tech_pvt->local_sdp_str) || switch_stristr("0.0.0.0", tech_pvt->local_sdp_str))) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Skip patch on hold SDP\n");
+			return;
+		}
 	}
 
 	if (zstr(tech_pvt->adv_sdp_audio_ip) || !tech_pvt->adv_sdp_audio_port) {
