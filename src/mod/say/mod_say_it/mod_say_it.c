@@ -162,7 +162,7 @@ static switch_status_t it_say_general_count(switch_core_session_t *session,	char
 		return SWITCH_STATUS_FALSE;
 	}
 
-	/* Check if number isin't zero */
+	/* Check if number isn't zero */
 	if (in != 0) {
 
 		/* Init x to 0 */
@@ -205,7 +205,7 @@ static switch_status_t it_say_general_count(switch_core_session_t *session,	char
 				} else {
 					/* Play thousand group */
 					if ((status = play_group(SSM_PRONOUNCED, places[5], places[4], places[3],
-											 "digits/thousands.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
+											 "digits/thousand.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
 						return status;
 					}
 				}
