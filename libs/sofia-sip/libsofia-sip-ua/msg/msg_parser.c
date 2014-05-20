@@ -739,7 +739,7 @@ issize_t msg_buf_external(msg_t *msg,
 			  usize_t N,
 			  usize_t blocksize)
 {
-  msg_buffer_t *ext, *b, **bb;
+  msg_buffer_t *ext = NULL, *b, **bb;
   size_t i, I;
 
   assert(N <= 128 * 1024);
