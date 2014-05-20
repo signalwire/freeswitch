@@ -3350,12 +3350,14 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				memset(&codec_fmtp, 0, sizeof(codec_fmtp));
 
 				if (zstr(map->rm_fmtp)) {
-					if (!strcasecmp(map->rm_encoding, "ilbc")) {
+					if (!strcasecmp(rm_encoding, "ilbc")) {
 						codec_ms = 30;
 						map_bit_rate = 13330;
-					} else if (!strcasecmp(map->rm_encoding, "isac")) {
+					} else if (!strcasecmp(rm_encoding, "isac")) {
 						codec_ms = 30;
 						map_bit_rate = 32000;
+					} else {
+						map_bit_rate = switch_known_bitrate((switch_payload_t)map->rm_pt);
 					}
 				} else {
 					if ((switch_core_codec_parse_fmtp(map->rm_encoding, map->rm_fmtp, map->rm_rate, &codec_fmtp)) == SWITCH_STATUS_SUCCESS) {
