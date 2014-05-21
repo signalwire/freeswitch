@@ -414,6 +414,11 @@ TELETONE_API(int) teletone_run(teletone_generation_session_t *ts, const char *cm
 								*e++ = '\0';
 							}
 							do {
+#if (_MSC_VER == 1600)
+								if (!p) {
+									break;
+								}
+#endif
 								if ((next = strchr(p, ',')) != 0) {
 									*next++ = '\0';
 								}
