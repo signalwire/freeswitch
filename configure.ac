@@ -1150,6 +1150,9 @@ PKG_CHECK_MODULES([SPEEX], [speex >= 1.2rc1 speexdsp >= 1.2rc1])
 PKG_CHECK_MODULES([YAML], [yaml-0.1 >= 0.1.4],[
   AM_CONDITIONAL([HAVE_YAML],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_YAML],[false])])
+PKG_CHECK_MODULES([PORTAUDIO], [portaudio-2.0 >= 19],[
+  AM_CONDITIONAL([HAVE_PORTAUDIO],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_PORTAUDIO],[false])])
 PKG_CHECK_MODULES([LDNS], [libldns >= 1.6.6],[
   AM_CONDITIONAL([HAVE_LDNS],[true])],[
   AC_CHECK_LIB([ldns], [ldns_str2rdf_a], [LDNS_LIBS=-lldns])
@@ -1660,7 +1663,6 @@ AC_CONFIG_SUBDIRS([libs/js])
 AC_CONFIG_SUBDIRS([libs/libdingaling])
 AC_CONFIG_SUBDIRS([libs/libsndfile])
 AC_CONFIG_SUBDIRS([libs/sofia-sip])
-AC_CONFIG_SUBDIRS([libs/portaudio])
 AC_CONFIG_SUBDIRS([libs/freetdm])
 AC_CONFIG_SUBDIRS([libs/unimrcp])
 AC_CONFIG_SUBDIRS([libs/tiff-4.0.2])

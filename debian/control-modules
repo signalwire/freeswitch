@@ -405,7 +405,7 @@ Build-Depends: libopal-dev
 Module: endpoints/mod_portaudio
 Description: mod_portaudio
  Adds mod_portaudio.
-Build-Depends: libasound2-dev
+Build-Depends: portaudio19-dev
 
 Module: endpoints/mod_reference
 Description: mod_reference
@@ -517,6 +517,7 @@ Description: mod_native_file
 Module: formats/mod_portaudio_stream
 Description: mod_portaudio_stream
  Adds mod_portaudio_stream.
+Build-Depends: portaudio19-dev
 
 Module: formats/mod_shell_stream
 Description: mod_shell_stream

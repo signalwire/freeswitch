@@ -1708,24 +1708,6 @@ Copyright: 2007 <robs@users.sourceforge.net>
  2007-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 License: LGPL-2+
 
-Files: libs/portaudio/*
-Copyright: 1999-2007 Ross Bencina and Phil Burk
- 1999-2002 Phil Burk, Ross Bencina
- 1999-2007 Andrew Baldwin, Ross Bencina
- 1999-2007 Ross Bencina, Andrew Baldwin
- 1999-2006 Phil Burk, Robert Marsanyi and Ross Bencina
- 1999-2007 Ross Bencina, Phil Burk, Robert Marsanyi
- 1999-2007 Ross Bencina
- 1999-2000 Phil Burk
- 2004-2007 Arve Knudsen <aknuds-1@broadpark.no>
- 2005-2006 Bjorn Roche
- 2006-2007 David Viens
- 2003 Fred Gleason
- 2002 Joshua Haberman <joshua@haberman.com>
- 2005,2006 Ludwig Schwardt
- 2004 Stefan Westerfeld <stefan@space.twc.de
-License: MIT/X11 (BSD like)
-
 Files: libs/tiff-4.0.2/*
 Copyright: 1988-1997 Sam Leffler
  1991-1997 Silicon Graphics, Inc.

@@ -199,8 +199,6 @@ ipch/
 /w32/Library/switch_version.inc
 /w32/Setup/Fragments
 
-/libs/portaudio/build/msvc/Win32/Debug DirectSound/portaudio.*.log
-/libs/portaudio/build/msvc/Win32/Release DirectSound/portaudio.*.log
 /libs/win32/mpg123/Win32/Debug_Generic/libmpg123.*.log
 /libs/win32/mpg123/Win32/Release_Generic/libmpg123.*.log
 /libs/win32/pthread/Win32/Debug DLL/pthread.*.log

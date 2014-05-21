@@ -30,8 +30,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "pablio.h"
 #include <string.h>
+#include "pablio.h"
 
 #define DEFAULT_PREBUFFER_SIZE 1024 * 64
 #define SAMPLE_TYPE  paInt16
