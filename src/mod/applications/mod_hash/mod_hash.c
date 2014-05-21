@@ -599,7 +599,7 @@ SWITCH_STANDARD_API(hash_dump_function)
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 		cmd = argv[0];
 	} else {
-		realmvalue = "test";
+		realmvalue = switch_mprintf("test");
 		realm = 0;
 		stream->write_function(stream, "Usage: "HASH_DUMP_SYNTAX"\n");
 		goto done;
