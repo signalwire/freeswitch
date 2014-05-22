@@ -1135,6 +1135,10 @@ if test "$cross_compiling" != "yes" && test -f /usr/lib/pkg-config/libldns.pc; t
   path_push_unique PKG_CONFIG_PATH /usr/lib/pkg-config
 fi
 
+module_enabled() {
+  grep -v -e "\#" -e "^\$" modules.conf | sed -e "s|^.*/||" | grep "^${1}\$" >/dev/null
+}
+
 PKG_CHECK_MODULES([SQLITE], [sqlite3 >= 3.6.20])
 PKG_CHECK_MODULES([CURL], [libcurl >= 7.19])
 PKG_CHECK_MODULES([PCRE], [libpcre >= 7.8])
@@ -1146,7 +1150,11 @@ PKG_CHECK_MODULES([LDNS], [libldns >= 1.6.6],[
   AM_CONDITIONAL([HAVE_LDNS],[true])],[
   AC_CHECK_LIB([ldns], [ldns_str2rdf_a], [LDNS_LIBS=-lldns])
   AS_IF([test -z "$LDNS_LIBS"],[
-    AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_LDNS],[false])],[
+    if module_enabled mod_enum; then
+      AC_MSG_ERROR([You need to either install libldns-dev or disable mod_enum in modules.conf])
+    else
+      AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_LDNS],[false])
+    fi],[
     AM_CONDITIONAL([HAVE_LDNS],[true])])])
 
 PKG_CHECK_MODULES([MEMCACHED], [libmemcached >= 0.31],[
