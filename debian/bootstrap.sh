@@ -39,6 +39,7 @@ avoid_mods_sid=(
 )
 avoid_mods_jessie=(
   directories/mod_ldap
+  languages/mod_java
 )
 avoid_mods_wheezy=(
 )
