@@ -17,7 +17,7 @@ endif
 
 $(MYLIB): libesl.la
 
-bin_PROGRAMS = fs_cli ivrd
+bin_PROGRAMS = fs_cli fs_ivrd
 noinst_PROGRAMS = testclient testserver testserver_fork
 
 fs_cli_SOURCES = fs_cli.c
@@ -40,10 +40,10 @@ testserver_fork_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include
 testserver_fork_LDFLAGS = $(AM_LDFLAGS) $(LDFLAGS) $(LIBS)
 testserver_fork_LDADD   = libesl.la 
 
-ivrd_SOURCES = ivrd.c
-ivrd_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include
-ivrd_LDFLAGS = $(AM_LDFLAGS) $(LDFLAGS) $(LIBS)
-ivrd_LDADD   = libesl.la 
+fs_ivrd_SOURCES = ivrd.c
+fs_ivrd_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include
+fs_ivrd_LDFLAGS = $(AM_LDFLAGS) $(LDFLAGS) $(LIBS)
+fs_ivrd_LDADD   = libesl.la 
 
 reswig:	swigclean
 	$(MAKE) -C perl reswig
