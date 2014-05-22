@@ -593,17 +593,15 @@ SWITCH_STANDARD_API(hash_dump_function)
 	int realm = 0;
 	char *realmvalue = NULL;
 	
-	if (!zstr(cmd)) {
-		mydata = strdup(cmd);
-		switch_assert(mydata);
-		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-		cmd = argv[0];
-	} else {
-		realmvalue = switch_mprintf("test");
-		realm = 0;
+	if (zstr(cmd)) {
 		stream->write_function(stream, "Usage: "HASH_DUMP_SYNTAX"\n");
 		goto done;
-	}	
+	}
+
+	mydata = strdup(cmd);
+	switch_assert(mydata);
+	argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	cmd = argv[0];
 
 	if (argc == 2) {
 		realm = 1;
