@@ -368,7 +368,6 @@ static int tport_ws_init_primary_secure(tport_primary_t *pri,
 	chain = su_sprintf(autohome, "%s/%s", path, "ca-bundle.crt");
 	if (access(chain, R_OK) != 0) chain = NULL;
 
-	if (access(cert, R_OK) != 0) cert = NULL;
 	if ( !key )  key  = su_sprintf(autohome, "%s/%s", path, "wss.pem");
 	if ( !cert ) cert = su_sprintf(autohome, "%s/%s", path, "wss.pem");
 	if ( !chain ) chain = su_sprintf(autohome, "%s/%s", path, "wss.pem");
