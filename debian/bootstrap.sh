@@ -34,9 +34,11 @@ avoid_mods=(
   xml_int/mod_xml_radius
 )
 avoid_mods_sid=(
+  directories/mod_ldap
   languages/mod_java
 )
 avoid_mods_jessie=(
+  directories/mod_ldap
 )
 avoid_mods_wheezy=(
 )
