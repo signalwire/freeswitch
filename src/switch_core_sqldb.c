@@ -1699,6 +1699,9 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_destroy(switch_sql_queu
 
 SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push(switch_sql_queue_manager_t *qm, const char *sql, uint32_t pos, switch_bool_t dup)
 {
+	char *sqlptr = NULL;
+	switch_status_t status;
+	int x = 0;
 
 	if (sql_manager.paused || qm->thread_running != 1) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "DROP [%s]\n", sql);
@@ -1716,10 +1719,20 @@ SWITCH_DECLARE(switch_status_t) switch_sql_queue_manager_push(switch_sql_queue_m
 		pos = 0;
 	}
 
-	switch_mutex_lock(qm->mutex);
-	switch_queue_push(qm->sql_queue[pos], dup ? strdup(sql) : (char *)sql);
-	switch_mutex_unlock(qm->mutex);
+	sqlptr = dup ? strdup(sql) : (char *)sql;
 
+	do {
+		switch_mutex_lock(qm->mutex);
+		status = switch_queue_trypush(qm->sql_queue[pos], sqlptr);
+		switch_mutex_unlock(qm->mutex);
+		if (status != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Delay %d sending sql\n", x);
+			if (x++) {
+				switch_yield(1000000 * x);
+			}
+		}
+	} while(status != SWITCH_STATUS_SUCCESS);
+	
 	qm_wake(qm);
 
 	return SWITCH_STATUS_SUCCESS;
