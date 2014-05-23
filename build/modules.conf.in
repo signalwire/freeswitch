@@ -121,6 +121,7 @@ languages/mod_lua
 #languages/mod_v8
 #languages/mod_yaml
 loggers/mod_console
+#loggers/mod_graylog2
 loggers/mod_logfile
 loggers/mod_syslog
 #say/mod_say_de

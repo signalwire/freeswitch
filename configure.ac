@@ -1533,6 +1533,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/legacy/languages/mod_lua/Makefile
 		src/mod/legacy/languages/mod_spidermonkey/Makefile
 		src/mod/loggers/mod_console/Makefile
+		src/mod/loggers/mod_graylog2/Makefile
 		src/mod/loggers/mod_logfile/Makefile
 		src/mod/loggers/mod_syslog/Makefile
 		src/mod/say/mod_say_de/Makefile

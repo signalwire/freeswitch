@@ -1,0 +1,15 @@
+<configuration name="graylog2.conf" description="Graylog2 Logger">
+  <!-- emerg   - system is unusable  -->
+  <!-- alert   - action must be taken immediately  -->
+  <!-- crit    - critical conditions  -->
+  <!-- err     - error conditions  -->
+  <!-- warning - warning conditions  -->
+  <!-- notice  - normal, but significant, condition  -->
+  <!-- info    - informational message  -->
+  <!-- debug   - debug-level message -->
+  <settings>
+    <param name="server-host" value="192.168.0.69"/>
+    <param name="server-port" value="12201"/>
+    <param name="loglevel" value="warning"/>
+  </settings>
+</configuration>
