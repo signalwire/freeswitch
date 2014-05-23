@@ -90,7 +90,7 @@
     <!--<load module="mod_siren"/>-->
     <!--<load module="mod_isac"/>-->
     <!--<load module="mod_celt"/>-->
-    <!--<load module="mod_opus"/>-->
+    <load module="mod_opus"/>
 
     <!-- File Format Interfaces -->
     <load module="mod_sndfile"/>
