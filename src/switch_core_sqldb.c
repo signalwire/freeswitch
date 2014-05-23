@@ -2269,8 +2269,8 @@ static void core_event_handler(switch_event_t *event)
 			break;
 		}
 	case SWITCH_EVENT_CHANNEL_CREATE:
-		new_sql() = switch_mprintf("insert into channels (uuid,direction,created,created_epoch, name,state,callstate,dialplan,context,hostname) "
-								   "values('%q','%q','%q','%ld','%q','%q','%q','%q','%q','%q')",
+		new_sql() = switch_mprintf("insert into channels (uuid,direction,created,created_epoch, name,state,callstate,dialplan,context,hostname,initial_cid_num,initial_dest) "
+								   "values('%q','%q','%q','%ld','%q','%q','%q','%q','%q','%q','%q','%q')",
 								   switch_event_get_header_nil(event, "unique-id"),
 								   switch_event_get_header_nil(event, "call-direction"),
 								   switch_event_get_header_nil(event, "event-date-local"),
@@ -2279,7 +2279,9 @@ static void core_event_handler(switch_event_t *event)
 								   switch_event_get_header_nil(event, "channel-state"),
 								   switch_event_get_header_nil(event, "channel-call-state"),
 								   switch_event_get_header_nil(event, "caller-dialplan"),
-								   switch_event_get_header_nil(event, "caller-context"), switch_core_get_switchname()
+								   switch_event_get_header_nil(event, "caller-context"), switch_core_get_switchname(),
+								   switch_event_get_header_nil(event, "caller-caller-id-number"),
+								   switch_event_get_header_nil(event, "caller-destination-number")
 								   );
 		break;
 	case SWITCH_EVENT_CHANNEL_ANSWER:
@@ -2666,8 +2668,15 @@ static char create_channels_sql[] =
 	"   callee_direction  VARCHAR(5),\n"
 	"   call_uuid  VARCHAR(256),\n"
 	"   sent_callee_name  VARCHAR(1024),\n"
-	"   sent_callee_num  VARCHAR(256)\n"
+	"   sent_callee_num  VARCHAR(256),\n"
+	"   initial_cid_num  VARCHAR(256),\n"
+	"   initial_dest  VARCHAR(256)\n"
 	");\n";
+
+static char *alter_channels_sql[2][2] = {
+	{ "select initial_cid_num from channels", "ALTER TABLE channels ADD COLUMN initial_cid_num VARCHAR(256);\n" },
+	{ "select initial_dest from channels", "ALTER TABLE channels ADD COLUMN initial_dest VARCHAR(256);\n" }
+};
 
 static char create_calls_sql[] =
 	"CREATE TABLE calls (\n"
@@ -3386,6 +3395,9 @@ switch_status_t switch_core_sqldb_start(switch_memory_pool_t *pool, switch_bool_
 			int result = 0;
 
 			switch_cache_db_test_reactive(sql_manager.dbh, "select call_uuid, read_bit_rate, sent_callee_name from channels", "DROP TABLE channels", create_channels_sql);
+			for (int i=0; i<sizeof(alter_channels_sql); i++) {
+				switch_cache_db_test_reactive(sql_manager.dbh, alter_channels_sql[i][0], NULL, alter_channels_sql[i][1]);
+			};
 			switch_cache_db_test_reactive(sql_manager.dbh, "select * from detailed_calls where sent_callee_name=''", "DROP VIEW detailed_calls", detailed_calls_sql);
 			switch_cache_db_test_reactive(sql_manager.dbh, "select * from basic_calls where sent_callee_name=''", "DROP VIEW basic_calls", basic_calls_sql);
 			switch_cache_db_test_reactive(sql_manager.dbh, "select call_uuid from calls", "DROP TABLE calls", create_calls_sql);
