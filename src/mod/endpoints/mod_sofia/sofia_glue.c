@@ -2680,7 +2680,6 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 				break;
 			}
 		} else {
-			user_via = sofia_glue_create_external_via(NULL, profile, SOFIA_TRANSPORT_UDP);
 			contact_str = profile->url;
 		}
 	}
