@@ -4373,11 +4373,8 @@ static switch_status_t load_config(int reload, int del_all)
 	
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
-			char *var = NULL;
-			char *val = NULL;
-
-			var = (char *) switch_xml_attr_soft(param, "name");
-			val = (char *) switch_xml_attr_soft(param, "value");
+			char *var = (char*)switch_xml_attr_soft(param, "name");
+			char *val = (char*)switch_xml_attr_soft(param, "value");
 
 			if (!strcasecmp(var, "outbound-strategy") && !zstr(val)) {
 				default_strategy = parse_strat(val);
