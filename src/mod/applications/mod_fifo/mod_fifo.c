@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
+ * Travis Cross <tc@traviscross.com>
  *
  * mod_fifo.c -- FIFO
  *
@@ -34,6 +35,69 @@
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_fifo_shutdown);
 SWITCH_MODULE_LOAD_FUNCTION(mod_fifo_load);
 SWITCH_MODULE_DEFINITION(mod_fifo, mod_fifo_load, mod_fifo_shutdown, NULL);
+
+/*!\file
+ * # Theory of operation
+ *
+ * ## Kinds of things
+ *
+ * The fifo systems deals in various kinds of things: /fifos nodes/,
+ * /queues/, /(inbound) callers/, /outbound callers/, /consumers/, and
+ * /(outbound) members/.
+ *
+ * /fifo nodes/ accept callers and work to deliver those callers to
+ * consumers and members.  The nodes contain an array of /queues/
+ * indexed by a priority value.
+ *
+ * /queues/ contain an array of callers treated as a list.
+ *
+ * /callers/ are the channels placed into a fifo node's queue for
+ * eventual delivery to consumers and members.
+ *
+ * /outbound callers/ are persons waiting to be called back via a
+ * dial string.
+ *
+ * /consumers/ are channels for agents who have dialed in to one or
+ * more fifos and will have callers connected to them.
+ *
+ * /members/ are agents who we'll place calls to via a dial string to
+ * attempt to deliver callers.
+ *
+ * An /agent/ may refer to either a /consumer/ or an /member/.
+ *
+ * ## Outbound Strategies
+ *
+ * An outbound strategy defines the way in which we attempt to deliver
+ * callers to members.
+ *
+ * The default strategy, /ringall/, preserves the caller ID of the
+ * caller being delivered.  Because this means we must choose a caller
+ * before we place the call to the member, this impacts the order in
+ * which calls are delivered and the rate at which we can deliver
+ * those calls.
+ *
+ * The /enterprise/ outbound strategy does not preserve the caller ID
+ * of the caller thereby allowing deliver of callers to agents at the
+ * fastest possible rate.
+ *
+ * ## Manual calls
+ *
+ * The fifo system provides a way to prevent members on non-fifo calls
+ * from receiving a call from the fifo system.  We do this by tracking
+ * non-fifo calls in a special fifo named `manual_calls`.  When
+ * creating a channel for an agent we set the channel variable
+ * `fifo_outbound_uuid` to an arbitrary unique value for that agent,
+ * then call `fifo_track_call`.  For the corresponding member we must
+ * also set `{fifo_outbound_uuid=}` to the same value.
+ *
+ * ## Importance
+ *
+ * Importance is a value 0-9 that can be associated with a fifo.  The
+ * default value is 0.  If the fifo is being dynamically created the
+ * importance of the fifo can be set when calling the `fifo`
+ * application.  If the fifo already exists the importance value
+ * passed to the fifo application will be ignored.
+ */
 
 #define MANUAL_QUEUE_NAME "manual_calls"
 #define FIFO_EVENT "fifo::info"
