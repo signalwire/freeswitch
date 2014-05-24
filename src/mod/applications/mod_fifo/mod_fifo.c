@@ -4402,7 +4402,6 @@ static switch_status_t load_config(int reload, int del_all)
 		}
 	}
 
-
 	if (!(dbh = fifo_get_db_handle())) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot open DB!\n");
 		goto done;
@@ -4418,10 +4417,7 @@ static switch_status_t load_config(int reload, int del_all)
 										   globals.post_trans_execute,
 										   globals.inner_pre_trans_execute,
 										   globals.inner_post_trans_execute);
-		
 		switch_sql_queue_manager_start(globals.qm);
-
-
 
 		switch_cache_db_test_reactive(dbh, "delete from fifo_outbound where static = 1 or taking_calls < 0 or stop_time < 0",
 									  "drop table fifo_outbound", outbound_sql);
@@ -4465,7 +4461,6 @@ static switch_status_t load_config(int reload, int del_all)
 		node->is_static = 0;
 	}
 
-
 	if ((fifos = switch_xml_child(cfg, "fifos"))) {
 		for (fifo = switch_xml_child(fifos, "fifo"); fifo; fifo = fifo->next) {
 			const char *name, *outbound_strategy;
@@ -4506,13 +4501,10 @@ static switch_status_t load_config(int reload, int del_all)
 			}
 
 			switch_mutex_unlock(globals.mutex);
-
 			switch_assert(node);
-
 			switch_mutex_lock(node->mutex);
 
 			outbound_strategy = switch_xml_attr(fifo, "outbound_strategy");
-
 
 			if ((val = switch_xml_attr(fifo, "outbound_per_cycle"))) {
 				if ((outbound_per_cycle = atoi(val)) < 0) {
@@ -4523,17 +4515,14 @@ static switch_status_t load_config(int reload, int del_all)
 
 			if ((val = switch_xml_attr(fifo, "retry_delay"))) {
 				int tmp;
-
 				if ((tmp = atoi(val)) < 0) {
 					tmp = 0;
 				}
-
 				node->retry_delay = tmp;
 			}
 
 			if ((val = switch_xml_attr(fifo, "outbound_priority"))) {
 				outbound_priority = atoi(val);
-
 				if (outbound_priority < 1 || outbound_priority > 10) {
 					outbound_priority = 5;
 				}
@@ -4610,7 +4599,6 @@ static switch_status_t load_config(int reload, int del_all)
 					*p = '\0';
 				}
 
-
 				sql = switch_mprintf("insert into fifo_outbound "
 									 "(uuid, fifo_name, originate_string, simo_count, use_count, timeout, lag, "
 									 "next_avail, expires, static, outbound_call_count, outbound_fail_count, hostname, taking_calls, "
@@ -4618,7 +4606,6 @@ static switch_status_t load_config(int reload, int del_all)
 									 "values ('%q','%q','%q',%d,%d,%d,%d,0,0,1,0,0,'%q',%d,%ld,0)",
 									 digest, node->name, member->txt, simo_i, 0, timeout_i, lag_i, globals.hostname, taking_calls_i,
 									 (long) switch_epoch_time_now(NULL));
-
 				switch_assert(sql);
 				fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_FALSE);
 				free(name_dup);
@@ -4630,7 +4617,6 @@ static switch_status_t load_config(int reload, int del_all)
 			switch_mutex_unlock(node->mutex);
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s configured\n", node->name);
-
 		}
 	}
 	switch_xml_free(xml);
@@ -4639,7 +4625,6 @@ static switch_status_t load_config(int reload, int del_all)
 
 	if (reload) {
 		fifo_node_t *node;
-
 		switch_mutex_lock(globals.mutex);
 		for (node = globals.nodes; node; node = node->next) {
 			if (node->ready == -1) {
@@ -4650,8 +4635,6 @@ static switch_status_t load_config(int reload, int del_all)
 		}
 		switch_mutex_unlock(globals.mutex);
 	}
-
-
 
 	return status;
 }
