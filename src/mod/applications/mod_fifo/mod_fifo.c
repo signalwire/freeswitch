@@ -395,7 +395,7 @@ struct callback {
 };
 typedef struct callback callback_t;
 
-static const char *strat_parse(outbound_strategy_t s)
+static const char *print_strategy(outbound_strategy_t s)
 {
 	switch (s) {
 	case NODE_STRATEGY_RINGALL:
@@ -409,7 +409,7 @@ static const char *strat_parse(outbound_strategy_t s)
 	return "invalid";
 }
 
-static outbound_strategy_t parse_strat(const char *name)
+static outbound_strategy_t parse_strategy(const char *name)
 {
 	if (!strcasecmp(name, "ringall")) {
 		return NODE_STRATEGY_RINGALL;
@@ -4045,7 +4045,7 @@ static void list_node(fifo_node_t *node, switch_xml_t x_report, int *off, int ve
 	switch_snprintf(tmp, sizeof(buffer), "%u", node->outbound_priority);
 	switch_xml_set_attr_d(x_fifo, "outbound_priority", tmp);
 
-	switch_xml_set_attr_d(x_fifo, "outbound_strategy", strat_parse(node->outbound_strategy));
+	switch_xml_set_attr_d(x_fifo, "outbound_strategy", print_strategy(node->outbound_strategy));
 
 	cc_off = xml_outbound(x_fifo, node, "outbound", "member", cc_off, verbose);
 	cc_off = xml_caller(x_fifo, node, "callers", "caller", cc_off, verbose);
@@ -4091,7 +4091,7 @@ void node_dump(switch_stream_handle_t *stream)
 								   " waiting: %d\n"
 								   ,
 								   node->name, node->outbound_name, node->outbound_per_cycle,
-								   node->outbound_priority, strat_parse(node->outbound_strategy),
+								   node->outbound_priority, print_strategy(node->outbound_strategy),
 								   node->has_outbound,
 								   node->outbound_priority,
 								   node->busy,
@@ -4377,7 +4377,7 @@ static switch_status_t load_config(int reload, int del_all)
 			char *val = (char*)switch_xml_attr_soft(param, "value");
 
 			if (!strcasecmp(var, "outbound-strategy") && !zstr(val)) {
-				default_strategy = parse_strat(val);
+				default_strategy = parse_strategy(val);
 			}
 
 			if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
@@ -4566,7 +4566,7 @@ static switch_status_t load_config(int reload, int del_all)
 			node->default_lag = default_lag;
 
 			if (outbound_strategy) {
-				node->outbound_strategy = parse_strat(outbound_strategy);
+				node->outbound_strategy = parse_strategy(outbound_strategy);
 				node->has_outbound = 1;
 			}
 
