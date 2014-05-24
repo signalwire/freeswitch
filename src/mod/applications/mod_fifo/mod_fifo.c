@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
@@ -22,7 +22,7 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- * 
+ *
  * Anthony Minessale II <anthm@freeswitch.org>
  * Travis Cross <tc@traviscross.com>
  *
@@ -594,14 +594,14 @@ static switch_status_t caller_read_frame_callback(switch_core_session_t *session
 			args.buflen = sizeof(buf);
 			args.read_frame_callback = chime_read_frame_callback;
 			args.user_data = user_data;
-			
+
 			status = switch_ivr_play_file(session, NULL, cd->list[cd->index], &args);
-			
+
 			if (match_key(cd->exit_key, *buf)) {
 				cd->abort = 1;
 				return SWITCH_STATUS_BREAK;
 			}
-			
+
 			if (status != SWITCH_STATUS_SUCCESS) {
 				return SWITCH_STATUS_BREAK;
 			}
@@ -664,7 +664,7 @@ static struct {
 	char *pre_trans_execute;
 	char *post_trans_execute;
 	char *inner_pre_trans_execute;
-	char *inner_post_trans_execute;	
+	char *inner_post_trans_execute;
 	switch_sql_queue_manager_t *qm;
 	int allow_transcoding;
 } globals;
@@ -683,11 +683,11 @@ static int fifo_dec_use_count(const char *outbound_id)
 		}
 	}
 	switch_mutex_unlock(globals.use_mutex);
-	
+
 	return r;
 }
 
-static int fifo_get_use_count(const char *outbound_id) 
+static int fifo_get_use_count(const char *outbound_id)
 {
 	int r = 0, *count;
 
@@ -696,12 +696,12 @@ static int fifo_get_use_count(const char *outbound_id)
 		r = *count;
 	}
 	switch_mutex_unlock(globals.use_mutex);
-	
+
 	return r;
 }
 
 
-static int fifo_inc_use_count(const char *outbound_id) 
+static int fifo_inc_use_count(const char *outbound_id)
 {
 	int r = 0, *count;
 
@@ -714,11 +714,11 @@ static int fifo_inc_use_count(const char *outbound_id)
 	r = ++(*count);
 
 	switch_mutex_unlock(globals.use_mutex);
-	
+
 	return r;
 }
 
-static void fifo_init_use_count(void) 
+static void fifo_init_use_count(void)
 {
 	switch_mutex_lock(globals.use_mutex);
 	if (globals.use_hash) {
@@ -861,7 +861,7 @@ switch_cache_db_handle_t *fifo_get_db_handle(void)
 
 	switch_cache_db_handle_t *dbh = NULL;
 	char *dsn;
-	
+
 	if (!zstr(globals.odbc_dsn)) {
 		dsn = globals.odbc_dsn;
 	} else {
@@ -871,7 +871,7 @@ switch_cache_db_handle_t *fifo_get_db_handle(void)
 	if (switch_cache_db_get_db_handle_dsn(&dbh, dsn) != SWITCH_STATUS_SUCCESS) {
 		dbh = NULL;
 	}
-	
+
 	return dbh;
 }
 
@@ -881,7 +881,7 @@ static switch_status_t fifo_execute_sql_queued(char **sqlp, switch_bool_t sql_al
 	char *sql;
 
 	switch_assert(sqlp && *sqlp);
-	sql = *sqlp;	
+	sql = *sqlp;
 
 
 	if (switch_stristr("insert", sql)) {
@@ -976,7 +976,7 @@ static fifo_node_t *create_node(const char *name, uint32_t importance, switch_mu
 	callback_t cbt = { 0 };
 	char *sql = NULL;
 	char *domain_name = NULL;
-	
+
 	if (!globals.running) {
 		return NULL;
 	}
@@ -1007,12 +1007,12 @@ static fifo_node_t *create_node(const char *name, uint32_t importance, switch_mu
 	cbt.len = sizeof(outbound_count);
 	sql = switch_mprintf("select count(*) from fifo_outbound where fifo_name = '%q'", name);
 	fifo_execute_sql_callback(mutex, sql, sql2str_callback, &cbt);
-    node->member_count = atoi(outbound_count);
+	node->member_count = atoi(outbound_count);
 	if (node->member_count > 0) {
 		node->has_outbound = 1;
 	} else {
-        node->has_outbound = 0;
-    }
+		node->has_outbound = 0;
+	}
 	switch_safe_free(sql);
 
 	node->importance = importance;
@@ -1097,7 +1097,7 @@ static void do_unbridge(switch_core_session_t *consumer_session, switch_core_ses
 		if ((outbound_id = switch_channel_get_variable(consumer_channel, "fifo_outbound_uuid"))) {
 			use_count = fifo_get_use_count(outbound_id);
 		}
-		
+
 		ts = switch_micro_time_now();
 		switch_time_exp_lt(&tm, ts);
 		switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
@@ -1462,7 +1462,7 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 
 		if (use_ent) {
 			stream.write_function(&stream, "{ignore_early_media=true,outbound_redirect_fatal=true,leg_timeout=%d,fifo_outbound_uuid=%s,fifo_name=%s}%s%s",
-								  h->timeout, h->uuid, node->name, 
+								  h->timeout, h->uuid, node->name,
 								  parsed ? parsed : expanded_originate_string, (i == cbh->rowcount - 1) ? "" : SWITCH_ENT_ORIGINATE_DELIM);
 		} else {
 			stream.write_function(&stream, "[leg_timeout=%d,fifo_outbound_uuid=%s,fifo_name=%s]%s,",
@@ -1591,7 +1591,7 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 
 	if (!total) goto end;
 
-	if (!globals.allow_transcoding && !switch_true(switch_event_get_header(pop, "variable_fifo_allow_transcoding")) && 
+	if (!globals.allow_transcoding && !switch_true(switch_event_get_header(pop, "variable_fifo_allow_transcoding")) &&
 		(codec = switch_event_get_header(pop, "variable_rtp_use_codec_name"))) {
 		const char *rate = switch_event_get_header(pop, "variable_rtp_use_codec_rate");
 		const char *ptime = switch_event_get_header(pop, "variable_rtp_use_codec_ptime");
@@ -2099,7 +2099,7 @@ static void *SWITCH_THREAD_FUNC node_thread_run(switch_thread_t *thread, void *o
 				}
 			}
 		}
-	
+
 
 		if (++cur_priority > 10) {
 			cur_priority = 1;
@@ -2514,7 +2514,7 @@ SWITCH_STANDARD_APP(fifo_function)
 	const char *arg_fifo_name = NULL;
 	const char *arg_inout = NULL;
 	const char *serviced_uuid = NULL;
-	
+
 	if (!globals.running) {
 		return;
 	}
@@ -3183,18 +3183,18 @@ SWITCH_STANDARD_APP(fifo_function)
 				if (!(switch_channel_ready(channel))) {
 					const char *app = switch_channel_get_variable(other_channel, "current_application");
 					const char *arg = switch_channel_get_variable(other_channel, "current_application_data");
-					switch_caller_extension_t *extension = NULL;                
+					switch_caller_extension_t *extension = NULL;
 
 
-					switch_channel_set_variable_printf(channel, "last_sent_callee_id_name", "%s (AGENT FAIL)", 
+					switch_channel_set_variable_printf(channel, "last_sent_callee_id_name", "%s (AGENT FAIL)",
 													   switch_channel_get_variable(other_channel, "caller_id_name"));
 					switch_channel_set_variable(channel, "last_sent_callee_id_number", switch_channel_get_variable(other_channel, "caller_id_number"));
 
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 									  "Customer %s %s [%s] appears to be abandoned by agent %s [%s] "
 									  "but is still on the line, redirecting them back to the queue with VIP status.\n",
-									  switch_channel_get_name(other_channel), 
-									  switch_channel_get_variable(other_channel, "caller_id_name"), 
+									  switch_channel_get_name(other_channel),
+									  switch_channel_get_variable(other_channel, "caller_id_name"),
 									  switch_channel_get_variable(other_channel, "caller_id_number"),
 									  switch_channel_get_variable(channel, "caller_id_name"),
 									  switch_channel_get_variable(channel, "caller_id_number"));
@@ -3203,7 +3203,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
 					send_presence(node);
 					check_cancel(node);
-					
+
 					if (app) {
 						extension = switch_caller_extension_new(other_session, app, arg);
 						switch_caller_extension_add_application(other_session, extension, app, arg);
@@ -3232,18 +3232,18 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				originator_cp = switch_channel_get_caller_profile(channel);
 				originatee_cp = switch_channel_get_caller_profile(other_channel);
-				
+
 				switch_channel_set_originator_caller_profile(other_channel, switch_caller_profile_clone(other_session, originator_cp));
 				switch_channel_set_originatee_caller_profile(channel, switch_caller_profile_clone(session, originatee_cp));
-				
-				
+
+
 				originator_cp->callee_id_name = switch_core_strdup(originator_cp->pool, originatee_cp->callee_id_name);
 				originator_cp->callee_id_number = switch_core_strdup(originator_cp->pool, originatee_cp->callee_id_number);
 
 
 				originatee_cp->callee_id_name = switch_core_strdup(originatee_cp->pool, originatee_cp->caller_id_name);
 				originatee_cp->callee_id_number = switch_core_strdup(originatee_cp->pool, originatee_cp->caller_id_number);
-				
+
 				originatee_cp->caller_id_name = switch_core_strdup(originatee_cp->pool, originator_cp->caller_id_name);
 				originatee_cp->caller_id_number = switch_core_strdup(originatee_cp->pool, originator_cp->caller_id_number);
 
@@ -3327,7 +3327,7 @@ SWITCH_STANDARD_APP(fifo_function)
 					switch_event_fire(&event);
 				}
 
-				
+
 				add_bridge_call(switch_core_session_get_uuid(other_session));
 				add_bridge_call(switch_core_session_get_uuid(session));
 
@@ -3361,7 +3361,7 @@ SWITCH_STANDARD_APP(fifo_function)
 					switch_channel_set_variable(switch_core_session_get_channel(other_session), "fifo_initiated_bridge", NULL);
 					switch_channel_set_variable(switch_core_session_get_channel(other_session), "fifo_bridge_role", NULL);
 				}
-				
+
 				if (switch_channel_test_flag(channel, CF_TRANSFER) && switch_channel_up(channel)) {
 					switch_channel_set_variable(switch_core_session_get_channel(other_session), "fifo_initiated_bridge", NULL);
 					switch_channel_set_variable(switch_core_session_get_channel(other_session), "fifo_bridge_role", NULL);
@@ -3404,7 +3404,7 @@ SWITCH_STANDARD_APP(fifo_function)
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Hold-Time-us", "%"SWITCH_TIME_T_FMT, hold_usec);
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Hold-Time-ms", "%"SWITCH_TIME_T_FMT, (uint64_t)(hold_usec / 1000));
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Hold-Time-s", "%"SWITCH_TIME_T_FMT, (uint64_t)(hold_usec / 1000000));
-					
+
 					switch_event_fire(&event);
 				}
 
@@ -3419,7 +3419,7 @@ SWITCH_STANDARD_APP(fifo_function)
 					if (outbound_id) {
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Outbound-ID", outbound_id);
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "FIFO-Consumer-Use-Count", "%d", fifo_get_use_count(outbound_id));
-					}	
+					}
 					switch_event_fire(&event);
 				}
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
@@ -3599,7 +3599,7 @@ SWITCH_STANDARD_APP(fifo_function)
 			continue;
 		}
 		switch_thread_rwlock_unlock(node->rwlock);
-		
+
 		if (node->ready == 1 && do_destroy && node_caller_count(node) == 0 && node->consumer_count == 0) {
 			switch_core_hash_delete(globals.fifo_hash, node->name);
 			node->ready = 0;
@@ -4370,7 +4370,7 @@ static switch_status_t load_config(int reload, int del_all)
 	}
 
 	globals.dbname = "fifo";
-	
+
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char*)switch_xml_attr_soft(param, "name");
@@ -4644,8 +4644,8 @@ static void fifo_member_add(char *fifo_name, char *originate_string, int simo_co
 {
 	char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
 	char *sql, *name_dup, *p;
-    char outbound_count[80] = "";
-    callback_t cbt = { 0 };
+	char outbound_count[80] = "";
+	callback_t cbt = { 0 };
 	fifo_node_t *node = NULL;
 
 	if (!fifo_name) return;
@@ -4683,17 +4683,17 @@ static void fifo_member_add(char *fifo_name, char *originate_string, int simo_co
 	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
 	free(name_dup);
 
-    cbt.buf = outbound_count; 
-    cbt.len = sizeof(outbound_count);
-    sql = switch_mprintf("select count(*) from fifo_outbound where fifo_name = '%q'", fifo_name);
-    fifo_execute_sql_callback(globals.sql_mutex, sql, sql2str_callback, &cbt);
-    node->member_count = atoi(outbound_count);
-    if (node->member_count > 0) {
-        node->has_outbound = 1;
-    } else {
-        node->has_outbound = 0;
-    }
-    switch_safe_free(sql);
+	cbt.buf = outbound_count;
+	cbt.len = sizeof(outbound_count);
+	sql = switch_mprintf("select count(*) from fifo_outbound where fifo_name = '%q'", fifo_name);
+	fifo_execute_sql_callback(globals.sql_mutex, sql, sql2str_callback, &cbt);
+	node->member_count = atoi(outbound_count);
+	if (node->member_count > 0) {
+		node->has_outbound = 1;
+	} else {
+		node->has_outbound = 0;
+	}
+	switch_safe_free(sql);
 }
 
 static void fifo_member_del(char *fifo_name, char *originate_string)
@@ -4728,11 +4728,11 @@ static void fifo_member_del(char *fifo_name, char *originate_string)
 	cbt.len = sizeof(outbound_count);
 	sql = switch_mprintf("select count(*) from fifo_outbound where fifo_name = '%q'", node->name);
 	fifo_execute_sql_callback(globals.sql_mutex, sql, sql2str_callback, &cbt);
-    node->member_count = atoi(outbound_count);
+	node->member_count = atoi(outbound_count);
 	if (node->member_count > 0) {
-        node->has_outbound = 1;
+		node->has_outbound = 1;
 	} else {
-        node->has_outbound = 0;
+		node->has_outbound = 0;
 	}
 	switch_safe_free(sql);
 }
@@ -4920,7 +4920,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_fifo_shutdown)
 		this_node = node;
 		node = node->next;
 
-		
+
 		switch_mutex_lock(this_node->update_mutex);
 		switch_mutex_lock(this_node->mutex);
 		for (x = 0; x < MAX_PRI; x++) {
