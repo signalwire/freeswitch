@@ -4378,9 +4378,7 @@ static switch_status_t load_config(int reload, int del_all)
 
 			if (!strcasecmp(var, "outbound-strategy") && !zstr(val)) {
 				default_strategy = parse_strategy(val);
-			}
-
-			if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
+			} else if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
 				if (switch_odbc_available() || switch_pgsql_available()) {
 					switch_set_string(globals.odbc_dsn, val);
 				} else {
