@@ -4481,9 +4481,7 @@ static switch_status_t load_config(int reload, int del_all)
 			int ring_timeout = 60;
 			int default_lag = 30;
 
-			name = switch_xml_attr(fifo, "name");
-
-			if (!name) {
+			if (!(name = switch_xml_attr(fifo, "name"))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "fifo has no name!\n");
 				continue;
 			}
