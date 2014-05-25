@@ -4340,40 +4340,16 @@ static void extract_fifo_outbound_uuid(char *string, char *uuid, switch_size_t l
 	switch_event_destroy(&ovars);
 }
 
-/*!
- * Load or reload the configuration
- *
- * On the initial load, non-static members are preserved unless the
- * parameter `delete-all-outbound-members-on-startup` is set.  The
- * parameter `del_all` is ignored in this case.
- *
- * On reload, non-static members are preserved unless `del_all` is
- * set.
- *
- * \param reload true if we're reloading the config
- * \param del_all delete all outbound members when reloading;
- *   not used unless reload is true
- */
-static switch_status_t load_config(int reload, int del_all)
-{
-	char *cf = "fifo.conf";
-	switch_xml_t cfg, xml, fifo, fifos, member, settings, param;
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	char *sql;
-	switch_cache_db_handle_t *dbh = NULL;
-	fifo_node_t *node;
+static switch_status_t read_config_file(switch_xml_t *xml, switch_xml_t *cfg) {
+	const char *cf = "fifo.conf";
+	switch_xml_t settings;
 
-	strncpy(globals.hostname, switch_core_get_switchname(), sizeof(globals.hostname) - 1);
-
-	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
+	if (!(*xml = switch_xml_open_cfg(cf, cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
-
-	globals.dbname = "fifo";
-	globals.default_strategy = NODE_STRATEGY_RINGALL;
-	globals.delete_all_members_on_startup = SWITCH_FALSE;
-	if ((settings = switch_xml_child(cfg, "settings"))) {
+	if ((settings = switch_xml_child(*cfg, "settings"))) {
+		switch_xml_t param;
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char*)switch_xml_attr_soft(param, "name");
 			char *val = (char*)switch_xml_attr_soft(param, "value");
@@ -4403,6 +4379,37 @@ static switch_status_t load_config(int reload, int del_all)
 			}
 		}
 	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+/*!
+ * Load or reload the configuration
+ *
+ * On the initial load, non-static members are preserved unless the
+ * parameter `delete-all-outbound-members-on-startup` is set.  The
+ * parameter `del_all` is ignored in this case.
+ *
+ * On reload, non-static members are preserved unless `del_all` is
+ * set.
+ *
+ * \param reload true if we're reloading the config
+ * \param del_all delete all outbound members when reloading;
+ *   not used unless reload is true
+ */
+static switch_status_t load_config(int reload, int del_all)
+{
+	switch_xml_t xml, cfg, fifo, fifos, member;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	char *sql;
+	switch_cache_db_handle_t *dbh = NULL;
+	fifo_node_t *node;
+
+	strncpy(globals.hostname, switch_core_get_switchname(), sizeof(globals.hostname) - 1);
+	globals.dbname = "fifo";
+	globals.default_strategy = NODE_STRATEGY_RINGALL;
+	globals.delete_all_members_on_startup = SWITCH_FALSE;
+
+	if ((status = read_config_file(&xml, &cfg)) != SWITCH_STATUS_SUCCESS) return status;
 
 	if (!(dbh = fifo_get_db_handle())) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot open DB!\n");
