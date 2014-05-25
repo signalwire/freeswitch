@@ -508,7 +508,9 @@ static switch_status_t moh_on_dtmf(switch_core_session_t *session, void *input, 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define check_string(s) if (!zstr(s) && !strcasecmp(s, "undef")) { s = NULL; }
+static inline void cleanup_fifo_arg(const char **s) {
+	if (!zstr(*s) && !strcasecmp(*s, "undef")) *s = NULL;
+}
 
 static int node_caller_count(fifo_node_t *node)
 {
@@ -2607,8 +2609,8 @@ SWITCH_STANDARD_APP(fifo_function)
 		moh = NULL;
 	}
 
-	check_string(announce);
-	check_string(moh);
+	cleanup_fifo_arg(&announce);
+	cleanup_fifo_arg(&moh);
 	switch_assert(node);
 
 	switch_core_media_bug_pause(session);
