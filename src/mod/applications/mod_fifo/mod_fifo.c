@@ -348,6 +348,19 @@ static switch_status_t fifo_queue_popfly(fifo_queue_t *queue, const char *uuid)
 
 
 
+/*!
+ * \struct fifo_node
+ *
+ * \var fifo_node::outbound_name
+ * \brief Name of fifo in caller ID
+ *
+ * For the ringall strategy, this value is a prefix for the
+ * caller ID shown to agents.  If the value starts with '=' then the
+ * actual caller ID is replaced completely.
+ *
+ * For the enterprise strategy, this value is used instead of the
+ * queue name in the caller ID.
+ */
 struct fifo_node {
 	char *name;
 	switch_mutex_t *mutex;
