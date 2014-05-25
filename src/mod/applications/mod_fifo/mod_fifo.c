@@ -111,8 +111,6 @@ typedef enum {
 	NODE_STRATEGY_ENTERPRISE
 } outbound_strategy_t;
 
-static int marker = 1;
-
 typedef struct {
 	int nelm;
 	int idx;
@@ -796,6 +794,7 @@ static int check_bridge_call(const char *key)
 
 static void add_bridge_call(const char *key)
 {
+	static int marker = 1;
 	if (!key) return;
 
 	switch_mutex_lock(globals.bridge_mutex);
