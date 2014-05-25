@@ -1342,7 +1342,7 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 }
 
 
-static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void *obj)
+static void *SWITCH_THREAD_FUNC outbound_ringall_thread_run(switch_thread_t *thread, void *obj)
 {
 	struct callback_helper *cbh = (struct callback_helper *) obj;
 	char *node_name;
@@ -1744,7 +1744,7 @@ static void *SWITCH_THREAD_FUNC ringall_thread_run(switch_thread_t *thread, void
 	return NULL;
 }
 
-static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
+static void *SWITCH_THREAD_FUNC outbound_enterprise_thread_run(switch_thread_t *thread, void *obj)
 {
 	struct call_helper *h = (struct call_helper *) obj;
 
@@ -1946,7 +1946,7 @@ static int place_call_enterprise_callback(void *pArg, int argc, char **argv, cha
 	switch_threadattr_create(&thd_attr, h->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_thread_create(&thread, thd_attr, o_thread_run, h, h->pool);
+	switch_thread_create(&thread, thd_attr, outbound_enterprise_thread_run, h, h->pool);
 
 	(*need)--;
 
@@ -2003,7 +2003,7 @@ static void find_consumers(fifo_node_t *node)
 				switch_threadattr_create(&thd_attr, cbh->pool);
 				switch_threadattr_detach_set(thd_attr, 1);
 				switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-				switch_thread_create(&thread, thd_attr, ringall_thread_run, cbh, cbh->pool);
+				switch_thread_create(&thread, thd_attr, outbound_ringall_thread_run, cbh, cbh->pool);
 			} else {
 				switch_core_destroy_memory_pool(&pool);
 			}
