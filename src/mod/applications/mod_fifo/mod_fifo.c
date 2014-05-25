@@ -4628,10 +4628,10 @@ static switch_status_t load_config(int reload, int del_all)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s configured\n", node->name);
 		}
 	}
-	switch_xml_free(xml);
 
   done:
 
+	switch_xml_free(xml);
 	if (reload) {
 		fifo_node_t *node;
 		switch_mutex_lock(globals.mutex);
