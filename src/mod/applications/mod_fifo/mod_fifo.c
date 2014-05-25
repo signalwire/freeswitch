@@ -111,8 +111,6 @@ typedef enum {
 	NODE_STRATEGY_ENTERPRISE
 } outbound_strategy_t;
 
-static outbound_strategy_t default_strategy = NODE_STRATEGY_RINGALL;
-
 static int marker = 1;
 
 typedef struct {
@@ -667,6 +665,8 @@ static struct {
 	char *inner_post_trans_execute;
 	switch_sql_queue_manager_t *qm;
 	int allow_transcoding;
+	switch_bool_t delete_all_members_on_startup;
+	outbound_strategy_t default_strategy;
 } globals;
 
 
@@ -986,7 +986,7 @@ static fifo_node_t *create_node(const char *name, uint32_t importance, switch_mu
 
 	node = switch_core_alloc(pool, sizeof(*node));
 	node->pool = pool;
-	node->outbound_strategy = default_strategy;
+	node->outbound_strategy = globals.default_strategy;
 	node->name = switch_core_strdup(node->pool, name);
 
 	if (!strchr(name, '@')) {
@@ -4358,7 +4358,6 @@ static switch_status_t load_config(int reload, int del_all)
 	switch_xml_t cfg, xml, fifo, fifos, member, settings, param;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *sql;
-	switch_bool_t delete_all_outbound_member_on_startup = SWITCH_FALSE;
 	switch_cache_db_handle_t *dbh = NULL;
 	fifo_node_t *node;
 
@@ -4370,14 +4369,15 @@ static switch_status_t load_config(int reload, int del_all)
 	}
 
 	globals.dbname = "fifo";
-
+	globals.default_strategy = NODE_STRATEGY_RINGALL;
+	globals.delete_all_members_on_startup = SWITCH_FALSE;
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char*)switch_xml_attr_soft(param, "name");
 			char *val = (char*)switch_xml_attr_soft(param, "value");
 
 			if (!strcasecmp(var, "outbound-strategy") && !zstr(val)) {
-				default_strategy = parse_strategy(val);
+				globals.default_strategy = parse_strategy(val);
 			} else if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
 				if (switch_odbc_available() || switch_pgsql_available()) {
 					switch_set_string(globals.odbc_dsn, val);
@@ -4397,7 +4397,7 @@ static switch_status_t load_config(int reload, int del_all)
 			} else if (!strcasecmp(var, "db-inner-post-trans-execute") && !zstr(val)) {
 				globals.inner_post_trans_execute = switch_core_strdup(globals.pool, val);
 			} else if (!strcasecmp(var, "delete-all-outbound-member-on-startup")) {
-				delete_all_outbound_member_on_startup = switch_true(val);
+				globals.delete_all_members_on_startup = switch_true(val);
 			}
 		}
 	}
@@ -4447,7 +4447,7 @@ static switch_status_t load_config(int reload, int del_all)
 		switch_mutex_unlock(globals.mutex);
 	}
 
-	if ((reload && del_all) || (!reload && delete_all_outbound_member_on_startup)) {
+	if ((reload && del_all) || (!reload && globals.delete_all_members_on_startup)) {
 		sql = switch_mprintf("delete from fifo_outbound where hostname='%q'", globals.hostname);
 	} else {
 		sql = switch_mprintf("delete from fifo_outbound where static=1 and hostname='%q'", globals.hostname);
