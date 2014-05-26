@@ -4484,15 +4484,9 @@ static switch_status_t load_config(int reload, int del_all)
 
 	if ((fifos = switch_xml_child(cfg, "fifos"))) {
 		for (fifo = switch_xml_child(fifos, "fifo"); fifo; fifo = fifo->next) {
-			const char *name, *outbound_strategy;
+			const char *name, *sp;
 			const char *val;
-			int imp = 0, outbound_per_cycle = 1, outbound_priority = 5;
-			int simo_i = 1;
-			int taking_calls_i = 1;
-			int timeout_i = 60;
-			int lag_i = 10;
-			int ring_timeout = 60;
-			int default_lag = 30;
+			int i, importance = 0;
 
 			if (!(name = switch_xml_attr(fifo, "name"))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "fifo has no name!\n");
@@ -4504,15 +4498,13 @@ static switch_status_t load_config(int reload, int del_all)
 				continue;
 			}
 
-			if ((val = switch_xml_attr(fifo, "importance"))) {
-				if ((imp = atoi(val)) < 0) {
-					imp = 0;
-				}
+			if ((val = switch_xml_attr(fifo, "importance")) && !(i = atoi(val)) < 0) {
+				importance = i;
 			}
 
 			switch_mutex_lock(globals.mutex);
 			if (!(node = switch_core_hash_find(globals.fifo_hash, name))) {
-				node = create_node(name, imp, globals.sql_mutex);
+				node = create_node(name, importance, globals.sql_mutex);
 			}
 
 			if ((val = switch_xml_attr(fifo, "outbound_name"))) {
@@ -4523,64 +4515,54 @@ static switch_status_t load_config(int reload, int del_all)
 			switch_assert(node);
 			switch_mutex_lock(node->mutex);
 
-			outbound_strategy = switch_xml_attr(fifo, "outbound_strategy");
+			if ((sp = switch_xml_attr(fifo, "outbound_strategy"))) {
+				node->outbound_strategy = parse_strategy(sp);
+				node->has_outbound = 1;
+			}
 
+			node->outbound_per_cycle = 1;
 			if ((val = switch_xml_attr(fifo, "outbound_per_cycle"))) {
-				if ((outbound_per_cycle = atoi(val)) < 0) {
-					outbound_per_cycle = 1;
+				if (!(i = atoi(val)) < 0) {
+					node->outbound_per_cycle = i;
 				}
 				node->has_outbound = 1;
 			}
 
 			if ((val = switch_xml_attr(fifo, "retry_delay"))) {
-				int tmp;
-				if ((tmp = atoi(val)) < 0) {
-					tmp = 0;
-				}
-				node->retry_delay = tmp;
+				if ((i = atoi(val)) < 0) i = 0;
+				node->retry_delay = i;
 			}
 
+			node->outbound_priority = 5;
 			if ((val = switch_xml_attr(fifo, "outbound_priority"))) {
-				outbound_priority = atoi(val);
-				if (outbound_priority < 1 || outbound_priority > 10) {
-					outbound_priority = 5;
+				i = atoi(val);
+				if (!(i < 1 || i > 10)) {
+					node->outbound_priority = i;
 				}
 				node->has_outbound = 1;
 			}
 
+			node->ring_timeout = 60;
 			if ((val = switch_xml_attr(fifo, "outbound_ring_timeout"))) {
-				int tmp = atoi(val);
-				if (tmp > 10) {
-					ring_timeout = tmp;
+				if ((i = atoi(val)) > 10) {
+					node->ring_timeout = i;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid ring_timeout: must be > 10 for queue %s\n", node->name);
 				}
 			}
 
+			node->default_lag = 30;
 			if ((val = switch_xml_attr(fifo, "outbound_default_lag"))) {
-				int tmp = atoi(val);
-				if (tmp > 10) {
-					default_lag = tmp;
+				if ((i = atoi(val)) > 10) {
+					node->default_lag = i;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid default_lag: must be > 10 for queue %s\n", node->name);
 				}
 			}
 
-			node->ring_timeout = ring_timeout;
-			node->outbound_per_cycle = outbound_per_cycle;
-			node->outbound_priority = outbound_priority;
-			node->default_lag = default_lag;
-
-			if (outbound_strategy) {
-				node->outbound_strategy = parse_strategy(outbound_strategy);
-				node->has_outbound = 1;
-			}
-
 			for (member = switch_xml_child(fifo, "member"); member; member = member->next) {
-				const char *simo = switch_xml_attr_soft(member, "simo");
-				const char *lag = switch_xml_attr_soft(member, "lag");
-				const char *timeout = switch_xml_attr_soft(member, "timeout");
-				const char *taking_calls = switch_xml_attr_soft(member, "taking_calls");
+				const char *simo, *taking_calls, *timeout, *lag;
+				int simo_i = 1, taking_calls_i = 1, timeout_i = 60, lag_i = 10;
 				char *name_dup, *p;
 				char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
 
@@ -4590,27 +4572,23 @@ static switch_status_t load_config(int reload, int del_all)
 					switch_md5_string(digest, (void *) member->txt, strlen(member->txt));
 				}
 
-				if (simo) {
+				if ((simo = switch_xml_attr_soft(member, "simo"))) {
 					simo_i = atoi(simo);
 				}
 
-				if (taking_calls) {
-					if ((taking_calls_i = atoi(taking_calls)) < 1) {
-						taking_calls_i = 1;
-					}
+				if ((taking_calls = switch_xml_attr_soft(member, "taking_calls"))
+					&& (taking_calls_i = atoi(taking_calls)) < 1) {
+					taking_calls_i = 1;
 				}
 
-				if (timeout) {
-					if ((timeout_i = atoi(timeout)) < 10) {
-						timeout_i = ring_timeout;
-					}
-
+				if ((timeout = switch_xml_attr_soft(member, "timeout"))
+					&& (timeout_i = atoi(timeout)) < 10) {
+					timeout_i = node->ring_timeout;
 				}
 
-				if (lag) {
-					if ((lag_i = atoi(lag)) < 0) {
-						lag_i = default_lag;
-					}
+				if ((lag = switch_xml_attr_soft(member, "lag"))
+					&& (lag_i = atoi(lag)) < 0) {
+					lag_i = node->default_lag;
 				}
 
 				name_dup = strdup(node->name);
@@ -4634,7 +4612,6 @@ static switch_status_t load_config(int reload, int del_all)
 			node->ready = 1;
 			node->is_static = 1;
 			switch_mutex_unlock(node->mutex);
-
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s configured\n", node->name);
 		}
 	}
