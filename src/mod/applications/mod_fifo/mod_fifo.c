@@ -999,8 +999,6 @@ static fifo_node_t *create_node(const char *name, uint32_t importance, switch_mu
 	char outbound_count[80] = "";
 	callback_t cbt = { 0 };
 	char *sql = NULL;
-	char *domain_name = NULL;
-
 	if (!globals.running) {
 		return NULL;
 	}
@@ -1013,8 +1011,7 @@ static fifo_node_t *create_node(const char *name, uint32_t importance, switch_mu
 	node->name = switch_core_strdup(node->pool, name);
 
 	if (!strchr(name, '@')) {
-		domain_name = switch_core_get_domain(SWITCH_TRUE);
-		node->domain_name = switch_core_strdup(node->pool, domain_name);
+		node->domain_name = switch_core_strdup(node->pool, switch_core_get_domain(SWITCH_FALSE));
 	}
 
 	for (x = 0; x < MAX_PRI; x++) {
@@ -1042,8 +1039,6 @@ static fifo_node_t *create_node(const char *name, uint32_t importance, switch_mu
 	node->next = globals.nodes;
 	globals.nodes = node;
 	switch_mutex_unlock(globals.mutex);
-
-	switch_safe_free(domain_name);
 
 	return node;
 }
