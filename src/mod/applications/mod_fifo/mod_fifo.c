@@ -1186,6 +1186,7 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
 	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
 		if (msg->numeric_arg == 42) {
+			/* See audio_bridge_thread() for source of 42 constant. */
 			goto end;
 		}
 		if ((caller_session = switch_core_session_locate(msg->string_arg))) {
