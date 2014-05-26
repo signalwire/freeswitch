@@ -503,6 +503,13 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 	return SWITCH_STATUS_SUCCESS;
 }
 
+/*! \brief Handler for caller DTMF
+ *
+ * The channel variable `fifo_caller_exit_key` can be set to one or
+ * more digits that when pressed will cause the caller to exit from
+ * the fifo.  We'll return via a single character in `buf` the digit
+ * that was pressed (not null-terminated).
+ */
 static switch_status_t moh_on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
 	switch (itype) {
