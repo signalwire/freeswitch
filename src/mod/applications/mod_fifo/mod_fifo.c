@@ -1997,6 +1997,20 @@ static void find_consumers(fifo_node_t *node)
 	switch_safe_free(sql);
 }
 
+/*\brief Continuously attempt to deliver calls to outbound members
+ *
+ * For each outbound priority level 1-10, find fifo nodes with a
+ * matching priority.  For each of those nodes with outbound members,
+ * run `find_consumers()` if the fifo node has calls needing to be
+ * delivered and not enough ready and waiting inbound consumers.
+ *
+ * In the event of nothing needing to be done, each cycle starts at
+ * priority 1 and ends at priority 10, yielding for one second
+ * afterward.  We also yield after initiating outbound calls, starting
+ * again where we left off on the next node.
+ *
+ * We also take care of cleaning up after nodes queued for deletion.
+ */
 static void *SWITCH_THREAD_FUNC node_thread_run(switch_thread_t *thread, void *obj)
 {
 	fifo_node_t *node, *last, *this_node;
