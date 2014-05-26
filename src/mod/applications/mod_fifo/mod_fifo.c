@@ -1111,7 +1111,6 @@ static void do_unbridge(switch_core_session_t *consumer_session, switch_core_ses
 			use_count = fifo_get_use_count(outbound_id);
 		}
 
-		ts = switch_micro_time_now();
 		switch_time_exp_lt(&tm, ts);
 		switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 
