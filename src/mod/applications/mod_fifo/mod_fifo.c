@@ -447,16 +447,6 @@ static int sql2str_callback(void *pArg, int argc, char **argv, char **columnName
 	return 0;
 }
 
-static switch_bool_t match_key(const char *caller_exit_key, char key)
-{
-	while (caller_exit_key && *caller_exit_key) {
-		if (*caller_exit_key++ == key) {
-			return SWITCH_TRUE;
-		}
-	}
-	return SWITCH_FALSE;
-}
-
 /*! \brief Handler for consumer DTMF
  *
  * When `fifo_consumer_exit_key` is pressed by the consumer we hangup
@@ -522,7 +512,7 @@ static switch_status_t moh_on_dtmf(switch_core_session_t *session, void *input, 
 			switch_channel_t *channel = switch_core_session_get_channel(session);
 			const char *caller_exit_key = switch_channel_get_variable(channel, "fifo_caller_exit_key");
 
-			if (match_key(caller_exit_key, dtmf->digit)) {
+			if (caller_exit_key && dtmf->digit && strchr(caller_exit_key, dtmf->digit)) {
 				char *bp = buf;
 				*bp = dtmf->digit;
 				return SWITCH_STATUS_BREAK;
@@ -625,7 +615,7 @@ static switch_status_t caller_read_frame_callback(switch_core_session_t *session
 
 			status = switch_ivr_play_file(session, NULL, cd->list[cd->index], &args);
 
-			if (match_key(cd->exit_key, *buf)) {
+			if (cd->exit_key && *buf && strchr(cd->exit_key, *buf)) {
 				cd->abort = 1;
 				return SWITCH_STATUS_BREAK;
 			}
@@ -2781,7 +2771,7 @@ SWITCH_STANDARD_APP(fifo_function)
 				goto abort;
 			}
 
-			if (match_key(caller_exit_key, *buf)) {
+			if (caller_exit_key && *buf && strchr(caller_exit_key, *buf)) {
 				switch_channel_set_variable(channel, "fifo_caller_exit_key", (char *)buf);
 				aborted = 1;
 				goto abort;
