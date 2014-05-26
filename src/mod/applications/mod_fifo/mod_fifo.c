@@ -565,6 +565,12 @@ static void node_remove_uuid(fifo_node_t *node, const char *uuid)
 	return;
 }
 
+/*!\struct fifo_chime_data
+ *
+ * \var fifo_chime_data::list
+ * A list of strings representing things to play back to the caller
+ * while they are waiting to be connected with an agent.
+ */
 #define MAX_CHIME 25
 struct fifo_chime_data {
 	char *list[MAX_CHIME];
