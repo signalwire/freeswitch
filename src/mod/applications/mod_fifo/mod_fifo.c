@@ -1593,8 +1593,6 @@ static void *SWITCH_THREAD_FUNC outbound_ringall_thread_run(switch_thread_t *thr
 		fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
 	}
 
-	if (!total) goto end;
-
 	if (!globals.allow_transcoding && !switch_true(switch_event_get_header(pop, "variable_fifo_allow_transcoding")) &&
 		(codec = switch_event_get_header(pop, "variable_rtp_use_codec_name"))) {
 		const char *rate = switch_event_get_header(pop, "variable_rtp_use_codec_rate");
