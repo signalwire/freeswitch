@@ -457,6 +457,19 @@ static switch_bool_t match_key(const char *caller_exit_key, char key)
 	return SWITCH_FALSE;
 }
 
+/*! \brief Handler for consumer DTMF
+ *
+ * When `fifo_consumer_exit_key` is pressed by the consumer we hangup
+ * on the caller (unless we've put the caller on hold).  The default
+ * exit key is '*'.
+ *
+ * When the consumer presses '0' we put both legs on hold and play
+ * hold music as follows.  To the caller we play `fifo_music` or the
+ * default hold music for the channel.  To the consumer we play
+ * `fifo_hold_music`, or `fifo_music`, or the default hold music for
+ * the channel.  The consumer can press '0' again to pick up the
+ * caller from hold.
+ */
 static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
 	switch_core_session_t *bleg = (switch_core_session_t *) buf;
