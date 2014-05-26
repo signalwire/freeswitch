@@ -692,8 +692,6 @@ static switch_status_t consumer_read_frame_callback(switch_core_session_t *sessi
 	return SWITCH_STATUS_SUCCESS;
 }
 
-struct fifo_node;
-
 static struct {
 	switch_hash_t *caller_orig_hash;
 	switch_hash_t *consumer_orig_hash;
