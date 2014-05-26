@@ -245,7 +245,16 @@ static switch_status_t fifo_queue_pop(fifo_queue_t *queue, switch_event_t **pop,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
+/*! \brief Remove matching event from queue
+ *
+ * Each event in the queue will be checked to see whether it has a
+ * header equal to name whose value is equal to val.  If it does, that
+ * event will be returned unless the event is for an outbound caller.
+ * If name starts with '+' or remove == 2 then forcing is enabled and
+ * the event will be returned in any case.  If remove > 0 then the
+ * returned event will be removed from the queue and the remaining
+ * elements shifted to make them contiguous.
+ */
 static switch_status_t fifo_queue_pop_nameval(fifo_queue_t *queue, const char *name, const char *val, switch_event_t **pop, int remove)
 {
 	int i, j, force = 0;
