@@ -674,15 +674,13 @@ static switch_status_t caller_read_frame_callback(switch_core_session_t *session
 static switch_status_t consumer_read_frame_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data)
 {
 	fifo_node_t *node, **node_list = (fifo_node_t **) user_data;
-	int x = 0, total = 0, i = 0;
+	int total = 0, i = 0;
 
 	for (i = 0;; i++) {
 		if (!(node = node_list[i])) {
 			break;
 		}
-		for (x = 0; x < MAX_PRI; x++) {
-			total += fifo_queue_size(node->fifo_list[x]);
-		}
+		total += node_caller_count(node);
 	}
 
 	if (total) {
