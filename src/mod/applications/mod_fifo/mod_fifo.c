@@ -995,7 +995,6 @@ static fifo_node_t *create_node(const char *name, uint32_t importance, switch_mu
 		return NULL;
 	}
 
-
 	switch_core_new_memory_pool(&pool);
 
 	node = switch_core_alloc(pool, sizeof(*node));
@@ -1022,11 +1021,7 @@ static fifo_node_t *create_node(const char *name, uint32_t importance, switch_mu
 	sql = switch_mprintf("select count(*) from fifo_outbound where fifo_name = '%q'", name);
 	fifo_execute_sql_callback(mutex, sql, sql2str_callback, &cbt);
 	node->member_count = atoi(outbound_count);
-	if (node->member_count > 0) {
-		node->has_outbound = 1;
-	} else {
-		node->has_outbound = 0;
-	}
+	node->has_outbound = (node->member_count > 0) ? 1 : 0;
 	switch_safe_free(sql);
 
 	node->importance = importance;
