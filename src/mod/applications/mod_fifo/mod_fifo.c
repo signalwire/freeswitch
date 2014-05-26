@@ -309,6 +309,12 @@ static switch_status_t fifo_queue_pop_nameval(fifo_queue_t *queue, const char *n
 	return SWITCH_STATUS_SUCCESS;
 }
 
+/*! \brief Destroy event with given uuid and remove it from queue
+ *
+ * Elements of the queue are searched until a matching uuid is found.
+ * That uuid is then destroyed and removed from the queue.  The
+ * remaining elements are shifted to make them contiguous.
+ */
 static switch_status_t fifo_queue_popfly(fifo_queue_t *queue, const char *uuid)
 {
 	int i, j;
