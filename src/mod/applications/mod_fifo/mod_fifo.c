@@ -599,6 +599,11 @@ struct fifo_chime_data {
 
 typedef struct fifo_chime_data fifo_chime_data_t;
 
+/*! \brief Enforce the `fifo_orbit_timeout`
+ *
+ * If the caller has been waiting longer than the `fifo_orbit_timeout`
+ * we break out so the orbit can do something else with the call.
+ */
 static switch_status_t chime_read_frame_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data)
 {
 	fifo_chime_data_t *cd = (fifo_chime_data_t *) user_data;
@@ -611,7 +616,11 @@ static switch_status_t chime_read_frame_callback(switch_core_session_t *session,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
+/*! \brief Handle chimes and timeouts for callers
+ *
+ * Play back the chimes in order spaced out by the given `freq` while
+ * ensuring that we don't exceed the `orbit_timeout`.
+ */
 static switch_status_t caller_read_frame_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data)
 {
 	fifo_chime_data_t *cd = (fifo_chime_data_t *) user_data;
@@ -655,6 +664,13 @@ static switch_status_t caller_read_frame_callback(switch_core_session_t *session
 	return chime_read_frame_callback(session, frame, user_data);
 }
 
+/*! \brief Handler for waiting consumers
+ *
+ * In `user_data` we'll be passed an array of fifo_nodes representing
+ * the fifos for which this consumer will accept calls.  If any of
+ * those fifos have a caller in them, we break out so we can accept
+ * the call.
+ */
 static switch_status_t consumer_read_frame_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data)
 {
 	fifo_node_t *node, **node_list = (fifo_node_t **) user_data;
