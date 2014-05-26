@@ -111,6 +111,16 @@ typedef enum {
 	NODE_STRATEGY_ENTERPRISE
 } outbound_strategy_t;
 
+/*!\struct fifo_queue_t
+ * \brief Queue of callers
+ *
+ * Callers are placed into a queue as events in `data` which is an
+ * array of such events.  The array size is hard-coded as 1000
+ * elements.
+ *
+ * Fifo nodes are composed of an array of these queues representing
+ * each priority level of the fifo.
+ */
 typedef struct {
 	int nelm;
 	int idx;
