@@ -4563,7 +4563,6 @@ static switch_status_t load_config(int reload, int del_all)
 			for (member = switch_xml_child(fifo, "member"); member; member = member->next) {
 				const char *simo, *taking_calls, *timeout, *lag;
 				int simo_i = 1, taking_calls_i = 1, timeout_i = 60, lag_i = 10;
-				char *name_dup, *p;
 				char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
 
 				if (switch_stristr("fifo_outbound_uuid=", member->txt)) {
@@ -4591,11 +4590,6 @@ static switch_status_t load_config(int reload, int del_all)
 					lag_i = node->default_lag;
 				}
 
-				name_dup = strdup(node->name);
-				if ((p = strchr(name_dup, '@'))) {
-					*p = '\0';
-				}
-
 				sql = switch_mprintf("insert into fifo_outbound "
 									 "(uuid, fifo_name, originate_string, simo_count, use_count, timeout, lag, "
 									 "next_avail, expires, static, outbound_call_count, outbound_fail_count, hostname, taking_calls, "
@@ -4605,7 +4599,6 @@ static switch_status_t load_config(int reload, int del_all)
 									 (long) switch_epoch_time_now(NULL));
 				switch_assert(sql);
 				fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_FALSE);
-				free(name_dup);
 				node->has_outbound = 1;
 				node->member_count++;
 			}
