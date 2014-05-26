@@ -1083,6 +1083,8 @@ struct callback_helper {
 	int ready;
 };
 
+/*!\brief Handle unbridging of manually tracked calls
+ */
 static void do_unbridge(switch_core_session_t *consumer_session, switch_core_session_t *caller_session)
 {
 	switch_channel_t *consumer_channel = switch_core_session_get_channel(consumer_session);
@@ -1168,6 +1170,8 @@ static void do_unbridge(switch_core_session_t *consumer_session, switch_core_ses
 	}
 }
 
+/*!\brief Handle session messages for manually tracked calls
+ */
 static switch_status_t messagehook (switch_core_session_t *session, switch_core_session_message_t *msg)
 {
 	switch_event_t *event;
