@@ -166,37 +166,26 @@ static void change_pos(switch_event_t *event, int pos)
 	char tmp[30] = "";
 
 	if (zstr(uuid)) return;
-
 	if (!(session = switch_core_session_locate(uuid))) {
 		return;
 	}
-
 	channel = switch_core_session_get_channel(session);
-
 	switch_snprintf(tmp, sizeof(tmp), "%d", pos);
 	switch_channel_set_variable(channel, "fifo_position", tmp);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "fifo_position", tmp);
-
 	switch_core_session_rwunlock(session);
-
-
 }
 
 static switch_status_t fifo_queue_push(fifo_queue_t *queue, switch_event_t *ptr)
 {
 	switch_mutex_lock(queue->mutex);
-
 	if (queue->idx == queue->nelm) {
 		switch_mutex_unlock(queue->mutex);
 		return SWITCH_STATUS_FALSE;
 	}
-
 	queue->data[queue->idx++] = ptr;
-
 	switch_mutex_unlock(queue->mutex);
-
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 static int fifo_queue_size(fifo_queue_t *queue)
@@ -205,7 +194,6 @@ static int fifo_queue_size(fifo_queue_t *queue)
 	switch_mutex_lock(queue->mutex);
 	s = queue->idx;
 	switch_mutex_unlock(queue->mutex);
-
 	return s;
 }
 
@@ -248,9 +236,7 @@ static switch_status_t fifo_queue_pop(fifo_queue_t *queue, switch_event_t **pop,
 	}
 
 	switch_mutex_unlock(queue->mutex);
-
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 
