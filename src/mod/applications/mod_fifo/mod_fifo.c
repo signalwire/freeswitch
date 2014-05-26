@@ -197,6 +197,12 @@ static int fifo_queue_size(fifo_queue_t *queue)
 	return s;
 }
 
+/*!
+ * \param remove Whether to remove the popped event from the queue
+ * If remove is 0, do not remove the popped event.  If it is 1, remove
+ * it if it is not an event for an outbound caller.  If it is 2,
+ * always remove it.
+ */
 static switch_status_t fifo_queue_pop(fifo_queue_t *queue, switch_event_t **pop, int remove)
 {
 	int i, j;
