@@ -4338,6 +4338,20 @@ static void extract_fifo_outbound_uuid(char *string, char *uuid, switch_size_t l
 	switch_event_destroy(&ovars);
 }
 
+/*!
+ * Load or reload the configuration
+ *
+ * On the initial load, non-static members are preserved unless the
+ * parameter `delete-all-outbound-members-on-startup` is set.  The
+ * parameter `del_all` is ignored in this case.
+ *
+ * On reload, non-static members are preserved unless `del_all` is
+ * set.
+ *
+ * \param reload true if we're reloading the config
+ * \param del_all delete all outbound members when reloading;
+ *   not used unless reload is true
+ */
 static switch_status_t load_config(int reload, int del_all)
 {
 	char *cf = "fifo.conf";
