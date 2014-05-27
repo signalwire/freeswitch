@@ -383,7 +383,7 @@ static void insert_fax_metadata(switch_event_t *event, const char *name, iks *re
 static void on_execute_complete_event(switch_event_t *event)
 {
 	const char *application = switch_event_get_header(event, "Application");
-	
+
 	if (!zstr(application) && (!strcmp(application, "rxfax") || !strcmp(application, "txfax"))) {
 		int is_rxfax = !strcmp(application, "rxfax");
 		const char *uuid = switch_event_get_header(event, "Unique-ID");
@@ -406,14 +406,15 @@ static void on_execute_complete_event(switch_event_t *event)
 
 			/* RX only: transfer HTTP document and delete local copy */
 			if (is_rxfax && RECEIVEFAX_COMPONENT(component)->http_put_after_receive && switch_file_exists(RECEIVEFAX_COMPONENT(component)->local_filename, RAYO_POOL(component)) == SWITCH_STATUS_SUCCESS) {
+				char *cmd = switch_core_sprintf(RAYO_POOL(component), "%s %s", RECEIVEFAX_COMPONENT(component)->filename, RECEIVEFAX_COMPONENT(component)->local_filename);
 				switch_stream_handle_t stream = { 0 };
 				SWITCH_STANDARD_STREAM(stream);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s PUT fax to %s\n", RAYO_JID(component), RECEIVEFAX_COMPONENT(component)->filename);
-				switch_api_execute("http_put", RECEIVEFAX_COMPONENT(component)->filename, NULL, &stream);
+				switch_api_execute("http_put", cmd, NULL, &stream);
 				/* check if successful */
 				if (!zstr(stream.data) && strncmp(stream.data, "+OK", 3)) {
 					/* PUT failed */
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s PUT fax to %s failed: %s\n", RAYO_JID(component), RECEIVEFAX_COMPONENT(component)->filename, (char *)stream.data);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s PUT fax %s to %s failed: %s\n", RAYO_JID(component), RECEIVEFAX_COMPONENT(component)->local_filename, RECEIVEFAX_COMPONENT(component)->filename, (char *)stream.data);
 					have_fax_document = 0;
 				}
 				switch_safe_free(stream.data)
