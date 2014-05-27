@@ -1352,6 +1352,20 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 	return SWITCH_STATUS_SUCCESS;
 }
 
+/*!\brief Create calls to outbound members with ringall strategy
+ *
+ * A fifo node has been selected for us and we've been given a list of
+ * outbound members to ring.  We're going to pick a single caller by
+ * searching through the fifo node queues in order of priority
+ * (`fifo_priority`) from lowest to highest.  We'll look first for
+ * callers with fifo_vip=true.  Finding none, we'll consider the
+ * plebs.
+ *
+ * Once we have a caller to service, we'll set fifo_bridge_uuid for
+ * that caller to let the fifo application in on our decision.  Our
+ * job being done, we'll let the fifo application deal with the
+ * remaining details.
+ */
 static void *SWITCH_THREAD_FUNC outbound_ringall_thread_run(switch_thread_t *thread, void *obj)
 {
 	struct callback_helper *cbh = (struct callback_helper *) obj;
@@ -1887,6 +1901,9 @@ static void *SWITCH_THREAD_FUNC outbound_enterprise_thread_run(switch_thread_t *
 	return NULL;
 }
 
+/*!\brief Extract the outbound member results and accumulate them for
+ * the ringall strategy handler
+ */
 static int place_call_ringall_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	struct callback_helper *cbh = (struct callback_helper *) pArg;
@@ -2991,6 +3008,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				check = switch_channel_get_variable(channel, "fifo_bridge_uuid_required");
 
+				/* Handle predestined calls, including calls from the ringall strategy */
 				if ((varval = switch_channel_get_variable(channel, "fifo_bridge_uuid"))) {
 					if (check_bridge_call(varval) && switch_true(check)) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Call has already been answered\n",
