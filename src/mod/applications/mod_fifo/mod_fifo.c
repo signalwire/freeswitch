@@ -1751,6 +1751,15 @@ static void *SWITCH_THREAD_FUNC outbound_ringall_thread_run(switch_thread_t *thr
 	return NULL;
 }
 
+/*!\brief Send a call to an outbound member with the enterprise strategy
+ *
+ * A fifo and an outbound member have been picked out for us and our
+ * job is to create a channel to the member and deliver that channel
+ * into the `fifo <fifo> out` application.
+ *
+ * We haven't picked a caller yet, and we won't do so here.  We'll let
+ * the fifo application take care of that work.
+ */
 static void *SWITCH_THREAD_FUNC outbound_enterprise_thread_run(switch_thread_t *thread, void *obj)
 {
 	struct call_helper *h = (struct call_helper *) obj;
@@ -1928,6 +1937,9 @@ static int place_call_ringall_callback(void *pArg, int argc, char **argv, char *
 	return 0;
 }
 
+/*!\brief Extract the outbound member results and invoke the
+ * enterprise strategy handler
+ */
 static int place_call_enterprise_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	int *need = (int *) pArg;
