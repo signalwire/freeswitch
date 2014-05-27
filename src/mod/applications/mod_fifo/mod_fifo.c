@@ -4110,7 +4110,7 @@ void node_dump(switch_stream_handle_t *stream)
 	switch_mutex_unlock(globals.mutex);
 }
 
-#define FIFO_API_SYNTAX "list|list_verbose|count|debug|status|importance [<fifo name>]|reparse [del_all]"
+#define FIFO_API_SYNTAX "list|list_verbose|count|debug|status|has_outbound|importance [<fifo name>]|reparse [del_all]"
 SWITCH_STANDARD_API(fifo_api_function)
 {
 	fifo_node_t *node;
