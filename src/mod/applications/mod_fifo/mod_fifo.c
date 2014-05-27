@@ -1938,6 +1938,18 @@ static int place_call_enterprise_callback(void *pArg, int argc, char **argv, cha
 	return *need ? 0 : -1;
 }
 
+/*!\brief Find outbound members to call for a given fifo node
+ *
+ * We're given a fifo node that has callers to be delivered to agents.
+ * Our job is to find available outbound members and pass them to the
+ * appropriate outbound strategy handler.
+ *
+ * The ringall strategy handler needs the full list of members to do
+ * its job, so we first let `place_call_ringall_callback` accumulate
+ * the results.  The enterprise strategy handler can simply take each
+ * member one at a time, so the `place_call_enterprise_callback` takes
+ * care of invoking the handler.
+ */
 static void find_consumers(fifo_node_t *node)
 {
 	char *sql;
