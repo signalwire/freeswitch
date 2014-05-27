@@ -1190,6 +1190,14 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
 		if (msg->numeric_arg == 42) {
 			/* See audio_bridge_thread() for source of 42 constant. */
+			/* When a session is interrupted to execute an application
+			   (e.g. by uuid_execute) we need to tell everything in FS
+			   to unbridge the channel (e.g. to turn on the
+			   jitterbuffer) but we need mod_fifo not to see the
+			   unbridge because we don't want fifo to stop tracking
+			   the call.  So this magic number is a complete hack to
+			   make this happen.  So we ignore it here and simply fall
+			   through. */
 			goto end;
 		}
 		if ((caller_session = switch_core_session_locate(msg->string_arg))) {
