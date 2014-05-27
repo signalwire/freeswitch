@@ -204,9 +204,9 @@ static int fifo_queue_size(fifo_queue_t *queue)
 
 /*!
  * \param remove Whether to remove the popped event from the queue
- * If remove is 0, do not remove the popped event.  If it is 1, remove
- * it if it is not an event for an outbound caller.  If it is 2,
- * always remove it.
+ *   If remove is 0, do not remove the popped event.  If it is 1,
+ *   remove it if it is not an event for an outbound caller.  If it is
+ *   2, always remove it.
  */
 static switch_status_t fifo_queue_pop(fifo_queue_t *queue, switch_event_t **pop, int remove)
 {
@@ -250,7 +250,7 @@ static switch_status_t fifo_queue_pop(fifo_queue_t *queue, switch_event_t **pop,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/*! \brief Remove matching event from queue
+/*!\brief Remove matching event from queue
  *
  * Each event in the queue will be checked to see whether it has a
  * header equal to name whose value is equal to val.  If it does, that
@@ -313,7 +313,7 @@ static switch_status_t fifo_queue_pop_nameval(fifo_queue_t *queue, const char *n
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/*! \brief Destroy event with given uuid and remove it from queue
+/*!\brief Destroy event with given uuid and remove it from queue
  *
  * Elements of the queue are searched until a matching uuid is found.
  * That uuid is then destroyed and removed from the queue.  The
@@ -356,8 +356,7 @@ static switch_status_t fifo_queue_popfly(fifo_queue_t *queue, const char *uuid)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/*!
- * \struct fifo_node
+/*!\struct fifo_node
  *
  * \var fifo_node::outbound_name
  * \brief Name of fifo in caller ID
@@ -446,7 +445,7 @@ static int sql2str_callback(void *pArg, int argc, char **argv, char **columnName
 	return 0;
 }
 
-/*! \brief Handler for consumer DTMF
+/*!\brief Handler for consumer DTMF
  *
  * When `fifo_consumer_exit_key` is pressed by the consumer we hangup
  * on the caller (unless we've put the caller on hold).  The default
@@ -502,7 +501,7 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/*! \brief Handler for caller DTMF
+/*!\brief Handler for caller DTMF
  *
  * The channel variable `fifo_caller_exit_key` can be set to one or
  * more digits that when pressed will cause the caller to exit from
@@ -588,7 +587,7 @@ struct fifo_chime_data {
 
 typedef struct fifo_chime_data fifo_chime_data_t;
 
-/*! \brief Enforce the `fifo_orbit_timeout`
+/*!\brief Enforce the `fifo_orbit_timeout`
  *
  * If the caller has been waiting longer than the `fifo_orbit_timeout`
  * we break out so the orbit can do something else with the call.
@@ -605,7 +604,7 @@ static switch_status_t chime_read_frame_callback(switch_core_session_t *session,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/*! \brief Handle chimes and timeouts for callers
+/*!\brief Handle chimes and timeouts for callers
  *
  * Play back the chimes in order spaced out by the given `freq` while
  * ensuring that we don't exceed the `orbit_timeout`.
@@ -653,7 +652,7 @@ static switch_status_t caller_read_frame_callback(switch_core_session_t *session
 	return chime_read_frame_callback(session, frame, user_data);
 }
 
-/*! \brief Handler for waiting consumers
+/*!\brief Handler for waiting consumers
  *
  * In `user_data` we'll be passed an array of fifo_nodes representing
  * the fifos for which this consumer will accept calls.  If any of
@@ -4368,8 +4367,7 @@ static switch_status_t read_config_file(switch_xml_t *xml, switch_xml_t *cfg) {
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/*!
- * Load or reload the configuration
+/*!\brief Load or reload the configuration
  *
  * On the initial load, non-static members are preserved unless the
  * parameter `delete-all-outbound-members-on-startup` is set.  The
