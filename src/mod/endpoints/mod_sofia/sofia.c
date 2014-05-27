@@ -5071,8 +5071,9 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			caller_profile->network_addr = switch_core_strdup(caller_profile->pool, network_ip);
 		}
 
+
 		tech_pvt->last_sdp_str = NULL;
-		if (!sofia_use_soa(tech_pvt) && sip->sip_payload && sip->sip_payload->pl_data) {
+		if (sip->sip_payload && sip->sip_payload->pl_data) {
 			tech_pvt->last_sdp_str = switch_core_session_strdup(session, sip->sip_payload->pl_data);
 		}
 
@@ -5786,7 +5787,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		}
 	}
 
-	if (status > 100 && status < 300 && tech_pvt && !sofia_use_soa(tech_pvt) && !r_sdp && tech_pvt->last_sdp_str) {
+	if (tech_pvt && (status > 100 || switch_channel_test_flag(channel, CF_ANSWERED)) && status < 300 && !r_sdp && tech_pvt->last_sdp_str) {
 		r_sdp = tech_pvt->last_sdp_str;
 	}
 
@@ -7780,9 +7781,11 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 {
 	char *call_info = NULL;
 	switch_channel_t *channel = NULL;
+	private_object_t *tech_pvt = NULL;
 
 	if (session) {
 		channel = switch_core_session_get_channel(session);
+		tech_pvt = switch_core_session_get_private(session);
 	}
 
 	if (session && profile && sip && sofia_test_pflag(profile, PFLAG_TRACK_CALLS)) {
@@ -7823,8 +7826,10 @@ void sofia_handle_sip_i_reinvite(switch_core_session_t *session,
 	}
 
 	if (channel) {
+		tech_pvt->last_sdp_str = NULL;
 		if (sip->sip_payload && sip->sip_payload->pl_data) {
 			switch_channel_set_variable(channel, "sip_reinvite_sdp", sip->sip_payload->pl_data);
+			tech_pvt->last_sdp_str = switch_core_session_strdup(session, sip->sip_payload->pl_data);
 		}
 		switch_channel_execute_on(channel, "execute_on_sip_reinvite");
 	}
