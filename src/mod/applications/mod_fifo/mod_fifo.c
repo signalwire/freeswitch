@@ -2983,6 +2983,33 @@ SWITCH_STANDARD_APP(fifo_function)
 				}
 			}
 
+			/* Before we can pick a caller we have to decide on a fifo
+			   node to service if the consumer can service more than
+			   one.
+
+			   If all fifos have an importance of zero, we'll find the
+			   first node that wins based on the chosen strategy.
+
+			   The `waiting_longer` strategy will choose the node that
+			   hasn't been empty for the longest time.
+
+			   The `more_ppl` strategy will choose the node that has
+			   the most people waiting.
+
+			   If a node has an importance value set, it will cause us
+			   to ignore later nodes with equivalent or lower
+			   importance values.  This means that a node with the
+			   same importance that would otherwise win based on the
+			   strategy will not be considered at all if it comes
+			   later in the list.  Note also that the high importance
+			   node may still lose if a considered fifo earlier in the
+			   list beats it per the strategy.
+
+			   Note that when the consumer has been delivered by an
+			   outbound strategy there will only be one fifo node
+			   passed to us, so neither the importance nor the
+			   strategy here will have any effect.
+			*/
 			for (i = 0; i < node_count; i++) {
 				if (!(node = node_list[i])) {
 					continue;
