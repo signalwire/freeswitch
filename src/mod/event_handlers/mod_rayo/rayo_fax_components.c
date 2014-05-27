@@ -200,9 +200,6 @@ static iks *start_sendfax_component(struct rayo_actor *call, struct rayo_message
 	switch_channel_set_variable(channel, "fax_local_station_id", NULL);
 	switch_channel_set_variable(channel, "fax_remote_station_id", NULL);
 
-	/* clear fax interrupt variable */
-	switch_channel_set_variable(switch_core_session_get_channel(session), "rayo_read_frame_interrupt", NULL);
-
 	rayo_call_set_faxing(RAYO_CALL(call), 1);
 
 	/* execute txfax APP */
@@ -306,9 +303,6 @@ static iks *start_receivefax_component(struct rayo_actor *call, struct rayo_mess
 	switch_channel_set_variable(channel, "fax_local_station_id", NULL);
 	switch_channel_set_variable(channel, "fax_remote_station_id", NULL);
 
-	/* clear fax interrupt variable */
-	switch_channel_set_variable(switch_core_session_get_channel(session), "rayo_read_frame_interrupt", NULL);
-
 	rayo_call_set_faxing(RAYO_CALL(call), 1);
 
 	/* execute rxfax APP */
@@ -394,15 +388,7 @@ static void on_execute_complete_event(switch_event_t *event)
 			iks *complete;
 			iks *fax;
 			int have_fax_document = 1;
-			switch_core_session_t *session;
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "Got result for %s\n", fax_jid);
-
-			/* clean up channel */
-			session = switch_core_session_locate(uuid);
-			if (session) {
-				switch_channel_set_variable(switch_core_session_get_channel(session), "rayo_read_frame_interrupt", NULL);
-				switch_core_session_rwunlock(session);
-			}
 
 			/* RX only: transfer HTTP document and delete local copy */
 			if (is_rxfax && RECEIVEFAX_COMPONENT(component)->http_put_after_receive && switch_file_exists(RECEIVEFAX_COMPONENT(component)->local_filename, RAYO_POOL(component)) == SWITCH_STATUS_SUCCESS) {
