@@ -3,6 +3,7 @@
     <!-- Don't change these unless you are insane -->
     <!--<param name="decoder" value="i586"/>-->
     <!--<param name="volume" value=".1"/>-->
-    <!--<param name="outscale" value="8192"/>-->
+    <!-- mod_shout sets output amplitude scale to 8192 by default - preserve mpg123 default of 32768 -->
+    <param name="outscale" value="32768"/>
   </settings>
 </configuration>
