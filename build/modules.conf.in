@@ -82,6 +82,7 @@ dialplans/mod_dialplan_xml
 #endpoints/mod_gsmopen
 #endpoints/mod_h323
 #endpoints/mod_khomp
+endpoints/mod_rtc
 endpoints/mod_loopback
 #endpoints/mod_opal
 #endpoints/mod_portaudio
