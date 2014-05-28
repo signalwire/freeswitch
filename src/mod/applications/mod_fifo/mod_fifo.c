@@ -86,9 +86,12 @@ SWITCH_MODULE_DEFINITION(mod_fifo, mod_fifo_load, mod_fifo_shutdown, NULL);
  * from receiving a call from the fifo system.  We do this by tracking
  * non-fifo calls in a special fifo named `manual_calls`.  When
  * creating a channel for an agent we set the channel variable
- * `fifo_outbound_uuid` to an arbitrary unique value for that agent,
- * then call `fifo_track_call`.  For the corresponding member we must
- * also set `{fifo_outbound_uuid=}` to the same value.
+ * `fifo_outbound_uuid` to an arbitrary unique value <= 32 characters
+ * for that agent, then call `fifo_track_call`.  For the corresponding
+ * member we must also set `{fifo_outbound_uuid=}` to the same value.
+ * We expect the value of `fifo_outbound_uuid` to be the MD5 hash of
+ * the unique ID.  Values longer than 32 characters will cause the
+ * mechanism to fail to work as expected.
  *
  * ## Importance
  *
