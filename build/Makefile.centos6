@@ -1,28 +1,19 @@
 #
-# FreeSWITCH auto-build Makefile (CentOS 5.10 Wingardium Leviosa Edition)
+# FreeSWITCH auto-build Makefile (CentOS 6.5/Debian 7 Nike Edition, JUST DO IT!)
 # http://www.freeswitch.org
 # put this file anywhere and type make to
 # create a fully-built freeswitch.git from scratch
 # in that same directory.
 #
-# Brian West <brian@freeswitch.org>
 #
-FSPREFIX=/usr/local/freeswitch
-PREFIX=/opt/fs-libs
-JPEG=v8d
-OPENSSL=1.0.1g
-SQLITE=autoconf-3080403
-PCRE=8.35
-CURL=7.36.0
-SPEEX=1.2rc1
-LIBEDIT=20140213-3.1
-LDNS=1.6.17
+RPMS=git gcc-c++ autoconf automake libtool wget python ncurses-devel zlib-devel libjpeg-devel openssl-devel e2fsprogs-devel sqlite-devel libcurl-devel pcre-devel speex-devel ldns-devel libedit-devel
+DEBS=git build-essential automake autoconf libtool wget python zlib1g-dev libjpeg-dev libncurses5-dev libssl-dev libpcre3-dev libcurl4-openssl-dev libldns-dev libedit-dev libspeexdsp-dev  libspeexdsp-dev libsqlite3-dev 
 
 freeswitch: deps has-git freeswitch.git/Makefile
 	cd freeswitch.git && make
 
 freeswitch.git/Makefile: freeswitch.git/configure
-	cd freeswitch.git && PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig ./configure LDFLAGS='-L$(PREFIX)/lib -Wl,-rpath=$(PREFIX)/lib' CFLAGS='-I$(PREFIX)/include' --prefix=$(FSPREFIX)
+	cd freeswitch.git && ./configure
 
 freeswitch.git/configure: freeswitch.git/bootstrap.sh
 	cd freeswitch.git && sh bootstrap.sh
@@ -30,63 +21,14 @@ freeswitch.git/configure: freeswitch.git/bootstrap.sh
 freeswitch.git/bootstrap.sh: has-git
 	test -d freeswitch.git || git clone git://git.freeswitch.org/freeswitch.git freeswitch.git
 
-install: freeswitch
+rpmforge:
+	(which rpm && rpm -i http://pkgs.repoforge.org/rpmforge-release/rpmforge-release-0.5.3-1.el6.rf.x86_64.rpm) || true
+
+install:
 	cd freeswitch.git && make install
 
-install-git:
-	rpm -i http://apt.sw.be/redhat/el5/en/x86_64/rpmforge/RPMS//rpmforge-release-0.3.6-1.el5.rf.x86_64.rpm
-	yum update -y
-	yum install -y git gcc-c++ wget ncurses-devel zlib-devel e2fsprogs-devel libtool automake autoconf
+has-git:
+	@git --version || (echo "please install git" && false)
 
-has-git: 
-	@git --version || (echo "please install git by running 'make install-git'" && false)
-
-libjpeg: jpeg-8d/Makefile
-
-jpeg-8d/Makefile:
-	(test -d jpeg-8d) || (wget -4 -O jpegsrc.$(JPEG).tar.gz http://www.ijg.org/files/jpegsrc.$(JPEG).tar.gz && tar zxfv jpegsrc.$(JPEG).tar.gz)
-	(cd jpeg-8d && ./configure --prefix=$(PREFIX) && make && sudo make install)
-
-openssl: openssl-$(OPENSSL)
-
-openssl-$(OPENSSL):
-	(test -d $@) || (wget -4 -O $@.tar.gz http://www.openssl.org/source/$@.tar.gz && tar zxfv $@.tar.gz)
-	(cd $@ && ./Configure --prefix=$(PREFIX) linux-x86_64 shared && make && sudo make install)
-
-sqlite: sqlite-$(SQLITE)
-
-sqlite-$(SQLITE):
-	(test -d $@) || (wget -4 -O $@.tar.gz http://www.sqlite.org/2014/$@.tar.gz && tar zxfv $@.tar.gz)
-	(cd $@ && ./configure --prefix=$(PREFIX) && make && sudo make install)
-
-pcre: pcre-$(PCRE)
-
-pcre-$(PCRE):
-	(test -d $@) || (wget -4 -O $@.tar.gz http://downloads.sourceforge.net/project/pcre/pcre/$(PCRE)/$@.tar.gz && tar zxfv $@.tar.gz)
-	(cd $@ && ./configure --prefix=$(PREFIX) && make && sudo make install)
-
-curl: curl-$(CURL)
-
-curl-$(CURL):
-	(test -d $@) || (wget -4 -O $@.tar.gz http://curl.haxx.se/download/$@.tar.gz && tar zxfv $@.tar.gz)
-	(cd $@ && ./configure --prefix=$(PREFIX) && make && sudo make install)
-
-speex: speex-$(SPEEX)
-
-speex-$(SPEEX):
-	(test -d $@) || (wget -4 -O $@.tar.gz http://downloads.xiph.org/releases/speex/$@.tar.gz && tar zxfv $@.tar.gz)
-	(cd $@ && ./configure --prefix=$(PREFIX) && make && sudo make install)
-
-libedit: libedit-$(LIBEDIT)
-
-libedit-$(LIBEDIT):
-	(test -d $@) || (wget -4 -O $@.tar.gz http://thrysoee.dk/editline/$@.tar.gz && tar zxfv $@.tar.gz)
-	(cd $@ && ./configure --prefix=$(PREFIX) && make && sudo make install)
-
-ldns: ldns-$(LDNS)
-
-ldns-$(LDNS): openssl
-	(test -d $@) || (wget -4 -O $@.tar.gz http://www.nlnetlabs.nl/downloads/ldns/$@.tar.gz && tar zxfv $@.tar.gz)
-	(cd $@ && ./configure --with-ssl=$(PREFIX) --prefix=$(PREFIX) && make && sudo make install)
-
-deps: libjpeg openssl sqlite pcre curl speex libedit ldns
+deps: rpmforge
+	((which yum && yum -y install $(RPMS)) || (which apt-get && apt-get -y install $(DEBS))) || true
