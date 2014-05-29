@@ -4638,7 +4638,8 @@ static void gen_ice(switch_core_session_t *session, switch_media_type_t type, co
 	}
 
 	if (!engine->ice_out.pwd) {
-		switch_stun_random_string(tmp, 16, NULL);
+		switch_stun_random_string(tmp, 24, NULL);
+		tmp[24] = '\0';
 		engine->ice_out.pwd = switch_core_session_strdup(session, tmp);	
 	}
 
