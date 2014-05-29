@@ -1791,7 +1791,7 @@ static void *SWITCH_THREAD_FUNC outbound_enterprise_thread_run(switch_thread_t *
 
 	switch_mutex_lock(globals.mutex);
 	node = switch_core_hash_find(globals.fifo_hash, h->node_name);
-	switch_thread_rwlock_rdlock(node->rwlock);
+	if (node) switch_thread_rwlock_rdlock(node->rwlock);
 	switch_mutex_unlock(globals.mutex);
 
 	if (node) {
