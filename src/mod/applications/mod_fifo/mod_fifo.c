@@ -1476,6 +1476,7 @@ static void *SWITCH_THREAD_FUNC outbound_ringall_thread_run(switch_thread_t *thr
 		int use_ent = 0;
 		char *expanded_originate_string = switch_event_expand_headers(ovars, h->originate_string);
 
+		switch_assert(expanded_originate_string);
 		if (strstr(expanded_originate_string, "user/")) {
 			switch_event_create_brackets(expanded_originate_string, '<', '>', ',', &ovars, &parsed, SWITCH_TRUE);
 			use_ent = 1;
