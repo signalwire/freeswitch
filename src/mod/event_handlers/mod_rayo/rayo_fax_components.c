@@ -200,9 +200,6 @@ static iks *start_sendfax_component(struct rayo_actor *call, struct rayo_message
 	switch_channel_set_variable(channel, "fax_local_station_id", NULL);
 	switch_channel_set_variable(channel, "fax_remote_station_id", NULL);
 
-	/* clear fax interrupt variable */
-	switch_channel_set_variable(switch_core_session_get_channel(session), "rayo_read_frame_interrupt", NULL);
-
 	rayo_call_set_faxing(RAYO_CALL(call), 1);
 
 	/* execute txfax APP */
@@ -306,9 +303,6 @@ static iks *start_receivefax_component(struct rayo_actor *call, struct rayo_mess
 	switch_channel_set_variable(channel, "fax_local_station_id", NULL);
 	switch_channel_set_variable(channel, "fax_remote_station_id", NULL);
 
-	/* clear fax interrupt variable */
-	switch_channel_set_variable(switch_core_session_get_channel(session), "rayo_read_frame_interrupt", NULL);
-
 	rayo_call_set_faxing(RAYO_CALL(call), 1);
 
 	/* execute rxfax APP */
@@ -383,7 +377,7 @@ static void insert_fax_metadata(switch_event_t *event, const char *name, iks *re
 static void on_execute_complete_event(switch_event_t *event)
 {
 	const char *application = switch_event_get_header(event, "Application");
-	
+
 	if (!zstr(application) && (!strcmp(application, "rxfax") || !strcmp(application, "txfax"))) {
 		int is_rxfax = !strcmp(application, "rxfax");
 		const char *uuid = switch_event_get_header(event, "Unique-ID");
@@ -394,26 +388,19 @@ static void on_execute_complete_event(switch_event_t *event)
 			iks *complete;
 			iks *fax;
 			int have_fax_document = 1;
-			switch_core_session_t *session;
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "Got result for %s\n", fax_jid);
-
-			/* clean up channel */
-			session = switch_core_session_locate(uuid);
-			if (session) {
-				switch_channel_set_variable(switch_core_session_get_channel(session), "rayo_read_frame_interrupt", NULL);
-				switch_core_session_rwunlock(session);
-			}
 
 			/* RX only: transfer HTTP document and delete local copy */
 			if (is_rxfax && RECEIVEFAX_COMPONENT(component)->http_put_after_receive && switch_file_exists(RECEIVEFAX_COMPONENT(component)->local_filename, RAYO_POOL(component)) == SWITCH_STATUS_SUCCESS) {
+				char *cmd = switch_core_sprintf(RAYO_POOL(component), "%s %s", RECEIVEFAX_COMPONENT(component)->filename, RECEIVEFAX_COMPONENT(component)->local_filename);
 				switch_stream_handle_t stream = { 0 };
 				SWITCH_STANDARD_STREAM(stream);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s PUT fax to %s\n", RAYO_JID(component), RECEIVEFAX_COMPONENT(component)->filename);
-				switch_api_execute("http_put", RECEIVEFAX_COMPONENT(component)->filename, NULL, &stream);
+				switch_api_execute("http_put", cmd, NULL, &stream);
 				/* check if successful */
 				if (!zstr(stream.data) && strncmp(stream.data, "+OK", 3)) {
 					/* PUT failed */
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s PUT fax to %s failed: %s\n", RAYO_JID(component), RECEIVEFAX_COMPONENT(component)->filename, (char *)stream.data);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s PUT fax %s to %s failed: %s\n", RAYO_JID(component), RECEIVEFAX_COMPONENT(component)->local_filename, RECEIVEFAX_COMPONENT(component)->filename, (char *)stream.data);
 					have_fax_document = 0;
 				}
 				switch_safe_free(stream.data)

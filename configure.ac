@@ -1499,6 +1499,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/endpoints/mod_skypopen/Makefile
 		src/mod/endpoints/mod_sofia/Makefile
 		src/mod/endpoints/mod_unicall/Makefile
+		src/mod/endpoints/mod_rtc/Makefile
 		src/mod/event_handlers/mod_cdr_csv/Makefile
 		src/mod/event_handlers/mod_cdr_mongodb/Makefile
 		src/mod/event_handlers/mod_cdr_pg_csv/Makefile
@@ -1533,6 +1534,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/legacy/languages/mod_lua/Makefile
 		src/mod/legacy/languages/mod_spidermonkey/Makefile
 		src/mod/loggers/mod_console/Makefile
+		src/mod/loggers/mod_graylog2/Makefile
 		src/mod/loggers/mod_logfile/Makefile
 		src/mod/loggers/mod_syslog/Makefile
 		src/mod/say/mod_say_de/Makefile

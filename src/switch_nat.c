@@ -585,6 +585,7 @@ SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping_internal(switch_port_t po
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_event_t *event = NULL;
 
+	if (!initialized || !nat_globals.nat_type) return status;
 	if (!nat_globals.mapping) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "NAT port mapping disabled\n");
 		return status;

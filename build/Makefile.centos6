@@ -1,0 +1,34 @@
+#
+# FreeSWITCH auto-build Makefile (CentOS 6.5/Debian 7 Nike Edition, JUST DO IT!)
+# http://www.freeswitch.org
+# put this file anywhere and type make to
+# create a fully-built freeswitch.git from scratch
+# in that same directory.
+#
+#
+RPMS=git gcc-c++ autoconf automake libtool wget python ncurses-devel zlib-devel libjpeg-devel openssl-devel e2fsprogs-devel sqlite-devel libcurl-devel pcre-devel speex-devel ldns-devel libedit-devel
+DEBS=git build-essential automake autoconf libtool wget python zlib1g-dev libjpeg-dev libncurses5-dev libssl-dev libpcre3-dev libcurl4-openssl-dev libldns-dev libedit-dev libspeexdsp-dev  libspeexdsp-dev libsqlite3-dev 
+
+freeswitch: deps has-git freeswitch.git/Makefile
+	cd freeswitch.git && make
+
+freeswitch.git/Makefile: freeswitch.git/configure
+	cd freeswitch.git && ./configure
+
+freeswitch.git/configure: freeswitch.git/bootstrap.sh
+	cd freeswitch.git && sh bootstrap.sh
+
+freeswitch.git/bootstrap.sh: has-git
+	test -d freeswitch.git || git clone git://git.freeswitch.org/freeswitch.git freeswitch.git
+
+rpmforge:
+	(which rpm && rpm -i http://pkgs.repoforge.org/rpmforge-release/rpmforge-release-0.5.3-1.el6.rf.x86_64.rpm) || true
+
+install:
+	cd freeswitch.git && make install
+
+has-git:
+	@git --version || (echo "please install git" && false)
+
+deps: rpmforge
+	((which yum && yum -y install $(RPMS)) || (which apt-get && apt-get -y install $(DEBS))) || true

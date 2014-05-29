@@ -645,6 +645,7 @@ SWITCH_DECLARE(void *) switch_core_perform_alloc(_In_ switch_memory_pool_t *pool
   \brief Allocate memory directly from a memory pool
   \param _pool the memory pool to allocate from
   \param _mem the number of bytes to allocate
+  \remark the memory returned has been memset to zero
   \return a void pointer to the allocated memory
 */
 #define switch_core_alloc(_pool, _mem) switch_core_perform_alloc(_pool, _mem, __FILE__, __SWITCH_FUNC__, __LINE__)

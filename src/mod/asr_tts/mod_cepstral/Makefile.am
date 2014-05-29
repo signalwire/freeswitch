@@ -11,7 +11,7 @@ if ISMAC
 mod_cepstral_la_LDFLAGS += -framework swift
 mod_cepstral_la_CFLAGS  += -I/Library/Frameworks/swift.framework/Versions/5/Headers/
 else
-mod_cepstral_la_LDFLAGS += -L$(SWIFT_HOME)/lib -L/opt/swift/lib -lswift -lm
+mod_cepstral_la_LDFLAGS += -Wl,-rpath -Wl,/opt/swift/lib -L$(SWIFT_HOME)/lib -L/opt/swift/lib -lswift -lm
 mod_cepstral_la_CFLAGS  += -I$(SWIFT_HOME)/include -I/opt/swift/include 
 endif
 
