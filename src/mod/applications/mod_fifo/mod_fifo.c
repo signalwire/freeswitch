@@ -4456,7 +4456,7 @@ static switch_status_t load_config(int reload, int del_all)
 
 	fifo_execute_sql_queued(&sql, SWITCH_TRUE, SWITCH_TRUE);
 
-	if (!(node = switch_core_hash_find(globals.fifo_hash, MANUAL_QUEUE_NAME))) {
+	if (!switch_core_hash_find(globals.fifo_hash, MANUAL_QUEUE_NAME)) {
 		node = create_node(MANUAL_QUEUE_NAME, 0, globals.sql_mutex);
 		node->ready = 2;
 		node->is_static = 0;
