@@ -1459,14 +1459,10 @@ static void *SWITCH_THREAD_FUNC outbound_ringall_thread_run(switch_thread_t *thr
 		goto end;
 	}
 
-	if (node) {
-		switch_mutex_lock(node->update_mutex);
-		node->busy = 0;
-		node->ring_consumer_count = 1;
-		switch_mutex_unlock(node->update_mutex);
-	} else {
-		goto end;
-	}
+	switch_mutex_lock(node->update_mutex);
+	node->busy = 0;
+	node->ring_consumer_count = 1;
+	switch_mutex_unlock(node->update_mutex);
 
 	SWITCH_STANDARD_STREAM(stream);
 	SWITCH_STANDARD_STREAM(stream2);
