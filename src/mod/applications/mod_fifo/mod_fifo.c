@@ -1501,7 +1501,7 @@ static void *SWITCH_THREAD_FUNC outbound_ringall_thread_run(switch_thread_t *thr
 		stream2.write_function(&stream2, "%s,", h->uuid);
 		switch_safe_free(parsed);
 
-		if (expanded_originate_string && expanded_originate_string != h->originate_string) {
+		if (expanded_originate_string != h->originate_string) {
 			switch_safe_free(expanded_originate_string);
 		}
 	}
