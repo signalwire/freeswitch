@@ -4501,7 +4501,7 @@ static switch_status_t load_config(int reload, int del_all)
 
 			node->outbound_per_cycle = 1;
 			if ((val = switch_xml_attr(fifo, "outbound_per_cycle"))) {
-				if (!(i = atoi(val)) < 0) {
+				if (!((i = atoi(val)) < 0)) {
 					node->outbound_per_cycle = i;
 				}
 				node->has_outbound = 1;
