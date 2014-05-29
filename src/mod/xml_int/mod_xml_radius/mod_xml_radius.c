@@ -479,7 +479,7 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 					if ( GLOBAL_TIME_FORMAT == 1 ) {
 						av_value = switch_mprintf("%02u:%02u:%02u.%03u %s %s %s %02u %04u",
 												  tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec/1000,
-												  GLOBAL_TIME_FORMAT, radattrdays[tm.tm_wday], radattrmonths[tm.tm_mon],
+												  GLOBAL_TIME_ZONE, radattrdays[tm.tm_wday], radattrmonths[tm.tm_mon],
 												  tm.tm_mday, tm.tm_year + 1900);
 					} else {
 						av_value = switch_mprintf("%04u-%02u-%02uT%02u:%02u:%02u.%06u%+03d%02d",
