@@ -4481,7 +4481,7 @@ static switch_status_t load_config(int reload, int del_all)
 				continue;
 			}
 
-			if ((val = switch_xml_attr(fifo, "importance")) && !(i = atoi(val)) < 0) {
+			if ((val = switch_xml_attr(fifo, "importance")) && !((i = atoi(val)) < 0)) {
 				importance = i;
 			}
 
