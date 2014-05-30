@@ -16,7 +16,7 @@ mod_perl_la_LDFLAGS  = -avoid-version -module -no-undefined -shared `$(PERL) -ME
 
 freeswitch_la_SOURCES = freeswitch_perl.cpp mod_perl_wrap.cpp perlxsi.c
 freeswitch_la_LDFLAGS = -avoid-version -module -no-undefined -shared $(LDFLAGS)
-freeswitch_la_CPPFLAGS = -DMULTIPLICITY `$(PERL) -MExtUtils::Embed -e ccopts` -DEMBED_PERL -I$(switch_srcdir)/libs/libteletone/src/ 
+freeswitch_la_CPPFLAGS = -DMULTIPLICITY `$(PERL) -MExtUtils::Embed -e ccopts` -DEMBED_PERL -I$(switch_srcdir)/libs/libteletone/src/ $(SWITCH_PERL_CPPFLAGS)
 reswig:	swigclean mod_perl_wrap.cpp
 
 swigclean: clean
