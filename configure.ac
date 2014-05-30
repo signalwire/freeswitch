@@ -464,7 +464,6 @@ if test "${enable_debug}" = "yes"; then
 	CFLAGS="$saved_CFLAGS"	
 
 	if test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
-	    APR_ADDTO(SWITCH_PERL_CPPFLAGS, -DPERL_GCC_PEDANTIC)
 	    APR_ADDTO(SWITCH_AM_CFLAGS, -g -ggdb)
 	    export DEBUG_CFLAGS="-g -ggdb"
 	fi
@@ -727,7 +726,6 @@ fi
 
 AC_SUBST(SWITCH_AM_CFLAGS)
 AC_SUBST(SWITCH_ANSI_CFLAGS)
-AC_SUBST(SWITCH_PERL_CPPFLAGS)
 AC_SUBST(SWITCH_AM_CXXFLAGS)
 AC_SUBST(SWITCH_AM_LDFLAGS)
 AC_SUBST(ESL_LDFLAGS)
