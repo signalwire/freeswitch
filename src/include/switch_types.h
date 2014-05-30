@@ -1120,7 +1120,7 @@ typedef enum {
 	CCS_HELD,
 	CCS_RING_WAIT,
 	CCS_HANGUP,
-	CCS_UNHOLD
+	CCS_UNHELD
 } switch_channel_callstate_t;
 
 typedef enum {
@@ -1129,6 +1129,7 @@ typedef enum {
 	SDS_ACTIVE,
 	SDS_ACTIVE_MULTI,
 	SDS_HELD,
+	SDS_UNHELD,
 	SDS_HANGUP
 } switch_device_state_t;
 

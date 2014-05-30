@@ -100,6 +100,9 @@ typedef struct switch_device_stats_s {
 	uint32_t held;
 	uint32_t held_in;
 	uint32_t held_out;
+	uint32_t unheld;
+	uint32_t unheld_in;
+	uint32_t unheld_out;
 	uint32_t hup;
 	uint32_t hup_in;
 	uint32_t hup_out;
