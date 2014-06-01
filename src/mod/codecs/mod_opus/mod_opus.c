@@ -439,7 +439,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 	int bits = 0;
 	char *dft_fmtp = NULL;
 	opus_codec_settings_t settings = { 0 };
-    switch_status_t status = SWITCH_FALSE;
+    switch_status_t status = SWITCH_STATUS_SUCCESS;
     
 	if ((status = opus_load_config(SWITCH_FALSE)) != SWITCH_STATUS_SUCCESS) {
 		return status;
