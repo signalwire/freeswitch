@@ -5326,7 +5326,6 @@ static void general_event_handler(switch_event_t *event)
 					}
 				}
 				switch_mutex_unlock(mod_sofia_globals.hash_mutex);
-				sofia_glue_restart_all_profiles();
 			}
 
 		}

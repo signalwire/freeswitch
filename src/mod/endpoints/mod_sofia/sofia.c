@@ -2666,7 +2666,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	int use_timer = !sofia_test_pflag(profile, PFLAG_DISABLE_TIMER);
 	int use_rfc_5626 = sofia_test_pflag(profile, PFLAG_ENABLE_RFC5626);
 	const char *supported = NULL;
-	int sanity;
+	int sanity, attempts = 0;
 	switch_thread_t *worker_thread;
 	switch_status_t st;
 	char qname [128] = "";
@@ -2707,72 +2707,83 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		profile->tls_verify_in_subjects = su_strlst_dup_split((su_home_t *)profile->nua, profile->tls_verify_in_subjects_str, "|");
 	}
 
-	profile->nua = nua_create(profile->s_root,	/* Event loop */
-							  sofia_event_callback,	/* Callback for processing events */
-							  profile,	/* Additional data to pass to callback */
-							  TAG_IF( ! sofia_test_pflag(profile, PFLAG_TLS) || ! profile->tls_only, NUTAG_URL(profile->bindurl)),
-							  NTATAG_USER_VIA(1),
-							  TPTAG_PONG2PING(1),
-							  NUTAG_RETRY_AFTER_ENABLE(0),
-							  TAG_IF(!strchr(profile->sipip, ':'),
-									 SOATAG_AF(SOA_AF_IP4_ONLY)),
-							  TAG_IF(strchr(profile->sipip, ':'),
-									 SOATAG_AF(SOA_AF_IP6_ONLY)),
-							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
-									 NUTAG_SIPS_URL(profile->tls_bindurl)),
-							  TAG_IF(profile->ws_bindurl,
-									 NUTAG_WS_URL(profile->ws_bindurl)),
-							  TAG_IF(profile->wss_bindurl,
-									 NUTAG_WSS_URL(profile->wss_bindurl)),
-							  TAG_IF(profile->tls_cert_dir,
-									 NUTAG_CERTIFICATE_DIR(profile->tls_cert_dir)),
-							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS) && profile->tls_passphrase,
-									TPTAG_TLS_PASSPHRASE(profile->tls_passphrase)),
-							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
-									 TPTAG_TLS_VERIFY_POLICY(profile->tls_verify_policy)),
-							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
-									 TPTAG_TLS_VERIFY_DEPTH(profile->tls_verify_depth)),
-							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
-									 TPTAG_TLS_VERIFY_DATE(profile->tls_verify_date)),
-							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS) && profile->tls_verify_in_subjects,
-									  TPTAG_TLS_VERIFY_SUBJECTS(profile->tls_verify_in_subjects)),
-							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
-									 TPTAG_TLS_CIPHERS(profile->tls_ciphers)),
-							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
-									 TPTAG_TLS_VERSION(profile->tls_version)),
-							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS) && profile->tls_timeout,
-									 TPTAG_TLS_TIMEOUT(profile->tls_timeout)),
-							  TAG_IF(!strchr(profile->sipip, ':'),
-									 NTATAG_UDP_MTU(65535)),
-							  TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_SRV),
-									 NTATAG_USE_SRV(0)),
-							  TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_NAPTR),
-									 NTATAG_USE_NAPTR(0)),
-							  TAG_IF(sofia_test_pflag(profile, PFLAG_TCP_PINGPONG),
-									 TPTAG_PINGPONG(profile->tcp_pingpong)),
-							  TAG_IF(sofia_test_pflag(profile, PFLAG_TCP_PING2PONG),
-									 TPTAG_PINGPONG(profile->tcp_ping2pong)),
-							  TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_SRV503),
-									 NTATAG_SRV_503(0)),
-							  TAG_IF(sofia_test_pflag(profile, PFLAG_SOCKET_TCP_KEEPALIVE),
-									 TPTAG_SOCKET_KEEPALIVE(profile->socket_tcp_keepalive)),
-							  TAG_IF(sofia_test_pflag(profile, PFLAG_TCP_KEEPALIVE),
-									 TPTAG_KEEPALIVE(profile->tcp_keepalive)),
-							  NTATAG_DEFAULT_PROXY(profile->outbound_proxy),
-							  NTATAG_SERVER_RPORT(profile->server_rport_level),
-							  NTATAG_CLIENT_RPORT(profile->client_rport_level),
-							  TPTAG_LOG(sofia_test_flag(profile, TFLAG_TPORT_LOG)),
-							  TPTAG_CAPT(sofia_test_flag(profile, TFLAG_CAPTURE) ? mod_sofia_globals.capture_server : NULL),
-							  TAG_IF(sofia_test_pflag(profile, PFLAG_SIPCOMPACT),
-									 NTATAG_SIPFLAGS(MSG_DO_COMPACT)),
-							  TAG_IF(profile->timer_t1, NTATAG_SIP_T1(profile->timer_t1)),
-							  TAG_IF(profile->timer_t1x64, NTATAG_SIP_T1X64(profile->timer_t1x64)),
-							  TAG_IF(profile->timer_t2, NTATAG_SIP_T2(profile->timer_t2)),
-							  TAG_IF(profile->timer_t4, NTATAG_SIP_T4(profile->timer_t4)),
-							  SIPTAG_ACCEPT_STR("application/sdp, multipart/mixed"),
-							  TAG_IF(sofia_test_pflag(profile, PFLAG_NO_CONNECTION_REUSE),
-									TPTAG_REUSE(0)),
-							  TAG_END());	/* Last tag should always finish the sequence */
+	do {
+		profile->nua = nua_create(profile->s_root,	/* Event loop */
+								  sofia_event_callback,	/* Callback for processing events */
+								  profile,	/* Additional data to pass to callback */
+								  TAG_IF( ! sofia_test_pflag(profile, PFLAG_TLS) || ! profile->tls_only, NUTAG_URL(profile->bindurl)),
+								  NTATAG_USER_VIA(1),
+								  TPTAG_PONG2PING(1),
+								  NUTAG_RETRY_AFTER_ENABLE(0),
+								  TAG_IF(!strchr(profile->sipip, ':'),
+										 SOATAG_AF(SOA_AF_IP4_ONLY)),
+								  TAG_IF(strchr(profile->sipip, ':'),
+										 SOATAG_AF(SOA_AF_IP6_ONLY)),
+								  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
+										 NUTAG_SIPS_URL(profile->tls_bindurl)),
+								  TAG_IF(profile->ws_bindurl,
+										 NUTAG_WS_URL(profile->ws_bindurl)),
+								  TAG_IF(profile->wss_bindurl,
+										 NUTAG_WSS_URL(profile->wss_bindurl)),
+								  TAG_IF(profile->tls_cert_dir,
+										 NUTAG_CERTIFICATE_DIR(profile->tls_cert_dir)),
+								  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS) && profile->tls_passphrase,
+										 TPTAG_TLS_PASSPHRASE(profile->tls_passphrase)),
+								  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
+										 TPTAG_TLS_VERIFY_POLICY(profile->tls_verify_policy)),
+								  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
+										 TPTAG_TLS_VERIFY_DEPTH(profile->tls_verify_depth)),
+								  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
+										 TPTAG_TLS_VERIFY_DATE(profile->tls_verify_date)),
+								  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS) && profile->tls_verify_in_subjects,
+										 TPTAG_TLS_VERIFY_SUBJECTS(profile->tls_verify_in_subjects)),
+								  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
+										 TPTAG_TLS_CIPHERS(profile->tls_ciphers)),
+								  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS),
+										 TPTAG_TLS_VERSION(profile->tls_version)),
+								  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS) && profile->tls_timeout,
+										 TPTAG_TLS_TIMEOUT(profile->tls_timeout)),
+								  TAG_IF(!strchr(profile->sipip, ':'),
+										 NTATAG_UDP_MTU(65535)),
+								  TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_SRV),
+										 NTATAG_USE_SRV(0)),
+								  TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_NAPTR),
+										 NTATAG_USE_NAPTR(0)),
+								  TAG_IF(sofia_test_pflag(profile, PFLAG_TCP_PINGPONG),
+										 TPTAG_PINGPONG(profile->tcp_pingpong)),
+								  TAG_IF(sofia_test_pflag(profile, PFLAG_TCP_PING2PONG),
+										 TPTAG_PINGPONG(profile->tcp_ping2pong)),
+								  TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_SRV503),
+										 NTATAG_SRV_503(0)),
+								  TAG_IF(sofia_test_pflag(profile, PFLAG_SOCKET_TCP_KEEPALIVE),
+										 TPTAG_SOCKET_KEEPALIVE(profile->socket_tcp_keepalive)),
+								  TAG_IF(sofia_test_pflag(profile, PFLAG_TCP_KEEPALIVE),
+										 TPTAG_KEEPALIVE(profile->tcp_keepalive)),
+								  NTATAG_DEFAULT_PROXY(profile->outbound_proxy),
+								  NTATAG_SERVER_RPORT(profile->server_rport_level),
+								  NTATAG_CLIENT_RPORT(profile->client_rport_level),
+								  TPTAG_LOG(sofia_test_flag(profile, TFLAG_TPORT_LOG)),
+								  TPTAG_CAPT(sofia_test_flag(profile, TFLAG_CAPTURE) ? mod_sofia_globals.capture_server : NULL),
+								  TAG_IF(sofia_test_pflag(profile, PFLAG_SIPCOMPACT),
+										 NTATAG_SIPFLAGS(MSG_DO_COMPACT)),
+								  TAG_IF(profile->timer_t1, NTATAG_SIP_T1(profile->timer_t1)),
+								  TAG_IF(profile->timer_t1x64, NTATAG_SIP_T1X64(profile->timer_t1x64)),
+								  TAG_IF(profile->timer_t2, NTATAG_SIP_T2(profile->timer_t2)),
+								  TAG_IF(profile->timer_t4, NTATAG_SIP_T4(profile->timer_t4)),
+								  SIPTAG_ACCEPT_STR("application/sdp, multipart/mixed"),
+								  TAG_IF(sofia_test_pflag(profile, PFLAG_NO_CONNECTION_REUSE),
+										 TPTAG_REUSE(0)),
+								  TAG_END());	/* Last tag should always finish the sequence */
+
+		if (!profile->nua) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s (%s) ATTEMPT %d (RETRY IN %d SEC)\n",
+							  profile->name, profile->bindurl, attempts + 1, profile->bind_attempt_interval);
+			if (attempts < profile->bind_attempts) {
+				switch_yield(1000000 * profile->bind_attempt_interval);
+			}
+		}
+
+	} while (!profile->nua && attempts++ < profile->bind_attempts);
 
 	if (!profile->nua) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Creating SIP UA for profile: %s (%s)\n"
@@ -4000,7 +4011,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->te = 101;
 					profile->ireg_seconds = IREG_SECONDS;
 					profile->paid_type = PAID_DEFAULT;
-
+					profile->bind_attempts = 2;
+					profile->bind_attempt_interval = 5;
 
 					profile->tls_verify_policy = TPTLS_VERIFY_NONE;
 					/* lib default */
@@ -4043,6 +4055,18 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							} else {
 								profile->keepalive = KA_MESSAGE;								
 							}
+						}
+					} else if (!strcasecmp(var, "bind-attempts") && val) {
+						int ba = atoi(val) - 1;
+
+						if (ba >= 0) {
+							profile->bind_attempts = ba;
+						}
+					} else if (!strcasecmp(var, "bind-attempt-interval") && val) {
+						int bai = atoi(val);
+
+						if (bai >= 0) {
+							profile->bind_attempt_interval = bai;
 						}
 					} else if (!strcasecmp(var, "shutdown-on-fail")) {
 						profile->shutdown_type = switch_core_strdup(profile->pool, val);
