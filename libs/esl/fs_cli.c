@@ -1000,7 +1000,7 @@ static const char *inf = "Type /help <enter> to see a list of commands\n\n\n";
 
 static void print_banner(FILE *stream, int color)
 {
-	int x;
+	int x = 0;
 	const char *use = NULL;
 #include <cc.h>
 
