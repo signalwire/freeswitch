@@ -139,10 +139,10 @@ static void screen_size(int *x, int *y)
 
 #elif defined(TIOCGWINSZ)
 	struct winsize w;
-	ioctl(0, TIOCGWINSZ, &w);
-
-	if (x) *x = w.ws_col;
-	if (y) *y = w.ws_row;
+	if ( (ioctl(0, TIOCGWINSZ, &w)) >= 0 ) {
+		if (x) *x = w.ws_col;
+		if (y) *y = w.ws_row;
+	}
 #else
 	if (x) *x = 80;
 	if (y) *y = 24;
@@ -1000,7 +1000,7 @@ static const char *inf = "Type /help <enter> to see a list of commands\n\n\n";
 
 static void print_banner(FILE *stream, int color)
 {
-	int x;
+	int x = 0;
 	const char *use = NULL;
 #include <cc.h>
 

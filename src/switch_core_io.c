@@ -973,6 +973,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	switch_mutex_unlock(session->read_codec->mutex);
 	switch_mutex_unlock(session->codec_read_mutex);
 
+	
+	if (status == SWITCH_STATUS_SUCCESS && switch_channel_get_callstate(session->channel) == CCS_UNHELD) {
+		switch_channel_set_callstate(session->channel, CCS_ACTIVE);
+	}
+
+
 	return status;
 }
 

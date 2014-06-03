@@ -704,7 +704,7 @@ static void do_normal_probe(switch_event_t *event)
 		*probe_host++ = '\0';
 	}
 	probe_euser = probe_user;
-	if ((p = strchr(probe_euser, '+'))) {
+	if ((p = strchr(probe_euser, '+')) && p != probe_euser) {
 		probe_euser = (p + 1);
 	}
 
@@ -841,7 +841,7 @@ static void do_dialog_probe(switch_event_t *event)
 		*probe_host++ = '\0';
 	}
 	probe_euser = probe_user;
-	if ((p = strchr(probe_euser, '+'))) {
+	if ((p = strchr(probe_euser, '+')) && p != probe_euser) {
 		probe_euser = (p + 1);
 	}
 
@@ -1266,7 +1266,7 @@ static switch_event_t *actual_sofia_presence_event_handler(switch_event_t *event
 			switch_safe_free(user);
 			goto done;
 		}
-		if ((euser = strchr(user, '+'))) {
+		if ((euser = strchr(user, '+')) && euser != user) {
 			euser++;
 		} else {
 			euser = user;
@@ -3650,6 +3650,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	char to_tag[13] = "";
 	char buf[80] = "";
 	char *orig_to_user = NULL;
+	char *p;
 
 	if (!sip) {
 		return;
@@ -3812,7 +3813,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 	orig_to_user = su_strdup(nua_handle_home(nh), to_user);
 
-	if (to_user && strchr(to_user, '+')) {
+	if (to_user && (p = strchr(to_user, '+')) && p != to_user) {
 		char *h;
 		if ((proto = (d_user = strdup(to_user)))) {
 			if ((my_to_user = strchr(d_user, '+'))) {
@@ -4809,7 +4810,7 @@ void sofia_presence_handle_sip_i_message(int status,
 
 			full_from = sip_header_as_string(nh->nh_home, (void *) sip->sip_from);
 
-			if ((p = strchr(to_user, '+'))) {
+			if ((p = strchr(to_user, '+')) && p != to_user) {
 				switch_copy_string(proto, to_user, sizeof(proto));
 				p = strchr(proto, '+');
 				*p++ = '\0';

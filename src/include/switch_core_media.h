@@ -106,6 +106,7 @@ typedef struct switch_core_media_params_s {
 	char *early_sdp;
 	char *local_sdp_str;
 	char *last_sdp_str;
+	char *last_sdp_response;
 
 	char *stun_ip;
 	switch_port_t stun_port;

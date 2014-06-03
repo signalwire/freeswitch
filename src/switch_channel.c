@@ -243,7 +243,7 @@ static struct switch_callstate_table CALLSTATE_CHART[] = {
     {"HELD", CCS_HELD},
     {"RING_WAIT", CCS_RING_WAIT},
     {"HANGUP", CCS_HANGUP},
-	{"UNHOLD", CCS_UNHOLD},
+	{"UNHELD", CCS_UNHELD},
     {NULL, 0}
 };
 
@@ -257,6 +257,7 @@ static struct switch_device_state_table DEVICE_STATE_CHART[] = {
     {"ACTIVE", SDS_ACTIVE},
     {"ACTIVE_MULTI", SDS_ACTIVE_MULTI},
     {"HELD", SDS_HELD},
+    {"UNHELD", SDS_UNHELD},
     {"HANGUP", SDS_HANGUP},
     {NULL, 0}
 };
@@ -268,7 +269,7 @@ SWITCH_DECLARE(void) switch_channel_perform_set_callstate(switch_channel_t *chan
 	switch_event_t *event;
 	switch_channel_callstate_t o_callstate = channel->callstate;
 
-	if (o_callstate == callstate) return;
+	if (o_callstate == callstate || o_callstate == CCS_HANGUP) return;
 	
 	channel->callstate = callstate;
 	if (channel->device_node) {
@@ -278,9 +279,7 @@ SWITCH_DECLARE(void) switch_channel_perform_set_callstate(switch_channel_t *chan
 					  "(%s) Callstate Change %s -> %s\n", channel->name, 
 					  switch_channel_callstate2str(o_callstate), switch_channel_callstate2str(callstate));
 
-	if (callstate != CCS_HANGUP) {
-		switch_channel_check_device_state(channel, channel->callstate);
-	}
+	switch_channel_check_device_state(channel, channel->callstate);
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_CALLSTATE) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Original-Channel-Call-State", switch_channel_callstate2str(o_callstate));
@@ -1959,7 +1958,7 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 	}
 
 	if (ACTIVE) {
-		switch_channel_set_callstate(channel, CCS_UNHOLD);
+		switch_channel_set_callstate(channel, CCS_UNHELD);
 		switch_mutex_lock(channel->profile_mutex);
 		if (channel->caller_profile->times->last_hold) {
 			channel->caller_profile->times->hold_accum += (switch_time_now() - channel->caller_profile->times->last_hold);
@@ -1969,8 +1968,11 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 			channel->hold_record->off = switch_time_now();
 		}
 
+		if (switch_channel_test_flag(channel, CF_PROXY_MODE) && switch_channel_test_flag(channel, CF_BRIDGED)) {
+			switch_channel_set_callstate(channel, CCS_ACTIVE);
+		}
+
 		switch_mutex_unlock(channel->profile_mutex);
-		switch_channel_set_callstate(channel, CCS_ACTIVE);
 	}
 
 	if (flag == CF_ORIGINATOR && switch_channel_test_flag(channel, CF_ANSWERED) && switch_channel_up_nosig(channel)) {
@@ -4722,6 +4724,13 @@ static void fetch_device_stats(switch_device_record_t *drec)
 				} else {
 					drec->stats.held_out++;
 				}
+			} else if (np->callstate == CCS_UNHELD) {
+				drec->stats.unheld++;
+				if (np->direction == SWITCH_CALL_DIRECTION_INBOUND) {
+					drec->stats.unheld_in++;
+				} else {
+					drec->stats.unheld_out++;
+				}
 			} else {
 				if (np->callstate == CCS_EARLY) {
 					drec->stats.early++;
@@ -4906,23 +4915,27 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 
 	fetch_device_stats(drec);
 
-	if (drec->stats.offhook == 0) {
-		drec->state = SDS_HANGUP;
-	} else {
-		if (drec->stats.active == 0) {
-			if ((drec->stats.ringing_out + drec->stats.early_out) > 0 || drec->stats.ring_wait > 0) {
-				drec->state = SDS_RINGING;
-			} else {
-				if (drec->stats.held > 0) {
-					drec->state = SDS_HELD;
-				} else {
-					drec->state = SDS_DOWN;
-				}
-			}
-		} else if (drec->stats.active == 1) {
-			drec->state = SDS_ACTIVE;
+	if (drec->state != SDS_HANGUP) {
+		if (drec->stats.offhook == 0 || drec->stats.hup == drec->stats.total) {
+			drec->state = SDS_HANGUP;
 		} else {
-			drec->state = SDS_ACTIVE_MULTI;
+			if (drec->stats.active == 0) {
+				if ((drec->stats.ringing_out + drec->stats.early_out) > 0 || drec->stats.ring_wait > 0) {
+					drec->state = SDS_RINGING;
+				} else {
+					if (drec->stats.held > 0) {
+						drec->state = SDS_HELD;
+					} else if (drec->stats.unheld > 0) {
+						drec->state = SDS_UNHELD;
+					} else {
+						drec->state = SDS_DOWN;
+					}
+				}
+			} else if (drec->stats.active == 1) {
+				drec->state = SDS_ACTIVE;
+			} else {
+				drec->state = SDS_ACTIVE_MULTI;
+			}
 		}
 	}
 
@@ -4960,7 +4973,7 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 		break;
 	}
 
-	if (drec->active_start && drec->state != SDS_ACTIVE && drec->state != SDS_ACTIVE_MULTI) {
+	if (callstate != CCS_UNHELD && drec->active_start && drec->state != SDS_ACTIVE && drec->state != SDS_ACTIVE_MULTI) {
 		drec->active_stop = switch_micro_time_now();
 	}
 
@@ -4984,6 +4997,7 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Device-Legs-Early", "%u", drec->stats.early);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Device-Legs-Active", "%u", drec->stats.active);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Device-Legs-Held", "%u", drec->stats.held);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Device-Legs-UnHeld", "%u", drec->stats.unheld);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Device-Legs-Hup", "%u", drec->stats.hup);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Device-Talk-Time-Start-Uepoch", "%"SWITCH_TIME_T_FMT, drec->active_start);
 		if (drec->active_stop) {
@@ -4994,7 +5008,7 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 
 	switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG1, 
 					  "%s device: %s\nState: %s Dev State: %s/%s Total:%u Offhook:%u "
-					  "Ringing:%u Early:%u Active:%u Held:%u Hungup:%u Dur: %u Ringtime: %u Holdtime: %u %s\n", 
+					  "Ringing:%u Early:%u Active:%u Held:%u Unheld:%u Hungup:%u Dur: %u Ringtime: %u Holdtime: %u %s\n", 
 					  switch_channel_get_name(channel),
 					  drec->device_id,
 					  switch_channel_callstate2str(callstate),
@@ -5006,6 +5020,7 @@ static void switch_channel_check_device_state(switch_channel_t *channel, switch_
 					  drec->stats.early,
 					  drec->stats.active,
 					  drec->stats.held,
+					  drec->stats.unheld,
 					  drec->stats.hup,
 					  drec->active_stop ? (uint32_t)(drec->active_stop - drec->active_start) / 1000 : 0,
 					  drec->ring_stop ? (uint32_t)(drec->ring_stop - drec->ring_start) / 1000 : 0,

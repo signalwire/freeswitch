@@ -54,7 +54,7 @@
 #include <switch_ssl.h>
 
 #define FIR_COUNTDOWN 50
-
+#define JITTER_LEAD_FRAMES 10
 #define READ_INC(rtp_session) switch_mutex_lock(rtp_session->read_mutex); rtp_session->reading++
 #define READ_DEC(rtp_session)  switch_mutex_unlock(rtp_session->read_mutex); rtp_session->reading--
 #define WRITE_INC(rtp_session)  switch_mutex_lock(rtp_session->write_mutex); rtp_session->writing++
@@ -1695,6 +1695,8 @@ static void reset_jitter_seq(switch_rtp_t *rtp_session)
 	rtp_session->stats.inbound.last_proc_time = 0;
 	rtp_session->stats.inbound.last_processed_seq = 0;
 	rtp_session->jitter_lead = 0;
+	rtp_session->consecutive_flaws = 0;
+	rtp_session->stats.inbound.last_flaw = 0;
 }
 
 static void check_jitter(switch_rtp_t *rtp_session)
@@ -1710,7 +1712,7 @@ static void check_jitter(switch_rtp_t *rtp_session)
 		return;
 	}
 
-	if (++rtp_session->jitter_lead < 10 || !rtp_session->stats.inbound.last_proc_time) {
+	if (++rtp_session->jitter_lead < JITTER_LEAD_FRAMES || !rtp_session->stats.inbound.last_proc_time) {
 		rtp_session->stats.inbound.last_proc_time = current_time;
 		return;
 	}
@@ -4136,6 +4138,8 @@ SWITCH_DECLARE(void) switch_rtp_clear_flag(switch_rtp_t *rtp_session, switch_rtp
 
 	if (flag == SWITCH_RTP_FLAG_DTMF_ON) {
 		rtp_session->stats.inbound.last_processed_seq = 0;
+	} else if (flag == SWITCH_RTP_FLAG_PAUSE) {
+		reset_jitter_seq(rtp_session);
 	} else if (flag == SWITCH_RTP_FLAG_NOBLOCK && rtp_session->sock_input) {
 		switch_socket_opt_set(rtp_session->sock_input, SWITCH_SO_NONBLOCK, FALSE);
 	}
@@ -5689,9 +5693,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				}
 
 				
-				
+
 				if (!rtp_session->flags[SWITCH_RTP_FLAG_PAUSE] && !rtp_session->flags[SWITCH_RTP_FLAG_DTMF_ON] && !rtp_session->dtmf_data.in_digit_ts 
-					&& rtp_session->cng_count > (rtp_session->one_second * 2)) {
+					&& rtp_session->cng_count > (rtp_session->one_second * 2) && rtp_session->jitter_lead > JITTER_LEAD_FRAMES) {
 
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "%s %s timeout\n", 
 									  rtp_session_name(rtp_session), rtp_type(rtp_session));

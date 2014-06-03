@@ -716,6 +716,8 @@ struct sofia_profile {
 	int tcp_pingpong;
 	int tcp_ping2pong;
 	ka_type_t keepalive;
+	int bind_attempts;
+	int bind_attempt_interval;
 };
 
 
