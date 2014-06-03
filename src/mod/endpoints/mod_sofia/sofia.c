@@ -6172,13 +6172,10 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "[%s][%d]\n%s\n",
-					  nua_callstate_name(ss_state), status, r_sdp);
-
 	if (tech_pvt && (status > 100 || switch_channel_test_flag(channel, CF_ANSWERED)) && status < 300 && !r_sdp && tech_pvt->mparams.last_sdp_str) {
 		r_sdp = tech_pvt->mparams.last_sdp_str;
 	}
-
+	
 	tech_pvt->mparams.last_sdp_str = NULL;
 
 	if ((channel && (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA))) ||
