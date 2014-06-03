@@ -6172,11 +6172,12 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		}
 	}
 
-	if (tech_pvt && (status > 100 || switch_channel_test_flag(channel, CF_ANSWERED)) && status < 300 && !r_sdp && tech_pvt->mparams.last_sdp_str) {
-		r_sdp = tech_pvt->mparams.last_sdp_str;
+	if (tech_pvt) {
+		if ((status > 100 || switch_channel_test_flag(channel, CF_ANSWERED)) && status < 300 && !r_sdp && tech_pvt->mparams.last_sdp_str) {
+			r_sdp = tech_pvt->mparams.last_sdp_str;
+		}
+		tech_pvt->mparams.last_sdp_str = NULL;
 	}
-	
-	tech_pvt->mparams.last_sdp_str = NULL;
 
 	if ((channel && (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA))) ||
 		(sofia_test_flag(profile, TFLAG_INB_NOMEDIA) || sofia_test_flag(profile, TFLAG_PROXY_MEDIA))) {
