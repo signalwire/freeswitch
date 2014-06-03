@@ -5485,13 +5485,11 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			caller_profile->network_addr = switch_core_strdup(caller_profile->pool, network_ip);
 		}
 
-		tech_pvt->mparams.last_sdp_str = NULL;
+		tech_pvt->mparams.last_sdp_response = NULL;
 		if (sip->sip_payload && sip->sip_payload->pl_data) {
 			switch_core_media_set_sdp_codec_string(session, sip->sip_payload->pl_data, SDP_TYPE_RESPONSE);
-
-			tech_pvt->mparams.last_sdp_str = switch_core_session_strdup(session, sip->sip_payload->pl_data);
+			tech_pvt->mparams.last_sdp_response = switch_core_session_strdup(session, sip->sip_payload->pl_data);
 		}
-
 
 		if (status > 299 && switch_channel_test_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_REQ)) {
 			switch_channel_set_private(channel, "t38_options", NULL);
@@ -6174,9 +6172,14 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		}
 	}
 
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "[%s][%d]\n%s\n",
+					  nua_callstate_name(ss_state), status, r_sdp);
+
 	if (tech_pvt && (status > 100 || switch_channel_test_flag(channel, CF_ANSWERED)) && status < 300 && !r_sdp && tech_pvt->mparams.last_sdp_str) {
 		r_sdp = tech_pvt->mparams.last_sdp_str;
 	}
+
+	tech_pvt->mparams.last_sdp_str = NULL;
 
 	if ((channel && (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA))) ||
 		(sofia_test_flag(profile, TFLAG_INB_NOMEDIA) || sofia_test_flag(profile, TFLAG_PROXY_MEDIA))) {
