@@ -793,6 +793,7 @@ struct private_object {
 	char *early_sdp;
 	char *local_sdp_str;
 	char *last_sdp_str;
+	char *last_sdp_response;
 	char *dest;
 	char *dest_to;
 	char *key;

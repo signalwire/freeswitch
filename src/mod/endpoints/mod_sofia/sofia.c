@@ -5072,9 +5072,9 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		}
 
 
-		tech_pvt->last_sdp_str = NULL;
+		tech_pvt->last_sdp_response = NULL;
 		if (sip->sip_payload && sip->sip_payload->pl_data) {
-			tech_pvt->last_sdp_str = switch_core_session_strdup(session, sip->sip_payload->pl_data);
+			tech_pvt->last_sdp_response = switch_core_session_strdup(session, sip->sip_payload->pl_data);
 		}
 
 
@@ -5791,6 +5791,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		r_sdp = tech_pvt->last_sdp_str;
 	}
 
+	tech_pvt->last_sdp_str = NULL;
+	
 	if ((channel && (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA))) ||
 		(sofia_test_flag(profile, TFLAG_INB_NOMEDIA) || sofia_test_flag(profile, TFLAG_PROXY_MEDIA))) {
 
