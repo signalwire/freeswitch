@@ -59,7 +59,7 @@ typedef struct {
 	const char *console_fnkeys[12];
 	char loglevel[128];
 	int log_uuid;
-	int log_uuid_chars;
+	int log_uuid_length;
 	int quiet;
 	int batch_mode;
 	char prompt_color[12];
@@ -67,7 +67,7 @@ typedef struct {
 	char output_text_color[12];
 } cli_profile_t;
 
-static const int log_uuid_short_chars = 8;
+static const int log_uuid_short_length = 8;
 static int is_color = 1;
 static int warn_stop = 0;
 static int connected = 0;
@@ -745,9 +745,9 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 									printf("%s", colors[level]);
 								}
 								if (global_profile->log_uuid && !esl_strlen_zero(userdata)) {
-									if (global_profile->log_uuid_chars) {
+									if (global_profile->log_uuid_length) {
 										int len = strlen(userdata);
-										int i = (global_profile->log_uuid_chars < len) ? global_profile->log_uuid_chars : len;
+										int i = (global_profile->log_uuid_length < len) ? global_profile->log_uuid_length : len;
 										fwrite(userdata, sizeof(char), i, stdout);
 										printf(" ");
 									} else {
@@ -1247,11 +1247,11 @@ static void read_config(const char *dft_cfile, const char *cfile) {
 				profiles[pcount-1].log_uuid = esl_true(val);
 			} else if(!strcasecmp(var, "log-uuid-short")) {
 				profiles[pcount-1].log_uuid = esl_true(val);
-				profiles[pcount-1].log_uuid_chars = (esl_true(val) ? log_uuid_short_chars : 0);
-			} else if(!strcasecmp(var, "log-uuid-chars")) {
+				profiles[pcount-1].log_uuid_length = (esl_true(val) ? log_uuid_short_length : 0);
+			} else if(!strcasecmp(var, "log-uuid-length")) {
 				int i;
 				if ((i = atoi(val)) > -1) {
-					profiles[pcount-1].log_uuid_chars = i;
+					profiles[pcount-1].log_uuid_length = i;
 				}
 			} else if(!strcasecmp(var, "quiet")) {
 				profiles[pcount-1].quiet = esl_true(val);
@@ -1512,7 +1512,7 @@ int main(int argc, char *argv[])
 	}
 	if (argv_log_uuid_short) {
 		profile->log_uuid = 1;
-		profile->log_uuid_chars = log_uuid_short_chars;
+		profile->log_uuid_length = log_uuid_short_length;
 	}
 	esl_log(ESL_LOG_DEBUG, "Using profile %s [%s]\n", profile->name, profile->host);
 	esl_set_string(prompt_color, profile->prompt_color);
