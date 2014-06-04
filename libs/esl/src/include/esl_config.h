@@ -81,28 +81,30 @@ extern "C" {
   \param expr a string expression
   \return true or false 
 */
-#define esl_true(expr)\
-(expr && ( !strcasecmp(expr, "yes") ||\
-!strcasecmp(expr, "on") ||\
-!strcasecmp(expr, "true") ||\
-!strcasecmp(expr, "enabled") ||\
-!strcasecmp(expr, "active") ||\
-!strcasecmp(expr, "allow") ||\
-atoi(expr))) ? 1 : 0
+static inline int esl_true(const char *expr) {
+	return (expr && (!strcasecmp(expr, "yes")
+					 || !strcasecmp(expr, "on")
+					 || !strcasecmp(expr, "true")
+					 || !strcasecmp(expr, "enabled")
+					 || !strcasecmp(expr, "active")
+					 || !strcasecmp(expr, "allow")
+					 || atoi(expr)));
+}
 
 /*!
   \brief Evaluate the falsefullness of a string expression
   \param expr a string expression
   \return true or false 
 */
-#define esl_false(expr)\
-(expr && ( !strcasecmp(expr, "no") ||\
-!strcasecmp(expr, "off") ||\
-!strcasecmp(expr, "false") ||\
-!strcasecmp(expr, "disabled") ||\
-!strcasecmp(expr, "inactive") ||\
-!strcasecmp(expr, "disallow") ||\
-!atoi(expr))) ? 1 : 0
+static inline int esl_false(const char *expr) {
+	return (expr && (!strcasecmp(expr, "no")
+					 || !strcasecmp(expr, "off")
+					 || !strcasecmp(expr, "false")
+					 || !strcasecmp(expr, "disabled")
+					 || !strcasecmp(expr, "inactive")
+					 || !strcasecmp(expr, "disallow")
+					 || !atoi(expr)));
+}
 
 typedef struct esl_config esl_config_t;
 
