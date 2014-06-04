@@ -311,6 +311,20 @@ SPAN_DECLARE(void) hdlc_rx_set_octet_counting_report_interval(hdlc_rx_state_t *s
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) hdlc_rx_restart(hdlc_rx_state_t *s)
+{
+    s->framing_ok_announced = false;
+    s->flags_seen = 0;
+    s->raw_bit_stream = 0;
+    s->byte_in_progress = 0;
+    s->num_bits = 0;
+    s->octet_counting_mode = false;
+    s->octet_count = 0;
+    s->len = 0;
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(hdlc_rx_state_t *) hdlc_rx_init(hdlc_rx_state_t *s,
                                              bool crc32,
                                              bool report_bad_frames,
@@ -375,7 +389,7 @@ SPAN_DECLARE(int) hdlc_rx_get_stats(hdlc_rx_state_t *s,
 
 SPAN_DECLARE(int) hdlc_tx_frame(hdlc_tx_state_t *s, const uint8_t *frame, size_t len)
 {
-    if (len <= 0)
+    if (len == 0)
     {
         s->tx_end = true;
         return 0;
@@ -394,7 +408,7 @@ SPAN_DECLARE(int) hdlc_tx_frame(hdlc_tx_state_t *s, const uint8_t *frame, size_t
         if (s->len)
             return -1;
     }
-    memcpy(s->buffer + s->len, frame, len);
+    memcpy(&s->buffer[s->len], frame, len);
     if (s->crc_bytes == 2)
         s->crc = crc_itu16_calc(frame, len, (uint16_t) s->crc);
     else
@@ -589,6 +603,24 @@ SPAN_DECLARE(void) hdlc_tx_set_max_frame_len(hdlc_tx_state_t *s, size_t max_len)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) hdlc_tx_restart(hdlc_tx_state_t *s)
+{
+    s->octets_in_progress = 0;
+    s->num_bits = 0;
+    s->idle_octet = 0x7E;
+    s->flag_octets = 0;
+    s->abort_octets = 0;
+    s->report_flag_underflow = false;
+    s->len = 0;
+    s->pos = 0;
+    s->crc = 0;
+    s->byte = 0;
+    s->bits = 0;
+    s->tx_end = false;
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(hdlc_tx_state_t *) hdlc_tx_init(hdlc_tx_state_t *s,
                                              bool crc32,
                                              int inter_frame_flags,
@@ -602,7 +634,6 @@ SPAN_DECLARE(hdlc_tx_state_t *) hdlc_tx_init(hdlc_tx_state_t *s,
             return NULL;
     }
     memset(s, 0, sizeof(*s));
-    s->idle_octet = 0x7E;
     s->underflow_handler = handler;
     s->user_data = user_data;
     s->inter_frame_flags = (inter_frame_flags < 1)  ?  1  :  inter_frame_flags;
@@ -616,6 +647,7 @@ SPAN_DECLARE(hdlc_tx_state_t *) hdlc_tx_init(hdlc_tx_state_t *s,
         s->crc_bytes = 2;
         s->crc = 0xFFFF;
     }
+    s->idle_octet = 0x7E;
     s->progressive = progressive;
     s->max_frame_len = HDLC_MAXFRAME_LEN;
     return s;

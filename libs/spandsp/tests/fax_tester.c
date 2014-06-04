@@ -112,7 +112,7 @@ static void hdlc_underflow_handler(void *user_data)
             buf[1] = 0x03;
             buf[2] = 0x06;
             buf[3] = s->image_ptr/s->ecm_frame_size;
-            memcpy(buf + 4, &s->image_buffer[s->image_ptr], s->ecm_frame_size);
+            memcpy(&buf[4], &s->image_buffer[s->image_ptr], s->ecm_frame_size);
             hdlc_tx_frame(&s->modems.hdlc_tx, buf, 4 + s->ecm_frame_size);
             if (s->corrupt_crc >= 0  &&  s->corrupt_crc == s->image_ptr/s->ecm_frame_size)
                 hdlc_tx_corrupt_frame(&s->modems.hdlc_tx);

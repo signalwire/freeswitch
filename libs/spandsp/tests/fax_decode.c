@@ -211,12 +211,24 @@ static int check_rx_dcs(const uint8_t *msg, int len)
     }
 
     octets_per_ecm_frame = (dcs_frame[6] & DISBIT4)  ?  256  :  64;
+
     if ((dcs_frame[8] & DISBIT1))
         y_resolution = T4_Y_RESOLUTION_SUPERFINE;
     else if (dcs_frame[4] & DISBIT7)
         y_resolution = T4_Y_RESOLUTION_FINE;
     else
         y_resolution = T4_Y_RESOLUTION_STANDARD;
+
+    if ((dcs_frame[8] & DISBIT3))
+    {
+        x_resolution = T4_X_RESOLUTION_R16;
+        y_resolution = T4_Y_RESOLUTION_SUPERFINE;
+    }
+    else
+    {
+        x_resolution = T4_X_RESOLUTION_R8;
+    }
+
     image_width = widths[(dcs_frame[8] & DISBIT3)  ?  2  :  1][dcs_frame[5] & (DISBIT2 | DISBIT1)];
 
     /* Check which compression we will use. */
@@ -344,9 +356,9 @@ static void v21_put_bit(void *user_data, int bit)
         }
         return;
     }
+    fprintf(stderr, "V.21 Rx bit %d - %d\n", rx_bits++, bit);
     if (fast_trained == FAX_NONE)
         hdlc_rx_put_bit(&hdlcrx, bit);
-    //printf("V.21 Rx bit %d - %d\n", rx_bits++, bit);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -501,8 +513,10 @@ int main(int argc, char *argv[])
     }
 
     memset(&t30_dummy, 0, sizeof(t30_dummy));
-    span_log_init(&t30_dummy.logging, SPAN_LOG_FLOW, NULL);
-    span_log_set_protocol(&t30_dummy.logging, "T.30");
+    logging = t30_get_logging_state(&t30_dummy);
+    span_log_init(logging, SPAN_LOG_NONE, NULL);
+    span_log_set_protocol(logging, "T.30");
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
 
     hdlc_rx_init(&hdlcrx, false, true, 5, hdlc_accept, NULL);
     fsk = fsk_rx_init(NULL, &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, v21_put_bit, NULL);
@@ -520,24 +534,20 @@ int main(int argc, char *argv[])
 
 #if 1
     logging = v17_rx_get_logging_state(v17);
-    span_log_init(logging, SPAN_LOG_FLOW, NULL);
     span_log_set_protocol(logging, "V.17");
-    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_FLOW);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
 
     logging = v29_rx_get_logging_state(v29);
-    span_log_init(logging, SPAN_LOG_FLOW, NULL);
     span_log_set_protocol(logging, "V.29");
-    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_FLOW);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
 
     logging = v27ter_rx_get_logging_state(v27ter_4800);
-    span_log_init(logging, SPAN_LOG_FLOW, NULL);
     span_log_set_protocol(logging, "V.27ter-4800");
-    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_FLOW);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
 
     logging = v27ter_rx_get_logging_state(v27ter_2400);
-    span_log_init(logging, SPAN_LOG_FLOW, NULL);
     span_log_set_protocol(logging, "V.27ter-2400");
-    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_FLOW);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
 #endif
 
     if (t4_rx_init(&t4_rx_state, "fax_decode.tif", T4_COMPRESSION_T4_2D) == NULL)
@@ -556,6 +566,17 @@ int main(int argc, char *argv[])
         v29_rx(v29, amp, len);
         v27ter_rx(v27ter_4800, amp, len);
         v27ter_rx(v27ter_2400, amp, len);
+
+        logging = t30_get_logging_state(&t30_dummy);
+        span_log_bump_samples(logging, len);
+        logging = v17_rx_get_logging_state(v17);
+        span_log_bump_samples(logging, len);
+        logging = v29_rx_get_logging_state(v29);
+        span_log_bump_samples(logging, len);
+        logging = v27ter_rx_get_logging_state(v27ter_4800);
+        span_log_bump_samples(logging, len);
+        logging = v27ter_rx_get_logging_state(v27ter_2400);
+        span_log_bump_samples(logging, len);
     }
     t4_rx_release(&t4_rx_state);
 

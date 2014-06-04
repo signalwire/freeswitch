@@ -299,7 +299,7 @@ static int document_handler(void *user_data, int event)
 
     ch = 'A';
     s = (t30_state_t *) user_data;
-    fprintf(stderr, "%d: Document handler on channel %d - event %d\n", ch, ch, event);
+    fprintf(stderr, "%c: Document handler on channel %c - event %d\n", ch, ch, event);
     if (next_tx_file[0])
     {
         t30_set_tx_file(s, next_tx_file, -1, -1);

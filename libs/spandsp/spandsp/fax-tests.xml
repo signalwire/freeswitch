@@ -184,5 +184,46 @@
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
     </test>
+    <test name="Phase-D-collision">
+        <!-- DUT calls tester and sends 1 IMPRESS and 1 WHITE page. The MCF after the first
+             page is delayed enough to cause a collision with a retry of the MPS from the DUT. -->
+        <step type="ANSWER" value="etsi_300_242_a4_impress_white.tif"/>
+        <step dir="T" type="SET" tag="IDENT" value="+0123456789"/>
+
+        <step dir="R" type="CNG"/>
+
+        <step dir="T" type="CED"/>
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="DIS" value="FF C8 01 00 50 00"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="TSI+" value="FF C0 C2 9C 1C EC 6C AC 2C CC 4C 8C 0C D4 04 04 04 04 04 04 04 04 04 ..."/>
+        <step dir="R" type="HDLC" tag="DCS+" value="FF C8 C1 ..."/>
+        <step dir="R" type="TCF" modem="V.27ter/4800" timeout="60000"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="CFR" value="FF C8 21"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="R" type="MSG" modem="V.27ter/4800" timeout="180000"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="MPS+" value="FF C8 F2"/>
+
+        <step type="WAIT" value="3500"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="MCF" value="FF C8 31"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="R" type="MSG" modem="V.27ter/4800"  timeout="60000"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="EOP+" value="FF C8 F4"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="MCF" value="FF C8 31"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+    </test>
 </test-group>
 </fax-tests>

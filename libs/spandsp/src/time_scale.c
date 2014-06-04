@@ -190,12 +190,12 @@ SPAN_DECLARE(int) time_scale(time_scale_state_t *s, int16_t out[], int16_t in[],
     if (s->fill + len < s->buf_len)
     {
         /* Cannot continue without more samples */
-        memcpy(s->buf + s->fill, in, sizeof(int16_t)*len);
+        memcpy(&s->buf[s->fill], in, sizeof(int16_t)*len);
         s->fill += len;
         return out_len;
     }
     k = s->buf_len - s->fill;
-    memcpy(s->buf + s->fill, in, sizeof(int16_t)*k);
+    memcpy(&s->buf[s->fill], in, sizeof(int16_t)*k);
     in_len += k;
     s->fill = s->buf_len;
     while (s->fill == s->buf_len)
@@ -207,12 +207,12 @@ SPAN_DECLARE(int) time_scale(time_scale_state_t *s, int16_t out[], int16_t in[],
             if (len - in_len < s->buf_len)
             {
                 /* Cannot continue without more samples */
-                memcpy(s->buf, in + in_len, sizeof(int16_t)*(len - in_len));
+                memcpy(s->buf, &in[in_len], sizeof(int16_t)*(len - in_len));
                 s->fill = len - in_len;
                 s->lcp -= s->buf_len;
                 return out_len;
             }
-            memcpy(s->buf, in + in_len, sizeof(int16_t)*s->buf_len);
+            memcpy(s->buf, &in[in_len], sizeof(int16_t)*s->buf_len);
             in_len += s->buf_len;
             s->lcp -= s->buf_len;
         }
@@ -220,16 +220,16 @@ SPAN_DECLARE(int) time_scale(time_scale_state_t *s, int16_t out[], int16_t in[],
         {
             memcpy(&out[out_len], s->buf, sizeof(int16_t)*s->lcp);
             out_len += s->lcp;
-            memcpy(s->buf, s->buf + s->lcp, sizeof(int16_t)*(s->buf_len - s->lcp));
+            memcpy(s->buf, &s->buf[s->lcp], sizeof(int16_t)*(s->buf_len - s->lcp));
             if (len - in_len < s->lcp)
             {
                 /* Cannot continue without more samples */
-                memcpy(s->buf + (s->buf_len - s->lcp), in + in_len, sizeof(int16_t)*(len - in_len));
+                memcpy(&s->buf[s->buf_len - s->lcp], &in[in_len], sizeof(int16_t)*(len - in_len));
                 s->fill = s->buf_len - s->lcp + len - in_len;
                 s->lcp = 0;
                 return out_len;
             }
-            memcpy(s->buf + (s->buf_len - s->lcp), in + in_len, sizeof(int16_t)*s->lcp);
+            memcpy(&s->buf[s->buf_len - s->lcp], &in[in_len], sizeof(int16_t)*s->lcp);
             in_len += s->lcp;
             s->lcp = 0;
         }
@@ -263,11 +263,11 @@ SPAN_DECLARE(int) time_scale(time_scale_state_t *s, int16_t out[], int16_t in[],
                 if (len - in_len < pitch)
                 {
                     /* Cannot continue without more samples */
-                    memcpy(s->buf + s->buf_len - pitch, in + in_len, sizeof(int16_t)*(len - in_len));
+                    memcpy(&s->buf[s->buf_len - pitch], &in[in_len], sizeof(int16_t)*(len - in_len));
                     s->fill += (len - in_len - pitch);
                     return out_len;
                 }
-                memcpy(s->buf + s->buf_len - pitch, in + in_len, sizeof(int16_t)*pitch);
+                memcpy(&s->buf[s->buf_len - pitch], &in[in_len], sizeof(int16_t)*pitch);
                 in_len += pitch;
             }
             else

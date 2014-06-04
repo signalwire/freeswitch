@@ -282,7 +282,7 @@ SPAN_DECLARE(int) t30_set_tx_nsf(t30_state_t *s, const uint8_t *nsf, int len)
         span_free(s->tx_info.nsf);
     if (nsf  &&  len > 0  &&  (s->tx_info.nsf = span_alloc(len + 3)))
     {
-        memcpy(s->tx_info.nsf + 3, nsf, len);
+        memcpy(&s->tx_info.nsf[3], nsf, len);
         s->tx_info.nsf_len = len;
     }
     else
@@ -316,7 +316,7 @@ SPAN_DECLARE(int) t30_set_tx_nsc(t30_state_t *s, const uint8_t *nsc, int len)
         span_free(s->tx_info.nsc);
     if (nsc  &&  len > 0  &&  (s->tx_info.nsc = span_alloc(len + 3)))
     {
-        memcpy(s->tx_info.nsc + 3, nsc, len);
+        memcpy(&s->tx_info.nsc[3], nsc, len);
         s->tx_info.nsc_len = len;
     }
     else
@@ -350,7 +350,7 @@ SPAN_DECLARE(int) t30_set_tx_nss(t30_state_t *s, const uint8_t *nss, int len)
         span_free(s->tx_info.nss);
     if (nss  &&  len > 0  &&  (s->tx_info.nss = span_alloc(len + 3)))
     {
-        memcpy(s->tx_info.nss + 3, nss, len);
+        memcpy(&s->tx_info.nss[3], nss, len);
         s->tx_info.nss_len = len;
     }
     else

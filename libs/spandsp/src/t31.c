@@ -1877,7 +1877,7 @@ static void hdlc_accept_frame(void *user_data, const uint8_t *msg, int len, int 
             buf[0] = (ok)  ?  AT_RESPONSE_CODE_OK  :  AT_RESPONSE_CODE_ERROR;
             /* It is safe to look at the two bytes beyond the length of the message,
                and expect to find the FCS there. */
-            memcpy(buf + 1, msg, len + 2);
+            memcpy(&buf[1], msg, len + 2);
             queue_write_msg(s->rx_queue, buf, len + 3);
         }
         /*endif*/

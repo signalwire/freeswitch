@@ -168,7 +168,7 @@ static int power_surge_detector_file_test(const char *file)
 
     if ((inhandle = sf_open_telephony_read(file, 1)) == NULL)
     {
-        printf("    Cannot open audio file '%s'\n", file);
+        fprintf(stderr, "    Cannot open audio file '%s'\n", file);
         exit(2);
     }
 

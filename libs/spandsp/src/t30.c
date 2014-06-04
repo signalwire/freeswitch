@@ -5109,20 +5109,34 @@ static void queue_phase(t30_state_t *s, int phase)
     if (s->rx_signal_present)
     {
         /* We need to wait for that signal to go away */
+        if (s->next_phase != T30_PHASE_IDLE)
+        {
+            span_log(&s->logging, SPAN_LOG_FLOW, "Flushing queued phase %s\n", phase_names[s->next_phase]);
+            /* Ensure nothing has been left in the queue that was scheduled to go out in the previous next
+               phase */
+            if (s->send_hdlc_handler)
+                s->send_hdlc_handler(s->send_hdlc_user_data, NULL, -1);
+        }
         s->next_phase = phase;
     }
     else
     {
+        /* We don't need to queue the new phase. We can change to it immediately. */
         set_phase(s, phase);
-        s->next_phase = T30_PHASE_IDLE;
     }
 }
 /*- End of function --------------------------------------------------------*/
 
 static void set_phase(t30_state_t *s, int phase)
 {
-    //if (phase = s->phase)
-    //    return;
+    if (phase != s->next_phase  &&  s->next_phase != T30_PHASE_IDLE)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "Flushing queued phase %s\n", phase_names[s->next_phase]);
+        /* Ensure nothing has been left in the queue that was scheduled to go out in the previous next
+           phase */
+        if (s->send_hdlc_handler)
+            s->send_hdlc_handler(s->send_hdlc_user_data, NULL, -1);
+    }
     span_log(&s->logging, SPAN_LOG_FLOW, "Changing from phase %s to %s\n", phase_names[s->phase], phase_names[phase]);
     /* We may be killing a receiver before it has declared the end of the
        signal. Force the signal present indicator to off, because the
@@ -5132,6 +5146,7 @@ static void set_phase(t30_state_t *s, int phase)
     s->rx_trained = false;
     s->rx_frame_received = false;
     s->phase = phase;
+    s->next_phase = T30_PHASE_IDLE;
     switch (phase)
     {
     case T30_PHASE_A_CED:
@@ -5470,6 +5485,14 @@ static void timer_t1_expired(t30_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void timer_t1a_expired(t30_state_t *s)
+{
+    span_log(&s->logging, SPAN_LOG_FLOW, "T1A expired in phase %s, state %s. An HDLC frame lasted too long.\n", phase_names[s->phase], state_names[s->state]);
+    t30_set_status(s, T30_ERR_HDLC_CARRIER);
+    disconnect(s);
+}
+/*- End of function --------------------------------------------------------*/
+
 static void timer_t2_expired(t30_state_t *s)
 {
     if (s->timer_t2_t4_is != TIMER_IS_T2B)
@@ -5538,14 +5561,6 @@ static void timer_t2_expired(t30_state_t *s)
     }
     queue_phase(s, T30_PHASE_B_TX);
     start_receiving_document(s);
-}
-/*- End of function --------------------------------------------------------*/
-
-static void timer_t1a_expired(t30_state_t *s)
-{
-    span_log(&s->logging, SPAN_LOG_FLOW, "T1A expired in phase %s, state %s. An HDLC frame lasted too long.\n", phase_names[s->phase], state_names[s->state]);
-    t30_set_status(s, T30_ERR_HDLC_CARRIER);
-    disconnect(s);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -5680,7 +5695,7 @@ static int decode_nsf_nss_nsc(t30_state_t *s, uint8_t *msg[], const uint8_t *pkt
 
     if ((t = span_alloc(len - 1)) == NULL)
         return 0;
-    memcpy(t, pkt + 1, len - 1);
+    memcpy(t, &pkt[1], len - 1);
     *msg = t;
     return len - 1;
 }
@@ -5777,10 +5792,7 @@ static void t30_non_ecm_rx_status(void *user_data, int status)
             break;
         }
         if (s->next_phase != T30_PHASE_IDLE)
-        {
             set_phase(s, s->next_phase);
-            s->next_phase = T30_PHASE_IDLE;
-        }
         break;
     default:
         span_log(&s->logging, SPAN_LOG_WARNING, "Unexpected non-ECM rx status - %d!\n", status);
@@ -6012,7 +6024,6 @@ static void t30_hdlc_rx_status(void *user_data, int status)
         {
             /* The appropriate timer for the next phase should already be in progress */
             set_phase(s, s->next_phase);
-            s->next_phase = T30_PHASE_IDLE;
         }
         else
         {
