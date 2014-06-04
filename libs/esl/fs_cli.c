@@ -59,6 +59,7 @@ typedef struct {
 	const char *console_fnkeys[12];
 	char loglevel[128];
 	int log_uuid;
+	int log_uuid_chars;
 	int quiet;
 	int batch_mode;
 	char prompt_color[12];
@@ -66,6 +67,7 @@ typedef struct {
 	char output_text_color[12];
 } cli_profile_t;
 
+static const int log_uuid_short_chars = 8;
 static int is_color = 1;
 static int warn_stop = 0;
 static int connected = 0;
@@ -604,6 +606,7 @@ static const char *usage_str =
 	"  -x, --execute=command           Execute Command and Exit\n"
 	"  -l, --loglevel=command          Log Level\n"
 	"  -U, --log-uuid                  Include UUID in log output\n"
+	"  -S, --log-uuid-short            Include shortened UUID in log output\n"
 	"  -q, --quiet                     Disable logging\n"
 	"  -r, --retry                     Retry connection on failure\n"
 	"  -R, --reconnect                 Reconnect if disconnected\n"
@@ -742,7 +745,14 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 									printf("%s", colors[level]);
 								}
 								if (global_profile->log_uuid && !esl_strlen_zero(userdata)) {
-									printf("%s ", userdata);
+									if (global_profile->log_uuid_chars) {
+										int len = strlen(userdata);
+										int i = (global_profile->log_uuid_chars < len) ? global_profile->log_uuid_chars : len;
+										fwrite(userdata, sizeof(char), i, stdout);
+										printf(" ");
+									} else {
+										printf("%s ", userdata);
+									}
 								}
 								if (strcmp("\n",handle->last_event->body)) {
 									char *c = handle->last_event->body;
@@ -1235,6 +1245,14 @@ static void read_config(const char *dft_cfile, const char *cfile) {
 				esl_set_string(profiles[pcount-1].loglevel, val);
 			} else if(!strcasecmp(var, "log-uuid")) {
 				profiles[pcount-1].log_uuid = esl_true(val);
+			} else if(!strcasecmp(var, "log-uuid-short")) {
+				profiles[pcount-1].log_uuid = esl_true(val);
+				profiles[pcount-1].log_uuid_chars = (esl_true(val) ? log_uuid_short_chars : 0);
+			} else if(!strcasecmp(var, "log-uuid-chars")) {
+				int i;
+				if ((i = atoi(val)) > -1) {
+					profiles[pcount-1].log_uuid_chars = i;
+				}
 			} else if(!strcasecmp(var, "quiet")) {
 				profiles[pcount-1].quiet = esl_true(val);
 			} else if(!strcasecmp(var, "prompt-color")) {
@@ -1301,6 +1319,7 @@ int main(int argc, char *argv[])
 		{"execute", 1, 0, 'x'},
 		{"loglevel", 1, 0, 'l'},
 		{"log-uuid", 0, 0, 'U'},
+		{"log-uuid-short", 0, 0, 'S'},
 		{"quiet", 0, 0, 'q'},
 		{"batchmode", 0, 0, 'b'},
 		{"retry", 0, 0, 'r'},
@@ -1324,6 +1343,7 @@ int main(int argc, char *argv[])
 	char argv_command[1024] = "";
 	char argv_loglevel[128] = "";
 	int argv_log_uuid = 0;
+	int argv_log_uuid_short = 0;
 	int argv_quiet = 0;
 	int argv_batch = 0;
 	int loops = 2, reconnect = 0;
@@ -1373,7 +1393,7 @@ int main(int argc, char *argv[])
 	esl_global_set_default_logger(6); /* default debug level to 6 (info) */
 	for(;;) {
 		int option_index = 0;
-		opt = getopt_long(argc, argv, "H:P:S:u:p:d:x:l:Ut:T:qrRhib?n", options, &option_index);
+		opt = getopt_long(argc, argv, "H:P:u:p:d:x:l:USt:T:qrRhib?n", options, &option_index);
 		if (opt == -1) break;
 		switch (opt) {
 			case 'H':
@@ -1418,6 +1438,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'U':
 				argv_log_uuid = 1;
+				break;
+			case 'S':
+				argv_log_uuid_short = 1;
 				break;
 			case 'q':
 				argv_quiet = 1;
@@ -1486,6 +1509,10 @@ int main(int argc, char *argv[])
 	}
 	if (argv_log_uuid) {
 		profile->log_uuid = 1;
+	}
+	if (argv_log_uuid_short) {
+		profile->log_uuid = 1;
+		profile->log_uuid_chars = log_uuid_short_chars;
 	}
 	esl_log(ESL_LOG_DEBUG, "Using profile %s [%s]\n", profile->name, profile->host);
 	esl_set_string(prompt_color, profile->prompt_color);
