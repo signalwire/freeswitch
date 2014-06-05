@@ -10,7 +10,7 @@
 FSPREFIX=/usr/local/freeswitch
 PREFIX=/opt/fs-libs
 JPEG=v8d
-OPENSSL=1.0.1g
+OPENSSL=1.0.1h
 SQLITE=autoconf-3080403
 PCRE=8.35
 CURL=7.36.0
