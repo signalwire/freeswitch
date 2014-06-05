@@ -120,6 +120,7 @@ struct skinny_profile {
 	char *patterns_dialplan;
 	char *patterns_context;
 	uint32_t keep_alive;
+	uint32_t digit_timeout;
 	char date_format[6];
 	int debug;
 	int auto_restart;
@@ -195,6 +196,7 @@ struct listener {
 	switch_mutex_t *flag_mutex;
 	uint32_t flags;
 	time_t expire_time;
+	switch_time_t digit_timeout_time;
 	struct listener *next;
 	char *ext_voicemail;
 	char *ext_redial;

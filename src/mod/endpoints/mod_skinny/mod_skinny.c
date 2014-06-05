@@ -158,6 +158,7 @@ switch_status_t skinny_profile_dump(const skinny_profile_t *profile, switch_stre
 	stream->write_function(stream, "Patterns-Dialplan \t%s\n", profile->patterns_dialplan);
 	stream->write_function(stream, "Patterns-Context  \t%s\n", profile->patterns_context);
 	stream->write_function(stream, "Keep-Alive        \t%d\n", profile->keep_alive);
+	stream->write_function(stream, "Digit-Timeout     \t%s\n", profile->digit_timeout);
 	stream->write_function(stream, "Date-Format       \t%s\n", profile->date_format);
 	stream->write_function(stream, "DBName            \t%s\n", profile->dbname ? profile->dbname : switch_str_nil(profile->odbc_dsn));
 	stream->write_function(stream, "Debug             \t%d\n", profile->debug);
@@ -777,9 +778,19 @@ switch_status_t channel_on_routing(switch_core_session_t *session)
 			case SKINNY_ACTION_WAIT:
 				/* for now, wait forever */
 				switch_channel_set_state(channel, CS_HIBERNATE);
-				if (!zstr(data)) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "skinny-wait doesn't support timeout yet (See #FS-477)");
+				skinny_profile_find_listener_by_device_name_and_instance(tech_pvt->profile,
+						switch_channel_get_variable(channel, "skinny_device_name"),
+						atoi(switch_channel_get_variable(channel, "skinny_device_instance")), &listener);
+
+				if (listener) {
+					listener->digit_timeout_time = switch_mono_micro_time_now() + listener->profile->digit_timeout * 1000;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Could not find listener %s:%s for Channel %s\n",
+							switch_channel_get_variable(channel, "skinny_device_name"), switch_channel_get_variable(channel, "skinny_device_instance"),
+							switch_channel_get_name(channel));
+
 				}
+
 				break;
 			case SKINNY_ACTION_DROP:
 			default:
@@ -952,6 +963,7 @@ int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnN
 		skinny_line_set_state(listener, line_instance, call_id, SKINNY_ON_HOOK);
 		send_select_soft_keys(listener, line_instance, call_id, SKINNY_KEY_SET_ON_HOOK, 0xffff);
 		send_define_current_time_date(listener);
+		listener->digit_timeout_time = 0;
 
 		skinny_log_ls(listener, helper->tech_pvt->session, SWITCH_LOG_DEBUG, 
 			"channel_on_hangup_callback - cause=%s [%d], call_state = %s [%d]\n", 
@@ -1641,6 +1653,39 @@ switch_status_t keepalive_listener(listener_t *listener, void *pvt)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+switch_status_t listener_digit_timeout(listener_t *listener)
+{
+	switch_core_session_t *session = NULL;
+	uint32_t line_instance = 1;
+	uint32_t call_id = 0;
+	switch_channel_t *channel = NULL;
+	private_t *tech_pvt = NULL;
+
+	listener->digit_timeout_time = 0;
+
+	session = skinny_profile_find_session(listener->profile, listener, &line_instance, call_id);
+	if ( !session )
+	{
+		line_instance = 0;
+		session = skinny_profile_find_session(listener->profile, listener, &line_instance, 0);
+	}
+
+	if ( !session)
+		return SWITCH_STATUS_FALSE;
+
+
+	channel = switch_core_session_get_channel(session);
+	tech_pvt = switch_core_session_get_private(session);
+
+	if (channel && tech_pvt->session) {
+		switch_set_flag_locked(tech_pvt, TFLAG_FORCE_ROUTE);
+		switch_channel_set_state(channel, CS_ROUTING);
+		listener->digit_timeout_time = 0;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 {
 	listener_t *listener = (listener_t *) obj;
@@ -1664,7 +1709,8 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_socket_opt_set(listener->sock, SWITCH_SO_NONBLOCK, TRUE);
 #else
 	switch_socket_opt_set(listener->sock, SWITCH_SO_NONBLOCK, FALSE);
-	switch_socket_timeout_set(listener->sock, 5000000);
+	/* 200 ms to allow reasonably fast reaction on digit timeout */
+	switch_socket_timeout_set(listener->sock, 200000);
 #endif
 	if (listener->profile->debug > 0) {
 		skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Connection Open\n");
@@ -1681,6 +1727,11 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		if (status != SWITCH_STATUS_SUCCESS) {
 			switch(status) {
 				case SWITCH_STATUS_TIMEOUT:
+					if (listener->digit_timeout_time && listener->digit_timeout_time < switch_mono_micro_time_now()) {
+						listener_digit_timeout(listener);
+						continue;
+					}
+
 					skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Communication Time Out\n");
 
 					if(listener->expire_time < switch_epoch_time_now(NULL)) {
@@ -1954,6 +2005,8 @@ switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, c
 		profile->context = switch_core_strdup(profile->pool, val);
 	} else if (!strcasecmp(var, "keep-alive")) {
 		profile->keep_alive = atoi(val);
+	} else if (!strcasecmp(var, "digit-timeout")) {
+		profile->digit_timeout = atoi(val);
 	} else if (!strcasecmp(var, "date-format")) {
 		strncpy(profile->date_format, val, 6);
 	} else if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
@@ -2035,6 +2088,7 @@ static switch_status_t load_skinny_config(void)
 				profile->pool = profile_pool;
 				profile->name = switch_core_strdup(profile->pool, profile_name);
 				profile->auto_restart = SWITCH_TRUE;
+				profile->digit_timeout = 2000; /* 2 seconds */
 				switch_mutex_init(&profile->sql_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 				switch_mutex_init(&profile->listener_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 				switch_mutex_init(&profile->sock_mutex, SWITCH_MUTEX_NESTED, profile->pool);

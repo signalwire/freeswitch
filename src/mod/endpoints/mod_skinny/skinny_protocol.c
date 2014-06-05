@@ -183,6 +183,12 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 				}
 			}
 		}
+
+		if (listener->digit_timeout_time && listener->digit_timeout_time < switch_mono_micro_time_now()) {
+			switch_safe_free(request);
+			return SWITCH_STATUS_TIMEOUT;
+		}
+
 		if (do_sleep) {
 			switch_cond_next();
 		}
