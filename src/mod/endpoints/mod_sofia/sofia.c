@@ -4087,6 +4087,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					} else if (!strcasecmp(var, "tcp-ping2pong") && !zstr(val)) {
 						profile->tcp_ping2pong = atoi(val);
 						sofia_set_pflag(profile, PFLAG_TCP_PING2PONG);
+					} else if (!strcasecmp(var, "proxy-refer-replaces") && !zstr(val)) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_PROXY_REFER_REPLACES);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_PROXY_REFER_REPLACES);
+						}
 					} else if (!strcasecmp(var, "sip-messages-respond-200-ok") && !zstr(val)) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_MESSAGES_RESPOND_200_OK);
@@ -7310,6 +7316,31 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 		goto done;
 	}
 
+	if ((refer_to = sip->sip_refer_to)) {
+		full_ref_to = sip_header_as_string(home, (void *) sip->sip_refer_to);
+	}
+
+	
+	if (sofia_test_pflag(profile, PFLAG_PROXY_REFER_REPLACES)) {
+		switch_core_session_t *other_session;
+
+		if (switch_stristr("replaces=", full_ref_to) && switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+			switch_core_session_message_t *msg;
+			
+			msg = switch_core_session_alloc(other_session, sizeof(*msg));
+			MESSAGE_STAMP_FFL(msg);
+			msg->message_id = SWITCH_MESSAGE_INDICATE_DEFLECT;
+			msg->string_arg = switch_core_session_strdup(other_session, full_ref_to);
+			msg->from = __FILE__;
+			switch_core_session_queue_message(other_session, msg);
+			switch_core_session_rwunlock(other_session);
+			
+			nua_respond(nh, SIP_202_ACCEPTED, NUTAG_WITH_THIS_MSG(de->data->e_msg), SIPTAG_EXPIRES_STR("60"), TAG_END());
+			goto done;
+		}
+	}
+
+
 	from = sip->sip_from;
 	//to = sip->sip_to;
 
@@ -7325,9 +7356,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 		full_ref_by = sip_header_as_string(home, (void *) sip->sip_referred_by);
 	}
 
-	if ((refer_to = sip->sip_refer_to)) {
+	if (refer_to) {
 		char *rep = NULL;
-		full_ref_to = sip_header_as_string(home, (void *) sip->sip_refer_to);
 
 		if (sofia_test_pflag(profile, PFLAG_FULL_ID)) {
 			exten = switch_core_session_sprintf(session, "%s@%s", (char *) refer_to->r_url->url_user, (char *) refer_to->r_url->url_host);
