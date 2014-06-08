@@ -81,7 +81,7 @@ extern "C" {
   \param expr a string expression
   \return true or false 
 */
-static inline int esl_true(const char *expr) {
+static __inline__ int esl_true(const char *expr) {
 	return (expr && (!strcasecmp(expr, "yes")
 					 || !strcasecmp(expr, "on")
 					 || !strcasecmp(expr, "true")
@@ -96,7 +96,7 @@ static inline int esl_true(const char *expr) {
   \param expr a string expression
   \return true or false 
 */
-static inline int esl_false(const char *expr) {
+static __inline__ int esl_false(const char *expr) {
 	return (expr && (!strcasecmp(expr, "no")
 					 || !strcasecmp(expr, "off")
 					 || !strcasecmp(expr, "false")
