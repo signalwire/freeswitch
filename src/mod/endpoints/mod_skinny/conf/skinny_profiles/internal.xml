@@ -15,6 +15,7 @@
     <param name="ext-voicemail" value="vmain"/>
     <param name="ext-redial" value="redial"/>
     <!-- <param name="ext-meetme" value="conference"/> -->
+    <param name="digit-timeout" value="10000"/> -->
 
     <!-- usually place this one on the directory entry for a skinny phone and not global -->
     <!-- <param name="ext-pickup" value="pickup"/> -->

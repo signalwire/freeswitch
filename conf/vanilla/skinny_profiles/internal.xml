@@ -12,6 +12,9 @@
     <param name="odbc-dsn" value=""/>
     <param name="debug" value="4"/>
     <param name="auto-restart" value="true"/>
+
+    <!-- timeout to wait for another digit in milliseconds -->
+    <param name="digit-timeout" value="10000"/>
   </settings>
   <soft-key-set-sets>
     <soft-key-set-set name="default">

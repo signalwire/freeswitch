@@ -751,6 +751,7 @@ switch_status_t channel_on_routing(switch_core_session_t *session)
 		char *data = NULL;
 		listener_t *listener = NULL;
 		struct channel_on_routing_helper helper = {0};
+		int digit_timeout;
 
 		if(switch_test_flag(tech_pvt, TFLAG_FORCE_ROUTE)) {
 			action = SKINNY_ACTION_PROCESS;
@@ -783,7 +784,15 @@ switch_status_t channel_on_routing(switch_core_session_t *session)
 						atoi(switch_channel_get_variable(channel, "skinny_device_instance")), &listener);
 
 				if (listener) {
-					listener->digit_timeout_time = switch_mono_micro_time_now() + listener->profile->digit_timeout * 1000;
+					digit_timeout = listener->profile->digit_timeout;
+					if (!zstr(data)) {
+						digit_timeout = atoi(data);
+						if ( digit_timeout < 100 ) {
+							digit_timeout *= 1000;
+						}
+					}
+
+					listener->digit_timeout_time = switch_mono_micro_time_now() + digit_timeout * 1000;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Could not find listener %s:%s for Channel %s\n",
 							switch_channel_get_variable(channel, "skinny_device_name"), switch_channel_get_variable(channel, "skinny_device_instance"),
