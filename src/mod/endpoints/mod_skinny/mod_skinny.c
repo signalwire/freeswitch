@@ -1682,7 +1682,6 @@ switch_status_t listener_digit_timeout(listener_t *listener)
 	if ( !session)
 		return SWITCH_STATUS_FALSE;
 
-
 	channel = switch_core_session_get_channel(session);
 	tech_pvt = switch_core_session_get_private(session);
 
@@ -1691,6 +1690,8 @@ switch_status_t listener_digit_timeout(listener_t *listener)
 		switch_channel_set_state(channel, CS_ROUTING);
 		listener->digit_timeout_time = 0;
 	}
+
+	switch_core_session_rwunlock(session);
 
 	return SWITCH_STATUS_SUCCESS;
 }
