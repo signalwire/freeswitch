@@ -2268,6 +2268,10 @@ SWITCH_STANDARD_API(ctl_function)
 						command = SCSC_SHUTDOWN_NOW;
 					} else if (!strcasecmp(argv[x], "asap")) {
 						command = SCSC_SHUTDOWN_ASAP;
+					} else if (!strcasecmp(argv[x], "reincarnate")
+							   && (x+1 < argc) && argv[x+1] && !strcasecmp(argv[x+1], "now")) {
+						++x;
+						command = SCSC_REINCARNATE_NOW;
 					} else if (!strcasecmp(argv[x], "restart")) {
 						arg = 1;
 					}
@@ -6746,6 +6750,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add fsctl shutdown cancel");
 	switch_console_set_complete("add fsctl shutdown elegant");
 	switch_console_set_complete("add fsctl shutdown elegant restart");
+	switch_console_set_complete("add fsctl shutdown reincarnate now");
 	switch_console_set_complete("add fsctl shutdown restart");
 	switch_console_set_complete("add fsctl shutdown restart asap");
 	switch_console_set_complete("add fsctl shutdown restart elegant");
