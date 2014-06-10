@@ -1,7 +1,7 @@
 ######################################################################################################################
 #
 # freeswitch-config-rayo for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
-# Copyright (C) 2013, Grasshopper
+# Copyright (C) 2013-2014, Grasshopper
 #
 # Version: MPL 1.1
 #
@@ -75,7 +75,7 @@ Group: System/Libraries
 Packager: Chris Rienzo
 URL: http://www.freeswitch.org/
 Source0: freeswitch-%{version}.tar.bz2
-Requires: freeswitch = %{version}
+Requires: freeswitch
 Requires: freeswitch-application-conference
 Requires: freeswitch-application-esf
 Requires: freeswitch-application-expr
@@ -94,14 +94,8 @@ Requires: freeswitch-format-mod-shout
 Requires: freeswitch-format-shell-stream
 Requires: freeswitch-format-ssml
 Requires: freeswitch-sounds-music-8000
-Requires: freeswitch-sounds-music-16000
-Requires: freeswitch-sounds-music-32000
-Requires: freeswitch-sounds-music-48000
 Requires: freeswitch-lang-en
 Requires: freeswitch-sounds-en-us-callie-8000
-Requires: freeswitch-sounds-en-us-callie-16000
-Requires: freeswitch-sounds-en-us-callie-32000
-Requires: freeswitch-sounds-en-us-callie-48000
 BuildRequires: bash
 BuildArch: noarch
 BuildRoot:    %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -171,6 +165,9 @@ FreeSWITCH rayo server implementation.
 #
 ######################################################################################################################
 %changelog
+* Tue Jun 10 2014 crienzo@grasshopper.com
+- Remove dependency to high resolution music and sounds files
+- Remove dependency to specific FreeSWITCH package version
 * Mon Jun 03 2013 - crienzo@grasshopper.com
 - Added users and internal profile for softphone testing
 * Wed May 08 2013 - crienzo@grasshopper.com
