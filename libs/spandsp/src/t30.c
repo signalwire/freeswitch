@@ -3070,7 +3070,7 @@ static void process_rx_ppr(t30_state_t *s, const uint8_t *msg, int len)
     int i;
     int j;
     int frame_no;
-    uint8_t frame[4];
+    uint8_t frame[5];
 
     if (len != 3 + 256/8)
     {
@@ -3120,7 +3120,12 @@ static void process_rx_ppr(t30_state_t *s, const uint8_t *msg, int len)
             s->ecm_progress = 0;
             queue_phase(s, T30_PHASE_D_TX);
             set_state(s, T30_STATE_IV_CTC);
-            send_simple_frame(s, T30_CTC);
+            frame[0] = ADDRESS_FIELD;
+            frame[1] = CONTROL_FIELD_FINAL_FRAME;
+            frame[2] = (uint8_t) (T30_CTC | s->dis_received);
+            frame[3] = 0;
+            frame[4] = fallback_sequence[s->current_fallback].dcs_code;
+            send_frame(s, frame, 5);
         }
         else
         {

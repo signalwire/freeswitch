@@ -613,7 +613,10 @@ SPAN_DECLARE(int) hdlc_tx_restart(hdlc_tx_state_t *s)
     s->report_flag_underflow = false;
     s->len = 0;
     s->pos = 0;
-    s->crc = 0;
+    if (s->crc_bytes == 2)
+        s->crc = 0xFFFF;
+    else
+        s->crc = 0xFFFFFFFF;
     s->byte = 0;
     s->bits = 0;
     s->tx_end = false;
