@@ -295,7 +295,10 @@ build_debs () {
     }
     if ! [ -d $cow_img ]; then
       announce "Creating base $distro-$arch image..."
-      cow --create
+      local x=5
+      while ! cow --create; do
+        [ $x -lt 1 ] && break; sleep 60; x=$((x-1))
+      done
     fi
     announce "Updating base $distro-$arch image..."
     local x=5
