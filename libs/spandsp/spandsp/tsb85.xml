@@ -1528,7 +1528,7 @@
 
         <step type="WAIT" value="75"/>
         <step dir="T" type="PREAMBLE" modem="V.21"/>
-        <step dir="T" type="HDLC" tag="CTC" value="FF C8 48"/>
+        <step dir="T" type="HDLC" tag="CTC" value="FF C8 48 00 10"/>
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="CTR" value="FF C8 23"/>
@@ -5330,7 +5330,7 @@
         <step dir="T" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="CTC" value="FF C8 C8"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="CTC" value="FF C8 C8 00 10"/>
         <step dir="R" type="SILENCE"/>
 
         <step type="WAIT" value="75"/>
@@ -5442,7 +5442,7 @@
         <step dir="T" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="CTC+" value="FF C8 C8"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="CTC+" value="FF C8 C8 00 10"/>
         <step dir="R" type="SILENCE"/>
 
         <step type="WAIT" value="75"/>
