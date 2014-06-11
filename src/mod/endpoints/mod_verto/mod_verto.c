@@ -515,7 +515,7 @@ static switch_ssize_t ws_write_json(jsock_t *jsock, cJSON **json, switch_bool_t 
 		return r;
 	}
 
-	if (jsock->uuid_str) {
+	if (!zstr(jsock->uuid_str)) {
 		cJSON *result = cJSON_GetObjectItem(*json, "result");
 
 		if (result) {
@@ -2065,6 +2065,9 @@ static switch_bool_t attended_transfer(switch_core_session_t *session, switch_co
 	tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
 	b_tech_pvt = switch_core_session_get_private_class(b_session, SWITCH_PVT_SECONDARY);
 
+	switch_assert(b_tech_pvt);
+	switch_assert(tech_pvt);
+
 	switch_channel_set_variable(tech_pvt->channel, "refer_uuid", switch_core_session_get_uuid(b_tech_pvt->session));
 	switch_channel_set_variable(b_tech_pvt->channel, "transfer_disposition", "replaced");
 	
@@ -2130,9 +2133,7 @@ static switch_bool_t attended_transfer(switch_core_session_t *session, switch_co
 
 			result = SWITCH_TRUE;
 
-			if (b_tech_pvt) {
-				switch_channel_hangup(b_tech_pvt->channel, SWITCH_CAUSE_NORMAL_CLEARING);
-			}
+			switch_channel_hangup(b_tech_pvt->channel, SWITCH_CAUSE_NORMAL_CLEARING);
 		} else {
 			result = SWITCH_FALSE;
 		}
@@ -2344,11 +2345,6 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 
 	if (!(dialog = cJSON_GetObjectItem(params, "dialogParams"))) {
 		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Dialog data missing"));
-		err = 1; goto cleanup;
-	}
-
-	if (!(call_id = cJSON_GetObjectCstr(dialog, "callID"))) {
-		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("CallID missing"));
 		err = 1; goto cleanup;
 	}
 
@@ -2850,8 +2846,9 @@ static switch_bool_t verto__broadcast_func(const char *method, cJSON *params, js
 	if (jsock->profile->mcast_pub.sock > -1) {
 		if ((json_text = cJSON_PrintUnformatted(params))) {
 
-			mcast_socket_send(&jsock->profile->mcast_pub, json_text, strlen(json_text) + 1);
-		
+			if ( mcast_socket_send(&jsock->profile->mcast_pub, json_text, strlen(json_text) + 1) < 0 ) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "multicast socket send error!\n");
+			}
 
 			free(json_text);
 			json_text = NULL;
@@ -3058,7 +3055,9 @@ static int prepare_socket(int ip, int port)
 		die("Socket Error!\n");
 	}
 	
-	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr));
+	if ( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr)) < 0 ) {
+		die("Socket setsockopt Error!\n");
+	}
 	
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
@@ -3288,11 +3287,11 @@ static verto_profile_t *find_profile(const char *name)
 		}
 	}
 
-	if (!r->in_thread || !r->running) {
+	if (r && (!r->in_thread || !r->running)) {
 		r = NULL;
 	}
 
-	if (switch_thread_rwlock_tryrdlock(r->rwlock) != SWITCH_STATUS_SUCCESS) {
+	if (r && switch_thread_rwlock_tryrdlock(r->rwlock) != SWITCH_STATUS_SUCCESS) {
 		r = NULL;
 	}
 	switch_mutex_unlock(globals.mutex);
@@ -3476,7 +3475,7 @@ static switch_status_t parse_config(const char *cf)
 			}
 
 			if (zstr(profile->inbound_codec_string)) {
-				profile->outbound_codec_string = profile->outbound_codec_string;
+				profile->inbound_codec_string = profile->outbound_codec_string;
 			}
 
 			if (zstr(profile->timer_name)) {
@@ -4014,7 +4013,7 @@ static cJSON *json_retrieve(const char *name, switch_mutex_t *mutex)
 
 static switch_bool_t json_commit(cJSON *json, const char *name, switch_mutex_t *mutex)
 {
-	char *ascii = cJSON_PrintUnformatted(json);
+	char *ascii;
 	char *sql;
 	char del_sql[128] = "";
 	switch_cache_db_handle_t *dbh;

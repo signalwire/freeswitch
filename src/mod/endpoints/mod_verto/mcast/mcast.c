@@ -51,7 +51,7 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 
 	memset(handle, 0, sizeof(*handle));
 	
-	if ((!(flags & MCAST_SEND) && !(flags & MCAST_RECV)) || !(handle->sock = socket(AF_INET, SOCK_DGRAM, 0))) {
+	if ((!(flags & MCAST_SEND) && !(flags & MCAST_RECV)) || (handle->sock = socket(AF_INET, SOCK_DGRAM, 0)) <= 0 ) {
 		return -1;
 	}
 	
@@ -59,7 +59,10 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 	handle->send_addr.sin_addr.s_addr = inet_addr(host);
 	handle->send_addr.sin_port = htons(port);
 	
-	setsockopt(handle->sock, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+	if ( setsockopt(handle->sock, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) != 0 ) {
+		close(handle->sock);
+		return -1;
+	}
 	
 
 	if ((flags & MCAST_RECV)) {
@@ -113,7 +116,9 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 		handle->ttl = 255;
 	}
 
-	setsockopt(handle->sock, IPPROTO_IP, IP_MULTICAST_TTL, &handle->ttl, sizeof(handle->ttl));
+	if ( setsockopt(handle->sock, IPPROTO_IP, IP_MULTICAST_TTL, &handle->ttl, sizeof(handle->ttl)) != 0 ) {
+		return -1;
+	}
 
 	handle->ready = 1;
 	
