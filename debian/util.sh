@@ -302,7 +302,7 @@ build_debs () {
     fi
     announce "Updating base $distro-$arch image..."
     local x=30
-    while ! cow --update; do
+    while ! cow --update --override-config; do
       [ $x -lt 1 ] && break; sleep 120; x=$((x-1))
     done
     announce "Building $distro-$arch DEBs from $dsc..."
