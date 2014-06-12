@@ -9086,7 +9086,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_channel_t *channel = NULL;
 	const char *force_rate = NULL, *force_interval = NULL, *force_channels = NULL, *presence_id = NULL;
-	uint32_t force_rate_i = 0, force_interval_i = 0, force_channels_i = NULL;
+	uint32_t force_rate_i = 0, force_interval_i = 0, force_channels_i = 0;
 
 	/* Validate the conference name */
 	if (zstr(name)) {
