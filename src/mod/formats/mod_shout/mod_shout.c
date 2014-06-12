@@ -625,6 +625,9 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 	char *err = NULL;
 	const char *mpg123err = NULL;
 	int portno = 0;
+	long rate = 0;
+	int channels = 0;
+	int encoding = 0;
 
 	if ((context = switch_core_alloc(handle->memory_pool, sizeof(*context))) == 0) {
 		return SWITCH_STATUS_MEMERR;
@@ -659,9 +662,6 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 		}
 
 		if (handle->handler) {
-			if (mpg123_param(context->mh, MPG123_FLAGS, MPG123_SEEKBUFFER | MPG123_MONO_MIX, 0) != MPG123_OK) {
-				MPGERROR();
-			}
 			if (mpg123_open_feed(context->mh) != MPG123_OK) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening mpg feed\n");
 				mpg123err = mpg123_strerror(context->mh);
@@ -672,9 +672,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 			launch_read_stream_thread(context);
 		} else {
 			handle->seekable = 1;
-			if (mpg123_param(context->mh, MPG123_FLAGS, MPG123_MONO_MIX, 0) != MPG123_OK) {
-				MPGERROR();
-			}
+
 			if (mpg123_open(context->mh, path) != MPG123_OK) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", path);
 				mpg123err = mpg123_strerror(context->mh);
@@ -682,6 +680,12 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 			}
 
 		}
+
+
+		mpg123_getformat(context->mh, &rate, &channels, &encoding);
+		handle->channels = channels;
+		handle->samplerate = rate;
+
 	} else if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		if (!(context->gfp = lame_init())) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate lame\n");
@@ -897,7 +901,7 @@ static switch_status_t shout_file_seek(switch_file_handle_t *handle, unsigned in
 static switch_status_t shout_file_read(switch_file_handle_t *handle, void *data, size_t *len)
 {
 	shout_context_t *context = handle->private_info;
-	size_t rb = 0, bytes = *len * sizeof(int16_t), newbytes = 0;
+	size_t rb = 0, bytes = *len * sizeof(int16_t) * handle->channels, newbytes = 0;
 
 	*len = 0;
 
@@ -919,7 +923,7 @@ static switch_status_t shout_file_read(switch_file_handle_t *handle, void *data,
 	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "rb: %d, bytes: %d\n", (int) rb, (int) bytes); */
 
 	if (rb) {
-		*len = rb / sizeof(int16_t);
+		*len = rb / sizeof(int16_t) / handle->channels;
 	} else {
 		/* no data, so insert 1 second of silence */
 		newbytes = 2 * handle->samplerate;
@@ -929,7 +933,7 @@ static switch_status_t shout_file_read(switch_file_handle_t *handle, void *data,
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Padding mp3 stream with 1s of empty audio. (%s)\n", context->stream_url);
 
 		memset(data, 255, bytes);
-		*len = bytes / sizeof(int16_t);
+		*len = bytes / sizeof(int16_t) / handle->channels;
 	}
 
 	handle->sample_count += *len;

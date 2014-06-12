@@ -99,6 +99,8 @@ static switch_status_t shell_stream_file_open(switch_file_handle_t *handle, cons
 		return SWITCH_STATUS_FALSE;
 	}
 
+	handle->channels = 1;
+
 	context = switch_core_alloc(handle->memory_pool, sizeof(*context));
 
 	context->fds[0] = -1;

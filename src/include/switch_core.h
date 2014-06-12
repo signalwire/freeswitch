@@ -1870,7 +1870,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(_In_ switch_speech_handl
 														const char *module_name,
 														const char *voice_name,
 														_In_ unsigned int rate,
-														_In_ unsigned int interval, switch_speech_flag_t *flags, _In_opt_ switch_memory_pool_t *pool);
+														_In_ unsigned int interval, 
+														_In_ unsigned int channels,
+														switch_speech_flag_t *flags, _In_opt_ switch_memory_pool_t *pool);
 /*! 
   \brief Feed text to the TTS module
   \param sh the speech handle to feed

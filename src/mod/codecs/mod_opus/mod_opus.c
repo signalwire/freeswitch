@@ -143,6 +143,11 @@ static switch_status_t switch_opus_fmtp_parse(const char *fmtp, switch_codec_fmt
 							codec_settings->samplerate = atoi(arg);
 							codec_fmtp->actual_samples_per_second = codec_settings->samplerate;
 						}
+
+						if (!strcasecmp(data, "stereo")) {
+							codec_settings->stereo = atoi(arg);
+							codec_fmtp->stereo = codec_settings->stereo;
+						}
                         
 						if (!strcasecmp(data, "maxaveragebitrate")) {
 							codec_settings->maxaveragebitrate = atoi(arg);
@@ -202,36 +207,40 @@ static char *gen_fmtp(opus_codec_settings_t *settings, switch_memory_pool_t *poo
 	char buf[256] = "";
     
 	if (settings->useinbandfec) {
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "useinbandfec=1;");
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "useinbandfec=1; ");
 	}
     
 	if (settings->usedtx) {
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "usedtx=1;");
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "usedtx=1; ");
 	}
     
 	if (settings->maxaveragebitrate) {
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "maxaveragebitrate=%d;", settings->maxaveragebitrate);
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "maxaveragebitrate=%d; ", settings->maxaveragebitrate);
         
 	}
     
 	if (settings->ptime) {
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "ptime=%d;", settings->ptime);
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "ptime=%d; ", settings->ptime);
 	}
     
 	if (settings->minptime) {
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "minptime=%d;", settings->minptime);
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "minptime=%d; ", settings->minptime);
 	}
-    
+
 	if (settings->maxptime) {
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "maxptime=%d;", settings->maxptime);
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "maxptime=%d; ", settings->maxptime);
 	}
     
 	if (settings->samplerate) {
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "samplerate=%d;", settings->samplerate);
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "samplerate=%d; ", settings->samplerate);
 	}
-    
-	if (end_of(buf) == ';') {
-		end_of(buf) = '\0';
+
+	if (settings->stereo) {
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "stereo=%d; ", settings->stereo);
+	}
+
+	if (end_of(buf) == ' ') {
+		*(end_of_p(buf) - 1) = '\0';
 	}
 	
 	return switch_core_strdup(pool, buf);
@@ -255,9 +264,8 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 	memset(&codec_fmtp, '\0', sizeof(struct switch_codec_fmtp));
 	codec_fmtp.private_info = &opus_codec_settings;
 	switch_opus_fmtp_parse(codec->fmtp_in, &codec_fmtp);
-    
 	codec->fmtp_out = gen_fmtp(&opus_codec_settings, codec->memory_pool);
-    
+
 	if (encoding) {
 		/* come up with a way to specify these */
 		int bitrate_bps = OPUS_AUTO;
@@ -268,7 +276,7 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
         
 		context->encoder_object = opus_encoder_create(samplerate,
 													  codec->implementation->number_of_channels,
-													  OPUS_APPLICATION_VOIP, &err);
+													  codec->implementation->number_of_channels == 1 ? OPUS_APPLICATION_VOIP : OPUS_APPLICATION_AUDIO, &err);
         
         if (err != OPUS_OK) {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot create encoder: %s\n", opus_strerror(err));
@@ -358,17 +366,19 @@ static switch_status_t switch_opus_encode(switch_codec_t *codec,
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
-    
-	if (len > 1275) len = 1275;
-    
-	bytes = opus_encode(context->encoder_object, (void *) decoded_data, decoded_data_len / 2, (unsigned char *) encoded_data, len);
-    
+
+	if (len > 2880) len = 2880;
+
+	bytes = opus_encode(context->encoder_object, (void *) decoded_data, 
+						decoded_data_len / 2 / codec->implementation->number_of_channels, (unsigned char *) encoded_data, len);
+
 	if (bytes > 0) {
 		*encoded_data_len = (uint32_t) bytes;
 		return SWITCH_STATUS_SUCCESS;
 	}
-    
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Encoder Error!\n");
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Encoder Error: %s Decoded Datalen %u Codec NumberChans %u Len %u DecodedDate %p EncodedData %p ContextEncoderObject %p!\n", opus_strerror(bytes),decoded_data_len,codec->implementation->number_of_channels,len,(void *) decoded_data,(void *) encoded_data,(void *) context->encoder_object);
+
 	return SWITCH_STATUS_GENERR;
 }
 
@@ -387,12 +397,13 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 	}
 	
 	samples = opus_decode(context->decoder_object, (*flag & SFF_PLC) ? NULL : encoded_data, encoded_data_len, decoded_data, *decoded_data_len, 0);
-    
+
 	if (samples < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decoder Error: %s!\n", opus_strerror(samples));
 		return SWITCH_STATUS_GENERR;
 	}
-    
-	*decoded_data_len = samples * 2;
+
+	*decoded_data_len = samples * 2 * codec->implementation->number_of_channels;
 	
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -481,6 +492,27 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 											 switch_opus_decode,	/* function to decode encoded data into raw data */
 											 switch_opus_destroy);	/* deinitalize a codec handle using this implementation */
 		
+		settings.stereo = 1;
+		dft_fmtp = gen_fmtp(&settings, pool);
+
+		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 116,	/* the IANA code number */
+											 "opus",/* the IANA code name */
+											 dft_fmtp,	/* default fmtp to send (can be overridden by the init function) */
+											 rate,	/* samples transferred per second */
+											 rate,	/* actual samples transferred per second */
+											 bits,	/* bits transferred per second */
+											 mss,	/* number of microseconds per frame */
+											 samples,	/* number of samples per frame */
+											 bytes * 2,	/* number of bytes per frame decompressed */
+											 0,	/* number of bytes per frame compressed */
+											 2,/* number of channels represented */
+											 1,	/* number of frames per network packet */
+											 switch_opus_init,	/* function to initialize a codec handle using this implementation */
+											 switch_opus_encode,	/* function to encode raw data into encoded data */
+											 switch_opus_decode,	/* function to decode encoded data into raw data */
+											 switch_opus_destroy);	/* deinitalize a codec handle using this implementation */
+
 		bytes *= 2;
 		samples *= 2;
 		mss *= 2;

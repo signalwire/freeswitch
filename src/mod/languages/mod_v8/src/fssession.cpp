@@ -982,7 +982,7 @@ switch_status_t FSSession::InitSpeechEngine(const char *engine, const char *voic
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_core_speech_open(&this->_speech->sh, engine, voice, rate, interval,
+	if (switch_core_speech_open(&this->_speech->sh, engine, voice, rate, interval, read_codec->implementation->number_of_channels,
 								&flags, switch_core_session_get_pool(this->_session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module!\n");
 		switch_core_codec_destroy(&this->_speech->codec);

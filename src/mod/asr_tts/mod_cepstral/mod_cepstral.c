@@ -118,7 +118,7 @@ static swift_result_t write_audio(swift_event * event, swift_event_t type, void 
 	return rv;
 }
 
-static switch_status_t cepstral_speech_open(switch_speech_handle_t *sh, const char *voice_name, int rate, switch_speech_flag_t *flags)
+static switch_status_t cepstral_speech_open(switch_speech_handle_t *sh, const char *voice_name, int rate, int channels, switch_speech_flag_t *flags)
 {
 	cepstral_t *cepstral = switch_core_alloc(sh->memory_pool, sizeof(*cepstral));
 	char srate[25];
@@ -290,7 +290,6 @@ static switch_status_t cepstral_speech_read_tts(switch_speech_handle_t *sh, void
 
 
 		if (!used && cepstral->done_gen) {
-
 			status = SWITCH_STATUS_BREAK;
 			break;
 		}

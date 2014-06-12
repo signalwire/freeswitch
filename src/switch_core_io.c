@@ -596,6 +596,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				status = SWITCH_STATUS_RESAMPLE;
 			}
 
+			/* mux or demux to match */
+			if (session->read_impl.number_of_channels != read_frame->codec->implementation->number_of_channels) {
+				uint32_t rlen = session->raw_read_frame.datalen / 2 / read_frame->codec->implementation->number_of_channels;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s MUX READ\n", switch_channel_get_name(session->channel));
+				switch_mux_channels((int16_t *) session->raw_read_frame.data, rlen, 
+									read_frame->codec->implementation->number_of_channels, session->read_impl.number_of_channels);
+				session->raw_write_frame.datalen = rlen * 2 * session->read_impl.number_of_channels;
+			}
+
 			switch (status) {
 			case SWITCH_STATUS_RESAMPLE:
 				if (!session->read_resampler) {
@@ -604,7 +613,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					status = switch_resample_create(&session->read_resampler,
 													read_frame->codec->implementation->actual_samples_per_second,
 													session->read_impl.actual_samples_per_second,
-													session->read_impl.decoded_bytes_per_packet, SWITCH_RESAMPLE_QUALITY, 1);
+													session->read_impl.decoded_bytes_per_packet, SWITCH_RESAMPLE_QUALITY, 
+													session->read_impl.number_of_channels);
 
 					switch_mutex_unlock(session->resample_mutex);
 
@@ -807,10 +817,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			if (session->read_resampler) {
 				short *data = read_frame->data;
 				switch_mutex_lock(session->resample_mutex);
-				switch_resample_process(session->read_resampler, data, (int) read_frame->datalen / 2);
-				memcpy(data, session->read_resampler->to, session->read_resampler->to_len * 2);
+				switch_resample_process(session->read_resampler, data, (int) read_frame->datalen / 2 / session->read_resampler->channels);
+				memcpy(data, session->read_resampler->to, session->read_resampler->to_len * 2 * session->read_resampler->channels);
 				read_frame->samples = session->read_resampler->to_len;
-				read_frame->datalen = session->read_resampler->to_len * 2;
+				read_frame->datalen = session->read_resampler->to_len * 2 * session->read_resampler->channels;
 				read_frame->rate = session->read_resampler->to_rate;
 				switch_mutex_unlock(session->resample_mutex);
 			}
@@ -1206,6 +1216,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			status = SWITCH_STATUS_RESAMPLE;
 		}
 		
+		/* mux or demux to match */
+		if (session->write_impl.number_of_channels != frame->codec->implementation->number_of_channels) {
+			uint32_t rlen = session->raw_write_frame.datalen / 2 / frame->codec->implementation->number_of_channels;
+			switch_mux_channels((int16_t *) session->raw_write_frame.data, rlen, 
+								frame->codec->implementation->number_of_channels, session->write_impl.number_of_channels);
+			session->raw_write_frame.datalen = rlen * 2 * session->write_impl.number_of_channels;
+		}
+		
 		switch (status) {
 		case SWITCH_STATUS_RESAMPLE:
 			resample++;
@@ -1216,7 +1234,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				status = switch_resample_create(&session->write_resampler,
 												frame->codec->implementation->actual_samples_per_second,
 												session->write_impl.actual_samples_per_second,
-												session->write_impl.decoded_bytes_per_packet, SWITCH_RESAMPLE_QUALITY, 1);
+												session->write_impl.decoded_bytes_per_packet, SWITCH_RESAMPLE_QUALITY, session->write_impl.number_of_channels);
 
 
 				switch_mutex_unlock(session->resample_mutex);
@@ -1294,13 +1312,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		switch_mutex_lock(session->resample_mutex);
 		if (session->write_resampler) {
 
-			switch_resample_process(session->write_resampler, data, write_frame->datalen / 2);
+			switch_resample_process(session->write_resampler, data, write_frame->datalen / 2 / session->write_resampler->channels);
 
-			memcpy(data, session->write_resampler->to, session->write_resampler->to_len * 2);
+			memcpy(data, session->write_resampler->to, session->write_resampler->to_len * 2 * session->write_resampler->channels);
 
 			write_frame->samples = session->write_resampler->to_len;
 
-			write_frame->datalen = write_frame->samples * 2;
+			write_frame->datalen = write_frame->samples * 2 * session->write_resampler->channels;
 
 			write_frame->rate = session->write_resampler->to_rate;
 
@@ -1527,7 +1545,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 							status = switch_resample_create(&session->write_resampler,
 															frame->codec->implementation->actual_samples_per_second,
 															session->write_impl.actual_samples_per_second,
-															session->write_impl.decoded_bytes_per_packet, SWITCH_RESAMPLE_QUALITY, 1);
+															session->write_impl.decoded_bytes_per_packet, SWITCH_RESAMPLE_QUALITY, 
+															session->write_impl.number_of_channels);
 						}
 						switch_mutex_unlock(session->resample_mutex);
 
@@ -1598,10 +1617,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					short *data = write_frame->data;
 					switch_mutex_lock(session->resample_mutex);
 					if (session->read_resampler) {
-						switch_resample_process(session->read_resampler, data, write_frame->datalen / 2);
-						memcpy(data, session->read_resampler->to, session->read_resampler->to_len * 2);
+						switch_resample_process(session->read_resampler, data, write_frame->datalen / 2 / session->read_resampler->channels);
+						memcpy(data, session->read_resampler->to, session->read_resampler->to_len * 2 * session->read_resampler->channels);
 						write_frame->samples = session->read_resampler->to_len;
-						write_frame->datalen = session->read_resampler->to_len * 2;
+						write_frame->datalen = session->read_resampler->to_len * 2 * session->read_resampler->channels;
 						write_frame->rate = session->read_resampler->to_rate;
 					}
 					switch_mutex_unlock(session->resample_mutex);

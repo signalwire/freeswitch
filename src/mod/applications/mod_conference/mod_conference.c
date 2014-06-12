@@ -359,6 +359,7 @@ typedef struct conference_obj {
 	switch_mutex_t *flag_mutex;
 	uint32_t rate;
 	uint32_t interval;
+	uint32_t channels;
 	switch_mutex_t *mutex;
 	conference_member_t *members;
 	conference_member_t *floor_holder;
@@ -2532,7 +2533,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	conference_obj_t *conference = (conference_obj_t *) obj;
 	conference_member_t *imember, *omember;
 	uint32_t samples = switch_samples_per_packet(conference->rate, conference->interval);
-	uint32_t bytes = samples * 2;
+	uint32_t bytes = samples * 2 * conference->channels;
 	uint8_t ready = 0, total = 0;
 	switch_timer_t timer = { 0 };
 	switch_event_t *event;
@@ -2595,12 +2596,12 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 
 	while (globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT)) {
 		switch_size_t file_sample_len = samples;
-		switch_size_t file_data_len = samples * 2;
+		switch_size_t file_data_len = samples * 2 * conference->channels;
 		int has_file_data = 0, members_with_video = 0;
 		uint32_t conf_energy = 0;
 		int nomoh = 0;
-		conference_member_t *floor_holder, *video_bridge_members[2] = { 0 };
-		
+		conference_member_t *floor_holder, *video_bridge_members[2] = { 0 };		
+
 		/* Sync the conference to a single timing source */
 		if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
 			switch_set_flag(conference, CFLAG_DESTRUCT);
@@ -2744,11 +2745,13 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				conference->fnode->leadin--;
 			} else if (!conference->fnode->done) {
 				file_sample_len = samples;
+				
 				if (conference->fnode->type == NODE_TYPE_SPEECH) {
 					switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_BLOCKING;
-
+					
 					if (switch_core_speech_read_tts(conference->fnode->sh, file_frame, &file_data_len, &flags) == SWITCH_STATUS_SUCCESS) {
-						file_sample_len = file_data_len / 2;
+						file_sample_len = file_data_len / 2 / conference->fnode->sh->channels;
+						
 					} else {
 						file_sample_len = file_data_len = 0;
 					}
@@ -2780,8 +2783,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				} else {
 					if (has_file_data) {
 						switch_size_t x;
-
-						for (x = 0; x < file_sample_len; x++) {
+						for (x = 0; x < file_sample_len * conference->channels; x++) {
 							int32_t z;
 							int16_t *muxed;
 
@@ -2792,27 +2794,29 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 							muxed[x] = (int16_t) z;
 						}
 					} else {
-						memcpy(file_frame, async_file_frame, file_sample_len * 2);
+						memcpy(file_frame, async_file_frame, file_sample_len * 2 * conference->channels);
 						has_file_data = 1;
 					}
 				}
 			}
 		}
-
+		
 		if (ready || has_file_data) {
 			/* Use more bits in the main_frame to preserve the exact sum of the audio samples. */
-			int main_frame[SWITCH_RECOMMENDED_BUFFER_SIZE / 2] = { 0 };
-			int16_t write_frame[SWITCH_RECOMMENDED_BUFFER_SIZE / 2] = { 0 };
+			int main_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
+			int16_t write_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 
 
 			/* Init the main frame with file data if there is any. */
 			bptr = (int16_t *) file_frame;
 			if (has_file_data && file_sample_len) {
+
 				for (x = 0; x < bytes / 2; x++) {
-					if (x <= file_sample_len) {
+					if (x <= file_sample_len * conference->channels) {
 						main_frame[x] = (int32_t) bptr[x];
 					} else {
 						memset(&main_frame[x], 255, sizeof(main_frame[x]));
+						//printf("FUCCCK %d <= %ld (%ld/%d)\n", x, file_sample_len * conference->channels, file_sample_len, conference->channels);
 					}
 				}
 			}
@@ -2876,8 +2880,10 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				}
 
 				bptr = (int16_t *) omember->frame;
-				for (x = 0; x < bytes / 2; x++) {
+				
+				for (x = 0; x < bytes / 2 ; x++) {
 					z = main_frame[x];
+
 					/* bptr[x] represents my own contribution to this audio sample */
 					if (switch_test_flag(omember, MFLAG_HAS_AUDIO) && x <= omember->read / 2) {
 						z -= (int32_t) bptr[x];
@@ -3678,6 +3684,27 @@ static void check_agc_levels(conference_member_t *member)
 }
 
 
+static void member_check_channels(switch_frame_t *frame, conference_member_t *member, switch_bool_t in)
+{
+	if (member->conference->channels != member->read_impl.number_of_channels) {
+		uint32_t rlen;
+		int from, to;
+
+		if (in) {
+			to = member->conference->channels;
+			from = member->read_impl.number_of_channels;
+		} else {
+			from = member->conference->channels;
+			to = member->read_impl.number_of_channels;
+		}
+
+		rlen = frame->datalen / 2 / from; 
+
+		switch_mux_channels((int16_t *) frame->data, rlen, from, to);
+
+		frame->datalen = rlen * 2 * to;
+	}
+}
 
 
 /* marshall frames from the call leg to the conference thread for muxing to other call legs */
@@ -3729,6 +3756,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			break;
 		}
 
+		member_check_channels(read_frame, member, SWITCH_TRUE);
+		
 		if (switch_channel_test_flag(channel, CF_VIDEO) && !switch_test_flag(member, MFLAG_ACK_VIDEO)) {
 			switch_set_flag_locked(member, MFLAG_ACK_VIDEO);
 			switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
@@ -3827,7 +3856,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				switch_change_sln_volume_granular(read_frame->data, read_frame->datalen / 2, member->agc_volume_in_level);
 			}
 			
-			if ((samples = read_frame->datalen / sizeof(*data))) {
+			if ((samples = read_frame->datalen / sizeof(*data) / member->read_impl.number_of_channels)) {
 				for (i = 0; i < samples; i++) {
 					energy += abs(data[j]);
 					j += member->read_impl.number_of_channels;
@@ -3980,9 +4009,9 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				int16_t *bptr = (int16_t *) read_frame->data;
 				int len = (int) read_frame->datalen;
 
-				switch_resample_process(read_resampler, bptr, len / 2);
-				memcpy(member->resample_out, read_resampler->to, read_resampler->to_len * 2);
-				len = read_resampler->to_len * 2;
+				switch_resample_process(read_resampler, bptr, len / 2 / member->conference->channels);
+				memcpy(member->resample_out, read_resampler->to, read_resampler->to_len * 2 * member->conference->channels);
+				len = read_resampler->to_len * 2 * member->conference->channels;
 				datalen = len;
 				data = member->resample_out;
 			} else {
@@ -4039,8 +4068,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 static void member_add_file_data(conference_member_t *member, int16_t *data, switch_size_t file_data_len)
 {
-	switch_size_t file_sample_len = file_data_len / 2;
-	int16_t file_frame[SWITCH_RECOMMENDED_BUFFER_SIZE / 2] = { 0 };
+	switch_size_t file_sample_len;
+	int16_t file_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 
 
 	switch_mutex_lock(member->fnode_mutex);
@@ -4048,6 +4077,8 @@ static void member_add_file_data(conference_member_t *member, int16_t *data, swi
 	if (!member->fnode) {
 		goto done;
 	}
+
+	file_sample_len = file_data_len / 2 / member->conference->channels;
 
 	/* if we are done, clean it up */
 	if (member->fnode->done) {
@@ -4071,15 +4102,15 @@ static void member_add_file_data(conference_member_t *member, int16_t *data, swi
 		} else {
 			if (member->fnode->type == NODE_TYPE_SPEECH) {
 				switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_BLOCKING;
-
+				
 				if (switch_core_speech_read_tts(member->fnode->sh, file_frame, &file_data_len, &flags) == SWITCH_STATUS_SUCCESS) {
-					file_sample_len = file_data_len / 2;
+					file_sample_len = file_data_len / 2 / member->conference->channels;
 				} else {
 					file_sample_len = file_data_len = 0;
 				}
 			} else if (member->fnode->type == NODE_TYPE_FILE) {
 				switch_core_file_read(&member->fnode->fh, file_frame, &file_sample_len);
-				file_data_len = file_sample_len * 2;
+				file_data_len = file_sample_len * 2 * member->fnode->fh.channels;
 			}
 
 			if (file_sample_len <= 0) {
@@ -4092,7 +4123,7 @@ static void member_add_file_data(conference_member_t *member, int16_t *data, swi
 					switch_change_sln_volume(file_frame, (uint32_t)file_sample_len, member->volume_out_level);
 				}
 
-				for (i = 0; i < (int)file_sample_len; i++) {
+				for (i = 0; i < (int)file_sample_len * member->conference->channels; i++) {
 					if (member->fnode->mux) {
 						sample = data[i] + file_frame[i];
 						switch_normalize_to_16bit(sample);
@@ -4157,7 +4188,7 @@ static void conference_loop_output(conference_member_t *member)
 	//csamples = samples;
 	tsamples = member->orig_read_impl.samples_per_packet;
 	low_count = 0;
-	bytes = samples * 2;
+	bytes = samples * 2 * member->conference->channels;
 	call_list = NULL;
 	cp = NULL;
 
@@ -4165,7 +4196,7 @@ static void conference_loop_output(conference_member_t *member)
 
 	switch_assert(member->conference != NULL);
 
-	flush_len = switch_samples_per_packet(member->conference->rate, member->conference->interval) * 10;
+	flush_len = switch_samples_per_packet(member->conference->rate, member->conference->interval) * 10 * member->conference->channels;
 
 	if (switch_core_timer_init(&timer, member->conference->timer_name, interval, tsamples, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Timer Setup Failed.  Conference Cannot Start\n");
@@ -4331,7 +4362,7 @@ static void conference_loop_output(conference_member_t *member)
 		mux_used = (uint32_t) switch_buffer_inuse(member->mux_buffer);
 		
 		use_timer = 1;
-		
+
 		if (mux_used) {
 			if (mux_used < bytes) {
 				if (++low_count >= 5) {
@@ -4354,7 +4385,7 @@ static void conference_loop_output(conference_member_t *member)
 			low_count = 0;
 			if ((write_frame.datalen = (uint32_t) switch_buffer_read(use_buffer, write_frame.data, bytes))) {
 				if (write_frame.datalen) {
-					write_frame.samples = write_frame.datalen / 2;
+					write_frame.samples = write_frame.datalen / 2 / member->conference->channels;
 				   
 				   if( !switch_test_flag(member, MFLAG_CAN_HEAR)) {
 				      memset(write_frame.data, 255, write_frame.datalen);
@@ -4369,6 +4400,9 @@ static void conference_loop_output(conference_member_t *member)
 					if (member->fnode) {
 						member_add_file_data(member, write_frame.data, write_frame.datalen);
 					}
+
+					member_check_channels(&write_frame, member, SWITCH_FALSE);
+
 					if (switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 						switch_mutex_unlock(member->audio_out_mutex);
 						break;
@@ -4383,6 +4417,7 @@ static void conference_loop_output(conference_member_t *member)
 			memset(write_frame.data, 255, write_frame.datalen);
 			write_frame.timestamp = timer.samplecount;
 			member_add_file_data(member, write_frame.data, write_frame.datalen);
+			member_check_channels(&write_frame, member, SWITCH_FALSE);
 			if (switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				break;
@@ -4399,6 +4434,8 @@ static void conference_loop_output(conference_member_t *member)
 			write_frame.samples = samples;
 			write_frame.timestamp = timer.samplecount;
 			
+			member_check_channels(&write_frame, member, SWITCH_FALSE);
+
 			if (switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				break;
@@ -4521,7 +4558,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		return NULL;
 	}
 
-	data_buf_len = samples * sizeof(int16_t);
+	data_buf_len = samples * sizeof(int16_t) * conference->channels;
 	switch_zmalloc(data_buf, data_buf_len);
 
 	switch_mutex_lock(globals.hash_mutex);
@@ -4574,7 +4611,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 
 	if (switch_core_file_open(&fh,
-							  rec->path, (uint8_t) 1, conference->rate, SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT,
+							  rec->path, (uint8_t) conference->channels, conference->rate, SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT,
 							  rec->pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening File [%s]\n", rec->path);
 
@@ -4917,7 +4954,7 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 
 	/* Open the file */
 	fnode->fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
-	if (switch_core_file_open(&fnode->fh, file, (uint8_t) 1, conference->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, pool) !=
+	if (switch_core_file_open(&fnode->fh, file, (uint8_t) conference->channels, conference->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, pool) !=
 		SWITCH_STATUS_SUCCESS) {
 		switch_event_t *event;
 
@@ -5043,7 +5080,7 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 	/* Open the file */
 	fnode->fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 	if (switch_core_file_open(&fnode->fh,
-							  file, (uint8_t) 1, member->conference->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
+							  file, (uint8_t) member->conference->channels, member->conference->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
 							  pool) != SWITCH_STATUS_SUCCESS) {
 		switch_core_destroy_memory_pool(&pool);
 		status = SWITCH_STATUS_NOTFOUND;
@@ -5109,7 +5146,7 @@ static switch_status_t conference_member_say(conference_member_t *member, char *
 	if (!member->sh) {
 		memset(&member->lsh, 0, sizeof(member->lsh));
 		if (switch_core_speech_open(&member->lsh, conference->tts_engine, conference->tts_voice,
-									conference->rate, conference->interval, &flags, switch_core_session_get_pool(member->session)) !=
+									conference->rate, conference->interval, conference->channels, &flags, switch_core_session_get_pool(member->session)) !=
 			SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Invalid TTS module [%s]!\n", conference->tts_engine);
 			return SWITCH_STATUS_FALSE;
@@ -5198,7 +5235,7 @@ static switch_status_t conference_say(conference_obj_t *conference, const char *
 	if (!conference->sh) {
 		memset(&conference->lsh, 0, sizeof(conference->lsh));
 		if (switch_core_speech_open(&conference->lsh, conference->tts_engine, conference->tts_voice,
-									conference->rate, conference->interval, &flags, NULL) != SWITCH_STATUS_SUCCESS) {
+									conference->rate, conference->interval, conference->channels, &flags, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module [%s]!\n", conference->tts_engine);
 			return SWITCH_STATUS_FALSE;
 		}
@@ -8075,14 +8112,15 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 	if (switch_core_codec_init(&member->read_codec,
 							   "L16",
 							   NULL, read_impl.actual_samples_per_second, read_impl.microseconds_per_packet / 1000,
-							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, member->pool) == SWITCH_STATUS_SUCCESS) {
+							   read_impl.number_of_channels, 
+							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, member->pool) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG,
-						  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
-						  read_impl.actual_samples_per_second, read_impl.microseconds_per_packet / 1000);
+						  "Raw Codec Activation Success L16@%uhz %d channel %dms\n",
+						  read_impl.actual_samples_per_second, read_impl.number_of_channels, read_impl.microseconds_per_packet / 1000);
 
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
-						  read_impl.actual_samples_per_second, read_impl.microseconds_per_packet / 1000);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz %d channel %dms\n",
+						  read_impl.actual_samples_per_second, read_impl.number_of_channels, read_impl.microseconds_per_packet / 1000);
 
 		goto done;
 	}
@@ -8096,7 +8134,7 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 	if (read_impl.actual_samples_per_second != conference->rate) {
 		if (switch_resample_create(&member->read_resampler,
 								   read_impl.actual_samples_per_second,
-								   conference->rate, member->frame_size, SWITCH_RESAMPLE_QUALITY, 1) != SWITCH_STATUS_SUCCESS) {
+								   conference->rate, member->frame_size, SWITCH_RESAMPLE_QUALITY, conference->channels) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_CRIT, "Unable to create resampler!\n");
 			goto done;
 		}
@@ -8120,12 +8158,14 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 							   NULL,
 							   conference->rate,
 							   read_impl.microseconds_per_packet / 1000,
-							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, member->pool) == SWITCH_STATUS_SUCCESS) {
+							   read_impl.number_of_channels, 
+							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, member->pool) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG,
-						  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n", conference->rate, read_impl.microseconds_per_packet / 1000);
+						  "Raw Codec Activation Success L16@%uhz %d channel %dms\n", 
+						  conference->rate, conference->channels, read_impl.microseconds_per_packet / 1000);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
-						  conference->rate, read_impl.microseconds_per_packet / 1000);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz %d channel %dms\n",
+						  conference->rate, conference->channels, read_impl.microseconds_per_packet / 1000);
 		goto codec_done2;
 	}
 
@@ -9027,6 +9067,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	uint32_t announce_count = 0;
 	char *maxmember_sound = NULL;
 	uint32_t rate = 8000, interval = 20;
+	uint32_t channels = 1;
 	int broadcast_chat_messages = 0;
 	int comfort_noise_level = 0;
 	int pin_retries = 3;
@@ -9044,8 +9085,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	switch_uuid_t uuid;
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_channel_t *channel = NULL;
-	const char *force_rate = NULL, *force_interval = NULL, *presence_id = NULL;
-	uint32_t force_rate_i = 0, force_interval_i = 0;
+	const char *force_rate = NULL, *force_interval = NULL, *force_channels = NULL, *presence_id = NULL;
+	uint32_t force_rate_i = 0, force_interval_i = 0, force_channels_i = NULL;
 
 	/* Validate the conference name */
 	if (zstr(name)) {
@@ -9069,6 +9110,18 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 
 				if (tmp == 8000 || tmp == 12000 || tmp == 16000 || tmp == 24000 || tmp == 32000 || tmp == 48000) {
 					force_rate_i = rate = tmp;
+				}
+			}
+		}
+
+		if ((force_channels = switch_channel_get_variable(channel, "conference_force_channels"))) {
+			if (!strcasecmp(force_channels, "auto")) {
+				force_rate_i = read_impl.number_of_channels;
+			} else {
+				tmp = atoi(force_channels);
+
+				if (tmp == 1 || tmp == 2) {
+					force_channels_i = channels = tmp;
 				}
 			}
 		}
@@ -9115,6 +9168,17 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 				} else {
 					if (tmp == 8000 || tmp == 12000 || tmp == 16000 || tmp == 24000 || tmp == 32000 || tmp == 48000) {
 						rate = tmp;
+					}
+				}
+			} else if (!force_channels_i && !strcasecmp(var, "channels") && !zstr(val)) {
+				uint32_t tmp = atoi(val);
+				if (session && tmp == 0) {
+					if (!strcasecmp(val, "auto")) {
+						channels = read_impl.number_of_channels;
+					}
+				} else {
+					if (tmp == 1 || tmp == 2) {
+						channels = tmp;
 					}
 				}
 			} else if (!strcasecmp(var, "domain") && !zstr(val)) {
@@ -9507,6 +9571,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 		conference->domain = "cluecon.com";
 	}
 
+	conference->channels = channels;
 	conference->rate = rate;
 	conference->interval = interval;
 	conference->ivr_dtmf_timeout = ivr_dtmf_timeout;

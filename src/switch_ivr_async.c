@@ -767,7 +767,7 @@ static switch_bool_t write_displace_callback(switch_media_bug_t *bug, void *user
 
 				st = switch_core_file_read(&dh->fh, buf, &len);
 
-				for (x = 0; x < (uint32_t) len; x++) {
+				for (x = 0; x < (uint32_t) len * dh->fh.channels; x++) {
 					int32_t mixed = fp[x] + buf[x];
 					switch_normalize_to_16bit(mixed);
 					fp[x] = (int16_t) mixed;
@@ -778,6 +778,9 @@ static switch_bool_t write_displace_callback(switch_media_bug_t *bug, void *user
 					memset((char *)rframe->data + len * 2, 0, rframe->datalen - len * 2);
 				}
 			}
+
+			rframe->datalen = rframe->samples * 2 * dh->fh.channels;
+
 
 			if (st != SWITCH_STATUS_SUCCESS || len == 0) {
 				if (dh->loop) {
@@ -848,16 +851,19 @@ static switch_bool_t read_displace_callback(switch_media_bug_t *bug, void *user_
 
 				st = switch_core_file_read(&dh->fh, buf, &len);
 
-				for (x = 0; x < (uint32_t) len; x++) {
+				for (x = 0; x < (uint32_t) len * dh->fh.channels; x++) {
 					int32_t mixed = fp[x] + buf[x];
 					switch_normalize_to_16bit(mixed);
 					fp[x] = (int16_t) mixed;
 				}
+				
 			} else {
 				st = switch_core_file_read(&dh->fh, rframe->data, &len);
 				rframe->samples = (uint32_t) len;
-				rframe->datalen = rframe->samples * 2;
 			}
+
+			rframe->datalen = rframe->samples * 2 * dh->fh.channels;
+
 
 			if (st != SWITCH_STATUS_SUCCESS || len == 0) {
 				if (dh->loop) {

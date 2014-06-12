@@ -78,7 +78,8 @@ SWITCH_DECLARE(switch_status_t) switch_resample_perform_create(switch_audio_resa
 	resampler->factor = (lto_rate / lfrom_rate);
 	resampler->rfactor = (lfrom_rate / lto_rate);
 	resampler->to_size = resample_buffer(to_rate, from_rate, (uint32_t) to_size);
-	resampler->to = malloc(resampler->to_size * sizeof(int16_t));
+	resampler->to = malloc(resampler->to_size * sizeof(int16_t) * channels);
+	resampler->channels = channels;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -271,18 +272,55 @@ SWITCH_DECLARE(uint32_t) switch_unmerge_sln(int16_t *data, uint32_t samples, int
 	return x;
 }
 
-SWITCH_DECLARE(void) switch_mux_channels(int16_t *data, switch_size_t samples, uint32_t channels)
+SWITCH_DECLARE(void) switch_mux_channels(int16_t *data, switch_size_t samples, uint32_t orig_channels, uint32_t channels)
 {
 	switch_size_t i = 0;
 	uint32_t j = 0;
 
-	for (i = 0; i < samples; i++) {
-		int32_t z = 0;
-		for (j = 0; j < channels; j++) {
-			z += data[i * channels + j];
-			switch_normalize_to_16bit(z);
-			data[i] = (int16_t) z;
+	switch_assert(channels < 11);
+
+	if (orig_channels > channels) {
+		for (i = 0; i < samples; i++) {
+			int32_t z = 0;
+			for (j = 0; j < orig_channels; j++) {
+				z += data[i * orig_channels + j];
+				switch_normalize_to_16bit(z);
+				data[i] = (int16_t) z;
+			}
 		}
+	} else if (orig_channels < channels) {
+
+		/* interesting problem... take a give buffer and double up every sample in the buffer without using any other buffer.....
+		   This way beats the other i think bacause there is no malloc but I do have to copy the data twice */
+#if 1
+		uint32_t k = 0, len = samples * orig_channels;
+
+		for (i = 0; i < len; i++) {
+			data[i+len] = data[i];
+		}
+
+		for (i = 0; i < samples; i++) {
+			for (j = 0; j < channels; j++) { 
+				data[k++] = data[i + samples];
+			}
+		}
+
+#else 
+		uint32_t k = 0, len = samples * 2 * orig_channels;
+		int16_t *orig = NULL;
+
+		switch_zmalloc(orig, len);
+		memcpy(orig, data, len);
+
+		for (i = 0; i < samples; i++) {
+			for (j = 0; j < channels; j++) { 
+				data[k++] = orig[i];
+			}
+		}
+		
+		free(orig);
+#endif
+
 	}
 }
 

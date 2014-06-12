@@ -700,8 +700,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init_with_bitrate(switch_codec
 		switch_set_flag(codec, SWITCH_CODEC_FLAG_READY);
 		return SWITCH_STATUS_SUCCESS;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec %s Exists but not at the desired implementation. %dhz %dms\n", codec_name, rate,
-						  ms);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec %s Exists but not at the desired implementation. %dhz %dms %dch\n", 
+						  codec_name, rate, ms, channels);
+						  
 	}
 
 	UNPROTECT_INTERFACE(codec_interface);
@@ -765,7 +766,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 	}
 
 	if (codec->implementation->encoded_bytes_per_packet) {
-		uint32_t frames = encoded_data_len / codec->implementation->encoded_bytes_per_packet;
+		uint32_t frames = encoded_data_len / codec->implementation->encoded_bytes_per_packet / codec->implementation->number_of_channels;
 
 		if (frames && codec->implementation->decoded_bytes_per_packet * frames > *decoded_data_len) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Buffer size sanity check failed! edl:%u ebpp:%u fr:%u ddl:%u\n", 

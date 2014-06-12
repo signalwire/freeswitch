@@ -73,6 +73,7 @@ struct vlc_file_context {
 	int samples;
 	int playing;
 	int samplerate;
+	int channels;
 	int err;
 	int pts;
 	libvlc_instance_t *inst_out;
@@ -113,7 +114,7 @@ void vlc_auto_play_callback(void *data, const void *samples, unsigned count, int
 	
 	switch_mutex_lock(context->audio_mutex);
 	if (context->audio_buffer) {
-		if (!switch_buffer_write(context->audio_buffer, samples, count * 2)) {
+		if (!switch_buffer_write(context->audio_buffer, samples, count * 2 * context->channels)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Buffer error\n");
 		}
 	}
@@ -145,7 +146,7 @@ int  vlc_imem_get_callback(void *data, const char *cookie, int64_t *dts, int64_t
 	context->samples = 0;
 	
 	if ( samples ) {
-		bytes = samples * 2;
+		bytes = samples * 2 * context->channels;
 		*output = malloc(bytes);
 		bytes = switch_buffer_read(context->audio_buffer, *output, bytes);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VLC imem samples: %d\n", samples);
@@ -210,12 +211,14 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 		
 		context->mp = libvlc_media_player_new_from_media(context->m);
 		
-		if ( !handle->samplerate)
+		if (!handle->samplerate) {
 			handle->samplerate = 16000;
+		}
 
 		context->samplerate = handle->samplerate;
-		
-		libvlc_audio_set_format(context->mp, "S16N", context->samplerate, 1);
+		context->channels = handle->channels;
+
+		libvlc_audio_set_format(context->mp, "S16N", context->samplerate, handle->channels);
 		
 		m_event_manager = libvlc_media_event_manager(context->m);
 		libvlc_event_attach(m_event_manager, libvlc_MediaStateChanged, vlc_media_state_callback, (void *) context);
@@ -246,7 +249,7 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 		opts[6] = "--rawaud-fourcc=s16l";
 		opts[7] = switch_mprintf("--rawaud-samplerate=%d", context->samplerate);
 		opts[8] = switch_mprintf("--imem-data=%ld", context);
-		opts[9] = "--rawaud-channels=1";
+		//opts[9] = "--rawaud-channels=1";
 
 		/* Prepare to write to an output stream. */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VLC open %s for writing\n", path);
@@ -274,7 +277,7 @@ static switch_status_t vlc_file_open(switch_file_handle_t *handle, const char *p
 static switch_status_t vlc_file_read(switch_file_handle_t *handle, void *data, size_t *len)
 {
 	vlc_file_context_t *context = handle->private_info;
-	size_t bytes = *len * sizeof(int16_t), read;
+	size_t bytes = *len * sizeof(int16_t) * handle->channels, read;
 	libvlc_state_t status;
 	
 	if (!context) {
@@ -310,7 +313,8 @@ static switch_status_t vlc_file_read(switch_file_handle_t *handle, void *data, s
 	read = switch_buffer_read(context->audio_buffer, data, bytes);
 	switch_mutex_unlock(context->audio_mutex);
 	
-        status = libvlc_media_get_state(context->m);
+	status = libvlc_media_get_state(context->m);
+
 	if (!read && (status == libvlc_Stopped || status == libvlc_Ended || status == libvlc_Error)) {
 		return SWITCH_STATUS_FALSE;
 	} else if (!read) {
@@ -318,8 +322,9 @@ static switch_status_t vlc_file_read(switch_file_handle_t *handle, void *data, s
 		memset(data, 0, read);
 	}
 	
-	if (read)
-		*len = read/2;
+	if (read) {
+		*len = read / 2 / handle->channels;
+	}
 	
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -327,7 +332,7 @@ static switch_status_t vlc_file_read(switch_file_handle_t *handle, void *data, s
 static switch_status_t vlc_file_write(switch_file_handle_t *handle, void *data, size_t *len)
 {
 	vlc_file_context_t *context = handle->private_info;
-	size_t bytes = *len * sizeof(int16_t);
+	size_t bytes = *len * sizeof(int16_t) * handle->channels;
 	
 	switch_mutex_lock(context->audio_mutex);
 	context->samples += *len;

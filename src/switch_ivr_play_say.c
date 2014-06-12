@@ -737,13 +737,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 		if (!switch_test_flag(fh, SWITCH_FILE_PAUSE) && !switch_test_flag(read_frame, SFF_CNG)) {
 			int16_t *data = read_frame->data;
-			len = (switch_size_t) asis ? read_frame->datalen : read_frame->datalen / 2;
+			len = (switch_size_t) asis ? read_frame->datalen : read_frame->datalen / 2 / fh->channels;
 
 			if (switch_core_file_write(fh, data, &len) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
 		} else if (switch_test_flag(read_frame, SFF_CNG) && fill_cng) {
-			len = write_frame.datalen / 2;
+			len = write_frame.datalen / 2 / fh->channels;
 			if (switch_core_file_write(fh, write_frame.data, &len) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
@@ -1301,14 +1301,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 									   codec_name,
 									   NULL,
 									   fh->samplerate,
-									   interval, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, pool) == SWITCH_STATUS_SUCCESS) {
+									   interval, read_impl.number_of_channels, 
+									   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, pool) == SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
-								  SWITCH_LOG_DEBUG, "Codec Activated %s@%uhz %u channels %dms\n", codec_name, fh->samplerate, fh->channels, interval);
+								  SWITCH_LOG_DEBUG, "Codec Activated %s@%uhz %u channels %dms\n", 
+								  codec_name, fh->samplerate, read_impl.number_of_channels, interval);
 
 
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
-								  "Raw Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name, fh->samplerate, fh->channels, interval);
+								  "Raw Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name, 
+								  fh->samplerate, read_impl.number_of_channels, interval);
 				switch_core_session_io_write_lock(session);
 				switch_channel_set_private(channel, "__fh", NULL);
 				switch_core_session_io_rwunlock(session);
@@ -1339,7 +1342,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			uint32_t len;
 
 			len = samples * 2;
-			if (switch_core_timer_init(&timer, timer_name, interval, samples, pool) != SWITCH_STATUS_SUCCESS) {
+			if (switch_core_timer_init(&timer, timer_name, interval, samples / codec.implementation->number_of_channels, pool) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Setup timer failed!\n");
 				switch_core_codec_destroy(&codec);
 				switch_core_session_io_write_lock(session);
@@ -1351,7 +1354,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				continue;
 			}
 			switch_core_timer_sync(&timer); // Sync timer
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Setup timer success %u bytes per %d ms!\n", len, interval);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+							  "Setup timer success %u bytes per %d ms! %d ch\n", len, interval, codec.implementation->number_of_channels);
 		}
 		write_frame.rate = fh->samplerate;
 
@@ -1445,7 +1449,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				}
 			}
 
-			buflen = FILE_STARTSAMPLES * sizeof(*abuf) * fh->cur_channels;
+			buflen = FILE_STARTSAMPLES * sizeof(*abuf) * fh->cur_channels ? fh->cur_channels : fh->channels;
 
 			if (buflen > write_frame.buflen) {
 				abuf = realloc(abuf, buflen);
@@ -1502,10 +1506,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					olen /= 2;
 				}
 				switch_set_flag(fh, SWITCH_FILE_BREAK_ON_CHANGE);
+				
 				if ((rstatus = switch_core_file_read(fh, abuf, &olen)) == SWITCH_STATUS_BREAK) {
 					continue;
 				}
-
+				
 				if (rstatus != SWITCH_STATUS_SUCCESS) {
 					eof++;
 					continue;
@@ -1528,7 +1533,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 				last_native = test_native;
 
-				switch_buffer_write(fh->audio_buffer, abuf, switch_test_flag(fh, SWITCH_FILE_NATIVE) ? olen : olen * 2);
+				switch_buffer_write(fh->audio_buffer, abuf, switch_test_flag(fh, SWITCH_FILE_NATIVE) ? olen : olen * 2 * fh->channels);
 				olen = switch_buffer_read(fh->audio_buffer, abuf, framelen);
 				fh->offset_pos += (uint32_t)(olen / 2);
 
@@ -2142,14 +2147,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 															 switch_codec_t *codec, switch_timer_t *timer, char *text, switch_input_args_t *args)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	short abuf[960];
+	short abuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	switch_dtmf_t dtmf = { 0 };
 	uint32_t len = 0;
 	switch_size_t ilen = 0;
 	switch_frame_t write_frame = { 0 };
-	int x;
 	int done = 0;
-	int lead_in_out = 10;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 	switch_size_t extra = 0;
@@ -2174,7 +2177,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	write_frame.data = abuf;
 	write_frame.buflen = sizeof(abuf);
 
-	len = sh->samples * 2;
+	len = sh->samples * 2 * sh->channels;
 
 	flags = 0;
 
@@ -2227,7 +2230,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	text = NULL;
 
 	write_frame.rate = sh->rate;
-
 	memset(write_frame.data, 0, len);
 	write_frame.datalen = len;
 	write_frame.samples = len / 2;
@@ -2235,22 +2237,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 
 	switch_assert(codec->implementation != NULL);
 
-	for (x = 0; !done && x < lead_in_out; x++) {
-		switch_yield(codec->implementation->microseconds_per_packet);
-		if (timer) {
-			write_frame.timestamp = timer->samplecount;
-		}
-		if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
-			done = 1;
-			break;
-		}
-	}
-
 	switch_channel_audio_sync(channel);
 
-	ilen = len;
+
 	for (;;) {
 		switch_event_t *event;
+
+		ilen = len;
 
 		if (!switch_channel_ready(channel)) {
 			status = SWITCH_STATUS_FALSE;
@@ -2348,23 +2341,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 			continue;
 		}
 
+
 		flags = SWITCH_SPEECH_FLAG_BLOCKING;
 		status = switch_core_speech_read_tts(sh, abuf, &ilen, &flags);
 
 		if (status != SWITCH_STATUS_SUCCESS) {
-			write_frame.datalen = (uint32_t) codec->implementation->decoded_bytes_per_packet;
-			write_frame.samples = (uint32_t) (write_frame.datalen / 2);
-			memset(write_frame.data, 0, write_frame.datalen);
-			for (x = 0; !done && x < lead_in_out; x++) {
-				switch_yield(codec->implementation->microseconds_per_packet);
-				if (timer) {
-					write_frame.timestamp = timer->samplecount;
-				}
-				if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
-					done = 1;
-					break;
-				}
-			}
 			if (status == SWITCH_STATUS_BREAK) {
 				status = SWITCH_STATUS_SUCCESS;
 			}
@@ -2376,7 +2357,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 		}
 
 		write_frame.datalen = (uint32_t) ilen;
-		write_frame.samples = (uint32_t) (ilen / 2);
+		write_frame.samples = (uint32_t) (ilen / 2 / sh->channels);
 		if (timer) {
 			write_frame.timestamp = timer->samplecount;
 		}
@@ -2466,6 +2447,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	uint32_t rate = 0;
 	int interval = 0;
+	uint32_t channels;
 	switch_frame_t write_frame = { 0 };
 	switch_timer_t ltimer, *timer;
 	switch_codec_t lcodec, *codec;
@@ -2519,10 +2501,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 
 	rate = read_impl.actual_samples_per_second;
 	interval = read_impl.microseconds_per_packet / 1000;
+	channels = read_impl.number_of_channels;
 
 	if (need_create) {
 		memset(sh, 0, sizeof(*sh));
-		if ((status = switch_core_speech_open(sh, tts_name, voice_name, (uint32_t) rate, interval, &flags, NULL)) != SWITCH_STATUS_SUCCESS) {
+		if ((status = switch_core_speech_open(sh, tts_name, voice_name, (uint32_t) rate, interval, read_impl.number_of_channels, &flags, NULL)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid TTS module!\n");
 			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 			switch_ivr_clear_speech_cache(session);
@@ -2543,11 +2526,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "OPEN TTS %s\n", tts_name);
 
 	codec_name = "L16";
-
+	
 	if (need_create) {
 		if (switch_core_codec_init(codec,
 								   codec_name,
-								   NULL, (int) rate, interval, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+								   NULL, (int) rate, interval, channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 								   pool) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Raw Codec Activated\n");
 		} else {
