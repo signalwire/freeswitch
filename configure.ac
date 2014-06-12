@@ -1238,7 +1238,7 @@ if test "x$ac_cv_have_perl" != "xno" ; then
    PERL_LIBDIR="-L`$PERL -MConfig -e 'print $Config{archlib}'`/CORE"
    PERL_LIBS="`$PERL -MConfig -e 'print $Config{libs}'`"
    PERL_CFLAGS="-w -DMULTIPLICITY `$PERL -MExtUtils::Embed -e ccopts` -DEMBED_PERL"
-   PERL_LDFLAGS="`$PERL -MExtUtils::Embed -e ldopts` `$PERL -MConfig -e 'print $Config{libs}'`"
+   PERL_LDFLAGS="`$PERL -MExtUtils::Embed -e ldopts`"
    PERL_INC="`$PERL -MExtUtils::Embed -e perl_inc`"
    AC_SUBST(PERL_SITEDIR)
    AC_SUBST(PERL_LIBDIR)
