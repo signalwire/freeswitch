@@ -142,6 +142,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 
 	arg_recursion_check_start(args);
 
+	switch_core_session_get_read_impl(session, &imp);
+
 	/*
 	   if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND && !switch_channel_test_flag(channel, CF_PROXY_MODE) && 
 	   !switch_channel_media_ready(channel) && !switch_channel_test_flag(channel, CF_SERVICE)) {
@@ -171,7 +173,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 	}
 
 	if (ms > 10 && sval) {
-		switch_core_session_get_read_impl(session, &imp);
 
 		if (switch_core_codec_init(&codec,
 								   "L16",
@@ -299,7 +300,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 		}
 
 		if (sval && write_frame.datalen) {
-			switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, sval);
+			switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, imp.number_of_channels, sval);
 			switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 		} else {
 			switch_core_session_write_frame(session, &cng_frame, SWITCH_IO_FLAG_NONE, 0);
@@ -992,7 +993,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 		}
 
 		if (rate && write_frame.data && sval) {
-			switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, sval);
+			switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, read_impl.number_of_channels, sval);
 			switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 		}
 		
@@ -1409,7 +1410,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 			}
 
 			if (write_frame.data) {
-				switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, sval);
+				switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, imp.number_of_channels, sval);
 				switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 			}
 

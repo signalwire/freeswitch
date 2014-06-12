@@ -199,7 +199,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_random_runtime)
 		int i = 0;
 		int len = sizeof(data) / 2;
 
-		switch_generate_sln_silence(data, len, 1);
+		switch_generate_sln_silence(data, len, 1, 1);
 		random_add_entropy(rfd, data, len);	
 
 		while(i < len && !data[i]) i++;

@@ -713,9 +713,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			double energy = 0;
 
 
-			for (count = 0; count < samples; count++) {
-				energy += abs(fdata[j]);
-				j += read_impl.number_of_channels;
+			for (count = 0; count < samples * read_impl.number_of_channels; count++) {
+				energy += abs(fdata[j++]);
 			}
 
 			score = (uint32_t) (energy / (samples / divisor));
@@ -730,9 +729,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		}
 
 		if (fill_cng) {
-			switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, fill_cng);
+			switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, read_impl.number_of_channels, fill_cng);
 		} else if (waste_resources) {
-			switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, waste_resources);
+			switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, read_impl.number_of_channels, waste_resources);
 		}
 
 		if (!switch_test_flag(fh, SWITCH_FILE_PAUSE) && !switch_test_flag(read_frame, SFF_CNG)) {

@@ -1084,7 +1084,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 				}
 			} else if (ringback.silence) {
 				write_frame.datalen = write_frame.codec->implementation->decoded_bytes_per_packet;
-				switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.datalen / 2, ringback.silence);
+				switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.datalen / 2, 
+											write_frame.codec->implementation->number_of_channels, ringback.silence);
 			}
 
 			if ((ringback.fh || ringback.silence || ringback.audio_buffer) && write_frame.codec && write_frame.datalen) {
@@ -3213,7 +3214,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					if ((ringback.fh || silence || ringback.audio_buffer || oglobals.bridge_early_media > -1) && write_frame.codec && write_frame.datalen) {
 						if (silence) {
 							write_frame.datalen = read_impl.decoded_bytes_per_packet;
-							switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.datalen / 2, silence);
+							switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.datalen / 2, write_frame.codec->implementation->number_of_channels, silence);
 						}
 
 						if (switch_core_session_write_frame(oglobals.session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {

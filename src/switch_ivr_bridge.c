@@ -562,7 +562,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			read_frame_count++;
 			if (switch_test_flag(read_frame, SFF_CNG)) {
 				if (silence_val) {
-					switch_generate_sln_silence((int16_t *) silence_frame.data, silence_frame.samples, silence_val);
+					switch_generate_sln_silence((int16_t *) silence_frame.data, silence_frame.samples, 
+												read_frame->codec->implementation->number_of_channels, silence_val);
 					read_frame = &silence_frame;
 				} else if (!switch_channel_test_flag(chan_b, CF_ACCEPT_CNG)) {
 					continue;

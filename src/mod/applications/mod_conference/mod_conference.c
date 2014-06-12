@@ -4425,7 +4425,7 @@ static void conference_loop_output(conference_member_t *member)
 		} else {
 			
 			if (member->conference->comfort_noise_level) {
-				switch_generate_sln_silence(write_frame.data, samples, member->conference->comfort_noise_level);
+				switch_generate_sln_silence(write_frame.data, samples, member->conference->channels, member->conference->comfort_noise_level);
 			} else {
 				memset(write_frame.data, 255, bytes);
 			}

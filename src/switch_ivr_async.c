@@ -2531,6 +2531,10 @@ static switch_bool_t session_audio_callback(switch_media_bug_t *bug, void *user_
 	switch_session_audio_t *pvt = (switch_session_audio_t *) user_data;
 	switch_frame_t *frame = NULL;
 	int level = 0, mute = 0;
+	switch_core_session_t *session = switch_core_media_bug_get_session(bug);
+	switch_codec_implementation_t read_impl = { 0 };
+
+	switch_core_session_get_read_impl(session, &read_impl);
 
 
 	if (type == SWITCH_ABC_TYPE_READ_REPLACE || type == SWITCH_ABC_TYPE_WRITE_REPLACE) {
@@ -2553,7 +2557,7 @@ static switch_bool_t session_audio_callback(switch_media_bug_t *bug, void *user_
 	if (frame) {
 		if (mute) {
 			if (mute > 1) {
-				switch_generate_sln_silence(frame->data, frame->datalen / 2, mute);
+				switch_generate_sln_silence(frame->data, frame->datalen / 2, read_impl.number_of_channels, mute);
 			} else {
 				memset(frame->data, 0, frame->datalen);
 			}

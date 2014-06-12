@@ -94,7 +94,7 @@ static switch_status_t silence_stream_file_read(switch_file_handle_t *handle, vo
 		sh->samples -= (int32_t)*len;
 	}
 
-	switch_generate_sln_silence((int16_t *) data, (uint32_t)*len,
+	switch_generate_sln_silence((int16_t *) data, (uint32_t)*len, handle->channels,
 								sh->silence ? sh->silence : (uint32_t)-1);
 
 	return SWITCH_STATUS_SUCCESS;

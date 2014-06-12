@@ -181,13 +181,15 @@ SWITCH_DECLARE(void) switch_swap_linear(int16_t *buf, int len)
 	}
 }
 
-#if 1
-SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples, uint32_t divisor)
+
+SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples, uint32_t channels, uint32_t divisor)
 {
-	int16_t x;
-	uint32_t i;
+	int16_t s;
+	uint32_t x, i, j;
 	int sum_rnd = 0;
 	int16_t rnd2 = (int16_t) switch_micro_time_now() + (int16_t) (intptr_t) data;
+
+	if (channels == 0) channels = 1;
 
 	assert(divisor);
 
@@ -201,37 +203,17 @@ SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples
 			rnd2 = rnd2 * 31821U + 13849U;
 			sum_rnd += rnd2;
 		}
-		//switch_normalize_to_16bit(sum_rnd);
-		*data = (int16_t) ((int16_t) sum_rnd / (int) divisor);
 
-		data++;
-	}
-}
-#else
+		s = (int16_t) ((int16_t) sum_rnd / (int) divisor);		
 
-SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples, uint32_t divisor)
-{
-	int16_t rnd = 0, rnd2, x;
-	uint32_t i;
-	int sum_rnd = 0;
-
-	assert(divisor);
-
-	rnd2 = (int16_t) (intptr_t) (&data + switch_epoch_time_now(NULL));
-
-	for (i = 0; i < samples; i++, sum_rnd = 0) {
-		for (x = 0; x < 10; x++) {
-			rnd = rnd + (int16_t) ((x + i) * rnd2);
-			sum_rnd += rnd;
+		for (j = 0; j < channels; j++) {
+			*data = s;
+			data++;			
 		}
-		switch_normalize_to_16bit(sum_rnd);
-		*data = (int16_t) ((int16_t) sum_rnd / (int) divisor);
 
-		data++;
+
 	}
 }
-
-#endif
 
 SWITCH_DECLARE(uint32_t) switch_merge_sln(int16_t *data, uint32_t samples, int16_t *other_data, uint32_t other_samples)
 {
