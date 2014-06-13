@@ -238,7 +238,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_resume_detect_speech(switch_core_sess
   \param name the grammar name
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_load_grammar(switch_core_session_t *session, char *grammar, char *name);
+SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_load_grammar(switch_core_session_t *session, const char *grammar, const char *name);
 
 /*!
   \brief Unload a grammar on a background speech detection handle
