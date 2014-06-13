@@ -92,6 +92,10 @@ static void json_cleanup(void)
 	const void *var;
 	cJSON *json;
 
+	if (!json_GLOBALS.store_hash) {
+		return;
+	}
+
 	switch_mutex_lock(json_GLOBALS.store_mutex);
  top:
 
@@ -963,6 +967,9 @@ static void tech_reattach(verto_pvt_t *tech_pvt, jsock_t *jsock)
 	switch_set_flag(tech_pvt, TFLAG_ATTACH_REQ);
 	msg = jrpc_new_req("verto.attach", tech_pvt->call_id, &params);
 	cJSON_AddItemToObject(params, "sdp", cJSON_CreateString(tech_pvt->mparams->local_sdp_str));
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Local attach SDP %s:\n%s\n", 
+					  switch_channel_get_name(tech_pvt->channel),
+					  tech_pvt->mparams->local_sdp_str);
 	set_call_params(params, tech_pvt);
  	ws_write_json(jsock, &msg, SWITCH_TRUE);
 }
