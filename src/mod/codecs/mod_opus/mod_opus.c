@@ -266,8 +266,6 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 	switch_opus_fmtp_parse(codec->fmtp_in, &codec_fmtp);
 	codec->fmtp_out = gen_fmtp(&opus_codec_settings, codec->memory_pool);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OPUS init %d %d\n", codec->implementation->actual_samples_per_second, codec->implementation->number_of_channels);
-
 	if (encoding) {
 		/* come up with a way to specify these */
 		int bitrate_bps = OPUS_AUTO;
