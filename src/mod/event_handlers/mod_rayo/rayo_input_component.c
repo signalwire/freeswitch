@@ -721,6 +721,22 @@ static char *create_input_component_id(switch_core_session_t *session, iks *inpu
 }
 
 /**
+ * Release any resources consumed by this input component
+ */
+static void input_component_cleanup(struct rayo_actor *component)
+{
+	switch_mutex_lock(component->mutex);
+	if (INPUT_COMPONENT(component)->speech_mode) {
+		switch_core_session_t *session = switch_core_session_locate(component->parent->id);
+		if (session) {
+			switch_ivr_stop_detect_speech(session);
+			switch_core_session_rwunlock(session);
+		}
+	}
+	switch_mutex_unlock(component->mutex);
+}
+
+/**
  * Start execution of input component
  */
 static iks *start_call_input_component(struct rayo_actor *call, struct rayo_message *msg, void *session_data)
@@ -745,7 +761,7 @@ static iks *start_call_input_component(struct rayo_actor *call, struct rayo_mess
 
 	switch_core_new_memory_pool(&pool);
 	input_component = switch_core_alloc(pool, sizeof(*input_component));
-	input_component = INPUT_COMPONENT(rayo_component_init(RAYO_COMPONENT(input_component), pool, RAT_CALL_COMPONENT, "input", component_id, call, iks_find_attrib(iq, "from")));
+	input_component = INPUT_COMPONENT(rayo_component_init_cleanup(RAYO_COMPONENT(input_component), pool, RAT_CALL_COMPONENT, "input", component_id, call, iks_find_attrib(iq, "from"), input_component_cleanup));
 	if (!input_component) {
 		switch_core_destroy_memory_pool(&pool);
 		return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Failed to create input entity");
