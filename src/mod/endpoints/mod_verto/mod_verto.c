@@ -833,7 +833,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 						verto_dialplan = val;
 					}
 
-					switch_event_add_header(jsock->params, SWITCH_STACK_BOTTOM, var, val);
+					switch_event_add_header_string(jsock->params, SWITCH_STACK_BOTTOM, var, val);
 				}
 			}
 
@@ -842,7 +842,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 					const char *var = switch_xml_attr_soft(x_param, "name");
 					const char *val = switch_xml_attr_soft(x_param, "value");
 					
-					switch_event_add_header(jsock->vars, SWITCH_STACK_BOTTOM, var, val);
+					switch_event_add_header_string(jsock->vars, SWITCH_STACK_BOTTOM, var, val);
 				}
 			}
 
