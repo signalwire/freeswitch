@@ -266,6 +266,8 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 	switch_opus_fmtp_parse(codec->fmtp_in, &codec_fmtp);
 	codec->fmtp_out = gen_fmtp(&opus_codec_settings, codec->memory_pool);
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OPUS init %d %d\n", codec->implementation->actual_samples_per_second, codec->implementation->number_of_channels);
+
 	if (encoding) {
 		/* come up with a way to specify these */
 		int bitrate_bps = OPUS_AUTO;
@@ -472,6 +474,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 		settings.maxptime = settings.ptime;
 		settings.minptime = settings.ptime;
 		settings.samplerate = rate;
+		settings.stereo = 0;
 		dft_fmtp = gen_fmtp(&settings, pool);
         
 		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
@@ -493,8 +496,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 											 switch_opus_destroy);	/* deinitalize a codec handle using this implementation */
 		
 		settings.stereo = 1;
+		if (x < 2) {
 		dft_fmtp = gen_fmtp(&settings, pool);
-
 		switch_core_codec_add_implementation(pool, codec_interface, SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 											 116,	/* the IANA code number */
 											 "opus",/* the IANA code name */
@@ -512,7 +515,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opus_load)
 											 switch_opus_encode,	/* function to encode raw data into encoded data */
 											 switch_opus_decode,	/* function to decode encoded data into raw data */
 											 switch_opus_destroy);	/* deinitalize a codec handle using this implementation */
-
+		}
 		bytes *= 2;
 		samples *= 2;
 		mss *= 2;

@@ -1441,10 +1441,12 @@ static switch_status_t verto_connect(switch_core_session_t *session, const char 
 
 			verto_set_media_options(tech_pvt, jsock->profile);
 
-			switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
+
 			switch_channel_set_variable(tech_pvt->channel, "verto_profile_name", jsock->profile->name);
 
 			if (!switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING)) {
+				switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
+
 				if ((status = switch_core_media_choose_ports(tech_pvt->session, SWITCH_TRUE, SWITCH_TRUE)) != SWITCH_STATUS_SUCCESS) {
 					//if ((status = switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0)) != SWITCH_STATUS_SUCCESS) {
 					switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);

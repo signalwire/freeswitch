@@ -577,7 +577,8 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 																  switch_sdp_type_t sdp_type,
 																  uint32_t pt, 
 																  uint32_t rate, 
-																  uint32_t ptime, 
+																  uint32_t ptime,
+																  uint32_t channels,
 																  uint8_t negotiated)
 {
 	payload_map_t *pmap;
@@ -628,6 +629,7 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 		pmap->iananame = switch_core_strdup(session->pool, name);
 		pmap->rm_encoding = pmap->iananame;
 		pmap->hash = switch_ci_hashfunc_default(pmap->iananame, &hlen);
+		pmap->channels = 1;
 	}
 
 	pmap->sdp_type = sdp_type;
@@ -638,6 +640,10 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 
 	if (rate) {
 		pmap->rate = rate;
+	}
+
+	if (channels) {
+		pmap->channels = channels;
 	}
 
 	if (!zstr(fmtp) && (zstr(pmap->rm_fmtp) || strcmp(pmap->rm_fmtp, fmtp))) {
@@ -2310,8 +2316,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 	switch_channel_set_variable(session->channel, "rtp_use_codec_fmtp", a_engine->cur_payload_map->rm_fmtp);
 	switch_channel_set_variable_printf(session->channel, "rtp_use_codec_rate", "%d", a_engine->cur_payload_map->rm_rate);
 	switch_channel_set_variable_printf(session->channel, "rtp_use_codec_ptime", "%d", a_engine->cur_payload_map->codec_ms);
-	switch_channel_set_variable_printf(session->channel, "rtp_last_audio_codec_string", "%s@%dh@%di", 
-									   a_engine->cur_payload_map->iananame, a_engine->cur_payload_map->rm_rate, a_engine->cur_payload_map->codec_ms);
+	switch_channel_set_variable_printf(session->channel, "rtp_use_codec_channels", "%d", a_engine->cur_payload_map->channels);
+	switch_channel_set_variable_printf(session->channel, "rtp_last_audio_codec_string", "%s@%dh@%di@%dc", 
+									   a_engine->cur_payload_map->iananame, a_engine->cur_payload_map->rm_rate, a_engine->cur_payload_map->codec_ms, a_engine->cur_payload_map->channels);
 
 	switch_assert(a_engine->read_codec.implementation);
 	switch_assert(a_engine->write_codec.implementation);
@@ -2345,7 +2352,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 					  a_engine->cur_payload_map->codec_ms,
 					  a_engine->read_impl.samples_per_packet, a_engine->read_impl.bits_per_second);
 	a_engine->read_frame.codec = &a_engine->read_codec;
-
+	a_engine->read_frame.channels = a_engine->read_impl.number_of_channels;
 	a_engine->write_codec.agreed_pt = a_engine->cur_payload_map->agreed_pt;
 	a_engine->read_codec.agreed_pt = a_engine->cur_payload_map->agreed_pt;
 
@@ -3066,6 +3073,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		reneg = 0;
 	}
 
+	if (switch_channel_test_flag(session->channel, CF_RECOVERING)) {
+		reneg = 0;
+	}
+
 	if (!reneg && smh->num_negotiated_codecs) {
 		codec_array = smh->negotiated_codecs;
 		total_codecs = smh->num_negotiated_codecs;
@@ -3520,6 +3531,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 																			matches[j].map->rm_pt,
 																			matches[j].imp->samples_per_second,
 																			matches[j].imp->microseconds_per_packet / 1000,
+																			matches[j].imp->number_of_channels,
 																			SWITCH_TRUE);
 					mimp = matches[j].imp;
 					mmap = matches[j].map;
@@ -3789,6 +3801,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 																			matches[j].map->rm_pt,
 																			matches[j].imp->samples_per_second,
 																			matches[j].imp->microseconds_per_packet / 1000,
+																			matches[j].imp->number_of_channels,
 																			SWITCH_TRUE);
 					if (j == 0) {
 						v_engine->cur_payload_map = pmap;
@@ -6137,7 +6150,6 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 						smh->ianacodes[i] = (switch_payload_t)smh->payload_space++;
 					}
 				}
-				
 
 				switch_core_media_add_payload_map(session,
 												  imp->codec_type == SWITCH_CODEC_TYPE_AUDIO ? SWITCH_MEDIA_TYPE_AUDIO : SWITCH_MEDIA_TYPE_VIDEO,
@@ -6147,6 +6159,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 												  smh->ianacodes[i],
 												  imp->samples_per_second,
 												  imp->microseconds_per_packet / 1000,
+												  imp->number_of_channels,
 												  SWITCH_FALSE);
 			}
 				
@@ -8125,7 +8138,7 @@ SWITCH_DECLARE(void) switch_core_media_set_sdp_codec_string(switch_core_session_
 static void add_audio_codec(sdp_rtpmap_t *map, int ptime, char *buf, switch_size_t buflen)
 {
 	int codec_ms = ptime;
-	uint32_t map_bit_rate = 0;
+	uint32_t map_bit_rate = 0, map_channels = 1;
 	char ptstr[20] = "";
 	char ratestr[20] = "";
 	char bitstr[20] = "";
@@ -8135,6 +8148,7 @@ static void add_audio_codec(sdp_rtpmap_t *map, int ptime, char *buf, switch_size
 		codec_ms = switch_default_ptime(map->rm_encoding, map->rm_pt);
 	}
 
+	map_channels = map->rm_params ? atoi(map->rm_params) : 1;
 	map_bit_rate = switch_known_bitrate((switch_payload_t)map->rm_pt);
 				
 	if (!ptime && !strcasecmp(map->rm_encoding, "g723")) {
@@ -8170,6 +8184,10 @@ static void add_audio_codec(sdp_rtpmap_t *map, int ptime, char *buf, switch_size
 
 	if (map_bit_rate) {
 		switch_snprintf(bitstr, sizeof(bitstr), "@%db", map_bit_rate);
+	}
+
+	if (map_channels > 1) {
+		switch_snprintf(bitstr, sizeof(bitstr), "@%dc", map_channels);
 	}
 
 	switch_snprintf(buf + strlen(buf), buflen - strlen(buf), ",%s%s%s%s", map->rm_encoding, ratestr, ptstr, bitstr);
@@ -8257,6 +8275,7 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 												  map->rm_pt,
 												  map->rm_rate,
 												  ptime,
+												  map->rm_params ? atoi(map->rm_params) : 1,
 												  SWITCH_FALSE);
 			}
 		}
@@ -8355,6 +8374,7 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 			}
 			for (i = 0; i < num_codecs; i++) {
 				const switch_codec_implementation_t *imp = codecs[i];
+				int channels;
 
 				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO || imp->ianacode > 127 || already_did[imp->ianacode]) {
 					continue;
@@ -8381,11 +8401,12 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 					}
 
 					if (match) {
+						channels = map->rm_params ? atoi(map->rm_params) : 1;
 						if (ptime > 0) {
-							switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",%s@%uh@%di", imp->iananame, (unsigned int) map->rm_rate,
-											ptime);
+							switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",%s@%uh@%di@%dc", imp->iananame, (unsigned int) map->rm_rate,
+											ptime, channels);
 						} else {
-							switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",%s@%uh", imp->iananame, (unsigned int) map->rm_rate);
+							switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",%s@%uh@%dc", imp->iananame, (unsigned int) map->rm_rate, channels);
 						}
 						already_did[imp->ianacode] = 1;
 						break;
@@ -8611,6 +8632,10 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 		a_engine->cur_payload_map->codec_ms = atoi(tmp);
 	}
 
+	if ((tmp = switch_channel_get_variable(session->channel, "rtp_use_codec_channels"))) {
+		a_engine->cur_payload_map->channels = atoi(tmp);
+	}
+
 	if ((tmp = switch_channel_get_variable(session->channel, "rtp_use_pt"))) {
 		a_engine->cur_payload_map->pt = a_engine->cur_payload_map->agreed_pt = (switch_payload_t)atoi(tmp);
 	}
@@ -8618,8 +8643,8 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 	if ((tmp = switch_channel_get_variable(session->channel, "rtp_audio_recv_pt"))) {
 		a_engine->cur_payload_map->recv_pt = (switch_payload_t)atoi(tmp);
 	}
-			
-	switch_core_media_set_codec(session, 1, smh->mparams->codec_flags);
+
+	switch_core_media_set_codec(session, 0, smh->mparams->codec_flags);
 
 	a_engine->adv_sdp_ip = smh->mparams->extrtpip = (char *) ip;
 	a_engine->adv_sdp_port = a_engine->local_sdp_port = (switch_port_t)atoi(port);

@@ -61,6 +61,8 @@ SWITCH_BEGIN_EXTERN_C
 	uint32_t samples;
 	/*! the rate of the frame */
 	uint32_t rate;
+	/*! the number of channels in the frame */
+	uint32_t channels;
 	/*! the payload of the frame */
 	switch_payload_t payload;
 	/*! the timestamp of the frame */

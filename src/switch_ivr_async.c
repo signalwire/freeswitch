@@ -761,7 +761,7 @@ static switch_bool_t write_displace_callback(switch_media_bug_t *bug, void *user
 			len = rframe->samples;
 
 			if (dh->mux) {
-				int16_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE / 2];
+				int16_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 				int16_t *fp = rframe->data;
 				uint32_t x;
 
@@ -775,12 +775,11 @@ static switch_bool_t write_displace_callback(switch_media_bug_t *bug, void *user
 			} else {
 				st = switch_core_file_read(&dh->fh, rframe->data, &len);
 				if (len < rframe->samples) {
-					memset((char *)rframe->data + len * 2, 0, rframe->datalen - len * 2);
+					memset((char *)rframe->data + len * 2 * dh->fh.channels, 0, (rframe->datalen - len) * 2 * dh->fh.channels);
 				}
 			}
 
 			rframe->datalen = rframe->samples * 2 * dh->fh.channels;
-
 
 			if (st != SWITCH_STATUS_SUCCESS || len == 0) {
 				if (dh->loop) {
@@ -845,7 +844,7 @@ static switch_bool_t read_displace_callback(switch_media_bug_t *bug, void *user_
 			len = rframe->samples;
 
 			if (dh->mux) {
-				int16_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE / 2];
+				int16_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 				int16_t *fp = rframe->data;
 				uint32_t x;
 

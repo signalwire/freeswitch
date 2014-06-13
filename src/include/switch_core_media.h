@@ -264,7 +264,8 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 																  switch_sdp_type_t sdp_type,
 																  uint32_t pt, 
 																  uint32_t rate, 
-																  uint32_t ptime, 
+																  uint32_t ptime,
+																  uint32_t channels,
 																  uint8_t negotiated);
 
 

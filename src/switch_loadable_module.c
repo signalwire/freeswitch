@@ -2230,11 +2230,13 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 
 }
 
-SWITCH_DECLARE(char *) switch_parse_codec_buf(char *buf, uint32_t *interval, uint32_t *rate, uint32_t *bit)
+SWITCH_DECLARE(char *) switch_parse_codec_buf(char *buf, uint32_t *interval, uint32_t *rate, uint32_t *bit, uint32_t *channels)
 {
 	char *cur, *next = NULL, *name, *p;
 
 	name = next = cur = buf;
+
+	*channels = 1;
 
 	for (;;) {
 		if (!next) {
@@ -2253,8 +2255,10 @@ SWITCH_DECLARE(char *) switch_parse_codec_buf(char *buf, uint32_t *interval, uin
 				*rate = atoi(cur);
 			} else if (strchr(cur, 'b')) {
 				*bit = atoi(cur);
+			} else if (strchr(cur, 'c')) {
+				*channels = atoi(cur);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bad syntax for codec string. Missing qualifier [h|k|i|b] for part [%s]!\n", cur);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bad syntax for codec string. Missing qualifier [h|k|i|b|c] for part [%s]!\n", cur);
 			}
 		}
 		cur = next;
@@ -2273,15 +2277,15 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 
 	for (x = 0; x < preflen; x++) {
 		char *name, buf[256], jbuf[256];
-		uint32_t interval = 0, rate = 0, bit = 0;
+		uint32_t interval = 0, rate = 0, bit = 0, channels = 1;
 
 		switch_copy_string(buf, prefs[x], sizeof(buf));
-		name = switch_parse_codec_buf(buf, &interval, &rate, &bit);
+		name = switch_parse_codec_buf(buf, &interval, &rate, &bit, &channels);
 
 		for(j = 0; j < x; j++) {
 			char *jname;
-			uint32_t jinterval = 0, jrate = 0, jbit = 0;
-			uint32_t ointerval = interval, orate = rate;
+			uint32_t jinterval = 0, jrate = 0, jbit = 0, jchannels = 1;
+			uint32_t ointerval = interval, orate = rate, ochannels = channels;
 
 			if (ointerval == 0) {
 				ointerval = switch_default_ptime(name, 0);
@@ -2291,8 +2295,12 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 				orate = switch_default_rate(name, 0);
 			}
 
+			if (ochannels == 0) {
+				ochannels = 1;
+			}
+			
 			switch_copy_string(jbuf, prefs[j], sizeof(jbuf));
-			jname = switch_parse_codec_buf(jbuf, &jinterval, &jrate, &jbit);
+			jname = switch_parse_codec_buf(jbuf, &jinterval, &jrate, &jbit, &jchannels);
 
 			if (jinterval == 0) {
 				jinterval = switch_default_ptime(jname, 0);
@@ -2302,7 +2310,11 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 				jrate = switch_default_rate(jname, 0);
 			}
 
-			if (!strcasecmp(name, jname) && ointerval == jinterval && orate == jrate) {
+			if (jchannels == 0) {
+				jchannels = 1;
+			}
+
+			if (!strcasecmp(name, jname) && ointerval == jinterval && orate == jrate && ochannels == jchannels) {
 				goto next_x;
 			}
 		}
@@ -2320,7 +2332,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 						(interval && (uint32_t) (imp->microseconds_per_packet / 1000) != interval)) {
 						continue;
 					}
-
+					
 					if (((!rate && crate != default_rate) || (rate && (uint32_t) imp->actual_samples_per_second != rate))) {
 						continue;
 					}
@@ -2329,6 +2341,9 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 						continue;
 					}
 
+					if (channels && imp->number_of_channels != channels) {
+						continue;
+					}
 				}
 
 
@@ -2353,7 +2368,10 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 					if (bit && (uint32_t) imp->bits_per_second != bit) {
 						continue;
 					}
-					
+
+					if (channels && imp->number_of_channels != channels) {
+						continue;
+					}					
 				}
 
 				array[i++] = imp;

@@ -405,6 +405,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 							tmp_frame.codec = (*frame)->codec;
 							tmp_frame.datalen = (*frame)->codec->implementation->encoded_bytes_per_packet;
 							tmp_frame.samples = (*frame)->codec->implementation->samples_per_packet;
+							tmp_frame.channels = (*frame)->codec->implementation->number_of_channels;
 							tmp_frame.data = data;
 							
 							switch_core_gen_encoded_silence(data, (*frame)->codec->implementation, tmp_frame.datalen);
@@ -510,7 +511,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 				session->raw_read_frame.timestamp = 0;
 				session->raw_read_frame.datalen = read_frame->codec->implementation->decoded_bytes_per_packet;
-				session->raw_read_frame.samples = session->raw_read_frame.datalen / sizeof(int16_t);
+				session->raw_read_frame.samples = session->raw_read_frame.datalen / sizeof(int16_t) / session->read_impl.number_of_channels;
+				session->raw_read_frame.channels = read_frame->codec->implementation->number_of_channels;
 				read_frame = &session->raw_read_frame;
 				status = SWITCH_STATUS_SUCCESS;
 			} else {
@@ -547,7 +549,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 				if (switch_test_flag(read_frame, SFF_PLC)) {
 					session->raw_read_frame.datalen = read_frame->codec->implementation->decoded_bytes_per_packet;
-					session->raw_read_frame.samples = session->raw_read_frame.datalen / sizeof(int16_t);
+					session->raw_read_frame.samples = session->raw_read_frame.datalen / sizeof(int16_t) / session->read_impl.number_of_channels;
+					session->raw_read_frame.channels = session->read_impl.number_of_channels;
 					memset(session->raw_read_frame.data, 255, session->raw_read_frame.datalen);
 					status = SWITCH_STATUS_SUCCESS;
 				} else {
@@ -632,7 +635,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					}
 				}
 			case SWITCH_STATUS_SUCCESS:
-				session->raw_read_frame.samples = session->raw_read_frame.datalen / sizeof(int16_t);
+				session->raw_read_frame.samples = session->raw_read_frame.datalen / sizeof(int16_t) / session->read_impl.number_of_channels;
+				session->raw_read_frame.channels = session->read_impl.number_of_channels;
 				session->raw_read_frame.rate = read_frame->rate;
 				if (read_frame->codec->implementation->samples_per_packet != session->read_impl.samples_per_packet) {
 					session->raw_read_frame.timestamp = 0;
@@ -670,7 +674,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			case SWITCH_STATUS_BREAK:
 				memset(session->raw_read_frame.data, 255, read_frame->codec->implementation->decoded_bytes_per_packet);
 				session->raw_read_frame.datalen = read_frame->codec->implementation->decoded_bytes_per_packet;
-				session->raw_read_frame.samples = session->raw_read_frame.datalen / sizeof(int16_t);
+				session->raw_read_frame.samples = session->raw_read_frame.datalen / sizeof(int16_t) / session->read_impl.number_of_channels;
+				session->raw_read_frame.channels = session->read_impl.number_of_channels;
 				session->raw_read_frame.timestamp = read_frame->timestamp;
 				session->raw_read_frame.rate = read_frame->rate;
 				session->raw_read_frame.ssrc = read_frame->ssrc;
@@ -820,6 +825,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				switch_resample_process(session->read_resampler, data, (int) read_frame->datalen / 2 / session->read_resampler->channels);
 				memcpy(data, session->read_resampler->to, session->read_resampler->to_len * 2 * session->read_resampler->channels);
 				read_frame->samples = session->read_resampler->to_len;
+				read_frame->channels = session->read_resampler->channels;
 				read_frame->datalen = session->read_resampler->to_len * 2 * session->read_resampler->channels;
 				read_frame->rate = session->read_resampler->to_rate;
 				switch_mutex_unlock(session->resample_mutex);
@@ -872,7 +878,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				case SWITCH_STATUS_RESAMPLE:
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fixme 1\n");
 				case SWITCH_STATUS_SUCCESS:
-					session->enc_read_frame.samples = session->read_impl.decoded_bytes_per_packet / sizeof(int16_t);
+					session->enc_read_frame.samples = session->read_impl.decoded_bytes_per_packet / sizeof(int16_t) / session->read_impl.number_of_channels;
+					session->enc_read_frame.channels = session->read_impl.number_of_channels;
 					if (perfect) {
 						if (enc_frame->codec->implementation->samples_per_packet != session->read_impl.samples_per_packet) {
 							session->enc_read_frame.timestamp = 0;
@@ -889,6 +896,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					break;
 				case SWITCH_STATUS_NOOP:
 					session->raw_read_frame.samples = enc_frame->codec->implementation->samples_per_packet;
+					session->raw_read_frame.channels = enc_frame->codec->implementation->number_of_channels;
 					session->raw_read_frame.timestamp = read_frame->timestamp;
 					session->raw_read_frame.payload = enc_frame->codec->implementation->ianacode;
 					session->raw_read_frame.m = read_frame->m;
@@ -1251,7 +1259,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			}
 			break;
 		case SWITCH_STATUS_SUCCESS:
-			session->raw_write_frame.samples = session->raw_write_frame.datalen / sizeof(int16_t);
+			session->raw_write_frame.samples = session->raw_write_frame.datalen / sizeof(int16_t) / session->write_impl.number_of_channels;
+			session->raw_write_frame.channels = session->write_impl.number_of_channels;
 			session->raw_write_frame.timestamp = frame->timestamp;
 			session->raw_write_frame.rate = frame->rate;
 			session->raw_write_frame.m = frame->m;
@@ -1317,7 +1326,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			memcpy(data, session->write_resampler->to, session->write_resampler->to_len * 2 * session->write_resampler->channels);
 
 			write_frame->samples = session->write_resampler->to_len;
-
+			write_frame->channels = session->write_resampler->channels;
 			write_frame->datalen = write_frame->samples * 2 * session->write_resampler->channels;
 
 			write_frame->rate = session->write_resampler->to_rate;
@@ -1431,7 +1440,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				/* switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Fixme 2\n"); */
 			case SWITCH_STATUS_SUCCESS:
 				session->enc_write_frame.codec = session->write_codec;
-				session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t);
+				session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t) / session->write_impl.number_of_channels;
+				session->enc_write_frame.channels = session->write_impl.number_of_channels;
 				if (frame->codec->implementation->samples_per_packet != session->write_impl.samples_per_packet) {
 					session->enc_write_frame.timestamp = 0;
 				} else {
@@ -1446,7 +1456,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				break;
 			case SWITCH_STATUS_NOOP:
 				enc_frame->codec = session->write_codec;
-				enc_frame->samples = enc_frame->datalen / sizeof(int16_t);
+				enc_frame->samples = enc_frame->datalen / sizeof(int16_t) / session->write_impl.number_of_channels;
+				enc_frame->channels = session->write_impl.number_of_channels;
 				enc_frame->timestamp = frame->timestamp;
 				enc_frame->m = frame->m;
 				enc_frame->seq = frame->seq;
@@ -1534,7 +1545,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				case SWITCH_STATUS_RESAMPLE:
 					resample++;
 					session->enc_write_frame.codec = session->write_codec;
-					session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t);
+					session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t) / session->write_impl.number_of_channels;
+					session->enc_write_frame.channels = session->write_impl.number_of_channels;
 					session->enc_write_frame.m = frame->m;
 					session->enc_write_frame.ssrc = frame->ssrc;
 					session->enc_write_frame.payload = session->write_impl.ianacode;
@@ -1567,7 +1579,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					break;
 				case SWITCH_STATUS_SUCCESS:
 					session->enc_write_frame.codec = session->write_codec;
-					session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t);
+					session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t) / session->write_impl.number_of_channels;
+					session->enc_write_frame.channels = session->write_impl.number_of_channels;
 					session->enc_write_frame.m = frame->m;
 					session->enc_write_frame.ssrc = frame->ssrc;
 					session->enc_write_frame.payload = session->write_impl.ianacode;
@@ -1595,7 +1608,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 					}
 					enc_frame->codec = session->write_codec;
-					enc_frame->samples = enc_frame->datalen / sizeof(int16_t);
+					enc_frame->samples = enc_frame->datalen / sizeof(int16_t) / session->read_impl.number_of_channels;
+					enc_frame->channels = session->read_impl.number_of_channels;
 					enc_frame->m = frame->m;
 					enc_frame->ssrc = frame->ssrc;
 					enc_frame->payload = enc_frame->codec->implementation->ianacode;
@@ -1620,6 +1634,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 						switch_resample_process(session->read_resampler, data, write_frame->datalen / 2 / session->read_resampler->channels);
 						memcpy(data, session->read_resampler->to, session->read_resampler->to_len * 2 * session->read_resampler->channels);
 						write_frame->samples = session->read_resampler->to_len;
+						write_frame->channels = session->read_resampler->channels;
 						write_frame->datalen = session->read_resampler->to_len * 2 * session->read_resampler->channels;
 						write_frame->rate = session->read_resampler->to_rate;
 					}

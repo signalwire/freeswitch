@@ -140,8 +140,8 @@ static switch_status_t tech_init(loopback_private_t *tech_pvt, switch_core_sessi
 
 		if ((var = switch_channel_get_variable(channel, "loopback_initial_codec"))) {
 			char *dup = switch_core_session_strdup(session, var);
-			uint32_t bit;
-			iananame = switch_parse_codec_buf(dup, &interval, &rate, &bit);
+			uint32_t bit, channels;
+			iananame = switch_parse_codec_buf(dup, &interval, &rate, &bit, &channels);
 		}
 		
 	}
