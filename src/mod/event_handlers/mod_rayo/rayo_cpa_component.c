@@ -166,14 +166,14 @@ static void stop_cpa_detectors(struct cpa_component *cpa)
 			void *cpa_signal = NULL;
 			switch_core_hash_this(hi, &signal_type, NULL, &cpa_signal);
 			if (cpa_signal) {
-				rayo_cpa_detector_stop(RAYO_COMPONENT(cpa)->parent->id, ((struct cpa_signal *)cpa_signal)->name);
-				unsubscribe(RAYO_COMPONENT(cpa)->parent->id, ((struct cpa_signal *)cpa_signal)->name, RAYO_JID(cpa));
+				rayo_cpa_detector_stop(RAYO_ACTOR(cpa)->parent->id, ((struct cpa_signal *)cpa_signal)->name);
+				unsubscribe(RAYO_ACTOR(cpa)->parent->id, ((struct cpa_signal *)cpa_signal)->name, RAYO_JID(cpa));
 			}
 		}
 		switch_core_hash_destroy(&cpa->signals);
 		cpa->signals = NULL;
 	}
-	unsubscribe(RAYO_COMPONENT(cpa)->parent->id, "hangup", RAYO_JID(cpa));
+	unsubscribe(RAYO_ACTOR(cpa)->parent->id, "hangup", RAYO_JID(cpa));
 }
 
 /**
@@ -197,7 +197,7 @@ static void rayo_cpa_detector_event(const char *jid, void *user_data)
 			switch_event_t *event = (switch_event_t *)user_data;
 			const char *signal_type = switch_event_get_header(event, "signal-type");
 			struct cpa_signal *cpa_signal = switch_core_hash_find(CPA_COMPONENT(component)->signals, signal_type);
-			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(RAYO_COMPONENT(component)->parent->id), SWITCH_LOG_DEBUG, "Handling CPA event\n");
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(component->parent->id), SWITCH_LOG_DEBUG, "Handling CPA event\n");
 			if (cpa_signal) {
 				const char *value = switch_event_get_header(event, "value");
 				const char *duration = switch_event_get_header(event, "duration");
@@ -234,7 +234,7 @@ static void rayo_cpa_detector_event(const char *jid, void *user_data)
 				}
 			}
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(RAYO_COMPONENT(component)->parent->id), SWITCH_LOG_DEBUG, "Skipping CPA event\n");
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(component->parent->id), SWITCH_LOG_DEBUG, "Skipping CPA event\n");
 		}
 		RAYO_RELEASE(component);
 	}

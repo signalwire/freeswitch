@@ -126,14 +126,14 @@ static void start_input(struct prompt_component *prompt, int start_timers, int b
 	iks *input = iks_find(PROMPT_COMPONENT(prompt)->iq, "prompt");
 	input = iks_find(input, "input");
 	iks_insert_attrib(iq, "from", RAYO_JID(prompt));
-	iks_insert_attrib(iq, "to", RAYO_JID(RAYO_COMPONENT(prompt)->parent));
+	iks_insert_attrib(iq, "to", RAYO_JID(RAYO_ACTOR(prompt)->parent));
 	iks_insert_attrib_printf(iq, "id", "mod_rayo-prompt-%d", RAYO_SEQ_NEXT(prompt));
 	iks_insert_attrib(iq, "type", "set");
 	input = iks_copy_within(input, iks_stack(iq));
 	iks_insert_attrib(input, "start-timers", start_timers ? "true" : "false");
 	iks_insert_attrib(input, "barge-event", barge_event ? "true" : "false");
 	iks_insert_node(iq, input);
-	RAYO_SEND_MESSAGE(prompt, RAYO_JID(RAYO_COMPONENT(prompt)->parent), iq);
+	RAYO_SEND_MESSAGE(prompt, RAYO_JID(RAYO_ACTOR(prompt)->parent), iq);
 }
 
 /**
@@ -281,7 +281,7 @@ static iks *prompt_component_handle_input_error(struct rayo_actor *prompt, struc
 
 			/* forward IQ error to client */
 			iq = PROMPT_COMPONENT(prompt)->iq;
-			iks_insert_attrib(iq, "from", RAYO_JID(RAYO_COMPONENT(prompt)->parent));
+			iks_insert_attrib(iq, "from", RAYO_JID(prompt->parent));
 			iks_insert_attrib(iq, "to", RAYO_COMPONENT(prompt)->client_jid);
 			iks_insert_node(iq, iks_copy_within(error, iks_stack(iq)));
 			RAYO_SEND_REPLY(prompt, RAYO_COMPONENT(prompt)->client_jid, iq);
@@ -309,7 +309,7 @@ static iks *prompt_component_handle_input_error(struct rayo_actor *prompt, struc
 
 			/* forward IQ error to client */
 			iq = PROMPT_COMPONENT(prompt)->iq;
-			iks_insert_attrib(iq, "from", RAYO_JID(RAYO_COMPONENT(prompt)->parent));
+			iks_insert_attrib(iq, "from", RAYO_JID(prompt->parent));
 			iks_insert_attrib(iq, "to", RAYO_COMPONENT(prompt)->client_jid);
 			iks_insert_node(iq, iks_copy_within(error, iks_stack(iq)));
 			PROMPT_COMPONENT(prompt)->complete = iks_copy(iq);
@@ -350,7 +350,7 @@ static iks *prompt_component_handle_output_error(struct rayo_actor *prompt, stru
 
 			/* forward IQ error to client */
 			iq = PROMPT_COMPONENT(prompt)->iq;
-			iks_insert_attrib(iq, "from", RAYO_JID(RAYO_COMPONENT(prompt)->parent));
+			iks_insert_attrib(iq, "from", RAYO_JID(prompt->parent));
 			iks_insert_attrib(iq, "to", RAYO_COMPONENT(prompt)->client_jid);
 			iks_insert_node(iq, iks_copy_within(error, iks_stack(iq)));
 			RAYO_SEND_REPLY(prompt, RAYO_COMPONENT(prompt)->client_jid, iq);

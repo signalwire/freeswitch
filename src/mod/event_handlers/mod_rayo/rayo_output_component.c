@@ -536,7 +536,7 @@ static switch_status_t rayo_file_close(switch_file_handle_t *handle)
 		} else {
 			if (!strcmp(RAYO_ACTOR(context->component)->type, RAT_CALL_COMPONENT)) {
 				/* call output... check for hangup */
-				switch_core_session_t *session = switch_core_session_locate(context->component->parent->id);
+				switch_core_session_t *session = switch_core_session_locate(RAYO_ACTOR(context->component)->parent->id);
 				if (session) {
 					if (switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
 						rayo_component_send_complete(context->component, COMPONENT_COMPLETE_HANGUP);

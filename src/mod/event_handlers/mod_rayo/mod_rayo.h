@@ -106,6 +106,8 @@ struct rayo_actor {
 	rayo_actor_send_fn send_fn;
 	/** optional cleanup */
 	rayo_actor_cleanup_fn cleanup_fn;
+	/** optional parent */
+	struct rayo_actor *parent;
 };
 
 /**
@@ -114,16 +116,12 @@ struct rayo_actor {
 struct rayo_component {
 	/** base actor class */
 	struct rayo_actor base;
-	/** parent to this component */
-	struct rayo_actor *parent;
 	/** owning client JID */
 	const char *client_jid;
 	/** external ref */
 	const char *ref;
 	/** true if component has completed */
 	int complete;
-	/** optional cleanup */
-	rayo_actor_cleanup_fn cleanup_fn;
 };
 
 #define RAYO_ACTOR(x) ((struct rayo_actor *)x)

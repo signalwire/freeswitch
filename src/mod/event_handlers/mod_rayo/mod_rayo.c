@@ -950,6 +950,10 @@ void rayo_actor_destroy(struct rayo_actor *actor, const char *file, int line)
 		if (actor->cleanup_fn) {
 			actor->cleanup_fn(actor);
 		}
+		if (actor->parent) {
+			/* safe to destroy parent now */
+			RAYO_RELEASE(actor->parent);
+		}
 		switch_core_hash_delete(globals.destroy_actors, RAYO_JID(actor));
 		switch_core_destroy_memory_pool(&pool);
 	} else {
@@ -1224,10 +1228,12 @@ void rayo_actor_send_ignore(struct rayo_actor *to, struct rayo_message *msg)
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, msg->file, "", msg->line, "", SWITCH_LOG_WARNING, "%s, dropping unexpected message to %s.\n", msg->from_jid, RAYO_JID(to));
 }
 
-#define RAYO_ACTOR_INIT(actor, pool, type, subtype, id, jid, cleanup, send) rayo_actor_init(actor, pool, type, subtype, id, jid, cleanup, send, __FILE__, __LINE__)
+#define RAYO_ACTOR_INIT(actor, pool, type, subtype, id, jid, cleanup, send) rayo_actor_init(actor, pool, type, subtype, id, jid, cleanup, send, NULL, __FILE__, __LINE__)
+#define RAYO_ACTOR_INIT_PARENT(actor, pool, type, subtype, id, jid, cleanup, send, parent) rayo_actor_init(actor, pool, type, subtype, id, jid, cleanup, send, parent, __FILE__, __LINE__)
 
 /**
  * Initialize a rayo actor
+ * @param actor to initialize
  * @param pool to use
  * @param type of actor (MIXER, CALL, SERVER, COMPONENT)
  * @param subtype of actor (input/output/prompt)
@@ -1235,11 +1241,12 @@ void rayo_actor_send_ignore(struct rayo_actor *to, struct rayo_message *msg)
  * @param jid external ID
  * @param cleanup function
  * @param send sent message handler
+ * @param parent of actor
  * @param file that called this function
  * @param line that called this function
  * @return the actor or NULL if JID conflict
  */
-static struct rayo_actor *rayo_actor_init(struct rayo_actor *actor, switch_memory_pool_t *pool, const char *type, const char *subtype, const char *id, const char *jid, rayo_actor_cleanup_fn cleanup, rayo_actor_send_fn send, const char *file, int line)
+static struct rayo_actor *rayo_actor_init(struct rayo_actor *actor, switch_memory_pool_t *pool, const char *type, const char *subtype, const char *id, const char *jid, rayo_actor_cleanup_fn cleanup, rayo_actor_send_fn send, struct rayo_actor *parent, const char *file, int line)
 {
 	char *domain;
 	actor->type = switch_core_strdup(pool, type);
@@ -1265,12 +1272,22 @@ static struct rayo_actor *rayo_actor_init(struct rayo_actor *actor, switch_memor
 	actor->seq = 1;
 	actor->ref_count = 1;
 	actor->destroy = 0;
-	switch_mutex_init(&actor->mutex, SWITCH_MUTEX_NESTED, pool);
 	actor->cleanup_fn = cleanup;
 	if (send == NULL) {
 		actor->send_fn = rayo_actor_send_ignore;
 	} else {
 		actor->send_fn = send;
+	}
+
+	actor->parent = parent;
+	if (!actor->parent) {
+		switch_mutex_init(&actor->mutex, SWITCH_MUTEX_NESTED, pool);
+	} else {
+		/* inherit mutex from parent */
+		actor->mutex = actor->parent->mutex;
+
+		/* prevent parent destruction */
+		RAYO_RETAIN(actor->parent);
 	}
 
 	/* add to hash of actors, so commands can route to call */
@@ -1280,6 +1297,11 @@ static struct rayo_actor *rayo_actor_init(struct rayo_actor *actor, switch_memor
 			/* duplicate JID, give up! */
 			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, "", SWITCH_LOG_NOTICE, "JID conflict! %s\n", RAYO_JID(actor));
 			switch_mutex_unlock(globals.actors_mutex);
+			if (actor->parent) {
+				/* unlink from parent */
+				RAYO_RELEASE(actor->parent);
+				actor->parent = NULL;
+			}
 			return NULL;
 		}
 		switch_core_hash_insert(globals.actors, RAYO_JID(actor), actor);
@@ -1313,7 +1335,7 @@ static struct rayo_call *rayo_call_init(struct rayo_call *call, switch_memory_po
 	}
 	call_jid = switch_mprintf("%s@%s", uuid, RAYO_JID(globals.server));
 
-	call = RAYO_CALL(rayo_actor_init(RAYO_ACTOR(call), pool, RAT_CALL, "", uuid, call_jid, rayo_call_cleanup, rayo_call_send, file, line));
+	call = RAYO_CALL(rayo_actor_init(RAYO_ACTOR(call), pool, RAT_CALL, "", uuid, call_jid, rayo_call_cleanup, rayo_call_send, NULL, file, line));
 	if (call) {
 		call->dcp_jid = "";
 		call->idle_start_time = switch_micro_time_now();
@@ -1370,7 +1392,7 @@ static void rayo_mixer_cleanup(struct rayo_actor *actor)
 static struct rayo_mixer *rayo_mixer_init(struct rayo_mixer *mixer, switch_memory_pool_t *pool, const char *name, const char *file, int line)
 {
 	char *mixer_jid = switch_mprintf("%s@%s", name, RAYO_JID(globals.server));
-	mixer = RAYO_MIXER(rayo_actor_init(RAYO_ACTOR(mixer), pool, RAT_MIXER, "", name, mixer_jid, rayo_mixer_cleanup, rayo_mixer_send, file, line));
+	mixer = RAYO_MIXER(rayo_actor_init(RAYO_ACTOR(mixer), pool, RAT_MIXER, "", name, mixer_jid, rayo_mixer_cleanup, rayo_mixer_send, NULL, file, line));
 	if (mixer) {
 		switch_core_hash_init(&mixer->members);
 		switch_core_hash_init(&mixer->subscribers);
@@ -1398,19 +1420,6 @@ static struct rayo_mixer *_rayo_mixer_create(const char *name, const char *file,
 }
 
 /**
- * Clean up component before destruction
- */
-static void rayo_component_cleanup(struct rayo_actor *actor)
-{
-	if (RAYO_COMPONENT(actor)->cleanup_fn) {
-		RAYO_COMPONENT(actor)->cleanup_fn(actor);
-	}
-
-	/* parent can now be destroyed */
-	RAYO_RELEASE(RAYO_COMPONENT(actor)->parent);
-}
-
-/**
  * Initialize Rayo component
  * @param type of this component
  * @param subtype of this component
@@ -1430,13 +1439,10 @@ struct rayo_component *_rayo_component_init(struct rayo_component *component, sw
 		id = jid;
 	}
 
-	component = RAYO_COMPONENT(rayo_actor_init(RAYO_ACTOR(component), pool, type, subtype, id, jid, rayo_component_cleanup, rayo_component_send, file, line));
+	component = RAYO_COMPONENT(rayo_actor_init(RAYO_ACTOR(component), pool, type, subtype, id, jid, cleanup, rayo_component_send, parent, file, line));
 	if (component) {
-		RAYO_RETAIN(parent);
 		component->client_jid = switch_core_strdup(pool, client_jid);
 		component->ref = switch_core_strdup(pool, ref);
-		component->parent = parent;
-		component->cleanup_fn = cleanup;
 	}
 
 	switch_safe_free(ref);

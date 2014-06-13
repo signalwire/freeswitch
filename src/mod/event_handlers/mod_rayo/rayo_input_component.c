@@ -762,7 +762,7 @@ static iks *stop_call_input_component(struct rayo_actor *component, struct rayo_
 	struct input_component *input_component = INPUT_COMPONENT(component);
 
 	if (input_component && !input_component->stop) {
-		switch_core_session_t *session = switch_core_session_locate(RAYO_COMPONENT(component)->parent->id);
+		switch_core_session_t *session = switch_core_session_locate(component->parent->id);
 		if (session) {
 			switch_mutex_lock(input_component->handler->mutex);
 			input_component->stop = 1;
@@ -787,7 +787,7 @@ static iks *start_timers_call_input_component(struct rayo_actor *component, stru
 	iks *iq = msg->payload;
 	struct input_component *input_component = INPUT_COMPONENT(component);
 	if (input_component) {
-		switch_core_session_t *session = switch_core_session_locate(RAYO_COMPONENT(component)->parent->id);
+		switch_core_session_t *session = switch_core_session_locate(component->parent->id);
 		if (session) {
 			switch_mutex_lock(input_component->handler->mutex);
 			if (input_component->speech_mode) {

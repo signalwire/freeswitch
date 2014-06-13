@@ -84,7 +84,7 @@ struct record_component {
 static void complete_record(struct rayo_component *component, const char *reason, const char *reason_namespace)
 {
 	switch_core_session_t *session = NULL;
-	const char *uuid = component->parent->id;
+	const char *uuid = RAYO_ACTOR(component)->parent->id;
 	const char *uri = RECORD_COMPONENT(component)->local_file_path;
 	iks *recording;
 	switch_size_t file_size = 0;
@@ -296,7 +296,7 @@ static iks *start_call_record_component(struct rayo_actor *call, struct rayo_mes
 static iks *stop_call_record_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
 	iks *iq = msg->payload;
-	switch_core_session_t *session = switch_core_session_locate(RAYO_COMPONENT(component)->parent->id);
+	switch_core_session_t *session = switch_core_session_locate(component->parent->id);
 	if (session) {
 		RECORD_COMPONENT(component)->stop = 1;
 		switch_ivr_stop_record_session(session, RAYO_ID(component));
@@ -383,7 +383,7 @@ static int start_mixer_record(struct rayo_component *component)
 	char *args;
 	SWITCH_STANDARD_STREAM(stream);
 
-	args = switch_mprintf("%s recording start %s", component->parent->id, RAYO_ID(component));
+	args = switch_mprintf("%s recording start %s", RAYO_ACTOR(component)->parent->id, RAYO_ID(component));
 	switch_api_execute("conference", args, NULL, &stream);
 	switch_safe_free(args);
 	switch_safe_free(stream.data);
@@ -439,7 +439,7 @@ static iks *stop_mixer_record_component(struct rayo_actor *component, struct ray
 	SWITCH_STANDARD_STREAM(stream);
 
 	RECORD_COMPONENT(component)->stop = 1;
-	args = switch_mprintf("%s recording stop %s", RAYO_COMPONENT(component)->parent->id, RAYO_ID(component));
+	args = switch_mprintf("%s recording stop %s", component->parent->id, RAYO_ID(component));
 	switch_api_execute("conference", args, NULL, &stream);
 	switch_safe_free(args);
 	switch_safe_free(stream.data);
