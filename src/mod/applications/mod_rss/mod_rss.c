@@ -185,7 +185,7 @@ SWITCH_STANDARD_APP(rss_function)
 	const char *vcf = NULL;
 	char *chanvars = switch_channel_build_param_string(channel, NULL, NULL);
 	switch_codec_implementation_t read_impl = { 0 };
-	uint32_t rate, interval;
+	uint32_t rate, interval, channels;
 	switch_core_session_get_read_impl(session, &read_impl);
 	interval = read_impl.microseconds_per_packet / 1000;
 
@@ -257,13 +257,14 @@ SWITCH_STANDARD_APP(rss_function)
 
 	if (switch_channel_media_ready(channel)) {
 		rate = read_impl.actual_samples_per_second;
+		channels = read_impl.number_of_channels;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Codec Error!\n");
 		return;
 	}
 
 	memset(&sh, 0, sizeof(sh));
-	if (switch_core_speech_open(&sh, engine, voice, rate, interval, &flags, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_speech_open(&sh, engine, voice, rate, interval, channels, &flags, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid TTS module!\n");
 		return;
 	}
