@@ -1075,7 +1075,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 						break;
 					}
 				}
-				write_frame.datalen = (uint32_t) (ringback.asis ? olen : olen * 2 * ringback.fh.channels);
+				write_frame.datalen = (uint32_t) (ringback.asis ? olen : olen * 2 * ringback.fh->channels);
 			} else if (ringback.audio_buffer) {
 				if ((write_frame.datalen = (uint32_t) switch_buffer_read_loop(ringback.audio_buffer,
 																			  write_frame.data,
@@ -3188,7 +3188,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 									break;
 								}
 							}
-							write_frame.datalen = (uint32_t) (ringback.asis ? olen : olen * 2 ( ringback.fh.channels);
+							write_frame.datalen = (uint32_t) (ringback.asis ? olen : olen * 2 * ringback.fh->channels);
 							write_frame.samples = (uint32_t) olen;
 
 						} else if (ringback.audio_buffer) {
