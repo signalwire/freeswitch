@@ -598,8 +598,9 @@ static iks *start_call_voice_input(struct input_component *component, switch_cor
 		switch_mutex_lock(handler->mutex);
 		handler->voice_component = NULL;
 		rayo_component_send_complete(RAYO_COMPONENT(component), COMPONENT_COMPLETE_ERROR);
+	} else {
+		switch_mutex_lock(handler->mutex);
 	}
-	switch_mutex_lock(handler->mutex);
 	switch_safe_free(grammar);
 
 	return NULL;
