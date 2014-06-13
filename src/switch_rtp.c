@@ -33,7 +33,7 @@
 //#define DEBUG_2833
 //#define RTP_DEBUG_WRITE_DELTA
 //#define DEBUG_MISSED_SEQ
-
+//#define DEBUG_EXTRA
 #include <switch.h>
 #ifndef _MSC_VER
 #include <switch_private.h>
@@ -1513,9 +1513,17 @@ static void send_fir(switch_rtp_t *rtp_session)
 #endif
 
 #ifdef DEBUG_EXTRA
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_CRIT, "%s SEND %s RTCP %ld\n", 
-						  rtp_session_name(rtp_session),
-						  rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ? "video" : "audio", rtcp_bytes);
+		{
+			const char *old_host;
+			char bufb[30];
+			old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->rtcp_remote_addr);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_CRIT, "%s SEND %s RTCP %s:%d %ld\n", 
+							  rtp_session_name(rtp_session),
+							  rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ? "video" : "audio", 
+							  old_host,
+							  switch_sockaddr_get_port(rtp_session->rtcp_remote_addr),
+							  rtcp_bytes);
+		}
 #endif
 		if (switch_socket_sendto(rtp_session->rtcp_sock_output, rtp_session->rtcp_remote_addr, 0, (void *)&rtp_session->rtcp_ext_send_msg, &rtcp_bytes ) != SWITCH_STATUS_SUCCESS) {			
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG,"RTCP packet not written\n");
@@ -1599,9 +1607,18 @@ static void send_pli(switch_rtp_t *rtp_session)
 #endif
 
 #ifdef DEBUG_EXTRA
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_CRIT, "%s SEND %s RTCP %ld\n", 
-						  rtp_session_name(rtp_session),
-						  rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ? "video" : "audio", rtcp_bytes);
+		{
+			const char *old_host;
+			char bufb[30];
+			old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->rtcp_remote_addr);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_CRIT, "%s SEND %s RTCP %s:%d %ld\n", 
+							  rtp_session_name(rtp_session),
+							  rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ? "video" : "audio", 
+							  old_host,
+							  switch_sockaddr_get_port(rtp_session->rtcp_remote_addr),
+							  rtcp_bytes);
+		}
+
 #endif
 		if (switch_socket_sendto(rtp_session->rtcp_sock_output, rtp_session->rtcp_remote_addr, 0, (void *)&rtp_session->rtcp_ext_send_msg, &rtcp_bytes ) != SWITCH_STATUS_SUCCESS) {			
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG,"RTCP packet not written\n");
@@ -1974,9 +1991,17 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 #endif
 
 #ifdef DEBUG_EXTRA
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_CRIT, "%s SEND %s RTCP %ld\n", 
-						  rtp_session_name(rtp_session),
-						  rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ? "video" : "audio", rtcp_bytes);
+		{
+			const char *old_host;
+			char bufb[30];
+			old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->rtcp_remote_addr);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_CRIT, "%s SEND %s RTCP %s:%d %ld\n", 
+							  rtp_session_name(rtp_session),
+							  rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ? "video" : "audio", 
+							  old_host,
+							  switch_sockaddr_get_port(rtp_session->rtcp_remote_addr),
+							  rtcp_bytes);
+		}
 #endif
 		if (switch_socket_sendto(rtp_session->rtcp_sock_output, rtp_session->rtcp_remote_addr, 0, (void *)&rtp_session->rtcp_send_msg, &rtcp_bytes ) != SWITCH_STATUS_SUCCESS) {			
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG,"RTCP packet not written\n");

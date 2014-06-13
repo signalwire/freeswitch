@@ -2376,6 +2376,81 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 
 	return status;
 }
+static void clear_ice(switch_core_session_t *session, switch_media_type_t type) 
+{
+	switch_media_handle_t *smh;
+	switch_rtp_engine_t *engine;
+
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		return;
+	}
+
+	engine = &smh->engines[type];
+
+	engine->ice_in.chosen[0] = 0;
+	engine->ice_in.chosen[1] = 0;
+	engine->ice_in.cand_idx = 0;
+	memset(&engine->ice_in, 0, sizeof(engine->ice_in));
+	engine->remote_rtcp_port = 0;
+
+}
+
+//?
+SWITCH_DECLARE(void) switch_core_media_clear_ice(switch_core_session_t *session)
+{
+	clear_ice(session, SWITCH_MEDIA_TYPE_AUDIO);
+	clear_ice(session, SWITCH_MEDIA_TYPE_VIDEO);
+
+}
+
+SWITCH_DECLARE(void) switch_core_media_pause(switch_core_session_t *session)
+{
+	switch_rtp_engine_t *a_engine, *v_engine;
+	switch_media_handle_t *smh;
+
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		return;
+	}
+
+	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
+
+	if (a_engine->rtp_session) {
+		switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_PAUSE);
+	}
+	
+	if (v_engine->rtp_session) {
+		switch_rtp_set_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_PAUSE);
+	}
+}
+
+SWITCH_DECLARE(void) switch_core_media_resume(switch_core_session_t *session)
+{
+	switch_rtp_engine_t *a_engine, *v_engine;
+	switch_media_handle_t *smh;
+
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		return;
+	}
+
+	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
+
+	if (a_engine->rtp_session) {
+		switch_rtp_clear_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_PAUSE);
+	}
+	
+	if (v_engine->rtp_session) {
+		switch_rtp_clear_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_PAUSE);
+	}
+}
+
 
 //?
 SWITCH_DECLARE(switch_status_t) switch_core_media_add_ice_acl(switch_core_session_t *session, switch_media_type_t type, const char *acl_name)
@@ -2748,8 +2823,6 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 		engine->rtcp_mux = -1;
 	}
 
-
-	
 	if (switch_channel_test_flag(smh->session->channel, CF_REINVITE)) {
 
 		if (switch_rtp_ready(engine->rtp_session) && engine->ice_in.cands[engine->ice_in.chosen[0]][0].ready) {
@@ -2781,29 +2854,25 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 																	   "rtcp_video_interval_msec" : "rtcp_audio_interval_msec")) 
 									|| (val = type == SWITCH_MEDIA_TYPE_VIDEO ? 
 										smh->mparams->rtcp_video_interval_msec : smh->mparams->rtcp_audio_interval_msec))) {
-											   
-			const char *rport = switch_channel_get_variable(smh->session->channel, 
-															type == SWITCH_MEDIA_TYPE_VIDEO ? "rtp_remote_video_rtcp_port" : "rtp_remote_audio_rtcp_port");
+			
 			switch_port_t remote_rtcp_port = engine->remote_rtcp_port;
 
-			if (!remote_rtcp_port && rport) {
-				remote_rtcp_port = (switch_port_t)atoi(rport);
-			}
-			
-			if (!strcasecmp(val, "passthru")) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_INFO, "Activating %s RTCP PASSTHRU PORT %d\n", 
-								  type2str(type), remote_rtcp_port);
-				switch_rtp_activate_rtcp(engine->rtp_session, -1, remote_rtcp_port, engine->rtcp_mux > 0);
-			} else {
-				int interval = atoi(val);
-				if (interval < 100 || interval > 500000) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_ERROR,
-									  "Invalid rtcp interval spec [%d] must be between 100 and 500000\n", interval);
-					interval = 10000;
-				}
+			if (remote_rtcp_port) {
+				if (!strcasecmp(val, "passthru")) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_INFO, "Activating %s RTCP PASSTHRU PORT %d\n", 
+									  type2str(type), remote_rtcp_port);
+					switch_rtp_activate_rtcp(engine->rtp_session, -1, remote_rtcp_port, engine->rtcp_mux > 0);
+				} else {
+					int interval = atoi(val);
+					if (interval < 100 || interval > 500000) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_ERROR,
+										  "Invalid rtcp interval spec [%d] must be between 100 and 500000\n", interval);
+						interval = 10000;
+					}
 
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_INFO, "Activating %s RTCP PORT %d\n", type2str(type), remote_rtcp_port);
-				switch_rtp_activate_rtcp(engine->rtp_session, interval, remote_rtcp_port, engine->rtcp_mux > 0);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_INFO, "Activating %s RTCP PORT %d\n", type2str(type), remote_rtcp_port);
+					switch_rtp_activate_rtcp(engine->rtp_session, interval, remote_rtcp_port, engine->rtcp_mux > 0);
+				}
 			}
 		}
 			
@@ -2834,7 +2903,6 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 		}
 		
 	}
-	
 }
 #ifdef _MSC_VER
 #pragma warning(pop)
@@ -3855,13 +3923,16 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				if (switch_core_media_set_video_codec(session, 0) == SWITCH_STATUS_SUCCESS) {
 					check_ice(smh, SWITCH_MEDIA_TYPE_VIDEO, sdp, m);
 				}
-				
-
 			}
 		}
 	}
 
  done:
+
+
+
+
+
 
 	if (parser) {
 		sdp_parser_free(parser);
@@ -5287,10 +5358,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			if (!switch_channel_test_flag(session->channel, CF_PROXY_MEDIA)) {
 				if (switch_rtp_ready(v_engine->rtp_session)) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
-									  "VIDEO RTP [%s] %s port %d -> %s port %d codec: %u ms: %d\n", switch_channel_get_name(session->channel),
-									  a_engine->cur_payload_map->remote_sdp_ip, v_engine->local_sdp_port, v_engine->cur_payload_map->remote_sdp_ip,
-									  v_engine->cur_payload_map->remote_sdp_port, v_engine->cur_payload_map->agreed_pt, 
-									  a_engine->read_impl.microseconds_per_packet / 1000);
+									  "VIDEO RTP [%s] %s port %d -> %s port %d codec: %u\n", switch_channel_get_name(session->channel),
+									  v_engine->local_sdp_ip, v_engine->local_sdp_port, v_engine->cur_payload_map->remote_sdp_ip,
+									  v_engine->cur_payload_map->remote_sdp_port, v_engine->cur_payload_map->agreed_pt);
+
 
 					start_video_thread(session);
 					switch_rtp_set_default_payload(v_engine->rtp_session, v_engine->cur_payload_map->agreed_pt);
@@ -8692,6 +8763,7 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 		}
 
 		v_engine->adv_sdp_port = v_engine->local_sdp_port = (switch_port_t)atoi(port);
+		v_engine->local_sdp_ip = smh->mparams->rtpip;
 
 		if (r_ip && r_port) {
 			v_engine->cur_payload_map->remote_sdp_ip = (char *) r_ip;

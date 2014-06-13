@@ -2379,6 +2379,7 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote SDP %s:\n%s\n", 
 					  switch_channel_get_name(tech_pvt->channel), tech_pvt->r_sdp);
 
+	switch_core_media_clear_ice(tech_pvt->session);
 	switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
 
 	if ((match = switch_core_media_negotiate_sdp(tech_pvt->session, tech_pvt->r_sdp, &p, SDP_TYPE_RESPONSE))) {
