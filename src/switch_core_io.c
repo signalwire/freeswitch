@@ -576,7 +576,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 				}
 				
-				if (status == SWITCH_STATUS_SUCCESS) {
+				if (status == SWITCH_STATUS_SUCCESS && session->read_impl.number_of_channels == 1) {
 					if ((switch_channel_test_flag(session->channel, CF_JITTERBUFFER_PLC) || switch_channel_test_flag(session->channel, CF_CNG_PLC)) 
 						&& !session->plc) {
 						session->plc = plc_init(NULL);
