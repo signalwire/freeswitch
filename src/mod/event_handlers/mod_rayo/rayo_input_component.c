@@ -551,7 +551,7 @@ static iks *start_call_voice_input(struct input_component *component, switch_cor
 
 	if (component->speech_mode && handler->voice_component) {
 		/* don't allow multi voice input */
-		RAYO_UNLOCK(component);
+		RAYO_RELEASE(component);
 		RAYO_DESTROY(component);
 		return iks_new_error_detailed(iq, STANZA_ERROR_CONFLICT, "Multiple voice input is not allowed");
 	}
@@ -565,7 +565,7 @@ static iks *start_call_voice_input(struct input_component *component, switch_cor
 	/* if recognition engine is different, we can't handle this request */
 	if (!zstr(handler->last_recognizer) && strcmp(component->recognizer, handler->last_recognizer)) {
 		handler->voice_component = NULL;
-		RAYO_UNLOCK(component);
+		RAYO_RELEASE(component);
 		RAYO_DESTROY(component);
 		return iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "Must use the same recognizer for the entire call");
 	} else if (zstr(handler->last_recognizer)) {
@@ -582,7 +582,7 @@ static iks *start_call_voice_input(struct input_component *component, switch_cor
 
 	if (!grammar) {
 		handler->voice_component = NULL;
-		RAYO_UNLOCK(component);
+		RAYO_RELEASE(component);
 		RAYO_DESTROY(component);
 		return iks_new_error_detailed(iq, stanza_error, error_detail);
 	}
@@ -614,7 +614,7 @@ static iks *start_call_dtmf_input(struct input_component *component, switch_core
 	/* parse the grammar */
 	if (!(component->grammar = srgs_parse(globals.parser, iks_find_cdata(input, "grammar")))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Failed to parse grammar body\n");
-		RAYO_UNLOCK(component);
+		RAYO_RELEASE(component);
 		RAYO_DESTROY(component);
 		return iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "Failed to parse grammar body");
 	}
@@ -654,7 +654,7 @@ static iks *start_call_input(struct input_component *component, switch_core_sess
 		/* fire up media bug to monitor lifecycle */
 		if (switch_core_media_bug_add(session, "rayo_input_component", NULL, input_handler_bug_callback, handler, 0, SMBF_READ_REPLACE, &handler->bug) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Failed to create input handler media bug\n");
-			RAYO_UNLOCK(component);
+			RAYO_RELEASE(component);
 			RAYO_DESTROY(component);
 			return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Failed to create input handler media bug");
 		}
@@ -666,7 +666,7 @@ static iks *start_call_input(struct input_component *component, switch_core_sess
 		/* handler bug was destroyed */
 		switch_mutex_unlock(handler->mutex);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Input handler media bug is closed\n");
-		RAYO_UNLOCK(component);
+		RAYO_RELEASE(component);
 		RAYO_DESTROY(component);
 		return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Input handler media bug is closed\n");
 	}
@@ -767,7 +767,9 @@ static iks *stop_call_input_component(struct rayo_actor *component, struct rayo_
 			switch_mutex_lock(input_component->handler->mutex);
 			input_component->stop = 1;
 			if (input_component->speech_mode) {
+				switch_mutex_unlock(input_component->handler->mutex);
 				switch_ivr_stop_detect_speech(session);
+				switch_mutex_lock(input_component->handler->mutex);
 				rayo_component_send_complete(RAYO_COMPONENT(component), COMPONENT_COMPLETE_STOP);
 			}
 			switch_mutex_unlock(input_component->handler->mutex);
@@ -789,7 +791,9 @@ static iks *start_timers_call_input_component(struct rayo_actor *component, stru
 		if (session) {
 			switch_mutex_lock(input_component->handler->mutex);
 			if (input_component->speech_mode) {
+				switch_mutex_unlock(input_component->handler->mutex);
 				switch_ivr_detect_speech_start_input_timers(session);
+				switch_mutex_lock(input_component->handler->mutex);
 			} else {
 				input_component->last_digit_time = switch_micro_time_now();
 				input_component->start_timers = 1;
@@ -861,7 +865,7 @@ static void on_detected_speech_event(switch_event_t *event)
 					rayo_component_send_complete(component, INPUT_NOMATCH);
 				}
 			}
-			RAYO_UNLOCK(component);
+			RAYO_RELEASE(component);
 		}
 	} else if (!strcasecmp("begin-speaking", speech_type)) {
 		char *component_id = switch_mprintf("%s-input-voice", uuid);
@@ -870,7 +874,7 @@ static void on_detected_speech_event(switch_event_t *event)
 		if (component && INPUT_COMPONENT(component)->barge_event) {
 			send_barge_event(component);
 		}
-		RAYO_UNLOCK(component);
+		RAYO_RELEASE(component);
 	} else if (!strcasecmp("closed", speech_type)) {
 		char *component_id = switch_mprintf("%s-input-voice", uuid);
 		struct rayo_component *component = RAYO_COMPONENT_LOCATE(component_id);
@@ -887,7 +891,7 @@ static void on_detected_speech_event(switch_event_t *event)
 				/* shouldn't get here... */
 				rayo_component_send_complete(component, COMPONENT_COMPLETE_ERROR);
 			}
-			RAYO_UNLOCK(component);
+			RAYO_RELEASE(component);
 		}
 	}
 	switch_safe_free(event_str);

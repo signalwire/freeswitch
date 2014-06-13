@@ -112,11 +112,11 @@ static iks *start_call_output(struct rayo_component *component, switch_core_sess
 	stream.write_function(&stream, "}fileman://rayo://%s", RAYO_JID(component));
 
 	if (switch_ivr_displace_session(session, stream.data, 0, "m") == SWITCH_STATUS_SUCCESS) {
-		RAYO_UNLOCK(component);
+		RAYO_RELEASE(component);
 	} else {
 		if (component->complete) {
 			/* component is already destroyed */
-			RAYO_UNLOCK(component);
+			RAYO_RELEASE(component);
 		} else {
 			/* need to destroy component */
 			if (OUTPUT_COMPONENT(component)->document) {
@@ -210,7 +210,7 @@ static iks *start_mixer_output_component(struct rayo_actor *mixer, struct rayo_m
 	rayo_component_api_execute_async(component, "conference", stream.data);
 
 	switch_safe_free(stream.data);
-	RAYO_UNLOCK(component);
+	RAYO_RELEASE(component);
 
 	return NULL;
 }
@@ -512,7 +512,7 @@ static switch_status_t rayo_file_open(switch_file_handle_t *handle, const char *
 	if (status != SWITCH_STATUS_SUCCESS && context->component) {
 		/* complete error event will be sent by calling thread */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Status = %i\n", status);
-		RAYO_UNLOCK(context->component);
+		RAYO_RELEASE(context->component);
 	}
 
 	return status;

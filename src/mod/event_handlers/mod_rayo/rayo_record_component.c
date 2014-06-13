@@ -141,7 +141,7 @@ static void on_call_record_stop_event(switch_event_t *event)
 			/* TODO assume final timeout, for now */
 			complete_record(component, RECORD_COMPLETE_FINAL_TIMEOUT);
 		}
-		RAYO_UNLOCK(component);
+		RAYO_RELEASE(component);
 	}
 }
 
@@ -282,7 +282,7 @@ static iks *start_call_record_component(struct rayo_actor *call, struct rayo_mes
 	if (start_call_record(session, component)) {
 		rayo_component_send_start(component, iq);
 	} else {
-		RAYO_UNLOCK(component);
+		RAYO_RELEASE(component);
 		RAYO_DESTROY(component);
 		return iks_new_error(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR);
 	}
@@ -369,7 +369,7 @@ static void on_mixer_record_event(switch_event_t *event)
 				complete_record(component, RECORD_COMPLETE_FINAL_TIMEOUT);
 			}
 		}
-		RAYO_UNLOCK(component);
+		RAYO_RELEASE(component);
 	}
 }
 
@@ -412,7 +412,7 @@ static iks *start_mixer_record_component(struct rayo_actor *mixer, struct rayo_m
 
 	/* mixer doesn't allow "send" */
 	if (!strcmp("send", iks_find_attrib_soft(record, "direction"))) {
-		RAYO_UNLOCK(component);
+		RAYO_RELEASE(component);
 		RAYO_DESTROY(component);
 		return iks_new_error(iq, STANZA_ERROR_BAD_REQUEST);
 	}
@@ -420,7 +420,7 @@ static iks *start_mixer_record_component(struct rayo_actor *mixer, struct rayo_m
 	if (start_mixer_record(component)) {
 		rayo_component_send_start(component, iq);
 	} else {
-		RAYO_UNLOCK(component);
+		RAYO_RELEASE(component);
 		RAYO_DESTROY(component);
 		return iks_new_error(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR);
 	}

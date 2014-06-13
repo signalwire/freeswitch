@@ -43,7 +43,7 @@ struct rayo_component *rayo_component_locate(const char *id, const char *file, i
 	if (actor && is_component_actor(actor)) {
 		return RAYO_COMPONENT(actor);
 	} else if (actor) {
-		 RAYO_UNLOCK(actor);
+		 RAYO_RELEASE(actor);
 	}
 	return NULL;
 }
@@ -114,7 +114,7 @@ void rayo_component_send_complete_event(struct rayo_component *component, iks *r
 {
 	component->complete = 1;
 	RAYO_SEND_REPLY(component, iks_find_attrib(response, "to"), response);
-	RAYO_UNLOCK(component);
+	RAYO_RELEASE(component);
 	RAYO_DESTROY(component);
 }
 

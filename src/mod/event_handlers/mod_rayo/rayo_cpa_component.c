@@ -236,7 +236,7 @@ static void rayo_cpa_detector_event(const char *jid, void *user_data)
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(RAYO_COMPONENT(component)->parent->id), SWITCH_LOG_DEBUG, "Skipping CPA event\n");
 		}
-		RAYO_UNLOCK(component);
+		RAYO_RELEASE(component);
 	}
 }
 
@@ -257,7 +257,7 @@ static void rayo_cpa_component_hangup(const char *jid, void *user_data)
 	if (component) {
 		stop_cpa_detectors(CPA_COMPONENT(component));
 		rayo_component_send_complete(RAYO_COMPONENT(component), COMPONENT_COMPLETE_HANGUP);
-		RAYO_UNLOCK(component);
+		RAYO_RELEASE(component);
 	}
 }
 
@@ -303,7 +303,7 @@ iks *rayo_cpa_component_start(struct rayo_actor *call, struct rayo_message *msg,
 
 			if (zstr(url)) {
 				stop_cpa_detectors(component);
-				RAYO_UNLOCK(component);
+				RAYO_RELEASE(component);
 				RAYO_DESTROY(component);
 				return iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "Missing grammar URL");
 			}
@@ -318,7 +318,7 @@ iks *rayo_cpa_component_start(struct rayo_actor *call, struct rayo_message *msg,
 			if (switch_core_hash_find(component->signals, url)) {
 				free(url_dup);
 				stop_cpa_detectors(component);
-				RAYO_UNLOCK(component);
+				RAYO_RELEASE(component);
 				RAYO_DESTROY(component);
 				return iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "Duplicate URL");
 			}
@@ -334,7 +334,7 @@ iks *rayo_cpa_component_start(struct rayo_actor *call, struct rayo_message *msg,
 			} else {
 				free(url_dup);
 				stop_cpa_detectors(component);
-				RAYO_UNLOCK(component);
+				RAYO_RELEASE(component);
 				RAYO_DESTROY(component);
 				return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, error_str);
 			}
@@ -345,7 +345,7 @@ iks *rayo_cpa_component_start(struct rayo_actor *call, struct rayo_message *msg,
 
 	if (!have_grammar) {
 		stop_cpa_detectors(component);
-		RAYO_UNLOCK(component);
+		RAYO_RELEASE(component);
 		RAYO_DESTROY(component);
 		return iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "No grammar defined");
 	}

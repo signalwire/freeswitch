@@ -217,7 +217,7 @@ static iks *start_sendfax_component(struct rayo_actor *call, struct rayo_message
 				switch_event_destroy(&execute_event);
 			}
 			rayo_call_set_faxing(RAYO_CALL(call), 0);
-			RAYO_UNLOCK(sendfax_component);
+			RAYO_RELEASE(sendfax_component);
 		} else {
 			/* component starting... */
 			rayo_component_send_start(RAYO_COMPONENT(sendfax_component), iq);
@@ -225,7 +225,7 @@ static iks *start_sendfax_component(struct rayo_actor *call, struct rayo_message
 	} else {
 		response = iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "failed to create txfax event");
 		rayo_call_set_faxing(RAYO_CALL(call), 0);
-		RAYO_UNLOCK(sendfax_component);
+		RAYO_RELEASE(sendfax_component);
 	}
 
 	return response;
@@ -320,7 +320,7 @@ static iks *start_receivefax_component(struct rayo_actor *call, struct rayo_mess
 				switch_event_destroy(&execute_event);
 			}
 			rayo_call_set_faxing(RAYO_CALL(call), 0);
-			RAYO_UNLOCK(receivefax_component);
+			RAYO_RELEASE(receivefax_component);
 		} else {
 			/* component starting... */
 			rayo_component_send_start(RAYO_COMPONENT(receivefax_component), iq);
@@ -328,7 +328,7 @@ static iks *start_receivefax_component(struct rayo_actor *call, struct rayo_mess
 	} else {
 		response = iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "failed to create rxfax event");
 		rayo_call_set_faxing(RAYO_CALL(call), 0);
-		RAYO_UNLOCK(receivefax_component);
+		RAYO_RELEASE(receivefax_component);
 	}
 
 	return response;
@@ -463,7 +463,7 @@ static void on_execute_complete_event(switch_event_t *event)
 
 			rayo_component_send_complete_event(RAYO_COMPONENT(component), result);
 
-			RAYO_UNLOCK(component);
+			RAYO_RELEASE(component);
 		}
 	}
 }

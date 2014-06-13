@@ -288,7 +288,7 @@ static iks *prompt_component_handle_input_error(struct rayo_actor *prompt, struc
 
 			/* done */
 			iks_delete(PROMPT_COMPONENT(prompt)->iq);
-			RAYO_UNLOCK(prompt);
+			RAYO_RELEASE(prompt);
 			RAYO_DESTROY(prompt);
 
 			break;
@@ -357,7 +357,7 @@ static iks *prompt_component_handle_output_error(struct rayo_actor *prompt, stru
 
 			/* done */
 			iks_delete(PROMPT_COMPONENT(prompt)->iq);
-			RAYO_UNLOCK(prompt);
+			RAYO_RELEASE(prompt);
 			RAYO_DESTROY(prompt);
 
 			break;
