@@ -574,7 +574,7 @@ static iks *start_call_voice_input(struct input_component *component, switch_cor
 
 	if (!strcmp(component->recognizer, "pocketsphinx")) {
 		grammar = setup_grammars_pocketsphinx(component, session, input, &stanza_error, &error_detail);
-	} else if (!strncmp(component->recognizer, "unimrcp", strlen("unimrcp")) {
+	} else if (!strncmp(component->recognizer, "unimrcp", strlen("unimrcp"))) {
 		grammar = setup_grammars_unimrcp(component, session, input, &stanza_error, &error_detail);
 	} else {
 		grammar = setup_grammars_unknown(component, session, input, &stanza_error, &error_detail);
