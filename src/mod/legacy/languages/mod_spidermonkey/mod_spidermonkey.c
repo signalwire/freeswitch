@@ -1901,12 +1901,13 @@ static switch_status_t init_speech_engine(struct js_session *jss, char *engine, 
 {
 	switch_codec_t *read_codec;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
-	uint32_t rate = 0;
+	uint32_t rate = 0, channels;
 	int interval = 0;
 
 	read_codec = switch_core_session_get_read_codec(jss->session);
 	rate = read_codec->implementation->actual_samples_per_second;
 	interval = read_codec->implementation->microseconds_per_packet / 1000;
+	channels = read_codec->implementation->number_of_channels;
 
 	if (switch_core_codec_init(&jss->speech->codec,
 							   "L16",
@@ -1921,7 +1922,7 @@ static switch_status_t init_speech_engine(struct js_session *jss, char *engine, 
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_core_speech_open(&jss->speech->sh, engine, voice, rate, interval,
+	if (switch_core_speech_open(&jss->speech->sh, engine, voice, rate, interval, channels,
 								&flags, switch_core_session_get_pool(jss->session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module!\n");
 		switch_core_codec_destroy(&jss->speech->codec);
