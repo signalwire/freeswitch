@@ -218,6 +218,7 @@ SWITCH_DECLARE(void) switch_rtp_reset_media_timer(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(void) switch_rtp_set_max_missed_packets(switch_rtp_t *rtp_session, uint32_t max);
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_udptl_mode(switch_rtp_t *rtp_session);
+SWITCH_DECLARE(void) switch_rtp_reset(switch_rtp_t *rtp_session);
 
 /*! 
   \brief Assign a local address to the RTP session

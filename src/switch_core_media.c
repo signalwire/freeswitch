@@ -2395,6 +2395,10 @@ static void clear_ice(switch_core_session_t *session, switch_media_type_t type)
 	memset(&engine->ice_in, 0, sizeof(engine->ice_in));
 	engine->remote_rtcp_port = 0;
 
+	if (engine->rtp_session) {
+		switch_rtp_reset(engine->rtp_session);
+	}
+
 }
 
 //?

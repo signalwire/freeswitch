@@ -1634,7 +1634,6 @@ static void verto_set_media_options(verto_pvt_t *tech_pvt, verto_profile_t *prof
 	//tech_pvt->mparams->manual_rtp_bugs = profile->manual_rtp_bugs;
 	//tech_pvt->mparams->manual_video_rtp_bugs = profile->manual_video_rtp_bugs;
 
-
 	tech_pvt->mparams->local_network = switch_core_session_strdup(tech_pvt->session, profile->local_network);
 	
 
@@ -2381,6 +2380,10 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 
 	switch_core_media_clear_ice(tech_pvt->session);
 	switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
+
+	//switch_channel_audio_sync(tech_pvt->channel);
+	//switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_BREAK);
+	//switch_core_session_kill_channel(tech_pvt->session, SWITCH_SIG_BREAK);
 
 	if ((match = switch_core_media_negotiate_sdp(tech_pvt->session, tech_pvt->r_sdp, &p, SDP_TYPE_RESPONSE))) {
 		if (switch_core_media_activate_rtp(tech_pvt->session) != SWITCH_STATUS_SUCCESS) {

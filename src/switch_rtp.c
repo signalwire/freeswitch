@@ -543,8 +543,6 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 		rtp_session->stats.inbound.last_processed_seq = 0;
 
 		if (!(packet[0] || packet[1] || packet[2] || packet[3]) && len >= 8) {
-
-			
 			packet += 4;
 			len -= 4;
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "DTMF payload offset by 4 bytes.\n");
@@ -2456,6 +2454,18 @@ SWITCH_DECLARE(void) switch_rtp_set_max_missed_packets(switch_rtp_t *rtp_session
 	}
 
 	rtp_session->max_missed_packets = max;
+}
+
+SWITCH_DECLARE(void) switch_rtp_reset(switch_rtp_t *rtp_session)
+{
+	if (!rtp_session) {
+		return;
+	}
+
+	rtp_session->seq = (uint16_t) rand();
+	rtp_session->ts = 0;
+	memset(&rtp_session->ts_norm, 0, sizeof(rtp_session->ts_norm));
+
 }
 
 SWITCH_DECLARE(void) switch_rtp_reset_media_timer(switch_rtp_t *rtp_session)
