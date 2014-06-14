@@ -278,6 +278,7 @@ static void itu_compliance_tests(void)
             exit(2);
         }
         printf("Test passed\n");
+        g722_encode_free(enc_state);
     }
 #endif
 #if 1
@@ -346,6 +347,7 @@ static void itu_compliance_tests(void)
                 exit(2);
             }
             printf("Test passed\n");
+            g722_decode_free(dec_state);
         }
     }
 #endif
@@ -403,6 +405,11 @@ static void signal_to_distortion_tests(void)
         printf("%10d, %10d, %f\n", in_level, out_level, (float) out_level/in_level);
     }
     while (len > 0);
+    swept_tone_free(swept);
+    g722_encode_free(enc_state);
+    g722_decode_free(dec_state);
+    power_meter_free(in_meter);
+    power_meter_free(out_meter);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -657,6 +664,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Cannot close audio file '%s'\n", IN_FILE_NAME);
                 exit(2);
             }
+            g722_encode_free(enc_state);
         }
         else
         {
@@ -669,6 +677,7 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
                 exit(2);
             }
+            g722_decode_free(dec_state);
         }
         else
         {

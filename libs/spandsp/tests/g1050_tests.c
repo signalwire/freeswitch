@@ -233,6 +233,8 @@ int main(int argc, char *argv[])
         exit(2);
     }
     printf("%.3f%% of packets lost\n", 100.0*(packets_put - packets_really_put)/packets_put);
+    g1050_free(s);
+    free(packet_arrival_times);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

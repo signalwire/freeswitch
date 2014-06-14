@@ -811,6 +811,8 @@ static void lenna_tests(int output_width, int output_length_scaling, const char 
     TIFFWriteDirectory(out_file);
     TIFFClose(out_file);
     image_translate_free(s);
+    free(image);
+    free(image2);
 }
 /*- End of function --------------------------------------------------------*/
 

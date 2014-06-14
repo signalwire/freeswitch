@@ -41,15 +41,17 @@
 #define GEN_CONST
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp.h"
 #include "spandsp/g1050.h"
 
 #define PACKET_LOSS_TIME    -1
-
-#define FALSE 0
-#define TRUE (!FALSE)
 
 g1050_constants_t g1050_constants[1] =
 {
@@ -746,7 +748,7 @@ static void g1050_segment_init(g1050_segment_state_t *s,
     s->max_jitter = parms->max_jitter;
 
     /* The following is common state information to all links. */
-    s->high_loss = FALSE;
+    s->high_loss = false;
     s->congestion_delay = 0.0;
     s->last_arrival_time = 0.0;
 
@@ -797,7 +799,7 @@ static void g1050_core_init(g1050_core_state_t *s, g1050_core_model_t *parms, in
 static void g1050_segment_model(g1050_segment_state_t *s, double delays[], int len)
 {
     int i;
-    int lose;
+    bool lose;
     int was_high_loss;
     double impulse;
     double slice_delay;
@@ -805,7 +807,7 @@ static void g1050_segment_model(g1050_segment_state_t *s, double delays[], int l
     /* Compute delay and loss value for each time slice. */
     for (i = 0;  i < len;  i++)
     {
-        lose = FALSE;
+        lose = false;
         /* Initialize delay to the serial delay plus some jitter. */
         slice_delay = s->serial_delay + s->max_jitter*q1050_rand();
         /* If no QoS, do congestion delay and packet loss analysis. */
@@ -826,14 +828,14 @@ static void g1050_segment_model(g1050_segment_state_t *s, double delays[], int l
             }
 
             if (was_high_loss  &&  q1050_rand() < s->prob_packet_loss)
-                lose = TRUE;
+                lose = true;
             /* Single pole LPF for the congestion delay impulses. */
             s->congestion_delay = s->congestion_delay*s->impulse_coeff + impulse*(1.0 - s->impulse_coeff);
             slice_delay += s->congestion_delay;
         }
         /* If duplex mismatch on LAN, packet loss based on loss probability. */
         if (s->multiple_access  &&  (q1050_rand() < s->prob_packet_collision_loss))
-            lose = TRUE;
+            lose = true;
         /* Put computed delay into time slice array. */
         if (lose)
         {
@@ -851,12 +853,12 @@ static void g1050_segment_model(g1050_segment_state_t *s, double delays[], int l
 static void g1050_core_model(g1050_core_state_t *s, double delays[], int len)
 {
     int32_t i;
-    int lose;
+    bool lose;
     double jitter_delay;
 
     for (i = 0;  i < len;  i++)
     {
-        lose = FALSE;
+        lose = false;
         jitter_delay = s->base_delay + s->max_jitter*q1050_rand();
         /* Route flapping */
         if (--s->route_flap_counter <= 0)
@@ -866,18 +868,18 @@ static void g1050_core_model(g1050_core_state_t *s, double delays[], int len)
             s->route_flap_counter = s->route_flap_interval;
         }
         if (q1050_rand() < s->prob_packet_loss)
-            lose = TRUE;
+            lose = true;
         /* Link failures */
         if (--s->link_failure_counter <= 0)
         {
             /* We are in a link failure */
-            lose = TRUE;
+            lose = true;
             if (--s->link_recovery_counter <= 0)
             {
                 /* Leave failure state. */
                 s->link_failure_counter = s->link_failure_interval_ticks;
                 s->link_recovery_counter = s->link_failure_duration_ticks;
-                lose = FALSE;
+                lose = false;
             }
         }
         if (lose)
@@ -1056,23 +1058,23 @@ static void g1050_simulate_chunk(g1050_state_t *s)
 
     s->base_time += 1.0;
 
-    memcpy(&s->segment[0].delays[0], &s->segment[0].delays[G1050_TICKS_PER_SEC], 2*G1050_TICKS_PER_SEC*sizeof(s->segment[0].delays[0]));
+    memmove(&s->segment[0].delays[0], &s->segment[0].delays[G1050_TICKS_PER_SEC], 2*G1050_TICKS_PER_SEC*sizeof(s->segment[0].delays[0]));
     g1050_segment_model(&s->segment[0], &s->segment[0].delays[2*G1050_TICKS_PER_SEC], G1050_TICKS_PER_SEC);
 
-    memcpy(&s->segment[1].delays[0], &s->segment[1].delays[G1050_TICKS_PER_SEC], 2*G1050_TICKS_PER_SEC*sizeof(s->segment[1].delays[0]));
+    memmove(&s->segment[1].delays[0], &s->segment[1].delays[G1050_TICKS_PER_SEC], 2*G1050_TICKS_PER_SEC*sizeof(s->segment[1].delays[0]));
     g1050_segment_model(&s->segment[1], &s->segment[1].delays[2*G1050_TICKS_PER_SEC], G1050_TICKS_PER_SEC);
 
-    memcpy(&s->core.delays[0], &s->core.delays[G1050_TICKS_PER_SEC], 2*G1050_TICKS_PER_SEC*sizeof(s->core.delays[0]));
+    memmove(&s->core.delays[0], &s->core.delays[G1050_TICKS_PER_SEC], 2*G1050_TICKS_PER_SEC*sizeof(s->core.delays[0]));
     g1050_core_model(&s->core, &s->core.delays[2*G1050_TICKS_PER_SEC], G1050_TICKS_PER_SEC);
 
-    memcpy(&s->segment[2].delays[0], &s->segment[2].delays[G1050_TICKS_PER_SEC], 2*G1050_TICKS_PER_SEC*sizeof(s->segment[2].delays[0]));
+    memmove(&s->segment[2].delays[0], &s->segment[2].delays[G1050_TICKS_PER_SEC], 2*G1050_TICKS_PER_SEC*sizeof(s->segment[2].delays[0]));
     g1050_segment_model(&s->segment[2], &s->segment[2].delays[2*G1050_TICKS_PER_SEC], G1050_TICKS_PER_SEC);
 
-    memcpy(&s->segment[3].delays[0], &s->segment[3].delays[G1050_TICKS_PER_SEC], 2*G1050_TICKS_PER_SEC*sizeof(s->segment[3].delays[0]));
+    memmove(&s->segment[3].delays[0], &s->segment[3].delays[G1050_TICKS_PER_SEC], 2*G1050_TICKS_PER_SEC*sizeof(s->segment[3].delays[0]));
     g1050_segment_model(&s->segment[3], &s->segment[3].delays[2*G1050_TICKS_PER_SEC], G1050_TICKS_PER_SEC);
 
-    memcpy(&s->arrival_times_1[0], &s->arrival_times_1[s->packet_rate], 2*s->packet_rate*sizeof(s->arrival_times_1[0]));
-    memcpy(&s->arrival_times_2[0], &s->arrival_times_2[s->packet_rate], 2*s->packet_rate*sizeof(s->arrival_times_2[0]));
+    memmove(&s->arrival_times_1[0], &s->arrival_times_1[s->packet_rate], 2*s->packet_rate*sizeof(s->arrival_times_1[0]));
+    memmove(&s->arrival_times_2[0], &s->arrival_times_2[s->packet_rate], 2*s->packet_rate*sizeof(s->arrival_times_2[0]));
     for (i = 0;  i < s->packet_rate;  i++)
     {
         s->arrival_times_1[2*s->packet_rate + i] = s->base_time + 2.0 + (double) i/(double) s->packet_rate;
@@ -1126,7 +1128,7 @@ SPAN_DECLARE(g1050_state_t *) g1050_init(int model,
                        &mo->sidea_lan,
                        sp->sidea_lan_bit_rate,
                        sp->sidea_lan_multiple_access,
-                       FALSE,
+                       false,
                        packet_size,
                        packet_rate);
     g1050_segment_init(&s->segment[1],
@@ -1134,7 +1136,7 @@ SPAN_DECLARE(g1050_state_t *) g1050_init(int model,
                        &constants->segment[1],
                        &mo->sidea_access_link,
                        sp->sidea_access_link_bit_rate_ab,
-                       FALSE,
+                       false,
                        sp->sidea_access_link_qos_enabled,
                        packet_size,
                        packet_rate);
@@ -1144,7 +1146,7 @@ SPAN_DECLARE(g1050_state_t *) g1050_init(int model,
                        &constants->segment[2],
                        &mo->sideb_access_link,
                        sp->sideb_access_link_bit_rate_ba,
-                       FALSE,
+                       false,
                        sp->sideb_access_link_qos_enabled,
                        packet_size,
                        packet_rate);
@@ -1154,7 +1156,7 @@ SPAN_DECLARE(g1050_state_t *) g1050_init(int model,
                        &mo->sideb_lan,
                        sp->sideb_lan_bit_rate,
                        sp->sideb_lan_multiple_access,
-                       FALSE,
+                       false,
                        packet_size,
                        packet_rate);
 
@@ -1183,6 +1185,13 @@ SPAN_DECLARE(g1050_state_t *) g1050_init(int model,
     s->first = NULL;
     s->last = NULL;
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) g1050_free(g1050_state_t *s)
+{
+    free(s);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

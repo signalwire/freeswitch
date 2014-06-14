@@ -229,6 +229,10 @@ int main(int argc, char *argv[])
 
     fclose(out_file);
 
+    rfc2198_sim_free(s);
+
+    free(packet_arrival_times);
+
     printf("Put %d packets. Really put %d packets. Got %d packets.\n", packets_put, packets_really_put, packets_got);
     printf("%d OOS packets, %d missing packets\n", oos_packets_got, missing_packets_got - oos_packets_got);
     printf("%d packets queued, %d received\n", packets_really_put, packets_got);

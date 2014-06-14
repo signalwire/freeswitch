@@ -3619,7 +3619,7 @@ static void process_state_f_doc_non_ecm(t30_state_t *s, const uint8_t *msg, int 
         /* Treat this as a bad quality page. */
         if (s->phase_d_handler)
             s->phase_d_handler(s->phase_d_user_data, fcf);
-        s->next_rx_step = msg[2] & 0xFE;
+        s->next_rx_step = fcf;
         queue_phase(s, T30_PHASE_D_TX);
         set_state(s, T30_STATE_III_Q_RTN);
         send_simple_frame(s, T30_RTN);
@@ -3634,7 +3634,7 @@ static void process_state_f_doc_non_ecm(t30_state_t *s, const uint8_t *msg, int 
         /* Treat this as a bad quality page. */
         if (s->phase_d_handler)
             s->phase_d_handler(s->phase_d_user_data, fcf);
-        s->next_rx_step = msg[2] & 0xFE;
+        s->next_rx_step = fcf;
         /* Return to phase B */
         queue_phase(s, T30_PHASE_B_TX);
         set_state(s, T30_STATE_III_Q_RTN);
@@ -3649,7 +3649,7 @@ static void process_state_f_doc_non_ecm(t30_state_t *s, const uint8_t *msg, int 
         /* Treat this as a bad quality page. */
         if (s->phase_d_handler)
             s->phase_d_handler(s->phase_d_user_data, fcf);
-        s->next_rx_step = msg[2] & 0xFE;
+        s->next_rx_step = fcf;
         queue_phase(s, T30_PHASE_D_TX);
         set_state(s, T30_STATE_III_Q_RTN);
         send_simple_frame(s, T30_RTN);

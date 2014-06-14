@@ -455,6 +455,7 @@ int main(int argc, char *argv[])
             }
         }
     }
+    both_ways_line_model_free(model);
 #if defined(ENABLE_GUI)
     if (use_gui)
         qam_wait_to_end(endpoint[0].qam_monitor);

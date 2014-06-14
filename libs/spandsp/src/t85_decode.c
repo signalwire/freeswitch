@@ -853,6 +853,12 @@ SPAN_DECLARE(int) t85_decode_new_plane(t85_decode_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(logging_state_t *) t85_decode_get_logging_state(t85_decode_state_t *s)
+{
+    return &s->logging;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) t85_decode_restart(t85_decode_state_t *s)
 {
     s->xd = 0;
@@ -885,12 +891,6 @@ SPAN_DECLARE(int) t85_decode_restart(t85_decode_state_t *s)
     t81_t82_arith_decode_restart(&s->s, false);
 
     return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(logging_state_t *) t85_decode_get_logging_state(t85_decode_state_t *s)
-{
-    return &s->logging;
 }
 /*- End of function --------------------------------------------------------*/
 

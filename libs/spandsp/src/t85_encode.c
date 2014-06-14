@@ -645,6 +645,12 @@ SPAN_DECLARE(int) t85_encode_set_row_read_handler(t85_encode_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(logging_state_t *) t85_encode_get_logging_state(t85_encode_state_t *s)
+{
+    return &s->logging;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) t85_encode_restart(t85_encode_state_t *s, uint32_t image_width, uint32_t image_length)
 {
     int bytes_per_row;
@@ -678,12 +684,6 @@ SPAN_DECLARE(int) t85_encode_restart(t85_encode_state_t *s, uint32_t image_width
 
     t81_t82_arith_encode_init(&s->s, output_byte, s);
     return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(logging_state_t *) t85_encode_get_logging_state(t85_encode_state_t *s)
-{
-    return &s->logging;
 }
 /*- End of function --------------------------------------------------------*/
 

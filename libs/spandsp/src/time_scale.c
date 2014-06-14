@@ -220,7 +220,7 @@ SPAN_DECLARE(int) time_scale(time_scale_state_t *s, int16_t out[], int16_t in[],
         {
             memcpy(&out[out_len], s->buf, sizeof(int16_t)*s->lcp);
             out_len += s->lcp;
-            memcpy(s->buf, &s->buf[s->lcp], sizeof(int16_t)*(s->buf_len - s->lcp));
+            memmove(s->buf, &s->buf[s->lcp], sizeof(int16_t)*(s->buf_len - s->lcp));
             if (len - in_len < s->lcp)
             {
                 /* Cannot continue without more samples */

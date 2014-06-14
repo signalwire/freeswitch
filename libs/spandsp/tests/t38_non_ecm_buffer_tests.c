@@ -168,6 +168,7 @@ int main(int argc, char *argv[])
     printf("    Done\n");
     t38_non_ecm_buffer_report_input_status(&buffer, &logging);
     t38_non_ecm_buffer_report_output_status(&buffer, &logging);
+    t38_non_ecm_buffer_release(&buffer);
 
     printf("2 - Impose no minimum for the bits per row, different alignment\n");
     t38_non_ecm_buffer_init(&buffer, true, 0);
@@ -233,6 +234,7 @@ int main(int argc, char *argv[])
     }
     t38_non_ecm_buffer_report_input_status(&buffer, &logging);
     t38_non_ecm_buffer_report_output_status(&buffer, &logging);
+    t38_non_ecm_buffer_release(&buffer);
 
     printf("3 - Demand a fairly high minimum for the bits per row\n");
     t38_non_ecm_buffer_init(&buffer, true, 400);
@@ -298,6 +300,7 @@ int main(int argc, char *argv[])
     }
     t38_non_ecm_buffer_report_input_status(&buffer, &logging);
     t38_non_ecm_buffer_report_output_status(&buffer, &logging);
+    t38_non_ecm_buffer_release(&buffer);
 
     printf("4 - Take some time to get to the first row of the image, output ahead\n");
     t38_non_ecm_buffer_init(&buffer, true, 400);
@@ -446,6 +449,7 @@ int main(int argc, char *argv[])
     printf("    RTC output OK\n");
     t38_non_ecm_buffer_report_input_status(&buffer, &logging);
     t38_non_ecm_buffer_report_output_status(&buffer, &logging);
+    t38_non_ecm_buffer_release(&buffer);
 
     printf("5 - Take some time to get to the first row of the image, output behind\n");
     t38_non_ecm_buffer_init(&buffer, true, 400);
@@ -583,6 +587,7 @@ int main(int argc, char *argv[])
     printf("    RTC output OK\n");
     t38_non_ecm_buffer_report_input_status(&buffer, &logging);
     t38_non_ecm_buffer_report_output_status(&buffer, &logging);
+    t38_non_ecm_buffer_release(&buffer);
 
     printf("6 - TCF without leading ones\n");
     t38_non_ecm_buffer_init(&buffer, false, 400);
@@ -628,6 +633,7 @@ int main(int argc, char *argv[])
     printf("    End of data seen OK\n");
     t38_non_ecm_buffer_report_input_status(&buffer, &logging);
     t38_non_ecm_buffer_report_output_status(&buffer, &logging);
+    t38_non_ecm_buffer_release(&buffer);
 
     printf("7 - TCF with leading ones\n");
     t38_non_ecm_buffer_init(&buffer, false, 400);
@@ -695,6 +701,7 @@ int main(int argc, char *argv[])
     printf("    End of data seen OK\n");
     t38_non_ecm_buffer_report_input_status(&buffer, &logging);
     t38_non_ecm_buffer_report_output_status(&buffer, &logging);
+    t38_non_ecm_buffer_release(&buffer);
 
     printf("Tests passed\n");
     return 0;

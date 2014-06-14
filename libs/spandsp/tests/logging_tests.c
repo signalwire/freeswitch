@@ -203,6 +203,8 @@ int main(int argc, char *argv[])
 
     span_log_set_message_handler(log, &message_handler, NULL);
 
+    span_log_free(log);
+
     printf("Tests passed.\n");
     return 0;
 }

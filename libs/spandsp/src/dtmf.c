@@ -597,12 +597,14 @@ SPAN_DECLARE(dtmf_tx_state_t *) dtmf_tx_init(dtmf_tx_state_t *s,
 
 SPAN_DECLARE(int) dtmf_tx_release(dtmf_tx_state_t *s)
 {
+    queue_release(&s->queue.queue);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) dtmf_tx_free(dtmf_tx_state_t *s)
 {
+    queue_release(&s->queue.queue);
     span_free(s);
     return 0;
 }

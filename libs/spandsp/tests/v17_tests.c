@@ -535,7 +535,7 @@ int main(int argc, char *argv[])
                 //rx.eq_put_step = rand()%(192*10/3);
                 bert_init(&bert, bits_per_test, BERT_PATTERN_ITU_O152_11, test_bps, 20);
                 bert_set_report(&bert, 10000, reporter, NULL);
-                one_way_line_model_release(line_model);
+                one_way_line_model_free(line_model);
                 if ((line_model = one_way_line_model_init(line_model_no, (float) noise_level, channel_codec, 0)) == NULL)
                 {
                     fprintf(stderr, "    Failed to create line model\n");
@@ -565,7 +565,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "At completion:\n");
         fprintf(stderr, "Final result %ddBm0/%ddBm0, %d bits, %d bad bits, %d resyncs\n", signal_level, noise_level, bert_results.total_bits, bert_results.bad_bits, bert_results.resyncs);
         fprintf(stderr, "Last report  %ddBm0/%ddBm0, %d bits, %d bad bits, %d resyncs\n", signal_level, noise_level, latest_results.total_bits, latest_results.bad_bits, latest_results.resyncs);
-        one_way_line_model_release(line_model);
+        one_way_line_model_free(line_model);
 
         if (signal_level > -43)
         {
@@ -575,6 +575,9 @@ int main(int argc, char *argv[])
 
         printf("Tests passed.\n");
     }
+    v17_rx_free(rx);
+    if (tx)
+        v17_tx_free(tx);
 #if defined(ENABLE_GUI)
     if (use_gui)
         qam_wait_to_end(qam_monitor);

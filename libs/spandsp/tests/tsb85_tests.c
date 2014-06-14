@@ -94,6 +94,8 @@ char next_tx_file[1000];
 
 static int next_step(faxtester_state_t *s);
 
+static bool test_for_call_drop = false;
+
 static int phase_b_handler(void *user_data, int result)
 {
     int ch;
@@ -641,6 +643,7 @@ static int next_step(faxtester_state_t *s)
     t4_tx_state_t t4_tx_state;
     t30_state_t *t30;
 
+    test_for_call_drop = false;
     if (s->cur == NULL)
     {
         if (!s->final_delayed)
@@ -797,6 +800,11 @@ static int next_step(faxtester_state_t *s)
         else if (strcasecmp((const char *) type, "SILENCE") == 0)
         {
             faxtest_set_rx_silence(s);
+        }
+        else if (strcasecmp((const char *) type, "DROPCALL") == 0)
+        {
+            span_log(&s->logging, SPAN_LOG_FLOW, "Far end should drop the call\n");
+            test_for_call_drop = true;
         }
         else
         {
@@ -1109,6 +1117,11 @@ static int next_step(faxtester_state_t *s)
             span_log(&s->logging, SPAN_LOG_FLOW, "ECM image is %d bytes (min row bits %d)\n", len, min_row_bits);
             faxtester_set_ecm_image_buffer(s, image, len, ecm_block, ecm_frame_size, i);
         }
+        else if (strcasecmp((const char *) type, "DROPCALL") == 0)
+        {
+            span_log(&s->logging, SPAN_LOG_FLOW, "Time to drop the call\n");
+            return 0;
+        }
         else
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Unrecognised type '%s'\n", (const char *) type);
@@ -1195,6 +1208,16 @@ static void exchange(faxtester_state_t *s)
             /*endfor*/
             if (sf_writef_short(out_handle, out_amp, SAMPLES_PER_CHUNK) != SAMPLES_PER_CHUNK)
                 break;
+            /*endif*/
+        }
+        /*endif*/
+        if (test_for_call_drop)
+        {
+            if (!t30_call_active(fax_get_t30_state(fax)))
+            {
+                printf("Call dropped\n");
+                //break;
+            }
             /*endif*/
         }
         /*endif*/
@@ -1391,6 +1414,7 @@ int main(int argc, char *argv[])
     span_log_set_level(&state.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
     span_log_set_tag(&state.logging, "B");
     get_test_set(&state, xml_file_name, test_name);
+    faxtester_release(&state);
     printf("Done\n");
     return 0;
 }

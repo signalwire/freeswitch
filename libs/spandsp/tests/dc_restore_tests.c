@@ -84,6 +84,7 @@ int main (int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    awgn_free(noise_source);
     printf("Test passed.\n");
     return 0;
 }

@@ -236,8 +236,8 @@ int main(int argc, char *argv[])
         close(compress_file);
     if (decompress)
         close(decompress_file);
-    lpc10_encode_release(lpc10_enc_state);
-    lpc10_decode_release(lpc10_dec_state);
+    lpc10_encode_free(lpc10_enc_state);
+    lpc10_decode_free(lpc10_dec_state);
 
     if (!decompress)
     {

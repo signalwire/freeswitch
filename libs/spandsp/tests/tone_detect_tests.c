@@ -122,6 +122,8 @@ static int periodogram_tests(void)
                 return -1;
             }
         }
+        awgn_free(noise_source_re);
+        awgn_free(noise_source_im);
     }
     return 0;
 }

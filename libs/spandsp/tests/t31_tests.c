@@ -852,8 +852,13 @@ static int t30_tests(int t38_mode, int use_gui, int log_audio, int test_sending,
         span_log_bump_samples(at_get_logging_state(t31_get_at_state(t31_state)), SAMPLES_PER_CHUNK);
     }
 
+    g1050_free(path_a_to_b);
+    g1050_free(path_b_to_a);
     if (t38_mode)
-        t38_terminal_release(t38_state);
+        t38_terminal_free(t38_state);
+    else
+        fax_free(fax_state);
+    t31_free(t31_state);
 
     if (decode_test_file)
     {

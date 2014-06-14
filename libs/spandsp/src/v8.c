@@ -1104,7 +1104,8 @@ SPAN_DECLARE(int) v8_restart(v8_state_t *s, bool calling_party, v8_parms_t *parm
         modem_connect_tones_tx_init(&s->ansam_tx, s->parms.modem_connect_tone);
         s->modem_connect_tone_tx_on = ms_to_samples(75) + 1;
     }
-
+    if (s->tx_queue)
+        queue_free(s->tx_queue);
     if ((s->tx_queue = queue_init(NULL, 1024, 0)) == NULL)
         return -1;
     return 0;

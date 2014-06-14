@@ -187,8 +187,8 @@ int main(int argc, char *argv[])
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
         exit(2);
     }
-    ima_adpcm_release(ima_enc_state);
-    ima_adpcm_release(ima_dec_state);
+    ima_adpcm_free(ima_enc_state);
+    ima_adpcm_free(ima_dec_state);
 
     printf("Pre samples: %d\n", total_pre_samples);
     printf("Compressed bytes: %d\n", total_compressed_bytes);

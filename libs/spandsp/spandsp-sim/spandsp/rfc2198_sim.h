@@ -73,6 +73,8 @@ SPAN_DECLARE(rfc2198_sim_state_t *) rfc2198_sim_init(int model,
                                                      int packet_rate,
                                                      int redundancy_depth);
 
+SPAN_DECLARE(int) rfc2198_sim_free(rfc2198_sim_state_t *s);
+
 SPAN_DECLARE(int) rfc2198_sim_put(rfc2198_sim_state_t *s,
                                   const uint8_t buf[],
                                   int len,

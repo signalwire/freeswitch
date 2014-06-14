@@ -97,9 +97,11 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    bert_free(tx_bert);
+    bert_free(rx_bert);
 
-    bert_init(tx_bert, 0, BERT_PATTERN_ONES, 300, 20);
-    bert_init(rx_bert, 0, BERT_PATTERN_ONES, 300, 20);
+    tx_bert = bert_init(NULL, 0, BERT_PATTERN_ONES, 300, 20);
+    rx_bert = bert_init(NULL, 0, BERT_PATTERN_ONES, 300, 20);
     for (i = 0;  i < 511*2;  i++)
     {
         bit = bert_get_bit(tx_bert);
@@ -112,6 +114,8 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    bert_free(tx_bert);
+    bert_free(rx_bert);
 
     tx_bert = bert_init(NULL, 0, BERT_PATTERN_1_TO_7, 300, 20);
     rx_bert = bert_init(NULL, 0, BERT_PATTERN_1_TO_7, 300, 20);
@@ -127,6 +131,8 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    bert_free(tx_bert);
+    bert_free(rx_bert);
 
     tx_bert = bert_init(NULL, 0, BERT_PATTERN_1_TO_3, 300, 20);
     rx_bert = bert_init(NULL, 0, BERT_PATTERN_1_TO_3, 300, 20);
@@ -142,6 +148,8 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    bert_free(tx_bert);
+    bert_free(rx_bert);
 
     tx_bert = bert_init(NULL, 0, BERT_PATTERN_1_TO_1, 300, 20);
     rx_bert = bert_init(NULL, 0, BERT_PATTERN_1_TO_1, 300, 20);
@@ -157,6 +165,8 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    bert_free(tx_bert);
+    bert_free(rx_bert);
 
     tx_bert = bert_init(NULL, 0, BERT_PATTERN_3_TO_1, 300, 20);
     rx_bert = bert_init(NULL, 0, BERT_PATTERN_3_TO_1, 300, 20);
@@ -172,6 +182,8 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    bert_free(tx_bert);
+    bert_free(rx_bert);
 
     tx_bert = bert_init(NULL, 0, BERT_PATTERN_7_TO_1, 300, 20);
     rx_bert = bert_init(NULL, 0, BERT_PATTERN_7_TO_1, 300, 20);
@@ -187,6 +199,8 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    bert_free(tx_bert);
+    bert_free(rx_bert);
 
     tx_bert = bert_init(NULL, 0, BERT_PATTERN_ITU_O153_9, 300, 20);
     rx_bert = bert_init(NULL, 0, BERT_PATTERN_ITU_O153_9, 300, 20);
@@ -231,6 +245,8 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    bert_free(tx_bert);
+    bert_free(rx_bert);
 
     tx_bert = bert_init(NULL, 0, BERT_PATTERN_ITU_O152_11, 300, 20);
     rx_bert = bert_init(NULL, 0, BERT_PATTERN_ITU_O152_11, 300, 20);
@@ -275,6 +291,8 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    bert_free(tx_bert);
+    bert_free(rx_bert);
 
     tx_bert = bert_init(NULL, 0, BERT_PATTERN_ITU_O151_15, 300, 20);
     rx_bert = bert_init(NULL, 0, BERT_PATTERN_ITU_O151_15, 300, 20);
@@ -319,6 +337,8 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    bert_free(tx_bert);
+    bert_free(rx_bert);
 
     tx_bert = bert_init(NULL, 0, BERT_PATTERN_ITU_O151_20, 300, 20);
     rx_bert = bert_init(NULL, 0, BERT_PATTERN_ITU_O151_20, 300, 20);
@@ -360,6 +380,8 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    bert_free(tx_bert);
+    bert_free(rx_bert);
 
     tx_bert = bert_init(NULL, 0, BERT_PATTERN_ITU_O151_23, 300, 20);
     rx_bert = bert_init(NULL, 0, BERT_PATTERN_ITU_O151_23, 300, 20);
@@ -401,6 +423,8 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    bert_free(tx_bert);
+    bert_free(rx_bert);
 
     tx_bert = bert_init(NULL, 0, BERT_PATTERN_QBF, 300, 20);
     rx_bert = bert_init(NULL, 0, BERT_PATTERN_QBF, 300, 20);
@@ -416,6 +440,8 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
+    bert_free(tx_bert);
+    bert_free(rx_bert);
 
     /* Test the mechanism for categorising the error rate into <10^x bands */
     /* TODO: The result of this test is not checked automatically */
@@ -447,6 +473,7 @@ int main(int argc, char *argv[])
         //    bert_put_bit(bert, bit);
         bert_put_bit(bert, bit);
     }
+    bert_free(bert);
 
     printf("Tests passed.\n");
     return 0;

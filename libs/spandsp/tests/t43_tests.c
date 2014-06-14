@@ -486,8 +486,7 @@ int read_file(meta_t *meta, int page)
     if (TIFFGetField(tif, TIFFTAG_COLORMAP, &map_L, &map_a, &map_b, &map_z))
     {
         entries = 1 << meta->bits_per_sample;
-        meta->colour_map = malloc(3*entries);
-        if (meta->colour_map)
+        if ((meta->colour_map = malloc(3*entries)))
         {
 #if 0
             /* Sweep the colormap in the proper order */
@@ -1349,7 +1348,11 @@ int main(int argc, char *argv[])
             free(data);
             data = data2;
 #elif 1
-            data2 = malloc(totdata);
+            if ((data2 = malloc(totdata)) == NULL)
+            {
+                printf("Failed to allocate buffer\n");
+                exit(2);
+            }
             start = rdtscll();
             //if (!t42_itulab_jpeg_to_srgb(&logging2, &lab_param, data2, &off, data, off, &meta.image_width, &meta.image_length, &meta.samples_per_pixel))
             {

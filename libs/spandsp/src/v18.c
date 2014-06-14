@@ -1220,12 +1220,14 @@ SPAN_DECLARE(v18_state_t *) v18_init(v18_state_t *s,
 
 SPAN_DECLARE(int) v18_release(v18_state_t *s)
 {
+    queue_release(&s->queue.queue);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) v18_free(v18_state_t *s)
 {
+    queue_release(&s->queue.queue);
     span_free(s);
     return 0;
 }

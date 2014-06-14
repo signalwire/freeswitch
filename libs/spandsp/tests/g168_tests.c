@@ -309,6 +309,15 @@ int main(int argc, char *argv[])
         printf("%d\n", css_c3[i]);
     signal_free(&local_css);
     signal_free(&far_css);
+    fir32_free(&line_model_d2);
+    fir32_free(&line_model_d3);
+    fir32_free(&line_model_d4);
+    fir32_free(&line_model_d5);
+    fir32_free(&line_model_d6);
+    fir32_free(&line_model_d7);
+    fir32_free(&line_model_d8);
+    fir32_free(&line_model_d9);
+    fir_float_free(&level_measurement_bp);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

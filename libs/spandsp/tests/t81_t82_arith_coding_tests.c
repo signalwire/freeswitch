@@ -225,7 +225,8 @@ int main(int argc, char *argv[])
         exit(2);
     }
     printf("Test passed\n");
-
+    t81_t82_arith_encode_free(se);
+    t81_t82_arith_encode_free(sd);
     printf("Tests passed\n");
     return 0;
 }

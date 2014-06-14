@@ -515,13 +515,14 @@ SPAN_DECLARE(fax_state_t *) fax_init(fax_state_t *s, int calling_party)
 SPAN_DECLARE(int) fax_release(fax_state_t *s)
 {
     t30_release(&s->t30);
+    v8_release(&s->v8);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) fax_free(fax_state_t *s)
 {
-    t30_release(&s->t30);
+    fax_release(s);
     span_free(s);
     return 0;
 }

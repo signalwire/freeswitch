@@ -276,15 +276,15 @@ int main(int argc, char *argv[])
         }
 
 
-        oki_adpcm_release(oki_enc_state);
+        oki_adpcm_free(oki_enc_state);
         if (sf_close_telephony(inhandle))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", in_file_name);
             exit(2);
         }
     }
-    oki_adpcm_release(oki_dec_state);
-    oki_adpcm_release(oki_dec_state2);
+    oki_adpcm_free(oki_dec_state);
+    oki_adpcm_free(oki_dec_state2);
     if (sf_close_telephony(outhandle))
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);

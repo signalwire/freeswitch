@@ -356,7 +356,7 @@ static void v21_put_bit(void *user_data, int bit)
         }
         return;
     }
-    fprintf(stderr, "V.21 Rx bit %d - %d\n", rx_bits++, bit);
+    //fprintf(stderr, "V.21 Rx bit %d - %d\n", rx_bits++, bit);
     if (fast_trained == FAX_NONE)
         hdlc_rx_put_bit(&hdlcrx, bit);
 }
