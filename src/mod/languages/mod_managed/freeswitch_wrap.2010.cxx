@@ -15969,19 +15969,21 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_loadable_module_get_codec_interface(
 }
 
 
-SWIGEXPORT char * SWIGSTDCALL CSharp_switch_parse_codec_buf(char * jarg1, void * jarg2, void * jarg3, void * jarg4) {
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_parse_codec_buf(char * jarg1, void * jarg2, void * jarg3, void * jarg4, void * jarg5) {
   char * jresult ;
   char *arg1 = (char *) 0 ;
   uint32_t *arg2 = (uint32_t *) 0 ;
   uint32_t *arg3 = (uint32_t *) 0 ;
   uint32_t *arg4 = (uint32_t *) 0 ;
+  uint32_t *arg5 = (uint32_t *) 0 ;
   char *result = 0 ;
   
   arg1 = (char *)jarg1; 
   arg2 = (uint32_t *)jarg2; 
   arg3 = (uint32_t *)jarg3; 
   arg4 = (uint32_t *)jarg4; 
-  result = (char *)switch_parse_codec_buf(arg1,arg2,arg3,arg4);
+  arg5 = (uint32_t *)jarg5; 
+  result = (char *)switch_parse_codec_buf(arg1,arg2,arg3,arg4,arg5);
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }
@@ -20300,6 +20302,28 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_frame_rate_get(void * jarg1) 
   
   arg1 = (switch_frame *)jarg1; 
   result = (uint32_t) ((arg1)->rate);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_frame_channels_set(void * jarg1, unsigned long jarg2) {
+  switch_frame *arg1 = (switch_frame *) 0 ;
+  uint32_t arg2 ;
+  
+  arg1 = (switch_frame *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  if (arg1) (arg1)->channels = arg2;
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_frame_channels_get(void * jarg1) {
+  unsigned long jresult ;
+  switch_frame *arg1 = (switch_frame *) 0 ;
+  uint32_t result;
+  
+  arg1 = (switch_frame *)jarg1; 
+  result = (uint32_t) ((arg1)->channels);
   jresult = (unsigned long)result; 
   return jresult;
 }
@@ -37628,6 +37652,14 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_udptl_mode(void * jarg1) {
   result = (switch_status_t)switch_rtp_udptl_mode(arg1);
   jresult = result; 
   return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_reset(void * jarg1) {
+  switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
+  
+  arg1 = (switch_rtp_t *)jarg1; 
+  switch_rtp_reset(arg1);
 }
 
 

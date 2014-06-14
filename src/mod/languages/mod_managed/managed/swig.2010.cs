@@ -3230,8 +3230,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static string switch_parse_codec_buf(string buf, SWIGTYPE_p_unsigned_long interval, SWIGTYPE_p_unsigned_long rate, SWIGTYPE_p_unsigned_long bit) {
-    string ret = freeswitchPINVOKE.switch_parse_codec_buf(buf, SWIGTYPE_p_unsigned_long.getCPtr(interval), SWIGTYPE_p_unsigned_long.getCPtr(rate), SWIGTYPE_p_unsigned_long.getCPtr(bit));
+  public static string switch_parse_codec_buf(string buf, SWIGTYPE_p_unsigned_long interval, SWIGTYPE_p_unsigned_long rate, SWIGTYPE_p_unsigned_long bit, SWIGTYPE_p_unsigned_long channels) {
+    string ret = freeswitchPINVOKE.switch_parse_codec_buf(buf, SWIGTYPE_p_unsigned_long.getCPtr(interval), SWIGTYPE_p_unsigned_long.getCPtr(rate), SWIGTYPE_p_unsigned_long.getCPtr(bit), SWIGTYPE_p_unsigned_long.getCPtr(channels));
     return ret;
   }
 
@@ -6102,6 +6102,10 @@ public class freeswitch {
   public static switch_status_t switch_rtp_udptl_mode(SWIGTYPE_p_switch_rtp rtp_session) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_udptl_mode(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session));
     return ret;
+  }
+
+  public static void switch_rtp_reset(SWIGTYPE_p_switch_rtp rtp_session) {
+    freeswitchPINVOKE.switch_rtp_reset(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session));
   }
 
   public static switch_status_t switch_rtp_set_local_address(SWIGTYPE_p_switch_rtp rtp_session, string host, ushort port, ref string err) {
@@ -11248,7 +11252,7 @@ class freeswitchPINVOKE {
   public static extern IntPtr switch_loadable_module_get_codec_interface(string jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_parse_codec_buf")]
-  public static extern string switch_parse_codec_buf(string jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4);
+  public static extern string switch_parse_codec_buf(string jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4, HandleRef jarg5);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_loadable_module_get_dialplan_interface")]
   public static extern IntPtr switch_loadable_module_get_dialplan_interface(string jarg1);
@@ -12200,6 +12204,12 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_rate_get")]
   public static extern uint switch_frame_rate_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_channels_set")]
+  public static extern void switch_frame_channels_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_channels_get")]
+  public static extern uint switch_frame_channels_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_frame_payload_set")]
   public static extern void switch_frame_payload_set(HandleRef jarg1, byte jarg2);
@@ -16367,6 +16377,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_udptl_mode")]
   public static extern int switch_rtp_udptl_mode(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_reset")]
+  public static extern void switch_rtp_reset(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_set_local_address")]
   public static extern int switch_rtp_set_local_address(HandleRef jarg1, string jarg2, ushort jarg3, ref string jarg4);
@@ -32687,6 +32700,16 @@ public class switch_frame : IDisposable {
     } 
     get {
       uint ret = freeswitchPINVOKE.switch_frame_rate_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint channels {
+    set {
+      freeswitchPINVOKE.switch_frame_channels_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_frame_channels_get(swigCPtr);
       return ret;
     } 
   }
