@@ -835,3 +835,4 @@ unimrcp/build/compile
 /curl-*/
 /sqlite-*.zip
 /sqlite-*/
+/ldns/
