@@ -584,13 +584,13 @@ Module: loggers/mod_console
 Description: mod_console
  Adds mod_console.
 
-Module: loggers/mod_logfile
-Description: mod_logfile
- Adds mod_logfile.
-
 Module: loggers/mod_graylog2
 Description: mod_graylog2
  Adds mod_greylog2.
+
+Module: loggers/mod_logfile
+Description: mod_logfile
+ Adds mod_logfile.
 
 Module: loggers/mod_syslog
 Description: mod_syslog
