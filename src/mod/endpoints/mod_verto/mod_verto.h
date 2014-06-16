@@ -89,7 +89,6 @@ struct jsock_s {
 	struct sockaddr_in local_addr;
 	struct sockaddr_in remote_addr;
 	struct sockaddr_in send_addr;
-	struct ucred credentials;
 	struct passwd pw;
 
 	int drop;
