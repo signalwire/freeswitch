@@ -411,6 +411,10 @@ Module: endpoints/mod_reference
 Description: mod_reference
  Adds mod_reference.
 
+Module: endpoints/mod_rtc
+Description: Adds mod_rtc.
+ Adds mod_rtc.
+
 Module: endpoints/mod_rtmp
 Description: mod_rtmp
  Adds mod_rtmp.
@@ -431,6 +435,10 @@ Description: mod_sofia
 Module: endpoints/mod_unicall
 Description: mod_unicall
  Adds mod_unicall.
+
+Module: endpoints/mod_verto
+Description: Adds mod_verto.
+ Adds mod_verto.
 
 ## mod/event_handlers
 
