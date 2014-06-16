@@ -49,7 +49,7 @@ class McastHandle {
 	virtual ~McastHandle();
 	int send(const char *data);
 	char *recv(int ms = 0);
-	int fileno(void);
+	int filenum(void);
 };
 
 #ifdef __cplusplus

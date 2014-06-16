@@ -1888,7 +1888,7 @@ XS(_wrap_McastHandle_recv) {
 }
 
 
-XS(_wrap_McastHandle_fileno) {
+XS(_wrap_McastHandle_filenum) {
   {
     McastHandle *arg1 = (McastHandle *) 0 ;
     int result;
@@ -1898,14 +1898,14 @@ XS(_wrap_McastHandle_fileno) {
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: McastHandle_fileno(self);");
+      SWIG_croak("Usage: McastHandle_filenum(self);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_McastHandle, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "McastHandle_fileno" "', argument " "1"" of type '" "McastHandle *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "McastHandle_filenum" "', argument " "1"" of type '" "McastHandle *""'"); 
     }
     arg1 = reinterpret_cast< McastHandle * >(argp1);
-    result = (int)(arg1)->fileno();
+    result = (int)(arg1)->filenum();
     ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
     
     XSRETURN(argvi);
@@ -1952,7 +1952,7 @@ static swig_command_info swig_commands[] = {
 {"MCASTc::delete_McastHandle", _wrap_delete_McastHandle},
 {"MCASTc::McastHandle_send", _wrap_McastHandle_send},
 {"MCASTc::McastHandle_recv", _wrap_McastHandle_recv},
-{"MCASTc::McastHandle_fileno", _wrap_McastHandle_fileno},
+{"MCASTc::McastHandle_filenum", _wrap_McastHandle_filenum},
 {0,0}
 };
 /* -----------------------------------------------------------------------------

@@ -76,7 +76,7 @@ sub DESTROY {
 
 *send = *MCASTc::McastHandle_send;
 *recv = *MCASTc::McastHandle_recv;
-*fileno = *MCASTc::McastHandle_fileno;
+*filenum = *MCASTc::McastHandle_filenum;
 sub DISOWN {
     my $self = shift;
     my $ptr = tied(%$self);
