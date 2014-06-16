@@ -1812,7 +1812,6 @@ void rayo_call_send(struct rayo_actor *call, struct rayo_message *msg)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, executing command\n", RAYO_JID(call));
 		response = handler(call, msg, session);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s, done executing command\n", RAYO_JID(call));
-		RAYO_CALL(call)->idle_start_time = switch_micro_time_now();
 	}
 	switch_core_session_rwunlock(session);
 
@@ -3719,7 +3718,7 @@ static switch_status_t rayo_call_on_read_frame(switch_core_session_t *session, s
 		switch_time_t idle_start = call->idle_start_time;
 		int idle_duration_ms = (now - idle_start) / 1000;
 		/* detect idle session (rayo-client has stopped controlling call) and terminate call */
-		if (rayo_call_is_joined(call) || rayo_call_is_faxing(call)) {
+		if (rayo_call_is_joined(call) || rayo_call_is_faxing(call) || RAYO_ACTOR(call)->ref_count > 1) {
 			call->idle_start_time = now;
 		} else if (idle_duration_ms > globals.max_idle_ms) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Ending abandoned call.  idle_duration_ms = %i ms\n", idle_duration_ms);
