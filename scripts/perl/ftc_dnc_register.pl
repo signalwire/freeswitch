@@ -32,14 +32,3 @@ foreach my $num (@nums) {
 }
 close(NUMS);
 print "Done...";
-
-
-
-
-
-
-
-
-
-
-
