@@ -1230,9 +1230,10 @@ AM_CONDITIONAL([HAVE_MYSQL],[test "$found_mysql" = "yes"])
 #
 
 AC_CHECK_PROG(PERL,perl,[ac_cv_have_perl=yes],[ac_cv_have_perl=no])
-AM_CONDITIONAL([HAVE_PERL],[test "x$ac_cv_have_perl" != "xno"])
+AC_CHECK_HEADER([EXTERN.h], [ac_cv_have_EXTERN_h=yes], [ac_cv_have_EXTERN_h=no])
+AM_CONDITIONAL([HAVE_PERL],[test "x$ac_cv_have_perl" != "xno" -a "x$ac_cv_have_EXTERN_h" != "xno"])
 
-if test "x$ac_cv_have_perl" != "xno" ; then
+if test "x$ac_cv_have_perl" != "xno" -a "x$ac_cv_have_EXTERN_h" != "xno"; then
    PERL=perl
    PERL_SITEDIR="`$PERL -MConfig -e 'print $Config{sitelibexp}'`"
    PERL_LIBDIR="-L`$PERL -MConfig -e 'print $Config{archlib}'`/CORE"
