@@ -1248,6 +1248,11 @@ if test "x$ac_cv_have_perl" != "xno"; then
 # include <perl.h>]])
    CFLAGS="$save_CFLAGS"
 
+   save_LDFLAGS="$LDFLAGS"
+   LDFLAGS="$PERL_LDFLAGS"
+   AC_CHECK_LIB([perl], [perl_alloc], ac_cv_use_libperl=yes, ac_cv_use_libperl=no)
+   LDFLAGS="$save_LDFLAGS"
+
    AC_SUBST(PERL_SITEDIR)
    AC_SUBST(PERL_LIBDIR)
    AC_SUBST(PERL_LIBS)
@@ -1256,7 +1261,7 @@ if test "x$ac_cv_have_perl" != "xno"; then
    AC_SUBST(PERL_INC)
 fi
 
-AM_CONDITIONAL([HAVE_PERL],[test "x$ac_cv_have_perl" != "xno" -a "x$ac_cv_have_EXTERN_h" != "xno"])
+AM_CONDITIONAL([HAVE_PERL],[test "x$ac_cv_have_perl" != "xno" -a "x$ac_cv_have_EXTERN_h" != "xno" -a "x$ac_cv_use_libperl" != "xno"])
 
 #
 # php checks
