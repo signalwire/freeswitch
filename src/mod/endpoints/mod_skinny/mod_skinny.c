@@ -773,6 +773,9 @@ switch_status_t channel_on_routing(switch_core_session_t *session)
 							switch_channel_get_variable(channel, "skinny_device_name"), switch_channel_get_variable(channel, "skinny_device_instance"),
 							switch_channel_get_name(channel));
 				}
+				/* clear digit timeout time */
+				listener->digit_timeout_time = 0;
+
 				/* Future bridge should go straight */
 				switch_set_flag_locked(tech_pvt, TFLAG_FORCE_ROUTE);
 				break;
