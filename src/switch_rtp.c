@@ -274,10 +274,6 @@ typedef struct ts_normalize_s {
 	uint32_t delta;
 	uint32_t delta_ct;
 	uint32_t delta_ttl;
-	uint32_t delta_avg;
-	uint32_t delta_delta;
-	double delta_percent;
-	uint8_t m;
 } ts_normalize_t;
 
 struct switch_rtp {
@@ -6196,7 +6192,6 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 		if (!rtp_session->ts_norm.last_ssrc || send_msg->header.ssrc != rtp_session->ts_norm.last_ssrc) {
 			if (rtp_session->ts_norm.last_ssrc) {
-				rtp_session->ts_norm.m = 1;
 				rtp_session->ts_norm.delta_ct = 1;
 				rtp_session->ts_norm.delta_ttl = 0;
 				if (rtp_session->ts_norm.delta) {
@@ -6210,40 +6205,12 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 		if (ntohl(send_msg->header.ts) != rtp_session->ts_norm.last_frame) {
 			rtp_session->ts_norm.delta = ntohl(send_msg->header.ts) - rtp_session->ts_norm.last_frame;
-
-			if (rtp_session->ts_norm.delta > 0) {
-				rtp_session->ts_norm.delta_ct++;
-				if (rtp_session->ts_norm.delta_ct == 1000) {
-					rtp_session->ts_norm.delta_ct = 1;
-					rtp_session->ts_norm.delta_ttl = 0;
-				}
-
-				rtp_session->ts_norm.delta_ttl += rtp_session->ts_norm.delta;
-				rtp_session->ts_norm.delta_avg = rtp_session->ts_norm.delta_ttl / rtp_session->ts_norm.delta_ct;
-				rtp_session->ts_norm.delta_delta = abs(rtp_session->ts_norm.delta_avg - rtp_session->ts_norm.delta);
-				rtp_session->ts_norm.delta_percent = (double)((double)rtp_session->ts_norm.delta / (double)rtp_session->ts_norm.delta_avg) * 100.0f;
-
-
-				//if (rtp_session->ts_norm.delta_ct > 50 && rtp_session->ts_norm.delta_percent > 150.0) {
-					//printf("%s diff %d %d (%.2f)\n",rtp_session_name(rtp_session),
-					//rtp_session->ts_norm.delta, rtp_session->ts_norm.delta_avg, rtp_session->ts_norm.delta_percent);
-					//switch_rtp_video_refresh(rtp_session);
-					//}
-			}
 			rtp_session->ts_norm.ts += rtp_session->ts_norm.delta;
 		}
 		
 		rtp_session->ts_norm.last_frame = ntohl(send_msg->header.ts);
 		send_msg->header.ts = htonl(rtp_session->ts_norm.ts);
 
-		/* wait for a marked frame since we just switched streams */
-		if (rtp_session->ts_norm.m) {
-			if (send_msg->header.m) {
-				rtp_session->ts_norm.m = 0;
-			} else {
-				send = 0;
-			}
-		}
 	}
 
 	send_msg->header.ssrc = htonl(rtp_session->ssrc);
