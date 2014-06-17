@@ -25,6 +25,7 @@
  *
  * THOSE WHO DISAGREE MAY CERTAINLY STFU
  */
+#include <switch.h>
 #include "stfu.h"
 
 //#define DB_JB 1
@@ -75,7 +76,6 @@ struct stfu_instance {
 	uint32_t samples_per_packet;
 	uint32_t samples_per_second;
 	uint32_t miss_count;
-	uint32_t max_plc;
     uint32_t qlen;
     uint32_t most_qlen;
     uint32_t max_qlen;
@@ -257,7 +257,7 @@ stfu_status_t stfu_n_resize(stfu_instance_t *i, uint32_t qlen)
     }
 
     if ((s = stfu_n_resize_aqueue(&i->a_queue, qlen)) == STFU_IT_WORKED) {
-        s = stfu_n_resize_aqueue(&i->b_queue, qlen);
+        stfu_n_resize_aqueue(&i->b_queue, qlen);
         s = stfu_n_resize_aqueue(&i->c_queue, qlen);
 
         if (qlen > i->most_qlen) {
@@ -265,7 +265,6 @@ stfu_status_t stfu_n_resize(stfu_instance_t *i, uint32_t qlen)
         }
 
         i->qlen = qlen;
-        i->max_plc = 5;
         i->last_frame = NULL;
     }
     
@@ -302,8 +301,6 @@ stfu_instance_t *stfu_n_init(uint32_t qlen, uint32_t max_qlen, uint32_t samples_
 	i->old_queue = &i->c_queue;
     i->name = strdup("none");
     
-    i->max_plc = i->qlen / 2;
-
     i->samples_per_second = samples_per_second ? samples_per_second : 8000;
     
     i->period_time = ((i->samples_per_second * 20) / i->samples_per_packet);
@@ -339,10 +336,10 @@ static void stfu_n_reset_counters(stfu_instance_t *i)
 
 }
 
-void stfu_n_reset(stfu_instance_t *i)
+void _stfu_n_reset(stfu_instance_t *i, const char *file, const char *func, int line)
 {
     if (stfu_log != null_logger && i->debug) {
-        stfu_log(STFU_LOG_EMERG, "%s RESET\n", i->name);
+        stfu_log(file, func, line, STFU_LOG_LEVEL_EMERG, "%s RESET\n", i->name);
     }
 
     i->ready = 0;
@@ -447,14 +444,11 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
 
 
         if (i->max_drift) {
-            if (i->drift_dropped_packets > 500) {
-                stfu_n_reset(i);
-            }
-
             if (i->ts_drift < i->max_drift) {
                 if (++i->drift_dropped_packets < i->drift_max_dropped) {
                     stfu_log(STFU_LOG_EMERG, "%s TOO LATE !!! %u \n\n\n", i->name, ts);
-                    return STFU_ITS_TOO_LATE;
+                    stfu_n_sync(i, 1);
+                    //return STFU_ITS_TOO_LATE;
                 }
             } else {
                 i->drift_dropped_packets = 0;
@@ -476,9 +470,7 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
                 if (stfu_log != null_logger && i->debug) {
                     stfu_log(STFU_LOG_EMERG, "%s TOO LATE !!! %u \n\n\n", i->name, ts);
                 }
-                if (i->in_queue->array_len < i->in_queue->array_size) {
-                    i->in_queue->array_len++;
-                }
+                stfu_n_sync(i, 1);
                 return STFU_ITS_TOO_LATE;
             }
         }
@@ -522,10 +514,6 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
     i->diff_total += i->diff;
 
     if ((i->period_packet_in_count > i->period_time)) {
-        //uint32_t avg;
-
-        //avg = i->diff_total / least1(i->period_packet_in_count);
-
         i->period_packet_in_count = 0;
 
         if (i->period_missing_count == 0 && i->qlen > i->orig_qlen) {
@@ -535,10 +523,7 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
 
         stfu_n_reset_counters(i);
     }
-
-
     
-
     if (stfu_log != null_logger && i->debug) {
         stfu_log(STFU_LOG_EMERG, "I: %s %u/%u i=%u/%u - g:%u/%u c:%u/%u b:%u - %u:%u - %u %d %u %u %d %d %d/%d\n", i->name,
                  i->qlen, i->max_qlen, i->period_packet_in_count, i->period_time, i->consecutive_good_count, 
@@ -584,8 +569,9 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
 
 static int stfu_n_find_any_frame(stfu_instance_t *in, stfu_queue_t *queue, stfu_frame_t **r_frame)
 {
-    uint32_t i = 0;
-    stfu_frame_t *frame = NULL;
+    uint32_t i = 0, best_index = 0;
+    int best_diff = 1000000, cur_diff = 0;
+    stfu_frame_t *frame = NULL, *best_frame = NULL;
 
     stfu_assert(r_frame);
     
@@ -593,15 +579,24 @@ static int stfu_n_find_any_frame(stfu_instance_t *in, stfu_queue_t *queue, stfu_
 
     for(i = 0; i < queue->real_array_size; i++) {
         frame = &queue->array[i];
-        if (!frame->was_read) {
-            *r_frame = frame;
-            queue->last_index = i;
-            frame->was_read = 1;
-            in->period_packet_out_count++;
-            in->session_packet_out_count++;
-            return 1;
+        cur_diff = abs(frame->ts - in->cur_ts);
+
+        if (!frame->was_read && cur_diff < best_diff) {
+            best_diff = cur_diff;
+            best_frame = frame;
+            best_index = i;
         }
     }
+
+    if (best_frame) {
+        *r_frame = best_frame;
+        queue->last_index = best_index;
+        best_frame->was_read = 1;
+        in->period_packet_out_count++;
+        in->session_packet_out_count++;
+        return 1;
+    }
+
 
     return 0;    
 }
@@ -616,7 +611,7 @@ static int stfu_n_find_frame(stfu_instance_t *in, stfu_queue_t *queue, uint32_t 
         *r_frame = NULL;
     }
 
-    for(i = 0; i < queue->array_size; i++) {
+    for(i = 0; i < queue->array_len; i++) {
         frame = &queue->array[i];
         
         if (frame->ts == max_ts || (frame->ts > min_ts && frame->ts < max_ts)) {
@@ -673,11 +668,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
     
     found = stfu_n_find_frame(i, i->out_queue, i->last_wr_ts, i->cur_ts, &rframe);
 
-    if (found) {
-        if (i->out_queue->array_len) {
-            i->out_queue->array_len--;
-        }
-    } else {
+    if (!found) {
         found = stfu_n_find_frame(i, i->in_queue, i->last_wr_ts, i->cur_ts, &rframe);
 
         if (!found) {
@@ -717,8 +708,8 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
         uint32_t y;
         stfu_frame_t *frame = NULL;
 
-        int32_t delay = i->last_rd_ts - i->cur_ts;
-        uint32_t need  = abs(i->last_rd_ts - i->cur_ts) / i->samples_per_packet;
+        int32_t delay = i->cur_ts - i->last_rd_ts;
+        uint32_t need  = abs(delay) / i->samples_per_packet;
 
         
         i->period_missing_count++;
@@ -735,27 +726,21 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
         }
 
         if (stfu_log != null_logger && i->debug) {        
-            stfu_log(STFU_LOG_EMERG, "%s ", i->name);
-            for(y = 0; y < i->out_queue->array_size; y++) {
-                if ((y % 5) == 0) stfu_log(STFU_LOG_EMERG, "\n%s ", i->name);
+            stfu_log(STFU_LOG_EMERG, "%s ------------\n", i->name);
+            for(y = 0; y < i->out_queue->array_len; y++) {
                 frame = &i->out_queue->array[y];
-                stfu_log(STFU_LOG_EMERG, "%u:%u\t", frame->ts, frame->ts / i->samples_per_packet);
+                stfu_log(STFU_LOG_EMERG, "%s\t%u:%u\n", i->name, frame->ts, frame->ts / i->samples_per_packet);
             }
-            stfu_log(STFU_LOG_EMERG, "\n%s ", i->name);
+            stfu_log(STFU_LOG_EMERG, "%s ------------\n\n\n", i->name);
 
 
-            for(y = 0; y < i->in_queue->array_size; y++) {
-                if ((y % 5) == 0) stfu_log(STFU_LOG_EMERG, "\n%s ", i->name);
+            stfu_log(STFU_LOG_EMERG, "%s ------------\n", i->name);
+            for(y = 0; y < i->in_queue->array_len; y++) {
                 frame = &i->in_queue->array[y];
-                stfu_log(STFU_LOG_EMERG, "%u:%u\t", frame->ts, frame->ts / i->samples_per_packet);
+                stfu_log(STFU_LOG_EMERG, "%s\t%u:%u\n", i->name, frame->ts, frame->ts / i->samples_per_packet);
             }
-            stfu_log(STFU_LOG_EMERG, "\n%s\n\n\n", i->name);
+            stfu_log(STFU_LOG_EMERG, "%s\n\n\n", i->name);
 
-        }
-
-        if (delay < 0) {
-            stfu_n_reset(i);
-            return NULL;
         }
     }
 
@@ -788,29 +773,45 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
         i->plc_pt = rframe->pt;
 
     } else {
-        i->last_wr_ts = i->cur_ts;
-        rframe = &i->out_queue->int_frame;
-        rframe->dlen = i->plc_len;
-        rframe->pt = i->plc_pt;
-        rframe->ts = i->cur_ts;
-        rframe->seq = i->cur_seq;
-        i->miss_count++;
-        
-        if (stfu_log != null_logger && i->debug) {
-            stfu_log(STFU_LOG_EMERG, "%s PLC %d %d %ld %u:%u\n", i->name, 
-                     i->miss_count, rframe->plc, rframe->dlen, rframe->ts, rframe->ts / i->samples_per_packet);
+        if (stfu_n_find_any_frame(i, i->out_queue, &rframe)) {
+            i->cur_ts = rframe->ts;
+            i->cur_seq = rframe->seq;
+            i->last_wr_ts = i->cur_ts;
+            i->miss_count = 0;
+
+            if (stfu_log != null_logger && i->debug) {
+                stfu_log(STFU_LOG_EMERG, "%s AUTOCORRECT %d %d %ld %u:%u\n", i->name, 
+                         i->miss_count, rframe->plc, rframe->dlen, rframe->ts, rframe->ts / i->samples_per_packet);
+            }
+
+        } else {
+            i->last_wr_ts = i->cur_ts;
+            rframe = &i->out_queue->int_frame;
+            rframe->dlen = i->plc_len;
+            rframe->pt = i->plc_pt;
+            rframe->ts = i->cur_ts;
+            rframe->seq = i->cur_seq;
+            i->miss_count++;
+
+            if (stfu_log != null_logger && i->debug) {
+                stfu_log(STFU_LOG_EMERG, "%s PLC %d/%d %d %ld %u:%u\n", i->name, 
+                         i->miss_count, i->max_qlen, rframe->plc, rframe->dlen, rframe->ts, rframe->ts / i->samples_per_packet);
+            }
         }
 
-        if (i->miss_count > i->max_plc) {
-            stfu_n_reset(i);
-            rframe = NULL;
+        if (i->miss_count > i->max_qlen) {
+            if (stfu_log != null_logger && i->debug) {
+                stfu_log(STFU_LOG_EMERG, "%s TOO MANY MISS %d/%d SYNC...\n", i->name, i->miss_count, i->max_qlen);
+            }
+            stfu_n_sync(i, 1);
         }
+        
     }
 
     return rframe;
 }
 
-STFU_DECLARE(int32_t) stfu_n_copy_next_frame(stfu_instance_t *jb, uint32_t timestamp, uint16_t seq, uint16_t distance, stfu_frame_t *next_frame)
+SWITCH_DECLARE(int32_t) stfu_n_copy_next_frame(stfu_instance_t *jb, uint32_t timestamp, uint16_t seq, uint16_t distance, stfu_frame_t *next_frame)
 {
 	uint32_t i = 0, j = 0;
 #ifdef WIN32
