@@ -27,6 +27,7 @@ avoid_mods=(
   endpoints/mod_opal
   endpoints/mod_reference
   endpoints/mod_unicall
+  endpoints/mod_verto
   languages/mod_managed
   sdk/autotools
   xml_int/mod_xml_ldap
