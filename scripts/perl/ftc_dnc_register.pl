@@ -21,7 +21,7 @@ my @nums = <NUMS>;
 foreach my $num (@nums) {
   chomp $num;
   $num =~ s/^1//;
-  next if lenght($num) != 10;
+  next if length($num) != 10;
   print "Dialing from $num\n";
   my @digits = split(//, $num);
   my $dial = join('w', @digits);
