@@ -1238,8 +1238,8 @@ if test "x$ac_cv_have_perl" != "xno"; then
    PERL_SITEDIR="`$PERL -MConfig -e 'print $Config{archlib}'`"
    PERL_LIBDIR="-L`$PERL -MConfig -e 'print $Config{archlib}'`/CORE"
    PERL_LIBS="`$PERL -MConfig -e 'print $Config{libs}'`"
-   PERL_CFLAGS="-w -DMULTIPLICITY `$PERL -MExtUtils::Embed -e ccopts` -DEMBED_PERL"
-   PERL_LDFLAGS="`$PERL -MExtUtils::Embed -e ldopts`"
+   PERL_CFLAGS="-w -DMULTIPLICITY `$PERL -MExtUtils::Embed -e ccopts | sed -e 's|-arch x86_64 -arch i386||'` -DEMBED_PERL"
+   PERL_LDFLAGS="`$PERL -MExtUtils::Embed -e ldopts| sed -e 's|-arch x86_64 -arch i386||'`"
    PERL_INC="`$PERL -MExtUtils::Embed -e perl_inc`"
 
    save_CFLAGS="$CFLAGS"
