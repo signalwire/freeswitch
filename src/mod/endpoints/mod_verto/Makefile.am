@@ -20,8 +20,8 @@ MCAST_la_LDFLAGS   = -avoid-version -module -no-undefined -shared $(PERL_LDFLAGS
 install-data-local: perlmod-install
 
 perlmod-install: install-perlLTLIBRARIES
-	install -d -m 755 $(PERL_SITEDIR)
-	install -m 755 mcast/MCAST.pm $(PERL_SITEDIR)
+	install -d -m 755 $(DESTDIR)$(PERL_SITEDIR)
+	install -m 755 mcast/MCAST.pm $(DESTDIR)$(PERL_SITEDIR)
 endif
 
 mcast/esl_wrap.cpp:
