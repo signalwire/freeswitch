@@ -8,6 +8,7 @@
 #
 FSPREFIX=/usr/local/freeswitch
 PREFIX=/usr/local/
+DOWNLOAD=http://files.freeswitch.org/downloads/libs
 JP=v8d
 SSL=1.0.1h
 SQLITE=autoconf-3080403
@@ -48,62 +49,62 @@ clean:
 libjpeg: jpeg-8d/.done
 
 jpeg-8d/.done:
-	(test -d jpeg-8d) || (wget -4 -O jpegsrc.$(JP).tar.gz http://www.ijg.org/files/jpegsrc.$(JP).tar.gz && tar zxfv jpegsrc.$(JP).tar.gz)
+	(test -d jpeg-8d) || (wget -4 -O jpegsrc.$(JP).tar.gz $(DOWNLOAD)/jpegsrc.$(JP).tar.gz && tar zxfv jpegsrc.$(JP).tar.gz)
 	(cd jpeg-8d && CFLAGS=-m64 LDFLAGS=-m64 ./configure --prefix=$(PREFIX) && gmake && sudo gmake install && touch .done)
 
 openssl: openssl-$(SSL)/.done
 openssl-$(SSL)/.done: openssl-$(SSL)
 openssl-$(SSL):
-	(test -d $@) || (wget -4 -O $@.tar.gz http://www.openssl.org/source/$@.tar.gz && tar zxfv $@.tar.gz)
+	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
 	(cd $@ && CFLAGS=-m64 LDFLAGS=-m64 ./Configure --prefix=$(PREFIX) solaris64-x86_64-gcc shared && gmake && sudo gmake install && touch .done)
 
 sqlite: sqlite-$(SQLITE)/.done
 sqlite-$(SQLITE)/.done: sqlite-$(SQLITE)
 sqlite-$(SQLITE):
-	(test -d $@) || (wget -4 -O $@.tar.gz http://www.sqlite.org/2014/$@.tar.gz && tar zxfv $@.tar.gz)
+	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
 	(cd $@ && CFLAGS=-m64 LDFLAGS=-m64 ./configure --prefix=$(PREFIX) && gmake && sudo gmake install && touch .done)
 
 pcre: pcre-$(PCRE)/.done
 pcre-$(PCRE)/.done: pcre-$(PCRE)
 pcre-$(PCRE):
-	(test -d $@) || (wget -4 -O $@.tar.gz http://downloads.sourceforge.net/project/pcre/pcre/$(PCRE)/$@.tar.gz && tar zxfv $@.tar.gz)
+	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
 	(cd $@ && CXXFLAGS=-m64 CFLAGS=-m64 LDFLAGS=-m64 ./configure --prefix=$(PREFIX) && gmake && sudo gmake install && touch .done)
 
 curl: curl-$(CURL)/.done
 curl-$(CURL)/.done: curl-$(CURL)
 curl-$(CURL):
-	(test -d $@) || (wget -4 -O $@.tar.gz http://files.freeswitch.org/downloads/libs/$@.tar.gz && tar zxfv $@.tar.gz)
+	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
 	(cd $@ && CFLAGS=-m64 LDFLAGS=-m64 ./configure --prefix=$(PREFIX) && gmake && sudo gmake install && touch .done)
 
 speex: speex-$(SPEEX)/.done
 speex-$(SPEEX)/.done: speex-$(SPEEX)
 speex-$(SPEEX):
-	(test -d $@) || (wget -4 -O $@.tar.gz http://downloads.xiph.org/releases/speex/$@.tar.gz && tar zxfv $@.tar.gz)
+	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
 	(cd $@ && CFLAGS=-m64 LDFLAGS=-m64 ./configure --prefix=$(PREFIX) && gmake && sudo gmake install && touch .done)
 
 libedit: libedit-$(LIBEDIT)/.done
 libedit-$(LIBEDIT)/.done: libedit-$(LIBEDIT)
 libedit-$(LIBEDIT):
-	(test -d $@) || (wget -4 -O $@.tar.gz http://thrysoee.dk/editline/$@.tar.gz && tar zxfv $@.tar.gz)
+	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
 	(cd $@ && CFLAGS=-m64 LDFLAGS=-m64 ./configure --prefix=$(PREFIX) && gmake && sudo gmake install && touch .done)
 
 ldns: openssl ldns-$(LDNS)/.done
 ldns-$(LDNS)/.done: ldns-$(LDNS)
 ldns-$(LDNS):
-	(test -d $@) || (wget -4 -O $@.tar.gz http://www.nlnetlabs.nl/downloads/ldns/$@.tar.gz && tar zxfv $@.tar.gz)
+	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
 	(cd $@ && CFLAGS=-m64 LDFLAGS=-m64 ./configure --with-ssl=$(PREFIX) --prefix=$(PREFIX) && gmake && sudo gmake install && touch .done)
 
 pkg-config: openssl pkg-config-$(PKGCFG)/.done
 pkg-config-$(PKGCFG)/.done: pkg-config-$(PKGCFG)
 pkg-config-$(PKGCFG):
-	(test -d $@) || (wget -4 -O $@.tar.gz http://pkgconfig.freedesktop.org/releases/$@.tar.gz && tar zxfv $@.tar.gz)
+	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
 	(cd $@ && CFLAGS=-m64 LDFLAGS=-m64 ./configure --with-internal-glib --prefix=$(PREFIX) && sudo gmake uninstall && gmake && sudo gmake install && \
 	touch .done)
 
 perl: openssl perl-$(PERL)/.done
 perl-$(PERL)/.done: perl-$(PERL)
 perl-$(PERL):
-	(test -d $@) || (wget -4 -O $@.tar.gz http://www.cpan.org/src/5.0/$@.tar.gz && tar zxfv $@.tar.gz)
+	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
 	(cd $@ && CFLAGS=-m64 LDFLAGS=-m64 ./configure.gnu -Dcc=gcc --prefix=$(PREFIX) && gmake && sudo gmake install && touch .done)
 
 deps: has-git libjpeg openssl sqlite pcre curl speex libedit ldns pkg-config perl

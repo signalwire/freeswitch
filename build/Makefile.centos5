@@ -9,8 +9,9 @@
 #
 FSPREFIX=/usr/local/freeswitch
 PREFIX=/opt/fs-libs
+DOWNLOAD=http://files.freeswitch.org/downloads/libs
 JPEG=v8d
-OPENSSL=1.0.1g
+OPENSSL=1.0.1h
 SQLITE=autoconf-3080403
 PCRE=8.35
 CURL=7.35.0
@@ -50,49 +51,49 @@ clean:
 libjpeg: jpeg-8d/.done
 
 jpeg-8d/.done:
-	(test -d jpeg-8d) || (wget -4 -O jpegsrc.$(JPEG).tar.gz http://www.ijg.org/files/jpegsrc.$(JPEG).tar.gz && tar zxfv jpegsrc.$(JPEG).tar.gz)
+	(test -d jpeg-8d) || (wget -4 -O jpegsrc.$(JPEG).tar.gz $(DOWNLOAD)/jpegsrc.$(JPEG).tar.gz && tar zxfv jpegsrc.$(JPEG).tar.gz)
 	(cd jpeg-8d && ./configure --prefix=$(PREFIX) && make && sudo make install && touch .done)
 
 openssl: openssl-$(OPENSSL)/.done
 openssl-$(OPENSSL)/.done: openssl-$(OPENSSL)
 openssl-$(OPENSSL):
-	(test -d $@) || (wget -4 -O $@.tar.gz http://www.openssl.org/source/$@.tar.gz && tar zxfv $@.tar.gz)
+	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
 	(cd $@ && ./Configure --prefix=$(PREFIX) linux-x86_64 shared && make && sudo make install && touch .done)
 
 sqlite: sqlite-$(SQLITE)/.done
 sqlite-$(SQLITE)/.done: sqlite-$(SQLITE)
 sqlite-$(SQLITE):
-	(test -d $@) || (wget -4 -O $@.tar.gz http://www.sqlite.org/2014/$@.tar.gz && tar zxfv $@.tar.gz)
+	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
 	(cd $@ && ./configure --prefix=$(PREFIX) && make && sudo make install && touch .done_sqlite && touch .done)
 
 pcre: pcre-$(PCRE)/.done
 pcre-$(PCRE)/.done: pcre-$(PCRE)
 pcre-$(PCRE):
-	(test -d $@) || (wget -4 -O $@.tar.gz http://downloads.sourceforge.net/project/pcre/pcre/$(PCRE)/$@.tar.gz && tar zxfv $@.tar.gz)
+	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
 	(cd $@ && ./configure --prefix=$(PREFIX) && make && sudo make install && touch .done)
 
 curl: curl-$(CURL)/.done
 curl-$(CURL)/.done: curl-$(CURL)
 curl-$(CURL):
-	(test -d $@) || (wget -4 -O $@.tar.gz http://files.freeswitch.org/downloads/libs/$@.tar.gz && tar zxfv $@.tar.gz)
+	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
 	(cd $@ && ./configure --prefix=$(PREFIX) && make && sudo make install && touch .done)
 
 speex: speex-$(SPEEX)/.done
 speex-$(SPEEX)/.done: speex-$(SPEEX)
 speex-$(SPEEX):
-	(test -d $@) || (wget -4 -O $@.tar.gz http://downloads.xiph.org/releases/speex/$@.tar.gz && tar zxfv $@.tar.gz)
+	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
 	(cd $@ && ./configure --prefix=$(PREFIX) && make && sudo make install && touch .done)
 
 libedit: libedit-$(LIBEDIT)/.done
 libedit-$(LIBEDIT)/.done: libedit-$(LIBEDIT)
 libedit-$(LIBEDIT):
-	(test -d $@) || (wget -4 -O $@.tar.gz http://thrysoee.dk/editline/$@.tar.gz && tar zxfv $@.tar.gz)
+	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
 	(cd $@ && ./configure --prefix=$(PREFIX) && make && sudo make install && touch .done)
 
 ldns: ldns-$(LDNS)/.done
 ldns-$(LDNS)/.done: ldns-$(LDNS)
 ldns-$(LDNS):
-	(test -d $@) || (wget -4 -O $@.tar.gz http://www.nlnetlabs.nl/downloads/ldns/$@.tar.gz && tar zxfv $@.tar.gz)
+	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
 	(cd $@ && ./configure --with-ssl=$(PREFIX) --prefix=$(PREFIX) && make && sudo make install && touch .done)
 
 deps: libjpeg openssl sqlite pcre curl speex libedit ldns
