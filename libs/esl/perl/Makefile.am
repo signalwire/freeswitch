@@ -12,9 +12,9 @@ perlmod: ESL.la
 install-data-local: perlmod-install
 
 perlmod-install: install-perlLTLIBRARIES
-	install -m 755 ESL.pm $(PERL_SITEDIR)
-	install -d -m 755 ESL $(PERL_SITEDIR)/ESL
-	install -m 755 ESL/* $(PERL_SITEDIR)/ESL
+	install -d -m 755 ESL $(DESTDIR)$(PERL_SITEDIR)/ESL
+	install -m 755 ESL.pm $(DESTDIR)$(PERL_SITEDIR)
+	install -m 755 ESL/* $(DESTDIR)$(PERL_SITEDIR)/ESL
 endif
 
 esl_wrap.cpp:
