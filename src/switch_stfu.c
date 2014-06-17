@@ -471,11 +471,8 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
                 if (stfu_log != null_logger && i->debug) {
                     stfu_log(STFU_LOG_EMERG, "%s TOO LATE !!! %u \n\n\n", i->name, ts);
                 }
-                if (i->in_queue->array_len < i->in_queue->array_size) {
-                    i->in_queue->array_len++;
-                }
                 stfu_n_sync(i, 1);
-                //return STFU_ITS_TOO_LATE;
+                return STFU_ITS_TOO_LATE;
             }
         }
     }
@@ -615,7 +612,7 @@ static int stfu_n_find_frame(stfu_instance_t *in, stfu_queue_t *queue, uint32_t 
         *r_frame = NULL;
     }
 
-    for(i = 0; i < queue->array_size; i++) {
+    for(i = 0; i < queue->array_len; i++) {
         frame = &queue->array[i];
         
         if (frame->ts == max_ts || (frame->ts > min_ts && frame->ts < max_ts)) {
@@ -672,11 +669,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
     
     found = stfu_n_find_frame(i, i->out_queue, i->last_wr_ts, i->cur_ts, &rframe);
 
-    if (found) {
-        if (i->out_queue->array_len) {
-            i->out_queue->array_len--;
-        }
-    } else {
+    if (!found) {
         found = stfu_n_find_frame(i, i->in_queue, i->last_wr_ts, i->cur_ts, &rframe);
 
         if (!found) {
@@ -735,7 +728,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 
         if (stfu_log != null_logger && i->debug) {        
             stfu_log(STFU_LOG_EMERG, "%s ------------\n", i->name);
-            for(y = 0; y < i->out_queue->array_size; y++) {
+            for(y = 0; y < i->out_queue->array_len; y++) {
                 frame = &i->out_queue->array[y];
                 stfu_log(STFU_LOG_EMERG, "%s\t%u:%u\n", i->name, frame->ts, frame->ts / i->samples_per_packet);
             }
@@ -743,7 +736,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 
 
             stfu_log(STFU_LOG_EMERG, "%s ------------\n", i->name);
-            for(y = 0; y < i->in_queue->array_size; y++) {
+            for(y = 0; y < i->in_queue->array_len; y++) {
                 frame = &i->in_queue->array[y];
                 stfu_log(STFU_LOG_EMERG, "%s\t%u:%u\n", i->name, frame->ts, frame->ts / i->samples_per_packet);
             }
