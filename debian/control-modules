@@ -439,6 +439,7 @@ Description: mod_unicall
 Module: endpoints/mod_verto
 Description: Adds mod_verto.
  Adds mod_verto.
+Build-Depends: libperl-dev
 
 ## mod/event_handlers
 
