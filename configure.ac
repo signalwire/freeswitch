@@ -1230,17 +1230,23 @@ AM_CONDITIONAL([HAVE_MYSQL],[test "$found_mysql" = "yes"])
 #
 
 AC_CHECK_PROG(PERL,perl,[ac_cv_have_perl=yes],[ac_cv_have_perl=no])
-AC_CHECK_HEADER([EXTERN.h], [ac_cv_have_EXTERN_h=yes], [ac_cv_have_EXTERN_h=no])
-AM_CONDITIONAL([HAVE_PERL],[test "x$ac_cv_have_perl" != "xno" -a "x$ac_cv_have_EXTERN_h" != "xno"])
 
-if test "x$ac_cv_have_perl" != "xno" -a "x$ac_cv_have_EXTERN_h" != "xno"; then
+# -a "x$ac_cv_have_EXTERN_h" != "xno"
+
+if test "x$ac_cv_have_perl" != "xno"; then
    PERL=perl
-   PERL_SITEDIR="`$PERL -MConfig -e 'print $Config{sitelibexp}'`"
+   PERL_SITEDIR="`$PERL -MConfig -e 'print $Config{archlib}'`"
    PERL_LIBDIR="-L`$PERL -MConfig -e 'print $Config{archlib}'`/CORE"
    PERL_LIBS="`$PERL -MConfig -e 'print $Config{libs}'`"
    PERL_CFLAGS="-w -DMULTIPLICITY `$PERL -MExtUtils::Embed -e ccopts` -DEMBED_PERL"
    PERL_LDFLAGS="`$PERL -MExtUtils::Embed -e ldopts`"
    PERL_INC="`$PERL -MExtUtils::Embed -e perl_inc`"
+
+   save_CPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$PERL_CFLAGS $CPPFLAGS"
+   AC_CHECK_HEADER([EXTERN.h], [ac_cv_have_EXTERN_h=yes], [ac_cv_have_EXTERN_h=no])
+   CPPFLAGS="$save_CPPFLAGS"
+
    AC_SUBST(PERL_SITEDIR)
    AC_SUBST(PERL_LIBDIR)
    AC_SUBST(PERL_LIBS)
@@ -1248,6 +1254,8 @@ if test "x$ac_cv_have_perl" != "xno" -a "x$ac_cv_have_EXTERN_h" != "xno"; then
    AC_SUBST(PERL_LDFLAGS)
    AC_SUBST(PERL_INC)
 fi
+
+AM_CONDITIONAL([HAVE_PERL],[test "x$ac_cv_have_perl" != "xno" -a "x$ac_cv_have_EXTERN_h" != "xno"])
 
 #
 # php checks
