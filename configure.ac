@@ -1242,10 +1242,11 @@ if test "x$ac_cv_have_perl" != "xno"; then
    PERL_LDFLAGS="`$PERL -MExtUtils::Embed -e ldopts`"
    PERL_INC="`$PERL -MExtUtils::Embed -e perl_inc`"
 
-   save_CPPFLAGS="$CPPFLAGS"
-   CPPFLAGS="$PERL_CFLAGS $CPPFLAGS"
-   AC_CHECK_HEADER([EXTERN.h], [ac_cv_have_EXTERN_h=yes], [ac_cv_have_EXTERN_h=no])
-   CPPFLAGS="$save_CPPFLAGS"
+   save_CFLAGS="$CFLAGS"
+   CFLAGS="$PERL_CFLAGS"
+   AC_CHECK_HEADER([EXTERN.h], [ac_cv_have_EXTERN_h=yes], [ac_cv_have_EXTERN_h=no], [[#include <EXTERN.h>
+# include <perl.h>]])
+   CFLAGS="$save_CFLAGS"
 
    AC_SUBST(PERL_SITEDIR)
    AC_SUBST(PERL_LIBDIR)
