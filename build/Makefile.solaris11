@@ -1,0 +1,108 @@
+#
+# FreeSWITCH auto-build Makefile (Solaris 11.1 64bit Tonka Truck Edition)
+# http://www.freeswitch.org
+# put this file anywhere and type gmake to
+# create a fully-built freeswitch.git from scratch
+# in that same directory.
+#
+#
+FSPREFIX=/usr/local/freeswitch
+PREFIX=/usr/local/
+JP=v8d
+SSL=1.0.1h
+SQLITE=autoconf-3080403
+PCRE=8.35
+CURL=7.36.0
+SPEEX=1.2rc1
+LIBEDIT=20140213-3.1
+LDNS=1.6.17
+PKGCFG=0.28
+PERL=5.18.2
+
+freeswitch: deps has-git freeswitch.git/Makefile
+	cd freeswitch.git && gmake
+
+freeswitch.git/Makefile: freeswitch.git/configure
+	export PATH=$PATH:$(PREFIX)/bin
+	cd freeswitch.git && PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig ./configure --enable-64 LDFLAGS='-L$(PREFIX)/lib -Wl,-rpath=$(PREFIX)/lib' CFLAGS='-I$(PREFIX)/include' --prefix=$(FSPREFIX)
+
+freeswitch.git/configure: freeswitch.git/bootstrap.sh
+	cd freeswitch.git && sh bootstrap.sh
+
+freeswitch.git/bootstrap.sh: has-git
+	test -d freeswitch.git || git clone git://git.freeswitch.org/freeswitch.git freeswitch.git
+
+install: freeswitch
+	cd freeswitch.git && gmake install
+
+install-git:
+	pkg install git autoconf automake libtool libjpeg gcc-45 wget
+
+has-git: 
+	@git --version || (echo "please install git by running 'gmake install-git'" && false)
+
+clean:
+	@rm -rf openssl* ldns* jpeg* pcre* perl* pkg-config* speex* sqlite* libedit* curl* *~
+	(cd freeswitch.git && git clean -fdx && git reset --hard HEAD && git pull)
+
+libjpeg: jpeg-8d/Makefile
+
+jpeg-8d/Makefile:
+	(test -d jpeg-8d) || (wget -4 -O jpegsrc.$(JP).tar.gz http://www.ijg.org/files/jpegsrc.$(JP).tar.gz && tar zxfv jpegsrc.$(JP).tar.gz)
+	(cd jpeg-8d && CFLAGS=-m64 LDFLAGS=-m64 ./configure --prefix=$(PREFIX) && gmake && sudo gmake install)
+
+openssl: openssl-$(SSL)/Makefile
+openssl-$(SSL)/Makefile: openssl-$(SSL)
+openssl-$(SSL):
+	(test -d $@) || (wget -4 -O $@.tar.gz http://www.openssl.org/source/$@.tar.gz && tar zxfv $@.tar.gz)
+	(cd $@ && CFLAGS=-m64 LDFLAGS=-m64 ./Configure --prefix=$(PREFIX) solaris64-x86_64-gcc shared && gmake && sudo gmake install)
+
+sqlite: sqlite-$(SQLITE)/Makefile
+sqlite-$(SQLITE)/Makefile: sqlite-$(SQLITE)
+sqlite-$(SQLITE):
+	(test -d $@) || (wget -4 -O $@.tar.gz http://www.sqlite.org/2014/$@.tar.gz && tar zxfv $@.tar.gz)
+	(cd $@ && CFLAGS=-m64 LDFLAGS=-m64 ./configure --prefix=$(PREFIX) && gmake && sudo gmake install)
+
+pcre: pcre-$(PCRE)/Makefile
+pcre-$(PCRE)/Makefile: pcre-$(PCRE)
+pcre-$(PCRE):
+	(test -d $@) || (wget -4 -O $@.tar.gz http://downloads.sourceforge.net/project/pcre/pcre/$(PCRE)/$@.tar.gz && tar zxfv $@.tar.gz)
+	(cd $@ && CXXFLAGS=-m64 CFLAGS=-m64 LDFLAGS=-m64 ./configure --prefix=$(PREFIX) && gmake && sudo gmake install)
+
+curl: curl-$(CURL)/Makefile
+curl-$(CURL)/Makefile: curl-$(CURL)
+curl-$(CURL):
+	(test -d $@) || (wget -4 -O $@.tar.gz http://www.execve.net/curl/$@.tar.gz && tar zxfv $@.tar.gz)
+	(cd $@ && CFLAGS=-m64 LDFLAGS=-m64 ./configure --prefix=$(PREFIX) && gmake && sudo gmake install)
+
+speex: speex-$(SPEEX)/Makefile
+speex-$(SPEEX)/Makefile: speex-$(SPEEX)
+speex-$(SPEEX):
+	(test -d $@) || (wget -4 -O $@.tar.gz http://downloads.xiph.org/releases/speex/$@.tar.gz && tar zxfv $@.tar.gz)
+	(cd $@ && CFLAGS=-m64 LDFLAGS=-m64 ./configure --prefix=$(PREFIX) && gmake && sudo gmake install)
+
+libedit: libedit-$(LIBEDIT)/Makefile
+libedit-$(LIBEDIT)/Makefile: libedit-$(LIBEDIT)
+libedit-$(LIBEDIT):
+	(test -d $@) || (wget -4 -O $@.tar.gz http://thrysoee.dk/editline/$@.tar.gz && tar zxfv $@.tar.gz)
+	(cd $@ && CFLAGS=-m64 LDFLAGS=-m64 ./configure --prefix=$(PREFIX) && gmake && sudo gmake install)
+
+ldns: openssl ldns-$(LDNS)/Makefile
+ldns-$(LDNS)/Makefile: ldns-$(LDNS)
+ldns-$(LDNS):
+	(test -d $@) || (wget -4 -O $@.tar.gz http://www.nlnetlabs.nl/downloads/ldns/$@.tar.gz && tar zxfv $@.tar.gz)
+	(cd $@ && CFLAGS=-m64 LDFLAGS=-m64 ./configure --with-ssl=$(PREFIX) --prefix=$(PREFIX) && gmake && sudo gmake install)
+
+pkg-config: openssl pkg-config-$(PKGCFG)/Makefile
+pkg-config-$(PKGCFG)/Makefile: pkg-config-$(PKGCFG)
+pkg-config-$(PKGCFG):
+	(test -d $@) || (wget -4 -O $@.tar.gz http://pkgconfig.freedesktop.org/releases/$@.tar.gz && tar zxfv $@.tar.gz)
+	(cd $@ && CFLAGS=-m64 LDFLAGS=-m64 ./configure --with-internal-glib --prefix=$(PREFIX) && sudo gmake uninstall && gmake && sudo gmake install)
+
+perl: openssl perl-$(PERL)/Makefile
+perl-$(PERL)/Makefile: perl-$(PERL)
+perl-$(PERL):
+	(test -d $@) || (wget -4 -O $@.tar.gz http://www.cpan.org/src/5.0/$@.tar.gz && tar zxfv $@.tar.gz)
+	(cd $@ && CFLAGS=-m64 LDFLAGS=-m64 ./configure.gnu -Dcc=gcc --prefix=$(PREFIX) && gmake && sudo gmake install)
+
+deps: libjpeg openssl sqlite pcre curl speex libedit ldns pkg-config perl
