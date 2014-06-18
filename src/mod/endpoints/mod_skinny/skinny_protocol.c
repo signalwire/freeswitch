@@ -1018,7 +1018,7 @@ switch_status_t perform_send_display_prompt_status(listener_t *listener,
 	message->data.display_prompt_status.line_instance = line_instance;
 	message->data.display_prompt_status.call_id = call_id;
 
-	tmp = skinny_expand_textid(display);
+	tmp = skinny_format_message(display);
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 		"Send Display Prompt Status with Timeout (%d), Display (%s), Line Instance (%d), Call ID (%d)\n", 
@@ -1140,6 +1140,7 @@ switch_status_t perform_send_display_pri_notify(listener_t *listener,
 		char *notify)
 {
 	skinny_message_t *message;
+	char *tmp;
 
 	skinny_create_message(message, DISPLAY_PRI_NOTIFY_MESSAGE, display_pri_notify);
 
@@ -1147,9 +1148,13 @@ switch_status_t perform_send_display_pri_notify(listener_t *listener,
 	message->data.display_pri_notify.priority = priority;
 	strncpy(message->data.display_pri_notify.notify, notify, 32);
 
+	tmp = skinny_format_message(notify);
+
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 		"Send Display Pri Notify with Timeout (%d), Priority (%d), Message (%s)\n", 
-		message_timeout, priority, notify);
+		message_timeout, priority, tmp);
+
+	switch_safe_free(tmp);
 
 	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }

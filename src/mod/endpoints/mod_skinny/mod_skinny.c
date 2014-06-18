@@ -105,7 +105,7 @@ static char active_lines_sql[] =
 /*****************************************************************************/
 /* TEXT FUNCTIONS */
 /*****************************************************************************/
-char *skinny_expand_textid(const char *str)
+char *skinny_format_message(const char *str)
 {
 	char *tmp;
 	switch_size_t i;
@@ -131,6 +131,9 @@ char *skinny_expand_textid(const char *str)
 			}
 			switch_safe_free(old);
 			i++;
+		} else if ( !switch_isprint(str[i]) ) {
+			tmp = switch_mprintf("%s\\x%.2X", old, str[i]);
+			switch_safe_free(old);
 		} else {
 			tmp = switch_mprintf("%s%c", old, str[i]);
 			switch_safe_free(old);
