@@ -1723,12 +1723,16 @@ switch_status_t skinny_handle_button_template_request(listener_t *listener, skin
 
 switch_status_t skinny_handle_version_request(listener_t *listener, skinny_message_t *request)
 {
+	int saw_entry = 0;
+
 	if (zstr(listener->firmware_version)) {
 		char *id_str;
 		skinny_device_type_params_t *params;
 		id_str = switch_mprintf("%d", listener->device_type);
 		params = (skinny_device_type_params_t *) switch_core_hash_find(listener->profile->device_type_params_hash, id_str);
 		if (params) {
+			saw_entry = 1;
+
 			if (!zstr(params->firmware_version)) {
 				strncpy(listener->firmware_version, params->firmware_version, 16);
 			}
@@ -1737,6 +1741,9 @@ switch_status_t skinny_handle_version_request(listener_t *listener, skinny_messa
 
 	if (!zstr(listener->firmware_version)) {
 		return send_version(listener, listener->firmware_version);
+	} else if (saw_entry) {
+		/* found entry with an empty string */
+		return send_version(listener, "");
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 				"Device %s:%d is requesting for firmware version, but none is set.\n",
