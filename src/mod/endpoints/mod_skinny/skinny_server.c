@@ -1741,7 +1741,9 @@ switch_status_t skinny_handle_version_request(listener_t *listener, skinny_messa
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 				"Device %s:%d is requesting for firmware version, but none is set.\n",
 				listener->device_name, listener->device_instance);
-		return SWITCH_STATUS_SUCCESS;
+
+		/* CCM sends back an answer, but with all nulls */
+		return send_version(listener, "");
 	}
 }
 
