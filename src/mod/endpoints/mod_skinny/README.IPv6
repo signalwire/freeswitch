@@ -1,0 +1,18 @@
+mod_skinny currently does not support IPv6 (as of 2014-06-17)
+
+According to Cisco documentation, the underlying protocol does support IPv6 for the "G" series
+phones. (Basically a subset of the models running the java based image.)
+
+http://www.cisco.com/c/en/us/support/docs/voice-unified-communications/unified-communications-manager-version-70/112997-cucmipv6-00.html 
+
+	7906G, 7911G, 7931G, 7942G, 7945G, 7962G, 7965G, and the 7975G
+
+It is possible that others would be supported, and are just not listed in the Cisco documentation
+due to them being past end-of-life. 
+
+Additional changes will be required to mod_skinny to actually support IPv6, at a bare minimum, the
+current code has at least one data structure for the server response that contains a fixed
+layout structure with uint32_t's for IP addresses.
+
+If someone has an existing CCM deployment that is using IPv6, sample network captures would be
+appreciated.
