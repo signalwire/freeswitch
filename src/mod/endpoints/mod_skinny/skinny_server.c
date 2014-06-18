@@ -285,7 +285,15 @@ switch_status_t skinny_session_process_dest(switch_core_session_t *session, list
 	channel = switch_core_session_get_channel(session);
 	tech_pvt = switch_core_session_get_private(session);
 
-	if (!dest) {
+	// get listener profile setting for ringdown/autodial
+	// if initial offhook - and we have a ringdown/autodial configured, just dial it in one shot
+	if (!dest && append_dest == '\0' && listener->ext_autodial ) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+			"triggering auto dial to (%s)\n", listener->ext_autodial);
+
+		tech_pvt->caller_profile->destination_number = switch_core_strdup(tech_pvt->caller_profile->pool, listener->ext_autodial);
+		switch_set_flag_locked(tech_pvt, TFLAG_FORCE_ROUTE);
+	} else if (!dest) {
 		if (strlen(tech_pvt->caller_profile->destination_number) == 0) {/* no digit yet */
 			send_start_tone(listener, SKINNY_TONE_DIALTONE, 0, line_instance, tech_pvt->call_id);
 		}
@@ -1127,6 +1135,10 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 				} else if (!strcasecmp(name, "ext-cfwdall")) {
 					if (!listener->ext_cfwdall || strcmp(value,listener->ext_cfwdall)) {
 						listener->ext_cfwdall = switch_core_strdup(profile->pool, value);
+					}
+				} else if (!strcasecmp(name, "ext-autodial")) {
+					if (!listener->ext_autodial || strcmp(value,listener->ext_autodial)) {
+						listener->ext_autodial = switch_core_strdup(profile->pool, value);
 					}
 				}
 			}

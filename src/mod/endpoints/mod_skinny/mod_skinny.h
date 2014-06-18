@@ -203,6 +203,7 @@ struct listener {
 	char *ext_meetme;
 	char *ext_pickup;
 	char *ext_cfwdall;
+	char *ext_autodial;
 };
 
 typedef struct listener listener_t;
