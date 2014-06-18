@@ -9,19 +9,19 @@ mod_verto_la_LIBADD   = $(switch_builddir)/libfreeswitch.la
 mod_verto_la_LDFLAGS  = -avoid-version -module -no-undefined -shared
 
 if HAVE_PERL
-perldir = $(PERL_SITEDIR)
-perl_LTLIBRARIES = MCAST.la
+#perldir = $(PERL_SITEDIR)
+noinst_LTLIBRARIES = MCAST.la
 MCAST_la_SOURCES   = mcast/mcast_wrap.cpp mcast/perlxsi.c mcast/mcast.c mcast/mcast_cpp.cpp
 MCAST_la_CFLAGS    = $(CC_CFLAGS) $(CFLAGS) $(SWITCH_AM_CFLAGS) $(PERL_CFLAGS)
 MCAST_la_CXXFLAGS  = $(SWITCH_AM_CXXFLAGS) $(CXXFLAGS) -w $(PERL_INC)
 MCAST_la_CPPFLAGS  = -I$(switch_srcdir)/src/mod/endpoints/mod_verto/mcast
 MCAST_la_LDFLAGS   = -avoid-version -module -no-undefined -shared $(PERL_LDFLAGS)
 
-install-data-local: perlmod-install
+#install-data-local: perlmod-install
 
-perlmod-install: install-perlLTLIBRARIES
-	install -d -m 755 $(DESTDIR)$(PERL_SITEDIR)
-	install -m 755 mcast/MCAST.pm $(DESTDIR)$(PERL_SITEDIR)
+#perlmod-install: install-perlLTLIBRARIES
+#	install -d -m 755 $(DESTDIR)$(PERL_SITEDIR)
+#	install -m 755 mcast/MCAST.pm $(DESTDIR)$(PERL_SITEDIR)
 endif
 
 mcast/esl_wrap.cpp:
