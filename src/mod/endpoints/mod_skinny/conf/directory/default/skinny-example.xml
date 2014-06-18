@@ -7,6 +7,7 @@
     <param name="ext-voicemail" value="voicemail">
     <param name="ext-redial" value="redial">
     <param name="ext-meetme" value="conference">
+    <param name="ext-autodial" value="operator">
     -->
 
     <!-- if you define an extension that runs 'pickup' application with 'key' as the data
