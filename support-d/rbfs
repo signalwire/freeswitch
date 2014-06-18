@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+fs_cli -x "fsctl shutdown now"
+pkill -9 freeswitch
+sleep 1
+/usr/local/freeswitch/bin/freeswitch -ncwait -nocal
