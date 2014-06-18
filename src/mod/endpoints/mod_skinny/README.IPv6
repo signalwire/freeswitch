@@ -1,4 +1,8 @@
-mod_skinny currently does not support IPv6 (as of 2014-06-17)
+mod_skinny currently is not believed to support IPv6 (as of 2014-06-17)
+
+  There is a notation in the wiki that you can force IPv6 usage
+  by setting: ip="::" in the profile, but unclear if that is sufficient
+  for the rest of the protocol. 
 
 According to Cisco documentation, the underlying protocol does support IPv6 for the "G" series
 phones. (Basically a subset of the models running the java based image.)
