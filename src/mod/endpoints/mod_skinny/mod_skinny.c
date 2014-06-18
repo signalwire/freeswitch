@@ -1725,9 +1725,11 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_socket_opt_set(listener->sock, SWITCH_SO_NONBLOCK, TRUE);
 #else
 	switch_socket_opt_set(listener->sock, SWITCH_SO_NONBLOCK, FALSE);
+#endif
+
 	/* 200 ms to allow reasonably fast reaction on digit timeout */
 	switch_socket_timeout_set(listener->sock, 200000);
-#endif
+
 	if (listener->profile->debug > 0) {
 		skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Connection Open\n");
 	}
