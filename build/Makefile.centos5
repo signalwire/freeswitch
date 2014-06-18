@@ -16,7 +16,7 @@ SQLITE=autoconf-3080403
 PCRE=8.35
 CURL=7.35.0
 SPEEX=1.2rc1
-LIBEDIT=20140213-3.1
+LIBEDIT=20140618-3.1
 LDNS=1.6.17
 
 freeswitch: deps has-git freeswitch.git/Makefile
