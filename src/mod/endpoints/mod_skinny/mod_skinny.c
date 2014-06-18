@@ -166,6 +166,7 @@ switch_status_t skinny_profile_dump(const skinny_profile_t *profile, switch_stre
 	stream->write_function(stream, "DBName            \t%s\n", profile->dbname ? profile->dbname : switch_str_nil(profile->odbc_dsn));
 	stream->write_function(stream, "Debug             \t%d\n", profile->debug);
 	stream->write_function(stream, "Auto-Restart      \t%d\n", profile->auto_restart);
+	stream->write_function(stream, "Non-Blocking      \t%d\n", profile->non_blocking);
 	/* stats */
 	stream->write_function(stream, "CALLS-IN          \t%d\n", profile->ib_calls);
 	stream->write_function(stream, "FAILED-CALLS-IN   \t%d\n", profile->ib_failed_calls);
@@ -1720,12 +1721,12 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 	switch_assert(listener != NULL);
 
-#if MOD_SKINNY_NONBLOCK
-	switch_socket_opt_set(listener->sock, SWITCH_SO_TCP_NODELAY, TRUE);
-	switch_socket_opt_set(listener->sock, SWITCH_SO_NONBLOCK, TRUE);
-#else
-	switch_socket_opt_set(listener->sock, SWITCH_SO_NONBLOCK, FALSE);
-#endif
+	if ( profile->non_blocking ) {
+		switch_socket_opt_set(listener->sock, SWITCH_SO_TCP_NODELAY, TRUE);
+		switch_socket_opt_set(listener->sock, SWITCH_SO_NONBLOCK, TRUE);
+	} else {
+		switch_socket_opt_set(listener->sock, SWITCH_SO_NONBLOCK, FALSE);
+	}
 
 	/* 200 ms to allow reasonably fast reaction on digit timeout */
 	switch_socket_timeout_set(listener->sock, 200000);
@@ -2033,6 +2034,8 @@ switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, c
 		profile->debug = atoi(val);
 	} else if (!strcasecmp(var, "auto-restart")) {
 		profile->auto_restart = switch_true(val);
+	} else if (!strcasecmp(var, "non-blocking")) {
+		profile->non_blocking = switch_true(val);
 	} else if (!strcasecmp(var, "ext-voicemail")) {
 		if (!profile->ext_voicemail || strcmp(val, profile->ext_voicemail)) {
 			profile->ext_voicemail = switch_core_strdup(profile->pool, val);
@@ -2106,6 +2109,7 @@ static switch_status_t load_skinny_config(void)
 				profile->pool = profile_pool;
 				profile->name = switch_core_strdup(profile->pool, profile_name);
 				profile->auto_restart = SWITCH_TRUE;
+				profile->non_blocking = SWITCH_FALSE;
 				profile->digit_timeout = 10000; /* 10 seconds */
 				switch_mutex_init(&profile->sql_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 				switch_mutex_init(&profile->listener_mutex, SWITCH_MUTEX_NESTED, profile->pool);

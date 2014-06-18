@@ -12,6 +12,8 @@
     <param name="odbc-dsn" value=""/>
     <param name="debug" value="4"/>
     <param name="auto-restart" value="true"/>
+    <!-- send individual SCCP PDUs immediately instead of buffering -->
+    <!-- <param name="non-blocking" value="true"/> -->
     <param name="ext-voicemail" value="vmain"/>
     <param name="ext-redial" value="redial"/>
     <!-- <param name="ext-meetme" value="conference"/> -->

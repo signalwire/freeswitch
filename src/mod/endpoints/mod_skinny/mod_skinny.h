@@ -124,6 +124,7 @@ struct skinny_profile {
 	char date_format[6];
 	int debug;
 	int auto_restart;
+	int non_blocking;
 	switch_hash_t *soft_key_set_sets_hash;
 	switch_hash_t *device_type_params_hash;
 	/* extensions */
