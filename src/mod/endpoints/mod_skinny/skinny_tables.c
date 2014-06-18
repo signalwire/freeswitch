@@ -57,6 +57,7 @@ struct skinny_table SKINNY_MESSAGE_TYPES[] = {
 	{SOFT_KEY_EVENT_MESSAGE, "SoftKeyEventMessage"},
 	{UNREGISTER_MESSAGE, "UnregisterMessage"},
 	{SOFT_KEY_TEMPLATE_REQ_MESSAGE, "SoftKeyTemplateReqMessage"},
+	{MEDIA_RESOURCE_MESSAGE, "MediaResourceNotificationMessage"},
 	{HEADSET_STATUS_MESSAGE, "HeadsetStatusMessage"},
 	{REGISTER_AVAILABLE_LINES_MESSAGE, "RegisterAvailableLinesMessage"},
 	{DEVICE_TO_USER_DATA_MESSAGE, "DeviceToUserDataMessage"},

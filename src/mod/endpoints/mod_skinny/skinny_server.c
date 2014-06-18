@@ -2140,6 +2140,16 @@ switch_status_t skinny_headset_status_message(listener_t *listener, skinny_messa
 	return SWITCH_STATUS_SUCCESS;
 }
 
+switch_status_t skinny_handle_media_resource_message(listener_t *listener, skinny_message_t *request)
+{
+	skinny_check_data_length(request, sizeof(request->data.media_resource));
+
+	skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Handle Media Resource Notification\n");
+
+	/* Do nothing */
+	return SWITCH_STATUS_SUCCESS;
+}
+
 switch_status_t skinny_handle_register_available_lines_message(listener_t *listener, skinny_message_t *request)
 {
 	skinny_check_data_length(request, sizeof(request->data.reg_lines));
@@ -2471,6 +2481,8 @@ switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *re
 			return skinny_handle_unregister(listener, request);
 		case SOFT_KEY_TEMPLATE_REQ_MESSAGE:
 			return skinny_handle_soft_key_template_request(listener, request);
+		case MEDIA_RESOURCE_MESSAGE:
+			return skinny_handle_media_resource_message(listener, request);
 		case HEADSET_STATUS_MESSAGE:
 			return skinny_headset_status_message(listener, request);
 		case REGISTER_AVAILABLE_LINES_MESSAGE:

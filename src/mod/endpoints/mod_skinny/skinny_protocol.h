@@ -250,6 +250,15 @@ struct PACKED headset_status_message {
 	uint32_t mode; /* 1=HeadsetOn; 2=HeadsetOff */
 };
 
+/* MediaResourceNotification */
+#define MEDIA_RESOURCE_MESSAGE 0x002C
+struct PACKED media_resource_message {
+	uint32_t device_type;
+	uint32_t streams_in_service;
+	uint32_t max_streams_per_conf;
+	uint32_t streams_out_of_service;
+};
+
 /* RegisterAvailableLinesMessage */
 #define REGISTER_AVAILABLE_LINES_MESSAGE 0x002D
 struct PACKED register_available_lines_message {
@@ -866,6 +875,7 @@ union skinny_data {
 	/* no data for UNREGISTER_MESSAGE */
 	/* no data for SOFT_KEY_TEMPLATE_REQ_MESSAGE */
 	struct headset_status_message headset_status;
+	struct media_resource_message media_resource;
 	struct register_available_lines_message reg_lines;
 	/* see field "data" for DEVICE_TO_USER_DATA_MESSAGE */
 	/* see field "data" for DEVICE_TO_USER_DATA_RESPONSE_MESSAGE */
