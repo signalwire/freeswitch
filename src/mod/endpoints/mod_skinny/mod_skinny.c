@@ -161,7 +161,7 @@ switch_status_t skinny_profile_dump(const skinny_profile_t *profile, switch_stre
 	stream->write_function(stream, "Patterns-Dialplan \t%s\n", profile->patterns_dialplan);
 	stream->write_function(stream, "Patterns-Context  \t%s\n", profile->patterns_context);
 	stream->write_function(stream, "Keep-Alive        \t%d\n", profile->keep_alive);
-	stream->write_function(stream, "Digit-Timeout     \t%s\n", profile->digit_timeout);
+	stream->write_function(stream, "Digit-Timeout     \t%d\n", profile->digit_timeout);
 	stream->write_function(stream, "Date-Format       \t%s\n", profile->date_format);
 	stream->write_function(stream, "DBName            \t%s\n", profile->dbname ? profile->dbname : switch_str_nil(profile->odbc_dsn));
 	stream->write_function(stream, "Debug             \t%d\n", profile->debug);
