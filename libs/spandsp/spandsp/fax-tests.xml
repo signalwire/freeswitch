@@ -91,6 +91,9 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="RX_DCNDATA"/>
     </test>
     <test name="V17-12000-V29-9600">
         <!-- Tester calls, trying to provoke a crash seen in some versions of spandsp, when
@@ -183,6 +186,9 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="Phase-D-collision">
         <!-- DUT calls tester and sends 1 IMPRESS and 1 WHITE page. The MCF after the first
@@ -224,6 +230,8 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
 </test-group>
 </fax-tests>

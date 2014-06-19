@@ -173,9 +173,7 @@ enum
     T30_STATE_I,
     T30_STATE_II,
     T30_STATE_II_Q,
-    T30_STATE_III_Q_MCF,
-    T30_STATE_III_Q_RTP,
-    T30_STATE_III_Q_RTN,
+    T30_STATE_III_Q,
     T30_STATE_IV,
     T30_STATE_IV_PPS_NULL,
     T30_STATE_IV_PPS_Q,
@@ -210,9 +208,7 @@ static const char *state_names[] =
     "I",
     "II",
     "II_Q",
-    "III_Q_MCF",
-    "III_Q_RTP",
-    "III_Q_RTN",
+    "III_Q",
     "IV",
     "IV_PPS_NULL",
     "IV_PPS_Q",
@@ -3600,7 +3596,7 @@ static void process_state_f_doc_non_ecm(t30_state_t *s, const uint8_t *msg, int 
        state, it looks like either:
         - we didn't see the image data carrier properly, or
         - they didn't see our T30_CFR, and are repeating the DCS/TCF sequence.
-        - they didn't see out T30_MCF, and are repeating the end of page message. */
+        - they didn't see our T30_MCF, T30_RTP or T30_RTN and are repeating the end of page message. */
     fcf = msg[2] & 0xFE;
     switch (fcf)
     {
@@ -3616,13 +3612,22 @@ static void process_state_f_doc_non_ecm(t30_state_t *s, const uint8_t *msg, int 
         }
         /* Fall through */
     case T30_MPS:
-        /* Treat this as a bad quality page. */
-        if (s->phase_d_handler)
-            s->phase_d_handler(s->phase_d_user_data, fcf);
-        s->next_rx_step = fcf;
-        queue_phase(s, T30_PHASE_D_TX);
-        set_state(s, T30_STATE_III_Q_RTN);
-        send_simple_frame(s, T30_RTN);
+        if (s->image_carrier_attempted)
+        {
+            /* Treat this as a bad quality page. */
+            if (s->phase_d_handler)
+                s->phase_d_handler(s->phase_d_user_data, fcf);
+            s->next_rx_step = fcf;
+            s->last_rx_page_result = T30_RTN;
+            queue_phase(s, T30_PHASE_D_TX);
+            set_state(s, T30_STATE_III_Q);
+            send_simple_frame(s, s->last_rx_page_result);
+        }
+        else
+        {
+            /* This appears to be a retry, because the far end didn't see our last response */
+            repeat_last_command(s);
+        }
         break;
     case T30_PRI_EOM:
         if (s->remote_interrupts_allowed)
@@ -3631,14 +3636,23 @@ static void process_state_f_doc_non_ecm(t30_state_t *s, const uint8_t *msg, int 
         /* Fall through */
     case T30_EOM:
     case T30_EOS:
-        /* Treat this as a bad quality page. */
-        if (s->phase_d_handler)
-            s->phase_d_handler(s->phase_d_user_data, fcf);
-        s->next_rx_step = fcf;
-        /* Return to phase B */
-        queue_phase(s, T30_PHASE_B_TX);
-        set_state(s, T30_STATE_III_Q_RTN);
-        send_simple_frame(s, T30_RTN);
+        if (s->image_carrier_attempted)
+        {
+            /* Treat this as a bad quality page. */
+            if (s->phase_d_handler)
+                s->phase_d_handler(s->phase_d_user_data, fcf);
+            s->next_rx_step = fcf;
+            s->last_rx_page_result = T30_RTN;
+            /* Return to phase B */
+            queue_phase(s, T30_PHASE_B_TX);
+            set_state(s, T30_STATE_III_Q);
+            send_simple_frame(s, s->last_rx_page_result);
+        }
+        else
+        {
+            /* This appears to be a retry, because the far end didn't see our last response */
+            repeat_last_command(s);
+        }
         break;
     case T30_PRI_EOP:
         if (s->remote_interrupts_allowed)
@@ -3646,13 +3660,22 @@ static void process_state_f_doc_non_ecm(t30_state_t *s, const uint8_t *msg, int 
         }
         /* Fall through */
     case T30_EOP:
-        /* Treat this as a bad quality page. */
-        if (s->phase_d_handler)
-            s->phase_d_handler(s->phase_d_user_data, fcf);
-        s->next_rx_step = fcf;
-        queue_phase(s, T30_PHASE_D_TX);
-        set_state(s, T30_STATE_III_Q_RTN);
-        send_simple_frame(s, T30_RTN);
+        if (s->image_carrier_attempted)
+        {
+            /* Treat this as a bad quality page. */
+            if (s->phase_d_handler)
+                s->phase_d_handler(s->phase_d_user_data, fcf);
+            s->next_rx_step = fcf;
+            s->last_rx_page_result = T30_RTN;
+            queue_phase(s, T30_PHASE_D_TX);
+            set_state(s, T30_STATE_III_Q);
+            send_simple_frame(s, s->last_rx_page_result);
+        }
+        else
+        {
+            /* This appears to be a retry, because the far end didn't see our last response */
+            repeat_last_command(s);
+        }
         break;
     case T30_DCN:
         t30_set_status(s, T30_ERR_RX_DCNDATA);
@@ -3705,18 +3728,18 @@ static void assess_copy_quality(t30_state_t *s, uint8_t fcf)
     {
     case T30_COPY_QUALITY_PERFECT:
     case T30_COPY_QUALITY_GOOD:
-        set_state(s, T30_STATE_III_Q_MCF);
-        send_simple_frame(s, T30_MCF);
+        s->last_rx_page_result = T30_MCF;
         break;
     case T30_COPY_QUALITY_POOR:
-        set_state(s, T30_STATE_III_Q_RTP);
-        send_simple_frame(s, T30_RTP);
+        s->last_rx_page_result = T30_RTP;
         break;
     case T30_COPY_QUALITY_BAD:
-        set_state(s, T30_STATE_III_Q_RTN);
-        send_simple_frame(s, T30_RTN);
+    default:
+        s->last_rx_page_result = T30_RTN;
         break;
     }
+    set_state(s, T30_STATE_III_Q);
+    send_simple_frame(s, s->last_rx_page_result);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -3760,6 +3783,10 @@ static void process_state_f_post_doc_non_ecm(t30_state_t *s, const uint8_t *msg,
         s->next_rx_step = fcf;
         queue_phase(s, T30_PHASE_D_TX);
         assess_copy_quality(s, fcf);
+        break;
+    case T30_DCS:
+        span_log(&s->logging, SPAN_LOG_FLOW, "DCS received after CFR\n");
+        process_rx_dcs(s, msg, len);
         break;
     case T30_DCN:
         t30_set_status(s, T30_ERR_RX_DCNFAX);
@@ -3823,6 +3850,7 @@ static void process_state_f_doc_and_post_doc_ecm(t30_state_t *s, const uint8_t *
         case T30_EOM:
         case T30_EOS:
         case T30_MPS:
+            s->image_carrier_attempted = false;
             s->next_rx_step = fcf2;
             queue_phase(s, T30_PHASE_D_TX);
             set_state(s, T30_STATE_F_DOC_ECM);
@@ -3837,6 +3865,7 @@ static void process_state_f_doc_and_post_doc_ecm(t30_state_t *s, const uint8_t *
         process_rx_pps(s, msg, len);
         break;
     case T30_CTC:
+        s->image_carrier_attempted = false;
         /* T.30 says we change back to long training here */
         s->short_train = false;
         queue_phase(s, T30_PHASE_D_TX);
@@ -4270,7 +4299,7 @@ static void process_state_ii_q(t30_state_t *s, const uint8_t *msg, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void process_state_iii_q_mcf(t30_state_t *s, const uint8_t *msg, int len)
+static void process_state_iii_q(t30_state_t *s, const uint8_t *msg, int len)
 {
     uint8_t fcf;
 
@@ -4283,8 +4312,8 @@ static void process_state_iii_q_mcf(t30_state_t *s, const uint8_t *msg, int len)
     case T30_MPS:
         /* Looks like they didn't see our signal. Repeat it */
         queue_phase(s, T30_PHASE_D_TX);
-        set_state(s, T30_STATE_III_Q_MCF);
-        send_simple_frame(s, T30_MCF);
+        set_state(s, T30_STATE_III_Q);
+        send_simple_frame(s, s->last_rx_page_result);
         break;
     case T30_DIS:
         if (msg[2] == T30_DTC)
@@ -4297,78 +4326,8 @@ static void process_state_iii_q_mcf(t30_state_t *s, const uint8_t *msg, int len)
         process_rx_fnv(s, msg, len);
         break;
     case T30_DCN:
-        terminate_call(s);
-        break;
-    default:
-        /* We don't know what to do with this. */
-        unexpected_final_frame(s, msg, len);
-        break;
-    }
-}
-/*- End of function --------------------------------------------------------*/
-
-static void process_state_iii_q_rtp(t30_state_t *s, const uint8_t *msg, int len)
-{
-    uint8_t fcf;
-
-    fcf = msg[2] & 0xFE;
-    switch (fcf)
-    {
-    case T30_EOP:
-    case T30_EOM:
-    case T30_EOS:
-    case T30_MPS:
-        /* Looks like they didn't see our signal. Repeat it */
-        queue_phase(s, T30_PHASE_D_TX);
-        set_state(s, T30_STATE_III_Q_RTP);
-        send_simple_frame(s, T30_RTP);
-        break;
-    case T30_DIS:
-        if (msg[2] == T30_DTC)
-            process_rx_dis_dtc(s, msg, len);
-        break;
-    case T30_CRP:
-        repeat_last_command(s);
-        break;
-    case T30_FNV:
-        process_rx_fnv(s, msg, len);
-        break;
-    default:
-        /* We don't know what to do with this. */
-        unexpected_final_frame(s, msg, len);
-        break;
-    }
-}
-/*- End of function --------------------------------------------------------*/
-
-static void process_state_iii_q_rtn(t30_state_t *s, const uint8_t *msg, int len)
-{
-    uint8_t fcf;
-
-    fcf = msg[2] & 0xFE;
-    switch (fcf)
-    {
-    case T30_EOP:
-    case T30_EOM:
-    case T30_EOS:
-    case T30_MPS:
-        /* Looks like they didn't see our signal. Repeat it */
-        queue_phase(s, T30_PHASE_D_TX);
-        set_state(s, T30_STATE_III_Q_RTN);
-        send_simple_frame(s, T30_RTN);
-        break;
-    case T30_DIS:
-        if (msg[2] == T30_DTC)
-            process_rx_dis_dtc(s, msg, len);
-        break;
-    case T30_CRP:
-        repeat_last_command(s);
-        break;
-    case T30_FNV:
-        process_rx_fnv(s, msg, len);
-        break;
-    case T30_DCN:
-        t30_set_status(s, T30_ERR_RX_DCNNORTN);
+        if (s->last_rx_page_result == T30_RTN)
+            t30_set_status(s, T30_ERR_RX_DCNNORTN);
         terminate_call(s);
         break;
     default:
@@ -5090,14 +5049,8 @@ static void process_rx_control_msg(t30_state_t *s, const uint8_t *msg, int len)
         case T30_STATE_II_Q:
             process_state_ii_q(s, msg, len);
             break;
-        case T30_STATE_III_Q_MCF:
-            process_state_iii_q_mcf(s, msg, len);
-            break;
-        case T30_STATE_III_Q_RTP:
-            process_state_iii_q_rtp(s, msg, len);
-            break;
-        case T30_STATE_III_Q_RTN:
-            process_state_iii_q_rtn(s, msg, len);
+        case T30_STATE_III_Q:
+            process_state_iii_q(s, msg, len);
             break;
         case T30_STATE_IV:
             process_state_iv(s, msg, len);
@@ -5315,17 +5268,10 @@ static void repeat_last_command(t30_state_t *s)
         queue_phase(s, T30_PHASE_B_TX);
         send_dis_or_dtc_sequence(s, true);
         break;
-    case T30_STATE_III_Q_MCF:
+    case T30_STATE_F_DOC_NON_ECM:
+    case T30_STATE_III_Q:
         queue_phase(s, T30_PHASE_D_TX);
-        send_simple_frame(s, T30_MCF);
-        break;
-    case T30_STATE_III_Q_RTP:
-        queue_phase(s, T30_PHASE_D_TX);
-        send_simple_frame(s, T30_RTP);
-        break;
-    case T30_STATE_III_Q_RTN:
-        queue_phase(s, T30_PHASE_D_TX);
-        send_simple_frame(s, T30_RTN);
+        send_simple_frame(s, s->last_rx_page_result);
         break;
     case T30_STATE_II_Q:
         queue_phase(s, T30_PHASE_D_TX);
@@ -5526,9 +5472,7 @@ static void timer_t2_expired(t30_state_t *s)
         span_log(&s->logging, SPAN_LOG_FLOW, "T2 expired in phase %s, state %s\n", phase_names[s->phase], state_names[s->state]);
     switch (s->state)
     {
-    case T30_STATE_III_Q_MCF:
-    case T30_STATE_III_Q_RTP:
-    case T30_STATE_III_Q_RTN:
+    case T30_STATE_III_Q:
     case T30_STATE_F_POST_RCP_PPR:
     case T30_STATE_F_POST_RCP_MCF:
         switch (s->next_rx_step)
@@ -5738,6 +5682,7 @@ static void t30_non_ecm_rx_status(void *user_data, int status)
     switch (status)
     {
     case SIG_STATUS_TRAINING_IN_PROGRESS:
+        s->image_carrier_attempted = true;
         break;
     case SIG_STATUS_TRAINING_FAILED:
         s->rx_trained = false;
@@ -6205,6 +6150,8 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
         case T30_STATE_F_CFR:
             if (send_cfr_sequence(s, false))
             {
+                s->image_carrier_attempted = false;
+                s->last_rx_page_result = -1;
                 if (s->error_correcting_mode)
                 {
                     set_state(s, T30_STATE_F_DOC_ECM);
@@ -6231,9 +6178,8 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
                 timer_t2_start(s);
             }
             break;
-        case T30_STATE_III_Q_MCF:
-        case T30_STATE_III_Q_RTP:
-        case T30_STATE_III_Q_RTN:
+        case T30_STATE_F_DOC_NON_ECM:
+        case T30_STATE_III_Q:
         case T30_STATE_F_POST_RCP_PPR:
         case T30_STATE_F_POST_RCP_MCF:
             if (s->step == 0)
@@ -6248,6 +6194,7 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
                 case T30_PRI_MPS:
                 case T30_MPS:
                     /* We should now start to get another page */
+                    s->image_carrier_attempted = false;
                     if (s->error_correcting_mode)
                     {
                         set_state(s, T30_STATE_F_DOC_ECM);
@@ -6264,8 +6211,8 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
                 case T30_EOM:
                 case T30_EOS:
                     /* See if we get something back, before moving to phase B. */
-                    timer_t2_start(s);
                     set_phase(s, T30_PHASE_D_RX);
+                    timer_t2_start(s);
                     break;
                 case T30_PRI_EOP:
                 case T30_EOP:

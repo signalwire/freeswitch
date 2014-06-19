@@ -92,9 +92,86 @@ t30_exchanged_info_t expected_rx_info;
 
 char next_tx_file[1000];
 
+static int timein_x = -1;
+static int timeout_x = -1;
+
 static int next_step(faxtester_state_t *s);
 
-static bool test_for_call_drop = false;
+static bool test_for_call_clear = false;
+static int call_clear_timer = 0;
+
+static bool far_end_cleared_call = false;
+
+struct
+{
+    const char *tag;
+    int code;
+} t30_status[] =
+{
+    {"OK", T30_ERR_OK},
+    {"CEDTONE", T30_ERR_CEDTONE},
+    {"T0_EXPIRED", T30_ERR_T0_EXPIRED},
+    {"T1_EXPIRED", T30_ERR_T1_EXPIRED},
+    {"T3_EXPIRED", T30_ERR_T3_EXPIRED},
+    {"HDLC_CARRIER", T30_ERR_HDLC_CARRIER},
+    {"CANNOT_TRAIN", T30_ERR_CANNOT_TRAIN},
+    {"OPER_INT_FAIL", T30_ERR_OPER_INT_FAIL},
+    {"INCOMPATIBLE", T30_ERR_INCOMPATIBLE},
+    {"RX_INCAPABLE", T30_ERR_RX_INCAPABLE},
+    {"TX_INCAPABLE", T30_ERR_TX_INCAPABLE},
+    {"NORESSUPPORT", T30_ERR_NORESSUPPORT},
+    {"NOSIZESUPPORT", T30_ERR_NOSIZESUPPORT},
+    {"UNEXPECTED", T30_ERR_UNEXPECTED},
+    {"TX_BADDCS", T30_ERR_TX_BADDCS},
+    {"TX_BADPG", T30_ERR_TX_BADPG},
+    {"TX_ECMPHD", T30_ERR_TX_ECMPHD},
+    {"TX_GOTDCN", T30_ERR_TX_GOTDCN},
+    {"TX_INVALRSP", T30_ERR_TX_INVALRSP},
+    {"TX_NODIS", T30_ERR_TX_NODIS},
+    {"TX_PHBDEAD", T30_ERR_TX_PHBDEAD},
+    {"TX_PHDDEAD", T30_ERR_TX_PHDDEAD},
+    {"TX_T5EXP", T30_ERR_TX_T5EXP},
+    {"RX_ECMPHD", T30_ERR_RX_ECMPHD},
+    {"RX_GOTDCS", T30_ERR_RX_GOTDCS},
+    {"RX_INVALCMD", T30_ERR_RX_INVALCMD},
+    {"RX_NOCARRIER", T30_ERR_RX_NOCARRIER},
+    {"RX_NOEOL", T30_ERR_RX_NOEOL},
+    {"RX_NOFAX", T30_ERR_RX_NOFAX},
+    {"RX_T2EXPDCN", T30_ERR_RX_T2EXPDCN},
+    {"RX_T2EXPD", T30_ERR_RX_T2EXPD},
+    {"RX_T2EXPFAX", T30_ERR_RX_T2EXPFAX},
+    {"RX_T2EXPMPS", T30_ERR_RX_T2EXPMPS},
+    {"RX_T2EXPRR", T30_ERR_RX_T2EXPRR},
+    {"RX_T2EXP", T30_ERR_RX_T2EXP},
+    {"RX_DCNWHY", T30_ERR_RX_DCNWHY},
+    {"RX_DCNDATA", T30_ERR_RX_DCNDATA},
+    {"RX_DCNFAX", T30_ERR_RX_DCNFAX},
+    {"RX_DCNPHD", T30_ERR_RX_DCNPHD},
+    {"RX_DCNRRD", T30_ERR_RX_DCNRRD},
+    {"RX_DCNNORTN", T30_ERR_RX_DCNNORTN},
+    {"FILEERROR", T30_ERR_FILEERROR},
+    {"NOPAGE", T30_ERR_NOPAGE},
+    {"BADTIFF", T30_ERR_BADTIFF},
+    {"BADPAGE", T30_ERR_BADPAGE},
+    {"BADTAG", T30_ERR_BADTAG},
+    {"BADTIFFHDR", T30_ERR_BADTIFFHDR},
+    {"NOMEM", T30_ERR_NOMEM},
+    {"RETRYDCN", T30_ERR_RETRYDCN},
+    {"CALLDROPPED", T30_ERR_CALLDROPPED},
+    {"NOPOLL", T30_ERR_NOPOLL},
+    {"IDENT_UNACCEPTABLE", T30_ERR_IDENT_UNACCEPTABLE},
+    {"SUB_UNACCEPTABLE", T30_ERR_SUB_UNACCEPTABLE},
+    {"SEP_UNACCEPTABLE", T30_ERR_SEP_UNACCEPTABLE},
+    {"PSA_UNACCEPTABLE", T30_ERR_PSA_UNACCEPTABLE},
+    {"SID_UNACCEPTABLE", T30_ERR_SID_UNACCEPTABLE},
+    {"PWD_UNACCEPTABLE", T30_ERR_PWD_UNACCEPTABLE},
+    {"TSA_UNACCEPTABLE", T30_ERR_TSA_UNACCEPTABLE},
+    {"IRA_UNACCEPTABLE", T30_ERR_IRA_UNACCEPTABLE},
+    {"CIA_UNACCEPTABLE", T30_ERR_CIA_UNACCEPTABLE},
+    {"ISP_UNACCEPTABLE", T30_ERR_ISP_UNACCEPTABLE},
+    {"CSA_UNACCEPTABLE", T30_ERR_CSA_UNACCEPTABLE},
+    {NULL, -1}
+};
 
 static int phase_b_handler(void *user_data, int result)
 {
@@ -622,6 +699,7 @@ static int next_step(faxtester_state_t *s)
     xmlChar *bad_rows;
     xmlChar *crc_error;
     xmlChar *pattern;
+    xmlChar *timein;
     xmlChar *timeout;
     xmlChar *min_bits;
     xmlChar *frame_size;
@@ -638,12 +716,12 @@ static int next_step(faxtester_state_t *s)
     int ecm_frame_size;
     int ecm_block;
     int compression_type;
-    int timer;
     int len;
     t4_tx_state_t t4_tx_state;
     t30_state_t *t30;
+    t30_stats_t t30_stats;
 
-    test_for_call_drop = false;
+    test_for_call_clear = false;
     if (s->cur == NULL)
     {
         if (!s->final_delayed)
@@ -677,6 +755,7 @@ static int next_step(faxtester_state_t *s)
     bad_rows = xmlGetProp(s->cur, (const xmlChar *) "bad_rows");
     crc_error = xmlGetProp(s->cur, (const xmlChar *) "crc_error");
     pattern = xmlGetProp(s->cur, (const xmlChar *) "pattern");
+    timein = xmlGetProp(s->cur, (const xmlChar *) "timein");
     timeout = xmlGetProp(s->cur, (const xmlChar *) "timeout");
     min_bits = xmlGetProp(s->cur, (const xmlChar *) "min_bits");
     frame_size = xmlGetProp(s->cur, (const xmlChar *) "frame_size");
@@ -687,26 +766,31 @@ static int next_step(faxtester_state_t *s)
 
     span_log(&s->logging,
              SPAN_LOG_FLOW,
-             "Dir - %s, type - %s, modem - %s, value - %s, timeout - %s, tag - %s\n",
+             "Dir - %s, type - %s, modem - %s, value - %s, timein - %s, timeout - %s, tag - %s\n",
              (dir)  ?  (const char *) dir  :  "",
              (type)  ?  (const char *) type  :  "",
              (modem)  ?  (const char *) modem  :  "",
              (value)  ?  (const char *) value  :  "",
+             (timein)  ?  (const char *) timein  :  "",
              (timeout)  ?  (const char *) timeout  :  "",
              (tag)  ?  (const char *) tag  :  "");
     if (type == NULL)
         return 1;
-    if (timeout)
-        timer = atoi((const char *) timeout);
+    if (timein)
+        timein_x = atoi((const char *) timein);
     else
-        timer = -1;
+        timein_x = -1;
+    if (timeout)
+        timeout_x = atoi((const char *) timeout);
+    else
+        timeout_x = -1;
 
     if (dir  &&  strcasecmp((const char *) dir, "R") == 0)
     {
         /* Receive always has a timeout applied. */
-        if (timer < 0)
-            timer = 7000;
-        faxtester_set_timeout(s, timer);
+        if (timeout_x < 0)
+            timeout_x = 7000;
+        faxtester_set_timeout(s, timeout_x);
         if (modem)
         {
             hdlc = (strcasecmp((const char *) type, "PREAMBLE") == 0);
@@ -801,10 +885,11 @@ static int next_step(faxtester_state_t *s)
         {
             faxtest_set_rx_silence(s);
         }
-        else if (strcasecmp((const char *) type, "DROPCALL") == 0)
+        else if (strcasecmp((const char *) type, "CLEAR") == 0)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Far end should drop the call\n");
-            test_for_call_drop = true;
+            test_for_call_clear = true;
+            call_clear_timer = 0;
         }
         else
         {
@@ -814,7 +899,7 @@ static int next_step(faxtester_state_t *s)
     }
     else
     {
-        faxtester_set_timeout(s, timer);
+        faxtester_set_timeout(s, timeout_x);
         if (modem)
         {
             hdlc = (strcasecmp((const char *) type, "PREAMBLE") == 0);
@@ -1117,9 +1202,35 @@ static int next_step(faxtester_state_t *s)
             span_log(&s->logging, SPAN_LOG_FLOW, "ECM image is %d bytes (min row bits %d)\n", len, min_row_bits);
             faxtester_set_ecm_image_buffer(s, image, len, ecm_block, ecm_frame_size, i);
         }
-        else if (strcasecmp((const char *) type, "DROPCALL") == 0)
+        else if (strcasecmp((const char *) type, "CLEAR") == 0)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Time to drop the call\n");
+            t30 = fax_get_t30_state(fax);
+            t30_terminate(t30);
+            return 0;
+        }
+        else if (strcasecmp((const char *) type, "STATUS") == 0)
+        {
+            if (value)
+            {
+                for (i = 0;  t30_status[i].code >= 0;  i++)
+                {
+                    if (strcmp(t30_status[i].tag, (const char *) value) == 0)
+                        break;
+                }
+                if (t30_status[i].code >= 0)
+                    delay = t30_status[i].code;
+                else
+                    delay = atoi((const char *) value);
+                t30 = fax_get_t30_state(fax);
+                t30_get_transfer_statistics(t30, &t30_stats);
+                span_log(&s->logging, SPAN_LOG_FLOW, "Expect status %d. Got %d\n", delay, t30_stats.current_status);
+                if (delay != t30_stats.current_status)
+                {
+                    printf("Test failed\n");
+                    exit(2);
+                }
+            }
             return 0;
         }
         else
@@ -1211,12 +1322,23 @@ static void exchange(faxtester_state_t *s)
             /*endif*/
         }
         /*endif*/
-        if (test_for_call_drop)
+        if (test_for_call_clear  &&  !far_end_cleared_call)
         {
+            call_clear_timer += len;
             if (!t30_call_active(fax_get_t30_state(fax)))
             {
-                printf("Call dropped\n");
-                //break;
+                span_log(&s->logging, SPAN_LOG_FLOW, "Far end cleared after %dms (limits %dms to %dms)\n", call_clear_timer/8, timein_x, timeout_x);
+                if (call_clear_timer/8 < timein_x  ||  call_clear_timer/8 > timeout_x)
+                {
+                    printf("Test failed\n");
+                    exit(2);
+                }
+                span_log(&s->logging, SPAN_LOG_FLOW, "Clear time OK\n");
+                far_end_cleared_call = true;
+                test_for_call_clear = false;
+                while (next_step(s) == 0)
+                    ;
+                /*endwhile*/
             }
             /*endif*/
         }
@@ -1297,29 +1419,37 @@ static int parse_test_group(faxtester_state_t *s, xmlDocPtr doc, xmlNsPtr ns, xm
 
 static int get_test_set(faxtester_state_t *s, const char *test_file, const char *test)
 {
+    xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
     xmlNsPtr ns;
     xmlNodePtr cur;
-    xmlValidCtxt valid;
 
     ns = NULL;
     xmlKeepBlanksDefault(0);
     xmlCleanupParser();
-    if ((doc = xmlParseFile(test_file)) == NULL)
+
+    if ((ctxt = xmlNewParserCtxt()) == NULL)
     {
-        fprintf(stderr, "No document\n");
+        fprintf(stderr, "Failed to allocate parser context\n");
         printf("Test failed\n");
         exit(2);
     }
-    /*endif*/
-    xmlXIncludeProcess(doc);
-    if (!xmlValidateDocument(&valid, doc))
+    /* parse the file, activating the DTD validation option */
+    if ((doc = xmlCtxtReadFile(ctxt, test_file, NULL, XML_PARSE_XINCLUDE | XML_PARSE_DTDVALID)) == NULL)
     {
-        fprintf(stderr, "Invalid document\n");
+        fprintf(stderr, "Failed to read the XML document\n");
         printf("Test failed\n");
         exit(2);
     }
-    /*endif*/
+    if (ctxt->valid == 0)
+    {
+        fprintf(stderr, "Failed to validate the XML document\n");
+    	xmlFreeDoc(doc);
+        xmlFreeParserCtxt(ctxt);
+        printf("Test failed\n");
+        exit(2);
+    }
+    xmlFreeParserCtxt(ctxt);
 
     /* Check the document is of the right kind */
     if ((cur = xmlDocGetRootElement(doc)) == NULL)

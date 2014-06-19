@@ -38,8 +38,7 @@ done
 #MRGN16 fails because we don't adequately distinguish between receiving a
 #bad image signal and receiving none at all.
 
-#for TEST in MRGN09 MRGN10 MRGN11 MRGN12 MRGN13 MRGN14 MRGN15 MRGN16 MRGN17
-for TEST in MRGN09 MRGN10 MRGN11 MRGN12 MRGN13 MRGN15 MRGN17
+for TEST in MRGN09 MRGN10 MRGN11 MRGN12 MRGN13 MRGN14 MRGN15 MRGN16 MRGN17
 do
     run_tsb85_test
 done
@@ -58,8 +57,7 @@ done
 # MRGX05 is failing because we don't distinguish MPS immediately after MCF from MPS after
 # a corrupt image signal.
 
-#for TEST in MRGX01 MRGX02 MRGX03 MRGX04 MRGX05 MRGX06 MRGX07 MRGX08
-for TEST in MRGX01 MRGX02 MRGX04 MRGX06 MRGX07 MRGX08
+for TEST in MRGX01 MRGX02 MRGX03 MRGX04 MRGX05 MRGX06 MRGX07 MRGX08
 do
     run_tsb85_test
 done

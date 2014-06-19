@@ -264,32 +264,39 @@ static void parse_tone_set(super_tone_rx_descriptor_t *desc, xmlDocPtr doc, xmlN
 
 static void get_tone_set(super_tone_rx_descriptor_t *desc, const char *tone_file, const char *set_id)
 {
+    xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
     xmlNsPtr ns;
     xmlNodePtr cur;
-#if 1
-    xmlValidCtxt valid;
-#endif
     xmlChar *x;
 
     ns = NULL;
     xmlKeepBlanksDefault(0);
     xmlCleanupParser();
-    if ((doc = xmlParseFile(tone_file)) == NULL)
+
+    if ((ctxt = xmlNewParserCtxt()) == NULL)
     {
-        fprintf(stderr, "No document\n");
+        fprintf(stderr, "Failed to allocate parser context\n");
+        printf("Test failed\n");
         exit(2);
     }
-    /*endif*/
-    xmlXIncludeProcess(doc);
-#if 1
-    if (!xmlValidateDocument(&valid, doc))
+    /* parse the file, activating the DTD validation option */
+    if ((doc = xmlCtxtReadFile(ctxt, tone_file, NULL, XML_PARSE_XINCLUDE | XML_PARSE_DTDVALID)) == NULL)
     {
-        fprintf(stderr, "Invalid document\n");
+        fprintf(stderr, "Failed to read the XML document\n");
+        printf("Test failed\n");
         exit(2);
     }
-    /*endif*/
-#endif
+    if (ctxt->valid == 0)
+    {
+        fprintf(stderr, "Failed to validate the XML document\n");
+    	xmlFreeDoc(doc);
+        xmlFreeParserCtxt(ctxt);
+        printf("Test failed\n");
+        exit(2);
+    }
+    xmlFreeParserCtxt(ctxt);
+
     /* Check the document is of the right kind */
     if ((cur = xmlDocGetRootElement(doc)) == NULL)
     {

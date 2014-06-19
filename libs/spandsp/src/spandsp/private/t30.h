@@ -181,6 +181,10 @@ struct t30_state_s
     /*! \brief True if the short training sequence should be used. */
     bool short_train;
 
+    /*! \brief True if an image carrier appears to have been received, even if it did not successfully
+        train. */
+    bool image_carrier_attempted;
+
     /*! \brief A count of the number of bits in the trainability test. This counts down to zero when
         sending TCF, and counts up when receiving it. */
     int tcf_test_bits;
@@ -293,6 +297,8 @@ struct t30_state_s
         partial pages still to come. */
     bool ecm_at_page_end;
 
+    /*! \brief The last result for a received non-ECM page - T30_MPS, T30_RTP, or T30_RTN. */
+    int last_rx_page_result;
     /*! \brief The transmission step queued to follow the one in progress. */
     int next_tx_step;
     /*! \brief The FCF for the next receive step. */
@@ -310,11 +316,6 @@ struct t30_state_s
     /*! \brief The current completion status. */
     int current_status;
 
-    /*! \brief The number of RTP events */
-    int rtp_events;
-    /*! \brief The number of RTN events */
-    int rtn_events;
-
     /*! \brief the FCF2 field of the last PPS message we received. */
     uint8_t last_pps_fcf2;
     /*! \brief True if all frames of the current received ECM block are now OK */
@@ -322,6 +323,11 @@ struct t30_state_s
     /*! \brief A count of successfully received ECM frames, to assess progress as a basis for
         deciding whether to continue error correction when PPRs keep repeating. */
     int ecm_progress;
+
+    /*! \brief The number of RTP events */
+    int rtp_events;
+    /*! \brief The number of RTN events */
+    int rtn_events;
 
     /*! \brief Error and flow logging control */
     logging_state_t logging;

@@ -91,6 +91,10 @@
             <check name="MRGN01M18" desc="Disconnect after receiving DCN"/>
         </step>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGN02">
         <!-- Tester calls DUT and sends DIAG_1 and DIAG_2 pages. -->
@@ -140,6 +144,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGN03">
         <!-- Tester calls DUT and sends DURATION_1 and DURATION_2 pages. -->
@@ -196,6 +204,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="RETRYDCN"/>
     </test>
     <test name="MRGN04">
         <!-- Tester calls DUT and sends 4.9% ERROR page and one 15.1% ERROR page. -->
@@ -251,6 +263,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="RX_DCNNORTN"/>
     </test>
     <test name="MRGN05">
         <!-- Tester calls DUT and sends 1 IMPRESS page using a low signal intensity. -->
@@ -299,6 +315,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGN06a">
         <!-- Tester calls DUT and sends 2 WHITE pages. -->
@@ -347,6 +367,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGN06b">
         <!-- Tester calls DUT and sends 2 WHITE pages. -->
@@ -395,6 +419,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGN07">
         <!-- Tester calls DUT and sends 1 WHITE page. -->
@@ -442,6 +470,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGN08">
         <!-- Tester calls DUT and sends 1 WHITE page. -->
@@ -493,6 +525,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGN09">
         <!-- Tester calls DUT and sends 2 WHITE pages. -->
@@ -552,6 +588,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGN10">
         <!-- Tester calls DUT and sends 1 WHITE page. -->
@@ -591,6 +631,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGN11">
         <!-- Tester calls DUT and sends 1 WHITE page. -->
@@ -648,6 +692,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGN12">
         <!-- Tester calls DUT and sends 1 WHITE page. -->
@@ -701,6 +749,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGN13">
         <!-- Tester calls DUT and sends 1 WHITE page. -->
@@ -754,6 +806,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGN14">
         <!-- Tester calls DUT and sends 1 WHITE page. -->
@@ -810,6 +866,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGN15">
         <!-- Tester calls DUT and sends 1 WHITE page. -->
@@ -865,6 +925,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGN16">
         <!-- Tester calls DUT and sends 2 WHITE pages separately. -->
@@ -979,6 +1043,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGN17">
         <!-- Tester called DUT, and sends 2 WHITE pages -->
@@ -1101,6 +1169,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
 </test-group>
 <test-group name="Annex B - Capability receive test procedures">
@@ -1148,6 +1220,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="ORGC02">
         <!-- Tester calls DUT and sends 2 WHITE pages. -->
@@ -1193,6 +1269,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="ORGC03">
         <!-- Tester calls DUT and sends 1 IMPRESS page. -->
@@ -1228,6 +1308,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
 </test-group>
 <test-group name="Annex C - ECM receive test procedures">
@@ -1311,6 +1395,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="RX_DCNDATA"/>
     </test>
     <test name="OREN02">
         <!-- Tester calls DUT and sends one 31k byte STAIRSTEP page and one 15k byte STAIRSTEP page. -->
@@ -1419,6 +1507,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="RX_DCNDATA"/>
     </test>
     <test name="OREN03">
         <!-- Tester calls DUT and sends one 15k byte STAIRSTEP page. -->
@@ -1560,6 +1652,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OREN04">
         <!-- Tester calls DUT and sends one 31k byte STAIRSTEP page. -->
@@ -1703,6 +1799,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OREN05">
         <!-- Tester calls DUT and sends one 31k byte STAIRSTEP page. -->
@@ -1846,6 +1946,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="RX_DCNDATA"/>
     </test>
     <test name="OREN06">
         <!-- Tester calls DUT and sends two 15k byte STAIRSTEP pages. -->
@@ -1989,6 +2093,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OREN07">
         <!-- Tester calls DUT and sends one 15k byte STAIRSTEP page. -->
@@ -2109,6 +2217,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="RX_DCNDATA"/>
     </test>
     <test name="OREN08">
         <!-- Tester calls DUT and sends two 15k byte STAIRSTEP pages. -->
@@ -2178,6 +2290,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OREN09">
         <!-- Tester calls DUT and sends one 64k byte STAIRSTEP page and one 63k byte STAIRSTEP page. -->
@@ -2227,6 +2343,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="RX_DCNDATA"/>
     </test>
     <test name="OREN10">
         <!-- Tester calls DUT and sends 1 IMPRESS page. -->
@@ -2264,6 +2384,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
 </test-group>
 <test-group name="Annex D - Exception receive test procedures">
@@ -2276,6 +2400,9 @@
         <step dir="R" type="HDLC" modem="V.21" tag="DIS" value="FF C8 01 ..." timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="DIS" value="FF C8 01 ..." timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="DCN" value="FF C8 5F"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="RETRYDCN"/>
     </test>
     <test name="MRGX02">
         <!-- Tester calls DUT -->
@@ -2289,6 +2416,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="RX_DCNWHY"/>
     </test>
     <test name="MRGX03">
         <!-- Tester calls DUT -->
@@ -2322,6 +2453,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="RX_DCNDATA"/>
     </test>
     <test name="MRGX04">
         <!-- Tester calls DUT -->
@@ -2347,6 +2482,10 @@
         <step dir="T" type="POSTAMBLE"/>
         <step type="WAIT" value="75"/>
         <step dir="T" type="TCF" modem="V.27ter/4800" value="900"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="CALLDROPPED"/>
     </test>
     <test name="MRGX05">
         <!-- Tester calls DUT -->
@@ -2416,6 +2555,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="MPS" value="FF C8 72"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="CALLDROPPED"/>
     </test>
     <test name="MRGX07">
         <!-- Tester calls DUT -->
@@ -2449,6 +2592,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="EOP" value="FF C8 74"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGX08">
         <!-- Tester calls DUT -->
@@ -2482,6 +2629,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="EOP" value="FF C8 74"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGX09">
         <!-- Tester calls DUT -->
@@ -2521,6 +2672,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="UNEXPECTED"/>
     </test>
     <test name="MRGX10">
         <!-- Tester calls DUT -->
@@ -2564,6 +2719,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="UNEXPECTED"/>
     </test>
     <test name="MRGX11">
         <!-- Tester calls DUT -->
@@ -2604,6 +2763,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGX12">
         <!-- Tester calls DUT -->
@@ -2650,6 +2813,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="RX_INVALCMD"/>
     </test>
     <test name="MRGX13">
         <!-- Tester calls DUT -->
@@ -2685,6 +2852,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGX14">
         <!-- Tester calls DUT -->
@@ -2719,6 +2890,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGX15">
         <!-- Tester calls DUT, and sends 1 WHITE page -->
@@ -2757,6 +2932,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
 </test-group>
 <test-group name="Annex E - Polling receive test procedures">
@@ -2775,6 +2954,9 @@
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
         <step dir="R" type="SILENCE"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="TX_INCAPABLE"/>
     </test>
     <test name="MTGP02">
         <!-- DUT is set up for polling reception. DUT calls tester. Tester sends 2 WHITE pages. -->
@@ -2829,6 +3011,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTGP03">
         <!-- DUT is set up for polling reception using a correct password. DUT calls tester. Tester sends 2 WHITE pages. -->
@@ -2885,6 +3071,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN+" value="FF C8 DF"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
     </test>
 </test-group>
 <test-group name="Annex F - Transmit test procedures">
@@ -2927,6 +3117,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN02">
         <!-- The DUT is first set up to attempt this transmission using R8x7.7 l/mm. DUT calls tester
@@ -2960,6 +3153,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN03">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -2990,6 +3186,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN04">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -3020,6 +3219,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN05">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -3050,6 +3252,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN06">
         <!-- The DUT is configured to attempt this transmission using ECM. DUT calls tester
@@ -3081,6 +3286,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN07">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -3095,6 +3303,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="RX_INCAPABLE"/>
     </test>
     <test name="MTGN08">
         <!-- DUT calls tester and sends 2 WHITE pages. -->
@@ -3133,6 +3344,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN09">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -3171,6 +3385,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN10">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -3217,6 +3434,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN11">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -3251,6 +3471,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN12">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -3297,6 +3520,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN13">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -3335,6 +3561,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN14">
         <!-- DUT calls tester and sends 2 WHITE pages separately. -->
@@ -3389,6 +3618,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN15">
         <!-- DUT calls tester and sends 2 WHITE pages separately. -->
@@ -3456,6 +3688,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN16">
         <!-- DUT calls tester and sends 2 WHITE pages separately. -->
@@ -3523,6 +3758,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN17">
         <!-- DUT calls tester and sends 2 WHITE pages. -->
@@ -3563,6 +3801,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN18">
         <!-- DUT calls tester and sends 2 WHITE pages. -->
@@ -3615,6 +3856,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN19">
         <!-- DUT calls tester and sends 2 WHITE pages. -->
@@ -3667,6 +3911,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN20">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -3699,6 +3946,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN21">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -3743,6 +3993,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN22">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -3787,6 +4040,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN23">
         <!-- DUT calls tester and sends 2 WHITE pages separately. -->
@@ -3840,6 +4096,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN24">
         <!-- DUT calls tester and sends 2 WHITE pages. -->
@@ -3886,6 +4145,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN25">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -3916,6 +4178,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN26">
         <!-- DUT calls tester and sends 2 WHITE pages separately. -->
@@ -3969,6 +4234,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN27">
         <!-- DUT calls tester and sends 2 WHITE pages. -->
@@ -4024,6 +4292,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGN28">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -4054,6 +4325,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
 </test-group>
 <test-group name="Annex G - Capability transmit tests">
@@ -4094,6 +4368,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTGC02">
         <!-- DUT calls tester and sends 1 IMPRESS and 1 WHITE page. -->
@@ -4132,6 +4409,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTGC03">
         <!-- DUT calls tester and sends 1 IMPRESS and 1 WHITE page. -->
@@ -4170,6 +4450,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTGC04">
         <!-- DUT calls tester and sends 1 IMPRESS and 1 WHITE page. -->
@@ -4216,6 +4499,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTGC05">
         <!-- DUT calls tester and sends 1 IMPRESS and 1 WHITE page. -->
@@ -4254,6 +4540,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTGC06">
         <!-- DUT calls tester and sends 1 IMPRESS and 1 WHITE page. -->
@@ -4292,6 +4581,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTGC07">
         <!-- DUT calls tester and sends 1 IMPRESS and 1 WHITE page. -->
@@ -4346,6 +4638,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTGC08">
         <!-- DUT calls tester and sends 1 IMPRESS and 1 WHITE page. -->
@@ -4408,6 +4703,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTGC09-01">
         <!-- DUT calls tester and sends 2 WHITE pages. -->
@@ -4446,6 +4744,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTGC09-02">
         <!-- DUT calls tester and sends 2 WHITE pages. -->
@@ -4484,6 +4785,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTGC09-03">
         <!-- DUT calls tester and sends 2 WHITE pages. -->
@@ -4522,6 +4826,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTGC09-04">
         <!-- DUT calls tester and sends 2 WHITE pages. -->
@@ -4560,6 +4867,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTGC09-05">
         <!-- DUT calls tester and sends 2 WHITE pages. -->
@@ -4598,6 +4908,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTGC09-06">
         <!-- DUT calls tester and sends 2 WHITE pages. -->
@@ -4636,6 +4949,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTGC09-07">
         <!-- DUT calls tester and sends 2 WHITE pages. -->
@@ -4674,6 +4990,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTGC09-08">
         <!-- DUT calls tester and sends 2 WHITE pages. -->
@@ -4712,6 +5031,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTGC09-09">
         <!-- DUT calls tester and sends 2 WHITE pages. -->
@@ -4750,6 +5072,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTGC09-10">
         <!-- DUT calls tester and sends 2 WHITE pages. -->
@@ -4788,6 +5113,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTGC09-11">
         <!-- DUT calls tester and sends 2 WHITE pages. -->
@@ -4826,6 +5154,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTGC09-12">
         <!-- DUT calls tester and sends 2 WHITE pages. -->
@@ -4864,6 +5195,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTGC10">
         <!-- DUT calls tester and sends 2 WHITE pages. -->
@@ -4929,6 +5263,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTGC11">
         <!-- DUT calls tester and sends 1 IMPRESS page. -->
@@ -4959,6 +5296,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
 </test-group>
 <test-group name="Annex H - ECM transmit test procedures">
@@ -5007,6 +5347,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTEN02">
         <!-- DUT calls tester and sends 1 IMPRESS and 1 WHITE page. -->
@@ -5081,6 +5424,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTEN03">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -5272,6 +5618,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="TX_T5EXP"/>
     </test>
     <test name="OTEN04">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -5383,7 +5732,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
-        <step dir="R" type="SILENCE"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="RETRYDCN"/>
     </test>
     <test name="OTEN05">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -5459,6 +5810,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="OTEN06">
         <!-- DUT calls tester and sends 1 IMPRESS page. -->
@@ -5489,6 +5843,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
 </test-group>
 <test-group name="Annex I - Exception transmit test procedures">
@@ -5508,6 +5865,8 @@
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCS+" value="FF C8 C1 ..."/>
         <step dir="R" type="TCF" modem="V.27ter/4800" timeout="60000"/>
+
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGX02">
         <!-- DUT calls tester and is prepared to send 1 WHITE page. Tester sends CED/DIS
@@ -5527,6 +5886,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="CALLDROPPED"/>
     </test>
     <test name="MTGX03">
         <!-- DUT calls tester and is prepared to send 1 WHITE page. -->
@@ -5547,6 +5910,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="TX_BADDCS"/>
     </test>
     <test name="MTGX04">
         <!-- DUT calls tester and is prepared to send 2 WHITE pages separately. -->
@@ -5577,6 +5944,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="RX_DCNPHD"/>
     </test>
     <test name="MTGX05">
         <!-- DUT calls tester and attempts to send 2 WHITE pages. -->
@@ -5605,6 +5976,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN+" value="FF C8 DF"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="RX_DCNPHD"/>
     </test>
     <test name="MTGX06">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -5633,6 +6008,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN+" value="FF C8 DF"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="TX_BADPG"/>
     </test>
     <test name="MTGX07">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -5656,6 +6035,9 @@
         <step dir="R" type="TCF" modem="V.29/9600"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="TX_PHBDEAD"/>
     </test>
     <test name="MTGX08">
         <!-- DUT calls tester and sends 2 WHITE pages separately. -->
@@ -5687,6 +6069,9 @@
         <step dir="R" type="HDLC" modem="V.21" tag="EOM+" value="FF C8 F1"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="TX_PHDDEAD"/>
     </test>
     <test name="MTGX09">
         <!-- DUT calls tester and sends 2 WHITE pages. -->
@@ -5716,6 +6101,9 @@
         <step dir="R" type="HDLC" modem="V.21" tag="MPS+" value="FF C8 F2"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="TX_PHDDEAD"/>
     </test>
     <test name="MTGX10">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -5745,6 +6133,9 @@
         <step dir="R" type="HDLC" modem="V.21" tag="EOP+" value="FF C8 F4"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="TX_PHDDEAD"/>
     </test>
     <test name="MTGX11">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -5791,6 +6182,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="CANNOT_TRAIN"/>
     </test>
     <test name="MTGX12">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -5829,6 +6223,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="RETRYDCN"/>
     </test>
     <test name="MTGX13">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -5867,6 +6264,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="TX_PHBDEAD"/>
     </test>
     <test name="MTGX14">
         <!-- DUT calls tester and sends 2 WHITE pages separately. -->
@@ -5913,6 +6313,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="TX_PHDDEAD"/>
     </test>
     <test name="MTGX15">
         <!-- DUT calls tester and sends 2 WHITE pages. -->
@@ -5957,6 +6360,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="TX_PHDDEAD"/>
     </test>
     <test name="MTGX16">
         <!-- DUT calls tester and sends 1 WHITE page. -->
@@ -6001,6 +6407,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="TX_PHDDEAD"/>
     </test>
     <test name="MTGX17">
         <!-- DUT calls tester, and is configured to send 1 WHITE page. Tester responds with an unknown frame instead of
@@ -6038,6 +6447,10 @@
         <step dir="T" type="PREAMBLE" modem="V.21"/>
         <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
         <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="TX_NODIS"/>
     </test>
     <test name="MTGX18">
         <!-- DUT calls tester, and sends 1 WHITE page -->
@@ -6081,6 +6494,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="UNEXPECTED"/>
     </test>
     <test name="MTGX19">
         <!-- DUT calls tester, and sends 1 WHITE page -->
@@ -6117,6 +6533,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGX20">
         <!-- DUT calls tester, and attempts to send 1 WHITE page -->
@@ -6150,6 +6569,9 @@
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF">
             <check name="MTGX20M01" desc="Unknown frame for response received"/>
         </step>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="TX_INVALRSP"/>
     </test>
     <test name="MTGX21">
         <!-- DUT calls tester, and sends 2 WHITE pages -->
@@ -6197,6 +6619,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGX22">
         <!-- DUT calls tester, and sends 2 WHITE pages -->
@@ -6243,6 +6668,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MTGX23">
         <!-- DUT calls tester, and sends 1 WHITE page -->
@@ -6280,6 +6708,9 @@
         <step dir="T" type="POSTAMBLE"/>
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
 </test-group>
 <test-group name="Annex J - Polling transmit test procedures">
@@ -6360,6 +6791,9 @@
             <check name="MRGP01M21" desc="Polled, disconnect after DCN"/>
         </step>
         <step dir="R" type="SILENCE"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGP02">
         <!-- DUT has been prepared with 2 WHITE pages, which are available for polling using a password. Tester calls DUT -->
@@ -6414,6 +6848,9 @@
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN" value="FF C8 5F"/>
         <step dir="R" type="SILENCE"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGP03">
         <!-- DUT has been prepared with 2 WHITE pages, which are available for polling using a password. Tester calls DUT -->
@@ -6436,6 +6873,9 @@
             <check name="MRGP03M01" desc="Polled, DUT rejects tester's password"/>
         </step>
         <step dir="R" type="SILENCE"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="PWD_UNACCEPTABLE"/>
     </test>
     <test name="MRGP04">
         <!-- DUT has been prepared with 2 WHITE pages, which are available for polling using a password. Tester calls DUT -->
@@ -6457,6 +6897,9 @@
             <check name="MRGP04M01" desc="Polled, DUT rejects DTC for lack of password"/>
         </step>
         <step dir="R" type="SILENCE"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="PWD_UNACCEPTABLE"/>
     </test>
     <test name="MRGP05">
         <!-- DUT has no document available for polling. Tester calls DUT -->
@@ -6479,6 +6922,9 @@
             <check name="MRGP05M02" desc="Polled, DUT rejects DTC for no document available"/>
         </step>
         <step dir="R" type="SILENCE"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="TX_INCAPABLE"/>
     </test>
     <test name="MRGP06">
         <!-- DUT has been prepared with 2 WHITE pages, which are available for polling without a password. Tester calls DUT -->
@@ -6526,6 +6972,9 @@
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN+" value="FF C8 DF"/>
         <step dir="R" type="SILENCE"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="MRGP07">
         <!-- DUT has been prepared with 2 WHITE pages, which are available for polling using a password. Tester calls DUT -->
@@ -6547,6 +6996,9 @@
             <check name="MRGP07M01" desc="Polled, DUT rejects DIS in place of DTC for lackof password"/>
         </step>
         <step dir="R" type="SILENCE"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="PWD_UNACCEPTABLE"/>
     </test>
     <test name="MRGP08">
         <!-- DUT has no document available for polling. Tester calls DUT -->
@@ -6567,6 +7019,9 @@
             <check name="MRGP08M01" desc="Polled, DUT rejects DIS in place of DTC for no document available"/>
         </step>
         <step dir="R" type="SILENCE"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="TX_INCAPABLE"/>
     </test>
     <test name="ORGP09">
         <!-- DUT has been prepared with 1 WHITE page, which is available for polling without password. Tester calls DUT
@@ -6627,6 +7082,9 @@
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN" value="FF C8 5F"/>
         <step dir="R" type="SILENCE"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
     <test name="ORGP10">
         <!-- DUT has been prepared with 1 WHITE page, which is available for polling without password. Tester calls DUT
@@ -6686,6 +7144,9 @@
 
         <step dir="R" type="HDLC" modem="V.21" tag="DCN" value="FF C8 5F"/>
         <step dir="R" type="SILENCE"/>
+
+        <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
+        <step type="STATUS" value="OK"/>
     </test>
 </test-group>
 </fax-tests>
