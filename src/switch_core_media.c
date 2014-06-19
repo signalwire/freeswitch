@@ -1607,6 +1607,8 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
  ready:
 	if (codec_string) {
 		char *tmp_codec_string = switch_core_session_strdup(smh->session, codec_string);
+
+
 		switch_channel_set_variable(session->channel, "rtp_use_codec_string", codec_string);
 		smh->codec_order_last = switch_separate_string(tmp_codec_string, ',', smh->codec_order, SWITCH_MAX_CODECS);
 		smh->mparams->num_codecs = switch_loadable_module_get_codecs_sorted(smh->codecs, SWITCH_MAX_CODECS, smh->codec_order, smh->codec_order_last);
@@ -2347,10 +2349,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set Codec %s %s/%ld %d ms %d samples %d bits\n",
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Set Codec %s %s/%ld %d ms %d samples %d bits %d channels\n",
 					  switch_channel_get_name(session->channel), a_engine->cur_payload_map->iananame, a_engine->cur_payload_map->rm_rate, 
 					  a_engine->cur_payload_map->codec_ms,
-					  a_engine->read_impl.samples_per_packet, a_engine->read_impl.bits_per_second);
+					  a_engine->read_impl.samples_per_packet, a_engine->read_impl.bits_per_second, a_engine->read_impl.number_of_channels);
 	a_engine->read_frame.codec = &a_engine->read_codec;
 	a_engine->read_frame.channels = a_engine->read_impl.number_of_channels;
 	a_engine->write_codec.agreed_pt = a_engine->cur_payload_map->agreed_pt;
@@ -3458,14 +3460,15 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					const switch_codec_implementation_t *imp = codec_array[i];
 					uint32_t bit_rate = imp->bits_per_second;
 					uint32_t codec_rate = imp->samples_per_second;
-					
+					int map_channels = map->rm_params ? atoi(map->rm_params) : 1;
+
 					if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
 						continue;
 					}
 
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio Codec Compare [%s:%d:%u:%d:%u]/[%s:%d:%u:%d:%u]\n",
-									  rm_encoding, map->rm_pt, (int) remote_codec_rate, codec_ms, map_bit_rate,
-									  imp->iananame, imp->ianacode, codec_rate, imp->microseconds_per_packet / 1000, bit_rate);
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio Codec Compare [%s:%d:%u:%d:%u:%d]/[%s:%d:%u:%d:%u:%d]\n",
+									  rm_encoding, map->rm_pt, (int) remote_codec_rate, codec_ms, map_bit_rate, map_channels,
+									  imp->iananame, imp->ianacode, codec_rate, imp->microseconds_per_packet / 1000, bit_rate, imp->number_of_channels);
 					if ((zstr(map->rm_encoding) || (smh->mparams->ndlb & SM_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
 						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 					} else {
@@ -3494,13 +3497,13 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 											  "Bah HUMBUG! Sticking with %s@%uh@%ui\n",
 											  imp->iananame, imp->samples_per_second, imp->microseconds_per_packet / 1000);
-						} else if ((ptime && codec_ms && codec_ms * 1000 != imp->microseconds_per_packet) || remote_codec_rate != codec_rate) {
+						} else if ((ptime && codec_ms && codec_ms * 1000 != imp->microseconds_per_packet) || remote_codec_rate != codec_rate || map_channels != imp->number_of_channels) {
 							/* ptime does not match */
 							match = 0;
 							
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
-											  "Audio Codec Compare [%s:%d:%u:%d:%u] is saved as a near-match\n", 
-											  imp->iananame, imp->ianacode, codec_rate, imp->microseconds_per_packet / 1000, bit_rate);
+											  "Audio Codec Compare [%s:%d:%u:%d:%u:%d] is saved as a near-match\n", 
+											  imp->iananame, imp->ianacode, codec_rate, imp->microseconds_per_packet / 1000, bit_rate, imp->number_of_channels);
 
 							near_matches[nm_idx].codec_idx = i;
 							near_matches[nm_idx].rate = remote_codec_rate;
@@ -3518,8 +3521,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						m_idx++;
 
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
-										  "Audio Codec Compare [%s:%d:%u:%d:%u] ++++ is saved as a match\n", 
-										  imp->iananame, imp->ianacode, codec_rate, imp->microseconds_per_packet / 1000, bit_rate);
+										  "Audio Codec Compare [%s:%d:%u:%d:%u:%d] ++++ is saved as a match\n", 
+										  imp->iananame, imp->ianacode, codec_rate, imp->microseconds_per_packet / 1000, bit_rate, imp->number_of_channels);
 						
 						if (m_idx >= MAX_MATCHES) {
 							break;
@@ -3605,6 +3608,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 																			matches[j].imp->microseconds_per_packet / 1000,
 																			matches[j].imp->number_of_channels,
 																			SWITCH_TRUE);
+
 					mimp = matches[j].imp;
 					mmap = matches[j].map;
 			

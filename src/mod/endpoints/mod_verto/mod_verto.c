@@ -3818,10 +3818,16 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 		
 		if (session) {
 			switch_channel_t *ochannel = switch_core_session_get_channel(session);
+			const char *ep_codec;
+
 			if (switch_true(switch_channel_get_variable(ochannel, SWITCH_BYPASS_MEDIA_VARIABLE))) {
 				switch_channel_set_flag(channel, CF_PROXY_MODE);
 				switch_channel_set_flag(ochannel, CF_PROXY_MODE);
 				switch_channel_set_cap(channel, CC_BYPASS_MEDIA);
+			}
+
+			if ((ep_codec = switch_channel_get_variable(ochannel, "ep_codec_string"))) {
+				switch_channel_set_variable(tech_pvt->channel, "codec_string", ep_codec);
 			}
 		}
 
