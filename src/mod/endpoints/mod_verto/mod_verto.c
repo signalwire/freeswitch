@@ -3718,7 +3718,7 @@ static char *verto_get_dial_string(const char *uid, switch_stream_handle_t *rstr
 		switch_mutex_lock(profile->mutex);
 		
 		for(jsock = profile->jsock_head; jsock; jsock = jsock->next) {
-			if (!strcmp(uid, jsock->uid)) {
+			if (!zstr(jsock->uid) && !zstr(uid) && !strcmp(uid, jsock->uid)) {
 				use_stream->write_function(use_stream, "%s/u:%s,", EP_NAME, jsock->uuid_str);
 				hits++;
 			}
