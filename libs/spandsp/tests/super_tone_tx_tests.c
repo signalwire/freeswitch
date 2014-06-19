@@ -33,6 +33,7 @@
 #include "config.h"
 #endif
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -165,8 +166,8 @@ static int parse_tone(super_tone_tx_step_t **tree, xmlDocPtr doc, xmlNsPtr ns, x
                                             length*1000.0 + 0.5,
                                             cycles);
             *tree = treep;
-            tree = &(treep->next);
-            parse_tone(&(treep->nest), doc, ns, cur);
+            tree = &treep->next;
+            parse_tone(&treep->nest, doc, ns, cur);
         }
         /*endif*/
         cur = cur->next;

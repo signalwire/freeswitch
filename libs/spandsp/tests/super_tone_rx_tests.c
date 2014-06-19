@@ -188,8 +188,8 @@ static int parse_tone(super_tone_rx_descriptor_t *desc, int tone_id, super_tone_
                                             length*1000.0 + 0.5,
                                             cycles);
             *tree = treep;
-            tree = &(treep->next);
-            parse_tone(desc, tone_id, &(treep->nest), doc, ns, cur);
+            tree = &treep->next;
+            parse_tone(desc, tone_id, &treep->nest, doc, ns, cur);
         }
         /*endif*/
         cur = cur->next;
