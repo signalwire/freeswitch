@@ -174,6 +174,7 @@ struct jsock_sub_node_head_s;
 
 typedef struct jsock_sub_node_s {
 	jsock_t *jsock;
+	uint32_t serno;
 	struct jsock_sub_node_head_s *head;
 	struct jsock_sub_node_s *next;
 } jsock_sub_node_t;
@@ -529,7 +530,9 @@ static switch_ssize_t ws_write_json(jsock_t *jsock, cJSON **json, switch_bool_t 
 
 	if ((json_text = cJSON_PrintUnformatted(*json))) {
 		if (jsock->profile->debug || globals.debug) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "WRITE %s [%s]\n", jsock->name, json_text);
+			char *log_text = cJSON_Print(*json);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "WRITE %s [%s]\n", jsock->name, log_text);
+			free(log_text);
 		}
 		switch_mutex_lock(jsock->write_mutex);
 		ws_write_frame(&jsock->ws, WSOC_TEXT, json_text, strlen(json_text));
@@ -558,6 +561,7 @@ static void write_event(const char *event_channel, jsock_t *use_jsock, cJSON *ev
 			
 			if (!use_jsock || use_jsock == np->jsock) {
 				params = cJSON_Duplicate(event, 1);
+				cJSON_AddItemToObject(params, "eventSerno", cJSON_CreateNumber(np->serno++));
 				msg = jrpc_new_req("verto.event", NULL, &params);
 				ws_write_json(np->jsock, &msg, SWITCH_TRUE);
 			}
@@ -1134,13 +1138,17 @@ static switch_status_t process_input(jsock_t *jsock, uint8_t *data, switch_ssize
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (ascii) {
-		if (jsock->profile->debug || globals.debug) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "READ %s [%s]\n", jsock->name, ascii);
-		}
 		json = cJSON_Parse(ascii);
 	}
 
 	if (json) {
+
+		if (jsock->profile->debug || globals.debug) {
+			char *log_text = cJSON_Print(json);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "READ %s [%s]\n", jsock->name, log_text);
+			free(log_text);
+		}
+
 		if (json->type == cJSON_Array) { /* batch mode */
 			int i, len = cJSON_GetArraySize(json);
 
@@ -3860,19 +3868,13 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 
 void verto_broadcast(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id)
 {
-
-	{
+	if (globals.debug > 10) {
 		char *json_text;
 		if ((json_text = cJSON_Print(json))) {
-			if (globals.debug) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "EVENT BROADCAST %s %s\n", event_channel, json_text);
-			}
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "EVENT BROADCAST %s %s\n", event_channel, json_text);
 			free(json_text);
 		}
 	}
-
-
-
 
 	jsock_send_event(json);
 }

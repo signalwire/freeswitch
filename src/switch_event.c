@@ -97,6 +97,7 @@ static switch_hash_t *CUSTOM_HASH = NULL;
 static int THREAD_COUNT = 0;
 static int DISPATCH_THREAD_COUNT = 0;
 static int EVENT_CHANNEL_DISPATCH_THREAD_COUNT = 0;
+static int EVENT_CHANNEL_DISPATCH_THREAD_STARTING = 0;
 static int SYSTEM_RUNNING = 0;
 static uint64_t EVENT_SEQUENCE_NR = 0;
 #ifdef SWITCH_EVENT_RECYCLE
@@ -2876,6 +2877,7 @@ static void *SWITCH_THREAD_FUNC switch_event_channel_deliver_thread(switch_threa
 	switch_mutex_lock(EVENT_QUEUE_MUTEX);
 	THREAD_COUNT++;
 	EVENT_CHANNEL_DISPATCH_THREAD_COUNT++;
+	EVENT_CHANNEL_DISPATCH_THREAD_STARTING = 0;
 	switch_mutex_unlock(EVENT_QUEUE_MUTEX);
 
 	while(SYSTEM_RUNNING) {
@@ -2911,6 +2913,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_channel_broadcast(const char *event
 {
 	event_channel_data_t *ecd = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	int launch = 0;
 
 	if (!SYSTEM_RUNNING) {
 		cJSON_Delete(*json);
@@ -2927,7 +2930,14 @@ SWITCH_DECLARE(switch_status_t) switch_event_channel_broadcast(const char *event
 
 	*json = NULL;
 
-	if (!EVENT_CHANNEL_DISPATCH_THREAD_COUNT && SYSTEM_RUNNING) {
+	switch_mutex_lock(EVENT_QUEUE_MUTEX);
+	if (!EVENT_CHANNEL_DISPATCH_THREAD_COUNT && !EVENT_CHANNEL_DISPATCH_THREAD_STARTING && SYSTEM_RUNNING) {
+		EVENT_CHANNEL_DISPATCH_THREAD_STARTING = 1;
+		launch = 1;
+	}
+	switch_mutex_unlock(EVENT_QUEUE_MUTEX);
+
+	if (launch) {
 		switch_thread_data_t *td;
 	
 		if (!EVENT_CHANNEL_DISPATCH_QUEUE) {
@@ -3189,7 +3199,7 @@ SWITCH_DECLARE(switch_status_t) switch_live_array_bootstrap(switch_live_array_t 
 	cJSON_AddItemToObject(msg, "eventChannel", cJSON_CreateString(la->event_channel));
 	cJSON_AddItemToObject(data, "action", cJSON_CreateString("bootObj"));
 	cJSON_AddItemToObject(data, "name", cJSON_CreateString(la->name));
-	cJSON_AddItemToObject(data, "wireSerno", cJSON_CreateNumber(la->serno++));
+	cJSON_AddItemToObject(data, "wireSerno", cJSON_CreateNumber(-1));
 
 	if (sessid) {
 		cJSON_AddItemToObject(msg, "sessid", cJSON_CreateString(sessid));
