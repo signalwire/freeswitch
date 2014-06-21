@@ -10040,7 +10040,7 @@ static void member_bind_controls(conference_member_t *member, const char *contro
 	}
 
 	if (!(xgroups = switch_xml_find_child(xgroups, "group", "name", controls))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find caller-controls in %s\n", global_cf_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find group '%s' in caller-controls section of %s\n", switch_str_nil(controls), global_cf_name);
 		goto end;
 	}
 
