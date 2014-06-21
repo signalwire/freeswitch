@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="css/jquery.mobile-1.3.2.min.css" />
+  <link rel="stylesheet" type="text/css" href="css/jsontable.css" />
+  <link rel="shortcut icon" href="favicon.ico" />
+    <meta charset="utf-8" />
+    <title>FreeSWITCH Verto Demo</title>
+
+    <style type="text/css">
+      .pageheader {
+      font-size: 22px;
+      font-weight: normal;
+      height: 27px;
+      }
+    </style>
+
+  </head>
+  <body>
+    <div data-role="page" id="page-login" align="center">
+      <div data-role="header" class="page-header">
+	FreeSWITCH Verto Demo
+      </div>
+      <br>
+      <a target="_CC2104" href="https://www.cluecon.com"><img border="0" width="300" src="img/cc_banner2014.gif"></a>
+
+      <div data-role="fieldcontain">
+	<label for="name">Login</label>
+	<input type="text" size="20" id="login"/>
+      </div>
+
+      <div data-role="fieldcontain">
+	<label for="name">Password</label>
+	<input type="password" size="20" id="passwd"/>
+      </div>
+
+      <div data-role="fieldcontain">
+	<label for="name">CID Name</label>  
+	<input type="text" size="30" id="name"/>
+      </div>
+
+      <div data-role="fieldcontain">
+	<label for="name">CID Number</label>  
+	<input type="text" size="20" id="cid"/>
+      </div>
+
+      <div data-role="fieldcontain">
+	<label for="name">Hostname</label>
+	<input type="text" size="20" id="hostName"/>
+      </div>
+
+      <div data-role="fieldcontain">
+	<label for="name">Websocket URL</label>
+	<input type="text" size="20" id="wsURL"/>
+      </div>
+
+      <br><br>
+      <button data-inline="true" id="loginbtn">Log In</button>      
+      
+    </div>
+
+    <div data-role="page" id="page-incall" align="center">
+      <div data-role="header" id="calltitle" class="pageheader">
+	Verto IN CALL
+      </div>
+
+      <br>
+      <a target="_CC2104" href="https://www.cluecon.com"><img border="0" width="300" src="img/cc_banner2014.gif"></a>
+      <br><br>
+
+      <div id="conf">
+	<div style="color:black;font-family: verdana" align="center" id="mcount"></div>
+	<table cellspacing="0" cellpadding="0" border="0" align="center" id="example" class="jsDataTable">
+	</table>
+      </div>
+
+      <div id="display" style="font-weight:bold;font-size:18px"></div>
+      <br>
+      <div data-role="fieldcontain" id="xferdiv">
+	<input data-mini="true" type="text" id="xferto"><br>
+      <button data-inline="true" id="cancelxferbtn">Cancel Transfer</button>
+      <button data-inline="true" class="startxferbtn">Complete Transfer</button>
+      </div>
+
+      <div id=keypad>
+	<button class="dtmf" data-inline="true">1</button>
+	<button class="dtmf" data-inline="true">2</button>
+	<button class="dtmf" data-inline="true">3</button>
+	<br>
+	<button class="dtmf" data-inline="true">4</button>
+	<button class="dtmf" data-inline="true">5</button>
+	<button class="dtmf" data-inline="true">6</button>
+	<br>	
+	<button class="dtmf" data-inline="true">7</button>
+	<button class="dtmf" data-inline="true">8</button>
+	<button class="dtmf" data-inline="true">9</button>
+	<br>
+	<button class="dtmf" data-inline="true">*</button>
+	<button class="dtmf" data-inline="true">0</button>
+	<button class="dtmf" data-inline="true">#</button>
+      </div>
+
+      <br>
+      <button data-inline="true" id="hold">HOLD</button>
+      <button data-inline="true" id="hupbtn">End Call</button>
+      <button data-inline="true" class="startxferbtn">Transfer</button>
+
+      <div id="media">	
+	<video width=800 id="webcam" autoplay="autoplay" hidden="true"></video>
+      </div>
+      <br><br>
+    </div>
+    
+    <div data-role="page" id="page-main" align="center">
+      <div data-role="header" class="pageheader">
+	FreeSWITCH Verto Demo
+      </div>
+      <br>
+      <a target="_CC2104" href="https://www.cluecon.com"><img border="0" width="300" src="img/cc_banner2014.gif"></a>
+      
+      <div id="offline">
+	<h2>LOGGING IN</h2>
+	<img src="images/login.gif"></img>
+        <div id="errordisplay" style="font-weight:bold;font-size:18px;color:#ae0000"></div>
+      </div>
+
+      <div id="online" align="center">
+	<div id="text"></div>
+	<div data-role="fieldcontain">
+	  <input type="text" id="ext"/><br>
+	  <div id="dialpad">
+	    <button class="dialbtn" data-inline="true">1</button>
+	    <button class="dialbtn" data-inline="true">2</button>
+	    <button class="dialbtn" data-inline="true">3</button>
+	    <br>
+	    <button class="dialbtn" data-inline="true">4</button>
+	    <button class="dialbtn" data-inline="true">5</button>
+	    <button class="dialbtn" data-inline="true">6</button>
+	    <br>	
+	    <button class="dialbtn" data-inline="true">7</button>
+	    <button class="dialbtn" data-inline="true">8</button>
+	    <button class="dialbtn" data-inline="true">9</button>
+	    <br>
+	    <button class="dialbtn" data-inline="true">*</button>
+	    <button class="dialbtn" data-inline="true">0</button>
+	    <button class="dialbtn" data-inline="true">#</button>
+	  </div>
+
+	  <button data-inline="true" id="clearbtn">Clear</button>
+	  <button data-inline="true" id="callbtn">Call</button>
+	  <br><br>
+	  <button data-inline="true"id="logoutbtn">Log Out</button>
+	</div>
+	<br>
+	<label><input id="use_vid" type="checkbox" value="foo" > Use Video</label>
+	<label><input id="use_stereo" type="checkbox" value="foo" > Stereo Audio</label>
+	<br>
+<!--
+	<b>TEXT</b><br>To: <input type="text" size="20" id="textto"/> MSG: <input type="text" size="40" id="textmsg"/>
+	<button id="vtxtbtn">Send</button>
+-->
+      </div>
+
+
+
+<table width=500 style="font-size:11pt;font-face:arial">
+<tr><td align=center colspan=2><b>FreeSWITCH VERTO WebRTC Demo Directory<Br><br></td></tr>
+<tr><td width=100><b>Dial</b></td><td><b>Desc</b></td></tr>
+<tr><td align=left colspan=2><hr></td></tr>
+
+<tr><td>3d1</td><td> 3D sound demo #1</td></tr>
+<tr><td>3d2</td><td> 3D sound demo #2</td></tr>
+
+<tr><td>stereo1</td><td> Stereo sound demo #1</td></tr>
+<tr><td>stereo2</td><td> Stereo sound demo #2</td></tr>
+<tr><td>stereo3</td><td> Stereo sound demo #3</td></tr>
+<tr><td>3500</td><td>Local 48k Stereo Conference</td></tr>
+<tr><td>&nbsp;</td></tr>
+<tr><td>cluecon</td><td> ClueCon Hotline</td></tr>
+<tr><td>&lt;number&gt;</td><td>Call a US/Canda Number</td></tr>
+
+<tr><td>vuc</td><td>VoIP Users Conference</td></tr>
+<tr><td>888</td><td>FreeSWITCH Community Conference</td></tr>
+
+<tr><td>3300</td><td>Local 48k Conference</td></tr>
+<tr><td>5000</td><td>Try the Demo IVR</td></tr>
+<tr><td>9664</td><td>Listen to Hold Music</td></tr>
+<tr><td>9386</td><td>Funny Prompts</td></tr>
+<tr><td>9198</td><td>Tetris (tone generator)</td></tr>
+<tr><td colspan=2><Br>
+<center>
+<br><br><br>
+</td></tr>
+</td></tr>
+</table>
+
+
+
+
+    </div><!-- /page -->
+
+    <div data-role="page" id="dialog-logout" data-close-btn="none">
+      <div data-role="header">
+        <h2>Logged Out</h2>
+      </div>
+      <div data-role="content">
+        <p>You have been logged out or disconnected from the server.</p>
+
+	<button onclick="$('#dialog-logout').dialog('close')">OK</button>
+      </div>
+    </div>
+
+    <div data-role="page" id="dialog-login-error" data-close-btn="none">
+      <div data-role="header">
+        <h2>Login Error</h2>
+      </div>
+      <div data-role="content">
+        <p>Error logging in</p>
+
+	<button onclick="$('#dialog-login-error').dialog('close')">OK</button>
+      </div>
+    </div>
+
+    <div data-role="page" id="dialog-hold" data-close-btn="none">
+      <div data-role="header">
+        <h2>Call On hold</h2>
+      </div>
+      <div data-role="content">
+        <p>The call is on hold</p>
+
+	<button onclick="$('#dialog-hold').dialog('close');cur_call.toggleHold();">Resume Call</button>
+      </div>      
+    </div>
+
+    <div data-role="page" id="dialog-incoming-call" data-close-btn="none">
+      <div data-role="header">
+        <h2>Incoming Call</h2>
+      </div>
+      <div data-role="content">
+        <div id="dialog-incoming-call-txt"><p>Incoming Call</p></div>
+	<button id="ansbtn">Answer</button> 
+	<div id="vansdiv"><button id="vansbtn">Answer Video</button></div>
+	<button id="declinebtn">Decline</button>
+      </div>
+      
+    </div>
+
+
+    <script type="text/javascript" src="js/jquery-2.0.3.min.js"></script> 
+    <script type="text/javascript" src="js/jquery.mobile-1.3.2.min.js"></script> 
+    <script type="text/javascript" src="js/jquery.json-2.4.min.js"></script>  
+    <script type="text/javascript" src="js/jquery.cookie.js"></script>
+    <script type="text/javascript" src="js/jquery.dataTables.js"></script>
+    <script type="text/javascript" src="js/verto-min.js"></script>
+    
+    <script type="text/javascript" src="verto.js"></script>
+
+  </body>
+</html>
+
