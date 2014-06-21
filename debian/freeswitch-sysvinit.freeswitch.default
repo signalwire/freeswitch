@@ -1,2 +1,2 @@
 # /etc/default/freeswitch
-DAEMON_OPTS="-rp -nonat"
+DAEMON_OPTS="-nonat"
