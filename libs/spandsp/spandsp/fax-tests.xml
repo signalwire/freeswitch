@@ -233,5 +233,151 @@
         <step dir="R" type="CLEAR" timein="800" timeout="1200"/>
         <step type="STATUS" value="OK"/>
     </test>
+    <test name="Modem-change-at-CTC">
+        <!-- Similar test to TSB85/OREN03, but there is a modem change at the CTC -->
+        <!-- Tester calls DUT and sends one 15k byte STAIRSTEP page. -->
+        <step type="CALL"/>
+
+        <!--<step dir="T" type="CNG"/>-->
+
+        <step dir="R" type="CED"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="DIS" value="FF C8 01 ..." timeout="60000"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="DCS" value="FF C8 41 00 60 1F 20"/>
+        <step dir="T" type="POSTAMBLE"/>
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="TCF" modem="V.29/9600" value="1800"/>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="CFR" value="FF C8 21"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.29/9600"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" crc_error="0"/>
+        <step dir="T" type="POSTAMBLE"/>
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="PPS-EOP" value="FF C8 7D 74 00 00 10"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <possible-step>
+            <step dir="R" type="HDLC" modem="V.21" tag="RNR" value="FF C8 37"/>
+            <step dir="R" type="SILENCE"/>
+
+            <step type="WAIT" value="75"/>
+            <step dir="T" type="PREAMBLE" modem="V.21"/>
+            <step dir="T" type="HDLC" tag="RR" value="FF C8 76"/>
+            <step dir="T" type="POSTAMBLE"/>
+        </possible-step>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 80 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 FF FF FF FF FF"/>
+        <step dir="R" type="SILENCE"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.29/9600"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" crc_error="0"/>
+        <step dir="T" type="POSTAMBLE"/>
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="PPS-EOP" value="FF C8 7D 74 00 00 10"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <possible-step>
+            <step dir="R" type="HDLC" modem="V.21" tag="RNR" value="FF C8 37"/>
+            <step dir="R" type="SILENCE"/>
+
+            <step type="WAIT" value="75"/>
+            <step dir="T" type="PREAMBLE" modem="V.21"/>
+            <step dir="T" type="HDLC" tag="RR" value="FF C8 76"/>
+            <step dir="T" type="POSTAMBLE"/>
+        </possible-step>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 80 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 FF FF FF FF FF"/>
+        <step dir="R" type="SILENCE"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.29/9600"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" crc_error="0"/>
+        <step dir="T" type="POSTAMBLE"/>
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="PPS-EOP" value="FF C8 7D 74 00 00 10"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <possible-step>
+            <step dir="R" type="HDLC" modem="V.21" tag="RNR" value="FF C8 37"/>
+            <step dir="R" type="SILENCE"/>
+
+            <step type="WAIT" value="75"/>
+            <step dir="T" type="PREAMBLE" modem="V.21"/>
+            <step dir="T" type="HDLC" tag="RR" value="FF C8 76"/>
+            <step dir="T" type="POSTAMBLE"/>
+        </possible-step>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 80 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 FF FF FF FF FF"/>
+        <step dir="R" type="SILENCE"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.29/9600"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64" crc_error="0"/>
+        <step dir="T" type="POSTAMBLE"/>
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="PPS-EOP" value="FF C8 7D 74 00 00 10"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <possible-step>
+            <step dir="R" type="HDLC" modem="V.21" tag="RNR" value="FF C8 37"/>
+            <step dir="R" type="SILENCE"/>
+
+            <step type="WAIT" value="75"/>
+            <step dir="T" type="PREAMBLE" modem="V.21"/>
+            <step dir="T" type="HDLC" tag="RR" value="FF C8 76"/>
+            <step dir="T" type="POSTAMBLE"/>
+        </possible-step>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 80 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 FF FF FF FF FF"/>
+        <step dir="R" type="SILENCE"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="CTC + V.27ter/4800" value="FF C8 48 00 10"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="CTR" value="FF C8 23"/>
+        <step dir="R" type="SILENCE"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.27ter/4800"/>
+        <step dir="T" type="PP" value="etsi_300_242_a4_stairstep.tif" frame_size="64"/>
+        <step dir="T" type="POSTAMBLE"/>
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="PPS-EOP" value="FF C8 7D 74 00 00 6B"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <possible-step>
+            <step dir="R" type="HDLC" modem="V.21" tag="RNR" value="FF C8 37"/>
+            <step dir="R" type="SILENCE"/>
+
+            <step type="WAIT" value="75"/>
+            <step dir="T" type="PREAMBLE" modem="V.21"/>
+            <step dir="T" type="HDLC" tag="RR" value="FF C8 76"/>
+            <step dir="T" type="POSTAMBLE"/>
+        </possible-step>
+
+        <step dir="R" type="HDLC" modem="V.21" tag="MCF" value="FF C8 31"/>
+        <step dir="R" type="SILENCE"/>
+
+        <step type="WAIT" value="75"/>
+        <step dir="T" type="PREAMBLE" modem="V.21"/>
+        <step dir="T" type="HDLC" tag="DCN" value="FF C8 5F"/>
+        <step dir="T" type="POSTAMBLE"/>
+
+        <step dir="T" type="CLEAR"/>
+        <step dir="R" type="CLEAR" timein="0" timeout="100"/>
+        <step type="STATUS" value="OK"/>
+    </test>
 </test-group>
 </fax-tests>

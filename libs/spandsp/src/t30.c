@@ -3865,8 +3865,14 @@ static void process_state_f_doc_and_post_doc_ecm(t30_state_t *s, const uint8_t *
         process_rx_pps(s, msg, len);
         break;
     case T30_CTC:
+        if ((msg[4] & (DISBIT6 | DISBIT5 | DISBIT4 | DISBIT3)) != fallback_sequence[s->current_fallback].dcs_code)
+        {
+            span_log(&s->logging, SPAN_LOG_FLOW, "Modem changed in CTC.\n");
+            if ((s->current_fallback = find_fallback_entry(msg[4] & (DISBIT6 | DISBIT5 | DISBIT4 | DISBIT3))) < 0)
+                span_log(&s->logging, SPAN_LOG_FLOW, "Remote asked for a modem standard we do not support\n");
+        }
         s->image_carrier_attempted = false;
-        /* T.30 says we change back to long training here */
+        /* T.30 says we change back to long training here, whether or not the far end changed the modem type. */
         s->short_train = false;
         queue_phase(s, T30_PHASE_D_TX);
         set_state(s, T30_STATE_F_DOC_ECM);
