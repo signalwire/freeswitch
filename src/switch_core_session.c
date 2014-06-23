@@ -1828,16 +1828,21 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_manager(switch_t
 	while(session_manager.ready) {
 		int check = 1;
 		int ttl = 0;
+		uint32_t xsleep = sleep;
 
 		switch_mutex_lock(session_manager.mutex);
 		ttl = switch_queue_size(session_manager.thread_queue);
 		switch_mutex_unlock(session_manager.mutex);
 
+
 		if (!ttl) {
-			switch_mutex_lock(session_manager.cond2_mutex);
-			switch_thread_cond_timedwait(session_manager.cond, session_manager.cond_mutex, sleep);
-			switch_mutex_unlock(session_manager.cond2_mutex);
+			xsleep = 10000;
 		}
+
+		switch_mutex_lock(session_manager.cond2_mutex);
+		switch_thread_cond_timedwait(session_manager.cond, session_manager.cond_mutex, xsleep);
+		switch_mutex_unlock(session_manager.cond2_mutex);
+		
 
 		if (switch_micro_time_now() >= next) {
 			if (session_manager.popping) {
