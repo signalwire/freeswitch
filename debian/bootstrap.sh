@@ -67,6 +67,7 @@ freeswitch-init
 freeswitch-sysvinit
 freeswitch-systemd
 freeswitch-lang
+freeswitch-timezones
 )
 
 err () {
@@ -353,6 +354,7 @@ Recommends:
  freeswitch-mod-commands (= \${binary:Version}),
  freeswitch-init (= \${binary:Version}),
  freeswitch-lang (= \${binary:Version}),
+ freeswitch-timezones (= \${binary:Version}),
  freeswitch-music,
  freeswitch-sounds
 Suggests:
@@ -386,6 +388,7 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
 Recommends:
  freeswitch-init (= \${binary:Version}),
  freeswitch-lang (= \${binary:Version}),
+ freeswitch-timezones (= \${binary:Version}),
  freeswitch-meta-codecs (= \${binary:Version}),
  freeswitch-music,
  freeswitch-sounds
@@ -442,6 +445,7 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
 Recommends:
  freeswitch-init (= \${binary:Version}),
  freeswitch-lang (= \${binary:Version}),
+ freeswitch-timezones (= \${binary:Version}),
  freeswitch-music,
  freeswitch-sounds,
  freeswitch-conf-vanilla (= \${binary:Version}),
@@ -459,6 +463,7 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
 Recommends:
  freeswitch-init (= \${binary:Version}),
  freeswitch-lang (= \${binary:Version}),
+ freeswitch-timezones (= \${binary:Version}),
  freeswitch-meta-codecs (= \${binary:Version}),
  freeswitch-music,
  freeswitch-sounds,
@@ -542,6 +547,7 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
 Recommends:
  freeswitch-init (= \${binary:Version}),
  freeswitch-lang (= \${binary:Version}),
+ freeswitch-timezones (= \${binary:Version}),
  freeswitch-meta-codecs (= \${binary:Version}),
  freeswitch-meta-conf (= \${binary:Version}),
  freeswitch-meta-lang (= \${binary:Version}),
@@ -828,6 +834,16 @@ Description: Language files for FreeSWITCH
  .
  This is a metapackage which depends on the default language packages
  for FreeSWITCH.
+
+## timezones
+
+Package: freeswitch-timezones
+Architecture: all
+Depends: \${misc:Depends}
+Description: Timezone files for FreeSWITCH
+ $(debian_wrap "${fs_description}")
+ .
+ $(debian_wrap "This package includes the timezone files for FreeSWITCH.")
 
 EOF
 }
