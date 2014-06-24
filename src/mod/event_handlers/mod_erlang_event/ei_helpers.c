@@ -329,7 +329,7 @@ int ei_decode_string_or_binary(char *buf, int *index, int maxlen, char *dst)
 
 switch_status_t initialise_ei(struct ei_cnode_s *ec)
 {
-	switch_status_t rv;
+	int rv;
 	struct sockaddr_in server_addr;
 	struct hostent *nodehost;
 	char thishostname[EI_MAXHOSTNAMELEN + 1] = "";
