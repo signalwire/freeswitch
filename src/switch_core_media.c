@@ -3382,6 +3382,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				const char *rm_encoding;
 				uint32_t map_bit_rate = 0;
 				switch_codec_fmtp_t codec_fmtp = { 0 };
+				int map_channels = map->rm_params ? atoi(map->rm_params) : 1;
 
 				if (!(rm_encoding = map->rm_encoding)) {
 					rm_encoding = "";
@@ -3453,14 +3454,18 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						if (codec_fmtp.actual_samples_per_second) {
 							fmtp_remote_codec_rate = codec_fmtp.actual_samples_per_second;
 						}
+						if (codec_fmtp.stereo) {
+							map_channels = 2;
+						} else if (!strcasecmp(map->rm_encoding, "opus")) {
+							map_channels = 1;
+						}
 					}
 				}
-				
+
 				for (i = 0; i < smh->mparams->num_codecs && i < total_codecs; i++) {
 					const switch_codec_implementation_t *imp = codec_array[i];
 					uint32_t bit_rate = imp->bits_per_second;
 					uint32_t codec_rate = imp->samples_per_second;
-					int map_channels = map->rm_params ? atoi(map->rm_params) : 1;
 
 					if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
 						continue;
@@ -3558,8 +3563,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					near_match = near_matches[j].imp;
 					near_map = near_matches[j].map;					
 					
-					switch_snprintf(tmp, sizeof(tmp), "%s@%uh@%ui", near_match->iananame, near_rate ? near_rate : near_match->samples_per_second,
-									codec_ms);
+					switch_snprintf(tmp, sizeof(tmp), "%s@%uh@%ui%dc", near_match->iananame, near_rate ? near_rate : near_match->samples_per_second,
+									codec_ms, near_match->number_of_channels);
 					
 					prefs[0] = tmp;
 					num = switch_loadable_module_get_codecs_sorted(search, 1, prefs, 1);
@@ -3571,8 +3576,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					}
 				
 					if (!maxptime || timp->microseconds_per_packet / 1000 <= maxptime) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Substituting codec %s@%ui@%uh\n",
-										  timp->iananame, timp->microseconds_per_packet / 1000, timp->actual_samples_per_second);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Substituting codec %s@%ui@%uh@%dc\n",
+										  timp->iananame, timp->microseconds_per_packet / 1000, timp->actual_samples_per_second, timp->number_of_channels);
 						match = 1;
 
 						matches[m_idx].codec_idx = near_matches[j].codec_idx;
