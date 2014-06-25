@@ -63,6 +63,7 @@ struct cdr_profile {
 	char *log_dir;
 	char *err_log_dir[MAX_ERR_DIRS];
 	int err_dir_count;
+	char *log_file;
 	uint32_t delay;
 	uint32_t retries;
 	uint32_t enable_cacert_check;
@@ -198,6 +199,7 @@ static switch_status_t my_on_reporting_cb(switch_core_session_t *session, cdr_pr
 	switch_xml_t xml_cdr = NULL;
 	cJSON *json_cdr = NULL;
 	char *cdr_text = NULL;
+	char *lfile = NULL;
 	char *dpath = NULL;
 	char *path = NULL;
 	char *curl_cdr_text = NULL;
@@ -265,9 +267,14 @@ static switch_status_t my_on_reporting_cb(switch_core_session_t *session, cdr_pr
 	}
 
 	if (!zstr(logdir) && (profile->log_http_and_disk || !profile->url_count)) {
+		if (profile->log_file) {
+			lfile = switch_channel_expand_variables(channel, profile->log_file);
+		} else {
+			lfile = switch_mprintf("%s%s.cdr.%s", a_prefix, switch_core_session_get_uuid(session), profile->format);
+		}
 		dpath = switch_mprintf("%s%s%s", logdir, SWITCH_PATH_SEPARATOR, a_prefix);
-		path = switch_mprintf("%s%s%s%s.cdr.%s", logdir, SWITCH_PATH_SEPARATOR, a_prefix, switch_core_session_get_uuid(session),
-			profile->format);
+		path = switch_mprintf("%s%s%s", logdir, SWITCH_PATH_SEPARATOR, lfile);
+		if (lfile != profile->log_file) switch_safe_free(lfile);
 		switch_thread_rwlock_unlock(profile->log_path_lock);
 		if (path) {
 			if (switch_directory_exists(dpath, profile->pool) != SWITCH_STATUS_SUCCESS) {
@@ -427,9 +434,14 @@ static switch_status_t my_on_reporting_cb(switch_core_session_t *session, cdr_pr
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to post to web server, writing to file\n");
 
 		switch_thread_rwlock_rdlock(profile->log_path_lock);
-		dpath = switch_mprintf("%s%s%s", profile->err_log_dir, SWITCH_PATH_SEPARATOR, a_prefix);
-		path = switch_mprintf("%s%s%s%s.cdr.%s", profile->err_log_dir, SWITCH_PATH_SEPARATOR, a_prefix, switch_core_session_get_uuid(session),
-			profile->format);
+		if (profile->log_file) {
+			lfile = switch_channel_expand_variables(channel, profile->log_file);
+		} else {
+			lfile = switch_mprintf("%s%s.cdr.%s", a_prefix, switch_core_session_get_uuid(session), profile->format);
+		}
+		dpath = switch_mprintf("%s%s%s", logdir, SWITCH_PATH_SEPARATOR, a_prefix);
+		path = switch_mprintf("%s%s%s", logdir, SWITCH_PATH_SEPARATOR, lfile);
+		if (lfile != profile->log_file) switch_safe_free(lfile);
 		switch_thread_rwlock_unlock(profile->log_path_lock);
 		if (path) {
 			if (switch_directory_exists(dpath, profile->pool) != SWITCH_STATUS_SUCCESS) {
@@ -616,6 +628,8 @@ switch_status_t mod_format_cdr_load_profile_xml(switch_xml_t xprofile)
 				profile->retries = switch_atoui(val);
 			} else if (!strcasecmp(var, "rotate") && !zstr(val)) {
 				profile->rotate = switch_true(val);
+			} else if (!strcasecmp(var, "log-file") && !zstr(val)) {
+				profile->log_file = switch_core_strdup(profile->pool, val);
 			} else if (!strcasecmp(var, "log-dir")) {
 				if (zstr(val)) {
 					profile->base_log_dir = switch_core_sprintf(profile->pool, "%s%sformat_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
