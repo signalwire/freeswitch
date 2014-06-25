@@ -1725,7 +1725,7 @@ static void member_update_status_field(conference_member_t *member)
 {
 	char *str, *vstr = "", display[128] = "";
 
-	if (!member->conference->la) {
+	if (!member->conference->la || !member->json || !member->status_field) {
 		return;
 	}
 
