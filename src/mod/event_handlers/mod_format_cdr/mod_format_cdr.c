@@ -287,6 +287,9 @@ static switch_status_t my_on_reporting_cb(switch_core_session_t *session, cdr_pr
 #endif
 				int wrote;
 				wrote = write(fd, cdr_text, (unsigned) strlen(cdr_text));
+				if (!strcasecmp(profile->format, "json")) {
+					wrote += write(fd, "\n", 1);
+				}
 				wrote++;
 				close(fd);
 				fd = -1;
@@ -454,6 +457,9 @@ static switch_status_t my_on_reporting_cb(switch_core_session_t *session, cdr_pr
 #endif
 				int wrote;
 				wrote = write(fd, cdr_text, (unsigned) strlen(cdr_text));
+				if (!strcasecmp(profile->format, "json")) {
+					wrote += write(fd, "\n", 1);
+				}
 				wrote++;
 				close(fd);
 				fd = -1;
