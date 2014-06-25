@@ -2805,7 +2805,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   NUTAG_AUTOALERT(0),
 				   NUTAG_ENABLEMESSENGER(1),
 				   NTATAG_EXTRA_100(0),
-				   TAG_IF(sofia_test_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE), NUTAG_ALLOW("UPDATE")),
+				   TAG_IF(sofia_test_pflag(profile, PFLAG_ALLOW_UPDATE), NUTAG_ALLOW("UPDATE")),
 				   TAG_IF((profile->mflags & MFLAG_REGISTER), NUTAG_ALLOW("REGISTER")),
 				   TAG_IF((profile->mflags & MFLAG_REFER), NUTAG_ALLOW("REFER")),
 				   TAG_IF(!sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_ALLOW("PRACK")),
@@ -4001,6 +4001,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					sofia_set_media_flag(profile, SCMF_RTP_AUTOFLUSH_DURING_BRIDGE);
 					profile->contact_user = SOFIA_DEFAULT_CONTACT_USER;
 					sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
+					sofia_set_pflag(profile, PFLAG_ALLOW_UPDATE);
 					sofia_set_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE);
 					sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_FIRST_REGISTER);
 					//sofia_set_pflag(profile, PFLAG_PRESENCE_ON_FIRST_REGISTER);
@@ -4149,6 +4150,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_CONFIRM_BLIND_TRANSFER);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_CONFIRM_BLIND_TRANSFER);
+						}
+					} else if (!strcasecmp(var, "allow-update")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_ALLOW_UPDATE);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_ALLOW_UPDATE);
 						}
 					} else if (!strcasecmp(var, "send-display-update")) {
 						if (switch_true(val)) {
@@ -5122,6 +5129,11 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 				if (sofia_test_flag(profile, TFLAG_ZRTP_PASSTHRU) && !sofia_test_flag(profile, TFLAG_LATE_NEGOTIATION)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "ZRTP passthrough implictly enables inbound-late-negotiation\n");
 					sofia_set_flag(profile, TFLAG_LATE_NEGOTIATION);
+				}
+
+				if (sofia_test_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE) && !sofia_test_pflag(profile, PFLAG_ALLOW_UPDATE)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "send-display-update=true is set, but we can't comply because allow-update=false\n");
+					sofia_clear_pflag(profile, PFLAG_SEND_DISPLAY_UPDATE);
 				}
 
 				if ((!profile->cng_pt) && (!sofia_test_media_flag(profile, SCMF_SUPPRESS_CNG))) {
