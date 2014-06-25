@@ -3446,6 +3446,10 @@ static switch_status_t parse_config(const char *cf)
 					set_string(profile->key, val);
 				} else if (!strcasecmp(var, "secure-chain")) {
 					set_string(profile->chain, val);
+				} else if (!strcasecmp(var, "inbound-codec-string") && !zstr(val)) {
+					profile->inbound_codec_string = switch_core_strdup(profile->pool, val); 
+				} else if (!strcasecmp(var, "outbound-codec-string") && !zstr(val)) {
+					profile->outbound_codec_string = switch_core_strdup(profile->pool, val); 
 				} else if (!strcasecmp(var, "userauth") && !zstr(val)) {
 					profile->userauth = switch_core_strdup(profile->pool, val);
 				} else if (!strcasecmp(var, "root-password") && !zstr(val)) {
