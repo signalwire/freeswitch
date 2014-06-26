@@ -4909,7 +4909,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 
 					} else if (!strcasecmp(var, "apply-candidate-acl")) {
 						if (profile->cand_acl_count < SWITCH_MAX_CAND_ACL) {
-							profile->cand_acl[profile->cand_acl_count++] = strdup(val);
+							profile->cand_acl[profile->cand_acl_count++] = switch_core_strdup(profile->pool, val);
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max acl records of %d reached\n", SWITCH_MAX_CAND_ACL);
 						}
