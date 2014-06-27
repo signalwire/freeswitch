@@ -333,4 +333,13 @@ SWITCH_DECLARE(void) switch_delete_profile_timer(switch_profile_timer_t **p)
 	*p = NULL;
 }
 
-
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
+ */
