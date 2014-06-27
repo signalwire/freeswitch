@@ -2478,6 +2478,9 @@ static void sofia_perform_profile_start_failure(sofia_profile_t *profile, char *
 		} else if (!strcasecmp(profile->shutdown_type, "asap")) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile %s could not load! Shutting down ASAP!\n", profile->name);
 			switch_core_session_ctl(SCSC_SHUTDOWN_ASAP, &arg);
+		} else if (!strcasecmp(profile->shutdown_type, "reincarnate-now")) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile %s could not load! Asking for reincarnation now!\n", profile->name);
+			switch_core_session_ctl(SCSC_REINCARNATE_NOW, &arg);
 		}
 	}
 
