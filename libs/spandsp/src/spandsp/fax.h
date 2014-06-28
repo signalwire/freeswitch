@@ -108,7 +108,7 @@ SPAN_DECLARE(logging_state_t *) fax_get_logging_state(fax_state_t *s);
     \param calling_party True if the context is for a calling party. False if the
            context is for an answering party.
     \return 0 for OK, else -1. */
-SPAN_DECLARE(int) fax_restart(fax_state_t *s, int calling_party);
+SPAN_DECLARE(int) fax_restart(fax_state_t *s, bool calling_party);
 
 /*! Initialise a FAX context.
     \brief Initialise a FAX context.
@@ -117,7 +117,7 @@ SPAN_DECLARE(int) fax_restart(fax_state_t *s, int calling_party);
            context is for an answering party.
     \return A pointer to the FAX context, or NULL if there was a problem.
 */
-SPAN_DECLARE(fax_state_t *) fax_init(fax_state_t *s, int calling_party);
+SPAN_DECLARE(fax_state_t *) fax_init(fax_state_t *s, bool calling_party);
 
 /*! Release a FAX context.
     \brief Release a FAX context.

@@ -604,26 +604,19 @@ static void monitor_control_messages(t38_gateway_state_t *s,
         uint8_t dcs_code;
     } modem_codes[] =
     {
-        {14400, FAX_MODEM_V17_RX,       DISBIT6},
-        {12000, FAX_MODEM_V17_RX,       (DISBIT6 | DISBIT4)},
-        { 9600, FAX_MODEM_V17_RX,       (DISBIT6 | DISBIT3)},
-        { 9600, FAX_MODEM_V29_RX,       DISBIT3},
+        {14400, FAX_MODEM_V17_RX,       (DISBIT6                    )},
+        {12000, FAX_MODEM_V17_RX,       (DISBIT6 | DISBIT4          )},
+        { 9600, FAX_MODEM_V17_RX,       (DISBIT6 |           DISBIT3)},
+        { 9600, FAX_MODEM_V29_RX,       (                    DISBIT3)},
         { 7200, FAX_MODEM_V17_RX,       (DISBIT6 | DISBIT4 | DISBIT3)},
-        { 7200, FAX_MODEM_V29_RX,       (DISBIT4 | DISBIT3)},
-        { 4800, FAX_MODEM_V27TER_RX,    DISBIT4},
-        { 2400, FAX_MODEM_V27TER_RX,    0},
-        {    0, FAX_MODEM_NONE,         0}
+        { 7200, FAX_MODEM_V29_RX,       (          DISBIT4 | DISBIT3)},
+        { 4800, FAX_MODEM_V27TER_RX,    (          DISBIT4          )},
+        { 2400, FAX_MODEM_V27TER_RX,    (0                          )},
+        {    0, FAX_MODEM_NONE,         (0                          )}
     };
     static const int minimum_scan_line_times[8] =
     {
-        20,
-        5,
-        10,
-        0,
-        40,
-        0,
-        0,
-        0
+        20,  5, 10,  0, 40,  0,  0,  0
     };
     int dcs_code;
     int i;

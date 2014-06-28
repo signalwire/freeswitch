@@ -394,7 +394,7 @@ SPAN_DECLARE(logging_state_t *) fax_get_logging_state(fax_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) fax_restart(fax_state_t *s, int calling_party)
+SPAN_DECLARE(int) fax_restart(fax_state_t *s, bool calling_party)
 {
     v8_parms_t v8_parms;
 
@@ -420,7 +420,7 @@ SPAN_DECLARE(int) fax_restart(fax_state_t *s, int calling_party)
     v8_parms.nsf = -1;
     v8_parms.t66 = -1;
     v8_restart(&s->v8, calling_party, &v8_parms);
-    t30_restart(&s->t30);
+    t30_restart(&s->t30, calling_party);
 #if defined(LOG_FAX_AUDIO)
     {
         char buf[100 + 1];
@@ -455,7 +455,7 @@ SPAN_DECLARE(int) fax_restart(fax_state_t *s, int calling_party)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(fax_state_t *) fax_init(fax_state_t *s, int calling_party)
+SPAN_DECLARE(fax_state_t *) fax_init(fax_state_t *s, bool calling_party)
 {
     v8_parms_t v8_parms;
 

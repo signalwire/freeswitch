@@ -1517,7 +1517,7 @@ SPAN_DECLARE(int) t38_terminal_restart(t38_terminal_state_t *s,
                                        bool calling_party)
 {
     t38_terminal_t38_fe_restart(s);
-    t30_restart(&s->t30);
+    t30_restart(&s->t30, calling_party);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1557,7 +1557,7 @@ SPAN_DECLARE(t38_terminal_state_t *) t38_terminal_init(t38_terminal_state_t *s,
     t30_set_iaf_mode(&s->t30, s->t38_fe.iaf);
     t30_set_supported_modems(&s->t30,
                              T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17 | T30_SUPPORT_IAF);
-    t30_restart(&s->t30);
+    t30_restart(&s->t30, calling_party);
     return s;
 }
 /*- End of function --------------------------------------------------------*/

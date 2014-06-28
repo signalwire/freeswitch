@@ -410,15 +410,15 @@ static const struct
     uint8_t dcs_code;
 } fallback_sequence[] =
 {
-    {14400, T30_MODEM_V17,      T30_SUPPORT_V17,    DISBIT6},
-    {12000, T30_MODEM_V17,      T30_SUPPORT_V17,    (DISBIT6 | DISBIT4)},
-    { 9600, T30_MODEM_V17,      T30_SUPPORT_V17,    (DISBIT6 | DISBIT3)},
-    { 9600, T30_MODEM_V29,      T30_SUPPORT_V29,    DISBIT3},
+    {14400, T30_MODEM_V17,      T30_SUPPORT_V17,    (DISBIT6                    )},
+    {12000, T30_MODEM_V17,      T30_SUPPORT_V17,    (DISBIT6 | DISBIT4          )},
+    { 9600, T30_MODEM_V17,      T30_SUPPORT_V17,    (DISBIT6 |           DISBIT3)},
+    { 9600, T30_MODEM_V29,      T30_SUPPORT_V29,    (                    DISBIT3)},
     { 7200, T30_MODEM_V17,      T30_SUPPORT_V17,    (DISBIT6 | DISBIT4 | DISBIT3)},
-    { 7200, T30_MODEM_V29,      T30_SUPPORT_V29,    (DISBIT4 | DISBIT3)},
-    { 4800, T30_MODEM_V27TER,   T30_SUPPORT_V27TER, DISBIT4},
-    { 2400, T30_MODEM_V27TER,   T30_SUPPORT_V27TER, 0},
-    {    0, 0,                  0,                  0}
+    { 7200, T30_MODEM_V29,      T30_SUPPORT_V29,    (          DISBIT4 | DISBIT3)},
+    { 4800, T30_MODEM_V27TER,   T30_SUPPORT_V27TER, (          DISBIT4          )},
+    { 2400, T30_MODEM_V27TER,   T30_SUPPORT_V27TER, (0                          )},
+    {    0, 0,                  0,                  (0                          )}
 };
 
 static void queue_phase(t30_state_t *s, int phase);
@@ -6587,8 +6587,10 @@ SPAN_DECLARE(void) t30_remote_interrupts_allowed(t30_state_t *s, int state)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t30_restart(t30_state_t *s)
+SPAN_DECLARE(int) t30_restart(t30_state_t *s, bool calling_party)
 {
+    release_resources(s);
+    s->calling_party = calling_party;
     s->phase = T30_PHASE_IDLE;
     s->next_phase = T30_PHASE_IDLE;
     s->current_fallback = 0;
@@ -6602,7 +6604,6 @@ SPAN_DECLARE(int) t30_restart(t30_state_t *s)
     memset(&s->far_dis_dtc_frame, 0, sizeof(s->far_dis_dtc_frame));
     t30_build_dis_or_dtc(s);
     memset(&s->rx_info, 0, sizeof(s->rx_info));
-    release_resources(s);
     /* The page number is only reset at call establishment */
     s->rx_page_number = 0;
     s->tx_page_number = 0;
@@ -6627,7 +6628,7 @@ SPAN_DECLARE(int) t30_restart(t30_state_t *s)
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
-                                     int calling_party,
+                                     bool calling_party,
                                      t30_set_handler_t set_rx_type_handler,
                                      void *set_rx_type_user_data,
                                      t30_set_handler_t set_tx_type_handler,
@@ -6641,7 +6642,6 @@ SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
             return NULL;
     }
     memset(s, 0, sizeof(*s));
-    s->calling_party = calling_party;
     s->set_rx_type_handler = set_rx_type_handler;
     s->set_rx_type_user_data = set_rx_type_user_data;
     s->set_tx_type_handler = set_tx_type_handler;
@@ -6670,7 +6670,7 @@ SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
     s->local_min_scan_time_code = T30_MIN_SCAN_0MS;
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "T.30");
-    t30_restart(s);
+    t30_restart(s, calling_party);
     return s;
 }
 /*- End of function --------------------------------------------------------*/
