@@ -66,7 +66,8 @@
 #define RTP_END_PORT 32768
 #define MASTER_KEY_LEN   30
 #define RTP_MAGIC_NUMBER 42
-#define MAX_SRTP_ERRS 10
+#define WARN_SRTP_ERRS 10
+#define MAX_SRTP_ERRS 100
 
 #define DTMF_SANITY (rtp_session->one_second * 30)
 
@@ -4801,13 +4802,25 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 				}
 
 				if (stat && rtp_session->recv_msg.header.pt != rtp_session->recv_te && rtp_session->recv_msg.header.pt != rtp_session->cng_pt) {
-					if (++rtp_session->srtp_errs[rtp_session->srtp_idx_rtp] >= MAX_SRTP_ERRS && stat != 10) {
-						switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR,
-										  "Error: SRTP %s unprotect failed with code %d%s %ld\n", rtp_type(rtp_session), stat,
-										  stat == err_status_replay_fail ? " (replay check failed)" : stat ==
-										  err_status_auth_fail ? " (auth check failed)" : "", (long)*bytes);
-						switch_channel_hangup(channel, SWITCH_CAUSE_SRTP_READ_ERROR);
+					int errs = ++rtp_session->srtp_errs[rtp_session->srtp_idx_rtp];
+					if (stat != 10) {
+						char *msg;
+						if (stat == err_status_replay_fail) msg="replay check failed";
+						else if (stat == err_status_auth_fail) msg="auth check failed";
+						else msg="";
+						if (errs >= WARN_SRTP_ERRS && !(errs % WARN_SRTP_ERRS)) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
+											  "SRTP %s unprotect failed with code %d (%s) %ld bytes %d errors\n",
+											  rtp_type(rtp_session), stat, msg, (long)*bytes, errs);
+						} else if (errs >= MAX_SRTP_ERRS) {
+							switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR,
+											  "SRTP %s unprotect failed with code %d (%s) %ld bytes %d errors\n",
+											  rtp_type(rtp_session), stat, msg, (long)*bytes, errs);
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR,
+											  "Ending call due to SRTP error\n");
+							switch_channel_hangup(channel, SWITCH_CAUSE_SRTP_READ_ERROR);
+						}
 					}
 					sbytes = 0;
 				} else {
