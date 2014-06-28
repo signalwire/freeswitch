@@ -4802,15 +4802,14 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 				if (stat && rtp_session->recv_msg.header.pt != rtp_session->recv_te && rtp_session->recv_msg.header.pt != rtp_session->cng_pt) {
 					if (++rtp_session->srtp_errs[rtp_session->srtp_idx_rtp] >= MAX_SRTP_ERRS && stat != 10) {
-						
+						switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR,
 										  "Error: SRTP %s unprotect failed with code %d%s %ld\n", rtp_type(rtp_session), stat,
 										  stat == err_status_replay_fail ? " (replay check failed)" : stat ==
 										  err_status_auth_fail ? " (auth check failed)" : "", (long)*bytes);
-						return SWITCH_STATUS_GENERR;
-					} else {
-						sbytes = 0;
+						switch_channel_hangup(channel, SWITCH_CAUSE_SRTP_READ_ERROR);
 					}
+					sbytes = 0;
 				} else {
 					rtp_session->srtp_errs[rtp_session->srtp_idx_rtp] = 0;
 				}
