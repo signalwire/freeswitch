@@ -148,6 +148,9 @@
 /*! The number of transmissions of terminating data IFP packets */
 #define DATA_END_TX_COUNT                       3
 
+/*! The number of consecutive flags to declare HDLC framing is OK. */
+#define HDLC_FRAMING_OK_THRESHOLD       5
+
 enum
 {
     DISBIT1 = 0x01,
@@ -182,19 +185,6 @@ enum
     TIMED_MODE_TCF_PREDICTABLE_MODEM_START_FAST_MODEM_SEEN,
     TIMED_MODE_TCF_PREDICTABLE_MODEM_START_PAST_V21_MODEM,
     TIMED_MODE_TCF_PREDICTABLE_MODEM_START_BEGIN,
-};
-
-/*! The maximum number of bytes to be zapped, in order to corrupt NSF,
-    NSS and NSC messages, so the receiver does not recognise them. */
-#define MAX_NSX_SUPPRESSION             10
-
-/*! The number of consecutive flags to declare HDLC framing is OK. */
-#define HDLC_FRAMING_OK_THRESHOLD       5
-
-static uint8_t nsx_overwrite[2][MAX_NSX_SUPPRESSION] =
-{
-    {0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0xFF, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 };
 
 static int restart_rx_modem(t38_gateway_state_t *s);
@@ -485,18 +475,18 @@ static void finalise_hdlc_frame(t38_gateway_state_t *s, int good_fcs)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void edit_control_messages(t38_gateway_state_t *s, int from_modem, uint8_t *buf, int len)
+static void edit_control_messages(t38_gateway_state_t *s, bool from_modem, uint8_t *buf, int len)
 {
     /* Frames need to be fed to this routine byte by byte as they arrive. It basically just
        edits the last byte received, based on the frame up to that point. */
-    if (s->t38x.corrupt_current_frame[from_modem])
+    if (s->t38x.corrupt_current_frame[(from_modem)  ?  1  :  0])
     {
         /* We simply need to overwrite a section of the message, so it is not recognisable at
            the receiver. This is used for the NSF, NSC, and NSS messages. Several strategies are
            possible for the replacement data. If you have a manufacturer code of your own, the
            sane thing is to overwrite the original data with that. */
-        if (len <= s->t38x.suppress_nsx_len[from_modem])
-            buf[len - 1] = nsx_overwrite[from_modem][len - 4];
+        if (len <= s->t38x.suppress_nsx_len[(from_modem)  ?  1  :  0])
+            buf[len - 1] = s->t38x.suppress_nsx_string[(from_modem)  ?  1  :  0][len - 1 - 3];
         /*endif*/
         return;
     }
@@ -510,13 +500,13 @@ static void edit_control_messages(t38_gateway_state_t *s, int from_modem, uint8_
         case T30_NSF:
         case T30_NSC:
         case T30_NSS:
-            if (s->t38x.suppress_nsx_len[from_modem])
+            if (s->t38x.suppress_nsx_len[(from_modem)  ?  1  :  0])
             {
                 /* Corrupt the message, so it will be ignored by the far end. If it were
                    processed, 2 machines which recognise each other might do special things
                    we cannot handle as a middle man. */
                 span_log(&s->logging, SPAN_LOG_FLOW, "Corrupting %s message to prevent recognition\n", t30_frametype(buf[2]));
-                s->t38x.corrupt_current_frame[from_modem] = true;
+                s->t38x.corrupt_current_frame[(from_modem)  ?  1  :  0] = true;
             }
             /*endif*/
             break;
@@ -603,7 +593,7 @@ static void edit_control_messages(t38_gateway_state_t *s, int from_modem, uint8_
 /*- End of function --------------------------------------------------------*/
 
 static void monitor_control_messages(t38_gateway_state_t *s,
-                                     int from_modem,
+                                     bool from_modem,
                                      const uint8_t *buf,
                                      int len)
 {
@@ -663,6 +653,27 @@ static void monitor_control_messages(t38_gateway_state_t *s,
         /* We are going back to the exchange of fresh TCF */
         s->core.image_data_mode = false;
         s->core.short_train = false;
+        break;
+    case T30_CTC:
+        if (len >= 5)
+        {
+            /* The table is short, and not searched often, so a brain-dead linear scan seems OK */
+            dcs_code = buf[4] & (DISBIT6 | DISBIT5 | DISBIT4 | DISBIT3);
+            for (i = 0;  modem_codes[i].bit_rate;  i++)
+            {
+                if (modem_codes[i].dcs_code == dcs_code)
+                    break;
+                /*endif*/
+            }
+            /*endfor*/
+            /* If we are processing a message from the modem side, the contents determine the fast receive modem.
+               we are to use. If it comes from the T.38 side the contents do not. */
+            s->core.fast_bit_rate = modem_codes[i].bit_rate;
+            if (from_modem)
+                s->core.fast_rx_modem = modem_codes[i].modem_type;
+            /*endif*/
+        }
+        /*endif*/
         break;
     case T30_CTR:
         /* T.30 says the first image data after this does full training, yet does not
@@ -1981,13 +1992,13 @@ static int restart_rx_modem(t38_gateway_state_t *s)
              s->core.ecm_mode);
 
     t = &s->audio.modems;
-    hdlc_rx_init(&t->hdlc_rx, false, true, HDLC_FRAMING_OK_THRESHOLD, NULL, s);
     t->rx_signal_present = false;
     t->rx_trained = false;
     /* Default to the transmit data being V.21, unless a faster modem pops up trained. */
     s->t38x.current_tx_data_type = T38_DATA_V21;
     //fax_modems_start_slow_modem(t, FAX_MODEM_V21_RX);
     fsk_rx_init(&t->v21_rx, &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, (put_bit_func_t) t38_hdlc_rx_put_bit, &t->hdlc_rx);
+    hdlc_rx_init(&t->hdlc_rx, false, true, HDLC_FRAMING_OK_THRESHOLD, NULL, s);
 #if 0
     fsk_rx_signal_cutoff(&t->v21_rx, -39.09f);
 #endif
@@ -2209,8 +2220,14 @@ SPAN_DECLARE(void) t38_gateway_set_nsx_suppression(t38_gateway_state_t *s,
                                                    const uint8_t *from_modem,
                                                    int from_modem_len)
 {
-    s->t38x.suppress_nsx_len[0] = (from_t38_len < 0  ||  from_t38_len < MAX_NSX_SUPPRESSION)  ?  (from_t38_len + 3)  :  0;
-    s->t38x.suppress_nsx_len[1] = (from_modem_len < 0  ||  from_modem_len < MAX_NSX_SUPPRESSION)  ?  (from_modem_len + 3)  :  0;
+    if (from_t38_len >= 0)
+        s->t38x.suppress_nsx_len[0] = ((from_t38_len < MAX_NSX_SUPPRESSION)  ?  from_t38_len  :  MAX_NSX_SUPPRESSION) + 3;
+    if (from_t38)
+        memcpy(s->t38x.suppress_nsx_string[0], from_t38, s->t38x.suppress_nsx_len[0]);
+    if (from_modem_len >= 0)
+        s->t38x.suppress_nsx_len[1] = ((from_modem_len < MAX_NSX_SUPPRESSION)  ?  from_modem_len  :  MAX_NSX_SUPPRESSION) + 3;
+    if (from_modem)
+        memcpy(s->t38x.suppress_nsx_string[1], from_modem, s->t38x.suppress_nsx_len[1]);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -2302,7 +2319,7 @@ SPAN_DECLARE(t38_gateway_state_t *) t38_gateway_init(t38_gateway_state_t *s,
 
     fax_modems_set_rx_active(&s->audio.modems, true);
     t38_gateway_set_supported_modems(s, T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17);
-    t38_gateway_set_nsx_suppression(s, (const uint8_t *) "\x00\x00\x00", 3, (const uint8_t *) "\x00\x00\x00", 3);
+    t38_gateway_set_nsx_suppression(s, (const uint8_t *) "\xFF\x00\x00", 3, (const uint8_t *) "\xFF\x00\x00", 3);
 
     s->core.to_t38.octets_per_data_packet = 1;
     s->core.ecm_allowed = true;

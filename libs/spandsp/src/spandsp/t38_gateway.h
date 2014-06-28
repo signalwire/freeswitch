@@ -38,6 +38,10 @@ to maximum the tolerance of jitter and packet loss on the IP network.
 \section t38_gateway_page_sec_2 How does it work?
 */
 
+/*! The maximum number of bytes to be zapped, in order to corrupt NSF,
+    NSS and NSC messages, so the receiver does not recognise them. */
+#define MAX_NSX_SUPPRESSION             10
+
 typedef struct t38_gateway_state_s t38_gateway_state_t;
 
 /*!
