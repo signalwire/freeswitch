@@ -743,17 +743,15 @@ static void process_al(al_handle_t *al, void *data, switch_size_t datalen, int r
 
 		if ((al->device = alcLoopbackOpenDeviceSOFT(NULL))) {
 			static const ALshort silence[16] = { 0 };
-
-			//if ((al->device = alcOpenDevice( NULL ))) {
-			//float orient[6] = { /*fwd:*/ 0., 0., -1., /*up:*/ 0., 1., 0. };
+			float orient[6] = { /*fwd:*/ 0., 0., -1., /*up:*/ 0., 1., 0. };
 
 			al->context = alcCreateContext(al->device, contextAttr);
 			alcSetThreadContext(al->context);
 			
-			/* listener at origin, facing down -z (ears at 1.5m height) */
-			//alListener3f( AL_POSITION, 0. ,0, 0. );
-			//alListener3f( AL_VELOCITY, 0., 0., 0. );
-			//alListenerfv( AL_ORIENTATION, orient );
+			/* listener at origin, facing down -z (ears at 0.0m height) */
+			alListener3f( AL_POSITION, 0. ,0, 0. );
+			alListener3f( AL_VELOCITY, 0., 0., 0. );
+			alListenerfv( AL_ORIENTATION, orient );
 
 			
 			alGenSources(1, &al->source);
@@ -779,6 +777,7 @@ static void process_al(al_handle_t *al, void *data, switch_size_t datalen, int r
 		if (al->setpos) {
 			al->setpos = 0;
 			alSource3f(al->source, AL_POSITION, al->pos_x, al->pos_y, al->pos_z);
+			//alSource3f(al->source, AL_VELOCITY, .01, 0., 0.);
 		}
 		
 		if (processed > 0) {
