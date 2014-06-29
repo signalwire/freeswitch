@@ -878,22 +878,16 @@ srtp_protect_aead (srtp_ctx_t *ctx, srtp_stream_ctx_t *stream,
      * encrypted - the encrypted portion starts after the rtp header
      * extension, if present; otherwise, it starts after the last csrc,
      * if any are present
-     *
-     * if we're not providing confidentiality, set enc_start to NULL
      */
-    if (stream->rtp_services & sec_serv_conf) {
-        enc_start = (uint32_t*)hdr + uint32s_in_rtp_header + hdr->cc;
-        if (hdr->x == 1) {
-            srtp_hdr_xtnd_t *xtn_hdr = (srtp_hdr_xtnd_t*)enc_start;
-            enc_start += (ntohs(xtn_hdr->length) + 1);
-        }
-        if (!(enc_start < (uint32_t*)hdr + *pkt_octet_len))
-            return err_status_parse_err;
-        enc_octet_len = (unsigned int)(*pkt_octet_len - 
-		        ((enc_start - (uint32_t*)hdr) << 2));
-    } else {
-        enc_start = NULL;
-    }
+     enc_start = (uint32_t*)hdr + uint32s_in_rtp_header + hdr->cc;
+     if (hdr->x == 1) {
+         srtp_hdr_xtnd_t *xtn_hdr = (srtp_hdr_xtnd_t*)enc_start;
+         enc_start += (ntohs(xtn_hdr->length) + 1);
+     }
+     if (!(enc_start < (uint32_t*)hdr + *pkt_octet_len))
+         return err_status_parse_err;
+     enc_octet_len = (unsigned int)(*pkt_octet_len -
+                     ((enc_start - (uint32_t*)hdr) << 2));
 
     /*
      * estimate the packet index using the start of the replay window
