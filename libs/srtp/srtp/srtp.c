@@ -887,6 +887,8 @@ srtp_protect_aead (srtp_ctx_t *ctx, srtp_stream_ctx_t *stream,
             srtp_hdr_xtnd_t *xtn_hdr = (srtp_hdr_xtnd_t*)enc_start;
             enc_start += (ntohs(xtn_hdr->length) + 1);
         }
+        if (!(enc_start < (uint32_t*)hdr + *pkt_octet_len))
+            return err_status_parse_err;
         enc_octet_len = (unsigned int)(*pkt_octet_len - 
 		        ((enc_start - (uint32_t*)hdr) << 2));
     } else {
@@ -1015,6 +1017,8 @@ srtp_unprotect_aead (srtp_ctx_t *ctx, srtp_stream_ctx_t *stream, int delta,
         srtp_hdr_xtnd_t *xtn_hdr = (srtp_hdr_xtnd_t*)enc_start;
         enc_start += (ntohs(xtn_hdr->length) + 1);
     }
+    if (!(enc_start < (uint32_t*)hdr + *pkt_octet_len))
+        return err_status_parse_err;
     /*
      * We pass the tag down to the cipher when doing GCM mode 
      */
@@ -1229,6 +1233,8 @@ srtp_unprotect_aead (srtp_ctx_t *ctx, srtp_stream_ctx_t *stream, int delta,
      if (hdr->x == 1) {
        srtp_hdr_xtnd_t *xtn_hdr = (srtp_hdr_xtnd_t *)enc_start;
        enc_start += (ntohs(xtn_hdr->length) + 1);
+       if (!(enc_start < (uint32_t*)hdr + *pkt_octet_len))
+         return err_status_parse_err;
      }
      enc_octet_len = (unsigned int)(*pkt_octet_len 
 				    - ((enc_start - (uint32_t *)hdr) << 2));
@@ -1510,6 +1516,8 @@ srtp_unprotect(srtp_ctx_t *ctx, void *srtp_hdr, int *pkt_octet_len) {
       srtp_hdr_xtnd_t *xtn_hdr = (srtp_hdr_xtnd_t *)enc_start;
       enc_start += (ntohs(xtn_hdr->length) + 1);
     }  
+    if (!(enc_start < (uint32_t*)hdr + *pkt_octet_len))
+      return err_status_parse_err;
     enc_octet_len = (uint32_t)(*pkt_octet_len - tag_len 
 			       - ((enc_start - (uint32_t *)hdr) << 2));
   } else {
