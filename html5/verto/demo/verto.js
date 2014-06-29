@@ -130,12 +130,17 @@ var callbacks = {
     onDialogState: function(d) {
         cur_call = d;
 
+	if (d.state == $.verto.enum.state.ringing) {
+	    ringing = true;
+	} else {
+	    ringing = false;
+	}
+
         switch (d.state) {
         case $.verto.enum.state.ringing:
             display("Call From: " + d.cidString());
 
             $("#ansbtn").click(function() {
-		ringing = false;
                 cur_call.answer({
 		    useStereo: $("#use_stereo").is(':checked')
 		});
@@ -143,19 +148,15 @@ var callbacks = {
             });
 
             $("#declinebtn").click(function() {
-		ringing = false;
                 cur_call.hangup();
                 $('#dialog-incoming-call').dialog('close');
             });
-	    
-	    ringing = true;
 
             goto_dialog("incoming-call");
             $("#dialog-incoming-call-txt").text("Incoming call from: " + d.cidString());
 
             if (d.params.wantVideo) {
                 $("#vansbtn").click(function() {
-		    ringing = false;
                     $("#use_vid").prop("checked", true);
                     cur_call.answer({
                         useVideo: true,
@@ -189,6 +190,9 @@ var callbacks = {
     },
     onWSLogin: function(v, success) {
         display("");
+
+	cur_call = null;
+	ringing = false;
 
         if (success) {
             online(true);
