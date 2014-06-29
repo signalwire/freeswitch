@@ -676,7 +676,7 @@ static void gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream
 	
 	for (member = conference->members; member; member = member->next) {
 
-		if (switch_test_flag(member, MFLAG_NO_POSITIONAL)) {
+		if (!member->channel || switch_test_flag(member, MFLAG_NO_POSITIONAL)) {
 			continue;
 		}
 
