@@ -2342,12 +2342,6 @@ srtp_unprotect_rtcp_aead (srtp_t ctx, srtp_stream_ctx_t *stream,
     /* get tag length from stream context */
     tag_len = auth_get_tag_length(stream->rtcp_auth);
 
-    /* Validate packet length */
-    if (*pkt_octet_len < (octets_in_rtcp_header + tag_len + 
-                          sizeof(srtcp_trailer_t))) {
-        return err_status_bad_param;
-    }
-
     /*
      * set encryption start, encryption length, and trailer
      */
@@ -2520,6 +2514,11 @@ srtp_protect_rtcp(srtp_t ctx, void *rtcp_hdr, int *pkt_octet_len) {
   uint32_t seq_num;
 
   /* we assume the hdr is 32-bit aligned to start */
+
+  /* check the packet length - it must at least contain a full header */
+  if (*pkt_octet_len < octets_in_rtcp_header)
+    return err_status_bad_param;
+
   /*
    * look up ssrc in srtp_stream list, and process the packet with 
    * the appropriate stream.  if we haven't seen this stream before,
@@ -2753,6 +2752,16 @@ srtp_unprotect_rtcp(srtp_t ctx, void *srtcp_hdr, int *pkt_octet_len) {
     } 
   }
   
+  /* get tag length from stream context */
+  tag_len = auth_get_tag_length(stream->rtcp_auth);
+
+  /* check the packet length - it must contain at least a full RTCP
+     header, an auth tag (if applicable), and the SRTCP encrypted flag
+     and 31-bit index value */
+  if (*pkt_octet_len < (octets_in_rtcp_header + tag_len +
+                        sizeof(srtcp_trailer_t)))
+    return err_status_bad_param;
+
   /*
    * Check if this is an AEAD stream (GCM mode).  If so, then dispatch
    * the request to our AEAD handler.
@@ -2764,9 +2773,6 @@ srtp_unprotect_rtcp(srtp_t ctx, void *srtcp_hdr, int *pkt_octet_len) {
 
   sec_serv_confidentiality = stream->rtcp_services == sec_serv_conf ||
       stream->rtcp_services == sec_serv_conf_and_auth;
-
-  /* get tag length from stream context */
-  tag_len = auth_get_tag_length(stream->rtcp_auth); 
 
   /*
    * set encryption start, encryption length, and trailer
