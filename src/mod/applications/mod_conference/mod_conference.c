@@ -39,6 +39,14 @@
  *
  */
 #include <switch.h>
+
+#ifdef OPENAL_POSITIONING
+#define AL_ALEXT_PROTOTYPES
+#include <AL/al.h>
+#include <AL/alc.h>
+#include <AL/alext.h>
+#endif
+
 #define DEFAULT_AGC_LEVEL 1100
 #define CONFERENCE_UUID_VARIABLE "conference_uuid"
 
@@ -187,7 +195,9 @@ typedef enum {
 	MFLAG_PAUSE_RECORDING = (1 << 22),
 	MFLAG_ACK_VIDEO = (1 << 23),
 	MFLAG_GHOST = (1 << 24),
-	MFLAG_JOIN_ONLY = (1 << 25)
+	MFLAG_JOIN_ONLY = (1 << 25),
+	MFLAG_POSITIONAL = (1 << 26),
+	MFLAG_NO_POSITIONAL = (1 << 27)
 } member_flag_t;
 
 typedef enum {
@@ -213,7 +223,8 @@ typedef enum {
 	CFLAG_VID_FLOOR_LOCK = (1 << 19),
 	CFLAG_JSON_EVENTS = (1 << 20),
 	CFLAG_LIVEARRAY_SYNC = (1 << 21),
-	CFLAG_CONF_RESTART_AUTO_RECORD = (1 << 22)
+	CFLAG_CONF_RESTART_AUTO_RECORD = (1 << 22),
+	CFLAG_POSITIONAL = (1 << 23)
 } conf_flag_t;
 
 typedef enum {
@@ -262,7 +273,25 @@ typedef enum {
 	EFLAG_RECORD = (1 << 27),
 	EFLAG_HUP_MEMBER = (1 << 28),
 	EFLAG_PLAY_FILE_DONE = (1 << 29),
+	EFLAG_SET_POSITION_MEMBER = (1 << 30)
 } event_type_t;
+
+#ifdef OPENAL_POSITIONING
+typedef struct al_handle_s {
+	ALCdevice *device;
+	ALCcontext *context;
+	ALuint source;
+	ALuint buffer_in[2];
+	int setpos;
+	ALfloat pos_x;
+	ALfloat pos_y;
+	ALfloat pos_z;
+} al_handle_t;
+#else 
+typedef struct al_handle_s {
+	int unsupported;
+} al_handle_t;
+#endif
 
 typedef struct conference_file_node {
 	switch_file_handle_t fh;
@@ -277,6 +306,7 @@ typedef struct conference_file_node {
 	char *file;
 	switch_bool_t mux;
 	uint32_t member_id;
+	al_handle_t *al;
 } conference_file_node_t;
 
 typedef enum {
@@ -415,6 +445,7 @@ typedef struct conference_obj {
 	struct vid_helper vh[2];
 	struct vid_helper mh;
 	conference_record_t *rec_node_head;
+	int last_speech_channels;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -487,6 +518,8 @@ struct conference_member {
 	cJSON *json;
 	cJSON *status_field;
 	uint8_t loop_loop;
+	al_handle_t *al;
+	int last_speech_channels;
 };
 
 typedef enum {
@@ -582,6 +615,187 @@ static switch_status_t conf_api_sub_clear_vid_floor(conference_obj_t *conference
 //#define lock_member(_member) switch_mutex_lock(_member->write_mutex)
 //#define unlock_member(_member) switch_mutex_unlock(_member->write_mutex)
 
+static al_handle_t *create_al(switch_memory_pool_t *pool)
+{
+	al_handle_t *al;
+
+	al = switch_core_alloc(pool, sizeof(al_handle_t));
+	
+	return al;
+}
+
+#ifndef OPENAL_POSITIONING
+static void gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream)
+{
+}
+static void process_al(al_handle_t *al, void *data, switch_size_t datalen, int rate)
+{
+}
+
+#else
+static void gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream)
+{
+	float offset;
+	float pos;
+	float radius;
+	float x, z;
+	float div = 3.14159f / 180;
+	conference_member_t *member;
+
+	if (!conference->count) {
+		return;
+	}
+
+	switch_mutex_lock(conference->member_mutex);
+
+	if (conference->count < 3) {
+		for (member = conference->members; member; member = member->next) {
+			if (member->al) {
+				member->al->pos_x = 0;
+				member->al->pos_y = 0;
+				member->al->pos_z = 0;
+				member->al->setpos = 1;
+
+				if (stream) {
+					stream->write_function(stream, "Member %d (%s) 0.0:0.0:0.0\n", member->id, switch_channel_get_name(member->channel));
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Member %d (%s) 0.0:0.0:0.0\n", 
+									  member->id, switch_channel_get_name(member->channel));
+				}
+			}
+		}
+
+		goto end;
+	}
+
+	offset = 180 / (conference->count - 1);
+
+	radius = 2.0f;//3.0f; //(float)conference->count / 2.0f; //3.0f;
+
+	pos = -90.0f;// + (offset / 2.0f);
+	
+	for (member = conference->members; member; member = member->next) {
+
+		if (switch_test_flag(member, MFLAG_NO_POSITIONAL)) {
+			continue;
+		}
+
+		if (!member->al) {
+			member->al = create_al(member->pool);
+		}
+		switch_set_flag(member, MFLAG_POSITIONAL);
+
+		if (pos == 0) {
+			x = 0;
+			z = radius;
+		} else if (pos == -90) {
+			z = 0;
+			x = radius * -1;
+		} else if (pos == 90) {
+			z = 0;
+			x = radius;
+		} else if (pos < 0) {
+			z = cos((90+pos) * div) * radius;
+			x = sin((90+pos) * div) * radius * -1.0f;
+		} else {
+			x = cos(pos * div) * radius;
+			z = sin(pos * div) * radius;
+		}
+
+		member->al->pos_x = x;
+		member->al->pos_y = 0;
+		member->al->pos_z = z;
+		member->al->setpos = 1;
+
+		if (stream) {
+			stream->write_function(stream, "Member %d (%s) %0.2f:0.0:%0.2f\n", member->id, switch_channel_get_name(member->channel), x, z);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Member %d (%s) %0.2f:0.0:%0.2f\n", 
+							  member->id, switch_channel_get_name(member->channel), x, z);
+		}
+
+		pos += offset;
+	}
+		
+ end:
+
+	switch_mutex_unlock(conference->member_mutex);
+
+	return;
+
+}
+
+
+#define ALC_HRTF_SOFT  0x1992
+
+static void process_al(al_handle_t *al, void *data, switch_size_t datalen, int rate)
+{
+
+	if (!al->device) {
+		ALCint contextAttr[] = {
+			ALC_FORMAT_CHANNELS_SOFT, ALC_STEREO_SOFT,
+			ALC_FORMAT_TYPE_SOFT, ALC_SHORT_SOFT,
+			ALC_FREQUENCY, rate,
+			ALC_HRTF_SOFT, AL_TRUE,
+			0
+		};
+
+
+		if ((al->device = alcLoopbackOpenDeviceSOFT(NULL))) {
+			static const ALshort silence[16] = { 0 };
+
+			//if ((al->device = alcOpenDevice( NULL ))) {
+			//float orient[6] = { /*fwd:*/ 0., 0., -1., /*up:*/ 0., 1., 0. };
+
+			al->context = alcCreateContext(al->device, contextAttr);
+			alcSetThreadContext(al->context);
+			
+			/* listener at origin, facing down -z (ears at 1.5m height) */
+			//alListener3f( AL_POSITION, 0. ,0, 0. );
+			//alListener3f( AL_VELOCITY, 0., 0., 0. );
+			//alListenerfv( AL_ORIENTATION, orient );
+
+			
+			alGenSources(1, &al->source);
+			alSourcef( al->source, AL_PITCH, 1.);
+			alSourcef( al->source, AL_GAIN, 1.);
+			alGenBuffers(2, al->buffer_in);
+
+			alBufferData(al->buffer_in[0], AL_FORMAT_MONO16, data, datalen, rate);
+			//alBufferData(al->buffer_in[0], AL_FORMAT_MONO16, NULL, 0, rate);
+			alBufferData(al->buffer_in[1], AL_FORMAT_MONO16, silence, sizeof(silence), rate);
+			alSourceQueueBuffers(al->source, 2, al->buffer_in);
+			alSourcePlay(al->source);
+		}
+	}
+
+	if (al->device) {
+		ALint processed = 0, state = 0;
+		
+		alcSetThreadContext(al->context);
+		alGetSourcei(al->source, AL_SOURCE_STATE, &state);
+		alGetSourcei(al->source, AL_BUFFERS_PROCESSED, &processed);
+				
+		if (al->setpos) {
+			al->setpos = 0;
+			alSource3f(al->source, AL_POSITION, al->pos_x, al->pos_y, al->pos_z);
+		}
+		
+		if (processed > 0) {
+			ALuint bufid;
+			alSourceUnqueueBuffers(al->source, 1, &bufid);
+			alBufferData(bufid, AL_FORMAT_MONO16, data, datalen, rate);
+			alSourceQueueBuffers(al->source, 1, &bufid);
+		}
+
+		if (state != AL_PLAYING) {
+			alSourcePlay(al->source);
+		}
+		
+		alcRenderSamplesSOFT(al->device, data, datalen / 2);
+	}
+}
+#endif
 
 static void conference_cdr_del(conference_member_t *member)
 {
@@ -707,7 +921,7 @@ static char *conference_rfc4579_render(conference_obj_t *conference, switch_even
 	if (!(x_tag = switch_xml_add_child_d(xml, "conference-description", off++))) {
 		abort();
 	}
-
+	
 	if (!(x_tag1 = switch_xml_add_child_d(x_tag, "display-text", off1++))) {
 		abort();
 	}
@@ -1789,6 +2003,57 @@ static void adv_la(conference_obj_t *conference, conference_member_t *member, sw
 	}
 }
 
+#ifndef OPENAL_POSITIONING
+static switch_status_t parse_position(al_handle_t *al, const char *data) 
+{
+	return SWITCH_STATUS_FALSE;
+}
+
+#else 
+static switch_status_t parse_position(al_handle_t *al, const char *data) 
+{
+	char *args[3];
+	int num;
+	char *dup;
+	
+
+	dup = strdup((char *)data);
+	switch_assert(dup);
+			
+	if ((num = switch_split(dup, ':', args)) != 3) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	al->pos_x = atof(args[0]);
+	al->pos_y = atof(args[1]);
+	al->pos_z = atof(args[2]);
+	al->setpos = 1;
+
+	switch_safe_free(dup);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+#endif
+
+#ifndef OPENAL_POSITIONING
+static switch_status_t member_parse_position(conference_member_t *member, const char *data)
+{
+	return SWITCH_STATUS_FALSE;
+}
+#else
+static switch_status_t member_parse_position(conference_member_t *member, const char *data)
+{
+	switch_status_t status;
+
+	lock_member(member);
+	status = parse_position(member->al, data);
+	unlock_member(member);
+
+	return status;
+	
+}
+#endif
+
 /* Gain exclusive access and add the member to the list */
 static switch_status_t conference_add_member(conference_obj_t *conference, conference_member_t *member)
 {
@@ -1797,7 +2062,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	char msg[512];				/* conference count announcement */
 	call_list_t *call_list = NULL;
 	switch_channel_t *channel;
-	const char *controls = NULL;
+	const char *controls = NULL, *position = NULL;
 
 	switch_assert(conference != NULL);
 	switch_assert(member != NULL);
@@ -1820,6 +2085,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	switch_set_flag_locked(member, MFLAG_INTREE);
 	switch_mutex_unlock(conference->member_mutex);
 	conference_cdr_add(member);
+
 
 	if (!switch_test_flag(member, MFLAG_NOCHANNEL)) {
 		if (switch_test_flag(member, MFLAG_GHOST)) {
@@ -1942,6 +2208,30 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		switch_channel_clear_app_flag_key("conf_silent", channel, CONF_SILENT_REQ);
 		switch_channel_set_app_flag_key("conf_silent", channel, CONF_SILENT_DONE);
 
+
+		if ((position = switch_channel_get_variable(channel, "conference_position"))) {
+
+			if (conference->channels == 2) {
+				if (switch_test_flag(member, MFLAG_NO_POSITIONAL)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+									  "%s has positional audio blocked.\n", switch_channel_get_name(channel));
+				} else {
+					if (member_parse_position(member, position) != SWITCH_STATUS_SUCCESS) { 
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,	"%s invalid position data\n", switch_channel_get_name(channel));
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,	"%s position data set\n", switch_channel_get_name(channel));
+					}
+					
+					switch_set_flag(member, MFLAG_POSITIONAL);
+					member->al = create_al(member->pool);
+				}
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,	"%s cannot set position data on mono conference.\n", switch_channel_get_name(channel));
+			}
+		}
+		
+		
+
 		controls = switch_channel_get_variable(channel, "conference_controls");
 
 		if (zstr(controls)) {
@@ -1985,6 +2275,11 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		adv_la(conference, member, SWITCH_TRUE);
 		switch_live_array_add(conference->la, switch_core_session_get_uuid(member->session), -1, &member->json, SWITCH_FALSE);
 		
+	}
+
+
+	if (switch_test_flag(conference, CFLAG_POSITIONAL)) {
+		gen_arc(conference, NULL);
 	}
 
 
@@ -2155,6 +2450,17 @@ static void conference_set_floor_holder(conference_obj_t *conference, conference
 
 }
 
+#ifdef OPENAL_POSITIONING
+static void close_al(al_handle_t *al)
+{
+	alDeleteSources(1, &al->source);
+	alDeleteBuffers(2, al->buffer_in);
+	alcDestroyContext(al->context);
+	alcCloseDevice(al->device);
+	al->device = NULL;
+}
+#endif
+
 static switch_status_t conference_file_close(conference_obj_t *conference, conference_file_node_t *node)
 {
 	switch_event_t *event;
@@ -2193,7 +2499,13 @@ static switch_status_t conference_file_close(conference_obj_t *conference, confe
 
 		switch_event_fire(&event);
 	}
-	
+
+#ifdef OPENAL_POSITIONING	
+	if (node->al && node->al->device) {
+		close_al(node->al);
+	}
+#endif
+
 	return switch_core_file_close(&node->fh);
 }
 
@@ -2223,6 +2535,11 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 
 	conference_cdr_del(member);
 
+#ifdef OPENAL_POSITIONING	
+	if (member->al && member->al->device) {
+		close_al(member->al);
+	}
+#endif
 
 	member_fnode = member->fnode;
 	member_sh = member->sh;
@@ -2343,6 +2660,10 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 
 	send_rfc_event(conference);
 	send_json_event(conference);
+
+	if (switch_test_flag(conference, CFLAG_POSITIONAL)) {
+		gen_arc(conference, NULL);
+	}
 
 	switch_mutex_unlock(conference->mutex);
 	status = SWITCH_STATUS_SUCCESS;
@@ -2748,9 +3069,20 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				
 				if (conference->fnode->type == NODE_TYPE_SPEECH) {
 					switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_BLOCKING;
+					switch_size_t speech_len = file_data_len;
 					
-					if (switch_core_speech_read_tts(conference->fnode->sh, file_frame, &file_data_len, &flags) == SWITCH_STATUS_SUCCESS) {
+					if (conference->fnode->al) {
+						speech_len /= 2;
+					}
+					
+					if (switch_core_speech_read_tts(conference->fnode->sh, file_frame, &speech_len, &flags) == SWITCH_STATUS_SUCCESS) {
+						
+						if (conference->fnode->al) {
+							process_al(conference->fnode->al, file_frame, speech_len, conference->rate);
+						}
+
 						file_sample_len = file_data_len / 2 / conference->fnode->sh->channels;
+
 						
 					} else {
 						file_sample_len = file_data_len = 0;
@@ -2759,6 +3091,9 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 					switch_core_file_read(&conference->fnode->fh, file_frame, &file_sample_len);
 					if (conference->fnode->fh.vol) {
 						switch_change_sln_volume_granular((void *)file_frame, (uint32_t)file_sample_len, conference->fnode->fh.vol);
+					}
+					if (conference->fnode->al) {
+						process_al(conference->fnode->al, file_frame, file_sample_len * 2, conference->fnode->fh.samplerate);
 					}
 				}
 
@@ -2777,7 +3112,9 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			} else if (!conference->async_fnode->done) {
 				file_sample_len = samples;
 				switch_core_file_read(&conference->async_fnode->fh, async_file_frame, &file_sample_len);
-
+				if (conference->async_fnode->al) {
+					process_al(conference->async_fnode->al, file_frame, file_sample_len * 2, conference->async_fnode->fh.samplerate);
+				}
 				if (file_sample_len <= 0) {
 					conference->async_fnode->done++;
 				} else {
@@ -3683,13 +4020,12 @@ static void check_agc_levels(conference_member_t *member)
 	}
 }
 
-
 static void member_check_channels(switch_frame_t *frame, conference_member_t *member, switch_bool_t in)
 {
-	if (member->conference->channels != member->read_impl.number_of_channels) {
+	if (member->conference->channels != member->read_impl.number_of_channels || switch_test_flag(member, MFLAG_POSITIONAL)) {
 		uint32_t rlen;
 		int from, to;
-
+		
 		if (in) {
 			to = member->conference->channels;
 			from = member->read_impl.number_of_channels;
@@ -3699,10 +4035,21 @@ static void member_check_channels(switch_frame_t *frame, conference_member_t *me
 		}
 
 		rlen = frame->datalen / 2 / from; 
-
-		switch_mux_channels((int16_t *) frame->data, rlen, from, to);
-
+		
+		if (((from == 1 && to == 2) || (from == 2 && to == 2 && in)) && switch_test_flag(member, MFLAG_POSITIONAL)) {
+			if (from == 2 && to == 2) {
+				switch_mux_channels((int16_t *) frame->data, rlen, 2, 1);
+				frame->datalen /= 2;
+				rlen = frame->datalen / 2;
+			}
+			
+			process_al(member->al, frame->data, frame->datalen, member->read_impl.actual_samples_per_second);
+		} else {
+			switch_mux_channels((int16_t *) frame->data, rlen, from, to);
+		}
+		
 		frame->datalen = rlen * 2 * to;
+		
 	}
 }
 
@@ -4102,9 +4449,14 @@ static void member_add_file_data(conference_member_t *member, int16_t *data, swi
 		} else {
 			if (member->fnode->type == NODE_TYPE_SPEECH) {
 				switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_BLOCKING;
+				switch_size_t speech_len = file_data_len;
+
+				if (member->fnode->al) {
+					speech_len /= 2;
+				}
 				
-				if (switch_core_speech_read_tts(member->fnode->sh, file_frame, &file_data_len, &flags) == SWITCH_STATUS_SUCCESS) {
-					file_sample_len = file_data_len / 2 / member->conference->channels;
+				if (switch_core_speech_read_tts(member->fnode->sh, file_frame, &speech_len, &flags) == SWITCH_STATUS_SUCCESS) {
+					file_sample_len = file_data_len / 2 / member->conference->channels;					
 				} else {
 					file_sample_len = file_data_len = 0;
 				}
@@ -4121,6 +4473,10 @@ static void member_add_file_data(conference_member_t *member, int16_t *data, swi
 				/* Check for output volume adjustments */
 				if (member->volume_out_level) {
 					switch_change_sln_volume(file_frame, (uint32_t)file_sample_len, member->volume_out_level);
+				}
+
+				if (member->fnode->al) {
+					process_al(member->fnode->al, file_frame, file_sample_len * 2, member->conference->rate);
 				}
 
 				for (i = 0; i < (int)file_sample_len * member->conference->channels; i++) {
@@ -4886,6 +5242,8 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 	uint32_t count;
 	char *dfile = NULL, *expanded = NULL;
 	int say = 0;
+	uint8_t channels = (uint8_t) conference->channels;
+	int bad_params = 0;
 
 	switch_assert(conference != NULL);
 
@@ -4952,9 +5310,16 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 	fnode->type = NODE_TYPE_FILE;
 	fnode->leadin = leadin;
 
+	if (switch_stristr("position=", file)) {
+		/* positional requires mono input */
+		fnode->fh.channels = channels = 1;
+	}
+	
+ retry:
+
 	/* Open the file */
 	fnode->fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
-	if (switch_core_file_open(&fnode->fh, file, (uint8_t) conference->channels, conference->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, pool) !=
+	if (switch_core_file_open(&fnode->fh, file, channels, conference->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, pool) !=
 		SWITCH_STATUS_SUCCESS) {
 		switch_event_t *event;
 
@@ -4980,9 +5345,22 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 
 	if (fnode->fh.params) {
 		const char *vol = switch_event_get_header(fnode->fh.params, "vol");
+		const char *position = switch_event_get_header(fnode->fh.params, "position");
 
 		if (!zstr(vol)) {
 			fnode->fh.vol = atoi(vol);
+		}
+
+		if (!bad_params && !zstr(position) && conference->channels == 2) {
+			fnode->al = create_al(pool);
+			if (parse_position(fnode->al, position) != SWITCH_STATUS_SUCCESS) {
+				switch_core_file_close(&fnode->fh);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Position Data.\n");
+				fnode->al = NULL;
+				channels = conference->channels;
+				bad_params = 1;
+				goto retry;
+			}
 		}
 	}
 
@@ -5033,6 +5411,8 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 	char *dfile = NULL, *expanded = NULL;
 	conference_file_node_t *fnode, *nptr = NULL;
 	switch_memory_pool_t *pool;
+	int channels = member->conference->channels;
+	int bad_params = 0;
 
 	if (member == NULL || file == NULL || switch_test_flag(member, MFLAG_KICKED))
 		return status;
@@ -5077,10 +5457,17 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 	fnode->mux = mux;
 	fnode->member_id = member->id;
 
+	if (switch_stristr("position=", file)) {
+		/* positional requires mono input */
+		fnode->fh.channels = channels = 1;
+	}
+
+ retry:
+
 	/* Open the file */
 	fnode->fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 	if (switch_core_file_open(&fnode->fh,
-							  file, (uint8_t) member->conference->channels, member->conference->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
+							  file, (uint8_t) channels, member->conference->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
 							  pool) != SWITCH_STATUS_SUCCESS) {
 		switch_core_destroy_memory_pool(&pool);
 		status = SWITCH_STATUS_NOTFOUND;
@@ -5088,6 +5475,23 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 	}
 	fnode->pool = pool;
 	fnode->file = switch_core_strdup(fnode->pool, file);
+
+	if (fnode->fh.params) {
+		const char *position = switch_event_get_header(fnode->fh.params, "position");
+		
+		if (!bad_params && !zstr(position) && member->conference->channels == 2) {
+			fnode->al = create_al(pool);
+			if (parse_position(fnode->al, position) != SWITCH_STATUS_SUCCESS) {
+				switch_core_file_close(&fnode->fh);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Invalid Position Data.\n");
+				fnode->al = NULL;
+				channels = member->conference->channels;
+				bad_params = 1;
+				goto retry;
+			}
+		}
+	}
+
 	/* Queue the node */
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Queueing file '%s' for play\n", file);
 	switch_mutex_lock(member->fnode_mutex);
@@ -5116,6 +5520,10 @@ static switch_status_t conference_member_say(conference_member_t *member, char *
 	switch_memory_pool_t *pool;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *fp = NULL;
+	int channels = member->conference->channels;
+	switch_event_t *params = NULL;
+	const char *position = NULL;
 
 	if (member == NULL || zstr(text))
 		return SWITCH_STATUS_FALSE;
@@ -5139,18 +5547,55 @@ static switch_status_t conference_member_say(conference_member_t *member, char *
 		return SWITCH_STATUS_MEMERR;
 	}
 
+	if (*text == '{') {
+		char *new_fp;
+		
+		fp = switch_core_strdup(pool, text);
+		switch_assert(fp);
+
+		if (!switch_event_create_brackets(fp, '{', '}', ',', &params, &new_fp, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
+			new_fp = fp;
+		}
+
+		text = new_fp;
+	}
+
 	fnode->type = NODE_TYPE_SPEECH;
 	fnode->leadin = leadin;
 	fnode->pool = pool;
 
+
+	if (params && (position = switch_event_get_header(params, "position"))) {
+		if (conference->channels != 2) {
+			position = NULL;
+		} else {
+			channels = 1;
+			fnode->al = create_al(pool);
+			if (parse_position(fnode->al, position) != SWITCH_STATUS_SUCCESS) {
+				fnode->al = NULL;
+				channels = conference->channels;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Position Data.\n");
+			}
+		}
+	}
+
+
+	if (member->sh && member->last_speech_channels != channels) {
+		switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
+		switch_core_speech_close(&member->lsh, &flags);
+		member->sh = NULL;
+	}
+
 	if (!member->sh) {
 		memset(&member->lsh, 0, sizeof(member->lsh));
 		if (switch_core_speech_open(&member->lsh, conference->tts_engine, conference->tts_voice,
-									conference->rate, conference->interval, conference->channels, &flags, switch_core_session_get_pool(member->session)) !=
+									conference->rate, conference->interval, channels, &flags, switch_core_session_get_pool(member->session)) !=
 			SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Invalid TTS module [%s]!\n", conference->tts_engine);
-			return SWITCH_STATUS_FALSE;
+			status = SWITCH_STATUS_FALSE;
+			goto end;
 		}
+		member->last_speech_channels = channels;
 		member->sh = &member->lsh;
 	}
 
@@ -5185,6 +5630,12 @@ static switch_status_t conference_member_say(conference_member_t *member, char *
 
 	status = SWITCH_STATUS_SUCCESS;
 
+ end:
+
+	if (params) {
+		switch_event_destroy(&params);
+	}
+
 	return status;
 }
 
@@ -5196,12 +5647,19 @@ static switch_status_t conference_say(conference_obj_t *conference, const char *
 	switch_memory_pool_t *pool;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 	uint32_t count;
+	switch_event_t *params = NULL;
+	char *fp = NULL;
+	int channels;
+	const char *position = NULL;
 
 	switch_assert(conference != NULL);
+
+	channels = conference->channels;
 
 	if (zstr(text)) {
 		return SWITCH_STATUS_GENERR;
 	}
+
 
 	switch_mutex_lock(conference->mutex);
 	switch_mutex_lock(conference->member_mutex);
@@ -5229,16 +5687,53 @@ static switch_status_t conference_say(conference_obj_t *conference, const char *
 		return SWITCH_STATUS_MEMERR;
 	}
 
+
+	if (*text == '{') {
+		char *new_fp;
+		
+		fp = switch_core_strdup(pool, text);
+		switch_assert(fp);
+
+		if (!switch_event_create_brackets(fp, '{', '}', ',', &params, &new_fp, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
+			new_fp = fp;
+		}
+
+		text = new_fp;
+	}
+
+
 	fnode->type = NODE_TYPE_SPEECH;
 	fnode->leadin = leadin;
+
+	if (params && (position = switch_event_get_header(params, "position"))) {
+		if (conference->channels != 2) {
+			position = NULL;
+		} else {
+			channels = 1;
+			fnode->al = create_al(pool);
+			if (parse_position(fnode->al, position) != SWITCH_STATUS_SUCCESS) {
+				fnode->al = NULL;
+				channels = conference->channels;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Position Data.\n");
+			}
+		}
+	}
+
+	if (conference->sh && conference->last_speech_channels != channels) {
+		switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
+		switch_core_speech_close(&conference->lsh, &flags);
+		conference->sh = NULL;
+	}
 
 	if (!conference->sh) {
 		memset(&conference->lsh, 0, sizeof(conference->lsh));
 		if (switch_core_speech_open(&conference->lsh, conference->tts_engine, conference->tts_voice,
-									conference->rate, conference->interval, conference->channels, &flags, NULL) != SWITCH_STATUS_SUCCESS) {
+									conference->rate, conference->interval, channels, &flags, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module [%s]!\n", conference->tts_engine);
-			return SWITCH_STATUS_FALSE;
+			status = SWITCH_STATUS_FALSE;
+			goto end;
 		}
+		conference->last_speech_channels = channels;
 		conference->sh = &conference->lsh;
 	}
 
@@ -5272,6 +5767,12 @@ static switch_status_t conference_say(conference_obj_t *conference, const char *
 	switch_core_speech_feed_tts(fnode->sh, (char *) text, &flags);
 	switch_mutex_unlock(conference->mutex);
 	status = SWITCH_STATUS_SUCCESS;
+
+ end:
+
+	if (params) {
+		switch_event_destroy(&params);
+	}
 
 	return status;
 }
@@ -5721,8 +6222,9 @@ static switch_status_t conf_api_sub_energy(conference_member_t *member, switch_s
 {
 	switch_event_t *event;
 
-	if (member == NULL)
+	if (member == NULL) {
 		return SWITCH_STATUS_GENERR;
+	}
 
 	if (data) {
 		lock_member(member);
@@ -5739,6 +6241,79 @@ static switch_status_t conf_api_sub_energy(conference_member_t *member, switch_s
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Energy-Level", "%d", member->energy_level);
 		switch_event_fire(&event);
 	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t conf_api_sub_auto_position(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+#ifdef OPENAL_POSITIONING
+	gen_arc(conference, stream);
+
+	stream->write_function(stream, "+OK\n");
+	
+#else
+	stream->write_function(stream, "-ERR not supported\n");
+	
+#endif
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t conf_api_sub_position(conference_member_t *member, switch_stream_handle_t *stream, void *data)
+{
+#ifndef OPENAL_POSITIONING
+	stream->write_function(stream, "-ERR not supported\n");
+#else
+	switch_event_t *event;
+
+	if (member == NULL) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (switch_test_flag(member, MFLAG_NO_POSITIONAL)) {
+		if (stream) stream->write_function(stream,
+										   "%s has positional audio blocked.\n", switch_channel_get_name(member->channel));
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (!member->al) {
+		if (!switch_test_flag(member, MFLAG_POSITIONAL) && member->conference->channels == 2) {
+			switch_set_flag(member, MFLAG_POSITIONAL);
+			member->al = create_al(member->pool);
+		} else {
+		
+			if (stream) {
+				stream->write_function(stream, "Positional audio not avalilable %d\n", member->conference->channels);
+			}
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+
+
+	if (data) {
+		if (member_parse_position(member, data) != SWITCH_STATUS_SUCCESS) {
+			if (stream) {
+				stream->write_function(stream, "invalid input!\n");
+			}
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+	
+
+	if (stream != NULL) {
+		stream->write_function(stream, "Position %u = %0.2f:%0.2f:%0.2f\n", member->id, member->al->pos_x, member->al->pos_y, member->al->pos_z);
+	}
+
+	if (test_eflag(member->conference, EFLAG_SET_POSITION_MEMBER) &&
+		data && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+		conference_add_event_member_data(member, event);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "set-position-member");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Position", "%0.2f:%0.2f:%0.2f", member->al->pos_x, member->al->pos_y, member->al->pos_z);
+		switch_event_fire(&event);
+	}
+
+#endif
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -7303,6 +7878,8 @@ static api_command_t conf_api_sub_commands[] = {
 	{"energy", (void_fn_t) & conf_api_sub_energy, CONF_API_SUB_MEMBER_TARGET, "energy", "<member_id|all|last|non_moderator> [<newval>]"},
 	{"volume_in", (void_fn_t) & conf_api_sub_volume_in, CONF_API_SUB_MEMBER_TARGET, "volume_in", "<member_id|all|last|non_moderator> [<newval>]"},
 	{"volume_out", (void_fn_t) & conf_api_sub_volume_out, CONF_API_SUB_MEMBER_TARGET, "volume_out", "<member_id|all|last|non_moderator> [<newval>]"},
+	{"position", (void_fn_t) & conf_api_sub_position, CONF_API_SUB_MEMBER_TARGET, "position", "<member_id> <x>,<y>,<z>"},
+	{"auto-3d-position", (void_fn_t) & conf_api_sub_auto_position, CONF_API_SUB_ARGS_SPLIT, "auto-3d-position", ""},
 	{"play", (void_fn_t) & conf_api_sub_play, CONF_API_SUB_ARGS_SPLIT, "play", "<file_path> [async|<member_id> [nomux]]"},
 	{"pause_play", (void_fn_t) & conf_api_sub_pause_play, CONF_API_SUB_ARGS_SPLIT, "pause", ""},
 	{"file_seek", (void_fn_t) & conf_api_sub_file_seek, CONF_API_SUB_ARGS_SPLIT, "file_seek", "[+-]<val>"},
@@ -7931,6 +8508,10 @@ static void set_mflags(const char *flags, member_flag_t *f)
 				*f |= MFLAG_GHOST;
 			} else if (!strcasecmp(argv[i], "join-only")) {
 				*f |= MFLAG_JOIN_ONLY;
+			} else if (!strcasecmp(argv[i], "positional")) {
+				*f |= MFLAG_POSITIONAL;
+			} else if (!strcasecmp(argv[i], "no-positional")) {
+				*f |= MFLAG_NO_POSITIONAL;
 			}
 		}
 
@@ -7973,6 +8554,8 @@ static void set_cflags(const char *flags, uint32_t *f)
 				*f |= CFLAG_LIVEARRAY_SYNC;
 			} else if (!strcasecmp(argv[i], "rfc-4579")) {
 				*f |= CFLAG_RFC4579;
+			} else if (!strcasecmp(argv[i], "auto-3d-position")) {
+				*f |= CFLAG_POSITIONAL;
 			}
 
 			
@@ -9108,7 +9691,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 			} else {
 				tmp = atoi(force_rate);
 
-				if (tmp == 8000 || tmp == 12000 || tmp == 16000 || tmp == 24000 || tmp == 32000 || tmp == 48000) {
+				if (tmp == 8000 || tmp == 12000 || tmp == 16000 || tmp == 24000 || tmp == 32000 || tmp == 44100 || tmp == 48000) {
 					force_rate_i = rate = tmp;
 				}
 			}
@@ -9166,7 +9749,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 						rate = read_impl.actual_samples_per_second;
 					}
 				} else {
-					if (tmp == 8000 || tmp == 12000 || tmp == 16000 || tmp == 24000 || tmp == 32000 || tmp == 48000) {
+					if (tmp == 8000 || tmp == 12000 || tmp == 16000 || tmp == 24000 || tmp == 32000 || tmp == 44100 || tmp == 48000) {
 						rate = tmp;
 					}
 				}
@@ -10164,7 +10747,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load)
 	SWITCH_ADD_APP(app_interface, global_app_name, global_app_name, NULL, conference_function, NULL, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "conference_set_auto_outcall", "conference_set_auto_outcall", NULL, conference_auto_function, NULL, SAF_NONE);
 	SWITCH_ADD_CHAT(chat_interface, CONF_CHAT_PROTO, chat_send);
-	
 
 	send_presence(SWITCH_EVENT_PRESENCE_IN);
 
