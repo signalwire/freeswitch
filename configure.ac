@@ -493,6 +493,10 @@ AC_ARG_ENABLE(srtp,
 
 AM_CONDITIONAL([ENABLE_SRTP],[test "${enable_srtp}" = "yes"])
 
+have_openal=no
+AC_CHECK_LIB(openal, alMidiGainSOFT, [have_openal="yes"])
+AM_CONDITIONAL([HAVE_OPENAL],[test "${have_openal}" = "yes"])
+
 AC_ARG_ENABLE(zrtp,
 	[AS_HELP_STRING([--enable-zrtp], [Compile with zrtp Support])],,[enable_zrtp="no"])
 if test "x$enable_zrtp" = "xyes" ; then
