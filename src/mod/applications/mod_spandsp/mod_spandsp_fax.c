@@ -838,12 +838,6 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 		t38_gateway_set_ecm_capability(pvt->t38_gateway_state, pvt->use_ecm);
 		switch_channel_set_variable(channel, "fax_ecm_requested", pvt->use_ecm ? "true" : "false");
 
-		if (switch_true(switch_channel_get_variable(channel, "FAX_DISABLE_ECM"))) {
-			t38_gateway_set_ecm_capability(pvt->t38_gateway_state, FALSE);
-		} else {
-			t38_gateway_set_ecm_capability(pvt->t38_gateway_state, TRUE);
-		}
-
 		span_log_set_message_handler(t38_gateway_get_logging_state(pvt->t38_gateway_state), mod_spandsp_log_message, pvt->session);
 		span_log_set_message_handler(t38_core_get_logging_state(pvt->t38_core), mod_spandsp_log_message, pvt->session);
 
@@ -853,7 +847,6 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 		}
 
 		t38_set_t38_version(pvt->t38_core, 0);
-		t38_gateway_set_ecm_capability(pvt->t38_gateway_state, 1);
 
 		return SWITCH_STATUS_SUCCESS;
 	default:
