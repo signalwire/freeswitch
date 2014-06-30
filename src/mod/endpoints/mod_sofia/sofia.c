@@ -4101,11 +4101,11 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					} else if (!strcasecmp(var, "tcp-ping2pong") && !zstr(val)) {
 						profile->tcp_ping2pong = atoi(val);
 						sofia_set_pflag(profile, PFLAG_TCP_PING2PONG);
-					} else if (!strcasecmp(var, "proxy-refer-replaces") && !zstr(val)) {
+					} else if ((!strcasecmp(var, "proxy-refer-replaces") || !strcasecmp(var, "proxy-refer")) && !zstr(val)) {
 						if (switch_true(val)) {
-							sofia_set_pflag(profile, PFLAG_PROXY_REFER_REPLACES);
+							sofia_set_pflag(profile, PFLAG_PROXY_REFER);
 						} else {
-							sofia_clear_pflag(profile, PFLAG_PROXY_REFER_REPLACES);
+							sofia_clear_pflag(profile, PFLAG_PROXY_REFER);
 						}
 					} else if (!strcasecmp(var, "sip-messages-respond-200-ok") && !zstr(val)) {
 						if (switch_true(val)) {
@@ -7450,10 +7450,10 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	}
 
 	
-	if (sofia_test_pflag(profile, PFLAG_PROXY_REFER_REPLACES)) {
+	if (sofia_test_pflag(profile, PFLAG_PROXY_REFER)) {
 		switch_core_session_t *other_session;
 
-		if (switch_stristr("replaces=", full_ref_to) && switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+		if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 			switch_core_session_message_t *msg;
 			
 			msg = switch_core_session_alloc(other_session, sizeof(*msg));
