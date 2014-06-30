@@ -748,7 +748,9 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 									if (global_profile->log_uuid_length) {
 										int len = strlen(userdata);
 										int i = (global_profile->log_uuid_length < len) ? global_profile->log_uuid_length : len;
-										fwrite(userdata, sizeof(char), i, stdout);
+										if (fwrite(userdata, sizeof(char), i, stdout) < i) {
+											// don't care
+										}
 										printf(" ");
 									} else {
 										printf("%s ", userdata);
