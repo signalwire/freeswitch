@@ -3114,7 +3114,8 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				} else if (conference->fnode->type == NODE_TYPE_FILE) {
 					switch_core_file_read(&conference->fnode->fh, file_frame, &file_sample_len);
 					if (conference->fnode->fh.vol) {
-						switch_change_sln_volume_granular((void *)file_frame, (uint32_t)file_sample_len, conference->fnode->fh.vol);
+						switch_change_sln_volume_granular((void *)file_frame, (uint32_t)file_sample_len * conference->fnode->fh.channels, 
+														  conference->fnode->fh.vol);
 					}
 					if (conference->fnode->al) {
 						process_al(conference->fnode->al, file_frame, file_sample_len * 2, conference->fnode->fh.samplerate);
@@ -4219,11 +4220,11 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			member->score = 0;
 
 			if (member->volume_in_level) {
-				switch_change_sln_volume(read_frame->data, read_frame->datalen / 2, member->volume_in_level);
+				switch_change_sln_volume(read_frame->data, (read_frame->datalen / 2) * member->conference->channels, member->volume_in_level);
 			}
 
 			if (member->agc_volume_in_level) {
-				switch_change_sln_volume_granular(read_frame->data, read_frame->datalen / 2, member->agc_volume_in_level);
+				switch_change_sln_volume_granular(read_frame->data, (read_frame->datalen / 2) * member->conference->channels, member->agc_volume_in_level);
 			}
 			
 			if ((samples = read_frame->datalen / sizeof(*data) / member->read_impl.number_of_channels)) {
@@ -4500,7 +4501,7 @@ static void member_add_file_data(conference_member_t *member, int16_t *data, swi
 
 				/* Check for output volume adjustments */
 				if (member->volume_out_level) {
-					switch_change_sln_volume(file_frame, (uint32_t)file_sample_len, member->volume_out_level);
+					switch_change_sln_volume(file_frame, (uint32_t)file_sample_len * member->conference->channels, member->volume_out_level);
 				}
 
 				if (member->fnode->al) {
@@ -4777,7 +4778,7 @@ static void conference_loop_output(conference_member_t *member)
 				   else {
    					/* Check for output volume adjustments */
    					if (member->volume_out_level) {
-   						switch_change_sln_volume(write_frame.data, write_frame.samples, member->volume_out_level);
+   						switch_change_sln_volume(write_frame.data, write_frame.samples * member->conference->channels, member->volume_out_level);
    					}
 				   }
 					write_frame.timestamp = timer.samplecount;
