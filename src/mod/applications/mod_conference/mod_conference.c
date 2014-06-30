@@ -731,6 +731,11 @@ static void gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream
 static void process_al(al_handle_t *al, void *data, switch_size_t datalen, int rate)
 {
 
+	if (rate != 48000) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Only 48khz is supported.\n");
+		return;
+	}
+
 	if (!al->device) {
 		ALCint contextAttr[] = {
 			ALC_FORMAT_CHANNELS_SOFT, ALC_STEREO_SOFT,
@@ -740,11 +745,11 @@ static void process_al(al_handle_t *al, void *data, switch_size_t datalen, int r
 			0
 		};
 
-
+		switch_mutex_lock(globals.setup_mutex);
 		if ((al->device = alcLoopbackOpenDeviceSOFT(NULL))) {
 			static const ALshort silence[16] = { 0 };
 			float orient[6] = { /*fwd:*/ 0., 0., -1., /*up:*/ 0., 1., 0. };
-
+			
 			al->context = alcCreateContext(al->device, contextAttr);
 			alcSetThreadContext(al->context);
 			
@@ -765,12 +770,13 @@ static void process_al(al_handle_t *al, void *data, switch_size_t datalen, int r
 			alSourceQueueBuffers(al->source, 2, al->buffer_in);
 			alSourcePlay(al->source);
 		}
+		switch_mutex_unlock(globals.setup_mutex);
 	}
 
 	if (al->device) {
 		ALint processed = 0, state = 0;
 		
-		alcSetThreadContext(al->context);
+		//alcSetThreadContext(al->context);
 		alGetSourcei(al->source, AL_SOURCE_STATE, &state);
 		alGetSourcei(al->source, AL_BUFFERS_PROCESSED, &processed);
 				
@@ -2452,11 +2458,30 @@ static void conference_set_floor_holder(conference_obj_t *conference, conference
 #ifdef OPENAL_POSITIONING
 static void close_al(al_handle_t *al)
 {
-	alDeleteSources(1, &al->source);
-	alDeleteBuffers(2, al->buffer_in);
-	alcDestroyContext(al->context);
-	alcCloseDevice(al->device);
-	al->device = NULL;
+	if (!al) return;
+
+	switch_mutex_lock(globals.setup_mutex);	
+	if (al->source) {
+		alDeleteSources(1, &al->source);
+		al->source = 0;
+	}
+
+	if (al->buffer_in[0]) {
+		alDeleteBuffers(2, al->buffer_in);
+		al->buffer_in[0] = 0;
+		al->buffer_in[1] = 0;
+	}
+
+	if (al->context) {
+		alcDestroyContext(al->context);
+		al->context = 0;
+	}
+
+	if (al->device) {
+		alcCloseDevice(al->device);
+		al->device = NULL;
+	}
+	switch_mutex_unlock(globals.setup_mutex);
 }
 #endif
 
@@ -4024,7 +4049,7 @@ static void member_check_channels(switch_frame_t *frame, conference_member_t *me
 	if (member->conference->channels != member->read_impl.number_of_channels || switch_test_flag(member, MFLAG_POSITIONAL)) {
 		uint32_t rlen;
 		int from, to;
-		
+
 		if (in) {
 			to = member->conference->channels;
 			from = member->read_impl.number_of_channels;
@@ -4034,15 +4059,15 @@ static void member_check_channels(switch_frame_t *frame, conference_member_t *me
 		}
 
 		rlen = frame->datalen / 2 / from; 
-		
-		if (((from == 1 && to == 2) || (from == 2 && to == 2 && in)) && switch_test_flag(member, MFLAG_POSITIONAL)) {
+
+		if (in && frame->rate == 48000 && ((from == 1 && to == 2) || (from == 2 && to == 2)) && switch_test_flag(member, MFLAG_POSITIONAL)) {
 			if (from == 2 && to == 2) {
 				switch_mux_channels((int16_t *) frame->data, rlen, 2, 1);
 				frame->datalen /= 2;
 				rlen = frame->datalen / 2;
 			}
 			
-			process_al(member->al, frame->data, frame->datalen, member->read_impl.actual_samples_per_second);
+			process_al(member->al, frame->data, frame->datalen, frame->rate);
 		} else {
 			switch_mux_channels((int16_t *) frame->data, rlen, from, to);
 		}
@@ -4064,6 +4089,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 	uint32_t hangover = 40, hangunder = 5, hangover_hits = 0, hangunder_hits = 0, diff_level = 400;
 	switch_core_session_t *session = member->session;
 	uint32_t flush_len, loops = 0;
+	switch_frame_t tmp_frame = { 0 };
 
 	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
 		goto end;
@@ -4102,8 +4128,6 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			break;
 		}
 
-		member_check_channels(read_frame, member, SWITCH_TRUE);
-		
 		if (switch_channel_test_flag(channel, CF_VIDEO) && !switch_test_flag(member, MFLAG_ACK_VIDEO)) {
 			switch_set_flag_locked(member, MFLAG_ACK_VIDEO);
 			switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
@@ -4219,7 +4243,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				switch_test_flag(member, MFLAG_CAN_SPEAK) &&
 				noise_gate_check(member)
 				) {
-				int last_shift = abs(member->last_score - member->score);
+				int last_shift = abs((int)(member->last_score - member->score));
 				
 				if (member->score && member->last_score && last_shift > 900) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG7,
@@ -4365,6 +4389,11 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				datalen = read_frame->datalen;
 			}
 
+			tmp_frame.data = data;
+			tmp_frame.datalen = datalen;
+			tmp_frame.rate = member->conference->rate;
+			member_check_channels(&tmp_frame, member, SWITCH_TRUE);
+			
 
 			if (datalen) {
 				switch_size_t ok = 1;
@@ -4375,7 +4404,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 					switch_buffer_zero(member->audio_buffer);
 					switch_channel_audio_sync(channel);
 				}
-				ok = switch_buffer_write(member->audio_buffer, data, datalen);
+				ok = switch_buffer_write(member->audio_buffer, tmp_frame.data, tmp_frame.datalen);
 				switch_mutex_unlock(member->audio_in_mutex);
 				if (!ok) {
 					switch_mutex_unlock(member->read_mutex);
