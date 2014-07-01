@@ -1119,35 +1119,39 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 		const char *var;
 
 		if (!zstr(sbv) && !strcmp(sbv, switch_core_session_get_uuid(session))) {
+			int hup = 1;
 
 			switch_channel_set_variable(other_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
 			switch_channel_set_variable(other_channel, SWITCH_BRIDGE_VARIABLE, NULL);
 			switch_channel_set_variable(other_channel, "call_uuid", switch_core_session_get_uuid(other_session));
 
 			if (switch_channel_up_nosig(other_channel)) {
-
 				if (switch_true(switch_channel_get_variable(other_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
 					switch_ivr_park_session(other_session);
+					hup = 0;
 				} else if ((var = switch_channel_get_variable(other_channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE))) {
 					transfer_after_bridge(other_session, var);
+					hup = 0;
 				}
 
-				if (switch_channel_test_flag(other_channel, CF_BRIDGE_ORIGINATOR)) {
-					if (switch_channel_test_flag(channel, CF_ANSWERED) &&
-						switch_true(switch_channel_get_variable(other_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) {
+				if (hup) {
+					if (switch_channel_test_flag(other_channel, CF_BRIDGE_ORIGINATOR)) {
+						if (switch_channel_test_flag(channel, CF_ANSWERED) &&
+							switch_true(switch_channel_get_variable(other_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) {
 
-						if (switch_channel_test_flag(channel, CF_INTERCEPTED)) {
-							switch_channel_set_flag(other_channel, CF_INTERCEPT);
+							if (switch_channel_test_flag(channel, CF_INTERCEPTED)) {
+								switch_channel_set_flag(other_channel, CF_INTERCEPT);
+							}
+							switch_channel_hangup(other_channel, switch_channel_get_cause(channel));
+						} else {
+							if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
+								switch_channel_handle_cause(other_channel, switch_channel_get_cause(channel));
+							}
+							switch_channel_set_state(other_channel, CS_EXECUTE);
 						}
-						switch_channel_hangup(other_channel, switch_channel_get_cause(channel));
 					} else {
-						if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
-							switch_channel_handle_cause(other_channel, switch_channel_get_cause(channel));
-						}
-						switch_channel_set_state(other_channel, CS_EXECUTE);
+						switch_channel_hangup(other_channel, switch_channel_get_cause(channel));
 					}
-				} else {
-					switch_channel_hangup(other_channel, switch_channel_get_cause(channel));
 				}
 			}
 		}
