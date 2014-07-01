@@ -1141,10 +1141,18 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 						}
 						switch_channel_hangup(other_channel, switch_channel_get_cause(channel));
 					} else {
+						const char *var;
+
 						if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
 							switch_channel_handle_cause(other_channel, switch_channel_get_cause(channel));
+						} 
+
+						if (switch_channel_test_flag(channel, CF_ANSWERED) && 
+							(var = switch_channel_get_variable(other_channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE))) {
+							transfer_after_bridge(other_session, var);
+						} else {
+							switch_channel_set_state(other_channel, CS_EXECUTE);
 						}
-						switch_channel_set_state(other_channel, CS_EXECUTE);
 					}
 				} else {
 					switch_channel_hangup(other_channel, switch_channel_get_cause(channel));
