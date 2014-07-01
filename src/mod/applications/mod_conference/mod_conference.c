@@ -6277,9 +6277,28 @@ static switch_status_t conf_api_sub_energy(conference_member_t *member, switch_s
 static switch_status_t conf_api_sub_auto_position(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 #ifdef OPENAL_POSITIONING
-	gen_arc(conference, stream);
+	char *arg = NULL;
+	int set = 0;
 
-	stream->write_function(stream, "+OK\n");
+	if (argc > 2) {
+		arg = argv[2];
+	}
+
+
+	if (!zstr(arg)) {
+		if (!strcasecmp(arg, "on")) {
+			switch_set_flag(conference, CFLAG_POSITIONAL);
+			set = 1;
+		} else if (!strcasecmp(arg, "off")) {
+			switch_clear_flag(conference, CFLAG_POSITIONAL);
+		}
+	}
+
+	if (set && switch_test_flag(conference, CFLAG_POSITIONAL)) {
+		gen_arc(conference, stream);
+	}
+
+	stream->write_function(stream, "+OK positioning %s\n", switch_test_flag(conference, CFLAG_POSITIONAL) ? "on" : "off");
 	
 #else
 	stream->write_function(stream, "-ERR not supported\n");
@@ -7908,7 +7927,7 @@ static api_command_t conf_api_sub_commands[] = {
 	{"volume_in", (void_fn_t) & conf_api_sub_volume_in, CONF_API_SUB_MEMBER_TARGET, "volume_in", "<member_id|all|last|non_moderator> [<newval>]"},
 	{"volume_out", (void_fn_t) & conf_api_sub_volume_out, CONF_API_SUB_MEMBER_TARGET, "volume_out", "<member_id|all|last|non_moderator> [<newval>]"},
 	{"position", (void_fn_t) & conf_api_sub_position, CONF_API_SUB_MEMBER_TARGET, "position", "<member_id> <x>,<y>,<z>"},
-	{"auto-3d-position", (void_fn_t) & conf_api_sub_auto_position, CONF_API_SUB_ARGS_SPLIT, "auto-3d-position", ""},
+	{"auto-3d-position", (void_fn_t) & conf_api_sub_auto_position, CONF_API_SUB_ARGS_SPLIT, "auto-3d-position", "[on|off]"},
 	{"play", (void_fn_t) & conf_api_sub_play, CONF_API_SUB_ARGS_SPLIT, "play", "<file_path> [async|<member_id> [nomux]]"},
 	{"pause_play", (void_fn_t) & conf_api_sub_pause_play, CONF_API_SUB_ARGS_SPLIT, "pause", ""},
 	{"file_seek", (void_fn_t) & conf_api_sub_file_seek, CONF_API_SUB_ARGS_SPLIT, "file_seek", "[+-]<val>"},
