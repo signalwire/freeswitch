@@ -506,9 +506,9 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
     
     if (i->last_wr_ts) {
         if (ts < 1000 && i->last_wr_ts > (UINT_MAX - 1000)) {
-            i->diff = abs(((UINT_MAX - i->last_wr_ts) + ts) / i->samples_per_packet);
+            i->diff = abs((int)(((UINT_MAX - i->last_wr_ts) + ts) / i->samples_per_packet));
         } else if (ts) {
-            i->diff = abs(i->last_wr_ts - ts) / i->samples_per_packet;
+            i->diff = abs((int)(i->last_wr_ts - ts)) / i->samples_per_packet;
         }
     }
     
@@ -568,25 +568,41 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
 	return STFU_IT_WORKED;
 }
 
-static int stfu_n_find_any_frame(stfu_instance_t *in, stfu_queue_t *queue, stfu_frame_t **r_frame)
+static int stfu_n_find_any_frame(stfu_instance_t *in, stfu_queue_t *queue, stfu_frame_t **r_frame, int force)
 {
     uint32_t i = 0, best_index = 0;
     int best_diff = 1000000, cur_diff = 0;
     stfu_frame_t *frame = NULL, *best_frame = NULL;
-
+    int newer = 0;
     stfu_assert(r_frame);
     
     *r_frame = NULL;
 
+ top:
+
+    if (force) {
+        in->cur_ts = 0;
+    }
+
     for(i = 0; i < queue->real_array_size; i++) {
         frame = &queue->array[i];
-        cur_diff = abs(frame->ts - in->cur_ts);
+        
+        if (!frame->was_read && in->cur_ts && frame->ts > in->cur_ts) {
+            newer++;
+        }
+
+        cur_diff = abs((int)(frame->ts - in->cur_ts));
 
         if (!frame->was_read && cur_diff < best_diff) {
             best_diff = cur_diff;
             best_frame = frame;
             best_index = i;
         }
+    }
+
+    if (!force && !best_frame && newer) {
+        force = 1;
+        goto top;
     }
 
     if (best_frame) {
@@ -684,7 +700,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 
     if (i->sync_out) {
         if (!found) {
-            if ((found = stfu_n_find_any_frame(i, i->out_queue, &rframe))) {
+            if ((found = stfu_n_find_any_frame(i, i->out_queue, &rframe, 1))) {
                 i->cur_ts = rframe->ts;
                 i->cur_seq = rframe->seq;
             }
@@ -760,7 +776,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
         i->period_bad_count++;
         i->consecutive_good_count = 0;
     }
-
+    
     if (found) {
         i->last_frame = rframe;
         i->out_queue->wr_len++;
@@ -774,7 +790,13 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
         i->plc_pt = rframe->pt;
 
     } else {
-        if (stfu_n_find_any_frame(i, i->out_queue, &rframe)) {
+        int force = 0;
+
+        if (i->consecutive_bad_count > (i->max_qlen / 2)) {
+            force = 1;
+        }
+
+        if (stfu_n_find_any_frame(i, i->out_queue, &rframe, force)) {
             i->cur_ts = rframe->ts;
             i->cur_seq = rframe->seq;
             i->last_wr_ts = i->cur_ts;
@@ -786,17 +808,22 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
             }
 
         } else {
-            i->last_wr_ts = i->cur_ts;
-            rframe = &i->out_queue->int_frame;
-            rframe->dlen = i->plc_len;
-            rframe->pt = i->plc_pt;
-            rframe->ts = i->cur_ts;
-            rframe->seq = i->cur_seq;
-            i->miss_count++;
+            if (force) {
+                stfu_log(STFU_LOG_EMERG, "%s NO PACKETS HARD RESETTING\n", i->name);
+                stfu_n_reset(i);
+            } else {
+                i->last_wr_ts = i->cur_ts;
+                rframe = &i->out_queue->int_frame;
+                rframe->dlen = i->plc_len;
+                rframe->pt = i->plc_pt;
+                rframe->ts = i->cur_ts;
+                rframe->seq = i->cur_seq;
+                i->miss_count++;
 
-            if (stfu_log != null_logger && i->debug) {
-                stfu_log(STFU_LOG_EMERG, "%s PLC %d/%d %d %ld %u:%u\n", i->name, 
-                         i->miss_count, i->max_qlen, rframe->plc, rframe->dlen, rframe->ts, rframe->ts / i->samples_per_packet);
+                if (stfu_log != null_logger && i->debug) {
+                    stfu_log(STFU_LOG_EMERG, "%s PLC %d/%d %d %ld %u:%u\n", i->name, 
+                             i->miss_count, i->max_qlen, rframe->plc, rframe->dlen, rframe->ts, rframe->ts / i->samples_per_packet);
+                }
             }
         }
 
