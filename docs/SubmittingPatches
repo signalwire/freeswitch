@@ -77,7 +77,7 @@ message might look like this:
 > After appropriate amounts of frobbing have been done, a new variable
 > `frobbing_done` is set in the caller's channel.
 > 
-> FS-XXXX --resolve
+> FS-XXXX #resolve
 
 Patches Related to JIRA Issues
 ------------------------------
