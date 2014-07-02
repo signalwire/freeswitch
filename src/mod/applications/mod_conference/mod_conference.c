@@ -641,16 +641,22 @@ static void gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream
 	float x, z;
 	float div = 3.14159f / 180;
 	conference_member_t *member;
+	uint32_t count = 0;
 
 	if (!conference->count) {
 		return;
 	}
 
 	switch_mutex_lock(conference->member_mutex);
+	for (member = conference->members; member; member = member->next) {
+		if (member->channel && switch_test_flag(member, MFLAG_CAN_SPEAK) && !switch_test_flag(member, MFLAG_NO_POSITIONAL)) {
+			count++;
+		}
+	}
 
-	if (conference->count < 3) {
+	if (count < 3) {
 		for (member = conference->members; member; member = member->next) {
-			if (member->al) {
+			if (member->channel && !switch_test_flag(member, MFLAG_NO_POSITIONAL) && member->al) {
 				member->al->pos_x = 0;
 				member->al->pos_y = 0;
 				member->al->pos_z = 0;
@@ -668,15 +674,15 @@ static void gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream
 		goto end;
 	}
 
-	offset = 180 / (conference->count - 1);
+	offset = 180 / (count - 1);
 
-	radius = 2.0f;//3.0f; //(float)conference->count / 2.0f; //3.0f;
+	radius = 2.0f;//3.0f; //(float)count / 2.0f; //3.0f;
 
 	pos = -90.0f;// + (offset / 2.0f);
 	
 	for (member = conference->members; member; member = member->next) {
 
-		if (!member->channel || switch_test_flag(member, MFLAG_NO_POSITIONAL)) {
+		if (!member->channel || switch_test_flag(member, MFLAG_NO_POSITIONAL) || !switch_test_flag(member, MFLAG_CAN_SPEAK)) {
 			continue;
 		}
 
@@ -6019,6 +6025,10 @@ static switch_status_t conf_api_sub_mute(conference_member_t *member, switch_str
 		switch_event_fire(&event);
 	}
 
+	if (switch_test_flag(member->conference, CFLAG_POSITIONAL)) {
+		gen_arc(member->conference, NULL);
+	}
+
 	member_update_status_field(member);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -6107,6 +6117,10 @@ static switch_status_t conf_api_sub_unmute(conference_member_t *member, switch_s
 		switch_event_fire(&event);
 	}
 
+	if (switch_test_flag(member->conference, CFLAG_POSITIONAL)) {
+		gen_arc(member->conference, NULL);
+	}
+
 	member_update_status_field(member);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -6129,6 +6143,10 @@ static switch_status_t conf_api_sub_deaf(conference_member_t *member, switch_str
 		switch_event_fire(&event);
 	}
 
+	if (switch_test_flag(member->conference, CFLAG_POSITIONAL)) {
+		gen_arc(member->conference, NULL);
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -6147,6 +6165,10 @@ static switch_status_t conf_api_sub_undeaf(conference_member_t *member, switch_s
 		conference_add_event_member_data(member, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "undeaf-member");
 		switch_event_fire(&event);
+	}
+
+	if (switch_test_flag(member->conference, CFLAG_POSITIONAL)) {
+		gen_arc(member->conference, NULL);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
