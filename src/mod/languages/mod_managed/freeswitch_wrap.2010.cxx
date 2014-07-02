@@ -37951,13 +37951,13 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_rtp_get_default_payload(void 
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_set_invald_handler(void * jarg1, void * jarg2) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_set_invalid_handler(void * jarg1, void * jarg2) {
   switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
   switch_rtp_invalid_handler_t arg2 = (switch_rtp_invalid_handler_t) 0 ;
   
   arg1 = (switch_rtp_t *)jarg1; 
   arg2 = (switch_rtp_invalid_handler_t)jarg2; 
-  switch_rtp_set_invald_handler(arg1,arg2);
+  switch_rtp_set_invalid_handler(arg1,arg2);
 }
 
 
