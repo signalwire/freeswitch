@@ -533,7 +533,7 @@ SWITCH_DECLARE_DATA extern switch_filenames SWITCH_GLOBAL_filenames;
 #define SWITCH_INTERVAL_PAD 10	/* A little extra buffer space to be safe */
 #define SWITCH_MAX_SAMPLE_LEN 48
 #define SWITCH_BYTES_PER_SAMPLE 2	/* slin is 2 bytes per sample */
-#define SWITCH_RECOMMENDED_BUFFER_SIZE 4096	/* worst case of 32khz @60ms we only do 48khz @10ms which is 960 */
+#define SWITCH_RECOMMENDED_BUFFER_SIZE 8192
 #define SWITCH_MAX_CODECS 50
 #define SWITCH_MAX_STATE_HANDLERS 30
 #define SWITCH_CORE_QUEUE_LEN 100000
