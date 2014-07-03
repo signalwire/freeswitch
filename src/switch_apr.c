@@ -868,9 +868,9 @@ SWITCH_DECLARE(switch_status_t) switch_socket_recvfrom(switch_sockaddr_t *from, 
 
 /* poll stubs */
 
-SWITCH_DECLARE(switch_status_t) switch_pollset_create(switch_pollset_t ** pollset, uint32_t size, switch_memory_pool_t *p, uint32_t flags)
+SWITCH_DECLARE(switch_status_t) switch_pollset_create(switch_pollset_t ** pollset, uint32_t size, switch_memory_pool_t *pool, uint32_t flags)
 {
-	return apr_pollset_create(pollset, size, p, flags);
+	return apr_pollset_create(pollset, size, pool, flags);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_pollset_add(switch_pollset_t *pollset, const switch_pollfd_t *descriptor)
@@ -1108,9 +1108,9 @@ SWITCH_DECLARE(int) switch_vasprintf(char **ret, const char *fmt, va_list ap)
 #endif
 }
 
-SWITCH_DECLARE(switch_status_t) switch_match_glob(const char *pattern, switch_array_header_t ** result, switch_memory_pool_t *p)
+SWITCH_DECLARE(switch_status_t) switch_match_glob(const char *pattern, switch_array_header_t ** result, switch_memory_pool_t *pool)
 {
-	return apr_match_glob(pattern, (apr_array_header_t **) result, p);
+	return apr_match_glob(pattern, (apr_array_header_t **) result, pool);
 }
 
 /**
@@ -1119,9 +1119,9 @@ SWITCH_DECLARE(switch_status_t) switch_match_glob(const char *pattern, switch_ar
  * @param out The file descriptor to use as output from the pipe.
  * @param pool The pool to operate on.
  */
-SWITCH_DECLARE(switch_status_t) switch_file_pipe_create(switch_file_t ** in, switch_file_t ** out, switch_memory_pool_t *p)
+SWITCH_DECLARE(switch_status_t) switch_file_pipe_create(switch_file_t ** in, switch_file_t ** out, switch_memory_pool_t *pool)
 {
-	return apr_file_pipe_create((apr_file_t **) in, (apr_file_t **) out, p);
+	return apr_file_pipe_create((apr_file_t **) in, (apr_file_t **) out, pool);
 }
 
 /**

@@ -79,12 +79,12 @@ SWITCH_DECLARE(int) switch_thread_equal(switch_thread_id_t tid1, switch_thread_i
 /**
  * Clear all memory in the pool and run all the cleanups. This also destroys all
  * subpools.
- * @param p The pool to clear
+ * @param pool The pool to clear
  * @remark This does not actually free the memory, it just allows the pool
  *         to re-use this memory for the next allocation.
  * @see apr_pool_destroy()
  */
-SWITCH_DECLARE(void) switch_pool_clear(switch_memory_pool_t *p);
+SWITCH_DECLARE(void) switch_pool_clear(switch_memory_pool_t *pool);
 
 /** @} */
 
@@ -137,7 +137,7 @@ SWITCH_DECLARE(char *) switch_copy_string(_Out_z_cap_(dst_size)
  * progress at the same time.
 
  */
-SWITCH_DECLARE(switch_hash_index_t *) switch_core_hash_first(switch_memory_pool_t *p, switch_hash_t *ht);
+SWITCH_DECLARE(switch_hash_index_t *) switch_core_hash_first(switch_memory_pool_t *pool, switch_hash_t *ht);
 
 /**
  * Continue iterating over the entries in a hash table.
@@ -1308,7 +1308,7 @@ SWITCH_DECLARE(switch_status_t) switch_mcast_interface(switch_socket_t *sock, sw
  * Setup a pollset object
  * @param pollset  The pointer in which to return the newly created object 
  * @param size The maximum number of descriptors that this pollset can hold
- * @param p The pool from which to allocate the pollset
+ * @param pool The pool from which to allocate the pollset
  * @param flags Optional flags to modify the operation of the pollset.
  *
  * @remark If flags equals APR_POLLSET_THREADSAFE, then a pollset is
@@ -1318,7 +1318,7 @@ SWITCH_DECLARE(switch_status_t) switch_mcast_interface(switch_socket_t *sock, sw
  * platforms; the apr_pollset_create() call will fail with
  * APR_ENOTIMPL on platforms where it is not supported.
  */
-SWITCH_DECLARE(switch_status_t) switch_pollset_create(switch_pollset_t ** pollset, uint32_t size, switch_memory_pool_t *p, uint32_t flags);
+SWITCH_DECLARE(switch_status_t) switch_pollset_create(switch_pollset_t ** pollset, uint32_t size, switch_memory_pool_t *pool, uint32_t flags);
 
 /**
  * Add a socket or file descriptor to a pollset
@@ -1391,7 +1391,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_create_pollset(switch_pollfd_t ** 
 
 /*!
   \brief Create a pollfd out of a socket
-  \param poll the polfd to create
+  \param pollfd the pollfd to create
   \param sock the socket to add
   \param flags the flags to modify the behaviour
   \param client_data custom user data
@@ -1399,7 +1399,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_create_pollset(switch_pollfd_t ** 
   \return SWITCH_STATUS_SUCCESS when successful
 */
 SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t **pollfd, switch_socket_t *sock, int16_t flags, void *client_data, switch_memory_pool_t *pool);
-SWITCH_DECLARE(switch_status_t) switch_match_glob(const char *pattern, switch_array_header_t ** result, switch_memory_pool_t *p);
+SWITCH_DECLARE(switch_status_t) switch_match_glob(const char *pattern, switch_array_header_t ** result, switch_memory_pool_t *pool);
 SWITCH_DECLARE(switch_status_t) switch_os_sock_get(switch_os_socket_t *thesock, switch_socket_t *sock);
 SWITCH_DECLARE(switch_status_t) switch_socket_addr_get(switch_sockaddr_t ** sa, switch_bool_t remote, switch_socket_t *sock);
 
@@ -1409,7 +1409,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_addr_get(switch_sockaddr_t ** sa, 
  * @param out The file descriptor to use as output from the pipe.
  * @param pool The pool to operate on.
  */
-SWITCH_DECLARE(switch_status_t) switch_file_pipe_create(switch_file_t ** in, switch_file_t ** out, switch_memory_pool_t *p);
+SWITCH_DECLARE(switch_status_t) switch_file_pipe_create(switch_file_t ** in, switch_file_t ** out, switch_memory_pool_t *pool);
 
 /**
  * Get the timeout value for a pipe or manipulate the blocking state.
