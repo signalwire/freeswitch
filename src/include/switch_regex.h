@@ -65,7 +65,7 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match(const char *target, const cha
  \brief Function to evaluate an expression against a string
  \param target The string to find a match in
  \param expression The regular expression to run against the string
- \param partial If non-zero returns SUCCESS if the target is a partial match, on successful return, this is set to non-zero if the match was partial and zero if it was a full match
+ \param partial_match If non-zero returns SUCCESS if the target is a partial match, on successful return, this is set to non-zero if the match was partial and zero if it was a full match
  \return Boolean if a match was found or not
 */
 SWITCH_DECLARE(switch_status_t) switch_regex_match_partial(const char *target, const char *expression, int *partial_match);
