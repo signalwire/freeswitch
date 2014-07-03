@@ -5022,7 +5022,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 	}
 
 	if (switch_channel_up(session->channel)) {
-
+		switch_channel_set_variable(session->channel, "rtp_use_timer_name", timer_name);
+		
 		a_engine->rtp_session = switch_rtp_new(a_engine->local_sdp_ip,
 											   a_engine->local_sdp_port,
 											   a_engine->cur_payload_map->remote_sdp_ip,
@@ -8687,6 +8688,9 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 		smh->mparams->remote_sdp_str = switch_core_session_strdup(session, tmp);
 	}
 
+	if ((tmp = switch_channel_get_variable(session->channel, "rtp_use_timer_name"))) {
+		smh->mparams->timer_name = switch_core_session_strdup(session, tmp);
+	}
 
 	if ((tmp = switch_channel_get_variable(session->channel, "rtp_last_audio_codec_string"))) {
 		const char *vtmp = switch_channel_get_variable(session->channel, "rtp_last_video_codec_string");
