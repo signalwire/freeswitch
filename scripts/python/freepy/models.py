@@ -1,4 +1,4 @@
-""" 
+"""
 FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
 Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
 
@@ -23,12 +23,13 @@ the Initial Developer. All Rights Reserved.
 
 Contributor(s): Traun Leyden <tleyden@branchcut.com>
 """
- 
+
 """
 Data models for objects inside freeswitch
 """
 
 import re
+
 
 class ConfMember:
 
@@ -45,7 +46,7 @@ class ConfMember:
         self.energy_level = None
 
         self.parse(self.rawstring)
-        
+
     def parse(self, rawstring):
         """
         1;sofia/mydomain.com/user@somewhere.com;898e6552-24ab-11dc-9df7-9fccd4095451;FreeSWITCH;0000000000;hear|speak;0;0;300
@@ -76,6 +77,6 @@ class ConfMember:
 
     def __repr__(self):
         return self.__str__()
-    
+
     def __str__(self):
         return "%s (%s)" % (self.member_id, self.member_uri)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" 
+"""
 FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
 Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
 
@@ -31,6 +31,7 @@ from twisted.internet import reactor, defer
 from twisted.internet.protocol import ClientFactory
 import freepy
 
+
 class FsHelper(ClientFactory):
 
     def __init__(self, host=None, passwd=None, port=None):
@@ -39,17 +40,17 @@ class FsHelper(ClientFactory):
         if passwd:
             self.passwd = passwd
         if port:
-            self.port = port        
-            
+            self.port = port
+
         self.freepyd = None
         self.connection_deferred = None
 
     def reset(self):
         self.freepyd = None
         self.connection_deferred = None
-        
+
     def connect(self):
-            
+
         if self.freepyd:
             # if we have a protocol object, we are connected (since we always
             # null it upon any disconnection)
@@ -58,7 +59,7 @@ class FsHelper(ClientFactory):
         if self.connection_deferred:
             # we are already connecting, return existing dfrd
             return self.connection_deferred
-        
+
         self.connection_deferred = defer.Deferred()
         self.connection_deferred.addCallback(self.dologin)
         self.connection_deferred.addErrback(self.generalError)
@@ -72,29 +73,28 @@ class FsHelper(ClientFactory):
         self.connection_deferred = None
         deferred2callback.callback("Connected")
 
-
     def generalError(self, failure):
         print "General error: %s" % failure
         return failure
 
     def startedConnecting(self, connector):
         pass
-    
+
     def buildProtocol(self, addr):
         return freepy.FreepyDispatcher(self.conncb, self.discocb)
-    
+
     def clientConnectionLost(self, connector, reason):
         print "clientConnectionLost! conn=%s, reason=%s" % (connector,
                                                             reason)
-        self.connection_deferred = None        
+        self.connection_deferred = None
         self.freepyd = None
-    
+
     def clientConnectionFailed(self, connector, reason):
         print "clientConnectionFailed! conn=%s, reason=%s" % (connector,
                                                               reason)
         self.freepyd = None
         deferred2callback = self.connection_deferred
-        self.connection_deferred = None                
+        self.connection_deferred = None
         deferred2callback.errback(reason)
 
     def discocb(self, reason):
@@ -102,7 +102,7 @@ class FsHelper(ClientFactory):
         self.freepyd = None
 
     def dologin(self, connectmsg):
-        return self.freepyd.login(self.passwd)                                     
+        return self.freepyd.login(self.passwd)
 
     def originate(self, party2dial, dest_ext_app, bgapi=True):
         """
@@ -127,9 +127,6 @@ class FsHelper(ClientFactory):
         d = self.connect()
         d.addCallback(originate_inner)
         return d
-
-
-
 
     def dialconf(self, people2dial, conf_name, bgapi=True):
         """
@@ -162,7 +159,7 @@ class FsHelper(ClientFactory):
 
     def listconf(self, conf_name):
         """
-        conf_name - name of conf 
+        conf_name - name of conf
         returns - a deferred that will be called back with a result
                   like:
 
@@ -215,7 +212,6 @@ class FsHelper(ClientFactory):
         d.addCallback(confdtmf_inner)
         return d
 
-
     def confsay(self, conf_name, text2speak, bgapi=True):
         """
         conf_name - name of conf
@@ -253,7 +249,7 @@ class FsHelper(ClientFactory):
     def confstop(self, conf_name, bgapi=True):
         """
         stop playback of all sounds
-        
+
         conf_name - name of conf
         returns - a deferred that will be called back with a result
                   like:
@@ -267,7 +263,6 @@ class FsHelper(ClientFactory):
         d = self.connect()
         d.addCallback(confstop_inner)
         return d
-
 
     def showchannels(self, bgapi=True):
 
@@ -289,10 +284,9 @@ class FsHelper(ClientFactory):
         d.addCallback(killchan_inner)
         return d
 
-
     def broadcast(self, uuid, path, legs="both", bgapi=True):
         """
-        @legs - one of the following strings: aleg|bleg|both 
+        @legs - one of the following strings: aleg|bleg|both
         """
         def broadcast_inner(ignored):
             df = self.freepyd.broadcast(uuid, path, legs, bgapi)
@@ -325,12 +319,10 @@ class FsHelper(ClientFactory):
         d.addCallback(sofia_profile_restart_inner)
         return d
 
-
     def sofia_status_profile(self, profile_name, bgapi=True):
 
         def sofia_status_profile_inner(ignored):
-            df = self.freepyd.sofia_status_profile(profile_name,
-                                                    bgapi)
+            df = self.freepyd.sofia_status_profile(profile_name, bgapi)
             return df
 
         d = self.connect()
@@ -340,7 +332,7 @@ class FsHelper(ClientFactory):
 
 class FsHelperTest:
     def __init__(self, fshelper):
-        self.fshelper=fshelper
+        self.fshelper = fshelper
         pass
 
     def test_dialconf(self):
@@ -349,10 +341,16 @@ class FsHelperTest:
         # called "freeswitch" on the local freeswitch instance.
         # one party is actually another conference, just to make
         # the example more confusing.
-        people2dial = [{'name':'freeswitch',
-                        'number':'888@conference.freeswitch.org'},
-                       {'name':'mouselike',
-                        'number':'904@mouselike.org'}]
+        people2dial = [
+            {
+                'name': 'freeswitch',
+                'number': '888@conference.freeswitch.org'
+            },
+            {
+                'name': 'mouselike',
+                'number': ' 904@mouselike.org'
+            }
+        ]
         d = self.fshelper.dialconf(people2dial, "freeswitch", bgapi=False)
         def failed(error):
             print "Failed to dial users!"
@@ -361,7 +359,7 @@ class FsHelperTest:
         d.addErrback(failed)
         def worked(*args):
             print "Worked! Dialed user result: %s" % str(args)
-        d.addCallback(worked)        
+        d.addCallback(worked)
         return d
 
     def test_listconf(self):
@@ -389,7 +387,7 @@ class FsHelperTest:
         def worked(*args):
             print "Kicked user from conf, result: %s" % str(args)
         d.addCallback(worked)
-        
+
 
 def test1():
     kick_everyone = False
@@ -409,7 +407,7 @@ def test1():
         print "failed: %s" % str(failure)
         reactor.stop()
     if kick_everyone:
-        d.addCallback(kickeveryone)        
+        d.addCallback(kickeveryone)
         d.addErrback(failed)
     #fsht.test_confkick()
     #d = fshelper.connect()
@@ -422,14 +420,14 @@ def test1():
 def test2():
     fshelper = FsHelper(host="127.0.0.1",
                         passwd="ClueCon",
-                        port=8021)    
+                        port=8021)
     fshelper.sofia_profile_restart("mydomain.com")
-    reactor.run()    
+    reactor.run()
 
 def test3():
     fshelper = FsHelper(host="127.0.0.1",
                         passwd="ClueCon",
-                        port=8021)        
+                        port=8021)
     print "Calling originate.."
     party2dial="sofia/foo/600@192.168.1.202:5080"
     d = fshelper.originate(party2dial=party2dial,
@@ -439,25 +437,25 @@ def test3():
     def worked(result):
         print "Originate succeeded: %s" % result
         reactor.stop()
-        
+
     def failed(failure):
         print "failed: %s" % str(failure)
         reactor.stop()
-        
+
     d.addCallback(worked)
     d.addErrback(failed)
-    reactor.run()    
+    reactor.run()
 
 
 def test4():
     fshelper = FsHelper(host="127.0.0.1",
                         passwd="ClueCon",
-                        port=8021)        
+                        port=8021)
 
     def worked(result):
         print "Originate succeeded: %s" % result
         #reactor.stop()
-        
+
     def failed(failure):
         print "failed: %s" % str(failure)
         #reactor.stop()
@@ -470,39 +468,39 @@ def test4():
                            bgapi=True)
     d.addCallback(worked)
     d.addErrback(failed)
-    party2dial="sofia/foo/someone@bar.com"    
+    party2dial="sofia/foo/someone@bar.com"
     d2 = fshelper.originate(party2dial=party2dial,
                             dest_ext_app=dest_ext_app,
                             bgapi=True)
-        
+
     d2.addCallback(worked)
     d2.addErrback(failed)
-    reactor.run()    
+    reactor.run()
 
 
 def test5():
     fshelper = FsHelper(host="127.0.0.1",
                         passwd="ClueCon",
-                        port=8021)        
+                        port=8021)
 
     def worked(result):
         print "Originate succeeded: %s" % result
         #reactor.stop()
-        
+
     def failed(failure):
         print "failed: %s" % str(failure)
         #reactor.stop()
 
     for i in xrange(20):
-
-        party2dial="sofia/foo/600@192.168.1.202:5080"
+        party2dial = "sofia/foo/600@192.168.1.202:5080"
         d = fshelper.originate(party2dial=party2dial,
                                dest_ext_app="700",
                                bgapi=True)
         d.addCallback(worked)
         d.addErrback(failed)
 
-    reactor.run()    
+    reactor.run()
+
 
 def test6():
     """
@@ -514,17 +512,17 @@ def test6():
     from wikipbx import channelsutil
     def show_chanels(raw_xml):
         print raw_xml
-    
+
     def failure(failure):
         print failure
-        
+
     d = fshelper.showchannels(bgapi=False)
     d.addCallback(show_chanels)
     d.addErrback(failure)
     reactor.run()
-                                                                            
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     #test1()
     #test2()
     #test3()

@@ -1,4 +1,4 @@
-""" 
+"""
 FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
 Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
 
@@ -65,7 +65,7 @@ class FreepyRequest(object):
         debug("setRequestFinished called.  response_content: %s " %
               self.response_content)
         self.finished = True
-        
+
     def getDeferred(self):
         return self.deferred
 
@@ -89,7 +89,7 @@ class FreepyRequest(object):
         if not line.strip() or len(line.strip()) == 0:
             self._fsm.BlankLine()
             return self.isRequestFinished()
-        
+
         matchstr = re.compile("auth/request", re.I)
         result = matchstr.search(line)
         if (result != None):
@@ -159,7 +159,7 @@ class LoginRequest(FreepyRequest):
     """
     Example success response
     ========================
-        
+
     lineReceived: Content-Type: auth/request
     lineReceived:
     lineReceived: Content-Type: command/reply
@@ -176,7 +176,7 @@ class LoginRequest(FreepyRequest):
     lineReceived:
 
     """
-    
+
     def __init__(self):
         super(LoginRequest, self).__init__()
         import loginrequest_sm
@@ -190,7 +190,7 @@ class LoginRequest(FreepyRequest):
             return
         msg = "Login failed, most likely a bad password"
         self.errbackDeferred(Failure(Exception(msg)))
-        
+
     def getReplyText(self):
         self.response_content
 
@@ -204,7 +204,7 @@ class BgApiRequest(FreepyRequest):
 
     linereceived: Content-Type: command/reply
     linereceived: Reply-Text: +OK Job-UUID: 788da080-24e0-11dc-85f6-3d7b12..
-    linereceived: 
+    linereceived:
 
     """
     def __init__(self):
@@ -233,7 +233,7 @@ class ApiRequest(FreepyRequest):
     lineReceived:
     lineReceived: Call Requested: result: [SUCCESS]
     """
-    
+
     def __init__(self):
         super(ApiRequest, self).__init__()
         import apirequest_sm
@@ -255,7 +255,7 @@ class ApiRequest(FreepyRequest):
         # we need to add it back .. otherwise the Content-length
         # will be off by one
         line += "\n"
-        
+
         self.response_content += line
         if len(self.response_content) == self.content_length:
             return True
@@ -272,7 +272,7 @@ class ApiRequest(FreepyRequest):
         # By default, just return accumulated string
         return self.response_content
 
-        
+
 class DialoutRequest(ApiRequest):
     """
     Example raw dialout response
@@ -291,7 +291,7 @@ class DialoutRequest(ApiRequest):
 class BgDialoutRequest(BgApiRequest):
     def __init__(self):
         super(BgDialoutRequest, self).__init__()
-        
+
 
 class ConfKickRequest(ApiRequest):
     """
@@ -314,13 +314,13 @@ class BgConfKickRequest(BgApiRequest):
 
     def __init__(self):
         super(BgConfKickRequest, self).__init__()
-        
+
 
 class ListConfRequest(ApiRequest):
     """
     Response to request to list conferences:
     ========================================
-    
+
     lineReceived: Content-Type: api/response
     lineReceived: Content-Length: 233
     lineReceived:
@@ -332,7 +332,7 @@ class ListConfRequest(ApiRequest):
     def __init__(self):
         super(ListConfRequest, self).__init__()
         self.conf_members = []
-        
+
     def add_content(self, line):
         """
         conf not empty example
@@ -352,13 +352,13 @@ class ListConfRequest(ApiRequest):
         else:
             confmember = models.ConfMember(line)
             self.conf_members.append(confmember)
-        
+
         return super(ListConfRequest, self).add_content(line)
-        
+
     def getResponse(self):
 
         # TODO: parse this content into a meaningful
         # 'object' .. though, not sure this is really
         # necessary.   wait till there's a need
         return self.conf_members
-        
+
