@@ -2,14 +2,14 @@ from freeswitch import *
 from py_modules.speechtools import Grammar, SpeechDetect
 from py_modules.speechtools import SpeechObtainer
 
-import time, os
+import os
 
 VOICE_ENGINE = "cepstral"
 VOICE = "William"
 GRAMMAR_ROOT = "/usr/src/freeswitch_trunk/scripts"
 
 """
-Example speech recognition application in python.  
+Example speech recognition application in python.
 
 How to make this work:
 
@@ -20,24 +20,24 @@ How to make this work:
 
 """
 
+
 class RecipeWizard:
 
     def __init__(self, session):
-        self.session=session
-        self.session.set_tts_parms(VOICE_ENGINE, VOICE)        
+        self.session = session
+        self.session.set_tts_parms(VOICE_ENGINE, VOICE)
         self.main()
 
     def main(self):
-
-        console_log("debug", "recipe wizard main()\n")        
-        self.speechdetect = SpeechDetect(self.session, "openmrcp", "127.0.0.1");
+        console_log("debug", "recipe wizard main()\n")
+        self.speechdetect = SpeechDetect(self.session, "openmrcp", "127.0.0.1")
         self.speechobtainer = SpeechObtainer(speech_detect=self.speechdetect,
                                              required_phrases=1,
                                              wait_time=5000,
                                              max_tries=3)
         gfile = os.path.join(GRAMMAR_ROOT, "mainmenu.xml")
-        self.grammar = Grammar("mainmenu", gfile,"input",80,90)
-        self.speechobtainer.setGrammar(self.grammar);
+        self.grammar = Grammar("mainmenu", gfile, "input", 80, 90)
+        self.speechobtainer.setGrammar(self.grammar)
         console_log("debug", "calling speechobtainer.run()\n")
         self.speechobtainer.detectSpeech()
         self.session.speak("Hello. Welcome to the recipe wizard. Drinks or food?")
@@ -47,8 +47,9 @@ class RecipeWizard:
             self.session.speak("Received result.  Result is: %s" % result[0])
         else:
             self.session.speak("Sorry, I did not hear you")
-            
-        console_log("debug", "speechobtainer.run() finished\n")        
+
+        console_log("debug", "speechobtainer.run() finished\n")
+
 
 def mainmenu():
     """
@@ -78,10 +79,9 @@ def mainmenu():
     """
     pass
 
+
 def handler(uuid):
     session = PySession(uuid)
     session.answer()
     rw = RecipeWizard(session)
     session.hangup("1")
-
-
