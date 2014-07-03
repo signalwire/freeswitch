@@ -3016,7 +3016,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_RECOMMENDED_BUFFER_SIZE_get() {
   int jresult ;
   int result;
   
-  result = (int)(4096);
+  result = (int)(8192);
   jresult = result; 
   return jresult;
 }
@@ -29061,8 +29061,8 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_slin_data_frame_data_set(void * jarg1,
   arg2 = (char *)jarg2; 
   {
     if(arg2) {
-      strncpy((char*)arg1->frame_data, (const char *)arg2, 4096-1);
-      arg1->frame_data[4096-1] = 0;
+      strncpy((char*)arg1->frame_data, (const char *)arg2, 8192-1);
+      arg1->frame_data[8192-1] = 0;
     } else {
       arg1->frame_data[0] = 0;
     }
@@ -33927,7 +33927,7 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_unicast_conninfo_write_frame_data_set(
   {
     size_t ii;
     switch_byte_t *b = (switch_byte_t *) arg1->write_frame_data;
-    for (ii = 0; ii < (size_t)4096; ii++) b[ii] = *((switch_byte_t *) arg2 + ii);
+    for (ii = 0; ii < (size_t)8192; ii++) b[ii] = *((switch_byte_t *) arg2 + ii);
   }
 }
 
@@ -37655,6 +37655,14 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_udptl_mode(void * jarg1) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_reset(void * jarg1) {
+  switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
+  
+  arg1 = (switch_rtp_t *)jarg1; 
+  switch_rtp_reset(arg1);
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_set_local_address(void * jarg1, char * jarg2, unsigned short jarg3, void * jarg4) {
   int jresult ;
   switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
@@ -37943,13 +37951,13 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_rtp_get_default_payload(void 
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_set_invald_handler(void * jarg1, void * jarg2) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_set_invalid_handler(void * jarg1, void * jarg2) {
   switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
   switch_rtp_invalid_handler_t arg2 = (switch_rtp_invalid_handler_t) 0 ;
   
   arg1 = (switch_rtp_t *)jarg1; 
   arg2 = (switch_rtp_invalid_handler_t)jarg2; 
-  switch_rtp_set_invald_handler(arg1,arg2);
+  switch_rtp_set_invalid_handler(arg1,arg2);
 }
 
 

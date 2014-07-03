@@ -6104,6 +6104,10 @@ public class freeswitch {
     return ret;
   }
 
+  public static void switch_rtp_reset(SWIGTYPE_p_switch_rtp rtp_session) {
+    freeswitchPINVOKE.switch_rtp_reset(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session));
+  }
+
   public static switch_status_t switch_rtp_set_local_address(SWIGTYPE_p_switch_rtp rtp_session, string host, ushort port, ref string err) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_set_local_address(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), host, port, ref err);
     return ret;
@@ -6211,8 +6215,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static void switch_rtp_set_invald_handler(SWIGTYPE_p_switch_rtp rtp_session, SWIGTYPE_p_f_p_switch_rtp_p_switch_socket_t_p_void_switch_size_t_p_switch_sockaddr_t__void on_invalid) {
-    freeswitchPINVOKE.switch_rtp_set_invald_handler(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), SWIGTYPE_p_f_p_switch_rtp_p_switch_socket_t_p_void_switch_size_t_p_switch_sockaddr_t__void.getCPtr(on_invalid));
+  public static void switch_rtp_set_invalid_handler(SWIGTYPE_p_switch_rtp rtp_session, SWIGTYPE_p_f_p_switch_rtp_p_switch_socket_t_p_void_switch_size_t_p_switch_sockaddr_t__void on_invalid) {
+    freeswitchPINVOKE.switch_rtp_set_invalid_handler(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), SWIGTYPE_p_f_p_switch_rtp_p_switch_socket_t_p_void_switch_size_t_p_switch_sockaddr_t__void.getCPtr(on_invalid));
   }
 
   public static switch_status_t switch_rtp_read(SWIGTYPE_p_switch_rtp rtp_session, SWIGTYPE_p_void data, SWIGTYPE_p_unsigned_long datalen, SWIGTYPE_p_unsigned_char payload_type, SWIGTYPE_p_unsigned_long flags, uint io_flags) {
@@ -16374,6 +16378,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_udptl_mode")]
   public static extern int switch_rtp_udptl_mode(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_reset")]
+  public static extern void switch_rtp_reset(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_set_local_address")]
   public static extern int switch_rtp_set_local_address(HandleRef jarg1, string jarg2, ushort jarg3, ref string jarg4);
 
@@ -16443,8 +16450,8 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_get_default_payload")]
   public static extern uint switch_rtp_get_default_payload(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_set_invald_handler")]
-  public static extern void switch_rtp_set_invald_handler(HandleRef jarg1, HandleRef jarg2);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_set_invalid_handler")]
+  public static extern void switch_rtp_set_invalid_handler(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_read")]
   public static extern int switch_rtp_read(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4, HandleRef jarg5, uint jarg6);
@@ -26526,7 +26533,8 @@ public enum switch_call_cause_t {
   SWITCH_CAUSE_GATEWAY_DOWN = 609,
   SWITCH_CAUSE_INVALID_URL = 610,
   SWITCH_CAUSE_INVALID_PROFILE = 611,
-  SWITCH_CAUSE_NO_PICKUP = 612
+  SWITCH_CAUSE_NO_PICKUP = 612,
+  SWITCH_CAUSE_SRTP_READ_ERROR = 613
 }
 
 }
