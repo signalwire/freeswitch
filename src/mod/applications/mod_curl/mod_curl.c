@@ -51,7 +51,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_curl_load);
  */
 SWITCH_MODULE_DEFINITION(mod_curl, mod_curl_load, mod_curl_shutdown, NULL);
 
-static char *SYNTAX = "curl url [headers|json|content-type <mime-type>|timeout <seconds>] [get|head|post [post_data]]";
+static char *SYNTAX = "curl url [headers|json|content-type <mime-type>|timeout <seconds>] [get|head|post|put [post/put_data]]";
 
 #define HTTP_SENDFILE_ACK_EVENT "curl_sendfile::ack"
 #define HTTP_SENDFILE_RESPONSE_SIZE 32768
@@ -101,6 +101,11 @@ struct http_sendfile_data_obj {
 
 typedef struct http_sendfile_data_obj http_sendfile_data_t;
 
+struct data_stream {
+	const char *data;
+	size_t length;
+};
+
 struct callback_obj {
 	switch_memory_pool_t *pool;
 	char *name;
@@ -145,12 +150,28 @@ static size_t header_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	return realsize;
 }
 
+static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
+{
+	struct data_stream *dstream = (struct data_stream*)stream;
+	size_t nmax = size*nmemb, ncur = 0;
+	if (dstream->length > nmax) {
+		ncur = nmax;
+		dstream->length -= nmax;
+	} else {
+		ncur = dstream->length;
+		dstream->length = 0;
+	}
+	memmove(ptr, dstream->data, ncur);
+	return ncur;
+}
+
 static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, const char *method, const char *data, const char *content_type, curl_options_t *options)
 {
 	switch_CURL *curl_handle = NULL;
 	long httpRes = 0;
 	http_data_t *http_data = NULL;
 	switch_curl_slist_t *headers = NULL;
+	struct data_stream dstream = { NULL };
 
 	http_data = switch_core_alloc(pool, sizeof(http_data_t));
 	memset(http_data, 0, sizeof(http_data_t));
@@ -192,6 +213,21 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 			switch_safe_free(ct);
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Post data: %s\n", data);
+	} else if (!strcasecmp(method, "put")) {
+		dstream.data = data;
+		dstream.length = strlen(data);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_READFUNCTION, read_callback);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_INFILESIZE_LARGE, (curl_off_t)dstream.length);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_READDATA, (void *) &dstream);
+		if (content_type) {
+			char *ct = switch_mprintf("Content-Type: %s", content_type);
+			headers = switch_curl_slist_append(headers, ct);
+			headers = switch_curl_slist_append(headers, "Expect:");
+			switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+			switch_safe_free(ct);
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "PUT data: %s\n", data);
 	} else {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
 	}
@@ -756,6 +792,14 @@ SWITCH_STANDARD_APP(curl_app_function)
 				} else {
 					postdata = "";
 				}
+			} else if (!strcasecmp("put", argv[i])) {
+				method = "put";
+				if (++i < argc) {
+					postdata = switch_core_strdup(pool, argv[i]);
+					switch_url_decode(postdata);
+				} else {
+					postdata = "";
+				}
 			} else if (!strcasecmp("content-type", argv[i])) {
 				if (++i < argc) {
 					content_type = switch_core_strdup(pool, argv[i]);
@@ -854,6 +898,14 @@ SWITCH_STANDARD_API(curl_function)
 				method = switch_core_strdup(pool, argv[i]);
 			} else if (!strcasecmp("post", argv[i])) {
 				method = "post";
+				if (++i < argc) {
+					postdata = switch_core_strdup(pool, argv[i]);
+					switch_url_decode(postdata);
+				} else {
+					postdata = "";
+				}
+			} else if (!strcasecmp("put", argv[i])) {
+				method = "put";
 				if (++i < argc) {
 					postdata = switch_core_strdup(pool, argv[i]);
 					switch_url_decode(postdata);
