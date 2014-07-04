@@ -153,16 +153,11 @@ static size_t header_callback(void *ptr, size_t size, size_t nmemb, void *data)
 static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 {
 	struct data_stream *dstream = (struct data_stream*)stream;
-	size_t nmax = size*nmemb, ncur = 0;
-	if (dstream->length > nmax) {
-		ncur = nmax;
-		dstream->length -= nmax;
-	} else {
-		ncur = dstream->length;
-		dstream->length = 0;
-	}
+	size_t nmax = size*nmemb;
+	size_t ncur = (dstream->length > nmax) ? nmax : dstream->length;
 	memmove(ptr, dstream->data, ncur);
 	dstream->data += ncur;
+	dstream->length -= ncur;
 	return ncur;
 }
 
