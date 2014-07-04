@@ -162,6 +162,7 @@ static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 		dstream->length = 0;
 	}
 	memmove(ptr, dstream->data, ncur);
+	dstream->data += ncur;
 	return ncur;
 }
 
