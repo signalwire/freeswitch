@@ -1336,32 +1336,30 @@ SWITCH_DECLARE(switch_status_t) switch_channel_transfer_variable_prefix(switch_c
 
 SWITCH_DECLARE(void) switch_channel_set_presence_data_vals(switch_channel_t *channel, const char *presence_data_cols)
 {
-	if (!zstr(presence_data_cols)) {
-		char *cols[128] = { 0 };
-		char header_name[128] = "";
-		int col_count = 0, i = 0;
-		char *data_copy = NULL;
-
+	char *cols[128] = { 0 };
+	char header_name[128] = "";
+	int col_count = 0, i = 0;
+	char *data_copy = NULL;
+	
+	if (zstr(presence_data_cols)) {
+		presence_data_cols = switch_channel_get_variable_dup(channel, "presence_data_cols", SWITCH_FALSE, -1);
 		if (zstr(presence_data_cols)) {
-			presence_data_cols = switch_channel_get_variable_dup(channel, "presence_data_cols", SWITCH_FALSE, -1);
-			if (zstr(presence_data_cols)) {
-				return;
-			}
+			return;
 		}
-
-		data_copy = strdup(presence_data_cols);
-	
-		col_count = switch_split(data_copy, ':', cols);
-	
-		for (i = 0; i < col_count; i++) {
-			const char *val = NULL;
-			switch_snprintf(header_name, sizeof(header_name), "PD-%s", cols[i]);
-			val = switch_channel_get_variable(channel, cols[i]);
-			switch_channel_set_profile_var(channel, header_name, val);
-		}
-		
-		switch_safe_free(data_copy);
 	}
+	
+	data_copy = strdup(presence_data_cols);
+	
+	col_count = switch_split(data_copy, ':', cols);
+	
+	for (i = 0; i < col_count; i++) {
+		const char *val = NULL;
+		switch_snprintf(header_name, sizeof(header_name), "PD-%s", cols[i]);
+		val = switch_channel_get_variable(channel, cols[i]);
+		switch_channel_set_profile_var(channel, header_name, val);
+	}
+	
+	switch_safe_free(data_copy);
 }
 
 
