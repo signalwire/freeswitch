@@ -1,10 +1,10 @@
 include $(top_srcdir)/build/modmake.rulesam
 MODNAME=mod_pocketsphinx
 
-SPHINXBASE=sphinxbase-0.7
+SPHINXBASE=sphinxbase-0.8
 SPHINXBASE_DIR=$(switch_srcdir)/libs/$(SPHINXBASE)
 SPHINXBASE_BUILDDIR=$(switch_builddir)/libs/$(SPHINXBASE)
-POCKETSPHINX=pocketsphinx-0.7
+POCKETSPHINX=pocketsphinx-0.8
 POCKETSPHINX_DIR=$(switch_srcdir)/libs/$(POCKETSPHINX)
 POCKETSPHINX_BUILDDIR=$(switch_builddir)/libs/$(POCKETSPHINX)
 SPHINXBASE_LA=$(SPHINXBASE_BUILDDIR)/src/libsphinxbase/libsphinxbase.la
