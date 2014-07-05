@@ -1,0 +1,13 @@
+#JSGF V1.0;
+/**
+  * JSGF Grammar for Directory
+  */
+
+grammar directory;
+
+<anthony> = [ anthony ];
+<michael> = [ michael ];
+<brian>   = [ brian ];
+
+public <directory> = <anthony> <michael> <brian>;
+
