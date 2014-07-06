@@ -877,15 +877,16 @@ static void do_dialog_probe(switch_event_t *event)
 							 "sip_subscriptions.call_id='%q' "
 							 "left join sip_registrations on sip_registrations.hostname=sip_dialogs.hostname and "
 							 "sip_registrations.profile_name=sip_dialogs.profile_name and "
-							 "(sip_dialogs.sip_from_user = sip_registrations.sip_user "
-							 "and (sip_dialogs.sip_from_host = sip_registrations.orig_server_host or "
+							 "(sip_dialogs.sip_from_user = sip_registrations.sip_user and sip_dialogs.sip_from_host = '%q' and "
+							 "(sip_dialogs.sip_from_host = sip_registrations.orig_server_host or "
 							 "sip_dialogs.sip_from_host = sip_registrations.sip_host) ) "
 							 "where sip_dialogs.hostname='%q' and sip_dialogs.profile_name='%q' and "
 							 "sip_dialogs.call_info_state != 'seized' and sip_dialogs.presence_id='%q@%q' or (sip_registrations.sip_user='%q' and "
 							 "(sip_registrations.orig_server_host='%q' or sip_registrations.sub_host='%q' "
 							 "or sip_registrations.presence_hosts like '%%%q%%'))",
 							 probe_euser, probe_host,
-							 sub_call_id, mod_sofia_globals.hostname, profile->name,
+							 sub_call_id, probe_host,
+							 mod_sofia_globals.hostname, profile->name,
 							 probe_euser, probe_host,
 							 probe_euser, probe_host, probe_host, probe_host);
 		switch_assert(sql);
