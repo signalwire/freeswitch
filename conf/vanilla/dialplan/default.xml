@@ -126,6 +126,14 @@
       <condition field="${call_debug}" expression="^true$" break="never">
 	<action application="info"/>
       </condition>
+
+      <condition field="${default_password}" expression="^1234$" break="never">
+	<action application="log" data="CRIT WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING "/>
+	<action application="log" data="CRIT Open ${base_dir}/conf/vars.xml and change the default_password."/>
+	<action application="log" data="CRIT Once changed type 'reloadxml' at the console."/>
+	<action application="log" data="CRIT WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING "/>
+	<action application="sleep" data="10000"/>
+      </condition>
       <!--
 	  This is an example of how to auto detect if telephone-event is missing and activate inband detection 
       -->
