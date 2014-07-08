@@ -1934,6 +1934,21 @@ static void t38_hdlc_rx_put_bit(hdlc_rx_state_t *t, int new_bit)
     s = (t38_gateway_state_t *) t->frame_user_data;
     u = &s->core.to_t38;
     t->buffer[t->len] = (uint8_t) t->byte_in_progress;
+    if (t->len == 1)
+    {
+        /* All valid HDLC frames in FAX communication begin 0xFF 0x03 or 0xFF 0x13.
+           Anything else is bogus, */
+        if (t->buffer[0] != 0xFF  ||  (t->buffer[1] & 0xEF) != 0x03)
+        {
+            /* Abandon the frame, and wait for the next flag octet. */
+            span_log(&s->logging, SPAN_LOG_FLOW, "Bad HDLC frame header. Abandoning frame.\n");
+            t->flags_seen = t->framing_ok_threshold - 1;
+            t->len = 0;
+            return;
+        }
+        /*endif*/
+    }
+    /*endif*/
     /* Calculate the CRC progressively, before we start altering the frame */
     u->crc = crc_itu16_calc(&t->buffer[t->len], 1, u->crc);
     /* Make the transmission lag by two octets, so we do not send the CRC, and
