@@ -47,7 +47,6 @@
 #include "srtp_priv.h"
 #include "ekt.h"
 
-
 extern debug_module_t mod_srtp;
 
 /*

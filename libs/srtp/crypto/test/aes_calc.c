@@ -36,7 +36,7 @@ main (int argc, char *argv[]) {
   uint8_t key[AES_MAX_KEY_LEN];
   aes_expanded_key_t exp_key;
   int key_len, len;
-  int verbose;
+  int verbose = 0;
   err_status_t status;
 
   if (argc == 3) {

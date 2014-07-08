@@ -376,7 +376,7 @@ srtp_kdf_init(srtp_kdf_t *kdf, cipher_type_id_t cipher_id, const uint8_t *key, i
 
 err_status_t
 srtp_kdf_generate(srtp_kdf_t *kdf, srtp_prf_label label,
-		  uint8_t *key, unsigned length) {
+		  uint8_t *key, unsigned int length) {
 
   v128_t nonce;
   err_status_t status;
@@ -841,11 +841,11 @@ static void srtp_calc_aead_iv(srtp_stream_ctx_t *stream, v128_t *iv,
  */
 static err_status_t
 srtp_protect_aead (srtp_ctx_t *ctx, srtp_stream_ctx_t *stream, 
-	           void *rtp_hdr, int *pkt_octet_len)
+	           void *rtp_hdr, unsigned int *pkt_octet_len)
 {
     srtp_hdr_t *hdr = (srtp_hdr_t*)rtp_hdr;
     uint32_t *enc_start;        /* pointer to start of encrypted portion  */
-    unsigned enc_octet_len = 0; /* number of octets in encrypted portion  */
+    unsigned int enc_octet_len = 0; /* number of octets in encrypted portion  */
     xtd_seq_num_t est;          /* estimated xtd_seq_num_t of *hdr        */
     int delta;                  /* delta of local pkt idx and that in hdr */
     err_status_t status;
@@ -886,10 +886,10 @@ srtp_protect_aead (srtp_ctx_t *ctx, srtp_stream_ctx_t *stream,
          srtp_hdr_xtnd_t *xtn_hdr = (srtp_hdr_xtnd_t*)enc_start;
          enc_start += (ntohs(xtn_hdr->length) + 1);
      }
-     if (!(enc_start < (uint32_t*)hdr + *pkt_octet_len))
+     if (!((uint8_t*)enc_start < (uint8_t*)hdr + *pkt_octet_len))
          return err_status_parse_err;
      enc_octet_len = (unsigned int)(*pkt_octet_len -
-                     ((enc_start - (uint32_t*)hdr) << 2));
+                                    ((uint8_t*)enc_start - (uint8_t*)hdr));
 
     /*
      * estimate the packet index using the start of the replay window
@@ -972,11 +972,11 @@ srtp_protect_aead (srtp_ctx_t *ctx, srtp_stream_ctx_t *stream,
  */
 static err_status_t
 srtp_unprotect_aead (srtp_ctx_t *ctx, srtp_stream_ctx_t *stream, int delta, 
-	             xtd_seq_num_t est, void *srtp_hdr, int *pkt_octet_len)
+	             xtd_seq_num_t est, void *srtp_hdr, unsigned int *pkt_octet_len)
 {
     srtp_hdr_t *hdr = (srtp_hdr_t*)srtp_hdr;
     uint32_t *enc_start;        /* pointer to start of encrypted portion  */
-    unsigned enc_octet_len = 0; /* number of octets in encrypted portion */
+    unsigned int enc_octet_len = 0; /* number of octets in encrypted portion */
     v128_t iv;
     err_status_t status;
     int tag_len;
@@ -1013,13 +1013,13 @@ srtp_unprotect_aead (srtp_ctx_t *ctx, srtp_stream_ctx_t *stream, int delta,
         srtp_hdr_xtnd_t *xtn_hdr = (srtp_hdr_xtnd_t*)enc_start;
         enc_start += (ntohs(xtn_hdr->length) + 1);
     }
-    if (!(enc_start < (uint32_t*)hdr + *pkt_octet_len))
+    if (!((uint8_t*)enc_start < (uint8_t*)hdr + *pkt_octet_len))
         return err_status_parse_err;
     /*
      * We pass the tag down to the cipher when doing GCM mode 
      */
-    enc_octet_len = (unsigned int) *pkt_octet_len - 
-                    ((enc_start - (uint32_t *)hdr) << 2);
+    enc_octet_len = (unsigned int)(*pkt_octet_len - 
+                                   ((uint8_t*)enc_start - (uint8_t*)hdr));
 
     /*
      * Sanity check the encrypted payload length against
@@ -1131,7 +1131,7 @@ srtp_unprotect_aead (srtp_ctx_t *ctx, srtp_stream_ctx_t *stream, int delta,
    srtp_hdr_t *hdr = (srtp_hdr_t *)rtp_hdr;
    uint32_t *enc_start;        /* pointer to start of encrypted portion  */
    uint32_t *auth_start;       /* pointer to start of auth. portion      */
-   unsigned enc_octet_len = 0; /* number of octets in encrypted portion  */
+   unsigned int enc_octet_len = 0; /* number of octets in encrypted portion  */
    xtd_seq_num_t est;          /* estimated xtd_seq_num_t of *hdr        */
    int delta;                  /* delta of local pkt idx and that in hdr */
    uint8_t *auth_tag = NULL;   /* location of auth_tag within packet     */
@@ -1201,7 +1201,7 @@ srtp_unprotect_aead (srtp_ctx_t *ctx, srtp_stream_ctx_t *stream, int delta,
     */
   if (stream->rtp_cipher->algorithm == AES_128_GCM ||
       stream->rtp_cipher->algorithm == AES_256_GCM) {
-      return srtp_protect_aead(ctx, stream, rtp_hdr, pkt_octet_len);
+      return srtp_protect_aead(ctx, stream, rtp_hdr, (unsigned int*)pkt_octet_len);
   }
 
   /* 
@@ -1238,11 +1238,11 @@ srtp_unprotect_aead (srtp_ctx_t *ctx, srtp_stream_ctx_t *stream, int delta,
      if (hdr->x == 1) {
        srtp_hdr_xtnd_t *xtn_hdr = (srtp_hdr_xtnd_t *)enc_start;
        enc_start += (ntohs(xtn_hdr->length) + 1);
-       if (!(enc_start < (uint32_t*)hdr + *pkt_octet_len))
+       if (!((uint8_t*)enc_start < (uint8_t*)hdr + *pkt_octet_len))
          return err_status_parse_err;
      }
-     enc_octet_len = (unsigned int)(*pkt_octet_len 
-				    - ((enc_start - (uint32_t *)hdr) << 2));
+     enc_octet_len = (unsigned int)(*pkt_octet_len -
+                                    ((uint8_t*)enc_start - (uint8_t*)hdr));
    } else {
      enc_start = NULL;
    }
@@ -1386,7 +1386,7 @@ srtp_unprotect(srtp_ctx_t *ctx, void *srtp_hdr, int *pkt_octet_len) {
   srtp_hdr_t *hdr = (srtp_hdr_t *)srtp_hdr;
   uint32_t *enc_start;      /* pointer to start of encrypted portion  */
   uint32_t *auth_start;     /* pointer to start of auth. portion      */
-  unsigned enc_octet_len = 0;/* number of octets in encrypted portion */
+  unsigned int enc_octet_len = 0;/* number of octets in encrypted portion */
   uint8_t *auth_tag = NULL; /* location of auth_tag within packet     */
   xtd_seq_num_t est;        /* estimated xtd_seq_num_t of *hdr        */
   int delta;                /* delta of local pkt idx and that in hdr */
@@ -1460,7 +1460,7 @@ srtp_unprotect(srtp_ctx_t *ctx, void *srtp_hdr, int *pkt_octet_len) {
    */
   if (stream->rtp_cipher->algorithm == AES_128_GCM ||
       stream->rtp_cipher->algorithm == AES_256_GCM) {
-      return srtp_unprotect_aead(ctx, stream, delta, est, srtp_hdr, pkt_octet_len);
+      return srtp_unprotect_aead(ctx, stream, delta, est, srtp_hdr, (unsigned int*)pkt_octet_len);
   }
 
   /* get tag length from stream */
@@ -1521,10 +1521,10 @@ srtp_unprotect(srtp_ctx_t *ctx, void *srtp_hdr, int *pkt_octet_len) {
       srtp_hdr_xtnd_t *xtn_hdr = (srtp_hdr_xtnd_t *)enc_start;
       enc_start += (ntohs(xtn_hdr->length) + 1);
     }  
-    if (!(enc_start < (uint32_t*)hdr + *pkt_octet_len))
+    if (!((uint8_t*)enc_start < (uint8_t*)hdr + *pkt_octet_len))
       return err_status_parse_err;
-    enc_octet_len = (uint32_t)(*pkt_octet_len - tag_len 
-			       - ((enc_start - (uint32_t *)hdr) << 2));
+    enc_octet_len = (uint32_t)(*pkt_octet_len - tag_len -
+                               ((uint8_t*)enc_start - (uint8_t*)hdr));
   } else {
     enc_start = NULL;
   }
@@ -2210,12 +2210,12 @@ static void srtp_calc_aead_iv_srtcp(srtp_stream_ctx_t *stream, v128_t *iv,
  */
 static err_status_t
 srtp_protect_rtcp_aead (srtp_t ctx, srtp_stream_ctx_t *stream, 
-                        void *rtcp_hdr, int *pkt_octet_len)
+                        void *rtcp_hdr, unsigned int *pkt_octet_len)
 {
     srtcp_hdr_t *hdr = (srtcp_hdr_t*)rtcp_hdr;
     uint32_t *enc_start;        /* pointer to start of encrypted portion  */
     uint32_t *trailer;          /* pointer to start of trailer            */
-    unsigned enc_octet_len = 0; /* number of octets in encrypted portion */
+    unsigned int enc_octet_len = 0; /* number of octets in encrypted portion */
     uint8_t *auth_tag = NULL;   /* location of auth_tag within packet     */
     err_status_t status;
     int tag_len;
@@ -2333,7 +2333,7 @@ srtp_protect_rtcp_aead (srtp_t ctx, srtp_stream_ctx_t *stream,
 	 * Even though we're not encrypting the payload, we need
 	 * to run the cipher to get the auth tag.
 	 */
-	unsigned nolen = 0;
+	unsigned int nolen = 0;
         status = cipher_encrypt(stream->rtcp_cipher, NULL, &nolen);
         if (status) {
             return err_status_cipher_fail;
@@ -2363,12 +2363,12 @@ srtp_protect_rtcp_aead (srtp_t ctx, srtp_stream_ctx_t *stream,
  */
 static err_status_t
 srtp_unprotect_rtcp_aead (srtp_t ctx, srtp_stream_ctx_t *stream, 
-                          void *srtcp_hdr, int *pkt_octet_len)
+                          void *srtcp_hdr, unsigned int *pkt_octet_len)
 {
     srtcp_hdr_t *hdr = (srtcp_hdr_t*)srtcp_hdr;
     uint32_t *enc_start;        /* pointer to start of encrypted portion  */
     uint32_t *trailer;          /* pointer to start of trailer            */
-    unsigned enc_octet_len = 0; /* number of octets in encrypted portion */
+    unsigned int enc_octet_len = 0; /* number of octets in encrypted portion */
     uint8_t *auth_tag = NULL;   /* location of auth_tag within packet     */
     err_status_t status;
     int tag_len;
@@ -2543,7 +2543,7 @@ srtp_protect_rtcp(srtp_t ctx, void *rtcp_hdr, int *pkt_octet_len) {
   uint32_t *enc_start;      /* pointer to start of encrypted portion  */
   uint32_t *auth_start;     /* pointer to start of auth. portion      */
   uint32_t *trailer;        /* pointer to start of trailer            */
-  unsigned enc_octet_len = 0;/* number of octets in encrypted portion */
+  unsigned int enc_octet_len = 0;/* number of octets in encrypted portion */
   uint8_t *auth_tag = NULL; /* location of auth_tag within packet     */
   err_status_t status;   
   int tag_len;
@@ -2607,7 +2607,7 @@ srtp_protect_rtcp(srtp_t ctx, void *rtcp_hdr, int *pkt_octet_len) {
    */
   if (stream->rtp_cipher->algorithm == AES_128_GCM ||
       stream->rtp_cipher->algorithm == AES_256_GCM) {
-      return srtp_protect_rtcp_aead(ctx, stream, rtcp_hdr, pkt_octet_len);
+      return srtp_protect_rtcp_aead(ctx, stream, rtcp_hdr, (unsigned int*)pkt_octet_len);
   }
 
   /* get tag length from stream context */
@@ -2740,12 +2740,12 @@ srtp_unprotect_rtcp(srtp_t ctx, void *srtcp_hdr, int *pkt_octet_len) {
   uint32_t *enc_start;      /* pointer to start of encrypted portion  */
   uint32_t *auth_start;     /* pointer to start of auth. portion      */
   uint32_t *trailer;        /* pointer to start of trailer            */
-  unsigned enc_octet_len = 0;/* number of octets in encrypted portion */
+  unsigned int enc_octet_len = 0;/* number of octets in encrypted portion */
   uint8_t *auth_tag = NULL; /* location of auth_tag within packet     */
   uint8_t tmp_tag[SRTP_MAX_TAG_LEN];
   uint8_t tag_copy[SRTP_MAX_TAG_LEN];
   err_status_t status;   
-  unsigned auth_len;
+  unsigned int auth_len;
   int tag_len;
   srtp_stream_ctx_t *stream;
   int prefix_len;
@@ -2754,6 +2754,13 @@ srtp_unprotect_rtcp(srtp_t ctx, void *srtcp_hdr, int *pkt_octet_len) {
   int sec_serv_confidentiality; /* whether confidentiality was requested */
 
   /* we assume the hdr is 32-bit aligned to start */
+
+  /* check that the length value is sane; we'll check again once we
+     know the tag length, but we at least want to know that it is
+     a positive value */
+  if (*pkt_octet_len < octets_in_rtcp_header + sizeof(srtcp_trailer_t))
+    return err_status_bad_param;
+
   /*
    * look up ssrc in srtp_stream list, and process the packet with 
    * the appropriate stream.  if we haven't seen this stream before,
@@ -2796,9 +2803,9 @@ srtp_unprotect_rtcp(srtp_t ctx, void *srtcp_hdr, int *pkt_octet_len) {
   /* check the packet length - it must contain at least a full RTCP
      header, an auth tag (if applicable), and the SRTCP encrypted flag
      and 31-bit index value */
-  if (*pkt_octet_len < (octets_in_rtcp_header + tag_len +
-                        sizeof(srtcp_trailer_t)))
+  if (*pkt_octet_len < (octets_in_rtcp_header + tag_len + sizeof(srtcp_trailer_t))) {
     return err_status_bad_param;
+  }
 
   /*
    * Check if this is an AEAD stream (GCM mode).  If so, then dispatch
@@ -2806,7 +2813,7 @@ srtp_unprotect_rtcp(srtp_t ctx, void *srtcp_hdr, int *pkt_octet_len) {
    */
   if (stream->rtp_cipher->algorithm == AES_128_GCM ||
       stream->rtp_cipher->algorithm == AES_256_GCM) {
-      return srtp_unprotect_rtcp_aead(ctx, stream, srtcp_hdr, pkt_octet_len);
+      return srtp_unprotect_rtcp_aead(ctx, stream, srtcp_hdr, (unsigned int*)pkt_octet_len);
   }
 
   sec_serv_confidentiality = stream->rtcp_services == sec_serv_conf ||

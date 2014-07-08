@@ -83,10 +83,8 @@ ctr_prng_get_octet_string(void *dest, uint32_t len) {
 
   /* 
    * if we need to re-initialize the prng, do so now 
-   *
-   * avoid 32-bit overflows by subtracting instead of adding
    */
-  if (ctr_prng.octet_count > MAX_PRNG_OUT_LEN - len) {
+  if ((aes_icm_bytes_encrypted(&ctr_prng.state) + len) > 0xffff) {
     status = ctr_prng_init(ctr_prng.rand);    
     if (status)
       return status;

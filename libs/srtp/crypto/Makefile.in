@@ -40,15 +40,14 @@ endif
 dummy : all runtest 
 
 # test applications 
-
 ifneq (1, $(USE_OPENSSL))
 AES_CALC = test/aes_calc$(EXE)
 endif
 
-testapp = #test/cipher_driver$(EXE) test/datatypes_driver$(EXE) \
-	  #test/stat_driver$(EXE) test/sha1_driver$(EXE) \
-	  #test/kernel_driver$(EXE) $(AES_CALC) test/rand_gen$(EXE) \
-	  #test/env$(EXE)
+testapp = test/cipher_driver$(EXE) test/datatypes_driver$(EXE) \
+	  test/stat_driver$(EXE) test/sha1_driver$(EXE) \
+	  test/kernel_driver$(EXE) $(AES_CALC) test/rand_gen$(EXE) \
+	  test/env$(EXE)
 
 # data values used to test the aes_calc application for AES-128
 k128=000102030405060708090a0b0c0d0e0f
