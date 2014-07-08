@@ -48,7 +48,6 @@
 #include "null_cipher.h"
 #include "alloc.h"
 
-
 /* the null_cipher uses the cipher debug module  */
 
 extern debug_module_t mod_cipher;

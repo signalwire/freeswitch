@@ -29,7 +29,7 @@ The configure script accepts the following options:
    --enable-openssl    use OpenSSL crypto primitives
    --gdoi              use GDOI key management (disabled at present)
 
-By default, debbuging is enabled and stdout is used for debugging.
+By default, debugging is enabled and stdout is used for debugging.
 You can use the above configure options to have the debugging output
 sent to syslog or the system console.  Alternatively, you can define
 ERR_REPORTING_FILE in include/conf.h to be any other file that can be
@@ -87,15 +87,30 @@ or     rtpw -l
   which the dictionary will be sent, respectively.  
 
   options:
-       -a use message authentication
-       -e <key size> use encryption (use 128, 192, or 256 for key size)
-       -g Use AES-GCM mode (must be used with -e) 
-       -k <key>  sets the srtp master key
-       -s act as rtp sender
-       -r act as rtp receiver
-       -l list debug modules
-       -d <debug> turn on debugging for module <debug>
-       -i specify input/output file
+
+  -s		(s)rtp sender - causes app to send words
+
+  -r		(s)rtp receive - causes app to receive words
+
+  -k <key>      use srtp master key <key>, where the
+		key is a hexadecimal value (without the
+                leading "0x")
+
+  -e <keysize>  encrypt/decrypt (for data confidentiality)
+                (requires use of -k option as well)
+                (use 128, 192, or 256 for keysize)
+
+  -g            use AES-GCM mode (must be used with -e) 
+
+  -a            message authentication 
+                (requires use of -k option as well)
+
+  -l            list debug modules
+
+  -d <debug>    turn on debugging for module <debug>
+  -i            specify input/output file 
+                (instead of using dictionary file)
+
 
 In order to get random 30-byte values for use as key/salt pairs , you
 can use the following bash function to format the output of
