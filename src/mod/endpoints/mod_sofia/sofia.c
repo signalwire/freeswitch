@@ -5438,6 +5438,7 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					}
 
 					if (profile->sipip) {
+						switch_event_t *s_event;
 						if (!profile->extsipport) profile->extsipport = profile->sip_port;
 
 						launch_sofia_profile_thread(profile);
@@ -5446,6 +5447,14 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							switch_yield(1000000);
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Started Profile %s [%s]\n", profile->name, url);
+						}
+						if ((switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_PROFILE_START) == SWITCH_STATUS_SUCCESS)) {
+							switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "module_name", "mod_sofia");
+							switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile_name", profile->name);
+							if (profile) {
+								switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile_uri", profile->url);
+							}
+							switch_event_fire(&s_event);
 						}
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Unable to start Profile %s due to no configured sip-ip\n", profile->name);
