@@ -1279,6 +1279,11 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg)
 	return console_clean_log(msg);
 }
 
+SWITCH_DECLARE(void) consoleChannelLog(char *level_str, char *file, char *func, int line, char *msg)
+{
+    return console_channel_log(level_str, file, func, line, msg);
+}
+
 SWITCH_DECLARE(void) console_log(char *level_str, char *msg)
 {
     switch_log_level_t level = SWITCH_LOG_DEBUG;
@@ -1294,6 +1299,18 @@ SWITCH_DECLARE(void) console_log(char *level_str, char *msg)
 SWITCH_DECLARE(void) console_clean_log(char *msg)
 {
     switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN,SWITCH_LOG_DEBUG, "%s", switch_str_nil(msg));
+}
+
+SWITCH_DECLARE(void) console_channel_log(char *level_str, char *file, char *func, int line, char *msg)
+{
+    switch_log_level_t level = SWITCH_LOG_DEBUG;
+    if (level_str) {
+        level = switch_log_str2level(level_str);
+        if (level == SWITCH_LOG_INVALID) {
+            level = SWITCH_LOG_DEBUG;
+        }
+    }
+    switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, level, "%s", switch_str_nil(msg));
 }
 
 SWITCH_DECLARE(bool) email(char *to, char *from, char *headers, char *body, char *file, char *convert_cmd, char *convert_ext)

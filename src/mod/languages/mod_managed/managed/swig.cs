@@ -6859,6 +6859,10 @@ public class freeswitch {
     freeswitchPINVOKE.consoleCleanLog(msg);
   }
 
+  public static void consoleChannelLog(string level_str, string file, string func, int line, string msg) {
+    freeswitchPINVOKE.consoleChannelLog(level_str, file, func, line, msg);
+  }
+
   public static bool running() {
     bool ret = freeswitchPINVOKE.running();
     return ret;
@@ -6875,6 +6879,10 @@ public class freeswitch {
 
   public static void console_clean_log(string msg) {
     freeswitchPINVOKE.console_clean_log(msg);
+  }
+
+  public static void console_channel_log(string level_str, string file, string func, int line, string msg) {
+    freeswitchPINVOKE.console_channel_log(level_str, file, func, line, msg);
   }
 
   public static void msleep(uint ms) {
@@ -17392,6 +17400,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_consoleCleanLog")]
   public static extern void consoleCleanLog(string jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_consoleChannelLog")]
+  public static extern void consoleChannelLog(string jarg1, string jarg2, string jarg3, int jarg4, string jarg5);
+
   [DllImport("mod_managed", EntryPoint="CSharp_running")]
   public static extern bool running();
 
@@ -17811,6 +17822,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_console_clean_log")]
   public static extern void console_clean_log(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_console_channel_log")]
+  public static extern void console_channel_log(string jarg1, string jarg2, string jarg3, int jarg4, string jarg5);
 
   [DllImport("mod_managed", EntryPoint="CSharp_msleep")]
   public static extern void msleep(uint jarg1);
