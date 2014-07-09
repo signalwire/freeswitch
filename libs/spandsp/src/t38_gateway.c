@@ -1941,6 +1941,11 @@ static void t38_hdlc_rx_put_bit(hdlc_rx_state_t *t, int new_bit)
         if (t->buffer[0] != 0xFF  ||  (t->buffer[1] & 0xEF) != 0x03)
         {
             /* Abandon the frame, and wait for the next flag octet. */
+            /* If this is a real frame, where one of these first two octets has a bit
+               error, we will fail to forward the frame with a CRC error, as we do for
+               other bad framess. This will affect the timing of what goes forward.
+               Hopefully such timing changes will have less frequent bad effects than
+               the consequences of a bad bit stream simulating an HDLC frame start. */
             span_log(&s->logging, SPAN_LOG_FLOW, "Bad HDLC frame header. Abandoning frame.\n");
             t->flags_seen = t->framing_ok_threshold - 1;
             t->len = 0;
