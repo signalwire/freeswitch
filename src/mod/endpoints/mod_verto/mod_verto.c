@@ -517,6 +517,7 @@ static switch_ssize_t ws_write_json(jsock_t *jsock, cJSON **json, switch_bool_t 
 	switch_assert(json);
 
 	if (!*json) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "WRITE NULL JS ERROR %ld\n", r);
 		return r;
 	}
 
@@ -535,7 +536,7 @@ static switch_ssize_t ws_write_json(jsock_t *jsock, cJSON **json, switch_bool_t 
 			free(log_text);
 		}
 		switch_mutex_lock(jsock->write_mutex);
-		ws_write_frame(&jsock->ws, WSOC_TEXT, json_text, strlen(json_text));
+		r = ws_write_frame(&jsock->ws, WSOC_TEXT, json_text, strlen(json_text));
 		switch_mutex_unlock(jsock->write_mutex);
 		switch_safe_free(json_text);
 	}
@@ -543,6 +544,10 @@ static switch_ssize_t ws_write_json(jsock_t *jsock, cJSON **json, switch_bool_t 
 	if (destroy) {
 		cJSON_Delete(*json);
 		*json = NULL;
+	}
+
+	if (r <= 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "WRITE RETURNED ERROR %ld\n", r);
 	}
 
 	return r;
@@ -1723,14 +1728,17 @@ static switch_status_t verto_send_media_indication(switch_core_session_t *sessio
 		} else {
 			cJSON *params = NULL;
 			cJSON *msg = jrpc_new_req(method, tech_pvt->call_id, &params);
-
+			
 			if (!switch_test_flag(tech_pvt, TFLAG_SENT_MEDIA)) {
 				cJSON_AddItemToObject(params, "sdp", cJSON_CreateString(tech_pvt->mparams->local_sdp_str));
 			}
 
 			switch_set_flag(tech_pvt, TFLAG_SENT_MEDIA);
 
-			ws_write_json(jsock, &msg, SWITCH_TRUE);
+			if (ws_write_json(jsock, &msg, SWITCH_TRUE) <= 0) {
+				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			}
+
 			switch_thread_rwlock_unlock(jsock->rwlock);
 		}
 	}
@@ -3902,7 +3910,9 @@ static int verto_send_chat(const char *uid, const char *call_id, cJSON *msg)
 			jsock_t *jsock;
 
 			if ((jsock = get_jsock(tech_pvt->jsock_uuid))) {
-				ws_write_json(jsock, &msg, SWITCH_FALSE);
+				if (ws_write_json(jsock, &msg, SWITCH_FALSE) <= 0) {
+					switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				}
 				switch_thread_rwlock_unlock(jsock->rwlock);
 				done = 1;
 			}
