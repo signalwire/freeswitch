@@ -1637,16 +1637,16 @@ SWITCH_DECLARE(switch_status_t) switch_find_interface_ip(char *buf, int len, int
 
 SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in)
 {
-	switch_time_exp_t tm = { 0 };
+	switch_time_exp_t tm = { 0 }, local_tm = { 0 };
 	int proceed = 0, ovector[30];
 	switch_regex_t *re = NULL;
 	char replace[1024] = "";
-	switch_time_t ret = 0;
+	switch_time_t ret = 0, local_time = 0;
 	char *pattern = "^(\\d+)-(\\d+)-(\\d+)\\s*(\\d*):{0,1}(\\d*):{0,1}(\\d*)";
 	char *pattern2 = "^(\\d{4})(\\d{2})(\\d{2})(\\d{2})(\\d{2})(\\d{2})";
 
 	switch_time_exp_lt(&tm, switch_micro_time_now());
-	tm.tm_year = tm.tm_mon = tm.tm_mday = tm.tm_hour = tm.tm_min = tm.tm_sec = 0;
+	tm.tm_year = tm.tm_mon = tm.tm_mday = tm.tm_hour = tm.tm_min = tm.tm_sec = tm.tm_usec = 0;
 
 	if (!(proceed = switch_regex_perform(in, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 		switch_regex_safe_free(re);
@@ -1686,6 +1686,11 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in)
 		}
 
 		switch_regex_safe_free(re);
+
+		switch_time_exp_get(&local_time, &tm);
+		switch_time_exp_lt(&local_tm, local_time);
+		tm.tm_isdst = local_tm.tm_isdst;
+		tm.tm_gmtoff = local_tm.tm_gmtoff;
 
 		switch_time_exp_gmt_get(&ret, &tm);
 		return ret;
