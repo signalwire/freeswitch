@@ -2999,6 +2999,7 @@ typedef struct {
 	int default_sleep;
 	int default_expires;
 	int once;
+	switch_time_t start_time;
 	switch_tone_detect_callback_t callback;
 } switch_tone_detect_t;
 
@@ -3010,6 +3011,16 @@ typedef struct {
 	int bug_running;
 	int detect_fax;
 } switch_tone_container_t;
+
+
+static void tone_detect_set_total_time(switch_tone_container_t *cont, int index) 
+{
+	char *total_time = switch_mprintf("%d", (int)(switch_micro_time_now() - cont->list[index].start_time) / 1000);
+
+	switch_channel_set_variable_name_printf(switch_core_session_get_channel(cont->session), total_time, "tone_detect_%s_total_time", 
+											cont->list[index].key);
+	switch_safe_free(total_time);
+}
 
 static switch_status_t tone_on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf, switch_dtmf_direction_t direction)
 {
@@ -3023,6 +3034,7 @@ static switch_status_t tone_on_dtmf(switch_core_session_t *session, const switch
 
 	i = cont->detect_fax;
 
+	tone_detect_set_total_time(cont, i);
 	if (cont->list[i].callback) {
 		cont->list[i].callback(cont->session, cont->list[i].app, cont->list[i].data);
 	} else {
@@ -3037,7 +3049,6 @@ static switch_status_t tone_on_dtmf(switch_core_session_t *session, const switch
 	return SWITCH_STATUS_SUCCESS;
 
 }
-
 
 static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
@@ -3101,6 +3112,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 					if (cont->list[i].hits >= cont->list[i].total_hits) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_DEBUG, "TONE %s DETECTED\n",
 										  cont->list[i].key);
+						tone_detect_set_total_time(cont, i);
 						cont->list[i].up = 0;
 
 						if (cont->list[i].callback) {
@@ -3280,6 +3292,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 
 	cont->list[cont->index].hits = 0;
 	cont->list[cont->index].total_hits = hits;
+	cont->list[cont->index].start_time = switch_micro_time_now();
 
 	cont->list[cont->index].up = 1;
 	memset(&cont->list[cont->index].mt, 0, sizeof(cont->list[cont->index].mt));
