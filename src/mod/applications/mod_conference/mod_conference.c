@@ -5550,7 +5550,7 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 /* Say some thing with TTS in the conference room */
 static switch_status_t conference_member_say(conference_member_t *member, char *text, uint32_t leadin)
 {
-	conference_obj_t *conference = (member != NULL ? member->conference : NULL);
+	conference_obj_t *conference = member->conference;
 	conference_file_node_t *fnode, *nptr;
 	switch_memory_pool_t *pool;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
