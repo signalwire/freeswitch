@@ -90,6 +90,7 @@ struct pvt_s {
 
 	int use_ecm;
 	int disable_v17;
+	int enable_tep;
 	int enable_colour_fax;
 	int enable_image_resizing;
 	int enable_colour_to_bilevel;
@@ -835,6 +836,8 @@ static switch_status_t spanfax_init(pvt_t *pvt, transport_mode_t trans_mode)
 			t38_gateway_set_supported_modems(pvt->t38_gateway_state, T30_SUPPORT_V17 | T30_SUPPORT_V29 | T30_SUPPORT_V27TER);
 		}
 
+		t38_gateway_set_tep_mode(pvt->t38_gateway_state, pvt->enable_tep);
+
 		t38_gateway_set_ecm_capability(pvt->t38_gateway_state, pvt->use_ecm);
 		switch_channel_set_variable(channel, "fax_ecm_requested", pvt->use_ecm ? "true" : "false");
 
@@ -1231,6 +1234,12 @@ static pvt_t *pvt_init(switch_core_session_t *session, mod_spandsp_fax_applicati
 		pvt->use_ecm = switch_true(tmp);
 	} else {
 		pvt->use_ecm = spandsp_globals.use_ecm;
+	}
+
+	if ((tmp = switch_channel_get_variable(channel, "fax_enable_tep"))) {
+		pvt->enable_tep = switch_true(tmp);
+	} else {
+		pvt->enable_tep = spandsp_globals.enable_tep;
 	}
 
 	if ((tmp = switch_channel_get_variable(channel, "fax_disable_v17"))) {

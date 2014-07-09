@@ -508,6 +508,7 @@ switch_status_t load_configuration(switch_bool_t reload)
 
 
 	spandsp_globals.enable_t38 = 1;
+	spandsp_globals.enable_tep = 0;
 	spandsp_globals.total_sessions = 0;
 	spandsp_globals.verbose = 0;
 	spandsp_globals.use_ecm = 1;
@@ -608,6 +609,12 @@ switch_status_t load_configuration(switch_bool_t reload)
 						spandsp_globals.enable_grayscale_to_bilevel = 1;
 					else
 						spandsp_globals.enable_grayscale_to_bilevel = 0;
+				} else if (!strcmp(name, "enable-tep")) {
+					if (switch_true(value)) {
+						spandsp_globals.enable_tep= 1;
+					} else {
+						spandsp_globals.enable_tep = 0;
+					}
 				} else if (!strcmp(name, "enable-t38")) {
 					if (switch_true(value)) {
 						spandsp_globals.enable_t38= 1;
