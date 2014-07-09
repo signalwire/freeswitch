@@ -84,22 +84,47 @@ if [ -z $user ] ; then
 	user="anon"
 fi
 
+post_cmd=""
+command -v wget >/dev/null 2>&1
+if [ $? -eq 0 ]; then
+    post_cmd="wget --output-file=/dev/null --output-document=/tmp/fscore_pb.tmp/pb_out --http-user=pastebin --http-password=freeswitch http://pastebin.freeswitch.org --post-file=$post_file"
+fi
+
+if [ -z "$post_cmd" ]; then
+    command -v curl >/dev/null 2>&1
+    if [ $? -eq 0 ]; then 
+	post_cmd="curl -o /tmp/fscore_pb.tmp/pb_out --user pastebin:freeswitch http://pastebin.freeswitch.org -d paste=Send -d remember=0 -d poster=$user -d format=none -d expiry=f --data-urlencode code2@$post_file"
+    fi
+fi
+
+if [ -z "$post_cmd" ]; then
+  echo "Unable to locate wget or curl."
+  exit 255
+fi
+
+if [[ "$post_cmd" == wget* ]]; then
+    echo -n "paste=Send&remember=0&poster=$user&format=none&expiry=f&code2=" > $post_file
+fi
 
 echo "Gathering Data Please Wait........."
 
-echo -n "paste=Send&remember=0&poster=$user&format=none&expiry=f&code2=" > $post_file
+#Linux
+if [ $(uname) == "Linux" ]; then
+    echo "LSB RELEASE:" >> $post_file
+    echo $line >> $post_file
+    if [ -f /etc/redhat-release ] ; then
+	cat /etc/redhat-release  >> $post_file
+    else
+	lsb_release -a >> $post_file
+    fi
 
-echo "LSB RELEASE:" >> $post_file
-echo $line >> $post_file
-if [ -f /etc/redhat-release ] ; then
-    cat /etc/redhat-release  >> $post_file
-else
-    lsb_release -a >> $post_file
-fi
-
-echo "CPU INFO:" >> $post_file
-echo $line >> $post_file
-cat /proc/cpuinfo >> $post_file
+    echo "CPU INFO:" >> $post_file
+    echo $line >> $post_file
+    cat /proc/cpuinfo >> $post_file
+#Mac
+elif [ $(uname) == "Darwin" ]; then
+    system_profiler SPSoftwareDataType SPHardwareDataType >> $post_file
+fi;
 
 echo "GIT INFO:" >> $post_file
 echo $line >> $post_file
@@ -115,34 +140,43 @@ fi
 echo "GDB BACKTRACE:" >> $post_file
 echo $line >> $post_file
 
-gdb $prefix/bin/freeswitch `echo $core | tail -n1` \
-        --eval-command="echo \n\n" \
-        --eval-command="set pagination off" \
-        --eval-command="echo Thread Info\n" \
-        --eval-command="echo $line\n" \
-        --eval-command="info threads" \
-        --eval-command="echo Stack Trace\n" \
-        --eval-command="echo $line\n" \
-        --eval-command="bt" \
-        --eval-command="echo \n\n\n\n Stack Trace (full)\n" \
-        --eval-command="echo $line\n" \
-        --eval-command="bt full" \
-        --eval-command="echo \n\n\n\n Stack Trace (all threads)\n" \
-        --eval-command="echo $line\n" \
-        --eval-command="thread apply all bt" \
-        --eval-command="echo \n\n\n\n Stack Trace (all threads) (full)\n" \
-        --eval-command="echo $line\n" \
-        --eval-command="thread apply all bt full" \
-        --eval-command="quit" 1>> $post_file 2>/dev/null
+cat > fscore_pb.$$.gdb <<EOF
+echo \n\n
+set pagination off
+echo Thread Info\n
+echo $line\n
+info threads
+echo Stack Trace\n
+echo $line
+bt
+echo \n\n\n\n Stack Trace (full)\n
+echo $line\n
+bt full
+echo \n\n\n\n Stack Trace (all threads)\n
+echo $line\n
+thread apply all bt
+echo \n\n\n\n Stack Trace (all threads) (full)\n
+echo $line\n
+thread apply all bt full
+quit
+EOF
 
+gdb $prefix/bin/freeswitch `echo $core | tail -n1` -x fscore_pb.$$.gdb 1 >> $post_file 2>/dev/null
+
+rm fscore_pb.$$.gdb
 rm -fr $tmpdir 
 mkdir -p $tmpdir
 cd $tmpdir
 
-wget --output-file=/dev/null --output-document=/tmp/fscore_pb.tmp/pb_out --http-user=pastebin --http-password=freeswitch http://pastebin.freeswitch.org --post-file=$post_file
-
-pb=`cat /tmp/fscore_pb.tmp/pb_out | grep parent_pid | awk -F \" '{print $6}'`
+echo $post_cmd
+$post_cmd
 
 mv $post_file $tmpdir
+
 echo "Finished."
-echo "Please report http://pastebin.freeswitch.org/$pb to the developers."
+if [ -e /tmp/fscore_pb.tmp/pb_out ]; then
+    pb=`cat /tmp/fscore_pb.tmp/pb_out | grep parent_pid | awk -F \" '{print $6}'`
+    echo "Please report http://pastebin.freeswitch.org/$pb to the developers."
+else
+    echo "Please check recent posts on http://pastebin.freeswitch.org/ and find your issue to report to the developers."
+fi
