@@ -22,6 +22,7 @@
  *
  * Contributor(s):
  * Christopher Rienzo <crienzo@grasshopper.com>
+ * Michael McGuinness <mmcguinness@grasshopper.com>
  *
  * mod_graylog2.c -- Graylog2 GELF logger
  *
@@ -81,6 +82,9 @@ static char *to_gelf(const switch_log_node_t *node, switch_log_level_t log_level
 	char *full_message = node->content;
 	char short_message[151];
 	char *short_message_end = NULL;
+	char *parsed_full_message = NULL;
+	char *field_name = NULL;
+	switch_event_t *log_fields = NULL;
 
 	cJSON_AddItemToObject(gelf, "version", cJSON_CreateString("1.1"));
 	if ((hostname = switch_core_get_variable("hostname")) && !zstr(hostname)) {
@@ -90,6 +94,7 @@ static char *to_gelf(const switch_log_node_t *node, switch_log_level_t log_level
 	}
 	switch_snprintf(timestamp, 32, "%"SWITCH_UINT64_T_FMT".%d", (uint64_t)(node->timestamp / 1000000), node->timestamp % 1000000);
 	cJSON_AddItemToObject(gelf, "timestamp", cJSON_CreateString(timestamp));
+	cJSON_AddItemToObject(gelf, "_microtimestamp", cJSON_CreateNumber(node->timestamp));
 	cJSON_AddItemToObject(gelf, "level", cJSON_CreateNumber(to_graylog2_level(log_level)));
 	cJSON_AddItemToObject(gelf, "_ident", cJSON_CreateString("freeswitch"));
 	cJSON_AddItemToObject(gelf, "_pid", cJSON_CreateNumber((int)getpid()));
@@ -111,6 +116,27 @@ static char *to_gelf(const switch_log_node_t *node, switch_log_level_t log_level
 	if (*full_message == '\n') {
 		full_message++;
 	}
+	
+	/* parse list of fields, if any */
+	if (strncmp(full_message, "LOG_FIELDS", 10) == 0) {
+		if (switch_event_create_brackets(full_message+10, '[', ']', ',', &log_fields, &parsed_full_message, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
+			
+			switch_event_header_t *hp;
+			for (hp = log_fields->headers; hp; hp = hp->next) {
+				if (strncmp(hp->name, "@#", 2) == 0) {
+			        field_name = switch_mprintf("_%s", hp->name + 2);
+					cJSON_AddItemToObject(gelf, field_name, cJSON_CreateNumber(strtod(hp->value, NULL)));	
+				} else {
+					field_name = switch_mprintf("_%s", hp->name);
+					cJSON_AddItemToObject(gelf, field_name, cJSON_CreateString(hp->value));
+				}
+				free(field_name);
+			}
+			
+			switch_event_destroy(&log_fields);
+			full_message = parsed_full_message;
+		}
+	}
 
 	cJSON_AddItemToObject(gelf, "full_message", cJSON_CreateString(full_message));
 
@@ -122,6 +148,11 @@ static char *to_gelf(const switch_log_node_t *node, switch_log_level_t log_level
 
 	gelf_text = cJSON_PrintUnformatted(gelf);
 	cJSON_Delete(gelf);
+	
+	if (parsed_full_message != NULL) {
+		free(parsed_full_message);
+	}
+	
 	return gelf_text;
 }
 
