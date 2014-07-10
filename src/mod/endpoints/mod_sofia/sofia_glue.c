@@ -1979,7 +1979,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   contact          VARCHAR(1024),\n"
 		"   status           VARCHAR(255),\n"
 		"   rpid             VARCHAR(255),\n"
-		"   expires          INTEGER,\n"
+		"   expires          BIGINT,\n"
 		"   user_agent       VARCHAR(255),\n"
 		"   server_user      VARCHAR(255),\n"
 		"   server_host      VARCHAR(255),\n"
@@ -2002,7 +2002,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   sip_host        VARCHAR(255),\n"
 		"   status          VARCHAR(255),\n"
 		"   rpid            VARCHAR(255),\n"
-		"   expires         INTEGER,\n"
+		"   expires         BIGINT,\n"
 		"   user_agent      VARCHAR(255),\n"
 		"   profile_name    VARCHAR(255),\n"
 		"   hostname        VARCHAR(255),\n"
@@ -2031,7 +2031,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   presence_data   VARCHAR(255),\n"
 		"   call_info       VARCHAR(255),\n"
 		"   call_info_state VARCHAR(255) default '',\n"
-		"   expires         INTEGER default 0,\n"
+		"   expires         BIGINT default 0,\n"
 		"   status          VARCHAR(255),\n"
 		"   rpid            VARCHAR(255),\n"
 		"   sip_to_tag      VARCHAR(255),\n"
@@ -2052,7 +2052,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   call_id         VARCHAR(255),\n"
 		"   full_from       VARCHAR(255),\n"
 		"   full_via        VARCHAR(255),\n"
-		"   expires         INTEGER,\n"
+		"   expires         BIGINT,\n"
 		"   user_agent      VARCHAR(255),\n"
 		"   accept          VARCHAR(255),\n"
 		"   profile_name    VARCHAR(255),\n"
@@ -2067,7 +2067,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 	char auth_sql[] =
 		"CREATE TABLE sip_authentication (\n"
 		"   nonce           VARCHAR(255),\n"
-		"   expires         INTEGER,"
+		"   expires         BIGINT,"
 		"   profile_name    VARCHAR(255),\n"
 		"   hostname        VARCHAR(255),\n"
 		"   last_nc         INTEGER\n"
@@ -2092,7 +2092,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   contact_str       VARCHAR(255),\n"
 		"   call_id           VARCHAR(255),\n"
 		"   network_ip        VARCHAR(255),\n"
-		"   expires           INTEGER\n"
+		"   expires           BIGINT\n"
 		");\n";
 
 	
