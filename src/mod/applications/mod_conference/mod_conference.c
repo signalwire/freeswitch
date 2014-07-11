@@ -401,6 +401,7 @@ typedef struct conference_obj {
 	switch_memory_pool_t *pool;
 	switch_thread_rwlock_t *rwlock;
 	uint32_t count;
+	uint32_t count3d;
 	int32_t energy_level;
 	uint8_t min;
 	switch_speech_handle_t lsh;
@@ -464,6 +465,7 @@ struct conference_member {
 	conference_obj_t *conference;
 	switch_memory_pool_t *pool;
 	switch_buffer_t *audio_buffer;
+	switch_buffer_t *clean_audio_buffer;
 	switch_buffer_t *mux_buffer;
 	switch_buffer_t *resample_buffer;
 	uint32_t flags;
@@ -485,10 +487,13 @@ struct conference_member {
 	switch_time_t rec_time;
 	conference_record_t *rec;
 	uint8_t *frame;
+	uint8_t *clean_frame;
 	uint8_t *last_frame;
 	uint32_t frame_size;
+	uint32_t clean_frame_size;
 	uint8_t *mux_frame;
 	uint32_t read;
+	uint32_t clean_read;
 	uint32_t vol_period;
 	int32_t energy_level;
 	int32_t agc_volume_in_level;
@@ -677,7 +682,7 @@ static void gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream
 
 	offset = 180 / (count - 1);
 
-	radius = 2.0f;//3.0f; //(float)count / 2.0f; //3.0f;
+	radius = 1.5f;//3.0f; //(float)count / 2.0f; //3.0f;
 
 	pos = -90.0f;// + (offset / 2.0f);
 	
@@ -689,6 +694,9 @@ static void gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream
 
 		if (!member->al) {
 			member->al = create_al(member->pool);
+			switch_mutex_lock(member->conference->member_mutex);
+			member->conference->count3d++;
+			switch_mutex_unlock(member->conference->member_mutex);
 		}
 		switch_set_flag(member, MFLAG_POSITIONAL);
 
@@ -768,7 +776,7 @@ static void process_al(al_handle_t *al, void *data, switch_size_t datalen, int r
 			
 			alGenSources(1, &al->source);
 			alSourcef( al->source, AL_PITCH, 1.);
-			alSourcef( al->source, AL_GAIN, 1.);
+			alSourcef( al->source, AL_GAIN, 1.2);
 			alGenBuffers(2, al->buffer_in);
 
 			alBufferData(al->buffer_in[0], AL_FORMAT_MONO16, data, datalen, rate);
@@ -2338,6 +2346,9 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 					
 					switch_set_flag(member, MFLAG_POSITIONAL);
 					member->al = create_al(member->pool);
+					switch_mutex_lock(member->conference->member_mutex);
+					member->conference->count3d++;
+					switch_mutex_unlock(member->conference->member_mutex);
 				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,	"%s cannot set position data on mono conference.\n", switch_channel_get_name(channel));
@@ -2674,12 +2685,6 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 
 	conference_cdr_del(member);
 
-#ifdef OPENAL_POSITIONING	
-	if (member->al && member->al->device) {
-		close_al(member->al);
-	}
-#endif
-
 	member_fnode = member->fnode;
 	member_sh = member->sh;
 	member->fnode = NULL;
@@ -2696,6 +2701,13 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 	switch_mutex_lock(member->audio_out_mutex);
 	lock_member(member);
 	switch_clear_flag(member, MFLAG_INTREE);
+
+#ifdef OPENAL_POSITIONING	
+	if (member->al && member->al->device) {
+		member->conference->count3d--;
+		close_al(member->al);
+	}
+#endif
 
 	for (imember = conference->members; imember; imember = imember->next) {
 		if (imember == member) {
@@ -3114,6 +3126,13 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				switch_set_flag_locked(imember, MFLAG_HAS_AUDIO);
 				ready++;
 			}
+
+			if (imember->clean_audio_buffer && imember->clean_frame && switch_buffer_inuse(imember->clean_audio_buffer) >= bytes
+				&& (buf_read = (uint32_t) switch_buffer_read(imember->clean_audio_buffer, imember->clean_frame, bytes))) {
+				imember->clean_read = buf_read;
+			} else {
+				imember->clean_read = 0;
+			}
 			switch_mutex_unlock(imember->audio_in_mutex);
 		}
 		
@@ -3283,7 +3302,14 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			/* Use more bits in the main_frame to preserve the exact sum of the audio samples. */
 			int main_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 			int16_t write_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
+			int clean_main_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
+			int clean = 0;
 
+#ifdef OPENAL_POSITIONING
+			if (conference->channels == 2) {
+				clean = 1;
+			}
+#endif
 
 			/* Init the main frame with file data if there is any. */
 			bptr = (int16_t *) file_frame;
@@ -3292,9 +3318,14 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				for (x = 0; x < bytes / 2; x++) {
 					if (x <= file_sample_len * conference->channels) {
 						main_frame[x] = (int32_t) bptr[x];
+						if (clean) {
+							clean_main_frame[x] = (int32_t) bptr[x];
+						}
 					} else {
 						memset(&main_frame[x], 255, sizeof(main_frame[x]));
-						//printf("FUCCCK %d <= %ld (%ld/%d)\n", x, file_sample_len * conference->channels, file_sample_len, conference->channels);
+						if (clean) {
+							memset(&clean_main_frame[x], 255, sizeof(main_frame[x]));
+						}
 					}
 				}
 			}
@@ -3323,6 +3354,14 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				for (x = 0; x < omember->read / 2; x++) {
 					main_frame[x] += (int32_t) bptr[x];
 				}
+
+				if (clean && omember->clean_read) {
+					bptr = (int16_t *) omember->clean_frame;
+					for (x = 0; x < omember->clean_read / 2; x++) {
+						clean_main_frame[x] += (int32_t) bptr[x];
+					}
+				}
+
 			}
 
 			if (conference->agc_level && conference->member_loop_count) {
@@ -3357,10 +3396,21 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 					continue;
 				}
 
-				bptr = (int16_t *) omember->frame;
+				if (omember->read_impl.number_of_channels == 1 && omember->clean_read) {
+					bptr = (int16_t *) omember->clean_frame;
+				} else {
+					bptr = (int16_t *) omember->frame;
+				}
 				
 				for (x = 0; x < bytes / 2 ; x++) {
-					z = main_frame[x];
+					
+					if (omember->read_impl.number_of_channels == 1 && omember->clean_read) {
+						z = clean_main_frame[x];
+					} else {
+						z = main_frame[x];
+					}
+
+					
 
 					/* bptr[x] represents my own contribution to this audio sample */
 					if (switch_test_flag(omember, MFLAG_HAS_AUDIO) && x <= omember->read / 2) {
@@ -4161,8 +4211,10 @@ static void check_agc_levels(conference_member_t *member)
 	}
 }
 
-static void member_check_channels(switch_frame_t *frame, conference_member_t *member, switch_bool_t in)
+ static int member_check_channels(switch_frame_t *frame, conference_member_t *member, switch_bool_t in, switch_bool_t skip3d)
 {
+	int r = 0;
+
 	if (member->conference->channels != member->read_impl.number_of_channels || switch_test_flag(member, MFLAG_POSITIONAL)) {
 		uint32_t rlen;
 		int from, to;
@@ -4177,7 +4229,7 @@ static void member_check_channels(switch_frame_t *frame, conference_member_t *me
 
 		rlen = frame->datalen / 2 / from; 
 
-		if (in && frame->rate == 48000 && ((from == 1 && to == 2) || (from == 2 && to == 2)) && switch_test_flag(member, MFLAG_POSITIONAL)) {
+		if (in && frame->rate == 48000 && ((from == 1 && to == 2) || (from == 2 && to == 2)) && switch_test_flag(member, MFLAG_POSITIONAL) && !skip3d) {
 			if (from == 2 && to == 2) {
 				switch_mux_channels((int16_t *) frame->data, rlen, 2, 1);
 				frame->datalen /= 2;
@@ -4185,13 +4237,15 @@ static void member_check_channels(switch_frame_t *frame, conference_member_t *me
 			}
 			
 			process_al(member->al, frame->data, frame->datalen, frame->rate);
+			r++;
 		} else {
 			switch_mux_channels((int16_t *) frame->data, rlen, from, to);
 		}
 		
 		frame->datalen = rlen * 2 * to;
-		
 	}
+
+	return r;
 }
 
 
@@ -4491,6 +4545,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			switch_audio_resampler_t *read_resampler = member->read_resampler;
 			void *data;
 			uint32_t datalen;
+			int16_t save_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 
 			if (read_resampler) {
 				int16_t *bptr = (int16_t *) read_frame->data;
@@ -4506,11 +4561,14 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				datalen = read_frame->datalen;
 			}
 
+			if (member->clean_audio_buffer) {
+				memcpy(save_frame, data, datalen);
+			}
+
 			tmp_frame.data = data;
 			tmp_frame.datalen = datalen;
 			tmp_frame.rate = member->conference->rate;
-			member_check_channels(&tmp_frame, member, SWITCH_TRUE);
-			
+			member_check_channels(&tmp_frame, member, SWITCH_TRUE, SWITCH_FALSE);
 
 			if (datalen) {
 				switch_size_t ok = 1;
@@ -4519,9 +4577,24 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				switch_mutex_lock(member->audio_in_mutex);
 				if (switch_buffer_inuse(member->audio_buffer) > flush_len) {
 					switch_buffer_zero(member->audio_buffer);
+
+					if (member->clean_audio_buffer) {
+						switch_buffer_zero(member->clean_audio_buffer);
+					}
 					switch_channel_audio_sync(channel);
 				}
+				
 				ok = switch_buffer_write(member->audio_buffer, tmp_frame.data, tmp_frame.datalen);
+
+				if (member->clean_audio_buffer) {
+					if (member->conference->count3d) {
+						tmp_frame.data = save_frame;
+						tmp_frame.datalen = datalen;
+						member_check_channels(&tmp_frame, member, SWITCH_TRUE, SWITCH_TRUE);
+						switch_buffer_write(member->clean_audio_buffer, tmp_frame.data, tmp_frame.datalen);
+					}
+				}
+
 				switch_mutex_unlock(member->audio_in_mutex);
 				if (!ok) {
 					switch_mutex_unlock(member->read_mutex);
@@ -4902,7 +4975,7 @@ static void conference_loop_output(conference_member_t *member)
 						member_add_file_data(member, write_frame.data, write_frame.datalen);
 					}
 
-					member_check_channels(&write_frame, member, SWITCH_FALSE);
+					member_check_channels(&write_frame, member, SWITCH_FALSE, SWITCH_FALSE);
 
 					if (switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 						switch_mutex_unlock(member->audio_out_mutex);
@@ -4918,7 +4991,7 @@ static void conference_loop_output(conference_member_t *member)
 			memset(write_frame.data, 255, write_frame.datalen);
 			write_frame.timestamp = timer.samplecount;
 			member_add_file_data(member, write_frame.data, write_frame.datalen);
-			member_check_channels(&write_frame, member, SWITCH_FALSE);
+			member_check_channels(&write_frame, member, SWITCH_FALSE, SWITCH_FALSE);
 			if (switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				break;
@@ -4935,7 +5008,7 @@ static void conference_loop_output(conference_member_t *member)
 			write_frame.samples = samples;
 			write_frame.timestamp = timer.samplecount;
 			
-			member_check_channels(&write_frame, member, SWITCH_FALSE);
+			member_check_channels(&write_frame, member, SWITCH_FALSE, SWITCH_FALSE);
 
 			if (switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -5084,6 +5157,13 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	member->mux_frame = switch_core_alloc(member->pool, member->frame_size);
 
 
+#ifdef OPENAL_POSITIONING
+	if (member->conference->channels == 2) {
+		member->clean_frame_size = SWITCH_RECOMMENDED_BUFFER_SIZE;
+		member->clean_frame = switch_core_alloc(member->pool, member->clean_frame_size);
+	}
+#endif
+
 	switch_mutex_init(&member->write_mutex, SWITCH_MUTEX_NESTED, rec->pool);
 	switch_mutex_init(&member->flag_mutex, SWITCH_MUTEX_NESTED, rec->pool);
 	switch_mutex_init(&member->fnode_mutex, SWITCH_MUTEX_NESTED, rec->pool);
@@ -5097,6 +5177,17 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
 		goto end;
 	}
+
+#ifdef OPENAL_POSITIONING
+	if (conference->channels == 2) {
+		/* Setup an audio buffer for the incoming audio */
+		if (switch_buffer_create_dynamic(&member->clean_audio_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, 0) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
+			goto end;
+		}
+	}
+#endif
+
 
 	/* Setup an audio buffer for the outgoing audio */
 	if (switch_buffer_create_dynamic(&member->mux_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, 0) != SWITCH_STATUS_SUCCESS) {
@@ -5237,6 +5328,9 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	conference_del_member(conference, member);
 
 	switch_buffer_destroy(&member->audio_buffer);
+	if (member->clean_audio_buffer) {
+		switch_buffer_destroy(&member->clean_audio_buffer);
+	}
 	switch_buffer_destroy(&member->mux_buffer);
 	switch_clear_flag_locked(member, MFLAG_RUNNING);
 	if (switch_test_flag((&fh), SWITCH_FILE_OPEN)) {
@@ -6473,6 +6567,9 @@ static switch_status_t conf_api_sub_position(conference_member_t *member, switch
 		if (!switch_test_flag(member, MFLAG_POSITIONAL) && member->conference->channels == 2) {
 			switch_set_flag(member, MFLAG_POSITIONAL);
 			member->al = create_al(member->pool);
+			switch_mutex_lock(member->conference->member_mutex);
+			member->conference->count3d++;
+			switch_mutex_unlock(member->conference->member_mutex);
 		} else {
 		
 			if (stream) {
@@ -8923,6 +9020,14 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 		member->mux_frame = switch_core_alloc(member->pool, member->frame_size);
 	}
 
+
+#ifdef OPENAL_POSITIONING
+	if (conference->channels == 2) {
+		member->clean_frame_size = SWITCH_RECOMMENDED_BUFFER_SIZE;
+		member->clean_frame = switch_core_alloc(member->pool, member->clean_frame_size);
+	}
+#endif
+
 	if (read_impl.actual_samples_per_second != conference->rate) {
 		if (switch_resample_create(&member->read_resampler,
 								   read_impl.actual_samples_per_second,
@@ -8965,6 +9070,14 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 	if (switch_buffer_create_dynamic(&member->audio_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
 		goto codec_done1;
+	}
+
+	if (conference->channels == 2) {
+		/* Setup an audio buffer for the incoming audio */
+		if (switch_buffer_create_dynamic(&member->clean_audio_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, 0) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
+			goto codec_done1;
+		}
 	}
 
 	/* Setup an audio buffer for the outgoing audio */
@@ -9554,6 +9667,9 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_event_destroy(&params);
 	switch_buffer_destroy(&member.resample_buffer);
 	switch_buffer_destroy(&member.audio_buffer);
+	if (member.clean_audio_buffer) {
+		switch_buffer_destroy(&member.clean_audio_buffer);
+	}
 	switch_buffer_destroy(&member.mux_buffer);
 
 	if (conference) {
