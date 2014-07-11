@@ -2823,6 +2823,7 @@ static uint32_t _switch_event_channel_broadcast(const char *event_channel, const
 			if (np->id == id) {
 				continue;
 			}
+			
 			np->func(broadcast_channel, json, key, id);
 			x++;
 		}

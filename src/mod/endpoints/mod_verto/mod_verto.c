@@ -3861,6 +3861,7 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 		switch_channel_set_variable(channel, "jsock_uuid_str", tech_pvt->jsock_uuid);
 		switch_channel_set_variable(channel, "event_channel_cookie", tech_pvt->jsock_uuid);
 
+
 		if ((caller_profile = switch_caller_profile_dup(switch_core_session_get_pool(*new_session), outbound_profile))) {
 			switch_channel_set_caller_profile(channel, caller_profile);        
 		} 
@@ -3880,7 +3881,7 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 
 void verto_broadcast(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id)
 {
-	if (globals.debug > 10) {
+	if (globals.debug > 9) {
 		char *json_text;
 		if ((json_text = cJSON_Print(json))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "EVENT BROADCAST %s %s\n", event_channel, json_text);

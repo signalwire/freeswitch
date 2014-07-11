@@ -219,7 +219,7 @@
     }
 
     var SERNO = 1;
-
+    
     function do_subscribe(verto, channel, subChannels, sparams) {
         var params = sparams || {};
 
@@ -494,7 +494,11 @@
                     }
                 }
 
-                if (!list && key && verto.dialogs[key]) {
+		if (!list && key && key === verto.sessid) {
+		    if (verto.callbacks.onMessage) { 
+			verto.callbacks.onMessage(verto, null, $.verto.enum.message.pvtEvent, data.params);
+		    }
+                } else if (!list && key && verto.dialogs[key]) {
                     verto.dialogs[key].sendMessage($.verto.enum.message.pvtEvent, data.params);
                 } else if (!list) {
                     if (!key) {
@@ -855,11 +859,11 @@
         var eventHandler = function(v, e, la) {
             var packet = e.data;
 
+            console.error("READ:", packet);
+
             if (packet.name != la.name) {
                 return;
             }
-
-            console.error("READ:", packet);
 
             switch (packet.action) {
 
@@ -924,19 +928,21 @@
             la.verto.unsubscribe(binding);
         };
 
-        la.bootstrap = function(obj) {
+	la.sendCommand = function(cmd, obj) {
             var self = la;
-
-            self.clear();
-            self.broadcast(self.context, {
-                liveArray: {
-                    command: "bootstrap",
+	    self.broadcast(self.context, {
+		liveArray: {
+                    command: cmd,
                     context: self.context,
                     name: self.name,
                     obj: obj
                 }
-            });
+	    });
+	};
 
+        la.bootstrap = function(obj) {
+            var self = la;
+	    la.sendCommand("bootstrap", obj);
             //self.heartbeat();
         };
 
@@ -1035,6 +1041,10 @@
                 }
             }
 
+            if (config.onChange) {
+                config.onChange(obj, args);
+            }
+
             try {
                 switch (args.action) {
                 case "bootObj":
@@ -1102,11 +1112,7 @@
             } else {
                 obj.errs = 0;
             }
-
-            if (config.onChange) {
-                config.onChange(obj, args);
-            }
-
+	    
         };
 
         la.onChange(la, {
@@ -1114,6 +1120,248 @@
         });
 
     };
+
+    var CONFMAN_SERNO = 1;
+    
+    $.verto.confMan = function(verto, params) {
+	var confMan = this;
+	conf
+        confMan.params = $.extend({
+	    tableID: null,
+	    statusID: null,
+	    mainModID: null,
+	    dialog: null,
+	    hasVid: false,
+	    laData: null,
+	    onBroadcast: null,
+	    onLaChange: null,
+	    onLaRow: null
+        },
+        params);
+
+	confMan.verto = verto;
+	confMan.serno = CONFMAN_SERNO++;
+
+	function genMainMod(jq) {
+	    var play_id = "play_" + confMan.serno;
+	    var stop_id = "stop_" + confMan.serno;
+	    var recording_id = "recording_" + confMan.serno;
+	    var rec_stop_id = "recording_stop" + confMan.serno;
+	    var div_id = "confman_" + confMan.serno;
+
+	    var html =	"<div id='" + div_id + "'><br>" +
+		"<button id='" + play_id + "'>Play</button>" +
+		"<button id='" + stop_id + "'>Stop</button>" +
+		"<button id='" + recording_id + "'>Record</button>" +
+		"<button id='" + rec_stop_id + "'>Record Stop</button>" 
+
+	    + "<br><br></div>";
+
+	    jq.html(html);
+
+	    $("#" + play_id).click(function() {
+		var file = prompt("Please enter file name", "");
+		confMan.modCommand("play", null, file);
+	    });
+
+	    $("#" + stop_id).click(function() {
+		confMan.modCommand("stop", null, "all");
+	    });
+
+	    $("#" + recording_id).click(function() {
+		var file = prompt("Please enter file name", "");
+		confMan.modCommand("recording", null, ["start", file]);
+	    });
+
+	    $("#" + rec_stop_id).click(function() {
+		confMan.modCommand("recording", null, ["stop", "all"]);
+	    });
+
+	}
+
+	function genControls(jq, rowid) {
+	    var x = parseInt(rowid);
+	    var kick_id = "kick_" + x;
+	    var tmute_id = "tmute_" + x;
+	    var box_id = "box_" + x;
+	    var volup_id = "volume_in_up" + x;
+	    var voldn_id = "volume_in_dn" + x;
+
+	    
+	    var html = "<div id='" + box_id + "'>" + 
+		"<button id='" + kick_id + "'>KICK</button>" + 
+		"<button id='" + tmute_id + "'>MUTE</button>" +
+		"<button id='" + voldn_id + "'>vol -</button>" +
+		"<button id='" + volup_id + "'>vol +</button>" +
+		"</div>"
+	    ;
+	    
+	    jq.html(html);
+	    
+	    if (!jq.data("mouse")) {
+		$("#" + box_id).hide();
+	    }
+
+	    jq.mouseover(function(e) {
+		jq.data({"mouse": true});
+		$("#" + box_id).show();
+	    });
+
+	    jq.mouseout(function(e) {
+		jq.data({"mouse": false});
+		$("#" + box_id).hide();
+	    });
+
+	    $("#" + kick_id).click(function() {
+		confMan.modCommand("kick", x);
+	    });
+
+	    $("#" + tmute_id).click(function() {
+		confMan.modCommand("tmute", x);
+	    });
+
+	    $("#" + volup_id).click(function() {
+		confMan.modCommand("volume_in", x, "up");
+	    });
+
+	    $("#" + voldn_id).click(function() {
+		confMan.modCommand("volume_in", x, "down");
+	    });
+
+	    return html;
+	}
+
+
+
+	var atitle = "";
+	var awidth = 0;
+		    
+        $(".jsDataTable").width(confMan.params.hasVid ? "900px" : "800px");
+	
+	if (confMan.params.laData.role === "moderator") {
+	    atitle = "Action";
+	    awidth = 200;
+	    
+	    if (confMan.params.mainModID) {
+		genMainMod($(confMan.params.mainModID));
+	    } else {
+		$(confMan.params.mainModID).html("");
+	    }
+
+	    verto.subscribe(confMan.params.laData.modChannel, {
+		handler: function(v, e) {
+		    console.error("MODDATA:", e.data);
+		    if (confMan.params.onBroadcast) {
+			confMan.params.onBroadcast(verto, confMan, e.data);
+		    }
+		    if (confMan.params.displayID) {
+			$(confMan.params.displayID).html(e.data.response + "<br><br>");
+			if (confMan.lastTimeout) {
+			    clearTimeout(confMan.lastTimeout);
+			    confMan.lastTimeout = 0;
+			}
+			confMan.lastTimeout = setTimeout(function() { $(confMan.params.displayID).html("")}, 4000);
+		    }
+
+		}
+	    });
+	    
+	}
+	
+        confMan.lt = new $.verto.liveTable(verto, confMan.params.laData.laChannel, confMan.params.laData.laName, $(confMan.params.tableID), {
+            subParams: {
+                callID: confMan.params.dialog ? confMan.params.dialog.callID : null
+            },
+	    
+	    
+            "onChange": function(obj, args) {
+                $(confMan.params.statusID).text("Conference Members: " + " (" + obj.arrayLen() + " Total)");
+		if (confMan.params.onLaChange) {
+		    confMan.params.onLaChange(verto, confMan, $.verto.enum.confEvent.laChange, obj, args);
+		}
+            },
+
+            "aaData": [],
+            "aoColumns": [{
+                "sTitle": "ID"
+            },
+                          {
+                              "sTitle": "Number"
+                          },
+                          {
+                              "sTitle": "Name"
+                          },
+                          {
+                              "sTitle": "Codec"
+                          },
+                          {
+                              "sTitle": "Status",
+                              "sWidth": confMan.params.hasVid ? "300px" : "150px"
+			  },
+                          {
+			      "sTitle": atitle,
+			      "sWidth": awidth,
+			      
+                          }],
+            "bAutoWidth": true,
+            "bDestroy": true,
+            "bSort": false,
+            "bInfo": false,
+            "bFilter": false,
+            "bLengthChange": false,
+            "bPaginate": false,
+            "iDisplayLength": 1000,
+
+            "oLanguage": {
+                "sEmptyTable": "The Conference is Empty....."
+            },
+
+
+	    "fnRowCallback": function(nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+
+		if (!aData[5]) {
+		    var $row = $('td:eq(5)', nRow);
+		    genControls($row, aData);
+		    
+		    if (confMan.params.onLaRow) {
+			confMan.params.onLaRow(verto, confMan, $row, aData);
+		    }
+
+		}
+	    },
+
+        });
+    }
+
+    $.verto.confMan.prototype.modCommand = function(cmd, id, value) {
+	var confMan = this;
+	
+	confMan.verto.sendMethod("verto.broadcast", {
+	    "eventChannel": confMan.params.laData.modChannel,
+	    "data": {
+		"application": "conf-control",
+		"command": cmd,
+		"id": id, 
+		"value": value
+	    }
+	});
+    }
+
+    $.verto.confMan.prototype.destroy = function() {
+	var confMan = this;
+
+	if (confMan.lt) {
+	    confMan.lt.destroy();
+	}
+
+	if (confMan.params.laData.modChannel) {
+	    confMan.verto.unsubscribe(confMan.params.laData.modChannel);
+	}
+
+	if (confMan.params.mainModID) {
+	    $(confMan.params.mainModID).html("");
+	}
+    }
 
     $.verto.dialog = function(direction, verto, params) {
         var dialog = this;
@@ -1303,7 +1551,7 @@
             dialog.setState($.verto.enum.state.destroy);
             break;
         case $.verto.enum.state.destroy:
-            delete verto.dialogs[dialog.callID];
+	    delete verto.dialogs[dialog.callID];
             dialog.rtc.stop();
             break;
         }

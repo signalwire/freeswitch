@@ -1,6 +1,6 @@
 'use strict';
 var cur_call = null;
-var la = null;
+var confMan = null;
 var $display = $("#display");
 var verto;
 var ringing = false;
@@ -9,10 +9,10 @@ function display(msg) {
     $("#calltitle").html(msg);
 }
 
-function clearLa() {
-    if (la) {
-        la.destroy();
-        la = null;
+function clearConfMan() {
+    if (confMan) {
+        confMan.destroy();
+        confMan = null;
     }
 
     $("#conf").hide();
@@ -61,53 +61,21 @@ var callbacks = {
             console.error("pvtEvent", data.pvtData.action);
             if (data.pvtData) {
                 switch (data.pvtData.action) {
+
                 case "conference-liveArray-part":
-                    clearLa();
+                    clearConfMan();
                     break;
                 case "conference-liveArray-join":
-
-                    $(".jsDataTable").width(check_vid() ? "650px" : "550px");
-
-                    la = new $.verto.liveTable(verto, data.pvtData.laChannel, data.pvtData.laName, $('#example'), {
-                        subParams: {
-                            callID: dialog.callID
-                        },
-
-                        "onChange": function(obj, args) {
-                            //var len = obj.asArray().length;
-                            $("#mcount").text("Conference Members: " + " (" + obj.arrayLen() + " Total)");
-                        },
-
-                        "aaData": [],
-                        "aoColumns": [{
-                            "sTitle": "ID"
-                        },
-                        {
-                            "sTitle": "Number"
-                        },
-                        {
-                            "sTitle": "Name"
-                        },
-                        {
-                            "sTitle": "Codec"
-                        },
-                        {
-                            "sTitle": "Status",
-                            "sWidth": check_vid() ? "300px" : "150px"
-                        }],
-                        "bAutoWidth": true,
-                        "bDestroy": true,
-                        "bSort": false,
-                        "bInfo": false,
-                        "bFilter": false,
-                        "bLengthChange": false,
-                        "bPaginate": false,
-                        "iDisplayLength": 1000,
-
-                        "oLanguage": {
-                            "sEmptyTable": "The Conference is Empty....."
-                        }
-                    });
+                    clearConfMan();
+		    confMan = new $.verto.confMan(verto, {
+			tableID: "#conf_list",
+			statusID: "#conf_count",
+			mainModID: "#conf_mod",
+			displayID: "#conf_display",
+			dialog: dialog,
+			hasVid: check_vid(),
+			laData: data.pvtData
+		    });
 
                     $("#conf").show();
 
@@ -177,7 +145,7 @@ var callbacks = {
             break;
         case $.verto.enum.state.hangup:
         case $.verto.enum.state.destroy:
-            clearLa();
+            clearConfMan();
             goto_page("main");
             cur_call = null;
             break;
@@ -306,6 +274,8 @@ function pop(id, cname, dft) {
 
 
 function init() {
+    cur_call = null;
+
     pop("#ext", "verto_demo_ext", "3500");
     pop("#name", "verto_demo_name", "FreeSWITCH User");
     pop("#cid", "verto_demo_cid", "1008");
@@ -351,8 +321,7 @@ function init() {
             "minWidth": "1280",
             "minHeight": "720"
         }
-    },
-    callbacks);
+    },callbacks);
 
     $("#login").change(function(e) {
         $("#cid").val(e.currentTarget.value);

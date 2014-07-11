@@ -451,8 +451,6 @@
         var x = 0;
 
         peer.onicecandidate = function(event) {
-            console.log("WTF ICE", event);
-
             if (event.candidate) {
                 options.onICE(event.candidate);
             } else {

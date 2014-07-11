@@ -368,18 +368,25 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block)
 ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 {
 	size_t r;
+	int sanity = 2000;
 
 	if (wsh->ssl) {
 		do {
 			r = SSL_write(wsh->ssl, data, bytes);
-		} while (r == -1 && SSL_get_error(wsh->ssl, r) == SSL_ERROR_WANT_WRITE);
+			if (sanity < 2000) {
+				ms_sleep(1);
+			}
+		} while (--sanity > 0 && r == -1 && SSL_get_error(wsh->ssl, r) == SSL_ERROR_WANT_WRITE);
 
 		return r;
 	}
 
 	do {
 		r = send(wsh->sock, data, bytes, 0);
-	} while (r == -1 && xp_is_blocking(xp_errno()));
+		if (sanity < 2000) {
+			ms_sleep(1);
+		}
+	} while (--sanity > 0 && r == -1 && xp_is_blocking(xp_errno()));
 
 	//if (r<0) {
 		//printf("wRITE FAIL: %s\n", strerror(errno));
