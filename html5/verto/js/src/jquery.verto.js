@@ -1268,6 +1268,22 @@
 	    
 	}
 	
+	var row_callback = null;
+
+	if (confMan.params.laData.role === "moderator") { 
+	    row_callback = function(nRow, aData, iDisplayIndex, iDisplayIndexFull) {
+		if (!aData[5]) {
+		    var $row = $('td:eq(5)', nRow);
+		    genControls($row, aData);
+		    
+		    if (confMan.params.onLaRow) {
+			confMan.params.onLaRow(verto, confMan, $row, aData);
+		    }
+
+		}
+	    };
+	}
+	
         confMan.lt = new $.verto.liveTable(verto, confMan.params.laData.laChannel, confMan.params.laData.laName, $(confMan.params.tableID), {
             subParams: {
                 callID: confMan.params.dialog ? confMan.params.dialog.callID : null
@@ -1316,19 +1332,7 @@
                 "sEmptyTable": "The Conference is Empty....."
             },
 
-
-	    "fnRowCallback": function(nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-
-		if (!aData[5]) {
-		    var $row = $('td:eq(5)', nRow);
-		    genControls($row, aData);
-		    
-		    if (confMan.params.onLaRow) {
-			confMan.params.onLaRow(verto, confMan, $row, aData);
-		    }
-
-		}
-	    },
+	    "fnRowCallback": row_callback
 
         });
     }
