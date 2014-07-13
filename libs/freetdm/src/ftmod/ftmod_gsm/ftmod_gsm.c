@@ -60,18 +60,6 @@
 
 #include <private/ftdm_core.h>
 
-// Debug
-#define LOG_SIG_DATA	 0
-#define DEBUG_STATES	 0
-
-
-#if  DEBUG_STATES // state debugging 
-#define STATE_ADVANCE_LOG_LEVEL		FTDM_LOG_CRIT
-#else
-#define STATE_ADVANCE_LOG_LEVEL		FTDM_LOG_DEBUG
-#endif
-
-
 /********************************************************************************/
 /*                                                                              */
 /*                                  MACROS                                      */
@@ -177,7 +165,6 @@ static ftdm_io_interface_t g_ftdm_gsm_interface;
 /********************************************************************************/
 static int read_channel(ftdm_channel_t *ftdm_chan , const void *buf, int size)
 {
-	
 	ftdm_size_t outsize = size;
 	ftdm_status_t status = ftdm_channel_read(ftdm_chan, (void *)buf, &outsize);
 	if (FTDM_FAIL == status) {
@@ -189,11 +176,6 @@ static int read_channel(ftdm_channel_t *ftdm_chan , const void *buf, int size)
 
 int on_wat_span_write(unsigned char span_id, void *buffer, unsigned len)
 {
-
-#if 	 LOG_SIG_DATA
-		fprintf(stdout,  " Out Data ====================>>> %s \r\n (%d) - %d\n", (char *)buffer, len, (int) span_id);
-#endif
-
 	ftdm_span_t *span = NULL;
 	ftdm_status_t status = FTDM_FAIL;
 	ftdm_gsm_span_data_t *gsm_data = NULL;
@@ -211,15 +193,7 @@ int on_wat_span_write(unsigned char span_id, void *buffer, unsigned len)
 		ftdm_log(FTDM_LOG_ERROR, "Failed to write %d bytes to d-channel in span %s\n", len, span->name);
 		return -1;
 	}
-
-//#if 	 LOG_SIG_DATA
-//	fprintf(stdout,  "\r\n==================== len=%d outsize=%d \r\n", len, (int)outsize);
-//#endif
-
-	fflush(stdout);
 	return len;
-
-
 }
 
 static void on_wat_span_status(unsigned char span_id, wat_span_status_t *status)
@@ -260,9 +234,7 @@ static void on_wat_span_status(unsigned char span_id, wat_span_status_t *status)
 void on_wat_con_ind(unsigned char span_id, uint8_t call_id, wat_con_event_t *con_event)
 {
 	ftdm_span_t *span = NULL;
-	//ftdm_status_t ftdm_status = FTDM_FAIL;
 	ftdm_gsm_span_data_t *gsm_data = NULL;
-	//fprintf(stdout, "s%d: Incoming call (id:%d) Calling Number:%s  Calling Name:\"%s\" type:%d plan:%d\n", span_id, call_id, con_event->calling_num.digits, con_event->calling_name, con_event->calling_num.type, con_event->calling_num.plan);
 	
 	ftdm_log(FTDM_LOG_INFO, "s%d: Incoming call (id:%d) Calling Number:%s  Calling Name:\"%s\" type:%d plan:%d\n", span_id, call_id, con_event->calling_num.digits, con_event->calling_name, con_event->calling_num.type, con_event->calling_num.plan);
 	
@@ -707,7 +679,7 @@ static ftdm_state_map_t gsm_state_map = {
 static ftdm_status_t ftdm_gsm_state_advance(ftdm_channel_t *ftdmchan)
 {
 
-	ftdm_log_chan(ftdmchan, STATE_ADVANCE_LOG_LEVEL , "Executing state handler for %s\n", ftdm_channel_state2str(ftdmchan->state));
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Executing state handler for %s\n", ftdm_channel_state2str(ftdmchan->state));
 	
 	ftdm_channel_complete_state(ftdmchan);
 
@@ -1054,7 +1026,6 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_gsm_configure_span_signaling)
 
 	gsm_data->span = span;
 
-	fprintf(stdout, "Configuring wat span %d %s \r\n", span->span_id, span->name);
 	if (wat_span_config(span->span_id, &span_config)) {
 		ftdm_log(FTDM_LOG_ERROR, "Failed to configure span %s for GSM signaling!!\n", span->name);
 		return FTDM_FAIL;
