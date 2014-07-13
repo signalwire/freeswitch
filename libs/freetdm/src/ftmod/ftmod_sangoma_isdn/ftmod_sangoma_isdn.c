@@ -1304,7 +1304,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_sangoma_isdn_span_config)
 	span->indicate = ftdm_sangoma_isdn_indicate;
 	span->channel_request = NULL;
 	span->signal_cb	= sig_cb;
-	span->sig_dtmf = ftdm_sangoma_isdn_dtmf;
+	span->sig_queue_dtmf = ftdm_sangoma_isdn_dtmf;
 	span->get_channel_sig_status = ftdm_sangoma_isdn_get_chan_sig_status;
 	span->set_channel_sig_status = ftdm_sangoma_isdn_set_chan_sig_status;
 	span->get_span_sig_status = ftdm_sangoma_isdn_get_span_sig_status;

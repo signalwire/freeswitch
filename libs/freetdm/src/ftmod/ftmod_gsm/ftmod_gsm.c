@@ -879,6 +879,30 @@ static ftdm_status_t init_wat_lib(void)
 	return FTDM_SUCCESS;
 }
 
+WAT_AT_CMD_RESPONSE_FUNC(on_dtmf_sent)
+{
+	ftdm_channel_t *ftdmchan = obj;
+	ftdm_span_t *span = ftdmchan->span;
+	int i = 0;
+
+	if (success == WAT_TRUE) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "DTMF successfully transmitted on span %s\n", span->name);
+	} else {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Command execution failed on span %s. Err: %s\n", span->name, error);
+	}
+
+	for (i = 0; tokens[i]; i++) {
+		ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "%s\n", tokens[i]);
+	}
+	return i;
+}
+
+static ftdm_status_t ftdm_gsm_send_dtmf(ftdm_channel_t *ftdmchan, const char* dtmf)
+{
+	ftdm_gsm_span_data_t *gsm_data = ftdmchan->span->signal_data;
+	wat_send_dtmf(ftdmchan->span->span_id, gsm_data->call_id, dtmf, on_dtmf_sent, ftdmchan);
+	return FTDM_SUCCESS;
+}
 
 static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_gsm_configure_span_signaling)
 {
@@ -956,9 +980,6 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_gsm_configure_span_signaling)
 	gsm_data->dchan = dchan;
 	gsm_data->bchan = bchan;
 
-	//sprintf(gsm_data->dchan->chan_name, "%s\t\n", "GSM dchan");
-	//sprintf(gsm_data->bchan->chan_name, "%s\r\n", "GSM bchan");
-
 	for (paramindex = 0; ftdm_parameters[paramindex].var; paramindex++) {
 		var = ftdm_parameters[paramindex].var;
 		val = ftdm_parameters[paramindex].val;
@@ -984,7 +1005,6 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_gsm_configure_span_signaling)
 				span_config.hardware_dtmf = WAT_FALSE;
 			}
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring GSM span %s with hardware dtmf %s\n", span->name, val);
-			ftdm_channel_set_feature(gsm_data->bchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT);
 		} else {
 			ftdm_log(FTDM_LOG_ERROR, "Ignoring unknown GSM parameter '%s'", var);
 		}
@@ -995,6 +1015,10 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_gsm_configure_span_signaling)
 	span->stop = ftdm_gsm_stop;
 	span->sig_read = NULL;
 	span->sig_write = NULL;
+	if (span_config.hardware_dtmf == WAT_TRUE) {
+		span->sig_send_dtmf = ftdm_gsm_send_dtmf;
+		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_SIG_DTMF_DETECTION);
+	}
 
 	span->signal_cb = sig_cb;
 	span->signal_type = FTDM_SIGTYPE_GSM;

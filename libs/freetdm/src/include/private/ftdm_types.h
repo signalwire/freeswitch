@@ -268,9 +268,11 @@ typedef enum {
 #define FTDM_CHANNEL_DIGITAL_MEDIA   (1ULL << 36)
 /*!< Native signaling bridge is enabled */
 #define FTDM_CHANNEL_NATIVE_SIGBRIDGE (1ULL << 37)
+/*!< Native signaling DTMF detection */
+#define FTDM_CHANNEL_SIG_DTMF_DETECTION (1ULL << 38)
 
 /*!< This no more flags after this flag */
-#define FTDM_CHANNEL_MAX_FLAG 	     (1ULL << 38)
+#define FTDM_CHANNEL_MAX_FLAG 	     (1ULL << 39)
 /*!<When adding a new flag, need to update ftdm_io.c:channel_flag_strs */
 
 #include "ftdm_state.h"

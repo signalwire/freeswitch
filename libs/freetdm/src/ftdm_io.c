@@ -59,6 +59,8 @@ struct tm *localtime_r(const time_t *clock, struct tm *result);
 #define FTDM_HALF_DTMF_PAUSE 500
 #define FTDM_FULL_DTMF_PAUSE 1000
 
+#define FTDM_CHANNEL_SW_DTMF_ALLOWED(ftdmchan) (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT) && !ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_DTMF_DETECTION))
+
 ftdm_time_t time_last_throttle_log = 0;
 ftdm_time_t time_current_throttle_log = 0;
 
@@ -105,6 +107,7 @@ static val_str_t channel_flag_strs[] =  {
 	{ "blocking",  FTDM_CHANNEL_BLOCKING},
 	{ "media",  FTDM_CHANNEL_DIGITAL_MEDIA},
 	{ "native-sigbridge",  FTDM_CHANNEL_NATIVE_SIGBRIDGE},
+	{ "sig-dtmf-detection", FTDM_CHANNEL_SIG_DTMF_DETECTION},
 	{ "invalid",  FTDM_CHANNEL_MAX_FLAG},
 };
 
@@ -3370,7 +3373,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 		{
 			/* if they don't have thier own, use ours */
 			if (FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
-				if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT)) {
+				if (FTDM_CHANNEL_SW_DTMF_ALLOWED(ftdmchan)) {
 					teletone_dtmf_detect_init (&ftdmchan->dtmf_detect, ftdmchan->rate);
 					ftdm_set_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
 					ftdm_set_flag(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF);
@@ -3383,9 +3386,9 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 	case FTDM_COMMAND_DISABLE_DTMF_DETECT:
 		{
 			if (FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
-				if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT)) {
-								teletone_dtmf_detect_init (&ftdmchan->dtmf_detect, ftdmchan->rate);
-								ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
+				if (FTDM_CHANNEL_SW_DTMF_ALLOWED(ftdmchan)) {
+					teletone_dtmf_detect_init (&ftdmchan->dtmf_detect, ftdmchan->rate);
+					ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
 					ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF);
 					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Disabled software DTMF detector\n");
 					GOTO_STATUS(done, FTDM_SUCCESS);
@@ -3461,8 +3464,11 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 		break;
 	case FTDM_COMMAND_SEND_DTMF:
 		{
-			if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_GENERATE)) {
-				char *digits = FTDM_COMMAND_OBJ_CHAR_P;
+			char *digits = FTDM_COMMAND_OBJ_CHAR_P;
+			if (ftdmchan->span->sig_send_dtmf) {
+				status = ftdmchan->span->sig_send_dtmf(ftdmchan, digits);
+				GOTO_STATUS(done, status);
+			} else if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_GENERATE)) {
 				
 				if ((status = ftdmchan_activate_dtmf_buffer(ftdmchan)) != FTDM_SUCCESS) {
 					GOTO_STATUS(done, status);
@@ -3773,7 +3779,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, cons
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Queuing DTMF %s (debug = %d)\n", dtmf, ftdmchan->dtmfdbg.enabled);
 
-	if (ftdmchan->span->sig_dtmf && (ftdmchan->span->sig_dtmf(ftdmchan, dtmf) == FTDM_BREAK)) {
+	if (ftdmchan->span->sig_queue_dtmf && (ftdmchan->span->sig_queue_dtmf(ftdmchan, dtmf) == FTDM_BREAK)) {
 		/* Signalling module wants to absorb this DTMF event */
 		return FTDM_SUCCESS;
 	}
@@ -4212,7 +4218,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, v
 			}
 		}
 
-		if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT) && !ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT)) {
+		if (FTDM_CHANNEL_SW_DTMF_ALLOWED(ftdmchan) && ftdm_test_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT)) {
 			teletone_hit_type_t hit;
 			char digit_char;
 			uint32_t dur;
