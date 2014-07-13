@@ -913,6 +913,8 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_gsm_configure_span_signaling)
 	ftdm_channel_t *ftdmchan = NULL;
 	ftdm_channel_t *dchan = NULL;
 	ftdm_channel_t *bchan = NULL;
+	ftdm_bool_t hwdtmf_detect = FTDM_FALSE;
+	ftdm_bool_t hwdtmf_generate = FTDM_FALSE;
 
 	unsigned paramindex = 0;
 	const char *var = NULL;
@@ -999,8 +1001,15 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_gsm_configure_span_signaling)
 			span_config.debug_mask = wat_str2debug(val);
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring GSM span %s with debug mask %s == 0x%X\n", span->name, val, span_config.debug_mask);
 		} else if (!strcasecmp(var, "hwdtmf")) {
-			if (ftdm_true(val)) {
-				span_config.hardware_dtmf = WAT_TRUE;
+			hwdtmf_detect = FTDM_FALSE;
+			hwdtmf_generate = FTDM_FALSE;
+			if (!strcasecmp(val, "generate")) {
+				hwdtmf_generate = FTDM_TRUE;
+			} else if (!strcasecmp(val, "detect")) {
+				hwdtmf_detect = FTDM_TRUE;
+			} else if (!strcasecmp(val, "both") || ftdm_true(val)) {
+				hwdtmf_detect = FTDM_TRUE;
+				hwdtmf_generate = FTDM_TRUE;
 			} else {
 				span_config.hardware_dtmf = WAT_FALSE;
 			}
@@ -1015,11 +1024,15 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_gsm_configure_span_signaling)
 	span->stop = ftdm_gsm_stop;
 	span->sig_read = NULL;
 	span->sig_write = NULL;
-	if (span_config.hardware_dtmf == WAT_TRUE) {
-		span->sig_send_dtmf = ftdm_gsm_send_dtmf;
-		ftdm_set_flag(ftdmchan, FTDM_CHANNEL_SIG_DTMF_DETECTION);
+	if (hwdtmf_detect || hwdtmf_generate) {
+		span_config.hardware_dtmf = WAT_TRUE;
+		if (hwdtmf_generate) {
+			span->sig_send_dtmf = ftdm_gsm_send_dtmf;
+		}
+		if (hwdtmf_detect) {
+			ftdm_set_flag(ftdmchan, FTDM_CHANNEL_SIG_DTMF_DETECTION);
+		}
 	}
-
 	span->signal_cb = sig_cb;
 	span->signal_type = FTDM_SIGTYPE_GSM;
 	span->signal_data = gsm_data;
