@@ -1721,8 +1721,8 @@ static FIO_CHANNEL_DESTROY_FUNCTION(wanpipe_channel_destroy)
 		/* enable HW DTMF. As odd as it seems. Why enable when the channel is being destroyed and won't be used anymore?
 		 * because that way we can transfer the DTMF state back to the driver, if we're being restarted we will set again
 		 * the FEATURE_DTMF flag and use HW DTMF, if we don't enable here, then on module restart we won't see
-		 * HW DTMF available and will use software */
-		if (ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT)) {
+		 * HW DTMF available and will use software (except for GSM cards which enable hw dtmf on the signaling module) */
+		if (ftdmchan->span->trunk_type != FTDM_TRUNK_GSM && ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT)) {
 			wanpipe_tdm_api_t tdm_api;
 			int err;
 			memset(&tdm_api, 0, sizeof(tdm_api));
