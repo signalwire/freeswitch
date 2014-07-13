@@ -547,7 +547,7 @@ static ftdm_status_t ftdm_gsm_start(ftdm_span_t *span)
 {
 	if (wat_span_start(span->span_id)) {
 		ftdm_log(FTDM_LOG_ERROR, "Failed to start span %s!\n", span->name);
-		return FTDM_SUCCESS;
+		return FTDM_FAIL;
 	}
 
 	return ftdm_thread_create_detached(ftdm_gsm_run, span);
@@ -555,6 +555,10 @@ static ftdm_status_t ftdm_gsm_start(ftdm_span_t *span)
 
 static ftdm_status_t ftdm_gsm_stop(ftdm_span_t *span)
 {
+	if (wat_span_stop(span->span_id)) {
+		ftdm_log(FTDM_LOG_ERROR, "Failed to stop span %s!\n", span->name);
+		return FTDM_FAIL;
+	}
 	return FTDM_SUCCESS;
 }
 

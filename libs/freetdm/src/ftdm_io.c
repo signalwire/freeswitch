@@ -690,14 +690,10 @@ static ftdm_status_t ftdm_span_destroy(ftdm_span_t *span)
 	ftdm_status_t status = FTDM_SUCCESS;
 	unsigned j;
 
+	/* The signaling must be already stopped (this is just a sanity check, should never happen) */
+	ftdm_assert_return(!ftdm_test_flag(span, FTDM_SPAN_STARTED), FTDM_FAIL, "Signaling for span %s has not been stopped, refusing to destroy span\n");
+
 	ftdm_mutex_lock(span->mutex);
-
-	/* stop the signaling */
-
-	/* This is a forced stopped */
-	ftdm_clear_flag(span, FTDM_SPAN_NON_STOPPABLE);
-	
-	ftdm_span_stop(span);
 
 	/* destroy the channels */
 	ftdm_clear_flag(span, FTDM_SPAN_CONFIGURED);
@@ -6040,6 +6036,17 @@ FT_DECLARE(ftdm_status_t) ftdm_group_create(ftdm_group_t **group, const char *na
 	return status;
 }
 
+static void ftdm_group_destroy(ftdm_group_t **group)
+{
+	ftdm_group_t *grp = NULL;
+	ftdm_assert(group != NULL, "Group must not be null\n");
+	grp = *group;
+	ftdm_mutex_destroy(&grp->mutex);
+	ftdm_safe_free(grp->name);
+	ftdm_safe_free(grp);
+	*group = NULL;
+}
+
 static ftdm_status_t ftdm_span_trigger_signal(const ftdm_span_t *span, ftdm_sigmsg_t *sigmsg)
 {
 	if (!span->signal_cb) {
@@ -6376,10 +6383,37 @@ FT_DECLARE(uint32_t) ftdm_running(void)
 	return globals.running;
 }
 
+static void destroy_span(ftdm_span_t *span)
+{
+	if (ftdm_test_flag(span, FTDM_SPAN_CONFIGURED)) {
+		ftdm_span_destroy(span);
+	}
+	hashtable_remove(globals.span_hash, (void *)span->name);
+	ftdm_safe_free(span->dtmf_hangup);
+	ftdm_safe_free(span->type);
+	ftdm_safe_free(span->name);
+	ftdm_safe_free(span);
+}
+
+static void force_stop_span(ftdm_span_t *span)
+{
+	/* This is a forced stop */
+	ftdm_clear_flag(span, FTDM_SPAN_NON_STOPPABLE);
+	ftdm_span_stop(span);
+}
+
+static void span_for_each(void (*func)(ftdm_span_t *span))
+{
+	ftdm_span_t *sp = NULL, *next = NULL;
+	for (sp = globals.spans; sp; sp = next) {
+		next = sp->next;
+		func(sp);
+	}
+}
 
 FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 {
-	ftdm_span_t *sp;
+	ftdm_group_t *grp = NULL, *next_grp = NULL;
 
 	time_end();
 
@@ -6397,45 +6431,49 @@ FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 
 	ftdm_span_close_all();
 	
+	/* Stop and destroy alls pans */
 	ftdm_mutex_lock(globals.span_mutex);
-	for (sp = globals.spans; sp;) {
-		ftdm_span_t *cur_span = sp;
-		sp = sp->next;
 
-		if (cur_span) {
-			if (ftdm_test_flag(cur_span, FTDM_SPAN_CONFIGURED)) {
-				ftdm_span_destroy(cur_span);
-			}
-
-			hashtable_remove(globals.span_hash, (void *)cur_span->name);
-			ftdm_safe_free(cur_span->dtmf_hangup);
-			ftdm_safe_free(cur_span->type);
-			ftdm_safe_free(cur_span->name);
-			ftdm_safe_free(cur_span);
-			cur_span = NULL;
-		}
-	}
+	span_for_each(force_stop_span);
+	span_for_each(destroy_span);
 	globals.spans = NULL;
+
 	ftdm_mutex_unlock(globals.span_mutex);
 
 	/* destroy signaling and io modules */
 	ftdm_unload_modules();
 
-	ftdm_global_set_logger( NULL );
+	/* Destroy hunting groups */
+	ftdm_mutex_lock(globals.group_mutex);
+	grp = globals.groups;
+	while (grp) {
+		next_grp = grp->next;
+		ftdm_group_destroy(&grp);
+		grp = next_grp;
+	}
+	ftdm_mutex_unlock(globals.group_mutex);
 
 	/* finally destroy the globals */
 	ftdm_mutex_lock(globals.mutex);
+
 	ftdm_sched_destroy(&globals.timingsched);
+
 	hashtable_destroy(globals.interface_hash);
 	hashtable_destroy(globals.module_hash);	
 	hashtable_destroy(globals.span_hash);
 	hashtable_destroy(globals.group_hash);
-	ftdm_mutex_unlock(globals.mutex);
-	ftdm_mutex_destroy(&globals.mutex);
+
 	ftdm_mutex_destroy(&globals.span_mutex);
 	ftdm_mutex_destroy(&globals.group_mutex);
 	ftdm_mutex_destroy(&globals.call_id_mutex);
 
+	ftdm_mutex_unlock(globals.mutex);
+
+	ftdm_mutex_destroy(&globals.mutex);
+
+	ftdm_sched_global_destroy();
+
+	ftdm_global_set_logger(NULL);
 	memset(&globals, 0, sizeof(globals));
 	return FTDM_SUCCESS;
 }
