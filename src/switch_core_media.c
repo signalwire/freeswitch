@@ -7655,7 +7655,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 							maxlen = atol(p);
 							if ((q = strchr(p, ':'))) {
 								q++;
-								max_drift = abs(atol(q));
+								max_drift = abs(atoi(q));
 							}
 						}
 					}

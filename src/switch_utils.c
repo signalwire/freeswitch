@@ -1560,10 +1560,6 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *ma
 				goto doh;
 			}
 
-			if (iface_out.sin6_addr.s6_addr == 0) {
-				goto doh;
-			}
-
 			inet_ntop(AF_INET6, (const void *) &iface_out.sin6_addr, buf, len - 1);
 			status = SWITCH_STATUS_SUCCESS;
 		}

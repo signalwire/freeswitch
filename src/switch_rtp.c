@@ -6341,7 +6341,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 	if (!switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO)) {
 		this_ts = ntohl(send_msg->header.ts);
 
-		if (abs(rtp_session->last_write_ts - this_ts) > 16000) {
+		if ((this_ts - rtp_session->last_write_ts) > 16000) {
 			rtp_session->flags[SWITCH_RTP_FLAG_RESET] = 1;
 		}
 

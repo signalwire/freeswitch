@@ -166,6 +166,13 @@ SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel, s
 													switch_channel_flag_t flag);
 
 /*!
+  \brief Takes presence_data_cols as a parameter or as a channel variable and copies them to channel profile variables
+  \param channel the channel on which to set the channel profile variables
+  \param presence_data_cols is a colon separated list of channel variables to copy to channel profile variables
+ */
+SWITCH_DECLARE(void) switch_channel_set_presence_data_vals(switch_channel_t *channel, const char *presence_data_cols);
+
+/*!
   \brief Fire A presence event for the channel
   \param channel the channel to initilize
   \param rpid the rpid if for the icon to use
