@@ -14,6 +14,19 @@
       font-weight: normal;
       height: 27px;
       }
+
+      .ctlbtn {
+        border: 0px;
+	color: #eeeeee;
+	background-color: #0000ae;
+	font-face: arial;
+      }     	      
+
+      .ctlbtn:hover {
+      color: #ffffae;
+      cursor: pointer;
+      }	
+
     </style>
 
   </head>
@@ -74,8 +87,6 @@
 
       <div id="conf">
 	<div style="color:black;font-family: verdana" align="center" id="conf_count"></div>
-	<div id="conf_mod"></div>
-	<div id="conf_display"></div>
 	<table width="800" cellspacing="0" cellpadding="0" border="0" align="center" id="conf_list" class="jsDataTable">
 	</table>
       </div>
@@ -105,12 +116,13 @@
 	<button class="dtmf" data-inline="true">0</button>
 	<button class="dtmf" data-inline="true">#</button>
       </div>
+      	<div id="conf_mod"></div>
+	<div style="color:blue" id="conf_display"></div>
 
-      <br>
       <button data-inline="true" id="hold">HOLD</button>
       <button data-inline="true" id="hupbtn">End Call</button>
       <button data-inline="true" class="startxferbtn">Transfer</button>
-      <Br><br>
+<br><br>
       <img src="img/verto_black_web.gif" width="300"><br><br>
       <div id="media">	
 	<video width=800 id="webcam" autoplay="autoplay" hidden="true"></video>

@@ -1150,10 +1150,10 @@
 	    var div_id = "confman_" + confMan.serno;
 
 	    var html =	"<div id='" + div_id + "'><br>" +
-		"<button id='" + play_id + "'>Play</button>" +
-		"<button id='" + stop_id + "'>Stop</button>" +
-		"<button id='" + recording_id + "'>Record</button>" +
-		"<button id='" + rec_stop_id + "'>Record Stop</button>" 
+		"<button class='ctlbtn' id='" + play_id + "'>Play</button>" +
+		"<button class='ctlbtn' id='" + stop_id + "'>Stop</button>" +
+		"<button class='ctlbtn' id='" + recording_id + "'>Record</button>" +
+		"<button class='ctlbtn' id='" + rec_stop_id + "'>Record Stop</button>" 
 
 	    + "<br><br></div>";
 
@@ -1189,10 +1189,10 @@
 
 	    
 	    var html = "<div id='" + box_id + "'>" + 
-		"<button id='" + kick_id + "'>KICK</button>" + 
-		"<button id='" + tmute_id + "'>MUTE</button>" +
-		"<button id='" + voldn_id + "'>vol -</button>" +
-		"<button id='" + volup_id + "'>vol +</button>" +
+		"<button class='ctlbtn' id='" + kick_id + "'>KICK</button>" + 
+		"<button class='ctlbtn' id='" + tmute_id + "'>MUTE</button>" +
+		"<button class='ctlbtn' id='" + voldn_id + "'>vol -</button>" +
+		"<button class='ctlbtn' id='" + volup_id + "'>vol +</button>" +
 		"</div>"
 	    ;
 	    
@@ -1244,6 +1244,7 @@
 	    
 	    if (confMan.params.mainModID) {
 		genMainMod($(confMan.params.mainModID));
+		$(confMan.params.displayID).html("Moderator Controls Ready<br><br>")
 	    } else {
 		$(confMan.params.mainModID).html("");
 	    }
@@ -1260,7 +1261,7 @@
 			    clearTimeout(confMan.lastTimeout);
 			    confMan.lastTimeout = 0;
 			}
-			confMan.lastTimeout = setTimeout(function() { $(confMan.params.displayID).html("")}, 4000);
+			confMan.lastTimeout = setTimeout(function() { $(confMan.params.displayID).html("Moderator Controls Ready<br><br>")}, 4000);
 		    }
 
 		}
