@@ -1416,7 +1416,12 @@ static switch_status_t verto_on_hangup(switch_core_session_t *session)
 
 	// get the jsock and send hangup notice
 	if (!tech_pvt->remote_hangup_cause && (jsock = get_jsock(tech_pvt->jsock_uuid))) {
-		cJSON *msg = jrpc_new_req("verto.bye", tech_pvt->call_id, NULL);
+		cJSON *params = NULL;
+		cJSON *msg = jrpc_new_req("verto.bye", tech_pvt->call_id, &params);
+		switch_call_cause_t cause = switch_channel_get_cause(tech_pvt->channel);
+		
+		cJSON_AddItemToObject(params, "causeCode", cJSON_CreateNumber(cause));
+		cJSON_AddItemToObject(params, "cause", cJSON_CreateString(switch_channel_cause2str(cause)));
 		ws_write_json(jsock, &msg, SWITCH_TRUE);
 
 		switch_thread_rwlock_unlock(jsock->rwlock);

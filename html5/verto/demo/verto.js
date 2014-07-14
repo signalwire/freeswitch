@@ -145,7 +145,9 @@ var callbacks = {
             goto_page("incall");
             break;
         case $.verto.enum.state.hangup:
+	    $("#main_info").html("Call ended with cause: " + d.cause);
         case $.verto.enum.state.destroy:
+	    $("#hangup_cause").html("");
             clearConfMan();
             goto_page("main");
             cur_call = null;
@@ -250,6 +252,8 @@ $("#callbtn").click(function() {
     if (cur_call) {
         return;
     }
+
+    $("#main_info").html("Trying");
 
     cur_call = verto.newCall({
         destination_number: $("#ext").val(),

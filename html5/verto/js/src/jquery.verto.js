@@ -421,13 +421,13 @@
 
                 switch (data.method) {
                 case 'verto.bye':
-                    dialog.hangup();
+                    dialog.hangup(data.params);
                     break;
                 case 'verto.answer':
-                    dialog.handleAnswer(data.params.sdp);
+                    dialog.handleAnswer(data.params);
                     break;
                 case 'verto.media':
-                    dialog.handleMedia(data.params.sdp);
+                    dialog.handleMedia(data.params);
                     break;
                 case 'verto.display':
                     dialog.handleDisplay(data.params);
@@ -1537,6 +1537,14 @@
 
         dialog.lastState = dialog.state;
         dialog.state = state;
+	
+	if (!dialog.causeCode) {
+	    dialog.causeCode = 16;
+	}
+
+	if (!dialog.cause) {
+	    dialog.cause = "NORMAL CLEARING";
+	}
 
         if (dialog.callbacks.onDialogState) {
             dialog.callbacks.onDialogState(this);
@@ -1613,8 +1621,18 @@
 
     };
 
-    $.verto.dialog.prototype.hangup = function(sdp) {
+    $.verto.dialog.prototype.hangup = function(params) {
         var dialog = this;
+
+	if (params) {
+	    if (params.causeCode) {
+		dialog.causeCode = params.causeCode;
+	    }
+	
+	    if (params.cause) {
+		dialog.cause = params.cause;
+	    }
+	}
 
         if (dialog.state.val > $.verto.enum.state.new.val && dialog.state.val < $.verto.enum.state.hangup.val) {
             dialog.setState($.verto.enum.state.hangup);
@@ -1761,7 +1779,7 @@
         }
     };
 
-    $.verto.dialog.prototype.handleAnswer = function(sdp) {
+    $.verto.dialog.prototype.handleAnswer = function(params) {
         var dialog = this;
 
         if (dialog.state.val >= $.verto.enum.state.active.val) {
@@ -1771,14 +1789,14 @@
         if (dialog.state.val >= $.verto.enum.state.early.val) {
             dialog.setState($.verto.enum.state.active);
         } else {
-            dialog.rtc.answer(sdp, function() {
+            dialog.rtc.answer(params.sdp, function() {
                 dialog.setState($.verto.enum.state.active);
             },
             function(e) {
                 console.error(e);
                 dialog.hangup();
             });
-            console.log("ANSWER SDP", sdp);
+            console.log("ANSWER SDP", params.sdp);
         }
     };
 
@@ -1815,21 +1833,21 @@
         dialog.sendMessage($.verto.enum.message.display, {});
     };
 
-    $.verto.dialog.prototype.handleMedia = function(sdp) {
+    $.verto.dialog.prototype.handleMedia = function(params) {
         var dialog = this;
 
         if (dialog.state.val >= $.verto.enum.state.early.val) {
             return;
         }
 
-        dialog.rtc.answer(sdp, function() {
+        dialog.rtc.answer(params.sdp, function() {
             dialog.setState($.verto.enum.state.early);
         },
         function(e) {
             console.error(e);
             dialog.hangup();
         });
-        console.log("EARLY SDP", sdp);
+        console.log("EARLY SDP", params.sdp);
     };
 
     $.verto.ENUM = function(s) {
