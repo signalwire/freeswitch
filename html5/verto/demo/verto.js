@@ -139,6 +139,7 @@ var callbacks = {
 
             break;
 
+        case $.verto.enum.state.early:
         case $.verto.enum.state.active:
             display("Talking to: " + d.cidString());
             goto_page("incall");
