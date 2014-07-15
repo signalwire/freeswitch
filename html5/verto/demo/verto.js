@@ -368,6 +368,13 @@ function init() {
 $(document).ready(function() {
     init();
     $("#page-incall").on("pagebeforechange", function(event) {});
+
+    if (window.location.hash) {
+	var hash = window.location.hash.substring(1);
+	$("#ext").val(hash);
+	$("#callbtn").trigger("click");
+    }
+
 });
 
 $(document).bind("pagebeforechange", function(e, data) {
