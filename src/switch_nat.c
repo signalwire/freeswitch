@@ -149,9 +149,13 @@ static int get_pmp_pubaddr(char *pub_addr)
 	int r = 0, i = 0, max = 5;
 	natpmpresp_t response;
 	char *pubaddr = NULL;
-	fd_set fds;
 	natpmp_t natpmp;
 	const char *err = NULL;
+	switch_pollfd_t *pollfd = NULL;
+	switch_socket_t *sock = NULL;
+	switch_memory_pool_t *pool;
+	int32_t num = 0;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if ((r = initnatpmp(&natpmp)) < 0) {
 		err = "init failed";
@@ -163,24 +167,34 @@ static int get_pmp_pubaddr(char *pub_addr)
 		goto end;
 	}
 
+	switch_core_new_memory_pool(&pool);
+
+	switch_os_sock_put(&sock, &natpmp.s, pool);
+
+	if (switch_socket_create_pollset(&pollfd, sock, SWITCH_POLLIN | SWITCH_POLLERR, pool) != SWITCH_STATUS_SUCCESS) {
+		err = "cannot create pollset";
+		goto end;
+	}
+
 	do {
 		struct timeval timeout = { 1, 0 };
 		i++;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking for PMP %d/%d\n", i, max);
 
-		FD_ZERO(&fds);
-		FD_SET(natpmp.s, &fds);
-
 		if ((r = getnatpmprequesttimeout(&natpmp, &timeout)) < 0) {
 			err = "get timeout failed";
 			goto end;
 		}
+		
+		status = switch_poll(pollfd, 1, &num, switch_interval_time_from_timeval(&timeout));
 
-		if ((r = select(FD_SETSIZE, &fds, NULL, NULL, &timeout)) < 0) {
-			err = "select failed";
+		if (!(status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_TIMEOUT)) {
+			err = "poll failed";
 			goto end;
 		}
+
 		r = readnatpmpresponseorretry(&natpmp, &response);
+
 	} while (r == NATPMP_TRYAGAIN && i < max);
 
 	if (r < 0) {
@@ -195,6 +209,8 @@ static int get_pmp_pubaddr(char *pub_addr)
 	closenatpmp(&natpmp);
 
   end:
+
+	switch_core_destroy_memory_pool(&pool);
 
 	if (err) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error checking for PMP [%s]\n", err);

@@ -1389,6 +1389,9 @@ SWITCH_DECLARE(switch_status_t) switch_pollset_poll(switch_pollset_t *pollset, s
 */
 SWITCH_DECLARE(switch_status_t) switch_socket_create_pollset(switch_pollfd_t ** poll, switch_socket_t *sock, int16_t flags, switch_memory_pool_t *pool);
 
+SWITCH_DECLARE(switch_interval_time_t) switch_interval_time_from_timeval(struct timeval *tvp);
+																
+
 /*!
   \brief Create a pollfd out of a socket
   \param pollfd the pollfd to create
@@ -1402,7 +1405,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t **po
 SWITCH_DECLARE(switch_status_t) switch_match_glob(const char *pattern, switch_array_header_t ** result, switch_memory_pool_t *pool);
 SWITCH_DECLARE(switch_status_t) switch_os_sock_get(switch_os_socket_t *thesock, switch_socket_t *sock);
 SWITCH_DECLARE(switch_status_t) switch_socket_addr_get(switch_sockaddr_t ** sa, switch_bool_t remote, switch_socket_t *sock);
-
+SWITCH_DECLARE(switch_status_t) switch_os_sock_put(switch_socket_t **sock, switch_os_socket_t *thesock, switch_memory_pool_t *pool);
 /**
  * Create an anonymous pipe.
  * @param in The file descriptor to use as input to the pipe.

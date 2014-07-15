@@ -646,7 +646,17 @@ SWITCH_DECLARE(switch_status_t) switch_thread_create(switch_thread_t ** new_thre
 	return apr_thread_create(new_thread, attr, func, data, cont);
 }
 
+SWITCH_DECLARE(switch_interval_time_t) switch_interval_time_from_timeval(struct timeval *tvp)
+{
+	return ((switch_interval_time_t)tvp->tv_sec * 1000000) + tvp->tv_usec / 1000;
+}
+
 /* socket stubs */
+
+SWITCH_DECLARE(switch_status_t) switch_os_sock_put(switch_socket_t **sock, switch_os_socket_t *thesock, switch_memory_pool_t *pool)
+{
+	return apr_os_sock_put(sock, thesock, pool);
+}
 
 SWITCH_DECLARE(switch_status_t) switch_os_sock_get(switch_os_socket_t *thesock, switch_socket_t *sock)
 {
