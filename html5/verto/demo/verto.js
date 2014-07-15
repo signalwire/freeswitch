@@ -371,8 +371,10 @@ $(document).ready(function() {
 
     if (window.location.hash) {
 	var hash = window.location.hash.substring(1);
-	$("#ext").val(hash);
-	$("#callbtn").trigger("click");
+	if (hash && !hash.contains("page-")) {
+	    $("#ext").val(hash);
+	    $("#callbtn").trigger("click");
+	}
     }
 
 });
