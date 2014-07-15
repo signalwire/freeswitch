@@ -547,7 +547,7 @@ is-scm:
 		echo ; echo ; \
 		echo "*****************************************************************************************************" ; \
 		echo "You cannot update a release tarball without a git tree.  Please clone FreeSWITCH as so:              " ; \
-		echo "  git clone git://git.freeswitch.org/freeswitch.git                                                  " ; \
+		echo "  git clone https://stash.freeswitch.org/scm/fs/freeswitch.git                                       " ; \
 		echo "*****************************************************************************************************" ; \
 		echo ; echo ; \
 		exit 1; \

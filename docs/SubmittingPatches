@@ -4,7 +4,7 @@ How to Contribute Patches to FreeSWITCH
 Download the Source Code
 ------------------------
 
-    git clone git://git.freeswitch.org/freeswitch.git
+    git clone https://stash.freeswitch.org/scm/fs/freeswitch.git
     cd freeswitch
 
 Create Your Patch
