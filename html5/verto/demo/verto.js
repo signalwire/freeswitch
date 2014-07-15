@@ -366,8 +366,24 @@ function init() {
 }
 
 $(document).ready(function() {
+    var autocall = false;
+    var hash = window.location.hash.substring(1);    
+
+    if (hash && hash.indexOf("page-") == -1) {
+	window.location.hash = "";
+	autocall = true;
+    }
+
     init();
+
     $("#page-incall").on("pagebeforechange", function(event) {});
+
+    if (autocall) {
+	$("#ext").val(hash);
+	$("#callbtn").trigger("click");
+    }
+
+
 });
 
 $(document).bind("pagebeforechange", function(e, data) {
