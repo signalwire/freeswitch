@@ -414,6 +414,11 @@
     $.verto.prototype.handleMessage = function(data) {
         var verto = this;
 
+	if (!(data && data.method)) {
+	    console.error("Invalid Data", data);
+	    return;
+	}
+
         if (data.params.callID) {
             var dialog = verto.dialogs[data.params.callID];
 
@@ -436,7 +441,7 @@
                     dialog.handleInfo(data.params);
                     break;
                 default:
-                    console.debug("INVALID METHOD OR NON-EXISTANT CALL REFERENCE IGNORED", data.method);
+                    console.debug("INVALID METHOD OR NON-EXISTANT CALL REFERENCE IGNORED", dialog, data.method);
                     break;
                 }
             } else {
