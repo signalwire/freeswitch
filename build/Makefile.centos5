@@ -29,7 +29,7 @@ freeswitch.git/configure: freeswitch.git/bootstrap.sh
 	cd freeswitch.git && sh bootstrap.sh
 
 freeswitch.git/bootstrap.sh: has-git
-	test -d freeswitch.git || git clone git://git.freeswitch.org/freeswitch.git freeswitch.git
+	test -d freeswitch.git || git clone https://stash.freeswitch.org/scm/fs/freeswitch.git  freeswitch.git
 
 install: freeswitch
 	cd freeswitch.git && make install

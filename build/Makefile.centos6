@@ -19,7 +19,7 @@ freeswitch.git/configure: freeswitch.git/bootstrap.sh
 	cd freeswitch.git && sh bootstrap.sh
 
 freeswitch.git/bootstrap.sh: has-git
-	test -d freeswitch.git || git clone git://git.freeswitch.org/freeswitch.git freeswitch.git
+	test -d freeswitch.git || git clone https://stash.freeswitch.org/scm/fs/freeswitch.git freeswitch.git
 
 rpmforge:
 	(which rpm && rpm -i http://pkgs.repoforge.org/rpmforge-release/rpmforge-release-0.5.3-1.el6.rf.x86_64.rpm) || true
