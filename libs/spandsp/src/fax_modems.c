@@ -172,7 +172,10 @@ SPAN_DECLARE_NONSTD(void) fax_modems_hdlc_tx_frame(void *user_data, const uint8_
 
     s = (fax_modems_state_t *) user_data;
 
-    hdlc_tx_frame(&s->hdlc_tx, msg, len);
+    if (len == -1)
+        hdlc_tx_restart(&s->hdlc_tx);
+    else
+        hdlc_tx_frame(&s->hdlc_tx, msg, len);
 }
 /*- End of function --------------------------------------------------------*/
 

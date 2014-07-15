@@ -298,7 +298,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 							}
 						}
 
-						switch_buffer_write(audio_buffer, abuf, olen * 2);
+						switch_buffer_write(audio_buffer, abuf, olen * 2 * source->channels);
 					}
 				}
 
@@ -308,8 +308,8 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 					break;
 				}
 
-				if (!is_open || used >= source->prebuf || (source->total && used > source->samples * 2)) {
-					used = switch_buffer_read(audio_buffer, dist_buf, source->samples * 2);
+				if (!is_open || used >= source->prebuf || (source->total && used > source->samples * 2 * source->channels)) {
+					used = switch_buffer_read(audio_buffer, dist_buf, source->samples * 2 * source->channels);
 					if (source->total) {
 						uint32_t bused = 0;
 						switch_mutex_lock(source->mutex);
@@ -548,7 +548,7 @@ static switch_status_t local_stream_file_read(switch_file_handle_t *handle, void
 {
 	local_stream_context_t *context = handle->private_info;
 	switch_size_t bytes = 0;
-	size_t need = *len * 2;
+	size_t need = *len * 2 * handle->real_channels;
 
 	if (!context->source->ready) {
 		*len = 0;
@@ -557,13 +557,13 @@ static switch_status_t local_stream_file_read(switch_file_handle_t *handle, void
 
 	switch_mutex_lock(context->audio_mutex);
 	if ((bytes = switch_buffer_read(context->audio_buffer, data, need))) {
-		*len = bytes / 2;
+		*len = bytes / 2 / handle->real_channels;
 	} else {
 		if (need > 2560) {
 			need = 2560;
 		}
 		memset(data, 255, need);
-		*len = need / 2;
+		*len = need / 2 / handle->real_channels;
 	}
 	switch_mutex_unlock(context->audio_mutex);
 	handle->sample_count += *len;

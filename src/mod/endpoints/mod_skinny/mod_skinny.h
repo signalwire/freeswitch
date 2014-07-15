@@ -120,9 +120,11 @@ struct skinny_profile {
 	char *patterns_dialplan;
 	char *patterns_context;
 	uint32_t keep_alive;
+	uint32_t digit_timeout;
 	char date_format[6];
 	int debug;
 	int auto_restart;
+	int non_blocking;
 	switch_hash_t *soft_key_set_sets_hash;
 	switch_hash_t *device_type_params_hash;
 	/* extensions */
@@ -195,12 +197,14 @@ struct listener {
 	switch_mutex_t *flag_mutex;
 	uint32_t flags;
 	time_t expire_time;
+	switch_time_t digit_timeout_time;
 	struct listener *next;
 	char *ext_voicemail;
 	char *ext_redial;
 	char *ext_meetme;
 	char *ext_pickup;
 	char *ext_cfwdall;
+	char *ext_autodial;
 };
 
 typedef struct listener listener_t;
@@ -330,7 +334,7 @@ switch_endpoint_interface_t *skinny_get_endpoint_interface();
 /* TEXT FUNCTIONS */
 /*****************************************************************************/
 #define skinny_textid2raw(label) (label > 0 ? switch_mprintf("\200%c", label) : switch_mprintf(""))
-char *skinny_expand_textid(const char *str);
+char *skinny_format_message(const char *str);
 
 #endif /* _MOD_SKINNY_H */
 

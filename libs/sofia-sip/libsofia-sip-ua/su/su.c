@@ -350,8 +350,15 @@ int su_getsocktype(su_socket_t s)
 
 int su_setreuseaddr(su_socket_t s, int reuse)
 {
-  return setsockopt(s, SOL_SOCKET, SO_REUSEADDR,
-		    (void *)&reuse, (socklen_t)sizeof(reuse));
+#ifdef SO_REUSEPORT
+	if (setsockopt(s, SOL_SOCKET, SO_REUSEPORT,
+				   (void *)&reuse, (socklen_t)sizeof(reuse)) < 0)
+		return -1;
+#endif
+	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR,
+				   (void *)&reuse, (socklen_t)sizeof(reuse)) < 0)
+		return -1;
+	return 0;
 }
 
 

@@ -295,12 +295,15 @@ build_debs () {
     }
     if ! [ -d $cow_img ]; then
       announce "Creating base $distro-$arch image..."
-      cow --create
+      local x=30
+      while ! cow --create; do
+        [ $x -lt 1 ] && break; sleep 120; x=$((x-1))
+      done
     fi
     announce "Updating base $distro-$arch image..."
-    local x=5
-    while ! cow --update; do
-      [ $x -lt 1 ] && break; sleep 60; x=$((x-1))
+    local x=30
+    while ! cow --update --override-config; do
+      [ $x -lt 1 ] && break; sleep 120; x=$((x-1))
     done
     announce "Building $distro-$arch DEBs from $dsc..."
     if $debug_hook; then

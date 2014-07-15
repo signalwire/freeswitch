@@ -47,6 +47,7 @@
 
 #include "ut_sim.h"
 
+
 int
 ut_compar(const void *a, const void *b) {
   return rand() > (RAND_MAX/2) ? -1 : 1;

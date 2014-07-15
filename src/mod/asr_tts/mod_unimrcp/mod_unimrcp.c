@@ -378,7 +378,7 @@ static switch_status_t synth_load(switch_loadable_module_interface_t *module_int
 static switch_status_t synth_shutdown();
 
 /* synthesizer's interface for FreeSWITCH */
-static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char *voice_name, int rate, switch_speech_flag_t *flags);
+static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char *voice_name, int rate, int channels, switch_speech_flag_t *flags);
 static switch_status_t synth_speech_close(switch_speech_handle_t *sh, switch_speech_flag_t *flags);
 static switch_status_t synth_speech_feed_tts(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags);
 static switch_status_t synth_speech_read_tts(switch_speech_handle_t *sh, void *data, switch_size_t *datalen, switch_speech_flag_t *flags);
@@ -1571,10 +1571,11 @@ static switch_status_t speech_channel_set_state_unlocked(speech_channel_t *schan
  * @param sh the FreeSWITCH speech handle
  * @param voice_name the voice to use
  * @param rate the sampling rate requested
+ * @param channels the number of channels requested
  * @param flags other options
  * @return SWITCH_STATUS_SUCCESS if successful, otherwise SWITCH_STATUS_FALSE
  */
-static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char *voice_name, int rate, switch_speech_flag_t *flags)
+static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char *voice_name, int rate, int channels, switch_speech_flag_t *flags)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	speech_channel_t *schannel = NULL;

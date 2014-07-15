@@ -272,6 +272,8 @@ SPAN_DECLARE(g1050_state_t *) g1050_init(int model,
                                          int packet_size,
                                          int packet_rate);
 
+SPAN_DECLARE(int) g1050_free(g1050_state_t *s);
+
 SPAN_DECLARE(void) g1050_dump_parms(int model, int speed_pattern);
 
 SPAN_DECLARE(int) g1050_put(g1050_state_t *s,

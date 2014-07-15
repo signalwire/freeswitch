@@ -399,7 +399,19 @@ static void reincarnate_protect(char **argv) {
 			sigaction(SIGTERM, &sa15_prev, NULL);
 			sigaction(SIGCHLD, &sa17_prev, NULL);
 			if (argv) {
-				execv(argv[0], argv); return;
+				if (execv(argv[0], argv) == -1) {
+					char buf[256];
+					fprintf(stderr, "Reincarnate execv() failed: %d %s\n", errno,
+							switch_strerror_r(errno, buf, sizeof(buf)));
+				}
+				fprintf(stderr, "Trying reincarnate-reexec plan B...\n");
+				if (execvp(argv[0], argv) == -1) {
+					char buf[256];
+					fprintf(stderr, "Reincarnate execvp() failed: %d %s\n", errno,
+							switch_strerror_r(errno, buf, sizeof(buf)));
+				}
+				fprintf(stderr, "Falling back to normal reincarnate behavior...\n");
+				goto refork;
 			} else goto refork;
 		}
 		goto rewait;
@@ -1214,6 +1226,7 @@ int main(int argc, char *argv[])
 
 	return ret;
 }
+
 
 /* For Emacs:
  * Local Variables:

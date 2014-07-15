@@ -41,6 +41,11 @@
 #define GEN_CONST
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
@@ -345,7 +350,7 @@ SPAN_DECLARE(void) one_way_line_model_set_mains_pickup(one_way_line_model_state_
 
     if (f)
     {
-        tone_gen_descriptor_init(&mains_tone_desc, f, (int) (level - 10.0f), f*3, (int) level, 1, 0, 0, 0, TRUE);
+        tone_gen_descriptor_init(&mains_tone_desc, f, (int) (level - 10.0f), f*3, (int) level, 1, 0, 0, 0, true);
         tone_gen_init(&s->mains_tone, &mains_tone_desc);
     }
     s->mains_interference = f;
@@ -454,9 +459,9 @@ SPAN_DECLARE(void) both_ways_line_model_set_mains_pickup(both_ways_line_model_st
 
     if (f)
     {
-        tone_gen_descriptor_init(&mains_tone_desc, f, (int) (level1 - 10.0f), f*3, (int) level1, 1, 0, 0, 0, TRUE);
+        tone_gen_descriptor_init(&mains_tone_desc, f, (int) (level1 - 10.0f), f*3, (int) level1, 1, 0, 0, 0, true);
         tone_gen_init(&s->line1.mains_tone, &mains_tone_desc);
-        tone_gen_descriptor_init(&mains_tone_desc, f, (int) (level2 - 10.0f), f*3, (int) level2, 1, 0, 0, 0, TRUE);
+        tone_gen_descriptor_init(&mains_tone_desc, f, (int) (level2 - 10.0f), f*3, (int) level2, 1, 0, 0, 0, true);
         tone_gen_init(&s->line2.mains_tone, &mains_tone_desc);
     }
     s->line1.mains_interference = f;
@@ -494,8 +499,9 @@ SPAN_DECLARE(one_way_line_model_state_t *) one_way_line_model_init(int model, fl
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) one_way_line_model_release(one_way_line_model_state_t *s)
+SPAN_DECLARE(int) one_way_line_model_free(one_way_line_model_state_t *s)
 {
+    codec_munge_free(s->munge);
     free(s);
     return 0;
 }
@@ -559,8 +565,10 @@ SPAN_DECLARE(both_ways_line_model_state_t *) both_ways_line_model_init(int model
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) both_ways_line_model_release(both_ways_line_model_state_t *s)
+SPAN_DECLARE(int) both_ways_line_model_free(both_ways_line_model_state_t *s)
 {
+    codec_munge_free(s->line1.munge);
+    codec_munge_free(s->line2.munge);
     free(s);
     return 0;
 }

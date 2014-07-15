@@ -287,7 +287,11 @@ int main(int argc, char *argv[])
 
         for (i = 0, total_image_len = 0;  i < nstrips;  i++)
             total_image_len += TIFFRawStripSize(tif, i);
-        data = malloc(total_image_len);
+        if ((data = malloc(total_image_len)) == NULL)
+        {
+            printf("Failed to allocate buffer\n");
+            exit(2);
+        }
         for (i = 0, total_len = 0;  i < nstrips;  i++, total_len += len)
         {
             if ((len = TIFFReadRawStrip(tif, i, &data[total_len], total_image_len - total_len)) < 0)
@@ -439,7 +443,11 @@ int main(int argc, char *argv[])
         printf("total %d\n", totdata);
 
         /* Read the image into memory. */
-        data = malloc(totdata);
+        if ((data = malloc(totdata)) == NULL)
+        {
+            printf("Failed to allocate buffer\n");
+            exit(2);
+        }
         off = 0;
         for (row = 0;  row < h;  row++)
         {
@@ -561,7 +569,11 @@ int main(int argc, char *argv[])
         }
         free(data);
 #else
-        data2 = malloc(totdata);
+        if ((data2 = malloc(totdata)) == NULL)
+        {
+            printf("Failed to allocate buffer\n");
+            exit(2);
+        }
         start = rdtscll();
         //if (!t42_itulab_jpeg_to_srgb(logging, &lab_param, data2, &off, data, off, &w, &h, &samples_per_pixel))
         {

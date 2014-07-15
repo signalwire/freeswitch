@@ -15,14 +15,14 @@ echo
 here=`pwd`
 
 cd $mods
-files=`ls *.dylib *.so 2>/dev/null`
+files=`ls *.so 2>/dev/null`
 cd $here
 
 for i in $files ; do
     mod=${i%%.*}
 
-    infile=`grep ^.*$mod\$ ../modules.conf`
-    commented=`grep ^\#.*$mod\$ ../modules.conf`
+    infile=`grep ^.*$mod\$ ../modules.conf | grep -v ftmod_`
+    commented=`grep ^\#.*$mod\$ ../modules.conf | grep -v ftmod_`
 
     if [ -z "$infile" ] ; then
 	echo "${on}WARNING: installed module: $i was not installed by this build.  It is not present in modules.conf.${off}"

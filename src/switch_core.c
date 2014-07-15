@@ -2421,6 +2421,10 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, void *
 		switch_console_save_history();
 		exit(0);
 		break;
+	case SCSC_REINCARNATE_NOW:
+		switch_console_save_history();
+		exit(SWITCH_STATUS_RESTART);
+		break;
 	case SCSC_SHUTDOWN_ELEGANT:
 	case SCSC_SHUTDOWN_ASAP:
 		{

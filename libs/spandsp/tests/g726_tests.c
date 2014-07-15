@@ -1193,8 +1193,8 @@ static void itu_compliance_tests(void)
 
 int main(int argc, char *argv[])
 {
-    g726_state_t enc_state;
-    g726_state_t dec_state;
+    g726_state_t *enc_state;
+    g726_state_t *dec_state;
     int opt;
     bool itutests;
     int bit_rate;
@@ -1251,13 +1251,13 @@ int main(int argc, char *argv[])
         }
 
         printf("ADPCM packing is %d\n", packing);
-        g726_init(&enc_state, bit_rate, G726_ENCODING_LINEAR, packing);
-        g726_init(&dec_state, bit_rate, G726_ENCODING_LINEAR, packing);
+        enc_state = g726_init(NULL, bit_rate, G726_ENCODING_LINEAR, packing);
+        dec_state = g726_init(NULL, bit_rate, G726_ENCODING_LINEAR, packing);
 
         while ((frames = sf_readf_short(inhandle, amp, 159)))
         {
-            adpcm = g726_encode(&enc_state, adpcmdata, amp, frames);
-            frames = g726_decode(&dec_state, amp, adpcmdata, adpcm);
+            adpcm = g726_encode(enc_state, adpcmdata, amp, frames);
+            frames = g726_decode(dec_state, amp, adpcmdata, adpcm);
             sf_writef_short(outhandle, amp, frames);
         }
         if (sf_close_telephony(inhandle))
@@ -1271,6 +1271,8 @@ int main(int argc, char *argv[])
             exit(2);
         }
         printf("'%s' transcoded to '%s' at %dbps.\n", IN_FILE_NAME, OUT_FILE_NAME, bit_rate);
+        g726_free(enc_state);
+        g726_free(dec_state);
     }
     return 0;
 }

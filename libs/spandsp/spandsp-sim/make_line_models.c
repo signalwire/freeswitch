@@ -40,17 +40,16 @@
 #include <inttypes.h>
 #include <string.h>
 #include <stdio.h>
-#include "floating_fudge.h"
 #if defined(HAVE_FFTW3_H)
 #include <fftw3.h>
 #else
 #include <fftw.h>
 #endif
-#if defined(HAVE_TGMATH_H)
-#include <tgmath.h>
-#endif
-#if defined(HAVE_MATH_H)
 #include <math.h>
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
 #endif
 
 #include "spandsp.h"

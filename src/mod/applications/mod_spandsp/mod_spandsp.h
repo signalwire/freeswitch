@@ -60,6 +60,7 @@ struct spandsp_globals {
 	short int use_ecm;
 	short int verbose;
 	short int disable_v17;
+	short int enable_tep;
 	short int enable_colour_fax;
 	short int enable_image_resizing;
 	short int enable_colour_to_bilevel;

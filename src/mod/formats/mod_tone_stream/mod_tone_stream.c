@@ -67,6 +67,7 @@ static switch_status_t silence_stream_file_open(switch_file_handle_t *handle, co
 		}
 	}
 
+	handle->channels = 1;
 	handle->private_info = sh;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -93,7 +94,7 @@ static switch_status_t silence_stream_file_read(switch_file_handle_t *handle, vo
 		sh->samples -= (int32_t)*len;
 	}
 
-	switch_generate_sln_silence((int16_t *) data, (uint32_t)*len,
+	switch_generate_sln_silence((int16_t *) data, (uint32_t)*len, handle->channels,
 								sh->silence ? sh->silence : (uint32_t)-1);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -152,6 +153,8 @@ static switch_status_t tone_stream_file_open(switch_file_handle_t *handle, const
 	if (!handle->samplerate) {
 		handle->samplerate = 8000;
 	}
+
+	handle->channels = 1;
 
 	teletone_init_session(&ts, 0, teletone_handler, audio_buffer);
 	ts.rate = handle->samplerate;

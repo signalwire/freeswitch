@@ -217,7 +217,7 @@ static iks *start_sendfax_component(struct rayo_actor *call, struct rayo_message
 				switch_event_destroy(&execute_event);
 			}
 			rayo_call_set_faxing(RAYO_CALL(call), 0);
-			RAYO_UNLOCK(sendfax_component);
+			RAYO_RELEASE(sendfax_component);
 		} else {
 			/* component starting... */
 			rayo_component_send_start(RAYO_COMPONENT(sendfax_component), iq);
@@ -225,7 +225,7 @@ static iks *start_sendfax_component(struct rayo_actor *call, struct rayo_message
 	} else {
 		response = iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "failed to create txfax event");
 		rayo_call_set_faxing(RAYO_CALL(call), 0);
-		RAYO_UNLOCK(sendfax_component);
+		RAYO_RELEASE(sendfax_component);
 	}
 
 	return response;
@@ -320,7 +320,7 @@ static iks *start_receivefax_component(struct rayo_actor *call, struct rayo_mess
 				switch_event_destroy(&execute_event);
 			}
 			rayo_call_set_faxing(RAYO_CALL(call), 0);
-			RAYO_UNLOCK(receivefax_component);
+			RAYO_RELEASE(receivefax_component);
 		} else {
 			/* component starting... */
 			rayo_component_send_start(RAYO_COMPONENT(receivefax_component), iq);
@@ -328,7 +328,7 @@ static iks *start_receivefax_component(struct rayo_actor *call, struct rayo_mess
 	} else {
 		response = iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "failed to create rxfax event");
 		rayo_call_set_faxing(RAYO_CALL(call), 0);
-		RAYO_UNLOCK(receivefax_component);
+		RAYO_RELEASE(receivefax_component);
 	}
 
 	return response;
@@ -340,7 +340,7 @@ static iks *start_receivefax_component(struct rayo_actor *call, struct rayo_mess
 static iks *stop_fax_component(struct rayo_actor *component, struct rayo_message *msg, void *data)
 {
 	iks *iq = msg->payload;
-	switch_core_session_t *session = switch_core_session_locate(RAYO_COMPONENT(component)->parent->id);
+	switch_core_session_t *session = switch_core_session_locate(component->parent->id);
 	FAX_COMPONENT(component)->stop = 1;
 	if (session) {
 		switch_core_session_execute_application_async(session, "stopfax", "");
@@ -459,11 +459,11 @@ static void on_execute_complete_event(switch_event_t *event)
 			insert_fax_metadata(event, "fax_remote_station_id", complete);
 
 			/* flag faxing as done */
-			rayo_call_set_faxing(RAYO_CALL(RAYO_COMPONENT(component)->parent), 0);
+			rayo_call_set_faxing(RAYO_CALL(component->parent), 0);
 
 			rayo_component_send_complete_event(RAYO_COMPONENT(component), result);
 
-			RAYO_UNLOCK(component);
+			RAYO_RELEASE(component);
 		}
 	}
 }

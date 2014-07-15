@@ -92,6 +92,7 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_RECOVERY_SEND "sofia::recovery_send"
 #define MY_EVENT_RECOVERY_RECOVERED "sofia::recovery_recovered"
 #define MY_EVENT_ERROR "sofia::error"
+#define MY_EVENT_PROFILE_START "sofia::profile_start"
 
 #define MULTICAST_EVENT "multicast::event"
 #define SOFIA_REPLACES_HEADER "_sofia_replaces_"
@@ -262,6 +263,7 @@ typedef enum {
 	PFLAG_THREAD_PER_REG,
 	PFLAG_MWI_USE_REG_CALLID,
 	PFLAG_FIRE_MESSAGE_EVENTS,
+	PFLAG_ALLOW_UPDATE,
 	PFLAG_SEND_DISPLAY_UPDATE,
 	PFLAG_RUNNING_TRANS,
 	PFLAG_SOCKET_TCP_KEEPALIVE,
@@ -276,6 +278,7 @@ typedef enum {
 	PFLAG_TCP_ALWAYS_NAT,
 	PFLAG_ENABLE_CHAT,
 	PFLAG_AUTH_SUBSCRIPTIONS,
+	PFLAG_PROXY_REFER,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;

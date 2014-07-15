@@ -154,7 +154,7 @@ SPAN_DECLARE(both_ways_line_model_state_t *) both_ways_line_model_init(int model
                                                                        int codec,
                                                                        int rbs_pattern);
 
-SPAN_DECLARE(int) both_ways_line_model_release(both_ways_line_model_state_t *s);
+SPAN_DECLARE(int) both_ways_line_model_free(both_ways_line_model_state_t *s);
 
 SPAN_DECLARE(void) one_way_line_model(one_way_line_model_state_t *s,
                                       int16_t output[],
@@ -167,7 +167,7 @@ SPAN_DECLARE(void) one_way_line_model_set_mains_pickup(one_way_line_model_state_
 
 SPAN_DECLARE(one_way_line_model_state_t *) one_way_line_model_init(int model, float noise, int codec, int rbs_pattern);
 
-SPAN_DECLARE(int) one_way_line_model_release(one_way_line_model_state_t *s);
+SPAN_DECLARE(int) one_way_line_model_free(one_way_line_model_state_t *s);
 
 #ifdef __cplusplus
 }

@@ -33,6 +33,7 @@
   modem                 CDATA   #IMPLIED
   tag                   CDATA   #IMPLIED
   value                 CDATA   #IMPLIED
+  timein                CDATA   #IMPLIED
   timeout               CDATA   #IMPLIED
   crc_error             CDATA   #IMPLIED
   pattern               CDATA   #IMPLIED

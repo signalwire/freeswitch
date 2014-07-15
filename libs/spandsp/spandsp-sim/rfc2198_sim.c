@@ -41,6 +41,11 @@
 #define GEN_CONST
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp.h"
@@ -48,9 +53,6 @@
 #include "spandsp/rfc2198_sim.h"
 
 #define PACKET_LOSS_TIME    -1
-
-#define FALSE 0
-#define TRUE (!FALSE)
 
 SPAN_DECLARE(rfc2198_sim_state_t *) rfc2198_sim_init(int model,
                                                      int speed_pattern,
@@ -67,6 +69,14 @@ SPAN_DECLARE(rfc2198_sim_state_t *) rfc2198_sim_init(int model,
     s->g1050 = g1050_init(model, speed_pattern, packet_size, packet_rate);
     s->redundancy_depth = redundancy_depth;
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) rfc2198_sim_free(rfc2198_sim_state_t *s)
+{
+    g1050_free(s->g1050);
+    free(s);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

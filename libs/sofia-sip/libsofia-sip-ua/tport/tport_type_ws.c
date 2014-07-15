@@ -217,7 +217,7 @@ int tport_recv_stream_ws(tport_t *self)
   N = ws_read_frame(&wstp->ws, &oc, &data);
 
   if (N == -2) {
-	  return 2;
+	  return 1;
   }
 
   if ((N == -1000) || (N == 0)) {

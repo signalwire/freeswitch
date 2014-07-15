@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.4.6], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.4.7], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [4])
-AC_SUBST(SWITCH_VERSION_MICRO, [6])
+AC_SUBST(SWITCH_VERSION_MICRO, [7])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -492,6 +492,10 @@ AC_ARG_ENABLE(srtp,
 [AC_HELP_STRING([--disable-srtp],[build without srtp support])],[enable_srtp="$enableval"],[enable_srtp="yes"])
 
 AM_CONDITIONAL([ENABLE_SRTP],[test "${enable_srtp}" = "yes"])
+
+have_openal=no
+AC_CHECK_LIB(openal, alMidiGainSOFT, [have_openal="yes"])
+AM_CONDITIONAL([HAVE_OPENAL],[test "${have_openal}" = "yes"])
 
 AC_ARG_ENABLE(zrtp,
 	[AS_HELP_STRING([--enable-zrtp], [Compile with zrtp Support])],,[enable_zrtp="no"])
@@ -1230,16 +1234,29 @@ AM_CONDITIONAL([HAVE_MYSQL],[test "$found_mysql" = "yes"])
 #
 
 AC_CHECK_PROG(PERL,perl,[ac_cv_have_perl=yes],[ac_cv_have_perl=no])
-AM_CONDITIONAL([HAVE_PERL],[test "x$ac_cv_have_perl" != "xno"])
 
-if test "x$ac_cv_have_perl" != "xno" ; then
+# -a "x$ac_cv_have_EXTERN_h" != "xno"
+
+if test "x$ac_cv_have_perl" != "xno"; then
    PERL=perl
-   PERL_SITEDIR="`$PERL -MConfig -e 'print $Config{sitelibexp}'`"
+   PERL_SITEDIR="`$PERL -MConfig -e 'print $Config{archlib}'`"
    PERL_LIBDIR="-L`$PERL -MConfig -e 'print $Config{archlib}'`/CORE"
    PERL_LIBS="`$PERL -MConfig -e 'print $Config{libs}'`"
-   PERL_CFLAGS="-w -DMULTIPLICITY `$PERL -MExtUtils::Embed -e ccopts` -DEMBED_PERL"
-   PERL_LDFLAGS="`$PERL -MExtUtils::Embed -e ldopts` `$PERL -MConfig -e 'print $Config{libs}'`"
+   PERL_CFLAGS="-w -DMULTIPLICITY `$PERL -MExtUtils::Embed -e ccopts | sed -e 's|-arch x86_64 -arch i386||'` -DEMBED_PERL"
+   PERL_LDFLAGS="`$PERL -MExtUtils::Embed -e ldopts| sed -e 's|-arch x86_64 -arch i386||'`"
    PERL_INC="`$PERL -MExtUtils::Embed -e perl_inc`"
+
+   save_CFLAGS="$CFLAGS"
+   CFLAGS="$PERL_CFLAGS"
+   AC_CHECK_HEADER([EXTERN.h], [ac_cv_have_EXTERN_h=yes], [ac_cv_have_EXTERN_h=no], [[#include <EXTERN.h>
+# include <perl.h>]])
+   CFLAGS="$save_CFLAGS"
+
+   save_LDFLAGS="$LDFLAGS"
+   LDFLAGS="$PERL_LDFLAGS"
+   AC_CHECK_LIB([perl], [perl_alloc], ac_cv_use_libperl=yes, ac_cv_use_libperl=no)
+   LDFLAGS="$save_LDFLAGS"
+
    AC_SUBST(PERL_SITEDIR)
    AC_SUBST(PERL_LIBDIR)
    AC_SUBST(PERL_LIBS)
@@ -1247,6 +1264,8 @@ if test "x$ac_cv_have_perl" != "xno" ; then
    AC_SUBST(PERL_LDFLAGS)
    AC_SUBST(PERL_INC)
 fi
+
+AM_CONDITIONAL([HAVE_PERL],[test "x$ac_cv_have_perl" != "xno" -a "x$ac_cv_have_EXTERN_h" != "xno" -a "x$ac_cv_use_libperl" != "xno"])
 
 #
 # php checks
@@ -1500,6 +1519,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/endpoints/mod_sofia/Makefile
 		src/mod/endpoints/mod_unicall/Makefile
 		src/mod/endpoints/mod_rtc/Makefile
+		src/mod/endpoints/mod_verto/Makefile
 		src/mod/event_handlers/mod_cdr_csv/Makefile
 		src/mod/event_handlers/mod_cdr_mongodb/Makefile
 		src/mod/event_handlers/mod_cdr_pg_csv/Makefile

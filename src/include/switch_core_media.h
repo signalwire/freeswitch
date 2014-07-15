@@ -243,7 +243,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_chosen(switch_core_sessi
 SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_core_media_add_ice_acl(switch_core_session_t *session, switch_media_type_t type, const char *acl_name);
 SWITCH_DECLARE(void) switch_core_session_set_ice(switch_core_session_t *session);
-
+SWITCH_DECLARE(void) switch_core_media_clear_ice(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_media_pause(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_media_resume(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_media_init(void);
 SWITCH_DECLARE(void) switch_core_media_deinit(void);
 SWITCH_DECLARE(void) switch_core_media_set_stats(switch_core_session_t *session);
@@ -264,7 +266,8 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 																  switch_sdp_type_t sdp_type,
 																  uint32_t pt, 
 																  uint32_t rate, 
-																  uint32_t ptime, 
+																  uint32_t ptime,
+																  uint32_t channels,
 																  uint8_t negotiated);
 
 

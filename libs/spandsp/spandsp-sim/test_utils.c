@@ -39,6 +39,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <time.h>
 #include <fcntl.h>
@@ -66,12 +71,14 @@ struct complexify_state_s
 };
 
 static complex_t circle[MAX_FFT_LEN/2];
-static int circle_init = FALSE;
+static int circle_init = false;
 static complex_t icircle[MAX_FFT_LEN/2];
-static int icircle_init = FALSE;
+static int icircle_init = false;
 
 #define SF_MAX_HANDLE   32
-static int sf_close_at_exit_registered = FALSE;
+
+static int sf_close_at_exit_registered = false;
+
 static SNDFILE *sf_close_at_exit_list[SF_MAX_HANDLE] =
 {
     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
@@ -95,9 +102,10 @@ SPAN_DECLARE(complexify_state_t *) complexify_init(void)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) complexify_release(complexify_state_t *s)
+SPAN_DECLARE(int) complexify_free(complexify_state_t *s)
 {
     free(s);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -243,7 +251,7 @@ SPAN_DECLARE(void) fft(complex_t data[], int len)
             x = -(2.0*3.1415926535*i)/(double) MAX_FFT_LEN;
             circle[i] = expj(x);
         }
-        circle_init = TRUE;
+        circle_init = true;
     }
     fftx(data, temp, len);
 }
@@ -263,7 +271,7 @@ SPAN_DECLARE(void) ifft(complex_t data[], int len)
             x = (2.0*3.1415926535*i)/(double) MAX_FFT_LEN;
             icircle[i] = expj(x);
         }
-        icircle_init = TRUE;
+        icircle_init = true;
     }
     ifftx(data, temp, len);
 }
@@ -308,7 +316,7 @@ SPAN_DECLARE(codec_munge_state_t *) codec_munge_init(int codec, int info)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) codec_munge_release(codec_munge_state_t *s)
+SPAN_DECLARE(void) codec_munge_free(codec_munge_state_t *s)
 {
     free(s);
 }
@@ -389,7 +397,7 @@ static int sf_record_handle(SNDFILE *handle)
     if (!sf_close_at_exit_registered)
     {
         atexit(sf_close_at_exit);
-        sf_close_at_exit_registered = TRUE;
+        sf_close_at_exit_registered = true;
     }
     return 0;
 }
@@ -455,7 +463,6 @@ SPAN_DECLARE(int) sf_close_telephony(SNDFILE *handle)
         {
             if (sf_close_at_exit_list[i] == handle)
             {
-                sf_close(sf_close_at_exit_list[i]);
                 sf_close_at_exit_list[i] = NULL;
                 break;
             }

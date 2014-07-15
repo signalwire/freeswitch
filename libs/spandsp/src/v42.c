@@ -238,7 +238,7 @@ static int tx_unnumbered_frame(lapm_state_t *s, uint8_t addr, uint8_t ctrl, uint
     f->len = 2;
     if (info  &&  len)
     {
-        memcpy(buf + f->len, info, len);
+        memcpy(&buf[f->len], info, len);
         f->len += len;
     }
     return 0;

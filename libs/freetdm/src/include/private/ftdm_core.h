@@ -513,7 +513,8 @@ struct ftdm_span {
 	ftdm_span_stop_t stop;
 	ftdm_channel_sig_read_t sig_read;
 	ftdm_channel_sig_write_t sig_write;
-	ftdm_channel_sig_dtmf_t sig_dtmf;
+	ftdm_channel_sig_dtmf_t sig_queue_dtmf;
+	ftdm_channel_sig_dtmf_t sig_send_dtmf;
 	ftdm_channel_state_processor_t state_processor; /*!< This guy is called whenever state processing is required */
 	void *io_data; /*!< Private I/O data per span. Do not touch unless you are an I/O module */
 	char *type;

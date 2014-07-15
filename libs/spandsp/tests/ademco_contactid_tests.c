@@ -106,7 +106,7 @@ static int mitel_cm7291_side_2_and_bellcore_tests(void)
 
     /* The remainder of the Mitel tape is the talk-off test */
     /* Here we use the Bellcore test tapes (much tougher), in six
-      files - 1 from each side of the original 3 cassette tapes */
+       files - 1 from each side of the original 3 cassette tapes */
     /* Bellcore say you should get no more than 470 false detections with
        a good receiver. Dialogic claim 20. Of course, we can do better than
        that, eh? */
@@ -135,6 +135,7 @@ static int mitel_cm7291_side_2_and_bellcore_tests(void)
         return -1;
     }
     printf("    Passed\n");
+    ademco_contactid_sender_free(sender);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -254,6 +255,7 @@ static int end_to_end_tests(void)
 
         sf_writef_short(outhandle, sndfile_buf, SAMPLES_PER_CHUNK);
     }
+    codec_munge_free(munge);
     if (!rx_callback_reported)
     {
         fprintf(stderr, "    Report not received\n");
@@ -266,6 +268,8 @@ static int end_to_end_tests(void)
         return -1;
     }
     printf("    Passed\n");
+    ademco_contactid_sender_free(sender);
+    ademco_contactid_receiver_free(receiver);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -323,6 +327,8 @@ static int encode_decode_tests(void)
     printf("'%s'\n", buf);
     printf("\n");
     printf("    Passed\n");
+    ademco_contactid_sender_free(sender);
+    ademco_contactid_receiver_free(receiver);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

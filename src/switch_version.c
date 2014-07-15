@@ -53,3 +53,13 @@ SWITCH_DECLARE(const char *)switch_version_revision_human(void) {return switch_v
 SWITCH_DECLARE(const char *)switch_version_full(void) {return switch_version_full_str;}
 SWITCH_DECLARE(const char *)switch_version_full_human(void) {return switch_version_full_human_str;}
 
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
+ */

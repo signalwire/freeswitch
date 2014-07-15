@@ -106,6 +106,8 @@ struct rayo_actor {
 	rayo_actor_send_fn send_fn;
 	/** optional cleanup */
 	rayo_actor_cleanup_fn cleanup_fn;
+	/** optional parent */
+	struct rayo_actor *parent;
 };
 
 /**
@@ -114,16 +116,12 @@ struct rayo_actor {
 struct rayo_component {
 	/** base actor class */
 	struct rayo_actor base;
-	/** parent to this component */
-	struct rayo_actor *parent;
 	/** owning client JID */
 	const char *client_jid;
 	/** external ref */
 	const char *ref;
 	/** true if component has completed */
 	int complete;
-	/** optional cleanup */
-	rayo_actor_cleanup_fn cleanup_fn;
 };
 
 #define RAYO_ACTOR(x) ((struct rayo_actor *)x)
@@ -142,8 +140,8 @@ extern iks *rayo_message_remove_payload(struct rayo_message *msg);
 extern struct rayo_actor *rayo_actor_locate(const char *jid, const char *file, int line);
 extern struct rayo_actor *rayo_actor_locate_by_id(const char *id, const char *file, int line);
 extern int rayo_actor_seq_next(struct rayo_actor *actor);
-extern void rayo_actor_rdlock(struct rayo_actor *actor, const char *file, int line);
-extern void rayo_actor_unlock(struct rayo_actor *actor, const char *file, int line);
+extern void rayo_actor_retain(struct rayo_actor *actor, const char *file, int line);
+extern void rayo_actor_release(struct rayo_actor *actor, const char *file, int line);
 extern void rayo_actor_destroy(struct rayo_actor *actor, const char *file, int line);
 
 #define RAYO_LOCATE(jid) rayo_actor_locate(jid, __FILE__, __LINE__)
@@ -153,8 +151,8 @@ extern void rayo_actor_destroy(struct rayo_actor *actor, const char *file, int l
 #define RAYO_JID(x) RAYO_ACTOR(x)->jid
 #define RAYO_ID(x) RAYO_ACTOR(x)->id
 #define RAYO_POOL(x) RAYO_ACTOR(x)->pool
-#define RAYO_RDLOCK(x) rayo_actor_rdlock(RAYO_ACTOR(x), __FILE__, __LINE__)
-#define RAYO_UNLOCK(x) rayo_actor_unlock(RAYO_ACTOR(x), __FILE__, __LINE__)
+#define RAYO_RETAIN(x) rayo_actor_retain(RAYO_ACTOR(x), __FILE__, __LINE__)
+#define RAYO_RELEASE(x) rayo_actor_release(RAYO_ACTOR(x), __FILE__, __LINE__)
 #define RAYO_DESTROY(x) rayo_actor_destroy(RAYO_ACTOR(x), __FILE__, __LINE__)
 #define RAYO_SEQ_NEXT(x) rayo_actor_seq_next(RAYO_ACTOR(x))
 

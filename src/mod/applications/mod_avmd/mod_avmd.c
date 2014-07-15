@@ -120,6 +120,7 @@ typedef struct {
 	double f;
 	/* freq_table_t ft; */
 	avmd_state_t state;
+	switch_time_t start_time;
 } avmd_session_t;
 
 static void avmd_process(avmd_session_t *session, switch_frame_t *frame);
@@ -183,6 +184,7 @@ static switch_bool_t avmd_callback(switch_media_bug_t * bug, void *user_data, sw
 	case SWITCH_ABC_TYPE_INIT:
 		read_codec = switch_core_session_get_read_codec(avmd_session->session);
 		avmd_session->rate = read_codec->implementation->samples_per_second;
+		avmd_session->start_time = switch_micro_time_now();
 		/* avmd_session->vmd_codec.channels = read_codec->implementation->number_of_channels; */
 		break;
 
@@ -539,7 +541,8 @@ static void avmd_process(avmd_session_t *session, switch_frame_t *frame)
 			/*! If variance is less than threshold then we have detection */
 			if(v < VARIANCE_THRESHOLD){
 
-				switch_channel_execute_on(switch_core_session_get_channel(session->session), "execute_on_avmd_beep");
+				switch_channel_set_variable_printf(channel, "avmd_total_time", "%d", (int)(switch_micro_time_now() - session->start_time) / 1000);
+				switch_channel_execute_on(channel, "execute_on_avmd_beep");
 
 				/*! Throw an event to FreeSWITCH */
 				status = switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, AVMD_EVENT_BEEP);

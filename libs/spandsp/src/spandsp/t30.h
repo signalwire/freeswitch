@@ -213,7 +213,7 @@ typedef void (*t30_set_handler_t)(void *user_data, int type, int bit_rate, int s
     \brief T.30 send HDLC handler.
     \param user_data An opaque pointer.
     \param msg The HDLC message.
-    \param len The length of the message.
+    \param len The length of the message. -1 to flush the HDLC queue.
 */
 typedef void (*t30_send_hdlc_handler_t)(void *user_data, const uint8_t msg[], int len);
 
@@ -526,7 +526,7 @@ extern "C"
     \param send_hdlc_user_data
     \return A pointer to the context, or NULL if there was a problem. */
 SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
-                                     int calling_party,
+                                     bool calling_party,
                                      t30_set_handler_t set_rx_type_handler,
                                      void *set_rx_type_user_data,
                                      t30_set_handler_t set_tx_type_handler,
@@ -549,8 +549,10 @@ SPAN_DECLARE(int) t30_free(t30_state_t *s);
 /*! Restart a T.30 context.
     \brief Restart a T.30 context.
     \param s The T.30 context.
+    \param calling_party True if the context is for a calling party. False if the
+           context is for an answering party.
     \return 0 for OK, else -1. */
-SPAN_DECLARE(int) t30_restart(t30_state_t *s);
+SPAN_DECLARE(int) t30_restart(t30_state_t *s, bool calling_party);
 
 /*! Check if a T.30 call is still active. This may be used to regularly poll
     if the job has finished.

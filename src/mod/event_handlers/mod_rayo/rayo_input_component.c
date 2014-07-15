@@ -413,18 +413,145 @@ static int validate_call_input(iks *input, const char **error)
 	return 1;
 }
 
-/**
- * Start call input on voice resource
- */
-static iks *start_call_voice_input(struct input_component *component, switch_core_session_t *session, iks *input, iks *iq, const char *output_file, int barge_in)
+static char *setup_grammars_pocketsphinx(struct input_component *component, switch_core_session_t *session, iks *input, const struct xmpp_error **stanza_error, const char **error_detail)
 {
-	struct input_handler *handler = component->handler;
+	const char *jsgf_path;
 	switch_stream_handle_t grammar = { 0 };
 	SWITCH_STANDARD_STREAM(grammar);
 
+	/* transform SRGS grammar to JSGF */
+	if (!(component->grammar = srgs_parse(globals.parser, iks_find_cdata(input, "grammar")))) {
+		*stanza_error = STANZA_ERROR_BAD_REQUEST;
+		*error_detail = "Failed to parse grammar body";
+		return NULL;
+	}
+
+	jsgf_path = srgs_grammar_to_jsgf_file(component->grammar, SWITCH_GLOBAL_dirs.grammar_dir, "gram");
+	if (!jsgf_path) {
+		*stanza_error = STANZA_ERROR_BAD_REQUEST;
+		*error_detail = "Grammar conversion to JSGF error";
+		return NULL;
+	}
+
+	/* build pocketsphinx grammar string */
+	grammar.write_function(&grammar,
+		"{start-input-timers=%s,no-input-timeout=%d,speech-timeout=%d,confidence-threshold=%d}%s",
+		component->start_timers ? "true" : "false",
+		component->initial_timeout,
+		component->max_silence,
+		(int)ceil(component->min_confidence * 100.0),
+		jsgf_path);
+
+	return (char *)grammar.data;
+}
+
+static char *setup_grammars_unimrcp(struct input_component *component, switch_core_session_t *session, iks *input, const struct xmpp_error **stanza_error, const char **error_detail)
+{
+	iks *grammar_tag;
+	switch_stream_handle_t grammar_uri_list = { 0 };
+	SWITCH_STANDARD_STREAM(grammar_uri_list);
+
+	/* unlock handler mutex, otherwise deadlock will happen when switch_ivr_detect_speech_init adds a new media bug */
+	switch_mutex_unlock(component->handler->mutex);
+	if (switch_ivr_detect_speech_init(session, component->recognizer, "", NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_mutex_lock(component->handler->mutex);
+		*stanza_error = STANZA_ERROR_INTERNAL_SERVER_ERROR;
+		*error_detail = "Failed to initialize recognizer";
+		return NULL;
+	}
+	switch_mutex_lock(component->handler->mutex);
+
+	/* load unimrcp grammars and return uri-list */
+	grammar_uri_list.write_function(&grammar_uri_list, "{start-recognize=true,start-input-timers=%s,confidence-threshold=%f,sensitivity-level=%f",
+							component->start_timers ? "true" : "false",
+							component->min_confidence,
+							component->sensitivity);
+	if (component->initial_timeout > 0) {
+		grammar_uri_list.write_function(&grammar_uri_list, ",no-input-timeout=%d",
+			component->initial_timeout);
+	}
+
+	if (component->max_silence > 0) {
+		grammar_uri_list.write_function(&grammar_uri_list, ",speech-complete-timeout=%d,speech-incomplete-timeout=%d",
+			component->max_silence,
+			component->max_silence);
+	}
+
+	if (!zstr(component->language)) {
+		grammar_uri_list.write_function(&grammar_uri_list, ",speech-language=%s", component->language);
+	}
+
+	if (!strcmp(iks_find_attrib_soft(input, "mode"), "any") || !strcmp(iks_find_attrib_soft(input, "mode"), "dtmf")) {
+		/* set dtmf params */
+		if (component->inter_digit_timeout > 0) {
+			grammar_uri_list.write_function(&grammar_uri_list, ",dtmf-interdigit-timeout=%d", component->inter_digit_timeout);
+		}
+		if (component->term_digit) {
+			grammar_uri_list.write_function(&grammar_uri_list, ",dtmf-term-char=%c", component->term_digit);
+		}
+	}
+	grammar_uri_list.write_function(&grammar_uri_list, "}");
+
+	for (grammar_tag = iks_find(input, "grammar"); grammar_tag; grammar_tag = iks_next_tag(grammar_tag)) {
+		const char *grammar_name;
+		iks *grammar_cdata;
+		const char *grammar;
+
+		/* is this a grammar? */
+		if (strcmp("grammar", iks_name(grammar_tag))) {
+			continue;
+		}
+
+		/* get the srgs contained in this grammar */
+		if (!(grammar_cdata = iks_child(grammar_tag)) || iks_type(grammar_cdata) != IKS_CDATA) {
+			*stanza_error = STANZA_ERROR_BAD_REQUEST;
+			*error_detail = "Missing grammar";
+			switch_safe_free(grammar_uri_list.data);
+			return NULL;
+		}
+
+		/* load the grammar */
+		grammar = switch_core_sprintf(RAYO_POOL(component), "{start-recognize=false}inline:%s", iks_cdata(grammar_cdata));
+		grammar_name = switch_core_sprintf(RAYO_POOL(component), "grammar-%d", rayo_actor_seq_next(RAYO_ACTOR(component)));
+		/* unlock handler mutex, otherwise deadlock will happen if switch_ivr_detect_speech_load_grammar removes the media bug */
+		switch_mutex_unlock(component->handler->mutex);
+		if (switch_ivr_detect_speech_load_grammar(session, grammar, grammar_name) != SWITCH_STATUS_SUCCESS) {
+			switch_mutex_lock(component->handler->mutex);
+			*stanza_error = STANZA_ERROR_INTERNAL_SERVER_ERROR;
+			*error_detail = "Failed to load grammar";
+			switch_safe_free(grammar_uri_list.data);
+			return NULL;
+		}
+		switch_mutex_lock(component->handler->mutex);
+
+		/* add grammar to uri-list */
+		grammar_uri_list.write_function(&grammar_uri_list, "session:%s\r\n", grammar_name);
+	}
+
+	return (char *)grammar_uri_list.data;
+}
+
+static char *setup_grammars_unknown(struct input_component *component, switch_core_session_t *session, iks *input, const struct xmpp_error **stanza_error, const char **error_detail)
+{
+	switch_stream_handle_t grammar = { 0 };
+	SWITCH_STANDARD_STREAM(grammar);
+	grammar.write_function(&grammar, "%s", iks_find_cdata(input, "grammar"));
+	return (char *)grammar.data;
+}
+
+/**
+ * Start call input on voice resource
+ */
+static iks *start_call_voice_input(struct input_component *component, switch_core_session_t *session, iks *input, iks *iq, int barge_in)
+{
+	struct input_handler *handler = component->handler;
+	char *grammar = NULL;
+	const struct xmpp_error *stanza_error = NULL;
+	const char *error_detail = NULL;
+
 	if (component->speech_mode && handler->voice_component) {
 		/* don't allow multi voice input */
-		RAYO_UNLOCK(component);
+		RAYO_RELEASE(component);
 		RAYO_DESTROY(component);
 		return iks_new_error_detailed(iq, STANZA_ERROR_CONFLICT, "Multiple voice input is not allowed");
 	}
@@ -438,75 +565,26 @@ static iks *start_call_voice_input(struct input_component *component, switch_cor
 	/* if recognition engine is different, we can't handle this request */
 	if (!zstr(handler->last_recognizer) && strcmp(component->recognizer, handler->last_recognizer)) {
 		handler->voice_component = NULL;
-		RAYO_UNLOCK(component);
+		RAYO_RELEASE(component);
 		RAYO_DESTROY(component);
 		return iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "Must use the same recognizer for the entire call");
+	} else if (zstr(handler->last_recognizer)) {
+		handler->last_recognizer = switch_core_session_strdup(session, component->recognizer);
 	}
-	handler->last_recognizer = switch_core_session_strdup(session, component->recognizer);
 
 	if (!strcmp(component->recognizer, "pocketsphinx")) {
-		const char *jsgf_path;
-
-		/* transform SRGS grammar to JSGF */
-		if (!(component->grammar = srgs_parse(globals.parser, iks_find_cdata(input, "grammar")))) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Failed to parse grammar body\n");
-			handler->voice_component = NULL;
-			RAYO_UNLOCK(component);
-			RAYO_DESTROY(component);
-			return iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "Failed to parse grammar body");
-		}
-		jsgf_path = srgs_grammar_to_jsgf_file(component->grammar, SWITCH_GLOBAL_dirs.grammar_dir, "gram");
-		if (!jsgf_path) {
-			handler->voice_component = NULL;
-			RAYO_UNLOCK(component);
-			RAYO_DESTROY(component);
-			return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Grammar conversion to JSGF error");
-		}
-
-		/* build pocketsphinx grammar string */
-		grammar.write_function(&grammar,
-			"{start-input-timers=%s,no-input-timeout=%d,speech-timeout=%d,confidence-threshold=%d}%s",
-			component->start_timers ? "true" : "false",
-			component->initial_timeout,
-			component->max_silence,
-			(int)ceil(component->min_confidence * 100.0),
-			jsgf_path);
+		grammar = setup_grammars_pocketsphinx(component, session, input, &stanza_error, &error_detail);
 	} else if (!strncmp(component->recognizer, "unimrcp", strlen("unimrcp"))) {
-		/* send inline grammar to unimrcp */
-		grammar.write_function(&grammar, "{start-input-timers=%s,confidence-threshold=%f,sensitivity-level=%f",
-								component->start_timers ? "true" : "false",
-								component->min_confidence,
-								component->sensitivity);
-
-		if (component->initial_timeout > 0) {
-			grammar.write_function(&grammar, ",no-input-timeout=%d",
-				component->initial_timeout);
-		}
-
-		if (component->max_silence > 0) {
-			grammar.write_function(&grammar, ",speech-complete-timeout=%d,speech-incomplete-timeout=%d",
-				component->max_silence,
-				component->max_silence);
-		}
-
-		if (!zstr(component->language)) {
-			grammar.write_function(&grammar, ",speech-language=%s", component->language);
-		}
-
-		if (!strcmp(iks_find_attrib_soft(input, "mode"), "any")) {
-			/* set dtmf params */
-			if (component->inter_digit_timeout > 0) {
-				grammar.write_function(&grammar, ",dtmf-interdigit-timeout=%d", component->inter_digit_timeout);
-			}
-			if (component->term_digit) {
-				grammar.write_function(&grammar, ",dtmf-term-char=%c", component->term_digit);
-			}
-		}
-
-		grammar.write_function(&grammar, "}inline:%s", iks_find_cdata(input, "grammar"));
+		grammar = setup_grammars_unimrcp(component, session, input, &stanza_error, &error_detail);
 	} else {
-		/* passthrough to unknown ASR module */
-		grammar.write_function(&grammar, "%s", iks_find_cdata(input, "grammar"));
+		grammar = setup_grammars_unknown(component, session, input, &stanza_error, &error_detail);
+	}
+
+	if (!grammar) {
+		handler->voice_component = NULL;
+		RAYO_RELEASE(component);
+		RAYO_DESTROY(component);
+		return iks_new_error_detailed(iq, stanza_error, error_detail);
 	}
 
 	/* acknowledge command */
@@ -514,15 +592,16 @@ static iks *start_call_voice_input(struct input_component *component, switch_cor
 
 	/* start speech detection */
 	switch_channel_set_variable(switch_core_session_get_channel(session), "fire_asr_events", "true");
-	switch_mutex_unlock(handler->mutex); /* unlock handler mutex, otherwise deadlock will happen when switch_ivr_detect_speech adds a new media bug */
-	if (switch_ivr_detect_speech(session, component->recognizer, grammar.data, "mod_rayo_grammar", "", NULL) != SWITCH_STATUS_SUCCESS) {
+	/* unlock handler mutex, otherwise deadlock will happen if switch_ivr_detect_speech adds a media bug */
+	switch_mutex_unlock(handler->mutex);
+	if (switch_ivr_detect_speech(session, component->recognizer, grammar, "mod_rayo_grammar", "", NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_mutex_lock(handler->mutex);
 		handler->voice_component = NULL;
 		rayo_component_send_complete(RAYO_COMPONENT(component), COMPONENT_COMPLETE_ERROR);
 	} else {
 		switch_mutex_lock(handler->mutex);
 	}
-	switch_safe_free(grammar.data);
+	switch_safe_free(grammar);
 
 	return NULL;
 }
@@ -530,12 +609,12 @@ static iks *start_call_voice_input(struct input_component *component, switch_cor
 /**
  * Start call input on DTMF resource
  */
-static iks *start_call_dtmf_input(struct input_component *component, switch_core_session_t *session, iks *input, iks *iq, const char *output_file, int barge_in)
+static iks *start_call_dtmf_input(struct input_component *component, switch_core_session_t *session, iks *input, iks *iq, int barge_in)
 {
 	/* parse the grammar */
 	if (!(component->grammar = srgs_parse(globals.parser, iks_find_cdata(input, "grammar")))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Failed to parse grammar body\n");
-		RAYO_UNLOCK(component);
+		RAYO_RELEASE(component);
 		RAYO_DESTROY(component);
 		return iks_new_error_detailed(iq, STANZA_ERROR_BAD_REQUEST, "Failed to parse grammar body");
 	}
@@ -558,7 +637,7 @@ static iks *start_call_dtmf_input(struct input_component *component, switch_core
  * @param input the input request
  * @param iq the original input/prompt request
  */
-static iks *start_call_input(struct input_component *component, switch_core_session_t *session, iks *input, iks *iq, const char *output_file, int barge_in)
+static iks *start_call_input(struct input_component *component, switch_core_session_t *session, iks *input, iks *iq, int barge_in)
 {
 	iks *result = NULL;
 
@@ -575,7 +654,7 @@ static iks *start_call_input(struct input_component *component, switch_core_sess
 		/* fire up media bug to monitor lifecycle */
 		if (switch_core_media_bug_add(session, "rayo_input_component", NULL, input_handler_bug_callback, handler, 0, SMBF_READ_REPLACE, &handler->bug) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Failed to create input handler media bug\n");
-			RAYO_UNLOCK(component);
+			RAYO_RELEASE(component);
 			RAYO_DESTROY(component);
 			return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Failed to create input handler media bug");
 		}
@@ -587,7 +666,7 @@ static iks *start_call_input(struct input_component *component, switch_core_sess
 		/* handler bug was destroyed */
 		switch_mutex_unlock(handler->mutex);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Input handler media bug is closed\n");
-		RAYO_UNLOCK(component);
+		RAYO_RELEASE(component);
 		RAYO_DESTROY(component);
 		return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Input handler media bug is closed\n");
 	}
@@ -610,9 +689,9 @@ static iks *start_call_input(struct input_component *component, switch_core_sess
 	component->speech_mode = strcmp(iks_find_attrib_soft(input, "mode"), "dtmf");
 
 	if (component->speech_mode) {
-		result = start_call_voice_input(component, session, input, iq, output_file, barge_in);
+		result = start_call_voice_input(component, session, input, iq, barge_in);
 	} else {
-		result = start_call_dtmf_input(component, session, input, iq, output_file, barge_in);
+		result = start_call_dtmf_input(component, session, input, iq, barge_in);
 	}
 
 	switch_mutex_unlock(handler->mutex);
@@ -642,6 +721,22 @@ static char *create_input_component_id(switch_core_session_t *session, iks *inpu
 }
 
 /**
+ * Release any resources consumed by this input component
+ */
+static void input_component_cleanup(struct rayo_actor *component)
+{
+	switch_mutex_lock(component->mutex);
+	if (INPUT_COMPONENT(component)->speech_mode) {
+		switch_core_session_t *session = switch_core_session_locate(component->parent->id);
+		if (session) {
+			switch_ivr_stop_detect_speech(session);
+			switch_core_session_rwunlock(session);
+		}
+	}
+	switch_mutex_unlock(component->mutex);
+}
+
+/**
  * Start execution of input component
  */
 static iks *start_call_input_component(struct rayo_actor *call, struct rayo_message *msg, void *session_data)
@@ -666,12 +761,12 @@ static iks *start_call_input_component(struct rayo_actor *call, struct rayo_mess
 
 	switch_core_new_memory_pool(&pool);
 	input_component = switch_core_alloc(pool, sizeof(*input_component));
-	input_component = INPUT_COMPONENT(rayo_component_init(RAYO_COMPONENT(input_component), pool, RAT_CALL_COMPONENT, "input", component_id, call, iks_find_attrib(iq, "from")));
+	input_component = INPUT_COMPONENT(rayo_component_init_cleanup(RAYO_COMPONENT(input_component), pool, RAT_CALL_COMPONENT, "input", component_id, call, iks_find_attrib(iq, "from"), input_component_cleanup));
 	if (!input_component) {
 		switch_core_destroy_memory_pool(&pool);
 		return iks_new_error_detailed(iq, STANZA_ERROR_INTERNAL_SERVER_ERROR, "Failed to create input entity");
 	}
-	return start_call_input(input_component, session, input, iq, NULL, 0);
+	return start_call_input(input_component, session, input, iq, 0);
 }
 
 /**
@@ -683,12 +778,14 @@ static iks *stop_call_input_component(struct rayo_actor *component, struct rayo_
 	struct input_component *input_component = INPUT_COMPONENT(component);
 
 	if (input_component && !input_component->stop) {
-		switch_core_session_t *session = switch_core_session_locate(RAYO_COMPONENT(component)->parent->id);
+		switch_core_session_t *session = switch_core_session_locate(component->parent->id);
 		if (session) {
 			switch_mutex_lock(input_component->handler->mutex);
 			input_component->stop = 1;
 			if (input_component->speech_mode) {
+				switch_mutex_unlock(input_component->handler->mutex);
 				switch_ivr_stop_detect_speech(session);
+				switch_mutex_lock(input_component->handler->mutex);
 				rayo_component_send_complete(RAYO_COMPONENT(component), COMPONENT_COMPLETE_STOP);
 			}
 			switch_mutex_unlock(input_component->handler->mutex);
@@ -706,11 +803,13 @@ static iks *start_timers_call_input_component(struct rayo_actor *component, stru
 	iks *iq = msg->payload;
 	struct input_component *input_component = INPUT_COMPONENT(component);
 	if (input_component) {
-		switch_core_session_t *session = switch_core_session_locate(RAYO_COMPONENT(component)->parent->id);
+		switch_core_session_t *session = switch_core_session_locate(component->parent->id);
 		if (session) {
 			switch_mutex_lock(input_component->handler->mutex);
 			if (input_component->speech_mode) {
+				switch_mutex_unlock(input_component->handler->mutex);
 				switch_ivr_detect_speech_start_input_timers(session);
+				switch_mutex_lock(input_component->handler->mutex);
 			} else {
 				input_component->last_digit_time = switch_micro_time_now();
 				input_component->start_timers = 1;
@@ -782,7 +881,7 @@ static void on_detected_speech_event(switch_event_t *event)
 					rayo_component_send_complete(component, INPUT_NOMATCH);
 				}
 			}
-			RAYO_UNLOCK(component);
+			RAYO_RELEASE(component);
 		}
 	} else if (!strcasecmp("begin-speaking", speech_type)) {
 		char *component_id = switch_mprintf("%s-input-voice", uuid);
@@ -791,7 +890,7 @@ static void on_detected_speech_event(switch_event_t *event)
 		if (component && INPUT_COMPONENT(component)->barge_event) {
 			send_barge_event(component);
 		}
-		RAYO_UNLOCK(component);
+		RAYO_RELEASE(component);
 	} else if (!strcasecmp("closed", speech_type)) {
 		char *component_id = switch_mprintf("%s-input-voice", uuid);
 		struct rayo_component *component = RAYO_COMPONENT_LOCATE(component_id);
@@ -808,7 +907,7 @@ static void on_detected_speech_event(switch_event_t *event)
 				/* shouldn't get here... */
 				rayo_component_send_complete(component, COMPONENT_COMPLETE_ERROR);
 			}
-			RAYO_UNLOCK(component);
+			RAYO_RELEASE(component);
 		}
 	}
 	switch_safe_free(event_str);

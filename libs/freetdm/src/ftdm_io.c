@@ -59,6 +59,8 @@ struct tm *localtime_r(const time_t *clock, struct tm *result);
 #define FTDM_HALF_DTMF_PAUSE 500
 #define FTDM_FULL_DTMF_PAUSE 1000
 
+#define FTDM_CHANNEL_SW_DTMF_ALLOWED(ftdmchan) (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT) && !ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SIG_DTMF_DETECTION))
+
 ftdm_time_t time_last_throttle_log = 0;
 ftdm_time_t time_current_throttle_log = 0;
 
@@ -105,6 +107,7 @@ static val_str_t channel_flag_strs[] =  {
 	{ "blocking",  FTDM_CHANNEL_BLOCKING},
 	{ "media",  FTDM_CHANNEL_DIGITAL_MEDIA},
 	{ "native-sigbridge",  FTDM_CHANNEL_NATIVE_SIGBRIDGE},
+	{ "sig-dtmf-detection", FTDM_CHANNEL_SIG_DTMF_DETECTION},
 	{ "invalid",  FTDM_CHANNEL_MAX_FLAG},
 };
 
@@ -690,14 +693,10 @@ static ftdm_status_t ftdm_span_destroy(ftdm_span_t *span)
 	ftdm_status_t status = FTDM_SUCCESS;
 	unsigned j;
 
+	/* The signaling must be already stopped (this is just a sanity check, should never happen) */
+	ftdm_assert_return(!ftdm_test_flag(span, FTDM_SPAN_STARTED), FTDM_FAIL, "Signaling for span %s has not been stopped, refusing to destroy span\n");
+
 	ftdm_mutex_lock(span->mutex);
-
-	/* stop the signaling */
-
-	/* This is a forced stopped */
-	ftdm_clear_flag(span, FTDM_SPAN_NON_STOPPABLE);
-	
-	ftdm_span_stop(span);
 
 	/* destroy the channels */
 	ftdm_clear_flag(span, FTDM_SPAN_CONFIGURED);
@@ -3374,7 +3373,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 		{
 			/* if they don't have thier own, use ours */
 			if (FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
-				if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT)) {
+				if (FTDM_CHANNEL_SW_DTMF_ALLOWED(ftdmchan)) {
 					teletone_dtmf_detect_init (&ftdmchan->dtmf_detect, ftdmchan->rate);
 					ftdm_set_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
 					ftdm_set_flag(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF);
@@ -3387,9 +3386,9 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 	case FTDM_COMMAND_DISABLE_DTMF_DETECT:
 		{
 			if (FTDM_IS_VOICE_CHANNEL(ftdmchan)) {
-				if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT)) {
-								teletone_dtmf_detect_init (&ftdmchan->dtmf_detect, ftdmchan->rate);
-								ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
+				if (FTDM_CHANNEL_SW_DTMF_ALLOWED(ftdmchan)) {
+					teletone_dtmf_detect_init (&ftdmchan->dtmf_detect, ftdmchan->rate);
+					ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT);
 					ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_SUPRESS_DTMF);
 					ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Disabled software DTMF detector\n");
 					GOTO_STATUS(done, FTDM_SUCCESS);
@@ -3465,8 +3464,11 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 		break;
 	case FTDM_COMMAND_SEND_DTMF:
 		{
-			if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_GENERATE)) {
-				char *digits = FTDM_COMMAND_OBJ_CHAR_P;
+			char *digits = FTDM_COMMAND_OBJ_CHAR_P;
+			if (ftdmchan->span->sig_send_dtmf) {
+				status = ftdmchan->span->sig_send_dtmf(ftdmchan, digits);
+				GOTO_STATUS(done, status);
+			} else if (!ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_GENERATE)) {
 				
 				if ((status = ftdmchan_activate_dtmf_buffer(ftdmchan)) != FTDM_SUCCESS) {
 					GOTO_STATUS(done, status);
@@ -3777,7 +3779,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_queue_dtmf(ftdm_channel_t *ftdmchan, cons
 
 	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Queuing DTMF %s (debug = %d)\n", dtmf, ftdmchan->dtmfdbg.enabled);
 
-	if (ftdmchan->span->sig_dtmf && (ftdmchan->span->sig_dtmf(ftdmchan, dtmf) == FTDM_BREAK)) {
+	if (ftdmchan->span->sig_queue_dtmf && (ftdmchan->span->sig_queue_dtmf(ftdmchan, dtmf) == FTDM_BREAK)) {
 		/* Signalling module wants to absorb this DTMF event */
 		return FTDM_SUCCESS;
 	}
@@ -4216,7 +4218,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_process_media(ftdm_channel_t *ftdmchan, v
 			}
 		}
 
-		if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT) && !ftdm_channel_test_feature(ftdmchan, FTDM_CHANNEL_FEATURE_DTMF_DETECT)) {
+		if (FTDM_CHANNEL_SW_DTMF_ALLOWED(ftdmchan) && ftdm_test_flag(ftdmchan, FTDM_CHANNEL_DTMF_DETECT)) {
 			teletone_hit_type_t hit;
 			char digit_char;
 			uint32_t dur;
@@ -6040,6 +6042,17 @@ FT_DECLARE(ftdm_status_t) ftdm_group_create(ftdm_group_t **group, const char *na
 	return status;
 }
 
+static void ftdm_group_destroy(ftdm_group_t **group)
+{
+	ftdm_group_t *grp = NULL;
+	ftdm_assert(group != NULL, "Group must not be null\n");
+	grp = *group;
+	ftdm_mutex_destroy(&grp->mutex);
+	ftdm_safe_free(grp->name);
+	ftdm_safe_free(grp);
+	*group = NULL;
+}
+
 static ftdm_status_t ftdm_span_trigger_signal(const ftdm_span_t *span, ftdm_sigmsg_t *sigmsg)
 {
 	if (!span->signal_cb) {
@@ -6376,10 +6389,37 @@ FT_DECLARE(uint32_t) ftdm_running(void)
 	return globals.running;
 }
 
+static void destroy_span(ftdm_span_t *span)
+{
+	if (ftdm_test_flag(span, FTDM_SPAN_CONFIGURED)) {
+		ftdm_span_destroy(span);
+	}
+	hashtable_remove(globals.span_hash, (void *)span->name);
+	ftdm_safe_free(span->dtmf_hangup);
+	ftdm_safe_free(span->type);
+	ftdm_safe_free(span->name);
+	ftdm_safe_free(span);
+}
+
+static void force_stop_span(ftdm_span_t *span)
+{
+	/* This is a forced stop */
+	ftdm_clear_flag(span, FTDM_SPAN_NON_STOPPABLE);
+	ftdm_span_stop(span);
+}
+
+static void span_for_each(void (*func)(ftdm_span_t *span))
+{
+	ftdm_span_t *sp = NULL, *next = NULL;
+	for (sp = globals.spans; sp; sp = next) {
+		next = sp->next;
+		func(sp);
+	}
+}
 
 FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 {
-	ftdm_span_t *sp;
+	ftdm_group_t *grp = NULL, *next_grp = NULL;
 
 	time_end();
 
@@ -6397,45 +6437,49 @@ FT_DECLARE(ftdm_status_t) ftdm_global_destroy(void)
 
 	ftdm_span_close_all();
 	
+	/* Stop and destroy alls pans */
 	ftdm_mutex_lock(globals.span_mutex);
-	for (sp = globals.spans; sp;) {
-		ftdm_span_t *cur_span = sp;
-		sp = sp->next;
 
-		if (cur_span) {
-			if (ftdm_test_flag(cur_span, FTDM_SPAN_CONFIGURED)) {
-				ftdm_span_destroy(cur_span);
-			}
-
-			hashtable_remove(globals.span_hash, (void *)cur_span->name);
-			ftdm_safe_free(cur_span->dtmf_hangup);
-			ftdm_safe_free(cur_span->type);
-			ftdm_safe_free(cur_span->name);
-			ftdm_safe_free(cur_span);
-			cur_span = NULL;
-		}
-	}
+	span_for_each(force_stop_span);
+	span_for_each(destroy_span);
 	globals.spans = NULL;
+
 	ftdm_mutex_unlock(globals.span_mutex);
 
 	/* destroy signaling and io modules */
 	ftdm_unload_modules();
 
-	ftdm_global_set_logger( NULL );
+	/* Destroy hunting groups */
+	ftdm_mutex_lock(globals.group_mutex);
+	grp = globals.groups;
+	while (grp) {
+		next_grp = grp->next;
+		ftdm_group_destroy(&grp);
+		grp = next_grp;
+	}
+	ftdm_mutex_unlock(globals.group_mutex);
 
 	/* finally destroy the globals */
 	ftdm_mutex_lock(globals.mutex);
+
 	ftdm_sched_destroy(&globals.timingsched);
+
 	hashtable_destroy(globals.interface_hash);
 	hashtable_destroy(globals.module_hash);	
 	hashtable_destroy(globals.span_hash);
 	hashtable_destroy(globals.group_hash);
-	ftdm_mutex_unlock(globals.mutex);
-	ftdm_mutex_destroy(&globals.mutex);
+
 	ftdm_mutex_destroy(&globals.span_mutex);
 	ftdm_mutex_destroy(&globals.group_mutex);
 	ftdm_mutex_destroy(&globals.call_id_mutex);
 
+	ftdm_mutex_unlock(globals.mutex);
+
+	ftdm_mutex_destroy(&globals.mutex);
+
+	ftdm_sched_global_destroy();
+
+	ftdm_global_set_logger(NULL);
 	memset(&globals, 0, sizeof(globals));
 	return FTDM_SUCCESS;
 }

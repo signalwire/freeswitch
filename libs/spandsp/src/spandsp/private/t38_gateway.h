@@ -46,6 +46,10 @@ typedef struct
     /*! \brief If NSF, NSC, and NSS are to be suppressed by altering their contents to
                something the far end will not recognise, this is the amount to overwrite. */
     int suppress_nsx_len[2];
+    /*! \brief If NSF, NSC, and NSS are to be suppressed by altering their contents to
+               something the far end will not recognise, this is the string to use for overwriting. */
+    uint8_t suppress_nsx_string[2][MAX_NSX_SUPPRESSION];
+
     /*! \brief True if we need to corrupt the HDLC frame in progress, so the receiver cannot
                interpret it. The two values are for the two directions. */
     bool corrupt_current_frame[2];

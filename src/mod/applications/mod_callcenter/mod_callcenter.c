@@ -3234,7 +3234,7 @@ SWITCH_STANDARD_API(cc_config_api_function)
 					}
 				/* queue list members */
 				} else if (sub_action && !strcasecmp(sub_action, "members")) {
-					sql = switch_mprintf("SELECT * FROM members WHERE queue = '%q';", queue_name);
+					sql = switch_mprintf("SELECT  *,(%" SWITCH_TIME_T_FMT "-joined_epoch)+base_score+skill_score AS score FROM members WHERE queue = '%q' ORDER BY score DESC;", local_epoch_time_now(NULL), queue_name);
 				/* queue list tiers */
 				} else if (sub_action && !strcasecmp(sub_action, "tiers")) {
 					sql = switch_mprintf("SELECT * FROM tiers WHERE queue = '%q';", queue_name);

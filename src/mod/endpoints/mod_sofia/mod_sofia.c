@@ -1396,7 +1396,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					switch_channel_set_flag(channel, CF_REQ_MEDIA);
 				}
 				sofia_set_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
-				switch_channel_set_variable(channel, "sip_require_timer", "false");
 				sofia_glue_do_invite(session);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s Request to send IMAGE on channel with not t38 options.\n",

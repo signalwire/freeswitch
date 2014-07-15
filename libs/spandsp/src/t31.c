@@ -1877,7 +1877,7 @@ static void hdlc_accept_frame(void *user_data, const uint8_t *msg, int len, int 
             buf[0] = (ok)  ?  AT_RESPONSE_CODE_OK  :  AT_RESPONSE_CODE_ERROR;
             /* It is safe to look at the two bytes beyond the length of the message,
                and expect to find the FCS there. */
-            memcpy(buf + 1, msg, len + 2);
+            memcpy(&buf[1], msg, len + 2);
             queue_write_msg(s->rx_queue, buf, len + 3);
         }
         /*endif*/
@@ -3045,6 +3045,8 @@ SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
     s->modem = FAX_MODEM_NONE;
     s->at_state.transmit = true;
 
+    if (s->rx_queue)
+        queue_free(s->rx_queue);
     if ((s->rx_queue = queue_init(NULL, 4096, QUEUE_WRITE_ATOMIC | QUEUE_READ_ATOMIC)) == NULL)
     {
         if (alloced)
@@ -3070,6 +3072,9 @@ SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
 SPAN_DECLARE(int) t31_release(t31_state_t *s)
 {
     at_reset_call_info(&s->at_state);
+    v8_release(&s->audio.v8);
+    fax_modems_release(&s->audio.modems);
+    queue_free(s->rx_queue);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

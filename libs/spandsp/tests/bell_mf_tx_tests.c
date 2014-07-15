@@ -157,6 +157,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
         exit (2);
     }
+    bell_mf_tx_free(gen);
 
     return 0;
 }

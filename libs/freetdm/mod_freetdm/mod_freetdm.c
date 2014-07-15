@@ -5538,6 +5538,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_freetdm_shutdown)
 		ftdm_conf_node_destroy(val);
 	}
 
+	switch_core_hash_destroy(&globals.ss7_configs);
 	ftdm_global_destroy();
 
 	// this breaks pika but they are MIA so *shrug*

@@ -1029,13 +1029,13 @@ SPAN_DECLARE(int) adsi_add_field(adsi_tx_state_t *s, uint8_t *msg, int len, uint
                 msg[len++] = (uint8_t) field_len;
                 if (field_len == DLE)
                     msg[len++] = (uint8_t) field_len;
-                memcpy(msg + len, field_body, field_len);
+                memcpy(&msg[len], field_body, field_len);
                 len += field_len;
             }
             else
             {
                 /* No field type or length, for restricted single message formats */
-                memcpy(msg + len, field_body, field_len);
+                memcpy(&msg[len], field_body, field_len);
                 len += field_len;
             }
         }
@@ -1080,7 +1080,7 @@ SPAN_DECLARE(int) adsi_add_field(adsi_tx_state_t *s, uint8_t *msg, int len, uint
             x = msg[--len];
             if (field_type != CLIP_DTMF_HASH_UNSPECIFIED)
                 msg[len++] = field_type;
-            memcpy(msg + len, field_body, field_len);
+            memcpy(&msg[len], field_body, field_len);
             msg[len + field_len] = (uint8_t) x;
             len += (field_len + 1);
         }

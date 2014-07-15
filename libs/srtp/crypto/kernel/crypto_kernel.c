@@ -477,7 +477,8 @@ crypto_kernel_get_cipher_type(cipher_type_id_t id) {
 err_status_t
 crypto_kernel_alloc_cipher(cipher_type_id_t id, 
 			      cipher_pointer_t *cp, 
-			      int key_len) {
+			      int key_len,
+			      int tag_len) {
   cipher_type_t *ct;
 
   /* 
@@ -491,7 +492,7 @@ crypto_kernel_alloc_cipher(cipher_type_id_t id,
   if (!ct)
     return err_status_fail;
   
-  return ((ct)->alloc(cp, key_len));
+  return ((ct)->alloc(cp, key_len, tag_len));
 }
 
 

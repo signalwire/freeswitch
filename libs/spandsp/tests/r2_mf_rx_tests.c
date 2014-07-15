@@ -181,6 +181,7 @@ static int my_mf_generate(int16_t amp[], char digit)
     {
         tone = tone_gen_init(NULL, &my_mf_digit_tones[cp - r2_mf_tone_codes]);
         len += tone_gen(tone, amp + len, 9999);
+        tone_gen_free(tone);
     }
     return len;
 }
@@ -524,6 +525,7 @@ static int test_a_tone_set(int fwd)
                 if (r2_mf_rx_get(mf_state) != digit)
                     break;
             }
+            awgn_free(noise_source);
             if (j < 500)
                 break;
         }
@@ -541,7 +543,7 @@ static int test_a_tone_set(int fwd)
     printf("Test 8: Callback digit delivery mode.\n");
     callback_ok = false;
     callback_roll = 0;
-    mf_state = r2_mf_rx_init(NULL, fwd, digit_delivery, (void *) 0x12345678);
+    mf_state = r2_mf_rx_init(mf_state, fwd, digit_delivery, (void *) 0x12345678);
     my_mf_gen_init(0.0, -3, 0.0, -3, 68, fwd);
     s = r2_mf_tone_codes;
     noise_source = awgn_init_dbm0(NULL, 1234567, -40.0f);
@@ -560,12 +562,15 @@ static int test_a_tone_set(int fwd)
         codec_munge(amp, len);
         r2_mf_rx(mf_state, amp, len);
     }
+    awgn_free(noise_source);
     if (!callback_ok)
     {
         printf("    Failed\n");
         exit(2);
     }
     printf("    Passed\n");
+
+    r2_mf_rx_free(mf_state);
 
     /* The remainder of the Mitel tape is the talk-off test. This is
        meaningless for R2 MF. However the decoder's tolerance of

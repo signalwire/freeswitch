@@ -236,3 +236,14 @@ static int inet_pton6(const char *src, unsigned char *dst)
 #endif /* ENABLE_IPV6 */
 
 #endif /* HAVE_INET_PTON */
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 noet:
+ */

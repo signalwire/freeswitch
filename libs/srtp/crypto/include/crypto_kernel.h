@@ -221,7 +221,8 @@ crypto_kernel_load_debug_module(debug_module_t *new_dm);
 err_status_t
 crypto_kernel_alloc_cipher(cipher_type_id_t id, 
 			   cipher_pointer_t *cp, 
-			   int key_len);
+			   int key_len,
+			   int tag_len);
 
 /*
  * crypto_kernel_alloc_auth(id, ap, key_len, tag_len); 

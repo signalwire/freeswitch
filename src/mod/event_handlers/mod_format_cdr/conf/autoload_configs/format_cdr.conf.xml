@@ -29,6 +29,8 @@
     <!-- optional: if not present we do not log every record to disk -->
     <!-- either an absolute path, a relative path assuming ${prefix}/logs or a blank value will default to ${prefix}/logs/format_cdr -->
     <param name="log-dir" value=""/>
+    <!-- template for the filename of the saved CDR -->
+    <!-- <param name="log-file" value="${uuid}.cdr.xml"/> -->
 
     <!-- optional: if not present we do log the b leg -->
     <!-- true or false if we should create a cdr for the b leg of a call-->

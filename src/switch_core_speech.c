@@ -39,7 +39,8 @@
 SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *sh,
 														const char *module_name,
 														const char *voice_name,
-														unsigned int rate, unsigned int interval, switch_speech_flag_t *flags, switch_memory_pool_t *pool)
+														unsigned int rate, unsigned int interval, unsigned int channels,
+														switch_speech_flag_t *flags, switch_memory_pool_t *pool)
 {
 	switch_status_t status;
 	char buf[256] = "";
@@ -83,8 +84,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *
 	sh->samples = switch_samples_per_packet(rate, interval);
 	sh->samplerate = rate;
 	sh->native_rate = rate;
+	sh->channels = channels;
+	sh->real_channels = 1;
 
-	if ((status = sh->speech_interface->speech_open(sh, voice_name, rate, flags)) == SWITCH_STATUS_SUCCESS) {
+	if ((status = sh->speech_interface->speech_open(sh, voice_name, rate, channels, flags)) == SWITCH_STATUS_SUCCESS) {
 		switch_set_flag(sh, SWITCH_SPEECH_FLAG_OPEN);
 	} else {
 		UNPROTECT_INTERFACE(sh->speech_interface);
@@ -205,7 +208,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle
 
 	if (sh->buffer && (switch_buffer_inuse(sh->buffer) >= orig_len || switch_test_flag(sh, SWITCH_SPEECH_FLAG_DONE))) {
 		if ((*datalen = switch_buffer_read(sh->buffer, data, orig_len))) {
-			return SWITCH_STATUS_SUCCESS;
+			status = SWITCH_STATUS_SUCCESS;
+			goto done;
 		}
 	}
 
@@ -217,16 +221,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle
 
   more:
 
+	*datalen = orig_len / sh->channels;
+
 	if ((status = sh->speech_interface->speech_read_tts(sh, data, datalen, flags)) != SWITCH_STATUS_SUCCESS) {
 		switch_set_flag(sh, SWITCH_SPEECH_FLAG_DONE);
 		goto top;
 	}
 
-
 	if (sh->native_rate && sh->samplerate && sh->native_rate != sh->samplerate) {
 		if (!sh->resampler) {
 			if (switch_resample_create(&sh->resampler,
-									   sh->native_rate, sh->samplerate, (uint32_t) orig_len, SWITCH_RESAMPLE_QUALITY, 1) != SWITCH_STATUS_SUCCESS) {
+									   sh->native_rate, sh->samplerate, (uint32_t) orig_len / sh->channels, SWITCH_RESAMPLE_QUALITY, 1) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to create resampler!\n");
 				return SWITCH_STATUS_GENERR;
 			}
@@ -261,6 +266,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle
 		}
 	}
 
+
+ done:
+
+	if (sh->channels != sh->real_channels) {
+		uint32_t rlen = *datalen / 2;
+		switch_mux_channels((int16_t *) data, rlen, 1, sh->channels);
+		*datalen = rlen * 2 * sh->channels;
+	}
+	
 	return status;
 
 }

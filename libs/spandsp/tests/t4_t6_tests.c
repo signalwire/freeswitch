@@ -412,8 +412,8 @@ int main(int argc, char *argv[])
         if (compression_step < 0)
             break;
     }
-    t4_t6_encode_release(send_state);
-    t4_t6_decode_release(receive_state);
+    t4_t6_encode_free(send_state);
+    t4_t6_decode_free(receive_state);
 #endif
     printf("Tests passed\n");
     return 0;

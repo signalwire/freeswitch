@@ -94,6 +94,7 @@ int main(int argc, char *argv[])
             break;
         }
     }
+    memset(&info, 0, sizeof(info));
     if ((inhandle = sf_open(in_file_name, SFM_READ, &info)) == NULL)
     {
         printf("    Cannot open audio file '%s'\n", in_file_name);
@@ -151,6 +152,7 @@ int main(int argc, char *argv[])
             count = 0;
         }
     }
+    time_scale_release(&state);
     if (sf_close(inhandle))
     {
         printf("    Cannot close audio file '%s'\n", in_file_name);

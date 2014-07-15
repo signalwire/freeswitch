@@ -53,5 +53,8 @@ aes_icm_alloc_ismacryp(cipher_t **c,
 		       int key_len, 
 		       int forIsmacryp);
 
+uint16_t
+aes_icm_bytes_encrypted(aes_icm_ctx_t *c);
+
 #endif /* AES_ICM_H */
 

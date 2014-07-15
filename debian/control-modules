@@ -411,6 +411,10 @@ Module: endpoints/mod_reference
 Description: mod_reference
  Adds mod_reference.
 
+Module: endpoints/mod_rtc
+Description: Adds mod_rtc.
+ Adds mod_rtc.
+
 Module: endpoints/mod_rtmp
 Description: mod_rtmp
  Adds mod_rtmp.
@@ -431,6 +435,11 @@ Description: mod_sofia
 Module: endpoints/mod_unicall
 Description: mod_unicall
  Adds mod_unicall.
+
+Module: endpoints/mod_verto
+Description: Adds mod_verto.
+ Adds mod_verto.
+Build-Depends: libperl-dev
 
 ## mod/event_handlers
 
@@ -584,13 +593,13 @@ Module: loggers/mod_console
 Description: mod_console
  Adds mod_console.
 
-Module: loggers/mod_logfile
-Description: mod_logfile
- Adds mod_logfile.
-
 Module: loggers/mod_graylog2
 Description: mod_graylog2
  Adds mod_greylog2.
+
+Module: loggers/mod_logfile
+Description: mod_logfile
+ Adds mod_logfile.
 
 Module: loggers/mod_syslog
 Description: mod_syslog

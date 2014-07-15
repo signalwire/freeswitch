@@ -116,13 +116,14 @@ enum
 
 int mode[2] = {AUDIO_FAX, AUDIO_FAX};
 
-t30_state_t *t30_state[2];
-fax_state_t *fax_state[2];
-t38_gateway_state_t *t38_gateway_state[2];
-t38_terminal_state_t *t38_state[2];
-t38_core_state_t *t38_core_state[2];
-g1050_state_t *g1050_path[2];
-awgn_state_t *awgn_state[2];
+t30_state_t *t30_state[2] = {NULL, NULL};
+fax_state_t *fax_state[2] = {NULL, NULL};
+t38_gateway_state_t *t38_gateway_state[2] = {NULL, NULL};
+t38_terminal_state_t *t38_state[2] = {NULL, NULL};
+t38_core_state_t *t38_core_state[2] = {NULL, NULL};
+faxtester_state_t *faxtester[2] = {NULL, NULL};
+g1050_state_t *g1050_path[2] = {NULL, NULL};
+awgn_state_t *awgn_state[2] = {NULL, NULL};
 int16_t audio_buffer[2*2][SAMPLES_PER_CHUNK];
 
 int t38_subst_seq[2] = {0, 0};
@@ -1264,11 +1265,16 @@ int main(int argc, char *argv[])
                 break;
         }
         if (mode[i] == T38_TERMINAL_FAX)
-            t38_terminal_release(t38_state[i]);
+            t38_terminal_free(t38_state[i]);
         else
-            fax_release(fax_state[i]);
+            fax_free(fax_state[i]);
         if (mode[i] == T38_GATEWAY_FAX)
-            t38_gateway_release(t38_gateway_state[i]);
+            t38_gateway_free(t38_gateway_state[i]);
+        if (g1050_path[i])
+        {
+            g1050_free(g1050_path[i]);
+            g1050_path[i] = NULL;
+        }
     }
     if (i < 2)
     {

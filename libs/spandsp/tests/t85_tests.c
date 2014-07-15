@@ -228,7 +228,6 @@ static int test_cycle(const char *test_id,
         if (comment  &&  testbuf_len == 1000)
             t85_encode_comment(t85_enc, comment, strlen((const char *) comment) + 1);
     }
-    t85_encode_release(t85_enc);
     printf("Encoded BIE has %lu bytes\n", (unsigned long int) testbuf_len);
     if (correct_length > 0)
     {
@@ -240,6 +239,9 @@ static int test_cycle(const char *test_id,
         }
         printf("Test passed\n");
     }
+
+    cnt_a = t85_encode_get_compressed_image_size(t85_enc);
+    t85_encode_free(t85_enc);
 
     printf("%s.2: Decode in one big chunk\n", test_id);
     if ((decoded_image = (uint8_t *) malloc(image_size)) == NULL)
@@ -254,7 +256,6 @@ static int test_cycle(const char *test_id,
     result = t85_decode_put(t85_dec, testbuf, testbuf_len);
     if (result == T4_DECODE_MORE_DATA)
         result = t85_decode_put(t85_dec, NULL, 0);
-    cnt_a = t85_encode_get_compressed_image_size(t85_enc);
     cnt_b = t85_decode_get_compressed_image_size(t85_dec);
     if (cnt_a != cnt_b  ||  cnt_a != testbuf_len*8  ||  result != T4_DECODE_OK)
     {
@@ -274,7 +275,7 @@ static int test_cycle(const char *test_id,
         exit(2);
     }
     free(decoded_image);
-    t85_decode_release(t85_dec);
+    t85_decode_free(t85_dec);
     printf("Test passed\n");
 
     printf("%s.3: Decode byte by byte\n", test_id);
@@ -316,7 +317,7 @@ static int test_cycle(const char *test_id,
         exit(2);
     }
     free(decoded_image);
-    t85_decode_release(t85_dec);
+    t85_decode_free(t85_dec);
     printf("Test passed\n");
 
     return 0;

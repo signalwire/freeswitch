@@ -118,6 +118,17 @@ aes_icm_alloc_ismacryp(cipher_t **c, int key_len, int forIsmacryp) {
 
   /* set pointers */
   *c = (cipher_t *)pointer;
+  switch (key_len) {
+  case 46:
+      (*c)->algorithm = AES_256_ICM;
+      break;
+  case 38:
+      (*c)->algorithm = AES_192_ICM;
+      break;
+  default:
+      (*c)->algorithm = AES_128_ICM;
+      break;
+  }
   (*c)->type = &aes_icm;
   (*c)->state = pointer + sizeof(cipher_t);
 
@@ -384,7 +395,7 @@ aes_icm_encrypt_ismacryp(aes_icm_ctx_t *c,
   for (i=0; i < (bytes_to_encr/sizeof(v128_t)); i++) {
 
     /* fill buffer with new keystream */
-    aes_icm_advance_ismacryp(c, (uint8_t)forIsmacryp);
+    aes_icm_advance_ismacryp(c, forIsmacryp);
 
     /*
      * add keystream into the data buffer (this would be a lot faster
@@ -432,7 +443,7 @@ aes_icm_encrypt_ismacryp(aes_icm_ctx_t *c,
   if ((bytes_to_encr & 0xf) != 0) {
     
     /* fill buffer with new keystream */
-    aes_icm_advance_ismacryp(c, (uint8_t)forIsmacryp);
+    aes_icm_advance_ismacryp(c, forIsmacryp);
     
     for (i=0; i < (bytes_to_encr & 0xf); i++)
       *buf++ ^= c->keystream_buffer.v8[i];
@@ -465,6 +476,10 @@ aes_icm_output(aes_icm_ctx_t *c, uint8_t *buffer, int num_octets_to_output) {
   return aes_icm_encrypt(c, buffer, &len);
 }
 
+uint16_t
+aes_icm_bytes_encrypted(aes_icm_ctx_t *c) {
+    return htons(c->counter.v16[7]);
+}
 
 char 
 aes_icm_description[] = "aes integer counter mode";
@@ -505,6 +520,7 @@ cipher_test_case_t aes_icm_test_case_0 = {
   aes_icm_test_case_0_ciphertext,        /* ciphertext               */
   0,
   NULL,
+  0,
   NULL                                   /* pointer to next testcase */
 };
 
@@ -546,6 +562,7 @@ cipher_test_case_t aes_icm_test_case_1 = {
   aes_icm_test_case_1_ciphertext,        /* ciphertext               */
   0,
   NULL,
+  0,
   &aes_icm_test_case_0                   /* pointer to next testcase */
 };
 

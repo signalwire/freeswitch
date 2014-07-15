@@ -512,6 +512,7 @@ int main(int argc, char *argv[])
         printf("    Failed\n");
         exit(2);
     }
+    bell_mf_rx_free(mf_state);
     printf("    Passed\n");
 
     /* The remainder of the Mitel tape is the talk-off test. This is
@@ -540,6 +541,7 @@ int main(int argc, char *argv[])
         printf("    Failed\n");
         exit(2);
     }
+    bell_mf_rx_free(mf_state);
     printf("    Passed\n");
 
     duration = time (NULL) - now;

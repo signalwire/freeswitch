@@ -644,7 +644,9 @@ pa-reconf:
 
 srtp-reconf:
 	cd libs/srtp && $(MAKE) clean
-	cd libs/srtp && sh ./configure.gnu
+	cd libs/srtp && sh ./config.status --recheck
+	cd libs/srtp && sh ./config.status
+
 
 iks-reconf:
 	cd libs/iksemel && $(MAKE) clean

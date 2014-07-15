@@ -625,6 +625,9 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 	char *err = NULL;
 	const char *mpg123err = NULL;
 	int portno = 0;
+	long rate = 0;
+	int channels = 0;
+	int encoding = 0;
 
 	if ((context = switch_core_alloc(handle->memory_pool, sizeof(*context))) == 0) {
 		return SWITCH_STATUS_MEMERR;
@@ -659,9 +662,6 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 		}
 
 		if (handle->handler) {
-			if (mpg123_param(context->mh, MPG123_FLAGS, MPG123_SEEKBUFFER | MPG123_MONO_MIX, 0) != MPG123_OK) {
-				MPGERROR();
-			}
 			if (mpg123_open_feed(context->mh) != MPG123_OK) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening mpg feed\n");
 				mpg123err = mpg123_strerror(context->mh);
@@ -670,11 +670,10 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 			context->stream_url = switch_core_sprintf(context->memory_pool, "http://%s", path);
 			context->prebuf = handle->prebuf;
 			launch_read_stream_thread(context);
+			switch_cond_next();
 		} else {
 			handle->seekable = 1;
-			if (mpg123_param(context->mh, MPG123_FLAGS, MPG123_MONO_MIX, 0) != MPG123_OK) {
-				MPGERROR();
-			}
+
 			if (mpg123_open(context->mh, path) != MPG123_OK) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", path);
 				mpg123err = mpg123_strerror(context->mh);
@@ -682,6 +681,30 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 			}
 
 		}
+
+		if (handle->handler) {
+			int sanity = 1000;
+
+			while(--sanity > 0 && !switch_buffer_inuse(context->audio_buffer)) {
+				switch_yield(20000);
+			}
+
+			if (!sanity) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s (data stream timeout)\n", path);
+				goto error;
+			}
+		}
+
+		mpg123_getformat(context->mh, &rate, &channels, &encoding);
+
+		if (!channels || !rate) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s (invalid rate or channel count)\n", path);
+			goto error;
+		}
+
+		handle->channels = channels;
+		handle->samplerate = rate;
+
 	} else if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		if (!(context->gfp = lame_init())) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate lame\n");
@@ -897,7 +920,7 @@ static switch_status_t shout_file_seek(switch_file_handle_t *handle, unsigned in
 static switch_status_t shout_file_read(switch_file_handle_t *handle, void *data, size_t *len)
 {
 	shout_context_t *context = handle->private_info;
-	size_t rb = 0, bytes = *len * sizeof(int16_t), newbytes = 0;
+	size_t rb = 0, bytes = *len * sizeof(int16_t) * handle->real_channels, newbytes = 0;
 
 	*len = 0;
 
@@ -919,7 +942,7 @@ static switch_status_t shout_file_read(switch_file_handle_t *handle, void *data,
 	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "rb: %d, bytes: %d\n", (int) rb, (int) bytes); */
 
 	if (rb) {
-		*len = rb / sizeof(int16_t);
+		*len = rb / sizeof(int16_t) / handle->real_channels;
 	} else {
 		/* no data, so insert 1 second of silence */
 		newbytes = 2 * handle->samplerate;
@@ -929,7 +952,7 @@ static switch_status_t shout_file_read(switch_file_handle_t *handle, void *data,
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Padding mp3 stream with 1s of empty audio. (%s)\n", context->stream_url);
 
 		memset(data, 255, bytes);
-		*len = bytes / sizeof(int16_t);
+		*len = bytes / sizeof(int16_t) / handle->real_channels;
 	}
 
 	handle->sample_count += *len;
@@ -976,7 +999,7 @@ static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data
 	if (handle->handler && context->audio_mutex) {
 		switch_mutex_lock(context->audio_mutex);
 		if (context->audio_buffer) {
-			if (!switch_buffer_write(context->audio_buffer, data, (nsamples * sizeof(int16_t) * handle->channels))) {
+			if (!switch_buffer_write(context->audio_buffer, data, (nsamples * sizeof(int16_t) * handle->real_channels))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Buffer error\n");
 				context->err++;
 			}
@@ -1004,7 +1027,7 @@ static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data
 		context->mp3buf = switch_core_alloc(context->memory_pool, context->mp3buflen);
 	}
 
-	if (handle->channels == 2) {
+	if (handle->real_channels == 2) {
 		switch_size_t i, j = 0;
 
 		if (context->llen < nsamples) {
@@ -1023,7 +1046,7 @@ static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data
 			return SWITCH_STATUS_FALSE;
 		}
 
-	} else if (handle->channels == 1) {
+	} else if (handle->real_channels == 1) {
 		if ((rlen = lame_encode_buffer(context->gfp, audio, NULL, (int)nsamples, context->mp3buf, (int)context->mp3buflen)) < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
 			return SWITCH_STATUS_FALSE;

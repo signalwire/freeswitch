@@ -842,7 +842,7 @@ static int t38_encode_data(t38_core_state_t *s, uint8_t buf[], int data_type, co
                         return -1;
                     buf[len++] = (uint8_t) (((q->field_len - 1) >> 8) & 0xFF);
                     buf[len++] = (uint8_t) ((q->field_len - 1) & 0xFF);
-                    memcpy(buf + len, q->field, q->field_len);
+                    memcpy(&buf[len], q->field, q->field_len);
                     len += q->field_len;
                 }
                 data_field_no++;

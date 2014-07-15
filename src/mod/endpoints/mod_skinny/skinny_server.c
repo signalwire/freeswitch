@@ -285,7 +285,15 @@ switch_status_t skinny_session_process_dest(switch_core_session_t *session, list
 	channel = switch_core_session_get_channel(session);
 	tech_pvt = switch_core_session_get_private(session);
 
-	if (!dest) {
+	// get listener profile setting for ringdown/autodial
+	// if initial offhook - and we have a ringdown/autodial configured, just dial it in one shot
+	if (!dest && append_dest == '\0' && listener->ext_autodial ) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, 
+			"triggering auto dial to (%s)\n", listener->ext_autodial);
+
+		tech_pvt->caller_profile->destination_number = switch_core_strdup(tech_pvt->caller_profile->pool, listener->ext_autodial);
+		switch_set_flag_locked(tech_pvt, TFLAG_FORCE_ROUTE);
+	} else if (!dest) {
 		if (strlen(tech_pvt->caller_profile->destination_number) == 0) {/* no digit yet */
 			send_start_tone(listener, SKINNY_TONE_DIALTONE, 0, line_instance, tech_pvt->call_id);
 		}
@@ -1128,6 +1136,10 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 					if (!listener->ext_cfwdall || strcmp(value,listener->ext_cfwdall)) {
 						listener->ext_cfwdall = switch_core_strdup(profile->pool, value);
 					}
+				} else if (!strcasecmp(name, "ext-autodial")) {
+					if (!listener->ext_autodial || strcmp(value,listener->ext_autodial)) {
+						listener->ext_autodial = switch_core_strdup(profile->pool, value);
+					}
 				}
 			}
 		}
@@ -1711,12 +1723,16 @@ switch_status_t skinny_handle_button_template_request(listener_t *listener, skin
 
 switch_status_t skinny_handle_version_request(listener_t *listener, skinny_message_t *request)
 {
+	int saw_entry = 0;
+
 	if (zstr(listener->firmware_version)) {
 		char *id_str;
 		skinny_device_type_params_t *params;
 		id_str = switch_mprintf("%d", listener->device_type);
 		params = (skinny_device_type_params_t *) switch_core_hash_find(listener->profile->device_type_params_hash, id_str);
 		if (params) {
+			saw_entry = 1;
+
 			if (!zstr(params->firmware_version)) {
 				strncpy(listener->firmware_version, params->firmware_version, 16);
 			}
@@ -1725,11 +1741,16 @@ switch_status_t skinny_handle_version_request(listener_t *listener, skinny_messa
 
 	if (!zstr(listener->firmware_version)) {
 		return send_version(listener, listener->firmware_version);
+	} else if (saw_entry) {
+		/* found entry with an empty string */
+		return send_version(listener, "");
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 				"Device %s:%d is requesting for firmware version, but none is set.\n",
 				listener->device_name, listener->device_instance);
-		return SWITCH_STATUS_SUCCESS;
+
+		/* CCM sends back an answer, but with all nulls */
+		return send_version(listener, "");
 	}
 }
 
@@ -2126,6 +2147,16 @@ switch_status_t skinny_headset_status_message(listener_t *listener, skinny_messa
 	return SWITCH_STATUS_SUCCESS;
 }
 
+switch_status_t skinny_handle_media_resource_message(listener_t *listener, skinny_message_t *request)
+{
+	skinny_check_data_length(request, sizeof(request->data.media_resource));
+
+	skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Handle Media Resource Notification\n");
+
+	/* Do nothing */
+	return SWITCH_STATUS_SUCCESS;
+}
+
 switch_status_t skinny_handle_register_available_lines_message(listener_t *listener, skinny_message_t *request)
 {
 	skinny_check_data_length(request, sizeof(request->data.reg_lines));
@@ -2457,6 +2488,8 @@ switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *re
 			return skinny_handle_unregister(listener, request);
 		case SOFT_KEY_TEMPLATE_REQ_MESSAGE:
 			return skinny_handle_soft_key_template_request(listener, request);
+		case MEDIA_RESOURCE_MESSAGE:
+			return skinny_handle_media_resource_message(listener, request);
 		case HEADSET_STATUS_MESSAGE:
 			return skinny_headset_status_message(listener, request);
 		case REGISTER_AVAILABLE_LINES_MESSAGE:

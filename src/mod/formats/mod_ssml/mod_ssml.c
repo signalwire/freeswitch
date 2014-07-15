@@ -938,7 +938,7 @@ static switch_status_t tts_file_open(switch_file_handle_t *handle, const char *p
 
 	memset(context, 0, sizeof(*context));
 	context->flags = SWITCH_SPEECH_FLAG_NONE;
-	if ((status = switch_core_speech_open(&context->sh, module, voice, handle->samplerate, handle->interval, &context->flags, NULL)) == SWITCH_STATUS_SUCCESS) {
+	if ((status = switch_core_speech_open(&context->sh, module, voice, handle->samplerate, handle->interval, handle->channels, &context->flags, NULL)) == SWITCH_STATUS_SUCCESS) {
 		if ((status = switch_core_speech_feed_tts(&context->sh, document, &context->flags)) == SWITCH_STATUS_SUCCESS) {
 			handle->channels = 1;
 			handle->samples = 0;

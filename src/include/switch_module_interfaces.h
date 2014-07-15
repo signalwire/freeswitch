@@ -311,6 +311,7 @@ struct switch_file_handle {
 	uint32_t native_rate;
 	/*! the number of channels */
 	uint32_t channels;
+	uint32_t real_channels;
 	/*! integer representation of the format */
 	unsigned int format;
 	/*! integer representation of the sections */
@@ -435,7 +436,7 @@ struct switch_speech_interface {
 	/*! the name of the interface */
 	const char *interface_name;
 	/*! function to open the speech interface */
-	switch_status_t (*speech_open) (switch_speech_handle_t *sh, const char *voice_name, int rate, switch_speech_flag_t *flags);
+	switch_status_t (*speech_open) (switch_speech_handle_t *sh, const char *voice_name, int rate, int channels, switch_speech_flag_t *flags);
 	/*! function to close the speech interface */
 	switch_status_t (*speech_close) (switch_speech_handle_t *, switch_speech_flag_t *flags);
 	/*! function to feed audio to the ASR */
@@ -466,6 +467,8 @@ struct switch_speech_handle {
 	uint32_t rate;
 	uint32_t speed;
 	uint32_t samples;
+	uint32_t channels;
+	uint32_t real_channels;
 	char voice[80];
 	char *engine;
 	/*! module specific param */
@@ -599,6 +602,8 @@ struct switch_codec_fmtp {
 	int bits_per_second;
 	/*! number of microseconds of media in one packet (ptime * 1000) */
 	int microseconds_per_packet;
+	/*! stereo  */
+	int stereo;
 	/*! private data for the codec module to store handle specific info */
 	void *private_info;
 

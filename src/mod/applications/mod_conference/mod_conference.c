@@ -39,6 +39,14 @@
  *
  */
 #include <switch.h>
+
+#ifdef OPENAL_POSITIONING
+#define AL_ALEXT_PROTOTYPES
+#include <AL/al.h>
+#include <AL/alc.h>
+#include <AL/alext.h>
+#endif
+
 #define DEFAULT_AGC_LEVEL 1100
 #define CONFERENCE_UUID_VARIABLE "conference_uuid"
 
@@ -187,7 +195,9 @@ typedef enum {
 	MFLAG_PAUSE_RECORDING = (1 << 22),
 	MFLAG_ACK_VIDEO = (1 << 23),
 	MFLAG_GHOST = (1 << 24),
-	MFLAG_JOIN_ONLY = (1 << 25)
+	MFLAG_JOIN_ONLY = (1 << 25),
+	MFLAG_POSITIONAL = (1 << 26),
+	MFLAG_NO_POSITIONAL = (1 << 27)
 } member_flag_t;
 
 typedef enum {
@@ -213,7 +223,8 @@ typedef enum {
 	CFLAG_VID_FLOOR_LOCK = (1 << 19),
 	CFLAG_JSON_EVENTS = (1 << 20),
 	CFLAG_LIVEARRAY_SYNC = (1 << 21),
-	CFLAG_CONF_RESTART_AUTO_RECORD = (1 << 22)
+	CFLAG_CONF_RESTART_AUTO_RECORD = (1 << 22),
+	CFLAG_POSITIONAL = (1 << 23)
 } conf_flag_t;
 
 typedef enum {
@@ -262,7 +273,25 @@ typedef enum {
 	EFLAG_RECORD = (1 << 27),
 	EFLAG_HUP_MEMBER = (1 << 28),
 	EFLAG_PLAY_FILE_DONE = (1 << 29),
+	EFLAG_SET_POSITION_MEMBER = (1 << 30)
 } event_type_t;
+
+#ifdef OPENAL_POSITIONING
+typedef struct al_handle_s {
+	ALCdevice *device;
+	ALCcontext *context;
+	ALuint source;
+	ALuint buffer_in[2];
+	int setpos;
+	ALfloat pos_x;
+	ALfloat pos_y;
+	ALfloat pos_z;
+} al_handle_t;
+#else 
+typedef struct al_handle_s {
+	int unsupported;
+} al_handle_t;
+#endif
 
 typedef struct conference_file_node {
 	switch_file_handle_t fh;
@@ -277,6 +306,7 @@ typedef struct conference_file_node {
 	char *file;
 	switch_bool_t mux;
 	uint32_t member_id;
+	al_handle_t *al;
 } conference_file_node_t;
 
 typedef enum {
@@ -313,6 +343,7 @@ typedef struct conference_obj {
 	char *name;
 	char *la_name;
 	char *la_event_channel;
+	char *mod_event_channel;
 	char *desc;
 	char *timer_name;
 	char *tts_engine;
@@ -359,6 +390,7 @@ typedef struct conference_obj {
 	switch_mutex_t *flag_mutex;
 	uint32_t rate;
 	uint32_t interval;
+	uint32_t channels;
 	switch_mutex_t *mutex;
 	conference_member_t *members;
 	conference_member_t *floor_holder;
@@ -369,6 +401,7 @@ typedef struct conference_obj {
 	switch_memory_pool_t *pool;
 	switch_thread_rwlock_t *rwlock;
 	uint32_t count;
+	uint32_t count3d;
 	int32_t energy_level;
 	uint8_t min;
 	switch_speech_handle_t lsh;
@@ -414,6 +447,7 @@ typedef struct conference_obj {
 	struct vid_helper vh[2];
 	struct vid_helper mh;
 	conference_record_t *rec_node_head;
+	int last_speech_channels;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -431,6 +465,7 @@ struct conference_member {
 	conference_obj_t *conference;
 	switch_memory_pool_t *pool;
 	switch_buffer_t *audio_buffer;
+	switch_buffer_t *clean_audio_buffer;
 	switch_buffer_t *mux_buffer;
 	switch_buffer_t *resample_buffer;
 	uint32_t flags;
@@ -452,10 +487,13 @@ struct conference_member {
 	switch_time_t rec_time;
 	conference_record_t *rec;
 	uint8_t *frame;
+	uint8_t *clean_frame;
 	uint8_t *last_frame;
 	uint32_t frame_size;
+	uint32_t clean_frame_size;
 	uint8_t *mux_frame;
 	uint32_t read;
+	uint32_t clean_read;
 	uint32_t vol_period;
 	int32_t energy_level;
 	int32_t agc_volume_in_level;
@@ -486,6 +524,8 @@ struct conference_member {
 	cJSON *json;
 	cJSON *status_field;
 	uint8_t loop_loop;
+	al_handle_t *al;
+	int last_speech_channels;
 };
 
 typedef enum {
@@ -581,6 +621,201 @@ static switch_status_t conf_api_sub_clear_vid_floor(conference_obj_t *conference
 //#define lock_member(_member) switch_mutex_lock(_member->write_mutex)
 //#define unlock_member(_member) switch_mutex_unlock(_member->write_mutex)
 
+static al_handle_t *create_al(switch_memory_pool_t *pool)
+{
+	al_handle_t *al;
+
+	al = switch_core_alloc(pool, sizeof(al_handle_t));
+	
+	return al;
+}
+
+#ifndef OPENAL_POSITIONING
+static void gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream)
+{
+}
+static void process_al(al_handle_t *al, void *data, switch_size_t datalen, int rate)
+{
+}
+
+#else
+static void gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream)
+{
+	float offset;
+	float pos;
+	float radius;
+	float x, z;
+	float div = 3.14159f / 180;
+	conference_member_t *member;
+	uint32_t count = 0;
+
+	if (!conference->count) {
+		return;
+	}
+
+	switch_mutex_lock(conference->member_mutex);
+	for (member = conference->members; member; member = member->next) {
+		if (member->channel && switch_test_flag(member, MFLAG_CAN_SPEAK) && !switch_test_flag(member, MFLAG_NO_POSITIONAL)) {
+			count++;
+		}
+	}
+
+	if (count < 3) {
+		for (member = conference->members; member; member = member->next) {
+			if (member->channel && !switch_test_flag(member, MFLAG_NO_POSITIONAL) && member->al) {
+				member->al->pos_x = 0;
+				member->al->pos_y = 0;
+				member->al->pos_z = 0;
+				member->al->setpos = 1;
+
+				if (stream) {
+					stream->write_function(stream, "Member %d (%s) 0.0:0.0:0.0\n", member->id, switch_channel_get_name(member->channel));
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Member %d (%s) 0.0:0.0:0.0\n", 
+									  member->id, switch_channel_get_name(member->channel));
+				}
+			}
+		}
+
+		goto end;
+	}
+
+	offset = 180 / (count - 1);
+
+	radius = 1.5f;//3.0f; //(float)count / 2.0f; //3.0f;
+
+	pos = -90.0f;// + (offset / 2.0f);
+	
+	for (member = conference->members; member; member = member->next) {
+
+		if (!member->channel || switch_test_flag(member, MFLAG_NO_POSITIONAL) || !switch_test_flag(member, MFLAG_CAN_SPEAK)) {
+			continue;
+		}
+
+		if (!member->al) {
+			member->al = create_al(member->pool);
+			switch_mutex_lock(member->conference->member_mutex);
+			member->conference->count3d++;
+			switch_mutex_unlock(member->conference->member_mutex);
+		}
+		switch_set_flag(member, MFLAG_POSITIONAL);
+
+		if (pos == 0) {
+			x = 0;
+			z = radius;
+		} else if (pos == -90) {
+			z = 0;
+			x = radius * -1;
+		} else if (pos == 90) {
+			z = 0;
+			x = radius;
+		} else if (pos < 0) {
+			z = cos((90+pos) * div) * radius;
+			x = sin((90+pos) * div) * radius * -1.0f;
+		} else {
+			x = cos(pos * div) * radius;
+			z = sin(pos * div) * radius;
+		}
+
+		member->al->pos_x = x;
+		member->al->pos_y = 0;
+		member->al->pos_z = z;
+		member->al->setpos = 1;
+
+		if (stream) {
+			stream->write_function(stream, "Member %d (%s) %0.2f:0.0:%0.2f\n", member->id, switch_channel_get_name(member->channel), x, z);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Member %d (%s) %0.2f:0.0:%0.2f\n", 
+							  member->id, switch_channel_get_name(member->channel), x, z);
+		}
+
+		pos += offset;
+	}
+		
+ end:
+
+	switch_mutex_unlock(conference->member_mutex);
+
+	return;
+
+}
+
+
+#define ALC_HRTF_SOFT  0x1992
+
+static void process_al(al_handle_t *al, void *data, switch_size_t datalen, int rate)
+{
+
+	if (rate != 48000) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Only 48khz is supported.\n");
+		return;
+	}
+
+	if (!al->device) {
+		ALCint contextAttr[] = {
+			ALC_FORMAT_CHANNELS_SOFT, ALC_STEREO_SOFT,
+			ALC_FORMAT_TYPE_SOFT, ALC_SHORT_SOFT,
+			ALC_FREQUENCY, rate,
+			ALC_HRTF_SOFT, AL_TRUE,
+			0
+		};
+
+		switch_mutex_lock(globals.setup_mutex);
+		if ((al->device = alcLoopbackOpenDeviceSOFT(NULL))) {
+			static const ALshort silence[16] = { 0 };
+			float orient[6] = { /*fwd:*/ 0., 0., -1., /*up:*/ 0., 1., 0. };
+			
+			al->context = alcCreateContext(al->device, contextAttr);
+			alcSetThreadContext(al->context);
+			
+			/* listener at origin, facing down -z (ears at 0.0m height) */
+			alListener3f( AL_POSITION, 0. ,0, 0. );
+			alListener3f( AL_VELOCITY, 0., 0., 0. );
+			alListenerfv( AL_ORIENTATION, orient );
+
+			
+			alGenSources(1, &al->source);
+			alSourcef( al->source, AL_PITCH, 1.);
+			alSourcef( al->source, AL_GAIN, 1.2);
+			alGenBuffers(2, al->buffer_in);
+
+			alBufferData(al->buffer_in[0], AL_FORMAT_MONO16, data, datalen, rate);
+			//alBufferData(al->buffer_in[0], AL_FORMAT_MONO16, NULL, 0, rate);
+			alBufferData(al->buffer_in[1], AL_FORMAT_MONO16, silence, sizeof(silence), rate);
+			alSourceQueueBuffers(al->source, 2, al->buffer_in);
+			alSourcePlay(al->source);
+		}
+		switch_mutex_unlock(globals.setup_mutex);
+	}
+
+	if (al->device) {
+		ALint processed = 0, state = 0;
+		
+		//alcSetThreadContext(al->context);
+		alGetSourcei(al->source, AL_SOURCE_STATE, &state);
+		alGetSourcei(al->source, AL_BUFFERS_PROCESSED, &processed);
+				
+		if (al->setpos) {
+			al->setpos = 0;
+			alSource3f(al->source, AL_POSITION, al->pos_x, al->pos_y, al->pos_z);
+			//alSource3f(al->source, AL_VELOCITY, .01, 0., 0.);
+		}
+		
+		if (processed > 0) {
+			ALuint bufid;
+			alSourceUnqueueBuffers(al->source, 1, &bufid);
+			alBufferData(bufid, AL_FORMAT_MONO16, data, datalen, rate);
+			alSourceQueueBuffers(al->source, 1, &bufid);
+		}
+
+		if (state != AL_PLAYING) {
+			alSourcePlay(al->source);
+		}
+		
+		alcRenderSamplesSOFT(al->device, data, datalen / 2);
+	}
+}
+#endif
 
 static void conference_cdr_del(conference_member_t *member)
 {
@@ -706,7 +941,7 @@ static char *conference_rfc4579_render(conference_obj_t *conference, switch_even
 	if (!(x_tag = switch_xml_add_child_d(xml, "conference-description", off++))) {
 		abort();
 	}
-
+	
 	if (!(x_tag1 = switch_xml_add_child_d(x_tag, "display-text", off1++))) {
 		abort();
 	}
@@ -1291,6 +1526,102 @@ static cJSON *conference_json_render(conference_obj_t *conference, cJSON *req)
 	return json;
 }
 
+static void conference_mod_event_channel_handler(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id)
+{
+	cJSON *data; 
+	const char *action = NULL;
+	char *value = NULL;
+	cJSON *jid = 0;
+	char *conf_name = strdup(event_channel + 15);
+	int cid = 0;
+	char *p;
+	switch_stream_handle_t stream = { 0 };
+	char *exec = NULL;
+	cJSON *msg, *jdata, *jvalue;
+	char *argv[10] = {0};
+	int argc = 0;
+
+	if (conf_name && (p = strchr(conf_name, '@'))) {
+		*p = '\0';
+	}
+
+	if ((data = cJSON_GetObjectItem(json, "data"))) {
+		action = cJSON_GetObjectCstr(data, "command");
+		if ((jid = cJSON_GetObjectItem(data, "id"))) {
+			cid = jid->valueint;
+		}
+
+		if ((jvalue = cJSON_GetObjectItem(data, "value"))) {
+
+			if (jvalue->type == cJSON_Array) {
+				int i;
+				argc = cJSON_GetArraySize(jvalue);
+				if (argc > 10) argc = 10;
+
+				for (i = 0; i < argc; i++) {
+					cJSON *str = cJSON_GetArrayItem(jvalue, i);
+					if (str->type == cJSON_String) {
+						argv[i] = str->valuestring;
+					}
+				}
+			} else if (jvalue->type == cJSON_String) { 
+				value = jvalue->valuestring;
+				argv[argc++] = value;
+			}
+		}
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "conf %s CMD %s [%s] %d\n", conf_name, key, action, cid);
+
+	if (zstr(action)) {
+		goto end;
+	}
+
+	SWITCH_STANDARD_STREAM(stream);
+	
+	if (!strcasecmp(action, "kick") || !strcasecmp(action, "mute") || !strcasecmp(action, "unmute") || !strcasecmp(action, "tmute")) {
+		exec = switch_mprintf("%s %s %d", conf_name, action, cid);
+	} else if (!strcasecmp(action, "volume_in") || !strcasecmp(action, "volume_out")) {
+		exec = switch_mprintf("%s %s %d %s", conf_name, action, cid, argv[0]);
+	} else if (!strcasecmp(action, "play") || !strcasecmp(action, "stop")) {
+		exec = switch_mprintf("%s %s %s", conf_name, action, argv[0]);
+	} else if (!strcasecmp(action, "recording")) {
+		if (!argv[1]) {
+			argv[1] = "all";
+		}
+		exec = switch_mprintf("%s %s %s %s", conf_name, action, argv[0], argv[1]);
+	}
+
+	if (exec) {
+		conf_api_main(exec, NULL, &stream);
+	}
+
+ end:
+
+	msg = cJSON_CreateObject();
+	jdata = json_add_child_obj(msg, "data", NULL);
+
+	cJSON_AddItemToObject(msg, "eventChannel", cJSON_CreateString(event_channel));
+	cJSON_AddItemToObject(jdata, "action", cJSON_CreateString("response"));
+	
+	if (exec) {
+		cJSON_AddItemToObject(jdata, "conf-command", cJSON_CreateString(exec));
+		cJSON_AddItemToObject(jdata, "response", cJSON_CreateString((char *)stream.data));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT,"RES [%s][%s]\n", exec, (char *)stream.data);
+	} else {
+		cJSON_AddItemToObject(jdata, "error", cJSON_CreateString("Invalid Command"));
+	}
+
+	switch_event_channel_broadcast(event_channel, &msg, __FILE__, globals.event_channel_id);
+
+
+	switch_safe_free(stream.data);
+	switch_safe_free(exec);
+
+	switch_safe_free(conf_name);
+
+}
+
 static void conference_la_event_channel_handler(const char *event_channel, cJSON *json, const char *key, switch_event_channel_id_t id)
 {
 	switch_live_array_parse_json(json, globals.event_channel_id);
@@ -1724,7 +2055,7 @@ static void member_update_status_field(conference_member_t *member)
 {
 	char *str, *vstr = "", display[128] = "";
 
-	if (!member->conference->la) {
+	if (!member->conference->la || !member->json || !member->status_field) {
 		return;
 	}
 
@@ -1769,24 +2100,81 @@ static void adv_la(conference_obj_t *conference, conference_member_t *member, sw
 		cJSON *msg, *data;
 		const char *uuid = switch_core_session_get_uuid(member->session);
 		const char *cookie = switch_channel_get_variable(member->channel, "event_channel_cookie");
+		const char *event_channel = cookie ? cookie : uuid;
 
 		msg = cJSON_CreateObject();
 		data = json_add_child_obj(msg, "pvtData", NULL);
 
-		cJSON_AddItemToObject(msg, "eventChannel", cJSON_CreateString(uuid));
+		cJSON_AddItemToObject(msg, "eventChannel", cJSON_CreateString(event_channel));
 		cJSON_AddItemToObject(msg, "eventType", cJSON_CreateString("channelPvtData"));
 
 		cJSON_AddItemToObject(data, "action", cJSON_CreateString(join ? "conference-liveArray-join" : "conference-liveArray-part"));
 		cJSON_AddItemToObject(data, "laChannel", cJSON_CreateString(conference->la_event_channel));
 		cJSON_AddItemToObject(data, "laName", cJSON_CreateString(conference->la_name));
+		cJSON_AddItemToObject(data, "role", cJSON_CreateString(switch_test_flag(member, MFLAG_MOD) ? "moderator" : "participant"));
+		if (switch_test_flag(member, MFLAG_MOD)) {
+			cJSON_AddItemToObject(data, "modChannel", cJSON_CreateString(conference->mod_event_channel));
+		}
+		
+		switch_event_channel_broadcast(event_channel, &msg, modname, globals.event_channel_id);
 
 		if (cookie) {
 			switch_event_channel_permission_modify(cookie, conference->la_event_channel, join);
+			switch_event_channel_permission_modify(cookie, conference->mod_event_channel, join);
 		}
-
-		switch_event_channel_broadcast(uuid, &msg, modname, globals.event_channel_id);
 	}
 }
+
+#ifndef OPENAL_POSITIONING
+static switch_status_t parse_position(al_handle_t *al, const char *data) 
+{
+	return SWITCH_STATUS_FALSE;
+}
+
+#else 
+static switch_status_t parse_position(al_handle_t *al, const char *data) 
+{
+	char *args[3];
+	int num;
+	char *dup;
+	
+
+	dup = strdup((char *)data);
+	switch_assert(dup);
+			
+	if ((num = switch_split(dup, ':', args)) != 3) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	al->pos_x = atof(args[0]);
+	al->pos_y = atof(args[1]);
+	al->pos_z = atof(args[2]);
+	al->setpos = 1;
+
+	switch_safe_free(dup);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+#endif
+
+#ifndef OPENAL_POSITIONING
+static switch_status_t member_parse_position(conference_member_t *member, const char *data)
+{
+	return SWITCH_STATUS_FALSE;
+}
+#else
+static switch_status_t member_parse_position(conference_member_t *member, const char *data)
+{
+	switch_status_t status;
+
+	lock_member(member);
+	status = parse_position(member->al, data);
+	unlock_member(member);
+
+	return status;
+	
+}
+#endif
 
 /* Gain exclusive access and add the member to the list */
 static switch_status_t conference_add_member(conference_obj_t *conference, conference_member_t *member)
@@ -1796,7 +2184,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	char msg[512];				/* conference count announcement */
 	call_list_t *call_list = NULL;
 	switch_channel_t *channel;
-	const char *controls = NULL;
+	const char *controls = NULL, *position = NULL;
 
 	switch_assert(conference != NULL);
 	switch_assert(member != NULL);
@@ -1819,6 +2207,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	switch_set_flag_locked(member, MFLAG_INTREE);
 	switch_mutex_unlock(conference->member_mutex);
 	conference_cdr_add(member);
+
 
 	if (!switch_test_flag(member, MFLAG_NOCHANNEL)) {
 		if (switch_test_flag(member, MFLAG_GHOST)) {
@@ -1941,6 +2330,33 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		switch_channel_clear_app_flag_key("conf_silent", channel, CONF_SILENT_REQ);
 		switch_channel_set_app_flag_key("conf_silent", channel, CONF_SILENT_DONE);
 
+
+		if ((position = switch_channel_get_variable(channel, "conference_position"))) {
+
+			if (conference->channels == 2) {
+				if (switch_test_flag(member, MFLAG_NO_POSITIONAL)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+									  "%s has positional audio blocked.\n", switch_channel_get_name(channel));
+				} else {
+					if (member_parse_position(member, position) != SWITCH_STATUS_SUCCESS) { 
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,	"%s invalid position data\n", switch_channel_get_name(channel));
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,	"%s position data set\n", switch_channel_get_name(channel));
+					}
+					
+					switch_set_flag(member, MFLAG_POSITIONAL);
+					member->al = create_al(member->pool);
+					switch_mutex_lock(member->conference->member_mutex);
+					member->conference->count3d++;
+					switch_mutex_unlock(member->conference->member_mutex);
+				}
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,	"%s cannot set position data on mono conference.\n", switch_channel_get_name(channel));
+			}
+		}
+		
+		
+
 		controls = switch_channel_get_variable(channel, "conference_controls");
 
 		if (zstr(controls)) {
@@ -1977,13 +2393,24 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 																	switch_channel_get_variable(member->channel, "original_read_rate")
 																	));
 
+
+
+
 		member->status_field = cJSON_CreateString("");
 		cJSON_AddItemToArray(member->json, member->status_field);
+
+		cJSON_AddItemToArray(member->json, cJSON_CreateNull());
+
 		member_update_status_field(member);
 		//switch_live_array_add_alias(conference->la, switch_core_session_get_uuid(member->session), "conference");
 		adv_la(conference, member, SWITCH_TRUE);
 		switch_live_array_add(conference->la, switch_core_session_get_uuid(member->session), -1, &member->json, SWITCH_FALSE);
 		
+	}
+
+
+	if (switch_test_flag(conference, CFLAG_POSITIONAL)) {
+		gen_arc(conference, NULL);
 	}
 
 
@@ -2154,6 +2581,36 @@ static void conference_set_floor_holder(conference_obj_t *conference, conference
 
 }
 
+#ifdef OPENAL_POSITIONING
+static void close_al(al_handle_t *al)
+{
+	if (!al) return;
+
+	switch_mutex_lock(globals.setup_mutex);	
+	if (al->source) {
+		alDeleteSources(1, &al->source);
+		al->source = 0;
+	}
+
+	if (al->buffer_in[0]) {
+		alDeleteBuffers(2, al->buffer_in);
+		al->buffer_in[0] = 0;
+		al->buffer_in[1] = 0;
+	}
+
+	if (al->context) {
+		alcDestroyContext(al->context);
+		al->context = 0;
+	}
+
+	if (al->device) {
+		alcCloseDevice(al->device);
+		al->device = NULL;
+	}
+	switch_mutex_unlock(globals.setup_mutex);
+}
+#endif
+
 static switch_status_t conference_file_close(conference_obj_t *conference, conference_file_node_t *node)
 {
 	switch_event_t *event;
@@ -2192,7 +2649,13 @@ static switch_status_t conference_file_close(conference_obj_t *conference, confe
 
 		switch_event_fire(&event);
 	}
-	
+
+#ifdef OPENAL_POSITIONING	
+	if (node->al && node->al->device) {
+		close_al(node->al);
+	}
+#endif
+
 	return switch_core_file_close(&node->fh);
 }
 
@@ -2222,7 +2685,6 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 
 	conference_cdr_del(member);
 
-
 	member_fnode = member->fnode;
 	member_sh = member->sh;
 	member->fnode = NULL;
@@ -2239,6 +2701,13 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 	switch_mutex_lock(member->audio_out_mutex);
 	lock_member(member);
 	switch_clear_flag(member, MFLAG_INTREE);
+
+#ifdef OPENAL_POSITIONING	
+	if (member->al && member->al->device) {
+		member->conference->count3d--;
+		close_al(member->al);
+	}
+#endif
 
 	for (imember = conference->members; imember; imember = imember->next) {
 		if (imember == member) {
@@ -2342,6 +2811,10 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 
 	send_rfc_event(conference);
 	send_json_event(conference);
+
+	if (switch_test_flag(conference, CFLAG_POSITIONAL)) {
+		gen_arc(conference, NULL);
+	}
 
 	switch_mutex_unlock(conference->mutex);
 	status = SWITCH_STATUS_SUCCESS;
@@ -2523,7 +2996,6 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 
 static void conference_command_handler(switch_live_array_t *la, const char *cmd, const char *sessid, cJSON *jla, void *user_data)
 {
-	
 }
 
 /* Main monitor thread (1 per distinct conference room) */
@@ -2532,7 +3004,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	conference_obj_t *conference = (conference_obj_t *) obj;
 	conference_member_t *imember, *omember;
 	uint32_t samples = switch_samples_per_packet(conference->rate, conference->interval);
-	uint32_t bytes = samples * 2;
+	uint32_t bytes = samples * 2 * conference->channels;
 	uint8_t ready = 0, total = 0;
 	switch_timer_t timer = { 0 };
 	switch_event_t *event;
@@ -2578,8 +3050,10 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 
 		if (strchr(conference->name, '@')) {
 			conference->la_event_channel = switch_core_sprintf(conference->pool, "conference-liveArray.%s", conference->name);
+			conference->mod_event_channel = switch_core_sprintf(conference->pool, "conference-mod.%s", conference->name);
 		} else {
 			conference->la_event_channel = switch_core_sprintf(conference->pool, "conference-liveArray.%s@%s", conference->name, conference->domain);
+			conference->mod_event_channel = switch_core_sprintf(conference->pool, "conference-mod.%s@%s", conference->name, conference->domain);
 		}
 
 		conference->la_name = switch_core_strdup(conference->pool, conference->name);
@@ -2595,12 +3069,12 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 
 	while (globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT)) {
 		switch_size_t file_sample_len = samples;
-		switch_size_t file_data_len = samples * 2;
+		switch_size_t file_data_len = samples * 2 * conference->channels;
 		int has_file_data = 0, members_with_video = 0;
 		uint32_t conf_energy = 0;
 		int nomoh = 0;
-		conference_member_t *floor_holder, *video_bridge_members[2] = { 0 };
-		
+		conference_member_t *floor_holder, *video_bridge_members[2] = { 0 };		
+
 		/* Sync the conference to a single timing source */
 		if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
 			switch_set_flag(conference, CFLAG_DESTRUCT);
@@ -2651,6 +3125,13 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				imember->read = buf_read;
 				switch_set_flag_locked(imember, MFLAG_HAS_AUDIO);
 				ready++;
+			}
+
+			if (imember->clean_audio_buffer && imember->clean_frame && switch_buffer_inuse(imember->clean_audio_buffer) >= bytes
+				&& (buf_read = (uint32_t) switch_buffer_read(imember->clean_audio_buffer, imember->clean_frame, bytes))) {
+				imember->clean_read = buf_read;
+			} else {
+				imember->clean_read = 0;
 			}
 			switch_mutex_unlock(imember->audio_in_mutex);
 		}
@@ -2744,18 +3225,35 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				conference->fnode->leadin--;
 			} else if (!conference->fnode->done) {
 				file_sample_len = samples;
+				
 				if (conference->fnode->type == NODE_TYPE_SPEECH) {
 					switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_BLOCKING;
+					switch_size_t speech_len = file_data_len;
+					
+					if (conference->fnode->al) {
+						speech_len /= 2;
+					}
+					
+					if (switch_core_speech_read_tts(conference->fnode->sh, file_frame, &speech_len, &flags) == SWITCH_STATUS_SUCCESS) {
+						
+						if (conference->fnode->al) {
+							process_al(conference->fnode->al, file_frame, speech_len, conference->rate);
+						}
 
-					if (switch_core_speech_read_tts(conference->fnode->sh, file_frame, &file_data_len, &flags) == SWITCH_STATUS_SUCCESS) {
-						file_sample_len = file_data_len / 2;
+						file_sample_len = file_data_len / 2 / conference->fnode->sh->channels;
+
+						
 					} else {
 						file_sample_len = file_data_len = 0;
 					}
 				} else if (conference->fnode->type == NODE_TYPE_FILE) {
 					switch_core_file_read(&conference->fnode->fh, file_frame, &file_sample_len);
 					if (conference->fnode->fh.vol) {
-						switch_change_sln_volume_granular((void *)file_frame, (uint32_t)file_sample_len, conference->fnode->fh.vol);
+						switch_change_sln_volume_granular((void *)file_frame, (uint32_t)file_sample_len * conference->fnode->fh.channels, 
+														  conference->fnode->fh.vol);
+					}
+					if (conference->fnode->al) {
+						process_al(conference->fnode->al, file_frame, file_sample_len * 2, conference->fnode->fh.samplerate);
 					}
 				}
 
@@ -2774,14 +3272,15 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			} else if (!conference->async_fnode->done) {
 				file_sample_len = samples;
 				switch_core_file_read(&conference->async_fnode->fh, async_file_frame, &file_sample_len);
-
+				if (conference->async_fnode->al) {
+					process_al(conference->async_fnode->al, file_frame, file_sample_len * 2, conference->async_fnode->fh.samplerate);
+				}
 				if (file_sample_len <= 0) {
 					conference->async_fnode->done++;
 				} else {
 					if (has_file_data) {
 						switch_size_t x;
-
-						for (x = 0; x < file_sample_len; x++) {
+						for (x = 0; x < file_sample_len * conference->channels; x++) {
 							int32_t z;
 							int16_t *muxed;
 
@@ -2792,27 +3291,41 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 							muxed[x] = (int16_t) z;
 						}
 					} else {
-						memcpy(file_frame, async_file_frame, file_sample_len * 2);
+						memcpy(file_frame, async_file_frame, file_sample_len * 2 * conference->channels);
 						has_file_data = 1;
 					}
 				}
 			}
 		}
-
+		
 		if (ready || has_file_data) {
 			/* Use more bits in the main_frame to preserve the exact sum of the audio samples. */
-			int main_frame[SWITCH_RECOMMENDED_BUFFER_SIZE / 2] = { 0 };
-			int16_t write_frame[SWITCH_RECOMMENDED_BUFFER_SIZE / 2] = { 0 };
+			int main_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
+			int16_t write_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
+			int clean_main_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
+			int clean = 0;
 
+#ifdef OPENAL_POSITIONING
+			if (conference->channels == 2) {
+				clean = 1;
+			}
+#endif
 
 			/* Init the main frame with file data if there is any. */
 			bptr = (int16_t *) file_frame;
 			if (has_file_data && file_sample_len) {
+
 				for (x = 0; x < bytes / 2; x++) {
-					if (x <= file_sample_len) {
+					if (x <= file_sample_len * conference->channels) {
 						main_frame[x] = (int32_t) bptr[x];
+						if (clean) {
+							clean_main_frame[x] = (int32_t) bptr[x];
+						}
 					} else {
 						memset(&main_frame[x], 255, sizeof(main_frame[x]));
+						if (clean) {
+							memset(&clean_main_frame[x], 255, sizeof(main_frame[x]));
+						}
 					}
 				}
 			}
@@ -2841,6 +3354,14 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				for (x = 0; x < omember->read / 2; x++) {
 					main_frame[x] += (int32_t) bptr[x];
 				}
+
+				if (clean && omember->clean_read) {
+					bptr = (int16_t *) omember->clean_frame;
+					for (x = 0; x < omember->clean_read / 2; x++) {
+						clean_main_frame[x] += (int32_t) bptr[x];
+					}
+				}
+
 			}
 
 			if (conference->agc_level && conference->member_loop_count) {
@@ -2875,9 +3396,22 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 					continue;
 				}
 
-				bptr = (int16_t *) omember->frame;
-				for (x = 0; x < bytes / 2; x++) {
-					z = main_frame[x];
+				if (omember->read_impl.number_of_channels == 1 && omember->clean_read) {
+					bptr = (int16_t *) omember->clean_frame;
+				} else {
+					bptr = (int16_t *) omember->frame;
+				}
+				
+				for (x = 0; x < bytes / 2 ; x++) {
+					
+					if (omember->read_impl.number_of_channels == 1 && omember->clean_read) {
+						z = clean_main_frame[x];
+					} else {
+						z = main_frame[x];
+					}
+
+					
+
 					/* bptr[x] represents my own contribution to this audio sample */
 					if (switch_test_flag(omember, MFLAG_HAS_AUDIO) && x <= omember->read / 2) {
 						z -= (int32_t) bptr[x];
@@ -3677,7 +4211,42 @@ static void check_agc_levels(conference_member_t *member)
 	}
 }
 
+ static int member_check_channels(switch_frame_t *frame, conference_member_t *member, switch_bool_t in, switch_bool_t skip3d)
+{
+	int r = 0;
 
+	if (member->conference->channels != member->read_impl.number_of_channels || switch_test_flag(member, MFLAG_POSITIONAL)) {
+		uint32_t rlen;
+		int from, to;
+
+		if (in) {
+			to = member->conference->channels;
+			from = member->read_impl.number_of_channels;
+		} else {
+			from = member->conference->channels;
+			to = member->read_impl.number_of_channels;
+		}
+
+		rlen = frame->datalen / 2 / from; 
+
+		if (in && frame->rate == 48000 && ((from == 1 && to == 2) || (from == 2 && to == 2)) && switch_test_flag(member, MFLAG_POSITIONAL) && !skip3d) {
+			if (from == 2 && to == 2) {
+				switch_mux_channels((int16_t *) frame->data, rlen, 2, 1);
+				frame->datalen /= 2;
+				rlen = frame->datalen / 2;
+			}
+			
+			process_al(member->al, frame->data, frame->datalen, frame->rate);
+			r++;
+		} else {
+			switch_mux_channels((int16_t *) frame->data, rlen, from, to);
+		}
+		
+		frame->datalen = rlen * 2 * to;
+	}
+
+	return r;
+}
 
 
 /* marshall frames from the call leg to the conference thread for muxing to other call legs */
@@ -3691,6 +4260,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 	uint32_t hangover = 40, hangunder = 5, hangover_hits = 0, hangunder_hits = 0, diff_level = 400;
 	switch_core_session_t *session = member->session;
 	uint32_t flush_len, loops = 0;
+	switch_frame_t tmp_frame = { 0 };
 
 	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
 		goto end;
@@ -3820,14 +4390,14 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			member->score = 0;
 
 			if (member->volume_in_level) {
-				switch_change_sln_volume(read_frame->data, read_frame->datalen / 2, member->volume_in_level);
+				switch_change_sln_volume(read_frame->data, (read_frame->datalen / 2) * member->conference->channels, member->volume_in_level);
 			}
 
 			if (member->agc_volume_in_level) {
-				switch_change_sln_volume_granular(read_frame->data, read_frame->datalen / 2, member->agc_volume_in_level);
+				switch_change_sln_volume_granular(read_frame->data, (read_frame->datalen / 2) * member->conference->channels, member->agc_volume_in_level);
 			}
 			
-			if ((samples = read_frame->datalen / sizeof(*data))) {
+			if ((samples = read_frame->datalen / sizeof(*data) / member->read_impl.number_of_channels)) {
 				for (i = 0; i < samples; i++) {
 					energy += abs(data[j]);
 					j += member->read_impl.number_of_channels;
@@ -3844,7 +4414,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				switch_test_flag(member, MFLAG_CAN_SPEAK) &&
 				noise_gate_check(member)
 				) {
-				int last_shift = abs(member->last_score - member->score);
+				int last_shift = abs((int)(member->last_score - member->score));
 				
 				if (member->score && member->last_score && last_shift > 900) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG7,
@@ -3975,14 +4545,15 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			switch_audio_resampler_t *read_resampler = member->read_resampler;
 			void *data;
 			uint32_t datalen;
+			int16_t save_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 
 			if (read_resampler) {
 				int16_t *bptr = (int16_t *) read_frame->data;
 				int len = (int) read_frame->datalen;
 
-				switch_resample_process(read_resampler, bptr, len / 2);
-				memcpy(member->resample_out, read_resampler->to, read_resampler->to_len * 2);
-				len = read_resampler->to_len * 2;
+				switch_resample_process(read_resampler, bptr, len / 2 / member->conference->channels);
+				memcpy(member->resample_out, read_resampler->to, read_resampler->to_len * 2 * member->conference->channels);
+				len = read_resampler->to_len * 2 * member->conference->channels;
 				datalen = len;
 				data = member->resample_out;
 			} else {
@@ -3990,6 +4561,14 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				datalen = read_frame->datalen;
 			}
 
+			if (member->clean_audio_buffer) {
+				memcpy(save_frame, data, datalen);
+			}
+
+			tmp_frame.data = data;
+			tmp_frame.datalen = datalen;
+			tmp_frame.rate = member->conference->rate;
+			member_check_channels(&tmp_frame, member, SWITCH_TRUE, SWITCH_FALSE);
 
 			if (datalen) {
 				switch_size_t ok = 1;
@@ -3998,9 +4577,24 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				switch_mutex_lock(member->audio_in_mutex);
 				if (switch_buffer_inuse(member->audio_buffer) > flush_len) {
 					switch_buffer_zero(member->audio_buffer);
+
+					if (member->clean_audio_buffer) {
+						switch_buffer_zero(member->clean_audio_buffer);
+					}
 					switch_channel_audio_sync(channel);
 				}
-				ok = switch_buffer_write(member->audio_buffer, data, datalen);
+				
+				ok = switch_buffer_write(member->audio_buffer, tmp_frame.data, tmp_frame.datalen);
+
+				if (member->clean_audio_buffer) {
+					if (member->conference->count3d) {
+						tmp_frame.data = save_frame;
+						tmp_frame.datalen = datalen;
+						member_check_channels(&tmp_frame, member, SWITCH_TRUE, SWITCH_TRUE);
+						switch_buffer_write(member->clean_audio_buffer, tmp_frame.data, tmp_frame.datalen);
+					}
+				}
+
 				switch_mutex_unlock(member->audio_in_mutex);
 				if (!ok) {
 					switch_mutex_unlock(member->read_mutex);
@@ -4039,8 +4633,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 static void member_add_file_data(conference_member_t *member, int16_t *data, switch_size_t file_data_len)
 {
-	switch_size_t file_sample_len = file_data_len / 2;
-	int16_t file_frame[SWITCH_RECOMMENDED_BUFFER_SIZE / 2] = { 0 };
+	switch_size_t file_sample_len;
+	int16_t file_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 
 
 	switch_mutex_lock(member->fnode_mutex);
@@ -4048,6 +4642,8 @@ static void member_add_file_data(conference_member_t *member, int16_t *data, swi
 	if (!member->fnode) {
 		goto done;
 	}
+
+	file_sample_len = file_data_len / 2 / member->conference->channels;
 
 	/* if we are done, clean it up */
 	if (member->fnode->done) {
@@ -4071,15 +4667,20 @@ static void member_add_file_data(conference_member_t *member, int16_t *data, swi
 		} else {
 			if (member->fnode->type == NODE_TYPE_SPEECH) {
 				switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_BLOCKING;
+				switch_size_t speech_len = file_data_len;
 
-				if (switch_core_speech_read_tts(member->fnode->sh, file_frame, &file_data_len, &flags) == SWITCH_STATUS_SUCCESS) {
-					file_sample_len = file_data_len / 2;
+				if (member->fnode->al) {
+					speech_len /= 2;
+				}
+				
+				if (switch_core_speech_read_tts(member->fnode->sh, file_frame, &speech_len, &flags) == SWITCH_STATUS_SUCCESS) {
+					file_sample_len = file_data_len / 2 / member->conference->channels;					
 				} else {
 					file_sample_len = file_data_len = 0;
 				}
 			} else if (member->fnode->type == NODE_TYPE_FILE) {
 				switch_core_file_read(&member->fnode->fh, file_frame, &file_sample_len);
-				file_data_len = file_sample_len * 2;
+				file_data_len = file_sample_len * 2 * member->fnode->fh.channels;
 			}
 
 			if (file_sample_len <= 0) {
@@ -4089,10 +4690,14 @@ static void member_add_file_data(conference_member_t *member, int16_t *data, swi
 
 				/* Check for output volume adjustments */
 				if (member->volume_out_level) {
-					switch_change_sln_volume(file_frame, (uint32_t)file_sample_len, member->volume_out_level);
+					switch_change_sln_volume(file_frame, (uint32_t)file_sample_len * member->conference->channels, member->volume_out_level);
 				}
 
-				for (i = 0; i < (int)file_sample_len; i++) {
+				if (member->fnode->al) {
+					process_al(member->fnode->al, file_frame, file_sample_len * 2, member->conference->rate);
+				}
+
+				for (i = 0; i < (int)file_sample_len * member->conference->channels; i++) {
 					if (member->fnode->mux) {
 						sample = data[i] + file_frame[i];
 						switch_normalize_to_16bit(sample);
@@ -4157,7 +4762,7 @@ static void conference_loop_output(conference_member_t *member)
 	//csamples = samples;
 	tsamples = member->orig_read_impl.samples_per_packet;
 	low_count = 0;
-	bytes = samples * 2;
+	bytes = samples * 2 * member->conference->channels;
 	call_list = NULL;
 	cp = NULL;
 
@@ -4165,7 +4770,7 @@ static void conference_loop_output(conference_member_t *member)
 
 	switch_assert(member->conference != NULL);
 
-	flush_len = switch_samples_per_packet(member->conference->rate, member->conference->interval) * 10;
+	flush_len = switch_samples_per_packet(member->conference->rate, member->conference->interval) * 10 * member->conference->channels;
 
 	if (switch_core_timer_init(&timer, member->conference->timer_name, interval, tsamples, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Timer Setup Failed.  Conference Cannot Start\n");
@@ -4331,7 +4936,7 @@ static void conference_loop_output(conference_member_t *member)
 		mux_used = (uint32_t) switch_buffer_inuse(member->mux_buffer);
 		
 		use_timer = 1;
-		
+
 		if (mux_used) {
 			if (mux_used < bytes) {
 				if (++low_count >= 5) {
@@ -4354,7 +4959,7 @@ static void conference_loop_output(conference_member_t *member)
 			low_count = 0;
 			if ((write_frame.datalen = (uint32_t) switch_buffer_read(use_buffer, write_frame.data, bytes))) {
 				if (write_frame.datalen) {
-					write_frame.samples = write_frame.datalen / 2;
+					write_frame.samples = write_frame.datalen / 2 / member->conference->channels;
 				   
 				   if( !switch_test_flag(member, MFLAG_CAN_HEAR)) {
 				      memset(write_frame.data, 255, write_frame.datalen);
@@ -4362,13 +4967,16 @@ static void conference_loop_output(conference_member_t *member)
 				   else {
    					/* Check for output volume adjustments */
    					if (member->volume_out_level) {
-   						switch_change_sln_volume(write_frame.data, write_frame.samples, member->volume_out_level);
+   						switch_change_sln_volume(write_frame.data, write_frame.samples * member->conference->channels, member->volume_out_level);
    					}
 				   }
 					write_frame.timestamp = timer.samplecount;
 					if (member->fnode) {
 						member_add_file_data(member, write_frame.data, write_frame.datalen);
 					}
+
+					member_check_channels(&write_frame, member, SWITCH_FALSE, SWITCH_FALSE);
+
 					if (switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 						switch_mutex_unlock(member->audio_out_mutex);
 						break;
@@ -4383,6 +4991,7 @@ static void conference_loop_output(conference_member_t *member)
 			memset(write_frame.data, 255, write_frame.datalen);
 			write_frame.timestamp = timer.samplecount;
 			member_add_file_data(member, write_frame.data, write_frame.datalen);
+			member_check_channels(&write_frame, member, SWITCH_FALSE, SWITCH_FALSE);
 			if (switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				break;
@@ -4390,7 +4999,7 @@ static void conference_loop_output(conference_member_t *member)
 		} else {
 			
 			if (member->conference->comfort_noise_level) {
-				switch_generate_sln_silence(write_frame.data, samples, member->conference->comfort_noise_level);
+				switch_generate_sln_silence(write_frame.data, samples, member->conference->channels, member->conference->comfort_noise_level);
 			} else {
 				memset(write_frame.data, 255, bytes);
 			}
@@ -4399,6 +5008,8 @@ static void conference_loop_output(conference_member_t *member)
 			write_frame.samples = samples;
 			write_frame.timestamp = timer.samplecount;
 			
+			member_check_channels(&write_frame, member, SWITCH_FALSE, SWITCH_FALSE);
+
 			if (switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				break;
@@ -4521,7 +5132,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		return NULL;
 	}
 
-	data_buf_len = samples * sizeof(int16_t);
+	data_buf_len = samples * sizeof(int16_t) * conference->channels;
 	switch_zmalloc(data_buf, data_buf_len);
 
 	switch_mutex_lock(globals.hash_mutex);
@@ -4546,6 +5157,13 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	member->mux_frame = switch_core_alloc(member->pool, member->frame_size);
 
 
+#ifdef OPENAL_POSITIONING
+	if (member->conference->channels == 2) {
+		member->clean_frame_size = SWITCH_RECOMMENDED_BUFFER_SIZE;
+		member->clean_frame = switch_core_alloc(member->pool, member->clean_frame_size);
+	}
+#endif
+
 	switch_mutex_init(&member->write_mutex, SWITCH_MUTEX_NESTED, rec->pool);
 	switch_mutex_init(&member->flag_mutex, SWITCH_MUTEX_NESTED, rec->pool);
 	switch_mutex_init(&member->fnode_mutex, SWITCH_MUTEX_NESTED, rec->pool);
@@ -4559,6 +5177,17 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
 		goto end;
 	}
+
+#ifdef OPENAL_POSITIONING
+	if (conference->channels == 2) {
+		/* Setup an audio buffer for the incoming audio */
+		if (switch_buffer_create_dynamic(&member->clean_audio_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, 0) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
+			goto end;
+		}
+	}
+#endif
+
 
 	/* Setup an audio buffer for the outgoing audio */
 	if (switch_buffer_create_dynamic(&member->mux_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, 0) != SWITCH_STATUS_SUCCESS) {
@@ -4574,7 +5203,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 
 	if (switch_core_file_open(&fh,
-							  rec->path, (uint8_t) 1, conference->rate, SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT,
+							  rec->path, (uint8_t) conference->channels, conference->rate, SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT,
 							  rec->pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening File [%s]\n", rec->path);
 
@@ -4648,7 +5277,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 			//low_count = 0;
 
 			if ((rlen = (uint32_t) switch_buffer_read(member->mux_buffer, data_buf, data_buf_len))) {
-				len = (switch_size_t) rlen / sizeof(int16_t);
+				len = (switch_size_t) rlen / sizeof(int16_t) / conference->channels;
 				no_data = 0;
 			}
 			switch_mutex_unlock(member->audio_out_mutex);
@@ -4686,7 +5315,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	while(!no_data) {
 		switch_mutex_lock(member->audio_out_mutex);
 		if ((rlen = (uint32_t) switch_buffer_read(member->mux_buffer, data_buf, data_buf_len))) {
-			len = (switch_size_t) rlen / sizeof(int16_t);
+			len = (switch_size_t) rlen / sizeof(int16_t)/ conference->channels;
 			switch_core_file_write(&fh, data_buf, &len);
 		} else {
 			no_data = 1;
@@ -4699,6 +5328,9 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	conference_del_member(conference, member);
 
 	switch_buffer_destroy(&member->audio_buffer);
+	if (member->clean_audio_buffer) {
+		switch_buffer_destroy(&member->clean_audio_buffer);
+	}
 	switch_buffer_destroy(&member->mux_buffer);
 	switch_clear_flag_locked(member, MFLAG_RUNNING);
 	if (switch_test_flag((&fh), SWITCH_FILE_OPEN)) {
@@ -4849,6 +5481,8 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 	uint32_t count;
 	char *dfile = NULL, *expanded = NULL;
 	int say = 0;
+	uint8_t channels = (uint8_t) conference->channels;
+	int bad_params = 0;
 
 	switch_assert(conference != NULL);
 
@@ -4915,9 +5549,16 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 	fnode->type = NODE_TYPE_FILE;
 	fnode->leadin = leadin;
 
+	if (switch_stristr("position=", file)) {
+		/* positional requires mono input */
+		fnode->fh.channels = channels = 1;
+	}
+	
+ retry:
+
 	/* Open the file */
 	fnode->fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
-	if (switch_core_file_open(&fnode->fh, file, (uint8_t) 1, conference->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, pool) !=
+	if (switch_core_file_open(&fnode->fh, file, channels, conference->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, pool) !=
 		SWITCH_STATUS_SUCCESS) {
 		switch_event_t *event;
 
@@ -4943,9 +5584,22 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 
 	if (fnode->fh.params) {
 		const char *vol = switch_event_get_header(fnode->fh.params, "vol");
+		const char *position = switch_event_get_header(fnode->fh.params, "position");
 
 		if (!zstr(vol)) {
 			fnode->fh.vol = atoi(vol);
+		}
+
+		if (!bad_params && !zstr(position) && conference->channels == 2) {
+			fnode->al = create_al(pool);
+			if (parse_position(fnode->al, position) != SWITCH_STATUS_SUCCESS) {
+				switch_core_file_close(&fnode->fh);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Position Data.\n");
+				fnode->al = NULL;
+				channels = conference->channels;
+				bad_params = 1;
+				goto retry;
+			}
 		}
 	}
 
@@ -4996,6 +5650,8 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 	char *dfile = NULL, *expanded = NULL;
 	conference_file_node_t *fnode, *nptr = NULL;
 	switch_memory_pool_t *pool;
+	int channels = member->conference->channels;
+	int bad_params = 0;
 
 	if (member == NULL || file == NULL || switch_test_flag(member, MFLAG_KICKED))
 		return status;
@@ -5040,10 +5696,17 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 	fnode->mux = mux;
 	fnode->member_id = member->id;
 
+	if (switch_stristr("position=", file)) {
+		/* positional requires mono input */
+		fnode->fh.channels = channels = 1;
+	}
+
+ retry:
+
 	/* Open the file */
 	fnode->fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 	if (switch_core_file_open(&fnode->fh,
-							  file, (uint8_t) 1, member->conference->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
+							  file, (uint8_t) channels, member->conference->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
 							  pool) != SWITCH_STATUS_SUCCESS) {
 		switch_core_destroy_memory_pool(&pool);
 		status = SWITCH_STATUS_NOTFOUND;
@@ -5051,6 +5714,23 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 	}
 	fnode->pool = pool;
 	fnode->file = switch_core_strdup(fnode->pool, file);
+
+	if (fnode->fh.params) {
+		const char *position = switch_event_get_header(fnode->fh.params, "position");
+		
+		if (!bad_params && !zstr(position) && member->conference->channels == 2) {
+			fnode->al = create_al(pool);
+			if (parse_position(fnode->al, position) != SWITCH_STATUS_SUCCESS) {
+				switch_core_file_close(&fnode->fh);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Invalid Position Data.\n");
+				fnode->al = NULL;
+				channels = member->conference->channels;
+				bad_params = 1;
+				goto retry;
+			}
+		}
+	}
+
 	/* Queue the node */
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Queueing file '%s' for play\n", file);
 	switch_mutex_lock(member->fnode_mutex);
@@ -5074,11 +5754,15 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 /* Say some thing with TTS in the conference room */
 static switch_status_t conference_member_say(conference_member_t *member, char *text, uint32_t leadin)
 {
-	conference_obj_t *conference = (member != NULL ? member->conference : NULL);
+	conference_obj_t *conference = member->conference;
 	conference_file_node_t *fnode, *nptr;
 	switch_memory_pool_t *pool;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *fp = NULL;
+	int channels = member->conference->channels;
+	switch_event_t *params = NULL;
+	const char *position = NULL;
 
 	if (member == NULL || zstr(text))
 		return SWITCH_STATUS_FALSE;
@@ -5102,18 +5786,55 @@ static switch_status_t conference_member_say(conference_member_t *member, char *
 		return SWITCH_STATUS_MEMERR;
 	}
 
+	if (*text == '{') {
+		char *new_fp;
+		
+		fp = switch_core_strdup(pool, text);
+		switch_assert(fp);
+
+		if (!switch_event_create_brackets(fp, '{', '}', ',', &params, &new_fp, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
+			new_fp = fp;
+		}
+
+		text = new_fp;
+	}
+
 	fnode->type = NODE_TYPE_SPEECH;
 	fnode->leadin = leadin;
 	fnode->pool = pool;
 
+
+	if (params && (position = switch_event_get_header(params, "position"))) {
+		if (conference->channels != 2) {
+			position = NULL;
+		} else {
+			channels = 1;
+			fnode->al = create_al(pool);
+			if (parse_position(fnode->al, position) != SWITCH_STATUS_SUCCESS) {
+				fnode->al = NULL;
+				channels = conference->channels;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Position Data.\n");
+			}
+		}
+	}
+
+
+	if (member->sh && member->last_speech_channels != channels) {
+		switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
+		switch_core_speech_close(&member->lsh, &flags);
+		member->sh = NULL;
+	}
+
 	if (!member->sh) {
 		memset(&member->lsh, 0, sizeof(member->lsh));
 		if (switch_core_speech_open(&member->lsh, conference->tts_engine, conference->tts_voice,
-									conference->rate, conference->interval, &flags, switch_core_session_get_pool(member->session)) !=
+									conference->rate, conference->interval, channels, &flags, switch_core_session_get_pool(member->session)) !=
 			SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_ERROR, "Invalid TTS module [%s]!\n", conference->tts_engine);
-			return SWITCH_STATUS_FALSE;
+			status = SWITCH_STATUS_FALSE;
+			goto end;
 		}
+		member->last_speech_channels = channels;
 		member->sh = &member->lsh;
 	}
 
@@ -5148,6 +5869,12 @@ static switch_status_t conference_member_say(conference_member_t *member, char *
 
 	status = SWITCH_STATUS_SUCCESS;
 
+ end:
+
+	if (params) {
+		switch_event_destroy(&params);
+	}
+
 	return status;
 }
 
@@ -5159,12 +5886,19 @@ static switch_status_t conference_say(conference_obj_t *conference, const char *
 	switch_memory_pool_t *pool;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 	uint32_t count;
+	switch_event_t *params = NULL;
+	char *fp = NULL;
+	int channels;
+	const char *position = NULL;
 
 	switch_assert(conference != NULL);
+
+	channels = conference->channels;
 
 	if (zstr(text)) {
 		return SWITCH_STATUS_GENERR;
 	}
+
 
 	switch_mutex_lock(conference->mutex);
 	switch_mutex_lock(conference->member_mutex);
@@ -5192,16 +5926,53 @@ static switch_status_t conference_say(conference_obj_t *conference, const char *
 		return SWITCH_STATUS_MEMERR;
 	}
 
+
+	if (*text == '{') {
+		char *new_fp;
+		
+		fp = switch_core_strdup(pool, text);
+		switch_assert(fp);
+
+		if (!switch_event_create_brackets(fp, '{', '}', ',', &params, &new_fp, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
+			new_fp = fp;
+		}
+
+		text = new_fp;
+	}
+
+
 	fnode->type = NODE_TYPE_SPEECH;
 	fnode->leadin = leadin;
+
+	if (params && (position = switch_event_get_header(params, "position"))) {
+		if (conference->channels != 2) {
+			position = NULL;
+		} else {
+			channels = 1;
+			fnode->al = create_al(pool);
+			if (parse_position(fnode->al, position) != SWITCH_STATUS_SUCCESS) {
+				fnode->al = NULL;
+				channels = conference->channels;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Position Data.\n");
+			}
+		}
+	}
+
+	if (conference->sh && conference->last_speech_channels != channels) {
+		switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
+		switch_core_speech_close(&conference->lsh, &flags);
+		conference->sh = NULL;
+	}
 
 	if (!conference->sh) {
 		memset(&conference->lsh, 0, sizeof(conference->lsh));
 		if (switch_core_speech_open(&conference->lsh, conference->tts_engine, conference->tts_voice,
-									conference->rate, conference->interval, &flags, NULL) != SWITCH_STATUS_SUCCESS) {
+									conference->rate, conference->interval, channels, &flags, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module [%s]!\n", conference->tts_engine);
-			return SWITCH_STATUS_FALSE;
+			status = SWITCH_STATUS_FALSE;
+			goto end;
 		}
+		conference->last_speech_channels = channels;
 		conference->sh = &conference->lsh;
 	}
 
@@ -5235,6 +6006,12 @@ static switch_status_t conference_say(conference_obj_t *conference, const char *
 	switch_core_speech_feed_tts(fnode->sh, (char *) text, &flags);
 	switch_mutex_unlock(conference->mutex);
 	status = SWITCH_STATUS_SUCCESS;
+
+ end:
+
+	if (params) {
+		switch_event_destroy(&params);
+	}
 
 	return status;
 }
@@ -5452,6 +6229,10 @@ static switch_status_t conf_api_sub_mute(conference_member_t *member, switch_str
 		switch_event_fire(&event);
 	}
 
+	if (switch_test_flag(member->conference, CFLAG_POSITIONAL)) {
+		gen_arc(member->conference, NULL);
+	}
+
 	member_update_status_field(member);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -5540,6 +6321,10 @@ static switch_status_t conf_api_sub_unmute(conference_member_t *member, switch_s
 		switch_event_fire(&event);
 	}
 
+	if (switch_test_flag(member->conference, CFLAG_POSITIONAL)) {
+		gen_arc(member->conference, NULL);
+	}
+
 	member_update_status_field(member);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -5562,6 +6347,10 @@ static switch_status_t conf_api_sub_deaf(conference_member_t *member, switch_str
 		switch_event_fire(&event);
 	}
 
+	if (switch_test_flag(member->conference, CFLAG_POSITIONAL)) {
+		gen_arc(member->conference, NULL);
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -5580,6 +6369,10 @@ static switch_status_t conf_api_sub_undeaf(conference_member_t *member, switch_s
 		conference_add_event_member_data(member, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "undeaf-member");
 		switch_event_fire(&event);
+	}
+
+	if (switch_test_flag(member->conference, CFLAG_POSITIONAL)) {
+		gen_arc(member->conference, NULL);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -5684,12 +6477,25 @@ static switch_status_t conf_api_sub_energy(conference_member_t *member, switch_s
 {
 	switch_event_t *event;
 
-	if (member == NULL)
+	if (member == NULL) {
 		return SWITCH_STATUS_GENERR;
+	}
 
 	if (data) {
 		lock_member(member);
-		member->energy_level = atoi((char *) data);
+		if (!strcasecmp(data, "up")) {
+			member->energy_level += 200;
+			if (member->energy_level > 1800) {
+				member->energy_level = 1800;
+			}
+		} else if (!strcasecmp(data, "down")) {
+			member->energy_level -= 200;
+			if (member->energy_level < 0) {
+				member->energy_level = 0;
+			}
+		} else {
+			member->energy_level = atoi((char *) data);
+		}
 		unlock_member(member);
 	}
 	if (stream != NULL) {
@@ -5706,6 +6512,101 @@ static switch_status_t conf_api_sub_energy(conference_member_t *member, switch_s
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t conf_api_sub_auto_position(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+#ifdef OPENAL_POSITIONING
+	char *arg = NULL;
+	int set = 0;
+
+	if (argc > 2) {
+		arg = argv[2];
+	}
+
+
+	if (!zstr(arg)) {
+		if (!strcasecmp(arg, "on")) {
+			switch_set_flag(conference, CFLAG_POSITIONAL);
+			set = 1;
+		} else if (!strcasecmp(arg, "off")) {
+			switch_clear_flag(conference, CFLAG_POSITIONAL);
+		}
+	}
+
+	if (set && switch_test_flag(conference, CFLAG_POSITIONAL)) {
+		gen_arc(conference, stream);
+	}
+
+	stream->write_function(stream, "+OK positioning %s\n", switch_test_flag(conference, CFLAG_POSITIONAL) ? "on" : "off");
+	
+#else
+	stream->write_function(stream, "-ERR not supported\n");
+	
+#endif
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t conf_api_sub_position(conference_member_t *member, switch_stream_handle_t *stream, void *data)
+{
+#ifndef OPENAL_POSITIONING
+	stream->write_function(stream, "-ERR not supported\n");
+#else
+	switch_event_t *event;
+
+	if (member == NULL) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (switch_test_flag(member, MFLAG_NO_POSITIONAL)) {
+		if (stream) stream->write_function(stream,
+										   "%s has positional audio blocked.\n", switch_channel_get_name(member->channel));
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (!member->al) {
+		if (!switch_test_flag(member, MFLAG_POSITIONAL) && member->conference->channels == 2) {
+			switch_set_flag(member, MFLAG_POSITIONAL);
+			member->al = create_al(member->pool);
+			switch_mutex_lock(member->conference->member_mutex);
+			member->conference->count3d++;
+			switch_mutex_unlock(member->conference->member_mutex);
+		} else {
+		
+			if (stream) {
+				stream->write_function(stream, "Positional audio not avalilable %d\n", member->conference->channels);
+			}
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+
+
+	if (data) {
+		if (member_parse_position(member, data) != SWITCH_STATUS_SUCCESS) {
+			if (stream) {
+				stream->write_function(stream, "invalid input!\n");
+			}
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+	
+
+	if (stream != NULL) {
+		stream->write_function(stream, "Position %u = %0.2f:%0.2f:%0.2f\n", member->id, member->al->pos_x, member->al->pos_y, member->al->pos_z);
+	}
+
+	if (test_eflag(member->conference, EFLAG_SET_POSITION_MEMBER) &&
+		data && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+		conference_add_event_member_data(member, event);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "set-position-member");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Position", "%0.2f:%0.2f:%0.2f", member->al->pos_x, member->al->pos_y, member->al->pos_z);
+		switch_event_fire(&event);
+	}
+
+#endif
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t conf_api_sub_volume_in(conference_member_t *member, switch_stream_handle_t *stream, void *data)
 {
 	switch_event_t *event;
@@ -5715,9 +6616,18 @@ static switch_status_t conf_api_sub_volume_in(conference_member_t *member, switc
 
 	if (data) {
 		lock_member(member);
-		member->volume_in_level = atoi((char *) data);
-		switch_normalize_volume(member->volume_in_level);
+		if (!strcasecmp(data, "up")) {
+			member->volume_in_level++;
+			switch_normalize_volume(member->volume_in_level);
+		} else if (!strcasecmp(data, "down")) {
+			member->volume_in_level--;
+			switch_normalize_volume(member->volume_in_level);
+		} else {
+			member->volume_in_level = atoi((char *) data);
+			switch_normalize_volume(member->volume_in_level);
+		}
 		unlock_member(member);
+
 	}
 	if (stream != NULL) {
 		stream->write_function(stream, "Volume IN %u = %d\n", member->id, member->volume_in_level);
@@ -5742,8 +6652,16 @@ static switch_status_t conf_api_sub_volume_out(conference_member_t *member, swit
 
 	if (data) {
 		lock_member(member);
-		member->volume_out_level = atoi((char *) data);
-		switch_normalize_volume(member->volume_out_level);
+		if (!strcasecmp(data, "up")) {
+			member->volume_out_level++;
+			switch_normalize_volume(member->volume_out_level);
+		} else if (!strcasecmp(data, "down")) {
+			member->volume_out_level--;
+			switch_normalize_volume(member->volume_out_level);
+		} else {
+			member->volume_out_level = atoi((char *) data);
+			switch_normalize_volume(member->volume_out_level);
+		}
 		unlock_member(member);
 	}
 	if (stream != NULL) {
@@ -7266,6 +8184,8 @@ static api_command_t conf_api_sub_commands[] = {
 	{"energy", (void_fn_t) & conf_api_sub_energy, CONF_API_SUB_MEMBER_TARGET, "energy", "<member_id|all|last|non_moderator> [<newval>]"},
 	{"volume_in", (void_fn_t) & conf_api_sub_volume_in, CONF_API_SUB_MEMBER_TARGET, "volume_in", "<member_id|all|last|non_moderator> [<newval>]"},
 	{"volume_out", (void_fn_t) & conf_api_sub_volume_out, CONF_API_SUB_MEMBER_TARGET, "volume_out", "<member_id|all|last|non_moderator> [<newval>]"},
+	{"position", (void_fn_t) & conf_api_sub_position, CONF_API_SUB_MEMBER_TARGET, "position", "<member_id> <x>,<y>,<z>"},
+	{"auto-3d-position", (void_fn_t) & conf_api_sub_auto_position, CONF_API_SUB_ARGS_SPLIT, "auto-3d-position", "[on|off]"},
 	{"play", (void_fn_t) & conf_api_sub_play, CONF_API_SUB_ARGS_SPLIT, "play", "<file_path> [async|<member_id> [nomux]]"},
 	{"pause_play", (void_fn_t) & conf_api_sub_pause_play, CONF_API_SUB_ARGS_SPLIT, "pause", ""},
 	{"file_seek", (void_fn_t) & conf_api_sub_file_seek, CONF_API_SUB_ARGS_SPLIT, "file_seek", "[+-]<val>"},
@@ -7894,6 +8814,10 @@ static void set_mflags(const char *flags, member_flag_t *f)
 				*f |= MFLAG_GHOST;
 			} else if (!strcasecmp(argv[i], "join-only")) {
 				*f |= MFLAG_JOIN_ONLY;
+			} else if (!strcasecmp(argv[i], "positional")) {
+				*f |= MFLAG_POSITIONAL;
+			} else if (!strcasecmp(argv[i], "no-positional")) {
+				*f |= MFLAG_NO_POSITIONAL;
 			}
 		}
 
@@ -7936,6 +8860,8 @@ static void set_cflags(const char *flags, uint32_t *f)
 				*f |= CFLAG_LIVEARRAY_SYNC;
 			} else if (!strcasecmp(argv[i], "rfc-4579")) {
 				*f |= CFLAG_RFC4579;
+			} else if (!strcasecmp(argv[i], "auto-3d-position")) {
+				*f |= CFLAG_POSITIONAL;
 			}
 
 			
@@ -8075,14 +9001,15 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 	if (switch_core_codec_init(&member->read_codec,
 							   "L16",
 							   NULL, read_impl.actual_samples_per_second, read_impl.microseconds_per_packet / 1000,
-							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, member->pool) == SWITCH_STATUS_SUCCESS) {
+							   read_impl.number_of_channels, 
+							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, member->pool) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG,
-						  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
-						  read_impl.actual_samples_per_second, read_impl.microseconds_per_packet / 1000);
+						  "Raw Codec Activation Success L16@%uhz %d channel %dms\n",
+						  read_impl.actual_samples_per_second, read_impl.number_of_channels, read_impl.microseconds_per_packet / 1000);
 
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
-						  read_impl.actual_samples_per_second, read_impl.microseconds_per_packet / 1000);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz %d channel %dms\n",
+						  read_impl.actual_samples_per_second, read_impl.number_of_channels, read_impl.microseconds_per_packet / 1000);
 
 		goto done;
 	}
@@ -8093,10 +9020,18 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 		member->mux_frame = switch_core_alloc(member->pool, member->frame_size);
 	}
 
+
+#ifdef OPENAL_POSITIONING
+	if (conference->channels == 2) {
+		member->clean_frame_size = SWITCH_RECOMMENDED_BUFFER_SIZE;
+		member->clean_frame = switch_core_alloc(member->pool, member->clean_frame_size);
+	}
+#endif
+
 	if (read_impl.actual_samples_per_second != conference->rate) {
 		if (switch_resample_create(&member->read_resampler,
 								   read_impl.actual_samples_per_second,
-								   conference->rate, member->frame_size, SWITCH_RESAMPLE_QUALITY, 1) != SWITCH_STATUS_SUCCESS) {
+								   conference->rate, member->frame_size, SWITCH_RESAMPLE_QUALITY, conference->channels) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_CRIT, "Unable to create resampler!\n");
 			goto done;
 		}
@@ -8120,12 +9055,14 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 							   NULL,
 							   conference->rate,
 							   read_impl.microseconds_per_packet / 1000,
-							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, member->pool) == SWITCH_STATUS_SUCCESS) {
+							   read_impl.number_of_channels, 
+							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, member->pool) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG,
-						  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n", conference->rate, read_impl.microseconds_per_packet / 1000);
+						  "Raw Codec Activation Success L16@%uhz %d channel %dms\n", 
+						  conference->rate, conference->channels, read_impl.microseconds_per_packet / 1000);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
-						  conference->rate, read_impl.microseconds_per_packet / 1000);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz %d channel %dms\n",
+						  conference->rate, conference->channels, read_impl.microseconds_per_packet / 1000);
 		goto codec_done2;
 	}
 
@@ -8133,6 +9070,14 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 	if (switch_buffer_create_dynamic(&member->audio_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(member->session), SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
 		goto codec_done1;
+	}
+
+	if (conference->channels == 2) {
+		/* Setup an audio buffer for the incoming audio */
+		if (switch_buffer_create_dynamic(&member->clean_audio_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, 0) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
+			goto codec_done1;
+		}
 	}
 
 	/* Setup an audio buffer for the outgoing audio */
@@ -8722,6 +9667,9 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_event_destroy(&params);
 	switch_buffer_destroy(&member.resample_buffer);
 	switch_buffer_destroy(&member.audio_buffer);
+	if (member.clean_audio_buffer) {
+		switch_buffer_destroy(&member.clean_audio_buffer);
+	}
 	switch_buffer_destroy(&member.mux_buffer);
 
 	if (conference) {
@@ -9027,6 +9975,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	uint32_t announce_count = 0;
 	char *maxmember_sound = NULL;
 	uint32_t rate = 8000, interval = 20;
+	uint32_t channels = 1;
 	int broadcast_chat_messages = 0;
 	int comfort_noise_level = 0;
 	int pin_retries = 3;
@@ -9044,8 +9993,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	switch_uuid_t uuid;
 	switch_codec_implementation_t read_impl = { 0 };
 	switch_channel_t *channel = NULL;
-	const char *force_rate = NULL, *force_interval = NULL, *presence_id = NULL;
-	uint32_t force_rate_i = 0, force_interval_i = 0;
+	const char *force_rate = NULL, *force_interval = NULL, *force_channels = NULL, *presence_id = NULL;
+	uint32_t force_rate_i = 0, force_interval_i = 0, force_channels_i = 0;
 
 	/* Validate the conference name */
 	if (zstr(name)) {
@@ -9067,8 +10016,20 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 			} else {
 				tmp = atoi(force_rate);
 
-				if (tmp == 8000 || tmp == 12000 || tmp == 16000 || tmp == 24000 || tmp == 32000 || tmp == 48000) {
+				if (tmp == 8000 || tmp == 12000 || tmp == 16000 || tmp == 24000 || tmp == 32000 || tmp == 44100 || tmp == 48000) {
 					force_rate_i = rate = tmp;
+				}
+			}
+		}
+
+		if ((force_channels = switch_channel_get_variable(channel, "conference_force_channels"))) {
+			if (!strcasecmp(force_channels, "auto")) {
+				force_rate_i = read_impl.number_of_channels;
+			} else {
+				tmp = atoi(force_channels);
+
+				if (tmp == 1 || tmp == 2) {
+					force_channels_i = channels = tmp;
 				}
 			}
 		}
@@ -9113,8 +10074,19 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 						rate = read_impl.actual_samples_per_second;
 					}
 				} else {
-					if (tmp == 8000 || tmp == 12000 || tmp == 16000 || tmp == 24000 || tmp == 32000 || tmp == 48000) {
+					if (tmp == 8000 || tmp == 12000 || tmp == 16000 || tmp == 24000 || tmp == 32000 || tmp == 44100 || tmp == 48000) {
 						rate = tmp;
+					}
+				}
+			} else if (!force_channels_i && !strcasecmp(var, "channels") && !zstr(val)) {
+				uint32_t tmp = atoi(val);
+				if (session && tmp == 0) {
+					if (!strcasecmp(val, "auto")) {
+						channels = read_impl.number_of_channels;
+					}
+				} else {
+					if (tmp == 1 || tmp == 2) {
+						channels = tmp;
 					}
 				}
 			} else if (!strcasecmp(var, "domain") && !zstr(val)) {
@@ -9507,6 +10479,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 		conference->domain = "cluecon.com";
 	}
 
+	conference->channels = channels;
 	conference->rate = rate;
 	conference->interval = interval;
 	conference->ivr_dtmf_timeout = ivr_dtmf_timeout;
@@ -9975,7 +10948,7 @@ static void member_bind_controls(conference_member_t *member, const char *contro
 	}
 
 	if (!(xgroups = switch_xml_find_child(xgroups, "group", "name", controls))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find caller-controls in %s\n", global_cf_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find group '%s' in caller-controls section of %s\n", switch_str_nil(controls), global_cf_name);
 		goto end;
 	}
 
@@ -10034,6 +11007,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load)
 
 	switch_event_channel_bind("conference", conference_event_channel_handler, &globals.event_channel_id);
 	switch_event_channel_bind("conference-liveArray", conference_la_event_channel_handler, &globals.event_channel_id);
+	switch_event_channel_bind("conference-mod", conference_mod_event_channel_handler, &globals.event_channel_id);
 
 	/* build api interface help ".syntax" field string */
 	p = strdup("");
@@ -10099,7 +11073,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load)
 	SWITCH_ADD_APP(app_interface, global_app_name, global_app_name, NULL, conference_function, NULL, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "conference_set_auto_outcall", "conference_set_auto_outcall", NULL, conference_auto_function, NULL, SAF_NONE);
 	SWITCH_ADD_CHAT(chat_interface, CONF_CHAT_PROTO, chat_send);
-	
 
 	send_presence(SWITCH_EVENT_PRESENCE_IN);
 

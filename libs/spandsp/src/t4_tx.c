@@ -1644,6 +1644,35 @@ SPAN_DECLARE(int) t4_tx_set_row_read_handler(t4_tx_state_t *s, t4_row_read_handl
 }
 /*- End of function --------------------------------------------------------*/
 
+static int release_encoder(t4_tx_state_t *s)
+{
+    switch (s->metadata.compression)
+    {
+    case T4_COMPRESSION_T4_1D:
+    case T4_COMPRESSION_T4_2D:
+    case T4_COMPRESSION_T6:
+        return t4_t6_encode_release(&s->encoder.t4_t6);
+    case T4_COMPRESSION_T85:
+    case T4_COMPRESSION_T85_L0:
+        return t85_encode_release(&s->encoder.t85);
+#if defined(SPANDSP_SUPPORT_T88)
+    case T4_COMPRESSION_T88:
+        return t88_encode_release(&s->encoder.t88);
+#endif
+    case T4_COMPRESSION_T42_T81:
+    case T4_COMPRESSION_SYCC_T81:
+        return t42_encode_release(&s->encoder.t42);
+    case T4_COMPRESSION_T43:
+        return t43_encode_release(&s->encoder.t43);
+#if defined(SPANDSP_SUPPORT_T45)
+    case T4_COMPRESSION_T45:
+        return t45_encode_release(&s->encoder.t45);
+#endif
+    }
+    return -1;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
                                             int supported_compressions,
                                             int supported_image_sizes,
@@ -2002,6 +2031,7 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
             case T4_COMPRESSION_T6:
                 break;
             default:
+                release_encoder(s);
                 t4_t6_encode_init(&s->encoder.t4_t6, compression, s->metadata.image_width, s->metadata.image_length, s->row_handler, s->row_handler_user_data);
                 break;
             }
@@ -2018,6 +2048,7 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
             case T4_COMPRESSION_T85_L0:
                 break;
             default:
+                release_encoder(s);
                 t85_encode_init(&s->encoder.t85, s->metadata.image_width, s->metadata.image_length, s->row_handler, s->row_handler_user_data);
                 break;
             }
@@ -2046,6 +2077,7 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
             case T4_COMPRESSION_SYCC_T81:
                 break;
             default:
+                release_encoder(s);
                 t42_encode_init(&s->encoder.t42, s->metadata.image_width, s->metadata.image_length, s->row_handler, s->row_handler_user_data);
                 break;
             }
@@ -2058,6 +2090,7 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
             case T4_COMPRESSION_T43:
                 break;
             default:
+                release_encoder(s);
                 t43_encode_init(&s->encoder.t43, s->metadata.image_width, s->metadata.image_length, s->row_handler, s->row_handler_user_data);
                 break;
             }
@@ -2071,6 +2104,7 @@ SPAN_DECLARE(int) t4_tx_set_tx_image_format(t4_tx_state_t *s,
             case T4_COMPRESSION_T45:
                 break;
             default:
+                release_encoder(s);
                 t45_encode_init(&s->encoder.t45, s->metadata.image_width, s->metadata.image_length, s->row_handler, s->row_handler_user_data);
                 break;
             }
@@ -2603,30 +2637,7 @@ SPAN_DECLARE(int) t4_tx_release(t4_tx_state_t *s)
         span_free(s->colour_map);
         s->colour_map = NULL;
     }
-    switch (s->metadata.compression)
-    {
-    case T4_COMPRESSION_T4_1D:
-    case T4_COMPRESSION_T4_2D:
-    case T4_COMPRESSION_T6:
-        return t4_t6_encode_release(&s->encoder.t4_t6);
-    case T4_COMPRESSION_T85:
-    case T4_COMPRESSION_T85_L0:
-        return t85_encode_release(&s->encoder.t85);
-#if defined(SPANDSP_SUPPORT_T88)
-    case T4_COMPRESSION_T88:
-        return t88_encode_release(&s->encoder.t88);
-#endif
-    case T4_COMPRESSION_T42_T81:
-    case T4_COMPRESSION_SYCC_T81:
-        return t42_encode_release(&s->encoder.t42);
-    case T4_COMPRESSION_T43:
-        return t43_encode_release(&s->encoder.t43);
-#if defined(SPANDSP_SUPPORT_T45)
-    case T4_COMPRESSION_T45:
-        return t45_encode_release(&s->encoder.t45);
-#endif
-    }
-    return -1;
+    return release_encoder(s);
 }
 /*- End of function --------------------------------------------------------*/
 

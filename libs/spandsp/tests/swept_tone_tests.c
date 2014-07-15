@@ -92,6 +92,10 @@ int main(int argc, char *argv[])
         exit(2);
     }
 
+    swept_tone_free(s);
+
+    power_meter_release(&meter);
+
     printf("Tests passed.\n");
     return 0;
 }

@@ -37,7 +37,7 @@
 
 #include <switch.h>
 #include <sys/stat.h>
-#include <libpq-fe.h>
+#include <postgresql/libpq-fe.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_pg_csv_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cdr_pg_csv_shutdown);
@@ -362,14 +362,14 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			var = tmp;
 		}
 
-		if (cdr_field->quote) {
-			if ((cdr_field->not_null == SWITCH_FALSE) && zstr(var)) {
-				pq_var = switch_mprintf("null,", var);
-			} else {
-				pq_var = switch_mprintf("'%s',", var);
-			}
+		if ((cdr_field->not_null == SWITCH_FALSE) && zstr(var)) {
+			pq_var = switch_mprintf("null,", var);
 		} else {
-			pq_var = switch_mprintf("%s,", var);
+			if (cdr_field->quote) {
+				pq_var = switch_mprintf("'%s',", var);
+			} else {
+				pq_var = switch_mprintf("%s,", var);
+			}
 		}
 
 		/* Resize values buffer to accomodate next var */

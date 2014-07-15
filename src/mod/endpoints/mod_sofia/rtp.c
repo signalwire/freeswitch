@@ -622,7 +622,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 							maxlen = atol(p);
 							if ((q = strchr(p, ':'))) {
 								q++;
-								max_drift = abs(atol(q));
+								max_drift = abs(atoi(q));
 							}
 						}
 					}

@@ -616,20 +616,28 @@ static void send_hdlc(void *user_data, const uint8_t *msg, int len)
     t38_terminal_state_t *s;
 
     s = (t38_terminal_state_t *) user_data;
-    if (len <= 0)
+    if (len == 0)
     {
+        /* A length of zero means shut down the HDLC transmission */
+        /* Setting len to -1 makes HDLC shut down */
         s->t38_fe.hdlc_tx.len = -1;
-    }
-    else
-    {
-        if (s->t38_fe.us_per_tx_chunk)
-            s->t38_fe.hdlc_tx.extra_bits = extra_bits_in_stuffed_frame(msg, len);
-        /*endif*/
-        bit_reverse(s->t38_fe.hdlc_tx.buf, msg, len);
-        s->t38_fe.hdlc_tx.len = len;
-        s->t38_fe.hdlc_tx.ptr = 0;
+        return;
     }
     /*endif*/
+    if (len == -1)
+    {
+        /* A length of -1 means flush any buffered HDLC data */
+        s->t38_fe.hdlc_tx.len = 0;
+        s->t38_fe.hdlc_tx.ptr = 0;
+        return;
+    }
+    /*endif*/
+    if (s->t38_fe.us_per_tx_chunk)
+        s->t38_fe.hdlc_tx.extra_bits = extra_bits_in_stuffed_frame(msg, len);
+    /*endif*/
+    bit_reverse(s->t38_fe.hdlc_tx.buf, msg, len);
+    s->t38_fe.hdlc_tx.len = len;
+    s->t38_fe.hdlc_tx.ptr = 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1509,7 +1517,7 @@ SPAN_DECLARE(int) t38_terminal_restart(t38_terminal_state_t *s,
                                        bool calling_party)
 {
     t38_terminal_t38_fe_restart(s);
-    t30_restart(&s->t30);
+    t30_restart(&s->t30, calling_party);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1549,7 +1557,7 @@ SPAN_DECLARE(t38_terminal_state_t *) t38_terminal_init(t38_terminal_state_t *s,
     t30_set_iaf_mode(&s->t30, s->t38_fe.iaf);
     t30_set_supported_modems(&s->t30,
                              T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17 | T30_SUPPORT_IAF);
-    t30_restart(&s->t30);
+    t30_restart(&s->t30, calling_party);
     return s;
 }
 /*- End of function --------------------------------------------------------*/

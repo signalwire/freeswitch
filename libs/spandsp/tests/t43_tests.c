@@ -68,7 +68,7 @@ typedef struct
 static const TIFFFieldInfo tiff_fx_tiff_field_info[] =
 {
     {TIFFTAG_INDEXED, 1, 1, TIFF_SHORT, FIELD_CUSTOM, false, false, (char *) "Indexed"},
-	{TIFFTAG_GLOBALPARAMETERSIFD, 1, 1, TIFF_IFD8, FIELD_CUSTOM, false, false, (char *) "GlobalParametersIFD"},
+    {TIFFTAG_GLOBALPARAMETERSIFD, 1, 1, TIFF_IFD8, FIELD_CUSTOM, false, false, (char *) "GlobalParametersIFD"},
     {TIFFTAG_PROFILETYPE, 1, 1, TIFF_LONG, FIELD_CUSTOM, false, false, (char *) "ProfileType"},
     {TIFFTAG_FAXPROFILE, 1, 1, TIFF_BYTE, FIELD_CUSTOM, false, false, (char *) "FaxProfile"},
     {TIFFTAG_CODINGMETHODS, 1, 1, TIFF_LONG, FIELD_CUSTOM, false, false, (char *) "CodingMethods"},
@@ -86,7 +86,7 @@ static TIFFFieldArray tifffxFieldArray;
 static TIFFField tiff_fx_tiff_fields[] =
 {
     { TIFFTAG_INDEXED, 1, 1, TIFF_SHORT, 0, TIFF_SETGET_UINT16, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, (char *) "Indexed" },
-	{ TIFFTAG_GLOBALPARAMETERSIFD, 1, 1, TIFF_IFD8, 0, TIFF_SETGET_IFD8, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 0, 0, (char *) "GlobalParametersIFD", &tifffxFieldArray },
+    { TIFFTAG_GLOBALPARAMETERSIFD, 1, 1, TIFF_IFD8, 0, TIFF_SETGET_IFD8, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 0, 0, (char *) "GlobalParametersIFD", &tifffxFieldArray },
     { TIFFTAG_PROFILETYPE, 1, 1, TIFF_LONG, 0, TIFF_SETGET_UINT32, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, (char *) "ProfileType", NULL },
     { TIFFTAG_FAXPROFILE, 1, 1, TIFF_BYTE, 0, TIFF_SETGET_UINT8, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, (char *) "FaxProfile", NULL },
     { TIFFTAG_CODINGMETHODS, 1, 1, TIFF_LONG, 0, TIFF_SETGET_UINT32, TIFF_SETGET_UNDEFINED, FIELD_CUSTOM, 1, 0, (char *) "CodingMethods", NULL },
@@ -486,8 +486,7 @@ int read_file(meta_t *meta, int page)
     if (TIFFGetField(tif, TIFFTAG_COLORMAP, &map_L, &map_a, &map_b, &map_z))
     {
         entries = 1 << meta->bits_per_sample;
-        meta->colour_map = malloc(3*entries);
-        if (meta->colour_map)
+        if ((meta->colour_map = malloc(3*entries)))
         {
 #if 0
             /* Sweep the colormap in the proper order */
@@ -1349,7 +1348,11 @@ int main(int argc, char *argv[])
             free(data);
             data = data2;
 #elif 1
-            data2 = malloc(totdata);
+            if ((data2 = malloc(totdata)) == NULL)
+            {
+                printf("Failed to allocate buffer\n");
+                exit(2);
+            }
             start = rdtscll();
             //if (!t42_itulab_jpeg_to_srgb(&logging2, &lab_param, data2, &off, data, off, &meta.image_width, &meta.image_length, &meta.samples_per_pixel))
             {

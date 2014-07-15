@@ -87,7 +87,7 @@ if (my_matches) {\
 }
 
 
-extern struct skinny_table SKINNY_MESSAGE_TYPES[75];
+extern struct skinny_table SKINNY_MESSAGE_TYPES[76];
 const char *skinny_message_type2str(uint32_t id);
 uint32_t skinny_str2message_type(const char *str);
 #define SKINNY_PUSH_MESSAGE_TYPES SKINNY_DECLARE_PUSH_MATCH(SKINNY_MESSAGE_TYPES)

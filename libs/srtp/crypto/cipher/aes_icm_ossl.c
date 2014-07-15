@@ -103,9 +103,10 @@ extern cipher_type_t aes_icm_256;
  * The key_len parameter should be one of 30, 38, or 46 for
  * AES-128, AES-192, and AES-256 respectively.  Note, this key_len
  * value is inflated, as it also accounts for the 112 bit salt
- * value.
+ * value.  The tlen argument is for the AEAD tag length, which
+ * isn't used in counter mode.
  */
-err_status_t aes_icm_openssl_alloc (cipher_t **c, int key_len, int x)
+err_status_t aes_icm_openssl_alloc (cipher_t **c, int key_len, int tlen)
 {
     aes_icm_ctx_t *icm;
     int tmp;
@@ -382,6 +383,7 @@ cipher_test_case_t aes_icm_test_case_0 = {
     aes_icm_test_case_0_ciphertext,        /* ciphertext               */
     0,
     NULL,
+    0,
     NULL                                   /* pointer to next testcase */
 };
 
@@ -426,6 +428,7 @@ cipher_test_case_t aes_icm_192_test_case_1 = {
     aes_icm_192_test_case_1_ciphertext,    /* ciphertext               */
     0,
     NULL,
+    0,
     NULL                                   /* pointer to next testcase */
 };
 
@@ -472,6 +475,7 @@ cipher_test_case_t aes_icm_256_test_case_2 = {
     aes_icm_256_test_case_2_ciphertext,    /* ciphertext               */
     0,
     NULL,
+    0,
     NULL                                   /* pointer to next testcase */
 };
 

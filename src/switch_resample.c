@@ -78,7 +78,8 @@ SWITCH_DECLARE(switch_status_t) switch_resample_perform_create(switch_audio_resa
 	resampler->factor = (lto_rate / lfrom_rate);
 	resampler->rfactor = (lfrom_rate / lto_rate);
 	resampler->to_size = resample_buffer(to_rate, from_rate, (uint32_t) to_size);
-	resampler->to = malloc(resampler->to_size * sizeof(int16_t));
+	resampler->to = malloc(resampler->to_size * sizeof(int16_t) * channels);
+	resampler->channels = channels;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -180,13 +181,15 @@ SWITCH_DECLARE(void) switch_swap_linear(int16_t *buf, int len)
 	}
 }
 
-#if 1
-SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples, uint32_t divisor)
+
+SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples, uint32_t channels, uint32_t divisor)
 {
-	int16_t x;
-	uint32_t i;
+	int16_t s;
+	uint32_t x, i, j;
 	int sum_rnd = 0;
 	int16_t rnd2 = (int16_t) switch_micro_time_now() + (int16_t) (intptr_t) data;
+
+	if (channels == 0) channels = 1;
 
 	assert(divisor);
 
@@ -200,37 +203,17 @@ SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples
 			rnd2 = rnd2 * 31821U + 13849U;
 			sum_rnd += rnd2;
 		}
-		//switch_normalize_to_16bit(sum_rnd);
-		*data = (int16_t) ((int16_t) sum_rnd / (int) divisor);
 
-		data++;
-	}
-}
-#else
+		s = (int16_t) ((int16_t) sum_rnd / (int) divisor);		
 
-SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples, uint32_t divisor)
-{
-	int16_t rnd = 0, rnd2, x;
-	uint32_t i;
-	int sum_rnd = 0;
-
-	assert(divisor);
-
-	rnd2 = (int16_t) (intptr_t) (&data + switch_epoch_time_now(NULL));
-
-	for (i = 0; i < samples; i++, sum_rnd = 0) {
-		for (x = 0; x < 10; x++) {
-			rnd = rnd + (int16_t) ((x + i) * rnd2);
-			sum_rnd += rnd;
+		for (j = 0; j < channels; j++) {
+			*data = s;
+			data++;			
 		}
-		switch_normalize_to_16bit(sum_rnd);
-		*data = (int16_t) ((int16_t) sum_rnd / (int) divisor);
 
-		data++;
+
 	}
 }
-
-#endif
 
 SWITCH_DECLARE(uint32_t) switch_merge_sln(int16_t *data, uint32_t samples, int16_t *other_data, uint32_t other_samples)
 {
@@ -271,18 +254,55 @@ SWITCH_DECLARE(uint32_t) switch_unmerge_sln(int16_t *data, uint32_t samples, int
 	return x;
 }
 
-SWITCH_DECLARE(void) switch_mux_channels(int16_t *data, switch_size_t samples, uint32_t channels)
+SWITCH_DECLARE(void) switch_mux_channels(int16_t *data, switch_size_t samples, uint32_t orig_channels, uint32_t channels)
 {
 	switch_size_t i = 0;
 	uint32_t j = 0;
 
-	for (i = 0; i < samples; i++) {
-		int32_t z = 0;
-		for (j = 0; j < channels; j++) {
-			z += data[i * channels + j];
-			switch_normalize_to_16bit(z);
-			data[i] = (int16_t) z;
+	switch_assert(channels < 11);
+
+	if (orig_channels > channels) {
+		for (i = 0; i < samples; i++) {
+			int32_t z = 0;
+			for (j = 0; j < orig_channels; j++) {
+				z += data[i * orig_channels + j];
+				switch_normalize_to_16bit(z);
+				data[i] = (int16_t) z;
+			}
 		}
+	} else if (orig_channels < channels) {
+
+		/* interesting problem... take a give buffer and double up every sample in the buffer without using any other buffer.....
+		   This way beats the other i think bacause there is no malloc but I do have to copy the data twice */
+#if 1
+		uint32_t k = 0, len = samples * orig_channels;
+
+		for (i = 0; i < len; i++) {
+			data[i+len] = data[i];
+		}
+
+		for (i = 0; i < samples; i++) {
+			for (j = 0; j < channels; j++) { 
+				data[k++] = data[i + samples];
+			}
+		}
+
+#else 
+		uint32_t k = 0, len = samples * 2 * orig_channels;
+		int16_t *orig = NULL;
+
+		switch_zmalloc(orig, len);
+		memcpy(orig, data, len);
+
+		for (i = 0; i < samples; i++) {
+			for (j = 0; j < channels; j++) { 
+				data[k++] = orig[i];
+			}
+		}
+		
+		free(orig);
+#endif
+
 	}
 }
 

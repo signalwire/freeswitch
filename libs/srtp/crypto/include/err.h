@@ -87,7 +87,7 @@ typedef enum {
   err_status_nonce_bad    = 18, /**< nonce check failed                      */
   err_status_read_fail    = 19, /**< couldn't read data                      */
   err_status_write_fail   = 20, /**< couldn't write data                     */
-  err_status_parse_err    = 21, /**< error pasring data                      */
+  err_status_parse_err    = 21, /**< error parsing data                      */
   err_status_encode_err   = 22, /**< error encoding data                     */
   err_status_semaphore_err = 23,/**< error while using semaphores            */
   err_status_pfkey_err    = 24  /**< error while using pfkey                 */

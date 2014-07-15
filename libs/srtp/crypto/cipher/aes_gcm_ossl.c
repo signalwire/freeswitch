@@ -64,11 +64,11 @@ extern cipher_type_t aes_gcm_128_openssl;
 extern cipher_type_t aes_gcm_256_openssl;
 
 /*
- * For now we only support 8 octet tags.  The spec allows for
- * optional 12 and 16 byte tags.  These longer tag lengths may
- * be implemented in the future.
+ * For now we only support 8 and 16 octet tags.  The spec allows for
+ * optional 12 byte tag, which may be supported in the future.  
  */
-#define GCM_AUTH_TAG_LEN 8
+#define GCM_AUTH_TAG_LEN    16
+#define GCM_AUTH_TAG_LEN_8  8
 
 
 /*
@@ -78,19 +78,25 @@ extern cipher_type_t aes_gcm_256_openssl;
  * key length includes the 14 byte salt value that is used when
  * initializing the KDF.
  */
-err_status_t aes_gcm_openssl_alloc (cipher_t **c, int key_len)
+err_status_t aes_gcm_openssl_alloc (cipher_t **c, int key_len, int tlen)
 {
     aes_gcm_ctx_t *gcm;
     int tmp;
     uint8_t *allptr;
 
     debug_print(mod_aes_gcm, "allocating cipher with key length %d", key_len);
+    debug_print(mod_aes_gcm, "allocating cipher with tag length %d", tlen);
 
     /*
      * Verify the key_len is valid for one of: AES-128/256
      */
     if (key_len != AES_128_GCM_KEYSIZE_WSALT && 
 	key_len != AES_256_GCM_KEYSIZE_WSALT) {
+        return (err_status_bad_param);
+    }
+
+    if (tlen != GCM_AUTH_TAG_LEN &&
+	tlen != GCM_AUTH_TAG_LEN_8) {
         return (err_status_bad_param);
     }
 
@@ -113,14 +119,14 @@ err_status_t aes_gcm_openssl_alloc (cipher_t **c, int key_len)
         (*c)->algorithm = AES_128_GCM;
         aes_gcm_128_openssl.ref_count++;
         ((aes_gcm_ctx_t*)(*c)->state)->key_size = AES_128_KEYSIZE;
-        ((aes_gcm_ctx_t*)(*c)->state)->tag_len = GCM_AUTH_TAG_LEN;  
+        ((aes_gcm_ctx_t*)(*c)->state)->tag_len = tlen;  
         break;
     case AES_256_GCM_KEYSIZE_WSALT:
         (*c)->type = &aes_gcm_256_openssl;
         (*c)->algorithm = AES_256_GCM;
         aes_gcm_256_openssl.ref_count++;
         ((aes_gcm_ctx_t*)(*c)->state)->key_size = AES_256_KEYSIZE;
-        ((aes_gcm_ctx_t*)(*c)->state)->tag_len = GCM_AUTH_TAG_LEN;  
+        ((aes_gcm_ctx_t*)(*c)->state)->tag_len = tlen;  
         break;
     }
 
@@ -405,7 +411,7 @@ uint8_t aes_gcm_test_case_0_aad[20] = {
     0xab, 0xad, 0xda, 0xd2
 };
 
-uint8_t aes_gcm_test_case_0_ciphertext[68] = {
+uint8_t aes_gcm_test_case_0_ciphertext[76] = {
     0x42, 0x83, 0x1e, 0xc2, 0x21, 0x77, 0x74, 0x24,
     0x4b, 0x72, 0x21, 0xb7, 0x84, 0xd0, 0xd4, 0x9c,
     0xe3, 0xaa, 0x21, 0x2f, 0x2c, 0x02, 0xa4, 0xe0,
@@ -414,11 +420,12 @@ uint8_t aes_gcm_test_case_0_ciphertext[68] = {
     0x7d, 0x8f, 0x6a, 0x5a, 0xac, 0x84, 0xaa, 0x05,
     0x1b, 0xa3, 0x0b, 0x39, 0x6a, 0x0a, 0xac, 0x97,
     0x3d, 0x58, 0xe0, 0x91,
-    /* the last 8 bytes are the tag */
+    /* the last 16 bytes are the tag */
     0x5b, 0xc9, 0x4f, 0xbc, 0x32, 0x21, 0xa5, 0xdb,
+    0x94, 0xfa, 0xe9, 0x5a, 0xe7, 0x12, 0x1a, 0x47,
 };
 
-cipher_test_case_t aes_gcm_test_case_0 = {
+cipher_test_case_t aes_gcm_test_case_0a = {
     AES_128_GCM_KEYSIZE_WSALT,             /* octets in key            */
     aes_gcm_test_case_0_key,               /* key                      */
     aes_gcm_test_case_0_iv,                /* packet index             */
@@ -428,7 +435,22 @@ cipher_test_case_t aes_gcm_test_case_0 = {
     aes_gcm_test_case_0_ciphertext,        /* ciphertext  + tag        */
     20,                                    /* octets in AAD            */
     aes_gcm_test_case_0_aad,               /* AAD                      */
+    GCM_AUTH_TAG_LEN_8,
     NULL                                   /* pointer to next testcase */
+};
+
+cipher_test_case_t aes_gcm_test_case_0 = {
+    AES_128_GCM_KEYSIZE_WSALT,             /* octets in key            */
+    aes_gcm_test_case_0_key,               /* key                      */
+    aes_gcm_test_case_0_iv,                /* packet index             */
+    60,                                    /* octets in plaintext      */
+    aes_gcm_test_case_0_plaintext,         /* plaintext                */
+    76,                                    /* octets in ciphertext     */
+    aes_gcm_test_case_0_ciphertext,        /* ciphertext  + tag        */
+    20,                                    /* octets in AAD            */
+    aes_gcm_test_case_0_aad,               /* AAD                      */
+    GCM_AUTH_TAG_LEN,
+    &aes_gcm_test_case_0a                  /* pointer to next testcase */
 };
 
 uint8_t aes_gcm_test_case_1_key[AES_256_GCM_KEYSIZE_WSALT] = {
@@ -463,7 +485,7 @@ uint8_t aes_gcm_test_case_1_aad[20] = {
     0xab, 0xad, 0xda, 0xd2
 };
 
-uint8_t aes_gcm_test_case_1_ciphertext[68] = {
+uint8_t aes_gcm_test_case_1_ciphertext[76] = {
     0x0b, 0x11, 0xcf, 0xaf, 0x68, 0x4d, 0xae, 0x46, 
     0xc7, 0x90, 0xb8, 0x8e, 0xb7, 0x6a, 0x76, 0x2a, 
     0x94, 0x82, 0xca, 0xab, 0x3e, 0x39, 0xd7, 0x86, 
@@ -472,11 +494,12 @@ uint8_t aes_gcm_test_case_1_ciphertext[68] = {
     0x6d, 0xd7, 0xe2, 0x6a, 0x7d, 0x5f, 0xb4, 0x80, 
     0xef, 0xef, 0xc5, 0x29, 0x12, 0xd1, 0xaa, 0x10, 
     0x09, 0xc9, 0x86, 0xc1, 
-    /* the last 8 bytes are the tag */
+    /* the last 16 bytes are the tag */
     0x45, 0xbc, 0x03, 0xe6, 0xe1, 0xac, 0x0a, 0x9f, 
+    0x81, 0xcb, 0x8e, 0x5b, 0x46, 0x65, 0x63, 0x1d,
 };
 
-cipher_test_case_t aes_gcm_test_case_1 = {
+cipher_test_case_t aes_gcm_test_case_1a = {
     AES_256_GCM_KEYSIZE_WSALT,                 /* octets in key            */
     aes_gcm_test_case_1_key,               /* key                      */
     aes_gcm_test_case_1_iv,                /* packet index             */
@@ -486,7 +509,22 @@ cipher_test_case_t aes_gcm_test_case_1 = {
     aes_gcm_test_case_1_ciphertext,        /* ciphertext  + tag        */
     20,                                    /* octets in AAD            */
     aes_gcm_test_case_1_aad,               /* AAD                      */
+    GCM_AUTH_TAG_LEN_8,
     NULL                                   /* pointer to next testcase */
+};
+
+cipher_test_case_t aes_gcm_test_case_1 = {
+    AES_256_GCM_KEYSIZE_WSALT,                 /* octets in key            */
+    aes_gcm_test_case_1_key,               /* key                      */
+    aes_gcm_test_case_1_iv,                /* packet index             */
+    60,                                    /* octets in plaintext      */
+    aes_gcm_test_case_1_plaintext,         /* plaintext                */
+    76,                                    /* octets in ciphertext     */
+    aes_gcm_test_case_1_ciphertext,        /* ciphertext  + tag        */
+    20,                                    /* octets in AAD            */
+    aes_gcm_test_case_1_aad,               /* AAD                      */
+    GCM_AUTH_TAG_LEN,
+    &aes_gcm_test_case_1a                  /* pointer to next testcase */
 };
 
 /*

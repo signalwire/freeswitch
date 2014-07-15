@@ -348,12 +348,14 @@ SPAN_DECLARE(bell_mf_tx_state_t *) bell_mf_tx_init(bell_mf_tx_state_t *s)
 
 SPAN_DECLARE(int) bell_mf_tx_release(bell_mf_tx_state_t *s)
 {
+    queue_release(&s->queue.queue);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) bell_mf_tx_free(bell_mf_tx_state_t *s)
 {
+    queue_release(&s->queue.queue);
     span_free(s);
     return 0;
 }

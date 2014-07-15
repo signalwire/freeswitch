@@ -564,6 +564,7 @@ int main(int argc, char *argv[])
         exit(2);
     }
     printf("Tests passed.\n");
+    at_free(at_state);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

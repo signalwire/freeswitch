@@ -166,6 +166,13 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_global_init()
 	return FTDM_FAIL;
 }
 
+FT_DECLARE(ftdm_status_t) ftdm_sched_global_destroy()
+{
+	ftdm_mutex_destroy(&sched_globals.mutex);
+	memset(&sched_globals, 0, sizeof(sched_globals));
+	return FTDM_SUCCESS;
+}
+
 FT_DECLARE(ftdm_status_t) ftdm_sched_free_run(ftdm_sched_t *sched)
 {
 	ftdm_status_t status = FTDM_FAIL;

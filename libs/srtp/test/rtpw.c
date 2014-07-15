@@ -153,6 +153,7 @@ main (int argc, char *argv[]) {
   unsigned char ttl = 5;
   int c;
   int key_size = 128;
+  int tag_size = 8;
   int gcm_on = 0;
   char *input_key = NULL;
   char *address = NULL;
@@ -188,7 +189,7 @@ main (int argc, char *argv[]) {
 
   /* check args */
   while (1) {
-    c = getopt_s(argc, argv, "k:rsgae:ld:");
+    c = getopt_s(argc, argv, "k:rsgt:ae:ld:");
     if (c == -1) {
       break;
     }
@@ -203,6 +204,13 @@ main (int argc, char *argv[]) {
         exit(1);
       }
       sec_servs |= sec_serv_conf;
+      break;
+    case 't':
+      tag_size = atoi(optarg_s);
+      if (tag_size != 8 && tag_size != 16) {
+        printf("error: GCM tag size must be 8 or 16 (%d)\n", tag_size);
+        exit(1);
+      }
       break;
     case 'a':
       sec_servs |= sec_serv_auth;
@@ -423,6 +431,10 @@ main (int argc, char *argv[]) {
     policy.rtp.sec_serv = sec_servs;
     policy.rtcp.sec_serv = sec_serv_none;  /* we don't do RTCP anyway */
 
+    if (gcm_on && tag_size != 8) {
+	policy.rtp.auth_tag_len = tag_size;
+    }
+
     /*
      * read key from hexadecimal on command line into an octet string
      */
@@ -610,6 +622,7 @@ usage(char *string) {
 	 "where  -a use message authentication\n"
 	 "       -e <key size> use encryption (use 128 or 256 for key size)\n"
 	 "       -g Use AES-GCM mode (must be used with -e)\n"
+	 "       -t <tag size> Tag size to use in GCM mode (use 8 or 16)\n"
 	 "       -k <key>  sets the srtp master key\n"
 	 "       -s act as rtp sender\n"
 	 "       -r act as rtp receiver\n"

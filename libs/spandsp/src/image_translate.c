@@ -546,7 +546,7 @@ static int floyd_steinberg_dither_row(image_translate_state_t *s, uint8_t buf[])
         s->pixel_row[0][x - 1] = saturateu8(s->pixel_row[0][x - 1] + (7*quant_error)/16);
         s->pixel_row[1][x + 0] = saturateu8(s->pixel_row[1][x + 0] + (5*quant_error)/16);
         s->pixel_row[1][x - 1] = saturateu8(s->pixel_row[1][x - 1] + (1*quant_error)/16);
-        for (  ;  x > 0;  x--)
+        while (--x > 0)
         {
             old_pixel = s->pixel_row[0][x];
             new_pixel = find_closest_palette_color(old_pixel);
@@ -574,7 +574,7 @@ static int floyd_steinberg_dither_row(image_translate_state_t *s, uint8_t buf[])
         s->pixel_row[0][x + 1] = saturateu8(s->pixel_row[0][x + 1] + (7*quant_error)/16);
         s->pixel_row[1][x + 0] = saturateu8(s->pixel_row[1][x + 0] + (5*quant_error)/16);
         s->pixel_row[1][x + 1] = saturateu8(s->pixel_row[1][x + 1] + (1*quant_error)/16);
-        for (  ;  x < s->output_width - 1;  x++)
+        while (++x < s->output_width - 1)
         {
             old_pixel = s->pixel_row[0][x];
             new_pixel = find_closest_palette_color(old_pixel);
@@ -772,10 +772,7 @@ SPAN_DECLARE(image_translate_state_t *) image_translate_init(image_translate_sta
     s->output_bytes_per_pixel = image_format_to_bytes_per_pixel(s->output_format);
 
     s->resize = (output_width > 0);
-    if (s->resize)
-        s->output_width = output_width;
-    else
-        s->output_width = s->input_width;
+    s->output_width = (s->resize)  ?  output_width  :  s->input_width;
 
     if (image_translate_restart(s, input_length))
         return NULL;

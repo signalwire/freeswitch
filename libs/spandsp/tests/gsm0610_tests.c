@@ -321,7 +321,7 @@ static int perform_linear_test(int full, int disk, const char *name)
                 mismatches++;
             }
         }
-        gsm0610_release(gsm0610_enc_state);
+        gsm0610_free(gsm0610_enc_state);
         if (mismatches)
         {
             printf("Test failed: %d of %d samples mismatch\n", mismatches, xxx);
@@ -350,7 +350,7 @@ static int perform_linear_test(int full, int disk, const char *name)
         printf("Test failed: %d of %d samples mismatch\n", mismatches, vector_len);
         exit(2);
     }
-    gsm0610_release(gsm0610_dec_state);
+    gsm0610_free(gsm0610_dec_state);
     printf("Test passed\n");
     return 0;
 }
@@ -405,7 +405,7 @@ static int perform_law_test(int full, int law, const char *name)
             exit(2);
         }
         printf("Test passed\n");
-        gsm0610_release(gsm0610_enc_state);
+        gsm0610_free(gsm0610_enc_state);
     }
 
     if ((gsm0610_dec_state = gsm0610_init(NULL, GSM0610_PACKING_NONE)) == NULL)
@@ -438,7 +438,7 @@ static int perform_law_test(int full, int law, const char *name)
         printf("Test failed: %d of %d samples mismatch\n", mismatches, vector_len);
         exit(2);
     }
-    gsm0610_release(gsm0610_dec_state);
+    gsm0610_free(gsm0610_dec_state);
     printf("Test passed\n");
     return 0;
 }
@@ -613,8 +613,8 @@ int main(int argc, char *argv[])
             fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
         }
-        gsm0610_release(gsm0610_enc_state);
-        gsm0610_release(gsm0610_dec_state);
+        gsm0610_free(gsm0610_enc_state);
+        gsm0610_free(gsm0610_dec_state);
     }
     return 0;
 }

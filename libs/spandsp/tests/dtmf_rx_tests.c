@@ -613,6 +613,7 @@ static void mitel_cm7291_side_1_tests(void)
         printf("    Failed\n");
         exit(2);
     }
+    dtmf_rx_free(dtmf_state);
     printf("    Passed\n");
 }
 /*- End of function --------------------------------------------------------*/
@@ -686,6 +687,7 @@ static void mitel_cm7291_side_2_and_bellcore_tests(void)
         exit(2);
     }
     printf("    Passed\n");
+    dtmf_rx_free(dtmf_state);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -741,6 +743,7 @@ static void dial_tone_tolerance_tests(void)
         exit(2);
     }
     printf("    Passed\n");
+    dtmf_rx_free(dtmf_state);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -817,6 +820,7 @@ static void callback_function_tests(void)
         printf("    Failed\n");
         exit(2);
     }
+    dtmf_rx_free(dtmf_state);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -915,6 +919,7 @@ int main(int argc, char *argv[])
         printf("Tests passed in %ds\n", duration);
     }
 
+    codec_munge_free(munge);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

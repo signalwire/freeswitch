@@ -99,6 +99,13 @@ SPAN_DECLARE(hdlc_rx_state_t *) hdlc_rx_init(hdlc_rx_state_t *s,
                                              hdlc_frame_handler_t handler,
                                              void *user_data);
 
+/*! Re-initialise an HDLC receiver context. This does not reset the usage statistics.
+    \brief Re-initialise an HDLC receiver context.
+    \param s A pointer to an HDLC receiver context.
+    \return 0 for success.
+*/
+SPAN_DECLARE(int) hdlc_rx_restart(hdlc_rx_state_t *s);
+
 /*! Change the put_bit function associated with an HDLC receiver context.
     \brief Change the put_bit function associated with an HDLC receiver context.
     \param s A pointer to an HDLC receiver context.
@@ -167,7 +174,8 @@ SPAN_DECLARE_NONSTD(void) hdlc_rx_put_byte(hdlc_rx_state_t *s, int new_byte);
 */
 SPAN_DECLARE_NONSTD(void) hdlc_rx_put(hdlc_rx_state_t *s, const uint8_t buf[], int len);
 
-/*! \brief Initialise an HDLC transmitter context.
+/*! Initialise an HDLC transmitter context.
+    \brief Initialise an HDLC transmitter context.
     \param s A pointer to an HDLC transmitter context.
     \param crc32 True to use ITU CRC32. False to use ITU CRC16.
     \param inter_frame_flags The minimum flag octets to insert between frames (usually one).
@@ -183,8 +191,23 @@ SPAN_DECLARE(hdlc_tx_state_t *) hdlc_tx_init(hdlc_tx_state_t *s,
                                              hdlc_underflow_handler_t handler,
                                              void *user_data);
 
+/*! Re-initialise an HDLC transmitter context.
+    \brief Re-initialise an HDLC transmitter context.
+    \param s A pointer to an HDLC transmitter context.
+    \return 0 for success.
+*/
+SPAN_DECLARE(int) hdlc_tx_restart(hdlc_tx_state_t *s);
+
+/*! Release an HDLC transmitter context.
+    \brief Release an HDLC transmitter context.
+    \param s A pointer to an HDLC transmitter context.
+    \return 0 for OK */
 SPAN_DECLARE(int) hdlc_tx_release(hdlc_tx_state_t *s);
 
+/*! Free an HDLC transmitter context.
+    \brief Free an HDLC transmitter context.
+    \param s A pointer to an HDLC transmitter context.
+    \return 0 for OK */
 SPAN_DECLARE(int) hdlc_tx_free(hdlc_tx_state_t *s);
 
 /*! \brief Set the maximum frame length for an HDLC transmitter context.

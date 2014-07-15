@@ -314,9 +314,9 @@ static void compliance_tests(int log_audio)
             }
         }
     }
-    g711_release(enc_state);
-    g711_release(transcode);
-    g711_release(dec_state);
+    g711_free(enc_state);
+    g711_free(transcode);
+    g711_free(dec_state);
 
     if (log_audio)
     {

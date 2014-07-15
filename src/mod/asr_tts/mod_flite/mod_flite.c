@@ -72,7 +72,7 @@ typedef struct flite_data flite_t;
 #define free_wave(w) if (w) {delete_wave(w) ; w = NULL; }
 #define FLITE_BLOCK_SIZE 1024 * 32
 
-static switch_status_t flite_speech_open(switch_speech_handle_t *sh, const char *voice_name, int rate, switch_speech_flag_t *flags)
+static switch_status_t flite_speech_open(switch_speech_handle_t *sh, const char *voice_name, int rate, int channels, switch_speech_flag_t *flags)
 {
 	flite_t *flite = switch_core_alloc(sh->memory_pool, sizeof(*flite));
 

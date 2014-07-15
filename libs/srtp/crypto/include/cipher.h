@@ -80,7 +80,7 @@ typedef struct cipher_t      *cipher_pointer_t;
  */
 
 typedef err_status_t (*cipher_alloc_func_t)
-     (cipher_pointer_t *cp, int key_len);
+     (cipher_pointer_t *cp, int key_len, int tag_len);
 
 /* 
  * a cipher_init_func_t [re-]initializes a cipher_t with a given key
@@ -148,6 +148,7 @@ typedef struct cipher_test_case_t {
   uint8_t *ciphertext;                        /* ciphertext               */
   int aad_length_octets;                      /* octets in AAD            */ 
   uint8_t *aad;                               /* AAD                      */
+  int tag_length_octets;                      /* Length of AEAD tag       */
   struct cipher_test_case_t *next_test_case;  /* pointer to next testcase */
 } cipher_test_case_t;
 
@@ -183,7 +184,7 @@ typedef struct cipher_t {
 
 /* some syntactic sugar on these function types */
 
-#define cipher_type_alloc(ct, c, klen) ((ct)->alloc((c), (klen)))
+#define cipher_type_alloc(ct, c, klen, tlen) ((ct)->alloc((c), (klen), (tlen)))
 
 #define cipher_dealloc(c) (((c)->type)->dealloc(c))
 

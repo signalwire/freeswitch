@@ -5411,7 +5411,7 @@ static int command_search(const char *u, int *matched)
 
     entry = 0;
     /* Loop over the length of the string to search the trie... */
-    for (i = 0, ptr = 0;  ptr < COMMAND_TRIE_LEN;  i++)
+    for (i = 0, ptr = 0;  ptr < COMMAND_TRIE_LEN - 2;  i++)
     {
         /* The character in u we are processing... */
         /* V.250 5.4.1 says upper and lower case are equivalent in commands */

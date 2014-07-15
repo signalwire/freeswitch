@@ -197,6 +197,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int is_b;
 	const char *a_prefix = "";
+	char url_joiner = '?';
 
 	if (globals.shutdown) {
 		return SWITCH_STATUS_SUCCESS;
@@ -340,7 +341,10 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 				switch_yield(globals.delay * 1000000);
 			}
 
-			destUrl = switch_mprintf("%s?uuid=%s%s", globals.urls[globals.url_index], a_prefix, switch_core_session_get_uuid(session));
+			if( strchr(globals.urls[globals.url_index], '?') != NULL ) {
+				url_joiner = '&';
+			}
+			destUrl = switch_mprintf("%s%cuuid=%s%s", globals.urls[globals.url_index], url_joiner, a_prefix, switch_core_session_get_uuid(session));
 			switch_curl_easy_setopt(curl_handle, CURLOPT_URL, destUrl);
 
 			if (!strncasecmp(destUrl, "https", 5)) {

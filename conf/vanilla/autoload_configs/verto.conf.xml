@@ -1,0 +1,27 @@
+<configuration name="verto.conf" description="HTML5 Verto Endpoint">
+
+  <settings>
+    <param name="debug" value="0"/>
+  </settings>
+
+  <profiles>
+    <profile name="mine">
+      <param name="bind-local" value="0.0.0.0:8081"/>
+      <param name="bind-local" value="0.0.0.0:8082" secure="true"/>
+      <param name="secure-combined" value="/usr/local/freeswitch/certs/wss.pem"/>
+      <param name="secure-chain" value="/usr/local/freeswitch/certs/wss.pem"/>
+      <param name="userauth" value="true"/>
+      <param name="mcast-ip" value="224.1.1.1"/>
+      <param name="mcast-port" value="1337"/>
+      <param name="rtp-ip" value="$${local_ip_v4}"/>
+      <!--  <param name="ext-rtp-ip" value=""/> -->
+      <param name="local-network" value="localnet.auto"/>
+      <param name="outbound-codec-string" value="opus,vp8"/>
+      <param name="inbound-codec-string" value="opus,vp8"/>
+      <param name="apply-candidate-acl" value="wan.auto"/>
+      <param name="timer-name" value="soft"/>
+      
+    </profile>
+  </profiles>
+
+</configuration>

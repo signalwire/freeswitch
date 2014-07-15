@@ -454,7 +454,7 @@ int main(int argc, char *argv[])
             dump_image_as_xxx(receive_state);
         t4_rx_end_page(receive_state);
         display_page_stats(receive_state);
-        t4_rx_release(receive_state);
+        t4_rx_free(receive_state);
     }
     else
     {
@@ -621,8 +621,8 @@ int main(int argc, char *argv[])
             t4_rx_end_page(receive_state);
             sends++;
         }
-        t4_tx_release(send_state);
-        t4_rx_release(receive_state);
+        t4_tx_free(send_state);
+        t4_rx_free(receive_state);
         /* And we should now have a matching received TIFF file. Note this will only match
            at the image level. TIFF files allow a lot of ways to express the same thing,
            so bit matching of the files is not the normal case. */

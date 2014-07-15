@@ -92,6 +92,9 @@ FT_DECLARE(ftdm_status_t) ftdm_sched_get_time_to_next_timer(const ftdm_sched_t *
 /*! \brief Global initialization, called just once, this is called by FreeTDM core, other users MUST not call it */
 FT_DECLARE(ftdm_status_t) ftdm_sched_global_init(void);
 
+/*! \brief Global destroy, called just once, this is called by FreeTDM core, other users MUST not call it */
+FT_DECLARE(ftdm_status_t) ftdm_sched_global_destroy(void);
+
 /*! \brief Checks if the main scheduling thread is running */
 FT_DECLARE(ftdm_bool_t) ftdm_free_sched_running(void);
 

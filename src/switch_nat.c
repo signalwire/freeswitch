@@ -95,7 +95,7 @@ static int init_upnp(void)
 	memset(&nat_globals.urls, 0, sizeof(struct UPNPUrls));
 	memset(&nat_globals.data, 0, sizeof(struct IGDdatas));
 
-	devlist = upnpDiscover(3000, NULL, minissdpdpath, 0);
+	devlist = upnpDiscover(3000, minissdpdpath, minissdpdpath, 0);
 
 	if (devlist) {
 		dev = devlist;

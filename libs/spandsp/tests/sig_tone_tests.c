@@ -648,6 +648,8 @@ int main(int argc, char *argv[])
         speech_immunity_tests(&rx_state);
         level_and_ratio_tests(&rx_state, fc);
         sequence_tests(&tx_state, &rx_state, munge);
+        if (munge)
+            codec_munge_free(munge);
     }
     /*endfor*/
 

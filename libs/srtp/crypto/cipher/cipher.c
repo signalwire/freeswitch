@@ -108,7 +108,7 @@ cipher_type_test(const cipher_type_t *ct, const cipher_test_case_t *test_data) {
    */  
   while (test_case != NULL) {
     /* allocate cipher */
-    status = cipher_type_alloc(ct, &c, test_case->key_length_octets);
+    status = cipher_type_alloc(ct, &c, test_case->key_length_octets, test_case->tag_length_octets);
     if (status)
       return status;
     
@@ -307,7 +307,7 @@ cipher_type_test(const cipher_type_t *ct, const cipher_test_case_t *test_data) {
 
   /* allocate cipher, using paramaters from the first test case */
   test_case = test_data;
-  status = cipher_type_alloc(ct, &c, test_case->key_length_octets);
+  status = cipher_type_alloc(ct, &c, test_case->key_length_octets, test_case->tag_length_octets);
   if (status)
       return status;
   
