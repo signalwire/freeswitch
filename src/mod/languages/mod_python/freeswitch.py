@@ -52,6 +52,7 @@ setGlobalVariable = _freeswitch.setGlobalVariable
 getGlobalVariable = _freeswitch.getGlobalVariable
 consoleLog = _freeswitch.consoleLog
 consoleCleanLog = _freeswitch.consoleCleanLog
+consoleChannelLog = _freeswitch.consoleChannelLog
 running = _freeswitch.running
 email = _freeswitch.email
 class IVRMenu(_object):
@@ -323,6 +324,7 @@ CoreSession_swigregister(CoreSession)
 
 console_log = _freeswitch.console_log
 console_clean_log = _freeswitch.console_clean_log
+console_channel_log = _freeswitch.console_channel_log
 msleep = _freeswitch.msleep
 bridge = _freeswitch.bridge
 hanguphook = _freeswitch.hanguphook

@@ -29704,6 +29704,16 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_init(void * jarg1, void * jarg2
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_presence_data_vals(void * jarg1, char * jarg2) {
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  switch_channel_set_presence_data_vals(arg1,(char const *)arg2);
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_perform_presence(void * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5, char * jarg6, int jarg7) {
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
   char *arg2 = (char *) 0 ;

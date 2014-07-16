@@ -1627,6 +1627,38 @@ fail:
 }
 
 
+static int _wrap_consoleChannelLog(lua_State* L) {
+  int SWIG_arg = -1;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  int arg4 ;
+  char *arg5 = (char *) 0 ;
+  
+  SWIG_check_num_args("consoleChannelLog",5,5)
+  if(!lua_isstring(L,1)) SWIG_fail_arg("consoleChannelLog",1,"char *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("consoleChannelLog",2,"char *");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("consoleChannelLog",3,"char *");
+  if(!lua_isnumber(L,4)) SWIG_fail_arg("consoleChannelLog",4,"int");
+  if(!lua_isstring(L,5)) SWIG_fail_arg("consoleChannelLog",5,"char *");
+  arg1 = (char *)lua_tostring(L, 1);
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3 = (char *)lua_tostring(L, 3);
+  arg4 = (int)lua_tonumber(L, 4);
+  arg5 = (char *)lua_tostring(L, 5);
+  consoleChannelLog(arg1,arg2,arg3,arg4,arg5);
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_running(lua_State* L) {
   int SWIG_arg = -1;
   bool result;
@@ -6295,6 +6327,38 @@ fail:
 }
 
 
+static int _wrap_console_channel_log(lua_State* L) {
+  int SWIG_arg = -1;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  int arg4 ;
+  char *arg5 = (char *) 0 ;
+  
+  SWIG_check_num_args("console_channel_log",5,5)
+  if(!lua_isstring(L,1)) SWIG_fail_arg("console_channel_log",1,"char *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("console_channel_log",2,"char *");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("console_channel_log",3,"char *");
+  if(!lua_isnumber(L,4)) SWIG_fail_arg("console_channel_log",4,"int");
+  if(!lua_isstring(L,5)) SWIG_fail_arg("console_channel_log",5,"char *");
+  arg1 = (char *)lua_tostring(L, 1);
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3 = (char *)lua_tostring(L, 3);
+  arg4 = (int)lua_tonumber(L, 4);
+  arg5 = (char *)lua_tostring(L, 5);
+  console_channel_log(arg1,arg2,arg3,arg4,arg5);
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_msleep(lua_State* L) {
   int SWIG_arg = -1;
   unsigned int arg1 ;
@@ -7918,10 +7982,12 @@ static const struct luaL_reg swig_commands[] = {
     { "getGlobalVariable", _wrap_getGlobalVariable},
     { "consoleLog", _wrap_consoleLog},
     { "consoleCleanLog", _wrap_consoleCleanLog},
+    { "consoleChannelLog", _wrap_consoleChannelLog},
     { "running", _wrap_running},
     { "email", _wrap_email},
     { "console_log", _wrap_console_log},
     { "console_clean_log", _wrap_console_clean_log},
+    { "console_channel_log", _wrap_console_channel_log},
     { "msleep", _wrap_msleep},
     { "bridge", _wrap_bridge},
     { "hanguphook", _wrap_hanguphook},

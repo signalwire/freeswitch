@@ -4186,6 +4186,10 @@ public class freeswitch {
     return ret;
   }
 
+  public static void switch_channel_set_presence_data_vals(SWIGTYPE_p_switch_channel channel, string presence_data_cols) {
+    freeswitchPINVOKE.switch_channel_set_presence_data_vals(SWIGTYPE_p_switch_channel.getCPtr(channel), presence_data_cols);
+  }
+
   public static void switch_channel_perform_presence(SWIGTYPE_p_switch_channel channel, string rpid, string status, string id, string file, string func, int line) {
     freeswitchPINVOKE.switch_channel_perform_presence(SWIGTYPE_p_switch_channel.getCPtr(channel), rpid, status, id, file, func, line);
   }
@@ -14660,6 +14664,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_init")]
   public static extern int switch_channel_init(HandleRef jarg1, HandleRef jarg2, int jarg3, int jarg4);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_presence_data_vals")]
+  public static extern void switch_channel_set_presence_data_vals(HandleRef jarg1, string jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_perform_presence")]
   public static extern void switch_channel_perform_presence(HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5, string jarg6, int jarg7);

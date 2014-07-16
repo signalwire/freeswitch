@@ -13,6 +13,7 @@ class freeswitchJNI {
   public final static native String getGlobalVariable(String jarg1);
   public final static native void consoleLog(String jarg1, String jarg2);
   public final static native void consoleCleanLog(String jarg1);
+  public final static native void consoleChannelLog(String jarg1, String jarg2, String jarg3, int jarg4, String jarg5);
   public final static native boolean running();
   public final static native boolean email(String jarg1, String jarg2, String jarg3, String jarg4, String jarg5, String jarg6, String jarg7);
   public final static native long new_IVRMenu(long jarg1, IVRMenu jarg1_, String jarg2, String jarg3, String jarg4, String jarg5, String jarg6, String jarg7, String jarg8, String jarg9, String jarg10, String jarg11, int jarg12, int jarg13, int jarg14, int jarg15, int jarg16, int jarg17);
@@ -160,6 +161,7 @@ class freeswitchJNI {
   public final static native void CoreSession_consoleLog(long jarg1, CoreSession jarg1_, String jarg2, String jarg3);
   public final static native void console_log(String jarg1, String jarg2);
   public final static native void console_clean_log(String jarg1);
+  public final static native void console_channel_log(String jarg1, String jarg2, String jarg3, int jarg4, String jarg5);
   public final static native void msleep(long jarg1);
   public final static native void bridge(long jarg1, CoreSession jarg1_, long jarg2, CoreSession jarg2_);
   public final static native long hanguphook(long jarg1);

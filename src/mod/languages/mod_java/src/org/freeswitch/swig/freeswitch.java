@@ -25,6 +25,10 @@ public class freeswitch {
     freeswitchJNI.consoleCleanLog(msg);
   }
 
+  public static void consoleChannelLog(String level_str, String file, String func, int line, String msg) {
+    freeswitchJNI.consoleChannelLog(level_str, file, func, line, msg);
+  }
+
   public static boolean running() {
     return freeswitchJNI.running();
   }
@@ -39,6 +43,10 @@ public class freeswitch {
 
   public static void console_clean_log(String msg) {
     freeswitchJNI.console_clean_log(msg);
+  }
+
+  public static void console_channel_log(String level_str, String file, String func, int line, String msg) {
+    freeswitchJNI.console_channel_log(level_str, file, func, line, msg);
   }
 
   public static void msleep(long ms) {
