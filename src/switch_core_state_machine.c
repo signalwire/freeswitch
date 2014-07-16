@@ -48,6 +48,8 @@ static void switch_core_standard_on_init(switch_core_session_t *session)
 			switch_channel_set_state(session->channel, CS_ROUTING);
 		}
 	}
+
+	switch_channel_clear_flag(session->channel, CF_RECOVERING);
 }
 
 static void switch_core_standard_on_hangup(switch_core_session_t *session)

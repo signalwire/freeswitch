@@ -1990,6 +1990,10 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 		switch_core_session_wake_video_thread(channel->session);
 	}
 
+	if (flag == CF_RECOVERING && !channel->hangup_cause) {
+		switch_core_recovery_track(channel->session);
+	}
+
 }
 
 

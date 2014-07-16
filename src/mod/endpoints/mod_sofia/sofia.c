@@ -6134,7 +6134,6 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 			extract_header_vars(profile, sip, session, nh);
 			extract_vars(profile, sip, session);
-			switch_core_recovery_track(session);
 			switch_channel_clear_flag(tech_pvt->channel, CF_RECOVERING);
 		}
 
