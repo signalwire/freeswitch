@@ -195,6 +195,7 @@ SKINNY_DECLARE_STR2ID(skinny_str2tone, SKINNY_TONS, -1)
 		{SKINNY_RING_INSIDE, "RingInside"},
 		{SKINNY_RING_OUTSIDE, "RingOutside"},
 		{SKINNY_RING_FEATURE, "RingFeature"},
+		{SKINNY_RING_FLASHONLY, "RingFlashOnly"},
 		{0, NULL}
 	};
 	SKINNY_DECLARE_ID2STR(skinny_ring_type2str, SKINNY_RING_TYPES, "RingTypeUnknown")

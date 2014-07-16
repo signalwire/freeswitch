@@ -649,7 +649,7 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 			send_start_tone(listener, SKINNY_TONE_CALLWAITTONE, 0, line_instance, helper->tech_pvt->call_id);
 			send_stop_tone(listener, line_instance, helper->tech_pvt->call_id);
 		} else {
-			/* silent ring - would like to just flash the lamp */
+			send_set_ringer(listener, SKINNY_RING_FLASHONLY, SKINNY_RING_FOREVER, 0, helper->tech_pvt->call_id);
 		}
 		switch_channel_ring_ready(channel);
 	}
