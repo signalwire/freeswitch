@@ -392,6 +392,7 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 		 virtual switch_status_t run_dtmf_callback(void *input, switch_input_type_t itype) = 0;
 
 		 SWITCH_DECLARE(void) consoleLog(char *level_str, char *msg);
+		 SWITCH_DECLARE(void) consoleLog2(char *level_str, char *file, char *func, int line, char *msg);
 	 };
 
 
