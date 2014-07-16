@@ -2170,7 +2170,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			if (!sofia_test_flag(tech_pvt, TFLAG_ANS) && !sofia_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
 
 				sofia_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
-				switch_log_printf(SWITCH_CHANNEL_ID_LOG, msg->_file, msg->_func, msg->_line, NULL, SWITCH_LOG_INFO, "Sending early media\n");
+				switch_log_printf(SWITCH_CHANNEL_ID_SESSION, msg->_file, msg->_func, msg->_line,
+								  (const char*)session, SWITCH_LOG_INFO, "Sending early media\n");
 
 				/* Transmit 183 Progress with SDP */
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
