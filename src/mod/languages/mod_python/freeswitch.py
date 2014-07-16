@@ -51,8 +51,8 @@ del types
 setGlobalVariable = _freeswitch.setGlobalVariable
 getGlobalVariable = _freeswitch.getGlobalVariable
 consoleLog = _freeswitch.consoleLog
+consoleLog2 = _freeswitch.consoleLog2
 consoleCleanLog = _freeswitch.consoleCleanLog
-consoleChannelLog = _freeswitch.consoleChannelLog
 running = _freeswitch.running
 email = _freeswitch.email
 class IVRMenu(_object):
@@ -319,12 +319,13 @@ class CoreSession(_object):
     def check_hangup_hook(*args): return _freeswitch.CoreSession_check_hangup_hook(*args)
     def run_dtmf_callback(*args): return _freeswitch.CoreSession_run_dtmf_callback(*args)
     def consoleLog(*args): return _freeswitch.CoreSession_consoleLog(*args)
+    def consoleLog2(*args): return _freeswitch.CoreSession_consoleLog2(*args)
 CoreSession_swigregister = _freeswitch.CoreSession_swigregister
 CoreSession_swigregister(CoreSession)
 
 console_log = _freeswitch.console_log
+console_log2 = _freeswitch.console_log2
 console_clean_log = _freeswitch.console_clean_log
-console_channel_log = _freeswitch.console_channel_log
 msleep = _freeswitch.msleep
 bridge = _freeswitch.bridge
 hanguphook = _freeswitch.hanguphook

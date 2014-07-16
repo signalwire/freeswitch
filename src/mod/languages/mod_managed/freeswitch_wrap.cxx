@@ -41828,15 +41828,7 @@ SWIGEXPORT void SWIGSTDCALL CSharp_consoleLog(char * jarg1, char * jarg2) {
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_consoleCleanLog(char * jarg1) {
-  char *arg1 = (char *) 0 ;
-  
-  arg1 = (char *)jarg1; 
-  consoleCleanLog(arg1);
-}
-
-
-SWIGEXPORT void SWIGSTDCALL CSharp_consoleChannelLog(char * jarg1, char * jarg2, char * jarg3, int jarg4, char * jarg5) {
+SWIGEXPORT void SWIGSTDCALL CSharp_consoleLog2(char * jarg1, char * jarg2, char * jarg3, int jarg4, char * jarg5) {
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
@@ -41848,7 +41840,15 @@ SWIGEXPORT void SWIGSTDCALL CSharp_consoleChannelLog(char * jarg1, char * jarg2,
   arg3 = (char *)jarg3; 
   arg4 = (int)jarg4; 
   arg5 = (char *)jarg5; 
-  consoleChannelLog(arg1,arg2,arg3,arg4,arg5);
+  consoleLog2(arg1,arg2,arg3,arg4,arg5);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_consoleCleanLog(char * jarg1) {
+  char *arg1 = (char *) 0 ;
+  
+  arg1 = (char *)jarg1; 
+  consoleCleanLog(arg1);
 }
 
 
@@ -43656,6 +43656,24 @@ SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_consoleLog(void * jarg1, char * j
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_consoleLog2(void * jarg1, char * jarg2, char * jarg3, char * jarg4, int jarg5, char * jarg6) {
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
+  int arg5 ;
+  char *arg6 = (char *) 0 ;
+  
+  arg1 = (CoreSession *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  arg4 = (char *)jarg4; 
+  arg5 = (int)jarg5; 
+  arg6 = (char *)jarg6; 
+  (arg1)->consoleLog2(arg2,arg3,arg4,arg5,arg6);
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_console_log(char * jarg1, char * jarg2) {
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -43666,15 +43684,7 @@ SWIGEXPORT void SWIGSTDCALL CSharp_console_log(char * jarg1, char * jarg2) {
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_console_clean_log(char * jarg1) {
-  char *arg1 = (char *) 0 ;
-  
-  arg1 = (char *)jarg1; 
-  console_clean_log(arg1);
-}
-
-
-SWIGEXPORT void SWIGSTDCALL CSharp_console_channel_log(char * jarg1, char * jarg2, char * jarg3, int jarg4, char * jarg5) {
+SWIGEXPORT void SWIGSTDCALL CSharp_console_log2(char * jarg1, char * jarg2, char * jarg3, int jarg4, char * jarg5) {
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
@@ -43686,7 +43696,15 @@ SWIGEXPORT void SWIGSTDCALL CSharp_console_channel_log(char * jarg1, char * jarg
   arg3 = (char *)jarg3; 
   arg4 = (int)jarg4; 
   arg5 = (char *)jarg5; 
-  console_channel_log(arg1,arg2,arg3,arg4,arg5);
+  console_log2(arg1,arg2,arg3,arg4,arg5);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_console_clean_log(char * jarg1) {
+  char *arg1 = (char *) 0 ;
+  
+  arg1 = (char *)jarg1; 
+  console_clean_log(arg1);
 }
 
 

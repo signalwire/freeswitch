@@ -317,4 +317,8 @@ public class CoreSession {
     freeswitchJNI.CoreSession_consoleLog(swigCPtr, this, level_str, msg);
   }
 
+  public void consoleLog2(String level_str, String file, String func, int line, String msg) {
+    freeswitchJNI.CoreSession_consoleLog2(swigCPtr, this, level_str, file, func, line, msg);
+  }
+
 }

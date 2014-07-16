@@ -2023,35 +2023,7 @@ XS(_wrap_consoleLog) {
 }
 
 
-XS(_wrap_consoleCleanLog) {
-  {
-    char *arg1 = (char *) 0 ;
-    int res1 ;
-    char *buf1 = 0 ;
-    int alloc1 = 0 ;
-    int argvi = 0;
-    dXSARGS;
-    
-    if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: consoleCleanLog(msg);");
-    }
-    res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "consoleCleanLog" "', argument " "1"" of type '" "char *""'");
-    }
-    arg1 = reinterpret_cast< char * >(buf1);
-    consoleCleanLog(arg1);
-    
-    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-    XSRETURN(argvi);
-  fail:
-    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_consoleChannelLog) {
+XS(_wrap_consoleLog2) {
   {
     char *arg1 = (char *) 0 ;
     char *arg2 = (char *) 0 ;
@@ -2076,34 +2048,34 @@ XS(_wrap_consoleChannelLog) {
     dXSARGS;
     
     if ((items < 5) || (items > 5)) {
-      SWIG_croak("Usage: consoleChannelLog(level_str,file,func,line,msg);");
+      SWIG_croak("Usage: consoleLog2(level_str,file,func,line,msg);");
     }
     res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "consoleChannelLog" "', argument " "1"" of type '" "char *""'");
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "consoleLog2" "', argument " "1"" of type '" "char *""'");
     }
     arg1 = reinterpret_cast< char * >(buf1);
     res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
     if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "consoleChannelLog" "', argument " "2"" of type '" "char *""'");
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "consoleLog2" "', argument " "2"" of type '" "char *""'");
     }
     arg2 = reinterpret_cast< char * >(buf2);
     res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
     if (!SWIG_IsOK(res3)) {
-      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "consoleChannelLog" "', argument " "3"" of type '" "char *""'");
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "consoleLog2" "', argument " "3"" of type '" "char *""'");
     }
     arg3 = reinterpret_cast< char * >(buf3);
     ecode4 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(3), &val4);
     if (!SWIG_IsOK(ecode4)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "consoleChannelLog" "', argument " "4"" of type '" "int""'");
+      SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "consoleLog2" "', argument " "4"" of type '" "int""'");
     } 
     arg4 = static_cast< int >(val4);
     res5 = SWIG_AsCharPtrAndSize(ST(4), &buf5, NULL, &alloc5);
     if (!SWIG_IsOK(res5)) {
-      SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "consoleChannelLog" "', argument " "5"" of type '" "char *""'");
+      SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "consoleLog2" "', argument " "5"" of type '" "char *""'");
     }
     arg5 = reinterpret_cast< char * >(buf5);
-    consoleChannelLog(arg1,arg2,arg3,arg4,arg5);
+    consoleLog2(arg1,arg2,arg3,arg4,arg5);
     
     if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -2117,6 +2089,34 @@ XS(_wrap_consoleChannelLog) {
     if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
     
     if (alloc5 == SWIG_NEWOBJ) delete[] buf5;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_consoleCleanLog) {
+  {
+    char *arg1 = (char *) 0 ;
+    int res1 ;
+    char *buf1 = 0 ;
+    int alloc1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: consoleCleanLog(msg);");
+    }
+    res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "consoleCleanLog" "', argument " "1"" of type '" "char *""'");
+    }
+    arg1 = reinterpret_cast< char * >(buf1);
+    consoleCleanLog(arg1);
+    
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+    XSRETURN(argvi);
+  fail:
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
     SWIG_croak_null();
   }
 }
@@ -8183,6 +8183,87 @@ XS(_wrap_CoreSession_consoleLog) {
 }
 
 
+XS(_wrap_CoreSession_consoleLog2) {
+  {
+    CoreSession *arg1 = (CoreSession *) 0 ;
+    char *arg2 = (char *) 0 ;
+    char *arg3 = (char *) 0 ;
+    char *arg4 = (char *) 0 ;
+    int arg5 ;
+    char *arg6 = (char *) 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int res3 ;
+    char *buf3 = 0 ;
+    int alloc3 = 0 ;
+    int res4 ;
+    char *buf4 = 0 ;
+    int alloc4 = 0 ;
+    int val5 ;
+    int ecode5 = 0 ;
+    int res6 ;
+    char *buf6 = 0 ;
+    int alloc6 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 6) || (items > 6)) {
+      SWIG_croak("Usage: CoreSession_consoleLog2(self,level_str,file,func,line,msg);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_consoleLog2" "', argument " "1"" of type '" "CoreSession *""'"); 
+    }
+    arg1 = reinterpret_cast< CoreSession * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_consoleLog2" "', argument " "2"" of type '" "char *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "CoreSession_consoleLog2" "', argument " "3"" of type '" "char *""'");
+    }
+    arg3 = reinterpret_cast< char * >(buf3);
+    res4 = SWIG_AsCharPtrAndSize(ST(3), &buf4, NULL, &alloc4);
+    if (!SWIG_IsOK(res4)) {
+      SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "CoreSession_consoleLog2" "', argument " "4"" of type '" "char *""'");
+    }
+    arg4 = reinterpret_cast< char * >(buf4);
+    ecode5 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(4), &val5);
+    if (!SWIG_IsOK(ecode5)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode5), "in method '" "CoreSession_consoleLog2" "', argument " "5"" of type '" "int""'");
+    } 
+    arg5 = static_cast< int >(val5);
+    res6 = SWIG_AsCharPtrAndSize(ST(5), &buf6, NULL, &alloc6);
+    if (!SWIG_IsOK(res6)) {
+      SWIG_exception_fail(SWIG_ArgError(res6), "in method '" "CoreSession_consoleLog2" "', argument " "6"" of type '" "char *""'");
+    }
+    arg6 = reinterpret_cast< char * >(buf6);
+    (arg1)->consoleLog2(arg2,arg3,arg4,arg5,arg6);
+    
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+    
+    if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+    
+    if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_console_log) {
   {
     char *arg1 = (char *) 0 ;
@@ -8222,35 +8303,7 @@ XS(_wrap_console_log) {
 }
 
 
-XS(_wrap_console_clean_log) {
-  {
-    char *arg1 = (char *) 0 ;
-    int res1 ;
-    char *buf1 = 0 ;
-    int alloc1 = 0 ;
-    int argvi = 0;
-    dXSARGS;
-    
-    if ((items < 1) || (items > 1)) {
-      SWIG_croak("Usage: console_clean_log(msg);");
-    }
-    res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "console_clean_log" "', argument " "1"" of type '" "char *""'");
-    }
-    arg1 = reinterpret_cast< char * >(buf1);
-    console_clean_log(arg1);
-    
-    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-    XSRETURN(argvi);
-  fail:
-    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-    SWIG_croak_null();
-  }
-}
-
-
-XS(_wrap_console_channel_log) {
+XS(_wrap_console_log2) {
   {
     char *arg1 = (char *) 0 ;
     char *arg2 = (char *) 0 ;
@@ -8275,34 +8328,34 @@ XS(_wrap_console_channel_log) {
     dXSARGS;
     
     if ((items < 5) || (items > 5)) {
-      SWIG_croak("Usage: console_channel_log(level_str,file,func,line,msg);");
+      SWIG_croak("Usage: console_log2(level_str,file,func,line,msg);");
     }
     res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "console_channel_log" "', argument " "1"" of type '" "char *""'");
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "console_log2" "', argument " "1"" of type '" "char *""'");
     }
     arg1 = reinterpret_cast< char * >(buf1);
     res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
     if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "console_channel_log" "', argument " "2"" of type '" "char *""'");
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "console_log2" "', argument " "2"" of type '" "char *""'");
     }
     arg2 = reinterpret_cast< char * >(buf2);
     res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
     if (!SWIG_IsOK(res3)) {
-      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "console_channel_log" "', argument " "3"" of type '" "char *""'");
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "console_log2" "', argument " "3"" of type '" "char *""'");
     }
     arg3 = reinterpret_cast< char * >(buf3);
     ecode4 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(3), &val4);
     if (!SWIG_IsOK(ecode4)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "console_channel_log" "', argument " "4"" of type '" "int""'");
+      SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "console_log2" "', argument " "4"" of type '" "int""'");
     } 
     arg4 = static_cast< int >(val4);
     res5 = SWIG_AsCharPtrAndSize(ST(4), &buf5, NULL, &alloc5);
     if (!SWIG_IsOK(res5)) {
-      SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "console_channel_log" "', argument " "5"" of type '" "char *""'");
+      SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "console_log2" "', argument " "5"" of type '" "char *""'");
     }
     arg5 = reinterpret_cast< char * >(buf5);
-    console_channel_log(arg1,arg2,arg3,arg4,arg5);
+    console_log2(arg1,arg2,arg3,arg4,arg5);
     
     if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -8316,6 +8369,34 @@ XS(_wrap_console_channel_log) {
     if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
     
     if (alloc5 == SWIG_NEWOBJ) delete[] buf5;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_console_clean_log) {
+  {
+    char *arg1 = (char *) 0 ;
+    int res1 ;
+    char *buf1 = 0 ;
+    int alloc1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: console_clean_log(msg);");
+    }
+    res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "console_clean_log" "', argument " "1"" of type '" "char *""'");
+    }
+    arg1 = reinterpret_cast< char * >(buf1);
+    console_clean_log(arg1);
+    
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+    XSRETURN(argvi);
+  fail:
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
     SWIG_croak_null();
   }
 }
@@ -9949,8 +10030,8 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::setGlobalVariable", _wrap_setGlobalVariable},
 {"freeswitchc::getGlobalVariable", _wrap_getGlobalVariable},
 {"freeswitchc::consoleLog", _wrap_consoleLog},
+{"freeswitchc::consoleLog2", _wrap_consoleLog2},
 {"freeswitchc::consoleCleanLog", _wrap_consoleCleanLog},
-{"freeswitchc::consoleChannelLog", _wrap_consoleChannelLog},
 {"freeswitchc::running", _wrap_running},
 {"freeswitchc::email", _wrap_email},
 {"freeswitchc::new_IVRMenu", _wrap_new_IVRMenu},
@@ -10089,9 +10170,10 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::CoreSession_check_hangup_hook", _wrap_CoreSession_check_hangup_hook},
 {"freeswitchc::CoreSession_run_dtmf_callback", _wrap_CoreSession_run_dtmf_callback},
 {"freeswitchc::CoreSession_consoleLog", _wrap_CoreSession_consoleLog},
+{"freeswitchc::CoreSession_consoleLog2", _wrap_CoreSession_consoleLog2},
 {"freeswitchc::console_log", _wrap_console_log},
+{"freeswitchc::console_log2", _wrap_console_log2},
 {"freeswitchc::console_clean_log", _wrap_console_clean_log},
-{"freeswitchc::console_channel_log", _wrap_console_channel_log},
 {"freeswitchc::msleep", _wrap_msleep},
 {"freeswitchc::bridge", _wrap_bridge},
 {"freeswitchc::hanguphook", _wrap_hanguphook},
@@ -10416,17 +10498,17 @@ XS(SWIG_init) {
   SWIG_TypeClientData(SWIGTYPE_p_IVRMenu, (void*) "freeswitch::IVRMenu");
   SWIG_TypeClientData(SWIGTYPE_p_API, (void*) "freeswitch::API");
   SWIG_TypeClientData(SWIGTYPE_p_input_callback_state, (void*) "freeswitch::input_callback_state_t");
-  /*@SWIG://share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
+  /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "S_HUP", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(S_HUP)));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
-  /*@SWIG://share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
+  /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "S_FREE", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(S_FREE)));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
-  /*@SWIG://share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
+  /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "S_RDLOCK", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(S_RDLOCK)));
     SvREADONLY_on(sv);

@@ -21,12 +21,12 @@ public class freeswitch {
     freeswitchJNI.consoleLog(level_str, msg);
   }
 
-  public static void consoleCleanLog(String msg) {
-    freeswitchJNI.consoleCleanLog(msg);
+  public static void consoleLog2(String level_str, String file, String func, int line, String msg) {
+    freeswitchJNI.consoleLog2(level_str, file, func, line, msg);
   }
 
-  public static void consoleChannelLog(String level_str, String file, String func, int line, String msg) {
-    freeswitchJNI.consoleChannelLog(level_str, file, func, line, msg);
+  public static void consoleCleanLog(String msg) {
+    freeswitchJNI.consoleCleanLog(msg);
   }
 
   public static boolean running() {
@@ -41,12 +41,12 @@ public class freeswitch {
     freeswitchJNI.console_log(level_str, msg);
   }
 
-  public static void console_clean_log(String msg) {
-    freeswitchJNI.console_clean_log(msg);
+  public static void console_log2(String level_str, String file, String func, int line, String msg) {
+    freeswitchJNI.console_log2(level_str, file, func, line, msg);
   }
 
-  public static void console_channel_log(String level_str, String file, String func, int line, String msg) {
-    freeswitchJNI.console_channel_log(level_str, file, func, line, msg);
+  public static void console_clean_log(String msg) {
+    freeswitchJNI.console_clean_log(msg);
   }
 
   public static void msleep(long ms) {

@@ -51,13 +51,13 @@ package freeswitch;
 *setGlobalVariable = *freeswitchc::setGlobalVariable;
 *getGlobalVariable = *freeswitchc::getGlobalVariable;
 *consoleLog = *freeswitchc::consoleLog;
+*consoleLog2 = *freeswitchc::consoleLog2;
 *consoleCleanLog = *freeswitchc::consoleCleanLog;
-*consoleChannelLog = *freeswitchc::consoleChannelLog;
 *running = *freeswitchc::running;
 *email = *freeswitchc::email;
 *console_log = *freeswitchc::console_log;
+*console_log2 = *freeswitchc::console_log2;
 *console_clean_log = *freeswitchc::console_clean_log;
-*console_channel_log = *freeswitchc::console_channel_log;
 *msleep = *freeswitchc::msleep;
 *bridge = *freeswitchc::bridge;
 *hanguphook = *freeswitchc::hanguphook;
@@ -461,6 +461,7 @@ sub DESTROY {
 *check_hangup_hook = *freeswitchc::CoreSession_check_hangup_hook;
 *run_dtmf_callback = *freeswitchc::CoreSession_run_dtmf_callback;
 *consoleLog = *freeswitchc::CoreSession_consoleLog;
+*consoleLog2 = *freeswitchc::CoreSession_consoleLog2;
 sub DISOWN {
     my $self = shift;
     my $ptr = tied(%$self);
