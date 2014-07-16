@@ -301,6 +301,7 @@ struct switch_rtp {
 	rtcp_msg_t *rtcp_recv_msg_p;
 
 	uint32_t autoadj_window;
+	uint32_t autoadj_threshold;
 	uint32_t autoadj_tally;
 
 	srtp_ctx_t *send_ctx[2];
@@ -4112,7 +4113,19 @@ SWITCH_DECLARE(void) switch_rtp_set_flags(switch_rtp_t *rtp_session, switch_rtp_
 
 			if (i == SWITCH_RTP_FLAG_AUTOADJ) {
 				rtp_session->autoadj_window = 20;
+				rtp_session->autoadj_threshold = 10;
 				rtp_session->autoadj_tally = 0;
+				if (rtp_session->session) {
+					switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
+					const char *x = switch_channel_get_variable(channel, "rtp_auto_adjust_threshold");
+					if (x && *x) {
+						int xn = atoi(x);
+						if (xn > 0 && xn <= 65535) {
+							rtp_session->autoadj_window = xn*2;
+							rtp_session->autoadj_threshold = xn;
+						}
+					}
+				}
 				rtp_flush_read_buffer(rtp_session, SWITCH_RTP_FLUSH_ONCE);
 			} else if (i == SWITCH_RTP_FLAG_NOBLOCK && rtp_session->sock_input) {
 				switch_socket_opt_set(rtp_session->sock_input, SWITCH_SO_NONBLOCK, TRUE);
@@ -4145,7 +4158,19 @@ SWITCH_DECLARE(void) switch_rtp_set_flag(switch_rtp_t *rtp_session, switch_rtp_f
 		reset_jitter_seq(rtp_session);
 	} else if (flag == SWITCH_RTP_FLAG_AUTOADJ) {
 		rtp_session->autoadj_window = 20;
+		rtp_session->autoadj_threshold = 10;
 		rtp_session->autoadj_tally = 0;
+		if (rtp_session->session) {
+			switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
+			const char *x = switch_channel_get_variable(channel, "rtp_auto_adjust_threshold");
+			if (x && *x) {
+				int xn = atoi(x);
+				if (xn > 0 && xn <= 65535) {
+					rtp_session->autoadj_window = xn*2;
+					rtp_session->autoadj_threshold = xn;
+				}
+			}
+		}
 		rtp_flush_read_buffer(rtp_session, SWITCH_RTP_FLUSH_ONCE);
 		if (rtp_session->jb) {
 			stfu_n_reset(rtp_session->jb);
@@ -5583,7 +5608,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		if (bytes && rtp_session->flags[SWITCH_RTP_FLAG_AUTOADJ] && switch_sockaddr_get_port(rtp_session->from_addr)) {
 			if (!switch_cmp_addr(rtp_session->from_addr, rtp_session->remote_addr)) {
-				if (++rtp_session->autoadj_tally >= 10) {
+				if (++rtp_session->autoadj_tally >= rtp_session->autoadj_threshold) {
 					const char *err;
 					uint32_t old = rtp_session->remote_port;
 					const char *tx_host;
