@@ -583,8 +583,8 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 	/* char *label = argv[4]; */
 	char *value = argv[5];
 	char *caller_name = argv[6];
-	/* uint32_t ring_on_idle = atoi(argv[7]); */
-	/* uint32_t ring_on_active = atoi(argv[8]); */
+	uint32_t ring_on_idle = atoi(argv[7]);
+	uint32_t ring_on_active = atoi(argv[8]);
 	/* uint32_t busy_trigger = atoi(argv[9]); */
 	/* char *forward_all = argv[10]; */
 	/* char *forward_busy = argv[11]; */
@@ -643,11 +643,13 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 		skinny_session_send_call_info(helper->tech_pvt->session, listener, line_instance);
 		send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_BLINK);
 
-		if ( active_calls < 1 ) {
+		if ( active_calls < 1 && ring_on_idle ) {
 			send_set_ringer(listener, SKINNY_RING_INSIDE, SKINNY_RING_FOREVER, 0, helper->tech_pvt->call_id);
-		} else {
+		} else if ( active_calls > 0 && ring_on_active ) {
 			send_start_tone(listener, SKINNY_TONE_CALLWAITTONE, 0, line_instance, helper->tech_pvt->call_id);
 			send_stop_tone(listener, line_instance, helper->tech_pvt->call_id);
+		} else {
+			/* silent ring - would like to just flash the lamp */
 		}
 		switch_channel_ring_ready(channel);
 	}
@@ -1157,13 +1159,25 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 				if(type ==  SKINNY_BUTTON_LINE) {
 					const char *caller_name = switch_xml_attr_soft(xbutton, "caller-name");
 					const char *reg_metadata = switch_xml_attr_soft(xbutton, "registration-metadata");
-					uint32_t ring_on_idle = atoi(switch_xml_attr_soft(xbutton, "ring-on-idle"));
-					uint32_t ring_on_active = atoi(switch_xml_attr_soft(xbutton, "ring-on-active"));
+					uint32_t ring_on_idle = 1;
+					uint32_t ring_on_active = 1;
 					uint32_t busy_trigger = atoi(switch_xml_attr_soft(xbutton, "busy-trigger"));
 					const char *forward_all = switch_xml_attr_soft(xbutton, "forward-all");
 					const char *forward_busy = switch_xml_attr_soft(xbutton, "forward-busy");
 					const char *forward_noanswer = switch_xml_attr_soft(xbutton, "forward-noanswer");
 					uint32_t noanswer_duration = atoi(switch_xml_attr_soft(xbutton, "noanswer-duration"));
+					const char *tmp;
+
+					tmp = switch_xml_attr_soft(xbutton, "ring-on-active");
+					if ( !zstr(tmp) ) {
+						ring_on_active = atoi(tmp);
+					}
+
+					tmp = switch_xml_attr_soft(xbutton, "ring-on-idle");
+					if ( !zstr(tmp) ) {
+						ring_on_idle = atoi(tmp);
+					}
+
 					if ((sql = switch_mprintf(
 									"INSERT INTO skinny_lines "
 									"(device_name, device_instance, position, line_instance, "
