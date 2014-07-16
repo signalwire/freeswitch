@@ -517,7 +517,7 @@ static switch_ssize_t ws_write_json(jsock_t *jsock, cJSON **json, switch_bool_t 
 	switch_assert(json);
 
 	if (!*json) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "WRITE NULL JS ERROR %ld\n", r);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "WRITE NULL JS ERROR %" SWITCH_SIZE_T_FMT "\n", r);
 		return r;
 	}
 
@@ -547,7 +547,7 @@ static switch_ssize_t ws_write_json(jsock_t *jsock, cJSON **json, switch_bool_t 
 	}
 
 	if (r <= 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "WRITE RETURNED ERROR %ld\n", r);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "WRITE RETURNED ERROR %" SWITCH_SIZE_T_FMT " \n", r);
 		jsock->drop = 1;
 	}
 
