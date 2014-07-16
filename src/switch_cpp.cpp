@@ -222,12 +222,11 @@ SWITCH_DECLARE_CONSTRUCTOR API::API(CoreSession *s)
 	} else {
 		session = NULL;
 	}
-	last_data = NULL;
 }
 
 SWITCH_DECLARE_CONSTRUCTOR API::~API()
 {
-	switch_safe_free(last_data);
+	return;
 }
 
 
@@ -237,9 +236,7 @@ SWITCH_DECLARE(const char *) API::execute(const char *cmd, const char *arg)
 	this_check("");
 	SWITCH_STANDARD_STREAM(stream);
 	switch_api_execute(cmd, arg, session, &stream);
-	switch_safe_free(last_data);
-	last_data = (char *) stream.data;
-	return last_data;
+	return (char *) stream.data;
 }
 
 
@@ -269,13 +266,10 @@ SWITCH_DECLARE(const char *) API::executeString(const char *cmd)
 		*arg++ = '\0';
 	}
 
-	switch_safe_free(last_data);
-	
 	SWITCH_STANDARD_STREAM(stream);
 	switch_api_execute(mycmd, arg, session, &stream);
-	last_data = (char *) stream.data;
 	switch_safe_free(mycmd);
-	return last_data;
+	return (char *) stream.data;
 }
 
 SWITCH_DECLARE_CONSTRUCTOR Event::Event(const char *type, const char *subclass_name)

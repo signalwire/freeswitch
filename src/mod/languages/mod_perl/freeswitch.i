@@ -15,6 +15,8 @@
 %newobject CoreSession;
 %newobject Event;
 %newobject Stream;
+%newobject API::execute;
+%newobject API::executeString;
 
 /** insert the following includes into generated code so it compiles */
 %{

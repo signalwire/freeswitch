@@ -1980,6 +1980,7 @@ static int _wrap_API_execute(lua_State* L) {
   result = (char *)(arg1)->execute((char const *)arg2,(char const *)arg3);
   SWIG_arg=0;
   lua_pushstring(L,(const char*)result); SWIG_arg++;
+  free(result);
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2008,6 +2009,7 @@ static int _wrap_API_executeString(lua_State* L) {
   result = (char *)(arg1)->executeString((char const *)arg2);
   SWIG_arg=0;
   lua_pushstring(L,(const char*)result); SWIG_arg++;
+  free(result);
   return SWIG_arg;
   
   if(0) SWIG_fail;

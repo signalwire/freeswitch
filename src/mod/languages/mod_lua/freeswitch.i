@@ -40,6 +40,8 @@
 %newobject Event;
 %newobject Stream;
 %newobject Dbh;
+%newobject API::execute;
+%newobject API::executeString;
 
 /**
  * tell swig to grok everything defined in these header files and

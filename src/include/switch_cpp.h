@@ -106,7 +106,6 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 
 	 class API {
 	   protected:
-		 char *last_data;
 		 char time_buf[64];
 		 switch_core_session_t *session;
 	   public:

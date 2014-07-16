@@ -2679,6 +2679,7 @@ XS(_wrap_API_execute) {
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
     if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    free(result);
     XSRETURN(argvi);
   fail:
     
@@ -2719,6 +2720,7 @@ XS(_wrap_API_executeString) {
     ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    free(result);
     XSRETURN(argvi);
   fail:
     
