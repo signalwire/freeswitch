@@ -2743,6 +2743,7 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 						/* out of sessions, typically */
 						response = iks_new_error_detailed(iq, STANZA_ERROR_RESOURCE_CONSTRAINT, "DESTINATION_OUT_OF_ORDER");
 						break;
+					case SWITCH_CAUSE_SUBSCRIBER_ABSENT:
 					case SWITCH_CAUSE_USER_NOT_REGISTERED: {
 						/* call session was never created, so we must fake it so that a call error is sent and
 						   not a dial error */
