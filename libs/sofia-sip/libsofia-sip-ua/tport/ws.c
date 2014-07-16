@@ -369,6 +369,7 @@ ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 {
 	size_t r;
 	int sanity = 2000;
+	int ssl_err = 0;
 
 	if (wsh->ssl) {
 		do {
@@ -376,8 +377,17 @@ ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes)
 			if (sanity < 2000) {
 				ms_sleep(1);
 			}
-		} while (--sanity > 0 && r == -1 && SSL_get_error(wsh->ssl, r) == SSL_ERROR_WANT_WRITE);
 
+			if (r == -1) {
+				ssl_err = SSL_get_error(wsh->ssl, r);
+			}
+
+		} while (--sanity > 0 && r == -1 && ssl_err == SSL_ERROR_WANT_WRITE);
+
+		if (ssl_err) {
+			r = ssl_err * -1;
+		}
+		
 		return r;
 	}
 
@@ -569,6 +579,12 @@ void ws_destroy(wsh_t *wsh)
 	}
 	
 	wsh->down = 2;
+
+	if (wsh->write_buffer) {
+		free(wsh->write_buffer);
+		wsh->write_buffer = NULL;
+		wsh->write_buffer_len = 0;
+	}
 
 	if (wsh->ssl) {
 		int code;
@@ -818,6 +834,8 @@ ssize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes)
 {
 	uint8_t hdr[14] = { 0 };
 	size_t hlen = 2;
+	uint8_t *bp;
+	ssize_t raw_ret = 0;
 
 	if (wsh->down) {
 		return -1;
@@ -848,12 +866,25 @@ ssize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes)
 		*u64 = htonl(bytes);
 	}
 
-	if (ws_raw_write(wsh, (void *) &hdr[0], hlen) != (ssize_t)hlen) {
-		return -1;
-	}
+	if (wsh->write_buffer_len < (hlen + bytes + 1)) {
+		void *tmp;
 
-	if (ws_raw_write(wsh, data, bytes) != (ssize_t)bytes) {
-		return -2;
+		wsh->write_buffer_len = hlen + bytes + 1;
+		if ((tmp = realloc(wsh->write_buffer, wsh->write_buffer_len))) {
+			wsh->write_buffer = tmp;
+		} else {
+			abort();
+		}
+	}
+	
+	bp = (uint8_t *) wsh->write_buffer;
+	memcpy(bp, (void *) &hdr[0], hlen);
+	memcpy(bp + hlen, data, bytes);
+	
+	raw_ret = ws_raw_write(wsh, bp, (hlen + bytes));
+
+	if (raw_ret != (ssize_t) (hlen + bytes)) {
+		return raw_ret;
 	}
 	
 	return bytes;
