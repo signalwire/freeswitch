@@ -500,7 +500,7 @@ static const nsf_data_t vendor_b5[] =
     {"\x00\x6E", 2, "Microsoft", false, NULL},
     {"\x00\x72", 2, "Speaking Devices", false, NULL},
     {"\x00\x74", 2, "Compaq", false, NULL},
-    {"\x00\x76", 2, "Microsoft", false, NULL},      /* uses LSB for country but MSB for manufacturer */
+    {"\x00\x76", 2, "Microsoft", false, NULL},      /* Uses LSB for country but MSB for manufacturer */
     {"\x00\x78", 2, "Cylink", false, NULL},
     {"\x00\x7A", 2, "Pitney Bowes", false, NULL},
     {"\x00\x7C", 2, "Digiboard", false, NULL},
@@ -724,7 +724,7 @@ static const country_code_t t35_country_codes[255] =
     {"Vanuatu", NULL},
     {"Vatican City State", NULL},
     {"Venezuela", NULL},
-    {"Viet Nam", vendor_bc},
+    {"Vietnam", vendor_bc},
     {"Wallis and Futuna", NULL},
     {"Western Samoa", NULL},
     {"Yemen (Republic of)", NULL},

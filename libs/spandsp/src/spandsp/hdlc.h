@@ -81,7 +81,8 @@ extern "C"
 {
 #endif
 
-/*! \brief Initialise an HDLC receiver context.
+/*! Initialise an HDLC receiver context.
+    \brief Initialise an HDLC receiver context.
     \param s A pointer to an HDLC receiver context.
     \param crc32 True to use ITU CRC32. False to use ITU CRC16.
     \param report_bad_frames True to request the reporting of bad frames.

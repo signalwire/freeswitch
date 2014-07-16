@@ -330,6 +330,7 @@ static void process_hdlc_data(t38_terminal_front_end_state_t *fe, const uint8_t 
     {
         fe->rx_data_missing = true;
     }
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 

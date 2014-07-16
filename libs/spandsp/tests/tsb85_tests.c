@@ -1420,7 +1420,6 @@ static int parse_test_group(faxtester_state_t *s, xmlDocPtr doc, xmlNsPtr ns, xm
 static int get_test_set(faxtester_state_t *s, const char *test_file, const char *test)
 {
     xmlParserCtxtPtr ctxt;
-    xmlDocPtr doc;
     xmlNsPtr ns;
     xmlNodePtr cur;
 
@@ -1435,7 +1434,7 @@ static int get_test_set(faxtester_state_t *s, const char *test_file, const char 
         exit(2);
     }
     /* parse the file, activating the DTD validation option */
-    if ((doc = xmlCtxtReadFile(ctxt, test_file, NULL, XML_PARSE_XINCLUDE | XML_PARSE_DTDVALID)) == NULL)
+    if ((s->doc = xmlCtxtReadFile(ctxt, test_file, NULL, XML_PARSE_XINCLUDE | XML_PARSE_DTDVALID)) == NULL)
     {
         fprintf(stderr, "Failed to read the XML document\n");
         printf("Test failed\n");
@@ -1444,7 +1443,7 @@ static int get_test_set(faxtester_state_t *s, const char *test_file, const char 
     if (ctxt->valid == 0)
     {
         fprintf(stderr, "Failed to validate the XML document\n");
-    	xmlFreeDoc(doc);
+    	xmlFreeDoc(s->doc);
         xmlFreeParserCtxt(ctxt);
         printf("Test failed\n");
         exit(2);
@@ -1452,9 +1451,9 @@ static int get_test_set(faxtester_state_t *s, const char *test_file, const char 
     xmlFreeParserCtxt(ctxt);
 
     /* Check the document is of the right kind */
-    if ((cur = xmlDocGetRootElement(doc)) == NULL)
+    if ((cur = xmlDocGetRootElement(s->doc)) == NULL)
     {
-        xmlFreeDoc(doc);
+        xmlFreeDoc(s->doc);
         fprintf(stderr, "Empty document\n");
         printf("Test failed\n");
         exit(2);
@@ -1462,7 +1461,7 @@ static int get_test_set(faxtester_state_t *s, const char *test_file, const char 
     /*endif*/
     if (xmlStrcmp(cur->name, (const xmlChar *) "fax-tests"))
     {
-        xmlFreeDoc(doc);
+        xmlFreeDoc(s->doc);
         fprintf(stderr, "Document of the wrong type, root node != fax-tests");
         printf("Test failed\n");
         exit(2);
@@ -1482,12 +1481,12 @@ static int get_test_set(faxtester_state_t *s, const char *test_file, const char 
     {
         if (xmlStrcmp(cur->name, (const xmlChar *) "config") == 0)
         {
-            parse_config(s, doc, ns, cur->xmlChildrenNode);
+            parse_config(s, s->doc, ns, cur->xmlChildrenNode);
         }
         /*endif*/
         if (xmlStrcmp(cur->name, (const xmlChar *) "test-group") == 0)
         {
-            if (parse_test_group(s, doc, ns, cur->xmlChildrenNode, test) == 0)
+            if (parse_test_group(s, s->doc, ns, cur->xmlChildrenNode, test) == 0)
             {
                 /* We found the test we want, so run it. */
                 exchange(s);
@@ -1499,7 +1498,7 @@ static int get_test_set(faxtester_state_t *s, const char *test_file, const char 
         cur = cur->next;
     }
     /*endwhile*/
-    xmlFreeDoc(doc);
+    xmlFreeDoc(s->doc);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

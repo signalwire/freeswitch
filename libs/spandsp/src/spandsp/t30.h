@@ -32,7 +32,7 @@
 
 \section t30_page_sec_1 What does it do?
 The T.30 protocol is the core protocol used for FAX transmission. This module
-implements most of its key features. It does not interface to the outside work.
+implements most of its key features. It does not interface to the outside world.
 Seperate modules do that for T.38, analogue line, and other forms of FAX
 communication.
 

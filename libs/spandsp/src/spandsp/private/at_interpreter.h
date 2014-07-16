@@ -106,9 +106,9 @@ struct at_state_s
     int command_dial;
     int ok_is_pending;
     int dte_is_waiting;
-    /*! \brief True if a carrier is presnt. Otherwise false. */
+    /*! \brief True if a carrier is present. */
     bool rx_signal_present;
-    /*! \brief True if a modem has trained, Otherwise false. */
+    /*! \brief True if a modem has trained, */
     bool rx_trained;
     int transmit;
 

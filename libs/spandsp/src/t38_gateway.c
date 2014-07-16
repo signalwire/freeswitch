@@ -1105,7 +1105,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
                 {
                     monitor_control_messages(s, false, hdlc_buf->buf, hdlc_buf->len);
                     if (s->core.real_time_frame_handler)
-                        s->core.real_time_frame_handler(s, s->core.real_time_frame_user_data, false, hdlc_buf->buf, hdlc_buf->len);
+                        s->core.real_time_frame_handler(s->core.real_time_frame_user_data, false, hdlc_buf->buf, hdlc_buf->len);
                     /*endif*/
                 }
                 /*endif*/
@@ -1193,7 +1193,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
                 {
                     monitor_control_messages(s, false, hdlc_buf->buf, hdlc_buf->len);
                     if (s->core.real_time_frame_handler)
-                        s->core.real_time_frame_handler(s, s->core.real_time_frame_user_data, false, hdlc_buf->buf, hdlc_buf->len);
+                        s->core.real_time_frame_handler(s->core.real_time_frame_user_data, false, hdlc_buf->buf, hdlc_buf->len);
                     /*endif*/
                 }
                 /*endif*/
@@ -1830,7 +1830,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
                         {
                             monitor_control_messages(s, true, t->buffer, t->len - 2);
                             if (s->core.real_time_frame_handler)
-                                s->core.real_time_frame_handler(s, s->core.real_time_frame_user_data, true, t->buffer, t->len - 2);
+                                s->core.real_time_frame_handler(s->core.real_time_frame_user_data, true, t->buffer, t->len - 2);
                             /*endif*/
                         }
                         else
@@ -1937,13 +1937,13 @@ static void t38_hdlc_rx_put_bit(hdlc_rx_state_t *t, int new_bit)
     if (t->len == 1)
     {
         /* All valid HDLC frames in FAX communication begin 0xFF 0x03 or 0xFF 0x13.
-           Anything else is bogus, */
+           Anything else is bogus. */
         if (t->buffer[0] != 0xFF  ||  (t->buffer[1] & 0xEF) != 0x03)
         {
             /* Abandon the frame, and wait for the next flag octet. */
             /* If this is a real frame, where one of these first two octets has a bit
                error, we will fail to forward the frame with a CRC error, as we do for
-               other bad framess. This will affect the timing of what goes forward.
+               other bad frames. This will affect the timing of what goes forward.
                Hopefully such timing changes will have less frequent bad effects than
                the consequences of a bad bit stream simulating an HDLC frame start. */
             span_log(&s->logging, SPAN_LOG_FLOW, "Bad HDLC frame header. Abandoning frame.\n");

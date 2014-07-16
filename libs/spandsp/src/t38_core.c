@@ -147,6 +147,7 @@ SPAN_DECLARE(const char *) t38_indicator_to_str(int indicator)
     case T38_IND_V33_14400_TRAINING:
         return "v33-14400-training";
     }
+    /*endswitch*/
     return "???";
 }
 /*- End of function --------------------------------------------------------*/
@@ -186,6 +187,7 @@ SPAN_DECLARE(const char *) t38_data_type_to_str(int data_type)
     case T38_DATA_V33_14400:
         return "v33-14400";
     }
+    /*endswitch*/
     return "???";
 }
 /*- End of function --------------------------------------------------------*/
@@ -219,6 +221,7 @@ SPAN_DECLARE(const char *) t38_field_type_to_str(int field_type)
     case T38_FIELD_V34RATE:
         return "v34rate";
     }
+    /*endswitch*/
     return "???";
 }
 /*- End of function --------------------------------------------------------*/
@@ -240,6 +243,7 @@ SPAN_DECLARE(const char *) t38_cm_profile_to_str(int profile)
     case '6':
         return "V.34 HDX-only FAX receiving terminal";
     }
+    /*endswitch*/
     return "???";
 }
 /*- End of function --------------------------------------------------------*/
@@ -248,6 +252,7 @@ SPAN_DECLARE(const char *) t38_jm_to_str(const uint8_t *data, int len)
 {
     if (len < 2)
         return "???";
+    /*endif*/
     switch (data[0])
     {
     case 'A':
@@ -256,6 +261,7 @@ SPAN_DECLARE(const char *) t38_jm_to_str(const uint8_t *data, int len)
         case '0':
             return "ACK";
         }
+        /*endswitch*/
         break;
     case 'N':
         switch (data[1])
@@ -269,8 +275,10 @@ SPAN_DECLARE(const char *) t38_jm_to_str(const uint8_t *data, int len)
             /* Response for profiles 5 and 6 */
             return "NACK: V.34 only FAX.";
         }
+        /*endswitch*/
         break;
     }
+    /*endswitch*/
     return "???";
 }
 /*- End of function --------------------------------------------------------*/
@@ -282,12 +290,15 @@ SPAN_DECLARE(int) t38_v34rate_to_bps(const uint8_t *data, int len)
 
     if (len < 3)
         return -1;
+    /*endif*/
     for (i = 0, rate = 0;  i < 3;  i++)
     {
         if (data[i] < '0'  ||  data[i] > '9')
             return -1;
+        /*endif*/
         rate = rate*10 + data[i] - '0';
     }
+    /*endfor*/
     return rate*100;
 }
 /*- End of function --------------------------------------------------------*/
@@ -307,11 +318,13 @@ static __inline__ int classify_seq_no_offset(int expected, int actual)
             /* In the near future */
             return 1;
         }
+        /*endif*/
         if (expected < actual + ACCEPTABLE_SEQ_NO_OFFSET)
         {
             /* In the recent past */
             return -1;
         }
+        /*endif*/
     }
     else
     {
@@ -320,12 +333,15 @@ static __inline__ int classify_seq_no_offset(int expected, int actual)
             /* In the near future */
             return 1;
         }
+        /*endif*/
         if (expected + 0x10000 - ACCEPTABLE_SEQ_NO_OFFSET < actual)
         {
             /* In the recent past */
             return -1;
         }
+        /*endif*/
     }
+    /*endif*/
     /* There has been a huge step in the sequence */
     return 0;
 }
@@ -355,6 +371,7 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
         sprintf(tag, "Rx %5d: IFP", log_seq_no);
         span_log_buf(&s->logging, SPAN_LOG_FLOW, tag, buf, len);
     }
+    /*endif*/
     ptr = 0;
     pkt_len = len;
     switch (s->data_transport_protocol)
@@ -369,15 +386,19 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
             /* Version */
             if (buf[0] != 3)
                 return -1;
+            /*endif*/
             /* Reserved */
             if (buf[1] != 0)
                 return -1;
+            /*endif*/
             /* Packet length - this includes the length of the header itself */
             pkt_len = (buf[2] << 8) | buf[3];
             if (len < pkt_len)
                 return 0;
+            /*endif*/
             ptr = 4;
         }
+        /*endif*/
         ret = -1;
         break;
     default:
@@ -385,8 +406,10 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
         ret = -1;
         break;
     }
+    /*endswitch*/
     if ((ptr + 1) > pkt_len)
         return ret;
+    /*endif*/
     data_field_present = buf[ptr] & 0x80;
     type = (buf[ptr] >> 6) & 1;
     switch (type)
@@ -398,6 +421,7 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
             span_log(&s->logging, SPAN_LOG_PROTOCOL_WARNING, "Rx %5d: Data field with indicator\n", log_seq_no);
             return -1;
         }
+        /*endif*/
         /* Any received indicator should mean we no longer have a valid concept of "last received data/field type". */
         s->current_rx_data_type = -1;
         s->current_rx_field_type = -1;
@@ -406,12 +430,14 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
             /* Extension */
             if ((ptr + 2) > pkt_len)
                 return ret;
+            /*endif*/
             t30_indicator = T38_IND_V8_ANSAM + (((buf[ptr] << 2) & 0x3C) | ((buf[ptr + 1] >> 6) & 0x3));
             if (t30_indicator > T38_IND_V33_14400_TRAINING)
             {
                 span_log(&s->logging, SPAN_LOG_PROTOCOL_WARNING, "Rx %5d: Unknown indicator - %d\n", log_seq_no, t30_indicator);
                 return -1;
             }
+            /*endif*/
             ptr += 2;
         }
         else
@@ -419,6 +445,7 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
             t30_indicator = (buf[ptr] >> 1) & 0xF;
             ptr += 1;
         }
+        /*endif*/
         span_log(&s->logging, SPAN_LOG_FLOW, "Rx %5d: indicator %s\n", log_seq_no, t38_indicator_to_str(t30_indicator));
         s->rx_indicator_handler(s, s->rx_user_data, t30_indicator);
         /* This must come after the indicator handler, so the handler routine sees the existing state of the
@@ -431,12 +458,14 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
             /* Extension */
             if ((ptr + 2) > pkt_len)
                 return ret;
+            /*endif*/
             t30_data = T38_DATA_V8 + (((buf[ptr] << 2) & 0x3C) | ((buf[ptr + 1] >> 6) & 0x3));
             if (t30_data > T38_DATA_V33_14400)
             {
                 span_log(&s->logging, SPAN_LOG_PROTOCOL_WARNING, "Rx %5d: Unknown data type - %d\n", log_seq_no, t30_data);
                 return -1;
             }
+            /*endif*/
             ptr += 2;
         }
         else
@@ -447,16 +476,20 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
                 span_log(&s->logging, SPAN_LOG_PROTOCOL_WARNING, "Rx %5d: Unknown data type - %d\n", log_seq_no, t30_data);
                 return -1;
             }
+            /*endif*/
             ptr += 1;
         }
+        /*endif*/
         if (!data_field_present)
         {
             /* This is kinda weird, but I guess if the length checks out we accept it. */
             span_log(&s->logging, SPAN_LOG_PROTOCOL_WARNING, "Rx %5d: Data type with no data field\n", log_seq_no);
             break;
         }
+        /*endif*/
         if (ptr >= pkt_len)
             return ret;
+        /*endif*/
         count = buf[ptr++];
         //printf("Count is %d\n", count);
         /* Do a dummy run through the fields to check we have a complete and uncorrupted packet. */
@@ -466,6 +499,7 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
         {
             if (ptr >= pkt_len)
                 return ret;
+            /*endif*/
             if (s->t38_version == 0)
             {
                 /* The original version of T.38 with a typo in the ASN.1 spec. */
@@ -488,12 +522,15 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
                         ptr++;
                     else
                         other_half = true;
+                    /*endif*/
                 }
+                /*endif*/
                 if (t30_field_type > T38_FIELD_T4_NON_ECM_SIG_END)
                 {
                     span_log(&s->logging, SPAN_LOG_PROTOCOL_WARNING, "Rx %5d: Unknown field type - %d\n", log_seq_no, t30_field_type);
                     return -1;
                 }
+                /*endif*/
             }
             else
             {
@@ -503,35 +540,45 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
                 {
                     if ((ptr + 2) > pkt_len)
                         return ret;
+                    /*endif*/
                     t30_field_type = T38_FIELD_CM_MESSAGE + (((buf[ptr] << 2) & 0x3C) | ((buf[ptr + 1] >> 6) & 0x3));
                     if (t30_field_type > T38_FIELD_V34RATE)
                     {
                         span_log(&s->logging, SPAN_LOG_PROTOCOL_WARNING, "Rx %5d: Unknown field type - %d\n", log_seq_no, t30_field_type);
                         return -1;
                     }
+                    /*endif*/
                     ptr += 2;
                 }
                 else
                 {
                     ptr++;
                 }
+                /*endif*/
             }
+            /*endif*/
             /* Decode field_data */
             if (field_data_present)
             {
                 if ((ptr + 2) > pkt_len)
                     return ret;
+                /*endif*/
                 numocts = ((buf[ptr] << 8) | buf[ptr + 1]) + 1;
                 ptr += numocts + 2;
             }
+            /*endif*/
             if (ptr > pkt_len)
                 return ret;
+            /*endif*/
         }
+        /*endfor*/
         /* Check if we finished mid byte in a version 0 packet. */
         if (other_half)
             ptr++;
+        /*endif*/
         if (ptr > pkt_len)
             return ret;
+        /*endif*/
 
         /* Things look alright in the data, so lets run through the fields again, actually processing them.
            There is no need to do all the error checking along the way on this pass. */
@@ -561,7 +608,9 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
                         ptr++;
                     else
                         other_half = true;
+                    /*endif*/
                 }
+                /*endif*/
             }
             else
             {
@@ -576,7 +625,9 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
                 {
                     t30_field_type = (buf[ptr++] >> 3) & 0x7;
                 }
+                /*endif*/
             }
+            /*endif*/
             /* Decode field_data */
             if (field_data_present)
             {
@@ -589,6 +640,7 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
                 numocts = 0;
                 msg = NULL;
             }
+            /*endif*/
             span_log(&s->logging,
                      SPAN_LOG_FLOW,
                      "Rx %5d: (%d) data %s/%s + %d byte(s)\n",
@@ -601,13 +653,17 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_stream(t38_core_state_t *s, const uint8
             s->current_rx_data_type = t30_data;
             s->current_rx_field_type = t30_field_type;
         }
+        /*endfor*/
         /* Check if we finished mid byte in a version 0 packet. */
         if (other_half)
             ptr++;
+        /*endif*/
         break;
     }
+    /*endswitch*/
     if (ptr > pkt_len)
         return ret;
+    /*endif*/
     return ptr;
 }
 /*- End of function --------------------------------------------------------*/
@@ -645,6 +701,7 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_packet(t38_core_state_t *s, const uint8
                     span_log(&s->logging, SPAN_LOG_FLOW, "Rx %5d: Repeat packet number\n", log_seq_no);
                     return 0;
                 }
+                /*endif*/
                 /* Distinguish between a little bit out of sequence, and a huge hop. */
                 switch (classify_seq_no_offset(s->rx_expected_seq_no, seq_no))
                 {
@@ -665,15 +722,20 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_packet(t38_core_state_t *s, const uint8
                     s->missing_packets++;
                     break;
                 }
+                /*endswitch*/
             }
+            /*endif*/
             s->rx_expected_seq_no = seq_no;
         }
+        /*endif*/
     }
+    /*endif*/
     if (len < 1)
     {
         span_log(&s->logging, SPAN_LOG_PROTOCOL_WARNING, "Rx %5d: Bad packet length - %d\n", log_seq_no, len);
         return -1;
     }
+    /*endif*/
     /* The sequence numbering is defined as rolling from 0xFFFF to 0x0000. Some implementations
        of T.38 roll from 0xFFFF to 0x0001. Isn't standardisation a wonderful thing? The T.38
        document specifies only a small fraction of what it should, yet then they actually nail
@@ -690,8 +752,10 @@ SPAN_DECLARE_NONSTD(int) t38_core_rx_ifp_packet(t38_core_state_t *s, const uint8
     {
         if (ptr >= 0)
             span_log(&s->logging, SPAN_LOG_PROTOCOL_WARNING, "Rx %5d: Invalid length for packet - %d %d\n", log_seq_no, ptr, len);
+        /*endif*/
         return -1;
     }
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -704,6 +768,7 @@ static int t38_encode_indicator(t38_core_state_t *s, uint8_t buf[], int indicato
     len = 0;
     if (s->data_transport_protocol == T38_TRANSPORT_TCP_TPKT)
         len = 4;
+    /*endif*/
 
     /* Data field not present */
     /* Indicator packet */
@@ -721,9 +786,10 @@ static int t38_encode_indicator(t38_core_state_t *s, uint8_t buf[], int indicato
     {
         len = -1;
     }
+    /*endif*/
     if (s->data_transport_protocol == T38_TRANSPORT_TCP_TPKT)
     {
-        /* Fill in the TPKT header (se RFC1006) */
+        /* Fill in the TPKT header (see RFC1006) */
         /* Version */
         buf[0] = 3;
         /* Reserved */
@@ -732,6 +798,7 @@ static int t38_encode_indicator(t38_core_state_t *s, uint8_t buf[], int indicato
         buf[2] = (len >> 8) & 0xFF;
         buf[3] = len & 0xFF;
     }
+    /*endif*/
     return len;
 }
 /*- End of function --------------------------------------------------------*/
@@ -755,6 +822,7 @@ static int t38_encode_data(t38_core_state_t *s, uint8_t buf[], int data_type, co
     len = 0;
     if (s->data_transport_protocol == T38_TRANSPORT_TCP_TPKT)
         len = 4;
+    /*endif*/
 
     /* There seems no valid reason why a packet would ever be generated without a data field present */
     data_field_present = (fields > 0)  ?  0x80  :  0x00;
@@ -775,6 +843,7 @@ static int t38_encode_data(t38_core_state_t *s, uint8_t buf[], int data_type, co
     {
         return -1;
     }
+    /*endif*/
 
     if (data_field_present)
     {
@@ -803,6 +872,7 @@ static int t38_encode_data(t38_core_state_t *s, uint8_t buf[], int data_type, co
                 buf[len++] = (uint8_t) (0xC0 | multiplier);
                 enclen = 0x4000*multiplier;
             }
+            /*endif*/
 
             fragment_len = enclen;
             encoded_len += fragment_len;
@@ -817,6 +887,7 @@ static int t38_encode_data(t38_core_state_t *s, uint8_t buf[], int data_type, co
                     /* Original version of T.38 with a typo */
                     if (q->field_type > T38_FIELD_T4_NON_ECM_SIG_END)
                         return -1;
+                    /*endif*/
                     buf[len++] = (uint8_t) ((field_data_present << 7) | (q->field_type << 4));
                 }
                 else
@@ -834,22 +905,28 @@ static int t38_encode_data(t38_core_state_t *s, uint8_t buf[], int data_type, co
                     {
                         return -1;
                     }
+                    /*endif*/
                 }
+                /*endif*/
                 /* Encode field_data */
                 if (field_data_present)
                 {
                     if (q->field_len < 1  ||  q->field_len > 65535)
                         return -1;
+                    /*endif*/
                     buf[len++] = (uint8_t) (((q->field_len - 1) >> 8) & 0xFF);
                     buf[len++] = (uint8_t) ((q->field_len - 1) & 0xFF);
                     memcpy(&buf[len], q->field, q->field_len);
                     len += q->field_len;
                 }
+                /*endif*/
                 data_field_no++;
             }
+            /*endfor*/
         }
         while ((int) encoded_len != fields  ||  fragment_len >= 16384);
     }
+    /*endif*/
 
     for (data_field_no = 0;  data_field_no < fields;  data_field_no++)
     {
@@ -862,6 +939,7 @@ static int t38_encode_data(t38_core_state_t *s, uint8_t buf[], int data_type, co
                  t38_field_type_to_str(field[data_field_no].field_type),
                  field[data_field_no].field_len);
     }
+    /*endfor*/
 
     if (s->data_transport_protocol == T38_TRANSPORT_TCP_TPKT)
     {
@@ -874,12 +952,14 @@ static int t38_encode_data(t38_core_state_t *s, uint8_t buf[], int data_type, co
         buf[2] = (len >> 8) & 0xFF;
         buf[3] = len & 0xFF;
     }
+    /*endif*/
 
     if (span_log_test(&s->logging, SPAN_LOG_FLOW))
     {
         sprintf(tag, "Tx %5d: IFP", s->tx_seq_no);
         span_log_buf(&s->logging, SPAN_LOG_FLOW, tag, buf, len);
     }
+    /*endif*/
     return len;
 }
 /*- End of function --------------------------------------------------------*/
@@ -907,22 +987,28 @@ SPAN_DECLARE(int) t38_core_send_indicator(t38_core_state_t *s, int indicator)
                 span_log(&s->logging, SPAN_LOG_FLOW, "T.38 indicator len is %d\n", len);
                 return len;
             }
+            /*endif*/
             span_log(&s->logging, SPAN_LOG_FLOW, "Tx %5d: indicator %s\n", s->tx_seq_no, t38_indicator_to_str(indicator));
             if (s->tx_packet_handler(s, s->tx_packet_user_data, buf, len, transmissions) < 0)
             {
                 span_log(&s->logging, SPAN_LOG_PROTOCOL_WARNING, "Tx packet handler failure\n");
                 return -1;
             }
+            /*endif*/
             s->tx_seq_no = (s->tx_seq_no + 1) & 0xFFFF;
             if (s->pace_transmission)
             {
                 delay = modem_startup_time[indicator].training;
                 if (s->allow_for_tep)
                     delay += modem_startup_time[indicator].tep;
+                /*endif*/
             }
+            /*endif*/
         }
+        /*endif*/
         s->current_tx_indicator = indicator;
     }
+    /*endif*/
     return delay;
 }
 /*- End of function --------------------------------------------------------*/
@@ -931,6 +1017,7 @@ SPAN_DECLARE(int) t38_core_send_flags_delay(t38_core_state_t *s, int indicator)
 {
     if (s->pace_transmission)
         return modem_startup_time[indicator].flags;
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -939,6 +1026,7 @@ SPAN_DECLARE(int) t38_core_send_training_delay(t38_core_state_t *s, int indicato
 {
     if (s->pace_transmission)
         return modem_startup_time[indicator].training;
+    /*endif*/
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -957,11 +1045,13 @@ SPAN_DECLARE(int) t38_core_send_data(t38_core_state_t *s, int data_type, int fie
         span_log(&s->logging, SPAN_LOG_FLOW, "T.38 data len is %d\n", len);
         return len;
     }
+    /*endif*/
     if (s->tx_packet_handler(s, s->tx_packet_user_data, buf, len, s->category_control[category]) < 0)
     {
         span_log(&s->logging, SPAN_LOG_PROTOCOL_WARNING, "Tx packet handler failure\n");
         return -1;
     }
+    /*endif*/
     s->tx_seq_no = (s->tx_seq_no + 1) & 0xFFFF;
     return 0;
 }
@@ -977,11 +1067,13 @@ SPAN_DECLARE(int) t38_core_send_data_multi_field(t38_core_state_t *s, int data_t
         span_log(&s->logging, SPAN_LOG_FLOW, "T.38 data len is %d\n", len);
         return len;
     }
+    /*endif*/
     if (s->tx_packet_handler(s, s->tx_packet_user_data, buf, len, s->category_control[category]) < 0)
     {
         span_log(&s->logging, SPAN_LOG_PROTOCOL_WARNING, "Tx packet handler failure\n");
         return -1;
     }
+    /*endif*/
     s->tx_seq_no = (s->tx_seq_no + 1) & 0xFFFF;
     return 0;
 }
@@ -1109,7 +1201,9 @@ SPAN_DECLARE(t38_core_state_t *) t38_core_init(t38_core_state_t *s,
     {
         if ((s = (t38_core_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
+    /*endif*/
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "T.38");

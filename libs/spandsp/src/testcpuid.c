@@ -95,14 +95,14 @@ int has_MMX(void)
     /*endif*/
     __asm__ __volatile__(
         " push  %%ebx;\n"
-        " mov    $1,%%eax;\n"
+        " mov   $1,%%eax;\n"
         " cpuid;\n"
         " xor   %%eax,%%eax;\n"
-        " test    $0x800000,%%edx;\n"
-        " jz    1f;\n"                /* no MMX support */
-        " inc   %%eax;\n"        /* MMX support */
+        " test  $0x800000,%%edx;\n"
+        " jz    1f;\n"                  /* no MMX support */
+        " inc   %%eax;\n"               /* MMX support */
         "1:\n"
-        " pop  %%ebx;\n"
+        " pop   %%ebx;\n"
         : "=a" (result)
         :
         : "ecx", "edx");
@@ -119,14 +119,14 @@ int has_SIMD(void)
     /*endif*/
     __asm__ __volatile__(
         " push  %%ebx;\n"
-        " mov    $1,%%eax;\n"
+        " mov   $1,%%eax;\n"
         " cpuid;\n"
         " xor   %%eax,%%eax;\n"
-        " test    $0x02000000,%%edx;\n"
-        " jz    1f;\n"                /* no SIMD support */
-        " inc    %%eax;\n"        /* SIMD support */
+        " test  $0x02000000,%%edx;\n"
+        " jz    1f;\n"                  /* no SIMD support */
+        " inc   %%eax;\n"               /* SIMD support */
         "1:\n"
-        " pop  %%ebx;\n"
+        " pop   %%ebx;\n"
         : "=a" (result)
         :
         : "ecx", "edx");
@@ -143,14 +143,14 @@ int has_SIMD2(void)
     /*endif*/
     __asm__ __volatile__(
         " push  %%ebx;\n"
-        " mov    $1,%%eax;\n"
+        " mov   $1,%%eax;\n"
         " cpuid;\n"
         " xor   %%eax,%%eax;\n"
-        " test    $0x04000000,%%edx;\n"
-        " jz    1f;\n"                /* no SIMD2 support */
-        " inc    %%eax;\n"        /* SIMD2 support */
+        " test  $0x04000000,%%edx;\n"
+        " jz    1f;\n"                  /* no SIMD2 support */
+        " inc   %%eax;\n"               /* SIMD2 support */
         "1:\n"
-        " pop  %%ebx;\n"
+        " pop   %%ebx;\n"
         : "=a" (result)
         :
         : "ecx", "edx");
@@ -167,19 +167,19 @@ int has_3DNow(void)
     /*endif*/
     __asm__ __volatile__(
         " push  %%ebx;\n"
-        " mov    $0x80000000,%%eax;\n"
+        " mov   $0x80000000,%%eax;\n"
         " cpuid;\n"
         " xor   %%ecx,%%ecx;\n"
-        " cmp    $0x80000000,%%eax;\n"
-        " jbe    1f;\n"                /* no extended MSR(1), so no 3DNow! */
-        " mov    $0x80000001,%%eax;\n"
+        " cmp   $0x80000000,%%eax;\n"
+        " jbe   1f;\n"                  /* no extended MSR(1), so no 3DNow! */
+        " mov   $0x80000001,%%eax;\n"
         " cpuid;\n"
         " xor   %%ecx,%%ecx;\n"
-        " test    $0x80000000,%%edx;\n"
-        " jz    1f;\n"                /* no 3DNow! support */
-        " inc   %%ecx;\n"        /* 3DNow! support */
+        " test  $0x80000000,%%edx;\n"
+        " jz    1f;\n"                  /* no 3DNow! support */
+        " inc   %%ecx;\n"               /* 3DNow! support */
         "1:\n"
-        " pop  %%ebx;\n"
+        " pop   %%ebx;\n"
         : "=c" (result)
         :
         : "eax", "edx");

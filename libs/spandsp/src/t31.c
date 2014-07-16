@@ -69,6 +69,7 @@
 #include "spandsp/async.h"
 #include "spandsp/crc.h"
 #include "spandsp/hdlc.h"
+#include "spandsp/vector_int.h"
 #include "spandsp/silence_gen.h"
 #include "spandsp/super_tone_rx.h"
 #include "spandsp/fsk.h"
@@ -929,7 +930,7 @@ static int stream_non_ecm(t31_state_t *s)
                        help for all implentations. It is usually ignored, which is probably
                        the right thing to do after receiving a message saying the signal has
                        ended. */
-                    memset(buf + len, 0, fe->octets_per_data_packet - len);
+                    memset(&buf[len], 0, fe->octets_per_data_packet - len);
                     fe->non_ecm_trailer_bytes = 3*fe->octets_per_data_packet + len;
                     len = fe->octets_per_data_packet;
                     fe->timed_step = T38_TIMED_STEP_NON_ECM_MODEM_4;
@@ -2868,7 +2869,7 @@ SPAN_DECLARE_NONSTD(int) t31_tx(t31_state_t *s, int16_t amp[], int max_len)
     if (s->audio.modems.transmit_on_idle)
     {
         /* Pad to the requested length with silence */
-        memset(&amp[len], 0, (max_len - len)*sizeof(int16_t));
+        vec_zeroi16(&amp[len], max_len - len);
         len = max_len;
     }
     /*endif*/

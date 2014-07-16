@@ -61,6 +61,17 @@ typedef void (*faxtester_front_end_step_complete_handler_t)(faxtester_state_t *s
 */
 struct faxtester_state_s
 {
+    /*! \brief The far end FAX context */
+    fax_state_t *far_fax;
+
+    /*! \brief The far end T.38 terminal context */
+    t38_terminal_state_t *far_t38_fax;
+
+    /*! \brief Path for the FAX image test files. */
+    char image_path[1024];
+
+    /*! \brief Pointer to the XML document. */
+    xmlDocPtr doc;
     /*! \brief Pointer to our current step in the test. */
     xmlNodePtr cur;
 
@@ -112,6 +123,19 @@ struct faxtester_state_s
 
     int64_t timer;
     int64_t timeout;
+
+    bool test_for_call_clear;
+    int call_clear_timer;
+
+    bool far_end_cleared_call;
+
+    int timein_x;
+    int timeout_x;
+
+    uint8_t awaited[1000];
+    int awaited_len;
+
+    char next_tx_file[1000];
 
     /*! \brief Error and flow logging control */
     logging_state_t logging;

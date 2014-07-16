@@ -2657,7 +2657,6 @@ static int start_receiving_document(t30_state_t *s)
         return -1;
     }
     span_log(&s->logging, SPAN_LOG_FLOW, "Start receiving document\n");
-    queue_phase(s, T30_PHASE_B_TX);
     s->ecm_block = 0;
     send_dis_or_dtc_sequence(s, true);
     return 0;
@@ -2745,7 +2744,7 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
         send_dcs_sequence(s, true);
         return 0;
     }
-    span_log(&s->logging, SPAN_LOG_FLOW, "%s nothing to send\n", t30_frametype(msg[2]));
+    span_log(&s->logging, SPAN_LOG_FLOW, "%s - nothing to send\n", t30_frametype(msg[2]));
     /* ... then try to receive something */
     if (s->rx_file[0])
     {
@@ -2772,7 +2771,7 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
         send_dis_or_dtc_sequence(s, true);
         return 0;
     }
-    span_log(&s->logging, SPAN_LOG_FLOW, "%s nothing to receive\n", t30_frametype(msg[2]));
+    span_log(&s->logging, SPAN_LOG_FLOW, "%s - nothing to receive\n", t30_frametype(msg[2]));
     /* There is nothing to do, or nothing we are able to do. */
     send_dcn(s);
     return -1;
@@ -5105,6 +5104,7 @@ static void queue_phase(t30_state_t *s, int phase)
                 s->send_hdlc_handler(s->send_hdlc_user_data, NULL, -1);
         }
         s->next_phase = phase;
+        span_log(&s->logging, SPAN_LOG_FLOW, "Queuing phase %s\n", phase_names[s->next_phase]);
     }
     else
     {
@@ -5116,7 +5116,7 @@ static void queue_phase(t30_state_t *s, int phase)
 
 static void set_phase(t30_state_t *s, int phase)
 {
-    if (phase != s->next_phase  &&  s->next_phase != T30_PHASE_IDLE)
+    if (s->next_phase != phase  &&  s->next_phase != T30_PHASE_IDLE)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Flushing queued phase %s\n", phase_names[s->next_phase]);
         /* Ensure nothing has been left in the queue that was scheduled to go out in the previous next

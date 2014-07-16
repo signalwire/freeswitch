@@ -293,15 +293,15 @@ SPAN_DECLARE(int) bell_mf_tx(bell_mf_tx_state_t *s, int16_t amp[], int max_sampl
     if (s->tones.current_section >= 0)
     {
         /* Deal with the fragment left over from last time */
-        len = tone_gen(&(s->tones), amp, max_samples);
+        len = tone_gen(&s->tones, amp, max_samples);
     }
     while (len < max_samples  &&  (digit = queue_read_byte(&s->queue.queue)) >= 0)
     {
         /* Step to the next digit */
         if ((cp = strchr(bell_mf_tone_codes, digit)) == NULL)
             continue;
-        tone_gen_init(&(s->tones), &bell_mf_digit_tones[cp - bell_mf_tone_codes]);
-        len += tone_gen(&(s->tones), amp + len, max_samples - len);
+        tone_gen_init(&s->tones, &bell_mf_digit_tones[cp - bell_mf_tone_codes]);
+        len += tone_gen(&s->tones, amp + len, max_samples - len);
     }
     return len;
 }
@@ -338,7 +338,7 @@ SPAN_DECLARE(bell_mf_tx_state_t *) bell_mf_tx_init(bell_mf_tx_state_t *s)
 
     if (!bell_mf_gen_inited)
         bell_mf_gen_init();
-    tone_gen_init(&(s->tones), &bell_mf_digit_tones[0]);
+    tone_gen_init(&s->tones, &bell_mf_digit_tones[0]);
     s->current_sample = 0;
     queue_init(&s->queue.queue, MAX_BELL_MF_DIGITS, QUEUE_READ_ATOMIC | QUEUE_WRITE_ATOMIC);
     s->tones.current_section = -1;

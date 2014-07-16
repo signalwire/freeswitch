@@ -1144,7 +1144,7 @@ SPAN_DECLARE(int) v8_free(v8_state_t *s)
 {
     int ret;
 
-    ret = queue_free(s->tx_queue);
+    ret = v8_release(s);
     span_free(s);
     return ret;
 }

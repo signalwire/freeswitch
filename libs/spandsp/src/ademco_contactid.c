@@ -504,7 +504,7 @@ SPAN_DECLARE(int) decode_msg(ademco_contactid_report_t *report, const char buf[]
     int x;
     char buf2[20];
 
-    /* We need to remap normal DTMF (0-0, *, #, A-D) to Ademco's pseudo-hex (0-0, B-F, nothing for A)
+    /* We need to remap normal DTMF (0-9, *, #, A-D) to Ademco's pseudo-hex (0-9, B-F, nothing for A)
        and calculate the checksum */
     for (sum = 0, s = buf, t = buf2;  *s;  s++, t++)
     {
