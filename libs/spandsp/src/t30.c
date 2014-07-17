@@ -3133,8 +3133,9 @@ static void process_rx_ppr(t30_state_t *s, const uint8_t *msg, int len)
         /* Continue to correct? */
         /* Continue only if we have been making progress */
         s->ppr_count = 0;
-        if (s->ecm_progress)
+        if (s->ecm_progress  &&  fallback_sequence[s->current_fallback + 1].bit_rate)
         {
+            s->current_fallback++;
             s->ecm_progress = 0;
             queue_phase(s, T30_PHASE_D_TX);
             set_state(s, T30_STATE_IV_CTC);
