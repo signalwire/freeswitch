@@ -4,6 +4,9 @@ var confMan = null;
 var $display = $("#display");
 var verto;
 var ringing = false;
+var autocall = false;
+
+$( ".selector" ).pagecontainer({ "theme": "a" });
 
 function display(msg) {
     $("#calltitle").html(msg);
@@ -19,13 +22,11 @@ function clearConfMan() {
 }
 
 function goto_dialog(where) {
-    $.mobile.changePage("#dialog-" + where, {
-        role: "dialog"
-    });
+    $( ":mobile-pagecontainer" ).pagecontainer( "change", "#dialog-" + where, { role: "dialog" } );
 }
 
-function goto_page(where) {
-    $.mobile.changePage("#page-" + where);
+function goto_page(where, force) {
+    $( ":mobile-pagecontainer" ).pagecontainer( "change", "#page-" + where);
 }
 
 var first_login = false;
@@ -58,7 +59,7 @@ var callbacks = {
 
         switch (msg) {
         case $.verto.enum.message.pvtEvent:
-            console.error("pvtEvent", data.pvtData.action);
+            //console.error("pvtEvent", data.pvtData.action);
             if (data.pvtData) {
                 switch (data.pvtData.action) {
 
@@ -139,6 +140,10 @@ var callbacks = {
 
             break;
 
+        case $.verto.enum.state.trying:
+            display("Calling: " + d.cidString());
+            goto_page("incall");
+	    break;
         case $.verto.enum.state.early:
         case $.verto.enum.state.active:
             display("Talking to: " + d.cidString());
@@ -168,14 +173,22 @@ var callbacks = {
         if (success) {
             online(true);
 
+	    /*
             verto.subscribe("presence", {
                 handler: function(v, e) {
                     console.error("PRESENCE:", e);
                 }
-            });
+		});
+	    */
+
             if (!window.location.hash) {
                 goto_page("main");
             }
+
+	    if (autocall) {
+		autocall = false;
+		docall();
+	    }
         } else {
             goto_page("login");
             goto_dialog("login-error");
@@ -193,7 +206,7 @@ var callbacks = {
     },
 
     onEvent: function(v, e) {
-        console.debug("w00t", e);
+        console.debug("GOT EVENT", e);
     },
 };
 
@@ -246,7 +259,7 @@ $("#webcam").click(function() {
     check_vid();
 });
 
-$("#callbtn").click(function() {
+function docall() {
     $('#ext').trigger('change');
 
     if (cur_call) {
@@ -262,6 +275,10 @@ $("#callbtn").click(function() {
         useVideo: check_vid(),
         useStereo: $("#use_stereo").is(':checked')
     });
+}
+
+$("#callbtn").click(function() {
+    docall();
 });
 
 function pop(id, cname, dft) {
@@ -366,58 +383,43 @@ function init() {
 }
 
 $(document).ready(function() {
-    var autocall = false;
     var hash = window.location.hash.substring(1);    
 
     if (hash && hash.indexOf("page-") == -1) {
 	window.location.hash = "";
+	$("#ext").val(hash);
 	autocall = true;
     }
 
     init();
 
-    $("#page-incall").on("pagebeforechange", function(event) {});
-
-    if (autocall) {
-	$("#ext").val(hash);
-	$("#callbtn").trigger("click");
-    }
-
-
 });
 
-$(document).bind("pagebeforechange", function(e, data) {
-    if (typeof(data.toPage) !== "string") {
-        return;
+
+var lastTo = 0;
+
+$(document).bind("pagecontainerchange", function(e, data) {
+
+    if (lastTo) {
+	clearTimeout(lastTo);
     }
 
     switch (window.location.hash) {
 
     case "#page-incall":
-
-        console.error(e, data);
-        setTimeout(function() {
+        lastTo = setTimeout(function() {
             if (!cur_call) {
                 goto_page("main");
             }
-        },
-        10000);
+        }, 1000);
+
         break;
 
     case "#page-main":
-
-        console.error(e, data);
-        setTimeout(function() {
-            if (cur_call && !ringing) {
-                goto_page("incall");
-            }
-        },
-        2000);
-        break;
-
+	break;
     case "#page-login":
 
-        setTimeout(function() {
+        lastTo = setTimeout(function() {
             if (online_visible) {
                 goto_page("main");
             }
@@ -426,3 +428,4 @@ $(document).bind("pagebeforechange", function(e, data) {
         break;
     }
 });
+

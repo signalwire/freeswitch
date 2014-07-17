@@ -74,6 +74,8 @@
       getSocket   : function(onmessage_cb) { return self._getSocket(onmessage_cb); }
     }, options);
       
+      self.ws_cnt = 0;
+
     // Declare an instance version of the onmessage callback to wrap 'this'.
     this.wsOnMessage = function(event) { self._wsOnMessage(event); };
   };
@@ -261,42 +263,53 @@
   $.JsonRpcClient.prototype.connectSocket = function(onmessage_cb) {
       var self = this;
 
+      if (self.to) {
+	  clearTimeout(self.to);
+      }
+
       if (!self.socketReady()) {
 	  self.authing = false;
+
+	  if (self._ws_socket) {
+	      delete self._ws_socket;
+	  }
+
 	  // No socket, or dying socket, let's get a new one.
-	  this._ws_socket = new WebSocket(this.options.socketUrl);
+	  self._ws_socket = new WebSocket(self.options.socketUrl);
 	  
-	  if (this._ws_socket) {
+	  if (self._ws_socket) {
 	      // Set up onmessage handler.
-	      this._ws_socket.onmessage = onmessage_cb;
-	      this._ws_socket.onclose = function (w) {
+	      self._ws_socket.onmessage = onmessage_cb;
+	      self._ws_socket.onclose = function (w) {
 		  if (!self.ws_sleep) {
-		      self.ws_sleep = 2;
+		      self.ws_sleep = 500;
 		  }
 
-		  self.ws_cnt = 0;
-		  
 		  if (self.options.onWSClose) {
 		      self.options.onWSClose(self);
 		  }
 
-		  console.error("Websocket Lost sleep: " + self.ws_sleep + "sec");
-
-		  setTimeout(function() {
+		  console.error("Websocket Lost " + self.ws_cnt + " sleep: " + self.ws_sleep + "msec");
+		  
+		  self.to = setTimeout(function() {
 		      console.log("Attempting Reconnection....");
 		      self.connectSocket(onmessage_cb);
-		  }, self.ws_sleep * 1000);
+		  }, self.ws_sleep);
 		  
+		  self.ws_cnt++;
 
-		  if (++self.ws_cnt >= 150) {
-		      self.ws_sleep = 30;
+		  if (self.ws_sleep < 3000 && (self.ws_cnt % 100) == 0) {
+		      self.ws_sleep += 500;
 		  }
 	      }
 
 	      // Set up sending of message for when the socket is open.
-	      this._ws_socket.onopen = function() {
-		  this.ws_sleep = 2;	  
-		  this.ws_cnt = 0;
+	      self._ws_socket.onopen = function() {
+		  if (self.to) {
+		      clearTimeout(self.to);
+		  }
+		  self.ws_sleep = 500;	  
+		  self.ws_cnt = 0;
 		  if (self.options.onWSConnect) {
 		      self.options.onWSConnect(self);
 		  }
@@ -310,7 +323,7 @@
 	  }
       }      
       
-      return this._ws_socket ? true : false;
+      return self._ws_socket ? true : false;
   }
 
   $.JsonRpcClient.prototype._getSocket = function(onmessage_cb) {

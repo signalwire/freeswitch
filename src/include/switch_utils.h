@@ -1066,7 +1066,7 @@ SWITCH_DECLARE(unsigned long) switch_atoul(const char *nptr);
  * \return	Pointer to message buffer, returning error message or "Unknown error xxx" if none found
  */
 SWITCH_DECLARE(char *) switch_strerror_r(int errnum, char *buf, switch_size_t buflen);
-
+SWITCH_DECLARE(int) switch_wait_sock(switch_os_socket_t sock, uint32_t ms, switch_poll_t flags);
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

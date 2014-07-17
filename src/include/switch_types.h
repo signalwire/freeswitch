@@ -2024,8 +2024,10 @@ typedef enum {
 
 #ifdef WIN32
 typedef SOCKET switch_os_socket_t;
+#define SWITCH_SOCK_INVALID INVALID_SOCKET
 #else
 typedef int switch_os_socket_t;
+#define SWITCH_SOCK_INVALID -1
 #endif
 
 typedef struct apr_pool_t switch_memory_pool_t;
@@ -2385,7 +2387,16 @@ typedef enum {
 	ICE_CONTROLLED = (1 << 2)
 } switch_core_media_ice_type_t;
 
-
+typedef enum {
+	SWITCH_POLL_READ = (1 << 0),
+	SWITCH_POLL_WRITE = (1 << 1),
+	SWITCH_POLL_ERROR = (1 << 2),
+	SWITCH_POLL_HUP = (1 << 3),
+	SWITCH_POLL_RDNORM = (1 << 4),
+	SWITCH_POLL_RDBAND = (1 << 5),
+	SWITCH_POLL_PRI = (1 << 6),
+	SWITCH_POLL_INVALID = (1 << 7)
+} switch_poll_t;
 
 SWITCH_END_EXTERN_C
 #endif
