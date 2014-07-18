@@ -1590,6 +1590,22 @@ static void conference_mod_event_channel_handler(const char *event_channel, cJSO
 			argv[1] = "all";
 		}
 		exec = switch_mprintf("%s %s %s %s", conf_name, action, argv[0], argv[1]);
+
+	} else if (!strcasecmp(action, "transfer") && cid) {
+		conference_member_t *member;
+		conference_obj_t *conference;
+
+		exec = switch_mprintf("%s %s %s", argv[0], switch_str_nil(argv[1]), switch_str_nil(argv[2]));
+		stream.write_function(&stream, "+OK Call transferred to %s", argv[0]);
+
+		if ((conference = conference_find(conf_name, NULL))) {
+			if ((member = conference_member_get(conference, cid))) {
+				switch_ivr_session_transfer(member->session, argv[0], argv[1], argv[2]);
+				switch_thread_rwlock_unlock(member->rwlock);
+			}
+			switch_thread_rwlock_unlock(conference->rwlock); 
+		}
+		goto end;
 	}
 
 	if (exec) {

@@ -1192,13 +1192,15 @@
 	    var box_id = "box_" + x;
 	    var volup_id = "volume_in_up" + x;
 	    var voldn_id = "volume_in_dn" + x;
+	    var transfer_id = "transfer" + x;
 
 	    
 	    var html = "<div id='" + box_id + "'>" + 
-		"<button class='ctlbtn' id='" + kick_id + "'>KICK</button>" + 
-		"<button class='ctlbtn' id='" + tmute_id + "'>MUTE</button>" +
-		"<button class='ctlbtn' id='" + voldn_id + "'>vol -</button>" +
-		"<button class='ctlbtn' id='" + volup_id + "'>vol +</button>" +
+		"<button class='ctlbtn' id='" + kick_id + "'>Kick</button>" + 
+		"<button class='ctlbtn' id='" + tmute_id + "'>Mute</button>" +
+		"<button class='ctlbtn' id='" + voldn_id + "'>Vol -</button>" +
+		"<button class='ctlbtn' id='" + volup_id + "'>Vol +</button>" +
+		"<button class='ctlbtn' id='" + transfer_id + "'>Transfer</button>" +
 		"</div>"
 	    ;
 	    
@@ -1216,6 +1218,11 @@
 	    jq.mouseout(function(e) {
 		jq.data({"mouse": false});
 		$("#" + box_id).hide();
+	    });
+
+	    $("#" + transfer_id).click(function() {
+		var xten = prompt("Enter Extension");
+		confMan.modCommand("transfer", x, xten);
 	    });
 
 	    $("#" + kick_id).click(function() {
@@ -1261,13 +1268,13 @@
 		    if (confMan.params.onBroadcast) {
 			confMan.params.onBroadcast(verto, confMan, e.data);
 		    }
-		    if (confMan.params.displayID) {
+		    if (!confMan.destroyed && confMan.params.displayID) {
 			$(confMan.params.displayID).html(e.data.response + "<br><br>");
 			if (confMan.lastTimeout) {
 			    clearTimeout(confMan.lastTimeout);
 			    confMan.lastTimeout = 0;
 			}
-			confMan.lastTimeout = setTimeout(function() { $(confMan.params.displayID).html("Moderator Controls Ready<br><br>")}, 4000);
+			confMan.lastTimeout = setTimeout(function() { $(confMan.params.displayID).html(confMan.destroyed ? "" : "Moderator Controls Ready<br><br>")}, 4000);
 		    }
 
 		}
@@ -1360,6 +1367,8 @@
 
     $.verto.confMan.prototype.destroy = function() {
 	var confMan = this;
+
+	confMan.destroyed = true;
 
 	if (confMan.lt) {
 	    confMan.lt.destroy();
