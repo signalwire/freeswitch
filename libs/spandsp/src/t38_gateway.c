@@ -1914,7 +1914,7 @@ static void t38_hdlc_rx_put_bit(hdlc_rx_state_t *t, int new_bit)
     }
     /*endif*/
     t->num_bits++;
-    if (!t->framing_ok_announced)
+    if (t->flags_seen < t->framing_ok_threshold)
         return;
     /*endif*/
     t->byte_in_progress = (t->byte_in_progress >> 1) | ((t->raw_bit_stream & 0x01) << 7);
@@ -1922,17 +1922,26 @@ static void t38_hdlc_rx_put_bit(hdlc_rx_state_t *t, int new_bit)
         return;
     /*endif*/
     t->num_bits = 0;
+    s = (t38_gateway_state_t *) t->frame_user_data;
+    u = &s->core.to_t38;
     if (t->len >= (int) sizeof(t->buffer))
     {
         /* This is too long. Abandon the frame, and wait for the next flag octet. */
+        if ((t->len + 2) >= u->octets_per_data_packet)
+        {
+            /* We will have sent some of this frame already, so we need to send termination of this bad HDLC frame. */
+            category = (s->t38x.current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA  :  T38_PACKET_CATEGORY_IMAGE_DATA;
+            if (t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_FCS_BAD, NULL, 0, category) < 0)
+                span_log(&s->logging, SPAN_LOG_WARNING, "T.38 send failed\n");
+            /*endif*/
+        }
+        /*endif*/
         t->rx_length_errors++;
         t->flags_seen = t->framing_ok_threshold - 1;
         t->len = 0;
         return;
     }
     /*endif*/
-    s = (t38_gateway_state_t *) t->frame_user_data;
-    u = &s->core.to_t38;
     t->buffer[t->len] = (uint8_t) t->byte_in_progress;
     if (t->len == 1)
     {
@@ -1969,7 +1978,7 @@ static void t38_hdlc_rx_put_bit(hdlc_rx_state_t *t, int new_bit)
     }
     if (++u->data_ptr >= u->octets_per_data_packet)
     {
-        bit_reverse(u->data, t->buffer + t->len - 2 - u->data_ptr, u->data_ptr);
+        bit_reverse(u->data, &t->buffer[t->len - 2 - u->data_ptr], u->data_ptr);
         category = (s->t38x.current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA  :  T38_PACKET_CATEGORY_IMAGE_DATA;
         if (t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_DATA, u->data, u->data_ptr, category) < 0)
             span_log(&s->logging, SPAN_LOG_WARNING, "T.38 send failed\n");

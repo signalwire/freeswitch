@@ -420,8 +420,7 @@ static void set_t30_callbacks(t30_state_t *t30, int chan)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void real_time_gateway_frame_handler(t38_gateway_state_t *s,
-                                            void *user_data,
+static void real_time_gateway_frame_handler(void *user_data,
                                             bool incoming,
                                             const uint8_t *msg,
                                             int len)
