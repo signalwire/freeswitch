@@ -1,4 +1,3 @@
-
 /*
  * Verto HTML5/Javascript Telephony Signaling and Control Protocol Stack for FreeSWITCH
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
