@@ -1659,8 +1659,6 @@ if test "$use_system_aprutil" != "yes"; then
 fi
 AC_CONFIG_SUBDIRS([libs/ilbc])
 AC_CONFIG_SUBDIRS([libs/iksemel])
-AC_CONFIG_SUBDIRS([libs/js/nsprpub])
-AC_CONFIG_SUBDIRS([libs/js])
 AC_CONFIG_SUBDIRS([libs/libdingaling])
 AC_CONFIG_SUBDIRS([libs/libsndfile])
 AC_CONFIG_SUBDIRS([libs/sofia-sip])
