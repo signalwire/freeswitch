@@ -11,6 +11,8 @@
       <param name="secure-combined" value="/usr/local/freeswitch/certs/wss.pem"/>
       <param name="secure-chain" value="/usr/local/freeswitch/certs/wss.pem"/>
       <param name="userauth" value="true"/>
+      <!-- setting this to true will allow anyone to register even with no account so use with care -->
+      <param name="blind-reg" value="false"/>
       <param name="mcast-ip" value="224.1.1.1"/>
       <param name="mcast-port" value="1337"/>
       <param name="rtp-ip" value="$${local_ip_v4}"/>

@@ -916,6 +916,9 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 		switch_event_destroy(&req_params);
 	}
 
+	if (jsock->profile->blind_reg) {
+		r = SWITCH_TRUE;
+	}
 	
  end:
 
@@ -3531,6 +3534,8 @@ static switch_status_t parse_config(const char *cf)
 					profile->inbound_codec_string = switch_core_strdup(profile->pool, val); 
 				} else if (!strcasecmp(var, "outbound-codec-string") && !zstr(val)) {
 					profile->outbound_codec_string = switch_core_strdup(profile->pool, val); 
+				} else if (!strcasecmp(var, "blind-reg") && !zstr(val)) {
+					profile->blind_reg = switch_true(val);
 				} else if (!strcasecmp(var, "userauth") && !zstr(val)) {
 					profile->userauth = switch_core_strdup(profile->pool, val);
 				} else if (!strcasecmp(var, "root-password") && !zstr(val)) {

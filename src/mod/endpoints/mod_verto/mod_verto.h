@@ -187,6 +187,7 @@ struct verto_profile_s {
 	int debug;
 	
 	int in_thread;
+	int blind_reg;
 
 	char *userauth;
 	char *root_passwd;
