@@ -27,7 +27,7 @@ that much better:
  Stefan Knoblich - Sofia TLS, various patches and support.  Thanks.
  Justin Unger - <justinunger at gmail dot com> Lots of help with patches and SIP testing. Thanks! 
  Paul D. Tinsley - Various patches and support. <pdt at jackhammer.org> 
- Ken Rice - <krice AT suspicious.org> - xmlcdr, sofia improvements, load testing, 1 liners here and there.
+ Ken Rice - <krice AT freeswitch.org> - xmlcdr, sofia improvements, load testing, 1 liners here and there.
  Travis Cross <tc@traviscross.com> - git migration, Debian packaging, ZRTP integration, and many other improvements
  Neal Horman <neal at wanlink dot com> - conference improvements, switch_ivr menu additions and other tweaks.
  Johny Kadarisman <jkr888 at gmail.com> - mod_python fixups.
