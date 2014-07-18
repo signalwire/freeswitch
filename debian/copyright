@@ -1563,10 +1563,6 @@ Files: src/mod/endpoints/mod_khomp/commons/base/atomic.hpp
 Copyright: 1998 Doug Rabson
 License: BSD-2-clause
 
-Files: src/mod/legacy/languages/mod_spidermonkey/mod_spidermonkey_socket.c
-Copyright: 2007, Jonas Gauffin <jonas.gauffin@gmail.com>
-License: MPL-1.1
-
 Files: src/mod/languages/mod_java/modjava.c
 Copyright: 2007, Damjan Jovanovic <d a m j a n d o t j o v a t g m a i l d o t c o m>
 License: MPL-1.1

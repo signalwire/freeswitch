@@ -107,7 +107,6 @@
     <!-- <load module="mod_posix_timer"/> -->
 
     <!-- Languages -->
-    <!-- <load module="mod_spidermonkey"/> -->
     <load module="mod_v8"/>
     <!-- <load module="mod_perl"/> -->
     <!-- <load module="mod_python"/> -->
