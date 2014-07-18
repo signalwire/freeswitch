@@ -1,0 +1,51 @@
+#
+# FreeSWITCH auto-build Makefile (OpenBSD 5.x)
+# http://www.freeswitch.org
+# put this file anywhere and type make to
+# create a fully-built freeswitch.git from scratch
+# in that same directory.
+#
+#
+
+PKG=rsync-3.1.0 git automake-1.14.1 autoconf-2.69p1 libtool gmake bzip2 jpeg wget pcre speex libldns
+FSPREFIX=/usr/local/freeswitch
+PREFIX=$(FSPREFIX)
+OPENSSL=1.0.1h
+LIBEDIT=20140618-3.1
+
+freeswitch: has-git deps freeswitch.git/Makefile
+	AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.14 LIBTOOL=/usr/local/bin/libtoolize gmake
+
+freeswitch.git/Makefile: freeswitch.git/configure
+	cd freeswitch.git && PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig ./configure LDFLAGS='-L$(PREFIX)/lib -Wl,-rpath=$(PREFIX)/lib' CFLAGS='-I$(PREFIX)/include' --prefix=$(FSPREFIX)
+
+freeswitch.git/configure: freeswitch.git/bootstrap.sh
+	cd freeswitch.git && AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.14 LIBTOOL=/usr/local/bin/libtoolize sh bootstrap.sh
+
+freeswitch.git/bootstrap.sh: has-git
+	test -d freeswitch.git || git clone https://stash.freeswitch.org/scm/fs/freeswitch.git freeswitch.git
+
+install:
+	cd freeswitch.git && AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.14 LIBTOOL=/usr/local/bin/libtoolize gmake install
+
+clean:
+	@rm -rf openssl* ldns* jpeg* pcre* perl* pkg-config* speex* sqlite* libedit* curl* *~
+	(cd freeswitch.git && git clean -fdx && git reset --hard HEAD && git pull)
+
+has-git:
+	@git --version || pkg install git
+
+deps: libedit openssl
+	@PKG_PATH=http://openbsd.mirrors.pair.com/`uname -r`/packages/`machine -a`/ pkg_add -r $(PKG)
+
+openssl: openssl-$(OPENSSL)/Makefile
+openssl-$(OPENSSL)/Makefile: openssl-$(OPENSSL)
+openssl-$(OPENSSL):
+	(test -d $@) || (wget -4 -O $@.tar.gz http://www.openssl.org/source/$@.tar.gz && tar zxfv $@.tar.gz)
+	(cd $@ && ./Configure --prefix=$(PREFIX) BSD-x86_64 shared && make && sudo make install)
+
+libedit: libedit-$(LIBEDIT)/Makefile
+libedit-$(LIBEDIT)/Makefile: libedit-$(LIBEDIT)
+libedit-$(LIBEDIT):
+	(test -d $@) || (wget -4 -O $@.tar.gz http://thrysoee.dk/editline/$@.tar.gz && tar zxfv $@.tar.gz)
+	(cd $@ && ./configure --prefix=$(PREFIX) && make && sudo make install)
