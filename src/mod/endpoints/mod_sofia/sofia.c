@@ -550,6 +550,27 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 		switch_assert(tech_pvt != NULL);
 	}
 
+
+	if (sofia_test_pflag(profile, PFLAG_PROXY_REFER) && sip->sip_payload && sip->sip_payload->pl_data &&
+		sip->sip_content_type && sip->sip_content_type->c_type && 
+		switch_stristr("sipfrag", sip->sip_content_type->c_type)) {
+		switch_core_session_t *other_session;
+		if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+			switch_core_session_message_t *msg;
+			
+			msg = switch_core_session_alloc(other_session, sizeof(*msg));
+			MESSAGE_STAMP_FFL(msg);
+			msg->message_id = SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE;
+			msg->string_arg = switch_core_session_strdup(other_session, sip->sip_payload->pl_data);
+			msg->from = __FILE__;
+			switch_core_session_queue_message(other_session, msg);
+			switch_core_session_rwunlock(other_session);
+			
+			nua_respond(nh, SIP_202_ACCEPTED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+			goto end;
+		}
+	}
+
 	/* For additional NOTIFY event packages see http://www.iana.org/assignments/sip-events. */
 	if (sip->sip_content_type &&
 		sip->sip_content_type->c_type && sip->sip_payload && sip->sip_payload->pl_data && !strcasecmp(sip->sip_event->o_type, "refer")) {

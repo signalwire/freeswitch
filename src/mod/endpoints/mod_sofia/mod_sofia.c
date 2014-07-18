@@ -1180,9 +1180,21 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		break;
 	case SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE:
 		{
-			const char *event = switch_channel_get_variable(channel, "sip_blind_transfer_event");
-			const char *uuid = switch_channel_get_variable(channel, "blind_transfer_uuid");
+			const char *event;
+			const char *uuid;
 			char *xdest;
+
+			if (msg->string_arg) {
+				nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag;version=2.0"),
+						   NUTAG_SUBSTATE(nua_substate_terminated),
+						   SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"),
+						   SIPTAG_PAYLOAD_STR(msg->string_arg),
+						   SIPTAG_EVENT_STR("refer"), TAG_END());
+				goto end;
+			}
+
+			event = switch_channel_get_variable(channel, "sip_blind_transfer_event");
+			uuid = switch_channel_get_variable(channel, "blind_transfer_uuid");
 
 			if (event && uuid) {
 				char payload_str[255] = "SIP/2.0 403 Forbidden\r\n";
