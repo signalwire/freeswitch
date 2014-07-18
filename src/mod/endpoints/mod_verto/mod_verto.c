@@ -150,6 +150,17 @@ static void verto_init_ssl(verto_profile_t *profile)
 	profile->ssl_ready = 1;
 	assert(profile->ssl_ctx);
 
+	/* Disable SSLv2 */
+	SSL_CTX_set_options(profile->ssl_ctx, SSL_OP_NO_SSLv2);
+	/* Disable SSLv3 */
+	SSL_CTX_set_options(profile->ssl_ctx, SSL_OP_NO_SSLv3);
+	/* Disable TLSv1 */
+	SSL_CTX_set_options(profile->ssl_ctx, SSL_OP_NO_TLSv1);
+	/* Disable TLSv1_1 */
+	SSL_CTX_set_options(profile->ssl_ctx, SSL_OP_NO_TLSv1_1);
+	/* Disable Compression CRIME (Compression Ratio Info-leak Made Easy) */
+	SSL_CTX_set_options(profile->ssl_ctx, SSL_OP_NO_COMPRESSION);
+
 	/* set the local certificate from CertFile */
 	if (!zstr(profile->chain)) {
 		SSL_CTX_use_certificate_chain_file(profile->ssl_ctx, profile->chain);
