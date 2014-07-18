@@ -3100,6 +3100,7 @@ static void process_rx_ppr(t30_state_t *s, const uint8_t *msg, int len)
         terminate_call(s);
         return;
     }
+    s->retries = 0;
     /* Check which frames are OK, and mark them as OK. */
     for (i = 0;  i < 32;  i++)
     {
