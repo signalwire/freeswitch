@@ -1779,6 +1779,8 @@
                 if (params.useVideo) {
                     dialog.useVideo(true);
                 }
+		dialog.params.callee_id_name = params.callee_id_name;
+		dialog.params.callee_id_number = params.callee_id_number;
             }
             dialog.rtc.createAnswer(dialog.params.sdp);
             dialog.answered = true;

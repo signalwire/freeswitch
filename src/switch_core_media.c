@@ -3502,7 +3502,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 											  "Bah HUMBUG! Sticking with %s@%uh@%ui\n",
 											  imp->iananame, imp->samples_per_second, imp->microseconds_per_packet / 1000);
-						} else if ((ptime && codec_ms && codec_ms * 1000 != imp->microseconds_per_packet) || remote_codec_rate != codec_rate || map_channels != imp->number_of_channels) {
+						} else if ((ptime && codec_ms && codec_ms * 1000 != imp->microseconds_per_packet) || remote_codec_rate != codec_rate) {
 							/* ptime does not match */
 							match = 0;
 							

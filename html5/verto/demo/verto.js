@@ -111,7 +111,9 @@ var callbacks = {
 
             $("#ansbtn").click(function() {
                 cur_call.answer({
-		    useStereo: $("#use_stereo").is(':checked')
+		    useStereo: $("#use_stereo").is(':checked'),
+		    callee_id_name: $("#name").val(),
+		    callee_id_number: $("#cid").val(),
 		});
                 $('#dialog-incoming-call').dialog('close');
             });

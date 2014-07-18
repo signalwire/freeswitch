@@ -934,7 +934,7 @@ static void set_call_params(cJSON *params, verto_pvt_t *tech_pvt) {
 		caller_id_name = switch_channel_get_variable(tech_pvt->channel, "callee_id_name");
 		caller_id_number = switch_channel_get_variable(tech_pvt->channel, "callee_id_number");
 	}
-	
+
 	if (zstr(caller_id_name)) {
 		caller_id_name = "Outbound Call";
 	}
@@ -1924,7 +1924,8 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 	cJSON *dialog = NULL;
 	const char *call_id = NULL, *sdp = NULL;
 	int err = 0;
-	
+	const char *callee_id_name = NULL, *callee_id_number = NULL;
+
 	*response = obj;
 
 	if (!(dialog = cJSON_GetObjectItem(params, "dialogParams"))) {
@@ -1941,6 +1942,9 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("SDP missing"));
 		err = 1; goto cleanup;
 	}
+
+	callee_id_name = cJSON_GetObjectCstr(dialog, "callee_id_name");
+	callee_id_number = cJSON_GetObjectCstr(dialog, "callee_id_number");
 
 
 	if ((session = switch_core_session_locate(call_id))) {
@@ -1968,6 +1972,12 @@ static switch_bool_t verto__answer_func(const char *method, cJSON *params, jsock
 		}
 		
 		if (!err) {
+			if (callee_id_name) {
+				switch_channel_set_profile_var(tech_pvt->channel, "callee_id_name", callee_id_name);
+			}
+			if (callee_id_number) {
+				switch_channel_set_profile_var(tech_pvt->channel, "callee_id_number", callee_id_number);
+			}
 			switch_channel_mark_answered(tech_pvt->channel);
 		}
 
@@ -3855,13 +3865,22 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 	if (!zstr(outbound_profile->destination_number)) {
 		dest = strdup(outbound_profile->destination_number);
 	}
-	
+
 	if (zstr(dest)) {
 		goto end;
 	}
 
 	if (!switch_stristr("u:", dest)) {
 		char *dial_str = verto_get_dial_string(dest, NULL);
+
+		switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "verto_orig_dest", dest);
+		if (zstr(switch_event_get_header(var_event, "origination_callee_id_number"))) {
+			char *trimmed_dest = strdup(dest);
+			char *p = strchr(trimmed_dest, '@');
+			if (p) *p = '\0';
+			switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_callee_id_number", trimmed_dest);
+			free(trimmed_dest);
+		}
 
 		cause = SWITCH_CAUSE_USER_NOT_REGISTERED;
 
@@ -3885,6 +3904,21 @@ static switch_call_cause_t verto_outgoing_channel(switch_core_session_t *session
 		}
 
 		return cause;
+	} else {
+		const char *dialed_user = switch_event_get_header(var_event, "dialed_user");
+		const char *dialed_domain = switch_event_get_header(var_event, "dialed_domain");
+		
+		if (dialed_user) {
+			if (dialed_domain) {
+				switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, "verto_orig_dest", "%s@%s", dialed_user, dialed_domain);
+			} else {
+				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "verto_orig_dest", dialed_user);
+			}
+			if (zstr(switch_event_get_header(var_event, "origination_callee_id_number"))) {
+				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_callee_id_number", dialed_user);
+				outbound_profile->callee_id_number = switch_sanitize_number(switch_core_strdup(outbound_profile->pool, dialed_user));
+			}
+		}
 	}
 
 	if ((cause = switch_core_session_outgoing_channel(session, var_event, "rtc",
