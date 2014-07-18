@@ -37,8 +37,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "pablio.h"
 #include <string.h>
+#include "pablio.h"
 
 #define MY_EVENT_RINGING "portaudio::ringing"
 #define MY_EVENT_MAKE_CALL "portaudio::makecall"

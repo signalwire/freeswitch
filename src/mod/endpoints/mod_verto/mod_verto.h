@@ -51,6 +51,9 @@
 #include <openssl/ssl.h>
 #include "mcast.h"
 
+#define MAX_QUEUE_LEN 100000
+#define MAX_MISSED 500
+
 #define MAXPENDING 10000
 #define STACK_SIZE 80 * 1024
 
@@ -73,7 +76,10 @@ typedef enum {
 typedef enum {
 	JPFLAG_INIT = (1 << 0),
 	JPFLAG_AUTHED = (1 << 1),
-	JPFLAG_CHECK_ATTACH = (1 << 2)
+	JPFLAG_CHECK_ATTACH = (1 << 2),
+	JPFLAG_EVENTS = (1 << 3),
+	JPFLAG_AUTH_EVENTS = (1 << 4),
+	JPFLAG_ALL_EVENTS_AUTHED = (1 << 5)
 } jpflag_t;
 
 struct verto_profile_s;
@@ -114,9 +120,13 @@ struct jsock_s {
 	switch_thread_rwlock_t *rwlock;
 	
 	switch_mutex_t *write_mutex;
+	switch_mutex_t *filter_mutex;
 
 	switch_event_t *params;
 	switch_event_t *vars;
+
+	switch_queue_t *event_queue;
+	int lost_events;
 
 	struct jsock_s *next;
 };
@@ -231,6 +241,7 @@ struct globals_s {
 	int ready;
 	int profile_threads;
 	int enable_presence;
+	int enable_fs_events;
 
 	switch_hash_t *jsock_hash;
 	switch_mutex_t *jsock_mutex;

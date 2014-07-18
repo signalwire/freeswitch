@@ -331,10 +331,6 @@ opal
 /openssl-*/
 /opus-*/
 /pocketsphinx-*/
-/portaudio/bin/
-/portaudio/bin-stamp
-/portaudio/lib-stamp
-/portaudio/Makefile
 /pthreads-w32-2-7-0-release/
 /pthreads-w32-2-9-1/
 /silk/compile
@@ -814,11 +810,6 @@ opal
 !/libdingaling/missing
 !/libg722_1/config/depcomp
 !/libg722_1/config/missing
-!/portaudio/bindings/cpp/build/gnu/aclocal.m4
-!/portaudio/bindings/cpp/build/gnu/config.guess
-!/portaudio/bindings/cpp/build/gnu/config.sub
-!/portaudio/bindings/cpp/build/gnu/configure
-!/portaudio/bindings/cpp/build/gnu/install-sh
 !/tiff-*/config/depcomp
 !/tiff-*/config/missing
 !/xmlrpc-c/install-sh

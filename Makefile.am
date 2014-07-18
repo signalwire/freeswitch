@@ -615,7 +615,6 @@ pristine:
 
 update-clean: clean python-reconf lua-reconf spandsp-reconf srtp-reconf
 	cd libs/sofia-sip && $(MAKE) clean
-	cd libs/portaudio && $(MAKE) clean
 	cd libs/esl && $(MAKE) clean
 	cd libs/srtp && $(MAKE) clean
 
@@ -636,11 +635,6 @@ tiff-reconf:
 python-reconf:
 	rm -f src/mod/languages/mod_python/Makefile
 	./config.status
-
-pa-reconf:
-	cd libs/portaudio && $(MAKE) clean
-	cd libs/portaudio && sh ./configure.gnu
-	$(MAKE) mod_portaudio-clean
 
 srtp-reconf:
 	cd libs/srtp && $(MAKE) clean

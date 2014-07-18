@@ -44,6 +44,7 @@
 #include <unistd.h>
 #include "mcast.h"
 #include <poll.h>
+#include <switch_utils.h>
 
 int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, mcast_flag_t flags)
 {
@@ -151,7 +152,6 @@ ssize_t mcast_socket_send(mcast_handle_t *handle, void *data, size_t datalen)
 ssize_t mcast_socket_recv(mcast_handle_t *handle, void *data, size_t datalen, int ms)
 {
 	socklen_t addrlen = sizeof(handle->recv_addr);
-	int r;
 
 	if (data == NULL || datalen == 0) {
 		data = handle->buffer;
@@ -159,16 +159,9 @@ ssize_t mcast_socket_recv(mcast_handle_t *handle, void *data, size_t datalen, in
 	}
 
 	if (ms > 0) {
-		struct pollfd pfds[1];
-		
-		pfds[0].fd = handle->sock;
-		pfds[0].events = POLLIN|POLLERR;
-		
-		if ((r = poll(pfds, 1, ms)) <= 0) {
-			return r;
-		}
+		int pflags = switch_wait_sock(handle->sock, ms, SWITCH_POLL_READ | SWITCH_POLL_ERROR | SWITCH_POLL_HUP);
 
-		if (pfds[0].revents & POLLERR) {
+		if ((pflags & SWITCH_POLL_ERROR) || (pflags & SWITCH_POLL_HUP)) {
 			return -1;
 		}
 	}

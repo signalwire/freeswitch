@@ -10,7 +10,7 @@ BASEDIR=`pwd`;
 LIBDIR=${BASEDIR}/libs;
 SUBDIRS="apr \
   libzrtp ilbc iksemel js js/nsprpub libdingaling libsndfile sofia-sip \
-  speex srtp freetdm spandsp libg722_1 portaudio unimrcp tiff-4.0.2 broadvoice silk libcodec2 \
+  speex srtp freetdm spandsp libg722_1 unimrcp tiff-4.0.2 broadvoice silk libcodec2 \
   fs";
 
 while getopts 'jhd:v' o; do 

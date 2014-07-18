@@ -55,7 +55,7 @@ return{addAnswerSDP:function(sdp,cbSuccess,cbError){peer.setRemoteDescription(ne
 var video_constraints={mandatory:{},optional:[]};function getUserMedia(options){var n=navigator,media;n.getMedia=n.webkitGetUserMedia||n.mozGetUserMedia;n.getMedia(options.constraints||{audio:true,video:video_constraints},streaming,options.onerror||function(e){console.error(e);});function streaming(stream){var video=options.video;if(video){video[moz?'mozSrcObject':'src']=moz?stream:window.webkitURL.createObjectURL(stream);}
 if(options.onsuccess){options.onsuccess(stream);}
 media=stream;}
-return media;}})(jQuery);(function($){$.JsonRpcClient=function(options){var self=this;this.options=$.extend({ajaxUrl:null,socketUrl:null,onmessage:null,login:null,passwd:null,sessid:null,getSocket:function(onmessage_cb){return self._getSocket(onmessage_cb);}},options);this.wsOnMessage=function(event){self._wsOnMessage(event);};};$.JsonRpcClient.prototype._ws_socket=null;$.JsonRpcClient.prototype._ws_callbacks={};$.JsonRpcClient.prototype._current_id=1;$.JsonRpcClient.prototype.call=function(method,params,success_cb,error_cb){if(!params){params={};}
+return media;}})(jQuery);(function($){$.JsonRpcClient=function(options){var self=this;this.options=$.extend({ajaxUrl:null,socketUrl:null,onmessage:null,login:null,passwd:null,sessid:null,getSocket:function(onmessage_cb){return self._getSocket(onmessage_cb);}},options);self.ws_cnt=0;this.wsOnMessage=function(event){self._wsOnMessage(event);};};$.JsonRpcClient.prototype._ws_socket=null;$.JsonRpcClient.prototype._ws_callbacks={};$.JsonRpcClient.prototype._current_id=1;$.JsonRpcClient.prototype.call=function(method,params,success_cb,error_cb){if(!params){params={};}
 if(this.options.sessid){params.sessid=this.options.sessid;}
 var request={jsonrpc:'2.0',method:method,params:params,id:this._current_id++};if(!success_cb){success_cb=function(e){console.log("Success: ",e);};}
 if(!error_cb){error_cb=function(e){console.log("Error: ",e);};}
@@ -70,12 +70,15 @@ return true;}
 $.JsonRpcClient.prototype.closeSocket=function(){if(self.socketReady()){this._ws_socket.onclose=function(w){console.log("Closing Socket")}
 this._ws_socket.close();}}
 $.JsonRpcClient.prototype.loginData=function(params){self.options.login=params.login;self.options.passwd=params.passwd;}
-$.JsonRpcClient.prototype.connectSocket=function(onmessage_cb){var self=this;if(!self.socketReady()){self.authing=false;this._ws_socket=new WebSocket(this.options.socketUrl);if(this._ws_socket){this._ws_socket.onmessage=onmessage_cb;this._ws_socket.onclose=function(w){if(!self.ws_sleep){self.ws_sleep=2;}
-self.ws_cnt=0;if(self.options.onWSClose){self.options.onWSClose(self);}
-console.error("Websocket Lost sleep: "+self.ws_sleep+"sec");setTimeout(function(){console.log("Attempting Reconnection....");self.connectSocket(onmessage_cb);},self.ws_sleep*1000);if(++self.ws_cnt>=150){self.ws_sleep=30;}}
-this._ws_socket.onopen=function(){this.ws_sleep=2;this.ws_cnt=0;if(self.options.onWSConnect){self.options.onWSConnect(self);}
+$.JsonRpcClient.prototype.connectSocket=function(onmessage_cb){var self=this;if(self.to){clearTimeout(self.to);}
+if(!self.socketReady()){self.authing=false;if(self._ws_socket){delete self._ws_socket;}
+self._ws_socket=new WebSocket(self.options.socketUrl);if(self._ws_socket){self._ws_socket.onmessage=onmessage_cb;self._ws_socket.onclose=function(w){if(!self.ws_sleep){self.ws_sleep=500;}
+if(self.options.onWSClose){self.options.onWSClose(self);}
+console.error("Websocket Lost "+self.ws_cnt+" sleep: "+self.ws_sleep+"msec");self.to=setTimeout(function(){console.log("Attempting Reconnection....");self.connectSocket(onmessage_cb);},self.ws_sleep);self.ws_cnt++;if(self.ws_sleep<3000&&(self.ws_cnt%100)==0){self.ws_sleep+=500;}}
+self._ws_socket.onopen=function(){if(self.to){clearTimeout(self.to);}
+self.ws_sleep=500;self.ws_cnt=0;if(self.options.onWSConnect){self.options.onWSConnect(self);}
 var req;while(req=$.JsonRpcClient.q.pop()){self._ws_socket.send(req);}}}}
-return this._ws_socket?true:false;}
+return self._ws_socket?true:false;}
 $.JsonRpcClient.prototype._getSocket=function(onmessage_cb){if(this.options.socketUrl===null||!("WebSocket"in window))return null;this.connectSocket(onmessage_cb);return this._ws_socket;};$.JsonRpcClient.q=[];$.JsonRpcClient.prototype._wsCall=function(socket,request,success_cb,error_cb){var request_json=$.toJSON(request);if(socket.readyState<1){self=this;$.JsonRpcClient.q.push(request_json);}
 else{socket.send(request_json);}
 if('id'in request&&typeof success_cb!=='undefined'){this._ws_callbacks[request.id]={request:request_json,request_obj:request,success_cb:success_cb,error_cb:error_cb};}};$.JsonRpcClient.prototype._wsOnMessage=function(event){var response;try{response=$.parseJSON(event.data);if(typeof response==='object'&&'jsonrpc'in response&&response.jsonrpc==='2.0'){if('result'in response&&this._ws_callbacks[response.id]){var success_cb=this._ws_callbacks[response.id].success_cb;delete this._ws_callbacks[response.id];success_cb(response.result,this);return;}
@@ -102,7 +105,7 @@ verto.purge();}});if(verto.options.ringFile&&verto.options.tag){verto.ringer=$("
 verto.rpcClient.call('login',{});};$.verto.prototype.loginData=function(params){verto.options.login=params.login;verto.options.passwd=params.passwd;verto.rpcClient.loginData(params);};$.verto.prototype.logout=function(msg){var verto=this;verto.rpcClient.closeSocket();verto.purge();};$.verto.prototype.login=function(msg){var verto=this;verto.logout();verto.rpcClient.call('login',{});};$.verto.prototype.message=function(msg){var verto=this;var err=0;if(!msg.to){console.error("Missing To");err++;}
 if(!msg.body){console.error("Missing Body");err++;}
 if(err){return false;}
-verto.sendMethod("verto.info",{msg:msg});return true;};$.verto.prototype.processReply=function(method,success,e){var verto=this;var i;console.log("Response: "+method,success,e);switch(method){case"verto.subscribe":for(i in e.unauthorizedChannels){drop_bad(verto,e.unauthorizedChannels[i]);}
+verto.sendMethod("verto.info",{msg:msg});return true;};$.verto.prototype.processReply=function(method,success,e){var verto=this;var i;switch(method){case"verto.subscribe":for(i in e.unauthorizedChannels){drop_bad(verto,e.unauthorizedChannels[i]);}
 for(i in e.subscribedChannels){mark_ready(verto,e.subscribedChannels[i]);}
 break;case"verto.unsubscribe":break;}};$.verto.prototype.sendMethod=function(method,params){var verto=this;verto.rpcClient.call(method,params,function(e){verto.processReply(method,true,e);},function(e){verto.processReply(method,false,e);});};function do_sub(verto,channel,obj){}
 function drop_bad(verto,channel){console.error("drop unauthorized channel: "+channel);delete verto.eventSUBS[channel];}
@@ -148,7 +151,7 @@ if(la.onChange){la.onChange(la,{serno:serno,action:"bootObj",data:val,redraw:tru
 if(la.checkSerno(serno)){var redraw=la._add(key,val,index);if(la.onChange){la.onChange(la,{serno:serno,action:"add",index:index,key:key,data:val,redraw:redraw});}}};la.modify=function(serno,val,key,index){if(key===null||key===undefined){key=serno;}
 if(la.checkSerno(serno)){la._add(key,val,index);if(la.onChange){la.onChange(la,{serno:serno,action:"modify",key:key,data:val,index:index});}}};la.del=function(serno,key,index){if(key===null||key===undefined){key=serno;}
 if(la.checkSerno(serno)){if(index===null||index<0||index===undefined){index=la.indexOf(key);}
-var ok=la._del(key);if(ok&&la.onChange){la.onChange(la,{serno:serno,action:"del",key:key,index:index});}}};var eventHandler=function(v,e,la){var packet=e.data;console.error("READ:",packet);if(packet.name!=la.name){return;}
+var ok=la._del(key);if(ok&&la.onChange){la.onChange(la,{serno:serno,action:"del",key:key,index:index});}}};var eventHandler=function(v,e,la){var packet=e.data;if(packet.name!=la.name){return;}
 switch(packet.action){case"init":la.init(packet.wireSerno,packet.data,packet.hashKey,packet.arrIndex);break;case"bootObj":la.bootObj(packet.wireSerno,packet.data);break;case"add":la.add(packet.wireSerno,packet.data,packet.hashKey,packet.arrIndex);break;case"modify":if(!(packet.arrIndex||packet.hashKey)){console.error("Invalid Packet",packet);}else{la.modify(packet.wireSerno,packet.data,packet.hashKey,packet.arrIndex);}
 break;case"del":if(!(packet.arrIndex||packet.hashKey)){console.error("Invalid Packet",packet);}else{la.del(packet.wireSerno,packet.hashKey,packet.arrIndex);}
 break;case"clear":la.clear();break;case"reorder":la.reorder(packet.wireSerno,packet.order);break;default:if(la.checkSerno(packet.wireSerno)){if(la.onChange){la.onChange(la,{serno:packet.wireSerno,action:packet.action,data:packet.data});}}
@@ -165,7 +168,7 @@ try{switch(args.action){case"bootObj":if(!args.data){console.error("missing data
 dt.fnClearTable();dt.fnAddData(obj.asArray());dt.fnAdjustColumnSizing();break;case"add":if(!args.data){console.error("missing data");return;}
 if(args.redraw>-1){dt.fnClearTable();dt.fnAddData(obj.asArray());}else{dt.fnAddData(args.data);}
 dt.fnAdjustColumnSizing();break;case"modify":if(!args.data){return;}
-console.debug(args,index);dt.fnUpdate(args.data,index);dt.fnAdjustColumnSizing();break;case"del":dt.fnDeleteRow(index);dt.fnAdjustColumnSizing();break;case"clear":dt.fnClearTable();break;case"reorder":dt.fnClearTable();dt.fnAddData(obj.asArray());break;case"hide":jq.hide();break;case"show":jq.show();break;}}catch(err){console.error("ERROR: "+err);iserr++;}
+dt.fnUpdate(args.data,index);dt.fnAdjustColumnSizing();break;case"del":dt.fnDeleteRow(index);dt.fnAdjustColumnSizing();break;case"clear":dt.fnClearTable();break;case"reorder":dt.fnClearTable();dt.fnAddData(obj.asArray());break;case"hide":jq.hide();break;case"show":jq.show();break;}}catch(err){console.error("ERROR: "+err);iserr++;}
 if(iserr){obj.errs++;if(obj.errs<3){obj.bootstrap(obj.user_obj);}}else{obj.errs=0;}};la.onChange(la,{action:"init"});};var CONFMAN_SERNO=1;$.verto.confMan=function(verto,params){var confMan=this;conf
 confMan.params=$.extend({tableID:null,statusID:null,mainModID:null,dialog:null,hasVid:false,laData:null,onBroadcast:null,onLaChange:null,onLaRow:null},params);confMan.verto=verto;confMan.serno=CONFMAN_SERNO++;function genMainMod(jq){var play_id="play_"+confMan.serno;var stop_id="stop_"+confMan.serno;var recording_id="recording_"+confMan.serno;var rec_stop_id="recording_stop"+confMan.serno;var div_id="confman_"+confMan.serno;var html="<div id='"+div_id+"'><br>"+"<button class='ctlbtn' id='"+play_id+"'>Play</button>"+"<button class='ctlbtn' id='"+stop_id+"'>Stop</button>"+"<button class='ctlbtn' id='"+recording_id+"'>Record</button>"+"<button class='ctlbtn' id='"+rec_stop_id+"'>Record Stop</button>"
 +"<br><br></div>";jq.html(html);$("#"+play_id).click(function(){var file=prompt("Please enter file name","");confMan.modCommand("play",null,file);});$("#"+stop_id).click(function(){confMan.modCommand("stop",null,"all");});$("#"+recording_id).click(function(){var file=prompt("Please enter file name","");confMan.modCommand("recording",null,["start",file]);});$("#"+rec_stop_id).click(function(){confMan.modCommand("recording",null,["stop","all"]);});}
@@ -192,12 +195,12 @@ dialog.verto.rpcClient.call(method,obj,function(e){dialog.processReply(method,tr
 return false;}
 $.verto.dialog.prototype.setState=function(state){var dialog=this;if(dialog.state==$.verto.enum.state.ringing){dialog.stopRinging();}
 if(dialog.state==state||!checkStateChange(dialog.state,state)){console.error("Dialog "+dialog.callID+": INVALID state change from "+dialog.state.name+" to "+state.name);dialog.hangup();return false;}
-console.error("Dialog "+dialog.callID+": state change from "+dialog.state.name+" to "+state.name);dialog.lastState=dialog.state;dialog.state=state;if(!dialog.causeCode){dialog.causeCode=16;}
+console.info("Dialog "+dialog.callID+": state change from "+dialog.state.name+" to "+state.name);dialog.lastState=dialog.state;dialog.state=state;if(!dialog.causeCode){dialog.causeCode=16;}
 if(!dialog.cause){dialog.cause="NORMAL CLEARING";}
 if(dialog.callbacks.onDialogState){dialog.callbacks.onDialogState(this);}
 switch(dialog.state){case $.verto.enum.state.purge:dialog.setState($.verto.enum.state.destroy);break;case $.verto.enum.state.hangup:if(dialog.lastState.val>$.verto.enum.state.requesting.val&&dialog.lastState.val<$.verto.enum.state.hangup.val){dialog.sendMethod("verto.bye",{});}
 dialog.setState($.verto.enum.state.destroy);break;case $.verto.enum.state.destroy:delete verto.dialogs[dialog.callID];dialog.rtc.stop();break;}
-return true;};$.verto.dialog.prototype.processReply=function(method,success,e){var dialog=this;console.log("Response: "+method+" State:"+dialog.state.name,success,e);switch(method){case"verto.answer":case"verto.attach":if(success){dialog.setState($.verto.enum.state.active);}else{dialog.hangup();}
+return true;};$.verto.dialog.prototype.processReply=function(method,success,e){var dialog=this;switch(method){case"verto.answer":case"verto.attach":if(success){dialog.setState($.verto.enum.state.active);}else{dialog.hangup();}
 break;case"verto.invite":if(success){dialog.setState($.verto.enum.state.trying);}else{dialog.setState($.verto.enum.state.destroy);}
 break;case"verto.bye":dialog.hangup();break;case"verto.modify":if(e.holdState){if(e.holdState=="held"){if(dialog.state!=$.verto.enum.state.held){dialog.setState($.verto.enum.state.held);}}else if(e.holdState=="active"){if(dialog.state!=$.verto.enum.state.active){dialog.setState($.verto.enum.state.active);}}}
 if(success){}

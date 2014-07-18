@@ -554,6 +554,29 @@ static switch_ssize_t ws_write_json(jsock_t *jsock, cJSON **json, switch_bool_t 
 	return r;
 }
 
+static switch_status_t jsock_queue_event(jsock_t *jsock, cJSON **json)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	
+	if (switch_queue_trypush(jsock->event_queue, *json) == SWITCH_STATUS_SUCCESS) {
+		status = SWITCH_STATUS_SUCCESS;
+		if (jsock->lost_events) {
+			int le = jsock->lost_events;
+			jsock->lost_events = 0;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Lost %d json events!\n", le);
+		}
+	} else {
+		if (++jsock->lost_events > MAX_MISSED) {
+			jsock->drop++;
+		}
+		cJSON_Delete(*json);
+	}
+
+	*json = NULL;
+
+	return status;
+}
+
 
 static void write_event(const char *event_channel, jsock_t *use_jsock, cJSON *event)
 {
@@ -569,7 +592,8 @@ static void write_event(const char *event_channel, jsock_t *use_jsock, cJSON *ev
 				params = cJSON_Duplicate(event, 1);
 				cJSON_AddItemToObject(params, "eventSerno", cJSON_CreateNumber(np->serno++));
 				msg = jrpc_new_req("verto.event", NULL, &params);
-				ws_write_json(np->jsock, &msg, SWITCH_TRUE);
+				//ws_write_json(np->jsock, &msg, SWITCH_TRUE);
+				jsock_queue_event(np->jsock, &msg);
 			}
 		}
 	}
@@ -601,7 +625,8 @@ static void jsock_send_event(cJSON *event)
 		cJSON *msg = NULL, *params;
 		params = cJSON_Duplicate(event, 1);
 		msg = jrpc_new_req("verto.event", NULL, &params);
-		ws_write_json(use_jsock, &msg, SWITCH_TRUE); 
+		//ws_write_json(use_jsock, &msg, SWITCH_TRUE); 
+		jsock_queue_event(use_jsock, &msg);
 		switch_thread_rwlock_unlock(use_jsock->rwlock);
 		use_jsock = NULL;
 		return;
@@ -746,6 +771,7 @@ static void check_permissions(jsock_t *jsock, switch_xml_t x_user, cJSON *params
 			}
 		}
 	}
+
 
 	set_perm(allowed_methods, &jsock->allowed_methods);
 	set_perm(allowed_jsapi, &jsock->allowed_jsapi);
@@ -1186,6 +1212,19 @@ static switch_status_t process_input(jsock_t *jsock, uint8_t *data, switch_ssize
 	return status;
 }
 
+static void jsock_check_event_queue(jsock_t *jsock)
+{
+	void *pop;
+	int this_pass = switch_queue_size(jsock->event_queue);
+
+	switch_mutex_lock(jsock->write_mutex);
+	while(this_pass-- > 0 && switch_queue_trypop(jsock->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+		cJSON *json = (cJSON *) pop;
+		ws_write_json(jsock, &json, SWITCH_TRUE);
+	}
+	switch_mutex_unlock(jsock->write_mutex);
+}
+
 static void client_run(jsock_t *jsock)
 {
 
@@ -1199,43 +1238,31 @@ static void client_run(jsock_t *jsock)
 	}
 
 	while(jsock->profile->running) {
-		struct pollfd pfds[1];
-		int res;
-		
-		memset(&pfds[0], 0, sizeof(pfds[0]));
-
-		pfds[0].fd = jsock->client_socket;
-		pfds[0].events = POLLIN|POLLERR|POLLHUP|POLLRDNORM|POLLRDBAND|POLLPRI;
-
-		
-		if ((res = poll(pfds, 1, -1)) < 0) {
-			if (errno != EINTR) {
-				die("%s POLL FAILED\n", jsock->name);
-			}
-		}
-
-		if (res < 0) {
-			die("%s POLL ERROR\n", jsock->name);
-		}
+		int pflags = switch_wait_sock(jsock->client_socket, 50, SWITCH_POLL_READ | SWITCH_POLL_ERROR | SWITCH_POLL_HUP);
 
 		if (jsock->drop) {
 			die("%s Dropping Connection\n", jsock->name);
 		}
 
+		if (pflags < 0) {
+			if (errno != EINTR) {
+				die("%s POLL FAILED\n", jsock->name);
+			}
+		}
 
-		if (pfds[0].revents & POLLERR) {
+		if (pflags & SWITCH_POLL_ERROR) {
 			die("%s POLL ERROR\n", jsock->name);
 		}
 
-		if (pfds[0].revents & POLLHUP) {
+		if (pflags & SWITCH_POLL_HUP) {
 			die("%s POLL HANGUP DETECTED\n", jsock->name);
 		}
 
-		if (pfds[0].revents & POLLNVAL) {
+		if (pflags & SWITCH_POLL_INVALID) {
 			die("%s POLL INVALID SOCKET\n", jsock->name);
 		}
 
-		if (pfds[0].revents & POLLIN) {
+		if (pflags & SWITCH_POLL_READ) {
 			switch_ssize_t bytes;
 			ws_opcode_t oc;
 			uint8_t *data;
@@ -1257,6 +1284,8 @@ static void client_run(jsock_t *jsock)
 					switch_set_flag(jsock, JPFLAG_CHECK_ATTACH);
 				}
 			}
+		} else {
+			jsock_check_event_queue(jsock);
 		}
 	}
 
@@ -1266,6 +1295,18 @@ static void client_run(jsock_t *jsock)
 	ws_destroy(&jsock->ws);
 
 	return;
+}
+
+static void jsock_flush(jsock_t *jsock)
+{
+	void *pop;
+
+	switch_mutex_lock(jsock->write_mutex);
+	while(switch_queue_trypop(jsock->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+		cJSON *json = (cJSON *) pop;
+		cJSON_Delete(json);
+	}
+	switch_mutex_unlock(jsock->write_mutex);
 }
 
 static void *SWITCH_THREAD_FUNC client_thread(switch_thread_t *thread, void *obj)
@@ -1302,6 +1343,7 @@ static void *SWITCH_THREAD_FUNC client_thread(switch_thread_t *thread, void *obj
 	switch_event_destroy(&jsock->allowed_jsapi);
 	switch_event_destroy(&jsock->allowed_event_channels);
 
+	jsock_flush(jsock);
 
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Ending client thread.\n", jsock->name);
 	switch_thread_rwlock_wrlock(jsock->rwlock);
@@ -1772,7 +1814,8 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 					jmsg = jrpc_new_req("verto.display", tech_pvt->call_id, &params);
 					cJSON_AddItemToObject(params, "display_name", cJSON_CreateString(name));
 					cJSON_AddItemToObject(params, "display_number", cJSON_CreateString(number));
-					ws_write_json(jsock, &jmsg, SWITCH_TRUE);
+					//ws_write_json(jsock, &jmsg, SWITCH_TRUE);
+					jsock_queue_event(jsock, &jmsg);
 				}
 
 				switch_thread_rwlock_unlock(jsock->rwlock);
@@ -2709,7 +2752,8 @@ static switch_bool_t event_channel_check_auth(jsock_t *jsock, const char *event_
 			}
 		}
 
-		if (!(switch_event_get_header(jsock->allowed_event_channels, event_channel) || 
+		if ((!globals.enable_fs_events && (!strcasecmp(event_channel, "FSevent") || (main_event_channel && !strcasecmp(main_event_channel, "FSevent")))) || 
+			!(switch_event_get_header(jsock->allowed_event_channels, event_channel) || 
 			  (main_event_channel && switch_event_get_header(jsock->allowed_event_channels, main_event_channel)))) {
 			ok = SWITCH_FALSE;
 		}
@@ -3062,6 +3106,8 @@ static int start_jsock(verto_profile_t *profile, int sock)
 	td->pool = pool;
 
 	switch_mutex_init(&jsock->write_mutex, SWITCH_MUTEX_NESTED, jsock->pool);
+	switch_mutex_init(&jsock->filter_mutex, SWITCH_MUTEX_NESTED, jsock->pool);
+	switch_queue_create(&jsock->event_queue, MAX_QUEUE_LEN, jsock->pool);
 	switch_thread_rwlock_create(&jsock->rwlock, jsock->pool);
 	switch_thread_pool_launch_thread(&td);
 
@@ -3561,6 +3607,8 @@ static switch_status_t parse_config(const char *cf)
 				}
 			} else if (!strcasecmp(var, "enable-presence") && val) {
 				globals.enable_presence = switch_true(val);
+			} else if (!strcasecmp(var, "enable-fs-events") && val) {
+				globals.enable_fs_events = switch_true(val);
 			} else if (!strcasecmp(var, "detach-timeout-sec") && val) {
 				int tmp = atoi(val);
 				if (tmp > 0) {
@@ -3917,9 +3965,10 @@ static int verto_send_chat(const char *uid, const char *call_id, cJSON *msg)
 			jsock_t *jsock;
 
 			if ((jsock = get_jsock(tech_pvt->jsock_uuid))) {
-				if (ws_write_json(jsock, &msg, SWITCH_FALSE) <= 0) {
-					switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-				}
+				jsock_queue_event(jsock, &msg);
+				//if (ws_write_json(jsock, &msg, SWITCH_FALSE) <= 0) {
+				//	switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				//}
 				switch_thread_rwlock_unlock(jsock->rwlock);
 				done = 1;
 			}
@@ -3939,7 +3988,8 @@ static int verto_send_chat(const char *uid, const char *call_id, cJSON *msg)
 		
 		for(jsock = profile->jsock_head; jsock; jsock = jsock->next) {
 			if (!strcmp(uid, jsock->uid)) {
-				ws_write_json(jsock, &msg, SWITCH_FALSE);
+				//ws_write_json(jsock, &msg, SWITCH_FALSE);
+				jsock_queue_event(jsock, &msg);
 				hits++;
 			}
 		}
@@ -4351,6 +4401,10 @@ static void presence_event_handler(switch_event_t *event)
 	char *event_channel;
 	const char *presence_id = switch_event_get_header(event, "channel-presence-id");
 
+	if (!globals.running) {
+		return;
+	}
+
 	if (!globals.enable_presence || zstr(presence_id)) {
 		return;
 	}
@@ -4388,6 +4442,38 @@ static void presence_event_handler(switch_event_t *event)
 
 }
 
+static void event_handler(switch_event_t *event)
+{
+	cJSON *msg = NULL, *data = NULL;
+	char *event_channel;
+
+	if (!globals.enable_fs_events) {
+		return;
+	}
+
+	switch_event_serialize_json_obj(event, &data);
+
+	msg = cJSON_CreateObject();
+
+	if (event->event_id == SWITCH_EVENT_CUSTOM) {
+		const char *subclass = switch_event_get_header(event, "Event-Subclass");
+		event_channel = switch_mprintf("FSevent.%s::%s", switch_event_name(event->event_id), subclass);
+		switch_tolower_max(event_channel + 8);
+	} else {
+		event_channel = switch_mprintf("FSevent.%s", switch_event_name(event->event_id));
+		switch_tolower_max(event_channel + 8);
+	}
+	
+	cJSON_AddItemToObject(msg, "eventChannel", cJSON_CreateString(event_channel));
+	cJSON_AddItemToObject(msg, "data", data);
+
+	/* comment broadcasting globally and change to only within the module cos FS events are heavy */
+	//switch_event_channel_broadcast(event_channel, &msg, __FILE__, NO_EVENT_CHANNEL_ID);
+	verto_broadcast(event_channel, msg, __FILE__, NO_EVENT_CHANNEL_ID);cJSON_Delete(msg);
+
+	free(event_channel);
+
+}
 
 /* Macro expands to: switch_status_t mod_verto_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool) */
 SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
@@ -4403,6 +4489,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 	globals.pool = pool;
 	globals.ready = SIGUSR1;
 	globals.enable_presence = SWITCH_TRUE;
+	globals.enable_fs_events = SWITCH_FALSE;
 
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
 
@@ -4423,8 +4510,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 	globals.detach_timeout = 120;
 
 	
-	switch_event_bind(modname, SWITCH_EVENT_CHANNEL_CALLSTATE, SWITCH_EVENT_SUBCLASS_ANY, presence_event_handler, NULL);
-
 
 
 	memset(&json_GLOBALS, 0, sizeof(json_GLOBALS));
@@ -4462,6 +4547,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 
 	switch_core_register_secondary_recover_callback(modname, verto_recover_callback);
 
+	if (globals.enable_presence) {
+		switch_event_bind(modname, SWITCH_EVENT_CHANNEL_CALLSTATE, SWITCH_EVENT_SUBCLASS_ANY, presence_event_handler, NULL);
+	}
+
+	if (globals.enable_fs_events) {
+		if (switch_event_bind(modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+			return SWITCH_STATUS_GENERR;
+		}
+	}
+
 	run_profiles();
 
 	/* indicate that the module should continue to be loaded */
@@ -4478,6 +4574,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_verto_shutdown)
 
 	switch_event_channel_unbind(NULL, verto_broadcast);
 	switch_event_unbind_callback(presence_event_handler);
+	switch_event_unbind_callback(event_handler);
 
 	switch_core_unregister_secondary_recover_callback(modname);
 	do_shutdown();

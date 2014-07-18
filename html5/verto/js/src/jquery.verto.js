@@ -165,7 +165,7 @@
         var verto = this;
 	var i;
 
-        console.log("Response: " + method, success, e);
+        //console.log("Response: " + method, success, e);
 
         switch (method) {
         case "verto.subscribe":
@@ -864,7 +864,7 @@
         var eventHandler = function(v, e, la) {
             var packet = e.data;
 
-            console.error("READ:", packet);
+            //console.error("READ:", packet);
 
             if (packet.name != la.name) {
                 return;
@@ -1079,7 +1079,7 @@
                     if (!args.data) {
                         return;
                     }
-                    console.debug(args, index);
+                    //console.debug(args, index);
                     dt.fnUpdate(args.data, index);
                     dt.fnAdjustColumnSizing();
                     break;
@@ -1539,7 +1539,7 @@
             return false;
         }
 
-        console.error("Dialog " + dialog.callID + ": state change from " + dialog.state.name + " to " + state.name);
+        console.info("Dialog " + dialog.callID + ": state change from " + dialog.state.name + " to " + state.name);
 
         dialog.lastState = dialog.state;
         dialog.state = state;
@@ -1580,7 +1580,7 @@
     $.verto.dialog.prototype.processReply = function(method, success, e) {
         var dialog = this;
 
-        console.log("Response: " + method + " State:" + dialog.state.name, success, e);
+        //console.log("Response: " + method + " State:" + dialog.state.name, success, e);
 
         switch (method) {
 
