@@ -1,4 +1,13 @@
 # gitattributes
+*.h text eol=lf
+*.hxx text eol=lf
+*.hpp text eol=lf
+*.in text eol=lf
+*.c text eol=lf
+*.cxx text eol=lf
+*.cpp text eol=lf
+/libs/sofia-sip/libsofia-sip-ua/sip/sip_bad_mask text eol=lf
+*.txt text eol=lf
 *.exe -diff binary executable windows dfsg-nonfree debian-ignore
 *.wav -diff binary sound
 *.gif -diff binary image
