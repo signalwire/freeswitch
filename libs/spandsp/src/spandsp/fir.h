@@ -38,6 +38,8 @@
 #include "mmx.h"
 #endif
 
+#include "alloc.h"
+
 /*!
     16 bit integer FIR descriptor. This defines the working state for a single
     instance of an FIR filter using 16 bit integer coefficients.
