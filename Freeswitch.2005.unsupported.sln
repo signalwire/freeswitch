@@ -91,14 +91,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libteletone", "libs\libtele
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Languages", "Languages", "{0C808854-54D1-4230-BFF5-77B5FD905000}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey", "src\mod\languages\mod_spidermonkey\mod_spidermonkey.vcproj", "{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}"
-	ProjectSection(ProjectDependencies) = postProject
-		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
-		{F6C55D93-B927-4483-BB69-15AEF3DD2DFF} = {F6C55D93-B927-4483-BB69-15AEF3DD2DFF}
-		{87EE9DA4-DE1E-4448-8324-183C98DCA588} = {87EE9DA4-DE1E-4448-8324-183C98DCA588}
-		{204FA0DE-305D-4414-AE2E-F195A23F390D} = {204FA0DE-305D-4414-AE2E-F195A23F390D}
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ASR-TTS", "ASR-TTS", "{4CF6A6AC-07DE-4B9E-ABE1-7F98B64E0BB0}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_cepstral", "src\mod\asr_tts\mod_cepstral\mod_cepstral.vcproj", "{692F6330-4D87-4C82-81DF-40DB5892636E}"
@@ -208,8 +200,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "curllib", "libs\win32\curl\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xml", "libs\win32\apr-util\xml.vcproj", "{155844C3-EC5F-407F-97A4-A2DDADED9B2F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "js", "libs\win32\js\js.vcproj", "{204FA0DE-305D-4414-AE2E-F195A23F390D}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_sofia", "src\mod\endpoints\mod_sofia\mod_sofia.vcproj", "{0DF3ABD0-DDC0-4265-B778-07C66780979B}"
 	ProjectSection(ProjectDependencies) = postProject
 		{DF018947-0FFF-4EB3-BDEE-441DC81DA7A4} = {DF018947-0FFF-4EB3-BDEE-441DC81DA7A4}
@@ -243,37 +233,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_native_file", "src\mod\
 		{F6C55D93-B927-4483-BB69-15AEF3DD2DFF} = {F6C55D93-B927-4483-BB69-15AEF3DD2DFF}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_core_db", "src\mod\languages\mod_spidermonkey\mod_spidermonkey_core_db.vcproj", "{ACFFF684-4D19-4D48-AF12-88EA1D778BDF}"
-	ProjectSection(ProjectDependencies) = postProject
-		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F} = {1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}
-		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
-		{F6C55D93-B927-4483-BB69-15AEF3DD2DFF} = {F6C55D93-B927-4483-BB69-15AEF3DD2DFF}
-		{204FA0DE-305D-4414-AE2E-F195A23F390D} = {204FA0DE-305D-4414-AE2E-F195A23F390D}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_teletone", "src\mod\languages\mod_spidermonkey\mod_spidermonkey_teletone.vcproj", "{8F992C49-6C51-412F-B2A3-34EAB708EB65}"
-	ProjectSection(ProjectDependencies) = postProject
-		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F} = {1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}
-		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
-		{89385C74-5860-4174-9CAF-A39E7C48909C} = {89385C74-5860-4174-9CAF-A39E7C48909C}
-		{F6C55D93-B927-4483-BB69-15AEF3DD2DFF} = {F6C55D93-B927-4483-BB69-15AEF3DD2DFF}
-		{204FA0DE-305D-4414-AE2E-F195A23F390D} = {204FA0DE-305D-4414-AE2E-F195A23F390D}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libudns", "libs\win32\udns\libudns.vcproj", "{4043FC6A-9A30-4577-8AD5-9B233C9575D8}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_enum", "src\mod\applications\mod_enum\mod_enum.vcproj", "{71A967D5-0E99-4CEF-A587-98836EE6F2EF}"
 	ProjectSection(ProjectDependencies) = postProject
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 		{4043FC6A-9A30-4577-8AD5-9B233C9575D8} = {4043FC6A-9A30-4577-8AD5-9B233C9575D8}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_odbc", "src\mod\languages\mod_spidermonkey\mod_spidermonkey_odbc.vcproj", "{0A6B5EA5-6E9B-4A51-931F-ED25AA87B4DF}"
-	ProjectSection(ProjectDependencies) = postProject
-		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F} = {1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}
-		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
-		{F6C55D93-B927-4483-BB69-15AEF3DD2DFF} = {F6C55D93-B927-4483-BB69-15AEF3DD2DFF}
-		{204FA0DE-305D-4414-AE2E-F195A23F390D} = {204FA0DE-305D-4414-AE2E-F195A23F390D}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_xml_curl", "src\mod\xml_int\mod_xml_curl\mod_xml_curl.vcproj", "{AB91A099-7690-4ECF-8994-E458F4EA1ED4}"
@@ -365,13 +330,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_local_stream", "src\mod
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_socket", "src\mod\languages\mod_spidermonkey\mod_spidermonkey_socket.vcproj", "{028C7278-05D7-4E18-82FE-BE231B844F41}"
-	ProjectSection(ProjectDependencies) = postProject
-		{204FA0DE-305D-4414-AE2E-F195A23F390D} = {204FA0DE-305D-4414-AE2E-F195A23F390D}
-		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
-		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F} = {1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_voicemail", "src\mod\applications\mod_voicemail\mod_voicemail.vcproj", "{D7F1E3F2-A3F4-474C-8555-15122571AF52}"
 	ProjectSection(ProjectDependencies) = postProject
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
@@ -443,7 +401,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "autoload_configs", "autoloa
 		conf\autoload_configs\portaudio.conf.xml = conf\autoload_configs\portaudio.conf.xml
 		conf\autoload_configs\rss.conf.xml = conf\autoload_configs\rss.conf.xml
 		conf\autoload_configs\sofia.conf.xml = conf\autoload_configs\sofia.conf.xml
-		conf\autoload_configs\spidermonkey.conf.xml = conf\autoload_configs\spidermonkey.conf.xml
 		conf\autoload_configs\switch.conf.xml = conf\autoload_configs\switch.conf.xml
 		conf\autoload_configs\syslog.conf.xml = conf\autoload_configs\syslog.conf.xml
 		conf\autoload_configs\voicemail.conf.xml = conf\autoload_configs\voicemail.conf.xml
@@ -544,7 +501,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "autoload_configs", "autoloa
 		debug\conf\autoload_configs\portaudio.conf.xml = debug\conf\autoload_configs\portaudio.conf.xml
 		debug\conf\autoload_configs\rss.conf.xml = debug\conf\autoload_configs\rss.conf.xml
 		debug\conf\autoload_configs\sofia.conf.xml = debug\conf\autoload_configs\sofia.conf.xml
-		debug\conf\autoload_configs\spidermonkey.conf.xml = debug\conf\autoload_configs\spidermonkey.conf.xml
 		debug\conf\autoload_configs\switch.conf.xml = debug\conf\autoload_configs\switch.conf.xml
 		debug\conf\autoload_configs\syslog.conf.xml = debug\conf\autoload_configs\syslog.conf.xml
 		debug\conf\autoload_configs\voicemail.conf.xml = debug\conf\autoload_configs\voicemail.conf.xml
@@ -642,7 +598,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "autoload_configs", "autoloa
 		release\conf\autoload_configs\portaudio.conf.xml = release\conf\autoload_configs\portaudio.conf.xml
 		release\conf\autoload_configs\rss.conf.xml = release\conf\autoload_configs\rss.conf.xml
 		release\conf\autoload_configs\sofia.conf.xml = release\conf\autoload_configs\sofia.conf.xml
-		release\conf\autoload_configs\spidermonkey.conf.xml = release\conf\autoload_configs\spidermonkey.conf.xml
 		release\conf\autoload_configs\switch.conf.xml = release\conf\autoload_configs\switch.conf.xml
 		release\conf\autoload_configs\syslog.conf.xml = release\conf\autoload_configs\syslog.conf.xml
 		release\conf\autoload_configs\voicemail.conf.xml = release\conf\autoload_configs\voicemail.conf.xml
@@ -740,14 +695,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_voipcodecs", "src\mod\c
 		{401A40CD-5DB4-4E34-AC68-FA99E9FAC014} = {401A40CD-5DB4-4E34-AC68-FA99E9FAC014}
 		{1CBB0077-18C5-455F-801C-0A0CE7B0BBF5} = {1CBB0077-18C5-455F-801C-0A0CE7B0BBF5}
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey_curl", "src\mod\languages\mod_spidermonkey\mod_spidermonkey_curl.vcproj", "{2CCED6DC-26FF-40F2-9585-E9E1049A4599}"
-	ProjectSection(ProjectDependencies) = postProject
-		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F} = {1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}
-		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
-		{87EE9DA4-DE1E-4448-8324-183C98DCA588} = {87EE9DA4-DE1E-4448-8324-183C98DCA588}
-		{204FA0DE-305D-4414-AE2E-F195A23F390D} = {204FA0DE-305D-4414-AE2E-F195A23F390D}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_fsv", "src\mod\applications\mod_fsv\mod_fsv.vcproj", "{4AE157CF-F2DD-4B5D-A1EE-4AC173B4F9AC}"
@@ -923,15 +870,6 @@ Global
 		{89385C74-5860-4174-9CAF-A39E7C48909C}.Release|Win32.ActiveCfg = Release|Win32
 		{89385C74-5860-4174-9CAF-A39E7C48909C}.Release|Win32.Build.0 = Release|Win32
 		{89385C74-5860-4174-9CAF-A39E7C48909C}.Release|x64.ActiveCfg = Release|Win32
-		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.All|Win32.ActiveCfg = Release|Win32
-		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.All|Win32.Build.0 = Release|Win32
-		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.All|x64.ActiveCfg = Release|Win32
-		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.Debug|Win32.ActiveCfg = Debug|Win32
-		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.Debug|Win32.Build.0 = Debug|Win32
-		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.Debug|x64.ActiveCfg = Debug|Win32
-		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.Release|Win32.ActiveCfg = Release|Win32
-		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.Release|Win32.Build.0 = Release|Win32
-		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.Release|x64.ActiveCfg = Release|Win32
 		{692F6330-4D87-4C82-81DF-40DB5892636E}.All|Win32.ActiveCfg = Release|Win32
 		{692F6330-4D87-4C82-81DF-40DB5892636E}.All|Win32.Build.0 = Release|Win32
 		{692F6330-4D87-4C82-81DF-40DB5892636E}.All|x64.ActiveCfg = Release|Win32
@@ -1119,15 +1057,6 @@ Global
 		{155844C3-EC5F-407F-97A4-A2DDADED9B2F}.Release|Win32.ActiveCfg = Release|Win32
 		{155844C3-EC5F-407F-97A4-A2DDADED9B2F}.Release|Win32.Build.0 = Release|Win32
 		{155844C3-EC5F-407F-97A4-A2DDADED9B2F}.Release|x64.ActiveCfg = Release|Win32
-		{204FA0DE-305D-4414-AE2E-F195A23F390D}.All|Win32.ActiveCfg = Debug|Win32
-		{204FA0DE-305D-4414-AE2E-F195A23F390D}.All|Win32.Build.0 = Debug|Win32
-		{204FA0DE-305D-4414-AE2E-F195A23F390D}.All|x64.ActiveCfg = Debug|Win32
-		{204FA0DE-305D-4414-AE2E-F195A23F390D}.Debug|Win32.ActiveCfg = Debug|Win32
-		{204FA0DE-305D-4414-AE2E-F195A23F390D}.Debug|Win32.Build.0 = Debug|Win32
-		{204FA0DE-305D-4414-AE2E-F195A23F390D}.Debug|x64.ActiveCfg = Debug|Win32
-		{204FA0DE-305D-4414-AE2E-F195A23F390D}.Release|Win32.ActiveCfg = Release|Win32
-		{204FA0DE-305D-4414-AE2E-F195A23F390D}.Release|Win32.Build.0 = Release|Win32
-		{204FA0DE-305D-4414-AE2E-F195A23F390D}.Release|x64.ActiveCfg = Release|Win32
 		{0DF3ABD0-DDC0-4265-B778-07C66780979B}.All|Win32.ActiveCfg = Release|Win32
 		{0DF3ABD0-DDC0-4265-B778-07C66780979B}.All|Win32.Build.0 = Release|Win32
 		{0DF3ABD0-DDC0-4265-B778-07C66780979B}.All|x64.ActiveCfg = Release|Win32
@@ -1182,24 +1111,6 @@ Global
 		{9254C4B0-6F60-42B6-BB3A-36D63FC001C7}.Release|Win32.ActiveCfg = Release|Win32
 		{9254C4B0-6F60-42B6-BB3A-36D63FC001C7}.Release|Win32.Build.0 = Release|Win32
 		{9254C4B0-6F60-42B6-BB3A-36D63FC001C7}.Release|x64.ActiveCfg = Release|Win32
-		{ACFFF684-4D19-4D48-AF12-88EA1D778BDF}.All|Win32.ActiveCfg = Release|Win32
-		{ACFFF684-4D19-4D48-AF12-88EA1D778BDF}.All|Win32.Build.0 = Release|Win32
-		{ACFFF684-4D19-4D48-AF12-88EA1D778BDF}.All|x64.ActiveCfg = Release|Win32
-		{ACFFF684-4D19-4D48-AF12-88EA1D778BDF}.Debug|Win32.ActiveCfg = Debug|Win32
-		{ACFFF684-4D19-4D48-AF12-88EA1D778BDF}.Debug|Win32.Build.0 = Debug|Win32
-		{ACFFF684-4D19-4D48-AF12-88EA1D778BDF}.Debug|x64.ActiveCfg = Debug|Win32
-		{ACFFF684-4D19-4D48-AF12-88EA1D778BDF}.Release|Win32.ActiveCfg = Release|Win32
-		{ACFFF684-4D19-4D48-AF12-88EA1D778BDF}.Release|Win32.Build.0 = Release|Win32
-		{ACFFF684-4D19-4D48-AF12-88EA1D778BDF}.Release|x64.ActiveCfg = Release|Win32
-		{8F992C49-6C51-412F-B2A3-34EAB708EB65}.All|Win32.ActiveCfg = Release|Win32
-		{8F992C49-6C51-412F-B2A3-34EAB708EB65}.All|Win32.Build.0 = Release|Win32
-		{8F992C49-6C51-412F-B2A3-34EAB708EB65}.All|x64.ActiveCfg = Release|Win32
-		{8F992C49-6C51-412F-B2A3-34EAB708EB65}.Debug|Win32.ActiveCfg = Debug|Win32
-		{8F992C49-6C51-412F-B2A3-34EAB708EB65}.Debug|Win32.Build.0 = Debug|Win32
-		{8F992C49-6C51-412F-B2A3-34EAB708EB65}.Debug|x64.ActiveCfg = Debug|Win32
-		{8F992C49-6C51-412F-B2A3-34EAB708EB65}.Release|Win32.ActiveCfg = Release|Win32
-		{8F992C49-6C51-412F-B2A3-34EAB708EB65}.Release|Win32.Build.0 = Release|Win32
-		{8F992C49-6C51-412F-B2A3-34EAB708EB65}.Release|x64.ActiveCfg = Release|Win32
 		{4043FC6A-9A30-4577-8AD5-9B233C9575D8}.All|Win32.ActiveCfg = Release|Win32
 		{4043FC6A-9A30-4577-8AD5-9B233C9575D8}.All|Win32.Build.0 = Release|Win32
 		{4043FC6A-9A30-4577-8AD5-9B233C9575D8}.All|x64.ActiveCfg = Release|Win32
@@ -1218,15 +1129,6 @@ Global
 		{71A967D5-0E99-4CEF-A587-98836EE6F2EF}.Release|Win32.ActiveCfg = Release|Win32
 		{71A967D5-0E99-4CEF-A587-98836EE6F2EF}.Release|Win32.Build.0 = Release|Win32
 		{71A967D5-0E99-4CEF-A587-98836EE6F2EF}.Release|x64.ActiveCfg = Release|Win32
-		{0A6B5EA5-6E9B-4A51-931F-ED25AA87B4DF}.All|Win32.ActiveCfg = Release|Win32
-		{0A6B5EA5-6E9B-4A51-931F-ED25AA87B4DF}.All|Win32.Build.0 = Release|Win32
-		{0A6B5EA5-6E9B-4A51-931F-ED25AA87B4DF}.All|x64.ActiveCfg = Release|Win32
-		{0A6B5EA5-6E9B-4A51-931F-ED25AA87B4DF}.Debug|Win32.ActiveCfg = Debug|Win32
-		{0A6B5EA5-6E9B-4A51-931F-ED25AA87B4DF}.Debug|Win32.Build.0 = Debug|Win32
-		{0A6B5EA5-6E9B-4A51-931F-ED25AA87B4DF}.Debug|x64.ActiveCfg = Debug|Win32
-		{0A6B5EA5-6E9B-4A51-931F-ED25AA87B4DF}.Release|Win32.ActiveCfg = Release|Win32
-		{0A6B5EA5-6E9B-4A51-931F-ED25AA87B4DF}.Release|Win32.Build.0 = Release|Win32
-		{0A6B5EA5-6E9B-4A51-931F-ED25AA87B4DF}.Release|x64.ActiveCfg = Release|Win32
 		{AB91A099-7690-4ECF-8994-E458F4EA1ED4}.All|Win32.ActiveCfg = Release|Win32
 		{AB91A099-7690-4ECF-8994-E458F4EA1ED4}.All|Win32.Build.0 = Release|Win32
 		{AB91A099-7690-4ECF-8994-E458F4EA1ED4}.All|x64.ActiveCfg = Release|Win32
@@ -1299,15 +1201,6 @@ Global
 		{2CA40887-1622-46A1-A7F9-17FD7E7E545B}.Release|Win32.ActiveCfg = Release|Win32
 		{2CA40887-1622-46A1-A7F9-17FD7E7E545B}.Release|Win32.Build.0 = Release|Win32
 		{2CA40887-1622-46A1-A7F9-17FD7E7E545B}.Release|x64.ActiveCfg = Release|Win32
-		{028C7278-05D7-4E18-82FE-BE231B844F41}.All|Win32.ActiveCfg = Release|Win32
-		{028C7278-05D7-4E18-82FE-BE231B844F41}.All|Win32.Build.0 = Release|Win32
-		{028C7278-05D7-4E18-82FE-BE231B844F41}.All|x64.ActiveCfg = Release|Win32
-		{028C7278-05D7-4E18-82FE-BE231B844F41}.Debug|Win32.ActiveCfg = Debug|Win32
-		{028C7278-05D7-4E18-82FE-BE231B844F41}.Debug|Win32.Build.0 = Debug|Win32
-		{028C7278-05D7-4E18-82FE-BE231B844F41}.Debug|x64.ActiveCfg = Debug|Win32
-		{028C7278-05D7-4E18-82FE-BE231B844F41}.Release|Win32.ActiveCfg = Release|Win32
-		{028C7278-05D7-4E18-82FE-BE231B844F41}.Release|Win32.Build.0 = Release|Win32
-		{028C7278-05D7-4E18-82FE-BE231B844F41}.Release|x64.ActiveCfg = Release|Win32
 		{D7F1E3F2-A3F4-474C-8555-15122571AF52}.All|Win32.ActiveCfg = Release|Win32
 		{D7F1E3F2-A3F4-474C-8555-15122571AF52}.All|Win32.Build.0 = Release|Win32
 		{D7F1E3F2-A3F4-474C-8555-15122571AF52}.All|x64.ActiveCfg = Release|Win32
@@ -1434,15 +1327,6 @@ Global
 		{9EED03C8-8315-4214-8D13-8FF5FA46D93C}.Release|Win32.ActiveCfg = Release|Win32
 		{9EED03C8-8315-4214-8D13-8FF5FA46D93C}.Release|Win32.Build.0 = Release|Win32
 		{9EED03C8-8315-4214-8D13-8FF5FA46D93C}.Release|x64.ActiveCfg = Release|Win32
-		{2CCED6DC-26FF-40F2-9585-E9E1049A4599}.All|Win32.ActiveCfg = Release|Win32
-		{2CCED6DC-26FF-40F2-9585-E9E1049A4599}.All|Win32.Build.0 = Release|Win32
-		{2CCED6DC-26FF-40F2-9585-E9E1049A4599}.All|x64.ActiveCfg = Release|Win32
-		{2CCED6DC-26FF-40F2-9585-E9E1049A4599}.Debug|Win32.ActiveCfg = Debug|Win32
-		{2CCED6DC-26FF-40F2-9585-E9E1049A4599}.Debug|Win32.Build.0 = Debug|Win32
-		{2CCED6DC-26FF-40F2-9585-E9E1049A4599}.Debug|x64.ActiveCfg = Debug|Win32
-		{2CCED6DC-26FF-40F2-9585-E9E1049A4599}.Release|Win32.ActiveCfg = Release|Win32
-		{2CCED6DC-26FF-40F2-9585-E9E1049A4599}.Release|Win32.Build.0 = Release|Win32
-		{2CCED6DC-26FF-40F2-9585-E9E1049A4599}.Release|x64.ActiveCfg = Release|Win32
 		{4AE157CF-F2DD-4B5D-A1EE-4AC173B4F9AC}.All|Win32.ActiveCfg = Release|Win32
 		{4AE157CF-F2DD-4B5D-A1EE-4AC173B4F9AC}.All|Win32.Build.0 = Release|Win32
 		{4AE157CF-F2DD-4B5D-A1EE-4AC173B4F9AC}.All|x64.ActiveCfg = Release|Win32
@@ -1638,7 +1522,6 @@ Global
 		{3D0370CA-BED2-4657-A475-32375CBCB6E4} = {EB910B0D-F27D-4B62-B67B-DE834C99AC5B}
 		{87EE9DA4-DE1E-4448-8324-183C98DCA588} = {EB910B0D-F27D-4B62-B67B-DE834C99AC5B}
 		{155844C3-EC5F-407F-97A4-A2DDADED9B2F} = {EB910B0D-F27D-4B62-B67B-DE834C99AC5B}
-		{204FA0DE-305D-4414-AE2E-F195A23F390D} = {EB910B0D-F27D-4B62-B67B-DE834C99AC5B}
 		{70A49BC2-7500-41D0-B75D-EDCC5BE987A0} = {EB910B0D-F27D-4B62-B67B-DE834C99AC5B}
 		{DF018947-0FFF-4EB3-BDEE-441DC81DA7A4} = {EB910B0D-F27D-4B62-B67B-DE834C99AC5B}
 		{4043FC6A-9A30-4577-8AD5-9B233C9575D8} = {EB910B0D-F27D-4B62-B67B-DE834C99AC5B}
@@ -1655,12 +1538,6 @@ Global
 		{1CBB0077-18C5-455F-801C-0A0CE7B0BBF5} = {EB910B0D-F27D-4B62-B67B-DE834C99AC5B}
 		{DEE932AB-5911-4700-9EEB-8C7090A0A330} = {EB910B0D-F27D-4B62-B67B-DE834C99AC5B}
 		{329A6FA0-0FCC-4435-A950-E670AEFA9838} = {EB910B0D-F27D-4B62-B67B-DE834C99AC5B}
-		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F} = {0C808854-54D1-4230-BFF5-77B5FD905000}
-		{ACFFF684-4D19-4D48-AF12-88EA1D778BDF} = {0C808854-54D1-4230-BFF5-77B5FD905000}
-		{8F992C49-6C51-412F-B2A3-34EAB708EB65} = {0C808854-54D1-4230-BFF5-77B5FD905000}
-		{0A6B5EA5-6E9B-4A51-931F-ED25AA87B4DF} = {0C808854-54D1-4230-BFF5-77B5FD905000}
-		{028C7278-05D7-4E18-82FE-BE231B844F41} = {0C808854-54D1-4230-BFF5-77B5FD905000}
-		{2CCED6DC-26FF-40F2-9585-E9E1049A4599} = {0C808854-54D1-4230-BFF5-77B5FD905000}
 		{7B077E7F-1BE7-4291-AB86-55E527B25CAC} = {0C808854-54D1-4230-BFF5-77B5FD905000}
 		{692F6330-4D87-4C82-81DF-40DB5892636E} = {4CF6A6AC-07DE-4B9E-ABE1-7F98B64E0BB0}
 		{1C453396-D912-4213-89FD-9B489162B7B5} = {A7AB4405-FDB7-4853-9FBB-1516B1C3D80A}
