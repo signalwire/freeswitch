@@ -827,3 +827,4 @@ unimrcp/build/compile
 /sqlite-*.zip
 /sqlite-*/
 /ldns/
+/portaudio/
