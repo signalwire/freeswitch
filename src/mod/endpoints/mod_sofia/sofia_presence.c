@@ -3921,7 +3921,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 								 proto, from_user, from_host, to_user, to_host, profile->presence_hosts ? profile->presence_hosts : "",
 								 event, contact_str, call_id, full_from, full_via,
 								 (long) switch_epoch_time_now(NULL) + exp_delta,
-								 full_agent, accept, profile->name, mod_sofia_globals.hostname,
+								 full_agent, accept_header, profile->name, mod_sofia_globals.hostname,
 								 np.network_port, np.network_ip, orig_proto, full_to, use_to_tag);
 
 			switch_assert(sql != NULL);
