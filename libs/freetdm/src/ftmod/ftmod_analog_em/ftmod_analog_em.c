@@ -178,8 +178,7 @@ static ftdm_status_t ftdm_analog_em_sig_write(ftdm_channel_t *ftdmchan, void *da
 	ftdm_analog_em_data_t *analog_data = ftdmchan->span->signal_data;
 	if (ftdmchan->state == FTDM_CHANNEL_STATE_PROGRESS_MEDIA
 	    && analog_data->immediate_ringback
-	    && ftdmchan->call_data) {
-		/* DO NOT USE ftdmchan->call_data, as is a dummy non-null pointer */
+	    && ftdm_test_sflag(ftdmchan, FTDM_ANALOG_EM_LOCAL_WRITE)) {
 		/* ringback is being played in the analog thread, ignore user data for now */
 		return FTDM_BREAK;
 	}
@@ -283,7 +282,7 @@ static FIO_SPAN_GET_SIG_STATUS_FUNCTION(analog_em_get_span_sig_status)
 	return FTDM_SUCCESS;
 }
 
-static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(analog_em_set_channel_sig_status)
+static ftdm_status_t analog_em_set_channel_sig_status_ex(ftdm_channel_t *ftdmchan, ftdm_signaling_status_t status, ftdm_bool_t remote)
 {
 	switch (status) {
 	case FTDM_SIG_STATE_DOWN:
@@ -299,17 +298,30 @@ static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(analog_em_set_channel_sig_status)
 			}
 			ftdm_analog_set_chan_sig_status(ftdmchan, FTDM_SIG_STATE_SUSPENDED);
 		}
+		if (remote) {
+			ftdm_set_sflag(ftdmchan, FTDM_ANALOG_EM_REMOTE_SUSPEND);
+		} else {
+			ftdm_set_sflag(ftdmchan, FTDM_ANALOG_EM_LOCAL_SUSPEND);
+		}
 		break;
 	case FTDM_SIG_STATE_UP:
 		if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_SUSPENDED)) {
-			int cas_bits = 0x00;
-			ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_SUSPENDED);
-			ftdm_channel_command(ftdmchan, FTDM_COMMAND_SET_CAS_BITS, &cas_bits);
-			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OFFHOOK)) {
-				ftdm_channel_command(ftdmchan, FTDM_COMMAND_ONHOOK, NULL);
+			if (remote) {
+				ftdm_clear_sflag(ftdmchan, FTDM_ANALOG_EM_REMOTE_SUSPEND);
+			} else {
+				ftdm_clear_sflag(ftdmchan, FTDM_ANALOG_EM_LOCAL_SUSPEND);
 			}
-			if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_IN_ALARM)) {
-				ftdm_analog_set_chan_sig_status(ftdmchan, FTDM_SIG_STATE_UP);
+			if (!ftdm_test_sflag(ftdmchan, FTDM_ANALOG_EM_REMOTE_SUSPEND) &&
+				!ftdm_test_sflag(ftdmchan, FTDM_ANALOG_EM_LOCAL_SUSPEND)) {
+				int cas_bits = 0x00;
+				ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_SUSPENDED);
+				ftdm_channel_command(ftdmchan, FTDM_COMMAND_SET_CAS_BITS, &cas_bits);
+				if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OFFHOOK)) {
+					ftdm_channel_command(ftdmchan, FTDM_COMMAND_ONHOOK, NULL);
+				}
+				if (!ftdm_test_flag(ftdmchan, FTDM_CHANNEL_IN_ALARM)) {
+					ftdm_analog_set_chan_sig_status(ftdmchan, FTDM_SIG_STATE_UP);
+				}
 			}
 		}
 		break;
@@ -318,6 +330,11 @@ static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(analog_em_set_channel_sig_status)
 		return FTDM_FAIL;
 	}
 	return FTDM_SUCCESS;
+}
+
+static FIO_CHANNEL_SET_SIG_STATUS_FUNCTION(analog_em_set_channel_sig_status)
+{
+	return analog_em_set_channel_sig_status_ex(ftdmchan, status, FTDM_FALSE);
 }
 
 static FIO_SPAN_SET_SIG_STATUS_FUNCTION(analog_em_set_span_sig_status)
@@ -335,7 +352,7 @@ static FIO_SPAN_SET_SIG_STATUS_FUNCTION(analog_em_set_span_sig_status)
 		ftdm_channel_t *fchan = ftdm_iterator_current(citer);
 		/* we set channel's state through analog_em_set_channel_sig_status(), since it already takes care of notifying the user when appropriate */
 		ftdm_channel_lock(fchan);
-		if ((analog_em_set_channel_sig_status(fchan, status)) != FTDM_SUCCESS) {
+		if ((analog_em_set_channel_sig_status_ex(fchan, status, FTDM_FALSE)) != FTDM_SUCCESS) {
 			ftdm_log_chan(fchan, FTDM_LOG_ERROR, "Failed to set signaling status to %s\n", ftdm_signaling_status2str(status));
 		}
 		ftdm_channel_unlock(fchan);
@@ -496,6 +513,7 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 	uint32_t cas_hangup = 0;
 	int cas_answer_ms = 500;
 	int cas_hangup_ms = 500;
+	ftdm_bool_t busy_timeout = FTDM_FALSE;
 	FILE *ringback_f = NULL;
 	ftdm_bool_t digits_sent = FTDM_FALSE;
 
@@ -762,6 +780,7 @@ static void *ftdm_analog_em_channel_run(ftdm_thread_t *me, void *obj)
 						indicate = 1;
 					} else {
 						ftdm_set_state_locked(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
+						busy_timeout = FTDM_TRUE;
 					}
 				}
 				break;
@@ -925,17 +944,25 @@ read_try:
 			}
 		}
 
-		/* we must lock the channel and make sure we let our own generated audio thru (ftdmchan->call_data is tested in the ftdm_analog_em_sig_write handler)*/
+		/* we must lock the channel and make sure we let our own generated audio thru (FTDM_ANALOG_EM_LOCAL_WRITE is tested in the ftdm_analog_em_sig_write handler)*/
 		ftdm_channel_lock(ftdmchan);
-		ftdmchan->call_data = (void *)0xFF; /* ugh! */
+		ftdm_set_sflag(ftdmchan, FTDM_ANALOG_EM_LOCAL_WRITE);
 		ftdm_channel_write(ftdmchan, frame, sizeof(frame), &rlen);
-		ftdmchan->call_data = NULL;
+		ftdm_clear_sflag(ftdmchan, FTDM_ANALOG_EM_LOCAL_WRITE);
 		ftdm_channel_unlock(ftdmchan);
 	}
 
  done:
 
 	ftdm_channel_command(ftdmchan, FTDM_COMMAND_ONHOOK, NULL);
+	if (busy_timeout) {
+		ftdm_channel_command(ftdmchan, FTDM_COMMAND_GET_CAS_BITS, &cas_bits);
+		if (cas_bits == 0XF) {
+			/* the remote end never sent any digits, neither moved to onhook, let's stay suspended */
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Moving channel to suspended after timeout, remote end still offhook\n");
+			analog_em_set_channel_sig_status_ex(ftdmchan, FTDM_SIG_STATE_SUSPENDED, FTDM_TRUE);
+		}
+	}
 	
 	closed_chan = ftdmchan;
 	ftdm_channel_close(&ftdmchan);
@@ -983,6 +1010,11 @@ static __inline__ ftdm_status_t process_event(ftdm_span_t *span, ftdm_event_t *e
 
 	ftdm_mutex_lock(event->channel->mutex);
 	locked++;
+
+	if (event->enum_id == FTDM_OOB_ONHOOK && ftdm_test_sflag(event->channel, FTDM_ANALOG_EM_REMOTE_SUSPEND)) {
+		/* We've got remote suspend, now we're back on hook, lift the remote suspend status */
+		analog_em_set_channel_sig_status_ex(event->channel, FTDM_SIG_STATE_UP, FTDM_TRUE);
+	}
 
 	if (ftdm_test_flag(event->channel, FTDM_CHANNEL_SUSPENDED)) {
 		ftdm_log(FTDM_LOG_WARNING, "Ignoring event %s on channel %d:%d in state %s, channel is suspended\n",
