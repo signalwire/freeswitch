@@ -3904,12 +3904,13 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		} else {
 			sip_accept_t *ap = sip->sip_accept;
-			char accept[256] = "";
+			char accept_header[256] = "";
 
 			sub_state = nua_substate_active;
 
 			while (ap) {
-				switch_snprintf(accept + strlen(accept), sizeof(accept) - strlen(accept), "%s%s ", ap->ac_type, ap->ac_next ? "," : "");
+				switch_snprintf(accept_header + strlen(accept_header), sizeof(accept_header) - strlen(accept_header),
+								"%s%s ", ap->ac_type, ap->ac_next ? "," : "");
 				ap = ap->ac_next;
 			}
 

@@ -1617,6 +1617,8 @@ static void our_sofia_event_callback(nua_event_t event,
 				const char *call_id, *full_from, *full_to, *full_via, *from_user = NULL, *from_host = NULL, *to_user, *to_host, *full_agent;
 				char to_tag[13] = "";
 				char *event_str = "refer";
+				sip_accept_t *ap = sip->sip_accept;
+				char accept_header[256] = "";
 
 				np.fs_path = 1;
 				contact_str = sofia_glue_gen_contact_str(profile, sip, nh, de, &np);
@@ -1644,6 +1646,12 @@ static void our_sofia_event_callback(nua_event_t event,
 				} else {
 					to_user = "n/a";
 					to_host = "n/a";
+				}
+				
+				while (ap) {
+					switch_snprintf(accept_header + strlen(accept_header), sizeof(accept_header) - strlen(accept_header),
+									"%s%s ", ap->ac_type, ap->ac_next ? "," : "");
+					ap = ap->ac_next;
 				}
 
 				sql = switch_mprintf("insert into sip_subscriptions "
