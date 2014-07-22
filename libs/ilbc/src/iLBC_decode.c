@@ -188,7 +188,7 @@ static void Decode(ilbc_decode_state_t *iLBCdec_inst,  /* (i/o) the decoder stat
 
         /* setup memory */
         memset(mem, 0, (CB_MEML - iLBCdec_inst->state_short_len)*sizeof(float));
-        memcpy(mem + CB_MEML - iLBCdec_inst->state_short_len,
+        memcpy(&mem[CB_MEML - iLBCdec_inst->state_short_len],
                decresidual + start_pos,
                iLBCdec_inst->state_short_len*sizeof(float));
 
@@ -239,8 +239,8 @@ static void Decode(ilbc_decode_state_t *iLBCdec_inst,  /* (i/o) the decoder stat
     if (Nfor > 0)
     {
         /* Setup memory */
-        memset(mem, 0, (CB_MEML-STATE_LEN)*sizeof(float));
-        memcpy(mem + CB_MEML - STATE_LEN, decresidual + (start - 1)*SUBL, STATE_LEN*sizeof(float));
+        memset(mem, 0, (CB_MEML - STATE_LEN)*sizeof(float));
+        memcpy(&mem[CB_MEML - STATE_LEN], decresidual + (start - 1)*SUBL, STATE_LEN*sizeof(float));
 
         /* Loop over sub-frames to encode */
         for (subframe = 0;  subframe < Nfor;  subframe++)
@@ -255,10 +255,10 @@ static void Decode(ilbc_decode_state_t *iLBCdec_inst,  /* (i/o) the decoder stat
                          CB_NSTAGES);
 
             /* Update memory */
-            memcpy(mem, mem + SUBL, (CB_MEML - SUBL)*sizeof(float));
-            memcpy(mem + CB_MEML-SUBL,
-                   &decresidual[(start + 1 + subframe)*SUBL],
-                   SUBL*sizeof(float));
+            memmove(mem, &mem[SUBL], (CB_MEML - SUBL)*sizeof(float));
+            memmove(&mem[CB_MEML - SUBL],
+                    &decresidual[(start + 1 + subframe)*SUBL],
+                    SUBL*sizeof(float));
 
             subcount++;
         }
@@ -291,10 +291,10 @@ static void Decode(ilbc_decode_state_t *iLBCdec_inst,  /* (i/o) the decoder stat
                          CB_NSTAGES);
 
             /* Update memory */
-            memcpy(mem, mem + SUBL, (CB_MEML - SUBL)*sizeof(float));
-            memcpy(mem + CB_MEML - SUBL,
-                   &reverseDecresidual[subframe*SUBL],
-                   SUBL*sizeof(float));
+            memmove(mem, &mem[SUBL], (CB_MEML - SUBL)*sizeof(float));
+            memmove(&mem[CB_MEML - SUBL],
+                    &reverseDecresidual[subframe*SUBL],
+                    SUBL*sizeof(float));
 
             subcount++;
         }
@@ -332,7 +332,6 @@ static void ilbc_decode_frame(ilbc_decode_state_t *iLBCdec_inst, /* (i/o) the de
     float cc;
     float maxcc;
     int idxVec[STATE_LEN];
-    int check;
     int gain_index[NASUB_MAX*CB_NSTAGES];
     int extra_gain_index[CB_NSTAGES];
     int cb_index[CB_NSTAGES*NASUB_MAX];
@@ -452,7 +451,7 @@ static void ilbc_decode_frame(ilbc_decode_state_t *iLBCdec_inst, /* (i/o) the de
 
             /* Decode the LSF */
             SimplelsfDEQ(lsfdeq, lsf_i, iLBCdec_inst->lpc_n);
-            check = LSF_check(lsfdeq, ILBC_LPC_FILTERORDER, iLBCdec_inst->lpc_n);
+            LSF_check(lsfdeq, ILBC_LPC_FILTERORDER, iLBCdec_inst->lpc_n);
             DecoderInterpolateLSF(syntdenum, weightdenum, lsfdeq, ILBC_LPC_FILTERORDER, iLBCdec_inst);
 
             Decode(iLBCdec_inst,
@@ -499,7 +498,7 @@ static void ilbc_decode_frame(ilbc_decode_state_t *iLBCdec_inst, /* (i/o) the de
 
         order_plus_one = ILBC_LPC_FILTERORDER + 1;
         for (i = 0;  i < iLBCdec_inst->nsub;  i++)
-            memcpy(syntdenum + (i*order_plus_one), PLClpc, order_plus_one*sizeof(float));
+            memcpy(&syntdenum[i*order_plus_one], PLClpc, order_plus_one*sizeof(float));
     }
 
     if (iLBCdec_inst->use_enhancer == 1)

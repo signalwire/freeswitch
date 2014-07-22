@@ -195,7 +195,7 @@ static int ilbc_encode_frame(ilbc_encode_state_t *iLBCenc_inst,     /* (i/o) the
         /* Setup memory */
 
         memset(mem, 0, (CB_MEML - iLBCenc_inst->state_short_len)*sizeof(float));
-        memcpy(mem + CB_MEML - iLBCenc_inst->state_short_len, decresidual + start_pos, iLBCenc_inst->state_short_len*sizeof(float));
+        memcpy(&mem[CB_MEML - iLBCenc_inst->state_short_len], &decresidual[start_pos], iLBCenc_inst->state_short_len*sizeof(float));
         memset(weightState, 0, ILBC_LPC_FILTERORDER*sizeof(float));
 
         /* Encode sub-frames */
@@ -272,7 +272,7 @@ static int ilbc_encode_frame(ilbc_encode_state_t *iLBCenc_inst,     /* (i/o) the
     {
         /* Setup memory */
         memset(mem, 0, (CB_MEML-STATE_LEN)*sizeof(float));
-        memcpy(mem + CB_MEML - STATE_LEN, decresidual + (start - 1)*SUBL, STATE_LEN*sizeof(float));
+        memcpy(&mem[CB_MEML - STATE_LEN], decresidual + (start - 1)*SUBL, STATE_LEN*sizeof(float));
         memset(weightState, 0, ILBC_LPC_FILTERORDER*sizeof(float));
 
         /* Loop over sub-frames to encode */
@@ -301,8 +301,8 @@ static int ilbc_encode_frame(ilbc_encode_state_t *iLBCenc_inst,     /* (i/o) the
                          CB_NSTAGES);
 
             /* Update memory */
-            memcpy(mem, mem+SUBL, (CB_MEML-SUBL)*sizeof(float));
-            memcpy(mem + CB_MEML - SUBL, &decresidual[(start + 1 + subframe)*SUBL], SUBL*sizeof(float));
+            memmove(mem, &mem[SUBL], (CB_MEML-SUBL)*sizeof(float));
+            memmove(&mem[CB_MEML - SUBL], &decresidual[(start + 1 + subframe)*SUBL], SUBL*sizeof(float));
             memset(weightState, 0, ILBC_LPC_FILTERORDER*sizeof(float));
             subcount++;
         }
@@ -357,10 +357,10 @@ static int ilbc_encode_frame(ilbc_encode_state_t *iLBCenc_inst,     /* (i/o) the
                          CB_NSTAGES);
 
             /* Update memory */
-            memcpy(mem, mem + SUBL, (CB_MEML - SUBL)*sizeof(float));
-            memcpy(mem + CB_MEML - SUBL,
-                   &reverseDecresidual[subframe*SUBL],
-                   SUBL*sizeof(float));
+            memmove(mem, &mem[SUBL], (CB_MEML - SUBL)*sizeof(float));
+            memmove(&mem[CB_MEML - SUBL],
+                    &reverseDecresidual[subframe*SUBL],
+                    SUBL*sizeof(float));
             memset(weightState, 0, ILBC_LPC_FILTERORDER*sizeof(float));
 
             subcount++;

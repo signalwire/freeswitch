@@ -400,7 +400,7 @@ static void super_tone_chunk(super_tone_rx_state_t *s)
                                     s->segments[9].f2,
                                     s->segments[9].min_duration*SUPER_TONE_BINS/8);
             }
-            memcpy (&s->segments[0], &s->segments[1], 9*sizeof(s->segments[0]));
+            memmove(&s->segments[0], &s->segments[1], 9*sizeof(s->segments[0]));
             s->segments[9].f1 = k1;
             s->segments[9].f2 = k2;
             s->segments[9].min_duration = 1;
