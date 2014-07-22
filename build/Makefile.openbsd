@@ -27,7 +27,7 @@ freeswitch.git/bootstrap.sh: has-git
 	test -d freeswitch.git || git clone https://stash.freeswitch.org/scm/fs/freeswitch.git freeswitch.git
 
 install:
-	cd freeswitch.git && AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.14 LIBTOOL=/usr/local/bin/libtoolize gmake install
+	cd freeswitch.git && AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.14 LIBTOOL=/usr/local/bin/libtoolize gmake install cd-sounds-install cd-moh-install
 
 clean:
 	@rm -rf openssl* ldns* jpeg* pcre* perl* pkg-config* speex* sqlite* libedit* curl* *~

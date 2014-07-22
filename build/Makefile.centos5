@@ -32,7 +32,7 @@ freeswitch.git/bootstrap.sh: has-git
 	test -d freeswitch.git || git clone https://stash.freeswitch.org/scm/fs/freeswitch.git  freeswitch.git
 
 install: freeswitch
-	cd freeswitch.git && make install
+	cd freeswitch.git && make install cd-sounds-install cd-moh-install
 
 install-git: .done
 .done:
