@@ -677,9 +677,9 @@ static void gen_arc(conference_obj_t *conference, switch_stream_handle_t *stream
 
 	offset = 180 / (count - 1);
 
-	radius = 2.0f;//3.0f; //(float)count / 2.0f; //3.0f;
+	radius = 1.0f;
 
-	pos = -90.0f;// + (offset / 2.0f);
+	pos = -90.0f;
 	
 	for (member = conference->members; member; member = member->next) {
 
