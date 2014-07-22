@@ -156,6 +156,11 @@ Description: Open Settlement Protocol
  This module adds support for the Open Settlement Protocol (OSP).
 Build-Depends: libosptk3-dev
 
+Module: applications/mod_prefix
+Description: Longest prefix match search
+ This module provides a data store with fast lookups by the longest
+ prefix match (LPM) rule.
+
 Module: applications/mod_rad_auth
 Description: RADIUS AA
  This module implements RADIUS Authentication and Authorization.

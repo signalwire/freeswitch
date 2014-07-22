@@ -1,0 +1,5 @@
+<configuration name="prefix.conf">
+  <tables>
+    <table name="rates" file="/var/lib/freeswitch/prefix/rates.json"/>
+  </tables>
+</configuration>
