@@ -39,6 +39,9 @@ complex cadence patterns.
 
 */
 
+#define SUPER_TONE_TX_MAX_LEVELS    4
+#define SUPER_TONE_TX_MAX_TONES     4
+
 typedef struct super_tone_tx_step_s super_tone_tx_step_t;
 
 typedef struct super_tone_tx_state_s super_tone_tx_state_t;
