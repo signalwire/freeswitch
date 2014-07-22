@@ -46,46 +46,6 @@
  *  Initiation of encoder instance.
  *---------------------------------------------------------------*/
 
-ilbc_encode_state_t *ilbc_encode_init(ilbc_encode_state_t *iLBCenc_inst, /* (i/o) Encoder instance */
-                                      int mode)                          /* (i) frame size mode */
-{
-    iLBCenc_inst->mode = mode;
-    if (mode == 30)
-    {
-        iLBCenc_inst->blockl = ILBC_BLOCK_LEN_30MS;
-        iLBCenc_inst->nsub = NSUB_30MS;
-        iLBCenc_inst->nasub = NASUB_30MS;
-        iLBCenc_inst->lpc_n = LPC_N_30MS;
-        iLBCenc_inst->no_of_bytes = ILBC_NO_OF_BYTES_30MS;
-        iLBCenc_inst->state_short_len = STATE_SHORT_LEN_30MS;
-        /* ULP init */
-        iLBCenc_inst->ULP_inst = &ULP_30msTbl;
-    }
-    else if (mode == 20)
-    {
-        iLBCenc_inst->blockl = ILBC_BLOCK_LEN_20MS;
-        iLBCenc_inst->nsub = NSUB_20MS;
-        iLBCenc_inst->nasub = NASUB_20MS;
-        iLBCenc_inst->lpc_n = LPC_N_20MS;
-        iLBCenc_inst->no_of_bytes = ILBC_NO_OF_BYTES_20MS;
-        iLBCenc_inst->state_short_len = STATE_SHORT_LEN_20MS;
-        /* ULP init */
-        iLBCenc_inst->ULP_inst = &ULP_20msTbl;
-    }
-    else
-    {
-        return NULL;
-    }
-
-    memset((*iLBCenc_inst).anaMem, 0, ILBC_LPC_FILTERORDER*sizeof(float));
-    memcpy((*iLBCenc_inst).lsfold, lsfmeanTbl, ILBC_LPC_FILTERORDER*sizeof(float));
-    memcpy((*iLBCenc_inst).lsfdeqold, lsfmeanTbl, ILBC_LPC_FILTERORDER*sizeof(float));
-    memset((*iLBCenc_inst).lpc_buffer, 0, (LPC_LOOKBACK + ILBC_BLOCK_LEN_MAX)*sizeof(float));
-    memset((*iLBCenc_inst).hpimem, 0, 4*sizeof(float));
-
-    return iLBCenc_inst;
-}
-
 /*----------------------------------------------------------------*
  *  main encoder function
  *---------------------------------------------------------------*/
@@ -215,7 +175,7 @@ static int ilbc_encode_frame(ilbc_encode_state_t *iLBCenc_inst,     /* (i/o) the
         iCBConstruct(&decresidual[start_pos + iLBCenc_inst->state_short_len],
                      extra_cb_index,
                      extra_gain_index,
-                     mem + CB_MEML - stMemLTbl,
+                     &mem[CB_MEML - stMemLTbl],
                      stMemLTbl,
                      diff,
                      CB_NSTAGES);
@@ -252,7 +212,7 @@ static int ilbc_encode_frame(ilbc_encode_state_t *iLBCenc_inst,     /* (i/o) the
         iCBConstruct(reverseDecresidual,
                      extra_cb_index,
                      extra_gain_index,
-                     mem + CB_MEML - stMemLTbl,
+                     &mem[CB_MEML - stMemLTbl],
                      stMemLTbl,
                      diff,
                      CB_NSTAGES);
@@ -271,7 +231,7 @@ static int ilbc_encode_frame(ilbc_encode_state_t *iLBCenc_inst,     /* (i/o) the
     if (Nfor > 0)
     {
         /* Setup memory */
-        memset(mem, 0, (CB_MEML-STATE_LEN)*sizeof(float));
+        memset(mem, 0, (CB_MEML - STATE_LEN)*sizeof(float));
         memcpy(&mem[CB_MEML - STATE_LEN], decresidual + (start - 1)*SUBL, STATE_LEN*sizeof(float));
         memset(weightState, 0, ILBC_LPC_FILTERORDER*sizeof(float));
 
@@ -280,10 +240,10 @@ static int ilbc_encode_frame(ilbc_encode_state_t *iLBCenc_inst,     /* (i/o) the
         {
             /* Encode sub-frame */
             iCBSearch(iLBCenc_inst,
-                      cb_index + subcount*CB_NSTAGES,
-                      gain_index + subcount*CB_NSTAGES,
+                      &cb_index[subcount*CB_NSTAGES],
+                      &gain_index[subcount*CB_NSTAGES],
                       &residual[(start + 1 + subframe)*SUBL],
-                      mem + CB_MEML-memLfTbl[subcount],
+                      &mem[CB_MEML - memLfTbl[subcount]],
                       memLfTbl[subcount],
                       SUBL,
                       CB_NSTAGES,
@@ -293,9 +253,9 @@ static int ilbc_encode_frame(ilbc_encode_state_t *iLBCenc_inst,     /* (i/o) the
 
             /* Construct decoded vector */
             iCBConstruct(&decresidual[(start + 1 + subframe)*SUBL],
-                         cb_index + subcount*CB_NSTAGES,
-                         gain_index + subcount*CB_NSTAGES,
-                         mem + CB_MEML - memLfTbl[subcount],
+                         &cb_index[subcount*CB_NSTAGES],
+                         &gain_index[subcount*CB_NSTAGES],
+                         &mem[CB_MEML - memLfTbl[subcount]],
                          memLfTbl[subcount],
                          SUBL,
                          CB_NSTAGES);
@@ -338,20 +298,23 @@ static int ilbc_encode_frame(ilbc_encode_state_t *iLBCenc_inst,     /* (i/o) the
         for (subframe = 0;  subframe < Nback;  subframe++)
         {
             /* Encode sub-frame */
-            iCBSearch(iLBCenc_inst, cb_index+subcount*CB_NSTAGES,
-                      gain_index + subcount*CB_NSTAGES,
+            iCBSearch(iLBCenc_inst,
+                      &cb_index[subcount*CB_NSTAGES],
+                      &gain_index[subcount*CB_NSTAGES],
                       &reverseResidual[subframe*SUBL],
-                      mem + CB_MEML - memLfTbl[subcount],
-                      memLfTbl[subcount], SUBL, CB_NSTAGES,
+                      &mem[CB_MEML - memLfTbl[subcount]],
+                      memLfTbl[subcount],
+                      SUBL,
+                      CB_NSTAGES,
                       &weightdenum[(start - 2 - subframe)*(ILBC_LPC_FILTERORDER + 1)],
                       weightState,
                       subcount + 1);
 
             /* Construct decoded vector */
             iCBConstruct(&reverseDecresidual[subframe*SUBL],
-                         cb_index + subcount*CB_NSTAGES,
-                         gain_index + subcount*CB_NSTAGES,
-                         mem + CB_MEML - memLfTbl[subcount],
+                         &cb_index[subcount*CB_NSTAGES],
+                         &gain_index[subcount*CB_NSTAGES],
+                         &mem[CB_MEML - memLfTbl[subcount]],
                          memLfTbl[subcount],
                          SUBL,
                          CB_NSTAGES);
@@ -514,4 +477,44 @@ int ilbc_encode(ilbc_encode_state_t *s,     /* (i/o) the general encoder state *
         ilbc_encode_frame(s, bytes + j, block);
     }
     return j;
+}
+
+ilbc_encode_state_t *ilbc_encode_init(ilbc_encode_state_t *iLBCenc_inst, /* (i/o) Encoder instance */
+                                      int mode)                          /* (i) frame size mode */
+{
+    iLBCenc_inst->mode = mode;
+    if (mode == 30)
+    {
+        iLBCenc_inst->blockl = ILBC_BLOCK_LEN_30MS;
+        iLBCenc_inst->nsub = NSUB_30MS;
+        iLBCenc_inst->nasub = NASUB_30MS;
+        iLBCenc_inst->lpc_n = LPC_N_30MS;
+        iLBCenc_inst->no_of_bytes = ILBC_NO_OF_BYTES_30MS;
+        iLBCenc_inst->state_short_len = STATE_SHORT_LEN_30MS;
+        /* ULP init */
+        iLBCenc_inst->ULP_inst = &ULP_30msTbl;
+    }
+    else if (mode == 20)
+    {
+        iLBCenc_inst->blockl = ILBC_BLOCK_LEN_20MS;
+        iLBCenc_inst->nsub = NSUB_20MS;
+        iLBCenc_inst->nasub = NASUB_20MS;
+        iLBCenc_inst->lpc_n = LPC_N_20MS;
+        iLBCenc_inst->no_of_bytes = ILBC_NO_OF_BYTES_20MS;
+        iLBCenc_inst->state_short_len = STATE_SHORT_LEN_20MS;
+        /* ULP init */
+        iLBCenc_inst->ULP_inst = &ULP_20msTbl;
+    }
+    else
+    {
+        return NULL;
+    }
+
+    memset((*iLBCenc_inst).anaMem, 0, ILBC_LPC_FILTERORDER*sizeof(float));
+    memcpy((*iLBCenc_inst).lsfold, lsfmeanTbl, ILBC_LPC_FILTERORDER*sizeof(float));
+    memcpy((*iLBCenc_inst).lsfdeqold, lsfmeanTbl, ILBC_LPC_FILTERORDER*sizeof(float));
+    memset((*iLBCenc_inst).lpc_buffer, 0, (LPC_LOOKBACK + ILBC_BLOCK_LEN_MAX)*sizeof(float));
+    memset((*iLBCenc_inst).hpimem, 0, 4*sizeof(float));
+
+    return iLBCenc_inst;
 }

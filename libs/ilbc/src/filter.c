@@ -134,7 +134,7 @@ void DownSample(const float *In,        /* (i) input samples */
 
         o = 0.0f;
 
-        stop = (i < FILTERORDER_DS)  ?  i + 1  :  FILTERORDER_DS;
+        stop = (i < FILTERORDER_DS)  ?  (i + 1)  :  FILTERORDER_DS;
 
         for (j = 0;  j < stop;  j++)
             o += *Coef_ptr++ * (*In_ptr--);
@@ -151,14 +151,13 @@ void DownSample(const float *In,        /* (i) input samples */
         if (i<lengthIn)
         {
             Coef_ptr = &Coef[0];
-            In_ptr = &In[i];
             for (j = 0;  j < FILTERORDER_DS;  j++)
                 o += *Coef_ptr++ * (*Out_ptr--);
         }
         else
         {
-            Coef_ptr = &Coef[i-lengthIn];
-            In_ptr = &In[lengthIn-1];
+            Coef_ptr = &Coef[i - lengthIn];
+            In_ptr = &In[lengthIn - 1];
             for (j = 0;  j < FILTERORDER_DS - (i - lengthIn);  j++)
                 o += *Coef_ptr++ * (*In_ptr--);
         }

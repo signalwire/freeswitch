@@ -67,77 +67,6 @@
 #endif
 
 /*----------------------------------------------------------------*
- *  Initiation of decoder instance.
- *---------------------------------------------------------------*/
-
-ilbc_decode_state_t *ilbc_decode_init(ilbc_decode_state_t *iLBCdec_inst,   /* (i/o) Decoder instance */
-                                      int mode,                            /* (i) frame size mode */
-                                      int use_enhancer)                    /* (i) 1 to use enhancer
-                                                                                  0 to run without enhancer */
-{
-    int i;
-
-    iLBCdec_inst->mode = mode;
-
-    if (mode == 30)
-    {
-        iLBCdec_inst->blockl = ILBC_BLOCK_LEN_30MS;
-        iLBCdec_inst->nsub = NSUB_30MS;
-        iLBCdec_inst->nasub = NASUB_30MS;
-        iLBCdec_inst->lpc_n = LPC_N_30MS;
-        iLBCdec_inst->no_of_bytes = ILBC_NO_OF_BYTES_30MS;
-        iLBCdec_inst->state_short_len = STATE_SHORT_LEN_30MS;
-        /* ULP init */
-        iLBCdec_inst->ULP_inst = &ULP_30msTbl;
-    }
-    else if (mode == 20)
-    {
-        iLBCdec_inst->blockl = ILBC_BLOCK_LEN_20MS;
-        iLBCdec_inst->nsub = NSUB_20MS;
-        iLBCdec_inst->nasub = NASUB_20MS;
-        iLBCdec_inst->lpc_n = LPC_N_20MS;
-        iLBCdec_inst->no_of_bytes = ILBC_NO_OF_BYTES_20MS;
-        iLBCdec_inst->state_short_len = STATE_SHORT_LEN_20MS;
-        /* ULP init */
-        iLBCdec_inst->ULP_inst = &ULP_20msTbl;
-    }
-    else
-    {
-        return NULL;
-    }
-
-    memset(iLBCdec_inst->syntMem, 0, ILBC_LPC_FILTERORDER*sizeof(float));
-    memcpy((*iLBCdec_inst).lsfdeqold, lsfmeanTbl, ILBC_LPC_FILTERORDER*sizeof(float));
-
-    memset(iLBCdec_inst->old_syntdenum,
-           0,
-           ((ILBC_LPC_FILTERORDER + 1)*ILBC_NUM_SUB_MAX)*sizeof(float));
-    for (i = 0;  i < ILBC_NUM_SUB_MAX;  i++)
-        iLBCdec_inst->old_syntdenum[i*(ILBC_LPC_FILTERORDER + 1)] = 1.0f;
-
-    iLBCdec_inst->last_lag = 20;
-
-    iLBCdec_inst->prevLag = 120;
-    iLBCdec_inst->per = 0.0;
-    iLBCdec_inst->consPLICount = 0;
-    iLBCdec_inst->prevPLI = 0;
-    iLBCdec_inst->prevLpc[0] = 1.0f;
-    memset(iLBCdec_inst->prevLpc + 1, 0, ILBC_LPC_FILTERORDER*sizeof(float));
-    memset(iLBCdec_inst->prevResidual, 0, ILBC_BLOCK_LEN_MAX*sizeof(float));
-    iLBCdec_inst->seed = 777;
-    memset(iLBCdec_inst->hpomem, 0, 4*sizeof(float));
-
-    iLBCdec_inst->use_enhancer = use_enhancer;
-    memset(iLBCdec_inst->enh_buf, 0, ENH_BUFL*sizeof(float));
-    for (i = 0;  i < ENH_NBLOCKS_TOT;  i++)
-        iLBCdec_inst->enh_period[i] = 40.0f;
-
-    iLBCdec_inst->prev_enh_pl = 0;
-
-    return iLBCdec_inst;
-}
-
-/*----------------------------------------------------------------*
  *  frame residual decoder function (subrutine to iLBC_decode)
  *---------------------------------------------------------------*/
 
@@ -647,4 +576,71 @@ int ilbc_fillin(ilbc_decode_state_t *s,     /* (i/o) the decoder state structure
         }
     }
     return i;
+}
+
+ilbc_decode_state_t *ilbc_decode_init(ilbc_decode_state_t *iLBCdec_inst,   /* (i/o) Decoder instance */
+                                      int mode,                            /* (i) frame size mode */
+                                      int use_enhancer)                    /* (i) 1 to use enhancer
+                                                                                  0 to run without enhancer */
+{
+    int i;
+
+    iLBCdec_inst->mode = mode;
+
+    if (mode == 30)
+    {
+        iLBCdec_inst->blockl = ILBC_BLOCK_LEN_30MS;
+        iLBCdec_inst->nsub = NSUB_30MS;
+        iLBCdec_inst->nasub = NASUB_30MS;
+        iLBCdec_inst->lpc_n = LPC_N_30MS;
+        iLBCdec_inst->no_of_bytes = ILBC_NO_OF_BYTES_30MS;
+        iLBCdec_inst->state_short_len = STATE_SHORT_LEN_30MS;
+        /* ULP init */
+        iLBCdec_inst->ULP_inst = &ULP_30msTbl;
+    }
+    else if (mode == 20)
+    {
+        iLBCdec_inst->blockl = ILBC_BLOCK_LEN_20MS;
+        iLBCdec_inst->nsub = NSUB_20MS;
+        iLBCdec_inst->nasub = NASUB_20MS;
+        iLBCdec_inst->lpc_n = LPC_N_20MS;
+        iLBCdec_inst->no_of_bytes = ILBC_NO_OF_BYTES_20MS;
+        iLBCdec_inst->state_short_len = STATE_SHORT_LEN_20MS;
+        /* ULP init */
+        iLBCdec_inst->ULP_inst = &ULP_20msTbl;
+    }
+    else
+    {
+        return NULL;
+    }
+
+    memset(iLBCdec_inst->syntMem, 0, ILBC_LPC_FILTERORDER*sizeof(float));
+    memcpy((*iLBCdec_inst).lsfdeqold, lsfmeanTbl, ILBC_LPC_FILTERORDER*sizeof(float));
+
+    memset(iLBCdec_inst->old_syntdenum,
+           0,
+           ((ILBC_LPC_FILTERORDER + 1)*ILBC_NUM_SUB_MAX)*sizeof(float));
+    for (i = 0;  i < ILBC_NUM_SUB_MAX;  i++)
+        iLBCdec_inst->old_syntdenum[i*(ILBC_LPC_FILTERORDER + 1)] = 1.0f;
+
+    iLBCdec_inst->last_lag = 20;
+
+    iLBCdec_inst->prevLag = 120;
+    iLBCdec_inst->per = 0.0;
+    iLBCdec_inst->consPLICount = 0;
+    iLBCdec_inst->prevPLI = 0;
+    iLBCdec_inst->prevLpc[0] = 1.0f;
+    memset(iLBCdec_inst->prevLpc + 1, 0, ILBC_LPC_FILTERORDER*sizeof(float));
+    memset(iLBCdec_inst->prevResidual, 0, ILBC_BLOCK_LEN_MAX*sizeof(float));
+    iLBCdec_inst->seed = 777;
+    memset(iLBCdec_inst->hpomem, 0, 4*sizeof(float));
+
+    iLBCdec_inst->use_enhancer = use_enhancer;
+    memset(iLBCdec_inst->enh_buf, 0, ENH_BUFL*sizeof(float));
+    for (i = 0;  i < ENH_NBLOCKS_TOT;  i++)
+        iLBCdec_inst->enh_period[i] = 40.0f;
+
+    iLBCdec_inst->prev_enh_pl = 0;
+
+    return iLBCdec_inst;
 }
