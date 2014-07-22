@@ -12,6 +12,7 @@ FSPREFIX=/usr/local/freeswitch
 PREFIX=$(FSPREFIX)
 OPENSSL=1.0.1h
 LIBEDIT=20140618-3.1
+CURL=7.35.0
 
 freeswitch: has-git deps freeswitch.git/Makefile
 	cd freeswitch.git && AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.14 LIBTOOL=/usr/local/bin/libtoolize gmake
@@ -35,7 +36,7 @@ clean:
 has-git:
 	@git --version || pkg install git
 
-deps: libedit openssl
+deps: libedit openssl curl
 	@PKG_PATH=http://openbsd.mirrors.pair.com/`uname -r`/packages/`machine -a`/ pkg_add -r $(PKG)
 
 openssl: openssl-$(OPENSSL)/Makefile
@@ -49,3 +50,10 @@ libedit-$(LIBEDIT)/Makefile: libedit-$(LIBEDIT)
 libedit-$(LIBEDIT):
 	(test -d $@) || (wget -4 -O $@.tar.gz http://thrysoee.dk/editline/$@.tar.gz && tar zxfv $@.tar.gz)
 	(cd $@ && ./configure --prefix=$(PREFIX) && make && sudo make install)
+
+curl: curl-$(CURL)/.done
+curl-$(CURL)/.done: curl-$(CURL)
+curl-$(CURL):
+	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
+	(cd $@ && ./configure --prefix=$(PREFIX) && make && sudo make install && touch .done)
+
