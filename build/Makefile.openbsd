@@ -56,5 +56,6 @@ curl: curl-$(CURL)/.done
 curl-$(CURL)/.done: curl-$(CURL)
 curl-$(CURL):
 	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
-	(cd $@ && ./configure --prefix=$(PREFIX) && make && sudo make install && touch .done)
+	(rm -rf $(PREFIX)/lib/libcurl.*)
+	(cd $@ && PKG_CONFIG_PATH=/usr/local/freeswitch/lib/pkgconfig:$PKG_CONFIG_PATH LDFLAGS='-L$(PREFIX)/lib -Wl,-rpath-link=$(PREFIX)/lib' CFLAGS='-I$(PREFIX)/include' ./configure --prefix=$(PREFIX) && make && sudo make install && touch .done)
 
