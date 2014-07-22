@@ -14,7 +14,7 @@ OPENSSL=1.0.1h
 LIBEDIT=20140618-3.1
 
 freeswitch: has-git deps freeswitch.git/Makefile
-	AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.14 LIBTOOL=/usr/local/bin/libtoolize gmake
+	cd freeswitch.git && AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.14 LIBTOOL=/usr/local/bin/libtoolize gmake
 
 freeswitch.git/Makefile: freeswitch.git/configure
 	cd freeswitch.git && PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig ./configure LDFLAGS='-L$(PREFIX)/lib -Wl,-rpath=$(PREFIX)/lib' CFLAGS='-I$(PREFIX)/include' --prefix=$(FSPREFIX)
