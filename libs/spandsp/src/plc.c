@@ -46,6 +46,7 @@
 #include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/saturated.h"
+#include "spandsp/vector_int.h"
 #include "spandsp/plc.h"
 
 #include "spandsp/private/plc.h"
@@ -58,21 +59,21 @@ static void save_history(plc_state_t *s, int16_t *buf, int len)
     if (len >= PLC_HISTORY_LEN)
     {
         /* Just keep the last part of the new data, starting at the beginning of the buffer */
-        memcpy(s->history, &buf[len - PLC_HISTORY_LEN], sizeof(int16_t)*PLC_HISTORY_LEN);
+        vec_copyi16(s->history, &buf[len - PLC_HISTORY_LEN], PLC_HISTORY_LEN);
         s->buf_ptr = 0;
         return;
     }
     if (s->buf_ptr + len > PLC_HISTORY_LEN)
     {
         /* Wraps around - must break into two sections */
-        memcpy(&s->history[s->buf_ptr], buf, sizeof(int16_t)*(PLC_HISTORY_LEN - s->buf_ptr));
+        vec_copyi16(&s->history[s->buf_ptr], buf, PLC_HISTORY_LEN - s->buf_ptr);
         len -= (PLC_HISTORY_LEN - s->buf_ptr);
-        memcpy(s->history, &buf[PLC_HISTORY_LEN - s->buf_ptr], sizeof(int16_t)*len);
+        vec_copyi16(s->history, &buf[PLC_HISTORY_LEN - s->buf_ptr], len);
         s->buf_ptr = len;
         return;
     }
     /* Can use just one section */
-    memcpy(&s->history[s->buf_ptr], buf, sizeof(int16_t)*len);
+    vec_copyi16(&s->history[s->buf_ptr], buf, len);
     s->buf_ptr += len;
 }
 /*- End of function --------------------------------------------------------*/
@@ -83,9 +84,9 @@ static __inline__ void normalise_history(plc_state_t *s)
 
     if (s->buf_ptr == 0)
         return;
-    memcpy(tmp, s->history, sizeof(int16_t)*s->buf_ptr);
-    memmove(s->history, &s->history[s->buf_ptr], sizeof(int16_t)*(PLC_HISTORY_LEN - s->buf_ptr));
-    memcpy(&s->history[PLC_HISTORY_LEN - s->buf_ptr], tmp, sizeof(int16_t)*s->buf_ptr);
+    vec_copyi16(tmp, s->history, s->buf_ptr);
+    vec_copyi16(s->history, &s->history[s->buf_ptr], PLC_HISTORY_LEN - s->buf_ptr);
+    vec_copyi16(&s->history[PLC_HISTORY_LEN - s->buf_ptr], tmp, s->buf_ptr);
     s->buf_ptr = 0;
 }
 /*- End of function --------------------------------------------------------*/
