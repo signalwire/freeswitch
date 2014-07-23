@@ -528,8 +528,9 @@ uint32_t skinny_line_count_active(listener_t *listener)
 	if ((sql = switch_mprintf(
 			"SELECT call_state FROM skinny_active_lines "
 			"WHERE device_name='%s' AND device_instance=%d "
-			"AND call_state != 2",
-			listener->device_name, listener->device_instance
+			"AND call_state not in (%d,%d,%d)",
+			listener->device_name, listener->device_instance, 
+			SKINNY_ON_HOOK, SKINNY_IN_USE_REMOTELY, SKINNY_HOLD
 			))) {
 
 		skinny_execute_sql_callback(listener->profile, listener->profile->sql_mutex, sql, skinny_line_count_active_callback, &helper);
