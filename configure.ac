@@ -709,13 +709,16 @@ AM_CONDITIONAL([SYSTEM_APR],[test "${use_system_apr}" = "yes"])
 AC_CHECK_LIB(aprutil-1, apr_queue_pop_timeout, use_system_aprutil=yes, use_system_aprutil=no)
 AM_CONDITIONAL([SYSTEM_APRUTIL],[test "${use_system_aprutil}" = "yes"])
 
+save_LIBS="$LIBS"
+LIBS=
 AC_CHECK_LIB(jpeg, jpeg_std_error,, AC_MSG_ERROR([no usable libjpeg; please install libjpeg devel package or equivalent]))
 
 AC_CHECK_LIB(jbig, jbg_enc_out, have_libjbig=yes, have_libjbig=no)
 if test "x$have_libjbig" = "xyes"  ; then
-SPANDSP_LA_JBIG="-ljbig"
+SPANDSP_LA_JBIG="-ljbig $LIBS"
 AC_SUBST(SPANDSP_LA_JBIG)
 fi
+LIBS="$save_LIBS"
 
 AC_CHECK_LIB(lzma, lzma_code, have_liblzma=yes, have_liblzma=no)
 if test "x$have_liblzma" = "xyes" ; then
