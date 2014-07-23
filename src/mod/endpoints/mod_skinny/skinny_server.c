@@ -173,7 +173,7 @@ switch_status_t skinny_create_incoming_session(listener_t *listener, uint32_t *l
 	}
 	skinny_session_set_variables(nsession, listener, *line_instance_p);
 
-	send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, tech_pvt->call_id);
+	send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, *line_instance_p, tech_pvt->call_id);
 	send_set_speaker_mode(listener, SKINNY_SPEAKER_ON);
 	send_set_lamp(listener, SKINNY_BUTTON_LINE, *line_instance_p, SKINNY_LAMP_ON);
 	skinny_line_set_state(listener, *line_instance_p, tech_pvt->call_id, SKINNY_OFF_HOOK);
@@ -644,12 +644,12 @@ int skinny_ring_lines_callback(void *pArg, int argc, char **argv, char **columnN
 		send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_BLINK);
 
 		if ( active_calls < 1 && ring_on_idle ) {
-			send_set_ringer(listener, SKINNY_RING_INSIDE, SKINNY_RING_FOREVER, 0, helper->tech_pvt->call_id);
+			send_set_ringer(listener, SKINNY_RING_INSIDE, SKINNY_RING_FOREVER, line_instance, helper->tech_pvt->call_id);
 		} else if ( active_calls > 0 && ring_on_active ) {
 			send_start_tone(listener, SKINNY_TONE_CALLWAITTONE, 0, line_instance, helper->tech_pvt->call_id);
 			send_stop_tone(listener, line_instance, helper->tech_pvt->call_id);
 		} else {
-			send_set_ringer(listener, SKINNY_RING_FLASHONLY, SKINNY_RING_FOREVER, 0, helper->tech_pvt->call_id);
+			send_set_ringer(listener, SKINNY_RING_FLASHONLY, SKINNY_RING_FOREVER, line_instance, helper->tech_pvt->call_id);
 		}
 		switch_channel_ring_ready(channel);
 	}
@@ -750,7 +750,7 @@ int skinny_session_answer_callback(void *pArg, int argc, char **argv, char **col
 
 			send_display_prompt_status_textid(listener, 0, SKINNY_TEXTID_IN_USE_REMOTE, line_instance, helper->tech_pvt->call_id);
 
-			send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, helper->tech_pvt->call_id);
+			send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, line_instance, helper->tech_pvt->call_id);
 		}
 	}
 	return 0;
@@ -771,7 +771,7 @@ switch_status_t skinny_session_answer(switch_core_session_t *session, listener_t
 	channel = switch_core_session_get_channel(session);
 	tech_pvt = switch_core_session_get_private(session);
 
-	send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, tech_pvt->call_id);
+	send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, line_instance, tech_pvt->call_id);
 	send_set_speaker_mode(listener, SKINNY_SPEAKER_ON);
 	send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_ON);
 	skinny_line_set_state(listener, line_instance, tech_pvt->call_id, SKINNY_OFF_HOOK);
@@ -850,7 +850,7 @@ switch_status_t skinny_session_hold_line(switch_core_session_t *session, listene
 
 	skinny_session_send_call_info(tech_pvt->session, listener, line_instance);
 	send_set_speaker_mode(listener, SKINNY_SPEAKER_OFF);
-	send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, tech_pvt->call_id);
+	send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, line_instance, tech_pvt->call_id);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -866,7 +866,7 @@ switch_status_t skinny_session_unhold_line(switch_core_session_t *session, liste
 	tech_pvt = switch_core_session_get_private(session);
 
 	skinny_hold_active_calls(listener);
-	send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, tech_pvt->call_id);
+	send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, line_instance, tech_pvt->call_id);
 	send_set_speaker_mode(listener, SKINNY_SPEAKER_ON);
 	send_select_soft_keys(listener, line_instance, tech_pvt->call_id, SKINNY_KEY_SET_RING_OUT, 0xffff);
 

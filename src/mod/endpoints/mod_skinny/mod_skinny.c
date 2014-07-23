@@ -998,7 +998,7 @@ int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnN
 			/* re-enabling for testing to bring back bad behavior */
 			send_set_speaker_mode(listener, SKINNY_SPEAKER_OFF);
 		}
-		send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, call_id);
+		send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, line_instance, call_id);
 	}
 	return 0;
 }
