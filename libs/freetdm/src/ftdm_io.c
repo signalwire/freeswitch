@@ -728,7 +728,14 @@ static ftdm_status_t ftdm_span_destroy(ftdm_span_t *span)
 	}
 	ftdm_mutex_unlock(span->mutex);
 	ftdm_mutex_destroy(&span->mutex);
-	ftdm_safe_free(span->signal_data);
+
+	/* Give the span a chance to destroy its own signaling data */
+	if (span->destroy) {
+		span->destroy(span);
+	} else if (span->signal_data) {
+		/* We take care of their dirty business ... */
+		ftdm_free(span->signal_data);
+	}
 
 	return status;
 }
@@ -5520,7 +5527,8 @@ FT_DECLARE(ftdm_io_interface_t *) ftdm_global_get_io_interface(const char *iotyp
 FT_DECLARE(int) ftdm_load_module(const char *name)
 {
 	ftdm_dso_lib_t lib;
-	int count = 0, x = 0;
+	int count = 0;
+	ftdm_bool_t load_proceed = FTDM_TRUE;
 	char path[512] = "";
 	char *err;
 	ftdm_module_t *mod;
@@ -5544,11 +5552,11 @@ FT_DECLARE(int) ftdm_load_module(const char *name)
 
 		if (mod->io_load(&interface1) != FTDM_SUCCESS || !interface1 || !interface1->name) {
 			ftdm_log(FTDM_LOG_ERROR, "Error loading %s\n", path);
+			load_proceed = FTDM_FALSE;
 		} else {
 			ftdm_log(FTDM_LOG_INFO, "Loading IO from %s [%s]\n", path, interface1->name);
 			if (ftdm_global_add_io_interface(interface1) == FTDM_SUCCESS) {
 				process_module_config(interface1);
-				x++;
 			}
 		}
 	}
@@ -5556,13 +5564,13 @@ FT_DECLARE(int) ftdm_load_module(const char *name)
 	if (mod->sig_load) {
 		if (mod->sig_load() != FTDM_SUCCESS) {
 			ftdm_log(FTDM_LOG_ERROR, "Error loading %s\n", path);
+			load_proceed = FTDM_FALSE;
 		} else {
 			ftdm_log(FTDM_LOG_INFO, "Loading SIG from %s\n", path);
-			x++;
 		}
 	}
 
-	if (x) {
+	if (load_proceed) {
 		char *p;
 		mod->lib = lib;
 		ftdm_set_string(mod->path, path);
@@ -5583,7 +5591,7 @@ FT_DECLARE(int) ftdm_load_module(const char *name)
 		}
 		ftdm_mutex_unlock(globals.mutex);
 	} else {
-		ftdm_log(FTDM_LOG_ERROR, "Unloading %s\n", path);
+		ftdm_log(FTDM_LOG_ERROR, "Errors during module load. Unloading %s\n", path);
 		ftdm_dso_destroy(&lib);
 	}
 	

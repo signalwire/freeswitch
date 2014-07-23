@@ -4936,6 +4936,7 @@ FTDM_CLI_DECLARE(ftdm_cmd_trace)
 	uint32_t chan_id = 0;
 	uint32_t span_id = 0;
 	uint32_t chan_count = 0;
+	ftdm_status_t status;
 	ftdm_span_t *span = NULL;
 	ftdm_channel_t *chan = NULL;
 
@@ -4964,17 +4965,39 @@ FTDM_CLI_DECLARE(ftdm_cmd_trace)
 
 	if (chan_id) {
 		chan = ftdm_span_get_channel(span, chan_id);
+
 		snprintf(tracepath, sizeof(tracepath), "%s-in-s%dc%d", argv[1], span_id, chan_id);
-		ftdm_channel_command(chan, FTDM_COMMAND_TRACE_INPUT, tracepath);
+		status = ftdm_channel_command(chan, FTDM_COMMAND_TRACE_INPUT, tracepath);
+		if (status != FTDM_SUCCESS) {
+			stream->write_function(stream, "-ERR failed to enable input trace at path %s\n", tracepath);
+			goto end;
+		}
+
 		snprintf(tracepath, sizeof(tracepath), "%s-out-s%dc%d", argv[1], span_id, chan_id);
-		ftdm_channel_command(chan, FTDM_COMMAND_TRACE_OUTPUT, tracepath);
+		status = ftdm_channel_command(chan, FTDM_COMMAND_TRACE_OUTPUT, tracepath);
+		if (status != FTDM_SUCCESS) {
+			stream->write_function(stream, "-ERR failed to enable output trace at path %s\n", tracepath);
+			ftdm_channel_command(chan, FTDM_COMMAND_TRACE_END_ALL, NULL);
+			goto end;
+		}
 	} else {
 		for (i = 1; i <= chan_count; i++) {
 			chan = ftdm_span_get_channel(span, i);
+
 			snprintf(tracepath, sizeof(tracepath), "%s-in-s%dc%d", argv[1], span_id, i);
-			ftdm_channel_command(chan, FTDM_COMMAND_TRACE_INPUT, tracepath);
+			status = ftdm_channel_command(chan, FTDM_COMMAND_TRACE_INPUT, tracepath);
+			if (status != FTDM_SUCCESS) {
+				stream->write_function(stream, "-ERR failed to enable input trace at path %s\n", tracepath);
+				goto end;
+			}
+
 			snprintf(tracepath, sizeof(tracepath), "%s-out-s%dc%d", argv[1], span_id, i);
-			ftdm_channel_command(chan, FTDM_COMMAND_TRACE_OUTPUT, tracepath);
+			status = ftdm_channel_command(chan, FTDM_COMMAND_TRACE_OUTPUT, tracepath);
+			if (status != FTDM_SUCCESS) {
+				stream->write_function(stream, "-ERR failed to enable output trace at path %s\n", tracepath);
+				ftdm_channel_command(chan, FTDM_COMMAND_TRACE_END_ALL, NULL);
+				goto end;
+			}
 		}
 	}
 	stream->write_function(stream, "+OK trace enabled with prefix path %s\n", argv[1]);
