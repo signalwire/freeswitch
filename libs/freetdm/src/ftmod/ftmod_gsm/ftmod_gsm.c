@@ -109,6 +109,7 @@ typedef struct ftdm_gsm_span_data_s {
 	char conditional_forward_number[255];
 	ftdm_sched_t *sched;
 	ftdm_timer_id_t conditional_forwarding_timer;
+	ftdm_bool_t init_forwarding;
 } ftdm_gsm_span_data_t;
 
 // command handler function type.
@@ -257,11 +258,12 @@ static void on_wat_span_status(unsigned char span_id, wat_span_status_t *status)
 			} else {
 				ftdm_log_chan_msg(gsm_data->bchan, FTDM_LOG_INFO, "Signaling is now down\n");
 			}
-			if (!ftdm_strlen_zero_buf(gsm_data->conditional_forward_number)) {
+			if (gsm_data->init_forwarding == FTDM_TRUE && !ftdm_strlen_zero_buf(gsm_data->conditional_forward_number)) {
 				ftdm_sched_timer(gsm_data->sched, "conditional_forwarding_delay", 500,
 						ftdm_gsm_enable_conditional_forwarding,
 						gsm_data,
 						&gsm_data->conditional_forwarding_timer);
+				gsm_data->init_forwarding = FTDM_FALSE;
 			}
 		}
 		break;
@@ -563,7 +565,7 @@ void on_wat_log_span(uint8_t span_id, uint8_t level, char *fmt, ...)
 	
 	vsprintf(buff, fmt, argptr);
 
-	ftdm_log_chan_ex(gsm_data->dchan, __FILE__, __FTDM_FUNC__, __LINE__, ftdm_level, "%s", buff);
+	ftdm_log_chan_ex(gsm_data->bchan, __FILE__, __FTDM_FUNC__, __LINE__, ftdm_level, "%s", buff);
 
 	va_end(argptr);
 }
@@ -1062,6 +1064,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_gsm_configure_span_signaling)
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring GSM span %s with hardware dtmf %s\n", span->name, val);
 		} else if (!strcasecmp(var, "conditional-forwarding-number")) {
 			ftdm_set_string(gsm_data->conditional_forward_number, val);
+			gsm_data->init_forwarding = FTDM_TRUE;
 		} else {
 			ftdm_log(FTDM_LOG_ERROR, "Ignoring unknown GSM parameter '%s'", var);
 		}
