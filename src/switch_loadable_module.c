@@ -592,8 +592,6 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 	const char *hint;
 	*/		
 
-
-
 	dest_proto = switch_event_get_header(message_event, "dest_proto");
 
 	if (!dest_proto) {
@@ -626,20 +624,21 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 			if ((ci = (switch_chat_interface_t *) val)) {
 				if (ci->chat_send && !strncasecmp(ci->interface_name, "GLOBAL_", 7)) {
 					status = ci->chat_send(message_event);
+					
 					if (status == SWITCH_STATUS_SUCCESS) {
-						/* The event was handled by an extension in the chatplan, 
-						 * so the event will be duplicated, modified and queued again, 
-						 * but it won't be processed by the chatplan again.
-						 * So this copy of the event can be destroyed by the caller.
-						 */ 
-						switch_mutex_unlock(loadable_modules.mutex);
-						return SWITCH_STATUS_SUCCESS;
+						if (switch_true(switch_event_get_header(message_event, "final_delivery"))) {
+							/* The event was handled by an extension in the chatplan, 
+							 * so the event will be duplicated, modified and queued again, 
+							 * but it won't be processed by the chatplan again.
+							 * So this copy of the event can be destroyed by the caller.
+							 */ 
+							do_skip = 1;
+						}
 					} else if (status == SWITCH_STATUS_BREAK) {
 						/* The event went through the chatplan, but no extension matched
 						 * to handle the sms messsage. It'll be attempted to be delivered
 						 * directly, and unless that works the sms delivery will have failed.
 						 */
-						do_skip = 1;
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Chat Interface Error [%s]!\n", dest_proto);
 						break;
