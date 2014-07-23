@@ -378,6 +378,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_em_configure_span)
 	uint32_t digit_timeout = 2000;
 	uint32_t max_dialstr = 11;
 	uint32_t dial_timeout = 0;
+	uint32_t release_guard_time_ms = 500;
 	ftdm_bool_t answer_supervision = FTDM_FALSE;
 	const char *var, *val;
 	int *intval;
@@ -429,6 +430,11 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_em_configure_span)
 				break;
 			}
 			max_dialstr = *intval;
+		} else if (!strcasecmp(var, "release_guard_time_ms")) {
+			if (!(intval = va_arg(ap, int *))) {
+				break;
+			}
+			release_guard_time_ms = *intval;
 		} else {
 			ftdm_log(FTDM_LOG_ERROR, "Invalid parameter for analog em span: '%s'\n", var);
 			return FTDM_FAIL;
@@ -460,6 +466,7 @@ static FIO_SIG_CONFIGURE_FUNCTION(ftdm_analog_em_configure_span)
 	span->get_span_sig_status = analog_em_get_span_sig_status;
 	span->set_channel_sig_status = analog_em_set_channel_sig_status;
 	span->set_span_sig_status = analog_em_set_span_sig_status;
+	span->sig_release_guard_time_ms = release_guard_time_ms;
 	ftdm_span_load_tones(span, tonemap);
 	if (immediate_ringback || !ftdm_strlen_zero(ringback_file)) {
 		analog_data->immediate_ringback = FTDM_TRUE;

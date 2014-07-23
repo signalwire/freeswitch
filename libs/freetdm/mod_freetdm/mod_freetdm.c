@@ -566,7 +566,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	}
 
 	if (!uuid_found) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Device [%d:%d] is no longer attached to %s. Nothing to do.\n", span_id, chan_id, name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Device [%d:%d] is no longer attached to %s\n", span_id, chan_id, name);
 		goto end;
 	}
 
@@ -3827,6 +3827,7 @@ static switch_status_t load_config(void)
 			const char *tonegroup = NULL;
 			char *digit_timeout = NULL;
 			char *dial_timeout = NULL;
+			char *release_guard_time_ms = NULL;
 			char *max_digits = NULL;
 			char *dial_regex = NULL;
 			char *hold_music = NULL;
@@ -3836,7 +3837,7 @@ static switch_status_t load_config(void)
 			char *answer_supervision = str_false;
 			char *immediate_ringback = str_false;
 			char *ringback_file = str_empty;
-			uint32_t span_id = 0, to = 0, max = 0, dial_timeout_int = 0;
+			uint32_t span_id = 0, to = 0, max = 0, dial_timeout_int = 0, release_guard_time_ms_int = 0;
 			ftdm_span_t *span = NULL;
 			analog_option_t analog_options = ANALOG_OPTION_NONE;
 
@@ -3850,6 +3851,8 @@ static switch_status_t load_config(void)
 					digit_timeout = val;
 				} else if (!strcasecmp(var, "dial-timeout")) {
 					dial_timeout = val;
+				} else if (!strcasecmp(var, "release-guard-time-ms")) {
+					release_guard_time_ms = val;
 				} else if (!strcasecmp(var, "context")) {
 					context = val;
 				} else if (!strcasecmp(var, "dialplan")) {
@@ -3890,6 +3893,10 @@ static switch_status_t load_config(void)
 				dial_timeout_int = atoi(dial_timeout);
 			}
 
+			if (release_guard_time_ms) {
+				release_guard_time_ms_int = atoi(release_guard_time_ms);
+			}
+
 			if (max_digits) {
 				max = atoi(max_digits);
 			}
@@ -3925,6 +3932,7 @@ static switch_status_t load_config(void)
 								   "ringback_file", ringback_file,
 								   "digit_timeout", &to,
 								   "dial_timeout", &dial_timeout_int,
+								   "release_guard_time_ms", &release_guard_time_ms_int,
 								   "max_dialstr", &max,
 								   FTDM_TAG_END) != FTDM_SUCCESS) {
 				LOAD_ERROR("Error starting FreeTDM span %d\n", span_id);

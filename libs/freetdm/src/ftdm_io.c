@@ -1490,6 +1490,15 @@ static __inline__ int chan_is_avail(ftdm_channel_t *check)
 			return 0;
 		}
 	}
+	/* release guard time check */
+	if (check->span->sig_release_guard_time_ms && check->last_release_time) {
+		ftdm_time_t time_diff = (check->last_release_time - ftdm_current_time_in_ms());
+		if (time_diff < check->span->sig_release_guard_time_ms) {
+			return 0;
+		}
+		/* circuit now available for outbound dialing */
+		check->last_release_time = 0;
+	}
 	return 1;
 }
 
@@ -2982,6 +2991,11 @@ static ftdm_status_t ftdm_channel_done(ftdm_channel_t *ftdmchan)
 		ftdmchan->packet_len = ftdmchan->native_interval * (ftdmchan->effective_codec == FTDM_CODEC_SLIN ? 16 : 8);
 		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_TRANSCODE);
 	}
+
+	if (ftdmchan->span->sig_release_guard_time_ms) {
+		ftdmchan->last_release_time = ftdm_current_time_in_ms();
+	}
+
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "channel done\n");
 	return FTDM_SUCCESS;
 }
