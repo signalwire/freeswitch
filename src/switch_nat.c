@@ -165,15 +165,15 @@ static int get_pmp_pubaddr(char *pub_addr)
 
 	do {
 		struct timeval timeout = { 1, 0 };
+
 		i++;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking for PMP %d/%d\n", i, max);
-
 		if ((r = getnatpmprequesttimeout(&natpmp, &timeout)) < 0) {
 			err = "get timeout failed";
 			goto end;
 		}
 
-		pflags = switch_wait_sock(natpmp.s, switch_interval_time_from_timeval(&timeout), SWITCH_POLL_READ | SWITCH_POLL_ERROR | SWITCH_POLL_HUP);
+		pflags = switch_wait_sock(natpmp.s, 1000, SWITCH_POLL_READ | SWITCH_POLL_ERROR | SWITCH_POLL_HUP);
 
 		if ((pflags & SWITCH_POLL_ERROR) || (pflags & SWITCH_POLL_HUP)) {
 			err = "wait sock failed";
