@@ -173,7 +173,7 @@ static int get_pmp_pubaddr(char *pub_addr)
 			goto end;
 		}
 
-		pflags = switch_wait_sock(natpmp.s, 100, SWITCH_POLL_READ | SWITCH_POLL_ERROR | SWITCH_POLL_HUP);
+		pflags = switch_wait_sock(natpmp.s, switch_interval_time_from_timeval(&timeout), SWITCH_POLL_READ | SWITCH_POLL_ERROR | SWITCH_POLL_HUP);
 
 		if ((pflags & SWITCH_POLL_ERROR) || (pflags & SWITCH_POLL_HUP)) {
 			err = "wait sock failed";
