@@ -106,7 +106,7 @@ getlibs () {
   getlib http://files.freeswitch.org/downloads/libs/pocketsphinx-0.7.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/celt-0.10.0.tar.gz
-  getlib http://files.freeswitch.org/downloads/libs/opus-1.1.tar.gz
+  getlib http://files.freeswitch.org/downloads/libs/opus-1.1-p2.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/openldap-2.4.19.tar.gz
   getlib http://download.zeromq.org/zeromq-2.1.9.tar.gz \
     || getlib http://download.zeromq.org/historic/zeromq-2.1.9.tar.gz
