@@ -198,7 +198,7 @@ if(dialog.state==state||!checkStateChange(dialog.state,state)){console.error("Di
 console.info("Dialog "+dialog.callID+": state change from "+dialog.state.name+" to "+state.name);dialog.lastState=dialog.state;dialog.state=state;if(!dialog.causeCode){dialog.causeCode=16;}
 if(!dialog.cause){dialog.cause="NORMAL CLEARING";}
 if(dialog.callbacks.onDialogState){dialog.callbacks.onDialogState(this);}
-switch(dialog.state){case $.verto.enum.state.trying:setTimeout(function(){if(dialog.state==$.verto.enum.state.trying){dialog.setState($.verto.enum.state.hangup);}},5000);break;case $.verto.enum.state.purge:dialog.setState($.verto.enum.state.destroy);break;case $.verto.enum.state.hangup:if(dialog.lastState.val>$.verto.enum.state.requesting.val&&dialog.lastState.val<$.verto.enum.state.hangup.val){dialog.sendMethod("verto.bye",{});}
+switch(dialog.state){case $.verto.enum.state.trying:setTimeout(function(){if(dialog.state==$.verto.enum.state.trying){dialog.setState($.verto.enum.state.hangup);}},30000);break;case $.verto.enum.state.purge:dialog.setState($.verto.enum.state.destroy);break;case $.verto.enum.state.hangup:if(dialog.lastState.val>$.verto.enum.state.requesting.val&&dialog.lastState.val<$.verto.enum.state.hangup.val){dialog.sendMethod("verto.bye",{});}
 dialog.setState($.verto.enum.state.destroy);break;case $.verto.enum.state.destroy:delete verto.dialogs[dialog.callID];dialog.rtc.stop();break;}
 return true;};$.verto.dialog.prototype.processReply=function(method,success,e){var dialog=this;switch(method){case"verto.answer":case"verto.attach":if(success){dialog.setState($.verto.enum.state.active);}else{dialog.hangup();}
 break;case"verto.invite":if(success){dialog.setState($.verto.enum.state.trying);}else{dialog.setState($.verto.enum.state.destroy);}
