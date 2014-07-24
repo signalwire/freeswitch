@@ -112,12 +112,19 @@ var callbacks = {
             }
             break;
         case $.verto.enum.message.info:
-	    var body = data.body.replace(/(http[s]{0,1}:\/\/\S+)/g, "<a target='_blank' href='$1'>$1<\/a>");
+	    var body = data.body;
+
+	    if (body.match(/\.gif|\.jpg|\.jpeg|\.png/)) {
+		body = body.replace(/(http[s]{0,1}:\/\/\S+)/g, "<a target='_blank' href='$1'>$1<br><img border='0' class='chatimg' src='$1'><\/a>");
+	    } else {
+		body = body.replace(/(http[s]{0,1}:\/\/\S+)/g, "<a target='_blank' href='$1'>$1<\/a>");
+	    }
 
 	    if (body.slice(-1) !== "\n") {
 		body += "\n";
 	    }
 	    body = body.replace(/(?:\r\n|\r|\n)/g, '<br />');
+	    
 	    var from = data.from_msg_name || data.from;
 	    
             $("#chatwin").append("<span class=chatuid>" + from + ":</span><br>" + body);
