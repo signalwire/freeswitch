@@ -946,7 +946,7 @@ static void set_call_params(cJSON *params, verto_pvt_t *tech_pvt) {
 	const char *caller_id_name = NULL;
 	const char *caller_id_number = NULL;
 	
-	if (switch_channel_outbound_display(tech_pvt->channel)) {
+	if (switch_channel_inbound_display(tech_pvt->channel)) {
 		caller_id_name = switch_channel_get_variable(tech_pvt->channel, "caller_id_name");
 		caller_id_number = switch_channel_get_variable(tech_pvt->channel, "caller_id_number");
 	} else {
@@ -2563,10 +2563,10 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 		switch_event_t *event;
 		char *to = (char *) cJSON_GetObjectCstr(msg, "to");
 		//char *from = (char *) cJSON_GetObjectCstr(msg, "from");
-		cJSON *indialog =  cJSON_GetObjectItem(msg, "inDialog");
+		cJSON *i, *indialog =  cJSON_GetObjectItem(msg, "inDialog");
 		const char *body = cJSON_GetObjectCstr(msg, "body");
 		switch_bool_t is_dialog = indialog && (indialog->type == cJSON_True || (indialog->type == cJSON_String && switch_true(indialog->valuestring)));
-
+		
 		if (!zstr(to)) {
 			if (strchr(to, '+')) {
 				pproto = strdup(to);
@@ -2591,6 +2591,12 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "verto_profile", jsock->profile->name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "verto_jsock_uuid", jsock->uuid_str);
 			
+			for(i = msg->child; i; i = i->next) {
+				if (!zstr(i->string) && !zstr(i->valuestring) && (!strncasecmp(i->string, "from_", 5) || !strncasecmp(i->string, "to_", 3))) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, i->string, i->valuestring);
+				}
+			}
+
 			if (is_dialog) {
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call_id", call_id);
 			}
@@ -4098,12 +4104,13 @@ static switch_status_t chat_send(switch_event_t *message_event)
 	const char *body = switch_event_get_body(message_event);
 	const char *call_id = switch_event_get_header(message_event, "call_id"); 
 
-	DUMP_EVENT(message_event);
+	//DUMP_EVENT(message_event);
 
 
 	if (!zstr(to) && !zstr(body) && !zstr(from)) {
 		cJSON *obj = NULL, *msg = NULL, *params = NULL;
-		
+		switch_event_header_t *eh;
+
 		obj = jrpc_new_req("verto.info", call_id, &params);
 		msg = json_add_child_obj(params, "msg", NULL);
 		
@@ -4111,10 +4118,17 @@ static switch_status_t chat_send(switch_event_t *message_event)
 		cJSON_AddItemToObject(msg, "to", cJSON_CreateString(to));
 		cJSON_AddItemToObject(msg, "body", cJSON_CreateString(body));
 
+		for (eh = message_event->headers; eh; eh = eh->next) {
+			if ((!strncasecmp(eh->name, "from_", 5) || !strncasecmp(eh->name, "to_", 3))) {
+				cJSON_AddItemToObject(msg, eh->name, cJSON_CreateString(eh->value)); 
+			}
+		}
+
 		verto_send_chat(to, call_id, obj);
 		cJSON_Delete(obj);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID EVENT\n");
+		DUMP_EVENT(message_event);
 		status = SWITCH_STATUS_FALSE;
 	}
 

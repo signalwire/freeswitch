@@ -55,7 +55,11 @@ function setupChat() {
 	    return;
 	}
 
-	cur_call.message({to: chatting_with, body: $("#chatmsg").val()});  
+	cur_call.message({to: chatting_with, 
+			  body: $("#chatmsg").val(), 
+			  from_msg_name: cur_call.params.caller_id_name, 
+			  from_msg_number: cur_call.params.caller_id_number
+			 });  
 	$("#chatmsg").val("");
     });
 
@@ -109,9 +113,14 @@ var callbacks = {
             break;
         case $.verto.enum.message.info:
 	    var body = data.body.replace(/(http[s]{0,1}:\/\/\S+)/g, "<a target='_blank' href='$1'>$1<\/a>");
-	    body = body.replace(/(?:\r\n|\r|\n)/g, '<br />');
 
-            $("#chatwin").append("<span class=chatuid>" + data.from + ":</span><br>" + body);
+	    if (body.slice(-1) !== "\n") {
+		body += "\n";
+	    }
+	    body = body.replace(/(?:\r\n|\r|\n)/g, '<br />');
+	    var from = data.from_msg_name || data.from;
+	    
+            $("#chatwin").append("<span class=chatuid>" + from + ":</span><br>" + body);
 	    $('#chatwin').animate({"scrollTop": $('#chatwin')[0].scrollHeight}, "fast");
 
             break;

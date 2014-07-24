@@ -5944,8 +5944,10 @@ static switch_status_t conference_say(conference_obj_t *conference, const char *
 static void chat_message_broadcast(conference_obj_t *conference, switch_event_t *event)
 {
 	conference_member_t *member = NULL;
+	switch_event_t *processed;
 
 	switch_assert(conference != NULL);
+	switch_event_create(&processed, SWITCH_EVENT_CHANNEL_DATA);
 
 	switch_mutex_lock(conference->member_mutex);
 	for (member = conference->members; member; member = member->next) {
@@ -5955,20 +5957,22 @@ static void chat_message_broadcast(conference_obj_t *conference, switch_event_t 
 			switch_event_t *reply = NULL;
 			
 			if (presence_id && chat_proto) {
+				if (switch_event_get_header(processed, presence_id)) {
+					continue;
+				}
 				switch_event_dup(&reply, event);
 				switch_event_add_header_string(reply, SWITCH_STACK_BOTTOM, "to", presence_id);
 				switch_event_add_header_string(reply, SWITCH_STACK_BOTTOM, "conference_name", conference->name);
 				switch_event_add_header_string(reply, SWITCH_STACK_BOTTOM, "conference_domain", conference->domain);
 				
 				switch_event_set_body(reply, switch_event_get_body(event));
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SENDIT\n");
-				DUMP_EVENT(reply);
-
-				switch_core_chat_deliver(chat_proto, &reply);
 				
+				switch_core_chat_deliver(chat_proto, &reply);
+				switch_event_add_header_string(processed, SWITCH_STACK_BOTTOM, presence_id, "true");
 			}
 		}
 	}
+	switch_event_destroy(&processed);
 	switch_mutex_unlock(conference->member_mutex);
 }
 
@@ -9796,7 +9800,10 @@ static switch_status_t chat_send(switch_event_t *message_event)
 
 	switch_safe_free(lbuf);
 
-	switch_core_chat_send_args(proto, CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", stream.data, NULL, NULL, SWITCH_FALSE);
+	if (!conference->broadcast_chat_messages) {
+		switch_core_chat_send_args(proto, CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", stream.data, NULL, NULL, SWITCH_FALSE);
+	}
+
 	switch_safe_free(stream.data);
 	switch_thread_rwlock_unlock(conference->rwlock);
 
