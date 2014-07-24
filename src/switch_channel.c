@@ -1284,7 +1284,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_printf(switch_cha
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	status = switch_channel_export_variable(channel, varname, export_varname, data);
+	status = switch_channel_export_variable(channel, varname, data, export_varname);
 	
 	free(data);
 	
