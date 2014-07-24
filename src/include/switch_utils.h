@@ -1067,6 +1067,8 @@ SWITCH_DECLARE(unsigned long) switch_atoul(const char *nptr);
  */
 SWITCH_DECLARE(char *) switch_strerror_r(int errnum, char *buf, switch_size_t buflen);
 SWITCH_DECLARE(int) switch_wait_sock(switch_os_socket_t sock, uint32_t ms, switch_poll_t flags);
+SWITCH_DECLARE(int) switch_wait_socklist(switch_waitlist_t *waitlist, uint32_t len, uint32_t ms);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

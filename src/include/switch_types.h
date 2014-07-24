@@ -2398,6 +2398,13 @@ typedef enum {
 	SWITCH_POLL_INVALID = (1 << 7)
 } switch_poll_t;
 
+typedef struct switch_waitlist_s {
+	switch_os_socket_t sock;
+	uint32_t events;
+	uint32_t revents;
+} switch_waitlist_t;
+
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

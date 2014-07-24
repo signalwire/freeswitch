@@ -2570,6 +2570,94 @@ SWITCH_DECLARE(int) switch_wait_sock(switch_os_socket_t sock, uint32_t ms, switc
 
 }
 
+SWITCH_DECLARE(int) switch_wait_socklist(switch_waitlist_t *waitlist, uint32_t len, uint32_t ms)
+{
+	struct pollfd *pfds;
+	int s = 0, r = 0, i;
+
+	pfds = calloc(len, sizeof(struct pollfd));
+	
+	for (i = 0; i < len; i++) {
+		if (waitlist[i].sock == SWITCH_SOCK_INVALID) {
+			break;
+		}
+
+		pfds[i].fd = waitlist[i].sock;
+		
+		if ((waitlist[i].events & SWITCH_POLL_READ)) {
+			pfds[i].events |= POLLIN;
+		}
+
+		if ((waitlist[i].events & SWITCH_POLL_WRITE)) {
+			pfds[i].events |= POLLOUT;
+		}
+
+		if ((waitlist[i].events & SWITCH_POLL_ERROR)) {
+			pfds[i].events |= POLLERR;
+		}
+
+		if ((waitlist[i].events & SWITCH_POLL_HUP)) {
+			pfds[i].events |= POLLHUP;
+		}
+
+		if ((waitlist[i].events & SWITCH_POLL_RDNORM)) {
+			pfds[i].events |= POLLRDNORM;
+		}
+
+		if ((waitlist[i].events & SWITCH_POLL_RDBAND)) {
+			pfds[i].events |= POLLRDBAND;
+		}
+
+		if ((waitlist[i].events & SWITCH_POLL_PRI)) {
+			pfds[i].events |= POLLPRI;
+		}
+	}
+	
+	s = poll(pfds, len, ms);
+
+	if (s < 0) {
+		r = s;
+	} else if (s > 0) {
+		for (i = 0; i < len; i++) {
+			if ((pfds[i].revents & POLLIN)) {
+				r |= SWITCH_POLL_READ;
+				waitlist[i].revents |= SWITCH_POLL_READ;
+			}
+			if ((pfds[i].revents & POLLOUT)) {
+				r |= SWITCH_POLL_WRITE;
+				waitlist[i].revents |= SWITCH_POLL_WRITE;
+			}
+			if ((pfds[i].revents & POLLERR)) {
+				r |= SWITCH_POLL_ERROR;
+				waitlist[i].revents |= SWITCH_POLL_ERROR;
+			}
+			if ((pfds[i].revents & POLLHUP)) {
+				r |= SWITCH_POLL_HUP;
+				waitlist[i].revents |= SWITCH_POLL_HUP;
+			}
+			if ((pfds[i].revents & POLLRDNORM)) {
+				r |= SWITCH_POLL_RDNORM;
+				waitlist[i].revents |= SWITCH_POLL_RDNORM;
+			}
+			if ((pfds[i].revents & POLLRDBAND)) {
+				r |= SWITCH_POLL_RDBAND;
+				waitlist[i].revents |= SWITCH_POLL_RDBAND;
+			}
+			if ((pfds[i].revents & POLLPRI)) {
+				r |= SWITCH_POLL_PRI;
+				waitlist[i].revents |= SWITCH_POLL_PRI;
+			}
+			if ((pfds[i].revents & POLLNVAL)) {
+				r |= SWITCH_POLL_INVALID;
+				waitlist[i].revents |= SWITCH_POLL_INVALID;
+			}
+		}
+	}
+
+	return r;
+
+}
+
 #else
 /* use select instead of poll */
 SWITCH_DECLARE(int) switch_wait_sock(switch_os_socket_t sock, uint32_t ms, switch_poll_t flags)
@@ -2651,6 +2739,111 @@ SWITCH_DECLARE(int) switch_wait_sock(switch_os_socket_t sock, uint32_t ms, switc
 
 		if ((flags & SWITCH_POLL_ERROR) && FD_ISSET(sock, efds)) {
 			r |= SWITCH_POLL_ERROR;
+		}
+	}
+
+	free(rfds);
+	free(wfds);
+	free(efds);
+
+	return r;
+
+}
+
+SWITCH_DECLARE(int) switch_wait_socklist(switch_waitlist_t *waitlist, uint32_t len, uint32_t ms)
+{
+	int s = 0, r = 0;
+	fd_set *rfds;
+	fd_set *wfds;
+	fd_set *efds;
+	struct timeval tv;
+	int i;
+	switch_os_socket_t max_fd = 0;
+	int flags = 0;
+
+	rfds = malloc(sizeof(fd_set));
+	wfds = malloc(sizeof(fd_set));
+	efds = malloc(sizeof(fd_set));
+
+	FD_ZERO(rfds);
+	FD_ZERO(wfds);
+	FD_ZERO(efds);
+
+	for (i = 0; i < len; i++) {
+		if (waitlist[i].sock == SWITCH_SOCK_INVALID) {
+			break;
+		}
+
+		if (waitlist[i].sock > max_fd) {
+			max_fd = waitlist[i].sock;
+		}
+
+#ifndef WIN32
+		/* Wouldn't you rather know?? */
+		assert(waitlist[i].sock <= FD_SETSIZE);
+#endif
+		flags |= waitlist[i].events;
+	
+		if ((waitlist[i].events & SWITCH_POLL_READ)) {
+
+#ifdef WIN32
+#pragma warning( push )
+#pragma warning( disable : 4127 )
+			FD_SET(waitlist[i].sock, rfds);
+#pragma warning( pop ) 
+#else
+			FD_SET(waitlist[i].sock, rfds);
+#endif
+		}
+
+		if ((waitlist[i].events & SWITCH_POLL_WRITE)) {
+
+#ifdef WIN32
+#pragma warning( push )
+#pragma warning( disable : 4127 )
+			FD_SET(waitlist[i].sock, wfds);
+#pragma warning( pop ) 
+#else
+			FD_SET(waitlist[i].sock, wfds);
+#endif
+		}
+
+		if ((waitlist[i].events & SWITCH_POLL_ERROR)) {
+
+#ifdef WIN32
+#pragma warning( push )
+#pragma warning( disable : 4127 )
+			FD_SET(waitlist[i].sock, efds);
+#pragma warning( pop ) 
+#else
+			FD_SET(waitlist[i].sock, efds);
+#endif
+		}
+	}
+
+	tv.tv_sec = ms / 1000;
+	tv.tv_usec = (ms % 1000) * ms;
+	
+	s = select(max_fd + 1, (flags & SWITCH_POLL_READ) ? rfds : NULL, (flags & SWITCH_POLL_WRITE) ? wfds : NULL, (flags & SWITCH_POLL_ERROR) ? efds : NULL, &tv);
+
+	if (s < 0) {
+		r = s;
+	} else if (s > 0) {
+		for (i = 0; i < len; i++) {
+			if ((waitlist[i].events & SWITCH_POLL_READ) && FD_ISSET(waitlist[i].sock, rfds)) {
+				r |= SWITCH_POLL_READ;
+				waitlist[i].revents |= SWITCH_POLL_READ;
+			}
+
+			if ((waitlist[i].events & SWITCH_POLL_WRITE) && FD_ISSET(waitlist[i].sock, wfds)) {
+				r |= SWITCH_POLL_WRITE;
+				waitlist[i].revents |= SWITCH_POLL_WRITE;
+			}
+
+			if ((waitlist[i].events & SWITCH_POLL_ERROR) && FD_ISSET(waitlist[i].sock, efds)) {
+				r |= SWITCH_POLL_ERROR;
+				waitlist[i].revents |= SWITCH_POLL_ERROR;
+			}
 		}
 	}
 

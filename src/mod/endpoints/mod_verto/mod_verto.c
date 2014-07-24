@@ -3255,11 +3255,66 @@ static void handle_mcast_sub(verto_profile_t *profile)
 
 }
 
+static int profile_one_loop(verto_profile_t *profile)
+{
+	switch_waitlist_t pfds[MAX_BIND+4];
+	int res, x = 0;
+	int i = 0;
+	int max = 2;
+
+	memset(&pfds[0], 0, sizeof(pfds[0]) * MAX_BIND+2);
+		
+	for (i = 0; i < profile->i; i++)  {
+		pfds[i].sock = profile->server_socket[i];
+		pfds[i].events = SWITCH_POLL_READ|SWITCH_POLL_ERROR;
+	}
+
+	if (profile->mcast_ip) {
+		pfds[i].sock = profile->mcast_sub.sock;
+		pfds[i++].events = SWITCH_POLL_READ|SWITCH_POLL_ERROR;
+	}
+
+	max = i;
+
+	if ((res = switch_wait_socklist(pfds, max, 1000)) < 0) {
+		if (errno != EINTR) {
+			die("POLL FAILED\n");
+		}
+	}
+
+	if (res == 0) {
+		return 0;
+	}
+			
+	for (x = 0; x < max; x++) {
+		if (pfds[x].revents & SWITCH_POLL_ERROR) {
+			die("POLL ERROR\n");
+		}
+
+		if (pfds[x].revents & SWITCH_POLL_HUP) {
+			die("POLL HUP\n");
+		}
+			
+		if (pfds[x].revents & SWITCH_POLL_READ) {
+			if (pfds[x].sock == profile->mcast_sub.sock) {
+				handle_mcast_sub(profile);
+			} else {
+				start_jsock(profile, pfds[x].sock);
+			}
+		}
+	}
+
+	return res;
+
+ error:
+	return -1;
+}
+
+
 static int runtime(verto_profile_t *profile)
 {
-	int max = 2;
 	int i;
-	
+
 	for (i = 0; i < profile->i; i++) {
 		if ((profile->server_socket[i] = prepare_socket(profile->ip[i].local_ip_addr, profile->ip[i].local_port)) < 0) {
 			die("Client Socket Error!\n");
@@ -3281,50 +3336,8 @@ static int runtime(verto_profile_t *profile)
 	
 	
 	while(profile->running) {
-		struct pollfd pfds[MAX_BIND+4];
-		int res, x = 0;
-		int i = 0;
-
-		memset(&pfds[0], 0, sizeof(pfds[0]) * MAX_BIND+2);
-		
-		for (i = 0; i < profile->i; i++)  {
-			pfds[i].fd = profile->server_socket[i];
-			pfds[i].events = POLLIN|POLLERR;
-		}
-
-		if (profile->mcast_ip) {
-			pfds[i].fd = profile->mcast_sub.sock;
-			pfds[i++].events = POLLIN|POLLERR;
-		}
-
-		max = i;
-
-		if ((res = poll(pfds, max, 1000)) < 0) {
-			if (errno != EINTR) {
-				die("POLL FAILED\n");
-			}
-		}
-
-		if (res == 0) {
-			continue;
-		}
-			
-		for (x = 0; x < max; x++) {
-			if (pfds[x].revents & POLLERR) {
-				die("POLL ERROR\n");
-			}
-
-			if (pfds[x].revents & POLLHUP) {
-				die("POLL HUP\n");
-			}
-			
-			if (pfds[x].revents & POLLIN) {
-				if (pfds[x].fd == profile->mcast_sub.sock) {
-					handle_mcast_sub(profile);
-				} else {
-					start_jsock(profile, pfds[x].fd);
-				}
-			}
+		if (profile_one_loop(profile) < 0) {
+			goto error;
 		}
 	}
 
