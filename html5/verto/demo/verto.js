@@ -111,7 +111,7 @@ var callbacks = {
 	    var body = data.body.replace(/(http[s]{0,1}:\/\/\S+)/g, "<a target='_blank' href='$1'>$1<\/a>");
 	    body = body.replace(/(?:\r\n|\r|\n)/g, '<br />');
 
-            $("#chatwin").append("<b>" + data.from + "</b>:<br>" + "" + body + "" + "<br>");
+            $("#chatwin").append("<span class=chatuid>" + data.from + ":</span><br>" + body);
 	    $('#chatwin').animate({"scrollTop": $('#chatwin')[0].scrollHeight}, "fast");
 
             break;
