@@ -430,9 +430,10 @@ function init() {
     });
 
     $(document).keypress(function(event) {
-	if (!cur_call) return;
+	if (!(cur_call && event.target.id == "page-incall")) return;
 	var key = String.fromCharCode(event.keyCode);
 	var i = parseInt(key);
+
 
 	if (key === "#" || key === "*" || key === "0" || (i > 0 && i <= 9)) {
 	    cur_call.dtmf(key);
