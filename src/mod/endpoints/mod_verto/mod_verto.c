@@ -560,17 +560,26 @@ static switch_ssize_t ws_write_json(jsock_t *jsock, cJSON **json, switch_bool_t 
 	if (r <= 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "WRITE RETURNED ERROR %" SWITCH_SIZE_T_FMT " \n", r);
 		jsock->drop = 1;
+		jsock->ready = 0;
 	}
 
 	return r;
 }
 
-static switch_status_t jsock_queue_event(jsock_t *jsock, cJSON **json)
+static switch_status_t jsock_queue_event(jsock_t *jsock, cJSON **json, switch_bool_t destroy)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	
-	if (switch_queue_trypush(jsock->event_queue, *json) == SWITCH_STATUS_SUCCESS) {
+	cJSON *jp;
+
+	if (destroy) {
+		jp = *json;
+	} else {
+		jp = cJSON_Duplicate(*json, 1);
+	}
+
+	if (switch_queue_trypush(jsock->event_queue, jp) == SWITCH_STATUS_SUCCESS) {
 		status = SWITCH_STATUS_SUCCESS;
+		
 		if (jsock->lost_events) {
 			int le = jsock->lost_events;
 			jsock->lost_events = 0;
@@ -580,18 +589,18 @@ static switch_status_t jsock_queue_event(jsock_t *jsock, cJSON **json)
 		if (++jsock->lost_events > MAX_MISSED) {
 			jsock->drop++;
 		}
-		cJSON_Delete(*json);
+
+		if (!destroy) {
+			cJSON_Delete(jp);
+			jp = NULL;
+		}
 	}
 
-	*json = NULL;
+	if (destroy) {
+		*json = NULL;
+	}
 
 	return status;
-}
-
-static switch_status_t jsock_queue_event_clone(jsock_t *jsock, cJSON *json)
-{
-	cJSON *dup = cJSON_Duplicate(json, 1);
-	return jsock_queue_event(jsock, &dup);
 }
 
 static void write_event(const char *event_channel, jsock_t *use_jsock, cJSON *event)
@@ -609,7 +618,7 @@ static void write_event(const char *event_channel, jsock_t *use_jsock, cJSON *ev
 				cJSON_AddItemToObject(params, "eventSerno", cJSON_CreateNumber(np->serno++));
 				msg = jrpc_new_req("verto.event", NULL, &params);
 				//ws_write_json(np->jsock, &msg, SWITCH_TRUE);
-				jsock_queue_event_clone(np->jsock, msg);
+				jsock_queue_event(np->jsock, &msg, SWITCH_TRUE);
 			}
 		}
 	}
@@ -642,7 +651,7 @@ static void jsock_send_event(cJSON *event)
 		params = cJSON_Duplicate(event, 1);
 		msg = jrpc_new_req("verto.event", NULL, &params);
 		//ws_write_json(use_jsock, &msg, SWITCH_TRUE); 
-		jsock_queue_event_clone(use_jsock, msg);
+		jsock_queue_event(use_jsock, &msg, SWITCH_TRUE);
 		switch_thread_rwlock_unlock(use_jsock->rwlock);
 		use_jsock = NULL;
 		return;
@@ -868,6 +877,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 			jsock->id = switch_core_strdup(jsock->pool, id);
 			jsock->domain = switch_core_strdup(jsock->pool, domain);
 			jsock->uid = switch_core_sprintf(jsock->pool, "%s@%s", id, domain);
+			jsock->ready = 1;
 			
 			if (!x_user) {
 				switch_event_destroy(&req_params);
@@ -1837,7 +1847,7 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 					cJSON_AddItemToObject(params, "display_name", cJSON_CreateString(name));
 					cJSON_AddItemToObject(params, "display_number", cJSON_CreateString(number));
 					//ws_write_json(jsock, &jmsg, SWITCH_TRUE);
-					jsock_queue_event_clone(jsock, jmsg);
+					jsock_queue_event(jsock, &jmsg, SWITCH_TRUE);
 				}
 
 				switch_thread_rwlock_unlock(jsock->rwlock);
@@ -3847,7 +3857,7 @@ static char *verto_get_dial_string(const char *uid, switch_stream_handle_t *rstr
 		switch_mutex_lock(profile->mutex);
 		
 		for(jsock = profile->jsock_head; jsock; jsock = jsock->next) {
-			if (!zstr(jsock->uid) && !zstr(uid) && !strcmp(uid, jsock->uid)) {
+			if (jsock->ready && !zstr(jsock->uid) && !zstr(uid) && !strcmp(uid, jsock->uid)) {
 				use_stream->write_function(use_stream, "%s/u:%s,", EP_NAME, jsock->uuid_str);
 				hits++;
 			}
@@ -4044,7 +4054,7 @@ static int verto_send_chat(const char *uid, const char *call_id, cJSON *msg)
 			jsock_t *jsock;
 
 			if ((jsock = get_jsock(tech_pvt->jsock_uuid))) {
-				jsock_queue_event_clone(jsock, msg);
+				jsock_queue_event(jsock, &msg, SWITCH_FALSE);
 				//if (ws_write_json(jsock, &msg, SWITCH_FALSE) <= 0) {
 				//	switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				//}
@@ -4066,9 +4076,9 @@ static int verto_send_chat(const char *uid, const char *call_id, cJSON *msg)
 		switch_mutex_lock(profile->mutex);
 		
 		for(jsock = profile->jsock_head; jsock; jsock = jsock->next) {
-			if (!strcmp(uid, jsock->uid)) {
+			if (jsock->ready && !zstr(jsock->uid) && !strcmp(uid, jsock->uid)) {
 				//ws_write_json(jsock, &msg, SWITCH_FALSE);
-				jsock_queue_event_clone(jsock, msg);
+				jsock_queue_event(jsock, &msg, SWITCH_FALSE);
 				hits++;
 			}
 		}
@@ -4093,13 +4103,14 @@ static switch_status_t chat_send(switch_event_t *message_event)
 
 	if (!zstr(to) && !zstr(body) && !zstr(from)) {
 		cJSON *obj = NULL, *msg = NULL, *params = NULL;
-
+		
 		obj = jrpc_new_req("verto.info", call_id, &params);
 		msg = json_add_child_obj(params, "msg", NULL);
 		
 		cJSON_AddItemToObject(msg, "from", cJSON_CreateString(from));
 		cJSON_AddItemToObject(msg, "to", cJSON_CreateString(to));
 		cJSON_AddItemToObject(msg, "body", cJSON_CreateString(body));
+
 		verto_send_chat(to, call_id, obj);
 		cJSON_Delete(obj);
 	} else {

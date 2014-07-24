@@ -127,6 +127,7 @@ struct jsock_s {
 
 	switch_queue_t *event_queue;
 	int lost_events;
+	int ready;
 
 	struct jsock_s *next;
 };
