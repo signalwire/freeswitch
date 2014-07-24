@@ -1,10 +1,10 @@
 'use strict';
 var cur_call = null;
 var confMan = null;
-var $display = $("#display");
 var verto;
 var ringing = false;
 var autocall = false;
+var chatting_with = false;
 
 $( ".selector" ).pagecontainer({ "theme": "a" });
 
@@ -19,6 +19,8 @@ function clearConfMan() {
     }
 
     $("#conf").hide();
+    $("#message").hide();
+    chatting_with = null;
 }
 
 function goto_dialog(where) {
@@ -37,15 +39,32 @@ function online(on) {
         $("#offline").hide();
         first_login = true;
     } else {
-        if (first_login && online_visible) {
-            goto_dialog("logout");
-        }
 
         $("#online").hide();
         $("#offline").show();
     }
 
     online_visible = on;
+}
+
+function setupChat() {
+    $("#chatwin").html("");
+
+    $("#chatsend").click(function() {
+	if (!cur_call && chatting_with) {
+	    return;
+	}
+
+	cur_call.message({to: chatting_with, body: $("#chatmsg").val()});  
+	$("#chatmsg").val("");
+    });
+
+    $("#chatmsg").keyup(function (event) {
+	if (event.keyCode == 13 && !event.shiftKey) {
+	    $( "#chatsend" ).trigger( "click" );   
+	}
+    });
+
 }
 
 function check_vid() {
@@ -59,7 +78,7 @@ var callbacks = {
 
         switch (msg) {
         case $.verto.enum.message.pvtEvent:
-            //console.error("pvtEvent", data.pvtData.action);
+//            console.error("pvtEvent", data.pvtData);
             if (data.pvtData) {
                 switch (data.pvtData.action) {
 
@@ -79,13 +98,22 @@ var callbacks = {
 		    });
 
                     $("#conf").show();
+		    $("#chatwin").html("");
+                    $("#message").show();
+
+		    chatting_with = data.pvtData.chatID;
 
                     break;
                 }
             }
             break;
         case $.verto.enum.message.info:
-            $("#text").html("Message from: <b>" + data.from + "</b>:<br>" + "<pre>" + data.body + "</pre>");
+	    var body = data.body.replace(/(http[s]{0,1}:\/\/\S+)/g, "<a target='_blank' href='$1'>$1<\/a>");
+	    body = body.replace(/(?:\r\n|\r|\n)/g, '<br />');
+
+            $("#chatwin").append("<b>" + data.from + "</b>:<br>" + "" + body + "" + "<br>");
+	    $('#chatwin').animate({"scrollTop": $('#chatwin')[0].scrollHeight}, "fast");
+
             break;
         case $.verto.enum.message.display:
             var party = dialog.params.remote_caller_id_name + "<" + dialog.params.remote_caller_id_number + ">";
@@ -153,10 +181,11 @@ var callbacks = {
             break;
         case $.verto.enum.state.hangup:
 	    $("#main_info").html("Call ended with cause: " + d.cause);
+            goto_page("main");
         case $.verto.enum.state.destroy:
 	    $("#hangup_cause").html("");
             clearConfMan();
-            goto_page("main");
+
             cur_call = null;
             break;
         case $.verto.enum.state.held:
@@ -382,6 +411,9 @@ function init() {
     $("#webcam").hide();
 
     online(false);
+
+    setupChat();
+
 }
 
 $(document).ready(function() {
@@ -418,6 +450,9 @@ $(document).bind("pagecontainerchange", function(e, data) {
         break;
 
     case "#page-main":
+            if (cur_call) {
+                goto_page("incall");
+            }
 	break;
     case "#page-login":
 

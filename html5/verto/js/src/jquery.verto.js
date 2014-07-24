@@ -460,6 +460,8 @@
                     }
 
 		    dialog = new $.verto.dialog($.verto.enum.direction.inbound, verto, data.params);
+                    dialog.setState($.verto.enum.state.recovering);
+
 		    break;
                 case 'verto.invite':
 
@@ -533,7 +535,7 @@
                 if (verto.callbacks.onMessage) {
                     verto.callbacks.onMessage(verto, null, $.verto.enum.message.info, data.params.msg);
                 }
-                console.error(data);
+                //console.error(data);
                 console.debug("MESSAGE from: " + data.params.msg.from, data.params.msg.body);
 
                 break;
@@ -1389,7 +1391,8 @@
         dialog.params = $.extend({
             useVideo: verto.options.useVideo,
             useStereo: verto.options.useStereo,
-            tag: verto.options.tag
+            tag: verto.options.tag,
+	    login: verto.options.login
         },
         params);
 
@@ -1567,6 +1570,13 @@
         }
 
         switch (dialog.state) {
+        case $.verto.enum.state.trying:
+	    setTimeout(function() {
+                if (dialog.state == $.verto.enum.state.trying) {
+		    dialog.setState($.verto.enum.state.hangup);
+                }
+            }, 5000);
+	    break;
         case $.verto.enum.state.purge:
             dialog.setState($.verto.enum.state.destroy);
             break;
@@ -1760,6 +1770,8 @@
         var dialog = this;
         var err = 0;
 
+	msg.from = dialog.params.login;
+
         if (!msg.to) {
             console.error("Missing To");
             err++;
@@ -1885,12 +1897,17 @@
     $.verto.enum.states = Object.freeze({
         new: {
             requesting: 1,
+	    recovering: 1,
             ringing: 1,
             destroy: 1,
             answering: 1
         },
         requesting: {
             trying: 1,
+            hangup: 1
+        },
+        recovering: {
+            answering: 1,
             hangup: 1
         },
         trying: {
@@ -1927,7 +1944,7 @@
         }
     });
 
-    $.verto.enum.state = $.verto.ENUM("new requesting trying ringing answering early active held hangup destroy purge");
+    $.verto.enum.state = $.verto.ENUM("new requesting trying recovering ringing answering early active held hangup destroy purge");
     $.verto.enum.direction = $.verto.ENUM("inbound outbound");
     $.verto.enum.message = $.verto.ENUM("display info pvtEvent");
 

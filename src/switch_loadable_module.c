@@ -613,9 +613,8 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "proto", proto);
 	}
 
-
 	replying = switch_event_get_header(message_event, "replying");
-	
+
 	if (!switch_true(replying) && !switch_stristr("global", proto) && !switch_true(switch_event_get_header(message_event, "skip_global_process"))) {
 		switch_mutex_lock(loadable_modules.mutex);
 		for (hi = switch_core_hash_first(loadable_modules.chat_hash); hi; hi = switch_core_hash_next(&hi)) {
@@ -650,6 +649,7 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 		switch_mutex_unlock(loadable_modules.mutex);
 	}
 	
+
 	if (!do_skip && !switch_stristr("GLOBAL", dest_proto)) {
 		if ((ci = switch_loadable_module_get_chat_interface(dest_proto)) && ci->chat_send) {
 			status = ci->chat_send(message_event);

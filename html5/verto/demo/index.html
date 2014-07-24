@@ -29,6 +29,36 @@
       cursor: pointer;
       }	
 
+
+
+
+      #chatwin
+      {
+      background-color: #eeeeee;
+      width: 500px;
+      height:150px;
+      max-height:150px;
+      overflow-y: scroll;
+      scrolling: auto;
+      text-align: left;
+      border-style:inset;
+      font-size: 10pt;
+      }
+
+      .l1
+      {
+      border:1;
+      background-color:#fefefe;
+      height:1px;
+      opacity:0.4;
+      }
+      #chatmsg
+      {
+      width:400px;
+      max-height:40px;
+      }
+
+
     </style>
 
   </head>
@@ -40,32 +70,32 @@
       <br>
       <a target="_CC2104" href="https://www.cluecon.com"><img border="0" width="300" src="img/cc_banner2014.gif"></a>
 
-      <div data-role="fieldcontain">
+      <div class="ui-field-contain">
 	<label for="name">Login</label>
 	<input type="text" size="20" id="login"/>
       </div>
 
-      <div data-role="fieldcontain">
+      <div class="ui-field-contain">
 	<label for="name">Password</label>
 	<input type="password" size="20" id="passwd"/>
       </div>
 
-      <div data-role="fieldcontain">
+      <div class="ui-field-contain">
 	<label for="name">CID Name</label>  
 	<input type="text" size="30" id="name"/>
       </div>
 
-      <div data-role="fieldcontain">
+      <div class="ui-field-contain">
 	<label for="name">CID Number</label>  
 	<input type="text" size="20" id="cid"/>
       </div>
 
-      <div data-role="fieldcontain">
+      <div class="ui-field-contain">
 	<label for="name">Hostname</label>
 	<input type="text" size="20" id="hostName"/>
       </div>
 
-      <div data-role="fieldcontain">
+      <div class="ui-field-contain">
 	<label for="name">Websocket URL</label>
 	<input type="text" size="20" id="wsURL"/>
       </div>
@@ -93,9 +123,16 @@
 	</table>
       </div>
 
-      <div id="display" style="font-weight:bold;font-size:18px"></div>
       <br>
-      <div data-role="fieldcontain" id="xferdiv">
+      <div id="message" hidden="true">
+	<hr class="l1" width="500"/>
+	<div id="chatwin"></div>
+<!--	<textarea readonly id="chatwin"></textarea>-->
+	<table><tr><td><textarea id="chatmsg"></textarea></td><td><button id="chatsend" style="width:100px;">Send</button></td></tr></table>
+	<hr class="l1" width="500"/><br>
+      </div>
+      
+      <div class="ui-field-contain" id="xferdiv">
 	<input data-mini="true" type="text" id="xferto"><br>
       <button data-inline="true" id="cancelxferbtn">Cancel Transfer</button>
       <button data-inline="true" class="startxferbtn">Complete Transfer</button>
@@ -146,8 +183,7 @@
       </div>
 
       <div id="online" align="center" style="width:600px">
-	<div id="text"></div>
-	<div data-role="fieldcontain">
+	<div class="ui-field-contain">
 	  <input type="text" id="ext"/><br>
 	  <div id="dialpad">
 	    <button class="dialbtn" data-inline="true">1</button>
@@ -269,13 +305,12 @@
     </div>
 
 
-    <script type="text/javascript" src="//code.jquery.com/jquery-2.1.1.min.js"></script> 
-    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquerymobile/1.4.3/jquery.mobile.min.js"></script> 
+    <script type="text/javascript" src="js/jquery-2.1.1.min.js"></script> 
+    <script type="text/javascript" src="js/jquery.mobile.min.js"></script> 
     <script type="text/javascript" src="js/jquery.json-2.4.min.js"></script>  
     <script type="text/javascript" src="js/jquery.cookie.js"></script>
-    <script type="text/javascript" src="//cdn.datatables.net/1.10.1/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="js/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="js/verto-min.js"></script>
-    
     <script type="text/javascript" src="verto.js"></script>
 
   </body>

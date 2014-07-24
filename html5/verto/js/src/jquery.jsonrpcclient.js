@@ -282,7 +282,7 @@
 	      self._ws_socket.onmessage = onmessage_cb;
 	      self._ws_socket.onclose = function (w) {
 		  if (!self.ws_sleep) {
-		      self.ws_sleep = 500;
+		      self.ws_sleep = 1000;
 		  }
 
 		  if (self.options.onWSClose) {
@@ -298,8 +298,8 @@
 		  
 		  self.ws_cnt++;
 
-		  if (self.ws_sleep < 3000 && (self.ws_cnt % 100) == 0) {
-		      self.ws_sleep += 500;
+		  if (self.ws_sleep < 3000 && (self.ws_cnt % 10) == 0) {
+		      self.ws_sleep += 1000;
 		  }
 	      }
 
@@ -308,7 +308,7 @@
 		  if (self.to) {
 		      clearTimeout(self.to);
 		  }
-		  self.ws_sleep = 500;	  
+		  self.ws_sleep = 1000;	  
 		  self.ws_cnt = 0;
 		  if (self.options.onWSConnect) {
 		      self.options.onWSConnect(self);

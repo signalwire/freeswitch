@@ -381,6 +381,7 @@ typedef struct conference_obj {
 	char *bad_pin_sound;
 	char *profile_name;
 	char *domain;
+	char *chat_id;
 	char *caller_controls;
 	char *moderator_controls;
 	switch_live_array_t *la;
@@ -2120,6 +2121,7 @@ static void adv_la(conference_obj_t *conference, conference_member_t *member, sw
 		cJSON_AddItemToObject(data, "laChannel", cJSON_CreateString(conference->la_event_channel));
 		cJSON_AddItemToObject(data, "laName", cJSON_CreateString(conference->la_name));
 		cJSON_AddItemToObject(data, "role", cJSON_CreateString(switch_test_flag(member, MFLAG_MOD) ? "moderator" : "participant"));
+		cJSON_AddItemToObject(data, "chatID", cJSON_CreateString(conference->chat_id));
 		if (switch_test_flag(member, MFLAG_MOD)) {
 			cJSON_AddItemToObject(data, "modChannel", cJSON_CreateString(conference->mod_event_channel));
 		}
@@ -4845,7 +4847,7 @@ static void conference_loop_output(conference_member_t *member)
 				char *from = switch_event_get_header(event, "from");
 				char *to = switch_event_get_header(event, "to");
 				char *body = switch_event_get_body(event);
-
+				
 				if (to && from && body) {
 					if (strchr(to, '+') && strncmp(to, CONF_CHAT_PROTO, strlen(CONF_CHAT_PROTO))) {
 						switch_event_del_header(event, "to");
@@ -5939,34 +5941,32 @@ static switch_status_t conference_say(conference_obj_t *conference, const char *
 }
 
 /* send a message to every member of the conference */
-static void chat_message_broadcast(conference_obj_t *conference, switch_stream_handle_t *stream, const char *data, const char *chat_from, const char *ouuid)
+static void chat_message_broadcast(conference_obj_t *conference, switch_event_t *event)
 {
 	conference_member_t *member = NULL;
-	char *argv[2] = { 0 };
-	char *dup = NULL;
-	switch_core_session_message_t msg = { 0 };
 
 	switch_assert(conference != NULL);
-	switch_assert(stream != NULL);
-
-	if (!(dup = strdup(chat_from))) {
-		return;
-	}
-	switch_separate_string(dup, '@', argv, (sizeof(argv) / sizeof(argv[0])));
-
-	msg.message_id = SWITCH_MESSAGE_INDICATE_MESSAGE;
-	msg.string_array_arg[2] = data;
-	msg.string_array_arg[3] = ouuid;
-	msg.from = __FILE__;
 
 	switch_mutex_lock(conference->member_mutex);
 	for (member = conference->members; member; member = member->next) {
 		if (member->session && !switch_test_flag(member, MFLAG_NOCHANNEL)) {
-			switch_core_session_t *lsession = NULL;
+			const char *presence_id = switch_channel_get_variable(member->channel, "presence_id");
+			const char *chat_proto = switch_channel_get_variable(member->channel, "chat_proto");
+			switch_event_t *reply = NULL;
+			
+			if (presence_id && chat_proto) {
+				switch_event_dup(&reply, event);
+				switch_event_add_header_string(reply, SWITCH_STACK_BOTTOM, "to", presence_id);
+				switch_event_add_header_string(reply, SWITCH_STACK_BOTTOM, "conference_name", conference->name);
+				switch_event_add_header_string(reply, SWITCH_STACK_BOTTOM, "conference_domain", conference->domain);
+				
+				switch_event_set_body(reply, switch_event_get_body(event));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SENDIT\n");
+				DUMP_EVENT(reply);
 
-			lsession = member->session;
-
-			switch_core_session_receive_message(lsession, &msg);
+				switch_core_chat_deliver(chat_proto, &reply);
+				
+			}
 		}
 	}
 	switch_mutex_unlock(conference->member_mutex);
@@ -9752,16 +9752,13 @@ static switch_status_t chat_send(switch_event_t *message_event)
 	const char *body;
 	//const char *type;
 	const char *hint;
-	const char *ouuid;
 
 	proto = switch_event_get_header(message_event, "proto");
 	from = switch_event_get_header(message_event, "from");
 	to = switch_event_get_header(message_event, "to");
-	//subject = switch_event_get_header(message_event, "subject");
 	body = switch_event_get_body(message_event);
-	//type = switch_event_get_header(message_event, "type");
 	hint = switch_event_get_header(message_event, "hint");
-	ouuid = switch_event_get_header(message_event, "Channel-Call-UUID");
+
 
 	if ((p = strchr(to, '+'))) {
 		to = ++p;
@@ -9788,7 +9785,7 @@ static switch_status_t chat_send(switch_event_t *message_event)
 	if (body != NULL && (lbuf = strdup(body))) {
 		/* special case list */
 		if (conference->broadcast_chat_messages) {
-			chat_message_broadcast(conference, &stream, body, from, ouuid);
+			chat_message_broadcast(conference, message_event);
 		} else if (switch_stristr("list", lbuf)) {
 			conference_list_pretty(conference, &stream);
 			/* provide help */
@@ -9876,7 +9873,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	char *maxmember_sound = NULL;
 	uint32_t rate = 8000, interval = 20;
 	uint32_t channels = 1;
-	int broadcast_chat_messages = 0;
+	int broadcast_chat_messages = 1;
 	int comfort_noise_level = 0;
 	int pin_retries = 3;
 	int ivr_dtmf_timeout = 500;
@@ -10091,8 +10088,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
                                }
 			} else if (!strcasecmp(var, "moderator-controls") && !zstr(val)) {
 				moderator_controls = val;
-			} else if (!strcasecmp(var, "broadcast-chat-messages") && !zstr(val) && switch_true(val)) {
-				broadcast_chat_messages = 1;
+			} else if (!strcasecmp(var, "broadcast-chat-messages") && !zstr(val)) {
+				broadcast_chat_messages = switch_true(val);
 			} else if (!strcasecmp(var, "comfort-noise") && !zstr(val)) {
 				int tmp;
 				tmp = atoi(val);
@@ -10378,6 +10375,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	} else {
 		conference->domain = "cluecon.com";
 	}
+
+	conference->chat_id = switch_core_sprintf(conference->pool, "conf+%s@%s", conference->name, conference->domain);
 
 	conference->channels = channels;
 	conference->rate = rate;
