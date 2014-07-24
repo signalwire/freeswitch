@@ -1405,7 +1405,7 @@ ENDPOINTS_MODULES="endpoints/mod_dingaling ../../libs/freetdm/mod_freetdm \
 #						Event Handlers
 #
 ######################################################################################################################
-EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_pg_csv event_handlers/mod_cdr_sqlite \
+EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_sqlite \
 			event_handlers/mod_cdr_mongodb event_handlers/mod_erlang_event event_handlers/mod_event_multicast \
 			event_handlers/mod_event_socket event_handlers/mod_json_cdr \
 			event_handlers/mod_snmp"
@@ -1413,7 +1413,7 @@ EVENT_HANDLERS_MODULES="event_handlers/mod_cdr_csv event_handlers/mod_cdr_pg_csv
 EVENT_HANDLERS_MODULES+=" event_handlers/mod_rayo"
 %endif
 
-#### BUILD ISSUES NET RESOLVED FOR RELEASE event_handlers/mod_event_zmq 
+#### BUILD ISSUES NET RESOLVED FOR RELEASE event_handlers/mod_event_zmq event_handlers/mod_cdr_pg_csv
 ######################################################################################################################
 #
 #					File and Audio Format Handlers
@@ -1815,6 +1815,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/tts_commandline.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/unicall.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/unimrcp.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/verto.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/voicemail.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/voicemail_ivr.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/xml_cdr.conf.xml
@@ -2130,8 +2131,8 @@ fi
 %files event-cdr-mongodb
 %{MODINSTDIR}/mod_cdr_mongodb.so*
 
-%files event-cdr-pg-csv
-%{MODINSTDIR}/mod_cdr_pg_csv.so*
+#%files event-cdr-pg-csv
+#%{MODINSTDIR}/mod_cdr_pg_csv.so*
 
 %files event-cdr-sqlite
 %{MODINSTDIR}/mod_cdr_sqlite.so*
@@ -2338,6 +2339,8 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Fri Jul 20 2014 - krice@freeswitch.org
+- remove mod_cdr_pg_csv as its broken on centos
 * Fri Jun 02 2014 - krice@freeswitch.org
 - remove mod_spidermoney as its been deprecated
 * Fri Feb 21 2014 - crienzo@grasshopper.com
