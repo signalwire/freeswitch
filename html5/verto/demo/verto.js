@@ -115,7 +115,7 @@ var callbacks = {
 	    var body = data.body;
 
 	    if (body.match(/\.gif|\.jpg|\.jpeg|\.png/)) {
-		body = body.replace(/(http[s]{0,1}:\/\/\S+)/g, "<a target='_blank' href='$1'>$1<br><img border='0' class='chatimg' src='$1'><\/a>");
+		body = body.replace(/(http[s]{0,1}:\/\/\S+)/g, "<a target='_blank' href='$1'>$1<br><img border='0' class='chatimg' src='$1?dl=1'><\/a>");
 	    } else {
 		body = body.replace(/(http[s]{0,1}:\/\/\S+)/g, "<a target='_blank' href='$1'>$1<\/a>");
 	    }
