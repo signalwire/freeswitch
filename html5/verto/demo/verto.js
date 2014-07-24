@@ -414,6 +414,13 @@ function init() {
 
     setupChat();
 
+    $("#ext").keyup(function (event) {
+	if (event.keyCode == 13) {
+	    $( "#callbtn" ).trigger( "click" );   
+	}
+    });
+
+
 }
 
 $(document).ready(function() {
