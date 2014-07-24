@@ -429,6 +429,16 @@ function init() {
 	}
     });
 
+    $(document).keypress(function(event) {
+	if (!cur_call) return;
+	var key = String.fromCharCode(event.keyCode);
+	var i = parseInt(key);
+
+	if (key === "#" || key === "*" || key === "0" || (i > 0 && i <= 9)) {
+	    cur_call.dtmf(key);
+	}
+    });
+
 
 }
 
