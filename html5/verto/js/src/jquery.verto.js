@@ -1251,7 +1251,7 @@
 	var atitle = "";
 	var awidth = 0;
 		    
-        $(".jsDataTable").width(confMan.params.hasVid ? "900px" : "800px");
+        //$(".jsDataTable").width(confMan.params.hasVid ? "900px" : "800px");
 	
 	if (confMan.params.laData.role === "moderator") {
 	    atitle = "Action";

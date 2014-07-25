@@ -20,12 +20,12 @@
 	padding: 2px;
 	vertical-align: middle;
         height:25px;
+	font-size: 10px;
 }
 
 .jsDataTable {
     font-family: verdana; 
-    font-size:10pt;  
-
+    font-size:10pt;
 }
 
 .jsDataTable > tbody > tr:nth-child(odd),
