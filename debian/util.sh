@@ -102,8 +102,8 @@ getlibs () {
   getlib http://files.freeswitch.org/downloads/libs/json-c-0.9.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/soundtouch-1.7.1.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/flite-1.5.4-current.tar.bz2
-  getlib http://files.freeswitch.org/downloads/libs/sphinxbase-0.7.tar.gz
-  getlib http://files.freeswitch.org/downloads/libs/pocketsphinx-0.7.tar.gz
+  getlib http://files.freeswitch.org/downloads/libs/sphinxbase-0.8.tar.gz
+  getlib http://files.freeswitch.org/downloads/libs/pocketsphinx-0.8.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/celt-0.10.0.tar.gz
   getlib http://files.freeswitch.org/downloads/libs/opus-1.1-p2.tar.gz
