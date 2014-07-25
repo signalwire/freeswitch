@@ -617,7 +617,6 @@ static void write_event(const char *event_channel, jsock_t *use_jsock, cJSON *ev
 				params = cJSON_Duplicate(event, 1);
 				cJSON_AddItemToObject(params, "eventSerno", cJSON_CreateNumber(np->serno++));
 				msg = jrpc_new_req("verto.event", NULL, &params);
-				//ws_write_json(np->jsock, &msg, SWITCH_TRUE);
 				jsock_queue_event(np->jsock, &msg, SWITCH_TRUE);
 			}
 		}
@@ -650,7 +649,6 @@ static void jsock_send_event(cJSON *event)
 		cJSON *msg = NULL, *params;
 		params = cJSON_Duplicate(event, 1);
 		msg = jrpc_new_req("verto.event", NULL, &params);
-		//ws_write_json(use_jsock, &msg, SWITCH_TRUE); 
 		jsock_queue_event(use_jsock, &msg, SWITCH_TRUE);
 		switch_thread_rwlock_unlock(use_jsock->rwlock);
 		use_jsock = NULL;
@@ -1037,7 +1035,7 @@ static void tech_reattach(verto_pvt_t *tech_pvt, jsock_t *jsock)
 					  switch_channel_get_name(tech_pvt->channel),
 					  tech_pvt->mparams->local_sdp_str);
 	set_call_params(params, tech_pvt);
- 	ws_write_json(jsock, &msg, SWITCH_TRUE);
+ 	jsock_queue_event(jsock, &msg, SWITCH_TRUE);
 }
 
 static void drop_detached(void)
@@ -1495,7 +1493,7 @@ static switch_status_t verto_on_hangup(switch_core_session_t *session)
 		
 		cJSON_AddItemToObject(params, "causeCode", cJSON_CreateNumber(cause));
 		cJSON_AddItemToObject(params, "cause", cJSON_CreateString(switch_channel_cause2str(cause)));
-		ws_write_json(jsock, &msg, SWITCH_TRUE);
+		jsock_queue_event(jsock, &msg, SWITCH_TRUE);
 
 		switch_thread_rwlock_unlock(jsock->rwlock);
 	}
@@ -1569,7 +1567,7 @@ static switch_status_t verto_connect(switch_core_session_t *session, const char 
             cJSON_AddItemToObject(params, "sdp", cJSON_CreateString(tech_pvt->mparams->local_sdp_str));
 			set_call_params(params, tech_pvt);
 			
-            ws_write_json(jsock, &msg, SWITCH_TRUE);
+            jsock_queue_event(jsock, &msg, SWITCH_TRUE);
         } else {
             status = SWITCH_STATUS_FALSE;
         }
@@ -1815,7 +1813,7 @@ static switch_status_t verto_send_media_indication(switch_core_session_t *sessio
 
 			switch_set_flag(tech_pvt, TFLAG_SENT_MEDIA);
 
-			if (ws_write_json(jsock, &msg, SWITCH_TRUE) <= 0) {
+			if (jsock_queue_event(jsock, &msg, SWITCH_TRUE) != SWITCH_STATUS_SUCCESS) {
 				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			}
 
@@ -1846,7 +1844,6 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 					jmsg = jrpc_new_req("verto.display", tech_pvt->call_id, &params);
 					cJSON_AddItemToObject(params, "display_name", cJSON_CreateString(name));
 					cJSON_AddItemToObject(params, "display_number", cJSON_CreateString(number));
-					//ws_write_json(jsock, &jmsg, SWITCH_TRUE);
 					jsock_queue_event(jsock, &jmsg, SWITCH_TRUE);
 				}
 
@@ -3276,7 +3273,7 @@ static int profile_one_loop(verto_profile_t *profile)
 
 	max = i;
 
-	if ((res = switch_wait_socklist(pfds, max, 1000)) < 0) {
+	if ((res = switch_wait_socklist(pfds, max, 100)) < 0) {
 		if (errno != EINTR) {
 			die("POLL FAILED\n");
 		}
@@ -4096,7 +4093,6 @@ static int verto_send_chat(const char *uid, const char *call_id, cJSON *msg)
 		
 		for(jsock = profile->jsock_head; jsock; jsock = jsock->next) {
 			if (jsock->ready && !zstr(jsock->uid) && !strcmp(uid, jsock->uid)) {
-				//ws_write_json(jsock, &msg, SWITCH_FALSE);
 				jsock_queue_event(jsock, &msg, SWITCH_FALSE);
 				hits++;
 			}
