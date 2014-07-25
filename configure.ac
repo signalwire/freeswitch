@@ -1211,6 +1211,18 @@ PKG_CHECK_MODULES([LDNS], [libldns >= 1.6.6],[
     fi],[
     AM_CONDITIONAL([HAVE_LDNS],[true])])])
 
+PKG_CHECK_MODULES([VPX], [vpx >= 1.3.0],[
+  AM_CONDITIONAL([HAVE_VPX],[true])],[
+    if module_enabled mod_vpx; then
+      AC_MSG_ERROR([You need to either install libvpx-dev or disable mod_vpx in modules.conf])
+    else
+      AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_VPX],[false])
+    fi],[
+    AM_CONDITIONAL([HAVE_VPX],[true])])
+
+#PKG_CHECK_MODULES([AVCODEC], [avcodec >= 53.35.0])
+#PKG_CHECK_MODULES([AVFORMAT], [avformat >= 53.21.1])
+
 PKG_CHECK_MODULES([MEMCACHED], [libmemcached >= 0.31],[
   AM_CONDITIONAL([HAVE_MEMCACHED],[true])
   MEMCACHED_LIBS="${MEMCACHED_LIBS} -lpthread"
@@ -1550,12 +1562,14 @@ AC_CONFIG_FILES([Makefile
 		src/mod/codecs/mod_isac/Makefile
 		src/mod/codecs/mod_mp4v/Makefile
 		src/mod/codecs/mod_opus/Makefile
+		src/mod/codecs/mod_openh264/Makefile
 		src/mod/codecs/mod_sangoma_codec/Makefile
 		src/mod/codecs/mod_silk/Makefile
 		src/mod/codecs/mod_siren/Makefile
 		src/mod/codecs/mod_skel_codec/Makefile
 		src/mod/codecs/mod_theora/Makefile
 		src/mod/codecs/mod_vp8/Makefile
+		src/mod/codecs/mod_vpx/Makefile
 		src/mod/dialplans/mod_dialplan_asterisk/Makefile
 		src/mod/dialplans/mod_dialplan_directory/Makefile
 		src/mod/dialplans/mod_dialplan_xml/Makefile
