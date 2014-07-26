@@ -107,14 +107,13 @@ struct vlc_video_context {
 	uint8_t video_packet[1500 + 12];
 	void *raw_yuyv_data;
 	void *raw_i420_data;
-	uint32_t last_video_ts;
+	switch_time_t last_video_ts;
 	switch_payload_t pt;
 	uint32_t seq;
 	int width;
 	int height;
 	int force_width;
 	int force_height;
-	int new_frame;          // next frame is a new frame(new timestamp)
 };
 
 typedef struct vlc_video_context vlc_video_context_t;
@@ -271,16 +270,27 @@ static void vlc_video_unlock_callback(void *data, void *id, void *const *p_pixel
 	uint32_t flag = 0;
 	uint32_t encoded_data_len = 1500;
 	uint32_t encoded_rate = 0;
+	switch_time_t now = (switch_time_t)(switch_micro_time_now() / 1000);
 	switch_codec_t *codec = switch_core_session_get_video_write_codec(context->session);
+	int delta;
 
 	switch_assert(id == NULL); /* picture identifier, not needed here */
 	switch_assert(codec);
+
+	if (now - context->last_video_ts < 60) goto end;
 
 	yuyv_to_i420(*p_pixels, context->raw_i420_data, context->width, context->height);
 
 	codec->enc_picture.width = context->width;
 	codec->enc_picture.height = context->height;
 	decoded_data_len = context->width * context->height * 3 / 2;
+	delta = now - context->last_video_ts;
+
+	if (delta > 0) {
+		frame->timestamp += delta * 90;
+		context->last_video_ts = now;
+	}
+
 	switch_core_codec_encode(codec, NULL, context->raw_i420_data, decoded_data_len, 0, frame->data, &encoded_data_len, &encoded_rate, &flag);
 
 	while(encoded_data_len) {
@@ -289,23 +299,6 @@ static void vlc_video_unlock_callback(void *data, void *id, void *const *p_pixel
 		frame->datalen = encoded_data_len;
 		frame->packetlen = frame->datalen + 12;
 		frame->m = flag & SFF_MARKER ? 1 : 0;
-		// frame->timestamp = context->ts;
-		// if (frame->m) context->ts += 90000 / FPS;
-		if (!context->last_video_ts) {
-			context->last_video_ts = switch_micro_time_now() / 1000;
-			frame->timestamp = context->last_video_ts;
-		}
-
-		if (context->new_frame) {
-			int delta = switch_micro_time_now() / 1000 - context->last_video_ts;
-			frame->timestamp += delta * 90;
-			context->last_video_ts = switch_micro_time_now() / 1000;
-			context->new_frame = 0;
-		}
-
-		if (frame->m) { // next frame is a new frame
-			context->new_frame = 1;
-		}
 
 		if (1) {
 			/* set correct mark and ts */
@@ -329,6 +322,7 @@ static void vlc_video_unlock_callback(void *data, void *id, void *const *p_pixel
 		switch_core_codec_encode(codec, NULL, NULL, 0, 0, frame->data, &encoded_data_len, &encoded_rate, &flag);
 	}
 
+end:
 	switch_mutex_unlock(context->video_mutex);
 }
 
@@ -358,6 +352,8 @@ static void vlc_video_channel_unlock_callback(void *data, void *id, void *const 
 	uint32_t encoded_rate = 0;
 	switch_codec_t *codec = switch_core_session_get_video_write_codec(context->session);
 	switch_frame_t *frame = context->vid_frame;
+	switch_time_t now = (switch_time_t)(switch_micro_time_now() / 1000);
+	int delta;
 
 	switch_assert(id == NULL); /* picture identifier, not needed here */
 	switch_assert(codec);
@@ -371,6 +367,12 @@ static void vlc_video_channel_unlock_callback(void *data, void *id, void *const 
 
 	frame->packet = context->video_packet;
 	frame->data = context->video_packet + 12;
+	delta = now - context->last_video_ts;
+
+	if (delta > 0) {
+		frame->timestamp += delta * 90;
+		context->last_video_ts = now;
+	}
 
 	switch_core_codec_encode(codec, NULL, context->raw_i420_data, decoded_data_len, 0, frame->data, &encoded_data_len, &encoded_rate, &flag);
 
@@ -380,21 +382,6 @@ static void vlc_video_channel_unlock_callback(void *data, void *id, void *const 
 		frame->datalen = encoded_data_len;
 		frame->packetlen = frame->datalen + 12;
 		frame->m = flag & SFF_MARKER ? 1 : 0;
-		if (!context->last_video_ts) {
-			context->last_video_ts = switch_micro_time_now() / 1000;
-			frame->timestamp = context->last_video_ts;
-		}
-
-		if (context->new_frame) {
-			int delta = switch_micro_time_now() / 1000 - context->last_video_ts;
-			frame->timestamp += delta * 90;
-			context->last_video_ts = switch_micro_time_now() / 1000;
-			context->new_frame = 0;
-		}
-
-		if (frame->m) { // next frame is a new frame
-			context->new_frame = 1;
-		}
 
 		if (1) {
 			/* set correct mark and ts */
@@ -1163,7 +1150,7 @@ static switch_status_t setup_tech_pvt(switch_core_session_t *session, const char
 
 fail:
 
-	return SWITCH_STATUS_FALSE;
+	return status;
 }
 
 static switch_status_t channel_on_init(switch_core_session_t *session)
