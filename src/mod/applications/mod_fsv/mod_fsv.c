@@ -575,7 +575,7 @@ SWITCH_STANDARD_APP(play_yuv_function)
 	switch_frame_t *read_frame;
 	uint32_t width = 0, height = 0, size;
 	switch_byte_t *yuv;
-	uint32_t last_video_ts;
+	switch_time_t last_video_ts = 0;
 	int argc;
 	char *argv[3] = { 0 };
 	char *mydata = switch_core_session_strdup(session, data);
@@ -670,24 +670,18 @@ SWITCH_STANDARD_APP(play_yuv_function)
 			uint32_t encoded_data_len = 1500;
 			uint32_t encoded_rate = 0;
 			switch_frame_t *frame = &vid_frame;
-			uint32_t now;
+			switch_time_t now = switch_micro_time_now() / 1000;
 			char ts_str[33];
+			int delta;
 
 			codec->enc_picture.width = width;
 			codec->enc_picture.height = height;
 			decoded_data_len = width * height * 3 / 2;
+			delta = now - last_video_ts;
 
-			now = switch_micro_time_now() / 1000;
-
-			if (!last_video_ts) {
+			if (delta > 0) {
+				frame->timestamp += delta * 90;
 				last_video_ts = now;
-				frame->timestamp = last_video_ts;
-			} else {
-				int delta = now - last_video_ts;
-				if (delta > 0) {
-					frame->timestamp += delta * 90;
-					last_video_ts = now;
-				}
 			}
 
 			sprintf(ts_str, "%u", (uint32_t)frame->timestamp);
@@ -695,7 +689,7 @@ SWITCH_STANDARD_APP(play_yuv_function)
 			switch_core_codec_encode(codec, NULL, yuv, decoded_data_len, 0, vid_frame.data, &encoded_data_len, &encoded_rate, &flag);
 
 			while(encoded_data_len) {
-				// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "encoded: %s [%d] flag=%d ts=%u\n", codec->implementation->iananame, encoded_data_len, flag, context->last_video_ts);
+				// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "encoded: %s [%d] flag=%d ts=%u\n", codec->implementation->iananame, encoded_data_len, flag, last_video_ts);
 
 				frame->datalen = encoded_data_len;
 				frame->packetlen = frame->datalen + 12;
