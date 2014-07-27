@@ -2757,7 +2757,7 @@ SWITCH_DECLARE(int) switch_wait_socklist(switch_waitlist_t *waitlist, uint32_t l
 	fd_set *wfds;
 	fd_set *efds;
 	struct timeval tv;
-	int i;
+	unsigned int i;
 	switch_os_socket_t max_fd = 0;
 	int flags = 0;
 
