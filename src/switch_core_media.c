@@ -3478,6 +3478,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 					} else {
 						match = (!strcasecmp(rm_encoding, imp->iananame) && 
+								 ((map->rm_pt < 96 && imp->ianacode < 96) || (map->rm_pt > 96 && imp->ianacode > 96)) &&
 								 (remote_codec_rate == codec_rate || fmtp_remote_codec_rate == imp->actual_samples_per_second)) ? 1 : 0;
 						if (fmtp_remote_codec_rate) {
 							remote_codec_rate = fmtp_remote_codec_rate;
@@ -8404,7 +8405,8 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 							match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 						} else {
 							if (map->rm_encoding) {
-								match = strcasecmp(map->rm_encoding, imp->iananame) ? 0 : 1;
+								match = !strcasecmp(map->rm_encoding, imp->iananame) &&
+									((map->rm_pt < 96 && imp->ianacode < 96) || (map->rm_pt > 96 && imp->ianacode > 96));
 							} else {
 								match = 0;
 							}
@@ -8433,7 +8435,8 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 							match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 						} else {
 							if (map->rm_encoding) {
-								match = strcasecmp(map->rm_encoding, imp->iananame) ? 0 : 1;
+								match = !strcasecmp(map->rm_encoding, imp->iananame) &&
+									((map->rm_pt < 96 && imp->ianacode < 96) || (map->rm_pt > 96 && imp->ianacode > 96));
 							} else {
 								match = 0;
 							}
@@ -8479,7 +8482,8 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 					} else {
 						if (map->rm_encoding) {
-							match = strcasecmp(map->rm_encoding, imp->iananame) ? 0 : 1;
+							match = !strcasecmp(map->rm_encoding, imp->iananame) &&
+								((map->rm_pt < 96 && imp->ianacode < 96) || (map->rm_pt > 96 && imp->ianacode > 96));
 						} else {
 							match = 0;
 						}
