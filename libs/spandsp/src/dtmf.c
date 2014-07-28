@@ -68,8 +68,6 @@
 #define DEFAULT_DTMF_TX_ON_TIME     50
 #define DEFAULT_DTMF_TX_OFF_TIME    55
 
-#define DTMF_SAMPLES_PER_BLOCK      102
-
 #if defined(SPANDSP_USE_FIXED_POINT)
 /* The fixed point version scales the 16 bit signal down by 7 bits, so the Goertzels will fit in a 32 bit word */
 #define FP_SCALE(x)                 ((int16_t) (x/128.0 + ((x >= 0.0)  ?  0.5  :  -0.5)))
@@ -80,6 +78,7 @@
 #define DTMF_RELATIVE_PEAK_COL      6.309f          /* 8dB [10.0^(8.0/10.0)] */
 #define DTMF_TO_TOTAL_ENERGY        83.868f         /* -0.85dB [DTMF_SAMPLES_PER_BLOCK*10^(-0.85/10.0)] */
 #define DTMF_POWER_OFFSET           68.251f         /* 10*log(((32768.0/128.0)^2)*DTMF_SAMPLES_PER_BLOCK) */
+#define DTMF_SAMPLES_PER_BLOCK      102
 #else
 #define FP_SCALE(x)                 (x)
 #define DTMF_THRESHOLD              171032462.0f    /* -42dBm0 [((DTMF_SAMPLES_PER_BLOCK*32768.0/1.4142)*10^((-42 - DBM0_MAX_SINE_POWER)/20.0))^2] */
@@ -89,6 +88,7 @@
 #define DTMF_RELATIVE_PEAK_COL      6.309f          /* 8dB [10.0^(8.0/10.0)] */
 #define DTMF_TO_TOTAL_ENERGY        83.868f         /* -0.85dB [DTMF_SAMPLES_PER_BLOCK*10^(-0.85/10.0)] */
 #define DTMF_POWER_OFFSET           110.395f        /* 10*log((32768.0^2)*DTMF_SAMPLES_PER_BLOCK) */
+#define DTMF_SAMPLES_PER_BLOCK      102
 #endif
 
 static const float dtmf_row[] =
@@ -604,7 +604,7 @@ SPAN_DECLARE(int) dtmf_tx_release(dtmf_tx_state_t *s)
 
 SPAN_DECLARE(int) dtmf_tx_free(dtmf_tx_state_t *s)
 {
-    queue_release(&s->queue.queue);
+    dtmf_tx_release(s);
     span_free(s);
     return 0;
 }

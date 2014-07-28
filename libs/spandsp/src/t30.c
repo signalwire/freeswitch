@@ -152,7 +152,8 @@ static const char *phase_names[] =
 /* These state names are modelled after places in the T.30 flow charts. */
 enum
 {
-    T30_STATE_ANSWERING = 1,
+    T30_STATE_IDLE = 0,
+    T30_STATE_ANSWERING,
     T30_STATE_B,
     T30_STATE_C,
     T30_STATE_D,
@@ -186,7 +187,7 @@ enum
 
 static const char *state_names[] =
 {
-    "NONE",
+    "IDLE",
     "ANSWERING",
     "B",
     "C",
@@ -6402,7 +6403,6 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
             /* Cancel any receive timeout, and declare that a receive signal is present,
                since the front end is explicitly telling us we have seen something. */
             s->rx_signal_present = true;
-            timer_t2_t4_stop(s);
             break;
         }
         break;
@@ -6593,6 +6593,7 @@ SPAN_DECLARE(int) t30_restart(t30_state_t *s, bool calling_party)
 {
     release_resources(s);
     s->calling_party = calling_party;
+    s->state = T30_STATE_IDLE;
     s->phase = T30_PHASE_IDLE;
     s->next_phase = T30_PHASE_IDLE;
     s->current_fallback = 0;

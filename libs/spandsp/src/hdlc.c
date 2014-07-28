@@ -197,7 +197,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *s)
             /* Check the flags are back-to-back when testing for valid preamble. This
                greatly reduces the chances of false preamble detection, and anything
                which doesn't send them back-to-back is badly broken. */
-            if (s->num_bits != 7)
+            if (s->flags_seen != s->framing_ok_threshold - 1  &&  s->num_bits != 7)
             {
                 /* Don't set the flags seen indicator back to zero too aggressively.
                    We want to pick up with the minimum of discarded data when there

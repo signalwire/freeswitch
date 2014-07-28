@@ -58,6 +58,7 @@
 #include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/queue.h"
+#include "spandsp/vector_int.h"
 #include "spandsp/dc_restore.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/power_meter.h"
@@ -149,7 +150,7 @@
 #define DATA_END_TX_COUNT                       3
 
 /*! The number of consecutive flags to declare HDLC framing is OK. */
-#define HDLC_FRAMING_OK_THRESHOLD       5
+#define HDLC_FRAMING_OK_THRESHOLD               5
 
 enum
 {
@@ -700,7 +701,7 @@ static void monitor_control_messages(t38_gateway_state_t *s,
             /* If we are processing a message from the modem side, the contents determine the fast receive modem.
                we are to use. If it comes from the T.38 side the contents do not. */
             s->core.fast_bit_rate = modem_codes[i].bit_rate;
-            if (from_modem)
+            if ((buf[2] == T30_DTC  &&  !from_modem)  ||  (buf[2] != T30_DTC  &&  from_modem))
                 s->core.fast_rx_modem = modem_codes[i].modem_type;
             /*endif*/
         }
@@ -1863,7 +1864,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
             /* Check the flags are back-to-back when testing for valid preamble. This
                greatly reduces the chances of false preamble detection, and anything
                which doesn't send them back-to-back is badly broken. */
-            if (t->num_bits != 7)
+            if (t->flags_seen != t->framing_ok_threshold - 1  &&  t->num_bits != 7)
                 t->flags_seen = 0;
             /*endif*/
             if (++t->flags_seen >= t->framing_ok_threshold  &&  !t->framing_ok_announced)
@@ -2070,15 +2071,15 @@ static void update_rx_timing(t38_gateway_state_t *s, int len)
             {
             case TIMED_MODE_TCF_PREDICTABLE_MODEM_START_PAST_V21_MODEM:
                 /* Timed announcement of training, 75ms after the DCS carrier fell. */
-                s->core.timed_mode = TIMED_MODE_TCF_PREDICTABLE_MODEM_START_FAST_MODEM_ANNOUNCED;
                 announce_training(s);
+                s->core.timed_mode = TIMED_MODE_TCF_PREDICTABLE_MODEM_START_FAST_MODEM_ANNOUNCED;
                 break;
             case TIMED_MODE_TCF_PREDICTABLE_MODEM_START_FAST_MODEM_SEEN:
                 /* Timed announcement of training, 75ms after the DCS carrier fell. */
+                announce_training(s);
                 /* Use a timeout to ride over TEP, if it is present */
                 s->core.samples_to_timeout = ms_to_samples(500);
                 s->core.timed_mode = TIMED_MODE_TCF_PREDICTABLE_MODEM_START_FAST_MODEM_ANNOUNCED;
-                announce_training(s);
                 break;
             case TIMED_MODE_TCF_PREDICTABLE_MODEM_START_FAST_MODEM_ANNOUNCED:
                 s->core.timed_mode = TIMED_MODE_IDLE;
@@ -2172,7 +2173,7 @@ SPAN_DECLARE_NONSTD(int) t38_gateway_tx(t38_gateway_state_t *s, int16_t amp[], i
     if (s->audio.modems.transmit_on_idle)
     {
         /* Pad to the requested length with silence */
-        memset(&amp[len], 0, (max_len - len)*sizeof(int16_t));
+        vec_zeroi16(&amp[len], max_len - len);
         len = max_len;
     }
     /*endif*/
@@ -2180,7 +2181,7 @@ SPAN_DECLARE_NONSTD(int) t38_gateway_tx(t38_gateway_state_t *s, int16_t amp[], i
     if (s->audio.modems.audio_tx_log >= 0)
     {
         if (len < required_len)
-            memset(&amp[len], 0, (required_len - len)*sizeof(int16_t));
+            vec_zeroi16(&amp[len], required_len - len);
         /*endif*/
         write(s->audio.modems.audio_tx_log, amp, required_len*sizeof(int16_t));
     }
