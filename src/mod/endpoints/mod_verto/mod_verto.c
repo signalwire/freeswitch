@@ -1083,6 +1083,11 @@ static void detach_calls(jsock_t *jsock)
 			if (!switch_channel_up_nosig(tech_pvt->channel)) {
 				continue;
 			}
+
+			if (!switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED)) {
+				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				continue;
+			}
 			
 			tech_pvt->detach_time = switch_epoch_time_now(NULL);
 			globals.detached++;
@@ -2477,6 +2482,14 @@ static switch_bool_t verto__attach_func(const char *method, cJSON *params, jsock
 
 	tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
 	tech_pvt->r_sdp = switch_core_session_strdup(session, sdp);
+
+
+	if (!switch_channel_test_flag(tech_pvt->channel, CF_ANSWERED)) {
+		switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		cJSON_AddItemToObject(obj, "message", cJSON_CreateString("Cannot attach to a call that has not been answered."));
+		err = 1; goto cleanup;
+	}
+
 
 	switch_channel_set_variable(tech_pvt->channel, SWITCH_R_SDP_VARIABLE, tech_pvt->r_sdp);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Remote SDP %s:\n%s\n", 

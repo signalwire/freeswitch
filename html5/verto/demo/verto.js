@@ -456,11 +456,16 @@ function init() {
 
 $(document).ready(function() {
     var hash = window.location.hash.substring(1);    
+    var a = [];
 
     if (hash && hash.indexOf("page-") == -1) {
 	window.location.hash = "";
 	$("#ext").val(hash);
 	autocall = true;
+    }
+
+    if (hash && (a = hash.split("&"))) {
+	window.location.hash = a[0];
     }
 
     init();

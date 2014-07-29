@@ -2882,7 +2882,7 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 			}
 		}
 			
-		if (engine->ice_in.cands[engine->ice_in.chosen[1]][1].ready) {
+		if (engine->rtp_session && engine->ice_in.cands[engine->ice_in.chosen[1]][1].ready) {
 			if (engine->rtcp_mux > 0 && !strcmp(engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_addr, engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_addr)
 				&& engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_port == engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_port) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_INFO, "Skipping %s RTCP ICE (Same as RTP)\n", type2str(type));
