@@ -393,6 +393,7 @@ SWITCH_DECLARE(void) switch_channel_set_direction(switch_channel_t *channel, swi
 {
 	if (!switch_core_session_in_thread(channel->session)) {
 		channel->direction = channel->logical_direction = direction;
+		switch_channel_set_variable(channel, "direction", switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
 	}
 }
 
