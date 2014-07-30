@@ -4915,7 +4915,7 @@ void sofia_presence_handle_sip_i_message(int status,
 								reps++;
 								switch_snprintf(new_name, sizeof(new_name), "%s%s%s", SOFIA_SIP_HEADER_PREFIX, un->un_name, postfix);
 
-								if (switch_channel_get_variable(channel, new_name)) {
+								if (switch_event_get_header(event, new_name)) {
 									continue;
 								}
 
