@@ -2654,6 +2654,8 @@ SWITCH_DECLARE(int) switch_wait_socklist(switch_waitlist_t *waitlist, uint32_t l
 		}
 	}
 
+	free(pfds);
+
 	return r;
 
 }
