@@ -568,9 +568,10 @@ if test x"$enable_core_pgsql_support" = x"yes" ; then
       POSTGRESQL_LIBDIR="`$PKG_CONFIG libpq --libs-only-L`"
       POSTGRESQL_LDFLAGS="`$PKG_CONFIG --libs libpq`"
       POSTGRESQL_VERSION="`$PKG_CONFIG --modversion libpq`"
-      POSTGRESQL_MAJOR_VERSION="`echo $POSTGRESQL_VERSION | cut -d. -f1`"
-      POSTGRESQL_MINOR_VERSION="`echo $POSTGRESQL_VERSION | cut -d. -f2`"
-      POSTGRESQL_PATCH_VERSION="`echo $POSTGRESQL_VERSION | cut -d. -f3`"
+      POSTGRESQL_MAJOR_VERSION="`echo $POSTGRESQL_VERSION | cut -d. -f1 | sed 's/^\([[0-9]]*\)[[^0-9]].*/\1/'`"
+      POSTGRESQL_MINOR_VERSION="`echo $POSTGRESQL_VERSION | cut -d. -f2 | sed 's/^\([[0-9]]*\)[[^0-9]].*/\1/'`"
+      POSTGRESQL_PATCH_VERSION="`echo $POSTGRESQL_VERSION | cut -d. -f3 | sed 's/^\([[0-9]]*\)[[^0-9]].*/\1/'`"
+      test -n "$POSTGRESQL_PATCH_VERSION" || POSTGRESQL_PATCH_VERSION=0
     fi
     save_LIBS="$LIBS"
     LIBS="$POSTGRESQL_LIBDIR $LIBS"
