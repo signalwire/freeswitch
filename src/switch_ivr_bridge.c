@@ -593,7 +593,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	if (vid_thread) {
 		vh.up = -1;
 		switch_channel_set_flag(chan_a, CF_NOT_READY);
-		switch_channel_set_flag(chan_b, CF_NOT_READY);
+		//switch_channel_set_flag(chan_b, CF_NOT_READY);
 		switch_core_session_kill_channel(session_a, SWITCH_SIG_BREAK);
 		switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_a), SWITCH_LOG_DEBUG, "Ending video thread.\n");
