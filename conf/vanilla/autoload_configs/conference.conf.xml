@@ -124,6 +124,8 @@
            wait_mod will wait until the moderator in,
            audio-always will always mix audio from all members regardless they are talking or not -->
       <!-- <param name="conference-flags" value="audio-always"/> -->
+      <!-- Allow live array sync for Verto -->
+      <!-- <param name="conference-flags" value="livearray-sync"/> -->
     </profile>
 
     <profile name="wideband">

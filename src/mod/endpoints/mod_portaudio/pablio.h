@@ -51,10 +51,9 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "pa_ringbuffer.h"
-#include "portaudio.h"
-
 #include <string.h>
+#include <portaudio.h>
+#include "pa_ringbuffer.h"
 
 /*! Maximum number of channels per stream */
 #define MAX_IO_CHANNELS 2

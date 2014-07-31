@@ -53,8 +53,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "pa_ringbuffer.h"
 #include <string.h>
+#include "pa_ringbuffer.h"
 
 /****************
  * First, we'll define some memory barrier primitives based on the system.

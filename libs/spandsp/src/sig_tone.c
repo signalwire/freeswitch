@@ -302,7 +302,7 @@ SPAN_DECLARE(int) sig_tone_tx(sig_tone_tx_state_t *s, int16_t amp[], int len)
                 {
                     for (j = i;  j < i + n;  j++)
                     {
-                        tone = dds_mod(&(s->phase_acc[k]), s->phase_rate[k], s->tone_scaling[k][high_low], 0);
+                        tone = dds_mod(&s->phase_acc[k], s->phase_rate[k], s->tone_scaling[k][high_low], 0);
                         amp[j] = sat_add16(amp[j], tone);
                     }
                     /*endfor*/

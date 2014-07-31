@@ -152,7 +152,8 @@ static const char *phase_names[] =
 /* These state names are modelled after places in the T.30 flow charts. */
 enum
 {
-    T30_STATE_ANSWERING = 1,
+    T30_STATE_IDLE = 0,
+    T30_STATE_ANSWERING,
     T30_STATE_B,
     T30_STATE_C,
     T30_STATE_D,
@@ -186,7 +187,7 @@ enum
 
 static const char *state_names[] =
 {
-    "NONE",
+    "IDLE",
     "ANSWERING",
     "B",
     "C",
@@ -2657,7 +2658,6 @@ static int start_receiving_document(t30_state_t *s)
         return -1;
     }
     span_log(&s->logging, SPAN_LOG_FLOW, "Start receiving document\n");
-    queue_phase(s, T30_PHASE_B_TX);
     s->ecm_block = 0;
     send_dis_or_dtc_sequence(s, true);
     return 0;
@@ -2745,7 +2745,7 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
         send_dcs_sequence(s, true);
         return 0;
     }
-    span_log(&s->logging, SPAN_LOG_FLOW, "%s nothing to send\n", t30_frametype(msg[2]));
+    span_log(&s->logging, SPAN_LOG_FLOW, "%s - nothing to send\n", t30_frametype(msg[2]));
     /* ... then try to receive something */
     if (s->rx_file[0])
     {
@@ -2772,7 +2772,7 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
         send_dis_or_dtc_sequence(s, true);
         return 0;
     }
-    span_log(&s->logging, SPAN_LOG_FLOW, "%s nothing to receive\n", t30_frametype(msg[2]));
+    span_log(&s->logging, SPAN_LOG_FLOW, "%s - nothing to receive\n", t30_frametype(msg[2]));
     /* There is nothing to do, or nothing we are able to do. */
     send_dcn(s);
     return -1;
@@ -3101,6 +3101,7 @@ static void process_rx_ppr(t30_state_t *s, const uint8_t *msg, int len)
         terminate_call(s);
         return;
     }
+    s->retries = 0;
     /* Check which frames are OK, and mark them as OK. */
     for (i = 0;  i < 32;  i++)
     {
@@ -3134,8 +3135,9 @@ static void process_rx_ppr(t30_state_t *s, const uint8_t *msg, int len)
         /* Continue to correct? */
         /* Continue only if we have been making progress */
         s->ppr_count = 0;
-        if (s->ecm_progress)
+        if (s->ecm_progress  &&  fallback_sequence[s->current_fallback + 1].bit_rate)
         {
+            s->current_fallback++;
             s->ecm_progress = 0;
             queue_phase(s, T30_PHASE_D_TX);
             set_state(s, T30_STATE_IV_CTC);
@@ -5105,6 +5107,7 @@ static void queue_phase(t30_state_t *s, int phase)
                 s->send_hdlc_handler(s->send_hdlc_user_data, NULL, -1);
         }
         s->next_phase = phase;
+        span_log(&s->logging, SPAN_LOG_FLOW, "Queuing phase %s\n", phase_names[s->next_phase]);
     }
     else
     {
@@ -5116,7 +5119,7 @@ static void queue_phase(t30_state_t *s, int phase)
 
 static void set_phase(t30_state_t *s, int phase)
 {
-    if (phase != s->next_phase  &&  s->next_phase != T30_PHASE_IDLE)
+    if (s->next_phase != phase  &&  s->next_phase != T30_PHASE_IDLE)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Flushing queued phase %s\n", phase_names[s->next_phase]);
         /* Ensure nothing has been left in the queue that was scheduled to go out in the previous next
@@ -6400,7 +6403,6 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
             /* Cancel any receive timeout, and declare that a receive signal is present,
                since the front end is explicitly telling us we have seen something. */
             s->rx_signal_present = true;
-            timer_t2_t4_stop(s);
             break;
         }
         break;
@@ -6591,6 +6593,7 @@ SPAN_DECLARE(int) t30_restart(t30_state_t *s, bool calling_party)
 {
     release_resources(s);
     s->calling_party = calling_party;
+    s->state = T30_STATE_IDLE;
     s->phase = T30_PHASE_IDLE;
     s->next_phase = T30_PHASE_IDLE;
     s->current_fallback = 0;

@@ -509,6 +509,10 @@ public class CoreSession : IDisposable {
     freeswitchPINVOKE.CoreSession_consoleLog(swigCPtr, level_str, msg);
   }
 
+  public void consoleLog2(string level_str, string file, string func, int line, string msg) {
+    freeswitchPINVOKE.CoreSession_consoleLog2(swigCPtr, level_str, file, func, line, msg);
+  }
+
 }
 
 }
@@ -4186,6 +4190,10 @@ public class freeswitch {
     return ret;
   }
 
+  public static void switch_channel_set_presence_data_vals(SWIGTYPE_p_switch_channel channel, string presence_data_cols) {
+    freeswitchPINVOKE.switch_channel_set_presence_data_vals(SWIGTYPE_p_switch_channel.getCPtr(channel), presence_data_cols);
+  }
+
   public static void switch_channel_perform_presence(SWIGTYPE_p_switch_channel channel, string rpid, string status, string id, string file, string func, int line) {
     freeswitchPINVOKE.switch_channel_perform_presence(SWIGTYPE_p_switch_channel.getCPtr(channel), rpid, status, id, file, func, line);
   }
@@ -6855,6 +6863,10 @@ public class freeswitch {
     freeswitchPINVOKE.consoleLog(level_str, msg);
   }
 
+  public static void consoleLog2(string level_str, string file, string func, int line, string msg) {
+    freeswitchPINVOKE.consoleLog2(level_str, file, func, line, msg);
+  }
+
   public static void consoleCleanLog(string msg) {
     freeswitchPINVOKE.consoleCleanLog(msg);
   }
@@ -6871,6 +6883,10 @@ public class freeswitch {
 
   public static void console_log(string level_str, string msg) {
     freeswitchPINVOKE.console_log(level_str, msg);
+  }
+
+  public static void console_log2(string level_str, string file, string func, int line, string msg) {
+    freeswitchPINVOKE.console_log2(level_str, file, func, line, msg);
   }
 
   public static void console_clean_log(string msg) {
@@ -14653,6 +14669,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_init")]
   public static extern int switch_channel_init(HandleRef jarg1, HandleRef jarg2, int jarg3, int jarg4);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_presence_data_vals")]
+  public static extern void switch_channel_set_presence_data_vals(HandleRef jarg1, string jarg2);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_perform_presence")]
   public static extern void switch_channel_perform_presence(HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5, string jarg6, int jarg7);
 
@@ -17389,6 +17408,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_consoleLog")]
   public static extern void consoleLog(string jarg1, string jarg2);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_consoleLog2")]
+  public static extern void consoleLog2(string jarg1, string jarg2, string jarg3, int jarg4, string jarg5);
+
   [DllImport("mod_managed", EntryPoint="CSharp_consoleCleanLog")]
   public static extern void consoleCleanLog(string jarg1);
 
@@ -17806,8 +17828,14 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_consoleLog")]
   public static extern void CoreSession_consoleLog(HandleRef jarg1, string jarg2, string jarg3);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_consoleLog2")]
+  public static extern void CoreSession_consoleLog2(HandleRef jarg1, string jarg2, string jarg3, string jarg4, int jarg5, string jarg6);
+
   [DllImport("mod_managed", EntryPoint="CSharp_console_log")]
   public static extern void console_log(string jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_console_log2")]
+  public static extern void console_log2(string jarg1, string jarg2, string jarg3, int jarg4, string jarg5);
 
   [DllImport("mod_managed", EntryPoint="CSharp_console_clean_log")]
   public static extern void console_clean_log(string jarg1);

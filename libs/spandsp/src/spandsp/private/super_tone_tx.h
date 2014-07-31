@@ -28,7 +28,7 @@
 
 struct super_tone_tx_step_s
 {
-    tone_gen_tone_descriptor_t tone[4];
+    tone_gen_tone_descriptor_t tone[SUPER_TONE_TX_MAX_TONES];
     int tone_on;
     int length;
     int cycles;
@@ -38,12 +38,12 @@ struct super_tone_tx_step_s
 
 struct super_tone_tx_state_s
 {
-    tone_gen_tone_descriptor_t tone[4];
-    uint32_t phase[4];
+    tone_gen_tone_descriptor_t tone[SUPER_TONE_TX_MAX_TONES];
+    uint32_t phase[SUPER_TONE_TX_MAX_TONES];
     int current_position;
     int level;
-    super_tone_tx_step_t *levels[4];
-    int cycles[4];
+    super_tone_tx_step_t *levels[SUPER_TONE_TX_MAX_LEVELS];
+    int cycles[SUPER_TONE_TX_MAX_LEVELS];
 };
 
 #endif

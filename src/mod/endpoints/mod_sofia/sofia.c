@@ -550,6 +550,27 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 		switch_assert(tech_pvt != NULL);
 	}
 
+
+	if (sofia_test_pflag(profile, PFLAG_PROXY_REFER) && sip->sip_payload && sip->sip_payload->pl_data &&
+		sip->sip_content_type && sip->sip_content_type->c_type && 
+		switch_stristr("sipfrag", sip->sip_content_type->c_type)) {
+		switch_core_session_t *other_session;
+		if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+			switch_core_session_message_t *msg;
+			
+			msg = switch_core_session_alloc(other_session, sizeof(*msg));
+			MESSAGE_STAMP_FFL(msg);
+			msg->message_id = SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE;
+			msg->string_arg = switch_core_session_strdup(other_session, sip->sip_payload->pl_data);
+			msg->from = __FILE__;
+			switch_core_session_queue_message(other_session, msg);
+			switch_core_session_rwunlock(other_session);
+			
+			nua_respond(nh, SIP_202_ACCEPTED, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+			goto end;
+		}
+	}
+
 	/* For additional NOTIFY event packages see http://www.iana.org/assignments/sip-events. */
 	if (sip->sip_content_type &&
 		sip->sip_content_type->c_type && sip->sip_payload && sip->sip_payload->pl_data && !strcasecmp(sip->sip_event->o_type, "refer")) {
@@ -1596,6 +1617,8 @@ static void our_sofia_event_callback(nua_event_t event,
 				const char *call_id, *full_from, *full_to, *full_via, *from_user = NULL, *from_host = NULL, *to_user, *to_host, *full_agent;
 				char to_tag[13] = "";
 				char *event_str = "refer";
+				sip_accept_t *ap = sip->sip_accept;
+				char accept_header[256] = "";
 
 				np.fs_path = 1;
 				contact_str = sofia_glue_gen_contact_str(profile, sip, nh, de, &np);
@@ -1624,6 +1647,12 @@ static void our_sofia_event_callback(nua_event_t event,
 					to_user = "n/a";
 					to_host = "n/a";
 				}
+				
+				while (ap) {
+					switch_snprintf(accept_header + strlen(accept_header), sizeof(accept_header) - strlen(accept_header),
+									"%s%s ", ap->ac_type, ap->ac_next ? "," : "");
+					ap = ap->ac_next;
+				}
 
 				sql = switch_mprintf("insert into sip_subscriptions "
 									 "(proto,sip_user,sip_host,sub_to_user,sub_to_host,presence_hosts,event,contact,call_id,full_from,"
@@ -1632,7 +1661,7 @@ static void our_sofia_event_callback(nua_event_t event,
 									 proto, from_user, from_host, to_user, to_host, profile->presence_hosts ? profile->presence_hosts : "",
 									 event_str, contact_str, call_id, full_from, full_via,
 									 (long) switch_epoch_time_now(NULL) + 60,
-									 full_agent, accept, profile->name, mod_sofia_globals.hostname,
+									 full_agent, accept_header, profile->name, mod_sofia_globals.hostname,
 									 np.network_port, np.network_ip, orig_proto, full_to, to_tag);
 
 				switch_assert(sql != NULL);
@@ -6134,7 +6163,6 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 
 			extract_header_vars(profile, sip, session, nh);
 			extract_vars(profile, sip, session);
-			switch_core_recovery_track(session);
 			switch_channel_clear_flag(tech_pvt->channel, CF_RECOVERING);
 		}
 
@@ -9673,6 +9701,8 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 				tech_pvt->x_freeswitch_support_remote = switch_core_session_strdup(session, un->un_value);
 			} else if (!strcasecmp(un->un_name, "Geolocation")) {
 				switch_channel_set_variable(channel, "sip_geolocation", un->un_value);
+			} else if (!strcasecmp(un->un_name, "Geolocation-Error")) {
+				switch_channel_set_variable(channel, "sip_geolocation_error", un->un_value);
 			} else if (!strncasecmp(un->un_name, "X-", 2) || !strncasecmp(un->un_name, "P-", 2) || !strcasecmp(un->un_name, "User-to-User")) {
 				if (!zstr(un->un_value)) {
 					char new_name[512] = "";

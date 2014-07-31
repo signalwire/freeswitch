@@ -133,7 +133,7 @@ struct v42_state_s
 {
     /*! True if we are the calling party, otherwise false. */
     bool calling_party;
-    /*! True if we should detect whether the far end is V.42 capable. false if we go
+    /*! True if we should detect whether the far end is V.42 capable. False if we go
         directly to protocol establishment. */
     bool detect;
 

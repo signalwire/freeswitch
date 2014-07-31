@@ -149,9 +149,9 @@ static int get_pmp_pubaddr(char *pub_addr)
 	int r = 0, i = 0, max = 5;
 	natpmpresp_t response;
 	char *pubaddr = NULL;
-	fd_set fds;
 	natpmp_t natpmp;
 	const char *err = NULL;
+	int pflags;
 
 	if ((r = initnatpmp(&natpmp)) < 0) {
 		err = "init failed";
@@ -165,19 +165,18 @@ static int get_pmp_pubaddr(char *pub_addr)
 
 	do {
 		struct timeval timeout = { 1, 0 };
+
 		i++;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking for PMP %d/%d\n", i, max);
-
-		FD_ZERO(&fds);
-		FD_SET(natpmp.s, &fds);
-
 		if ((r = getnatpmprequesttimeout(&natpmp, &timeout)) < 0) {
 			err = "get timeout failed";
 			goto end;
 		}
 
-		if ((r = select(FD_SETSIZE, &fds, NULL, NULL, &timeout)) < 0) {
-			err = "select failed";
+		pflags = switch_wait_sock(natpmp.s, 1000, SWITCH_POLL_READ | SWITCH_POLL_ERROR | SWITCH_POLL_HUP);
+
+		if ((pflags & SWITCH_POLL_ERROR) || (pflags & SWITCH_POLL_HUP)) {
+			err = "wait sock failed";
 			goto end;
 		}
 		r = readnatpmpresponseorretry(&natpmp, &response);

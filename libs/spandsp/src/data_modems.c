@@ -466,16 +466,8 @@ SPAN_DECLARE(void) data_modems_set_modem_type(data_modems_state_t *s, int which,
         s->rx_user_data = &s->modems.fsk.rx;
         s->tx_handler = (span_tx_handler_t) &fsk_tx;
         s->tx_user_data = &s->modems.fsk.tx;
-        if (s->calling_party)
-        {
-            fsk_rx_spec = &preset_fsk_specs[FSK_BELL202];
-            fsk_tx_spec = &preset_fsk_specs[FSK_BELL202];
-        }
-        else
-        {
-            fsk_rx_spec = &preset_fsk_specs[FSK_BELL202];
-            fsk_tx_spec = &preset_fsk_specs[FSK_BELL202];
-        }
+        fsk_rx_spec = &preset_fsk_specs[FSK_BELL202];
+        fsk_tx_spec = &preset_fsk_specs[FSK_BELL202];
         fsk_rx_init(&s->modems.fsk.rx, fsk_rx_spec, FSK_FRAME_MODE_SYNC, s->put_bit, s->put_user_data);
         fsk_tx_init(&s->modems.fsk.tx, fsk_tx_spec, s->get_bit, s->get_user_data);
         break;

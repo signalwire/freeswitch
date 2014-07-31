@@ -263,11 +263,11 @@ int main(int argc, char *argv[])
     int j;
     int test_bps;
     int line_model_no;
+    int channel_codec;
+    int rbs_pattern;
     int bits_per_test;
     int noise_level;
     int signal_level;
-    int channel_codec;
-    int rbs_pattern;
     int guard_tone_option;
     int opt;
     bool log_audio;

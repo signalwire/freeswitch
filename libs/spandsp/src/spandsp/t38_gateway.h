@@ -45,16 +45,14 @@ to maximum the tolerance of jitter and packet loss on the IP network.
 typedef struct t38_gateway_state_s t38_gateway_state_t;
 
 /*!
-    T.30 real time frame handler.
-    \brief T.30 real time frame handler.
-    \param s The T.30 context.
+    T.38 gateway real time frame handler.
+    \brief T.38 gateway real time frame handler.
     \param user_data An opaque pointer.
     \param incoming True for incoming, false for outgoing.
     \param msg The HDLC message.
     \param len The length of the message.
 */
-typedef void (*t38_gateway_real_time_frame_handler_t)(t38_gateway_state_t *s,
-                                                      void *user_data,
+typedef void (*t38_gateway_real_time_frame_handler_t)(void *user_data,
                                                       bool incoming,
                                                       const uint8_t *msg,
                                                       int len);

@@ -1,9 +1,12 @@
 'use strict';
 var cur_call = null;
 var confMan = null;
-var $display = $("#display");
 var verto;
 var ringing = false;
+var autocall = false;
+var chatting_with = false;
+
+$( ".selector" ).pagecontainer({ "theme": "a" });
 
 function display(msg) {
     $("#calltitle").html(msg);
@@ -16,16 +19,16 @@ function clearConfMan() {
     }
 
     $("#conf").hide();
+    $("#message").hide();
+    chatting_with = null;
 }
 
 function goto_dialog(where) {
-    $.mobile.changePage("#dialog-" + where, {
-        role: "dialog"
-    });
+    $( ":mobile-pagecontainer" ).pagecontainer( "change", "#dialog-" + where, { role: "dialog" } );
 }
 
-function goto_page(where) {
-    $.mobile.changePage("#page-" + where);
+function goto_page(where, force) {
+    $( ":mobile-pagecontainer" ).pagecontainer( "change", "#page-" + where);
 }
 
 var first_login = false;
@@ -36,15 +39,36 @@ function online(on) {
         $("#offline").hide();
         first_login = true;
     } else {
-        if (first_login && online_visible) {
-            goto_dialog("logout");
-        }
 
         $("#online").hide();
         $("#offline").show();
     }
 
     online_visible = on;
+}
+
+function setupChat() {
+    $("#chatwin").html("");
+
+    $("#chatsend").click(function() {
+	if (!cur_call && chatting_with) {
+	    return;
+	}
+
+	cur_call.message({to: chatting_with, 
+			  body: $("#chatmsg").val(), 
+			  from_msg_name: cur_call.params.caller_id_name, 
+			  from_msg_number: cur_call.params.caller_id_number
+			 });  
+	$("#chatmsg").val("");
+    });
+
+    $("#chatmsg").keyup(function (event) {
+	if (event.keyCode == 13 && !event.shiftKey) {
+	    $( "#chatsend" ).trigger( "click" );   
+	}
+    });
+
 }
 
 function check_vid() {
@@ -58,7 +82,7 @@ var callbacks = {
 
         switch (msg) {
         case $.verto.enum.message.pvtEvent:
-            console.error("pvtEvent", data.pvtData.action);
+//            console.error("pvtEvent", data.pvtData);
             if (data.pvtData) {
                 switch (data.pvtData.action) {
 
@@ -78,13 +102,38 @@ var callbacks = {
 		    });
 
                     $("#conf").show();
+		    $("#chatwin").html("");
+                    $("#message").show();
+
+		    chatting_with = data.pvtData.chatID;
 
                     break;
                 }
             }
             break;
         case $.verto.enum.message.info:
-            $("#text").html("Message from: <b>" + data.from + "</b>:<br>" + "<pre>" + data.body + "</pre>");
+	    var body = data.body;
+
+	    if (body.match(/\.gif|\.jpg|\.jpeg|\.png/)) {
+		var mod = "";
+		if (body.match(/dropbox.com/)) {
+		    mod = "?dl=1";
+		}
+		body = body.replace(/(http[s]{0,1}:\/\/\S+)/g, "<a target='_blank' href='$1'>$1<br><img border='0' class='chatimg' src='$1'" + mod + "><\/a>");
+	    } else {
+		body = body.replace(/(http[s]{0,1}:\/\/\S+)/g, "<a target='_blank' href='$1'>$1<\/a>");
+	    }
+
+	    if (body.slice(-1) !== "\n") {
+		body += "\n";
+	    }
+	    body = body.replace(/(?:\r\n|\r|\n)/g, '<br />');
+	    
+	    var from = data.from_msg_name || data.from;
+	    
+            $("#chatwin").append("<span class=chatuid>" + from + ":</span><br>" + body);
+	    $('#chatwin').animate({"scrollTop": $('#chatwin')[0].scrollHeight}, "fast");
+
             break;
         case $.verto.enum.message.display:
             var party = dialog.params.remote_caller_id_name + "<" + dialog.params.remote_caller_id_number + ">";
@@ -110,7 +159,9 @@ var callbacks = {
 
             $("#ansbtn").click(function() {
                 cur_call.answer({
-		    useStereo: $("#use_stereo").is(':checked')
+		    useStereo: $("#use_stereo").is(':checked'),
+		    callee_id_name: $("#name").val(),
+		    callee_id_number: $("#cid").val(),
 		});
                 $('#dialog-incoming-call').dialog('close');
             });
@@ -139,6 +190,10 @@ var callbacks = {
 
             break;
 
+        case $.verto.enum.state.trying:
+            display("Calling: " + d.cidString());
+            goto_page("incall");
+	    break;
         case $.verto.enum.state.early:
         case $.verto.enum.state.active:
             display("Talking to: " + d.cidString());
@@ -146,10 +201,11 @@ var callbacks = {
             break;
         case $.verto.enum.state.hangup:
 	    $("#main_info").html("Call ended with cause: " + d.cause);
+            goto_page("main");
         case $.verto.enum.state.destroy:
 	    $("#hangup_cause").html("");
             clearConfMan();
-            goto_page("main");
+
             cur_call = null;
             break;
         case $.verto.enum.state.held:
@@ -168,14 +224,22 @@ var callbacks = {
         if (success) {
             online(true);
 
+	    /*
             verto.subscribe("presence", {
                 handler: function(v, e) {
                     console.error("PRESENCE:", e);
                 }
-            });
+		});
+	    */
+
             if (!window.location.hash) {
                 goto_page("main");
             }
+
+	    if (autocall) {
+		autocall = false;
+		docall();
+	    }
         } else {
             goto_page("login");
             goto_dialog("login-error");
@@ -193,7 +257,7 @@ var callbacks = {
     },
 
     onEvent: function(v, e) {
-        console.debug("w00t", e);
+        console.debug("GOT EVENT", e);
     },
 };
 
@@ -246,7 +310,7 @@ $("#webcam").click(function() {
     check_vid();
 });
 
-$("#callbtn").click(function() {
+function docall() {
     $('#ext').trigger('change');
 
     if (cur_call) {
@@ -262,6 +326,10 @@ $("#callbtn").click(function() {
         useVideo: check_vid(),
         useStereo: $("#use_stereo").is(':checked')
     });
+}
+
+$("#callbtn").click(function() {
+    docall();
 });
 
 function pop(id, cname, dft) {
@@ -363,45 +431,75 @@ function init() {
     $("#webcam").hide();
 
     online(false);
+
+    setupChat();
+
+    $("#ext").keyup(function (event) {
+	if (event.keyCode == 13) {
+	    $( "#callbtn" ).trigger( "click" );   
+	}
+    });
+
+    $(document).keypress(function(event) {
+	if (!(cur_call && event.target.id == "page-incall")) return;
+	var key = String.fromCharCode(event.keyCode);
+	var i = parseInt(key);
+
+
+	if (key === "#" || key === "*" || key === "0" || (i > 0 && i <= 9)) {
+	    cur_call.dtmf(key);
+	}
+    });
+
+
 }
 
 $(document).ready(function() {
+    var hash = window.location.hash.substring(1);    
+    var a = [];
+
+    if (hash && hash.indexOf("page-") == -1) {
+	window.location.hash = "";
+	$("#ext").val(hash);
+	autocall = true;
+    }
+
+    if (hash && (a = hash.split("&"))) {
+	window.location.hash = a[0];
+    }
+
     init();
-    $("#page-incall").on("pagebeforechange", function(event) {});
+
 });
 
-$(document).bind("pagebeforechange", function(e, data) {
-    if (typeof(data.toPage) !== "string") {
-        return;
+
+var lastTo = 0;
+
+$(document).bind("pagecontainerchange", function(e, data) {
+
+    if (lastTo) {
+	clearTimeout(lastTo);
     }
 
     switch (window.location.hash) {
 
     case "#page-incall":
-
-        console.error(e, data);
-        setTimeout(function() {
+        lastTo = setTimeout(function() {
             if (!cur_call) {
                 goto_page("main");
             }
-        },
-        10000);
+        }, 1000);
+
         break;
 
     case "#page-main":
-
-        console.error(e, data);
-        setTimeout(function() {
-            if (cur_call && !ringing) {
+            if (cur_call) {
                 goto_page("incall");
             }
-        },
-        2000);
-        break;
-
+	break;
     case "#page-login":
 
-        setTimeout(function() {
+        lastTo = setTimeout(function() {
             if (online_visible) {
                 goto_page("main");
             }
@@ -410,3 +508,4 @@ $(document).bind("pagebeforechange", function(e, data) {
         break;
     }
 });
+

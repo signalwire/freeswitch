@@ -83,10 +83,14 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(PlatformName)\xmlparse\$(Configuration)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(PlatformName)\xmlparse\$(Configuration)\</IntDir>
     <ExtensionsToDeleteOnClean Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\version.h;$(ExtensionsToDeleteOnClean)</ExtensionsToDeleteOnClean>
-    <CustomBuildAfterTargets Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Clean</CustomBuildAfterTargets>
-    <CustomBuildAfterTargets Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Clean</CustomBuildAfterTargets>
-    <CustomBuildAfterTargets Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Clean</CustomBuildAfterTargets>
-    <CustomBuildAfterTargets Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Clean</CustomBuildAfterTargets>
+    <CustomBuildAfterTargets Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    </CustomBuildAfterTargets>
+    <CustomBuildAfterTargets Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    </CustomBuildAfterTargets>
+    <CustomBuildAfterTargets Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    </CustomBuildAfterTargets>
+    <CustomBuildAfterTargets Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    </CustomBuildAfterTargets>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -120,10 +124,8 @@ popd
 	</Command>
     </PreBuildEvent>
     <CustomBuildStep>
-      <Command>pushd $(XMLRPCDir)Windows
-"$(XMLRPCDir)Windows\CleanWin32.bat"
-popd
-</Command>
+      <Command>
+      </Command>
       <Outputs>NoOutput</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
@@ -162,10 +164,8 @@ popd
       </Command>
     </PreBuildEvent>
     <CustomBuildStep>
-      <Command>pushd $(XMLRPCDir)Windows
-"$(XMLRPCDir)Windows\CleanWin32.bat"
-popd
-</Command>
+      <Command>
+      </Command>
       <Outputs>NoOutput</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
@@ -201,10 +201,8 @@ popd
       </Command>
     </PreBuildEvent>
     <CustomBuildStep>
-      <Command>pushd $(XMLRPCDir)Windows
-"$(XMLRPCDir)Windows\CleanWin32.bat"
-popd
-</Command>
+      <Command>
+      </Command>
       <Outputs>NoOutput</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>
@@ -243,10 +241,8 @@ popd
       </Command>
     </PreBuildEvent>
     <CustomBuildStep>
-      <Command>pushd $(XMLRPCDir)Windows
-"$(XMLRPCDir)Windows\CleanWin32.bat"
-popd
-</Command>
+      <Command>
+      </Command>
       <Outputs>NoOutput</Outputs>
     </CustomBuildStep>
   </ItemDefinitionGroup>

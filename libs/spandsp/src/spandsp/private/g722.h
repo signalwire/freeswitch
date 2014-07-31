@@ -48,7 +48,7 @@ typedef struct
 struct g722_encode_state_s
 {
     /*! True if operating in the special ITU test mode, with the band split filters
-             disabled. */
+        disabled. */
     bool itu_test_mode;
     /*! True if the G.722 data is packed */
     bool packed;
@@ -74,7 +74,7 @@ struct g722_encode_state_s
 struct g722_decode_state_s
 {
     /*! True if operating in the special ITU test mode, with the band split filters
-             disabled. */
+        disabled. */
     bool itu_test_mode;
     /*! True if the G.722 data is packed */
     bool packed;

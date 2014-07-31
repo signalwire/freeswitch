@@ -2882,7 +2882,7 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 			}
 		}
 			
-		if (engine->ice_in.cands[engine->ice_in.chosen[1]][1].ready) {
+		if (engine->rtp_session && engine->ice_in.cands[engine->ice_in.chosen[1]][1].ready) {
 			if (engine->rtcp_mux > 0 && !strcmp(engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_addr, engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_addr)
 				&& engine->ice_in.cands[engine->ice_in.chosen[1]][1].con_port == engine->ice_in.cands[engine->ice_in.chosen[0]][0].con_port) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_INFO, "Skipping %s RTCP ICE (Same as RTP)\n", type2str(type));
@@ -3478,6 +3478,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 					} else {
 						match = (!strcasecmp(rm_encoding, imp->iananame) && 
+								 ((map->rm_pt < 96 && imp->ianacode < 96) || (map->rm_pt > 96 && imp->ianacode > 96)) &&
 								 (remote_codec_rate == codec_rate || fmtp_remote_codec_rate == imp->actual_samples_per_second)) ? 1 : 0;
 						if (fmtp_remote_codec_rate) {
 							remote_codec_rate = fmtp_remote_codec_rate;
@@ -3502,7 +3503,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 											  "Bah HUMBUG! Sticking with %s@%uh@%ui\n",
 											  imp->iananame, imp->samples_per_second, imp->microseconds_per_packet / 1000);
-						} else if ((ptime && codec_ms && codec_ms * 1000 != imp->microseconds_per_packet) || remote_codec_rate != codec_rate || map_channels != imp->number_of_channels) {
+						} else if ((ptime && codec_ms && codec_ms * 1000 != imp->microseconds_per_packet) || remote_codec_rate != codec_rate) {
 							/* ptime does not match */
 							match = 0;
 							
@@ -8404,7 +8405,8 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 							match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 						} else {
 							if (map->rm_encoding) {
-								match = strcasecmp(map->rm_encoding, imp->iananame) ? 0 : 1;
+								match = !strcasecmp(map->rm_encoding, imp->iananame) &&
+									((map->rm_pt < 96 && imp->ianacode < 96) || (map->rm_pt > 96 && imp->ianacode > 96));
 							} else {
 								match = 0;
 							}
@@ -8433,7 +8435,8 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 							match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 						} else {
 							if (map->rm_encoding) {
-								match = strcasecmp(map->rm_encoding, imp->iananame) ? 0 : 1;
+								match = !strcasecmp(map->rm_encoding, imp->iananame) &&
+									((map->rm_pt < 96 && imp->ianacode < 96) || (map->rm_pt > 96 && imp->ianacode > 96));
 							} else {
 								match = 0;
 							}
@@ -8479,7 +8482,8 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 					} else {
 						if (map->rm_encoding) {
-							match = strcasecmp(map->rm_encoding, imp->iananame) ? 0 : 1;
+							match = !strcasecmp(map->rm_encoding, imp->iananame) &&
+								((map->rm_pt < 96 && imp->ianacode < 96) || (map->rm_pt > 96 && imp->ianacode > 96));
 						} else {
 							match = 0;
 						}

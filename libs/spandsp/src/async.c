@@ -85,6 +85,7 @@ SPAN_DECLARE(const char *) signal_status_to_str(int status)
     case SIG_STATUS_LINK_IDLE:
         return "Link idle";
     }
+    /*endswitch*/
     return "???";
 }
 /*- End of function --------------------------------------------------------*/

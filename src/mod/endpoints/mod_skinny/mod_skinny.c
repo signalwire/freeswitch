@@ -528,8 +528,9 @@ uint32_t skinny_line_count_active(listener_t *listener)
 	if ((sql = switch_mprintf(
 			"SELECT call_state FROM skinny_active_lines "
 			"WHERE device_name='%s' AND device_instance=%d "
-			"AND call_state != 2",
-			listener->device_name, listener->device_instance
+			"AND call_state not in (%d,%d,%d)",
+			listener->device_name, listener->device_instance, 
+			SKINNY_ON_HOOK, SKINNY_IN_USE_REMOTELY, SKINNY_HOLD
 			))) {
 
 		skinny_execute_sql_callback(listener->profile, listener->profile->sql_mutex, sql, skinny_line_count_active_callback, &helper);
@@ -997,7 +998,7 @@ int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnN
 			/* re-enabling for testing to bring back bad behavior */
 			send_set_speaker_mode(listener, SKINNY_SPEAKER_OFF);
 		}
-		send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, 0, call_id);
+		send_set_ringer(listener, SKINNY_RING_OFF, SKINNY_RING_FOREVER, line_instance, call_id);
 	}
 	return 0;
 }

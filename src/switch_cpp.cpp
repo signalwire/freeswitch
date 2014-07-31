@@ -222,12 +222,11 @@ SWITCH_DECLARE_CONSTRUCTOR API::API(CoreSession *s)
 	} else {
 		session = NULL;
 	}
-	last_data = NULL;
 }
 
 SWITCH_DECLARE_CONSTRUCTOR API::~API()
 {
-	switch_safe_free(last_data);
+	return;
 }
 
 
@@ -237,9 +236,7 @@ SWITCH_DECLARE(const char *) API::execute(const char *cmd, const char *arg)
 	this_check("");
 	SWITCH_STANDARD_STREAM(stream);
 	switch_api_execute(cmd, arg, session, &stream);
-	switch_safe_free(last_data);
-	last_data = (char *) stream.data;
-	return last_data;
+	return (char *) stream.data;
 }
 
 
@@ -269,13 +266,10 @@ SWITCH_DECLARE(const char *) API::executeString(const char *cmd)
 		*arg++ = '\0';
 	}
 
-	switch_safe_free(last_data);
-	
 	SWITCH_STANDARD_STREAM(stream);
 	switch_api_execute(mycmd, arg, session, &stream);
-	last_data = (char *) stream.data;
 	switch_safe_free(mycmd);
-	return last_data;
+	return (char *) stream.data;
 }
 
 SWITCH_DECLARE_CONSTRUCTOR Event::Event(const char *type, const char *subclass_name)
@@ -1237,6 +1231,19 @@ SWITCH_DECLARE(void) CoreSession::consoleLog(char *level_str, char *msg)
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), level, "%s", switch_str_nil(msg));
 }
 
+SWITCH_DECLARE(void) CoreSession::consoleLog2(char *level_str, char *file, char *func, int line, char *msg)
+{
+	switch_log_level_t level = SWITCH_LOG_DEBUG;
+	if (level_str) {
+		level = switch_log_str2level(level_str);
+		if (level == SWITCH_LOG_INVALID) {
+			level = SWITCH_LOG_DEBUG;
+		}
+	}
+    switch_log_printf(SWITCH_CHANNEL_ID_SESSION, file, func, line, (const char*)session,
+					  level, "%s", switch_str_nil(msg));
+}
+
 /* ---- methods not bound to CoreSession instance ---- */
 
 
@@ -1274,14 +1281,14 @@ SWITCH_DECLARE(void) consoleLog(char *level_str, char *msg)
 	return console_log(level_str, msg);
 }
 
+SWITCH_DECLARE(void) consoleLog2(char *level_str, char *file, char *func, int line, char *msg)
+{
+	return console_log2(level_str, file, func, line, msg);
+}
+
 SWITCH_DECLARE(void) consoleCleanLog(char *msg)
 {
 	return console_clean_log(msg);
-}
-
-SWITCH_DECLARE(void) consoleChannelLog(char *level_str, char *file, char *func, int line, char *msg)
-{
-    return console_channel_log(level_str, file, func, line, msg);
 }
 
 SWITCH_DECLARE(void) console_log(char *level_str, char *msg)
@@ -1296,12 +1303,7 @@ SWITCH_DECLARE(void) console_log(char *level_str, char *msg)
     switch_log_printf(SWITCH_CHANNEL_LOG, level, "%s", switch_str_nil(msg));
 }
 
-SWITCH_DECLARE(void) console_clean_log(char *msg)
-{
-    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN,SWITCH_LOG_DEBUG, "%s", switch_str_nil(msg));
-}
-
-SWITCH_DECLARE(void) console_channel_log(char *level_str, char *file, char *func, int line, char *msg)
+SWITCH_DECLARE(void) console_log2(char *level_str, char *file, char *func, int line, char *msg)
 {
     switch_log_level_t level = SWITCH_LOG_DEBUG;
     if (level_str) {
@@ -1311,6 +1313,11 @@ SWITCH_DECLARE(void) console_channel_log(char *level_str, char *file, char *func
         }
     }
     switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, level, "%s", switch_str_nil(msg));
+}
+
+SWITCH_DECLARE(void) console_clean_log(char *msg)
+{
+    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN,SWITCH_LOG_DEBUG, "%s", switch_str_nil(msg));
 }
 
 SWITCH_DECLARE(bool) email(char *to, char *from, char *headers, char *body, char *file, char *convert_cmd, char *convert_ext)

@@ -49,6 +49,24 @@ static __inline__ void vec_copyi32(int32_t z[], const int32_t x[], int n)
 }
 /*- End of function --------------------------------------------------------*/
 
+static __inline__ void vec_movei(int z[], const int x[], int n)
+{
+    memmove(z, x, n*sizeof(z[0]));
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ void vec_movei16(int16_t z[], const int16_t x[], int n)
+{
+    memmove(z, x, n*sizeof(z[0]));
+}
+/*- End of function --------------------------------------------------------*/
+
+static __inline__ void vec_movei32(int32_t z[], const int32_t x[], int n)
+{
+    memmove(z, x, n*sizeof(z[0]));
+}
+/*- End of function --------------------------------------------------------*/
+
 static __inline__ void vec_zeroi(int z[], int n)
 {
     memset(z, 0, n*sizeof(z[0]));

@@ -5679,7 +5679,7 @@
         <step dir="T" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="CTC" value="FF C8 C8 00 10"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="CTC" value="FF C8 C8 00 00"/>
         <step dir="R" type="SILENCE"/>
 
         <step type="WAIT" value="75"/>
@@ -5687,7 +5687,7 @@
         <step dir="T" type="HDLC" modem="V.21" tag="CTR" value="FF C8 23"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/2400" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
         <step dir="R" type="SILENCE"/>
 
@@ -5696,7 +5696,7 @@
         <step dir="T" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/2400" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
         <step dir="R" type="SILENCE"/>
 
@@ -5705,7 +5705,7 @@
         <step dir="T" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/2400" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
         <step dir="R" type="SILENCE"/>
 
@@ -5714,7 +5714,7 @@
         <step dir="T" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/2400" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
         <step dir="R" type="SILENCE"/>
 
@@ -5793,7 +5793,7 @@
         <step dir="T" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 00 00 00 00 FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="CTC+" value="FF C8 C8 00 10"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="CTC+" value="FF C8 C8 00 00"/>
         <step dir="R" type="SILENCE"/>
 
         <step type="WAIT" value="75"/>
@@ -5801,7 +5801,7 @@
         <step dir="T" type="HDLC" tag="CTR" value="FF C8 23"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="PP" modem="V.27ter/4800" frame_size="64" timeout="60000"/>
+        <step dir="R" type="PP" modem="V.27ter/2400" frame_size="64" timeout="60000"/>
         <step dir="R" type="HDLC" modem="V.21" tag="PPS-EOP+" value="FF C8 FD F4 ..."/>
 
         <step type="WAIT" value="75"/>

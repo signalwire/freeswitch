@@ -21,6 +21,10 @@ public class freeswitch {
     freeswitchJNI.consoleLog(level_str, msg);
   }
 
+  public static void consoleLog2(String level_str, String file, String func, int line, String msg) {
+    freeswitchJNI.consoleLog2(level_str, file, func, line, msg);
+  }
+
   public static void consoleCleanLog(String msg) {
     freeswitchJNI.consoleCleanLog(msg);
   }
@@ -35,6 +39,10 @@ public class freeswitch {
 
   public static void console_log(String level_str, String msg) {
     freeswitchJNI.console_log(level_str, msg);
+  }
+
+  public static void console_log2(String level_str, String file, String func, int line, String msg) {
+    freeswitchJNI.console_log2(level_str, file, func, line, msg);
   }
 
   public static void console_clean_log(String msg) {

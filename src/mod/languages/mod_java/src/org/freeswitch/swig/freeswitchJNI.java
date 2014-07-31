@@ -12,6 +12,7 @@ class freeswitchJNI {
   public final static native void setGlobalVariable(String jarg1, String jarg2);
   public final static native String getGlobalVariable(String jarg1);
   public final static native void consoleLog(String jarg1, String jarg2);
+  public final static native void consoleLog2(String jarg1, String jarg2, String jarg3, int jarg4, String jarg5);
   public final static native void consoleCleanLog(String jarg1);
   public final static native boolean running();
   public final static native boolean email(String jarg1, String jarg2, String jarg3, String jarg4, String jarg5, String jarg6, String jarg7);
@@ -158,7 +159,9 @@ class freeswitchJNI {
   public final static native void CoreSession_check_hangup_hook(long jarg1, CoreSession jarg1_);
   public final static native long CoreSession_run_dtmf_callback(long jarg1, CoreSession jarg1_, long jarg2, long jarg3);
   public final static native void CoreSession_consoleLog(long jarg1, CoreSession jarg1_, String jarg2, String jarg3);
+  public final static native void CoreSession_consoleLog2(long jarg1, CoreSession jarg1_, String jarg2, String jarg3, String jarg4, int jarg5, String jarg6);
   public final static native void console_log(String jarg1, String jarg2);
+  public final static native void console_log2(String jarg1, String jarg2, String jarg3, int jarg4, String jarg5);
   public final static native void console_clean_log(String jarg1);
   public final static native void msleep(long jarg1);
   public final static native void bridge(long jarg1, CoreSession jarg1_, long jarg2, CoreSession jarg2_);

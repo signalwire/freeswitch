@@ -170,7 +170,7 @@ SPAN_DECLARE(int) super_tone_tx(super_tone_tx_state_t *s, int16_t amp[], int max
     float xamp;
     super_tone_tx_step_t *tree;
 
-    if (s->level < 0  ||  s->level > 3)
+    if (s->level < 0  ||  s->level >= SUPER_TONE_TX_MAX_LEVELS)
         return 0;
     samples = 0;
     tree = s->levels[s->level];
@@ -182,7 +182,7 @@ SPAN_DECLARE(int) super_tone_tx(super_tone_tx_state_t *s, int16_t amp[], int max
             if (s->current_position == 0)
             {
                 /* New step - prepare the tone generator */
-                for (i = 0;  i < 4;  i++)
+                for (i = 0;  i < SUPER_TONE_TX_MAX_TONES;  i++)
                     s->tone[i] = tree->tone[i];
             }
             len = tree->length - s->current_position;
@@ -216,7 +216,7 @@ SPAN_DECLARE(int) super_tone_tx(super_tone_tx_state_t *s, int16_t amp[], int max
                 for (limit = len + samples;  samples < limit;  samples++)
                 {
                     xamp = 0.0f;
-                    for (i = 0;  i < 4;  i++)
+                    for (i = 0;  i < SUPER_TONE_TX_MAX_TONES;  i++)
                     {
                         if (s->tone[i].phase_rate == 0)
                             break;
@@ -251,9 +251,14 @@ SPAN_DECLARE(int) super_tone_tx(super_tone_tx_state_t *s, int16_t amp[], int max
         /* Nesting has priority... */
         if (tree->nest)
         {
-            tree = tree->nest;
-            s->levels[++s->level] = tree;
-            s->cycles[s->level] = tree->cycles;
+            if (s->level < SUPER_TONE_TX_MAX_LEVELS - 1)
+            {
+                /* TODO: We have stopped an over-range value being used, but we really
+                         ought to deal with the condition properly. */
+                tree = tree->nest;
+                s->levels[++s->level] = tree;
+                s->cycles[s->level] = tree->cycles;
+            }
         }
         else
         {

@@ -209,7 +209,8 @@ MPF_DECLARE(apt_bool_t) mpf_dtmf_generator_put_frame(
 		/* Get next valid digit from queue */
 		do {
 			generator->event_id = (apr_byte_t) mpf_dtmf_char_to_event_id(*generator->queue);
-			strcpy(generator->queue, generator->queue + 1);
+            /* This used to be a strcpy(), but that can give overlapping buffer issues */
+			memmove(generator->queue, &generator->queue[1], strlen(&generator->queue[1]) + 1);
 		} while (*generator->queue && (generator->event_id > DTMF_EVENT_ID_MAX));
 		/* Reset state */
 		if (generator->event_id <= DTMF_EVENT_ID_MAX) {

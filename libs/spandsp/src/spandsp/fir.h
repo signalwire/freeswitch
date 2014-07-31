@@ -38,6 +38,8 @@
 #include "mmx.h"
 #endif
 
+#include "alloc.h"
+
 /*!
     16 bit integer FIR descriptor. This defines the working state for a single
     instance of an FIR filter using 16 bit integer coefficients.
@@ -88,10 +90,10 @@ static __inline__ const int16_t *fir16_create(fir16_state_t *fir,
     fir->curr_pos = taps - 1;
     fir->coeffs = coeffs;
 #if defined(USE_MMX)  ||  defined(USE_SSE2)
-    if ((fir->history = malloc(2*taps*sizeof(int16_t))))
+    if ((fir->history = span_alloc(2*taps*sizeof(int16_t))))
         memset(fir->history, 0, 2*taps*sizeof(int16_t));
 #else
-    if ((fir->history = (int16_t *) malloc(taps*sizeof(int16_t))))
+    if ((fir->history = (int16_t *) span_alloc(taps*sizeof(int16_t))))
         memset(fir->history, 0, taps*sizeof(int16_t));
 #endif
     return fir->history;
@@ -110,7 +112,7 @@ static __inline__ void fir16_flush(fir16_state_t *fir)
 
 static __inline__ void fir16_free(fir16_state_t *fir)
 {
-    free(fir->history);
+    span_free(fir->history);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -210,7 +212,7 @@ static __inline__ const int16_t *fir32_create(fir32_state_t *fir,
     fir->taps = taps;
     fir->curr_pos = taps - 1;
     fir->coeffs = coeffs;
-    fir->history = (int16_t *) malloc(taps*sizeof(int16_t));
+    fir->history = (int16_t *) span_alloc(taps*sizeof(int16_t));
     if (fir->history)
         memset(fir->history, '\0', taps*sizeof(int16_t));
     return fir->history;
@@ -225,7 +227,7 @@ static __inline__ void fir32_flush(fir32_state_t *fir)
 
 static __inline__ void fir32_free(fir32_state_t *fir)
 {
-    free(fir->history);
+    span_free(fir->history);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -258,7 +260,7 @@ static __inline__ const float *fir_float_create(fir_float_state_t *fir,
     fir->taps = taps;
     fir->curr_pos = taps - 1;
     fir->coeffs = coeffs;
-    fir->history = (float *) malloc(taps*sizeof(float));
+    fir->history = (float *) span_alloc(taps*sizeof(float));
     if (fir->history)
         memset(fir->history, '\0', taps*sizeof(float));
     return fir->history;
@@ -267,7 +269,7 @@ static __inline__ const float *fir_float_create(fir_float_state_t *fir,
 
 static __inline__ void fir_float_free(fir_float_state_t *fir)
 {
-    free(fir->history);
+    span_free(fir->history);
 }
 /*- End of function --------------------------------------------------------*/
 

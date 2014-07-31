@@ -142,7 +142,8 @@ MPF_DECLARE(char) mpf_dtmf_detector_digit_get(struct mpf_dtmf_detector_t *detect
 	apr_thread_mutex_lock(detector->mutex);
 	digit = detector->buf[0];
 	if (digit) {
-		strcpy(detector->buf, detector->buf + 1);
+        /* This used to be a strcpy(), but that can give overlapping buffer issues */
+		memmove(detector->buf, &detector->buf[1], strlen(&detector->buf[1]) + 1);
 		detector->digits--;
 	}
 	apr_thread_mutex_unlock(detector->mutex);

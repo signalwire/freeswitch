@@ -156,6 +156,11 @@ Description: Open Settlement Protocol
  This module adds support for the Open Settlement Protocol (OSP).
 Build-Depends: libosptk3-dev
 
+Module: applications/mod_prefix
+Description: Longest prefix match search
+ This module provides a data store with fast lookups by the longest
+ prefix match (LPM) rule.
+
 Module: applications/mod_rad_auth
 Description: RADIUS AA
  This module implements RADIUS Authentication and Authorization.
@@ -405,7 +410,7 @@ Build-Depends: libopal-dev
 Module: endpoints/mod_portaudio
 Description: mod_portaudio
  Adds mod_portaudio.
-Build-Depends: libasound2-dev
+Build-Depends: portaudio19-dev
 
 Module: endpoints/mod_reference
 Description: mod_reference
@@ -517,6 +522,7 @@ Description: mod_native_file
 Module: formats/mod_portaudio_stream
 Description: mod_portaudio_stream
  Adds mod_portaudio_stream.
+Build-Depends: portaudio19-dev
 
 Module: formats/mod_shell_stream
 Description: mod_shell_stream

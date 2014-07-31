@@ -1,25 +1,20 @@
 include $(top_srcdir)/build/modmake.rulesam
-
 MODNAME=mod_portaudio_stream
-PA_DIR=$(switch_srcdir)/libs/portaudio
-PALA=$(switch_builddir)/libs/portaudio/lib/libportaudio.la
 MODPA_DIR=$(switch_srcdir)/src/mod/endpoints/mod_portaudio
 
+if HAVE_PORTAUDIO
 mod_LTLIBRARIES = mod_portaudio_stream.la
 mod_portaudio_stream_la_SOURCES = mod_portaudio_stream.c ../../endpoints/mod_portaudio/pablio.c ../../endpoints/mod_portaudio/pa_ringbuffer.c
-mod_portaudio_stream_la_CFLAGS = -I. -I$(PA_DIR)/include -D__EXTENSION__=1 -I$(MODPA_DIR) $(AM_CFLAGS)
-mod_portaudio_stream_la_LIBADD = $(switch_builddir)/libfreeswitch.la $(PALA)
-mod_portaudio_stream_la_LDFLAGS = -avoid-version -module -no-undefined -shared $(PA_LIBS)
-
+mod_portaudio_stream_la_CFLAGS = $(AM_CFLAGS)
+mod_portaudio_stream_la_CPPFLAGS = -I. -I$(MODPA_DIR) $(PORTAUDIO_CFLAGS) $(AM_CPPFLAGS)
+mod_portaudio_stream_la_LIBADD = $(PORTAUDIO_LIBS) $(switch_builddir)/libfreeswitch.la
+mod_portaudio_stream_la_LDFLAGS = -avoid-version -module -no-undefined -shared
 if ISMAC
 mod_portaudio_stream_la_LDFLAGS += -framework CoreAudio -framework AudioToolbox -framework AudioUnit -framework Carbon
 endif
-
-BUILT_SOURCES = $(PALA)
-
-$(mod_portaudio_stream_la_SOURCES) : $(BUILT_SOURCES)
-
-$(PALA): $(PA_DIR) $(PA_DIR)/.update
-	cd $(switch_builddir)/libs/portaudio && $(MAKE) PORTAUDIO_CFLAGS="$(SWITCH_AM_CFLAGS)"
-	$(TOUCH_TARGET)
-
+else
+install: error
+all: error
+error:
+	$(error You must install portaudio19-dev to build $(MODNAME))
+endif

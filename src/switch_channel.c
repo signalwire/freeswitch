@@ -393,6 +393,7 @@ SWITCH_DECLARE(void) switch_channel_set_direction(switch_channel_t *channel, swi
 {
 	if (!switch_core_session_in_thread(channel->session)) {
 		channel->direction = channel->logical_direction = direction;
+		switch_channel_set_variable(channel, "direction", switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
 	}
 }
 
@@ -1284,7 +1285,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_export_variable_printf(switch_cha
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	status = switch_channel_export_variable(channel, varname, export_varname, data);
+	status = switch_channel_export_variable(channel, varname, data, export_varname);
 	
 	free(data);
 	
@@ -1988,6 +1989,10 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 
 	if (flag == CF_VIDEO_PASSIVE && CLEAR) {
 		switch_core_session_wake_video_thread(channel->session);
+	}
+
+	if (flag == CF_RECOVERING && !channel->hangup_cause) {
+		switch_core_recovery_track(channel->session);
 	}
 
 }

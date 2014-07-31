@@ -306,8 +306,8 @@ Build-Depends:
  $(debian_wrap "${mod_build_depends}")
 Standards-Version: 3.9.3
 Homepage: http://freeswitch.org/
-Vcs-Git: git://git.freeswitch.org/freeswitch
-Vcs-Browser: http://git.freeswitch.org/git/freeswitch/
+Vcs-Git: https://stash.freeswitch.org/scm/fs/freeswitch.git
+Vcs-Browser: https://stash.freeswitch.org/projects/FS/repos/freeswitch/browse
 
 EOF
 }

@@ -30,6 +30,7 @@ applications/mod_httapi
 #applications/mod_nibblebill
 #applications/mod_oreka
 #applications/mod_osp
+#applications/mod_prefix
 #applications/mod_rad_auth
 #applications/mod_redis
 #applications/mod_rss

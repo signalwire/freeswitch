@@ -319,6 +319,7 @@ static void event_handler(switch_event_t *event)
 									  &tmplen, (unsigned char *) MAGIC, (int) strlen((char *) MAGIC));
 					outlen += tmplen;
 					EVP_EncryptFinal(&ctx, (unsigned char *) buf + SWITCH_UUID_FORMATTED_LENGTH + outlen, &tmplen);
+					EVP_CIPHER_CTX_cleanup(&ctx);
 					outlen += tmplen;
 					len = (size_t) outlen + SWITCH_UUID_FORMATTED_LENGTH;
 					*(buf + SWITCH_UUID_FORMATTED_LENGTH + outlen) = '\0';
@@ -546,7 +547,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 			EVP_DecryptInit(&ctx, NULL, (unsigned char *) globals.psk, (unsigned char *) uuid_str);
 			EVP_DecryptUpdate(&ctx, (unsigned char *) tmp, &outl, (unsigned char *) packet, (int) len);
 			EVP_DecryptFinal(&ctx, (unsigned char *) tmp + outl, &tmplen);
-
+			EVP_CIPHER_CTX_cleanup(&ctx);
 			*(tmp + outl + tmplen) = '\0';
 
 			/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "decrypted event as %s\n----------\n of actual length %d (%d) %d\n", tmp, outl + tmplen, (int) len, (int) strlen(tmp)); */

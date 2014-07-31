@@ -88,7 +88,7 @@ struct r2_mf_rx_state_s
     tone_report_func_t callback;
     /*! An opaque pointer passed to the callback function. */
     void *callback_data;
-    /*! Tue is we are detecting forward tones. False if we are detecting backward tones */
+    /*! True if we are detecting forward tones. False if we are detecting backward tones */
     bool fwd;
     /*! Tone detector working states */
     goertzel_state_t out[6];

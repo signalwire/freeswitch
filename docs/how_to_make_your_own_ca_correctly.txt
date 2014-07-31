@@ -1,0 +1,50 @@
+Someone should probably turn this into a nice how-to:
+
+Here is how I did it.
+
+wget http://www.openssl.org/contrib/ssl.ca-0.1.tar.gz
+tar zxfv ssl.ca-0.1.tar.gz
+cd ssl.ca-0.1/
+perl -i -pe 's/md5/sha1/g' *.sh
+perl -i -pe 's/1024/2048/g' *.sh
+./new-root-ca.sh
+./new-server-cert.sh self.bkw.org
+./sign-server-cert.sh self.bkw.org
+cat self.bkw.org.crt self.bkw.org.key > /usr/local/freeswitch/certs/wss.pem
+
+Setup Apache:
+
+default-ssl:
+
+SSLCertificateFile    /usr/local/freeswitch/certs/wss.pem
+SSLCertificateKeyFile /usr/local/freeswitch/certs/wss.pem
+SSLCertificateChainFile /usr/local/freeswitch/certs/wss.pem
+
+Setup Sofia TLS:
+
+cat self.bkw.org.crt self.bkw.org.key > /usr/local/freeswitch/certs/agent.pem
+cat ca.crt > /usr/local/freeswitch/certs/cafile.pem
+
+vars.xml:
+
+<X-PRE-PROCESS cmd="set" data="internal_ssl_enable=true"/>
+<X-PRE-PROCESS cmd="set" data="external_ssl_enable=true"/>
+
+Restart FreeSWITCH.
+
+Now make sure your system has ca.crt imported so it will trust your new found hotness.
+
+TEST:
+
+openssl s_client -connect self.bkw.org:443
+openssl s_client -connect self.bkw.org:5061
+openssl s_client -connect self.bkw.org:5081
+openssl s_client -connect self.bkw.org:8082
+
+
+Depending on what you've setup you'll see:
+
+subject=/C=US/ST=Oklahoma/L=McAlester/O=Tonka Truck/OU=Secure Web Server/CN=self.bkw.org/emailAddress=brian@bkw.org
+issuer=/C=US/ST=Oklahoma/L=McAlester/O=Whizzzzzzy Bang Bang/OU=Certification Services Division/CN=WBB Root CA/emailAddress=brian@bkw.org
+
+Or there abouts.

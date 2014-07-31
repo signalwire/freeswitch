@@ -592,8 +592,6 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 	const char *hint;
 	*/		
 
-
-
 	dest_proto = switch_event_get_header(message_event, "dest_proto");
 
 	if (!dest_proto) {
@@ -615,9 +613,8 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "proto", proto);
 	}
 
-
 	replying = switch_event_get_header(message_event, "replying");
-	
+
 	if (!switch_true(replying) && !switch_stristr("global", proto) && !switch_true(switch_event_get_header(message_event, "skip_global_process"))) {
 		switch_mutex_lock(loadable_modules.mutex);
 		for (hi = switch_core_hash_first(loadable_modules.chat_hash); hi; hi = switch_core_hash_next(&hi)) {
@@ -626,20 +623,21 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 			if ((ci = (switch_chat_interface_t *) val)) {
 				if (ci->chat_send && !strncasecmp(ci->interface_name, "GLOBAL_", 7)) {
 					status = ci->chat_send(message_event);
+					
 					if (status == SWITCH_STATUS_SUCCESS) {
-						/* The event was handled by an extension in the chatplan, 
-						 * so the event will be duplicated, modified and queued again, 
-						 * but it won't be processed by the chatplan again.
-						 * So this copy of the event can be destroyed by the caller.
-						 */ 
-						switch_mutex_unlock(loadable_modules.mutex);
-						return SWITCH_STATUS_SUCCESS;
+						if (switch_true(switch_event_get_header(message_event, "final_delivery"))) {
+							/* The event was handled by an extension in the chatplan, 
+							 * so the event will be duplicated, modified and queued again, 
+							 * but it won't be processed by the chatplan again.
+							 * So this copy of the event can be destroyed by the caller.
+							 */ 
+							do_skip = 1;
+						}
 					} else if (status == SWITCH_STATUS_BREAK) {
 						/* The event went through the chatplan, but no extension matched
 						 * to handle the sms messsage. It'll be attempted to be delivered
 						 * directly, and unless that works the sms delivery will have failed.
 						 */
-						do_skip = 1;
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Chat Interface Error [%s]!\n", dest_proto);
 						break;
@@ -651,6 +649,7 @@ static switch_status_t do_chat_send(switch_event_t *message_event)
 		switch_mutex_unlock(loadable_modules.mutex);
 	}
 	
+
 	if (!do_skip && !switch_stristr("GLOBAL", dest_proto)) {
 		if ((ci = switch_loadable_module_get_chat_interface(dest_proto)) && ci->chat_send) {
 			status = ci->chat_send(message_event);

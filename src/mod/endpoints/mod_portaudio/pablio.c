@@ -44,12 +44,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "portaudio.h"
-#include "pa_ringbuffer.h"
-#include "pablio.h"
 #include <string.h>
 #include <time.h>
-
+#include <portaudio.h>
+#include "pa_ringbuffer.h"
+#include "pablio.h"
 
 /************************************************************************/
 /******** Prototypes ****************************************************/

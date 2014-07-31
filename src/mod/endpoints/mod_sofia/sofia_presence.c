@@ -877,15 +877,16 @@ static void do_dialog_probe(switch_event_t *event)
 							 "sip_subscriptions.call_id='%q' "
 							 "left join sip_registrations on sip_registrations.hostname=sip_dialogs.hostname and "
 							 "sip_registrations.profile_name=sip_dialogs.profile_name and "
-							 "(sip_dialogs.sip_from_user = sip_registrations.sip_user "
-							 "and (sip_dialogs.sip_from_host = sip_registrations.orig_server_host or "
+							 "(sip_dialogs.sip_from_user = sip_registrations.sip_user and sip_dialogs.sip_from_host = '%q' and "
+							 "(sip_dialogs.sip_from_host = sip_registrations.orig_server_host or "
 							 "sip_dialogs.sip_from_host = sip_registrations.sip_host) ) "
 							 "where sip_dialogs.hostname='%q' and sip_dialogs.profile_name='%q' and "
 							 "sip_dialogs.call_info_state != 'seized' and sip_dialogs.presence_id='%q@%q' or (sip_registrations.sip_user='%q' and "
 							 "(sip_registrations.orig_server_host='%q' or sip_registrations.sub_host='%q' "
 							 "or sip_registrations.presence_hosts like '%%%q%%'))",
 							 probe_euser, probe_host,
-							 sub_call_id, mod_sofia_globals.hostname, profile->name,
+							 sub_call_id, probe_host,
+							 mod_sofia_globals.hostname, profile->name,
 							 probe_euser, probe_host,
 							 probe_euser, probe_host, probe_host, probe_host);
 		switch_assert(sql);
@@ -3903,12 +3904,13 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		} else {
 			sip_accept_t *ap = sip->sip_accept;
-			char accept[256] = "";
+			char accept_header[256] = "";
 
 			sub_state = nua_substate_active;
 
 			while (ap) {
-				switch_snprintf(accept + strlen(accept), sizeof(accept) - strlen(accept), "%s%s ", ap->ac_type, ap->ac_next ? "," : "");
+				switch_snprintf(accept_header + strlen(accept_header), sizeof(accept_header) - strlen(accept_header),
+								"%s%s ", ap->ac_type, ap->ac_next ? "," : "");
 				ap = ap->ac_next;
 			}
 
@@ -3919,7 +3921,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 								 proto, from_user, from_host, to_user, to_host, profile->presence_hosts ? profile->presence_hosts : "",
 								 event, contact_str, call_id, full_from, full_via,
 								 (long) switch_epoch_time_now(NULL) + exp_delta,
-								 full_agent, accept, profile->name, mod_sofia_globals.hostname,
+								 full_agent, accept_header, profile->name, mod_sofia_globals.hostname,
 								 np.network_port, np.network_ip, orig_proto, full_to, use_to_tag);
 
 			switch_assert(sql != NULL);
@@ -4807,6 +4809,8 @@ void sofia_presence_handle_sip_i_message(int status,
 			char *p;
 			char *full_from;
 			char proto[512] = SOFIA_CHAT_PROTO;
+			sip_unknown_t *un;
+			int first_history_info = 1;
 
 			full_from = sip_header_as_string(nh->nh_home, (void *) sip->sip_from);
 
@@ -4852,10 +4856,76 @@ void sofia_presence_handle_sip_i_message(int status,
 				} else {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "text/plain");
 				}
-
+				
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from_full", full_from);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "sip_profile", profile->name);
+				
 
+				if (sip->sip_call_info) {
+					sip_call_info_t *call_info = sip->sip_call_info;
+					char *ci = sip_header_as_string(nua_handle_home(nh), (void *) call_info);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "sip_call_info", ci);
+				}
+				
+				/* Loop thru unknown Headers Here so we can do something with them */
+				for (un = sip->sip_unknown; un; un = un->un_next) {
+					if (!strncasecmp(un->un_name, "Diversion", 9)) {
+						/* Basic Diversion Support for Diversion Indication in SIP */
+						/* draft-levy-sip-diversion-08 */
+						if (!zstr(un->un_value)) {
+							char *tmp_name;
+							if ((tmp_name = switch_mprintf("%s%s", SOFIA_SIP_HEADER_PREFIX, un->un_name))) {
+								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, tmp_name, un->un_value);
+								free(tmp_name);
+							}
+						}
+					} else if (!strncasecmp(un->un_name, "History-Info", 12)) {
+						if (first_history_info) {
+							/* If the header exists first time, make sure to remove old info and re-set the variable */
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "sip_history_info", un->un_value);
+							first_history_info = 0;
+						} else {
+							/* Append the History-Info into one long string */
+							const char *history_var = switch_channel_get_variable(channel, "sip_history_info");
+							if (!zstr(history_var)) {
+								char *tmp_str;
+								if ((tmp_str = switch_mprintf("%s, %s", history_var, un->un_value))) {
+									switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "sip_history_info", tmp_str);
+									free(tmp_str);
+								} else {
+									switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "sip_history_info", un->un_value);
+								}
+							} else {
+								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "sip_history_info", un->un_value);
+							}
+						}
+					} else if (!strcasecmp(un->un_name, "Geolocation")) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "sip_geolocation", un->un_value);
+					} else if (!strcasecmp(un->un_name, "Geolocation-Error")) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "sip_geolocation_error", un->un_value);
+					} else if (!strncasecmp(un->un_name, "X-", 2) || !strncasecmp(un->un_name, "P-", 2) || !strcasecmp(un->un_name, "User-to-User")) {
+						if (!zstr(un->un_value)) {
+							char new_name[512] = "";
+							int reps = 0;
+							for (;;) {
+								char postfix[25] = "";
+								if (reps > 0) {
+									switch_snprintf(postfix, sizeof(postfix), "-%d", reps);
+								}
+								reps++;
+								switch_snprintf(new_name, sizeof(new_name), "%s%s%s", SOFIA_SIP_HEADER_PREFIX, un->un_name, postfix);
+
+								if (switch_event_get_header(event, new_name)) {
+									continue;
+								}
+
+								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, new_name, un->un_value);
+								break;
+							}
+						}
+					}
+				}
+				
 				if (msg) {
 					switch_event_add_body(event, "%s", msg);
 				}

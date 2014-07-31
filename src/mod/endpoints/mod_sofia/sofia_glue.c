@@ -1495,7 +1495,9 @@ char *sofia_glue_get_url_from_contact(char *buf, uint8_t to_dup)
 		buf++;
 	}
 
-	if ((url = strchr(buf, '<')) && (e = switch_find_end_paren(url, '<', '>'))) {
+	url = strchr(buf, '<');
+
+	if (url && (e = switch_find_end_paren(url, '<', '>'))) {
 		url++;
 		if (to_dup) {
 			url = strdup(url);
@@ -1504,6 +1506,8 @@ char *sofia_glue_get_url_from_contact(char *buf, uint8_t to_dup)
 
 		*e = '\0';
 	} else {
+		if (url) buf++;
+
 		if (to_dup) {
 			url = strdup(buf);
 		} else {

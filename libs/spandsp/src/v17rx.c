@@ -103,9 +103,9 @@
 /*! The nominal baud or symbol rate */
 #define BAUD_RATE                       2400
 /*! The adaption rate coefficient for the equalizer during initial training */
-#define EQUALIZER_DELTA                 0.21f
-/*! The adaption rate coefficient for the equalizer during continuous fine tuning */
-#define EQUALIZER_SLOW_ADAPT_RATIO      0.1f
+#define EQUALIZER_FAST_ADAPTION_DELTA   (0.21f/V17_EQUALIZER_LEN)
+/*! The adaption rate coefficient for the equalizer during fine tuning */
+#define EQUALIZER_SLOW_ADAPTION_DELTA   (0.1f*EQUALIZER_FAST_ADAPTION_DELTA)
 
 /* Segments of the training sequence */
 /*! The length of training segment 1, in symbols */
@@ -236,11 +236,11 @@ static void equalizer_restore(v17_rx_state_t *s)
 #if defined(SPANDSP_USE_FIXED_POINTx)
     cvec_copyi16(s->eq_coeff, s->eq_coeff_save, V17_EQUALIZER_LEN);
     cvec_zeroi16(s->eq_buf, V17_EQUALIZER_LEN);
-    s->eq_delta = 32768.0f*EQUALIZER_SLOW_ADAPT_RATIO*EQUALIZER_DELTA/V17_EQUALIZER_LEN;
+    s->eq_delta = 32768.0f*EQUALIZER_SLOW_ADAPTION_DELTA;
 #else
     cvec_copyf(s->eq_coeff, s->eq_coeff_save, V17_EQUALIZER_LEN);
     cvec_zerof(s->eq_buf, V17_EQUALIZER_LEN);
-    s->eq_delta = EQUALIZER_SLOW_ADAPT_RATIO*EQUALIZER_DELTA/V17_EQUALIZER_LEN;
+    s->eq_delta = EQUALIZER_SLOW_ADAPTION_DELTA;
 #endif
 
     s->eq_put_step = RX_PULSESHAPER_COEFF_SETS*10/(3*2) - 1;
@@ -258,14 +258,14 @@ static void equalizer_reset(v17_rx_state_t *s)
     cvec_zeroi16(s->eq_coeff, V17_EQUALIZER_LEN);
     s->eq_coeff[V17_EQUALIZER_PRE_LEN] = x;
     cvec_zeroi16(s->eq_buf, V17_EQUALIZER_LEN);
-    s->eq_delta = 32768.0f*EQUALIZER_DELTA/V17_EQUALIZER_LEN;
+    s->eq_delta = 32768.0f*EQUALIZER_FAST_ADAPTION_DELTA;
 #else
     static const complexf_t x = {FP_CONSTELLATION_SCALE(3.0f), FP_CONSTELLATION_SCALE(0.0f)};
 
     cvec_zerof(s->eq_coeff, V17_EQUALIZER_LEN);
     s->eq_coeff[V17_EQUALIZER_PRE_LEN] = x;
     cvec_zerof(s->eq_buf, V17_EQUALIZER_LEN);
-    s->eq_delta = EQUALIZER_DELTA/V17_EQUALIZER_LEN;
+    s->eq_delta = EQUALIZER_FAST_ADAPTION_DELTA;
 #endif
 
     s->eq_put_step = RX_PULSESHAPER_COEFF_SETS*10/(3*2) - 1;
@@ -627,15 +627,6 @@ static __inline__ void symbol_sync(v17_rx_state_t *s)
     /* A little integration will now filter away much of the HF noise */
     s->baud_phase -= p;
     v = labs(s->baud_phase);
-    if (v > FP_SYNC_SCALE_32(100.0f))
-    {
-        i = (v > FP_SYNC_SCALE_32(1000.0f))  ?  15  :  1;
-        if (s->baud_phase < FP_SYNC_SCALE_32(0.0f))
-            i = -i;
-        //printf("v = %10.5f %5d - %f %f %d %d\n", v, i, p, s->baud_phase, s->total_baud_timing_correction);
-        s->eq_put_step += i;
-        s->total_baud_timing_correction += i;
-    }
 #else
     /* Cross correlate */
     v = s->symbol_sync_low[1]*s->symbol_sync_high[0]*SYNC_LOW_BAND_EDGE_COEFF_2
@@ -648,6 +639,7 @@ static __inline__ void symbol_sync(v17_rx_state_t *s)
     /* A little integration will now filter away much of the HF noise */
     s->baud_phase -= p;
     v = fabsf(s->baud_phase);
+#endif
     if (v > FP_SYNC_SCALE_32(100.0f))
     {
         i = (v > FP_SYNC_SCALE_32(1000.0f))  ?  15  :  1;
@@ -657,7 +649,6 @@ static __inline__ void symbol_sync(v17_rx_state_t *s)
         s->eq_put_step += i;
         s->total_baud_timing_correction += i;
     }
-#endif
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -747,7 +738,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
                out is the phase. */
             /* Check if we just saw A or B */
             /* atan(1/3) = 18.433 degrees */
-            if ((uint32_t) (angle - s->last_angles[0]) < 0x80000000U)
+            if ((uint32_t) (angle - s->last_angles[0]) < (uint32_t) DDS_PHASE(180.0f))
             {
                 angle = s->last_angles[0];
                 s->last_angles[0] = DDS_PHASE(270.0f + 18.433f);
@@ -887,7 +878,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
         {
             /* Now the equaliser adaption should be getting somewhere, slow it down, or it will never
                tune very well on a noisy signal. */
-            s->eq_delta *= EQUALIZER_SLOW_ADAPT_RATIO;
+            s->eq_delta = EQUALIZER_SLOW_ADAPTION_DELTA;
 #if defined(SPANDSP_USE_FIXED_POINTx)
             s->carrier_track_i = 1000;
 #else
@@ -1188,7 +1179,7 @@ static __inline__ int signal_detect(v17_rx_state_t *s, int16_t amp)
     {
         if (++s->low_samples > 120)
         {
-            power_meter_init(&(s->power), 4);
+            power_meter_init(&s->power, 4);
             s->high_sample = 0;
             s->low_samples = 0;
         }
@@ -1471,7 +1462,7 @@ SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_trai
     s->trellis_ptr = 14;
 
     s->carrier_phase = 0;
-    power_meter_init(&(s->power), 4);
+    power_meter_init(&s->power, 4);
 
     if (s->short_train)
     {

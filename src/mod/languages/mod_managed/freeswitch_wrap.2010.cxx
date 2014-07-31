@@ -3016,7 +3016,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_RECOMMENDED_BUFFER_SIZE_get() {
   int jresult ;
   int result;
   
-  result = (int)(4096);
+  result = (int)(8192);
   jresult = result; 
   return jresult;
 }
@@ -29061,8 +29061,8 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_slin_data_frame_data_set(void * jarg1,
   arg2 = (char *)jarg2; 
   {
     if(arg2) {
-      strncpy((char*)arg1->frame_data, (const char *)arg2, 4096-1);
-      arg1->frame_data[4096-1] = 0;
+      strncpy((char*)arg1->frame_data, (const char *)arg2, 8192-1);
+      arg1->frame_data[8192-1] = 0;
     } else {
       arg1->frame_data[0] = 0;
     }
@@ -29701,6 +29701,16 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_init(void * jarg1, void * jarg2
   result = (switch_status_t)switch_channel_init(arg1,arg2,arg3,arg4);
   jresult = result; 
   return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_presence_data_vals(void * jarg1, char * jarg2) {
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  switch_channel_set_presence_data_vals(arg1,(char const *)arg2);
 }
 
 
@@ -33927,7 +33937,7 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_unicast_conninfo_write_frame_data_set(
   {
     size_t ii;
     switch_byte_t *b = (switch_byte_t *) arg1->write_frame_data;
-    for (ii = 0; ii < (size_t)4096; ii++) b[ii] = *((switch_byte_t *) arg2 + ii);
+    for (ii = 0; ii < (size_t)8192; ii++) b[ii] = *((switch_byte_t *) arg2 + ii);
   }
 }
 
@@ -41818,6 +41828,22 @@ SWIGEXPORT void SWIGSTDCALL CSharp_consoleLog(char * jarg1, char * jarg2) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_consoleLog2(char * jarg1, char * jarg2, char * jarg3, int jarg4, char * jarg5) {
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  int arg4 ;
+  char *arg5 = (char *) 0 ;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  arg4 = (int)jarg4; 
+  arg5 = (char *)jarg5; 
+  consoleLog2(arg1,arg2,arg3,arg4,arg5);
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_consoleCleanLog(char * jarg1) {
   char *arg1 = (char *) 0 ;
   
@@ -41970,6 +41996,7 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_Api_Execute(void * jarg1, char * jarg2, cha
   arg3 = (char *)jarg3; 
   result = (char *)(arg1)->execute((char const *)arg2,(char const *)arg3);
   jresult = SWIG_csharp_string_callback((const char *)result); 
+  free(result);
   return jresult;
 }
 
@@ -41984,6 +42011,7 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_Api_ExecuteString(void * jarg1, char * jarg
   arg2 = (char *)jarg2; 
   result = (char *)(arg1)->executeString((char const *)arg2);
   jresult = SWIG_csharp_string_callback((const char *)result); 
+  free(result);
   return jresult;
 }
 
@@ -43630,6 +43658,24 @@ SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_consoleLog(void * jarg1, char * j
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_consoleLog2(void * jarg1, char * jarg2, char * jarg3, char * jarg4, int jarg5, char * jarg6) {
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
+  int arg5 ;
+  char *arg6 = (char *) 0 ;
+  
+  arg1 = (CoreSession *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  arg4 = (char *)jarg4; 
+  arg5 = (int)jarg5; 
+  arg6 = (char *)jarg6; 
+  (arg1)->consoleLog2(arg2,arg3,arg4,arg5,arg6);
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_console_log(char * jarg1, char * jarg2) {
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -43637,6 +43683,22 @@ SWIGEXPORT void SWIGSTDCALL CSharp_console_log(char * jarg1, char * jarg2) {
   arg1 = (char *)jarg1; 
   arg2 = (char *)jarg2; 
   console_log(arg1,arg2);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_console_log2(char * jarg1, char * jarg2, char * jarg3, int jarg4, char * jarg5) {
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  int arg4 ;
+  char *arg5 = (char *) 0 ;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  arg4 = (int)jarg4; 
+  arg5 = (char *)jarg5; 
+  console_log2(arg1,arg2,arg3,arg4,arg5);
 }
 
 

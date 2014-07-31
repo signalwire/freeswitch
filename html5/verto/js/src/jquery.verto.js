@@ -1,3 +1,4 @@
+
 /*
  * Verto HTML5/Javascript Telephony Signaling and Control Protocol Stack for FreeSWITCH
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
@@ -165,7 +166,7 @@
         var verto = this;
 	var i;
 
-        console.log("Response: " + method, success, e);
+        //console.log("Response: " + method, success, e);
 
         switch (method) {
         case "verto.subscribe":
@@ -414,6 +415,11 @@
     $.verto.prototype.handleMessage = function(data) {
         var verto = this;
 
+	if (!(data && data.method)) {
+	    console.error("Invalid Data", data);
+	    return;
+	}
+
         if (data.params.callID) {
             var dialog = verto.dialogs[data.params.callID];
 
@@ -436,7 +442,7 @@
                     dialog.handleInfo(data.params);
                     break;
                 default:
-                    console.debug("INVALID METHOD OR NON-EXISTANT CALL REFERENCE IGNORED", data.method);
+                    console.debug("INVALID METHOD OR NON-EXISTANT CALL REFERENCE IGNORED", dialog, data.method);
                     break;
                 }
             } else {
@@ -454,6 +460,8 @@
                     }
 
 		    dialog = new $.verto.dialog($.verto.enum.direction.inbound, verto, data.params);
+                    dialog.setState($.verto.enum.state.recovering);
+
 		    break;
                 case 'verto.invite':
 
@@ -527,7 +535,7 @@
                 if (verto.callbacks.onMessage) {
                     verto.callbacks.onMessage(verto, null, $.verto.enum.message.info, data.params.msg);
                 }
-                console.error(data);
+                //console.error(data);
                 console.debug("MESSAGE from: " + data.params.msg.from, data.params.msg.body);
 
                 break;
@@ -859,7 +867,7 @@
         var eventHandler = function(v, e, la) {
             var packet = e.data;
 
-            console.error("READ:", packet);
+            //console.error("READ:", packet);
 
             if (packet.name != la.name) {
                 return;
@@ -1074,7 +1082,7 @@
                     if (!args.data) {
                         return;
                     }
-                    console.debug(args, index);
+                    //console.debug(args, index);
                     dt.fnUpdate(args.data, index);
                     dt.fnAdjustColumnSizing();
                     break;
@@ -1186,13 +1194,15 @@
 	    var box_id = "box_" + x;
 	    var volup_id = "volume_in_up" + x;
 	    var voldn_id = "volume_in_dn" + x;
+	    var transfer_id = "transfer" + x;
 
 	    
 	    var html = "<div id='" + box_id + "'>" + 
-		"<button class='ctlbtn' id='" + kick_id + "'>KICK</button>" + 
-		"<button class='ctlbtn' id='" + tmute_id + "'>MUTE</button>" +
-		"<button class='ctlbtn' id='" + voldn_id + "'>vol -</button>" +
-		"<button class='ctlbtn' id='" + volup_id + "'>vol +</button>" +
+		"<button class='ctlbtn' id='" + kick_id + "'>Kick</button>" + 
+		"<button class='ctlbtn' id='" + tmute_id + "'>Mute</button>" +
+		"<button class='ctlbtn' id='" + voldn_id + "'>Vol -</button>" +
+		"<button class='ctlbtn' id='" + volup_id + "'>Vol +</button>" +
+		"<button class='ctlbtn' id='" + transfer_id + "'>Transfer</button>" +
 		"</div>"
 	    ;
 	    
@@ -1210,6 +1220,11 @@
 	    jq.mouseout(function(e) {
 		jq.data({"mouse": false});
 		$("#" + box_id).hide();
+	    });
+
+	    $("#" + transfer_id).click(function() {
+		var xten = prompt("Enter Extension");
+		confMan.modCommand("transfer", x, xten);
 	    });
 
 	    $("#" + kick_id).click(function() {
@@ -1236,7 +1251,7 @@
 	var atitle = "";
 	var awidth = 0;
 		    
-        $(".jsDataTable").width(confMan.params.hasVid ? "900px" : "800px");
+        //$(".jsDataTable").width(confMan.params.hasVid ? "900px" : "800px");
 	
 	if (confMan.params.laData.role === "moderator") {
 	    atitle = "Action";
@@ -1255,13 +1270,13 @@
 		    if (confMan.params.onBroadcast) {
 			confMan.params.onBroadcast(verto, confMan, e.data);
 		    }
-		    if (confMan.params.displayID) {
+		    if (!confMan.destroyed && confMan.params.displayID) {
 			$(confMan.params.displayID).html(e.data.response + "<br><br>");
 			if (confMan.lastTimeout) {
 			    clearTimeout(confMan.lastTimeout);
 			    confMan.lastTimeout = 0;
 			}
-			confMan.lastTimeout = setTimeout(function() { $(confMan.params.displayID).html("Moderator Controls Ready<br><br>")}, 4000);
+			confMan.lastTimeout = setTimeout(function() { $(confMan.params.displayID).html(confMan.destroyed ? "" : "Moderator Controls Ready<br><br>")}, 4000);
 		    }
 
 		}
@@ -1355,6 +1370,8 @@
     $.verto.confMan.prototype.destroy = function() {
 	var confMan = this;
 
+	confMan.destroyed = true;
+
 	if (confMan.lt) {
 	    confMan.lt.destroy();
 	}
@@ -1374,7 +1391,8 @@
         dialog.params = $.extend({
             useVideo: verto.options.useVideo,
             useStereo: verto.options.useStereo,
-            tag: verto.options.tag
+            tag: verto.options.tag,
+	    login: verto.options.login
         },
         params);
 
@@ -1534,7 +1552,7 @@
             return false;
         }
 
-        console.error("Dialog " + dialog.callID + ": state change from " + dialog.state.name + " to " + state.name);
+        console.info("Dialog " + dialog.callID + ": state change from " + dialog.state.name + " to " + state.name);
 
         dialog.lastState = dialog.state;
         dialog.state = state;
@@ -1552,6 +1570,13 @@
         }
 
         switch (dialog.state) {
+        case $.verto.enum.state.trying:
+	    setTimeout(function() {
+                if (dialog.state == $.verto.enum.state.trying) {
+		    dialog.setState($.verto.enum.state.hangup);
+                }
+            }, 30000);
+	    break;
         case $.verto.enum.state.purge:
             dialog.setState($.verto.enum.state.destroy);
             break;
@@ -1575,7 +1600,7 @@
     $.verto.dialog.prototype.processReply = function(method, success, e) {
         var dialog = this;
 
-        console.log("Response: " + method + " State:" + dialog.state.name, success, e);
+        //console.log("Response: " + method + " State:" + dialog.state.name, success, e);
 
         switch (method) {
 
@@ -1745,6 +1770,8 @@
         var dialog = this;
         var err = 0;
 
+	msg.from = dialog.params.login;
+
         if (!msg.to) {
             console.error("Missing To");
             err++;
@@ -1774,6 +1801,8 @@
                 if (params.useVideo) {
                     dialog.useVideo(true);
                 }
+		dialog.params.callee_id_name = params.callee_id_name;
+		dialog.params.callee_id_number = params.callee_id_number;
             }
             dialog.rtc.createAnswer(dialog.params.sdp);
             dialog.answered = true;
@@ -1868,12 +1897,17 @@
     $.verto.enum.states = Object.freeze({
         new: {
             requesting: 1,
+	    recovering: 1,
             ringing: 1,
             destroy: 1,
             answering: 1
         },
         requesting: {
             trying: 1,
+            hangup: 1
+        },
+        recovering: {
+            answering: 1,
             hangup: 1
         },
         trying: {
@@ -1910,7 +1944,7 @@
         }
     });
 
-    $.verto.enum.state = $.verto.ENUM("new requesting trying ringing answering early active held hangup destroy purge");
+    $.verto.enum.state = $.verto.ENUM("new requesting trying recovering ringing answering early active held hangup destroy purge");
     $.verto.enum.direction = $.verto.ENUM("inbound outbound");
     $.verto.enum.message = $.verto.ENUM("display info pvtEvent");
 

@@ -568,9 +568,10 @@ if test x"$enable_core_pgsql_support" = x"yes" ; then
       POSTGRESQL_LIBDIR="`$PKG_CONFIG libpq --libs-only-L`"
       POSTGRESQL_LDFLAGS="`$PKG_CONFIG --libs libpq`"
       POSTGRESQL_VERSION="`$PKG_CONFIG --modversion libpq`"
-      POSTGRESQL_MAJOR_VERSION="`echo $POSTGRESQL_VERSION | cut -d. -f1`"
-      POSTGRESQL_MINOR_VERSION="`echo $POSTGRESQL_VERSION | cut -d. -f2`"
-      POSTGRESQL_PATCH_VERSION="`echo $POSTGRESQL_VERSION | cut -d. -f3`"
+      POSTGRESQL_MAJOR_VERSION="`echo $POSTGRESQL_VERSION | cut -d. -f1 | sed 's/^\([[0-9]]*\)[[^0-9]].*/\1/'`"
+      POSTGRESQL_MINOR_VERSION="`echo $POSTGRESQL_VERSION | cut -d. -f2 | sed 's/^\([[0-9]]*\)[[^0-9]].*/\1/'`"
+      POSTGRESQL_PATCH_VERSION="`echo $POSTGRESQL_VERSION | cut -d. -f3 | sed 's/^\([[0-9]]*\)[[^0-9]].*/\1/'`"
+      test -n "$POSTGRESQL_PATCH_VERSION" || POSTGRESQL_PATCH_VERSION=0
     fi
     save_LIBS="$LIBS"
     LIBS="$POSTGRESQL_LIBDIR $LIBS"
@@ -709,13 +710,16 @@ AM_CONDITIONAL([SYSTEM_APR],[test "${use_system_apr}" = "yes"])
 AC_CHECK_LIB(aprutil-1, apr_queue_pop_timeout, use_system_aprutil=yes, use_system_aprutil=no)
 AM_CONDITIONAL([SYSTEM_APRUTIL],[test "${use_system_aprutil}" = "yes"])
 
+save_LIBS="$LIBS"
+LIBS=
 AC_CHECK_LIB(jpeg, jpeg_std_error,, AC_MSG_ERROR([no usable libjpeg; please install libjpeg devel package or equivalent]))
 
 AC_CHECK_LIB(jbig, jbg_enc_out, have_libjbig=yes, have_libjbig=no)
 if test "x$have_libjbig" = "xyes"  ; then
-SPANDSP_LA_JBIG="-ljbig"
+SPANDSP_LA_JBIG="-ljbig $LIBS"
 AC_SUBST(SPANDSP_LA_JBIG)
 fi
+LIBS="$save_LIBS"
 
 AC_CHECK_LIB(lzma, lzma_code, have_liblzma=yes, have_liblzma=no)
 if test "x$have_liblzma" = "xyes" ; then
@@ -787,7 +791,7 @@ AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MALLOC
 AC_TYPE_SIGNAL
 AC_FUNC_STRFTIME
-AC_CHECK_FUNCS([gethostname vasprintf mmap mlock mlockall usleep getifaddrs timerfd_create getdtablesize posix_openpt])
+AC_CHECK_FUNCS([gethostname vasprintf mmap mlock mlockall usleep getifaddrs timerfd_create getdtablesize posix_openpt poll])
 AC_CHECK_FUNCS([sched_setscheduler setpriority setrlimit setgroups initgroups])
 AC_CHECK_FUNCS([wcsncmp setgroups asprintf setenv pselect gettimeofday localtime_r gmtime_r strcasecmp stricmp _stricmp])
 
@@ -1127,6 +1131,7 @@ case $host in
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/curl/lib/pkgconfig
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/sqlite/lib/pkgconfig/
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/ldns/lib/pkgconfig/
+        path_push_unique PKG_CONFIG_PATH /usr/local/opt/portaudio/lib/pkgconfig/
        ;;
 esac
 
@@ -1150,6 +1155,9 @@ PKG_CHECK_MODULES([SPEEX], [speex >= 1.2rc1 speexdsp >= 1.2rc1])
 PKG_CHECK_MODULES([YAML], [yaml-0.1 >= 0.1.4],[
   AM_CONDITIONAL([HAVE_YAML],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_YAML],[false])])
+PKG_CHECK_MODULES([PORTAUDIO], [portaudio-2.0 >= 19],[
+  AM_CONDITIONAL([HAVE_PORTAUDIO],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_PORTAUDIO],[false])])
 PKG_CHECK_MODULES([LDNS], [libldns >= 1.6.6],[
   AM_CONDITIONAL([HAVE_LDNS],[true])],[
   AC_CHECK_LIB([ldns], [ldns_str2rdf_a], [LDNS_LIBS=-lldns])
@@ -1455,6 +1463,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_nibblebill/Makefile
 		src/mod/applications/mod_oreka/Makefile
 		src/mod/applications/mod_osp/Makefile
+		src/mod/applications/mod_prefix/Makefile
 		src/mod/applications/mod_rad_auth/Makefile
 		src/mod/applications/mod_random/Makefile
 		src/mod/applications/mod_redis/Makefile
@@ -1552,7 +1561,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/languages/mod_yaml/Makefile
 		src/mod/languages/mod_basic/Makefile
 		src/mod/legacy/languages/mod_lua/Makefile
-		src/mod/legacy/languages/mod_spidermonkey/Makefile
 		src/mod/loggers/mod_console/Makefile
 		src/mod/loggers/mod_graylog2/Makefile
 		src/mod/loggers/mod_logfile/Makefile
@@ -1655,12 +1663,9 @@ if test "$use_system_aprutil" != "yes"; then
 fi
 AC_CONFIG_SUBDIRS([libs/ilbc])
 AC_CONFIG_SUBDIRS([libs/iksemel])
-AC_CONFIG_SUBDIRS([libs/js/nsprpub])
-AC_CONFIG_SUBDIRS([libs/js])
 AC_CONFIG_SUBDIRS([libs/libdingaling])
 AC_CONFIG_SUBDIRS([libs/libsndfile])
 AC_CONFIG_SUBDIRS([libs/sofia-sip])
-AC_CONFIG_SUBDIRS([libs/portaudio])
 AC_CONFIG_SUBDIRS([libs/freetdm])
 AC_CONFIG_SUBDIRS([libs/unimrcp])
 AC_CONFIG_SUBDIRS([libs/tiff-4.0.2])

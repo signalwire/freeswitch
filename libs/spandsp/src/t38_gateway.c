@@ -58,6 +58,7 @@
 #include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/queue.h"
+#include "spandsp/vector_int.h"
 #include "spandsp/dc_restore.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/power_meter.h"
@@ -149,7 +150,9 @@
 #define DATA_END_TX_COUNT                       3
 
 /*! The number of consecutive flags to declare HDLC framing is OK. */
-#define HDLC_FRAMING_OK_THRESHOLD       5
+#define HDLC_FRAMING_OK_THRESHOLD               5
+
+#define HDLC_TRAMISSION_LAG_OCTETS              2
 
 enum
 {
@@ -700,7 +703,7 @@ static void monitor_control_messages(t38_gateway_state_t *s,
             /* If we are processing a message from the modem side, the contents determine the fast receive modem.
                we are to use. If it comes from the T.38 side the contents do not. */
             s->core.fast_bit_rate = modem_codes[i].bit_rate;
-            if (from_modem)
+            if ((buf[2] == T30_DTC  &&  !from_modem)  ||  (buf[2] != T30_DTC  &&  from_modem))
                 s->core.fast_rx_modem = modem_codes[i].modem_type;
             /*endif*/
         }
@@ -1105,7 +1108,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
                 {
                     monitor_control_messages(s, false, hdlc_buf->buf, hdlc_buf->len);
                     if (s->core.real_time_frame_handler)
-                        s->core.real_time_frame_handler(s, s->core.real_time_frame_user_data, false, hdlc_buf->buf, hdlc_buf->len);
+                        s->core.real_time_frame_handler(s->core.real_time_frame_user_data, false, hdlc_buf->buf, hdlc_buf->len);
                     /*endif*/
                 }
                 /*endif*/
@@ -1193,7 +1196,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
                 {
                     monitor_control_messages(s, false, hdlc_buf->buf, hdlc_buf->len);
                     if (s->core.real_time_frame_handler)
-                        s->core.real_time_frame_handler(s, s->core.real_time_frame_user_data, false, hdlc_buf->buf, hdlc_buf->len);
+                        s->core.real_time_frame_handler(s->core.real_time_frame_user_data, false, hdlc_buf->buf, hdlc_buf->len);
                     /*endif*/
                 }
                 /*endif*/
@@ -1764,7 +1767,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
 
     s = (t38_gateway_state_t *) t->frame_user_data;
     u = &s->core.to_t38;
-    if ((t->raw_bit_stream & 0x80))
+    if ((t->raw_bit_stream & 0x01))
     {
         /* Hit HDLC abort */
         t->rx_aborts++;
@@ -1772,6 +1775,23 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
             t->flags_seen = 0;
         else
             t->flags_seen = t->framing_ok_threshold - 1;
+        /*endif*/
+        if (t->len > 0)
+        {
+            span_log(&s->logging, SPAN_LOG_FLOW, "HDLC frame aborted at %d\n", t->len);
+            /* If we have sent some of this frame we need to treat the abort as though it is a CRC error,
+               as reporting a bad CRC is the only way T.38 allows us to scrub a frame in progress. */
+            /* It seems some boxes may not like us sending a _SIG_END here, and then another
+               when the carrier actually drops. Lets just send T38_FIELD_HDLC_FCS_OK here. */
+            if (t->len > 2)
+            {
+                category = (s->t38x.current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA  :  T38_PACKET_CATEGORY_IMAGE_DATA;
+                if (t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_FCS_BAD, NULL, 0, category) < 0)
+                    span_log(&s->logging, SPAN_LOG_WARNING, "T.38 send failed\n");
+                /*endif*/
+            }
+            /*endif*/
+        }
         /*endif*/
     }
     else
@@ -1830,7 +1850,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
                         {
                             monitor_control_messages(s, true, t->buffer, t->len - 2);
                             if (s->core.real_time_frame_handler)
-                                s->core.real_time_frame_handler(s, s->core.real_time_frame_user_data, true, t->buffer, t->len - 2);
+                                s->core.real_time_frame_handler(s->core.real_time_frame_user_data, true, t->buffer, t->len - 2);
                             /*endif*/
                         }
                         else
@@ -1862,8 +1882,11 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
         {
             /* Check the flags are back-to-back when testing for valid preamble. This
                greatly reduces the chances of false preamble detection, and anything
-               which doesn't send them back-to-back is badly broken. */
-            if (t->num_bits != 7)
+               which doesn't send them back-to-back is badly broken. When we are one
+               flag away from OK we should not apply the back-to-back consition, as
+               between an abort and the following start of frame things might not be
+               octet aligned. */
+            if (t->flags_seen != t->framing_ok_threshold - 1  &&  t->num_bits != 7)
                 t->flags_seen = 0;
             /*endif*/
             if (++t->flags_seen >= t->framing_ok_threshold  &&  !t->framing_ok_announced)
@@ -1905,16 +1928,28 @@ static void t38_hdlc_rx_put_bit(hdlc_rx_state_t *t, int new_bit)
     }
     /*endif*/
     t->raw_bit_stream = (t->raw_bit_stream << 1) | (new_bit & 1);
-    if ((t->raw_bit_stream & 0x3F) == 0x3E)
+    if ((t->raw_bit_stream & 0x3E) == 0x3E)
     {
-        /* Its time to either skip a bit, for stuffing, or process a flag or abort */
-        if ((t->raw_bit_stream & 0x40))
+        /* There are at least 5 ones in a row. We could be at a:
+            - point where stuffing occurs
+            - a flag
+            - an abort
+            - the result of bit errors */
+        /* Is this a bit to be skipped for destuffing? */
+        if ((t->raw_bit_stream & 0x41) == 0)
+            return;
+        /*endif*/
+        /* Is this a flag or abort? */
+        if ((t->raw_bit_stream & 0xFE) == 0x7E)
+        {
             rx_flag_or_abort(t);
-        return;
+            return;
+        }
+        /*endif*/
     }
     /*endif*/
     t->num_bits++;
-    if (!t->framing_ok_announced)
+    if (t->flags_seen < t->framing_ok_threshold)
         return;
     /*endif*/
     t->byte_in_progress = (t->byte_in_progress >> 1) | ((t->raw_bit_stream & 0x01) << 7);
@@ -1922,28 +1957,37 @@ static void t38_hdlc_rx_put_bit(hdlc_rx_state_t *t, int new_bit)
         return;
     /*endif*/
     t->num_bits = 0;
+    s = (t38_gateway_state_t *) t->frame_user_data;
+    u = &s->core.to_t38;
     if (t->len >= (int) sizeof(t->buffer))
     {
         /* This is too long. Abandon the frame, and wait for the next flag octet. */
+        if ((t->len + HDLC_TRAMISSION_LAG_OCTETS) >= u->octets_per_data_packet)
+        {
+            /* We will have sent some of this frame already, so we need to send termination of this bad HDLC frame. */
+            category = (s->t38x.current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA  :  T38_PACKET_CATEGORY_IMAGE_DATA;
+            if (t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_FCS_BAD, NULL, 0, category) < 0)
+                span_log(&s->logging, SPAN_LOG_WARNING, "T.38 send failed\n");
+            /*endif*/
+        }
+        /*endif*/
         t->rx_length_errors++;
         t->flags_seen = t->framing_ok_threshold - 1;
         t->len = 0;
         return;
     }
     /*endif*/
-    s = (t38_gateway_state_t *) t->frame_user_data;
-    u = &s->core.to_t38;
     t->buffer[t->len] = (uint8_t) t->byte_in_progress;
     if (t->len == 1)
     {
         /* All valid HDLC frames in FAX communication begin 0xFF 0x03 or 0xFF 0x13.
-           Anything else is bogus, */
+           Anything else is bogus. */
         if (t->buffer[0] != 0xFF  ||  (t->buffer[1] & 0xEF) != 0x03)
         {
             /* Abandon the frame, and wait for the next flag octet. */
             /* If this is a real frame, where one of these first two octets has a bit
                error, we will fail to forward the frame with a CRC error, as we do for
-               other bad framess. This will affect the timing of what goes forward.
+               other bad frames. This will affect the timing of what goes forward.
                Hopefully such timing changes will have less frequent bad effects than
                the consequences of a bad bit stream simulating an HDLC frame start. */
             span_log(&s->logging, SPAN_LOG_FLOW, "Bad HDLC frame header. Abandoning frame.\n");
@@ -1958,7 +2002,7 @@ static void t38_hdlc_rx_put_bit(hdlc_rx_state_t *t, int new_bit)
     u->crc = crc_itu16_calc(&t->buffer[t->len], 1, u->crc);
     /* Make the transmission lag by two octets, so we do not send the CRC, and
        do not report the CRC result too late. */
-    if (++t->len <= 2)
+    if (++t->len <= HDLC_TRAMISSION_LAG_OCTETS)
         return;
     /*endif*/
     if (s->t38x.current_tx_data_type == T38_DATA_V21)
@@ -1969,7 +2013,7 @@ static void t38_hdlc_rx_put_bit(hdlc_rx_state_t *t, int new_bit)
     }
     if (++u->data_ptr >= u->octets_per_data_packet)
     {
-        bit_reverse(u->data, t->buffer + t->len - 2 - u->data_ptr, u->data_ptr);
+        bit_reverse(u->data, &t->buffer[t->len - HDLC_TRAMISSION_LAG_OCTETS - u->data_ptr], u->data_ptr);
         category = (s->t38x.current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA  :  T38_PACKET_CATEGORY_IMAGE_DATA;
         if (t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_DATA, u->data, u->data_ptr, category) < 0)
             span_log(&s->logging, SPAN_LOG_WARNING, "T.38 send failed\n");
@@ -2061,15 +2105,15 @@ static void update_rx_timing(t38_gateway_state_t *s, int len)
             {
             case TIMED_MODE_TCF_PREDICTABLE_MODEM_START_PAST_V21_MODEM:
                 /* Timed announcement of training, 75ms after the DCS carrier fell. */
-                s->core.timed_mode = TIMED_MODE_TCF_PREDICTABLE_MODEM_START_FAST_MODEM_ANNOUNCED;
                 announce_training(s);
+                s->core.timed_mode = TIMED_MODE_TCF_PREDICTABLE_MODEM_START_FAST_MODEM_ANNOUNCED;
                 break;
             case TIMED_MODE_TCF_PREDICTABLE_MODEM_START_FAST_MODEM_SEEN:
                 /* Timed announcement of training, 75ms after the DCS carrier fell. */
+                announce_training(s);
                 /* Use a timeout to ride over TEP, if it is present */
                 s->core.samples_to_timeout = ms_to_samples(500);
                 s->core.timed_mode = TIMED_MODE_TCF_PREDICTABLE_MODEM_START_FAST_MODEM_ANNOUNCED;
-                announce_training(s);
                 break;
             case TIMED_MODE_TCF_PREDICTABLE_MODEM_START_FAST_MODEM_ANNOUNCED:
                 s->core.timed_mode = TIMED_MODE_IDLE;
@@ -2163,7 +2207,7 @@ SPAN_DECLARE_NONSTD(int) t38_gateway_tx(t38_gateway_state_t *s, int16_t amp[], i
     if (s->audio.modems.transmit_on_idle)
     {
         /* Pad to the requested length with silence */
-        memset(&amp[len], 0, (max_len - len)*sizeof(int16_t));
+        vec_zeroi16(&amp[len], max_len - len);
         len = max_len;
     }
     /*endif*/
@@ -2171,7 +2215,7 @@ SPAN_DECLARE_NONSTD(int) t38_gateway_tx(t38_gateway_state_t *s, int16_t amp[], i
     if (s->audio.modems.audio_tx_log >= 0)
     {
         if (len < required_len)
-            memset(&amp[len], 0, (required_len - len)*sizeof(int16_t));
+            vec_zeroi16(&amp[len], required_len - len);
         /*endif*/
         write(s->audio.modems.audio_tx_log, amp, required_len*sizeof(int16_t));
     }

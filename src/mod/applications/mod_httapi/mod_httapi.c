@@ -2691,7 +2691,7 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 			if (switch_strcasecmp_any(ct, "audio/mpeg", "audio/x-mpeg", "audio/mp3", "audio/x-mp3", "audio/mpeg3", 
 									  "audio/x-mpeg3", "audio/mpg", "audio/x-mpg", "audio/x-mpegaudio", NULL)) {
 				newext = "mp3";
-			} else if (switch_strcasecmp_any(ct, "audio/wav", "audio/x-wave", "audio/wav", "audio/wave", NULL)) {
+			} else if (switch_strcasecmp_any(ct, "audio/x-wav", "audio/x-wave", "audio/wav", "audio/wave", NULL)) {
 				newext = "wav";
 			}
 		}

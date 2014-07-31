@@ -2,30 +2,72 @@
 <html>
   <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="css/jquery.mobile-1.3.2.min.css" />
+  <link rel="stylesheet" href="css/jquery.mobile.min.css"/>
   <link rel="stylesheet" type="text/css" href="css/jsontable.css" />
   <link rel="shortcut icon" href="favicon.ico" />
     <meta charset="utf-8" />
     <title>FreeSWITCH Verto&trade; Demo</title>
 
     <style type="text/css">
-      .pageheader {
-      font-size: 22px;
-      font-weight: normal;
-      height: 27px;
-      }
+									   .pageheader {
+	 font-size: 22px;
+	 font-weight: normal;
+	 height: 27px;
+ }
 
-      .ctlbtn {
-        border: 0px;
-	color: #eeeeee;
-	background-color: #0000ae;
-	font-face: arial;
-      }     	      
+									   .ctlbtn {
+	 border: 0px;
+	 color: #eeeeee;
+	 background-color: #0000ae;
+	 font-face: arial;
+	 height:18px;
+	 font-size:7pt;
+										}     	      
 
-      .ctlbtn:hover {
-      color: #ffffae;
-      cursor: pointer;
-      }	
+.ctlbtn:hover {
+	 color: #ffffae;
+	 cursor: pointer;
+ }	
+
+#chatwin
+{
+	background-color: #eeeeee;
+	width: 500px;
+	height:150px;
+	overflow-y: scroll;
+	scrolling: auto;
+	text-align: left;
+	border-style:inset;
+	font-size: 10pt;
+	color: #3333ff;
+	resize:both;
+}
+
+.chatuid
+{
+	font-size: 7pt;
+	font-weight: bold;
+	color: #ff3333;
+}
+
+.chatimg
+{
+	max-width:100px;
+}
+
+.l1
+{
+	border:1;
+	background-color:#fefefe;
+	height:1px;
+	opacity:0.4;
+}
+#chatmsg
+{
+	width:400px;
+	max-height:40px;
+}
+
 
     </style>
 
@@ -38,32 +80,32 @@
       <br>
       <a target="_CC2104" href="https://www.cluecon.com"><img border="0" width="300" src="img/cc_banner2014.gif"></a>
 
-      <div data-role="fieldcontain">
+      <div class="ui-field-contain">
 	<label for="name">Login</label>
 	<input type="text" size="20" id="login"/>
       </div>
 
-      <div data-role="fieldcontain">
+      <div class="ui-field-contain">
 	<label for="name">Password</label>
 	<input type="password" size="20" id="passwd"/>
       </div>
 
-      <div data-role="fieldcontain">
+      <div class="ui-field-contain">
 	<label for="name">CID Name</label>  
 	<input type="text" size="30" id="name"/>
       </div>
 
-      <div data-role="fieldcontain">
+      <div class="ui-field-contain">
 	<label for="name">CID Number</label>  
 	<input type="text" size="20" id="cid"/>
       </div>
 
-      <div data-role="fieldcontain">
+      <div class="ui-field-contain">
 	<label for="name">Hostname</label>
 	<input type="text" size="20" id="hostName"/>
       </div>
 
-      <div data-role="fieldcontain">
+      <div class="ui-field-contain">
 	<label for="name">Websocket URL</label>
 	<input type="text" size="20" id="wsURL"/>
       </div>
@@ -91,9 +133,16 @@
 	</table>
       </div>
 
-      <div id="display" style="font-weight:bold;font-size:18px"></div>
       <br>
-      <div data-role="fieldcontain" id="xferdiv">
+      <div id="message" hidden="true">
+	<hr class="l1" width="500"/>
+	<div id="chatwin"></div>
+<!--	<textarea readonly id="chatwin"></textarea>-->
+	<table><tr><td><textarea id="chatmsg"></textarea></td><td><button id="chatsend" style="width:100px;">Send</button></td></tr></table>
+	<hr class="l1" width="500"/><br>
+      </div>
+      
+      <div class="ui-field-contain" id="xferdiv">
 	<input data-mini="true" type="text" id="xferto"><br>
       <button data-inline="true" id="cancelxferbtn">Cancel Transfer</button>
       <button data-inline="true" class="startxferbtn">Complete Transfer</button>
@@ -143,9 +192,8 @@
         <div id="errordisplay" style="font-weight:bold;font-size:18px;color:#ae0000"></div>
       </div>
 
-      <div id="online" align="center">
-	<div id="text"></div>
-	<div data-role="fieldcontain">
+      <div id="online" align="center" style="width:600px">
+	<div class="ui-field-contain">
 	  <input type="text" id="ext"/><br>
 	  <div id="dialpad">
 	    <button class="dialbtn" data-inline="true">1</button>
@@ -267,13 +315,12 @@
     </div>
 
 
-    <script type="text/javascript" src="js/jquery-2.0.3.min.js"></script> 
-    <script type="text/javascript" src="js/jquery.mobile-1.3.2.min.js"></script> 
+    <script type="text/javascript" src="js/jquery-2.1.1.min.js"></script> 
+    <script type="text/javascript" src="js/jquery.mobile.min.js"></script> 
     <script type="text/javascript" src="js/jquery.json-2.4.min.js"></script>  
     <script type="text/javascript" src="js/jquery.cookie.js"></script>
-    <script type="text/javascript" src="js/jquery.dataTables.js"></script>
+    <script type="text/javascript" src="js/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="js/verto-min.js"></script>
-    
     <script type="text/javascript" src="verto.js"></script>
 
   </body>

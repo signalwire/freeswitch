@@ -78,7 +78,7 @@ SPAN_DECLARE(void) make_goertzel_descriptor(goertzel_descriptor_t *t,
                                             int samples);
 
 /*! \brief Initialise the state of a Goertzel transform.
-    \param s The Goertzel context. If NULL, a context is allocated with malloc.
+    \param s The Goertzel context. If NULL, a context is allocated.
     \param t The Goertzel descriptor.
     \return A pointer to the Goertzel state. */
 SPAN_DECLARE(goertzel_state_t *) goertzel_init(goertzel_state_t *s,

@@ -161,8 +161,10 @@ SPAN_DECLARE_NONSTD(void) fax_modems_hdlc_accept(void *user_data, const uint8_t 
        say the current signal source is valid. */
     if (len >= 0  &&  ok)
         s->rx_frame_received = true;
+    /*endif*/
     if (s->hdlc_accept)
         s->hdlc_accept(s->hdlc_accept_user_data, msg, len, ok);
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -176,6 +178,7 @@ SPAN_DECLARE_NONSTD(void) fax_modems_hdlc_tx_frame(void *user_data, const uint8_
         hdlc_tx_restart(&s->hdlc_tx);
     else
         hdlc_tx_frame(&s->hdlc_tx, msg, len);
+    /*endif*/
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -579,6 +582,7 @@ SPAN_DECLARE(int) fax_modems_set_next_tx_type(fax_modems_state_t *s)
         fax_modems_set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
         return 0;
     }
+    /*endif*/
     /* There is nothing else to change to, so use zero length silence */
     silence_gen_alter(&s->silence_gen, 0);
     fax_modems_set_tx_handler(s, (span_tx_handler_t) &silence_gen, &s->silence_gen);
@@ -619,6 +623,7 @@ SPAN_DECLARE(fax_modems_state_t *) fax_modems_init(fax_modems_state_t *s,
     {
         if ((s = (fax_modems_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
+        /*endif*/
     }
     /*endif*/
     memset(s, 0, sizeof(*s));
