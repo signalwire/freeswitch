@@ -923,6 +923,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 				r = SWITCH_FALSE;
 				*code = CODE_AUTH_FAILED;
 				switch_snprintf(message, mlen, "Authentication Failure");
+				jsock->uid = NULL;
 			} else {
 				r = SWITCH_TRUE;
 				check_permissions(jsock, x_user, params);
