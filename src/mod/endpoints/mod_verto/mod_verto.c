@@ -3756,29 +3756,125 @@ static void print_status(verto_profile_t *profile, switch_stream_handle_t *strea
 	}
 }
 #endif
-
-SWITCH_STANDARD_API(verto_function)
+typedef switch_status_t (*verto_command_t) (char **argv, int argc, switch_stream_handle_t *stream);
+static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t *stream)
 {
+	verto_profile_t *profile = NULL;
+	jsock_t *jsock;
+	int cp = 0;
+	int cc = 0;
+	const char *line = "=================================================================================================";
 
-	int argc = 0;
-	char *argv[5] = { 0 };
-	char *mydata = NULL;
+	stream->write_function(stream, "%25s\t%s\t  %40s\t%s\n", "Name", "   Type", "Data", "State");
+	stream->write_function(stream, "%s\n", line);
 
-	if (cmd) {
-		mydata = strdup(cmd);
-		argc = switch_split(mydata, ' ', argv);
-	}
-
-	if (argc > 0) {
-		if (!strcasecmp(argv[0], "connections")) {
-			//print_status(profile, stream);
+	switch_mutex_lock(globals.mutex);
+	for(profile = globals.profile_head; profile; profile = profile->next) {
+		for (int i = 0; i < profile->i; i++) { 
+			char *tmpurl = switch_mprintf("%s:%s:%d",(profile->ip[i].secure == 1) ? "wss" : "ws", profile->ip[i].local_ip, profile->ip[i].local_port);
+			stream->write_function(stream, "%25s\t%s\t  %40s\t%s\n", profile->name, "profile", tmpurl, (profile->running) ? "RUNNING" : "DOWN");
 		}
-	}
+		cp++;
 
-	switch_safe_free(mydata);
+		switch_mutex_lock(profile->mutex);
+		for(jsock = profile->jsock_head; jsock; jsock = jsock->next) {
+			char *tmpname = switch_mprintf("%s::%s@%s", profile->name, jsock->id, jsock->domain);
+			stream->write_function(stream, "%25s\t%s\t  %40s\t%s (%s)\n", tmpname, "client", jsock->name, (!zstr(jsock->uid)) ? "CONN_REG" : "CONN_NO_REG", (jsock->ptype & PTYPE_CLIENT_SSL) ? "WSS": "WS");
+			cc++;
+		}
+		switch_mutex_unlock(profile->mutex);
+	}
+	switch_mutex_unlock(globals.mutex);
+
+	stream->write_function(stream, "%s\n", line);
+	stream->write_function(stream, "%d profile%s , %d client%s\n", cp, cp == 1 ? "" : "s", cc, cc == 1 ? "" : "s");
 
 	return SWITCH_STATUS_SUCCESS;
 }
+
+static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handle_t *stream)
+{
+	verto_profile_t *profile = NULL;
+	jsock_t *jsock;
+	int cp = 0;
+	int cc = 0;
+	const char *header = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
+
+	stream->write_function(stream, "%s\n", header);
+	stream->write_function(stream, "<profiles>\n");
+	switch_mutex_lock(globals.mutex);
+	for(profile = globals.profile_head; profile; profile = profile->next) {
+		for (int i = 0; i < profile->i; i++) { 
+			char *tmpurl = switch_mprintf("%s:%s:%d",(profile->ip[i].secure == 1) ? "wss" : "ws", profile->ip[i].local_ip, profile->ip[i].local_port);
+			stream->write_function(stream, "<profile>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s</state>\n</profile>\n", profile->name, "profile", tmpurl, (profile->running) ? "RUNNING" : "DOWN");
+		}
+		cp++;
+
+		switch_mutex_lock(profile->mutex);
+		for(jsock = profile->jsock_head; jsock; jsock = jsock->next) {
+			char *tmpname = switch_mprintf("%s@%s", jsock->id, jsock->domain);
+			stream->write_function(stream, "<client>\n<profile>%s</profile>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s (%s)</state>\n</client>\n", profile->name, tmpname, "client", jsock->name,
+									 (!zstr(jsock->uid)) ? "CONN_REG" : "CONN_NO_REG",  (jsock->ptype & PTYPE_CLIENT_SSL) ? "WSS": "WS");
+			cc++;
+		}
+		switch_mutex_unlock(profile->mutex);
+	}
+	switch_mutex_unlock(globals.mutex);
+	stream->write_function(stream, "</profiles>\n");
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(verto_function)
+{
+	char *argv[1024] = { 0 };
+	int argc = 0;
+	char *mycmd = NULL;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	verto_command_t func = NULL;
+	int lead = 1;
+	static const char usage_string[] = "USAGE:\n"
+		"--------------------------------------------------------------------------------\n"
+		"verto [status|xmlstatus]\n"
+		"verto help\n"
+		"--------------------------------------------------------------------------------\n";
+
+	if (zstr(cmd)) {
+		stream->write_function(stream, "%s", usage_string);
+		goto done;
+	}
+
+	if (!(mycmd = strdup(cmd))) {
+		status = SWITCH_STATUS_MEMERR;
+		goto done;
+	}
+
+	if (!(argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) || !argv[0]) {
+		stream->write_function(stream, "%s", usage_string);
+		goto done;
+	}
+
+	if (!strcasecmp(argv[0], "help")) {
+		stream->write_function(stream, "%s", usage_string);
+		goto done;
+	} else if (!strcasecmp(argv[0], "status")) {
+		func = cmd_status;
+	} else if (!strcasecmp(argv[0], "xmlstatus")) {
+		func = cmd_xml_status;
+	}
+
+	if (func) {
+		status = func(&argv[lead], argc - lead, stream);
+	} else {
+		stream->write_function(stream, "Unknown Command [%s]\n", argv[0]);
+	}
+
+  done:
+	switch_safe_free(mycmd);
+	return status;
+
+}
+
+
 
 static void *SWITCH_THREAD_FUNC profile_thread(switch_thread_t *thread, void *obj)
 {
@@ -4664,6 +4760,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 
 	SWITCH_ADD_API(api_interface, "verto", "Verto API", verto_function, "syntax");
 	SWITCH_ADD_API(api_interface, "verto_contact", "Generate a verto endpoint dialstring", verto_contact_function, "user@domain");
+	switch_console_set_complete("add verto help");
+	switch_console_set_complete("add verto status");
+	switch_console_set_complete("add verto xmlstatus");
+
 	SWITCH_ADD_JSON_API(json_api_interface, "store", "JSON store", json_store_function, "");
 
 	verto_endpoint_interface = (switch_endpoint_interface_t *) switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
