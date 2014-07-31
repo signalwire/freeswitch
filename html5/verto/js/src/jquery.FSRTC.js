@@ -76,6 +76,7 @@
             useVideo: null,
             useStereo: false,
             userData: null,
+	    iceServers: false,
             videoParams: {},
             callbacks: {
                 onICEComplete: function() {},
@@ -305,6 +306,7 @@
                     return onChannelError(self, e);
                 },
                 constraints: self.constraints,
+		iceServers: self.options.iceServers,
                 offerSDP: {
                     type: "offer",
                     sdp: self.remoteSDP
@@ -364,7 +366,8 @@
                 onChannelError: function(e) {
                     return onChannelError(self, e);
                 },
-                constraints: self.constraints
+                constraints: self.constraints,
+		iceServers: self.options.iceServers,
             });
 
             onStreamSuccess(self);
@@ -418,19 +421,34 @@
             credential: 'homeo'
         };
 
-        var iceServers = {
-            iceServers: options.iceServers || [STUN]
-        };
+	var iceServers = null;
 
-        if (!moz && !options.iceServers) {
-            if (parseInt(navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2]) >= 28) TURN = {
-                url: 'turn:turn.bistri.com:80',
-                credential: 'homeo',
-                username: 'homeo'
+	if (options.iceServers) {
+	    var tmp = options.iceServers;;
+
+	    if (typeof(tmp) === "boolean") {
+		tmp = null;
+	    }
+
+	    if (tmp && typeof(tmp) !== "array") {
+		console.warn("iceServers must be an array, reverting to default ice servers");
+		tmp = null;
+	    }
+
+            iceServers = {
+		iceServers: tmp || [STUN]
             };
 
-            iceServers.iceServers = [STUN];
-        }
+            if (!moz && !tmp) {
+		if (parseInt(navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2]) >= 28) TURN = {
+                    url: 'turn:turn.bistri.com:80',
+                    credential: 'homeo',
+                    username: 'homeo'
+		};
+
+		iceServers.iceServers = [STUN];
+            }
+	}
 
         var optional = {
             optional: []
