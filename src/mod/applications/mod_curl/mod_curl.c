@@ -51,7 +51,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_curl_load);
  */
 SWITCH_MODULE_DEFINITION(mod_curl, mod_curl_load, mod_curl_shutdown, NULL);
 
-static char *SYNTAX = "curl url [headers|json|content-type <mime-type>|timeout <seconds>] [get|head|post|put [post/put_data]]";
+static char *SYNTAX = "curl url [headers|json|content-type <mime-type>|timeout <seconds>] [get|head|post|delete|put [data]]";
 
 #define HTTP_SENDFILE_ACK_EVENT "curl_sendfile::ack"
 #define HTTP_SENDFILE_RESPONSE_SIZE 32768
@@ -209,6 +209,17 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 			switch_safe_free(ct);
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Post data: %s\n", data);
+	} else if (!strcasecmp(method, "delete")) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_CUSTOMREQUEST, "DELETE");
+		switch_curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, strlen(data));
+		switch_curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, (void *) data);
+		if (content_type) {
+			char *ct = switch_mprintf("Content-Type: %s", content_type);
+			headers = switch_curl_slist_append(headers, ct);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
+			switch_safe_free(ct);
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DELETE data: %s\n", data);
 	} else if (!strcasecmp(method, "put")) {
 		dstream.data = data;
 		dstream.length = strlen(data);
@@ -788,6 +799,14 @@ SWITCH_STANDARD_APP(curl_app_function)
 				} else {
 					postdata = "";
 				}
+			} else if (!strcasecmp("delete", argv[i])) {
+				method = "delete";
+				if (++i < argc) {
+					postdata = switch_core_strdup(pool, argv[i]);
+					switch_url_decode(postdata);
+				} else {
+					postdata = "";
+				}
 			} else if (!strcasecmp("put", argv[i])) {
 				method = "put";
 				if (++i < argc) {
@@ -894,6 +913,14 @@ SWITCH_STANDARD_API(curl_function)
 				method = switch_core_strdup(pool, argv[i]);
 			} else if (!strcasecmp("post", argv[i])) {
 				method = "post";
+				if (++i < argc) {
+					postdata = switch_core_strdup(pool, argv[i]);
+					switch_url_decode(postdata);
+				} else {
+					postdata = "";
+				}
+			} else if (!strcasecmp("delete", argv[i])) {
+				method = "delete";
 				if (++i < argc) {
 					postdata = switch_core_strdup(pool, argv[i]);
 					switch_url_decode(postdata);
