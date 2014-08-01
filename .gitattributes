@@ -14,6 +14,8 @@
 *.jpg -diff binary image
 *.jpeg -diff binary image
 *.pbm -diff binary image
+*.min.js -diff binary minified
+*.min.css -diff binary minified
 /clients/flex* dfsg-nonfree
 /debian* debian-ignore
 /freeswitch.xcodeproj debian-ignore
