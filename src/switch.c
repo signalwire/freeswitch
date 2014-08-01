@@ -962,7 +962,7 @@ int main(int argc, char *argv[])
 		else if (!strcmp(local_argv[x], "-certs")) {
 			x++;
 			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
-				fprintf(stderr, "When using -certs you must specify a grammar directory\n");
+				fprintf(stderr, "When using -certs you must specify a certificates directory\n");
 				return 255;
 			}
 
