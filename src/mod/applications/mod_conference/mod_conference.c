@@ -5443,10 +5443,20 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 
 	if (!switch_is_file_path(file)) {
 		if (!say && conference->sound_prefix) {
-			if (!(dfile = switch_mprintf("%s%s%s", conference->sound_prefix, SWITCH_PATH_SEPARATOR, file))) {
-				goto done;
+			char *params_portion = NULL;
+			char *file_portion = NULL;
+			switch_separate_file_params(file, &file_portion, &params_portion);
+
+			if (params_portion) {
+				dfile = switch_mprintf("%s%s%s%s", params_portion, conference->sound_prefix, SWITCH_PATH_SEPARATOR, file_portion);
+			} else {
+				dfile = switch_mprintf("%s%s%s", conference->sound_prefix, SWITCH_PATH_SEPARATOR, file_portion);
 			}
+
 			file = dfile;
+			switch_safe_free(file_portion);
+			switch_safe_free(params_portion);
+
 		} else if (!async) {
 			status = conference_say(conference, file, leadin);
 			goto done;

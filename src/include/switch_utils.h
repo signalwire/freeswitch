@@ -955,8 +955,40 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 												  const char *body, const char *file, const char *convert_cmd, const char *convert_ext);
 SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char close);
 
+static inline void switch_separate_file_params(const char *file, char **file_portion, char **params_portion)
+{
+	char *e = NULL;
+	int x;
+	char *space = strdup(file);
 
-	 static inline switch_bool_t switch_is_file_path(const char *file)
+	file = space;
+
+	*file_portion = NULL;
+	*params_portion = NULL;
+	
+	for (x = 0; x < 2; x++) {
+		if (*file == '[' && *(file + 1) == *SWITCH_PATH_SEPARATOR) {
+			e = switch_find_end_paren(file, '[', ']');
+		} else if (*file == '{') {
+			e = switch_find_end_paren(file, '{', '}');
+		} else {
+			break;
+		}
+	}
+
+	if (e) {
+		file = e + 1;
+		*file_portion = strdup((char *)file);
+		*++e = '\0';
+		*params_portion = (char *)space;
+	} else {
+		*file_portion = (char *)space;
+	}
+	
+	return;
+}
+
+static inline switch_bool_t switch_is_file_path(const char *file)
 {
 	const char *e;
 	int r, x;
@@ -974,6 +1006,7 @@ SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char clos
 			break;
 		}
 	}
+
 #ifdef WIN32
 	r = (file && (*file == '\\' || *(file + 1) == ':' || *file == '/' || strstr(file, SWITCH_URL_SEPARATOR)));
 #else
