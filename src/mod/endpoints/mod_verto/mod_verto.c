@@ -805,6 +805,23 @@ static void check_permissions(jsock_t *jsock, switch_xml_t x_user, cJSON *params
 
 }
 
+static void login_fire_custom_event(jsock_t *jsock, cJSON *params, int success, const char *result_txt)
+{
+	switch_event_t *s_event;
+
+	if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_LOGIN) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_profile_name", jsock->profile->name);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_client_address", jsock->name);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_login", cJSON_GetObjectCstr(params, "login"));
+		if (success) {
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_sessid", cJSON_GetObjectCstr(params, "sessid"));
+		}
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "verto_success", "%d", success);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_result_txt", result_txt);
+		switch_event_fire(&s_event);
+	}
+}
+
 static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *message, switch_size_t mlen)
 {
 	switch_bool_t r = SWITCH_FALSE;
@@ -827,6 +844,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 	if (zstr(passwd)) {
 		*code = CODE_AUTH_FAILED;
 		switch_snprintf(message, mlen, "Missing passwd");
+		login_fire_custom_event(jsock, params, 0, "Missing passwd");
 		goto end;
 	}
 
@@ -835,6 +853,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 		if (!(r = !strcmp(passwd, jsock->profile->root_passwd))) {
 			*code = CODE_AUTH_FAILED;
 			switch_snprintf(message, mlen, "Authentication Failure");
+			login_fire_custom_event(jsock, params, 0, "Authentication Failure");
 		}
 
 	} else if (!zstr(jsock->profile->userauth)) {
@@ -868,6 +887,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 		if (switch_xml_locate_user_merged("id", id, domain, NULL, &x_user, req_params) != SWITCH_STATUS_SUCCESS && !jsock->profile->blind_reg) {
 			*code = CODE_AUTH_FAILED;
 			switch_snprintf(message, mlen, "Login Incorrect");
+			login_fire_custom_event(jsock, params, 0, "Login Incorrect");
 		} else {
 			switch_xml_t x_param, x_params;
 			const char *use_passwd = NULL, *verto_context = NULL, *verto_dialplan = NULL;
@@ -924,6 +944,7 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 				*code = CODE_AUTH_FAILED;
 				switch_snprintf(message, mlen, "Authentication Failure");
 				jsock->uid = NULL;
+				login_fire_custom_event(jsock, params, 0, "Authentication Failure");
 			} else {
 				r = SWITCH_TRUE;
 				check_permissions(jsock, x_user, params);
@@ -1345,6 +1366,8 @@ static void jsock_flush(jsock_t *jsock)
 
 static void *SWITCH_THREAD_FUNC client_thread(switch_thread_t *thread, void *obj)
 {
+	switch_event_t *s_event;
+
 	jsock_t *jsock = (jsock_t *) obj;
 
 	switch_event_create(&jsock->params, SWITCH_EVENT_CHANNEL_DATA);
@@ -1380,6 +1403,11 @@ static void *SWITCH_THREAD_FUNC client_thread(switch_thread_t *thread, void *obj
 	jsock_flush(jsock);
 
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Ending client thread.\n", jsock->name);
+	if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_CLIENT_DISCONNECT) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_profile_name", jsock->profile->name);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_client_address", jsock->name);
+		switch_event_fire(&s_event);
+	}
 	switch_thread_rwlock_wrlock(jsock->rwlock);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Thread ended\n", jsock->name);
 	switch_thread_rwlock_unlock(jsock->rwlock);
@@ -3028,6 +3056,8 @@ static switch_bool_t login_func(const char *method, cJSON *params, jsock_t *jsoc
 	*response = cJSON_CreateObject();
 	cJSON_AddItemToObject(*response, "message", cJSON_CreateString("logged in"));
 
+	login_fire_custom_event(jsock, params, 1, "Logged in");
+
 	return SWITCH_TRUE;
 }
 
@@ -3142,6 +3172,7 @@ static int start_jsock(verto_profile_t *profile, int sock)
 	jsock_type_t ptype = PTYPE_CLIENT;
 	switch_thread_data_t *td;
 	switch_memory_pool_t *pool;
+	switch_event_t *s_event;
 
 	switch_core_new_memory_pool(&pool);
 
@@ -3173,7 +3204,12 @@ static int start_jsock(verto_profile_t *profile, int sock)
 	
 	jsock->ptype = ptype;
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Client Connect.\n", jsock->name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s Client Connect.\n", jsock->name);
+	if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_CLIENT_CONNECT) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "verto_profile_name", profile->name);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "verto_client_address", "%s:%d", inet_ntoa(jsock->remote_addr.sin_addr), ntohs(jsock->remote_addr.sin_port));
+		switch_event_fire(&s_event);
+	}
 
 	/* no nagle please */
 	setsockopt(jsock->client_socket, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(flag));

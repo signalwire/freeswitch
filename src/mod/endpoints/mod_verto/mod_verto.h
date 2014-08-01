@@ -67,6 +67,9 @@
 #define CODE_AUTH_FAILED -32001
 #define CODE_SESSION_ERROR -32002
 
+#define MY_EVENT_CLIENT_CONNECT "verto::client_connect"
+#define MY_EVENT_CLIENT_DISCONNECT "verto::client_disconnect"
+#define MY_EVENT_LOGIN "verto::login"
 
 typedef enum {
 	PTYPE_CLIENT     = (1 << 0),
