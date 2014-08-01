@@ -945,7 +945,7 @@ static void set_call_params(cJSON *params, verto_pvt_t *tech_pvt) {
 	const char *caller_id_name = NULL;
 	const char *caller_id_number = NULL;
 	
-	if (switch_channel_inbound_display(tech_pvt->channel)) {
+	if (switch_channel_outbound_display(tech_pvt->channel)) {
 		caller_id_name = switch_channel_get_variable(tech_pvt->channel, "caller_id_name");
 		caller_id_number = switch_channel_get_variable(tech_pvt->channel, "caller_id_number");
 	} else {
