@@ -384,6 +384,23 @@ function init() {
         });
     });
 
+    tmp = $.cookie("verto_demo_stun_checked") || "false";
+    $.cookie("verto_demo_stun_checked", tmp, {
+        expires: 365
+    });
+
+    $("#use_stun").prop("checked", tmp === "true").change(function(e) {
+        tmp = $("#use_stun").is(':checked');
+        $.cookie("verto_demo_stun_checked", tmp ? "true" : "false", {
+            expires: 365
+        });
+	if (verto) {
+	    verto.iceServers(tmp);
+	}
+
+	alert(tmp);
+    });
+
     verto = new $.verto({
         login: $("#login").val() + "@" + $("#hostName").val(),
         passwd: $("#passwd").val(),
@@ -393,7 +410,8 @@ function init() {
         videoParams: {
             "minWidth": "1280",
             "minHeight": "720"
-        }
+        },
+	iceServers: $("#use_stun").is(':checked')
     },callbacks);
 
     $("#login").change(function(e) {

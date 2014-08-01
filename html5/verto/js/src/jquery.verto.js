@@ -120,6 +120,12 @@
 
     };
 
+    $.verto.prototype.iceServers = function(on) {
+        var verto = this;
+
+        verto.options.iceServers = on;
+    };
+
     $.verto.prototype.loginData = function(params) {
         verto.options.login = params.login;
         verto.options.passwd = params.passwd;
