@@ -6192,11 +6192,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	if (!smh->payload_space) {
 		int i;
 
-		if (switch_channel_test_flag(session->channel, CF_WEBRTC)) {
-			smh->payload_space = 102;
-		} else {
-			smh->payload_space = 98;
-		}
+		/* it could be 98 but chrome reserves 98 and 99 for some internal stuff even though they should not.  
+		   Everyone expects dtmf to be at 101 and Its not worth the trouble so we'll start at 102 */
+		smh->payload_space = 102;
 
 		for (i = 0; i < smh->mparams->num_codecs; i++) {
 			smh->ianacodes[i] = smh->codecs[i]->ianacode;
