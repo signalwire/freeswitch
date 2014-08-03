@@ -3732,7 +3732,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 		const char *delay;
 
 		if ((delay = switch_channel_get_variable(channel, "answer_delay"))) {
-			long msec = atol(delay);
+			uint32_t msec = atoi(delay);
 			
 			if (msec) {
 				switch_ivr_sleep(channel->session, msec, SWITCH_TRUE, NULL);
