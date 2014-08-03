@@ -143,6 +143,7 @@
 #include "switch_json.h"
 #include "switch_limit.h"
 #include "switch_core_media.h"
+#include "switch_core_video.h"
 #include <libteletone.h>
 
 

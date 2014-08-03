@@ -541,7 +541,6 @@ SWITCH_DECLARE_DATA extern switch_filenames SWITCH_GLOBAL_filenames;
 #define SWITCH_MAX_SAMPLE_LEN 48
 #define SWITCH_BYTES_PER_SAMPLE 2	/* slin is 2 bytes per sample */
 #define SWITCH_RECOMMENDED_BUFFER_SIZE 8192
-#define SWITCH_RECOMMENDED_VIDEO_BUFFER_SIZE 4096 * 1024 /* Fixme: Just Make sure it's big enough for now */
 #define SWITCH_MAX_CODECS 50
 #define SWITCH_MAX_STATE_HANDLERS 30
 #define SWITCH_CORE_QUEUE_LEN 100000
@@ -2095,7 +2094,7 @@ typedef struct switch_caller_extension switch_caller_extension_t;
 typedef struct switch_caller_application switch_caller_application_t;
 typedef struct switch_state_handler_table switch_state_handler_table_t;
 typedef struct switch_timer switch_timer_t;
-typedef struct switch_picture switch_picture_t;
+typedef struct switch_image switch_image_t;
 typedef struct switch_codec switch_codec_t;
 typedef struct switch_core_thread_session switch_core_thread_session_t;
 typedef struct switch_codec_implementation switch_codec_implementation_t;
@@ -2167,6 +2166,14 @@ typedef switch_status_t (*switch_core_codec_decode_func_t) (switch_codec_t *code
 															uint32_t encoded_data_len,
 															uint32_t encoded_rate,
 															void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag);
+
+typedef switch_status_t (*switch_core_codec_video_encode_func_t) (switch_codec_t *codec,
+															switch_image_t *img,
+															void *encoded_data, uint32_t *encoded_data_len, unsigned int *flag);
+
+typedef switch_status_t (*switch_core_codec_video_decode_func_t) (switch_codec_t *codec,
+															switch_frame_t *frame,
+															switch_image_t **img, unsigned int *flag);
 
 typedef switch_status_t (*switch_core_codec_init_func_t) (switch_codec_t *, switch_codec_flag_t, const switch_codec_settings_t *codec_settings);
 typedef switch_status_t (*switch_core_codec_fmtp_parse_func_t) (const char *fmtp, switch_codec_fmtp_t *codec_fmtp);

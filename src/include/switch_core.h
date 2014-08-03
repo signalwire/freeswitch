@@ -1621,6 +1621,33 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 														 uint32_t encoded_rate,
 														 void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag);
 
+/*!
+  \brief Encode video data using a codec handle
+  \param codec the codec handle to use
+  \param img the img in I420 format
+  \param encoded_data the buffer to write the encoded data to
+  \param encoded_data_len the size of the encoded_data buffer
+  \param flag flags to exchange
+  \return SWITCH_STATUS_SUCCESS if the data was encoded
+  \note encoded_data_len will be rewritten to the in-use size of encoded_data
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_codec_encode_video(switch_codec_t *codec,
+														 switch_image_t *img,
+														 void *encoded_data, uint32_t *encoded_data_len, unsigned int *flag);
+
+/*!
+  \brief Decode video data using a codec handle
+  \param codec the codec handle to use
+  \param frame the frame to be decoded
+  \param img the new image in I420 format, allocated by the codec
+  \param flag flags to exchange
+  \return SWITCH_STATUS_SUCCESS if the data was decoded, and a non-NULL img
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_codec_decode_video(switch_codec_t *codec,
+														 switch_frame_t *frame,
+														 switch_image_t **img, unsigned int *flag);
+
+
 /*! 
   \brief Destroy an initalized codec handle
   \param codec the codec handle to destroy

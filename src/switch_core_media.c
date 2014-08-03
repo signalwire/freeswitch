@@ -4387,14 +4387,11 @@ static switch_status_t video_bridge_callback(switch_core_session_t *session, swi
 		switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
 		return status;
 	} else {
-		uint8_t raw_buff[BUF_SIZE];
 		uint8_t rtp_buff[1500] = { 0 };
-		uint32_t decoded_rate = 0;
-		uint32_t decoded_data_len = BUF_SIZE;
 		uint32_t flag = 0;
 		uint32_t encoded_data_len = 1500;
-		uint32_t encoded_rate = 0;
 		switch_frame_t write_frame = { 0 };
+		switch_image_t *img = NULL;
 
 #if 0
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%d/%s != %d/%s need transcoding!!!\n",
@@ -4405,23 +4402,20 @@ static switch_status_t video_bridge_callback(switch_core_session_t *session, swi
 		// if (!strcmp(codec->implementation->iananame, "VP8")) return status;
 		// if (!strcmp(codec->implementation->iananame, "H264")) return status;
 
-		codec->cur_frame = read_frame;
-		switch_core_codec_decode(codec, NULL, read_frame->data, read_frame->datalen, 0, raw_buff, &decoded_data_len, &decoded_rate, &flag);
+		switch_core_codec_decode_video(codec, read_frame, &img, &flag);
 
-		if (decoded_data_len < 3) return SWITCH_STATUS_SUCCESS;
+		if (!img) return SWITCH_STATUS_SUCCESS;
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s decoded_data_len: %d size: %dx%d\n", codec->implementation->iananame, decoded_data_len, codec->dec_picture.width, codec->dec_picture.height);
+		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s decoded_data_len: %d size: %dx%d\n", codec->implementation->iananame, decoded_data_len, codec->dec_picture.width, codec->dec_picture.height);
 
 		write_frame.packet = rtp_buff;
 		write_frame.data = rtp_buff + 12;
 
-		other_codec->enc_picture.width = codec->dec_picture.width;
-		other_codec->enc_picture.height = codec->dec_picture.height;
 		encoded_data_len = 1500;
-		switch_core_codec_encode(other_codec, NULL, raw_buff, decoded_data_len, 0, rtp_buff+12, &encoded_data_len, &encoded_rate, &flag);
+		switch_core_codec_encode_video(other_codec, img, rtp_buff+12, &encoded_data_len, &flag);
 
 		while(encoded_data_len) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "encoded: %s [%d] flag=%d ts=%u\n", other_codec->implementation->iananame, encoded_data_len, flag, *ts);
+			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "encoded: %s [%d] flag=%d ts=%u\n", other_codec->implementation->iananame, encoded_data_len, flag, *ts);
 
 			write_frame.datalen = encoded_data_len;
 			write_frame.packetlen = write_frame.datalen + 12;
@@ -4448,7 +4442,7 @@ static switch_status_t video_bridge_callback(switch_core_session_t *session, swi
 			switch_core_session_write_video_frame(session_b, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 
 			encoded_data_len = 1500;
-			switch_core_codec_encode(other_codec, NULL, NULL, 0, 0, rtp_buff+12, &encoded_data_len, &encoded_rate, &flag);
+			switch_core_codec_encode_video(other_codec, NULL, rtp_buff+12, &encoded_data_len, &flag);
 		}
 	}
 

@@ -639,10 +639,6 @@ struct switch_codec {
 	struct switch_codec *next;
 	switch_core_session_t *session;
 	switch_frame_t *cur_frame;
-	/*! raw picture for encode */
-	switch_picture_t enc_picture;
-	/*! decoded picture */
-	switch_picture_t dec_picture;
 };
 
 /*! \brief A table of settings and callbacks that define a paticular implementation of a codec */
@@ -679,6 +675,10 @@ struct switch_codec_implementation {
 	switch_core_codec_encode_func_t encode;
 	/*! function to decode encoded data into raw data */
 	switch_core_codec_decode_func_t decode;
+	/*! function to encode video raw data into encoded data */
+	switch_core_codec_video_encode_func_t encode_video;
+	/*! function to decode video encoded data into raw data */
+	switch_core_codec_video_decode_func_t decode_video;
 	/*! deinitalize a codec handle using this implementation */
 	switch_core_codec_destroy_func_t destroy;
 	uint32_t codec_id;
