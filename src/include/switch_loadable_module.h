@@ -532,6 +532,45 @@ static inline void switch_core_codec_add_implementation(switch_memory_pool_t *po
 
 ///\}
 
+static inline void switch_core_codec_add_video_implementation(switch_memory_pool_t *pool, switch_codec_interface_t *codec_interface,
+                            /*! the IANA code number */
+                            switch_payload_t ianacode,
+                            /*! the IANA code name */
+                            const char *iananame,
+                            /*! default fmtp to send (can be overridden by the init function) */
+                            char *fmtp,
+                            switch_core_codec_init_func_t init,
+                            /*! function to encode raw data into encoded data */
+                            switch_core_codec_video_encode_func_t encode,
+                            /*! function to decode encoded data into raw data */
+                            switch_core_codec_video_decode_func_t decode,
+                            /*! deinitalize a codec handle using this implementation */
+                            switch_core_codec_destroy_func_t destroy)
+{
+
+    switch_codec_implementation_t *impl = (switch_codec_implementation_t *) switch_core_alloc(pool, sizeof(*impl));
+    memset(impl, 0, sizeof(*impl));
+    impl->codec_type = SWITCH_CODEC_TYPE_VIDEO;
+    impl->ianacode = ianacode;
+    impl->iananame = switch_core_strdup(pool, iananame);
+    impl->fmtp = switch_core_strdup(pool, fmtp);
+    impl->samples_per_second = 90000;
+    impl->actual_samples_per_second = 90000;
+    impl->bits_per_second = 0;
+    impl->microseconds_per_packet = 0;
+    impl->samples_per_packet = 0;
+    impl->number_of_channels = 1;
+    impl->codec_frames_per_packet = 1;
+    impl->init = init;
+    impl->encode_video = encode;
+    impl->decode_video = decode;
+    impl->destroy = destroy;
+    impl->codec_id = codec_interface->codec_id;
+    impl->next = codec_interface->implementations;
+    impl->impl_id = switch_core_codec_next_id();
+    codec_interface->implementations = impl;
+}
+
 #define SWITCH_DECLARE_STATIC_MODULE(init, load, run, shut) void init(void) { \
 		switch_loadable_module_build_dynamic(__FILE__, load, run, shut, SWITCH_FALSE); \
 	}

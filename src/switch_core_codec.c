@@ -784,6 +784,65 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_codec_encode_video(switch_codec_t *codec,
+														 switch_image_t *img,
+														 void *encoded_data, uint32_t *encoded_data_len, unsigned int *flag)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_assert(codec != NULL);
+
+	if (!codec->implementation || !switch_core_codec_ready(codec)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec is not initialized!\n");
+		return SWITCH_STATUS_NOT_INITALIZED;
+	}
+
+	if (!switch_test_flag(codec, SWITCH_CODEC_FLAG_ENCODE)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec encoder is not initialized!\n");
+		return SWITCH_STATUS_NOT_INITALIZED;
+	}
+
+	if (codec->mutex) switch_mutex_lock(codec->mutex);
+
+	if (codec->implementation->encode_video) {
+		status = codec->implementation->encode_video(codec, img, encoded_data, encoded_data_len, flag);
+	}
+
+	if (codec->mutex) switch_mutex_unlock(codec->mutex);
+
+	return status;
+
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_codec_decode_video(switch_codec_t *codec,
+														 switch_frame_t *frame,
+														 switch_image_t **img, unsigned int *flag)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	switch_assert(codec != NULL);
+	switch_assert(frame != NULL);
+
+	if (!codec->implementation || !switch_core_codec_ready(codec)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decode Codec is not initialized!\n");
+		return SWITCH_STATUS_NOT_INITALIZED;
+	}
+
+	if (!switch_test_flag(codec, SWITCH_CODEC_FLAG_DECODE)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec decoder is not initialized!\n");
+		return SWITCH_STATUS_NOT_INITALIZED;
+	}
+
+	if (codec->mutex) switch_mutex_lock(codec->mutex);
+
+	if (codec->implementation->decode_video) {
+		status = codec->implementation->decode_video(codec, frame, img, flag);
+	}
+	if (codec->mutex) switch_mutex_unlock(codec->mutex);
+
+	return status;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 {
 	switch_mutex_t *mutex = codec->mutex;
