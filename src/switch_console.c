@@ -495,15 +495,15 @@ static int comp_callback(void *pArg, int argc, char **argv, char **columnNames)
 		char *p = target + 3, *list = NULL;
 
 		if (p) {
-			char *argv[100] = { 0 };
+			char *s_argv[100] = { 0 };
 			char *r_argv[1] = { 0 }, *r_cols[1] = {0};
 			list = strdup(p);
 			
-			argc = switch_separate_string(list, ':', argv, (sizeof(argv) / sizeof(argv[0])));
+			argc = switch_separate_string(list, ':', s_argv, (sizeof(s_argv) / sizeof(s_argv[0])));
 
 			for (i = 0; (int)i < argc; i++) {
-				if (!cur || !strncmp(argv[i], cur, strlen(cur))) {
-					r_argv[0] = argv[i];
+				if (!cur || !strncmp(s_argv[i], cur, strlen(cur))) {
+					r_argv[0] = s_argv[i];
 					comp_callback(h, 1, r_argv, r_cols);
 				}
 			}
