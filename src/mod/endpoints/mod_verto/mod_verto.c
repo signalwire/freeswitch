@@ -970,8 +970,16 @@ static void set_call_params(cJSON *params, verto_pvt_t *tech_pvt) {
 		caller_id_name = switch_channel_get_variable(tech_pvt->channel, "caller_id_name");
 		caller_id_number = switch_channel_get_variable(tech_pvt->channel, "caller_id_number");
 	} else {
-		caller_id_name = switch_channel_get_variable(tech_pvt->channel, "callee_id_name");
-		caller_id_number = switch_channel_get_variable(tech_pvt->channel, "callee_id_number");
+		caller_id_name = switch_channel_get_variable(tech_pvt->channel, "verto_remote_caller_id_name");
+		caller_id_number = switch_channel_get_variable(tech_pvt->channel, "verto_remote_caller_id_number");
+
+		if (!caller_id_name) {
+			caller_id_name = switch_channel_get_variable(tech_pvt->channel, "callee_id_name");
+		}
+
+		if (!caller_id_number) {
+			caller_id_number = switch_channel_get_variable(tech_pvt->channel, "callee_id_number");
+		}
 	}
 
 	if (zstr(caller_id_name)) {
@@ -1052,6 +1060,7 @@ static void tech_reattach(verto_pvt_t *tech_pvt, jsock_t *jsock)
 	attach_wake();
 	switch_set_flag(tech_pvt, TFLAG_ATTACH_REQ);
 	msg = jrpc_new_req("verto.attach", tech_pvt->call_id, &params);
+
 	cJSON_AddItemToObject(params, "sdp", cJSON_CreateString(tech_pvt->mparams->local_sdp_str));
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_DEBUG, "Local attach SDP %s:\n%s\n", 
 					  switch_channel_get_name(tech_pvt->channel),
@@ -1551,6 +1560,7 @@ static switch_status_t verto_connect(switch_core_session_t *session, const char 
 		const char *var = NULL;
 		switch_caller_profile_t *caller_profile = switch_channel_get_caller_profile(tech_pvt->channel);
 
+		DUMP_EVENT(jsock->params);
 
 		switch_channel_set_variable(tech_pvt->channel, "verto_user", jsock->uid);
 		switch_channel_set_variable(tech_pvt->channel, "presence_id", jsock->uid);
@@ -2692,7 +2702,8 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 	cJSON *dialog;
 	verto_pvt_t *tech_pvt;
 	char name[512];
-	const char *var, *destination_number, *call_id = NULL, *sdp = NULL, *caller_id_name = NULL, *caller_id_number = NULL, *context = NULL;
+	const char *var, *destination_number, *call_id = NULL, *sdp = NULL, 
+		*caller_id_name = NULL, *caller_id_number = NULL, *remote_caller_id_name = NULL, *remote_caller_id_number = NULL,*context = NULL;
 	
 	*response = obj;
 
@@ -2757,6 +2768,9 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 
 	caller_id_name = cJSON_GetObjectCstr(dialog, "caller_id_name");
 	caller_id_number = cJSON_GetObjectCstr(dialog, "caller_id_number");
+
+	remote_caller_id_name = cJSON_GetObjectCstr(dialog, "remote_caller_id_name");
+	remote_caller_id_number = cJSON_GetObjectCstr(dialog, "remote_caller_id_number");
 	
 	if (zstr(caller_id_name)) {
 		if ((var = switch_event_get_header(jsock->params, "caller-id-name"))) {
@@ -2790,6 +2804,14 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 		switch_channel_set_caller_profile(channel, caller_profile);
 		
 	}
+
+	switch_channel_set_profile_var(channel, "callee_id_name", remote_caller_id_name);
+	switch_channel_set_profile_var(channel, "callee_id_number", remote_caller_id_number);
+
+
+	switch_channel_set_variable(channel, "verto_remote_caller_id_name", remote_caller_id_name);
+	switch_channel_set_variable(channel, "verto_remote_caller_id_number", remote_caller_id_number);
+
 
 
 	switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, sdp);
