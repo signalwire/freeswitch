@@ -107,6 +107,7 @@ struct vlc_video_context {
 	uint8_t video_packet[1500 + 12];
 	void *raw_yuyv_data;
 	void *raw_i420_data;
+	switch_image_t *img;
 	switch_time_t last_video_ts;
 	switch_payload_t pt;
 	uint32_t seq;
@@ -266,24 +267,22 @@ static void vlc_video_unlock_callback(void *data, void *id, void *const *p_pixel
 {
 	vlc_video_context_t *context = (vlc_video_context_t *)data;
 	switch_frame_t *frame = context->vid_frame;
-	uint32_t decoded_data_len;
 	uint32_t flag = 0;
 	uint32_t encoded_data_len = 1500;
-	uint32_t encoded_rate = 0;
 	switch_time_t now = (switch_time_t)(switch_micro_time_now() / 1000);
 	switch_codec_t *codec = switch_core_session_get_video_write_codec(context->session);
-	int delta;
+	long delta;
 
 	switch_assert(id == NULL); /* picture identifier, not needed here */
 	switch_assert(codec);
 
 	if (now - context->last_video_ts < 60) goto end;
 
-	yuyv_to_i420(*p_pixels, context->raw_i420_data, context->width, context->height);
+	if (!context->img) context->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, context->width, context->height, 0);
+	if (!context->img) goto end;
 
-	codec->enc_picture.width = context->width;
-	codec->enc_picture.height = context->height;
-	decoded_data_len = context->width * context->height * 3 / 2;
+	yuyv_to_i420(*p_pixels, context->img->img_data, context->width, context->height);
+
 	delta = now - context->last_video_ts;
 
 	if (delta > 0) {
@@ -291,10 +290,10 @@ static void vlc_video_unlock_callback(void *data, void *id, void *const *p_pixel
 		context->last_video_ts = now;
 	}
 
-	switch_core_codec_encode(codec, NULL, context->raw_i420_data, decoded_data_len, 0, frame->data, &encoded_data_len, &encoded_rate, &flag);
+	switch_core_codec_encode_video(codec, context->img, frame->data, &encoded_data_len, &flag);
 
 	while(encoded_data_len) {
-		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "encoded: %s [%d] flag=%d ts=%u\n", codec->implementation->iananame, encoded_data_len, flag, context->last_video_ts);
+		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "encoded: %s [%d] flag=%d ts=%lld\n", codec->implementation->iananame, encoded_data_len, flag, context->last_video_ts);
 
 		frame->datalen = encoded_data_len;
 		frame->packetlen = frame->datalen + 12;
@@ -314,12 +313,12 @@ static void vlc_video_unlock_callback(void *data, void *id, void *const *p_pixel
 		}
 
 		switch_set_flag(frame, SFF_RAW_RTP);
-		switch_set_flag(frame, SFF_PROXY_PACKET);
+		// switch_set_flag(frame, SFF_PROXY_PACKET);
 
 		switch_core_session_write_video_frame(context->session, frame, SWITCH_IO_FLAG_NONE, 0);
 
 		encoded_data_len = 1500;
-		switch_core_codec_encode(codec, NULL, NULL, 0, 0, frame->data, &encoded_data_len, &encoded_rate, &flag);
+		switch_core_codec_encode_video(codec, NULL, frame->data, &encoded_data_len, &flag);
 	}
 
 end:
@@ -346,24 +345,22 @@ static void do_buffer_frame(vlc_video_context_t *context)
 static void vlc_video_channel_unlock_callback(void *data, void *id, void *const *p_pixels)
 {
 	vlc_video_context_t *context = (vlc_video_context_t *)data;
-	uint32_t decoded_data_len;
 	uint32_t flag = 0;
 	uint32_t encoded_data_len = 1500;
-	uint32_t encoded_rate = 0;
 	switch_codec_t *codec = switch_core_session_get_video_write_codec(context->session);
 	switch_frame_t *frame = context->vid_frame;
 	switch_time_t now = (switch_time_t)(switch_micro_time_now() / 1000);
-	int delta;
+	long delta;
 
 	switch_assert(id == NULL); /* picture identifier, not needed here */
 	switch_assert(codec);
 
-	yuyv_to_i420(*p_pixels, context->raw_i420_data, context->width, context->height);
+	if (!context->img) context->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, context->width, context->height, 0);
+	if (!context->img) goto end;
 
-	codec->enc_picture.width = context->width;
-	codec->enc_picture.height = context->height;
+	yuyv_to_i420(*p_pixels, context->img->img_data, context->width, context->height);
+
 	encoded_data_len = 1500;
-	decoded_data_len = context->width * context->height * 3 / 2;
 
 	frame->packet = context->video_packet;
 	frame->data = context->video_packet + 12;
@@ -374,7 +371,7 @@ static void vlc_video_channel_unlock_callback(void *data, void *id, void *const 
 		context->last_video_ts = now;
 	}
 
-	switch_core_codec_encode(codec, NULL, context->raw_i420_data, decoded_data_len, 0, frame->data, &encoded_data_len, &encoded_rate, &flag);
+	switch_core_codec_encode_video(codec, context->img, frame->data, &encoded_data_len, &flag);
 
 	while(encoded_data_len) {
 		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "encoded: %s [%d] flag=%d ts=%u\n", codec->implementation->iananame, encoded_data_len, flag, context->ts);
@@ -402,9 +399,10 @@ static void vlc_video_channel_unlock_callback(void *data, void *id, void *const 
 		do_buffer_frame(context);
 
 		encoded_data_len = 1500;
-		switch_core_codec_encode(codec, NULL, NULL, 0, 0, frame->data, &encoded_data_len, &encoded_rate, &flag);
+		switch_core_codec_encode_video(codec, NULL, frame->data, &encoded_data_len, &flag);
 	}
 
+end:
 	switch_mutex_unlock(context->video_mutex);
 }
 
