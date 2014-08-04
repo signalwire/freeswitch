@@ -1263,44 +1263,47 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			frame.data = data;
 			frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
+			for (;;) {
+				status = switch_core_media_bug_read(bug, &frame, SWITCH_FALSE);
 
-			status = switch_core_media_bug_read(bug, &frame, SWITCH_FALSE);
-
-			if (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK) {
+				if (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK) {
 				
-				len = (switch_size_t) frame.datalen / 2;
+					len = (switch_size_t) frame.datalen / 2;
 
-				if (len && switch_core_file_write(rh->fh, mask ? null_data : data, &len) != SWITCH_STATUS_SUCCESS && rh->hangup_on_error) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error writing %s\n", rh->file);
-					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-					switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
-					return SWITCH_FALSE;
-				}
+					if (len && switch_core_file_write(rh->fh, mask ? null_data : data, &len) != SWITCH_STATUS_SUCCESS && rh->hangup_on_error) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error writing %s\n", rh->file);
+						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+						switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+						return SWITCH_FALSE;
+					}
 
-				/* check for silence timeout */
-				if (rh->silence_threshold) {
-					switch_codec_implementation_t read_impl = { 0 };
-					switch_core_session_get_read_impl(session, &read_impl);
-					if (is_silence_frame(&frame, rh->silence_threshold, &read_impl)) {
-						if (!rh->silence_time) {
-							/* start of silence */
-							rh->silence_time = switch_micro_time_now();
-						} else {
-							/* continuing silence */
-							int duration_ms = (int)((switch_micro_time_now() - rh->silence_time) / 1000);
-							if (rh->silence_timeout_ms > 0 && duration_ms >= rh->silence_timeout_ms) {
-								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Recording file %s timeout: %i >= %i\n", rh->file, duration_ms, rh->silence_timeout_ms);
-								switch_core_media_bug_set_flag(bug, SMBF_PRUNE);
+					/* check for silence timeout */
+					if (rh->silence_threshold) {
+						switch_codec_implementation_t read_impl = { 0 };
+						switch_core_session_get_read_impl(session, &read_impl);
+						if (is_silence_frame(&frame, rh->silence_threshold, &read_impl)) {
+							if (!rh->silence_time) {
+								/* start of silence */
+								rh->silence_time = switch_micro_time_now();
+							} else {
+								/* continuing silence */
+								int duration_ms = (int)((switch_micro_time_now() - rh->silence_time) / 1000);
+								if (rh->silence_timeout_ms > 0 && duration_ms >= rh->silence_timeout_ms) {
+									switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Recording file %s timeout: %i >= %i\n", rh->file, duration_ms, rh->silence_timeout_ms);
+									switch_core_media_bug_set_flag(bug, SMBF_PRUNE);
+								}
+							}
+						} else { /* not silence */
+							if (rh->silence_time) {
+								/* end of silence */
+								rh->silence_time = 0;
+								/* switch from initial timeout to final timeout */
+								rh->silence_timeout_ms = rh->final_timeout_ms;
 							}
 						}
-					} else { /* not silence */
-						if (rh->silence_time) {
-							/* end of silence */
-							rh->silence_time = 0;
-							/* switch from initial timeout to final timeout */
-							rh->silence_timeout_ms = rh->final_timeout_ms;
-						}
 					}
+				} else {
+					break;
 				}
 			}
 		}
