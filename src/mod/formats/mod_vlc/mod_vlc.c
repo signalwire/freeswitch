@@ -106,7 +106,6 @@ struct vlc_video_context {
 	switch_frame_t *vid_frame;
 	uint8_t video_packet[1500 + 12];
 	void *raw_yuyv_data;
-	void *raw_i420_data;
 	switch_image_t *img;
 	switch_time_t last_video_ts;
 	switch_payload_t pt;
@@ -132,33 +131,8 @@ void yuyv_to_i420(uint8_t *pixels, void *out_buffer, int src_width, int src_heig
 	U = Y + src_width * src_height;
 	V = U + (src_width * src_height>>2);
 
-	if (0) {//split
-		uint8_t *p, *q, *k;
-		p = pixels;
-		q = pixels;
-		k = pixels;
-		for (h = 0; h < src_height / 2; ++h)
-		{
-			for (w=0; w<src_width; w+=4)
-			{
-				p[0] = q[0];
-				p[1] = q[1];
-				p[2] = q[4];
-				p[3] = q[3];
-				p+=4; q+=8;
-			}
-			memcpy(p, k, src_width);
-			k += src_width * 2;
-			p += src_width;
-			q += src_width * 2;
-		}
-		memcpy(k, pixels, src_width * src_height);
-	}
-
-	for (h=0; h<src_height; ++h)
-	{
-		for (w=0; w<src_width; ++w)
-		{
+	for (h=0; h<src_height; ++h) {
+		for (w=0; w<src_width; ++w) {
 			Y[w] = pixels[2 * w];
 			if (w % 2 == 0 && h % 2 == 0) {
 				U[w / 2] = pixels[2*w + 1];
@@ -442,13 +416,6 @@ unsigned video_format_setup_callback(void **opaque, char *chroma, unsigned *widt
 		return 0;
 	}
 
-	context->raw_i420_data = malloc(frame_size);
-	if (context->raw_i420_data == NULL) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "memory error\n");
-		free(context->raw_yuyv_data);
-		return 0;
-	}
-
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "chroma: %s, width: %u, height: %u, pitches: %u, lines: %u\n", chroma, *width, *height, *pitches, *lines);
 
 	return 1;
@@ -459,7 +426,6 @@ void video_format_clean_callback(void *opaque)
 
 	vlc_video_context_t *context = (vlc_video_context_t *)opaque;
 	switch_safe_free(context->raw_yuyv_data);
-	switch_safe_free(context->raw_i420_data);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "cleanup\n");
 }
 
