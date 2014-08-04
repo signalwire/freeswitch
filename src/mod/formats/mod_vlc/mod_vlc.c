@@ -1025,6 +1025,8 @@ typedef struct {
     const char *destination_number;
     vlc_video_context_t *context;
     switch_timer_t timer;
+    switch_core_media_params_t mparams;
+    switch_media_handle_t *media_handle;
 } vlc_private_t;
 
 switch_state_handler_table_t vlc_state_handlers = {
@@ -1067,9 +1069,12 @@ static switch_status_t setup_tech_pvt(switch_core_session_t *session, const char
 
 	tech_pvt = switch_core_session_alloc(session, sizeof *tech_pvt);
 	switch_assert(tech_pvt);
+	memset(tech_pvt, 0, sizeof(*tech_pvt));
 	tech_pvt->session = session;
 	tech_pvt->channel = channel;
 	tech_pvt->destination_number = switch_core_session_strdup(session, path);
+	tech_pvt->mparams.external_video_source = SWITCH_TRUE;
+	switch_media_handle_create(&tech_pvt->media_handle, session, &tech_pvt->mparams);
 	switch_core_session_set_private(session, tech_pvt);
 
 	context = switch_core_session_alloc(session, sizeof(vlc_video_context_t));
@@ -1193,6 +1198,8 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 		if (tech_pvt->write_codec.implementation) {
 			switch_core_codec_destroy(&tech_pvt->write_codec);
 		}
+
+		switch_media_handle_destroy(session);
 	}
 
 	switch_yield(50000);
@@ -1308,6 +1315,7 @@ static switch_call_cause_t vlc_outgoing_channel(switch_core_session_t *session, 
 		goto fail;
 	}
 
+	start_core_video_thread(*new_session);
 	switch_channel_set_state(channel, CS_INIT);
 
 	if (switch_core_session_thread_launch(*new_session) != SWITCH_STATUS_SUCCESS) {
@@ -1338,6 +1346,8 @@ fail:
 		if (tech_pvt->video_codec.implementation) {
 			switch_core_codec_destroy(&tech_pvt->video_codec);
 		}
+
+		switch_media_handle_destroy(*new_session);
 	}
 
 	if (*new_session) {
@@ -1461,6 +1471,7 @@ static switch_status_t vlc_read_video_frame(switch_core_session_t *session, swit
 	*frame = &tech_pvt->read_video_frame;
 	switch_set_flag(*frame, SFF_RAW_RTP);
 	switch_clear_flag(*frame, SFF_CNG);
+	(*frame)->codec = &tech_pvt->video_codec;
 
 	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "read video %d\n", (*frame)->packetlen);
 	return SWITCH_STATUS_SUCCESS;
