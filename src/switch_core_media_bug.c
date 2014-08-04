@@ -223,7 +223,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		do_write = switch_buffer_inuse(bug->raw_write_buffer);
 		switch_mutex_unlock(bug->write_mutex);
 	}
-
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(switch_core_media_bug_get_session(bug)), SWITCH_LOG_ERROR,
+					  "READ BUFFER %ld WRITE BUFFER %ld\n", do_read, do_write);
 	if (bug->record_frame_size && bug->record_pre_buffer_max && (do_read || do_write) && bug->record_pre_buffer_count < bug->record_pre_buffer_max) {
 		bug->record_pre_buffer_count++;
 		return SWITCH_STATUS_FALSE;
