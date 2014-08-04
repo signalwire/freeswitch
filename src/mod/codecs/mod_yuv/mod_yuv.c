@@ -51,10 +51,8 @@ static switch_status_t switch_yuv_init(switch_codec_t *codec, switch_codec_flag_
 }
 
 static switch_status_t switch_yuv_encode(switch_codec_t *codec,
-										  switch_codec_t *other_codec,
-										  void *decoded_data,
-										  uint32_t decoded_data_len,
-										  uint32_t decoded_rate, void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate,
+										  switch_image_t *img,
+										  void *encoded_data, uint32_t *encoded_data_len,
 										  unsigned int *flag)
 {
 	/* yuv encode is unclear, so return 0 for now */
@@ -64,18 +62,13 @@ static switch_status_t switch_yuv_encode(switch_codec_t *codec,
 }
 
 static switch_status_t switch_yuv_decode(switch_codec_t *codec,
-										  switch_codec_t *other_codec,
-										  void *encoded_data,
-										  uint32_t encoded_data_len,
-										  uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate,
+										  switch_frame_t *frame,
+										  switch_image_t **img,
 										  unsigned int *flag)
 {
-	if (*decoded_data_len < encoded_data_len) return SWITCH_STATUS_FALSE;
+	switch_assert(frame);
 
-	codec->dec_picture.width = codec->enc_picture.width;
-	codec->dec_picture.height = codec->enc_picture.height;
-	memcpy(decoded_data, encoded_data, encoded_data_len);
-	*decoded_data_len = encoded_data_len;
+	*img = (switch_image_t *)frame->user_data;
 	return SWITCH_STATUS_SUCCESS;
 }
 
