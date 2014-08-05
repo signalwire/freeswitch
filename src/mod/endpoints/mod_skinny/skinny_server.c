@@ -1802,6 +1802,12 @@ switch_status_t skinny_handle_capabilities_response(listener_t *listener, skinny
 	}
 	i = 0;
 	pos = 0;
+
+	if ( string_len > SKINNY_MAX_STRING ) {
+		skinny_log_l_msg(listener, SWITCH_LOG_ERROR, "Codec string list too long.\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
 	codec_string = calloc(string_len+1,1);
 	if ( !codec_string ) {
 		skinny_log_l_msg(listener, SWITCH_LOG_ERROR, "Unable to allocate memory for codec string.\n");
