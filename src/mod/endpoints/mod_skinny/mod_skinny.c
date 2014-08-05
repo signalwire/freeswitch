@@ -1710,7 +1710,6 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_status_t status;
 	skinny_message_t *request = NULL;
 	skinny_profile_t *profile;
-	int destroy_pool = 1;
 
 	switch_assert(listener);
 	assert(listener->profile);
@@ -1803,15 +1802,10 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Communication Closed\n");
 	}
 
-	if(destroy_pool == 0) {
-		goto no_destroy_pool;
-	}
 	if (listener->pool) {
 		switch_memory_pool_t *pool = listener->pool;
 		switch_core_destroy_memory_pool(&pool);
 	}
-
-no_destroy_pool:
 
 	switch_mutex_lock(profile->listener_mutex);
 	profile->listener_threads--;
