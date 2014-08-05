@@ -773,13 +773,14 @@ switch_status_t channel_on_routing(switch_core_session_t *session)
 					helper.listener = listener;
 					helper.line_instance = atoi(switch_channel_get_variable(channel, "skinny_line_instance"));
 					skinny_session_walk_lines(tech_pvt->profile, switch_core_session_get_uuid(session), channel_on_routing_callback, &helper);
+
+					/* clear digit timeout time */
+					listener->digit_timeout_time = 0;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Could not find listener %s:%s for Channel %s\n",
 							switch_channel_get_variable(channel, "skinny_device_name"), switch_channel_get_variable(channel, "skinny_device_instance"),
 							switch_channel_get_name(channel));
 				}
-				/* clear digit timeout time */
-				listener->digit_timeout_time = 0;
 
 				/* Future bridge should go straight */
 				switch_set_flag_locked(tech_pvt, TFLAG_FORCE_ROUTE);
