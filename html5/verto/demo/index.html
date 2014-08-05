@@ -77,44 +77,6 @@
       <div data-role="header" class="page-header">
 	FreeSWITCH Verto&trade; Demo
       </div>
-      <br>
-      <a target="_CC2104" href="https://www.cluecon.com"><img border="0" width="300" src="img/cc_banner2014.gif"></a>
-
-      <div class="ui-field-contain">
-	<label for="name">Login</label>
-	<input type="text" size="20" id="login"/>
-      </div>
-
-      <div class="ui-field-contain">
-	<label for="name">Password</label>
-	<input type="password" size="20" id="passwd"/>
-      </div>
-
-      <div class="ui-field-contain">
-	<label for="name">CID Name</label>  
-	<input type="text" size="30" id="name"/>
-      </div>
-
-      <div class="ui-field-contain">
-	<label for="name">CID Number</label>  
-	<input type="text" size="20" id="cid"/>
-      </div>
-
-      <div class="ui-field-contain">
-	<label for="name">Hostname</label>
-	<input type="text" size="20" id="hostName"/>
-      </div>
-
-      <div class="ui-field-contain">
-	<label for="name">Websocket URL</label>
-	<input type="text" size="20" id="wsURL"/>
-      </div>
-
-      <br><br>
-      <img src="img/verto_black_web.gif" width="300">
-      <br><br>
-      <button data-inline="true" id="loginbtn">Log In</button>      
-
 
     </div>
 
@@ -171,26 +133,62 @@
       <button data-inline="true" id="hold">HOLD</button>
       <button data-inline="true" id="hupbtn">End Call</button>
       <button data-inline="true" class="startxferbtn">Transfer</button>
-<br><br>
-      <img src="img/verto_black_web.gif" width="300"><br><br>
-      <div id="media">	
-	<video width=800 id="webcam" autoplay="autoplay" hidden="true"></video>
-      </div>
-      <br><br>
-    </div>
-    
-    <div data-role="page" id="page-main" align="center">
-      <div data-role="header" class="pageheader">
-	FreeSWITCH Verto&trade; Demo
-      </div>
-      <br>
+	<br><br>
+	<img src="img/verto_black_web.gif" width="300"><br><br>
+	<div id="media">	
+	  <video width=800 id="webcam" autoplay="autoplay" hidden="true"></video>
+	</div>
+	<br><br>
+	</div>
+	
+	<div data-role="page" id="page-main" align="center">
+	<div data-role="header" class="pageheader">
+	  FreeSWITCH Verto&trade; Demo
+	</div>
+	<br>
       <a target="_CC2104" href="https://www.cluecon.com"><img border="0" width="300" src="img/cc_banner2014.gif"></a>
       
       <div id="offline">
-	<h2>LOGGING IN</h2>
-	<img src="images/login.gif"></img>
         <div id="errordisplay" style="font-weight:bold;font-size:18px;color:#ae0000"></div>
+
+      <div class="ui-field-contain">
+	<label for="name">Login</label>
+	<input type="text" size="20" id="login"/>
       </div>
+
+      <div class="ui-field-contain">
+	<label for="name">Password</label>
+	<input type="password" size="20" id="passwd"/>
+      </div>
+
+      <div class="ui-field-contain">
+	<label for="name">CID Name</label>  
+	<input type="text" size="30" id="name"/>
+      </div>
+
+      <div class="ui-field-contain">
+	<label for="name">CID Number</label>  
+	<input type="text" size="20" id="cid"/>
+      </div>
+
+      <div class="ui-field-contain">
+	<label for="name">Hostname</label>
+	<input type="text" size="20" id="hostName"/>
+      </div>
+
+      <div class="ui-field-contain">
+	<label for="name">Websocket URL</label>
+	<input type="text" size="20" id="wsURL"/>
+      </div>
+
+      <br><br>
+      <img src="img/verto_black_web.gif" width="300">
+      <br><br>
+      <button data-inline="true" id="loginbtn">Log In</button>      
+
+      <br><br><br>
+      
+	</div>
 
       <div id="online" align="center" style="width:600px">
 	<div class="ui-field-contain">
@@ -233,7 +231,7 @@
 
 
 
-<table width=500 style="font-size:11pt;font-face:arial">
+<table id="directory" width=500 style="font-size:11pt;font-face:arial">
 <tr><td align=center colspan=2><b>FreeSWITCH VERTO&trade; WebRTC Demo Directory<Br><br></td></tr>
 <tr><td width=100><b>Dial</b></td><td><b>Desc</b></td></tr>
 <tr><td align=left colspan=2><hr></td></tr>

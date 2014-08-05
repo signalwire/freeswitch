@@ -431,7 +431,6 @@ function init() {
 
     $("#logoutbtn").click(function() {
         verto.logout();
-        goto_page("login");
         online(false);
     });
 
@@ -469,7 +468,9 @@ function init() {
 	}
     });
 
-
+    if (window.location.hostname !== "webrtc.freeswitch.org") {
+	$("#directory").hide();
+    }
 }
 
 $(document).ready(function() {
