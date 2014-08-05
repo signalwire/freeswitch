@@ -1680,6 +1680,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_change_sln_volume(write_frame.data, write_frame.datalen / 2, fh->vol);
 			}
 
+			/* write silence while dmachine is in reading state */
+			if (args && args->dmachine && switch_ivr_dmachine_is_parsing(args->dmachine)) {
+				memset(write_frame.data, 0, write_frame.datalen);
+			}
+
 			status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 
 			if (timeout_samples) {

@@ -2929,6 +2929,7 @@ SWITCH_DECLARE(void) switch_core_session_set_ice(switch_core_session_t *session)
 	switch_channel_set_flag(session->channel, CF_ICE);
 	smh->mparams->rtcp_audio_interval_msec = "10000";
 	smh->mparams->rtcp_video_interval_msec = "10000";
+
 }
 
 #define MAX_MATCHES 30
@@ -5091,6 +5092,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 		if ((val = switch_channel_get_variable(session->channel, "rtp_manual_rtp_bugs"))) {
 			switch_core_media_parse_rtp_bugs(&a_engine->rtp_bugs, val);
+		}
+		
+		if (switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+			smh->mparams->manual_rtp_bugs = RTP_BUG_SEND_LINEAR_TIMESTAMPS;
 		}
 
 		switch_rtp_intentional_bugs(a_engine->rtp_session, a_engine->rtp_bugs | smh->mparams->manual_rtp_bugs);

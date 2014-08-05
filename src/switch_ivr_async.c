@@ -615,6 +615,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_feed(switch_ivr_dmachine_t *
 	return status;
 }
 
+SWITCH_DECLARE(switch_bool_t) switch_ivr_dmachine_is_parsing(switch_ivr_dmachine_t *dmachine)
+{
+	return !!dmachine->cur_digit_len;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_clear(switch_ivr_dmachine_t *dmachine)
 {
 
