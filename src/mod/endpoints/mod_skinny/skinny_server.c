@@ -112,7 +112,7 @@ switch_status_t skinny_create_incoming_session(listener_t *listener, uint32_t *l
 
 	skinny_line_get(listener, *line_instance_p, &button);
 
-	if (!button || !button->shortname) {
+	if (!button || !button->shortname[0]) {
 		skinny_log_l(listener, SWITCH_LOG_CRIT, "Line %d not found on device\n", *line_instance_p);
 		goto error;
 	}
