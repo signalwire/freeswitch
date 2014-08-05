@@ -110,7 +110,7 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 	char *ptr;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	request = calloc(SKINNY_MESSAGE_MAXSIZE,1);
+	request = calloc(1,SKINNY_MESSAGE_MAXSIZE);
 
 	if (!request) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to allocate memory.\n");
