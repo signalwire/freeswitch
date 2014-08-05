@@ -303,9 +303,9 @@ int skinny_line_get_callback(void *pArg, int argc, char **argv, char **columnNam
 	helper->pos++;
 	if (helper->pos == atoi(argv[0])) { /* wanted_position */
 		helper->button->number = helper->pos;
-		strncpy(helper->button->name,  argv[2], 24); /* label */
-		strncpy(helper->button->shortname,  argv[3], 40); /* value */
-		strncpy(helper->button->displayname,  argv[4], 44); /* caller_name */
+		switch_copy_string(helper->button->name,  argv[2], 24); /* label */
+		switch_copy_string(helper->button->shortname,  argv[3], 40); /* value */
+		switch_copy_string(helper->button->displayname,  argv[4], 44); /* caller_name */
 	}
 	return 0;
 }
@@ -347,8 +347,8 @@ int skinny_speed_dial_get_callback(void *pArg, int argc, char **argv, char **col
 	helper->pos++;
 	if (helper->pos == atoi(argv[0])) { /* wanted_position */
 		helper->button->number = helper->pos; /* value */
-		strncpy(helper->button->line,  argv[3], 24); /* value */
-		strncpy(helper->button->label,  argv[2], 40); /* label */
+		switch_copy_string(helper->button->line,  argv[3], 24); /* value */
+		switch_copy_string(helper->button->label,  argv[2], 40); /* label */
 	}
 	return 0;
 }
@@ -391,8 +391,8 @@ int skinny_service_url_get_callback(void *pArg, int argc, char **argv, char **co
 	helper->pos++;
 	if (helper->pos == atoi(argv[0])) { /* wanted_position */
 		helper->button->index = helper->pos;
-		strncpy(helper->button->url, argv[3], 256); /* value */
-		strncpy(helper->button->display_name,  argv[2], 40); /* label */
+		switch_copy_string(helper->button->url, argv[3], 256); /* value */
+		switch_copy_string(helper->button->display_name,  argv[2], 40); /* label */
 	}
 	return 0;
 }
@@ -437,7 +437,7 @@ int skinny_feature_get_callback(void *pArg, int argc, char **argv, char **column
 	if (helper->pos == atoi(argv[0])) { /* wanted_position */
 		helper->button->index = helper->pos;
 		helper->button->id = helper->pos;
-		strncpy(helper->button->text_label,  argv[2], 40); /* label */
+		switch_copy_string(helper->button->text_label,  argv[2], 40); /* label */
 		helper->button->status = atoi(argv[3]); /* value */
 	}
 	return 0;
@@ -501,10 +501,10 @@ switch_status_t perform_send_register_ack(listener_t *listener,
 	skinny_create_message(message, REGISTER_ACK_MESSAGE, reg_ack);
 
 	message->data.reg_ack.keep_alive = keep_alive;
-	strncpy(message->data.reg_ack.date_format, date_format, 6);
-	strncpy(message->data.reg_ack.reserved, reserved, 2);
+	switch_copy_string(message->data.reg_ack.date_format, date_format, 6);
+	switch_copy_string(message->data.reg_ack.reserved, reserved, 2);
 	message->data.reg_ack.secondary_keep_alive = keep_alive;
-	strncpy(message->data.reg_ack.reserved2, reserved2, 4);
+	switch_copy_string(message->data.reg_ack.reserved2, reserved2, 4);
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 		"Sending Register Ack with Keep Alive (%d), Date Format (%s), Secondary Keep Alive (%d)\n",
@@ -524,8 +524,8 @@ switch_status_t perform_send_speed_dial_stat_res(listener_t *listener,
 	skinny_create_message(message, SPEED_DIAL_STAT_RES_MESSAGE, speed_dial_res);
 
 	message->data.speed_dial_res.number = number;
-    strncpy(message->data.speed_dial_res.line, speed_line, 24);
-    strncpy(message->data.speed_dial_res.label, speed_label, 40);
+    switch_copy_string(message->data.speed_dial_res.line, speed_line, 24);
+    switch_copy_string(message->data.speed_dial_res.label, speed_label, 40);
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 		"Sending Speed Dial Stat Res with Number (%d), Line (%s), Label (%s)\n",
@@ -614,9 +614,9 @@ switch_status_t perform_send_forward_stat(listener_t *listener,
 		message->data.forward_stat.forward_busy_active = 1;
 		message->data.forward_stat.forward_noanswer_active = 1;
 
-		strncpy(message->data.forward_stat.forward_all_number, number, sizeof(message->data.forward_stat.forward_all_number));
-		strncpy(message->data.forward_stat.forward_busy_number, number, sizeof(message->data.forward_stat.forward_all_number));
-		strncpy(message->data.forward_stat.forward_noanswer_number, number, sizeof(message->data.forward_stat.forward_all_number));
+		switch_copy_string(message->data.forward_stat.forward_all_number, number, sizeof(message->data.forward_stat.forward_all_number));
+		switch_copy_string(message->data.forward_stat.forward_busy_number, number, sizeof(message->data.forward_stat.forward_all_number));
+		switch_copy_string(message->data.forward_stat.forward_noanswer_number, number, sizeof(message->data.forward_stat.forward_all_number));
 		skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 			"Sending ForwardStat with Number (%s)\n", number);
 	}
@@ -770,23 +770,23 @@ switch_status_t perform_send_call_info(listener_t *listener,
 
 	skinny_create_message(message, CALL_INFO_MESSAGE, call_info);
 
-	strncpy(message->data.call_info.calling_party_name, calling_party_name, 40);
-	strncpy(message->data.call_info.calling_party, calling_party, 24);
-	strncpy(message->data.call_info.called_party_name, called_party_name, 40);
-	strncpy(message->data.call_info.called_party, called_party, 24);
+	switch_copy_string(message->data.call_info.calling_party_name, calling_party_name, 40);
+	switch_copy_string(message->data.call_info.calling_party, calling_party, 24);
+	switch_copy_string(message->data.call_info.called_party_name, called_party_name, 40);
+	switch_copy_string(message->data.call_info.called_party, called_party, 24);
 	message->data.call_info.line_instance = line_instance;
 	message->data.call_info.call_id = call_id;
 	message->data.call_info.call_type = call_type;
-	strncpy(message->data.call_info.original_called_party_name, original_called_party_name, 40);
-	strncpy(message->data.call_info.original_called_party, original_called_party, 24);
-	strncpy(message->data.call_info.last_redirecting_party_name, last_redirecting_party_name, 40);
-	strncpy(message->data.call_info.last_redirecting_party, last_redirecting_party, 24);
+	switch_copy_string(message->data.call_info.original_called_party_name, original_called_party_name, 40);
+	switch_copy_string(message->data.call_info.original_called_party, original_called_party, 24);
+	switch_copy_string(message->data.call_info.last_redirecting_party_name, last_redirecting_party_name, 40);
+	switch_copy_string(message->data.call_info.last_redirecting_party, last_redirecting_party, 24);
 	message->data.call_info.original_called_party_redirect_reason = original_called_party_redirect_reason;
 	message->data.call_info.last_redirecting_reason = last_redirecting_reason;
-	strncpy(message->data.call_info.calling_party_voice_mailbox, calling_party_voice_mailbox, 24);
-	strncpy(message->data.call_info.called_party_voice_mailbox, called_party_voice_mailbox, 24);
-	strncpy(message->data.call_info.original_called_party_voice_mailbox, original_called_party_voice_mailbox, 24);
-	strncpy(message->data.call_info.last_redirecting_voice_mailbox, last_redirecting_voice_mailbox, 24);
+	switch_copy_string(message->data.call_info.calling_party_voice_mailbox, calling_party_voice_mailbox, 24);
+	switch_copy_string(message->data.call_info.called_party_voice_mailbox, called_party_voice_mailbox, 24);
+	switch_copy_string(message->data.call_info.original_called_party_voice_mailbox, original_called_party_voice_mailbox, 24);
+	switch_copy_string(message->data.call_info.last_redirecting_voice_mailbox, last_redirecting_voice_mailbox, 24);
 	message->data.call_info.call_instance = call_instance;
 	message->data.call_info.call_security_status = call_security_status;
 	message->data.call_info.party_pi_restriction_bits = party_pi_restriction_bits;
@@ -871,7 +871,7 @@ switch_status_t perform_send_version(listener_t *listener,
 
 	skinny_create_message(message, VERSION_MESSAGE, version);
 
-	strncpy(message->data.version.version, version, 16);
+	switch_copy_string(message->data.version.version, version, 16);
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 		"Send Version with Version(%s)\n", version);
@@ -887,7 +887,7 @@ switch_status_t perform_send_register_reject(listener_t *listener,
 
 	skinny_create_message(message, REGISTER_REJECT_MESSAGE, reg_rej);
 
-	strncpy(message->data.reg_rej.error, error, 33);
+	switch_copy_string(message->data.reg_rej.error, error, 33);
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 		"Send Register Reject with Error (%s)\n", error);
@@ -1014,7 +1014,7 @@ switch_status_t perform_send_display_prompt_status(listener_t *listener,
 	skinny_create_message(message, DISPLAY_PROMPT_STATUS_MESSAGE, display_prompt_status);
 
 	message->data.display_prompt_status.timeout = timeout;
-	strncpy(message->data.display_prompt_status.display, display, 32);
+	switch_copy_string(message->data.display_prompt_status.display, display, 32);
 	message->data.display_prompt_status.line_instance = line_instance;
 	message->data.display_prompt_status.call_id = call_id;
 
@@ -1044,7 +1044,7 @@ switch_status_t perform_send_display_prompt_status_textid(listener_t *listener,
 	message->data.display_prompt_status.timeout = timeout;
 
 	label = skinny_textid2raw(display_textid);
-	strncpy(message->data.display_prompt_status.display, label, 32);
+	switch_copy_string(message->data.display_prompt_status.display, label, 32);
 	switch_safe_free(label);
 
 	message->data.display_prompt_status.line_instance = line_instance;
@@ -1122,7 +1122,7 @@ switch_status_t perform_send_dialed_number(listener_t *listener,
 
 	skinny_create_message(message, DIALED_NUMBER_MESSAGE, dialed_number);
 
-	strncpy(message->data.dialed_number.called_party, called_party, 24);
+	switch_copy_string(message->data.dialed_number.called_party, called_party, 24);
 	message->data.dialed_number.line_instance = line_instance;
 	message->data.dialed_number.call_id = call_id;
 
@@ -1146,7 +1146,7 @@ switch_status_t perform_send_display_pri_notify(listener_t *listener,
 
 	message->data.display_pri_notify.message_timeout = message_timeout;
 	message->data.display_pri_notify.priority = priority;
-	strncpy(message->data.display_pri_notify.notify, notify, 32);
+	switch_copy_string(message->data.display_pri_notify.notify, notify, 32);
 
 	tmp = skinny_format_message(notify);
 
@@ -1204,7 +1204,7 @@ switch_status_t perform_send_data(listener_t *listener,
 	message->data.data.call_id = call_id;
 	message->data.data.transaction_id = transaction_id;
 	message->data.data.data_length = data_length;
-	strncpy(message->data.data.data, data, data_length);
+	switch_copy_string(message->data.data.data, data, data_length);
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 		"Send Data with Data Length (%d)\n", data_length);
@@ -1250,7 +1250,7 @@ switch_status_t perform_send_extended_data(listener_t *listener,
 	message->data.extended_data.conference_id = conference_id;
 	message->data.extended_data.app_instance_id = app_instance_id;
 	message->data.extended_data.routing_id = routing_id;
-	strncpy(message->data.extended_data.data, data, data_length);
+	switch_copy_string(message->data.extended_data.data, data, data_length);
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 		"Send Extended Data with Application ID (%d), Line Instance (%d), Call ID (%d), ...\n", 

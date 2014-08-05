@@ -1104,7 +1104,7 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 	}
 
 
-	strncpy(listener->device_name, request->data.reg.device_name, 16);
+	switch_copy_string(listener->device_name, request->data.reg.device_name, 16);
 	listener->device_instance = request->data.reg.instance;
 	listener->device_type = request->data.reg.device_type;
 
@@ -1115,7 +1115,7 @@ switch_status_t skinny_handle_register(listener_t *listener, skinny_message_t *r
 				const char *name = switch_xml_attr_soft(xparam, "name");
 				const char *value = switch_xml_attr_soft(xparam, "value");
 				if (!strcasecmp(name, "skinny-firmware-version")) {
-					strncpy(listener->firmware_version, value, 16);
+					switch_copy_string(listener->firmware_version, value, 16);
 				} else if (!strcasecmp(name, "skinny-soft-key-set-set")) {
 					listener->soft_key_set_set = switch_core_strdup(profile->pool, value);
 				} else if (!strcasecmp(name, "ext-voicemail")) {
@@ -1599,11 +1599,11 @@ int skinny_config_stat_res_callback(void *pArg, int argc, char **argv, char **co
 	int number_lines = atoi(argv[5]);
 	int number_speed_dials = atoi(argv[6]);
 
-	strncpy(message->data.config_res.device_name, device_name, 16);
+	switch_copy_string(message->data.config_res.device_name, device_name, 16);
 	message->data.config_res.user_id = user_id;
 	message->data.config_res.instance = instance;
-	strncpy(message->data.config_res.user_name, user_name, 40);
-	strncpy(message->data.config_res.server_name, server_name, 40);
+	switch_copy_string(message->data.config_res.user_name, user_name, 40);
+	switch_copy_string(message->data.config_res.server_name, server_name, 40);
 	message->data.config_res.number_lines = number_lines;
 	message->data.config_res.number_speed_dials = number_speed_dials;
 
@@ -1748,7 +1748,7 @@ switch_status_t skinny_handle_version_request(listener_t *listener, skinny_messa
 			saw_entry = 1;
 
 			if (!zstr(params->firmware_version)) {
-				strncpy(listener->firmware_version, params->firmware_version, 16);
+				switch_copy_string(listener->firmware_version, params->firmware_version, 16);
 			}
 		}
 	}
@@ -2126,7 +2126,7 @@ switch_status_t skinny_handle_soft_key_template_request(listener_t *listener, sk
 
 	for (i=0; i < sizeof(soft_key_template_default_textids)/4; i++) {
 		char *label = skinny_textid2raw(soft_key_template_default_textids[i]);
-		strncpy(message->data.soft_key_template.soft_key[i].soft_key_label, label, sizeof(message->data.soft_key_template.soft_key[i].soft_key_label));
+		switch_copy_string(message->data.soft_key_template.soft_key[i].soft_key_label, label, sizeof(message->data.soft_key_template.soft_key[i].soft_key_label));
 		switch_safe_free(label);
 
 		message->data.soft_key_template.soft_key[i].soft_key_event = soft_key_template_default_events[i];
