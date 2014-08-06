@@ -1848,7 +1848,6 @@ static switch_status_t verto_send_media_indication(switch_core_session_t *sessio
 		} else {
 			cJSON *params = NULL;
 			cJSON *msg = jrpc_new_req(method, tech_pvt->call_id, &params);
-			
 			if (!switch_test_flag(tech_pvt, TFLAG_SENT_MEDIA)) {
 				cJSON_AddItemToObject(params, "sdp", cJSON_CreateString(tech_pvt->mparams->local_sdp_str));
 			}

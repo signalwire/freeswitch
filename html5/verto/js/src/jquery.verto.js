@@ -1820,6 +1820,8 @@
     $.verto.dialog.prototype.handleAnswer = function(params) {
         var dialog = this;
 
+	dialog.gotAnswer = true;
+
         if (dialog.state.val >= $.verto.enum.state.active.val) {
             return;
         }
@@ -1827,15 +1829,20 @@
         if (dialog.state.val >= $.verto.enum.state.early.val) {
             dialog.setState($.verto.enum.state.active);
         } else {
-            dialog.rtc.answer(params.sdp, function() {
-                dialog.setState($.verto.enum.state.active);
-            },
-            function(e) {
-                console.error(e);
-                dialog.hangup();
-            });
-            console.log("ANSWER SDP", params.sdp);
-        }
+	    if (dialog.gotEarly) {
+		console.log("Dialog " + dialog.callID + "Got answer while still establishing early media, delaying...");
+	    } else {
+		console.log("Dialog " + dialog.callID + "Answering Channel");
+		dialog.rtc.answer(params.sdp, function() {
+                    dialog.setState($.verto.enum.state.active);
+		},
+				  function(e) {
+				      console.error(e);
+				      dialog.hangup();
+				  });
+		console.log("Dialog " + dialog.callID + "ANSWER SDP", params.sdp);
+            }
+	}
     };
 
     $.verto.dialog.prototype.cidString = function(enc) {
@@ -1878,14 +1885,22 @@
             return;
         }
 
+	dialog.gotEarly = true;
+	
         dialog.rtc.answer(params.sdp, function() {
-            dialog.setState($.verto.enum.state.early);
+	    console.log("Dialog " + dialog.callID + "Establishing early media");
+	    dialog.setState($.verto.enum.state.early);
+
+	    if (dialog.gotAnswer) {
+		console.log("Dialog " + dialog.callID + "Answering Channel");
+		dialog.setState($.verto.enum.state.active);
+	    }
         },
         function(e) {
             console.error(e);
             dialog.hangup();
         });
-        console.log("EARLY SDP", params.sdp);
+        console.log("Dialog " + dialog.callID + "EARLY SDP", params.sdp);
     };
 
     $.verto.ENUM = function(s) {
