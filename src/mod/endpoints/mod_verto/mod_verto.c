@@ -2728,6 +2728,8 @@ static switch_bool_t verto__invite_func(const char *method, cJSON *params, jsock
 		err = 1; goto cleanup;
 	}
 
+	switch_ivr_set_user(session, jsock->uid);
+
 	channel = switch_core_session_get_channel(session);
 	switch_channel_set_direction(channel, SWITCH_CALL_DIRECTION_INBOUND);
 
