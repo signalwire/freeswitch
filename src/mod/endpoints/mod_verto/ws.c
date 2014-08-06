@@ -102,8 +102,6 @@ void init_ssl(void) {
 	SSL_CTX_set_options(globals.ssl_ctx, SSL_OP_NO_SSLv3);
 	/* Disable TLSv1 */
 	SSL_CTX_set_options(globals.ssl_ctx, SSL_OP_NO_TLSv1);
-	/* Disable TLSv1_1 */
-	SSL_CTX_set_options(globals.ssl_ctx, SSL_OP_NO_TLSv1_1);
 	/* Disable Compression CRIME (Compression Ratio Info-leak Made Easy) */
 	SSL_CTX_set_options(globals.ssl_ctx, SSL_OP_NO_COMPRESSION);
 	/* set the local certificate from CertFile */
