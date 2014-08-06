@@ -7,6 +7,7 @@
  * Viktor Krykun <v.krikun at zfoneproject.com> 
  */
 
+#define _POSIX_C_SOURCE 199309L /* for struct timespec */
 #include "zrtp.h"
 
 #if (defined(ZRTP_USE_BUILTIN_SCEHDULER) && (ZRTP_USE_BUILTIN_SCEHDULER ==1))
@@ -80,11 +81,15 @@ int zrtp_thread_create(zrtp_thread_routine_t start_routine, void *arg)
 }
 
 #elif (ZRTP_PLATFORM == ZP_LINUX) || (ZRTP_PLATFORM == ZP_DARWIN) || (ZRTP_PLATFORM == ZP_BSD) || (ZRTP_PLATFORM == ZP_ANDROID)
-#if ZRTP_HAVE_UNISTD_H == 1
+/* POSIX.1-2008 removes usleep, so use nanosleep instead when available */
+#if ZRTP_HAVE_NANOSLEEP
+#include <time.h>               /* for nanosleep */
+#elif ZRTP_HAVE_UNISTD_H == 1
 #include <unistd.h>
 #else
 #error "Used environment dosn't have <unistd.h> - zrtp_scheduler can't be build."
 #endif
+
 #if ZRTP_HAVE_PTHREAD_H == 1
 #include <pthread.h>
 #else
@@ -93,7 +98,14 @@ int zrtp_thread_create(zrtp_thread_routine_t start_routine, void *arg)
 
 int zrtp_sleep(unsigned int msec)
 {
+#if ZRTP_HAVE_NANOSLEEP
+	struct timespec delay;
+	delay.tv_sec = msec / 1000;
+	delay.tv_nsec = (msec % 1000) * 1000000;
+	while (nanosleep(&delay, &delay)) ;
+#else
 	usleep(msec*1000);
+#endif
 	return 0;
 }
 
