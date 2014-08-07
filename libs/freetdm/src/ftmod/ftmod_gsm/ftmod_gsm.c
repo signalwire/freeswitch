@@ -404,6 +404,7 @@ void on_wat_rel_ind(unsigned char span_id, uint8_t call_id, wat_rel_event_t *rel
 		/* This is most likely due to a call to enable call
 		 * forwarding, which does not run the state machine */
 		ftdm_clear_flag(gsm_data->bchan, FTDM_CHANNEL_INUSE);
+		wat_rel_req(span_id, call_id);
 		return;
 	}
 
