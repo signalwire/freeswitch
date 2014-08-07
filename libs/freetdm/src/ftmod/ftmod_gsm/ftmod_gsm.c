@@ -392,7 +392,6 @@ void on_wat_con_sts(unsigned char span_id, uint8_t call_id, wat_con_status_t *st
 void on_wat_rel_ind(unsigned char span_id, uint8_t call_id, wat_rel_event_t *rel_event)
 {
 	ftdm_span_t *span = NULL;
-	//ftdm_status_t ftdm_status = FTDM_FAIL;
 	ftdm_gsm_span_data_t *gsm_data = NULL;
 
 	ftdm_log(FTDM_LOG_INFO, "s%d: Call hangup (id:%d) cause:%d\n", span_id, call_id, rel_event->cause);
@@ -401,14 +400,17 @@ void on_wat_rel_ind(unsigned char span_id, uint8_t call_id, wat_rel_event_t *rel
 		return;
 	}
 
-	if (gsm_data->bchan->state == FTDM_CHANNEL_STATE_HANGUP ||
-	    gsm_data->bchan->state == FTDM_CHANNEL_STATE_DOWN) {
-		/*  this might be due to a call to enable call forwarding,
-		 *  which does not run the state machine */
+	if (gsm_data->bchan->state == FTDM_CHANNEL_STATE_DOWN) {
+		/* This is most likely due to a call to enable call
+		 * forwarding, which does not run the state machine */
+		ftdm_clear_flag(gsm_data->bchan, FTDM_CHANNEL_INUSE);
 		return;
 	}
 
-	ftdm_set_state(gsm_data->bchan, FTDM_CHANNEL_STATE_HANGUP);
+	if (gsm_data->bchan->state > FTDM_CHANNEL_STATE_DOWN &&
+		gsm_data->bchan->state < FTDM_CHANNEL_STATE_HANGUP) {
+		ftdm_set_state(gsm_data->bchan, FTDM_CHANNEL_STATE_HANGUP);
+	}
 }
 
 void on_wat_rel_cfm(unsigned char span_id, uint8_t call_id)
