@@ -571,5 +571,59 @@ with the signaling protocols that you can run on top of your I/O interfaces.
 			<param name="context" value="default"/>
 		</span>
 	</pritap_spans>
+
+	<!--
+	GSM spans (libwat must be installed when configuring the freetdm build)
+	-->
+	<gsm_spans>
+		<span name="gsm01">
+			<!-- where to send inbound calls to -->
+			<param name="dialplan" value="XML" />
+			<param name="context" value="module1" />
+
+			<!--
+				GSM module type
+				Accepted values: "telit", "telit-gc864", "telit-he910", "telit-cc864", "telit-de910", "motorola"
+			-->
+			<param name="moduletype" value="telit-gc864" />
+
+			<!--
+				Debug mask (accepted values: all, uart_raw, uart_raw, call_state, span_state, at_parse, at_handle, sms_encode, sms_decode, none)
+				comma-separated values are accepted to combine those levels
+			-->
+			<param name="debug" value="all" />
+
+			<!--
+				Whether to enable HW DTMF in the hardware module
+				Accepted values: true, generate, detect, false
+			-->
+			<param name="hwdtmf" value="true" />
+
+			<!--
+				This enables conditional forwarding on module startup
+			-->
+			<!-- <param name="conditional-forwarding-prefix" value="*71" /> -->
+			<!-- <param name="conditional-forwarding-number" value="123456789" /> -->
+
+			<!--
+				This enables immediate forwarding logic to simulate hunt groups
+				The syntax for immediate-forwarding-numbers ia a comma-separated
+				list of elements in the form [<span-name>:]<number>
+
+				if span-name is specified, the span will be checked for availability
+				before enabling forwarding to that span number
+
+				The span-name must be a defined freetdm span name
+
+				If the span-name is not specified then only first number specified is used for
+				forwarding whenever this span is busy
+			-->
+			<!-- <param name="immediate-forwarding-prefix" value="*72" /> -->
+			<!-- <param name="immediate-forwarding-numbers" value="gsm02:123456789" /> -->
+
+			<!-- Number to dial to disable forwarding when the call ends (if immediate forwarding was enabled) -->
+			<!-- <param name="disable-forwarding-number" value="*73" /> -->
+		</span>
+	</gsm_spans>
 </configuration>
 

@@ -106,10 +106,19 @@ typedef struct ftdm_gsm_span_data_s {
 	ftdm_channel_t *bchan;
 	int32_t call_id;
 	uint32_t sms_id;
-	char conditional_forward_number[255];
+	char conditional_forward_prefix[10];
+	char conditional_forward_number[50];
+	char immediate_forward_prefix[10];
+	struct {
+		char number[50];
+		char span[50];
+	} immediate_forward_numbers[10];
+	char disable_forward_number[50];
 	ftdm_sched_t *sched;
 	ftdm_timer_id_t conditional_forwarding_timer;
-	ftdm_bool_t init_forwarding;
+	ftdm_timer_id_t immediate_forwarding_timer;
+	ftdm_bool_t init_conditional_forwarding;
+	ftdm_bool_t startup_forwarding_disabled;
 } ftdm_gsm_span_data_t;
 
 // command handler function type.
@@ -230,9 +239,11 @@ done:
 
 static void ftdm_gsm_enable_conditional_forwarding(void *data)
 {
+	char number[255];
 	ftdm_gsm_span_data_t *gsm_data = data;
-	ftdm_log_chan(gsm_data->bchan, FTDM_LOG_NOTICE, "Enabling conditional forwarding to %s\n", gsm_data->conditional_forward_number);
-	ftdm_gsm_make_raw_call(data, gsm_data->conditional_forward_number);
+	snprintf(number, sizeof(number), "%s%s", gsm_data->conditional_forward_prefix, gsm_data->conditional_forward_number);
+	ftdm_log_chan(gsm_data->bchan, FTDM_LOG_INFO, "Enabling conditional forwarding to %s\n", number);
+	ftdm_gsm_make_raw_call(data, number);
 }
 
 static void on_wat_span_status(unsigned char span_id, wat_span_status_t *status)
@@ -258,12 +269,12 @@ static void on_wat_span_status(unsigned char span_id, wat_span_status_t *status)
 			} else {
 				ftdm_log_chan_msg(gsm_data->bchan, FTDM_LOG_INFO, "Signaling is now down\n");
 			}
-			if (gsm_data->init_forwarding == FTDM_TRUE && !ftdm_strlen_zero_buf(gsm_data->conditional_forward_number)) {
-				ftdm_sched_timer(gsm_data->sched, "conditional_forwarding_delay", 500,
+			if (gsm_data->init_conditional_forwarding == FTDM_TRUE && !ftdm_strlen_zero_buf(gsm_data->conditional_forward_number)) {
+				ftdm_sched_timer(gsm_data->sched, "conditional_forwarding_delay", 1000,
 						ftdm_gsm_enable_conditional_forwarding,
 						gsm_data,
 						&gsm_data->conditional_forwarding_timer);
-				gsm_data->init_forwarding = FTDM_FALSE;
+				gsm_data->init_conditional_forwarding = FTDM_FALSE;
 			}
 		}
 		break;
@@ -754,136 +765,164 @@ static ftdm_state_map_t gsm_state_map = {
 	}
 };
 
-static ftdm_status_t ftdm_gsm_state_advance(ftdm_channel_t *ftdmchan)
+#define immediate_forward_enabled(gsm_data) !ftdm_strlen_zero_buf(gsm_data->immediate_forward_numbers[0].number)
+
+static void perform_enable_immediate_forward(void *data)
 {
+	ftdm_span_t *fwd_span = NULL;
+	ftdm_gsm_span_data_t *fwd_gsm_data = NULL;
+	char *fwd_span_name = NULL;
+	char *number = NULL;
+	char cmd[100];
+	int i = 0;
+	ftdm_channel_t *ftdmchan = data;
+	ftdm_gsm_span_data_t *gsm_data = ftdmchan->span->signal_data;
 
-	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Executing state handler for %s\n", ftdm_channel_state2str(ftdmchan->state));
-	
-	ftdm_channel_complete_state(ftdmchan);
-
-		switch (ftdmchan->state) {
-
-		/* starting an incoming call */
-		case FTDM_CHANNEL_STATE_COLLECT: 
-			{
-				
-				
-			}
-			break;
-
-			/* starting an outgoing call */
-		case FTDM_CHANNEL_STATE_DIALING:
-			{
-				uint32_t interval = 0;
-				
-				ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Starting outgoing call with interval %d\n", interval);
-
-				{
-
-					ftdm_gsm_span_data_t *gsm_data;
-					wat_con_event_t con_event;
-					gsm_data = ftdmchan->span->signal_data;
-					gsm_data->call_id = GSM_OUTBOUND_CALL_ID;
-					memset(&con_event, 0, sizeof(con_event));
-					ftdm_set_string(con_event.called_num.digits, ftdmchan->caller_data.dnis.digits);
-					ftdm_log(FTDM_LOG_DEBUG, "Dialing number %s\n", con_event.called_num.digits);
-					wat_con_req(ftdmchan->span->span_id, gsm_data->call_id , &con_event);
- 
-					SEND_STATE_SIGNAL(FTDM_SIGEVENT_DIALING);
-					
-					
-				}
-
-				
-			}
-			break;
-
-			/* incoming call was offered */
-		case FTDM_CHANNEL_STATE_RING:
-
-			/* notify the user about the new call */
-
-			ftdm_log(FTDM_LOG_INFO, "Answering Incomming Call\r\n");
-			SEND_STATE_SIGNAL(FTDM_SIGEVENT_START);
-			
-			break;
-
-			/* the call is making progress */
-		case FTDM_CHANNEL_STATE_PROGRESS:
-		case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
-			{
-				SEND_STATE_SIGNAL(FTDM_SIGEVENT_PROGRESS_MEDIA);
-				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_UP);
-			}
-			break;
-
-			/* the call was answered */
-		case FTDM_CHANNEL_STATE_UP:
-			{
-				if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
-				
-					SEND_STATE_SIGNAL(FTDM_SIGEVENT_UP);
-				}
-				else {
-						ftdm_gsm_span_data_t *gsm_data;
-						gsm_data = ftdmchan->span->signal_data;
-						wat_con_cfm(ftdmchan->span->span_id, gsm_data->call_id); 
-				}
-				
-				
-			}
-			break;
-
-			/* just got hangup */
-		case FTDM_CHANNEL_STATE_HANGUP:
-			{
-				ftdm_gsm_span_data_t *gsm_data;
-				gsm_data = ftdmchan->span->signal_data;
-				wat_rel_req(ftdmchan->span->span_id, gsm_data->call_id);
-				gsm_data->call_id = 0;
-				SEND_STATE_SIGNAL(FTDM_SIGEVENT_STOP);
-			}
-			break;
-
-		case FTDM_CHANNEL_STATE_TERMINATING:
-			{
-				SEND_STATE_SIGNAL(FTDM_SIGEVENT_STOP);
-			}
-			break;
-
-			/* finished call for good */
-		case FTDM_CHANNEL_STATE_DOWN: 
-			{
-				ftdm_channel_t *closed_chan;
-				closed_chan = ftdmchan;
-				ftdm_channel_close(&closed_chan);
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "State processing ended.\n");
-				SEND_STATE_SIGNAL(FTDM_SIGEVENT_STOP);
-			}
-			break;
-
-			/* INDICATE_RINGING doesn't apply to MFC/R2. maybe we could generate a tone */
-		case FTDM_CHANNEL_STATE_RINGING: 
-			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "RINGING indicated, ignoring it as it doesn't apply to MFC/R2\n");
-			SEND_STATE_SIGNAL(FTDM_SIGEVENT_RINGING);
-				
-			break;
-
-			/* put the r2 channel back to IDLE, close ftdmchan and set it's state as DOWN */
-		case FTDM_CHANNEL_STATE_RESET:
-			{
-				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "RESET indicated, putting the R2 channel back to IDLE\n");
-				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_DOWN);
-			}
-			break;
-
-		default:
-			{
-				ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Unhandled channel state change: %s\n", ftdm_channel_state2str(ftdmchan->state));
-			}
-			break;
+	for (i = 0; i < ftdm_array_len(gsm_data->immediate_forward_numbers); i++) {
+		fwd_span_name = gsm_data->immediate_forward_numbers[i].span;
+		fwd_span = NULL;
+		if (!ftdm_strlen_zero_buf(fwd_span_name) &&
+		    ftdm_span_find_by_name(fwd_span_name, &fwd_span) != FTDM_SUCCESS) {
+			continue;
+		}
+		fwd_gsm_data = fwd_span ? fwd_span->signal_data : NULL;
+		if (fwd_gsm_data && fwd_gsm_data->call_id) {
+			/* span busy, do not forward here */
+			continue;
+		}
+		number = gsm_data->immediate_forward_numbers[i].number;
+		break;
 	}
 
+	if (!number) {
+		ftdm_log_chan_msg(ftdmchan, FTDM_LOG_INFO, "No numbers available to enable immediate forwarding\n");
+		return;
+	}
+
+	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Enabling immediate forwarding to %s\n", number);
+	snprintf(cmd, sizeof(cmd), "ATD%s%s", gsm_data->immediate_forward_prefix, number);
+	wat_cmd_req(ftdmchan->span->span_id, cmd, NULL, NULL);
+}
+
+static __inline__ void enable_immediate_forward(ftdm_channel_t *ftdmchan)
+{
+	ftdm_gsm_span_data_t *gsm_data = ftdmchan->span->signal_data;
+	ftdm_sched_timer(gsm_data->sched, "immediate_forwarding_delay", 1000,
+			perform_enable_immediate_forward,
+			ftdmchan,
+			&gsm_data->immediate_forwarding_timer);
+}
+
+static __inline__ void disable_all_forwarding(ftdm_channel_t *ftdmchan)
+{
+	char cmd[100];
+	ftdm_gsm_span_data_t *gsm_data = ftdmchan->span->signal_data;
+
+	if (ftdm_strlen_zero_buf(gsm_data->disable_forward_number)) {
+		return;
+	}
+
+	snprintf(cmd, sizeof(cmd), "ATD%s", gsm_data->disable_forward_number);
+	ftdm_log_chan(ftdmchan, FTDM_LOG_INFO, "Disabling GSM immediate forward dialing %s\n", gsm_data->disable_forward_number);
+	wat_cmd_req(ftdmchan->span->span_id, cmd, NULL, NULL);
+}
+
+static ftdm_status_t ftdm_gsm_state_advance(ftdm_channel_t *ftdmchan)
+{
+	ftdm_gsm_span_data_t *gsm_data = ftdmchan->span->signal_data;
+
+	ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Executing GSM state handler for %s\n", ftdm_channel_state2str(ftdmchan->state));
+
+	ftdm_channel_complete_state(ftdmchan);
+
+	switch (ftdmchan->state) {
+
+	/* starting an outgoing call */
+	case FTDM_CHANNEL_STATE_DIALING:
+		{
+			uint32_t interval = 0;
+			wat_con_event_t con_event;
+
+			ftdm_log_chan(ftdmchan, FTDM_LOG_DEBUG, "Starting outgoing call with interval %d\n", interval);
+
+			gsm_data->call_id = GSM_OUTBOUND_CALL_ID;
+			memset(&con_event, 0, sizeof(con_event));
+			ftdm_set_string(con_event.called_num.digits, ftdmchan->caller_data.dnis.digits);
+			ftdm_log(FTDM_LOG_DEBUG, "Dialing number %s\n", con_event.called_num.digits);
+			wat_con_req(ftdmchan->span->span_id, gsm_data->call_id , &con_event);
+
+			SEND_STATE_SIGNAL(FTDM_SIGEVENT_DIALING);
+		}
+		break;
+
+	/* incoming call was offered */
+	case FTDM_CHANNEL_STATE_RING:
+		{
+			/* notify the user about the new call */
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Inbound call detected\n");
+			SEND_STATE_SIGNAL(FTDM_SIGEVENT_START);
+		}
+		break;
+
+	/* the call is making progress */
+	case FTDM_CHANNEL_STATE_PROGRESS:
+	case FTDM_CHANNEL_STATE_PROGRESS_MEDIA:
+		{
+			SEND_STATE_SIGNAL(FTDM_SIGEVENT_PROGRESS_MEDIA);
+			ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_UP);
+		}
+		break;
+
+	/* the call was answered */
+	case FTDM_CHANNEL_STATE_UP:
+		{
+			if (ftdm_test_flag(ftdmchan, FTDM_CHANNEL_OUTBOUND)) {
+				SEND_STATE_SIGNAL(FTDM_SIGEVENT_UP);
+			} else {
+				wat_con_cfm(ftdmchan->span->span_id, gsm_data->call_id);
+			}
+			if (immediate_forward_enabled(gsm_data)) {
+				enable_immediate_forward(ftdmchan);
+			}
+		}
+		break;
+
+	/* just got hangup */
+	case FTDM_CHANNEL_STATE_HANGUP:
+		{
+			wat_rel_req(ftdmchan->span->span_id, gsm_data->call_id);
+			SEND_STATE_SIGNAL(FTDM_SIGEVENT_STOP);
+		}
+		break;
+
+	/* finished call for good */
+	case FTDM_CHANNEL_STATE_DOWN:
+		{
+			ftdm_channel_t *closed_chan;
+			gsm_data->call_id = 0;
+			closed_chan = ftdmchan;
+			ftdm_channel_close(&closed_chan);
+			ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "State processing ended.\n");
+			SEND_STATE_SIGNAL(FTDM_SIGEVENT_STOP);
+			if (immediate_forward_enabled(gsm_data)) {
+				disable_all_forwarding(ftdmchan);
+			}
+		}
+		break;
+
+	/* Outbound call is ringing */
+	case FTDM_CHANNEL_STATE_RINGING:
+		{
+			SEND_STATE_SIGNAL(FTDM_SIGEVENT_RINGING);
+		}
+		break;
+
+	default:
+		{
+			ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "Unhandled channel state: %s\n", ftdm_channel_state2str(ftdmchan->state));
+		}
+		break;
+	}
 	
 	return FTDM_SUCCESS;
 }
@@ -1067,7 +1106,50 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_gsm_configure_span_signaling)
 			ftdm_log(FTDM_LOG_DEBUG, "Configuring GSM span %s with hardware dtmf %s\n", span->name, val);
 		} else if (!strcasecmp(var, "conditional-forwarding-number")) {
 			ftdm_set_string(gsm_data->conditional_forward_number, val);
-			gsm_data->init_forwarding = FTDM_TRUE;
+			gsm_data->init_conditional_forwarding = FTDM_TRUE;
+		} else if (!strcasecmp(var, "conditional-forwarding-prefix")) {
+			ftdm_set_string(gsm_data->conditional_forward_prefix, val);
+		} else if (!strcasecmp(var, "immediate-forwarding-numbers")) {
+			char *state = NULL;
+			char *span_end = NULL;
+			char *number = NULL;
+			char *span_name = NULL;
+			int f = 0;
+			char *valdup = ftdm_strdup(val);
+			char *s = valdup;
+
+			if (!ftdm_strlen_zero_buf(gsm_data->immediate_forward_numbers[0].number)) {
+				ftdm_log(FTDM_LOG_ERROR, "immediate-forwarding-numbers already parsed! failed to parse: %s\n", val);
+				goto ifn_parse_done;
+			}
+
+			/* The string must be in the form [<span>:]<number>, optionally multiple elements separated by comma */
+			while ((number = strtok_r(s, ",", &state))) {
+				if (f == ftdm_array_len(gsm_data->immediate_forward_numbers)) {
+					ftdm_log(FTDM_LOG_ERROR, "Max number (%d) of immediate forwarding numbers reached!\n", f);
+					break;
+				}
+
+				s = NULL;
+				span_end = strchr(number, ':');
+				if (span_end) {
+					*span_end = '\0';
+					span_name = number;
+					number = (span_end + 1);
+					ftdm_set_string(gsm_data->immediate_forward_numbers[f].span, span_name);
+					ftdm_log(FTDM_LOG_DEBUG, "Parsed immediate forwarding to span %s number %s\n", span_name, number);
+				} else {
+					ftdm_log(FTDM_LOG_DEBUG, "Parsed immediate forwarding to number %s\n", number);
+				}
+				ftdm_set_string(gsm_data->immediate_forward_numbers[f].number, number);
+				f++;
+			}
+ifn_parse_done:
+			ftdm_safe_free(valdup);
+		} else if (!strcasecmp(var, "immediate-forwarding-prefix")) {
+			ftdm_set_string(gsm_data->immediate_forward_prefix, val);
+		} else if (!strcasecmp(var, "disable-forwarding-number")) {
+			ftdm_set_string(gsm_data->disable_forward_number, val);
 		} else {
 			ftdm_log(FTDM_LOG_ERROR, "Ignoring unknown GSM parameter '%s'", var);
 		}
