@@ -2214,9 +2214,9 @@ static void send_presence(fifo_node_t *node)
 		}
 
 		if ((wait_count = node_caller_count(node)) > 0) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Active (%d waiting)", wait_count);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d waiting)", wait_count);
 		} else {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", "Idle");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Idle");
 		}
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
@@ -2225,7 +2225,7 @@ static void send_presence(fifo_node_t *node)
 
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", wait_count > 0 ? "CS_ROUTING" : "CS_HANGUP");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", node->name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", wait_count > 0 ? "early" : "terminated");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", wait_count > 0 ? "confirmed" : "terminated");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
 		switch_event_fire(&event);
 	}
