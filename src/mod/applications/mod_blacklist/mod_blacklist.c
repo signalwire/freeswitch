@@ -246,7 +246,7 @@ SWITCH_STANDARD_API(blacklist_api_function)
 		}
 		
 		switch_mutex_lock(bl->list_mutex);
-		switch_core_hash_insert(bl->list, argv[2], NULL);
+		switch_core_hash_delete(bl->list, argv[2]);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Removed [%s] from list [%s]\n", argv[2], argv[1]);
 		switch_mutex_unlock(bl->list_mutex);
 		stream->write_function(stream, "+OK\n");
