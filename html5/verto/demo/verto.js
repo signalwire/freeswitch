@@ -349,7 +349,10 @@ function pop(id, cname, dft) {
 function init() {
     cur_call = null;
 
-    pop("#ext", "verto_demo_ext", "3500");
+    if (!autocall) {
+	pop("#ext", "verto_demo_ext", "3500");
+    }
+
     pop("#name", "verto_demo_name", "FreeSWITCH User");
     pop("#cid", "verto_demo_cid", "1008");
     pop("#textto", "verto_demo_textto", "1000");
