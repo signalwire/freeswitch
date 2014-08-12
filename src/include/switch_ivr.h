@@ -958,6 +958,7 @@ SWITCH_DECLARE(switch_bool_t) switch_ivr_uuid_force_exists(const char *uuid);
 
 
 
+SWITCH_DECLARE(switch_bool_t) switch_ivr_dmachine_is_parsing(switch_ivr_dmachine_t *dmachine);
 SWITCH_DECLARE(switch_status_t) switch_ivr_dmachine_last_ping(switch_ivr_dmachine_t *dmachine);
 SWITCH_DECLARE(const char *) switch_ivr_dmachine_get_name(switch_ivr_dmachine_t *dmachine);
 SWITCH_DECLARE(void) switch_ivr_dmachine_set_match_callback(switch_ivr_dmachine_t *dmachine, switch_ivr_dmachine_callback_t match_callback);

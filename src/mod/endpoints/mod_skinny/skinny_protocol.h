@@ -92,12 +92,12 @@ char* skinny_codec2string(skinny_codecs skinnycodec);
 /*****************************************************************************/
 
 #define skinny_create_message(message,msgtype,field) \
-    message = calloc(12 + sizeof(message->data.field), 1); \
+    message = calloc(1, 12 + sizeof(message->data.field)); \
     message->type = msgtype; \
     message->length = 4 + sizeof(message->data.field)
 
 #define skinny_create_empty_message(message,msgtype) \
-    message = calloc(12, 1); \
+    message = calloc(1, 12); \
     message->type = msgtype; \
     message->length = 4
 

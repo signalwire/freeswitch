@@ -4555,7 +4555,7 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 
 	handle->samples = context->fh.samples;
 	handle->cur_samplerate = context->fh.samplerate;
-	handle->cur_channels = context->fh.channels;
+	handle->cur_channels = context->fh.real_channels;
 	handle->format = context->fh.format;
 	handle->sections = context->fh.sections;
 	handle->seekable = context->fh.seekable;
@@ -4747,7 +4747,7 @@ static switch_status_t file_url_file_open(switch_file_handle_t *handle, const ch
 	if (status == SWITCH_STATUS_SUCCESS) {
 		handle->samples = fh->samples;
 		handle->cur_samplerate = fh->samplerate;
-		handle->cur_channels = fh->channels;
+		handle->cur_channels = fh->real_channels;
 		handle->format = fh->format;
 		handle->sections = fh->sections;
 		handle->seekable = fh->seekable;

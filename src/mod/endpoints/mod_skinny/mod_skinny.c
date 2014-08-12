@@ -773,13 +773,14 @@ switch_status_t channel_on_routing(switch_core_session_t *session)
 					helper.listener = listener;
 					helper.line_instance = atoi(switch_channel_get_variable(channel, "skinny_line_instance"));
 					skinny_session_walk_lines(tech_pvt->profile, switch_core_session_get_uuid(session), channel_on_routing_callback, &helper);
+
+					/* clear digit timeout time */
+					listener->digit_timeout_time = 0;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Could not find listener %s:%s for Channel %s\n",
 							switch_channel_get_variable(channel, "skinny_device_name"), switch_channel_get_variable(channel, "skinny_device_instance"),
 							switch_channel_get_name(channel));
 				}
-				/* clear digit timeout time */
-				listener->digit_timeout_time = 0;
 
 				/* Future bridge should go straight */
 				switch_set_flag_locked(tech_pvt, TFLAG_FORCE_ROUTE);
@@ -1710,7 +1711,6 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_status_t status;
 	skinny_message_t *request = NULL;
 	skinny_profile_t *profile;
-	int destroy_pool = 1;
 
 	switch_assert(listener);
 	assert(listener->profile);
@@ -1803,15 +1803,10 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Communication Closed\n");
 	}
 
-	if(destroy_pool == 0) {
-		goto no_destroy_pool;
-	}
 	if (listener->pool) {
 		switch_memory_pool_t *pool = listener->pool;
 		switch_core_destroy_memory_pool(&pool);
 	}
-
-no_destroy_pool:
 
 	switch_mutex_lock(profile->listener_mutex);
 	profile->listener_threads--;

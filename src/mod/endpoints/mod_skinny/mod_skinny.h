@@ -336,6 +336,8 @@ switch_endpoint_interface_t *skinny_get_endpoint_interface();
 #define skinny_textid2raw(label) (label > 0 ? switch_mprintf("\200%c", label) : switch_mprintf(""))
 char *skinny_format_message(const char *str);
 
+#define SKINNY_MAX_STRING 16384
+
 #endif /* _MOD_SKINNY_H */
 
 /* For Emacs:

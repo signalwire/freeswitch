@@ -2893,7 +2893,7 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *path,
 	handle->seekable = context->fh.seekable;
 	handle->speed = context->fh.speed;
 	handle->interval = context->fh.interval;
-	handle->channels = context->fh.channels;
+	handle->channels = context->fh.real_channels;
 	handle->flags |= SWITCH_FILE_NOMUX;
 
 	if (switch_test_flag((&context->fh), SWITCH_FILE_NATIVE)) {

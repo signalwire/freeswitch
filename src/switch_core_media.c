@@ -2929,6 +2929,7 @@ SWITCH_DECLARE(void) switch_core_session_set_ice(switch_core_session_t *session)
 	switch_channel_set_flag(session->channel, CF_ICE);
 	smh->mparams->rtcp_audio_interval_msec = "10000";
 	smh->mparams->rtcp_video_interval_msec = "10000";
+
 }
 
 #define MAX_MATCHES 30
@@ -5092,6 +5093,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		if ((val = switch_channel_get_variable(session->channel, "rtp_manual_rtp_bugs"))) {
 			switch_core_media_parse_rtp_bugs(&a_engine->rtp_bugs, val);
 		}
+		
+		if (switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+			smh->mparams->manual_rtp_bugs = RTP_BUG_SEND_LINEAR_TIMESTAMPS;
+		}
 
 		switch_rtp_intentional_bugs(a_engine->rtp_session, a_engine->rtp_bugs | smh->mparams->manual_rtp_bugs);
 
@@ -6192,11 +6197,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	if (!smh->payload_space) {
 		int i;
 
-		if (switch_channel_test_flag(session->channel, CF_WEBRTC)) {
-			smh->payload_space = 102;
-		} else {
-			smh->payload_space = 98;
-		}
+		/* it could be 98 but chrome reserves 98 and 99 for some internal stuff even though they should not.  
+		   Everyone expects dtmf to be at 101 and Its not worth the trouble so we'll start at 102 */
+		smh->payload_space = 102;
 
 		for (i = 0; i < smh->mparams->num_codecs; i++) {
 			smh->ianacodes[i] = smh->codecs[i]->ianacode;
