@@ -1395,17 +1395,19 @@ static switch_status_t do_config(url_cache_t *cache)
 				http_profile_t *profile_obj;
 				switch_xml_t domains;
 				switch_xml_t s3 = switch_xml_child(profile, "aws-s3");
-				const char *access_key_id = NULL;
-				const char *secret_access_key = NULL;
+				char *access_key_id = NULL;
+				char *secret_access_key = NULL;
 				if (s3) {
 					switch_xml_t id = switch_xml_child(s3, "access-key-id");
 					switch_xml_t secret = switch_xml_child(s3, "secret-access-key");
 					if (id && secret) {
-						access_key_id = switch_xml_txt(id);
-						secret_access_key = switch_xml_txt(secret);
-						if (!access_key_id || !secret_access_key) {
+						access_key_id = switch_strip_whitespace(switch_xml_txt(id));
+						secret_access_key = switch_strip_whitespace(switch_xml_txt(secret));
+						if (zstr(access_key_id) || zstr(secret_access_key)) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing aws s3 credentials for profile \"%s\"\n", name);
+							switch_safe_free(access_key_id);
 							access_key_id = NULL;
+							switch_safe_free(secret_access_key);
 							secret_access_key = NULL;
 						}
 					} else {
@@ -1414,6 +1416,8 @@ static switch_status_t do_config(url_cache_t *cache)
 				}
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Adding profile \"%s\" to cache\n", name);
 				profile_obj = url_cache_http_profile_add(cache, name, access_key_id, secret_access_key);
+				switch_safe_free(access_key_id);
+				switch_safe_free(secret_access_key);
 
 				domains = switch_xml_child(profile, "domains");
 				if (domains) {
