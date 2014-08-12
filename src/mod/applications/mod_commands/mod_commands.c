@@ -2141,6 +2141,42 @@ SWITCH_STANDARD_API(status_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define UPTIME_SYNTAX "[us|ms|s|m|h|d|microseconds|milliseconds|seconds|minutes|hours|days]"
+SWITCH_STANDARD_API(uptime_function)
+{
+	switch_time_t scale;
+
+	if (zstr(cmd)) {
+		/* default to seconds */
+		scale = 1000000;
+	}
+	else if (!strcasecmp(cmd, "microseconds") || !strcasecmp(cmd, "us")) {
+		scale = 1;
+	}
+	else if (!strcasecmp(cmd, "milliseconds") || !strcasecmp(cmd, "ms")) {
+		scale = 1000;
+	}
+	else if (!strcasecmp(cmd, "seconds") || !strcasecmp(cmd, "s")) {
+		scale = 1000000;
+	}
+	else if (!strcasecmp(cmd, "minutes") || !strcasecmp(cmd, "m")) {
+		scale = 60000000;
+	}
+	else if (!strcasecmp(cmd, "hours") || !strcasecmp(cmd, "h")) {
+		scale = 3600000000;
+	}
+	else if (!strcasecmp(cmd, "days") || !strcasecmp(cmd, "d")) {
+		scale = 86400000000;
+	}
+	else {
+		stream->write_function(stream, "-USAGE: %s\n", UPTIME_SYNTAX);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	stream->write_function(stream, "%u\n", switch_core_uptime() / scale);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define CTL_SYNTAX "[recover|send_sighup|hupall|pause [inbound|outbound]|resume [inbound|outbound]|shutdown [cancel|elegant|asap|now|restart]|sps|sps_peak_reset|sync_clock|sync_clock_when_idle|reclaim_mem|max_sessions|min_dtmf_duration [num]|max_dtmf_duration [num]|default_dtmf_duration [num]|min_idle_cpu|loglevel [level]|debug_level [level]]"
 SWITCH_STANDARD_API(ctl_function)
 {
@@ -6633,6 +6669,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "tone_detect", "Start tone detection on a channel", tone_detect_session_function, TONE_DETECT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "unload", "Unload module", unload_function, UNLOAD_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "unsched_api", "Unschedule an api command", unsched_api_function, UNSCHED_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uptime", "Show uptime", uptime_function, UPTIME_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "reg_url", "", reg_url_function, "<user>@<realm>");
 	SWITCH_ADD_API(commands_api_interface, "url_decode", "Url decode a string", url_decode_function, "<string>");
 	SWITCH_ADD_API(commands_api_interface, "url_encode", "Url encode a string", url_encode_function, "<string>");
@@ -6796,6 +6833,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add shutdown");
 	switch_console_set_complete("add sql_escape");
 	switch_console_set_complete("add unload ::console::list_loaded_modules");
+	switch_console_set_complete("add uptime ms");
+	switch_console_set_complete("add uptime s");
+	switch_console_set_complete("add uptime m");
+	switch_console_set_complete("add uptime h");
+	switch_console_set_complete("add uptime d");
+	switch_console_set_complete("add uptime microseconds");
+	switch_console_set_complete("add uptime milliseconds");
+	switch_console_set_complete("add uptime seconds");
+	switch_console_set_complete("add uptime minutes");
+	switch_console_set_complete("add uptime hours");
+	switch_console_set_complete("add uptime days");
 	switch_console_set_complete("add uuid_audio ::console::list_uuid start read mute");
 	switch_console_set_complete("add uuid_audio ::console::list_uuid start read level");
 	switch_console_set_complete("add uuid_audio ::console::list_uuid start write mute");
