@@ -106,6 +106,39 @@ char *aws_s3_signature(char *signature, int signature_length, const char *string
 }
 
 /**
+ * Reverse string substring search
+ */
+static char *my_strrstr(const char *haystack, const char *needle)
+{
+	char *s;
+	size_t needle_len;
+	size_t haystack_len;
+
+	if (zstr(haystack)) {
+		return NULL;
+	}
+
+	if (zstr(needle)) {
+		return (char *)haystack;
+	}
+
+	needle_len = strlen(needle);
+	haystack_len = strlen(haystack);
+	if (needle_len > haystack_len) {
+		return NULL;
+	}
+
+	s = (char *)(haystack + haystack_len - needle_len);
+	do {
+		if (!strncmp(s, needle, needle_len)) {
+			return s;
+		}
+	} while (s-- != haystack);
+
+	return NULL;
+}
+
+/**
  * Parse bucket and object from URL
  * @param url to parse.  This value is modified.
  * @param bucket to store result in
@@ -113,7 +146,7 @@ char *aws_s3_signature(char *signature, int signature_length, const char *string
  */
 void aws_s3_parse_url(char *url, char **bucket, char **object)
 {
-	char *bucket_start;
+	char *bucket_start = NULL;
 	char *bucket_end;
 	char *object_start;
 
@@ -124,15 +157,18 @@ void aws_s3_parse_url(char *url, char **bucket, char **object)
 		return;
 	}
 
-	/* expect: http(s)://bucket.s3.amazonaws.com/object */
- 	bucket_start = strstr(url, "://");
-	if (!bucket_start) {
+	/* expect: http(s)://bucket.foo-bar.s3.amazonaws.com/object */
+	if (!strncasecmp(url, "https://", 8)) {
+		bucket_start = url + 8;
+	} else if (!strncasecmp(url, "http://", 7)) {
+		bucket_start = url + 7;
+	}
+	if (zstr(bucket_start)) {
 		/* invalid URL */
 		return;
 	}
-	bucket_start += 3;
-
-	bucket_end = strchr(bucket_start, '.');
+	
+	bucket_end = my_strrstr(bucket_start, ".s3");
 	if (!bucket_end) {
 		/* invalid URL */
 		return;
