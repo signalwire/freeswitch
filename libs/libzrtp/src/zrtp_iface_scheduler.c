@@ -102,7 +102,7 @@ int zrtp_sleep(unsigned int msec)
 	struct timespec delay;
 	delay.tv_sec = msec / 1000;
 	delay.tv_nsec = (msec % 1000) * 1000000;
-	while (nanosleep(&delay, &delay)) ;
+	while (nanosleep(&delay, &delay));
 #else
 	usleep(msec*1000);
 #endif
