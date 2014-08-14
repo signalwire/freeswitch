@@ -1597,7 +1597,7 @@
             dialog.setState($.verto.enum.state.destroy);
             break;
         case $.verto.enum.state.destroy:
-	    delete verto.dialogs[dialog.callID];
+	    delete dialog.verto.dialogs[dialog.callID];
             dialog.rtc.stop();
             break;
         }
