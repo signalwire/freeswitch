@@ -1,11 +1,6 @@
 #include "ws.h"
 #include <pthread.h>
 
-#ifdef _MSC_VER
-/* warning C4706: assignment within conditional expression*/
-#pragma warning(disable: 4706)
-#endif
-
 #ifndef _MSC_VER
 #include <fcntl.h>
 #endif
@@ -97,10 +92,18 @@ void init_ssl(void) {
 
 	OpenSSL_add_all_algorithms();   /* load & register cryptos */
 	SSL_load_error_strings();     /* load all error messages */
-	ws_globals.ssl_method = TLSv1_server_method();   /* create server instance */
+	ws_globals.ssl_method = SSLv23_server_method();   /* create server instance */
 	ws_globals.ssl_ctx = SSL_CTX_new(ws_globals.ssl_method);         /* create context */
 	assert(ws_globals.ssl_ctx);
-	
+
+	/* Disable SSLv2 */
+	SSL_CTX_set_options(globals.ssl_ctx, SSL_OP_NO_SSLv2);
+	/* Disable SSLv3 */
+	SSL_CTX_set_options(globals.ssl_ctx, SSL_OP_NO_SSLv3);
+	/* Disable TLSv1 */
+	SSL_CTX_set_options(globals.ssl_ctx, SSL_OP_NO_TLSv1);
+	/* Disable Compression CRIME (Compression Ratio Info-leak Made Easy) */
+	SSL_CTX_set_options(globals.ssl_ctx, SSL_OP_NO_COMPRESSION);
 	/* set the local certificate from CertFile */
 	SSL_CTX_use_certificate_file(ws_globals.ssl_ctx, ws_globals.cert, SSL_FILETYPE_PEM);
 	/* set the private key from KeyFile */
