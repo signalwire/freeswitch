@@ -5091,11 +5091,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 		}
 
 		if ((val = switch_channel_get_variable(session->channel, "rtp_manual_rtp_bugs"))) {
-			switch_core_media_parse_rtp_bugs(&a_engine->rtp_bugs, val);
+			switch_core_media_parse_rtp_bugs(&a_engine->manual_rtp_bugs, val);
 		}
 		
 		if (switch_channel_test_flag(session->channel, CF_WEBRTC)) {
-			smh->mparams->manual_rtp_bugs = RTP_BUG_SEND_LINEAR_TIMESTAMPS;
+			smh->mparams->manual_rtp_bugs |= RTP_BUG_SEND_LINEAR_TIMESTAMPS;
 		}
 
 		switch_rtp_intentional_bugs(a_engine->rtp_session, a_engine->rtp_bugs | smh->mparams->manual_rtp_bugs);
