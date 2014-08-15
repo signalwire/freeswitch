@@ -3235,6 +3235,18 @@ static int start_jsock(verto_profile_t *profile, int sock)
 	/* no nagle please */
 	setsockopt(jsock->client_socket, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(flag));
 
+
+#if defined(SO_KEEPALIVE)
+	setsockopt(jsock->client_socket, SOL_SOCKET, SO_KEEPALIVE, (void *)&flag, sizeof(flag));
+#endif
+	flag = 30;
+#if defined(TCP_KEEPIDLE)
+	setsockopt(jsock->client_socket, SOL_TCP, TCP_KEEPIDLE, (void *)&flag, sizeof(flag));
+#endif
+#if defined(TCP_KEEPINTVL)
+	setsockopt(jsock->client_socket, SOL_TCP, TCP_KEEPINTVL, (void *)&flag, sizeof(flag));
+#endif
+
 	td = switch_core_alloc(jsock->pool, sizeof(*td));
 
 	td->alloc = 0;
