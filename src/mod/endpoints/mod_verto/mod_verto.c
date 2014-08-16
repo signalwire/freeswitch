@@ -3241,10 +3241,10 @@ static int start_jsock(verto_profile_t *profile, int sock)
 #endif
 	flag = 30;
 #if defined(TCP_KEEPIDLE)
-	setsockopt(jsock->client_socket, SOL_TCP, TCP_KEEPIDLE, (void *)&flag, sizeof(flag));
+	setsockopt(jsock->client_socket, IPPROTO_TCP, TCP_KEEPIDLE, (void *)&flag, sizeof(flag));
 #endif
 #if defined(TCP_KEEPINTVL)
-	setsockopt(jsock->client_socket, SOL_TCP, TCP_KEEPINTVL, (void *)&flag, sizeof(flag));
+	setsockopt(jsock->client_socket, IPPROTO_TCP, TCP_KEEPINTVL, (void *)&flag, sizeof(flag));
 #endif
 
 	td = switch_core_alloc(jsock->pool, sizeof(*td));
