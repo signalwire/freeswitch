@@ -963,33 +963,25 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 static void set_call_params(cJSON *params, verto_pvt_t *tech_pvt) {
 	const char *caller_id_name = NULL;
 	const char *caller_id_number = NULL;
+	const char *callee_id_name = NULL;
+	const char *callee_id_number = NULL;
+
+	caller_id_name = switch_channel_get_variable(tech_pvt->channel, "caller_id_name");
+	caller_id_number = switch_channel_get_variable(tech_pvt->channel, "caller_id_number");	
+	callee_id_name = switch_channel_get_variable(tech_pvt->channel, "callee_id_name");
+	callee_id_number = switch_channel_get_variable(tech_pvt->channel, "callee_id_number");
+
+	if (caller_id_name) cJSON_AddItemToObject(params, "caller_id_name", cJSON_CreateString(caller_id_name));
+	if (caller_id_number) cJSON_AddItemToObject(params, "caller_id_number", cJSON_CreateString(caller_id_number));
+
+	if (callee_id_name) cJSON_AddItemToObject(params, "callee_id_name", cJSON_CreateString(callee_id_name));
+	if (callee_id_number) cJSON_AddItemToObject(params, "callee_id_number", cJSON_CreateString(callee_id_number));
 	
-	if (switch_channel_outbound_display(tech_pvt->channel)) {
-		caller_id_name = switch_channel_get_variable(tech_pvt->channel, "caller_id_name");
-		caller_id_number = switch_channel_get_variable(tech_pvt->channel, "caller_id_number");
-	} else {
-		caller_id_name = switch_channel_get_variable(tech_pvt->channel, "verto_remote_caller_id_name");
-		caller_id_number = switch_channel_get_variable(tech_pvt->channel, "verto_remote_caller_id_number");
+	cJSON_AddItemToObject(params, "display_direction", 
+						  cJSON_CreateString(switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound"));
 
-		if (!caller_id_name) {
-			caller_id_name = switch_channel_get_variable(tech_pvt->channel, "callee_id_name");
-		}
 
-		if (!caller_id_number) {
-			caller_id_number = switch_channel_get_variable(tech_pvt->channel, "callee_id_number");
-		}
-	}
 
-	if (zstr(caller_id_name)) {
-		caller_id_name = "Outbound Call";
-	}
-
-	if (zstr(caller_id_number)) {
-		caller_id_number = switch_channel_get_variable(tech_pvt->channel, "destination_number");
-	}
-
-	cJSON_AddItemToObject(params, "caller_id_name", cJSON_CreateString(caller_id_name));
-	cJSON_AddItemToObject(params, "caller_id_number", cJSON_CreateString(caller_id_number));
 }
 
 static jsock_t *get_jsock(const char *uuid)
@@ -1655,10 +1647,10 @@ static switch_status_t verto_on_init(switch_core_session_t *session)
 {
     switch_status_t status = SWITCH_STATUS_SUCCESS;
     verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
- 
+
 	if (switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING_BRIDGE) || switch_channel_test_flag(tech_pvt->channel, CF_RECOVERING)) {
 		int tries = 120;
-		
+
 		switch_core_session_clear_crypto(session);
 
 		while(--tries > 0) {
@@ -1883,8 +1875,12 @@ static switch_status_t messagehook (switch_core_session_t *session, switch_core_
 
 				if (name || number) {
 					jmsg = jrpc_new_req("verto.display", tech_pvt->call_id, &params);
+					switch_ivr_eavesdrop_update_display(session, name, number);
+					switch_channel_set_variable(tech_pvt->channel, "last_sent_display_name", name);
+					switch_channel_set_variable(tech_pvt->channel, "last_sent_display_number", number);
 					cJSON_AddItemToObject(params, "display_name", cJSON_CreateString(name));
 					cJSON_AddItemToObject(params, "display_number", cJSON_CreateString(number));
+					set_call_params(params, tech_pvt);
 					jsock_queue_event(jsock, &jmsg, SWITCH_TRUE);
 				}
 
