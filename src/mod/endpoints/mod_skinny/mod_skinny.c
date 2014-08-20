@@ -2023,7 +2023,7 @@ switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, c
 	} else if (!strcasecmp(var, "digit-timeout")) {
 		profile->digit_timeout = atoi(val);
 	} else if (!strcasecmp(var, "date-format")) {
-		strncpy(profile->date_format, val, 6);
+		switch_copy_string(profile->date_format, val, 6);
 	} else if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
 		profile->odbc_dsn = switch_core_strdup(profile->pool, val);
 	} else if (!strcasecmp(var, "debug")) {
@@ -2244,7 +2244,7 @@ static switch_status_t load_skinny_config(void)
 								char *val = (char *) switch_xml_attr_soft(param, "value");
 
 								if (!strcasecmp(var, "firmware-version")) {
-									strncpy(params->firmware_version, val, 16);
+									switch_copy_string(params->firmware_version, val, 16);
 								}
 							} /* param */
 							switch_core_hash_insert(profile->device_type_params_hash, id_str, params);
