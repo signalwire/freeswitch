@@ -400,8 +400,11 @@ static void http_sendfile_initialize_curl(http_sendfile_data_t *http_data)
 			char *argv2[4] = { 0 };
 			uint32_t argc2 = switch_separate_string(argv[count], '=', argv2, (sizeof(argv2) / sizeof(argv2[0])));
 			
-			if(argc2 == 2)
+			if(argc2 == 2) {
+				switch_url_decode(argv2[0]);
+				switch_url_decode(argv2[1]);
 				curl_formadd(&http_data->formpost, &http_data->lastptr, CURLFORM_COPYNAME, argv2[0], CURLFORM_COPYCONTENTS, argv2[1], CURLFORM_END);
+			}
 		}
 	}
 	
