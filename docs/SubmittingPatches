@@ -50,7 +50,8 @@ commit, perhaps your commit should be broken into smaller separate
 commits.
 
 The commit body can be longer and can consist of multiple paragraphs.
-The text of the body should be hard wrapped to 68-72 characters.
+The text of the body should be hard wrapped to 68-72 characters.  (In
+Emacs you can hard wrap text with `M-q`.)
 
 When writing the commit body, describe in detail the problem that your
 commit aims to solve, how your commit solves the problem, and any
