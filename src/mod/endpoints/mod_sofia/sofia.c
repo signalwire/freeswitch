@@ -3315,6 +3315,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			gateway->ob_calls = 0;
 			gateway->ib_failed_calls = 0;
 			gateway->ob_failed_calls = 0;
+			gateway->destination_prefix = "";
 
 			if ((x_params = switch_xml_child(gateway_tag, "variables"))) {
 				param = switch_xml_child(x_params, "variable");
@@ -3416,6 +3417,10 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					outbound_proxy = val;
 				} else if (!strcmp(var, "distinct-to")) {
 					distinct_to = switch_true(val);
+				} else if (!strcmp(var, "destination-prefix")) {
+					if (!zstr(val)) {
+						gateway->destination_prefix = switch_core_strdup(gateway->pool, val);
+					}
 				} else if (!strcmp(var, "rfc-5626")) {
 					rfc_5626 = switch_true(val);
 				} else if (!strcmp(var, "reg-id")) {
