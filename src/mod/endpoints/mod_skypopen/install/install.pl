@@ -1,12 +1,11 @@
 #!/usr/bin/perl
 
 my $myname ;
-#my $skype_download_url = "http://mirrors.kernel.org/archlinux/community/os/i686/skype-oss-2.0.0.72-3-i686.pkg.tar.xz";
-my $skype_download_url = "http://212.71.238.115:8080/skype-oss-2.0.0.72-3-i686.pkg.tar.xz";
-my $skype_download_pkg = "skype-oss-2.0.0.72-3-i686.pkg.tar.xz";
-#my $skype_binary_dir = "/usr/bin";
+my $skype_download_url = "http://download.skype.com/linux/skype-4.3.0.37.tar.bz2";
+my $skype_download_pkg = "skype-4.3.0.37.tar.bz2";
 my $skype_binary_dir = "/usr/local/freeswitch/skypopen/skype-clients-symlinks-dir";
 my $skype_download_dir = "/tmp/skype_download";
+my $skype_unpacked_dir = "skype-4.3.0.37";
 my $skype_share_dir = "/usr/share/skype";
 my $freeswitch_modules_config_dir = "/usr/local/freeswitch/conf/autoload_configs";
 my $skypopen_sound_driver_dir = "/usr/local/freeswitch/skypopen/skypopen-sound-driver-dir";
@@ -205,18 +204,18 @@ printf("\n");
 
 system("mkdir -p $skype_download_dir");
 system("cd $skype_download_dir ; wget -c $skype_download_url");
-system("cd $skype_download_dir ; tar -xJf $skype_download_pkg");
+system("cd $skype_download_dir ; tar -xjf $skype_download_pkg");
 
 system("mkdir -p $skype_binary_dir");
-system("cd $skype_download_dir/usr/bin ; cp skype $skype_binary_dir/");
+system("cd $skype_download_dir/$skype_unpacked_dir ; cp skype $skype_binary_dir/");
+
 system("mkdir -p $skype_share_dir");
-system("cd $skype_download_dir/usr/share/skype ; cp -a avatars $skype_share_dir/");
-system("cd $skype_download_dir/usr/share/skype ; cp -a sounds $skype_share_dir/");
-system("cd $skype_download_dir/usr/share/skype ; cp -a lang $skype_share_dir/");
+system("cd $skype_download_dir/$skype_unpacked_dir ; cp -a avatars $skype_share_dir/");
+system("cd $skype_download_dir/$skype_unpacked_dir ; cp -a sounds $skype_share_dir/");
+system("cd $skype_download_dir/$skype_unpacked_dir ; cp -a lang $skype_share_dir/");
+system("cd $skype_download_dir/$skype_unpacked_dir ; cp -a icons $skype_share_dir/");
 
 
-system("mkdir -p $skypopen_sound_driver_dir");
-system("cp ../oss/skypopen.ko $skypopen_sound_driver_dir/");
 system("mkdir -p $skype_config_dir");
 system("mkdir -p $skype_startup_dir");
 system("mkdir -p $skype_symlinks_dir");
@@ -236,15 +235,6 @@ system("echo \"<per_interface_settings>\" >> $freeswitch_modules_config_dir/skyp
 
 
 system("echo \"#!/bin/sh\" > $skype_startup_dir/start_skype_clients.sh");
-system("echo \"#Unload possible ALSA sound modules that would conflict with our OSS fake module\" >> $skype_startup_dir/start_skype_clients.sh");
-system("echo \"rmmod snd_pcm_oss\" >> $skype_startup_dir/start_skype_clients.sh");
-system("echo \"rmmod snd_mixer_oss\" >> $skype_startup_dir/start_skype_clients.sh");
-system("echo \"rmmod snd_seq_oss\" >> $skype_startup_dir/start_skype_clients.sh");
-system("echo \"sleep 1\" >> $skype_startup_dir/start_skype_clients.sh");
-system("echo \"#Create the inode our fake sound driver will use\" >> $skype_startup_dir/start_skype_clients.sh");
-system("echo \"mknod /dev/dsp c 14 3\" >> $skype_startup_dir/start_skype_clients.sh");
-system("echo \"#Load our OSS fake module\" >> $skype_startup_dir/start_skype_clients.sh");
-system("echo \"insmod $skypopen_sound_driver_dir/skypopen.ko\" >> $skype_startup_dir/start_skype_clients.sh");
 system("echo >> $skype_startup_dir/start_skype_clients.sh");
 system("echo >> $skype_startup_dir/start_skype_clients.sh");
 
