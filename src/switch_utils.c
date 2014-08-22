@@ -2994,21 +2994,19 @@ SWITCH_DECLARE(int) switch_fulldate_cmp(const char *exp, switch_time_t *ts)
 	char *dup = strdup(exp);
 	char *sStart;
 	char *sEnd;
-	char *sDate;
-	char *sTime;
-	switch_time_t tsStart;
-	switch_time_t tsEnd;
-	struct tm tmTmp;
-	int year, month, day;
-	int hour, min, sec;
 
 	switch_assert(dup);
 
 	sStart = dup;
 	if ((sEnd=strchr(dup, '~'))) {
+		char *sDate = sStart;
+		char *sTime;
 		*sEnd++ = '\0';
-		sDate = sStart;
 		if ((sTime=strchr(sStart, ' '))) {
+			switch_time_t tsStart;
+			struct tm tmTmp;
+			int year, month, day;
+			int hour, min, sec;
 			*sTime++ = '\0';
 
 			memset(&tmTmp, 0, sizeof(tmTmp));
@@ -3026,6 +3024,10 @@ SWITCH_DECLARE(int) switch_fulldate_cmp(const char *exp, switch_time_t *ts)
 
 			sDate = sEnd;
 			if ((sTime=strchr(sEnd, ' '))) {
+				switch_time_t tsEnd;
+				struct tm tmTmp;
+				int year, month, day;
+				int hour, min, sec;
 				*sTime++ = '\0';
 
 				memset(&tmTmp, 0, sizeof(tmTmp));
