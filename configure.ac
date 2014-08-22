@@ -464,6 +464,7 @@ if test "${enable_debug}" = "yes"; then
 	CFLAGS="$saved_CFLAGS"	
 
 	if test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
+	    APR_ADDTO(SWITCH_AM_CFLAGS, -Wno-unused-result)
 	    APR_ADDTO(SWITCH_AM_CFLAGS, -g -ggdb)
 	    export DEBUG_CFLAGS="-g -ggdb"
 	fi
