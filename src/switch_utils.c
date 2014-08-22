@@ -3005,8 +3005,8 @@ SWITCH_DECLARE(int) switch_fulldate_cmp(const char *exp, switch_time_t *ts)
 		if ((sTime=strchr(sStart, ' '))) {
 			switch_time_t tsStart;
 			struct tm tmTmp;
-			int year, month, day;
-			int hour, min, sec;
+			int year = 1970, month = 1, day = 1;
+			int hour = 0, min = 0, sec = 0;
 			*sTime++ = '\0';
 
 			memset(&tmTmp, 0, sizeof(tmTmp));
@@ -3026,8 +3026,8 @@ SWITCH_DECLARE(int) switch_fulldate_cmp(const char *exp, switch_time_t *ts)
 			if ((sTime=strchr(sEnd, ' '))) {
 				switch_time_t tsEnd;
 				struct tm tmTmp;
-				int year, month, day;
-				int hour, min, sec;
+				int year = 1970, month = 1, day = 1;
+				int hour = 0, min = 0, sec = 0;
 				*sTime++ = '\0';
 
 				memset(&tmTmp, 0, sizeof(tmTmp));
