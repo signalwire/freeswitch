@@ -251,7 +251,7 @@ static int check_fd(int fd, int ms)
 
 		if ((pfds[0].revents & POLLIN)) {
 			if ((i = read(fd, &r, sizeof(r))) > -1) {
-				i = write(fd, &r, sizeof(r));
+				(void)write(fd, &r, sizeof(r));
 			}
 		}
 	}
@@ -1189,7 +1189,7 @@ int main(int argc, char *argv[])
 			if ((i = write(fds[1], &v, sizeof(v))) < 0) {
 				fprintf(stderr, "System Error [%s]\n", strerror(errno));
 			} else {
-				i = read(fds[1], &v, sizeof(v));
+				(void)read(fds[1], &v, sizeof(v));
 			}
 		
 			shutdown(fds[1], 2);
