@@ -78,7 +78,7 @@ SWITCH_DECLARE(switch_status_t) switch_resample_perform_create(switch_audio_resa
 	resampler->factor = (lto_rate / lfrom_rate);
 	resampler->rfactor = (lfrom_rate / lto_rate);
 	resampler->to_size = resample_buffer(to_rate, from_rate, (uint32_t) to_size);
-	resampler->to = malloc(resampler->to_size * sizeof(int16_t) * channels);
+	resampler->to = malloc(resampler->to_size * sizeof(int16_t) * (channels ? channels : 1));
 	resampler->channels = channels;
 
 	return SWITCH_STATUS_SUCCESS;
