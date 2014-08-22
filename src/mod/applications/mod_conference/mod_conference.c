@@ -197,7 +197,8 @@ typedef enum {
 	MFLAG_GHOST = (1 << 24),
 	MFLAG_JOIN_ONLY = (1 << 25),
 	MFLAG_POSITIONAL = (1 << 26),
-	MFLAG_NO_POSITIONAL = (1 << 27)
+	MFLAG_NO_POSITIONAL = (1 << 27),
+	MFLAG_JOIN_VID_FLOOR = (1 << 28)
 } member_flag_t;
 
 typedef enum {
@@ -563,6 +564,7 @@ static void conference_list(conference_obj_t *conference, switch_stream_handle_t
 static conference_obj_t *conference_find(char *name, char *domain);
 static void member_bind_controls(conference_member_t *member, const char *controls);
 static void conference_send_presence(conference_obj_t *conference);
+static void conference_set_video_floor_holder(conference_obj_t *conference, conference_member_t *member, switch_bool_t force);
 
 SWITCH_STANDARD_API(conf_api_main);
 
@@ -2262,6 +2264,8 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 				switch_mutex_lock(conference->mutex);
 				if (conference->video_floor_holder) {
 					switch_core_session_refresh_video(conference->video_floor_holder->session);
+					// there's already someone hold the floor, tell the core thread start to read video
+					switch_channel_clear_flag(member->channel, CF_VIDEO_PASSIVE);
 				}
 				switch_mutex_unlock(conference->mutex);
 			}
@@ -2387,6 +2391,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		}
 		
 	}
+
 	unlock_member(member);
 	switch_mutex_unlock(member->audio_out_mutex);
 	switch_mutex_unlock(member->audio_in_mutex);
@@ -2429,8 +2434,15 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	switch_mutex_unlock(conference->mutex);
 	status = SWITCH_STATUS_SUCCESS;
 
+	if (switch_test_flag(member, MFLAG_JOIN_VID_FLOOR)) {
+		conference_set_video_floor_holder(conference, member, SWITCH_TRUE);
+		switch_set_flag(member->conference, CFLAG_VID_FLOOR_LOCK);
 
-
+		if (test_eflag(conference, EFLAG_FLOOR_CHANGE)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "conference %s OK video floor %d %s\n",
+							  conference->name, member->id, switch_channel_get_name(member->channel));
+		}
+	}
 
 	return status;
 }
@@ -6153,6 +6165,11 @@ static void conference_list(conference_obj_t *conference, switch_stream_handle_t
 			count++;
 		}
 
+		if (member == member->conference->video_floor_holder) {
+			stream->write_function(stream, "%s%s", count ? "|" : "", "vid-floor");
+			count++;
+		}
+
 		if (switch_test_flag(member, MFLAG_MOD)) {
 			stream->write_function(stream, "%s%s", count ? "|" : "", "moderator");
 			count++;
@@ -8843,6 +8860,8 @@ static void set_mflags(const char *flags, member_flag_t *f)
 				*f |= MFLAG_POSITIONAL;
 			} else if (!strcasecmp(argv[i], "no-positional")) {
 				*f |= MFLAG_NO_POSITIONAL;
+			} else if (!strcasecmp(argv[i], "join-vid-floor")) {
+				*f |= MFLAG_JOIN_VID_FLOOR;
 			}
 		}
 
