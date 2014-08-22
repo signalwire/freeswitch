@@ -985,6 +985,8 @@ SWITCH_DECLARE(switch_status_t) switch_thread_create(switch_thread_t ** new_thre
 #define SWITCH_SO_RCVBUF 128
 #define SWITCH_SO_DISCONNECTED 256
 #define SWITCH_SO_TCP_NODELAY 512
+#define SWITCH_SO_TCP_KEEPIDLE 520
+#define SWITCH_SO_TCP_KEEPINTVL 530
 
 
  /**
