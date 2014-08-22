@@ -432,6 +432,8 @@ void *sub_alloc(su_home_t *home,
   if (size >= ((size_t)1) << SIZEBITS)
     return (void)(errno = ENOMEM), NULL;
 
+  if (!size) return NULL;
+
   if (sub == NULL || 3 * sub->sub_used > 2 * sub->sub_n) {
     /* Resize the hash table */
     size_t i, n, n2;
@@ -474,7 +476,7 @@ void *sub_alloc(su_home_t *home,
     sub = b2;
   }
 
-  if (size && sub && zero < do_clone &&
+  if (sub && zero < do_clone &&
       sub->sub_preload && size <= sub->sub_prsize) {
     /* Use preloaded memory */
     size_t prused = sub->sub_prused + size + MEMCHECK_EXTRA;
