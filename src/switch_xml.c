@@ -1376,7 +1376,7 @@ static int preprocess(const char *cwd, const char *file, FILE *write_fd, int rle
 
 	if (!(read_fd = fopen(file, "r"))) {
 		const char *reason = strerror(errno);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldnt open %s (%s)\n", file, reason);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't open %s (%s)\n", file, reason);
 		return -1;
 	}
 
