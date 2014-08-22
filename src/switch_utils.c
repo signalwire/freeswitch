@@ -1569,7 +1569,6 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *ma
   doh:
 	if (tmp_socket > 0) {
 		close(tmp_socket);
-		tmp_socket = -1;
 	}
 #endif
 
