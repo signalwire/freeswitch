@@ -694,7 +694,7 @@ SWITCH_STANDARD_APP(play_video_function)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
 	switch_frame_t audio_frame = { 0 }, video_frame = { 0 };
-	switch_codec_t codec = { 0 }, vid_codec = { 0 }, *read_vid_codec;
+	switch_codec_t codec = { 0 }, *read_vid_codec;
 	switch_timer_t timer = { 0 };
 	switch_payload_t pt = 0;
 	switch_dtmf_t dtmf = { 0 };
@@ -797,20 +797,6 @@ SWITCH_STANDARD_APP(play_video_function)
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Audio Codec Activation Fail\n");
 		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Audio codec activation failed");
-		goto end;
-	}
-
-	if (switch_core_codec_init(&vid_codec,
-							   "H264",
-							   NULL,
-							   0,
-							   0,
-							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-							   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Video Codec Activation Success\n");
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Video Codec Activation Fail\n");
-		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Video codec activation failed");
 		goto end;
 	}
 
@@ -955,10 +941,6 @@ end:
 
 	if (switch_core_codec_ready(&codec)) {
 		switch_core_codec_destroy(&codec);
-	}
-
-	if (switch_core_codec_ready(&vid_codec)) {
-		switch_core_codec_destroy(&vid_codec);
 	}
 
 	switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
@@ -1196,7 +1178,7 @@ static switch_call_cause_t vlc_outgoing_channel(switch_core_session_t *session, 
 	char name[256];
 	vlc_private_t *tech_pvt = NULL;
 	switch_caller_profile_t *caller_profile;
-	// const char *err;
+	const char *codec_str = NULL;
 
 	switch_assert(vlc_endpoint_interface);
 
@@ -1223,7 +1205,6 @@ static switch_call_cause_t vlc_outgoing_channel(switch_core_session_t *session, 
 	caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 	switch_channel_set_caller_profile(channel, caller_profile);
 
-
 	if (switch_core_codec_init(&tech_pvt->read_codec,
 				"L16",
 				NULL,
@@ -1248,8 +1229,22 @@ static switch_call_cause_t vlc_outgoing_channel(switch_core_session_t *session, 
 		goto fail;
 	}
 
+	codec_str = switch_event_get_header(var_event, "absolute_codec_string");
+
+	if (!codec_str && session) {
+		switch_codec_t *codec = switch_core_session_get_video_read_codec(session);
+		if (codec) {
+			codec_str = codec->implementation->iananame;
+		}
+	}
+
+	if (!codec_str) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No video codec?\n");
+		goto fail;
+	}
+
 	if (switch_core_codec_init(&tech_pvt->video_codec,
-				"H264",
+				codec_str,
 				NULL,
 				90000,
 				0,
