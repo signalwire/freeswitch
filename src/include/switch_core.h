@@ -2303,6 +2303,35 @@ SWITCH_DECLARE(uint8_t) switch_core_session_compare(switch_core_session_t *a, sw
   \return TRUE or FALSE
 */
 SWITCH_DECLARE(uint8_t) switch_core_session_check_interface(switch_core_session_t *session, const switch_endpoint_interface_t *endpoint_interface);
+
+/*!
+  \brief Set a callback to let the core video thread call us
+  \param session the session
+  \param func to callback
+  \param private user data
+  \return SWITCH_STATUS_CONTINUE | SWITCH_STATUS_SUCCESS | SWITCH_STATUS_BREAK | SWITCH_STATUS_*
+
+  If returns SWITCH_STATUS_CONTINUE, it will continues to run furthur code (read/write) in the core video thread,
+  that is to say, if the callback func to nothing and just returns SWITCH_STATUS_CONTINUE, it remains the default behaviour,
+  Return SWITCH_STATUS_SUCCESS to skip the default behaviour
+  Return SWITCH_STATUS_BREAK will break the loop and end the video thread
+*/
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_thread_callback(switch_core_session_t *session, void *func, void *user_data);
+
+/*!
+  \brief Set a callback to let the core video thread call us
+  \param session the session
+  \param the current video frame
+  \param private user data
+  \return SWITCH_STATUS_CONTINUE or SWITCH_STATUS_SUCCESS
+
+  If returns SWITCH_STATUS_CONTINUE, it will continues to run furthur code (read/write) in the core video thread,
+  that is to say, if the callback func to nothing and just returns SWITCH_STATUS_CONTINUE, it remains the default behaviour,
+  Return SWITCH_STATUS_SUCCESS to skip the default behaviour
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_session_video_thread_callback(switch_core_session_t *session, switch_frame_t *frame);
+
 SWITCH_DECLARE(switch_hash_index_t *) switch_core_mime_index(void);
 SWITCH_DECLARE(const char *) switch_core_mime_ext2type(const char *ext);
 SWITCH_DECLARE(const char *) switch_core_mime_type2ext(const char *type);

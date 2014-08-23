@@ -3063,6 +3063,31 @@ SWITCH_DECLARE(void) switch_core_session_debug_pool(switch_stream_handle_t *stre
 		session_manager.running, session_manager.busy, session_manager.popping);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_thread_callback(switch_core_session_t *session, void *func, void *user_data)
+{
+	if (!func) {
+		session->_video_thread_callback = NULL;
+		session->_video_thread_user_data = NULL;
+		return SWITCH_STATUS_SUCCESS;
+	} else if (session->_video_thread_callback) {
+		return SWITCH_STATUS_FALSE;
+	} else {
+		session->_video_thread_callback = func;
+		session->_video_thread_user_data = user_data;
+		return SWITCH_STATUS_SUCCESS;
+	}
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_video_thread_callback(switch_core_session_t *session, switch_frame_t *frame)
+{
+	if (session->_video_thread_callback) {
+		return session->_video_thread_callback(session, frame, session->_video_thread_user_data);
+	}
+
+	return SWITCH_STATUS_CONTINUE;
+}
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c

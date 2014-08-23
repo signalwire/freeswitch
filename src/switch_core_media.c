@@ -4518,6 +4518,14 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			continue;
 		}
 
+		status = switch_core_session_video_thread_callback(session, read_frame);
+
+		if (status != SWITCH_STATUS_CONTINUE) {
+			if (status == SWITCH_STATUS_SUCCESS) continue;
+
+			break;
+		}
+
 		if (switch_channel_test_flag(channel, CF_VIDEO_ECHO)) {
 			switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
 		}

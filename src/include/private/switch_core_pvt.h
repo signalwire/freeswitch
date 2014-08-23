@@ -103,6 +103,7 @@ typedef enum {
 	SSF_MEDIA_BUG_TAP_ONLY = (1 << 10)
 } switch_session_flag_t;
 
+typedef switch_status_t (switch_core_video_thread_callback_func_t) (switch_core_session_t *session, switch_frame_t *frame, void *user_data);
 
 struct switch_core_session {
 	switch_memory_pool_t *pool;
@@ -189,6 +190,8 @@ struct switch_core_session {
 
 	switch_media_handle_t *media_handle;
 	uint32_t decoder_errors;
+	switch_core_video_thread_callback_func_t *_video_thread_callback;
+	void *_video_thread_user_data;
 };
 
 struct switch_media_bug {

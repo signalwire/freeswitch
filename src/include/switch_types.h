@@ -1477,7 +1477,7 @@ SFF_PLC        = (1 <<  3) - Frame has generated PLC data
 SFF_RFC2833    = (1 <<  4) - Frame has rfc2833 dtmf data
 SFF_DYNAMIC    = (1 <<  5) - Frame is dynamic and should be freed
 SFF_MARKER     = (1 << 11) - Frame flag has Marker set, only set by encoder
-SFF_WAIT_KEY_FRAME = (1 << 12) - Need a key from before could decode
+SFF_WAIT_KEY_FRAME = (1 << 12) - Need a key from before could decode, or force generate a key frame on encode
 </pre>
  */
 typedef enum {
