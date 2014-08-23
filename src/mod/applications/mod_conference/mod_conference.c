@@ -7532,6 +7532,34 @@ static switch_status_t conf_api_sub_relate(conference_obj_t *conference, switch_
 	switch_assert(conference != NULL);
 	switch_assert(stream != NULL);
 
+	if (argc <= 3) {
+		conference_member_t *member;
+
+		switch_mutex_unlock(conference->mutex);
+
+		if (conference->relationship_total) {
+			int member_id = 0;
+
+			if (argc == 3) member_id = atoi(argv[2]);
+
+			for (member = conference->members; member; member = member->next) {
+				conference_relationship_t *rel;
+
+				if (member_id > 0 && member->id != member_id) continue;
+
+				for (rel = member->relationships; rel; rel = rel->next) {
+					stream->write_function(stream, "%d -> %d %s%s\n", member->id, rel->id,
+						(rel->flags & RFLAG_CAN_SPEAK) ? "SPEAK " : "NOSPEAK ",
+						(rel->flags & RFLAG_CAN_HEAR) ? "HEAR" : "NOHEAR");
+				}
+			}
+		} else {
+			stream->write_function(stream, "No relationships\n");
+		}
+		switch_mutex_unlock(conference->mutex);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	if (argc <= 4)
 		return SWITCH_STATUS_GENERR;
 
