@@ -241,7 +241,7 @@ var callbacks = {
 		docall();
 	    }
         } else {
-            goto_page("login");
+            goto_page("main");
             goto_dialog("login-error");
         }
 
