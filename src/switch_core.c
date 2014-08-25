@@ -109,14 +109,35 @@ static void check_ip(void)
 	char old_ip6[256] = "";
 	int ok4 = 1, ok6 = 1;
 	int mask = 0;
+	switch_status_t check6, check4;
+	switch_event_t *event;
+	char *hostname = switch_core_get_variable("hostname");
 
 	gethostname(runtime.hostname, sizeof(runtime.hostname));
-	switch_core_set_variable("hostname", runtime.hostname);
 
-	switch_find_local_ip(guess_ip4, sizeof(guess_ip4), &mask, AF_INET);
-	switch_find_local_ip(guess_ip6, sizeof(guess_ip6), NULL, AF_INET6);
+	if (zstr(hostname)) {
+		switch_core_set_variable("hostname", runtime.hostname);
+	} else if (strcmp(hostname, runtime.hostname)) {
+		if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "condition", "hostname-change");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "old-hostname", hostname ? hostname : "nil");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "new-hostname", runtime.hostname);
+			switch_event_fire(&event);
+		}
 
-	if (!*main_ip4) {
+		switch_core_set_variable("hostname", runtime.hostname);
+	}
+
+	check4 = switch_find_local_ip(guess_ip4, sizeof(guess_ip4), &mask, AF_INET);
+	check6 = switch_find_local_ip(guess_ip6, sizeof(guess_ip6), NULL, AF_INET6);
+
+	if (check6 != SWITCH_STATUS_SUCCESS && (zstr(main_ip6) || !strcasecmp(main_ip6, "::1"))) {
+		check6 = SWITCH_STATUS_SUCCESS;
+	}
+
+	if (check4 != SWITCH_STATUS_SUCCESS) {
+		ok4 = 2;
+	} else if (!*main_ip4) {
 		switch_set_string(main_ip4, guess_ip4);
 	} else {
 		if (!(ok4 = !strcmp(main_ip4, guess_ip4))) {
@@ -130,7 +151,9 @@ static void check_ip(void)
 		}
 	}
 
-	if (!*main_ip6) {
+	if (check6 != SWITCH_STATUS_SUCCESS) {
+		ok6 = 2;
+	} else if (!*main_ip6) {
 		switch_set_string(main_ip6, guess_ip6);
 	} else {
 		if (!(ok6 = !strcmp(main_ip6, guess_ip6))) {
@@ -141,8 +164,6 @@ static void check_ip(void)
 	}
 
 	if (!ok4 || !ok6) {
-		switch_event_t *event;
-
 		if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "condition", "network-address-change");
 			if (!ok4) {
@@ -156,6 +177,21 @@ static void check_ip(void)
 			switch_event_fire(&event);
 		}
 	}
+
+	if (ok4 == 2 || ok6 == 2) {
+		if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "condition", "network-outage");
+
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-status-v4", ok4 == 2 ? "disconnected" : "active");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-address-v4", main_ip4);
+
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-status-v6", ok6 == 2 ? "disconnected" : "active");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-address-v6", main_ip6);
+
+			switch_event_fire(&event);
+		}
+	}
+
 }
 
 SWITCH_STANDARD_SCHED_FUNC(heartbeat_callback)

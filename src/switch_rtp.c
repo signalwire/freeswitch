@@ -1056,6 +1056,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			char ipbuf[25];
 			switch_sockaddr_t *from_addr = rtp_session->from_addr;
 			switch_socket_t *sock_output = rtp_session->sock_output;
+			uint8_t hosts_set = 0;
 
 			if (is_rtcp) {
 				from_addr = rtp_session->rtcp_from_addr;
@@ -1078,6 +1079,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			switch_stun_packet_attribute_add_xor_binded_address(rpacket, (char *) remote_ip, switch_sockaddr_get_port(from_addr));
 
 			if (!switch_cmp_addr(from_addr, ice->addr)) {
+				hosts_set++;
 				host = switch_get_addr(buf, sizeof(buf), from_addr);
 				port = switch_sockaddr_get_port(from_addr);
 				host2 = switch_get_addr(buf2, sizeof(buf2), ice->addr);
@@ -1088,7 +1090,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				switch_stun_packet_attribute_add_integrity(rpacket, ice->pass);
 				switch_stun_packet_attribute_add_fingerprint(rpacket);
 			} else {
-				if (!switch_cmp_addr(from_addr, ice->addr)) {
+				if (hosts_set) {
 					switch_sockaddr_info_get(&ice->addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool);
 					
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_NOTICE,
@@ -1111,7 +1113,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 
 			bytes = switch_stun_packet_length(rpacket);
 
-			if (!ice->rready && (ice->type & ICE_VANILLA) && ice->ice_params && !switch_cmp_addr(from_addr, ice->addr)) {
+			if (!ice->rready && (ice->type & ICE_VANILLA) && ice->ice_params && hosts_set && !switch_cmp_addr(from_addr, ice->addr)) {
 				int i = 0;
 
 				ice->missed_count = 0;

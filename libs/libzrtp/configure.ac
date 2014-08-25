@@ -68,7 +68,7 @@ AC_C_CONST
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([memset memcpy malloc free]) 
-AC_CHECK_FUNCS([usleep])
+AC_CHECK_FUNCS([usleep nanosleep])
 AC_CHECK_FUNCS([fopen fread])
 AC_CHECK_FUNCS([pthread_mutex_lock pthread_mutex_unlock pthread_mutex_init pthread_mutex_destroy])
 AC_CHECK_FUNCS([pthread_attr_init pthread_attr_setdetachstate pthread_create])

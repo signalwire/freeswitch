@@ -4319,9 +4319,9 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		}
 
 		if (!strchr(dest, '@')) {
-			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s@%s", dest, sofia_glue_strip_proto(gateway_ptr->register_proxy));
+			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s%s@%s", gateway_ptr->destination_prefix, dest, sofia_glue_strip_proto(gateway_ptr->register_proxy));
 		} else {
-			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s", dest);
+			tech_pvt->dest = switch_core_session_sprintf(nsession, "sip:%s%s", gateway_ptr->destination_prefix, dest);
 		}
 
 		if ((host = switch_core_session_strdup(nsession, tech_pvt->dest))) {

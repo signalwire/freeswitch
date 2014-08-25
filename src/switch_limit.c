@@ -54,7 +54,7 @@ static void release_backend(switch_limit_interface_t *limit) {
 
 SWITCH_DECLARE(void) switch_limit_init(switch_memory_pool_t *pool) {
 	if (switch_event_reserve_subclass(LIMIT_EVENT_USAGE) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldnt register event subclass \"%s\"", LIMIT_EVENT_USAGE);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register event subclass \"%s\"", LIMIT_EVENT_USAGE);
 	}
 }
 

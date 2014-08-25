@@ -51,6 +51,8 @@ static struct {
 	switch_thread_rwlock_t *shutdown_rwlock;
 	/** log delivery queue */
 	switch_queue_t *log_queue;
+	/** Fields to automatically add to session logs */
+	switch_event_t *session_fields;
 } globals;
 
 /**
@@ -85,6 +87,7 @@ static char *to_gelf(const switch_log_node_t *node, switch_log_level_t log_level
 	char *parsed_full_message = NULL;
 	char *field_name = NULL;
 	switch_event_t *log_fields = NULL;
+	switch_core_session_t *session = NULL;
 
 	cJSON_AddItemToObject(gelf, "version", cJSON_CreateString("1.1"));
 	if ((hostname = switch_core_get_variable("hostname")) && !zstr(hostname)) {
@@ -117,27 +120,47 @@ static char *to_gelf(const switch_log_node_t *node, switch_log_level_t log_level
 		full_message++;
 	}
 
-	/* parse list of fields, if any */
-	if (strncmp(full_message, "LOG_FIELDS", 10) == 0) {
-		if (switch_event_create_brackets(full_message+10, '[', ']', ',', &log_fields, &parsed_full_message, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
-
-			switch_event_header_t *hp;
-			for (hp = log_fields->headers; hp; hp = hp->next) {
-				if (!zstr(hp->name) && !zstr(hp->value)) {
-					if (strncmp(hp->name, "@#", 2) == 0) {
-						field_name = switch_mprintf("_%s", hp->name + 2);
-						cJSON_AddItemToObject(gelf, field_name, cJSON_CreateNumber(strtod(hp->value, NULL)));
-					} else {
-						field_name = switch_mprintf("_%s", hp->name);
-						cJSON_AddItemToObject(gelf, field_name, cJSON_CreateString(hp->value));
+	/* get fields from channel data, if configured */
+	if (!zstr(node->userdata) && (session = switch_core_session_locate(node->userdata))) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		switch_event_header_t *hp;
+		/* session_fields name mapped to variable name */
+		for (hp = globals.session_fields->headers; hp; hp = hp->next) {
+			if (!zstr(hp->name) && !zstr(hp->value)) {
+				const char *val = switch_channel_get_variable(channel, hp->value);
+				if (!zstr(val)) {
+					if (!log_fields) {
+						switch_event_create_plain(&log_fields, SWITCH_EVENT_CHANNEL_DATA);
 					}
-					free(field_name);
+					switch_event_add_header_string(log_fields, SWITCH_STACK_BOTTOM, hp->name, val);
 				}
 			}
-
-			switch_event_destroy(&log_fields);
-			full_message = parsed_full_message;
 		}
+		switch_core_session_rwunlock(session);
+	}
+
+	/* parse list of fields from message text, if any */
+	if (strncmp(full_message, "LOG_FIELDS", 10) == 0) {
+		switch_event_create_brackets(full_message+10, '[', ']', ',', &log_fields, &parsed_full_message, SWITCH_TRUE);
+		full_message = parsed_full_message;
+	}
+
+	/* add additional fields */
+	if (log_fields) {
+		switch_event_header_t *hp;
+		for (hp = log_fields->headers; hp; hp = hp->next) {
+			if (!zstr(hp->name) && !zstr(hp->value)) {
+				if (strncmp(hp->name, "@#", 2) == 0) {
+					field_name = switch_mprintf("_%s", hp->name + 2);
+					cJSON_AddItemToObject(gelf, field_name, cJSON_CreateNumber(strtod(hp->value, NULL)));
+				} else {
+					field_name = switch_mprintf("_%s", hp->name);
+					cJSON_AddItemToObject(gelf, field_name, cJSON_CreateString(hp->value));
+				}
+				free(field_name);
+			}
+		}
+		switch_event_destroy(&log_fields);
 	}
 
 	cJSON_AddItemToObject(gelf, "full_message", cJSON_CreateString(full_message));
@@ -293,6 +316,7 @@ static switch_status_t do_config(void)
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		switch_xml_t param;
+		switch_xml_t fields;
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *name = (char *) switch_xml_attr_soft(param, "name");
 			char *value = (char *) switch_xml_attr_soft(param, "value");
@@ -333,6 +357,25 @@ static switch_status_t do_config(void)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring unknown param: \"%s\"\n", name);
 			}
 		}
+
+		/* map session fields to channel variables */
+		if ((fields = switch_xml_child(settings, "fields"))) {
+			switch_xml_t field;
+			for (field = switch_xml_child(fields, "field"); field; field = field->next) {
+				char *name = (char *) switch_xml_attr_soft(field, "name");
+				char *variable = (char *) switch_xml_attr_soft(field, "variable");
+				if (zstr(name)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring unnamed session field\n");
+					continue;
+				}
+				if (zstr(variable)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring empty channel variable for session field \"%s\"\n", name);
+					continue;
+				}
+				switch_event_add_header_string(globals.session_fields, SWITCH_STACK_BOTTOM,
+					switch_core_strdup(globals.pool, name), switch_core_strdup(globals.pool, variable));
+			}
+		}
 	}
 	switch_xml_free(xml);
 	return SWITCH_STATUS_SUCCESS;
@@ -344,6 +387,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_graylog2_load)
 
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
+
+	switch_event_create_plain(&globals.session_fields, SWITCH_EVENT_CHANNEL_DATA);
 
 	if (do_config() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_TERM;
@@ -362,7 +407,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_graylog2_shutdown)
 {
 	switch_log_unbind_logger(mod_graylog2_logger);
 	stop_deliver_graylog2_thread();
-
+	if (globals.session_fields) {
+		switch_event_destroy(&globals.session_fields);
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 

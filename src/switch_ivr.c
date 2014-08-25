@@ -2308,6 +2308,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 	}
 
 	switch_xml_set_attr_d(cdr, "core-uuid", switch_core_get_uuid());
+	switch_xml_set_attr_d(cdr, "switchname", switch_core_get_switchname());
 
 	if (!(x_channel_data = switch_xml_add_child_d(cdr, "channel_data", cdr_off++))) {
 		goto error;
@@ -2681,7 +2682,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_json_cdr(switch_core_session
 	char tmp[512], *f;
 
 	cJSON_AddItemToObject(cdr, "core-uuid", cJSON_CreateString(switch_core_get_uuid()));
-	
+	cJSON_AddItemToObject(cdr, "switchname", cJSON_CreateString(switch_core_get_switchname()));
 	j_channel_data = cJSON_CreateObject();
 
 	cJSON_AddItemToObject(cdr, "channel_data", j_channel_data);

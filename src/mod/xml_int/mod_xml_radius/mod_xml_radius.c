@@ -362,6 +362,7 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 		char *variable = (char *) switch_xml_attr(param, "variable");
 		char *variable_secondary = (char *) switch_xml_attr(param, "variable_secondary");
 		char *val_default = (char *) switch_xml_attr(param, "default");
+		char *skip_if_set = (char *) switch_xml_attr(param, "skip_if_set");
 		char *format = (char *) switch_xml_attr(param, "format");
 		char *other_leg = (char *) switch_xml_attr(param, "other_leg");
 
@@ -399,6 +400,9 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 		if ( var ) {
 			if ( session ) {
 				switch_channel_t *channel = switch_core_session_get_channel(session);
+				if ( skip_if_set && switch_channel_get_variable(channel, skip_if_set) ) {
+					goto end_loop;
+				}
 				
 				/*  Accounting only */
 				if ( strncmp( var, "h323-setup-time", 15) == 0 ) {

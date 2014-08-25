@@ -1691,7 +1691,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 
 
 			if (switch_channel_direction(originator_channel) == SWITCH_CALL_DIRECTION_OUTBOUND && !switch_channel_test_flag(originator_channel, CF_DIALPLAN)) {
-				switch_channel_flip_cid(originator_channel);
+				if (!switch_channel_test_flag(originator_channel, CF_RECOVERING_BRIDGE)) {
+					switch_channel_flip_cid(originator_channel);
+				}
 				switch_channel_set_flag(originator_channel, CF_DIALPLAN);
 			}
 

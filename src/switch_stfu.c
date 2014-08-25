@@ -167,7 +167,7 @@ void stfu_global_set_default_logger(int level)
 
 static stfu_status_t stfu_n_resize_aqueue(stfu_queue_t *queue, uint32_t qlen)
 {
-    unsigned char *m;
+    struct stfu_frame *m;
 
     if (qlen <= queue->real_array_size) {
         queue->array_size = qlen;
@@ -177,8 +177,8 @@ static stfu_status_t stfu_n_resize_aqueue(stfu_queue_t *queue, uint32_t qlen)
     } else {
         m = realloc(queue->array, qlen * sizeof(struct stfu_frame));
         assert(m);
-        memset(m + queue->array_size * sizeof(struct stfu_frame), 0, (qlen * sizeof(struct stfu_frame)) - (queue->array_size * sizeof(struct stfu_frame)));
-        queue->array = (struct stfu_frame *) m;
+        memset(m + queue->array_size, 0, (qlen - queue->array_size) * sizeof(struct stfu_frame));
+        queue->array = m;
         queue->real_array_size = queue->array_size = qlen;
     }
 

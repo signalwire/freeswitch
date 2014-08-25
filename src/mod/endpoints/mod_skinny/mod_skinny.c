@@ -2023,7 +2023,7 @@ switch_status_t skinny_profile_set(skinny_profile_t *profile, const char *var, c
 	} else if (!strcasecmp(var, "digit-timeout")) {
 		profile->digit_timeout = atoi(val);
 	} else if (!strcasecmp(var, "date-format")) {
-		strncpy(profile->date_format, val, 6);
+		memcpy(profile->date_format, val, 6);
 	} else if (!strcasecmp(var, "odbc-dsn") && !zstr(val)) {
 		profile->odbc_dsn = switch_core_strdup(profile->pool, val);
 	} else if (!strcasecmp(var, "debug")) {

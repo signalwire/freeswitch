@@ -194,6 +194,7 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 	}
 
 	if (!strncasecmp(url, "https", 5)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Not verifying TLS cert for %s; connection is not secure\n", url);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 	}
@@ -357,6 +358,7 @@ static void http_sendfile_initialize_curl(http_sendfile_data_t *http_data)
 	
 	if (!strncasecmp(http_data->url, "https", 5))
 	{
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Not verifying TLS cert for %s; connection is not secure\n", http_data->url);
 		curl_easy_setopt(http_data->curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
 		curl_easy_setopt(http_data->curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 	}
@@ -400,8 +402,11 @@ static void http_sendfile_initialize_curl(http_sendfile_data_t *http_data)
 			char *argv2[4] = { 0 };
 			uint32_t argc2 = switch_separate_string(argv[count], '=', argv2, (sizeof(argv2) / sizeof(argv2[0])));
 			
-			if(argc2 == 2)
+			if(argc2 == 2) {
+				switch_url_decode(argv2[0]);
+				switch_url_decode(argv2[1]);
 				curl_formadd(&http_data->formpost, &http_data->lastptr, CURLFORM_COPYNAME, argv2[0], CURLFORM_COPYCONTENTS, argv2[1], CURLFORM_END);
+			}
 		}
 	}
 	

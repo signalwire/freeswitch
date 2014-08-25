@@ -251,7 +251,7 @@ static int check_fd(int fd, int ms)
 
 		if ((pfds[0].revents & POLLIN)) {
 			if ((i = read(fd, &r, sizeof(r))) > -1) {
-				i = write(fd, &r, sizeof(r));
+				(void)write(fd, &r, sizeof(r));
 			}
 		}
 	}
@@ -962,7 +962,7 @@ int main(int argc, char *argv[])
 		else if (!strcmp(local_argv[x], "-certs")) {
 			x++;
 			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
-				fprintf(stderr, "When using -certs you must specify a grammar directory\n");
+				fprintf(stderr, "When using -certs you must specify a certificates directory\n");
 				return 255;
 			}
 
@@ -1053,7 +1053,7 @@ int main(int argc, char *argv[])
 			setrlimit(RLIMIT_STACK, &rlp);
 
 			apr_terminate();
-			ret = (int) execv(argv[0], argv);
+			if (argv) ret = (int) execv(argv[0], argv);
 
 			for (i = 0; i < argc; i++) {
 				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s ", argv[i]);
@@ -1189,7 +1189,7 @@ int main(int argc, char *argv[])
 			if ((i = write(fds[1], &v, sizeof(v))) < 0) {
 				fprintf(stderr, "System Error [%s]\n", strerror(errno));
 			} else {
-				i = read(fds[1], &v, sizeof(v));
+				(void)read(fds[1], &v, sizeof(v));
 			}
 		
 			shutdown(fds[1], 2);
@@ -1215,7 +1215,7 @@ int main(int argc, char *argv[])
 		int j = 0;
 
 		switch_sleep(1000000);
-		if (execv(argv[0], argv) == -1) {
+		if (!argv || execv(argv[0], argv) == -1) {
 			fprintf(stderr, "Restart Failed [%s] resorting to plan b\n", strerror(errno));
 			for (j = 0; j < argc; j++) {
 				switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "%s ", argv[j]);

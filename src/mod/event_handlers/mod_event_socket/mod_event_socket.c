@@ -446,6 +446,8 @@ SWITCH_STANDARD_APP(socket_function)
 
 	switch_socket_opt_set(new_sock, SWITCH_SO_KEEPALIVE, 1);
 	switch_socket_opt_set(new_sock, SWITCH_SO_TCP_NODELAY, 1);
+	switch_socket_opt_set(new_sock, SWITCH_SO_TCP_KEEPIDLE, 30);
+	switch_socket_opt_set(new_sock, SWITCH_SO_TCP_KEEPINTVL, 30);
 
 	if (switch_socket_connect(new_sock, sa) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Socket Error!\n");

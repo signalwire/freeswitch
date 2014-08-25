@@ -1430,9 +1430,13 @@
         var RTCcallbacks = {};
 
         if (dialog.direction == $.verto.enum.direction.inbound) {
-
-            dialog.params.remote_caller_id_name = dialog.params.caller_id_name;
-            dialog.params.remote_caller_id_number = dialog.params.caller_id_number;
+	    if (dialog.params.display_direction === "outbound") {
+		dialog.params.remote_caller_id_name = dialog.params.caller_id_name;
+		dialog.params.remote_caller_id_number = dialog.params.caller_id_number;
+	    } else {
+		dialog.params.remote_caller_id_name = dialog.params.callee_id_name;
+		dialog.params.remote_caller_id_number = dialog.params.callee_id_number;
+	    }
 
             if (!dialog.params.remote_caller_id_name) {
                 dialog.params.remote_caller_id_name = "Nobody";
@@ -1597,7 +1601,7 @@
             dialog.setState($.verto.enum.state.destroy);
             break;
         case $.verto.enum.state.destroy:
-	    delete verto.dialogs[dialog.callID];
+	    delete dialog.verto.dialogs[dialog.callID];
             dialog.rtc.stop();
             break;
         }

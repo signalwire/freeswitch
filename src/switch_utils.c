@@ -1569,7 +1569,6 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *ma
   doh:
 	if (tmp_socket > 0) {
 		close(tmp_socket);
-		tmp_socket = -1;
 	}
 #endif
 
@@ -2994,21 +2993,19 @@ SWITCH_DECLARE(int) switch_fulldate_cmp(const char *exp, switch_time_t *ts)
 	char *dup = strdup(exp);
 	char *sStart;
 	char *sEnd;
-	char *sDate;
-	char *sTime;
-	switch_time_t tsStart;
-	switch_time_t tsEnd;
-	struct tm tmTmp;
-	int year, month, day;
-	int hour, min, sec;
 
 	switch_assert(dup);
 
 	sStart = dup;
 	if ((sEnd=strchr(dup, '~'))) {
+		char *sDate = sStart;
+		char *sTime;
 		*sEnd++ = '\0';
-		sDate = sStart;
 		if ((sTime=strchr(sStart, ' '))) {
+			switch_time_t tsStart;
+			struct tm tmTmp;
+			int year = 1970, month = 1, day = 1;
+			int hour = 0, min = 0, sec = 0;
 			*sTime++ = '\0';
 
 			memset(&tmTmp, 0, sizeof(tmTmp));
@@ -3026,6 +3023,10 @@ SWITCH_DECLARE(int) switch_fulldate_cmp(const char *exp, switch_time_t *ts)
 
 			sDate = sEnd;
 			if ((sTime=strchr(sEnd, ' '))) {
+				switch_time_t tsEnd;
+				struct tm tmTmp;
+				int year = 1970, month = 1, day = 1;
+				int hour = 0, min = 0, sec = 0;
 				*sTime++ = '\0';
 
 				memset(&tmTmp, 0, sizeof(tmTmp));
