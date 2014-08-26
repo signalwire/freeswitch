@@ -114,6 +114,7 @@ struct vlc_video_context {
 	int height;
 	int force_width;
 	int force_height;
+	int video_refresh_req;
 };
 
 typedef struct vlc_video_context vlc_video_context_t;
@@ -343,6 +344,11 @@ static void vlc_video_channel_unlock_callback(void *data, void *id, void *const 
 	if (delta > 0) {
 		frame->timestamp += delta * 90;
 		context->last_video_ts = now;
+	}
+
+	if (context->video_refresh_req > 0) {
+		flag |= SFF_WAIT_KEY_FRAME;
+		context->video_refresh_req--;
 	}
 
 	switch_core_codec_encode_video(codec, context->img, frame->data, &encoded_data_len, &flag);
@@ -1464,6 +1470,9 @@ static switch_status_t vlc_receive_message(switch_core_session_t *session, switc
 		case SWITCH_MESSAGE_INDICATE_AUDIO_SYNC:
 			break;
 		case SWITCH_MESSAGE_INDICATE_JITTER_BUFFER:
+			break;
+		case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
+			tech_pvt->context->video_refresh_req = 1;
 			break;
 		default:
 			break;
