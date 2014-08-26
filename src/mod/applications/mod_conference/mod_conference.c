@@ -3312,7 +3312,6 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 						main_frame[x] = (int32_t) bptr[x];
 					} else {
 						memset(&main_frame[x], 255, sizeof(main_frame[x]));
-						//printf("FUCCCK %d <= %ld (%ld/%d)\n", x, file_sample_len * conference->channels, file_sample_len, conference->channels);
 					}
 				}
 			}
@@ -3372,6 +3371,10 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				}
 
 				if (!switch_test_flag(omember, MFLAG_CAN_HEAR)) {
+					switch_mutex_lock(omember->audio_out_mutex);
+					memset(write_frame, 255, bytes);
+					ok = switch_buffer_write(omember->mux_buffer, write_frame, bytes);
+					switch_mutex_unlock(omember->audio_out_mutex);
 					continue;
 				}
 
@@ -3417,6 +3420,31 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 					/* Now we can convert to 16 bit. */
 					switch_normalize_to_16bit(z);
 					write_frame[x] = (int16_t) z;
+				}
+				
+				switch_mutex_lock(omember->audio_out_mutex);
+				ok = switch_buffer_write(omember->mux_buffer, write_frame, bytes);
+				switch_mutex_unlock(omember->audio_out_mutex);
+
+				if (!ok) {
+					switch_mutex_unlock(conference->mutex);
+					goto end;
+				}
+			}
+		} else { /* There is no source audio.  Push silence into all of the buffers */
+			int16_t write_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
+
+			if (conference->comfort_noise_level) {
+				switch_generate_sln_silence(write_frame, samples, conference->channels, conference->comfort_noise_level);
+			} else {
+				memset(write_frame, 255, bytes);
+			}
+			
+			for (omember = conference->members; omember; omember = omember->next) {
+				switch_size_t ok = 1;
+				
+				if (!switch_test_flag(omember, MFLAG_RUNNING)) {
+					continue;
 				}
 				
 				switch_mutex_lock(omember->audio_out_mutex);
@@ -4902,63 +4930,33 @@ static void conference_loop_output(conference_member_t *member)
 			write_frame.data = data;
 			use_buffer = member->mux_buffer;
 			low_count = 0;
+
 			if ((write_frame.datalen = (uint32_t) switch_buffer_read(use_buffer, write_frame.data, bytes))) {
 				if (write_frame.datalen) {
 					write_frame.samples = write_frame.datalen / 2 / member->conference->channels;
 				   
 				   if( !switch_test_flag(member, MFLAG_CAN_HEAR)) {
 				      memset(write_frame.data, 255, write_frame.datalen);
+				   } else if (member->volume_out_level) { /* Check for output volume adjustments */
+					   switch_change_sln_volume(write_frame.data, write_frame.samples * member->conference->channels, member->volume_out_level);
 				   }
-				   else {
-   					/* Check for output volume adjustments */
-   					if (member->volume_out_level) {
-   						switch_change_sln_volume(write_frame.data, write_frame.samples * member->conference->channels, member->volume_out_level);
-   					}
+
+				   write_frame.timestamp = timer.samplecount;
+
+				   if (member->fnode) {
+					   member_add_file_data(member, write_frame.data, write_frame.datalen);
 				   }
-					write_frame.timestamp = timer.samplecount;
-					if (member->fnode) {
-						member_add_file_data(member, write_frame.data, write_frame.datalen);
-					}
 
-					member_check_channels(&write_frame, member, SWITCH_FALSE);
-
-					if (switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
-						switch_mutex_unlock(member->audio_out_mutex);
-						break;
-					}
+				   member_check_channels(&write_frame, member, SWITCH_FALSE);
+				   
+				   if (switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+					   switch_mutex_unlock(member->audio_out_mutex);
+					   break;
+				   }
 				}
 			}
 
 			switch_mutex_unlock(member->audio_out_mutex);
-		} else if (member->fnode) {
-			write_frame.datalen = bytes;
-			write_frame.samples = samples;
-			memset(write_frame.data, 255, write_frame.datalen);
-			write_frame.timestamp = timer.samplecount;
-			member_add_file_data(member, write_frame.data, write_frame.datalen);
-			member_check_channels(&write_frame, member, SWITCH_FALSE);
-			if (switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
-				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-				break;
-			}
-		} else {
-			
-			if (member->conference->comfort_noise_level) {
-				switch_generate_sln_silence(write_frame.data, samples, member->conference->channels, member->conference->comfort_noise_level);
-			} else {
-				memset(write_frame.data, 255, bytes);
-			}
-			
-			write_frame.datalen = bytes;
-			write_frame.samples = samples;
-			write_frame.timestamp = timer.samplecount;
-			
-			member_check_channels(&write_frame, member, SWITCH_FALSE);
-
-			if (switch_core_session_write_frame(member->session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
-				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-				break;
-			}
 		}
 
 		if (switch_test_flag(member, MFLAG_FLUSH_BUFFER)) {
@@ -5068,8 +5066,6 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	uint32_t rlen;
 	switch_size_t data_buf_len;
 	switch_event_t *event;
-	int no_data = 0;
-	int lead_in = 20;
 	switch_size_t len = 0;
 
 	if (switch_thread_rwlock_tryrdlock(conference->rwlock) != SWITCH_STATUS_SUCCESS) {
@@ -5174,11 +5170,6 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 
 		len = 0;
 
-		if (lead_in) {
-			lead_in--;
-			goto loop;
-		}
-		
 		mux_used = (uint32_t) switch_buffer_inuse(member->mux_buffer);
 
 		if (switch_test_flag(member, MFLAG_FLUSH_BUFFER)) {
@@ -5205,7 +5196,6 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 
 			if ((rlen = (uint32_t) switch_buffer_read(member->mux_buffer, data_buf, data_buf_len))) {
 				len = (switch_size_t) rlen / sizeof(int16_t) / conference->channels;
-				no_data = 0;
 			}
 			switch_mutex_unlock(member->audio_out_mutex);
 		}
@@ -5215,10 +5205,6 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 				
 			if (mux_used >= data_buf_len) {
 				goto again;
-			}
-
-			if (++no_data < 2) {
-				goto loop;
 			}
 
 			memset(data_buf, 255, (switch_size_t) data_buf_len);
@@ -5238,16 +5224,18 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	}							/* Rinse ... Repeat */
 
   end:
-
-	while(!no_data) {
+	
+	for(;;) {
 		switch_mutex_lock(member->audio_out_mutex);
-		if ((rlen = (uint32_t) switch_buffer_read(member->mux_buffer, data_buf, data_buf_len))) {
-			len = (switch_size_t) rlen / sizeof(int16_t)/ conference->channels;
-			switch_core_file_write(&fh, data_buf, &len);
-		} else {
-			no_data = 1;
-		}
+		rlen = (uint32_t) switch_buffer_read(member->mux_buffer, data_buf, data_buf_len);
 		switch_mutex_unlock(member->audio_out_mutex);
+		
+		if (rlen > 0) {
+			len = (switch_size_t) rlen / sizeof(int16_t)/ conference->channels;
+			switch_core_file_write(&fh, data_buf, &len); 
+		} else {
+			break;
+		}
 	}
 
 	switch_safe_free(data_buf);
