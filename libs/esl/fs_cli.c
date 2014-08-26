@@ -1284,7 +1284,7 @@ static void read_config(const char *dft_cfile, const char *cfile) {
 static void clear_el_buffer(void) {
 #ifdef HAVE_LIBEDIT
 	const LineInfo *lf = el_line(el);
-	int len = (int)(lf->lastchar - lf->buffer);
+	int len = (int)(lf->cursor - lf->buffer);
 	if (global_profile->batch_mode) return;
 	el_deletestr(el, len);
 	memset((char*)lf->buffer, 0, len);
