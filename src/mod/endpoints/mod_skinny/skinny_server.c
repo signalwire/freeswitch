@@ -1485,7 +1485,7 @@ switch_status_t skinny_handle_off_hook_message(listener_t *listener, skinny_mess
 
 	line_state = skinny_line_get_state(listener, line_instance, call_id);
 
-	if(session && line_state != SKINNY_OFF_HOOK ) { /*answering a call */
+	if(session && line_state == SKINNY_RING_IN ) { /*answering a call */
 		skinny_session_answer(session, listener, line_instance);
 	} else { /* start a new call */
 		skinny_create_incoming_session(listener, &line_instance, &session);
