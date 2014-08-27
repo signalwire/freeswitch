@@ -43,7 +43,7 @@
                calls via this gateway -->
           <param name="caller-id-in-from" value="false"/>
           <!-- extra sip params to send in the contact -->
-          <param name="contact-params" value="tport=tcp"/>
+          <param name="contact-params" value=""/>
           <!-- put the extension in the contact -->
           <param name="extension-in-contact" value="true"/>
           <!-- send an options ping every x seconds, failure will unregister
