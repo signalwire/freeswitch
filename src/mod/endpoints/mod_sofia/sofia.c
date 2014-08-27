@@ -8265,6 +8265,29 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 					}
 				}
 
+			} else if (!strncasecmp(sip->sip_content_type->c_type, "application", 11) &&
+					   !strcasecmp(sip->sip_content_type->c_subtype, "vnd.nortelnetworks.digits")) {
+				int tmp;
+				if ((signal_ptr = switch_stristr("d=", sip->sip_payload->pl_data))) {
+					signal_ptr = signal_ptr + 2;
+
+					while (*signal_ptr && *signal_ptr == ' ') {
+						signal_ptr++;
+					}
+
+					if (*signal_ptr	&& (*signal_ptr == '*' || *signal_ptr == '#' || *signal_ptr == 'A' || *signal_ptr == 'B'
+										|| *signal_ptr == 'C' || *signal_ptr == 'D')) {
+						dtmf.digit = *signal_ptr;
+					} else {
+						tmp = atoi(signal_ptr);
+						dtmf.digit = switch_rfc2833_to_char(tmp);
+					}
+
+					dtmf.duration = 100;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Bad signal\n");
+					goto end;
+				}
 			} else if (!strncasecmp(sip->sip_content_type->c_type, "application", 11) && !strcasecmp(sip->sip_content_type->c_subtype, "dtmf-relay")) {
 				/* Try and find signal information in the payload */
 				if ((signal_ptr = switch_stristr("Signal=", sip->sip_payload->pl_data))) {
