@@ -197,11 +197,11 @@ SWITCH_LIMIT_INCR(limit_incr_hash)
 		switch_core_hash_insert(pvt->hash, hashkey, item);
 
 		if (max == -1) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d\n", hashkey, item->total_usage + remote_usage.total_usage);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Usage for %s is now %d\n", hashkey, item->total_usage + remote_usage.total_usage);
 		} else if (interval == 0) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d/%d\n", hashkey, item->total_usage + remote_usage.total_usage, max);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Usage for %s is now %d/%d\n", hashkey, item->total_usage + remote_usage.total_usage, max);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d/%d for the last %d seconds\n", hashkey,
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Usage for %s is now %d/%d for the last %d seconds\n", hashkey,
 							  item->rate_usage, max, interval);
 		}
 
@@ -301,7 +301,7 @@ SWITCH_LIMIT_RELEASE(limit_release_hash)
 
 			item = (limit_hash_item_t *) val;
 			item->total_usage--;
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d\n", (const char *) key, item->total_usage);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Usage for %s is now %d\n", (const char *) key, item->total_usage);
 
 			if (item->total_usage == 0 && item->rate_usage == 0) {
 				/* Noone is using this item anymore */
@@ -316,7 +316,7 @@ SWITCH_LIMIT_RELEASE(limit_release_hash)
 
 		if ((item = (limit_hash_item_t *) switch_core_hash_find(pvt->hash, hashkey))) {
 			item->total_usage--;
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s is now %d\n", (const char *) hashkey, item->total_usage);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Usage for %s is now %d\n", (const char *) hashkey, item->total_usage);
 
 			switch_core_hash_delete(pvt->hash, hashkey);
 
