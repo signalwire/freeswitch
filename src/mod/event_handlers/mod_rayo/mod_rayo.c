@@ -2668,11 +2668,10 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 	if (gateway) {
 		iks *join = iks_find(dial, "join");
 		const char *dial_to_stripped = dial_to + gateway->strip;
-		switch_core_session_t *caller_session = NULL;
+		switch_core_session_t *called_session = NULL;
 		switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 		const char *dialstring = NULL;
-		const char *app = NULL;
-		const char *app_args = NULL;
+		const char *rayo_app_args = "";
 
 		if (join) {
 			/* check join args */
@@ -2689,47 +2688,41 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 				goto done;
 			} else if (!zstr(call_uri)) {
 				/* bridge */
-				struct rayo_call *b_call = RAYO_CALL_LOCATE(call_uri);
-				/* is b-leg available? */
-				if (!b_call) {
-					response = iks_new_error_detailed(iq, STANZA_ERROR_SERVICE_UNAVAILABLE, "b-leg not found");
+				struct rayo_call *peer_call = RAYO_CALL_LOCATE(call_uri);
+				/* is peer call available? */
+				if (!peer_call) {
+					response = iks_new_error_detailed(iq, STANZA_ERROR_SERVICE_UNAVAILABLE, "peer call not found");
 					goto done;
-				} else if (b_call->joined) {
-					response = iks_new_error_detailed(iq, STANZA_ERROR_SERVICE_UNAVAILABLE, "b-leg already joined to another call");
-					RAYO_RELEASE(b_call);
+				} else if (peer_call->joined) {
+					response = iks_new_error_detailed(iq, STANZA_ERROR_SERVICE_UNAVAILABLE, "peer call already joined");
+					RAYO_RELEASE(peer_call);
 					goto done;
 				}
-				app = "bridge";
-				app_args = switch_core_strdup(dtdata->pool, rayo_call_get_uuid(b_call));
-				RAYO_RELEASE(b_call);
+				rayo_app_args = switch_core_sprintf(dtdata->pool, "bridge %s", rayo_call_get_uuid(peer_call));
+				RAYO_RELEASE(peer_call);
 			} else {
 				/* conference */
-				app = "conference";
-				app_args = switch_core_sprintf(dtdata->pool, "%s@%s", mixer_name, globals.mixer_conf_profile);
+				rayo_app_args = switch_core_sprintf(dtdata->pool, "conference %s@%s", mixer_name, globals.mixer_conf_profile);
 			}
-		} else {
-			/* default one-legged call */
-			app = "rayo";
-			app_args = "";
 		}
 
 		dialstring = switch_core_sprintf(dtdata->pool, "%s%s", gateway->dial_prefix, dial_to_stripped);
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_DEBUG, "dial: Using dialstring: %s\n", dialstring);
 
 		/* <iq><ref> response will be sent when originate event is received- otherwise error is returned */
-		if (switch_ivr_originate(NULL, &caller_session, &cause, dialstring, dial_timeout_sec, NULL, NULL, NULL, NULL, originate_vars, SOF_NONE, NULL) == SWITCH_STATUS_SUCCESS && caller_session) {
+		if (switch_ivr_originate(NULL, &called_session, &cause, dialstring, dial_timeout_sec, NULL, NULL, NULL, NULL, originate_vars, SOF_NONE, NULL) == SWITCH_STATUS_SUCCESS && called_session) {
 			/* start APP */
 			switch_caller_extension_t *extension = NULL;
-			switch_channel_t *caller_channel = switch_core_session_get_channel(caller_session);
+			switch_channel_t *called_channel = switch_core_session_get_channel(called_session);
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "dial: Call originated\n");
-			if ((extension = switch_caller_extension_new(caller_session, app, app_args)) == 0) {
+			if ((extension = switch_caller_extension_new(called_session, "rayo", rayo_app_args)) == 0) {
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_CRIT, "Memory Error!\n");
 				abort();
 			}
-			switch_caller_extension_add_application(caller_session, extension, app, app_args);
-			switch_channel_set_caller_extension(caller_channel, extension);
-			switch_channel_set_state(caller_channel, CS_EXECUTE);
-			switch_core_session_rwunlock(caller_session);
+			switch_caller_extension_add_application(called_session, extension, "rayo", rayo_app_args);
+			switch_channel_set_caller_extension(called_channel, extension);
+			switch_channel_set_state(called_channel, CS_EXECUTE);
+			switch_core_session_rwunlock(called_session);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "dial: Failed to originate call: %s\n", switch_channel_cause2str(cause));
 			switch_mutex_lock(RAYO_ACTOR(call)->mutex);
