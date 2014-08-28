@@ -22,9 +22,12 @@ case "$1" in
       /var/log/freeswitch \
       /var/run/freeswitch;
     do
-      mkdir -p $x
-      chown -R freeswitch:freeswitch $x
-      chmod -R o-rwx,g+u $x
+      if ! test -d $x; then
+        mkdir -p $x
+        chown freeswitch:freeswitch $x
+        chmod o-rwx,g+u $x
+      fi
+      chown freeswitch $x
     done
     ;;
   abort-upgrade|abort-remove|abort-deconfigure)
