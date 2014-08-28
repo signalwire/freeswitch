@@ -169,8 +169,7 @@ typedef enum {
 	DS_INVALID,
 } dtls_state_t;
 
-
-
+typedef switch_status_t (switch_core_video_thread_callback_func_t) (switch_core_session_t *session, switch_frame_t *frame, void *user_data);
 
 
 
@@ -2317,7 +2316,7 @@ SWITCH_DECLARE(uint8_t) switch_core_session_check_interface(switch_core_session_
   Return SWITCH_STATUS_BREAK will break the loop and end the video thread
 */
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_thread_callback(switch_core_session_t *session, void *func, void *user_data);
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_thread_callback(switch_core_session_t *session, switch_core_video_thread_callback_func_t *func, void *user_data);
 
 /*!
   \brief Set a callback to let the core video thread call us

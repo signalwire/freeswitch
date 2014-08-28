@@ -1213,12 +1213,14 @@ PKG_CHECK_MODULES([LDNS], [libldns >= 1.6.6],[
 
 PKG_CHECK_MODULES([VPX], [vpx >= 1.3.0],[
   AM_CONDITIONAL([HAVE_VPX],[true])],[
+  AC_CHECK_LIB([vpx], [vpx_codec_vp9_cx_algo], [VPX_LIBS=-lvpx])
+  AS_IF([test -z "$VPX_LIBS"],[
     if module_enabled mod_vpx; then
       AC_MSG_ERROR([You need to either install libvpx-dev or disable mod_vpx in modules.conf])
     else
       AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_VPX],[false])
     fi],[
-    AM_CONDITIONAL([HAVE_VPX],[true])])
+    AM_CONDITIONAL([HAVE_VPX],[true])])])
 
 #PKG_CHECK_MODULES([AVCODEC], [avcodec >= 53.35.0])
 #PKG_CHECK_MODULES([AVFORMAT], [avformat >= 53.21.1])

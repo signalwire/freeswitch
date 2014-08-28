@@ -3063,7 +3063,7 @@ SWITCH_DECLARE(void) switch_core_session_debug_pool(switch_stream_handle_t *stre
 		session_manager.running, session_manager.busy, session_manager.popping);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_thread_callback(switch_core_session_t *session, void *func, void *user_data)
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_thread_callback(switch_core_session_t *session, switch_core_video_thread_callback_func_t *func, void *user_data)
 {
 	if (!func) {
 		session->_video_thread_callback = NULL;

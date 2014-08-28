@@ -9781,7 +9781,7 @@ SWITCH_STANDARD_APP(conference_function)
 	switch_core_session_receive_message(session, &msg);
 
 	/* Chime in the core video thread */
-	switch_core_session_set_video_thread_callback(session, (void *)video_thread_callback, (void *)&member);
+	switch_core_session_set_video_thread_callback(session, video_thread_callback, (void *)&member);
 
 	/* Run the conference loop */
 	do {
