@@ -331,6 +331,17 @@ if test "${LIBTOOL_MAJOR_VERSION}" = "2" ; then
 fi
 AC_MSG_RESULT([using libtool library extension... ${LIBTOOL_LIB_EXTEN}])
 
+if test "$ax_cv_c_compiler_vendor" = "gnu"; then
+  saved_CFLAGS="$CFLAGS"
+  AC_CACHE_CHECK([whether compiler supports -Wno-unused-result],
+    [ac_cv_gcc_supports_w_no_unused_result], [
+      CFLAGS="$CFLAGS -Wno-unused-result"
+      AC_TRY_COMPILE([],[return 0;],
+        [ac_cv_gcc_supports_w_no_unused_result=yes],
+        [ac_cv_gcc_supports_w_no_unused_result=no])])
+  CFLAGS="$saved_CFLAGS"
+  AC_MSG_RESULT($ac_cv_gcc_supports_w_no_unused_result)
+fi
 
 # tweak compiler specific flags
 if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
@@ -360,7 +371,9 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
 elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     APR_ADDTO(SWITCH_AM_CFLAGS, -fPIC)
     APR_ADDTO(SWITCH_AM_CXXFLAGS, -fPIC)
-    APR_ADDTO(SWITCH_AM_CFLAGS, -Werror)
+    if test "$ac_cv_gcc_supports_w_no_unused_result" = yes; then
+      APR_ADDTO(SWITCH_AM_CFLAGS, -Werror)
+    fi
     if test "${enable_64}" = "yes"; then
 	case "$host" in
              *darwin12.*|*darwin11.*|*darwin10.*|*darwin9.*|*darwin8.*)
@@ -464,7 +477,9 @@ if test "${enable_debug}" = "yes"; then
 	CFLAGS="$saved_CFLAGS"	
 
 	if test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
-	    APR_ADDTO(SWITCH_AM_CFLAGS, -Wno-unused-result)
+	    if test "$ac_cv_gcc_supports_w_no_unused_result" = yes; then
+	      APR_ADDTO(SWITCH_AM_CFLAGS, -Wno-unused-result)
+	    fi
 	    APR_ADDTO(SWITCH_AM_CFLAGS, -g -ggdb)
 	    export DEBUG_CFLAGS="-g -ggdb"
 	fi
