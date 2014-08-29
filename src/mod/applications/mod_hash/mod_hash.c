@@ -279,8 +279,6 @@ SWITCH_LIMIT_RELEASE(limit_release_hash)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	limit_hash_private_t *pvt = switch_channel_get_private(channel, "limit_hash");
 	limit_hash_item_t *item = NULL;
-	switch_hash_index_t *hi = NULL;
-	char *hashkey = NULL;
 
 	if (!pvt || !pvt->hash) {
 		return SWITCH_STATUS_SUCCESS;
@@ -290,8 +288,9 @@ SWITCH_LIMIT_RELEASE(limit_release_hash)
 
 	/* clear for uuid */
 	if (realm == NULL && resource == NULL) {
+		switch_hash_index_t *hi;
 		/* Loop through the channel's hashtable which contains mapping to all the limit_hash_item_t referenced by that channel */
-		while ((hi = switch_core_hash_first_iter(pvt->hash, hi))) {
+		while ((hi = switch_core_hash_first_iter(pvt->hash, NULL))) {
 			void *val = NULL;
 			const void *key;
 			switch_ssize_t keylen;
@@ -313,7 +312,7 @@ SWITCH_LIMIT_RELEASE(limit_release_hash)
 		}
 		switch_core_hash_destroy(&pvt->hash);
 	} else {
-		hashkey = switch_core_session_sprintf(session, "%s_%s", realm, resource);
+		char *hashkey = switch_core_session_sprintf(session, "%s_%s", realm, resource);
 
 		if ((item = (limit_hash_item_t *) switch_core_hash_find(pvt->hash, hashkey))) {
 			item->total_usage--;
