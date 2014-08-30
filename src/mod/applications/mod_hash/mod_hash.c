@@ -273,7 +273,7 @@ SWITCH_STANDARD_SCHED_FUNC(limit_hash_cleanup_callback)
 	}
 }
 
-/* !\brief Releases usage of a limit_hash-controlled ressource  */
+/* !\brief Releases usage of a limit_hash-controlled resource  */
 SWITCH_LIMIT_RELEASE(limit_release_hash)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
