@@ -288,9 +288,9 @@ SWITCH_LIMIT_RELEASE(limit_release_hash)
 
 	/* clear for uuid */
 	if (realm == NULL && resource == NULL) {
-		switch_hash_index_t *hi;
+		switch_hash_index_t *hi = NULL;
 		/* Loop through the channel's hashtable which contains mapping to all the limit_hash_item_t referenced by that channel */
-		while ((hi = switch_core_hash_first_iter(pvt->hash, NULL))) {
+		while ((hi = switch_core_hash_first_iter(pvt->hash, hi))) {
 			void *val = NULL;
 			const void *key;
 			switch_ssize_t keylen;
