@@ -1091,7 +1091,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_directory_load)
    Macro expands to: switch_status_t mod_directory_shutdown() */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_directory_shutdown)
 {
-	switch_hash_index_t *hi;
+	switch_hash_index_t *hi = NULL;
 	dir_profile_t *profile;
 	void *val = NULL;
 	const void *key;
@@ -1100,7 +1100,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_directory_shutdown)
 
 	switch_mutex_lock(globals.mutex);
 
-	while ((hi = switch_core_hash_first(globals.profile_hash))) {
+	while ((hi = switch_core_hash_first_iter(globals.profile_hash, hi))) {
 		switch_core_hash_this(hi, &key, &keylen, &val);
 		profile = (dir_profile_t *) val;
 

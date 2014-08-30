@@ -1553,7 +1553,7 @@ void rayo_peer_server_send(struct rayo_actor *server, struct rayo_message *msg)
  */
 static void rayo_peer_server_cleanup(struct rayo_actor *actor)
 {
-	switch_hash_index_t *hi;
+	switch_hash_index_t *hi = NULL;
 	struct rayo_peer_server *rserver = RAYO_PEER_SERVER(actor);
 
 	/* a little messy... client will remove itself from the peer server when it is destroyed,
@@ -1561,7 +1561,7 @@ static void rayo_peer_server_cleanup(struct rayo_actor *actor)
 	 * the server must remove the client.
 	 */
 	switch_mutex_lock(globals.clients_mutex);
-	while ((hi = switch_core_hash_first(rserver->clients))) {
+	while ((hi = switch_core_hash_first_iter(rserver->clients, hi))) {
 		const void *key;
 		void *client;
 		switch_core_hash_this(hi, &key, NULL, &client);
