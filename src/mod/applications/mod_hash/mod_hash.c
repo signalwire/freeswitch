@@ -158,7 +158,7 @@ SWITCH_LIMIT_INCR(limit_incr_hash)
 		 */
 		increment = !switch_core_hash_find(pvt->hash, hashkey);
 	} else {
-		/* This is the first limit check on this channel, create a hashtable, set our prviate data */
+		/* This is the first limit check on this channel, create a hashtable, set our private data */
 		pvt = (limit_hash_private_t *) switch_core_session_alloc(session, sizeof(limit_hash_private_t));
 		memset(pvt, 0, sizeof(limit_hash_private_t));
 		switch_core_hash_init(&pvt->hash);
