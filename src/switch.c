@@ -478,6 +478,7 @@ static const char usage[] =
 	"\t-certs [directory]      -- alternate directory for certificates\n"
 	"\t-recordings [directory] -- alternate directory for recordings\n"
 	"\t-storage [directory]    -- alternate directory for voicemail storage\n"
+	"\t-cache [directory]      -- alternate directory for cache files\n"
 	"\t-sounds [directory]     -- alternate directory for sound files\n";
 
 
@@ -927,6 +928,21 @@ int main(int argc, char *argv[])
 				return 255;
 			}
 			strcpy(SWITCH_GLOBAL_dirs.storage_dir, local_argv[x]);
+		}
+
+		else if (!strcmp(local_argv[x], "-cache")) {
+			x++;
+			if (switch_strlen_zero(local_argv[x]) || is_option(local_argv[x])) {
+				fprintf(stderr, "When using -cache you must specify a cache directory\n");
+				return 255;
+			}
+
+			SWITCH_GLOBAL_dirs.cache_dir = (char *) malloc(strlen(local_argv[x]) + 1);
+			if (!SWITCH_GLOBAL_dirs.cache_dir) {
+				fprintf(stderr, "Allocation error\n");
+				return 255;
+			}
+			strcpy(SWITCH_GLOBAL_dirs.cache_dir, local_argv[x]);
 		}
 
 		else if (!strcmp(local_argv[x], "-recordings")) {

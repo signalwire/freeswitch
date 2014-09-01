@@ -28,6 +28,18 @@
       recordings_dir
       sound_prefix
       sounds_dir
+      conf_dir
+      log_dir
+      run_dir
+      db_dir
+      mod_dir
+      htdocs_dir
+      script_dir
+      temp_dir
+      grammar_dir
+      certs_dir
+      storage
+      cache_dir
       core_uuid
       zrtp_enabled
       nat_public_addr
@@ -117,7 +129,7 @@
           false     - implies forbidden
           true      - implies mandatory
 
-	  default if not set is accept SAVP inbound if offered.
+      default if not set is accept SAVP inbound if offered.
 
 
       rtp_secure_media_inbound | rtp_secure_media_outbound

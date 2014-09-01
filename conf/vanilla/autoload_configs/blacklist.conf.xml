@@ -5,7 +5,7 @@
 
 		NOTE: make sure the file exists and is readable by FreeSWITCH.
 
-	<list name="example" filename="/usr/local/freeswitch/conf/blacklists/example.list"/>
+	<list name="example" filename="$${conf_dir}/blacklists/example.list"/>
 	-->
 </lists>
 </configuration>

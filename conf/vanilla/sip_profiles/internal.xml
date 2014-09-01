@@ -307,7 +307,7 @@
     <!--<param name="ws-binding"  value=":5066"/>-->
 
     <!-- uncomment for sip over secure websocket support -->
-    <!-- You need wss.pem in /usr/local/freeswitch/certs for wss -->
+    <!-- You need wss.pem in $${certs_dir} for wss -->
     <!--<param name="wss-binding" value=":7443"/>-->
     
 

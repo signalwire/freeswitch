@@ -13,7 +13,7 @@
     These entries will be pre-pended to the LUA_PATH environment variable
     -->
     <!-- <param name="script-directory" value="/usr/local/lua/?.lua"/> -->
-    <!-- <param name="script-directory" value="$${base_dir}/scripts/?.lua"/> -->
+    <!-- <param name="script-directory" value="$${script_dir}/?.lua"/> -->
 
     <!--<param name="xml-handler-script" value="/dp.lua"/>-->
     <!--<param name="xml-handler-bindings" value="dialplan"/>-->

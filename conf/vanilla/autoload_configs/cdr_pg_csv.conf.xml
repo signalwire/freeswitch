@@ -9,7 +9,7 @@
     <param name="legs" value="a"/>
 
     <!-- Directory in which to spool failed SQL inserts -->
-    <!-- <param name="spool-dir" value="$${base_dir}/log/cdr-pg-csv"/> -->
+    <!-- <param name="spool-dir" value="$${log_dir}/cdr-pg-csv"/> -->
     <!-- Disk spool format if DB connection/insert fails - csv (default) or sql -->
     <param name="spool-format" value="csv"/>
     <param name="rotate-on-hup" value="true"/>
