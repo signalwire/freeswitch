@@ -280,11 +280,12 @@ SWITCH_LIMIT_RELEASE(limit_release_hash)
 	limit_hash_private_t *pvt = switch_channel_get_private(channel, "limit_hash");
 	limit_hash_item_t *item = NULL;
 
+	switch_thread_rwlock_wrlock(globals.limit_hash_rwlock);
+
 	if (!pvt || !pvt->hash) {
+		switch_thread_rwlock_unlock(globals.limit_hash_rwlock);
 		return SWITCH_STATUS_SUCCESS;
 	}
-
-	switch_thread_rwlock_wrlock(globals.limit_hash_rwlock);
 
 	/* clear for uuid */
 	if (realm == NULL && resource == NULL) {
