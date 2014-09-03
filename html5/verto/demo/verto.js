@@ -76,6 +76,54 @@ function check_vid() {
     return use_vid;
 }
 
+function messageTextToJQ(body) {
+	// Builds a jQuery collection from body text, linkifies http/https links, imageifies http/https links to images, and doesn't allow script injection
+	
+	var match, $link, img_url, $body_parts = $(), rx = /(https?:\/\/[^ \n\r]+|\n\r|\n|\r)/;
+	
+	while ((match = rx.exec(body)) !== null) {
+		if (match.index !== 0) {
+			$body_parts = $body_parts.add(document.createTextNode(body.substr(0, match.index)));
+		}
+
+		if (match[0].match(/^(\n|\r|\n\r)$/)) {
+			// Make a BR from a newline
+			$body_parts = $body_parts.add($('<br />'));
+			body = body.substr(match.index + match[0].length);
+		} else {
+			// Make a link (or image)
+			$link = $('<a target="_blank" />').attr('href', match[0]);
+			
+			if (match[0].search(/\.(gif|jpe?g|png)/) > -1) {
+				// Make an image
+				img_url = match[0];
+
+				// Handle dropbox links
+				if (img_url.indexOf('dropbox.com') !== -1) {
+					if (img_url.indexOf('?dl=1') === -1 && img_url.indexOf('?dl=0') === -1) {
+						img_url += '?dl=1';
+					} else if (img_url.indexOf('?dl=0') !== -1) {
+						img_url = img_url.replace(/dl=0$/, 'dl=1');
+					}
+				}
+
+				$link.append($('<img border="0" class="chatimg" />').attr('src', img_url));
+			} else {
+				// Make a link
+				$link.text(match[0]);
+			}
+
+			body = body.substr(match.index + match[0].length);
+			$body_parts = $body_parts.add($link);
+		}
+	}
+	if (body) {
+		$body_parts = $body_parts.add(document.createTextNode(body));
+	}
+
+	return $body_parts;
+} // END function messageTextToJQ
+
 var callbacks = {
 
     onMessage: function(verto, dialog, msg, data) {
@@ -114,6 +162,9 @@ var callbacks = {
         case $.verto.enum.message.info:
 	    var body = data.body;
 
+		/*
+		// This section has been replaced with messageTextToJQ function
+
 	    if (body.match(/\.gif|\.jpg|\.jpeg|\.png/)) {
 		var mod = "";
 		if (body.match(/dropbox.com/)) {
@@ -129,11 +180,21 @@ var callbacks = {
 	    }
 	    body = body.replace(/(?:\r\n|\r|\n)/g, '<br />');
 	    
-	    var from = data.from_msg_name || data.from;
-	    
+    	    var from = data.from_msg_name || data.from;
+
             $("#chatwin").append("<span class=chatuid>" + from + ":</span><br>" + body);
 	    $('#chatwin').animate({"scrollTop": $('#chatwin')[0].scrollHeight}, "fast");
-
+		*/
+		
+			var from = data.from_msg_name || data.from;
+			
+			$('#chatwin')
+				.append($('<span class="chatuid" />').text(from + ':'))
+				.append($('<br />'))
+				.append(messageTextToJQ(body))
+				.append($('<br />'));
+			$('#chatwin').animate({"scrollTop": $('#chatwin')[0].scrollHeight}, "fast");
+		
             break;
         case $.verto.enum.message.display:
             var party = dialog.params.remote_caller_id_name + "<" + dialog.params.remote_caller_id_number + ">";

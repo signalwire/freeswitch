@@ -762,11 +762,26 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch_media_bug_t *bp;
 			switch_bool_t ok = SWITCH_TRUE;
 			int prune = 0;
+			switch_time_t now = switch_micro_time_now();
+			switch_time_t diff = 0;
+			switch_size_t len = session->read_impl.decoded_bytes_per_packet;
+			unsigned char fill_data[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
+
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
+
+			if (session->last_read_time && session->last_read_time < now) {
+				diff = ((now - session->last_read_time) + 3000 ) / session->read_impl.microseconds_per_packet;
+				
+				if (diff > 1) {
+					memset(fill_data, 255, len);
+				}
+			}
+			
+			session->last_read_time = switch_micro_time_now();
 
 			for (bp = session->bugs; bp; bp = bp->next) {
 				ok = SWITCH_TRUE;
-
+				
 				if (switch_channel_test_flag(session->channel, CF_PAUSE_BUGS) && !switch_core_media_bug_test_flag(bp, SMBF_NO_PAUSE)) {
 					continue;
 				}
@@ -786,6 +801,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 				if (ok && bp->ready && switch_test_flag(bp, SMBF_READ_STREAM)) {
 					switch_mutex_lock(bp->read_mutex);
+
+					if (diff > 1) {
+						switch_time_t tdiff = diff;
+
+						while(tdiff > 1) {
+							switch_buffer_write(bp->raw_read_buffer, fill_data, len);
+							tdiff--;
+						}
+
+					}
+					
 					if (bp->read_demux_frame) {
 						uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 						int bytes = read_frame->datalen / 2;
@@ -1341,8 +1367,23 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	if (session->bugs) {
 		switch_media_bug_t *bp;
 		int prune = 0;
-
+		switch_time_t now = switch_micro_time_now();
+		switch_time_t diff = 0;
+		switch_size_t len = session->read_impl.decoded_bytes_per_packet;
+		unsigned char fill_data[SWITCH_RECOMMENDED_BUFFER_SIZE] = {0};
+		
 		switch_thread_rwlock_rdlock(session->bug_rwlock);
+
+		if (session->last_write_time && session->last_write_time < now) {
+			diff = ((now - session->last_write_time) + 3000 ) / session->read_impl.microseconds_per_packet;
+				
+			if (diff > 1) {
+				memset(fill_data, 255, len);
+			}
+		}
+
+		session->last_write_time = switch_micro_time_now();
+
 		for (bp = session->bugs; bp; bp = bp->next) {
 			switch_bool_t ok = SWITCH_TRUE;
 
@@ -1365,6 +1406,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 			if (switch_test_flag(bp, SMBF_WRITE_STREAM)) {
 				switch_mutex_lock(bp->write_mutex);
+				if (diff > 1) {
+					switch_time_t tdiff = diff;
+					
+					while(tdiff > 1) {
+						switch_buffer_write(bp->raw_read_buffer, fill_data, len);
+						tdiff--;
+					}
+				}
+				
 				switch_buffer_write(bp->raw_write_buffer, write_frame->data, write_frame->datalen);
 				switch_mutex_unlock(bp->write_mutex);
 				

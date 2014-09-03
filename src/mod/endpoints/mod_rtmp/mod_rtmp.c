@@ -1078,7 +1078,7 @@ fail:
 
 switch_status_t rtmp_profile_destroy(rtmp_profile_t **profile) {
 	int sanity = 0;
-	switch_hash_index_t *hi;
+	switch_hash_index_t *hi = NULL;
 	switch_xml_config_item_t *instructions = get_instructions(*profile);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Stopping profile: %s\n", (*profile)->name);
 	
@@ -1087,7 +1087,7 @@ switch_status_t rtmp_profile_destroy(rtmp_profile_t **profile) {
 	switch_thread_rwlock_wrlock((*profile)->rwlock);
 	
 	/* Kill all sessions */	
-	while ((hi = switch_core_hash_first((*profile)->session_hash))) {
+	while ((hi = switch_core_hash_first_iter((*profile)->session_hash, hi))) {
 		void *val;
 		rtmp_session_t *session;
 		const void *key;

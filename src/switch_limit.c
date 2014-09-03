@@ -123,7 +123,7 @@ SWITCH_DECLARE(switch_status_t) switch_limit_incr(const char *backend, switch_co
 		switch_goto_status(SWITCH_STATUS_GENERR, end);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "incr called: %s_%s max:%d, interval:%d\n",
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "incr called: %s_%s max:%d, interval:%d\n",
 					  realm, resource, max, interval);
 	
 	if ((status = limit->incr(session, realm, resource, max, interval)) == SWITCH_STATUS_SUCCESS) {

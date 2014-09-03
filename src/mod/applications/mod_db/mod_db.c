@@ -188,9 +188,9 @@ SWITCH_LIMIT_INCR(limit_incr_db)
 	got = atoi(gotstr);
 
 	if (max < 0) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s_%s is now %d\n", realm, resource, got + 1);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Usage for %s_%s is now %d\n", realm, resource, got + 1);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Usage for %s_%s is now %d/%d\n", realm, resource, got + 1, max);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Usage for %s_%s is now %d/%d\n", realm, resource, got + 1, max);
 	}
 
 	if (max >= 0 && got + 1 > max) {

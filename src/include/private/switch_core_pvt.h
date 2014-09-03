@@ -179,6 +179,9 @@ struct switch_core_session {
 
 	switch_media_handle_t *media_handle;
 	uint32_t decoder_errors;
+    switch_time_t last_read_time;
+	switch_time_t last_write_time;
+
 };
 
 struct switch_media_bug {

@@ -152,7 +152,6 @@ SWITCH_LIMIT_RELEASE(limit_release_redis)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	limit_redis_private_t *pvt = switch_channel_get_private(channel, "limit_redis");
 	int val, uuid_val;
-	switch_hash_index_t *hi;
 	char *rediskey = NULL;
 	char *uuid_rediskey = NULL;
 	int status = SWITCH_STATUS_SUCCESS;
@@ -171,8 +170,9 @@ SWITCH_LIMIT_RELEASE(limit_release_redis)
 
 	/* clear for uuid */
 	if (realm == NULL && resource == NULL) {
+		switch_hash_index_t *hi = NULL;
 		/* Loop through the channel's hashtable which contains mapping to all the limit_redis_item_t referenced by that channel */
-		while ((hi = switch_core_hash_first(pvt->hash))) {
+		while ((hi = switch_core_hash_first_iter(pvt->hash, hi))) {
 			void *p_val = NULL;
 			const void *p_key;
 			char *p_uuid_key = NULL;

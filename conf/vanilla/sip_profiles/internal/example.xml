@@ -27,7 +27,7 @@
   <!--Use the callerid of an inbound call in the from field on outbound calls via this gateway -->
   <!--<param name="caller-id-in-from" value="false"/>-->
   <!--extra sip params to send in the contact-->
-  <!--<param name="contact-params" value="tport=tcp"/>-->
+  <!--<param name="contact-params" value=""/>-->
   <!-- Put the extension in the contact -->
   <!--<param name="extension-in-contact" value="true"/>-->
   <!--send an options ping every x seconds, failure will unregister and/or mark it down-->

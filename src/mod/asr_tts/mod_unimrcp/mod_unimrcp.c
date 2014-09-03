@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2009-2012, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2009-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -162,7 +162,6 @@ static switch_status_t profile_create(profile_t ** profile, const char *name, sw
 static switch_xml_config_item_t instructions[] = {
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("max-connection-count", CONFIG_REQUIRED, &globals.unimrcp_max_connection_count, "100", "",
 									 "The max MRCPv2 connections to manage"),
-	/* TODO figure out what this param does */
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("offer-new-connection", CONFIG_REQUIRED, &globals.unimrcp_offer_new_connection, "1", "", ""),
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("default-tts-profile", CONFIG_REQUIRED, &globals.unimrcp_default_synth_profile, "default", "",
 									 "The default profile to use for TTS"),
@@ -481,9 +480,6 @@ static switch_status_t recog_asr_disable_all_grammars(switch_asr_handle_t *ah);
 static switch_status_t recog_asr_close(switch_asr_handle_t *ah, switch_asr_flag_t *flags);
 static switch_status_t recog_asr_feed(switch_asr_handle_t *ah, void *data, unsigned int len, switch_asr_flag_t *flags);
 static switch_status_t recog_asr_feed_dtmf(switch_asr_handle_t *ah, const switch_dtmf_t *dtmf, switch_asr_flag_t *flags);
-#if 0
-static switch_status_t recog_asr_start(switch_asr_handle_t *ah, const char *name);
-#endif
 static switch_status_t recog_asr_resume(switch_asr_handle_t *ah);
 static switch_status_t recog_asr_pause(switch_asr_handle_t *ah);
 static switch_status_t recog_asr_check_results(switch_asr_handle_t *ah, switch_asr_flag_t *flags);
@@ -1043,6 +1039,13 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, profile_t
 		/* can't retry */
 		status = SWITCH_STATUS_FALSE;
 	} else if (schannel->state == SPEECH_CHANNEL_ERROR) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Terminating MRCP session\n", schannel->name);
+		if (!mrcp_application_session_terminate(schannel->unimrcp_session)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) Unable to terminate application session\n", schannel->name);
+			status = SWITCH_STATUS_FALSE;
+			goto done;
+		}
+
 		/* Wait for session to be cleaned up */
 		warned = 0;
 		while (schannel->state == SPEECH_CHANNEL_ERROR) {
@@ -1888,13 +1891,9 @@ error:
 	if (schannel) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) %s channel error!\n", schannel->name,
 			speech_channel_type_to_string(schannel->type));
+		speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(unknown) channel error!\n");
-	}
-	if (session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Terminating MRCP session\n");
-		speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
-		mrcp_application_session_terminate(session);
 	}
 
 	return TRUE;
@@ -2187,7 +2186,6 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel)
 	r->start_of_input = 0;
 
 	/* input timers are started by default unless the start-input-timers=false param is set */
-	/* TODO this is true for Nuance, but might not be true on other MRCP servers */
 	start_input_timers = (char *) switch_core_hash_find(schannel->params, "start-input-timers");
 	r->timers_started = zstr(start_input_timers) || strcasecmp(start_input_timers, "false");
 
@@ -2389,7 +2387,6 @@ static switch_status_t recog_channel_load_grammar(speech_channel_t *schannel, co
 		}
 
 		/* set up name, type for future RECOGNIZE requests.  We'll reference this cached grammar by name */
-		/* TODO rethink this */
 		ldata = switch_mprintf("session:%s", name);
 		data = ldata;
 		type = GRAMMAR_TYPE_URI;
@@ -3432,21 +3429,6 @@ static switch_status_t recog_asr_feed_dtmf(switch_asr_handle_t *ah, const switch
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#if 0
-/**
- * Process asr_start request from FreeSWITCH
- * @param ah the FreeSWITCH speech recognition handle
- * @return SWITCH_STATUS_SUCCESS if successful
- */
-static switch_status_t recog_asr_start(switch_asr_handle_t *ah)
-{
-	switch_status_t status;
-	speech_channel_t *schannel = (speech_channel_t *) ah->private_info;
-	status = recog_channel_start(schannel);
-	return status;
-}
-#endif
-
 /**
  * Process asr_resume request from FreeSWITCH
  *
@@ -3763,9 +3745,6 @@ static switch_status_t recog_load(switch_loadable_module_interface_t *module_int
 	asr_interface->asr_close = recog_asr_close;
 	asr_interface->asr_feed = recog_asr_feed;
 	asr_interface->asr_feed_dtmf = recog_asr_feed_dtmf;
-#if 0
-	asr_interface->asr_start = recog_asr_start;
-#endif
 	asr_interface->asr_resume = recog_asr_resume;
 	asr_interface->asr_pause = recog_asr_pause;
 	asr_interface->asr_check_results = recog_asr_check_results;
