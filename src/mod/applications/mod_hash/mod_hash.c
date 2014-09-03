@@ -310,7 +310,7 @@ SWITCH_LIMIT_RELEASE(limit_release_hash)
 
 			switch_core_hash_delete(pvt->hash, (const char *) key);
 		}
-		//switch_core_hash_destroy(&pvt->hash);
+		switch_core_hash_destroy(&pvt->hash);
 	} else {
 		char *hashkey = switch_core_session_sprintf(session, "%s_%s", realm, resource);
 
