@@ -3487,6 +3487,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			if (!switch_true(register_str)) {
 				gateway->state = REG_STATE_NOREG;
 				gateway->status = SOFIA_GATEWAY_UP;
+				gateway->uptime = switch_time_now();
 			}
 
 			if (zstr(auth_username)) {
@@ -5563,6 +5564,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 
 				if (gateway->ping_count >= gateway->ping_min && gateway->status != SOFIA_GATEWAY_UP) {
 					gateway->status = SOFIA_GATEWAY_UP;
+					gateway->uptime = switch_time_now();
 					sofia_reg_fire_custom_gateway_state_event(gateway, status, phrase);
 				}
 

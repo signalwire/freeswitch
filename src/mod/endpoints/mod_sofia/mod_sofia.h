@@ -488,6 +488,7 @@ struct sofia_gateway {
 	time_t reg_timeout;
 	int pinging;
 	sofia_gateway_status_t status;
+	switch_time_t uptime;
 	uint32_t ping_freq;
 	int ping_count;
 	int ping_max;
