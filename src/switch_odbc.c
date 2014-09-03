@@ -56,6 +56,7 @@ struct switch_odbc_handle {
 	switch_odbc_state_t state;
 	char odbc_driver[256];
 	BOOL is_firebird;
+	BOOL is_oracle;
 	int affected_rows;
 	int num_retries;
 };
@@ -220,7 +221,9 @@ static int db_is_up(switch_odbc_handle_t *handle)
 		goto done;
 	}
 
-	if (handle->is_firebird) {
+	if (handle->is_oracle) {
+		strcpy((char *) sql, "select 1 from dual");
+	} else if (handle->is_firebird) {
 		strcpy((char *) sql, "select first 1 * from RDB$RELATIONS");
 	} else {
 		strcpy((char *) sql, "select 1");
@@ -380,10 +383,15 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 			handle->odbc_driver[i] = (char) toupper(handle->odbc_driver[i]);
 	}
 
-	if (strstr(handle->odbc_driver, "FIREBIRD") != 0 || strstr(handle->odbc_driver, "FB32") != 0 || strstr(handle->odbc_driver, "FB64") != 0) {
+	if (strstr(handle->odbc_driver, "SQORA32.DLL") != 0 || strstr(handle->odbc_driver, "SQORA64.DLL") != 0) {
+		handle->is_firebird = FALSE;
+		handle->is_oracle = TRUE;
+	} else if (strstr(handle->odbc_driver, "FIREBIRD") != 0 || strstr(handle->odbc_driver, "FB32") != 0 || strstr(handle->odbc_driver, "FB64") != 0) {
 		handle->is_firebird = TRUE;
+		handle->is_oracle = FALSE;
 	} else {
 		handle->is_firebird = FALSE;
+		handle->is_oracle = FALSE;
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Connected to [%s]\n", handle->dsn);
