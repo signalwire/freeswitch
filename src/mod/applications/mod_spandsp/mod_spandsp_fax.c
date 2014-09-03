@@ -1383,12 +1383,14 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 			if ((switch_file_exists(pvt->filename, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot send non-existant fax file [%s]\n",
 								  switch_str_nil(pvt->filename));
+				switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Cannot send non-existant fax file");
 				goto done;
 			}
 		}
 	} else {
 		if (pvt->app_mode == FUNCTION_TX) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Fax TX filename not set.\n");
+			switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Fax TX filename not set");
 			goto done;
 		} else if (pvt->app_mode == FUNCTION_RX) {
 			const char *prefix;
@@ -1402,6 +1404,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 
 			if (!(pvt->filename = switch_core_session_sprintf(session, "%s/%s-%ld-%" SWITCH_TIME_T_FMT ".tif", spandsp_globals.spool, prefix, spandsp_globals.total_sessions, time))) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot automatically set fax RX destination file\n");
+				switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Cannot automatically set fax RX destination file");
 				goto done;
 			}
 		} else {
@@ -1419,6 +1422,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 
 	if ((spanfax_init(pvt, AUDIO_MODE) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot initialize Fax engine\n");
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Cannot initialize Fax engine");
 		return;
 	}
 
@@ -1454,6 +1458,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 		switch_core_session_set_read_codec(session, &read_codec);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Raw read codec activation Failed L16\n");
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Raw read codec activation Failed L16");
 		goto done;
 	}
 
@@ -1471,6 +1476,7 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 		write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Raw write codec activation Failed L16\n");
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Raw write codec activation Failed L16");
 		goto done;
 	}
 
@@ -1578,12 +1584,14 @@ void mod_spandsp_fax_process_fax(switch_core_session_t *session, const char *dat
 			/* Pass the new incoming audio frame to the fax_rx function */
 			if (fax_rx(pvt->fax_state, (int16_t *) read_frame->data, read_frame->samples)) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "fax_rx reported an error\n");
+				switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "fax_rx reported an error");
 				goto done;
 			}
 		}
 
 		if ((tx = fax_tx(pvt->fax_state, buf, write_codec.implementation->samples_per_packet)) < 0) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "fax_tx reported an error\n");
+			switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "fax_tx reported an error");
 			goto done;
 		}
 
