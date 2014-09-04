@@ -3,6 +3,7 @@
 
 
 #ifdef __cplusplus
+#include <string>
 extern "C" {
 #endif
 #ifdef DOH
@@ -149,7 +150,9 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 		 SWITCH_DECLARE_CONSTRUCTOR Stream(void);
 		 SWITCH_DECLARE_CONSTRUCTOR Stream(switch_stream_handle_t *);
 		 virtual SWITCH_DECLARE_CONSTRUCTOR ~ Stream();
+		 SWITCH_DECLARE(std::string) read();
 		 SWITCH_DECLARE(void) write(const char *data);
+		 SWITCH_DECLARE(void) raw_write(std::string data);
 		 SWITCH_DECLARE(const char *) get_data(void);
 	 };
 

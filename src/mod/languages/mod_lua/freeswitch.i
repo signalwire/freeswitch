@@ -43,6 +43,8 @@
 %newobject API::execute;
 %newobject API::executeString;
 
+%include "std_string.i"
+
 /**
  * tell swig to grok everything defined in these header files and
  * build all sorts of c wrappers and lua shadows of the c wrappers.
