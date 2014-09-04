@@ -397,7 +397,7 @@ static switch_status_t read_frame_callback(switch_core_session_t *session, switc
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define VALET_APP_SYNTAX "<lotname> <extension>|[ask [<min>] [<max>] [<to>] [<prompt>]|auto in [min] [max]]"
+#define VALET_APP_SYNTAX "<lotname> <extension>|[ask [<min>] [<max>] [<to>] [<prompt>]|auto [in|out] [min] [max]]"
 SWITCH_STANDARD_APP(valet_parking_function)
 {
 	char *argv[6], *lbuf;
