@@ -312,15 +312,15 @@ int ws_handshake(wsh_t *wsh)
 
  err:
 
-	snprintf(respond, sizeof(respond), "HTTP/1.1 400 Bad Request\r\n"
-			 "Sec-WebSocket-Version: 13\r\n\r\n");
+	if (!wsh->stay_open) {
 
-	//printf("ERR:\n%s\n", respond);
+		snprintf(respond, sizeof(respond), "HTTP/1.1 400 Bad Request\r\n"
+				 "Sec-WebSocket-Version: 13\r\n\r\n");
 
+		ws_raw_write(wsh, respond, strlen(respond));
 
-	ws_raw_write(wsh, respond, strlen(respond));
-
-	ws_close(wsh, WS_NONE);
+		ws_close(wsh, WS_NONE);
+	}
 
 	return -1;
 
@@ -538,7 +538,7 @@ static int establish_logical_layer(wsh_t *wsh)
 }
 
 
-int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock, int block)
+int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock, int block, int stay_open)
 {
 	memset(wsh, 0, sizeof(*wsh));
 
@@ -546,6 +546,7 @@ int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock, int 
 	wsh->block = block;
 	wsh->sanity = 5000;
 	wsh->ssl_ctx = ssl_ctx;
+	wsh->stay_open = stay_open;
 
 	if (!ssl_ctx) {
 		ssl_ctx = ws_globals.ssl_ctx;
