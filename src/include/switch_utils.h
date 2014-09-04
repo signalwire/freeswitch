@@ -1102,6 +1102,39 @@ SWITCH_DECLARE(char *) switch_strerror_r(int errnum, char *buf, switch_size_t bu
 SWITCH_DECLARE(int) switch_wait_sock(switch_os_socket_t sock, uint32_t ms, switch_poll_t flags);
 SWITCH_DECLARE(int) switch_wait_socklist(switch_waitlist_t *waitlist, uint32_t len, uint32_t ms);
 
+typedef struct switch_http_request_s {
+	const char *method;        /* GET POST PUT DELETE OPTIONS PATCH HEAD */
+	const char *uri;
+	const char *qs;            /* query string*/
+	const char *host;
+	switch_port_t port;
+	const char *from;
+	const char *user_agent;
+	const char *referer;
+	const char *user;
+	switch_bool_t keepalive;
+	switch_event_t *headers;
+	void *user_data;           /* private user data */
+
+	/* private members used by the parser internally */
+	char *_buffer;
+	const char *_unparsed_data;
+	switch_size_t _unparsed_len;
+	switch_bool_t _destroy_headers;
+} switch_http_request_t;
+
+/**
+ * parse http headers in a buffer
+ * return status of success or not
+ * \param[in]	buffer the buffer start from the very begining of the http request, e.g. 'GET '
+ * \param[in]	datalen the buffer length
+ * \param[out]	the http request pointer or null, need destroy later if got non-NULL pointer
+ * \return	SWITCH_STATUS_SUCCESS | SWITCH_STATUS_FALSE
+ */
+SWITCH_DECLARE(switch_status_t) switch_http_parse_header(char *buffer, uint32_t datalen, switch_http_request_t *request);
+SWITCH_DECLARE(void) switch_http_free_request(switch_http_request_t *request);
+SWITCH_DECLARE(void) switch_http_dump_request(switch_http_request_t *request);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

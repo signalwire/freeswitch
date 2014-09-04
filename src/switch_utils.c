@@ -3603,6 +3603,155 @@ SWITCH_DECLARE(char *) switch_strerror_r(int errnum, char *buf, switch_size_t bu
 #endif
 }
 
+SWITCH_DECLARE(switch_status_t) switch_http_parse_header(char *buffer, uint32_t datalen, switch_http_request_t *request)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *p = buffer;
+	int i = 10;
+	char *http = NULL;
+	int header_count;
+	char *headers[64] = { 0 };
+	int argc;
+	char *argv[2] = { 0 };
+	char *body = NULL;
+	int header_len = 0;
+
+	if (datalen < 16)	return status; /* minimum GET / HTTP/1.1\r\n */
+
+	while(i--) { // sanity check
+		if (*p++ == ' ') break;
+	}
+
+	if (i == 0) return status;
+
+	if ((body = strstr(p, "\r\n\r\n"))) {
+		*body = '\0';
+		header_len = body - buffer + 1;
+		body += 4;
+	} else if (( body = strstr(p, "\n\n"))) {
+		*body = '\0';
+		header_len = body - buffer + 1;
+		body += 2;
+	}
+
+	request->_buffer = strdup(buffer);
+	request->method = request->_buffer;
+	if (body && *body) {
+		request->_unparsed_data = body;
+		request->_unparsed_len = datalen - (body - buffer);
+		switch_assert(request->_unparsed_len > 0);
+	}
+
+	p = strchr(request->method, ' ');
+	*p++ = '\0';
+
+	request->uri = p;
+	p = strchr(request->uri, ' ');
+
+	if (!p) goto err;
+	*p++ = '\0';
+
+	http = p;
+	p = strchr(http, '\n');
+
+	if (!p) goto err;
+
+	if (!strncmp(http, "HTTP/1.1", 8)) {
+		request->keepalive = SWITCH_TRUE;
+	} else if (strncmp(http, "HTTP/1.0", 8)) {
+		goto err;
+	}
+
+	p++; // now the first header
+
+	if (!request->headers) {
+		if (switch_event_create(&request->headers, SWITCH_EVENT_CHANNEL_DATA) != SWITCH_STATUS_SUCCESS) {
+			goto err;
+		}
+		request->_destroy_headers = SWITCH_TRUE;
+	}
+
+	header_count = switch_separate_string(p, '\n', headers, sizeof(headers)/ sizeof(headers[0]));
+
+	if (header_count < 2) goto err; /* at least two lines */
+
+	for (i = 0; i < header_count; i++) {
+		char *header, *value;
+		int len;
+
+		argc = switch_separate_string(headers[i], ':', argv, 2);
+
+		if (argc != 2) goto err;
+
+		header = argv[0];
+		value = argv[1];
+
+		if (*value == ' ') value++;
+
+		len = strlen(value);
+
+		if (len && *(value + len - 1) == '\r') *(value + len - 1) = '\0';
+
+		switch_event_add_header_string(request->headers, SWITCH_STACK_BOTTOM, header, value);
+
+		if (!strncasecmp(header, "User-Agent", 10)) {
+			request->user_agent = value;
+		} else if (!strncasecmp(header, "Host", 4)) {
+			request->host = value;
+			p = strchr(value, ':');
+
+			if (p) {
+				*p++ = '\0';
+
+				if (*p) request->port = atoi(p);
+			}
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+
+err:
+	switch_http_free_request(request);
+	return status;
+}
+
+SWITCH_DECLARE(void) switch_http_free_request(switch_http_request_t *request)
+{
+	if (request->_buffer) free(request->_buffer);
+	if (request->_destroy_headers && request->headers) {
+		switch_event_destroy(&request->headers);
+	}
+}
+
+/* for debugging only */
+SWITCH_DECLARE(void) switch_http_dump_request(switch_http_request_t *request)
+{
+	switch_assert(request->method);
+
+	printf("method: %s\n", request->method);
+
+	if (request->uri) printf("uri: %s\n", request->uri);
+	if (request->qs)  printf("qs: %s\n", request->qs);
+	if (request->host) printf("host: %s\n", request->host);
+	if (request->port) printf("port: %d\n", request->port);
+	if (request->from) printf("from: %s\n", request->from);
+	if (request->user_agent) printf("user_agent: %s\n", request->user_agent);
+	if (request->referer) printf("referer: %s\n", request->referer);
+	if (request->user) printf("user: %s\n", request->user);
+	if (request->keepalive) printf("uri: %d\n", request->keepalive);
+	if (request->_unparsed_data) printf("body: %p\n", request->_unparsed_data);
+
+	{
+		switch_event_header_t *header = request->headers->headers;
+
+		printf("headers:\n-------------------------\n");
+
+		while(header) {
+			printf("%s: %s\n", header->name, header->value);
+			header = header->next;
+		}
+	}
+}
 
 /* For Emacs:
  * Local Variables:
