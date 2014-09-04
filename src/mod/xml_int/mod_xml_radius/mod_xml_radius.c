@@ -544,7 +544,7 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 							goto err;
 						}			
 					} else if ( attribute->type == 1 ) {
-						char *data = switch_channel_get_variable(channel, variable);
+						const char *data = switch_channel_get_variable(channel, variable);
 						int number = 0;
 						
 						if ( data ) {
