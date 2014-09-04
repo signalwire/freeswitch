@@ -84,6 +84,7 @@ default_runtimedir="$rundir"
 default_scriptdir="$prefix/scripts"
 default_soundsdir="$prefix/sounds"
 default_storagedir="$prefix/storage"
+default_cachedir="$prefix/cache"
 
 if test "$enable_fhs" = yes; then
   prefix="/usr" exec_prefix="$prefix"
@@ -102,6 +103,7 @@ if test "$enable_fhs" = yes; then
   default_scriptdir="/usr/share/freeswitch/scripts"
   default_soundsdir="/usr/share/freeswitch/sounds"
   default_storagedir="/var/lib/freeswitch/storage"
+  default_cachedir="/var/cache/freeswitch"
 fi
 
 # Where to install the modules
@@ -160,6 +162,11 @@ AC_ARG_WITH([storagedir],
 	[AS_HELP_STRING([--with-storagedir=DIR], [Put storage files into this location (default: $prefix/storage)])], [storagedir="$withval"], [storagedir="${default_storagedir}"])
 AC_SUBST(storagedir)
 AC_DEFINE_UNQUOTED([SWITCH_STORAGE_DIR],"${storagedir}",[where to put storage files])
+
+AC_ARG_WITH([cachedir],
+	[AS_HELP_STRING([--with-cachedir=DIR], [Put cache files into this location (default: $prefix/cache)])], [cachedir="$withval"], [cachedir="${default_cachedir}"])
+AC_SUBST(cachedir)
+AC_DEFINE_UNQUOTED([SWITCH_CACHE_DIR],"${cachedir}",[where to put cache files])
 
 if test "$sysconfdir" = "\${prefix}/etc" ; then
     confdir="$prefix/conf"
@@ -1748,5 +1755,6 @@ echo "      runtimedir:      ${runtimedir}"
 echo "      scriptdir:       ${scriptdir}"
 echo "      soundsdir:       ${soundsdir}"
 echo "      storagedir:      ${storagedir}"
+echo "      cachedir:        ${cachedir}"
 echo ""
 echo "------------------------------------------------------------------------------"

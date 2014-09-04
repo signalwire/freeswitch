@@ -64,7 +64,7 @@
         <param name="date-fmt" value="%A, %B %d %Y, %I %M %p"/>
         <param name="email-from" value="${voicemail_account}@${voicemail_domain}"/>
       </email>
-      <!--<param name="storage-dir" value="/tmp"/>-->
+      <!--<param name="storage-dir" value="$${storage}"/>-->
       <!--<param name="odbc-dsn" value="dsn:user:pass"/>-->
       <!--<param name="record-comment" value="Your Comment"/>-->
       <!--<param name="record-title" value="Your Title"/>-->

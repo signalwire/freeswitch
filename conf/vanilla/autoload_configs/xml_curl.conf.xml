@@ -24,8 +24,8 @@
            Specify your public key with 'ssl-cert-path' and the private key with
            'ssl-key-path'. If your private key has a password, specify it with
            'ssl-key-password'. -->
-      <!-- <param name="ssl-cert-path" value="$${base_dir}/conf/certs/public_key.pem"/> -->
-      <!-- <param name="ssl-key-path" value="$${base_dir}/conf/certs/private_key.pem"/> -->
+      <!-- <param name="ssl-cert-path" value="$${certs_dir}/public_key.pem"/> -->
+      <!-- <param name="ssl-key-path" value="$${certs_dir}/private_key.pem"/> -->
       <!-- <param name="ssl-key-password" value="MyPrivateKeyPassword"/> -->
       <!-- optional timeout -->
       <!-- <param name="timeout" value="10"/> -->
@@ -33,14 +33,14 @@
       <!-- optional: use a custom CA certificate in PEM format to verify the peer
            with. This is useful if you are acting as your own certificate authority.
            note: only makes sense if used in combination with "enable-cacert-check." -->
-      <!-- <param name="ssl-cacert-file" value="$${base_dir}/conf/certs/cacert.pem"/> -->
+      <!-- <param name="ssl-cacert-file" value="$${certs_dir}/cacert.pem"/> -->
 
       <!-- optional: specify the SSL version to force HTTPS to use. Valid options are
            "SSLv3" and "TLSv1". Otherwise libcurl will auto-negotiate the version. -->
       <!-- <param name="ssl-version" value="TLSv1"/> -->
 
       <!-- optional: enables cookies and stores them in the specified file. -->
-      <!-- <param name="cookie-file" value="/tmp/cookie-mod_xml_curl.txt"/> -->
+      <!-- <param name="cookie-file" value="/$${temp_dir}/cookie-mod_xml_curl.txt"/> -->
 
       <!-- one or more of these imply you want to pick the exact variables that are transmitted -->
       <!--<param name="enable-post-var" value="Unique-ID"/>-->

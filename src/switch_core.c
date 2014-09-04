@@ -726,6 +726,17 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 #endif
 	}
 
+	if (!SWITCH_GLOBAL_dirs.cache_dir && (SWITCH_GLOBAL_dirs.cache_dir = (char *) malloc(BUFSIZE))) {
+		if (SWITCH_GLOBAL_dirs.base_dir)
+			switch_snprintf(SWITCH_GLOBAL_dirs.cache_dir, BUFSIZE, "%s%scache", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
+		else
+#ifdef SWITCH_CACHE_DIR
+			switch_snprintf(SWITCH_GLOBAL_dirs.cache_dir, BUFSIZE, "%s", SWITCH_CACHE_DIR);
+#else
+			switch_snprintf(SWITCH_GLOBAL_dirs.cache_dir, BUFSIZE, "%s%scache", base_dir, SWITCH_PATH_SEPARATOR);
+#endif
+	}
+
 	if (!SWITCH_GLOBAL_dirs.db_dir && (SWITCH_GLOBAL_dirs.db_dir = (char *) malloc(BUFSIZE))) {
 		if (SWITCH_GLOBAL_dirs.base_dir)
 			switch_snprintf(SWITCH_GLOBAL_dirs.db_dir, BUFSIZE, "%s%sdb", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
@@ -1717,6 +1728,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_core_set_variable("recordings_dir", SWITCH_GLOBAL_dirs.recordings_dir);
 	switch_core_set_variable("sound_prefix", SWITCH_GLOBAL_dirs.sounds_dir);
 	switch_core_set_variable("sounds_dir", SWITCH_GLOBAL_dirs.sounds_dir);
+	switch_core_set_variable("conf_dir", SWITCH_GLOBAL_dirs.conf_dir);
+	switch_core_set_variable("log_dir", SWITCH_GLOBAL_dirs.log_dir);
+	switch_core_set_variable("run_dir", SWITCH_GLOBAL_dirs.run_dir);
+	switch_core_set_variable("db_dir", SWITCH_GLOBAL_dirs.db_dir);
+	switch_core_set_variable("mod_dir", SWITCH_GLOBAL_dirs.mod_dir);
+	switch_core_set_variable("htdocs_dir", SWITCH_GLOBAL_dirs.htdocs_dir);
+	switch_core_set_variable("script_dir", SWITCH_GLOBAL_dirs.script_dir);
+	switch_core_set_variable("temp_dir", SWITCH_GLOBAL_dirs.temp_dir);
+	switch_core_set_variable("grammar_dir", SWITCH_GLOBAL_dirs.grammar_dir);
+	switch_core_set_variable("certs_dir", SWITCH_GLOBAL_dirs.certs_dir);
+	switch_core_set_variable("storage", SWITCH_GLOBAL_dirs.storage_dir);
+	switch_core_set_variable("cache_dir", SWITCH_GLOBAL_dirs.cache_dir);
 	switch_core_set_serial();
 
 	switch_console_init(runtime.memory_pool);
@@ -2702,6 +2725,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_safe_free(SWITCH_GLOBAL_dirs.htdocs_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.grammar_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.storage_dir);
+	switch_safe_free(SWITCH_GLOBAL_dirs.cache_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.recordings_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.sounds_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.run_dir);

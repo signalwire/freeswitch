@@ -11,7 +11,7 @@
     <!-- Specify this OR 'cookie-file' or $HOME/.erlang.cookie will be read -->
     <param name="cookie" value="ClueCon"/>
     <!-- Read a cookie from an arbitary erlang cookie file instead -->
-    <!--<param name="cookie-file" value="/tmp/erlang.cookie"/>-->
+    <!--<param name="cookie-file" value="/$${temp_dir}/erlang.cookie"/>-->
     <param name="shortname" value="true"/>
     <!-- in additon to cookie, optionally restrict by ACL -->
     <!--<param name="apply-inbound-acl" value="lan"/>-->
