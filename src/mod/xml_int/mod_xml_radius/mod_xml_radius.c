@@ -990,7 +990,7 @@ switch_status_t mod_xml_radius_accounting_end(switch_core_session_t *session){
 	}
 	
 	/* If there are conditions defined, and none of them pass, then skip this accounting */
-	if ((conditions = switch_xml_child(globals.acct_start_configs, "conditions")) != NULL &&
+	if ((conditions = switch_xml_child(globals.acct_end_configs, "conditions")) != NULL &&
 		mod_xml_radius_check_conditions(channel, conditions) != SWITCH_STATUS_SUCCESS ) {
 		goto end;
 	}
