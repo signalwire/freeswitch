@@ -38,7 +38,7 @@
       temp_dir
       grammar_dir
       certs_dir
-      storage
+      storage_dir
       cache_dir
       core_uuid
       zrtp_enabled
