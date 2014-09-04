@@ -2584,7 +2584,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				stream->write_function(stream, "PingState\t%d/%d/%d\n", gp->ping_min, gp->ping_count, gp->ping_max);
 				stream->write_function(stream, "State   \t%s\n", sofia_state_names[gp->state]);
 				stream->write_function(stream, "Status  \t%s%s\n", status_names[gp->status], gp->pinging ? " (ping)" : "");
-				stream->write_function(stream, "Uptime  \t%ld\n", gp->status == SOFIA_GATEWAY_UP ? switch_time_now()-gp->uptime : 0);
+				stream->write_function(stream, "Uptime  \t%lds\n", gp->status == SOFIA_GATEWAY_UP ? (switch_time_now()-gp->uptime)/1000000 : 0);
 				stream->write_function(stream, "CallsIN \t%u\n", gp->ib_calls);
 				stream->write_function(stream, "CallsOUT\t%u\n", gp->ob_calls);
 				stream->write_function(stream, "FailedCallsIN\t%u\n", gp->ib_failed_calls);
@@ -2828,7 +2828,7 @@ static void xml_gateway_status(sofia_gateway_t *gp, switch_stream_handle_t *stre
 	stream->write_function(stream, "    <pinging>%d</pinging>\n", gp->pinging);
 	stream->write_function(stream, "    <state>%s</state>\n", sofia_state_names[gp->state]);
 	stream->write_function(stream, "    <status>%s</status>\n", status_names[gp->status]);
-	stream->write_function(stream, "    <uptime>%ld</uptime>\n", gp->status == SOFIA_GATEWAY_UP ? switch_time_now()-gp->uptime : 0);
+	stream->write_function(stream, "    <uptime-usec>%ld</uptime-usec>\n", gp->status == SOFIA_GATEWAY_UP ? switch_time_now()-gp->uptime : 0);
 	stream->write_function(stream, "    <calls-in>%u</calls-in>\n", gp->ib_calls);
 	stream->write_function(stream, "    <calls-out>%u</calls-out>\n", gp->ob_calls);
 	stream->write_function(stream, "    <failed-calls-in>%u</failed-calls-in>\n", gp->ib_failed_calls);
