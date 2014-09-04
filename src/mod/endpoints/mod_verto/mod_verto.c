@@ -1279,6 +1279,167 @@ static void jsock_check_event_queue(jsock_t *jsock)
 	switch_mutex_unlock(jsock->write_mutex);
 }
 
+/* DO NOT use this unless you know what you are doing, you are WARNNED!!! */
+static uint8_t *http_stream_read(switch_stream_handle_t *handle, int *len)
+{
+	switch_http_request_t *r = (switch_http_request_t *) handle->data;
+	jsock_t *jsock = r->user_data;
+	wsh_t *wsh = &jsock->ws;
+
+	*len = r->_unparsed_len;
+
+	if (*len) { // we already read part of the body
+		r->_unparsed_len = 0; // reset for the next read
+		return (uint8_t *)r->_unparsed_data;
+	}
+
+	if ((*len = ws_raw_read(wsh, wsh->buffer, 4096, wsh->block)) < 0) {
+		return NULL;
+	}
+
+	return (uint8_t *)wsh->buffer;
+}
+
+static switch_status_t http_stream_raw_write(switch_stream_handle_t *handle, uint8_t *data, switch_size_t datalen)
+{
+	switch_http_request_t *r = (switch_http_request_t *) handle->data;
+	jsock_t *jsock = r->user_data;
+
+	return ws_raw_write(&jsock->ws, data, (uint32_t)datalen) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
+static switch_status_t http_stream_write(switch_stream_handle_t *handle, const char *fmt, ...)
+{
+	switch_http_request_t *r = (switch_http_request_t *) handle->data;
+	jsock_t *jsock = r->user_data;
+	int ret = 1;
+	char *data;
+	va_list ap;
+
+	va_start(ap, fmt);
+	ret = switch_vasprintf(&data, fmt, ap);
+	va_end(ap);
+
+	if (data) {
+		if (ret) {
+			ret = ws_raw_write(&jsock->ws, data, (uint32_t)strlen(data));
+		}
+		switch_safe_free(data);
+	}
+
+	return ret ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
+static void http_static_handler(switch_http_request_t *request)
+{
+	jsock_t *jsock = request->user_data;
+	char path[512];
+	switch_file_t *fd;
+	char *ext;
+	uint8_t chunk[4096];
+	const char *mime_type = "text/html", *new_type;
+
+	switch_snprintf(path, sizeof(path), "%s%s", jsock->profile->htdocs, request->uri);
+
+	printf("local path: %s\n", path);
+
+	if (end_of(path) == '/') {
+		char *data = "HTTP/1.1 500 Internal Error\r\n"
+			"Connection: close\r\n"
+			"Content-Type: text/plain\r\n\r\n"
+			"Directory indexing is UNSUPPORTED!\r\n";
+		ws_raw_write(&jsock->ws, data, strlen(data));
+		return;
+	}
+
+	if ((ext = strrchr(path, '.'))) {
+		ext++;
+		if ((new_type = switch_core_mime_ext2type(ext))) {
+			mime_type = new_type;
+		}
+	}
+
+	if (switch_file_open(&fd, path, SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, jsock->pool) == SWITCH_STATUS_SUCCESS) {
+		switch_size_t flen = switch_file_get_size(fd);
+		switch_snprintf((char *)chunk, sizeof(chunk),
+			"HTTP/1.1 200 OK\r\n"
+			"Connection: close\r\n"
+			"Date: %s\r\n"
+			"Server: FreeSWITCH-%s-mod_verto\r\n"
+			"Content-Type: %s\r\n"
+			"Content-Length: %" SWITCH_SIZE_T_FMT "\r\n\r\n",
+			switch_event_get_header(request->headers, "Event-Date-GMT"),
+			switch_version_full(),
+			mime_type,
+			flen);
+
+		ws_raw_write(&jsock->ws, chunk, strlen((char *)chunk));
+
+		for (;;) {
+			switch_status_t status;
+
+			flen = sizeof(chunk);
+			status = switch_file_read(fd, chunk, &flen);
+
+			if (status != SWITCH_STATUS_SUCCESS || flen == 0) {
+				break;
+			}
+
+			ws_raw_write(&jsock->ws, chunk, flen);
+		}
+		switch_file_close(fd);
+	} else {
+		char *data = "HTTP/1.1 404 Not Found\r\n"
+			"Connection: close\r\n\r\n";
+		ws_raw_write(&jsock->ws, data, strlen(data));
+	}
+}
+
+static void http_run(jsock_t *jsock)
+{
+	switch_http_request_t request = { 0 };
+	switch_stream_handle_t stream = { 0 };
+	char *data;
+
+	request.user_data = jsock;
+
+	if (switch_event_create(&stream.param_event, SWITCH_EVENT_CHANNEL_DATA) != SWITCH_STATUS_SUCCESS) {
+		goto err;
+	}
+
+	request.headers = stream.param_event;
+	if (switch_http_parse_header(jsock->ws.buffer, jsock->ws.datalen, &request) != SWITCH_STATUS_SUCCESS) {
+		switch_event_destroy(&stream.param_event);
+		goto err;
+	}
+
+	switch_http_dump_request(&request);
+
+	/* TODO: parse virtual hosts here */
+
+	stream.data = &request;
+	stream.read_function = http_stream_read;
+	stream.write_function = http_stream_write;
+	stream.raw_write_function = http_stream_raw_write;
+
+	switch_event_add_header_string(request.headers, SWITCH_STACK_BOTTOM, "Request-Method", request.method);
+	switch_event_add_header_string(request.headers, SWITCH_STACK_BOTTOM, "HTTP-URI", request.uri);
+
+	if (!strncmp(request.uri, "/rest/", 6)) {
+		switch_api_execute("lua", "__rest_init__.lua", NULL, &stream);
+	} else {
+		http_static_handler(&request);
+	}
+
+	switch_http_free_request(&request);
+	return;
+
+err:
+	data = "HTTP/1.1 500 Internal Server Error\r\n"
+		"Connection: close\r\n\r\n";
+	ws_raw_write(&jsock->ws, data, strlen(data));
+}
+
 static void client_run(jsock_t *jsock)
 {
 
@@ -1287,8 +1448,14 @@ static void client_run(jsock_t *jsock)
     jsock->local_addr.sin_port = 0;
 
 
-	if (ws_init(&jsock->ws, jsock->client_socket, (jsock->ptype & PTYPE_CLIENT_SSL) ? jsock->profile->ssl_ctx : NULL, 0, 1) < 0) {
-		die("%s WS SETUP FAILED", jsock->name);
+	if (ws_init(&jsock->ws, jsock->client_socket, (jsock->ptype & PTYPE_CLIENT_SSL) ? jsock->profile->ssl_ctx : NULL, 0, 1, !!jsock->profile->htdocs) < 0) {
+		if (jsock->profile->htdocs) {
+			http_run(jsock);
+			ws_close(&jsock->ws, WS_NONE);
+			goto error;
+		} else {
+			die("%s WS SETUP FAILED [%s]", jsock->name, jsock->ws.buffer);
+		}
 	}
 
 	while(jsock->profile->running) {
@@ -3654,6 +3821,8 @@ static switch_status_t parse_config(const char *cf)
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Max Bindings Reached!\n");
 					}
+				} else if (!strcasecmp(var, "htdocs-directory")) {
+					profile->htdocs = switch_core_strdup(profile->pool, val);
 				} else if (!strcasecmp(var, "secure-combined")) {
 					set_string(profile->cert, val);
 					set_string(profile->key, val);

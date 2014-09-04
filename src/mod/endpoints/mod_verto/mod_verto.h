@@ -220,7 +220,7 @@ struct verto_profile_s {
 	char *timer_name;
 	char *local_network;
 
-
+	char *htdocs;
 
 	struct verto_profile_s *next;
 };
