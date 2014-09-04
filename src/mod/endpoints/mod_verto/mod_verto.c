@@ -1341,7 +1341,7 @@ static void http_static_handler(switch_http_request_t *request)
 
 	switch_snprintf(path, sizeof(path), "%s%s", jsock->profile->htdocs, request->uri);
 
-	printf("local path: %s\n", path);
+	// printf("local path: %s\n", path);
 
 	if (end_of(path) == '/') {
 		char *data = "HTTP/1.1 500 Internal Error\r\n"
@@ -1413,7 +1413,7 @@ static void http_run(jsock_t *jsock)
 		goto err;
 	}
 
-	switch_http_dump_request(&request);
+	// switch_http_dump_request(&request);
 
 	/* TODO: parse virtual hosts here */
 
