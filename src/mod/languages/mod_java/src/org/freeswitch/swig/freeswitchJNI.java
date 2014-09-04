@@ -47,7 +47,9 @@ class freeswitchJNI {
   public final static native long new_Stream__SWIG_0();
   public final static native long new_Stream__SWIG_1(long jarg1);
   public final static native void delete_Stream(long jarg1);
+  public final static native long Stream_read(long jarg1, Stream jarg1_);
   public final static native void Stream_write(long jarg1, Stream jarg1_, String jarg2);
+  public final static native void Stream_raw_write(long jarg1, Stream jarg1_, long jarg2);
   public final static native String Stream_get_data(long jarg1, Stream jarg1_);
   public final static native void Event_event_set(long jarg1, Event jarg1_, long jarg2);
   public final static native long Event_event_get(long jarg1, Event jarg1_);

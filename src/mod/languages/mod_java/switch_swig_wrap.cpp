@@ -972,6 +972,21 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_delete_1Stream(JN
 }
 
 
+SWIGEXPORT jlong JNICALL Java_org_freeswitch_swig_freeswitchJNI_Stream_1read(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jlong jresult = 0 ;
+  Stream *arg1 = (Stream *) 0 ;
+  std::string result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(Stream **)&jarg1; 
+  result = (arg1)->read();
+  *(std::string **)&jresult = new std::string((std::string &)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_Stream_1write(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   Stream *arg1 = (Stream *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -987,6 +1002,25 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_Stream_1write(JNI
   }
   (arg1)->write((char const *)arg2);
   if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+}
+
+
+SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_Stream_1raw_1write(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+  Stream *arg1 = (Stream *) 0 ;
+  std::string arg2 ;
+  std::string *argp2 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(Stream **)&jarg1; 
+  argp2 = *(std::string **)&jarg2; 
+  if (!argp2) {
+    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "Attempt to dereference null std::string");
+    return ;
+  }
+  arg2 = *argp2; 
+  (arg1)->raw_write(arg2);
 }
 
 

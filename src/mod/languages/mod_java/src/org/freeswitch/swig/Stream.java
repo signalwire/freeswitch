@@ -41,8 +41,16 @@ public class Stream {
     this(freeswitchJNI.new_Stream__SWIG_1(SWIGTYPE_p_switch_stream_handle_t.getCPtr(arg0)), true);
   }
 
+  public SWIGTYPE_p_std__string read() {
+    return new SWIGTYPE_p_std__string(freeswitchJNI.Stream_read(swigCPtr, this), true);
+  }
+
   public void write(String data) {
     freeswitchJNI.Stream_write(swigCPtr, this, data);
+  }
+
+  public void raw_write(SWIGTYPE_p_std__string data) {
+    freeswitchJNI.Stream_raw_write(swigCPtr, this, SWIGTYPE_p_std__string.getCPtr(data));
   }
 
   public String get_data() {
