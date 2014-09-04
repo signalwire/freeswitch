@@ -3614,7 +3614,6 @@ SWITCH_DECLARE(switch_status_t) switch_http_parse_header(char *buffer, uint32_t 
 	int argc;
 	char *argv[2] = { 0 };
 	char *body = NULL;
-	int header_len = 0;
 
 	if (datalen < 16)	return status; /* minimum GET / HTTP/1.1\r\n */
 
@@ -3626,11 +3625,9 @@ SWITCH_DECLARE(switch_status_t) switch_http_parse_header(char *buffer, uint32_t 
 
 	if ((body = strstr(p, "\r\n\r\n"))) {
 		*body = '\0';
-		header_len = body - buffer + 1;
 		body += 4;
 	} else if (( body = strstr(p, "\n\n"))) {
 		*body = '\0';
-		header_len = body - buffer + 1;
 		body += 2;
 	}
 
