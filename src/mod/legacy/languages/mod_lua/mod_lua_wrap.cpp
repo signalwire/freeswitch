@@ -1495,10 +1495,10 @@ SWIG_Lua_dostring(lua_State *L, const char* str) {
 #define SWIGTYPE_p_SWIGLUA_FN swig_types[8]
 #define SWIGTYPE_p_Stream swig_types[9]
 #define SWIGTYPE_p_input_callback_state swig_types[10]
-#define SWIGTYPE_p_lua_State swig_types[11]
-#define SWIGTYPE_p_p_switch_event_node_t swig_types[12]
-#define SWIGTYPE_p_session_flag_t swig_types[13]
-#define SWIGTYPE_p_std__string swig_types[14]
+#define SWIGTYPE_p_int swig_types[11]
+#define SWIGTYPE_p_lua_State swig_types[12]
+#define SWIGTYPE_p_p_switch_event_node_t swig_types[13]
+#define SWIGTYPE_p_session_flag_t swig_types[14]
 #define SWIGTYPE_p_switch_call_cause_t swig_types[15]
 #define SWIGTYPE_p_switch_channel_state_t swig_types[16]
 #define SWIGTYPE_p_switch_channel_t swig_types[17]
@@ -2630,21 +2630,25 @@ fail:
 static int _wrap_Stream_read(lua_State* L) {
   int SWIG_arg = -1;
   Stream *arg1 = (Stream *) 0 ;
-  std::string result;
+  int *arg2 = (int *) 0 ;
+  char *result = 0 ;
   
-  SWIG_check_num_args("read",1,1)
+  SWIG_check_num_args("read",2,2)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("read",1,"Stream *");
+  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("read",2,"int *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Stream,0))){
     SWIG_fail_ptr("Stream_read",1,SWIGTYPE_p_Stream);
   }
   
-  result = (arg1)->read();
-  SWIG_arg=0;
-  {
-    std::string * resultptr = new std::string((std::string &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_std__string,1); SWIG_arg++;
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_int,0))){
+    SWIG_fail_ptr("Stream_read",2,SWIGTYPE_p_int);
   }
+  
+  result = (char *)(arg1)->read(arg2);
+  SWIG_arg=0;
+  lua_pushstring(L,(const char*)result); SWIG_arg++;
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2685,24 +2689,21 @@ fail:
 static int _wrap_Stream_raw_write(lua_State* L) {
   int SWIG_arg = -1;
   Stream *arg1 = (Stream *) 0 ;
-  std::string arg2 ;
-  std::string *argp2 ;
+  char *arg2 = (char *) 0 ;
+  int arg3 ;
   
-  SWIG_check_num_args("raw_write",2,2)
+  SWIG_check_num_args("raw_write",3,3)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("raw_write",1,"Stream *");
-  if(!lua_isuserdata(L,2)) SWIG_fail_arg("raw_write",2,"std::string");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("raw_write",2,"char const *");
+  if(!lua_isnumber(L,3)) SWIG_fail_arg("raw_write",3,"int");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Stream,0))){
     SWIG_fail_ptr("Stream_raw_write",1,SWIGTYPE_p_Stream);
   }
   
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&argp2,SWIGTYPE_p_std__string,0))){
-    SWIG_fail_ptr("Stream_raw_write",2,SWIGTYPE_p_std__string);
-  }
-  arg2 = *argp2;
-  
-  (arg1)->raw_write(arg2);
+  arg2 = (char *)lua_tostring(L, 2);
+  arg3 = (int)lua_tonumber(L, 3);
+  (arg1)->raw_write((char const *)arg2,arg3);
   SWIG_arg=0;
   
   return SWIG_arg;
@@ -8128,10 +8129,10 @@ static swig_type_info _swigt__p_LUA__Session = {"_p_LUA__Session", "LUA::Session
 static swig_type_info _swigt__p_SWIGLUA_FN = {"_p_SWIGLUA_FN", "SWIGLUA_FN *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_Stream = {"_p_Stream", "Stream *", 0, 0, (void*)&_wrap_class_Stream, 0};
 static swig_type_info _swigt__p_input_callback_state = {"_p_input_callback_state", "input_callback_state_t *|input_callback_state *", 0, 0, (void*)&_wrap_class_input_callback_state_t, 0};
+static swig_type_info _swigt__p_int = {"_p_int", "int *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_lua_State = {"_p_lua_State", "lua_State *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_p_switch_event_node_t = {"_p_p_switch_event_node_t", "switch_event_node_t **", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_session_flag_t = {"_p_session_flag_t", "enum session_flag_t *|session_flag_t *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__string = {"_p_std__string", "std::string *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_call_cause_t = {"_p_switch_call_cause_t", "switch_call_cause_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_channel_state_t = {"_p_switch_channel_state_t", "switch_channel_state_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_channel_t = {"_p_switch_channel_t", "switch_channel_t *", 0, 0, (void*)0, 0};
@@ -8160,10 +8161,10 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_SWIGLUA_FN,
   &_swigt__p_Stream,
   &_swigt__p_input_callback_state,
+  &_swigt__p_int,
   &_swigt__p_lua_State,
   &_swigt__p_p_switch_event_node_t,
   &_swigt__p_session_flag_t,
-  &_swigt__p_std__string,
   &_swigt__p_switch_call_cause_t,
   &_swigt__p_switch_channel_state_t,
   &_swigt__p_switch_channel_t,
@@ -8192,10 +8193,10 @@ static swig_cast_info _swigc__p_LUA__Session[] = {  {&_swigt__p_LUA__Session, 0,
 static swig_cast_info _swigc__p_SWIGLUA_FN[] = {  {&_swigt__p_SWIGLUA_FN, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_Stream[] = {  {&_swigt__p_Stream, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_input_callback_state[] = {  {&_swigt__p_input_callback_state, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_int[] = {  {&_swigt__p_int, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_lua_State[] = {  {&_swigt__p_lua_State, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_p_switch_event_node_t[] = {  {&_swigt__p_p_switch_event_node_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_session_flag_t[] = {  {&_swigt__p_session_flag_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__string[] = {  {&_swigt__p_std__string, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_call_cause_t[] = {  {&_swigt__p_switch_call_cause_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_channel_state_t[] = {  {&_swigt__p_switch_channel_state_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_channel_t[] = {  {&_swigt__p_switch_channel_t, 0, 0, 0},{0, 0, 0, 0}};
@@ -8224,10 +8225,10 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_SWIGLUA_FN,
   _swigc__p_Stream,
   _swigc__p_input_callback_state,
+  _swigc__p_int,
   _swigc__p_lua_State,
   _swigc__p_p_switch_event_node_t,
   _swigc__p_session_flag_t,
-  _swigc__p_std__string,
   _swigc__p_switch_call_cause_t,
   _swigc__p_switch_channel_state_t,
   _swigc__p_switch_channel_t,
