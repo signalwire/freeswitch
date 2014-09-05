@@ -10,7 +10,7 @@
 PKG=rsync-3.1.0 git automake-1.14.1 autoconf-2.69p1 libtool gmake bzip2 jpeg wget pcre speex libldns
 PREFIX=/usr/local/freeswitch
 DOWNLOAD=http://files.freeswitch.org/downloads/libs
-LIBRESSL=2.0.3
+OPENSSL=1.0.1i
 LIBEDIT=20140618-3.1
 CURL=7.35.0
 
@@ -39,11 +39,11 @@ has-git:
 deps: libedit libressl curl
 	@PKG_PATH=http://openbsd.mirrors.pair.com/`uname -r`/packages/`machine -a`/ pkg_add -r $(PKG)
 
-libressl: libressl-$(LIBRESSL)/Makefile
-libressl-$(LIBRESSL)/Makefile: libressl-$(LIBRESSL)
-libressl-$(LIBRESSL):
+openssl: openssl-$(OPENSSL)/.done
+openssl-$(OPENSSL)/.done: openssl-$(OPENSSL)
+openssl-$(OPENSSL):
 	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
-	(cd $@ && ./configure --prefix=$(PREFIX) && make && sudo make install)
+	(cd $@ && ./Configure --prefix=$(PREFIX) linux-x86_64 shared && make && sudo make install && touch .done)
 
 libedit: libedit-$(LIBEDIT)/Makefile
 libedit-$(LIBEDIT)/Makefile: libedit-$(LIBEDIT)

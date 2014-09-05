@@ -8,10 +8,10 @@
 # Brian West <brian@freeswitch.org>
 #
 FSPREFIX=/usr/local/freeswitch
-PREFIX=/opt/fs-libs
+PREFIX=/usr/local/freeswitch
 DOWNLOAD=http://files.freeswitch.org/downloads/libs
 JPEG=v8d
-OPENSSL=1.0.1h
+OPENSSL=1.0.1i
 SQLITE=autoconf-3080403
 PCRE=8.35
 CURL=7.35.0
