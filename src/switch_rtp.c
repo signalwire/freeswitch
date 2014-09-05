@@ -1862,10 +1862,10 @@ static void rtcp_generate_sender_info(switch_rtp_t *rtp_session, struct switch_r
 
 #ifdef DEBUG_RTCP
 	switch_time_exp_gmt(&now_hr,now);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,"Sending an RTCP packet[%04d-%02d-%02d %02d:%02d:%02d.%d] lsr[%u] msw[%u] lsw[%u] fs_ssrc[%u]\n",
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,"Sending an RTCP packet[%04d-%02d-%02d %02d:%02d:%02d.%d] lsr[%u] msw[%u] lsw[%u] stats_ssrc[%u]\n",
                 1900 + now_hr.tm_year,  now_hr.tm_mday, now_hr.tm_mon, now_hr.tm_hour, now_hr.tm_min, now_hr.tm_sec, now_hr.tm_usec,
                 (ntohl(sr->ntp_lsw)&0xffff0000)>>16 | (ntohl(sr->ntp_msw)&0x0000ffff)<<16,
-                ntohl(sr->ntp_msw),ntohl(sr->ntp_lsw), rtp_session->ssrc
+                ntohl(sr->ntp_msw),ntohl(sr->ntp_lsw), rtp_session->stats.rtcp.ssrc
 	);
 #endif
 }
@@ -1906,8 +1906,8 @@ static void rtcp_generate_report_block(switch_rtp_t *rtp_session, struct switch_
 #endif
 
 #ifdef DEBUG_RTCP
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "rtcp_generate_sr: stats_ssrc[%d] received[%d] expected[%d] cum[%d]lost[%d|%d/256]pkt last_seq[%d]cyc[%d] last_rpt_seq[%d]cyc[%d] ssrc[%d]\n",
-               ntohl((uint32_t)rtp_session->recv_msg.header.ssrc), stats->period_pkt_count, expected_pkt,
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "rtcp_generate_sr: stats_ssrc[%u] received[%d] expected[%d] cum[%d]lost[%d|%d/256]pkt last_seq[%d]cyc[%d] last_rpt_seq[%d]cyc[%d] ssrc[%d]\n",
+               ntohl(rtp_session->recv_msg.header.ssrc), stats->period_pkt_count, expected_pkt,
                stats->cum_lost, pkt_lost, rtcp_report_block->fraction, stats->high_ext_seq_recv&0x0000ffff,
                stats->cycle, stats->last_rpt_ext_seq&0x0000ffff, stats->last_rpt_cycle, rtp_session->stats.rtcp.peer_ssrc
        );
@@ -1983,7 +1983,7 @@ static int rtcp_stats(switch_rtp_t *rtp_session)
 	if(seq_diff < MAX_DROPOUT){  /* in order, with permissible gap */
 		if(pkt_seq < max_seq){
 			stats->cycle++;
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "rtcp_stats:[cycle change] pkt_seq[%d]cycle[%d] max_seq[%d] stats_ssrc[%d] local_ts[%u]\n",
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "rtcp_stats:[cycle change] pkt_seq[%d]cycle[%d] max_seq[%d] stats_ssrc[%u] local_ts[%u]\n",
                   pkt_seq, stats->cycle, max_seq, stats->ssrc, rtp_session->timer.samplecount);
 		}
 		pkt_extended_seq = stats->cycle << 16 | pkt_seq; /* getting the extended packet extended sequence ID */
@@ -2011,7 +2011,7 @@ static int rtcp_stats(switch_rtp_t *rtp_session)
 	stats->period_pkt_count++;
 	stats->pkt_count++;
 #ifdef DEBUG_RTCP
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "rtcp_stats: period_pkt_count[%d]last_seq[%d]cycle[%d]stats_ssrc[%d]local_ts[%u]\n",
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "rtcp_stats: period_pkt_count[%d]last_seq[%d]cycle[%d]stats_ssrc[%u]local_ts[%u]\n",
                  stats->period_pkt_count, pkt_seq, stats->cycle, stats->ssrc, rtp_session->timer.samplecount);
 #endif
 	/* Interarrival jitter calculation */
