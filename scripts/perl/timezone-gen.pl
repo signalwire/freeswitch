@@ -55,7 +55,7 @@ foreach my $name ( sort( keys(%name_to_file) ) ) {
     my $data = join( "", <$in> );
     close($in);
 
-    if ( $data !~ /^TZif2/o ) {
+    if ( $data !~ /^TZif/o ) {
         $debug && print "Skipped $file\n";
         next;
     }
