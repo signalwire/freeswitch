@@ -43,7 +43,7 @@ openssl: openssl-$(OPENSSL)/.done
 openssl-$(OPENSSL)/.done: openssl-$(OPENSSL)
 openssl-$(OPENSSL):
 	(test -d $@) || (wget -4 -O $@.tar.gz $(DOWNLOAD)/$@.tar.gz && tar zxfv $@.tar.gz)
-	(cd $@ && ./Configure --prefix=$(PREFIX) linux-x86_64 shared && make && sudo make install && touch .done)
+	(cd $@ && ./Configure --prefix=$(PREFIX) BSD-generic64 shared && make && sudo make install && touch .done)
 
 libedit: libedit-$(LIBEDIT)/Makefile
 libedit-$(LIBEDIT)/Makefile: libedit-$(LIBEDIT)
