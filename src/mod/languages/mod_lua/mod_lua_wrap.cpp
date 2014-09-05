@@ -2946,18 +2946,18 @@ fail:
 static int _wrap_Stream_raw_write(lua_State* L) {
   int SWIG_arg = -1;
   Stream *arg1 = (Stream *) 0 ;
-  std::string arg2 ;
-  
+  char *arg2 = (char *) 0 ;
+
   SWIG_check_num_args("raw_write",2,2)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("raw_write",1,"Stream *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("raw_write",2,"std::string");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("raw_write",2,"char const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_Stream,0))){
     SWIG_fail_ptr("Stream_raw_write",1,SWIGTYPE_p_Stream);
   }
   
-  (&arg2)->assign(lua_tostring(L,2),lua_rawlen(L,2));
-  (arg1)->raw_write(arg2);
+  arg2 = (char *)lua_tostring(L, 2);
+  (arg1)->raw_write((char const *)arg2,lua_rawlen(L, 2));
   SWIG_arg=0;
   
   return SWIG_arg;

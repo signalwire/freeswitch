@@ -22,7 +22,10 @@ class Stream {
 	    Stream(void);
 	     Stream(switch_stream_handle_t *);
 	                       virtual ~ Stream();
-	string read();
+
+%inline %{
+	char *read(int *len);
+%}
 	void write(const char *data);
 	void raw_write(void *data, int len);
 	const char *get_data(void);

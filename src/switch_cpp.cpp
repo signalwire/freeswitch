@@ -532,22 +532,20 @@ SWITCH_DECLARE_CONSTRUCTOR Stream::~Stream()
 }
 
 /* WARNING!! you are not encouraged to use this unless you understand the risk!!! */
-SWITCH_DECLARE(std::string) Stream::read()
+SWITCH_DECLARE(const char *) Stream::read(int *len)
 {
 	uint8_t *buff;
-	this_check(std::string(""));
-	int len = 0;
 
-	this_check(std::string());
+	this_check(NULL);
 
-	if (!stream_p->read_function) return std::string();
+	if (!stream_p->read_function) return NULL;
 
-	buff = stream_p->read_function(stream_p, &len);
+	buff = stream_p->read_function(stream_p, len);
 
-	if (!buff) return std::string();
-	if (len < 0) return std::string();
+	if (!buff) return NULL;
+	if (len < 0) return NULL;
 
-	return std::string((const char *)buff, len);
+	return (const char *)buff;
 }
 
 SWITCH_DECLARE(void) Stream::write(const char *data)
@@ -556,10 +554,10 @@ SWITCH_DECLARE(void) Stream::write(const char *data)
 	stream_p->write_function(stream_p, "%s", data);
 }
 
-SWITCH_DECLARE(void) Stream::raw_write(std::string data)
+SWITCH_DECLARE(void) Stream::raw_write(const char *data, int len)
 {
 	this_check_void();
-	stream_p->raw_write_function(stream_p, (uint8_t *)data.c_str(), data.length());
+	stream_p->raw_write_function(stream_p, (uint8_t *)data, len);
 }
 
 SWITCH_DECLARE(const char *)Stream::get_data()
