@@ -1396,7 +1396,7 @@ static void http_run(jsock_t *jsock)
 {
 	switch_http_request_t request = { 0 };
 	switch_stream_handle_t stream = { 0 };
-	char *data;
+	char *data = NULL;
 	char *ext;
 	verto_vhost_t *vhost;
 
@@ -1429,6 +1429,70 @@ static void http_run(jsock_t *jsock)
 	/* only one vhost supported for now */
 	vhost = jsock->profile->vhosts;
 
+	if (!switch_test_flag(jsock, JPFLAG_AUTHED) && vhost->auth_realm) {
+		int code = CODE_AUTH_REQUIRED;
+		char message[128] = "Authentication Required";
+		cJSON *params = NULL;
+		char *www_auth;
+		char auth_buffer[512];
+		char *auth_user = NULL, *auth_pass = NULL;
+
+		www_auth = switch_event_get_header(request.headers, "Authorization");
+
+		if (zstr(www_auth)) {
+			switch_snprintf(auth_buffer, sizeof(auth_buffer),
+				"HTTP/1.1 401 Authentication Required\r\n"
+				"WWW-Authenticate: Basic realm=\"%s\"\r\n"
+				"Connection: close\r\n\r\n",
+				vhost->auth_realm);
+			ws_raw_write(&jsock->ws, auth_buffer, strlen(auth_buffer));
+			goto done;
+		}
+
+		if (strncasecmp(www_auth, "Basic ", 6)) goto err;
+
+		www_auth += 6;
+
+		switch_b64_decode(www_auth, auth_buffer, sizeof(auth_buffer));
+
+		auth_user = auth_buffer;
+
+		if ((auth_pass = strchr(auth_user, ':'))) {
+			*auth_pass++ = '\0';
+		}
+
+		if (vhost->auth_user && vhost->auth_pass &&
+			!strcmp(vhost->auth_user, auth_user) &&
+			!strcmp(vhost->auth_pass, auth_pass)) {
+			goto authed;
+		}
+
+		if (!(params = cJSON_CreateObject())) {
+			switch_http_free_request(&request);
+			goto err;
+		}
+
+		cJSON_AddItemToObject(params, "login", cJSON_CreateString(auth_user));
+		cJSON_AddItemToObject(params, "passwd", cJSON_CreateString(auth_pass));
+
+		if (!check_auth(jsock, params, &code, message, sizeof(message))) {
+			switch_snprintf(auth_buffer, sizeof(auth_buffer),
+				"HTTP/1.1 401 Authentication Required\r\n"
+				"WWW-Authenticate: Basic realm=\"%s\"\r\n"
+				"Connection: close\r\n\r\n",
+				vhost->auth_realm);
+			ws_raw_write(&jsock->ws, auth_buffer, strlen(auth_buffer));
+			cJSON_Delete(params);
+			goto done;
+		} else {
+			cJSON_Delete(params);
+		}
+
+authed:
+		switch_set_flag(jsock, JPFLAG_AUTHED);
+		switch_event_add_header_string(request.headers, SWITCH_STACK_BOTTOM, "HTTP-USER", auth_user);
+	}
+
 	if (vhost->rewrites) {
 		switch_event_header_t *rule = vhost->rewrites->headers;
 		switch_regex_t *re = NULL;
@@ -1457,9 +1521,6 @@ static void http_run(jsock_t *jsock)
 		if (!strncmp(ext, ".lua", 4)) {
 			switch_snprintf(path, sizeof(path), "%s%s", vhost->script_root, request.uri);
 			switch_api_execute("lua", path, NULL, &stream);
-		} else if (!strncmp(ext, ".js", 3)) {
-			switch_snprintf(path, sizeof(path), "%s%s", vhost->script_root, request.uri);
-			switch_api_execute("jsrun", path, NULL, &stream);
 		} else {
 			http_static_handler(&request, vhost);
 		}
@@ -1467,6 +1528,8 @@ static void http_run(jsock_t *jsock)
 	} else {
 		http_static_handler(&request, vhost);
 	}
+
+done:
 
 	switch_http_free_request(&request);
 	return;
