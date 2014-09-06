@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
+ * Seven Du <dujinfang@gmail.com>
  *
  * mod_html.h -- HTML 5 interface
  *
@@ -166,6 +167,20 @@ typedef struct verto_pvt_s {
 	struct verto_pvt_s *next;
 } verto_pvt_t;
 
+typedef struct verto_vhost_s {
+	char *domain;
+	char *alias;
+	char *root;
+	char *script_root;
+	char *index;
+	char *auth_realm;
+	char *auth_user;
+	char *auth_pass;
+	switch_event_t *rewrites;
+	switch_memory_pool_t *pool;
+	struct verto_vhost_s *next;
+} verto_vhost_t;
+
 struct verto_profile_s {
 	char *name;
 	switch_mutex_t *mutex;
@@ -220,7 +235,7 @@ struct verto_profile_s {
 	char *timer_name;
 	char *local_network;
 
-	char *htdocs;
+	verto_vhost_t *vhosts;
 
 	struct verto_profile_s *next;
 };
