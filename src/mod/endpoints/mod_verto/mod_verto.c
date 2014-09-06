@@ -1340,6 +1340,13 @@ static void http_static_handler(switch_http_request_t *request, verto_vhost_t *v
 	uint8_t chunk[4096];
 	const char *mime_type = "text/html", *new_type;
 
+	if (strncmp(request->method, "GET", 3) && strncmp(request->method, "HEAD", 4)) {
+		char *data = "HTTP/1.1 415 Method Not Allowed\r\n"
+			"Connection: close\r\n\r\n";
+		ws_raw_write(&jsock->ws, data, strlen(data));
+		return;
+	}
+
 	switch_snprintf(path, sizeof(path), "%s%s", vhost->root, request->uri);
 
 	if (switch_directory_exists(path, NULL) == SWITCH_STATUS_SUCCESS) {
@@ -1357,7 +1364,9 @@ static void http_static_handler(switch_http_request_t *request, verto_vhost_t *v
 
 	if (switch_file_exists(path, NULL) == SWITCH_STATUS_SUCCESS &&
 		switch_file_open(&fd, path, SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD, jsock->pool) == SWITCH_STATUS_SUCCESS) {
+
 		switch_size_t flen = switch_file_get_size(fd);
+
 		switch_snprintf((char *)chunk, sizeof(chunk),
 			"HTTP/1.1 200 OK\r\n"
 			"Connection: close\r\n"
@@ -1412,6 +1421,21 @@ static void http_run(jsock_t *jsock)
 		goto err;
 	}
 
+	if (!strncmp(request.method, "OPTIONS", 7)) {
+		char data[512];
+		switch_snprintf(data, sizeof(data),
+			"HTTP/1.1 200 OK\r\n"
+			"Connection: close\r\n"
+			"Date: %s\r\n"
+			"Allow: HEAD,GET,POST,PUT,DELETE,PATCH,OPTIONS\r\n"
+			"Server: FreeSWITCH-%s-mod_verto\r\n\r\n",
+			switch_event_get_header(request.headers, "Event-Date-GMT"),
+			switch_version_full());
+
+		ws_raw_write(&jsock->ws, data, strlen(data));
+		goto done;
+	}
+
 	if (!strncmp(request.method, "POST", 4) && request.content_length &&
 		!strncmp(request.content_type, "application/x-www-form-urlencoded", 33)) {
 
@@ -1452,8 +1476,6 @@ static void http_run(jsock_t *jsock)
 	}
 
 	// switch_http_dump_request(&request);
-
-	/* TODO: parse virtual hosts here */
 
 	stream.data = &request;
 	stream.read_function = http_stream_read;
