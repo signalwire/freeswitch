@@ -1412,6 +1412,45 @@ static void http_run(jsock_t *jsock)
 		goto err;
 	}
 
+	if (!strncmp(request.method, "POST", 4) && request.content_length &&
+		!strncmp(request.content_type, "application/x-www-form-urlencoded", 33)) {
+
+		char *buffer = NULL;
+		int len = 0, bytes = 0;
+
+		if (request.content_length > 2 * 1024 * 1024 - 1) {
+			char *data = "HTTP/1.1 413 Request Entity Too Large\r\n"
+				"Connection: close\r\n\r\n";
+			ws_raw_write(&jsock->ws, data, strlen(data));
+			goto done;
+		}
+
+		if (!(buffer = malloc(2 * 1024 * 1024))) {
+			goto request_err;
+		}
+
+		if (request._unparsed_len) {
+			bytes += request._unparsed_len;
+			memcpy(buffer, request._unparsed_data, bytes);
+		}
+
+		while(bytes < request.content_length) {
+			len = request.content_length - bytes;
+
+			if ((len = ws_raw_read(&jsock->ws, buffer + bytes, len, jsock->ws.block)) < 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read error %d\n", len);
+				goto done;
+			}
+
+			bytes += len;
+		}
+
+		*(buffer + bytes) = '\0';
+
+		switch_http_parse_qs(&request, buffer);
+		free(buffer);
+	}
+
 	// switch_http_dump_request(&request);
 
 	/* TODO: parse virtual hosts here */
@@ -1468,8 +1507,7 @@ static void http_run(jsock_t *jsock)
 		}
 
 		if (!(params = cJSON_CreateObject())) {
-			switch_http_free_request(&request);
-			goto err;
+			goto request_err;
 		}
 
 		cJSON_AddItemToObject(params, "login", cJSON_CreateString(auth_user));
@@ -1533,6 +1571,10 @@ done:
 
 	switch_http_free_request(&request);
 	return;
+
+request_err:
+
+	switch_http_free_request(&request);
 
 err:
 	data = "HTTP/1.1 500 Internal Server Error\r\n"
