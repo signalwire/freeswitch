@@ -542,8 +542,10 @@ SWITCH_DECLARE(const char *) Stream::read(int *len)
 
 	buff = stream_p->read_function(stream_p, len);
 
-	if (!buff) return NULL;
-	if (len < 0) return NULL;
+	if (!buff || *len <= 0) {
+		*len = 0;
+		return NULL;
+	}
 
 	return (const char *)buff;
 }
