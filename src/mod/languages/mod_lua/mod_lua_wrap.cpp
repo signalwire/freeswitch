@@ -2799,7 +2799,7 @@ static int _wrap_Stream_read(lua_State* L) {
   
   result = (char *)(arg1)->read(arg2);
   SWIG_arg=0;
-  lua_pushstring(L,(const char*)result); SWIG_arg++;
+  lua_pushlstring(L,(const char*)result, (*arg2)); SWIG_arg++;
   lua_pushnumber(L, (lua_Number) *arg2); SWIG_arg++;
   return SWIG_arg;
   

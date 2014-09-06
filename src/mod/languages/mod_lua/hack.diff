@@ -1,6 +1,15 @@
---- mod_lua_wrap.cpp.orig	2013-11-13 07:48:40.587304736 +0500
-+++ mod_lua_wrap.cpp	2013-11-13 07:43:09.059309154 +0500
-@@ -6427,7 +6427,7 @@
+--- mod_lua_wrap.cpp.orig	2014-09-06 19:25:05.000000000 +0800
++++ mod_lua_wrap.cpp	2014-09-06 19:27:17.000000000 +0800
+@@ -2799,7 +2799,7 @@
+   
+   result = (char *)(arg1)->read(arg2);
+   SWIG_arg=0;
+-  lua_pushstring(L,(const char*)result); SWIG_arg++;
++  lua_pushlstring(L,(const char*)result, (*arg2)); SWIG_arg++;
+   lua_pushnumber(L, (lua_Number) *arg2); SWIG_arg++;
+   return SWIG_arg;
+   
+@@ -6750,7 +6750,7 @@
    SWIG_check_num_args("LUA::Session",0,0)
    result = (LUA::Session *)new LUA::Session();
    SWIG_arg=0;
@@ -9,7 +18,7 @@
    return SWIG_arg;
    
    if(0) SWIG_fail;
-@@ -6455,7 +6455,7 @@
+@@ -6778,7 +6778,7 @@
    
    result = (LUA::Session *)new LUA::Session(arg1,arg2);
    SWIG_arg=0;
@@ -18,7 +27,7 @@
    return SWIG_arg;
    
    if(0) SWIG_fail;
-@@ -6476,7 +6476,7 @@
+@@ -6799,7 +6799,7 @@
    arg1 = (char *)lua_tostring(L, 1);
    result = (LUA::Session *)new LUA::Session(arg1);
    SWIG_arg=0;
@@ -27,7 +36,7 @@
    return SWIG_arg;
    
    if(0) SWIG_fail;
-@@ -6501,7 +6501,7 @@
+@@ -6824,7 +6824,7 @@
    
    result = (LUA::Session *)new LUA::Session(arg1);
    SWIG_arg=0;
@@ -36,7 +45,7 @@
    return SWIG_arg;
    
    if(0) SWIG_fail;
-@@ -7913,7 +7913,7 @@
+@@ -8236,7 +8236,7 @@
  }
  #endif
  
@@ -45,7 +54,7 @@
      { "setGlobalVariable", _wrap_setGlobalVariable},
      { "getGlobalVariable", _wrap_getGlobalVariable},
      { "consoleLog", _wrap_consoleLog},
-@@ -8325,7 +8325,7 @@
+@@ -8654,7 +8654,7 @@
  {
    int i;
    /* start with global table */
