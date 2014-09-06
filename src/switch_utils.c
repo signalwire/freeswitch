@@ -3700,7 +3700,7 @@ SWITCH_DECLARE(switch_status_t) switch_http_parse_header(char *buffer, uint32_t 
 			if (p) {
 				*p++ = '\0';
 
-				if (*p) request->port = atoi(p);
+				if (*p) request->port = (switch_port_t)atoi(p);
 			}
 		}
 	}
