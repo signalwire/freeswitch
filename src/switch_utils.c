@@ -25,6 +25,7 @@
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
  * Juan Jose Comellas <juanjo@comellas.org>
+ * Seven Du <dujinfang@gmail.com>
  *
  *
  * switch_utils.c -- Compatibility and Helper Code
@@ -3603,6 +3604,47 @@ SWITCH_DECLARE(char *) switch_strerror_r(int errnum, char *buf, switch_size_t bu
 #endif
 }
 
+SWITCH_DECLARE(void) switch_http_parse_qs(switch_http_request_t *request, char *qs)
+{
+	char *q;
+	char *next;
+	char *name, *val;
+
+	if (qs) {
+		q = qs;
+	} else { /*parse our own qs, dup to avoid modify the original string */
+		q = strdup(request->qs);
+	}
+
+	switch_assert(q);
+	next = q;
+
+	do {
+		char *p;
+
+		if ((next = strchr(next, '&'))) {
+			*next++ = '\0';
+		}
+
+		for (p = q; p && *p; p++) {
+			if (*p == '+') *p = ' ';
+		}
+
+		switch_url_decode(q);
+
+		name = q;
+		if ((val = strchr(name, '='))) {
+			*val++ = '\0';
+			switch_event_add_header_string(request->headers, SWITCH_STACK_BOTTOM, name, val);
+		}
+		q = next;
+	} while (q);
+
+	if (!qs) {
+		switch_safe_free(q);
+	}
+}
+
 SWITCH_DECLARE(switch_status_t) switch_http_parse_header(char *buffer, uint32_t datalen, switch_http_request_t *request)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -3646,9 +3688,17 @@ SWITCH_DECLARE(switch_status_t) switch_http_parse_header(char *buffer, uint32_t 
 	p = strchr(request->uri, ' ');
 
 	if (!p) goto err;
-	*p++ = '\0';
 
+	*p++ = '\0';
 	http = p;
+
+	p = strchr(request->uri, '?');
+
+	if (p) {
+		*p++ = '\0';
+		request->qs = p;
+	}
+
 	p = strchr(http, '\n');
 
 	if (!p) goto err;
@@ -3702,7 +3752,17 @@ SWITCH_DECLARE(switch_status_t) switch_http_parse_header(char *buffer, uint32_t 
 
 				if (*p) request->port = (switch_port_t)atoi(p);
 			}
+		} else if (!strncasecmp(header, "Content-Type", 12)) {
+			request->content_type = value;
+		} else if (!strncasecmp(header, "Content-Length", 14)) {
+			request->content_length = atoi(value);
+		} else if (!strncasecmp(header, "Referer", 7)) {
+			request->referer = value;
 		}
+	}
+
+	if (request->qs) {
+		switch_http_parse_qs(request, NULL);
 	}
 
 	return SWITCH_STATUS_SUCCESS;

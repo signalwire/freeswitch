@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
+ * Seven Du <dujinfang@gmail.com>
  *
  *
  * switch_utils.h -- Compatability and Helper Code
@@ -1113,6 +1114,8 @@ typedef struct switch_http_request_s {
 	const char *referer;
 	const char *user;
 	switch_bool_t keepalive;
+	const char *content_type;
+	switch_size_t content_length;
 	switch_event_t *headers;
 	void *user_data;           /* private user data */
 
@@ -1134,6 +1137,16 @@ typedef struct switch_http_request_s {
 SWITCH_DECLARE(switch_status_t) switch_http_parse_header(char *buffer, uint32_t datalen, switch_http_request_t *request);
 SWITCH_DECLARE(void) switch_http_free_request(switch_http_request_t *request);
 SWITCH_DECLARE(void) switch_http_dump_request(switch_http_request_t *request);
+/**
+ * parse http query string
+ * \param[in]	request the http request object
+ * \param[in]	qs the query string buffer
+ *
+ * qs buffer will be modified, so be sure to dup the qs before passing into this function if you want to keep the original string untouched
+ * if qs is NULL, the it will parse request->qs, request->qs will be duplicated before parse to avoid being modified
+ */
+
+SWITCH_DECLARE(void) switch_http_parse_qs(switch_http_request_t *request, char *qs);
 
 SWITCH_END_EXTERN_C
 #endif
