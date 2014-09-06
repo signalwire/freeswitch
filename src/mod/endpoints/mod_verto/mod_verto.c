@@ -1287,16 +1287,28 @@ static uint8_t *http_stream_read(switch_stream_handle_t *handle, int *len)
 	jsock_t *jsock = r->user_data;
 	wsh_t *wsh = &jsock->ws;
 
-	*len = r->_unparsed_len;
+	*len = r->bytes_buffered - r->bytes_read;
 
-	if (*len) { // we already read part of the body
-		r->_unparsed_len = 0; // reset for the next read
-		return (uint8_t *)r->_unparsed_data;
+	if (*len > 0) { // we already read part of the body
+		uint8_t *data = (uint8_t *)wsh->buffer + r->bytes_read;
+		r->bytes_read = r->bytes_buffered;
+		return data;
 	}
 
-	if ((*len = ws_raw_read(wsh, wsh->buffer, 4096, wsh->block)) < 0) {
+	if (r->content_length && (r->bytes_read - r->bytes_header) >= r->content_length) {
+		*len = 0;
 		return NULL;
 	}
+
+	*len = r->content_length - (r->bytes_read - r->bytes_header);
+	*len = *len > sizeof(wsh->buffer) ? sizeof(wsh->buffer) : *len;
+
+	if ((*len = ws_raw_read(wsh, wsh->buffer, *len, wsh->block)) <= 0) {
+		*len = 0;
+		return NULL;
+	}
+
+	r->bytes_read += *len;
 
 	return (uint8_t *)wsh->buffer;
 }
@@ -1453,9 +1465,8 @@ static void http_run(jsock_t *jsock)
 			goto request_err;
 		}
 
-		if (request._unparsed_len) {
-			bytes += request._unparsed_len;
-			memcpy(buffer, request._unparsed_data, bytes);
+		if ((bytes = request.bytes_buffered - (request.bytes_read - request.bytes_header)) > 0) {
+			memcpy(buffer, jsock->ws.buffer + request.bytes_read, bytes);
 		}
 
 		while(bytes < request.content_length) {

@@ -3675,10 +3675,10 @@ SWITCH_DECLARE(switch_status_t) switch_http_parse_header(char *buffer, uint32_t 
 
 	request->_buffer = strdup(buffer);
 	request->method = request->_buffer;
-	if (body && *body) {
-		request->_unparsed_data = body;
-		request->_unparsed_len = datalen - (body - buffer);
-		switch_assert(request->_unparsed_len > 0);
+	request->bytes_buffered = datalen;
+	if (body) {
+		request->bytes_header = body - buffer;
+		request->bytes_read = body - buffer;
 	}
 
 	p = strchr(request->method, ' ');
@@ -3796,7 +3796,8 @@ SWITCH_DECLARE(void) switch_http_dump_request(switch_http_request_t *request)
 	if (request->referer) printf("referer: %s\n", request->referer);
 	if (request->user) printf("user: %s\n", request->user);
 	if (request->keepalive) printf("uri: %d\n", request->keepalive);
-	if (request->_unparsed_data) printf("body: %p\n", request->_unparsed_data);
+	if (request->content_type) printf("uri: %s\n", request->content_type);
+	if (request->content_length) printf("uri: %" SWITCH_SIZE_T_FMT "\n", request->content_length);
 
 	{
 		switch_event_header_t *header = request->headers->headers;

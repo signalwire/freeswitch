@@ -1116,13 +1116,14 @@ typedef struct switch_http_request_s {
 	switch_bool_t keepalive;
 	const char *content_type;
 	switch_size_t content_length;
+	switch_size_t bytes_header;
+	switch_size_t bytes_read;
+	switch_size_t bytes_buffered;
 	switch_event_t *headers;
 	void *user_data;           /* private user data */
 
 	/* private members used by the parser internally */
 	char *_buffer;
-	const char *_unparsed_data;
-	switch_size_t _unparsed_len;
 	switch_bool_t _destroy_headers;
 } switch_http_request_t;
 
