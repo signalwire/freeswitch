@@ -1287,6 +1287,11 @@ static uint8_t *http_stream_read(switch_stream_handle_t *handle, int *len)
 	jsock_t *jsock = r->user_data;
 	wsh_t *wsh = &jsock->ws;
 
+	if (!jsock->profile->running) {
+		*len = 0;
+		return NULL;
+	}
+
 	*len = r->bytes_buffered - r->bytes_read;
 
 	if (*len > 0) { // we already read part of the body
@@ -1303,7 +1308,7 @@ static uint8_t *http_stream_read(switch_stream_handle_t *handle, int *len)
 	*len = r->content_length - (r->bytes_read - r->bytes_header);
 	*len = *len > sizeof(wsh->buffer) ? sizeof(wsh->buffer) : *len;
 
-	if ((*len = ws_raw_read(wsh, wsh->buffer, *len, wsh->block)) <= 0) {
+	if ((*len = ws_raw_read(wsh, wsh->buffer, *len, wsh->block)) < 0) {
 		*len = 0;
 		return NULL;
 	}
@@ -1354,7 +1359,7 @@ static void http_static_handler(switch_http_request_t *request, verto_vhost_t *v
 
 	if (strncmp(request->method, "GET", 3) && strncmp(request->method, "HEAD", 4)) {
 		char *data = "HTTP/1.1 415 Method Not Allowed\r\n"
-			"Connection: close\r\n\r\n";
+			"Content-Length: 0\r\n\r\n";
 		ws_raw_write(&jsock->ws, data, strlen(data));
 		return;
 	}
@@ -1381,7 +1386,6 @@ static void http_static_handler(switch_http_request_t *request, verto_vhost_t *v
 
 		switch_snprintf((char *)chunk, sizeof(chunk),
 			"HTTP/1.1 200 OK\r\n"
-			"Connection: close\r\n"
 			"Date: %s\r\n"
 			"Server: FreeSWITCH-%s-mod_verto\r\n"
 			"Content-Type: %s\r\n"
@@ -1408,7 +1412,7 @@ static void http_static_handler(switch_http_request_t *request, verto_vhost_t *v
 		switch_file_close(fd);
 	} else {
 		char *data = "HTTP/1.1 404 Not Found\r\n"
-			"Connection: close\r\n\r\n";
+			"Content-Length: 0\r\n\r\n";
 		ws_raw_write(&jsock->ws, data, strlen(data));
 	}
 }
@@ -1420,6 +1424,9 @@ static void http_run(jsock_t *jsock)
 	char *data = NULL;
 	char *ext;
 	verto_vhost_t *vhost;
+	switch_bool_t keepalive;
+
+new_req:
 
 	request.user_data = jsock;
 
@@ -1433,11 +1440,13 @@ static void http_run(jsock_t *jsock)
 		goto err;
 	}
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s [%4" SWITCH_SIZE_T_FMT "] %s\n", jsock->name, jsock->ws.datalen, request.uri);
+
 	if (!strncmp(request.method, "OPTIONS", 7)) {
 		char data[512];
 		switch_snprintf(data, sizeof(data),
 			"HTTP/1.1 200 OK\r\n"
-			"Connection: close\r\n"
+			"Content-Length: 0\r\n"
 			"Date: %s\r\n"
 			"Allow: HEAD,GET,POST,PUT,DELETE,PATCH,OPTIONS\r\n"
 			"Server: FreeSWITCH-%s-mod_verto\r\n\r\n",
@@ -1456,7 +1465,7 @@ static void http_run(jsock_t *jsock)
 
 		if (request.content_length > 2 * 1024 * 1024 - 1) {
 			char *data = "HTTP/1.1 413 Request Entity Too Large\r\n"
-				"Connection: close\r\n\r\n";
+				"Content-Length: 0\r\n\r\n";
 			ws_raw_write(&jsock->ws, data, strlen(data));
 			goto done;
 		}
@@ -1515,7 +1524,7 @@ static void http_run(jsock_t *jsock)
 			switch_snprintf(auth_buffer, sizeof(auth_buffer),
 				"HTTP/1.1 401 Authentication Required\r\n"
 				"WWW-Authenticate: Basic realm=\"%s\"\r\n"
-				"Connection: close\r\n\r\n",
+				"Content-Length: 0\r\n\r\n",
 				vhost->auth_realm);
 			ws_raw_write(&jsock->ws, auth_buffer, strlen(auth_buffer));
 			goto done;
@@ -1550,7 +1559,7 @@ static void http_run(jsock_t *jsock)
 			switch_snprintf(auth_buffer, sizeof(auth_buffer),
 				"HTTP/1.1 401 Authentication Required\r\n"
 				"WWW-Authenticate: Basic realm=\"%s\"\r\n"
-				"Connection: close\r\n\r\n",
+				"Content-Length: 0\r\n\r\n",
 				vhost->auth_realm);
 			ws_raw_write(&jsock->ws, auth_buffer, strlen(auth_buffer));
 			cJSON_Delete(params);
@@ -1602,17 +1611,58 @@ authed:
 
 done:
 
+	keepalive = request.keepalive;
 	switch_http_free_request(&request);
+
+	if (keepalive) {
+		wsh_t *wsh = &jsock->ws;
+
+		memset(&request, 0, sizeof(request));
+		wsh->datalen = 0;
+		*wsh->buffer = '\0';
+
+		while(jsock->profile->running) {
+			int pflags = switch_wait_sock(jsock->client_socket, 3000, SWITCH_POLL_READ | SWITCH_POLL_ERROR | SWITCH_POLL_HUP);
+
+			if (jsock->drop) { die("%s Dropping Connection\n", jsock->name); }
+			if (pflags < 0 && (errno != EINTR)) { die("%s POLL FAILED\n", jsock->name); }
+			if (pflags & SWITCH_POLL_ERROR) { die("%s POLL ERROR\n", jsock->name); }
+			if (pflags & SWITCH_POLL_HUP) { die("%s POLL HANGUP DETECTED\n", jsock->name); }
+			if (pflags & SWITCH_POLL_INVALID) { die("%s POLL INVALID SOCKET\n", jsock->name); }
+			if (pflags & SWITCH_POLL_READ) {
+				ssize_t bytes;
+
+				bytes = ws_raw_read(wsh, wsh->buffer + wsh->datalen, wsh->buflen - wsh->datalen, wsh->block);
+
+				if (bytes < 0) {
+					die("BAD READ %" SWITCH_SIZE_T_FMT "\n", bytes);
+					break;
+				}
+
+				wsh->datalen += bytes;
+
+				if (strstr(wsh->buffer, "\r\n\r\n") || strstr(wsh->buffer, "\n\n")) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "socket %s is going to handle a new request\n", jsock->name);
+					goto new_req;
+				}
+			} else {
+				break;
+			}
+		}
+	}
+
 	return;
 
 request_err:
-
 	switch_http_free_request(&request);
 
 err:
 	data = "HTTP/1.1 500 Internal Server Error\r\n"
-		"Connection: close\r\n\r\n";
+		"Content-Length: 0\r\n\r\n";
 	ws_raw_write(&jsock->ws, data, strlen(data));
+
+error:
+	return;
 }
 
 static void client_run(jsock_t *jsock)
