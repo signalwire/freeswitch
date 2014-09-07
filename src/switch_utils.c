@@ -3645,6 +3645,43 @@ SWITCH_DECLARE(void) switch_http_parse_qs(switch_http_request_t *request, char *
 	}
 }
 
+/* clean the uri to protect us from vulnerability attack */
+switch_status_t clean_uri(char *uri)
+{
+	int argc;
+	char *argv[64];
+	int last, i, len, uri_len = 0;
+
+	argc = switch_separate_string(uri, '/', argv, sizeof(argv) / sizeof(argv[0]));
+
+	if (argc == sizeof(argv)) { /* too deep */
+		return SWITCH_STATUS_FALSE;
+	}
+
+	last = 1;
+	for(i = 1; i < argc; i++) {
+		if (*argv[i] == '\0' || !strcmp(argv[i], ".")) {
+			/* ignore //// or /././././ */
+		} else if (!strcmp(argv[i], "..")) {
+			/* got /../, go up one level */
+			if (last > 1) last--;
+		} else {
+			argv[last++] = argv[i];
+		}
+	}
+
+	*uri++ = '/';
+	*uri-- = '\0';
+
+	for(i = 1; i < last; i++) {
+		len = strlen(argv[i]);
+		sprintf(uri + uri_len, "/%s", argv[i]);
+		uri_len += (len + 1);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_http_parse_header(char *buffer, uint32_t datalen, switch_http_request_t *request)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -3689,6 +3726,8 @@ SWITCH_DECLARE(switch_status_t) switch_http_parse_header(char *buffer, uint32_t 
 
 	*p++ = '\0';
 
+	if (*p != '/') goto err; /* must start from '/' */
+
 	request->uri = p;
 	p = strchr(request->uri, ' ');
 
@@ -3702,6 +3741,10 @@ SWITCH_DECLARE(switch_status_t) switch_http_parse_header(char *buffer, uint32_t 
 	if (p) {
 		*p++ = '\0';
 		request->qs = p;
+	}
+
+	if (clean_uri((char *)request->uri) != SWITCH_STATUS_SUCCESS) {
+		goto err;
 	}
 
 	if (!strncmp(http, "HTTP/1.1", 8)) {
