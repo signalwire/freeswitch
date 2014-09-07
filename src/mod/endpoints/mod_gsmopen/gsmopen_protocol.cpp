@@ -1154,45 +1154,43 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 					tech_pvt->unread_sms_msg_id = pos;
 					gsmopen_sleep(1000);
 
-					if (tech_pvt->unread_sms_msg_id) {
-						char at_command[256];
+					char at_command[256];
 
-						if (tech_pvt->no_ucs2 == 0) {
-							int res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSCS=\"UCS2\"");
-							if (res) {
-								ERRORA("AT+CSCS=\"UCS2\" (set TE messages to ucs2)  didn't get OK from the phone, continuing\n", GSMOPEN_P_LOG);
-								//memset(tech_pvt->sms_message, 0, sizeof(tech_pvt->sms_message));
-							}
-						}
-
-						memset(at_command, 0, sizeof(at_command));
-						sprintf(at_command, "AT+CMGR=%d", tech_pvt->unread_sms_msg_id);
-						memset(tech_pvt->sms_message, 0, sizeof(tech_pvt->sms_message));
-
-						tech_pvt->reading_sms_msg = 1;
-						int res = gsmopen_serial_write_AT_ack(tech_pvt, at_command);
-						tech_pvt->reading_sms_msg = 0;
+					if (tech_pvt->no_ucs2 == 0) {
+						int res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CSCS=\"UCS2\"");
 						if (res) {
-							ERRORA("AT+CMGR (read SMS) didn't get OK from the phone, message sent was:|||%s|||\n", GSMOPEN_P_LOG, at_command);
+							ERRORA("AT+CSCS=\"UCS2\" (set TE messages to ucs2)  didn't get OK from the phone, continuing\n", GSMOPEN_P_LOG);
+							//memset(tech_pvt->sms_message, 0, sizeof(tech_pvt->sms_message));
 						}
-						memset(at_command, 0, sizeof(at_command));
-						sprintf(at_command, "AT+CMGD=%d", tech_pvt->unread_sms_msg_id);	/* delete the message */
-						tech_pvt->unread_sms_msg_id = 0;
-						res = gsmopen_serial_write_AT_ack(tech_pvt, at_command);
+					}
+
+					memset(at_command, 0, sizeof(at_command));
+					sprintf(at_command, "AT+CMGR=%d", tech_pvt->unread_sms_msg_id);
+					memset(tech_pvt->sms_message, 0, sizeof(tech_pvt->sms_message));
+
+					tech_pvt->reading_sms_msg = 1;
+					int res = gsmopen_serial_write_AT_ack(tech_pvt, at_command);
+					tech_pvt->reading_sms_msg = 0;
+					if (res) {
+						ERRORA("AT+CMGR (read SMS) didn't get OK from the phone, message sent was:|||%s|||\n", GSMOPEN_P_LOG, at_command);
+					}
+					memset(at_command, 0, sizeof(at_command));
+					sprintf(at_command, "AT+CMGD=%d", tech_pvt->unread_sms_msg_id);	/* delete the message */
+					tech_pvt->unread_sms_msg_id = 0;
+					res = gsmopen_serial_write_AT_ack(tech_pvt, at_command);
+					if (res) {
+						ERRORA("AT+CMGD (Delete SMS) didn't get OK from the phone, message sent was:|||%s|||\n", GSMOPEN_P_LOG, at_command);
+					}
+
+					res = sms_incoming(tech_pvt);
+
+					if (tech_pvt->phone_callflow == CALLFLOW_CALL_IDLE && tech_pvt->interface_state == GSMOPEN_STATE_DOWN && tech_pvt->owner == NULL) {
+						/* we're not in a call, neither calling */
+						res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CKPD=\"EEE\"");
 						if (res) {
-							ERRORA("AT+CMGD (Delete SMS) didn't get OK from the phone, message sent was:|||%s|||\n", GSMOPEN_P_LOG, at_command);
+							DEBUGA_GSMOPEN("AT+CKPD=\"EEE\" (cellphone screen back to user) didn't get OK from the phone\n", GSMOPEN_P_LOG);
 						}
-
-						res = sms_incoming(tech_pvt);
-
-						if (tech_pvt->phone_callflow == CALLFLOW_CALL_IDLE && tech_pvt->interface_state == GSMOPEN_STATE_DOWN && tech_pvt->owner == NULL) {
-							/* we're not in a call, neither calling */
-							res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CKPD=\"EEE\"");
-							if (res) {
-								DEBUGA_GSMOPEN("AT+CKPD=\"EEE\" (cellphone screen back to user) didn't get OK from the phone\n", GSMOPEN_P_LOG);
-							}
-						}
-					}			//unread_msg_id
+					}
 
 				}				//CMTI well formatted
 
