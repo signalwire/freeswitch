@@ -264,7 +264,7 @@ int ws_handshake(wsh_t *wsh)
 		goto err;
 	}
 
-	*(wsh->buffer+bytes) = '\0';
+	*(wsh->buffer + wsh->datalen) = '\0';
 	
 	if (strncasecmp(wsh->buffer, "GET ", 4)) {
 		goto err;
