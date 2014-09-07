@@ -3665,12 +3665,14 @@ SWITCH_DECLARE(switch_status_t) switch_http_parse_header(char *buffer, uint32_t 
 
 	if (i == 0) return status;
 
-	if ((body = strstr(p, "\r\n\r\n"))) {
+	if ((body = strstr(buffer, "\r\n\r\n"))) {
 		*body = '\0';
 		body += 4;
-	} else if (( body = strstr(p, "\n\n"))) {
+	} else if (( body = strstr(buffer, "\n\n"))) {
 		*body = '\0';
 		body += 2;
+	} else {
+		return status;
 	}
 
 	request->_buffer = strdup(buffer);
@@ -3682,6 +3684,9 @@ SWITCH_DECLARE(switch_status_t) switch_http_parse_header(char *buffer, uint32_t 
 	}
 
 	p = strchr(request->method, ' ');
+
+	if (!p) goto err;
+
 	*p++ = '\0';
 
 	request->uri = p;
@@ -3699,17 +3704,11 @@ SWITCH_DECLARE(switch_status_t) switch_http_parse_header(char *buffer, uint32_t 
 		request->qs = p;
 	}
 
-	p = strchr(http, '\n');
-
-	if (!p) goto err;
-
 	if (!strncmp(http, "HTTP/1.1", 8)) {
 		request->keepalive = SWITCH_TRUE;
 	} else if (strncmp(http, "HTTP/1.0", 8)) {
 		goto err;
 	}
-
-	p++; // now the first header
 
 	if (!request->headers) {
 		if (switch_event_create(&request->headers, SWITCH_EVENT_CHANNEL_DATA) != SWITCH_STATUS_SUCCESS) {
@@ -3718,9 +3717,17 @@ SWITCH_DECLARE(switch_status_t) switch_http_parse_header(char *buffer, uint32_t 
 		request->_destroy_headers = SWITCH_TRUE;
 	}
 
+	p = strchr(http, '\n');
+
+	if (p) {
+		*p++ = '\0'; // now the first header
+	} else {
+		goto noheader;
+	}
+
 	header_count = switch_separate_string(p, '\n', headers, sizeof(headers)/ sizeof(headers[0]));
 
-	if (header_count < 2) goto err; /* at least two lines */
+	if (header_count < 1) goto err;
 
 	for (i = 0; i < header_count; i++) {
 		char *header, *value;
@@ -3760,6 +3767,8 @@ SWITCH_DECLARE(switch_status_t) switch_http_parse_header(char *buffer, uint32_t 
 			request->referer = value;
 		}
 	}
+
+noheader:
 
 	if (request->qs) {
 		switch_http_parse_qs(request, NULL);
