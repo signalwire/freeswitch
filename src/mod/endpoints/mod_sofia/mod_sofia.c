@@ -5563,8 +5563,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_management_interface_t *management_interface;
 	switch_application_interface_t *app_interface;
 	struct in_addr in;
-	struct tm tm = {0};
-	time_t now;
 
 	memset(&mod_sofia_globals, 0, sizeof(mod_sofia_globals));
 	mod_sofia_globals.destroy_private.destroy_nh = 1;
@@ -5572,11 +5570,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	mod_sofia_globals.keep_private.is_static = 1;
 	mod_sofia_globals.pool = pool;
 	switch_mutex_init(&mod_sofia_globals.mutex, SWITCH_MUTEX_NESTED, mod_sofia_globals.pool);
-
-	now = switch_epoch_time_now(NULL);
-	tm = *(localtime(&now));
-
-	mod_sofia_globals.presence_epoch = now - (tm.tm_yday * 86400) - (tm.tm_hour * 60 * 60) - (tm.tm_min * 60) - tm.tm_sec;
 
 	switch_find_local_ip(mod_sofia_globals.guess_ip, sizeof(mod_sofia_globals.guess_ip), &mod_sofia_globals.guess_mask, AF_INET);
 	in.s_addr = mod_sofia_globals.guess_mask;

@@ -369,6 +369,7 @@ struct mod_sofia_globals {
 	switch_thread_t *presence_thread;
 	uint32_t max_reg_threads;
 	time_t presence_epoch;
+	int presence_year;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 

@@ -2105,17 +2105,44 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 	return 0;
 }
 
+#define SOFIA_PRESENCE_COLLISION_DELTA 50
+#define SOFIA_PRESENCE_ROLLOVER_YEAR (86400 * 365 * SOFIA_PRESENCE_COLLISION_DELTA)
+static uint32_t check_presence_epoch(void)
+{
+	struct tm tm = {0};
+	time_t now = switch_epoch_time_now(NULL);
+	uint32_t callsequence = (now - mod_sofia_globals.presence_epoch) * SOFIA_PRESENCE_COLLISION_DELTA;
+
+	if (!mod_sofia_globals.presence_year || callsequence >= SOFIA_PRESENCE_ROLLOVER_YEAR) {
+		switch_mutex_lock(mod_sofia_globals.mutex);
+		tm = *(localtime(&now));
+
+		if (tm.tm_year != mod_sofia_globals.presence_year) {
+			mod_sofia_globals.presence_epoch = (uint32_t)now - (tm.tm_yday * 86400) - (tm.tm_hour * 60 * 60) - (tm.tm_min * 60) - tm.tm_sec;
+			mod_sofia_globals.presence_year = tm.tm_year;
+			callsequence = ((uint32_t)now - mod_sofia_globals.presence_epoch) * SOFIA_PRESENCE_COLLISION_DELTA;
+		}
+
+		switch_mutex_unlock(mod_sofia_globals.mutex);
+	}
+
+	return callsequence;
+}
+
 uint32_t sofia_presence_get_cseq(sofia_profile_t *profile)
 {
 	uint32_t callsequence;
-	uint32_t now = (uint32_t) switch_epoch_time_now(NULL);
+	int diff = 0;
 
 	switch_mutex_lock(profile->ireg_mutex);
 
-	callsequence = (now - mod_sofia_globals.presence_epoch) * 100;
+	callsequence = check_presence_epoch();
 
-	if (profile->last_cseq && callsequence <= profile->last_cseq) {
-		callsequence = ++profile->last_cseq;
+	if (profile->last_cseq) {
+		diff = callsequence - profile->last_cseq;
+		if (diff < 0 && diff > -100000) {
+			callsequence = ++profile->last_cseq;
+		}
 	}
 
 	profile->last_cseq = callsequence;
