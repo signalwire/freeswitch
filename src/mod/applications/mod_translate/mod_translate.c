@@ -117,9 +117,9 @@ static void translate_number(char *number, char *profile, char **translated, swi
 	translate_rule_t *hi = NULL;
 	translate_rule_t *rule = NULL;
 	switch_regex_t *re = NULL;
-	int proceed = 0, ovector[30];
-	char *substituted = NULL;
-	uint32_t len = 0;
+	int proceed = 0, ovector[30], subbedlen = 0;
+	char *substituted = NULL, *subbed = NULL, *session_malloc = NULL;
+	uint32_t len = 1024;
 
 	if (!profile) {
 		profile = "US";
@@ -137,7 +137,7 @@ static void translate_number(char *number, char *profile, char **translated, swi
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s =~ /%s/\n", number, rule->regex);
 		if ((proceed = switch_regex_perform(number, rule->regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s matched %s, replacing with %s\n", number, rule->regex, rule->replace);
-			if (!(substituted = malloc(len))) {
+			if (!(substituted = switch_core_session_alloc(session, len))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 				switch_regex_safe_free(re);
 				goto end;
@@ -153,6 +153,17 @@ static void translate_number(char *number, char *profile, char **translated, swi
 				} else if (event) {
 					substituted = switch_event_expand_headers(event, substituted);
 				}
+
+				subbedlen = strlen(subbed) + 1;
+				session_malloc = (char *)switch_core_session_alloc(session, subbedlen);
+				memset(session_malloc, 0, subbedlen);
+				strncpy(session_malloc, subbed, subbedlen);
+				if (subbed != substituted)
+				{
+					switch_safe_free(subbed);
+				}
+
+				substituted = session_malloc;
 			}
 
 			break;
