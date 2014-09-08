@@ -3274,7 +3274,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 		if ((gateway = switch_core_alloc(profile->pool, sizeof(*gateway)))) {
 			const char *sipip, *format;
 			switch_uuid_t uuid;
-			uint32_t ping_freq = 0, extension_in_contact = 0, distinct_to = 0, rfc_5626 = 0;
+			uint32_t ping_freq = 0, extension_in_contact = 0, ping_monitoring = 0, distinct_to = 0, rfc_5626 = 0;
 			int ping_max = 1, ping_min = 1;
 			char *register_str = "true", *scheme = "Digest",
 				*realm = NULL,
@@ -3311,6 +3311,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			gateway->ping_max = 0;
 			gateway->ping_min = 0;
 			gateway->ping_count = 0;
+			gateway->ping_monitoring = SWITCH_FALSE;
 			gateway->ib_calls = 0;
 			gateway->ob_calls = 0;
 			gateway->ib_failed_calls = 0;
@@ -3393,6 +3394,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					ping_min = atoi(val);
 				} else if (!strcmp(var, "ping-user-agent")) {
 					options_user_agent = val;
+				} else if (!strcmp(var, "ping-monitoring")) { // if true then every gw ping result will fire a gateway status event 
+					ping_monitoring = switch_true(val);
 				} else if (!strcmp(var, "proxy")) {
 					proxy = val;
 				} else if (!strcmp(var, "context")) {
@@ -3570,6 +3573,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					gateway->ping_freq = ping_freq;
 					gateway->ping_max = ping_max;
 					gateway->ping_min = ping_min;
+					gateway->ping_monitoring = ping_monitoring;
 					gateway->ping = switch_epoch_time_now(NULL) + ping_freq;
 					gateway->options_to_uri = switch_core_sprintf(gateway->pool, "<sip:%s>",
 						!zstr(from_domain) ? from_domain : proxy);
@@ -5543,6 +5547,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 									   tagi_t tags[])
 {
 	sofia_gateway_t *gateway = NULL;
+	switch_bool_t do_fire_gateway_state_event = SWITCH_FALSE;
 
 	if (sofia_private && !zstr(sofia_private->gateway_name)) {
 		gateway = sofia_reg_find_gateway(sofia_private->gateway_name);
@@ -5565,9 +5570,9 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 				if (gateway->ping_count >= gateway->ping_min && gateway->status != SOFIA_GATEWAY_UP) {
 					gateway->status = SOFIA_GATEWAY_UP;
 					gateway->uptime = switch_time_now();
-					sofia_reg_fire_custom_gateway_state_event(gateway, status, phrase);
+					do_fire_gateway_state_event = SWITCH_TRUE;
 				}
-
+				
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 								  "Ping succeeded %s with code %d - count %d/%d/%d, state %s\n",
 								  gateway->name, status, gateway->ping_min, gateway->ping_count, gateway->ping_max, sofia_gateway_status_name(gateway->status));
@@ -5584,12 +5589,15 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 
 			if (gateway->ping_count < gateway->ping_min && gateway->status != SOFIA_GATEWAY_DOWN) {
 				gateway->status = SOFIA_GATEWAY_DOWN;
-				sofia_reg_fire_custom_gateway_state_event(gateway, status, phrase);
+				do_fire_gateway_state_event = SWITCH_TRUE;
 			}
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 							  "Ping failed %s with code %d - count %d/%d/%d, state %s\n",
 							  gateway->name, status, gateway->ping_min, gateway->ping_count, gateway->ping_max, sofia_gateway_status_name(gateway->status));
+		}
+		if (gateway->ping_monitoring || do_fire_gateway_state_event) {
+			sofia_reg_fire_custom_gateway_state_event(gateway, status, phrase);
 		}
 
 		gateway->ping = switch_epoch_time_now(NULL) + gateway->ping_freq;
