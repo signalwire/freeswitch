@@ -255,6 +255,7 @@ SWITCH_DECLARE(void) switch_core_session_clear_crypto(switch_core_session_t *ses
 SWITCH_DECLARE(switch_status_t) switch_core_session_get_payload_code(switch_core_session_t *session,
 																	 switch_media_type_t type,
 																	 const char *iananame,
+																	 uint32_t rate,
 																	 switch_payload_t *ptP,
 																	 switch_payload_t *recv_ptP,
 																	 char **fmtpP);
