@@ -149,9 +149,9 @@ static void translate_number(char *number, char *profile, char **translated, swi
 			if ((switch_string_var_check_const(substituted) || switch_string_has_escaped_data(substituted))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "perform variable expansion\n");
 				if (session) {
-					substituted = switch_channel_expand_variables(switch_core_session_get_channel(session), substituted);
+					subbed = switch_channel_expand_variables(switch_core_session_get_channel(session), substituted);
 				} else if (event) {
-					substituted = switch_event_expand_headers(event, substituted);
+					subbed = switch_event_expand_headers(event, substituted);
 				}
 
 				subbedlen = strlen(subbed) + 1;
