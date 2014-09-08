@@ -896,7 +896,11 @@ switch_status_t skinny_session_transfer(switch_core_session_t *session, listener
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	private_t *tech_pvt = NULL;
 	switch_channel_t *channel = NULL;
+	switch_channel_t *channel2 = NULL;
+	const char *local_uuid = NULL;
+	const char *local_uuid2 = NULL;
 	const char *remote_uuid = NULL;
+	const char *remote_uuid2 = NULL;
 	switch_core_session_t *session2 = NULL;
 	private_t *tech_pvt2 = NULL;
 
@@ -906,30 +910,60 @@ switch_status_t skinny_session_transfer(switch_core_session_t *session, listener
 
 	tech_pvt = switch_core_session_get_private(session);
 	channel = switch_core_session_get_channel(session);
+	local_uuid = switch_channel_get_uuid(channel);
 	remote_uuid = switch_channel_get_partner_uuid(channel);
 
+	skinny_log_l(listener, SWITCH_LOG_INFO, "SST: local_uuid=%s remote_uuid=%s\n", local_uuid, remote_uuid);
+
 	if (tech_pvt->transfer_from_call_id) {
+		skinny_log_l_msg(listener, SWITCH_LOG_INFO, "SST: transfer_from_call_id\n");
+
 		if((session2 = skinny_profile_find_session(listener->profile, listener, &line_instance, tech_pvt->transfer_from_call_id))) {
-			switch_channel_t *channel2 = switch_core_session_get_channel(session2);
-			const char *remote_uuid2 = switch_channel_get_partner_uuid(channel2);
+			channel2 = switch_core_session_get_channel(session2);
+			local_uuid2 = switch_channel_get_uuid(channel2);
+			remote_uuid2 = switch_channel_get_partner_uuid(channel2);
+			skinny_log_ls(listener, session2, SWITCH_LOG_INFO, "SST: tx from session - local_uuid=%s remote_uuid=%s local_uuid2=%s remote_uuid2=%s\n", 
+				local_uuid, remote_uuid, local_uuid2, remote_uuid2);
+
+			skinny_log_ls(listener, session2, SWITCH_LOG_INFO, "SST: attempting ivr bridge from (%s) to (%s)\n", remote_uuid, remote_uuid2);
+
 			if (switch_ivr_uuid_bridge(remote_uuid, remote_uuid2) == SWITCH_STATUS_SUCCESS) {
+				skinny_log_ls_msg(listener, session2, SWITCH_LOG_INFO, "SST: success on uuid bridge\n");
+
 				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 				switch_channel_hangup(channel2, SWITCH_CAUSE_NORMAL_CLEARING);
 			} else {
+				skinny_log_ls_msg(listener, session2, SWITCH_LOG_INFO, "SST: failure on uuid bridge\n");
 				/* TODO: How to inform the user that the bridge is not possible? */
 			}
 			switch_core_session_rwunlock(session2);
 		}
 	} else {
+		skinny_log_l_msg(listener, SWITCH_LOG_INFO, "SST: !transfer_from_call_id\n");
+
 		if(remote_uuid) {
+			skinny_log_ls_msg(listener, session2, SWITCH_LOG_INFO, "SST: found remote_uuid\n");
+
 			/* TODO CallSelectStat */
+			skinny_log_ls_msg(listener, session2, SWITCH_LOG_INFO, "SST: creating incoming session\n");
 			status = skinny_create_incoming_session(listener, &line_instance, &session2);
 			tech_pvt2 = switch_core_session_get_private(session2);
 			tech_pvt2->transfer_from_call_id = tech_pvt->call_id;
 			tech_pvt->transfer_to_call_id = tech_pvt2->call_id;
+			skinny_log_ls(listener, session2, SWITCH_LOG_INFO, "SST: transfer_to_call_id=%d transfer_from_call_id=%d\n", tech_pvt2->call_id,
+				tech_pvt->call_id);
+			skinny_log_ls_msg(listener, session2, SWITCH_LOG_INFO, "SST: triggering dial on incoming session\n");
 			skinny_session_process_dest(session2, listener, line_instance, NULL, '\0', 0);
+
+			channel2 = switch_core_session_get_channel(session2);
+			local_uuid2 = switch_channel_get_uuid(channel2);
+			remote_uuid2 = switch_channel_get_partner_uuid(channel2);
+			skinny_log_ls(listener, session2, SWITCH_LOG_INFO, "SST: new session - local_uuid2=%s remote_uuid2=%s\n", local_uuid2, remote_uuid2);
+
 			switch_core_session_rwunlock(session2);
 		} else {
+			skinny_log_ls_msg(listener, session2, SWITCH_LOG_INFO, "SST: could not find remote_uuid\n");
+
 			/* TODO: How to inform the user that the bridge is not possible? */
 		}
 	}
