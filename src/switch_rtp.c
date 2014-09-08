@@ -1912,7 +1912,7 @@ static void rtcp_generate_report_block(switch_rtp_t *rtp_session, struct switch_
                stats->cycle, stats->last_rpt_ext_seq&0x0000ffff, stats->last_rpt_cycle, rtp_session->stats.rtcp.peer_ssrc
        );
 #endif
-	rtcp_report_block->highest_sequence_number_received = stats->high_ext_seq_recv;
+	rtcp_report_block->highest_sequence_number_received = htonl(stats->high_ext_seq_recv);
 
 	/* Jitter */
 	rtcp_report_block->jitter = htonl((uint32_t)stats->inter_jitter);
