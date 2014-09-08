@@ -4081,6 +4081,10 @@ public class freeswitch {
     freeswitchPINVOKE.switch_http_dump_request(switch_http_request_t.getCPtr(request));
   }
 
+  public static void switch_http_parse_qs(switch_http_request_t request, string qs) {
+    freeswitchPINVOKE.switch_http_parse_qs(switch_http_request_t.getCPtr(request), qs);
+  }
+
   public static switch_caller_extension switch_caller_extension_new(SWIGTYPE_p_switch_core_session session, string extension_name, string extension_number) {
     IntPtr cPtr = freeswitchPINVOKE.switch_caller_extension_new(SWIGTYPE_p_switch_core_session.getCPtr(session), extension_name, extension_number);
     switch_caller_extension ret = (cPtr == IntPtr.Zero) ? null : new switch_caller_extension(cPtr, false);
@@ -11909,6 +11913,36 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_http_request_t_keepalive_get")]
   public static extern int switch_http_request_t_keepalive_get(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_http_request_t_content_type_set")]
+  public static extern void switch_http_request_t_content_type_set(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_http_request_t_content_type_get")]
+  public static extern string switch_http_request_t_content_type_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_http_request_t_content_length_set")]
+  public static extern void switch_http_request_t_content_length_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_http_request_t_content_length_get")]
+  public static extern IntPtr switch_http_request_t_content_length_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_http_request_t_bytes_header_set")]
+  public static extern void switch_http_request_t_bytes_header_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_http_request_t_bytes_header_get")]
+  public static extern IntPtr switch_http_request_t_bytes_header_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_http_request_t_bytes_read_set")]
+  public static extern void switch_http_request_t_bytes_read_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_http_request_t_bytes_read_get")]
+  public static extern IntPtr switch_http_request_t_bytes_read_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_http_request_t_bytes_buffered_set")]
+  public static extern void switch_http_request_t_bytes_buffered_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_http_request_t_bytes_buffered_get")]
+  public static extern IntPtr switch_http_request_t_bytes_buffered_get(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_http_request_t_headers_set")]
   public static extern void switch_http_request_t_headers_set(HandleRef jarg1, HandleRef jarg2);
 
@@ -11926,18 +11960,6 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_http_request_t__buffer_get")]
   public static extern string switch_http_request_t__buffer_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_http_request_t__unparsed_data_set")]
-  public static extern void switch_http_request_t__unparsed_data_set(HandleRef jarg1, string jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_http_request_t__unparsed_data_get")]
-  public static extern string switch_http_request_t__unparsed_data_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_http_request_t__unparsed_len_set")]
-  public static extern void switch_http_request_t__unparsed_len_set(HandleRef jarg1, HandleRef jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_http_request_t__unparsed_len_get")]
-  public static extern IntPtr switch_http_request_t__unparsed_len_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_http_request_t__destroy_headers_set")]
   public static extern void switch_http_request_t__destroy_headers_set(HandleRef jarg1, int jarg2);
@@ -11959,6 +11981,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_http_dump_request")]
   public static extern void switch_http_dump_request(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_http_parse_qs")]
+  public static extern void switch_http_parse_qs(HandleRef jarg1, string jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_profile_node_t_var_set")]
   public static extern void profile_node_t_var_set(HandleRef jarg1, string jarg2);
@@ -33346,6 +33371,64 @@ public class switch_http_request_t : IDisposable {
     } 
   }
 
+  public string content_type {
+    set {
+      freeswitchPINVOKE.switch_http_request_t_content_type_set(swigCPtr, value);
+    } 
+    get {
+      string ret = freeswitchPINVOKE.switch_http_request_t_content_type_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_switch_size_t content_length {
+    set {
+      freeswitchPINVOKE.switch_http_request_t_content_length_set(swigCPtr, SWIGTYPE_p_switch_size_t.getCPtr(value));
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    } 
+    get {
+      SWIGTYPE_p_switch_size_t ret = new SWIGTYPE_p_switch_size_t(freeswitchPINVOKE.switch_http_request_t_content_length_get(swigCPtr), true);
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_switch_size_t bytes_header {
+    set {
+      freeswitchPINVOKE.switch_http_request_t_bytes_header_set(swigCPtr, SWIGTYPE_p_switch_size_t.getCPtr(value));
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    } 
+    get {
+      SWIGTYPE_p_switch_size_t ret = new SWIGTYPE_p_switch_size_t(freeswitchPINVOKE.switch_http_request_t_bytes_header_get(swigCPtr), true);
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_switch_size_t bytes_read {
+    set {
+      freeswitchPINVOKE.switch_http_request_t_bytes_read_set(swigCPtr, SWIGTYPE_p_switch_size_t.getCPtr(value));
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    } 
+    get {
+      SWIGTYPE_p_switch_size_t ret = new SWIGTYPE_p_switch_size_t(freeswitchPINVOKE.switch_http_request_t_bytes_read_get(swigCPtr), true);
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_switch_size_t bytes_buffered {
+    set {
+      freeswitchPINVOKE.switch_http_request_t_bytes_buffered_set(swigCPtr, SWIGTYPE_p_switch_size_t.getCPtr(value));
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    } 
+    get {
+      SWIGTYPE_p_switch_size_t ret = new SWIGTYPE_p_switch_size_t(freeswitchPINVOKE.switch_http_request_t_bytes_buffered_get(swigCPtr), true);
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+      return ret;
+    } 
+  }
+
   public switch_event headers {
     set {
       freeswitchPINVOKE.switch_http_request_t_headers_set(swigCPtr, switch_event.getCPtr(value));
@@ -33374,28 +33457,6 @@ public class switch_http_request_t : IDisposable {
     } 
     get {
       string ret = freeswitchPINVOKE.switch_http_request_t__buffer_get(swigCPtr);
-      return ret;
-    } 
-  }
-
-  public string _unparsed_data {
-    set {
-      freeswitchPINVOKE.switch_http_request_t__unparsed_data_set(swigCPtr, value);
-    } 
-    get {
-      string ret = freeswitchPINVOKE.switch_http_request_t__unparsed_data_get(swigCPtr);
-      return ret;
-    } 
-  }
-
-  public SWIGTYPE_p_switch_size_t _unparsed_len {
-    set {
-      freeswitchPINVOKE.switch_http_request_t__unparsed_len_set(swigCPtr, SWIGTYPE_p_switch_size_t.getCPtr(value));
-      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
-    } 
-    get {
-      SWIGTYPE_p_switch_size_t ret = new SWIGTYPE_p_switch_size_t(freeswitchPINVOKE.switch_http_request_t__unparsed_len_get(swigCPtr), true);
-      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
       return ret;
     } 
   }

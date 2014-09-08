@@ -18870,6 +18870,147 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_http_request_t_keepalive_get(void * jar
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_http_request_t_content_type_set(void * jarg1, char * jarg2) {
+  switch_http_request_t *arg1 = (switch_http_request_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_http_request_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg2) {
+      arg1->content_type = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->content_type, (const char *)arg2);
+    } else {
+      arg1->content_type = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_http_request_t_content_type_get(void * jarg1) {
+  char * jresult ;
+  switch_http_request_t *arg1 = (switch_http_request_t *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_http_request_t *)jarg1; 
+  result = (char *) ((arg1)->content_type);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_http_request_t_content_length_set(void * jarg1, void * jarg2) {
+  switch_http_request_t *arg1 = (switch_http_request_t *) 0 ;
+  switch_size_t arg2 ;
+  switch_size_t *argp2 ;
+  
+  arg1 = (switch_http_request_t *)jarg1; 
+  argp2 = (switch_size_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->content_length = arg2;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_http_request_t_content_length_get(void * jarg1) {
+  void * jresult ;
+  switch_http_request_t *arg1 = (switch_http_request_t *) 0 ;
+  switch_size_t result;
+  
+  arg1 = (switch_http_request_t *)jarg1; 
+  result =  ((arg1)->content_length);
+  jresult = new switch_size_t((const switch_size_t &)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_http_request_t_bytes_header_set(void * jarg1, void * jarg2) {
+  switch_http_request_t *arg1 = (switch_http_request_t *) 0 ;
+  switch_size_t arg2 ;
+  switch_size_t *argp2 ;
+  
+  arg1 = (switch_http_request_t *)jarg1; 
+  argp2 = (switch_size_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->bytes_header = arg2;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_http_request_t_bytes_header_get(void * jarg1) {
+  void * jresult ;
+  switch_http_request_t *arg1 = (switch_http_request_t *) 0 ;
+  switch_size_t result;
+  
+  arg1 = (switch_http_request_t *)jarg1; 
+  result =  ((arg1)->bytes_header);
+  jresult = new switch_size_t((const switch_size_t &)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_http_request_t_bytes_read_set(void * jarg1, void * jarg2) {
+  switch_http_request_t *arg1 = (switch_http_request_t *) 0 ;
+  switch_size_t arg2 ;
+  switch_size_t *argp2 ;
+  
+  arg1 = (switch_http_request_t *)jarg1; 
+  argp2 = (switch_size_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->bytes_read = arg2;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_http_request_t_bytes_read_get(void * jarg1) {
+  void * jresult ;
+  switch_http_request_t *arg1 = (switch_http_request_t *) 0 ;
+  switch_size_t result;
+  
+  arg1 = (switch_http_request_t *)jarg1; 
+  result =  ((arg1)->bytes_read);
+  jresult = new switch_size_t((const switch_size_t &)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_http_request_t_bytes_buffered_set(void * jarg1, void * jarg2) {
+  switch_http_request_t *arg1 = (switch_http_request_t *) 0 ;
+  switch_size_t arg2 ;
+  switch_size_t *argp2 ;
+  
+  arg1 = (switch_http_request_t *)jarg1; 
+  argp2 = (switch_size_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->bytes_buffered = arg2;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_http_request_t_bytes_buffered_get(void * jarg1) {
+  void * jresult ;
+  switch_http_request_t *arg1 = (switch_http_request_t *) 0 ;
+  switch_size_t result;
+  
+  arg1 = (switch_http_request_t *)jarg1; 
+  result =  ((arg1)->bytes_buffered);
+  jresult = new switch_size_t((const switch_size_t &)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_http_request_t_headers_set(void * jarg1, void * jarg2) {
   switch_http_request_t *arg1 = (switch_http_request_t *) 0 ;
   switch_event_t *arg2 = (switch_event_t *) 0 ;
@@ -18944,63 +19085,6 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_http_request_t__buffer_get(void * ja
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_http_request_t__unparsed_data_set(void * jarg1, char * jarg2) {
-  switch_http_request_t *arg1 = (switch_http_request_t *) 0 ;
-  char *arg2 = (char *) 0 ;
-  
-  arg1 = (switch_http_request_t *)jarg1; 
-  arg2 = (char *)jarg2; 
-  {
-    if (arg2) {
-      arg1->_unparsed_data = (char const *) (new char[strlen((const char *)arg2)+1]);
-      strcpy((char *)arg1->_unparsed_data, (const char *)arg2);
-    } else {
-      arg1->_unparsed_data = 0;
-    }
-  }
-}
-
-
-SWIGEXPORT char * SWIGSTDCALL CSharp_switch_http_request_t__unparsed_data_get(void * jarg1) {
-  char * jresult ;
-  switch_http_request_t *arg1 = (switch_http_request_t *) 0 ;
-  char *result = 0 ;
-  
-  arg1 = (switch_http_request_t *)jarg1; 
-  result = (char *) ((arg1)->_unparsed_data);
-  jresult = SWIG_csharp_string_callback((const char *)result); 
-  return jresult;
-}
-
-
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_http_request_t__unparsed_len_set(void * jarg1, void * jarg2) {
-  switch_http_request_t *arg1 = (switch_http_request_t *) 0 ;
-  switch_size_t arg2 ;
-  switch_size_t *argp2 ;
-  
-  arg1 = (switch_http_request_t *)jarg1; 
-  argp2 = (switch_size_t *)jarg2; 
-  if (!argp2) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
-    return ;
-  }
-  arg2 = *argp2; 
-  if (arg1) (arg1)->_unparsed_len = arg2;
-}
-
-
-SWIGEXPORT void * SWIGSTDCALL CSharp_switch_http_request_t__unparsed_len_get(void * jarg1) {
-  void * jresult ;
-  switch_http_request_t *arg1 = (switch_http_request_t *) 0 ;
-  switch_size_t result;
-  
-  arg1 = (switch_http_request_t *)jarg1; 
-  result =  ((arg1)->_unparsed_len);
-  jresult = new switch_size_t((const switch_size_t &)result); 
-  return jresult;
-}
-
-
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_http_request_t__destroy_headers_set(void * jarg1, int jarg2) {
   switch_http_request_t *arg1 = (switch_http_request_t *) 0 ;
   switch_bool_t arg2 ;
@@ -19070,6 +19154,16 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_http_dump_request(void * jarg1) {
   
   arg1 = (switch_http_request_t *)jarg1; 
   switch_http_dump_request(arg1);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_http_parse_qs(void * jarg1, char * jarg2) {
+  switch_http_request_t *arg1 = (switch_http_request_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_http_request_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  switch_http_parse_qs(arg1,arg2);
 }
 
 
