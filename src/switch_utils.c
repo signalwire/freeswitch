@@ -3670,9 +3670,6 @@ switch_status_t clean_uri(char *uri)
 		}
 	}
 
-	*uri++ = '/';
-	*uri-- = '\0';
-
 	for(i = 1; i < last; i++) {
 		len = strlen(argv[i]);
 		sprintf(uri + uri_len, "/%s", argv[i]);
