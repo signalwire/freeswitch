@@ -41,6 +41,7 @@ avoid_mods_jessie=(
   languages/mod_java
 )
 avoid_mods_wheezy=(
+  languages/mod_java
 )
 avoid_mods_squeeze=(
   formats/mod_vlc
