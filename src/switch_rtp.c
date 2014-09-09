@@ -3585,13 +3585,15 @@ static void jb_callback(stfu_instance_t *i, void *udata)
 	stfu_n_report(i, &r);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG8, 
-					  "%s JB REPORT:\nlen: %u\nin: %u\nclean: %u\ngood: %u\nbad: %u\n",
+					  "%s JB REPORT:\nlen: %u\nin: %u\nclean: %u\ngood: %u\nbad: %u\njitter percent %0.2f\nmissing percent %0.2f\n\n",
 					  switch_core_session_get_name(session),
 					  r.qlen,
 					  r.packet_in_count,
 					  r.clean_count,
 					  r.consecutive_good_count,
-					  r.consecutive_bad_count
+					  r.consecutive_bad_count,
+					  r.period_jitter_percent,
+					  r.period_missing_percent
 					  );
 
 }
@@ -3646,7 +3648,7 @@ static void jb_logger(const char *file, const char *func, int line, int level, c
 	va_start(ap, fmt);
 	ret = switch_vasprintf(&data, fmt, ap);
 	if (ret != -1) {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%s", data);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG_CLEAN, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%d: %s", line, data);
 		free(data);
 	}
 
