@@ -903,6 +903,7 @@ switch_status_t skinny_session_transfer(switch_core_session_t *session, listener
 	const char *remote_uuid = NULL;
 	const char *remote_uuid2 = NULL;
 	switch_core_session_t *session2 = NULL;
+	switch_core_session_t *rsession = NULL;
 	private_t *tech_pvt2 = NULL;
 
 	switch_assert(session);
@@ -913,6 +914,17 @@ switch_status_t skinny_session_transfer(switch_core_session_t *session, listener
 	channel = switch_core_session_get_channel(session);
 	local_uuid = switch_channel_get_uuid(channel);
 	remote_uuid = switch_channel_get_partner_uuid(channel);
+
+	if ( switch_core_session_get_partner(session, &rsession) == SWITCH_STATUS_SUCCESS )
+	{
+		switch_channel_t *rchannel = NULL;
+		rchannel = switch_core_session_get_channel(rsession);
+
+		skinny_log_l_msg(listener, SWITCH_LOG_INFO, "SST: setting uuid bridge continue flag on remote channel\n");
+
+		switch_channel_set_variable(rchannel, "uuid_bridge_continue_on_cancel", "true");
+		switch_core_session_rwunlock(rsession);
+	}
 
 	skinny_log_l(listener, SWITCH_LOG_INFO, "SST: local_uuid=%s remote_uuid=%s\n", local_uuid, remote_uuid);
 
@@ -928,7 +940,7 @@ switch_status_t skinny_session_transfer(switch_core_session_t *session, listener
 
 			skinny_log_ls(listener, session2, SWITCH_LOG_INFO, "SST: attempting ivr bridge from (%s) to (%s)\n", remote_uuid, remote_uuid2);
 
-			if (switch_ivr_uuid_bridge(remote_uuid, remote_uuid2) == SWITCH_STATUS_SUCCESS) {
+			if (switch_ivr_uuid_bridge(remote_uuid2, remote_uuid) == SWITCH_STATUS_SUCCESS) {
 				skinny_log_ls_msg(listener, session2, SWITCH_LOG_INFO, "SST: success on uuid bridge\n");
 
 				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
