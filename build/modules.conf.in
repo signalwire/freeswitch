@@ -131,6 +131,7 @@ loggers/mod_syslog
 #say/mod_say_de
 say/mod_say_en
 #say/mod_say_es
+#say/mod_say_es_ar
 #say/mod_say_fa
 #say/mod_say_fr
 #say/mod_say_he
