@@ -369,6 +369,7 @@ struct mod_sofia_globals {
 	switch_thread_t *presence_thread;
 	uint32_t max_reg_threads;
 	time_t presence_epoch;
+	int presence_year;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 
@@ -488,10 +489,12 @@ struct sofia_gateway {
 	time_t reg_timeout;
 	int pinging;
 	sofia_gateway_status_t status;
+	switch_time_t uptime;
 	uint32_t ping_freq;
 	int ping_count;
 	int ping_max;
 	int ping_min;
+	switch_bool_t ping_monitoring;
 	uint8_t flags[REG_FLAG_MAX];
 	int32_t retry_seconds;
 	int32_t reg_timeout_seconds;

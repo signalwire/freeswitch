@@ -1127,7 +1127,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 						if (!strcmp(ice->ice_params->cands[i][ice->proto].con_addr, host) && 
 							!strcmp(ice->ice_params->cands[i][ice->proto].cand_type, "relay")) {
 
-							if (elapsed != 0 && elapsed < 5000) {
+							if (rtp_session->last_stun && elapsed < 5000) {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
 												  "Skiping RELAY stun/%s/dtls port change from %s:%u to %s:%u\n", is_rtcp ? "rtcp" : "rtp", 
 												  host2, port2,
@@ -3585,13 +3585,15 @@ static void jb_callback(stfu_instance_t *i, void *udata)
 	stfu_n_report(i, &r);
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG8, 
-					  "%s JB REPORT:\nlen: %u\nin: %u\nclean: %u\ngood: %u\nbad: %u\n",
+					  "%s JB REPORT:\nlen: %u\nin: %u\nclean: %u\ngood: %u\nbad: %u\njitter percent %0.2f\nmissing percent %0.2f\n\n",
 					  switch_core_session_get_name(session),
 					  r.qlen,
 					  r.packet_in_count,
 					  r.clean_count,
 					  r.consecutive_good_count,
-					  r.consecutive_bad_count
+					  r.consecutive_bad_count,
+					  r.period_jitter_percent,
+					  r.period_missing_percent
 					  );
 
 }
@@ -3646,7 +3648,7 @@ static void jb_logger(const char *file, const char *func, int line, int level, c
 	va_start(ap, fmt);
 	ret = switch_vasprintf(&data, fmt, ap);
 	if (ret != -1) {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%s", data);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG_CLEAN, file, func, line, NULL, SWITCH_LOG_CONSOLE, "%d: %s", line, data);
 		free(data);
 	}
 

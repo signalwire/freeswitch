@@ -91,6 +91,7 @@ struct switch_state_handler_table {
 };
 
 struct switch_stream_handle {
+	switch_stream_handle_read_function_t read_function;
 	switch_stream_handle_write_function_t write_function;
 	switch_stream_handle_raw_write_function_t raw_write_function;
 	void *data;

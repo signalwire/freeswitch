@@ -32,7 +32,7 @@
 	<param name="ident"		value="SpanDSP Fax Ident"/>
 	<param name="header"		value="SpanDSP Fax Header"/>
 
-	<param name="spool-dir"		value="/tmp"/>
+	<param name="spool-dir"		value="$${temp_dir}"/>
 	<param name="file-prefix"	value="faxrx"/>
     </fax-settings>
 

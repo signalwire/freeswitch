@@ -129,7 +129,7 @@
 
       <condition field="${default_password}" expression="^1234$" break="never">
 	<action application="log" data="CRIT WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING "/>
-	<action application="log" data="CRIT Open ${base_dir}/conf/vars.xml and change the default_password."/>
+	<action application="log" data="CRIT Open $${conf_dir}/vars.xml and change the default_password."/>
 	<action application="log" data="CRIT Once changed type 'reloadxml' at the console."/>
 	<action application="log" data="CRIT WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING "/>
 	<action application="sleep" data="10000"/>
@@ -598,14 +598,14 @@
       <condition field="destination_number" expression="^9178$">
 	<action application="answer" />
 	<action application="playback" data="silence_stream://2000"/>
-	<action application="rxfax" data="/tmp/rxfax.tif"/>
+	<action application="rxfax" data="$${temp_dir}/rxfax.tif"/>
 	<action application="hangup"/>
       </condition>
     </extension>
 
     <extension name="fax_transmit">
       <condition field="destination_number" expression="^9179$">
-	<action application="txfax" data="/tmp/txfax.tif"/>
+	<action application="txfax" data="$${temp_dir}/txfax.tif"/>
 	<action application="hangup"/>
       </condition>
     </extension>
@@ -675,14 +675,14 @@
     <extension name="video_record">
       <condition field="destination_number" expression="^9193$">
 	<action application="answer"/>
-	<action application="record_fsv" data="/tmp/testrecord.fsv"/>
+	<action application="record_fsv" data="$${temp_dir}/testrecord.fsv"/>
       </condition>
     </extension>
 
     <extension name="video_playback">
       <condition field="destination_number" expression="^9194$">
 	<action application="answer"/>
-	<action application="play_fsv" data="/tmp/testrecord.fsv"/>
+	<action application="play_fsv" data="$${temp_dir}/testrecord.fsv"/>
       </condition>
     </extension>
 
@@ -710,7 +710,7 @@
     <extension name="tone_stream">
       <condition field="destination_number" expression="^9198$">
 	<action application="answer"/>
-	<action application="playback" data="{loops=10}tone_stream://path=${base_dir}/conf/tetris.ttml"/>
+	<action application="playback" data="{loops=10}tone_stream://path=${conf_dir}/tetris.ttml"/>
       </condition>
     </extension>
 

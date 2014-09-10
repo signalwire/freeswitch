@@ -3,12 +3,12 @@
     <!-- set to true if you want to enable http:// and https:// formats.  Do not use if mod_httapi is also loaded -->
     <param name="enable-file-formats" value="false"/>
     <param name="max-urls" value="10000"/>
-    <param name="location" value="$${base_dir}/http_cache"/>
+    <param name="location" value="$${cache_dir}"/>
     <param name="default-max-age" value="86400"/>
     <param name="prefetch-thread-count" value="8"/>
     <param name="prefetch-queue-size" value="100"/>
     <!-- absolute path to CA bundle file -->
-    <param name="ssl-cacert" value="$${base_dir}/conf/cacert.pem"/>
+    <param name="ssl-cacert" value="$${certs_dir}/cacert.pem"/>
     <!-- verify certificates -->
     <param name="ssl-verifypeer" value="true"/>
     <!-- verify host name matches certificate -->

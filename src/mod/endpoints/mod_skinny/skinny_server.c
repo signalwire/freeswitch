@@ -191,6 +191,7 @@ switch_status_t skinny_create_incoming_session(listener_t *listener, uint32_t *l
 
 	goto done;
 error:
+	skinny_log_l(listener, SWITCH_LOG_CRIT, "Failed to create incoming session for line instance %d", *line_instance_p);
 	if (nsession) {
 		switch_core_session_destroy(&nsession);
 	}
@@ -896,8 +897,13 @@ switch_status_t skinny_session_transfer(switch_core_session_t *session, listener
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	private_t *tech_pvt = NULL;
 	switch_channel_t *channel = NULL;
+	switch_channel_t *channel2 = NULL;
+	const char *local_uuid = NULL;
+	const char *local_uuid2 = NULL;
 	const char *remote_uuid = NULL;
+	const char *remote_uuid2 = NULL;
 	switch_core_session_t *session2 = NULL;
+	switch_core_session_t *rsession = NULL;
 	private_t *tech_pvt2 = NULL;
 
 	switch_assert(session);
@@ -906,30 +912,75 @@ switch_status_t skinny_session_transfer(switch_core_session_t *session, listener
 
 	tech_pvt = switch_core_session_get_private(session);
 	channel = switch_core_session_get_channel(session);
+	local_uuid = switch_channel_get_uuid(channel);
 	remote_uuid = switch_channel_get_partner_uuid(channel);
 
+	if ( switch_core_session_get_partner(session, &rsession) == SWITCH_STATUS_SUCCESS )
+	{
+		switch_channel_t *rchannel = NULL;
+		rchannel = switch_core_session_get_channel(rsession);
+
+		skinny_log_l_msg(listener, SWITCH_LOG_INFO, "SST: setting uuid bridge continue flag on remote channel\n");
+
+		switch_channel_set_variable(rchannel, "uuid_bridge_continue_on_cancel", "true");
+		switch_core_session_rwunlock(rsession);
+	}
+
+	skinny_log_l(listener, SWITCH_LOG_INFO, "SST: local_uuid=%s remote_uuid=%s\n", local_uuid, remote_uuid);
+
 	if (tech_pvt->transfer_from_call_id) {
+		skinny_log_l_msg(listener, SWITCH_LOG_INFO, "SST: transfer_from_call_id\n");
+
 		if((session2 = skinny_profile_find_session(listener->profile, listener, &line_instance, tech_pvt->transfer_from_call_id))) {
-			switch_channel_t *channel2 = switch_core_session_get_channel(session2);
-			const char *remote_uuid2 = switch_channel_get_partner_uuid(channel2);
-			if (switch_ivr_uuid_bridge(remote_uuid, remote_uuid2) == SWITCH_STATUS_SUCCESS) {
+			channel2 = switch_core_session_get_channel(session2);
+			local_uuid2 = switch_channel_get_uuid(channel2);
+			remote_uuid2 = switch_channel_get_partner_uuid(channel2);
+			skinny_log_ls(listener, session2, SWITCH_LOG_INFO, "SST: tx from session - local_uuid=%s remote_uuid=%s local_uuid2=%s remote_uuid2=%s\n", 
+				local_uuid, remote_uuid, local_uuid2, remote_uuid2);
+
+			skinny_log_ls(listener, session2, SWITCH_LOG_INFO, "SST: attempting ivr bridge from (%s) to (%s)\n", remote_uuid, remote_uuid2);
+
+			if (switch_ivr_uuid_bridge(remote_uuid2, remote_uuid) == SWITCH_STATUS_SUCCESS) {
+				skinny_log_ls_msg(listener, session2, SWITCH_LOG_INFO, "SST: success on uuid bridge\n");
+
 				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 				switch_channel_hangup(channel2, SWITCH_CAUSE_NORMAL_CLEARING);
 			} else {
+				skinny_log_ls_msg(listener, session2, SWITCH_LOG_INFO, "SST: failure on uuid bridge\n");
 				/* TODO: How to inform the user that the bridge is not possible? */
 			}
 			switch_core_session_rwunlock(session2);
 		}
 	} else {
+		skinny_log_l_msg(listener, SWITCH_LOG_INFO, "SST: !transfer_from_call_id\n");
+
 		if(remote_uuid) {
+			skinny_log_ls_msg(listener, session2, SWITCH_LOG_INFO, "SST: found remote_uuid\n");
+
 			/* TODO CallSelectStat */
+			skinny_log_ls_msg(listener, session2, SWITCH_LOG_INFO, "SST: creating incoming session\n");
 			status = skinny_create_incoming_session(listener, &line_instance, &session2);
+			if ( ! session2 ) {
+				skinny_log_l_msg(listener, SWITCH_LOG_CRIT, "SST: Unable to create incoming session for transfer.\n");
+				return SWITCH_STATUS_FALSE;
+			}
 			tech_pvt2 = switch_core_session_get_private(session2);
 			tech_pvt2->transfer_from_call_id = tech_pvt->call_id;
 			tech_pvt->transfer_to_call_id = tech_pvt2->call_id;
+			skinny_log_ls(listener, session2, SWITCH_LOG_INFO, "SST: transfer_to_call_id=%d transfer_from_call_id=%d\n", tech_pvt2->call_id,
+				tech_pvt->call_id);
+			skinny_log_ls_msg(listener, session2, SWITCH_LOG_INFO, "SST: triggering dial on incoming session\n");
 			skinny_session_process_dest(session2, listener, line_instance, NULL, '\0', 0);
+
+			channel2 = switch_core_session_get_channel(session2);
+			local_uuid2 = switch_channel_get_uuid(channel2);
+			remote_uuid2 = switch_channel_get_partner_uuid(channel2);
+			skinny_log_ls(listener, session2, SWITCH_LOG_INFO, "SST: new session - local_uuid2=%s remote_uuid2=%s\n", local_uuid2, remote_uuid2);
+
 			switch_core_session_rwunlock(session2);
 		} else {
+			skinny_log_ls_msg(listener, session2, SWITCH_LOG_INFO, "SST: could not find remote_uuid\n");
+
 			/* TODO: How to inform the user that the bridge is not possible? */
 		}
 	}
@@ -1387,6 +1438,10 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 	switch(request->data.stimulus.instance_type) {
 		case SKINNY_BUTTON_LAST_NUMBER_REDIAL:
 			skinny_create_incoming_session(listener, &line_instance, &session);
+			if ( ! session ) {
+				skinny_log_l_msg(listener, SWITCH_LOG_CRIT, "Unable to handle last number redial stimulus message, couldn't create incoming session.\n");
+				return SWITCH_STATUS_FALSE;
+			}
 			skinny_session_process_dest(session, listener, line_instance, 
 				empty_null2(listener->ext_redial,listener->profile->ext_redial), '\0', 0);
 			break;
@@ -1395,8 +1450,12 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 
 			session = skinny_profile_find_session(listener->profile, listener, &line_instance, 0);
 			if(strlen(button_speed_dial->line) > 0) {
-				if (!session) {
+				if ( !session ) {
 					skinny_create_incoming_session(listener, &line_instance, &session);
+				}
+				if ( !session ) {
+					skinny_log_l_msg(listener, SWITCH_LOG_CRIT, "Unable to handle speed dial stimulus message, couldn't create incoming session.\n");
+					return SWITCH_STATUS_FALSE;
 				}
 				skinny_session_process_dest(session, listener, line_instance, button_speed_dial->line, '\0', 0);
 			}
@@ -1417,6 +1476,10 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 			break;
 		case SKINNY_BUTTON_VOICEMAIL:
 			skinny_create_incoming_session(listener, &line_instance, &session);
+			if ( ! session ) {
+				skinny_log_l_msg(listener, SWITCH_LOG_CRIT, "Unable to handle stimulus message, couldn't create incoming session.\n");
+				return SWITCH_STATUS_FALSE;
+			}
 			skinny_session_process_dest(session, listener, line_instance, 
 				empty_null2(listener->ext_voicemail, listener->profile->ext_voicemail), '\0', 0);
 			break;
@@ -1451,6 +1514,10 @@ switch_status_t skinny_handle_stimulus_message(listener_t *listener, skinny_mess
 				}
 
 				skinny_create_incoming_session(listener, &line_instance, &session);
+				if ( ! session ) {
+					skinny_log_l_msg(listener, SWITCH_LOG_CRIT, "Unable to handle stimulus message, couldn't create incoming session.\n");
+					return SWITCH_STATUS_FALSE;
+				}
 				skinny_session_process_dest(session, listener, line_instance, NULL, '\0', 0);
 			}
 			break;
@@ -1489,6 +1556,10 @@ switch_status_t skinny_handle_off_hook_message(listener_t *listener, skinny_mess
 		skinny_session_answer(session, listener, line_instance);
 	} else { /* start a new call */
 		skinny_create_incoming_session(listener, &line_instance, &session);
+		if ( ! session ) {
+			skinny_log_l_msg(listener, SWITCH_LOG_CRIT, "Unable to handle off hook message, could not create session.\n");
+			return SWITCH_STATUS_FALSE;
+		}
 		tech_pvt = switch_core_session_get_private(session);
 		assert(tech_pvt != NULL);
 
@@ -2003,11 +2074,19 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 	switch(request->data.soft_key_event.event) {
 		case SOFTKEY_REDIAL:
 			status = skinny_create_incoming_session(listener, &line_instance, &session);
+			if ( ! session ) {
+				skinny_log_l_msg(listener, SWITCH_LOG_CRIT, "Unable to handle soft key event, could not create incoming session.\n");
+				return SWITCH_STATUS_FALSE;
+			}
 			skinny_session_process_dest(session, listener, line_instance, 
 				empty_null2(listener->ext_redial,listener->profile->ext_redial), '\0', 0);
 			break;
 		case SOFTKEY_NEWCALL:
 			status = skinny_create_incoming_session(listener, &line_instance, &session);
+			if ( ! session ) {
+				skinny_log_l_msg(listener, SWITCH_LOG_CRIT, "Unable to handle soft key event, could not create incoming session.\n");
+				return SWITCH_STATUS_FALSE;
+			}
 			skinny_session_process_dest(session, listener, line_instance, NULL, '\0', 0);
 			break;
 		case SOFTKEY_HOLD:
@@ -2064,17 +2143,29 @@ switch_status_t skinny_handle_soft_key_event_message(listener_t *listener, skinn
 			break;
 		case SOFTKEY_MEETME:
 			skinny_create_incoming_session(listener, &line_instance, &session);
+			if ( ! session ) {
+				skinny_log_l_msg(listener, SWITCH_LOG_CRIT, "Unable to handle soft key event, could not create incoming session.\n");
+				return SWITCH_STATUS_FALSE;
+			}
 			skinny_session_process_dest(session, listener, line_instance, 
 				empty_null2(listener->ext_meetme, listener->profile->ext_meetme), '\0', 0);
 			break;
 		case SOFTKEY_CALLPICKUP:
 		case SOFTKEY_GRPCALLPICKUP:
 			skinny_create_incoming_session(listener, &line_instance, &session);
+			if ( ! session ) {
+				skinny_log_l_msg(listener, SWITCH_LOG_CRIT, "Unable to handle soft key event, could not create incoming session.\n");
+				return SWITCH_STATUS_FALSE;
+			}
 			skinny_session_process_dest(session, listener, line_instance, 
 				empty_null2(listener->ext_pickup, listener->profile->ext_pickup), '\0', 0);
 			break;
 		case SOFTKEY_CFWDALL:
 			skinny_create_incoming_session(listener, &line_instance, &session);
+			if ( ! session ) {
+				skinny_log_l_msg(listener, SWITCH_LOG_CRIT, "Unable to handle soft key event, could not create incoming session.\n");
+				return SWITCH_STATUS_FALSE;
+			}
 			skinny_session_process_dest(session, listener, line_instance, 
 				empty_null2(listener->ext_cfwdall, listener->profile->ext_cfwdall), '\0', 0);
 			break;

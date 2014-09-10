@@ -48,6 +48,9 @@
 
 #define least1(_z) (_z ? _z : 1)
 
+#define PERIOD_SECONDS 20
+#define PERIOD_JITTER_TOLERANCE 5.0f 
+
 static int stfu_log_level = 7;
 
 struct stfu_queue {
@@ -74,6 +77,7 @@ struct stfu_instance {
 	uint16_t cur_seq;
 	uint32_t last_wr_ts;
 	uint32_t last_rd_ts;
+	uint32_t ms_per_packet;
 	uint32_t samples_per_packet;
 	uint32_t samples_per_second;
 	uint32_t miss_count;
@@ -93,7 +97,9 @@ struct stfu_instance {
     uint32_t period_need_range;
     uint32_t period_need_range_avg;
     uint32_t period_clean_count;
-
+    uint32_t period_jitter_count;
+    double period_jitter_percent;
+    double period_missing_percent;
     uint32_t session_clean_count;
     uint32_t session_missing_count;
 
@@ -114,7 +120,6 @@ struct stfu_instance {
     int32_t same_ts;
     
     uint32_t period_time;
-    uint32_t decrement_time;
     
     uint32_t plc_len;
     uint32_t plc_pt;
@@ -123,6 +128,8 @@ struct stfu_instance {
     uint8_t ready;
     uint8_t debug;
 
+    switch_time_t last_clock_ts;
+    
     char *name;
     stfu_n_call_me_t callback;
     void *udata;
@@ -239,6 +246,8 @@ void stfu_n_report(stfu_instance_t *i, stfu_report_t *r)
 	r->clean_count = i->period_clean_count;
 	r->consecutive_good_count = i->consecutive_good_count;
 	r->consecutive_bad_count = i->consecutive_bad_count;
+    r->period_jitter_percent = i->period_jitter_percent;
+    r->period_missing_percent = i->period_missing_percent;
 }
 
 stfu_status_t stfu_n_resize(stfu_instance_t *i, uint32_t qlen) 
@@ -248,7 +257,7 @@ stfu_status_t stfu_n_resize(stfu_instance_t *i, uint32_t qlen)
     if (i->qlen == i->max_qlen) {
         return STFU_IT_FAILED;
     }
-    
+
     if (i->max_qlen && qlen > i->max_qlen) {
         if (i->qlen < i->max_qlen) {
             qlen = i->max_qlen;
@@ -304,8 +313,7 @@ stfu_instance_t *stfu_n_init(uint32_t qlen, uint32_t max_qlen, uint32_t samples_
     
     i->samples_per_second = samples_per_second ? samples_per_second : 8000;
     
-    i->period_time = ((i->samples_per_second * 20) / i->samples_per_packet);
-    i->decrement_time = ((i->samples_per_second * 15) / i->samples_per_packet);
+    i->period_time = ((i->samples_per_second * PERIOD_SECONDS) / i->samples_per_packet);
 
 	return i;
 }
@@ -315,6 +323,8 @@ static void stfu_n_reset_counters(stfu_instance_t *i)
     if (stfu_log != null_logger && i->debug) {
         stfu_log(STFU_LOG_EMERG, "%s COUNTER RESET........\n", i->name);
     }
+
+    
 
     if (i->callback) {
         i->callback(i, i->udata);
@@ -328,6 +338,7 @@ static void stfu_n_reset_counters(stfu_instance_t *i)
     i->period_packet_in_count = 0;
     i->period_packet_out_count = 0;
     i->period_missing_count = 0;
+    i->period_jitter_count = 0;
 
     i->period_need_range = 0;
     i->period_need_range_avg = 0;
@@ -408,6 +419,9 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
 	stfu_frame_t *frame;
 	size_t cplen = 0;
     int good_ts = 0;
+    int32_t diff;
+    switch_time_t now;
+    
 
     if (!i->samples_per_packet && ts && i->last_rd_ts) {
         i->ts_diff = ts - i->last_rd_ts;
@@ -430,7 +444,25 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
             return STFU_IT_FAILED;
         }
     }
- 
+    
+    if (!i->ms_per_packet) {
+        i->ms_per_packet = 1000 / (i->samples_per_second / i->samples_per_packet);
+    }
+
+    now = switch_micro_time_now();
+
+    if (i->last_clock_ts) {
+        diff = (uint32_t) ((now - i->last_clock_ts) / 1000);
+    } else {
+        diff = 0;
+    }
+
+    i->last_clock_ts = now;
+
+    if (abs(diff - i->ms_per_packet) > 1) {
+        i->period_jitter_count++;
+    }
+
     if (timer_ts) {
         if (ts && !i->ts_offset) {
             i->ts_offset = timer_ts - ts;
@@ -448,7 +480,8 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
             if (i->ts_drift < i->max_drift) {
                 if (++i->drift_dropped_packets < i->drift_max_dropped) {
                     stfu_log(STFU_LOG_EMERG, "%s TOO LATE !!! %u \n\n\n", i->name, ts);
-                    stfu_n_sync(i, 1);
+                    stfu_n_reset(i);
+                    //stfu_n_sync(i, 1);
                     //return STFU_ITS_TOO_LATE;
                 }
             } else {
@@ -489,16 +522,10 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
 
     if (i->period_missing_count > i->qlen * 2) {
         if (stfu_log != null_logger && i->debug) {
-            stfu_log(STFU_LOG_EMERG, "%s resize %u %u\n", i->name, i->qlen, i->qlen + 1);
+            stfu_log(STFU_LOG_EMERG, "%s resize up %u %u\n", i->name, i->qlen, i->qlen + 1);
         }
         stfu_n_resize(i, i->qlen + 1);
         stfu_n_reset_counters(i);
-    } else {
-        if (i->qlen > i->orig_qlen && (i->consecutive_good_count > i->decrement_time || i->period_clean_count > i->decrement_time)) {
-            stfu_n_resize(i, i->qlen - 1);
-            stfu_n_reset_counters(i);
-            stfu_n_sync(i, i->qlen);
-        }
     }
 
     
@@ -514,10 +541,20 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
     
     i->diff_total += i->diff;
 
-    if ((i->period_packet_in_count > i->period_time)) {
+    if ((i->period_packet_in_count >= i->period_time)) {
+        i->period_jitter_percent = (double)(((double)i->period_jitter_count / (double)i->period_time) * 100.0f);
+        i->period_missing_percent = (double)(((double)i->period_missing_count / (double)i->period_time) * 100.0f);
+        
         i->period_packet_in_count = 0;
 
-        if (i->period_missing_count == 0 && i->qlen > i->orig_qlen) {
+        if (stfu_log != null_logger && i->debug) {
+            stfu_log(STFU_LOG_EMERG, "PERIOD %f jitter missing:%f q:%d/%d\n", i->period_jitter_percent, i->period_missing_percent, i->qlen, i->orig_qlen);
+        }
+
+        if (i->qlen > i->orig_qlen && i->period_jitter_percent < PERIOD_JITTER_TOLERANCE && i->period_missing_percent < PERIOD_JITTER_TOLERANCE) {
+            if (stfu_log != null_logger && i->debug) {
+                stfu_log(STFU_LOG_EMERG, "%s resize down %u %u\n", i->name, i->qlen, i->qlen - 1);
+            }
             stfu_n_resize(i, i->qlen - 1);
             stfu_n_sync(i, i->qlen);
         }
@@ -526,12 +563,22 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
     }
     
     if (stfu_log != null_logger && i->debug) {
-        stfu_log(STFU_LOG_EMERG, "I: %s %u/%u i=%u/%u - g:%u/%u c:%u/%u b:%u - %u:%u - %u %d %u %u %d %d %d/%d\n", i->name,
-                 i->qlen, i->max_qlen, i->period_packet_in_count, i->period_time, i->consecutive_good_count, 
-                 i->decrement_time, i->period_clean_count, i->decrement_time, i->consecutive_bad_count,
+        double jitter_percent = (double)(((double)i->period_jitter_count / (double)i->period_packet_in_count) * 100.0f);
+        double missing_percent = (double)(((double)i->period_missing_count / (double)i->period_packet_in_count) * 100.0f);
+
+        stfu_log(STFU_LOG_EMERG, "I: %s len:%u/%u i=%u/%u - g:%u c:%u b:%u - ts:%u/%u/%u - m:%u(%f%%) j:%f%% dr:%d/%d\n", 
+                 i->name,
+                 i->qlen, i->max_qlen, 
+                 i->period_packet_in_count, i->period_time, 
+                 i->consecutive_good_count,
+                 i->period_clean_count,
+                 i->consecutive_bad_count,
                  ts, ts / i->samples_per_packet, 
-                 i->period_missing_count, i->period_need_range_avg,
-                 i->last_wr_ts, ts, i->diff, i->diff_total / least1(i->period_packet_in_count), i->ts_drift, i->max_drift);
+                 i->last_wr_ts,
+                 i->period_missing_count,
+                 missing_percent,
+                 jitter_percent,
+                 i->ts_drift, i->max_drift);
     }
 
 	if (last || i->in_queue->array_len == i->in_queue->array_size) {
@@ -763,7 +810,7 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 
     if (stfu_log != null_logger && i->debug) {
         if (found) {
-            stfu_log(STFU_LOG_EMERG, "%s O: %u:%u %u\n", i->name, rframe->ts, rframe->ts / i->samples_per_packet, rframe->plc);
+            stfu_log(STFU_LOG_EMERG, "%s OUT: %u:%u %u\n", i->name, rframe->ts, rframe->ts / i->samples_per_packet, rframe->plc);
         }
     }
 

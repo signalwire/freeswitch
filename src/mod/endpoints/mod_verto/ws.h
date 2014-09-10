@@ -88,6 +88,7 @@ typedef struct wsh_s {
 	int sanity;
 	int secure_established;
 	int logical_established;
+	int stay_open;
 	int x;
 	void *write_buffer;
 	size_t write_buffer_len;
@@ -101,7 +102,7 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block);
 ssize_t ws_raw_write(wsh_t *wsh, void *data, size_t bytes);
 ssize_t ws_read_frame(wsh_t *wsh, ws_opcode_t *oc, uint8_t **data);
 ssize_t ws_write_frame(wsh_t *wsh, ws_opcode_t oc, void *data, size_t bytes);
-int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock, int block);
+int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock, int block, int stay_open);
 ssize_t ws_close(wsh_t *wsh, int16_t reason);
 void ws_destroy(wsh_t *wsh);
 void init_ssl(void);

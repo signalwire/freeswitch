@@ -2584,6 +2584,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				stream->write_function(stream, "PingState\t%d/%d/%d\n", gp->ping_min, gp->ping_count, gp->ping_max);
 				stream->write_function(stream, "State   \t%s\n", sofia_state_names[gp->state]);
 				stream->write_function(stream, "Status  \t%s%s\n", status_names[gp->status], gp->pinging ? " (ping)" : "");
+				stream->write_function(stream, "Uptime  \t%lds\n", gp->status == SOFIA_GATEWAY_UP ? (switch_time_now()-gp->uptime)/1000000 : 0);
 				stream->write_function(stream, "CallsIN \t%u\n", gp->ib_calls);
 				stream->write_function(stream, "CallsOUT\t%u\n", gp->ob_calls);
 				stream->write_function(stream, "FailedCallsIN\t%u\n", gp->ib_failed_calls);
@@ -2827,6 +2828,7 @@ static void xml_gateway_status(sofia_gateway_t *gp, switch_stream_handle_t *stre
 	stream->write_function(stream, "    <pinging>%d</pinging>\n", gp->pinging);
 	stream->write_function(stream, "    <state>%s</state>\n", sofia_state_names[gp->state]);
 	stream->write_function(stream, "    <status>%s</status>\n", status_names[gp->status]);
+	stream->write_function(stream, "    <uptime-usec>%ld</uptime-usec>\n", gp->status == SOFIA_GATEWAY_UP ? switch_time_now()-gp->uptime : 0);
 	stream->write_function(stream, "    <calls-in>%u</calls-in>\n", gp->ib_calls);
 	stream->write_function(stream, "    <calls-out>%u</calls-out>\n", gp->ob_calls);
 	stream->write_function(stream, "    <failed-calls-in>%u</failed-calls-in>\n", gp->ib_failed_calls);
@@ -5561,8 +5563,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_management_interface_t *management_interface;
 	switch_application_interface_t *app_interface;
 	struct in_addr in;
-	struct tm tm = {0};
-	time_t now;
 
 	memset(&mod_sofia_globals, 0, sizeof(mod_sofia_globals));
 	mod_sofia_globals.destroy_private.destroy_nh = 1;
@@ -5570,11 +5570,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	mod_sofia_globals.keep_private.is_static = 1;
 	mod_sofia_globals.pool = pool;
 	switch_mutex_init(&mod_sofia_globals.mutex, SWITCH_MUTEX_NESTED, mod_sofia_globals.pool);
-
-	now = switch_epoch_time_now(NULL);
-	tm = *(localtime(&now));
-
-	mod_sofia_globals.presence_epoch = now - (tm.tm_yday * 86400) - (tm.tm_hour * 60 * 60) - (tm.tm_min * 60) - tm.tm_sec;
 
 	switch_find_local_ip(mod_sofia_globals.guess_ip, sizeof(mod_sofia_globals.guess_ip), &mod_sofia_globals.guess_mask, AF_INET);
 	in.s_addr = mod_sofia_globals.guess_mask;

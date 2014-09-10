@@ -252,7 +252,9 @@ sub DESTROY {
     }
 }
 
+*read = *freeswitchc::Stream_read;
 *write = *freeswitchc::Stream_write;
+*raw_write = *freeswitchc::Stream_raw_write;
 *get_data = *freeswitchc::Stream_get_data;
 sub DISOWN {
     my $self = shift;

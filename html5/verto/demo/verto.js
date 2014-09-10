@@ -461,8 +461,6 @@ function init() {
 	if (verto) {
 	    verto.iceServers(tmp);
 	}
-
-	alert(tmp);
     });
 
     verto = new $.verto({

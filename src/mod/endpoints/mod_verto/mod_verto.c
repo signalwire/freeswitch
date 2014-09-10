@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
+ * Seven Du <dujinfang@gmail.com>
  *
  * mod_verto.c -- HTML5 Verto interface
  *
@@ -1279,6 +1280,391 @@ static void jsock_check_event_queue(jsock_t *jsock)
 	switch_mutex_unlock(jsock->write_mutex);
 }
 
+/* DO NOT use this unless you know what you are doing, you are WARNNED!!! */
+static uint8_t *http_stream_read(switch_stream_handle_t *handle, int *len)
+{
+	switch_http_request_t *r = (switch_http_request_t *) handle->data;
+	jsock_t *jsock = r->user_data;
+	wsh_t *wsh = &jsock->ws;
+
+	if (!jsock->profile->running) {
+		*len = 0;
+		return NULL;
+	}
+
+	*len = r->bytes_buffered - r->bytes_read;
+
+	if (*len > 0) { // we already read part of the body
+		uint8_t *data = (uint8_t *)wsh->buffer + r->bytes_read;
+		r->bytes_read = r->bytes_buffered;
+		return data;
+	}
+
+	if (r->content_length && (r->bytes_read - r->bytes_header) >= r->content_length) {
+		*len = 0;
+		return NULL;
+	}
+
+	*len = r->content_length - (r->bytes_read - r->bytes_header);
+	*len = *len > sizeof(wsh->buffer) ? sizeof(wsh->buffer) : *len;
+
+	if ((*len = ws_raw_read(wsh, wsh->buffer, *len, wsh->block)) < 0) {
+		*len = 0;
+		return NULL;
+	}
+
+	r->bytes_read += *len;
+
+	return (uint8_t *)wsh->buffer;
+}
+
+static switch_status_t http_stream_raw_write(switch_stream_handle_t *handle, uint8_t *data, switch_size_t datalen)
+{
+	switch_http_request_t *r = (switch_http_request_t *) handle->data;
+	jsock_t *jsock = r->user_data;
+
+	return ws_raw_write(&jsock->ws, data, (uint32_t)datalen) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
+static switch_status_t http_stream_write(switch_stream_handle_t *handle, const char *fmt, ...)
+{
+	switch_http_request_t *r = (switch_http_request_t *) handle->data;
+	jsock_t *jsock = r->user_data;
+	int ret = 1;
+	char *data;
+	va_list ap;
+
+	va_start(ap, fmt);
+	ret = switch_vasprintf(&data, fmt, ap);
+	va_end(ap);
+
+	if (data) {
+		if (ret) {
+			ret = ws_raw_write(&jsock->ws, data, (uint32_t)strlen(data));
+		}
+		switch_safe_free(data);
+	}
+
+	return ret ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
+static void http_static_handler(switch_http_request_t *request, verto_vhost_t *vhost)
+{
+	jsock_t *jsock = request->user_data;
+	char path[512];
+	switch_file_t *fd;
+	char *ext;
+	uint8_t chunk[4096];
+	const char *mime_type = "text/html", *new_type;
+
+	if (strncmp(request->method, "GET", 3) && strncmp(request->method, "HEAD", 4)) {
+		char *data = "HTTP/1.1 415 Method Not Allowed\r\n"
+			"Content-Length: 0\r\n\r\n";
+		ws_raw_write(&jsock->ws, data, strlen(data));
+		return;
+	}
+
+	switch_snprintf(path, sizeof(path), "%s%s", vhost->root, request->uri);
+
+	if (switch_directory_exists(path, NULL) == SWITCH_STATUS_SUCCESS) {
+		switch_snprintf(path, sizeof(path), "%s%s%s%s",
+			vhost->root, request->uri, end_of(path) == '/' ? "" : SWITCH_PATH_SEPARATOR, vhost->index);
+		// printf("local path: %s\n", path);
+	}
+
+	if ((ext = strrchr(path, '.'))) {
+		ext++;
+		if ((new_type = switch_core_mime_ext2type(ext))) {
+			mime_type = new_type;
+		}
+	}
+
+	if (switch_file_exists(path, NULL) == SWITCH_STATUS_SUCCESS &&
+		switch_file_open(&fd, path, SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD, jsock->pool) == SWITCH_STATUS_SUCCESS) {
+
+		switch_size_t flen = switch_file_get_size(fd);
+
+		switch_snprintf((char *)chunk, sizeof(chunk),
+			"HTTP/1.1 200 OK\r\n"
+			"Date: %s\r\n"
+			"Server: FreeSWITCH-%s-mod_verto\r\n"
+			"Content-Type: %s\r\n"
+			"Content-Length: %" SWITCH_SIZE_T_FMT "\r\n\r\n",
+			switch_event_get_header(request->headers, "Event-Date-GMT"),
+			switch_version_full(),
+			mime_type,
+			flen);
+
+		ws_raw_write(&jsock->ws, chunk, strlen((char *)chunk));
+
+		for (;;) {
+			switch_status_t status;
+
+			flen = sizeof(chunk);
+			status = switch_file_read(fd, chunk, &flen);
+
+			if (status != SWITCH_STATUS_SUCCESS || flen == 0) {
+				break;
+			}
+
+			ws_raw_write(&jsock->ws, chunk, flen);
+		}
+		switch_file_close(fd);
+	} else {
+		char *data = "HTTP/1.1 404 Not Found\r\n"
+			"Content-Length: 0\r\n\r\n";
+		ws_raw_write(&jsock->ws, data, strlen(data));
+	}
+}
+
+static void http_run(jsock_t *jsock)
+{
+	switch_http_request_t request = { 0 };
+	switch_stream_handle_t stream = { 0 };
+	char *data = NULL;
+	char *ext;
+	verto_vhost_t *vhost;
+	switch_bool_t keepalive;
+
+new_req:
+
+	request.user_data = jsock;
+
+	if (switch_event_create(&stream.param_event, SWITCH_EVENT_CHANNEL_DATA) != SWITCH_STATUS_SUCCESS) {
+		goto err;
+	}
+
+	request.headers = stream.param_event;
+	if (switch_http_parse_header(jsock->ws.buffer, jsock->ws.datalen, &request) != SWITCH_STATUS_SUCCESS) {
+		switch_event_destroy(&stream.param_event);
+		goto err;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s [%4" SWITCH_SIZE_T_FMT "] %s\n", jsock->name, jsock->ws.datalen, request.uri);
+
+	if (!strncmp(request.method, "OPTIONS", 7)) {
+		char data[512];
+		switch_snprintf(data, sizeof(data),
+			"HTTP/1.1 200 OK\r\n"
+			"Content-Length: 0\r\n"
+			"Date: %s\r\n"
+			"Allow: HEAD,GET,POST,PUT,DELETE,PATCH,OPTIONS\r\n"
+			"Server: FreeSWITCH-%s-mod_verto\r\n\r\n",
+			switch_event_get_header(request.headers, "Event-Date-GMT"),
+			switch_version_full());
+
+		ws_raw_write(&jsock->ws, data, strlen(data));
+		goto done;
+	}
+
+	if (!strncmp(request.method, "POST", 4) && request.content_length &&
+		!strncmp(request.content_type, "application/x-www-form-urlencoded", 33)) {
+
+		char *buffer = NULL;
+		int len = 0, bytes = 0;
+
+		if (request.content_length > 2 * 1024 * 1024 - 1) {
+			char *data = "HTTP/1.1 413 Request Entity Too Large\r\n"
+				"Content-Length: 0\r\n\r\n";
+			ws_raw_write(&jsock->ws, data, strlen(data));
+			goto done;
+		}
+
+		if (!(buffer = malloc(2 * 1024 * 1024))) {
+			goto request_err;
+		}
+
+		if ((bytes = request.bytes_buffered - (request.bytes_read - request.bytes_header)) > 0) {
+			memcpy(buffer, jsock->ws.buffer + request.bytes_read, bytes);
+		}
+
+		while(bytes < request.content_length) {
+			len = request.content_length - bytes;
+
+			if ((len = ws_raw_read(&jsock->ws, buffer + bytes, len, jsock->ws.block)) < 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read error %d\n", len);
+				goto done;
+			}
+
+			bytes += len;
+		}
+
+		*(buffer + bytes) = '\0';
+
+		switch_http_parse_qs(&request, buffer);
+		free(buffer);
+	}
+
+	// switch_http_dump_request(&request);
+
+	stream.data = &request;
+	stream.read_function = http_stream_read;
+	stream.write_function = http_stream_write;
+	stream.raw_write_function = http_stream_raw_write;
+
+	switch_event_add_header_string(request.headers, SWITCH_STACK_BOTTOM, "Request-Method", request.method);
+	switch_event_add_header_string(request.headers, SWITCH_STACK_BOTTOM, "HTTP-Request-URI", request.uri);
+
+	if (!jsock->profile->vhosts) goto err;
+
+	/* only one vhost supported for now */
+	vhost = jsock->profile->vhosts;
+
+	if (!switch_test_flag(jsock, JPFLAG_AUTHED) && vhost->auth_realm) {
+		int code = CODE_AUTH_REQUIRED;
+		char message[128] = "Authentication Required";
+		cJSON *params = NULL;
+		char *www_auth;
+		char auth_buffer[512];
+		char *auth_user = NULL, *auth_pass = NULL;
+
+		www_auth = switch_event_get_header(request.headers, "Authorization");
+
+		if (zstr(www_auth)) {
+			switch_snprintf(auth_buffer, sizeof(auth_buffer),
+				"HTTP/1.1 401 Authentication Required\r\n"
+				"WWW-Authenticate: Basic realm=\"%s\"\r\n"
+				"Content-Length: 0\r\n\r\n",
+				vhost->auth_realm);
+			ws_raw_write(&jsock->ws, auth_buffer, strlen(auth_buffer));
+			goto done;
+		}
+
+		if (strncasecmp(www_auth, "Basic ", 6)) goto err;
+
+		www_auth += 6;
+
+		switch_b64_decode(www_auth, auth_buffer, sizeof(auth_buffer));
+
+		auth_user = auth_buffer;
+
+		if ((auth_pass = strchr(auth_user, ':'))) {
+			*auth_pass++ = '\0';
+		}
+
+		if (vhost->auth_user && vhost->auth_pass &&
+			!strcmp(vhost->auth_user, auth_user) &&
+			!strcmp(vhost->auth_pass, auth_pass)) {
+			goto authed;
+		}
+
+		if (!(params = cJSON_CreateObject())) {
+			goto request_err;
+		}
+
+		cJSON_AddItemToObject(params, "login", cJSON_CreateString(auth_user));
+		cJSON_AddItemToObject(params, "passwd", cJSON_CreateString(auth_pass));
+
+		if (!check_auth(jsock, params, &code, message, sizeof(message))) {
+			switch_snprintf(auth_buffer, sizeof(auth_buffer),
+				"HTTP/1.1 401 Authentication Required\r\n"
+				"WWW-Authenticate: Basic realm=\"%s\"\r\n"
+				"Content-Length: 0\r\n\r\n",
+				vhost->auth_realm);
+			ws_raw_write(&jsock->ws, auth_buffer, strlen(auth_buffer));
+			cJSON_Delete(params);
+			goto done;
+		} else {
+			cJSON_Delete(params);
+		}
+
+authed:
+		switch_set_flag(jsock, JPFLAG_AUTHED);
+		switch_event_add_header_string(request.headers, SWITCH_STACK_BOTTOM, "HTTP-USER", auth_user);
+	}
+
+	if (vhost->rewrites) {
+		switch_event_header_t *rule = vhost->rewrites->headers;
+		switch_regex_t *re = NULL;
+		int ovector[30];
+		int proceed;
+
+		while(rule) {
+			char *expression = rule->name;
+
+			if ((proceed = switch_regex_perform(request.uri, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+								  "%d request [%s] matched expr [%s]\n", proceed, request.uri, expression);
+				request.uri = rule->value;
+				break;
+			}
+
+			rule = rule->next;
+		}
+	}
+
+	switch_event_add_header_string(request.headers, SWITCH_STACK_BOTTOM, "HTTP-URI", request.uri);
+
+	if ((ext = strrchr(request.uri, '.'))) {
+		char path[1024];
+
+		if (!strncmp(ext, ".lua", 4)) {
+			switch_snprintf(path, sizeof(path), "%s%s", vhost->script_root, request.uri);
+			switch_api_execute("lua", path, NULL, &stream);
+		} else {
+			http_static_handler(&request, vhost);
+		}
+
+	} else {
+		http_static_handler(&request, vhost);
+	}
+
+done:
+
+	keepalive = request.keepalive;
+	switch_http_free_request(&request);
+
+	if (keepalive) {
+		wsh_t *wsh = &jsock->ws;
+
+		memset(&request, 0, sizeof(request));
+		wsh->datalen = 0;
+		*wsh->buffer = '\0';
+
+		while(jsock->profile->running) {
+			int pflags = switch_wait_sock(jsock->client_socket, 3000, SWITCH_POLL_READ | SWITCH_POLL_ERROR | SWITCH_POLL_HUP);
+
+			if (jsock->drop) { die("%s Dropping Connection\n", jsock->name); }
+			if (pflags < 0 && (errno != EINTR)) { die("%s POLL FAILED\n", jsock->name); }
+			if (pflags & SWITCH_POLL_ERROR) { die("%s POLL ERROR\n", jsock->name); }
+			if (pflags & SWITCH_POLL_HUP) { die("%s POLL HANGUP DETECTED\n", jsock->name); }
+			if (pflags & SWITCH_POLL_INVALID) { die("%s POLL INVALID SOCKET\n", jsock->name); }
+			if (pflags & SWITCH_POLL_READ) {
+				ssize_t bytes;
+
+				bytes = ws_raw_read(wsh, wsh->buffer + wsh->datalen, wsh->buflen - wsh->datalen, wsh->block);
+
+				if (bytes < 0) {
+					die("BAD READ %" SWITCH_SIZE_T_FMT "\n", bytes);
+					break;
+				}
+
+				wsh->datalen += bytes;
+
+				if (strstr(wsh->buffer, "\r\n\r\n") || strstr(wsh->buffer, "\n\n")) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "socket %s is going to handle a new request\n", jsock->name);
+					goto new_req;
+				}
+			} else {
+				break;
+			}
+		}
+	}
+
+	return;
+
+request_err:
+	switch_http_free_request(&request);
+
+err:
+	data = "HTTP/1.1 500 Internal Server Error\r\n"
+		"Content-Length: 0\r\n\r\n";
+	ws_raw_write(&jsock->ws, data, strlen(data));
+
+error:
+	return;
+}
+
 static void client_run(jsock_t *jsock)
 {
 
@@ -1287,8 +1673,14 @@ static void client_run(jsock_t *jsock)
     jsock->local_addr.sin_port = 0;
 
 
-	if (ws_init(&jsock->ws, jsock->client_socket, (jsock->ptype & PTYPE_CLIENT_SSL) ? jsock->profile->ssl_ctx : NULL, 0, 1) < 0) {
-		die("%s WS SETUP FAILED", jsock->name);
+	if (ws_init(&jsock->ws, jsock->client_socket, (jsock->ptype & PTYPE_CLIENT_SSL) ? jsock->profile->ssl_ctx : NULL, 0, 1, !!jsock->profile->vhosts) < 0) {
+		if (jsock->profile->vhosts) {
+			http_run(jsock);
+			ws_close(&jsock->ws, WS_NONE);
+			goto error;
+		} else {
+			die("%s WS SETUP FAILED [%s]", jsock->name, jsock->ws.buffer);
+		}
 	}
 
 	while(jsock->profile->running) {
@@ -3436,6 +3828,7 @@ static int runtime(verto_profile_t *profile)
 static void kill_profile(verto_profile_t *profile)
 {
 	jsock_t *p;
+	verto_vhost_t *h;
 	int i;
 
 	profile->running = 0;
@@ -3452,6 +3845,16 @@ static void kill_profile(verto_profile_t *profile)
 	for(p = profile->jsock_head; p; p = p->next) {
 		close_socket(&p->client_socket);
 	}
+
+	h = profile->vhosts;
+	while(h) {
+		if (h->rewrites) {
+			switch_event_destroy(&h->rewrites);
+		}
+
+		h = h->next;
+	}
+
 	switch_mutex_unlock(profile->mutex);
 
 
@@ -3601,6 +4004,7 @@ static switch_status_t parse_config(const char *cf)
 {
 	
 	switch_xml_t cfg, xml, settings, param, xprofile, xprofiles;
+	switch_xml_t xvhosts, xvhost, rewrites, rule;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -3749,8 +4153,89 @@ static switch_status_t parse_config(const char *cf)
 									  profile->name, profile->ip[i].local_ip, profile->ip[i].local_port);
 				}
 			}
-		}
-	}
+
+			/* parse vhosts */
+			/* WARNNING: Experimental feature, DO NOT use until we remove this warnning!! */
+			if ((xvhosts = switch_xml_child(xprofile, "vhosts"))) {
+				verto_vhost_t *vhost_tail = NULL;
+
+				for (xvhost = switch_xml_child(xvhosts, "vhost"); xvhost; xvhost = xvhost->next) {
+					verto_vhost_t *vhost;
+					const char *domain = switch_xml_attr(xvhost, "domain");
+
+					if (zstr(domain)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Required field domain missing\n");
+						continue;
+					}
+
+					vhost = switch_core_alloc(profile->pool, sizeof(*vhost));
+					memset(vhost, 0, sizeof(*vhost));
+					vhost->pool = profile->pool;
+					vhost->domain = switch_core_strdup(profile->pool, domain);
+
+					if (!vhost_tail) {
+						profile->vhosts = vhost;
+					} else {
+						vhost_tail->next = vhost;
+					}
+
+					vhost_tail = vhost;
+
+					for (param = switch_xml_child(xvhost, "param"); param; param = param->next) {
+						char *var = NULL;
+						char *val = NULL;
+
+						var = (char *) switch_xml_attr_soft(param, "name");
+						val = (char *) switch_xml_attr_soft(param, "value");
+
+						if (!strcasecmp(var, "alias")) {
+							vhost->alias = switch_core_strdup(vhost->pool, val);
+						} else if (!strcasecmp(var, "root")) {
+							vhost->root = switch_core_strdup(vhost->pool, val);
+						} else if (!strcasecmp(var, "script_root")) {
+							vhost->script_root = switch_core_strdup(vhost->pool, val);
+						} else if (!strcasecmp(var, "index")) {
+							vhost->index = switch_core_strdup(vhost->pool, val);
+						} else if (!strcasecmp(var, "auth-realm")) {
+							vhost->auth_realm = switch_core_strdup(vhost->pool, val);
+						} else if (!strcasecmp(var, "auth-user")) {
+							vhost->auth_user = switch_core_strdup(vhost->pool, val);
+						} else if (!strcasecmp(var, "auth-pass")) {
+							vhost->auth_pass = switch_core_strdup(vhost->pool, val);
+						}
+					}
+
+					if (zstr(vhost->root)) {
+						vhost->root = SWITCH_GLOBAL_dirs.htdocs_dir;
+					}
+
+					if (zstr(vhost->script_root)) {
+						vhost->root = SWITCH_GLOBAL_dirs.script_dir;
+					}
+
+					if (zstr(vhost->index)) {
+						vhost->index = "index.html";
+					}
+
+					if ((rewrites = switch_xml_child(xvhost, "rewrites"))) {
+						if (switch_event_create(&vhost->rewrites, SWITCH_EVENT_CLONE) == SWITCH_STATUS_SUCCESS) {
+							for (rule = switch_xml_child(rewrites, "rule"); rule; rule = rule->next) {
+								char *expr = NULL;
+								char *val = NULL;
+
+								expr = (char *) switch_xml_attr_soft(rule, "expression");
+								val =  (char *) switch_xml_attr_soft(rule, "value");
+
+								if (zstr(expr)) continue;
+
+								switch_event_add_header_string(vhost->rewrites, SWITCH_STACK_BOTTOM, expr, val);
+							}
+						}
+					} // rewrites
+				} // xvhost
+			} // xvhosts
+		} // xprofile
+	} // xprofiles
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -3826,6 +4311,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 {
 	verto_profile_t *profile = NULL;
 	jsock_t *jsock;
+	verto_vhost_t *vhost;
 	int cp = 0;
 	int cc = 0;
 	const char *line = "=================================================================================================";
@@ -3838,14 +4324,22 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 		for (int i = 0; i < profile->i; i++) { 
 			char *tmpurl = switch_mprintf("%s:%s:%d",(profile->ip[i].secure == 1) ? "wss" : "ws", profile->ip[i].local_ip, profile->ip[i].local_port);
 			stream->write_function(stream, "%25s\t%s\t  %40s\t%s\n", profile->name, "profile", tmpurl, (profile->running) ? "RUNNING" : "DOWN");
+			switch_safe_free(tmpurl);
 		}
 		cp++;
 
 		switch_mutex_lock(profile->mutex);
-		for(jsock = profile->jsock_head; jsock; jsock = jsock->next) {
+		for (vhost = profile->vhosts; vhost; vhost = vhost->next) {
+			char *tmpname = switch_mprintf("%s::%s", profile->name, vhost->domain);
+			stream->write_function(stream, "%25s\t%s\t  %40s\t%s (%s)\n", tmpname, "vhost", vhost->root, vhost->auth_user ? "AUTH" : "NOAUTH", vhost->auth_user ? vhost->auth_user : "");
+			switch_safe_free(tmpname);
+		}
+
+		for (jsock = profile->jsock_head; jsock; jsock = jsock->next) {
 			char *tmpname = switch_mprintf("%s::%s@%s", profile->name, jsock->id, jsock->domain);
 			stream->write_function(stream, "%25s\t%s\t  %40s\t%s (%s)\n", tmpname, "client", jsock->name, (!zstr(jsock->uid)) ? "CONN_REG" : "CONN_NO_REG", (jsock->ptype & PTYPE_CLIENT_SSL) ? "WSS": "WS");
 			cc++;
+			switch_safe_free(tmpname);
 		}
 		switch_mutex_unlock(profile->mutex);
 	}
@@ -3872,6 +4366,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 		for (int i = 0; i < profile->i; i++) { 
 			char *tmpurl = switch_mprintf("%s:%s:%d",(profile->ip[i].secure == 1) ? "wss" : "ws", profile->ip[i].local_ip, profile->ip[i].local_port);
 			stream->write_function(stream, "<profile>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s</state>\n</profile>\n", profile->name, "profile", tmpurl, (profile->running) ? "RUNNING" : "DOWN");
+			switch_safe_free(tmpurl);
 		}
 		cp++;
 
@@ -3881,6 +4376,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 			stream->write_function(stream, "<client>\n<profile>%s</profile>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s (%s)</state>\n</client>\n", profile->name, tmpname, "client", jsock->name,
 									 (!zstr(jsock->uid)) ? "CONN_REG" : "CONN_NO_REG",  (jsock->ptype & PTYPE_CLIENT_SSL) ? "WSS": "WS");
 			cc++;
+			switch_safe_free(tmpname);
 		}
 		switch_mutex_unlock(profile->mutex);
 	}

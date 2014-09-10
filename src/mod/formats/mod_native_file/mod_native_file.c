@@ -83,6 +83,13 @@ static switch_status_t native_file_file_open(switch_file_handle_t *handle, const
 
 	handle->samples = 0;
 	handle->samplerate = 8000;
+
+	if (ext) {
+		if (!strcasecmp(ext, "G722")) {
+			handle->samplerate = 16000;
+		}
+	}
+
 	handle->channels = 1;
 	handle->format = 0;
 	handle->sections = 0;

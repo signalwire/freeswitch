@@ -531,10 +531,35 @@ SWITCH_DECLARE_CONSTRUCTOR Stream::~Stream()
 	}
 }
 
+/* WARNING!! you are not encouraged to use this unless you understand the risk!!! */
+SWITCH_DECLARE(const char *) Stream::read(int *len)
+{
+	uint8_t *buff;
+
+	this_check(NULL);
+
+	if (!stream_p->read_function) return NULL;
+
+	buff = stream_p->read_function(stream_p, len);
+
+	if (!buff || *len <= 0) {
+		*len = 0;
+		return NULL;
+	}
+
+	return (const char *)buff;
+}
+
 SWITCH_DECLARE(void) Stream::write(const char *data)
 {
 	this_check_void();
 	stream_p->write_function(stream_p, "%s", data);
+}
+
+SWITCH_DECLARE(void) Stream::raw_write(const char *data, int len)
+{
+	this_check_void();
+	stream_p->raw_write_function(stream_p, (uint8_t *)data, len);
 }
 
 SWITCH_DECLARE(const char *)Stream::get_data()

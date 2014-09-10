@@ -1457,25 +1457,26 @@ SWIG_Perl_SetModule(swig_module_info *module) {
 #define SWIGTYPE_p_Stream swig_types[8]
 #define SWIGTYPE_p_char swig_types[9]
 #define SWIGTYPE_p_input_callback_state swig_types[10]
-#define SWIGTYPE_p_p_switch_event_node_t swig_types[11]
-#define SWIGTYPE_p_session_flag_t swig_types[12]
-#define SWIGTYPE_p_switch_call_cause_t swig_types[13]
-#define SWIGTYPE_p_switch_channel_state_t swig_types[14]
-#define SWIGTYPE_p_switch_channel_t swig_types[15]
-#define SWIGTYPE_p_switch_core_session_t swig_types[16]
-#define SWIGTYPE_p_switch_event_t swig_types[17]
-#define SWIGTYPE_p_switch_event_types_t swig_types[18]
-#define SWIGTYPE_p_switch_input_args_t swig_types[19]
-#define SWIGTYPE_p_switch_input_type_t swig_types[20]
-#define SWIGTYPE_p_switch_priority_t swig_types[21]
-#define SWIGTYPE_p_switch_queue_t swig_types[22]
-#define SWIGTYPE_p_switch_state_handler_table_t swig_types[23]
-#define SWIGTYPE_p_switch_status_t swig_types[24]
-#define SWIGTYPE_p_switch_stream_handle_t swig_types[25]
-#define SWIGTYPE_p_uint32_t swig_types[26]
-#define SWIGTYPE_p_void swig_types[27]
-static swig_type_info *swig_types[29];
-static swig_module_info swig_module = {swig_types, 28, 0, 0, 0, 0};
+#define SWIGTYPE_p_int swig_types[11]
+#define SWIGTYPE_p_p_switch_event_node_t swig_types[12]
+#define SWIGTYPE_p_session_flag_t swig_types[13]
+#define SWIGTYPE_p_switch_call_cause_t swig_types[14]
+#define SWIGTYPE_p_switch_channel_state_t swig_types[15]
+#define SWIGTYPE_p_switch_channel_t swig_types[16]
+#define SWIGTYPE_p_switch_core_session_t swig_types[17]
+#define SWIGTYPE_p_switch_event_t swig_types[18]
+#define SWIGTYPE_p_switch_event_types_t swig_types[19]
+#define SWIGTYPE_p_switch_input_args_t swig_types[20]
+#define SWIGTYPE_p_switch_input_type_t swig_types[21]
+#define SWIGTYPE_p_switch_priority_t swig_types[22]
+#define SWIGTYPE_p_switch_queue_t swig_types[23]
+#define SWIGTYPE_p_switch_state_handler_table_t swig_types[24]
+#define SWIGTYPE_p_switch_status_t swig_types[25]
+#define SWIGTYPE_p_switch_stream_handle_t swig_types[26]
+#define SWIGTYPE_p_uint32_t swig_types[27]
+#define SWIGTYPE_p_void swig_types[28]
+static swig_type_info *swig_types[30];
+static swig_module_info swig_module = {swig_types, 29, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -3399,6 +3400,44 @@ XS(_wrap_delete_Stream) {
 }
 
 
+XS(_wrap_Stream_read) {
+  {
+    Stream *arg1 = (Stream *) 0 ;
+    int *arg2 = (int *) 0 ;
+    char *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    void *argp2 = 0 ;
+    int res2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: Stream_read(self,len);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Stream, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Stream_read" "', argument " "1"" of type '" "Stream *""'"); 
+    }
+    arg1 = reinterpret_cast< Stream * >(argp1);
+    res2 = SWIG_ConvertPtr(ST(1), &argp2,SWIGTYPE_p_int, 0 |  0 );
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Stream_read" "', argument " "2"" of type '" "int *""'"); 
+    }
+    arg2 = reinterpret_cast< int * >(argp2);
+    result = (char *)(arg1)->read(arg2);
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
+    
+    
+    XSRETURN(argvi);
+  fail:
+    
+    
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_Stream_write) {
   {
     Stream *arg1 = (Stream *) 0 ;
@@ -3432,6 +3471,54 @@ XS(_wrap_Stream_write) {
   fail:
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_Stream_raw_write) {
+  {
+    Stream *arg1 = (Stream *) 0 ;
+    char *arg2 = (char *) 0 ;
+    int arg3 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int val3 ;
+    int ecode3 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 3) || (items > 3)) {
+      SWIG_croak("Usage: Stream_raw_write(self,data,len);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_Stream, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Stream_raw_write" "', argument " "1"" of type '" "Stream *""'"); 
+    }
+    arg1 = reinterpret_cast< Stream * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Stream_raw_write" "', argument " "2"" of type '" "char const *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    ecode3 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(2), &val3);
+    if (!SWIG_IsOK(ecode3)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "Stream_raw_write" "', argument " "3"" of type '" "int""'");
+    } 
+    arg3 = static_cast< int >(val3);
+    (arg1)->raw_write((char const *)arg2,arg3);
+    
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    
     SWIG_croak_null();
   }
 }
@@ -9907,6 +9994,7 @@ static swig_type_info _swigt__p_PerlInterpreter = {"_p_PerlInterpreter", "PerlIn
 static swig_type_info _swigt__p_Stream = {"_p_Stream", "Stream *", 0, 0, (void*)"freeswitch::Stream", 0};
 static swig_type_info _swigt__p_char = {"_p_char", "char *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_input_callback_state = {"_p_input_callback_state", "input_callback_state_t *|input_callback_state *", 0, 0, (void*)"freeswitch::input_callback_state_t", 0};
+static swig_type_info _swigt__p_int = {"_p_int", "int *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_p_switch_event_node_t = {"_p_p_switch_event_node_t", "switch_event_node_t **", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_session_flag_t = {"_p_session_flag_t", "enum session_flag_t *|session_flag_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_call_cause_t = {"_p_switch_call_cause_t", "switch_call_cause_t *", 0, 0, (void*)0, 0};
@@ -9937,6 +10025,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_Stream,
   &_swigt__p_char,
   &_swigt__p_input_callback_state,
+  &_swigt__p_int,
   &_swigt__p_p_switch_event_node_t,
   &_swigt__p_session_flag_t,
   &_swigt__p_switch_call_cause_t,
@@ -9967,6 +10056,7 @@ static swig_cast_info _swigc__p_PerlInterpreter[] = {  {&_swigt__p_PerlInterpret
 static swig_cast_info _swigc__p_Stream[] = {  {&_swigt__p_Stream, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_input_callback_state[] = {  {&_swigt__p_input_callback_state, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_int[] = {  {&_swigt__p_int, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_p_switch_event_node_t[] = {  {&_swigt__p_p_switch_event_node_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_session_flag_t[] = {  {&_swigt__p_session_flag_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_call_cause_t[] = {  {&_swigt__p_switch_call_cause_t, 0, 0, 0},{0, 0, 0, 0}};
@@ -9997,6 +10087,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_Stream,
   _swigc__p_char,
   _swigc__p_input_callback_state,
+  _swigc__p_int,
   _swigc__p_p_switch_event_node_t,
   _swigc__p_session_flag_t,
   _swigc__p_switch_call_cause_t,
@@ -10063,7 +10154,9 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::delete_DTMF", _wrap_delete_DTMF},
 {"freeswitchc::new_Stream", _wrap_new_Stream},
 {"freeswitchc::delete_Stream", _wrap_delete_Stream},
+{"freeswitchc::Stream_read", _wrap_Stream_read},
 {"freeswitchc::Stream_write", _wrap_Stream_write},
+{"freeswitchc::Stream_raw_write", _wrap_Stream_raw_write},
 {"freeswitchc::Stream_get_data", _wrap_Stream_get_data},
 {"freeswitchc::Event_event_set", _wrap_Event_event_set},
 {"freeswitchc::Event_event_get", _wrap_Event_event_get},
@@ -10500,17 +10593,17 @@ XS(SWIG_init) {
   SWIG_TypeClientData(SWIGTYPE_p_IVRMenu, (void*) "freeswitch::IVRMenu");
   SWIG_TypeClientData(SWIGTYPE_p_API, (void*) "freeswitch::API");
   SWIG_TypeClientData(SWIGTYPE_p_input_callback_state, (void*) "freeswitch::input_callback_state_t");
-  /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
+  /*@SWIG://share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "S_HUP", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(S_HUP)));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
+  /*@SWIG://share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "S_FREE", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(S_FREE)));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
+  /*@SWIG://share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "S_RDLOCK", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(S_RDLOCK)));
     SvREADONLY_on(sv);

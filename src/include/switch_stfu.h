@@ -172,6 +172,8 @@ typedef struct {
 	uint32_t clean_count;
 	uint32_t consecutive_good_count;
 	uint32_t consecutive_bad_count;
+    double period_jitter_percent;
+    double period_missing_percent;
 } stfu_report_t;
 
 typedef void (*stfu_n_call_me_t)(stfu_instance_t *i, void *);

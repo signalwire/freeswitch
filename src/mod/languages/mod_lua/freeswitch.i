@@ -43,6 +43,9 @@
 %newobject API::execute;
 %newobject API::executeString;
 
+%include "typemaps.i"
+%apply int *OUTPUT { int *len };
+
 /**
  * tell swig to grok everything defined in these header files and
  * build all sorts of c wrappers and lua shadows of the c wrappers.

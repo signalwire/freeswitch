@@ -25,6 +25,7 @@
  * 
  * Anthony Minessale II <anthm@freeswitch.org>
  * Juan Jose Comellas <juanjo@comellas.org>
+ * Seven Du <dujinfang@gmail.com>
  *
  *
  * switch_utils.c -- Compatibility and Helper Code
@@ -3603,6 +3604,261 @@ SWITCH_DECLARE(char *) switch_strerror_r(int errnum, char *buf, switch_size_t bu
 #endif
 }
 
+SWITCH_DECLARE(void) switch_http_parse_qs(switch_http_request_t *request, char *qs)
+{
+	char *q;
+	char *next;
+	char *name, *val;
+
+	if (qs) {
+		q = qs;
+	} else { /*parse our own qs, dup to avoid modify the original string */
+		q = strdup(request->qs);
+	}
+
+	switch_assert(q);
+	next = q;
+
+	do {
+		char *p;
+
+		if ((next = strchr(next, '&'))) {
+			*next++ = '\0';
+		}
+
+		for (p = q; p && *p; p++) {
+			if (*p == '+') *p = ' ';
+		}
+
+		switch_url_decode(q);
+
+		name = q;
+		if ((val = strchr(name, '='))) {
+			*val++ = '\0';
+			switch_event_add_header_string(request->headers, SWITCH_STACK_BOTTOM, name, val);
+		}
+		q = next;
+	} while (q);
+
+	if (!qs) {
+		switch_safe_free(q);
+	}
+}
+
+/* clean the uri to protect us from vulnerability attack */
+switch_status_t clean_uri(char *uri)
+{
+	int argc;
+	char *argv[64];
+	int last, i, len, uri_len = 0;
+
+	argc = switch_separate_string(uri, '/', argv, sizeof(argv) / sizeof(argv[0]));
+
+	if (argc == sizeof(argv)) { /* too deep */
+		return SWITCH_STATUS_FALSE;
+	}
+
+	last = 1;
+	for(i = 1; i < argc; i++) {
+		if (*argv[i] == '\0' || !strcmp(argv[i], ".")) {
+			/* ignore //// or /././././ */
+		} else if (!strcmp(argv[i], "..")) {
+			/* got /../, go up one level */
+			if (last > 1) last--;
+		} else {
+			argv[last++] = argv[i];
+		}
+	}
+
+	for(i = 1; i < last; i++) {
+		len = strlen(argv[i]);
+		sprintf(uri + uri_len, "/%s", argv[i]);
+		uri_len += (len + 1);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_http_parse_header(char *buffer, uint32_t datalen, switch_http_request_t *request)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *p = buffer;
+	int i = 10;
+	char *http = NULL;
+	int header_count;
+	char *headers[64] = { 0 };
+	int argc;
+	char *argv[2] = { 0 };
+	char *body = NULL;
+
+	if (datalen < 16)	return status; /* minimum GET / HTTP/1.1\r\n */
+
+	while(i--) { // sanity check
+		if (*p++ == ' ') break;
+	}
+
+	if (i == 0) return status;
+
+	if ((body = strstr(buffer, "\r\n\r\n"))) {
+		*body = '\0';
+		body += 4;
+	} else if (( body = strstr(buffer, "\n\n"))) {
+		*body = '\0';
+		body += 2;
+	} else {
+		return status;
+	}
+
+	request->_buffer = strdup(buffer);
+	request->method = request->_buffer;
+	request->bytes_buffered = datalen;
+	if (body) {
+		request->bytes_header = body - buffer;
+		request->bytes_read = body - buffer;
+	}
+
+	p = strchr(request->method, ' ');
+
+	if (!p) goto err;
+
+	*p++ = '\0';
+
+	if (*p != '/') goto err; /* must start from '/' */
+
+	request->uri = p;
+	p = strchr(request->uri, ' ');
+
+	if (!p) goto err;
+
+	*p++ = '\0';
+	http = p;
+
+	p = strchr(request->uri, '?');
+
+	if (p) {
+		*p++ = '\0';
+		request->qs = p;
+	}
+
+	if (clean_uri((char *)request->uri) != SWITCH_STATUS_SUCCESS) {
+		goto err;
+	}
+
+	if (!strncmp(http, "HTTP/1.1", 8)) {
+		request->keepalive = SWITCH_TRUE;
+	} else if (strncmp(http, "HTTP/1.0", 8)) {
+		goto err;
+	}
+
+	if (!request->headers) {
+		if (switch_event_create(&request->headers, SWITCH_EVENT_CHANNEL_DATA) != SWITCH_STATUS_SUCCESS) {
+			goto err;
+		}
+		request->_destroy_headers = SWITCH_TRUE;
+	}
+
+	p = strchr(http, '\n');
+
+	if (p) {
+		*p++ = '\0'; // now the first header
+	} else {
+		goto noheader;
+	}
+
+	header_count = switch_separate_string(p, '\n', headers, sizeof(headers)/ sizeof(headers[0]));
+
+	if (header_count < 1) goto err;
+
+	for (i = 0; i < header_count; i++) {
+		char *header, *value;
+		int len;
+
+		argc = switch_separate_string(headers[i], ':', argv, 2);
+
+		if (argc != 2) goto err;
+
+		header = argv[0];
+		value = argv[1];
+
+		if (*value == ' ') value++;
+
+		len = strlen(value);
+
+		if (len && *(value + len - 1) == '\r') *(value + len - 1) = '\0';
+
+		switch_event_add_header_string(request->headers, SWITCH_STACK_BOTTOM, header, value);
+
+		if (!strncasecmp(header, "User-Agent", 10)) {
+			request->user_agent = value;
+		} else if (!strncasecmp(header, "Host", 4)) {
+			request->host = value;
+			p = strchr(value, ':');
+
+			if (p) {
+				*p++ = '\0';
+
+				if (*p) request->port = (switch_port_t)atoi(p);
+			}
+		} else if (!strncasecmp(header, "Content-Type", 12)) {
+			request->content_type = value;
+		} else if (!strncasecmp(header, "Content-Length", 14)) {
+			request->content_length = atoi(value);
+		} else if (!strncasecmp(header, "Referer", 7)) {
+			request->referer = value;
+		}
+	}
+
+noheader:
+
+	if (request->qs) {
+		switch_http_parse_qs(request, NULL);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+
+err:
+	switch_http_free_request(request);
+	return status;
+}
+
+SWITCH_DECLARE(void) switch_http_free_request(switch_http_request_t *request)
+{
+	if (request->_buffer) free(request->_buffer);
+	if (request->_destroy_headers && request->headers) {
+		switch_event_destroy(&request->headers);
+	}
+}
+
+/* for debugging only */
+SWITCH_DECLARE(void) switch_http_dump_request(switch_http_request_t *request)
+{
+	switch_assert(request->method);
+
+	printf("method: %s\n", request->method);
+
+	if (request->uri) printf("uri: %s\n", request->uri);
+	if (request->qs)  printf("qs: %s\n", request->qs);
+	if (request->host) printf("host: %s\n", request->host);
+	if (request->port) printf("port: %d\n", request->port);
+	if (request->from) printf("from: %s\n", request->from);
+	if (request->user_agent) printf("user_agent: %s\n", request->user_agent);
+	if (request->referer) printf("referer: %s\n", request->referer);
+	if (request->user) printf("user: %s\n", request->user);
+	if (request->keepalive) printf("uri: %d\n", request->keepalive);
+	if (request->content_type) printf("uri: %s\n", request->content_type);
+	if (request->content_length) printf("uri: %" SWITCH_SIZE_T_FMT "\n", request->content_length);
+
+	{
+		switch_event_header_t *header = request->headers->headers;
+
+		printf("headers:\n-------------------------\n");
+
+		while(header) {
+			printf("%s: %s\n", header->name, header->value);
+			header = header->next;
+		}
+	}
+}
 
 /* For Emacs:
  * Local Variables:

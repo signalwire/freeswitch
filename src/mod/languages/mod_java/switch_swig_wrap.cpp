@@ -972,6 +972,23 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_delete_1Stream(JN
 }
 
 
+SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_Stream_1read(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+  jstring jresult = 0 ;
+  Stream *arg1 = (Stream *) 0 ;
+  int *arg2 = (int *) 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(Stream **)&jarg1; 
+  arg2 = *(int **)&jarg2; 
+  result = (char *)(arg1)->read(arg2);
+  if(result) jresult = jenv->NewStringUTF((const char *)result);
+  return jresult;
+}
+
+
 SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_Stream_1write(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   Stream *arg1 = (Stream *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -986,6 +1003,26 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_Stream_1write(JNI
     if (!arg2) return ;
   }
   (arg1)->write((char const *)arg2);
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+}
+
+
+SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_Stream_1raw_1write(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jint jarg3) {
+  Stream *arg1 = (Stream *) 0 ;
+  char *arg2 = (char *) 0 ;
+  int arg3 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(Stream **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return ;
+  }
+  arg3 = (int)jarg3; 
+  (arg1)->raw_write((char const *)arg2,arg3);
   if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
 }
 

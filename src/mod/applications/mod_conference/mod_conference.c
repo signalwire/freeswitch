@@ -4633,7 +4633,7 @@ static void member_add_file_data(conference_member_t *member, int16_t *data, swi
 		pool = fnode->pool;
 		fnode = NULL;
 		switch_core_destroy_memory_pool(&pool);
-	} else {
+	} else if(!switch_test_flag(member->fnode, NFLAG_PAUSE)) {
 		/* skip this frame until leadin time has expired */
 		if (member->fnode->leadin) {
 			member->fnode->leadin--;
@@ -7145,61 +7145,100 @@ static switch_status_t conf_api_sub_xml_list(conference_obj_t *conference, switc
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void switch_fnode_toggle_pause(conference_file_node_t *fnode, switch_stream_handle_t *stream)
+{
+	if (fnode) { 
+		if (switch_test_flag(fnode, NFLAG_PAUSE)) {
+				stream->write_function(stream, "+OK Resume\n");
+			switch_clear_flag(fnode, NFLAG_PAUSE);
+			} else {
+				stream->write_function(stream, "+OK Pause\n");
+			switch_set_flag(fnode, NFLAG_PAUSE);
+			}
+		}
+}
+
 static switch_status_t conf_api_sub_pause_play(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	if (argc == 2) {
 		switch_mutex_lock(conference->mutex);
-		if (conference->fnode) { 
-			if (switch_test_flag(conference->fnode, NFLAG_PAUSE)) {
-				stream->write_function(stream, "+OK Resume\n");
-				switch_clear_flag(conference->fnode, NFLAG_PAUSE);
-			} else {
-				stream->write_function(stream, "+OK Pause\n");
-				switch_set_flag(conference->fnode, NFLAG_PAUSE);
-			}
-		}
+		switch_fnode_toggle_pause(conference->fnode, stream);
 		switch_mutex_unlock(conference->mutex);
 
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	if (argc == 3) {
+		uint32_t id = atoi(argv[2]);
+		conference_member_t *member;
+
+		if ((member = conference_member_get(conference, id))) {
+			switch_mutex_lock(member->fnode_mutex);
+			switch_fnode_toggle_pause(member->fnode, stream);
+			switch_mutex_unlock(member->fnode_mutex);
+			switch_thread_rwlock_unlock(member->rwlock);
+			return SWITCH_STATUS_SUCCESS;
+		} else {
+			stream->write_function(stream, "Member: %u not found.\n", id);
+		}
+	}
+
 	return SWITCH_STATUS_GENERR;
 }
 
-static switch_status_t conf_api_sub_file_seek(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+static void switch_fnode_seek(conference_file_node_t *fnode, switch_stream_handle_t *stream, char *arg)
 {
-	if (argc == 3) {
+	if (fnode && fnode->type == NODE_TYPE_FILE) { 
 		unsigned int samps = 0;
 		unsigned int pos = 0;
 		
-		switch_mutex_lock(conference->mutex);
-
-		if (conference->fnode && conference->fnode->type == NODE_TYPE_FILE) { 
-			if (*argv[2] == '+' || *argv[2] == '-') {
+		if (*arg == '+' || *arg == '-') {
 				int step;
 				int32_t target;
-				if (!(step = atoi(argv[2]))) {
+			if (!(step = atoi(arg))) {
 					step = 1000;
 				}
 					
-				samps = step * (conference->fnode->fh.native_rate / 1000);
-				target = (int32_t)conference->fnode->fh.pos + samps;
+			samps = step * (fnode->fh.native_rate / 1000);
+			target = (int32_t)fnode->fh.pos + samps;
 				
 				if (target < 0) {
 					target = 0;
 				}
 					
 				stream->write_function(stream, "+OK seek to position %d\n", target);
-				switch_core_file_seek(&conference->fnode->fh, &pos, target, SEEK_SET);
+			switch_core_file_seek(&fnode->fh, &pos, target, SEEK_SET);
 				
 			} else {
-				samps = switch_atoui(argv[2]) * (conference->fnode->fh.native_rate / 1000);
+			samps = switch_atoui(arg) * (fnode->fh.native_rate / 1000);
 				stream->write_function(stream, "+OK seek to position %d\n", samps);
-				switch_core_file_seek(&conference->fnode->fh, &pos, samps, SEEK_SET);
+			switch_core_file_seek(&fnode->fh, &pos, samps, SEEK_SET);
 			}
 		}
+}
+
+static switch_status_t conf_api_sub_file_seek(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	if (argc == 3) {
+		switch_mutex_lock(conference->mutex);
+		switch_fnode_seek(conference->fnode, stream, argv[2]);
 		switch_mutex_unlock(conference->mutex);
 			
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (argc == 4) {
+		uint32_t id = atoi(argv[3]);
+		conference_member_t *member = conference_member_get(conference, id);
+		if (member == NULL) {
+		    stream->write_function(stream, "Member: %u not found.\n", id);
+		    return SWITCH_STATUS_GENERR;
+		}
+		
+		switch_mutex_lock(member->fnode_mutex);
+		switch_fnode_seek(member->fnode, stream, argv[2]);
+		switch_mutex_unlock(member->fnode_mutex);
+		switch_thread_rwlock_unlock(member->rwlock);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -8108,8 +8147,8 @@ static api_command_t conf_api_sub_commands[] = {
 	{"position", (void_fn_t) & conf_api_sub_position, CONF_API_SUB_MEMBER_TARGET, "position", "<member_id> <x>,<y>,<z>"},
 	{"auto-3d-position", (void_fn_t) & conf_api_sub_auto_position, CONF_API_SUB_ARGS_SPLIT, "auto-3d-position", "[on|off]"},
 	{"play", (void_fn_t) & conf_api_sub_play, CONF_API_SUB_ARGS_SPLIT, "play", "<file_path> [async|<member_id> [nomux]]"},
-	{"pause_play", (void_fn_t) & conf_api_sub_pause_play, CONF_API_SUB_ARGS_SPLIT, "pause", ""},
-	{"file_seek", (void_fn_t) & conf_api_sub_file_seek, CONF_API_SUB_ARGS_SPLIT, "file_seek", "[+-]<val>"},
+	{"pause_play", (void_fn_t) & conf_api_sub_pause_play, CONF_API_SUB_ARGS_SPLIT, "pause", "[<member_id>]"},
+	{"file_seek", (void_fn_t) & conf_api_sub_file_seek, CONF_API_SUB_ARGS_SPLIT, "file_seek", "[+-]<val> [<member_id>]"},
 	{"say", (void_fn_t) & conf_api_sub_say, CONF_API_SUB_ARGS_AS_ONE, "say", "<text>"},
 	{"saymember", (void_fn_t) & conf_api_sub_saymember, CONF_API_SUB_ARGS_AS_ONE, "saymember", "<member_id> <text>"},
 	{"stop", (void_fn_t) & conf_api_sub_stop, CONF_API_SUB_ARGS_SPLIT, "stop", "<[current|all|async|last]> [<member_id>]"},

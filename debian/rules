@@ -80,6 +80,7 @@ override_dh_auto_clean:
 		--with-htdocsdir=/usr/share/freeswitch/htdocs \
 		--with-soundsdir=/usr/share/freeswitch/sounds \
 		--with-storagedir=/var/lib/freeswitch/storage \
+		--with-cachedir=/var/cache/freeswitch \
 		--with-grammardir=/usr/share/freeswitch/grammar \
 		--with-certsdir=/etc/freeswitch/tls \
 		--with-scriptdir=/usr/share/freeswitch/scripts \

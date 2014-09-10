@@ -544,7 +544,12 @@ switch_status_t mod_xml_radius_add_params(switch_core_session_t *session, switch
 							goto err;
 						}			
 					} else if ( attribute->type == 1 ) {
-						int number = atoi(switch_channel_get_variable(channel, variable));
+						const char *data = switch_channel_get_variable(channel, variable);
+						int number = 0;
+						
+						if ( data ) {
+							number = atoi(data);
+						}
 						
 						if (rc_avpair_add(handle, send, attr_num, &number, -1, vend_num) == NULL) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
@@ -990,7 +995,7 @@ switch_status_t mod_xml_radius_accounting_end(switch_core_session_t *session){
 	}
 	
 	/* If there are conditions defined, and none of them pass, then skip this accounting */
-	if ((conditions = switch_xml_child(globals.acct_start_configs, "conditions")) != NULL &&
+	if ((conditions = switch_xml_child(globals.acct_end_configs, "conditions")) != NULL &&
 		mod_xml_radius_check_conditions(channel, conditions) != SWITCH_STATUS_SUCCESS ) {
 		goto end;
 	}

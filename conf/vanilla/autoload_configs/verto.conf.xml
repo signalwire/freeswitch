@@ -8,8 +8,8 @@
     <profile name="mine">
       <param name="bind-local" value="0.0.0.0:8081"/>
       <param name="bind-local" value="0.0.0.0:8082" secure="true"/>
-      <param name="secure-combined" value="$${base_dir}/certs/wss.pem"/>
-      <param name="secure-chain" value="$${base_dir}/certs/wss.pem"/>
+      <param name="secure-combined" value="$${certs_dir}/wss.pem"/>
+      <param name="secure-chain" value="$${certs_dir}/wss.pem"/>
       <param name="userauth" value="true"/>
       <!-- setting this to true will allow anyone to register even with no account so use with care -->
       <param name="blind-reg" value="false"/>

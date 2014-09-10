@@ -516,6 +516,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_process_t38_passthru(switch_co
 SWITCH_DECLARE(switch_status_t) switch_core_session_get_payload_code(switch_core_session_t *session,
 																	 switch_media_type_t type,
 																	 const char *iananame,
+																	 uint32_t rate,
 																	 switch_payload_t *ptP,
 																	 switch_payload_t *recv_ptP,
 																	 char **fmtpP)
@@ -540,7 +541,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_payload_code(switch_core
 
 		if (!pmap->allocated) continue;
 
-		if (!strcasecmp(pmap->iananame, iananame)) {
+		if (!strcasecmp(pmap->iananame, iananame) && (!rate || (rate == pmap->rate))) {
 			pt = pmap->pt;
 			recv_pt = pmap->recv_pt;
 			fmtp = pmap->rm_fmtp;
@@ -6229,7 +6230,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					if (orig_session && 
 						switch_core_session_get_payload_code(orig_session, 
 															 imp->codec_type == SWITCH_CODEC_TYPE_AUDIO ? SWITCH_MEDIA_TYPE_AUDIO : SWITCH_MEDIA_TYPE_VIDEO,
-															 imp->iananame, &orig_pt, NULL, &orig_fmtp) == SWITCH_STATUS_SUCCESS) {
+															 imp->iananame, imp->samples_per_second, &orig_pt, NULL, &orig_fmtp) == SWITCH_STATUS_SUCCESS) {
 						smh->ianacodes[i] = orig_pt;
 						
 						if (orig_fmtp) {

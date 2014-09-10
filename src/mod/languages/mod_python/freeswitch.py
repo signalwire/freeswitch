@@ -153,7 +153,9 @@ class Stream(_object):
         except: self.this = this
     __swig_destroy__ = _freeswitch.delete_Stream
     __del__ = lambda self : None;
+    def read(*args): return _freeswitch.Stream_read(*args)
     def write(*args): return _freeswitch.Stream_write(*args)
+    def raw_write(*args): return _freeswitch.Stream_raw_write(*args)
     def get_data(*args): return _freeswitch.Stream_get_data(*args)
 Stream_swigregister = _freeswitch.Stream_swigregister
 Stream_swigregister(Stream)

@@ -1,6 +1,6 @@
 <configuration name="perl.conf" description="PERL Configuration">
   <settings>
-    <!--<param name="xml-handler-script" value="/tmp/xml.pl"/>-->
+    <!--<param name="xml-handler-script" value="$${temp_dir}/xml.pl"/>-->
     <!--<param name="xml-handler-bindings" value="dialplan"/>-->
 
     <!--

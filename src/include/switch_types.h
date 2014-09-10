@@ -510,6 +510,7 @@ struct switch_directories {
 	char *htdocs_dir;
 	char *grammar_dir;
 	char *storage_dir;
+	char *cache_dir;
 	char *recordings_dir;
 	char *sounds_dir;
 	char *lib_dir;
@@ -2152,6 +2153,7 @@ typedef void (*switch_scheduler_func_t) (switch_scheduler_task_t *task);
 
 typedef switch_status_t (*switch_state_handler_t) (switch_core_session_t *);
 typedef struct switch_stream_handle switch_stream_handle_t;
+typedef uint8_t * (*switch_stream_handle_read_function_t) (switch_stream_handle_t *handle, int *len);
 typedef switch_status_t (*switch_stream_handle_write_function_t) (switch_stream_handle_t *handle, const char *fmt, ...);
 typedef switch_status_t (*switch_stream_handle_raw_write_function_t) (switch_stream_handle_t *handle, uint8_t *data, switch_size_t datalen);
 

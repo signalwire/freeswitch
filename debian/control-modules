@@ -13,6 +13,10 @@ Description: Advanced voicemail detection
  This module attempts to determine when a voicemail system has
  answered the call.
 
+Module: applications/mod_bert
+Description: Line testing tool
+ This module provides a tool to test a line.
+
 Module: applications/mod_blacklist
 Description: Blacklist helper
  This module provides tools to blacklist callers.
