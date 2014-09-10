@@ -37,7 +37,7 @@
 
 #include <switch.h>
 #include <sys/stat.h>
-#include <postgresql/libpq-fe.h>
+#include <libpq-fe.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_cdr_pg_csv_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cdr_pg_csv_shutdown);
