@@ -601,6 +601,7 @@ if test x"$enable_core_pgsql_support" = x"yes" ; then
     AC_MSG_RESULT([$POSTGRESQL_LIBDIR])
 
     AC_DEFINE([SWITCH_HAVE_PGSQL], [1], [Define to 1 if PostgreSQL libraries are available])
+    AM_CONDITIONAL([HAVE_PGSQL],[true])
     AC_DEFINE_UNQUOTED([POSTGRESQL_VERSION], "${POSTGRESQL_VERSION}", [Specifies the version of PostgreSQL we are linking against])
     AC_DEFINE_UNQUOTED([POSTGRESQL_MAJOR_VERSION], ${POSTGRESQL_MAJOR_VERSION}, [Specifies the version of PostgreSQL we are linking against])
     AC_DEFINE_UNQUOTED([POSTGRESQL_MINOR_VERSION], ${POSTGRESQL_MINOR_VERSION}, [Specifies the version of PostgreSQL we are linking against])
@@ -612,6 +613,8 @@ if test x"$enable_core_pgsql_support" = x"yes" ; then
     SWITCH_AM_LDFLAGS="$POSTGRESQL_LDFLAGS $SWITCH_AM_LDFLAGS"
 
     LIBS="$save_LIBS"
+else
+  AM_CONDITIONAL([HAVE_PGSQL],[false])
 fi
 
 AC_ARG_ENABLE(deprecated-core-db-events,
