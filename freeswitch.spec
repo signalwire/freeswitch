@@ -179,6 +179,9 @@ BuildRequires: e2fsprogs-devel
 BuildRequires: libtheora-devel
 BuildRequires: libxml2-devel
 BuildRequires: bison
+BuildRequires: net-snmp-devel
+BuildRequires: libmemcached-devel
+BuildRequires: portaudio-devel
 %if %{build_py26_esl}
 BuildRequires: python26-devel
 Requires: python26
@@ -1815,6 +1818,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/tts_commandline.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/unicall.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/unimrcp.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/verto.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/voicemail.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/voicemail_ivr.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/xml_cdr.conf.xml
