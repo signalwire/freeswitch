@@ -508,7 +508,7 @@
 	 After call is retrieved, park extension is free for another call.
     -->
     <extension name="valet_park">
-      <condition field="destination_number" expression="^(60\d[1-9])$">
+      <condition field="destination_number" expression="^((?!6000)60\d{2})$">
 	<action application="answer"/>
 	<action application="valet_park" data="valet_parking_lot $1"/>
       </condition>
