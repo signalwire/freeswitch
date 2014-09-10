@@ -2132,7 +2132,7 @@ static uint32_t sofia_presence_get_cseq(sofia_profile_t *profile)
 
 	if (profile->last_cseq) {
 		diff = callsequence - profile->last_cseq;
-		if (diff < 0 && diff > -100000) {
+		if (diff <= 0 && diff > -100000) {
 			callsequence = ++profile->last_cseq;
 		}
 	}
