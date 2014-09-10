@@ -1603,10 +1603,10 @@ static switch_status_t httapi_sync(client_t *client)
 	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) client);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) client);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, ua);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 
 	if (client->profile->timeout) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, client->profile->timeout);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 	}
 
 	if (client->profile->ssl_cert_file) {

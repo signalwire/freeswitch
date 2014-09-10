@@ -237,10 +237,10 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &config_data);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-xml/1.0");
+		switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 
 		if (binding->timeout) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, binding->timeout);
-			switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 		}
 
 		if (binding->disable100continue) {
