@@ -34,7 +34,7 @@
 //#define RTP_DEBUG_WRITE_DELTA
 //#define DEBUG_MISSED_SEQ
 //#define DEBUG_EXTRA
-#define DEBUG_RTCP
+//#define DEBUG_RTCP
 
 #include <switch.h>
 #ifndef _MSC_VER
@@ -1843,9 +1843,7 @@ static void check_jitter(switch_rtp_t *rtp_session)
 }
 
 static void rtcp_generate_sender_info(switch_rtp_t *rtp_session, struct switch_rtcp_sender_info *sr){
-#ifdef DEBUG_RTCP
 	switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
-#endif
 	switch_time_t now;
 	uint32_t sec, ntp_sec, ntp_usec;
 	switch_time_exp_t now_hr;
@@ -1860,14 +1858,12 @@ static void rtcp_generate_sender_info(switch_rtp_t *rtp_session, struct switch_r
 	sr->pc = htonl(rtp_session->stats.outbound.packet_count);
 	sr->oc = htonl((rtp_session->stats.outbound.raw_bytes - rtp_session->stats.outbound.packet_count * sizeof(srtp_hdr_t)));
 
-#ifdef DEBUG_RTCP
 	switch_time_exp_gmt(&now_hr,now);
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,"Sending an RTCP packet[%04d-%02d-%02d %02d:%02d:%02d.%d] lsr[%u] msw[%u] lsw[%u] stats_ssrc[%u]\n",
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10,"Sending an RTCP packet[%04d-%02d-%02d %02d:%02d:%02d.%d] lsr[%u] msw[%u] lsw[%u] stats_ssrc[%u]\n",
                 1900 + now_hr.tm_year,  now_hr.tm_mday, now_hr.tm_mon, now_hr.tm_hour, now_hr.tm_min, now_hr.tm_sec, now_hr.tm_usec,
                 (ntohl(sr->ntp_lsw)&0xffff0000)>>16 | (ntohl(sr->ntp_msw)&0x0000ffff)<<16,
                 ntohl(sr->ntp_msw),ntohl(sr->ntp_lsw), rtp_session->stats.rtcp.ssrc
 	);
-#endif
 }
 
 
