@@ -867,6 +867,22 @@ Requires:       %{name} = %{version}-%{release}
 %description endpoint-skinny
 SCCP/Skinny support for FreeSWITCH open source telephony platform.
 
+%package endpoint-verto
+Summary:        Verto endpoint support for FreeSWITCH open source telephony platform
+Group:          System/Libraries
+Requires:       %{name} = %{version}-%{release}
+
+%description endpoint-verto
+Verto protocol support for FreeSWITCH open source telephony platform.
+
+%package endpoint-rtc
+Summary:        Verto endpoint support for FreeSWITCH open source telephony platform
+Group:          System/Libraries
+Requires:       %{name} = %{version}-%{release}
+
+%description endpoint-rtc
+Verto protocol support for FreeSWITCH open source telephony platform.
+
 %package freetdm
 Summary:	Provides a unified interface to hardware TDM cards and ss7 stacks for FreeSWITCH
 Group:		System/Libraries
@@ -1405,7 +1421,7 @@ DIRECTORIES_MODULES=""
 ######################################################################################################################
 ENDPOINTS_MODULES="endpoints/mod_dingaling ../../libs/freetdm/mod_freetdm \
 			endpoints/mod_loopback endpoints/mod_portaudio endpoints/mod_rtmp \
-			endpoints/mod_skinny endpoints/mod_skypopen endpoints/mod_sofia"
+			endpoints/mod_skinny endpoints/mod_verto endpoints/mod_rtc endpoints/mod_skypopen endpoints/mod_sofia"
 
 ## DISABLED MODULES DUE TO BUILD ISSUES endpoints/mod_gsmopen endpoints/mod_h323 endpoints/mod_khomp 
  
@@ -2102,6 +2118,12 @@ fi
 %files endpoint-skinny
 %{MODINSTDIR}/mod_skinny.so*
 
+%files endpoint-verto
+%{MODINSTDIR}/mod_verto.so*
+
+%files endpoint-rtc
+%{MODINSTDIR}/mod_rtc.so*
+
 %files endpoint-skypopen
 %{MODINSTDIR}/mod_skypopen.so*
 
@@ -2349,7 +2371,9 @@ fi
 #
 ######################################################################################################################
 %changelog
-* Fri Jun 02 2014 - krice@freeswitch.org
+* Thu Sep 11 2014 - krice@freeswitch.org
+- add and fix mod_verto and mod_rtc
+* Mon Jun 02 2014 - krice@freeswitch.org
 - remove mod_spidermoney as its been deprecated
 * Fri Feb 21 2014 - crienzo@grasshopper.com
 - change file owner to root
@@ -2362,11 +2386,11 @@ fi
 * Mon Dec 09 2013 - crienzo@grasshopper.com
 - Add mod_ssml, mod_rayo
 - Fix build on master
-* Thu Jun 28 2013 - krice@freeswitch.org
+* Fri Jun 28 2013 - krice@freeswitch.org
 - Add module for VP8
-* Thu Jun 19 2013 - krice@freeswitch.org
+* Wed Jun 19 2013 - krice@freeswitch.org
 - tweak files included for vanilla configs
-* Thu Sep 19 2012 - krice@freeswitch.org
+* Wed Sep 19 2012 - krice@freeswitch.org
 - Add support for Spanish and Portugese say language modules
 * Thu Jan 26 2012 - krice@freeswitch.org
 - complete rework of spec file
@@ -2448,10 +2472,10 @@ fi
 - added directory files to russian language
 * Sat Nov 21 2009 - michal.bielicki@seventhsignal.de
 - added patch by Igor Neves <neves.igor@gmail.com>: Added some checkup in %post and %postun to prevent upgrades from removing freeswitch user
-* Thu Nov 18 2009 - michal.bielicki@seventhsignal.de
+* Wed Nov 18 2009 - michal.bielicki@seventhsignal.de
 - added new config files for diretory and distributor
 - removed sangoma boost from openzap for builds that do not inherit wanpipe while building.
-* Tue Jul 24 2009 - mike@jerris.com
+* Fri Jul 24 2009 - mike@jerris.com
 - removed mod_http
 - removed ozmod_wanpipe
 * Tue Jun 23 2009 - raulfragoso@gmail.com
@@ -2459,7 +2483,7 @@ fi
 - Included new config and mod files to catch up with latest SVN
 - Included new sound files for base256 and zrtp
 - mod_unimrcp must be built after mod_sofia
-* Mon Feb 17 2009 - michal.bielicki@halokwadrat.de
+* Tue Feb 17 2009 - michal.bielicki@halokwadrat.de
 - added mod_python
 - added mod_fax
 - added mod_amrwb.so
@@ -2496,7 +2520,7 @@ fi
 - abstraction of mkdir, mv, rm, install etc into macros
 * Fri Jan 18 2008 - michal.bielicki@voiceworks.pl
 - fixes, fixes and more fixes in preparation for rc1
-* Thu Dec 5 2007 - michal.bielicki@voiceworks.pl
+* Wed Dec 5 2007 - michal.bielicki@voiceworks.pl
 - put in detail configfiles in to split of spidermonkey configs
 - created link from /opt/freesxwitch/conf to /etc%{prefix}
 * Thu Nov 29 2007 - michal.bielicki@voiceworks.pl
