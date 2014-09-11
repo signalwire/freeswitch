@@ -1075,7 +1075,9 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
 				tech_pvt->privacy = "id";
 			} else {
-				tech_pvt->privacy = "none";
+				if (!(val = switch_channel_get_variable(channel, "sip_cid_suppress_privacy_none")) || !switch_true(val)) {
+					tech_pvt->privacy = "none";
+				}
 			}
 
 			break;
