@@ -2420,6 +2420,8 @@ SWITCH_STANDARD_API(gsmopen_dump_function)
 					}
 					snprintf(value, sizeof(value) - 1, "%d", tech_pvt->got_signal);
 					stream->write_function(stream, "got_signal = %s\n", value);
+					snprintf(value, sizeof(value) - 1, "%d", tech_pvt->signal_strength);
+					stream->write_function(stream, "signal_strength = %s\n", value);
 					snprintf(value, sizeof(value) - 1, "%d", tech_pvt->running);
 					stream->write_function(stream, "running = %s\n", value);
 					stream->write_function(stream, "subscriber_number = %s\n", tech_pvt->subscriber_number);
@@ -2483,6 +2485,8 @@ SWITCH_STANDARD_API(gsmopen_dump_function)
 			}
 			snprintf(value, sizeof(value) - 1, "%d", tech_pvt->got_signal);
 			stream->write_function(stream, "got_signal = %s\n", value);
+			snprintf(value, sizeof(value) - 1, "%d", tech_pvt->signal_strength);
+			stream->write_function(stream, "signal_strength = %s\n", value);
 			snprintf(value, sizeof(value) - 1, "%d", tech_pvt->running);
 			stream->write_function(stream, "running = %s\n", value);
 			stream->write_function(stream, "subscriber_number = %s\n", tech_pvt->subscriber_number);
@@ -2817,6 +2821,8 @@ int dump_event_full(private_t *tech_pvt, int is_alarm, int alarm_code, const cha
 		}
 		snprintf(value, sizeof(value) - 1, "%d", tech_pvt->got_signal);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "got_signal", value);
+		snprintf(value, sizeof(value) - 1, "%d", tech_pvt->signal_strength);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "signal_strength", value);
 		snprintf(value, sizeof(value) - 1, "%d", tech_pvt->running);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "running", value);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subscriber_number", tech_pvt->subscriber_number);

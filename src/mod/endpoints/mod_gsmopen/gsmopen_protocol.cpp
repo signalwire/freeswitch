@@ -996,6 +996,12 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 						tech_pvt->got_signal = 2;
 					}
 
+					if (signal_quality == 99) {
+						tech_pvt->signal_strength = 0;
+					} else {
+						tech_pvt->signal_strength = (signal_quality * 2) - 113; /* RSSI [dBm] = reported_value * 2 - 113dB */
+					}
+
 				}
 
 			}

@@ -445,6 +445,7 @@ struct private_object {
 	int roaming_registered;
 	int not_registered;
 	int got_signal;
+	int signal_strength;
 	char imei[128];
 	int requesting_imei;
 	char imsi[128];
