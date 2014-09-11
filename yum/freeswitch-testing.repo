@@ -1,0 +1,26 @@
+[freeswitch-testing]
+name=FreeSwitch Packages for Enterprise Linux $releasever - Testing - $basearch 
+baseurl=http://files.freeswitch.org/yum/testing/$releasever/$basearch
+#mirrorlist=http://mirrors.freeswitch.org/mirrorlist?repo=testing-freeswitch$releasever&arch=$basearch
+#failovermethod=priority
+enabled=0
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-FREESWITCH
+
+[freeswitch-testing-debuginfo]
+name=FreeSwitch Packages for Enterprise Linux $releasever - Testing - $basearch - Debug
+baseurl=http://files.freeswitch.org/yum/testing/$releasever/$basearch/debug
+#mirrorlist=http://mirrors.freeswitch.org/mirrorlist?repo=testing-debug-freeswitch$releasever&arch=$basearch
+#failovermethod=priority
+enabled=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-FREESWITCH
+gpgcheck=1
+
+[freeswitch-testing-source]
+name=FreeSwitch Packages for Enterprise Linux $releasever - Testing - $basearch - Source
+baseurl=http://files.freeswitch.org/yum/testing/$releasever/SRPMS
+#mirrorlist=http://mirrors.freeswitch.org/mirrorlist?repo=testing-source-freeswitch$releasever&arch=$basearch
+failovermethod=priority
+enabled=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-FREESWITCH
+gpgcheck=1
