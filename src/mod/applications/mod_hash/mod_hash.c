@@ -150,21 +150,15 @@ SWITCH_LIMIT_INCR(limit_incr_hash)
 		switch_core_hash_insert(globals.limit_hash, hashkey, item);
 	}
 
-	/* Did we already run on this channel before? */
-	if ((pvt = switch_channel_get_private(channel, "limit_hash"))) {
-		/* Yes, but check if we did that realm+resource
-		   If we didnt, allow incrementing the counter.
-		   If we did, dont touch it but do the validation anyways
-		 */
-		increment = !switch_core_hash_find(pvt->hash, hashkey);
-	} else {
-		/* This is the first limit check on this channel, create a hashtable, set our private data */
+	if (!(pvt = switch_channel_get_private(channel, "limit_hash"))) {
 		pvt = (limit_hash_private_t *) switch_core_session_alloc(session, sizeof(limit_hash_private_t));
 		memset(pvt, 0, sizeof(limit_hash_private_t));
-		switch_core_hash_init(&pvt->hash);
 		switch_channel_set_private(channel, "limit_hash", pvt);
 	}
-
+	if (!(pvt->hash)) {
+		switch_core_hash_init(&pvt->hash);
+	}
+	increment = !switch_core_hash_find(pvt->hash, hashkey);
  	remote_usage = get_remote_usage(hashkey);
 
 	if (interval > 0) {
