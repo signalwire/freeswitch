@@ -2224,8 +2224,8 @@ SWITCH_STANDARD_API(gsm_function)
 		unsigned int ob_failed = 0;
 		char next_flag_char = ' ';
 
-		stream->write_function(stream, "F ID\t    Name    \tIB (F/T)    OB (F/T)\tState\tCallFlw\t\tUUID\n");
-		stream->write_function(stream, "= ====\t  ========  \t=======     =======\t======\t============\t======\n");
+		stream->write_function(stream, "F ID Name       Operator         IMEI            IB (F/T)  OB (F/T)  State   CallFlw         UUID\n");
+		stream->write_function(stream, "= == ========== ================ =============== ========= ========= ======= =============== ====\n");
 
 		for (i = 0; i < GSMOPEN_MAX_INTERFACES; i++) {
 
@@ -2238,9 +2238,11 @@ SWITCH_STANDARD_API(gsm_function)
 
 
 				stream->write_function(stream,
-						"%c %d\t[%6s]\t%3u/%u\t%6u/%u\t%s\t%s\t%s\n",
+						"%c %-2d %-10s %-16.16s %-15s %4u/%-4u %4u/%-4u %-7s %-15s %s\n",
 						next_flag_char,
 						i, globals.GSMOPEN_INTERFACES[i].name,
+						globals.GSMOPEN_INTERFACES[i].operator_name,
+						globals.GSMOPEN_INTERFACES[i].imei,
 						globals.GSMOPEN_INTERFACES[i].ib_failed_calls,
 						globals.GSMOPEN_INTERFACES[i].ib_calls,
 						globals.GSMOPEN_INTERFACES[i].ob_failed_calls,
