@@ -25,10 +25,7 @@ fi
 cd $basedir/../freeswitch-sounds/sounds/trunk
 # perl dist.pl
 
-mv freeswitch-sounds-*48000*.tar.gz $basedir/rpmbuild/SOURCES
-mv freeswitch-sounds-*32000*.tar.gz $basedir/rpmbuild/SOURCES
-mv freeswitch-sounds-*16000*.tar.gz $basedir/rpmbuild/SOURCES
-mv freeswitch-sounds-*8000*.tar.gz $basedir/rpmbuild/SOURCES
+mv freeswitch-sounds-en-us-callie-*.tar.gz $basedir/rpmbuild/SOURCES
 
 cd $basedir
 
