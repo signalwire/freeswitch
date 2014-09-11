@@ -367,6 +367,14 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 		DEBUGA_GSMOPEN("AT+COPS? failed\n", GSMOPEN_P_LOG);
 	}
 
+	/* subscriber number */
+	tech_pvt->requesting_subscriber_number = 1;
+	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CNUM");
+	tech_pvt->requesting_subscriber_number = 0;
+	if (res) {
+		DEBUGA_GSMOPEN("AT+CNUM failed, continue\n", GSMOPEN_P_LOG);
+	}
+
 	/* IMEI */
 	tech_pvt->requesting_imei = 1;
 	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+GSN");
@@ -1030,6 +1038,41 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 				/* if we are requesting the operator name, copy it over */
 				if (tech_pvt->requesting_operator_name)
 					strncpy(tech_pvt->operator_name, oper, sizeof(tech_pvt->operator_name));
+			}
+
+			if ((strncmp(tech_pvt->line_array.result[i], "+CNUM:", 6) == 0) || (strncmp(tech_pvt->line_array.result[i], "ERROR+CNUM:", 11) == 0)) {
+				int  skip_chars, err, type;
+				char number[128] = "";
+				char *in_ptr, *out_ptr;
+
+				skip_chars = err = type = 0;
+				in_ptr = out_ptr = number;
+
+				/* +CNUM or ERROR+CNUM ? */
+				if ((strncmp(tech_pvt->line_array.result[i], "+CNUM:", 6) == 0))
+					skip_chars = 7;
+				else
+					skip_chars = 12;
+
+				err = sscanf(&tech_pvt->line_array.result[i][skip_chars], "%*[^,],%[^,],%d", &number, &type);
+
+				/* Remove any double quotes */
+				while (*in_ptr) {
+					if (*in_ptr != '\"') *out_ptr++ = *in_ptr;
+					in_ptr++;
+				}
+				*out_ptr = '\0';
+
+				if (err < 2) {
+					DEBUGA_GSMOPEN("|%s| is not formatted as: |+CNUM: \"Name\", \"+39025458068\", 145|\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
+				} else if (option_debug) {
+					DEBUGA_GSMOPEN("|%s| +CNUM: Subscriber number = %s, Type = %d\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i], number, type);
+				}
+				
+				/* Copy only the first number listed if there are more then one */
+				if (tech_pvt->requesting_subscriber_number && !strlen(tech_pvt->subscriber_number))
+					strncpy(tech_pvt->subscriber_number, number, sizeof(tech_pvt->subscriber_number));
+
 			}
 
 			if ((strncmp(tech_pvt->line_array.result[i], "+CMGW:", 6) == 0)) {
