@@ -23,7 +23,7 @@ else
 fi
 
 cd $basedir/../freeswitch-sounds/sounds/trunk
-
+./dist.pl music
 mv freeswitch-sounds-music-*.tar.gz $basedir/rpmbuild/SOURCES
 
 cd $basedir

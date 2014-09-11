@@ -19,11 +19,12 @@ if [ ! -d "$basedir/../freeswitch-sounds" ]; then
 	git clone https://stash.freeswitch.org/scm/fs/freeswitch-sounds.git 
 else
 	cd $basedir/../freeswitch-sounds
+	git clean -fdx
         git pull
 fi
 
 cd $basedir/../freeswitch-sounds/sounds/trunk
-# perl dist.pl
+./dist.pl en/us/callie
 
 mv freeswitch-sounds-en-us-callie-*.tar.gz $basedir/rpmbuild/SOURCES
 
