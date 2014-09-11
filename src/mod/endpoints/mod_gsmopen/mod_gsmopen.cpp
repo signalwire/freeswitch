@@ -2423,6 +2423,9 @@ SWITCH_STANDARD_API(gsmopen_dump_function)
 					snprintf(value, sizeof(value) - 1, "%d", tech_pvt->running);
 					stream->write_function(stream, "running = %s\n", value);
 					stream->write_function(stream, "subscriber_number = %s\n", tech_pvt->subscriber_number);
+					stream->write_function(stream, "device_manufacturer = %s\n", tech_pvt->device_mfg);
+					stream->write_function(stream, "device_model = %s\n", tech_pvt->device_model);
+					stream->write_function(stream, "device_firmware = %s\n", tech_pvt->device_firmware);
 					stream->write_function(stream, "operator = %s\n", tech_pvt->operator_name);
 					stream->write_function(stream, "imei = %s\n", tech_pvt->imei);
 					stream->write_function(stream, "imsi = %s\n", tech_pvt->imsi);
@@ -2483,6 +2486,9 @@ SWITCH_STANDARD_API(gsmopen_dump_function)
 			snprintf(value, sizeof(value) - 1, "%d", tech_pvt->running);
 			stream->write_function(stream, "running = %s\n", value);
 			stream->write_function(stream, "subscriber_number = %s\n", tech_pvt->subscriber_number);
+			stream->write_function(stream, "device_manufacturer = %s\n", tech_pvt->device_mfg);
+			stream->write_function(stream, "device_model = %s\n", tech_pvt->device_model);
+			stream->write_function(stream, "device_firmware = %s\n", tech_pvt->device_firmware);
 			stream->write_function(stream, "operator = %s\n", tech_pvt->operator_name);
 			stream->write_function(stream, "imei = %s\n", tech_pvt->imei);
 			stream->write_function(stream, "imsi = %s\n", tech_pvt->imsi);
@@ -2814,6 +2820,9 @@ int dump_event_full(private_t *tech_pvt, int is_alarm, int alarm_code, const cha
 		snprintf(value, sizeof(value) - 1, "%d", tech_pvt->running);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "running", value);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subscriber_number", tech_pvt->subscriber_number);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "device_manufacturer", tech_pvt->device_mfg);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "device_model", tech_pvt->device_model);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "device_firmware", tech_pvt->device_firmware);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "operator", tech_pvt->operator_name);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "imei", tech_pvt->imei);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "imsi", tech_pvt->imsi);

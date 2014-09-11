@@ -453,6 +453,12 @@ struct private_object {
 	int requesting_operator_name;
 	char subscriber_number[128];
 	int requesting_subscriber_number;
+	char device_mfg[128];
+	int requesting_device_mfg;
+	char device_model[128];
+	int requesting_device_model;
+	char device_firmware[128];
+	int requesting_device_firmware;
 	int network_creg_not_supported;
 	char creg[128];
 

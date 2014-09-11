@@ -330,15 +330,27 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 	}
 
 	/* phone manufacturer */
+	tech_pvt->requesting_device_mfg = 1;
 	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CGMI");
+	tech_pvt->requesting_device_mfg = 0;
 	if (res) {
 		DEBUGA_GSMOPEN("AT+CGMI failed\n", GSMOPEN_P_LOG);
 	}
 
 	/* phone model */
+	tech_pvt->requesting_device_model = 1;
 	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CGMM");
+	tech_pvt->requesting_device_model = 0;
 	if (res) {
 		DEBUGA_GSMOPEN("AT+CGMM failed\n", GSMOPEN_P_LOG);
+	}
+
+	/* phone firmware */
+	tech_pvt->requesting_device_firmware = 1;
+	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CGMR");
+	tech_pvt->requesting_device_firmware = 0;
+	if (res) {
+		DEBUGA_GSMOPEN("AT+CGMR failed\n", GSMOPEN_P_LOG);
 	}
 
 	/* signal network registration with a +CREG unsolicited msg */
@@ -1682,10 +1694,30 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 				}
 			}
 
-			/* if we are requesting IMSI, put the line into the imei buffer if the line is not "OK" or "ERROR" */
+			/* if we are requesting IMSI, put the line into the imsi buffer if the line is not "OK" or "ERROR" */
 			if (tech_pvt->requesting_imsi && at_ack == -1) {
 				if (strlen(tech_pvt->line_array.result[i])) {	/* we are reading the IMSI */
 					strncpy(tech_pvt->imsi, tech_pvt->line_array.result[i], sizeof(tech_pvt->imsi));
+				}
+			}
+
+			/* if we are requesting device manufacturer, model or firmware version,
+			 * put the line into the buffer if the line is not "OK" or "ERROR" */
+			if (tech_pvt->requesting_device_mfg && at_ack == -1) {
+				if (strlen(tech_pvt->line_array.result[i])) {
+					strncpy(tech_pvt->device_mfg, tech_pvt->line_array.result[i], sizeof(tech_pvt->device_mfg));
+				}
+			}
+
+			if (tech_pvt->requesting_device_model && at_ack == -1) {
+				if (strlen(tech_pvt->line_array.result[i])) {
+					strncpy(tech_pvt->device_model, tech_pvt->line_array.result[i], sizeof(tech_pvt->device_model));
+				}
+			}
+
+			if (tech_pvt->requesting_device_firmware && at_ack == -1) {
+				if (strlen(tech_pvt->line_array.result[i])) {
+					strncpy(tech_pvt->device_firmware, tech_pvt->line_array.result[i], sizeof(tech_pvt->device_firmware));
 				}
 			}
 
