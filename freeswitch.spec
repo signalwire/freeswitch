@@ -159,7 +159,7 @@ BuildRequires: sqlite-devel
 BuildRequires: ldns-devel
 BuildRequires: libedit-devel
 BuildRequires: perl
-%if 0%{?fedora_version} >= 8 || 0%{?rhel} >= 6
+%if 0%{?fedora} >= 8 || 0%{?rhel} >= 6
 BuildRequires: perl-ExtUtils-Embed
 %endif
 BuildRequires: pkgconfig
