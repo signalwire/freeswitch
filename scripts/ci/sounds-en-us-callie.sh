@@ -10,11 +10,22 @@ check_input_ver_build $@
 eval $(parse_version "$1")
 build="$2"
 
-cd rpmbuild/SOURCES
+basedir=$(pwd);
 
-wget http://files.freeswitch.org/freeswitch-sounds-en-us-callie-48000-$ver.tar.gz
+if [ ! -d "$basedir/../freeswitch-sounds" ]; then
+	cd $basedir/..
+	git clone https://stash.freeswitch.org/scm/fs/freeswitch-sounds.git 
+else
+	cd $basedir/../freeswitch-sounds
+        git pull
+fi
 
-cd ../..
+cd $basedir/../freeswitch-sounds/sounds/trunk
+perl dist.pl
+
+cp * freeswitch-sounds-*48000*.tar.gz $basedir/rpmbuild/SOURCES
+
+cd $basedir
 
 rpmbuild --define "VERSION_NUMBER $ver" \
   --define "BUILD_NUMBER 1" \
