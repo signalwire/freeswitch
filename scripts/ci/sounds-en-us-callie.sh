@@ -12,6 +12,8 @@ build="$2"
 
 basedir=$(pwd);
 
+(mkdir -p rpmbuild && cd rpmbuild && mkdir -p SOURCES BUILD BUILDROOT i386 x86_64 SPECS)
+
 if [ ! -d "$basedir/../freeswitch-sounds" ]; then
 	cd $basedir/..
 	git clone https://stash.freeswitch.org/scm/fs/freeswitch-sounds.git 
@@ -21,9 +23,12 @@ else
 fi
 
 cd $basedir/../freeswitch-sounds/sounds/trunk
-perl dist.pl
+# perl dist.pl
 
-cp * freeswitch-sounds-*48000*.tar.gz $basedir/rpmbuild/SOURCES
+mv freeswitch-sounds-*48000*.tar.gz $basedir/rpmbuild/SOURCES
+mv freeswitch-sounds-*32000*.tar.gz $basedir/rpmbuild/SOURCES
+mv freeswitch-sounds-*16000*.tar.gz $basedir/rpmbuild/SOURCES
+mv freeswitch-sounds-*8000*.tar.gz $basedir/rpmbuild/SOURCES
 
 cd $basedir
 

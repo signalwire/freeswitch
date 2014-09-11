@@ -73,6 +73,9 @@ Group: Applications/Communications
 Packager: Patrick Laimbock <vc-rpms@voipconsulting.nl>
 URL: http://www.freeswitch.org
 Source0:http://files.freeswitch.org/%{name}-48000-%{version}.tar.gz
+Source1:http://files.freeswitch.org/%{name}-32000-%{version}.tar.gz
+Source2:http://files.freeswitch.org/%{name}-16000-%{version}.tar.gz
+Source3:http://files.freeswitch.org/%{name}-8000-%{version}.tar.gz
 BuildArch: noarch
 BuildRequires: sox
 Requires: freeswitch
@@ -139,25 +142,11 @@ FreeSWITCH Callie prompts package that pulls in the 8KHz, 16KHz,
 ##############################################################################
 
 %prep
-%setup -b0 -q -n en
-mkdir -p ./usr/callie
-# create buildsounds-callie.sh script in working dir
-echo  '#!/bin/bash
-
-sounds_location=$1
-for rate in 32000 16000 8000
-do 
-    for i in ascii base256 conference currency digits directory ivr misc phonetic-ascii time voicemail zrtp
-    do
-	mkdir -p $sounds_location/$i/$rate
-	for f in `find $sounds_location/$i/48000 -name \*.wav`
-	do
-	    echo "generating" $sounds_location/$i/$rate/`basename $f`
-	    sox $f -r $rate $sounds_location/$i/$rate/`basename $f`
-	done
-    done
-done' > ./us/callie/buildsounds-callie.sh
-%{__chmod} 0750 ./us/callie/buildsounds-callie.sh
+%setup -n en
+%setup -T -D -b 0 -n en
+%setup -T -D -b 1 -n en
+%setup -T -D -b 2 -n en
+%setup -T -D -b 3 -n en
 
 ##############################################################################
 # Build
@@ -180,7 +169,6 @@ pushd us/callie
 # first install the 48KHz sounds
 %{__cp} -prv ./* %{buildroot}%{SOUNDSDIR}/en/us/callie
 # now resample the 48KHz ones to 8KHz, 16KHz and 32KHz
-./buildsounds-callie.sh %{buildroot}%{SOUNDSDIR}/en/us/callie
 popd
 
 ##############################################################################
@@ -196,8 +184,6 @@ popd
 
 %post
 # generate the 8KHz, 16KHz and 32KHz prompts from the 48KHz ones
-cd %{SOUNDSDIR}/en/us/callie
-./buildsounds-callie.sh %{SOUNDSDIR}/en/us/callie
 
 ##############################################################################
 # Postun
@@ -214,7 +200,6 @@ cd %{SOUNDSDIR}/en/us/callie
 
 %files
 %defattr(-,root,root)
-%attr(0750,freeswitch,daemon)		%{SOUNDSDIR}/en/us/callie/buildsounds-callie.sh
 
 %files -n freeswitch-sounds-en-us-callie-8000
 %defattr(-,root,root,-)
