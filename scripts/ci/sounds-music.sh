@@ -8,16 +8,25 @@ if [ ! -d .git ]; then
   exit 1;
 fi
 
-ver="1.0.8"
+ver="1.0.50"
 
-cd rpmbuild/SOURCES
+basedir=$(pwd);
 
-wget http://files.freeswitch.org/freeswitch-sounds-music-8000-$ver.tar.gz
-wget http://files.freeswitch.org/freeswitch-sounds-music-16000-$ver.tar.gz
-wget http://files.freeswitch.org/freeswitch-sounds-music-32000-$ver.tar.gz
-wget http://files.freeswitch.org/freeswitch-sounds-music-48000-$ver.tar.gz
+(mkdir -p rpmbuild && cd rpmbuild && mkdir -p SOURCES BUILD BUILDROOT i386 x86_64 SPECS)
 
-cd ../..
+if [ ! -d "$basedir/../freeswitch-sounds" ]; then
+        cd $basedir/..
+        git clone https://stash.freeswitch.org/scm/fs/freeswitch-sounds.git
+else
+        cd $basedir/../freeswitch-sounds
+        git pull
+fi
+
+cd $basedir/../freeswitch-sounds/sounds/trunk
+
+mv freeswitch-sounds-music-*.tar.gz $basedir/rpmbuild/SOURCES
+
+cd $basedir
 
 rpmbuild --define "VERSION_NUMBER $ver" \
   --define "BUILD_NUMBER 1" \
