@@ -358,6 +358,15 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 	if (res) {
 		DEBUGA_GSMOPEN("AT+CSQ failed\n", GSMOPEN_P_LOG);
 	}
+
+	/* operator name */
+	tech_pvt->requesting_operator_name = 1;
+	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+COPS?");
+	tech_pvt->requesting_operator_name = 0;
+	if (res) {
+		DEBUGA_GSMOPEN("AT+COPS? failed\n", GSMOPEN_P_LOG);
+	}
+
 	/* IMEI */
 	tech_pvt->requesting_imei = 1;
 	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+GSN");
@@ -1004,6 +1013,23 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 					}
 				}
 
+			}
+
+			if ((strncmp(tech_pvt->line_array.result[i], "+COPS:", 6) == 0)) {
+				int mode, format, rat, err;
+				char oper[128] = "";
+				mode = format = rat = err = 0;
+
+				err = sscanf(&tech_pvt->line_array.result[i][6], "%d,%d,%*[\"]%[^\"]%*[\"],%d", &mode, &format, &oper, &rat);
+				if (err < 3) {
+					DEBUGA_GSMOPEN("|%s| is not formatted as: |+COPS: xx,yy,ssss,nn|\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
+				} else if (option_debug > 1) {
+					DEBUGA_GSMOPEN("|%s| +COPS: : Mode %d, Format %d, Operator %s, Rat %d\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i], mode, format, oper, rat);
+				}
+
+				/* if we are requesting the operator name, copy it over */
+				if (tech_pvt->requesting_operator_name)
+					strncpy(tech_pvt->operator_name, oper, sizeof(tech_pvt->operator_name));
 			}
 
 			if ((strncmp(tech_pvt->line_array.result[i], "+CMGW:", 6) == 0)) {

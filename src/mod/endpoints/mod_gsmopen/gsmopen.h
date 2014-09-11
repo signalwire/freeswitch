@@ -449,6 +449,8 @@ struct private_object {
 	int requesting_imei;
 	char imsi[128];
 	int requesting_imsi;
+	char operator_name[128];
+	int requesting_operator_name;
 	int network_creg_not_supported;
 	char creg[128];
 

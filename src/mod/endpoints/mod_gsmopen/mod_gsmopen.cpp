@@ -2422,6 +2422,7 @@ SWITCH_STANDARD_API(gsmopen_dump_function)
 					stream->write_function(stream, "got_signal = %s\n", value);
 					snprintf(value, sizeof(value) - 1, "%d", tech_pvt->running);
 					stream->write_function(stream, "running = %s\n", value);
+					stream->write_function(stream, "operator = %s\n", tech_pvt->operator_name);
 					stream->write_function(stream, "imei = %s\n", tech_pvt->imei);
 					stream->write_function(stream, "imsi = %s\n", tech_pvt->imsi);
 					snprintf(value, sizeof(value) - 1, "%d", tech_pvt->controldev_dead);
@@ -2480,6 +2481,7 @@ SWITCH_STANDARD_API(gsmopen_dump_function)
 			stream->write_function(stream, "got_signal = %s\n", value);
 			snprintf(value, sizeof(value) - 1, "%d", tech_pvt->running);
 			stream->write_function(stream, "running = %s\n", value);
+			stream->write_function(stream, "operator = %s\n", tech_pvt->operator_name);
 			stream->write_function(stream, "imei = %s\n", tech_pvt->imei);
 			stream->write_function(stream, "imsi = %s\n", tech_pvt->imsi);
 			snprintf(value, sizeof(value) - 1, "%d", tech_pvt->controldev_dead);
@@ -2809,6 +2811,7 @@ int dump_event_full(private_t *tech_pvt, int is_alarm, int alarm_code, const cha
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "got_signal", value);
 		snprintf(value, sizeof(value) - 1, "%d", tech_pvt->running);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "running", value);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "operator", tech_pvt->operator_name);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "imei", tech_pvt->imei);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "imsi", tech_pvt->imsi);
 		snprintf(value, sizeof(value) - 1, "%d", tech_pvt->controldev_dead);
