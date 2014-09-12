@@ -648,6 +648,7 @@ typedef struct {
 	uint32_t cum_lost;            /* Packet loss calculation, cumulative number of packet lost */ 
 	uint32_t last_recv_lsr_local; /* RTT calculation, When receiving an SR we save our local timestamp in fraction of 65536 seconds */
 	uint32_t last_recv_lsr_peer;  /* RTT calculation, When receiving an SR we extract the middle 32bits of the remote NTP timestamp to include it in the next SR LSR */
+	uint32_t init;
 } switch_rtcp_numbers_t;
 
 typedef struct {

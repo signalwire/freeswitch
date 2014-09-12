@@ -1419,6 +1419,10 @@ static void send_fir(switch_rtp_t *rtp_session)
 	}
 
 	if (rtp_session->remote_ssrc == 0) {
+		rtp_session->remote_ssrc = ntohl(rtp_session->recv_msg.header.ssrc);
+	}
+
+	if (rtp_session->remote_ssrc == 0) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Peer ssrc not known yet for FIR\n");
 		return;
 	}
@@ -1884,6 +1888,7 @@ static void rtcp_stats_init(switch_rtp_t *rtp_session)
 	switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
 	stats->ssrc = ntohl(hdr->ssrc);
 	stats->last_rpt_ts = rtp_session->timer.samplecount;
+	stats->init = 1;
 	stats->last_rpt_ext_seq = 0;
 	stats->last_rpt_cycle = 0;
 	stats->last_pkt_tsdiff = 0;
@@ -1898,13 +1903,13 @@ static void rtcp_stats_init(switch_rtp_t *rtp_session)
 	stats->rtcp_rtp_count = 0;
 
 	if (!rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "rtcp_stats_init: rtcp disabled");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "rtcp_stats_init: rtcp disabled\n");
 	} else if (!rtp_session->rtcp_sock_output) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "rtcp_stats_init: no rtcp socket");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "rtcp_stats_init: no rtcp socket\n");
 	} else if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU]) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "rtcp_stats_init: rtcp passthru");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "rtcp_stats_init: rtcp passthru\n");
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "rtcp_stats_init: ssrc[%d] base_seq[%d]", stats->ssrc, stats->base_seq);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "rtcp_stats_init: ssrc[%d] base_seq[%d]\n", stats->ssrc, stats->base_seq);
 	}
 }
 
@@ -1951,7 +1956,7 @@ static int rtcp_stats(switch_rtp_t *rtp_session)
 	}
 
 	/* Verify that we are on the same stream source (we do not support multiple sources) */
-	if (ntohl(hdr->ssrc) != stats->ssrc || !stats->last_rpt_ts) {
+	if (ntohl(hdr->ssrc) != stats->ssrc || !stats->init) {
 		rtcp_stats_init(rtp_session);
 	}
 
