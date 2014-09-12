@@ -22,7 +22,7 @@ fi
 cd $basedir/../freeswitch-sounds/sounds/trunk
 ./dist.pl ru/RU/elena
 
-mv freeswitch-sounds-ru-RU-elena-*.tar.gz $basedir/rpmbuild/SOURCES
+mv freeswitch-sounds-ru-RU-elena-*.tar.* $basedir/rpmbuild/SOURCES
 
 cd $basedir
 
