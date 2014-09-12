@@ -430,74 +430,32 @@ struct switch_rtcp_report_block {
 	uint32_t dlsr; /* The delay, expressed in units of 1/65536 seconds, between receiving the last SR packet from source SSRC_n and sending this reception report block */
 };
 
-/* This was previously used, but a similar struct switch_rtcp_report_block existed and I merged them both.  It also fixed the problem of lost being an integer and not a unsigned.
-struct switch_rtcp_source {
-       unsigned ssrc1:32;
-       unsigned fraction_lost:8;
-       unsigned cumulative_lost:24;
-       unsigned hi_seq_recieved:32;
-       unsigned interarrival_jitter:32;
-       unsigned lsr:32;
-       unsigned lsr_delay:32;
-};
-*/
-
 struct switch_rtcp_sr_head {
-        unsigned ssrc:32;
-        unsigned ntp_msw:32;
-        unsigned ntp_lsw:32;
-        unsigned ts:32;
-        unsigned pc:32;
-        unsigned oc:32;
-};
-
-#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
-struct switch_rtcp_s_desc_head {
-       unsigned v:2;
-       unsigned padding:1;
-       unsigned sc:5;
-       unsigned pt:8;
-       unsigned length:16;
-};
-
-#else /*  BIG_ENDIAN */
-struct switch_rtcp_s_desc_head {
-       unsigned sc:5;
-       unsigned padding:1;
-       unsigned v:2;
-       unsigned pt:8;
-       unsigned length:16;
-};
-#endif
-
-struct switch_rtcp_s_desc_trunk {
-       unsigned ssrc:32;
-       unsigned cname:8;
-       unsigned length:8;
-       char text[1]; 
+	uint32_t ssrc;
+	uint32_t ntp_msw;
+	uint32_t ntp_lsw;
+	uint32_t ts;
+	uint32_t pc;
+	uint32_t oc;
 };
 
 struct switch_rtcp_sender_info {
-        unsigned ntp_msw:32;
-        unsigned ntp_lsw:32;
-        unsigned ts:32;
-        unsigned pc:32;
-        unsigned oc:32;
+	uint32_t ntp_msw;
+	uint32_t ntp_lsw;
+	uint32_t ts;
+	uint32_t pc;
+	uint32_t oc;
 };
 
 struct switch_rtcp_sender_report {
-       unsigned ssrc:32;
-       struct switch_rtcp_sender_info sender_info;
-       struct switch_rtcp_report_block report_block;
-       struct switch_rtcp_s_desc_head sr_desc_head;
-       struct switch_rtcp_s_desc_trunk sr_desc_ssrc;
+	uint32_t ssrc;
+	struct switch_rtcp_sender_info sender_info;
+	struct switch_rtcp_report_block report_block;
 };
 
 struct switch_rtcp_receiver_report {
-       unsigned ssrc:32;
-       struct switch_rtcp_report_block report_block;
-       struct switch_rtcp_s_desc_head sr_desc_head;
-       struct switch_rtcp_s_desc_trunk sr_desc_ssrc;
+	uint32_t ssrc;
+	struct switch_rtcp_report_block report_block;
 };
 
 typedef enum {
@@ -1938,16 +1896,15 @@ static void rtcp_stats_init(switch_rtp_t *rtp_session)
 	stats->period_pkt_count = 0;
 	stats->pkt_count = 0;
 	stats->rtcp_rtp_count = 0;
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "rtcp_stats_init: ssrc[%d] base_seq[%d]", stats->ssrc, stats->base_seq);
 
 	if (!rtp_session->flags[SWITCH_RTP_FLAG_ENABLE_RTCP]) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "rtcp_stats_init: rtcp disabled");
-	}
-	if (!rtp_session->rtcp_sock_output) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "rtcp_stats_init: no rtcp socket");
-	}
-	if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU]) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "rtcp_stats_init: rtcp passthru");
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "rtcp_stats_init: rtcp disabled");
+	} else if (!rtp_session->rtcp_sock_output) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "rtcp_stats_init: no rtcp socket");
+	} else if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU]) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "rtcp_stats_init: rtcp passthru");
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "rtcp_stats_init: ssrc[%d] base_seq[%d]", stats->ssrc, stats->base_seq);
 	}
 }
 
@@ -2112,48 +2069,8 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 		stats->last_rpt_ext_seq = stats->high_ext_seq_recv;
 		stats->last_rpt_ts = rtp_session->timer.samplecount;
 		stats->period_pkt_count = 0;
-
 		rtp_session->rtcp_send_msg.header.length = htons((u_short)(rtcp_bytes / 4) - 1);
 
-/*  ToBeDone : there was some issue with this report block so I commented the following lines of code to fix it please see 
- *           RFC3550 section 6.5 SDES: Source Description RTCP Packet
- *  I guess it could be made optionnal, I do not see much value in incresing the size of the RTCP report 
- **/
-
-/*
-		rtcp_header->v = 0x02;
-		rtcp_header->padding = 0;
-		rtcp_header->sc = 1;
-		rtcp_header->pt = 202;
-		rtcp_header->length = htons(5);
-
-		sr->sr_desc_ssrc.ssrc = htonl(rtp_session->ssrc);
-		sr->sr_desc_ssrc.cname = 0x1;
-		{
-			char bufa[30];
-			const char* str_cname = switch_get_addr(bufa, sizeof(bufa), rtp_session->rtcp_local_addr);
-
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Setting RTCP src-1 to %s\n", str_cname);
-			sr->sr_desc_ssrc.length = (unsigned int)strlen(str_cname);
-			memcpy ((char*)sr->sr_desc_ssrc.text, str_cname, strlen(str_cname));
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Setting RTCP src-1 LENGTH  to %d (%d, %s)\n",
-                                                        sr->sr_desc_ssrc.length, sr->header.length, str_cname);
-		}
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "Setting msw = %d, lsw = %d \n", sr->sr_head.ntp_msw, sr->sr_head.ntp_lsw);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG10, "now = %"SWITCH_TIME_T_FMT", now lo = %d, now hi = %d\n",
-						  when, (int32_t)(when&0xFFFFFFFF), (int32_t)((when>>32&0xFFFFFFFF)));
-
-		{
-			size_t sr_length = sizeof(switch_rtcp_hdr_t) + sizeof(struct switch_rtcp_sr_head) + (1 * sizeof(struct switch_rtcp_report_block));
-			size_t sr_desc_length = sizeof(struct switch_rtcp_s_desc_head) + sizeof(struct switch_rtcp_s_desc_trunk) + sr->sr_desc_ssrc.length;
-
-			rtp_session->rtcp_send_msg.header.length = htons((u_short)(sr_length / 4) - 1);
-			sr->sr_desc_head.length = htons((u_short)(sr_desc_length / 4) - 1);
-
-			rtcp_bytes = sr_length + sr_desc_length;
-		}
-*/
 
 #ifdef ENABLE_SRTP
 		if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND]) {
