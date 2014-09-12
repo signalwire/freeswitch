@@ -1,7 +1,7 @@
 Name:           freeswitch-release       
 Version:        1 
 Release:        0
-Summary:        FreeSwitch Packages for Enterprise Linux repository configuration
+Summary:        FreeSWITCH Packages for Enterprise Linux repository configuration
 
 Group:          System Environment/Base 
 License:        GPL 
@@ -18,7 +18,7 @@ BuildArch:     noarch
 Requires:      redhat-release >=  %{version} 
 
 %description
-This package contains the FreeSwitch Yum repository
+This package contains the FreeSWITCH Yum repository
 GPG key as well as configuration for yum.
 
 %prep
@@ -52,7 +52,7 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Sat Jan 27 2012 Ken Rice <krice at freeswitch.org> - 5-0
+* Fri Jan 27 2012 Ken Rice <krice at freeswitch.org> - 5-0
 - Replace GPG key with correct key, and update primary URLs
-* Sat Dec 21 2011 Ken Rice <krice at freeswitch.org> - 5-0
+* Wed Dec 21 2011 Ken Rice <krice at freeswitch.org> - 5-0
 - Initial Version - Thanks to the EPEL Guys I had something to Rip Off. Hense this package is GPL
