@@ -1,4 +1,4 @@
 en-us-callie 1.0.50
-ru-RU-elena 1.0.13
+ru-RU-elena 1.0.50
 fr-ca-june 1.0.18
 
