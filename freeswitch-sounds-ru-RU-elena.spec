@@ -169,8 +169,6 @@ FreeSWITCH Elena prompts package that pulls in the 8KHz, 16KHz, 32KHz and 48KHz 
 pushd RU/elena
 # first install the 48KHz sounds
 %{__cp} -prv ./* %{buildroot}%{SOUNDSDIR}/ru/RU/elena
-# now resample the 48KHz ones to 8KHz, 16KHz and 32KHz
-./buildsounds-elena.sh %{buildroot}%{SOUNDSDIR}/ru/RU/elena
 popd
 
 ##############################################################################

@@ -26,9 +26,7 @@ mv freeswitch-sounds-ru-RU-elena-*.tar.gz $basedir/rpmbuild/SOURCES
 
 cd $basedir
 
-rpmbuild --define "VERSION_NUMBER $ver" \
-  --define "BUILD_NUMBER $build" \
-  --define "_topdir %(pwd)/rpmbuild" \
+rpmbuild --define "_topdir %(pwd)/rpmbuild" \
   --define "_rpmdir %{_topdir}" \
   --define "_srcrpmdir %{_topdir}" \
   -ba freeswitch-sounds-ru-RU-elena.spec
