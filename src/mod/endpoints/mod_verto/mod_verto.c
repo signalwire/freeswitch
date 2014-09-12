@@ -3764,7 +3764,7 @@ static int profile_one_loop(verto_profile_t *profile)
 		}
 			
 		if (pfds[x].revents & SWITCH_POLL_READ) {
-			if (pfds[x].sock == profile->mcast_sub.sock) {
+			if (profile->mcast_ip && pfds[x].sock == profile->mcast_sub.sock) {
 				handle_mcast_sub(profile);
 			} else {
 				start_jsock(profile, pfds[x].sock);
