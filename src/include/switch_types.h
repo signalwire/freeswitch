@@ -627,27 +627,11 @@ typedef struct {
 	double mos;
 } switch_rtp_numbers_t;
 
+
 typedef struct {
-	uint32_t packet_count;        /* sent packet count */
-	uint32_t octet_count;
+	uint32_t packet_count;
+	uint32_t octet_count; 
 	uint32_t peer_ssrc;
-	uint32_t last_rpt_ts;         /* RTP timestamp at which the last report was generated and sent */
-	uint32_t ssrc;                /* identifier of the source */
-	uint32_t csrc;                /* contributing source 0-15 32bit each */
-	uint32_t last_pkt_tsdiff;     /* Jitter calculation, timestamp difference between the two last received packet */
-	double   inter_jitter;        /* Jitter calculation, Interarrival jitter */
-	uint32_t last_rpt_ext_seq;    /* Packet loss calculation, extended sequence number at the begining of this RTCP report interval */
-	uint16_t last_rpt_cycle;      /* Packet loss calculation, sequence number cycle at the begining of the current RTCP report interval */
-	uint16_t period_pkt_count;    /* Packet loss calculation, packet count received during this RTCP report interval */
-	uint16_t pkt_count;           /* Packet loss calculation, packet count received during this session */
-	uint32_t rtcp_rtp_count;      /* RTCP report generated count */
-	uint32_t high_ext_seq_recv;   /* Packet loss calculation, highest extended sequence number received and processed for stats */
-	uint16_t cycle;               /* Packet loss calculation, sequence number cycle of the current RTCP report interval */
-	uint32_t bad_seq;             /* Bad SEQ found, used to detect reset on the other side */
-	uint16_t base_seq;            /* Packet loss calculation, first sequence number received */
-	uint32_t cum_lost;            /* Packet loss calculation, cumulative number of packet lost */ 
-	uint32_t last_recv_lsr_local; /* RTT calculation, When receiving an SR we save our local timestamp in fraction of 65536 seconds */
-	uint32_t last_recv_lsr_peer;  /* RTT calculation, When receiving an SR we extract the middle 32bits of the remote NTP timestamp to include it in the next SR LSR */
 } switch_rtcp_numbers_t;
 
 typedef struct {
@@ -900,7 +884,7 @@ typedef struct {
 #endif
 
 #if SWITCH_BYTE_ORDER == __BIG_ENDIAN
-typedef struct switch_rtcp_hdr_s {
+typedef struct {
 	unsigned version:2;			/* protocol version                  */
 	unsigned p:1;				/* padding flag                      */
 	unsigned count:5;			/* number of reception report blocks */
@@ -910,7 +894,7 @@ typedef struct switch_rtcp_hdr_s {
 
 #else /*  BIG_ENDIAN */
 
-typedef struct switch_rtcp_hdr_s {
+typedef struct {
 	unsigned count:5;			/* number of reception report blocks */
 	unsigned p:1;				/* padding flag                      */
 	unsigned version:2;			/* protocol version                  */
