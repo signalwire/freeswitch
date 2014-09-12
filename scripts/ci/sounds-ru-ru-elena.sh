@@ -1,22 +1,30 @@
 #!/bin/sh
 ##### -*- mode:shell-script; indent-tabs-mode:nil; sh-basic-offset:2 -*-
 
-src_repo="$(pwd)"
+basedir=$(pwd);
 
 if [ ! -d .git ]; then
   echo "error: must be run from within the top level of a FreeSWITCH git tree." 1>&2
   exit 1;
 fi
 
-ver="1.0.13"
+(mkdir -p rpmbuild && cd rpmbuild && mkdir -p SOURCES BUILD BUILDROOT i386 x86_64 SPECS)
 
-build="2"
+if [ ! -d "$basedir/../freeswitch-sounds" ]; then
+        cd $basedir/..
+        git clone https://stash.freeswitch.org/scm/fs/freeswitch-sounds.git
+else
+        cd $basedir/../freeswitch-sounds
+        git clean -fdx
+        git pull
+fi
 
-cd rpmbuild/SOURCES
+cd $basedir/../freeswitch-sounds/sounds/trunk
+./dist.pl ru/RU/elena
 
-wget http://files.freeswitch.org/freeswitch-sounds-ru-RU-elena-48000-$ver.tar.gz
+mv freeswitch-sounds-ru-RU-elena-*.tar.gz $basedir/rpmbuild/SOURCES
 
-cd ../..
+cd $basedir
 
 rpmbuild --define "VERSION_NUMBER $ver" \
   --define "BUILD_NUMBER $build" \
@@ -25,8 +33,8 @@ rpmbuild --define "VERSION_NUMBER $ver" \
   --define "_srcrpmdir %{_topdir}" \
   -ba freeswitch-sounds-ru-RU-elena.spec
 
-mkdir $src_repo/RPMS
-mv $src_repo/rpmbuild/*/*.rpm $src_repo/RPMS/.
+mkdir $basedir/RPMS
+mv $basedir/rpmbuild/*/*.rpm $basedir/RPMS/.
 
 cat 1>&2 <<EOF
 ----------------------------------------------------------------------

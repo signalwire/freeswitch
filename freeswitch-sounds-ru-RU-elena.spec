@@ -14,14 +14,14 @@
 # Determine distribution
 ##############################################################################
 
-%define is_rhel5 %(test -f /etc/redhat-release && egrep -q 'release 5' /etc/redhat-release && echo 1 || echo 0)
+#%define is_rhel5 %(test -f /etc/redhat-release && egrep -q 'release 5' /etc/redhat-release && echo 1 || echo 0)
 
 ##############################################################################
 # Set variables
 ##############################################################################
 
-%define version	%{VERSION_NUMBER}
-%define release	%{BUILD_NUMBER}
+%define version	1.0.50
+%define release	1
 
 %define fsname  freeswitch
 # you could add a version number to be more strict
@@ -76,7 +76,10 @@ Group: Applications/Communications
 Packager: Michal Bielicki <michal.bielicki@seventhsignal.de>
 URL: http://www.freeswitch.org
 Source0:http://files.freeswitch.org/%{name}-48000-%{version}.tar.gz
-BuildArch: noarch
+Source1:http://files.freeswitch.org/%{name}-32000-%{version}.tar.gz
+Source2:http://files.freeswitch.org/%{name}-16000-%{version}.tar.gz
+Source3:http://files.freeswitch.org/%{name}-8000-%{version}.tar.gz
+BuildA4ch: noarch
 BuildRequires: sox
 Requires: freeswitch
 Requires: freeswitch-sounds-ru-RU-elena-48000
@@ -140,25 +143,11 @@ FreeSWITCH Elena prompts package that pulls in the 8KHz, 16KHz, 32KHz and 48KHz 
 ##############################################################################
 
 %prep
-%setup -b0 -q -n ru
-mkdir -p ./RU/elena
-# create buildsounds-elena.sh script in working dir
-echo  '#!/bin/bash
-
-sounds_location=$1
-for rate in 32000 16000 8000
-do 
-    for i in ascii base256 conference currency digits directory ivr misc phonetic-ascii time voicemail zrtp users
-    do
-	mkdir -p $sounds_location/$i/$rate
-	for f in `find $sounds_location/$i/48000 -name \*.wav`
-	do
-	    echo "generating" $sounds_location/$i/$rate/`basename $f`
-	    sox $f -r $rate $sounds_location/$i/$rate/`basename $f`
-	done
-    done
-done' > ./RU/elena/buildsounds-elena.sh
-%{__chmod} 0750 ./RU/elena/buildsounds-elena.sh
+%setup -n ru
+%setup -T -D -b 0 -n ru
+%setup -T -D -b 1 -n ru
+%setup -T -D -b 2 -n ru
+%setup -T -D -b 3 -n ru
 
 ##############################################################################
 # Build
@@ -196,18 +185,12 @@ popd
 ##############################################################################
 
 %post
-# generate the 8KHz, 16KHz and 32KHz prompts from the 48KHz ones
-cd %{SOUNDSDIR}/ru/RU/elena
-./buildsounds-elena.sh %{SOUNDSDIR}/ru/RU/elena
 
 ##############################################################################
 # Postun
 ##############################################################################
 
 %postun
-# you could check if there are sound files in 8000/ or
-# 16000/ or 32000/ and remove them *only* if the files
-# do not belong to an rpm
 
 ##############################################################################
 # Files
@@ -215,7 +198,6 @@ cd %{SOUNDSDIR}/ru/RU/elena
 
 %files
 %defattr(-,root,root)
-%attr(0750,freeswitch,daemon)		%{SOUNDSDIR}/ru/RU/elena/buildsounds-elena.sh
 
 %files -n freeswitch-sounds-ru-RU-elena-8000
 %defattr(-,root,root,-)
@@ -340,6 +322,8 @@ cd %{SOUNDSDIR}/ru/RU/elena
 ##############################################################################
 
 %changelog
+* Fri Sep 12 2014 Ken Rice <krice@freeswitch.org> - 1.0.50-1
+- created out of the spec file for elena
 * Mon Mar 06 2012 Ken Rice <krice@freeswitch.org> - 1.0.13-2
 - created out of the spec file for elena
 * Mon Jul 11 2011 Michal Bielicki <michal.bielicki@seventhsignal.de> - 1.0.13-1
