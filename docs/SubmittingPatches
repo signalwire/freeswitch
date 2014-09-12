@@ -7,6 +7,13 @@ Download the Source Code
     git clone https://stash.freeswitch.org/scm/fs/freeswitch.git
     cd freeswitch
 
+Ensure Git is Setup
+-------------------
+
+    # tell git your full name and email address; make sure to use your
+    # real name and not a username
+    ./scripts/setup-git.sh
+
 Create Your Patch
 -----------------
 
@@ -23,6 +30,9 @@ Create Your Patch
     # create more commits as needed such that each commit represents a
     # logically separate change
     #while true; do emacs .; git commit -va; done
+
+    # review changes; ensure your author name is correct
+    git log -p
 
     # create patch files
     git format-patch origin/master..HEAD
