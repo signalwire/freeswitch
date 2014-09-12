@@ -79,7 +79,7 @@ Source0:http://files.freeswitch.org/%{name}-48000-%{version}.tar.gz
 Source1:http://files.freeswitch.org/%{name}-32000-%{version}.tar.gz
 Source2:http://files.freeswitch.org/%{name}-16000-%{version}.tar.gz
 Source3:http://files.freeswitch.org/%{name}-8000-%{version}.tar.gz
-BuildA4ch: noarch
+BuildArch: noarch
 BuildRequires: sox
 Requires: freeswitch
 Requires: freeswitch-sounds-ru-RU-elena-48000
