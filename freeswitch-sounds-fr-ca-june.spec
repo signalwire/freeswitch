@@ -137,11 +137,11 @@ FreeSWITCH Elena prompts package that pulls in the 8KHz, 16KHz, 32KHz and 48KHz 
 ##############################################################################
 
 %prep
-%setup -n ru
-%setup -T -D -b 0 -n ru
-%setup -T -D -b 1 -n ru
-%setup -T -D -b 2 -n ru
-%setup -T -D -b 3 -n ru
+%setup -n fr
+%setup -T -D -b 0 -n fr
+%setup -T -D -b 1 -n fr
+%setup -T -D -b 2 -n fr
+%setup -T -D -b 3 -n fr
 
 ##############################################################################
 # Build
@@ -160,7 +160,7 @@ FreeSWITCH Elena prompts package that pulls in the 8KHz, 16KHz, 32KHz and 48KHz 
 # create the sounds directories
 %{__install} -d -m 0750 %{buildroot}%{SOUNDSDIR}/fr/ca/june
 
-pushd RU/elena
+pushd ca/june
 # first install the 48KHz sounds
 %{__cp} -prv ./* %{buildroot}%{SOUNDSDIR}/fr/ca/june
 popd
@@ -199,26 +199,28 @@ popd
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/currency/8000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/digits/8000
 %attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/fr/ca/june/directory/8000
+%attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/fr/ca/june/extra-attempt-record/8000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/ivr/8000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/misc/8000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/phonetic-ascii/8000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/time/8000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/voicemail/8000
-%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/zrtp/8000
-%attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/fr/ca/june/users/8000
+#%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/zrtp/8000
+#%attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/fr/ca/june/users/8000
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/ascii/8000/*.wav
 #%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/base256/8000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/conference/8000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/currency/8000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/digits/8000/*.wav
 %attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/fr/ca/june/directory/8000/*.wav
+%attr(0750,freeswitch,daemon)   	%{SOUNDSDIR}/fr/ca/june/extra-attempt-record/8000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/ivr/8000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/misc/8000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/phonetic-ascii/8000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/time/8000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/voicemail/8000/*.wav
-%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/zrtp/8000/*.wav
-%attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/fr/ca/june/users/8000/*.wav
+#%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/zrtp/8000/*.wav
+#%attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/fr/ca/june/users/8000/*.wav
 
 %files -n freeswitch-sounds-fr-ca-june-16000
 %defattr(-,root,root,-)
@@ -228,26 +230,28 @@ popd
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/currency/16000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/digits/16000
 %attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/fr/ca/june/directory/16000
+%attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/fr/ca/june/extra-attempt-record/16000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/ivr/16000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/misc/16000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/phonetic-ascii/16000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/time/16000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/voicemail/16000
-%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/zrtp/16000
-%attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/fr/ca/june/users/16000
+#%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/zrtp/16000
+#%attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/fr/ca/june/users/16000
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/ascii/16000/*.wav
 #%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/base256/16000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/conference/16000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/currency/16000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/digits/16000/*.wav
 %attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/fr/ca/june/directory/16000/*.wav
+%attr(0750,freeswitch,daemon)   	%{SOUNDSDIR}/fr/ca/june/extra-attempt-record/16000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/ivr/16000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/misc/16000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/phonetic-ascii/16000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/time/16000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/voicemail/16000/*.wav
-%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/zrtp/16000/*.wav
-%attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/fr/ca/june/users/16000/*.wav
+#%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/zrtp/16000/*.wav
+#%attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/fr/ca/june/users/16000/*.wav
 
 %files -n freeswitch-sounds-fr-ca-june-32000
 %defattr(-,root,root,-)
@@ -257,26 +261,28 @@ popd
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/currency/32000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/digits/32000
 %attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/fr/ca/june/directory/32000
+%attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/fr/ca/june/extra-attempt-record/32000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/ivr/32000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/misc/32000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/phonetic-ascii/32000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/time/32000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/voicemail/32000
-%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/zrtp/32000
-%attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/fr/ca/june/users/32000
+#%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/zrtp/32000
+#%attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/fr/ca/june/users/32000
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/ascii/32000/*.wav
 #%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/base256/32000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/conference/32000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/currency/32000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/digits/32000/*.wav
 %attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/fr/ca/june/directory/32000/*.wav
+%attr(0750,freeswitch,daemon)   	%{SOUNDSDIR}/fr/ca/june/extra-attempt-record/32000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/ivr/32000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/misc/32000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/phonetic-ascii/32000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/time/32000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/voicemail/32000/*.wav
-%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/zrtp/32000/*.wav
-%attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/fr/ca/june/users/32000/*.wav
+#%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/zrtp/32000/*.wav
+#%attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/fr/ca/june/users/32000/*.wav
 
 %files -n freeswitch-sounds-fr-ca-june-48000
 %defattr(-,root,root,-)
@@ -286,26 +292,28 @@ popd
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/currency/48000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/digits/48000
 %attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/fr/ca/june/directory/48000
+%attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/fr/ca/june/extra-attempt-record/48000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/ivr/48000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/misc/48000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/phonetic-ascii/48000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/time/48000
 %attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/voicemail/48000
-%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/zrtp/48000
-%attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/fr/ca/june/users/48000
+#%attr(0750,freeswitch,daemon)	%dir	%{SOUNDSDIR}/fr/ca/june/zrtp/48000
+#%attr(0750,freeswitch,daemon)   %dir    %{SOUNDSDIR}/fr/ca/june/users/48000
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/ascii/48000/*.wav
 #%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/base256/48000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/conference/48000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/currency/48000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/digits/48000/*.wav
 %attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/fr/ca/june/directory/48000/*.wav
+%attr(0750,freeswitch,daemon)  		%{SOUNDSDIR}/fr/ca/june/extra-attempt-record/48000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/ivr/48000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/misc/48000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/phonetic-ascii/48000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/time/48000/*.wav
 %attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/voicemail/48000/*.wav
-%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/zrtp/48000/*.wav
-%attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/fr/ca/june/users/48000/*.wav
+#%attr(0640,freeswitch,daemon)		%{SOUNDSDIR}/fr/ca/june/zrtp/48000/*.wav
+#%attr(0640,freeswitch,daemon)           %{SOUNDSDIR}/fr/ca/june/users/48000/*.wav
 
 %files -n freeswitch-sounds-fr-ca-june-all
 
