@@ -21,8 +21,8 @@
 # Set variables
 ##############################################################################
 
-%define version %{VERSION_NUMBER}
-%define release %{BUILD_NUMBER}
+%define version 1.0.50
+%define release 1
 
 %define fsname  freeswitch
 # you could add a version number to be more strict
