@@ -6,5 +6,11 @@
     <param name="auth-realm" value="freeswitch"/>
     <param name="auth-user" value="freeswitch"/>
     <param name="auth-pass" value="works"/>
+
+
+    <!-- regex pattern to match against commands called against this service.
+         If a command with arguments matches, it will be logged at INFO level -->
+    <!--<param name="commands-to-log" value=""/> -->
+
   </settings>
 </configuration>

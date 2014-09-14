@@ -89,6 +89,7 @@ static struct {
 	TServer abyssServer;
 	xmlrpc_registry *registryP;
 	switch_bool_t enable_websocket;
+	char *commands_to_log;
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_realm, globals.realm);
@@ -103,6 +104,8 @@ static switch_status_t do_config(void)
 	char *realm, *user, *pass, *default_domain;
 
 	default_domain = realm = user = pass = NULL;
+	globals.commands_to_log = NULL;
+
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
@@ -130,6 +133,8 @@ static switch_status_t do_config(void)
 					globals.virtual_host = switch_true(val);
 				} else if (!strcasecmp(var, "enable-websocket")) {
 					globals.enable_websocket = switch_true(val);
+				} else if (!strcasecmp(var, "commands-to-log")) {
+					globals.commands_to_log = val;
 				}
 			}
 		}
@@ -800,6 +805,7 @@ abyss_bool handler_hook(TSession * r)
 {
 	switch_stream_handle_t stream = { 0 };
 	char *command;
+	char *full_command;
 	int i;
 	char *fs_user = NULL, *fs_domain = NULL;
 	char *path_info = NULL;
@@ -1054,6 +1060,16 @@ abyss_bool handler_hook(TSession * r)
 	/* fs api command will write to stream,  calling http_stream_write / http_stream_raw_write	*/
 	/* switch_api_execute will stream INVALID COMMAND before it fails					        */
 	switch_api_execute(command, api_str, NULL, &stream);
+	
+        if (globals.commands_to_log != NULL) {
+                full_command = switch_mprintf("%s%s%s", command, (api_str==NULL ? "" : " "), api_str);
+
+                if (switch_regex_match(full_command, globals.commands_to_log) == SWITCH_STATUS_SUCCESS) {
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Executed HTTP request command: [%s].\n", full_command);
+                }
+
+                switch_safe_free(full_command);
+        }
 
 	r->responseStarted = TRUE;
 	ResponseStatus(r, 200);     /* we don't want an assertion failure */
