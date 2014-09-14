@@ -1694,14 +1694,15 @@ static switch_status_t load_config(int reload_type)
 				switch_sleep(100000);
 				WARNINGA("STARTED interface_id=%u\n", GSMOPEN_P_LOG, interface_id);
 
+				/* How many real intterfaces */
+				globals.real_interfaces++;
+
 			}
 		}
 
 
 		for (i = 0; i < GSMOPEN_MAX_INTERFACES; i++) {
 			if (strlen(globals.GSMOPEN_INTERFACES[i].name)) {
-				/* How many real intterfaces */
-				globals.real_interfaces++;
 
 				tech_pvt = &globals.GSMOPEN_INTERFACES[i];
 
