@@ -394,9 +394,9 @@ bool Dbh::test_reactive(char *test_sql, char *drop_sql, char *reactive_sql)
     if (switch_cache_db_test_reactive(dbh, test_sql, drop_sql, reactive_sql) == SWITCH_TRUE) {
       return true;
     }
+  } else {
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DBH NOT Connected.\n");
   }
-
-  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DBH NOT Connected.\n");
   return false;
 }
 
