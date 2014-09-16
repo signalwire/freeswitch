@@ -137,14 +137,35 @@ static void verto_deinit_ssl(verto_profile_t *profile)
 	}
 }
 
+static void close_file(int *sock)
+{
+	if (*sock > -1) {
+		close(*sock);
+		*sock = -1;
+	}
+}
+
+static void close_socket(int *sock)
+{
+	if (*sock > -1) {
+		shutdown(*sock, 2);
+		close_file(sock);
+	}
+}
+
+
 static int ssl_init = 0;
 
-static void verto_init_ssl(verto_profile_t *profile) 
+static int verto_init_ssl(verto_profile_t *profile) 
 {
+	const char *err = "";
+	int i = 0;
+
 	if (!ssl_init) {
 		SSL_library_init();
 		ssl_init = 1;
 	}
+
 
 	profile->ssl_method = SSLv23_server_method();   /* create server instance */
 	profile->ssl_ctx = SSL_CTX_new(profile->ssl_method);         /* create context */
@@ -162,21 +183,65 @@ static void verto_init_ssl(verto_profile_t *profile)
 
 	/* set the local certificate from CertFile */
 	if (!zstr(profile->chain)) {
-		SSL_CTX_use_certificate_chain_file(profile->ssl_ctx, profile->chain);
+		if (switch_file_exists(profile->chain, NULL) != SWITCH_STATUS_SUCCESS) {
+			err = "SUPPLIED CHAIN FILE NOT FOUND\n";
+			goto fail;
+		}
+
+		if (!SSL_CTX_use_certificate_chain_file(profile->ssl_ctx, profile->chain)) {
+			err = "CERT CHAIN FILE ERROR";
+			goto fail;
+		}
 	}
 
-	SSL_CTX_use_certificate_file(profile->ssl_ctx, profile->cert, SSL_FILETYPE_PEM);
+	if (switch_file_exists(profile->cert, NULL) != SWITCH_STATUS_SUCCESS) {
+		err = "SUPPLIED CERT FILE NOT FOUND\n";
+		goto fail;
+	}
+
+	if (!SSL_CTX_use_certificate_file(profile->ssl_ctx, profile->cert, SSL_FILETYPE_PEM)) {
+		err = "CERT FILE ERROR";
+		goto fail;
+	}
 
 	/* set the private key from KeyFile */
-	SSL_CTX_use_PrivateKey_file(profile->ssl_ctx, profile->key, SSL_FILETYPE_PEM);
+
+	if (switch_file_exists(profile->key, NULL) != SWITCH_STATUS_SUCCESS) {
+		err = "SUPPLIED KEY FILE NOT FOUND\n";
+		goto fail;
+	}
+
+	if (!SSL_CTX_use_PrivateKey_file(profile->ssl_ctx, profile->key, SSL_FILETYPE_PEM)) {
+		err = "PRIVATE KEY FILE ERROR";
+		goto fail;
+	}
+
 	/* verify private key */
 	if ( !SSL_CTX_check_private_key(profile->ssl_ctx) ) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "SSL NOT AVAILABLE\n");
-		profile->ssl_ready = 0;
-		verto_deinit_ssl(profile);
-	} else {
-		SSL_CTX_set_cipher_list(profile->ssl_ctx, "HIGH:!DSS:!aNULL@STRENGTH");
+		err = "PRIVATE KEY FILE ERROR";
+		goto fail;
 	}
+
+	SSL_CTX_set_cipher_list(profile->ssl_ctx, "HIGH:!DSS:!aNULL@STRENGTH");
+
+	return 1;
+
+ fail:
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SSL ERR: %s\n", err);
+
+	profile->ssl_ready = 0;
+	verto_deinit_ssl(profile);
+
+	for (i = 0; i < profile->i; i++) {
+		if (profile->ip[i].secure) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SSL NOT ENABLED FOR LISTENER %s:%d. REVERTING TO WS\n", 
+							  profile->ip[i].local_ip, profile->ip[i].local_port);
+			profile->ip[i].secure = 0;
+		}
+	}
+
+	return 0;
+
 }
 
 
@@ -384,22 +449,6 @@ static switch_status_t jsock_sub_channel(jsock_t *jsock, const char *event_chann
 }
 
 static uint32_t ID = 1;
-
-static void close_file(int *sock)
-{
-	if (*sock > -1) {
-		close(*sock);
-		*sock = -1;
-	}
-}
-
-static void close_socket(int *sock)
-{
-	if (*sock > -1) {
-		shutdown(*sock, 2);
-		close_file(sock);
-	}
-}
 
 static void del_jsock(jsock_t *jsock)
 {
