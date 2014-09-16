@@ -130,6 +130,7 @@ struct shout_context {
 	unsigned char *mp3buf;
 	switch_size_t mp3buflen;
 	switch_thread_rwlock_t *rwlock;
+	int buffer_seconds;
 };
 
 typedef struct shout_context shout_context_t;
@@ -477,27 +478,12 @@ static void launch_read_stream_thread(shout_context_t *context)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
-	int sanity = 10;
-	size_t used;
 
 	context->thread_running = 1;
 	switch_threadattr_create(&thd_attr, context->memory_pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, read_stream_thread, context, context->memory_pool);
-
-	while (context->thread_running && --sanity) {
-		/* at least 1s of audio and up to 5s initialize */
-		switch_mutex_lock(context->audio_mutex);
-		used = switch_buffer_inuse(context->audio_buffer);
-		switch_mutex_unlock(context->audio_mutex);
-
-		if (used >= (2 * context->samplerate)) {
-			break;
-		}
-
-		switch_yield(500000);
-	}
 }
 
 #define error_check() if (context->err) goto error;
@@ -628,6 +614,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 	long rate = 0;
 	int channels = 0;
 	int encoding = 0;
+	const char *var = NULL;
 
 	if ((context = switch_core_alloc(handle->memory_pool, sizeof(*context))) == 0) {
 		return SWITCH_STATUS_MEMERR;
@@ -640,12 +627,24 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 	context->memory_pool = handle->memory_pool;
 	context->samplerate = handle->samplerate;
 	context->handle = handle;
+	context->buffer_seconds = 1;
 
 	switch_thread_rwlock_create(&(context->rwlock), context->memory_pool);
 
 	switch_thread_rwlock_rdlock(context->rwlock);
 
 	switch_mutex_init(&context->audio_mutex, SWITCH_MUTEX_NESTED, context->memory_pool);
+
+	if (handle->params && (var = switch_event_get_header(handle->params, "buffer_seconds"))) {
+		int bs = atol(var);
+		if (bs < 1) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Buffer Seconds %d too low\n", bs);
+		} else if (bs > 60) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Buffer Seconds %d too high\n", bs);
+		} else {
+			context->buffer_seconds = bs;
+		}
+	}
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_READ)) {
 		if (switch_buffer_create_dynamic(&context->audio_buffer, TC_BUFFER_SIZE, TC_BUFFER_SIZE * 2, 0) != SWITCH_STATUS_SUCCESS) {
@@ -944,12 +943,13 @@ static switch_status_t shout_file_read(switch_file_handle_t *handle, void *data,
 	if (rb) {
 		*len = rb / sizeof(int16_t) / handle->real_channels;
 	} else {
-		/* no data, so insert 1 second of silence */
-		newbytes = 2 * handle->samplerate;
+		/* no data, so insert N seconds of silence */
+		newbytes = (2 * handle->samplerate * handle->real_channels) * context->buffer_seconds;
 		if (newbytes < bytes) {
 			bytes = newbytes;
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Padding mp3 stream with 1s of empty audio. (%s)\n", context->stream_url);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Padding mp3 stream with %ds of empty audio. (%s)\n", 
+						  context->buffer_seconds, context->stream_url);
 
 		memset(data, 255, bytes);
 		*len = bytes / sizeof(int16_t) / handle->real_channels;
