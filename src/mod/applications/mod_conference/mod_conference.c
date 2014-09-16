@@ -2394,6 +2394,11 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		
 	}
 
+	if (member->conference->video_floor_holder && member->conference->video_floor_holder != member && member->channel) {
+		// there's already someone hold the floor, tell the core thread start to read video
+		switch_channel_clear_flag(member->channel, CF_VIDEO_PASSIVE);
+	}
+
 	unlock_member(member);
 	switch_mutex_unlock(member->audio_out_mutex);
 	switch_mutex_unlock(member->audio_in_mutex);
