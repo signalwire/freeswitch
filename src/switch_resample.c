@@ -191,7 +191,6 @@ SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples
 
 	if (channels == 0) channels = 1;
 
-	switch_assert((samples * channels * 2) < SWITCH_RECOMMENDED_BUFFER_SIZE);
 	assert(divisor);
 
 	if (divisor == (uint32_t)-1) {
@@ -261,8 +260,7 @@ SWITCH_DECLARE(void) switch_mux_channels(int16_t *data, switch_size_t samples, u
 	uint32_t j = 0;
 
 	switch_assert(channels < 11);
-	switch_assert((samples * channels * 2) < SWITCH_RECOMMENDED_BUFFER_SIZE);
-	
+
 	if (orig_channels > channels) {
 		for (i = 0; i < samples; i++) {
 			int32_t z = 0;
