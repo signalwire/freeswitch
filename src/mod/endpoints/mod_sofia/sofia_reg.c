@@ -2483,7 +2483,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	if (session) {
 		switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_MANDATORY_IE_MISSING);
 	} else {
-		nua_cancel(nh, TAG_END());
+		nua_cancel(nh, SIPTAG_CONTACT(SIP_NONE), TAG_END());
 	}
 
   end:
