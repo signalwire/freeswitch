@@ -1716,7 +1716,7 @@ static void client_run(jsock_t *jsock)
 			bytes = ws_read_frame(&jsock->ws, &oc, &data);
 	
 			if (bytes < 0) {
-				die("BAD READ %" SWITCH_SIZE_T_FMT "\n", bytes);
+				die("BAD READ %" SWITCH_SSIZE_T_FMT "\n", bytes);
 				break;
 			}
 
