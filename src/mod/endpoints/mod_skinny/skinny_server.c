@@ -522,6 +522,8 @@ int skinny_session_set_variables_callback(void *pArg, int argc, char **argv, cha
 				"found user (id=%s) in channel var setup\n", uid);
 
 		if ((xvariables = switch_xml_child(xuser, "variables"))) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(helper->tech_pvt->session), SWITCH_LOG_DEBUG, 
+				"found variables section in user xml");
 			
 			for (xvariable = switch_xml_child(xvariables, "variable"); xvariable; xvariable = xvariable->next) {
 				char *name = (char *) switch_xml_attr_soft(xvariable, "name");

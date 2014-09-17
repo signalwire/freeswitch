@@ -938,7 +938,12 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 		switch_core_session_get_partner(session, &nsession);
 
 		if (nsession) {
-			switch_ivr_transfer_variable(session, nsession, SOFIA_SIP_BYE_HEADER_PREFIX_T);
+			const char *vval;
+			switch_channel_t *nchannel = switch_core_session_get_channel(nsession);
+			
+			if (!(vval = switch_channel_get_variable(nchannel, "sip_copy_custom_headers")) || switch_true(vval)) {
+				switch_ivr_transfer_variable(session, nsession, SOFIA_SIP_BYE_HEADER_PREFIX_T);
+			}
 			switch_core_session_rwunlock(nsession);
 		}
 	}

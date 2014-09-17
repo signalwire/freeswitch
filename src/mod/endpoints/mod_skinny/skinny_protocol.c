@@ -501,7 +501,7 @@ switch_status_t perform_send_register_ack(listener_t *listener,
 	skinny_create_message(message, REGISTER_ACK_MESSAGE, reg_ack);
 
 	message->data.reg_ack.keep_alive = keep_alive;
-	switch_copy_string(message->data.reg_ack.date_format, date_format, 6);
+	memcpy(message->data.reg_ack.date_format, date_format, 6);
 	switch_copy_string(message->data.reg_ack.reserved, reserved, 2);
 	message->data.reg_ack.secondary_keep_alive = keep_alive;
 	switch_copy_string(message->data.reg_ack.reserved2, reserved2, 4);
@@ -871,7 +871,7 @@ switch_status_t perform_send_version(listener_t *listener,
 
 	skinny_create_message(message, VERSION_MESSAGE, version);
 
-	switch_copy_string(message->data.version.version, version, 16);
+	memcpy(message->data.version.version, version, 16);
 
 	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 		"Send Version with Version(%s)\n", version);

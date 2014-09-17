@@ -2531,7 +2531,7 @@ static void conference_set_floor_holder(conference_obj_t *conference, conference
 	int old_id = 0;
 
 	if (!switch_test_flag(conference, CFLAG_VIDEO_BRIDGE) && 
-		((conference->video_floor_holder && !member) ||
+		((conference->video_floor_holder && !member && !switch_test_flag(conference, CFLAG_VID_FLOOR_LOCK)) ||
 			(member && member->channel && switch_channel_test_flag(member->channel, CF_VIDEO)))) {
 		conference_set_video_floor_holder(conference, member, SWITCH_FALSE);
 	}

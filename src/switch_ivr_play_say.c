@@ -1238,6 +1238,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			continue;
 		}
 
+		switch_channel_audio_sync(channel);
 		switch_core_session_io_write_lock(session);
 		switch_channel_set_private(channel, "__fh", fh);
 		switch_core_session_io_rwunlock(session);

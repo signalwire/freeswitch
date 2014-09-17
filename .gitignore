@@ -227,3 +227,5 @@ libs/libsndfile/src/Symbols.gnu-binutils
 libs/libsndfile/src/Symbols.static
 libs/libsndfile/src/version-metadata.rc
 libs/libsndfile/tests/pedantic-header-test.sh
+yum/RPMS
+yum/temp

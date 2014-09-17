@@ -16,7 +16,7 @@ if ! git config user.name >/dev/null 2>&1; then
   name=$(git config user.name)
   [ -z "$name" ] \
     && [ -n "$NAME" ] && name="$NAME" || name=""
-  echo -n "What is your name? [$name]: "
+  echo -n "What is your full real name? [$name]: "
   read name_
   [ -n "$name_" ] && name="$name_"
   [ -z "$name" ] && err "Your name is required."

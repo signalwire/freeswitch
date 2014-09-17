@@ -1,14 +1,13 @@
 #!/bin/sh
 ##### -*- mode:shell-script; indent-tabs-mode:nil; sh-basic-offset:2 -*-
 
+declare -a specfiles=('freeswitch-sounds-en-ca-june.spec' 'freeswitch-sounds-fr-ca-june.spec' 'freeswitch-sounds-ru-RU-elena.spec' 'freeswitch-sounds-en-us-callie.spec' 'freeswitch-sounds-sv-se-jakob.spec')
+
 sdir="."
 [ -n "${0%/*}" ] && sdir="${0%/*}"
 . $sdir/common.sh
 
 check_pwd
-check_input_ver_build $@
-eval $(parse_version "$1")
-build="$2"
 
 basedir=$(pwd);
 
@@ -23,19 +22,23 @@ else
         git pull
 fi
 
-cd $basedir/../freeswitch-sounds/sounds/trunk
-./dist.pl en/us/callie
+for i in "${specfiles[@]}"
+do
 
-mv freeswitch-sounds-en-us-callie-*.tar.gz $basedir/rpmbuild/SOURCES
+cd $basedir/../freeswitch-sounds/sounds/trunk
+
+./dist.pl `echo $i|sed -e 's/freeswitch-sounds-//g' -e 's/\.spec//g' -e 's/-/\//g'`
+
+mv `echo $i|sed -e's/\.spec//g'`*.tar.* $basedir/rpmbuild/SOURCES
 
 cd $basedir
 
-rpmbuild --define "VERSION_NUMBER $ver" \
-  --define "BUILD_NUMBER 1" \
-  --define "_topdir %(pwd)/rpmbuild" \
+rpmbuild --define "_topdir %(pwd)/rpmbuild" \
   --define "_rpmdir %{_topdir}" \
   --define "_srcrpmdir %{_topdir}" \
-  -ba freeswitch-sounds-en-us-callie.spec
+  -ba $i
+
+done
 
 mkdir $src_repo/RPMS
 mv $src_repo/rpmbuild/*/*.rpm $src_repo/RPMS/.

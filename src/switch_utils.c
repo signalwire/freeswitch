@@ -808,11 +808,18 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 				goto end;
 			}
 		}
-		switch_snprintf(buf, B64BUFFLEN, "MIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=\"%s\"\n", bound);
-		if (!write_buf(fd, buf)) {
-			rval = SWITCH_FALSE;
-			err = "write error.";
-			goto end;
+
+		if (!file && (!body || !switch_stristr("content-type", body))) {
+			bound = NULL;
+		}
+
+		if (bound) {
+			switch_snprintf(buf, B64BUFFLEN, "MIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=\"%s\"\n", bound);
+			if (!write_buf(fd, buf)) {
+				rval = SWITCH_FALSE;
+				err = "write error.";
+				goto end;
+			}
 		}
 
 		if (headers && !write_buf(fd, headers)) {
@@ -827,15 +834,17 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 			goto end;
 		}
 
-		if (body && switch_stristr("content-type", body)) {
-			switch_snprintf(buf, B64BUFFLEN, "--%s\n", bound);
-		} else {
-			switch_snprintf(buf, B64BUFFLEN, "--%s\nContent-Type: text/plain\n\n", bound);
-		}
-		if (!write_buf(fd, buf)) {
-			rval = SWITCH_FALSE;
-			err = "write error.";
-			goto end;
+		if (bound) {
+			if (body && switch_stristr("content-type", body)) {
+				switch_snprintf(buf, B64BUFFLEN, "--%s\n", bound);
+			} else {
+				switch_snprintf(buf, B64BUFFLEN, "--%s\nContent-Type: text/plain\n\n", bound);
+			}
+			if (!write_buf(fd, buf)) {
+				rval = SWITCH_FALSE;
+				err = "write error.";
+				goto end;
+			}
 		}
 
 		if (body) {
@@ -846,7 +855,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 			}
 		}
 
-		if (file) {
+		if (file && bound) {
 			const char *stipped_file = switch_cut_path(file);
 			const char *new_type;
 			char *ext;
@@ -904,12 +913,14 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to,
 
 		}
 
-		switch_snprintf(buf, B64BUFFLEN, "\n\n--%s--\n.\n", bound);
+		if (bound) {
+			switch_snprintf(buf, B64BUFFLEN, "\n\n--%s--\n.\n", bound);
 
-		if (!write_buf(fd, buf)) {
-			rval = SWITCH_FALSE;
-			err = "write error.";
-			goto end;
+			if (!write_buf(fd, buf)) {
+				rval = SWITCH_FALSE;
+				err = "write error.";
+				goto end;
+			}
 		}
 	}
 

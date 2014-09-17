@@ -35,7 +35,7 @@
 
 Summary:	FreeSWITCH Music on Hold soundfiles
 Name:		freeswitch-sounds-music
-Version:	1.0.8
+Version:	1.0.50
 Release:	2%{?dist}
 License:	MPL
 Group:		Productivity/Telephony/Servers

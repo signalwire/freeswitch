@@ -1486,8 +1486,6 @@ static switch_status_t load_config(int reload_type)
 				memset(&newconf, '\0', sizeof(newconf));
 				globals.GSMOPEN_INTERFACES[interface_id] = newconf;
 
-				tech_pvt = &globals.GSMOPEN_INTERFACES[interface_id];
-
 				switch_mutex_init(&globals.GSMOPEN_INTERFACES[interface_id].controldev_lock, SWITCH_MUTEX_NESTED, gsmopen_module_pool);
 				switch_mutex_init(&globals.GSMOPEN_INTERFACES[interface_id].controldev_audio_lock, SWITCH_MUTEX_NESTED, gsmopen_module_pool);
 
@@ -1596,9 +1594,11 @@ static switch_status_t load_config(int reload_type)
 
 		for (i = 0; i < GSMOPEN_MAX_INTERFACES; i++) {
 
-				switch_threadattr_t *gsmopen_api_thread_attr = NULL;
-				int res = 0;
-				int interface_id = i;
+			switch_threadattr_t *gsmopen_api_thread_attr = NULL;
+			int res = 0;
+			int interface_id = i;
+
+			tech_pvt = &globals.GSMOPEN_INTERFACES[interface_id];
 
 			if (strlen(globals.GSMOPEN_INTERFACES[i].name) && !globals.GSMOPEN_INTERFACES[i].active) {
 

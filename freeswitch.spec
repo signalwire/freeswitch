@@ -121,13 +121,13 @@ Source3:	http://files.freeswitch.org/downloads/libs/lame-3.98.4.tar.gz
 Source4:	http://files.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
 Source5:	http://files.freeswitch.org/downloads/libs/mpg123-1.13.2.tar.gz
 #Source6:	http://files.freeswitch.org/downloads/libs/openldap-2.4.11.tar.gz
-Source6:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.7.tar.gz
+Source6:	http://files.freeswitch.org/downloads/libs/pocketsphinx-0.8.tar.gz
 Source7:	http://files.freeswitch.org/downloads/libs/soundtouch-1.7.1.tar.gz
-Source8:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.7.tar.gz
+Source8:	http://files.freeswitch.org/downloads/libs/sphinxbase-0.8.tar.gz
 Source9:	http://files.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
 Source10:	http://files.freeswitch.org/downloads/libs/libmemcached-0.32.tar.gz
 Source11:       http://files.freeswitch.org/downloads/libs/json-c-0.9.tar.gz
-Source12:       http://files.freeswitch.org/downloads/libs/opus-1.1.tar.gz
+Source12:       http://files.freeswitch.org/downloads/libs/opus-1.1-p2.tar.gz
 Source13:       http://files.freeswitch.org/downloads/libs/v8-3.24.14.tar.bz2
 Prefix:        	%{prefix}
 
@@ -146,6 +146,7 @@ BuildRequires: lzo-devel
 %endif
 BuildRequires: autoconf
 BuildRequires: automake
+BuildRequires: bzip2
 BuildRequires: curl-devel
 BuildRequires: gcc-c++
 BuildRequires: gnutls-devel
@@ -155,9 +156,10 @@ BuildRequires: openssl-devel >= 1.0.1e
 BuildRequires: pcre-devel 
 BuildRequires: speex-devel 
 BuildRequires: sqlite-devel
+BuildRequires: ldns-devel
 BuildRequires: libedit-devel
 BuildRequires: perl
-%if 0%{?fedora_version} >= 8 || 0%{?rhel} >= 6
+%if 0%{?fedora} >= 8 || 0%{?rhel} >= 6
 BuildRequires: perl-ExtUtils-Embed
 %endif
 BuildRequires: pkgconfig
@@ -166,7 +168,11 @@ BuildRequires: termcap
 %endif
 BuildRequires: unixODBC-devel
 BuildRequires: gdbm-devel
+%if 0%{?suse_version} > 100
+BuildRequires: db-devel
+%else
 BuildRequires: db4-devel
+%endif
 BuildRequires: python-devel
 BuildRequires: libogg-devel
 BuildRequires: libvorbis-devel
@@ -179,6 +185,9 @@ BuildRequires: e2fsprogs-devel
 BuildRequires: libtheora-devel
 BuildRequires: libxml2-devel
 BuildRequires: bison
+BuildRequires: net-snmp-devel
+BuildRequires: libmemcached-devel
+BuildRequires: portaudio-devel
 %if %{build_py26_esl}
 BuildRequires: python26-devel
 Requires: python26
@@ -858,6 +867,22 @@ Requires:       %{name} = %{version}-%{release}
 %description endpoint-skinny
 SCCP/Skinny support for FreeSWITCH open source telephony platform.
 
+%package endpoint-verto
+Summary:        Verto endpoint support for FreeSWITCH open source telephony platform
+Group:          System/Libraries
+Requires:       %{name} = %{version}-%{release}
+
+%description endpoint-verto
+Verto protocol support for FreeSWITCH open source telephony platform.
+
+%package endpoint-rtc
+Summary:        Verto endpoint support for FreeSWITCH open source telephony platform
+Group:          System/Libraries
+Requires:       %{name} = %{version}-%{release}
+
+%description endpoint-rtc
+Verto protocol support for FreeSWITCH open source telephony platform.
+
 %package freetdm
 Summary:	Provides a unified interface to hardware TDM cards and ss7 stacks for FreeSWITCH
 Group:		System/Libraries
@@ -1396,7 +1421,7 @@ DIRECTORIES_MODULES=""
 ######################################################################################################################
 ENDPOINTS_MODULES="endpoints/mod_dingaling ../../libs/freetdm/mod_freetdm \
 			endpoints/mod_loopback endpoints/mod_portaudio endpoints/mod_rtmp \
-			endpoints/mod_skinny endpoints/mod_skypopen endpoints/mod_sofia"
+			endpoints/mod_skinny endpoints/mod_verto endpoints/mod_rtc endpoints/mod_skypopen endpoints/mod_sofia"
 
 ## DISABLED MODULES DUE TO BUILD ISSUES endpoints/mod_gsmopen endpoints/mod_h323 endpoints/mod_khomp 
  
@@ -1518,6 +1543,7 @@ fi
 --with-dbdir=%{DBDIR} \
 --with-htdocsdir=%{HTDOCSDIR} \
 --with-soundsdir=%{SOUNDSDIR} \
+--enable-core-pgsql-support \
 --enable-core-odbc-support \
 --enable-core-libedit-support \
 --with-grammardir=%{GRAMMARDIR} \
@@ -2092,6 +2118,12 @@ fi
 %files endpoint-skinny
 %{MODINSTDIR}/mod_skinny.so*
 
+%files endpoint-verto
+%{MODINSTDIR}/mod_verto.so*
+
+%files endpoint-rtc
+%{MODINSTDIR}/mod_rtc.so*
+
 %files endpoint-skypopen
 %{MODINSTDIR}/mod_skypopen.so*
 
@@ -2339,9 +2371,11 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Thu Sep 11 2014 - krice@freeswitch.org
+- add and fix mod_verto and mod_rtc
 * Fri Jul 20 2014 - krice@freeswitch.org
 - remove mod_cdr_pg_csv as its broken on centos
-* Fri Jun 02 2014 - krice@freeswitch.org
+* Mon Jun 02 2014 - krice@freeswitch.org
 - remove mod_spidermoney as its been deprecated
 * Fri Feb 21 2014 - crienzo@grasshopper.com
 - change file owner to root
@@ -2354,11 +2388,11 @@ fi
 * Mon Dec 09 2013 - crienzo@grasshopper.com
 - Add mod_ssml, mod_rayo
 - Fix build on master
-* Thu Jun 28 2013 - krice@freeswitch.org
+* Fri Jun 28 2013 - krice@freeswitch.org
 - Add module for VP8
-* Thu Jun 19 2013 - krice@freeswitch.org
+* Wed Jun 19 2013 - krice@freeswitch.org
 - tweak files included for vanilla configs
-* Thu Sep 19 2012 - krice@freeswitch.org
+* Wed Sep 19 2012 - krice@freeswitch.org
 - Add support for Spanish and Portugese say language modules
 * Thu Jan 26 2012 - krice@freeswitch.org
 - complete rework of spec file
@@ -2440,10 +2474,10 @@ fi
 - added directory files to russian language
 * Sat Nov 21 2009 - michal.bielicki@seventhsignal.de
 - added patch by Igor Neves <neves.igor@gmail.com>: Added some checkup in %post and %postun to prevent upgrades from removing freeswitch user
-* Thu Nov 18 2009 - michal.bielicki@seventhsignal.de
+* Wed Nov 18 2009 - michal.bielicki@seventhsignal.de
 - added new config files for diretory and distributor
 - removed sangoma boost from openzap for builds that do not inherit wanpipe while building.
-* Tue Jul 24 2009 - mike@jerris.com
+* Fri Jul 24 2009 - mike@jerris.com
 - removed mod_http
 - removed ozmod_wanpipe
 * Tue Jun 23 2009 - raulfragoso@gmail.com
@@ -2451,7 +2485,7 @@ fi
 - Included new config and mod files to catch up with latest SVN
 - Included new sound files for base256 and zrtp
 - mod_unimrcp must be built after mod_sofia
-* Mon Feb 17 2009 - michal.bielicki@halokwadrat.de
+* Tue Feb 17 2009 - michal.bielicki@halokwadrat.de
 - added mod_python
 - added mod_fax
 - added mod_amrwb.so
@@ -2488,7 +2522,7 @@ fi
 - abstraction of mkdir, mv, rm, install etc into macros
 * Fri Jan 18 2008 - michal.bielicki@voiceworks.pl
 - fixes, fixes and more fixes in preparation for rc1
-* Thu Dec 5 2007 - michal.bielicki@voiceworks.pl
+* Wed Dec 5 2007 - michal.bielicki@voiceworks.pl
 - put in detail configfiles in to split of spidermonkey configs
 - created link from /opt/freesxwitch/conf to /etc%{prefix}
 * Thu Nov 29 2007 - michal.bielicki@voiceworks.pl
