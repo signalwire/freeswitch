@@ -1803,11 +1803,11 @@ static void rtcp_generate_sender_info(switch_rtp_t *rtp_session, struct switch_r
 	uint32_t sec, ntp_sec, ntp_usec;
 	switch_time_exp_t now_hr;
 	now = switch_time_now();
-	sec = now/1000000;        /* convert to seconds     */
+	sec = (uint32_t)(now/1000000);        /* convert to seconds     */
 	ntp_sec = sec+NTP_TIME_OFFSET;  /* convert to NTP seconds */
 	sr->ntp_msw = htonl(ntp_sec);   /* store result in "most significant word" */
-	ntp_usec = now - (sec*1000000); /* remove seconds to keep only the microseconds */
-	sr->ntp_lsw = htonl(ntp_usec*(double)(((uint64_t)1)<<32)*1.0e-6); /* convert microseconds to fraction of 32bits and store result in "least significatn word" */
+	ntp_usec = (uint32_t)(now - (sec*1000000)); /* remove seconds to keep only the microseconds */
+	sr->ntp_lsw = htonl((u_long)(ntp_usec*(double)(((uint64_t)1)<<32)*1.0e-6)); /* convert microseconds to fraction of 32bits and store result in "least significatn word" */
 
 	sr->ts = htonl(rtp_session->last_write_ts);
 	sr->pc = htonl(rtp_session->stats.outbound.packet_count);
@@ -1832,9 +1832,9 @@ static void rtcp_generate_report_block(switch_rtp_t *rtp_session, struct switch_
 	int32_t pkt_lost;
 	uint32_t ntp_sec, ntp_usec, lsr_now, sec;
 	now = switch_time_now();
-	sec = now/1000000;        /* convert to seconds     */
+	sec = (uint32_t)(now/1000000);        /* convert to seconds     */
 	ntp_sec = sec+NTP_TIME_OFFSET;  /* convert to NTP seconds */
-	ntp_usec = now - (sec*1000000); /* remove seconds to keep only the microseconds */
+	ntp_usec = (uint32_t)(now - (sec*1000000)); /* remove seconds to keep only the microseconds */
 
 	/* Packet loss */
 	if (stats->rtcp_rtp_count == 0) {
@@ -3865,7 +3865,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp(switch_rtp_t *rtp_sessi
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "RTCP send rate is: %d and packet rate is: %d Remote Port: %d\n", 						  send_rate, rtp_session->ms_per_packet, rtp_session->remote_rtcp_port);
 
 		rtp_session->rtcp_interval = send_rate;
-		rtp_session->rtcp_send_rate = send_rate/1000;
+		rtp_session->rtcp_send_rate = (uint16_t)(send_rate/1000);
 		rtp_session->next_rtcp_send = switch_time_now() + (rtp_session->rtcp_interval * 1000);
 	}
 
@@ -5088,9 +5088,9 @@ static switch_status_t process_rtcp_packet(switch_rtp_t *rtp_session, switch_siz
 			uint32_t lsr;
 			uint32_t packet_ssrc;
 			now = switch_time_now();  /* number of microseconds since 00:00:00 january 1, 1970 UTC */
-			sec = now/1000000;              /* converted to second (NTP most significant bits) */
+			sec = (uint32_t)(now/1000000);              /* converted to second (NTP most significant bits) */
 			ntp_sec = sec+NTP_TIME_OFFSET;  /* 32bits most significant */
-			ntp_usec = now - (sec*1000000); /* micro seconds */
+			ntp_usec = (uint32_t)(now - (sec*1000000)); /* micro seconds */
 			lsr_now = (uint32_t)(ntp_usec*0.065536) | (ntp_sec&0x0000ffff)<<16; // 0.065536 is used for convertion from useconds 
 
 			if (rtp_session->rtcp_recv_msg.header.type == 200) { /* Sender report */
