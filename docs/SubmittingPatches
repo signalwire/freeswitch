@@ -102,6 +102,10 @@ The commit subject is the first line of your commit message, then
 there is an empty line, then your commit body starts.  A good commit
 message might look like this:
 
+    commit b5c64234ea5d4417abe02b282d6f41c019f2252f
+    Author: John Doe <johndoe@example.com>
+    Date:   Tue Jan 19 03:14:07 2014 +0000
+    
         Add frobinator support to mod_sofia
         
         Without proper frobinator support users had to make multiple calls
