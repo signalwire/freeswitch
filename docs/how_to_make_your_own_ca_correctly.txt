@@ -5,8 +5,8 @@ Here is how I did it.
 wget http://www.openssl.org/contrib/ssl.ca-0.1.tar.gz
 tar zxfv ssl.ca-0.1.tar.gz
 cd ssl.ca-0.1/
-perl -i -pe 's/md5/sha1/g' *.sh
-perl -i -pe 's/1024/2048/g' *.sh
+perl -i -pe 's/md5/sha2/g' *.sh
+perl -i -pe 's/1024/4096/g' *.sh
 ./new-root-ca.sh
 ./new-server-cert.sh self.bkw.org
 ./sign-server-cert.sh self.bkw.org
