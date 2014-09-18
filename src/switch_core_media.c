@@ -4103,7 +4103,10 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 			switch_channel_mark_hold(session->channel, SWITCH_FALSE);
 			switch_channel_presence(session->channel, "unknown", "unhold", NULL);
 
-			switch_rtp_clear_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_PAUSE);
+			if (a_engine->rtp_session) {
+				switch_rtp_clear_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_PAUSE);
+			}
+
 			if (v_engine->rtp_session) {
 				switch_rtp_clear_flag(v_engine->rtp_session, SWITCH_RTP_FLAG_PAUSE);
 			}
