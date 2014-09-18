@@ -126,7 +126,7 @@ before "Signed-off-by:" and "Thanks-to:" lines.  This helps our JIRA
 bot do useful things by relating the commit to the issue.
 
 If you believe your patch resolves the issue in question, follow the
-issue number with a space and the "--resolve" directive as in the
+issue number with a space and the "#resolve" directive as in the
 example above.
 
 Do As We Say...
