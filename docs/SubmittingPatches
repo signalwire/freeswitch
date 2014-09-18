@@ -46,6 +46,32 @@ Create Your Patch
     # create an account in JIRA and create a new issue;
     # attach the patch file(s) you created to the issue
 
+Guidelines for a Good Commit
+----------------------------
+
+To the extent possible and appropriate, address only one issue per
+commit.  When we review your commit, anything that doesn't need to be
+there will only create confusion.
+
+This means that, for example, unrelated refactoring or whitespace
+cleanups should generally happen in separate commits.  Whitespace
+cleanup commits should not change anything other than whitespace, and
+refactoring commits should strive to preserve identical behavior.
+
+However, don't go overboard.  A commit should do some identifiable
+thing completely.  If you're adding a new module, the build changes
+for that module should go in the commit that adds the module itself.
+If you're adding a feature, the feature should work after applying
+that commit.
+
+We don't need to see your missteps and corrections.  Use `git rebase
+-i` to squash those out of your history before submitting the commit
+series to us.  It should look like you got everything right the first
+time.
+
+Use `git log -p` to verify that each diff is correct and minimal, and
+that your git author name is correct and complete.
+
 Writing a Good Commit Message
 -----------------------------
 
