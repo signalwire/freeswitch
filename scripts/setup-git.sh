@@ -82,6 +82,10 @@ EOF
 EOF
 
 cat 1>&2 <<EOF
+
+    If you're creating patches for FS, please review this document:
+
+      docs/SubmittingPatches
 ----------------------------------------------------------------------
 EOF
 
