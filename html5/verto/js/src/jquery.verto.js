@@ -1951,6 +1951,8 @@
             hangup: 1
         },
         active: {
+	    answering: 1,
+	    requesting: 1,
             hangup: 1,
             held: 1
         },
