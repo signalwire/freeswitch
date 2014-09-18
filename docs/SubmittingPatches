@@ -14,8 +14,8 @@ Ensure Git is Setup
     # real name and not a username
     ./scripts/setup-git.sh
 
-Create Your Patch
------------------
+Create Your Commits
+-------------------
 
     # create a topic/feature branch in your local repository
     git checkout -b myfeature
@@ -34,17 +34,29 @@ Create Your Patch
     # review changes; ensure your author name is correct
     git log -p
 
-    # create patch files
-    git format-patch origin/master..HEAD
-
-    # you'll now have a number of *.patch files in your current
-    # directory
+Create a Pull Request
+---------------------
 
     # navigate to the FreeSWITCH JIRA
     chromium http://jira.freeswitch.org/
 
-    # create an account in JIRA and create a new issue;
-    # attach the patch file(s) you created to the issue
+    # create an account in JIRA and create a new issue
+
+    # navigate to FreeSWITCH Stash
+    chromium http://stash.freeswitch.org/
+
+    # create an account in Stash; create a forked FS repository; read
+    # the details here:
+    chromium https://confluence.freeswitch.org/display/FREESWITCH/Pull+Requests
+
+    # add your repository as a remote (change to your username)
+    git remote add stash ssh://git@stash.freeswitch.org:7999/~johndoe/freeswitch.git
+
+    # push your changes to a branch
+    git push stash +HEAD:myfeature
+
+    # create a pull request as described here:
+    chromium https://confluence.freeswitch.org/display/FREESWITCH/Pull+Requests
 
 Guidelines for a Good Commit
 ----------------------------
