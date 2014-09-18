@@ -129,6 +129,17 @@ If you believe your patch resolves the issue in question, follow the
 issue number with a space and the "#resolve" directive as in the
 example above.
 
+Avoid Merges
+------------
+
+When you've created a local git branch to make and test your changes,
+it can be tempting to merge that branch periodically against our git
+HEAD, particularly if the branch lingers for some time.  Don't do
+this.  Instead, please rebase your branch onto our tree before
+submitting the commits to us.  Random "update branch to master" merges
+make our history hard to understand and make it more difficult to
+isolate regressions with `git-bisect`.
+
 Do As We Say...
 ---------------
 
