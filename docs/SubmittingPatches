@@ -102,19 +102,19 @@ The commit subject is the first line of your commit message, then
 there is an empty line, then your commit body starts.  A good commit
 message might look like this:
 
-> Add frobinator support to mod_sofia
-> 
-> Without proper frobinator support users had to make multiple calls
-> to shell scripts to do the sort of frobbing needed in high call
-> volume environments.
-> 
-> With this change, we now link to libfrob and support the IETF
-> draft-cross-voip-frobbing API.
-> 
-> After appropriate amounts of frobbing have been done, a new variable
-> `frobbing_done` is set in the caller's channel.
-> 
-> FS-XXXX #resolve
+        Add frobinator support to mod_sofia
+        
+        Without proper frobinator support users had to make multiple calls
+        to shell scripts to do the sort of frobbing needed in high call
+        volume environments.
+        
+        With this change, we now link to libfrob and support the IETF
+        draft-cross-voip-frobbing API.
+        
+        After appropriate amounts of frobbing have been done, a new variable
+        `frobbing_done` is set in the caller's channel.
+        
+        FS-XXXX #resolve
 
 Patches Related to JIRA Issues
 ------------------------------
