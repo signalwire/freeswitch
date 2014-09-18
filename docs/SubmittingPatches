@@ -129,6 +129,23 @@ If you believe your patch resolves the issue in question, follow the
 issue number with a space and the "--resolve" directive as in the
 example above.
 
+Do As We Say...
+---------------
+
+When you look in our git history, you'll find not all commits follow
+the guidelines here.  Don't be fooled by this.  These guidelines are
+what we want, and your commits should follow them.
+
+It's always difficult to counsel, "do as we say and not as we do," but
+the truth is that the format of your commits will be held to a
+different standard than the commits of people who have written the
+majority of the code in FS.  For one thing, your commits will be
+reviewed, so following a careful format helps us to review and merge
+your patches quickly and efficiently.
+
+We want a clean and sensible git history, and over time more
+contributors will be following the guidelines here.
+
 Where to Go for Help
 --------------------
 
