@@ -38,12 +38,12 @@ Create a Pull Request
 ---------------------
 
     # navigate to the FreeSWITCH JIRA
-    chromium http://jira.freeswitch.org/
+    chromium https://jira.freeswitch.org/
 
     # create an account in JIRA and create a new issue
 
     # navigate to FreeSWITCH Stash
-    chromium http://stash.freeswitch.org/
+    chromium https://stash.freeswitch.org/
 
     # create an account in Stash; create a forked FS repository; read
     # the details here:
@@ -214,4 +214,4 @@ Finally, feel free to join us in our weekly conference call.  Many of
 the core developers are often on the call and you'll have an
 opportunity at the beginning or end of the call to ask your questions:
 
-> http://wiki.freeswitch.org/wiki/Weekly_Conference_Call
+> https://wiki.freeswitch.org/wiki/Weekly_Conference_Call
