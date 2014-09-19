@@ -156,6 +156,26 @@ submitting the commits to us.  Random "update branch to master" merges
 make our history hard to understand and make it more difficult to
 isolate regressions with `git-bisect`.
 
+New Module Checklist
+--------------------
+
+When proposing a new module:
+
+ * Add a `Makefile.am` for the module
+ * Add the module to the FS `configure.ac`
+ * Add the module to `build/modules.conf.in` (commented out)
+ * Describe the module in as much detail as possible in the comments
+   at the top of the module
+ * Add our whitespace footer to the module files; ensure the \*.[ch]
+   module files use tabs for indentation and are free of trailing
+   whitespace (e.g. in Emacs, run `M-x whitespace-mode`, then `M-x
+   whitespace-cleanup`)
+ * Remove any unused code left over from debugging
+ * Ensure symbols not meant to be exported are declared `static`
+ * Don't add any files to `conf/vanilla`
+ * Write a commit message body describing the module, why it's useful,
+   what it does, how it works, and any parts not yet implemented
+
 Do As We Say...
 ---------------
 
