@@ -3,8 +3,8 @@
  * Copyright (c) 2006-2009 Philip R. Zimmermann.  All rights reserved.
  * Contact: http://philzimmermann.com
  * For licensing and other legal details, see the file zrtp_legal.c.
- * 
- * Viktor Krykun <v.krikun at zfoneproject.com> 
+ *
+ * Viktor Krykun <v.krikun at zfoneproject.com>
  */
 
 #ifndef ZRTP_WIN_CONFIG_H__

@@ -1,27 +1,27 @@
 /***********************************************************************
-Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
-Redistribution and use in source and binary forms, with or without 
-modification, (subject to the limitations in the disclaimer below) 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, (subject to the limitations in the disclaimer below)
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright 
-notice, this list of conditions and the following disclaimer in the 
+- Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific 
-contributors, may be used to endorse or promote products derived from 
+- Neither the name of Skype Limited, nor the names of specific
+contributors, may be used to endorse or promote products derived from
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
-BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***********************************************************************/
 
@@ -32,7 +32,7 @@ void SKP_Silk_decode_short_term_prediction(
 SKP_int32	*vec_Q10,
 SKP_int32	*pres_Q10,
 SKP_int32	*sLPC_Q14,
-SKP_int16	*A_Q12_tmp, 
+SKP_int16	*A_Q12_tmp,
 SKP_int		LPC_order,
 SKP_int		subfr_length
 );
@@ -57,7 +57,7 @@ void SKP_Silk_decode_core(
     SKP_int32 FiltState[ MAX_LPC_ORDER ];
 
     SKP_assert( psDec->prev_inv_gain_Q16 != 0 );
-    
+
     offset_Q10 = SKP_Silk_Quantization_Offsets_Q10[ psDecCtrl->sigtype ][ psDecCtrl->QuantOffsetType ];
 
     if( psDecCtrl->NLSFInterpCoef_Q2 < ( 1 << 2 ) ) {
@@ -89,8 +89,8 @@ void SKP_Silk_decode_core(
     for( k = 0; k < NB_SUBFR; k++ ) {
         A_Q12 = psDecCtrl->PredCoef_Q12[ k >> 1 ];
 
-        /* Preload LPC coeficients to array on stack. Gives small performance gain */        
-        SKP_memcpy( A_Q12_tmp, A_Q12, psDec->LPC_order * sizeof( SKP_int16 ) ); 
+        /* Preload LPC coeficients to array on stack. Gives small performance gain */
+        SKP_memcpy( A_Q12_tmp, A_Q12, psDec->LPC_order * sizeof( SKP_int16 ) );
         B_Q14         = &psDecCtrl->LTPCoef_Q14[ k * LTP_ORDER ];
         Gain_Q16      = psDecCtrl->Gains_Q16[ k ];
         LTP_scale_Q14 = psDecCtrl->LTP_scale_Q14;
@@ -108,10 +108,10 @@ void SKP_Silk_decode_core(
         /* Avoid abrupt transition from voiced PLC to unvoiced normal decoding */
         if( psDec->lossCnt && psDec->prev_sigtype == SIG_TYPE_VOICED &&
             psDecCtrl->sigtype == SIG_TYPE_UNVOICED && k < ( NB_SUBFR >> 1 ) ) {
-            
+
             SKP_memset( B_Q14, 0, LTP_ORDER * sizeof( SKP_int16 ) );
             B_Q14[ LTP_ORDER/2 ] = ( SKP_int16 )1 << 12; /* 0.25 */
-        
+
             sigtype = SIG_TYPE_VOICED;
             psDecCtrl->pitchL[ k ] = psDec->lagPrev;
             LTP_scale_Q14 = ( SKP_int )1 << 14;
@@ -119,7 +119,7 @@ void SKP_Silk_decode_core(
 
         if( sigtype == SIG_TYPE_VOICED ) {
             /* Voiced */
-            
+
             lag = psDecCtrl->pitchL[ k ];
             /* Re-whitening */
             if( ( k & ( 3 - SKP_LSHIFT( NLSF_interpolation_flag, 1 ) ) ) == 0 ) {
@@ -129,7 +129,7 @@ void SKP_Silk_decode_core(
                 SKP_assert( start_idx <= psDec->frame_length - psDec->LPC_order );
 
                 SKP_memset( FiltState, 0, psDec->LPC_order * sizeof( SKP_int32 ) ); /* Not really necessary, but Valgrind and Coverity will complain otherwise */
-                SKP_Silk_MA_Prediction( &psDec->outBuf[ start_idx + k * ( psDec->frame_length >> 2 ) ], 
+                SKP_Silk_MA_Prediction( &psDec->outBuf[ start_idx + k * ( psDec->frame_length >> 2 ) ],
                     A_Q12, FiltState, sLTP + start_idx, psDec->frame_length - start_idx, psDec->LPC_order );
 
                 /* After rewhitening the LTP state is unscaled */
@@ -150,7 +150,7 @@ void SKP_Silk_decode_core(
                 }
             }
         }
-        
+
         /* Scale short term state */
         for( i = 0; i < MAX_LPC_ORDER; i++ ) {
             psDec->sLPC_Q14[ i ] = SKP_SMULWW( gain_adj_Q16, psDec->sLPC_Q14[ i ] );
@@ -172,10 +172,10 @@ void SKP_Silk_decode_core(
                 LTP_pred_Q14 = SKP_SMLAWB( LTP_pred_Q14, pred_lag_ptr[ -3 ], B_Q14[ 3 ] );
                 LTP_pred_Q14 = SKP_SMLAWB( LTP_pred_Q14, pred_lag_ptr[ -4 ], B_Q14[ 4 ] );
                 pred_lag_ptr++;
-            
-                /* Generate LPC residual */ 
+
+                /* Generate LPC residual */
                 pres_Q10[ i ] = SKP_ADD32( pexc_Q10[ i ], SKP_RSHIFT_ROUND( LTP_pred_Q14, 4 ) );
-            
+
                 /* Update states */
                 psDec->sLTP_Q16[ sLTP_buf_idx ] = SKP_LSHIFT( pres_Q10[ i ], 6 );
                 sLTP_buf_idx++;
@@ -197,7 +197,7 @@ void SKP_Silk_decode_core(
         pres_Q10 += psDec->subfr_length;
         pxq      += psDec->subfr_length;
     }
-    
+
     /* Copy to output */
     SKP_memcpy( xq, &psDec->outBuf[ psDec->frame_length ], psDec->frame_length * sizeof( SKP_int16 ) );
 
@@ -207,7 +207,7 @@ void SKP_Silk_decode_short_term_prediction(
 SKP_int32	*vec_Q10,
 SKP_int32	*pres_Q10,
 SKP_int32	*sLPC_Q14,
-SKP_int16	*A_Q12_tmp, 
+SKP_int16	*A_Q12_tmp,
 SKP_int		LPC_order,
 SKP_int		subfr_length
 )
@@ -234,11 +234,8 @@ SKP_int		subfr_length
 
             /* Add prediction to LPC residual */
             vec_Q10[ i ] = SKP_ADD32( pres_Q10[ i ], LPC_pred_Q10 );
-            
+
             /* Update states */
             sLPC_Q14[ MAX_LPC_ORDER + i ] = SKP_LSHIFT( vec_Q10[ i ], 4 );
         }
 }
-
-
-

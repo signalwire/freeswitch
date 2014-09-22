@@ -12,5 +12,3 @@ Contact: sip:host.company.com
 Expires: 0xpires: 0sip:host.company.com
 Expires: 0
 Contact: sip:host.company.com
-
-

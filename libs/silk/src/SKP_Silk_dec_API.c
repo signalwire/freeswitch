@@ -1,27 +1,27 @@
 /***********************************************************************
-Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
-Redistribution and use in source and binary forms, with or without 
-modification, (subject to the limitations in the disclaimer below) 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, (subject to the limitations in the disclaimer below)
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright 
-notice, this list of conditions and the following disclaimer in the 
+- Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific 
-contributors, may be used to endorse or promote products derived from 
+- Neither the name of Skype Limited, nor the names of specific
+contributors, may be used to endorse or promote products derived from
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
-BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***********************************************************************/
 
@@ -32,7 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /* Decoder functions */
 /*********************/
 
-SKP_int SKP_Silk_SDK_Get_Decoder_Size( SKP_int32 *decSizeBytes ) 
+SKP_int SKP_Silk_SDK_Get_Decoder_Size( SKP_int32 *decSizeBytes )
 {
     SKP_int ret = 0;
 
@@ -95,14 +95,14 @@ SKP_int SKP_Silk_SDK_Decode(
             lostFlag = 1;
             ret = SKP_SILK_DEC_PAYLOAD_TOO_LARGE;
     }
-            
+
     /* Save previous sample frequency */
     prev_fs_kHz = psDec->fs_kHz;
-    
+
     /* Call decoder for one frame */
-    ret += SKP_Silk_decode_frame( psDec, pSamplesOutInternal, nSamplesOut, inData, nBytesIn, 
+    ret += SKP_Silk_decode_frame( psDec, pSamplesOutInternal, nSamplesOut, inData, nBytesIn,
             lostFlag, &used_bytes );
-    
+
     if( used_bytes ) { /* Only Call if not a packet loss */
         if( psDec->nBytesLeft > 0 && psDec->FrameTermination == SKP_SILK_MORE_FRAMES && psDec->nFramesDecoded < 5 ) {
             /* We have more frames in the Payload */
@@ -111,7 +111,7 @@ SKP_int SKP_Silk_SDK_Decode(
             /* Last frame in Payload */
             psDec->moreInternalDecoderFrames = 0;
             psDec->nFramesInPacket = psDec->nFramesDecoded;
-        
+
             /* Track inband FEC usage */
             if( psDec->vadFlag == VOICE_ACTIVITY ) {
                 if( psDec->FrameTermination == SKP_SILK_LAST_FRAME ) {
@@ -137,7 +137,7 @@ SKP_int SKP_Silk_SDK_Decode(
     }
 
     /* Resample if needed */
-    if( psDec->fs_kHz * 1000 != decControl->API_sampleRate ) { 
+    if( psDec->fs_kHz * 1000 != decControl->API_sampleRate ) {
         SKP_int16 samplesOut_tmp[ MAX_API_FS_KHZ * FRAME_LENGTH_MS ];
         SKP_assert( psDec->fs_kHz <= MAX_API_FS_KHZ );
 
@@ -154,7 +154,7 @@ SKP_int SKP_Silk_SDK_Decode(
 
         /* Update the number of output samples */
         *nSamplesOut = SKP_DIV32( ( SKP_int32 )*nSamplesOut * decControl->API_sampleRate, psDec->fs_kHz * 1000 );
-    } else if( prev_fs_kHz * 1000 > decControl->API_sampleRate ) { 
+    } else if( prev_fs_kHz * 1000 > decControl->API_sampleRate ) {
         SKP_memcpy( samplesOut, pSamplesOutInternal, *nSamplesOut * sizeof( SKP_int16 ) );
     }
 
@@ -193,10 +193,10 @@ void SKP_Silk_SDK_search_for_LBRR(
 	sDec.lossCnt        = 0; /* Avoid running bw expansion of the LPC parameters when searching for LBRR data */
     SKP_memset( sDec.prevNLSF_Q15, 0, MAX_LPC_ORDER * sizeof( SKP_int ) );
     SKP_Silk_range_dec_init( &sDec.sRC, inData, ( SKP_int32 )nBytesIn );
-    
+
     while(1) {
         SKP_Silk_decode_parameters( &sDec, &sDecCtrl, TempQ, 0 );
-    
+
         if( sDec.sRC.error ) {
             /* Corrupt stream */
             *nLBRRBytes = 0;
@@ -236,23 +236,23 @@ void SKP_Silk_SDK_get_TOC(
     Silk_TOC->corrupt = 0;
     while( 1 ) {
         SKP_Silk_decode_parameters( &sDec, &sDecCtrl, TempQ, 0 );
-        
+
         Silk_TOC->vadFlags[     sDec.nFramesDecoded ] = sDec.vadFlag;
         Silk_TOC->sigtypeFlags[ sDec.nFramesDecoded ] = sDecCtrl.sigtype;
-    
+
         if( sDec.sRC.error ) {
             /* Corrupt stream */
             Silk_TOC->corrupt = 1;
             break;
         };
-    
+
         if( sDec.nBytesLeft > 0 && sDec.FrameTermination == SKP_SILK_MORE_FRAMES ) {
             sDec.nFramesDecoded++;
         } else {
             break;
         }
     }
-    if( Silk_TOC->corrupt || sDec.FrameTermination == SKP_SILK_MORE_FRAMES || 
+    if( Silk_TOC->corrupt || sDec.FrameTermination == SKP_SILK_MORE_FRAMES ||
         sDec.nFramesInPacket > SILK_MAX_FRAMES_PER_PACKET ) {
         /* Corrupt packet */
         SKP_memset( Silk_TOC, 0, sizeof( SKP_Silk_TOC_struct ) );
@@ -271,7 +271,7 @@ void SKP_Silk_SDK_get_TOC(
 /**************************/
 /* Get the version number */
 /**************************/
-/* Return a pointer to string specifying the version */ 
+/* Return a pointer to string specifying the version */
 const char *SKP_Silk_SDK_get_version()
 {
     static const char version[] = "1.0.8";

@@ -1,27 +1,27 @@
 /***********************************************************************
-Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
-Redistribution and use in source and binary forms, with or without 
-modification, (subject to the limitations in the disclaimer below) 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, (subject to the limitations in the disclaimer below)
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright 
-notice, this list of conditions and the following disclaimer in the 
+- Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific 
-contributors, may be used to endorse or promote products derived from 
+- Neither the name of Skype Limited, nor the names of specific
+contributors, may be used to endorse or promote products derived from
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
-BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***********************************************************************/
 
@@ -53,7 +53,7 @@ extern "C"
 {
 #endif
 /* Internally used functions */
-void Autocorrelation( 
+void Autocorrelation(
     SKP_float *results,                 /* o    result (length correlationCount)            */
     const SKP_float *inputData,         /* i    input data to correlate                     */
     SKP_int inputDataSize,              /* i    length of input                             */
@@ -61,9 +61,9 @@ void Autocorrelation(
 );
 
 /* inner product of two SKP_float arrays, with result as double */
-double Inner_product( 
-    const SKP_float     *data1, 
-    const SKP_float     *data2, 
+double Inner_product(
+    const SKP_float     *data1,
+    const SKP_float     *data2,
     SKP_int             dataSize
 );
 /* Solve the normal equations using the Levinson-Durbin recursion */
@@ -74,7 +74,7 @@ SKP_float Levinsondurbin(               /* O    prediction error energy         
 );
 
 /* Chirp (bw expand) LP AR filter */
-void Bwexpander( 
+void Bwexpander(
     SKP_float *ar,                      /* io   AR filter to be expanded (without leading 1)    */
     const SKP_int d,                    /* i    length of ar                                    */
     const SKP_float chirp               /* i    chirp factor (typically in range (0..1) )       */
@@ -112,7 +112,7 @@ int main(int argc, char* argv[])
     if (argc < 3) {
         print_usage(argv);
         exit(0);
-    } 
+    }
 
     /* get arguments */
     args = 1;
@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
     if (refInFile==NULL) {
         printf("Error: could not open input file %s\n", refInFileName);
         exit(0);
-    } 
+    }
     testInFile = fopen(testInFileName, "rb");
     if (testInFile==NULL) {
         printf("Error: could not open input file %s\n", testInFileName);
@@ -162,9 +162,9 @@ int main(int argc, char* argv[])
 
     while(1) {
         /* Read inputs */
-        counterRef  = (SKP_int)fread(&refIn[(WIN_LENGTH_MS - FRAME_LENGTH_MS) * Fs_kHz], 
+        counterRef  = (SKP_int)fread(&refIn[(WIN_LENGTH_MS - FRAME_LENGTH_MS) * Fs_kHz],
             sizeof(SKP_int16), FRAME_LENGTH_MS * Fs_kHz, refInFile);
-        counterTest = (SKP_int)fread(&testIn[(WIN_LENGTH_MS - FRAME_LENGTH_MS) * Fs_kHz], 
+        counterTest = (SKP_int)fread(&testIn[(WIN_LENGTH_MS - FRAME_LENGTH_MS) * Fs_kHz],
             sizeof(SKP_int16), FRAME_LENGTH_MS * Fs_kHz, testInFile);
         if(counterRef != FRAME_LENGTH_MS * Fs_kHz || counterTest != FRAME_LENGTH_MS * Fs_kHz){
             break;
@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
 
         /* test for bit-exactness */
         for( n = 0; n < FRAME_LENGTH_MS * Fs_kHz; n++ ) {
-            if( refIn[(WIN_LENGTH_MS - FRAME_LENGTH_MS) * Fs_kHz + n] != 
+            if( refIn[(WIN_LENGTH_MS - FRAME_LENGTH_MS) * Fs_kHz + n] !=
                 testIn[(WIN_LENGTH_MS - FRAME_LENGTH_MS) * Fs_kHz + n] ) {
                     isUnequal = 1;
                     break;
@@ -192,7 +192,7 @@ int main(int argc, char* argv[])
         Autocorrelation(autoCorr, refWin, WIN_LENGTH_MS * Fs_kHz, LPC_ORDER + 1);
 
         /* Add white noise */
-        autoCorr[ 0 ] += autoCorr[ 0 ] * 1e-6f + 1.0f; 
+        autoCorr[ 0 ] += autoCorr[ 0 ] * 1e-6f + 1.0f;
 
         /* Convert correlations to prediction coefficients */
         Levinsondurbin(LPC_Coef, autoCorr, LPC_ORDER);
@@ -203,7 +203,7 @@ int main(int argc, char* argv[])
         /* Filter both signals */
         refNrg = 1.0f;
         diffNrg = 1e-10f;
-        for( n = (WIN_LENGTH_MS - FRAME_LENGTH_MS) / 2 * Fs_kHz; 
+        for( n = (WIN_LENGTH_MS - FRAME_LENGTH_MS) / 2 * Fs_kHz;
              n < (WIN_LENGTH_MS + FRAME_LENGTH_MS) / 2 * Fs_kHz; n++ ) {
                 refWhtnd = refIn[n];
                 testWhtnd = testIn[n];
@@ -264,7 +264,7 @@ int main(int argc, char* argv[])
 }
 
 /* compute autocorrelation */
-void Autocorrelation( 
+void Autocorrelation(
     SKP_float *results,                 /* o    result (length correlationCount)            */
     const SKP_float *inputData,         /* i    input data to correlate                     */
     SKP_int inputDataSize,              /* i    length of input                             */
@@ -283,9 +283,9 @@ void Autocorrelation(
 }
 
 /* inner product of two SKP_float arrays, with result as double */
-double Inner_product( 
-    const SKP_float     *data1, 
-    const SKP_float     *data2, 
+double Inner_product(
+    const SKP_float     *data1,
+    const SKP_float     *data2,
     SKP_int             dataSize
 )
 {
@@ -296,7 +296,7 @@ double Inner_product(
     result = 0.0f;
     dataSize4 = dataSize & 0xFFFC;
     for( i = 0; i < dataSize4; i += 4 ) {
-        result += data1[ i + 0 ] * data2[ i + 0 ] + 
+        result += data1[ i + 0 ] * data2[ i + 0 ] +
                   data1[ i + 1 ] * data2[ i + 1 ] +
                   data1[ i + 2 ] * data2[ i + 2 ] +
                   data1[ i + 3 ] * data2[ i + 3 ];
@@ -319,7 +319,7 @@ SKP_float Levinsondurbin(               /* O    prediction error energy         
 {
     SKP_int   i, mHalf, m;
     SKP_float min_nrg, nrg, t, km, Atmp1, Atmp2;
-    
+
     min_nrg = 1e-12f * corr[ 0 ] + 1e-9f;
     nrg = corr[ 0 ];
     nrg = SKP_max(min_nrg, nrg);
@@ -359,7 +359,7 @@ SKP_float Levinsondurbin(               /* O    prediction error energy         
 }
 
 /* Chirp (bw expand) LP AR filter */
-void Bwexpander( 
+void Bwexpander(
     SKP_float *ar,                      /* io   AR filter to be expanded (without leading 1)    */
     const SKP_int d,                    /* i    length of ar                                    */
     const SKP_float chirp               /* i    chirp factor (typically in range (0..1) )       */

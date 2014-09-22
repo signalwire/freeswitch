@@ -6,7 +6,7 @@ xmlrpc_cpp_proxy.dsp, if added as a project to the xmlrpc solution,
 will build bin\xmlrpc_cpp_proxy.exe and xmlrpc_cpp_proxyD.exe, for
 testing using the default WinINET transport.
 
-After you have loaded the xmlrpc_cpp_proxy.dsp, which adds an 
+After you have loaded the xmlrpc_cpp_proxy.dsp, which adds an
 xmlrpc_cpp_proxy project, it is necessary to ADD a dependance on
 the xmlrpc library, to complete the link.
 
@@ -43,7 +43,7 @@ and implementation file. If this functions, for a bigger example, try -
 
 bin>xmlrpc_cpp_proxyD http://localhost:8080/RPC2 system systemProxy
 
-and you should see a better example of a class header, and the 
+and you should see a better example of a class header, and the
 implementation code ...
 
 20 December, 2007

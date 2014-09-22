@@ -5,5 +5,3 @@ To: sip:watson@bell-tel.com
 Call-ID: 70710@saturn.bell-tel.com
 CSeq: 2 REGISTER
 Contact: sip:+1-972-555-2222@gw1.wcom.com;user=phone
-
-

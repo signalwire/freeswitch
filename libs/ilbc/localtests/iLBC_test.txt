@@ -8,4 +8,3 @@
 
 ./iLBC_test 20 iLBC.INP tmp.BIT iLBC_20ms_tlm05.OUT tlm05.chn
 ./iLBC_test 30 iLBC.INP tmp.BIT iLBC_30ms_tlm05.OUT tlm05.chn
-

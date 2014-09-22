@@ -5,12 +5,12 @@
   Contents:     AT&T 5ESS ISDN State Engine for TE (User Mode).
 
 	            The controlling state engine for Q.931 is the state engine
-	            on the NT side. The state engine on the TE side is a slave 
+	            on the NT side. The state engine on the TE side is a slave
 	            of this. The TE side maintain it's own states as described in
-	            ITU-T Q931, but will in    raise conditions be overridden by 
+	            ITU-T Q931, but will in    raise conditions be overridden by
 	            the NT side.
 
-	            This reference implementation uses a process per message, 
+	            This reference implementation uses a process per message,
 	            meaning that each message must check call states. This
 	            is easier for dialect maintenance as each message proc
 	            can be replaced individually. A new TE variant only
@@ -20,37 +20,37 @@
   License/Copyright:
 
   Copyright (c) 2007, Jan Vidar Berger, Case Labs, Ltd. All rights reserved.
-  email:janvb@caselaboratories.com  
+  email:janvb@caselaboratories.com
 
   Copyright (c) 2007, Michael Jerris. All rights reserved.
-  email:mike@jerris.com  
-  
+  email:mike@jerris.com
+
   Copyright (c) 2007, Michael S. Collins, All rights reserved.
   email:mcollins@fcnetwork.com
-  
-  Redistribution and use in source and binary forms, with or without 
-  modification, are permitted provided that the following conditions are 
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are
   met:
 
-	* Redistributions of source code must retain the above copyright notice, 
+	* Redistributions of source code must retain the above copyright notice,
 	this list of conditions and the following disclaimer.
-	* Redistributions in binary form must reproduce the above copyright notice, 
-	this list of conditions and the following disclaimer in the documentation 
+	* Redistributions in binary form must reproduce the above copyright notice,
+	this list of conditions and the following disclaimer in the documentation
 	and/or other materials provided with the distribution.
-	* Neither the name of the Case Labs, Ltd nor the names of its contributors 
-	may be used to endorse or promote products derived from this software 
+	* Neither the name of the Case Labs, Ltd nor the names of its contributors
+	may be used to endorse or promote products derived from this software
 	without specific prior written permission.
 
-  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
-  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
   POSSIBILITY OF SUCH DAMAGE.
 *****************************************************************************/
 
@@ -103,7 +103,7 @@ void ATT5ESSCreateTE(L3UCHAR i)
 	Q931SetMesProc(Q932mes_RETRIEVE_ACKNOWLEDGE, i, Q932ProcRetrieveAckTE,       Q932Umes_RetrieveAck,       Q932Pmes_RetrieveAck);
 	Q931SetMesProc(Q932mes_RETRIEVE_REJECT,      i, Q932ProcRetrieveRejectTE,    Q932Umes_RetrieveReject,    Q932Pmes_RetrieveReject);
 
-	/* Set up the IE encoder/decoder handle table.*/ 
+	/* Set up the IE encoder/decoder handle table.*/
 	Q931SetIEProc(Q931ie_SEGMENTED_MESSAGE,                i, Q931Pie_Segment,           Q931Uie_Segment);
 	Q931SetIEProc(Q931ie_BEARER_CAPABILITY,                i, Q931Pie_BearerCap,         Q931Uie_BearerCap);
 	Q931SetIEProc(Q931ie_CAUSE,                            i, Q931Pie_Cause,             Q931Uie_Cause);
@@ -211,9 +211,9 @@ void ATT5ESSCreateTE(L3UCHAR i)
 	Q931AddStateEntry(i, Q931_U15,   Q931mes_RELEASE,             4);
 
 /* TODO
-	Q931AddStateEntry(i, Q931_U17, 
-	Q931AddStateEntry(i, Q931_U19, 
-	Q931AddStateEntry(i, Q931_U25, 
+	Q931AddStateEntry(i, Q931_U17,
+	Q931AddStateEntry(i, Q931_U19,
+	Q931AddStateEntry(i, Q931_U25,
 */
 }
 

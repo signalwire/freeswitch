@@ -1,27 +1,27 @@
 /***********************************************************************
-Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
-Redistribution and use in source and binary forms, with or without 
-modification, (subject to the limitations in the disclaimer below) 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, (subject to the limitations in the disclaimer below)
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright 
-notice, this list of conditions and the following disclaimer in the 
+- Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific 
-contributors, may be used to endorse or promote products derived from 
+- Neither the name of Skype Limited, nor the names of specific
+contributors, may be used to endorse or promote products derived from
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
-BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***********************************************************************/
 
@@ -50,7 +50,7 @@ SKP_INLINE void SKP_Silk_LS_SolveFirst_FIX(
     const SKP_int32     *L_Q16,     /* I Pointer to Lower Triangular Matrix */
     SKP_int             M,          /* I Dim of Matrix equation */
     const SKP_int32     *b,         /* I b Vector */
-    SKP_int32           *x_Q16      /* O x Vector */  
+    SKP_int32           *x_Q16      /* O x Vector */
 );
 
 /* Solve L^t*x = b, where L is lower triangular with ones on the diagonal */
@@ -58,7 +58,7 @@ SKP_INLINE void SKP_Silk_LS_SolveLast_FIX(
     const SKP_int32     *L_Q16,     /* I Pointer to Lower Triangular Matrix */
     const SKP_int       M,          /* I Dim of Matrix equation */
     const SKP_int32     *b,         /* I b Vector */
-    SKP_int32           *x_Q16      /* O x Vector */  
+    SKP_int32           *x_Q16      /* O x Vector */
 );
 
 SKP_INLINE void SKP_Silk_LS_divide_Q16_FIX(
@@ -75,7 +75,7 @@ void SKP_Silk_solve_LDL_FIX(
     SKP_int32                       *x_Q16              /* O    Pointer to x solution vector                */
 )
 {
-    SKP_int32 L_Q16[  MAX_MATRIX_SIZE * MAX_MATRIX_SIZE ]; 
+    SKP_int32 L_Q16[  MAX_MATRIX_SIZE * MAX_MATRIX_SIZE ];
     SKP_int32 Y[      MAX_MATRIX_SIZE ];
     inv_D_t   inv_D[  MAX_MATRIX_SIZE ];
 
@@ -86,7 +86,7 @@ void SKP_Silk_solve_LDL_FIX(
     where L is lower triangular with ones on diagonal
     ****************************************************/
     SKP_Silk_LDL_factorize_FIX( A, M, L_Q16, inv_D );
-        
+
     /****************************************************
     * substitute D*L'*x = Y. ie:
     L*D*L'*x = b => L*Y = b <=> Y = inv(L)*b
@@ -94,7 +94,7 @@ void SKP_Silk_solve_LDL_FIX(
     SKP_Silk_LS_SolveFirst_FIX( L_Q16, M, b, Y );
 
     /****************************************************
-    D*L'*x = Y <=> L'*x = inv(D)*Y, because D is 
+    D*L'*x = Y <=> L'*x = inv(D)*Y, because D is
     diagonal just multiply with 1/d_i
     ****************************************************/
     SKP_Silk_LS_divide_Q16_FIX( Y, inv_D, M );
@@ -143,7 +143,7 @@ SKP_INLINE void SKP_Silk_LDL_factorize_FIX(
                 break;
             }
             D_Q0[ j ] = tmp_32;                         /* always < max(Correlation) */
-        
+
             /* two-step division */
             one_div_diag_Q36 = SKP_INVERSE32_varQ( tmp_32, 36 );                    /* Q36 */
             one_div_diag_Q40 = SKP_LSHIFT( one_div_diag_Q36, 4 );                   /* Q40 */
@@ -157,7 +157,7 @@ SKP_INLINE void SKP_Silk_LDL_factorize_FIX(
             matrix_ptr( L_Q16, j, j, M ) = 65536; /* 1.0 in Q16 */
             ptr1 = matrix_adr( A, j, 0, M );
             ptr2 = matrix_adr( L_Q16, j + 1, 0, M );
-            for( i = j + 1; i < M; i++ ) { 
+            for( i = j + 1; i < M; i++ ) {
                 tmp_32 = 0;
                 for( k = 0; k < j; k++ ) {
                     tmp_32 = SKP_SMLAWW( tmp_32, v_Q0[ k ], ptr2[ k ] ); /* Q0 */
@@ -169,7 +169,7 @@ SKP_INLINE void SKP_Silk_LDL_factorize_FIX(
                     SKP_RSHIFT( SKP_SMULWW( tmp_32, one_div_diag_Q36 ), 4 ) );
 
                 /* go to next column */
-                ptr2 += M; 
+                ptr2 += M;
             }
         }
     }
@@ -201,7 +201,7 @@ SKP_INLINE void SKP_Silk_LS_SolveFirst_FIX(
     const SKP_int32     *L_Q16, /* I Pointer to Lower Triangular Matrix */
     SKP_int             M,      /* I Dim of Matrix equation */
     const SKP_int32     *b,     /* I b Vector */
-    SKP_int32           *x_Q16  /* O x Vector */  
+    SKP_int32           *x_Q16  /* O x Vector */
 )
 {
     SKP_int i, j;
@@ -223,7 +223,7 @@ SKP_INLINE void SKP_Silk_LS_SolveLast_FIX(
     const SKP_int32     *L_Q16,     /* I Pointer to Lower Triangular Matrix */
     const SKP_int       M,          /* I Dim of Matrix equation */
     const SKP_int32     *b,         /* I b Vector */
-    SKP_int32           *x_Q16      /* O x Vector */  
+    SKP_int32           *x_Q16      /* O x Vector */
 )
 {
     SKP_int i, j;

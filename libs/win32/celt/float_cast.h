@@ -89,13 +89,13 @@
 		{	fld flt
 			fistp intgr
 			} ;
-			
+
 		return intgr ;
 	}
-#else               
-#define float2int   
-#endif            
-  
+#else
+#define float2int
+#endif
+
 
 #else
 
