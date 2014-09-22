@@ -129,7 +129,7 @@ SOFIA_BEGIN_DECLS
 
 #define SU_WAIT_INIT    NULL
 
-#define SU_WAIT_MAX    (64)
+#define SU_WAIT_MAX    (0x7fffffff)
 
 #else
 /* If nothing works, try these */
