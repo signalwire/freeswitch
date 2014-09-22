@@ -192,6 +192,7 @@ SWITCH_STANDARD_API(snom_command_api_function)
 	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-curl/1.0");
 	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 15);
+	curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 
 	if (argc == 5) {
 		userpwd = switch_mprintf("%s:%s",argv[3],argv[4]);

@@ -237,6 +237,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FetchURLFile)
 		if ((config_data.fileHandle = open(filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 			switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 			switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 			switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, FSGlobal::FileCallback);
 			switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &config_data);
@@ -293,6 +294,7 @@ JS_GLOBAL_FUNCTION_IMPL_STATIC(FetchURL)
 
 		switch_curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, FSGlobal::FetchUrlCallback);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &config_data);
