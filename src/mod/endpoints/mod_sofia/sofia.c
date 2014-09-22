@@ -2574,6 +2574,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 {
 	sofia_profile_t *profile = (sofia_profile_t *) obj;
 	uint32_t ireg_loops = profile->ireg_seconds;					/* Number of loop iterations done when we haven't checked for registrations */
+	uint32_t iping_loops = profile->iping_freq;					/* Number of loop iterations done when we haven't checked for ping expires */
 	uint32_t gateway_loops = GATEWAY_SECONDS;			/* Number of loop iterations done when we haven't checked for gateways */
 
 	sofia_set_pflag_locked(profile, PFLAG_WORKER_RUNNING);
@@ -2617,6 +2618,12 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 				time_t now = switch_epoch_time_now(NULL);
 				sofia_reg_check_expire(profile, now, 0);
 				ireg_loops = 0;
+			}
+	
+			if(++iping_loops >= (uint32_t)profile->iping_freq) {
+				time_t now = switch_epoch_time_now(NULL);
+				sofia_reg_check_ping_expire(profile, now, profile->iping_seconds);
+				iping_loops = 0;
 			}
 
 			if (++gateway_loops >= GATEWAY_SECONDS) {
@@ -4099,6 +4106,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->mndlb |= SM_NDLB_ALLOW_NONDUP_SDP;
 					profile->te = 101;
 					profile->ireg_seconds = IREG_SECONDS;
+					profile->iping_seconds = IPING_SECONDS;
+					profile->iping_freq = IPING_FREQUENCY;
 					profile->paid_type = PAID_DEFAULT;
 					profile->bind_attempts = 2;
 					profile->bind_attempt_interval = 5;
@@ -4228,6 +4237,16 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						profile->ireg_seconds = atoi(val);
 						if (profile->ireg_seconds < 0) {
 							profile->ireg_seconds = IREG_SECONDS;
+						}
+					} else if (!strcasecmp(var, "ping-mean-interval")) {
+						profile->iping_seconds = atoi(val);
+						if (profile->iping_seconds < 0) {
+							profile->iping_seconds = IPING_SECONDS;
+						}
+					} else if (!strcasecmp(var, "ping-thread-frequency")) {
+						profile->iping_freq = atoi(val);
+						if (profile->iping_freq < 0) {
+							profile->iping_freq = IPING_FREQUENCY;
 						}
 					} else if (!strcasecmp(var, "user-agent-string")) {
 						profile->user_agent = switch_core_strdup(profile->pool, val);

@@ -846,21 +846,45 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 
 	sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 
+}
+
+long sofia_reg_uniform_distribution(int max)
+{
+/* 
+ * Generate a random number following a uniform distribution between 0 and max
+ */
+	int result;
+	int range = max + 1;
+
+	srand((unsigned) switch_thread_self() + switch_micro_time_now());
+	result = (int)((double)rand() / (((double)RAND_MAX + (double)1) / range));
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9, "Generated random %ld, max is %d\n", (long) result, max);
+	return (long) result;
+}
+
+void sofia_reg_check_ping_expire(sofia_profile_t *profile, time_t now, int interval)
+{
+	char *sql;
+	int mean = interval / 2;
+	long next, irand;
 
 	if (now) {
 		if (sofia_test_pflag(profile, PFLAG_ALL_REG_OPTIONS_PING)) {
 			sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,"
 							"expires,user_agent,server_user,server_host,profile_name"
  " from sip_registrations where hostname='%s' and " 
- "profile_name='%s' and orig_hostname='%s'", mod_sofia_globals.hostname, profile->name, mod_sofia_globals.hostname); 
+ "profile_name='%s' and orig_hostname='%s' and "
+ "ping_expires > 0 and ping_expires <= %ld", mod_sofia_globals.hostname, profile->name, mod_sofia_globals.hostname, (long) now); 
 			
 			sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sofia_reg_nat_callback, profile);
 			switch_safe_free(sql);
 		} else if (sofia_test_pflag(profile, PFLAG_UDP_NAT_OPTIONS_PING)) {
-			sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,"
-							"expires,user_agent,server_user,server_host,profile_name"
-							" from sip_registrations where status like '%%UDP-NAT%%' "
- "and hostname='%s' and profile_name='%s'", mod_sofia_globals.hostname, profile->name); 
+			sql = switch_mprintf(	" select call_id,sip_user,sip_host,contact,status,rpid, "
+						" expires,user_agent,server_user,server_host,profile_name "
+						" from sip_registrations where status like '%%UDP-NAT%%' "
+ 						" and hostname='%s' and profile_name='%s' and ping_expires > 0 and ping_expires <= %ld ",
+						mod_sofia_globals.hostname, profile->name, (long) now); 
 			
 			sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sofia_reg_nat_callback, profile);
 			switch_safe_free(sql);
@@ -869,10 +893,36 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 							"expires,user_agent,server_user,server_host,profile_name"
 							" from sip_registrations where (status like '%%NAT%%' "
  "or contact like '%%fs_nat=yes%%') and hostname='%s' " 
- "and profile_name='%s' and orig_hostname='%s'", mod_sofia_globals.hostname, profile->name, mod_sofia_globals.hostname); 
+ "and profile_name='%s' and orig_hostname='%s' and "
+ "ping_expires > 0 and ping_expires <= %ld", mod_sofia_globals.hostname, profile->name, mod_sofia_globals.hostname, (long) now); 
 			
 			sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sofia_reg_nat_callback, profile);
 			switch_safe_free(sql);
+		}
+
+		if (sofia_test_pflag(profile, PFLAG_ALL_REG_OPTIONS_PING) ||
+			sofia_test_pflag(profile, PFLAG_UDP_NAT_OPTIONS_PING) || 
+			sofia_test_pflag(profile, PFLAG_NAT_OPTIONS_PING)) {
+			char buf[32] = "";
+			int count;
+
+			sql = switch_mprintf("select count(*) from sip_registrations where hostname='%q' and profile_name='%q' and ping_expires <= %ld",
+                                      		mod_sofia_globals.hostname, profile->name, (long) now);
+
+        		sofia_glue_execute_sql2str(profile, profile->dbh_mutex, sql, buf, sizeof(buf));
+        		switch_safe_free(sql);
+        		count = atoi(buf);
+
+			/* only update if needed */
+			if (count) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG9, "Updating ping expires for profile %s\n", profile->name);
+				irand = mean + sofia_reg_uniform_distribution(interval);
+				next = (long) now + irand;
+	
+				sql = switch_mprintf(" update sip_registrations set ping_expires = %ld where ping_expires <= %ld ",
+							next, (long) now);
+				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+			}
 		}
 	}
 
