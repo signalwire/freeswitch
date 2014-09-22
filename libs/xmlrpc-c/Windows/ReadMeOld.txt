@@ -122,4 +122,3 @@ Changes from the 1.00 -> 1.01 release for Win32:
    to the output directory
 
 4) Major refactoring of the Wininet Transport.
-

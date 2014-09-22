@@ -35,18 +35,18 @@ Version 2.6
 * Added a new value list function 'exprValListGetNext' that can be used to
   enumerate the items in a value list.  Any of the items not needed (name,
   value, or address) can be NULL.  For example:
-  
+
   char *name;
   EXPRTYPE val;
   void *cookie;
-  
+
   cookie = exprValListGetNext(vlist, &name, &value, NULL, NULL);
   while(cookie)
     {
     /* Do something with name and value */
     cookie = exprValListGetNext(vlist, &name, &value, NULL, cookie);
     }
-    
+
   You must make sure not to actually edit the returned name, because it is a
   pointer into the value list to the name.  This can also be used to have one
   value list store globals.  Global variables can be added to a value list, then
@@ -57,17 +57,17 @@ Version 2.6
   on each expression through the global list.  This is useful especially if the
   globals are not known at compile time, but can be adjusted by the user.
   For example:
-  
+
   exprValList *globals;
   exprValList *v1;
   exprValList *v2;
   char *name;
   EXPRTYPE *addr;
   void *cookie;
-  
+
   exprValListCreate(&globals);
   /* Add variables to the list, perhaps read from a user file or something */
-  
+
   exprValListCreate(&v1);
   cookie = exprValListGetNext(globals, &name, NULL, &addr, NULL);
   while(cookie)
@@ -75,7 +75,7 @@ Version 2.6
     exprValListAddAddress(v1, name, addr);
     cookie = exprValListGetNext(globals, &name, NULL, &addr, cookie);
     }
-  
+
 
 Friday, June 30, 2006
 ---------------------
@@ -87,20 +87,20 @@ Version 2.5
   value.  You must ensure that the stack variable exists as long as it is used
   by the expression.  This can permit, for example, a value name to be shared
   with two different value lists like such:
-  
+
   EXPRTYPE global_value;
   exprValListAddAddress(vlist, "global", &global_value);
   exprValListAddAddress(vlist2, "global", &global_value);
-  
+
   Like this, the value can be directly accessed by the application, and each
   value list will share it.  This can also be used to replace code from this:
-  
+
   EXPRTYPE *a;
   exprValListAdd(vlist, "var", 0.0);
   exprValListGetAddress(vlist, "var", &a);
-  
+
   To look like this:
-  
+
   EXPRTYPE a;
   exprValListAddAddress(vlist, "var", &a);
 * Added a value list function exprValListSet to set the value of a variable
@@ -109,8 +109,8 @@ Version 2.5
   value of the item.  You can still use the fast direct access method.
 * Changed internal lists for function and value lists from binary trees to
   linked lists.
-  
-  
+
+
 
 
 Thursday, May 4, 2006
@@ -140,7 +140,7 @@ Tuesday, November 22, 2005
 --------------------------
 I still haven't been keeping up with history much.
 
-* Removed < and > as comments.  Instead use # as a 
+* Removed < and > as comments.  Instead use # as a
   comment to the end of the line
 * Added function exprGetErrorPosition to get start and
   end position of parse error.

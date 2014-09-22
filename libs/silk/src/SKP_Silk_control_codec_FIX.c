@@ -1,27 +1,27 @@
 /***********************************************************************
-Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
-Redistribution and use in source and binary forms, with or without 
-modification, (subject to the limitations in the disclaimer below) 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, (subject to the limitations in the disclaimer below)
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright 
-notice, this list of conditions and the following disclaimer in the 
+- Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific 
-contributors, may be used to endorse or promote products derived from 
+- Neither the name of Skype Limited, nor the names of specific
+contributors, may be used to endorse or promote products derived from
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
-BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***********************************************************************/
 
@@ -53,7 +53,7 @@ SKP_INLINE SKP_int SKP_Silk_setup_LBRR_FIX(
 );
 
 /* Control encoder */
-SKP_int SKP_Silk_control_encoder_FIX( 
+SKP_int SKP_Silk_control_encoder_FIX(
     SKP_Silk_encoder_state_FIX  *psEnc,                 /* I/O  Pointer to Silk encoder state           */
     const SKP_int               PacketSize_ms,          /* I    Packet length (ms)                      */
     const SKP_int32             TargetRate_bps,         /* I    Target max bitrate (bps)                */
@@ -143,7 +143,7 @@ void SKP_Silk_LBRR_ctrl_FIX(
         /* Usage Control based on sensitivity and packet loss caracteristics */
         /* For now only enable adding to next for active frames. Make more complex later */
         LBRR_usage = SKP_SILK_NO_LBRR;
-        if( psEnc->speech_activity_Q8 > SKP_FIX_CONST( LBRR_SPEECH_ACTIVITY_THRES, 8 ) && psEnc->sCmn.PacketLoss_perc > LBRR_LOSS_THRES ) { // nb! maybe multiply loss prob and speech activity 
+        if( psEnc->speech_activity_Q8 > SKP_FIX_CONST( LBRR_SPEECH_ACTIVITY_THRES, 8 ) && psEnc->sCmn.PacketLoss_perc > LBRR_LOSS_THRES ) { // nb! maybe multiply loss prob and speech activity
             LBRR_usage = SKP_SILK_ADD_LBRR_TO_PLUS1;
         }
         psEncCtrlC->LBRR_usage = LBRR_usage;
@@ -158,7 +158,7 @@ SKP_INLINE SKP_int SKP_Silk_setup_resamplers_FIX(
 )
 {
     SKP_int ret = SKP_SILK_NO_ERROR;
-    
+
     if( psEnc->sCmn.fs_kHz != fs_kHz || psEnc->sCmn.prev_API_fs_Hz != psEnc->sCmn.API_fs_Hz ) {
 
         if( psEnc->sCmn.fs_kHz == 0 ) {
@@ -212,10 +212,10 @@ SKP_INLINE SKP_int SKP_Silk_setup_packetsize_FIX(
     SKP_int ret = SKP_SILK_NO_ERROR;
 
     /* Set packet size */
-    if( ( PacketSize_ms !=  20 ) && 
-        ( PacketSize_ms !=  40 ) && 
-        ( PacketSize_ms !=  60 ) && 
-        ( PacketSize_ms !=  80 ) && 
+    if( ( PacketSize_ms !=  20 ) &&
+        ( PacketSize_ms !=  40 ) &&
+        ( PacketSize_ms !=  60 ) &&
+        ( PacketSize_ms !=  80 ) &&
         ( PacketSize_ms != 100 ) ) {
         ret = SKP_SILK_ENC_PACKET_SIZE_NOT_SUPPORTED;
     } else {
@@ -293,11 +293,11 @@ SKP_INLINE SKP_int SKP_Silk_setup_fs_FIX(
         if( psEnc->sCmn.fs_kHz == 24 ) {
             psEnc->mu_LTP_Q8 = SKP_FIX_CONST( MU_LTP_QUANT_SWB, 8 );
             psEnc->sCmn.bitrate_threshold_up   = SKP_int32_MAX;
-            psEnc->sCmn.bitrate_threshold_down = SWB2WB_BITRATE_BPS; 
+            psEnc->sCmn.bitrate_threshold_down = SWB2WB_BITRATE_BPS;
         } else if( psEnc->sCmn.fs_kHz == 16 ) {
             psEnc->mu_LTP_Q8 = SKP_FIX_CONST( MU_LTP_QUANT_WB, 8 );
             psEnc->sCmn.bitrate_threshold_up   = WB2SWB_BITRATE_BPS;
-            psEnc->sCmn.bitrate_threshold_down = WB2MB_BITRATE_BPS; 
+            psEnc->sCmn.bitrate_threshold_down = WB2MB_BITRATE_BPS;
         } else if( psEnc->sCmn.fs_kHz == 12 ) {
             psEnc->mu_LTP_Q8 = SKP_FIX_CONST( MU_LTP_QUANT_MB, 8 );
             psEnc->sCmn.bitrate_threshold_up   = MB2WB_BITRATE_BPS;
@@ -341,7 +341,7 @@ SKP_INLINE SKP_int SKP_Silk_setup_rate_FIX(
         for( k = 1; k < TARGET_RATE_TAB_SZ; k++ ) {
             /* Find bitrate interval in table and interpolate */
             if( TargetRate_bps < rateTable[ k ] ) {
-                frac_Q6 = SKP_DIV32( SKP_LSHIFT( TargetRate_bps - rateTable[ k - 1 ], 6 ), 
+                frac_Q6 = SKP_DIV32( SKP_LSHIFT( TargetRate_bps - rateTable[ k - 1 ], 6 ),
                                                  rateTable[ k ] - rateTable[ k - 1 ] );
                 psEnc->SNR_dB_Q7 = SKP_LSHIFT( SNR_table_Q1[ k - 1 ], 6 ) + SKP_MUL( frac_Q6, SNR_table_Q1[ k ] - SNR_table_Q1[ k - 1 ] );
                 break;
@@ -362,7 +362,7 @@ SKP_INLINE SKP_int SKP_Silk_setup_LBRR_FIX(
     if( psEnc->sCmn.useInBandFEC < 0 || psEnc->sCmn.useInBandFEC > 1 ) {
         ret = SKP_SILK_ENC_INVALID_INBAND_FEC_SETTING;
     }
-    
+
     psEnc->sCmn.LBRR_enabled = psEnc->sCmn.useInBandFEC;
     if( psEnc->sCmn.fs_kHz == 8 ) {
         LBRRRate_thres_bps = INBAND_FEC_MIN_RATE_BPS - 9000;

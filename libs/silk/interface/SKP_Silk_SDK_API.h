@@ -1,27 +1,27 @@
 /***********************************************************************
-Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
-Redistribution and use in source and binary forms, with or without 
-modification, (subject to the limitations in the disclaimer below) 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, (subject to the limitations in the disclaimer below)
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright 
-notice, this list of conditions and the following disclaimer in the 
+- Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific 
-contributors, may be used to endorse or promote products derived from 
+- Neither the name of Skype Limited, nor the names of specific
+contributors, may be used to endorse or promote products derived from
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
-BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***********************************************************************/
 
@@ -56,7 +56,7 @@ typedef struct {
 /***********************************************/
 /* Get size in bytes of the Silk encoder state */
 /***********************************************/
-SKP_int SKP_Silk_SDK_Get_Encoder_Size( 
+SKP_int SKP_Silk_SDK_Get_Encoder_Size(
     SKP_int32                           *encSizeBytes   /* O:   Number of bytes in SILK encoder state           */
 );
 
@@ -79,7 +79,7 @@ SKP_int SKP_Silk_SDK_QueryEncoder(
 /**************************/
 /* Encode frame with Silk */
 /**************************/
-SKP_int SKP_Silk_SDK_Encode( 
+SKP_int SKP_Silk_SDK_Encode(
     void                                *encState,      /* I/O: State                                           */
     const SKP_SILK_SDK_EncControlStruct *encControl,    /* I:   Control status                                  */
     const SKP_int16                     *samplesIn,     /* I:   Speech sample input vector                      */
@@ -95,14 +95,14 @@ SKP_int SKP_Silk_SDK_Encode(
 /***********************************************/
 /* Get size in bytes of the Silk decoder state */
 /***********************************************/
-SKP_int SKP_Silk_SDK_Get_Decoder_Size( 
+SKP_int SKP_Silk_SDK_Get_Decoder_Size(
     SKP_int32                           *decSizeBytes   /* O:   Number of bytes in SILK decoder state           */
 );
 
 /*************************/
 /* Init or Reset decoder */
 /*************************/
-SKP_int SKP_Silk_SDK_InitDecoder( 
+SKP_int SKP_Silk_SDK_InitDecoder(
     void                                *decState       /* I/O: State                                           */
 );
 
@@ -142,7 +142,7 @@ void SKP_Silk_SDK_get_TOC(
 /**************************/
 /* Get the version number */
 /**************************/
-/* Return a pointer to string specifying the version */ 
+/* Return a pointer to string specifying the version */
 const char *SKP_Silk_SDK_get_version();
 
 #ifdef __cplusplus

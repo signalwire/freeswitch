@@ -1,27 +1,27 @@
 /***********************************************************************
-Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
-Redistribution and use in source and binary forms, with or without 
-modification, (subject to the limitations in the disclaimer below) 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, (subject to the limitations in the disclaimer below)
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright 
-notice, this list of conditions and the following disclaimer in the 
+- Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific 
-contributors, may be used to endorse or promote products derived from 
+- Neither the name of Skype Limited, nor the names of specific
+contributors, may be used to endorse or promote products derived from
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
-BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***********************************************************************/
 
@@ -49,9 +49,9 @@ extern "C"
 /********************************************************************/
 
 /*!
- * Initialize/reset the resampler state for a given pair of input/output sampling rates 
+ * Initialize/reset the resampler state for a given pair of input/output sampling rates
 */
-SKP_int SKP_Silk_resampler_init( 
+SKP_int SKP_Silk_resampler_init(
 	SKP_Silk_resampler_state_struct	*S,		    /* I/O: Resampler state 			*/
 	SKP_int32							Fs_Hz_in,	/* I:	Input sampling rate (Hz)	*/
 	SKP_int32							Fs_Hz_out	/* I:	Output sampling rate (Hz)	*/
@@ -59,16 +59,16 @@ SKP_int SKP_Silk_resampler_init(
 
 
 /*!
- * Clear the states of all resampling filters, without resetting sampling rate ratio 
+ * Clear the states of all resampling filters, without resetting sampling rate ratio
  */
-SKP_int SKP_Silk_resampler_clear( 
+SKP_int SKP_Silk_resampler_clear(
 	SKP_Silk_resampler_state_struct	*S		    /* I/O: Resampler state 			*/
 );
 
 /*!
  * Resampler: convert from one sampling rate to another
  */
-SKP_int SKP_Silk_resampler( 
+SKP_int SKP_Silk_resampler(
 	SKP_Silk_resampler_state_struct	*S,		    /* I/O: Resampler state 			*/
 	SKP_int16							out[],	    /* O:	Output signal 				*/
 	const SKP_int16						in[],	    /* I:	Input signal				*/
@@ -76,7 +76,7 @@ SKP_int SKP_Silk_resampler(
 );
 
 /*!
- Upsample 2x, low quality 
+ Upsample 2x, low quality
  */
 void SKP_Silk_resampler_up2(
     SKP_int32                           *S,         /* I/O: State vector [ 2 ]                  */
@@ -86,7 +86,7 @@ void SKP_Silk_resampler_up2(
 );
 
 /*!
-* Downsample 2x, mediocre quality 
+* Downsample 2x, mediocre quality
 */
 void SKP_Silk_resampler_down2(
     SKP_int32                           *S,         /* I/O: State vector [ 2 ]                  */
@@ -116,9 +116,9 @@ void SKP_Silk_resampler_down3(
     SKP_int32                           inLen       /* I:   Number of input samples             */
 );
 
-/*! 
+/*!
  * second order ARMA filter
- * can handle (slowly) varying coefficients 
+ * can handle (slowly) varying coefficients
  */
 void SKP_Silk_biquad(
     const SKP_int16      *in,          /* I:   input signal                */
@@ -129,9 +129,9 @@ void SKP_Silk_biquad(
     const SKP_int32      len           /* I:   signal length               */
 );
 /*!
- * second order ARMA filter; 
+ * second order ARMA filter;
  * slower than biquad() but uses more precise coefficients
- * can handle (slowly) varying coefficients 
+ * can handle (slowly) varying coefficients
  */
 void SKP_Silk_biquad_alt(
     const SKP_int16     *in,           /* I:    input signal                 */
@@ -142,7 +142,7 @@ void SKP_Silk_biquad_alt(
     const SKP_int32     len            /* I:    signal length (must be even) */
 );
 
-/*! 
+/*!
  * variable order MA filter. Prediction error filter implementation. Coeficients negated and starting with coef to x[n - 1]
  */
 void SKP_Silk_MA_Prediction(
@@ -189,14 +189,14 @@ void SKP_Silk_LPC_synthesis_filter(
 );
 
 /* Chirp (bandwidth expand) LP AR filter */
-void SKP_Silk_bwexpander( 
+void SKP_Silk_bwexpander(
     SKP_int16            *ar,          /* I/O  AR filter to be expanded (without leading 1)    */
     const SKP_int        d,            /* I    Length of ar                                    */
     SKP_int32            chirp_Q16     /* I    Chirp factor (typically in the range 0 to 1)    */
 );
 
 /* Chirp (bandwidth expand) LP AR filter */
-void SKP_Silk_bwexpander_32( 
+void SKP_Silk_bwexpander_32(
     SKP_int32            *ar,          /* I/O  AR filter to be expanded (without leading 1)    */
     const SKP_int        d,            /* I    Length of ar                                    */
     SKP_int32            chirp_Q16     /* I    Chirp factor in Q16                             */
@@ -238,12 +238,12 @@ SKP_int32 SKP_Silk_lin2log(const SKP_int32 inLin);        /* I: input in linear 
 SKP_int SKP_Silk_sigm_Q15(SKP_int in_Q5);
 
 /* approximation of 2^() (exact inverse of approx log2() above) */
-/* convert input to a linear scale    */ 
-SKP_int32 SKP_Silk_log2lin(const SKP_int32 inLog_Q7);    /* I: input on log scale */ 
+/* convert input to a linear scale    */
+SKP_int32 SKP_Silk_log2lin(const SKP_int32 inLog_Q7);    /* I: input on log scale */
 
 /* Function that returns the maximum absolut value of the input vector */
 SKP_int16 SKP_Silk_int16_array_maxabs(  /* O   Maximum absolute value, max: 2^15-1   */
-    const SKP_int16     *vec,           /* I   Input vector  [len]                   */ 
+    const SKP_int16     *vec,           /* I   Input vector  [len]                   */
     const SKP_int32     len             /* I   Length of input vector                */
 );
 
@@ -258,7 +258,7 @@ void SKP_Silk_sum_sqr_shift(
 
 /* Calculates the reflection coefficients from the correlation sequence    */
 /* Faster than schur64(), but much less accurate.                          */
-/* uses SMLAWB(), requiring armv5E and higher.                             */ 
+/* uses SMLAWB(), requiring armv5E and higher.                             */
 SKP_int32 SKP_Silk_schur(               /* O:    Returns residual energy                   */
     SKP_int16            *rc_Q15,       /* O:    reflection coefficients [order] Q15       */
     const SKP_int32      *c,            /* I:    correlations [order+1]                    */
@@ -302,7 +302,7 @@ void SKP_Silk_apply_sine_window_new(
 );
 
 /* Compute autocorrelation */
-void SKP_Silk_autocorr( 
+void SKP_Silk_autocorr(
     SKP_int32           *results,       /* O  Result (length correlationCount)            */
     SKP_int             *scale,         /* O  Scaling of the correlation vector           */
     const SKP_int16     *inputData,     /* I  Input data to correlate                     */
@@ -392,7 +392,7 @@ void SKP_Silk_NLSF_VQ_weights_laroia(
 );
 
 /* Compute reflection coefficients from input signal */
-void SKP_Silk_burg_modified(        
+void SKP_Silk_burg_modified(
     SKP_int32            *res_nrg,           /* O   residual energy                                                 */
     SKP_int              *res_nrgQ,          /* O   residual energy Q value                                         */
     SKP_int32            A_Q16[],            /* O   prediction coefficients (length order)                          */
@@ -404,15 +404,15 @@ void SKP_Silk_burg_modified(
 );
 
 /* Copy and multiply a vector by a constant */
-void SKP_Silk_scale_copy_vector16( 
-    SKP_int16            *data_out, 
-    const SKP_int16      *data_in, 
+void SKP_Silk_scale_copy_vector16(
+    SKP_int16            *data_out,
+    const SKP_int16      *data_in,
     SKP_int32            gain_Q16,           /* I:   gain in Q16   */
     const SKP_int        dataSize            /* I:   length        */
 );
 
 /* Some for the LTP related function requires Q26 to work.*/
-void SKP_Silk_scale_vector32_Q26_lshift_18( 
+void SKP_Silk_scale_vector32_Q26_lshift_18(
     SKP_int32            *data1,             /* I/O: Q0/Q18        */
     SKP_int32            gain_Q26,           /* I:   Q26           */
     SKP_int              dataSize            /* I:   length        */
@@ -425,7 +425,7 @@ void SKP_Silk_scale_vector32_Q26_lshift_18(
 /*    return sum(inVec1[i]*inVec2[i])    */
 /*    inVec1 and inVec2 should be increasing ordered, and starting address should be 4 byte aligned. (a factor of 4)*/
 SKP_int32 SKP_Silk_inner_prod_aligned(
-    const SKP_int16* const inVec1,           /* I   input vector 1    */ 
+    const SKP_int16* const inVec1,           /* I   input vector 1    */
     const SKP_int16* const inVec2,           /* I   input vector 2    */
     const SKP_int          len               /* I   vector lengths    */
 );
@@ -507,7 +507,7 @@ SKP_INLINE SKP_int32 SKP_ROR32( SKP_int32 a32, SKP_int rot )
 
 #define SKP_ADD_SAT16(a, b)                (SKP_int16)SKP_SAT16( SKP_ADD32( (SKP_int32)(a), (b) ) )
 
-/* Add with saturation for positive input values */ 
+/* Add with saturation for positive input values */
 #define SKP_ADD_POS_SAT32(a, b)            ((((a)+(b)) & 0x80000000)           ? SKP_int32_MAX : ((a)+(b)))
 
 #define SKP_LSHIFT32(a, shift)             ((a)<<(shift))                // shift >= 0, shift < 32
@@ -541,7 +541,7 @@ SKP_INLINE SKP_int32 SKP_ROR32( SKP_int32 a32, SKP_int rot )
 /* Number of rightshift required to fit the multiplication */
 #define SKP_NSHIFT_MUL_32_32(a, b)        ( -(31- (32-SKP_Silk_CLZ32(SKP_abs(a)) + (32-SKP_Silk_CLZ32(SKP_abs(b))))) )
 
-#define SKP_min(a, b)                     (((a) < (b)) ? (a) : (b)) 
+#define SKP_min(a, b)                     (((a) < (b)) ? (a) : (b))
 #define SKP_max(a, b)                     (((a) > (b)) ? (a) : (b))
 
 /* Macro to convert floating-point constants to fixed-point */
@@ -592,9 +592,9 @@ SKP_INLINE SKP_int32 SKP_max_32(SKP_int32 a, SKP_int32 b)
 
 // Add some multiplication functions that can be easily mapped to ARM.
 
-//    SKP_SMMUL: Signed top word multiply. 
-//        ARMv6        2 instruction cycles. 
-//        ARMv3M+        3 instruction cycles. use SMULL and ignore LSB registers.(except xM) 
+//    SKP_SMMUL: Signed top word multiply.
+//        ARMv6        2 instruction cycles.
+//        ARMv3M+        3 instruction cycles. use SMULL and ignore LSB registers.(except xM)
 //#define SKP_SMMUL(a32, b32)            (SKP_int32)SKP_RSHIFT(SKP_SMLAL(SKP_SMULWB((a32), (b32)), (a32), SKP_RSHIFT_ROUND((b32), 16)), 16)
 // the following seems faster on x86
 #define SKP_SMMUL(a32, b32)              (SKP_int32)SKP_RSHIFT64(SKP_SMULL((a32), (b32)), 32)

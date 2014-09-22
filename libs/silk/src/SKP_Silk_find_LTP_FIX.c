@@ -1,27 +1,27 @@
 /***********************************************************************
-Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
-Redistribution and use in source and binary forms, with or without 
-modification, (subject to the limitations in the disclaimer below) 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, (subject to the limitations in the disclaimer below)
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright 
-notice, this list of conditions and the following disclaimer in the 
+- Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific 
-contributors, may be used to endorse or promote products derived from 
+- Neither the name of Skype Limited, nor the names of specific
+contributors, may be used to endorse or promote products derived from
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
-BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***********************************************************************/
 
@@ -64,7 +64,7 @@ void SKP_Silk_find_LTP_FIX(
     SKP_int32 LPC_res_nrg, LPC_LTP_res_nrg, div_Q16;
     SKP_int32 Rr[ LTP_ORDER ], rr[ NB_SUBFR ];
     SKP_int32 wd, m_Q12;
-    
+
     b_Q14_ptr = b_Q14;
     WLTP_ptr  = WLTP;
     r_ptr     = &r_first[ mem_offset ];
@@ -114,7 +114,7 @@ void SKP_Silk_find_LTP_FIX(
         SKP_assert( ((SKP_int64)Wght_Q15[ k ] << 16 ) < SKP_int32_MAX );                        /* Wght always < 0.5 in Q0 */
         temp32 = SKP_DIV32( SKP_LSHIFT( ( SKP_int32 )Wght_Q15[ k ], 16 ), denom32 );            /* Q( 15 + 16 + corr_rshifts[k] - extra_shifts ) */
         temp32 = SKP_RSHIFT( temp32, 31 + corr_rshifts[ k ] - extra_shifts - 26 );              /* Q26 */
-        
+
         /* Limit temp such that the below scaling never wraps around */
         WLTP_max = 0;
         for( i = 0; i < LTP_ORDER * LTP_ORDER; i++ ) {
@@ -127,7 +127,7 @@ void SKP_Silk_find_LTP_FIX(
         }
 
         SKP_Silk_scale_vector32_Q26_lshift_18( WLTP_ptr, temp32, LTP_ORDER * LTP_ORDER ); /* WLTP_ptr in Q( 18 - corr_rshifts[ k ] ) */
-        
+
         w[ k ] = matrix_ptr( WLTP_ptr, ( LTP_ORDER >> 1 ), ( LTP_ORDER >> 1 ), LTP_ORDER ); /* w in Q( 18 - corr_rshifts[ k ] ) */
         SKP_assert( w[k] >= 0 );
 
@@ -170,7 +170,7 @@ void SKP_Silk_find_LTP_FIX(
     }
 
     /* m = ( w * d' ) / ( sum( w ) + 1e-3 ); */
-        
+
     /* Find maximum absolute value of d_Q14 and the bits used by w in Q0 */
     max_abs_d_Q14 = 0;
     max_w_bits    = 0;
@@ -178,7 +178,7 @@ void SKP_Silk_find_LTP_FIX(
         max_abs_d_Q14 = SKP_max_32( max_abs_d_Q14, SKP_abs( d_Q14[ k ] ) );
         /* w[ k ] is in Q( 18 - corr_rshifts[ k ] ) */
         /* Find bits needed in Q( 18 - maxRshifts ) */
-        max_w_bits = SKP_max_32( max_w_bits, 32 - SKP_Silk_CLZ32( w[ k ] ) + corr_rshifts[ k ] - maxRshifts ); 
+        max_w_bits = SKP_max_32( max_w_bits, 32 - SKP_Silk_CLZ32( w[ k ] ) + corr_rshifts[ k ] - maxRshifts );
     }
 
     /* max_abs_d_Q14 = (5 << 15); worst case, i.e. LTP_ORDER * -SKP_int16_MIN */
@@ -186,13 +186,13 @@ void SKP_Silk_find_LTP_FIX(
 
     /* How many bits is needed for w*d' in Q( 18 - maxRshifts ) in the worst case, of all d_Q14's being equal to max_abs_d_Q14 */
     extra_shifts = max_w_bits + 32 - SKP_Silk_CLZ32( max_abs_d_Q14 ) - 14;
-    
+
     /* Subtract what we got available; bits in output var plus maxRshifts */
     extra_shifts -= ( 32 - 1 - 2 + maxRshifts ); /* Keep sign bit free as well as 2 bits for accumulation */
     extra_shifts = SKP_max_int( extra_shifts, 0 );
 
     maxRshifts_wxtra = maxRshifts + extra_shifts;
-    
+
     temp32 = SKP_RSHIFT( 262, maxRshifts + extra_shifts ) + 1; /* 1e-3f in Q( 18 - (maxRshifts + extra_shifts) ) */
     wd = 0;
     for( k = 0; k < NB_SUBFR; k++ ) {
@@ -211,10 +211,10 @@ void SKP_Silk_find_LTP_FIX(
             temp32 = SKP_LSHIFT_SAT32( w[ k ], corr_rshifts[ k ] - 2 );
         }
 
-        g_Q26 = SKP_MUL( 
-            SKP_DIV32( 
-                SKP_FIX_CONST( LTP_SMOOTHING, 26 ), 
-                SKP_RSHIFT( SKP_FIX_CONST( LTP_SMOOTHING, 26 ), 10 ) + temp32 ),                                       /* Q10 */ 
+        g_Q26 = SKP_MUL(
+            SKP_DIV32(
+                SKP_FIX_CONST( LTP_SMOOTHING, 26 ),
+                SKP_RSHIFT( SKP_FIX_CONST( LTP_SMOOTHING, 26 ), 10 ) + temp32 ),                                       /* Q10 */
             SKP_LSHIFT_SAT32( SKP_SUB_SAT32( ( SKP_int32 )m_Q12, SKP_RSHIFT( d_Q14[ k ], 2 ) ), 4 ) );  /* Q16 */
 
         temp32 = 0;

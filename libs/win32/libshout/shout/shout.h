@@ -170,7 +170,7 @@ int shout_close(shout_t *self);
 int shout_send(shout_t *self, const unsigned char *data, size_t len);
 
 /* Send unparsed data to the server.  Do not use this unless you know
- * what you are doing. 
+ * what you are doing.
  * Returns the number of bytes written, or < 0 on error.
  */
 ssize_t shout_send_raw(shout_t *self, const unsigned char *data, size_t len);
@@ -178,7 +178,7 @@ ssize_t shout_send_raw(shout_t *self, const unsigned char *data, size_t len);
 /* return the number of bytes currently on the write queue (only makes sense in
  * nonblocking mode). */
 ssize_t shout_queuelen(shout_t *self);
-  
+
 /* Puts caller to sleep until it is time to send more data to the server */
 void shout_sync(shout_t *self);
 

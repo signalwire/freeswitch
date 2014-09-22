@@ -1,27 +1,27 @@
 /***********************************************************************
-Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
-Redistribution and use in source and binary forms, with or without 
-modification, (subject to the limitations in the disclaimer below) 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, (subject to the limitations in the disclaimer below)
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright 
-notice, this list of conditions and the following disclaimer in the 
+- Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific 
-contributors, may be used to endorse or promote products derived from 
+- Neither the name of Skype Limited, nor the names of specific
+contributors, may be used to endorse or promote products derived from
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
-BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***********************************************************************/
 
@@ -95,7 +95,7 @@ void SKP_Silk_burg_modified(
         for( s = 0; s < nb_subfr; s++ ) {
             x_ptr = x + s * subfr_length;
             for( n = 1; n < D + 1; n++ ) {
-                C_first_row[ n - 1 ] += (SKP_int32)SKP_RSHIFT64( 
+                C_first_row[ n - 1 ] += (SKP_int32)SKP_RSHIFT64(
                     SKP_Silk_inner_prod16_aligned_64( x_ptr, x_ptr + n, subfr_length - n ), rshifts );
             }
         }
@@ -103,13 +103,13 @@ void SKP_Silk_burg_modified(
         for( s = 0; s < nb_subfr; s++ ) {
             x_ptr = x + s * subfr_length;
             for( n = 1; n < D + 1; n++ ) {
-                C_first_row[ n - 1 ] += SKP_LSHIFT32( 
+                C_first_row[ n - 1 ] += SKP_LSHIFT32(
                     SKP_Silk_inner_prod_aligned( x_ptr, x_ptr + n, subfr_length - n ), -rshifts );
             }
         }
     }
     SKP_memcpy( C_last_row, C_first_row, SKP_Silk_MAX_ORDER_LPC * sizeof( SKP_int32 ) );
-    
+
     /* Initialize */
     CAb[ 0 ] = CAf[ 0 ] = C0 + SKP_SMMUL( WhiteNoiseFrac_Q32, C0 ) + 1;         // Q(-rshifts)
 
@@ -156,9 +156,9 @@ void SKP_Silk_burg_modified(
                 tmp1 = -tmp1;                                                                       // Q17
                 tmp2 = -tmp2;                                                                       // Q17
                 for( k = 0; k <= n; k++ ) {
-                    CAf[ k ] = SKP_SMLAWW( CAf[ k ], tmp1, 
+                    CAf[ k ] = SKP_SMLAWW( CAf[ k ], tmp1,
                         SKP_LSHIFT32( (SKP_int32)x_ptr[ n - k ], -rshifts - 1 ) );                  // Q( -rshift )
-                    CAb[ k ] = SKP_SMLAWW( CAb[ k ], tmp2, 
+                    CAb[ k ] = SKP_SMLAWW( CAb[ k ], tmp2,
                         SKP_LSHIFT32( (SKP_int32)x_ptr[ subfr_length - n + k - 1 ], -rshifts - 1 ) );// Q( -rshift )
                 }
             }
@@ -178,7 +178,7 @@ void SKP_Silk_burg_modified(
             tmp1 = SKP_ADD_LSHIFT32( tmp1, SKP_SMMUL( C_last_row[  n - k - 1 ], Atmp1 ), 32 - QA - lz );    // Q( -rshifts )
             tmp2 = SKP_ADD_LSHIFT32( tmp2, SKP_SMMUL( C_first_row[ n - k - 1 ], Atmp1 ), 32 - QA - lz );    // Q( -rshifts )
             num  = SKP_ADD_LSHIFT32( num,  SKP_SMMUL( CAb[ n - k ],             Atmp1 ), 32 - QA - lz );    // Q( -rshifts )
-            nrg  = SKP_ADD_LSHIFT32( nrg,  SKP_SMMUL( SKP_ADD32( CAb[ k + 1 ], CAf[ k + 1 ] ), 
+            nrg  = SKP_ADD_LSHIFT32( nrg,  SKP_SMMUL( SKP_ADD32( CAb[ k + 1 ], CAf[ k + 1 ] ),
                                                                                 Atmp1 ), 32 - QA - lz );    // Q( 1-rshifts )
         }
         CAf[ n + 1 ] = tmp1;                                                                // Q( -rshifts )

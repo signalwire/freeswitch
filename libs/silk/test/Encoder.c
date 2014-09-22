@@ -1,27 +1,27 @@
 /***********************************************************************
-Copyright (c) 2006-2011, Skype Limited. All rights reserved. 
-Redistribution and use in source and binary forms, with or without 
-modification, (subject to the limitations in the disclaimer below) 
+Copyright (c) 2006-2011, Skype Limited. All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, (subject to the limitations in the disclaimer below)
 are permitted provided that the following conditions are met:
 - Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright 
-notice, this list of conditions and the following disclaimer in the 
+- Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
 documentation and/or other materials provided with the distribution.
-- Neither the name of Skype Limited, nor the names of specific 
-contributors, may be used to endorse or promote products derived from 
+- Neither the name of Skype Limited, nor the names of specific
+contributors, may be used to endorse or promote products derived from
 this software without specific prior written permission.
-NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED 
-BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND 
+NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED
+BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
 CONTRIBUTORS ''AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND 
-FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF 
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ***********************************************************************/
 
@@ -41,7 +41,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "SKP_Silk_SDK_API.h"
 
 /* Define codec specific settings */
-#define MAX_BYTES_PER_FRAME     250 // Equals peak bitrate of 100 kbps 
+#define MAX_BYTES_PER_FRAME     250 // Equals peak bitrate of 100 kbps
 #define MAX_INPUT_FRAMES        5
 #define MAX_LBRR_DELAY          2
 #define MAX_FRAME_LENGTH        480
@@ -74,7 +74,7 @@ static void print_usage( char* argv[] ) {
     printf( "\nstream.bit           : Bitstream output from encoder" );
     printf( "\n   settings:" );
     printf( "\n-Fs_API <Hz>         : API sampling rate in Hz, default: 24000" );
-    printf( "\n-Fs_maxInternal <Hz> : Maximum internal sampling rate in Hz, default: 24000" ); 
+    printf( "\n-Fs_maxInternal <Hz> : Maximum internal sampling rate in Hz, default: 24000" );
     printf( "\n-packetlength <ms>   : Packet interval in ms, default: 20" );
     printf( "\n-rate <bps>          : Target bitrate; default: 25000" );
     printf( "\n-loss <perc>         : Uplink loss estimate, in percent (0-100); default: 0" );
@@ -110,12 +110,12 @@ int main( int argc, char* argv[] )
     SKP_int32 packetLoss_perc = 0, complexity_mode = 2, smplsSinceLastPacket;
     SKP_int32 INBandFEC_enabled = 0, DTX_enabled = 0, quiet = 0;
     SKP_SILK_SDK_EncControlStruct encControl; // Struct for input to encoder
-        
+
     if( argc < 3 ) {
         print_usage( argv );
         exit( 0 );
-    } 
-    
+    }
+
     /* get arguments */
     args = 1;
     strcpy( speechInFileName, argv[ args ] );
@@ -211,7 +211,7 @@ int main( int argc, char* argv[] )
     if( ret ) {
         printf( "\nSKP_Silk_reset_encoder returned %d", ret );
     }
-    
+
     /* Set Encoder parameters */
     encControl.API_sampleRate        = API_fs_Hz;
     encControl.maxInternalSampleRate = max_internal_fs_Hz;
@@ -232,7 +232,7 @@ int main( int argc, char* argv[] )
     smplsSinceLastPacket = 0;
     sumBytes             = 0.0;
     sumActBytes          = 0.0;
-    
+
     while( 1 ) {
         /* Read input from file */
         counter = fread( in, sizeof( SKP_int16 ), ( frameSizeReadFromFile_ms * API_fs_Hz ) / 1000, speechInFile );
@@ -257,7 +257,7 @@ int main( int argc, char* argv[] )
         packetSize_ms = ( SKP_int )( ( 1000 * ( SKP_int32 )encControl.packetSize ) / encControl.API_sampleRate );
 
         smplsSinceLastPacket += ( SKP_int )counter;
-        
+
         if( ( ( 1000 * smplsSinceLastPacket ) / API_fs_Hz ) == packetSize_ms ) {
             /* Sends a dummy zero size packet in case of DTX period  */
             /* to make it work with the decoder test program.        */
@@ -284,7 +284,7 @@ int main( int argc, char* argv[] )
 
             /* Write payload */
             fwrite( payload, sizeof( SKP_uint8 ), nBytes, bitOutFile );
-        
+
             if( !quiet ) {
                 fprintf( stderr, "\rPackets encoded:              %d", totPackets );
             }

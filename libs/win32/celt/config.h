@@ -1,5 +1,5 @@
 /* This is a build of CELT */
-#define CELT_BUILD 
+#define CELT_BUILD
 
 /* Version extra */
 #define CELT_EXTRA_VERSION "-1"
@@ -20,7 +20,7 @@
 /* #undef FIXED_POINT */
 
 /* Compile as floating-point */
-#define FLOATING_POINT 
+#define FLOATING_POINT
 
 /* Make use of alloca */
 /* #undef USE_ALLOCA */
@@ -32,4 +32,3 @@
 
 // Microsoft version of 'inline'
 #define inline __inline
-

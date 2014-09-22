@@ -63,7 +63,7 @@ private:
 private:
 	TInt iState; // State of the active object
 	RTimer iTimer; // Provides async timing service
-	
+
 	zrtp_stream_t *iCtx;
 	zrtp_retry_task_t * iZTask;
 
