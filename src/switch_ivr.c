@@ -3434,7 +3434,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_process_fh(switch_core_session_t *ses
 					}
 
 					samps = step * (fhp->native_rate / 1000);
-					target = (int32_t)fhp->pos + samps;
+					target = (int32_t)fhp->offset_pos + samps;
 
 					if (target < 0) {
 						target = 0;
