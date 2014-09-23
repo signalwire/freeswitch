@@ -241,7 +241,6 @@ int ws_handshake(wsh_t *wsh)
 	char version[5] = "";
 	char proto[256] = "";
 	char proto_buf[384] = "";
-	char uri[256] = "";
 	char input[256] = "";
 	unsigned char output[SHA1_HASH_SIZE] = "";
 	char b64[256] = "";
@@ -276,9 +275,11 @@ int ws_handshake(wsh_t *wsh)
 	if (!e) {
 		goto err;
 	}
-	
-	strncpy(uri, p, e-p);
-	
+
+	wsh->uri = malloc((e-p) + 1);
+	strncpy(wsh->uri, p, e-p);
+	*(wsh->uri + (e-p)) = '\0';
+
 	cheezy_get_var(wsh->buffer, "Sec-WebSocket-Key", key, sizeof(key));
 	cheezy_get_var(wsh->buffer, "Sec-WebSocket-Version", version, sizeof(version));
 	cheezy_get_var(wsh->buffer, "Sec-WebSocket-Protocol", proto, sizeof(proto));
@@ -615,6 +616,11 @@ ssize_t ws_close(wsh_t *wsh, int16_t reason)
 
 	wsh->down = 1;
 	
+	if (wsh->uri) {
+		free(wsh->uri);
+		wsh->uri = NULL;
+	}
+
 	if (reason && wsh->sock != ws_sock_invalid) {
 		uint16_t *u16;
 		uint8_t fr[4] = {WSOC_CLOSE | 0x80, 2, 0};
