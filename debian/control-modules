@@ -30,11 +30,6 @@ Description: Caller ID name lookup
  This module provides an API for querying caller ID name and location
  data.
 
-Module: applications/mod_cluechoo
-Description: Clue Choo
- This demo module renders a Clue Choo train on the FreeSWITCH console.
-Build-Depends: libncurses5-dev
-
 Module: applications/mod_commands
 Description: Command module
  This module provides miscellaneous API commands.

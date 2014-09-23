@@ -15,6 +15,7 @@ avoid_mods=(
   applications/mod_osp
   applications/mod_rad_auth
   applications/mod_skel
+  applications/mod_cluechoo
   asr_tts/mod_cepstral
   codecs/mod_com_g729
   codecs/mod_ilbc
@@ -433,7 +434,6 @@ Depends: \${misc:Depends}, freeswitch (= \${binary:Version}),
  freeswitch-mod-voicemail (= \${binary:Version}),
  freeswitch-mod-esf (= \${binary:Version}),
  freeswitch-mod-fsv (= \${binary:Version}),
- freeswitch-mod-cluechoo (= \${binary:Version}),
  freeswitch-mod-valet-parking (= \${binary:Version}),
  freeswitch-mod-httapi (= \${binary:Version}),
  freeswitch-mod-dialplan-xml (= \${binary:Version}),
@@ -564,7 +564,6 @@ Recommends:
  freeswitch-mod-blacklist (= \${binary:Version}),
  freeswitch-mod-callcenter (= \${binary:Version}),
  freeswitch-mod-cidlookup (= \${binary:Version}),
- freeswitch-mod-cluechoo (= \${binary:Version}),
  freeswitch-mod-commands (= \${binary:Version}),
  freeswitch-mod-conference (= \${binary:Version}),
  freeswitch-mod-curl (= \${binary:Version}),
