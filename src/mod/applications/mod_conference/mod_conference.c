@@ -2277,7 +2277,8 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		}
 
 		if (conference->count > 1) {
-			if (conference->moh_sound && !switch_test_flag(conference, CFLAG_WAIT_MOD)) {
+			if ((conference->moh_sound && !switch_test_flag(conference, CFLAG_WAIT_MOD)) ||
+					(switch_test_flag(conference, CFLAG_WAIT_MOD) && !switch_true(switch_channel_get_variable(channel, "conference_permanent_wait_mod_moh")))) {
 				/* stop MoH if any */
 				conference_stop_file(conference, FILE_STOP_ASYNC);
 			}
@@ -2287,10 +2288,9 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 				if (switch_test_flag(conference, CFLAG_ENTER_SOUND)) {
 					if (!zstr(enter_sound)) {
 				     	conference_play_file(conference, (char *)enter_sound, CONF_DEFAULT_LEADIN,
-						     	switch_core_session_get_channel(member->session), !switch_test_flag(conference, CFLAG_WAIT_MOD) ? 0 : 1);
+							switch_core_session_get_channel(member->session), 0);
 			        } else {	
-				     		conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session),
-								!switch_test_flag(conference, CFLAG_WAIT_MOD) ? 0 : 1);
+						conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), 0);
 					}
 				}
 			}
@@ -2316,7 +2316,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 						if (conference->alone_sound  && !switch_test_flag(member, MFLAG_GHOST)) {
 							conference_stop_file(conference, FILE_STOP_ASYNC);
 							conference_play_file(conference, conference->alone_sound, CONF_DEFAULT_LEADIN,
-												 switch_core_session_get_channel(member->session), 1);
+												 switch_core_session_get_channel(member->session), 0);
 						} else {
 							switch_snprintf(msg, sizeof(msg), "You are currently the only person in this conference.");
 							conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
@@ -2683,7 +2683,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 
 	if (member->session && (exit_sound = switch_channel_get_variable(switch_core_session_get_channel(member->session), "conference_exit_sound"))) {
 		conference_play_file(conference, (char *)exit_sound, CONF_DEFAULT_LEADIN,
-							 switch_core_session_get_channel(member->session), !switch_test_flag(conference, CFLAG_WAIT_MOD) ? 0 : 1);
+							 switch_core_session_get_channel(member->session), 0);
 	}
 
 
@@ -2786,12 +2786,16 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 			|| (switch_test_flag(conference, CFLAG_DYNAMIC) && (conference->count + conference->count_ghosts == 0))) {
 			switch_set_flag(conference, CFLAG_DESTRUCT);
 		} else {
+			if (!switch_true(switch_channel_get_variable(channel, "conference_permanent_wait_mod_moh")) && switch_test_flag(conference, CFLAG_WAIT_MOD)) {
+				/* Stop MOH if any */
+				conference_stop_file(conference, FILE_STOP_ASYNC);
+			}
 			if (!exit_sound && conference->exit_sound && switch_test_flag(conference, CFLAG_EXIT_SOUND)) {
 				conference_play_file(conference, conference->exit_sound, 0, channel, 0);
 			}
 			if (conference->count == 1 && conference->alone_sound && !switch_test_flag(conference, CFLAG_WAIT_MOD) && !switch_test_flag(member, MFLAG_GHOST)) {
 				conference_stop_file(conference, FILE_STOP_ASYNC);
-				conference_play_file(conference, conference->alone_sound, 0, channel, 1);
+				conference_play_file(conference, conference->alone_sound, 0, channel, 0);
 			}
 		}
 
@@ -3146,7 +3150,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		if (conference->perpetual_sound && !conference->async_fnode) {
 			conference_play_file(conference, conference->perpetual_sound, CONF_DEFAULT_LEADIN, NULL, 1);
 		} else if (conference->moh_sound && ((nomoh == 0 && conference->count == 1) 
-											 || switch_test_flag(conference, CFLAG_WAIT_MOD)) && !conference->async_fnode) {
+									 || switch_test_flag(conference, CFLAG_WAIT_MOD)) && !conference->async_fnode && !conference->fnode) {
 			conference_play_file(conference, conference->moh_sound, CONF_DEFAULT_LEADIN, NULL, 1);
 		}
 
