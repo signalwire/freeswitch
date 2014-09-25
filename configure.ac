@@ -342,7 +342,7 @@ if test "$ax_cv_c_compiler_vendor" = "gnu"; then
   saved_CFLAGS="$CFLAGS"
   AC_CACHE_CHECK([whether compiler supports -Wno-unused-result],
     [ac_cv_gcc_supports_w_no_unused_result], [
-      CFLAGS="$CFLAGS -Wno-unused-result"
+      CFLAGS="$CFLAGS -Wno-unused-result -Wno-error=unused-result"
       AC_TRY_COMPILE([],[return 0;],
         [ac_cv_gcc_supports_w_no_unused_result=yes],
         [ac_cv_gcc_supports_w_no_unused_result=no])])
