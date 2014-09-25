@@ -2,7 +2,7 @@
   <!-- http://wiki.freeswitch.org/wiki/Sofia_Configuration_Files -->
   <!-- This profile is only for outbound registrations to providers -->
   <gateways>
-    <X-PRE-PROCESS cmd="include" data="external/*.xml"/>
+    <X-PRE-PROCESS cmd="include" data="external-ipv6/*.xml"/>
   </gateways>
 
   <aliases>
