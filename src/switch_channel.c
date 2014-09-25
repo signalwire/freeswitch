@@ -4203,7 +4203,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_get_variables(switch_channel_t *c
 {
 	switch_status_t status;
 	switch_mutex_lock(channel->profile_mutex);
-	status = switch_event_dup(event, channel->variables);
+	if (channel->variables) {
+		status = switch_event_dup(event, channel->variables);
+	} else {
+		status = switch_event_create(event, SWITCH_EVENT_CHANNEL_DATA);
+	}
 	switch_mutex_unlock(channel->profile_mutex);
 	return status;
 }

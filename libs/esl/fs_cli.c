@@ -61,6 +61,7 @@ typedef struct {
 	int log_uuid;
 	int log_uuid_length;
 	int quiet;
+	int use_history_file;
 	int batch_mode;
 	char prompt_color[12];
 	char input_text_color[12];
@@ -1222,6 +1223,7 @@ static void read_config(const char *dft_cfile, const char *cfile) {
 				esl_set_string(profiles[pcount].prompt_color, prompt_color);
 				esl_set_string(profiles[pcount].input_text_color, input_text_color);
 				esl_set_string(profiles[pcount].output_text_color, output_text_color);
+				profiles[pcount].use_history_file = 1;
 				esl_log(ESL_LOG_DEBUG, "Found Profile [%s]\n", profiles[pcount].name);
 				pcount++;
 			}
@@ -1257,6 +1259,8 @@ static void read_config(const char *dft_cfile, const char *cfile) {
 				}
 			} else if(!strcasecmp(var, "quiet")) {
 				profiles[pcount-1].quiet = esl_true(val);
+			} else if(!strcasecmp(var, "no-history-file")) {
+				profiles[pcount-1].use_history_file = !esl_true(val);
 			} else if(!strcasecmp(var, "prompt-color")) {
 				esl_set_string(profiles[pcount-1].prompt_color, match_color(val));
 			} else if(!strcasecmp(var, "input-text-color")) {
@@ -1298,6 +1302,8 @@ int main(int argc, char *argv[])
 	const char *line = NULL;
 	char cmd_str[1024] = "";
 	cli_profile_t *profile = NULL;
+	int argv_use_history_file = 1;
+	int use_history_file = 0;
 #ifndef WIN32
 	char hfile[512] = "/tmp/fs_cli_history";
 	char cfile[512] = "/etc/fs_cli.conf";
@@ -1324,6 +1330,7 @@ int main(int argc, char *argv[])
 		{"log-uuid-short", 0, 0, 'S'},
 		{"quiet", 0, 0, 'q'},
 		{"batchmode", 0, 0, 'b'},
+		{"no-history-file", 0, 0, 'Q'},
 		{"retry", 0, 0, 'r'},
 		{"interrupt", 0, 0, 'i'},
 		{"reconnect", 0, 0, 'R'},
@@ -1381,6 +1388,7 @@ int main(int argc, char *argv[])
 	esl_set_string(internal_profile.prompt_color, prompt_color);
 	esl_set_string(internal_profile.input_text_color, input_text_color);
 	esl_set_string(internal_profile.output_text_color, output_text_color);
+	internal_profile.use_history_file = 1;
 	if (home) {
 		snprintf(hfile, sizeof(hfile), "%s/.fs_cli_history", home);
 		snprintf(cfile, sizeof(cfile), "%s/.fs_cli_conf", home);
@@ -1395,7 +1403,7 @@ int main(int argc, char *argv[])
 	esl_global_set_default_logger(6); /* default debug level to 6 (info) */
 	for(;;) {
 		int option_index = 0;
-		opt = getopt_long(argc, argv, "H:P:u:p:d:x:l:USt:T:qrRhib?n", options, &option_index);
+		opt = getopt_long(argc, argv, "H:P:u:p:d:x:l:USt:T:qQrRhib?n", options, &option_index);
 		if (opt == -1) break;
 		switch (opt) {
 			case 'H':
@@ -1449,6 +1457,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'b':
 				argv_batch = 1;
+				break;
+			case 'Q':
+				argv_use_history_file = 0;
 				break;
 			case 'i':
 				allow_ctl_c = 1;
@@ -1504,6 +1515,9 @@ int main(int argc, char *argv[])
 	if (argv_batch || profile->batch_mode) {
 		profile->batch_mode = 1;
 		feature_level=0;
+	}
+	if (argv_use_history_file && profile->use_history_file) {
+		use_history_file = 1;
 	}
 	if (*argv_loglevel) {
 		esl_set_string(profile->loglevel, argv_loglevel);
@@ -1658,7 +1672,7 @@ int main(int argc, char *argv[])
 	}
 	history(myhistory, &ev, H_SETSIZE, 800);
 	el_set(el, EL_HIST, history, myhistory);
-	history(myhistory, &ev, H_LOAD, hfile);
+	if (use_history_file) history(myhistory, &ev, H_LOAD, hfile);
 	el_source(el, NULL);
 #endif
 #ifdef WIN32
@@ -1712,7 +1726,7 @@ int main(int argc, char *argv[])
 	}
 #ifdef HAVE_LIBEDIT
  done:
-	history(myhistory, &ev, H_SAVE, hfile);
+	if (use_history_file) history(myhistory, &ev, H_SAVE, hfile);
 	history_end(myhistory);
 	el_end(el);
 #endif

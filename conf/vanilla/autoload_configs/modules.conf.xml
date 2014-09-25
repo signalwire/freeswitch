@@ -60,7 +60,7 @@
     <!--<load module="mod_easyroute"/>-->
     <load module="mod_esf"/>
     <load module="mod_fsv"/>
-    <load module="mod_cluechoo"/>
+    <!--<load module="mod_cluechoo"/>-->
     <load module="mod_valet_parking"/>
     <!--<load module="mod_fsk"/>-->
     <!--<load module="mod_spy"/>-->
