@@ -2225,8 +2225,8 @@ SWITCH_STANDARD_API(gsm_function)
 		unsigned int ob_failed = 0;
 		char next_flag_char = ' ';
 
-		stream->write_function(stream, "F ID\t    Name    \tIB (F/T)    OB (F/T)\tState\tCallFlw\t\tUUID\n");
-		stream->write_function(stream, "= ====\t  ========  \t=======     =======\t======\t============\t======\n");
+		stream->write_function(stream, "F ID Name       Operator         IMEI            IB (F/T)  OB (F/T)  State   CallFlw         UUID\n");
+		stream->write_function(stream, "= == ========== ================ =============== ========= ========= ======= =============== ====\n");
 
 		for (i = 0; i < GSMOPEN_MAX_INTERFACES; i++) {
 
@@ -2239,9 +2239,11 @@ SWITCH_STANDARD_API(gsm_function)
 
 
 				stream->write_function(stream,
-						"%c %d\t[%6s]\t%3u/%u\t%6u/%u\t%s\t%s\t%s\n",
+						"%c %-2d %-10s %-16.16s %-15s %4u/%-4u %4u/%-4u %-7s %-15s %s\n",
 						next_flag_char,
 						i, globals.GSMOPEN_INTERFACES[i].name,
+						globals.GSMOPEN_INTERFACES[i].operator_name,
+						globals.GSMOPEN_INTERFACES[i].imei,
 						globals.GSMOPEN_INTERFACES[i].ib_failed_calls,
 						globals.GSMOPEN_INTERFACES[i].ib_calls,
 						globals.GSMOPEN_INTERFACES[i].ob_failed_calls,
@@ -2421,8 +2423,15 @@ SWITCH_STANDARD_API(gsmopen_dump_function)
 					}
 					snprintf(value, sizeof(value) - 1, "%d", tech_pvt->got_signal);
 					stream->write_function(stream, "got_signal = %s\n", value);
+					snprintf(value, sizeof(value) - 1, "%d", tech_pvt->signal_strength);
+					stream->write_function(stream, "signal_strength = %s\n", value);
 					snprintf(value, sizeof(value) - 1, "%d", tech_pvt->running);
 					stream->write_function(stream, "running = %s\n", value);
+					stream->write_function(stream, "subscriber_number = %s\n", tech_pvt->subscriber_number);
+					stream->write_function(stream, "device_manufacturer = %s\n", tech_pvt->device_mfg);
+					stream->write_function(stream, "device_model = %s\n", tech_pvt->device_model);
+					stream->write_function(stream, "device_firmware = %s\n", tech_pvt->device_firmware);
+					stream->write_function(stream, "operator = %s\n", tech_pvt->operator_name);
 					stream->write_function(stream, "imei = %s\n", tech_pvt->imei);
 					stream->write_function(stream, "imsi = %s\n", tech_pvt->imsi);
 					snprintf(value, sizeof(value) - 1, "%d", tech_pvt->controldev_dead);
@@ -2479,8 +2488,15 @@ SWITCH_STANDARD_API(gsmopen_dump_function)
 			}
 			snprintf(value, sizeof(value) - 1, "%d", tech_pvt->got_signal);
 			stream->write_function(stream, "got_signal = %s\n", value);
+			snprintf(value, sizeof(value) - 1, "%d", tech_pvt->signal_strength);
+			stream->write_function(stream, "signal_strength = %s\n", value);
 			snprintf(value, sizeof(value) - 1, "%d", tech_pvt->running);
 			stream->write_function(stream, "running = %s\n", value);
+			stream->write_function(stream, "subscriber_number = %s\n", tech_pvt->subscriber_number);
+			stream->write_function(stream, "device_manufacturer = %s\n", tech_pvt->device_mfg);
+			stream->write_function(stream, "device_model = %s\n", tech_pvt->device_model);
+			stream->write_function(stream, "device_firmware = %s\n", tech_pvt->device_firmware);
+			stream->write_function(stream, "operator = %s\n", tech_pvt->operator_name);
 			stream->write_function(stream, "imei = %s\n", tech_pvt->imei);
 			stream->write_function(stream, "imsi = %s\n", tech_pvt->imsi);
 			snprintf(value, sizeof(value) - 1, "%d", tech_pvt->controldev_dead);
@@ -2808,8 +2824,15 @@ int dump_event_full(private_t *tech_pvt, int is_alarm, int alarm_code, const cha
 		}
 		snprintf(value, sizeof(value) - 1, "%d", tech_pvt->got_signal);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "got_signal", value);
+		snprintf(value, sizeof(value) - 1, "%d", tech_pvt->signal_strength);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "signal_strength", value);
 		snprintf(value, sizeof(value) - 1, "%d", tech_pvt->running);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "running", value);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "subscriber_number", tech_pvt->subscriber_number);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "device_manufacturer", tech_pvt->device_mfg);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "device_model", tech_pvt->device_model);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "device_firmware", tech_pvt->device_firmware);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "operator", tech_pvt->operator_name);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "imei", tech_pvt->imei);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "imsi", tech_pvt->imsi);
 		snprintf(value, sizeof(value) - 1, "%d", tech_pvt->controldev_dead);

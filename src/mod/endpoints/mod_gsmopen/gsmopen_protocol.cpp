@@ -330,15 +330,27 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 	}
 
 	/* phone manufacturer */
+	tech_pvt->requesting_device_mfg = 1;
 	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CGMI");
+	tech_pvt->requesting_device_mfg = 0;
 	if (res) {
 		DEBUGA_GSMOPEN("AT+CGMI failed\n", GSMOPEN_P_LOG);
 	}
 
 	/* phone model */
+	tech_pvt->requesting_device_model = 1;
 	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CGMM");
+	tech_pvt->requesting_device_model = 0;
 	if (res) {
 		DEBUGA_GSMOPEN("AT+CGMM failed\n", GSMOPEN_P_LOG);
+	}
+
+	/* phone firmware */
+	tech_pvt->requesting_device_firmware = 1;
+	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CGMR");
+	tech_pvt->requesting_device_firmware = 0;
+	if (res) {
+		DEBUGA_GSMOPEN("AT+CGMR failed\n", GSMOPEN_P_LOG);
 	}
 
 	/* signal network registration with a +CREG unsolicited msg */
@@ -358,6 +370,23 @@ int gsmopen_serial_config_AT(private_t *tech_pvt)
 	if (res) {
 		DEBUGA_GSMOPEN("AT+CSQ failed\n", GSMOPEN_P_LOG);
 	}
+
+	/* operator name */
+	tech_pvt->requesting_operator_name = 1;
+	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+COPS?");
+	tech_pvt->requesting_operator_name = 0;
+	if (res) {
+		DEBUGA_GSMOPEN("AT+COPS? failed\n", GSMOPEN_P_LOG);
+	}
+
+	/* subscriber number */
+	tech_pvt->requesting_subscriber_number = 1;
+	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+CNUM");
+	tech_pvt->requesting_subscriber_number = 0;
+	if (res) {
+		DEBUGA_GSMOPEN("AT+CNUM failed, continue\n", GSMOPEN_P_LOG);
+	}
+
 	/* IMEI */
 	tech_pvt->requesting_imei = 1;
 	res = gsmopen_serial_write_AT_ack(tech_pvt, "AT+GSN");
@@ -967,6 +996,12 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 						tech_pvt->got_signal = 2;
 					}
 
+					if (signal_quality == 99) {
+						tech_pvt->signal_strength = 0;
+					} else {
+						tech_pvt->signal_strength = (signal_quality * 2) - 113; /* RSSI [dBm] = reported_value * 2 - 113dB */
+					}
+
 				}
 
 			}
@@ -1003,6 +1038,58 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 						alarm_event(tech_pvt, ALARM_ROAMING_NETWORK_REGISTRATION, "CELLPHONE is registered to a ROAMING network");
 					}
 				}
+
+			}
+
+			if ((strncmp(tech_pvt->line_array.result[i], "+COPS:", 6) == 0)) {
+				int mode, format, rat, err;
+				char oper[128] = "";
+				mode = format = rat = err = 0;
+
+				err = sscanf(&tech_pvt->line_array.result[i][6], "%d,%d,%*[\"]%[^\"]%*[\"],%d", &mode, &format, &oper, &rat);
+				if (err < 3) {
+					DEBUGA_GSMOPEN("|%s| is not formatted as: |+COPS: xx,yy,ssss,nn|\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
+				} else if (option_debug > 1) {
+					DEBUGA_GSMOPEN("|%s| +COPS: : Mode %d, Format %d, Operator %s, Rat %d\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i], mode, format, oper, rat);
+				}
+
+				/* if we are requesting the operator name, copy it over */
+				if (tech_pvt->requesting_operator_name)
+					strncpy(tech_pvt->operator_name, oper, sizeof(tech_pvt->operator_name));
+			}
+
+			if ((strncmp(tech_pvt->line_array.result[i], "+CNUM:", 6) == 0) || (strncmp(tech_pvt->line_array.result[i], "ERROR+CNUM:", 11) == 0)) {
+				int  skip_chars, err, type;
+				char number[128] = "";
+				char *in_ptr, *out_ptr;
+
+				skip_chars = err = type = 0;
+				in_ptr = out_ptr = number;
+
+				/* +CNUM or ERROR+CNUM ? */
+				if ((strncmp(tech_pvt->line_array.result[i], "+CNUM:", 6) == 0))
+					skip_chars = 7;
+				else
+					skip_chars = 12;
+
+				err = sscanf(&tech_pvt->line_array.result[i][skip_chars], "%*[^,],%[^,],%d", &number, &type);
+
+				/* Remove any double quotes */
+				while (*in_ptr) {
+					if (*in_ptr != '\"') *out_ptr++ = *in_ptr;
+					in_ptr++;
+				}
+				*out_ptr = '\0';
+
+				if (err < 2) {
+					DEBUGA_GSMOPEN("|%s| is not formatted as: |+CNUM: \"Name\", \"+39025458068\", 145|\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i]);
+				} else if (option_debug) {
+					DEBUGA_GSMOPEN("|%s| +CNUM: Subscriber number = %s, Type = %d\n", GSMOPEN_P_LOG, tech_pvt->line_array.result[i], number, type);
+				}
+				
+				/* Copy only the first number listed if there are more then one */
+				if (tech_pvt->requesting_subscriber_number && !strlen(tech_pvt->subscriber_number))
+					strncpy(tech_pvt->subscriber_number, number, sizeof(tech_pvt->subscriber_number));
 
 			}
 
@@ -1611,10 +1698,30 @@ int gsmopen_serial_read_AT(private_t *tech_pvt, int look_for_ack, int timeout_us
 				}
 			}
 
-			/* if we are requesting IMSI, put the line into the imei buffer if the line is not "OK" or "ERROR" */
+			/* if we are requesting IMSI, put the line into the imsi buffer if the line is not "OK" or "ERROR" */
 			if (tech_pvt->requesting_imsi && at_ack == -1) {
 				if (strlen(tech_pvt->line_array.result[i])) {	/* we are reading the IMSI */
 					strncpy(tech_pvt->imsi, tech_pvt->line_array.result[i], sizeof(tech_pvt->imsi));
+				}
+			}
+
+			/* if we are requesting device manufacturer, model or firmware version,
+			 * put the line into the buffer if the line is not "OK" or "ERROR" */
+			if (tech_pvt->requesting_device_mfg && at_ack == -1) {
+				if (strlen(tech_pvt->line_array.result[i])) {
+					strncpy(tech_pvt->device_mfg, tech_pvt->line_array.result[i], sizeof(tech_pvt->device_mfg));
+				}
+			}
+
+			if (tech_pvt->requesting_device_model && at_ack == -1) {
+				if (strlen(tech_pvt->line_array.result[i])) {
+					strncpy(tech_pvt->device_model, tech_pvt->line_array.result[i], sizeof(tech_pvt->device_model));
+				}
+			}
+
+			if (tech_pvt->requesting_device_firmware && at_ack == -1) {
+				if (strlen(tech_pvt->line_array.result[i])) {
+					strncpy(tech_pvt->device_firmware, tech_pvt->line_array.result[i], sizeof(tech_pvt->device_firmware));
 				}
 			}
 
