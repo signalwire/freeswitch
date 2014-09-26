@@ -11,6 +11,11 @@
 #define ms_sleep(x) Sleep( x );
 #endif				
 
+#ifdef _MSC_VER
+/* warning C4706: assignment within conditional expression*/
+#pragma warning(disable: 4706)
+#endif
+
 #define WS_BLOCK 1
 #define WS_NOBLOCK 0
 
