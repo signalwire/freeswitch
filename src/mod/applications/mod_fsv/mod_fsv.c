@@ -577,6 +577,7 @@ SWITCH_STANDARD_APP(play_yuv_function)
 	switch_image_t *img = NULL;
 	switch_byte_t *yuv = NULL;
 	switch_time_t last_video_ts = 0;
+	uint32_t timestamp = 0;
 	int argc;
 	char *argv[3] = { 0 };
 	char *mydata = switch_core_session_strdup(session, data);
@@ -679,14 +680,16 @@ SWITCH_STANDARD_APP(play_yuv_function)
 			char ts_str[33];
 			long delta;
 
+			if (last_video_ts == 0) last_video_ts = now;
+
 			delta = now - last_video_ts;
 
 			if (delta > 0) {
-				frame->timestamp += delta * 90;
+				timestamp += delta * 90;
 				last_video_ts = now;
 			}
 
-			sprintf(ts_str, "%u", (uint32_t)frame->timestamp);
+			sprintf(ts_str, "%u", timestamp);
 			text(img->planes[SWITCH_PLANE_PACKED], width, 20, 20, ts_str);
 			switch_core_codec_encode_video(codec, img, vid_frame.data, &encoded_data_len, &flag);
 
@@ -696,6 +699,7 @@ SWITCH_STANDARD_APP(play_yuv_function)
 				frame->datalen = encoded_data_len;
 				frame->packetlen = frame->datalen + 12;
 				frame->m = flag & SFF_MARKER ? 1 : 0;
+				frame->timestamp = timestamp;
 
 				if (1) { // we can remove this when ts and marker full passed in core
 					/* set correct mark and ts */
@@ -704,7 +708,7 @@ SWITCH_STANDARD_APP(play_yuv_function)
 					memset(rtp, 0, 12);
 					rtp->version = 2;
 					rtp->m = frame->m;
-					rtp->ts = htonl(frame->timestamp);
+					rtp->ts = htonl(timestamp);
 					rtp->ssrc = (uint32_t) ((intptr_t) rtp + (uint32_t) switch_epoch_time_now(NULL));
 					// rtp->ssrc = 0x11223344;
 				}
