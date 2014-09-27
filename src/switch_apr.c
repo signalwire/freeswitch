@@ -663,6 +663,11 @@ SWITCH_DECLARE(switch_status_t) switch_os_sock_get(switch_os_socket_t *thesock, 
 	return apr_os_sock_get(thesock, sock);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_os_sock_put(switch_socket_t **sock, switch_os_socket_t *thesock, switch_memory_pool_t *pool)
+{
+	return apr_os_sock_put(sock, thesock, pool);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_socket_addr_get(switch_sockaddr_t ** sa, switch_bool_t remote, switch_socket_t *sock)
 {
 	return apr_socket_addr_get(sa, (apr_interface_e) remote, sock);
