@@ -653,11 +653,6 @@ SWITCH_DECLARE(switch_interval_time_t) switch_interval_time_from_timeval(struct 
 
 /* socket stubs */
 
-SWITCH_DECLARE(switch_status_t) switch_os_sock_put(switch_socket_t **sock, switch_os_socket_t *thesock, switch_memory_pool_t *pool)
-{
-	return apr_os_sock_put(sock, thesock, pool);
-}
-
 SWITCH_DECLARE(switch_status_t) switch_os_sock_get(switch_os_socket_t *thesock, switch_socket_t *sock)
 {
 	return apr_os_sock_get(thesock, sock);
