@@ -1705,7 +1705,6 @@ fi
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/mrcp_profiles
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/sip_profiles
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/sip_profiles/external
-%dir %attr(0750, freeswitch, daemon) %{sysconfdir}/sip_profiles/internal
 %dir %attr(0750, freeswitch, daemon) %{sysconfdir}/skinny_profiles
 #
 #################################### Grammar Directory Structure #####################################################
