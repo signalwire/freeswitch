@@ -72,6 +72,7 @@ typedef struct wsh_s {
 	ws_socket_t sock;
 	char buffer[65536];
 	char wbuffer[65536];
+	char *uri;
 	size_t buflen;
 	ssize_t datalen;
 	ssize_t wdatalen;

@@ -1,11 +1,6 @@
 #include "ws.h"
 #include <pthread.h>
 
-#ifdef _MSC_VER
-/* warning C4706: assignment within conditional expression*/
-#pragma warning(disable: 4706)
-#endif
-
 #ifndef _MSC_VER
 #include <fcntl.h>
 #endif
@@ -15,6 +10,11 @@
 #else
 #define ms_sleep(x) Sleep( x );
 #endif				
+
+#ifdef _MSC_VER
+/* warning C4706: assignment within conditional expression*/
+#pragma warning(disable: 4706)
+#endif
 
 #define WS_BLOCK 1
 #define WS_NOBLOCK 0
@@ -246,7 +246,6 @@ int ws_handshake(wsh_t *wsh)
 	char version[5] = "";
 	char proto[256] = "";
 	char proto_buf[384] = "";
-	char uri[256] = "";
 	char input[256] = "";
 	unsigned char output[SHA1_HASH_SIZE] = "";
 	char b64[256] = "";
@@ -269,7 +268,7 @@ int ws_handshake(wsh_t *wsh)
 		goto err;
 	}
 
-	*(wsh->buffer+bytes) = '\0';
+	*(wsh->buffer + wsh->datalen) = '\0';
 	
 	if (strncasecmp(wsh->buffer, "GET ", 4)) {
 		goto err;
@@ -281,9 +280,11 @@ int ws_handshake(wsh_t *wsh)
 	if (!e) {
 		goto err;
 	}
-	
-	strncpy(uri, p, e-p);
-	
+
+	wsh->uri = malloc((e-p) + 1);
+	strncpy(wsh->uri, p, e-p);
+	*(wsh->uri + (e-p)) = '\0';
+
 	cheezy_get_var(wsh->buffer, "Sec-WebSocket-Key", key, sizeof(key));
 	cheezy_get_var(wsh->buffer, "Sec-WebSocket-Version", version, sizeof(version));
 	cheezy_get_var(wsh->buffer, "Sec-WebSocket-Protocol", proto, sizeof(proto));
@@ -317,15 +318,15 @@ int ws_handshake(wsh_t *wsh)
 
  err:
 
-	snprintf(respond, sizeof(respond), "HTTP/1.1 400 Bad Request\r\n"
-			 "Sec-WebSocket-Version: 13\r\n\r\n");
+	if (!wsh->stay_open) {
 
-	//printf("ERR:\n%s\n", respond);
+		snprintf(respond, sizeof(respond), "HTTP/1.1 400 Bad Request\r\n"
+				 "Sec-WebSocket-Version: 13\r\n\r\n");
 
+		ws_raw_write(wsh, respond, strlen(respond));
 
-	ws_raw_write(wsh, respond, strlen(respond));
-
-	ws_close(wsh, WS_NONE);
+		ws_close(wsh, WS_NONE);
+	}
 
 	return -1;
 
@@ -336,19 +337,22 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block)
 	ssize_t r;
 	int err = 0;
 
+	wsh->x++;
+	if (wsh->x > 250) ms_sleep(1);
+
 	if (wsh->ssl) {
 		do {
 			r = SSL_read(wsh->ssl, data, bytes);
 
-			ms_sleep(10);
-
 			if (r == -1) {
 				err = SSL_get_error(wsh->ssl, r);
-
+				
 				if (!block && err == SSL_ERROR_WANT_READ) {
 					r = -2;
 					goto end;
 				}
+
+				if (block) ms_sleep(10);
 			}
 
 		} while (r == -1 && err == SSL_ERROR_WANT_READ && wsh->x < 100);
@@ -358,10 +362,17 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block)
 
 	do {
 		r = recv(wsh->sock, data, bytes, 0);
-		ms_sleep(10);
+		if (r == -1) {
+			if (!block && xp_is_blocking(xp_errno())) {
+				r = -2;
+				goto end;
+			}
+
+			if (block) ms_sleep(10);
+		}
 	} while (r == -1 && xp_is_blocking(xp_errno()) && wsh->x < 100);
 	
-	if (wsh->x >= 100) {
+	if (wsh->x >= 1000 || (block && wsh->x >= 100)) {
 		r = -1;
 	}
 
@@ -543,7 +554,7 @@ static int establish_logical_layer(wsh_t *wsh)
 }
 
 
-int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock, int block)
+int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock, int block, int stay_open)
 {
 	memset(wsh, 0, sizeof(*wsh));
 
@@ -551,6 +562,7 @@ int ws_init(wsh_t *wsh, ws_socket_t sock, SSL_CTX *ssl_ctx, int close_sock, int 
 	wsh->block = block;
 	wsh->sanity = 5000;
 	wsh->ssl_ctx = ssl_ctx;
+	wsh->stay_open = stay_open;
 
 	if (!ssl_ctx) {
 		ssl_ctx = ws_globals.ssl_ctx;
@@ -619,6 +631,11 @@ ssize_t ws_close(wsh_t *wsh, int16_t reason)
 
 	wsh->down = 1;
 	
+	if (wsh->uri) {
+		free(wsh->uri);
+		wsh->uri = NULL;
+	}
+
 	if (reason && wsh->sock != ws_sock_invalid) {
 		uint16_t *u16;
 		uint8_t fr[4] = {WSOC_CLOSE | 0x80, 2, 0};

@@ -1410,7 +1410,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					switch_time_t tdiff = diff;
 					
 					while(tdiff > 1) {
-						switch_buffer_write(bp->raw_read_buffer, fill_data, len);
+						switch_buffer_write(bp->raw_write_buffer, fill_data, len);
 						tdiff--;
 					}
 				}

@@ -11,6 +11,11 @@
 #define ms_sleep(x) Sleep( x );
 #endif				
 
+#ifdef _MSC_VER
+/* warning C4706: assignment within conditional expression*/
+#pragma warning(disable: 4706)
+#endif
+
 #define WS_BLOCK 1
 #define WS_NOBLOCK 0
 
@@ -241,7 +246,6 @@ int ws_handshake(wsh_t *wsh)
 	char version[5] = "";
 	char proto[256] = "";
 	char proto_buf[384] = "";
-	char uri[256] = "";
 	char input[256] = "";
 	unsigned char output[SHA1_HASH_SIZE] = "";
 	char b64[256] = "";
@@ -276,9 +280,11 @@ int ws_handshake(wsh_t *wsh)
 	if (!e) {
 		goto err;
 	}
-	
-	strncpy(uri, p, e-p);
-	
+
+	wsh->uri = malloc((e-p) + 1);
+	strncpy(wsh->uri, p, e-p);
+	*(wsh->uri + (e-p)) = '\0';
+
 	cheezy_get_var(wsh->buffer, "Sec-WebSocket-Key", key, sizeof(key));
 	cheezy_get_var(wsh->buffer, "Sec-WebSocket-Version", version, sizeof(version));
 	cheezy_get_var(wsh->buffer, "Sec-WebSocket-Protocol", proto, sizeof(proto));
@@ -331,19 +337,22 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block)
 	ssize_t r;
 	int err = 0;
 
+	wsh->x++;
+	if (wsh->x > 250) ms_sleep(1);
+
 	if (wsh->ssl) {
 		do {
 			r = SSL_read(wsh->ssl, data, bytes);
 
-			ms_sleep(10);
-
 			if (r == -1) {
 				err = SSL_get_error(wsh->ssl, r);
-
+				
 				if (!block && err == SSL_ERROR_WANT_READ) {
 					r = -2;
 					goto end;
 				}
+
+				if (block) ms_sleep(10);
 			}
 
 		} while (r == -1 && err == SSL_ERROR_WANT_READ && wsh->x < 100);
@@ -353,10 +362,17 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block)
 
 	do {
 		r = recv(wsh->sock, data, bytes, 0);
-		ms_sleep(10);
+		if (r == -1) {
+			if (!block && xp_is_blocking(xp_errno())) {
+				r = -2;
+				goto end;
+			}
+
+			if (block) ms_sleep(10);
+		}
 	} while (r == -1 && xp_is_blocking(xp_errno()) && wsh->x < 100);
 	
-	if (wsh->x >= 100) {
+	if (wsh->x >= 1000 || (block && wsh->x >= 100)) {
 		r = -1;
 	}
 
@@ -615,6 +631,11 @@ ssize_t ws_close(wsh_t *wsh, int16_t reason)
 
 	wsh->down = 1;
 	
+	if (wsh->uri) {
+		free(wsh->uri);
+		wsh->uri = NULL;
+	}
+
 	if (reason && wsh->sock != ws_sock_invalid) {
 		uint16_t *u16;
 		uint8_t fr[4] = {WSOC_CLOSE | 0x80, 2, 0};

@@ -36,6 +36,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_graylog2_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_graylog2_shutdown);
 SWITCH_MODULE_DEFINITION(mod_graylog2, mod_graylog2_load, mod_graylog2_shutdown, NULL);
 
+#define MAX_GELF_LOG_LEN 8192
+#define UNCOMPRESSED_MAGIC "\037\074"
+#define UNCOMPRESSED_MAGIC_LEN 2
+
 static struct {
 	/** memory pool for this module */
 	switch_memory_pool_t *pool;
@@ -53,6 +57,8 @@ static struct {
 	switch_queue_t *log_queue;
 	/** Fields to automatically add to session logs */
 	switch_event_t *session_fields;
+	/** If true, byte header for uncompressed GELF is sent.  Might be required if using logstash */
+	int send_uncompressed_header;
 } globals;
 
 /**
@@ -227,10 +233,19 @@ static void *SWITCH_THREAD_FUNC deliver_graylog2_thread(switch_thread_t *thread,
 			if (switch_queue_pop(globals.log_queue, (void *)&log) == SWITCH_STATUS_SUCCESS) {
 				if (!zstr(log)) {
 					switch_size_t len = strlen(log);
-					if (len <= 8192) {
-						switch_socket_send_nonblock(graylog2_sock, (void *)log, &len);
+					switch_size_t max_len = globals.send_uncompressed_header ? MAX_GELF_LOG_LEN - UNCOMPRESSED_MAGIC_LEN : MAX_GELF_LOG_LEN;
+					if (len <= max_len) {
+						if (globals.send_uncompressed_header) {
+							char buf[MAX_GELF_LOG_LEN];
+							memcpy(buf, UNCOMPRESSED_MAGIC, UNCOMPRESSED_MAGIC_LEN);
+							memcpy(buf + UNCOMPRESSED_MAGIC_LEN, log, len);
+							len += UNCOMPRESSED_MAGIC_LEN;
+							switch_socket_send_nonblock(graylog2_sock, (void *)buf, &len);
+						} else {
+							switch_socket_send_nonblock(graylog2_sock, (void *)log, &len);
+						}
 					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Skipping log with length > 8192 bytes\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Skipping large log\n");
 					}
 				}
 				switch_safe_free(log);
@@ -313,6 +328,7 @@ static switch_status_t do_config(void)
 	globals.log_level = SWITCH_LOG_WARNING;
 	globals.server_host = "127.0.0.1";
 	globals.server_port = 12201;
+	globals.send_uncompressed_header = 0;
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		switch_xml_t param;
@@ -353,6 +369,9 @@ static switch_status_t do_config(void)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\"%s\" = \"%s\"\n", name, value); 
 					globals.log_level = log_level;
 				}
+			} else if (!strcasecmp(name, "send-uncompressed-header")) {
+				globals.send_uncompressed_header = switch_true(value);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\"%s\" = \"%s\"\n", name, value); 
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring unknown param: \"%s\"\n", name);
 			}

@@ -236,13 +236,14 @@ static switch_xml_t lua_fetch(const char *section,
 {
 
 	switch_xml_t xml = NULL;
+	char *mycmd = NULL;
 
 	if (!zstr(globals.xml_handler)) {
 		lua_State *L = lua_init();
-		char *mycmd = strdup(globals.xml_handler);
 		const char *str;
 		int error;
 
+		mycmd = strdup(globals.xml_handler);
 		switch_assert(mycmd);
 
 		lua_newtable(L);
@@ -267,7 +268,7 @@ static switch_xml_t lua_fetch(const char *section,
 
 		if((error = lua_parse_and_execute(L, mycmd))){
 		    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "LUA script parse/execute error!\n");
-		    return NULL;
+		    goto end;
 		}
 
 		lua_getglobal(L, "XML_STRING");
@@ -285,8 +286,12 @@ static switch_xml_t lua_fetch(const char *section,
 		}
 
 		lua_uninit(L);
-		free(mycmd);
+
 	}
+
+ end:
+
+	switch_safe_free(mycmd);
 
 	return xml;
 }

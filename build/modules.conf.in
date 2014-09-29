@@ -4,7 +4,7 @@
 #applications/mod_blacklist
 #applications/mod_callcenter
 #applications/mod_cidlookup
-applications/mod_cluechoo
+#applications/mod_cluechoo
 applications/mod_commands
 applications/mod_conference
 #applications/mod_curl

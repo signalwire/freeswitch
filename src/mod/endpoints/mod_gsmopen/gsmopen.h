@@ -445,10 +445,21 @@ struct private_object {
 	int roaming_registered;
 	int not_registered;
 	int got_signal;
+	int signal_strength;
 	char imei[128];
 	int requesting_imei;
 	char imsi[128];
 	int requesting_imsi;
+	char operator_name[128];
+	int requesting_operator_name;
+	char subscriber_number[128];
+	int requesting_subscriber_number;
+	char device_mfg[128];
+	int requesting_device_mfg;
+	char device_model[128];
+	int requesting_device_model;
+	char device_firmware[128];
+	int requesting_device_firmware;
 	int network_creg_not_supported;
 	char creg[128];
 
