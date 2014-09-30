@@ -6567,9 +6567,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				}
 				if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 					other_channel = switch_core_session_get_channel(other_session);
-					if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
-						switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, r_sdp);
-					}
+					switch_channel_pass_sdp(channel, other_channel, r_sdp);
+
 					//switch_channel_pre_answer(other_channel);
 					switch_core_session_queue_indication(other_session, SWITCH_MESSAGE_INDICATE_PROGRESS);
 					switch_core_session_rwunlock(other_session);
@@ -6626,9 +6625,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					other_channel = switch_core_session_get_channel(other_session);
 					//other_tech_pvt = switch_core_session_get_private(other_session);
 
-					if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
-						switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, r_sdp);
-					}
+					switch_channel_pass_sdp(channel, other_channel, r_sdp);
 					switch_core_session_queue_indication(other_session, SWITCH_MESSAGE_INDICATE_ANSWER);
 					switch_core_session_rwunlock(other_session);
 				}
@@ -7114,10 +7111,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 				if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 					other_channel = switch_core_session_get_channel(other_session);
-					if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
-						switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, r_sdp);
-					}
-
+					switch_channel_pass_sdp(channel, other_channel, r_sdp);
+					
 					if (sofia_test_flag(tech_pvt, TFLAG_3PCC) && sofia_test_pflag(profile, PFLAG_3PCC_PROXY)) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "3PCC-PROXY, Got my ACK\n");
 						sofia_set_flag(tech_pvt, TFLAG_3PCC_HAS_ACK);
@@ -7218,10 +7213,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 					if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 						other_channel = switch_core_session_get_channel(other_session);
-						if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
-							switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, r_sdp);
-						}
-
+						switch_channel_pass_sdp(channel, other_channel, r_sdp);
+						
 						//switch_channel_answer(other_channel);
 						switch_core_session_queue_indication(other_session, SWITCH_MESSAGE_INDICATE_ANSWER);
 

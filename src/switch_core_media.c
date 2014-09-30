@@ -8854,6 +8854,220 @@ SWITCH_DECLARE(void) switch_core_media_deinit(void)
 	
 }
 
+static int payload_number(const char *name)
+{
+	if (!strcasecmp(name, "pcmu")) {
+		return 0;
+	}
+
+	if (!strcasecmp(name, "pcma")) {
+		return 8;
+	}
+
+	if (!strcasecmp(name, "gsm")) {
+		return 3;
+	}
+
+	if (!strcasecmp(name, "g722")) {
+		return 9;
+	}
+
+	if (!strcasecmp(name, "g729")) {
+		return 18;
+	}
+
+	if (!strcasecmp(name, "dvi4")) {
+		return 5;
+	}
+
+	if (!strcasecmp(name, "h261")) {
+		return 31;
+	}
+
+	if (!strcasecmp(name, "h263")) {
+		return 34;
+	}
+
+	return -1;
+}
+
+static int find_pt(const char *sdp, const char *name)
+{
+	const char *p;
+	
+	if ((p = switch_stristr(name, sdp))) {
+		if (p < end_of_p(sdp) && *(p+strlen(name)) == '/' && *(p-1) == ' ') {
+			p -= 2;
+
+			while(*p > 47 && *p < 58) {
+				p--;
+			}
+			p++;
+
+			if (p) {
+				return atoi(p);
+			}
+		}
+	}
+
+	return -1;
+}
+
+
+SWITCH_DECLARE(char *) switch_core_media_filter_sdp(const char *sdp_str, const char *cmd, const char *arg)
+{
+	char *new_sdp = NULL;
+	int pt = -1, te = -1;
+	switch_size_t len;
+	const char *i;
+	char *o;
+	int in_m = 0, m_tally = 0, slash = 0;
+	int number = 0, skip = 0;
+	int remove = !strcasecmp(cmd, "remove");
+	int only = !strcasecmp(cmd, "only");
+	char *end = end_of_p((char *)sdp_str);
+	int tst;
+	end++;
+
+	
+	if (remove || only) {
+		pt = payload_number(arg);
+		
+		if (pt < 0) {
+			pt = find_pt(sdp_str, arg);
+		}
+	} else {
+		return NULL;
+	}
+
+	if (only) {
+		te = find_pt(sdp_str, "telephone-event");
+	}
+
+
+	len = strlen(sdp_str);
+	new_sdp = malloc(len);
+	o = new_sdp;
+	i = sdp_str;
+
+
+	while(i && *i && i < end) {
+
+		if (*i == 'm' && *(i+1) == '=') {
+			in_m = 1;
+			m_tally++;
+		}
+
+		if (in_m) {
+			if (*i == '\r' || *i == '\n') {
+				in_m = 0;
+				slash = 0;
+			} else {
+				if (*i == '/') {
+					slash++;
+					while(*i != ' ' && i < end) {
+						*o++ = *i++;
+					}
+					
+					*o++ = *i++;
+				}
+					
+				if (slash && switch_is_leading_number(i)) {
+
+					
+					number = atoi(i);
+						
+					while(i < end && ((*i > 47 && *i < 58) || *i == ' ')) {
+
+						if (remove)  {
+							tst = (number != pt);
+						} else {
+							tst = (number == pt || number == te);
+						}
+
+						if (tst) {
+							*o++ = *i;
+						}
+						i++;
+							
+						if (*i == ' ') {
+							break;
+						}
+							
+					}
+
+					if (remove)  {
+						tst = (number == pt);
+					} else {
+						tst = (number != pt && number != te);
+					}
+
+					if (tst) {
+						skip++;
+					}
+				}
+			}
+		}
+
+		while (i < end && !strncasecmp(i, "a=rtpmap:", 9)) {
+			const char *t = i + 9;
+				
+			number = atoi(t);
+
+			if (remove)  {
+				tst = (number == pt);
+			} else {
+				tst = (number != pt && number != te);
+			}
+
+			while(i < end && (*i != '\r' && *i != '\n')) {
+				if (!tst) *o++ = *i;
+				i++;
+			}
+
+			while(i < end && (*i == '\r' || *i == '\n')) {
+				if (!tst) *o++ = *i;
+				i++;
+			}
+		}
+
+		while (i < end && !strncasecmp(i, "a=fmtp:", 7)) {
+			const char *t = i + 7;
+				
+			number = atoi(t);
+
+			if (remove)  {
+				tst = (number == pt);
+			} else {
+				tst = (number != pt && number != te);
+			}
+
+			while(i < end && (*i != '\r' && *i != '\n')) {
+				if (!tst) *o++ = *i;
+				i++;
+			}
+
+			while(i < end && (*i == '\r' || *i == '\n')) {
+				if (!tst) *o++ = *i;
+				i++;
+			}
+		}
+
+		if (!skip) {
+			*o++ = *i;
+		}
+
+		skip = 0;
+
+		i++;
+	}
+
+	*o = '\0';
+	
+	return new_sdp;
+}
+
+
 
 /* For Emacs:
  * Local Variables:

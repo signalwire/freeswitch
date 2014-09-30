@@ -1231,6 +1231,25 @@ SWITCH_DECLARE(switch_bool_t) switch_is_number(const char *str)
 	return r;
 }
 
+SWITCH_DECLARE(switch_bool_t) switch_is_leading_number(const char *str)
+{
+	const char *p;
+	switch_bool_t r = SWITCH_FALSE;
+
+	if (*str == '-' || *str == '+') {
+		str++;
+	}
+
+	for (p = str; p && *p; p++) {
+		if ((*p == '.' || (*p > 47 && *p < 58))) {
+			r = SWITCH_TRUE;
+			break;
+		}
+	}
+
+	return r;
+}
+
 SWITCH_DECLARE(const char *) switch_stristr(const char *instr, const char *str)
 {
 /*
