@@ -36,7 +36,7 @@ clean:
 has-git:
 	@git --version || PKG_PATH=http://openbsd.mirrors.pair.com/`uname -r`/packages/`machine -a`/ pkg_add -r git
 
-deps: libedit libressl curl
+deps: libedit openssl curl
 	@PKG_PATH=http://openbsd.mirrors.pair.com/`uname -r`/packages/`machine -a`/ pkg_add -r $(PKG)
 
 openssl: openssl-$(OPENSSL)/.done
