@@ -3419,6 +3419,11 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 				codec_ms = ptime;
 
+				if (switch_channel_get_variable(session->channel, "rtp_h_X-Broken-PTIME") && a_engine->read_impl.microseconds_per_packet) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Overwriting ptime from a known broken endpoint with the currently used value of %d ms\n", a_engine->read_impl.microseconds_per_packet / 1000);
+					codec_ms = a_engine->read_impl.microseconds_per_packet / 1000;
+				}
+
 				if (maxptime && (!codec_ms || codec_ms > maxptime)) {
 					codec_ms = maxptime;
 				}
