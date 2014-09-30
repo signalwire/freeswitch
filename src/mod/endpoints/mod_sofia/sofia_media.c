@@ -104,9 +104,9 @@ static void process_mp(switch_core_session_t *session, switch_stream_handle_t *s
 	if ((dval = strchr(dname, ':'))) {
 		*dval++ = '\0';
 		if (*dval == '~') {
-			stream->write_function(stream, "--%s\nContent-Type: %s\nContent-Length: %d\n%s\n", boundary, dname, strlen(dval), dval + 1);
+			stream->write_function(stream, "--%s\r\nContent-Type: %s\r\nContent-Length: %d\r\n%s\r\n", boundary, dname, strlen(dval), dval + 1);
 		} else {
-			stream->write_function(stream, "--%s\nContent-Type: %s\nContent-Length: %d\n\n%s\n", boundary, dname, strlen(dval) + 1, dval);
+			stream->write_function(stream, "--%s\r\nContent-Type: %s\r\nContent-Length: %d\r\n\r\n%s\r\n", boundary, dname, strlen(dval) + 1, dval);
 		}							
 	}
 }
@@ -146,9 +146,9 @@ char *sofia_media_get_multipart(switch_core_session_t *session, const char *pref
 	if (x) {
 		*mp_type = switch_core_session_sprintf(session, "multipart/mixed; boundary=%s", boundary);
 		if (sdp) {
-			stream.write_function(&stream, "--%s\nContent-Type: application/sdp\nContent-Length: %d\n\n%s\n", boundary, strlen(sdp) + 1, sdp);
+			stream.write_function(&stream, "--%s\r\nContent-Type: application/sdp\r\nContent-Length: %d\r\n\r\n%s\r\n", boundary, strlen(sdp) + 1, sdp);
 		}
-		stream.write_function(&stream, "--%s--\n", boundary);
+		stream.write_function(&stream, "--%s--\r\n", boundary);
 	}
 
 	if (!zstr((char *) stream.data)) {
