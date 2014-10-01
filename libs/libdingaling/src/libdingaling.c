@@ -127,6 +127,7 @@ struct ldl_handle {
 	char *password;
 	char *server;
 	char *status_msg;
+	char *priority;
 	uint16_t port;
 	int features;
 	int counter;
@@ -1470,7 +1471,7 @@ static int on_commands(void *user_data, ikspak *pak)
 static int on_result(void *user_data, ikspak *pak)
 {
 	ldl_handle_t *handle = user_data;
-	iks *msg, *ctag;
+	iks *msg, *ctag, *tag;
 
 	if ((msg = iks_make_pres (IKS_SHOW_AVAILABLE, handle->status_msg))) {
 		ctag = iks_insert(msg, "c");
@@ -1479,6 +1480,11 @@ static int on_result(void *user_data, ikspak *pak)
 		iks_insert_attrib(ctag, "ext", "sidebar voice-v1 video-v1");
 		iks_insert_attrib(ctag, "client", "libdingaling");
 		iks_insert_attrib(ctag, "xmlns", "http://jabber.org/protocol/caps");
+
+		if (handle->priority && strlen(handle->priority)) {
+			tag = iks_insert (msg, "priority");
+			iks_insert_cdata(tag, handle->priority, 0);
+		}
 
 		apr_queue_push(handle->queue, msg);
 		msg = NULL;
@@ -3117,6 +3123,7 @@ ldl_status ldl_handle_init(ldl_handle_t **handle,
 						   char *server,
 						   ldl_user_flag_t flags,
 						   char *status_msg,
+						   char *priority,
 						   ldl_loop_callback_t loop_callback,
 						   ldl_session_callback_t session_callback,
 						   ldl_response_callback_t response_callback,
@@ -3160,6 +3167,10 @@ ldl_status ldl_handle_init(ldl_handle_t **handle,
 
 		if (status_msg) {
 			new_handle->status_msg = apr_pstrdup(pool, status_msg);
+		}
+
+		if (priority) {
+			new_handle->priority = apr_pstrdup(pool, priority);
 		}
 
 		if (loop_callback) {
