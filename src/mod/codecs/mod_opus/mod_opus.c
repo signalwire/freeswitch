@@ -276,7 +276,7 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
         
 		context->encoder_object = opus_encoder_create(samplerate,
 													  codec->implementation->number_of_channels,
-													  codec->implementation->number_of_channels == 1 ? OPUS_APPLICATION_VOIP : OPUS_APPLICATION_AUDIO, &err);
+													  OPUS_APPLICATION_VOIP, &err);
         
         if (err != OPUS_OK) {
             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot create encoder: %s\n", opus_strerror(err));
