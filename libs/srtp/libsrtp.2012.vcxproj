@@ -429,6 +429,11 @@
   <ItemGroup>
     <None Include="srtp.def" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\win32\Download OPENSSL.2012.vcxproj">
+      <Project>{d578e676-7ec8-4548-bd8b-845c635f14ad}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
