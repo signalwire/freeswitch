@@ -316,7 +316,7 @@ SOFIAPUBFUN int su_getlocalip(su_sockaddr_t *sin);
  * and which was missing from WINSOCK
  */
 #define su_is_blocking(e) \
-  ((e) == EINPROGRESS || (e) == EAGAIN || (e) == EWOULDBLOCK)
+((e) == EINPROGRESS || (e) == EAGAIN || (e) == EWOULDBLOCK || (e) == EINTR)
 #endif
 
 #if SU_HAVE_WINSOCK

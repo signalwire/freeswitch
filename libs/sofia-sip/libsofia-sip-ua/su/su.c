@@ -511,25 +511,26 @@ issize_t su_vrecv(su_socket_t s, su_iovec_t iov[], isize_t iovlen, int flags,
 
 
 #else
-
+#include <sched.h>
 issize_t su_vsend(su_socket_t s,
 		  su_iovec_t const iov[], isize_t iovlen, int flags,
 		  su_sockaddr_t const *su, socklen_t sulen)
 {
   struct msghdr hdr[1] = {{0}};
-  int rv;
+  issize_t rv;
+  int sanity = 100;
 
   hdr->msg_name = (void *)su;
   hdr->msg_namelen = sulen;
   hdr->msg_iov = (struct iovec *)iov;
   hdr->msg_iovlen = iovlen;
-
+  
   do {
 	  if ((rv = sendmsg(s, hdr, flags)) == -1) {
-		  if (errno == EAGAIN) usleep(1000);
+		  if (errno == EAGAIN) sched_yield();
 	  }
-  } while (rv == -1 && (errno == EAGAIN || errno == EINTR));
-
+  } while (--sanity > 0 && rv == -1 && (errno == EAGAIN || errno == EINTR));
+  
   return rv;
 }
 
@@ -545,9 +546,7 @@ issize_t su_vrecv(su_socket_t s, su_iovec_t iov[], isize_t iovlen, int flags,
   hdr->msg_iov = (struct iovec *)iov;
   hdr->msg_iovlen = iovlen;
 
-  do {
-	  retval = recvmsg(s, hdr, flags);
-  } while (retval == -1 && errno == EINTR);
+  retval = recvmsg(s, hdr, flags);
 
   if (su && sulen)
     *sulen = hdr->msg_namelen;
