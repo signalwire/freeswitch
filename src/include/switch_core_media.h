@@ -276,7 +276,7 @@ SWITCH_DECLARE(switch_rtp_crypto_key_type_t) switch_core_media_crypto_str2type(c
 SWITCH_DECLARE(const char *) switch_core_media_crypto_type2str(switch_rtp_crypto_key_type_t type);
 SWITCH_DECLARE(int) switch_core_media_crypto_keylen(switch_rtp_crypto_key_type_t type);
 SWITCH_DECLARE(char *) switch_core_media_filter_sdp(const char *sdp, const char *cmd, const char *arg);
-
+SWITCH_DECLARE(char *) switch_core_media_process_sdp_filter(const char *sdp, const char *cmd_buf, switch_core_session_t *session);
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

@@ -9067,7 +9067,56 @@ SWITCH_DECLARE(char *) switch_core_media_filter_sdp(const char *sdp_str, const c
 	return new_sdp;
 }
 
+SWITCH_DECLARE(char *) switch_core_media_process_sdp_filter(const char *sdp, const char *cmd_buf, switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char *cmd = switch_core_session_strdup(session, cmd_buf);
+	int argc = 0;
+	char *argv[50];
+	int x = 0;
+	char *use_sdp = (char *) sdp;
+	char *patched_sdp = NULL;
 
+	argc = switch_split(cmd, '|', argv);
+
+	for (x = 0; x < argc; x++) {
+		char *command = argv[x];
+		char *arg = strchr(command, '(');
+
+		if (arg) {
+			char *e = switch_find_end_paren(arg, '(', ')');
+			*arg++ = '\0';
+			if (e) *e = '\0';
+		}
+
+		if (zstr(command) || zstr(arg)) {
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_WARNING, "%s SDP FILTER PARSE ERROR\n", switch_channel_get_name(channel));
+		} else {
+			char *tmp_sdp = NULL;
+
+			if (patched_sdp) {
+				tmp_sdp = switch_core_media_filter_sdp(patched_sdp, command, arg);
+			} else {
+				tmp_sdp = switch_core_media_filter_sdp(use_sdp, command, arg);
+			}
+
+
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, 
+							  "%s Filter command %s(%s)\nFROM:\n==========\n%s\nTO:\n==========\n%s\n\n", 
+							  switch_channel_get_name(channel),
+							  command, arg, patched_sdp ? patched_sdp : use_sdp, tmp_sdp);
+
+
+			if (tmp_sdp) {
+				switch_safe_free(patched_sdp);
+				patched_sdp = use_sdp = tmp_sdp;
+			}
+		}
+	}
+
+	return patched_sdp;
+
+}
 
 /* For Emacs:
  * Local Variables:

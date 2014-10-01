@@ -5222,57 +5222,21 @@ SWITCH_DECLARE(switch_status_t) switch_channel_unbind_device_state_handler(switc
 
 SWITCH_DECLARE(switch_status_t) switch_channel_pass_sdp(switch_channel_t *from_channel, switch_channel_t *to_channel, const char *sdp)
 {
+	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *use_sdp = (char *) sdp;
 	char *patched_sdp = NULL;
-	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (!switch_channel_get_variable(to_channel, SWITCH_B_SDP_VARIABLE)) {
 		const char *var;
 
 		if ((var = switch_channel_get_variable(from_channel, "bypass_media_sdp_filter"))) {
-			char *cmd = switch_core_session_strdup(from_channel->session, var);
-			int argc = 0;
-			char *argv[50];
-			int x = 0;
 
-			argc = switch_split(cmd, '|', argv);
-
-			for (x = 0; x < argc; x++) {
-				char *command = argv[x];
-				char *arg = strchr(command, '(');
-
-				if (arg) {
-					char *e = switch_find_end_paren(arg, '(', ')');
-					*arg++ = '\0';
-					if (e) *e = '\0';
-				}
-
-				if (zstr(command) || zstr(arg)) {
-					switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(from_channel), SWITCH_LOG_WARNING, "%s SDP FILTER PARSE ERROR\n", from_channel->name);
-				} else {
-					char *tmp_sdp = NULL;
-
-					if (patched_sdp) {
-						tmp_sdp = switch_core_media_filter_sdp(patched_sdp, command, arg);
-					} else {
-						tmp_sdp = switch_core_media_filter_sdp(use_sdp, command, arg);
-					}
-
-
-					switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(from_channel), SWITCH_LOG_DEBUG, 
-									  "Filter command %s(%s)\nFROM:\n==========\n%s\nTO:\n==========\n%s\n\n", 
-									  command, arg, patched_sdp ? patched_sdp : use_sdp, tmp_sdp);
-
-
-					if (tmp_sdp) {
-						switch_safe_free(patched_sdp);
-						patched_sdp = use_sdp = tmp_sdp;
-					}
-				}
+			if ((patched_sdp = switch_core_media_process_sdp_filter(use_sdp, var, from_channel->session))) {
+				use_sdp = patched_sdp;
 			}
-		}
 
-		switch_channel_set_variable(to_channel, SWITCH_B_SDP_VARIABLE, use_sdp);
+			switch_channel_set_variable(to_channel, SWITCH_B_SDP_VARIABLE, use_sdp);
+		}
 	}
 
 	switch_safe_free(patched_sdp);

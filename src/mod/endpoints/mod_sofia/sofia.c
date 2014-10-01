@@ -6348,6 +6348,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	int is_dup_sdp = 0;
 	switch_event_t *s_event = NULL;
 	char *p;
+	char *patched_sdp = NULL;
 
 	tl_gets(tags,
 			NUTAG_CALLSTATE_REF(ss_state),
@@ -6371,6 +6372,16 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			r_sdp = tech_pvt->mparams.last_sdp_str;
 		}
 		tech_pvt->mparams.last_sdp_str = NULL;
+	}
+
+	if (r_sdp && (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA))) {
+		const char *var;
+
+		if ((var = switch_channel_get_variable(channel, "bypass_media_sdp_filter"))) {
+			if ((patched_sdp = switch_core_media_process_sdp_filter(r_sdp, var, session))) {
+				r_sdp = patched_sdp;
+			}
+		}
 	}
 
 	if ((channel && (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA))) ||
@@ -7319,6 +7330,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
   done:
 
+	switch_safe_free(patched_sdp);
 
 	if ((enum nua_callstate) ss_state == nua_callstate_ready && channel && session && tech_pvt) {
 		sofia_set_flag(tech_pvt, TFLAG_SIMPLIFY);
