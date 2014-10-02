@@ -6910,8 +6910,10 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 						switch_core_session_message_t *msg;
 						private_object_t *other_tech_pvt;
-
-						if (switch_channel_test_flag(channel, CF_PROXY_MODE) && !is_t38 && (profile->media_options & MEDIA_OPT_MEDIA_ON_HOLD)) {
+						int media_on_hold = switch_true(switch_channel_get_variable_dup(channel, "bypass_media_resume_on_hold", SWITCH_FALSE, -1));
+							
+						if (switch_channel_test_flag(channel, CF_PROXY_MODE) && !is_t38 && 
+							((profile->media_options & MEDIA_OPT_MEDIA_ON_HOLD) || media_on_hold)) {
 							if (switch_stristr("sendonly", r_sdp) || switch_stristr("0.0.0.0", r_sdp)) {
 								tech_pvt->mparams.hold_laps = 1;
 								switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
