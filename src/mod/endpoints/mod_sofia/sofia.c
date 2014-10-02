@@ -6893,6 +6893,13 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				}
 
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+					if ((sofia_test_media_flag(profile, SCMF_DISABLE_HOLD)
+						 || ((var = switch_channel_get_variable(channel, "rtp_disable_hold")) && switch_true(var)))
+						&& ((switch_stristr("sendonly", r_sdp) || switch_stristr("0.0.0.0", r_sdp)))) {
+						nua_respond(tech_pvt->nh, SIP_200_OK, TAG_END());
+						goto done;
+					}
+					
 					if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 						switch_core_session_message_t *msg;
 						private_object_t *other_tech_pvt;
