@@ -8761,7 +8761,7 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 	}
 
 	if ((tmp = switch_channel_get_variable(session->channel, "rtp_use_pt"))) {
-		a_engine->cur_payload_map->pt = a_engine->cur_payload_map->agreed_pt = (switch_payload_t)atoi(tmp);
+		a_engine->cur_payload_map->pt = a_engine->cur_payload_map->agreed_pt = smh->payload_space = (switch_payload_t)atoi(tmp);
 	}
 
 	if ((tmp = switch_channel_get_variable(session->channel, "rtp_audio_recv_pt"))) {
@@ -8769,9 +8769,10 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 	}
 
 	switch_core_media_set_codec(session, 0, smh->mparams->codec_flags);
-
+	
 	a_engine->adv_sdp_ip = smh->mparams->extrtpip = (char *) ip;
 	a_engine->adv_sdp_port = a_engine->local_sdp_port = (switch_port_t)atoi(port);
+	a_engine->codec_negotiated = 1;
 
 	if (!zstr(ip)) {
 		a_engine->local_sdp_ip = switch_core_session_strdup(session, ip);
