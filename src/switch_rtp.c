@@ -1002,7 +1002,11 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 								return;
 							}
 							
-							switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+							if ((rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST)) {
+								switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+							} else {
+								switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+							}
 							
 						}
 					}
@@ -5804,19 +5808,27 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					}
 					rtp_session->auto_adj_used = 1;
 					switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(rtp_session->from_addr), 0, SWITCH_FALSE, &err);
-					switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+					if ((rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST)) {
+						switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+					} else {
+						switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+					}
 					if (rtp_session->ice.ice_user) {
 						rtp_session->ice.addr = rtp_session->remote_addr;
 					}
 				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Correct ip/port confirmed.\n");
-				switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+				if ((rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST)) {
+					switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+				} else {
+					switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+				}
 				rtp_session->auto_adj_used = 0;
 			}
 		}
 
-		if (bytes && rtp_session->autoadj_window) {
+		if (bytes && !(rtp_session->rtp_bugs & RTP_BUG_ALWAYS_AUTO_ADJUST) && rtp_session->autoadj_window) {
 			if (--rtp_session->autoadj_window == 0) {
 				switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 			}
