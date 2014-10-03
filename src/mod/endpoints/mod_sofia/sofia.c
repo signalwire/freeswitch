@@ -6364,37 +6364,36 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		if (!tech_pvt || !tech_pvt->nh) {
 			goto done;
 		}
-	}
-
-	if (tech_pvt) {
+	
 		if ((status > 100 || switch_channel_test_flag(channel, CF_ANSWERED)) && status < 300 && !r_sdp && tech_pvt->mparams.last_sdp_str) {
 			r_sdp = tech_pvt->mparams.last_sdp_str;
 		}
 		tech_pvt->mparams.last_sdp_str = NULL;
-	}
-
-	if (r_sdp && (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA))) {
-		const char *var;
-
-		if ((var = switch_channel_get_variable(channel, "bypass_media_sdp_filter"))) {
-			if ((patched_sdp = switch_core_media_process_sdp_filter(r_sdp, var, session))) {
-				r_sdp = patched_sdp;
+	
+		
+		if (r_sdp && (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA))) {
+			const char *var;
+			
+			if ((var = switch_channel_get_variable(channel, "bypass_media_sdp_filter"))) {
+				if ((patched_sdp = switch_core_media_process_sdp_filter(r_sdp, var, session))) {
+					r_sdp = patched_sdp;
+				}
 			}
 		}
-	}
 
-	if ((channel && (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA))) ||
-		(sofia_test_flag(profile, TFLAG_INB_NOMEDIA) || sofia_test_flag(profile, TFLAG_PROXY_MEDIA))) {
-
-		/* This marr in our code brought to you by people who can't read........ */
-		if (profile->ndlb & SM_NDLB_ALLOW_BAD_IANANAME && r_sdp && (p = (char *) switch_stristr("g729a/8000", r_sdp))) {
-			p += 4;
-			*p++ = '/';
-			*p++ = '8';
-			*p++ = '0';
-			*p++ = '0';
-			*p++ = '0';
-			*p++ = ' ';
+		if ((switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) ||
+			(sofia_test_flag(profile, TFLAG_INB_NOMEDIA) || sofia_test_flag(profile, TFLAG_PROXY_MEDIA))) {
+			
+			/* This marr in our code brought to you by people who can't read........ */
+			if (profile->ndlb & SM_NDLB_ALLOW_BAD_IANANAME && r_sdp && (p = (char *) switch_stristr("g729a/8000", r_sdp))) {
+				p += 4;
+				*p++ = '/';
+				*p++ = '8';
+				*p++ = '0';
+				*p++ = '0';
+				*p++ = '0';
+				*p++ = ' ';
+			}
 		}
 	}
 

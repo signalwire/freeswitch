@@ -8966,7 +8966,7 @@ SWITCH_DECLARE(char *) switch_core_media_filter_sdp(const char *sdp_str, const c
 	}
 
 
-	len = strlen(sdp_str);
+	len = strlen(sdp_str) + 1;
 	new_sdp = malloc(len);
 	o = new_sdp;
 	i = sdp_str;
@@ -9095,7 +9095,6 @@ SWITCH_DECLARE(char *) switch_core_media_process_sdp_filter(const char *sdp, con
 	int argc = 0;
 	char *argv[50];
 	int x = 0;
-	char *use_sdp = (char *) sdp;
 	char *patched_sdp = NULL;
 
 	argc = switch_split(cmd, '|', argv);
@@ -9118,19 +9117,19 @@ SWITCH_DECLARE(char *) switch_core_media_process_sdp_filter(const char *sdp, con
 			if (patched_sdp) {
 				tmp_sdp = switch_core_media_filter_sdp(patched_sdp, command, arg);
 			} else {
-				tmp_sdp = switch_core_media_filter_sdp(use_sdp, command, arg);
+				tmp_sdp = switch_core_media_filter_sdp(sdp, command, arg);
 			}
 
 
 			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, 
 							  "%s Filter command %s(%s)\nFROM:\n==========\n%s\nTO:\n==========\n%s\n\n", 
 							  switch_channel_get_name(channel),
-							  command, arg, patched_sdp ? patched_sdp : use_sdp, tmp_sdp);
-
+							  command, arg, patched_sdp ? patched_sdp : sdp, tmp_sdp);
+			
 
 			if (tmp_sdp) {
 				switch_safe_free(patched_sdp);
-				patched_sdp = use_sdp = tmp_sdp;
+				patched_sdp = tmp_sdp;
 			}
 		}
 	}
