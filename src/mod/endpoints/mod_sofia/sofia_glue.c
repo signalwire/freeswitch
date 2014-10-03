@@ -735,8 +735,12 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	cid_name = caller_profile->caller_id_name;
 	cid_num = caller_profile->caller_id_number;
-	switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_FALSE);
-	switch_core_media_check_video_codecs(tech_pvt->session);
+
+	if (!tech_pvt->sent_invites && !switch_channel_test_flag(channel, CF_ANSWERED)) {
+		switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_FALSE);
+		switch_core_media_check_video_codecs(tech_pvt->session);
+	}
+
 	check_decode(cid_name, session);
 	check_decode(cid_num, session);
 
@@ -1229,6 +1233,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 					  switch_channel_get_name(tech_pvt->channel), switch_version_full_human(), 
 					  tech_pvt->mparams.local_sdp_str ? tech_pvt->mparams.local_sdp_str : "NO SDP PRESENT\n");
 
+	tech_pvt->sent_invites++;
 
 	if (sofia_use_soa(tech_pvt)) {
 		nua_invite(tech_pvt->nh,

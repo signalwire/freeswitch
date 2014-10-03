@@ -1419,14 +1419,13 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_MEDIA:
 		{
 			uint32_t send_invite = 1;
+			const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 
 			switch_channel_clear_flag(channel, CF_PROXY_MODE);
 			switch_core_media_set_local_sdp(session, NULL, SWITCH_FALSE);
 
 			if (!(switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_test_flag(channel, CF_EARLY_MEDIA))) {
 				if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
-					const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
-
 
 					switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
 					if (sofia_media_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
@@ -1439,7 +1438,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			}
 
 			if (!switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
-				switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_FALSE);
+				switch_core_media_set_sdp_codec_string(tech_pvt->session, r_sdp, SDP_TYPE_RESPONSE);
+				switch_channel_set_variable(tech_pvt->channel, "absolute_codec_string", switch_channel_get_variable(tech_pvt->channel, "ep_codec_string"));
+				switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
+
 				if ((status = switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0)) != SWITCH_STATUS_SUCCESS) {
 					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					goto end_lock;
