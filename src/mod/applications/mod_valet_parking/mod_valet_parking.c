@@ -880,7 +880,7 @@ static void pres_event_handler(switch_event_t *event)
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", lot_name);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", token->bridged == 0 ? "early" : "confirmed");
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "confirmed");
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", token->bridged == 0 ? "outbound" : "inbound");
 						switch_event_fire(&event);
 					}
