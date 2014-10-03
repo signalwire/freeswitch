@@ -8761,7 +8761,7 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 	}
 
 	if ((tmp = switch_channel_get_variable(session->channel, "rtp_use_pt"))) {
-		a_engine->cur_payload_map->pt = a_engine->cur_payload_map->agreed_pt = smh->payload_space = (switch_payload_t)atoi(tmp);
+		a_engine->cur_payload_map->pt = a_engine->cur_payload_map->agreed_pt = (switch_payload_t)(smh->payload_space = atoi(tmp));
 	}
 
 	if ((tmp = switch_channel_get_variable(session->channel, "rtp_audio_recv_pt"))) {

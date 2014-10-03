@@ -243,7 +243,7 @@ void stfu_n_debug(stfu_instance_t *i, const char *name)
             debug |= DBG_IN;
         }
 
-        if (debug) i->debug = debug;
+        if (debug) i->debug = (uint8_t)debug;
         else i->debug = 3;
 
         i->name = strdup(name);
@@ -276,7 +276,7 @@ stfu_status_t _stfu_n_resize(stfu_instance_t *i, int32_t qlen, int line)
 
     qlen = i->qlen + incr;
 
-    if (i->max_qlen && qlen > i->max_qlen) {
+    if (i->max_qlen && qlen > (int32_t)i->max_qlen) {
         if (i->qlen < i->max_qlen) {
             qlen = i->max_qlen;
         } else {
@@ -292,7 +292,7 @@ stfu_status_t _stfu_n_resize(stfu_instance_t *i, int32_t qlen, int line)
         stfu_n_resize_aqueue(&i->b_queue, qlen);
         s = stfu_n_resize_aqueue(&i->c_queue, qlen);
 
-        if (qlen > i->most_qlen) {
+        if (qlen > (int32_t)i->most_qlen) {
             i->most_qlen = qlen;
         }
 
