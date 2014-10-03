@@ -7872,6 +7872,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 
 	case SWITCH_MESSAGE_INDICATE_MEDIA:
 		{
+
+			a_engine->codec_negotiated = 0;
+			v_engine->codec_negotiated = 0;
+			
 			if (session->track_duration) {
 				switch_core_session_enable_heartbeat(session, session->track_duration);
 			}
@@ -7885,9 +7889,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 			const char *ip = NULL, *port = NULL;
 
 			switch_channel_set_flag(session->channel, CF_PROXY_MODE);
-
-			a_engine->codec_negotiated = 0;
-			v_engine->codec_negotiated = 0;
 
 			switch_core_media_set_local_sdp(session, NULL, SWITCH_FALSE);
 
@@ -8966,7 +8967,7 @@ SWITCH_DECLARE(char *) switch_core_media_filter_sdp(const char *sdp_str, const c
 	}
 
 
-	len = strlen(sdp_str) + 1;
+	len = strlen(sdp_str) + 2;
 	new_sdp = malloc(len);
 	o = new_sdp;
 	i = sdp_str;
