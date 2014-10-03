@@ -6591,18 +6591,26 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 {
 	switch_api_interface_t *commands_api_interface;
 	switch_json_api_interface_t *json_api_interface;
+	int use_system_commands = 1;
+
+	if (switch_true(switch_core_get_variable("disable_system_api_commands"))) {
+		use_system_commands = 0;
+	}
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	switch_thread_rwlock_create(&bgapi_rwlock, pool);
 	switch_mutex_init(&reload_mutex, SWITCH_MUTEX_NESTED, pool);
 
+	if (use_system_commands) {
+		SWITCH_ADD_API(commands_api_interface, "bg_system", "Execute a system command in the background", bg_system_function, SYSTEM_SYNTAX);
+		SWITCH_ADD_API(commands_api_interface, "system", "Execute a system command", system_function, SYSTEM_SYNTAX);
+	}
 
 	SWITCH_ADD_API(commands_api_interface, "acl", "Compare an ip to an acl list", acl_function, "<ip> <list_name>");
 	SWITCH_ADD_API(commands_api_interface, "alias", "Alias", alias_function, ALIAS_SYNTAX);	SWITCH_ADD_API(commands_api_interface, "coalesce", "Return first nonempty parameter", coalesce_function, COALESCE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "banner", "Return the system banner", banner_function, "");
 	SWITCH_ADD_API(commands_api_interface, "bgapi", "Execute an api command in a thread", bgapi_function, "<command>[ <arg>]");
-	SWITCH_ADD_API(commands_api_interface, "bg_system", "Execute a system command in the background", bg_system_function, SYSTEM_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "break", "uuid_break", break_function, BREAK_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "complete", "Complete", complete_function, COMPLETE_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "cond", "Evaluate a conditional", cond_function, "<expr> ? <true val> : <false val>");
@@ -6663,7 +6671,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "status", "Show current status", status_function, "");
 	SWITCH_ADD_API(commands_api_interface, "strftime_tz", "Display formatted time of timezone", strftime_tz_api_function, "<timezone_name> [<epoch>|][format string]");
 	SWITCH_ADD_API(commands_api_interface, "stun", "Execute STUN lookup", stun_function, "<stun_server>[:port] [<source_ip>[:<source_port]]");
-	SWITCH_ADD_API(commands_api_interface, "system", "Execute a system command", system_function, SYSTEM_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "time_test", "Show time jitter", time_test_function, "<mss> [count]");
 	SWITCH_ADD_API(commands_api_interface, "timer_test", "Exercise FS timer", timer_test_function, TIMER_TEST_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "tone_detect", "Start tone detection on a channel", tone_detect_session_function, TONE_DETECT_SYNTAX);
