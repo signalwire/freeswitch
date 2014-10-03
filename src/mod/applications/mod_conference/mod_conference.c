@@ -413,7 +413,7 @@ typedef struct conference_obj {
 	int comfort_noise_level;
 	int auto_recording;
 	int record_count;
-	int min_recording_participants;
+	uint32_t min_recording_participants;
 	int video_running;
 	int ivr_dtmf_timeout;
 	int ivr_input_timeout;
@@ -4659,7 +4659,8 @@ static void member_add_file_data(conference_member_t *member, int16_t *data, swi
 			if (file_sample_len <= 0) {
 				member->fnode->done++;
 			} else {			/* there is file node data to mix into the frame */
-				int32_t i, sample;
+				uint32_t i;
+				int32_t sample;
 
 				/* Check for output volume adjustments */
 				if (member->volume_out_level) {
@@ -5518,7 +5519,7 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 				switch_core_file_close(&fnode->fh);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Position Data.\n");
 				fnode->al = NULL;
-				channels = conference->channels;
+				channels = (uint8_t)conference->channels;
 				bad_params = 1;
 				goto retry;
 			}

@@ -5178,13 +5178,13 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					} else if (!strcasecmp(var, "tls-ciphers") && !zstr(val)) {
 						profile->tls_ciphers = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "tls-version") && !zstr(val)) {
-						char *ps = val, *pe;
+						char *ps = val, *pe = val;
 						profile->tls_version = 0;
-						while (1) {
+						while (ps && *pe) {
 							int n;
 							pe = strchr(ps,',');
 							if (!pe && !(pe = memchr(ps,0,1024))) break;
-							n = pe-ps;
+							n = (int)(pe-ps);
 							if (n==5 && !strncasecmp(ps, "sslv2", n))
 								profile->tls_version |= SOFIA_TLS_VERSION_SSLv2;
 							if (n==5 && !strncasecmp(ps, "sslv3", n))
@@ -5198,7 +5198,6 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							if (n==7 && !strncasecmp(ps, "tlsv1.2", n))
 								profile->tls_version |= SOFIA_TLS_VERSION_TLSv1_2;
 							ps=pe+1;
-							if (!*pe) break;
 						}
 					} else if (!strcasecmp(var, "tls-timeout")) {
 						int v = atoi(val);
