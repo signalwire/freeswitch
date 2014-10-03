@@ -330,6 +330,9 @@ fs_cli_SOURCES = libs/esl/src/esl.c libs/esl/src/esl_config.c libs/esl/src/esl_e
 fs_cli_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include $(LIBEDIT_CFLAGS)
 fs_cli_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS) -lm $(LIBEDIT_LIBS)
 
+if DISABLE_CC
+fs_cli_CFLAGS += -DDISABLE_CC
+endif
 
 ##
 ## fs_encode ()

@@ -498,6 +498,8 @@ AC_ARG_ENABLE(cpp,
 
 AM_CONDITIONAL([ENABLE_CPP],[test "${enable_cpp}" = "yes"])
 
+AM_CONDITIONAL([DISABLE_CC],[test "${disable_cc}" = "yes"])
+
 AC_ARG_ENABLE([system-xmlrpc-c],
   [AS_HELP_STRING([--enable-system-xmlrpc-c],
     [use system lib for xmlrpc-c])],,

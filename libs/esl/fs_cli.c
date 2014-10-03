@@ -1040,8 +1040,11 @@ static void print_banner(FILE *stream, int color)
 		fprintf(stream, "%s%s%s", ESL_SEQ_DEFAULT_COLOR, ESL_SEQ_FYELLOW, ESL_SEQ_BBLUE);
 	}
 
+#ifndef DISABLE_CC
 	fprintf(stream, "%s%s", banner, use);
-
+#else
+	fprintf(stream, "%s", banner);
+#endif
 
 	if (color) {
 		fprintf(stream, "%s", ESL_SEQ_DEFAULT_COLOR);
