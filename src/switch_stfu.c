@@ -270,7 +270,7 @@ stfu_status_t _stfu_n_resize(stfu_instance_t *i, int32_t qlen, int line)
     stfu_status_t s;
     int32_t incr = qlen;
 
-    if (i->qlen == i->max_qlen) {
+    if (incr > 0 && i->qlen == i->max_qlen) {
         return STFU_IT_FAILED;
     }
 
