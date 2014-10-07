@@ -1402,7 +1402,7 @@ static FIO_READ_FUNCTION(zt_read)
 			} else {
 				ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "Skipping one IO read cycle due to DTMF event processing\n");
 			}
-			continue;
+			break;
 		}
 
 		/* Read error, keep going unless to many errors force us to abort ...*/
