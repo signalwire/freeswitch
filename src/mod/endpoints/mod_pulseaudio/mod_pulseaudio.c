@@ -295,6 +295,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		if (!switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_NO_ANSWER);
 			return SWITCH_STATUS_SUCCESS;
+		} else {
+			switch_channel_mark_answered(channel);
 		}
 	}
 
