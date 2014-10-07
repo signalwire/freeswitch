@@ -2477,11 +2477,11 @@ void event_handler(switch_event_t *event)
 		sql = switch_mprintf("insert into sip_registrations "
 							 "(call_id, sip_user, sip_host, presence_hosts, contact, status, rpid, expires,"
 							 "user_agent, server_user, server_host, profile_name, hostname, network_ip, network_port, sip_username, sip_realm,"
-							 "mwi_user, mwi_host, orig_server_host, orig_hostname) "
-							 "values ('%q','%q','%q','%q','%q','Registered','%q',%ld, '%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q')",
+							 "mwi_user, mwi_host, orig_server_host, orig_hostname, ping_status, ping_count) "
+							 "values ('%q','%q','%q','%q','%q','Registered','%q',%ld, '%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q', '%q', %d)",
 							 call_id, from_user, from_host, presence_hosts, contact_str, rpid, expires, user_agent, to_user, guess_ip4,
 							 profile_name, mod_sofia_globals.hostname, network_ip, network_port, username, realm, mwi_user, mwi_host,
-							 orig_server_host, orig_hostname);
+							 orig_server_host, orig_hostname, "Reachable", 0);
 
 		if (sql) {
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
@@ -2495,6 +2495,33 @@ void event_handler(switch_event_t *event)
 	  end:
 		switch_safe_free(fixed_contact_str);
 		switch_safe_free(dup_mwi_account);
+	} else if ((subclass = switch_event_get_header_nil(event, "orig-event-subclass")) && !strcasecmp(subclass, MY_EVENT_SIP_USER_STATE)) {
+		char *profile_name = switch_event_get_header_nil(event, "orig-profile-name");
+		char *from_user = switch_event_get_header_nil(event, "orig-from-user");
+		char *from_host = switch_event_get_header_nil(event, "orig-from-host");
+		const char *call_id = switch_event_get_header_nil(event, "orig-call-id");
+		char *ping_status = switch_event_get_header_nil(event, "orig-Ping-Status");
+		sofia_profile_t *profile = NULL;
+
+		if (!profile_name || !(profile = sofia_glue_find_profile(profile_name))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile\n");
+		} else {
+			if (!strcmp(ping_status, "REACHABLE")) {
+				sql = switch_mprintf("update sip_registrations set ping_status='%s' where sip_user='%s' and sip_host='%s' and call_id='%q'",
+								 	"Reachable", from_user, from_host, call_id);
+			} else {
+				sql = switch_mprintf("update sip_registrations set ping_status='%s' where sip_user='%s' and sip_host='%s' and call_id='%q'",
+								 	"Unreachable", from_user, from_host, call_id);
+			}
+			if (sql) {
+				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Propagating sip_user_state for %s@%s. Ping-Status: %s\n", from_user, from_host, ping_status);
+			}
+
+			if (profile) {
+				sofia_glue_release_profile(profile);
+			}
+        }
 	}
 }
 
@@ -4014,6 +4041,9 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 
 					profile->user_agent = switch_core_sprintf(profile->pool, "FreeSWITCH-mod_sofia/%s", switch_version_full());
 
+					profile->sip_user_ping_max = 3;
+					profile->sip_user_ping_min = 1;
+
 					profile->name = switch_core_strdup(profile->pool, xprofilename);
 					switch_snprintf(url, sizeof(url), "sofia_reg_%s", xprofilename);
 
@@ -4772,6 +4802,10 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_UNREG_OPTIONS_FAIL);
 						}
+					} else if (!strcasecmp(var, "sip-user-ping-max")) {
+						profile->sip_user_ping_max = atoi(val);
+					} else if (!strcasecmp(var, "sip-user-ping-min")) {
+						profile->sip_user_ping_min = atoi(val);
 					} else if (!strcasecmp(var, "require-secure-rtp")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_SECURE);
@@ -5544,6 +5578,44 @@ const char *sofia_gateway_status_name(sofia_gateway_status_t status)
 	}
 }
 
+const char *sofia_sip_user_status_name(sofia_sip_user_status_t status)
+{
+	static const char *status_names[] = { "UNREACHABLE", "REACHABLE", NULL };
+
+	if (status < SOFIA_REG_INVALID) {
+		return status_names[status];
+	} else {
+		return "INVALID";
+	}
+}
+
+struct cb_helper_sip_user_status {
+	char *status;
+	size_t status_len;
+
+	char *contact;
+	size_t contact_len;
+
+	int count;
+};
+
+int sofia_sip_user_status_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct cb_helper_sip_user_status *cbt = (struct cb_helper_sip_user_status *) pArg;
+
+	if (argc != 3) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "expected 3 arguments from query, instead got %d\n", argc);
+		return 0;
+	}
+
+	switch_copy_string(cbt->status, argv[0], cbt->status_len);
+	cbt->count = (argv[1] && switch_is_number(argv[1])) ? atoi(argv[1]) : 0;
+
+	switch_copy_string(cbt->contact, argv[2], cbt->contact_len);
+
+	return 1;
+}
+
 static void sofia_handle_sip_r_options(switch_core_session_t *session, int status,
 									   char const *phrase,
 									   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
@@ -5607,18 +5679,85 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 		gateway->ping = switch_epoch_time_now(NULL) + gateway->ping_freq;
 		sofia_reg_release_gateway(gateway);
 		gateway->pinging = 0;
-	} else if (sofia_test_pflag(profile, PFLAG_UNREG_OPTIONS_FAIL) && (status != 200 && status != 486) &&
-			   sip && sip->sip_to && sip->sip_call_id && sip->sip_call_id->i_id && strchr(sip->sip_call_id->i_id, '_')) {
-		char *sql;
-		time_t now = switch_epoch_time_now(NULL);
+	} else if (sip && sip->sip_to && sip->sip_call_id && sip->sip_call_id->i_id && strchr(sip->sip_call_id->i_id, '_')) {
 		const char *call_id = strchr(sip->sip_call_id->i_id, '_') + 1;
+		char *sql;
+		struct cb_helper_sip_user_status sip_user_status;
+		char ping_status[255] = "";
+		char sip_contact[1024] = "";
+		int sip_user_ping_min = profile->sip_user_ping_min;
+		int sip_user_ping_max = profile->sip_user_ping_max;
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Expire registration '%s@%s' due to options failure\n",
-						  sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
+		char *sip_user = switch_mprintf("%s@%s", sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
 
-		sql = switch_mprintf("update sip_registrations set expires=%ld where sip_user='%s' and sip_host='%s' and call_id='%q'",
-							 (long) now, sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
-		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+		sip_user_status.status = ping_status;
+		sip_user_status.status_len = sizeof(ping_status);
+		sip_user_status.contact = sip_contact;
+		sip_user_status.contact_len = sizeof(sip_contact);
+		sql = switch_mprintf("select ping_status, ping_count, contact from sip_registrations where sip_user='%s' and sip_host='%s' and call_id='%q'",
+				     sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
+		sofia_glue_execute_sql_callback(profile, profile->ireg_mutex, sql, sofia_sip_user_status_callback, &sip_user_status);
+		switch_safe_free(sql);
+
+		if (status != 200 && status != 486) {
+			sip_user_status.count--;
+			if (sip_user_status.count >= 0) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Ping to sip user '%s@%s' failed with code %d - count %d, state %s\n",
+						  sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, status, sip_user_status.count, sip_user_status.status);
+				sql = switch_mprintf("update sip_registrations set ping_count=%d where sip_user='%s' and sip_host='%s' and call_id='%q'", sip_user_status.count,
+						     sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
+				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+				switch_safe_free(sql);
+			}
+			if (sip_user_status.count < sip_user_ping_min) {
+				if (strcmp(sip_user_status.status, "Unreachable")) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Sip user '%s@%s' is now Unreachable\n",
+							  sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
+					sql = switch_mprintf("update sip_registrations set ping_status='Unreachable' where sip_user='%s' and sip_host='%s' and call_id='%q'",
+							     sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
+					sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+					switch_safe_free(sql);
+					sofia_reg_fire_custom_sip_user_state_event(profile, sip_user, sip_user_status.contact, sip->sip_to->a_url->url_user,
+															   sip->sip_to->a_url->url_host, call_id, SOFIA_REG_REACHABLE, status, phrase);
+
+					if (sofia_test_pflag(profile, PFLAG_UNREG_OPTIONS_FAIL)) {
+						time_t now = switch_epoch_time_now(NULL);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Expire sip user '%s@%s' due to options failure\n",
+								  sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
+
+						sql = switch_mprintf("update sip_registrations set expires=%ld where sip_user='%s' and sip_host='%s' and call_id='%q'",
+								     (long) now, sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
+						sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+						switch_safe_free(sql);
+					}
+				}
+			}
+		} else {
+			sip_user_status.count++;
+			if (sip_user_status.count <= sip_user_ping_max) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Ping to sip user '%s@%s' succeeded with code %d - count %d, state %s\n",
+						  sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, status, sip_user_status.count, sip_user_status.status);
+				sql = switch_mprintf("update sip_registrations set ping_count=%d where sip_user='%s' and sip_host='%s' and call_id='%q'", sip_user_status.count,
+						     sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
+				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+				switch_safe_free(sql);
+			}
+			if (sip_user_status.count >= sip_user_ping_min) {
+				if (strcmp(sip_user_status.status, "Reachable")) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Sip user '%s@%s' is now Reachable\n",
+							  sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
+					sql = switch_mprintf("update sip_registrations set ping_status='Reachable' where sip_user='%s' and sip_host='%s' and call_id='%q'",
+							     sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host, call_id);
+					sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+					switch_safe_free(sql);
+					sofia_reg_fire_custom_sip_user_state_event(profile, sip_user, sip_user_status.contact, sip->sip_to->a_url->url_user,
+															   sip->sip_to->a_url->url_host, call_id, SOFIA_REG_UNREACHABLE, status, phrase);
+				}
+			}
+		}
+
+		switch_safe_free(sip_user);
+
 	}
 }
 

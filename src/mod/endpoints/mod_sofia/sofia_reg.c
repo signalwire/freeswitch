@@ -161,6 +161,26 @@ void sofia_reg_fire_custom_gateway_state_event(sofia_gateway_t *gateway, int sta
 	}
 }
 
+void sofia_reg_fire_custom_sip_user_state_event(sofia_profile_t *profile, const char *sip_user, const char *contact,
+							const char* from_user, const char* from_host, const char *call_id, sofia_sip_user_status_t status, int options_res, const char *phrase)
+{
+	switch_event_t *s_event;
+	if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_SIP_USER_STATE) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "sip_contact", contact);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", profile->name);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "sip_user", sip_user);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-user", from_user);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-host", from_host);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "call-id", call_id);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Ping-Status", sofia_sip_user_status_name(status));
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "Status", "%d", options_res);
+		if (!zstr(phrase)) {
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Phrase", phrase);
+		}
+		switch_event_fire(&s_event);
+	}
+}
+
 void sofia_reg_unregister(sofia_profile_t *profile)
 {
 	sofia_gateway_t *gateway_ptr;
@@ -830,7 +850,7 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 			sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,rpid,"
 							"expires,user_agent,server_user,server_host,profile_name"
  " from sip_registrations where hostname='%s' and " 
- "profile_name='%s'", mod_sofia_globals.hostname, profile->name); 
+ "profile_name='%s' and orig_hostname='%s'", mod_sofia_globals.hostname, profile->name, mod_sofia_globals.hostname); 
 			
 			sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sofia_reg_nat_callback, profile);
 			switch_safe_free(sql);
@@ -847,7 +867,7 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 							"expires,user_agent,server_user,server_host,profile_name"
 							" from sip_registrations where (status like '%%NAT%%' "
  "or contact like '%%fs_nat=yes%%') and hostname='%s' " 
- "and profile_name='%s'", mod_sofia_globals.hostname, profile->name); 
+ "and profile_name='%s' and orig_hostname='%s'", mod_sofia_globals.hostname, profile->name, mod_sofia_globals.hostname); 
 			
 			sofia_glue_execute_sql_callback(profile, profile->dbh_mutex, sql, sofia_reg_nat_callback, profile);
 			switch_safe_free(sql);
@@ -1805,12 +1825,12 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 			sql = switch_mprintf("insert into sip_registrations "
 					"(call_id,sip_user,sip_host,presence_hosts,contact,status,rpid,expires,"
 					"user_agent,server_user,server_host,profile_name,hostname,network_ip,network_port,sip_username,sip_realm,"
-					"mwi_user,mwi_host, orig_server_host, orig_hostname, sub_host) "
-					"values ('%q','%q', '%q','%q','%q','%q', '%q', %ld, '%q', '%q', '%q', '%q', '%q', '%q', '%q','%q','%q','%q','%q','%q','%q','%q')", 
+					"mwi_user,mwi_host, orig_server_host, orig_hostname, sub_host, ping_status, ping_count) "
+					"values ('%q','%q', '%q','%q','%q','%q', '%q', %ld, '%q', '%q', '%q', '%q', '%q', '%q', '%q','%q','%q','%q','%q','%q','%q','%q', '%q', %d)", 
 					call_id, to_user, reg_host, profile->presence_hosts ? profile->presence_hosts : "", 
 					contact_str, reg_desc, rpid, (long) reg_time + (long) exptime + profile->sip_expires_late_margin,
 					agent, from_user, guess_ip4, profile->name, mod_sofia_globals.hostname, network_ip, network_port_c, username, realm, 
-								 mwi_user, mwi_host, guess_ip4, mod_sofia_globals.hostname, sub_host);
+								 mwi_user, mwi_host, guess_ip4, mod_sofia_globals.hostname, sub_host, "Reachable", 0);
 		} else {
 			sql = switch_mprintf("update sip_registrations set call_id='%q',"
 								 "sub_host='%q', network_ip='%q',network_port='%q',"

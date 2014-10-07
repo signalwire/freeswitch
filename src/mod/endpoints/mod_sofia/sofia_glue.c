@@ -1989,6 +1989,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   presence_hosts   VARCHAR(255),\n"
 		"   contact          VARCHAR(1024),\n"
 		"   status           VARCHAR(255),\n"
+		"   ping_status      VARCHAR(255),\n"
+		"   ping_count       INTEGER,\n"
 		"   rpid             VARCHAR(255),\n"
 		"   expires          BIGINT,\n"
 		"   user_agent       VARCHAR(255),\n"
@@ -2121,6 +2123,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"create index sr_expires on sip_registrations (expires)",
 		"create index sr_hostname on sip_registrations (hostname)",
 		"create index sr_status on sip_registrations (status)",
+		"create index sr_ping_status on sip_registrations (ping_status)",
 		"create index sr_network_ip on sip_registrations (network_ip)",
 		"create index sr_network_port on sip_registrations (network_port)",
 		"create index sr_sip_username on sip_registrations (sip_username)",
@@ -2199,6 +2202,9 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 
 
 	switch_cache_db_test_reactive(dbh, test_sql, "drop table sip_registrations", reg_sql);
+
+	switch_cache_db_test_reactive(dbh, "select ping_count from sip_registrations", NULL, "alter table sip_registrations add column ping_count INTEGER default 0");
+	switch_cache_db_test_reactive(dbh, "select ping_status from sip_registrations", NULL, "alter table sip_registrations add column ping_status VARCHAR(255) default \"Reachable\"");
 	
 	test2 = switch_mprintf("%s;%s", test_sql, test_sql);
 			

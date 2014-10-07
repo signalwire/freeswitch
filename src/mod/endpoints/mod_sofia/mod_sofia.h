@@ -84,6 +84,7 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_UNREGISTER "sofia::unregister"
 #define MY_EVENT_EXPIRE "sofia::expire"
 #define MY_EVENT_GATEWAY_STATE "sofia::gateway_state"
+#define MY_EVENT_SIP_USER_STATE "sofia::sip_user_state"
 #define MY_EVENT_NOTIFY_REFER "sofia::notify_refer"
 #define MY_EVENT_REINVITE "sofia::reinvite"
 #define MY_EVENT_GATEWAY_ADD "sofia::gateway_add"
@@ -427,6 +428,13 @@ typedef enum {
 } sofia_gateway_status_t;
 
 typedef enum {
+       SOFIA_REG_REACHABLE,
+       SOFIA_REG_UNREACHABLE,
+
+       SOFIA_REG_INVALID
+} sofia_sip_user_status_t;
+
+typedef enum {
 	SUB_STATE_UNSUBED,
 	SUB_STATE_TRYING,
 	SUB_STATE_SUBSCRIBE,
@@ -603,6 +611,8 @@ struct sofia_profile {
 	char *challenge_realm;
 	char *pnp_prov_url;
 	char *pnp_notify_profile;
+	int sip_user_ping_max;
+	int sip_user_ping_min;
 	sofia_cid_type_t cid_type;
 	switch_core_media_dtmf_t dtmf_type;
 	int auto_restart;
@@ -1125,6 +1135,9 @@ void sofia_profile_destroy(sofia_profile_t *profile);
 switch_status_t sip_dig_function(_In_opt_z_ const char *cmd, _In_opt_ switch_core_session_t *session, _In_ switch_stream_handle_t *stream);
 const char *sofia_gateway_status_name(sofia_gateway_status_t status);
 void sofia_reg_fire_custom_gateway_state_event(sofia_gateway_t *gateway, int status, const char *phrase);
+const char *sofia_sip_user_status_name(sofia_sip_user_status_t status);
+void sofia_reg_fire_custom_sip_user_state_event(sofia_profile_t *profile, const char *sip_user, const char *contact,
+							const char* from_user, const char* from_host, const char *call_id, sofia_sip_user_status_t status, int options_res, const char *phrase);
 uint32_t sofia_reg_reg_count(sofia_profile_t *profile, const char *user, const char *host);
 char *sofia_media_get_multipart(switch_core_session_t *session, const char *prefix, const char *sdp, char **mp_type);
 int sofia_glue_tech_simplify(private_object_t *tech_pvt);
