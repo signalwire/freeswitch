@@ -2096,8 +2096,8 @@ void sofia_event_callback(nua_event_t event,
 
 		
 		if (event == nua_i_invite) {
-			if (sip->sip_min_se && profile->minimum_session_expires) {
-				if (sip->sip_min_se->min_delta < profile->minimum_session_expires) {
+			if (sip->sip_session_expires && profile->minimum_session_expires) {
+				if (sip->sip_session_expires->x_delta < profile->minimum_session_expires) {
 					char buf[64] = "";
 					switch_snprintf(buf, sizeof(buf), "Min-SE: %d", profile->minimum_session_expires);
 					nua_respond(nh, SIP_422_SESSION_TIMER_TOO_SMALL, SIPTAG_HEADER_STR(buf),TAG_END());
