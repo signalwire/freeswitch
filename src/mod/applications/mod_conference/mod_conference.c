@@ -3183,6 +3183,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				}
 				/* Set the conference recording variable for each member */
 				for (omember = conference->members; omember; omember = omember->next) {
+					if (!omember->session) continue;
 					channel = switch_core_session_get_channel(omember->session);
 					switch_channel_set_variable(channel, "conference_recording", conference->record_filename);
 				}
