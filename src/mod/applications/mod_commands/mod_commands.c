@@ -3786,25 +3786,31 @@ SWITCH_STANDARD_API(uuid_send_message_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define INFO_SYNTAX "<uuid>"
+#define INFO_SYNTAX "<uuid> [<mime_type> <mime_subtype>] <message>"
 SWITCH_STANDARD_API(uuid_send_info_function)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	char *mycmd = NULL, *argv[2] = { 0 };
+	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
 
 	if (!zstr(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (argc < 1) {
+	if (argc < 1 || argc == 3) {
 		stream->write_function(stream, "-USAGE: %s\n", INFO_SYNTAX);
 	} else {
 		switch_core_session_message_t msg = { 0 };
 		switch_core_session_t *lsession = NULL;
 
 		msg.message_id = SWITCH_MESSAGE_INDICATE_INFO;
-		msg.string_array_arg[2] = argv[1];
+		if (argc > 3) {
+			msg.string_array_arg[0] = argv[1];
+			msg.string_array_arg[1] = argv[2];
+			msg.string_array_arg[2] = argv[3];
+		} else {
+			msg.string_array_arg[2] = argv[1];
+		}
 		msg.from = __FILE__;
 
 		if ((lsession = switch_core_session_locate(argv[0]))) {
