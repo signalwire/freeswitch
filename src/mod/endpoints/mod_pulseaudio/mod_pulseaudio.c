@@ -111,9 +111,11 @@ static struct {
 	switch_mutex_t *pvt_lock;
 	switch_mutex_t *flag_mutex;
 	int sample_rate;
+	int channels;
 	int codec_ms;
 	pa_simple *audio_stream_in;
 	pa_simple *audio_stream_out;
+	pa_simple *audio_stream_ring;
 
 
 	switch_codec_t read_codec;
@@ -157,7 +159,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
-static switch_status_t engage_device(unsigned int samplerate, int codec_ms);
+static switch_status_t engage_device();
 static switch_status_t load_config(void);
 SWITCH_STANDARD_API(pa_cmd);
 
@@ -178,7 +180,6 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	switch_file_handle_t fh = { 0 };
 	const char *val, *ring_file = NULL, *hold_file = NULL;
 	int16_t abuf[2048];
-	int pulse_error;
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
@@ -209,7 +210,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 
 
-		if (engage_device(tech_pvt->sample_rate, tech_pvt->codec_ms) != SWITCH_STATUS_SUCCESS) {
+		if (engage_device() != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			return SWITCH_STATUS_FALSE;
 		}
@@ -233,7 +234,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 										  globals.read_codec.implementation->actual_samples_per_second,
 										  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) == SWITCH_STATUS_SUCCESS) {
 
-					if (engage_device(fh.samplerate, fh.channels) != SWITCH_STATUS_SUCCESS) {
+					if (engage_device() != SWITCH_STATUS_SUCCESS) {
 						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Ring Error!\n");
 						switch_core_file_close(&fh);
@@ -273,7 +274,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 						if (olen == 0) {
 							break;
 						}
-						pa_simple_write(globals.audio_stream_out, abuf, (int) olen, &pulse_error);
+						pa_simple_write(globals.audio_stream_ring, abuf, (size_t) olen, NULL);
 					}
 				}
 			}
@@ -339,20 +340,24 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 
 static void deactivate_audio_device(void)
 {
-	int pulse_error;
-
 	switch_mutex_lock(globals.device_lock);
 	if (globals.audio_stream_in) {
-		pa_simple_drain(globals.audio_stream_in, &pulse_error);
+		pa_simple_drain(globals.audio_stream_in, NULL);
 		pa_simple_free(globals.audio_stream_in);
 		globals.audio_stream_in = NULL;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Close IN stream\n");
 	}
 	if (globals.audio_stream_out) {
-		pa_simple_drain(globals.audio_stream_out, &pulse_error);
+		pa_simple_drain(globals.audio_stream_out, NULL);
 		pa_simple_free(globals.audio_stream_out);
 		globals.audio_stream_out = NULL;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Close OUT stream\n");
+	}
+	if (globals.audio_stream_ring) {
+		pa_simple_drain(globals.audio_stream_ring, NULL);
+		pa_simple_free(globals.audio_stream_ring);
+		globals.audio_stream_ring = NULL;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Close RING stream\n");
 	}
 	switch_mutex_unlock(globals.device_lock);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DONE\n");
@@ -535,9 +540,8 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
-	int samples = 0;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	int pulse_error;
+	int readbuf = 1024, pulse_error;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -546,6 +550,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	assert(tech_pvt != NULL);
 
 	if (!globals.audio_stream_in) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "IN stream not initialized\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -568,7 +573,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 										   NULL,
 										   sample_rate,
 										   codec_ms,
-										   1,
+										   globals.channels,
 										   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 										   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't load codec?\n");
@@ -630,9 +635,10 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 
 	switch_mutex_lock(globals.device_lock);
-	if ((samples = pa_simple_read(globals.audio_stream_in, globals.read_frame.data, globals.read_codec.implementation->samples_per_packet, &pulse_error)) > 0) {
-		globals.read_frame.datalen = samples * 2;
-		globals.read_frame.samples = samples;
+	pa_simple_read(globals.audio_stream_in, globals.read_frame.data, readbuf, &pulse_error);
+	if (!pulse_error) {
+		globals.read_frame.datalen = readbuf;
+		globals.read_frame.samples = readbuf / 2;
 
 		switch_core_timer_check(&globals.timer, SWITCH_TRUE);
 		globals.read_frame.timestamp = globals.timer.samplecount;
@@ -643,6 +649,8 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		}
 
 		status = SWITCH_STATUS_SUCCESS;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "IN stream generated an error: %s", pa_strerror(pulse_error));
 	}
 	switch_mutex_unlock(globals.device_lock);
 
@@ -654,7 +662,6 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	int pulse_error;
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
@@ -662,6 +669,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	assert(tech_pvt != NULL);
 
 	if (!globals.audio_stream_out) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "OUT stream not initialized\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -673,12 +681,10 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (globals.audio_stream_out) {
-		if (switch_test_flag((&globals), GFLAG_EAR)) {
-			pa_simple_write(globals.audio_stream_out, (short *) frame->data, (int) (frame->datalen / sizeof(SAMPLE)), &pulse_error);
-		}
-		status = SWITCH_STATUS_SUCCESS;
+	if (switch_test_flag((&globals), GFLAG_EAR)) {
+		pa_simple_write(globals.audio_stream_out, (short *) frame->data, (size_t) frame->datalen, NULL);
 	}
+	status = SWITCH_STATUS_SUCCESS;
 
 	return status;
 
@@ -712,6 +718,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Answering channel\n");
 		channel_answer_channel(session);
 		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
@@ -818,7 +825,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_pulseaudio_load)
 	pulseaudio_endpoint_interface->io_routines = &channel_io_routines;
 	pulseaudio_endpoint_interface->state_handler = &channel_event_handlers;
 
-	SWITCH_ADD_API(api_interface, "pulseaudio", "PulseAudio", pa_cmd, "<command> [<args>]");
+	SWITCH_ADD_API(api_interface, "pulse", "PulseAudio", pa_cmd, "<command> [<args>]");
+	switch_console_set_complete("add pulse help");
+	switch_console_set_complete("add pulse call");
+	switch_console_set_complete("add pulse answer");
+	switch_console_set_complete("add pulse hangup");
+	switch_console_set_complete("add pulse list");
+	switch_console_set_complete("add pulse switch");
+	switch_console_set_complete("add pulse dtmf");
+	switch_console_set_complete("add pulse flags");
+	switch_console_set_complete("add pulse mute");
+	switch_console_set_complete("add pulse unmute");
 
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
@@ -888,6 +905,8 @@ static switch_status_t load_config(void)
 				set_global_timer_name(val);
 			} else if (!strcmp(var, "device-name")) {
 				set_global_device_name(val);
+			} else if (!strcmp(var, "channels")) {
+				globals.channels = atoi(val);
 			} else if (!strcmp(var, "sample-rate")) {
 				globals.sample_rate = atoi(val);
 			} else if (!strcmp(var, "codec-ms")) {
@@ -918,6 +937,10 @@ static switch_status_t load_config(void)
 
 	if (!globals.sample_rate) {
 		globals.sample_rate = 8000;
+	}
+
+	if (!globals.channels) {
+		globals.channels = 1;
 	}
 
 	if (!globals.codec_ms) {
@@ -964,18 +987,18 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_pulseaudio_shutdown)
 
 
 
-static switch_status_t engage_device(unsigned int sample_rate, int codec_ms)
+static switch_status_t engage_device()
 {
 	int err = 0;
 	char *device = globals.device_name;
 
-	static const pa_sample_spec ss = {
+	pa_sample_spec ss = {
 		.format = PA_SAMPLE_S16LE,
-		.rate = 44100,
-		.channels = 2
+		.rate = globals.sample_rate,
+		.channels = globals.channels
 	};
 
-	if (globals.audio_stream_in && globals.audio_stream_out) {
+	if (globals.audio_stream_in && globals.audio_stream_out && globals.audio_stream_ring) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -989,24 +1012,21 @@ static switch_status_t engage_device(unsigned int sample_rate, int codec_ms)
 		globals.audio_stream_out = NULL;
 	}
 
-	if (!sample_rate) {
-		sample_rate = globals.sample_rate;
-	}
-
-	if (!codec_ms) {
-		codec_ms = globals.codec_ms;
+	if (globals.audio_stream_ring) {
+		pa_simple_free(globals.audio_stream_ring);
+		globals.audio_stream_ring = NULL;
 	}
 
 	if (switch_core_codec_init(&globals.read_codec,
 							   "L16",
-							   NULL, sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+							   NULL, ss.rate, globals.codec_ms, ss.channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
 		return SWITCH_STATUS_FALSE;
 	} else {
 		if (switch_core_codec_init(&globals.write_codec,
 								   "L16",
 								   NULL,
-								   sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+								   ss.rate, globals.codec_ms, ss.channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
 			switch_core_codec_destroy(&globals.read_codec);
 			return SWITCH_STATUS_FALSE;
@@ -1014,7 +1034,7 @@ static switch_status_t engage_device(unsigned int sample_rate, int codec_ms)
 	}
 
 	if (switch_core_timer_init(&globals.timer,
-							   globals.timer_name, codec_ms, globals.read_codec.implementation->samples_per_packet,
+							   globals.timer_name, globals.codec_ms, globals.read_codec.implementation->samples_per_packet,
 							   module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup timer failed!\n");
 		switch_core_codec_destroy(&globals.read_codec);
@@ -1024,7 +1044,7 @@ static switch_status_t engage_device(unsigned int sample_rate, int codec_ms)
 
 
 
-	globals.read_frame.rate = sample_rate;
+	globals.read_frame.rate = ss.rate;
 	globals.read_frame.codec = &globals.read_codec;
 
 
@@ -1032,18 +1052,28 @@ static switch_status_t engage_device(unsigned int sample_rate, int codec_ms)
 	switch_mutex_lock(globals.device_lock);
 	/* LOCKED ************************************************************************************************** */
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "opening device %s, %d channel, %d sample rate\n", device, ss.channels, ss.rate);
 
-	if (!(globals.audio_stream_out = pa_simple_new(NULL, "FreeSwitch", PA_STREAM_PLAYBACK, NULL, "Call", &ss, NULL, NULL, &err)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot open audio device %s (%s)\n", device, pa_strerror(err));
+	globals.audio_stream_ring = pa_simple_new(NULL, "FreeSwitch", PA_STREAM_PLAYBACK, NULL, "Ring", &ss, NULL, NULL, &err);
+	if (err != 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot open ring device %s (%s)\n", device, pa_strerror(err));
 		goto fail;
 	}
 
-	if (!(globals.audio_stream_in = pa_simple_new(NULL, "FreeSwitch", PA_STREAM_RECORD, NULL, "Call", &ss, NULL, NULL, &err)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot open audio device %s (%s)\n", device, pa_strerror(err));
+	globals.audio_stream_out = pa_simple_new(NULL, "FreeSwitch", PA_STREAM_PLAYBACK, NULL, "Call", &ss, NULL, NULL, &err);
+	if (err != 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot open playback device %s (%s)\n", device, pa_strerror(err));
+		goto fail;
+	}
+
+	globals.audio_stream_in = pa_simple_new(NULL, "FreeSwitch", PA_STREAM_RECORD, NULL, "Call", &ss, NULL, NULL, &err);
+	if (err != 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot open recording device %s (%s)\n", device, pa_strerror(err));
 		goto fail;
 	}
 
 	switch_mutex_unlock(globals.device_lock);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "device open, %d channel, %d sample rate\n", ss.channels, ss.rate);
 	return SWITCH_STATUS_SUCCESS;
 
   fail:
@@ -1058,14 +1088,15 @@ static switch_status_t engage_device(unsigned int sample_rate, int codec_ms)
 		pa_simple_free(globals.audio_stream_out);
 	}
 
+	if (globals.audio_stream_ring) {
+		pa_simple_free(globals.audio_stream_ring);
+	}
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open audio device!\n");
 	switch_core_codec_destroy(&globals.read_codec);
 	switch_core_codec_destroy(&globals.write_codec);
 
 	return SWITCH_STATUS_FALSE;
-
-
-
 }
 
 static switch_status_t dtmf_call(char **argv, int argc, switch_stream_handle_t *stream)
@@ -1419,7 +1450,8 @@ SWITCH_STANDARD_API(pa_cmd)
 		"pulseaudio list\n"
 		"pulseaudio switch [<call_id>|none]\n"
 		"pulseaudio dtmf <digit string>\n"
-		"pulseaudio flags [on|off] [ear] [mouth]\n" "--------------------------------------------------------------------------------\n";
+		"pulseaudio flags [on|off] [ear] [mouth]\n"
+		"--------------------------------------------------------------------------------\n";
 
 	if (stream->param_event) {
 		http = switch_event_get_header(stream->param_event, "http-host");
