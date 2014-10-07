@@ -1439,16 +1439,16 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				}
 			}
 
-			if (!switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
-				switch_core_media_set_sdp_codec_string(tech_pvt->session, r_sdp, SDP_TYPE_RESPONSE);
-				switch_channel_set_variable(tech_pvt->channel, "absolute_codec_string", switch_channel_get_variable(tech_pvt->channel, "ep_codec_string"));
-				switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
 
-				if ((status = switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0)) != SWITCH_STATUS_SUCCESS) {
-					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-					goto end_lock;
-				}
+			switch_core_media_set_sdp_codec_string(tech_pvt->session, r_sdp, SDP_TYPE_RESPONSE);
+			switch_channel_set_variable(tech_pvt->channel, "absolute_codec_string", switch_channel_get_variable(tech_pvt->channel, "ep_codec_string"));
+			switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
+			
+			if ((status = switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0)) != SWITCH_STATUS_SUCCESS) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				goto end_lock;
 			}
+			
 			switch_core_media_gen_local_sdp(session, SDP_TYPE_REQUEST, NULL, 0, NULL, 1);
 
 			if (send_invite) {

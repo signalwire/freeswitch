@@ -6922,7 +6922,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 									if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
 										//const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 
-
+										
 										switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
 										if (sofia_media_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
 											switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
@@ -7025,8 +7025,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					}
 					goto done;
-				} else {
-
+				} else {					
 					if (switch_channel_test_app_flag_key("T38", tech_pvt->channel, CF_APP_T38_NEGOTIATED)) {
 						nua_respond(tech_pvt->nh, SIP_200_OK, TAG_END());
 						goto done;
@@ -7036,6 +7035,12 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 
 					if (tech_pvt->mparams.num_codecs) {
 						match = sofia_media_negotiate_sdp(session, r_sdp, SDP_TYPE_REQUEST);
+					}
+
+
+					if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+						nua_respond(tech_pvt->nh, SIP_200_OK, TAG_END());
+						goto done;
 					}
 
 					if (match && sofia_test_flag(tech_pvt, TFLAG_NOREPLY)) {
@@ -7057,6 +7062,11 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						}
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Processing updated SDP\n");
 					} else {
+						if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+							nua_respond(tech_pvt->nh, SIP_200_OK, TAG_END());
+							goto done;
+						}
+
 						switch_channel_set_flag(tech_pvt->channel, CF_REINVITE);
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Reinvite Codec Error!\n");
 						is_ok = 0;
