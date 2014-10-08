@@ -1214,6 +1214,17 @@ set_modules_non_dfsg () {
   done
 }
 
+unavoid_modules () {
+  local len=${#avoid_mods}
+  for ((i=0; i<len; i++)); do
+    for x in $1; do
+      if test "${avoid_mods[$i]}" = "$x"; then
+        unset avoid_mods[$i]
+      fi
+    done
+  done
+}
+
 conf_merge () {
   local of="$1" if="$2"
   if [ -s $if ]; then
@@ -1228,10 +1239,12 @@ conf_merge () {
 
 codename="sid"
 modulelist_opt=""
-while getopts "c:m:" o; do
+modules_add=""
+while getopts "c:m:p:" o; do
   case "$o" in
     c) codename="$OPTARG" ;;
     m) modulelist_opt="$OPTARG" ;;
+    p) modules_add="$modules_add $OPTARG";;
   esac
 done
 shift $(($OPTIND-1))
@@ -1241,6 +1254,7 @@ echo >&2
 echo "Please wait, this takes a few seconds..." >&2
 
 test -z "$modulelist_opt" || set_modules_${modulelist_opt/-/_}
+test -z "$modules_add" || unavoid_modules "$modules_add"
 
 echo "Adding any new modules to control-modules..." >&2
 parse_dir=control-modules.parse

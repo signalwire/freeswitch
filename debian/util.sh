@@ -209,10 +209,12 @@ create_dsc () {
   {
     set -e
     local OPTIND OPTARG modules_conf="" modules_list="" speed="normal" suite_postfix="" suite_postfix_p=false zl=9
-    while getopts 'f:m:s:u:z:' o "$@"; do
+    local modules_add=""
+    while getopts 'f:m:p:s:u:z:' o "$@"; do
       case "$o" in
         f) modules_conf="$OPTARG";;
         m) modules_list="$OPTARG";;
+        p) modules_add="$modules_add $OPTARG";;
         s) speed="$OPTARG";;
         u) suite_postfix="$OPTARG"; suite_postfix_p=true; ;;
         z) zl="$OPTARG";;
@@ -234,6 +236,11 @@ create_dsc () {
       if [ "$modules_list" = "non-dfsg" ]; then
         bootstrap_args="-mnon-dfsg"
       else set_modules_${modules_list}; fi
+    fi
+    if test -n "$modules_add"; then
+      for x in $modules_add; do
+        bootstrap_args="$bootstrap_args -p${x}"
+      done
     fi
     (cd debian && ./bootstrap.sh -c $distro $bootstrap_args)
     case "$speed" in
@@ -354,7 +361,7 @@ build_all () {
   local OPTIND OPTARG
   local orig_opts="" dsc_opts="" deb_opts="" modlist=""
   local archs="" distros="" orig="" depinst=false par=false
-  while getopts 'a:bc:df:ijkl:m:no:s:tu:v:z:' o "$@"; do
+  while getopts 'a:bc:df:ijkl:m:no:p:s:tu:v:z:' o "$@"; do
     case "$o" in
       a) archs="$archs $OPTARG";;
       b) orig_opts="$orig_opts -b";;
@@ -368,6 +375,7 @@ build_all () {
       m) orig_opts="$orig_opts -m$OPTARG"; dsc_opts="$dsc_opts -m$OPTARG";;
       n) orig_opts="$orig_opts -n";;
       o) orig="$OPTARG";;
+      p) dsc_opts="$dsc_opts -p$OPTARG";;
       s) dsc_opts="$dsc_opts -s$OPTARG";;
       t) deb_opts="$deb_opts -t";;
       u) dsc_opts="$dsc_opts -u$OPTARG";;
@@ -455,6 +463,8 @@ commands:
     -n Nightly build
     -o <orig-file>
       Specify existing .orig.tar.xz file
+    -p <module>
+      Include otherwise avoided module
     -s [ paranoid | reckless ]
       Set FS bootstrap/build -j flags
     -t Use system /etc/apt/sources.list in build environment
@@ -481,6 +491,8 @@ commands:
       Build only modules listed in this file
     -m [ quicktest | non-dfsg ]
       Choose custom list of modules to build
+    -p <module>
+      Include otherwise avoided module
     -s [ paranoid | reckless ]
       Set FS bootstrap/build -j flags
     -u <suite-postfix>
