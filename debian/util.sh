@@ -263,17 +263,31 @@ cd /tmp/buildd/*/debian/..
 EOF
 }
 
+get_sources () {
+  local tgt_distro="$1"
+  while read type path distro components; do
+    test "$type" = deb || continue
+    printf "$type $path $tgt_distro $components\n"
+  done < /etc/apt/sources.list
+}
+
+get_mirrors () {
+  get_sources "$1" | tr '\n' '|' | head -c-1; echo
+}
+
 build_debs () {
   {
     set -e
     local OPTIND OPTARG debug_hook=false hookdir="" cow_build_opts=""
     local keep_pbuilder_config=false
-    while getopts 'Bbdk' o "$@"; do
+    local use_system_sources=false
+    while getopts 'Bbdkt' o "$@"; do
       case "$o" in
         B) cow_build_opts="--debbuildopts '-B'";;
         b) cow_build_opts="--debbuildopts '-b'";;
         d) debug_hook=true;;
         k) keep_pbuilder_config=true;;
+        t) use_system_sources=true;;
       esac
     done
     shift $(($OPTIND-1))
@@ -290,10 +304,22 @@ build_debs () {
       || err "package cowbuilder isn't installed"
     local cow_img=/var/cache/pbuilder/base-$distro-$arch.cow
     cow () {
-      cowbuilder "$@" \
-        --distribution $distro \
-        --architecture $arch \
-        --basepath $cow_img
+      if ! $use_system_sources; then
+        cowbuilder "$@" \
+          --distribution $distro \
+          --architecture $arch \
+          --basepath $cow_img
+      else
+        local keyring="$(mktemp /tmp/keyringXXXXXXXX.asc)"
+        apt-key exportall > "$keyring"
+        cowbuilder "$@" \
+          --distribution $distro \
+          --architecture $arch \
+          --basepath $cow_img \
+          --keyring "$keyring" \
+          --othermirror "$(get_mirrors $distro)"
+        rm -f $keyring
+      fi
     }
     if ! [ -d $cow_img ]; then
       announce "Creating base $distro-$arch image..."
@@ -328,7 +354,7 @@ build_all () {
   local OPTIND OPTARG
   local orig_opts="" dsc_opts="" deb_opts="" modlist=""
   local archs="" distros="" orig="" depinst=false par=false
-  while getopts 'a:bc:df:ijkl:m:no:s:u:v:z:' o "$@"; do
+  while getopts 'a:bc:df:ijkl:m:no:s:tu:v:z:' o "$@"; do
     case "$o" in
       a) archs="$archs $OPTARG";;
       b) orig_opts="$orig_opts -b";;
@@ -343,6 +369,7 @@ build_all () {
       n) orig_opts="$orig_opts -n";;
       o) orig="$OPTARG";;
       s) dsc_opts="$dsc_opts -s$OPTARG";;
+      t) deb_opts="$deb_opts -t";;
       u) dsc_opts="$dsc_opts -u$OPTARG";;
       v) orig_opts="$orig_opts -v$OPTARG";;
       z) orig_opts="$orig_opts -z$OPTARG"; dsc_opts="$dsc_opts -z$OPTARG";;
@@ -430,6 +457,7 @@ commands:
       Specify existing .orig.tar.xz file
     -s [ paranoid | reckless ]
       Set FS bootstrap/build -j flags
+    -t Use system /etc/apt/sources.list in build environment
     -u <suite-postfix>
       Specify a custom suite postfix
     -v Set version
@@ -443,6 +471,7 @@ commands:
     -b Binary-only build
     -d Enable cowbuilder debug hook
     -k Don't override pbuilder image configurations
+    -t Use system /etc/apt/sources.list in build environment
 
   create-dbg-pkgs
 
