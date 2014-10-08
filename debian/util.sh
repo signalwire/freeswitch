@@ -267,11 +267,13 @@ build_debs () {
   {
     set -e
     local OPTIND OPTARG debug_hook=false hookdir="" cow_build_opts=""
-    while getopts 'Bbd' o "$@"; do
+    local keep_pbuilder_config=false
+    while getopts 'Bbdk' o "$@"; do
       case "$o" in
         B) cow_build_opts="--debbuildopts '-B'";;
         b) cow_build_opts="--debbuildopts '-b'";;
         d) debug_hook=true;;
+        k) keep_pbuilder_config=true;;
       esac
     done
     shift $(($OPTIND-1))
@@ -302,7 +304,9 @@ build_debs () {
     fi
     announce "Updating base $distro-$arch image..."
     local x=30
-    while ! cow --update --override-config; do
+    local opts="--override-config"
+    $keep_pbuilder_config && opts=""
+    while ! cow --update $opts; do
       [ $x -lt 1 ] && break; sleep 120; x=$((x-1))
     done
     announce "Building $distro-$arch DEBs from $dsc..."
@@ -324,7 +328,7 @@ build_all () {
   local OPTIND OPTARG
   local orig_opts="" dsc_opts="" deb_opts="" modlist=""
   local archs="" distros="" orig="" depinst=false par=false
-  while getopts 'a:bc:df:ijl:m:no:s:u:v:z:' o "$@"; do
+  while getopts 'a:bc:df:ijkl:m:no:s:u:v:z:' o "$@"; do
     case "$o" in
       a) archs="$archs $OPTARG";;
       b) orig_opts="$orig_opts -b";;
@@ -333,6 +337,7 @@ build_all () {
       f) dsc_opts="$dsc_opts -f$OPTARG";;
       i) depinst=true;;
       j) par=true;;
+      k) deb_opts="$deb_opts -k";;
       l) modlist="$OPTARG";;
       m) orig_opts="$orig_opts -m$OPTARG"; dsc_opts="$dsc_opts -m$OPTARG";;
       n) orig_opts="$orig_opts -n";;
@@ -416,6 +421,7 @@ commands:
       Build only modules listed in this file
     -i Auto install build deps on host system
     -j Build debs in parallel
+    -k Don't override pbuilder image configurations
     -l <modules>
     -m [ quicktest | non-dfsg ]
       Choose custom list of modules to build
@@ -436,6 +442,7 @@ commands:
     -B Binary architecture-dependent build
     -b Binary-only build
     -d Enable cowbuilder debug hook
+    -k Don't override pbuilder image configurations
 
   create-dbg-pkgs
 
