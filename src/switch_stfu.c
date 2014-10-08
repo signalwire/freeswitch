@@ -565,15 +565,6 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
             } else {
                 i->consecutive_drift = 0;
             }
-
-            if (i->consecutive_drift >= 10 && abs(i->ts_drift) >= i->qlen * i->ms_per_packet) {
-                if (stfu_log != null_logger && i->debug) {
-                    stfu_log(STFU_LOG_EMERG, "%s DRIFT %d beyond jitter size %d\n\n", i->name, abs(i->ts_drift), i->qlen * i->ms_per_packet);
-                }
-                i->period_jitter_size = abs(i->ts_drift);
-                stfu_n_auto_size(i, 0);
-                //stfu_n_reset(i);
-            }
         }
         
 
@@ -752,8 +743,9 @@ static int stfu_n_find_any_frame(stfu_instance_t *in, stfu_queue_t *queue, stfu_
 
     if (was_read == queue->real_array_size) {
         if (stfu_log != null_logger && in->debug) {        
-            stfu_log(STFU_LOG_EMERG, "%s OUT QUEUE FULL RESETTING\n", in->name);
-            stfu_n_reset(in);
+            stfu_log(STFU_LOG_EMERG, "%s OUT QUEUE EMPTY, SWAPPING\n", in->name);
+            stfu_n_swap(in);
+            in->ready = 0;
         }
         return 0;
     }
