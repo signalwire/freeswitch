@@ -17,7 +17,7 @@ mod_xml_ldap_la_LDFLAGS  = -avoid-version -module -no-undefined -shared
 
 BUILT_SOURCES=$(LDAPLA) $(LIBLBERLA) $(LIBLUTILA)
 
-MY_DEFAULT_ARGS= --disable-slapd --disable-slurpd --disable-relay --disable-bdb --disable-hdb
+MY_DEFAULT_ARGS= --build=$(build) --host=$(host) --target=$(target) --prefix="$(prefix)" --exec_prefix="$(exec_prefix)" --libdir="$(libdir)" --disable-slapd --disable-slurpd --disable-relay --disable-bdb --disable-hdb
 
 $(LDAP_DIR):
 	$(GETLIB) $(LDAP).tar.gz

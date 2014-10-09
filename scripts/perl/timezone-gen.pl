@@ -55,16 +55,13 @@ foreach my $name ( sort( keys(%name_to_file) ) ) {
     my $data = join( "", <$in> );
     close($in);
 
-    if ( $data !~ /^TZif/o ) {
+    my @strings = $data =~ (m/[ -~]{4,}/g);
+    if ( shift(@strings) !~ /^TZif/o ) {
         $debug && print "Skipped $file\n";
         next;
     }
 
-    my $tmp = $data;
-    $tmp =~ s/\n$//s;
-    $tmp =~ s/.*\n//sgmo;
-
-    $zones{$name} = $tmp;
+    $zones{$name} = pop(@strings);
 }
 
 open( my $out, ">$output" );

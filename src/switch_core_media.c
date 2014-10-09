@@ -859,6 +859,14 @@ SWITCH_DECLARE(void) switch_core_media_parse_rtp_bugs(switch_rtp_bug_flag_t *fla
 	if (switch_stristr("~FLUSH_JB_ON_DTMF", str)) {
 		*flag_pole &= ~RTP_BUG_FLUSH_JB_ON_DTMF;
 	}
+
+	if (switch_stristr("ALWAYS_AUTO_ADJUST", str)) {
+		*flag_pole |= (RTP_BUG_ALWAYS_AUTO_ADJUST | RTP_BUG_ACCEPT_ANY_PACKETS);
+	}
+
+	if (switch_stristr("~ALWAYS_AUTO_ADJUST", str)) {
+		*flag_pole &= ~(RTP_BUG_ALWAYS_AUTO_ADJUST | RTP_BUG_ACCEPT_ANY_PACKETS);
+	}
 }
 
 
@@ -3419,6 +3427,11 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 				codec_ms = ptime;
 
+				if (switch_channel_get_variable(session->channel, "rtp_h_X-Broken-PTIME") && a_engine->read_impl.microseconds_per_packet) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Overwriting ptime from a known broken endpoint with the currently used value of %d ms\n", a_engine->read_impl.microseconds_per_packet / 1000);
+					codec_ms = a_engine->read_impl.microseconds_per_packet / 1000;
+				}
+
 				if (maxptime && (!codec_ms || codec_ms > maxptime)) {
 					codec_ms = maxptime;
 				}
@@ -4060,11 +4073,23 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 
 		if (switch_channel_test_flag(session->channel, CF_PROTO_HOLD)) {
 			const char *val;
+			int media_on_hold_a = switch_true(switch_channel_get_variable_dup(session->channel, "bypass_media_resume_on_hold", SWITCH_FALSE, -1));
+			int media_on_hold_b = switch_true(switch_channel_get_variable_dup(b_channel, "bypass_media_resume_on_hold", SWITCH_FALSE, -1));
+			int bypass_after_hold_a = 0;
+			int bypass_after_hold_b = 0;
+
+			if (media_on_hold_a) {
+				bypass_after_hold_a = switch_true(switch_channel_get_variable_dup(session->channel, "bypass_media_after_hold", SWITCH_FALSE, -1));
+			}
+
+			if (media_on_hold_b) {
+				bypass_after_hold_b = switch_true(switch_channel_get_variable_dup(b_channel, "bypass_media_after_hold", SWITCH_FALSE, -1));
+			}
 
 			switch_yield(250000);
 
 			if (b_channel && (switch_channel_test_flag(session->channel, CF_BYPASS_MEDIA_AFTER_HOLD) ||
-				switch_channel_test_flag(b_channel, CF_BYPASS_MEDIA_AFTER_HOLD))) {
+							  switch_channel_test_flag(b_channel, CF_BYPASS_MEDIA_AFTER_HOLD) || bypass_after_hold_a || bypass_after_hold_b)) {
 				/* try to stay out from media stream */
 				switch_ivr_nomedia(switch_core_session_get_uuid(session), SMF_REBRIDGE);
 			}
@@ -7847,6 +7872,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 
 	case SWITCH_MESSAGE_INDICATE_MEDIA:
 		{
+
+			a_engine->codec_negotiated = 0;
+			v_engine->codec_negotiated = 0;
+			
 			if (session->track_duration) {
 				switch_core_session_enable_heartbeat(session, session->track_duration);
 			}
@@ -7860,9 +7889,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 			const char *ip = NULL, *port = NULL;
 
 			switch_channel_set_flag(session->channel, CF_PROXY_MODE);
-
-			a_engine->codec_negotiated = 0;
-			v_engine->codec_negotiated = 0;
 
 			switch_core_media_set_local_sdp(session, NULL, SWITCH_FALSE);
 
@@ -8736,7 +8762,7 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 	}
 
 	if ((tmp = switch_channel_get_variable(session->channel, "rtp_use_pt"))) {
-		a_engine->cur_payload_map->pt = a_engine->cur_payload_map->agreed_pt = (switch_payload_t)atoi(tmp);
+		a_engine->cur_payload_map->pt = a_engine->cur_payload_map->agreed_pt = (switch_payload_t)(smh->payload_space = atoi(tmp));
 	}
 
 	if ((tmp = switch_channel_get_variable(session->channel, "rtp_audio_recv_pt"))) {
@@ -8744,9 +8770,10 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 	}
 
 	switch_core_media_set_codec(session, 0, smh->mparams->codec_flags);
-
+	
 	a_engine->adv_sdp_ip = smh->mparams->extrtpip = (char *) ip;
 	a_engine->adv_sdp_port = a_engine->local_sdp_port = (switch_port_t)atoi(port);
+	a_engine->codec_negotiated = 1;
 
 	if (!zstr(ip)) {
 		a_engine->local_sdp_ip = switch_core_session_strdup(session, ip);
@@ -8849,6 +8876,268 @@ SWITCH_DECLARE(void) switch_core_media_deinit(void)
 	
 }
 
+static int payload_number(const char *name)
+{
+	if (!strcasecmp(name, "pcmu")) {
+		return 0;
+	}
+
+	if (!strcasecmp(name, "pcma")) {
+		return 8;
+	}
+
+	if (!strcasecmp(name, "gsm")) {
+		return 3;
+	}
+
+	if (!strcasecmp(name, "g722")) {
+		return 9;
+	}
+
+	if (!strcasecmp(name, "g729")) {
+		return 18;
+	}
+
+	if (!strcasecmp(name, "dvi4")) {
+		return 5;
+	}
+
+	if (!strcasecmp(name, "h261")) {
+		return 31;
+	}
+
+	if (!strcasecmp(name, "h263")) {
+		return 34;
+	}
+
+	return -1;
+}
+
+static int find_pt(const char *sdp, const char *name)
+{
+	const char *p;
+	
+	if ((p = switch_stristr(name, sdp))) {
+		if (p < end_of_p(sdp) && *(p+strlen(name)) == '/' && *(p-1) == ' ') {
+			p -= 2;
+
+			while(*p > 47 && *p < 58) {
+				p--;
+			}
+			p++;
+
+			if (p) {
+				return atoi(p);
+			}
+		}
+	}
+
+	return -1;
+}
+
+
+SWITCH_DECLARE(char *) switch_core_media_filter_sdp(const char *sdp_str, const char *cmd, const char *arg)
+{
+	char *new_sdp = NULL;
+	int pt = -1, te = -1;
+	switch_size_t len;
+	const char *i;
+	char *o;
+	int in_m = 0, m_tally = 0, slash = 0;
+	int number = 0, skip = 0;
+	int remove = !strcasecmp(cmd, "remove");
+	int only = !strcasecmp(cmd, "only");
+	char *end = end_of_p((char *)sdp_str);
+	int tst;
+	end++;
+
+	
+	if (remove || only) {
+		pt = payload_number(arg);
+		
+		if (pt < 0) {
+			pt = find_pt(sdp_str, arg);
+		}
+	} else {
+		return NULL;
+	}
+
+	if (only) {
+		te = find_pt(sdp_str, "telephone-event");
+	}
+
+
+	len = strlen(sdp_str) + 2;
+	new_sdp = malloc(len);
+	o = new_sdp;
+	i = sdp_str;
+
+
+	while(i && *i && i < end) {
+
+		if (*i == 'm' && *(i+1) == '=') {
+			in_m = 1;
+			m_tally++;
+		}
+
+		if (in_m) {
+			if (*i == '\r' || *i == '\n') {
+				in_m = 0;
+				slash = 0;
+			} else {
+				if (*i == '/') {
+					slash++;
+					while(*i != ' ' && i < end) {
+						*o++ = *i++;
+					}
+					
+					*o++ = *i++;
+				}
+					
+				if (slash && switch_is_leading_number(i)) {
+
+					
+					number = atoi(i);
+						
+					while(i < end && ((*i > 47 && *i < 58) || *i == ' ')) {
+
+						if (remove)  {
+							tst = (number != pt);
+						} else {
+							tst = (number == pt || number == te);
+						}
+
+						if (tst) {
+							*o++ = *i;
+						}
+						i++;
+							
+						if (*i == ' ') {
+							break;
+						}
+							
+					}
+
+					if (remove)  {
+						tst = (number == pt);
+					} else {
+						tst = (number != pt && number != te);
+					}
+
+					if (tst) {
+						skip++;
+					}
+				}
+			}
+		}
+
+		while (i < end && !strncasecmp(i, "a=rtpmap:", 9)) {
+			const char *t = i + 9;
+				
+			number = atoi(t);
+
+			if (remove)  {
+				tst = (number == pt);
+			} else {
+				tst = (number != pt && number != te);
+			}
+
+			while(i < end && (*i != '\r' && *i != '\n')) {
+				if (!tst) *o++ = *i;
+				i++;
+			}
+
+			while(i < end && (*i == '\r' || *i == '\n')) {
+				if (!tst) *o++ = *i;
+				i++;
+			}
+		}
+
+		while (i < end && !strncasecmp(i, "a=fmtp:", 7)) {
+			const char *t = i + 7;
+				
+			number = atoi(t);
+
+			if (remove)  {
+				tst = (number == pt);
+			} else {
+				tst = (number != pt && number != te);
+			}
+
+			while(i < end && (*i != '\r' && *i != '\n')) {
+				if (!tst) *o++ = *i;
+				i++;
+			}
+
+			while(i < end && (*i == '\r' || *i == '\n')) {
+				if (!tst) *o++ = *i;
+				i++;
+			}
+		}
+
+		if (!skip) {
+			*o++ = *i;
+		}
+
+		skip = 0;
+
+		i++;
+	}
+
+	*o = '\0';
+	
+	return new_sdp;
+}
+
+SWITCH_DECLARE(char *) switch_core_media_process_sdp_filter(const char *sdp, const char *cmd_buf, switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char *cmd = switch_core_session_strdup(session, cmd_buf);
+	int argc = 0;
+	char *argv[50];
+	int x = 0;
+	char *patched_sdp = NULL;
+
+	argc = switch_split(cmd, '|', argv);
+
+	for (x = 0; x < argc; x++) {
+		char *command = argv[x];
+		char *arg = strchr(command, '(');
+
+		if (arg) {
+			char *e = switch_find_end_paren(arg, '(', ')');
+			*arg++ = '\0';
+			if (e) *e = '\0';
+		}
+
+		if (zstr(command) || zstr(arg)) {
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_WARNING, "%s SDP FILTER PARSE ERROR\n", switch_channel_get_name(channel));
+		} else {
+			char *tmp_sdp = NULL;
+
+			if (patched_sdp) {
+				tmp_sdp = switch_core_media_filter_sdp(patched_sdp, command, arg);
+			} else {
+				tmp_sdp = switch_core_media_filter_sdp(sdp, command, arg);
+			}
+
+
+			switch_log_printf(SWITCH_CHANNEL_CHANNEL_LOG(channel), SWITCH_LOG_DEBUG, 
+							  "%s Filter command %s(%s)\nFROM:\n==========\n%s\nTO:\n==========\n%s\n\n", 
+							  switch_channel_get_name(channel),
+							  command, arg, patched_sdp ? patched_sdp : sdp, tmp_sdp);
+			
+
+			if (tmp_sdp) {
+				switch_safe_free(patched_sdp);
+				patched_sdp = tmp_sdp;
+			}
+		}
+	}
+
+	return patched_sdp;
+
+}
 
 /* For Emacs:
  * Local Variables:

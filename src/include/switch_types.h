@@ -839,13 +839,22 @@ typedef enum {
 	
 	/* FLUSH JITTERBUFFER When getting RFC2833 to reduce bleed through */
 
-	RTP_BUG_ACCEPT_ANY_PAYLOAD = (1 << 11)
+	RTP_BUG_ACCEPT_ANY_PAYLOAD = (1 << 11),
 
 	/* 
 	  Make FS accept any payload type instead of dropping and returning CNG frame. Workaround while FS only supports a single payload per rtp session.
 	  This can be used by endpoint modules to detect payload changes and act appropriately (ex: sofia could send a reINVITE with single codec).
 	  This should probably be a flag, but flag enum is already full!
 	*/
+
+
+	RTP_BUG_ALWAYS_AUTO_ADJUST = (1 << 12)
+
+	/*
+	  Leave the auto-adjust behavior enableed permenantly rather than only at appropriate times.  (IMPLICITLY sets RTP_BUG_ACCEPT_ANY_PACKETS)
+
+	 */
+
 
 } switch_rtp_bug_flag_t;
 

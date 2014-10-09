@@ -654,7 +654,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 			}
 
 			if ((val = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE))) {
-				switch_channel_set_variable(peer_channel, SWITCH_B_SDP_VARIABLE, val);
+				switch_channel_pass_sdp(channel, peer_channel, val);
 			}
 
 			if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {

@@ -31,6 +31,7 @@ AM_CPPFLAGS = $(SWITCH_AM_CXXFLAGS) -I$(switch_srcdir)/libs/sofia-sip/libsofia-s
 AM_LDFLAGS  = $(SWITCH_AM_LDFLAGS) $(AM_LIBAPR_LDFLAGS) $(AM_LIBAPU_LDFLAGS)
 
 DEFAULT_SOUNDS=en-us-callie-8000
+MY_DEFAULT_ARGS= --build=$(build) --host=$(host) --target=$(target) --prefix="$(prefix)" --exec_prefix="$(exec_prefix)" --libdir="$(libdir)"
 
 .INTERMEDIATE: -ldl -liconv -lpthread
 
@@ -329,6 +330,9 @@ fs_cli_SOURCES = libs/esl/src/esl.c libs/esl/src/esl_config.c libs/esl/src/esl_e
 fs_cli_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include $(LIBEDIT_CFLAGS)
 fs_cli_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS) -lm $(LIBEDIT_LIBS)
 
+if DISABLE_CC
+fs_cli_CFLAGS += -DDISABLE_CC
+endif
 
 ##
 ## fs_encode ()
@@ -456,7 +460,7 @@ libs/libzrtp/libzrtp.a:
 	cd libs/libzrtp && $(MAKE)
 
 libs/sofia-sip/Makefile:
-	cd libs/sofia-sip && sh ./configure.gnu --prefix=$(prefix)
+	cd libs/sofia-sip && sh ./configure.gnu $(MY_DEFAULT_ARGS)
 
 libs/sofia-sip/libsofia-sip-ua/sdp/.libs/libsdp.a libs/sofia-sip/libsofia-sip-ua/su/.libs/libsu.a: libs/sofia-sip/.update libs/sofia-sip/Makefile
 	@cd libs/sofia-sip && $(MAKE) noop
@@ -629,7 +633,7 @@ sndfile-reconf:
 
 tiff-reconf:
 	cd libs/tiff-4.0.2 && autoreconf -fi
-	cd libs/tiff-4.0.2 && sh ./configure.gnu
+	cd libs/tiff-4.0.2 && sh ./configure.gnu $(MY_DEFAULT_ARGS)
 	cd libs/tiff-4.0.2 && make
 
 python-reconf:
@@ -645,19 +649,19 @@ srtp-reconf:
 iks-reconf:
 	cd libs/iksemel && $(MAKE) clean
 	cd libs/iksemel && autoreconf -fi
-	cd libs/iksemel && sh ./configure.gnu --prefix=$(prefix)
+	cd libs/iksemel && sh ./configure.gnu $(MY_DEFAULT_ARGS)
 	$(MAKE) mod_dingaling-clean
 
 spandsp-reconf: tiff-reconf
 	cd libs/spandsp && $(MAKE) clean || echo
 	cd libs/spandsp && autoreconf -fi
-	cd libs/spandsp && sh ./configure.gnu --prefix=$(prefix)
+	cd libs/spandsp && sh ./configure.gnu $(MY_DEFAULT_ARGS)
 	cd libs/spandsp && $(MAKE)
 
 sofia-reconf:
 	cd libs/sofia-sip && sh ./autogen.sh
 	cd libs/sofia-sip && $(MAKE) clean
-	cd libs/sofia-sip && ./configure --prefix=$(prefix) --with-pic --with-glib=no --disable-shared
+	cd libs/sofia-sip && ./configure $(MY_DEFAULT_ARGS) --with-pic --with-glib=no --disable-shared
 
 lua-reconf:
 	cd src/mod/languages/mod_lua/lua && make clean

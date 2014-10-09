@@ -209,10 +209,12 @@ create_dsc () {
   {
     set -e
     local OPTIND OPTARG modules_conf="" modules_list="" speed="normal" suite_postfix="" suite_postfix_p=false zl=9
-    while getopts 'f:m:s:u:z:' o "$@"; do
+    local modules_add=""
+    while getopts 'f:m:p:s:u:z:' o "$@"; do
       case "$o" in
         f) modules_conf="$OPTARG";;
         m) modules_list="$OPTARG";;
+        p) modules_add="$modules_add $OPTARG";;
         s) speed="$OPTARG";;
         u) suite_postfix="$OPTARG"; suite_postfix_p=true; ;;
         z) zl="$OPTARG";;
@@ -234,6 +236,11 @@ create_dsc () {
       if [ "$modules_list" = "non-dfsg" ]; then
         bootstrap_args="-mnon-dfsg"
       else set_modules_${modules_list}; fi
+    fi
+    if test -n "$modules_add"; then
+      for x in $modules_add; do
+        bootstrap_args="$bootstrap_args -p${x}"
+      done
     fi
     (cd debian && ./bootstrap.sh -c $distro $bootstrap_args)
     case "$speed" in
@@ -263,15 +270,31 @@ cd /tmp/buildd/*/debian/..
 EOF
 }
 
+get_sources () {
+  local tgt_distro="$1"
+  while read type path distro components; do
+    test "$type" = deb || continue
+    printf "$type $path $tgt_distro $components\n"
+  done < /etc/apt/sources.list
+}
+
+get_mirrors () {
+  get_sources "$1" | tr '\n' '|' | head -c-1; echo
+}
+
 build_debs () {
   {
     set -e
     local OPTIND OPTARG debug_hook=false hookdir="" cow_build_opts=""
-    while getopts 'Bbd' o "$@"; do
+    local keep_pbuilder_config=false
+    local use_system_sources=false
+    while getopts 'Bbdkt' o "$@"; do
       case "$o" in
         B) cow_build_opts="--debbuildopts '-B'";;
         b) cow_build_opts="--debbuildopts '-b'";;
         d) debug_hook=true;;
+        k) keep_pbuilder_config=true;;
+        t) use_system_sources=true;;
       esac
     done
     shift $(($OPTIND-1))
@@ -288,10 +311,22 @@ build_debs () {
       || err "package cowbuilder isn't installed"
     local cow_img=/var/cache/pbuilder/base-$distro-$arch.cow
     cow () {
-      cowbuilder "$@" \
-        --distribution $distro \
-        --architecture $arch \
-        --basepath $cow_img
+      if ! $use_system_sources; then
+        cowbuilder "$@" \
+          --distribution $distro \
+          --architecture $arch \
+          --basepath $cow_img
+      else
+        local keyring="$(mktemp /tmp/keyringXXXXXXXX.asc)"
+        apt-key exportall > "$keyring"
+        cowbuilder "$@" \
+          --distribution $distro \
+          --architecture $arch \
+          --basepath $cow_img \
+          --keyring "$keyring" \
+          --othermirror "$(get_mirrors $distro)"
+        rm -f $keyring
+      fi
     }
     if ! [ -d $cow_img ]; then
       announce "Creating base $distro-$arch image..."
@@ -302,7 +337,9 @@ build_debs () {
     fi
     announce "Updating base $distro-$arch image..."
     local x=30
-    while ! cow --update --override-config; do
+    local opts="--override-config"
+    $keep_pbuilder_config && opts=""
+    while ! cow --update $opts; do
       [ $x -lt 1 ] && break; sleep 120; x=$((x-1))
     done
     announce "Building $distro-$arch DEBs from $dsc..."
@@ -324,7 +361,7 @@ build_all () {
   local OPTIND OPTARG
   local orig_opts="" dsc_opts="" deb_opts="" modlist=""
   local archs="" distros="" orig="" depinst=false par=false
-  while getopts 'a:bc:df:ijl:m:no:s:u:v:z:' o "$@"; do
+  while getopts 'a:bc:df:ijkl:m:no:p:s:tu:v:z:' o "$@"; do
     case "$o" in
       a) archs="$archs $OPTARG";;
       b) orig_opts="$orig_opts -b";;
@@ -333,11 +370,14 @@ build_all () {
       f) dsc_opts="$dsc_opts -f$OPTARG";;
       i) depinst=true;;
       j) par=true;;
+      k) deb_opts="$deb_opts -k";;
       l) modlist="$OPTARG";;
       m) orig_opts="$orig_opts -m$OPTARG"; dsc_opts="$dsc_opts -m$OPTARG";;
       n) orig_opts="$orig_opts -n";;
       o) orig="$OPTARG";;
+      p) dsc_opts="$dsc_opts -p$OPTARG";;
       s) dsc_opts="$dsc_opts -s$OPTARG";;
+      t) deb_opts="$deb_opts -t";;
       u) dsc_opts="$dsc_opts -u$OPTARG";;
       v) orig_opts="$orig_opts -v$OPTARG";;
       z) orig_opts="$orig_opts -z$OPTARG"; dsc_opts="$dsc_opts -z$OPTARG";;
@@ -416,14 +456,18 @@ commands:
       Build only modules listed in this file
     -i Auto install build deps on host system
     -j Build debs in parallel
+    -k Don't override pbuilder image configurations
     -l <modules>
     -m [ quicktest | non-dfsg ]
       Choose custom list of modules to build
     -n Nightly build
     -o <orig-file>
       Specify existing .orig.tar.xz file
+    -p <module>
+      Include otherwise avoided module
     -s [ paranoid | reckless ]
       Set FS bootstrap/build -j flags
+    -t Use system /etc/apt/sources.list in build environment
     -u <suite-postfix>
       Specify a custom suite postfix
     -v Set version
@@ -436,6 +480,8 @@ commands:
     -B Binary architecture-dependent build
     -b Binary-only build
     -d Enable cowbuilder debug hook
+    -k Don't override pbuilder image configurations
+    -t Use system /etc/apt/sources.list in build environment
 
   create-dbg-pkgs
 
@@ -445,6 +491,8 @@ commands:
       Build only modules listed in this file
     -m [ quicktest | non-dfsg ]
       Choose custom list of modules to build
+    -p <module>
+      Include otherwise avoided module
     -s [ paranoid | reckless ]
       Set FS bootstrap/build -j flags
     -u <suite-postfix>

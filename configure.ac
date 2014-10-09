@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.4.9], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.4.10], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [4])
-AC_SUBST(SWITCH_VERSION_MICRO, [9])
+AC_SUBST(SWITCH_VERSION_MICRO, [10])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -497,6 +497,8 @@ AC_ARG_ENABLE(cpp,
 [AC_HELP_STRING([--disable-cpp],[build without cpp code])],[enable_cpp="$enableval"],[enable_cpp="yes"])
 
 AM_CONDITIONAL([ENABLE_CPP],[test "${enable_cpp}" = "yes"])
+
+AM_CONDITIONAL([DISABLE_CC],[test "${disable_cc}" = "yes"])
 
 AC_ARG_ENABLE([system-xmlrpc-c],
   [AS_HELP_STRING([--enable-system-xmlrpc-c],

@@ -2189,7 +2189,7 @@ static void verto_set_media_options(verto_pvt_t *tech_pvt, verto_profile_t *prof
 	tech_pvt->mparams->inbound_codec_string = switch_core_session_strdup(tech_pvt->session, profile->inbound_codec_string);
 	tech_pvt->mparams->outbound_codec_string = switch_core_session_strdup(tech_pvt->session, profile->outbound_codec_string);
 	
-	tech_pvt->mparams->jb_msec = "-3";
+	tech_pvt->mparams->jb_msec = "-1";
 	switch_media_handle_set_media_flag(tech_pvt->smh, SCMF_SUPPRESS_CNG);
 
 	switch_media_handle_set_media_flag(tech_pvt->smh, SCMF_RENEG_ON_REINVITE);
@@ -2401,7 +2401,8 @@ static void pass_sdp(verto_pvt_t *tech_pvt)
 
 	if (switch_core_session_get_partner(tech_pvt->session, &other_session) == SWITCH_STATUS_SUCCESS) {
 		other_channel = switch_core_session_get_channel(other_session);
-		switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, tech_pvt->r_sdp);
+		switch_channel_pass_sdp(tech_pvt->channel, other_channel, tech_pvt->r_sdp);
+
 		switch_channel_set_flag(other_channel, CF_PROXY_MODE);
 		switch_core_session_queue_indication(other_session, SWITCH_MESSAGE_INDICATE_ANSWER);
 		switch_core_session_rwunlock(other_session);

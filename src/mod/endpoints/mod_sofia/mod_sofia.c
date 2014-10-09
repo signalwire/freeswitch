@@ -465,6 +465,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Sending BYE to %s\n", switch_channel_get_name(channel));
 			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 				nua_bye(tech_pvt->nh,
+						SIPTAG_CONTACT(SIP_NONE),
 						TAG_IF(!zstr(reason), SIPTAG_REASON_STR(reason)),
 						TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 						TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
@@ -478,6 +479,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 				}
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 					nua_cancel(tech_pvt->nh,
+							   SIPTAG_CONTACT(SIP_NONE),
 							   TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 							   TAG_IF(!zstr(reason), SIPTAG_REASON_STR(reason)), TAG_IF(!zstr(bye_headers), SIPTAG_HEADER_STR(bye_headers)), TAG_END());
 				}
@@ -1419,14 +1421,13 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_MEDIA:
 		{
 			uint32_t send_invite = 1;
+			const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
 
 			switch_channel_clear_flag(channel, CF_PROXY_MODE);
 			switch_core_media_set_local_sdp(session, NULL, SWITCH_FALSE);
 
 			if (!(switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_test_flag(channel, CF_EARLY_MEDIA))) {
 				if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_INBOUND) {
-					const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
-
 
 					switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
 					if (sofia_media_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
@@ -1438,13 +1439,16 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				}
 			}
 
-			if (!switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
-				switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_FALSE);
-				if ((status = switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0)) != SWITCH_STATUS_SUCCESS) {
-					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-					goto end_lock;
-				}
+
+			switch_core_media_set_sdp_codec_string(tech_pvt->session, r_sdp, SDP_TYPE_RESPONSE);
+			switch_channel_set_variable(tech_pvt->channel, "absolute_codec_string", switch_channel_get_variable(tech_pvt->channel, "ep_codec_string"));
+			switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_TRUE);
+			
+			if ((status = switch_core_media_choose_port(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, 0)) != SWITCH_STATUS_SUCCESS) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				goto end_lock;
 			}
+			
 			switch_core_media_gen_local_sdp(session, SDP_TYPE_REQUEST, NULL, 0, NULL, 1);
 
 			if (send_invite) {
@@ -2418,6 +2422,7 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 							   "Contact:    \t%s\n"
 							   "Agent:      \t%s\n"
 							   "Status:     \t%s(%s) EXP(%s) EXPSECS(%d)\n"
+							   "Ping-Status:\t%s\n"
 							   "Host:       \t%s\n"
 							   "IP:         \t%s\n"
 							   "Port:       \t%s\n"
@@ -2425,9 +2430,9 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 							   "Auth-Realm: \t%s\n"
 							   "MWI-Account:\t%s@%s\n\n",
 							   switch_str_nil(argv[0]), switch_str_nil(argv[1]), switch_str_nil(argv[2]), switch_str_nil(argv[3]),
-							   switch_str_nil(argv[7]), switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf, exp_secs, switch_str_nil(argv[11]),
-							   switch_str_nil(argv[12]), switch_str_nil(argv[13]), switch_str_nil(argv[14]), switch_str_nil(argv[15]),
-							   switch_str_nil(argv[16]), switch_str_nil(argv[17]));
+							   switch_str_nil(argv[7]), switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf, exp_secs, switch_str_nil(argv[18]),
+							   switch_str_nil(argv[11]), switch_str_nil(argv[12]), switch_str_nil(argv[13]), switch_str_nil(argv[14]),
+							   switch_str_nil(argv[15]), switch_str_nil(argv[16]), switch_str_nil(argv[17]));
 	return 0;
 }
 
@@ -2459,6 +2464,7 @@ static int show_reg_callback_xml(void *pArg, int argc, char **argv, char **colum
 	cb->stream->write_function(cb->stream, "        <agent>%s</agent>\n", switch_amp_encode(switch_str_nil(argv[7]), xmlbuf, buflen));
 	cb->stream->write_function(cb->stream, "        <status>%s(%s) exp(%s) expsecs(%d)</status>\n", switch_str_nil(argv[4]), switch_str_nil(argv[5]),
 							   exp_buf, exp_secs);
+	cb->stream->write_function(cb->stream, "        <ping-status>%s</ping-status>\n", switch_str_nil(argv[18]));
 	cb->stream->write_function(cb->stream, "        <host>%s</host>\n", switch_str_nil(argv[11]));
 	cb->stream->write_function(cb->stream, "        <network-ip>%s</network-ip>\n", switch_str_nil(argv[12]));
 	cb->stream->write_function(cb->stream, "        <network-port>%s</network-port>\n", switch_str_nil(argv[13]));
@@ -2682,19 +2688,19 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				if (!sql && argv[2] && !strcasecmp(argv[2], "pres") && argv[3]) {
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status"
 										 " from sip_registrations where profile_name='%q' and presence_hosts like '%%%q%%'", profile->name, argv[3]);
 				}
 				if (!sql && argv[2] && !strcasecmp(argv[2], "reg") && argv[3]) {
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host, ping_status"
 										 " from sip_registrations where profile_name='%q' and contact like '%%%q%%'", profile->name, argv[3]);
 				}
 				if (!sql && argv[2] && !strcasecmp(argv[2], "reg")) {
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status"
 										 " from sip_registrations where profile_name='%q'", profile->name);
 				}
 				if (!sql && argv[2] && !strcasecmp(argv[2], "user") && argv[3]) {
@@ -2721,7 +2727,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status"
 										 " from sip_registrations where profile_name='%q' and %s", profile->name, sqlextra);
 					switch_safe_free(dup);
 					switch_safe_free(sqlextra);
@@ -2965,21 +2971,21 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status"
 										 " from sip_registrations where profile_name='%q' and presence_hosts like '%%%q%%'", profile->name, argv[3]);
 				}
 				if (!sql && argv[2] && !strcasecmp(argv[2], "reg") && argv[3]) {
 
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status"
 										 " from sip_registrations where profile_name='%q' and contact like '%%%q%%'", profile->name, argv[3]);
 				}
 				if (!sql && argv[2] && !strcasecmp(argv[2], "reg")) {
 
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status"
 										 " from sip_registrations where profile_name='%q'", profile->name);
 				}
 				if (!sql && argv[2] && !strcasecmp(argv[2], "user") && argv[3]) {
@@ -3006,7 +3012,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
 										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
-										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host"
+										 "network_ip,network_port,sip_username,sip_realm,mwi_user,mwi_host,ping_status"
 										 " from sip_registrations where profile_name='%q' and %s", profile->name, sqlextra);
 					switch_safe_free(dup);
 					switch_safe_free(sqlextra);

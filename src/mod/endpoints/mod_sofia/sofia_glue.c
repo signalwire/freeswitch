@@ -735,8 +735,12 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	cid_name = caller_profile->caller_id_name;
 	cid_num = caller_profile->caller_id_number;
-	switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_FALSE);
-	switch_core_media_check_video_codecs(tech_pvt->session);
+
+	if (!tech_pvt->sent_invites && !switch_channel_test_flag(channel, CF_ANSWERED)) {
+		switch_core_media_prepare_codecs(tech_pvt->session, SWITCH_FALSE);
+		switch_core_media_check_video_codecs(tech_pvt->session);
+	}
+
 	check_decode(cid_name, session);
 	check_decode(cid_num, session);
 
@@ -1229,6 +1233,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 					  switch_channel_get_name(tech_pvt->channel), switch_version_full_human(), 
 					  tech_pvt->mparams.local_sdp_str ? tech_pvt->mparams.local_sdp_str : "NO SDP PRESENT\n");
 
+	tech_pvt->sent_invites++;
 
 	if (sofia_use_soa(tech_pvt)) {
 		nua_invite(tech_pvt->nh,
@@ -1984,6 +1989,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   presence_hosts   VARCHAR(255),\n"
 		"   contact          VARCHAR(1024),\n"
 		"   status           VARCHAR(255),\n"
+		"   ping_status      VARCHAR(255),\n"
+		"   ping_count       INTEGER,\n"
 		"   rpid             VARCHAR(255),\n"
 		"   expires          BIGINT,\n"
 		"   user_agent       VARCHAR(255),\n"
@@ -2116,6 +2123,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"create index sr_expires on sip_registrations (expires)",
 		"create index sr_hostname on sip_registrations (hostname)",
 		"create index sr_status on sip_registrations (status)",
+		"create index sr_ping_status on sip_registrations (ping_status)",
 		"create index sr_network_ip on sip_registrations (network_ip)",
 		"create index sr_network_port on sip_registrations (network_port)",
 		"create index sr_sip_username on sip_registrations (sip_username)",
@@ -2194,6 +2202,9 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 
 
 	switch_cache_db_test_reactive(dbh, test_sql, "drop table sip_registrations", reg_sql);
+
+	switch_cache_db_test_reactive(dbh, "select ping_count from sip_registrations", NULL, "alter table sip_registrations add column ping_count INTEGER default 0");
+	switch_cache_db_test_reactive(dbh, "select ping_status from sip_registrations", NULL, "alter table sip_registrations add column ping_status VARCHAR(255) default \"Reachable\"");
 	
 	test2 = switch_mprintf("%s;%s", test_sql, test_sql);
 			

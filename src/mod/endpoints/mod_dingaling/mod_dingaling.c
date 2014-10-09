@@ -124,6 +124,7 @@ struct mdl_profile {
 	char *login;
 	char *password;
 	char *message;
+	char *priority;
 #ifdef AUTO_REPLY
 	char *auto_reply;
 #endif
@@ -2844,7 +2845,7 @@ static switch_status_t init_profile(mdl_profile_t *profile, uint8_t login)
 						profile->login,
 						profile->password,
 						profile->server,
-						profile->user_flags, profile->message, handle_loop, handle_signalling, handle_response, profile) == LDL_STATUS_SUCCESS) {
+						profile->user_flags, profile->message, profile->priority, handle_loop, handle_signalling, handle_response, profile) == LDL_STATUS_SUCCESS) {
 		profile->purge = SWITCH_FALSE;
 		switch_thread_rwlock_create(&profile->rwlock, module_pool);
 
@@ -2923,6 +2924,8 @@ static void set_profile_val(mdl_profile_t *profile, char *var, char *val)
 		profile->name = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "message") && !zstr(val)) {
 		profile->message = switch_core_strdup(module_pool, val);
+	} else if (!strcasecmp(var, "priority") && !zstr(val)) {
+		profile->priority = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "local-network-acl") && !zstr(val)) {
 		profile->local_network = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "rtp-ip")) {
@@ -3189,6 +3192,8 @@ static switch_bool_t match_profile(mdl_profile_t *profile, mdl_profile_t *new_pr
 		 (new_profile->password && profile->password && !strcasecmp(new_profile->password, profile->password))) &&
 		((!new_profile->message && !profile->message) ||
 		 (new_profile->message && profile->message && !strcasecmp(new_profile->message, profile->message))) &&
+		((!new_profile->priority && !profile->priority) ||
+		 (new_profile->priority && profile->priority && !strcasecmp(new_profile->priority, profile->priority))) &&
 		((!new_profile->avatar && !profile->avatar) || (new_profile->avatar && profile->avatar && !strcasecmp(new_profile->avatar, profile->avatar))) &&
 #ifdef AUTO_REPLY
 		((!new_profile->auto_reply && !profile->auto_reply) ||
@@ -3310,6 +3315,7 @@ static switch_status_t soft_reload(void)
 
 			switch_set_flag(profile, TFLAG_AUTO);
 			profile->message = "";
+			profile->priority = "";
 			profile->user_flags |= LDL_FLAG_COMPONENT;
 			switch_mutex_init(&profile->mutex, SWITCH_MUTEX_NESTED, module_pool);
 			switch_snprintf(dbname, sizeof(dbname), "dingaling_%s", profile->name);
@@ -3440,6 +3446,7 @@ static switch_status_t load_config(void)
 
 			switch_set_flag(profile, TFLAG_AUTO);
 			profile->message = "";
+			profile->priority = "";
 			profile->user_flags |= LDL_FLAG_COMPONENT;
 			switch_mutex_init(&profile->mutex, SWITCH_MUTEX_NESTED, module_pool);
 			switch_snprintf(dbname, sizeof(dbname), "dingaling_%s", profile->name);

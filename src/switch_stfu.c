@@ -31,6 +31,9 @@
 
 //#define DB_JB 1
 
+#define DBG_IN 1
+#define DBG_OUT 2
+
 #ifndef UINT_MAX
 #  define UINT_MAX        4294967295U
 #endif
@@ -100,6 +103,10 @@ struct stfu_instance {
     uint32_t period_jitter_count;
     double period_jitter_percent;
     double period_missing_percent;
+    uint32_t period_jitter_size_time;
+    uint32_t period_jitter_size_ts;
+    uint32_t period_jitter_size;
+
     uint32_t session_clean_count;
     uint32_t session_missing_count;
 
@@ -114,11 +121,15 @@ struct stfu_instance {
     int32_t max_drift;
     uint32_t drift_dropped_packets;
     uint32_t drift_max_dropped;
+    uint32_t consecutive_drift;
 
     int32_t ts_diff;
     int32_t last_ts_diff;
     int32_t same_ts;
     
+    uint32_t last_ts_skew;
+    uint32_t last_time_skew;
+
     uint32_t period_time;
     
     uint32_t plc_len;
@@ -230,8 +241,20 @@ void stfu_n_debug(stfu_instance_t *i, const char *name)
     if (i->name) free(i->name);
 
     if (name) {
+        int debug = 0;
+
+        if (strstr(name, ":out")) {
+            debug |= DBG_OUT;
+        }
+
+        if (strstr(name, ":in")) {
+            debug |= DBG_IN;
+        }
+
+        if (debug) i->debug = (uint8_t)debug;
+        else i->debug = 3;
+
         i->name = strdup(name);
-        i->debug = 1;
     } else {
         i->name = strdup("none");
         i->debug = 0;
@@ -250,15 +273,39 @@ void stfu_n_report(stfu_instance_t *i, stfu_report_t *r)
     r->period_missing_percent = i->period_missing_percent;
 }
 
-stfu_status_t stfu_n_resize(stfu_instance_t *i, uint32_t qlen) 
+stfu_status_t stfu_n_auto_size(stfu_instance_t *i, int check_down)
+{
+    stfu_status_t r = STFU_IT_FAILED;
+    int len;
+
+    if (!i->ms_per_packet) {
+        return r;
+    }
+
+    len = i->period_jitter_size / i->ms_per_packet;
+
+    if (len > i->qlen || (check_down && len < i->qlen)) {
+        if (check_down) {
+            len = i->qlen - 1;
+        }
+        r = stfu_n_resize(i, len);
+    }
+
+    return r;
+}
+
+stfu_status_t _stfu_n_resize(stfu_instance_t *i, int32_t qlen, int line) 
 {
     stfu_status_t s;
+    int diff;
 
-    if (i->qlen == i->max_qlen) {
+    if (qlen == i->qlen) {
         return STFU_IT_FAILED;
     }
 
-    if (i->max_qlen && qlen > i->max_qlen) {
+    if (qlen < i->orig_qlen) {
+        qlen = i->orig_qlen;
+    } else if (i->max_qlen && qlen >= (int32_t)i->max_qlen) {
         if (i->qlen < i->max_qlen) {
             qlen = i->max_qlen;
         } else {
@@ -266,11 +313,17 @@ stfu_status_t stfu_n_resize(stfu_instance_t *i, uint32_t qlen)
         }
     }
 
+    diff = qlen - i->qlen;
+
+    if (stfu_log != null_logger && i->debug) {
+        stfu_log(STFU_LOG_EMERG, "%d %s resize %s %u %u\n", line, i->name, diff > 0 ? "up" : "down", i->qlen, i->qlen + diff);
+    }
+
     if ((s = stfu_n_resize_aqueue(&i->a_queue, qlen)) == STFU_IT_WORKED) {
         stfu_n_resize_aqueue(&i->b_queue, qlen);
         s = stfu_n_resize_aqueue(&i->c_queue, qlen);
 
-        if (qlen > i->most_qlen) {
+        if (qlen > (int32_t)i->most_qlen) {
             i->most_qlen = qlen;
         }
 
@@ -340,6 +393,10 @@ static void stfu_n_reset_counters(stfu_instance_t *i)
     i->period_missing_count = 0;
     i->period_jitter_count = 0;
 
+    i->period_jitter_size_time = 0;
+    i->period_jitter_size_ts = 0;
+    i->period_jitter_size = 0;
+
     i->period_need_range = 0;
     i->period_need_range_avg = 0;
 
@@ -377,7 +434,8 @@ void _stfu_n_reset(stfu_instance_t *i, const char *file, const char *func, int l
 	i->miss_count = 0;	
     i->packet_count = 0;
     i->ts_offset = 0;
-
+    i->ts_drift = 0;
+    i->consecutive_drift = 0;
 }
 
 stfu_status_t stfu_n_sync(stfu_instance_t *i, uint32_t packets)
@@ -423,9 +481,9 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
     switch_time_t now;
     
 
-    if (!i->samples_per_packet && ts && i->last_rd_ts) {
-        i->ts_diff = ts - i->last_rd_ts;
+    i->ts_diff = ts - i->last_rd_ts;
 
+    if (!i->samples_per_packet && ts && i->last_rd_ts) {
         if (i->last_ts_diff == i->ts_diff) {
             if (++i->same_ts == 5) {
                 i->samples_per_packet = i->ts_diff;
@@ -437,13 +495,13 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
             i->same_ts = 0;
         }
             
-        i->last_ts_diff = i->ts_diff;
-
         if (!i->samples_per_packet) {
             i->last_rd_ts = ts;
             return STFU_IT_FAILED;
         }
     }
+
+    i->last_ts_diff = i->ts_diff;
     
     if (!i->ms_per_packet) {
         i->ms_per_packet = 1000 / (i->samples_per_second / i->samples_per_packet);
@@ -459,28 +517,65 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
 
     i->last_clock_ts = now;
 
-    if (abs(diff - i->ms_per_packet) > 1) {
-        i->period_jitter_count++;
+    if (diff && i->ms_per_packet) {
+        i->last_time_skew = abs((int)(diff - (int)i->ms_per_packet));
     }
 
-    if (timer_ts) {
+    if (i->last_ts_diff && i->samples_per_packet) {
+        i->last_ts_skew = abs((int)(i->last_ts_diff - (int)i->samples_per_packet));
+    }
+
+    if (i->ready && i->out_queue->array_len && (i->last_time_skew > 1 || i->last_ts_skew)) {
+        int time_ms = i->last_time_skew, ts_ms = (i->last_ts_skew / i->samples_per_packet) * i->ms_per_packet;
+
+        if (time_ms > i->period_jitter_size_time) {
+            i->period_jitter_size_time = time_ms;
+        }
+
+        if (ts_ms > i->period_jitter_size_ts) {
+            i->period_jitter_size_ts = ts_ms;
+        }
+
+        if (i->period_jitter_size_time > i->period_jitter_size_ts) {
+            i->period_jitter_size = i->period_jitter_size_time;
+        } else {
+            i->period_jitter_size = i->period_jitter_size_ts;
+        }
+
+        if (++i->period_jitter_count > 5) {
+            stfu_n_auto_size(i, 0);
+        }
+    }
+
+    if (timer_ts && i->ready && i->out_queue->array_len) {
         if (ts && !i->ts_offset) {
             i->ts_offset = timer_ts - ts;
         }
 
-        i->ts_drift = ts + (i->ts_offset - timer_ts);
-
-        if (i->ts_offset && i->ts_drift > 0) {
-            i->ts_offset = timer_ts - ts;
+        if (i->ts_offset) {
             i->ts_drift = ts + (i->ts_offset - timer_ts);
+
+            if (i->ts_drift > 0) {
+                i->ts_offset = timer_ts - ts;
+                i->ts_drift = ts + (i->ts_offset - timer_ts);
+            }
+
+            if (i->ts_drift) {
+                i->consecutive_drift++;
+            } else {
+                i->consecutive_drift = 0;
+            }
         }
+        
 
-
-        if (i->max_drift) {
+        if (i->max_drift && i->consecutive_drift >= 10) {
             if (i->ts_drift < i->max_drift) {
                 if (++i->drift_dropped_packets < i->drift_max_dropped) {
-                    stfu_log(STFU_LOG_EMERG, "%s TOO LATE !!! %u \n\n\n", i->name, ts);
+                    if (stfu_log != null_logger && i->debug) {
+                        stfu_log(STFU_LOG_EMERG, "%s TOO LATE !!! %u \n\n\n", i->name, ts);
+                    }
                     stfu_n_reset(i);
+                    //stfu_n_resize(i, 1);
                     //stfu_n_sync(i, 1);
                     //return STFU_ITS_TOO_LATE;
                 }
@@ -504,7 +599,7 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
                 if (stfu_log != null_logger && i->debug) {
                     stfu_log(STFU_LOG_EMERG, "%s TOO LATE !!! %u \n\n\n", i->name, ts);
                 }
-                stfu_n_sync(i, 1);
+                //stfu_n_resize(i, i->qlen + 1);
                 return STFU_ITS_TOO_LATE;
             }
         }
@@ -520,14 +615,9 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
 
     i->period_need_range_avg = i->period_need_range / least1(i->period_missing_count);
 
-    if (i->period_missing_count > i->qlen * 2) {
-        if (stfu_log != null_logger && i->debug) {
-            stfu_log(STFU_LOG_EMERG, "%s resize up %u %u\n", i->name, i->qlen, i->qlen + 1);
-        }
-        stfu_n_resize(i, i->qlen + 1);
-        stfu_n_reset_counters(i);
-    }
-
+    //if (i->period_missing_count > i->qlen * 2) {
+        //stfu_n_resize(i, 1);
+    //}
     
     i->diff = 0;
     
@@ -541,32 +631,28 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
     
     i->diff_total += i->diff;
 
+    i->period_jitter_percent = (double)(((double)i->period_jitter_count / (double)i->period_time) * 100.0f);
+    i->period_missing_percent= (double)(((double)i->period_missing_count / (double)i->period_time) * 100.0f);
+
     if ((i->period_packet_in_count >= i->period_time)) {
-        i->period_jitter_percent = (double)(((double)i->period_jitter_count / (double)i->period_time) * 100.0f);
-        i->period_missing_percent = (double)(((double)i->period_missing_count / (double)i->period_time) * 100.0f);
-        
         i->period_packet_in_count = 0;
 
         if (stfu_log != null_logger && i->debug) {
             stfu_log(STFU_LOG_EMERG, "PERIOD %f jitter missing:%f q:%d/%d\n", i->period_jitter_percent, i->period_missing_percent, i->qlen, i->orig_qlen);
         }
+        stfu_n_auto_size(i, 1);
 
-        if (i->qlen > i->orig_qlen && i->period_jitter_percent < PERIOD_JITTER_TOLERANCE && i->period_missing_percent < PERIOD_JITTER_TOLERANCE) {
-            if (stfu_log != null_logger && i->debug) {
-                stfu_log(STFU_LOG_EMERG, "%s resize down %u %u\n", i->name, i->qlen, i->qlen - 1);
-            }
-            stfu_n_resize(i, i->qlen - 1);
-            stfu_n_sync(i, i->qlen);
-        }
+        //if (i->qlen > i->orig_qlen) {
+            //if (i->period_jitter_percent < PERIOD_JITTER_TOLERANCE && i->period_missing_percent < PERIOD_JITTER_TOLERANCE) {
+            //    stfu_n_resize(i, -1);
+            //}
+        //}
 
         stfu_n_reset_counters(i);
     }
     
-    if (stfu_log != null_logger && i->debug) {
-        double jitter_percent = (double)(((double)i->period_jitter_count / (double)i->period_packet_in_count) * 100.0f);
-        double missing_percent = (double)(((double)i->period_missing_count / (double)i->period_packet_in_count) * 100.0f);
-
-        stfu_log(STFU_LOG_EMERG, "I: %s len:%u/%u i=%u/%u - g:%u c:%u b:%u - ts:%u/%u/%u - m:%u(%f%%) j:%f%% dr:%d/%d\n", 
+    if (stfu_log != null_logger && (i->debug & DBG_IN)) {
+        stfu_log(STFU_LOG_EMERG, "I: %s len:%u/%u i=%u/%u - g:%u c:%u b:%u - ts:%u/%u/%u - m:%u(%f%%) j:%0.2f%% js:%u/%u dr:%d/%d\n", 
                  i->name,
                  i->qlen, i->max_qlen, 
                  i->period_packet_in_count, i->period_time, 
@@ -576,8 +662,10 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
                  ts, ts / i->samples_per_packet, 
                  i->last_wr_ts,
                  i->period_missing_count,
-                 missing_percent,
-                 jitter_percent,
+                 i->period_missing_percent,
+                 i->period_jitter_percent,
+                 i->period_jitter_size_time,
+                 i->period_jitter_size_ts,
                  i->ts_drift, i->max_drift);
     }
 
@@ -621,11 +709,15 @@ static int stfu_n_find_any_frame(stfu_instance_t *in, stfu_queue_t *queue, stfu_
     int best_diff = 1000000, cur_diff = 0;
     stfu_frame_t *frame = NULL, *best_frame = NULL;
     int newer = 0;
+    int was_read = 0;
+
     stfu_assert(r_frame);
     
     *r_frame = NULL;
 
  top:
+
+    was_read = 0;
 
     if (force) {
         in->cur_ts = 0;
@@ -633,6 +725,8 @@ static int stfu_n_find_any_frame(stfu_instance_t *in, stfu_queue_t *queue, stfu_
 
     for(i = 0; i < queue->real_array_size; i++) {
         frame = &queue->array[i];
+        
+        if (frame->was_read) was_read++;
         
         if (!frame->was_read && in->cur_ts && frame->ts > in->cur_ts) {
             newer++;
@@ -645,6 +739,15 @@ static int stfu_n_find_any_frame(stfu_instance_t *in, stfu_queue_t *queue, stfu_
             best_frame = frame;
             best_index = i;
         }
+    }
+
+    if (was_read == queue->real_array_size) {
+        if (stfu_log != null_logger && in->debug) {        
+            stfu_log(STFU_LOG_EMERG, "%s OUT QUEUE EMPTY, SWAPPING\n", in->name);
+            stfu_n_swap(in);
+            in->ready = 0;
+        }
+        return 0;
     }
 
     if (!force && !best_frame && newer) {
@@ -692,6 +795,28 @@ static int stfu_n_find_frame(stfu_instance_t *in, stfu_queue_t *queue, uint32_t 
 
     return 0;
 }
+
+void stfu_n_dump(stfu_instance_t *i)
+{
+    uint32_t y;
+    stfu_frame_t *frame = NULL;
+
+    if (stfu_log != null_logger && i->debug) {        
+        stfu_log(STFU_LOG_EMERG, "%s OUT QUEUE: ------------\n", i->name);
+        for(y = 0; y < i->out_queue->array_len; y++) {
+            frame = &i->out_queue->array[y];
+            stfu_log(STFU_LOG_EMERG, "%s\t%u:%u r:%d\n", i->name, frame->ts, frame->ts / i->samples_per_packet, frame->was_read);
+        }
+        stfu_log(STFU_LOG_EMERG, "%s\n\n", i->name);
+        stfu_log(STFU_LOG_EMERG, "%s IN QUEUE: ------------\n", i->name);
+        for(y = 0; y < i->in_queue->array_len; y++) {
+            frame = &i->in_queue->array[y];
+            stfu_log(STFU_LOG_EMERG, "%s\t%u:%u r:%d\n", i->name, frame->ts, frame->ts / i->samples_per_packet, frame->was_read);
+        }
+        stfu_log(STFU_LOG_EMERG, "%s\n\n\n", i->name);
+    }
+}
+
 
 stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 {
@@ -769,9 +894,6 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 
 
     if (!found && i->samples_per_packet) {
-        uint32_t y;
-        stfu_frame_t *frame = NULL;
-
         int32_t delay = i->cur_ts - i->last_rd_ts;
         uint32_t need  = abs(delay) / i->samples_per_packet;
 
@@ -789,28 +911,12 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
             i->packet_count = 0;
         }
 
-        if (stfu_log != null_logger && i->debug) {        
-            stfu_log(STFU_LOG_EMERG, "%s ------------\n", i->name);
-            for(y = 0; y < i->out_queue->array_len; y++) {
-                frame = &i->out_queue->array[y];
-                stfu_log(STFU_LOG_EMERG, "%s\t%u:%u\n", i->name, frame->ts, frame->ts / i->samples_per_packet);
-            }
-            stfu_log(STFU_LOG_EMERG, "%s ------------\n\n\n", i->name);
-
-
-            stfu_log(STFU_LOG_EMERG, "%s ------------\n", i->name);
-            for(y = 0; y < i->in_queue->array_len; y++) {
-                frame = &i->in_queue->array[y];
-                stfu_log(STFU_LOG_EMERG, "%s\t%u:%u\n", i->name, frame->ts, frame->ts / i->samples_per_packet);
-            }
-            stfu_log(STFU_LOG_EMERG, "%s\n\n\n", i->name);
-
-        }
+        stfu_n_dump(i);
     }
 
-    if (stfu_log != null_logger && i->debug) {
+    if (stfu_log != null_logger && (i->debug & DBG_OUT)) {
         if (found) {
-            stfu_log(STFU_LOG_EMERG, "%s OUT: %u:%u %u\n", i->name, rframe->ts, rframe->ts / i->samples_per_packet, rframe->plc);
+            stfu_log(STFU_LOG_EMERG, "O: %s %u:%u %u\n", i->name, rframe->ts, rframe->ts / i->samples_per_packet, rframe->plc);
         }
     }
 
@@ -856,7 +962,9 @@ stfu_frame_t *stfu_n_read_a_frame(stfu_instance_t *i)
 
         } else {
             if (force) {
-                stfu_log(STFU_LOG_EMERG, "%s NO PACKETS HARD RESETTING\n", i->name);
+                if (stfu_log != null_logger && i->debug) {
+                    stfu_log(STFU_LOG_EMERG, "%s NO PACKETS HARD RESETTING\n", i->name);
+                }
                 stfu_n_reset(i);
             } else {
                 i->last_wr_ts = i->cur_ts;

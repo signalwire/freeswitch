@@ -76,8 +76,8 @@
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</LinkIncremental>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(PlatformName)\libeay32\$(Configuration)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(PlatformName)\libeay32\$(Configuration)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(PlatformName)\libeay32\$(Configuration)\</IntDir>
@@ -85,18 +85,18 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <PreBuildEvent>
-      <Command>copy /Y "$(ProjectDir)opensslconf.h" "$(ProjectDir)..\..\openssl-1.0.1g\include\openssl\opensslconf.h"
-copy /Y "$(ProjectDir)applink.c" "$(ProjectDir)..\..\openssl-1.0.1g\include\openssl\applink.c"
-copy /Y "$(ProjectDir)buildinf.h" "$(ProjectDir)..\..\openssl-1.0.1g\crypto\buildinf.h"
-copy /Y "$(ProjectDir)libeay32.def" "$(ProjectDir)..\..\openssl-1.0.1g\libeay32.def"
-if not exist "$(ProjectDir)..\..\openssl-1.0.1g\include\openssl\e_os.h" xcopy "$(ProjectDir)\include\*.*" "$(ProjectDir)..\..\openssl-1.0.1g\include\openssl\" /C /Y /S
+      <Command>copy /Y "$(ProjectDir)opensslconf.h" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\opensslconf.h"
+copy /Y "$(ProjectDir)applink.c" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\applink.c"
+copy /Y "$(ProjectDir)buildinf.h" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\crypto\buildinf.h"
+copy /Y "$(ProjectDir)libeay32.def" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\libeay32.def"
+if not exist "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\e_os.h" xcopy "$(ProjectDir)\include\*.*" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\" /C /Y /S
 </Command>
     </PreBuildEvent>
     <ClCompile>
       <AdditionalOptions>/Gs0 %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\openssl-1.0.1g\include;..\..\openssl-1.0.1g\crypto;..\..\openssl-1.0.1g\crypto\aes;..\..\openssl-1.0.1g\crypto\asn1;..\..\openssl-1.0.1g\crypto\bf;..\..\openssl-1.0.1g\crypto\bio;..\..\openssl-1.0.1g\crypto\bn;..\..\openssl-1.0.1g\crypto\buffer;..\..\openssl-1.0.1g\crypto\camellia;..\..\openssl-1.0.1g\crypto\cast;..\..\openssl-1.0.1g\crypto\cms;..\..\openssl-1.0.1g\crypto\comp;..\..\openssl-1.0.1g\crypto\conf;..\..\openssl-1.0.1g\crypto\des;..\..\openssl-1.0.1g\crypto\dh;..\..\openssl-1.0.1g\crypto\dsa;..\..\openssl-1.0.1g\crypto\dso;..\..\openssl-1.0.1g\crypto\ec;..\..\openssl-1.0.1g\crypto\ecdh;..\..\openssl-1.0.1g\crypto\ecdsa;..\..\openssl-1.0.1g\crypto\engine;..\..\openssl-1.0.1g\crypto\err;..\..\openssl-1.0.1g\crypto\evp;..\..\openssl-1.0.1g\crypto\modes;..\..\openssl-1.0.1g\ms;..\..\openssl-1.0.1g;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\openssl-$(OpenSSLVersion)\include;..\..\openssl-$(OpenSSLVersion)\crypto;..\..\openssl-$(OpenSSLVersion)\crypto\aes;..\..\openssl-$(OpenSSLVersion)\crypto\asn1;..\..\openssl-$(OpenSSLVersion)\crypto\bf;..\..\openssl-$(OpenSSLVersion)\crypto\bio;..\..\openssl-$(OpenSSLVersion)\crypto\bn;..\..\openssl-$(OpenSSLVersion)\crypto\buffer;..\..\openssl-$(OpenSSLVersion)\crypto\camellia;..\..\openssl-$(OpenSSLVersion)\crypto\cast;..\..\openssl-$(OpenSSLVersion)\crypto\cms;..\..\openssl-$(OpenSSLVersion)\crypto\comp;..\..\openssl-$(OpenSSLVersion)\crypto\conf;..\..\openssl-$(OpenSSLVersion)\crypto\des;..\..\openssl-$(OpenSSLVersion)\crypto\dh;..\..\openssl-$(OpenSSLVersion)\crypto\dsa;..\..\openssl-$(OpenSSLVersion)\crypto\dso;..\..\openssl-$(OpenSSLVersion)\crypto\ec;..\..\openssl-$(OpenSSLVersion)\crypto\ecdh;..\..\openssl-$(OpenSSLVersion)\crypto\ecdsa;..\..\openssl-$(OpenSSLVersion)\crypto\engine;..\..\openssl-$(OpenSSLVersion)\crypto\err;..\..\openssl-$(OpenSSLVersion)\crypto\evp;..\..\openssl-$(OpenSSLVersion)\crypto\modes;..\..\openssl-$(OpenSSLVersion)\ms;..\..\openssl-$(OpenSSLVersion);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WINDOWS;WIN32;_DEBUG;_CRT_NON_CONFORMING_SWPRINTFS;OPENSSL_THREADS;DSO_WIN32;OPENSSL_SYSNAME_WIN32;WIN32_LEAN_AND_MEAN;L_ENDIAN;_CRT_SECURE_NO_DEPRECATE;OPENSSL_NO_ASM;OPENSSL_NO_GMP;OPENSSL_NO_JPAKE;OPENSSL_NO_KRB5;OPENSSL_NO_MD2;OPENSSL_NO_RFC3779;OPENSSL_NO_STORE;OPENSSL_NO_STATIC_ENGINE;OPENSSL_BUILD_SHLIBCRYPTO;MK1MF_BUILD;OPENSSL_NO_SCTP;OPENSSL_NO_EC_NISTP_64_GCC_128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -111,7 +111,7 @@ if not exist "$(ProjectDir)..\..\openssl-1.0.1g\include\openssl\e_os.h" xcopy "$
     </ClCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ModuleDefinitionFile>$(ProjectDir)..\..\openssl-1.0.1g\libeay32.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\libeay32.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AssemblyDebug>true</AssemblyDebug>
       <TargetMachine>MachineX86</TargetMachine>
@@ -119,11 +119,11 @@ if not exist "$(ProjectDir)..\..\openssl-1.0.1g\include\openssl\e_os.h" xcopy "$
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <PreBuildEvent>
-      <Command>copy /Y "$(ProjectDir)opensslconf.h" "$(ProjectDir)..\..\openssl-1.0.1g\include\openssl\opensslconf.h"
-copy /Y "$(ProjectDir)applink.c" "$(ProjectDir)..\..\openssl-1.0.1g\include\openssl\applink.c"
-copy /Y "$(ProjectDir)buildinf.h" "$(ProjectDir)..\..\openssl-1.0.1g\crypto\buildinf.h"
-copy /Y "$(ProjectDir)libeay32.def" "$(ProjectDir)..\..\openssl-1.0.1g\libeay32.def"
-if not exist "$(ProjectDir)..\..\openssl-1.0.1g\include\openssl\e_os.h" xcopy "$(ProjectDir)\include\*.*" "$(ProjectDir)..\..\openssl-1.0.1g\include\openssl\" /C /Y /S
+      <Command>copy /Y "$(ProjectDir)opensslconf.h" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\opensslconf.h"
+copy /Y "$(ProjectDir)applink.c" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\applink.c"
+copy /Y "$(ProjectDir)buildinf.h" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\crypto\buildinf.h"
+copy /Y "$(ProjectDir)libeay32.def" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\libeay32.def"
+if not exist "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\e_os.h" xcopy "$(ProjectDir)\include\*.*" "$(ProjectDir)..\..\openssl-$(OpenSSLVersion)\include\openssl\" /C /Y /S
 </Command>
     </PreBuildEvent>
     <Midl>

@@ -25,6 +25,10 @@ fs_cli_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include $(LIBEDIT_
 fs_cli_LDFLAGS = $(AM_LDFLAGS) $(LDFLAGS) $(LIBS) $(LIBEDIT_LIBS)
 fs_cli_LDADD   = libesl.la
 
+if DISABLE_CC
+fs_cli_CFLAGS += -DDISABLE_CC
+endif
+
 testclient_SOURCES = testclient.c
 testclient_CFLAGS  = $(AM_CFLAGS) -I$(switch_srcdir)/libs/esl/src/include
 testclient_LDFLAGS = $(AM_LDFLAGS) $(LDFLAGS) $(LIBS)

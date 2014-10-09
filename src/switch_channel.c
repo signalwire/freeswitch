@@ -5220,6 +5220,28 @@ SWITCH_DECLARE(switch_status_t) switch_channel_unbind_device_state_handler(switc
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_channel_pass_sdp(switch_channel_t *from_channel, switch_channel_t *to_channel, const char *sdp)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	char *use_sdp = (char *) sdp;
+	char *patched_sdp = NULL;
+
+	if (!switch_channel_get_variable(to_channel, SWITCH_B_SDP_VARIABLE)) {
+		const char *var;
+
+		if ((var = switch_channel_get_variable(from_channel, "bypass_media_sdp_filter"))) {
+			if ((patched_sdp = switch_core_media_process_sdp_filter(use_sdp, var, from_channel->session))) {
+				use_sdp = patched_sdp;
+			}
+		}
+
+		switch_channel_set_variable(to_channel, SWITCH_B_SDP_VARIABLE, use_sdp);
+	}
+
+	switch_safe_free(patched_sdp);
+
+	return status;
+}
 
 /* For Emacs:
  * Local Variables:

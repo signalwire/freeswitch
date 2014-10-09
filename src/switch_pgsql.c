@@ -305,7 +305,7 @@ SWITCH_DECLARE(switch_pgsql_status_t) switch_pgsql_next_result_timed(switch_pgsq
 		if (PQisBusy(handle->con)) {
 
 			/* Wait for a result to become available, up to msec milliseconds */
-			start = switch_time_now();
+			start = switch_micro_time_now();
 			while((ctime = switch_micro_time_now()) - start <= usec) {
 				int wait_time = (usec - (ctime - start)) / 1000;
 				fds[0].fd = handle->sock;

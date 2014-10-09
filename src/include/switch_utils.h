@@ -418,6 +418,7 @@ SWITCH_DECLARE(switch_status_t) switch_frame_alloc(switch_frame_t **frame, switc
 SWITCH_DECLARE(switch_status_t) switch_frame_dup(switch_frame_t *orig, switch_frame_t **clone);
 SWITCH_DECLARE(switch_status_t) switch_frame_free(switch_frame_t **frame);
 SWITCH_DECLARE(switch_bool_t) switch_is_number(const char *str);
+SWITCH_DECLARE(switch_bool_t) switch_is_leading_number(const char *str);
 SWITCH_DECLARE(char *) switch_find_parameter(const char *str, const char *param, switch_memory_pool_t *pool);
 
 /*!

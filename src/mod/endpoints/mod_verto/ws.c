@@ -352,7 +352,10 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block)
 					goto end;
 				}
 
-				if (block) ms_sleep(10);
+				if (block) {
+					wsh->x++;
+					ms_sleep(10);
+				}
 			}
 
 		} while (r == -1 && err == SSL_ERROR_WANT_READ && wsh->x < 100);
@@ -361,14 +364,19 @@ ssize_t ws_raw_read(wsh_t *wsh, void *data, size_t bytes, int block)
 	}
 
 	do {
+
 		r = recv(wsh->sock, data, bytes, 0);
+
 		if (r == -1) {
 			if (!block && xp_is_blocking(xp_errno())) {
 				r = -2;
 				goto end;
 			}
 
-			if (block) ms_sleep(10);
+			if (block) {
+				wsh->x++;
+				ms_sleep(10);
+			}
 		}
 	} while (r == -1 && xp_is_blocking(xp_errno()) && wsh->x < 100);
 	

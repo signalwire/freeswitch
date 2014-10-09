@@ -243,6 +243,26 @@ switch_status_t gsmopen_tech_init(private_t *tech_pvt, switch_core_session_t *se
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t list_interfaces(const char *line, const char *cursor, switch_console_callback_match_t **matches)
+{
+	int interface_id;
+	switch_console_callback_match_t *my_matches = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	for (interface_id = 0; interface_id < GSMOPEN_MAX_INTERFACES; interface_id++) {
+		if (globals.GSMOPEN_INTERFACES[interface_id].running) {
+			switch_console_push_match(&my_matches, (const char *) globals.GSMOPEN_INTERFACES[interface_id].name);
+		}
+	}
+
+	if (my_matches) {
+		*matches = my_matches;
+		status = SWITCH_STATUS_SUCCESS;
+	}
+	
+	return status;
+}
+
 static switch_status_t interface_exists(char *the_interface)
 {
 	int i;
@@ -1882,6 +1902,20 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_gsmopen_load)
 		SWITCH_ADD_API(commands_api_interface, "gsmopen_ussd", "gsmopen_ussd interface ussd_code wait_seconds", gsmopen_ussd_function,
 					   SENDSMS_SYNTAX);
 		SWITCH_ADD_CHAT(chat_interface, GSMOPEN_CHAT_PROTO, chat_send);
+
+		switch_console_set_complete("add gsm list");
+		switch_console_set_complete("add gsm list full");
+		switch_console_set_complete("add gsm console ::gsm::list_interfaces");
+		switch_console_set_complete("add gsm remove ::gsm::list_interfaces");
+		switch_console_set_complete("add gsm reload");
+		switch_console_set_complete("add gsmopen ::gsm::list_interfaces");
+		switch_console_set_complete("add gsmopen_dump list");
+		switch_console_set_complete("add gsmopen_dump ::gsm::list_interfaces");
+		switch_console_set_complete("add gsmopen_ussd ::gsm::list_interfaces");
+		switch_console_set_complete("add gsmopen_sendsms ::gsm::list_interfaces");
+		switch_console_set_complete("add gsmopen_boost_audio ::gsm::list_interfaces");
+
+		switch_console_add_complete_func("::gsm::list_interfaces", list_interfaces);
 
 		/* indicate that the module should continue to be loaded */
 		return SWITCH_STATUS_SUCCESS;

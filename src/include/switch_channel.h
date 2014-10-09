@@ -678,7 +678,8 @@ SWITCH_DECLARE(void) switch_channel_release_device_record(switch_device_record_t
 SWITCH_DECLARE(switch_status_t) switch_channel_bind_device_state_handler(switch_device_state_function_t function, void *user_data);
 SWITCH_DECLARE(switch_status_t) switch_channel_unbind_device_state_handler(switch_device_state_function_t function);
 SWITCH_DECLARE(const char *) switch_channel_device_state2str(switch_device_state_t device_state);
-								
+SWITCH_DECLARE(switch_status_t) switch_channel_pass_sdp(switch_channel_t *from_channel, switch_channel_t *to_channel, const char *sdp);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:
