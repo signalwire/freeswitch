@@ -95,6 +95,7 @@ typedef struct switch_rtp_engine_s {
 	switch_codec_implementation_t write_impl;
 
 	switch_size_t last_ts;
+	switch_size_t last_seq;
 	uint32_t check_frames;
 	uint32_t mismatch_count;
 	uint32_t last_codec_ms;
@@ -1743,6 +1744,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 			
 			engine->check_frames = 0;
 			engine->last_ts = 0;
+			engine->last_seq = 0;
 
 			do_cng = 1;
 		}
@@ -1869,8 +1871,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 							uint32_t codec_ms = (int) (engine->read_frame.timestamp -
 													   engine->last_ts) / (engine->read_impl.samples_per_second / 1000);
 
+							if (engine->last_seq && (int) (engine->read_frame.seq - engine->last_seq) > 1) {
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Correcting calculated ptime value from %d to %d to compensate for %d lost packet(s)\n", codec_ms, codec_ms / (int) (engine->read_frame.seq - engine->last_seq), (int) (engine->read_frame.seq - engine->last_seq - 1));
+								codec_ms = codec_ms / (int) (engine->read_frame.seq - engine->last_seq);
+							}
+
 							if ((codec_ms % 10) != 0 || codec_ms > engine->read_impl.samples_per_packet * 10) {
 								engine->last_ts = 0;
+								engine->last_seq = 0;
 								goto skip;
 							}
 
@@ -1918,11 +1926,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 						}
 
 						engine->last_ts = engine->read_frame.timestamp;
+						engine->last_seq = engine->read_frame.seq;
 
 
 					} else {
 						engine->mismatch_count = 0;
 						engine->last_ts = 0;
+						engine->last_seq = 0;
 					}
 				}
 
@@ -4560,6 +4570,7 @@ SWITCH_DECLARE(void) switch_core_media_reset_autofix(switch_core_session_t *sess
 
 	engine->check_frames = 0;
 	engine->last_ts = 0;
+	engine->last_seq = 0;
 }
 
 
