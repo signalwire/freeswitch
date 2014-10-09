@@ -11,8 +11,9 @@ static const char *adhearsion_menu_grammar =
 	"    <one-of>\n"
 	"      <item><tag>0</tag>1</item>\n"
 	"      <item><tag>1</tag>5</item>\n"
-	"      <item><tag>2</tag>7</item>\n"
+	"      <item><tag>7</tag>7</item>\n"
 	"      <item><tag>3</tag>9</item>\n"
+	"      <item><tag>4</tag>715</item>\n"
 	"    </one-of>\n"
 	"  </rule>\n"
 	"</grammar>\n";
@@ -43,8 +44,10 @@ static void test_match_adhearsion_menu_grammar(void)
 	ASSERT_STRING_EQUALS("1", interpretation);
 	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "6", &interpretation));
 	ASSERT_NULL(interpretation);
-	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "7", &interpretation));
-	ASSERT_STRING_EQUALS("2", interpretation);
+	ASSERT_EQUALS(SMT_MATCH, srgs_grammar_match(grammar, "7", &interpretation));
+	ASSERT_STRING_EQUALS("7", interpretation);
+	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "715", &interpretation));
+	ASSERT_STRING_EQUALS("4", interpretation);
 	ASSERT_EQUALS(SMT_NO_MATCH, srgs_grammar_match(grammar, "8", &interpretation));
 	ASSERT_NULL(interpretation);
 	ASSERT_EQUALS(SMT_MATCH_END, srgs_grammar_match(grammar, "9", &interpretation));
