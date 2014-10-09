@@ -493,7 +493,9 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			{
 				int sec;
 
-				if (gateway_ptr->failure_status == 503 || gateway_ptr->failure_status == 908 || gateway_ptr->failures < 1) {
+				if (gateway_ptr->fail_908_retry_seconds && gateway_ptr->failure_status == 908) {
+					sec = gateway_ptr->fail_908_retry_seconds;
+				} else if (gateway_ptr->failure_status == 503 || gateway_ptr->failure_status == 908 || gateway_ptr->failures < 1) {
 					sec = gateway_ptr->retry_seconds;
 				} else {
 					sec = gateway_ptr->retry_seconds * gateway_ptr->failures;
