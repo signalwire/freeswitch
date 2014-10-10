@@ -498,6 +498,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		}
 	}
 
+	if (asis && read_impl.encoded_bytes_per_packet == 0) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s cannot play or record native files with variable length data\n", switch_channel_get_name(channel));
+		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+		arg_recursion_check_stop(args);
+		return SWITCH_STATUS_GENERR;
+	}
+
+
 	vval = switch_channel_get_variable(channel, "enable_file_write_buffering");
 	if (!vval || switch_true(vval)) {
 		fh->pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
@@ -1330,6 +1338,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			write_frame.codec = switch_core_session_get_read_codec(session);
 			samples = read_impl.samples_per_packet;
 			framelen = read_impl.encoded_bytes_per_packet;
+			if (framelen == 0) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s cannot play or record native files with variable length data\n", switch_channel_get_name(channel));
+				
+				switch_core_session_io_write_lock(session);
+				switch_channel_set_private(channel, "__fh", NULL);
+				switch_core_session_io_rwunlock(session);
+
+				switch_core_file_close(fh);
+
+				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_FALSE);
+				status = SWITCH_STATUS_GENERR;
+				continue;
+
+			}
 		} else {
 			write_frame.codec = &codec;
 			samples = codec.implementation->samples_per_packet;
@@ -1523,6 +1545,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 						write_frame.codec = switch_core_session_get_read_codec(session);
 						samples = read_impl.samples_per_packet;
 						framelen = read_impl.encoded_bytes_per_packet;
+						if (framelen == 0) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s cannot play or record native files with variable length data\n", switch_channel_get_name(channel));
+							eof++;
+							continue;
+						}
 					} else {
 						write_frame.codec = &codec;
 						samples = codec.implementation->samples_per_packet;

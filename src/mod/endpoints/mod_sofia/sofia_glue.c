@@ -2667,7 +2667,8 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 				contact_str = profile->tcp_public_contact;
 				break;
 			case SOFIA_TRANSPORT_TCP_TLS:
-				contact_str = profile->tls_public_contact;
+				contact_str = sofia_test_pflag(profile, PFLAG_TLS) ?
+					profile->tls_public_contact : profile->tcp_public_contact;
 				break;
 			default:
 				contact_str = profile->public_url;
@@ -2690,7 +2691,8 @@ switch_status_t sofia_glue_send_notify(sofia_profile_t *profile, const char *use
 				contact_str = profile->tcp_contact;
 				break;
 			case SOFIA_TRANSPORT_TCP_TLS:
-				contact_str = profile->tls_contact;
+				contact_str = sofia_test_pflag(profile, PFLAG_TLS) ?
+					profile->tls_contact : profile->tcp_contact;
 				break;
 			default:
 				contact_str = profile->url;

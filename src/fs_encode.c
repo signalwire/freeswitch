@@ -175,15 +175,6 @@ int main(int argc, char *argv[])
 	}
 
 
-	if (switch_core_file_open(&fh_output, output, channels, rate, out_flags, NULL) != SWITCH_STATUS_SUCCESS) {
-		fprintf(stderr, "Couldn't open %s\n", output);
-		goto end;	
-	}
-	
-	if (switch_test_flag(&fh_input, SWITCH_FILE_NATIVE)) {
-		in_asis = 1;
-	}
-
 	if (out_asis) {
 		if (switch_core_codec_init_with_bitrate(&codec, format, fmtp, rate, ptime, channels, bitrate, SWITCH_CODEC_FLAG_ENCODE, NULL, pool) != SWITCH_STATUS_SUCCESS) {
 			fprintf(stderr, "Couldn't initialize codec for %s@%dh@%di\n", format, rate, ptime);
@@ -205,6 +196,20 @@ int main(int argc, char *argv[])
 		goto end;
 		}
 	}
+
+
+
+
+	if (switch_core_file_open(&fh_output, output, channels, codec.implementation->actual_samples_per_second, out_flags, NULL) != SWITCH_STATUS_SUCCESS) {
+		fprintf(stderr, "Couldn't open %s\n", output);
+		goto end;	
+	}
+	
+	if (switch_test_flag(&fh_input, SWITCH_FILE_NATIVE)) {
+		in_asis = 1;
+	}
+
+
 
 	if (in_asis) {
 		blocksize = len = codec.implementation->encoded_bytes_per_packet;

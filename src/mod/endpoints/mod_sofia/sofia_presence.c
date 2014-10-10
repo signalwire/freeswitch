@@ -2227,7 +2227,8 @@ static void _send_presence_notify(sofia_profile_t *profile,
 			contact_str = profile->tcp_public_contact;
 			break;
 		case SOFIA_TRANSPORT_TCP_TLS:
-			contact_str = profile->tls_public_contact;
+			contact_str = sofia_test_pflag(profile, PFLAG_TLS) ?
+				profile->tls_public_contact : profile->tcp_public_contact;
 			break;
 		default:
 			contact_str = profile->public_url;
@@ -2241,7 +2242,8 @@ static void _send_presence_notify(sofia_profile_t *profile,
 			contact_str = profile->tcp_contact;
 			break;
 		case SOFIA_TRANSPORT_TCP_TLS:
-			contact_str = profile->tls_contact;
+			contact_str = sofia_test_pflag(profile, PFLAG_TLS) ?
+				profile->tls_contact : profile->tcp_contact;
 			break;
 		default:
 			contact_str = profile->url;
@@ -2687,7 +2689,8 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 				contact_str = profile->tcp_public_contact;
 				break;
 			case SOFIA_TRANSPORT_TCP_TLS:
-				contact_str = profile->tls_public_contact;
+				contact_str = sofia_test_pflag(profile, PFLAG_TLS) ?
+					profile->tls_public_contact : profile->tcp_public_contact;
 				break;
 			default:
 				contact_str = profile->public_url;
@@ -2706,7 +2709,8 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 				contact_str = profile->tcp_contact;
 				break;
 			case SOFIA_TRANSPORT_TCP_TLS:
-				contact_str = profile->tls_contact;
+				contact_str = sofia_test_pflag(profile, PFLAG_TLS) ?
+					profile->tls_contact : profile->tcp_contact;
 				break;
 			default:
 				contact_str = profile->url;
@@ -4036,9 +4040,11 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			}
 		} else if (switch_stristr("port=tls", contact->m_url->url_params)) {
 			if (np.is_auto_nat) {
-				cs = profile->tls_public_contact;
+				cs = sofia_test_pflag(profile, PFLAG_TLS) ?
+					profile->tls_public_contact : profile->tcp_public_contact;
 			} else {
-				cs = profile->tls_contact;
+				cs = sofia_test_pflag(profile, PFLAG_TLS) ?
+					profile->tls_contact : profile->tcp_contact;
 			}
 		}
 
