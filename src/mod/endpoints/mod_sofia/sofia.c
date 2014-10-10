@@ -6367,7 +6367,7 @@ void *SWITCH_THREAD_FUNC media_on_hold_thread_run(switch_thread_t *thread, void 
 				switch_channel_wait_for_flag(channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
 				switch_channel_wait_for_flag(other_channel, CF_MEDIA_ACK, SWITCH_TRUE, 10000, NULL);
 
-				switch_ivr_media(switch_core_session_get_uuid(other_session), SMF_REBRIDGE);
+				switch_ivr_media(switch_core_session_get_uuid(other_session), SMF_REBRIDGE|SMF_REPLYONLY_B);
 
 				if (switch_core_media_ready(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO)) {
 					switch_core_media_clear_rtp_flag(tech_pvt->session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_RTP_FLAG_AUTOADJ);

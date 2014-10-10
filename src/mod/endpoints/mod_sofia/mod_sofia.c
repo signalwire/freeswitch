@@ -1451,13 +1451,15 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			
 			switch_core_media_gen_local_sdp(session, SDP_TYPE_REQUEST, NULL, 0, NULL, 1);
 
-			if (send_invite) {
-				if (!switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
-					switch_channel_set_flag(channel, CF_REQ_MEDIA);
+			if (!msg->numeric_arg) {
+				if (send_invite) {
+					if (!switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+						switch_channel_set_flag(channel, CF_REQ_MEDIA);
+					}
+					sofia_glue_do_invite(session);
+				} else {
+					status = SWITCH_STATUS_FALSE;
 				}
-				sofia_glue_do_invite(session);
-			} else {
-				status = SWITCH_STATUS_FALSE;
 			}
 		}
 		break;
