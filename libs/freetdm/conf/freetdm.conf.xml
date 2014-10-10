@@ -623,6 +623,10 @@ with the signaling protocols that you can run on top of your I/O interfaces.
 
 			<!-- Number to dial to disable forwarding when the call ends (if immediate forwarding was enabled) -->
 			<!-- <param name="disable-forwarding-number" value="*73" /> -->
+
+			<!-- Startup raw AT commands to run, you can repeat this parameter as many times as needed -->
+			<!-- <param name="startup-command" value="AT$GPSP=1" /> -->
+			<!-- <param name="startup-command" value="AT$GPSAT=1" /> -->
 		</span>
 	</gsm_spans>
 </configuration>

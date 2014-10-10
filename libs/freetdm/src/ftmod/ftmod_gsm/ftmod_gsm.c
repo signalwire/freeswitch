@@ -119,6 +119,7 @@ typedef struct ftdm_gsm_span_data_s {
 	ftdm_timer_id_t immediate_forwarding_timer;
 	ftdm_bool_t init_conditional_forwarding;
 	ftdm_bool_t startup_forwarding_disabled;
+	char startup_commands[20][50];
 } ftdm_gsm_span_data_t;
 
 // command handler function type.
@@ -259,7 +260,14 @@ static void on_wat_span_status(unsigned char span_id, wat_span_status_t *status)
 	switch (status->type) {
 	case WAT_SPAN_STS_READY:
 		{
+			int i = 0;
 			ftdm_log(FTDM_LOG_INFO, "span %d: Ready\n", span_id);
+			for (i = 0; !ftdm_strlen_zero_buf(gsm_data->startup_commands[i]); i++) {
+				ftdm_log(FTDM_LOG_INFO, "span %d: Executing startup command '%s'\n", span_id, gsm_data->startup_commands[i]);
+				if (WAT_SUCCESS != wat_cmd_req(span_id, gsm_data->startup_commands[i], NULL, NULL)) {
+					ftdm_log(FTDM_LOG_ERROR, "span %d: Failed requesting execution of command '%s'\n", span_id, gsm_data->startup_commands[i]);
+				}
+			}
 		}
 		break;
 	case WAT_SPAN_STS_SIGSTATUS:
@@ -1009,6 +1017,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_gsm_configure_span_signaling)
 	const char *var = NULL;
 	const char *val = NULL;
 	char schedname[255];
+	int cmdindex = 0;
 
 	int codec = FTDM_CODEC_SLIN;
 	int interval = 20;
@@ -1072,6 +1081,7 @@ static FIO_CONFIGURE_SPAN_SIGNALING_FUNCTION(ftdm_gsm_configure_span_signaling)
 	gsm_data->dchan = dchan;
 	gsm_data->bchan = bchan;
 
+	cmdindex = 0;
 	for (paramindex = 0; ftdm_parameters[paramindex].var; paramindex++) {
 		var = ftdm_parameters[paramindex].var;
 		val = ftdm_parameters[paramindex].val;
@@ -1150,6 +1160,14 @@ ifn_parse_done:
 			ftdm_set_string(gsm_data->immediate_forward_prefix, val);
 		} else if (!strcasecmp(var, "disable-forwarding-number")) {
 			ftdm_set_string(gsm_data->disable_forward_number, val);
+		} else if (!strcasecmp(var, "startup-command")) {
+			if (cmdindex < (ftdm_array_len(gsm_data->startup_commands) - 1)) {
+				ftdm_set_string(gsm_data->startup_commands[cmdindex], val);
+				ftdm_log(FTDM_LOG_DEBUG, "Adding startup command '%s' to GSM span %s\n", gsm_data->startup_commands[cmdindex], span->name);
+				cmdindex++;
+			} else {
+				ftdm_log(FTDM_LOG_ERROR, "Ignoring startup command '%s' ... max commands limit reached", val);
+			}
 		} else {
 			ftdm_log(FTDM_LOG_ERROR, "Ignoring unknown GSM parameter '%s'", var);
 		}
