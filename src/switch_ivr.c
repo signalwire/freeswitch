@@ -1568,18 +1568,28 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_media(const char *uuid, switch_media_
 			status = SWITCH_STATUS_SUCCESS;
 
 			/* If we had early media in bypass mode before, it is no longer relevant */
-                	if (switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
-                        	switch_core_session_message_t msg2 = { 0 };
-
-                        	msg2.message_id = SWITCH_MESSAGE_INDICATE_CLEAR_PROGRESS;
-                        	msg2.from = __FILE__;
-                        	switch_core_session_receive_message(session, &msg2);
-                	}
-
+			if (switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
+				switch_core_session_message_t msg2 = { 0 };
+				
+				msg2.message_id = SWITCH_MESSAGE_INDICATE_CLEAR_PROGRESS;
+				msg2.from = __FILE__;
+				switch_core_session_receive_message(session, &msg2);
+			}
+			
+			if ((flags & SMF_REPLYONLY_A)) {
+				msg.numeric_arg = 1;
+			}
+					
 			if (switch_core_session_receive_message(session, &msg) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Can't re-establsh media on %s\n", switch_channel_get_name(channel));
 				switch_core_session_rwunlock(session);
 				return SWITCH_STATUS_GENERR;
+			}
+
+			if ((flags & SMF_REPLYONLY_B)) {
+				msg.numeric_arg = 1;
+			} else {
+				msg.numeric_arg = 0;
 			}
 
 			if ((flags & SMF_IMMEDIATE)) {

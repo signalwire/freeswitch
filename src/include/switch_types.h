@@ -460,7 +460,9 @@ typedef enum {
 	SMF_HOLD_BLEG = (1 << 5),
 	SMF_IMMEDIATE = (1 << 6),
 	SMF_EXEC_INLINE = (1 << 7),
-	SMF_PRIORITY = (1 << 8)
+	SMF_PRIORITY = (1 << 8),
+	SMF_REPLYONLY_A = (1 << 9),
+	SMF_REPLYONLY_B = (1 << 10)
 } switch_media_flag_enum_t;
 typedef uint32_t switch_media_flag_t;
 
