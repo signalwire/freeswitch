@@ -4084,7 +4084,7 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 		if (switch_channel_test_flag(session->channel, CF_PROTO_HOLD)) {
 			const char *val;
 			int media_on_hold_a = switch_true(switch_channel_get_variable_dup(session->channel, "bypass_media_resume_on_hold", SWITCH_FALSE, -1));
-			int media_on_hold_b = switch_true(switch_channel_get_variable_dup(b_channel, "bypass_media_resume_on_hold", SWITCH_FALSE, -1));
+			int media_on_hold_b = 0;
 			int bypass_after_hold_a = 0;
 			int bypass_after_hold_b = 0;
 
@@ -4092,10 +4092,12 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 				bypass_after_hold_a = switch_true(switch_channel_get_variable_dup(session->channel, "bypass_media_after_hold", SWITCH_FALSE, -1));
 			}
 
-			if (media_on_hold_b) {
-				bypass_after_hold_b = switch_true(switch_channel_get_variable_dup(b_channel, "bypass_media_after_hold", SWITCH_FALSE, -1));
+			if (b_channel) {
+				if ((media_on_hold_b = switch_true(switch_channel_get_variable_dup(b_channel, "bypass_media_resume_on_hold", SWITCH_FALSE, -1)))) {
+					bypass_after_hold_b = switch_true(switch_channel_get_variable_dup(b_channel, "bypass_media_after_hold", SWITCH_FALSE, -1));
+				}
 			}
-
+			
 			switch_yield(250000);
 
 			if (b_channel && (switch_channel_test_flag(session->channel, CF_BYPASS_MEDIA_AFTER_HOLD) ||
