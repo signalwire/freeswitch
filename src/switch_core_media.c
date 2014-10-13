@@ -5264,21 +5264,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				}
 			}
 
-			if (jb_msec < 0 && jb_msec > -10) {
+			if (jb_msec < 0 && jb_msec > -20) {
 				jb_msec = (a_engine->read_codec.implementation->microseconds_per_packet / 1000) * abs(jb_msec);
+			}
+
+			if (maxlen < 0 && maxlen > -20) {
+				maxlen = (a_engine->read_codec.implementation->microseconds_per_packet / 1000) * abs(maxlen);
 			}
 
 			if (jb_msec < 20 || jb_msec > 10000) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
 								  "Invalid Jitterbuffer spec [%d] must be between 20 and 10000\n", jb_msec);
 			} else {
-				int qlen, maxqlen = 50;
+				int qlen, maxqlen = 10;
 				
 				qlen = jb_msec / (a_engine->read_impl.microseconds_per_packet / 1000);
-
-				if (qlen < 1) {
-					qlen = 3;
-				}
 
 				if (maxlen) {
 					maxqlen = maxlen / (a_engine->read_impl.microseconds_per_packet / 1000);
@@ -7666,7 +7666,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 	case SWITCH_MESSAGE_INDICATE_JITTER_BUFFER:
 		{
 			if (switch_rtp_ready(a_engine->rtp_session)) {
-				int len = 0, maxlen = 0, qlen = 0, maxqlen = 50, max_drift = 0;
+				int len = 0, maxlen = 0, qlen = 0, maxqlen = 10, max_drift = 0;
 
 				if (msg->string_arg) {
 					char *p, *q;
@@ -7691,7 +7691,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 					if ((len = atoi(msg->string_arg))) {
 						qlen = len / (a_engine->read_impl.microseconds_per_packet / 1000);
 						if (qlen < 1) {
-							qlen = 3;
+							qlen = 1;
 						}
 					}
 					
@@ -7706,6 +7706,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 						}
 					}
 
+
+					if (qlen < 0 && qlen > -20) {
+						qlen = (a_engine->read_codec.implementation->microseconds_per_packet / 1000) * abs(qlen);
+					}
+					
+					if (maxlen < 0 && maxlen > -20) {
+						maxlen = (a_engine->read_codec.implementation->microseconds_per_packet / 1000) * abs(maxlen);
+					}
 
 					if (maxlen) {
 						maxqlen = maxlen / (a_engine->read_impl.microseconds_per_packet / 1000);
