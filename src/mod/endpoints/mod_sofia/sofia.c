@@ -8999,6 +8999,8 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 					switch_xml_free(x_user);
 				}
 
+				nua_handle_destroy(nh);
+				
 				if (sip->sip_authorization || sip->sip_proxy_authorization) {
 					goto fail;
 				}
