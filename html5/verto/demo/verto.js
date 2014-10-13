@@ -473,6 +473,11 @@ function init() {
             "minWidth": "1280",
             "minHeight": "720"
         },
+	audioParams: {
+	    googAutoGainControl: false,
+	    googNoiseSuppression: false,
+	    googHighpassFilter: false
+	},
 	iceServers: $("#use_stun").is(':checked')
     },callbacks);
 
