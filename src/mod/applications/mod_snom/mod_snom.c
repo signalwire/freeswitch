@@ -116,8 +116,10 @@ SWITCH_STANDARD_API(snom_command_api_function)
 {
 	int argc;
 	long httpRes = 0;
+	char *key = NULL;
 	char *url = NULL;
 	char *argv[5] = { 0 };
+	char host[32];
 	char *argdata = NULL;
 	char *userpwd = NULL;
 	char *apiresp = NULL;
@@ -141,10 +143,9 @@ SWITCH_STANDARD_API(snom_command_api_function)
 	}
 
 	if (switch_inet_pton(AF_INET, argv[0], &ip)) {
-		url = switch_mprintf("http://%s/command.htm?%s=%s",argv[0],argv[1],argv[2]);
+		strncpy(host, argv[0], sizeof(host));
 	} else {
 		char *sql = NULL;
-		char buf[32];
 		char *ret = NULL;
 		switch_cache_db_handle_t *db = NULL;
 		switch_stream_handle_t apistream = { 0 };
@@ -173,7 +174,7 @@ SWITCH_STANDARD_API(snom_command_api_function)
 
 		sql = switch_mprintf("select network_ip from registrations where url = '%s'", apiresp);
 
-		ret = switch_cache_db_execute_sql2str(db, sql, buf, sizeof(buf), NULL);
+		ret = switch_cache_db_execute_sql2str(db, sql, host, sizeof(host), NULL);
 		switch_safe_free(sql);
 		switch_cache_db_release_db_handle(&db);
 
@@ -181,11 +182,14 @@ SWITCH_STANDARD_API(snom_command_api_function)
 			stream->write_function(stream, "%s", "-ERR Query '%s' failed!\n", sql);
 			goto end;
 		}
-
-		url = switch_mprintf("http://%s/command.htm?%s=%s",buf,argv[1],argv[2]);
 	}
 
 	curl_handle = curl_easy_init();
+
+	key = curl_easy_escape(curl_handle, argv[2], 0);
+	url = switch_mprintf("http://%s/command.htm?%s=%s", host, argv[1], key);
+	curl_free(key);
+
 	curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, curl_callback);
 	curl_easy_setopt(curl_handle, CURLOPT_URL, url);
