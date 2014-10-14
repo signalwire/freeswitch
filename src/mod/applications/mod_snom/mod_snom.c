@@ -137,8 +137,8 @@ SWITCH_STANDARD_API(snom_command_api_function)
 		goto end;
 	}
 
-	if (strcasecmp(argv[1],"key")) {
-		stream->write_function(stream, "-ERR only KEY command allowed at the moment\n");
+	if (strcasecmp(argv[1],"key") && strcasecmp(argv[1],"action")) {
+		stream->write_function(stream, "-ERR only key or action commands allowed at the moment\n");
 		goto end;
 	}
 
@@ -186,9 +186,29 @@ SWITCH_STANDARD_API(snom_command_api_function)
 
 	curl_handle = curl_easy_init();
 
-	key = curl_easy_escape(curl_handle, argv[2], 0);
-	url = switch_mprintf("http://%s/command.htm?%s=%s", host, argv[1], key);
-	curl_free(key);
+	if (0 == strcasecmp(argv[1],"key")) {
+		key = curl_easy_escape(curl_handle, argv[2], 0);
+		url = switch_mprintf("http://%s/command.htm?key=%s", host, key);
+		curl_free(key);
+	}
+
+	if (0 == strcasecmp(argv[1],"action")) {
+		if (0 == strcasecmp(argv[2],"reboot")) {
+			url = switch_mprintf("http://%s/advanced_update.htm?reboot=Reboot", host);
+		} else if (0 == strcasecmp(argv[2],"reset")) {
+			url = switch_mprintf("http://%s/advanced_update.htm?reset=Reset", host);
+		} else if (0 == strcasecmp(argv[2],"dialeddel")) {
+			url = switch_mprintf("http://%s/index.htm?dialeddel=0", host);
+		} else if (0 == strcasecmp(argv[2],"misseddel")) {
+			url = switch_mprintf("http://%s/index.htm?misseddel=0", host);
+		} else if (0 == strcasecmp(argv[2],"receiveddel")) {
+			url = switch_mprintf("http://%s/index.htm?receiveddel=0", host);
+		} else {
+			stream->write_function(stream, "-ERR action '%s' not supported (supported actions are reboot, reset, dialeddel, misseddel, receiveddel)\n", argv[2]);
+			curl_easy_cleanup(curl_handle);
+			goto end;
+		}
+	}
 
 	curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, curl_callback);
