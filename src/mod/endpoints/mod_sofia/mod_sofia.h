@@ -43,6 +43,8 @@
 #define SQL_CACHE_TIMEOUT 300
 #define DEFAULT_NONCE_TTL 60
 #define IREG_SECONDS 30
+#define IPING_SECONDS 30
+#define IPING_FREQUENCY 1
 #define GATEWAY_SECONDS 1
 #define SOFIA_QUEUE_SIZE 50000
 #define HAVE_APR
@@ -720,6 +722,8 @@ struct sofia_profile {
 	uint32_t sip_expires_late_margin;
 	uint32_t sip_subscription_max_deviation;
 	int ireg_seconds;
+	int iping_seconds;
+	int iping_freq;
 	sofia_paid_type_t paid_type;
 	uint32_t rtp_digit_delay;
 	switch_queue_t *event_queue;
@@ -976,6 +980,7 @@ void sofia_glue_actually_execute_sql_trans(sofia_profile_t *profile, char *sql, 
 void sofia_glue_execute_sql_now(sofia_profile_t *profile, char **sqlp, switch_bool_t sql_already_dynamic);
 void sofia_glue_execute_sql_soon(sofia_profile_t *profile, char **sqlp, switch_bool_t sql_already_dynamic);
 void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot);
+void sofia_reg_check_ping_expire(sofia_profile_t *profile, time_t now, int interval);
 void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now);
 void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now);
 void sofia_reg_unregister(sofia_profile_t *profile);
