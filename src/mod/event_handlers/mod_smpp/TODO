@@ -1,0 +1,9 @@
+TODO:
+1. add more encoding options
+2. Improve partial read and write support
+3. Add storage options, and registration delivery checks.
+4. SSL connection support
+5. SMPP 5.0 support
+6. async message support
+7. Add support for configuring chatplan profile for inbound messages from a gateway
+8. ... ?

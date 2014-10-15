@@ -106,6 +106,7 @@ event_handlers/mod_event_socket
 #event_handlers/mod_radius_cdr
 #event_handlers/mod_odbc_cdr
 #event_handlers/mod_rayo
+#event_handlers/mod_smpp
 #event_handlers/mod_snmp
 #event_handlers/mod_event_zmq
 #formats/mod_imagick

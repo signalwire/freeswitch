@@ -1383,6 +1383,10 @@ PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2],[
   AM_CONDITIONAL([HAVE_AMQP],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AMQP],[false])])
 
+PKG_CHECK_MODULES([SMPP34], [libsmpp34 >= 1.10],[
+  AM_CONDITIONAL([HAVE_SMPP34],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SMPP34],[false])])
+
 AC_ARG_ENABLE(core-libedit-support,     
   [AS_HELP_STRING([--disable-core-libedit-support], [Compile without libedit Support])])
 
@@ -1771,6 +1775,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/event_handlers/mod_radius_cdr/Makefile
 		src/mod/event_handlers/mod_odbc_cdr/Makefile
 		src/mod/event_handlers/mod_rayo/Makefile
+		src/mod/event_handlers/mod_smpp/Makefile
 		src/mod/event_handlers/mod_snmp/Makefile
 		src/mod/event_handlers/mod_event_zmq/Makefile
 		src/mod/formats/mod_imagick/Makefile

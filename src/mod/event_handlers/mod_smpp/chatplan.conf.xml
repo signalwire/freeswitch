@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<include>
+  <context name="default">
+
+    <extension name="smpp34_demo_in">
+      <condition field="to_user" expression="^12345551234$"/>
+      <condition field="from_user" expression="^(\d{11})$">
+        <action application="set" data="to=1001@192.168.100.100"/>
+        <action application="set" data="from=$1@192.168.100.100"/>
+        <action application="set" data="proto="/>
+        <action application="set" data="dest_proto=sip"/>
+        <action application="info"/>
+        <action application="set" data="final_delivery=1"/>
+        <action application="send"/>
+      </condition>
+    </extension>
+  </context>
+
+  <context name="public">
+
+    <extension name="smpp34_demo_out">
+      <condition field="from_user" expression="^1001$"/>
+      <condition field="to_user" expression="^(\d{11})$">
+        <action application="set" data="from_user=12345551234"/>
+        <action application="set" data="final_delivery=1"/>
+        <action application="info"/>
+        <action application="smpp_send" data="smppgateway"/>
+      </condition>
+    </extension>
+
+  </context>
+</include>
