@@ -3825,11 +3825,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *
 	}
 
 	READ_INC(rtp_session);
+
 	if (rtp_session->jb) {
-		stfu_n_resize(rtp_session->jb, queue_frames);
-	} else {
-		rtp_session->jb = stfu_n_init(queue_frames, max_queue_frames ? max_queue_frames : 50, samples_per_packet, samples_per_second, max_drift);
+		stfu_n_destroy(&rtp_session->jb);
 	}
+
+	rtp_session->jb = stfu_n_init(queue_frames, max_queue_frames ? max_queue_frames : 50, samples_per_packet, samples_per_second, max_drift);
+
 	READ_DEC(rtp_session);
 	
 	if (rtp_session->jb) {
