@@ -71,6 +71,8 @@ long ReadAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, int ch
 {
 	switch_core_timer_next(timer);
 
+	//printf("latency-a: %lu\n", pa_simple_get_latency(aStream->istream, NULL));
+	//pa_simple_flush(aStream->istream, NULL);
 	pa_simple_read(aStream->istream, data, datalen, NULL);
 
 	return datalen;

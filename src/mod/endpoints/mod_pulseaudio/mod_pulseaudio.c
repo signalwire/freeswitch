@@ -345,7 +345,8 @@ static switch_status_t channel_on_routing(switch_core_session_t *session)
 				switch_set_flag(tech_pvt, TFLAG_ANSWER);
 			}
 			switch_mutex_unlock(globals.pvt_lock);
-			switch_yield(1000000);
+			// This will add one second latency on PulseAudio
+			//switch_yield(1000000);
 		} else {
 			switch_channel_mark_ring_ready(channel);
 		}
@@ -755,13 +756,8 @@ static switch_status_t channel_endpoint_read(audio_endpoint_t *endpoint, switch_
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	endpoint->read_frame.data = endpoint->read_buf;
-	endpoint->read_frame.buflen = sizeof(endpoint->read_buf);
-	endpoint->read_frame.source = __FILE__;
-	endpoint->read_frame.samples = STREAM_SAMPLES_PER_PACKET(endpoint->in_stream);
-	endpoint->read_frame.datalen = (endpoint->read_frame.samples * sizeof(SAMPLE));
 	datalen = ReadAudioStream(endpoint->in_stream->stream, 
-			endpoint->read_frame.data, endpoint->read_frame.datalen, 
+			endpoint->read_frame.data, STREAM_SAMPLES_PER_PACKET(endpoint->in_stream)*sizeof(SAMPLE),
 			endpoint->inchan, &endpoint->read_timer);
 
 	if (!datalen) {
@@ -770,6 +766,8 @@ static switch_status_t channel_endpoint_read(audio_endpoint_t *endpoint, switch_
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	endpoint->read_frame.datalen = datalen;
+	endpoint->read_frame.samples = (datalen / sizeof(SAMPLE));
 	endpoint->read_frame.codec = &endpoint->read_codec;
 	*frame = &endpoint->read_frame;
 	return SWITCH_STATUS_SUCCESS;
