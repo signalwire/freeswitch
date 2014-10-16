@@ -2073,6 +2073,7 @@ void sofia_event_callback(nua_event_t event,
 							switch_mutex_lock(profile->flag_mutex);
 							switch_core_hash_insert(profile->chat_hash, tech_pvt->call_id, strdup(switch_core_session_get_uuid(session)));
 							switch_mutex_unlock(profile->flag_mutex);
+							nua_handle_destroy(nh);
 						} else {
 							switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 						}
