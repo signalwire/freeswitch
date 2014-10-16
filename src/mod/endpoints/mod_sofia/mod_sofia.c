@@ -2523,7 +2523,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 			uint32_t ob_failed = 0;
 			uint32_t ob = 0;
 
-			stream->write_function(stream, "%25s\t%32s\t%s\t%s\t%s\n", "Profile::Gateway-Name", "    Data    ", "State", "IB Calls(F/T)", "OB Calls(F/T)");
+			stream->write_function(stream, "%25s\t%32s\t%s\t%9s\t%s\t%s\n", "Profile::Gateway-Name", "    Data    ", "State", "Ping Time", "IB Calls(F/T)", "OB Calls(F/T)");
 			stream->write_function(stream, "%s\n", line);
 			switch_mutex_lock(mod_sofia_globals.hash_mutex);
 			for (hi = switch_core_hash_first(mod_sofia_globals.profile_hash); hi; hi = switch_core_hash_next(&hi)) {
@@ -2543,8 +2543,8 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 							ob_failed += gp->ob_failed_calls;
 							ob += gp->ob_calls;
 
-							stream->write_function(stream, "%25s\t%32s\t%s\t%u/%u\t%u/%u",
-												   pkey, gp->register_to, sofia_state_names[gp->state],
+							stream->write_function(stream, "%25s\t%32s\t%s\t%9u\t%u/%u\t%u/%u",
+												   pkey, gp->register_to, sofia_state_names[gp->state], gp->ping_time,
 												   gp->ib_failed_calls, gp->ib_calls, gp->ob_failed_calls, gp->ob_calls);
 
 							if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
@@ -2589,6 +2589,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				stream->write_function(stream, "Freq    \t%d\n", gp->freq);
 				stream->write_function(stream, "Ping    \t%d\n", gp->ping);
 				stream->write_function(stream, "PingFreq\t%d\n", gp->ping_freq);
+				stream->write_function(stream, "PingTime\t%d\n", gp->ping_time);
 				stream->write_function(stream, "PingState\t%d/%d/%d\n", gp->ping_min, gp->ping_count, gp->ping_max);
 				stream->write_function(stream, "State   \t%s\n", sofia_state_names[gp->state]);
 				stream->write_function(stream, "Status  \t%s%s\n", status_names[gp->status], gp->pinging ? " (ping)" : "");
@@ -2831,8 +2832,9 @@ static void xml_gateway_status(sofia_gateway_t *gp, switch_stream_handle_t *stre
 	stream->write_function(stream, "    <ping>%d</ping>\n", gp->ping);
 	stream->write_function(stream, "    <pingfreq>%d</pingfreq>\n", gp->ping_freq);
 	stream->write_function(stream, "    <pingmin>%d</pingmin>\n", gp->ping_min);
-	stream->write_function(stream, "    <pingcount>%d</pingcount>\n", gp->ping_count);
+	stream->write_function(stream, "    <pingcount>%d</pingcount>\n", gp->ping_count);	
 	stream->write_function(stream, "    <pingmax>%d</pingmax>\n", gp->ping_max);
+	stream->write_function(stream, "    <pingtime>%d</pingtime>\n", gp->ping_time);
 	stream->write_function(stream, "    <pinging>%d</pinging>\n", gp->pinging);
 	stream->write_function(stream, "    <state>%s</state>\n", sofia_state_names[gp->state]);
 	stream->write_function(stream, "    <status>%s</status>\n", status_names[gp->status]);

@@ -3350,6 +3350,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			gateway->ping_freq = 0;
 			gateway->ping_max = 0;
 			gateway->ping_min = 0;
+			gateway->ping_sent = 0;
+			gateway->ping_time = 0;
 			gateway->ping_count = 0;
 			gateway->ping_monitoring = SWITCH_FALSE;
 			gateway->ib_calls = 0;
@@ -5679,10 +5681,15 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 								  "Ping succeeded %s with code %d - count %d/%d/%d, state %s\n",
 								  gateway->name, status, gateway->ping_min, gateway->ping_count, gateway->ping_max, sofia_gateway_status_name(gateway->status));
 			}
+			if (gateway->ping_sent) {
+				gateway->ping_time = (switch_micro_time_now() - gateway->ping_sent) / 1000;
+				gateway->ping_sent = 0;					
+			}
 		} else {
 			if (gateway->state == REG_STATE_REGED) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Unregister %s\n", gateway->name);
 				gateway->state = REG_STATE_FAILED;
+				gateway->ping_time = 0;
 			}
 
 			if (gateway->ping_count > 0) {
@@ -5692,6 +5699,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 			if (gateway->ping_count < gateway->ping_min && gateway->status != SOFIA_GATEWAY_DOWN) {
 				gateway->status = SOFIA_GATEWAY_DOWN;
 				do_fire_gateway_state_event = SWITCH_TRUE;
+				gateway->ping_time = 0;
 			}
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,

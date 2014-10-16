@@ -504,6 +504,8 @@ struct sofia_gateway {
 	int ping_count;
 	int ping_max;
 	int ping_min;
+	switch_time_t ping_sent;
+	uint32_t ping_time;
 	switch_bool_t ping_monitoring;
 	uint8_t flags[REG_FLAG_MAX];
 	int32_t retry_seconds;

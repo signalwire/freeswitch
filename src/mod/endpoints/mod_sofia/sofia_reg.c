@@ -379,6 +379,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			nua_handle_bind(nh, pvt);
 
 			gateway_ptr->pinging = 1;
+			gateway_ptr->ping_sent = switch_micro_time_now();
 			nua_options(nh,
 						TAG_IF(gateway_ptr->register_sticky_proxy, NUTAG_PROXY(gateway_ptr->register_sticky_proxy)),
 						TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
