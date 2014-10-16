@@ -46,6 +46,7 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
+#include <pulse/timeval.h>
 #include <pulse/simple.h>
 #include "pablio.h"
 
@@ -69,8 +70,14 @@ long WriteAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, int c
  */
 long ReadAudioStream(PABLIO_Stream * aStream, void *data, size_t datalen, int chan, switch_timer_t *timer)
 {
+	pa_usec_t latency;
 	switch_core_timer_next(timer);
 
+	latency = pa_simple_get_latency(aStream->istream, NULL);
+	//printf("latency-a: %lu\n", latency);
+	if (latency > 100000) {
+		pa_simple_flush(aStream->istream, NULL);
+	}
 	pa_simple_read(aStream->istream, data, datalen, NULL);
 
 	return datalen;
@@ -89,6 +96,8 @@ pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr, const char * channelName,
 	pa_error err;
 	PABLIO_Stream *aStream;
 	int channels = 1;
+	int latency_msec = 50;
+	pa_buffer_attr buffer_attr;
 
 	if (!(inputParameters || outputParameters)) {
 		return -1;
@@ -101,11 +110,15 @@ pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr, const char * channelName,
 
 	/* Open a PulseAudio stream that we will use to communicate with the underlying
 	 * audio drivers. */
+	bzero(&buffer_attr, sizeof(buffer_attr));
+	buffer_attr.prebuf = (uint32_t) -1;
+
 	if (inputParameters) {
+		buffer_attr.fragsize = pa_usec_to_bytes(latency_msec * PA_USEC_PER_MSEC, inputParameters);
+		buffer_attr.maxlength = buffer_attr.fragsize;
 		channels = inputParameters->channels;
-		//inputParameters = sampleRate;
 		aStream->has_in = 1;
-		aStream->istream = pa_simple_new(NULL, "FreeSwitch", PA_STREAM_RECORD, NULL, channelName, inputParameters, NULL, NULL, &err);
+		aStream->istream = pa_simple_new(NULL, "FreeSwitch", PA_STREAM_RECORD, NULL, channelName, inputParameters, NULL, &buffer_attr, &err);
 		if (!aStream->istream) {
 			goto error;
 		}
@@ -114,8 +127,10 @@ pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr, const char * channelName,
 	if (outputParameters) {
 		channels = outputParameters->channels;
 		//outputParameters->rate = sampleRate;
+		buffer_attr.tlength = pa_usec_to_bytes(latency_msec * PA_USEC_PER_MSEC, outputParameters);
+		buffer_attr.maxlength = buffer_attr.tlength;
 		aStream->has_out = 1;
-		aStream->ostream = pa_simple_new(NULL, "FreeSwitch", PA_STREAM_PLAYBACK, NULL, channelName, outputParameters, NULL, NULL, &err);
+		aStream->ostream = pa_simple_new(NULL, "FreeSwitch", PA_STREAM_PLAYBACK, NULL, channelName, outputParameters, NULL, &buffer_attr, &err);
 		if (!aStream->ostream) {
 			goto error;
 		}
@@ -135,6 +150,14 @@ pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr, const char * channelName,
 	*rwblPtr = NULL;
 
 	return err;
+}
+
+/************************************************************/
+void FlushAudioStream(PABLIO_Stream * aStream)
+{
+	if (aStream && aStream->has_in && aStream->istream) {
+		pa_simple_flush(aStream->istream, NULL);
+	}
 }
 
 /************************************************************/
