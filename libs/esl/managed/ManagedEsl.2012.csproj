@@ -58,7 +58,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ESL.2010.cs" />
-    <Compile Include="ESLconnection.2010.cs" />
+    <Compile Include="ESLconnection.cs" />
     <Compile Include="ESLevent.2010.cs" />
     <Compile Include="ESLPINVOKE.2010.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
