@@ -250,7 +250,7 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 		goto done_swap_out;
 	}
 
-	PyRun_SimpleString("from freeswitch import *");
+	PyRun_SimpleString("import freeswitch");
 
 	if (session) {
 		sp = mod_python_conjure_session(module, session);
