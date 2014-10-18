@@ -828,3 +828,4 @@ unimrcp/build/compile
 /sqlite-*/
 /ldns/
 /portaudio/
+portaudio.*.log
