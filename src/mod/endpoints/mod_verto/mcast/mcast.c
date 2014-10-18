@@ -37,13 +37,21 @@
 #include <stdint.h>
 #include <errno.h>
 #include <sys/types.h>
+#ifdef WIN32
+#include <winsock2.h>
+#else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#endif
 #include <time.h>
+#ifndef WIN32
 #include <unistd.h>
+#endif
 #include "mcast.h"
+#ifndef WIN32
 #include <poll.h>
+#endif
 #include <switch_utils.h>
 
 int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, mcast_flag_t flags)

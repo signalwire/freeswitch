@@ -46,10 +46,14 @@ SWITCH_MODULE_DEFINITION(mod_verto, mod_verto_load, mod_verto_shutdown, mod_vert
 
 //////////////////////////
 #include <mod_verto.h>
+#ifndef WIN32
 #include <sys/param.h>
+#endif
 #include <sys/stat.h>
 #include <fcntl.h>
+#ifndef WIN32
 #include <sys/file.h>
+#endif
 #include <ctype.h>
 #include <sys/stat.h>
 
@@ -137,15 +141,19 @@ static void verto_deinit_ssl(verto_profile_t *profile)
 	}
 }
 
-static void close_file(int *sock)
+static void close_file(ws_socket_t *sock)
 {
 	if (*sock > -1) {
+#ifndef WIN32
 		close(*sock);
-		*sock = -1;
+#else
+		closesocket(*sock);
+#endif
+		*sock = ws_sock_invalid;
 	}
 }
 
-static void close_socket(int *sock)
+static void close_socket(ws_socket_t *sock)
 {
 	if (*sock > -1) {
 		shutdown(*sock, 2);
@@ -2161,7 +2169,7 @@ static switch_state_handler_table_t verto_state_handlers = {
 
 static void verto_set_media_options(verto_pvt_t *tech_pvt, verto_profile_t *profile)
 {
-	int i;
+	uint32_t i;
 
 	tech_pvt->mparams->rtpip = switch_core_session_strdup(tech_pvt->session, profile->rtpip[profile->rtpip_cur++]);
 
@@ -3622,12 +3630,16 @@ static void jrpc_init(void)
 
 
 
-static int start_jsock(verto_profile_t *profile, int sock)
+static int start_jsock(verto_profile_t *profile, ws_socket_t sock)
 {
 	jsock_t *jsock = NULL;
 	int flag = 1;
 	int i;
-    unsigned int len;            
+#ifndef WIN32
+    unsigned int len;
+#else
+    int len;
+#endif
 	jsock_type_t ptype = PTYPE_CLIENT;
 	switch_thread_data_t *td;
 	switch_memory_pool_t *pool;
@@ -3713,10 +3725,14 @@ static int start_jsock(verto_profile_t *profile, int sock)
 	return -1;
 }
 
-static int prepare_socket(int ip, int port) 
+static ws_socket_t prepare_socket(int ip, int port) 
 {
-	int sock = -1;
+	ws_socket_t sock = ws_sock_invalid;
+#ifndef WIN32
 	int reuse_addr = 1;
+#else
+	char reuse_addr = 1;
+#endif
 	struct sockaddr_in addr;
 
 	if ((sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
@@ -3734,12 +3750,12 @@ static int prepare_socket(int ip, int port)
 	
     if (bind(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
 		die("Bind Error!\n");
-		return -1;
+		return ws_sock_invalid;
 	}
 
     if (listen(sock, MAXPENDING) < 0) {
 		die("Listen error\n");
-		return -1;
+		return ws_sock_invalid;
 	}
 
 	return sock;
@@ -3748,7 +3764,7 @@ static int prepare_socket(int ip, int port)
 
 	close_file(&sock);
 
-	return -1;
+	return ws_sock_invalid;
 }
 
 static void handle_mcast_sub(verto_profile_t *profile)
@@ -3925,7 +3941,7 @@ static void kill_profiles(void)
 
 
 	while(--sanity > 0 && globals.profile_threads > 0) {
-		usleep(100000);
+		switch_yield(100000);
 	}
 }
 
@@ -4365,13 +4381,14 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 	int cp = 0;
 	int cc = 0;
 	const char *line = "=================================================================================================";
+	int i;
 
 	stream->write_function(stream, "%25s\t%s\t  %40s\t%s\n", "Name", "   Type", "Data", "State");
 	stream->write_function(stream, "%s\n", line);
 
 	switch_mutex_lock(globals.mutex);
 	for(profile = globals.profile_head; profile; profile = profile->next) {
-		for (int i = 0; i < profile->i; i++) { 
+		for (i = 0; i < profile->i; i++) { 
 			char *tmpurl = switch_mprintf("%s:%s:%d",(profile->ip[i].secure == 1) ? "wss" : "ws", profile->ip[i].local_ip, profile->ip[i].local_port);
 			stream->write_function(stream, "%25s\t%s\t  %40s\t%s\n", profile->name, "profile", tmpurl, (profile->running) ? "RUNNING" : "DOWN");
 			switch_safe_free(tmpurl);
@@ -4408,12 +4425,13 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 	int cp = 0;
 	int cc = 0;
 	const char *header = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
+	int i;
 
 	stream->write_function(stream, "%s\n", header);
 	stream->write_function(stream, "<profiles>\n");
 	switch_mutex_lock(globals.mutex);
 	for(profile = globals.profile_head; profile; profile = profile->next) {
-		for (int i = 0; i < profile->i; i++) { 
+		for (i = 0; i < profile->i; i++) { 
 			char *tmpurl = switch_mprintf("%s:%s:%d",(profile->ip[i].secure == 1) ? "wss" : "ws", profile->ip[i].local_ip, profile->ip[i].local_port);
 			stream->write_function(stream, "<profile>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s</state>\n</profile>\n", profile->name, "profile", tmpurl, (profile->running) ? "RUNNING" : "DOWN");
 			switch_safe_free(tmpurl);
@@ -4506,7 +4524,7 @@ static void *SWITCH_THREAD_FUNC profile_thread(switch_thread_t *thread, void *ob
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "profile %s shutdown, Waiting for %d threads\n", profile->name, profile->jsock_count);
 	
 	while(--sanity > 0 && profile->jsock_count > 0) {
-		usleep(100000);
+		switch_yield(100000);
 	}
 
 	verto_deinit_ssl(profile);
@@ -5321,7 +5339,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_verto_load)
 
 	memset(&globals, 0, sizeof(globals));
 	globals.pool = pool;
+#ifndef WIN32
 	globals.ready = SIGUSR1;
+#endif
 	globals.enable_presence = SWITCH_TRUE;
 	globals.enable_fs_events = SWITCH_FALSE;
 

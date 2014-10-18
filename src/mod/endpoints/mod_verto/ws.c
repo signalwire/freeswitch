@@ -656,7 +656,11 @@ ssize_t ws_close(wsh_t *wsh, int16_t reason)
 	restore_socket(wsh->sock);
 
 	if (wsh->close_sock && wsh->sock != ws_sock_invalid) {
+#ifndef WIN32
 		close(wsh->sock);
+#else
+		closesocket(wsh->sock);
+#endif
 	}
 
 	wsh->sock = ws_sock_invalid;
