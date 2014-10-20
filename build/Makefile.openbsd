@@ -10,7 +10,7 @@
 PKG=rsync-3.1.0 git automake-1.14.1 autoconf-2.69p1 libtool gmake bzip2 jpeg wget pcre speex libldns
 PREFIX=/usr/local/freeswitch
 DOWNLOAD=http://files.freeswitch.org/downloads/libs
-OPENSSL=1.0.1i
+OPENSSL=1.0.1j
 LIBEDIT=20140618-3.1
 CURL=7.35.0
 
