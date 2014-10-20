@@ -941,6 +941,10 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	switch_assert(tech_pvt != NULL);
 
 	switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_AUDIO_SYNC:
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Flushing voice stream\n");
+		FlushAudioStream(get_audio_stream(STREAM_VOICE)->stream);
+		break;
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		channel_answer_channel(session);
 		break;

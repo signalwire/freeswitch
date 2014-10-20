@@ -114,6 +114,7 @@ pa_error OpenAudioStream(PABLIO_Stream ** rwblPtr,
 			const pa_sample_spec * outputParameters,
 			double sampleRate, long samples_per_packet);
 
+void FlushAudioStream(PABLIO_Stream * aStream);
 void CloseAudioStream(PABLIO_Stream * aStream);
 
 #ifdef __cplusplus
