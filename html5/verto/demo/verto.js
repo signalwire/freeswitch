@@ -448,7 +448,7 @@ function init() {
         });
     });
 
-    tmp = $.cookie("verto_demo_stun_checked") || "false";
+    tmp = $.cookie("verto_demo_stun_checked") || "true";
     $.cookie("verto_demo_stun_checked", tmp, {
         expires: 365
     });
