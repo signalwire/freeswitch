@@ -365,6 +365,21 @@
   <X-PRE-PROCESS cmd="set" data="bong-ring=v=-7;%(100,0,941.0,1477.0);v=-7;>=2;+=.1;%(1400,0,350,440)"/>
   <X-PRE-PROCESS cmd="set" data="beep=%(1000,0,640)"/>
   <X-PRE-PROCESS cmd="set" data="sit=%(274,0,913.8);%(274,0,1370.6);%(380,0,1776.7)"/>
+
+  <!--
+       Digits Dialed filter: (FS-6940)
+       
+       The digits stream may contain valid credit card numbers or social security numbers, These digit
+       filters will allow you to make a valant effort to stamp out sensitive information for 
+       PCI/HIPPA compliance. (see xml_cdr dialed_digits)
+       
+       df_us_ssn   = US Social Security Number pattern
+       df_us_luhn  = Visa, MasterCard, American Express, Diners Club, Discover and JCB
+  -->
+  <X-PRE-PROCESS cmd="set" data="df_us_ssn=(?!219099999|078051120)(?!666|000|9\d{2})\d{3}(?!00)\d{2}(?!0{4})\d{4}"/>
+  <X-PRE-PROCESS cmd="set" data="df_luhn=?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|6(?:011|5[0-9]{2})[0-9]{12}|(?:2131|1800|35\d{3})\d{11}"/>
+  <XX-PRE-PROCESS cmd="set" data="digits_dialed_filter=(($${df_luhn})|($${df_us_ssn}))"/>
+
   <!--
       Setting up your default sip provider is easy.
       Below are some values that should work in most cases.
