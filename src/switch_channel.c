@@ -33,7 +33,7 @@
 
 #include <switch.h>
 #include <switch_channel.h>
-
+#include <pcre.h>
 
 struct switch_cause_table {
 	const char *name;
@@ -4277,7 +4277,47 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	}
 
 	if (x) {
-		switch_channel_set_variable(channel, "digits_dialed", dtstr);
+		const char *var = switch_channel_get_variable(channel, "digits_dialed_filter");
+		char *digit_string = dtstr;
+		char *X = NULL;
+		switch_regex_t *re = NULL;
+		char *substituted = NULL;
+
+		if (!zstr(var)) {
+			int proceed = 0;
+			int ovector[30];
+
+			if ((proceed = switch_regex_perform(dtstr, var, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+				int len = (strlen(dtstr) + strlen(var) + 10) * proceed;
+				int i = 0;
+				const char *replace = NULL;
+
+				X = malloc(len);
+				
+				for (i = 0; i < proceed; i++) {
+					if (pcre_get_substring(dtstr, ovector, proceed, i, &replace) > 0) {
+						switch_size_t plen = strlen(replace);
+						memset(X, 'X', plen);
+						*(X+plen) = '\0';
+
+						switch_safe_free(substituted);
+						substituted = switch_string_replace(substituted ? substituted : dtstr, replace, X);
+						
+						printf("WTF [%s][%s]\n", replace, substituted);
+						pcre_free_substring(replace);
+					}
+				}
+				
+				if (!zstr(substituted)) {
+					digit_string = substituted;
+				}
+			}
+		}
+
+		switch_channel_set_variable(channel, "digits_dialed", digit_string);
+		switch_regex_safe_free(re);
+		switch_safe_free(substituted);
+		switch_safe_free(X);
 	} else {
 		switch_channel_set_variable(channel, "digits_dialed", "none");
 	}
