@@ -1628,7 +1628,7 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 }
 
 
-static void check_jb(switch_core_session_t *session)
+static void check_jb(switch_core_session_t *session, const char *input)
 {
 	const char *val;
 	switch_media_handle_t *smh;
@@ -1644,27 +1644,38 @@ static void check_jb(switch_core_session_t *session)
 
 	if (!a_engine->rtp_session) return;
 
-	if ((val = switch_channel_get_variable(session->channel, "jitterbuffer_msec")) || (val = smh->mparams->jb_msec)) {
-		int jb_msec = atoi(val);
-		int maxlen = 0, max_drift = 0;
-		char *p, *q;
+
+	if (!zstr(input)) {
 		const char *s;
-		
-		if (!strcasecmp(val, "pause")) {
+
+		if (!strcasecmp(input, "pause")) {
 			switch_rtp_pause_jitter_buffer(a_engine->rtp_session, SWITCH_TRUE);
 			return;
-		} else if (!strcasecmp(val, "resume")) {
+		} else if (!strcasecmp(input, "resume")) {
 			switch_rtp_pause_jitter_buffer(a_engine->rtp_session, SWITCH_FALSE);
 			return;
-		} else if (!strncasecmp(val, "debug:", 6)) {
-			s = val + 6;
+		} else if (!strcasecmp(input, "stop")) {
+			switch_rtp_deactivate_jitter_buffer(a_engine->rtp_session);
+			return;
+		} else if (!strncasecmp(input, "debug:", 6)) {
+			s = input + 6;
 			if (s && !strcmp(s, "off")) {
 				s = NULL;
 			}
 			switch_rtp_debug_jitter_buffer(a_engine->rtp_session, s);
 			return;
 		}
-			
+
+		switch_channel_set_variable(session->channel, "jitterbuffer_msec", input);
+	}
+	
+
+	if ((val = switch_channel_get_variable(session->channel, "jitterbuffer_msec")) || (val = smh->mparams->jb_msec)) {
+		int jb_msec = atoi(val);
+		int maxlen = 0, max_drift = 0;
+		char *p, *q;
+
+					
 		if ((p = strchr(val, ':'))) {
 			p++;
 			maxlen = atoi(p);
@@ -1831,7 +1842,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 				}
 			}
 
-			check_jb(session);
+			check_jb(session, NULL);
 
 			engine->check_frames = 0;
 			engine->last_ts = 0;
@@ -5339,7 +5350,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 		}
 
-		check_jb(session);
+		check_jb(session, NULL);
 
 		if ((val = switch_channel_get_variable(session->channel, "rtp_timeout_sec"))) {
 			int v = atoi(val);
@@ -7703,8 +7714,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 	case SWITCH_MESSAGE_INDICATE_JITTER_BUFFER:
 		{
 			if (switch_rtp_ready(a_engine->rtp_session)) {
-				switch_channel_set_variable(session->channel, "jitterbuffer_msec", msg->string_arg);
-				check_jb(session);
+				check_jb(session, msg->string_arg);
 			}
 		}
 		break;
