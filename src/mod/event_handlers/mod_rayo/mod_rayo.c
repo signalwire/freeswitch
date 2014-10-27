@@ -948,19 +948,20 @@ void rayo_actor_destroy(struct rayo_actor *actor, const char *file, int line)
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "", line, "", SWITCH_LOG_DEBUG, "Destroying %s\n", RAYO_JID(actor));
 		}
+		switch_core_hash_delete(globals.destroy_actors, RAYO_JID(actor));
+		switch_mutex_unlock(globals.actors_mutex);
+		/* safe to destroy parent now */
 		if (actor->cleanup_fn) {
 			actor->cleanup_fn(actor);
 		}
 		if (actor->parent) {
-			/* safe to destroy parent now */
 			RAYO_RELEASE(actor->parent);
 		}
-		switch_core_hash_delete(globals.destroy_actors, RAYO_JID(actor));
 		switch_core_destroy_memory_pool(&pool);
 	} else {
 		switch_core_hash_insert(globals.destroy_actors, RAYO_JID(actor), actor);
+		switch_mutex_unlock(globals.actors_mutex);
 	}
-	switch_mutex_unlock(globals.actors_mutex);
 }
 
 /**
