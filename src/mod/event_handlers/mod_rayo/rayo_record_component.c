@@ -134,11 +134,17 @@ static void on_call_record_stop_event(switch_event_t *event)
 	struct rayo_component *component = RAYO_COMPONENT_LOCATE(file_path);
 
 	if (component) {
+		const char *completion_cause = switch_event_get_header(event, "Record-Completion-Cause");
+		completion_cause = zstr(completion_cause) ? "" : completion_cause;
 		RECORD_COMPONENT(component)->duration_ms += (switch_micro_time_now() - RECORD_COMPONENT(component)->start_time) / 1000;
 		if (RECORD_COMPONENT(component)->stop) {
 			complete_record(component, COMPONENT_COMPLETE_STOP);
+		} else if (!strcmp(completion_cause, "no-input-timeout")) {
+			complete_record(component, RECORD_COMPLETE_INITIAL_TIMEOUT);
+		} else if (!strcmp(completion_cause, "success-maxtime")) {
+			complete_record(component, RECORD_COMPLETE_MAX_DURATION);
 		} else {
-			/* TODO assume final timeout, for now */
+			/* assume final timeout */
 			complete_record(component, RECORD_COMPLETE_FINAL_TIMEOUT);
 		}
 		RAYO_RELEASE(component);
