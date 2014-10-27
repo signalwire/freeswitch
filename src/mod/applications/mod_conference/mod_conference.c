@@ -6139,6 +6139,10 @@ static switch_status_t conf_api_sub_mute(conference_member_t *member, switch_str
 	switch_clear_flag_locked(member, MFLAG_CAN_SPEAK);
 	switch_clear_flag_locked(member, MFLAG_TALKING);
 
+	if (member->session && !switch_test_flag(member, MFLAG_INDICATE_MUTE)) {
+		switch_core_media_hard_mute(member->session, SWITCH_TRUE);
+	}
+
 	if (!(data) || !strstr((char *) data, "quiet")) {
 		switch_set_flag(member, MFLAG_INDICATE_MUTE);
 	}
@@ -6232,6 +6236,11 @@ static switch_status_t conf_api_sub_unmute(conference_member_t *member, switch_s
 		return SWITCH_STATUS_GENERR;
 
 	switch_set_flag_locked(member, MFLAG_CAN_SPEAK);
+
+	if (member->session && !switch_test_flag(member, MFLAG_INDICATE_MUTE)) {
+		switch_core_media_hard_mute(member->session, SWITCH_FALSE);
+	}
+
 	if (!(data) || !strstr((char *) data, "quiet")) {
 		switch_set_flag(member, MFLAG_INDICATE_UNMUTE);
 	}
@@ -9264,6 +9273,11 @@ SWITCH_STANDARD_APP(conference_function)
 			/* no conference yet, so check for join-only flag */
 			if (flags_str) {
 				set_mflags(flags_str,&mflags);
+
+				if (!(mflags & MFLAG_CAN_SPEAK) && (mflags & MFLAG_INDICATE_MUTE)) {
+					switch_core_media_hard_mute(session, SWITCH_TRUE);
+				}
+
 				if (mflags & MFLAG_JOIN_ONLY) {
 					switch_event_t *event;
 					switch_xml_t jos_xml;

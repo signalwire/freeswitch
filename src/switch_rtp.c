@@ -5915,6 +5915,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 	result_continue:
 	timer_check:
+		
+		if (rtp_session->flags[SWITCH_RTP_FLAG_MUTE]) {
+			do_cng++;
+		}
 
 		if (do_cng) {
 			uint8_t *data = (uint8_t *) RTP_BODY(rtp_session);

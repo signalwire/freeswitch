@@ -7656,8 +7656,17 @@ SWITCH_DECLARE(void) switch_core_media_start_udptl(switch_core_session_t *sessio
 	}
 }
 
+//?
+SWITCH_DECLARE(void) switch_core_media_hard_mute(switch_core_session_t *session, switch_bool_t on)
+{
+	switch_core_session_message_t msg = { 0 };
+	
+	msg.from = __FILE__;
 
-
+	msg.message_id = SWITCH_MESSAGE_INDICATE_HARD_MUTE;
+	msg.numeric_arg = on;
+	switch_core_session_receive_message(session, &msg);
+}
 
 
 //?
@@ -7718,6 +7727,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 			}
 		}
 		break;
+
+	case SWITCH_MESSAGE_INDICATE_HARD_MUTE:
+		{
+			if (a_engine->rtp_session) {
+				if (msg->numeric_arg) {
+					switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_MUTE);
+				} else {
+					switch_rtp_clear_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_MUTE);
+				}
+
+				rtp_flush_read_buffer(a_engine->rtp_session, SWITCH_RTP_FLUSH_ONCE);				
+			}
+		}
+
+		break;
+
 	case SWITCH_MESSAGE_INDICATE_DEBUG_MEDIA:
 		{
 			switch_rtp_t *rtp = a_engine->rtp_session;
