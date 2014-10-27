@@ -2672,7 +2672,6 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 		switch_core_session_t *called_session = NULL;
 		switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 		const char *dialstring = NULL;
-		const char *rayo_app_args = "";
 
 		if (join) {
 			/* check join args */
@@ -2699,11 +2698,11 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 					RAYO_RELEASE(peer_call);
 					goto done;
 				}
-				rayo_app_args = switch_core_sprintf(dtdata->pool, "bridge %s", rayo_call_get_uuid(peer_call));
+				switch_event_add_header(originate_vars, SWITCH_STACK_BOTTOM, "rayo_origination_args", "bridge %s", rayo_call_get_uuid(peer_call));
 				RAYO_RELEASE(peer_call);
 			} else {
 				/* conference */
-				rayo_app_args = switch_core_sprintf(dtdata->pool, "conference %s@%s", mixer_name, globals.mixer_conf_profile);
+				switch_event_add_header(originate_vars, SWITCH_STACK_BOTTOM, "rayo_origination_args", "conference %s@%s", mixer_name, globals.mixer_conf_profile);
 			}
 		}
 
@@ -2716,11 +2715,11 @@ static void *SWITCH_THREAD_FUNC rayo_dial_thread(switch_thread_t *thread, void *
 			switch_caller_extension_t *extension = NULL;
 			switch_channel_t *called_channel = switch_core_session_get_channel(called_session);
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(uuid), SWITCH_LOG_DEBUG, "dial: Call originated\n");
-			if ((extension = switch_caller_extension_new(called_session, "rayo", rayo_app_args)) == 0) {
+			if ((extension = switch_caller_extension_new(called_session, "rayo", NULL)) == 0) {
 				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rayo_call_get_uuid(call)), SWITCH_LOG_CRIT, "Memory Error!\n");
 				abort();
 			}
-			switch_caller_extension_add_application(called_session, extension, "rayo", rayo_app_args);
+			switch_caller_extension_add_application(called_session, extension, "rayo", NULL);
 			switch_channel_set_caller_extension(called_channel, extension);
 			switch_channel_set_state(called_channel, CS_EXECUTE);
 			switch_core_session_rwunlock(called_session);
@@ -3724,7 +3723,46 @@ static switch_status_t rayo_call_on_read_frame(switch_core_session_t *session, s
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define RAYO_USAGE "[bridge <uuid>|conference <name>]"
+/**
+ * @param rclient to check
+ * @param offer_filters optional list of username or username@server to match with client JID.
+ * @param offer_filter_count
+ * @return 1 if client is online and optional filter(s) match the client.  0 otherwise.
+ */
+static int should_offer_to_client(struct rayo_client *rclient, char **offer_filters, int offer_filter_count)
+{
+	if (!rclient->availability == PS_ONLINE) {
+		return 0;
+	}
+
+	if (offer_filter_count == 0) {
+		/* online and no filters to match */
+		return 1;
+	} else {
+		/* check if one of the filters matches the client */
+		int i;
+		const char *client_jid = RAYO_JID(rclient);
+		size_t client_jid_len = strlen(client_jid);
+		for (i = 0; i < offer_filter_count; i++) {
+			char *offer_filter = offer_filters[i];
+			if (!zstr(offer_filter)) {
+				size_t offer_filter_len = strlen(offer_filter);
+				if (strchr(offer_filter, '@')) {
+					if (offer_filter_len <= client_jid_len && !strncmp(offer_filter, client_jid, offer_filter_len)) {
+						/* username + server match */
+						return 1;
+					}
+				} else if (offer_filter_len < client_jid_len && !strncmp(offer_filter, client_jid, offer_filter_len) && client_jid[offer_filter_len] == '@') {
+					/* username match */
+					return 1;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+#define RAYO_USAGE "[client username 1,client username n]"
 /**
  * Offer call and park channel
  */
@@ -3732,7 +3770,7 @@ SWITCH_STANDARD_APP(rayo_app)
 {
 	int ok = 0;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-        struct rayo_call *call = RAYO_CALL_LOCATE_BY_ID(switch_core_session_get_uuid(session));
+	struct rayo_call *call = RAYO_CALL_LOCATE_BY_ID(switch_core_session_get_uuid(session));
 	const char *app = ""; /* optional app to execute */
 	const char *app_args = ""; /* app args */
 
@@ -3743,10 +3781,11 @@ SWITCH_STANDARD_APP(rayo_app)
 
 	/* is outbound call already under control? */
 	if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+		const char *origination_args = switch_channel_get_variable(channel, "rayo_origination_args");
 		/* check origination args */
-		if (!zstr(data)) {
+		if (!zstr(origination_args)) {
 			char *argv[2] = { 0 };
-			char *args = switch_core_session_strdup(session, data);
+			char *args = switch_core_session_strdup(session, origination_args);
 			int argc = switch_separate_string(args, ' ', argv, sizeof(argv) / sizeof(argv[0]));
 			if (argc) {
 				if (!strcmp("conference", argv[0])) {
@@ -3773,6 +3812,8 @@ SWITCH_STANDARD_APP(rayo_app)
 		/* offer control */
 		switch_hash_index_t *hi = NULL;
 		iks *offer = NULL;
+		char *clients_to_offer[16] = { 0 };
+		int clients_to_offer_count = 0;
 
 		call = rayo_call_create(switch_core_session_get_uuid(session));
 		if (!call) {
@@ -3787,7 +3828,12 @@ SWITCH_STANDARD_APP(rayo_app)
 		offer = rayo_create_offer(call, session);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Offering call for Rayo 3PCC\n");
 
-		/* Offer call to all ONLINE clients */
+		if (!zstr(data)) {
+			char *data_dup = switch_core_session_strdup(session, data);
+			clients_to_offer_count = switch_separate_string(data_dup, ',', clients_to_offer, sizeof(clients_to_offer) / sizeof(clients_to_offer[0]));
+		}
+
+		/* Offer call to all (or specified) ONLINE clients */
 		/* TODO load balance offers so first session doesn't always get offer first? */
 		switch_mutex_lock(globals.clients_mutex);
 		for (hi = switch_core_hash_first(globals.clients_roster); hi; hi = switch_core_hash_next(&hi)) {
@@ -3799,7 +3845,7 @@ SWITCH_STANDARD_APP(rayo_app)
 			switch_assert(rclient);
 
 			/* is session available to take call? */
-			if (rclient->availability == PS_ONLINE) {
+			if (should_offer_to_client(rclient, clients_to_offer, clients_to_offer_count)) {
 				ok = 1;
 				switch_core_hash_insert(call->pcps, RAYO_JID(rclient), "1");
 				iks_insert_attrib(offer, "to", RAYO_JID(rclient));
