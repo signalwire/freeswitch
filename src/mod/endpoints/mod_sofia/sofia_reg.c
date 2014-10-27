@@ -920,7 +920,7 @@ void sofia_reg_check_ping_expire(sofia_profile_t *profile, time_t now, int inter
 				irand = mean + sofia_reg_uniform_distribution(interval);
 				next = (long) now + irand;
 	
-				sql = switch_mprintf("update sip_registrations set ping_expires = %ld where hostname='%q' and profile_name='%q' ping_expires <= %ld ",
+				sql = switch_mprintf("update sip_registrations set ping_expires = %ld where hostname='%q' and profile_name='%q' and ping_expires <= %ld ",
 							next, mod_sofia_globals.hostname, profile->name, (long) now);
 				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 			}
