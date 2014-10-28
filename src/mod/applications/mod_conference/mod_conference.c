@@ -2822,6 +2822,10 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 		gen_arc(conference, NULL);
 	}
 
+	if (member->session) {
+		switch_core_media_hard_mute(member->session, SWITCH_FALSE);
+	}
+
 	switch_mutex_unlock(conference->mutex);
 	status = SWITCH_STATUS_SUCCESS;
 
@@ -9574,6 +9578,11 @@ SWITCH_STANDARD_APP(conference_function)
 	mflags = conference->mflags;
 	set_mflags(flags_str, &mflags);
 	mflags |= MFLAG_RUNNING;
+
+	if (!(mflags & MFLAG_CAN_SPEAK) && (mflags & MFLAG_INDICATE_MUTE)) {
+		switch_core_media_hard_mute(member.session, SWITCH_TRUE);
+	}
+
 	if (mpin_matched) {
 		mflags |= MFLAG_MOD;
 	}
