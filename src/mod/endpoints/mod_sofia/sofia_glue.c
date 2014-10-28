@@ -1268,7 +1268,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(!zstr(tech_pvt->mparams.local_sdp_str), SOATAG_ADDRESS(tech_pvt->mparams.adv_sdp_audio_ip)),
 				   TAG_IF(!zstr(tech_pvt->mparams.local_sdp_str), SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str)),
 				   TAG_IF(!zstr(tech_pvt->mparams.local_sdp_str), SOATAG_REUSE_REJECTED(1)),
-				   TAG_IF(!zstr(tech_pvt->mparams.local_sdp_str), SOATAG_ORDERED_USER(1)),
 				   TAG_IF(!zstr(tech_pvt->mparams.local_sdp_str), SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE)),
 				   TAG_IF(!zstr(tech_pvt->mparams.local_sdp_str), SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL)),
 				   TAG_IF(rep, SIPTAG_REPLACES_STR(rep)),
@@ -1350,7 +1349,6 @@ void sofia_glue_do_xfer_invite(switch_core_session_t *session)
 				   SOATAG_ADDRESS(tech_pvt->mparams.adv_sdp_audio_ip),
 				   SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
 				   SOATAG_REUSE_REJECTED(1),
-				   SOATAG_ORDERED_USER(1),
 				   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE), SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL), TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), TAG_END());
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Memory Error!\n");
