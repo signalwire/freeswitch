@@ -40,6 +40,7 @@ fi
 
 set -o emacs
 
+export TERM=xterm-256color
 export LESSCHARSET="latin1"
 export LESS="-R"
 export CHARSET="ISO-8859-1"
