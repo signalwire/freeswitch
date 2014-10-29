@@ -22,7 +22,7 @@ if [ "`id -u`" = "0" ]; then
     if [ "${UNAME}" = "NetBSD" ]; then
 	export PATH="$PATH:/usr/local/freeswitch/bin"
 	export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/lib/pkgconfig:/usr/pkg/lib/pkgconfig
-	export PKG_PATH=ftp://199.233.217.249/pub/pkgsrc/packages/NetBSD/amd64/6.1.3/All
+	export PKG_PATH=http://openbsd.mirrors.pair.com/`uname -r`/packages/`machine -a`/
     fi
     if [ "${UNAME}" = "FreeBSD" ]; then
 	export PATH="$PATH:/usr/local/freeswitch/bin"
