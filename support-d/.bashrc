@@ -18,11 +18,12 @@ if [ "`id -u`" = "0" ]; then
 	export AUTOMAKE_VERSION=1.13
 	export LIBTOOL=/usr/local/bin/libtoolize
 	export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig:/usr/lib/pkgconfig
+	export PKG_PATH=http://openbsd.mirrors.pair.com/`uname -r`/packages/`machine -a`/
     fi
     if [ "${UNAME}" = "NetBSD" ]; then
 	export PATH="$PATH:/usr/local/freeswitch/bin"
 	export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/lib/pkgconfig:/usr/pkg/lib/pkgconfig
-	export PKG_PATH=http://openbsd.mirrors.pair.com/`uname -r`/packages/`machine -a`/
+	export PKG_PATH=http://ftp.netbsd.org/pub/pkgsrc/packages/NetBSD/`uname -m`/`uname -r`/All/
     fi
     if [ "${UNAME}" = "FreeBSD" ]; then
 	export PATH="$PATH:/usr/local/freeswitch/bin"
