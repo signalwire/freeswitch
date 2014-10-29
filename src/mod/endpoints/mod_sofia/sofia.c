@@ -5683,7 +5683,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 								  gateway->name, status, gateway->ping_min, gateway->ping_count, gateway->ping_max, sofia_gateway_status_name(gateway->status));
 			}
 			if (gateway->ping_sent) {
-				gateway->ping_time = (switch_micro_time_now() - gateway->ping_sent) / 1000;
+				gateway->ping_time = (float)(switch_time_now() - gateway->ping_sent) / 1000;
 				gateway->ping_sent = 0;					
 			}
 		} else {
