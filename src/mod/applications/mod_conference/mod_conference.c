@@ -9278,7 +9278,7 @@ SWITCH_STANDARD_APP(conference_function)
 			if (flags_str) {
 				set_mflags(flags_str,&mflags);
 
-				if (!(mflags & MFLAG_CAN_SPEAK) && (mflags & MFLAG_INDICATE_MUTE)) {
+				if (!((mflags & MFLAG_CAN_SPEAK) && (mflags & MFLAG_INDICATE_MUTE))) {
 					switch_core_media_hard_mute(session, SWITCH_TRUE);
 				}
 
@@ -9579,7 +9579,7 @@ SWITCH_STANDARD_APP(conference_function)
 	set_mflags(flags_str, &mflags);
 	mflags |= MFLAG_RUNNING;
 
-	if (!(mflags & MFLAG_CAN_SPEAK) && (mflags & MFLAG_INDICATE_MUTE)) {
+	if (!((mflags & MFLAG_CAN_SPEAK) && (mflags & MFLAG_INDICATE_MUTE))) {
 		switch_core_media_hard_mute(member.session, SWITCH_TRUE);
 	}
 
