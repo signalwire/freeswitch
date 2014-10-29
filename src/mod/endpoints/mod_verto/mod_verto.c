@@ -3042,7 +3042,17 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 			if ((dtmf = cJSON_GetObjectCstr(params, "dtmf"))) {  
 				verto_pvt_t *tech_pvt = switch_core_session_get_private_class(session, SWITCH_PVT_SECONDARY);
 				char *send = switch_mprintf("~%s", dtmf);
-				switch_channel_queue_dtmf_string(tech_pvt->channel, send);
+
+				if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE)) {
+					switch_core_session_t *other_session = NULL;
+					
+					if (switch_core_session_get_partner(tech_pvt->session, &other_session) == SWITCH_STATUS_SUCCESS) {
+						switch_core_session_send_dtmf_string(other_session, send);
+						switch_core_session_rwunlock(other_session);
+					}
+				} else {
+					switch_channel_queue_dtmf_string(tech_pvt->channel, send);
+				}
 				free(send);
 				cJSON_AddItemToObject(*response, "message", cJSON_CreateString("SENT"));
 			}
