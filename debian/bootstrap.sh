@@ -274,6 +274,10 @@ list_freeswitch_all_dbg_replaces () {
 }
 
 print_source_control () {
+  local libtool_dep="libtool, libtool-bin"
+  if test "$codename" = wheezy || test "$codename" = squeeze; then
+    libtool_dep="libtool"
+  fi
 cat <<EOF
 Source: freeswitch
 Section: comm
@@ -283,7 +287,7 @@ Build-Depends:
 # for debian
  debhelper (>= 8.0.0),
 # bootstrapping
- automake (>= 1.9), autoconf, libtool,
+ automake (>= 1.9), autoconf, ${libtool_dep},
 # core build
  dpkg-dev (>= 1.15.8.12), gcc (>= 4:4.4.5), g++ (>= 4:4.4.5),
  libc6-dev (>= 2.11.3), make (>= 3.81),
