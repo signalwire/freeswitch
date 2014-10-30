@@ -35,9 +35,11 @@ avoid_mods=(
   xml_int/mod_xml_radius
 )
 avoid_mods_sid=(
+  formats/mod_shout
   languages/mod_java
 )
 avoid_mods_jessie=(
+  formats/mod_shout
 )
 avoid_mods_wheezy=(
 )
