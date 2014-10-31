@@ -483,7 +483,7 @@ static void parse_message(sdp_parser_t *p)
 
   post_session(p, sdp);
 }
-
+#ifdef SOFIA_AUTO_CORRECT_INADDR_ANY
 int sdp_connection_is_inaddr_any(sdp_connection_t const *c)
 {
   return
@@ -492,6 +492,7 @@ int sdp_connection_is_inaddr_any(sdp_connection_t const *c)
     ((c->c_addrtype == sdp_addr_ip4 && su_strmatch(c->c_address, "0.0.0.0")) ||
      (c->c_addrtype == sdp_addr_ip6 && su_strmatch(c->c_address, "::")));
 }
+#endif
 
 /**Postprocess session description.
  *
@@ -501,7 +502,9 @@ int sdp_connection_is_inaddr_any(sdp_connection_t const *c)
 static void post_session(sdp_parser_t *p, sdp_session_t *sdp)
 {
   sdp_media_t *m;
+#ifdef SOFIA_AUTO_CORRECT_INADDR_ANY
   sdp_connection_t const *c;
+#endif
 
   if (!p->pr_ok)
     return;
@@ -525,12 +528,15 @@ static void post_session(sdp_parser_t *p, sdp_session_t *sdp)
       continue;
     }
 
+#ifdef SOFIA_AUTO_CORRECT_INADDR_ANY
     c = sdp_media_connections(m);
+
 
     if (p->pr_mode_0000 && sdp_connection_is_inaddr_any(c)) {
       /* Reset recvonly flag */
       m->m_mode &= ~sdp_recvonly;
     }
+#endif
   }
 
   if (p->pr_insane)

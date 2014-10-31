@@ -3199,90 +3199,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		switch_channel_set_flag(session->channel, CF_LIBERAL_DTMF);
 	}
 
-	if ((m = sdp->sdp_media) && 
-		(m->m_mode == sdp_sendonly || m->m_mode == sdp_inactive || 
-		 (m->m_connections && m->m_connections->c_address && !strcmp(m->m_connections->c_address, "0.0.0.0")))) {
-		sendonly = 2;			/* global sendonly always wins */
-	}
-
-	for (attr = sdp->sdp_attributes; attr; attr = attr->a_next) {
-		if (zstr(attr->a_name)) {
-			continue;
-		}
-
-		if (!strcasecmp(attr->a_name, "sendonly")) {
-			sendonly = 1;
-			switch_channel_set_variable(session->channel, "media_audio_mode", "recvonly");
-		} else if (!strcasecmp(attr->a_name, "inactive")) {
-			sendonly = 1;
-			switch_channel_set_variable(session->channel, "media_audio_mode", "inactive");
-		} else if (!strcasecmp(attr->a_name, "recvonly")) {
-			switch_channel_set_variable(session->channel, "media_audio_mode", "sendonly");
-			recvonly = 1;
-
-			if (switch_rtp_ready(a_engine->rtp_session)) {
-				switch_rtp_set_max_missed_packets(a_engine->rtp_session, 0);
-				a_engine->max_missed_hold_packets = 0;
-				a_engine->max_missed_packets = 0;
-			} else {
-				switch_channel_set_variable(session->channel, "rtp_timeout_sec", "0");
-				switch_channel_set_variable(session->channel, "rtp_hold_timeout_sec", "0");
-			}
-		} else if (sendonly < 2 && !strcasecmp(attr->a_name, "sendrecv")) {
-			sendonly = 0;
-		} else if (!strcasecmp(attr->a_name, "ptime")) {
-			dptime = atoi(attr->a_value);
-		} else if (!strcasecmp(attr->a_name, "maxptime")) {
-			dmaxptime = atoi(attr->a_value);
-		}
-	}
-
-	if (sendonly != 1 && recvonly != 1) {
-		switch_channel_set_variable(session->channel, "media_audio_mode", NULL);
-	}
-
-	if (!(switch_media_handle_test_media_flag(smh, SCMF_DISABLE_HOLD)
-		  || ((val = switch_channel_get_variable(session->channel, "rtp_disable_hold"))
-			  && switch_true(val)))
-		&& !smh->mparams->hold_laps) {
-		smh->mparams->hold_laps++;
-		if (switch_core_media_toggle_hold(session, sendonly)) {
-			reneg = switch_media_handle_test_media_flag(smh, SCMF_RENEG_ON_HOLD);
-			if ((val = switch_channel_get_variable(session->channel, "rtp_renegotiate_codec_on_hold"))) {
-				reneg = switch_true(val);
-			}
-		}
-	}
-
-	if (reneg) {
-		reneg = switch_media_handle_test_media_flag(smh, SCMF_RENEG_ON_REINVITE);
-		
-		if ((val = switch_channel_get_variable(session->channel, "rtp_renegotiate_codec_on_reinvite"))) {
-			reneg = switch_true(val);
-		}
-	}
-
-	if (session->bugs) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
-						  "Session is connected to a media bug. "
-						  "Re-Negotiation implicitly disabled.\n");
-		reneg = 0;
-	}
-
-	if (switch_channel_test_flag(session->channel, CF_RECOVERING)) {
-		reneg = 0;
-	}
-
-	if (!reneg && smh->num_negotiated_codecs) {
-		codec_array = smh->negotiated_codecs;
-		total_codecs = smh->num_negotiated_codecs;
-	} else if (reneg) {
-		smh->mparams->num_codecs = 0;
-		switch_core_media_prepare_codecs(session, SWITCH_FALSE);
-		codec_array = smh->codecs;
-		total_codecs = smh->mparams->num_codecs;
-	}
-
 	if (switch_stristr("T38FaxFillBitRemoval:", r_sdp) || switch_stristr("T38FaxTranscodingMMR:", r_sdp) || 
 		switch_stristr("T38FaxTranscodingJBIG:", r_sdp)) {
 		switch_channel_set_variable(session->channel, "t38_broken_boolean", "true");
@@ -3298,6 +3214,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	for (m = sdp->sdp_media; m; m = m->m_next) {
 		sdp_connection_t *connection;
 		switch_core_session_t *other_session;
+
+		if (!m->m_port) {
+			continue;
+		}
 
 		ptime = dptime;
 		maxptime = dmaxptime;
@@ -3438,6 +3358,100 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			goto done;
 		} else if (m->m_type == sdp_media_audio && m->m_port && !got_audio) {
 			sdp_rtpmap_t *map;
+			int ice = 0;
+
+			if ((m->m_mode == sdp_sendonly || m->m_mode == sdp_inactive || 
+				 (m->m_connections && m->m_connections->c_address && !strcmp(m->m_connections->c_address, "0.0.0.0")))) {
+				sendonly = 2;			/* global sendonly always wins */
+			}
+
+
+			for (attr = sdp->sdp_attributes; attr; attr = attr->a_next) {
+				if (zstr(attr->a_name)) {
+					continue;
+				}
+
+				
+				if (!strncasecmp(attr->a_name, "ice", 3)) {
+					ice++;
+				} else if (sendonly < 2 && !strcasecmp(attr->a_name, "sendonly")) {
+					sendonly = 1;
+					switch_channel_set_variable(session->channel, "media_audio_mode", "recvonly");
+				} else if (sendonly < 2 && !strcasecmp(attr->a_name, "inactive")) {
+					sendonly = 1;
+					switch_channel_set_variable(session->channel, "media_audio_mode", "inactive");
+				} else if (!strcasecmp(attr->a_name, "recvonly")) {
+					switch_channel_set_variable(session->channel, "media_audio_mode", "sendonly");
+					recvonly = 1;
+					
+					if (switch_rtp_ready(a_engine->rtp_session)) {
+						switch_rtp_set_max_missed_packets(a_engine->rtp_session, 0);
+						a_engine->max_missed_hold_packets = 0;
+						a_engine->max_missed_packets = 0;
+					} else {
+						switch_channel_set_variable(session->channel, "rtp_timeout_sec", "0");
+						switch_channel_set_variable(session->channel, "rtp_hold_timeout_sec", "0");
+					}
+				} else if (sendonly < 2 && !strcasecmp(attr->a_name, "sendrecv")) {
+					sendonly = 0;
+				} else if (!strcasecmp(attr->a_name, "ptime")) {
+					ptime = dptime = atoi(attr->a_value);
+				} else if (!strcasecmp(attr->a_name, "maxptime")) {
+					maxptime = dmaxptime = atoi(attr->a_value);
+				}
+			}
+
+			if (sendonly == 2 && ice) {
+				sendonly = 0;
+			}
+
+
+			if (sendonly != 1 && recvonly != 1) {
+				switch_channel_set_variable(session->channel, "media_audio_mode", NULL);
+			}
+
+			if (!(switch_media_handle_test_media_flag(smh, SCMF_DISABLE_HOLD)
+				  || ((val = switch_channel_get_variable(session->channel, "rtp_disable_hold"))
+					  && switch_true(val)))
+				&& !smh->mparams->hold_laps) {
+				smh->mparams->hold_laps++;
+				if (switch_core_media_toggle_hold(session, sendonly)) {
+					reneg = switch_media_handle_test_media_flag(smh, SCMF_RENEG_ON_HOLD);
+					if ((val = switch_channel_get_variable(session->channel, "rtp_renegotiate_codec_on_hold"))) {
+						reneg = switch_true(val);
+					}
+				}
+			}
+
+			if (reneg) {
+				reneg = switch_media_handle_test_media_flag(smh, SCMF_RENEG_ON_REINVITE);
+				
+				if ((val = switch_channel_get_variable(session->channel, "rtp_renegotiate_codec_on_reinvite"))) {
+					reneg = switch_true(val);
+				}
+			}
+
+			if (session->bugs) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+								  "Session is connected to a media bug. "
+								  "Re-Negotiation implicitly disabled.\n");
+				reneg = 0;
+			}
+			
+			if (switch_channel_test_flag(session->channel, CF_RECOVERING)) {
+				reneg = 0;
+			}
+			
+			if (!reneg && smh->num_negotiated_codecs) {
+				codec_array = smh->negotiated_codecs;
+				total_codecs = smh->num_negotiated_codecs;
+			} else if (reneg) {
+				smh->mparams->num_codecs = 0;
+				switch_core_media_prepare_codecs(session, SWITCH_FALSE);
+				codec_array = smh->codecs;
+				total_codecs = smh->mparams->num_codecs;
+			}
+			
 
 			if (switch_rtp_has_dtls() && dtls_ok(session)) {
 				for (attr = m->m_attributes; attr; attr = attr->a_next) {
