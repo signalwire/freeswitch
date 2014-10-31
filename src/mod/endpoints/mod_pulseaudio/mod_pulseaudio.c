@@ -1848,6 +1848,8 @@ static audio_stream_t *create_audio_stream(STREAMS stream_number)
 		case STREAM_PLAYBACK:
 			channel_name = "Playback";
 			break;
+		default:
+			channel_name = "Unknown";
 	}
 
 	stream = malloc(sizeof(*stream));
