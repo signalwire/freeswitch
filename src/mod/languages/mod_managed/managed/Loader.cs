@@ -64,13 +64,23 @@ namespace FreeSWITCH {
         public static bool Load() {
             managedDir = Path.Combine(Native.freeswitch.SWITCH_GLOBAL_dirs.mod_dir, "managed");
             shadowDir = Path.Combine(managedDir, "shadow");
-            if (Directory.Exists(shadowDir)) {
-                Directory.Delete(shadowDir, true);
+            if (Directory.Exists(shadowDir)) 
+            {
+                try
+                {
+                    Directory.Delete(shadowDir, true);
+                }
+                catch (Exception ex)
+                {
+                    Log.WriteLine(LogLevel.Warning, "Cannot delete shadow directory: {0}", ex);
+                }
+
                 Directory.CreateDirectory(shadowDir);
             }
 
             Log.WriteLine(LogLevel.Debug, "FreeSWITCH.Managed loader is starting with directory '{0}'.", managedDir);
-            if (!Directory.Exists(managedDir)) {
+            if (!Directory.Exists(managedDir))
+            {
                 Log.WriteLine(LogLevel.Error, "Managed directory not found: {0}", managedDir);
                 return false;
             }
