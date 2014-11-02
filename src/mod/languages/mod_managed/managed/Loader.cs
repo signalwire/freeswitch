@@ -229,11 +229,38 @@ namespace FreeSWITCH {
                 setup.ConfigurationFile = fileName + ".config";
             }
             setup.ApplicationBase = Native.freeswitch.SWITCH_GLOBAL_dirs.mod_dir;
-            setup.ShadowCopyDirectories = managedDir + ";";
             setup.LoaderOptimization = LoaderOptimization.MultiDomainHost; // TODO: would MultiDomain work better since FreeSWITCH.Managed isn't gac'd?
             setup.CachePath = shadowDir;
             setup.ShadowCopyFiles = "true";
-            setup.PrivateBinPath = "managed";
+
+            // computing private bin path
+            var binPath = setup.PrivateBinPath ?? string.Empty;
+
+            var binPaths = binPath.Split(new[] { ";" }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .ToList();
+
+            // adding "managed" (modules) directory
+            if (!binPaths.Contains("managed", StringComparer.OrdinalIgnoreCase))
+            {
+                binPaths.Add("managed");
+            }
+
+            // adding "managed/<modulename>" directory for per-module references support
+            var moduleRefsDir = Path.GetFileName(fileName);
+            moduleRefsDir = Path.GetFileNameWithoutExtension(moduleRefsDir);
+
+            if (moduleRefsDir != null && moduleRefsDir.Trim() != "")
+            {
+                moduleRefsDir = Path.Combine("managed", moduleRefsDir);
+                if (!binPaths.Contains(moduleRefsDir, StringComparer.OrdinalIgnoreCase))
+                {
+                    binPaths.Add(moduleRefsDir);
+                }
+            }
+
+            // bringing all together
+            setup.PrivateBinPath = string.Join(";", binPaths);
 
             // Create domain and load PM inside
             System.Threading.Interlocked.Increment(ref appDomainCount);
