@@ -26,6 +26,7 @@
  * Michael Giagnocavo <mgg@giagnocavo.net>
  * David Brazier <David.Brazier@360crm.co.uk>
  * Jeff Lenk <jeff@jefflenk.com>
+ * Artur Kraev <ravenox@gmail.com>
  * 
  * Loader.cs -- mod_managed loader
  *
@@ -33,7 +34,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -46,16 +46,15 @@ namespace FreeSWITCH {
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool ExecuteDelegate(string cmd, IntPtr streamH, IntPtr eventH);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool ExecuteBackgroundDelegate(string cmd);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool RunDelegate(string cmd, IntPtr session);
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool ReloadDelegate(string cmd);
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool ListDelegate(string cmd);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool ReloadDelegate(string cmd);        
         static readonly ExecuteDelegate _execute = Execute;
         static readonly ExecuteBackgroundDelegate _executeBackground = ExecuteBackground;
         static readonly RunDelegate _run = Run;
         static readonly ReloadDelegate _reload = Reload;
-        static readonly ListDelegate _list = List;
+        static readonly ExecuteDelegate _list = List;
         
         [DllImport("mod_managed", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
-        static extern void InitManagedDelegates(RunDelegate run, ExecuteDelegate execute, ExecuteBackgroundDelegate executeBackground, ReloadDelegate reload, ListDelegate list);
+        static extern void InitManagedDelegates(RunDelegate run, ExecuteDelegate execute, ExecuteBackgroundDelegate executeBackground, ReloadDelegate reload, ExecuteDelegate list);
 
         static readonly object loaderLock = new object();
 
@@ -408,18 +407,33 @@ namespace FreeSWITCH {
             }
         }
 
-        public static bool List(string command) {
-            try {
-				Log.WriteLine(LogLevel.Info, "Available APIs:");
-                getApiExecs().Values.ForEach(x => {
-					Log.WriteLine(LogLevel.Info, "{0}: {1}", x.Name, String.Join(",", x.Aliases.ToArray()));
-				});
-				Log.WriteLine(LogLevel.Info, "Available Apps:");
-				getAppExecs().Values.ForEach(x => {
-					Log.WriteLine(LogLevel.Info, "{0}: {1}", x.Name, String.Join(",", x.Aliases.ToArray()));
-				});
+        public static bool List(string command, IntPtr streamHandle, IntPtr eventHandle)
+        {
+            try
+            {
+                if (streamHandle != IntPtr.Zero)
+                {
+                    using (var stream = new Native.Stream(new Native.switch_stream_handle(streamHandle, false)))
+                    {
+                        stream.Write("Available APIs:\n");
+
+                        getApiExecs().Values.ForEach(x => stream.Write(string.Format("{0}: {1}\n", x.Name, String.Join(",", x.Aliases.ToArray()))));
+
+                        stream.Write("Available Apps:\n");
+                        getAppExecs().Values.ForEach(x => stream.Write(string.Format("{0}: {1}\n", x.Name, String.Join(",", x.Aliases.ToArray()))));
+                    }
+                }
+                else
+                {
+                    Log.WriteLine(LogLevel.Info, "Available APIs:");
+                    getApiExecs().Values.ForEach(x => Log.WriteLine(LogLevel.Info, "{0}: {1}", x.Name, String.Join(",", x.Aliases.ToArray())));
+                    Log.WriteLine(LogLevel.Info, "Available Apps:");
+                    getAppExecs().Values.ForEach(x => Log.WriteLine(LogLevel.Info, "{0}: {1}", x.Name, String.Join(",", x.Aliases.ToArray())));
+                }
                 return true;
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 Log.WriteLine(LogLevel.Error, "Exception listing managed modules: {0}", ex.ToString());
                 return false;
             }

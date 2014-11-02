@@ -26,6 +26,7 @@
  * Michael Giagnocavo <mgg@giagnocavo.net>
  * David Brazier <David.Brazier@360crm.co.uk>
  * Jeff Lenk <jlenk@frontiernet.net> 
+ * Artur Kraev <ravenox@gmail.com>
  *
  * mod_mono.cpp -- FreeSWITCH mod_mono main class
  *
@@ -73,14 +74,13 @@ typedef int (*runFunction)(const char *data, void *sessionPtr);
 typedef int (*executeFunction)(const char *cmd, void *stream, void *Event);
 typedef int (*executeBackgroundFunction)(const char* cmd);
 typedef int (*reloadFunction)(const char* cmd);
-typedef int (*listFunction)(const char* cmd);
 static runFunction runDelegate;
 static executeFunction executeDelegate;
 static executeBackgroundFunction executeBackgroundDelegate;
 static reloadFunction reloadDelegate;
-static listFunction listDelegate;
+static executeFunction listDelegate;
 
-SWITCH_MOD_DECLARE_NONSTD(void) InitManagedDelegates(runFunction run, executeFunction execute, executeBackgroundFunction executeBackground, reloadFunction reload, listFunction list) 
+SWITCH_MOD_DECLARE_NONSTD(void) InitManagedDelegates(runFunction run, executeFunction execute, executeBackgroundFunction executeBackground, reloadFunction reload, executeFunction list)
 {
 	runDelegate = run;
 	executeDelegate = execute;
@@ -451,7 +451,7 @@ SWITCH_STANDARD_API(managedlist_api_function)
 #ifndef _MANAGED
 	mono_thread_attach(globals.domain);
 #endif
-	listDelegate(cmd);
+	listDelegate(cmd, stream, stream->param_event);
 #ifndef _MANAGED
 	mono_thread_detach(mono_thread_current());
 #endif
