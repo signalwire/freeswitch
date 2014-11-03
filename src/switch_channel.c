@@ -4303,7 +4303,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 						switch_safe_free(substituted);
 						substituted = switch_string_replace(substituted ? substituted : dtstr, replace, X);
 						
-						printf("WTF [%s][%s]\n", replace, substituted);
 						pcre_free_substring(replace);
 					}
 				}
