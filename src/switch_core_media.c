@@ -1628,6 +1628,106 @@ SWITCH_DECLARE(void) switch_core_media_prepare_codecs(switch_core_session_t *ses
 }
 
 
+static void check_jb(switch_core_session_t *session, const char *input)
+{
+	const char *val;
+	switch_media_handle_t *smh;
+	switch_rtp_engine_t *a_engine;
+
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		return;
+	}
+
+	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+
+	if (!a_engine->rtp_session) return;
+
+
+	if (!zstr(input)) {
+		const char *s;
+
+		if (!strcasecmp(input, "pause")) {
+			switch_rtp_pause_jitter_buffer(a_engine->rtp_session, SWITCH_TRUE);
+			return;
+		} else if (!strcasecmp(input, "resume")) {
+			switch_rtp_pause_jitter_buffer(a_engine->rtp_session, SWITCH_FALSE);
+			return;
+		} else if (!strcasecmp(input, "stop")) {
+			switch_rtp_deactivate_jitter_buffer(a_engine->rtp_session);
+			return;
+		} else if (!strncasecmp(input, "debug:", 6)) {
+			s = input + 6;
+			if (s && !strcmp(s, "off")) {
+				s = NULL;
+			}
+			switch_rtp_debug_jitter_buffer(a_engine->rtp_session, s);
+			return;
+		}
+
+		switch_channel_set_variable(session->channel, "jitterbuffer_msec", input);
+	}
+	
+
+	if ((val = switch_channel_get_variable(session->channel, "jitterbuffer_msec")) || (val = smh->mparams->jb_msec)) {
+		int jb_msec = atoi(val);
+		int maxlen = 0, max_drift = 0;
+		char *p, *q;
+
+					
+		if ((p = strchr(val, ':'))) {
+			p++;
+			maxlen = atoi(p);
+			if ((q = strchr(p, ':'))) {
+				q++;
+				max_drift = abs(atoi(q));
+			}
+		}
+
+		if (jb_msec < 0 && jb_msec > -20) {
+			jb_msec = (a_engine->read_codec.implementation->microseconds_per_packet / 1000) * abs(jb_msec);
+		}
+
+		if (maxlen < 0 && maxlen > -20) {
+			maxlen = (a_engine->read_codec.implementation->microseconds_per_packet / 1000) * abs(maxlen);
+		}
+
+		if (jb_msec < 20 || jb_msec > 10000) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
+							  "Invalid Jitterbuffer spec [%d] must be between 20 and 10000\n", jb_msec);
+		} else {
+			int qlen, maxqlen = 10;
+				
+			qlen = jb_msec / (a_engine->read_impl.microseconds_per_packet / 1000);
+
+			if (maxlen) {
+				maxqlen = maxlen / (a_engine->read_impl.microseconds_per_packet / 1000);
+			}
+
+			if (maxqlen < qlen) {
+				maxqlen = qlen * 5;
+			}
+			if (switch_rtp_activate_jitter_buffer(a_engine->rtp_session, qlen, maxqlen,
+												  a_engine->read_impl.samples_per_packet, 
+												  a_engine->read_impl.samples_per_second, max_drift) == SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
+										  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames) (%d max frames) (%d max drift)\n", 
+										  jb_msec, qlen, maxqlen, max_drift);
+						switch_channel_set_flag(session->channel, CF_JITTERBUFFER);
+				if (!switch_false(switch_channel_get_variable(session->channel, "rtp_jitter_buffer_plc"))) {
+					switch_channel_set_flag(session->channel, CF_JITTERBUFFER_PLC);
+				}
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
+								  SWITCH_LOG_WARNING, "Error Setting Jitterbuffer to %dms (%d frames)\n", jb_msec, qlen);
+			}
+				
+		}
+	}
+
+}
+
 //?
 SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session_t *session, switch_frame_t **frame,
 															 switch_io_flag_t flags, int stream_id, switch_media_type_t type)
@@ -1741,7 +1841,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 						engine->read_impl.samples_per_packet;
 				}
 			}
-			
+
+			check_jb(session, NULL);
+
 			engine->check_frames = 0;
 			engine->last_ts = 0;
 			engine->last_seq = 0;
@@ -3097,90 +3199,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 		switch_channel_set_flag(session->channel, CF_LIBERAL_DTMF);
 	}
 
-	if ((m = sdp->sdp_media) && 
-		(m->m_mode == sdp_sendonly || m->m_mode == sdp_inactive || 
-		 (m->m_connections && m->m_connections->c_address && !strcmp(m->m_connections->c_address, "0.0.0.0")))) {
-		sendonly = 2;			/* global sendonly always wins */
-	}
-
-	for (attr = sdp->sdp_attributes; attr; attr = attr->a_next) {
-		if (zstr(attr->a_name)) {
-			continue;
-		}
-
-		if (!strcasecmp(attr->a_name, "sendonly")) {
-			sendonly = 1;
-			switch_channel_set_variable(session->channel, "media_audio_mode", "recvonly");
-		} else if (!strcasecmp(attr->a_name, "inactive")) {
-			sendonly = 1;
-			switch_channel_set_variable(session->channel, "media_audio_mode", "inactive");
-		} else if (!strcasecmp(attr->a_name, "recvonly")) {
-			switch_channel_set_variable(session->channel, "media_audio_mode", "sendonly");
-			recvonly = 1;
-
-			if (switch_rtp_ready(a_engine->rtp_session)) {
-				switch_rtp_set_max_missed_packets(a_engine->rtp_session, 0);
-				a_engine->max_missed_hold_packets = 0;
-				a_engine->max_missed_packets = 0;
-			} else {
-				switch_channel_set_variable(session->channel, "rtp_timeout_sec", "0");
-				switch_channel_set_variable(session->channel, "rtp_hold_timeout_sec", "0");
-			}
-		} else if (sendonly < 2 && !strcasecmp(attr->a_name, "sendrecv")) {
-			sendonly = 0;
-		} else if (!strcasecmp(attr->a_name, "ptime")) {
-			dptime = atoi(attr->a_value);
-		} else if (!strcasecmp(attr->a_name, "maxptime")) {
-			dmaxptime = atoi(attr->a_value);
-		}
-	}
-
-	if (sendonly != 1 && recvonly != 1) {
-		switch_channel_set_variable(session->channel, "media_audio_mode", NULL);
-	}
-
-	if (!(switch_media_handle_test_media_flag(smh, SCMF_DISABLE_HOLD)
-		  || ((val = switch_channel_get_variable(session->channel, "rtp_disable_hold"))
-			  && switch_true(val)))
-		&& !smh->mparams->hold_laps) {
-		smh->mparams->hold_laps++;
-		if (switch_core_media_toggle_hold(session, sendonly)) {
-			reneg = switch_media_handle_test_media_flag(smh, SCMF_RENEG_ON_HOLD);
-			if ((val = switch_channel_get_variable(session->channel, "rtp_renegotiate_codec_on_hold"))) {
-				reneg = switch_true(val);
-			}
-		}
-	}
-
-	if (reneg) {
-		reneg = switch_media_handle_test_media_flag(smh, SCMF_RENEG_ON_REINVITE);
-		
-		if ((val = switch_channel_get_variable(session->channel, "rtp_renegotiate_codec_on_reinvite"))) {
-			reneg = switch_true(val);
-		}
-	}
-
-	if (session->bugs) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
-						  "Session is connected to a media bug. "
-						  "Re-Negotiation implicitly disabled.\n");
-		reneg = 0;
-	}
-
-	if (switch_channel_test_flag(session->channel, CF_RECOVERING)) {
-		reneg = 0;
-	}
-
-	if (!reneg && smh->num_negotiated_codecs) {
-		codec_array = smh->negotiated_codecs;
-		total_codecs = smh->num_negotiated_codecs;
-	} else if (reneg) {
-		smh->mparams->num_codecs = 0;
-		switch_core_media_prepare_codecs(session, SWITCH_FALSE);
-		codec_array = smh->codecs;
-		total_codecs = smh->mparams->num_codecs;
-	}
-
 	if (switch_stristr("T38FaxFillBitRemoval:", r_sdp) || switch_stristr("T38FaxTranscodingMMR:", r_sdp) || 
 		switch_stristr("T38FaxTranscodingJBIG:", r_sdp)) {
 		switch_channel_set_variable(session->channel, "t38_broken_boolean", "true");
@@ -3196,6 +3214,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	for (m = sdp->sdp_media; m; m = m->m_next) {
 		sdp_connection_t *connection;
 		switch_core_session_t *other_session;
+
+		if (!m->m_port) {
+			continue;
+		}
 
 		ptime = dptime;
 		maxptime = dmaxptime;
@@ -3336,6 +3358,100 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			goto done;
 		} else if (m->m_type == sdp_media_audio && m->m_port && !got_audio) {
 			sdp_rtpmap_t *map;
+			int ice = 0;
+
+			if ((m->m_mode == sdp_sendonly || m->m_mode == sdp_inactive || 
+				 (m->m_connections && m->m_connections->c_address && !strcmp(m->m_connections->c_address, "0.0.0.0")))) {
+				sendonly = 2;			/* global sendonly always wins */
+			}
+
+
+			for (attr = sdp->sdp_attributes; attr; attr = attr->a_next) {
+				if (zstr(attr->a_name)) {
+					continue;
+				}
+
+				
+				if (!strncasecmp(attr->a_name, "ice", 3)) {
+					ice++;
+				} else if (sendonly < 2 && !strcasecmp(attr->a_name, "sendonly")) {
+					sendonly = 1;
+					switch_channel_set_variable(session->channel, "media_audio_mode", "recvonly");
+				} else if (sendonly < 2 && !strcasecmp(attr->a_name, "inactive")) {
+					sendonly = 1;
+					switch_channel_set_variable(session->channel, "media_audio_mode", "inactive");
+				} else if (!strcasecmp(attr->a_name, "recvonly")) {
+					switch_channel_set_variable(session->channel, "media_audio_mode", "sendonly");
+					recvonly = 1;
+					
+					if (switch_rtp_ready(a_engine->rtp_session)) {
+						switch_rtp_set_max_missed_packets(a_engine->rtp_session, 0);
+						a_engine->max_missed_hold_packets = 0;
+						a_engine->max_missed_packets = 0;
+					} else {
+						switch_channel_set_variable(session->channel, "rtp_timeout_sec", "0");
+						switch_channel_set_variable(session->channel, "rtp_hold_timeout_sec", "0");
+					}
+				} else if (sendonly < 2 && !strcasecmp(attr->a_name, "sendrecv")) {
+					sendonly = 0;
+				} else if (!strcasecmp(attr->a_name, "ptime")) {
+					ptime = dptime = atoi(attr->a_value);
+				} else if (!strcasecmp(attr->a_name, "maxptime")) {
+					maxptime = dmaxptime = atoi(attr->a_value);
+				}
+			}
+
+			if (sendonly == 2 && ice) {
+				sendonly = 0;
+			}
+
+
+			if (sendonly != 1 && recvonly != 1) {
+				switch_channel_set_variable(session->channel, "media_audio_mode", NULL);
+			}
+
+			if (!(switch_media_handle_test_media_flag(smh, SCMF_DISABLE_HOLD)
+				  || ((val = switch_channel_get_variable(session->channel, "rtp_disable_hold"))
+					  && switch_true(val)))
+				&& !smh->mparams->hold_laps) {
+				smh->mparams->hold_laps++;
+				if (switch_core_media_toggle_hold(session, sendonly)) {
+					reneg = switch_media_handle_test_media_flag(smh, SCMF_RENEG_ON_HOLD);
+					if ((val = switch_channel_get_variable(session->channel, "rtp_renegotiate_codec_on_hold"))) {
+						reneg = switch_true(val);
+					}
+				}
+			}
+
+			if (reneg) {
+				reneg = switch_media_handle_test_media_flag(smh, SCMF_RENEG_ON_REINVITE);
+				
+				if ((val = switch_channel_get_variable(session->channel, "rtp_renegotiate_codec_on_reinvite"))) {
+					reneg = switch_true(val);
+				}
+			}
+
+			if (session->bugs) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, 
+								  "Session is connected to a media bug. "
+								  "Re-Negotiation implicitly disabled.\n");
+				reneg = 0;
+			}
+			
+			if (switch_channel_test_flag(session->channel, CF_RECOVERING)) {
+				reneg = 0;
+			}
+			
+			if (!reneg && smh->num_negotiated_codecs) {
+				codec_array = smh->negotiated_codecs;
+				total_codecs = smh->num_negotiated_codecs;
+			} else if (reneg) {
+				smh->mparams->num_codecs = 0;
+				switch_core_media_prepare_codecs(session, SWITCH_FALSE);
+				codec_array = smh->codecs;
+				total_codecs = smh->mparams->num_codecs;
+			}
+			
 
 			if (switch_rtp_has_dtls() && dtls_ok(session)) {
 				for (attr = m->m_attributes; attr; attr = attr->a_next) {
@@ -4084,7 +4200,7 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 		if (switch_channel_test_flag(session->channel, CF_PROTO_HOLD)) {
 			const char *val;
 			int media_on_hold_a = switch_true(switch_channel_get_variable_dup(session->channel, "bypass_media_resume_on_hold", SWITCH_FALSE, -1));
-			int media_on_hold_b = switch_true(switch_channel_get_variable_dup(b_channel, "bypass_media_resume_on_hold", SWITCH_FALSE, -1));
+			int media_on_hold_b = 0;
 			int bypass_after_hold_a = 0;
 			int bypass_after_hold_b = 0;
 
@@ -4092,10 +4208,12 @@ SWITCH_DECLARE(int) switch_core_media_toggle_hold(switch_core_session_t *session
 				bypass_after_hold_a = switch_true(switch_channel_get_variable_dup(session->channel, "bypass_media_after_hold", SWITCH_FALSE, -1));
 			}
 
-			if (media_on_hold_b) {
-				bypass_after_hold_b = switch_true(switch_channel_get_variable_dup(b_channel, "bypass_media_after_hold", SWITCH_FALSE, -1));
+			if (b_channel) {
+				if ((media_on_hold_b = switch_true(switch_channel_get_variable_dup(b_channel, "bypass_media_resume_on_hold", SWITCH_FALSE, -1)))) {
+					bypass_after_hold_b = switch_true(switch_channel_get_variable_dup(b_channel, "bypass_media_after_hold", SWITCH_FALSE, -1));
+				}
 			}
-
+			
 			switch_yield(250000);
 
 			if (b_channel && (switch_channel_test_flag(session->channel, CF_BYPASS_MEDIA_AFTER_HOLD) ||
@@ -5246,61 +5364,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 		}
 
-
-
-		if ((val = switch_channel_get_variable(session->channel, "jitterbuffer_msec")) || (val = smh->mparams->jb_msec)) {
-			int jb_msec = atoi(val);
-			int maxlen = 0, max_drift = 0;
-			char *p, *q;
-			
-			if ((p = strchr(val, ':'))) {
-				p++;
-				maxlen = atoi(p);
-				if ((q = strchr(p, ':'))) {
-					q++;
-					max_drift = abs(atoi(q));
-				}
-			}
-
-			if (jb_msec < 0 && jb_msec > -10) {
-				jb_msec = (a_engine->read_codec.implementation->microseconds_per_packet / 1000) * abs(jb_msec);
-			}
-
-			if (jb_msec < 20 || jb_msec > 10000) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
-								  "Invalid Jitterbuffer spec [%d] must be between 20 and 10000\n", jb_msec);
-			} else {
-				int qlen, maxqlen = 50;
-				
-				qlen = jb_msec / (a_engine->read_impl.microseconds_per_packet / 1000);
-
-				if (qlen < 1) {
-					qlen = 3;
-				}
-
-				if (maxlen) {
-					maxqlen = maxlen / (a_engine->read_impl.microseconds_per_packet / 1000);
-				}
-
-				if (maxqlen < qlen) {
-					maxqlen = qlen * 5;
-				}
-				if (switch_rtp_activate_jitter_buffer(a_engine->rtp_session, qlen, maxqlen,
-													  a_engine->read_impl.samples_per_packet, 
-													  a_engine->read_impl.samples_per_second, max_drift) == SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
-									  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames)\n", jb_msec, qlen);
-					switch_channel_set_flag(session->channel, CF_JITTERBUFFER);
-					if (!switch_false(switch_channel_get_variable(session->channel, "rtp_jitter_buffer_plc"))) {
-						switch_channel_set_flag(session->channel, CF_JITTERBUFFER_PLC);
-					}
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
-									  SWITCH_LOG_WARNING, "Error Setting Jitterbuffer to %dms (%d frames)\n", jb_msec, qlen);
-				}
-				
-			}
-		}
+		check_jb(session, NULL);
 
 		if ((val = switch_channel_get_variable(session->channel, "rtp_timeout_sec"))) {
 			int v = atoi(val);
@@ -7606,8 +7670,17 @@ SWITCH_DECLARE(void) switch_core_media_start_udptl(switch_core_session_t *sessio
 	}
 }
 
+//?
+SWITCH_DECLARE(void) switch_core_media_hard_mute(switch_core_session_t *session, switch_bool_t on)
+{
+	switch_core_session_message_t msg = { 0 };
+	
+	msg.from = __FILE__;
 
-
+	msg.message_id = SWITCH_MESSAGE_INDICATE_HARD_MUTE;
+	msg.numeric_arg = on;
+	switch_core_session_receive_message(session, &msg);
+}
 
 
 //?
@@ -7664,77 +7737,26 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 	case SWITCH_MESSAGE_INDICATE_JITTER_BUFFER:
 		{
 			if (switch_rtp_ready(a_engine->rtp_session)) {
-				int len = 0, maxlen = 0, qlen = 0, maxqlen = 50, max_drift = 0;
-
-				if (msg->string_arg) {
-					char *p, *q;
-					const char *s;
-
-					if (!strcasecmp(msg->string_arg, "pause")) {
-						switch_rtp_pause_jitter_buffer(a_engine->rtp_session, SWITCH_TRUE);
-						goto end;
-					} else if (!strcasecmp(msg->string_arg, "resume")) {
-						switch_rtp_pause_jitter_buffer(a_engine->rtp_session, SWITCH_FALSE);
-						goto end;
-					} else if (!strncasecmp(msg->string_arg, "debug:", 6)) {
-						s = msg->string_arg + 6;
-						if (s && !strcmp(s, "off")) {
-							s = NULL;
-						}
-						status = switch_rtp_debug_jitter_buffer(a_engine->rtp_session, s);
-						goto end;
-					}
-
-					
-					if ((len = atoi(msg->string_arg))) {
-						qlen = len / (a_engine->read_impl.microseconds_per_packet / 1000);
-						if (qlen < 1) {
-							qlen = 3;
-						}
-					}
-					
-					if (qlen) {
-						if ((p = strchr(msg->string_arg, ':'))) {
-							p++;
-							maxlen = atol(p);
-							if ((q = strchr(p, ':'))) {
-								q++;
-								max_drift = abs(atoi(q));
-							}
-						}
-					}
-
-
-					if (maxlen) {
-						maxqlen = maxlen / (a_engine->read_impl.microseconds_per_packet / 1000);
-					}
-				}
-
-				if (qlen) {
-					if (maxqlen < qlen) {
-						maxqlen = qlen * 5;
-					}
-					if (switch_rtp_activate_jitter_buffer(a_engine->rtp_session, qlen, maxqlen,
-														  a_engine->read_impl.samples_per_packet, 
-														  a_engine->read_impl.samples_per_second, max_drift) == SWITCH_STATUS_SUCCESS) {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
-										  SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames) (%d max frames) (%d max drift)\n", 
-										  len, qlen, maxqlen, max_drift);
-						switch_channel_set_flag(session->channel, CF_JITTERBUFFER);
-						if (!switch_false(switch_channel_get_variable(session->channel, "rtp_jitter_buffer_plc"))) {
-							switch_channel_set_flag(session->channel, CF_JITTERBUFFER_PLC);
-						}
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), 
-										  SWITCH_LOG_WARNING, "Error Setting Jitterbuffer to %dms (%d frames)\n", len, qlen);
-					}
-					
-				} else {
-					switch_rtp_deactivate_jitter_buffer(a_engine->rtp_session);
-				}
+				check_jb(session, msg->string_arg);
 			}
 		}
 		break;
+
+	case SWITCH_MESSAGE_INDICATE_HARD_MUTE:
+		{
+			if (a_engine->rtp_session) {
+				if (msg->numeric_arg) {
+					switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_MUTE);
+				} else {
+					switch_rtp_clear_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_MUTE);
+				}
+
+				rtp_flush_read_buffer(a_engine->rtp_session, SWITCH_RTP_FLUSH_ONCE);				
+			}
+		}
+
+		break;
+
 	case SWITCH_MESSAGE_INDICATE_DEBUG_MEDIA:
 		{
 			switch_rtp_t *rtp = a_engine->rtp_session;

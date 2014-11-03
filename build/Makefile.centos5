@@ -11,7 +11,7 @@ FSPREFIX=/usr/local/freeswitch
 PREFIX=/usr/local/freeswitch
 DOWNLOAD=http://files.freeswitch.org/downloads/libs
 JPEG=v8d
-OPENSSL=1.0.1i
+OPENSSL=1.0.1j
 SQLITE=autoconf-3080403
 PCRE=8.35
 CURL=7.35.0
@@ -29,7 +29,7 @@ freeswitch.git/configure: freeswitch.git/bootstrap.sh
 	cd freeswitch.git && sh bootstrap.sh
 
 freeswitch.git/bootstrap.sh: has-git
-	test -d freeswitch.git || git clone https://stash.freeswitch.org/scm/fs/freeswitch.git  freeswitch.git
+	test -d freeswitch.git || git clone https://freeswitch.org/stash/scm/fs/freeswitch.git freeswitch.git
 
 install: freeswitch
 	cd freeswitch.git && make install cd-sounds-install cd-moh-install

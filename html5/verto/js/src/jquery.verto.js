@@ -72,6 +72,7 @@
             socketUrl: null,
             tag: null,
             videoParams: {},
+            audioParams: {},
 	    iceServers: false,
             ringSleep: 6000
         },
@@ -1498,6 +1499,7 @@
             useAudio: dialog.audioStream,
             useStereo: dialog.params.useStereo,
             videoParams: verto.options.videoParams,
+            audioParams: verto.options.audioParams,
 	    iceServers: verto.options.iceServers
         });
 

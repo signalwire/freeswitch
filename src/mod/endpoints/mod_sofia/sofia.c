@@ -2073,6 +2073,7 @@ void sofia_event_callback(nua_event_t event,
 							switch_mutex_lock(profile->flag_mutex);
 							switch_core_hash_insert(profile->chat_hash, tech_pvt->call_id, strdup(switch_core_session_get_uuid(session)));
 							switch_mutex_unlock(profile->flag_mutex);
+							nua_handle_destroy(nh);
 						} else {
 							switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 						}
@@ -2574,6 +2575,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 {
 	sofia_profile_t *profile = (sofia_profile_t *) obj;
 	uint32_t ireg_loops = profile->ireg_seconds;					/* Number of loop iterations done when we haven't checked for registrations */
+	uint32_t iping_loops = profile->iping_freq;					/* Number of loop iterations done when we haven't checked for ping expires */
 	uint32_t gateway_loops = GATEWAY_SECONDS;			/* Number of loop iterations done when we haven't checked for gateways */
 
 	sofia_set_pflag_locked(profile, PFLAG_WORKER_RUNNING);
@@ -2617,6 +2619,12 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 				time_t now = switch_epoch_time_now(NULL);
 				sofia_reg_check_expire(profile, now, 0);
 				ireg_loops = 0;
+			}
+	
+			if(++iping_loops >= (uint32_t)profile->iping_freq) {
+				time_t now = switch_epoch_time_now(NULL);
+				sofia_reg_check_ping_expire(profile, now, profile->iping_seconds);
+				iping_loops = 0;
 			}
 
 			if (++gateway_loops >= GATEWAY_SECONDS) {
@@ -3343,6 +3351,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			gateway->ping_freq = 0;
 			gateway->ping_max = 0;
 			gateway->ping_min = 0;
+			gateway->ping_sent = 0;
+			gateway->ping_time = 0;
 			gateway->ping_count = 0;
 			gateway->ping_monitoring = SWITCH_FALSE;
 			gateway->ib_calls = 0;
@@ -4099,6 +4109,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->mndlb |= SM_NDLB_ALLOW_NONDUP_SDP;
 					profile->te = 101;
 					profile->ireg_seconds = IREG_SECONDS;
+					profile->iping_seconds = IPING_SECONDS;
+					profile->iping_freq = IPING_FREQUENCY;
 					profile->paid_type = PAID_DEFAULT;
 					profile->bind_attempts = 2;
 					profile->bind_attempt_interval = 5;
@@ -4228,6 +4240,16 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						profile->ireg_seconds = atoi(val);
 						if (profile->ireg_seconds < 0) {
 							profile->ireg_seconds = IREG_SECONDS;
+						}
+					} else if (!strcasecmp(var, "ping-mean-interval")) {
+						profile->iping_seconds = atoi(val);
+						if (profile->iping_seconds < 0) {
+							profile->iping_seconds = IPING_SECONDS;
+						}
+					} else if (!strcasecmp(var, "ping-thread-frequency")) {
+						profile->iping_freq = atoi(val);
+						if (profile->iping_freq < 0) {
+							profile->iping_freq = IPING_FREQUENCY;
 						}
 					} else if (!strcasecmp(var, "user-agent-string")) {
 						profile->user_agent = switch_core_strdup(profile->pool, val);
@@ -5660,10 +5682,15 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 								  "Ping succeeded %s with code %d - count %d/%d/%d, state %s\n",
 								  gateway->name, status, gateway->ping_min, gateway->ping_count, gateway->ping_max, sofia_gateway_status_name(gateway->status));
 			}
+			if (gateway->ping_sent) {
+				gateway->ping_time = (float)(switch_time_now() - gateway->ping_sent) / 1000;
+				gateway->ping_sent = 0;					
+			}
 		} else {
 			if (gateway->state == REG_STATE_REGED) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Unregister %s\n", gateway->name);
 				gateway->state = REG_STATE_FAILED;
+				gateway->ping_time = 0;
 			}
 
 			if (gateway->ping_count > 0) {
@@ -5673,6 +5700,7 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 			if (gateway->ping_count < gateway->ping_min && gateway->status != SOFIA_GATEWAY_DOWN) {
 				gateway->status = SOFIA_GATEWAY_DOWN;
 				do_fire_gateway_state_event = SWITCH_TRUE;
+				gateway->ping_time = 0;
 			}
 
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
@@ -6934,7 +6962,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 										SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 										SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
 										SOATAG_REUSE_REJECTED(1),
-										SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"),
+										SOATAG_AUDIO_AUX("cn telephone-event"),
 										TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
 						} else {
 							nua_respond(tech_pvt->nh, SIP_200_OK,
@@ -7095,7 +7123,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 												SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 												SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
 												SOATAG_REUSE_REJECTED(1),
-												SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"),
+												SOATAG_AUDIO_AUX("cn telephone-event"),
 												TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
 								} else {
 									nua_respond(tech_pvt->nh, SIP_200_OK,
@@ -7230,7 +7258,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 									SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 									SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
 									SOATAG_REUSE_REJECTED(1),
-									SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"),
+									SOATAG_AUDIO_AUX("cn telephone-event"),
 									TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
 					} else {
 						nua_respond(tech_pvt->nh, SIP_200_OK,

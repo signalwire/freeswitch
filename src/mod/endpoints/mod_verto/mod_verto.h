@@ -36,19 +36,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#ifdef WIN32
+#include <WinSock2.h>
+#else
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <sys/wait.h> 
+#endif
 #include <string.h>
+#ifndef WIN32
 #include <unistd.h>
 #include <poll.h>
+#endif
 #include <stdarg.h>
+#ifndef WIN32
 #include <netinet/tcp.h>
 #include <sys/un.h>
+#endif
 #include <assert.h>
 #include <errno.h>
+#ifndef WIN32
 #include <pwd.h>
 #include <netdb.h>
+#endif
 #include <openssl/ssl.h>
 #include "mcast.h"
 
@@ -89,7 +99,7 @@ typedef enum {
 struct verto_profile_s;
 
 struct jsock_s {
-	int client_socket;
+	ws_socket_t client_socket;
 	switch_memory_pool_t *pool;
 	switch_thread_t *thread;
 	wsh_t ws;
@@ -99,10 +109,12 @@ struct jsock_s {
 	struct sockaddr_in local_addr;
 	struct sockaddr_in remote_addr;
 	struct sockaddr_in send_addr;
+#ifndef WIN32
 	struct passwd pw;
+#endif
 
 	int drop;
-	int local_sock;
+	ws_socket_t local_sock;
 	SSL *ssl;
 
 	jpflag_t flags;
@@ -198,7 +210,7 @@ struct verto_profile_s {
 
 	jsock_t *jsock_head;
 	int jsock_count;
-	int server_socket[MAX_BIND];
+	ws_socket_t server_socket[MAX_BIND];
 	int running;
 
 	int ssl_ready;

@@ -1268,7 +1268,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(!zstr(tech_pvt->mparams.local_sdp_str), SOATAG_ADDRESS(tech_pvt->mparams.adv_sdp_audio_ip)),
 				   TAG_IF(!zstr(tech_pvt->mparams.local_sdp_str), SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str)),
 				   TAG_IF(!zstr(tech_pvt->mparams.local_sdp_str), SOATAG_REUSE_REJECTED(1)),
-				   TAG_IF(!zstr(tech_pvt->mparams.local_sdp_str), SOATAG_ORDERED_USER(1)),
 				   TAG_IF(!zstr(tech_pvt->mparams.local_sdp_str), SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE)),
 				   TAG_IF(!zstr(tech_pvt->mparams.local_sdp_str), SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL)),
 				   TAG_IF(rep, SIPTAG_REPLACES_STR(rep)),
@@ -1350,7 +1349,6 @@ void sofia_glue_do_xfer_invite(switch_core_session_t *session)
 				   SOATAG_ADDRESS(tech_pvt->mparams.adv_sdp_audio_ip),
 				   SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str),
 				   SOATAG_REUSE_REJECTED(1),
-				   SOATAG_ORDERED_USER(1),
 				   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE), SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL), TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), TAG_END());
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(tech_pvt->session), SWITCH_LOG_ERROR, "Memory Error!\n");
@@ -1993,6 +1991,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   ping_count       INTEGER,\n"
 		"   rpid             VARCHAR(255),\n"
 		"   expires          BIGINT,\n"
+		"   ping_expires     INTEGER not null default 0,\n"
 		"   user_agent       VARCHAR(255),\n"
 		"   server_user      VARCHAR(255),\n"
 		"   server_host      VARCHAR(255),\n"
@@ -2121,6 +2120,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"create index sr_presence_hosts on sip_registrations (presence_hosts)",
 		"create index sr_contact on sip_registrations (contact)",
 		"create index sr_expires on sip_registrations (expires)",
+		"create index sr_ping_expires on sip_registrations (ping_expires)",
 		"create index sr_hostname on sip_registrations (hostname)",
 		"create index sr_status on sip_registrations (status)",
 		"create index sr_ping_status on sip_registrations (ping_status)",
@@ -2205,6 +2205,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 
 	switch_cache_db_test_reactive(dbh, "select ping_count from sip_registrations", NULL, "alter table sip_registrations add column ping_count INTEGER default 0");
 	switch_cache_db_test_reactive(dbh, "select ping_status from sip_registrations", NULL, "alter table sip_registrations add column ping_status VARCHAR(255) default \"Reachable\"");
+	switch_cache_db_test_reactive(dbh, "select ping_expires from sip_registrations", NULL, "alter table sip_registrations add column ping_expires INTEGER not null default 0");
 	
 	test2 = switch_mprintf("%s;%s", test_sql, test_sql);
 			

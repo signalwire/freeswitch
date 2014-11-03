@@ -42,9 +42,29 @@ extern "C" {
 #endif
 
 #include <sys/types.h>
+#ifdef WIN32
+#include <WinSock2.h>
+#else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#endif
+
+#ifdef _MSC_VER
+#include <stdint.h>
+#ifndef strncasecmp
+#define strncasecmp _strnicmp
+#endif
+#define snprintf _snprintf
+#ifdef _WIN64
+#define WS_SSIZE_T __int64
+#elif _MSC_VER >= 1400
+#define WS_SSIZE_T __int32 __w64
+#else
+#define WS_SSIZE_T __int32
+#endif
+typedef WS_SSIZE_T ssize_t;
+#endif
 
 typedef struct {
 	int sock;

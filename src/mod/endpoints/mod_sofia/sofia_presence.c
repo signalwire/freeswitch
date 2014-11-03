@@ -3905,10 +3905,10 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		
 		sql = switch_mprintf("update sip_subscriptions "
 							 "set expires=%ld, "
-							 "network_ip='%q',network_port='%d',sip_user='%q',sip_host='%q',full_via='%q',full_to='%q',full_from='%q',contact='%q' "
+							 "network_ip='%q',network_port='%d',sip_user='%q',sip_host='%q',full_via='%q',full_to='%q',full_from='%q' "
 							 "where call_id='%q' and profile_name='%q' and hostname='%q'",
 							 (long) switch_epoch_time_now(NULL) + exp_delta, 
-							 np.network_ip, np.network_port, from_user, from_host, full_via, full_to, full_from, contact_str,
+							 np.network_ip, np.network_port, from_user, from_host, full_via, full_to, full_from,
 							 
 							 call_id, profile->name, mod_sofia_globals.hostname);
 

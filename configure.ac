@@ -383,10 +383,14 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     fi
     if test "${enable_64}" = "yes"; then
 	case "$host" in
-             *darwin12.*|*darwin11.*|*darwin10.*|*darwin9.*|*darwin8.*)
-		APR_ADDTO(CFLAGS, -arch x86_64)
-		APR_ADDTO(LDFLAGS, -arch x86_64)
-		APR_ADDTO(CXXFLAGS, -arch x86_64)
+             *darwin*)
+                osxvrm=`sw_vers -productVersion`          # Get version.release.modlevel
+	        osxrel=`echo $osxvrm | cut -d. -f2`       # Get release only
+                if test "$osxrel" -ge 4; then             # 10.4 and up are x64
+		   APR_ADDTO(CFLAGS, -arch x86_64)
+		   APR_ADDTO(LDFLAGS, -arch x86_64)
+		   APR_ADDTO(CXXFLAGS, -arch x86_64)
+                fi
 		;;
              *-solaris2*)
 		APR_ADDTO(CFLAGS, -m64)
@@ -649,39 +653,32 @@ path_push_unique () {
 
 # tweak platform specific flags
 case "$host" in
-    *darwin13.*|*darwin12.*|*darwin11.*)
-        APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
-        APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp -Wno-deprecated-declarations)
-        APR_ADDTO(CPPFLAGS, -I/usr/local/opt/openssl/include)
-        APR_ADDTO(LDFLAGS, -pipe -bind_at_load -L/usr/local/opt/openssl/lib)
-        APR_ADDTO(CXXFLAGS, -pipe)
-        APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
-	if test "x$enable_core_odbc_support" != "xno"; then
-	        APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
-	fi
-	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl])
-    ;;
-    *darwin10.*)
-        APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
-        APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp)
-        APR_ADDTO(CPPFLAGS, -I/usr/local/opt/openssl/include)
-        APR_ADDTO(LDFLAGS, -pipe -bind_at_load -L/usr/local/opt/openssl/lib)
-        APR_ADDTO(CXXFLAGS, -pipe)
-        APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
-	if test "x$enable_core_odbc_support" != "xno"; then
-	        APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
-	fi
-	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl])
-    ;;
     *darwin*)
+        # Common Apple Darwin settings
+        APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
+        APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
         APR_ADDTO(CPPFLAGS, -I/usr/local/opt/openssl/include)
         APR_ADDTO(LDFLAGS, -L/usr/local/opt/openssl/lib)
-        APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
-        APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
-	if test "x$enable_core_odbc_support" != "xno"; then
-	        APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
+        if test "x$enable_core_odbc_support" != "xno"; then
+	   APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
 	fi
 	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl])
+    # Get OSX and clang version
+        osxvrm=`sw_vers -productVersion`          # Get version.release.modlevel
+	osxrel=`echo $osxvrm | cut -d. -f2`       # Get release only
+        clangvers="`clang -v 2>&1  >/dev/null | grep version | sed -e 's/.*version \([[0-9]]*\).*$/\1/'`"
+        if test "$clangvers" -ge 6; then          # Xcode 6 drops std lib search, add it to clang
+           APR_ADDTO(LDFLAGS, -L/usr/local/lib)
+           APR_ADDTO(CPPFLAGS, -I/usr/local/include)
+        fi
+        if test "$clangvers" -ge 4; then          # Xcode 4 / 10.7 and up
+           APR_ADDTO(CFLAGS, -Wno-deprecated-declarations)
+        fi
+        if test "$osxrel" -ge 6; then             # 10.6 and up
+           APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp)
+           APR_ADDTO(LDFLAGS, -pipe -bind_at_load)
+           APR_ADDTO(CXXFLAGS, -pipe)
+        fi
     ;;
     *-solaris2*)
 	if test "${enable_64}" = "yes"; then
@@ -1107,16 +1104,8 @@ case $host in
         size_t_fmt='#define SWITCH_SIZE_T_FMT "ld"'
         ;;
     *apple-darwin*)
-        osver=`uname -r`
-        case $osver in
-           [0-7].*)
-              ssize_t_fmt='#define SWITCH_SSIZE_T_FMT "d"'
-              ;;
-           *)
-              ssize_t_fmt='#define SWITCH_SSIZE_T_FMT "ld"'
-              ;;
-        esac
-        size_t_fmt='#define SWITCH_SIZE_T_FMT "lu"'
+         ssize_t_fmt='#define SWITCH_SSIZE_T_FMT "ld"'
+         size_t_fmt='#define SWITCH_SIZE_T_FMT "lu"'
         ;;
 esac
 

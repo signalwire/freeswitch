@@ -1043,8 +1043,20 @@ struct record_helper {
 	switch_time_t last_write_time;
 	switch_bool_t hangup_on_error;
 	switch_codec_implementation_t read_impl;
+	switch_bool_t speech_detected;
+	const char *completion_cause;
 };
 
+/**
+ * Set the recording completion cause. The cause can only be set once, to minimize the logic in the record_callback.
+ * [The completion_cause strings are essentially those of an MRCP Recorder resource.]
+ */
+static void set_completion_cause(struct record_helper *rh, const char *completion_cause)
+{
+	if (!rh->completion_cause) {
+		rh->completion_cause = completion_cause;
+	}
+}
 
 static switch_bool_t is_silence_frame(switch_frame_t *frame, int silence_threshold, switch_codec_implementation_t *codec_impl)
 {
@@ -1072,6 +1084,30 @@ static switch_bool_t is_silence_frame(switch_frame_t *frame, int silence_thresho
 	return is_silence;
 }
 
+static void send_record_stop_event(switch_channel_t *channel, switch_codec_implementation_t *read_impl, struct record_helper *rh)
+{
+	switch_event_t *event;
+
+	if (read_impl->actual_samples_per_second) {
+		switch_channel_set_variable_printf(channel, "record_seconds", "%d", rh->fh->samples_out / read_impl->actual_samples_per_second);
+		switch_channel_set_variable_printf(channel, "record_ms", "%d", rh->fh->samples_out / (read_impl->actual_samples_per_second / 1000));
+	}
+
+	if (!zstr(rh->completion_cause)) {
+		switch_channel_set_variable_printf(channel, "record_completion_cause", "%s", rh->completion_cause);
+	}
+
+	switch_channel_set_variable_printf(channel, "record_samples", "%d", rh->fh->samples_out);
+
+	if (switch_event_create(&event, SWITCH_EVENT_RECORD_STOP) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", rh->file);
+		if (!zstr(rh->completion_cause)) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-Completion-Cause", rh->completion_cause);
+		}
+		switch_event_fire(&event);
+	}
+}
 
 static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
@@ -1093,6 +1129,8 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 		}
 		rh->silence_time = switch_micro_time_now();
 		rh->silence_timeout_ms = rh->initial_timeout_ms;
+		rh->speech_detected = SWITCH_FALSE;
+		rh->completion_cause = NULL;
 
 		switch_core_session_get_read_impl(session, &rh->read_impl);
 
@@ -1199,10 +1237,15 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				while (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
 					len = (switch_size_t) frame.datalen / 2;
 
-					if (len && switch_core_file_write(rh->fh, mask ? null_data : data, &len) != SWITCH_STATUS_SUCCESS && rh->hangup_on_error) {
+					if (len && switch_core_file_write(rh->fh, mask ? null_data : data, &len) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error writing %s\n", rh->file);
-						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-						switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+						/* File write failed */
+						set_completion_cause(rh, "uri-failure");
+						if (rh->hangup_on_error) {
+							switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+							switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+						}
+						send_record_stop_event(channel, &read_impl, rh);
 						return SWITCH_FALSE;
 					}
 				}
@@ -1213,22 +1256,27 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Discarding short file %s\n", rh->file);
 					switch_channel_set_variable(channel, "RECORD_DISCARDED", "true");
 					switch_file_remove(rh->file, switch_core_session_get_pool(session));
+					set_completion_cause(rh, "input-too-short");
 				}
 
-				if (read_impl.actual_samples_per_second) {
-					switch_channel_set_variable_printf(channel, "record_seconds", "%d", rh->fh->samples_out / read_impl.actual_samples_per_second);
-					switch_channel_set_variable_printf(channel, "record_ms", "%d", rh->fh->samples_out / (read_impl.actual_samples_per_second / 1000));
+				if (switch_channel_down_nosig(channel)) {
+					/* We got hung up */
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Channel is hung up\n");
+					if (rh->speech_detected) {
+						/* Treat it as equivalent with final-silence */
+						set_completion_cause(rh, "success-silence");
+					} else {
+						/* Treat it as equivalent with inital-silence timeout */
+						set_completion_cause(rh, "no-input-timeout");
+					}
+				} else {
+					/* Set the completion_cause to maxtime reached, unless it's already set */
+					set_completion_cause(rh, "success-maxtime");
 				}
-				switch_channel_set_variable_printf(channel, "record_samples", "%d", rh->fh->samples_out);
-				
 			}
-			
-			if (switch_event_create(&event, SWITCH_EVENT_RECORD_STOP) == SWITCH_STATUS_SUCCESS) {
-				switch_channel_event_set_data(channel, event);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Record-File-Path", rh->file);
-				switch_event_fire(&event);
-			}
-			
+
+			send_record_stop_event(channel, &read_impl, rh);
+
 			switch_channel_execute_on(channel, SWITCH_RECORD_POST_PROCESS_EXEC_APP_VARIABLE);
 
 			if ((var = switch_channel_get_variable(channel, SWITCH_RECORD_POST_PROCESS_EXEC_API_VARIABLE))) {
@@ -1275,10 +1323,14 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 				
 				len = (switch_size_t) frame.datalen / 2;
 
-				if (len && switch_core_file_write(rh->fh, mask ? null_data : data, &len) != SWITCH_STATUS_SUCCESS && rh->hangup_on_error) {
+				if (len && switch_core_file_write(rh->fh, mask ? null_data : data, &len) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Error writing %s\n", rh->file);
-					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-					switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+					/* File write failed */
+					set_completion_cause(rh, "uri-failure");
+					if (rh->hangup_on_error) {
+						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+						switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+					}
 					return SWITCH_FALSE;
 				}
 
@@ -1289,22 +1341,39 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 					if (is_silence_frame(&frame, rh->silence_threshold, &read_impl)) {
 						if (!rh->silence_time) {
 							/* start of silence */
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Start of silence detected\n");
 							rh->silence_time = switch_micro_time_now();
 						} else {
 							/* continuing silence */
 							int duration_ms = (int)((switch_micro_time_now() - rh->silence_time) / 1000);
 							if (rh->silence_timeout_ms > 0 && duration_ms >= rh->silence_timeout_ms) {
 								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Recording file %s timeout: %i >= %i\n", rh->file, duration_ms, rh->silence_timeout_ms);
+								if (rh->speech_detected) {
+									/* Reached final silence timeout */
+									set_completion_cause(rh, "success-silence");
+								} else {
+									/* Reached initial silence timeout */
+									set_completion_cause(rh, "no-input-timeout");
+									/* Discard the silent file? */
+								}
 								switch_core_media_bug_set_flag(bug, SMBF_PRUNE);
 							}
 						}
 					} else { /* not silence */
 						if (rh->silence_time) {
 							/* end of silence */
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Start of speech detected\n");
+							rh->speech_detected = SWITCH_TRUE;
 							rh->silence_time = 0;
 							/* switch from initial timeout to final timeout */
 							rh->silence_timeout_ms = rh->final_timeout_ms;
 						}
+					}
+				} else {
+					/* no silence detection */
+					if (!rh->speech_detected) {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "No silence detection configured; assuming start of speech\n");
+						rh->speech_detected = SWITCH_TRUE;
 					}
 				}
 			}

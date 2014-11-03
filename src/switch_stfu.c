@@ -276,7 +276,7 @@ void stfu_n_report(stfu_instance_t *i, stfu_report_t *r)
 stfu_status_t stfu_n_auto_size(stfu_instance_t *i, int check_down)
 {
     stfu_status_t r = STFU_IT_FAILED;
-    int len;
+    uint32_t len;
 
     if (!i->ms_per_packet) {
         return r;
@@ -294,7 +294,7 @@ stfu_status_t stfu_n_auto_size(stfu_instance_t *i, int check_down)
     return r;
 }
 
-stfu_status_t _stfu_n_resize(stfu_instance_t *i, int32_t qlen, int line) 
+stfu_status_t _stfu_n_resize(stfu_instance_t *i, uint32_t qlen, int line) 
 {
     stfu_status_t s;
     int diff;
@@ -526,7 +526,7 @@ stfu_status_t stfu_n_add_data(stfu_instance_t *i, uint32_t ts, uint16_t seq, uin
     }
 
     if (i->ready && i->out_queue->array_len && (i->last_time_skew > 1 || i->last_ts_skew)) {
-        int time_ms = i->last_time_skew, ts_ms = (i->last_ts_skew / i->samples_per_packet) * i->ms_per_packet;
+        uint32_t time_ms = i->last_time_skew, ts_ms = (i->last_ts_skew / i->samples_per_packet) * i->ms_per_packet;
 
         if (time_ms > i->period_jitter_size_time) {
             i->period_jitter_size_time = time_ms;
@@ -709,7 +709,7 @@ static int stfu_n_find_any_frame(stfu_instance_t *in, stfu_queue_t *queue, stfu_
     int best_diff = 1000000, cur_diff = 0;
     stfu_frame_t *frame = NULL, *best_frame = NULL;
     int newer = 0;
-    int was_read = 0;
+    uint32_t was_read = 0;
 
     stfu_assert(r_frame);
     

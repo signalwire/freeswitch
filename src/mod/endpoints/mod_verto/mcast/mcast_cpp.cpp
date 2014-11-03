@@ -34,7 +34,9 @@
 #include "mcast.h"
 #include "mcast_cpp.h"
 #include <string.h>
+#ifndef WIN32
 #include <poll.h>
+#endif
 
 McastHandle::McastHandle(const char *host, int port, int flags)
 {

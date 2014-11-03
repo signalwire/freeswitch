@@ -166,7 +166,7 @@ static inline void free_context(shout_context_t *context)
 			mpg123_delete(context->mh);
 		}
 
-		if (context->fp) {
+		if (context->fp && context->lame_ready) {
 			unsigned char mp3buffer[20480];
 			int len;
 			int16_t blank[2048] = { 0 }, *r = NULL;
@@ -853,11 +853,6 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 			if (!(context->fp = fopen(path, mask))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", path);
 				goto error;
-			}
-			if (!context->lame_ready) {
-				lame_init_params(context->gfp);
-				lame_print_config(context->gfp);
-				context->lame_ready = 1;
 			}
 		}
 	}

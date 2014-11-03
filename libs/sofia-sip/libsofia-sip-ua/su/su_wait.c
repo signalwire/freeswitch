@@ -224,10 +224,37 @@ int su_wait(su_wait_t waits[], unsigned n, su_duration_t timeout)
 #if SU_HAVE_WINSOCK
   DWORD i;
 
-  if (n > 0)
-    i = WSAWaitForMultipleEvents(n, waits, FALSE, timeout, FALSE);
-  else
+  if (n > 0) {
+    #define WAIT_EVENT_BLOCK_SIZE WSA_MAXIMUM_WAIT_EVENTS
+
+    /* Handle at most WAIT_EVENT_BLOCK_SIZE wait objects at a time */
+    int blocks = (n + WAIT_EVENT_BLOCK_SIZE - 1) / WAIT_EVENT_BLOCK_SIZE;
+    int block_index = 0;
+    int first_wait_index = 0;
+    int millisec_per_block = timeout / blocks;
+
+    if (timeout > 0)
+      millisec_per_block  = max(1, millisec_per_block);
+
+    i = WSA_WAIT_TIMEOUT;
+    for(block_index = 0; block_index < blocks; block_index++,first_wait_index+=WAIT_EVENT_BLOCK_SIZE)
+    {
+      int remaining_blocks = n - block_index * WAIT_EVENT_BLOCK_SIZE;
+      int waits_in_current_block = min( WAIT_EVENT_BLOCK_SIZE, remaining_blocks );
+
+      i = WSAWaitForMultipleEvents(waits_in_current_block, waits + first_wait_index, FALSE, millisec_per_block, FALSE);
+      if (i != WSA_WAIT_TIMEOUT) {
+        /* Did not timeout, return something NOW, ignore remaining blocks */
+        if (i != WSA_WAIT_FAILED) {
+          /* Return the right index */
+          i += first_wait_index;
+        }
+        break;
+      }
+    }
+  } else {
     return Sleep(timeout), SU_WAIT_TIMEOUT;
+  }
 
   if (i == WSA_WAIT_TIMEOUT)
     return SU_WAIT_TIMEOUT;

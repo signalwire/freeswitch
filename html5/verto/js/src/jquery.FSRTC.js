@@ -78,6 +78,7 @@
             userData: null,
 	    iceServers: false,
             videoParams: {},
+            audioParams: {},
             callbacks: {
                 onICEComplete: function() {},
                 onICE: function() {},
@@ -322,7 +323,10 @@
 
         getUserMedia({
             constraints: {
-                audio: true,
+                audio: {
+		    mandatory: this.options.audioParams,
+		    optional: []
+		},
                 video: this.options.useVideo ? {
                     mandatory: this.options.videoParams,
                     optional: []
@@ -379,7 +383,10 @@
 
         getUserMedia({
             constraints: {
-                audio: true,
+                audio: {
+		    mandatory: this.options.audioParams,
+		    optional: []
+		},
                 video: this.options.useVideo ? {
                     mandatory: this.options.videoParams,
                     optional: []

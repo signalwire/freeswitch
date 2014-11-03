@@ -3825,11 +3825,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_jitter_buffer(switch_rtp_t *
 	}
 
 	READ_INC(rtp_session);
+
 	if (rtp_session->jb) {
-		stfu_n_resize(rtp_session->jb, queue_frames);
-	} else {
-		rtp_session->jb = stfu_n_init(queue_frames, max_queue_frames ? max_queue_frames : 50, samples_per_packet, samples_per_second, max_drift);
+		stfu_n_destroy(&rtp_session->jb);
 	}
+
+	rtp_session->jb = stfu_n_init(queue_frames, max_queue_frames ? max_queue_frames : 50, samples_per_packet, samples_per_second, max_drift);
+
 	READ_DEC(rtp_session);
 	
 	if (rtp_session->jb) {
@@ -5913,6 +5915,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 	result_continue:
 	timer_check:
+		
+		if (rtp_session->flags[SWITCH_RTP_FLAG_MUTE]) {
+			do_cng++;
+		}
 
 		if (do_cng) {
 			uint8_t *data = (uint8_t *) RTP_BODY(rtp_session);

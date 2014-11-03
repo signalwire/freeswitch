@@ -873,7 +873,7 @@ switch_status_t navigate_entrys(switch_core_session_t *session, dir_profile_t *p
 				globals.hostname, switch_core_session_get_uuid(session), (params->search_by == SEARCH_BY_LAST_NAME ? "last_name_digit" : "first_name_digit"), params->digits);
 	}
 
-	sql = switch_mprintf("select count(*) from directory_search where %s group by last_name, first_name, extension", sql_where);
+	sql = switch_mprintf("select count(*) from (select distinct first_name, last_name, extension from directory_search where %s) AS dsearch", sql_where);
 
 	directory_execute_sql_callback(globals.mutex, sql, sql2str_callback, &cbt);
 	switch_safe_free(sql);

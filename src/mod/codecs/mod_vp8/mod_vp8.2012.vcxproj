@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -19,9 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>mod_verto</ProjectName>
-    <ProjectGuid>{5B2BACE4-0F5A-4A21-930D-C0F4B1F58FA6}</ProjectGuid>
-    <RootNamespace>mod_verto</RootNamespace>
+    <ProjectName>mod_vp8</ProjectName>
+    <ProjectGuid>{ABFD88E1-7710-4BCC-AC34-56038DAC9652}</ProjectGuid>
+    <RootNamespace>mod_vp8</RootNamespace>
     <Keyword>Win32Proj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -51,22 +51,18 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\..\..\w32\module_release.props" />
-    <Import Project="..\..\..\..\w32\openssl-version.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\..\..\w32\module_debug.props" />
-    <Import Project="..\..\..\..\w32\openssl-version.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\..\..\w32\module_release.props" />
-    <Import Project="..\..\..\..\w32\openssl-version.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\..\..\w32\module_debug.props" />
-    <Import Project="..\..\..\..\w32\openssl-version.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
@@ -76,7 +72,6 @@
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(SolutionDir)\src\include;%(AdditionalIncludeDirectories);..\..\..\..\libs\openssl-$(OpenSSLVersion)\include;$(ProjectDir)..\..\..\..\libs\pthreads-w32-2-9-1;.\;.\mcast</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -91,7 +86,6 @@
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(SolutionDir)\src\include;%(AdditionalIncludeDirectories);..\..\..\..\libs\openssl-$(OpenSSLVersion)\include;$(ProjectDir)..\..\..\..\libs\pthreads-w32-2-9-1;.\;.\mcast</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -104,7 +98,6 @@
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(SolutionDir)\src\include;%(AdditionalIncludeDirectories);..\..\..\..\libs\openssl-$(OpenSSLVersion)\include;$(ProjectDir)..\..\..\..\libs\pthreads-w32-2-9-1;.\;.\mcast</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -119,7 +112,6 @@
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(SolutionDir)\src\include;%(AdditionalIncludeDirectories);..\..\..\..\libs\openssl-$(OpenSSLVersion)\include;$(ProjectDir)..\..\..\..\libs\pthreads-w32-2-9-1;.\;.\mcast</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -129,24 +121,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="mod_verto.c" />
-    <ClCompile Include="ws.c" />
-    <ClCompile Include="mcast\mcast.c" />
-    <ClCompile Include="mcast\mcast_cpp.cpp" />
+    <ClCompile Include="mod_vp8.c" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2012.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\openssl\libeay32.2012.vcxproj">
-      <Project>{d331904d-a00a-4694-a5a3-fcff64ab5dbe}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\openssl\ssleay32.2012.vcxproj">
-      <Project>{b4b62169-5ad4-4559-8707-3d933ac5db39}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\pthread\pthread.2012.vcxproj">
-      <Project>{df018947-0fff-4eb3-bdee-441dc81da7a4}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

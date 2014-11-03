@@ -10,7 +10,7 @@
 PKG=rsync-3.1.0 git automake-1.14.1 autoconf-2.69p1 libtool gmake bzip2 jpeg wget pcre speex libldns
 PREFIX=/usr/local/freeswitch
 DOWNLOAD=http://files.freeswitch.org/downloads/libs
-OPENSSL=1.0.1i
+OPENSSL=1.0.1j
 LIBEDIT=20140618-3.1
 CURL=7.35.0
 
@@ -24,7 +24,7 @@ freeswitch.git/configure: freeswitch.git/bootstrap.sh
 	cd freeswitch.git && AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.14 LIBTOOL=/usr/local/bin/libtoolize sh bootstrap.sh
 
 freeswitch.git/bootstrap.sh: has-git
-	test -d freeswitch.git || git clone https://stash.freeswitch.org/scm/fs/freeswitch.git freeswitch.git
+	test -d freeswitch.git || git clone https://freeswitch.org/stash/scm/fs/freeswitch.git freeswitch.git
 
 install:
 	cd freeswitch.git && AUTOCONF_VERSION=2.69 AUTOMAKE_VERSION=1.14 LIBTOOL=/usr/local/bin/libtoolize gmake install cd-sounds-install cd-moh-install

@@ -448,7 +448,7 @@ function init() {
         });
     });
 
-    tmp = $.cookie("verto_demo_stun_checked") || "false";
+    tmp = $.cookie("verto_demo_stun_checked") || "true";
     $.cookie("verto_demo_stun_checked", tmp, {
         expires: 365
     });
@@ -473,6 +473,11 @@ function init() {
             "minWidth": "1280",
             "minHeight": "720"
         },
+	audioParams: {
+	    googAutoGainControl: false,
+	    googNoiseSuppression: false,
+	    googHighpassFilter: false
+	},
 	iceServers: $("#use_stun").is(':checked')
     },callbacks);
 
