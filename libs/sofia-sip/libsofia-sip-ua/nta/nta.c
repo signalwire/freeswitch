@@ -3188,7 +3188,9 @@ int agent_check_request_via(nta_agent_t *agent,
   else if (agent->sa_server_rport == 2 ||
 		   (agent->sa_server_rport == 3 && sip && sip->sip_user_agent &&
 			sip->sip_user_agent->g_string &&
-			(!strncasecmp(sip->sip_user_agent->g_string, "Polycom", 7) || !strncasecmp(sip->sip_user_agent->g_string, "KIRK Wireless Server", 20)))) {
+			(!strncasecmp(sip->sip_user_agent->g_string, "Polycom", 7) ||
+			 !strncasecmp(sip->sip_user_agent->g_string, "KIRK Wireless Server", 20) ||
+			 !strncasecmp(sip->sip_user_agent->g_string, "ADTRAN_Total_Access", 19)))) {
     rport = su_sprintf(msg_home(msg), "rport=%u", ntohs(from->su_port));
     msg_header_replace_param(msg_home(msg), v->v_common, rport);
   }
