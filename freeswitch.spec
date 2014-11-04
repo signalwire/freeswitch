@@ -482,6 +482,14 @@ is a "high-performance, distributed memory object caching system, generic in
 nature, but intended for use in speeding up dynamic web applications by 
 alleviating database load." 
 
+%package application-mongo
+Summary:	FreeSWITCH mod_mongo
+Group:		System/Libraries
+Requires:	%{name} = %{version}-%{release}
+
+%description application-mongo
+Provides FreeSWITCH mod_mongo, which implements an API interface to mongodb.
+
 %package application-nibblebill
 Summary:	FreeSWITCH mod_nibblebill
 Group:          System/Libraries
@@ -1029,6 +1037,18 @@ BuildRequires:	net-snmp-devel
 SNMP stats reporter for the FreeSWITCH open source telephony platform
 
 ######################################################################################################################
+#				FreeSWITCH Logger Modules
+######################################################################################################################
+
+%package logger-graylog2
+Summary:	GELF logger for Graylog2 and Logstash
+Group:		System/Libraries
+Requires:	%{name} = %{version}-%{release}
+
+%description logger-graylog2
+GELF logger for Graylog2 and Logstash
+
+######################################################################################################################
 #				FreeSWITCH Media Format Modules
 ######################################################################################################################
 
@@ -1371,7 +1391,7 @@ APPLICATION_MODULES_DE+="applications/mod_esl"
 
 APPLICATION_MODULES_FR="applications/mod_fifo applications/mod_fsk applications/mod_fsv applications/mod_hash \
 			applications/mod_httapi applications/mod_http_cache applications/mod_lcr applications/mod_limit \
-			applications/mod_memcache applications/mod_nibblebill applications/mod_redis applications/mod_rss" 
+			applications/mod_memcache applications/mod_mongo applications/mod_nibblebill applications/mod_redis applications/mod_rss" 
 
 APPLICATION_MODULES_SZ="applications/mod_sms applications/mod_snapshot applications/mod_snom applications/mod_soundtouch \
 			applications/mod_spandsp applications/mod_spy applications/mod_stress \
@@ -1463,7 +1483,7 @@ LANGUAGES_MODULES="languages/mod_lua languages/mod_perl languages/mod_python "
 #						Logging Modules
 #
 ######################################################################################################################
-LOGGERS_MODULES="loggers/mod_console loggers/mod_logfile loggers/mod_syslog"
+LOGGERS_MODULES="loggers/mod_console loggers/mod_graylog2 loggers/mod_logfile loggers/mod_syslog"
 
 ######################################################################################################################
 #
@@ -1807,6 +1827,7 @@ fi
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/fax.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/fifo.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/format_cdr.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/graylog2.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/hash.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/httapi.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{sysconfdir}/autoload_configs/http_cache.conf.xml
@@ -1967,6 +1988,9 @@ fi
 
 %files application-memcache
 %{MODINSTDIR}/mod_memcache.so*
+
+%files application-mongo
+%{MODINSTDIR}/mod_mongo.so*
 
 %files application-nibblebill
 %{MODINSTDIR}/mod_nibblebill.so*
@@ -2341,6 +2365,15 @@ fi
 
 ######################################################################################################################
 #
+#						Logger Modules
+#
+######################################################################################################################
+
+%files logger-graylog2
+%{MODINSTDIR}/mod_graylog2.so*
+
+######################################################################################################################
+#
 #					Timer Modules
 #
 ######################################################################################################################
@@ -2371,6 +2404,8 @@ fi
 #
 ######################################################################################################################
 %changelog
+* Tue Nov 04 2014 - crienzo@grasshopper.com
+- add mod_graylog2 and mod_mongo
 * Thu Sep 11 2014 - krice@freeswitch.org
 - add and fix mod_verto and mod_rtc
 * Mon Jun 02 2014 - krice@freeswitch.org
