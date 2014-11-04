@@ -46,5 +46,31 @@ namespace FreeSWITCH {
             if (cons == null) throw new ArgumentException(ty.Name + " constructor not found.");
             return (T)cons.Invoke(new object[] { cPtr, false });
         }
+
+        /// <summary>
+        /// Getting IntPtr from wrapper
+        /// </summary>
+        /// <typeparam name="T">swig generated class</typeparam>
+        /// <param name="obj">instance</param>
+        /// <returns>Original pointer</returns>
+        public static IntPtr GetPtr<T>(T obj)
+        {
+            // internal static HandleRef getCPtr(CoreSession obj)
+            var ty = typeof(T);
+            var bflags = BindingFlags.Static | BindingFlags.NonPublic;
+            var getCPtr = ty.GetMethod("getCPtr", bflags, null, new[] { typeof(T) }, null);
+
+            if (getCPtr != null)
+            {
+                var handleRef = getCPtr.Invoke(null, new object[] { obj });
+
+                if (handleRef is HandleRef)
+                {
+                    return ((HandleRef)handleRef).Handle;
+                }
+            }
+
+            return IntPtr.Zero;
+        }
     }
 }

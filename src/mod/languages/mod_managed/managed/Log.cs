@@ -57,6 +57,7 @@ namespace FreeSWITCH
         static string ToLogString(this LogLevel level)
         {
             switch (level) {
+                case LogLevel.Console: return "CONSOLE";
                 case LogLevel.Alert: return "ALERT";
                 case LogLevel.Critical: return "CRIT";
                 case LogLevel.Debug: return "DEBUG";
@@ -85,6 +86,7 @@ namespace FreeSWITCH
     };*/
     public enum LogLevel
     {
+        Console,
         Debug,
         Info,
         Error,

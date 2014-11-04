@@ -149,6 +149,23 @@ namespace FreeSWITCH.Native
             };
             return del;
         }
+
+        /// <summary>Wraps a nice handler into a delegate suitable for reverse P/Invoke. For native api using</summary>
+        public static switch_state_handler_t_delegate CreateStateHandlerDelegate(Action<ManagedSession> handler)
+        {
+            // We create a ManagedSession on top of the session so callbacks can use it "nicely"
+            // Then we sort of dispose it.
+            switch_state_handler_t_delegate del = ptr =>
+            {
+                using (var sess = new ManagedSession(new SWIGTYPE_p_switch_core_session(ptr, false)))
+                {
+                    handler(sess);
+                    return switch_status_t.SWITCH_STATUS_SUCCESS;
+                }
+            };
+            return del;
+        }
+
         public static SWIGTYPE_p_f_p_switch_core_session__switch_status_t WrapStateHandlerDelegate(switch_state_handler_t_delegate del) {
             return new SWIGTYPE_p_f_p_switch_core_session__switch_status_t(Marshal.GetFunctionPointerForDelegate(del), false);
         }
