@@ -1543,48 +1543,38 @@ static void nua_session_usage_refresh(nua_handle_t *nh,
   nua_session_usage_t *ss = NUA_DIALOG_USAGE_PRIVATE(du);
   nua_client_request_t const *cr = du->du_cr;
   nua_server_request_t const *sr;
-  
-  SU_DEBUG_3(("nua(%p): Checking Session Refresh\n", (void *)nh));
 
   if (ss->ss_state >= nua_callstate_terminating ||
       /* INVITE is in progress or being authenticated */
-      nua_client_request_in_progress(cr)) {
-	  SU_DEBUG_3(("nua(%p): client has a request in progress\n", (void *)nh));
-	  return;
-  }
+      nua_client_request_in_progress(cr))
+    return;
 
   /* UPDATE has been queued */
-  for (cr = ds->ds_cr; cr; cr = cr->cr_next) {
-	  if (cr->cr_method == sip_method_update) {
-		  SU_DEBUG_3(("nua(%p): client has an update queued\n", (void *)nh));
-		  return;
-	  }
-  }
+  for (cr = ds->ds_cr; cr; cr = cr->cr_next)
+    if (cr->cr_method == sip_method_update)
+      return;
 
   /* INVITE or UPDATE in progress on server side */
-  for (sr = ds->ds_sr; sr; sr = sr->sr_next) {
+  for (sr = ds->ds_sr; sr; sr = sr->sr_next)
     if (sr->sr_usage == du &&
-		(sr->sr_method == sip_method_invite ||
-		 sr->sr_method == sip_method_update)) {
-		SU_DEBUG_3(("nua(%p): client has an INVITE OR UPDATE in progress\n", (void *)nh));
-		return;
-	}
-  }
+	(sr->sr_method == sip_method_invite ||
+	 sr->sr_method == sip_method_update))
+      return;
 
   if (ss->ss_timer->refresher == nua_remote_refresher) {
     SU_DEBUG_3(("nua(%p): session almost expired, sending BYE before timeout.\n", (void *)nh));
     ss->ss_reason = "SIP;cause=408;text=\"Session timeout\"";
     nua_stack_bye(nh->nh_nua, nh, nua_r_bye, NULL);
     return;
-  } else if (NH_PGET(nh, update_refresh)) {
-	  SU_DEBUG_3(("nua(%p): STACK UPDATE\n", (void *)nh));
-	  nua_stack_update(nh->nh_nua, nh, nua_r_update, NULL);
-  } else if (du->du_cr && du->du_cr->cr_method == sip_method_invite) {
-	  SU_DEBUG_3(("nua(%p): RESEND REQUEST\n", (void *)nh));
-	  nua_client_resend_request(du->du_cr, 0);
-  } else {
-	  SU_DEBUG_3(("nua(%p): STACK INVITE\n", (void *)nh));
-	  nua_stack_invite(nh->nh_nua, nh, nua_r_invite, NULL);
+  }
+  else if (NH_PGET(nh, update_refresh)) {
+    nua_stack_update(nh->nh_nua, nh, nua_r_update, NULL);
+  }
+  else if (du->du_cr) {
+    nua_client_resend_request(du->du_cr, 0);
+  }
+  else {
+    nua_stack_invite(nh->nh_nua, nh, nua_r_invite, NULL);
   }
 }
 
