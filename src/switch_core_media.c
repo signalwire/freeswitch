@@ -235,7 +235,7 @@ SWITCH_DECLARE(int) switch_core_media_crypto_keylen(switch_rtp_crypto_key_type_t
 static int get_channels(const char *name, int dft)
 {
 
-	if (!switch_true(switch_core_get_variable("NDLB_broken_opus_sdp")) && !strcasecmp(name, "opus")) {
+	if (!zstr(name) && switch_true(switch_core_get_variable("NDLB_broken_opus_sdp")) && !strcasecmp(name, "opus")) {
 		return 2; /* IKR???*/
 	}
 
@@ -3827,7 +3827,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				switch_snprintf(tmp, sizeof(tmp), "%d", a_engine->cur_payload_map->recv_pt);
 				switch_channel_set_variable(session->channel, "rtp_audio_recv_pt", tmp);
 				
-				if (switch_core_codec_ready(&a_engine->read_codec)) {
+				if (switch_core_codec_ready(&a_engine->read_codec) && strcasecmp(matches[0].imp->iananame, a_engine->read_codec.implementation->iananame)) {
 					a_engine->reset_codec = 1;
 				}
 
@@ -4071,7 +4071,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				switch_channel_set_variable(session->channel, "rtp_video_recv_pt", tmp);
 				if (!match && vmatch) match = 1;
 
-				if (switch_core_codec_ready(&v_engine->read_codec)) {
+				if (switch_core_codec_ready(&v_engine->read_codec) && strcasecmp(matches[0].imp->iananame, v_engine->read_codec.implementation->iananame)) {
 					v_engine->reset_codec = 1;
 				}
 
