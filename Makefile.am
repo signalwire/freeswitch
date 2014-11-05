@@ -640,6 +640,11 @@ python-reconf:
 	rm -f src/mod/languages/mod_python/Makefile
 	./config.status
 
+reconf:
+	rm config.cache
+	sh ./config.status --recheck
+	sh ./config.status
+
 srtp-reconf:
 	cd libs/srtp && $(MAKE) clean
 	cd libs/srtp && sh ./config.status --recheck
