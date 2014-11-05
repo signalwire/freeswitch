@@ -9081,6 +9081,7 @@ SWITCH_STANDARD_APP(conference_function)
 	char *profile_name = NULL;
 	switch_xml_t cxml = NULL, cfg = NULL, profiles = NULL;
 	const char *flags_str, *v_flags_str;
+	const char *cflags_str, *v_cflags_str;
 	member_flag_t mflags = 0;
 	switch_core_session_message_t msg = { 0 };
 	uint8_t rl = 0, isbr = 0;
@@ -9141,6 +9142,16 @@ SWITCH_STANDARD_APP(conference_function)
 			flags_str = v_flags_str;
 		} else {
 			flags_str = switch_core_session_sprintf(session, "%s|%s", flags_str, v_flags_str);
+		}
+	}
+
+    cflags_str = flags_str;
+
+	if ((v_cflags_str = switch_channel_get_variable(channel, "conference_flags"))) {
+		if (zstr(cflags_str)) {
+			cflags_str = v_cflags_str;
+		} else {
+			cflags_str = switch_core_session_sprintf(session, "%s|%s", cflags_str, v_cflags_str);
 		}
 	}
 
@@ -9234,6 +9245,8 @@ SWITCH_STANDARD_APP(conference_function)
 			goto done;
 		}
 
+		set_cflags(cflags_str, &conference->flags);
+
 		if (locked) {
 			switch_mutex_unlock(globals.setup_mutex);
 			locked = 0;
@@ -9315,6 +9328,8 @@ SWITCH_STANDARD_APP(conference_function)
 			if (!conference) {
 				goto done;
 			}
+
+			set_cflags(cflags_str, &conference->flags);
 
 			if (locked) {
 				switch_mutex_unlock(globals.setup_mutex);
