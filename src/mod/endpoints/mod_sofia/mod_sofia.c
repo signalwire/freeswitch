@@ -2967,15 +2967,27 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					for (x = 0; x < profile->rtpip_index; x++) {
 						stream->write_function(stream, "    <rtp-ip>%s</rtp-ip>\n", switch_str_nil(profile->rtpip[x]));
 					}
-					stream->write_function(stream, "    <ext-rtp-ip>%s</ext-rtp-ip>\n", profile->extrtpip);
+					if (profile->extrtpip) {
+						stream->write_function(stream, "    <ext-rtp-ip>%s</ext-rtp-ip>\n", profile->extrtpip);
+					}
 					stream->write_function(stream, "    <sip-ip>%s</sip-ip>\n", switch_str_nil(profile->sipip));
-					stream->write_function(stream, "    <ext-sip-ip>%s</ext-sip-ip>\n", profile->extsipip);
-					stream->write_function(stream, "    <url>%s</url>\n", switch_str_nil(profile->url));
-					stream->write_function(stream, "    <bind-url>%s</bind-url>\n", switch_str_nil(profile->bindurl));
-					stream->write_function(stream, "    <tls-url>%s</tls-url>\n", switch_str_nil(profile->tls_url));
-					stream->write_function(stream, "    <tls-bind-url>%s</tls-bind-url>\n", switch_str_nil(profile->tls_bindurl));
-					stream->write_function(stream, "    <ws-bind-url>%s</ws-bind-url>\n", switch_str_nil(profile->ws_bindurl));
-					stream->write_function(stream, "    <wss-bind-url>%s</wss-bind-url>\n", switch_str_nil(profile->wss_bindurl));
+					if (profile->extsipip) {
+						stream->write_function(stream, "    <ext-sip-ip>%s</ext-sip-ip>\n", profile->extsipip);
+					}
+					if (! sofia_test_pflag(profile, PFLAG_TLS) || ! profile->tls_only) {
+						stream->write_function(stream, "    <url>%s</url>\n", switch_str_nil(profile->url));
+						stream->write_function(stream, "    <bind-url>%s</bind-url>\n", switch_str_nil(profile->bindurl));
+					}
+					if (sofia_test_pflag(profile, PFLAG_TLS)) {
+						stream->write_function(stream, "    <tls-url>%s</tls-url>\n", switch_str_nil(profile->tls_url));
+						stream->write_function(stream, "    <tls-bind-url>%s</tls-bind-url>\n", switch_str_nil(profile->tls_bindurl));
+					}
+					if (profile->ws_bindurl) {
+						stream->write_function(stream, "    <ws-bind-url>%s</ws-bind-url>\n", switch_str_nil(profile->ws_bindurl));
+					}
+					if (profile->wss_bindurl) {
+						stream->write_function(stream, "    <wss-bind-url>%s</wss-bind-url>\n", switch_str_nil(profile->wss_bindurl));
+					}
 					stream->write_function(stream, "    <hold-music>%s</hold-music>\n", zstr(profile->hold_music) ? "N/A" : profile->hold_music);
 					stream->write_function(stream, "    <outbound-proxy>%s</outbound-proxy>\n",
 										   zstr(profile->outbound_proxy) ? "N/A" : profile->outbound_proxy);
@@ -2983,9 +2995,13 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					stream->write_function(stream, "    <outbound-codecs>%s</outbound-codecs>\n", switch_str_nil(profile->outbound_codec_string));
 
 					stream->write_function(stream, "    <tel-event>%d</tel-event>\n", profile->te);
-					stream->write_function(stream, "    <dtmf-mode>rfc2833</dtmf-mode>\n");
-					stream->write_function(stream, "    <dtmf-mode>info</dtmf-mode>\n");
-					stream->write_function(stream, "    <dtmf-mode>none</dtmf-mode>\n");
+					if (profile->dtmf_type == DTMF_2833) {
+						stream->write_function(stream, "    <dtmf-mode>rfc2833</dtmf-mode>\n");
+					} else if (profile->dtmf_type == DTMF_INFO) {
+						stream->write_function(stream, "    <dtmf-mode>info</dtmf-mode>\n");
+					} else {
+						stream->write_function(stream, "    <dtmf-mode>none</dtmf-mode>\n");
+					}
 					stream->write_function(stream, "    <cng>%d</cng>\n", profile->cng_pt);
 					stream->write_function(stream, "    <session-to>%d</session-to>\n", profile->session_timeout);
 					stream->write_function(stream, "    <max-dialog>%d</max-dialog>\n", profile->max_proceeding);
@@ -2995,9 +3011,13 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					stream->write_function(stream, "    <zrtp-passthru>%s</zrtp-passthru>\n", sofia_test_flag(profile, TFLAG_ZRTP_PASSTHRU) ? "true" : "false");
 					stream->write_function(stream, "    <aggressive-nat>%s</aggressive-nat>\n",
 										   sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION) ? "true" : "false");
-					stream->write_function(stream, "    <user-agent-filter>%s</user-agent-filter>\n", switch_str_nil(profile->user_agent_filter));
-					stream->write_function(stream, "    <max-registrations-per-extension>%d</max-registrations-per-extension>\n",
+					if (profile->user_agent_filter) {
+						stream->write_function(stream, "    <user-agent-filter>%s</user-agent-filter>\n", switch_str_nil(profile->user_agent_filter));
+					}
+					if (profile->max_registrations_perext > 0) {
+						stream->write_function(stream, "    <max-registrations-per-extension>%d</max-registrations-per-extension>\n",
 										   profile->max_registrations_perext);
+					}
 					stream->write_function(stream, "    <calls-in>%u</calls-in>\n", profile->ib_calls);
 					stream->write_function(stream, "    <calls-out>%u</calls-out>\n", profile->ob_calls);
 					stream->write_function(stream, "    <failed-calls-in>%u</failed-calls-in>\n", profile->ib_failed_calls);
