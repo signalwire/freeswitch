@@ -237,7 +237,7 @@ namespace FreeSWITCH {
                 .ToList();
 
             // adding "managed" (modules) directory
-            if (!binPaths.Contains("managed", StringComparer.OrdinalIgnoreCase)) {
+            if (!binPaths.Contains("managed")) {
                 binPaths.Add("managed");
             }
 
