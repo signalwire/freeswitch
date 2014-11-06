@@ -74,13 +74,14 @@ typedef int (*runFunction)(const char *data, void *sessionPtr);
 typedef int (*executeFunction)(const char *cmd, void *stream, void *Event);
 typedef int (*executeBackgroundFunction)(const char* cmd);
 typedef int (*reloadFunction)(const char* cmd);
+typedef int (*listFunction)(const char *cmd, void *stream, void *Event);
 static runFunction runDelegate;
 static executeFunction executeDelegate;
 static executeBackgroundFunction executeBackgroundDelegate;
 static reloadFunction reloadDelegate;
-static executeFunction listDelegate;
+static listFunction listDelegate;
 
-SWITCH_MOD_DECLARE_NONSTD(void) InitManagedDelegates(runFunction run, executeFunction execute, executeBackgroundFunction executeBackground, reloadFunction reload, executeFunction list)
+SWITCH_MOD_DECLARE_NONSTD(void) InitManagedDelegates(runFunction run, executeFunction execute, executeBackgroundFunction executeBackground, reloadFunction reload, listFunction list)
 {
 	runDelegate = run;
 	executeDelegate = execute;
