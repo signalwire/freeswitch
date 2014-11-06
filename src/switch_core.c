@@ -1,3 +1,4 @@
+
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
@@ -1300,6 +1301,12 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	switch_core_hash_init(&IP_LIST.hash);
 
 
+	tmp_name = "rfc6598.auto";
+	switch_network_list_create(&rfc_list, tmp_name, SWITCH_FALSE, IP_LIST.pool);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Created ip list %s default (deny)\n", tmp_name);
+	switch_network_list_add_cidr(rfc_list, "100.64.0.0/10", SWITCH_TRUE);
+	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);
+
 	tmp_name = "rfc1918.auto";
 	switch_network_list_create(&rfc_list, tmp_name, SWITCH_FALSE, IP_LIST.pool);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Created ip list %s default (deny)\n", tmp_name);
@@ -1327,6 +1334,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	switch_network_list_add_cidr(rfc_list, "10.0.0.0/8", SWITCH_TRUE);
 	switch_network_list_add_cidr(rfc_list, "172.16.0.0/12", SWITCH_TRUE);
 	switch_network_list_add_cidr(rfc_list, "192.168.0.0/16", SWITCH_TRUE);
+	switch_network_list_add_cidr(rfc_list, "100.64.0.0/10", SWITCH_TRUE);
 	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);
 
 	tmp_name = "loopback.auto";
