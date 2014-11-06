@@ -46,15 +46,16 @@ namespace FreeSWITCH {
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool ExecuteDelegate(string cmd, IntPtr streamH, IntPtr eventH);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool ExecuteBackgroundDelegate(string cmd);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool RunDelegate(string cmd, IntPtr session);
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool ReloadDelegate(string cmd);        
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool ReloadDelegate(string cmd);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool ListDelegate(string cmd, IntPtr streamH, IntPtr eventH);
         static readonly ExecuteDelegate _execute = Execute;
         static readonly ExecuteBackgroundDelegate _executeBackground = ExecuteBackground;
         static readonly RunDelegate _run = Run;
         static readonly ReloadDelegate _reload = Reload;
-        static readonly ExecuteDelegate _list = List;
+        static readonly ListDelegate _list = List;
         
         [DllImport("mod_managed", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
-        static extern void InitManagedDelegates(RunDelegate run, ExecuteDelegate execute, ExecuteBackgroundDelegate executeBackground, ReloadDelegate reload, ExecuteDelegate list);
+        static extern void InitManagedDelegates(RunDelegate run, ExecuteDelegate execute, ExecuteBackgroundDelegate executeBackground, ReloadDelegate reload, ListDelegate list);
 
         static readonly object loaderLock = new object();
 
@@ -64,14 +65,10 @@ namespace FreeSWITCH {
         public static bool Load() {
             managedDir = Path.Combine(Native.freeswitch.SWITCH_GLOBAL_dirs.mod_dir, "managed");
             shadowDir = Path.Combine(managedDir, "shadow");
-            if (Directory.Exists(shadowDir)) 
-            {
-                try
-                {
+            if (Directory.Exists(shadowDir)) {
+                try {
                     Directory.Delete(shadowDir, true);
-                }
-                catch (Exception ex)
-                {
+                } catch (Exception ex) {
                     Log.WriteLine(LogLevel.Warning, "Cannot delete shadow directory: {0}", ex);
                 }
 
@@ -79,8 +76,7 @@ namespace FreeSWITCH {
             }
 
             Log.WriteLine(LogLevel.Debug, "FreeSWITCH.Managed loader is starting with directory '{0}'.", managedDir);
-            if (!Directory.Exists(managedDir))
-            {
+            if (!Directory.Exists(managedDir)) {
                 Log.WriteLine(LogLevel.Error, "Managed directory not found: {0}", managedDir);
                 return false;
             }
@@ -241,8 +237,7 @@ namespace FreeSWITCH {
                 .ToList();
 
             // adding "managed" (modules) directory
-            if (!binPaths.Contains("managed", StringComparer.OrdinalIgnoreCase))
-            {
+            if (!binPaths.Contains("managed", StringComparer.OrdinalIgnoreCase)) {
                 binPaths.Add("managed");
             }
 
@@ -250,11 +245,9 @@ namespace FreeSWITCH {
             var moduleRefsDir = Path.GetFileName(fileName);
             moduleRefsDir = Path.GetFileNameWithoutExtension(moduleRefsDir);
 
-            if (moduleRefsDir != null && moduleRefsDir.Trim() != "")
-            {
+            if (moduleRefsDir != null && moduleRefsDir.Trim() != "") {
                 moduleRefsDir = Path.Combine("managed", moduleRefsDir);
-                if (!binPaths.Contains(moduleRefsDir, StringComparer.OrdinalIgnoreCase))
-                {
+                if (!binPaths.Contains(moduleRefsDir, StringComparer.OrdinalIgnoreCase)) {
                     binPaths.Add(moduleRefsDir);
                 }
             }
@@ -446,12 +439,9 @@ namespace FreeSWITCH {
 
         public static bool List(string command, IntPtr streamHandle, IntPtr eventHandle)
         {
-            try
-            {
-                if (streamHandle != IntPtr.Zero)
-                {
-                    using (var stream = new Native.Stream(new Native.switch_stream_handle(streamHandle, false)))
-                    {
+            try {
+                if (streamHandle != IntPtr.Zero) {
+                    using (var stream = new Native.Stream(new Native.switch_stream_handle(streamHandle, false))) {
                         stream.Write("Available APIs:\n");
 
                         getApiExecs().Values.ForEach(x => stream.Write(string.Format("{0}: {1}\n", x.Name, String.Join(",", x.Aliases.ToArray()))));
@@ -459,18 +449,14 @@ namespace FreeSWITCH {
                         stream.Write("Available Apps:\n");
                         getAppExecs().Values.ForEach(x => stream.Write(string.Format("{0}: {1}\n", x.Name, String.Join(",", x.Aliases.ToArray()))));
                     }
-                }
-                else
-                {
+                } else {
                     Log.WriteLine(LogLevel.Info, "Available APIs:");
                     getApiExecs().Values.ForEach(x => Log.WriteLine(LogLevel.Info, "{0}: {1}", x.Name, String.Join(",", x.Aliases.ToArray())));
                     Log.WriteLine(LogLevel.Info, "Available Apps:");
                     getAppExecs().Values.ForEach(x => Log.WriteLine(LogLevel.Info, "{0}: {1}", x.Name, String.Join(",", x.Aliases.ToArray())));
                 }
                 return true;
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 Log.WriteLine(LogLevel.Error, "Exception listing managed modules: {0}", ex.ToString());
                 return false;
             }
