@@ -1267,20 +1267,36 @@ SWITCH_DECLARE(switch_status_t) switch_cache_db_execute_sql_callback_err(switch_
 	return status;
 }
 
+/*!
+ * \brief Performs test_sql and if it fails performs drop_sql and reactive_sql.
+ *
+ * If auto-clear-sql is disabled, then this function will do nothing and it is
+ * assumed that the queries are not needed. If auto-create-schemas is disabled,
+ * then just test_sql is executed, but drop_sql and reactive_sql are not.
+ *
+ * Otherwise, test_sql gets executed. If that succeeds, then there is nothing to
+ * do. Otherwise drop_sql is executed (its result is ignored) and then finally
+ * reactive_sql is executed.
+ *
+ * \return If auto-create-schemas is enabled, SWITCH_TRUE is returned if
+ * test_sql succeeds, SWITCH_FALSE otherwise. If reactive_sql is executed
+ * successfully SWITCH_TRUE is returned, otherwise SWITCH_FALSE is returned.
+ */
 SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_handle_t *dbh,
 															const char *test_sql, const char *drop_sql, const char *reactive_sql)
 {
-	char *errmsg;
 	switch_bool_t r = SWITCH_TRUE;
 	switch_mutex_t *io_mutex = dbh->io_mutex;
+
+	switch_assert(test_sql != NULL);
+	switch_assert(reactive_sql != NULL);
 
 	if (!switch_test_flag((&runtime), SCF_CLEAR_SQL)) {
 		return SWITCH_TRUE;
 	}
 
 	if (!switch_test_flag((&runtime), SCF_AUTO_SCHEMAS)) {
-		switch_cache_db_execute_sql(dbh, (char *)test_sql, NULL);
-		return SWITCH_TRUE;
+		return switch_cache_db_execute_sql(dbh, (char *)test_sql, NULL);
 	}
 
 	if (io_mutex) switch_mutex_lock(io_mutex);
@@ -1289,49 +1305,48 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_hand
 	case SCDB_TYPE_PGSQL:
 		{
 			if (switch_pgsql_handle_exec(dbh->native_handle.pgsql_dbh, test_sql, NULL) != SWITCH_PGSQL_SUCCESS) {
-				r = SWITCH_FALSE;
 				if (drop_sql) {
 					switch_pgsql_handle_exec(dbh->native_handle.pgsql_dbh, drop_sql, NULL);
 				}
-				switch_pgsql_handle_exec(dbh->native_handle.pgsql_dbh, reactive_sql, NULL);
+				r = switch_pgsql_handle_exec(dbh->native_handle.pgsql_dbh, reactive_sql, NULL) == SWITCH_PGSQL_SUCCESS;
 			}
 		}
 		break;
 	case SCDB_TYPE_ODBC:
 		{
 			if (switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, test_sql, NULL, NULL) != SWITCH_ODBC_SUCCESS) {
-				r = SWITCH_FALSE;
 				if (drop_sql) {
 					switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, drop_sql, NULL, NULL);
 				}
-				switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, reactive_sql, NULL, NULL);
+				r = switch_odbc_handle_exec(dbh->native_handle.odbc_dbh, reactive_sql, NULL, NULL) == SWITCH_ODBC_SUCCESS;
 			}
 		}
 		break;
 	case SCDB_TYPE_CORE_DB:
 		{
-			if (test_sql) {
-				switch_core_db_exec(dbh->native_handle.core_db_dbh, test_sql, NULL, NULL, &errmsg);
+			char *errmsg = NULL;
+			switch_core_db_exec(dbh->native_handle.core_db_dbh, test_sql, NULL, NULL, &errmsg);
 
+			if (errmsg) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\nAuto Generating Table!\n", errmsg, test_sql);
+				switch_core_db_free(errmsg);
+				errmsg = NULL;
+				if (drop_sql) {
+					switch_core_db_exec(dbh->native_handle.core_db_dbh, drop_sql, NULL, NULL, &errmsg);
+				}
 				if (errmsg) {
-					r = SWITCH_FALSE;
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\nAuto Generating Table!\n", errmsg, test_sql);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Ignoring SQL ERR [%s]\n[%s]\n", errmsg, drop_sql);
 					switch_core_db_free(errmsg);
 					errmsg = NULL;
-					if (drop_sql) {
-						switch_core_db_exec(dbh->native_handle.core_db_dbh, drop_sql, NULL, NULL, &errmsg);
-					}
-					if (errmsg) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\n", errmsg, drop_sql);
-						switch_core_db_free(errmsg);
-						errmsg = NULL;
-					}
-					switch_core_db_exec(dbh->native_handle.core_db_dbh, reactive_sql, NULL, NULL, &errmsg);
-					if (errmsg) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\n", errmsg, reactive_sql);
-						switch_core_db_free(errmsg);
-						errmsg = NULL;
-					}
+				}
+				switch_core_db_exec(dbh->native_handle.core_db_dbh, reactive_sql, NULL, NULL, &errmsg);
+				if (errmsg) {
+					r = SWITCH_FALSE;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\n", errmsg, reactive_sql);
+					switch_core_db_free(errmsg);
+					errmsg = NULL;
+				} else {
+					r = SWITCH_TRUE;
 				}
 			}
 		}
