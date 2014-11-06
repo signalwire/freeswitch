@@ -810,6 +810,8 @@ struct private_object {
 	time_t last_vid_info;
 	uint32_t keepalive;
 	uint32_t sent_invites;
+	uint32_t recv_invites;
+	uint8_t sent_last_invite;
 };
 
 

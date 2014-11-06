@@ -1233,7 +1233,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 					  switch_channel_get_name(tech_pvt->channel), switch_version_full_human(), 
 					  tech_pvt->mparams.local_sdp_str ? tech_pvt->mparams.local_sdp_str : "NO SDP PRESENT\n");
 
-	tech_pvt->sent_invites++;
+
 
 	if (sofia_use_soa(tech_pvt)) {
 		nua_invite(tech_pvt->nh,

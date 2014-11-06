@@ -1591,9 +1591,14 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				cseq = sip_cseq_create(nh->nh_home, callsequence, SIP_METHOD_NOTIFY);
 				nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
 				
-				from = (char *)switch_channel_get_variable(tech_pvt->channel, "sip_full_to");
-				to = (char *)switch_channel_get_variable(tech_pvt->channel, "sip_full_from");
-				
+				if (tech_pvt->sent_last_invite || !tech_pvt->recv_invites) {
+					from = (char *)switch_channel_get_variable(tech_pvt->channel, "sip_full_from");
+					to = (char *)switch_channel_get_variable(tech_pvt->channel, "sip_full_to");
+				} else {
+					from = (char *)switch_channel_get_variable(tech_pvt->channel, "sip_full_to");
+					to = (char *)switch_channel_get_variable(tech_pvt->channel, "sip_full_from");
+				}
+
 				nua_info(nh,
 						 TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
 						 TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
