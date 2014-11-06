@@ -35,7 +35,9 @@ WORKDIR=/var/lib/$NAME
 do_start() {
   if ! [ -f $CONFDIR/freeswitch.xml ]; then
     echo "$NAME is not configured so not starting.">&2
-    echo "Please review /usr/share/doc/$NAME/README.Debian">&2
+    echo "Please add configuration under /etc/freeswitch">&2
+    echo "e.g. Install freeswitch-conf-vanilla, then:">&2
+    echo "cp -a /usr/share/freeswitch/conf/vanilla /etc/freeswitch">&2
     return 3
   fi
 
