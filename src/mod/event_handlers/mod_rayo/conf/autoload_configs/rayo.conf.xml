@@ -52,8 +52,8 @@
 
 		<!-- map mod_spandsp call progress tone detector to Rayo CPA signal events.  Fires DETECTED_TONE events until stopped. -->
 		<detector name="mod_spandsp_tone">
-			<start application="start_tone_detect" data="1"/>
-			<stop application="stop_tone_detect" data=""/>
+			<start application="spandsp_start_tone_detect" data="1"/>
+			<stop application="spandsp_stop_tone_detect" data=""/>
 			<!-- map tone events to Rayo CPA signal type -->
 			<event class="CUSTOM" subclass="DETECTED_TONE" type-header="Detected-Tone">
 				<signal-type header-value="SIT" value="sit"/>
