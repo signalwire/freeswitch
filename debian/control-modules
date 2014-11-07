@@ -333,9 +333,9 @@ Description: mod_opus
  Adds mod_opus.
 
 Module: codecs/mod_sangoma_codec
-Build-Depends: libsngtc-dev
 Description: mod_sangoma_codec
  Adds mod_sangoma_codec.
+Build-Depends: libsngtc-dev
 
 Module: codecs/mod_silk
 Description: mod_silk
