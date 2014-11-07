@@ -1233,7 +1233,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 					  switch_channel_get_name(tech_pvt->channel), switch_version_full_human(), 
 					  tech_pvt->mparams.local_sdp_str ? tech_pvt->mparams.local_sdp_str : "NO SDP PRESENT\n");
 
-	tech_pvt->sent_invites++;
+
 
 	if (switch_channel_get_private(tech_pvt->channel, "t38_options")) {
 		sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);

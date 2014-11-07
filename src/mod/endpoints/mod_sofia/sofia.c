@@ -6696,6 +6696,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	case nua_callstate_authenticating:
 		break;
 	case nua_callstate_calling:
+		tech_pvt->sent_last_invite = 1;
+		tech_pvt->sent_invites++;
 		break;
 	case nua_callstate_proceeding:
 
@@ -6834,6 +6836,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		}
 		goto done;
 	case nua_callstate_received:
+		tech_pvt->recv_invites++;
+		tech_pvt->sent_last_invite = 0;
 		if (!sofia_test_flag(tech_pvt, TFLAG_SDP)) {
 			if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 				private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
