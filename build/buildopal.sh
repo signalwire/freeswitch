@@ -18,7 +18,7 @@ cd `dirname $0`
 cd ..
 FS_DIR=`pwd`
 
-#export PKG_CONFIG_PATH=$INSTALLDIR/lib/pkgconfig 
+export PKG_CONFIG_PATH=$INSTALLDIR/lib/pkgconfig 
 
 
 # Version and patch for PTLib and OPAL. These are almost always in lock
