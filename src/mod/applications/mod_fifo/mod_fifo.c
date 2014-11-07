@@ -80,6 +80,15 @@ SWITCH_MODULE_DEFINITION(mod_fifo, mod_fifo_load, mod_fifo_shutdown, NULL);
  * of the caller thereby allowing deliver of callers to agents at the
  * fastest possible rate.
  *
+ * outbound_per_cycle is used to define the maximum number of agents
+ * who will be available to answer a single caller. In ringall this
+ * maximum is the number who will be called, in enterprise the need defines
+ * how many agents will be called. outbound_per_cycle_min will define
+ * the minimum agents who will be called to answer a caller regardless of 
+ * need, giving the enterprise strategy the ability to ring through more
+ * than one agent for one caller.
+
+ *
  * ## Manual calls
  *
  * The fifo system provides a way to prevent members on non-fifo calls
@@ -391,6 +400,7 @@ struct fifo_node {
 	long busy;
 	int is_static;
 	int outbound_per_cycle;
+	int outbound_per_cycle_min;
 	char *outbound_name;
 	outbound_strategy_t outbound_strategy;
 	int ring_timeout;
@@ -1985,6 +1995,21 @@ static int place_call_enterprise_callback(void *pArg, int argc, char **argv, cha
  * the results.  The enterprise strategy handler can simply take each
  * member one at a time, so the `place_call_enterprise_callback` takes
  * care of invoking the handler.
+ *
+ * Within the ringall call strategy outbound_per_cycle is used to define
+ * how many agents exactly are assigned to the caller. With ringall if 
+ * multiple callers are calling in and one is answered, because the call
+ * is assigned to all agents the call to the agents that is not answered
+ * will be lose raced and the other agents will drop the call before the
+ * next one will begin to ring. When oubound_per_cycle is used in the 
+ * enterprise strategy it acts as a maximum value for how many agents
+ * are rung at once on any call, the caller is not assigned to any agent 
+ * until the call is answered. Enterprise only rings the number of phones
+ * that are needed, so outbound_per_cycle as a max does not give you the
+ * effect of ringall. outbound_per_cycle_min defines how many agents minimum
+ * will be rung by an incoming caller through fifo, which can give a ringall
+ * effect. outbound_per_cycle and outbound_per_cycle_min both default to 1.
+ * 
  */
 static void find_consumers(fifo_node_t *node)
 {
@@ -2005,6 +2030,8 @@ static void find_consumers(fifo_node_t *node)
 
 			if (node->outbound_per_cycle && node->outbound_per_cycle < need) {
 				need = node->outbound_per_cycle;
+			} else if (node->outbound_per_cycle_min && node->outbound_per_cycle_min > need) {
+				need = node->outbound_per_cycle_min;
 			}
 
 			fifo_execute_sql_callback(globals.sql_mutex, sql, place_call_enterprise_callback, &need);
@@ -4045,6 +4072,9 @@ static void list_node(fifo_node_t *node, switch_xml_t x_report, int *off, int ve
 	switch_snprintf(tmp, sizeof(buffer), "%u", node->outbound_per_cycle);
 	switch_xml_set_attr_d(x_fifo, "outbound_per_cycle", tmp);
 
+	switch_snprintf(tmp, sizeof(buffer), "%u", node->outbound_per_cycle_min);
+	switch_xml_set_attr_d(x_fifo, "outbound_per_cycle_min", tmp); 
+
 	switch_snprintf(tmp, sizeof(buffer), "%u", node->ring_timeout);
 	switch_xml_set_attr_d(x_fifo, "ring_timeout", tmp);
 
@@ -4088,6 +4118,7 @@ void node_dump(switch_stream_handle_t *stream)
 			stream->write_function(stream, "node: %s\n"
 								   " outbound_name: %s\n"
 								   " outbound_per_cycle: %d"
+								   " outbound_per_cycle_min: %d"
 								   " outbound_priority: %d"
 								   " outbound_strategy: %s\n"
 								   " has_outbound: %d\n"
@@ -4096,7 +4127,7 @@ void node_dump(switch_stream_handle_t *stream)
 								   " ready: %d\n"
 								   " waiting: %d\n"
 								   ,
-								   node->name, node->outbound_name, node->outbound_per_cycle,
+								   node->name, node->outbound_name, node->outbound_per_cycle, node->outbound_per_cycle_min,
 								   node->outbound_priority, print_strategy(node->outbound_strategy),
 								   node->has_outbound,
 								   node->outbound_priority,
@@ -4506,6 +4537,13 @@ static switch_status_t load_config(int reload, int del_all)
 					node->outbound_per_cycle = i;
 				}
 				node->has_outbound = 1;
+			}
+
+			node->outbound_per_cycle_min = 1;
+			if ((val = switch_xml_attr(fifo, "outbound_per_cycle_min"))) {
+				if (!((i = atoi(val)) < 0)) {
+					node->outbound_per_cycle_min = i;
+				}
 			}
 
 			if ((val = switch_xml_attr(fifo, "retry_delay"))) {
