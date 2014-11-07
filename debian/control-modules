@@ -634,6 +634,10 @@ Module: say/mod_say_es
 Description: mod_say_es
  Adds mod_say_es.
 
+Module: say/mod_say_es_ar
+Description: mod_say_es_ar
+ Adds mod_say_es_ar.
+
 Module: say/mod_say_fa
 Description: mod_say_fa
  Adds mod_say_fa.
