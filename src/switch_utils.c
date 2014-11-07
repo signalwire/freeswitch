@@ -2568,6 +2568,12 @@ SWITCH_DECLARE(int) switch_wait_sock(switch_os_socket_t sock, uint32_t ms, switc
 	s = poll(pfds, 1, ms);
 
 	if (s < 0) {
+		if (switch_errno_is_break(switch_errno())) {
+			s = 0;
+		}
+	}
+
+	if (s < 0) {
 		r = s;
 	} else if (s > 0) {
 		if ((pfds[0].revents & POLLIN)) {
@@ -2644,6 +2650,12 @@ SWITCH_DECLARE(int) switch_wait_socklist(switch_waitlist_t *waitlist, uint32_t l
 	}
 	
 	s = poll(pfds, len, ms);
+
+	if (s < 0) {
+		if (switch_errno_is_break(switch_errno())) {
+			s = 0;
+		}
+	}
 
 	if (s < 0) {
 		r = s;
@@ -2759,6 +2771,12 @@ SWITCH_DECLARE(int) switch_wait_sock(switch_os_socket_t sock, uint32_t ms, switc
 	s = select(sock + 1, (flags & SWITCH_POLL_READ) ? rfds : NULL, (flags & SWITCH_POLL_WRITE) ? wfds : NULL, (flags & SWITCH_POLL_ERROR) ? efds : NULL, &tv);
 
 	if (s < 0) {
+		if (switch_errno_is_break(switch_errno())) {
+			s = 0;
+		}
+	}
+
+	if (s < 0) {
 		r = s;
 	} else if (s > 0) {
 		if ((flags & SWITCH_POLL_READ) && FD_ISSET(sock, rfds)) {
@@ -2857,6 +2875,12 @@ SWITCH_DECLARE(int) switch_wait_socklist(switch_waitlist_t *waitlist, uint32_t l
 	tv.tv_usec = (ms % 1000) * ms;
 	
 	s = select(max_fd + 1, (flags & SWITCH_POLL_READ) ? rfds : NULL, (flags & SWITCH_POLL_WRITE) ? wfds : NULL, (flags & SWITCH_POLL_ERROR) ? efds : NULL, &tv);
+
+	if (s < 0) {
+		if (switch_errno_is_break(switch_errno())) {
+			s = 0;
+		}
+	}
 
 	if (s < 0) {
 		r = s;
