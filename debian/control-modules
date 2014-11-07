@@ -500,6 +500,10 @@ Module: event_handlers/mod_json_cdr
 Description: mod_json_cdr
  Adds mod_json_cdr.
 
+Module: event_handlers/mod_odbc_cdr
+Description: mod_odbc_cdr
+ Adds mod_odbc_cdr.
+
 Module: event_handlers/mod_radius_cdr
 Description: mod_radius_cdr
  Adds mod_radius_cdr.
