@@ -1558,6 +1558,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/event_handlers/mod_format_cdr/Makefile
 		src/mod/event_handlers/mod_json_cdr/Makefile
 		src/mod/event_handlers/mod_radius_cdr/Makefile
+		src/mod/event_handlers/mod_odbc_cdr/Makefile
 		src/mod/event_handlers/mod_rayo/Makefile
 		src/mod/event_handlers/mod_snmp/Makefile
 		src/mod/event_handlers/mod_event_zmq/Makefile
@@ -1586,7 +1587,7 @@ AC_CONFIG_FILES([Makefile
 		src/mod/say/mod_say_de/Makefile
 		src/mod/say/mod_say_en/Makefile
 		src/mod/say/mod_say_es/Makefile
-    src/mod/say/mod_say_es_ar/Makefile
+		src/mod/say/mod_say_es_ar/Makefile
 		src/mod/say/mod_say_fa/Makefile
 		src/mod/say/mod_say_fr/Makefile
 		src/mod/say/mod_say_he/Makefile

@@ -541,6 +541,28 @@ SWITCH_DECLARE(int) switch_build_uri(char *uri, switch_size_t size, const char *
 
 #define SWITCH_STATUS_IS_BREAK(x) (x == SWITCH_STATUS_BREAK || x == 730035 || x == 35 || x == SWITCH_STATUS_INTR)
 
+
+#ifdef _MSC_VER
+
+#define switch_errno() WSAGetLastError()
+
+static inline int switch_errno_is_break(int errcode)
+{
+	return errcode == WSAEWOULDBLOCK || errcode == WSAEINPROGRESS || errcode == WSAEINTR;
+}
+
+#else
+
+#define switch_errno() errno
+
+static inline int switch_errno_is_break(int errcode)
+{
+  return errcode == EAGAIN || errcode == EWOULDBLOCK || errcode == EINPROGRESS || errcode == EINTR || errcode == ETIMEDOUT;
+}
+
+#endif
+
+
 /*!
   \brief Return a printable name of a switch_priority_t
   \param priority the priority to get the name of
