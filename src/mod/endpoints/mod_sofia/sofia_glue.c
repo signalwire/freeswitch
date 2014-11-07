@@ -1235,6 +1235,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	tech_pvt->sent_invites++;
 
+	if (switch_channel_get_private(tech_pvt->channel, "t38_options")) {
+		sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
+	}
+
 	if (sofia_use_soa(tech_pvt)) {
 		nua_invite(tech_pvt->nh,
 				   NUTAG_AUTOANSWER(0),
