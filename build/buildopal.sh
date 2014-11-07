@@ -18,7 +18,7 @@ cd `dirname $0`
 cd ..
 FS_DIR=`pwd`
 
-export PKG_CONFIG_PATH=$INSTALLDIR/lib/pkgconfig 
+#export PKG_CONFIG_PATH=$INSTALLDIR/lib/pkgconfig 
 
 
 # Version and patch for PTLib and OPAL. These are almost always in lock
@@ -42,7 +42,7 @@ fi
 
 
 cd $FS_DIR/libs
-svn co https://opalvoip.svn.sourceforge.net/svnroot/opalvoip/ptlib/$PTLIB_VERSION ptlib
+svn co https://svn.code.sf.net/p/opalvoip/code/ptlib/$PTLIB_VERSION ptlib
 cd $FS_DIR/libs/ptlib
 # LDAP disabled due to conflict wit libs in spidermonkey
 ./configure --disable-plugins --disable-openldap --prefix=$INSTALLDIR
@@ -50,7 +50,7 @@ ${MAKE}
 sudo ${MAKE} install
 
 cd $FS_DIR/libs
-svn co https://opalvoip.svn.sourceforge.net/svnroot/opalvoip/opal/$OPAL_VERSION opal 
+svn co https://svn.code.sf.net/p/opalvoip/code/opal/$OPAL_VERSION opal 
 cd $FS_DIR/libs/opal
 ./configure --disable-plugins --prefix=$INSTALLDIR
 $MAKE
