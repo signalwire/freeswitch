@@ -1492,12 +1492,13 @@ static __inline__ int chan_is_avail(ftdm_channel_t *check)
 	}
 	/* release guard time check */
 	if (check->span->sig_release_guard_time_ms && check->last_release_time) {
-		ftdm_time_t time_diff = (check->last_release_time - ftdm_current_time_in_ms());
+		ftdm_time_t time_diff = (ftdm_current_time_in_ms() - check->last_release_time);
 		if (time_diff < check->span->sig_release_guard_time_ms) {
 			return 0;
 		}
 		/* circuit now available for outbound dialing */
 		check->last_release_time = 0;
+		ftdm_log_chan(check, FTDM_LOG_DEBUG, "Channel is now available, release guard timer expired %zdms ago\n", (time_diff - check->span->sig_release_guard_time_ms));
 	}
 	return 1;
 }
