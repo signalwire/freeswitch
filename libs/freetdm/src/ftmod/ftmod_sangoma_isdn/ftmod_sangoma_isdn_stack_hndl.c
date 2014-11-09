@@ -203,8 +203,17 @@ void sngisdn_process_con_ind (sngisdn_event_data_t *sngisdn_event)
 				}
 			}
 #endif			
-			if (signal_data->overlap_dial == SNGISDN_OPT_TRUE && !conEvnt->sndCmplt.eh.pres) {
-				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_COLLECT);
+			if (signal_data->overlap_dial == SNGISDN_OPT_TRUE) {
+				ftdm_size_t min_digits = ((sngisdn_span_data_t*)ftdmchan->span->signal_data)->min_digits;
+				ftdm_size_t num_digits;
+
+				num_digits = strlen(ftdmchan->caller_data.dnis.digits);
+
+				if (conEvnt->sndCmplt.eh.pres || num_digits >= min_digits) {
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
+				} else {
+					ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_COLLECT);
+				}
 			} else {
 				ftdm_set_state(ftdmchan, FTDM_CHANNEL_STATE_RING);
 			}
