@@ -43,7 +43,7 @@ typedef enum {
 	FTDM_ANALOG_POLARITY_CALLERID = (1 << 4)
 } ftdm_analog_flag_t;
 
-#define FTDM_MAX_HOTLINE_STR		20
+#define FTDM_MAX_HOTLINE_STR		32
 #define MAX_DTMF 256
 
 struct ftdm_analog_data {

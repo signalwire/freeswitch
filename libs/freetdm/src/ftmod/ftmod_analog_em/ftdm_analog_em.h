@@ -44,9 +44,11 @@
 #define MAX_DIALSTRING 256
 
 typedef enum {
-	FTDM_ANALOG_EM_RUNNING = (1 << 0)
+	FTDM_ANALOG_EM_RUNNING = (1 << 0),
+	FTDM_ANALOG_EM_LOCAL_WRITE = (1 << 2),
+	FTDM_ANALOG_EM_LOCAL_SUSPEND = (1 << 3),
+	FTDM_ANALOG_EM_REMOTE_SUSPEND = (1 << 4),
 } ftdm_analog_em_flag_t;
-
 
 struct ftdm_analog_data {
 	uint32_t flags;
