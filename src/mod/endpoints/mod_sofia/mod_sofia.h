@@ -811,6 +811,7 @@ struct private_object {
 	uint32_t keepalive;
 	uint32_t sent_invites;
 	uint32_t recv_invites;
+	uint32_t info_cseq;
 	uint8_t sent_last_invite;
 };
 

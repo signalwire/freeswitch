@@ -1559,14 +1559,14 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			if (ok) {
 				char *headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_INFO_HEADER_PREFIX);
 				const char *pl = NULL;
-				uint32_t callsequence;
 				nua_handle_t *nh;
 				sip_cseq_t *cseq = NULL;
 				const char *uri = NULL;
 				char *to, *from;
 				char *contact;
 				const char *invite_contact_params = switch_channel_get_variable(tech_pvt->channel, "sip_invite_contact_params");
-
+				
+				
 				if (!zstr(msg->string_array_arg[2])) {
 					pl = msg->string_array_arg[2];
 				}
@@ -1581,14 +1581,14 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					contact = tech_pvt->reply_contact;
 				}
 
-				callsequence = sofia_presence_get_cseq(tech_pvt->profile);
+				
 				nh = nua_handle(tech_pvt->profile->nua, NULL, 
 								NUTAG_URL(uri),
 								TAG_IF(contact, SIPTAG_CONTACT_STR(contact)), 
 								TAG_END());
 								
 
-				cseq = sip_cseq_create(nh->nh_home, callsequence, SIP_METHOD_NOTIFY);
+				cseq = sip_cseq_create(nh->nh_home, ++tech_pvt->info_cseq, SIP_METHOD_INFO);
 				nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
 				
 				if (tech_pvt->sent_last_invite || !tech_pvt->recv_invites) {
