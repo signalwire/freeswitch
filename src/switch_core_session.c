@@ -2811,8 +2811,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	}
 
 	
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG, "EXECUTE %s %s(%s)\n",
+	if ( switch_core_test_flag(SCF_DIALPLAN_TIMESTAMPS) ) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "EXECUTE %s %s(%s)\n",
 					  switch_channel_get_name(session->channel), app, switch_str_nil(expanded));
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG_CLEAN(session), SWITCH_LOG_DEBUG, "EXECUTE %s %s(%s)\n",
+					  switch_channel_get_name(session->channel), app, switch_str_nil(expanded));
+	}
 
 	if ((var = switch_channel_get_variable(session->channel, "verbose_presence")) && switch_true(var)) {
 		char *myarg = NULL;
