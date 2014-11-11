@@ -1621,8 +1621,10 @@ switch_status_t skinny_handle_forward_stat_req_message(listener_t *listener, ski
 
 	message->data.forward_stat.line_instance = request->data.forward_stat_req.line_instance;
 
-	skinny_log_l(listener, SWITCH_LOG_DEBUG, "Handle Forward Stat Req Message with Line Instance (%d)\n", 
-		request->data.forward_stat_req.line_instance);
+	if ( listener->profile->debug >= 9 ) {
+		skinny_log_l(listener, SWITCH_LOG_DEBUG, "Handle Forward Stat Req Message with Line Instance (%d)\n", 
+			request->data.forward_stat_req.line_instance);
+	}
 	skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1634,7 +1636,9 @@ switch_status_t skinny_handle_speed_dial_stat_request(listener_t *listener, skin
 
 	skinny_check_data_length(request, sizeof(request->data.speed_dial_req));
 
-	skinny_log_l(listener, SWITCH_LOG_DEBUG, "Handle Speed Dial Stat Request for Number (%d)\n", request->data.speed_dial_req.number);
+	if ( listener->profile->debug >= 9 ) {
+		skinny_log_l(listener, SWITCH_LOG_DEBUG, "Handle Speed Dial Stat Request for Number (%d)\n", request->data.speed_dial_req.number);
+	}
 
 	skinny_speed_dial_get(listener, request->data.speed_dial_req.number, &button);
 
@@ -1906,7 +1910,9 @@ switch_status_t skinny_handle_capabilities_response(listener_t *listener, skinny
 		skinny_execute_sql(profile, sql, profile->sql_mutex);
 		switch_safe_free(sql);
 	}
-	skinny_log_l(listener, SWITCH_LOG_DEBUG, "Codecs %s supported.\n", codec_string);
+	if ( listener->profile->debug >= 9 ) {
+		skinny_log_l(listener, SWITCH_LOG_DEBUG, "Codecs %s supported.\n", codec_string);
+	}
 	switch_safe_free(codec_string);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2036,11 +2042,15 @@ switch_status_t skinny_handle_soft_key_set_request(listener_t *listener, skinny_
 
 	if (listener->soft_key_set_set) {
 		message = switch_core_hash_find(listener->profile->soft_key_set_sets_hash, listener->soft_key_set_set);
-		skinny_log_l(listener, SWITCH_LOG_DEBUG, "Handle Soft Key Set Request with Set (%s)\n", listener->soft_key_set_set);
+		if ( listener->profile->debug >= 9 ) {
+			skinny_log_l(listener, SWITCH_LOG_DEBUG, "Handle Soft Key Set Request with Set (%s)\n", listener->soft_key_set_set);
+		}
 	}
 	if (!message) {
 		message = switch_core_hash_find(listener->profile->soft_key_set_sets_hash, "default");
-		skinny_log_l(listener, SWITCH_LOG_DEBUG, "Handle Soft Key Set Request with Set (%s)\n", "default");
+		if ( listener->profile->debug >= 9 ) {
+			skinny_log_l(listener, SWITCH_LOG_DEBUG, "Handle Soft Key Set Request with Set (%s)\n", "default");
+		}
 	}
 	if (message) {
 		skinny_send_reply_quiet(listener, message, SWITCH_FALSE);
@@ -2231,7 +2241,9 @@ switch_status_t skinny_handle_soft_key_template_request(listener_t *listener, sk
 		message->data.soft_key_template.soft_key[i].soft_key_event = soft_key_template_default_events[i];
 	}
 		
-	skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Handle Soft Key Template Request with Default Template\n");
+	if ( listener->profile->debug >= 9 ) {
+		skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Handle Soft Key Template Request with Default Template\n");
+	}
 
 	skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 
@@ -2254,8 +2266,10 @@ switch_status_t skinny_headset_status_message(listener_t *listener, skinny_messa
 		switch_safe_free(sql);
 	}
 
-	skinny_log_l(listener, SWITCH_LOG_DEBUG, "Update headset accessory status (%s)\n", 
-		skinny_accessory_state2str(request->data.headset_status.mode));
+	if ( listener->profile->debug >= 9 ) {
+		skinny_log_l(listener, SWITCH_LOG_DEBUG, "Update headset accessory status (%s)\n", 
+			skinny_accessory_state2str(request->data.headset_status.mode));
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2274,7 +2288,9 @@ switch_status_t skinny_handle_register_available_lines_message(listener_t *liste
 {
 	skinny_check_data_length(request, sizeof(request->data.reg_lines));
 
-	skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Handle Register Available Lines\n");
+	if ( listener->profile->debug >= 9 ) {
+		skinny_log_l_msg(listener, SWITCH_LOG_DEBUG, "Handle Register Available Lines\n");
+	}
 
 	/* Do nothing */
 	return SWITCH_STATUS_SUCCESS;
@@ -2531,7 +2547,7 @@ switch_status_t skinny_handle_xml_alarm(listener_t *listener, skinny_message_t *
 	switch_event_t *event = NULL;
 	char *tmp = NULL;
 
-	skinny_log_l(listener, SWITCH_LOG_INFO, "Received XML alarm (length=%d).\n", request->length);
+	skinny_log_l(listener, SWITCH_LOG_DEBUG, "Received XML alarm (length=%d).\n", request->length);
 	/* skinny::xml_alarm event */
 	skinny_device_event(listener, &event, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_XML_ALARM);
 	/* Ensure that the body is null-terminated */
@@ -2547,7 +2563,8 @@ switch_status_t skinny_handle_xml_alarm(listener_t *listener, skinny_message_t *
 
 switch_status_t skinny_handle_request(listener_t *listener, skinny_message_t *request)
 {
-	if (listener->profile->debug >= 10 || request->type != KEEP_ALIVE_MESSAGE) {
+	if (listener->profile->debug >= 10 || 
+		(listener->profile->debug >= 9 && request->type != KEEP_ALIVE_MESSAGE)) {
 		skinny_log_l(listener, SWITCH_LOG_DEBUG, "Received %s (type=%x,length=%d).\n",
 			skinny_message_type2str(request->type), request->type, request->length);
 	}
