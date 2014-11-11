@@ -1625,10 +1625,14 @@ static switch_status_t httapi_sync(client_t *client)
 	if (client->profile->ssl_version) {
 		if (!strcasecmp(client->profile->ssl_version, "SSLv3")) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_SSLv3);
+#ifdef CURL_SSLVERSION_TLSv1_1
 		} else if (!strcasecmp(client->profile->ssl_version, "TLSv1.1")) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1);
+#endif
+#ifdef CURL_SSLVERSION_TLSv1_2
 		} else if (!strcasecmp(client->profile->ssl_version, "TLSv1.2")) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
+#endif
 		}
 	} else {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
@@ -2533,10 +2537,14 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 	if (client->profile->ssl_version) {
 		if (!strcasecmp(client->profile->ssl_version, "SSLv3")) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_SSLv3);
+#ifdef CURL_SSLVERSION_TLSv1_1
 		} else if (!strcasecmp(client->profile->ssl_version, "TLSv1.1")) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1);
+#endif
+#ifdef CURL_SSLVERSION_TLSv1_2
 		} else if (!strcasecmp(client->profile->ssl_version, "TLSv1.2")) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
+#endif
 		}
 	} else {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
