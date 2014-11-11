@@ -93,6 +93,7 @@ dialplans/mod_dialplan_xml
 endpoints/mod_loopback
 #endpoints/mod_opal
 #endpoints/mod_portaudio
+#endpoints/mod_pulseaudio
 endpoints/mod_rtc
 #endpoints/mod_rtmp
 endpoints/mod_skinny

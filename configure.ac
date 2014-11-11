@@ -1340,6 +1340,16 @@ PKG_CHECK_MODULES([PORTAUDIO], [portaudio-2.0 >= 19],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_PORTAUDIO],[false])])
 PKG_CHECK_MODULES([LDNS], [libldns-fs >= 1.6.6],[
   AM_CONDITIONAL([HAVE_LDNS],[true])],[
+PKG_CHECK_MODULES([PULSEAUDIO], [libpulse >= 2.1],[
+  AM_CONDITIONAL([HAVE_PULSEAUDIO],[true])],[
+  AC_CHECK_LIB([pulse-simple], [pa_simple_new], [PULSEAUDIO_LIBS="-lpulse-simple -lpulse"])
+  AS_IF([test -z "$PULSEAUDIO_LIBS"],[
+    if module_enabled mod_pulseaudio; then
+      AC_MSG_ERROR([You need to either install libpulse-dev or disable mod_pulseaudio in modules.conf])
+    else
+      AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_PULSEAUDIO],[false])
+    fi],[
+    AM_CONDITIONAL([HAVE_PULSEAUDIO],[true])])])
 PKG_CHECK_MODULES([LDNS], [libldns >= 1.6.6],[
   AM_CONDITIONAL([HAVE_LDNS],[true])],[
   AC_CHECK_LIB([ldns], [ldns_str2rdf_a], [LDNS_LIBS=-lldns])
