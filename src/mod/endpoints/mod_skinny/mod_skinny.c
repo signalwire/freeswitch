@@ -954,27 +954,29 @@ int channel_on_hangup_callback(void *pArg, int argc, char **argv, char **columnN
 			send_clear_prompt_status(listener, line_instance, call_id); 
 		}
 		send_set_lamp(listener, SKINNY_BUTTON_LINE, line_instance, SKINNY_LAMP_OFF);
-		switch (helper->cause) {
-			case SWITCH_CAUSE_UNALLOCATED_NUMBER:
-				send_start_tone(listener, SKINNY_TONE_REORDER, 0, line_instance, call_id);
-				skinny_session_send_call_info(helper->tech_pvt->session, listener, line_instance);
-				label = skinny_textid2raw(SKINNY_TEXTID_UNKNOWN_NUMBER);
-				send_display_prompt_status(listener, 0, label, line_instance, call_id);
-				switch_safe_free(label);
-				break;
-			case SWITCH_CAUSE_USER_BUSY:
-				send_start_tone(listener, SKINNY_TONE_BUSYTONE, 0, line_instance, call_id);
-				label = skinny_textid2raw(SKINNY_TEXTID_BUSY);
-				send_display_prompt_status(listener, 0, label, line_instance, call_id);
-				switch_safe_free(label);
-				break;
-			case SWITCH_CAUSE_NORMAL_CLEARING:
-				send_clear_prompt_status(listener, line_instance, call_id);
-				break;
-			default:
-				send_display_prompt_status(listener, 0, switch_channel_cause2str(helper->cause), line_instance, call_id);
-		}
+
 		if((call_state == SKINNY_PROCEED) || (call_state == SKINNY_RING_OUT) || (call_state == SKINNY_CONNECTED)) { /* calling parties */
+			switch (helper->cause) {
+				case SWITCH_CAUSE_UNALLOCATED_NUMBER:
+					send_start_tone(listener, SKINNY_TONE_REORDER, 0, line_instance, call_id);
+					skinny_session_send_call_info(helper->tech_pvt->session, listener, line_instance);
+					label = skinny_textid2raw(SKINNY_TEXTID_UNKNOWN_NUMBER);
+					send_display_prompt_status(listener, 0, label, line_instance, call_id);
+					switch_safe_free(label);
+					break;
+				case SWITCH_CAUSE_USER_BUSY:
+					send_start_tone(listener, SKINNY_TONE_BUSYTONE, 0, line_instance, call_id);
+					label = skinny_textid2raw(SKINNY_TEXTID_BUSY);
+					send_display_prompt_status(listener, 0, label, line_instance, call_id);
+					switch_safe_free(label);
+					break;
+				case SWITCH_CAUSE_NORMAL_CLEARING:
+					send_clear_prompt_status(listener, line_instance, call_id);
+					break;
+				default:
+					send_display_prompt_status(listener, 0, switch_channel_cause2str(helper->cause), line_instance, call_id);
+			}
+
 			skinny_session_stop_media(helper->tech_pvt->session, listener, line_instance);
 		}
 
