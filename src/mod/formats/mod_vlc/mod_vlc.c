@@ -264,11 +264,15 @@ static void vlc_video_unlock_callback(void *data, void *id, void *const *p_pixel
 		frame->timestamp += delta * 90;
 		context->last_video_ts = now;
 	}
+	//printf("WTF VLC d_w=%d d_h=%d w=%d h=%d\n", context->img->d_w, context->img->d_h, context->img->w, context->img->h);
+
+	context->img->d_w = context->img->w;
+	context->img->d_h = context->img->h;
 
 	switch_core_codec_encode_video(codec, context->img, frame->data, &encoded_data_len, &flag);
 
 	while(encoded_data_len) {
-		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "encoded: %s [%d] flag=%d ts=%lld\n", codec->implementation->iananame, encoded_data_len, flag, context->last_video_ts);
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "encoded: %s [%d] flag=%d ts=%ld\n", codec->implementation->iananame, encoded_data_len, flag, context->last_video_ts);
 
 		frame->datalen = encoded_data_len;
 		frame->packetlen = frame->datalen + 12;
@@ -293,6 +297,7 @@ static void vlc_video_unlock_callback(void *data, void *id, void *const *p_pixel
 		switch_core_session_write_video_frame(context->session, frame, SWITCH_IO_FLAG_NONE, 0);
 
 		encoded_data_len = 1500;
+
 		switch_core_codec_encode_video(codec, NULL, frame->data, &encoded_data_len, &flag);
 	}
 
