@@ -854,6 +854,8 @@ CPPFLAGS="$save_CPPFLAGS"
 
 AX_HAVE_CPU_SET
 
+AC_CHECK_LIB(vpx, vpx_img_alloc, [AC_DEFINE(HAVE_VPX, 1, [Define if you have vpx()])])
+
 AC_CHECK_LIB(rt, clock_gettime, [AC_DEFINE(HAVE_CLOCK_GETTIME, 1, [Define if you have clock_gettime()])])
 AC_CHECK_LIB(rt, clock_getres, [AC_DEFINE(HAVE_CLOCK_GETRES, 1, [Define if you have clock_getres()])])
 AC_CHECK_LIB(rt, clock_nanosleep, [AC_DEFINE(HAVE_CLOCK_NANOSLEEP, 1, [Define if you have clock_nanosleep()])])
