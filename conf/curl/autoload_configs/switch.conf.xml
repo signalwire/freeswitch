@@ -18,6 +18,8 @@
   <settings>
     <!--Colorize the Console -->
     <param name="colorize-console" value="true"/>
+    <!--Include full timestamps in dialplan logs -->
+    <param name="dialplan-timestamps" value="false"/>
     <!--Most channels to allow at once -->
     <param name="max-sessions" value="1000"/>
     <!--Most channels to create per second -->

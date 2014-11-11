@@ -361,7 +361,8 @@ typedef enum {
 	SCF_CORE_NON_SQLITE_DB_REQ = (1 << 20),
 	SCF_DEBUG_SQL = (1 << 21),
 	SCF_API_EXPANSION = (1 << 22),
-	SCF_SESSION_THREAD_POOL = (1 << 23)
+	SCF_SESSION_THREAD_POOL = (1 << 23),
+	SCF_DIALPLAN_TIMESTAMPS = (1 << 24)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 
