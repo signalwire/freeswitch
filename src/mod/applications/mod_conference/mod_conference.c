@@ -6147,7 +6147,7 @@ static switch_status_t conf_api_sub_mute(conference_member_t *member, switch_str
 	switch_clear_flag_locked(member, MFLAG_CAN_SPEAK);
 	switch_clear_flag_locked(member, MFLAG_TALKING);
 
-	if (member->session && !switch_test_flag(member, MFLAG_INDICATE_MUTE)) {
+	if (member->session && !switch_test_flag(member, MFLAG_MUTE_DETECT)) {
 		switch_core_media_hard_mute(member->session, SWITCH_TRUE);
 	}
 
@@ -6245,7 +6245,7 @@ static switch_status_t conf_api_sub_unmute(conference_member_t *member, switch_s
 
 	switch_set_flag_locked(member, MFLAG_CAN_SPEAK);
 
-	if (member->session && !switch_test_flag(member, MFLAG_INDICATE_MUTE)) {
+	if (member->session && !switch_test_flag(member, MFLAG_MUTE_DETECT)) {
 		switch_core_media_hard_mute(member->session, SWITCH_FALSE);
 	}
 
@@ -8761,6 +8761,8 @@ static void set_mflags(const char *flags, member_flag_t *f)
 		char *argv[10] = { 0 };
 		int i, argc = 0;
 
+		*f |= MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR;
+
 		for (p = dup; p && *p; p++) {
 			if (*p == ',') {
 				*p = '|';
@@ -9296,7 +9298,7 @@ SWITCH_STANDARD_APP(conference_function)
 				set_mflags(flags_str,&mflags);
 
 				if (!(mflags & MFLAG_CAN_SPEAK)) {
-					if (!(mflags & MFLAG_INDICATE_MUTE)) {
+					if (!(mflags & MFLAG_MUTE_DETECT)) {
 						switch_core_media_hard_mute(session, SWITCH_TRUE);
 					}
 				}
@@ -9601,7 +9603,7 @@ SWITCH_STANDARD_APP(conference_function)
 	mflags |= MFLAG_RUNNING;
 
 	if (!(mflags & MFLAG_CAN_SPEAK)) {
-		if (!(mflags & MFLAG_INDICATE_MUTE)) {
+		if (!(mflags & MFLAG_MUTE_DETECT)) {
 			switch_core_media_hard_mute(member.session, SWITCH_TRUE);
 		}
 	}
@@ -10328,8 +10330,6 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 	if (!zstr(perpetual_sound)) {
 		conference->perpetual_sound = switch_core_strdup(conference->pool, perpetual_sound);
 	}
-
-	conference->mflags = MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR;
 
 	if (!zstr(moh_sound) && switch_is_moh(moh_sound)) {
 		conference->moh_sound = switch_core_strdup(conference->pool, moh_sound);
