@@ -64,8 +64,9 @@
         var newLine = [];
         var index = 0;
         for (var i = 0; i < elements.length; i++) {
-            if (index === 3) // Format of media starts from the fourth.
-            newLine[index++] = payload; // Put target payload to the first.
+            if (index === 3) { // Format of media starts from the fourth.
+                newLine[index++] = payload; // Put target payload to the first.
+            }
             if (elements[i] !== payload) newLine[index++] = elements[i];
         }
         return newLine.join(' ');
@@ -76,7 +77,7 @@
             useVideo: null,
             useStereo: false,
             userData: null,
-	    iceServers: false,
+            iceServers: false,
             videoParams: {},
             audioParams: {},
             callbacks: {
@@ -84,8 +85,7 @@
                 onICE: function() {},
                 onOfferSDP: function() {}
             }
-        },
-        options);
+        }, options);
 
         this.mediaData = {
             SDP: null,
@@ -163,9 +163,9 @@
     function setCompat() {
         $.FSRTC.moz = !!navigator.mozGetUserMedia;
         //navigator.getUserMedia || (navigator.getUserMedia = navigator.mozGetUserMedia || navigator.webkitGetUserMedia || navigator.msGetUserMedia);
-	if (!navigator.getUserMedia) {
-	    navigator.getUserMedia = navigator.mozGetUserMedia || navigator.webkitGetUserMedia || navigator.msGetUserMedia;
-	}
+        if (!navigator.getUserMedia) {
+            navigator.getUserMedia = navigator.mozGetUserMedia || navigator.webkitGetUserMedia || navigator.msGetUserMedia;
+        }
     }
 
     function checkCompat() {
@@ -307,7 +307,7 @@
                     return onChannelError(self, e);
                 },
                 constraints: self.constraints,
-		iceServers: self.options.iceServers,
+                iceServers: self.options.iceServers,
                 offerSDP: {
                     type: "offer",
                     sdp: self.remoteSDP
@@ -324,9 +324,9 @@
         getUserMedia({
             constraints: {
                 audio: {
-		    mandatory: this.options.audioParams,
-		    optional: []
-		},
+                    mandatory: this.options.audioParams,
+                    optional: []
+                },
                 video: this.options.useVideo ? {
                     mandatory: this.options.videoParams,
                     optional: []
@@ -371,7 +371,7 @@
                     return onChannelError(self, e);
                 },
                 constraints: self.constraints,
-		iceServers: self.options.iceServers,
+                iceServers: self.options.iceServers,
             });
 
             onStreamSuccess(self);
@@ -384,9 +384,9 @@
         getUserMedia({
             constraints: {
                 audio: {
-		    mandatory: this.options.audioParams,
-		    optional: []
-		},
+                    mandatory: this.options.audioParams,
+                    optional: []
+                },
                 video: this.options.useVideo ? {
                     mandatory: this.options.videoParams,
                     optional: []
@@ -398,11 +398,11 @@
         });
 
         /*
-	navigator.getUserMedia({
+        navigator.getUserMedia({
             video: this.options.useVideo,
             audio: true
-	}, onSuccess, onError);
-*/
+        }, onSuccess, onError);
+        */
 
     };
 
@@ -428,34 +428,34 @@
             credential: 'homeo'
         };
 
-	var iceServers = null;
+        var iceServers = null;
 
-	if (options.iceServers) {
-	    var tmp = options.iceServers;;
+        if (options.iceServers) {
+            var tmp = options.iceServers;;
 
-	    if (typeof(tmp) === "boolean") {
-		tmp = null;
-	    }
+            if (typeof(tmp) === "boolean") {
+                tmp = null;
+            }
 
-	    if (tmp && typeof(tmp) !== "array") {
-		console.warn("iceServers must be an array, reverting to default ice servers");
-		tmp = null;
-	    }
+            if (tmp && typeof(tmp) !== "array") {
+                console.warn("iceServers must be an array, reverting to default ice servers");
+                tmp = null;
+            }
 
             iceServers = {
-		iceServers: tmp || [STUN]
+                iceServers: tmp || [STUN]
             };
 
             if (!moz && !tmp) {
-		if (parseInt(navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2]) >= 28) TURN = {
+                if (parseInt(navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)[2]) >= 28) TURN = {
                     url: 'turn:turn.bistri.com:80',
                     credential: 'homeo',
                     username: 'homeo'
-		};
+                };
 
-		iceServers.iceServers = [STUN];
+                iceServers.iceServers = [STUN];
             }
-	}
+        }
 
         var optional = {
             optional: []
@@ -488,30 +488,30 @@
                         options.onICESDP(peer.localDescription);
                         //x = 1;
                         /*
-			  x = 1;
-			  peer.createOffer(function(sessionDescription) {
-			  sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
-			  peer.setLocalDescription(sessionDescription);
-			  if (options.onICESDP) {
-			  options.onICESDP(sessionDescription);
-			  }
-			  }, onSdpError, constraints);
-			*/
+                        x = 1;
+                        peer.createOffer(function(sessionDescription) {
+                            sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
+                            peer.setLocalDescription(sessionDescription);
+                            if (options.onICESDP) {
+                                options.onICESDP(sessionDescription);
+                            }
+                        }, onSdpError, constraints);
+                        */
                     }
                 } else {
                     if (!x && options.onICESDP) {
                         options.onICESDP(peer.localDescription);
                         //x = 1;
                         /*
-			  x = 1;
-			  peer.createAnswer(function(sessionDescription) {
-			  sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
-			  peer.setLocalDescription(sessionDescription);
-			  if (options.onICESDP) {
-			  options.onICESDP(sessionDescription);
-			  }
-			  }, onSdpError, constraints);
-			*/
+                        x = 1;
+                        peer.createAnswer(function(sessionDescription) {
+                            sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
+                            peer.setLocalDescription(sessionDescription);
+                            if (options.onICESDP) {
+                                options.onICESDP(sessionDescription);
+                            }
+                        }, onSdpError, constraints);
+                        */
                     }
                 }
             }
@@ -730,8 +730,8 @@
             channel: channel,
             sendData: function(message) {
                 if (channel) {
-		    channel.send(message);
-		}
+                    channel.send(message);
+                }
             },
 
             stop: function() {
@@ -770,8 +770,8 @@
                 //video.play();
             }
             if (options.onsuccess) {
-		options.onsuccess(stream);
-	    }
+                options.onsuccess(stream);
+            }
             media = stream;
         }
 
