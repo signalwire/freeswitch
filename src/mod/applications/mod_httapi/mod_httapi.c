@@ -155,6 +155,7 @@ static struct {
 	int not_found_expires;
 	int cache_ttl;
 	int abs_cache_ttl;
+	client_profile_t *profile;
 } globals;
 
 
@@ -1624,10 +1625,15 @@ static switch_status_t httapi_sync(client_t *client)
 	if (client->profile->ssl_version) {
 		if (!strcasecmp(client->profile->ssl_version, "SSLv3")) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_SSLv3);
-		} else if (!strcasecmp(client->profile->ssl_version, "TLSv1")) {
-			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
+		} else if (!strcasecmp(client->profile->ssl_version, "TLSv1.1")) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1);
+		} else if (!strcasecmp(client->profile->ssl_version, "TLSv1.2")) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
 		}
+	} else {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
 	}
+	
 
 	if (client->profile->ssl_cacert_file) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, client->profile->ssl_cacert_file);
@@ -2150,6 +2156,8 @@ static switch_status_t do_config(void)
 
 		profile->name = switch_core_strdup(globals.pool, bname);
 
+		if (!globals.profile) globals.profile = profile;
+
 		switch_core_hash_insert(globals.profile_hash, bname, profile);
 
 		x++;
@@ -2429,16 +2437,33 @@ static size_t save_file_callback(void *ptr, size_t size, size_t nmemb, void *dat
 static switch_status_t fetch_cache_data(http_file_context_t *context, const char *url, switch_event_t **headers, const char *save_path)
 {
 	switch_CURL *curl_handle = NULL;
-	client_t client = { 0 };
+	client_t *client = NULL;
 	long code;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *dup_creds = NULL, *dynamic_url = NULL, *use_url;
 	char *ua = NULL;
+	const char *profile_name = NULL;
 
-	client.fd = -1;
+
+	if (context->url_params) { 
+		profile_name = switch_event_get_header(context->url_params, "profile_name");
+	}
+
+	if (zstr(profile_name)) {
+		if (globals.profile) profile_name = globals.profile->name;
+	}
+	
+	if (zstr(profile_name)) {
+		profile_name = "default";
+	}
+
+	if (!(client = client_create(NULL, profile_name, NULL))) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 
 	if (save_path) {
-		if ((client.fd = open(save_path, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) < 0) {
+		if ((client->fd = open(save_path, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) < 0) {
 			return SWITCH_STATUS_FALSE;
 		}
 	}
@@ -2478,31 +2503,80 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 	switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1);
 
-	switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
-	switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+	if (!strncasecmp(url, "https", 5)) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+	}
 
-	client.max_bytes = HTTAPI_MAX_FILE_BYTES;
+	client->max_bytes = HTTAPI_MAX_FILE_BYTES;
 
 	switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 
+	if (client->profile->timeout) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, client->profile->timeout);
+	}
+
+	if (client->profile->ssl_cert_file) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_SSLCERT, client->profile->ssl_cert_file);
+	}
+
+	if (client->profile->ssl_key_file) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_SSLKEY, client->profile->ssl_key_file);
+	}
+
+	if (client->profile->ssl_key_password) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_SSLKEYPASSWD, client->profile->ssl_key_password);
+	}
+
+	if (client->profile->ssl_version) {
+		if (!strcasecmp(client->profile->ssl_version, "SSLv3")) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_SSLv3);
+		} else if (!strcasecmp(client->profile->ssl_version, "TLSv1.1")) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_1);
+		} else if (!strcasecmp(client->profile->ssl_version, "TLSv1.2")) {
+			switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1_2);
+		}
+	} else {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_SSLVERSION, CURL_SSLVERSION_TLSv1);
+	}
+
+	if (client->profile->ssl_cacert_file) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, client->profile->ssl_cacert_file);
+	}
+
+	if (client->profile->enable_ssl_verifyhost) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 2);
+	}
+
+	if (client->profile->cookie_file) {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_COOKIEJAR, client->profile->cookie_file);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, client->profile->cookie_file);
+	} else {
+		switch_curl_easy_setopt(curl_handle, CURLOPT_COOKIE, "");
+	}
+
+	if (client->profile->bind_local) {
+		curl_easy_setopt(curl_handle, CURLOPT_INTERFACE, client->profile->bind_local);
+	}
+
 	if (save_path) {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, save_file_callback);
-		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &client);
+		switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) client);
 	} else {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HEADER, 1);
 		switch_curl_easy_setopt(curl_handle, CURLOPT_NOBODY, 1);
 	}
 
 	if (headers) {
-		switch_event_create(&client.headers, SWITCH_EVENT_CLONE);
+		switch_event_create(&client->headers, SWITCH_EVENT_CLONE);
 		if (save_path) {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, get_header_callback);
-			switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) &client);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, (void *) client);
 		} else {
 			switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, get_header_callback);
-			switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &client);
+			switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) client);
 		}
 	}
 
@@ -2516,19 +2590,20 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 	switch_curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &code);
 	switch_curl_easy_cleanup(curl_handle);
 	
-	if (client.fd > -1) {
-		close(client.fd);
+	if (client->fd > -1) {
+		close(client->fd);
 	}
 
-	if (headers && client.headers) {
-		switch_event_add_header(client.headers, SWITCH_STACK_BOTTOM, "http-response-code", "%ld", code);
-		*headers = client.headers;
+	if (headers && client->headers) {
+		switch_event_add_header(client->headers, SWITCH_STACK_BOTTOM, "http-response-code", "%ld", code);
+		*headers = client->headers;
+		client->headers = NULL;
 	}
 
 	switch(code) {
 	case 200:
 		if (save_path) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "caching: url:%s to %s (%" SWITCH_SIZE_T_FMT " bytes)\n", url, save_path, client.bytes);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "caching: url:%s to %s (%" SWITCH_SIZE_T_FMT " bytes)\n", url, save_path, client->bytes);
 		}
 		status = SWITCH_STATUS_SUCCESS;
 		break;
@@ -2544,7 +2619,7 @@ static switch_status_t fetch_cache_data(http_file_context_t *context, const char
 
 	switch_safe_free(dynamic_url);
 	switch_safe_free(dup_creds);
-
+	client_destroy(&client);
 
 	return status;
 }
@@ -2704,6 +2779,7 @@ static switch_status_t locate_url_file(http_file_context_t *context, const char 
 
 		if (switch_file_exists(context->cache_file, context->pool) != SWITCH_STATUS_SUCCESS && unreachable) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "File at url [%s] is unreachable!\n", url);
+			status = SWITCH_STATUS_NOTFOUND;
 			goto end;
 		}
 		
