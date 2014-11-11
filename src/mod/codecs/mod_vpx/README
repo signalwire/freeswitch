@@ -1,0 +1,9 @@
+To build this module I used the following steps:
+
+apt-get install yasm
+git /usr/local/src/
+git clone https://chromium.googlesource.com/webm/libvpx
+cd libvpx/build/
+../configure --enable-pic --enable-shared
+make
+make install
