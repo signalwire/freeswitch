@@ -1088,16 +1088,16 @@ static void send_record_stop_event(switch_channel_t *channel, switch_codec_imple
 {
 	switch_event_t *event;
 
-	if (read_impl->actual_samples_per_second) {
-		switch_channel_set_variable_printf(channel, "record_seconds", "%d", rh->fh->samples_out / read_impl->actual_samples_per_second);
-		switch_channel_set_variable_printf(channel, "record_ms", "%d", rh->fh->samples_out / (read_impl->actual_samples_per_second / 1000));
+	if (rh->fh) {
+		switch_channel_set_variable_printf(channel, "record_samples", "%d", rh->fh->samples_out);
+		if (read_impl->actual_samples_per_second) {
+			switch_channel_set_variable_printf(channel, "record_seconds", "%d", rh->fh->samples_out / read_impl->actual_samples_per_second);
+			switch_channel_set_variable_printf(channel, "record_ms", "%d", rh->fh->samples_out / (read_impl->actual_samples_per_second / 1000));
+		}
 	}
-
 	if (!zstr(rh->completion_cause)) {
 		switch_channel_set_variable_printf(channel, "record_completion_cause", "%s", rh->completion_cause);
 	}
-
-	switch_channel_set_variable_printf(channel, "record_samples", "%d", rh->fh->samples_out);
 
 	if (switch_event_create(&event, SWITCH_EVENT_RECORD_STOP) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
