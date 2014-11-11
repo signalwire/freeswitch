@@ -1202,7 +1202,7 @@ PKG_CHECK_MODULES([PORTAUDIO], [portaudio-2.0 >= 19],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_PORTAUDIO],[false])])
 PKG_CHECK_MODULES([PULSEAUDIO], [libpulse >= 2.1],[
   AM_CONDITIONAL([HAVE_PULSEAUDIO],[true])],[
-  AC_CHECK_LIB([lpulse-simple], [lpulse], [PULSEAUDIO_LIBS=-lpulse])
+  AC_CHECK_LIB([pulse-simple], [pa_simple_new], [PULSEAUDIO_LIBS="-lpulse-simple -lpulse"])
   AS_IF([test -z "$PULSEAUDIO_LIBS"],[
     if module_enabled mod_pulseaudio; then
       AC_MSG_ERROR([You need to either install libpulse-dev or disable mod_pulseaudio in modules.conf])
