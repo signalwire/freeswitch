@@ -89,6 +89,7 @@ endpoints/mod_verto
 endpoints/mod_loopback
 #endpoints/mod_opal
 #endpoints/mod_portaudio
+#endpoints/mod_pulseaudio
 #endpoints/mod_rtmp
 endpoints/mod_skinny
 #endpoints/mod_skypopen
