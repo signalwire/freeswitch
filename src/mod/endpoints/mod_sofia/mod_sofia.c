@@ -1559,58 +1559,18 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			if (ok) {
 				char *headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_INFO_HEADER_PREFIX);
 				const char *pl = NULL;
-				nua_handle_t *nh;
-				sip_cseq_t *cseq = NULL;
-				const char *uri = NULL;
-				char *to, *from;
-				char *contact;
-				const char *invite_contact_params = switch_channel_get_variable(tech_pvt->channel, "sip_invite_contact_params");
-				
-				
+
 				if (!zstr(msg->string_array_arg[2])) {
 					pl = msg->string_array_arg[2];
 				}
 
-				uri = switch_core_session_sprintf(tech_pvt->session, "sip:%s", 
-												  switch_channel_get_variable_dup(tech_pvt->channel, "sip_contact_uri", SWITCH_FALSE, -1));
-
-				if (tech_pvt->invite_contact) {
-					contact = sofia_overcome_sip_uri_weakness(tech_pvt->session, 
-															  tech_pvt->invite_contact, tech_pvt->transport, SWITCH_FALSE, invite_contact_params, NULL);
-				} else {
-					contact = tech_pvt->reply_contact;
-				}
-
-				
-				nh = nua_handle(tech_pvt->profile->nua, NULL, 
-								NUTAG_URL(uri),
-								TAG_IF(contact, SIPTAG_CONTACT_STR(contact)), 
-								TAG_END());
-								
-
-				cseq = sip_cseq_create(nh->nh_home, ++tech_pvt->info_cseq, SIP_METHOD_INFO);
-				nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
-				
-				if (tech_pvt->sent_last_invite || !tech_pvt->recv_invites) {
-					from = (char *)switch_channel_get_variable(tech_pvt->channel, "sip_full_from");
-					to = (char *)switch_channel_get_variable(tech_pvt->channel, "sip_full_to");
-				} else {
-					from = (char *)switch_channel_get_variable(tech_pvt->channel, "sip_full_to");
-					to = (char *)switch_channel_get_variable(tech_pvt->channel, "sip_full_from");
-				}
-
-				nua_info(nh,
-						 TAG_IF(!zstr(tech_pvt->route_uri), NUTAG_PROXY(tech_pvt->route_uri)),
-						 TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
-						 SIPTAG_FROM_STR(from),
-						 SIPTAG_TO_STR(to),
-						 SIPTAG_CALL_ID_STR(switch_channel_get_variable(tech_pvt->channel, "sip_call_id")),
+				nua_info(tech_pvt->nh,
 						 SIPTAG_CONTENT_TYPE_STR(ct),
 						 TAG_IF(!zstr(headers), SIPTAG_HEADER_STR(headers)),
-						 TAG_IF(pl, SIPTAG_PAYLOAD_STR(pl)),						 
-						 SIPTAG_CSEQ(cseq),
+						 TAG_IF(!zstr(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
+						 TAG_IF(pl, SIPTAG_PAYLOAD_STR(pl)),
 						 TAG_END());
-				
+
 				switch_safe_free(headers);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "%s send_info is not supported.\n", switch_channel_get_name(channel));
