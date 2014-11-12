@@ -115,6 +115,7 @@ struct vlc_video_context {
 	int force_width;
 	int force_height;
 	int video_refresh_req;
+	int channels;
 };
 
 typedef struct vlc_video_context vlc_video_context_t;
@@ -204,7 +205,7 @@ void vlc_play_audio_callback(void *data, const void *samples, unsigned count, in
 		switch_buffer_toss(context->audio_buffer, bytes - VLC_BUFFER_SIZE);
 	}
 
-	switch_buffer_write(context->audio_buffer, samples, count * 2);
+	switch_buffer_write(context->audio_buffer, samples, count * 2 * context->channels);
 
 	if (!context->playing) {
 		context->playing = 1;
@@ -266,8 +267,8 @@ static void vlc_video_unlock_callback(void *data, void *id, void *const *p_pixel
 	}
 	//printf("WTF VLC d_w=%d d_h=%d w=%d h=%d\n", context->img->d_w, context->img->d_h, context->img->w, context->img->h);
 
-	context->img->d_w = context->img->w;
-	context->img->d_h = context->img->h;
+	//context->img->d_w = context->img->w;
+	//context->img->d_h = context->img->h;
 
 	switch_core_codec_encode_video(codec, context->img, frame->data, &encoded_data_len, &flag);
 
@@ -640,8 +641,9 @@ static switch_status_t vlc_file_read(switch_file_handle_t *handle, void *data, s
 		memset(data, 0, read);
 	}
 
-	if (read)
-		*len = read/2;
+	if (read) {
+		*len = read / 2 / handle->channels;
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -649,7 +651,7 @@ static switch_status_t vlc_file_read(switch_file_handle_t *handle, void *data, s
 static switch_status_t vlc_file_write(switch_file_handle_t *handle, void *data, size_t *len)
 {
 	vlc_file_context_t *context = handle->private_info;
-	size_t bytes = *len * sizeof(int16_t);
+	size_t bytes = *len * sizeof(int16_t) * handle->channels;
 	
 	switch_mutex_lock(context->audio_mutex);
 	context->samples += *len;
@@ -718,7 +720,7 @@ SWITCH_STANDARD_APP(play_video_function)
 
 	switch_size_t audio_datalen;
 
-	switch_channel_set_flag(channel, CF_VIDEO_PASSIVE);
+	switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
 
 	context = switch_core_session_alloc(session, sizeof(vlc_video_context_t));
 	switch_assert(context);
@@ -783,6 +785,7 @@ SWITCH_STANDARD_APP(play_video_function)
 	}
 
 	context->pt = pt;
+	context->channels = read_impl.number_of_channels;
 	audio_frame.codec = &codec;
 	video_frame.codec = read_vid_codec;
 	video_frame.packet = context->video_packet;
@@ -802,7 +805,7 @@ SWITCH_STANDARD_APP(play_video_function)
 							   NULL,
 							   read_impl.actual_samples_per_second,
 							   read_impl.microseconds_per_packet/1000,
-							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+							   read_impl.number_of_channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio Codec Activation Success\n");
 	} else {
@@ -811,7 +814,7 @@ SWITCH_STANDARD_APP(play_video_function)
 		goto end;
 	}
 
-	audio_datalen = codec.implementation->actual_samples_per_second / 1000 * (read_impl.microseconds_per_packet / 1000);
+	audio_datalen = read_impl.decoded_bytes_per_packet; //codec.implementation->actual_samples_per_second / 1000 * (read_impl.microseconds_per_packet / 1000);
 
 	context->session = session;
 	context->pool = pool;
@@ -857,7 +860,7 @@ SWITCH_STANDARD_APP(play_video_function)
 
 	context->mp = libvlc_media_player_new_from_media(context->m);
 
-	libvlc_audio_set_format(context->mp, "S16N", read_impl.actual_samples_per_second, 1);
+	libvlc_audio_set_format(context->mp, "S16N", read_impl.actual_samples_per_second, read_impl.number_of_channels);
 	libvlc_audio_set_callbacks(context->mp, vlc_play_audio_callback, NULL,NULL,NULL,NULL, (void *) context);
 
 	if (switch_channel_test_flag(channel, CF_VIDEO)) {
@@ -917,15 +920,15 @@ SWITCH_STANDARD_APP(play_video_function)
 			}
 		}
 
-		if (switch_buffer_inuse(context->audio_buffer) >= audio_datalen * 2) {
+		if (switch_buffer_inuse(context->audio_buffer) >= audio_datalen) {
 			const void *decoded_data;
-			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%d %d\n", (int)switch_buffer_inuse(context->audio_buffer), (int)audio_datalen * 2);
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%d %d\n", (int)switch_buffer_inuse(context->audio_buffer), (int)audio_datalen);
 			switch_buffer_peek_zerocopy(context->audio_buffer, &decoded_data);
 			audio_frame.data = (void *)decoded_data;
-			audio_frame.datalen = audio_datalen*2;
-			audio_frame.buflen = audio_datalen*2;
+			audio_frame.datalen = audio_datalen;;
+			audio_frame.buflen = audio_datalen;
 			switch_core_session_write_frame(context->session, &audio_frame, SWITCH_IO_FLAG_NONE, 0);
-			switch_buffer_toss(context->audio_buffer, audio_datalen * 2);
+			switch_buffer_toss(context->audio_buffer, audio_datalen);
 		}
 
 	}
@@ -954,7 +957,7 @@ end:
 		switch_core_codec_destroy(&codec);
 	}
 
-	switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
+	switch_core_session_video_reset(session);
 }
 
 static switch_status_t channel_on_init(switch_core_session_t *session);

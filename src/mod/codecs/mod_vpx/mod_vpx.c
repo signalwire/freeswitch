@@ -108,9 +108,10 @@ static switch_status_t switch_vpx_init(switch_codec_t *codec, switch_codec_flag_
 		return SWITCH_STATUS_FALSE;
 	}
 
-	context->width = 352;
-	context->height = 288;
-	context->bitrate = 38400;
+	// very big defaults till we know why scaling segs it
+	context->width = 3840;
+	context->height = 2160;
+	context->bitrate = 3840000;
 
 	// settings
 	config->g_profile = 1;
@@ -329,8 +330,10 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_image_t *
 		return consume_partition(context, encoded_data, encoded_data_len, flag);
 	}
 
-	width = img->d_w;
-	height = img->d_h;
+	//d_w and d_h are messed up
+
+	width = img->w;
+	height = img->h;
 
 	//switch_assert(width > 0 && (width % 4 == 0));
 	//switch_assert(height > 0 && (height % 4 == 0));

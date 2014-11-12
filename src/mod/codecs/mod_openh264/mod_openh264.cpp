@@ -395,8 +395,9 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec,
 		return nalu_slice(context, encoded_data, encoded_data_len, flag);
 	}
 
-	width = img->d_w;
-	height = img->d_h;
+	//d_w and d_h are corrupt
+	width = img->w;
+	height = img->h;
 
 	//switch_assert(width > 0 && (width % 2 == 0));
 	//switch_assert(height > 0 && (height % 2 == 0));
