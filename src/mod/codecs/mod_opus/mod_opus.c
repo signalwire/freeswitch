@@ -42,6 +42,7 @@ struct opus_codec_settings {
 	int useinbandfec;
 	int usedtx;
 	int maxaveragebitrate;
+	int maxplaybackrate;
 	int stereo;
 	int cbr;
 	int sprop_maxcapturerate;
@@ -57,6 +58,7 @@ static opus_codec_settings_t default_codec_settings = {
 	/*.useinbandfec */ 1,
 	/*.usedtx */ 1,
 	/*.maxaveragebitrate */ 30000,
+	/*.maxplaybackrate */ 48000,
 	/*.stereo*/ 0,
 	/*.cbr*/ 0,
 	/*.sprop_maxcapturerate*/ 0,
@@ -151,52 +153,23 @@ static switch_status_t switch_opus_fmtp_parse(const char *fmtp, switch_codec_fmt
                         
 						if (!strcasecmp(data, "maxaveragebitrate")) {
 							codec_settings->maxaveragebitrate = atoi(arg);
-							switch(codec_fmtp->actual_samples_per_second) {
-								case 8000:
-                                {
-                                    if(codec_settings->maxaveragebitrate < 6000 || codec_settings->maxaveragebitrate > 20000) {
-                                        codec_settings->maxaveragebitrate = 20000;
-                                    }
-                                    break;
-                                }
-								case 12000:
-                                {
-                                    if(codec_settings->maxaveragebitrate < 7000 || codec_settings->maxaveragebitrate > 25000) {
-                                        codec_settings->maxaveragebitrate = 25000;
-                                    }
-                                    break;
-                                }
-								case 16000:
-                                {
-                                    if(codec_settings->maxaveragebitrate < 8000 || codec_settings->maxaveragebitrate > 30000) {
-                                        codec_settings->maxaveragebitrate = 30000;
-                                    }
-                                    break;
-                                }
-								case 24000:
-                                {
-                                    if(codec_settings->maxaveragebitrate < 12000 || codec_settings->maxaveragebitrate > 40000) {
-                                        codec_settings->maxaveragebitrate = 40000;
-                                    }
-                                    break;
-                                }
-                                    
-								default:
-									/* this should never happen but 20000 is common among all rates */
-									codec_settings->maxaveragebitrate = 20000;
-									break;
+							if ( codec_settings->maxaveragebitrate < 6000 || codec_settings->maxaveragebitrate > 510000 ) {
+								codec_settings->maxaveragebitrate = 0; /* values outside the range between 6000 and 510000 SHOULD be ignored */
 							}
-                            
-                            
-							codec_fmtp->bits_per_second = codec_settings->maxaveragebitrate;
 						}
                         
+						if (!strcasecmp(data, "maxplaybackrate")) {
+							codec_settings->maxplaybackrate = atoi(arg);
+							if ( codec_settings->maxplaybackrate != 8000 && codec_settings->maxplaybackrate != 12000 && codec_settings->maxplaybackrate != 16000
+									&& codec_settings->maxplaybackrate != 24000 && codec_settings->maxplaybackrate != 48000) {
+								codec_settings->maxplaybackrate = 0; /* value not supported */
+							}
+						}
 					}
 				}
 			}
 			free(fmtp_dup);
 		}
-		//codec_fmtp->bits_per_second = bit_rate;
 		return SWITCH_STATUS_SUCCESS;
 	}
 	return SWITCH_STATUS_FALSE;
@@ -216,7 +189,10 @@ static char *gen_fmtp(opus_codec_settings_t *settings, switch_memory_pool_t *poo
     
 	if (settings->maxaveragebitrate) {
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "maxaveragebitrate=%d; ", settings->maxaveragebitrate);
-        
+	}
+    
+	if (settings->maxplaybackrate) {
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "maxplaybackrate=%d; ", settings->maxplaybackrate);
 	}
     
 	if (settings->ptime) {
@@ -283,15 +259,41 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
             return SWITCH_STATUS_GENERR;
         }
         
-		opus_encoder_ctl(context->encoder_object, OPUS_SET_BITRATE(bitrate_bps));
-		
-		if (codec->implementation->actual_samples_per_second == 8000) {
-			opus_encoder_ctl(context->encoder_object, OPUS_SET_BANDWIDTH(OPUS_BANDWIDTH_NARROWBAND));
-			opus_encoder_ctl(context->encoder_object, OPUS_SET_MAX_BANDWIDTH(OPUS_BANDWIDTH_NARROWBAND));
+
+
+
+		/* Setting documented in "RTP Payload Format for Opus Speech and Audio Codec"  draft-spittka-payload-rtp-opus-03 */
+		if( opus_codec_settings.maxaveragebitrate ) { /* Remote codec settings found in SDP "fmtp", we accept to tune the Encoder */
+			opus_encoder_ctl(context->encoder_object, OPUS_SET_BITRATE(opus_codec_settings.maxaveragebitrate));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opus encoder set bitrate based on maxaveragebitrate found in SDP [%dbps]\n", opus_codec_settings.maxaveragebitrate);
 		} else {
-			opus_encoder_ctl(context->encoder_object, OPUS_SET_BANDWIDTH(OPUS_BANDWIDTH_FULLBAND));
+			/* Default codec settings used, may have been modified by SDP "samplerate" */
+			opus_encoder_ctl(context->encoder_object, OPUS_SET_BITRATE(bitrate_bps));
+			if (codec->implementation->actual_samples_per_second == 8000) {
+				opus_encoder_ctl(context->encoder_object, OPUS_SET_BANDWIDTH(OPUS_BANDWIDTH_NARROWBAND));
+				opus_encoder_ctl(context->encoder_object, OPUS_SET_MAX_BANDWIDTH(OPUS_BANDWIDTH_NARROWBAND));
+			} else {
+				opus_encoder_ctl(context->encoder_object, OPUS_SET_BANDWIDTH(OPUS_BANDWIDTH_FULLBAND));
+			}
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opus encoder set bitrate to local settings [%dbps]\n", bitrate_bps);
 		}
-        
+
+		/* Another setting from "RTP Payload Format for Opus Speech and Audio Codec" */
+		if ( opus_codec_settings.maxplaybackrate ) {
+			if (opus_codec_settings.maxplaybackrate == 8000) {       /* Audio Bandwidth: 0-4000Hz  Sampling Rate: 8000Hz */
+				opus_encoder_ctl(context->encoder_object, OPUS_SET_MAX_BANDWIDTH(OPUS_BANDWIDTH_NARROWBAND));
+			} else if (opus_codec_settings.maxplaybackrate == 12000) { /* Audio Bandwidth: 0-6000Hz  Sampling Rate: 12000Hz */
+				opus_encoder_ctl(context->encoder_object, OPUS_SET_MAX_BANDWIDTH(OPUS_BANDWIDTH_MEDIUMBAND));
+			} else if (opus_codec_settings.maxplaybackrate == 16000) { /* Audio Bandwidth: 0-8000Hz  Sampling Rate: 16000Hz */
+				opus_encoder_ctl(context->encoder_object, OPUS_SET_MAX_BANDWIDTH(OPUS_BANDWIDTH_WIDEBAND));
+			} else if (opus_codec_settings.maxplaybackrate == 24000) { /* Audio Bandwidth: 0-12000Hz Sampling Rate: 24000Hz */
+				opus_encoder_ctl(context->encoder_object, OPUS_SET_MAX_BANDWIDTH(OPUS_BANDWIDTH_SUPERWIDEBAND));
+			} else if (opus_codec_settings.maxplaybackrate == 48000) { /* Audio Bandwidth: 0-20000Hz Sampling Rate: 48000Hz */
+				opus_encoder_ctl(context->encoder_object, OPUS_SET_MAX_BANDWIDTH(OPUS_BANDWIDTH_FULLBAND));
+			}
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opus encoder set bandwidth based on maxplaybackrate found in SDP [%dHz]\n", opus_codec_settings.maxplaybackrate);
+		}
+
 		if (use_vbr) {
 			opus_encoder_ctl(context->encoder_object, OPUS_SET_VBR(use_vbr));
 		}
