@@ -4375,7 +4375,10 @@ static switch_status_t start_video_thread(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s Starting Video thread\n", switch_core_session_get_name(session));
 
-	switch_rtp_set_default_payload(v_engine->rtp_session, v_engine->cur_payload_map->agreed_pt);
+	if (v_engine->rtp_session) {
+		switch_rtp_set_default_payload(v_engine->rtp_session, v_engine->cur_payload_map->agreed_pt);
+	}
+
 	v_engine->mh.session = session;
 	switch_threadattr_create(&thd_attr, pool);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
@@ -4388,7 +4391,10 @@ static switch_status_t start_video_thread(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
+SWITCH_DECLARE(switch_status_t) switch_core_media_start_video_thread(switch_core_session_t *session)
+{
+	return start_video_thread(session);
+}
 
 //?
 #define RA_PTR_LEN 512
@@ -4940,7 +4946,13 @@ SWITCH_DECLARE(void) switch_core_session_wake_video_thread(switch_core_session_t
 
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 
-	if (!v_engine->rtp_session) {
+	if ((!smh->mparams->external_video_source) && (!v_engine->rtp_session)) {
+		return;
+	}
+
+	if (!v_engine->mh.cond_mutex) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Channel %s has no cond?\n",
+						  switch_channel_get_name(session->channel));
 		return;
 	}
 
