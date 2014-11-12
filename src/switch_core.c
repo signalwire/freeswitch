@@ -1559,6 +1559,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_thread_set_cpu_affinity(int cpu)
 }
 
 
+#ifdef ENABLE_ZRTP 
 static void switch_core_set_serial(void)
 {
 	char buf[13] = "";
@@ -1604,7 +1605,7 @@ static void switch_core_set_serial(void)
 
 	switch_core_set_variable("switch_serial", buf);
 }
-
+#endif
 
 SWITCH_DECLARE(int) switch_core_test_flag(int flag)
 {
@@ -1748,8 +1749,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_core_set_variable("certs_dir", SWITCH_GLOBAL_dirs.certs_dir);
 	switch_core_set_variable("storage_dir", SWITCH_GLOBAL_dirs.storage_dir);
 	switch_core_set_variable("cache_dir", SWITCH_GLOBAL_dirs.cache_dir);
+#ifdef ENABLE_ZRTP
 	switch_core_set_serial();
-
+#endif
 	switch_console_init(runtime.memory_pool);
 	switch_event_init(runtime.memory_pool);
 	switch_channel_global_init(runtime.memory_pool);
