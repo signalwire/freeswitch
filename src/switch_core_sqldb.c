@@ -1296,7 +1296,9 @@ SWITCH_DECLARE(switch_bool_t) switch_cache_db_test_reactive(switch_cache_db_hand
 	}
 
 	if (!switch_test_flag((&runtime), SCF_AUTO_SCHEMAS)) {
-		return switch_cache_db_execute_sql(dbh, (char *)test_sql, NULL);
+		switch_status_t status = switch_cache_db_execute_sql(dbh, (char *)test_sql, NULL);
+
+		return (status == SWITCH_STATUS_SUCCESS) ? SWITCH_TRUE : SWITCH_FALSE;
 	}
 
 	if (io_mutex) switch_mutex_lock(io_mutex);
