@@ -2168,12 +2168,33 @@ typedef switch_status_t (*switch_core_codec_decode_func_t) (switch_codec_t *code
 															void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag);
 
 typedef switch_status_t (*switch_core_codec_video_encode_func_t) (switch_codec_t *codec,
-															switch_image_t *img,
-															void *encoded_data, uint32_t *encoded_data_len, unsigned int *flag);
+																  switch_image_t *img,
+																  void *encoded_data, uint32_t *encoded_data_len, unsigned int *flag);
 
 typedef switch_status_t (*switch_core_codec_video_decode_func_t) (switch_codec_t *codec,
-															switch_frame_t *frame,
-															switch_image_t **img, unsigned int *flag);
+																  switch_frame_t *frame,
+																  switch_image_t **img, unsigned int *flag);
+
+typedef enum {
+	SCC_VIDEO_REFRESH = 0
+} switch_codec_control_command_t;
+
+typedef enum {
+	SCCT_NONE = 0
+} switch_codec_control_type_t;
+
+typedef enum {
+	SWITCH_IO_READ,
+	SWITCH_IO_WRITE
+} switch_io_type_t;
+
+typedef switch_status_t (*switch_core_codec_control_func_t) (switch_codec_t *codec, 
+																   switch_codec_control_command_t cmd, 
+																   switch_codec_control_type_t ctype,
+																   void *cmd_data,
+																   switch_codec_control_type_t *rtype,
+																   void **ret_data);
+																   
 
 typedef switch_status_t (*switch_core_codec_init_func_t) (switch_codec_t *, switch_codec_flag_t, const switch_codec_settings_t *codec_settings);
 typedef switch_status_t (*switch_core_codec_fmtp_parse_func_t) (const char *fmtp, switch_codec_fmtp_t *codec_fmtp);

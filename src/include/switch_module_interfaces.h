@@ -679,6 +679,8 @@ struct switch_codec_implementation {
 	switch_core_codec_video_encode_func_t encode_video;
 	/*! function to decode video encoded data into raw data */
 	switch_core_codec_video_decode_func_t decode_video;
+	/*! function to send control messages to the codec */
+	switch_core_codec_control_func_t codec_control;
 	/*! deinitalize a codec handle using this implementation */
 	switch_core_codec_destroy_func_t destroy;
 	uint32_t codec_id;

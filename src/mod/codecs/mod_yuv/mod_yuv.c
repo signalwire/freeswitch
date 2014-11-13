@@ -85,7 +85,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_yuv_load)
 	SWITCH_ADD_CODEC(codec_interface, "YUV I420 Video (raw)");
 
 	switch_core_codec_add_video_implementation(pool, codec_interface, 99, "I420", NULL,
-		switch_yuv_init, switch_yuv_encode, switch_yuv_decode, switch_yuv_destroy);
+											   switch_yuv_init, switch_yuv_encode, switch_yuv_decode, NULL, switch_yuv_destroy);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
