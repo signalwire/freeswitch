@@ -6665,10 +6665,19 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	}
 
 	if (channel && (status == 180 || status == 183) && switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+		const char *full_to = NULL;
 		const char *val;
 		if ((val = switch_channel_get_variable(channel, "sip_auto_answer")) && switch_true(val)) {
-			nua_notify(nh, NUTAG_NEWSUB(1), NUTAG_WITH_THIS_MSG(de->data->e_msg),
-					   NUTAG_SUBSTATE(nua_substate_terminated),SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"), SIPTAG_EVENT_STR("talk"), TAG_END());
+			full_to = switch_str_nil(switch_channel_get_variable(channel, "sip_full_to"));
+
+			nua_notify(nh,
+					   NUTAG_NEWSUB(1),
+					   NUTAG_WITH_THIS_MSG(de->data->e_msg),
+					   NUTAG_SUBSTATE(nua_substate_terminated),
+					   TAG_IF((full_to), SIPTAG_TO_STR(full_to)),
+					   SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"),
+					   SIPTAG_EVENT_STR("talk"),
+					   TAG_END());
 		}
 	}
 
