@@ -533,19 +533,21 @@ static inline void switch_core_codec_add_implementation(switch_memory_pool_t *po
 ///\}
 
 static inline void switch_core_codec_add_video_implementation(switch_memory_pool_t *pool, switch_codec_interface_t *codec_interface,
-                            /*! the IANA code number */
-                            switch_payload_t ianacode,
-                            /*! the IANA code name */
-                            const char *iananame,
-                            /*! default fmtp to send (can be overridden by the init function) */
-                            char *fmtp,
-                            switch_core_codec_init_func_t init,
-                            /*! function to encode raw data into encoded data */
-                            switch_core_codec_video_encode_func_t encode,
-                            /*! function to decode encoded data into raw data */
-                            switch_core_codec_video_decode_func_t decode,
-                            /*! deinitalize a codec handle using this implementation */
-                            switch_core_codec_destroy_func_t destroy)
+															  /*! the IANA code number */
+															  switch_payload_t ianacode,
+															  /*! the IANA code name */
+															  const char *iananame,
+															  /*! default fmtp to send (can be overridden by the init function) */
+															  char *fmtp,
+															  switch_core_codec_init_func_t init,
+															  /*! function to encode raw data into encoded data */
+															  switch_core_codec_video_encode_func_t encode,
+															  /*! function to decode encoded data into raw data */
+															  switch_core_codec_video_decode_func_t decode,
+															  /*! function to send control messages to the codec */
+															  switch_core_codec_control_func_t control,
+															  /*! deinitalize a codec handle using this implementation */
+															  switch_core_codec_destroy_func_t destroy)
 {
 
     switch_codec_implementation_t *impl = (switch_codec_implementation_t *) switch_core_alloc(pool, sizeof(*impl));
@@ -564,6 +566,7 @@ static inline void switch_core_codec_add_video_implementation(switch_memory_pool
     impl->init = init;
     impl->encode_video = encode;
     impl->decode_video = decode;
+	impl->codec_control = control;
     impl->destroy = destroy;
     impl->codec_id = codec_interface->codec_id;
     impl->next = codec_interface->implementations;

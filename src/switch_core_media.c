@@ -152,6 +152,7 @@ typedef struct switch_rtp_engine_s {
 
 	uint8_t fir;
 	uint8_t pli;
+	uint8_t nack;
 	uint8_t no_crypto;
 } switch_rtp_engine_t;
 
@@ -4006,9 +4007,13 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 								v_engine->fir++;
 							}
 							
-							//if (switch_stristr("pli", attr->a_value)) {
-							//	v_engine->pli++;
-							//}
+							if (switch_stristr("pli", attr->a_value)) {
+								v_engine->pli++;
+							}
+
+							if (switch_stristr("nack", attr->a_value)) {
+								v_engine->nack++;
+							}
 							
 							smh->mparams->rtcp_video_interval_msec = "10000";
 						}
@@ -6429,9 +6434,12 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	switch_media_handle_t *smh;
 	ice_t *ice_out;
 	int vp8 = 0;
-	int red = 0;
+	//int red = 0;
 	payload_map_t *pmap;
 	int is_outbound = switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND;
+	const char *vbw;
+	int bw = 256;
+	uint8_t fir = 0, nack = 0, pli = 0;
 
 	switch_assert(session);
 
@@ -7041,9 +7049,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 						vp8 = v_engine->cur_payload_map->pt;
 					}
 
-					if (!strcasecmp(v_engine->cur_payload_map->rm_encoding, "red")) {
-						red = v_engine->cur_payload_map->pt;
-					}
+					//if (!strcasecmp(v_engine->cur_payload_map->rm_encoding, "red")) {
+					//	red = v_engine->cur_payload_map->pt;
+					//}
 
 					rate = v_engine->cur_payload_map->rm_rate;
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%ld\n",
@@ -7129,9 +7137,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 							vp8 = ianacode;
 						}
 
-						if (!strcasecmp(imp->iananame, "red")) {
-							red = ianacode;
-						}
+						//if (!strcasecmp(imp->iananame, "red")) {
+						//		red = ianacode;
+						//}
 
 						if (channels > 1) {
 							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=rtpmap:%d %s/%d/%d\n", ianacode, imp->iananame,
@@ -7187,10 +7195,40 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				}
 
 
-				if (v_engine->fir || v_engine->pli) {
-					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
-									"a=rtcp-fb:* %s%s\n", v_engine->fir ? "fir " : "", v_engine->pli ? "pli" : "");
+				if ((vbw = switch_channel_get_variable(smh->session->channel, "rtp_video_max_bandwidth"))) {
+					int v = atoi(vbw);
+					bw = v;
 				}
+				
+				if (bw > 0) {
+					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "b=AS:%d\n", bw);
+				}
+				
+
+				if (sdp_type == SDP_TYPE_REQUEST) {
+					fir++;
+					pli++;
+					nack++;
+				}
+
+				if (vp8) {
+					
+					if (v_engine->fir || fir) {
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
+										"a=rtcp-fb:%d ccm fir\n", vp8);
+					}
+
+					if (v_engine->nack || nack) {
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
+										"a=rtcp-fb:%d nack\n", vp8);
+					}
+
+					if (v_engine->pli || pli) {
+						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
+										"a=rtcp-fb:%d nack pli\n", vp8);
+					}
+				}
+
 
 				//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u\n", v_engine->ssrc);
 
@@ -7201,8 +7239,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					uint32_t c2 = (2^24)*126 + (2^8)*65535 + (2^0)*(256 - 2);
 					uint32_t c3 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 1);
 					uint32_t c4 = (2^24)*126 + (2^8)*65534 + (2^0)*(256 - 2);
-					const char *vbw;
-					int bw = 256;
+					
 				
 					tmp1[10] = '\0';
 					tmp2[10] = '\0';
@@ -7210,27 +7247,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					switch_stun_random_string(tmp2, 10, "0123456789");
 
 					ice_out = &v_engine->ice_out;
-
-
-					if ((vbw = switch_channel_get_variable(smh->session->channel, "rtp_video_max_bandwidth"))) {
-						int v = atoi(vbw);
-						bw = v;
-					}
-				
-					if (bw > 0) {
-						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "b=AS:%d\n", bw);
-					}
-
-					if (vp8 && switch_channel_test_flag(session->channel, CF_WEBRTC)) {
-						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
-										"a=rtcp-fb:%d ccm fir\n", vp8);
-					}
-				
-					if (red) {
-						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
-										"a=rtcp-fb:%d nack\n", vp8);
-					}
-				
+					
+					
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u cname:%s\n", v_engine->ssrc, smh->cname);
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u msid:%s v0\n", v_engine->ssrc, smh->msid);
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u mslabel:%s\n", v_engine->ssrc, smh->msid);
@@ -9425,6 +9443,45 @@ SWITCH_DECLARE(char *) switch_core_media_process_sdp_filter(const char *sdp, con
 	return patched_sdp;
 
 }
+
+
+SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_session_t *session, 
+																switch_media_type_t mtype,
+																switch_io_type_t iotype,
+																switch_codec_control_command_t cmd, 
+																switch_codec_control_type_t ctype,
+																void *cmd_data,
+																switch_codec_control_type_t *rtype,
+																void **ret_data) 
+{
+	switch_rtp_engine_t *engine = NULL;
+	switch_media_handle_t *smh = NULL;
+	switch_codec_t *codec = NULL;
+
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	if (!(engine = &smh->engines[mtype])) {
+		return SWITCH_STATUS_NOTIMPL;
+	}
+
+	if (iotype == SWITCH_IO_READ) {
+		codec = &engine->read_codec;
+	} else {
+		codec = &engine->write_codec;
+	}
+
+	if (codec) {
+		return switch_core_codec_control(codec, cmd, ctype, cmd_data, rtype, ret_data);
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+
 
 /* For Emacs:
  * Local Variables:

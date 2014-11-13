@@ -533,6 +533,16 @@ end:
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t switch_h264_control(switch_codec_t *codec, 
+										   switch_codec_control_command_t cmd, 
+										   switch_codec_control_type_t ctype,
+										   void *cmd_data,
+										   switch_codec_control_type_t *rtype,
+										   void **ret_data) {
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t switch_h264_destroy(switch_codec_t *codec)
 {
 	h264_codec_context_t *context = (h264_codec_context_t *)codec->private_info;
@@ -565,7 +575,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_openh264_load)
 
 	SWITCH_ADD_CODEC(codec_interface, "H264 Video (with Cisco OpenH264)");
 	switch_core_codec_add_video_implementation(pool, codec_interface, 99, "H264", NULL,
-		switch_h264_init, switch_h264_encode, switch_h264_decode, switch_h264_destroy);
+											   switch_h264_init, switch_h264_encode, switch_h264_decode, switch_h264_control, switch_h264_destroy);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

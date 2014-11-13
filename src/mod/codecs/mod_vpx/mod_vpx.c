@@ -358,6 +358,7 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_image_t *
 
 	if (context->need_key_frame > 0) {
 		// force generate a key frame
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VPX KEYFRAME REQ\n");
 		vpx_flags |= VPX_EFLAG_FORCE_KF;
 		context->last_ts = switch_micro_time_now();
 		context->need_key_frame--;
@@ -508,6 +509,30 @@ error:
 	return SWITCH_STATUS_FALSE;
 }
 
+
+static switch_status_t switch_vpx_control(switch_codec_t *codec, 
+										  switch_codec_control_command_t cmd, 
+										  switch_codec_control_type_t ctype,
+										  void *cmd_data,
+										  switch_codec_control_type_t *rtype,
+										  void **ret_data) 
+{
+
+	vpx_context_t *context = (vpx_context_t *)codec->private_info;
+
+	switch(cmd) {
+	case SCC_VIDEO_REFRESH:
+		context->need_key_frame = 1;		
+		break;
+	default:
+		break;
+	}
+
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 static switch_status_t switch_vpx_destroy(switch_codec_t *codec)
 {
 	vpx_context_t *context = (vpx_context_t *)codec->private_info;
@@ -541,7 +566,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vpx_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_CODEC(codec_interface, "VP8 Video");
 	switch_core_codec_add_video_implementation(pool, codec_interface, 99, "VP8", NULL,
-		switch_vpx_init, switch_vpx_encode, switch_vpx_decode, switch_vpx_destroy);
+											   switch_vpx_init, switch_vpx_encode, switch_vpx_decode, switch_vpx_control, switch_vpx_destroy);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

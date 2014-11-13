@@ -5652,8 +5652,28 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				
 				if (rtcp_status == SWITCH_STATUS_SUCCESS) {
 					switch_rtp_reset_media_timer(rtp_session);
-					
-					if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU] || rtp_session->rtcp_recv_msg_p->header.type == 206) {
+
+					if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && (rtp_session->rtcp_recv_msg_p->header.type == 205 || //RTPFB
+																	  rtp_session->rtcp_recv_msg_p->header.type == 206)) {//PSFB
+						rtcp_ext_msg_t *extp = (rtcp_ext_msg_t *) rtp_session->rtcp_recv_msg_p;
+
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "PICKED UP XRTCP type: %d fmt: %d\n", 
+										  rtp_session->rtcp_recv_msg_p->header.type, extp->header.fmt);
+
+						if ((extp->header.fmt == 4) || (extp->header.fmt == 1)) { /* FIR || PLI */
+
+							switch_core_media_codec_control(rtp_session->session,
+															SWITCH_MEDIA_TYPE_VIDEO,
+															SWITCH_IO_WRITE,
+															SCC_VIDEO_REFRESH,
+															SCCT_NONE,
+															NULL,
+															NULL,
+															NULL);
+						}
+					}
+
+					if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU]) {
 						switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
 						const char *uuid = switch_channel_get_partner_uuid(channel);
 
@@ -5667,13 +5687,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 									other_rtp_session->rtcp_sock_output &&
 									switch_rtp_test_flag(other_rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP)) {
 									other_rtp_session->rtcp_send_msg = rtp_session->rtcp_recv_msg;
-
-									if (rtp_session->rtcp_recv_msg_p->header.type == 206) {
-										rtcp_ext_msg_t *extp = (rtcp_ext_msg_t *) rtp_session->rtcp_recv_msg_p;
-										extp->header.recv_ssrc = htonl(other_rtp_session->stats.rtcp.peer_ssrc);
-									}
-
-
+									
 #ifdef ENABLE_SRTP
 									if (switch_rtp_test_flag(other_rtp_session, SWITCH_RTP_FLAG_SECURE_SEND)) {
 										int sbytes = (int) rtcp_bytes;

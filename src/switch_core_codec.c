@@ -843,6 +843,39 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode_video(switch_codec_t *c
 	return status;
 }
 
+
+SWITCH_DECLARE(switch_status_t) switch_core_codec_control(switch_codec_t *codec, 
+														  switch_codec_control_command_t cmd, 
+														  switch_codec_control_type_t ctype,
+														  void *cmd_data,
+														  switch_codec_control_type_t *rtype,
+														  void **ret_data) 
+{
+
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+
+	switch_assert(codec != NULL);
+
+	
+	if (!codec->implementation || !switch_core_codec_ready(codec)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec is not initialized!\n");
+		return SWITCH_STATUS_NOT_INITALIZED;
+	}
+
+
+	if (codec->mutex) switch_mutex_lock(codec->mutex);
+
+	if (codec->implementation->codec_control) {
+		status = codec->implementation->codec_control(codec, cmd, ctype, cmd_data, rtype, ret_data);
+	}
+
+	if (codec->mutex) switch_mutex_unlock(codec->mutex);
+
+
+	return status;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 {
 	switch_mutex_t *mutex = codec->mutex;

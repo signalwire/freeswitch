@@ -1635,6 +1635,23 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_encode_video(switch_codec_t *c
 														 void *encoded_data, uint32_t *encoded_data_len, unsigned int *flag);
 
 /*!
+  \brief send control data using a codec handle
+  \param codec the codec handle to use
+  \param cmd the command to send
+  \param ctype the type of the arguement
+  \param cmd_data a void pointer to the data matching the passed type
+  \param rtype the type of the response if any
+  \param ret_data a void pointer to a pointer of return data
+  \return SWITCH_STATUS_SUCCESS if the command was received
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_codec_control(switch_codec_t *codec, 
+														  switch_codec_control_command_t cmd, 
+														  switch_codec_control_type_t ctype,
+														  void *cmd_data,
+														  switch_codec_control_type_t *rtype,
+														  void **ret_data);
+
+/*!
   \brief Decode video data using a codec handle
   \param codec the codec handle to use
   \param frame the frame to be decoded

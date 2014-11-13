@@ -294,6 +294,17 @@ SWITCH_DECLARE(const char *) switch_core_media_crypto_type2str(switch_rtp_crypto
 SWITCH_DECLARE(int) switch_core_media_crypto_keylen(switch_rtp_crypto_key_type_t type);
 SWITCH_DECLARE(char *) switch_core_media_filter_sdp(const char *sdp, const char *cmd, const char *arg);
 SWITCH_DECLARE(char *) switch_core_media_process_sdp_filter(const char *sdp, const char *cmd_buf, switch_core_session_t *session);
+
+
+SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_session_t *session, 
+																switch_media_type_t mtype,
+																switch_io_type_t iotype,
+																switch_codec_control_command_t cmd, 
+																switch_codec_control_type_t ctype,
+																void *cmd_data,
+																switch_codec_control_type_t *rtype,
+																void **ret_data);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:
