@@ -18,6 +18,7 @@
           <access-key-id><![CDATA[AKIAIOSFODNN7EXAMPLE]]></access-key-id>
           <!-- 40 character secret -->
           <secret-access-key><![CDATA[wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY]]></secret-access-key>
+          <!--base-url><![CDATA[s3.example.com]]></base-url-->
        </aws-s3>
        <!-- Domains that this profile applies to -->
        <domains>

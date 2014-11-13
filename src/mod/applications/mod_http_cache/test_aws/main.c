@@ -41,24 +41,28 @@ static void test_signature(void)
  */
 static void test_check_url(void)
 {
-	ASSERT_TRUE(aws_s3_is_s3_url("http://bucket.s3-us-west-1.amazonaws.com/object.ext"));
-	ASSERT_TRUE(aws_s3_is_s3_url("https://bucket.s3-us-west-1.amazonaws.com/object.ext"));
-	ASSERT_TRUE(aws_s3_is_s3_url("http://bucket.s3.amazonaws.com/object.ext"));
-	ASSERT_TRUE(aws_s3_is_s3_url("http://bucket.s3.amazonaws.com/object.ext"));
-	ASSERT_TRUE(aws_s3_is_s3_url("http://bucket.s3.amazonaws.com/object"));
-	ASSERT_TRUE(aws_s3_is_s3_url("http://red.bucket.s3.amazonaws.com/object.ext"));
-	ASSERT_TRUE(aws_s3_is_s3_url("https://bucket.s3.amazonaws.com/object.ext"));
-	ASSERT_TRUE(aws_s3_is_s3_url("https://bucket.s3.amazonaws.com/object"));
-	ASSERT_TRUE(aws_s3_is_s3_url("https://bucket.s3.amazonaws.com/recordings/1240fwjf8we.mp3"));
-	ASSERT_TRUE(aws_s3_is_s3_url("https://bucket.s3.amazonaws.com/en/us/8000/1232345.mp3"));
-	ASSERT_TRUE(aws_s3_is_s3_url("https://bucket_with_underscore.s3.amazonaws.com/en/us/8000/1232345.mp3"));
-	ASSERT_FALSE(aws_s3_is_s3_url("bucket.s3.amazonaws.com/object.ext"));
-	ASSERT_FALSE(aws_s3_is_s3_url("https://s3.amazonaws.com/bucket/object"));
-	ASSERT_FALSE(aws_s3_is_s3_url("http://s3.amazonaws.com/bucket/object"));
-	ASSERT_FALSE(aws_s3_is_s3_url("http://google.com/"));
-	ASSERT_FALSE(aws_s3_is_s3_url("http://phono.com/audio/troporocks.mp3"));
-	ASSERT_FALSE(aws_s3_is_s3_url(""));
-	ASSERT_FALSE(aws_s3_is_s3_url(NULL));
+	ASSERT_TRUE(aws_s3_is_s3_url("http://bucket.s3-us-west-1.amazonaws.com/object.ext", NULL));
+	ASSERT_TRUE(aws_s3_is_s3_url("https://bucket.s3-us-west-1.amazonaws.com/object.ext", NULL));
+	ASSERT_TRUE(aws_s3_is_s3_url("http://bucket.s3.amazonaws.com/object.ext", NULL));
+	ASSERT_TRUE(aws_s3_is_s3_url("http://bucket.s3.amazonaws.com/object.ext", NULL));
+	ASSERT_TRUE(aws_s3_is_s3_url("http://bucket.s3.amazonaws.com/object", NULL));
+	ASSERT_TRUE(aws_s3_is_s3_url("http://red.bucket.s3.amazonaws.com/object.ext", NULL));
+	ASSERT_TRUE(aws_s3_is_s3_url("https://bucket.s3.amazonaws.com/object.ext", NULL));
+	ASSERT_TRUE(aws_s3_is_s3_url("https://bucket.s3.amazonaws.com/object", NULL));
+	ASSERT_TRUE(aws_s3_is_s3_url("https://bucket.s3.amazonaws.com/recordings/1240fwjf8we.mp3", NULL));
+	ASSERT_TRUE(aws_s3_is_s3_url("https://bucket.s3.amazonaws.com/en/us/8000/1232345.mp3", NULL));
+	ASSERT_TRUE(aws_s3_is_s3_url("https://bucket_with_underscore.s3.amazonaws.com/en/us/8000/1232345.mp3", NULL));
+	ASSERT_FALSE(aws_s3_is_s3_url("bucket.s3.amazonaws.com/object.ext", NULL));
+	ASSERT_FALSE(aws_s3_is_s3_url("https://s3.amazonaws.com/bucket/object", NULL));
+	ASSERT_FALSE(aws_s3_is_s3_url("http://s3.amazonaws.com/bucket/object", NULL));
+	ASSERT_FALSE(aws_s3_is_s3_url("http://google.com/", NULL));
+	ASSERT_FALSE(aws_s3_is_s3_url("http://phono.com/audio/troporocks.mp3", NULL));
+	ASSERT_FALSE(aws_s3_is_s3_url("", NULL));
+	ASSERT_FALSE(aws_s3_is_s3_url(NULL, NULL));
+	ASSERT_FALSE(aws_s3_is_s3_url("https://example.com/bucket/object", "example.com"));
+	ASSERT_TRUE(aws_s3_is_s3_url("http://bucket.example.com/object", "example.com"));
+	ASSERT_FALSE(aws_s3_is_s3_url("", "example.com"));
+	ASSERT_FALSE(aws_s3_is_s3_url(NULL, "example.com"));
 }
 
 /**
@@ -68,51 +72,55 @@ static void test_parse_url(void)
 {
 	char *bucket;
 	char *object;
-	aws_s3_parse_url(strdup("http://quotes.s3.amazonaws.com/nelson"), &bucket, &object);
+	aws_s3_parse_url(strdup("http://quotes.s3.amazonaws.com/nelson"), NULL, &bucket, &object);
 	ASSERT_STRING_EQUALS("quotes", bucket);
 	ASSERT_STRING_EQUALS("nelson", object);
 
-	aws_s3_parse_url(strdup("https://quotes.s3.amazonaws.com/nelson.mp3"), &bucket, &object);
+	aws_s3_parse_url(strdup("https://quotes.s3.amazonaws.com/nelson.mp3"), NULL, &bucket, &object);
 	ASSERT_STRING_EQUALS("quotes", bucket);
 	ASSERT_STRING_EQUALS("nelson.mp3", object);
 
-	aws_s3_parse_url(strdup("http://s3.amazonaws.com/quotes/nelson"), &bucket, &object);
+	aws_s3_parse_url(strdup("http://s3.amazonaws.com/quotes/nelson"), NULL, &bucket, &object);
 	ASSERT_NULL(bucket);
 	ASSERT_NULL(object);
 
-	aws_s3_parse_url(strdup("http://quotes/quotes/nelson"), &bucket, &object);
+	aws_s3_parse_url(strdup("http://quotes/quotes/nelson"), NULL, &bucket, &object);
 	ASSERT_NULL(bucket);
 	ASSERT_NULL(object);
 
-	aws_s3_parse_url(strdup("http://quotes.s3.amazonaws.com/"), &bucket, &object);
+	aws_s3_parse_url(strdup("http://quotes.s3.amazonaws.com/"), NULL, &bucket, &object);
 	ASSERT_NULL(bucket);
 	ASSERT_NULL(object);
 
-	aws_s3_parse_url(strdup("http://quotes.s3.amazonaws.com"), &bucket, &object);
+	aws_s3_parse_url(strdup("http://quotes.s3.amazonaws.com"), NULL, &bucket, &object);
 	ASSERT_NULL(bucket);
 	ASSERT_NULL(object);
 
-	aws_s3_parse_url(strdup("http://quotes"), &bucket, &object);
+	aws_s3_parse_url(strdup("http://quotes"), NULL, &bucket, &object);
 	ASSERT_NULL(bucket);
 	ASSERT_NULL(object);
 
-	aws_s3_parse_url(strdup(""), &bucket, &object);
+	aws_s3_parse_url(strdup(""), NULL, &bucket, &object);
 	ASSERT_NULL(bucket);
 	ASSERT_NULL(object);
 
-	aws_s3_parse_url(NULL, &bucket, &object);
+	aws_s3_parse_url(NULL, NULL, &bucket, &object);
 	ASSERT_NULL(bucket);
 	ASSERT_NULL(object);
 
-	aws_s3_parse_url(strdup("http://bucket.s3.amazonaws.com/voicemails/recording.wav"), &bucket, &object);
+	aws_s3_parse_url(strdup("http://bucket.s3.amazonaws.com/voicemails/recording.wav"), NULL, &bucket, &object);
 	ASSERT_STRING_EQUALS("bucket", bucket);
 	ASSERT_STRING_EQUALS("voicemails/recording.wav", object);
 
-	aws_s3_parse_url(strdup("https://my-bucket-with-dash.s3-us-west-2.amazonaws.com/greeting/file/1002/Lumino.mp3"), &bucket, &object);
+	aws_s3_parse_url(strdup("https://my-bucket-with-dash.s3-us-west-2.amazonaws.com/greeting/file/1002/Lumino.mp3"), NULL, &bucket, &object);
 	ASSERT_STRING_EQUALS("my-bucket-with-dash", bucket);
 	ASSERT_STRING_EQUALS("greeting/file/1002/Lumino.mp3", object);
 	
-	aws_s3_parse_url(strdup("http://quotes.s3.foo.bar.s3.amazonaws.com/greeting/file/1002/Lumino.mp3"), &bucket, &object);
+	aws_s3_parse_url(strdup("http://quotes.s3.foo.bar.s3.amazonaws.com/greeting/file/1002/Lumino.mp3"), NULL, &bucket, &object);
+	ASSERT_STRING_EQUALS("quotes.s3.foo.bar", bucket);
+	ASSERT_STRING_EQUALS("greeting/file/1002/Lumino.mp3", object);
+
+	aws_s3_parse_url(strdup("http://quotes.s3.foo.bar.example.com/greeting/file/1002/Lumino.mp3"), "example.com", &bucket, &object);
 	ASSERT_STRING_EQUALS("quotes.s3.foo.bar", bucket);
 	ASSERT_STRING_EQUALS("greeting/file/1002/Lumino.mp3", object);
 }
@@ -122,7 +130,9 @@ static void test_parse_url(void)
  */
 static void test_authorization_header(void)
 {
-	ASSERT_STRING_EQUALS("AWS AKIAIOSFODNN7EXAMPLE:YJkomOaqUJlvEluDq4fpusID38Y=", aws_s3_authentication_create("GET", "https://vault.s3.amazonaws.com/awesome.mp3", "audio/mpeg", "", "AKIAIOSFODNN7EXAMPLE", "0123456789012345678901234567890123456789", "1234567890"));
+	ASSERT_STRING_EQUALS("AWS AKIAIOSFODNN7EXAMPLE:YJkomOaqUJlvEluDq4fpusID38Y=", aws_s3_authentication_create("GET", "https://vault.s3.amazonaws.com/awesome.mp3", NULL, "audio/mpeg", "", "AKIAIOSFODNN7EXAMPLE", "0123456789012345678901234567890123456789", "1234567890"));
+	ASSERT_STRING_EQUALS("AWS AKIAIOSFODNN7EXAMPLE:YJkomOaqUJlvEluDq4fpusID38Y=", aws_s3_authentication_create("GET", "https://vault.s3.amazonaws.com/awesome.mp3", "s3.amazonaws.com", "audio/mpeg", "", "AKIAIOSFODNN7EXAMPLE", "0123456789012345678901234567890123456789", "1234567890"));
+	ASSERT_STRING_EQUALS("AWS AKIAIOSFODNN7EXAMPLE:YJkomOaqUJlvEluDq4fpusID38Y=", aws_s3_authentication_create("GET", "https://vault.example.com/awesome.mp3", "example.com", "audio/mpeg", "", "AKIAIOSFODNN7EXAMPLE", "0123456789012345678901234567890123456789", "1234567890"));
 }
 
 /**
@@ -130,7 +140,9 @@ static void test_authorization_header(void)
  */
 static void test_presigned_url(void)
 {
-	ASSERT_STRING_EQUALS("https://vault.s3.amazonaws.com/awesome.mp3?Signature=YJkomOaqUJlvEluDq4fpusID38Y%3D&Expires=1234567890&AWSAccessKeyId=AKIAIOSFODNN7EXAMPLE", aws_s3_presigned_url_create("GET", "https://vault.s3.amazonaws.com/awesome.mp3", "audio/mpeg", "", "AKIAIOSFODNN7EXAMPLE", "0123456789012345678901234567890123456789", "1234567890"));
+	ASSERT_STRING_EQUALS("https://vault.s3.amazonaws.com/awesome.mp3?Signature=YJkomOaqUJlvEluDq4fpusID38Y%3D&Expires=1234567890&AWSAccessKeyId=AKIAIOSFODNN7EXAMPLE", aws_s3_presigned_url_create("GET", "https://vault.s3.amazonaws.com/awesome.mp3", NULL, "audio/mpeg", "", "AKIAIOSFODNN7EXAMPLE", "0123456789012345678901234567890123456789", "1234567890"));
+	ASSERT_STRING_EQUALS("https://vault.s3.amazonaws.com/awesome.mp3?Signature=YJkomOaqUJlvEluDq4fpusID38Y%3D&Expires=1234567890&AWSAccessKeyId=AKIAIOSFODNN7EXAMPLE", aws_s3_presigned_url_create("GET", "https://vault.s3.amazonaws.com/awesome.mp3", "s3.amazonaws.com", "audio/mpeg", "", "AKIAIOSFODNN7EXAMPLE", "0123456789012345678901234567890123456789", "1234567890"));
+	ASSERT_STRING_EQUALS("https://vault.example.com/awesome.mp3?Signature=YJkomOaqUJlvEluDq4fpusID38Y%3D&Expires=1234567890&AWSAccessKeyId=AKIAIOSFODNN7EXAMPLE", aws_s3_presigned_url_create("GET", "https://vault.example.com/awesome.mp3", "example.com", "audio/mpeg", "", "AKIAIOSFODNN7EXAMPLE", "0123456789012345678901234567890123456789", "1234567890"));
 }
 
 /**
