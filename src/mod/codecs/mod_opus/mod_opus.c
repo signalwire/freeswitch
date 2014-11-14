@@ -78,6 +78,8 @@ struct opus_context {
 struct {
     int use_vbr;
     int complexity;
+    int maxaveragebitrate;
+    int maxplaybackrate;
     switch_mutex_t *mutex;
 } opus_prefs;
 
@@ -240,6 +242,15 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 	memset(&codec_fmtp, '\0', sizeof(struct switch_codec_fmtp));
 	codec_fmtp.private_info = &opus_codec_settings;
 	switch_opus_fmtp_parse(codec->fmtp_in, &codec_fmtp);
+
+	/* Verify if the local or remote configuration are lowering maxaveragebitrate and/or maxplaybackrate */
+	if ( opus_prefs.maxaveragebitrate && (opus_prefs.maxaveragebitrate < opus_codec_settings.maxaveragebitrate || !opus_codec_settings.maxaveragebitrate) ) {
+		opus_codec_settings.maxaveragebitrate = opus_prefs.maxaveragebitrate;
+	}
+	if ( opus_prefs.maxplaybackrate && (opus_prefs.maxplaybackrate < opus_codec_settings.maxplaybackrate || !opus_codec_settings.maxplaybackrate) ) {
+		opus_codec_settings.maxplaybackrate = opus_prefs.maxplaybackrate;
+	}
+
 	codec->fmtp_out = gen_fmtp(&opus_codec_settings, codec->memory_pool);
 
 	if (encoding) {
@@ -259,8 +270,6 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
             return SWITCH_STATUS_GENERR;
         }
         
-
-
 
 		/* Setting documented in "RTP Payload Format for Opus Speech and Audio Codec"  draft-spittka-payload-rtp-opus-03 */
 		if( opus_codec_settings.maxaveragebitrate ) { /* Remote codec settings found in SDP "fmtp", we accept to tune the Encoder */
@@ -430,6 +439,17 @@ static switch_status_t opus_load_config(switch_bool_t reload)
 				opus_prefs.use_vbr = atoi(val);
 			} else if (!strcasecmp(key, "complexity")) {
 				opus_prefs.complexity = atoi(val);
+			} else if (!strcasecmp(key, "maxaveragebitrate")) {
+				opus_prefs.maxaveragebitrate = atoi(val);
+				if ( opus_prefs.maxaveragebitrate < 6000 || opus_prefs.maxaveragebitrate > 510000 ) {
+					opus_prefs.maxaveragebitrate = 0; /* values outside the range between 6000 and 510000 SHOULD be ignored */
+				}
+			} else if (!strcasecmp(key, "maxplaybackrate")) {
+				opus_prefs.maxplaybackrate = atoi(val);
+				if ( opus_prefs.maxplaybackrate != 8000 && opus_prefs.maxplaybackrate != 12000 && opus_prefs.maxplaybackrate != 16000
+							&& opus_prefs.maxplaybackrate != 24000 && opus_prefs.maxplaybackrate != 48000) {
+					opus_prefs.maxplaybackrate = 0; /* value not supported */
+				}
 			}
 		}
 	}
