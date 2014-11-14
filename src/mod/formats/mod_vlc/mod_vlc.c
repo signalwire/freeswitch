@@ -107,7 +107,6 @@ struct vlc_video_context {
 	uint8_t video_packet[1500 + 12];
 	void *raw_yuyv_data;
 	switch_image_t *img;
-	switch_time_t last_video_ts;
 	switch_payload_t pt;
 	uint32_t seq;
 	int width;
@@ -241,68 +240,19 @@ static void vlc_video_unlock_dummy_callback(void *data, void *id, void *const *p
 
 static void vlc_video_unlock_callback(void *data, void *id, void *const *p_pixels)
 {
-	vlc_video_context_t *context = (vlc_video_context_t *)data;
+	vlc_video_context_t *context = (vlc_video_context_t *) data;
 	switch_frame_t *frame = context->vid_frame;
-	uint32_t flag = 0;
-	uint32_t encoded_data_len = 1500;
-	switch_time_t now = (switch_time_t)(switch_micro_time_now() / 1000);
-	switch_codec_t *codec = switch_core_session_get_video_write_codec(context->session);
-	long delta;
 
 	switch_assert(id == NULL); /* picture identifier, not needed here */
-	switch_assert(codec);
-
-	if (now - context->last_video_ts < 60) goto end;
 
 	if (!context->img) context->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, context->width, context->height, 0);
-	if (!context->img) goto end;
+
+	switch_assert(context->img);
 
 	yuyv_to_i420(*p_pixels, context->img->img_data, context->width, context->height);
 
-	delta = now - context->last_video_ts;
+	switch_core_session_write_video_image(context->session, frame, context->img, SWITCH_DEFAULT_VIDEO_SIZE, NULL);
 
-	if (delta > 0) {
-		frame->timestamp += delta * 90;
-		context->last_video_ts = now;
-	}
-	//printf("WTF VLC d_w=%d d_h=%d w=%d h=%d\n", context->img->d_w, context->img->d_h, context->img->w, context->img->h);
-
-	//context->img->d_w = context->img->w;
-	//context->img->d_h = context->img->h;
-
-	switch_core_codec_encode_video(codec, context->img, frame->data, &encoded_data_len, &flag);
-
-	while(encoded_data_len) {
-		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "encoded: %s [%d] flag=%d ts=%ld\n", codec->implementation->iananame, encoded_data_len, flag, context->last_video_ts);
-
-		frame->datalen = encoded_data_len;
-		frame->packetlen = frame->datalen + 12;
-		frame->m = flag & SFF_MARKER ? 1 : 0;
-
-		if (1) {
-			/* set correct mark and ts */
-			switch_rtp_hdr_t *rtp = (switch_rtp_hdr_t *)frame->packet;
-
-			memset(rtp, 0, 12);
-			rtp->version = 2;
-			rtp->m = frame->m;
-			rtp->ts = htonl(frame->timestamp);
-			rtp->ssrc = (uint32_t) ((intptr_t) rtp + (uint32_t) switch_epoch_time_now(NULL));
-
-			switch_set_flag(frame, SFF_RAW_RTP);
-		}
-
-		switch_set_flag(frame, SFF_RAW_RTP);
-		// switch_set_flag(frame, SFF_PROXY_PACKET);
-
-		switch_core_session_write_video_frame(context->session, frame, SWITCH_IO_FLAG_NONE, 0);
-
-		encoded_data_len = 1500;
-
-		switch_core_codec_encode_video(codec, NULL, frame->data, &encoded_data_len, &flag);
-	}
-
-end:
 	switch_mutex_unlock(context->video_mutex);
 }
 
@@ -323,72 +273,28 @@ static void do_buffer_frame(vlc_video_context_t *context)
 	switch_mutex_unlock(context->video_mutex);
 }
 
+
 static void vlc_video_channel_unlock_callback(void *data, void *id, void *const *p_pixels)
 {
 	vlc_video_context_t *context = (vlc_video_context_t *)data;
 	uint32_t flag = 0;
-	uint32_t encoded_data_len = 1500;
-	switch_codec_t *codec = switch_core_session_get_video_write_codec(context->session);
 	switch_frame_t *frame = context->vid_frame;
-	switch_time_t now = (switch_time_t)(switch_micro_time_now() / 1000);
-	long delta;
 
 	switch_assert(id == NULL); /* picture identifier, not needed here */
-	switch_assert(codec);
 
 	if (!context->img) context->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, context->width, context->height, 0);
-	if (!context->img) goto end;
+	switch_assert(context->img);
 
 	yuyv_to_i420(*p_pixels, context->img->img_data, context->width, context->height);
 
-	encoded_data_len = 1500;
-
-	frame->packet = context->video_packet;
-	frame->data = context->video_packet + 12;
-	delta = now - context->last_video_ts;
-
-	if (delta > 0) {
-		frame->timestamp += delta * 90;
-		context->last_video_ts = now;
-	}
 
 	if (context->video_refresh_req > 0) {
 		flag |= SFF_WAIT_KEY_FRAME;
 		context->video_refresh_req--;
 	}
 
-	switch_core_codec_encode_video(codec, context->img, frame->data, &encoded_data_len, &flag);
+	switch_core_session_write_video_image(context->session, frame, context->img, SWITCH_DEFAULT_VIDEO_SIZE, &flag);
 
-	while(encoded_data_len) {
-		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "encoded: %s [%d] flag=%d ts=%u\n", codec->implementation->iananame, encoded_data_len, flag, context->ts);
-
-		frame->datalen = encoded_data_len;
-		frame->packetlen = frame->datalen + 12;
-		frame->m = flag & SFF_MARKER ? 1 : 0;
-
-		if (1) {
-			/* set correct mark and ts */
-			switch_rtp_hdr_t *rtp = (switch_rtp_hdr_t *)frame->packet;
-
-			memset(rtp, 0, 12);
-			rtp->version = 2;
-			rtp->m = frame->m;
-			rtp->ts = htonl(frame->timestamp);
-			rtp->ssrc = (uint32_t) ((intptr_t) rtp + (uint32_t) switch_epoch_time_now(NULL));
-
-			switch_set_flag(frame, SFF_RAW_RTP);
-		}
-
-		switch_set_flag(frame, SFF_RAW_RTP);
-		switch_set_flag(frame, SFF_PROXY_PACKET);
-
-		do_buffer_frame(context);
-
-		encoded_data_len = 1500;
-		switch_core_codec_encode_video(codec, NULL, frame->data, &encoded_data_len, &flag);
-	}
-
-end:
 	switch_mutex_unlock(context->video_mutex);
 }
 
@@ -720,6 +626,7 @@ SWITCH_STANDARD_APP(play_video_function)
 
 	switch_size_t audio_datalen;
 
+
 	switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
 
 	context = switch_core_session_alloc(session, sizeof(vlc_video_context_t));
@@ -974,6 +881,7 @@ static switch_status_t vlc_write_frame(switch_core_session_t *session, switch_fr
 static switch_status_t vlc_read_video_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t vlc_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg);
 static switch_status_t vlc_kill_channel(switch_core_session_t *session, int sig);
+static switch_status_t vlc_state_change(switch_core_session_t *session);
 
 typedef struct {
     switch_core_session_t *session;
@@ -1014,7 +922,7 @@ switch_io_routines_t vlc_io_routines = {
 	/*send_dtmf*/ NULL,
 	/*receive_message*/ vlc_receive_message,
 	/*receive_event*/ NULL,
-	/*state_change*/ NULL,
+	/*state_change*/ vlc_state_change,
 	/*read_video_frame*/ vlc_read_video_frame,
 	/*write_video_frame*/ NULL,
 	/*state_run*/ NULL
@@ -1118,11 +1026,24 @@ fail:
 	return status;
 }
 
+static switch_status_t vlc_channel_img_callback(switch_core_session_t *session, switch_frame_t *frame, switch_image_t *img, void *user_data)
+{
+	vlc_video_context_t *context = (vlc_video_context_t *) user_data;
+
+	do_buffer_frame(context);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 static switch_status_t channel_on_init(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	vlc_private_t *tech_pvt = switch_core_session_get_private(session);
 
 	switch_channel_set_state(channel, CS_CONSUME_MEDIA);
+
+	switch_core_session_set_image_write_callback(session, vlc_channel_img_callback, tech_pvt->context);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1487,6 +1408,19 @@ static switch_status_t vlc_receive_message(switch_core_session_t *session, switc
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
+
+static switch_status_t vlc_state_change(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_channel_state_t state = switch_channel_get_state(channel);
+
+	if (state == CS_HANGUP || state == CS_ROUTING) {
+		switch_core_session_video_reset(session);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 static switch_status_t vlc_kill_channel(switch_core_session_t *session, int sig)
 {

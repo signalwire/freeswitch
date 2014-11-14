@@ -226,6 +226,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_DTMF_LOG_LEN 1000
 #define SWITCH_MAX_TRANS 2000
 #define SWITCH_CORE_SESSION_MAX_PRIVATES 2
+#define SWITCH_DEFAULT_VIDEO_SIZE 1500
 
 /* Jitter */
 #define JITTER_VARIANCE_THRESHOLD 400.0
@@ -1494,7 +1495,8 @@ typedef enum {
 	SFF_NOT_AUDIO = (1 << 9),
 	SFF_RTCP = (1 << 10),
 	SFF_MARKER = (1 << 11),
-	SFF_WAIT_KEY_FRAME = (1 << 12)
+	SFF_WAIT_KEY_FRAME = (1 << 12),
+	SFF_RAW_RTP_PARSE_FRAME = (1 << 13)
 } switch_frame_flag_enum_t;
 typedef uint32_t switch_frame_flag_t;
 
@@ -2195,6 +2197,8 @@ typedef switch_status_t (*switch_core_codec_control_func_t) (switch_codec_t *cod
 																   switch_codec_control_type_t *rtype,
 																   void **ret_data);
 																   
+
+typedef switch_status_t (*switch_image_write_callback_t) (switch_core_session_t *session, switch_frame_t *frame, switch_image_t *img, void *user_data);
 
 typedef switch_status_t (*switch_core_codec_init_func_t) (switch_codec_t *, switch_codec_flag_t, const switch_codec_settings_t *codec_settings);
 typedef switch_status_t (*switch_core_codec_fmtp_parse_func_t) (const char *fmtp, switch_codec_fmtp_t *codec_fmtp);

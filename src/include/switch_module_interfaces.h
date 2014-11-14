@@ -217,6 +217,7 @@ struct switch_timer {
 	switch_size_t diff;
 	switch_time_t start;
 	uint64_t tick;
+
 };
 
 typedef enum {

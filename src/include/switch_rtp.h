@@ -268,6 +268,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 */
 SWITCH_DECLARE(switch_status_t) switch_rtp_activate_rtcp(switch_rtp_t *rtp_session, int send_rate, switch_port_t remote_port, switch_bool_t mux);
 
+
+SWITCH_DECLARE(switch_timer_t *) switch_rtp_get_media_timer(switch_rtp_t *rtp_session);
+
 /*! 
   \brief Acvite a jitter buffer on an RTP session
   \param rtp_session the rtp session
@@ -284,6 +287,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_debug_jitter_buffer(switch_rtp_t *rtp
 SWITCH_DECLARE(switch_status_t) switch_rtp_deactivate_jitter_buffer(switch_rtp_t *rtp_session);
 SWITCH_DECLARE(switch_status_t) switch_rtp_pause_jitter_buffer(switch_rtp_t *rtp_session, switch_bool_t pause);
 SWITCH_DECLARE(stfu_instance_t *) switch_rtp_get_jitter_buffer(switch_rtp_t *rtp_session);
+
+
+
 
 /*!
   \brief Set an RTP Flag
