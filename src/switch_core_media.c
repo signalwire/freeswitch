@@ -7211,6 +7211,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					nack++;
 				}
 
+				nack = v_engine->nack = pli = v_engine->pli = 0;
+				
 				if (vp8) {
 					
 					if (v_engine->fir || fir) {
@@ -9445,6 +9447,25 @@ SWITCH_DECLARE(char *) switch_core_media_process_sdp_filter(const char *sdp, con
 }
 
 
+SWITCH_DECLARE(switch_timer_t *) switch_core_media_get_timer(switch_core_session_t *session, switch_media_type_t mtype)
+{
+	switch_rtp_engine_t *engine = NULL;
+	switch_media_handle_t *smh = NULL;
+
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		return NULL;
+	}
+	
+	if (!(engine = &smh->engines[mtype])) {
+		return NULL;
+	}
+
+	return switch_rtp_get_media_timer(engine->rtp_session);
+
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_session_t *session, 
 																switch_media_type_t mtype,
 																switch_io_type_t iotype,
@@ -9480,8 +9501,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 
 	return SWITCH_STATUS_FALSE;
 }
-
-
 
 /* For Emacs:
  * Local Variables:

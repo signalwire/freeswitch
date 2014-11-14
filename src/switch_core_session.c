@@ -2677,6 +2677,8 @@ SWITCH_DECLARE(void) switch_core_session_video_reset(switch_core_session_t *sess
 	switch_channel_set_flag(session->channel, CF_VIDEO_ECHO);
 	switch_channel_clear_flag(session->channel, CF_VIDEO_PASSIVE);
 	switch_core_session_refresh_video(session);
+	session->image_write_callback = NULL;
+	session->image_write_callback_user_data = NULL;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flags(switch_core_session_t *session, const char *app,

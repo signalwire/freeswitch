@@ -36,6 +36,53 @@
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 
+SWITCH_DECLARE(void) switch_core_session_set_image_write_callback(switch_core_session_t *session, switch_image_write_callback_t callback, void *user_data)
+{
+	session->image_write_callback = callback;
+	session->image_write_callback_user_data = user_data;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_image(switch_core_session_t *session, switch_frame_t *frame, 
+																	  switch_image_t *img, switch_size_t size, uint32_t *flag)
+{
+	uint32_t encoded_data_len = size, lflag = 0, *flagp = flag;
+	switch_codec_t *codec = switch_core_session_get_video_write_codec(session);
+	switch_timer_t *timer;
+
+	switch_assert(session);
+
+	if (!flag) {
+		flagp = &lflag;
+	}
+
+	timer = switch_core_media_get_timer(session, SWITCH_MEDIA_TYPE_VIDEO);
+	switch_assert(timer);
+
+	switch_core_codec_encode_video(codec, img, frame->data, &encoded_data_len, flagp);
+
+	while(encoded_data_len) {
+
+		frame->datalen = encoded_data_len;
+		frame->packetlen = frame->datalen + 12;
+		frame->m = (*flagp & SFF_MARKER) ? 1 : 0;
+		frame->timestamp = timer->samplecount;
+
+		switch_set_flag(frame, SFF_RAW_RTP_PARSE_FRAME);
+		
+		switch_core_session_write_video_frame(session, frame, SWITCH_IO_FLAG_NONE, 0);
+
+		if (session->image_write_callback) {
+			session->image_write_callback(session, frame, img, session->image_write_callback_user_data);
+		}
+
+		encoded_data_len = size;
+		switch_core_codec_encode_video(codec, NULL, frame->data, &encoded_data_len, flagp);	
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags,
 																	  int stream_id)
 {

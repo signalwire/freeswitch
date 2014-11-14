@@ -305,6 +305,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 																switch_codec_control_type_t *rtype,
 																void **ret_data);
 
+SWITCH_DECLARE(switch_timer_t *) switch_core_media_get_timer(switch_core_session_t *session, switch_media_type_t mtype);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

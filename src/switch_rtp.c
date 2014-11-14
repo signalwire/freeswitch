@@ -3575,7 +3575,14 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 			switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Not using a timer\n");
+		if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
+			if (switch_core_timer_init(&rtp_session->timer, "soft", 1, 90, pool) == SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Starting video timer.\n");
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Not using a timer\n");
+		}
+
 		switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
 		switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
 	}
@@ -3780,6 +3787,19 @@ static void jb_callback(stfu_instance_t *i, void *udata)
 					  );
 
 }
+
+SWITCH_DECLARE(switch_timer_t *) switch_rtp_get_media_timer(switch_rtp_t *rtp_session)
+{
+	if (rtp_session->timer.timer_interface) {
+		if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
+			switch_core_timer_sync(&rtp_session->timer);
+		}
+		return &rtp_session->timer;
+	}
+
+	return NULL;
+}
+
 
 SWITCH_DECLARE(stfu_instance_t *) switch_rtp_get_jitter_buffer(switch_rtp_t *rtp_session)
 {
@@ -6953,7 +6973,8 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 	}
 #endif
 
-	fwd = (rtp_session->flags[SWITCH_RTP_FLAG_RAW_WRITE] && switch_test_flag(frame, SFF_RAW_RTP)) ? 1 : 0;
+	fwd = (rtp_session->flags[SWITCH_RTP_FLAG_RAW_WRITE] && 
+		   (switch_test_flag(frame, SFF_RAW_RTP) || switch_test_flag(frame, SFF_RAW_RTP_PARSE_FRAME))) ? 1 : 0;
 
 	if (!fwd && !rtp_session->sending_dtmf && !rtp_session->queue_delay && 
 		rtp_session->flags[SWITCH_RTP_FLAG_RAW_WRITE] && (rtp_session->rtp_bugs & RTP_BUG_GEN_ONE_GEN_ALL)) {
@@ -7012,11 +7033,16 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 		send_msg = frame->packet;
 		len = frame->packetlen;
 		ts = 0;
-		// Trying this based on http://jira.freeswitch.org/browse/MODSOFIA-90
-		//if (frame->codec && frame->codec->agreed_pt == frame->payload) {
 
 		send_msg->header.pt = payload;
-		//}
+
+		if (switch_test_flag(frame, SFF_RAW_RTP_PARSE_FRAME)) {
+			send_msg->header.version = 2;
+			send_msg->header.m = frame->m;
+			send_msg->header.ts = htonl(frame->timestamp);
+			send_msg->header.ssrc = htonl(rtp_session->ssrc);
+		}
+
 	} else {
 		data = frame->data;
 		len = frame->datalen;
