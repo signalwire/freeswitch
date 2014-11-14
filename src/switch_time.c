@@ -132,7 +132,7 @@ struct timer_private {
 typedef struct timer_private timer_private_t;
 
 struct timer_matrix {
-	switch_size_t tick;
+	uint64_t tick;
 	uint32_t count;
 	uint32_t roll;
 	switch_mutex_t *mutex;
@@ -385,23 +385,34 @@ SWITCH_DECLARE(void) switch_time_set_cond_yield(switch_bool_t enable)
 	switch_time_sync();
 }
 
+static switch_status_t timer_generic_sync(switch_timer_t *timer)
+{
+	switch_time_t now = time_now(0);
+	int64_t elapsed = (now - timer->start);
+	
+	timer->tick = (elapsed / timer->interval) / 1000;
+	timer->samplecount = timer->tick * timer->samples;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+
 /////////
 #ifdef HAVE_TIMERFD_CREATE
 
 #define MAX_INTERVAL		2000 /* ms */
 
 struct interval_timer {
-	int			fd;
-	switch_size_t		tick;
+	int	fd;
 };
 typedef struct interval_timer interval_timer_t;
 
 static switch_status_t timerfd_start_interval(interval_timer_t *it, int interval)
 {
 	struct itimerspec val;
-	int fd;
-
-	it->tick = 0;
+	int fd, r;
+	uint64_t exp;
 
 	fd = timerfd_create(CLOCK_MONOTONIC, 0);
 
@@ -409,17 +420,23 @@ static switch_status_t timerfd_start_interval(interval_timer_t *it, int interval
 		return SWITCH_STATUS_GENERR;
 	}
 
-	val.it_interval.tv_sec = interval / 1000;
-	val.it_interval.tv_nsec = (interval % 1000) * 1000000;
+	val.it_interval.tv_sec = 0;
+	val.it_interval.tv_nsec = interval * 1000000;
 	val.it_value.tv_sec = 0;
-	val.it_value.tv_nsec = 100000;
+	val.it_value.tv_nsec = val.it_interval.tv_nsec;
 
-	if (timerfd_settime(fd, 0, &val, NULL) < 0) {
+	if (timerfd_settime(fd, TFD_TIMER_ABSTIME, &val, NULL) < 0) {
+		close(fd);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if ((r = read(fd, &exp, sizeof(exp)) < 0)) {
 		close(fd);
 		return SWITCH_STATUS_GENERR;
 	}
 
 	it->fd = fd;
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -439,7 +456,9 @@ static switch_status_t _timerfd_init(switch_timer_t *timer)
 		return SWITCH_STATUS_GENERR;
 
 	it = switch_core_alloc(timer->memory_pool, sizeof(*it));
+
 	if ((rc = timerfd_start_interval(it, timer->interval)) == SWITCH_STATUS_SUCCESS) {
+		timer->start = time_now(0);
 		timer->private_info = it;
 	}
 
@@ -457,25 +476,14 @@ static switch_status_t _timerfd_step(switch_timer_t *timer)
 static switch_status_t _timerfd_next(switch_timer_t *timer)
 {
 	interval_timer_t *it = timer->private_info;
-	uint64_t x, u64  = 0;
+	uint64_t u64  = 0;
 
 	if (read(it->fd, &u64, sizeof(u64)) < 0) {
 		return SWITCH_STATUS_GENERR;
 	} else {
-		for (x = 0; x < u64; x++) {
-			it->tick++;
-			_timerfd_step(timer);
-		}
+		timer->tick += u64;
+		timer->samplecount = timer->tick * timer->samples;
 	}
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status_t _timerfd_sync(switch_timer_t *timer)
-{
-	interval_timer_t *it = timer->private_info;
-
-	timer->tick = it->tick;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -483,8 +491,12 @@ static switch_status_t _timerfd_sync(switch_timer_t *timer)
 static switch_status_t _timerfd_check(switch_timer_t *timer, switch_bool_t step)
 {
 	interval_timer_t *it = timer->private_info;
-	int diff = (int)(timer->tick - it->tick);
+	struct itimerspec val;
+	int diff;
 
+	timerfd_gettime(it->fd, &val);
+	diff = val.it_interval.tv_nsec / 1000;
+	
 	if (diff > 0) {
 		/* still pending */
 		timer->diff = diff;
@@ -676,6 +688,15 @@ static switch_status_t timer_init(switch_timer_t *timer)
 	timer_private_t *private_info;
 	int sanity = 0;
 
+	timer->start = time_now(0);
+
+	if (timer->interval == 1) {
+		switch_mutex_lock(globals.mutex);
+		globals.timer_count++;
+		switch_mutex_unlock(globals.mutex);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 #ifdef HAVE_TIMERFD_CREATE
 	if (TFD == 2) {
 		return _timerfd_init(timer);
@@ -743,6 +764,10 @@ static switch_status_t timer_step(switch_timer_t *timer)
 	timer_private_t *private_info;
 	uint64_t samples;
 
+	if (timer->interval == 1) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 #ifdef HAVE_TIMERFD_CREATE
 	if (TFD == 2) {
 		return _timerfd_step(timer);
@@ -773,9 +798,13 @@ static switch_status_t timer_sync(switch_timer_t *timer)
 {
 	timer_private_t *private_info;
 
+	if (timer->interval == 1) {
+		return timer_generic_sync(timer);
+	}
+
 #ifdef HAVE_TIMERFD_CREATE
 	if (TFD == 2) {
-		return _timerfd_sync(timer);
+		return timer_generic_sync(timer);
 	}
 #endif
 
@@ -805,6 +834,10 @@ static switch_status_t timer_next(switch_timer_t *timer)
 	int cond_index = 1;
 #endif
 	int delta;
+
+	if (timer->interval == 1) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 #ifdef HAVE_TIMERFD_CREATE
 	if (TFD == 2) {
@@ -859,6 +892,10 @@ static switch_status_t timer_check(switch_timer_t *timer, switch_bool_t step)
 	timer_private_t *private_info;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
+	if (timer->interval == 1) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 #ifdef HAVE_TIMERFD_CREATE
 	if (TFD == 2) {
 		return _timerfd_check(timer, step);
@@ -894,6 +931,15 @@ static switch_status_t timer_check(switch_timer_t *timer, switch_bool_t step)
 static switch_status_t timer_destroy(switch_timer_t *timer)
 {
 	timer_private_t *private_info;
+
+	if (timer->interval == 1) {
+		switch_mutex_lock(globals.mutex);
+		if (globals.timer_count) {
+			globals.timer_count--;
+		}
+		switch_mutex_unlock(globals.mutex);
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 #ifdef HAVE_TIMERFD_CREATE
 	if (TFD == 2) {
