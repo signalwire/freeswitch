@@ -368,6 +368,8 @@ struct rayo_file_context {
 	struct rayo_component *component;
 	/** number of times played */
 	int play_count;
+	/** have any files successfully opened? */
+	int could_open;
 };
 
 /**
@@ -376,6 +378,7 @@ struct rayo_file_context {
  */
 static switch_status_t next_file(switch_file_handle_t *handle)
 {
+	int loops = 0;
 	struct rayo_file_context *context = handle->private_info;
 	struct output_component *output = context->component ? OUTPUT_COMPONENT(context->component) : NULL;
 
@@ -404,7 +407,7 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 
 	/* done? */
 	if (!context->cur_doc) {
-		if (output->repeat_times == 0 || ++context->play_count < output->repeat_times) {
+		if (context->could_open && ++loops < 2 && (output->repeat_times == 0 || ++context->play_count < output->repeat_times)) {
 			/* repeat all document(s) */
 			if (!output->repeat_interval_ms) {
 				goto top;
@@ -464,6 +467,8 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 	if (switch_core_file_open(&context->fh, context->ssml, handle->channels, handle->samplerate, handle->flags, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Failed to open %s\n", context->ssml);
 		goto top;
+	} else {
+		context->could_open = 1;
 	}
 
 	handle->samples = context->fh.samples;
@@ -503,6 +508,7 @@ static switch_status_t rayo_file_open(switch_file_handle_t *handle, const char *
 		handle->private_info = context;
 		context->cur_doc = NULL;
 		context->play_count = 0;
+		context->could_open = 0;
 		status = next_file(handle);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "File error! %s\n", path);
