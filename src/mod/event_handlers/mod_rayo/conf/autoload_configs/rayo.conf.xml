@@ -2,8 +2,14 @@
 
 	<!-- rayo params -->
 	<settings>
+		<!-- ends idle calls : unbridged calls that have not been controlled by client in some time -->
 		<param name="max-idle-sec" value="300"/>
+		<!-- conference profile to use for mixers- sla = shared line appearance / conference /w no audio -->
 		<param name="mixer-conf-profile" value="sla"/>
+		<!-- if true, to attribute in offer uses URI instead of name/number -->
+		<param name="offer-uri" value="true"/>
+		<!-- if true, channel variables are added to rayo client offer -->
+		<param name="add-variables-to-offer" value="false"/>
 	</settings>
 
 	<!-- record component params -->
