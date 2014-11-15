@@ -517,6 +517,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_del_dtls(switch_rtp_t *rtp_session, d
 
 SWITCH_DECLARE(int) switch_rtp_has_dtls(void);
 SWITCH_DECLARE(void) switch_rtp_video_refresh(switch_rtp_t *rtp_session);
+SWITCH_DECLARE(void) switch_rtp_video_loss(switch_rtp_t *rtp_session);
 
 /*!
   \}

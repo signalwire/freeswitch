@@ -44,18 +44,21 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_vpx_load);
 SWITCH_MODULE_DEFINITION(mod_vpx, mod_vpx_load, NULL, NULL);
 
+
+#define encoder_interface (vpx_codec_vp8_cx())
+#define decoder_interface (vpx_codec_vp8_dx())
+
 struct vpx_context {
 	switch_codec_t *codec;
 	unsigned int flags;
-
+	switch_codec_settings_t codec_settings;
+	unsigned int bandwidth;
 	vpx_codec_enc_cfg_t	config;
 
 	vpx_codec_ctx_t	encoder;
+	uint8_t encoder_init;
 	vpx_image_t *pic;
 	switch_bool_t force_key_frame;
-	int width;
-	int height;
-	int bitrate;
 	int fps;
 	int format;
 	int intra_period;
@@ -65,9 +68,8 @@ struct vpx_context {
 	const vpx_codec_cx_pkt_t *pkt;
 	int pkt_pos;
 	vpx_codec_iter_t iter;
-	switch_time_t last_ts;
-
 	vpx_codec_ctx_t	decoder;
+	uint8_t decoder_init;
 	switch_buffer_t *vpx_packet_buffer;
 	int got_key_frame;
 	switch_size_t last_received_timestamp;
@@ -76,48 +78,17 @@ struct vpx_context {
 };
 typedef struct vpx_context vpx_context_t;
 
-static switch_status_t switch_vpx_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
+
+static switch_status_t init_codec(switch_codec_t *codec)
 {
-	vpx_context_t *context = NULL;
-	int encoding, decoding;
-	vpx_codec_ctx_t	*encoder = NULL;
-	vpx_codec_ctx_t	*decoder = NULL;
-	vpx_codec_enc_cfg_t *config;
-	const vpx_codec_iface_t* encoder_interface = vpx_codec_vp8_cx();
-	const vpx_codec_iface_t* decoder_interface = vpx_codec_vp8_dx();
-
-
-	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
-	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
-
-	if (!(encoding || decoding) || ((context = switch_core_alloc(codec->memory_pool, sizeof(*context))) == 0)) {
-		return SWITCH_STATUS_FALSE;
-	}
-	memset(context, 0, sizeof(*context));
-	context->flags = flags;
-	codec->private_info = context;
-
-	if (codec->fmtp_in) {
-		codec->fmtp_out = switch_core_strdup(codec->memory_pool, codec->fmtp_in);
-	}
-
-	config = &context->config;
-
-	if (vpx_codec_enc_config_default(encoder_interface, config, 0) != VPX_CODEC_OK) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Encoder config Error\n");
-		return SWITCH_STATUS_FALSE;
-	}
-
-	// very big defaults till we know why scaling segs it
-	context->width = 3840;
-	context->height = 2160;
-	context->bitrate = 3840000;
+	vpx_context_t *context = (vpx_context_t *)codec->private_info;
+	vpx_codec_enc_cfg_t *config = &context->config;
 
 	// settings
 	config->g_profile = 1;
-	config->g_w = context->width;
-	config->g_h = context->height;
-	config->rc_target_bitrate = context->bitrate;
+	config->g_w = context->codec_settings.video.width;
+	config->g_h = context->codec_settings.video.height;
+	config->rc_target_bitrate = context->bandwidth;
 	config->g_timebase.num = 1;
 	config->g_timebase.den = 1000;
 	config->g_error_resilient = VPX_ERROR_RESILIENT_PARTITIONS;
@@ -127,11 +98,11 @@ static switch_status_t switch_vpx_init(switch_codec_t *codec, switch_codec_flag_
 	config->rc_dropframe_thresh = 0;
 	config->rc_end_usage = VPX_CBR;
 	config->g_pass = VPX_RC_ONE_PASS;
-	// config->kf_mode = VPX_KF_DISABLED;
-	config->kf_mode = VPX_KF_AUTO;
-	// config->kf_min_dist = FPS;// Intra Period 3 seconds;
-	// config->kf_max_dist = FPS * 3;
-	config->rc_resize_allowed = 0;
+	config->kf_mode = VPX_KF_DISABLED;
+	//config->kf_mode = VPX_KF_AUTO;
+	//config->kf_min_dist = FPS;// Intra Period 3 seconds;
+	//config->kf_max_dist = FPS;
+	config->rc_resize_allowed = 1;
 	config->rc_min_quantizer = 2;
 	config->rc_max_quantizer = 56;
 	//Rate control adaptation undershoot control.
@@ -157,61 +128,109 @@ static switch_status_t switch_vpx_init(switch_codec_t *codec, switch_codec_flag_
 	//	indicates that the client will buffer (at least) 5000ms worth
 	//	of encoded data. Use the target bitrate (rc_target_bitrate) to
 	//	convert to bits/bytes, if necessary.
-	config->rc_buf_sz = 1000;
+	config->rc_buf_sz = 5000;
 	//Decoder Buffer Initial Size.
 	//	This value indicates the amount of data that will be buffered
 	//	by the decoding application prior to beginning playback.
 	//	This value is expressed in units of time (milliseconds).
 	//	Use the target bitrate (rc_target_bitrate) to convert to
 	//	bits/bytes, if necessary.
-	config->rc_buf_initial_sz = 500;
+	config->rc_buf_initial_sz = 1000;
 	//Decoder Buffer Optimal Size.
 	//	This value indicates the amount of data that the encoder should
 	//	try to maintain in the decoder's buffer. This value is expressed
 	//	in units of time (milliseconds).
 	//	Use the target bitrate (rc_target_bitrate) to convert to
 	//	bits/bytes, if necessary.
-	config->rc_buf_optimal_sz = 600;
+	config->rc_buf_optimal_sz = 1000;
 
-	if (encoding) {
+	if (context->flags & SWITCH_CODEC_FLAG_ENCODE) {
+
+		if (context->encoder_init) {
+			vpx_codec_destroy(&context->encoder);
+			context->encoder_init = 0;
+		}
+
 		if (vpx_codec_enc_init(&context->encoder, encoder_interface, config, 0 & VPX_CODEC_USE_OUTPUT_PARTITION) != VPX_CODEC_OK) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error: [%d:%s]\n", encoder->err, encoder->err_detail);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error: [%d:%s]\n", context->encoder.err, context->encoder.err_detail);
 			return SWITCH_STATUS_FALSE;
 		}
 
+		context->encoder_init = 1;
+
 		// The static threshold imposes a change threshold on blocks below which they will be skipped by the encoder.
-		vpx_codec_control(encoder, VP8E_SET_STATIC_THRESHOLD, 100);
+		vpx_codec_control(&context->encoder, VP8E_SET_STATIC_THRESHOLD, 100);
 		//Set cpu usage, a bit lower than normal (-6) but higher than android (-12)
-		vpx_codec_control(encoder, VP8E_SET_CPUUSED, -8);
+		vpx_codec_control(&context->encoder, VP8E_SET_CPUUSED, -6);
 		// Only one partition
-		// vpx_codec_control(encoder, VP8E_SET_TOKEN_PARTITIONS, VP8_ONE_TOKENPARTITION);
+		// vpx_codec_control(&context->encoder, VP8E_SET_TOKEN_PARTITIONS, VP8_ONE_TOKENPARTITION);
 		// Enable noise reduction
-		vpx_codec_control(encoder, VP8E_SET_NOISE_SENSITIVITY, 0);
+		vpx_codec_control(&context->encoder, VP8E_SET_NOISE_SENSITIVITY, 1);
 		//Set max data rate for Intra frames.
 		//	This value controls additional clamping on the maximum size of a keyframe.
 		//	It is expressed as a percentage of the average per-frame bitrate, with the
 		//	special (and default) value 0 meaning unlimited, or no additional clamping
 		//	beyond the codec's built-in algorithm.
 		//	For example, to allocate no more than 4.5 frames worth of bitrate to a keyframe, set this to 450.
-		vpx_codec_control(encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT, 0);
+		vpx_codec_control(&context->encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT, 0);
 	}
 
-	if (decoding) {
+	if (context->flags & SWITCH_CODEC_FLAG_DECODE) {
 		vp8_postproc_cfg_t ppcfg;
 
+		if (context->decoder_init) {
+			vpx_codec_destroy(&context->decoder);
+			context->decoder_init = 0;
+		}
+
 		if (vpx_codec_dec_init(&context->decoder, decoder_interface, NULL, VPX_CODEC_USE_POSTPROC) != VPX_CODEC_OK) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error: [%d:%s]\n", encoder->err, encoder->err_detail);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error: [%d:%s]\n", context->encoder.err, context->encoder.err_detail);
 			return SWITCH_STATUS_FALSE;
 		}
+
+		context->decoder_init = 1;
 
 		// the types of post processing to be done, should be combination of "vp8_postproc_level"
 		ppcfg.post_proc_flag = VP8_DEMACROBLOCK | VP8_DEBLOCK;
 		// the strength of deblocking, valid range [0, 16]
 		ppcfg.deblocking_level = 3;
 		// Set deblocking settings
-		vpx_codec_control(decoder, VP8_SET_POSTPROC, &ppcfg);
+		vpx_codec_control(&context->decoder, VP8_SET_POSTPROC, &ppcfg);
 
 		switch_buffer_create_dynamic(&context->vpx_packet_buffer, 512, 512, 1024000);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t switch_vpx_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
+{
+	vpx_context_t *context = NULL;
+	int encoding, decoding;
+
+
+	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
+	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
+
+	if (!(encoding || decoding) || ((context = switch_core_alloc(codec->memory_pool, sizeof(*context))) == 0)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	memset(context, 0, sizeof(*context));
+	context->flags = flags;
+	codec->private_info = context;
+
+	if (codec_settings) {
+		context->codec_settings = *codec_settings;
+	}
+
+	if (codec->fmtp_in) {
+		codec->fmtp_out = switch_core_strdup(codec->memory_pool, codec->fmtp_in);
+	}
+
+	if (vpx_codec_enc_config_default(encoder_interface, &context->config, 0) != VPX_CODEC_OK) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Encoder config Error\n");
+		return SWITCH_STATUS_FALSE;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -313,8 +332,8 @@ static switch_status_t consume_partition(vpx_context_t *context, void *data, uin
 }
 
 static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_image_t *img,
-										  void *encoded_data, uint32_t *encoded_data_len,
-										  unsigned int *flag)
+										 void *encoded_data, uint32_t *encoded_data_len,
+										 unsigned int *flag)
 {
 	vpx_context_t *context = (vpx_context_t *)codec->private_info;
 	uint32_t duration = 90000 / FPS;
@@ -332,6 +351,8 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_image_t *
 
 	//d_w and d_h are messed up
 
+	//printf("WTF %d %d\n", img->d_w, img->d_h);
+
 	width = img->w;
 	height = img->h;
 
@@ -339,28 +360,31 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_image_t *
 	//switch_assert(height > 0 && (height % 4 == 0));
 
 	if (context->config.g_w != width || context->config.g_h != height) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VPX reset encoder picture from %dx%d to %dx%d\n", context->config.g_w, context->config.g_h, width, height);
-		context->config.g_w = width;
-		context->config.g_h = height;
-		if (vpx_codec_enc_config_set(&context->encoder, &context->config) != VPX_CODEC_OK) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "VPX reset config error!");
+		context->codec_settings.video.width = width;
+		context->codec_settings.video.height = height;
+		if (context->codec_settings.video.bandwidth) {
+			context->bandwidth = context->codec_settings.video.bandwidth;
+		} else {
+			context->bandwidth = width * height * 8;
 		}
-	}
 
-	if (context->last_ts == 0) context->last_ts = switch_micro_time_now();
+		if (context->bandwidth > 1250000) {
+			context->bandwidth = 1250000;
+		}
 
-	if ((switch_micro_time_now() - context->last_ts) > 2 * 1000000) {
-		// the config params doesn't seems work for generate regular key frames,
-		// so we do some trick here to force a key frame every 2 sec
-		// vpx_flags = VPX_EFLAG_FORCE_KF;
-		context->last_ts = switch_micro_time_now();
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_NOTICE, 
+						  "VPX reset encoder picture from %dx%d to %dx%d %u BW\n", 
+						  context->config.g_w, context->config.g_h, width, height, context->bandwidth);
+
+		init_codec(codec);
+		*flag |= SFF_PICTURE_RESET;
+		context->need_key_frame = 1;
 	}
 
 	if (context->need_key_frame > 0) {
 		// force generate a key frame
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VPX KEYFRAME REQ\n");
 		vpx_flags |= VPX_EFLAG_FORCE_KF;
-		context->last_ts = switch_micro_time_now();
 		context->need_key_frame--;
 	}
 
@@ -539,7 +563,7 @@ static switch_status_t switch_vpx_destroy(switch_codec_t *codec)
 
 	if (context) {
 		if ((codec->flags & SWITCH_CODEC_FLAG_ENCODE)) {
-			vpx_codec_destroy(&context->encoder); // TODO fix crash
+			vpx_codec_destroy(&context->encoder);
 		}
 
 		if ((codec->flags & SWITCH_CODEC_FLAG_DECODE)) {

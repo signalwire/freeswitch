@@ -102,6 +102,7 @@ struct vlc_video_context {
 	switch_mutex_t *video_mutex;
 
 	switch_core_session_t *session;
+	switch_channel_t *channel;
 	switch_frame_t *aud_frame;
 	switch_frame_t *vid_frame;
 	uint8_t video_packet[1500 + 12];
@@ -230,20 +231,11 @@ static void *vlc_video_lock_callback(void *data, void **p_pixels)
 	return NULL; /* picture identifier, not needed here */
 }
 
-/* dummy callback so it should be good when no video on channel */
-static void vlc_video_unlock_dummy_callback(void *data, void *id, void *const *p_pixels)
-{
-	vlc_video_context_t *context = (vlc_video_context_t *)data;
-	assert(id == NULL); /* picture identifier, not needed here */
-	switch_mutex_unlock(context->video_mutex);
-}
-
 static void vlc_video_unlock_callback(void *data, void *id, void *const *p_pixels)
 {
 	vlc_video_context_t *context = (vlc_video_context_t *) data;
-	switch_frame_t *frame = context->vid_frame;
 
-	switch_assert(id == NULL); /* picture identifier, not needed here */
+	if (context->channel && !switch_channel_test_flag(context->channel, CF_VIDEO)) return;
 
 	if (!context->img) context->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, context->width, context->height, 0);
 
@@ -251,14 +243,11 @@ static void vlc_video_unlock_callback(void *data, void *id, void *const *p_pixel
 
 	yuyv_to_i420(*p_pixels, context->img->img_data, context->width, context->height);
 
-	switch_core_session_write_video_image(context->session, frame, context->img, SWITCH_DEFAULT_VIDEO_SIZE, NULL);
-
 	switch_mutex_unlock(context->video_mutex);
 }
 
-static void do_buffer_frame(vlc_video_context_t *context)
+static void do_buffer_frame(vlc_video_context_t *context, switch_frame_t *frame)
 {
-	switch_frame_t *frame = context->vid_frame;
 	uint32_t size = sizeof(*frame) + frame->packetlen;
 
 	switch_mutex_lock(context->video_mutex);
@@ -277,32 +266,35 @@ static void do_buffer_frame(vlc_video_context_t *context)
 static void vlc_video_channel_unlock_callback(void *data, void *id, void *const *p_pixels)
 {
 	vlc_video_context_t *context = (vlc_video_context_t *)data;
-	uint32_t flag = 0;
-	switch_frame_t *frame = context->vid_frame;
+
 
 	switch_assert(id == NULL); /* picture identifier, not needed here */
+
+	if (context->channel && !switch_channel_test_flag(context->channel, CF_VIDEO)) return;
 
 	if (!context->img) context->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, context->width, context->height, 0);
 	switch_assert(context->img);
 
 	yuyv_to_i420(*p_pixels, context->img->img_data, context->width, context->height);
 
+	switch_mutex_unlock(context->video_mutex);
+}
+
+static void vlc_video_display_callback(void *data, void *id)
+{
+	vlc_video_context_t *context = (vlc_video_context_t *) data;
+	int32_t flag = 0;
+
+	/* VLC wants to display the video */
+
+	if (context->channel && !switch_channel_test_flag(context->channel, CF_VIDEO)) return;
 
 	if (context->video_refresh_req > 0) {
 		flag |= SFF_WAIT_KEY_FRAME;
 		context->video_refresh_req--;
 	}
 
-	switch_core_session_write_video_image(context->session, frame, context->img, SWITCH_DEFAULT_VIDEO_SIZE, &flag);
-
-	switch_mutex_unlock(context->video_mutex);
-}
-
-static void vlc_video_display_callback(void *data, void *id)
-{
-	/* VLC wants to display the video */
-	(void) data;
-	assert(id == NULL);
+	switch_core_session_write_video_image(context->session, context->vid_frame, context->img, SWITCH_DEFAULT_VIDEO_SIZE, NULL);
 }
 
 unsigned video_format_setup_callback(void **opaque, char *chroma, unsigned *width, unsigned *height, unsigned *pitches, unsigned *lines)
@@ -723,7 +715,9 @@ SWITCH_STANDARD_APP(play_video_function)
 
 	audio_datalen = read_impl.decoded_bytes_per_packet; //codec.implementation->actual_samples_per_second / 1000 * (read_impl.microseconds_per_packet / 1000);
 
+
 	context->session = session;
+	context->channel = channel;
 	context->pool = pool;
 	context->aud_frame = &audio_frame;
 	context->vid_frame = &video_frame;
@@ -770,14 +764,8 @@ SWITCH_STANDARD_APP(play_video_function)
 	libvlc_audio_set_format(context->mp, "S16N", read_impl.actual_samples_per_second, read_impl.number_of_channels);
 	libvlc_audio_set_callbacks(context->mp, vlc_play_audio_callback, NULL,NULL,NULL,NULL, (void *) context);
 
-	if (switch_channel_test_flag(channel, CF_VIDEO)) {
-		// libvlc_video_set_format(context->mp, "YUYV", VIDEOWIDTH, VIDEOHEIGHT, VIDEOWIDTH * 2);
-		libvlc_video_set_format_callbacks(context->mp, video_format_setup_callback, video_format_clean_callback);
-		libvlc_video_set_callbacks(context->mp, vlc_video_lock_callback, vlc_video_unlock_callback, vlc_video_display_callback, context);
-	} else {
-		libvlc_video_set_format_callbacks(context->mp, video_format_setup_callback, video_format_clean_callback);
-		libvlc_video_set_callbacks(context->mp, vlc_video_lock_callback, vlc_video_unlock_dummy_callback, vlc_video_display_callback, context);
-	}
+	libvlc_video_set_format_callbacks(context->mp, video_format_setup_callback, video_format_clean_callback);
+	libvlc_video_set_callbacks(context->mp, vlc_video_lock_callback, vlc_video_unlock_callback, vlc_video_display_callback, context);
 
 	// start play
 	if (-1 == libvlc_media_player_play(context->mp)) {
@@ -928,6 +916,15 @@ switch_io_routines_t vlc_io_routines = {
 	/*state_run*/ NULL
 };
 
+static switch_status_t vlc_channel_img_callback(switch_core_session_t *session, switch_frame_t *frame, switch_image_t *img, void *user_data)
+{
+	vlc_video_context_t *context = (vlc_video_context_t *) user_data;
+
+	do_buffer_frame(context, frame);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t setup_tech_pvt(switch_core_session_t *session, const char *path)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -952,11 +949,12 @@ static switch_status_t setup_tech_pvt(switch_core_session_t *session, const char
 	memset(context, 0, sizeof(vlc_file_context_t));
 	tech_pvt->context = context;
 
+
 	switch_buffer_create_dynamic(&(context->audio_buffer), VLC_BUFFER_SIZE, VLC_BUFFER_SIZE * 8, 0);
 
-	if (switch_channel_test_flag(channel, CF_VIDEO)) {
-		switch_buffer_create_dynamic(&(context->video_buffer), VLC_BUFFER_SIZE * 2, VLC_BUFFER_SIZE * 16, 0);
-	}
+	switch_buffer_create_dynamic(&(context->video_buffer), VLC_BUFFER_SIZE * 2, VLC_BUFFER_SIZE * 16, 0);
+
+	switch_core_session_set_image_write_callback(session, vlc_channel_img_callback, tech_pvt->context);
 
 	if (switch_core_timer_init(&tech_pvt->timer, "soft", 20,
 							   8000 / (1000 / 20), pool) != SWITCH_STATUS_SUCCESS) {
@@ -969,6 +967,9 @@ static switch_status_t setup_tech_pvt(switch_core_session_t *session, const char
 	context->pool = pool;
 	context->aud_frame = &tech_pvt->read_frame;
 	context->vid_frame = &tech_pvt->read_video_frame;
+	context->vid_frame->packet = context->video_packet;
+	context->vid_frame->data = context->video_packet + 12;
+
 	context->playing = 0;
 	// context->err = 0;
 
@@ -1010,14 +1011,10 @@ static switch_status_t setup_tech_pvt(switch_core_session_t *session, const char
 	libvlc_audio_set_format(context->mp, "S16N", 8000, 1);
 	libvlc_audio_set_callbacks(context->mp, vlc_play_audio_callback, NULL,NULL,NULL,NULL, (void *) context);
 
-	if (switch_channel_test_flag(channel, CF_VIDEO)) {
-		// libvlc_video_set_format(context->mp, "YUYV", VIDEOWIDTH, VIDEOHEIGHT, VIDEOWIDTH * 2);
-		libvlc_video_set_format_callbacks(context->mp, video_format_setup_callback, video_format_clean_callback);
-		libvlc_video_set_callbacks(context->mp, vlc_video_lock_callback, vlc_video_channel_unlock_callback, vlc_video_display_callback, context);
-	} else {
-		libvlc_video_set_format_callbacks(context->mp, video_format_setup_callback, video_format_clean_callback);
-		libvlc_video_set_callbacks(context->mp, vlc_video_lock_callback, vlc_video_unlock_dummy_callback, vlc_video_display_callback, context);
-	}
+	
+	libvlc_video_set_format_callbacks(context->mp, video_format_setup_callback, video_format_clean_callback);
+	libvlc_video_set_callbacks(context->mp, vlc_video_lock_callback, vlc_video_channel_unlock_callback, vlc_video_display_callback, context);
+
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -1026,24 +1023,12 @@ fail:
 	return status;
 }
 
-static switch_status_t vlc_channel_img_callback(switch_core_session_t *session, switch_frame_t *frame, switch_image_t *img, void *user_data)
-{
-	vlc_video_context_t *context = (vlc_video_context_t *) user_data;
-
-	do_buffer_frame(context);
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
-
 static switch_status_t channel_on_init(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	vlc_private_t *tech_pvt = switch_core_session_get_private(session);
+	//vlc_private_t *tech_pvt = switch_core_session_get_private(session);
 
 	switch_channel_set_state(channel, CS_CONSUME_MEDIA);
-
-	switch_core_session_set_image_write_callback(session, vlc_channel_img_callback, tech_pvt->context);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1094,6 +1079,10 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 
 	if (tech_pvt->context->audio_buffer) {
 		switch_buffer_destroy(&tech_pvt->context->audio_buffer);
+	}
+
+	if (tech_pvt->context->video_buffer) {
+		switch_buffer_destroy(&tech_pvt->context->video_buffer);
 	}
 
 	if (tech_pvt->timer.interval) {
