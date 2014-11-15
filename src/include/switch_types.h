@@ -1496,7 +1496,8 @@ typedef enum {
 	SFF_RTCP = (1 << 10),
 	SFF_MARKER = (1 << 11),
 	SFF_WAIT_KEY_FRAME = (1 << 12),
-	SFF_RAW_RTP_PARSE_FRAME = (1 << 13)
+	SFF_RAW_RTP_PARSE_FRAME = (1 << 13),
+	SFF_PICTURE_RESET = (1 << 14)
 } switch_frame_flag_enum_t;
 typedef uint32_t switch_frame_flag_t;
 
@@ -2101,7 +2102,7 @@ typedef struct switch_codec switch_codec_t;
 typedef struct switch_core_thread_session switch_core_thread_session_t;
 typedef struct switch_codec_implementation switch_codec_implementation_t;
 typedef struct switch_buffer switch_buffer_t;
-typedef struct switch_codec_settings switch_codec_settings_t;
+typedef union  switch_codec_settings switch_codec_settings_t;
 typedef struct switch_codec_fmtp switch_codec_fmtp_t;
 typedef struct switch_odbc_handle switch_odbc_handle_t;
 typedef struct switch_pgsql_handle switch_pgsql_handle_t;

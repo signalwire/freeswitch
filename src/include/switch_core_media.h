@@ -157,6 +157,9 @@ typedef struct switch_core_media_params_s {
 
 	switch_bool_t external_video_source;
 
+	uint32_t video_key_freq;
+	uint32_t video_key_first;
+
 } switch_core_media_params_t;
 
 static inline const char *switch_media_type2str(switch_media_type_t type)
@@ -304,6 +307,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 																void *cmd_data,
 																switch_codec_control_type_t *rtype,
 																void **ret_data);
+
+
+#define switch_core_media_gen_key_frame(_session) switch_core_media_codec_control(_session, SWITCH_MEDIA_TYPE_VIDEO, SWITCH_IO_WRITE, \
+																				  SCC_VIDEO_REFRESH, SCCT_NONE, NULL, NULL, NULL) \
+
 
 SWITCH_DECLARE(switch_timer_t *) switch_core_media_get_timer(switch_core_session_t *session, switch_media_type_t mtype);
 

@@ -591,10 +591,19 @@ struct switch_directory_handle {
 	void *private_info;
 };
 
-/* nobody has more setting than speex so we will let them set the standard */
-/*! \brief Various codec settings (currently only relevant to speex) */
-struct switch_codec_settings {
+struct switch_audio_codec_settings {
 	int unused;
+};
+
+struct switch_video_codec_settings {
+	uint32_t bandwidth;
+	int32_t width;
+	int32_t height;
+};
+
+union switch_codec_settings {
+	struct switch_audio_codec_settings audio;
+	struct switch_video_codec_settings video;
 };
 
 /*! an abstract handle of a fmtp parsed by codec */
