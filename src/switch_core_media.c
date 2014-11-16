@@ -2294,12 +2294,12 @@ static void switch_core_session_parse_codec_settings(switch_core_session_t *sess
 		return;
 	}
 
-	if ((engine = &smh->engines[type]));
+	if (!(engine = &smh->engines[type])) return;
 	
 	switch(type) {
 	case SWITCH_MEDIA_TYPE_AUDIO:
 		break;
-	case SWITCH_MEDIA_TYPE_VIDEO: 
+	case SWITCH_MEDIA_TYPE_VIDEO:
 		{
 			const char *bwv = switch_channel_get_variable(session->channel, "video_codec_bandwidth");
 			uint32_t bw = 0;
