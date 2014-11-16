@@ -959,7 +959,7 @@ SWITCH_STANDARD_API(curl_function)
 					int tmp = atoi(argv[i]);
 
 					if (tmp > 0) {
-						options.connect_timeout = tmp;
+						options.timeout = tmp;
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invalid timeout!\n");
 					}
