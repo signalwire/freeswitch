@@ -51,7 +51,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_curl_load);
  */
 SWITCH_MODULE_DEFINITION(mod_curl, mod_curl_load, mod_curl_shutdown, NULL);
 
-static char *SYNTAX = "curl url [headers|json|content-type <mime-type>|timeout <seconds>] [get|head|post|delete|put [data]]";
+static char *SYNTAX = "curl url [headers|json|content-type <mime-type>|connect-timeout <seconds>|timeout <seconds>] [get|head|post|delete|put [data]]";
 
 #define HTTP_SENDFILE_ACK_EVENT "curl_sendfile::ack"
 #define HTTP_SENDFILE_RESPONSE_SIZE 32768
@@ -943,6 +943,16 @@ SWITCH_STANDARD_API(curl_function)
 			} else if (!strcasecmp("content-type", argv[i])) {
 				if (++i < argc) {
 					content_type = switch_core_strdup(pool, argv[i]);
+				}
+			} else if (!strcasecmp("connect-timeout", argv[i])) {
+				if (++i < argc) {
+					int tmp = atoi(argv[i]);
+
+					if (tmp > 0) {
+						options.connect_timeout = tmp;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Invalid connect-timeout!\n");
+					}
 				}
 			} else if (!strcasecmp("timeout", argv[i])) {
 				if (++i < argc) {
