@@ -40,6 +40,7 @@ static struct{
 	char *host;
 	int port;
 	int timeout;
+	switch_bool_t ignore_connect_fail;
 } globals;
 
 static switch_xml_config_item_t instructions[] = {
@@ -47,6 +48,7 @@ static switch_xml_config_item_t instructions[] = {
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("host", CONFIG_RELOAD, &globals.host, NULL, "localhost", "Hostname for redis server"),	
 	SWITCH_CONFIG_ITEM("port", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, &globals.port, (void *) 6379, NULL,NULL, NULL),
 	SWITCH_CONFIG_ITEM("timeout", SWITCH_CONFIG_INT, CONFIG_RELOADABLE, &globals.timeout, (void *) 10000, NULL,NULL, NULL),
+	SWITCH_CONFIG_ITEM("ignore_connect_fail", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE, &globals.ignore_connect_fail, SWITCH_FALSE, NULL, "true|false", "Set to true in order to continue when redis is not contactable"),
 	SWITCH_CONFIG_ITEM_END()
 };
 
@@ -85,9 +87,14 @@ SWITCH_LIMIT_INCR(limit_incr_redis)
 	REDIS redis;
 	
 	if (redis_factory(&redis) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_FALSE;
+		if ( globals.ignore_connect_fail ) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ignore_connect_fail=true, so ignoring the fact that redis was not contactabl and continuing with the call\n" );
+			return SWITCH_STATUS_SUCCESS;
+		} else {
+			return SWITCH_STATUS_FALSE;
+		}
 	}
-	
+
 	/* Get the keys for redis server */
 	uuid_rediskey = switch_core_session_sprintf(session,"%s_%s_%s", switch_core_get_switchname(), realm, resource);
 	rediskey = switch_core_session_sprintf(session, "%s_%s", realm, resource);
@@ -163,7 +170,13 @@ SWITCH_LIMIT_RELEASE(limit_release_redis)
 	}
 	
 	if (redis_factory(&redis) != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_FALSE;
+                if ( globals.ignore_connect_fail ) {
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ignore_connect_fail=true, so ignoring the fact that redis was not contactabl and continuing with the call\n" );
+                        return SWITCH_STATUS_SUCCESS;
+                } else {
+                        return SWITCH_STATUS_FALSE;
+                }
+
 	}
 
 	switch_mutex_lock(pvt->mutex);
