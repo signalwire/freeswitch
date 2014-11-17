@@ -101,6 +101,18 @@
  */
 #define ZRTP_BYTE_ORDER ZBO_BIG_ENDIAN
 
+#elif defined(__MIPSEB__)
+/*
+ * mips, big endian
+ */
+#define ZRTP_BYTE_ORDER ZBO_BIG_ENDIAN
+
+#elif defined(__MIPSEL__)
+/*
+ * mips, little endian
+ */
+#define ZRTP_BYTE_ORDER ZBO_LITTLE_ENDIAN
+
 #endif /* Automatic byte order detection */
 
 #endif
