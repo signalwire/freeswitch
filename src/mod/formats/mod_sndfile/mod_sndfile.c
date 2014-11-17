@@ -54,10 +54,13 @@ struct sndfile_context {
 
 typedef struct sndfile_context sndfile_context;
 
+static switch_status_t sndfile_perform_open(sndfile_context *context, const char *path, const char *mask, int mode);
+
 static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const char *path)
 {
 	sndfile_context *context;
 	int mode = 0;
+	const char *mask = "rb";
 	char *ext;
 	struct format_map *map = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -84,8 +87,10 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND) || switch_test_flag(handle, SWITCH_FILE_WRITE_OVER) || handle->offset_pos) {
+			mask = "ab+";
 			mode += SFM_RDWR;
 		} else {
+			mask = "wb+";
 			mode += SFM_WRITE;
 		}
 	}
@@ -181,7 +186,7 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 		ldup = strdup(last);
 		switch_assert(ldup);
 		switch_snprintf(last, alt_len - (last - alt_path), "%d%s%s", handle->samplerate, SWITCH_PATH_SEPARATOR, ldup);
-		if ((context->handle = sf_open(alt_path, mode, &context->sfinfo))) {
+		if (sndfile_perform_open(context, alt_path, mask, mode) == SWITCH_STATUS_SUCCESS) {
 			path = alt_path;
 		} else {
 			/* Try to find the file at the highest rate possible if we can't find one that matches the exact rate.
@@ -189,7 +194,7 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 			 */
 			for (i = 3; i >= 0; i--) {
 				switch_snprintf(last, alt_len - (last - alt_path), "%d%s%s", rates[i], SWITCH_PATH_SEPARATOR, ldup);
-				if ((context->handle = sf_open(alt_path, mode, &context->sfinfo))) {
+				if (sndfile_perform_open(context, alt_path, mask, mode) == SWITCH_STATUS_SUCCESS) {
 					path = alt_path;
 					break;
 				}
@@ -198,7 +203,7 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 	}
 
 	if (!context->handle) {
-		if ((context->handle = sf_open(path, mode, &context->sfinfo)) == 0) {
+		if (sndfile_perform_open(context, path, mask, mode) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening File [%s] [%s]\n", path, sf_strerror(context->handle));
 			status = SWITCH_STATUS_GENERR;
 			goto end;
@@ -234,6 +239,20 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 	switch_safe_free(ldup);
 
 	return status;
+}
+
+static switch_status_t sndfile_perform_open(sndfile_context *context, const char *path, const char *mask, int mode)
+{
+	FILE *fd = NULL;
+	fd = fopen(path, mask);
+	if (!fd) {
+		return SWITCH_STATUS_FALSE;
+	}
+	if ((context->handle = sf_open_fd(fileno(fd), mode, &context->sfinfo, SWITCH_TRUE)) == 0) {
+		fclose(fd);
+		return SWITCH_STATUS_FALSE;
+	}
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t sndfile_file_truncate(switch_file_handle_t *handle, int64_t offset)
