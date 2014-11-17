@@ -2,6 +2,9 @@
 
 #define _XOPEN_SOURCE 600  /* Make sure strdup() is in <string.h> */
 #define _BSD_SOURCE  /* Make sure setgroups()is in <grp.h> */
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE
+#endif
 
 #include <assert.h>
 #include <stdio.h>

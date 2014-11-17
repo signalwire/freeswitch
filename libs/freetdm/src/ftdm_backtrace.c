@@ -2,6 +2,9 @@
  *
  *
  */
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE
+#endif
 #define _BSD_SOURCE
 #include "private/ftdm_core.h"
 
