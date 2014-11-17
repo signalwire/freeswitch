@@ -241,6 +241,7 @@ static http_data_t *do_lookup_url(switch_memory_pool_t *pool, const char *url, c
 	}
 	switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 15);
+	switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
 	switch_curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
