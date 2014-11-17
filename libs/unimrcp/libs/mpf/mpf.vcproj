@@ -321,6 +321,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\mpf_engine_factory.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\mpf_file_termination_factory.h"
 				>
 			</File>
@@ -479,6 +483,10 @@
 			</File>
 			<File
 				RelativePath=".\src\mpf_engine.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpf_engine_factory.c"
 				>
 			</File>
 			<File

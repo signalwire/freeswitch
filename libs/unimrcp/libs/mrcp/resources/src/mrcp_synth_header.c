@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_synth_header.c 1632 2010-03-30 20:46:25Z achaloyan $
+ * $Id: mrcp_synth_header.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "mrcp_synth_header.h"
@@ -95,18 +95,6 @@ static const apt_str_table_item_t completion_cause_string_table[] = {
 static APR_INLINE apr_size_t apt_string_table_value_parse(const apt_str_table_item_t *string_table, size_t count, const apt_str_t *value)
 {
 	return apt_string_table_id_find(string_table,count,value);
-}
-
-static apt_bool_t apt_string_table_value_generate(const apt_str_table_item_t *string_table, apr_size_t count, apr_size_t id, apt_text_stream_t *stream)
-{
-	const apt_str_t *name = apt_string_table_str_get(string_table,count,id);
-	if(!name) {
-		return FALSE;
-	}
-
-	memcpy(stream->pos,name->buf,name->length);
-	stream->pos += name->length;
-	return TRUE;
 }
 
 static apt_bool_t apt_string_table_value_pgenerate(const apt_str_table_item_t *string_table, apr_size_t count, apr_size_t id, apt_str_t *str, apr_pool_t *pool)
@@ -261,20 +249,19 @@ static apt_bool_t mrcp_speech_length_generate(mrcp_speech_length_value_t *speech
 		}
 	}
 	else {
-		char buf[256];
-		apt_text_stream_t stream;
-		apt_text_stream_init(&stream,buf,sizeof(buf));
-		if(speech_length->type == SPEECH_LENGTH_TYPE_NUMERIC_POSITIVE) {
-			*stream.pos++ = '+';
+		const apt_str_t *unit_name = apt_string_table_str_get(
+										speech_unit_string_table,
+										SPEECH_UNIT_COUNT,
+										speech_length->value.numeric.unit);
+		if(!unit_name) {
+			return FALSE;
 		}
-		else {
-			*stream.pos++ = '-';
-		}
-		apt_text_size_value_insert(&stream,speech_length->value.numeric.length);
-		*stream.pos++ = APT_TOKEN_SP;
-		apt_string_table_value_generate(speech_unit_string_table,SPEECH_UNIT_COUNT,speech_length->value.numeric.unit,&stream);
 
-		apt_string_assign_n(str,stream.text.buf, stream.pos - stream.text.buf, pool);
+		str->buf = apr_psprintf(pool, "%c%"APR_SIZE_T_FMT" %s",
+						speech_length->type == SPEECH_LENGTH_TYPE_NUMERIC_POSITIVE ? '+' : '-',
+						speech_length->value.numeric.length,
+						unit_name->buf);
+		str->length = strlen(str->buf);
 	}
 	return TRUE;
 }

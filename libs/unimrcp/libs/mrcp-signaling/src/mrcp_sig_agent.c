@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,26 +13,71 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_sig_agent.c 1792 2011-01-10 21:08:52Z achaloyan $
+ * $Id: mrcp_sig_agent.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "mrcp_sig_agent.h"
 #include "mrcp_session.h"
 #include "apt_pool.h"
 
-MRCP_DECLARE(mrcp_sig_agent_t*) mrcp_signaling_agent_create(const char *id, void *obj, mrcp_version_e mrcp_version, apr_pool_t *pool)
+/** Factory of MRCP signaling agents */
+struct mrcp_sa_factory_t {
+	/** Array of pointers to signaling agents */
+	apr_array_header_t   *agents_arr;
+	/** Index of the current agent */
+	int                   index;
+};
+
+/** Create signaling agent */
+MRCP_DECLARE(mrcp_sig_agent_t*) mrcp_signaling_agent_create(const char *id, void *obj, apr_pool_t *pool)
 {
 	mrcp_sig_agent_t *sig_agent = apr_palloc(pool,sizeof(mrcp_sig_agent_t));
 	sig_agent->id = id;
 	sig_agent->pool = pool;
 	sig_agent->obj = obj;
-	sig_agent->mrcp_version = mrcp_version;
 	sig_agent->resource_factory = NULL;
 	sig_agent->parent = NULL;
 	sig_agent->task = NULL;
 	sig_agent->msg_pool = NULL;
 	sig_agent->create_server_session = NULL;
 	sig_agent->create_client_session = NULL;
+	return sig_agent;
+}
+
+/** Create factory of signaling agents */
+MRCP_DECLARE(mrcp_sa_factory_t*) mrcp_sa_factory_create(apr_pool_t *pool)
+{
+	mrcp_sa_factory_t *sa_factory = apr_palloc(pool,sizeof(mrcp_sa_factory_t));
+	sa_factory->agents_arr = apr_array_make(pool,1,sizeof(mrcp_sig_agent_t*));
+	sa_factory->index = 0;
+	return sa_factory;
+}
+
+/** Add signaling agent to pool */
+MRCP_DECLARE(apt_bool_t) mrcp_sa_factory_agent_add(mrcp_sa_factory_t *sa_factory, mrcp_sig_agent_t *sig_agent)
+{
+	mrcp_sig_agent_t **slot;
+	if(!sig_agent)
+		return FALSE;
+
+	slot = apr_array_push(sa_factory->agents_arr);
+	*slot = sig_agent;
+	return TRUE;
+}
+
+/** Determine whether factory is empty. */
+MRCP_DECLARE(apt_bool_t) mrcp_sa_factory_is_empty(const mrcp_sa_factory_t *sa_factory)
+{
+	return apr_is_empty_array(sa_factory->agents_arr);
+}
+
+/** Select next available signaling agent */
+MRCP_DECLARE(mrcp_sig_agent_t*) mrcp_sa_factory_agent_select(mrcp_sa_factory_t *sa_factory)
+{
+	mrcp_sig_agent_t *sig_agent = APR_ARRAY_IDX(sa_factory->agents_arr, sa_factory->index, mrcp_sig_agent_t*);
+	if(++sa_factory->index == sa_factory->agents_arr->nelts) {
+		sa_factory->index = 0;
+	}
 	return sig_agent;
 }
 
@@ -64,6 +109,9 @@ MRCP_DECLARE(mrcp_session_t*) mrcp_session_create(apr_size_t padding)
 	session->log_obj = NULL;
 	session->name = NULL;
 	session->signaling_agent = NULL;
+	session->connection_agent = NULL;
+	session->media_engine = NULL;
+	session->rtp_factory = NULL;
 	session->request_vtable = NULL;
 	session->response_vtable = NULL;
 	session->event_vtable = NULL;

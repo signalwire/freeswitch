@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: main.c 1541 2010-02-22 20:20:10Z achaloyan $
+ * $Id: main.c 2213 2014-11-06 03:02:45Z achaloyan@gmail.com $
  */
 
 #include <stdio.h>
@@ -146,7 +146,7 @@ static apt_bool_t cmdline_run(asr_engine_t *engine)
 {
 	apt_bool_t running = TRUE;
 	char cmdline[1024];
-	int i;
+	apr_size_t i;
 	do {
 		printf(">");
 		memset(&cmdline, 0, sizeof(cmdline));
@@ -165,7 +165,7 @@ static apt_bool_t cmdline_run(asr_engine_t *engine)
 	return TRUE;
 }
 
-static void usage()
+static void usage(void)
 {
 	printf(
 		"\n"
@@ -220,7 +220,7 @@ static client_options_t* options_load(int argc, const char * const *argv)
 	options = apr_palloc(pool,sizeof(client_options_t));
 	options->pool = pool;
 	/* set the default options */
-	options->root_dir_path = "../";
+	options->root_dir_path = NULL;
 	options->log_priority = APT_PRIO_INFO;
 	options->log_output = APT_LOG_OUTPUT_CONSOLE;
 

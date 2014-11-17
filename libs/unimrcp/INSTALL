@@ -1,96 +1,117 @@
 BUILD REQUIREMENTS
 ==================
-UniMRCP depends on a number of third party tools and libraries, 
-which are required and must be installed first.
 
-The easiest and recommended way is to install an appropriate 
-dependency package from the download area, which contains APR, 
-APR-Util and Sofia-SIP libraries prepackaged for UniMRCP use.
+The UniMRCP project depends on a number of third party tools and libraries which must be installed first.
 
-http://code.google.com/p/unimrcp/downloads/
+All the required dependencies are available to download prepackaged for the UniMRCP use from the 
+following location:
 
-Alternatively, the original packages of APR, APR-Util and
-Sofia-SIP libraries and patches for them can be downloaded from
+	http://www.unimrcp.org/downloads/dependencies
 
-http://www.unimrcp.org/dependencies/
+Alternatively, original versions of the libraries as well as patches on them can be downloaded
+separately from the following location:
+
+	http://www.unimrcp.org/dependencies
 
 References:
-  
-1. Apache Portable Runtime [>=1.2.x] (http://apr.apache.org/). 
-Whenever you want to build any part of UniMRCP, you need the 
-Apache Portable Runtime (APR) and the APR Utility (APR-util) 
-libraries.
 
-2. Sofia-SIP [>=1.12.6] (http://sofia-sip.sourceforge.net/). 
-Sofia-SIP library is used to implement MRCPv2 specification 
-compliant SIP signaling. Sofia-SIP is an open-source SIP User-Agent
-library, compliant with the IETF RFC3261 specification.
+1. Apache Portable Runtime [>=1.2.x] (http://apr.apache.org).
+In order to build any part of the UniMRCP project, the Apache Portable Runtime (APR) and 
+the APR Utility (APR-util) libraries are required. The libraries provide a consistent interface to
+underlying platform-specific implementations.
+
+2. Sofia-SIP [>=1.12.6] (http://sofia-sip.sourceforge.net).
+Sofia-SIP is an open-source SIP User-Agent library, compliant with the IETF RFC3261 specification.
+The library is utilized for implementation of SIP signaling for MRCPv2. The SDP message parser is
+also used for both MRCPv2 (SIP/SDP) and MRCPv1 (RTSP/SDP).
 
 
 GNU BUILD
-===================
-Additional requirements
-- autoconf 2.57 or newer
-- automake
-- libtool 1.4 or newer
-- gcc
-- pkg-config
+=========
 
-Build procedure
-$ ./bootstrap
-$ ./configure
-$ make
-$ make install
+Prerequisites:
 
-Installed directory layout
-bin      - binaries (unimrcpserver, unimrcpclient)
-conf     - configuration files
-data     - data files
-include  - header files
-lib      - shared (convenient) libraries
-log      - log files
-plugin   - run-time loadable modules
+	autoconf 2.59 or newer
+	automake
+	libtool 1.4 or newer
+	gcc
+	pkg-config
 
-There are a couple of options to "./configure".
-To specify where to look for the APR and APR-util libraries
-use the "--with-apr=" and "--with-apr-util=" options.
-For example
-$ ./configure --with-apr=/usr/local/apr \
-              --with-apr-util=/usr/local/apr
 
-To specify  where to look for the Sofia-SIP library
-use the "--with-sofia-sip=" option. 
-For example
-$ ./configure --with-sofia-sip=/usr/local/sofia-sip
+Procedure:
 
-To cross-compile for 64-bit platform use
-CFLAGS=-m64 CXXFLAGS=-m64 LDFLAGS=-m64 ./configure
+If the UniMRCP source is checked out from the repository, the "bootstrap" script must be run first
+in order to generate the "configure" script and other required files.
 
-To cross-compile for 32-bit platform use
-CFLAGS=-m32 CXXFLAGS=-m32 LDFLAGS=-m32 ./configure
+	./bootstrap
 
-To install the default configuration use
-$ cd conf
-$ make def-conf
+The usual "configure", "make", "make install" sequence of commands should follow in order to build 
+and install the project from source.
 
-To install the default data use
-$ cd data
-$ make def-data
+	./configure
+	make
+	make install
 
-To generate doxygen documentation from the source use
-$ make dox
+As a result, the project will be installed in the directory "/usr/local/unimrcp" with the following
+layout:
 
+	bin       binaries (unimrcpserver, unimrcpclient, ...)
+	conf      configuration files (unimrcpserver.xml, unimrcpclient.xml, ...)
+	data      data files
+	include   header files
+	lib       shared (convenience) libraries
+	log       log files
+	plugin    run-time loadable modules
+
+There are a couple of options which can additionally be configured.
+In order to specify where to look for the APR and APR-util libraries, use the "--with-apr=" and 
+"--with-apr-util=" options respectively. For example:
+
+	./configure --with-apr=/usr/local/apr --with-apr-util=/usr/local/apr
+
+In order to specify where to look for the Sofia-SIP library, use the "--with-sofia-sip=" option.
+For example:
+
+	./configure --with-sofia-sip=/usr/local/sofia-sip
+
+In order to generate executables and shared libraries for x86-64 architecture, use the "-m64" 
+option as follows:
+
+	CFLAGS=-m64 CXXFLAGS=-m64 LDFLAGS=-m64 ./configure
+
+In order to generate executables and shared libraries for i386 architecture, use the "-m32" option
+as follows:
+
+	CFLAGS=-m32 CXXFLAGS=-m32 LDFLAGS=-m32 ./configure
+
+In order to install the default configuration, use the following commands:
+
+	cd conf
+	make def-conf
+
+In order to install the default data files, use the following commands:
+
+	cd data
+	make def-data
+
+In order to build a Doxygen generated documentation, use the following command:
+
+	make dox
 
 
 WINDOWS BUILD
-======================
-Additional requirements
-- Microsoft Visual Studio 2005
+=============
 
-One-time pre-build preparation
-You may need to adjust the paths for 3-rd party libraries
-in appropriate property sheets to match your local installation,
-while below are the defaults (build/vsprops).
+Prerequisites:
+
+	Microsoft Visual Studio 2005 or 2010.
+
+One-time pre-build setup: [optional]
+
+This step can be skipped if the dependencies are installed in their default locations. Otherwise,
+the paths in the corresponding property sheets must be modified accordingly. Below is the content
+of property sheets for Visual Studio 2005, which are located in the directory "build/vsprops".
+Similarly, property sheets for Visual Studio 2010 can be found in the directory "build/props".
 
 apr.vsprops
 	<UserMacro
@@ -108,22 +129,30 @@ sofiasip.vsprops
 		Value="$(SolutionDir)libs\sofia-sip"
 	/>
 
-Build procedure
-- open unimrcp.sln solution file
-- choose an appropriate solution platform (Build -> Configuration Manager) either win32 or x64
-- choose an appropriate solution configuration (Build -> Configuration Manager) either Debug or Release
-- build the solution (Build -> Build Solution)
+Procedure:
 
-One-time pre-run output directory preparation
-Build prepare.vcproj utility project (right click on tools -> prebuild in 
-Solution Explorer and select Build from context menu). This is a one-time 
-output directory preparation. It copies all the required APR and SofiaSIP 
-libraries and the default configuration to the output directory. 
+1. Open one of the available solution files:
+	* for Visual Studio 2005, use unimrcp.sln,
+	* for Visual Studio 2010, use unimrcp-2010.sln.
+2. Choose a platform (Build -> Configuration Manager):
+	* win32 
+	* x64.
+3. Choose a configuration (Build -> Configuration Manager):
+	* Debug
+	* Release.
+4. Build the solution (Build -> Build Solution).
 
-Output directory layout
-bin      - binaries (unimrcpserver, unimrcpclient) and all the required dlls
-conf     - configuration files
-data     - data files
-lib      - libraries
-log      - log files
-plugin   - run-time loadable modules
+One-time output directory setup:
+
+Build the "prepare.vcproj" utility project by right clicking on the project icon from the Solution
+Explorer (tools->prepare) and selecting the Build command from the context menu. This routine will
+setup the output directory and copy all the required APR, APR-Util, and Sofia-SIP libraries as well 
+as the default configuration and data files. As a result, the output directory layout will look 
+like the following:
+
+	bin      binaries (unimrcpserver, unimrcpclient, ...) and all the required dlls
+	conf     configuration files (unimrcpserver.xml, unimrcpclient.xml, ...)
+	data     data files
+	lib      libraries
+	log      log files
+	plugin   run-time loadable modules

@@ -14,27 +14,10 @@
  *
  */
 
-/*! \file */
-
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
-#ifndef _MSC_VER
-#include <inttypes.h>
-#ifdef HAVE_TGMATH_H
-#include <tgmath.h>
-#endif
-#endif
-
 #include "g711.h"
 
 /* Copied from the CCITT G.711 specification */
-static const uint8_t ulaw_to_alaw_table[256] =
+static const apr_byte_t ulaw_to_alaw_table[256] =
 {
      42,  43,  40,  41,  46,  47,  44,  45,  34,  35,  32,  33,  38,  39,  36,  37,
      58,  59,  56,  57,  62,  63,  60,  61,  50,  51,  48,  49,  54,  55,  52,  53,
@@ -56,8 +39,7 @@ static const uint8_t ulaw_to_alaw_table[256] =
 
 /* These transcoding tables are copied from the CCITT G.711 specification. To achieve
    optimal results, do not change them. */
-
-static const uint8_t alaw_to_ulaw_table[256] =
+static const apr_byte_t alaw_to_ulaw_table[256] =
 {
      42,  43,  40,  41,  46,  47,  44,  45,  34,  35,  32,  33,  38,  39,  36,  37,
      57,  58,  55,  56,  61,  62,  59,  60,  49,  50,  47,  48,  53,  54,  51,  52,
@@ -77,13 +59,13 @@ static const uint8_t alaw_to_ulaw_table[256] =
     214, 215, 212, 213, 218, 219, 216, 217, 207, 207, 206, 206, 210, 211, 208, 209
 };
 
-uint8_t alaw_to_ulaw(uint8_t alaw)
+apr_byte_t alaw_to_ulaw(apr_byte_t alaw)
 {
     return alaw_to_ulaw_table[alaw];
 }
 /*- End of function --------------------------------------------------------*/
 
-uint8_t ulaw_to_alaw(uint8_t ulaw)
+apr_byte_t ulaw_to_alaw(apr_byte_t ulaw)
 {
     return ulaw_to_alaw_table[ulaw];
 }

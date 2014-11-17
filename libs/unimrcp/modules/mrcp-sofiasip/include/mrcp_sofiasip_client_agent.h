@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_sofiasip_client_agent.h 1700 2010-05-21 18:56:06Z achaloyan $
+ * $Id: mrcp_sofiasip_client_agent.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_SOFIASIP_CLIENT_AGENT_H
@@ -56,6 +56,10 @@ struct mrcp_sofia_client_config_t {
 	apr_size_t sip_t4;
 	/** SIP T1x64 timer */
 	apr_size_t sip_t1x64;
+	/** Print out SIP messages to the console */
+	apt_bool_t tport_log;
+	/** Dump SIP messages to the specified file */
+	char      *tport_dump_file;
 };
 
 /**
@@ -67,6 +71,11 @@ MRCP_DECLARE(mrcp_sig_agent_t*) mrcp_sofiasip_client_agent_create(const char *id
  * Allocate Sofia-SIP config.
  */
 MRCP_DECLARE(mrcp_sofia_client_config_t*) mrcp_sofiasip_client_config_alloc(apr_pool_t *pool);
+
+/**
+ * Initialize Sofia-SIP logger.
+ */
+MRCP_DECLARE(apt_bool_t) mrcp_sofiasip_client_logger_init(const char *name, const char *level_str, apt_bool_t redirect);
 
 APT_END_EXTERN_C
 

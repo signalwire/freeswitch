@@ -7,7 +7,7 @@
 	>
 	<Tool
 		Name="VCCLCompilerTool"
-		AdditionalIncludeDirectories="&quot;$(SofiaDir)\win32&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\su&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\nua&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\url&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\sip&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\msg&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\sdp&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\nta&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\nea&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\soa&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\iptsec&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\bnf&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\features&quot;"
+		AdditionalIncludeDirectories="&quot;$(SofiaDir)\win32&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\su&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\nua&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\url&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\sip&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\msg&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\sdp&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\nta&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\nea&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\soa&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\iptsec&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\bnf&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\features&quot;;&quot;$(SofiaDir)\libsofia-sip-ua\tport&quot;"
 	/>
 	<UserMacro
 		Name="SofiaDir"

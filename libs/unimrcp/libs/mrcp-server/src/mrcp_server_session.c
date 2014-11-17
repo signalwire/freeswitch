@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_server_session.c 1794 2011-01-20 18:59:01Z achaloyan $
+ * $Id: mrcp_server_session.c 2237 2014-11-12 01:48:46Z achaloyan@gmail.com $
  */
 
 #include "mrcp_server.h"
@@ -118,7 +118,7 @@ mrcp_server_session_t* mrcp_server_session_create()
 
 static APR_INLINE mrcp_version_e mrcp_session_version_get(mrcp_server_session_t *session)
 {
-	return session->base.signaling_agent->mrcp_version;
+	return session->profile->mrcp_version;
 }
 
 static mrcp_engine_channel_t* mrcp_server_engine_channel_create(
@@ -504,7 +504,7 @@ static apt_bool_t mrcp_server_session_terminate_process(mrcp_server_session_t *s
 	for(i=0; i<session->terminations->nelts; i++) {
 		/* get existing termination */
 		slot = &APR_ARRAY_IDX(session->terminations,i,mrcp_termination_slot_t);
-		if(!slot || !slot->termination) continue;
+		if(!slot->termination) continue;
 
 		/* send subtract termination request */
 		apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Subtract Media Termination "APT_NAMESIDRES_FMT,
@@ -568,7 +568,7 @@ static apt_bool_t mrcp_server_on_message_receive(mrcp_server_session_t *session,
 	if(!channel->resource || !channel->state_machine) {
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Missing Resource "APT_NAMESIDRES_FMT,
 			MRCP_SESSION_NAMESID(session),
-			channel->resource->name.buf);
+			message->channel_id.resource_name.buf);
 		return FALSE;
 	}
 
@@ -737,7 +737,7 @@ static apt_bool_t mrcp_server_control_media_offer_process(mrcp_server_session_t 
 
 		/* create new MRCP channel instance */
 		channel = mrcp_server_channel_create(session,&control_descriptor->resource_name,i,control_descriptor->cmid_arr);
-		if(!channel) continue;
+		if(!channel || !channel->resource) continue;
 
 		control_descriptor->session_id = session->base.id;
 		apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Add Control Channel "APT_NAMESIDRES_FMT" [%d]",
@@ -827,8 +827,17 @@ static mpf_rtp_termination_descriptor_t* mrcp_server_associations_build(mrcp_ser
 			}
 
 			if(mrcp_session_version_get(session) == MRCP_VERSION_1) {
-				/* implicitly modify the descriptor, if needed */
 				mpf_stream_direction_e direction = audio_stream->direction;
+				/* implicitly modify the descriptor, if needed */
+				if(media_descriptor->direction == STREAM_DIRECTION_NONE && mpf_codec_list_is_empty(&media_descriptor->codec_list) == TRUE) {
+					/* this is the case when SETUP contains no SDP, assume all the available codecs are offered */
+					if(mpf_codec_list_is_empty(&session->profile->rtp_settings->codec_list) == FALSE) {
+						mpf_codec_list_copy(&media_descriptor->codec_list,
+								&session->profile->rtp_settings->codec_list,
+								session->base.pool);
+					}
+				}
+
 				media_descriptor->direction |= direction;
 				if(media_descriptor->state == MPF_MEDIA_DISABLED) {
 					media_descriptor->state = MPF_MEDIA_ENABLED;
@@ -881,7 +890,7 @@ static apt_bool_t mrcp_server_av_media_offer_process(mrcp_server_session_t *sess
 	for(i=0; i<count; i++) {
 		/* get existing termination */
 		slot = &APR_ARRAY_IDX(session->terminations,i,mrcp_termination_slot_t);
-		if(!slot || !slot->termination) continue;
+		if(!slot->termination) continue;
 
 		/* build associations between specified RTP termination and control channels */
 		rtp_descriptor = mrcp_server_associations_build(session,descriptor,slot);
@@ -990,7 +999,7 @@ static mrcp_termination_slot_t* mrcp_server_rtp_termination_find(mrcp_server_ses
 	mrcp_termination_slot_t *slot;
 	for(i=0; i<session->terminations->nelts; i++) {
 		slot = &APR_ARRAY_IDX(session->terminations,i,mrcp_termination_slot_t);
-		if(slot && slot->termination == termination) {
+		if(slot->termination == termination) {
 			return slot;
 		}
 	}
@@ -1030,9 +1039,6 @@ static mrcp_channel_t* mrcp_server_channel_find(mrcp_server_session_t *session, 
 static apt_bool_t mrcp_server_on_termination_modify(mrcp_server_session_t *session, const mpf_message_t *mpf_message)
 {
 	mrcp_termination_slot_t *termination_slot;
-	if(!session) {
-		return FALSE;
-	}
 	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Media Termination Modified "APT_NAMESIDRES_FMT,
 		MRCP_SESSION_NAMESID(session),
 		mpf_termination_name_get(mpf_message->termination));
@@ -1066,9 +1072,6 @@ static apt_bool_t mrcp_server_on_termination_modify(mrcp_server_session_t *sessi
 static apt_bool_t mrcp_server_on_termination_subtract(mrcp_server_session_t *session, const mpf_message_t *mpf_message)
 {
 	mrcp_termination_slot_t *termination_slot;
-	if(!session) {
-		return FALSE;
-	}
 	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Media Termination Subtracted "APT_NAMESIDRES_FMT,
 		MRCP_SESSION_NAMESID(session),
 		mpf_termination_name_get(mpf_message->termination));
@@ -1105,7 +1108,10 @@ apt_bool_t mrcp_server_mpf_message_process(mpf_message_container_t *mpf_message_
 		else {
 			session = NULL;
 		}
-		
+		if(!session) {
+			apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Received MPF Message: NULL session");
+			continue;
+		}
 		if(mpf_message->message_type == MPF_MESSAGE_TYPE_RESPONSE) {
 			switch(mpf_message->command_id) {
 				case MPF_ADD_TERMINATION:

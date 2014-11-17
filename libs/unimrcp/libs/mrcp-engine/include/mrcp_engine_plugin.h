@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_engine_plugin.h 1724 2010-06-02 18:42:20Z achaloyan $
+ * $Id: mrcp_engine_plugin.h 2139 2014-07-07 05:06:19Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_ENGINE_PLUGIN_H
@@ -30,11 +30,18 @@
 
 APT_BEGIN_EXTERN_C
 
+/** Let the plugin symbols be always exported as C functions */
+#ifdef __cplusplus
+#define MRCP_PLUGIN_EXTERN_C extern "C"
+#else
+#define MRCP_PLUGIN_EXTERN_C extern
+#endif
+
 /** Plugin export defines */
 #ifdef WIN32
-#define MRCP_PLUGIN_DECLARE(type) EXTERN_C __declspec(dllexport) type
+#define MRCP_PLUGIN_DECLARE(type) MRCP_PLUGIN_EXTERN_C __declspec(dllexport) type
 #else
-#define MRCP_PLUGIN_DECLARE(type) type
+#define MRCP_PLUGIN_DECLARE(type) MRCP_PLUGIN_EXTERN_C type
 #endif
 
 /** [REQUIRED] Symbol name of the main entry point in plugin DSO */
@@ -57,7 +64,8 @@ typedef apt_bool_t (*mrcp_plugin_log_accessor_f)(apt_logger_t *logger);
 
 /** Declare this macro in plugins to set plugin version */
 #define MRCP_PLUGIN_VERSION_DECLARE \
-	MRCP_PLUGIN_DECLARE(mrcp_plugin_version_t) mrcp_plugin_version =  \
+	MRCP_PLUGIN_DECLARE(mrcp_plugin_version_t) mrcp_plugin_version; \
+	mrcp_plugin_version_t mrcp_plugin_version =  \
 		{PLUGIN_MAJOR_VERSION, PLUGIN_MINOR_VERSION, PLUGIN_PATCH_VERSION};
 
 
@@ -72,7 +80,7 @@ typedef apt_bool_t (*mrcp_plugin_log_accessor_f)(apt_logger_t *logger);
  * Minor API changes that do not cause binary compatibility problems.
  * Reset to 0 when upgrading PLUGIN_MAJOR_VERSION
  */
-#define PLUGIN_MINOR_VERSION   0
+#define PLUGIN_MINOR_VERSION   2
 
 /** patch level 
  * The Patch Level never includes API changes, simply bug fixes.

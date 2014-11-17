@@ -1,20 +1,8 @@
-MAINTAINERCLEANFILES   = Makefile.in
-
-AM_CPPFLAGS            = -Iinclude \
-                         -I$(unimrcp_srcdir)/platforms/umc/include \
-                         -I$(top_srcdir)/platforms/libunimrcp-client/include \
-                         -I$(top_srcdir)/libs/mrcp-client/include \
-                         -I$(top_srcdir)/libs/mrcp-signaling/include \
-                         -I$(top_srcdir)/libs/mrcpv2-transport/include \
-                         -I$(top_srcdir)/libs/mrcp/include \
-                         -I$(top_srcdir)/libs/mrcp/message/include \
-                         -I$(top_srcdir)/libs/mrcp/control/include \
-                         -I$(top_srcdir)/libs/mrcp/resources/include \
-                         -I$(top_srcdir)/libs/mpf/include \
-                         -I$(top_srcdir)/libs/apr-toolkit/include \
-                         $(UNIMRCP_APR_INCLUDES) $(UNIMRCP_APU_INCLUDES)
+AM_CPPFLAGS            = -I$(top_srcdir)/platforms/umc/include \
+                         $(UNIMRCP_CLIENTAPP_INCLUDES)
 
 bin_PROGRAMS           = umc
+
 umc_SOURCES            = src/main.cpp \
                          src/umcconsole.cpp \
                          src/umcframework.cpp \
@@ -32,9 +20,7 @@ umc_SOURCES            = src/main.cpp \
                          src/setparamsession.cpp \
                          src/verifierscenario.cpp \
                          src/verifiersession.cpp
-                         
-umc_LDADD              = $(top_builddir)/platforms/libunimrcp-client/libunimrcpclient.la
+umc_LDADD              = $(UNIMRCP_CLIENTAPP_LIBS)
+umc_LDFLAGS            = $(UNIMRCP_CLIENTAPP_OPTS)
 
-if ISMAC
-umc_LDFLAGS            = -framework CoreFoundation -framework SystemConfiguration
-endif
+include $(top_srcdir)/build/rules/uniclientapp.am

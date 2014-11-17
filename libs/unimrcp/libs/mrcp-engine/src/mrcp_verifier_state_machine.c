@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_verifier_state_machine.c 1756 2010-08-19 19:02:39Z achaloyan $
+ * $Id: mrcp_verifier_state_machine.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "apt_obj_list.h"
@@ -112,8 +112,7 @@ static apt_bool_t verifier_request_get_params(mrcp_verifier_state_machine_t *sta
 
 static apt_bool_t verifier_response_get_params(mrcp_verifier_state_machine_t *state_machine, mrcp_message_t *message)
 {
-	mrcp_header_fields_set(&message->header,&state_machine->active_request->header,message->pool);
-	mrcp_header_fields_get(&message->header,state_machine->properties,message->pool);
+	mrcp_header_fields_get(&message->header,state_machine->properties,&state_machine->active_request->header,message->pool);
 	return verifier_response_dispatch(state_machine,message);
 }
 

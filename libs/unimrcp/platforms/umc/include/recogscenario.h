@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: recogscenario.h 1474 2010-02-07 20:51:47Z achaloyan $
+ * $Id: recogscenario.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef RECOG_SCENARIO_H
@@ -41,6 +41,7 @@ public:
 /* ============================ ACCESSORS ================================== */
 	const char* GetContentType() const;
 	const char* GetContent() const;
+	apr_size_t GetContentLength() const;
 	const char* GetAudioSource() const;
 
 /* ============================ INQUIRIES ================================== */
@@ -58,6 +59,7 @@ protected:
 	bool        m_Recognize;
 	const char* m_ContentType;
 	const char* m_Content;
+	apr_size_t  m_ContentLength;
 	const char* m_AudioSource;
 };
 
@@ -70,6 +72,11 @@ inline const char* RecogScenario::GetContentType() const
 inline const char* RecogScenario::GetContent() const
 {
 	return m_Content;
+}
+
+inline apr_size_t RecogScenario::GetContentLength() const
+{
+	return m_ContentLength;
 }
 
 inline const char* RecogScenario::GetAudioSource() const

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: synthsession.h 1586 2010-03-12 19:39:02Z achaloyan $
+ * $Id: synthsession.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef SYNTH_SESSION_H

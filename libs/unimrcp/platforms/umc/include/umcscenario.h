@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: umcscenario.h 1474 2010-02-07 20:51:47Z achaloyan $
+ * $Id: umcscenario.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef UMC_SCENARIO_H
@@ -65,11 +65,12 @@ protected:
 	bool LoadCapabilities(const apr_xml_elem* pElem, apr_pool_t* pool);
 	bool LoadRtpTermination(const apr_xml_elem* pElem, apr_pool_t* pool);
 
+	const char* LoadFileContent(const char* pFileName, apr_size_t& size, apr_pool_t* pool) const;
 	const char* LoadFileContent(const char* pFileName, apr_pool_t* pool) const;
-	int ParseRates(const char* pStr, apr_pool_t* pool) const;
+	static int ParseRates(const char* pStr, apr_pool_t* pool);
 
 /* ============================ INQUIRIES ================================== */
-	bool IsElementEnabled(const apr_xml_elem* pElem) const;
+	static bool IsElementEnabled(const apr_xml_elem* pElem);
 
 /* ============================ DATA ======================================= */
 	const char*                       m_pName;
@@ -118,5 +119,11 @@ inline bool UmcScenario::IsDiscoveryEnabled() const
 	return m_ResourceDiscovery;
 }
 
+
+inline const char* UmcScenario::LoadFileContent(const char* pFileName, apr_pool_t* pool) const
+{
+	apr_size_t dummy;
+	return LoadFileContent(pFileName, dummy, pool);
+}
 
 #endif /* UMC_SCENARIO_H */

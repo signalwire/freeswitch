@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: rtsp_client.h 1710 2010-05-24 17:36:19Z achaloyan $
+ * $Id: rtsp_client.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef RTSP_CLIENT_H
@@ -51,6 +51,7 @@ struct rtsp_client_vtable_t {
 
 /**
  * Create RTSP client.
+ * @param id the identifier of the client
  * @param max_connection_count the number of max RTSP connections
  * @param request_timeout the request timeout to set
  * @param obj the external object to send event to
@@ -58,11 +59,12 @@ struct rtsp_client_vtable_t {
  * @param pool the pool to allocate memory from
  */
 RTSP_DECLARE(rtsp_client_t*) rtsp_client_create(
-								apr_size_t max_connection_count,
-								apr_size_t request_timeout,
-								void *obj,
-								const rtsp_client_vtable_t *handler,
-								apr_pool_t *pool);
+									const char *id,
+									apr_size_t max_connection_count,
+									apr_size_t request_timeout,
+									void *obj,
+									const rtsp_client_vtable_t *handler,
+									apr_pool_t *pool);
 
 /**
  * Destroy RTSP client.

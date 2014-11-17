@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_connection.h 1710 2010-05-24 17:36:19Z achaloyan $
+ * $Id: mrcp_connection.h 2170 2014-09-09 05:19:48Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_CONNECTION_H
@@ -26,7 +26,10 @@
 
 #include <apr_poll.h>
 #include <apr_hash.h>
-#include "apt_obj_list.h"
+#ifdef WIN32
+#pragma warning(disable: 4127)
+#endif
+#include <apr_ring.h>
 #include "mrcp_connection_types.h"
 #include "mrcp_stream.h"
 
@@ -37,6 +40,9 @@ APT_BEGIN_EXTERN_C
 
 /** MRCPv2 connection */
 struct mrcp_connection_t {
+	/** Ring entry */
+	APR_RING_ENTRY(mrcp_connection_t) link;
+
 	/** Memory pool */
 	apr_pool_t       *pool;
 
@@ -58,8 +64,6 @@ struct mrcp_connection_t {
 
 	/** Reference count */
 	apr_size_t        access_count;
-	/** Agent list element */
-	apt_list_elem_t  *it;
 	/** Opaque agent */
 	void             *agent;
 
@@ -84,7 +88,7 @@ struct mrcp_connection_t {
 };
 
 /** Create MRCP connection. */
-mrcp_connection_t* mrcp_connection_create();
+mrcp_connection_t* mrcp_connection_create(void);
 
 /** Destroy MRCP connection. */
 void mrcp_connection_destroy(mrcp_connection_t *connection);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: unimrcp_server.c 1711 2010-05-25 17:54:02Z achaloyan $
+ * $Id: unimrcp_server.c 2231 2014-11-12 01:32:03Z achaloyan@gmail.com $
  */
 
 #include <stdlib.h>
 #include <apr_xml.h>
 #include <apr_version.h>
 #include "uni_version.h"
+#include "uni_revision.h"
 #include "unimrcp_server.h"
 #include "mrcp_resource_loader.h"
 #include "mpf_engine.h"
@@ -32,7 +33,6 @@
 #include "apt_log.h"
 
 #define CONF_FILE_NAME            "unimrcpserver.xml"
-#define DEFAULT_PLUGIN_DIR_PATH   "../plugin"
 #ifdef WIN32
 #define DEFAULT_PLUGIN_EXT        "dll"
 #else
@@ -86,7 +86,7 @@ MRCP_DECLARE(mrcp_server_t*) unimrcp_server_start(apt_dir_layout_t *dir_layout)
 		return NULL;
 	}
 
-	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"UniMRCP Server ["UNI_VERSION_STRING"]");
+	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"UniMRCP Server ["UNI_VERSION_STRING"] [r"UNI_REVISION_STRING"]");
 	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"APR ["APR_VERSION_STRING"]");
 	server = mrcp_server_create(dir_layout);
 	if(!server) {
@@ -118,7 +118,7 @@ MRCP_DECLARE(apt_bool_t) unimrcp_server_shutdown(mrcp_server_t *server)
 /** Check whether specified attribute is valid */
 static APR_INLINE apt_bool_t is_attr_valid(const apr_xml_attr *attr)
 {
-	return (attr && attr->value && attr->value != '\0');
+	return (attr && attr->value && *attr->value != '\0');
 }
 
 /** Check whether specified attribute is enabled (true) */
@@ -172,7 +172,7 @@ static apt_bool_t header_attribs_get(const apr_xml_elem *elem, const apr_xml_att
 			*enable = attr;
 		}
 	}
-	
+
 	if(is_attr_valid(*id) == FALSE) {
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Missing Required Attribute <id> in Element <%s>",elem->name);
 		return FALSE;
@@ -219,6 +219,16 @@ static char* unimrcp_server_ip_address_get(unimrcp_server_loader_t *loader, cons
 			loader->auto_ip = auto_addr;
 		}
 		return apr_pstrdup(loader->pool,loader->auto_ip);
+	}
+	else if(attr && strcasecmp(attr->value,"iface") == 0) {
+		/* get ip address by network interface name */
+		char *ip_addr = DEFAULT_IP_ADDRESS;
+		if(is_cdata_valid(elem) == TRUE) {
+			const char *iface_name = cdata_text_get(elem);
+			apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Get IP Address by Interface [%s]", iface_name);
+			apt_ip_get_by_iface(iface_name,&ip_addr,loader->pool);
+		}
+		return ip_addr;
 	}
 
 	if(is_cdata_valid(elem)) {
@@ -269,7 +279,7 @@ static apt_bool_t unimrcp_server_resource_factory_load(unimrcp_server_loader_t *
 			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown Element <%s>",elem->name);
 		}
 	}
-	
+
 	resource_factory = mrcp_resource_factory_get(resource_loader);
 	return mrcp_server_resource_factory_register(loader->server,resource_factory);
 }
@@ -307,7 +317,18 @@ static apt_bool_t unimrcp_server_sip_uas_load(unimrcp_server_loader_t *loader, c
 		}
 		else if(strcasecmp(elem->name,"ua-name") == 0) {
 			if(is_cdata_valid(elem) == TRUE) {
-				config->user_agent_name = cdata_copy(elem,loader->pool);
+				const apr_xml_attr *attr = NULL;
+				for(attr = elem->attr; attr; attr = attr->next) {
+					if(strcasecmp(attr->name,"appendversion") == 0) {
+						break;
+					}
+				}
+				if(is_attr_enabled(attr)) {
+					config->user_agent_name = apr_psprintf(loader->pool,"%s "UNI_VERSION_STRING,cdata_text_get(elem));
+				}
+				else {
+					config->user_agent_name = cdata_copy(elem,loader->pool);
+				}
 			}
 		}
 		else if(strcasecmp(elem->name,"sdp-origin") == 0) {
@@ -338,6 +359,25 @@ static apt_bool_t unimrcp_server_sip_uas_load(unimrcp_server_loader_t *loader, c
 		else if(strcasecmp(elem->name,"sip-t1x64") == 0) {
 			if(is_cdata_valid(elem) == TRUE) {
 				config->sip_t1x64 = atol(cdata_text_get(elem));
+			}
+		}
+		else if(strcasecmp(elem->name,"sip-message-output") == 0) {
+			if(is_cdata_valid(elem) == TRUE) {
+				config->tport_log = cdata_bool_get(elem);
+			}
+		}
+		else if(strcasecmp(elem->name,"sip-message-dump") == 0) {
+			if(is_cdata_valid(elem) == TRUE) {
+				const char *root_path;
+				const char *path = cdata_text_get(elem);
+				if(loader->dir_layout && apr_filepath_root(&root_path,&path,0,loader->pool) == APR_ERELATIVE)
+					config->tport_dump_file = apt_dir_layout_path_compose(
+													loader->dir_layout,
+													APT_LAYOUT_LOG_DIR,
+													path,
+													loader->pool);
+				else
+					config->tport_dump_file = cdata_copy(elem,loader->pool);
 			}
 		}
 		else {
@@ -547,8 +587,8 @@ static apt_bool_t unimrcp_server_rtp_factory_load(unimrcp_server_loader_t *loade
 		else {
 			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown Element <%s>",elem->name);
 		}
-	}    
-	
+	}
+
 	if(rtp_ip) {
 		apt_string_set(&rtp_config->ip,rtp_ip);
 	}
@@ -571,10 +611,11 @@ static apt_bool_t unimrcp_server_plugin_load(unimrcp_server_loader_t *loader, co
 {
 	mrcp_engine_t *engine;
 	mrcp_engine_config_t *config;
+	char *plugin_file_name;
+	char *plugin_path;
 	const char *plugin_id = NULL;
 	const char *plugin_name = NULL;
 	const char *plugin_ext = NULL;
-	const char *plugin_path = NULL;
 	apt_bool_t plugin_enabled = TRUE;
 	const apr_xml_attr *attr;
 	for(attr = root->attr; attr; attr = attr->next) {
@@ -599,7 +640,7 @@ static apt_bool_t unimrcp_server_plugin_load(unimrcp_server_loader_t *loader, co
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Missing plugin id or name");
 		return FALSE;
 	}
-		
+
 	if(!plugin_enabled) {
 		/* disabled plugin, just skip it */
 		return TRUE;
@@ -609,13 +650,11 @@ static apt_bool_t unimrcp_server_plugin_load(unimrcp_server_loader_t *loader, co
 		plugin_ext = DEFAULT_PLUGIN_EXT;
 	}
 
-	if(*loader->dir_layout->plugin_dir_path == '\0') {
-		plugin_path = apr_psprintf(loader->pool,"%s.%s",
-						plugin_name,plugin_ext);
-	}
-	else {
-		plugin_path = apr_psprintf(loader->pool,"%s/%s.%s",
-						loader->dir_layout->plugin_dir_path,plugin_name,plugin_ext);
+	plugin_file_name = apr_psprintf(loader->pool,"%s.%s",plugin_name,plugin_ext);
+	plugin_path = apt_dir_layout_path_compose(loader->dir_layout,APT_LAYOUT_PLUGIN_DIR,plugin_file_name,loader->pool);
+	if(!plugin_path) {
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to compose plugin path %s",plugin_file_name);
+		return FALSE;
 	}
 
 	config = mrcp_engine_config_alloc(loader->pool);
@@ -651,10 +690,6 @@ static apt_bool_t unimrcp_server_plugin_factory_load(unimrcp_server_loader_t *lo
 {
 	const apr_xml_elem *elem;
 
-	if(!loader->dir_layout->plugin_dir_path) {
-		loader->dir_layout->plugin_dir_path = DEFAULT_PLUGIN_DIR_PATH;
-	}
-
 	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Loading Plugin Factory");
 	for(elem = root->first_child; elem; elem = elem->next) {
 		apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Loading Element <%s>",elem->name);
@@ -689,6 +724,16 @@ static apt_bool_t unimrcp_server_jb_settings_load(unimrcp_server_loader_t *loade
 		else if(strcasecmp(elem->name,"max-playout-delay") == 0) {
 			if(is_cdata_valid(elem) == TRUE) {
 				jb->max_playout_delay = atol(cdata_text_get(elem));
+			}
+		}
+		else if(strcasecmp(elem->name,"adaptive") == 0) {
+			if(is_cdata_valid(elem) == TRUE) {
+				jb->adaptive = (apr_byte_t) atol(cdata_text_get(elem));
+			}
+		}
+		else if(strcasecmp(elem->name,"time-skew-detection") == 0) {
+			if(is_cdata_valid(elem) == TRUE) {
+				jb->time_skew_detection = (apr_byte_t) atol(cdata_text_get(elem));
 			}
 		}
 		else {
@@ -780,7 +825,7 @@ static apt_bool_t unimrcp_server_rtp_settings_load(unimrcp_server_loader_t *load
 		else {
 			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown Element <%s>",elem->name);
 		}
-	}    
+	}
 
 	return mrcp_server_rtp_settings_register(loader->server,rtp_settings,id);
 }
@@ -850,6 +895,7 @@ static apt_bool_t unimrcp_server_mrcpv2_profile_load(unimrcp_server_loader_t *lo
 	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Create MRCPv2 Profile [%s]",id);
 	profile = mrcp_server_profile_create(
 				id,
+				MRCP_VERSION_2,
 				NULL,
 				sip_agent,
 				mrcpv2_agent,
@@ -902,6 +948,7 @@ static apt_bool_t unimrcp_server_mrcpv1_profile_load(unimrcp_server_loader_t *lo
 	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Create MRCPv1 Profile [%s]",id);
 	profile = mrcp_server_profile_create(
 				id,
+				MRCP_VERSION_1,
 				NULL,
 				rtsp_agent,
 				NULL,
@@ -1024,7 +1071,7 @@ static apt_bool_t unimrcp_server_settings_load(unimrcp_server_loader_t *loader, 
 		else {
 			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown Element <%s>",elem->name);
 		}
-	}    
+	}
 	return TRUE;
 }
 
@@ -1058,7 +1105,47 @@ static apt_bool_t unimrcp_server_profiles_load(unimrcp_server_loader_t *loader, 
 		else {
 			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown Element <%s>",elem->name);
 		}
-	}    
+	}
+	return TRUE;
+}
+
+/** Load misc parameters */
+static apt_bool_t unimrcp_server_misc_load(unimrcp_server_loader_t *loader, const apr_xml_elem *root)
+{
+	const apr_xml_elem *elem;
+	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Loading Misc Parameters");
+	for(elem = root->first_child; elem; elem = elem->next) {
+		if(strcasecmp(elem->name,"sofiasip-logger") == 0) {
+			char *logger_list_str;
+			char *logger_name;
+			char *state;
+			apr_xml_attr *attr;
+			apt_bool_t redirect = FALSE;
+			const char *loglevel_str = NULL;
+			for(attr = elem->attr; attr; attr = attr->next) {
+				if(strcasecmp(attr->name,"redirect") == 0) {
+					if(attr->value && strcasecmp(attr->value,"true") == 0)
+						redirect = TRUE;
+				}
+				else if(strcasecmp(attr->name,"loglevel") == 0) {
+					loglevel_str = attr->value;
+				}
+			}
+			
+			logger_list_str = apr_pstrdup(loader->pool,cdata_text_get(elem));
+			do {
+				logger_name = apr_strtok(logger_list_str, ",", &state);
+				if(logger_name) {
+					mrcp_sofiasip_server_logger_init(logger_name,loglevel_str,redirect);
+				}
+				logger_list_str = NULL; /* make sure we pass NULL on subsequent calls of apr_strtok() */
+			}
+			while(logger_name);
+		}
+		else {
+			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown Element <%s>",elem->name);
+		}
+	}
 	return TRUE;
 }
 
@@ -1082,7 +1169,7 @@ static apr_xml_doc* unimrcp_server_doc_parse(const char *file_path, apr_pool_t *
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Parse Config File [%s]",file_path);
 		xml_doc = NULL;
 	}
-	
+
 	apr_file_close(fd);
 	return xml_doc;
 }
@@ -1113,7 +1200,7 @@ static apt_bool_t unimrcp_server_load(mrcp_server_t *mrcp_server, apt_dir_layout
 
 	/* Match document name */
 	if(!root || strcasecmp(root->name,"unimrcpserver") != 0) {
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown Document <%s>",root->name);
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown Document <%s>",root ? root->name : "null");
 		return FALSE;
 	}
 
@@ -1152,6 +1239,9 @@ static apt_bool_t unimrcp_server_load(mrcp_server_t *mrcp_server, apt_dir_layout
 		}
 		else if(strcasecmp(elem->name,"profiles") == 0) {
 			unimrcp_server_profiles_load(loader,elem);
+		}
+		else if(strcasecmp(elem->name,"misc") == 0) {
+			unimrcp_server_misc_load(loader,elem);
 		}
 		else {
 			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Unknown Element <%s>",elem->name);

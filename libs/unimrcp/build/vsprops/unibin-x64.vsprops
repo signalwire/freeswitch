@@ -8,6 +8,10 @@
 	InheritedPropertySheets="apr.vsprops;sofiasip.vsprops"
 	>
 	<Tool
+		Name="VCCLCompilerTool"
+		PreprocessorDefinitions="_WIN64"
+	/>
+	<Tool
 		Name="VCLinkerTool"
 		AdditionalLibraryDirectories="$(AprDir)\$(PlatformName)\$(ConfigurationName);$(AprUtilDir)\$(PlatformName)\$(ConfigurationName);$(SofiaDir)\win32\libsofia-sip-ua\$(PlatformName)\$(ConfigurationName);$(SolutionDir)$(PlatformName)\$(ConfigurationName)\lib;$(SolutionDir)$(PlatformName)\$(ConfigurationName)\bin"
 		TargetMachine="17"

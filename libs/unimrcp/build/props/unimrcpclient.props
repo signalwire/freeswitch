@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="mrcpclient.props" />
+    <Import Project="sofiasip.props" Condition=" '$(SofiaSipImported)' == '' "/>
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <UniMRCPClientLibs>libunimrcpclient.lib;mrcpsofiasip.lib;mrcpunirtsp.lib;unirtsp.lib;mrcpclient.lib;mrcpv2transport.lib;mrcpsignaling.lib;mrcp.lib;mpf.lib;aprtoolkit.lib;libaprutil-1.lib;libapr-1.lib;libsofia_sip_ua.lib;ws2_32.lib;winmm.lib</UniMRCPClientLibs>
+  </PropertyGroup>
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectRootDir)platforms\libunimrcp-client\include;$(ProjectRootDir)build;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <BuildMacro Include="UniMRCPClientLibs">
+      <Value>$(UniMRCPClientLibs)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>

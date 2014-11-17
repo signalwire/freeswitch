@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mpf_multiplier.c 1693 2010-05-16 18:33:07Z achaloyan $
+ * $Id: mpf_multiplier.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "mpf_multiplier.h"

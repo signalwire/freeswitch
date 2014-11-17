@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: parse_gen_suite.c 1667 2010-04-25 07:04:31Z achaloyan $
+ * $Id: parse_gen_suite.c 2215 2014-11-06 03:07:23Z achaloyan@gmail.com $
  */
 
 #include <apr_file_info.h>
@@ -167,11 +167,12 @@ static apt_bool_t test_dir_process(apt_test_suite_t *suite, mrcp_resource_factor
 		rv = apr_dir_read(&finfo,APR_FINFO_DIRENT,dir);
 		if(rv == APR_SUCCESS) {
 			if(finfo.filetype == APR_REG && finfo.name) {
+				int ch;
 				char *file_path;
-				apr_filepath_merge(&file_path,dir_name,finfo.name,0,suite->pool);
+				apr_filepath_merge(&file_path,dir_name,finfo.name,APR_FILEPATH_NATIVE,suite->pool);
 				test_file_process(suite,factory,version,file_path);
 				printf("\nPress ENTER to continue\n");
-				getchar();
+				do {ch = getchar(); } while ((ch != '\n') && (ch != EOF));
 			}
 		}
 	} 

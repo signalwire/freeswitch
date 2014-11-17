@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: synthsession.cpp 1586 2010-03-12 19:39:02Z achaloyan $
+ * $Id: synthsession.cpp 2193 2014-10-08 03:44:33Z achaloyan@gmail.com $
  */
 
 #include "synthsession.h"
@@ -22,6 +22,7 @@
 #include "mrcp_generic_header.h"
 #include "mrcp_synth_header.h"
 #include "mrcp_synth_resource.h"
+#include "apt_log.h"
 
 struct SynthChannel
 {
@@ -145,7 +146,8 @@ SynthChannel* SynthSession::CreateSynthChannel()
 		NULL,
 		NULL,
 		NULL,
-		WriteStream
+		WriteStream,
+		NULL
 	};
 
 	pTermination = CreateAudioTermination(
@@ -173,6 +175,13 @@ bool SynthSession::OnChannelAdd(mrcp_channel_t* pMrcpChannel, mrcp_sig_status_co
 	if(!UmcSession::OnChannelAdd(pMrcpChannel,status))
 		return false;
 
+	const mpf_codec_descriptor_t* pDescriptor = mrcp_application_sink_descriptor_get(pMrcpChannel);
+	if(!pDescriptor) 
+	{
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Get Media Sink Descriptor");
+		return Terminate();
+	}
+
 	SynthChannel* pSynthChannel = (SynthChannel*) mrcp_application_channel_object_get(pMrcpChannel);
 	if(status != MRCP_SIG_STATUS_CODE_SUCCESS)
 	{
@@ -187,7 +196,6 @@ bool SynthSession::OnChannelAdd(mrcp_channel_t* pMrcpChannel, mrcp_sig_status_co
 		SendMrcpRequest(pSynthChannel->m_pMrcpChannel,pMrcpMessage);
 	}
 
-	const mpf_codec_descriptor_t* pDescriptor = mrcp_application_sink_descriptor_get(pMrcpChannel);
 	pSynthChannel->m_pAudioOut = GetAudioOut(pDescriptor,GetSessionPool());
 	return true;
 }
@@ -273,12 +281,19 @@ mrcp_message_t* SynthSession::CreateSpeakRequest(mrcp_channel_t* pMrcpChannel)
 
 FILE* SynthSession::GetAudioOut(const mpf_codec_descriptor_t* pDescriptor, apr_pool_t* pool) const
 {
-	char* pFileName = apr_psprintf(pool,"synth-%dkHz-%s.pcm",
-		pDescriptor ? pDescriptor->sampling_rate/1000 : 8, GetMrcpSessionId());
+	FILE* file;
+	char* pFileName = apr_psprintf(pool,"synth-%dkHz-%s.pcm",pDescriptor->sampling_rate/1000, GetMrcpSessionId());
 	apt_dir_layout_t* pDirLayout = GetScenario()->GetDirLayout();
-	char* pFilePath = apt_datadir_filepath_get(pDirLayout,pFileName,pool);
-	if(!pFilePath) 
+	char* pFilePath = apt_vardir_filepath_get(pDirLayout,pFileName,pool);
+	if(!pFilePath)
 		return NULL;
 
-	return fopen(pFilePath,"wb");
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Open Speech Output File [%s] for Writing",pFilePath);
+	file = fopen(pFilePath,"wb");
+	if(!file)
+	{
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Open Speech Output File [%s] for Writing",pFilePath);
+		return NULL;
+	}
+	return file;
 }

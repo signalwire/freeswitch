@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_client_connection.c 1792 2011-01-10 21:08:52Z achaloyan $
+ * $Id: mrcp_client_connection.c 2235 2014-11-12 01:41:51Z achaloyan@gmail.com $
  */
 
 #include "mrcp_connection.h"
@@ -27,11 +27,12 @@
 
 
 struct mrcp_connection_agent_t {
+	/** List (ring) of MRCP connections */
+	APR_RING_HEAD(mrcp_connection_head_t, mrcp_connection_t) connection_list;
+
 	apr_pool_t                           *pool;
 	apt_poller_task_t                    *task;
 	const mrcp_resource_factory_t        *resource_factory;
-
-	apt_obj_list_t                       *connection_list;
 
 	apr_uint32_t                          request_timeout;
 	apt_bool_t                            offer_new_connection;
@@ -74,7 +75,7 @@ MRCP_DECLARE(mrcp_connection_agent_t*) mrcp_client_connection_agent_create(
 	apt_task_vtable_t *vtable;
 	apt_task_msg_pool_t *msg_pool;
 	mrcp_connection_agent_t *agent;
-	
+
 	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Create MRCPv2 Agent [%s] [%"APR_SIZE_T_FMT"]",
 				id,	max_connection_count);
 	agent = apr_palloc(pool,sizeof(mrcp_connection_agent_t));
@@ -106,7 +107,7 @@ MRCP_DECLARE(mrcp_connection_agent_t*) mrcp_client_connection_agent_create(
 		vtable->process_msg = mrcp_client_agent_msg_process;
 	}
 
-	agent->connection_list = apt_list_create(pool);
+	APR_RING_INIT(&agent->connection_list, mrcp_connection_t, link);
 	return agent;
 }
 
@@ -287,7 +288,6 @@ static mrcp_connection_t* mrcp_client_agent_connection_create(mrcp_connection_ag
 {
 	char *local_ip = NULL;
 	char *remote_ip = NULL;
-	apt_pollset_t *pollset = apt_poller_task_pollset_get(agent->task);
 	mrcp_connection_t *connection = mrcp_connection_create();
 
 	apr_sockaddr_info_get(&connection->r_sockaddr,descriptor->ip.buf,APR_INET,descriptor->port,0,connection->pool);
@@ -328,7 +328,7 @@ static mrcp_connection_t* mrcp_client_agent_connection_create(mrcp_connection_ag
 	connection->sock_pfd.reqevents = APR_POLLIN;
 	connection->sock_pfd.desc.s = connection->sock;
 	connection->sock_pfd.client_data = connection;
-	if(apt_pollset_add(pollset, &connection->sock_pfd) != TRUE) {
+	if(apt_poller_task_descriptor_add(agent->task, &connection->sock_pfd) != TRUE) {
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Add to Pollset %s",connection->id);
 		apr_socket_close(connection->sock);
 		mrcp_connection_destroy(connection);
@@ -337,7 +337,7 @@ static mrcp_connection_t* mrcp_client_agent_connection_create(mrcp_connection_ag
 	
 	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Established TCP/MRCPv2 Connection %s",connection->id);
 	connection->agent = agent;
-	connection->it = apt_list_push_back(agent->connection_list,connection,connection->pool);
+	APR_RING_INSERT_TAIL(&agent->connection_list,connection,mrcp_connection_t,link);
 	
 	connection->parser = mrcp_parser_create(agent->resource_factory,connection->pool);
 	connection->generator = mrcp_generator_create(agent->resource_factory,connection->pool);
@@ -361,39 +361,30 @@ static mrcp_connection_t* mrcp_client_agent_connection_create(mrcp_connection_ag
 static mrcp_connection_t* mrcp_client_agent_connection_find(mrcp_connection_agent_t *agent, mrcp_control_descriptor_t *descriptor)
 {
 	apr_sockaddr_t *sockaddr;
-	mrcp_connection_t *connection = NULL;
-	apt_list_elem_t *elem = apt_list_first_elem_get(agent->connection_list);
-	/* walk through the list of connections */
-	while(elem) {
-		connection = apt_list_elem_object_get(elem);
-		if(connection) {
-			if(apr_sockaddr_info_get(&sockaddr,descriptor->ip.buf,APR_INET,descriptor->port,0,connection->pool) == APR_SUCCESS) {
-				if(apr_sockaddr_equal(sockaddr,connection->r_sockaddr) != 0 && 
-					descriptor->port == connection->r_sockaddr->port) {
-					return connection;
-				}
+	mrcp_connection_t *connection;
+
+	for(connection = APR_RING_FIRST(&agent->connection_list);
+			connection != APR_RING_SENTINEL(&agent->connection_list, mrcp_connection_t, link);
+				connection = APR_RING_NEXT(connection, link)) {
+		if(apr_sockaddr_info_get(&sockaddr,descriptor->ip.buf,APR_INET,descriptor->port,0,connection->pool) == APR_SUCCESS) {
+			if(apr_sockaddr_equal(sockaddr,connection->r_sockaddr) != 0 && 
+				descriptor->port == connection->r_sockaddr->port) {
+				return connection;
 			}
 		}
-		elem = apt_list_next_elem_get(agent->connection_list,elem);
 	}
+
 	return NULL;
 }
 
 static apt_bool_t mrcp_client_agent_connection_remove(mrcp_connection_agent_t *agent, mrcp_connection_t *connection)
 {
-	apt_pollset_t *pollset = apt_poller_task_pollset_get(agent->task);
-
 	/* remove from the list */
-	if(connection->it) {
-		apt_list_elem_remove(agent->connection_list,connection->it);
-		connection->it = NULL;
-	}
-	
-	if(pollset) {
-		apt_pollset_remove(pollset,&connection->sock_pfd);
-	}
+	APR_RING_REMOVE(connection,link);
+
 	if(connection->sock) {
 		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Close TCP/MRCPv2 Connection %s",connection->id);
+		apt_poller_task_descriptor_remove(agent->task,&connection->sock_pfd);
 		apr_socket_close(connection->sock);
 		connection->sock = NULL;
 	}
@@ -407,7 +398,7 @@ static apt_bool_t mrcp_client_agent_channel_add(mrcp_connection_agent_t *agent, 
 	}
 	else {
 		descriptor->connection_type = MRCP_CONNECTION_TYPE_EXISTING;
-		if(apt_list_is_empty(agent->connection_list) == TRUE) {
+		if(APR_RING_EMPTY(&agent->connection_list, mrcp_connection_t, link)) {
 			/* offer new connection if there is no established connection yet */
 			descriptor->connection_type = MRCP_CONNECTION_TYPE_NEW;
 		}
@@ -629,11 +620,8 @@ static apt_bool_t mrcp_client_poller_signal_process(void *obj, const apr_pollfd_
 
 	status = apr_socket_recv(connection->sock,stream->pos,&length);
 	if(status == APR_EOF || length == 0) {
-		apt_pollset_t *pollset = apt_poller_task_pollset_get(agent->task);
 		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"TCP/MRCPv2 Peer Disconnected %s",connection->id);
-		if(pollset) {
-			apt_pollset_remove(pollset,&connection->sock_pfd);
-		}
+		apt_poller_task_descriptor_remove(agent->task,&connection->sock_pfd);
 		apr_socket_close(connection->sock);
 		connection->sock = NULL;
 

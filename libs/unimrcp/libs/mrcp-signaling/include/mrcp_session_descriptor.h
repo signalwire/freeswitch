@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_session_descriptor.h 1474 2010-02-07 20:51:47Z achaloyan $
+ * $Id: mrcp_session_descriptor.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_SESSION_DESCRIPTOR_H
@@ -31,11 +31,11 @@ APT_BEGIN_EXTERN_C
 
 /** MRCP session status */
 typedef enum {
-	MRCP_SESSION_STATUS_OK,			          /**< OK */
+	MRCP_SESSION_STATUS_OK,                   /**< OK */
 	MRCP_SESSION_STATUS_NO_SUCH_RESOURCE,     /**< no such resource found */
 	MRCP_SESSION_STATUS_UNACCEPTABLE_RESOURCE,/**< resource exists, but no implementation (plugin) found */
 	MRCP_SESSION_STATUS_UNAVAILABLE_RESOURCE, /**< resource exists, but is temporary unavailable */
-	MRCP_SESSION_STATUS_ERROR                 /**< internal error occuried */
+	MRCP_SESSION_STATUS_ERROR                 /**< internal error occurred */
 } mrcp_session_status_e;
 
 /** MRCP session descriptor */
@@ -52,6 +52,8 @@ struct mrcp_session_descriptor_t {
 	apt_bool_t            resource_state;
 	/** Session status */
 	mrcp_session_status_e status;
+	/** Response code (SIP for MRCPv2 and RTSP for MRCPv1) */
+	int                   response_code;
 
 	/** MRCP control media array (mrcp_control_descriptor_t) */
 	apr_array_header_t   *control_media_arr;

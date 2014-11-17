@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: demo_synth_application.c 1474 2010-02-07 20:51:47Z achaloyan $
+ * $Id: demo_synth_application.c 2193 2014-10-08 03:44:33Z achaloyan@gmail.com $
  */
 
 /* 
@@ -37,6 +37,7 @@
 #include "mrcp_generic_header.h"
 #include "mrcp_synth_header.h"
 #include "mrcp_synth_resource.h"
+#include "apt_log.h"
 
 typedef struct synth_app_channel_t synth_app_channel_t;
 
@@ -64,7 +65,9 @@ static const mrcp_app_message_dispatcher_t synth_application_dispatcher = {
 	synth_application_on_session_terminate,
 	synth_application_on_channel_add,
 	synth_application_on_channel_remove,
-	synth_application_on_message_receive
+	synth_application_on_message_receive,
+	NULL /* synth_application_on_terminate_event */,
+	NULL /* synth_application_on_resource_discover */
 };
 
 /** Declaration of synthesizer audio stream methods */
@@ -80,7 +83,8 @@ static const mpf_audio_stream_vtable_t audio_stream_vtable = {
 	NULL,
 	synth_app_stream_open,
 	synth_app_stream_close,
-	synth_app_stream_write
+	synth_app_stream_write,
+	NULL
 };
 
 
@@ -196,26 +200,36 @@ static apt_bool_t synth_application_on_session_terminate(mrcp_application_t *app
 /** Handle the responses sent to channel add requests */
 static apt_bool_t synth_application_on_channel_add(mrcp_application_t *application, mrcp_session_t *session, mrcp_channel_t *channel, mrcp_sig_status_code_e status)
 {
-	synth_app_channel_t *synth_channel = mrcp_application_channel_object_get(channel);
-	apr_pool_t *pool = mrcp_application_session_pool_get(session);
 	if(status == MRCP_SIG_STATUS_CODE_SUCCESS) {
 		mrcp_message_t *mrcp_message;
+		synth_app_channel_t *synth_channel = mrcp_application_channel_object_get(channel);
+		apr_pool_t *pool = mrcp_application_session_pool_get(session);
 		const apt_dir_layout_t *dir_layout = mrcp_application_dir_layout_get(application);
+		const mpf_codec_descriptor_t *descriptor = mrcp_application_sink_descriptor_get(channel);
+		if(!descriptor) {
+			/* terminate the demo */
+			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Get Media Sink Descriptor");
+			return mrcp_application_session_terminate(session);
+		}
+
 		/* create and send SPEAK request */
 		mrcp_message = demo_speak_message_create(session,channel,dir_layout);
 		if(mrcp_message) {
 			mrcp_application_message_send(session,channel,mrcp_message);
 		}
 
-		if(synth_channel && session) {
+		if(synth_channel) {
 			const apt_str_t *id = mrcp_application_session_id_get(session);
-			const mpf_codec_descriptor_t *descriptor = mrcp_application_sink_descriptor_get(channel);
 			char *file_name = apr_psprintf(pool,"synth-%dkHz-%s.pcm",
-				descriptor ? descriptor->sampling_rate/1000 : 8,
-				id->buf);
-			char *file_path = apt_datadir_filepath_get(dir_layout,file_name,pool);
+									descriptor->sampling_rate/1000,
+									id->buf);
+			char *file_path = apt_vardir_filepath_get(dir_layout,file_name,pool);
 			if(file_path) {
+				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Open Speech Output File [%s] for Writing",file_path);
 				synth_channel->audio_out = fopen(file_path,"wb");
+				if(!synth_channel->audio_out) {
+					apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Open Utterance Output File [%s] for Writing",file_path);
+				}
 			}
 		}
 	}

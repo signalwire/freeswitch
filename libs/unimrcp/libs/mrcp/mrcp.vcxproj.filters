@@ -1,0 +1,151 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="message">
+      <UniqueIdentifier>{235b9544-2004-49c6-96de-a5830544296e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="message\include">
+      <UniqueIdentifier>{64717899-118b-46de-8646-d7312b19ce00}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="message\src">
+      <UniqueIdentifier>{1b656d42-e8f0-4126-85da-9bb8a470cfaa}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="control">
+      <UniqueIdentifier>{39545f85-6811-4878-af3f-26d813012ea3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="control\include">
+      <UniqueIdentifier>{e165b2a9-81db-4030-9e72-7189ee45182b}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="control\src">
+      <UniqueIdentifier>{a4e3b1a7-762d-4fcf-83e8-f52675aab2ff}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="resources">
+      <UniqueIdentifier>{35e8458d-fc25-4066-b4be-ab452a6da8a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="resources\include">
+      <UniqueIdentifier>{8bbdedd2-2c1e-4474-8dbb-fcecf1f9a869}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="resources\src">
+      <UniqueIdentifier>{1d167695-a5d2-4f87-8bd3-ea21cea5a368}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\mrcp.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mrcp_types.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="message\include\mrcp_generic_header.h">
+      <Filter>message\include</Filter>
+    </ClInclude>
+    <ClInclude Include="message\include\mrcp_header.h">
+      <Filter>message\include</Filter>
+    </ClInclude>
+    <ClInclude Include="message\include\mrcp_header_accessor.h">
+      <Filter>message\include</Filter>
+    </ClInclude>
+    <ClInclude Include="message\include\mrcp_message.h">
+      <Filter>message\include</Filter>
+    </ClInclude>
+    <ClInclude Include="message\include\mrcp_start_line.h">
+      <Filter>message\include</Filter>
+    </ClInclude>
+    <ClInclude Include="control\include\mrcp_resource.h">
+      <Filter>control\include</Filter>
+    </ClInclude>
+    <ClInclude Include="control\include\mrcp_resource_factory.h">
+      <Filter>control\include</Filter>
+    </ClInclude>
+    <ClInclude Include="control\include\mrcp_resource_loader.h">
+      <Filter>control\include</Filter>
+    </ClInclude>
+    <ClInclude Include="control\include\mrcp_stream.h">
+      <Filter>control\include</Filter>
+    </ClInclude>
+    <ClInclude Include="resources\include\mrcp_recog_header.h">
+      <Filter>resources\include</Filter>
+    </ClInclude>
+    <ClInclude Include="resources\include\mrcp_recog_resource.h">
+      <Filter>resources\include</Filter>
+    </ClInclude>
+    <ClInclude Include="resources\include\mrcp_recorder_header.h">
+      <Filter>resources\include</Filter>
+    </ClInclude>
+    <ClInclude Include="resources\include\mrcp_recorder_resource.h">
+      <Filter>resources\include</Filter>
+    </ClInclude>
+    <ClInclude Include="resources\include\mrcp_synth_header.h">
+      <Filter>resources\include</Filter>
+    </ClInclude>
+    <ClInclude Include="resources\include\mrcp_synth_resource.h">
+      <Filter>resources\include</Filter>
+    </ClInclude>
+    <ClInclude Include="resources\include\mrcp_verifier_header.h">
+      <Filter>resources\include</Filter>
+    </ClInclude>
+    <ClInclude Include="resources\include\mrcp_verifier_resource.h">
+      <Filter>resources\include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="message\src\mrcp_generic_header.c">
+      <Filter>message\src</Filter>
+    </ClCompile>
+    <ClCompile Include="message\src\mrcp_header.c">
+      <Filter>message\src</Filter>
+    </ClCompile>
+    <ClCompile Include="message\src\mrcp_header_accessor.c">
+      <Filter>message\src</Filter>
+    </ClCompile>
+    <ClCompile Include="message\src\mrcp_message.c">
+      <Filter>message\src</Filter>
+    </ClCompile>
+    <ClCompile Include="message\src\mrcp_start_line.c">
+      <Filter>message\src</Filter>
+    </ClCompile>
+    <ClCompile Include="control\src\mrcp_resource_factory.c">
+      <Filter>control\src</Filter>
+    </ClCompile>
+    <ClCompile Include="control\src\mrcp_resource_loader.c">
+      <Filter>control\src</Filter>
+    </ClCompile>
+    <ClCompile Include="control\src\mrcp_stream.c">
+      <Filter>control\src</Filter>
+    </ClCompile>
+    <ClCompile Include="resources\src\mrcp_recog_header.c">
+      <Filter>resources\src</Filter>
+    </ClCompile>
+    <ClCompile Include="resources\src\mrcp_recog_resource.c">
+      <Filter>resources\src</Filter>
+    </ClCompile>
+    <ClCompile Include="resources\src\mrcp_recorder_header.c">
+      <Filter>resources\src</Filter>
+    </ClCompile>
+    <ClCompile Include="resources\src\mrcp_recorder_resource.c">
+      <Filter>resources\src</Filter>
+    </ClCompile>
+    <ClCompile Include="resources\src\mrcp_synth_header.c">
+      <Filter>resources\src</Filter>
+    </ClCompile>
+    <ClCompile Include="resources\src\mrcp_synth_resource.c">
+      <Filter>resources\src</Filter>
+    </ClCompile>
+    <ClCompile Include="resources\src\mrcp_verifier_header.c">
+      <Filter>resources\src</Filter>
+    </ClCompile>
+    <ClCompile Include="resources\src\mrcp_verifier_resource.c">
+      <Filter>resources\src</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

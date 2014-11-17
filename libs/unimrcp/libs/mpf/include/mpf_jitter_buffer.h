@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mpf_jitter_buffer.h 1802 2011-05-13 02:43:12Z achaloyan $
+ * $Id: mpf_jitter_buffer.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MPF_JITTER_BUFFER_H
@@ -59,6 +59,9 @@ jb_result_t mpf_jitter_buffer_event_write(mpf_jitter_buffer_t *jb, const mpf_nam
 
 /** Read media frame from jitter buffer */
 apt_bool_t mpf_jitter_buffer_read(mpf_jitter_buffer_t *jb, mpf_frame_t *media_frame);
+
+/** Get current playout delay */
+apr_uint32_t mpf_jitter_buffer_playout_delay_get(const mpf_jitter_buffer_t *jb);
 
 APT_END_EXTERN_C
 

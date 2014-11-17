@@ -1,0 +1,143 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{4e9335ac-20e8-4284-ad77-20ad9190c94d}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\apt.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\apt_consumer_task.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\apt_cyclic_queue.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\apt_dir_layout.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\apt_header_field.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\apt_log.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\apt_multipart_content.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\apt_net.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\apt_nlsml_doc.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\apt_obj_list.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\apt_pair.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\apt_poller_task.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\apt_pollset.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\apt_pool.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\apt_string.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\apt_string_table.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\apt_task.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\apt_task_msg.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\apt_test_suite.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\apt_text_message.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\apt_text_stream.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\apt_timer_queue.h">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\apt_consumer_task.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apt_cyclic_queue.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apt_dir_layout.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apt_header_field.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apt_log.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apt_multipart_content.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apt_net.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apt_nlsml_doc.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apt_obj_list.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apt_pair.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apt_poller_task.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apt_pollset.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apt_pool.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apt_string_table.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apt_task.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apt_task_msg.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apt_test_suite.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apt_text_message.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apt_text_stream.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\apt_timer_queue.c">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

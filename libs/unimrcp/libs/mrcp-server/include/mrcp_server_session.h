@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_server_session.h 1700 2010-05-21 18:56:06Z achaloyan $
+ * $Id: mrcp_server_session.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_SERVER_SESSION_H
@@ -113,6 +113,8 @@ struct mrcp_server_session_t {
 struct mrcp_profile_t {
 	/** Identifier of the profile */
 	const char                *id;
+	/** MRCP version */
+	mrcp_version_e             mrcp_version;
 	/** Table of engines (mrcp_engine_t*) */
 	apr_hash_t                *engine_table;
 	/** MRCP resource factory */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mpf_types.h 1543 2010-02-24 21:46:24Z achaloyan $
+ * $Id: mpf_types.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MPF_TYPES_H
@@ -30,6 +30,9 @@ APT_BEGIN_EXTERN_C
 
 /** Opaque MPF engine declaration */
 typedef struct mpf_engine_t mpf_engine_t;
+
+/** Opaque MPF engine factory declaration */
+typedef struct mpf_engine_factory_t mpf_engine_factory_t;
 
 /** Opaque MPF scheduler declaration */
 typedef struct mpf_scheduler_t mpf_scheduler_t;

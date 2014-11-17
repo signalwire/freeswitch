@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_synth_header.h 1643 2010-04-08 13:40:09Z achaloyan $
+ * $Id: mrcp_synth_header.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_SYNTH_HEADER_H
@@ -201,7 +201,7 @@ struct mrcp_prosody_volume_t {
 
 	/** prosody-volume value */
 	union {
-		/** one of "silent", "x-soft,..." */ 
+		/** one of "silent", "x-soft", ... */ 
 		mrcp_prosody_volume_label_e label;
 		/** numeric value */
 		float                       numeric;
@@ -217,7 +217,7 @@ struct mrcp_prosody_rate_t {
 
 	/** prosody-rate value */
 	union {
-		/** one of "x-slow", "slow,..." */ 
+		/** one of "x-slow", "slow", ... */ 
 		mrcp_prosody_rate_label_e label;
 		/** relative change */
 		float                     relative;

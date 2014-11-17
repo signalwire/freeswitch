@@ -3,16 +3,18 @@
 # unimrcp-server This shell script takes care of starting and stopping the UniMRCP server.
 #
 # chkconfig: 2345 65 35
-# description: UniMRCP is an open source MRCP v1 & v2 server
+# description: UniMRCP is an open source MRCP v1 & v2 server.
 
 # Some global variables
 
 # Application
 APP_NAME="unimrcpserver"
-APP_LONG_NAME="unimrcpserver"
+APP_LONG_NAME="UniMRCP Server"
 UNIMRCP_DIR="/usr/local/unimrcp/"
+DAEMON_ARGS="-d -r ${UNIMRCP_DIR}"
+APP_ARGS="-o 2"
 
-EXEC="${UNIMRCP_DIR}bin/${APP_NAME} -d -o 2 -r ${UNIMRCP_DIR}"
+EXEC="${UNIMRCP_DIR}bin/${APP_NAME}"
 
 # sudo user
 USERNAME=root
@@ -25,12 +27,10 @@ PRIORITY=
 PIDDIR="/var/run/"
 pid=
 
-LOG="/var/log/${APP_NAME}.log"
-
 if [ -e $PIDDIR ]; then
-echo
+    echo
 else
-mkdir $PIDDIR
+    mkdir $PIDDIR
 fi
 
 # Allow configuration overrides in /etc/sysconfig/$APP_NAME
@@ -58,16 +58,16 @@ SCRIPT=`echo $SCRIPT | sed -e 's; ;:;g'`
 TOKENS=`echo $SCRIPT | sed -e 's;/; ;g'`
 REALPATH=
 for C in $TOKENS; do
-REALPATH="$REALPATH/$C"
+    REALPATH="$REALPATH/$C"
     while [ -h "$REALPATH" ] ; do
-LS="`ls -ld "$REALPATH"`"
+        LS="`ls -ld "$REALPATH"`"
         LINK="`expr "$LS" : '.*-> \(.*\)$'`"
         if expr "$LINK" : '/.*' > /dev/null; then
-REALPATH="$LINK"
+            REALPATH="$LINK"
         else
-REALPATH="`dirname "$REALPATH"`""/$LINK"
+            REALPATH="`dirname "$REALPATH"`""/$LINK"
         fi
-done
+    done
 done
 # Change ":" chars back to spaces.
 REALPATH=`echo $REALPATH | sed -e 's;:; ;g'`
@@ -84,10 +84,10 @@ PIDFILE="$PIDDIR/$APP_NAME.pid"
 PSEXE="/usr/bin/ps"
 if [ ! -x $PSEXE ]
 then
-PSEXE="/bin/ps"
+    PSEXE="/bin/ps"
     if [ ! -x $PSEXE ]
     then
-echo "Unable to locate 'ps'."
+        echo "Unable to locate 'ps'."
         echo "Please report this with the location on your system."
         exit 1
     fi
@@ -96,17 +96,17 @@ fi
 # Build the nice clause
 if [ "X$PRIORITY" = "X" ]
 then
-CMDNICE=""
+    CMDNICE=""
 else
-CMDNICE="nice -$PRIORITY"
+    CMDNICE="nice -$PRIORITY"
 fi
 
 getpid() {
     if [ -f $PIDFILE ]
     then
-if [ -r $PIDFILE ]
+        if [ -r $PIDFILE ]
         then
-pid=`cat $PIDFILE`
+            pid=`cat $PIDFILE`
             if [ "X$pid" != "X" ]
             then
                 # Verify that a process with this pid is still running.
@@ -117,12 +117,12 @@ pid=`cat $PIDFILE`
                     rm -f $PIDFILE
                     echo "Removed stale pid file: $PIDFILE"
                 fi
-fi
-else
-echo "Cannot read $PIDFILE."
+            fi
+        else
+            echo "Cannot read $PIDFILE."
             exit 1
         fi
-fi
+    fi
 }
 
 testpid() {
@@ -139,34 +139,34 @@ console() {
     getpid
     if [ "X$pid" = "X" ]
     then
-exec sudo -u $USERNAME $CMDNICE $EXEC
+        exec sudo -u $USERNAME $CMDNICE $EXEC $APP_ARGS
+        echo $pid > $PIDFILE
     else
-echo "$APP_LONG_NAME is already running."
+        echo "$APP_LONG_NAME is already running."
         exit 1
     fi
 }
- 
+
 start() {
     echo "Starting $APP_LONG_NAME..."
     getpid
     if [ "X$pid" = "X" ]
     then
-sudo -u $USERNAME $CMDNICE $EXEC
+        sudo -u $USERNAME $CMDNICE $EXEC $DAEMON_ARGS $APP_ARGS
         pid=`$PSEXE -C $APP_NAME -o pid=`
-echo $pid
-echo $pid > $PIDFILE
+        echo $pid > $PIDFILE
     else
-echo "$APP_LONG_NAME is already running."
+        echo "$APP_LONG_NAME is already running."
         exit 1
     fi
 }
- 
+
 stopit() {
     echo "Stopping $APP_LONG_NAME..."
     getpid
     if [ "X$pid" = "X" ]
     then
-echo "$APP_LONG_NAME was not running."
+        echo "$APP_LONG_NAME was not running."
     else
          # Running so try to stop it.
         sudo -u $USERNAME kill $pid
@@ -188,52 +188,52 @@ echo "$APP_LONG_NAME was not running."
             # Loop for up to 5 minutes
             if [ "$TOTCNT" -lt "300" ]
             then
-if [ "$CNT" -lt "5" ]
+                if [ "$CNT" -lt "5" ]
                 then
-CNT=`expr $CNT + 1`
+                    CNT=`expr $CNT + 1`
                 else
-echo "Waiting for $APP_LONG_NAME to exit..."
+                    echo "Waiting for $APP_LONG_NAME to exit..."
                     CNT=0
                 fi
-TOTCNT=`expr $TOTCNT + 1`
+                TOTCNT=`expr $TOTCNT + 1`
 
                 sleep 1
 
                 testpid
             else
-pid=
+                pid=
             fi
-done
+        done
 
-pid=$savepid
+        pid=$savepid
         testpid
         if [ "X$pid" != "X" ]
         then
-echo "Timed out waiting for $APP_LONG_NAME to exit."
+            echo "Timed out waiting for $APP_LONG_NAME to exit."
             echo " Attempting a forced exit..."
             kill -9 $pid
         fi
 
-pid=$savepid
+        pid=$savepid
         testpid
         if [ "X$pid" != "X" ]
         then
-echo "Failed to stop $APP_LONG_NAME."
+            echo "Failed to stop $APP_LONG_NAME."
             exit 1
         else
-echo "Stopped $APP_LONG_NAME."
+            echo "Stopped $APP_LONG_NAME."
         fi
-fi
+    fi
 }
 
 status() {
     getpid
     if [ "X$pid" = "X" ]
     then
-echo "$APP_LONG_NAME is not running."
+        echo "$APP_LONG_NAME is not running."
         exit 1
     else
-echo "$APP_LONG_NAME is running ($pid)."
+        echo "$APP_LONG_NAME is running ($pid)."
         exit 0
     fi
 }
@@ -247,7 +247,7 @@ case "$1" in
     'start')
         start
         ;;
-        
+
     'stop')
         stopit
         ;;
@@ -268,4 +268,3 @@ case "$1" in
 esac
 
 exit 0
-

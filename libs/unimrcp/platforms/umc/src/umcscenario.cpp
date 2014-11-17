@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: umcscenario.cpp 1571 2010-03-07 20:33:39Z achaloyan $
+ * $Id: umcscenario.cpp 2232 2014-11-12 01:33:37Z achaloyan@gmail.com $
  */
 
 #include <stdlib.h>
@@ -40,7 +40,8 @@ bool UmcScenario::Load(const apr_xml_elem* pElem, apr_pool_t* pool)
 	/* Load Child Elements */
 	for(pChildElem = pElem->first_child; pChildElem; pChildElem = pChildElem->next)
 	{
-		LoadElement(pChildElem,pool);
+		if(!LoadElement(pChildElem,pool))
+			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Load Child Element %s",pChildElem->name);
 	}
 	return true;
 }
@@ -95,7 +96,7 @@ bool UmcScenario::LoadCapabilities(const apr_xml_elem* pElem, apr_pool_t* pool)
 {
 	const apr_xml_elem* pChildElem;
 	/* Load Child Elements */
-	m_pCapabilities = (mpf_codec_capabilities_t*) apr_palloc(pool,sizeof(mpf_codec_capabilities_t*));
+	m_pCapabilities = (mpf_codec_capabilities_t*) apr_palloc(pool,sizeof(mpf_codec_capabilities_t));
 	mpf_codec_capabilities_init(m_pCapabilities,1,pool);
 	for(pChildElem = pElem->first_child; pChildElem; pChildElem = pChildElem->next)
 	{
@@ -126,7 +127,7 @@ bool UmcScenario::LoadCapabilities(const apr_xml_elem* pElem, apr_pool_t* pool)
 	return true;
 }
 
-int UmcScenario::ParseRates(const char* pStr, apr_pool_t* pool) const
+int UmcScenario::ParseRates(const char* pStr, apr_pool_t* pool)
 {
 	int rates = 0;
 	if(pStr)
@@ -181,7 +182,7 @@ bool UmcScenario::InitCapabilities(mpf_stream_capabilities_t* pCapabilities) con
 	return true;
 }
 
-bool UmcScenario::IsElementEnabled(const apr_xml_elem* pElem) const
+bool UmcScenario::IsElementEnabled(const apr_xml_elem* pElem)
 {
 	const apr_xml_attr* pAttr;
 	for(pAttr = pElem->attr; pAttr; pAttr = pAttr->next) 
@@ -194,7 +195,7 @@ bool UmcScenario::IsElementEnabled(const apr_xml_elem* pElem) const
 	return true;
 }
 
-const char* UmcScenario::LoadFileContent(const char* pFileName, apr_pool_t* pool) const
+const char* UmcScenario::LoadFileContent(const char* pFileName, apr_size_t& size, apr_pool_t* pool) const
 {
 	if(!m_pDirLayout || !pFileName)
 		return NULL;
@@ -218,7 +219,7 @@ const char* UmcScenario::LoadFileContent(const char* pFileName, apr_pool_t* pool
 		return NULL;
 	}
 
-	apr_size_t size = (apr_size_t)finfo.size;
+	size = (apr_size_t)finfo.size;
 	char* pContent = (char*) apr_palloc(pool,size+1);
 	apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Load File Content size [%"APR_SIZE_T_FMT" bytes] %s",size,pFilePath);
 	if(apr_file_read(pFile,pContent,&size) != APR_SUCCESS) 

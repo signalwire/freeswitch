@@ -8,6 +8,10 @@
 	InheritedPropertySheets="apr.vsprops;mrcpengine.vsprops"
 	>
 	<Tool
+		Name="VCCLCompilerTool"
+		PreprocessorDefinitions="_WIN64"
+	/>
+	<Tool
 		Name="VCLinkerTool"
 		AdditionalLibraryDirectories="$(AprDir)\$(PlatformName)\$(ConfigurationName);$(AprUtilDir)\$(PlatformName)\$(ConfigurationName);$(SolutionDir)$(PlatformName)\$(ConfigurationName)\lib"
 		AdditionalDependencies="mrcpengine.lib mrcp.lib mpf.lib aprtoolkit.lib libaprutil-1.lib libapr-1.lib ws2_32.lib"

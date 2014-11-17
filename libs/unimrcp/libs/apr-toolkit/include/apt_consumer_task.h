@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: apt_consumer_task.h 1708 2010-05-24 17:03:25Z achaloyan $
+ * $Id: apt_consumer_task.h 2175 2014-09-12 04:56:09Z achaloyan@gmail.com $
  */
 
 #ifndef APT_CONSUMER_TASK_H
@@ -25,6 +25,7 @@
  */ 
 
 #include "apt_task.h"
+#include "apt_timer_queue.h"
 
 APT_BEGIN_EXTERN_C
 
@@ -52,13 +53,26 @@ APT_DECLARE(apt_task_t*) apt_consumer_task_base_get(const apt_consumer_task_t *t
  * Get task vtable.
  * @param task the consumer task to get vtable for
  */
-APT_DECLARE(apt_task_vtable_t*) apt_consumer_task_vtable_get(apt_consumer_task_t *task);
+APT_DECLARE(apt_task_vtable_t*) apt_consumer_task_vtable_get(const apt_consumer_task_t *task);
 
 /**
  * Get consumer task object.
  * @param task the consumer task to get object from
  */
 APT_DECLARE(void*) apt_consumer_task_object_get(const apt_consumer_task_t *task);
+
+/**
+ * Create timer.
+ * @param task the consumer task to create timer for
+ * @param proc the timer callback
+ * @param obj the object to pass to callback
+ * @param pool the pool to allocate memory from
+ */
+APT_DECLARE(apt_timer_t*) apt_consumer_task_timer_create(
+								apt_consumer_task_t *task,
+								apt_timer_proc_f proc,
+								void *obj,
+								apr_pool_t *pool);
 
 APT_END_EXTERN_C
 

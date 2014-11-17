@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="UserMacros">
+    <ProjectRootDir>$(ProjectDir)..\..\</ProjectRootDir>
+    <LibRootDir>$(SolutionDir)</LibRootDir>
+  </PropertyGroup>
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup>
+    <UniBaseImported>true</UniBaseImported>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <DisableSpecificWarnings>4100;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <BuildMacro Include="ProjectRootDir">
+      <Value>$(ProjectRootDir)</Value>
+    </BuildMacro>
+    <BuildMacro Include="LibRootDir">
+      <Value>$(LibRootDir)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>

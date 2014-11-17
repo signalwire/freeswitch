@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_application.c 1792 2011-01-10 21:08:52Z achaloyan $
+ * $Id: mrcp_application.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "mrcp_application.h"
 #include "mrcp_client.h"
 #include "mrcp_client_session.h"
+#include "mrcp_session_descriptor.h"
 #include "mrcp_message.h"
 #include "mrcp_sig_agent.h"
 #include "mrcp_resource_factory.h"
@@ -92,7 +93,7 @@ MRCP_DECLARE(mrcp_session_t*) mrcp_application_session_create(mrcp_application_t
 	session->base.log_obj = obj;
 	session->profile = profile;
 	
-	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Create MRCP Handle "APT_PTR_FMT" [%s]",
+	apt_obj_log(APT_LOG_MARK,APT_PRIO_NOTICE,session->base.log_obj,"Create MRCP Handle "APT_PTR_FMT" [%s]",
 		MRCP_SESSION_PTR(session),
 		profile_name);
 	return &session->base;
@@ -114,6 +115,16 @@ MRCP_DECLARE(const apt_str_t*) mrcp_application_session_id_get(const mrcp_sessio
 		return NULL;
 	}
 	return &session->id;
+}
+
+/** Get SIP or RTSP response code */
+MRCP_DECLARE(int) mrcp_application_session_response_code_get(const mrcp_session_t *session)
+{
+	mrcp_client_session_t *client_session = (mrcp_client_session_t*)session;
+	if(!client_session || !client_session->answer) {
+		return 0;
+	}
+	return client_session->answer->response_code;
 }
 
 /** Get external object associated with the session */
@@ -168,7 +179,7 @@ MRCP_DECLARE(apt_bool_t) mrcp_application_session_destroy(mrcp_session_t *sessio
 	if(!session) {
 		return FALSE;
 	}
-	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Destroy MRCP Handle %s",session->name);
+	apt_obj_log(APT_LOG_MARK,APT_PRIO_NOTICE,session->log_obj,"Destroy MRCP Handle %s",session->name);
 	mrcp_session_destroy(session);
 	return TRUE;
 }
@@ -203,7 +214,7 @@ MRCP_DECLARE(mrcp_channel_t*) mrcp_application_channel_create(
 
 	if(termination) {
 		/* Media engine and RTP factory must be specified in this case */
-		if(!profile->media_engine || !profile->rtp_termination_factory) {
+		if(!profile->mpf_factory || !profile->rtp_termination_factory) {
 			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Create Channel: invalid profile");
 			return FALSE;
 		}
@@ -317,7 +328,7 @@ MRCP_DECLARE(mrcp_message_t*) mrcp_application_message_create(mrcp_session_t *se
 	}
 	mrcp_message = mrcp_request_create(
 						channel->resource,
-						profile->signaling_agent->mrcp_version,
+						profile->mrcp_version,
 						method_id,
 						session->pool);
 	return mrcp_message;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_sofiasip_client_agent.c 1799 2011-05-12 02:32:32Z achaloyan $
+ * $Id: mrcp_sofiasip_client_agent.c 2225 2014-11-12 00:45:19Z achaloyan@gmail.com $
  */
 
 typedef struct mrcp_sofia_agent_t mrcp_sofia_agent_t;
@@ -26,6 +26,7 @@ typedef struct mrcp_sofia_session_t mrcp_sofia_session_t;
 #include <sofia-sip/nua.h>
 #include <sofia-sip/sip_status.h>
 #include <sofia-sip/sdp.h>
+#include <sofia-sip/tport.h>
 #include <sofia-sip/sofia_features.h>
 #undef strcasecmp
 #undef strncasecmp
@@ -56,6 +57,7 @@ struct mrcp_sofia_session_t {
 
 	su_home_t                 *home;
 	nua_handle_t              *nh;
+	enum nua_callstate         nua_state;
 
 	apt_bool_t                 terminate_requested;
 	mrcp_session_descriptor_t *descriptor;
@@ -92,6 +94,7 @@ static void mrcp_sofia_event_callback( nua_event_t           nua_event,
 									   sip_t const          *sip,
 									   tagi_t                tags[]);
 
+apt_bool_t mrcp_sofiasip_log_init(const char *name, const char *level_str, apt_bool_t redirect);
 
 /** Create Sofia-SIP Signaling Agent */
 MRCP_DECLARE(mrcp_sig_agent_t*) mrcp_sofiasip_client_agent_create(const char *id, mrcp_sofia_client_config_t *config, apr_pool_t *pool)
@@ -100,7 +103,7 @@ MRCP_DECLARE(mrcp_sig_agent_t*) mrcp_sofiasip_client_agent_create(const char *id
 	apt_task_vtable_t *vtable;
 	mrcp_sofia_agent_t *sofia_agent;
 	sofia_agent = apr_palloc(pool,sizeof(mrcp_sofia_agent_t));
-	sofia_agent->sig_agent = mrcp_signaling_agent_create(id,sofia_agent,MRCP_VERSION_2,pool);
+	sofia_agent->sig_agent = mrcp_signaling_agent_create(id,sofia_agent,pool);
 	sofia_agent->sig_agent->create_client_session = mrcp_sofia_session_create;
 	sofia_agent->root = NULL;
 	sofia_agent->nua = NULL;
@@ -143,19 +146,34 @@ MRCP_DECLARE(mrcp_sofia_client_config_t*) mrcp_sofiasip_client_config_alloc(apr_
 	config->sip_t2 = 0;
 	config->sip_t4 = 0;
 	config->sip_t1x64 = 0;
+
+	config->tport_log = FALSE;
+	config->tport_dump_file = NULL;
+
 	return config;
+}
+
+MRCP_DECLARE(apt_bool_t) mrcp_sofiasip_client_logger_init(const char *name, const char *level_str, apt_bool_t redirect)
+{
+	return mrcp_sofiasip_log_init(name,level_str,redirect);
 }
 
 static apt_bool_t mrcp_sofia_config_validate(mrcp_sofia_agent_t *sofia_agent, mrcp_sofia_client_config_t *config, apr_pool_t *pool)
 {
-	const char *local_ip = config->ext_ip ? config->ext_ip : config->local_ip;
 	if(!config->local_ip) {
 		return FALSE;
 	}
 
 	sofia_agent->config = config;
-	sofia_agent->sip_contact_str = apr_psprintf(pool,"sip:%s:%hu", local_ip, config->local_port);
-	sofia_agent->sip_from_str = apr_psprintf(pool,"sip:%s:%hu", local_ip, config->local_port);
+	if(config->ext_ip) {
+		/* Use external IP address in Contact and From headers, if behind NAT */
+		sofia_agent->sip_contact_str = apr_psprintf(pool,"sip:%s:%hu", config->ext_ip, config->local_port);
+		sofia_agent->sip_from_str = apr_psprintf(pool,"sip:%s:%hu", config->ext_ip, config->local_port);
+	}
+	else {
+		sofia_agent->sip_contact_str = NULL; /* Let Sofia-SIP implicitly set Contact header by default */
+		sofia_agent->sip_from_str = apr_psprintf(pool,"sip:%s:%hu", config->local_ip, config->local_port);
+	}
 
 	if(config->transport) {
 		sofia_agent->sip_bind_str = apr_psprintf(pool,"sip:%s:%hu;transport=%s",
@@ -189,6 +207,8 @@ static void mrcp_sofia_task_initialize(apt_task_t *task)
 					mrcp_sofia_event_callback, /* Callback for processing events */
 					sofia_agent,               /* Additional data to pass to callback */
 					NUTAG_URL(sofia_agent->sip_bind_str), /* Address to bind to */
+					TAG_IF(sofia_config->tport_log == TRUE,TPTAG_LOG(1)), /* Print out SIP messages to the console */
+					TAG_IF(sofia_config->tport_dump_file,TPTAG_DUMP(sofia_config->tport_dump_file)), /* Dump SIP messages to the file */
 					TAG_END());                /* Last tag should always finish the sequence */
 	if(sofia_agent->nua) {
 		nua_set_params(
@@ -201,6 +221,11 @@ static void mrcp_sofia_task_initialize(apt_task_t *task)
 					TAG_IF(sofia_config->sip_t1x64,NTATAG_SIP_T1X64(sofia_config->sip_t1x64)),
 					SIPTAG_USER_AGENT_STR(sofia_config->user_agent_name),
 					TAG_END());
+	}
+	else {
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Create NUA [%s] %s",
+					apt_task_name_get(task),
+					sofia_agent->sip_bind_str);
 	}
 }
 
@@ -220,7 +245,7 @@ static apt_bool_t mrcp_sofia_task_run(apt_task_t *task)
 	sofia_agent->root = NULL;
 	su_deinit();
 
-	apt_task_child_terminate(task);
+	apt_task_terminate_request_process(task);
 	return TRUE;
 }
 
@@ -228,7 +253,8 @@ static apt_bool_t mrcp_sofia_task_terminate(apt_task_t *task)
 {
 	mrcp_sofia_agent_t *sofia_agent = apt_task_object_get(task);
 	if(sofia_agent->nua) {
-		apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Send Shutdown Signal to NUA");
+		apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Send Shutdown Signal to NUA [%s]",
+				apt_task_name_get(task));
 		nua_shutdown(sofia_agent->nua);
 	}
 	return TRUE;
@@ -245,6 +271,10 @@ static apt_bool_t mrcp_sofia_session_create(mrcp_session_t *session, mrcp_sig_se
 	mrcp_sofia_session_t *sofia_session;
 	session->request_vtable = &session_request_vtable;
 
+	if(!sofia_agent->nua) {
+		return FALSE;
+	}
+
 	sofia_session = apr_palloc(session->pool,sizeof(mrcp_sofia_session_t));
 	sofia_session->mutex = NULL;
 	sofia_session->home = su_home_new(sizeof(*sofia_session->home));
@@ -254,7 +284,7 @@ static apt_bool_t mrcp_sofia_session_create(mrcp_session_t *session, mrcp_sig_se
 	sofia_session->descriptor = NULL;
 	session->obj = sofia_session;
 
-	if(settings->user_name && settings->user_name != '\0') {
+	if(settings->user_name && *settings->user_name != '\0') {
 		sofia_session->sip_to_str = apr_psprintf(session->pool,"sip:%s@%s:%hu",
 										settings->user_name,
 										settings->server_ip,
@@ -271,15 +301,16 @@ static apt_bool_t mrcp_sofia_session_create(mrcp_session_t *session, mrcp_sig_se
 				sofia_session,
 				SIPTAG_TO_STR(sofia_session->sip_to_str),
 				SIPTAG_FROM_STR(sofia_agent->sip_from_str),
-				SIPTAG_CONTACT_STR(sofia_agent->sip_contact_str),
+				TAG_IF(sofia_agent->sip_contact_str,SIPTAG_CONTACT_STR(sofia_agent->sip_contact_str)),
 				TAG_IF(settings->feature_tags,SIPTAG_ACCEPT_CONTACT_STR(settings->feature_tags)),
 				TAG_END());
+	sofia_session->nua_state = nua_callstate_init;
 
 	apr_thread_mutex_create(&sofia_session->mutex,APR_THREAD_MUTEX_DEFAULT,session->pool);
 	return TRUE;
 }
 
-static apt_bool_t mrcp_sofia_session_destroy(mrcp_sofia_session_t *sofia_session)
+static apt_bool_t mrcp_sofia_session_cleanup(mrcp_sofia_session_t *sofia_session)
 {
 	if(sofia_session->mutex) {
 		apr_thread_mutex_destroy(sofia_session->mutex);
@@ -306,7 +337,7 @@ static apt_bool_t mrcp_sofia_session_unref(mrcp_sofia_session_t *sofia_session)
 static apt_bool_t mrcp_sofia_session_offer(mrcp_session_t *session, mrcp_session_descriptor_t *descriptor)
 {
 	char sdp_str[2048];
-	char *local_sdp_str = NULL;
+	const char *local_sdp_str = NULL;
 	apt_bool_t res = FALSE;
 	mrcp_sofia_session_t *sofia_session = session->obj;
 	if(!sofia_session) {
@@ -359,7 +390,7 @@ static apt_bool_t mrcp_sofia_session_terminate_request(mrcp_session_t *session)
 	apr_thread_mutex_unlock(sofia_session->mutex);
 
 	if(sofia_session->terminate_requested == FALSE) {
-		mrcp_sofia_session_destroy(sofia_session);
+		mrcp_sofia_session_cleanup(sofia_session);
 		mrcp_session_terminate_response(session);
 	}
 	return TRUE;
@@ -391,35 +422,34 @@ static void mrcp_sofia_on_session_ready(
 						tagi_t                tags[])
 {
 	mrcp_session_t *session = sofia_session->session;
-	if(session) {
-		const char *local_sdp_str = NULL, *remote_sdp_str = NULL;
-		mrcp_session_descriptor_t *descriptor = NULL;
+	const char *remote_sdp_str = NULL;
+	mrcp_session_descriptor_t *descriptor = mrcp_session_descriptor_create(session->pool);
+	descriptor->response_code = status;
 
-		tl_gets(tags, 
-				SOATAG_LOCAL_SDP_STR_REF(local_sdp_str),
-				SOATAG_REMOTE_SDP_STR_REF(remote_sdp_str),
-				TAG_END());
+	tl_gets(tags, 
+			SOATAG_REMOTE_SDP_STR_REF(remote_sdp_str),
+			TAG_END());
 
-		if(remote_sdp_str) {
-			sdp_parser_t *parser = NULL;
-			sdp_session_t *sdp = NULL;
-			const char *force_destination_ip = NULL;
-			apt_obj_log(APT_LOG_MARK,APT_PRIO_INFO,session->log_obj,"Remote SDP "APT_NAMESID_FMT"\n%s",
-				session->name,
-				MRCP_SESSION_SID(session),
-				remote_sdp_str);
+	if(remote_sdp_str) {
+		sdp_parser_t *parser = NULL;
+		sdp_session_t *sdp = NULL;
+		const char *force_destination_ip = NULL;
+		apt_obj_log(APT_LOG_MARK,APT_PRIO_INFO,session->log_obj,"Remote SDP "APT_NAMESID_FMT"\n%s",
+			session->name,
+			MRCP_SESSION_SID(session),
+			remote_sdp_str);
 
-			parser = sdp_parse(sofia_session->home,remote_sdp_str,(int)strlen(remote_sdp_str),0);
-			sdp = sdp_session(parser);
-			if(sofia_session->sip_settings->force_destination == TRUE) {
-				force_destination_ip = sofia_session->sip_settings->server_ip;
-			}
-			descriptor = mrcp_descriptor_generate_by_sdp_session(sdp,force_destination_ip,session->pool);
-			sdp_parser_free(parser);
+		parser = sdp_parse(sofia_session->home,remote_sdp_str,(int)strlen(remote_sdp_str),0);
+		sdp = sdp_session(parser);
+		if(sofia_session->sip_settings->force_destination == TRUE) {
+			force_destination_ip = sofia_session->sip_settings->server_ip;
 		}
 
-		mrcp_session_answer(session,descriptor);
+		mrcp_descriptor_generate_by_sdp_session(descriptor,sdp,force_destination_ip,session->pool);
+		sdp_parser_free(parser);
 	}
+
+	mrcp_session_answer(session,descriptor);
 }
 
 static void mrcp_sofia_on_session_redirect(
@@ -436,11 +466,11 @@ static void mrcp_sofia_on_session_redirect(
 		return;
 	}
 	sip_contact = sip->sip_contact;
-	if(!sip_contact || !sip_contact->m_url) {
+	if(!sip_contact) {
 		return;
 	}
 	
-	if(sip_contact->m_url->url_user && sip_contact->m_url->url_user != '\0') {
+	if(sip_contact->m_url->url_user && *sip_contact->m_url->url_user != '\0') {
 		sofia_session->sip_to_str = apr_psprintf(session->pool,"sip:%s@%s:%s",
 										sip_contact->m_url->url_user,
 										sip_contact->m_url->url_host,
@@ -470,7 +500,7 @@ static void mrcp_sofia_on_session_redirect(
 				sofia_session,
 				SIPTAG_TO_STR(sofia_session->sip_to_str),
 				SIPTAG_FROM_STR(sofia_agent->sip_from_str),
-				SIPTAG_CONTACT_STR(sofia_agent->sip_contact_str),
+				TAG_IF(sofia_agent->sip_contact_str,SIPTAG_CONTACT_STR(sofia_agent->sip_contact_str)),
 				TAG_END());
 
 	apr_thread_mutex_unlock(sofia_session->mutex);
@@ -486,24 +516,31 @@ static void mrcp_sofia_on_session_terminate(
 						sip_t const          *sip,
 						tagi_t                tags[])
 {
-	mrcp_session_t *session = sofia_session->session;
-	if(session) {
-		apt_bool_t terminate_requested;
-	
-		apr_thread_mutex_lock(sofia_session->mutex);
-		terminate_requested = sofia_session->terminate_requested;
-		session = sofia_session->session;
-		mrcp_sofia_session_unref(sofia_session);
-		apr_thread_mutex_unlock(sofia_session->mutex);
+	mrcp_session_t *session;
+	apt_bool_t terminate_requested;
 
-		if(terminate_requested == TRUE) {
-			mrcp_sofia_session_destroy(sofia_session);
-			mrcp_session_terminate_response(session);
-		}
-		else {
-			mrcp_session_terminate_event(session);
-		}
+	apr_thread_mutex_lock(sofia_session->mutex);
+	terminate_requested = sofia_session->terminate_requested;
+	session = sofia_session->session;
+	mrcp_sofia_session_unref(sofia_session);
+	apr_thread_mutex_unlock(sofia_session->mutex);
+
+	if(terminate_requested == TRUE) {
+		sofia_session->nua_state = nua_callstate_terminated;
+		mrcp_sofia_session_cleanup(sofia_session);
+		mrcp_session_terminate_response(session);
+		return;
 	}
+
+	if(sofia_session->nua_state == nua_callstate_ready) {
+		mrcp_session_terminate_event(session);
+	}
+	else {
+		mrcp_session_descriptor_t *descriptor = mrcp_session_descriptor_create(session->pool);
+		descriptor->response_code = status;
+		mrcp_session_answer(session,descriptor);
+	}
+	sofia_session->nua_state = nua_callstate_terminated;
 }
 
 static void mrcp_sofia_on_state_change(
@@ -514,23 +551,28 @@ static void mrcp_sofia_on_state_change(
 						sip_t const          *sip,
 						tagi_t                tags[])
 {
-	int ss_state = nua_callstate_init;
+	int nua_state = nua_callstate_init;
 	tl_gets(tags,
-			NUTAG_CALLSTATE_REF(ss_state),
+			NUTAG_CALLSTATE_REF(nua_state),
 			TAG_END());
 	
-	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"SIP Call State %s [%s]",
-		sofia_session ? sofia_session->session->name : "",
-		nua_callstate_name(ss_state));
-
-	switch(ss_state) {
-		case nua_callstate_ready:
-			mrcp_sofia_on_session_ready(status,sofia_agent,nh,sofia_session,sip,tags);
-			break;
-		case nua_callstate_terminated:
-			mrcp_sofia_on_session_terminate(status,sofia_agent,nh,sofia_session,sip,tags);
-			break;
+	if(!sofia_session || !sofia_session->session) {
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"SIP Call State [%s]", nua_callstate_name(nua_state));
+		return;
 	}
+	apt_obj_log(APT_LOG_MARK,APT_PRIO_NOTICE,sofia_session->session->log_obj,"SIP Call State %s [%s]",
+		sofia_session->session->name,
+		nua_callstate_name(nua_state));
+
+	if(nua_state == nua_callstate_terminated) {
+		mrcp_sofia_on_session_terminate(status,sofia_agent,nh,sofia_session,sip,tags);
+		return;
+	}
+
+	if(nua_state == nua_callstate_ready) {
+		mrcp_sofia_on_session_ready(status,sofia_agent,nh,sofia_session,sip,tags);
+	}
+	sofia_session->nua_state = nua_state;
 }
 
 static void mrcp_sofia_on_resource_discover(
@@ -544,7 +586,8 @@ static void mrcp_sofia_on_resource_discover(
 	mrcp_session_t *session = sofia_session->session;
 	if(session) {
 		const char *remote_sdp_str = NULL;
-		mrcp_session_descriptor_t *descriptor = NULL;
+		mrcp_session_descriptor_t *descriptor = mrcp_session_descriptor_create(session->pool);
+		descriptor->response_code = status;
 
 		if(sip->sip_payload) {
 			remote_sdp_str = sip->sip_payload->pl_data;
@@ -559,7 +602,7 @@ static void mrcp_sofia_on_resource_discover(
 
 			parser = sdp_parse(sofia_session->home,remote_sdp_str,(int)strlen(remote_sdp_str),0);
 			sdp = sdp_session(parser);
-			descriptor = mrcp_descriptor_generate_by_sdp_session(sdp,NULL,session->pool);
+			mrcp_descriptor_generate_by_sdp_session(descriptor,sdp,NULL,session->pool);
 			sdp_parser_free(parser);
 		}
 
@@ -579,8 +622,11 @@ static void mrcp_sofia_event_callback(
 						sip_t const          *sip,
 						tagi_t                tags[])
 {
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Receive SIP Event [%s] Status %d %s",
-		nua_event_name(nua_event),status,phrase);
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Receive SIP Event [%s] Status %d %s [%s]",
+		nua_event_name(nua_event),
+		status,
+		phrase,
+		sofia_agent->sig_agent->id);
 
 	switch(nua_event) {
 		case nua_i_state:
