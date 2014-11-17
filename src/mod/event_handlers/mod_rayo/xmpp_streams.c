@@ -450,7 +450,7 @@ static void xmpp_send_outbound_server_header(struct xmpp_stream *stream)
 static void on_stream_starttls(struct xmpp_stream *stream, iks *node)
 {
 	/* wait for handshake to start */
-	if (iks_proceed_tls(stream->parser, stream->context->cert_pem_file, stream->context->key_pem_file, 1) == IKS_OK) {
+	if (iks_proceed_tls(stream->parser, stream->context->cert_pem_file, stream->context->key_pem_file) == IKS_OK) {
 		stream->state = XSS_SECURE;
 	} else {
 		stream->state = XSS_ERROR;

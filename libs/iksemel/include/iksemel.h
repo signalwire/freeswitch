@@ -226,7 +226,7 @@ void iks_disconnect (iksparser *prs);
 int iks_has_tls (void);
 int iks_is_secure (iksparser *prs);
 int iks_start_tls (iksparser *prs);
-int iks_proceed_tls (iksparser *prs, const char *cert_file, const char *key_file, int use_ssl);
+int iks_proceed_tls (iksparser *prs, const char *cert_file, const char *key_file);
 int iks_start_sasl (iksparser *prs, enum ikssasltype type, char *username, char *pass);
 
 /*****  jabber  *****/
