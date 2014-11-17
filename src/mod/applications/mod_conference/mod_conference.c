@@ -10331,6 +10331,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_c
 		conference->perpetual_sound = switch_core_strdup(conference->pool, perpetual_sound);
 	}
 
+	conference->mflags = MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR;
+
 	if (!zstr(moh_sound) && switch_is_moh(moh_sound)) {
 		conference->moh_sound = switch_core_strdup(conference->pool, moh_sound);
 	}
