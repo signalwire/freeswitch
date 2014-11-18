@@ -5188,8 +5188,8 @@ static switch_status_t process_rtcp_packet(switch_rtp_t *rtp_session, switch_siz
 						  "RTCP packet bytes %" SWITCH_SIZE_T_FMT " type %d\n", *bytes, rtp_session->rtcp_recv_msg_p->header.type);
 
 
-
-		if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && *bytes > 94) {
+		//DFF
+		if (0 && rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && *bytes > 94) {
 			//(rtp_session->rtcp_recv_msg_p->header.type == 205 || //RTPFB
 			//rtp_session->rtcp_recv_msg_p->header.type == 206)) {//PSFB
 			
