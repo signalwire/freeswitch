@@ -4597,8 +4597,6 @@ SWITCH_DECLARE(void) switch_core_media_end_video_function(switch_core_session_t 
 	}
 }
 
-
->>>>>>> another refactoring pass, temp code still in place, WORK IN PROGRESS
 //?
 #define RA_PTR_LEN 512
 SWITCH_DECLARE(switch_status_t) switch_core_media_proxy_remote_addr(switch_core_session_t *session, const char *sdp_str)
@@ -9589,17 +9587,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 		return raw_write_video(session, frame, flags, stream_id);
 	}
 
-	if (!(timer = switch_core_media_get_timer(session, SWITCH_MEDIA_TYPE_VIDEO))) {
+	if (!switch_test_flag(frame, SFF_USE_VIDEO_TIMESTAMP)) {
 
-		if (!smh->video_timer.timer_interface) {
-			switch_core_timer_init(&smh->video_timer, "soft", 1, 90, switch_core_session_get_pool(session));
+		if (!(timer = switch_core_media_get_timer(session, SWITCH_MEDIA_TYPE_VIDEO))) {
+			
+			if (!smh->video_timer.timer_interface) {
+				switch_core_timer_init(&smh->video_timer, "soft", 1, 90, switch_core_session_get_pool(session));
+			}
+			
+			timer = &smh->video_timer;
 		}
 
-		timer = &smh->video_timer;
+		frame->timestamp = timer->samplecount;
 	}
 
-	frame->timestamp = timer->samplecount;
-	frame->flags &= ~SFF_SAME_IMAGE;
+	switch_clear_flag(frame, SFF_SAME_IMAGE);
 
 	do {
 		frame->datalen = SWITCH_DEFAULT_VIDEO_SIZE;

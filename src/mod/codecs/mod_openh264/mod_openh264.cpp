@@ -553,7 +553,9 @@ end:
 		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
 	}
 
-	if (!frame->img) {
+	if (frame->img) {
+		switch_set_flag(frame, SFF_USE_VIDEO_TIMESTAMP);
+	} else {
 		status = SWITCH_STATUS_MORE_DATA;
 	}
 

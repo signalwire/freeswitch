@@ -1498,7 +1498,8 @@ typedef enum {
 	SFF_WAIT_KEY_FRAME = (1 << 12),
 	SFF_RAW_RTP_PARSE_FRAME = (1 << 13),
 	SFF_PICTURE_RESET = (1 << 14),
-	SFF_SAME_IMAGE = (1 << 15)
+	SFF_SAME_IMAGE = (1 << 15),
+	SFF_USE_VIDEO_TIMESTAMP = (1 << 16)
 } switch_frame_flag_enum_t;
 typedef uint32_t switch_frame_flag_t;
 
