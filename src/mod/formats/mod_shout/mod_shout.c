@@ -123,6 +123,7 @@ struct shout_context {
 	int lame_ready;
 	int eof;
 	int channels;
+	int stream_channels;
 	int16_t *l;
 	switch_size_t llen;
 	int16_t *r;
@@ -371,12 +372,23 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	shout_context_t *context = data;
 	int decode_status = 0;
 	size_t usedlen;
-	uint32_t buf_size = 1024 * 128;			/* do not make this 64 or less, stutter will ensue after 
-											   first 64k buffer is dry */
+	uint32_t buf_size = 1024 * 128;	/* do not make this 64 or less, stutter will ensue after first 64k buffer is dry */
 	switch_size_t used;
+
+	if (!context->stream_channels) {
+		long rate = 0;
+		int channels = 0;
+		int encoding = 0;
+		mpg123_getformat(context->mh, &rate, &channels, &encoding);
+		context->stream_channels = channels;
+	}
 
 	if (context->prebuf) {
 		buf_size = context->prebuf;
+	}
+
+	if (context->stream_channels) {
+		buf_size = buf_size * context->stream_channels;
 	}
 
 	/* make sure we aren't over zealous by slowing down the stream when the buffer is too full */
