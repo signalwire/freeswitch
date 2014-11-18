@@ -93,6 +93,10 @@ struct mod_unimrcp_globals {
 	char *unimrcp_max_connection_count;
 	/** request-timeout config */
 	char *unimrcp_request_timeout;
+	/** rx-buffer-size */
+	char *unimrcp_rx_buffer_size;
+	/** tx-buffer-size */
+	char *unimrcp_tx_buffer_size;
 	/** offer-new-connection config */
 	char *unimrcp_offer_new_connection;
 	/** default-tts-profile config */
@@ -172,6 +176,10 @@ static switch_xml_config_item_t instructions[] = {
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("enable-profile-events", CONFIG_REQUIRED, &globals.enable_profile_events_param, "false", "",
 									 "Fire profile events (true|false)"),
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("request-timeout", CONFIG_REQUIRED, &globals.unimrcp_request_timeout, "10000", "",
+									 "Maximum time to wait for server response to a request"),
+	SWITCH_CONFIG_ITEM_STRING_STRDUP("connection-rx-buffer-size", 0, &globals.unimrcp_rx_buffer_size, "1024", "",
+									 "Maximum time to wait for server response to a request"),
+	SWITCH_CONFIG_ITEM_STRING_STRDUP("connection-tx-buffer-size", 0, &globals.unimrcp_tx_buffer_size, "1024", "",
 									 "Maximum time to wait for server response to a request"),
 	SWITCH_CONFIG_ITEM_END()
 };
@@ -258,10 +266,12 @@ struct audio_queue {
 	switch_size_t waiting;
 	/** name of this queue (for logging) */
 	char *name;
+	/** optional session uuid associated with this queue (for logging) */
+	char *session_uuid;
 };
 typedef struct audio_queue audio_queue_t;
 
-static switch_status_t audio_queue_create(audio_queue_t ** queue, const char *name, switch_memory_pool_t *pool);
+static switch_status_t audio_queue_create(audio_queue_t ** queue, const char *name, const char *session_uuid, switch_memory_pool_t *pool);
 static switch_status_t audio_queue_write(audio_queue_t *queue, void *data, switch_size_t *data_len);
 static switch_status_t audio_queue_read(audio_queue_t *queue, void *data, switch_size_t *data_len, int block);
 static switch_status_t audio_queue_clear(audio_queue_t *queue);
@@ -309,6 +319,8 @@ typedef enum speech_channel_state speech_channel_state_t;
 struct speech_channel {
 	/** the name of this channel (for logging) */
 	char *name;
+	/** optional session associated w/ this channel */
+	char *session_uuid;
 	/** The profile used by this channel */
 	profile_t *profile;
 	/** type of channel */
@@ -351,7 +363,7 @@ static apt_bool_t speech_on_channel_remove(mrcp_application_t *application, mrcp
 										   mrcp_sig_status_code_e status);
 
 /* speech_channel funcs */
-static switch_status_t speech_channel_create(speech_channel_t ** schannel, const char *name, speech_channel_type_t type, mod_unimrcp_application_t *app,
+static switch_status_t speech_channel_create(speech_channel_t ** schannel, const char *name, const char *session_uuid, speech_channel_type_t type, mod_unimrcp_application_t *app,
 											 uint16_t rate, switch_memory_pool_t *pool);
 static mpf_termination_t *speech_channel_create_mpf_termination(speech_channel_t *schannel);
 static switch_status_t speech_channel_open(speech_channel_t *schannel, profile_t *profile);
@@ -595,10 +607,11 @@ static const char *skip_initial_whitespace(const char *text)
  *
  * @param audio_queue the created queue
  * @param name the name of this queue (for logging)
+ * @param session_uuid optional session associated with this channel
  * @param pool memory pool to allocate queue from
  * @return SWITCH_STATUS_SUCCESS if successful.  SWITCH_STATUS_FALSE if unable to allocate queue
  */
-static switch_status_t audio_queue_create(audio_queue_t ** audio_queue, const char *name, switch_memory_pool_t *pool)
+static switch_status_t audio_queue_create(audio_queue_t ** audio_queue, const char *name, const char *session_uuid, switch_memory_pool_t *pool)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	audio_queue_t *laudio_queue = NULL;
@@ -606,8 +619,12 @@ static switch_status_t audio_queue_create(audio_queue_t ** audio_queue, const ch
 	int flags;
 #endif
 	char *lname = "";
+	char *lsession_uuid = NULL;
 	*audio_queue = NULL;
 
+	lname = zstr(name) ? "" : switch_core_strdup(pool, name);
+	lsession_uuid = zstr(session_uuid) ? NULL : switch_core_strdup(pool, session_uuid);
+	
 	if (zstr(name)) {
 		lname = "";
 	} else {
@@ -615,27 +632,28 @@ static switch_status_t audio_queue_create(audio_queue_t ** audio_queue, const ch
 	}
 
 	if ((laudio_queue = (audio_queue_t *) switch_core_alloc(pool, sizeof(audio_queue_t))) == NULL) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) unable to create audio queue\n", lname);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(lsession_uuid), SWITCH_LOG_ERROR, "(%s) unable to create audio queue\n", lname);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
 
 	laudio_queue->name = lname;
+	laudio_queue->session_uuid = lsession_uuid;
 
 	if (switch_buffer_create(pool, &laudio_queue->buffer, AUDIO_QUEUE_SIZE) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) unable to create audio queue buffer\n", laudio_queue->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(lsession_uuid), SWITCH_LOG_ERROR, "(%s) unable to create audio queue buffer\n", laudio_queue->name);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
 
 	if (switch_mutex_init(&laudio_queue->mutex, SWITCH_MUTEX_UNNESTED, pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) unable to create audio queue mutex\n", laudio_queue->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(lsession_uuid), SWITCH_LOG_ERROR, "(%s) unable to create audio queue mutex\n", laudio_queue->name);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
 
 	if (switch_thread_cond_create(&laudio_queue->cond, pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) unable to create audio queue condition variable\n", laudio_queue->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(lsession_uuid), SWITCH_LOG_ERROR, "(%s) unable to create audio queue condition variable\n", laudio_queue->name);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
@@ -643,17 +661,17 @@ static switch_status_t audio_queue_create(audio_queue_t ** audio_queue, const ch
 	flags = SWITCH_FOPEN_CREATE | SWITCH_FOPEN_WRITE | SWITCH_FOPEN_TRUNCATE | SWITCH_FOPEN_BINARY;
 	strcpy(laudio_queue->file_read_name, "/tmp/mod_unimrcp_rx_XXXXXX");
 	if (switch_file_mktemp(&laudio_queue->file_read, laudio_queue->file_read_name, flags, pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) unable to create audio queue read file\n", laudio_queue->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(laudio_queue->session_uuid), SWITCH_LOG_ERROR, "(%s) unable to create audio queue read file\n", laudio_queue->name);
 		laudio_queue->file_read = NULL;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) queue rx saved to %s\n", laudio_queue->name, laudio_queue->file_read_name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(laudio_queue->session_uuid), SWITCH_LOG_DEBUG, "(%s) queue rx saved to %s\n", laudio_queue->name, laudio_queue->file_read_name);
 	}
 	strcpy(laudio_queue->file_write_name, "/tmp/mod_unimrcp_tx_XXXXXX");
 	if (switch_file_mktemp(&laudio_queue->file_write, laudio_queue->file_write_name, flags, pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) unable to create audio queue write file\n", laudio_queue->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(laudio_queue->session_uuid), SWITCH_LOG_ERROR, "(%s) unable to create audio queue write file\n", laudio_queue->name);
 		laudio_queue->file_write = NULL;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) queue tx saved to %s\n", laudio_queue->name, laudio_queue->file_write_name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(laudio_queue->session_uuid), SWITCH_LOG_DEBUG, "(%s) queue tx saved to %s\n", laudio_queue->name, laudio_queue->file_write_name);
 	}
 #endif
 
@@ -661,7 +679,7 @@ static switch_status_t audio_queue_create(audio_queue_t ** audio_queue, const ch
 	laudio_queue->read_bytes = 0;
 	laudio_queue->waiting = 0;
 	*audio_queue = laudio_queue;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) audio queue created\n", laudio_queue->name);
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(laudio_queue->session_uuid), SWITCH_LOG_DEBUG, "(%s) audio queue created\n", laudio_queue->name);
 
   done:
 
@@ -696,7 +714,7 @@ static switch_status_t audio_queue_write(audio_queue_t *queue, void *data, switc
 	if (switch_buffer_write(queue->buffer, data, *data_len) > 0) {
 		queue->write_bytes = queue->write_bytes + *data_len;
 #ifdef MOD_UNIMRCP_DEBUG_AUDIO_QUEUE
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) audio queue write total = %ld\trequested = %ld\n", queue->name, queue->write_bytes,
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(queue->session_uuid), SWITCH_LOG_DEBUG, "(%s) audio queue write total = %ld\trequested = %ld\n", queue->name, queue->write_bytes,
 						  *data_len);
 #endif
 		if (queue->waiting <= switch_buffer_inuse(queue->buffer)) {
@@ -704,7 +722,7 @@ static switch_status_t audio_queue_write(audio_queue_t *queue, void *data, switc
 		}
 	} else {
 		*data_len = 0;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) audio queue overflow!\n", queue->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(queue->session_uuid), SWITCH_LOG_DEBUG, "(%s) audio queue overflow!\n", queue->name);
 		status = SWITCH_STATUS_FALSE;
 	}
 
@@ -761,7 +779,7 @@ static switch_status_t audio_queue_read(audio_queue_t *queue, void *data, switch
 	*data_len = switch_buffer_read(queue->buffer, data, requested);
 	queue->read_bytes = queue->read_bytes + *data_len;
 #ifdef MOD_UNIMRCP_DEBUG_AUDIO_QUEUE
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) audio queue read total = %ld\tread = %ld\trequested = %ld\n", queue->name,
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(queue->session_uuid), SWITCH_LOG_DEBUG, "(%s) audio queue read total = %ld\tread = %ld\trequested = %ld\n", queue->name,
 					  queue->read_bytes, *data_len, requested);
 	if (queue->file_read) {
 		switch_file_write(queue->file_read, data, &len);
@@ -829,7 +847,7 @@ static switch_status_t audio_queue_destroy(audio_queue_t *queue)
 			queue->file_write = NULL;
 		}
 #endif
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) audio queue destroyed\n", name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(queue->session_uuid), SWITCH_LOG_DEBUG, "(%s) audio queue destroyed\n", name);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -839,13 +857,14 @@ static switch_status_t audio_queue_destroy(audio_queue_t *queue)
  *
  * @param schannel the created channel
  * @param name the name of the channel
+ * @param session_uuid optional session associated with this channel
  * @param type the type of channel to create
  * @param app the application
  * @param rate the rate to use
  * @param pool the memory pool to use
  * @return SWITCH_STATUS_SUCCESS if successful.  SWITCH_STATUS_FALSE if the channel cannot be allocated.
  */
-static switch_status_t speech_channel_create(speech_channel_t ** schannel, const char *name, speech_channel_type_t type, mod_unimrcp_application_t *app,
+static switch_status_t speech_channel_create(speech_channel_t ** schannel, const char *name, const char *session_uuid, speech_channel_type_t type, mod_unimrcp_application_t *app,
 											 uint16_t rate, switch_memory_pool_t *pool)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -868,17 +887,15 @@ static switch_status_t speech_channel_create(speech_channel_t ** schannel, const
 
 	if (switch_mutex_init(&schan->mutex, SWITCH_MUTEX_UNNESTED, pool) != SWITCH_STATUS_SUCCESS ||
 		switch_thread_cond_create(&schan->cond, pool) != SWITCH_STATUS_SUCCESS ||
-		audio_queue_create(&schan->audio_queue, name, pool) != SWITCH_STATUS_SUCCESS) {
+		audio_queue_create(&schan->audio_queue, name, session_uuid, pool) != SWITCH_STATUS_SUCCESS) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
 	switch_core_hash_init(&schan->params);
 	schan->data = NULL;
-	if (zstr(name)) {
-		schan->name = "";
-	} else {
-		schan->name = switch_core_strdup(pool, name);
-	}
+	schan->name = zstr(name) ? "" : switch_core_strdup(pool, name);
+	schan->session_uuid = zstr(session_uuid) ? NULL : switch_core_strdup(pool, session_uuid);
+
 	*schannel = schan;
 
   done:
@@ -902,11 +919,11 @@ static switch_status_t speech_channel_destroy(speech_channel_t *schannel)
 				int warned = 0;
 				mrcp_application_session_terminate(schannel->unimrcp_session);
 				/* wait forever for session to terminate.  Log WARNING if this starts taking too long */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Waiting for MRCP session to terminate\n", schannel->name);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) Waiting for MRCP session to terminate\n", schannel->name);
 				while (schannel->state != SPEECH_CHANNEL_CLOSED) {
 					if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
 						warned = 1;
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) MRCP session has not terminated after %d ms\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
+						switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) MRCP session has not terminated after %d ms\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
 					}
 				}
 			}
@@ -992,14 +1009,15 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, profile_t
 	/* create MRCP session */
 	if ((schannel->unimrcp_session = mrcp_application_session_create(schannel->application->app, profile->name, schannel)) == NULL) {
 		/* profile doesn't exist? */
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Unable to create session with %s\n", schannel->name, profile->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) Unable to create session with %s\n", schannel->name, profile->name);
 		status = SWITCH_STATUS_RESTART;
 		goto done;
 	}
+	mrcp_application_session_name_set(schannel->unimrcp_session, schannel->name);
 
 	/* create audio termination and add to channel */
 	if ((termination = speech_channel_create_mpf_termination(schannel)) == NULL) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Unable to create termination with %s\n", schannel->name, profile->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) Unable to create termination with %s\n", schannel->name, profile->name);
 		mrcp_application_session_destroy(schannel->unimrcp_session);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
@@ -1010,7 +1028,7 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, profile_t
 		resource_type = MRCP_RECOGNIZER_RESOURCE;
 	}
 	if ((schannel->unimrcp_channel = mrcp_application_channel_create(schannel->unimrcp_session, resource_type, termination, NULL, schannel)) == NULL) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Unable to create channel with %s\n", schannel->name, profile->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) Unable to create channel with %s\n", schannel->name, profile->name);
 		mrcp_application_session_destroy(schannel->unimrcp_session);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
@@ -1018,7 +1036,7 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, profile_t
 
 	/* add channel to session... this establishes the connection to the MRCP server */
 	if (mrcp_application_channel_add(schannel->unimrcp_session, schannel->unimrcp_channel) != TRUE) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Unable to add channel to session with %s\n", schannel->name, profile->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) Unable to add channel to session with %s\n", schannel->name, profile->name);
 		mrcp_application_session_destroy(schannel->unimrcp_session);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
@@ -1029,19 +1047,19 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, profile_t
 	while (schannel->state == SPEECH_CHANNEL_CLOSED) {
 		if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
 			warned = 1;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) MRCP session has not opened after %d ms\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) MRCP session has not opened after %d ms\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
 		}
 	}
 	if (schannel->state == SPEECH_CHANNEL_READY) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) channel is ready\n", schannel->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) channel is ready\n", schannel->name);
 	} else if (schannel->state == SPEECH_CHANNEL_CLOSED) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Timed out waiting for channel to be ready\n", schannel->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) Timed out waiting for channel to be ready\n", schannel->name);
 		/* can't retry */
 		status = SWITCH_STATUS_FALSE;
 	} else if (schannel->state == SPEECH_CHANNEL_ERROR) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Terminating MRCP session\n", schannel->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) Terminating MRCP session\n", schannel->name);
 		if (!mrcp_application_session_terminate(schannel->unimrcp_session)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) Unable to terminate application session\n", schannel->name);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) Unable to terminate application session\n", schannel->name);
 			status = SWITCH_STATUS_FALSE;
 			goto done;
 		}
@@ -1051,7 +1069,7 @@ static switch_status_t speech_channel_open(speech_channel_t *schannel, profile_t
 		while (schannel->state == SPEECH_CHANNEL_ERROR) {
 			if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
 				warned = 1;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) MRCP session has not cleaned up after %d ms\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) MRCP session has not cleaned up after %d ms\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
 			}
 		}
 		if (schannel->state != SPEECH_CHANNEL_CLOSED) {
@@ -1092,7 +1110,7 @@ static switch_status_t synth_channel_speak(speech_channel_t *schannel, const cha
 
 	mrcp_message = mrcp_application_message_create(schannel->unimrcp_session, schannel->unimrcp_channel, SYNTHESIZER_SPEAK);
 	if (mrcp_message == NULL) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Failed to create SPEAK message\n", schannel->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) Failed to create SPEAK message\n", schannel->name);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
@@ -1133,7 +1151,7 @@ static switch_status_t synth_channel_speak(speech_channel_t *schannel, const cha
 	while (schannel->state == SPEECH_CHANNEL_READY) {
 		if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
 			warned = 1;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) SPEAK IN-PROGRESS not received after %d ms\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) SPEAK IN-PROGRESS not received after %d ms\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
 		}
 	}
 	if (schannel->state != SPEECH_CHANNEL_PROCESSING) {
@@ -1171,18 +1189,18 @@ static switch_status_t synth_channel_set_params(speech_channel_t *schannel, mrcp
 		if (!zstr(param_name) && !zstr(param_val)) {
 			unimrcp_param_id_t *id = (unimrcp_param_id_t *) switch_core_hash_find(schannel->application->param_id_map, param_name);
 			if (id) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) %s: %s\n", schannel->name, param_name, param_val);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) %s: %s\n", schannel->name, param_name, param_val);
 				synth_channel_set_header(schannel, id->id, param_val, msg, synth_hdr);
 			} else {
 				apt_str_t apt_param_name = { 0 };
 				apt_str_t apt_param_val = { 0 };
 
 				/* this is probably a vendor-specific MRCP param */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) (vendor-specific value) %s: %s\n", schannel->name, param_name, param_val);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) (vendor-specific value) %s: %s\n", schannel->name, param_name, param_val);
 				apt_string_set(&apt_param_name, param_name);	/* copy isn't necessary since apt_pair_array_append will do it */
 				apt_string_set(&apt_param_val, param_val);
 				if (!gen_hdr->vendor_specific_params) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) creating vendor specific pair array\n", schannel->name);
+					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) creating vendor specific pair array\n", schannel->name);
 					gen_hdr->vendor_specific_params = apt_pair_array_create(10, msg->pool);
 				}
 				apt_pair_array_append(gen_hdr->vendor_specific_params, &apt_param_name, &apt_param_val, msg->pool);
@@ -1218,7 +1236,7 @@ static switch_status_t synth_channel_set_header(speech_channel_t *schannel, int 
 		} else if (!strcasecmp("neutral", val)) {
 			synth_hdr->voice_param.gender = VOICE_GENDER_NEUTRAL;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) ignoring invalid voice gender, %s\n", schannel->name, val);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) ignoring invalid voice gender, %s\n", schannel->name, val);
 			break;
 		}
 		mrcp_resource_header_property_add(msg, SYNTHESIZER_HEADER_VOICE_GENDER);
@@ -1230,7 +1248,7 @@ static switch_status_t synth_channel_set_header(speech_channel_t *schannel, int 
 				synth_hdr->voice_param.age = age;
 				mrcp_resource_header_property_add(msg, SYNTHESIZER_HEADER_VOICE_AGE);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) ignoring invalid voice age, %s\n", schannel->name, val);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) ignoring invalid voice age, %s\n", schannel->name, val);
 			}
 			break;
 		}
@@ -1241,7 +1259,7 @@ static switch_status_t synth_channel_set_header(speech_channel_t *schannel, int 
 				synth_hdr->voice_param.variant = variant;
 				mrcp_resource_header_property_add(msg, SYNTHESIZER_HEADER_VOICE_VARIANT);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) ignoring invalid voice variant, %s\n", schannel->name, val);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) ignoring invalid voice variant, %s\n", schannel->name, val);
 			}
 			break;
 		}
@@ -1285,7 +1303,7 @@ static switch_status_t synth_channel_set_header(speech_channel_t *schannel, int 
 			synth_hdr->prosody_param.volume.type = PROSODY_VOLUME_TYPE_LABEL;
 			synth_hdr->prosody_param.volume.value.label = PROSODY_VOLUME_DEFAULT;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) ignoring invalid prosody volume, %s\n", schannel->name, val);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) ignoring invalid prosody volume, %s\n", schannel->name, val);
 			break;
 		}
 		mrcp_resource_header_property_add(msg, SYNTHESIZER_HEADER_PROSODY_VOLUME);
@@ -1314,7 +1332,7 @@ static switch_status_t synth_channel_set_header(speech_channel_t *schannel, int 
 			synth_hdr->prosody_param.rate.type = PROSODY_RATE_TYPE_LABEL;
 			synth_hdr->prosody_param.rate.value.label = PROSODY_RATE_DEFAULT;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) ignoring invalid prosody rate, %s\n", schannel->name, val);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) ignoring invalid prosody rate, %s\n", schannel->name, val);
 			break;
 		}
 		mrcp_resource_header_property_add(msg, SYNTHESIZER_HEADER_PROSODY_RATE);
@@ -1340,7 +1358,7 @@ static switch_status_t synth_channel_set_header(speech_channel_t *schannel, int 
 	case SYNTHESIZER_HEADER_LOAD_LEXICON:
 	case SYNTHESIZER_HEADER_LEXICON_SEARCH_ORDER:
 	default:
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) unsupported SYNTHESIZER_HEADER type\n", schannel->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) unsupported SYNTHESIZER_HEADER type\n", schannel->name);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1366,11 +1384,11 @@ static switch_status_t speech_channel_stop(speech_channel_t *schannel)
 		} else {
 			method = RECOGNIZER_STOP;
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Stopping %s\n", schannel->name, speech_channel_type_to_string(schannel->type));
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) Stopping %s\n", schannel->name, speech_channel_type_to_string(schannel->type));
 		/* Send STOP to MRCP server */
 		mrcp_message = mrcp_application_message_create(schannel->unimrcp_session, schannel->unimrcp_channel, method);
 		if (mrcp_message == NULL) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Failed to create STOP message\n", schannel->name);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) Failed to create STOP message\n", schannel->name);
 			status = SWITCH_STATUS_FALSE;
 			goto done;
 		}
@@ -1378,17 +1396,17 @@ static switch_status_t speech_channel_stop(speech_channel_t *schannel)
 		while (schannel->state == SPEECH_CHANNEL_PROCESSING) {
 			if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
 				warned = 1;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) STOP has not COMPLETED after %d ms.\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) STOP has not COMPLETED after %d ms.\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
 			}
 		}
 
 		if (schannel->state == SPEECH_CHANNEL_ERROR) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Channel error\n", schannel->name);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) Channel error\n", schannel->name);
 			schannel->state = SPEECH_CHANNEL_ERROR;
 			status = SWITCH_STATUS_FALSE;
 			goto done;
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) %s stopped\n", schannel->name, speech_channel_type_to_string(schannel->type));
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) %s stopped\n", schannel->name, speech_channel_type_to_string(schannel->type));
 	} else if (schannel->state == SPEECH_CHANNEL_DONE) {
 		speech_channel_set_state_unlocked(schannel, SPEECH_CHANNEL_READY);
 	}
@@ -1436,7 +1454,7 @@ static switch_status_t speech_channel_set_param(speech_channel_t *schannel, cons
 			p = switch_core_strdup(schannel->memory_pool, param);
 		}
 		v = switch_core_strdup(schannel->memory_pool, val);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) param = %s, val = %s\n", schannel->name, p, v);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) param = %s, val = %s\n", schannel->name, p, v);
 		switch_core_hash_insert(schannel->params, p, v);
 	}
 	switch_mutex_unlock(schannel->mutex);
@@ -1559,7 +1577,7 @@ static switch_status_t speech_channel_set_state_unlocked(speech_channel_t *schan
 		audio_queue_signal(schannel->audio_queue);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) %s ==> %s\n", schannel->name, speech_channel_state_to_string(schannel->state),
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) %s ==> %s\n", schannel->name, speech_channel_state_to_string(schannel->state),
 					  speech_channel_state_to_string(state));
 	schannel->state = state;
 	switch_thread_cond_signal(schannel->cond);
@@ -1586,27 +1604,33 @@ static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char 
 	profile_t *profile = NULL;
 	int speech_channel_number = get_next_speech_channel_number();
 	char *name = NULL;
+	char *session_uuid = NULL;
 	switch_hash_index_t *hi = NULL;
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
-					  "speech_handle: name = %s, rate = %d, speed = %d, samples = %d, voice = %s, engine = %s, param = %s\n", sh->name, sh->rate,
-					  sh->speed, sh->samples, sh->voice, sh->engine, sh->param);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "voice = %s, rate = %d\n", voice_name, rate);
 
 	/* Name the channel */
 	if (profile_name && strchr(profile_name, ':')) {
 		/* Profile has session name appended to it.  Pick it out */
 		profile_name = switch_core_strdup(sh->memory_pool, profile_name);
-		name = strchr(profile_name, ':');
-		*name = '\0';
-		name++;
-		name = switch_core_sprintf(sh->memory_pool, "%s TTS-%d", name, speech_channel_number);
+		session_uuid = strchr(profile_name, ':');
+		*session_uuid = '\0';
+		session_uuid++;
+		session_uuid = switch_core_strdup(sh->memory_pool, session_uuid);
 	} else {
-		name = switch_core_sprintf(sh->memory_pool, "TTS-%d", speech_channel_number);
+		/* check if session is associated w/ this memory pool */
+		switch_core_session_t *session = switch_core_memory_pool_get_data(sh->memory_pool, "__session");
+		if (session) {
+			session_uuid = switch_core_session_get_uuid(session);
+		}
 	}
+	name = switch_core_sprintf(sh->memory_pool, "TTS-%d", speech_channel_number);
+
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(session_uuid), SWITCH_LOG_INFO,
+					  "speech_handle: name = %s, rate = %d, speed = %d, samples = %d, voice = %s, engine = %s, param = %s\n", sh->name, sh->rate,
+					  sh->speed, sh->samples, sh->voice, sh->engine, sh->param);
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(session_uuid), SWITCH_LOG_INFO, "voice = %s, rate = %d\n", voice_name, rate);
 
 	/* Allocate the channel */
-	if (speech_channel_create(&schannel, name, SPEECH_CHANNEL_SYNTHESIZER, &globals.synth, (uint16_t) rate, sh->memory_pool) != SWITCH_STATUS_SUCCESS) {
+	if (speech_channel_create(&schannel, name, session_uuid, SPEECH_CHANNEL_SYNTHESIZER, &globals.synth, (uint16_t) rate, sh->memory_pool) != SWITCH_STATUS_SUCCESS) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
@@ -1619,7 +1643,7 @@ static switch_status_t synth_speech_open(switch_speech_handle_t *sh, const char 
 	}
 	profile = (profile_t *) switch_core_hash_find(globals.profiles, profile_name);
 	if (!profile) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Can't find profile, %s\n", name, profile_name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(session_uuid), SWITCH_LOG_ERROR, "(%s) Can't find profile, %s\n", name, profile_name);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
@@ -1706,7 +1730,7 @@ static switch_status_t synth_speech_read_tts(switch_speech_handle_t *sh, void *d
 		/* pad data, if not enough read */
 		if (bytes_read < *datalen) {
 #ifdef MOD_UNIMRCP_DEBUG_AUDIO_QUEUE
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) adding %ld bytes of padding\n", schannel->name, *datalen - bytes_read);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) adding %ld bytes of padding\n", schannel->name, *datalen - bytes_read);
 #endif
 			memset((uint8_t *) data + bytes_read, schannel->silence, *datalen - bytes_read);
 		}
@@ -1804,7 +1828,7 @@ static apt_bool_t speech_on_session_terminate(mrcp_application_t *application, m
 {
 	speech_channel_t *schannel = (speech_channel_t *) mrcp_application_session_object_get(session);
 	switch_event_t *event = NULL;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Destroying MRCP session\n", schannel->name);
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) Destroying MRCP session\n", schannel->name);
 	mrcp_application_session_destroy(session);
 
 	/* notify of channel close */
@@ -1869,7 +1893,7 @@ static apt_bool_t speech_on_channel_add(mrcp_application_t *application, mrcp_se
 	if (descriptor->name.length) {
 		strncpy(codec_name, descriptor->name.buf, sizeof(codec_name) - 1 );
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) %s channel is ready, codec = %s, sample rate = %d\n", schannel->name,
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) %s channel is ready, codec = %s, sample rate = %d\n", schannel->name,
 		speech_channel_type_to_string(schannel->type), codec_name, schannel->rate);
 	speech_channel_set_state(schannel, SPEECH_CHANNEL_READY);
 
@@ -1889,7 +1913,7 @@ static apt_bool_t speech_on_channel_add(mrcp_application_t *application, mrcp_se
 
 error:
 	if (schannel) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) %s channel error!\n", schannel->name,
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) %s channel error!\n", schannel->name,
 			speech_channel_type_to_string(schannel->type));
 		speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
 	} else {
@@ -1913,11 +1937,11 @@ static apt_bool_t speech_on_channel_remove(mrcp_application_t *application, mrcp
 										   mrcp_sig_status_code_e status)
 {
 	speech_channel_t *schannel = (speech_channel_t *) mrcp_application_channel_object_get(channel);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "(%s) %s channel is removed\n", schannel->name, speech_channel_type_to_string(schannel->type));
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_INFO, "(%s) %s channel is removed\n", schannel->name, speech_channel_type_to_string(schannel->type));
 	schannel->unimrcp_channel = NULL;
 
 	if (session) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Terminating MRCP session\n", schannel->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) Terminating MRCP session\n", schannel->name);
 		mrcp_application_session_terminate(session);
 	}
 
@@ -1942,11 +1966,11 @@ static apt_bool_t synth_on_message_receive(mrcp_application_t *application, mrcp
 			/* received the response to SPEAK request */
 			if (message->start_line.request_state == MRCP_REQUEST_STATE_INPROGRESS) {
 				/* waiting for SPEAK-COMPLETE event */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) REQUEST IN PROGRESS\n", schannel->name);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) REQUEST IN PROGRESS\n", schannel->name);
 				speech_channel_set_state(schannel, SPEECH_CHANNEL_PROCESSING);
 			} else {
 				/* received unexpected request_state */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) unexpected SPEAK response, request_state = %d\n", schannel->name,
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) unexpected SPEAK response, request_state = %d\n", schannel->name,
 								  message->start_line.request_state);
 				speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
 			}
@@ -1954,17 +1978,17 @@ static apt_bool_t synth_on_message_receive(mrcp_application_t *application, mrcp
 			/* received response to the STOP request */
 			if (message->start_line.request_state == MRCP_REQUEST_STATE_COMPLETE) {
 				/* got COMPLETE */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) COMPLETE\n", schannel->name);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) COMPLETE\n", schannel->name);
 				speech_channel_set_state(schannel, SPEECH_CHANNEL_DONE);
 			} else {
 				/* received unexpected request state */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) unexpected STOP response, request_state = %d\n", schannel->name,
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) unexpected STOP response, request_state = %d\n", schannel->name,
 								  message->start_line.request_state);
 				speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
 			}
 		} else {
 			/* received unexpected response */
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) unexpected response, method_id = %d\n", schannel->name,
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) unexpected response, method_id = %d\n", schannel->name,
 							  (int) message->start_line.method_id);
 			speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
 		}
@@ -1972,15 +1996,15 @@ static apt_bool_t synth_on_message_receive(mrcp_application_t *application, mrcp
 		/* received MRCP event */
 		if (message->start_line.method_id == SYNTHESIZER_SPEAK_COMPLETE) {
 			/* got SPEAK-COMPLETE */
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) SPEAK-COMPLETE\n", schannel->name);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) SPEAK-COMPLETE\n", schannel->name);
 			speech_channel_set_state(schannel, SPEECH_CHANNEL_DONE);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) unexpected event, method_id = %d\n", schannel->name,
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) unexpected event, method_id = %d\n", schannel->name,
 							  (int) message->start_line.method_id);
 			speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) unexpected message type, message_type = %d\n", schannel->name,
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) unexpected message type, message_type = %d\n", schannel->name,
 						  message->start_line.message_type);
 		speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
 	}
@@ -2198,7 +2222,7 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel)
 		switch_core_hash_this(egk, (void *) &key, NULL, (void *) &grammar);
 		if (grammar->type != GRAMMAR_TYPE_URI && grammar_uri_count != 1) {
 		      no_grammar_alone:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Grammar '%s' can only be used alone (not a URI list)\n", schannel->name, key);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) Grammar '%s' can only be used alone (not a URI list)\n", schannel->name, key);
 			status = SWITCH_STATUS_FALSE;
 			switch_safe_free(egk);
 			goto done;
@@ -2213,7 +2237,7 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel)
 
 	switch (grammar_uri_count) {
 	case 0:
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) No grammar specified\n", schannel->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) No grammar specified\n", schannel->name);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	case 1:
@@ -2299,7 +2323,7 @@ static switch_status_t recog_channel_start(speech_channel_t *schannel)
 	while (schannel->state == SPEECH_CHANNEL_READY) {
 		if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
 			warned = 1;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) IN-PROGRESS not received for RECOGNIZE after %d ms.\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) IN-PROGRESS not received for RECOGNIZE after %d ms.\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
 		}
 	}
 	if (schannel->state != SPEECH_CHANNEL_PROCESSING) {
@@ -2328,7 +2352,7 @@ static switch_status_t recog_channel_load_grammar(speech_channel_t *schannel, co
 	grammar_t *g = NULL;
 	char *ldata = NULL;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Loading grammar %s, data = %s\n", schannel->name, name, data);
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) Loading grammar %s, data = %s\n", schannel->name, name, data);
 
 	switch_mutex_lock(schannel->mutex);
 	if (schannel->state != SPEECH_CHANNEL_READY) {
@@ -2378,7 +2402,7 @@ static switch_status_t recog_channel_load_grammar(speech_channel_t *schannel, co
 		while (schannel->state == SPEECH_CHANNEL_PROCESSING) {
 			if (switch_thread_cond_timedwait(schannel->cond, schannel->mutex, SPEECH_CHANNEL_TIMEOUT_USEC) == SWITCH_STATUS_TIMEOUT && !warned) {
 				warned = 1;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) DEFINE-GRAMMAR not COMPLETED after %d ms.\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) DEFINE-GRAMMAR not COMPLETED after %d ms.\n", schannel->name, SPEECH_CHANNEL_TIMEOUT_USEC / (1000));
 			}
 		}
 		if (schannel->state != SPEECH_CHANNEL_READY) {
@@ -2421,7 +2445,7 @@ static switch_status_t recog_channel_unload_grammar(speech_channel_t *schannel, 
 		status = SWITCH_STATUS_FALSE;
 	} else {
 		recognizer_data_t *r = (recognizer_data_t *) schannel->data;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Unloading grammar %s\n", schannel->name, grammar_name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) Unloading grammar %s\n", schannel->name, grammar_name);
 		switch_core_hash_delete(r->enabled_grammars, grammar_name);
 		switch_core_hash_delete(r->grammars, grammar_name);
 	}
@@ -2448,11 +2472,11 @@ static switch_status_t recog_channel_enable_grammar(speech_channel_t *schannel, 
 		grammar = (grammar_t *) switch_core_hash_find(r->grammars, grammar_name);
 		if (grammar == NULL)
 		{
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Undefined grammar, %s\n", schannel->name, grammar_name);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) Undefined grammar, %s\n", schannel->name, grammar_name);
 			status = SWITCH_STATUS_FALSE;
 		}
 		else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Enabling grammar %s\n", schannel->name, grammar_name);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) Enabling grammar %s\n", schannel->name, grammar_name);
 			switch_core_hash_insert(r->enabled_grammars, grammar_name, grammar);
 		}
 	}
@@ -2475,7 +2499,7 @@ static switch_status_t recog_channel_disable_grammar(speech_channel_t *schannel,
 		status = SWITCH_STATUS_FALSE;
 	} else {
 		recognizer_data_t *r = (recognizer_data_t *) schannel->data;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Disabling grammar %s\n", schannel->name, grammar_name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) Disabling grammar %s\n", schannel->name, grammar_name);
 		switch_core_hash_delete(r->enabled_grammars, grammar_name);
 	}
 
@@ -2493,7 +2517,7 @@ static switch_status_t recog_channel_disable_all_grammars(speech_channel_t *scha
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	recognizer_data_t *r = (recognizer_data_t *) schannel->data;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Disabling all grammars\n", schannel->name);
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) Disabling all grammars\n", schannel->name);
 	switch_core_hash_destroy(&r->enabled_grammars);
 	switch_core_hash_init(&r->enabled_grammars);
 
@@ -2512,9 +2536,9 @@ static switch_status_t recog_channel_check_results(speech_channel_t *schannel)
 	switch_mutex_lock(schannel->mutex);
 	r = (recognizer_data_t *) schannel->data;
 	if (!zstr(r->result)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) SUCCESS, have result\n", schannel->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) SUCCESS, have result\n", schannel->name);
 	} else if (r->start_of_input == START_OF_INPUT_RECEIVED) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) SUCCESS, start of input\n", schannel->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) SUCCESS, start of input\n", schannel->name);
 	} else {
 		status = SWITCH_STATUS_FALSE;
 	}
@@ -2536,11 +2560,11 @@ static switch_status_t recog_channel_start_input_timers(speech_channel_t *schann
 
 	if (schannel->state == SPEECH_CHANNEL_PROCESSING && !r->timers_started && !r->start_of_input) {
 		mrcp_message_t *mrcp_message;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Starting input timers\n", schannel->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) Starting input timers\n", schannel->name);
 		/* Send START-INPUT-TIMERS to MRCP server */
 		mrcp_message = mrcp_application_message_create(schannel->unimrcp_session, schannel->unimrcp_channel, RECOGNIZER_START_INPUT_TIMERS);
 		if (mrcp_message == NULL) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Failed to create START-INPUT-TIMERS message\n", schannel->name);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) Failed to create START-INPUT-TIMERS message\n", schannel->name);
 			status = SWITCH_STATUS_FALSE;
 			goto done;
 		}
@@ -2567,7 +2591,7 @@ static switch_status_t recog_channel_set_start_of_input(speech_channel_t *schann
 	switch_mutex_lock(schannel->mutex);
 	r = (recognizer_data_t *) schannel->data;
 	r->start_of_input = START_OF_INPUT_RECEIVED;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) start of input\n", schannel->name);
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) start of input\n", schannel->name);
 	switch_mutex_unlock(schannel->mutex);
 	return status;
 }
@@ -2586,16 +2610,16 @@ static switch_status_t recog_channel_set_results(speech_channel_t *schannel, con
 	switch_mutex_lock(schannel->mutex);
 	r = (recognizer_data_t *) schannel->data;
 	if (!zstr(r->result)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) result is already set\n", schannel->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) result is already set\n", schannel->name);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
 	if (zstr(result)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) result is NULL\n", schannel->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) result is NULL\n", schannel->name);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) result:\n\n%s\n", schannel->name, result);
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) result:\n\n%s\n", schannel->name, result);
 	r->result = switch_core_strdup(schannel->memory_pool, result);
 
   done:
@@ -2689,18 +2713,18 @@ static switch_status_t recog_channel_set_result_headers(speech_channel_t *schann
 	r = (recognizer_data_t *) schannel->data;
 
 	if (r->result_headers) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) result headers are already set\n", schannel->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) result headers are already set\n", schannel->name);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
 
 	if (!recog_hdr) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) result headers are NULL\n", schannel->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) result headers are NULL\n", schannel->name);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) ASR adding result headers\n", schannel->name);
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) ASR adding result headers\n", schannel->name);
 
 	if ((status = switch_event_create(&r->result_headers, SWITCH_EVENT_CLONE)) == SWITCH_STATUS_SUCCESS) {
 
@@ -2753,11 +2777,11 @@ static switch_status_t recog_channel_get_results(speech_channel_t *schannel, cha
 	switch_mutex_lock(schannel->mutex);
 	if (!zstr(r->result)) {
 		*result = strdup(r->result);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) result:\n\n%s\n", schannel->name, *result ? *result : "");
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) result:\n\n%s\n", schannel->name, *result ? *result : "");
 		r->result = NULL;
 		r->start_of_input = START_OF_INPUT_REPORTED;
 	} else if (r->start_of_input == START_OF_INPUT_RECEIVED) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) start of input\n", schannel->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) start of input\n", schannel->name);
 		status = SWITCH_STATUS_BREAK;
 		r->start_of_input = START_OF_INPUT_REPORTED;
 	} else {
@@ -2815,7 +2839,7 @@ static switch_status_t recog_channel_set_params(speech_channel_t *schannel, mrcp
 		if (!zstr(param_name) && !zstr(param_val)) {
 			unimrcp_param_id_t *id = (unimrcp_param_id_t *) switch_core_hash_find(schannel->application->param_id_map, param_name);
 			if (id) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) \"%s\": \"%s\"\n", schannel->name, param_name, param_val);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) \"%s\": \"%s\"\n", schannel->name, param_name, param_val);
 				recog_channel_set_header(schannel, id->id, param_val, msg, recog_hdr);
 			} else if (!strcasecmp(param_name, "define-grammar")) {
 				// This parameter is used internally only, not in MRCP headers
@@ -2827,11 +2851,11 @@ static switch_status_t recog_channel_set_params(speech_channel_t *schannel, mrcp
 				/* this is probably a vendor-specific MRCP param */
 				apt_str_t apt_param_name = { 0 };
 				apt_str_t apt_param_val = { 0 };
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) (vendor-specific value) %s: %s\n", schannel->name, param_name, param_val);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) (vendor-specific value) %s: %s\n", schannel->name, param_name, param_val);
 				apt_string_set(&apt_param_name, param_name);	/* copy isn't necessary since apt_pair_array_append will do it */
 				apt_string_set(&apt_param_val, param_val);
 				if (!gen_hdr->vendor_specific_params) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) creating vendor specific pair array\n", schannel->name);
+					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) creating vendor specific pair array\n", schannel->name);
 					gen_hdr->vendor_specific_params = apt_pair_array_create(10, msg->pool);
 				}
 				apt_pair_array_append(gen_hdr->vendor_specific_params, &apt_param_name, &apt_param_val, msg->pool);
@@ -2882,7 +2906,7 @@ static switch_status_t recog_channel_set_header(speech_channel_t *schannel, int 
 				recog_hdr->n_best_list_length = n_best_list_length;
 				mrcp_resource_header_property_add(msg, RECOGNIZER_HEADER_N_BEST_LIST_LENGTH);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) Ignoring invalid n best list length, \"%s\"\n", schannel->name, val);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) Ignoring invalid n best list length, \"%s\"\n", schannel->name, val);
 			}
 			break;
 		}
@@ -2892,7 +2916,7 @@ static switch_status_t recog_channel_set_header(speech_channel_t *schannel, int 
 				recog_hdr->no_input_timeout = no_input_timeout;
 				mrcp_resource_header_property_add(msg, RECOGNIZER_HEADER_NO_INPUT_TIMEOUT);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) Ignoring invalid no input timeout, \"%s\"\n", schannel->name, val);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) Ignoring invalid no input timeout, \"%s\"\n", schannel->name, val);
 			}
 			break;
 		}
@@ -2902,7 +2926,7 @@ static switch_status_t recog_channel_set_header(speech_channel_t *schannel, int 
 				recog_hdr->recognition_timeout = recognition_timeout;
 				mrcp_resource_header_property_add(msg, RECOGNIZER_HEADER_RECOGNITION_TIMEOUT);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) Ignoring invalid recognition timeout, \"%s\"\n", schannel->name, val);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) Ignoring invalid recognition timeout, \"%s\"\n", schannel->name, val);
 			}
 			break;
 		}
@@ -2916,7 +2940,7 @@ static switch_status_t recog_channel_set_header(speech_channel_t *schannel, int 
 				recog_hdr->speech_complete_timeout = speech_complete_timeout;
 				mrcp_resource_header_property_add(msg, RECOGNIZER_HEADER_SPEECH_COMPLETE_TIMEOUT);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) Ignoring invalid speech complete timeout, \"%s\"\n", schannel->name, val);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) Ignoring invalid speech complete timeout, \"%s\"\n", schannel->name, val);
 			}
 			break;
 		}
@@ -2926,7 +2950,7 @@ static switch_status_t recog_channel_set_header(speech_channel_t *schannel, int 
 				recog_hdr->speech_incomplete_timeout = speech_incomplete_timeout;
 				mrcp_resource_header_property_add(msg, RECOGNIZER_HEADER_SPEECH_INCOMPLETE_TIMEOUT);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) Ignoring invalid speech incomplete timeout, \"%s\"\n", schannel->name,
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) Ignoring invalid speech incomplete timeout, \"%s\"\n", schannel->name,
 								  val);
 			}
 			break;
@@ -2937,7 +2961,7 @@ static switch_status_t recog_channel_set_header(speech_channel_t *schannel, int 
 				recog_hdr->dtmf_interdigit_timeout = dtmf_interdigit_timeout;
 				mrcp_resource_header_property_add(msg, RECOGNIZER_HEADER_DTMF_INTERDIGIT_TIMEOUT);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) Ignoring invalid dtmf interdigit timeout, \"%s\"\n", schannel->name, val);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) Ignoring invalid dtmf interdigit timeout, \"%s\"\n", schannel->name, val);
 			}
 			break;
 		}
@@ -2947,7 +2971,7 @@ static switch_status_t recog_channel_set_header(speech_channel_t *schannel, int 
 				recog_hdr->dtmf_term_timeout = dtmf_term_timeout;
 				mrcp_resource_header_property_add(msg, RECOGNIZER_HEADER_DTMF_TERM_TIMEOUT);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) Ignoring invalid dtmf term timeout, \"%s\"\n", schannel->name, val);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) Ignoring invalid dtmf term timeout, \"%s\"\n", schannel->name, val);
 			}
 			break;
 		}
@@ -2956,7 +2980,7 @@ static switch_status_t recog_channel_set_header(speech_channel_t *schannel, int 
 			recog_hdr->dtmf_term_char = *val;
 			mrcp_resource_header_property_add(msg, RECOGNIZER_HEADER_DTMF_TERM_CHAR);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) Ignoring invalid dtmf term char, \"%s\"\n", schannel->name, val);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) Ignoring invalid dtmf term char, \"%s\"\n", schannel->name, val);
 		}
 		break;
 
@@ -2986,7 +3010,7 @@ static switch_status_t recog_channel_set_header(speech_channel_t *schannel, int 
 				recog_hdr->hotword_max_duration = hotword_max_duration;
 				mrcp_resource_header_property_add(msg, RECOGNIZER_HEADER_HOTWORD_MAX_DURATION);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) Ignoring invalid hotword max duration, \"%s\"\n", schannel->name, val);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) Ignoring invalid hotword max duration, \"%s\"\n", schannel->name, val);
 			}
 			break;
 		}
@@ -2996,7 +3020,7 @@ static switch_status_t recog_channel_set_header(speech_channel_t *schannel, int 
 				recog_hdr->hotword_min_duration = hotword_min_duration;
 				mrcp_resource_header_property_add(msg, RECOGNIZER_HEADER_HOTWORD_MIN_DURATION);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) Ignoring invalid hotword min duration, \"%s\"\n", schannel->name, val);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) Ignoring invalid hotword min duration, \"%s\"\n", schannel->name, val);
 			}
 			break;
 		}
@@ -3042,7 +3066,7 @@ static switch_status_t recog_channel_set_header(speech_channel_t *schannel, int 
 	case RECOGNIZER_HEADER_VER_BUFFER_UTTERANCE:
 
 	default:
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "(%s) unsupported RECOGNIZER header\n", schannel->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_WARNING, "(%s) unsupported RECOGNIZER header\n", schannel->name);
 	}
 
 	return status;
@@ -3082,25 +3106,31 @@ static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec
 	profile_t *profile = NULL;
 	recognizer_data_t *r = NULL;
 	switch_hash_index_t *hi = NULL;
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "asr_handle: name = %s, codec = %s, rate = %d, grammar = %s, param = %s\n",
-					  ah->name, ah->codec, ah->rate, ah->grammar, ah->param);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "codec = %s, rate = %d, dest = %s\n", codec, rate, dest);
+	char *session_uuid = NULL;
 
 	/* Name the channel */
 	if (profile_name && strchr(profile_name, ':')) {
 		/* Profile has session name appended to it.  Pick it out */
 		profile_name = switch_core_strdup(ah->memory_pool, profile_name);
-		name = strchr(profile_name, ':');
-		*name = '\0';
-		name++;
-		name = switch_core_sprintf(ah->memory_pool, "%s ASR-%d", name, speech_channel_number);
+		session_uuid = strchr(profile_name, ':');
+		*session_uuid = '\0';
+		session_uuid++;
+		session_uuid = switch_core_strdup(ah->memory_pool, session_uuid);
 	} else {
-		name = switch_core_sprintf(ah->memory_pool, "ASR-%d", speech_channel_number);
+		/* check if session is associated w/ this memory pool */
+		switch_core_session_t *session = switch_core_memory_pool_get_data(ah->memory_pool, "__session");
+		if (session) {
+			session_uuid = switch_core_session_get_uuid(session);
+		}
 	}
+	name = switch_core_sprintf(ah->memory_pool, "ASR-%d", speech_channel_number);
+
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(session_uuid), SWITCH_LOG_INFO, "asr_handle: name = %s, codec = %s, rate = %d, grammar = %s, param = %s\n",
+					  ah->name, ah->codec, ah->rate, ah->grammar, ah->param);
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(session_uuid), SWITCH_LOG_INFO, "codec = %s, rate = %d, dest = %s\n", codec, rate, dest);
 
 	/* Allocate the channel */
-	if (speech_channel_create(&schannel, name, SPEECH_CHANNEL_RECOGNIZER, &globals.recog, (uint16_t) rate, ah->memory_pool) != SWITCH_STATUS_SUCCESS) {
+	if (speech_channel_create(&schannel, name, session_uuid, SPEECH_CHANNEL_RECOGNIZER, &globals.recog, (uint16_t) rate, ah->memory_pool) != SWITCH_STATUS_SUCCESS) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
@@ -3118,7 +3148,7 @@ static switch_status_t recog_asr_open(switch_asr_handle_t *ah, const char *codec
 	}
 	profile = (profile_t *) switch_core_hash_find(globals.profiles, profile_name);
 	if (!profile) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Can't find profile, %s\n", name, profile_name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(session_uuid), SWITCH_LOG_ERROR, "(%s) Can't find profile, %s\n", name, profile_name);
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
@@ -3162,7 +3192,7 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 	grammar_type_t type = GRAMMAR_TYPE_UNKNOWN;
 	char *filename = NULL;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) grammar = %s, name = %s\n", schannel->name, grammar, name);
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) grammar = %s, name = %s\n", schannel->name, grammar, name);
 
 	grammar = skip_initial_whitespace(grammar);
 	if (zstr(grammar)) {
@@ -3179,7 +3209,7 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 	/* figure out what type of grammar this is */
 	if (text_starts_with(grammar, HTTP_ID) || text_starts_with(grammar, FILE_ID) || text_starts_with(grammar, SESSION_ID)
 		|| text_starts_with(grammar, BUILTIN_ID)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Grammar is URI\n", schannel->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) Grammar is URI\n", schannel->name);
 		type = GRAMMAR_TYPE_URI;
 		grammar_data = grammar;
 	} else if (text_starts_with(grammar, INLINE_ID)) {
@@ -3187,7 +3217,7 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 	} else {
 		/* grammar points to file containing the grammar text.  We assume the MRCP server can't get to this file
 		 * so read the data from the file and cache it */
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Grammar is inside file\n", schannel->name);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) Grammar is inside file\n", schannel->name);
 		if (switch_is_file_path(grammar)) {
 			filename = switch_mprintf("%s.gram", grammar);
 		} else {
@@ -3195,25 +3225,25 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 		}
 		grammar_data = NULL;
 		if (switch_file_open(&grammar_file, filename, SWITCH_FOPEN_READ, 0, schannel->memory_pool) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Could not read grammar file: %s\n", schannel->name, filename);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) Could not read grammar file: %s\n", schannel->name, filename);
 			status = SWITCH_STATUS_FALSE;
 			goto done;
 		}
 		grammar_file_size = switch_file_get_size(grammar_file);
 		if (grammar_file_size == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Grammar file is empty: %s\n", schannel->name, filename);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) Grammar file is empty: %s\n", schannel->name, filename);
 			status = SWITCH_STATUS_FALSE;
 			goto done;
 		}
 		grammar_file_data = (char *) switch_core_alloc(schannel->memory_pool, grammar_file_size + 1);
 		to_read = grammar_file_size;
 		if (switch_file_read(grammar_file, grammar_file_data, &to_read) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Grammar file read error: %s\n", schannel->name, filename);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) Grammar file read error: %s\n", schannel->name, filename);
 			status = SWITCH_STATUS_FALSE;
 			goto done;
 		}
 		if (to_read != grammar_file_size) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Could not read entire grammar file: %s\n", schannel->name, filename);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) Could not read entire grammar file: %s\n", schannel->name, filename);
 			status = SWITCH_STATUS_FALSE;
 			goto done;
 		}
@@ -3244,12 +3274,12 @@ static switch_status_t recog_asr_load_grammar(switch_asr_handle_t *ah, const cha
 		} else if (text_starts_with(grammar_data, JSGF_ID)) {
 			type = GRAMMAR_TYPE_JSGF;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) unable to determine grammar type: %s\n", schannel->name, grammar_data);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) unable to determine grammar type: %s\n", schannel->name, grammar_data);
 			status = SWITCH_STATUS_FALSE;
 			goto done;
 		}
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) grammar is %s\n", schannel->name, grammar_type_to_mime(type, schannel->profile));
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) grammar is %s\n", schannel->name, grammar_type_to_mime(type, schannel->profile));
 
 	/* load the grammar */
 	if (recog_channel_load_grammar(schannel, name, type, grammar_data) != SWITCH_STATUS_SUCCESS) {
@@ -3410,19 +3440,19 @@ static switch_status_t recog_asr_feed_dtmf(switch_asr_handle_t *ah, const switch
 
 	if (!r->dtmf_generator) {
 		if (!r->unimrcp_stream) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Cannot queue DTMF: No UniMRCP stream object open\n", schannel->name);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) Cannot queue DTMF: No UniMRCP stream object open\n", schannel->name);
 			return SWITCH_STATUS_FALSE;
 		}
 		r->dtmf_generator = mpf_dtmf_generator_create(r->unimrcp_stream, schannel->unimrcp_session->pool);
 		if (!r->dtmf_generator) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "(%s) Cannot queue DTMF: Failed to create DTMF generator\n", schannel->name);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_ERROR, "(%s) Cannot queue DTMF: Failed to create DTMF generator\n", schannel->name);
 			return SWITCH_STATUS_FALSE;
 		}
 	}
 
 	digits[0] = dtmf->digit;
 	digits[1] = '\0';
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) Queued DTMF: %s\n", schannel->name, digits);
+	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) Queued DTMF: %s\n", schannel->name, digits);
 	mpf_dtmf_generator_enqueue(r->dtmf_generator, digits);
 	r->dtmf_generator_active = 1;
 
@@ -3569,24 +3599,24 @@ static apt_bool_t recog_on_message_receive(mrcp_application_t *application, mrcp
 			/* received the response to RECOGNIZE request */
 			if (message->start_line.request_state == MRCP_REQUEST_STATE_INPROGRESS) {
 				/* RECOGNIZE in progress */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) RECOGNIZE IN PROGRESS\n", schannel->name);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) RECOGNIZE IN PROGRESS\n", schannel->name);
 				speech_channel_set_state(schannel, SPEECH_CHANNEL_PROCESSING);
 			} else if (message->start_line.request_state == MRCP_REQUEST_STATE_COMPLETE) {
 				/* RECOGNIZE failed to start */
 				if (!recog_hdr || recog_hdr->completion_cause == RECOGNIZER_COMPLETION_CAUSE_UNKNOWN) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) RECOGNIZE failed: status = %d\n", schannel->name,
+					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) RECOGNIZE failed: status = %d\n", schannel->name,
 									  message->start_line.status_code);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) RECOGNIZE failed: status = %d, completion-cause = %03d\n",
+					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) RECOGNIZE failed: status = %d, completion-cause = %03d\n",
 									  schannel->name, message->start_line.status_code, recog_hdr->completion_cause);
 				}
 				speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
 			} else if (message->start_line.request_state == MRCP_REQUEST_STATE_PENDING) {
 				/* RECOGNIZE is queued */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) RECOGNIZE PENDING\n", schannel->name);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) RECOGNIZE PENDING\n", schannel->name);
 			} else {
 				/* received unexpected request_state */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) unexpected RECOGNIZE request state: %d\n", schannel->name,
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) unexpected RECOGNIZE request state: %d\n", schannel->name,
 								  message->start_line.request_state);
 				speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
 			}
@@ -3594,11 +3624,11 @@ static apt_bool_t recog_on_message_receive(mrcp_application_t *application, mrcp
 			/* received response to the STOP request */
 			if (message->start_line.request_state == MRCP_REQUEST_STATE_COMPLETE) {
 				/* got COMPLETE */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) RECOGNIZE STOPPED\n", schannel->name);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) RECOGNIZE STOPPED\n", schannel->name);
 				speech_channel_set_state(schannel, SPEECH_CHANNEL_READY);
 			} else {
 				/* received unexpected request state */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) unexpected STOP request state: %d\n", schannel->name,
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) unexpected STOP request state: %d\n", schannel->name,
 								  message->start_line.request_state);
 				speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
 			}
@@ -3606,10 +3636,10 @@ static apt_bool_t recog_on_message_receive(mrcp_application_t *application, mrcp
 			/* received response to START-INPUT-TIMERS request */
 			if (message->start_line.request_state == MRCP_REQUEST_STATE_COMPLETE) {
 				if (message->start_line.status_code >= 200 && message->start_line.status_code <= 299) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) timers started\n", schannel->name);
+					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) timers started\n", schannel->name);
 					recog_channel_set_timers_started(schannel);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) timers failed to start, status code = %d\n", schannel->name,
+					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) timers failed to start, status code = %d\n", schannel->name,
 									  message->start_line.status_code);
 				}
 			}
@@ -3617,24 +3647,24 @@ static apt_bool_t recog_on_message_receive(mrcp_application_t *application, mrcp
 			/* received response to DEFINE-GRAMMAR request */
 			if (message->start_line.request_state == MRCP_REQUEST_STATE_COMPLETE) {
 				if (message->start_line.status_code >= 200 && message->start_line.status_code <= 299) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) grammar loaded\n", schannel->name);
+					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) grammar loaded\n", schannel->name);
 					speech_channel_set_state(schannel, SPEECH_CHANNEL_READY);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) grammar failed to load, status code = %d\n", schannel->name,
+					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) grammar failed to load, status code = %d\n", schannel->name,
 									  message->start_line.status_code);
 					speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
 				}
 			}
 		} else {
 			/* received unexpected response */
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) unexpected response, method_id = %d\n", schannel->name,
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) unexpected response, method_id = %d\n", schannel->name,
 							  (int) message->start_line.method_id);
 			speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
 		}
 	} else if (message->start_line.message_type == MRCP_MESSAGE_TYPE_EVENT) {
 		/* received MRCP event */
 		if (message->start_line.method_id == RECOGNIZER_RECOGNITION_COMPLETE) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) RECOGNITION COMPLETE, Completion-Cause: %03d\n", schannel->name,
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) RECOGNITION COMPLETE, Completion-Cause: %03d\n", schannel->name,
 							  recog_hdr->completion_cause);
 			if (message->body.length > 0) {
 				if (message->body.buf[message->body.length - 1] == '\0') {
@@ -3652,22 +3682,22 @@ static apt_bool_t recog_on_message_receive(mrcp_application_t *application, mrcp
 				}
 			} else {
 				char *completion_cause = switch_mprintf("Completion-Cause: %03d", recog_hdr->completion_cause);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) No result\n", schannel->name);
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) No result\n", schannel->name);
 				recog_channel_set_result_headers(schannel, recog_hdr);
 				recog_channel_set_results(schannel, completion_cause);
 				switch_safe_free(completion_cause);
 			}
 			speech_channel_set_state(schannel, SPEECH_CHANNEL_READY);
 		} else if (message->start_line.method_id == RECOGNIZER_START_OF_INPUT) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) START OF INPUT\n", schannel->name);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) START OF INPUT\n", schannel->name);
 			recog_channel_set_start_of_input(schannel);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) unexpected event, method_id = %d\n", schannel->name,
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) unexpected event, method_id = %d\n", schannel->name,
 							  (int) message->start_line.method_id);
 			speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) unexpected message type, message_type = %d\n", schannel->name,
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(schannel->session_uuid), SWITCH_LOG_DEBUG, "(%s) unexpected message type, message_type = %d\n", schannel->name,
 						  message->start_line.message_type);
 		speech_channel_set_state(schannel, SPEECH_CHANNEL_ERROR);
 	}
@@ -4072,18 +4102,24 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 	}
 	client = mrcp_client_create(dir_layout);
 	if (!client) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to create MRCP client\n");
 		goto done;
 	}
 
 	pool = mrcp_client_memory_pool_get(client);
 	if (!pool) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to get MRCP client memory pool\n");
 		client = NULL;
 		goto done;
 	}
 
 	/* load the synthesizer and recognizer resources */
 	resource_loader = mrcp_resource_loader_create(FALSE, pool);
-	if (resource_loader) {
+	if (!resource_loader) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to create MRCP resource loader\n");
+		client = NULL;
+		goto done;
+	} else {
 		apt_str_t synth_resource;
 		apt_str_t recog_resource;
 		apt_string_set(&synth_resource, "speechsynth");
@@ -4092,17 +4128,21 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 		mrcp_resource_load(resource_loader, &recog_resource);
 		resource_factory = mrcp_resource_factory_get(resource_loader);
 		mrcp_client_resource_factory_register(client, resource_factory);
-	} else {
+	}
+
+	codec_manager = mpf_engine_codec_manager_create(pool);
+	if (!codec_manager) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to create MPF codec manager\n");
+		client = NULL;
+		goto done;
+	}
+	if (!mrcp_client_codec_manager_register(client, codec_manager)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to create register MRCP client codec manager\n");
 		client = NULL;
 		goto done;
 	}
 
-	codec_manager = mpf_engine_codec_manager_create(pool);
-	if (codec_manager) {
-		mrcp_client_codec_manager_register(client, codec_manager);
-	}
-
-	/* set up MRCPv2 connection agent that will be shared with all profiles */
+	/* set up MRCP connection agent that will be shared with all profiles */
 	if (!zstr(globals.unimrcp_max_connection_count)) {
 		max_connection_count = atoi(globals.unimrcp_max_connection_count);
 	}
@@ -4113,20 +4153,51 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 		offer_new_connection = strcasecmp("true", globals.unimrcp_offer_new_connection);
 	}
 	connection_agent = mrcp_client_connection_agent_create("MRCPv2ConnectionAgent", max_connection_count, offer_new_connection, pool);
-	if (connection_agent) {
-		if (!zstr(globals.unimrcp_request_timeout)) {
-			apr_size_t request_timeout = (apr_size_t)atol(globals.unimrcp_request_timeout);
-			if (request_timeout > 0) {
-				mrcp_client_connection_timeout_set(connection_agent, request_timeout);
-			}
+	if (!connection_agent) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to create MRCP connection agent\n");
+		client = NULL;
+		goto done;
+	}
+	if (!zstr(globals.unimrcp_rx_buffer_size)) {
+		apr_size_t rx_buffer_size = (apr_size_t)atol(globals.unimrcp_rx_buffer_size);
+		if (rx_buffer_size > 0) {
+			mrcp_client_connection_rx_size_set(connection_agent, rx_buffer_size);
 		}
-		mrcp_client_connection_agent_register(client, connection_agent);
+	}
+	if (!zstr(globals.unimrcp_tx_buffer_size)) {
+		apr_size_t tx_buffer_size = (apr_size_t)atol(globals.unimrcp_tx_buffer_size);
+		if (tx_buffer_size > 0) {
+			mrcp_client_connection_tx_size_set(connection_agent, tx_buffer_size);
+		}
+	}
+	if (!zstr(globals.unimrcp_request_timeout)) {
+		apr_size_t request_timeout = (apr_size_t)atol(globals.unimrcp_request_timeout);
+		if (request_timeout > 0) {
+			mrcp_client_connection_timeout_set(connection_agent, request_timeout);
+		}
+	}
+	if (!mrcp_client_connection_agent_register(client, connection_agent)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to create register MRCP connection agent\n");
+		client = NULL;
+		goto done;
 	}
 
 	/* Set up the media engine that will be shared with all profiles */
 	media_engine = mpf_engine_create("MediaEngine", pool);
-	if (media_engine) {
-		mrcp_client_media_engine_register(client, media_engine);
+	if (!media_engine) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to create MPF media engine\n");
+		client = NULL;
+		goto done;
+	}
+	if (!mpf_engine_scheduler_rate_set(media_engine, 1)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to set MPF engine scheduler rate\n");
+		client = NULL;
+		goto done;
+	}
+	if (!mrcp_client_media_engine_register(client, media_engine)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to register MPF media engine\n");
+		client = NULL;
+		goto done;
 	}
 
 	/* configure the client profiles */
@@ -4146,6 +4217,7 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 			mrcp_sig_settings_t *sig_settings = mrcp_signaling_settings_alloc(pool);
 			profile_t *mod_profile = NULL;
 			switch_xml_t default_params = NULL;
+			mrcp_connection_agent_t *v2_profile_connection_agent = NULL;
 
 			/* get profile attributes */
 			const char *name = apr_pstrdup(pool, switch_xml_attr(profile, "name"));
@@ -4218,6 +4290,7 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 				rtsp_client_config_t *config = mrcp_unirtsp_client_config_alloc(pool);
 				config->origin = DEFAULT_SDP_ORIGIN;
 				sig_settings->resource_location = DEFAULT_RESOURCE_LOCATION;
+				v2_profile_connection_agent = NULL;
 
 				if (!zstr(globals.unimrcp_request_timeout)) {
 					apr_size_t request_timeout = (apr_size_t)atol(globals.unimrcp_request_timeout);
@@ -4238,10 +4311,15 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 					if (!process_mrcpv1_config(config, sig_settings, param_name, param_value, pool) &&
 						!process_rtp_config(client, rtp_config, rtp_settings, param_name, param_value, pool) &&
 						!process_profile_config(mod_profile, param_name, param_value, mod_pool)) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown param %s\n", param_name);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring unknown param %s\n", param_name);
 					}
 				}
 				agent = mrcp_unirtsp_client_agent_create(name, config, pool);
+				if (!agent) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create MRCP RTSP client agent\n");
+					client = NULL;
+					goto done;
+				}
 			} else if (strcmp("2", version) == 0) {
 				/* MRCPv2 configuration */
 				mrcp_sofia_client_config_t *config = mrcp_sofiasip_client_config_alloc(pool);
@@ -4253,6 +4331,7 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 				config->ext_ip = NULL;
 				config->user_agent_name = DEFAULT_SOFIASIP_UA_NAME;
 				config->origin = DEFAULT_SDP_ORIGIN;
+				v2_profile_connection_agent = connection_agent;
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading MRCPv2 profile: %s\n", name);
 				for (param = switch_xml_child(profile, "param"); param; param = switch_xml_next(param)) {
 					const char *param_name = switch_xml_attr(param, "name");
@@ -4266,10 +4345,15 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 					if (!process_mrcpv2_config(config, sig_settings, param_name, param_value, pool) &&
 						!process_rtp_config(client, rtp_config, rtp_settings, param_name, param_value, pool) &&
 						!process_profile_config(mod_profile, param_name, param_value, mod_pool)) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown param %s\n", param_name);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Ignoring unknown param %s\n", param_name);
 					}
 				}
 				agent = mrcp_sofiasip_client_agent_create(name, config, pool);
+				if (!agent) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create MRCP SIP client agent\n");
+					client = NULL;
+					goto done;
+				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "version must be either \"1\" or \"2\"\n");
 				client = NULL;
@@ -4277,18 +4361,24 @@ static mrcp_client_t *mod_unimrcp_client_create(switch_memory_pool_t *mod_pool)
 			}
 
 			termination_factory = mpf_rtp_termination_factory_create(rtp_config, pool);
-			if (termination_factory) {
-				mrcp_client_rtp_factory_register(client, termination_factory, name);
+			if (!termination_factory) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create RTP termination factory\n");
+				client = NULL;
+				goto done;
 			}
-			if (agent) {
-				mrcp_client_signaling_agent_register(client, agent);
-			}
+			mrcp_client_rtp_factory_register(client, termination_factory, name);
+			mrcp_client_rtp_settings_register(client, rtp_settings, "RTP-Settings");
+			mrcp_client_signaling_settings_register(client, sig_settings, "Signaling-Settings");
+			mrcp_client_signaling_agent_register(client, agent);
 
 			/* create the profile and register it */
-			mprofile = mrcp_client_profile_create(NULL, agent, connection_agent, media_engine, termination_factory, rtp_settings, sig_settings, pool);
-			if (mprofile) {
-				mrcp_client_profile_register(client, mprofile, name);
+			mprofile = mrcp_client_profile_create(NULL, agent, v2_profile_connection_agent, media_engine, termination_factory, rtp_settings, sig_settings, pool);
+			if (!mprofile) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create MRCP client profile\n");
+				client = NULL;
+				goto done;
 			}
+			mrcp_client_profile_register(client, mprofile, name);
 		}
 	}
 

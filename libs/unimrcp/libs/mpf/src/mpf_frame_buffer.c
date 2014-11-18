@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mpf_frame_buffer.c 1474 2010-02-07 20:51:47Z achaloyan $
+ * $Id: mpf_frame_buffer.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "mpf_frame_buffer.h"
@@ -29,6 +29,11 @@ struct mpf_frame_buffer_t {
 
 	apr_thread_mutex_t *guard;
 	apr_pool_t         *pool;
+
+#ifdef MPF_FRAME_BUFFER_DEBUG
+	FILE               *utt_in;
+	FILE               *utt_out;
+#endif
 };
 
 
@@ -37,6 +42,7 @@ mpf_frame_buffer_t* mpf_frame_buffer_create(apr_size_t frame_size, apr_size_t fr
 	apr_size_t i;
 	mpf_frame_t *frame;
 	mpf_frame_buffer_t *buffer = apr_palloc(pool,sizeof(mpf_frame_buffer_t));
+	buffer->pool = pool;
 
 	buffer->frame_size = frame_size;
 	buffer->frame_count = frame_count;
@@ -51,8 +57,43 @@ mpf_frame_buffer_t* mpf_frame_buffer_create(apr_size_t frame_size, apr_size_t fr
 
 	buffer->write_pos = buffer->read_pos = 0;
 	apr_thread_mutex_create(&buffer->guard,APR_THREAD_MUTEX_UNNESTED,pool);
+
+#ifdef MPF_FRAME_BUFFER_DEBUG
+	buffer->utt_in = NULL;
+	buffer->utt_out = NULL;
+#endif
 	return buffer;
 }
+
+#ifdef MPF_FRAME_BUFFER_DEBUG
+static apr_status_t mpf_frame_buffer_file_close(void *obj)
+{
+	mpf_frame_buffer_t *buffer = obj;
+	if(buffer->utt_out) {
+		fclose(buffer->utt_out);
+		buffer->utt_out = NULL;
+	}
+	if(buffer->utt_in) {
+		fclose(buffer->utt_in);
+		buffer->utt_in = NULL;
+	}
+	return APR_SUCCESS;
+}
+
+apt_bool_t mpf_frame_buffer_file_open(mpf_frame_buffer_t *buffer, const char *utt_file_in, const char *utt_file_out)
+{
+	buffer->utt_in = fopen(utt_file_in,"wb");
+	if(!buffer->utt_in)
+		return FALSE;
+
+	buffer->utt_out = fopen(utt_file_out,"wb");
+	if(!buffer->utt_out)
+		return FALSE;
+
+	apr_pool_cleanup_register(buffer->pool,buffer,mpf_frame_buffer_file_close,NULL);
+	return TRUE;
+}
+#endif
 
 void mpf_frame_buffer_destroy(mpf_frame_buffer_t *buffer)
 {
@@ -79,6 +120,12 @@ apt_bool_t mpf_frame_buffer_write(mpf_frame_buffer_t *buffer, const mpf_frame_t 
 	mpf_frame_t *write_frame;
 	void *data = frame->codec_frame.buffer;
 	apr_size_t size = frame->codec_frame.size;
+
+#ifdef MPF_FRAME_BUFFER_DEBUG
+	if(buffer->utt_in) {
+		fwrite(data,1,size,buffer->utt_in);
+	}
+#endif
 
 	apr_thread_mutex_lock(buffer->guard);
 	while(buffer->write_pos - buffer->read_pos < buffer->frame_count && size >= buffer->frame_size) {
@@ -114,6 +161,11 @@ apt_bool_t mpf_frame_buffer_read(mpf_frame_buffer_t *buffer, mpf_frame_t *media_
 				media_frame->codec_frame.buffer,
 				src_media_frame->codec_frame.buffer,
 				media_frame->codec_frame.size);
+#ifdef MPF_FRAME_BUFFER_DEBUG
+			if(buffer->utt_out) {
+				fwrite(media_frame->codec_frame.buffer,1,media_frame->codec_frame.size,buffer->utt_out);
+			}
+#endif
 		}
 		if(media_frame->type & MEDIA_FRAME_TYPE_EVENT) {
 			media_frame->event_frame = src_media_frame->event_frame;

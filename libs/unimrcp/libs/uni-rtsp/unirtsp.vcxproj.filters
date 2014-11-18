@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{8ffd50c3-3b28-438d-a305-071644d5f115}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\rtsp.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtsp_client.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtsp_header.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtsp_message.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtsp_server.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtsp_start_line.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\rtsp_stream.h">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\rtsp_client.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rtsp_header.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rtsp_message.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rtsp_server.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rtsp_start_line.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\rtsp_stream.c">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

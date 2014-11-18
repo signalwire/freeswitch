@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mpf_scheduler.c 1474 2010-02-07 20:51:47Z achaloyan $
+ * $Id: mpf_scheduler.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "mpf_scheduler.h"
@@ -188,6 +188,8 @@ MPF_DECLARE(apt_bool_t) mpf_scheduler_stop(mpf_scheduler_t *scheduler)
 
 #else
 
+#include "apt_task.h"
+
 static APR_INLINE void mpf_scheduler_init(mpf_scheduler_t *scheduler)
 {
 	scheduler->thread = NULL;
@@ -201,6 +203,9 @@ static void* APR_THREAD_FUNC timer_thread_proc(apr_thread_t *thread, void *data)
 	apr_interval_time_t time_drift = 0;
 	apr_time_t time_now, time_last;
 	
+#if APR_HAS_SETTHREADNAME
+	apr_thread_name_set("MPF Scheduler");
+#endif
 	time_now = apr_time_now();
 	while(scheduler->running == TRUE) {
 		time_last = time_now;

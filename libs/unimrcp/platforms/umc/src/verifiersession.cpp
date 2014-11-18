@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: verifiersession.cpp 1778 2010-08-27 17:34:52Z achaloyan $
+ * $Id: verifiersession.cpp 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "verifiersession.h"
@@ -164,6 +164,7 @@ VerifierChannel* VerifierSession::CreateVerifierChannel()
 		ReadStream,
 		NULL,
 		NULL,
+		NULL,
 		NULL
 	};
 
@@ -266,7 +267,7 @@ bool VerifierSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_messag
 
 			/* create and send END-SESSION request */
 			mrcp_message_t* pMrcpMessage = CreateEndSessionRequest(pMrcpChannel);
-			if(pMrcpMessage)
+			if(pVerifierChannel && pMrcpMessage)
 			{
 				SendMrcpRequest(pVerifierChannel->m_pMrcpChannel,pMrcpMessage);
 			}
@@ -281,6 +282,13 @@ bool VerifierSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_messag
 
 bool VerifierSession::StartVerification(mrcp_channel_t* pMrcpChannel)
 {
+	const mpf_codec_descriptor_t* pDescriptor = mrcp_application_source_descriptor_get(pMrcpChannel);
+	if(!pDescriptor)
+	{
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Get Media Source Descriptor");
+		return Terminate();
+	}
+
 	VerifierChannel* pVerifierChannel = (VerifierChannel*) mrcp_application_channel_object_get(pMrcpChannel);
 	/* create and send Verification request */
 	mrcp_message_t* pMrcpMessage = CreateStartSessionRequest(pMrcpChannel);
@@ -289,7 +297,6 @@ bool VerifierSession::StartVerification(mrcp_channel_t* pMrcpChannel)
 		SendMrcpRequest(pVerifierChannel->m_pMrcpChannel,pMrcpMessage);
 	}
 
-	const mpf_codec_descriptor_t* pDescriptor = mrcp_application_source_descriptor_get(pMrcpChannel);
 	pVerifierChannel->m_pAudioIn = GetAudioIn(pDescriptor,GetSessionPool());
 	if(!pVerifierChannel->m_pAudioIn)
 	{
@@ -371,7 +378,7 @@ FILE* VerifierSession::GetAudioIn(const mpf_codec_descriptor_t* pDescriptor, apr
 
 	const char* pFileName = apr_psprintf(pool,"%s-%dkHz.pcm",
 			pVoiceprintIdentifier,
-			pDescriptor ? pDescriptor->sampling_rate/1000 : 8);
+			pDescriptor->sampling_rate/1000);
 	apt_dir_layout_t* pDirLayout = pScenario->GetDirLayout();
 	const char* pFilePath = apt_datadir_filepath_get(pDirLayout,pFileName,pool);
 	if(!pFilePath)

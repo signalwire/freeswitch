@@ -1,48 +1,75 @@
+dnl
 dnl UNIMRCP_CHECK_SOFIA
-
+dnl
+dnl This macro attempts to find the Sofia-SIP library and
+dnl set corresponding variables on exit.
+dnl
 AC_DEFUN([UNIMRCP_CHECK_SOFIA],
-[  
+[
     AC_MSG_NOTICE([Sofia SIP library configuration])
 
     AC_MSG_CHECKING([for Sofia-SIP])
     AC_ARG_WITH(sofia-sip,
-                [  --with-sofia-sip=PATH   prefix for installed Sofia-SIP or
-                          path to Sofia-SIP build tree],
+                [  --with-sofia-sip=PATH   prefix for installed Sofia-SIP,
+                          path to Sofia-SIP source/build tree,
+                          or the full path to Sofia-SIP pkg-config],
                 [sofia_path=$withval],
                 [sofia_path="/usr/local"]
                 )
-    
-    found_sofia="no"
-    sofiaconfig="lib/pkgconfig/sofia-sip-ua.pc"
-    sofiasrcdir="libsofia-sip-ua"
-    for dir in $sofia_path ; do
-        cd $dir && sofiadir=`pwd` && cd - > /dev/null
-	sofiadirsrc=`(cd $srcdir/$dir && pwd)`
-        if test -f "$dir/$sofiaconfig"; then
-            found_sofia="yes"
-            UNIMRCP_SOFIA_INCLUDES="`pkg-config --cflags $dir/$sofiaconfig`"
-            UNIMRCP_SOFIA_LIBS="`pkg-config --libs $dir/$sofiaconfig`"
-	    sofia_version="`pkg-config --modversion $dir/$sofiaconfig`"
-            break
-        fi
-        if test -d "$dir/$sofiasrcdir"; then
-            found_sofia="yes"
-            UNIMRCP_SOFIA_INCLUDES="-I$sofiadir/$sofiasrcdir -I$sofiadir/$sofiasrcdir/bnf -I$sofiadir/$sofiasrcdir/features -I$sofiadir/$sofiasrcdir/http -I$sofiadir/$sofiasrcdir/ipt -I$sofiadir/$sofiasrcdir/iptsec -I$sofiadir/$sofiasrcdir/msg -I$sofiadir/$sofiasrcdir/nea -I$sofiadir/$sofiasrcdir/nta -I$sofiadir/$sofiasrcdir/nth -I$sofiadir/$sofiasrcdir/nua -I$sofiadir/$sofiasrcdir/sdp -I$sofiadir/$sofiasrcdir/sip -I$sofiadir/$sofiasrcdir/soa -I$sofiadir/$sofiasrcdir/sresolv -I$sofiadir/$sofiasrcdir/stun -I$sofiadir/$sofiasrcdir/su -I$sofiadir/$sofiasrcdir/tport -I$sofiadir/$sofiasrcdir/url -I$sofiadirsrc/$sofiasrcdir -I$sofiadirsrc/$sofiasrcdir/bnf -I$sofiadirsrc/$sofiasrcdir/features -I$sofiadirsrc/$sofiasrcdir/http -I$sofiadirsrc/$sofiasrcdir/ipt -I$sofiadirsrc/$sofiasrcdir/iptsec -I$sofiadirsrc/$sofiasrcdir/msg -I$sofiadirsrc/$sofiasrcdir/nea -I$sofiadirsrc/$sofiasrcdir/nta -I$sofiadirsrc/$sofiasrcdir/nth -I$sofiadirsrc/$sofiasrcdir/nua -I$sofiadirsrc/$sofiasrcdir/sdp -I$sofiadirsrc/$sofiasrcdir/sip -I$sofiadirsrc/$sofiasrcdir/soa -I$sofiadirsrc/$sofiasrcdir/sresolv -I$sofiadirsrc/$sofiasrcdir/stun -I$sofiadirsrc/$sofiasrcdir/su -I$sofiadirsrc/$sofiasrcdir/tport -I$sofiadirsrc/$sofiasrcdir/url"
-            UNIMRCP_SOFIA_LIBS="$sofiadir/$sofiasrcdir/libsofia-sip-ua.la"
-	    sofia_version="`pkg-config --modversion $sofiadir/packages/sofia-sip-ua.pc`"
-            break
-        fi
-    done
 
-    if test x_$found_sofia != x_yes; then
-        AC_MSG_ERROR(Cannot find Sofia-SIP - looked for sofia-config:$sofiaconfig and srcdir:$sofiasrcdir in $sofia_path)
+    found_sofia="no"
+
+    if test -n "$PKG_CONFIG"; then
+        dnl Check for installed Sofia-SIP
+        for dir in $sofia_path ; do
+            sofia_config_path=$dir/lib/pkgconfig/sofia-sip-ua.pc
+            if test -f "$sofia_config_path" && $PKG_CONFIG $sofia_config_path > /dev/null 2>&1; then
+                found_sofia="yes"
+                break
+            fi
+        done
+
+        dnl Check for full path to Sofia-SIP pkg-config file
+        if test "$found_sofia" != "yes" && test -f "$sofia_path" && $PKG_CONFIG $sofia_path > /dev/null 2>&1 ; then
+            found_sofia="yes"
+            sofia_config_path=$sofia_path
+        fi
+
+        if test "$found_sofia" = "yes" ; then
+            UNIMRCP_SOFIA_INCLUDES="`$PKG_CONFIG --cflags $sofia_config_path`"
+            UNIMRCP_SOFIA_LIBS="`$PKG_CONFIG --libs $sofia_config_path`"
+            sofia_version="`$PKG_CONFIG --modversion $sofia_config_path`"
+        fi
+    fi
+
+    if test "$found_sofia" != "yes" ; then
+        dnl Check for path to Sofia-SIP source/build tree
+        for dir in $sofia_path ; do
+            sofia_uadir="$dir/libsofia-sip-ua"
+            if test -d "$sofia_uadir"; then
+                found_sofia="yes"
+                UNIMRCP_SOFIA_INCLUDES="-I$sofia_uadir -I$sofia_uadir/bnf -I$sofia_uadir/features -I$sofia_uadir/http -I$sofia_uadir/ipt -I$sofia_uadir/iptsec -I$sofia_uadir/msg -I$sofia_uadir/nea -I$sofia_uadir/nta -I$sofia_uadir/nth -I$sofia_uadir/nua -I$sofia_uadir/sdp -I$sofia_uadir/sip -I$sofia_uadir/soa -I$sofia_uadir/sresolv -I$sofia_uadir/stun -I$sofia_uadir/su -I$sofia_uadir/tport -I$sofia_uadir/url"
+                UNIMRCP_SOFIA_LIBS="$sofia_uadir/libsofia-sip-ua.la"
+                sofia_version="`sed -n 's/#define SOFIA_SIP_VERSION.* "\(.*\)"/\1/p' $sofia_uadir/features/sofia-sip/sofia_features.h`"
+                break
+            fi
+        done
+    fi
+
+    if test $found_sofia != "yes" ; then
+        if test -n "$PKG_CONFIG"; then
+            AC_MSG_ERROR(Cannot find Sofia-SIP - looked for sofia-config and libsofia-sip-ua in $sofia_path)
+        else
+            AC_MSG_ERROR(Cannot find Sofia-SIP - pkg-config not available, looked for libsofia-sip-ua in $sofia_path)
+        fi
     else
         AC_MSG_RESULT([$found_sofia])
         AC_MSG_RESULT([$sofia_version])
 
 case "$host" in
     *darwin*)
-	UNIMRCP_SOFIA_LIBS="$UNIMRCP_SOFIA_LIBS -framework CoreFoundation -framework SystemConfiguration"                                                                ;;
+        UNIMRCP_SOFIA_LIBS="$UNIMRCP_SOFIA_LIBS -framework CoreFoundation -framework SystemConfiguration"
+        ;;
 esac
 
         AC_SUBST(UNIMRCP_SOFIA_INCLUDES)

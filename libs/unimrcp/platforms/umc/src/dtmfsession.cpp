@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: dtmfsession.cpp 1780 2010-09-01 05:59:32Z achaloyan $
+ * $Id: dtmfsession.cpp 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "dtmfsession.h"
@@ -115,6 +115,7 @@ RecogChannel* DtmfSession::CreateRecogChannel()
 		NULL,
 		NULL,
 		ReadStream,
+		NULL,
 		NULL,
 		NULL,
 		NULL
@@ -267,37 +268,12 @@ mrcp_message_t* DtmfSession::CreateRecognizeRequest(mrcp_channel_t* pMrcpChannel
 	return pMrcpMessage;
 }
 
-bool DtmfSession::ParseNLSMLResult(mrcp_message_t* pMrcpMessage) const
+bool DtmfSession::ParseNLSMLResult(mrcp_message_t* pMrcpMessage)
 {
-	apr_xml_elem* pInterpret;
-	apr_xml_elem* pInstance;
-	apr_xml_elem* pInput;
-	apr_xml_doc* pDoc = nlsml_doc_load(&pMrcpMessage->body,pMrcpMessage->pool);
-	if(!pDoc)
+	nlsml_result_t *pResult = nlsml_result_parse(pMrcpMessage->body.buf, pMrcpMessage->body.length, pMrcpMessage->pool);
+	if(!pResult)
 		return false;
-	
-	/* walk through interpreted results */
-	pInterpret = nlsml_first_interpret_get(pDoc);
-	for(; pInterpret; pInterpret = nlsml_next_interpret_get(pInterpret)) 
-	{
-		/* get instance and input */
-		nlsml_interpret_results_get(pInterpret,&pInstance,&pInput);
-		if(pInstance) 
-		{
-			/* process instance */
-			if(pInstance->first_cdata.first) 
-			{
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Interpreted Instance [%s]",pInstance->first_cdata.first->text);
-			}
-		}
-		if(pInput) 
-		{
-			/* process input */
-			if(pInput->first_cdata.first)
-			{
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Interpreted Input [%s]",pInput->first_cdata.first->text);
-			}
-		}
-	}
+
+	nlsml_result_trace(pResult, pMrcpMessage->pool);
 	return true;
 }

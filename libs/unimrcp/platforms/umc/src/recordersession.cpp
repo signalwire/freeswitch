@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: recordersession.cpp 1474 2010-02-07 20:51:47Z achaloyan $
+ * $Id: recordersession.cpp 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "recordersession.h"
@@ -129,6 +129,7 @@ RecorderChannel* RecorderSession::CreateRecorderChannel()
 		ReadStream,
 		NULL,
 		NULL,
+		NULL,
 		NULL
 	};
 
@@ -217,6 +218,13 @@ bool RecorderSession::OnMessageReceive(mrcp_channel_t* pMrcpChannel, mrcp_messag
 
 bool RecorderSession::StartRecorder(mrcp_channel_t* pMrcpChannel)
 {
+	const mpf_codec_descriptor_t* pDescriptor = mrcp_application_source_descriptor_get(pMrcpChannel);
+	if(!pDescriptor)
+	{
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Get Media Source Descriptor");
+		return Terminate();
+	}
+
 	RecorderChannel* pRecorderChannel = (RecorderChannel*) mrcp_application_channel_object_get(pMrcpChannel);
 	/* create and send RECORD request */
 	mrcp_message_t* pMrcpMessage = CreateRecordRequest(pMrcpChannel);
@@ -225,7 +233,6 @@ bool RecorderSession::StartRecorder(mrcp_channel_t* pMrcpChannel)
 		SendMrcpRequest(pRecorderChannel->m_pMrcpChannel,pMrcpMessage);
 	}
 
-	const mpf_codec_descriptor_t* pDescriptor = mrcp_application_source_descriptor_get(pMrcpChannel);
 	pRecorderChannel->m_pAudioIn = GetAudioIn(pDescriptor,GetSessionPool());
 	return true;
 }
@@ -260,8 +267,7 @@ FILE* RecorderSession::GetAudioIn(const mpf_codec_descriptor_t* pDescriptor, apr
 	const char* pFileName = GetScenario()->GetAudioSource();
 	if(!pFileName)
 	{
-		pFileName = apr_psprintf(pool,"demo-%dkHz.pcm",
-			pDescriptor ? pDescriptor->sampling_rate/1000 : 8);
+		pFileName = apr_psprintf(pool,"demo-%dkHz.pcm",pDescriptor->sampling_rate/1000);
 	}
 	apt_dir_layout_t* pDirLayout = GetScenario()->GetDirLayout();
 	const char* pFilePath = apt_datadir_filepath_get(pDirLayout,pFileName,pool);

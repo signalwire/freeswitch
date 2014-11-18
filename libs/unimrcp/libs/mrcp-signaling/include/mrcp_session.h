@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_session.h 1792 2011-01-10 21:08:52Z achaloyan $
+ * $Id: mrcp_session.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_SESSION_H
@@ -25,6 +25,7 @@
  */ 
 
 #include "mrcp_sig_types.h"
+#include "mpf_types.h"
 #include "apt_string.h"
 
 APT_BEGIN_EXTERN_C
@@ -57,8 +58,15 @@ struct mrcp_session_t {
 	void             *log_obj;
 	/** Informative name of the session used for debugging */
 	const char       *name;
-	/** Back pointer to signaling agent */
-	mrcp_sig_agent_t *signaling_agent;
+
+	/** Signaling (session managment) agent */
+	mrcp_sig_agent_t          *signaling_agent;
+	/** MRCPv2 connection agent, if any */
+	void                      *connection_agent;
+	/** Media processing engine */
+	mpf_engine_t              *media_engine;
+	/** RTP termination factory */
+	mpf_termination_factory_t *rtp_factory;
 
 	/** Session identifier */
 	apt_str_t         id;

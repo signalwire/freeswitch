@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: demo_recog_application.c 1474 2010-02-07 20:51:47Z achaloyan $
+ * $Id: demo_recog_application.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 /*
@@ -38,6 +38,7 @@
 #include "mrcp_generic_header.h"
 #include "mrcp_recog_header.h"
 #include "mrcp_recog_resource.h"
+#include "apt_nlsml_doc.h"
 #include "apt_log.h"
 
 typedef struct recog_app_channel_t recog_app_channel_t;
@@ -71,7 +72,9 @@ static const mrcp_app_message_dispatcher_t recog_application_dispatcher = {
 	recog_application_on_session_terminate,
 	recog_application_on_channel_add,
 	recog_application_on_channel_remove,
-	recog_application_on_message_receive
+	recog_application_on_message_receive,
+	NULL /* recog_application_on_terminate_event */,
+	NULL /* recog_application_on_resource_discover */
 };
 
 /** Declaration of recognizer audio stream methods */
@@ -85,6 +88,7 @@ static const mpf_audio_stream_vtable_t audio_stream_vtable = {
 	recog_app_stream_open,
 	recog_app_stream_close,
 	recog_app_stream_read,
+	NULL,
 	NULL,
 	NULL,
 	NULL
@@ -240,19 +244,26 @@ static apt_bool_t recog_application_on_channel_remove(mrcp_application_t *applic
 /** Handle the DEFINE-GRAMMAR responses */
 static apt_bool_t recog_application_on_define_grammar(mrcp_application_t *application, mrcp_session_t *session, mrcp_channel_t *channel)
 {
-	recog_app_channel_t *recog_channel = mrcp_application_channel_object_get(channel);
 	mrcp_message_t *mrcp_message;
+	recog_app_channel_t *recog_channel = mrcp_application_channel_object_get(channel);
 	const apt_dir_layout_t *dir_layout = mrcp_application_dir_layout_get(application);
-	apr_pool_t *pool = mrcp_application_session_pool_get(session);
+
+	const mpf_codec_descriptor_t *descriptor = mrcp_application_source_descriptor_get(channel);
+	if(!descriptor) {
+		/* terminate the demo */
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Get Media Source Descriptor");
+		return mrcp_application_session_terminate(session);
+	}
+
 	/* create and send RECOGNIZE request */
 	mrcp_message = demo_recognize_message_create(session,channel,dir_layout);
 	if(mrcp_message) {
 		mrcp_application_message_send(session,channel,mrcp_message);
 	}
+	
 	if(recog_channel) {
-		const mpf_codec_descriptor_t *descriptor = mrcp_application_source_descriptor_get(channel);
-		char *file_name = apr_psprintf(pool,"one-%dkHz.pcm",
-			descriptor ? descriptor->sampling_rate/1000 : 8);
+		apr_pool_t *pool = mrcp_application_session_pool_get(session);
+		char *file_name = apr_psprintf(pool,"one-%dkHz.pcm",descriptor->sampling_rate/1000);
 		char *file_path = apt_datadir_filepath_get(dir_layout,file_name,pool);
 		if(file_path) {
 			recog_channel->audio_in = fopen(file_path,"rb");
@@ -303,7 +314,11 @@ static apt_bool_t recog_application_on_message_receive(mrcp_application_t *appli
 	}
 	else if(message->start_line.message_type == MRCP_MESSAGE_TYPE_EVENT) {
 		if(message->start_line.method_id == RECOGNIZER_RECOGNITION_COMPLETE) {
-			demo_nlsml_result_parse(message);
+			nlsml_result_t *result = nlsml_result_parse(message->body.buf, message->body.length, message->pool);
+			if(result) {
+				nlsml_result_trace(result, message->pool);
+			}
+			
 			if(recog_channel) {
 				recog_channel->streaming = FALSE;
 			}

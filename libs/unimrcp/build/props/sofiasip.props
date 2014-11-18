@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(ProjectDir)..\..\build\props\unibase.props" Condition=" '$(UniBaseImported)' == '' "/>
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <SofiaDir>$(LibRootDir)libs\sofia-sip</SofiaDir>
+  </PropertyGroup>
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SofiaSipImported>true</SofiaSipImported>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(SofiaDir)\win32;$(SofiaDir)\libsofia-sip-ua\su;$(SofiaDir)\libsofia-sip-ua\nua;$(SofiaDir)\libsofia-sip-ua\url;$(SofiaDir)\libsofia-sip-ua\sip;$(SofiaDir)\libsofia-sip-ua\msg;$(SofiaDir)\libsofia-sip-ua\sdp;$(SofiaDir)\libsofia-sip-ua\nta;$(SofiaDir)\libsofia-sip-ua\nea;$(SofiaDir)\libsofia-sip-ua\soa;$(SofiaDir)\libsofia-sip-ua\iptsec;$(SofiaDir)\libsofia-sip-ua\bnf;$(SofiaDir)\libsofia-sip-ua\features;$(SofiaDir)\libsofia-sip-ua\tport;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <BuildMacro Include="SofiaDir">
+      <Value>$(SofiaDir)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>

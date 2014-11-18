@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mpf_codec_descriptor.h 1474 2010-02-07 20:51:47Z achaloyan $
+ * $Id: mpf_codec_descriptor.h 2239 2014-11-12 01:52:59Z achaloyan@gmail.com $
  */
 
 #ifndef MPF_CODEC_DESCRIPTOR_H
@@ -136,20 +136,20 @@ static APR_INLINE  mpf_codec_descriptor_t* mpf_codec_descriptor_create(apr_pool_
 /** Calculate encoded frame size in bytes */
 static APR_INLINE apr_size_t mpf_codec_frame_size_calculate(const mpf_codec_descriptor_t *descriptor, const mpf_codec_attribs_t *attribs)
 {
-	return descriptor->channel_count * attribs->bits_per_sample * CODEC_FRAME_TIME_BASE * 
+	return (size_t) descriptor->channel_count * attribs->bits_per_sample * CODEC_FRAME_TIME_BASE * 
 			descriptor->sampling_rate / 1000 / 8; /* 1000 - msec per sec, 8 - bits per byte */
 }
 
 /** Calculate samples of the frame (ts) */
 static APR_INLINE apr_size_t mpf_codec_frame_samples_calculate(const mpf_codec_descriptor_t *descriptor)
 {
-	return descriptor->channel_count * CODEC_FRAME_TIME_BASE * descriptor->sampling_rate / 1000;
+	return (size_t) descriptor->channel_count * CODEC_FRAME_TIME_BASE * descriptor->sampling_rate / 1000;
 }
 
 /** Calculate linear frame size in bytes */
 static APR_INLINE apr_size_t mpf_codec_linear_frame_size_calculate(apr_uint16_t sampling_rate, apr_byte_t channel_count)
 {
-	return channel_count * BYTES_PER_SAMPLE * CODEC_FRAME_TIME_BASE * sampling_rate / 1000;
+	return (size_t) channel_count * BYTES_PER_SAMPLE * CODEC_FRAME_TIME_BASE * sampling_rate / 1000;
 }
 
 
@@ -244,13 +244,13 @@ static APR_INLINE apt_bool_t mpf_codec_capabilities_merge(mpf_codec_capabilities
 static APR_INLINE apt_bool_t mpf_codec_capabilities_add(mpf_codec_capabilities_t *capabilities, int sample_rates, const char *codec_name)
 {
 	mpf_codec_attribs_t *attribs = (mpf_codec_attribs_t*)apr_array_push(capabilities->attrib_arr);
-	apt_string_set(&attribs->name,codec_name);
+	apt_string_assign(&attribs->name,codec_name,capabilities->attrib_arr->pool);
 	attribs->sample_rates = sample_rates;
 	attribs->bits_per_sample = 0;
 	return TRUE;
 }
 
-/** Add default (liear PCM) capabilities */
+/** Add default (linear PCM) capabilities */
 MPF_DECLARE(apt_bool_t) mpf_codec_default_capabilities_add(mpf_codec_capabilities_t *capabilities);
 
 /** Validate codec capabilities */
@@ -267,8 +267,8 @@ static APR_INLINE apt_bool_t mpf_codec_capabilities_validate(mpf_codec_capabilit
 /** Find matched descriptor in codec list */
 MPF_DECLARE(mpf_codec_descriptor_t*) mpf_codec_list_descriptor_find(const mpf_codec_list_t *codec_list, const mpf_codec_descriptor_t *descriptor);
 
-/** Modify codec list according to capabilities specified */
-MPF_DECLARE(apt_bool_t) mpf_codec_list_modify(mpf_codec_list_t *codec_list, const mpf_codec_capabilities_t *capabilities);
+/** Match codec list with specified capabilities */
+MPF_DECLARE(apt_bool_t) mpf_codec_list_match(mpf_codec_list_t *codec_list, const mpf_codec_capabilities_t *capabilities);
 
 /** Intersect two codec lists */
 MPF_DECLARE(apt_bool_t) mpf_codec_lists_intersect(mpf_codec_list_t *codec_list1, mpf_codec_list_t *codec_list2);

@@ -1,4 +1,4 @@
-MAINTAINERCLEANFILES 	    = Makefile.in
+MAINTAINERCLEANFILES        = Makefile.in
 
 AM_CPPFLAGS                 = -I$(top_srcdir)/libs/mrcp-engine/include \
                               -I$(top_srcdir)/libs/mrcp/include \
@@ -7,7 +7,7 @@ AM_CPPFLAGS                 = -I$(top_srcdir)/libs/mrcp-engine/include \
                               -I$(top_srcdir)/libs/mrcp/resources/include \
                               -I$(top_srcdir)/libs/mpf/include \
                               -I$(top_srcdir)/libs/apr-toolkit/include \
-                              $(UNIMRCP_APR_INCLUDES) $(UNIMRCP_APU_INCLUDES)
+                              $(UNIMRCP_APR_INCLUDES)
 
 noinst_LTLIBRARIES          = libmrcpengine.la
 

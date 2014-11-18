@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_application.h 1779 2010-09-01 05:54:34Z achaloyan $
+ * $Id: mrcp_application.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_APPLICATION_H
@@ -182,6 +182,12 @@ MRCP_DECLARE(apr_pool_t*) mrcp_application_session_pool_get(const mrcp_session_t
  * @param session the session to get identifier of
  */
 MRCP_DECLARE(const apt_str_t*) mrcp_application_session_id_get(const mrcp_session_t *session);
+
+/**
+ * Get SIP or RTSP response code.
+ * @param session the session to use
+ */
+MRCP_DECLARE(int) mrcp_application_session_response_code_get(const mrcp_session_t *session);
 
 /**
  * Get external object associated with the session.

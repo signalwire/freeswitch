@@ -1,0 +1,24 @@
+MAINTAINERCLEANFILES       = Makefile.in
+
+# Includes
+UNIMRCP_CLIENTAPP_INCLUDES = -I$(top_srcdir)/platforms/libunimrcp-client/include \
+                             -I$(top_srcdir)/libs/mrcp-client/include \
+                             -I$(top_srcdir)/libs/mrcp-signaling/include \
+                             -I$(top_srcdir)/libs/mrcpv2-transport/include \
+                             -I$(top_srcdir)/libs/mrcp/include \
+                             -I$(top_srcdir)/libs/mrcp/message/include \
+                             -I$(top_srcdir)/libs/mrcp/control/include \
+                             -I$(top_srcdir)/libs/mrcp/resources/include \
+                             -I$(top_srcdir)/libs/mpf/include \
+                             -I$(top_srcdir)/libs/apr-toolkit/include \
+                             -I$(top_srcdir)/build \
+                             $(UNIMRCP_APR_INCLUDES)
+
+# Libraries (LDADD)
+UNIMRCP_CLIENTAPP_LIBS     = $(top_builddir)/platforms/libunimrcp-client/libunimrcpclient.la
+
+# Linker options (LDFLAGS)
+UNIMRCP_CLIENTAPP_OPTS     =
+if ISMAC
+UNIMRCP_CLIENTAPP_OPTS    += -framework CoreFoundation -framework SystemConfiguration
+endif

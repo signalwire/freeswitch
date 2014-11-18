@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: apt_pool.c 1474 2010-02-07 20:51:47Z achaloyan $
+ * $Id: apt_pool.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "apt_pool.h"
+#include "apt_log.h"
 
 #define OWN_ALLOCATOR_PER_POOL
+
+static int apt_abort_fn(int retcode)
+{
+	apt_log(APT_LOG_MARK,APT_PRIO_CRITICAL,"APR Abort Called [%d]", retcode);
+	return 0;
+}
 
 APT_DECLARE(apr_pool_t*) apt_pool_create()
 {
@@ -29,7 +36,7 @@ APT_DECLARE(apr_pool_t*) apt_pool_create()
 	apr_thread_mutex_t *mutex = NULL;
 
 	if(apr_allocator_create(&allocator) == APR_SUCCESS) {
-		if(apr_pool_create_ex(&pool,NULL,NULL,allocator) == APR_SUCCESS) {
+		if(apr_pool_create_ex(&pool,NULL,apt_abort_fn,allocator) == APR_SUCCESS) {
 			apr_allocator_owner_set(allocator,pool);
 			apr_thread_mutex_create(&mutex,APR_THREAD_MUTEX_NESTED,pool);
 			apr_allocator_mutex_set(allocator,mutex);

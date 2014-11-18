@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_unirtsp_server_agent.c 1700 2010-05-21 18:56:06Z achaloyan $
+ * $Id: mrcp_unirtsp_server_agent.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include <apr_general.h>
@@ -54,7 +54,8 @@ static apt_bool_t mrcp_unirtsp_on_session_control(mrcp_session_t *session, mrcp_
 static const mrcp_session_response_vtable_t session_response_vtable = {
 	mrcp_unirtsp_on_session_answer,
 	mrcp_unirtsp_on_session_terminate,
-	mrcp_unirtsp_on_session_control
+	mrcp_unirtsp_on_session_control,
+	NULL /* mrcp_unirtsp_on_session_discover */
 };
 
 static apt_bool_t mrcp_unirtsp_session_create(rtsp_server_t *server, rtsp_server_session_t *session);
@@ -77,7 +78,7 @@ MRCP_DECLARE(mrcp_sig_agent_t*) mrcp_unirtsp_server_agent_create(const char *id,
 	apt_task_t *task;
 	mrcp_unirtsp_agent_t *agent;
 	agent = apr_palloc(pool,sizeof(mrcp_unirtsp_agent_t));
-	agent->sig_agent = mrcp_signaling_agent_create(id,agent,MRCP_VERSION_1,pool);
+	agent->sig_agent = mrcp_signaling_agent_create(id,agent,pool);
 	agent->config = config;
 
 	if(rtsp_config_validate(agent,config,pool) == FALSE) {
@@ -85,25 +86,20 @@ MRCP_DECLARE(mrcp_sig_agent_t*) mrcp_unirtsp_server_agent_create(const char *id,
 	}
 
 	agent->rtsp_server = rtsp_server_create(
-								config->local_ip,
-								config->local_port,
-								config->max_connection_count,
-								agent,
-								&session_request_vtable,
-								pool);
+							id,
+							config->local_ip,
+							config->local_port,
+							config->max_connection_count,
+							agent,
+							&session_request_vtable,
+							pool);
 	if(!agent->rtsp_server) {
 		return NULL;
 	}
-	
+
 	task = rtsp_server_task_get(agent->rtsp_server);
-	apt_task_name_set(task,id);
 	agent->sig_agent->task = task;
 
-	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Create UniRTSP Agent [%s] %s:%hu [%"APR_SIZE_T_FMT"]",
-				id,
-				config->local_ip,
-				config->local_port,
-				config->max_connection_count);
 	return agent->sig_agent;
 }
 
@@ -332,7 +328,7 @@ static apt_bool_t mrcp_unirtsp_on_session_control(mrcp_session_t *mrcp_session, 
 	mrcp_unirtsp_session_t *session = mrcp_session->obj;
 	mrcp_unirtsp_agent_t *agent = mrcp_session->signaling_agent->obj;
 
-	char buffer[500];
+	char buffer[2000];
 	apt_text_stream_t stream;
 	rtsp_message_t *rtsp_message = NULL;
 	apt_str_t *body;

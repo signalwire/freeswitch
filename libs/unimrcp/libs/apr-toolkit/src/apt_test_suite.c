@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: apt_test_suite.c 1708 2010-05-24 17:03:25Z achaloyan $
+ * $Id: apt_test_suite.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "apt_pool.h"
@@ -59,7 +59,7 @@ APT_DECLARE(void) apt_test_framework_destroy(apt_test_framework_t *framework)
 
 APT_DECLARE(apt_bool_t) apt_test_framework_suite_add(apt_test_framework_t *framework, apt_test_suite_t *suite)
 {
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Add Test Suite [%s]",suite->name);
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Add Test Suite [%s]",suite->name.buf);
 	return (apt_list_push_back(framework->suites,suite,suite->pool) ? TRUE : FALSE);
 }
 
@@ -72,7 +72,7 @@ static apt_bool_t apt_test_framework_suite_run(apt_test_framework_t *framework, 
 											   int argc, const char * const *argv)
 {
 	apt_bool_t status = FALSE;
-	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"----- Run Test Suite [%s] -----",suite->name);
+	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"----- Run Test Suite [%s] -----",suite->name.buf);
 	if(suite->tester) {
 		status = suite->tester(suite,argc,argv);
 	}

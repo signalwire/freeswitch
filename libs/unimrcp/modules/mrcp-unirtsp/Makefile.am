@@ -1,7 +1,6 @@
-MAINTAINERCLEANFILES 	   = Makefile.in
+MAINTAINERCLEANFILES       = Makefile.in
 
-AM_CPPFLAGS                = -Iinclude \
-                             -I$(unimrcp_srcdir)/modules/mrcp-unirtsp/include \
+AM_CPPFLAGS                = -I$(top_srcdir)/modules/mrcp-unirtsp/include \
                              -I$(top_srcdir)/libs/mrcp-signaling/include \
                              -I$(top_srcdir)/libs/mrcp/include \
                              -I$(top_srcdir)/libs/mrcp/message/include \
@@ -10,7 +9,7 @@ AM_CPPFLAGS                = -Iinclude \
                              -I$(top_srcdir)/libs/mpf/include \
                              -I$(top_srcdir)/libs/uni-rtsp/include \
                              -I$(top_srcdir)/libs/apr-toolkit/include \
-                             $(UNIMRCP_APR_INCLUDES) $(UNIMRCP_APU_INCLUDES) $(UNIMRCP_SOFIA_INCLUDES)
+                             $(UNIMRCP_APR_INCLUDES) $(UNIMRCP_SOFIA_INCLUDES)
 
 noinst_LTLIBRARIES         = libmrcpunirtsp.la
 

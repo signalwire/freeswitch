@@ -666,7 +666,7 @@ opal
 /unimrcp/build/svnrev/Makefile.in
 /unimrcp/build/svnrev/svnrev
 !/unimrcp/build/tools/unimrcpservice.exe.manifest
-/unimrcp/build/uni_revision.h
+!/unimrcp/build/uni_revision.h
 !/unimrcp/configure.gnu
 /unimrcp/conf/Makefile
 /unimrcp/conf/Makefile.in

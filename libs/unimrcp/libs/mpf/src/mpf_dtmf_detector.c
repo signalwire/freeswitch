@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mpf_dtmf_detector.c 1788 2010-11-22 19:45:38Z tomas.valenta@speechtech.cz $
+ * $Id: mpf_dtmf_detector.c 2227 2014-11-12 01:10:18Z achaloyan@gmail.com $
  */
 
 #include "mpf_dtmf_detector.h"
@@ -142,8 +142,7 @@ MPF_DECLARE(char) mpf_dtmf_detector_digit_get(struct mpf_dtmf_detector_t *detect
 	apr_thread_mutex_lock(detector->mutex);
 	digit = detector->buf[0];
 	if (digit) {
-        /* This used to be a strcpy(), but that can give overlapping buffer issues */
-		memmove(detector->buf, &detector->buf[1], strlen(&detector->buf[1]) + 1);
+		memmove(detector->buf, detector->buf + 1, strlen(detector->buf));
 		detector->digits--;
 	}
 	apr_thread_mutex_unlock(detector->mutex);
@@ -239,7 +238,8 @@ static void goertzel_energies_digit(struct mpf_dtmf_detector_t *detector)
 	} else if (0.25 * detector->totenergy > (reng + ceng)) {  /* 16db */
 		/* Signal energy to total energy ratio test failed */
 	} else {
-		digit = freq2digits[rmax][cmax - DTMF_FREQUENCIES/2];
+		if (cmax >= DTMF_FREQUENCIES/2 && cmax < DTMF_FREQUENCIES)
+			digit = freq2digits[rmax][cmax - DTMF_FREQUENCIES/2];
 	}
 
 	/* Three successive detections will trigger the detection */

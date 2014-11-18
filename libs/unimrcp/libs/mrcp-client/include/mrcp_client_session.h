@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_client_session.h 1733 2010-06-07 17:26:49Z achaloyan $
+ * $Id: mrcp_client_session.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_CLIENT_SESSION_H
@@ -92,6 +92,8 @@ struct mrcp_client_session_t {
 	mrcp_sig_status_code_e      status;
 	/** Number of in-progress sub requests */
 	apr_size_t                  subrequest_count;
+	/** True, if server unexpectedly closed session/connection */
+	apt_bool_t                  disconnected;
 };
 
 /** MRCP channel */
@@ -134,17 +136,22 @@ struct rtp_termination_slot_t {
 
 /** MRCP profile */
 struct mrcp_profile_t {
+	/** Unique profile name */
+	const char                *name;
+	/** Arbitrary tag set/used by user application */
+	const char                *tag;
+	/** MRCP version */
+	mrcp_version_e             mrcp_version;
 	/** MRCP resource factory */
 	mrcp_resource_factory_t   *resource_factory;
-	/** Media processing engine */
-	mpf_engine_t              *media_engine;
+	/** Media engine factory */
+	mpf_engine_factory_t      *mpf_factory;
 	/** RTP termination factory */
 	mpf_termination_factory_t *rtp_termination_factory;
-	/** Signaling agent */
-	mrcp_sig_agent_t          *signaling_agent;
-	/** Connection agent */
-	mrcp_connection_agent_t   *connection_agent;
-
+	/** Signaling agent factory */
+	mrcp_sa_factory_t         *sa_factory;
+	/** Connection agent factory */
+	mrcp_ca_factory_t         *ca_factory;
 	/** Signaling settings */
 	mrcp_sig_settings_t       *signaling_settings;
 	/** RTP settings */

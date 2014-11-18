@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_engine_iface.c 1700 2010-05-21 18:56:06Z achaloyan $
+ * $Id: mrcp_engine_iface.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "mrcp_engine_iface.h"
@@ -70,6 +70,8 @@ mrcp_engine_channel_t* mrcp_engine_channel_virtual_create(mrcp_engine_t *engine,
 		return NULL;
 	}
 	if(engine->config->max_channel_count && engine->cur_channel_count >= engine->config->max_channel_count) {
+		apt_log(APT_LOG_MARK, APT_PRIO_NOTICE, "Maximum channel count %"APR_SIZE_T_FMT" exceeded for engine [%s]",
+			engine->config->max_channel_count, engine->id);
 		return NULL;
 	}
 	channel = engine->method_vtable->create_channel(engine,pool);

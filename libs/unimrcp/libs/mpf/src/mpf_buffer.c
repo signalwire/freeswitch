@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mpf_buffer.c 1709 2010-05-24 17:12:11Z achaloyan $
+ * $Id: mpf_buffer.c 2181 2014-09-14 04:29:38Z achaloyan@gmail.com $
  */
 
 #ifdef WIN32
@@ -85,10 +85,11 @@ static APR_INLINE mpf_chunk_t* mpf_buffer_chunk_read(mpf_buffer_t *buffer)
 apt_bool_t mpf_buffer_audio_write(mpf_buffer_t *buffer, void *data, apr_size_t size)
 {
 	mpf_chunk_t *chunk;
-	apt_bool_t status = TRUE;
+	apt_bool_t status;
 	apr_thread_mutex_lock(buffer->guard);
 
 	chunk = apr_palloc(buffer->pool,sizeof(mpf_chunk_t));
+	APR_RING_ELEM_INIT(chunk,link);
 	chunk->frame.codec_frame.buffer = apr_palloc(buffer->pool,size);
 	memcpy(chunk->frame.codec_frame.buffer,data,size);
 	chunk->frame.codec_frame.size = size;
@@ -103,10 +104,11 @@ apt_bool_t mpf_buffer_audio_write(mpf_buffer_t *buffer, void *data, apr_size_t s
 apt_bool_t mpf_buffer_event_write(mpf_buffer_t *buffer, mpf_frame_type_e event_type)
 {
 	mpf_chunk_t *chunk;
-	apt_bool_t status = TRUE;
+	apt_bool_t status;
 	apr_thread_mutex_lock(buffer->guard);
 
 	chunk = apr_palloc(buffer->pool,sizeof(mpf_chunk_t));
+	APR_RING_ELEM_INIT(chunk,link);
 	chunk->frame.codec_frame.buffer = NULL;
 	chunk->frame.codec_frame.size = 0;
 	chunk->frame.type = event_type;

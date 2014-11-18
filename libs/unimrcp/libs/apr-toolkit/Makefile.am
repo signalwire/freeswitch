@@ -1,7 +1,7 @@
-MAINTAINERCLEANFILES 	 = Makefile.in
+MAINTAINERCLEANFILES     = Makefile.in
 
 AM_CPPFLAGS              = -I$(top_srcdir)/libs/apr-toolkit/include \
-                           $(UNIMRCP_APR_INCLUDES) $(UNIMRCP_APU_INCLUDES)
+                           $(UNIMRCP_APR_INCLUDES)
 
 noinst_LTLIBRARIES       = libaprtoolkit.la
 

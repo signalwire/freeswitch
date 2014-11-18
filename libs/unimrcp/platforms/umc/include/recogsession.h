@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: recogsession.h 1587 2010-03-12 19:40:02Z achaloyan $
+ * $Id: recogsession.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef RECOG_SESSION_H
@@ -48,7 +48,7 @@ protected:
 	mrcp_message_t* CreateDefineGrammarRequest(mrcp_channel_t* pMrcpChannel);
 	mrcp_message_t* CreateRecognizeRequest(mrcp_channel_t* pMrcpChannel);
 
-	bool ParseNLSMLResult(mrcp_message_t* pMrcpMessage) const;
+	static bool ParseNLSMLResult(mrcp_message_t* pMrcpMessage);
 	FILE* GetAudioIn(const mpf_codec_descriptor_t* pDescriptor, apr_pool_t* pool) const;
 
 /* ============================ HANDLERS =================================== */

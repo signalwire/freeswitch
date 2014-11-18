@@ -29,8 +29,10 @@
     <!-- RTP/RTCP settings -->
     <rtp-settings id="Nuance-RTP-Settings">
       <jitter-buffer>
+        <adaptive>1</adaptive>
         <playout-delay>50</playout-delay>
-        <max-playout-delay>200</max-playout-delay>
+        <max-playout-delay>600</max-playout-delay>
+        <time-skew-detection>1</time-skew-detection>
       </jitter-buffer>
       <ptime>20</ptime>
       <codecs>PCMU PCMA L16/96/8000 telephone-event/101/8000</codecs>

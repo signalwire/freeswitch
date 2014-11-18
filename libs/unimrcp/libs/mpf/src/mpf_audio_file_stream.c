@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mpf_audio_file_stream.c 1474 2010-02-07 20:51:47Z achaloyan $
+ * $Id: mpf_audio_file_stream.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "mpf_audio_file_stream.h"
@@ -112,7 +112,8 @@ static const mpf_audio_stream_vtable_t vtable = {
 	mpf_audio_file_frame_read,
 	mpf_audio_file_writer_open,
 	mpf_audio_file_writer_close,
-	mpf_audio_file_frame_write
+	mpf_audio_file_frame_write,
+	NULL /* mpf_audio_file_trace */
 };
 
 MPF_DECLARE(mpf_audio_stream_t*) mpf_file_stream_create(mpf_termination_t *termination, apr_pool_t *pool)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_start_line.h 1632 2010-03-30 20:46:25Z achaloyan $
+ * $Id: mrcp_start_line.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_START_LINE_H
@@ -34,9 +34,9 @@ typedef enum {
 	/** The request was processed to completion and there will be no	
 	    more events from that resource to the client with that request-id */
 	MRCP_REQUEST_STATE_COMPLETE,
-	/** The job has been placed on a queue and will be processed in first-in-first-out order */
-	MRCP_REQUEST_STATE_INPROGRESS,
 	/** Indicate that further event messages will be delivered with that request-id */
+	MRCP_REQUEST_STATE_INPROGRESS,
+	/** The job has been placed on a queue and will be processed in first-in-first-out order */
 	MRCP_REQUEST_STATE_PENDING,
 	
 	/** Number of request states */

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mpf_context.c 1709 2010-05-24 17:12:11Z achaloyan $
+ * $Id: mpf_context.c 2181 2014-09-14 04:29:38Z achaloyan@gmail.com $
  */
 
 #ifdef WIN32
@@ -122,6 +122,7 @@ MPF_DECLARE(mpf_context_t*) mpf_context_create(
 	matrix_item_t *matrix_item;
 	header_item_t *header_item;
 	mpf_context_t *context = apr_palloc(pool,sizeof(mpf_context_t));
+	APR_RING_ELEM_INIT(context,link);
 	context->factory = factory;
 	context->obj = obj;
 	context->pool = pool;
