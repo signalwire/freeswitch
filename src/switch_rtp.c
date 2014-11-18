@@ -1444,7 +1444,7 @@ static uint8_t get_next_write_ts(switch_rtp_t *rtp_session, uint32_t timestamp)
 static void send_fir(switch_rtp_t *rtp_session)
 {
 
-	if (!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && rtp_session->ice.ice_user) {
+	if (!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
 		return;
 	}
 
@@ -1557,7 +1557,7 @@ static void send_fir(switch_rtp_t *rtp_session)
 static void send_pli(switch_rtp_t *rtp_session)
 {
 
-	if (!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && rtp_session->ice.ice_user) {
+	if (!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
 		return;
 	}
 
@@ -2035,7 +2035,6 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 	}
 
 	if (rtp_session->pli_countdown) {
-
 		if (rtp_session->pli_countdown == PLI_COUNTDOWN || (rtp_session->pli_countdown == PLI_COUNTDOWN / 2) || rtp_session->pli_countdown == 1) {
 			send_pli(rtp_session);
 		}

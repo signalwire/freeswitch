@@ -198,8 +198,7 @@ typedef enum {
 	MFLAG_JOIN_ONLY = (1 << 25),
 	MFLAG_POSITIONAL = (1 << 26),
 	MFLAG_NO_POSITIONAL = (1 << 27),
-	MFLAG_JOIN_VID_FLOOR = (1 << 28),
-	MFLAG_RECEIVING_VIDEO = (1 << 29)
+	MFLAG_JOIN_VID_FLOOR = (1 << 28)
 } member_flag_t;
 
 typedef enum {
@@ -231,8 +230,7 @@ typedef enum {
 
 typedef enum {
 	RFLAG_CAN_SPEAK = (1 << 0),
-	RFLAG_CAN_HEAR = (1 << 1),
-	RFLAG_CAN_SEND_VIDEO = (1 << 2)
+	RFLAG_CAN_HEAR = (1 << 1)
 } relation_flag_t;
 
 typedef enum {
@@ -2394,11 +2392,6 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		
 	}
 
-	if (member->conference->video_floor_holder && member->conference->video_floor_holder != member && member->channel) {
-		// there's already someone hold the floor, tell the core thread start to read video
-		switch_channel_clear_flag(member->channel, CF_VIDEO_PASSIVE);
-	}
-
 	unlock_member(member);
 	switch_mutex_unlock(member->audio_out_mutex);
 	switch_mutex_unlock(member->audio_in_mutex);
@@ -2917,29 +2910,6 @@ static void *SWITCH_THREAD_FUNC conference_video_bridge_thread_run(switch_thread
 	return NULL;
 }
 
-switch_status_t video_thread_callback(switch_core_session_t *session, switch_frame_t *frame, void *user_data)
-{
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	char *name = switch_channel_get_name(channel);
-	conference_member_t *member = (conference_member_t *)user_data;
-	conference_relationship_t *rel = NULL;
-
-	if (!member || member->relationships == NULL) return SWITCH_STATUS_SUCCESS;
-
-	lock_member(member);
-
-	for (rel = member->relationships; rel; rel = rel->next) {
-		conference_member_t *imember = conference_member_get(member->conference, rel->id);
-		if (imember && switch_test_flag(imember, MFLAG_RECEIVING_VIDEO)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s %d->%d %d\n", name, member->id, imember->id, frame->datalen);
-			switch_core_session_write_video_frame(imember->session, frame, SWITCH_IO_FLAG_NONE, 0);
-			switch_thread_rwlock_unlock(imember->rwlock);
-		}
-	}
-
-	unlock_member(member);
-	return SWITCH_STATUS_SUCCESS;
-}
 
 /* Main video monitor thread (1 per distinct conference room) */
 static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thread, void *obj)
@@ -3031,10 +3001,8 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 			}
 
 			if (isession && switch_channel_test_flag(ichannel, CF_VIDEO)) {
-				if (!switch_test_flag(imember, MFLAG_RECEIVING_VIDEO)) {
-					memcpy(vid_frame->packet, buf, vid_frame->packetlen);
-					switch_core_session_write_video_frame(imember->session, vid_frame, SWITCH_IO_FLAG_NONE, 0);
-				}
+				memcpy(vid_frame->packet, buf, vid_frame->packetlen);
+				switch_core_session_write_video_frame(imember->session, vid_frame, SWITCH_IO_FLAG_NONE, 0);
 			}
 
 			switch_core_session_rwunlock(isession);
@@ -7559,7 +7527,7 @@ static switch_status_t conf_api_sub_stop(conference_obj_t *conference, switch_st
 
 static switch_status_t conf_api_sub_relate(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
-	uint8_t nospeak = 0, nohear = 0, sendvideo = 0, clear = 0;
+	uint8_t nospeak = 0, nohear = 0, clear = 0;
 
 	switch_assert(conference != NULL);
 	switch_assert(stream != NULL);
@@ -7580,10 +7548,9 @@ static switch_status_t conf_api_sub_relate(conference_obj_t *conference, switch_
 				if (member_id > 0 && member->id != member_id) continue;
 
 				for (rel = member->relationships; rel; rel = rel->next) {
-					stream->write_function(stream, "%d -> %d %s%s%s\n", member->id, rel->id,
+					stream->write_function(stream, "%d -> %d %s%s\n", member->id, rel->id,
 						(rel->flags & RFLAG_CAN_SPEAK) ? "SPEAK " : "NOSPEAK ",
-						(rel->flags & RFLAG_CAN_HEAR) ? "HEAR " : "NOHEAR ",
-						(rel->flags & RFLAG_CAN_SEND_VIDEO) ? "SENDVIDEO " : "NOSENDVIDEO ");
+						(rel->flags & RFLAG_CAN_HEAR) ? "HEAR" : "NOHEAR");
 				}
 			}
 		} else {
@@ -7598,35 +7565,22 @@ static switch_status_t conf_api_sub_relate(conference_obj_t *conference, switch_
 
 	nospeak = strstr(argv[4], "nospeak") ? 1 : 0;
 	nohear = strstr(argv[4], "nohear") ? 1 : 0;
-	sendvideo = strstr(argv[4], "sendvideo") ? 1 : 0;
 
 	if (!strcasecmp(argv[4], "clear")) {
 		clear = 1;
 	}
 
-	if (!(clear || nospeak || nohear || sendvideo)) {
+	if (!(clear || nospeak || nohear)) {
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (clear) {
-		conference_member_t *member = NULL, *other_member = NULL;
+		conference_member_t *member = NULL;
 		uint32_t id = atoi(argv[2]);
 		uint32_t oid = atoi(argv[3]);
 
 		if ((member = conference_member_get(conference, id))) {
 			member_del_relationship(member, oid);
-			other_member = conference_member_get(conference, oid);
-
-			if (other_member) {
-				if (switch_test_flag(other_member, MFLAG_RECEIVING_VIDEO)) {
-					switch_clear_flag(other_member, MFLAG_RECEIVING_VIDEO);
-					if (conference->floor_holder) {
-						switch_core_session_refresh_video(conference->floor_holder->session);
-					}
-				}
-				switch_thread_rwlock_unlock(other_member->rwlock);
-			}
-
 			stream->write_function(stream, "relationship %u->%u cleared.\n", id, oid);
 			switch_thread_rwlock_unlock(member->rwlock);
 		} else {
@@ -7635,7 +7589,7 @@ static switch_status_t conf_api_sub_relate(conference_obj_t *conference, switch_
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (nospeak || nohear || sendvideo) {
+	if (nospeak || nohear) {
 		conference_member_t *member = NULL, *other_member = NULL;
 		uint32_t id = atoi(argv[2]);
 		uint32_t oid = atoi(argv[3]);
@@ -7646,11 +7600,6 @@ static switch_status_t conf_api_sub_relate(conference_obj_t *conference, switch_
 
 		if (member && other_member) {
 			conference_relationship_t *rel = NULL;
-
-			if (sendvideo && switch_test_flag(other_member, MFLAG_RECEIVING_VIDEO) && (! (nospeak || nohear))) {
-				stream->write_function(stream, "member %d already receiving video", oid);
-				goto skip;
-			}
 
 			if ((rel = member_get_relationship(member, other_member))) {
 				rel->flags = 0;
@@ -7667,13 +7616,7 @@ static switch_status_t conf_api_sub_relate(conference_obj_t *conference, switch_
 				if (nohear) {
 					switch_clear_flag(rel, RFLAG_CAN_HEAR);
 				}
-				if (sendvideo) {
-					switch_set_flag(rel, RFLAG_CAN_SEND_VIDEO);
-					switch_set_flag(other_member, MFLAG_RECEIVING_VIDEO);
-					switch_core_session_refresh_video(member->session);
-				}
-
-				stream->write_function(stream, "ok %u->%u %s set\n", id, oid, argv[4]);
+				stream->write_function(stream, "ok %u->%u set\n", id, oid);
 			} else {
 				stream->write_function(stream, "error!\n");
 			}
@@ -7681,7 +7624,6 @@ static switch_status_t conf_api_sub_relate(conference_obj_t *conference, switch_
 			stream->write_function(stream, "relationship %u->%u not found.\n", id, oid);
 		}
 
-skip:
 		if (member) {
 			switch_thread_rwlock_unlock(member->rwlock);
 		}
@@ -9785,15 +9727,10 @@ SWITCH_STANDARD_APP(conference_function)
 	msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
 	switch_core_session_receive_message(session, &msg);
 
-	/* Chime in the core video thread */
-	switch_core_session_set_video_thread_callback(session, video_thread_callback, (void *)&member);
-
 	/* Run the conference loop */
 	do {
 		conference_loop_output(&member);
 	} while (member.loop_loop);
-
-	switch_core_session_set_video_thread_callback(session, NULL, NULL);
 
 	switch_channel_set_private(channel, "_conference_autocall_list_", NULL);
 

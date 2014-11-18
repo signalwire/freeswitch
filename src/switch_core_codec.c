@@ -788,9 +788,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_codec_encode_video(switch_codec_t *codec,
-														 switch_image_t *img,
-														 void *encoded_data, uint32_t *encoded_data_len, unsigned int *flag)
+SWITCH_DECLARE(switch_status_t) switch_core_codec_encode_video(switch_codec_t *codec, switch_frame_t *frame)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -809,7 +807,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_encode_video(switch_codec_t *c
 	if (codec->mutex) switch_mutex_lock(codec->mutex);
 
 	if (codec->implementation->encode_video) {
-		status = codec->implementation->encode_video(codec, img, encoded_data, encoded_data_len, flag);
+		status = codec->implementation->encode_video(codec, frame);
+		
+		if (frame->datalen) {
+			frame->packetlen = frame->datalen + 12;
+			frame->flags |= SFF_SAME_IMAGE;
+		} else {
+			frame->flags &= ~SFF_SAME_IMAGE;
+		}
 	}
 
 	if (codec->mutex) switch_mutex_unlock(codec->mutex);
@@ -818,9 +823,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_encode_video(switch_codec_t *c
 
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_codec_decode_video(switch_codec_t *codec,
-														 switch_frame_t *frame,
-														 switch_image_t **img, unsigned int *flag)
+SWITCH_DECLARE(switch_status_t) switch_core_codec_decode_video(switch_codec_t *codec, switch_frame_t *frame)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -840,7 +843,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode_video(switch_codec_t *c
 	if (codec->mutex) switch_mutex_lock(codec->mutex);
 
 	if (codec->implementation->decode_video) {
-		status = codec->implementation->decode_video(codec, frame, img, flag);
+		status = codec->implementation->decode_video(codec, frame);
 	}
 	if (codec->mutex) switch_mutex_unlock(codec->mutex);
 

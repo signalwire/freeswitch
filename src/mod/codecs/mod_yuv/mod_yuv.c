@@ -50,25 +50,19 @@ static switch_status_t switch_yuv_init(switch_codec_t *codec, switch_codec_flag_
 	}
 }
 
-static switch_status_t switch_yuv_encode(switch_codec_t *codec,
-										  switch_image_t *img,
-										  void *encoded_data, uint32_t *encoded_data_len,
-										  unsigned int *flag)
+static switch_status_t switch_yuv_encode(switch_codec_t *codec, switch_frame_t *frame)
 {
 	/* yuv encode is unclear, so return 0 for now */
-	*encoded_data_len = 0;
-	*flag |= SFF_MARKER;
+	frame->datalen = 0;
+	frame->m = 1;
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t switch_yuv_decode(switch_codec_t *codec,
-										  switch_frame_t *frame,
-										  switch_image_t **img,
-										  unsigned int *flag)
+static switch_status_t switch_yuv_decode(switch_codec_t *codec, switch_frame_t *frame)
 {
 	switch_assert(frame);
 
-	*img = (switch_image_t *)frame->user_data;
+	frame->img = (switch_image_t *)frame->user_data;
 	return SWITCH_STATUS_SUCCESS;
 }
 
