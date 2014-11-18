@@ -8,8 +8,14 @@ jsmin: jsmin.c
 verto-min.js: jsmin $(JSFILES)
 	cat $(JSFILES) | ./jsmin > $@
 
+verto-max.js: jsmin $(JSFILES)
+	cat $(JSFILES) > $@
+
 clean:
-	rm -f verto-min.js jsmin *~
+	rm -f verto-min.js verto-max.js jsmin *~
 
 install-demo: all
 	cp verto-min.js ../demo/js
+
+install-maxdemo: all verto-max.js
+	cp verto-max.js ../demo/js/verto-min.js

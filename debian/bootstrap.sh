@@ -35,11 +35,13 @@ avoid_mods=(
 )
 avoid_mods_sid=(
   directories/mod_ldap
+  formats/mod_shout
   languages/mod_java
 )
 avoid_mods_jessie=(
   directories/mod_ldap
   languages/mod_java
+  formats/mod_shout
 )
 avoid_mods_wheezy=(
   languages/mod_java

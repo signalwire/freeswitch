@@ -2277,7 +2277,8 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 		}
 
 		if (conference->count > 1) {
-			if (conference->moh_sound && !switch_test_flag(conference, CFLAG_WAIT_MOD)) {
+			if ((conference->moh_sound && !switch_test_flag(conference, CFLAG_WAIT_MOD)) ||
+					(switch_test_flag(conference, CFLAG_WAIT_MOD) && !switch_true(switch_channel_get_variable(channel, "conference_permanent_wait_mod_moh")))) {
 				/* stop MoH if any */
 				conference_stop_file(conference, FILE_STOP_ASYNC);
 			}
@@ -2287,10 +2288,9 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 				if (switch_test_flag(conference, CFLAG_ENTER_SOUND)) {
 					if (!zstr(enter_sound)) {
 				     	conference_play_file(conference, (char *)enter_sound, CONF_DEFAULT_LEADIN,
-						     	switch_core_session_get_channel(member->session), !switch_test_flag(conference, CFLAG_WAIT_MOD) ? 0 : 1);
+							switch_core_session_get_channel(member->session), 0);
 			        } else {	
-				     		conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session),
-								!switch_test_flag(conference, CFLAG_WAIT_MOD) ? 0 : 1);
+						conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), 0);
 					}
 				}
 			}
@@ -2316,7 +2316,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 						if (conference->alone_sound  && !switch_test_flag(member, MFLAG_GHOST)) {
 							conference_stop_file(conference, FILE_STOP_ASYNC);
 							conference_play_file(conference, conference->alone_sound, CONF_DEFAULT_LEADIN,
-												 switch_core_session_get_channel(member->session), 1);
+												 switch_core_session_get_channel(member->session), 0);
 						} else {
 							switch_snprintf(msg, sizeof(msg), "You are currently the only person in this conference.");
 							conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
@@ -2683,7 +2683,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 
 	if (member->session && (exit_sound = switch_channel_get_variable(switch_core_session_get_channel(member->session), "conference_exit_sound"))) {
 		conference_play_file(conference, (char *)exit_sound, CONF_DEFAULT_LEADIN,
-							 switch_core_session_get_channel(member->session), !switch_test_flag(conference, CFLAG_WAIT_MOD) ? 0 : 1);
+							 switch_core_session_get_channel(member->session), 0);
 	}
 
 
@@ -2786,12 +2786,16 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 			|| (switch_test_flag(conference, CFLAG_DYNAMIC) && (conference->count + conference->count_ghosts == 0))) {
 			switch_set_flag(conference, CFLAG_DESTRUCT);
 		} else {
+			if (!switch_true(switch_channel_get_variable(channel, "conference_permanent_wait_mod_moh")) && switch_test_flag(conference, CFLAG_WAIT_MOD)) {
+				/* Stop MOH if any */
+				conference_stop_file(conference, FILE_STOP_ASYNC);
+			}
 			if (!exit_sound && conference->exit_sound && switch_test_flag(conference, CFLAG_EXIT_SOUND)) {
 				conference_play_file(conference, conference->exit_sound, 0, channel, 0);
 			}
 			if (conference->count == 1 && conference->alone_sound && !switch_test_flag(conference, CFLAG_WAIT_MOD) && !switch_test_flag(member, MFLAG_GHOST)) {
 				conference_stop_file(conference, FILE_STOP_ASYNC);
-				conference_play_file(conference, conference->alone_sound, 0, channel, 1);
+				conference_play_file(conference, conference->alone_sound, 0, channel, 0);
 			}
 		}
 
@@ -3146,7 +3150,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		if (conference->perpetual_sound && !conference->async_fnode) {
 			conference_play_file(conference, conference->perpetual_sound, CONF_DEFAULT_LEADIN, NULL, 1);
 		} else if (conference->moh_sound && ((nomoh == 0 && conference->count == 1) 
-											 || switch_test_flag(conference, CFLAG_WAIT_MOD)) && !conference->async_fnode) {
+									 || switch_test_flag(conference, CFLAG_WAIT_MOD)) && !conference->async_fnode && !conference->fnode) {
 			conference_play_file(conference, conference->moh_sound, CONF_DEFAULT_LEADIN, NULL, 1);
 		}
 
@@ -6143,7 +6147,7 @@ static switch_status_t conf_api_sub_mute(conference_member_t *member, switch_str
 	switch_clear_flag_locked(member, MFLAG_CAN_SPEAK);
 	switch_clear_flag_locked(member, MFLAG_TALKING);
 
-	if (member->session && !switch_test_flag(member, MFLAG_INDICATE_MUTE)) {
+	if (member->session && !switch_test_flag(member, MFLAG_MUTE_DETECT)) {
 		switch_core_media_hard_mute(member->session, SWITCH_TRUE);
 	}
 
@@ -6241,7 +6245,7 @@ static switch_status_t conf_api_sub_unmute(conference_member_t *member, switch_s
 
 	switch_set_flag_locked(member, MFLAG_CAN_SPEAK);
 
-	if (member->session && !switch_test_flag(member, MFLAG_INDICATE_MUTE)) {
+	if (member->session && !switch_test_flag(member, MFLAG_MUTE_DETECT)) {
 		switch_core_media_hard_mute(member->session, SWITCH_FALSE);
 	}
 
@@ -8757,6 +8761,8 @@ static void set_mflags(const char *flags, member_flag_t *f)
 		char *argv[10] = { 0 };
 		int i, argc = 0;
 
+		*f |= MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR;
+
 		for (p = dup; p && *p; p++) {
 			if (*p == ',') {
 				*p = '|';
@@ -9081,6 +9087,7 @@ SWITCH_STANDARD_APP(conference_function)
 	char *profile_name = NULL;
 	switch_xml_t cxml = NULL, cfg = NULL, profiles = NULL;
 	const char *flags_str, *v_flags_str;
+	const char *cflags_str, *v_cflags_str;
 	member_flag_t mflags = 0;
 	switch_core_session_message_t msg = { 0 };
 	uint8_t rl = 0, isbr = 0;
@@ -9141,6 +9148,16 @@ SWITCH_STANDARD_APP(conference_function)
 			flags_str = v_flags_str;
 		} else {
 			flags_str = switch_core_session_sprintf(session, "%s|%s", flags_str, v_flags_str);
+		}
+	}
+
+    cflags_str = flags_str;
+
+	if ((v_cflags_str = switch_channel_get_variable(channel, "conference_flags"))) {
+		if (zstr(cflags_str)) {
+			cflags_str = v_cflags_str;
+		} else {
+			cflags_str = switch_core_session_sprintf(session, "%s|%s", cflags_str, v_cflags_str);
 		}
 	}
 
@@ -9234,6 +9251,8 @@ SWITCH_STANDARD_APP(conference_function)
 			goto done;
 		}
 
+		set_cflags(cflags_str, &conference->flags);
+
 		if (locked) {
 			switch_mutex_unlock(globals.setup_mutex);
 			locked = 0;
@@ -9279,7 +9298,7 @@ SWITCH_STANDARD_APP(conference_function)
 				set_mflags(flags_str,&mflags);
 
 				if (!(mflags & MFLAG_CAN_SPEAK)) {
-					if (!(mflags & MFLAG_INDICATE_MUTE)) {
+					if (!(mflags & MFLAG_MUTE_DETECT)) {
 						switch_core_media_hard_mute(session, SWITCH_TRUE);
 					}
 				}
@@ -9315,6 +9334,8 @@ SWITCH_STANDARD_APP(conference_function)
 			if (!conference) {
 				goto done;
 			}
+
+			set_cflags(cflags_str, &conference->flags);
 
 			if (locked) {
 				switch_mutex_unlock(globals.setup_mutex);
@@ -9582,7 +9603,7 @@ SWITCH_STANDARD_APP(conference_function)
 	mflags |= MFLAG_RUNNING;
 
 	if (!(mflags & MFLAG_CAN_SPEAK)) {
-		if (!(mflags & MFLAG_INDICATE_MUTE)) {
+		if (!(mflags & MFLAG_MUTE_DETECT)) {
 			switch_core_media_hard_mute(member.session, SWITCH_TRUE);
 		}
 	}

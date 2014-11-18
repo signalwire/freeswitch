@@ -129,9 +129,7 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 	packet = (switch_stun_packet_t *) buf;
 	packet->header.type = ntohs(packet->header.type);
 	packet->header.length = ntohs(packet->header.length);
-	if (packet->header.length > (bytes_left -= 20))
-		return NULL;
-
+	if (packet->header.length > (bytes_left -= 20)) return NULL;
 
 	/*
 	 * Check packet type (RFC3489(bis?) values)

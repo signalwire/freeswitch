@@ -1,0 +1,58 @@
+<configuration name="odbc_cdr.conf" description="ODBC CDR Configuration">
+  <settings>
+    <!-- <param name="odbc-dsn" value="database:username:password"/> -->
+    <param name="odbc-dsn" value="pgsql://hostaddr=192.168.0.100 dbname=freeswitch user=freeswitch password='freeswitch' options='-c client_min_messages=NOTICE'"/>
+	<!-- global value can be "a-leg", "b-leg", "both" (default is "both") -->
+	<param name="log-leg" value="both"/>
+    <!-- value can be "always", "never", "on-db-fail" -->
+    <param name="write-csv" value="on-db-fail"/>
+	<!-- location to store csv copy of CDR -->
+    <param name="csv-path" value="/usr/local/freeswitch/log/odbc_cdr"/>
+    <!-- if "csv-path-on-fail" is set, failed INSERTs will be placed here as CSV files otherwise they will be placed in "csv-path" -->
+    <param name="csv-path-on-fail" value="/usr/local/freeswitch/log/odbc_cdr/failed"/>
+    <!-- dump SQL statement after leg ends -->
+	<param name="debug-sql" value="true"/>
+  </settings>
+  <tables>
+	<!-- only a-legs will be inserted into this table -->
+    <table name="cdr_table_a_leg" log-leg="a-leg">
+      <field name="CallId" chan-var-name="call_uuid"/>
+      <field name="orig_id" chan-var-name="uuid"/>
+      <field name="term_id" chan-var-name="sip_call_id"/>
+      <field name="ClientId" chan-var-name="uuid"/>
+      <field name="IP" chan-var-name="sip_network_ip"/>
+      <field name="IPInternal" chan-var-name="sip_via_host"/>
+      <field name="CODEC" chan-var-name="read_codec"/>
+      <field name="directGateway" chan-var-name="sip_req_host"/>
+      <field name="redirectGateway" chan-var-name="sip_redirect_contact_host_0"/>
+      <field name="CallerID" chan-var-name="sip_from_user"/>
+      <field name="TelNumber" chan-var-name="sip_req_user"/>
+      <field name="TelNumberFull" chan-var-name="sip_to_user"/>
+      <field name="sip_endpoint_disposition" chan-var-name="endpoint_disposition"/>
+      <field name="sip_current_application" chan-var-name="current_application"/>
+    </table>
+	<!-- only b-legs will be inserted into this table -->
+    <table name="cdr_table_b_leg" log-leg="b-leg">
+      <field name="CallId" chan-var-name="call_uuid"/>
+      <field name="orig_id" chan-var-name="uuid"/>
+      <field name="term_id" chan-var-name="sip_call_id"/>
+      <field name="ClientId" chan-var-name="uuid"/>
+      <field name="IP" chan-var-name="sip_network_ip"/>
+      <field name="IPInternal" chan-var-name="sip_via_host"/>
+      <field name="CODEC" chan-var-name="read_codec"/>
+      <field name="directGateway" chan-var-name="sip_req_host"/>
+      <field name="redirectGateway" chan-var-name="sip_redirect_contact_host_0"/>
+      <field name="CallerID" chan-var-name="sip_from_user"/>
+      <field name="TelNumber" chan-var-name="sip_req_user"/>
+      <field name="TelNumberFull" chan-var-name="sip_to_user"/>
+      <field name="sip_endpoint_disposition" chan-var-name="endpoint_disposition"/>
+      <field name="sip_current_application" chan-var-name="current_application"/>
+    </table>
+	<!-- both legs will be inserted into this table -->
+    <table name="cdr_table_both">
+      <field name="CallId" chan-var-name="uuid"/>
+      <field name="orig_id" chan-var-name="Caller-Unique-ID"/>
+      <field name="TEST_id" chan-var-name="sip_from_uri"/>
+    </table>
+  </tables>
+</configuration>

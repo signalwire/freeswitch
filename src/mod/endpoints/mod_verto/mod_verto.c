@@ -4286,7 +4286,7 @@ static switch_status_t parse_config(const char *cf)
 					}
 
 					if (zstr(vhost->script_root)) {
-						vhost->root = SWITCH_GLOBAL_dirs.script_dir;
+						vhost->script_root = SWITCH_GLOBAL_dirs.script_dir;
 					}
 
 					if (zstr(vhost->index)) {

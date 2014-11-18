@@ -1,6 +1,6 @@
 /*
  * aws.c for FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2013, Grasshopper
+ * Copyright (C) 2013-2014, Grasshopper
  *
  * Version: MPL 1.1
  *
@@ -41,8 +41,18 @@
  * @param url to check
  * @return true if this is an S3 url
  */
-int aws_s3_is_s3_url(const char *url)
+int aws_s3_is_s3_url(const char *url, const char *base_domain)
 {
+	if (!zstr(base_domain)) {
+		char *base_domain_escaped;
+		char regex[1024];
+		int result;
+		base_domain_escaped = switch_string_replace(base_domain, ".", "\\.");
+		switch_snprintf(regex, 1024, "^https?://\\w[-\\w.]{1,61}\\w\\.%s/.*$", base_domain_escaped);
+		result = !zstr(url) && switch_regex_match(url, regex) == SWITCH_STATUS_SUCCESS;
+		switch_safe_free(base_domain_escaped);
+		return result;
+	}
 	/* AWS bucket naming rules are complex... this match only supports virtual hosting of buckets */
 	return !zstr(url) && switch_regex_match(url, "^https?://\\w[-\\w.]{1,61}\\w\\.s3([-\\w]+)?\\.amazonaws\\.com/.*$") == SWITCH_STATUS_SUCCESS;
 }
@@ -141,10 +151,11 @@ static char *my_strrstr(const char *haystack, const char *needle)
 /**
  * Parse bucket and object from URL
  * @param url to parse.  This value is modified.
+ * @param base_domain of URL (assumes s3.amazonaws.com if not specified)
  * @param bucket to store result in
  * @param bucket_length of result buffer
  */
-void aws_s3_parse_url(char *url, char **bucket, char **object)
+void aws_s3_parse_url(char *url, const char *base_domain, char **bucket, char **object)
 {
 	char *bucket_start = NULL;
 	char *bucket_end;
@@ -153,7 +164,7 @@ void aws_s3_parse_url(char *url, char **bucket, char **object)
 	*bucket = NULL;
 	*object = NULL;
 
-	if (!aws_s3_is_s3_url(url)) {
+	if (!aws_s3_is_s3_url(url, base_domain)) {
 		return;
 	}
 
@@ -167,8 +178,15 @@ void aws_s3_parse_url(char *url, char **bucket, char **object)
 		/* invalid URL */
 		return;
 	}
-	
-	bucket_end = my_strrstr(bucket_start, ".s3");
+
+	{
+		char base_domain_match[1024];
+		if (zstr(base_domain)) {
+			base_domain = "s3";
+		}
+		switch_snprintf(base_domain_match, 1024, ".%s", base_domain);
+		bucket_end = my_strrstr(bucket_start, base_domain_match);
+	}
 	if (!bucket_end) {
 		/* invalid URL */
 		return;
@@ -195,6 +213,7 @@ void aws_s3_parse_url(char *url, char **bucket, char **object)
  * Create a pre-signed URL for AWS S3
  * @param verb (PUT/GET)
  * @param url address (virtual-host-style)
+ * @param base_domain (optional - amazon aws assumed if not specified)
  * @param content_type optional content type
  * @param content_md5 optional content MD5 checksum
  * @param aws_access_key_id secret access key identifier
@@ -202,7 +221,7 @@ void aws_s3_parse_url(char *url, char **bucket, char **object)
  * @param expires seconds since the epoch
  * @return presigned_url
  */
-char *aws_s3_presigned_url_create(const char *verb, const char *url, const char *content_type, const char *content_md5, const char *aws_access_key_id, const char *aws_secret_access_key, const char *expires)
+char *aws_s3_presigned_url_create(const char *verb, const char *url, const char *base_domain, const char *content_type, const char *content_md5, const char *aws_access_key_id, const char *aws_secret_access_key, const char *expires)
 {
 	char signature[S3_SIGNATURE_LENGTH_MAX];
 	char signature_url_encoded[S3_SIGNATURE_LENGTH_MAX];
@@ -212,7 +231,7 @@ char *aws_s3_presigned_url_create(const char *verb, const char *url, const char 
 	char *object;
 
 	/* create URL encoded signature */
-	aws_s3_parse_url(url_dup, &bucket, &object);
+	aws_s3_parse_url(url_dup, base_domain, &bucket, &object);
 	string_to_sign = aws_s3_string_to_sign(verb, bucket, object, content_type, content_md5, expires);
 	signature[0] = '\0';
 	aws_s3_signature(signature, S3_SIGNATURE_LENGTH_MAX, string_to_sign, aws_secret_access_key);
@@ -230,6 +249,7 @@ char *aws_s3_presigned_url_create(const char *verb, const char *url, const char 
  * @param authentication_length maximum result length
  * @param verb (PUT/GET)
  * @param url address (virtual-host-style)
+ * @param base_domain (optional - amazon aws assumed if not specified)
  * @param content_type optional content type
  * @param content_md5 optional content MD5 checksum
  * @param aws_access_key_id secret access key identifier
@@ -237,7 +257,7 @@ char *aws_s3_presigned_url_create(const char *verb, const char *url, const char 
  * @param date header
  * @return signature for Authorization header
  */
-char *aws_s3_authentication_create(const char *verb, const char *url, const char *content_type, const char *content_md5, const char *aws_access_key_id, const char *aws_secret_access_key, const char *date)
+char *aws_s3_authentication_create(const char *verb, const char *url, const char *base_domain, const char *content_type, const char *content_md5, const char *aws_access_key_id, const char *aws_secret_access_key, const char *date)
 {
 	char signature[S3_SIGNATURE_LENGTH_MAX];
 	char *string_to_sign;
@@ -246,7 +266,7 @@ char *aws_s3_authentication_create(const char *verb, const char *url, const char
 	char *object;
 
 	/* create base64 encoded signature */
-	aws_s3_parse_url(url_dup, &bucket, &object);
+	aws_s3_parse_url(url_dup, base_domain, &bucket, &object);
 	string_to_sign = aws_s3_string_to_sign(verb, bucket, object, content_type, content_md5, date);
 	signature[0] = '\0';
 	aws_s3_signature(signature, S3_SIGNATURE_LENGTH_MAX, string_to_sign, aws_secret_access_key);

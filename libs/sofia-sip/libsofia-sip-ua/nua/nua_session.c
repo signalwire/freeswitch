@@ -1549,10 +1549,12 @@ static void nua_session_usage_refresh(nua_handle_t *nh,
       nua_client_request_in_progress(cr))
     return;
 
+  if (ds->ds_cr) return; /* request queued */
+
   /* UPDATE has been queued */
-  for (cr = ds->ds_cr; cr; cr = cr->cr_next)
-    if (cr->cr_method == sip_method_update)
-      return;
+  //for (cr = ds->ds_cr; cr; cr = cr->cr_next)
+  //if (cr->cr_method == sip_method_update)
+  //  return;
 
   /* INVITE or UPDATE in progress on server side */
   for (sr = ds->ds_sr; sr; sr = sr->sr_next)

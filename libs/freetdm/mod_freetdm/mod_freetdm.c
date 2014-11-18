@@ -566,7 +566,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	}
 
 	if (!uuid_found) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Device [%d:%d] is no longer attached to %s. Nothing to do.\n", span_id, chan_id, name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Device [%d:%d] is no longer attached to %s\n", span_id, chan_id, name);
 		goto end;
 	}
 
@@ -3830,6 +3830,7 @@ static switch_status_t load_config(void)
 			const char *tonegroup = NULL;
 			char *digit_timeout = NULL;
 			char *dial_timeout = NULL;
+			char *release_guard_time_ms = NULL;
 			char *max_digits = NULL;
 			char *dial_regex = NULL;
 			char *hold_music = NULL;
@@ -3839,7 +3840,7 @@ static switch_status_t load_config(void)
 			char *answer_supervision = str_false;
 			char *immediate_ringback = str_false;
 			char *ringback_file = str_empty;
-			uint32_t span_id = 0, to = 0, max = 0, dial_timeout_int = 0;
+			uint32_t span_id = 0, to = 0, max = 0, dial_timeout_int = 0, release_guard_time_ms_int = 0;
 			ftdm_span_t *span = NULL;
 			analog_option_t analog_options = ANALOG_OPTION_NONE;
 
@@ -3853,6 +3854,8 @@ static switch_status_t load_config(void)
 					digit_timeout = val;
 				} else if (!strcasecmp(var, "dial-timeout")) {
 					dial_timeout = val;
+				} else if (!strcasecmp(var, "release-guard-time-ms")) {
+					release_guard_time_ms = val;
 				} else if (!strcasecmp(var, "context")) {
 					context = val;
 				} else if (!strcasecmp(var, "dialplan")) {
@@ -3893,6 +3896,10 @@ static switch_status_t load_config(void)
 				dial_timeout_int = atoi(dial_timeout);
 			}
 
+			if (release_guard_time_ms) {
+				release_guard_time_ms_int = atoi(release_guard_time_ms);
+			}
+
 			if (max_digits) {
 				max = atoi(max_digits);
 			}
@@ -3928,6 +3935,7 @@ static switch_status_t load_config(void)
 								   "ringback_file", ringback_file,
 								   "digit_timeout", &to,
 								   "dial_timeout", &dial_timeout_int,
+								   "release_guard_time_ms", &release_guard_time_ms_int,
 								   "max_dialstr", &max,
 								   FTDM_TAG_END) != FTDM_SUCCESS) {
 				LOAD_ERROR("Error starting FreeTDM span %d\n", span_id);
@@ -5246,6 +5254,98 @@ end:
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define CASINTS(cas) ((cas) & (1 << 3)) ? 1 : 0, \
+                     ((cas) & (1 << 2)) ? 1 : 0, \
+                     ((cas) & (1 << 1)) ? 1 : 0, \
+                     ((cas) & (1 << 0)) ? 1 : 0
+FTDM_CLI_DECLARE(ftdm_cmd_cas)
+{
+	uint32_t chan_id = 0;
+	switch_bool_t do_read = SWITCH_FALSE;
+	ftdm_channel_t *chan;
+	ftdm_iterator_t *iter = NULL;
+	ftdm_iterator_t *curr = NULL;
+	ftdm_span_t *span = NULL;
+	const char *write_bits_str = "";
+	int32_t abcd_bits = 0;
+
+	if (argc < 3) {
+		print_usage(stream, cli);
+		goto end;
+	}
+
+	if (!strcasecmp(argv[1], "read")) {
+		do_read = SWITCH_TRUE;
+		chan_id = argc > 3 ? atoi(argv[3]) : 0;
+	} else if (!strcasecmp(argv[1], "write") && argc >= 4) {
+		const char *str = NULL;
+		int mask = 0x08;
+		do_read = SWITCH_FALSE;
+		if (argc == 4) {
+			chan_id = 0;
+			write_bits_str = argv[3];
+		} else {
+			chan_id = atoi(argv[3]);
+			write_bits_str = argv[4];
+		}
+		if (strlen(write_bits_str) != 4) {
+			stream->write_function(stream, "-ERR Invalid CAS bits '%s'. CAS ABCD string must be composed of only four 1's and 0's (e.g. 1101)\n", write_bits_str);
+			goto end;
+		}
+		str = write_bits_str;
+		while (*str) {
+			if (*str == '1') {
+				abcd_bits |= mask;
+			} else if (*str != '0') {
+				stream->write_function(stream, "-ERR Invalid CAS bits '%s'. CAS ABCD string must be composed of only four 1's and 0's (e.g. 1101)\n", write_bits_str);
+				goto end;
+			}
+			str++;
+			mask = (mask >> 1);
+		}
+	} else {
+		print_usage(stream, cli);
+		goto end;
+	}
+
+	ftdm_span_find_by_name(argv[2], &span);
+	if (!span) {
+		stream->write_function(stream, "-ERR failed to find span %s\n", argv[2]);
+		goto end;
+	}
+
+	if (chan_id) {
+		if (chan_id > ftdm_span_get_chan_count(span)) {
+			stream->write_function(stream, "-ERR invalid channel\n");
+			goto end;
+		}
+		chan = ftdm_span_get_channel(span, chan_id);
+		if (do_read) {
+			ftdm_channel_command(chan, FTDM_COMMAND_GET_CAS_BITS, &abcd_bits);
+			stream->write_function(stream, "Read CAS bits from channel %d: %d%d%d%d (0x0%X)\n", chan_id, CASINTS(abcd_bits), abcd_bits);
+		} else {
+			stream->write_function(stream, "Writing 0x0%X to channel %d\n", abcd_bits, chan_id);
+		}
+	} else {
+		iter = ftdm_span_get_chan_iterator(span, NULL);
+		for (curr  = iter; curr; curr = ftdm_iterator_next(curr)) {
+			chan = ftdm_iterator_current(curr);
+			//ftdm_channel_command();
+			chan_id = ftdm_channel_get_id(chan);
+			if (do_read) {
+				ftdm_channel_command(chan, FTDM_COMMAND_GET_CAS_BITS, &abcd_bits);
+				stream->write_function(stream, "Read CAS bits from channel %d: %d%d%d%d (0x0%X)\n", chan_id, CASINTS(abcd_bits), abcd_bits);
+			} else {
+				stream->write_function(stream, "Writing 0x0%X to channel %d\n", abcd_bits, chan_id);
+			}
+		}
+		ftdm_iterator_free(iter);
+	}
+	stream->write_function(stream, "+OK\n");
+end:
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(ftdm_api_exec_usage)
 {
 	char *mycmd = NULL, *argv[10] = { 0 };
@@ -5326,6 +5426,7 @@ static ftdm_cli_entry_t ftdm_cli_options[] =
 	{ "queuesize", "<rxsize> <txsize> <span_id|span_name> [<chan_id>]", "", NULL, ftdm_cmd_queuesize, NULL },
 	{ "iostats", "enable|disable|flush|print <span_id|span_name> <chan_id>", "::[enable:disable:flush:print", NULL, ftdm_cmd_iostats, NULL },
 	{ "ioread", "<span_id|span_name> <chan_id> [num_times] [interval]", "", NULL, ftdm_cmd_ioread, NULL },
+	{ "cas", "read|write <span_id|span_name> [<chan_id>] [<write_bits>]", "::[read:write", NULL, ftdm_cmd_cas, NULL },
 
 	/* Stand-alone commands (not part of the generic ftdm API */
 	{ "ftdm_usage", "<span_id|span_name> <chan_id>", "", "Return channel call count", NULL, ftdm_api_exec_usage },

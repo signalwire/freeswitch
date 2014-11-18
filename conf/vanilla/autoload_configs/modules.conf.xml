@@ -3,6 +3,7 @@
     
     <!-- Loggers (I'd load these first) -->
     <load module="mod_console"/>
+    <!-- <load module="mod_graylog2"/> -->
     <load module="mod_logfile"/>
     <!-- <load module="mod_syslog"/> -->
 
@@ -53,6 +54,7 @@
     <load module="mod_expr"/>
     <load module="mod_fifo"/>
     <load module="mod_hash"/>
+    <!--<load module="mod_mongo"/> -->
     <load module="mod_voicemail"/>
     <!--<load module="mod_directory"/>-->
     <!--<load module="mod_distributor"/>-->

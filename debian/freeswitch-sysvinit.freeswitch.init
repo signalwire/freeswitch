@@ -19,8 +19,7 @@ DESC=freeswitch
 NAME=freeswitch
 DAEMON=/usr/bin/freeswitch
 USER=freeswitch
-GROUP=freeswitch
-DAEMON_ARGS="-u $USER -g $GROUP -ncwait"
+DAEMON_ARGS="-u $USER -ncwait"
 CONFDIR=/etc/$NAME
 RUNDIR=/var/run/$NAME
 PIDFILE=$RUNDIR/$NAME.pid
@@ -35,13 +34,15 @@ WORKDIR=/var/lib/$NAME
 do_start() {
   if ! [ -f $CONFDIR/freeswitch.xml ]; then
     echo "$NAME is not configured so not starting.">&2
-    echo "Please review /usr/share/doc/$NAME/README.Debian">&2
+    echo "Please add configuration under /etc/freeswitch">&2
+    echo "e.g. Install freeswitch-conf-vanilla, then:">&2
+    echo "cp -a /usr/share/freeswitch/conf/vanilla /etc/freeswitch">&2
     return 3
   fi
 
   # Directory in /var/run may disappear on reboot (e.g. when tmpfs used for /var/run).
   mkdir -p $RUNDIR
-  chown -R $USER:$GROUP $RUNDIR
+  chown -R $USER: $RUNDIR
   chmod -R ug=rwX,o= $RUNDIR
 
   start-stop-daemon --start --quiet \

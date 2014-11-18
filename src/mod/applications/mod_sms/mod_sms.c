@@ -522,6 +522,25 @@ SWITCH_STANDARD_CHAT_APP(set_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_CHAT_APP(unset_function)
+{
+	char *var;
+
+	if (!data) return SWITCH_STATUS_SUCCESS;
+
+	var = strdup(data);
+
+	if (!var) return SWITCH_STATUS_SUCCESS;
+
+	if (!zstr(var)) {
+		switch_event_del_header(message, var);
+	}
+
+	free(var);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_CHAT_APP(fire_function)
 {
 	switch_event_t *fireme;
@@ -573,6 +592,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sms_load)
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "reply", "reply to a message", "reply to a message", reply_function, "", SCAF_NONE);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "stop", "stop execution", "stop execution", stop_function, "", SCAF_NONE);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "set", "set a variable", "set a variable", set_function, "", SCAF_NONE);
+	SWITCH_ADD_CHAT_APP(chat_app_interface, "unset", "unset a variable", "unset a variable", unset_function, "", SCAF_NONE);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "send", "send the message as-is", "send the message as-is", send_function, "", SCAF_NONE);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "fire", "fire the message", "fire the message", fire_function, "", SCAF_NONE);
 	SWITCH_ADD_CHAT_APP(chat_app_interface, "system", "execute a system command", "execute a sytem command", system_function, "", SCAF_NONE);

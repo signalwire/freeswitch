@@ -74,10 +74,10 @@ extern "C" {
 #endif
 
 /*! \brief Limit to span names */
-#define FTDM_MAX_NAME_STR_SZ 80
+#define FTDM_MAX_NAME_STR_SZ 128
 
 /*! \brief Limit to channel number strings */
-#define FTDM_MAX_NUMBER_STR_SZ 20
+#define FTDM_MAX_NUMBER_STR_SZ 32
 
 /*! \brief Hangup cause codes */
 typedef enum {
@@ -355,7 +355,7 @@ typedef enum {
 FTDM_STR2ENUM_P(ftdm_str2ftdm_transfer_response, ftdm_transfer_response2str, ftdm_transfer_response_t)
 
 /*! \brief Digit limit used in DNIS/ANI */
-#define FTDM_DIGITS_LIMIT 25
+#define FTDM_DIGITS_LIMIT 64
 
 #define FTDM_SILENCE_VALUE(fchan) (fchan)->native_codec == FTDM_CODEC_ULAW ? 255 : (fchan)->native_codec == FTDM_CODEC_ALAW ? 0xD5 : 0x00
 
@@ -533,6 +533,8 @@ typedef struct ftdm_channel_config {
 	uint8_t debugdtmf;
 	uint8_t dtmf_on_start;
 	uint32_t dtmfdetect_ms;
+	uint32_t dtmf_time_on;
+	uint32_t dtmf_time_off;
 	uint8_t iostats;
 } ftdm_channel_config_t;
 

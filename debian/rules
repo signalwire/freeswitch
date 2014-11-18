@@ -55,7 +55,6 @@ clean:
 	dh $@
 
 override_dh_auto_clean:
-	dh_clean
 
 .stamp-bootstrap:
 	@$(call show_vars)

@@ -34,6 +34,9 @@
 
 #define _XOPEN_SOURCE 600   /* For strdup() */
 #define _BSD_SOURCE  /* For xmlrpc_strcaseeq */
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE
+#endif
 
 #include <stdlib.h>
 #include <stdio.h>

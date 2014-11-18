@@ -201,7 +201,7 @@ switch_status_t do_config()
 			goto err;
 		}		
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Could not find 'auth_invite' section in config file.\n");		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Could not find 'auth_reg' section in config file.\n");		
 	}
 
 	if ((tmp = switch_xml_child(cfg, "global")) != NULL ) {
@@ -741,7 +741,7 @@ switch_xml_t mod_xml_radius_auth_reg(switch_event_t *params) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: starting registration authentication\n");
 	}
 	
-	if ( mod_xml_radius_new_handle(&new_handle, globals.auth_invite_configs) != SWITCH_STATUS_SUCCESS ) {
+	if ( mod_xml_radius_new_handle(&new_handle, globals.auth_reg_configs) != SWITCH_STATUS_SUCCESS ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load radius handle for registration authentication\n");
 		goto err;		
 	}
@@ -849,7 +849,7 @@ static switch_xml_t mod_xml_radius_directory_search(const char *section, const c
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: starting authentication\n");
 		switch_event_serialize(params, &event_buf, SWITCH_TRUE);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Event: %s \n", event_buf);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Section: %s \nTag: %s\nKey_name: %s\nKey_value: %s\n", 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "\nSection: %s \nTag: %s\nKey_name: %s\nKey_value: %s\n", 
 						  section, tag_name, key_name, key_value);
 	}
 	
@@ -1087,7 +1087,7 @@ SWITCH_STANDARD_APP(radius_auth_handle)
 	temp = NULL;
 
 	if ( result != 0 ) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: Failed to authenticate\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "mod_xml_radius: Failed to authenticate, authentication result: %d \n", result);
 		goto err;
 	}
 
@@ -1169,7 +1169,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_radius_load)
 		return SWITCH_STATUS_TERM;
 	}
 	
-	if ( globals.auth_invite_configs ) {
+	if ( globals.auth_invite_configs && globals.auth_reg_configs ) {
 		status = switch_xml_bind_search_function(mod_xml_radius_directory_search, switch_xml_parse_section_string("directory"), NULL);
 	}
 		

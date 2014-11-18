@@ -1,3 +1,4 @@
+
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
@@ -1300,6 +1301,12 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	switch_core_hash_init(&IP_LIST.hash);
 
 
+	tmp_name = "rfc6598.auto";
+	switch_network_list_create(&rfc_list, tmp_name, SWITCH_FALSE, IP_LIST.pool);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Created ip list %s default (deny)\n", tmp_name);
+	switch_network_list_add_cidr(rfc_list, "100.64.0.0/10", SWITCH_TRUE);
+	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);
+
 	tmp_name = "rfc1918.auto";
 	switch_network_list_create(&rfc_list, tmp_name, SWITCH_FALSE, IP_LIST.pool);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Created ip list %s default (deny)\n", tmp_name);
@@ -1327,6 +1334,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	switch_network_list_add_cidr(rfc_list, "10.0.0.0/8", SWITCH_TRUE);
 	switch_network_list_add_cidr(rfc_list, "172.16.0.0/12", SWITCH_TRUE);
 	switch_network_list_add_cidr(rfc_list, "192.168.0.0/16", SWITCH_TRUE);
+	switch_network_list_add_cidr(rfc_list, "100.64.0.0/10", SWITCH_TRUE);
 	switch_core_hash_insert(IP_LIST.hash, tmp_name, rfc_list);
 
 	tmp_name = "loopback.auto";
@@ -1551,6 +1559,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_thread_set_cpu_affinity(int cpu)
 }
 
 
+#ifdef ENABLE_ZRTP 
 static void switch_core_set_serial(void)
 {
 	char buf[13] = "";
@@ -1596,7 +1605,7 @@ static void switch_core_set_serial(void)
 
 	switch_core_set_variable("switch_serial", buf);
 }
-
+#endif
 
 SWITCH_DECLARE(int) switch_core_test_flag(int flag)
 {
@@ -1740,8 +1749,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_core_set_variable("certs_dir", SWITCH_GLOBAL_dirs.certs_dir);
 	switch_core_set_variable("storage_dir", SWITCH_GLOBAL_dirs.storage_dir);
 	switch_core_set_variable("cache_dir", SWITCH_GLOBAL_dirs.cache_dir);
+#ifdef ENABLE_ZRTP
 	switch_core_set_serial();
-
+#endif
 	switch_console_init(runtime.memory_pool);
 	switch_event_init(runtime.memory_pool);
 	switch_channel_global_init(runtime.memory_pool);
@@ -1972,6 +1982,12 @@ static void switch_load_core_config(const char *file)
 					runtime.core_db_inner_pre_trans_execute = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "core-db-inner-post-trans-execute") && !zstr(val)) {
 					runtime.core_db_inner_post_trans_execute = switch_core_strdup(runtime.memory_pool, val);
+				} else if (!strcasecmp(var, "dialplan-timestamps")) {
+					if (switch_true(val)) {
+						switch_set_flag((&runtime), SCF_DIALPLAN_TIMESTAMPS);
+					} else {
+						switch_clear_flag((&runtime), SCF_DIALPLAN_TIMESTAMPS);
+					}
 				} else if (!strcasecmp(var, "mailer-app") && !zstr(val)) {
 					runtime.mailer_app = switch_core_strdup(runtime.memory_pool, val);
 				} else if (!strcasecmp(var, "mailer-app-args") && val) {

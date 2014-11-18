@@ -229,6 +229,8 @@ static struct {
 	int pause_when_offline;
 	/** flag to reduce log noise */
 	int offline_logged;
+	/** if true, channel variables are added to offer */
+	int add_variables_to_offer;
 } globals;
 
 /**
@@ -3682,17 +3684,22 @@ static iks *rayo_create_offer(struct rayo_call *call, switch_core_session_t *ses
 		iks_insert_attrib(offer, "to", profile->destination_number);
 	}
 
-	/* add signaling headers */
+	/* add headers to offer */
 	{
 		switch_event_header_t *var;
 		add_header(offer, "from", switch_channel_get_variable(channel, "sip_full_from"));
 		add_header(offer, "to", switch_channel_get_variable(channel, "sip_full_to"));
 		add_header(offer, "via", switch_channel_get_variable(channel, "sip_full_via"));
 
-		/* get all variables prefixed with sip_h_ */
+		/* add all SIP header variables and (if configured) all other variables */
 		for (var = switch_channel_variable_first(channel); var; var = var->next) {
 			if (!strncmp("sip_h_", var->name, 6)) {
 				add_header(offer, var->name + 6, var->value);
+			}
+			if (globals.add_variables_to_offer) {
+				char var_name[1024];
+				snprintf(var_name, 1024, "variable-%s", var->name);
+				add_header(offer, var_name, var->value);
 			}
 		}
 		switch_channel_variable_last(channel);
@@ -4066,6 +4073,7 @@ static switch_status_t do_config(switch_memory_pool_t *pool, const char *config_
 	globals.num_message_threads = 8;
 	globals.offer_uri = 1;
 	globals.pause_when_offline = 0;
+	globals.add_variables_to_offer = 0;
 
 	/* get params */
 	{
@@ -4101,6 +4109,10 @@ static switch_status_t do_config(switch_memory_pool_t *pool, const char *config_
 				} else if (!strcasecmp(var, "pause-when-offline")) {
 					if (switch_true(val)) {
 						globals.pause_when_offline = 1;
+					}
+				} else if (!strcasecmp(var, "add-variables-to-offer")) {
+					if (switch_true(val)) {
+						globals.add_variables_to_offer = 1;
 					}
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unsupported param: %s\n", var);

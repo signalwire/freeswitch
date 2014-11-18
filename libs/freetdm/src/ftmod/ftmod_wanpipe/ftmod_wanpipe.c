@@ -40,6 +40,9 @@
  *
  */ 
 #ifdef WP_DEBUG_IO
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE
+#endif
 #define _BSD_SOURCE
 #include <syscall.h>
 #endif

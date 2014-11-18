@@ -87,7 +87,8 @@ fi
 post_cmd=""
 command -v wget >/dev/null 2>&1
 if [ $? -eq 0 ]; then
-    post_cmd="wget --output-file=/dev/null --output-document=/tmp/fscore_pb.tmp/pb_out --http-user=pastebin --http-password=freeswitch http://pastebin.freeswitch.org --post-file=$post_file"
+    post_cmd="wget --output-file=/dev/null --output-document=/tmp/fscore_pb.tmp/pb_out --http-user=pastebin --http-password=freeswitch https://pastebin.freeswitch.org --post-file=$post_file"
+    echo -n "paste=Send&remember=0&poster=$user&format=none&expiry=f&code2=" > $post_file
 fi
 
 if [ -z "$post_cmd" ]; then
@@ -102,17 +103,15 @@ if [ -z "$post_cmd" ]; then
   exit 255
 fi
 
-if [[ "$post_cmd" == wget* ]]; then
-    echo -n "paste=Send&remember=0&poster=$user&format=none&expiry=f&code2=" > $post_file
-fi
-
 echo "Gathering Data Please Wait........."
 
+UNAME=`uname`;
+
 #Linux
-if [ $(uname) == "Linux" ]; then
+if [ "${UNAME}" = "Linux" ]; then
     echo "LSB RELEASE:" >> $post_file
     echo $line >> $post_file
-    if [ -f /etc/redhat-release ] ; then
+    if [ -f /etc/redhat-release ]; then
 	cat /etc/redhat-release  >> $post_file
     else
 	lsb_release -a >> $post_file
@@ -122,7 +121,7 @@ if [ $(uname) == "Linux" ]; then
     echo $line >> $post_file
     cat /proc/cpuinfo >> $post_file
 #Mac
-elif [ $(uname) == "Darwin" ]; then
+elif [ "${UNAME}" = "Darwin" ]; then
     system_profiler SPSoftwareDataType SPHardwareDataType >> $post_file
 fi;
 

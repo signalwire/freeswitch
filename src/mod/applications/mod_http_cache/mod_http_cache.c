@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2013, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2014, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -61,6 +61,7 @@ struct http_profile {
 	const char *name;
 	const char *aws_s3_access_key_id;
 	const char *aws_s3_secret_access_key;
+	const char *aws_s3_base_domain;
 };
 typedef struct http_profile http_profile_t;
 
@@ -201,7 +202,7 @@ static void url_cache_unlock(url_cache_t *cache, switch_core_session_t *session)
 static void url_cache_clear(url_cache_t *cache, switch_core_session_t *session);
 static http_profile_t *url_cache_http_profile_find(url_cache_t *cache, const char *name);
 static http_profile_t *url_cache_http_profile_find_by_fqdn(url_cache_t *cache, const char *url);
-static http_profile_t *url_cache_http_profile_add(url_cache_t *cache, const char *name, const char *aws_s3_access_key_id, const char *aws_s3_secret_access_key);
+static http_profile_t *url_cache_http_profile_add(url_cache_t *cache, const char *name, const char *aws_s3_access_key_id, const char *aws_s3_secret_access_key, const char *aws_s3_base_domain);
 
 static switch_curl_slist_t *append_aws_s3_headers(switch_curl_slist_t *headers, http_profile_t *profile, const char *verb, const char *content_type, const char *url);
 
@@ -792,7 +793,7 @@ static http_profile_t *url_cache_http_profile_find_by_fqdn(url_cache_t *cache, c
 /**
  * Add a profile to the cache
  */
-static http_profile_t *url_cache_http_profile_add(url_cache_t *cache, const char *name, const char *aws_s3_access_key_id, const char *aws_s3_secret_access_key)
+static http_profile_t *url_cache_http_profile_add(url_cache_t *cache, const char *name, const char *aws_s3_access_key_id, const char *aws_s3_secret_access_key, const char *aws_s3_base_domain)
 {
 	http_profile_t *profile = switch_core_alloc(cache->pool, sizeof(*profile));
 	profile->name = switch_core_strdup(cache->pool, name);
@@ -802,6 +803,10 @@ static http_profile_t *url_cache_http_profile_add(url_cache_t *cache, const char
 	if (aws_s3_secret_access_key) {
 		profile->aws_s3_secret_access_key = switch_core_strdup(cache->pool, aws_s3_secret_access_key);
 	}
+	if (aws_s3_base_domain) {
+		profile->aws_s3_base_domain = switch_core_strdup(cache->pool, aws_s3_base_domain);
+	}
+
 	switch_core_hash_insert(cache->profiles, profile->name, profile);
 	return profile;
 }
@@ -919,7 +924,7 @@ static void cached_url_destroy(cached_url_t *url, switch_memory_pool_t *pool)
 static switch_curl_slist_t *append_aws_s3_headers(switch_curl_slist_t *headers, http_profile_t *profile, const char *verb, const char *content_type, const char *url)
 {
 	/* check if Amazon headers are needed */
-	if (profile && profile->aws_s3_access_key_id && aws_s3_is_s3_url(url)) {
+	if (profile && profile->aws_s3_access_key_id && aws_s3_is_s3_url(url, profile->aws_s3_base_domain)) {
 		char date[256];
 		char header[1024];
 		char *authenticate;
@@ -930,7 +935,7 @@ static switch_curl_slist_t *append_aws_s3_headers(switch_curl_slist_t *headers, 
 		headers = switch_curl_slist_append(headers, header);
 
 		/* Authorization: */
-		authenticate = aws_s3_authentication_create(verb, url, content_type, "", profile->aws_s3_access_key_id, profile->aws_s3_secret_access_key, date);
+		authenticate = aws_s3_authentication_create(verb, url, profile->aws_s3_base_domain, content_type, "", profile->aws_s3_access_key_id, profile->aws_s3_secret_access_key, date);
 		snprintf(header, 1024, "Authorization: %s", authenticate);
 		free(authenticate);
 		headers = switch_curl_slist_append(headers, header);
@@ -1397,7 +1402,9 @@ static switch_status_t do_config(url_cache_t *cache)
 				switch_xml_t s3 = switch_xml_child(profile, "aws-s3");
 				char *access_key_id = NULL;
 				char *secret_access_key = NULL;
+				char *base_domain = NULL;
 				if (s3) {
+					switch_xml_t base_domain_xml = switch_xml_child(s3, "base-domain");
 					switch_xml_t id = switch_xml_child(s3, "access-key-id");
 					switch_xml_t secret = switch_xml_child(s3, "secret-access-key");
 					if (id && secret) {
@@ -1412,12 +1419,21 @@ static switch_status_t do_config(url_cache_t *cache)
 						}
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Missing key id or secret\n");
+						continue;
+					}
+					if (base_domain_xml) {
+						base_domain = switch_strip_whitespace(switch_xml_txt(base_domain_xml));
+						if (zstr(base_domain)) {
+							switch_safe_free(base_domain);
+							base_domain = NULL;
+						}
 					}
 				}
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Adding profile \"%s\" to cache\n", name);
-				profile_obj = url_cache_http_profile_add(cache, name, access_key_id, secret_access_key);
+				profile_obj = url_cache_http_profile_add(cache, name, access_key_id, secret_access_key, base_domain);
 				switch_safe_free(access_key_id);
 				switch_safe_free(secret_access_key);
+				switch_safe_free(base_domain);
 
 				domains = switch_xml_child(profile, "domains");
 				if (domains) {

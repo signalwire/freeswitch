@@ -26,6 +26,7 @@
  * Michael Giagnocavo <mgg@giagnocavo.net>
  * David Brazier <David.Brazier@360crm.co.uk>
  * Jeff Lenk <jeff@jefflenk.com>
+ * Artur Kraev <ravenox@gmail.com>
  * 
  * Loader.cs -- mod_managed loader
  *
@@ -33,7 +34,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -47,7 +47,7 @@ namespace FreeSWITCH {
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool ExecuteBackgroundDelegate(string cmd);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool RunDelegate(string cmd, IntPtr session);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool ReloadDelegate(string cmd);
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool ListDelegate(string cmd);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate bool ListDelegate(string cmd, IntPtr streamH, IntPtr eventH);
         static readonly ExecuteDelegate _execute = Execute;
         static readonly ExecuteBackgroundDelegate _executeBackground = ExecuteBackground;
         static readonly RunDelegate _run = Run;
@@ -66,7 +66,12 @@ namespace FreeSWITCH {
             managedDir = Path.Combine(Native.freeswitch.SWITCH_GLOBAL_dirs.mod_dir, "managed");
             shadowDir = Path.Combine(managedDir, "shadow");
             if (Directory.Exists(shadowDir)) {
-                Directory.Delete(shadowDir, true);
+                try {
+                    Directory.Delete(shadowDir, true);
+                } catch (Exception ex) {
+                    Log.WriteLine(LogLevel.Warning, "Cannot delete shadow directory: {0}", ex);
+                }
+
                 Directory.CreateDirectory(shadowDir);
             }
 
@@ -220,11 +225,35 @@ namespace FreeSWITCH {
                 setup.ConfigurationFile = fileName + ".config";
             }
             setup.ApplicationBase = Native.freeswitch.SWITCH_GLOBAL_dirs.mod_dir;
-            setup.ShadowCopyDirectories = managedDir + ";";
             setup.LoaderOptimization = LoaderOptimization.MultiDomainHost; // TODO: would MultiDomain work better since FreeSWITCH.Managed isn't gac'd?
             setup.CachePath = shadowDir;
             setup.ShadowCopyFiles = "true";
-            setup.PrivateBinPath = "managed";
+
+            // computing private bin path
+            var binPath = setup.PrivateBinPath ?? string.Empty;
+
+            var binPaths = binPath.Split(new[] { ";" }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .ToList();
+
+            // adding "managed" (modules) directory
+            if (!binPaths.Contains("managed")) {
+                binPaths.Add("managed");
+            }
+
+            // adding "managed/<modulename>" directory for per-module references support
+            var moduleRefsDir = Path.GetFileName(fileName);
+            moduleRefsDir = Path.GetFileNameWithoutExtension(moduleRefsDir);
+
+            if (moduleRefsDir != null && moduleRefsDir.Trim() != "") {
+                moduleRefsDir = Path.Combine("managed", moduleRefsDir);
+                if (!binPaths.Contains(moduleRefsDir, StringComparer.OrdinalIgnoreCase)) {
+                    binPaths.Add(moduleRefsDir);
+                }
+            }
+
+            // bringing all together
+            setup.PrivateBinPath = string.Join(";", binPaths);
 
             // Create domain and load PM inside
             System.Threading.Interlocked.Increment(ref appDomainCount);
@@ -408,16 +437,24 @@ namespace FreeSWITCH {
             }
         }
 
-        public static bool List(string command) {
+        public static bool List(string command, IntPtr streamHandle, IntPtr eventHandle)
+        {
             try {
-				Log.WriteLine(LogLevel.Info, "Available APIs:");
-                getApiExecs().Values.ForEach(x => {
-					Log.WriteLine(LogLevel.Info, "{0}: {1}", x.Name, String.Join(",", x.Aliases.ToArray()));
-				});
-				Log.WriteLine(LogLevel.Info, "Available Apps:");
-				getAppExecs().Values.ForEach(x => {
-					Log.WriteLine(LogLevel.Info, "{0}: {1}", x.Name, String.Join(",", x.Aliases.ToArray()));
-				});
+                if (streamHandle != IntPtr.Zero) {
+                    using (var stream = new Native.Stream(new Native.switch_stream_handle(streamHandle, false))) {
+                        stream.Write("Available APIs:\n");
+
+                        getApiExecs().Values.ForEach(x => stream.Write(string.Format("{0}: {1}\n", x.Name, String.Join(",", x.Aliases.ToArray()))));
+
+                        stream.Write("Available Apps:\n");
+                        getAppExecs().Values.ForEach(x => stream.Write(string.Format("{0}: {1}\n", x.Name, String.Join(",", x.Aliases.ToArray()))));
+                    }
+                } else {
+                    Log.WriteLine(LogLevel.Info, "Available APIs:");
+                    getApiExecs().Values.ForEach(x => Log.WriteLine(LogLevel.Info, "{0}: {1}", x.Name, String.Join(",", x.Aliases.ToArray())));
+                    Log.WriteLine(LogLevel.Info, "Available Apps:");
+                    getAppExecs().Values.ForEach(x => Log.WriteLine(LogLevel.Info, "{0}: {1}", x.Name, String.Join(",", x.Aliases.ToArray())));
+                }
                 return true;
             } catch (Exception ex) {
                 Log.WriteLine(LogLevel.Error, "Exception listing managed modules: {0}", ex.ToString());

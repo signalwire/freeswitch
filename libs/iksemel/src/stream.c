@@ -36,7 +36,6 @@ typedef unsigned __int32 uint32_t;
 #define SF_TRY_SECURE 2
 #define SF_SECURE 4
 #define SF_SERVER 8
-#define SF_SSLv23 16
 
 struct stream_data {
 	iksparser *prs;
@@ -319,11 +318,7 @@ handshake (struct stream_data *data)
 	SSL_load_error_strings();
 	
 	if (data->flags & SF_SERVER) {
-		if (data->flags & SF_SSLv23) {
-			data->ssl_ctx = SSL_CTX_new(SSLv23_server_method());
-		} else {
-			data->ssl_ctx = SSL_CTX_new(TLSv1_server_method());
-		}
+		data->ssl_ctx = SSL_CTX_new(TLSv1_server_method());
 		if(!data->ssl_ctx) return IKS_NOMEM;
 
 		if (SSL_CTX_use_certificate_file(data->ssl_ctx, data->cert_file, SSL_FILETYPE_PEM) <= 0) {
@@ -985,7 +980,7 @@ iks_start_tls (iksparser *prs)
 }
 
 int
-iks_proceed_tls (iksparser *prs, const char *cert_file, const char *key_file, int use_ssl)
+iks_proceed_tls (iksparser *prs, const char *cert_file, const char *key_file)
 {
 #ifdef HAVE_GNUTLS
 	int ret;
@@ -996,9 +991,6 @@ iks_proceed_tls (iksparser *prs, const char *cert_file, const char *key_file, in
 	data->cert_file = iks_stack_strdup(data->s, cert_file, 0);
 	data->key_file = iks_stack_strdup(data->s, key_file, 0);
 	data->flags |= SF_TRY_SECURE | SF_SERVER;
-	if (use_ssl) {
-		data->flags |= SF_SSLv23;
-	}
 	return handshake (data);
 #elif HAVE_SSL
 	int ret;
@@ -1009,9 +1001,6 @@ iks_proceed_tls (iksparser *prs, const char *cert_file, const char *key_file, in
 	data->cert_file = iks_stack_strdup(data->s, cert_file, 0);
 	data->key_file = iks_stack_strdup(data->s, key_file, 0);
 	data->flags |= SF_TRY_SECURE | SF_SERVER;
-	if (use_ssl) {
-		data->flags |= SF_SSLv23;
-	}
 	return handshake (data);
 #else
 	return IKS_NET_NOTSUPP;

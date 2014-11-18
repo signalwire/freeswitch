@@ -2,8 +2,14 @@
 
 	<!-- rayo params -->
 	<settings>
+		<!-- ends idle calls : unbridged calls that have not been controlled by client in some time -->
 		<param name="max-idle-sec" value="300"/>
+		<!-- conference profile to use for mixers- sla = shared line appearance / conference /w no audio -->
 		<param name="mixer-conf-profile" value="sla"/>
+		<!-- if true, to attribute in offer uses URI instead of name/number -->
+		<param name="offer-uri" value="true"/>
+		<!-- if true, channel variables are added to rayo client offer -->
+		<param name="add-variables-to-offer" value="false"/>
 	</settings>
 
 	<!-- record component params -->
@@ -52,8 +58,8 @@
 
 		<!-- map mod_spandsp call progress tone detector to Rayo CPA signal events.  Fires DETECTED_TONE events until stopped. -->
 		<detector name="mod_spandsp_tone">
-			<start application="start_tone_detect" data="1"/>
-			<stop application="stop_tone_detect" data=""/>
+			<start application="spandsp_start_tone_detect" data="1"/>
+			<stop application="spandsp_stop_tone_detect" data=""/>
 			<!-- map tone events to Rayo CPA signal type -->
 			<event class="CUSTOM" subclass="DETECTED_TONE" type-header="Detected-Tone">
 				<signal-type header-value="SIT" value="sit"/>

@@ -235,7 +235,7 @@ SWITCH_DECLARE(int) switch_core_media_crypto_keylen(switch_rtp_crypto_key_type_t
 static int get_channels(const char *name, int dft)
 {
 
-	if (!switch_true(switch_core_get_variable("NDLB_broken_opus_sdp")) && !strcasecmp(name, "opus")) {
+	if (!zstr(name) && !switch_true(switch_core_get_variable("NDLB_broken_opus_sdp")) && !strcasecmp(name, "opus")) {
 		return 2; /* IKR???*/
 	}
 
@@ -3827,7 +3827,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				switch_snprintf(tmp, sizeof(tmp), "%d", a_engine->cur_payload_map->recv_pt);
 				switch_channel_set_variable(session->channel, "rtp_audio_recv_pt", tmp);
 				
-				if (switch_core_codec_ready(&a_engine->read_codec)) {
+				if (switch_core_codec_ready(&a_engine->read_codec) && strcasecmp(matches[0].imp->iananame, a_engine->read_codec.implementation->iananame)) {
 					a_engine->reset_codec = 1;
 				}
 
@@ -4071,7 +4071,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				switch_channel_set_variable(session->channel, "rtp_video_recv_pt", tmp);
 				if (!match && vmatch) match = 1;
 
-				if (switch_core_codec_ready(&v_engine->read_codec)) {
+				if (switch_core_codec_ready(&v_engine->read_codec) && strcasecmp(matches[0].imp->iananame, v_engine->read_codec.implementation->iananame)) {
 					v_engine->reset_codec = 1;
 				}
 
@@ -4375,7 +4375,10 @@ static switch_status_t start_video_thread(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_NOTICE, "%s Starting Video thread\n", switch_core_session_get_name(session));
 
-	switch_rtp_set_default_payload(v_engine->rtp_session, v_engine->cur_payload_map->agreed_pt);
+	if (v_engine->rtp_session) {
+		switch_rtp_set_default_payload(v_engine->rtp_session, v_engine->cur_payload_map->agreed_pt);
+	}
+
 	v_engine->mh.session = session;
 	switch_threadattr_create(&thd_attr, pool);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
@@ -4388,7 +4391,10 @@ static switch_status_t start_video_thread(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
+SWITCH_DECLARE(switch_status_t) switch_core_media_start_video_thread(switch_core_session_t *session)
+{
+	return start_video_thread(session);
+}
 
 //?
 #define RA_PTR_LEN 512
@@ -4940,7 +4946,13 @@ SWITCH_DECLARE(void) switch_core_session_wake_video_thread(switch_core_session_t
 
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 
-	if (!v_engine->rtp_session) {
+	if ((!smh->mparams->external_video_source) && (!v_engine->rtp_session)) {
+		return;
+	}
+
+	if (!v_engine->mh.cond_mutex) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Channel %s has no cond?\n",
+						  switch_channel_get_name(session->channel));
 		return;
 	}
 

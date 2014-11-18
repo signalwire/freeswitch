@@ -1233,7 +1233,11 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 					  switch_channel_get_name(tech_pvt->channel), switch_version_full_human(), 
 					  tech_pvt->mparams.local_sdp_str ? tech_pvt->mparams.local_sdp_str : "NO SDP PRESENT\n");
 
-	tech_pvt->sent_invites++;
+
+
+	if (switch_channel_get_private(tech_pvt->channel, "t38_options")) {
+		sofia_clear_flag(tech_pvt, TFLAG_ENABLE_SOA);
+	}
 
 	if (sofia_use_soa(tech_pvt)) {
 		nua_invite(tech_pvt->nh,
@@ -1268,6 +1272,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(!zstr(tech_pvt->mparams.local_sdp_str), SOATAG_ADDRESS(tech_pvt->mparams.adv_sdp_audio_ip)),
 				   TAG_IF(!zstr(tech_pvt->mparams.local_sdp_str), SOATAG_USER_SDP_STR(tech_pvt->mparams.local_sdp_str)),
 				   TAG_IF(!zstr(tech_pvt->mparams.local_sdp_str), SOATAG_REUSE_REJECTED(1)),
+				   TAG_IF(switch_channel_get_private(tech_pvt->channel, "t38_options"), SOATAG_ORDERED_USER(1)),
 				   TAG_IF(!zstr(tech_pvt->mparams.local_sdp_str), SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE)),
 				   TAG_IF(!zstr(tech_pvt->mparams.local_sdp_str), SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL)),
 				   TAG_IF(rep, SIPTAG_REPLACES_STR(rep)),

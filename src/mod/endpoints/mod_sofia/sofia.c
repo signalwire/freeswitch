@@ -6538,9 +6538,17 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		if (!tech_pvt || !tech_pvt->nh) {
 			goto done;
 		}
-	
-		if ((status > 100 || switch_channel_test_flag(channel, CF_ANSWERED)) && status < 300 && !r_sdp && tech_pvt->mparams.last_sdp_str) {
-			r_sdp = tech_pvt->mparams.last_sdp_str;
+
+		if (!r_sdp && (status > 100 || switch_channel_test_flag(channel, CF_ANSWERED)) && status < 300) {
+			if (ss_state == nua_callstate_ready) {
+				if (tech_pvt->mparams.last_sdp_response) {
+					r_sdp = tech_pvt->mparams.last_sdp_response;
+				}
+			} else {
+				if (tech_pvt->mparams.last_sdp_str) {
+					r_sdp = tech_pvt->mparams.last_sdp_str;
+				}
+			}
 		}
 		tech_pvt->mparams.last_sdp_str = NULL;
 	
@@ -6657,10 +6665,19 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	}
 
 	if (channel && (status == 180 || status == 183) && switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+		const char *full_to = NULL;
 		const char *val;
 		if ((val = switch_channel_get_variable(channel, "sip_auto_answer")) && switch_true(val)) {
-			nua_notify(nh, NUTAG_NEWSUB(1), NUTAG_WITH_THIS_MSG(de->data->e_msg),
-					   NUTAG_SUBSTATE(nua_substate_terminated),SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"), SIPTAG_EVENT_STR("talk"), TAG_END());
+			full_to = switch_str_nil(switch_channel_get_variable(channel, "sip_full_to"));
+
+			nua_notify(nh,
+					   NUTAG_NEWSUB(1),
+					   NUTAG_WITH_THIS_MSG(de->data->e_msg),
+					   NUTAG_SUBSTATE(nua_substate_terminated),
+					   TAG_IF((full_to), SIPTAG_TO_STR(full_to)),
+					   SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"),
+					   SIPTAG_EVENT_STR("talk"),
+					   TAG_END());
 		}
 	}
 
@@ -6688,6 +6705,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	case nua_callstate_authenticating:
 		break;
 	case nua_callstate_calling:
+		tech_pvt->sent_last_invite = 1;
+		tech_pvt->sent_invites++;
 		break;
 	case nua_callstate_proceeding:
 
@@ -6826,6 +6845,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		}
 		goto done;
 	case nua_callstate_received:
+		tech_pvt->recv_invites++;
+		tech_pvt->sent_last_invite = 0;
 		if (!sofia_test_flag(tech_pvt, TFLAG_SDP)) {
 			if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 				private_object_t *other_tech_pvt = switch_core_session_get_private(other_session);
@@ -9913,7 +9934,15 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 
 		/* Loop thru unknown Headers Here so we can do something with them */
 		for (un = sip->sip_unknown; un; un = un->un_next) {
-			if (!strncasecmp(un->un_name, "Diversion", 9)) {
+			if (!strncasecmp(un->un_name, "Accept-Language", 15)) {
+				if (!zstr(un->un_value)) {
+					char *tmp_name;
+					if ((tmp_name = switch_mprintf("%s%s", SOFIA_SIP_HEADER_PREFIX, un->un_name))) {
+						switch_channel_set_variable(channel, tmp_name, un->un_value);
+						free(tmp_name);
+					}
+				}
+			} else if (!strncasecmp(un->un_name, "Diversion", 9)) {
 				/* Basic Diversion Support for Diversion Indication in SIP */
 				/* draft-levy-sip-diversion-08 */
 				if (!zstr(un->un_value)) {

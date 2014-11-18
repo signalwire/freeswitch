@@ -506,9 +506,11 @@ switch_status_t perform_send_register_ack(listener_t *listener,
 	message->data.reg_ack.secondary_keep_alive = keep_alive;
 	switch_copy_string(message->data.reg_ack.reserved2, reserved2, 4);
 
-	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
-		"Sending Register Ack with Keep Alive (%d), Date Format (%s), Secondary Keep Alive (%d)\n",
-		keep_alive, date_format, secondary_keep_alive);
+	if ( listener->profile->debug >= 9 ) {
+		skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
+			"Sending Register Ack with Keep Alive (%d), Date Format (%s), Secondary Keep Alive (%d)\n",
+			keep_alive, date_format, secondary_keep_alive);
+	}
 
 	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
@@ -527,9 +529,11 @@ switch_status_t perform_send_speed_dial_stat_res(listener_t *listener,
     switch_copy_string(message->data.speed_dial_res.line, speed_line, 24);
     switch_copy_string(message->data.speed_dial_res.label, speed_label, 40);
 
-	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
-		"Sending Speed Dial Stat Res with Number (%d), Line (%s), Label (%s)\n",
-		number, speed_line, speed_label);
+	if ( listener->profile->debug >= 9 ) {
+		skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
+			"Sending Speed Dial Stat Res with Number (%d), Line (%s), Label (%s)\n",
+			number, speed_line, speed_label);
+	}
 
 	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
@@ -791,8 +795,10 @@ switch_status_t perform_send_call_info(listener_t *listener,
 	message->data.call_info.call_security_status = call_security_status;
 	message->data.call_info.party_pi_restriction_bits = party_pi_restriction_bits;
 
-	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
-		"Send Call Info with Line Instance (%d)...\n", line_instance);
+	if ( listener->profile->debug >= 9 ) {
+		skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
+			"Send Call Info with Line Instance (%d)...\n", line_instance);
+	}
 
 	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
@@ -823,9 +829,11 @@ switch_status_t perform_send_define_time_date(listener_t *listener,
 	message->data.define_time_date.milliseconds = milliseconds;
 	message->data.define_time_date.timestamp = timestamp;
 
-	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
-		"Send Define Time Date with %.4d-%.2d-%.2d %.2d:%.2d:%.2d.%d, Timestamp (%d), DOW (%d)\n", 
-		year, month, day, hour, minute, seconds, milliseconds, timestamp, day_of_week);
+	if ( listener->profile->debug >= 9 ) {
+		skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
+			"Send Define Time Date with %.4d-%.2d-%.2d %.2d:%.2d:%.2d.%d, Timestamp (%d), DOW (%d)\n", 
+			year, month, day, hour, minute, seconds, milliseconds, timestamp, day_of_week);
+	}
 
 	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
@@ -857,8 +865,10 @@ switch_status_t perform_send_capabilities_req(listener_t *listener,
 
 	skinny_create_empty_message(message, CAPABILITIES_REQ_MESSAGE);
 
-	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
-		"Send Capabilities Req%s\n", "");
+	if ( listener->profile->debug >= 9 ) {
+		skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
+			"Send Capabilities Req%s\n", "");
+	}
 
 	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
@@ -873,8 +883,10 @@ switch_status_t perform_send_version(listener_t *listener,
 
 	memcpy(message->data.version.version, version, 16);
 
-	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
-		"Send Version with Version(%s)\n", version);
+	if ( listener->profile->debug >= 9 ) {
+		skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
+			"Send Version with Version(%s)\n", version);
+	}
 
 	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
@@ -973,9 +985,11 @@ switch_status_t perform_send_select_soft_keys(listener_t *listener,
 	message->data.select_soft_keys.soft_key_set = soft_key_set;
 	message->data.select_soft_keys.valid_key_mask = valid_key_mask;
 
-	skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
-		"Send Select Soft Keys with Line Instance (%d), Call ID (%d), Soft Key Set (%d), Valid Key Mask (%x)\n",
+	if ( listener->profile->debug >= 9 ) {
+		skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
+			"Send Select Soft Keys with Line Instance (%d), Call ID (%d), Soft Key Set (%d), Valid Key Mask (%x)\n",
 			line_instance, call_id, soft_key_set, valid_key_mask);
+	}
 
 	return skinny_send_reply_quiet(listener, message, SWITCH_TRUE);
 }
@@ -1299,7 +1313,8 @@ switch_status_t skinny_perform_send_reply(listener_t *listener, const char *file
 	ptr = (char *) reply;
 
 	if (listener_is_ready(listener)) {
-		if (listener->profile->debug >= 10 || reply->type != KEEP_ALIVE_ACK_MESSAGE) {
+		if (listener->profile->debug >= 10 || 
+			(listener->profile->debug >= 9 && reply->type != KEEP_ALIVE_ACK_MESSAGE)) {
 			skinny_log_l_ffl(listener, file, func, line, SWITCH_LOG_DEBUG,
 					"Sending %s (type=%x,length=%d).\n",
 					skinny_message_type2str(reply->type), reply->type, reply->length);

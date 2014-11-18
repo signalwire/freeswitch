@@ -1489,6 +1489,16 @@ static __inline__ int chan_is_avail(ftdm_channel_t *check)
 			return 0;
 		}
 	}
+	/* release guard time check */
+	if (check->span->sig_release_guard_time_ms && check->last_release_time) {
+		ftdm_time_t time_diff = (ftdm_current_time_in_ms() - check->last_release_time);
+		if (time_diff < check->span->sig_release_guard_time_ms) {
+			return 0;
+		}
+		/* circuit now available for outbound dialing */
+		check->last_release_time = 0;
+		ftdm_log_chan(check, FTDM_LOG_DEBUG, "Channel is now available, release guard timer expired %zdms ago\n", (time_diff - check->span->sig_release_guard_time_ms));
+	}
 	return 1;
 }
 
@@ -2981,6 +2991,11 @@ static ftdm_status_t ftdm_channel_done(ftdm_channel_t *ftdmchan)
 		ftdmchan->packet_len = ftdmchan->native_interval * (ftdmchan->effective_codec == FTDM_CODEC_SLIN ? 16 : 8);
 		ftdm_clear_flag(ftdmchan, FTDM_CHANNEL_TRANSCODE);
 	}
+
+	if (ftdmchan->span->sig_release_guard_time_ms) {
+		ftdmchan->last_release_time = ftdm_current_time_in_ms();
+	}
+
 	ftdm_log_chan_msg(ftdmchan, FTDM_LOG_DEBUG, "channel done\n");
 	return FTDM_SUCCESS;
 }
@@ -3442,7 +3457,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 					ftdmchan->dtmf_on = val;
 					GOTO_STATUS(done, FTDM_SUCCESS);
 				} else {
-					snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "invalid value %d range 10-1000", val);
+					ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "invalid value %d range 10-1000", val);
 					GOTO_STATUS(done, FTDM_FAIL);
 				}
 			}
@@ -3456,7 +3471,7 @@ FT_DECLARE(ftdm_status_t) ftdm_channel_command(ftdm_channel_t *ftdmchan, ftdm_co
 					ftdmchan->dtmf_off = val;
 					GOTO_STATUS(done, FTDM_SUCCESS);
 				} else {
-					snprintf(ftdmchan->last_error, sizeof(ftdmchan->last_error), "invalid value %d range 10-1000", val);
+					ftdm_log_chan(ftdmchan, FTDM_LOG_ERROR, "invalid value %d range 10-1000", val);
 					GOTO_STATUS(done, FTDM_FAIL);
 				}
 			}
@@ -5096,6 +5111,12 @@ FT_DECLARE(ftdm_status_t) ftdm_configure_span_channels(ftdm_span_t *span, const 
 		if (chan_config->dtmf_on_start) {
 			span->channels[chan_index]->dtmfdetect.trigger_on_start = 1;
 		}
+		if (chan_config->dtmf_time_on) {
+			ftdm_channel_command(span->channels[chan_index], FTDM_COMMAND_SET_DTMF_ON_PERIOD, &chan_config->dtmf_time_on);
+		}
+		if (chan_config->dtmf_time_off) {
+			ftdm_channel_command(span->channels[chan_index], FTDM_COMMAND_SET_DTMF_OFF_PERIOD, &chan_config->dtmf_time_off);
+		}
 	}
 
 	return FTDM_SUCCESS;
@@ -5334,6 +5355,14 @@ static ftdm_status_t load_config(void)
 					} else {
 						chan_config.dtmf_on_start = FTDM_FALSE;
 					}
+				}
+			} else if (!strcasecmp(var, "dtmf_time_on")) {
+				if (sscanf(val, "%u", &(chan_config.dtmf_time_on)) != 1) {
+					ftdm_log(FTDM_LOG_ERROR, "invalid dtmf_time_on: '%s'\n", val);
+				}
+			} else if (!strcasecmp(var, "dtmf_time_off")) {
+				if (sscanf(val, "%u", &(chan_config.dtmf_time_off)) != 1) {
+					ftdm_log(FTDM_LOG_ERROR, "invalid dtmf_time_off: '%s'\n", val);
 				}
 			} else if (!strncasecmp(var, "iostats", sizeof("iostats")-1)) {
 				if (ftdm_true(val)) {
