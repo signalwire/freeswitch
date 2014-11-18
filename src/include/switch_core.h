@@ -169,10 +169,6 @@ typedef enum {
 	DS_INVALID,
 } dtls_state_t;
 
-typedef switch_status_t (switch_core_video_thread_callback_func_t) (switch_core_session_t *session, switch_frame_t *frame, void *user_data);
-
-
-
 #define MESSAGE_STAMP_FFL(_m) _m->_file = __FILE__; _m->_func = __SWITCH_FUNC__; _m->_line = __LINE__
 
 #define MESSAGE_STRING_ARG_MAX 10
@@ -1274,18 +1270,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(_In_ switch_core_
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(_In_ switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags,
 																	 int stream_id);
-
-/*! 
-  \brief Write a video image to a session using a video frame
-  \param session the session to write to
-  \param frame a pointer to a frame to use for write with proper codec
-  \param img the image structure with the image data
-  \param the size for packetization
-  \param flag pointer to frame flags to pass in / out 															
-  \return SWITCH_STATUS_SUCCESS a if the image was written
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_image(switch_core_session_t *session, switch_frame_t *frame, 
-																	  switch_image_t *img, switch_size_t size, uint32_t *flag);
 /*! 
   \brief set a callback to be called after each frame of an image is written
   \param session the session to write to
@@ -1643,16 +1627,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 /*!
   \brief Encode video data using a codec handle
   \param codec the codec handle to use
-  \param img the img in I420 format
-  \param encoded_data the buffer to write the encoded data to
-  \param encoded_data_len the size of the encoded_data buffer
-  \param flag flags to exchange
-  \return SWITCH_STATUS_SUCCESS if the data was encoded
-  \note encoded_data_len will be rewritten to the in-use size of encoded_data
+  \param frame the frame to encode
 */
-SWITCH_DECLARE(switch_status_t) switch_core_codec_encode_video(switch_codec_t *codec,
-														 switch_image_t *img,
-														 void *encoded_data, uint32_t *encoded_data_len, unsigned int *flag);
+SWITCH_DECLARE(switch_status_t) switch_core_codec_encode_video(switch_codec_t *codec, switch_frame_t *frame);
+
 
 /*!
   \brief send control data using a codec handle
@@ -1679,10 +1657,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_control(switch_codec_t *codec,
   \param flag flags to exchange
   \return SWITCH_STATUS_SUCCESS if the data was decoded, and a non-NULL img
 */
-SWITCH_DECLARE(switch_status_t) switch_core_codec_decode_video(switch_codec_t *codec,
-														 switch_frame_t *frame,
-														 switch_image_t **img, unsigned int *flag);
-
+SWITCH_DECLARE(switch_status_t) switch_core_codec_decode_video(switch_codec_t *codec, switch_frame_t *frame);
 
 /*! 
   \brief Destroy an initalized codec handle
@@ -2339,34 +2314,6 @@ SWITCH_DECLARE(uint8_t) switch_core_session_compare(switch_core_session_t *a, sw
   \return TRUE or FALSE
 */
 SWITCH_DECLARE(uint8_t) switch_core_session_check_interface(switch_core_session_t *session, const switch_endpoint_interface_t *endpoint_interface);
-
-/*!
-  \brief Set a callback to let the core video thread call us
-  \param session the session
-  \param func to callback
-  \param private user data
-  \return SWITCH_STATUS_CONTINUE | SWITCH_STATUS_SUCCESS | SWITCH_STATUS_BREAK | SWITCH_STATUS_*
-
-  If returns SWITCH_STATUS_CONTINUE, it will continues to run furthur code (read/write) in the core video thread,
-  that is to say, if the callback func to nothing and just returns SWITCH_STATUS_CONTINUE, it remains the default behaviour,
-  Return SWITCH_STATUS_SUCCESS to skip the default behaviour
-  Return SWITCH_STATUS_BREAK will break the loop and end the video thread
-*/
-
-SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_thread_callback(switch_core_session_t *session, switch_core_video_thread_callback_func_t *func, void *user_data);
-
-/*!
-  \brief Set a callback to let the core video thread call us
-  \param session the session
-  \param the current video frame
-  \param private user data
-  \return SWITCH_STATUS_CONTINUE or SWITCH_STATUS_SUCCESS
-
-  If returns SWITCH_STATUS_CONTINUE, it will continues to run furthur code (read/write) in the core video thread,
-  that is to say, if the callback func to nothing and just returns SWITCH_STATUS_CONTINUE, it remains the default behaviour,
-  Return SWITCH_STATUS_SUCCESS to skip the default behaviour
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_session_video_thread_callback(switch_core_session_t *session, switch_frame_t *frame);
 
 SWITCH_DECLARE(switch_hash_index_t *) switch_core_mime_index(void);
 SWITCH_DECLARE(const char *) switch_core_mime_ext2type(const char *ext);

@@ -673,7 +673,6 @@ SWITCH_STANDARD_APP(play_yuv_function)
 		if (read_frame) switch_core_session_write_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 		{	/* video part */
-			uint32_t flag = 0;
 			uint32_t encoded_data_len = 1500;
 			switch_frame_t *frame = &vid_frame;
 			switch_time_t now = switch_micro_time_now() / 1000;
@@ -691,14 +690,12 @@ SWITCH_STANDARD_APP(play_yuv_function)
 
 			sprintf(ts_str, "%u", timestamp);
 			text(img->planes[SWITCH_PLANE_PACKED], width, 20, 20, ts_str);
-			switch_core_codec_encode_video(codec, img, vid_frame.data, &encoded_data_len, &flag);
+			vid_frame.img = img;
+			switch_core_codec_encode_video(codec, &vid_frame);
 
 			while(encoded_data_len) {
 				// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "encoded: %s [%d] flag=%d ts=%lld\n", codec->implementation->iananame, encoded_data_len, flag, last_video_ts);
 
-				frame->datalen = encoded_data_len;
-				frame->packetlen = frame->datalen + 12;
-				frame->m = flag & SFF_MARKER ? 1 : 0;
 				frame->timestamp = timestamp;
 
 				if (1) { // we can remove this when ts and marker full passed in core
@@ -715,8 +712,8 @@ SWITCH_STANDARD_APP(play_yuv_function)
 
 				switch_core_session_write_video_frame(session, frame, SWITCH_IO_FLAG_NONE, 0);
 
-				encoded_data_len = 1500;
-				switch_core_codec_encode_video(codec, NULL, vid_frame.data, &encoded_data_len, &flag);
+				vid_frame.datalen = 1500;
+				switch_core_codec_encode_video(codec, &vid_frame);
 			}
 		}
 	}
@@ -817,10 +814,7 @@ SWITCH_STANDARD_APP(decode_video_function)
 		}
 
 		if ( 1 ) {	/* video part */
-			uint32_t flag = 0;
-			switch_image_t *img = NULL;
-
-			switch_core_codec_decode_video(codec, frame, &img, &flag);
+			switch_core_codec_decode_video(codec, frame);
 
 			if ((switch_test_flag(frame, SFF_WAIT_KEY_FRAME))) {
 				switch_time_t now = switch_micro_time_now();
@@ -831,19 +825,19 @@ SWITCH_STANDARD_APP(decode_video_function)
 				continue;
 			}
 
-			if (img) {
-				if (img->d_w > 0 && !width) {
-					width = img->d_w;
+			if (frame->img) {
+				if (frame->img->d_w > 0 && !width) {
+					width = frame->img->d_w;
 					switch_channel_set_variable_printf(channel, "video_width", "%d", width);
 				}
 
-				if (img->d_h > 0 && !height) {
-					height = img->d_h;
+				if (frame->img->d_h > 0 && !height) {
+					height = frame->img->d_h;
 					switch_channel_set_variable_printf(channel, "video_height", "%d", height);
 				}
 
 				decoded_pictures++;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "picture#%d %dx%d\n", decoded_pictures, img->d_w, img->d_h);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "picture#%d %dx%d\n", decoded_pictures, frame->img->d_w, frame->img->d_h);
 
 				if (max_pictures && (decoded_pictures >= max_pictures)) {
 					break;

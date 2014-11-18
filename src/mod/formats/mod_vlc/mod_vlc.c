@@ -114,7 +114,6 @@ struct vlc_video_context {
 	int height;
 	int force_width;
 	int force_height;
-	int video_refresh_req;
 	int channels;
 };
 
@@ -242,6 +241,7 @@ static void vlc_video_unlock_callback(void *data, void *id, void *const *p_pixel
 	switch_assert(context->img);
 
 	yuyv_to_i420(*p_pixels, context->img->img_data, context->width, context->height);
+	
 
 	switch_mutex_unlock(context->video_mutex);
 }
@@ -267,14 +267,12 @@ static void vlc_video_channel_unlock_callback(void *data, void *id, void *const 
 {
 	vlc_video_context_t *context = (vlc_video_context_t *)data;
 
-
 	switch_assert(id == NULL); /* picture identifier, not needed here */
 
 	if (context->channel && !switch_channel_test_flag(context->channel, CF_VIDEO)) return;
 
-	if (!context->img) context->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, context->width, context->height, 0);
-	switch_assert(context->img);
-
+	if (!context->img) context->img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, context->width, context->height, 0); switch_assert(context->img);
+	
 	yuyv_to_i420(*p_pixels, context->img->img_data, context->width, context->height);
 
 	switch_mutex_unlock(context->video_mutex);
@@ -282,19 +280,15 @@ static void vlc_video_channel_unlock_callback(void *data, void *id, void *const 
 
 static void vlc_video_display_callback(void *data, void *id)
 {
-	vlc_video_context_t *context = (vlc_video_context_t *) data;
-	int32_t flag = 0;
-
 	/* VLC wants to display the video */
+
+	vlc_video_context_t *context = (vlc_video_context_t *) data;
 
 	if (context->channel && !switch_channel_test_flag(context->channel, CF_VIDEO)) return;
 
-	if (context->video_refresh_req > 0) {
-		flag |= SFF_WAIT_KEY_FRAME;
-		context->video_refresh_req--;
-	}
+	context->vid_frame->img = context->img;
 
-	switch_core_session_write_video_image(context->session, context->vid_frame, context->img, SWITCH_DEFAULT_VIDEO_SIZE, NULL);
+	switch_core_session_write_video_frame(context->session, context->vid_frame, SWITCH_IO_FLAG_NONE, 0);
 }
 
 unsigned video_format_setup_callback(void **opaque, char *chroma, unsigned *width, unsigned *height, unsigned *pitches, unsigned *lines)
@@ -321,6 +315,7 @@ unsigned video_format_setup_callback(void **opaque, char *chroma, unsigned *widt
 
 	frame_size = (*width) * (*height) * 4 * 2;
 	context->raw_yuyv_data = malloc(frame_size);
+
 	if (context->raw_yuyv_data == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "memory error\n");
 		return 0;
@@ -1200,7 +1195,7 @@ static switch_call_cause_t vlc_outgoing_channel(switch_core_session_t *session, 
 		goto fail;
 	}
 
-	start_core_video_thread(*new_session);
+	switch_core_session_start_video_thread(*new_session);
 	switch_channel_set_state(channel, CS_INIT);
 
 	if (switch_core_session_thread_launch(*new_session) != SWITCH_STATUS_SUCCESS) {
@@ -1390,7 +1385,7 @@ static switch_status_t vlc_receive_message(switch_core_session_t *session, switc
 		case SWITCH_MESSAGE_INDICATE_JITTER_BUFFER:
 			break;
 		case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
-			tech_pvt->context->video_refresh_req = 1;
+			switch_core_media_gen_key_frame(session);
 			break;
 		default:
 			break;

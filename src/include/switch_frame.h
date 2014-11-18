@@ -74,6 +74,7 @@ SWITCH_BEGIN_EXTERN_C
 	switch_frame_flag_t flags;
 	void *user_data;
 	payload_map_t *pmap;
+	switch_image_t *img;
 };
 
 SWITCH_END_EXTERN_C

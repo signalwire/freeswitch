@@ -1450,6 +1450,7 @@ typedef enum {
 	CF_BYPASS_MEDIA_AFTER_HOLD,
 	CF_HANGUP_HELD,
 	CF_CONFERENCE_RESET_MEDIA,
+	CF_VIDEO_DECODED_READ,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
 	CF_FLAG_MAX
@@ -1496,7 +1497,8 @@ typedef enum {
 	SFF_MARKER = (1 << 11),
 	SFF_WAIT_KEY_FRAME = (1 << 12),
 	SFF_RAW_RTP_PARSE_FRAME = (1 << 13),
-	SFF_PICTURE_RESET = (1 << 14)
+	SFF_PICTURE_RESET = (1 << 14),
+	SFF_SAME_IMAGE = (1 << 15)
 } switch_frame_flag_enum_t;
 typedef uint32_t switch_frame_flag_t;
 
@@ -2154,6 +2156,8 @@ typedef switch_bool_t (*switch_media_bug_callback_t) (switch_media_bug_t *, void
 typedef switch_bool_t (*switch_tone_detect_callback_t) (switch_core_session_t *, const char *, const char *);
 typedef struct switch_xml_binding switch_xml_binding_t;
 
+typedef void (*switch_video_function_t) (switch_core_session_t *session, void *user_data);
+
 typedef switch_status_t (*switch_core_codec_encode_func_t) (switch_codec_t *codec,
 															switch_codec_t *other_codec,
 															void *decoded_data,
@@ -2169,13 +2173,9 @@ typedef switch_status_t (*switch_core_codec_decode_func_t) (switch_codec_t *code
 															uint32_t encoded_rate,
 															void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag);
 
-typedef switch_status_t (*switch_core_codec_video_encode_func_t) (switch_codec_t *codec,
-																  switch_image_t *img,
-																  void *encoded_data, uint32_t *encoded_data_len, unsigned int *flag);
+typedef switch_status_t (*switch_core_codec_video_encode_func_t) (switch_codec_t *codec, switch_frame_t *frame);
 
-typedef switch_status_t (*switch_core_codec_video_decode_func_t) (switch_codec_t *codec,
-																  switch_frame_t *frame,
-																  switch_image_t **img, unsigned int *flag);
+typedef switch_status_t (*switch_core_codec_video_decode_func_t) (switch_codec_t *codec, switch_frame_t *frame);
 
 typedef enum {
 	SCC_VIDEO_REFRESH = 0

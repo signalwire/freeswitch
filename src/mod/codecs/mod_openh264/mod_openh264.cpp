@@ -39,7 +39,7 @@
 #include "codec_api.h"
 //#include "inc/logging.h"     // for debug
 
-#define FPS 15.0f // frame rate
+#define FPS 20.0f // frame rate
 #define H264_NALU_BUFFER_SIZE 65536
 #define MAX_NALUS 100
 #define SLICE_SIZE 1200 //NALU Slice Size
@@ -66,15 +66,16 @@ typedef struct h264_codec_context_s {
 	switch_image_t *img;
 	int got_sps;
 	int64_t pts;
+	int need_key_frame;
 	switch_size_t last_received_timestamp;
 	switch_bool_t last_received_complete_picture;
 } h264_codec_context_t;
 
 int FillSpecificParameters(SEncParamExt& param) {
 	/* Test for temporal, spatial, SNR scalability */
-	param.iPicWidth		        = 352;		 // width of picture in samples
-	param.iPicHeight	        = 288;		 // height of picture in samples
-	param.iTargetBitrate        = 384000;	 // target bitrate desired
+	param.iPicWidth		        = 1280;		 // width of picture in samples
+	param.iPicHeight	        = 720;		 // height of picture in samples
+	param.iTargetBitrate        = 1280 * 720 * 8; // target bitrate desired
 	param.iRCMode               = RC_QUALITY_MODE;         //  rc mode control
 	param.uiMaxNalSize          = SLICE_SIZE * 20;
 	param.iTemporalLayerNum     = 1;         // layer number at temporal level
@@ -91,11 +92,11 @@ int FillSpecificParameters(SEncParamExt& param) {
 	param.bPrefixNalAddingCtrl    = 0;
 
 	int iIndexLayer = 0;
-	param.sSpatialLayers[iIndexLayer].iVideoWidth	= 352;
-	param.sSpatialLayers[iIndexLayer].iVideoHeight	= 288;
-	param.sSpatialLayers[iIndexLayer].fFrameRate	= 15.0f;
+	param.sSpatialLayers[iIndexLayer].iVideoWidth	= 1280;
+	param.sSpatialLayers[iIndexLayer].iVideoHeight	= 720;
+	param.sSpatialLayers[iIndexLayer].fFrameRate	= (double) (FPS * 1.0f);
 	// param.sSpatialLayers[iIndexLayer].iQualityLayerNum = 1;
-	param.sSpatialLayers[iIndexLayer].iSpatialBitrate  = 384000;
+	param.sSpatialLayers[iIndexLayer].iSpatialBitrate  = 1280 * 720 * 8;
 
 #ifdef MT_ENABLED
 	param.sSpatialLayers[iIndexLayer].sSliceCfg.uiSliceMode = SM_DYN_SLICE;
@@ -137,27 +138,21 @@ static switch_size_t buffer_h264_nalu(h264_codec_context_t *context, switch_fram
 	switch_buffer_t *buffer = context->nalu_buffer;
 	switch_size_t size = 0;
 
-	if (!frame) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No frame in codec!!\n");
-		return size;
-	}
-
+	switch_assert(frame);
+	
 	nalu_idc = (nalu_hdr & 0x60) >> 5;
 	nalu_type = nalu_hdr & 0x1f;
 
 	if (!context->got_sps && nalu_type != 7) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Waiting SPS/PPS\n");
-		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
-		return size;
+		return 0;
 	}
 
 	if (!context->got_sps) context->got_sps = 1;
 
 	size = switch_buffer_write(buffer, sync_bytes, sizeof(sync_bytes));
-	if (size == 0 ) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Buffer Memory Error!\n");
-
 	size = switch_buffer_write(buffer, frame->data, frame->datalen);
-	if (size == 0 ) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Buffer Memory Error!\n");
+
 
 #ifdef DEBUG_H264
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ts: %ld len: %4d %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x mark=%d size=%d\n",
@@ -173,13 +168,13 @@ static switch_size_t buffer_h264_nalu(h264_codec_context_t *context, switch_fram
 	return size;
 }
 
-static switch_status_t nalu_slice(h264_codec_context_t *context, void *data, uint32_t *len, uint32_t *flag)
+static switch_status_t nalu_slice(h264_codec_context_t *context, switch_frame_t *frame)
 {
 	int nalu_len;
 	uint8_t *buffer;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	*flag &= ~SFF_MARKER;
+	frame->m = SWITCH_FALSE;
 
 	if (context->cur_nalu_index >= context->bit_stream_info.sLayerInfo[context->cur_layer].iNalCount) {
 		context->cur_nalu_index = 0;
@@ -198,8 +193,8 @@ static switch_status_t nalu_slice(h264_codec_context_t *context, void *data, uin
 
 	if (context->last_frame_type == videoFrameTypeSkip ||
 		context->cur_layer >= context->bit_stream_info.iLayerNum) {
-		*len = 0;
-		*flag |= SFF_MARKER;
+		frame->datalen = 0;
+		frame->m = SWITCH_TRUE;
 		context->cur_layer = 0;
 		context->cur_nalu_index = 0;
 		return status;
@@ -225,12 +220,12 @@ static switch_status_t nalu_slice(h264_codec_context_t *context, void *data, uin
 
 		// if (nalu_type == 7) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Got SPS\n");
 
-		memcpy(data, (buffer + context->last_nalu_data_pos), nalu_len);
-		*len = nalu_len;
+		memcpy(frame->data, (buffer + context->last_nalu_data_pos), nalu_len);
+		frame->datalen = nalu_len;
 		// *flag |= (nalu_type == 6 || nalu_type == 7 || nalu_type == 8 || (nalu_type == 0xe && context->last_nalu_type == 8)) ? 0 : SFF_MARKER;
 		if ((context->cur_nalu_index == context->bit_stream_info.sLayerInfo[context->cur_layer].iNalCount - 1) &&
 				 (context->cur_layer == context->bit_stream_info.iLayerNum - 1)) {
-			*flag |= SFF_MARKER;
+			frame->m = SWITCH_TRUE;
 		} else {
 			status = SWITCH_STATUS_MORE_DATA;
 		}
@@ -240,7 +235,7 @@ static switch_status_t nalu_slice(h264_codec_context_t *context, void *data, uin
 		goto end;
 	} else {
 		int left = nalu_len;
-		uint8_t *p = (uint8_t *)data;
+		uint8_t *p = (uint8_t *) frame->data;
 
 		if (context->nalu_eat) {
 			left = nalu_len + 4 - context->nalu_eat;
@@ -267,7 +262,7 @@ static switch_status_t nalu_slice(h264_codec_context_t *context, void *data, uin
 			memcpy(p + 2, buffer + context->last_nalu_data_pos, SLICE_SIZE - 2);
 			context->last_nalu_data_pos += (SLICE_SIZE - 2);
 			context->nalu_eat += (SLICE_SIZE - 2);
-			*len = SLICE_SIZE;
+			frame->datalen = SLICE_SIZE;
 			status = SWITCH_STATUS_MORE_DATA;
 			goto end;
 		} else {
@@ -275,8 +270,8 @@ static switch_status_t nalu_slice(h264_codec_context_t *context, void *data, uin
 			p[1] = 0x40 | context->last_nalu_type;
 			memcpy(p + 2, buffer + context->last_nalu_data_pos, left);
 			context->last_nalu_data_pos += left;
-			*len = left + 2;
-			*flag |= SFF_MARKER;
+			frame->datalen = left + 2;
+			frame->m = SWITCH_TRUE;
 			context->nalu_eat = 0;
 			context->cur_nalu_index++;
 			status = SWITCH_STATUS_MORE_DATA;
@@ -361,6 +356,7 @@ static switch_status_t init_encoder(h264_codec_context_t *context, uint32_t widt
 
 	context->encoder_params.iPicWidth = width;
 	context->encoder_params.iPicHeight = height;
+
 	for (int i=0; i<context->encoder_params.iSpatialLayerNum; i++) {
 		context->encoder_params.sSpatialLayers[i].iVideoWidth = width;
 		context->encoder_params.sSpatialLayers[i].iVideoHeight = height;
@@ -371,14 +367,12 @@ static switch_status_t init_encoder(h264_codec_context_t *context, uint32_t widt
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Encoder Init Error\n");
 		return SWITCH_STATUS_FALSE;
 	}
+
 	context->encoder_initialized = SWITCH_TRUE;
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t switch_h264_encode(switch_codec_t *codec,
-										  switch_image_t *img,
-										  void *encoded_data, uint32_t *encoded_data_len,
-										  unsigned int *flag)
+static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t *frame)
 {
 	h264_codec_context_t *context = (h264_codec_context_t *)codec->private_info;
 	int width = 0;
@@ -387,17 +381,24 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec,
 	SSourcePicture* pic = NULL;
 	long result;
 
-	if (*flag & SFF_WAIT_KEY_FRAME) {
+	if (context->need_key_frame) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "H264 KEYFRAME GENERATED\n");
 		context->encoder->ForceIntraFrame(1);
+		context->need_key_frame = 0;
 	}
 
-	if (img == NULL) {
-		return nalu_slice(context, encoded_data, encoded_data_len, flag);
+	if (frame->flags & SFF_SAME_IMAGE) {
+		return nalu_slice(context, frame);
 	}
 
-	//d_w and d_h are corrupt
-	width = img->w;
-	height = img->h;
+
+	if (frame->img->d_h > 1) {
+		width = frame->img->d_w;
+		height = frame->img->d_h;
+	} else {
+		width = frame->img->w;
+		height = frame->img->h;
+	}
 
 	//switch_assert(width > 0 && (width % 2 == 0));
 	//switch_assert(height > 0 && (height % 2 == 0));
@@ -419,12 +420,12 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec,
 	pic->iColorFormat = videoFormatI420;
 	pic->iPicHeight = height;
 	pic->iPicWidth = width;
-	pic->iStride[0] = img->stride[0];
-	pic->iStride[1] = img->stride[1]; // = img->stride[2];
+	pic->iStride[0] = frame->img->stride[0];
+	pic->iStride[1] = frame->img->stride[1]; // = frame->img->stride[2];
 
-	pic->pData[0] = img->planes[0];
-	pic->pData[1] = img->planes[1];
-	pic->pData[2] = img->planes[2];
+	pic->pData[0] = frame->img->planes[0];
+	pic->pData[1] = frame->img->planes[1];
+	pic->pData[2] = frame->img->planes[2];
 
 	result = (EVideoFrameType)context->encoder->EncodeFrame(pic, &context->bit_stream_info);
 	if (result != cmResultSuccess ) {
@@ -436,45 +437,48 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec,
 	context->cur_nalu_index = 0;
 	context->last_nalu_data_pos = 0;
 
-	if(pic){
+	if (pic){
 		delete pic;
 		pic = NULL;
 	}
-	return nalu_slice(context, encoded_data, encoded_data_len, flag);
+
+	return nalu_slice(context, frame);
 
 error:
+
 	if(pic){
 		delete pic;
 		pic = NULL;
 	}
 
-	*encoded_data_len = 0;
-	*flag |= SFF_MARKER;
+	frame->datalen = 0;
+	frame->m = SWITCH_TRUE;
+
 	return SWITCH_STATUS_FALSE;
 }
 
-static switch_status_t switch_h264_decode(switch_codec_t *codec,
-										  switch_frame_t *frame,
-										  switch_image_t **img,
-										  unsigned int *flag)
+static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t *frame)
 {
 	h264_codec_context_t *context = (h264_codec_context_t *)codec->private_info;
 	switch_size_t size = 0;
 	uint32_t error_code;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "len: %d ts: %u mark:%d\n", frame->datalen, ntohl(frame->timestamp), frame->m);
 
-	if (context->last_received_timestamp && context->last_received_timestamp != frame->timestamp &&
+	if (0 && context->last_received_timestamp && context->last_received_timestamp != frame->timestamp &&
 		(!frame->m) && (!context->last_received_complete_picture)) {
 		// possible packet loss
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Packet Loss, skip privousely received packets\n");
-		switch_buffer_zero(context->nalu_buffer);
+		switch_goto_status(SWITCH_STATUS_RESTART, end);
 	}
 
 	context->last_received_timestamp = frame->timestamp;
 	context->last_received_complete_picture = frame->m ? SWITCH_TRUE : SWITCH_FALSE;
 
 	size = buffer_h264_nalu(context, frame);
+	printf("READ buf:%ld got_key:%d st:%d m:%d\n", size, context->got_sps, status, frame->m);
+
 
 	if (frame->m && size) {
 		int got_picture = 0;
@@ -485,6 +489,11 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec,
 		SBufferInfo dest_buffer_info;
 		switch_buffer_peek_zerocopy(context->nalu_buffer, &nalu);
 		uint8_t* pData[3] = { 0 };
+		
+
+		frame->m = SWITCH_FALSE;
+		frame->flags = 0;
+
 
 		pData[0] = NULL;
 		pData[1] = NULL;
@@ -515,22 +524,40 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec,
 			context->img->stride[1] = dest_buffer_info.UsrData.sSystemBuffer.iStride[1];
 			context->img->stride[2] = dest_buffer_info.UsrData.sSystemBuffer.iStride[1];
 
-			*img = context->img;
+			frame->img = context->img;
 			// TODO: keep going and see if more picture available
 			// pDecoder->DecodeFrame (NULL, 0, pData, &sDstBufInfo);
 		} else {
 			if (error_code) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decode error: 0x%x\n", error_code);
-				context->got_sps = 0;
+				switch_goto_status(SWITCH_STATUS_RESTART, end);
 			}
 		}
 
 		switch_buffer_zero(context->nalu_buffer);
-		return SWITCH_STATUS_SUCCESS;
+		status = SWITCH_STATUS_SUCCESS;
 	}
 
 end:
-	return SWITCH_STATUS_SUCCESS;
+
+	if (size == 0) {
+		status == SWITCH_STATUS_MORE_DATA;
+	}
+	
+	if (status == SWITCH_STATUS_RESTART) {
+		context->got_sps = 0;
+		switch_buffer_zero(context->nalu_buffer);
+	}
+
+	if (!context->got_sps) {
+		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
+	}
+
+	if (!frame->img) {
+		status = SWITCH_STATUS_MORE_DATA;
+	}
+
+	return status;
 }
 
 static switch_status_t switch_h264_control(switch_codec_t *codec, 
@@ -539,6 +566,18 @@ static switch_status_t switch_h264_control(switch_codec_t *codec,
 										   void *cmd_data,
 										   switch_codec_control_type_t *rtype,
 										   void **ret_data) {
+
+
+
+	h264_codec_context_t *context = (h264_codec_context_t *)codec->private_info;
+
+	switch(cmd) {
+	case SCC_VIDEO_REFRESH:
+		context->need_key_frame = 1;		
+		break;
+	default:
+		break;
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }

@@ -150,7 +150,7 @@ typedef struct switch_core_media_params_s {
 	/* a core_video_thread will be started automatically
 	   when uses rtp based media,
 	   external_video_source should be set to SWITCH_TRUE and
-	   switch_core_media_start_video_thread()
+	   switch_core_session_start_video_thread()
 	   should be explicitly called to start the video thread
 	   if uses the media handle for non-rtp based media
 	*/
@@ -266,11 +266,6 @@ SWITCH_DECLARE(void) switch_core_media_deinit(void);
 SWITCH_DECLARE(void) switch_core_media_set_stats(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_wake_video_thread(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_clear_crypto(switch_core_session_t *session);
-<<<<<<< HEAD
-SWITCH_DECLARE(switch_status_t) switch_core_media_start_video_thread(switch_core_session_t *session);
-=======
-SWITCH_DECLARE(switch_status_t) start_core_video_thread(switch_core_session_t *session);
->>>>>>> allow using the video thread externally - e.g. non rtp based video
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_get_payload_code(switch_core_session_t *session,
 																	 switch_media_type_t type,
@@ -314,7 +309,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 
 
 SWITCH_DECLARE(switch_timer_t *) switch_core_media_get_timer(switch_core_session_t *session, switch_media_type_t mtype);
-
+SWITCH_DECLARE(void) switch_core_media_start_video_function(switch_core_session_t *session, switch_video_function_t video_function, void *user_data);
+SWITCH_DECLARE(void) switch_core_media_end_video_function(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_session_start_video_thread(switch_core_session_t *session);
+SWITCH_DECLARE(int) switch_core_media_check_video_function(switch_core_session_t *session);
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:
