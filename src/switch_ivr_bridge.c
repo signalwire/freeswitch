@@ -69,13 +69,11 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 			switch_codec_t *b_codec = switch_core_session_get_video_write_codec(vh->session_b);
 
 			if (!b_codec || !a_codec || a_codec->implementation->impl_id == b_codec->implementation->impl_id) {
-				//switch_channel_clear_flag(channel, CF_VIDEO_DECODED_READ);
+				switch_channel_clear_flag(channel, CF_VIDEO_DECODED_READ);
 			} else {
-				//switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
+				switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
 			}
 			
-			switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
-
 			status = switch_core_session_read_video_frame(vh->session_a, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 			
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
@@ -412,10 +410,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			vid_launch++;
 			vh.session_a = session_a;
 			vh.session_b = session_b;
-			//DFF TEMP
-			if (switch_channel_test_flag(chan_a, CF_BRIDGE_ORIGINATOR)) {
-				launch_video(&vh);
-			}
+			launch_video(&vh);
 		}
 #endif
 
