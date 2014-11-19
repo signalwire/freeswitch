@@ -630,10 +630,6 @@ if test x"$enable_deprecated_core_db_events" = x"yes" ; then
         AC_DEFINE([SWITCH_DEPRECATED_CORE_DB], [1], [Define to 1 to enable deprecated core db events])
 fi
 
-AC_ARG_ENABLE(timerfd-wrapper,
-[AC_HELP_STRING([--enable-timerfd-wrapper],[timerfd is in the kernel but not in your libc])],[enable_timer_fd_wrapper="$enableval"],[enable_timer_fd_wrapper="no"])
-AM_CONDITIONAL([ENABLE_TIMERFD_WRAPPER],[test "x$enable_timer_fd_wrapper" != "xno"])
-
 ESL_LDFLAGS=
 PLATFORM_CORE_LDFLAGS=
 PLATFORM_CORE_LIBS=
