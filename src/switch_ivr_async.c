@@ -644,7 +644,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 
 	arg_recursion_check_start(args);
 
-	if (switch_true(switch_channel_get_variable(channel, "video_decoded_echo"))) {
+	if (switch_true(switch_channel_get_variable(channel, "echo_decode_video"))) {
 		switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
 	}
 
@@ -691,22 +691,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 			}
 		}
 
-
 		switch_core_session_write_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
-
-#ifndef SWITCH_VIDEO_IN_THREADS
-		status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-
-		if (!SWITCH_READ_ACCEPTABLE(status)) {
-			break;
-		}
-
-		if (switch_test_flag(read_frame, SFF_CNG)) {
-			continue;
-		}
-
-		switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
-#endif
 
 		if (switch_channel_test_flag(channel, CF_BREAK)) {
 			switch_channel_clear_flag(channel, CF_BREAK);
