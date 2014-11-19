@@ -55,6 +55,7 @@ avoid_mods_squeeze=(
 avoid_mods_trusty=(
 )
 avoid_mods_utopic=(
+  directories/mod_ldap
 )
 manual_pkgs=(
 freeswitch-all
