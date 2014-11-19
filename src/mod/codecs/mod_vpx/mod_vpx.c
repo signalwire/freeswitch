@@ -83,6 +83,8 @@ static switch_status_t init_codec(switch_codec_t *codec)
 {
 	vpx_context_t *context = (vpx_context_t *)codec->private_info;
 	vpx_codec_enc_cfg_t *config = &context->config;
+	int token_parts = 0;
+	int cpus = switch_core_cpu_count();
 
 	if (!context->codec_settings.video.width) {
 		context->codec_settings.video.width = 1280;
@@ -95,7 +97,8 @@ static switch_status_t init_codec(switch_codec_t *codec)
 	if (context->codec_settings.video.bandwidth) {
 		context->bandwidth = context->codec_settings.video.bandwidth;
 	} else {
-		context->bandwidth = context->codec_settings.video.width * context->codec_settings.video.height * 8;
+		int x = (context->codec_settings.video.width / 1000) + 1;
+		context->bandwidth = context->codec_settings.video.width * context->codec_settings.video.height * x;
 	}
 
 	if (context->bandwidth > 1250000) {
@@ -103,7 +106,7 @@ static switch_status_t init_codec(switch_codec_t *codec)
 	}
 
 	// settings
-	config->g_profile = 1;
+	config->g_profile = 0;
 	config->g_w = context->codec_settings.video.width;
 	config->g_h = context->codec_settings.video.height;
 	config->rc_target_bitrate = context->bandwidth;
@@ -111,19 +114,22 @@ static switch_status_t init_codec(switch_codec_t *codec)
 	config->g_timebase.den = 1000;
 	config->g_error_resilient = VPX_ERROR_RESILIENT_PARTITIONS;
 	config->g_lag_in_frames = 0; // 0- no frame lagging
-	config->g_threads = (switch_core_cpu_count() > 1) ? 2 : 1;
+
+
+
+	config->g_threads = (cpus > 1) ? 2 : 1;
+	token_parts = (cpus > 1) ? 3 : 0;
 
 	// rate control settings
 	config->rc_dropframe_thresh = 0;
 	config->rc_end_usage = VPX_CBR;
 	config->g_pass = VPX_RC_ONE_PASS;
-	config->kf_mode = VPX_KF_DISABLED;
-	//config->kf_mode = VPX_KF_AUTO;
-	//config->kf_min_dist = FPS;// Intra Period 3 seconds;
-	//config->kf_max_dist = FPS;
+	config->kf_mode = VPX_KF_AUTO;
+	config->kf_max_dist = 1000;
+	//config->kf_mode = VPX_KF_DISABLED;
 	config->rc_resize_allowed = 1;
-	config->rc_min_quantizer = 2;
-	config->rc_max_quantizer = 56;
+	config->rc_min_quantizer = 0;
+	config->rc_max_quantizer = 63;
 	//Rate control adaptation undershoot control.
 	//	This value, expressed as a percentage of the target bitrate,
 	//	controls the maximum allowed adaptation speed of the codec.
@@ -181,8 +187,8 @@ static switch_status_t init_codec(switch_codec_t *codec)
 		vpx_codec_control(&context->encoder, VP8E_SET_STATIC_THRESHOLD, 100);
 		//Set cpu usage, a bit lower than normal (-6) but higher than android (-12)
 		vpx_codec_control(&context->encoder, VP8E_SET_CPUUSED, -6);
-		// Only one partition
-		// vpx_codec_control(&context->encoder, VP8E_SET_TOKEN_PARTITIONS, VP8_ONE_TOKENPARTITION);
+		vpx_codec_control(&context->encoder, VP8E_SET_TOKEN_PARTITIONS, token_parts);
+
 		// Enable noise reduction
 		vpx_codec_control(&context->encoder, VP8E_SET_NOISE_SENSITIVITY, 1);
 		//Set max data rate for Intra frames.
@@ -191,7 +197,7 @@ static switch_status_t init_codec(switch_codec_t *codec)
 		//	special (and default) value 0 meaning unlimited, or no additional clamping
 		//	beyond the codec's built-in algorithm.
 		//	For example, to allocate no more than 4.5 frames worth of bitrate to a keyframe, set this to 450.
-		vpx_codec_control(&context->encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT, 0);
+		//vpx_codec_control(&context->encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT, 0);
 	}
 
 	if (context->flags & SWITCH_CODEC_FLAG_DECODE) {
@@ -299,8 +305,6 @@ static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t 
 {
 	if (!context->pkt) context->pkt = vpx_codec_get_cx_data(&context->encoder, &context->iter);
 
-	frame->m = 0;
-
 	if (context->pkt) {
 		// if (context->pkt->kind == VPX_CODEC_CX_FRAME_PKT && (context->pkt->data.frame.flags & VPX_FRAME_IS_KEY) && context->pkt_pos == 0) {
 		// 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "============================Got a VP8 Key Frame size:[%d]===================================\n", (int)context->pkt->data.frame.sz);
@@ -407,7 +411,7 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 	if (vpx_codec_encode(&context->encoder, (vpx_image_t *) frame->img, context->pts, duration, vpx_flags, VPX_DL_REALTIME) != VPX_CODEC_OK) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "VP8 encode error %d:%s\n",
 			context->encoder.err, context->encoder.err_detail);
-
+		
 		frame->datalen = 0;
 		return SWITCH_STATUS_FALSE;
 	}

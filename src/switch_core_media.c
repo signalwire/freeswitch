@@ -9553,6 +9553,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	switch_timer_t *timer;
 	switch_media_handle_t *smh;
 	switch_image_t *img = frame->img;
+	switch_status_t encode_status;
 
 	switch_assert(session);
 
@@ -9602,26 +9603,32 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	}
 
 	switch_clear_flag(frame, SFF_SAME_IMAGE);
+	frame->m = 0;
 
 	do {
 		frame->datalen = SWITCH_DEFAULT_VIDEO_SIZE;
-		switch_core_codec_encode_video(codec, frame);
-
-		if (frame->flags & SFF_PICTURE_RESET) {
-			smh->video_init = 0;
-			smh->video_last_key_time = 0;
-			frame->flags &= ~SFF_PICTURE_RESET;
-		}
+		encode_status = switch_core_codec_encode_video(codec, frame);
 		
-		switch_set_flag(frame, SFF_RAW_RTP_PARSE_FRAME);
-		
-		status = raw_write_video(session, frame, flags, stream_id);
+		if (encode_status == SWITCH_STATUS_SUCCESS || encode_status == SWITCH_STATUS_MORE_DATA) {
 
-		if (status == SWITCH_STATUS_SUCCESS && session->image_write_callback) {
-			session->image_write_callback(session, frame, img, session->image_write_callback_user_data);
+			switch_assert((encode_status == SWITCH_STATUS_SUCCESS && frame->m) || !frame->m);
+			
+			if (frame->flags & SFF_PICTURE_RESET) {
+				smh->video_init = 0;
+				smh->video_last_key_time = 0;
+				frame->flags &= ~SFF_PICTURE_RESET;
+			}
+			
+			switch_set_flag(frame, SFF_RAW_RTP_PARSE_FRAME);
+		
+			status = raw_write_video(session, frame, flags, stream_id);
+
+			if (status == SWITCH_STATUS_SUCCESS && session->image_write_callback) {
+				session->image_write_callback(session, frame, img, session->image_write_callback_user_data);
+			}
 		}
 
-	} while(frame->datalen);
+	} while(status == SWITCH_STATUS_SUCCESS && encode_status == SWITCH_STATUS_MORE_DATA);
 
 
 	return status;
