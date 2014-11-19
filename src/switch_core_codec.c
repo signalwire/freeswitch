@@ -809,12 +809,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_encode_video(switch_codec_t *c
 	if (codec->implementation->encode_video) {
 		status = codec->implementation->encode_video(codec, frame);
 		
-		if (frame->datalen) {
-			frame->packetlen = frame->datalen + 12;
+		if (status == SWITCH_STATUS_MORE_DATA) {
 			frame->flags |= SFF_SAME_IMAGE;
 		} else {
 			frame->flags &= ~SFF_SAME_IMAGE;
 		}
+
+		frame->packetlen = frame->datalen + 12;
 	}
 
 	if (codec->mutex) switch_mutex_unlock(codec->mutex);
