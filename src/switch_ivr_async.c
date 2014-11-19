@@ -637,7 +637,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 	switch_status_t status;
 	switch_frame_t *read_frame;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	int orig_vid = switch_channel_test_flag(channel, CF_VIDEO);
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -645,7 +644,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 
 	arg_recursion_check_start(args);
 
- restart:
+	if (switch_true(switch_channel_get_variable(channel, "video_decoded_echo"))) {
+		switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
+	}
 
 	while (switch_channel_ready(channel)) {
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
@@ -653,12 +654,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 			break;
 		}
 		
-		if (!orig_vid && switch_channel_test_flag(channel, CF_VIDEO)) {
-			orig_vid = 1;
-			goto restart;
-		}
-
-
 		switch_ivr_parse_all_events(session);
 
 		if (args && (args->input_callback || args->buf || args->buflen)) {
@@ -718,6 +713,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 			break;
 		}
 	}
+
+	switch_core_session_video_reset(session);
 
 	return SWITCH_STATUS_SUCCESS;
 }
