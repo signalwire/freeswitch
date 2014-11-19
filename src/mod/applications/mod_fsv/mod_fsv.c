@@ -670,7 +670,8 @@ SWITCH_STANDARD_APP(play_yuv_function)
 			}
 		}
 
-		if (read_frame) switch_core_session_write_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
+		/* echo of opus tends to seg chrome */
+		//if (read_frame) switch_core_session_write_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 		sprintf(ts_str, "%" SWITCH_TIME_T_FMT, switch_micro_time_now() / 1000);
 		text(img->planes[SWITCH_PLANE_PACKED], width, 20, 20, ts_str);
