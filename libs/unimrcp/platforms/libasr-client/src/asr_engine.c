@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2010 Arsen Chaloyan
+ * Copyright 2009-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: asr_engine.c 1785 2010-09-22 06:14:29Z achaloyan $
+ * $Id: asr_engine.c 2204 2014-10-31 01:01:42Z achaloyan@gmail.com $
  */
 
 #include <stdlib.h>
@@ -96,6 +96,7 @@ static const mpf_audio_stream_vtable_t audio_stream_vtable = {
 	asr_stream_read,
 	NULL,
 	NULL,
+	NULL,
 	NULL
 };
 
@@ -127,7 +128,8 @@ ASR_CLIENT_DECLARE(asr_engine_t*) asr_engine_create(
 
 	if((log_output & APT_LOG_OUTPUT_FILE) == APT_LOG_OUTPUT_FILE) {
 		/* open the log file */
-		apt_log_file_open(dir_layout->log_dir_path,"unimrcpclient",MAX_LOG_FILE_SIZE,MAX_LOG_FILE_COUNT,FALSE,pool);
+		const char *log_dir_path = apt_dir_layout_path_get(dir_layout,APT_LAYOUT_LOG_DIR);
+		apt_log_file_open(log_dir_path,"unimrcpclient",MAX_LOG_FILE_SIZE,MAX_LOG_FILE_COUNT,FALSE,pool);
 	}
 
 	engine = apr_palloc(pool,sizeof(asr_engine_t));
@@ -291,17 +293,32 @@ static mrcp_message_t* define_grammar_message_create(asr_session_t *asr_session,
 		apr_pool_t *pool = mrcp_application_session_pool_get(asr_session->mrcp_session);
 		char *grammar_file_path = apt_datadir_filepath_get(dir_layout,grammar_file,pool);
 		if(grammar_file_path) {
-			char text[1024];
-			apr_size_t size;
-			FILE *grammar = fopen(grammar_file_path,"r");
-			if(!grammar) {
-				apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Cannot Open [%s]",grammar_file_path);
+			apr_finfo_t finfo;
+			apr_file_t *grammar_file;
+			apt_str_t *content = &mrcp_message->body;
+
+			if(apr_file_open(&grammar_file,grammar_file_path,APR_FOPEN_READ|APR_FOPEN_BINARY,0,pool) != APR_SUCCESS) {
+				apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Open Grammar File %s",grammar_file_path);
 				return NULL;
 			}
 
-			size = fread(text,1,sizeof(text),grammar);
-			apt_string_assign_n(&mrcp_message->body,text,size,mrcp_message->pool);
-			fclose(grammar);
+			if(apr_file_info_get(&finfo,APR_FINFO_SIZE,grammar_file) != APR_SUCCESS) {
+				apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Get Grammar File Info %s",grammar_file_path);
+				apr_file_close(grammar_file);
+				return NULL;
+			}
+
+			content->length = (apr_size_t)finfo.size;
+			content->buf = (char*) apr_palloc(pool,content->length+1);
+			apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Load Grammar File Content size [%"APR_SIZE_T_FMT" bytes] %s",
+				content->length,grammar_file_path);
+			if(apr_file_read(grammar_file,content->buf,&content->length) != APR_SUCCESS) {
+				apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Read Grammar File Content %s",grammar_file_path);
+				apr_file_close(grammar_file);
+				return NULL;
+			}
+			content->buf[content->length] = '\0';
+			apr_file_close(grammar_file);
 		}
 
 		/* get/allocate generic header */
@@ -369,30 +386,30 @@ static mrcp_message_t* recognize_message_create(asr_session_t *asr_session)
 	return mrcp_message;
 }
 
-/** Get NLSML input result */
-static const char* nlsml_input_get(mrcp_message_t *message)
+/** Get NLSML result */
+static const char* nlsml_result_get(mrcp_message_t *message)
 {
-	apr_xml_elem *interpret;
-	apr_xml_elem *instance;
-	apr_xml_elem *input;
-	apr_xml_doc *doc = nlsml_doc_load(&message->body,message->pool);
-	if(!doc) {
+	nlsml_interpretation_t *interpretation;
+	nlsml_instance_t *instance;
+	nlsml_result_t *result = nlsml_result_parse(message->body.buf, message->body.length, message->pool);
+	if(!result) {
 		return NULL;
 	}
 	
-	/* get interpreted result */
-	interpret = nlsml_first_interpret_get(doc);
-	if(!interpret) {
-		return NULL;
-	}
-	/* get instance and input */
-	nlsml_interpret_results_get(interpret,&instance,&input);
-	if(!input || !input->first_cdata.first) {
+	/* get first interpretation */
+	interpretation = nlsml_first_interpretation_get(result);
+	if(!interpretation) {
 		return NULL;
 	}
 	
-	/* return input */
-	return input->first_cdata.first->text;
+	/* get first instance */
+	instance = nlsml_interpretation_first_instance_get(interpretation);
+	if(!instance) {
+		return NULL;
+	}
+
+	nlsml_instance_swi_suppress(instance);
+	return nlsml_instance_content_generate(instance, message->pool);
 }
 
 
@@ -619,7 +636,7 @@ ASR_CLIENT_DECLARE(const char*) asr_session_file_recognize(
 	while(!asr_session->recog_complete);
 
 	/* Get results */
-	return nlsml_input_get(asr_session->recog_complete);
+	return nlsml_result_get(asr_session->recog_complete);
 }
 
 /** Initiate recognition based on specified grammar and input stream */
@@ -700,7 +717,7 @@ ASR_CLIENT_DECLARE(const char*) asr_session_stream_recognize(
 	while(!asr_session->recog_complete);
 
 	/* Get results */
-	return nlsml_input_get(asr_session->recog_complete);
+	return nlsml_result_get(asr_session->recog_complete);
 }
 
 /** Write audio frame to recognize */

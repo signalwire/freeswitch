@@ -1,20 +1,8 @@
-MAINTAINERCLEANFILES   = Makefile.in
-
-AM_CPPFLAGS            = -Iinclude \
-                         -I$(unimrcp_srcdir)/platforms/unimrcp-client/include \
-                         -I$(top_srcdir)/platforms/libunimrcp-client/include \
-                         -I$(top_srcdir)/libs/mrcp-client/include \
-                         -I$(top_srcdir)/libs/mrcp-signaling/include \
-                         -I$(top_srcdir)/libs/mrcpv2-transport/include \
-                         -I$(top_srcdir)/libs/mrcp/include \
-                         -I$(top_srcdir)/libs/mrcp/message/include \
-                         -I$(top_srcdir)/libs/mrcp/control/include \
-                         -I$(top_srcdir)/libs/mrcp/resources/include \
-                         -I$(top_srcdir)/libs/mpf/include \
-                         -I$(top_srcdir)/libs/apr-toolkit/include \
-                         $(UNIMRCP_APR_INCLUDES) $(UNIMRCP_APU_INCLUDES)
+AM_CPPFLAGS            = -I$(top_srcdir)/platforms/unimrcp-client/include \
+                         $(UNIMRCP_CLIENTAPP_INCLUDES)
 
 bin_PROGRAMS           = unimrcpclient
+
 unimrcpclient_SOURCES  = src/main.c \
                          src/demo_framework.c \
                          src/demo_synth_application.c \
@@ -22,8 +10,7 @@ unimrcpclient_SOURCES  = src/main.c \
                          src/demo_bypass_application.c \
                          src/demo_discover_application.c \
                          src/demo_util.c
-unimrcpclient_LDADD    = $(top_builddir)/platforms/libunimrcp-client/libunimrcpclient.la
+unimrcpclient_LDADD    = $(UNIMRCP_CLIENTAPP_LIBS)
+unimrcpclient_LDFLAGS  = $(UNIMRCP_CLIENTAPP_OPTS)
 
-if ISMAC
-unimrcpclient_LDFLAGS  = -framework CoreFoundation -framework SystemConfiguration
-endif
+include $(top_srcdir)/build/rules/uniclientapp.am

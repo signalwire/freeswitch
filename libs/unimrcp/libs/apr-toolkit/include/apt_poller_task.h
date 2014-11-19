@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: apt_poller_task.h 1708 2010-05-24 17:03:25Z achaloyan $
+ * $Id: apt_poller_task.h 2176 2014-09-12 05:00:23Z achaloyan@gmail.com $
  */
 
 #ifndef APT_POLLER_TASK_H
@@ -89,7 +89,7 @@ APT_DECLARE(apt_task_t*) apt_poller_task_base_get(const apt_poller_task_t *task)
  * Get task vtable.
  * @param task the poller task to get vtable from
  */
-APT_DECLARE(apt_task_vtable_t*) apt_poller_task_vtable_get(apt_poller_task_t *task);
+APT_DECLARE(apt_task_vtable_t*) apt_poller_task_vtable_get(const apt_poller_task_t *task);
 
 /**
  * Get external object.
@@ -98,10 +98,18 @@ APT_DECLARE(apt_task_vtable_t*) apt_poller_task_vtable_get(apt_poller_task_t *ta
 APT_DECLARE(void*) apt_poller_task_object_get(const apt_poller_task_t *task);
 
 /**
- * Get pollset.
- * @param task the poller task to get pollset from
+ * Add descriptor to pollset.
+ * @param task the task which holds the pollset
+ * @param descriptor the descriptor to add
  */
-APT_DECLARE(apt_pollset_t*) apt_poller_task_pollset_get(const apt_poller_task_t *task);
+APT_DECLARE(apt_bool_t) apt_poller_task_descriptor_add(const apt_poller_task_t *task, const apr_pollfd_t *descriptor);
+
+/**
+ * Remove descriptor from pollset.
+ * @param task the task which holds the pollset
+ * @param descriptor the descriptor to remove
+ */
+APT_DECLARE(apt_bool_t) apt_poller_task_descriptor_remove(const apt_poller_task_t *task, const apr_pollfd_t *descriptor);
 
 /**
  * Create timer.

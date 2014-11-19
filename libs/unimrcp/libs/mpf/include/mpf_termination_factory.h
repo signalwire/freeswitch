@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mpf_termination_factory.h 1693 2010-05-16 18:33:07Z achaloyan $
+ * $Id: mpf_termination_factory.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MPF_TERMINATION_FACTORY_H
@@ -32,9 +32,18 @@ APT_BEGIN_EXTERN_C
 struct mpf_termination_factory_t {
 	/** Virtual create */
 	mpf_termination_t* (*create_termination)(mpf_termination_factory_t *factory, void *obj, apr_pool_t *pool);
+	/** Virtual assign engine */
+	apt_bool_t (*assign_engine)(mpf_termination_factory_t *factory, mpf_engine_t *media_engine);
 };
 
-
+/**
+ * Assign media engine to termination factory.
+ * @param termination_factory the termination factory to assign media engine to
+ * @param media_engine the media engine to assign
+ */
+MPF_DECLARE(apt_bool_t) mpf_termination_factory_engine_assign(
+										mpf_termination_factory_t *termination_factory,
+										mpf_engine_t *media_engine);
 
 /**
  * Create MPF termination from termination factory.

@@ -41,7 +41,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="codecs"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -95,7 +94,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="codecs"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -149,7 +147,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="codecs"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -205,7 +202,6 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="codecs"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

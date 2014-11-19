@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: demo_bypass_application.c 1474 2010-02-07 20:51:47Z achaloyan $
+ * $Id: demo_bypass_application.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 /* 
@@ -62,7 +62,9 @@ static const mrcp_app_message_dispatcher_t demo_application_dispatcher = {
 	demo_application_on_session_terminate,
 	demo_application_on_channel_add,
 	demo_application_on_channel_remove,
-	demo_application_on_message_receive
+	demo_application_on_message_receive,
+	NULL /* demo_application_on_terminate_event */,
+	NULL /* demo_application_on_resource_discover */
 };
 
 

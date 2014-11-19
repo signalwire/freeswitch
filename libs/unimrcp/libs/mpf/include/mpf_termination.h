@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mpf_termination.h 1693 2010-05-16 18:33:07Z achaloyan $
+ * $Id: mpf_termination.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MPF_TERMINATION_H
@@ -57,8 +57,8 @@ struct mpf_termination_t {
 	const char                     *name;
 	/** External object */
 	void                           *obj;
-	/** Object to send events to */
-	void                           *event_handler_obj;
+	/** Media engine to send events to */
+	void                           *media_engine;
 	/** Event handler */
 	mpf_termination_event_handler_f event_handler;
 	/** Codec manager */

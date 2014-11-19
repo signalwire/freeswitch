@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(ProjectDir)..\..\build\props\unibase.props" Condition=" '$(UniBaseImported)' == '' "/>
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <AprDir>$(LibRootDir)libs\apr</AprDir>
+    <AprUtilDir>$(LibRootDir)libs\apr-util</AprUtilDir>
+    <AprIconvDir>$(LibRootDir)libs\apr-iconv</AprIconvDir>
+  </PropertyGroup>
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AprImported>true</AprImported>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(AprDir)\include;$(AprUtilDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <BuildMacro Include="AprDir">
+      <Value>$(AprDir)</Value>
+    </BuildMacro>
+    <BuildMacro Include="AprUtilDir">
+      <Value>$(AprUtilDir)</Value>
+    </BuildMacro>
+    <BuildMacro Include="AprIconvDir">
+      <Value>$(AprIconvDir)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>

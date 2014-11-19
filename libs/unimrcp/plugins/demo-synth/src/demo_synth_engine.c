@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: demo_synth_engine.c 1706 2010-05-23 14:11:11Z achaloyan $
+ * $Id: demo_synth_engine.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 /* 
@@ -79,6 +79,7 @@ static const mpf_audio_stream_vtable_t audio_stream_vtable = {
 	demo_synth_stream_read,
 	NULL,
 	NULL,
+	NULL,
 	NULL
 };
 
@@ -102,7 +103,7 @@ struct demo_synth_channel_t {
 	apr_size_t             time_to_complete;
 	/** Is paused */
 	apt_bool_t             paused;
-	/** Speech source (used instead of actual synthesizing) */
+	/** Speech source (used instead of actual synthesis) */
 	FILE                  *audio_file;
 };
 
@@ -262,11 +263,17 @@ static apt_bool_t demo_synth_channel_speak(mrcp_engine_channel_t *channel, mrcp_
 {
 	char *file_path = NULL;
 	demo_synth_channel_t *synth_channel = channel->method_obj;
+	const mpf_codec_descriptor_t *descriptor = mrcp_engine_source_stream_codec_get(channel);
+
+	if(!descriptor) {
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Get Codec Descriptor "APT_SIDRES_FMT, MRCP_MESSAGE_SIDRES(request));
+		response->start_line.status_code = MRCP_STATUS_CODE_METHOD_FAILED;
+		return FALSE;
+	}
+
 	synth_channel->time_to_complete = 0;
 	if(channel->engine) {
-		const mpf_codec_descriptor_t *descriptor = mrcp_engine_source_stream_codec_get(channel);
-		char *file_name = apr_psprintf(channel->pool,"demo-%dkHz.pcm",
-			descriptor ? descriptor->sampling_rate/1000 : 8);
+		char *file_name = apr_psprintf(channel->pool,"demo-%dkHz.pcm",descriptor->sampling_rate/1000);
 		file_path = apt_datadir_filepath_get(channel->engine->dir_layout,file_name,channel->pool);
 	}
 	if(file_path) {
@@ -289,7 +296,7 @@ static apt_bool_t demo_synth_channel_speak(mrcp_engine_channel_t *channel, mrcp_
 			}
 		}
 	}
-	
+
 	response->start_line.request_state = MRCP_REQUEST_STATE_INPROGRESS;
 	/* send asynchronous response */
 	mrcp_engine_channel_message_send(channel,response);
@@ -341,7 +348,7 @@ static apt_bool_t demo_synth_channel_set_params(mrcp_engine_channel_t *channel, 
 		/* check voice name header */
 		if(mrcp_resource_header_property_check(request,SYNTHESIZER_HEADER_VOICE_NAME) == TRUE) {
 			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Set Voice Name [%s]",
-				req_synth_header->voice_param.name);
+				req_synth_header->voice_param.name.buf);
 		}
 	}
 	

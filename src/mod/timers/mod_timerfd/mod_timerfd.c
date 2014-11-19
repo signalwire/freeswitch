@@ -31,12 +31,7 @@
  */
 
 #include <switch.h>
-#ifdef TIMERFD_WRAP
-#define TFD_CLOEXEC 0
-#include <timerfd_wrap.h>
-#else
 #include <sys/timerfd.h>
-#endif
 #include <sys/epoll.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_timerfd_load);

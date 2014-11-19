@@ -1,0 +1,89 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{dd062ad2-9a06-4efc-8e17-328567b52854}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\mrcp_engine_factory.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mrcp_engine_iface.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mrcp_engine_impl.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mrcp_engine_loader.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mrcp_engine_plugin.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mrcp_engine_types.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mrcp_recog_engine.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mrcp_recog_state_machine.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mrcp_recorder_engine.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mrcp_recorder_state_machine.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mrcp_resource_engine.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mrcp_state_machine.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mrcp_synth_engine.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mrcp_synth_state_machine.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mrcp_verifier_engine.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mrcp_verifier_state_machine.h">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\mrcp_engine_factory.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mrcp_engine_iface.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mrcp_engine_impl.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mrcp_engine_loader.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mrcp_recog_state_machine.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mrcp_recorder_state_machine.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mrcp_synth_state_machine.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mrcp_verifier_state_machine.c">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

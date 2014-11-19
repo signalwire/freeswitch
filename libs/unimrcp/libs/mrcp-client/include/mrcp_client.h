@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_client.h 1733 2010-06-07 17:26:49Z achaloyan $
+ * $Id: mrcp_client.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_CLIENT_H
@@ -143,6 +143,25 @@ MRCP_DECLARE(mrcp_profile_t*) mrcp_client_profile_create(
 									mrcp_sig_settings_t *signaling_settings,
 									apr_pool_t *pool);
 
+/** Create MRCP profile (extended version) */
+MRCP_DECLARE(mrcp_profile_t*) mrcp_client_profile_create_ex(
+									mrcp_version_e mrcp_version,
+									mrcp_resource_factory_t *resource_factory,
+									mrcp_sa_factory_t *sa_factory,
+									mrcp_ca_factory_t *ca_factory,
+									mpf_engine_factory_t *mpf_factory,
+									mpf_termination_factory_t *rtp_factory,
+									mpf_rtp_settings_t *rtp_settings,
+									mrcp_sig_settings_t *signaling_settings,
+									apr_pool_t *pool);
+
+/**
+ * Set a tag to the profile.
+ * @param profile the profile to set a tag for
+ * @param tag the tag to set
+ */
+MRCP_DECLARE(void) mrcp_client_profile_tag_set(mrcp_profile_t *profile, const char *tag);
+
 /**
  * Register MRCP profile.
  * @param client the MRCP client to set profile for
@@ -213,6 +232,16 @@ MRCP_DECLARE(mrcp_connection_agent_t*) mrcp_client_connection_agent_get(const mr
  * @param name the name to lookup
  */
 MRCP_DECLARE(mrcp_profile_t*) mrcp_client_profile_get(const mrcp_client_t *client, const char *name);
+
+/**
+ * Get available profiles.
+ * @param client the MRCP client to get the profile from
+ * @param profiles the array of profiles to be filled in
+ * @param count the max number of profiles on entry; and the number of profiles filled in on exit
+ * @param tag the tag to be used as a filter (no filter is specified if tag is NULL)
+ * @return FALSE if the provided max number of profiles is less than the actual number of profiles
+ */
+MRCP_DECLARE(apt_bool_t) mrcp_client_profiles_get(const mrcp_client_t *client, mrcp_profile_t *profiles[], apr_size_t *count, const char *tag);
 
 /**
  * Get directory layout.

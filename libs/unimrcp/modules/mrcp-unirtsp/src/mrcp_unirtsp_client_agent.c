@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_unirtsp_client_agent.c 1700 2010-05-21 18:56:06Z achaloyan $
+ * $Id: mrcp_unirtsp_client_agent.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include <apr_general.h>
@@ -85,7 +85,7 @@ MRCP_DECLARE(mrcp_sig_agent_t*) mrcp_unirtsp_client_agent_create(const char *id,
 	apt_task_t *task;
 	mrcp_unirtsp_agent_t *agent;
 	agent = apr_palloc(pool,sizeof(mrcp_unirtsp_agent_t));
-	agent->sig_agent = mrcp_signaling_agent_create(id,agent,MRCP_VERSION_1,pool);
+	agent->sig_agent = mrcp_signaling_agent_create(id,agent,pool);
 	agent->sig_agent->create_client_session = mrcp_unirtsp_session_create;
 	agent->config = config;
 
@@ -94,6 +94,7 @@ MRCP_DECLARE(mrcp_sig_agent_t*) mrcp_unirtsp_client_agent_create(const char *id,
 	}
 
 	agent->rtsp_client = rtsp_client_create(
+								id,
 								config->max_connection_count,
 								config->request_timeout,
 								agent,
@@ -104,11 +105,8 @@ MRCP_DECLARE(mrcp_sig_agent_t*) mrcp_unirtsp_client_agent_create(const char *id,
 	}
 
 	task = rtsp_client_task_get(agent->rtsp_client);
-	apt_task_name_set(task,id);
 	agent->sig_agent->task = task;
 
-	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Create UniRTSP Agent [%s] [%"APR_SIZE_T_FMT"]",
-						id,config->max_connection_count);
 	return agent->sig_agent;
 }
 
@@ -317,10 +315,16 @@ static apt_bool_t mrcp_unirtsp_on_session_event(rtsp_client_t *rtsp_client, rtsp
 {
 	mrcp_unirtsp_agent_t *agent = rtsp_client_object_get(rtsp_client);
 	mrcp_unirtsp_session_t *session	= rtsp_client_session_object_get(rtsp_session);
-	const char *resource_name = mrcp_name_get_by_rtsp_name(
+	const char *resource_name;
+
+	if(!session) {
+		return FALSE;
+	}
+
+	resource_name = mrcp_name_get_by_rtsp_name(
 		session->rtsp_settings->resource_map,
 		message->start_line.common.request_line.resource_name);
-	if(!session || !resource_name) {
+	if(!resource_name) {
 		return FALSE;
 	}
 
@@ -355,7 +359,7 @@ static apt_bool_t mrcp_unirtsp_session_control(mrcp_session_t *mrcp_session, mrc
 	mrcp_unirtsp_session_t *session = mrcp_session->obj;
 	mrcp_unirtsp_agent_t *agent = mrcp_session->signaling_agent->obj;
 
-	char buffer[500];
+	char buffer[2000];
 	apt_text_stream_t stream;
 	rtsp_message_t *rtsp_message = NULL;
 	apt_str_t *body;

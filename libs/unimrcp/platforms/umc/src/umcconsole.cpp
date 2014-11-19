@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: umcconsole.cpp 1785 2010-09-22 06:14:29Z achaloyan $
+ * $Id: umcconsole.cpp 2204 2014-10-31 01:01:42Z achaloyan@gmail.com $
  */
 
 #include <stdio.h>
@@ -22,6 +22,7 @@
 #include "umcconsole.h"
 #include "umcframework.h"
 #include "apt_pool.h"
+#include "uni_version.h"
 
 
 UmcConsole::UmcConsole() :
@@ -64,8 +65,26 @@ bool UmcConsole::Run(int argc, const char * const *argv)
 		return false;
 	}
 
-	/* create the structure of default directories layout */
-	pDirLayout = apt_default_dir_layout_create(m_Options.m_RootDirPath,pool);
+	if(m_Options.m_DirLayoutConf)
+	{
+		/* create and load directories layout from the configuration file */
+		pDirLayout = apt_dir_layout_create(pool);
+		if(pDirLayout)
+			apt_dir_layout_load(pDirLayout,m_Options.m_DirLayoutConf,pool);
+	}
+	else
+	{
+		/* create default directories layout */
+		pDirLayout = apt_default_dir_layout_create(m_Options.m_RootDirPath,pool);
+	}
+
+	if(!pDirLayout)
+	{
+		printf("Failed to Create Directories Layout\n");
+		apr_pool_destroy(pool);
+		apr_terminate();
+		return false;
+	}
 
 	/* get path to logger configuration file */
 	logConfPath = apt_confdir_filepath_get(pDirLayout,"logger.xml",pool);
@@ -86,7 +105,8 @@ bool UmcConsole::Run(int argc, const char * const *argv)
 	if(apt_log_output_mode_check(APT_LOG_OUTPUT_FILE) == TRUE) 
 	{
 		/* open the log file */
-		apt_log_file_open(pDirLayout->log_dir_path,"unimrcpclient",MAX_LOG_FILE_SIZE,MAX_LOG_FILE_COUNT,FALSE,pool);
+		const char *logDirPath = apt_dir_layout_path_get(pDirLayout,APT_LAYOUT_LOG_DIR);
+		apt_log_file_open(logDirPath,"unimrcpclient",MAX_LOG_FILE_SIZE,MAX_LOG_FILE_COUNT,FALSE,pool);
 	}
 
 	/* create demo framework */
@@ -199,7 +219,7 @@ bool UmcConsole::RunCmdLine()
 {
 	apt_bool_t running = true;
 	char cmdline[1024];
-	int i;
+	apr_size_t i;
 	do 
 	{
 		printf(">");
@@ -222,9 +242,13 @@ bool UmcConsole::RunCmdLine()
 	return true;
 }
 
-void UmcConsole::Usage() const
+void UmcConsole::Usage()
 {
 	printf(
+		"\n"
+		" * "UNI_COPYRIGHT"\n"
+		" *\n"
+		UNI_LICENSE"\n"
 		"\n"
 		"Usage:\n"
 		"\n"
@@ -232,13 +256,18 @@ void UmcConsole::Usage() const
 		"\n"
 		"  Available options:\n"
 		"\n"
-		"   -r [--root-dir] path     : Set the project root directory path.\n"
+		"   -r [--root-dir] path     : Set the path to the project root directory.\n"
+		"\n"
+		"   -c [--dir-layout] path   : Set the path to the dir layout config file.\n"
+		"                              (takes the precedence over --root-dir option)\n"
 		"\n"
 		"   -l [--log-prio] priority : Set the log priority.\n"
 		"                              (0-emergency, ..., 7-debug)\n"
 		"\n"
 		"   -o [--log-output] mode   : Set the log output mode.\n"
 		"                              (0-none, 1-console only, 2-file only, 3-both)\n"
+		"\n"
+		"   -v [--version]           : Show the version.\n"
 		"\n"
 		"   -h [--help]              : Show the help.\n"
 		"\n");
@@ -254,17 +283,14 @@ bool UmcConsole::LoadOptions(int argc, const char * const *argv, apr_pool_t *poo
 	const apr_getopt_option_t opt_option[] = 
 	{
 		/* long-option, short-option, has-arg flag, description */
-		{ "root-dir",    'r', TRUE,  "path to root dir" },  /* -r arg or --root-dir arg */
-		{ "log-prio",    'l', TRUE,  "log priority" },      /* -l arg or --log-prio arg */
-		{ "log-output",  'o', TRUE,  "log output mode" },   /* -o arg or --log-output arg */
-		{ "help",        'h', FALSE, "show help" },         /* -h or --help */
-		{ NULL, 0, 0, NULL },                               /* end */
+		{ "root-dir",    'r', TRUE,  "path to root dir" },         /* -r arg or --root-dir arg */
+		{ "dir-layout",  'c', TRUE,  "path to dir layout conf" },  /* -c arg or --dir-layout arg */
+		{ "log-prio",    'l', TRUE,  "log priority" },             /* -l arg or --log-prio arg */
+		{ "log-output",  'o', TRUE,  "log output mode" },          /* -o arg or --log-output arg */
+		{ "version",     'v', FALSE, "show version" },             /* -v or --version */
+		{ "help",        'h', FALSE, "show help" },                /* -h or --help */
+		{ NULL, 0, 0, NULL },                                      /* end */
 	};
-
-	/* set the default options */
-	m_Options.m_RootDirPath = "../";
-	m_Options.m_LogPriority = NULL;
-	m_Options.m_LogOutput = NULL;
 
 	rv = apr_getopt_init(&opt, pool , argc, argv);
 	if(rv != APR_SUCCESS)
@@ -277,6 +303,9 @@ bool UmcConsole::LoadOptions(int argc, const char * const *argv, apr_pool_t *poo
 			case 'r':
 				m_Options.m_RootDirPath = optarg;
 				break;
+			case 'c':
+				m_Options.m_DirLayoutConf = optarg;
+				break;
 			case 'l':
 				if(optarg) 
 				m_Options.m_LogPriority = optarg;
@@ -285,6 +314,9 @@ bool UmcConsole::LoadOptions(int argc, const char * const *argv, apr_pool_t *poo
 				if(optarg) 
 				m_Options.m_LogOutput = optarg;
 				break;
+			case 'v':
+				printf(UNI_VERSION_STRING);
+				return FALSE;
 			case 'h':
 				Usage();
 				return FALSE;

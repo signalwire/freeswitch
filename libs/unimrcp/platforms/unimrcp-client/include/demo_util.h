@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: demo_util.h 1474 2010-02-07 20:51:47Z achaloyan $
+ * $Id: demo_util.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef DEMO_UTIL_H
@@ -35,9 +35,6 @@ mrcp_message_t* demo_speak_message_create(mrcp_session_t *session, mrcp_channel_
 mrcp_message_t* demo_define_grammar_message_create(mrcp_session_t *session, mrcp_channel_t *channel, const apt_dir_layout_t *dir_layout);
 /** Create demo MRCP message (RECOGNIZE request) */
 mrcp_message_t* demo_recognize_message_create(mrcp_session_t *session, mrcp_channel_t *channel, const apt_dir_layout_t *dir_layout);
-
-/** Parse NLSML result */
-apt_bool_t demo_nlsml_result_parse(mrcp_message_t *message);
 
 /** Create demo RTP termination descriptor */
 mpf_rtp_termination_descriptor_t* demo_rtp_descriptor_create(apr_pool_t *pool);

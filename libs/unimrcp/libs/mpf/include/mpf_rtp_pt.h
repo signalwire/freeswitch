@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mpf_rtp_pt.h 1474 2010-02-07 20:51:47Z achaloyan $
+ * $Id: mpf_rtp_pt.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MPF_RTP_PT_H
@@ -30,13 +30,15 @@ APT_BEGIN_EXTERN_C
 
 /** RTP payload types */
 typedef enum {
-	RTP_PT_PCMU        =  0, /**< PCMU          Audio 8kHz 1  */
-	RTP_PT_PCMA        =  8, /**< PCMA          Audio 8kHz 1  */
+	RTP_PT_PCMU        =  0, /**< PCMU           Audio 8kHz 1 */
+	RTP_PT_PCMA        =  8, /**< PCMA           Audio 8kHz 1 */
 
-	RTP_PT_CN          =  13, /**< Comfort Noise Audio 8kHz 1  */
+	RTP_PT_CN          =  13, /**< Comfort Noise Audio 8kHz 1 */
+
+	RTP_PT_RESERVED    =  19, /**< Not used for any particular codec */
 
 	RTP_PT_DYNAMIC     =  96, /**< Start of dynamic payload types */
-	RTP_PT_DYNAMIC_MAX = 127, /**< End of dynamic payload types  */
+	RTP_PT_DYNAMIC_MAX = 127, /**< End of dynamic payload types */
 
 	RTP_PT_UNKNOWN     = 128  /**< Unknown (invalid) payload type */
 } mpf_rtp_pt_e;

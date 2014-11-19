@@ -14,7 +14,7 @@
 #else
  FILEOS 0x4L
 #endif
- FILETYPE 0x2L
+ FILETYPE 0x1L
  FILESUBTYPE 0x0L
 BEGIN
   BLOCK "StringFileInfo"

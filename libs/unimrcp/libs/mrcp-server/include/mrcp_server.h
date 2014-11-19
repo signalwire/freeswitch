@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_server.h 1721 2010-06-01 05:45:46Z achaloyan $
+ * $Id: mrcp_server.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_SERVER_H
@@ -140,6 +140,7 @@ MRCP_DECLARE(apt_bool_t) mrcp_server_connection_agent_register(
 /** Create MRCP profile */
 MRCP_DECLARE(mrcp_profile_t*) mrcp_server_profile_create(
 								const char *id,
+								mrcp_version_e mrcp_version,
 								mrcp_resource_factory_t *resource_factory,
 								mrcp_sig_agent_t *signaling_agent,
 								mrcp_connection_agent_t *connection_agent,

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mpf_engine.c 1709 2010-05-24 17:12:11Z achaloyan $
+ * $Id: mpf_engine.c 2226 2014-11-12 00:47:40Z achaloyan@gmail.com $
  */
 
 #include "mpf_engine.h"
@@ -240,7 +240,7 @@ static apt_bool_t mpf_engine_start(apt_task_t *task)
 	mpf_engine_t *engine = apt_task_object_get(task);
 
 	mpf_scheduler_start(engine->scheduler);
-	apt_task_child_start(task);
+	apt_task_start_request_process(task);
 	return TRUE;
 }
 
@@ -249,7 +249,7 @@ static apt_bool_t mpf_engine_terminate(apt_task_t *task)
 	mpf_engine_t *engine = apt_task_object_get(task);
 
 	mpf_scheduler_stop(engine->scheduler);
-	apt_task_child_terminate(task);
+	apt_task_terminate_request_process(task);
 	return TRUE;
 }
 
@@ -259,12 +259,15 @@ static apt_bool_t mpf_engine_event_raise(mpf_termination_t *termination, int eve
 	mpf_message_container_t *event_msg;
 	mpf_message_t *mpf_message;
 	mpf_engine_t *engine;
-	engine = termination->event_handler_obj;
+	engine = termination->media_engine;
 	if(!engine) {
 		return FALSE;
 	}
 
 	task_msg = apt_task_msg_get(engine->task);
+	if(!task_msg) {
+		return FALSE;
+	}
 	task_msg->type = engine->task_msg_type;
 	event_msg = (mpf_message_container_t*) task_msg->data;
 	mpf_message = event_msg->messages;
@@ -305,6 +308,9 @@ static apt_bool_t mpf_engine_msg_process(apt_task_t *task, apt_task_msg_t *msg)
 	const mpf_message_container_t *request = (const mpf_message_container_t*) msg->data;
 
 	response_msg = apt_task_msg_get(engine->task);
+	if(!response_msg) {
+		return FALSE;
+	}
 	response_msg->type = engine->task_msg_type;
 	response = (mpf_message_container_t*) response_msg->data;
 	*response = *request;
@@ -324,7 +330,7 @@ static apt_bool_t mpf_engine_msg_process(apt_task_t *task, apt_task_msg_t *msg)
 		switch(mpf_request->command_id) {
 			case MPF_ADD_TERMINATION:
 			{
-				termination->event_handler_obj = engine;
+				termination->media_engine = engine;
 				termination->event_handler = mpf_engine_event_raise;
 				termination->codec_manager = engine->codec_manager;
 				termination->timer_queue = engine->timer_queue;

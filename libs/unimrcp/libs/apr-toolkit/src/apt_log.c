@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: apt_log.c 1792 2011-01-10 21:08:52Z achaloyan $
+ * $Id: apt_log.c 2198 2014-10-16 01:41:19Z achaloyan@gmail.com $
  */
 
 #include <apr_time.h>
@@ -284,7 +284,7 @@ APT_DECLARE(apt_bool_t) apt_log_output_mode_check(apt_log_output_e mode)
 	if(!apt_logger) {
 		return FALSE;
 	}
-	return (apt_logger->mode | mode) ? TRUE : FALSE;
+	return (apt_logger->mode & mode) ? TRUE : FALSE;
 }
 
 APT_DECLARE(int) apt_log_output_mode_translate(char *str)
@@ -376,7 +376,7 @@ APT_DECLARE(apt_bool_t) apt_log_masking_set(apt_log_masking_e masking)
 	return TRUE;
 }
 
-APT_DECLARE(apt_log_masking_e) apt_log_masking_get()
+APT_DECLARE(apt_log_masking_e) apt_log_masking_get(void)
 {
 	if(!apt_logger) {
 		return APT_LOG_MASKING_NONE;
@@ -456,7 +456,24 @@ APT_DECLARE(apt_bool_t) apt_obj_log(const char *file, int line, apt_log_priority
 	return status;
 }
 
-static APR_INLINE unsigned long apt_thread_id_get()
+APT_DECLARE(apt_bool_t) apt_va_log(const char *file, int line, apt_log_priority_e priority, const char *format, va_list arg_ptr)
+{
+	apt_bool_t status = TRUE;
+	if(!apt_logger) {
+		return FALSE;
+	}
+	if(priority <= apt_logger->priority) {
+		if(apt_logger->ext_handler) {
+			status = apt_logger->ext_handler(file,line,NULL,priority,format,arg_ptr);
+		}
+		else {
+			status = apt_do_log(file,line,priority,format,arg_ptr);
+		}
+	}
+	return status;
+}
+
+static APR_INLINE unsigned long apt_thread_id_get(void)
 {
 #ifdef WIN32
 	return (unsigned long) GetCurrentThreadId();
@@ -514,8 +531,14 @@ static apt_bool_t apt_do_log(const char *file, int line, apt_log_priority_e prio
 static const char* apt_log_file_path_make(apt_log_file_data_t *file_data)
 {
 	char *log_file_path = NULL;
-	const char *log_file_name = apr_psprintf(file_data->pool,"%s-%"APR_SIZE_T_FMT".log",file_data->log_file_name,file_data->cur_file_index);
-	apr_filepath_merge(&log_file_path,file_data->log_dir_path,log_file_name,0,file_data->pool);
+	const char *log_file_name = apr_psprintf(file_data->pool,"%s-%.2"APR_SIZE_T_FMT".log",
+									file_data->log_file_name,
+									file_data->cur_file_index);
+	apr_filepath_merge(&log_file_path,
+		file_data->log_dir_path,
+		log_file_name,
+		APR_FILEPATH_NATIVE,
+		file_data->pool);
 	return log_file_path;
 }
 

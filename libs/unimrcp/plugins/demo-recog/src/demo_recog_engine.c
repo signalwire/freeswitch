@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: demo_recog_engine.c 1706 2010-05-23 14:11:11Z achaloyan $
+ * $Id: demo_recog_engine.c 2193 2014-10-08 03:44:33Z achaloyan@gmail.com $
  */
 
 /* 
@@ -80,7 +80,8 @@ static const mpf_audio_stream_vtable_t audio_stream_vtable = {
 	NULL,
 	demo_recog_stream_open,
 	demo_recog_stream_close,
-	demo_recog_stream_write
+	demo_recog_stream_write,
+	NULL
 };
 
 /** Declaration of demo recognizer engine */
@@ -259,6 +260,14 @@ static apt_bool_t demo_recog_channel_recognize(mrcp_engine_channel_t *channel, m
 	/* process RECOGNIZE request */
 	mrcp_recog_header_t *recog_header;
 	demo_recog_channel_t *recog_channel = channel->method_obj;
+	const mpf_codec_descriptor_t *descriptor = mrcp_engine_sink_stream_codec_get(channel);
+
+	if(!descriptor) {
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Get Codec Descriptor "APT_SIDRES_FMT, MRCP_MESSAGE_SIDRES(request));
+		response->start_line.status_code = MRCP_STATUS_CODE_METHOD_FAILED;
+		return FALSE;
+	}
+
 	recog_channel->timers_started = TRUE;
 
 	/* get recognizer header */
@@ -277,13 +286,16 @@ static apt_bool_t demo_recog_channel_recognize(mrcp_engine_channel_t *channel, m
 
 	if(!recog_channel->audio_out) {
 		const apt_dir_layout_t *dir_layout = channel->engine->dir_layout;
-		const mpf_codec_descriptor_t *descriptor = mrcp_engine_sink_stream_codec_get(channel);
 		char *file_name = apr_psprintf(channel->pool,"utter-%dkHz-%s.pcm",
-			descriptor ? descriptor->sampling_rate/1000 : 8,
-			request->channel_id.session_id.buf);
-		char *file_path = apt_datadir_filepath_get(dir_layout,file_name,channel->pool);
+							descriptor->sampling_rate/1000,
+							request->channel_id.session_id.buf);
+		char *file_path = apt_vardir_filepath_get(dir_layout,file_name,channel->pool);
 		if(file_path) {
+			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Open Utterance Output File [%s] for Writing",file_path);
 			recog_channel->audio_out = fopen(file_path,"wb");
+			if(!recog_channel->audio_out) {
+				apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Open Utterance Output File [%s] for Writing",file_path);
+			}
 		}
 	}
 

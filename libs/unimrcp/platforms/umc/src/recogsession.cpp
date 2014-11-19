@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: recogsession.cpp 1587 2010-03-12 19:40:02Z achaloyan $
+ * $Id: recogsession.cpp 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "recogsession.h"
@@ -184,6 +184,7 @@ RecogChannel* RecogSession::CreateRecogChannel()
 		ReadStream,
 		NULL,
 		NULL,
+		NULL,
 		NULL
 	};
 
@@ -309,6 +310,13 @@ bool RecogSession::OnDefineGrammar(mrcp_channel_t* pMrcpChannel)
 
 bool RecogSession::StartRecognition(mrcp_channel_t* pMrcpChannel)
 {
+	const mpf_codec_descriptor_t* pDescriptor = mrcp_application_source_descriptor_get(pMrcpChannel);
+	if(!pDescriptor)
+	{
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Get Media Source Descriptor");
+		return Terminate();
+	}
+
 	RecogChannel* pRecogChannel = (RecogChannel*) mrcp_application_channel_object_get(pMrcpChannel);
 	/* create and send RECOGNIZE request */
 	mrcp_message_t* pMrcpMessage = CreateRecognizeRequest(pMrcpChannel);
@@ -317,7 +325,6 @@ bool RecogSession::StartRecognition(mrcp_channel_t* pMrcpChannel)
 		SendMrcpRequest(pRecogChannel->m_pMrcpChannel,pMrcpMessage);
 	}
 
-	const mpf_codec_descriptor_t* pDescriptor = mrcp_application_source_descriptor_get(pMrcpChannel);
 	pRecogChannel->m_pAudioIn = GetAudioIn(pDescriptor,GetSessionPool());
 	if(!pRecogChannel->m_pAudioIn)
 	{
@@ -352,7 +359,7 @@ mrcp_message_t* RecogSession::CreateDefineGrammarRequest(mrcp_channel_t* pMrcpCh
 
 	/* set message body */
 	if(pScenario->GetContent())
-		apt_string_assign(&pMrcpMessage->body,pScenario->GetContent(),pMrcpMessage->pool);
+		apt_string_assign_n(&pMrcpMessage->body,pScenario->GetContent(),pScenario->GetContentLength(),pMrcpMessage->pool);
 	return pMrcpMessage;
 }
 
@@ -409,42 +416,19 @@ mrcp_message_t* RecogSession::CreateRecognizeRequest(mrcp_channel_t* pMrcpChanne
 		mrcp_resource_header_property_add(pMrcpMessage,RECOGNIZER_HEADER_START_INPUT_TIMERS);
 		pRecogHeader->confidence_threshold = 0.87f;
 		mrcp_resource_header_property_add(pMrcpMessage,RECOGNIZER_HEADER_CONFIDENCE_THRESHOLD);
+		pRecogHeader->save_waveform = TRUE;
+		mrcp_resource_header_property_add(pMrcpMessage,RECOGNIZER_HEADER_SAVE_WAVEFORM);
 	}
 	return pMrcpMessage;
 }
 
-bool RecogSession::ParseNLSMLResult(mrcp_message_t* pMrcpMessage) const
+bool RecogSession::ParseNLSMLResult(mrcp_message_t* pMrcpMessage)
 {
-	apr_xml_elem* pInterpret;
-	apr_xml_elem* pInstance;
-	apr_xml_elem* pInput;
-	apr_xml_doc* pDoc = nlsml_doc_load(&pMrcpMessage->body,pMrcpMessage->pool);
-	if(!pDoc)
+	nlsml_result_t *pResult = nlsml_result_parse(pMrcpMessage->body.buf, pMrcpMessage->body.length, pMrcpMessage->pool);
+	if(!pResult)
 		return false;
-	
-	/* walk through interpreted results */
-	pInterpret = nlsml_first_interpret_get(pDoc);
-	for(; pInterpret; pInterpret = nlsml_next_interpret_get(pInterpret)) 
-	{
-		/* get instance and input */
-		nlsml_interpret_results_get(pInterpret,&pInstance,&pInput);
-		if(pInstance) 
-		{
-			/* process instance */
-			if(pInstance->first_cdata.first) 
-			{
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Interpreted Instance [%s]",pInstance->first_cdata.first->text);
-			}
-		}
-		if(pInput) 
-		{
-			/* process input */
-			if(pInput->first_cdata.first)
-			{
-				apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Interpreted Input [%s]",pInput->first_cdata.first->text);
-			}
-		}
-	}
+
+	nlsml_result_trace(pResult, pMrcpMessage->pool);
 	return true;
 }
 
@@ -453,8 +437,7 @@ FILE* RecogSession::GetAudioIn(const mpf_codec_descriptor_t* pDescriptor, apr_po
 	const char* pFileName = GetScenario()->GetAudioSource();
 	if(!pFileName)
 	{
-		pFileName = apr_psprintf(pool,"one-%dkHz.pcm",
-			pDescriptor ? pDescriptor->sampling_rate/1000 : 8);
+		pFileName = apr_psprintf(pool,"one-%dkHz.pcm",pDescriptor->sampling_rate/1000);
 	}
 	apt_dir_layout_t* pDirLayout = GetScenario()->GetDirLayout();
 	const char* pFilePath = apt_datadir_filepath_get(pDirLayout,pFileName,pool);

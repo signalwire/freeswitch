@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_header.h 1648 2010-04-12 20:03:59Z achaloyan $
+ * $Id: mrcp_header.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_HEADER_H
@@ -96,7 +96,7 @@ MRCP_DECLARE(apt_bool_t) mrcp_header_field_add(mrcp_message_header_t *header, ap
 MRCP_DECLARE(apt_bool_t) mrcp_header_fields_set(mrcp_message_header_t *header, const mrcp_message_header_t *src_header, apr_pool_t *pool);
 
 /** Get (copy) MRCP header fields */
-MRCP_DECLARE(apt_bool_t) mrcp_header_fields_get(mrcp_message_header_t *header, const mrcp_message_header_t *src_header, apr_pool_t *pool);
+MRCP_DECLARE(apt_bool_t) mrcp_header_fields_get(mrcp_message_header_t *header, const mrcp_message_header_t *src_header, const mrcp_message_header_t *mask_header, apr_pool_t *pool);
 
 /** Inherit (copy) MRCP header fields */
 MRCP_DECLARE(apt_bool_t) mrcp_header_fields_inherit(mrcp_message_header_t *header, const mrcp_message_header_t *src_header, apr_pool_t *pool);

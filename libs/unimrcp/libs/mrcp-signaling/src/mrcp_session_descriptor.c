@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_session_descriptor.c 1474 2010-02-07 20:51:47Z achaloyan $
+ * $Id: mrcp_session_descriptor.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "mrcp_session_descriptor.h"
@@ -27,6 +27,7 @@ MRCP_DECLARE(mrcp_session_descriptor_t*) mrcp_session_descriptor_create(apr_pool
 	apt_string_reset(&descriptor->resource_name);
 	descriptor->resource_state = FALSE;
 	descriptor->status = MRCP_SESSION_STATUS_OK;
+	descriptor->response_code = 0;
 	descriptor->control_media_arr = apr_array_make(pool,1,sizeof(void*));
 	descriptor->audio_media_arr = apr_array_make(pool,1,sizeof(mpf_rtp_media_descriptor_t*));
 	descriptor->video_media_arr = apr_array_make(pool,0,sizeof(mpf_rtp_media_descriptor_t*));

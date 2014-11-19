@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: apt_text_stream.c 1793 2011-01-10 21:46:14Z achaloyan $
+ * $Id: apt_text_stream.c 2223 2014-11-12 00:37:40Z achaloyan@gmail.com $
  */
 
 #include <stdlib.h>
@@ -273,8 +273,12 @@ static apt_bool_t apt_pair_parse(apt_pair_t *pair, const apt_str_t *field, apr_p
 	apt_string_copy(&pair->name,&item,pool);
 
 	/* read value */
-	apt_text_field_read(&stream,';',TRUE,&item);
-	apt_string_copy(&pair->value,&item,pool);
+	if(apt_text_field_read(&stream,';',TRUE,&item) == TRUE) {
+		apt_string_copy(&pair->value,&item,pool);
+	}
+	else {
+		apt_string_reset(&pair->value);
+	}
 	return TRUE;
 }
 
@@ -301,27 +305,34 @@ APT_DECLARE(apt_bool_t) apt_pair_array_parse(apt_pair_arr_t *arr, const apt_str_
 /** Generate array of name-value pairs */
 APT_DECLARE(apt_bool_t) apt_pair_array_generate(const apt_pair_arr_t *arr, apt_str_t *str, apr_pool_t *pool)
 {
-	char buf[512];
-	apt_text_stream_t stream;
-	apt_text_stream_init(&stream,buf,sizeof(buf));
-	if(apt_text_pair_array_insert(&stream,arr) == FALSE) {
-		return FALSE;
-	}
-	apt_string_assign_n(str, stream.text.buf, stream.pos - stream.text.buf, pool);
-	return TRUE;
-}
-
-
-/** Insert array of name-value pairs */
-APT_DECLARE(apt_bool_t) apt_text_pair_array_insert(apt_text_stream_t *stream, const apt_pair_arr_t *arr)
-{
 	int i;
+	char *pos;
 	apt_pair_t *pair;
-	char *pos = stream->pos;
-	if(!arr) {
+	if(!arr || !str) {
 		return FALSE;
 	}
 
+	/* Compute length of string being generated */
+	str->length = 0;
+	for(i=0; i<arr->nelts; i++) {
+		pair = (apt_pair_t*)arr->elts + i;
+		/* name */
+		str->length += pair->name.length;
+		if(pair->value.length) {
+			/* =value */
+			str->length += 1 + pair->value.length;
+		}
+	}
+	if(arr->nelts) {
+		/* ; */
+		str->length += arr->nelts - 1;
+	}
+
+	/* Allocate required string */
+	str->buf = apr_palloc(pool, str->length + 1);
+
+	/* Copy pairs into allocated string */
+	pos = str->buf;
 	for(i=0; i<arr->nelts; i++) {
 		pair = (apt_pair_t*)arr->elts + i;
 		if(i != 0) {
@@ -337,7 +348,7 @@ APT_DECLARE(apt_bool_t) apt_text_pair_array_insert(apt_text_stream_t *stream, co
 			}
 		}
 	}
-	stream->pos = pos;
+	*pos = '\0';
 	return TRUE;
 }
 
@@ -370,26 +381,6 @@ APT_DECLARE(apt_bool_t) apt_boolean_value_generate(apt_bool_t value, apt_str_t *
 		str->length = TOKEN_FALSE_LENGTH;
 		str->buf = apr_palloc(pool,str->length);
 		memcpy(str->buf,TOKEN_FALSE,str->length);
-	}
-	return TRUE;
-}
-
-/** Generate boolean-value */
-APT_DECLARE(apt_bool_t) apt_boolean_value_insert(apt_text_stream_t *stream, apt_bool_t value)
-{
-	if(value == TRUE) {
-		if(stream->pos + TOKEN_TRUE_LENGTH >= stream->end) {
-			return FALSE;
-		}
-		memcpy(stream->pos,TOKEN_TRUE,TOKEN_TRUE_LENGTH);
-		stream->pos += TOKEN_TRUE_LENGTH;
-	}
-	else {
-		if(stream->pos + TOKEN_FALSE_LENGTH >= stream->end) {
-			return FALSE;
-		}
-		memcpy(stream->pos,TOKEN_FALSE,TOKEN_FALSE_LENGTH);
-		stream->pos += TOKEN_FALSE_LENGTH;
 	}
 	return TRUE;
 }
@@ -512,19 +503,21 @@ APT_DECLARE(apt_bool_t) apt_var_length_value_generate(apr_size_t *value, apr_siz
 /** Generate completion-cause */
 APT_DECLARE(apt_bool_t) apt_completion_cause_generate(const apt_str_table_item_t table[], apr_size_t size, apr_size_t cause, apt_str_t *str, apr_pool_t *pool)
 {
-	char buf[256];
-	int length;
 	const apt_str_t *name = apt_string_table_str_get(table,size,cause);
 	if(!name) {
 		return FALSE;
 	}
-	length = sprintf(buf,"%03"APR_SIZE_T_FMT" ",cause);
-	if(length <= 0) {
+
+	/* 3 digits + 1 space + name->length */
+	str->length = 4 + name->length;
+	str->buf = apr_palloc(pool,str->length + 1);
+
+	if(sprintf(str->buf,"%03"APR_SIZE_T_FMT" ",cause) != 4) {
 		return FALSE;
 	}
 
-	memcpy(buf+length,name->buf,name->length);
-	apt_string_assign_n(str,buf,name->length + length,pool);
+	memcpy(str->buf+4,name->buf,name->length);
+	str->buf[str->length] = '\0';
 	return TRUE;
 }
 

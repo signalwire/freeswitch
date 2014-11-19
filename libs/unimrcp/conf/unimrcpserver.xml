@@ -2,11 +2,17 @@
 <!-- UniMRCP server document -->
 <unimrcpserver xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="unimrcpserver.xsd" version="1.0">
   <properties>
-    <!-- By default, network interface (IP address) to bind to will be implicitly identified. 
-         Alternatively, it can be explicitly set.
-    -->
+    <!-- If the attribute "type" is set to "auto", IP address is 
+    determined implicitly by the hostname. This is the default setting. -->
     <ip type="auto"/>
+
+    <!-- If the attribute "type" is set to "iface", IP address is 
+    determined by the specified name of network interface/adapter. -->
+    <!-- <ip type="iface">eth0</ip>-->
+
+    <!-- IP address can also be specified explicitly. -->
     <!-- <ip>10.10.0.1</ip> -->
+
     <!-- <ext-ip>a.b.c.d</ext-ip> -->
   </properties>
 
@@ -35,6 +41,8 @@
       <!-- <sip-t2>4000</sip-t2> -->
       <!-- <sip-t4>4000</sip-t4> -->
       <!-- <sip-t1x64>32000</sip-t1x64> -->
+      <!-- <sip-message-output>true</sip-message-output> -->
+      <!-- <sip-message-dump>sofia-sip-uas.log</sip-message-dump> -->
     </sip-uas>
 
     <!-- UniRTSP MRCPv1 signaling agent -->
@@ -85,8 +93,6 @@
 
     <!-- Factory of plugins (MRCP engines) -->
     <plugin-factory>
-      <engine id="PocketSphinx-1" name="mrcppocketsphinx" enable="false"/>
-      <engine id="Flite-1" name="mrcpflite" enable="false"/>
       <engine id="Demo-Synth-1" name="demosynth" enable="true"/>
       <engine id="Demo-Recog-1" name="demorecog" enable="true"/>
       <engine id="Demo-Verifier-1" name="demoverifier" enable="true"/>
@@ -105,8 +111,10 @@
     <!-- RTP/RTCP settings -->
     <rtp-settings id="RTP-Settings-1">
       <jitter-buffer>
+        <adaptive>1</adaptive>
         <playout-delay>50</playout-delay>
-        <max-playout-delay>200</max-playout-delay>
+        <max-playout-delay>600</max-playout-delay>
+        <time-skew-detection>1</time-skew-detection>
       </jitter-buffer>
       <ptime>20</ptime>
       <codecs own-preference="false">PCMU PCMA L16/96/8000 telephone-event/101/8000</codecs>

@@ -14,7 +14,8 @@ Name: server; Description: UniMRCP server; Types: full server
 Name: server\recorder; Description: Recorder plugin; Types: full server
 Name: server\demosynth; Description: Demo synthesizer plugin; Types: full server
 Name: server\demorecog; Description: Demo recognizer plugin; Types: full server
-Name: client; Description: UniMRCP client (demo application); Types: full client
+Name: server\demoverifier; Description: Demo verifier plugin; Types: full server
+Name: client; Description: UniMRCP client (sample applications); Types: full client
 
 [Dirs]
 Name: {app}\data; Permissions: everyone-full
@@ -29,12 +30,14 @@ Source: {#= uni_outdir}\bin\*.dll; DestDir: {app}\bin; Components: server client
 Source: {#= uni_outdir}\plugin\mrcprecorder.dll; DestDir: {app}\plugin; Components: server/recorder
 Source: {#= uni_outdir}\plugin\demosynth.dll; DestDir: {app}\plugin; Components: server/demosynth
 Source: {#= uni_outdir}\plugin\demorecog.dll; DestDir: {app}\plugin; Components: server/demorecog
+Source: {#= uni_outdir}\plugin\demoverifier.dll; DestDir: {app}\plugin; Components: server/demoverifier
 Source: {#= uni_outdir}\conf\unimrcpserver.xml; DestDir: {app}\conf; Components: server
 Source: {#= uni_outdir}\conf\unimrcpclient.xml; DestDir: {app}\conf; Components: client
 Source: {#= uni_outdir}\conf\client-profiles\*.xml; DestDir: {app}\conf\client-profiles; Components: client
 Source: {#= uni_outdir}\conf\umcscenarios.xml; DestDir: {app}\conf; Components: client
 Source: {#= uni_outdir}\data\*.pcm; DestDir: {app}\data; Components: server client
 Source: {#= uni_outdir}\data\*.xml; DestDir: {app}\data; Components: server client
+Source: {#= uni_outdir}\data\*.txt; DestDir: {app}\data; Components: server client
 
 [Icons]
 Name: {group}\UniMRCP Server Console; Filename: {app}\bin\unimrcpserver.exe; Parameters: "--root-dir ""{app}"""; Components: server
@@ -82,7 +85,7 @@ begin
     ModifyPluginConf ('mrcprecorder', IsComponentSelected('server\recorder'));
     ModifyPluginConf ('demosynth', IsComponentSelected('server\demosynth'));
     ModifyPluginConf ('demorecog', IsComponentSelected('server\demorecog'));
+    ModifyPluginConf ('demoverifier', IsComponentSelected('server\demoverifier'));
     SaveStringToFile (CfgFile, Content, False);
   end
 end;
-

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: apt_net.h 1474 2010-02-07 20:51:47Z achaloyan $
+ * $Id: apt_net.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef APT_NET_H
@@ -30,11 +30,18 @@ APT_BEGIN_EXTERN_C
 
 /**
  * Get the IP address (in numeric address string format) by hostname.
- * @param addr the IP address
+ * @param addr the IP address to return
  * @param pool the pool to allocate memory from
  */
 apt_bool_t apt_ip_get(char **addr, apr_pool_t *pool);
 
+/**
+ * Get the IP address (in numeric address string format) by network interface name.
+ * @param iface_name the network interface name (eth0, Local Area Connection, etc)
+ * @param addr the IP address to return
+ * @param pool the pool to allocate memory from
+ */
+apt_bool_t apt_ip_get_by_iface(const char *iface_name, char **addr, apr_pool_t *pool);
 
 /**
  * Get current NTP time

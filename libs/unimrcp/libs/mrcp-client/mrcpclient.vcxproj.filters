@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{dc4325fe-8e7a-4a40-ab63-4173d85cf131}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\mrcp_application.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mrcp_client.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mrcp_client_session.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\mrcp_client_types.h">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\mrcp_application.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mrcp_client.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\mrcp_client_session.c">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

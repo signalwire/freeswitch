@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: umcconsole.h 1525 2010-02-16 14:58:56Z achaloyan $
+ * $Id: umcconsole.h 2197 2014-10-16 01:34:19Z achaloyan@gmail.com $
  */
 
 #ifndef UMC_CONSOLE_H
@@ -42,19 +42,24 @@ protected:
 	bool LoadOptions(int argc, const char * const *argv, apr_pool_t *pool);
 	bool RunCmdLine();
 	bool ProcessCmdLine(char* pCmdLine);
-	void Usage() const;
+	static void Usage();
 
 private:
 /* ============================ DATA ======================================= */
 	struct UmcOptions
 	{
 		const char*        m_RootDirPath;
+		const char*        m_DirLayoutConf;
 		const char*        m_LogPriority;
 		const char*        m_LogOutput;
+
+		UmcOptions() : 
+			m_RootDirPath(NULL), m_DirLayoutConf(NULL), 
+			m_LogPriority(NULL), m_LogOutput(NULL) {}
 	};
 
-	UmcOptions    m_Options;
-	UmcFramework* m_pFramework;
+	UmcOptions      m_Options;
+	UmcFramework*   m_pFramework;
 };
 
 #endif /* UMC_CONSOLE_H */

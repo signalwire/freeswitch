@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: demo_framework.c 1571 2010-03-07 20:33:39Z achaloyan $
+ * $Id: demo_framework.c 2233 2014-11-12 01:34:59Z achaloyan@gmail.com $
  */
 
 #include <apr_hash.h>
@@ -118,9 +118,8 @@ apt_bool_t demo_framework_app_run(demo_framework_t *framework, const char *app_n
 		framework_task_data_t *framework_task_data = (framework_task_data_t*)task_msg->data;
 		task_msg->type = TASK_MSG_USER;
 		task_msg->sub_type = DEMO_CONSOLE_MSG_ID;
-		framework_task_data = (framework_task_data_t*) task_msg->data;
-		strcpy(framework_task_data->app_name,app_name);
-		strcpy(framework_task_data->profile_name,profile_name);
+		strncpy(framework_task_data->app_name,app_name,sizeof(framework_task_data->app_name)-1);
+		strncpy(framework_task_data->profile_name,profile_name,sizeof(framework_task_data->profile_name)-1);
 		framework_task_data->app_message = NULL;
 		framework_task_data->demo_application = NULL;
 		apt_task_msg_signal(task,task_msg);
@@ -237,7 +236,6 @@ static apt_bool_t demo_framework_message_handler(const mrcp_app_message_t *app_m
 			framework_task_data_t *framework_task_data = (framework_task_data_t*)task_msg->data;
 			task_msg->type = TASK_MSG_USER;
 			task_msg->sub_type = DEMO_APPLICATION_MSG_ID;
-			framework_task_data = (framework_task_data_t*) task_msg->data;
 			framework_task_data->app_message = app_message;
 			framework_task_data->demo_application = demo_application;
 			apt_task_msg_signal(task,task_msg);

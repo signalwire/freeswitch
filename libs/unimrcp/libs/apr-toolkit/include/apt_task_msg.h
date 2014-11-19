@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: apt_task_msg.h 1474 2010-02-07 20:51:47Z achaloyan $
+ * $Id: apt_task_msg.h 2180 2014-09-13 21:17:24Z achaloyan@gmail.com $
  */
 
 #ifndef APT_TASK_MSG_H
@@ -30,16 +30,20 @@ APT_BEGIN_EXTERN_C
 
 /** Enumeration of task message types */
 typedef enum {
-	TASK_MSG_CORE,                   /**< core task message type */
-	TASK_MSG_USER                    /**< user defined task messages start from here */
+	TASK_MSG_CORE,                      /**< core task message type */
+	TASK_MSG_USER                       /**< user defined task messages start from here */
 } apt_task_msg_type_e;
 
 /** Enumeration of core task messages */
 typedef enum {
-	CORE_TASK_MSG_NONE,              /**< indefinite message */
-	CORE_TASK_MSG_START_COMPLETE,    /**< start-complete message */
-	CORE_TASK_MSG_TERMINATE_REQUEST, /**< terminate-request message */
-	CORE_TASK_MSG_TERMINATE_COMPLETE /**< terminate-complete message */
+	CORE_TASK_MSG_NONE,                 /**< indefinite message */
+	CORE_TASK_MSG_START_COMPLETE,       /**< start-complete message */
+	CORE_TASK_MSG_TERMINATE_REQUEST,    /**< terminate-request message */
+	CORE_TASK_MSG_TERMINATE_COMPLETE,   /**< terminate-complete message */
+	CORE_TASK_MSG_TAKEOFFLINE_REQUEST,  /**< take-offline-request message */
+	CORE_TASK_MSG_TAKEOFFLINE_COMPLETE, /**< take-offline-complete message */
+	CORE_TASK_MSG_BRINGONLINE_REQUEST,  /**< bring-online-request message */
+	CORE_TASK_MSG_BRINGONLINE_COMPLETE, /**< bring-online-complete message */
 } apt_core_task_msg_type_e;
 
 /** Opaque task message declaration */
@@ -52,7 +56,7 @@ struct apt_task_msg_t {
 	/** Message pool the task message is allocated from */
 	apt_task_msg_pool_t *msg_pool;
 	/** Task msg type */
-	apt_task_msg_type_e  type;
+	int                  type;
 	/** Task msg sub type */
 	int                  sub_type;
 	/** Context specific data */

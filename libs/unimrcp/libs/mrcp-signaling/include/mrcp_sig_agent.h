@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_sig_agent.h 1750 2010-07-23 19:33:34Z achaloyan $
+ * $Id: mrcp_sig_agent.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_SIG_AGENT_H
@@ -50,8 +50,6 @@ struct mrcp_sig_settings_t {
 	char        *feature_tags;
 };
 
-
-
 /** MRCP signaling agent  */
 struct mrcp_sig_agent_t {
 	/** Agent identifier */
@@ -62,8 +60,6 @@ struct mrcp_sig_agent_t {
 	void                    *obj;
 	/** Parent object (client/server) */
 	void                    *parent;
-	/** MRCP version */
-	mrcp_version_e           mrcp_version;
 	/** MRCP resource factory */
 	mrcp_resource_factory_t *resource_factory;
 	/** Task interface */
@@ -78,7 +74,19 @@ struct mrcp_sig_agent_t {
 };
 
 /** Create signaling agent. */
-MRCP_DECLARE(mrcp_sig_agent_t*) mrcp_signaling_agent_create(const char *id, void *obj, mrcp_version_e mrcp_version, apr_pool_t *pool);
+MRCP_DECLARE(mrcp_sig_agent_t*) mrcp_signaling_agent_create(const char *id, void *obj, apr_pool_t *pool);
+
+/** Create factory of signaling agents. */
+MRCP_DECLARE(mrcp_sa_factory_t*) mrcp_sa_factory_create(apr_pool_t *pool);
+
+/** Add signaling agent to factory. */
+MRCP_DECLARE(apt_bool_t) mrcp_sa_factory_agent_add(mrcp_sa_factory_t *sa_factory, mrcp_sig_agent_t *sig_agent);
+
+/** Determine whether factory is empty. */
+MRCP_DECLARE(apt_bool_t) mrcp_sa_factory_is_empty(const mrcp_sa_factory_t *sa_factory);
+
+/** Select next available signaling agent. */
+MRCP_DECLARE(mrcp_sig_agent_t*) mrcp_sa_factory_agent_select(mrcp_sa_factory_t *sa_factory);
 
 /** Allocate MRCP signaling settings. */
 MRCP_DECLARE(mrcp_sig_settings_t*) mrcp_signaling_settings_alloc(apr_pool_t *pool);

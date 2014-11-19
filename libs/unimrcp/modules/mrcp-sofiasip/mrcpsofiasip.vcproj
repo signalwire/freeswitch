@@ -256,6 +256,10 @@
 				RelativePath=".\include\mrcp_sofiasip_server_agent.h"
 				>
 			</File>
+			<File
+				RelativePath=".\include\mrcp_sofiasip_log.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="src"
@@ -267,6 +271,10 @@
 			</File>
 			<File
 				RelativePath=".\src\mrcp_sofiasip_client_agent.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mrcp_sofiasip_logger.c"
 				>
 			</File>
 			<File

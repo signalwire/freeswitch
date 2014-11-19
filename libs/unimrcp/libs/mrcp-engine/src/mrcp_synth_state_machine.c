@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_synth_state_machine.c 1705 2010-05-23 14:04:20Z achaloyan $
+ * $Id: mrcp_synth_state_machine.c 2228 2014-11-12 01:18:27Z achaloyan@gmail.com $
  */
 
 #include "apt_obj_list.h"
@@ -116,8 +116,7 @@ static apt_bool_t synth_request_get_params(mrcp_synth_state_machine_t *state_mac
 
 static apt_bool_t synth_response_get_params(mrcp_synth_state_machine_t *state_machine, mrcp_message_t *message)
 {
-	mrcp_header_fields_set(&message->header,&state_machine->active_request->header,message->pool);
-	mrcp_header_fields_get(&message->header,state_machine->properties,message->pool);
+	mrcp_header_fields_get(&message->header,state_machine->properties,&state_machine->active_request->header,message->pool);
 	return synth_response_dispatch(state_machine,message);
 }
 
@@ -167,7 +166,7 @@ static apt_bool_t synth_pending_requests_remove(mrcp_synth_state_machine_t *stat
 	mrcp_generic_header_t *generic_header = mrcp_generic_header_get(request_message);
 	mrcp_generic_header_t *response_generic_header = mrcp_generic_header_prepare(response_message);
 	if(generic_header && mrcp_generic_header_property_check(request_message,GENERIC_HEADER_ACTIVE_REQUEST_ID_LIST) == TRUE) {
-		if(generic_header->active_request_id_list.ids && generic_header->active_request_id_list.count) {
+		if(generic_header->active_request_id_list.count) {
 			/* selective STOP request */
 			request_id_list = &generic_header->active_request_id_list;
 		}
@@ -202,7 +201,7 @@ static apt_bool_t synth_request_stop(mrcp_synth_state_machine_t *state_machine, 
 		mrcp_request_id_list_t *request_id_list = NULL;
 		mrcp_generic_header_t *generic_header = mrcp_generic_header_get(message);
 		if(generic_header && mrcp_generic_header_property_check(message,GENERIC_HEADER_ACTIVE_REQUEST_ID_LIST) == TRUE) {
-			if(generic_header->active_request_id_list.ids && generic_header->active_request_id_list.count) {
+			if(generic_header->active_request_id_list.count) {
 				/* selective STOP request */
 				request_id_list = &generic_header->active_request_id_list;
 			}

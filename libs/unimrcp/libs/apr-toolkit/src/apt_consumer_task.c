@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: apt_consumer_task.c 1708 2010-05-24 17:03:25Z achaloyan $
+ * $Id: apt_consumer_task.c 2224 2014-11-12 00:41:45Z achaloyan@gmail.com $
  */
 
 #include <apr_time.h>
@@ -22,9 +22,12 @@
 #include "apt_log.h"
 
 struct apt_consumer_task_t {
-	void        *obj;
-	apt_task_t  *base;
-	apr_queue_t *msg_queue;
+	void              *obj;
+	apt_task_t        *base;
+	apr_queue_t       *msg_queue;
+#if APR_HAS_QUEUE_TIMEOUT
+	apt_timer_queue_t *timer_queue;
+#endif
 };
 
 static apt_bool_t apt_consumer_task_msg_signal(apt_task_t *task, apt_task_msg_t *msg);
@@ -53,6 +56,11 @@ APT_DECLARE(apt_consumer_task_t*) apt_consumer_task_create(
 		vtable->run = apt_consumer_task_run;
 		vtable->signal_msg = apt_consumer_task_msg_signal;
 	}
+
+#if APR_HAS_QUEUE_TIMEOUT
+	consumer_task->timer_queue = apt_timer_queue_create(pool);
+#endif
+
 	return consumer_task;
 }
 
@@ -61,7 +69,7 @@ APT_DECLARE(apt_task_t*) apt_consumer_task_base_get(const apt_consumer_task_t *t
 	return task->base;
 }
 
-APT_DECLARE(apt_task_vtable_t*) apt_consumer_task_vtable_get(apt_consumer_task_t *task)
+APT_DECLARE(apt_task_vtable_t*) apt_consumer_task_vtable_get(const apt_consumer_task_t *task)
 {
 	return apt_task_vtable_get(task->base);
 }
@@ -69,6 +77,19 @@ APT_DECLARE(apt_task_vtable_t*) apt_consumer_task_vtable_get(apt_consumer_task_t
 APT_DECLARE(void*) apt_consumer_task_object_get(const apt_consumer_task_t *task)
 {
 	return task->obj;
+}
+
+APT_DECLARE(apt_timer_t*) apt_consumer_task_timer_create(
+									apt_consumer_task_t *task, 
+									apt_timer_proc_f proc, 
+									void *obj, 
+									apr_pool_t *pool)
+{
+#if APR_HAS_QUEUE_TIMEOUT
+	return apt_timer_create(task->timer_queue,proc,obj,pool);
+#else
+	return NULL;
+#endif
 }
 
 static apt_bool_t apt_consumer_task_msg_signal(apt_task_t *task, apt_task_msg_t *msg)
@@ -83,10 +104,18 @@ static apt_bool_t apt_consumer_task_run(apt_task_t *task)
 	void *msg;
 	apt_bool_t *running;
 	apt_consumer_task_t *consumer_task;
+#if APR_HAS_QUEUE_TIMEOUT
+	apr_interval_time_t timeout;
+	apr_uint32_t queue_timeout;
+	apr_time_t time_now, time_last = 0;
+#endif
+	const char *task_name;
+
 	consumer_task = apt_task_object_get(task);
 	if(!consumer_task) {
 		return FALSE;
 	}
+	task_name = apt_task_name_get(consumer_task->base),
 
 	running = apt_task_running_flag_get(task);
 	if(!running) {
@@ -94,14 +123,42 @@ static apt_bool_t apt_consumer_task_run(apt_task_t *task)
 	}
 
 	while(*running) {
-		apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Wait for Messages [%s]",apt_task_name_get(task));
+#if APR_HAS_QUEUE_TIMEOUT
+		if(apt_timer_queue_timeout_get(consumer_task->timer_queue,&queue_timeout) == TRUE) {
+			timeout = (apr_interval_time_t)queue_timeout * 1000;
+			time_last = apr_time_now();
+			apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Wait for Messages [%s] timeout [%u]",
+				task_name, queue_timeout);
+			rv = apr_queue_timedpop(consumer_task->msg_queue,timeout,&msg);
+		}
+		else
+		{
+			timeout = -1;
+			apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Wait for Messages [%s]",task_name);
+			rv = apr_queue_pop(consumer_task->msg_queue,&msg);
+		}
+#else
+		apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Wait for Messages [%s]",task_name);
 		rv = apr_queue_pop(consumer_task->msg_queue,&msg);
+#endif
 		if(rv == APR_SUCCESS) {
 			if(msg) {
 				apt_task_msg_t *task_msg = msg;
 				apt_task_msg_process(consumer_task->base,task_msg);
 			}
 		}
+		else if(rv != APR_TIMEUP) {
+			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Pop Message [%s] status: %d",task_name,rv);
+		}
+
+#if APR_HAS_QUEUE_TIMEOUT
+		if(timeout != -1) {
+			time_now = apr_time_now();
+			if(time_now > time_last) {
+				apt_timer_queue_advance(consumer_task->timer_queue,(apr_uint32_t)((time_now - time_last)/1000));
+			}
+		}
+#endif
 	}
 	return TRUE;
 }

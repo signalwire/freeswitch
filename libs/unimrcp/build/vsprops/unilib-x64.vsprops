@@ -7,6 +7,10 @@
 	IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 	>
 	<Tool
+		Name="VCCLCompilerTool"
+		PreprocessorDefinitions="_WIN64"
+	/>
+	<Tool
 		Name="VCLinkerTool"
 		TargetMachine="17"
 	/>

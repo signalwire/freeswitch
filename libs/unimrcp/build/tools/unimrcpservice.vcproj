@@ -284,6 +284,42 @@
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\unimrcpservice.rc"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCResourceCompilerTool"
+					AdditionalIncludeDirectories="..\..\build"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCResourceCompilerTool"
+					AdditionalIncludeDirectories="..\..\build"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Debug|x64"
+				>
+				<Tool
+					Name="VCResourceCompilerTool"
+					AdditionalIncludeDirectories="..\..\build"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|x64"
+				>
+				<Tool
+					Name="VCResourceCompilerTool"
+					AdditionalIncludeDirectories="..\..\build"
+				/>
+			</FileConfiguration>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

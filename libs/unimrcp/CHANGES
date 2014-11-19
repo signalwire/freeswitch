@@ -1,0 +1,214 @@
+Changes for UniMRCP-1.2.0
+
+  APR-toolkit library
+  
+  * Implemented a new interface for the NLSML parser in accordance with the NSLML schema defined in http://tools.ietf.org/html/rfc6787#section-16.1.
+  * Took out the legacy NLSML interface.
+  * Fixed a gcc warning for strict-aliasing rules.
+  * Implemented apt_pair_array_generate() in 2 passes, apr_pstrcatv() alike.
+  * Prevent compilation warnings for unused-but-set-variable.
+  * Use int instead of apt_task_msg_type_e to suppress a warning triggered by gcc 4.7: case value not in enumerated type 'apt_task_msg_type_e'.
+  * Upon creation of a new memory pool, register apr_abortfunc_t callback which is supposed to be invoked when memory allocation fails within apr_pool.
+  * Added apt_va_log() which accepts va_list as an input argument.
+  * Set the default maximum number of log files used in rotation to 100.
+  * Set thread names for APT tasks to be shown in debuggers. Thanks Vali.
+  * Enable apt_timer logs only if APT_TIMER_DEBUG is defined.
+  * Use a local temporary char buffer to construct the hostname in apt_ip_get() not to allocate memory from a permanent pool.
+  * Unified pointer logging in APT style. Thanks Vali.
+  * Define APT_PTR_FMT as 0x%I64x for 64-bit Windows.
+  * Removed unused function apt_text_boolean_value_insert/apt_boolean_value_insert (inconsistent declaration/definition). Thanks Vali.
+  
+  MPF library
+
+  * The function mpf_codec_lists_intersect() now returns FALSE if there is no match for the primary codec descriptor.
+  * Reject the RTP session if there is no match in remote and local codecs.
+  * Use the reserved RTP payload type 19 in case codec list is empty (media stream is rejected).
+  * If the codec list does not match the capabilities, mark the stream as disabled.
+  * Do not set SO_REUSEADDR on RTP sockets.
+  * Made G.711 implementation bit-exact with ITU-T reference implementation.  
+  * Use APR typedefs in G.711 implementation.
+  * Improved the RTP port management for those cases when the specified RTP port range is not enough to handle concurrent MRCP sessions.
+  * Check the number of ports per engine to be even to ensure there is a room for a pair of RTP/RTCP ports.
+  * Added debugging capabilities to mpf_frame_buffer.
+  * Copy name string when adding to codec capabilities. Thanks Vali.
+  
+  MRCP common library
+  
+  * Use apr_snprintf() instead of sprintf() in mrcp_request_id_generate().
+  * Get rid of local fixed-size char buffers and additional string copies. Instead, allocate buffers from memory pool and generate strings straight into the buffers.
+
+  MRCP client library
+  
+  * Completed the implementation of the new API function to retrieve a SIP/RTSP response code received from the server (Issue-90).
+  * Fixed a potential crash of the client stack which could happen when the server unexpectedly closes the MRCPv2 connection while the client stack is processing an application request.
+  * Allow a pool/factory of signaling agents to be defined with the MRCPv1 and/or MRCPv2 profiles.
+  * Respond straight away with success to the session termination request if the session creation failed in the first place.
+  * Keep track of associations between RTP termination factories (pools of RTP ports) and media engines.
+  * Allow a pool/factory of media processing engines to be defined with the MRCPv1 and/or MRCPv2 profiles.
+  * Allow a pool/factory of MRCPv2 connection agents to be defined with the MRCPv2 profiles.
+  * Added the ability to specify an IP address by the name of network interface/adapter.
+  * Added a new accessor function to the client API mrcp_client_profiles_get() which retrieves the available profiles.
+  * Store the profile name not only as a key in the profile table but also in the profile structure.
+  * Allow setting an arbitrary tag to the profile.
+
+  MRCP server library
+  
+  * Handle separately the case when an RTSP SETUP contains no SDP, which means it's up to the server to decide which codec to use.
+  * Fixed a crash if MRCP resource not found. Thanks Vali.
+  * Keep track of associations between RTP termination factories (pools of RTP ports) and media engines.
+  * Added the ability to specify an IP address by the name of network interface/adapter.
+  * Log maximum engine channel count exceeded. Thanks Vali.
+
+  Sofia-SIP module (MRCPv2 agent)
+
+  * Do not generate media format list for a disabled audio stream.
+  * Use snprintf() consistently in mrcp_sdp.c.
+  * Implemented the log redirection routine of SofiaSIP.
+  * Added an indentifier of the SofiaSIP agent to the log statement "Receive SIP Event".
+
+  RTSP module (MRCPv1 agent)
+
+  * Do not generate media format list for a disabled audio stream.
+  
+  Demo plugins
+  
+  * Respond with failure if codec descriptor is unavailable (associated media stream is disabled).
+  
+  UMC sample application
+  
+  * Terminate execution of sample application if media descriptor is unavailable (media stream is disabled).
+  * Use the new NLSML parser interface in sample apps.
+  * Set the header field Save-Waveform to TRUE in the sample umc recog application.
+  * Fixed an invalid read of 8 bytes in umc application: sizeof(mpf_codec_capabilities_t) was meant to be allocated.
+  
+  ASR Client application (and library)
+  
+  * Get rid of 1Kb grammar file limit in libasrclient. Load the content into an allocated buffer instead. 
+
+  Miscellaneous
+
+  * Copy the version and revision header files located in the build directory to the SDK include directory.
+  * Added/fixed support for DESTDIR.
+  * Take into consideration m4 macro files generated for/by libtool 2.  
+  * Set ac_macro_dir variable manually, since newer versions of autoconf don't do that.
+  * Enable silent build rules (--enable-silent-rules)and use silent build by default.
+  * Enhanced the report generated by the ./configure script.
+  * Pass no-define to AM_INIT_AUTOMAKE in order not to define PACKAGE and VERSION.
+  * Do not use autoconf generated compiler DEFS by replacing confdefs.h after AC_INIT, AM_INIT_AUTOMAKE and AC_PROG_LIBTOLL getting called.
+  * Updated definition of the macro AX_COMPILER_VENDOR and moved it out from configure.ac to a separate m4 file.
+  * Added missing dereferences of pointers to the (potential) terminal NUL of some strings. Thanks Vali.
+  * Disabled DEFAULT_INCLUDES provided by automake.
+  * Added generic apr_common.m4 in order to use helper m4 macros APR_ADDTO() and APR_CONFIG_NICE().
+  * Generate ./config.nice to reuse ./configure command-line.
+  * Added uni_plugin.m4 which provides generic macros UNI_PLUGIN_ENABLED(name) and UNI_PLUGIN_DISABLED(name).
+  * Added common GNU make rules/vars for plugins, client and server libs/apps alike VS property sheets.
+  * The macro UNIMRCP_CHECK_APR() now checks and sets variables for both APR and APR-util libraries.
+  * Added a brief description of the license definition which is intended to be used for Windows resource files only.
+  * Brought XML schema definitions of configuration file formats up to date.
+  * Cppcheck: printf-like formats fix, possible NULL pointer dereference, member not initialized in the constructor, 
+    unused variable/value, method can be made static. Thanks Vali.
+  * Define _WIN64 in Visual Studio x64 targets (for IDE only, the compiler defines _WIN64 anyway). Thanks Vali.
+  * Fixed some GCC warnings. Thanks Vali.
+  * Moved mrcp-flite and mrcp-pocketsphinx plugins out of the source tree into the external solutions directory.
+
+
+Changes for UniMRCP-1.1.0
+
+  APR-toolkit library
+
+  * The function apt_log_file_open() makes a copy of dir_path and file_name variables passed from a user application.
+  * Applied a patch to the apt_log routine which allows the log file to be appended instead of being overwritten. The patch was submitted by Dani. Thanks.
+  * Added a new parameter to the function apt_log_file_open() which specifies whether the log file should be appended or overwritten.
+  * Fixed the formatting of float values in the header fields. Applied a patch submitted by Randy (Issue-108). Thanks.
+  * Fixed apt_log_output_mode_check() which returned TRUE if any mode was enabled or checked regardless their correspondence. Thanks Vali.
+  * Enhanced the debug output by adding task message identifier to the log statements "Signal Message" and "Process Message".
+  * Fixed a potential crash related to the use of pollsets.
+  * Fixed a potential buffer overflow in apt_text_pair_array_insert(). Thanks Vali.
+  * Remove a socket descriptor from the pollset only if the descriptor has been properly added to the pollset. Otherwise, this operation could cause a crash.
+
+  MPF library
+
+  * Tweaked DTMF detector's energy thresholds to eliminate false positives during in-band (from audio) DTMF detection. Thanks Vali.
+  * Took into consideration the RTP marker in order to re-sync the jitter buffer on a new talkspurt. Audio data loss could be experienced in the RTP receiver in case of consecutive SPEAK (for client) or RECOGNIZE (for server) requests.
+  * Instead of discarding a non-aligned RTP packet, adjust the timestamp and write available frames to the jitter buffer (Issue-122).
+  * Added support for the adaptive jitter buffer. Applied a reworked patch submitted by Erik. Thanks.
+  * Enhanced the detection of a new RTP talkspurt by implicitly setting the RTP marker if a gap between two RTP packets is more than the specified threshold (INTER_TALSKPUSRT_GAP = 1000 msec).
+  * Allow the initial playout delay in the jitter buffer to be set to 0.
+  * Implemented a time skew detection algorithm for RTP streams. The detection can be enabled and used for both the adaptive and static jitter buffer.
+  * Added support for redirection of RTP traces (RTP_TRACE, JB_TRACE) to the debug output window of Visual Studio.
+  * Enhanced the processing of the RTP named events.
+
+  RTSP library
+
+  * Use strcasecmp() instead of apr_strnatcasecmp() to match RTSP resource names (Issue-94).
+  * Fixed a crash in the RTSP client stack when the server closes a TCP connection while the associated RTSP session is being destroyed (Issue-124).
+  * Fixed the processing of RTSP TEARDOWN requests being timed out. Applied a patch submitted to Issue-125 by Chris. Thanks.
+  * For logging purposes, pass a string identifier of the RTSP/MRCPv1 signaling agent to the RTSP client and server stacks.
+
+  MRCP common library
+
+  * Added missing recognizer header fields used for voice enrollment (speaker-dependent recognition).
+  * Added support for custom MRCP header fields.
+  * Added support for speaker verification and identification resource.
+  * Added missing recognizer methods used for voice enrollment and interpretation.
+  * Updated the state machine of the recognizer resource to take into consideration requests, responses and events used for interpretation.
+  * Enhanced helper functions which operate on the MRCP header to properly set, get and inherit header fields (Issue-110).
+
+  MRCP client library
+
+  * Added support for SIP redirection with 300 Multiple Choices used by the Nuance Resource Manager. 
+  * Added support for feature-tags set in the SIP Accept-Contact header field in an outgoing SIP INVITE message sent to the Nuance Resource Manager.
+  * Added a new accessor function to the client API to get an audio stream associated with the specified channel. The function name is mrcp_application_audio_stream_get().
+  * Added the ability to retrieve an external object associated with the MRCP session through the log handler (apt_log_ext_handler_f).
+  * Fixed the processing of a response to the SIP OPTIONS request used for resource discovery (Issue-112).
+  * Added a new constructor function unimrcp_client_create2() which allows to pass the client XML configuration not by a file, but rather by a string parameter. Thanks Vali.
+  * Fixed the processing of more than one pending application requests upon reception of a SIP BYE message from the server.
+  * Fixed the loading of the client configuration parameter <offer-new-connection>.
+  * Respond to client user application requests with failure if a new session couldn't be created due to an error in initialization of the SIP stack (Issue-127).
+  * When originating an offer from the client, take into account capabilities of an audio stream created by the client user application.
+  * Added a new function to the client API to retrieve a SIP/RTSP response code received from the server (Issue-90). The support is incomplete.
+
+  MRCP server library
+  
+  * Fixed an interoperability issue with AVP. The mid attribute is not required when the SDP contains only one m-line.
+  * Fixed the build of C++ MRCP plugins for platforms other than Win32. Thanks Vali.
+  * Added the ability to take and use parameters set by the plugin in a response to the GET-PARAMS request. Thanks Vali.
+  
+  Sofia-SIP module
+  
+  * Took out unused tags (variables) to compile with Sofia-SIP 1.12.11.
+  * Added support for Sofia-SIP's TPTAG_LOG() and TPTAG_DUMP() tags which can be enabled from the client and server configuration to print out and/or dump SIP messages.
+
+  PocketSphinx plugin
+
+  * In the PocketSphinx plugin, instead of using one common timeout for detection of speech activity and inactivity, use two different timeouts: one for activity and the other for inactivity detection.
+  * In the recognition results sent from the PocketSphinx plugin, set both <instance> and <input> elements.
+  * Fixed a race condition in the PocketSphinx plugin which caused the server to crash.
+  * Fixed the use of recognition timer in the PocketSphinx plugin.
+  * Set an MRCP version specific completion cause in the PocketSphinx plugin.
+
+  UniMRCP server application
+
+  * Enhanced the UniMRCP Windows service manager. Thanks Vali.
+  * Corrected FileType in Windows resources from DLL to APP. Thanks Vali.
+  * Added a Windows resource file for the unimrcpservice application.
+    
+  UMC sample application
+
+  * Set the default profile name in umcscenarios.xml to "uni2".
+  * Added sample 8kHz and 16 kHz voiceprints in the data directory which are used by the umc application for a sample verification scenario.
+  * Added mandatory attributes for the SSML <speak> element in the sample speak.xml file.
+  * Added support for a binary recognition grammar used in RecogScenario by the sample umc application. Thanks Vali.
+  * Added a sample SRGS ABNF grammar to the data directory.
+
+  Miscellaneous
+
+  * Added init.d script. The script was originally submitted by pdeschen. Thanks.
+  * Modified the "prepare" utility project to use the new location of PthreadVC2.dll which is now built from source with other dependencies.
+  * Added support for Visual Studio 2010.
+  * Modified the MPF test application to read a raw PCM data from one file, transmit it over RTP, and write the data back to another file.
+  * Set the libtool parameters link_all_deplibs and link_all_deplibs_CXX to "yes" by default, with an option to disable them (--disable-interlib-deps), if ever needed. This fixes a link error on recent Debian/Ubuntu distributions.
+  * Modified the apr.m4 and apu.m4 macros to use '--link-ld' instead of '--link-libtool --libs' for the APR library dependencies. This addresses the problem with a wrong -L path to the expat library.
+  * Set prerequisite version for autoconf to 2.59.
+  * Added a checking for pkg-config to the configure script.
+  * Added a new option (-v or --version) to the unimrcpserver as well as the sample umc and unimrcpclient applications.

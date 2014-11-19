@@ -1,0 +1,26 @@
+##
+##  config.layout -- Pre-defined Installation Path Layouts
+##
+##  Hints:
+##  - layouts can be loaded with configure's --enable-layout=ID option
+##  - when no --enable-layout option is given, the default layout is `classic'
+
+# Classical UniMRCP path layout.
+<Layout classic>
+    prefix:          /usr/local/unimrcp
+    exec_prefix:     ${prefix}
+    bindir:          ${exec_prefix}/bin
+    sbindir:         ${exec_prefix}/bin
+    libdir:          ${exec_prefix}/lib
+    libexecdir:      ${exec_prefix}/modules
+    mandir:          ${prefix}/man
+    sysconfdir:      ${prefix}/conf
+    confdir:         ${prefix}/conf
+    datadir:         ${prefix}/data
+    plugindir:       ${exec_prefix}/plugin
+    logdir:          ${exec_prefix}/log
+    vardir:          ${exec_prefix}/var
+    installbuilddir: ${exec_prefix}/build
+    includedir:      ${prefix}/include
+    localstatedir:   ${prefix}
+</Layout>

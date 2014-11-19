@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mpf_dtmf_generator.c 1474 2010-02-07 20:51:47Z achaloyan $
+ * $Id: mpf_dtmf_generator.c 2227 2014-11-12 01:10:18Z achaloyan@gmail.com $
  */
 
 #include "mpf_dtmf_generator.h"
@@ -67,7 +67,7 @@ typedef struct sine_state_t {
 	double s2;
 } sine_state_t;
 
-/** Mapping event_it to frequency pair */
+/** Mapping event_id to frequency pair */
 static const double dtmf_freq[DTMF_EVENT_ID_MAX+1][2] = {
 	{941, 1336},  /* 0 */
 	{697, 1209},  /* 1 */
@@ -172,9 +172,9 @@ MPF_DECLARE(apt_bool_t) mpf_dtmf_generator_enqueue(
 	qlen = strlen(generator->queue);
 	if (qlen + dlen > MPF_DTMFGEN_QUEUE_LEN) {
 		ret = FALSE;
-		apt_log(APT_LOG_MARK, APT_PRIO_WARNING, "DTMF queue too short (%"APR_SIZE_T_FMT"), "
-			"cannot add %d digit%s, already has %"APR_SIZE_T_FMT, MPF_DTMFGEN_QUEUE_LEN,
-			dlen, dlen > 1 ? "s" : "", qlen);
+		apt_log(APT_LOG_MARK, APT_PRIO_WARNING, "DTMF queue too short (%d), "
+			"cannot add %"APR_SIZE_T_FMT" digit%s, already has %"APR_SIZE_T_FMT,
+			MPF_DTMFGEN_QUEUE_LEN, dlen, dlen > 1 ? "s" : "", qlen);
 	} else {
 		strcpy(generator->queue + qlen, digits);
 		ret = TRUE;
@@ -209,8 +209,7 @@ MPF_DECLARE(apt_bool_t) mpf_dtmf_generator_put_frame(
 		/* Get next valid digit from queue */
 		do {
 			generator->event_id = (apr_byte_t) mpf_dtmf_char_to_event_id(*generator->queue);
-            /* This used to be a strcpy(), but that can give overlapping buffer issues */
-			memmove(generator->queue, &generator->queue[1], strlen(&generator->queue[1]) + 1);
+			memmove(generator->queue, generator->queue + 1, strlen(generator->queue));
 		} while (*generator->queue && (generator->event_id > DTMF_EVENT_ID_MAX));
 		/* Reset state */
 		if (generator->event_id <= DTMF_EVENT_ID_MAX) {

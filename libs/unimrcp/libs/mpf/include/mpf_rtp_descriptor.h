@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mpf_rtp_descriptor.h 1474 2010-02-07 20:51:47Z achaloyan $
+ * $Id: mpf_rtp_descriptor.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef MPF_RTP_DESCRIPTOR_H
@@ -93,14 +93,16 @@ struct mpf_rtp_termination_descriptor_t {
 
 /** Jitter buffer configuration */
 struct mpf_jb_config_t {
-	/** Min playout delay in msec (used in case of adaptive jitter buffer) */
-	apr_size_t min_playout_delay;
+	/** Min playout delay in msec */
+	apr_uint32_t min_playout_delay;
 	/** Initial playout delay in msec */
-	apr_size_t initial_playout_delay;
-	/** Max playout delay in msec (used in case of adaptive jitter buffer) */
-	apr_size_t max_playout_delay;
-	/** Static - 0, adaptive - 1 jitter buffer */
+	apr_uint32_t initial_playout_delay;
+	/** Max playout delay in msec */
+	apr_uint32_t max_playout_delay;
+	/** Mode of operation of the jitter buffer: static - 0, adaptive - 1 */
 	apr_byte_t adaptive;
+	/** Enable/disable time skew detection */
+	apr_byte_t time_skew_detection;
 };
 
 /** RTCP BYE transmission policy */
@@ -164,6 +166,7 @@ static APR_INLINE void mpf_rtp_stream_descriptor_init(mpf_rtp_stream_descriptor_
 	descriptor->capabilities = NULL;
 	descriptor->local = NULL;
 	descriptor->remote = NULL;
+	descriptor->settings = NULL;
 }
 
 /** Initialize RTP termination descriptor */
@@ -180,6 +183,7 @@ static APR_INLINE void mpf_jb_config_init(mpf_jb_config_t *jb_config)
 	jb_config->initial_playout_delay = 0;
 	jb_config->min_playout_delay = 0;
 	jb_config->max_playout_delay = 0;
+	jb_config->time_skew_detection = 1;
 }
 
 /** Allocate RTP config */

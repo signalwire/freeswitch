@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: unimrcp_client.h 1474 2010-02-07 20:51:47Z achaloyan $
+ * $Id: unimrcp_client.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #ifndef UNIMRCP_CLIENT_H
@@ -33,6 +33,12 @@ APT_BEGIN_EXTERN_C
  * @param dir_layout the dir layout structure
  */
 MRCP_DECLARE(mrcp_client_t*) unimrcp_client_create(apt_dir_layout_t *dir_layout);
+
+/**
+ * Create UniMRCP client.
+ * @param xmlconfig XML configuration string
+ */
+MRCP_DECLARE(mrcp_client_t*) unimrcp_client_create2(const char *xmlconfig);
 
 
 APT_END_EXTERN_C

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mpf_codec_descriptor.c 1474 2010-02-07 20:51:47Z achaloyan $
+ * $Id: mpf_codec_descriptor.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
  */
 
 #include "mpf_codec_descriptor.h"
@@ -89,7 +89,6 @@ MPF_DECLARE(mpf_codec_descriptor_t*) mpf_codec_descriptor_create_by_capabilities
 	return descriptor;
 }
 
-
 /** Match two codec descriptors */
 MPF_DECLARE(apt_bool_t) mpf_codec_descriptors_match(const mpf_codec_descriptor_t *descriptor1, const mpf_codec_descriptor_t *descriptor2)
 {
@@ -116,7 +115,7 @@ MPF_DECLARE(apt_bool_t) mpf_codec_lpcm_descriptor_match(const mpf_codec_descript
 	return apt_string_compare(&descriptor->name,&lpcm_attribs.name);
 }
 
-/** Add default (liear PCM) capabilities */
+/** Add default (linear PCM) capabilities */
 MPF_DECLARE(apt_bool_t) mpf_codec_default_capabilities_add(mpf_codec_capabilities_t *capabilities)
 {
 	return mpf_codec_capabilities_add(capabilities,MPF_SAMPLE_RATE_8000,lpcm_attribs.name.buf);
@@ -172,24 +171,31 @@ static mpf_codec_attribs_t* mpf_codec_capabilities_attribs_find(const mpf_codec_
 	return NULL;
 }
 
-/** Modify codec list according to capabilities specified */
-MPF_DECLARE(apt_bool_t) mpf_codec_list_modify(mpf_codec_list_t *codec_list, const mpf_codec_capabilities_t *capabilities)
+/** Match codec list with specified capabilities */
+MPF_DECLARE(apt_bool_t) mpf_codec_list_match(mpf_codec_list_t *codec_list, const mpf_codec_capabilities_t *capabilities)
 {
 	int i;
 	mpf_codec_descriptor_t *descriptor;
+	apt_bool_t status = FALSE;
 	if(!capabilities) {
 		return FALSE;
 	}
 
 	for(i=0; i<codec_list->descriptor_arr->nelts; i++) {
 		descriptor = &APR_ARRAY_IDX(codec_list->descriptor_arr,i,mpf_codec_descriptor_t);
+		if(descriptor->enabled == FALSE) continue;
+
 		/* match capabilities */
-		if(!mpf_codec_capabilities_attribs_find(capabilities,descriptor)) {
+		if(mpf_codec_capabilities_attribs_find(capabilities,descriptor)) {
+			/* at least one codec descriptor matches */
+			status = TRUE;
+		}
+		else {
 			descriptor->enabled = FALSE;
 		}
 	}
 
-	return TRUE;
+	return status;
 }
 
 /** Intersect two codec lists */
@@ -202,7 +208,7 @@ MPF_DECLARE(apt_bool_t) mpf_codec_lists_intersect(mpf_codec_list_t *codec_list1,
 	codec_list1->event_descriptor = NULL;
 	codec_list2->primary_descriptor = NULL;
 	codec_list2->event_descriptor = NULL;
-	/* find only one match for primary and named event descriptors, 
+	/* find only one match for primary and named event descriptors,
 	set the matched descriptors as preffered, disable the others */
 	for(i=0; i<codec_list1->descriptor_arr->nelts; i++) {
 		descriptor1 = &APR_ARRAY_IDX(codec_list1->descriptor_arr,i,mpf_codec_descriptor_t);
@@ -262,6 +268,11 @@ MPF_DECLARE(apt_bool_t) mpf_codec_lists_intersect(mpf_codec_list_t *codec_list1,
 		else {
 			descriptor2->enabled = FALSE;
 		}
+	}
+
+	/* if primary descriptor is disabled or not set, return FALSE */
+	if(!codec_list1->primary_descriptor || codec_list1->primary_descriptor->enabled == FALSE) {
+		return FALSE;
 	}
 
 	return TRUE;

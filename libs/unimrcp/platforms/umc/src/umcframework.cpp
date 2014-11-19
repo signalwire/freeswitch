@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2010 Arsen Chaloyan
+ * Copyright 2008-2014 Arsen Chaloyan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: umcframework.cpp 1767 2010-08-23 19:10:22Z achaloyan $
+ * $Id: umcframework.cpp 2204 2014-10-31 01:01:42Z achaloyan@gmail.com $
  */
 
 #include "umcframework.h"
@@ -193,7 +193,12 @@ apr_xml_doc* UmcFramework::LoadDocument()
 	apr_status_t rv;
 	const char* pFilePath;
 
-	pFilePath = apr_psprintf(m_pPool,"%s/%s",m_pDirLayout->conf_dir_path,"umcscenarios.xml");
+	pFilePath = apt_dir_layout_path_compose(m_pDirLayout,APT_LAYOUT_CONF_DIR,"umcscenarios.xml",m_pPool);
+	if(!pFilePath)
+	{
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Compose Config File Path");
+		return NULL;
+	}
 
 	apt_log(APT_LOG_MARK,APT_PRIO_NOTICE,"Open Config File [%s]",pFilePath);
 	rv = apr_file_open(&pFD,pFilePath,APR_READ|APR_BINARY,0,m_pPool);

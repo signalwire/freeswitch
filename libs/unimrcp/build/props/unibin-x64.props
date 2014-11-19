@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="apr.props" Condition=" '$(AprImported)' == '' "/>
+    <Import Project="sofiasip.props" Condition=" '$(SofiaSipImported)' == '' "/>
+  </ImportGroup>
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir>$(SolutionDir)$(PlatformName)\$(Configuration)\bin\</OutDir>
+    <IntDir>$(PlatformName)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>_WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(AprDir)\$(Platform)\$(Configuration);$(AprUtilDir)\$(Platform)\$(Configuration);$(SofiaDir)\win32\libsofia-sip-ua\$(Platform)\$(Configuration);$(SolutionDir)$(Platform)\$(Configuration)\lib;$(SolutionDir)$(Platform)\$(Configuration)\bin;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>
