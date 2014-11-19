@@ -1730,8 +1730,8 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		/* This is used for the waiting caller to quit waiting for a agent */
 		switch_channel_set_variable(member_channel, "cc_agent_found", "true");
 
-		/* Wait until the member hangup or the agent hangup.  This will quit also if the agent transfer the call */
-		while(switch_channel_up(member_channel) && switch_channel_up(agent_channel) && globals.running) {
+		/* Wait until the agent hangup.  This will quit also if the agent transfer the call */
+		while(switch_channel_up(agent_channel) && globals.running) {
 			switch_yield(100000);
 		}
 		tiers_state = CC_TIER_STATE_READY;
