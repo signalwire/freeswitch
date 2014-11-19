@@ -576,8 +576,6 @@ SWITCH_STANDARD_APP(play_yuv_function)
 	uint32_t width = 0, height = 0, size;
 	switch_image_t *img = NULL;
 	switch_byte_t *yuv = NULL;
-	switch_time_t last_video_ts = 0;
-	uint32_t timestamp = 0;
 	int argc;
 	char *argv[3] = { 0 };
 	char *mydata = switch_core_session_strdup(session, data);
@@ -644,6 +642,8 @@ SWITCH_STANDARD_APP(play_yuv_function)
 	// switch_set_flag((&vid_frame), SFF_PROXY_PACKET);
 
 	while (switch_channel_ready(channel)) {
+		char ts_str[64];
+
 		switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 		if (switch_channel_test_flag(channel, CF_BREAK)) {
@@ -672,50 +672,10 @@ SWITCH_STANDARD_APP(play_yuv_function)
 
 		if (read_frame) switch_core_session_write_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
 
-		{	/* video part */
-			uint32_t encoded_data_len = 1500;
-			switch_frame_t *frame = &vid_frame;
-			switch_time_t now = switch_micro_time_now() / 1000;
-			char ts_str[33];
-			long delta;
-
-			if (last_video_ts == 0) last_video_ts = now;
-
-			delta = now - last_video_ts;
-
-			if (delta > 0) {
-				timestamp += delta * 90;
-				last_video_ts = now;
-			}
-
-			sprintf(ts_str, "%u", timestamp);
-			text(img->planes[SWITCH_PLANE_PACKED], width, 20, 20, ts_str);
-			vid_frame.img = img;
-			switch_core_codec_encode_video(codec, &vid_frame);
-
-			while(encoded_data_len) {
-				// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "encoded: %s [%d] flag=%d ts=%lld\n", codec->implementation->iananame, encoded_data_len, flag, last_video_ts);
-
-				frame->timestamp = timestamp;
-
-				if (1) { // we can remove this when ts and marker full passed in core
-					/* set correct mark and ts */
-					switch_rtp_hdr_t *rtp = (switch_rtp_hdr_t *)frame->packet;
-
-					memset(rtp, 0, 12);
-					rtp->version = 2;
-					rtp->m = frame->m;
-					rtp->ts = htonl(timestamp);
-					rtp->ssrc = (uint32_t) ((intptr_t) rtp + (uint32_t) switch_epoch_time_now(NULL));
-					// rtp->ssrc = 0x11223344;
-				}
-
-				switch_core_session_write_video_frame(session, frame, SWITCH_IO_FLAG_NONE, 0);
-
-				vid_frame.datalen = 1500;
-				switch_core_codec_encode_video(codec, &vid_frame);
-			}
-		}
+		sprintf(ts_str, "%" SWITCH_TIME_T_FMT, switch_micro_time_now() / 1000);
+		text(img->planes[SWITCH_PLANE_PACKED], width, 20, 20, ts_str);
+		vid_frame.img = img;
+		switch_core_session_write_video_frame(session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
 	}
 
 	switch_core_thread_session_end(session);
