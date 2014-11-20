@@ -94,6 +94,7 @@ endpoints/mod_skinny
 #endpoints/mod_skypopen
 endpoints/mod_sofia
 #endpoints/mod_unicall
+#event_handlers/mod_amqp
 event_handlers/mod_cdr_csv
 #event_handlers/mod_cdr_mongodb
 #event_handlers/mod_cdr_pg_csv
