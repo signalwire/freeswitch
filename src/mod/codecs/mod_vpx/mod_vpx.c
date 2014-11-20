@@ -581,9 +581,9 @@ end:
 		switch_buffer_zero(context->vpx_packet_buffer);
 	}
 
-	if (frame->img) {
-		switch_set_flag(frame, SFF_USE_VIDEO_TIMESTAMP);
-	} else {
+	if (!frame->img) {
+		//switch_set_flag(frame, SFF_USE_VIDEO_TIMESTAMP);
+		//} else {
 		status = SWITCH_STATUS_MORE_DATA;
 	}
 
