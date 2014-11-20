@@ -567,8 +567,6 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 			switch_goto_status(SWITCH_STATUS_NOTFOUND, end);
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "IMAGE %dx%d %dx%d\n", frame->img->w,frame->img->h, frame->img->d_w, frame->img->d_h);
-
 		switch_buffer_zero(context->vpx_packet_buffer);
 	}
 

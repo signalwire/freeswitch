@@ -9750,6 +9750,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 	if (switch_channel_test_flag(session->channel, CF_VIDEO_DECODED_READ)) {
 		switch_status_t decode_status = switch_core_codec_decode_video((*frame)->codec, *frame);
 		
+		if ((*frame)->img && switch_channel_test_flag(session->channel, CF_VIDEO_DEBUG_READ)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "IMAGE %dx%d %dx%d\n", 
+							  (*frame)->img->w, (*frame)->img->h, (*frame)->img->d_w, (*frame)->img->d_h);
+		}
+
 		if (switch_test_flag((*frame), SFF_WAIT_KEY_FRAME)) {
 			switch_core_session_refresh_video(session);
 			switch_clear_flag((*frame), SFF_WAIT_KEY_FRAME);

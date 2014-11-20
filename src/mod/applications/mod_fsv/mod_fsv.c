@@ -724,6 +724,7 @@ static void decode_video_thread(switch_core_session_t *session, void *obj)
 
 	switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
 	switch_channel_set_flag(channel, CF_VIDEO_DEBUG_READ);
+	switch_channel_set_flag(channel, CF_VIDEO_DEBUG_WRITE);
 	
 	while (switch_channel_ready(channel)) {
 		switch_status_t status = switch_core_session_read_video_frame(session, &frame, SWITCH_IO_FLAG_NONE, 0);
