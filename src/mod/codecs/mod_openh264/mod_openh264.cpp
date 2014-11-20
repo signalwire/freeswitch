@@ -478,7 +478,7 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 	context->last_received_complete_picture = frame->m ? SWITCH_TRUE : SWITCH_FALSE;
 
 	size = buffer_h264_nalu(context, frame);
-	printf("READ buf:%ld got_key:%d st:%d m:%d\n", size, context->got_sps, status, frame->m);
+	//printf("READ buf:%ld got_key:%d st:%d m:%d\n", size, context->got_sps, status, frame->m);
 
 
 	if (frame->m && size) {
