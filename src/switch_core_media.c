@@ -9714,7 +9714,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 						ok = SWITCH_FALSE;
 					}
 				}
-				bp->ping_frame = NULL;;
+				bp->ping_frame = NULL;
 				switch_mutex_unlock(bp->read_mutex);
 			}
 
