@@ -38,8 +38,9 @@
 #include <vpx/vp8dx.h>
 #include <vpx/vp8.h>
 
-#define FPS 20
+#define FPS 15
 #define SLICE_SIZE 1200
+#define KEY_FRAME_MIN_FREQ 1000000
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_vpx_load);
 SWITCH_MODULE_DEFINITION(mod_vpx, mod_vpx_load, NULL, NULL);
@@ -54,6 +55,7 @@ struct vpx_context {
 	switch_codec_settings_t codec_settings;
 	unsigned int bandwidth;
 	vpx_codec_enc_cfg_t	config;
+	switch_time_t last_key_frame;
 
 	vpx_codec_ctx_t	encoder;
 	uint8_t encoder_init;
@@ -83,7 +85,7 @@ static switch_status_t init_codec(switch_codec_t *codec)
 {
 	vpx_context_t *context = (vpx_context_t *)codec->private_info;
 	vpx_codec_enc_cfg_t *config = &context->config;
-	int token_parts = 0;
+	int token_parts = 1;
 	int cpus = switch_core_cpu_count();
 
 	if (!context->codec_settings.video.width) {
@@ -104,6 +106,12 @@ static switch_status_t init_codec(switch_codec_t *codec)
 	if (context->bandwidth > 1250000) {
 		context->bandwidth = 1250000;
 	}
+
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_NOTICE, 
+					  "VPX reset encoder picture from %dx%d to %dx%d %u BW\n", 
+					  config->g_w, config->g_h, context->codec_settings.video.width, context->codec_settings.video.height, context->bandwidth);
+
 
 	// settings
 	config->g_profile = 0;
@@ -169,12 +177,13 @@ static switch_status_t init_codec(switch_codec_t *codec)
 	//	bits/bytes, if necessary.
 	config->rc_buf_optimal_sz = 1000;
 
-	if (context->flags & SWITCH_CODEC_FLAG_ENCODE) {
 
-		if (context->encoder_init) {
-			vpx_codec_destroy(&context->encoder);
-			context->encoder_init = 0;
+	if (context->encoder_init) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "VPX ENCODER RESET\n");
+		if (vpx_codec_enc_config_set(&context->encoder, config) != VPX_CODEC_OK) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error: [%d:%s]\n", context->encoder.err, context->encoder.err_detail);
 		}
+	} else if (context->flags & SWITCH_CODEC_FLAG_ENCODE) {
 
 		if (vpx_codec_enc_init(&context->encoder, encoder_interface, config, 0 & VPX_CODEC_USE_OUTPUT_PARTITION) != VPX_CODEC_OK) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error: [%d:%s]\n", context->encoder.err, context->encoder.err_detail);
@@ -200,13 +209,13 @@ static switch_status_t init_codec(switch_codec_t *codec)
 		//vpx_codec_control(&context->encoder, VP8E_SET_MAX_INTRA_BITRATE_PCT, 0);
 	}
 
-	if (context->flags & SWITCH_CODEC_FLAG_DECODE) {
+	if (context->flags & SWITCH_CODEC_FLAG_DECODE && !context->decoder_init) {
 		vp8_postproc_cfg_t ppcfg;
 
-		if (context->decoder_init) {
-			vpx_codec_destroy(&context->decoder);
-			context->decoder_init = 0;
-		}
+		//if (context->decoder_init) {
+		//	vpx_codec_destroy(&context->decoder);
+		//	context->decoder_init = 0;
+		//}
 
 		if (vpx_codec_dec_init(&context->decoder, decoder_interface, NULL, VPX_CODEC_USE_POSTPROC) != VPX_CODEC_OK) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error: [%d:%s]\n", context->encoder.err, context->encoder.err_detail);
@@ -223,8 +232,6 @@ static switch_status_t init_codec(switch_codec_t *codec)
 		vpx_codec_control(&context->decoder, VP8_SET_POSTPROC, &ppcfg);
 
 		switch_buffer_create_dynamic(&context->vpx_packet_buffer, 512, 512, 1024000);
-
-		printf("WTF CREATE ??? %p\n", (void *)context->vpx_packet_buffer);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -259,6 +266,11 @@ static switch_status_t switch_vpx_init(switch_codec_t *codec, switch_codec_flag_
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Encoder config Error\n");
 		return SWITCH_STATUS_FALSE;
 	}
+
+	/* start with 4k res cos otherwise you can't reset without re-init the whole codec */
+	context->codec_settings.video.width = 3840;
+	context->codec_settings.video.height = 2160;
+	init_codec(codec);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -386,11 +398,6 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 	if (context->config.g_w != width || context->config.g_h != height) {
 		context->codec_settings.video.width = width;
 		context->codec_settings.video.height = height;
-
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_NOTICE, 
-						  "VPX reset encoder picture from %dx%d to %dx%d %u BW\n", 
-						  context->config.g_w, context->config.g_h, width, height, context->bandwidth);
-
 		init_codec(codec);
 		frame->flags |= SFF_PICTURE_RESET;
 		context->need_key_frame = 1;
@@ -403,9 +410,14 @@ static switch_status_t switch_vpx_encode(switch_codec_t *codec, switch_frame_t *
 
 	if (context->need_key_frame != 0) {
 		// force generate a key frame
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VPX KEYFRAME GENERATED\n");
-		vpx_flags |= VPX_EFLAG_FORCE_KF;
-		context->need_key_frame = 0;
+		switch_time_t now = switch_micro_time_now();
+
+		if (1 || !context->last_key_frame || (now - context->last_key_frame) > KEY_FRAME_MIN_FREQ) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "VPX KEYFRAME GENERATED\n");
+			vpx_flags |= VPX_EFLAG_FORCE_KF;
+			context->need_key_frame = 0;
+			context->last_key_frame = now;
+		}
 	}
 
 	if (vpx_codec_encode(&context->encoder, (vpx_image_t *) frame->img, context->pts, duration, vpx_flags, VPX_DL_REALTIME) != VPX_CODEC_OK) {
@@ -510,16 +522,23 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 
 	status = buffer_vpx_packets(context, frame);
 
-	printf("READ buf:%ld got_key:%d st:%d m:%d\n", switch_buffer_inuse(context->vpx_packet_buffer), context->got_key_frame, status, frame->m);
+	//printf("READ buf:%ld got_key:%d st:%d m:%d\n", switch_buffer_inuse(context->vpx_packet_buffer), context->got_key_frame, status, frame->m);
 
-	if (status == SWITCH_STATUS_SUCCESS && frame->m && (len = switch_buffer_inuse(context->vpx_packet_buffer))) {
+	len = switch_buffer_inuse(context->vpx_packet_buffer);
+
+	if (frame->m && (status != SWITCH_STATUS_SUCCESS || !len)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "WTF????? %d %ld\n", status, len);
+	}
+
+
+	if (status == SWITCH_STATUS_SUCCESS && frame->m && len) {
 		uint8_t *data;
 		vpx_codec_iter_t iter = NULL;
 		int corrupted = 0;
 		int err;
 		//int keyframe = 0;
 
-		printf("WTF %d %ld\n", frame->m, len);
+		//printf("WTF %d %ld\n", frame->m, len);
 
 		switch_buffer_peek_zerocopy(context->vpx_packet_buffer, (void *)&data);
 		//keyframe = (*data & 0x01) ? 0 : 1;
@@ -545,7 +564,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 			switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%dx%d %dx%d\n", frame->img->w,frame->img->h, frame->img->d_w, frame->img->d_h);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "IMAGE %dx%d %dx%d\n", frame->img->w,frame->img->h, frame->img->d_w, frame->img->d_h);
 
 		switch_buffer_zero(context->vpx_packet_buffer);
 	}
