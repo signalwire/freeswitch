@@ -274,7 +274,7 @@ static switch_status_t nalu_slice(h264_codec_context_t *context, switch_frame_t 
 			frame->m = SWITCH_TRUE;
 			context->nalu_eat = 0;
 			context->cur_nalu_index++;
-			status = SWITCH_STATUS_MORE_DATA;
+			status = SWITCH_STATUS_SUCCESS;
 			goto end;
 		}
 	}
@@ -381,6 +381,8 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 	SSourcePicture* pic = NULL;
 	long result;
 
+	frame->m = SWITCH_FALSE;
+
 	if (context->need_key_frame) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "H264 KEYFRAME GENERATED\n");
 		context->encoder->ForceIntraFrame(1);
@@ -452,7 +454,6 @@ error:
 	}
 
 	frame->datalen = 0;
-	frame->m = SWITCH_TRUE;
 
 	return SWITCH_STATUS_FALSE;
 }
@@ -541,9 +542,9 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 end:
 
 	if (size == 0) {
-		status == SWITCH_STATUS_MORE_DATA;
+		status = SWITCH_STATUS_MORE_DATA;
 	}
-	
+
 	if (status == SWITCH_STATUS_RESTART) {
 		context->got_sps = 0;
 		switch_buffer_zero(context->nalu_buffer);
