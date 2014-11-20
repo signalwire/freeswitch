@@ -652,6 +652,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 		switch_core_session_raw_read(session);
 	}
 
+	switch_channel_set_flag(channel, CF_VIDEO_ECHO);
+
 	while (switch_channel_ready(channel)) {
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		if (!SWITCH_READ_ACCEPTABLE(status)) {

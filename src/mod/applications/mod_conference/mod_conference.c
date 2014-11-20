@@ -2252,10 +2252,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 
 		if (switch_channel_test_flag(channel, CF_VIDEO)) {
 			if (switch_test_flag(conference, CFLAG_VIDEO_BRIDGE)) {
-				switch_channel_set_flag(channel, CF_VIDEO_ECHO);
 				switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
-			} else {
-				switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
 			}
 			/* Tell the channel to request a fresh vid frame */
 			switch_core_session_refresh_video(member->session);
@@ -2503,7 +2500,6 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 		if (!imember->channel || !switch_channel_test_flag(imember->channel, CF_VIDEO)) {
 			continue;
 		}
-		switch_channel_clear_flag(imember->channel, CF_VIDEO_ECHO);
 
 		if (imember == conference->video_floor_holder) {
 			switch_channel_set_flag(imember->channel, CF_VIDEO_PASSIVE);
@@ -4334,7 +4330,6 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 		if (switch_channel_test_flag(channel, CF_VIDEO) && !switch_test_flag(member, MFLAG_ACK_VIDEO)) {
 			switch_set_flag_locked(member, MFLAG_ACK_VIDEO);
-			switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
 			switch_core_session_refresh_video(member->session);
 			conference_set_video_floor_holder(member->conference, member, SWITCH_FALSE);
 		}
