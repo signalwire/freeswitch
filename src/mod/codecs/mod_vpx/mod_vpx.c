@@ -39,7 +39,7 @@
 #include <vpx/vp8.h>
 
 #define FPS 15
-#define SLICE_SIZE 1200
+#define SLICE_SIZE SWITCH_DEFAULT_VIDEO_SIZE
 #define KEY_FRAME_MIN_FREQ 1000000
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_vpx_load);

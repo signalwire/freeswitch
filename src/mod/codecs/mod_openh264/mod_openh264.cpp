@@ -42,7 +42,7 @@
 #define FPS 20.0f // frame rate
 #define H264_NALU_BUFFER_SIZE 65536
 #define MAX_NALUS 100
-#define SLICE_SIZE 1200 //NALU Slice Size
+#define SLICE_SIZE SWITCH_DEFAULT_VIDEO_SIZE //NALU Slice Size
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_openh264_load);
 SWITCH_MODULE_DEFINITION(mod_openh264, mod_openh264_load, NULL, NULL);
