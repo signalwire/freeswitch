@@ -616,7 +616,6 @@ SWITCH_STANDARD_APP(play_yuv_function)
 	yuv = img->planes[SWITCH_PLANE_PACKED];
 
 	// switch_channel_set_flag(channel, CF_VIDEO_PASSIVE);
-	switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
 
 	vid_buffer = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
 
@@ -699,9 +698,7 @@ SWITCH_STANDARD_APP(play_yuv_function)
  done:
 
 	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
-
 	// switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
-	switch_channel_set_flag(channel, CF_VIDEO_ECHO);
 }
 
 

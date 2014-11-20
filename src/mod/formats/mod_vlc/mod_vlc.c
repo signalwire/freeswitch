@@ -613,9 +613,6 @@ SWITCH_STANDARD_APP(play_video_function)
 
 	switch_size_t audio_datalen;
 
-
-	switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
-
 	context = switch_core_session_alloc(session, sizeof(vlc_video_context_t));
 	switch_assert(context);
 	memset(context, 0, sizeof(vlc_file_context_t));

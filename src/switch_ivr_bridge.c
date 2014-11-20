@@ -244,10 +244,6 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	chan_a = switch_core_session_get_channel(session_a);
 	chan_b = switch_core_session_get_channel(session_b);
 
-	switch_channel_clear_flag(chan_a, CF_VIDEO_ECHO);
-	switch_channel_clear_flag(chan_b, CF_VIDEO_ECHO);
-	
-
 	if ((exec_app = switch_channel_get_variable(chan_a, "bridge_pre_execute_app"))) {
 		exec_data = switch_channel_get_variable(chan_a, "bridge_pre_execute_data");
 	}
