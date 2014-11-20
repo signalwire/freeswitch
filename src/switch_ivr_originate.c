@@ -2458,6 +2458,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					switch_ivr_sleep(oglobals.session, sleep_ms, SWITCH_TRUE, NULL);
 					if (!switch_channel_ready(caller_channel)) {
 						status = SWITCH_STATUS_FALSE;
+						/* set try and retries to 0 */
+						try = 0;
+						retries = 0;
 						goto done;
 					}
 				} else {
