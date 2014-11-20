@@ -99,7 +99,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_codec_slin(switch_core_s
 							   NULL,
 							   read_impl.actual_samples_per_second,
 							   interval,
-							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) == SWITCH_STATUS_SUCCESS) {
+							   read_impl.number_of_channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, NULL) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session),
 						  SWITCH_LOG_DEBUG, "Codec Activated L16@%uhz %dms\n", read_impl.actual_samples_per_second, interval);
 
@@ -1298,6 +1298,9 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, s
 
 	if (reset_read_codec) {
 		switch_core_session_set_read_codec(session, NULL);
+		if (session->sdata && switch_core_codec_ready(&session->sdata->codec)) {
+			switch_core_codec_destroy(&session->sdata->codec);
+		}
 	}
 
 	/* clear resamplers */
@@ -1667,7 +1670,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread_pool_worker(switch_th
 	switch_memory_pool_t *pool = node->pool;
 	void *pop;
 	int check = 0;
-
+	
 	switch_mutex_lock(session_manager.mutex);
 	session_manager.starting--;
 	session_manager.running++;
@@ -3065,6 +3068,21 @@ SWITCH_DECLARE(void) switch_core_session_debug_pool(switch_stream_handle_t *stre
 	stream->write_function(stream, "Thread pool: running:%d busy:%d popping:%d\n",
 		session_manager.running, session_manager.busy, session_manager.popping);
 }
+
+SWITCH_DECLARE(void) switch_core_session_raw_read(switch_core_session_t *session)
+{
+	if (session->sdata) {
+		if (session->sdata && switch_core_codec_ready(&session->sdata->codec)) {
+			switch_core_codec_destroy(&session->sdata->codec);
+		}
+		memset(session->sdata, 0, sizeof(*session->sdata));
+	} else {
+		session->sdata = switch_core_session_alloc(session, sizeof(*session->sdata));
+	}
+
+	switch_core_session_set_codec_slin(session, session->sdata);
+}
+
 
 /* For Emacs:
  * Local Variables:

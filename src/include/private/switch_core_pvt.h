@@ -194,6 +194,7 @@ struct switch_core_session {
 
 	switch_image_write_callback_t image_write_callback;
 	void *image_write_callback_user_data;
+	switch_slin_data_t *sdata;
 };
 
 struct switch_media_bug {
