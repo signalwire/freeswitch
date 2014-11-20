@@ -648,6 +648,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 		switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
 	}
 
+	if (switch_true(switch_channel_get_variable(channel, "echo_decode_audio"))) {
+		switch_core_session_raw_read(session);
+	}
+
 	while (switch_channel_ready(channel)) {
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
@@ -700,6 +704,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_echo(switch_core_session_t *s
 	}
 
 	switch_core_session_video_reset(session);
+	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 
 	return SWITCH_STATUS_SUCCESS;
 }

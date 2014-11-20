@@ -568,7 +568,7 @@ SWITCH_STANDARD_APP(play_yuv_function)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_frame_t vid_frame = { 0 };
 	int fd = -1;
-	switch_codec_t read_codec, *codec = NULL;
+	switch_codec_t *codec = NULL;
 	unsigned char *vid_buffer;
 	// switch_timer_t timer = { 0 };
 	switch_dtmf_t dtmf = { 0 };
@@ -578,7 +578,6 @@ SWITCH_STANDARD_APP(play_yuv_function)
 	switch_byte_t *yuv = NULL;
 	int argc;
 	char *argv[3] = { 0 };
-	switch_codec_implementation_t read_impl = { 0 };
 	char *mydata = switch_core_session_strdup(session, data);
 	uint32_t loops = 0;
 
@@ -591,24 +590,7 @@ SWITCH_STANDARD_APP(play_yuv_function)
 	}
 
 	switch_channel_audio_sync(channel);
-
-	switch_core_session_get_read_impl(session, &read_impl);
-	if (switch_core_codec_init(&read_codec,
-							   "L16",
-							   NULL,
-							   read_impl.samples_per_second,
-							   read_impl.microseconds_per_packet / 1000,
-							   read_impl.number_of_channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-							   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio Codec Activation Success\n");
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Audio Codec Activation Fail\n");
-		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Audio codec activation failed");
-		goto done;
-	}
-
-	switch_core_session_set_read_codec(session, &read_codec);
-
+	switch_core_session_raw_read(session);
 
 	argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
@@ -716,7 +698,6 @@ SWITCH_STANDARD_APP(play_yuv_function)
 
  done:
 
-	switch_core_codec_destroy(&read_codec);
 	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 
 	// switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
