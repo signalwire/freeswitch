@@ -9738,7 +9738,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 		}
 
 		if (decode_status == SWITCH_STATUS_MORE_DATA) {
-			printf("mo data\n");
 			goto top;
 		}
 	}
