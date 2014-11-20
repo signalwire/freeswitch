@@ -7,7 +7,9 @@ conf_dir="../conf"
 lang_dir="../conf/vanilla/lang"
 fs_description="FreeSWITCH is a scalable open source cross-platform telephony platform designed to route and interconnect popular communication protocols using audio, video, text or any other form of media."
 mod_build_depends="." mod_depends="." mod_recommends="." mod_suggests="."
-supported_distros="squeeze wheezy jessie sid"
+supported_debian_distros="squeeze wheezy jessie sid"
+supported_ubuntu_distros="trusty utopic"
+supported_distros=" $supported_debian_distros $supported_ubuntu_distros "
 avoid_mods=(
   applications/mod_limit
   applications/mod_mongo
@@ -49,6 +51,10 @@ avoid_mods_wheezy=(
 avoid_mods_squeeze=(
   formats/mod_vlc
   languages/mod_managed
+)
+avoid_mods_trusty=(
+)
+avoid_mods_utopic=(
 )
 manual_pkgs=(
 freeswitch-all
@@ -277,9 +283,11 @@ list_freeswitch_all_dbg_replaces () {
 
 print_source_control () {
   local libtool_dep="libtool, libtool-bin"
-  if test "$codename" = wheezy || test "$codename" = squeeze; then
-    libtool_dep="libtool"
-  fi
+  case "$codename" in
+    squeeze|wheezy|trusty)
+      libtool_dep="libtool"
+      ;;
+  esac
 cat <<EOF
 Source: freeswitch
 Section: comm
