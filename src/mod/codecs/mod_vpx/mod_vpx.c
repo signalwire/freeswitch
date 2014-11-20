@@ -514,7 +514,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		(!frame->m) && (!context->last_received_complete_picture)) {
 		// possible packet loss
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Packet Loss, skip previous received frame (to avoid crash?)\n");
-		switch_goto_status(SWITCH_STATUS_RESTART, end);
+		switch_goto_status(SWITCH_STATUS_NOTFOUND, end);
 	}
 
 	context->last_received_timestamp = frame->timestamp;
@@ -549,7 +549,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 
 		if (err != VPX_CODEC_OK) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error decoding %" SWITCH_SIZE_T_FMT " bytes, [%d:%d:%s]\n", len, err, decoder->err, decoder->err_detail);
-			switch_goto_status(SWITCH_STATUS_RESTART, end);
+			switch_goto_status(SWITCH_STATUS_NOTFOUND, end);
 		}
 
 		if (vpx_codec_control(decoder, VP8D_GET_FRAME_CORRUPTED, &corrupted) != VPX_CODEC_OK) {
@@ -560,8 +560,8 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 		frame->img = (switch_image_t *) vpx_codec_get_frame(decoder, &iter);
 
 		if (!(frame->img) || corrupted) {
-			switch_buffer_zero(context->vpx_packet_buffer);
-			switch_goto_status(SWITCH_STATUS_SUCCESS, end);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "VPX invalid packet\n");
+			switch_goto_status(SWITCH_STATUS_NOTFOUND, end);
 		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "IMAGE %dx%d %dx%d\n", frame->img->w,frame->img->h, frame->img->d_w, frame->img->d_h);
@@ -570,6 +570,11 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 	}
 
 end:
+
+	if (status == SWITCH_STATUS_NOTFOUND) {
+		switch_buffer_zero(context->vpx_packet_buffer);
+		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
+	}
 
 	if (status == SWITCH_STATUS_RESTART) {
 		context->got_key_frame = 0;
