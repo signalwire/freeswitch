@@ -700,10 +700,8 @@ SWITCH_STANDARD_APP(decode_video_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_codec_t *codec = NULL;
-	switch_dtmf_t dtmf = { 0 };
 	switch_frame_t *frame;
 	uint32_t width = 0, height = 0;
-	switch_time_t last = switch_micro_time_now();
 	uint32_t max_pictures = 0;
 	uint32_t decoded_pictures = 0;
 
@@ -728,31 +726,18 @@ SWITCH_STANDARD_APP(decode_video_function)
 		goto done;
 	}
 
+	switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
+
 	while (switch_channel_ready(channel)) {
-		switch_core_session_read_video_frame(session, &frame, SWITCH_IO_FLAG_NONE, 0);
+		switch_status_t status = switch_core_session_read_video_frame(session, &frame, SWITCH_IO_FLAG_NONE, 0);
 
 		if (switch_channel_test_flag(channel, CF_BREAK)) {
 			switch_channel_clear_flag(channel, CF_BREAK);
 			break;
 		}
 
-		switch_ivr_parse_all_events(session);
-
-		//check for dtmf interrupts
-		if (switch_channel_has_dtmf(channel)) {
-			const char * terminators = switch_channel_get_variable(channel, SWITCH_PLAYBACK_TERMINATORS_VARIABLE);
-			switch_channel_dequeue_dtmf(channel, &dtmf);
-
-			if (terminators && !strcasecmp(terminators, "none")) {
-				terminators = NULL;
-			}
-
-			if (terminators && strchr(terminators, dtmf.digit)) {
-				char sbuf[2] = {dtmf.digit, '\0'};
-
-				switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, sbuf);
-				break;
-			}
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			break;
 		}
 
 		if (frame && frame->datalen > 0) {
@@ -774,35 +759,22 @@ SWITCH_STANDARD_APP(decode_video_function)
 			continue;
 		}
 
-		if ( 1 ) {	/* video part */
-			switch_core_codec_decode_video(codec, frame);
-
-			if ((switch_test_flag(frame, SFF_WAIT_KEY_FRAME))) {
-				switch_time_t now = switch_micro_time_now();
-				if (now - last > 3000000) {
-					switch_core_session_refresh_video(session);
-					last = now;
-				}
-				continue;
+		if (frame->img) {
+			if (frame->img->d_w > 0 && !width) {
+				width = frame->img->d_w;
+				switch_channel_set_variable_printf(channel, "video_width", "%d", width);
 			}
 
-			if (frame->img) {
-				if (frame->img->d_w > 0 && !width) {
-					width = frame->img->d_w;
-					switch_channel_set_variable_printf(channel, "video_width", "%d", width);
-				}
+			if (frame->img->d_h > 0 && !height) {
+				height = frame->img->d_h;
+				switch_channel_set_variable_printf(channel, "video_height", "%d", height);
+			}
 
-				if (frame->img->d_h > 0 && !height) {
-					height = frame->img->d_h;
-					switch_channel_set_variable_printf(channel, "video_height", "%d", height);
-				}
+			decoded_pictures++;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "picture#%d %dx%d\n", decoded_pictures, frame->img->d_w, frame->img->d_h);
 
-				decoded_pictures++;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "picture#%d %dx%d\n", decoded_pictures, frame->img->d_w, frame->img->d_h);
-
-				if (max_pictures && (decoded_pictures >= max_pictures)) {
-					break;
-				}
+			if (max_pictures && (decoded_pictures >= max_pictures)) {
+				break;
 			}
 		}
 	}
