@@ -1849,7 +1849,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 					switch_channel_execute_on(session->channel, "execute_on_media_timeout");
 					switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 				}
-
+				
 
 				switch_channel_hangup(session->channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
 			}
@@ -9686,6 +9686,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 	if (!(*frame)) {
 		goto done;
 	}
+	
+	if (switch_channel_test_flag(session->channel, CF_VIDEO_DEBUG_READ)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "seq: %d ts: %ld len: %4d %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x mark: %d %s\n",
+						  (*frame)->seq, (*frame)->timestamp, (*frame)->datalen,
+						  *((uint8_t *)(*frame)->data), *((uint8_t *)(*frame)->data + 1),
+						  *((uint8_t *)(*frame)->data + 2), *((uint8_t *)(*frame)->data + 3),
+						  *((uint8_t *)(*frame)->data + 4), *((uint8_t *)(*frame)->data + 5),
+						  *((uint8_t *)(*frame)->data + 6), *((uint8_t *)(*frame)->data + 7),
+						  *((uint8_t *)(*frame)->data + 8), *((uint8_t *)(*frame)->data + 9),
+						  *((uint8_t *)(*frame)->data + 10), (*frame)->m, switch_test_flag((*frame), SFF_CNG) ? " CNG" : "");
+	}
+
 
 	if (switch_test_flag(*frame, SFF_CNG)) {
 		status = SWITCH_STATUS_SUCCESS;

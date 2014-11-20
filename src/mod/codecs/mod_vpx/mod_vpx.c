@@ -315,16 +315,19 @@ static switch_status_t switch_vpx_init(switch_codec_t *codec, switch_codec_flag_
 
 static switch_status_t consume_partition(vpx_context_t *context, switch_frame_t *frame)
 {
-	if (!context->pkt) context->pkt = vpx_codec_get_cx_data(&context->encoder, &context->iter);
+	if (!context->pkt) {
+		context->pkt = vpx_codec_get_cx_data(&context->encoder, &context->iter);
+		context->pkt_pos = 0;
+	}
 
-	if (context->pkt) {
+	//	if (context->pkt) {
 		// if (context->pkt->kind == VPX_CODEC_CX_FRAME_PKT && (context->pkt->data.frame.flags & VPX_FRAME_IS_KEY) && context->pkt_pos == 0) {
 		// 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "============================Got a VP8 Key Frame size:[%d]===================================\n", (int)context->pkt->data.frame.sz);
 		// }
 
 		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "size:%d flag: %x part_id: %d pts: %lld duration:%ld\n",
 		// 	(int)context->pkt->data.frame.sz, context->pkt->data.frame.flags, context->pkt->data.frame.partition_id, context->pkt->data.frame.pts, context->pkt->data.frame.duration);
-	}
+		//}
 
 	if (!context->pkt || context->pkt_pos >= context->pkt->data.frame.sz - 1 || context->pkt->kind != VPX_CODEC_CX_FRAME_PKT) {
 		frame->datalen = 0;

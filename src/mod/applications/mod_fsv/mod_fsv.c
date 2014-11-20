@@ -723,6 +723,7 @@ static void decode_video_thread(switch_core_session_t *session, void *obj)
 	}
 
 	switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
+	switch_channel_set_flag(channel, CF_VIDEO_DEBUG_READ);
 	
 	while (switch_channel_ready(channel)) {
 		switch_status_t status = switch_core_session_read_video_frame(session, &frame, SWITCH_IO_FLAG_NONE, 0);
@@ -741,15 +742,6 @@ static void decode_video_thread(switch_core_session_t *session, void *obj)
 		} else {
 			continue;
 		}
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "seq: %d ts: %ld len: %4d %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x mark: %d %s\n",
-			frame->seq, frame->timestamp, frame->datalen,
-			*((uint8_t *)frame->data), *((uint8_t *)frame->data + 1),
-			*((uint8_t *)frame->data + 2), *((uint8_t *)frame->data + 3),
-			*((uint8_t *)frame->data + 4), *((uint8_t *)frame->data + 5),
-			*((uint8_t *)frame->data + 6), *((uint8_t *)frame->data + 7),
-			*((uint8_t *)frame->data + 8), *((uint8_t *)frame->data + 9),
-			*((uint8_t *)frame->data + 10), frame->m, switch_test_flag(frame, SFF_CNG) ? " CNG" : "");
 
 		if (switch_test_flag(frame, SFF_CNG) || frame->datalen < 3) {
 			continue;
