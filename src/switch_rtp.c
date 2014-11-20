@@ -5578,17 +5578,16 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 
 			if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && !rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA]) {
-				pt = 100000;
+				pt = 200000;
 			}
 
-			if (using_ice(rtp_session)) {
-				pt = 20000;
-			}
+			//if (using_ice(rtp_session)) {
+			//	pt = 20000;
+			//}
 
 			poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, pt);
 
-
-			if (rtp_session->dtmf_data.out_digit_dur > 0) {
+			if (!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && rtp_session->dtmf_data.out_digit_dur > 0) {
 				return_cng_frame();
 			}
 
