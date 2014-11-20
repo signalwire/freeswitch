@@ -4423,6 +4423,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	switch_status_t status;
 	switch_frame_t *read_frame;
 	switch_media_handle_t *smh;
+	uint32_t loops = 0;
 
 	if (!(smh = session->media_handle)) {
 		return NULL;
@@ -4438,6 +4439,11 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 	switch_core_session_refresh_video(session);
 
 	while (switch_channel_up_nosig(channel)) {
+		if (!switch_channel_test_flag(channel, CF_VIDEO)) {
+			if ((++loops % 100) == 0) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Waiting for video......\n");
+			switch_yield(20000);
+			continue;
+		}
 
 		if (switch_channel_test_flag(channel, CF_VIDEO_PASSIVE)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Video thread paused. Echo is %s\n", 
