@@ -80,11 +80,6 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 				switch_cond_next();
 				continue;
 			}
-
-			if (!switch_test_flag(read_frame, SFF_CNG)) {
-				switch_core_session_write_video_frame(vh->session_a, read_frame, SWITCH_IO_FLAG_NONE, 0);
-				continue;
-			}
 		}
 
 		if (switch_test_flag(read_frame, SFF_CNG)) {
