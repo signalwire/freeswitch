@@ -568,7 +568,7 @@ SWITCH_STANDARD_APP(play_yuv_function)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_frame_t vid_frame = { 0 };
 	int fd = -1;
-	switch_codec_t *codec = NULL;
+	switch_codec_t read_codec, *codec = NULL;
 	unsigned char *vid_buffer;
 	// switch_timer_t timer = { 0 };
 	switch_dtmf_t dtmf = { 0 };
@@ -578,12 +578,37 @@ SWITCH_STANDARD_APP(play_yuv_function)
 	switch_byte_t *yuv = NULL;
 	int argc;
 	char *argv[3] = { 0 };
+	switch_codec_implementation_t read_impl = { 0 };
 	char *mydata = switch_core_session_strdup(session, data);
+	uint32_t loops = 0;
 
-	if (!switch_channel_test_flag(channel, CF_VIDEO)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Channel %s has no video\n", switch_channel_get_name(channel));
+	switch_channel_answer(channel);
+
+	while (switch_channel_ready(channel) && !switch_channel_test_flag(channel, CF_VIDEO)) {
+		if ((++loops % 100) == 0) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Waiting for video......\n");
+		switch_ivr_sleep(session, 20, SWITCH_TRUE, NULL);
+		continue;
+	}
+
+	switch_channel_audio_sync(channel);
+
+	switch_core_session_get_read_impl(session, &read_impl);
+	if (switch_core_codec_init(&read_codec,
+							   "L16",
+							   NULL,
+							   read_impl.samples_per_second,
+							   read_impl.microseconds_per_packet / 1000,
+							   read_impl.number_of_channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+							   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio Codec Activation Success\n");
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Audio Codec Activation Fail\n");
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Audio codec activation failed");
 		goto done;
 	}
+
+	switch_core_session_set_read_codec(session, &read_codec);
+
 
 	argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
@@ -630,7 +655,7 @@ SWITCH_STANDARD_APP(play_yuv_function)
 	close(fd);
 	fd = -1;
 
-	switch_channel_answer(channel);
+
 
 	codec = switch_core_session_get_video_write_codec(session);
 
@@ -669,9 +694,8 @@ SWITCH_STANDARD_APP(play_yuv_function)
 				break;
 			}
 		}
-
-		/* echo of opus tends to seg chrome */
-		//if (read_frame) switch_core_session_write_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
+		
+		if (read_frame) switch_core_session_write_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 		sprintf(ts_str, "%" SWITCH_TIME_T_FMT, switch_micro_time_now() / 1000);
 		text(img->planes[SWITCH_PLANE_PACKED], width, 20, 20, ts_str);
@@ -691,43 +715,37 @@ SWITCH_STANDARD_APP(play_yuv_function)
 	switch_img_free(img);
 
  done:
+
+	switch_core_codec_destroy(&read_codec);
+	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+
 	// switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
 	switch_channel_set_flag(channel, CF_VIDEO_ECHO);
 }
 
 
-SWITCH_STANDARD_APP(decode_video_function)
+static void decode_video_thread(switch_core_session_t *session, void *obj)
 {
+	uint32_t max_pictures = *((uint32_t *) obj);
+	switch_codec_t *codec;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_codec_t *codec = NULL;
 	switch_frame_t *frame;
 	uint32_t width = 0, height = 0;
-	uint32_t max_pictures = 0;
 	uint32_t decoded_pictures = 0;
 
-	if (!zstr(data)) max_pictures = atoi(data);
-
-	if (!switch_channel_test_flag(channel, CF_VIDEO)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Channel %s has no video\n", switch_channel_get_name(channel));
+	if (!switch_channel_ready(channel)) {
 		goto done;
 	}
 
-	switch_channel_set_flag(channel, CF_VIDEO_PASSIVE);
-	switch_channel_clear_flag(channel, CF_VIDEO_ECHO);
-	switch_channel_answer(channel);
-	switch_core_session_refresh_video(session);
-
-	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
-
-
 	codec = switch_core_session_get_video_read_codec(session);
+
 	if (!codec) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Channel has no video read codec\n");
 		goto done;
 	}
 
 	switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
-
+	
 	while (switch_channel_ready(channel)) {
 		switch_status_t status = switch_core_session_read_video_frame(session, &frame, SWITCH_IO_FLAG_NONE, 0);
 
@@ -779,12 +797,36 @@ SWITCH_STANDARD_APP(decode_video_function)
 		}
 	}
 
-	switch_core_thread_session_end(session);
+ done:
+
+	return;
+}
+
+SWITCH_STANDARD_APP(decode_video_function)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	uint32_t max_pictures = 0;
+	const char *moh = switch_channel_get_hold_music(channel);
+
+	if (zstr(moh)) {
+		moh = "silence_stream://-1";
+	}
+
+	switch_channel_answer(channel);
+	switch_core_session_refresh_video(session);
+	switch_core_media_start_video_function(session, decode_video_thread, &max_pictures);
+
+	switch_ivr_play_file(session, NULL, moh, NULL);
+
+	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
+
+	if (!zstr(data)) max_pictures = atoi(data);
+
 	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "OK");
 
- done:
-	switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
-	switch_channel_set_flag(channel, CF_VIDEO_ECHO);
+
+	switch_core_media_end_video_function(session);
+	switch_core_session_video_reset(session);
 }
 
 
