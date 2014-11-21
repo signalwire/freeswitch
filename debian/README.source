@@ -72,6 +72,16 @@ will generate packages for all supported Debian releases.  Simply run:
 
     ./debian/util.sh build-all -ibn -z9
 
+Building on Ubuntu
+------------------
+
+Building on supported Ubuntu releases requires the main and universe
+APT components in the pbuilder chroot. You should enable the universe
+component in your system's APT sources.list and use the -t option to
+use your system sources in the chroot:
+
+    ./debian/util.sh build-all -ibn -z9 -t
+
 Building only some modules
 --------------------------
 
