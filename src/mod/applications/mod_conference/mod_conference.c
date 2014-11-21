@@ -225,7 +225,8 @@ typedef enum {
 	CFLAG_JSON_EVENTS = (1 << 20),
 	CFLAG_LIVEARRAY_SYNC = (1 << 21),
 	CFLAG_CONF_RESTART_AUTO_RECORD = (1 << 22),
-	CFLAG_POSITIONAL = (1 << 23)
+	CFLAG_POSITIONAL = (1 << 23),
+	CFLAG_DECODE_VIDEO = (1 << 24)
 } conf_flag_t;
 
 typedef enum {
@@ -2242,6 +2243,10 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 
 		if (switch_channel_test_flag(channel, CF_VIDEO)) {
 			switch_set_flag_locked(member, MFLAG_ACK_VIDEO);
+		}
+
+		if (switch_test_flag(conference, CFLAG_DECODE_VIDEO)) {
+			switch_channel_set_flag(channel, CF_VIDEO_DECODED_READ);
 		}
 
 		switch_channel_set_variable_printf(channel, "conference_member_id", "%d", member->id);
@@ -8929,6 +8934,8 @@ static void set_cflags(const char *flags, uint32_t *f)
 				*f |= CFLAG_RFC4579;
 			} else if (!strcasecmp(argv[i], "auto-3d-position")) {
 				*f |= CFLAG_POSITIONAL;
+			} else if (!strcasecmp(argv[i], "decode-video")) {
+				*f |= CFLAG_DECODE_VIDEO;
 			}
 
 			
@@ -9200,7 +9207,6 @@ SWITCH_STANDARD_APP(conference_function)
 
 	switch_channel_set_flag(channel, CF_CONFERENCE);
 	switch_channel_set_flag(channel, CF_VIDEO_PASSIVE);
-
 
 	if (switch_channel_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Channel answer failed.\n");
