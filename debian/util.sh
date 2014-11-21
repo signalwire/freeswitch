@@ -390,8 +390,12 @@ build_all () {
       Ubuntu)
         distros="utopic trusty"
         ;;
-      *) # default to assuming Debian
+      Debian)
         distros="sid jessie wheezy"
+        ;;
+      *)
+        echo "Unknown distribution"
+        exit -1
         ;;
     esac
   fi
