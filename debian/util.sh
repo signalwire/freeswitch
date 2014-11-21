@@ -385,7 +385,16 @@ build_all () {
   done
   shift $(($OPTIND-1))
   [ -n "$archs" ] || archs="amd64 i386"
-  [ -n "$distros" ] || distros="sid jessie wheezy"
+  if [ -z "$distros" ]; then
+    case "$(lsb_release -is)" in
+      Ubuntu)
+        distros="utopic trusty"
+        ;;
+      *) # default to assuming Debian
+        distros="sid jessie wheezy"
+        ;;
+    esac
+  fi
   ! $depinst || aptitude install -y \
     rsync git less cowbuilder ccache \
     devscripts equivs build-essential
