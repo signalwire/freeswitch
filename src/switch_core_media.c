@@ -9517,8 +9517,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 		codec = &engine->write_codec;
 	}
 
-	if (cmd == SCC_VIDEO_REFRESH && mtype == SWITCH_MEDIA_TYPE_VIDEO) {
-		switch_core_session_refresh_video(session);
+	if (mtype == SWITCH_MEDIA_TYPE_VIDEO) {
+		if (!switch_channel_test_flag(session->channel, CF_VIDEO)) {
+			return SWITCH_STATUS_FALSE;
+		}
+		
+		if (cmd == SCC_VIDEO_REFRESH) {
+			switch_core_session_message_t msg = { 0 };
+			msg.from = __FILE__;
+			msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
+			switch_core_session_receive_message(session, &msg);
+		}
 	}
 
 	if (codec) {
@@ -9564,6 +9573,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	switch_media_handle_t *smh;
 	switch_image_t *img = frame->img;
 	switch_status_t encode_status;
+	switch_frame_t write_frame = {0};
 
 	switch_assert(session);
 
@@ -9572,6 +9582,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	}
 
 	if (switch_channel_down(session->channel)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!codec) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s has no video codec\n", switch_core_session_get_name(session));
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -9597,6 +9612,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	if (!img) {
 		return raw_write_video(session, frame, flags, stream_id);
 	}
+
+	write_frame = *frame;
+	frame = &write_frame;
 
 	if (!switch_test_flag(frame, SFF_USE_VIDEO_TIMESTAMP)) {
 
