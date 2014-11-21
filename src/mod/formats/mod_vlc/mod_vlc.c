@@ -199,9 +199,9 @@ void vlc_play_audio_callback(void *data, const void *samples, unsigned count, in
 	switch_mutex_lock(context->audio_mutex);
 
 	bytes = switch_buffer_inuse(context->audio_buffer);
-	if ( bytes > VLC_BUFFER_SIZE * 4) {
+	if ( bytes > (VLC_BUFFER_SIZE * 10)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Buffer overflow %d\n", (int)bytes);
-		switch_buffer_toss(context->audio_buffer, bytes - VLC_BUFFER_SIZE);
+		switch_buffer_toss(context->audio_buffer, bytes - (VLC_BUFFER_SIZE * 10));
 	}
 
 	switch_buffer_write(context->audio_buffer, samples, count * 2 * context->channels);
@@ -252,7 +252,7 @@ static void do_buffer_frame(vlc_video_context_t *context, switch_frame_t *frame)
 
 	switch_mutex_lock(context->video_mutex);
 
-	if (switch_buffer_inuse(context->video_buffer) > VLC_BUFFER_SIZE * 10) {
+	if (switch_buffer_inuse(context->video_buffer) > VLC_BUFFER_SIZE * 1024) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer overflow %d\n", (int)switch_buffer_inuse(context->video_buffer));
 		switch_buffer_zero(context->video_buffer);
 	}
