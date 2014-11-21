@@ -9517,6 +9517,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 		codec = &engine->write_codec;
 	}
 
+	if (cmd == SCC_VIDEO_REFRESH && mtype == SWITCH_MEDIA_TYPE_VIDEO) {
+		switch_core_session_refresh_video(session);
+	}
+
 	if (codec) {
 		return switch_core_codec_control(codec, cmd, ctype, cmd_data, rtype, ret_data);
 	}
