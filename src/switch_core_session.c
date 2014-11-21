@@ -3059,6 +3059,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_refresh_video(switch_core_se
 		msg.from = __FILE__;
 		msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
 		switch_core_session_receive_message(session, &msg);
+		switch_core_media_gen_key_frame(session);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
