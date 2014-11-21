@@ -387,11 +387,11 @@ build_all () {
   [ -n "$archs" ] || archs="amd64 i386"
   if [ -z "$distros" ]; then
     case "$(lsb_release -is)" in
-      Ubuntu)
-        distros="utopic trusty"
-        ;;
       Debian)
         distros="sid jessie wheezy"
+        ;;
+      Ubuntu)
+        distros="utopic trusty"
         ;;
       *)
         echo "Unknown distribution"
