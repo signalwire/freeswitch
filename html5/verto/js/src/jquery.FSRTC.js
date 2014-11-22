@@ -484,7 +484,11 @@
                 }
 
                 if (options.type == "offer") {
-                    if (!moz && !x && options.onICESDP) {
+		    /* new mozilla now tries to be like chrome but it takes them 10 seconds to complete the ICE 
+		       Booooooooo! This trickle thing is a waste of time...... We'll all have to re-code our engines 
+		       to handle partial setups to maybe save 100m
+		     */
+                    if ((!moz || peer.localDescription.sdp.match(/a=candidate/)) && !x && options.onICESDP) {
                         options.onICESDP(peer.localDescription);
                         //x = 1;
                         /*
@@ -549,7 +553,10 @@
             mandatory: {
                 OfferToReceiveAudio: true,
                 OfferToReceiveVideo: true
-            }
+            },
+	    /* spec is changed support both ways at once */
+	    offerToReceiveAudio: true,
+	    offerToReceiveVideo: true   
         };
 
         // onOfferSDP(RTCSessionDescription)
@@ -560,7 +567,8 @@
                 sessionDescription.sdp = serializeSdp(sessionDescription.sdp);
                 peer.setLocalDescription(sessionDescription);
                 options.onOfferSDP(sessionDescription);
-                if (moz && options.onICESDP) {
+		/* old mozilla behaviour the SDP was already great right away */
+                if (moz && options.onICESDP && sessionDescription.match(/a=candidate/)) {
                     options.onICESDP(sessionDescription);
                 }
             },
