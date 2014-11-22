@@ -644,9 +644,8 @@ SWITCH_DECLARE(payload_map_t *) switch_core_media_add_payload_map(switch_core_se
 
 	switch_mutex_lock(smh->sdp_mutex);
 
-
 	for (pmap = engine->payload_map; pmap && pmap->allocated; pmap = pmap->next) {
-		exists = (!strcasecmp(name, pmap->iananame) && (!pmap->rate || rate == pmap->rate) && (!pmap->ptime || pmap->ptime == ptime));
+		exists = (!strcasecmp(name, pmap->iananame) && pmap->pt == pt && (!pmap->rate || rate == pmap->rate) && (!pmap->ptime || pmap->ptime == ptime));
 
 		if (exists) {
 			
@@ -4135,6 +4134,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						vmatch = strcasecmp(rm_encoding, imp->iananame) ? 0 : 1;
 					}
 
+					//DFF hack out packetization mode 1 need infrastructure here
+					if (switch_stristr("packetization-mode=1", map->rm_fmtp)) {
+						vmatch = 0;
+					}
 
 					if (vmatch && (map->rm_rate == imp->samples_per_second)) {
 						matches[m_idx].imp = imp;
@@ -6984,9 +6987,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_VIDEO, 0);
 		}
 
-		if (switch_channel_test_flag(session->channel, CF_WEBRTC)) {
-			switch_media_handle_set_media_flag(smh, SCMF_MULTI_ANSWER_VIDEO);
-		}
+		//if (switch_channel_test_flag(session->channel, CF_WEBRTC)) {
+		//	switch_media_handle_set_media_flag(smh, SCMF_MULTI_ANSWER_VIDEO);
+		//}
 
 		if ((v_port = v_engine->adv_sdp_port)) {
 			int loops;
@@ -7017,7 +7020,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					if (switch_media_handle_test_media_flag(smh, SCMF_MULTI_ANSWER_VIDEO)) {
 						switch_mutex_lock(smh->sdp_mutex);
 						for (pmap = v_engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
-							if (pmap->pt != v_engine->cur_payload_map->pt) {
+							if (pmap->pt != v_engine->cur_payload_map->pt && pmap->negotiated) {
 								switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", pmap->pt);
 							}
 						}
@@ -9520,13 +9523,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 	if (mtype == SWITCH_MEDIA_TYPE_VIDEO) {
 		if (!switch_channel_test_flag(session->channel, CF_VIDEO)) {
 			return SWITCH_STATUS_FALSE;
-		}
-		
-		if (cmd == SCC_VIDEO_REFRESH) {
-			switch_core_session_message_t msg = { 0 };
-			msg.from = __FILE__;
-			msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
-			switch_core_session_receive_message(session, &msg);
 		}
 	}
 
