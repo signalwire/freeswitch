@@ -3059,12 +3059,23 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_refresh_video(switch_core_se
 		msg.from = __FILE__;
 		msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
 		switch_core_session_receive_message(session, &msg);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_refresh_video_both_ways(switch_core_session_t *session)
+{
+	if (switch_channel_test_flag(session->channel, CF_VIDEO)) {
+		switch_core_session_refresh_video(session);
 		switch_core_media_gen_key_frame(session);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	return SWITCH_STATUS_FALSE;
 }
+
 
 SWITCH_DECLARE(void) switch_core_session_debug_pool(switch_stream_handle_t *stream)
 {
