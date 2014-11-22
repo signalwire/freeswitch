@@ -9591,7 +9591,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	}
 
 	if (!smh->video_init && smh->mparams->video_key_first && (now - smh->video_last_key_time) > smh->mparams->video_key_first) {
-		switch_core_media_gen_key_frame(smh->session);
+		switch_core_session_refresh_video_both_ways(smh->session);
 
 		if (smh->video_last_key_time) {
 			smh->video_init = 1;
