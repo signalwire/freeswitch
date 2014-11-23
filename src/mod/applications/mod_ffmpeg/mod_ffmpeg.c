@@ -37,7 +37,7 @@
 #include <libavutil/opt.h>
 #include <libavutil/imgutils.h>
 
-/* use libx264, comment for use the ffmpeg/avcodec wrapper */
+/* use libx264 by default, comment out to use the ffmpeg/avcodec wrapper */
 #define H264_CODEC_USE_LIBX264
 #define SLICE_SIZE SWITCH_DEFAULT_VIDEO_SIZE
 
@@ -46,12 +46,11 @@
 #endif
 
 #define FPS 15 // frame rate
-#define BUFFERSIZE 4096 * 2
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_ffmpeg_load);
 SWITCH_MODULE_DEFINITION(mod_ffmpeg, mod_ffmpeg_load, NULL, NULL);
 
-/*  ff_avc_find_startcode is not esposed in the ffmpeg lib but you can use it
+/*  ff_avc_find_startcode is not exposed in the ffmpeg lib but you can use it
 	Either include the avc.h which available in the ffmpeg source, or
 	just add the declaration like we does following to avoid include that whole avc.h
 	The function is implemented in avc.h, guess we'll get rid of this later if we can directly use libx264
@@ -61,1182 +60,6 @@ SWITCH_MODULE_DEFINITION(mod_ffmpeg, mod_ffmpeg_load, NULL, NULL);
 
 const uint8_t *ff_avc_find_startcode(const uint8_t *p, const uint8_t *end);
 
-#if 0 // this is not fully tested and supported
-struct record_helper {
-	switch_core_session_t *session;
-	switch_mutex_t *mutex;
-	AVFormatContext *avctx;
-	AVStream *video_st;
-	AVFrame *avframe;
-	int up;
-
-	int seq;
-	switch_socket_t *sock;
-	switch_sockaddr_t *sock_addr;
-};
-
-struct ffmpeg_context {
-	switch_mutex_t *mutex;
-	switch_buffer_t *buf;
-	AVFormatContext *avctx;
-	AVStream *video_st;
-	AVStream *audio_st;
-	AVFrame *aframe;
-	AVCodec *acodec;
-	int file_opened;
-	int video_pts;
-};
-
-typedef struct ffmpeg_context ffmpeg_context;
-
-static AVStream *add_audio_stream(AVFormatContext *context, enum AVCodecID codec_id)
-{
-	AVCodecContext *cc;
-	AVStream *st;
-	AVCodec *codec;
-
-	/* find the audio encoder */
-	codec = avcodec_find_encoder(codec_id);
-	if (!codec) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "codec not found\n");
-		return NULL;
-	}
-
-	st = avformat_new_stream(context, codec);
-
-	if (!st) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not alloc audio stream\n");
-		return NULL;
-	}
-
-	st->id = 1;
-
-	cc = st->codec;
-	cc->codec = codec;
-
-	/* put sample parameters */
-	cc->sample_fmt  = AV_SAMPLE_FMT_S16;
-	cc->bit_rate    = 64000;
-	cc->sample_rate = 44100;
-	cc->channels    = 1;
-
-	// some formats want stream headers to be separate
-	if (context->oformat->flags & AVFMT_GLOBALHEADER) {
-		cc->flags |= CODEC_FLAG_GLOBAL_HEADER;
-	}
-
-	return st;
-}
-
-static AVStream *add_video_stream(AVFormatContext *context, enum AVCodecID codec_id)
-{
-	AVCodecContext *cc;
-	AVStream *st;
-	AVCodec *codec;
-
-	/* find the video encoder */
-	codec = avcodec_find_encoder(codec_id);
-	if (!codec) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "codec not found\n");
-		return NULL;
-	}
-
-	st = avformat_new_stream(context, codec);
-	if (!st) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not alloc stream\n");
-		return NULL;
-	}
-
-	cc = st->codec;
-
-	avcodec_get_context_defaults3(cc, codec);
-
-	cc->codec_id = codec_id;
-
-	/* Put sample parameters. */
-	// c->bit_rate = 400000;
-	/* Resolution must be a multiple of two. */
-	cc->width    = 352;
-	cc->height   = 288;
-	/* timebase: This is the fundamental unit of time (in seconds) in terms
-	 * of which frame timestamps are represented. For fixed-fps content,
-	 * timebase should be 1/framerate and timestamp increments should be
-	 * identical to 1. */
-	cc->time_base.den = FPS;
-	cc->time_base.num = 1;
-	cc->gop_size      = 12; /* emit one intra frame every twelve frames at most */
-	cc->pix_fmt       = PIX_FMT_YUV420P;
-	cc->max_b_frames = 0;
-
-	/* Some formats want stream headers to be separate. */
-	if (context->oformat->flags & AVFMT_GLOBALHEADER) {
-		cc->flags |= CODEC_FLAG_GLOBAL_HEADER;
-	}
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "flags %x %x\n", context->oformat->flags, cc->flags);
-
-	return st;
-}
-
-static switch_status_t ffmpeg_open(switch_file_handle_t *handle, const char *path)
-{
-	ffmpeg_context *context;
-	char *ext;
-	unsigned int flags = 0;
-	AVFormatContext *avctx = NULL;
-	AVOutputFormat *fmt;
-	AVStream *audio_st=NULL;
-	AVStream *video_st=NULL;
-	AVCodecContext *audio_codec;
-	AVFrame *aframe = NULL;
-
-	if ((ext = strrchr(path, '.')) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Format\n");
-		return SWITCH_STATUS_GENERR;
-	}
-
-	ext++;
-
-	if ((context = switch_core_alloc(handle->memory_pool, sizeof(ffmpeg_context))) == 0) {
-		return SWITCH_STATUS_MEMERR;
-	}
-
-	memset(context, 0, sizeof(ffmpeg_context));
-
-	switch_mutex_init(&context->mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
-
-	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
-		flags |= SWITCH_FOPEN_WRITE | SWITCH_FOPEN_CREATE;
-		if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND) || switch_test_flag(handle, SWITCH_FILE_WRITE_OVER)) {
-			flags |= SWITCH_FOPEN_READ;
-		} else {
-			flags |= SWITCH_FOPEN_TRUNCATE;
-		}
-
-	}
-
-	if (switch_test_flag(handle, SWITCH_FILE_FLAG_READ)) {
-		flags |= SWITCH_FOPEN_READ;
-	}
-
-//write only
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "sample rate: %d\n", handle->samplerate);
-
-	handle->samplerate = 8000;
-
-	aframe = av_frame_alloc();
-
-	if (!aframe) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "memory error!\n");
-		goto end;
-	}
-
-	context->aframe = aframe;
-
-	av_register_all();
-
-	//avformat_alloc_output_context2(&avctx, NULL, NULL, path);
-	avctx = NULL;
-
-	if (!avctx) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not deduce output format from file extension: using mpeg4.\n");
-		//avformat_alloc_output_context2(&avctx, NULL, "mpeg4", path);
-	}
-
-	if (!avctx) {
-		goto end;
-	}
-
-	context->avctx = avctx;
-
-	fmt = avctx->oformat;
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "audio_codec: 0x%x video_codec: 0x%x\n", fmt->audio_codec, fmt->video_codec);
-
-	if (fmt->audio_codec != AV_CODEC_ID_NONE) {
-		audio_st = add_audio_stream(avctx, fmt->audio_codec);
-	}
-
-	if (fmt->video_codec != AV_CODEC_ID_NONE) {
-		video_st = add_video_stream(avctx, fmt->video_codec);
-	}
-
-	if (!video_st) {
-		if (!audio_st) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No audio & video stream!\n");
-			goto end;
-		}
-	}
-
-	context->video_st = video_st;
-
-	audio_codec = audio_st->codec;
-	/* open it */
-	if (avcodec_open2(audio_codec, NULL, NULL) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "could not open audio codec\n");
-		goto end;
-	}
-
-#if 1
-	av_dump_format(avctx, 0, path, 1);
-#endif
-
-	/* open the output file, if needed */
-	if (!(fmt->flags & AVFMT_NOFILE)) {
-		if (avio_open(&avctx->pb, path, AVIO_FLAG_WRITE) < 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open [%s]\n", path);
-			goto end;
-		}
-		context->file_opened = 1;
-	}
-
-	/* Write the stream header, if any. */
-	avformat_write_header(avctx, NULL);
-
-	context->audio_st = audio_st;
-
-	if (switch_test_flag(handle, SWITCH_FILE_WRITE_APPEND)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unsupported append\n");
-	}
-
-	handle->samples = 0;
-	handle->samplerate = 8000;
-	handle->channels = 1;
-	handle->format = 0;
-	handle->sections = 0;
-	handle->seekable = 0;
-	handle->speed = 0;
-	handle->pos = 0;
-	handle->private_info = context;
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File [%s] %dhz\n", path, handle->samplerate);
-
-	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
-
-	}
-
-	switch_buffer_create_dynamic(&context->buf, 512, 512, 1024000);
-
-	return SWITCH_STATUS_SUCCESS;
-
-end:
-
-	if (avctx) {
-		int i;
-		for (i = 0; i < avctx->nb_streams; i++) {
-			avcodec_close(avctx->streams[i]->codec);
-			av_freep(&avctx->streams[i]->codec);
-			av_freep(&avctx->streams[i]);
-		}
-
-		if (context->file_opened) {
-			/* Close the output file. */
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "closing file\n");
-			avio_close(avctx->pb);
-		}
-
-		av_free(avctx);
- 
-		if (aframe) av_free(aframe);
-	}
-
-	return SWITCH_STATUS_FALSE;
-}
-
-static switch_status_t ffmpeg_truncate(switch_file_handle_t *handle, int64_t offset)
-{
-	// ffmpeg_context *context = handle->private_info;
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unsupported truncate\n");
-	return status;
-}
-
-static switch_status_t ffmpeg_close(switch_file_handle_t *handle)
-{
-	ffmpeg_context *context = handle->private_info;
-	AVFormatContext *avctx = context->avctx;
-	int i;
-
-	av_write_trailer(avctx);
-
-	for (i = 0; i < avctx->nb_streams; i++) {
-		avcodec_close(avctx->streams[i]->codec);
-		av_freep(&avctx->streams[i]->codec);
-		av_freep(&avctx->streams[i]);
-	}
-
-	if (context->file_opened) {
-		/* Close the output file. */
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "closing file\n");
-		avio_close(avctx->pb);
-	}
-
-	av_free(avctx);
- 
-	if (context->aframe) av_free(context->aframe);
-
-	switch_buffer_destroy(&context->buf);
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status_t ffmpeg_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
-{
-	// switch_status_t status;
-	//
-	// ffmpeg_context *context = handle->private_info;
-	//
-	// status = switch_file_seek(context->fd, whence, &samples);
-	// if (status == SWITCH_STATUS_SUCCESS) {
-	// 	handle->pos += samples;
-	// }
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unsupported seek\n");
-	return SWITCH_STATUS_FALSE;
-}
-
-static switch_status_t ffmpeg_read(switch_file_handle_t *handle, void *data, size_t *len)
-{
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "read not implemented\n");
-	return SWITCH_STATUS_FALSE;
-}
-
-static switch_status_t ffmpeg_write(switch_file_handle_t *handle, void *data, size_t *len)
-{
-	ffmpeg_context *context = handle->private_info;
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	AVFormatContext *avctx = context->avctx;
-	AVFrame *aframe = context->aframe;
-	AVStream *audio_st = context->audio_st;
-	AVCodecContext *codec = audio_st->codec;
-	AVPacket pkt = { 0 };
-	int got_packet = 0;
-
-	aframe->nb_samples = 160;  //fixme
-
-	avcodec_fill_audio_frame(aframe, codec->channels, codec->sample_fmt,
-						(uint8_t *)data,
-						(*len) * codec->channels,
-						1);
-
-	av_init_packet(&pkt);
-
-	// avcodec_encode_audio2(codec, &pkt, aframe, &got_packet);
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "got packet %d, size: %d\n", got_packet, pkt.size);
-
-	if (!got_packet || pkt.size < 1) return status;
-
-	pkt.stream_index = audio_st->index;
-
-	/* Write the compressed frame to the media file. */
-	switch_mutex_lock(context->mutex);
-	if (av_interleaved_write_frame(avctx, &pkt) != 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error while writing audio frame\n");
-		switch_mutex_unlock(context->mutex);
-		return SWITCH_STATUS_FALSE;
-	}
-	switch_mutex_unlock(context->mutex);
-
-	// *len = ? //fixme
-	return status;
-}
-
-static switch_status_t ffmpeg_write_video(switch_file_handle_t *handle, void *data, size_t *len)
-{
-	uint32_t datalen = *len - 12;
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	uint8_t *hdr = NULL;
-	switch_rtp_hdr_t *rtp_hdr = data;
-	ffmpeg_context *context = handle->private_info;
-
-	uint8_t code[] = {0, 0, 1};
-
-	AVFormatContext *avctx = context->avctx;
-	AVStream *video_st = context->video_st;
-	AVPacket pkt;
-
-	int key_frame = 0;
-	int ret;
-
-	av_init_packet(&pkt);
-
-	hdr = (uint8_t *)data + 12;
-
-	switch_buffer_write(context->buf, &code, 3);
-	switch_buffer_write(context->buf, hdr, datalen);
-
-
-#if 1
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "read %d %02x %02x %02x %d\n",
-			rtp_hdr->m, *hdr, *(hdr+1), *(hdr+2), datalen);
-#endif
-
-	if (!rtp_hdr->m) return status;; // continue buffering until we get a marker
-
-	{
-		int nal_type = (*hdr &0x1f);
-		key_frame = (nal_type == 5);
-	}
-
-	pkt.pts = context->video_pts++;
-
-	if (key_frame) {
-		pkt.flags |= AV_PKT_FLAG_KEY;
-	} else {
-		pkt.flags &= ~AV_PKT_FLAG_KEY;
-	}
-
-	pkt.stream_index = video_st->index;
-	pkt.size         = switch_buffer_inuse(context->buf);
-	switch_buffer_peek_zerocopy(context->buf, (const void **)&pkt.data);
-
-		/* Write the compressed frame to the media file. */
-		
-	switch_mutex_lock(context->mutex);
-
-	if ((ret = av_write_frame(avctx, &pkt)) != 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to write %d bytes, ret=%d\n", pkt.size, ret);
-		switch_mutex_unlock(context->mutex);
-		return SWITCH_STATUS_FALSE;
-	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "write %d bytes, ret=%d\n", pkt.size, ret);
-
-	switch_mutex_unlock(context->mutex);
-	switch_buffer_zero(context->buf);
-
-	// *len = datalen; // FIXME
-
-	return status;
-}
-
-static switch_status_t ffmpeg_set_string(switch_file_handle_t *handle, switch_audio_col_t col, const char *string)
-{
-	return SWITCH_STATUS_FALSE;
-}
-
-static switch_status_t ffmpeg_get_string(switch_file_handle_t *handle, switch_audio_col_t col, const char **string)
-{
-	return SWITCH_STATUS_FALSE;
-}
-
-static void *SWITCH_THREAD_FUNC ffmpeg_record_video_thread(switch_thread_t *thread, void *obj)
-{
-	struct record_helper *eh = obj;
-	switch_core_session_t *session = eh->session;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_status_t status;
-	switch_frame_t *read_frame;
-	switch_buffer_t *buf = NULL;
-
-	AVFormatContext *avctx = eh->avctx;
-	AVStream *video_st = eh->video_st;
-	AVPacket pkt;
-
-	int key_frame = 0;
-	uint8_t *hdr;
-	uint64_t pts = 0;
-
-	av_init_packet(&pkt);
-
-	if (switch_buffer_create(switch_core_session_get_pool(eh->session), &buf, BUFFERSIZE) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "memory buffer error!\n");
-		goto end;
-	}
-
-	eh->up = 1;
-
-	while (switch_channel_ready(channel) && eh->up) {
-		int ret;
-		uint8_t code[] = {0, 0, 1};
-
-		status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-
-		if (!SWITCH_READ_ACCEPTABLE(status)) {
-			break;
-		}
-
-		if (switch_test_flag(read_frame, SFF_CNG)) {
-			continue;
-		}
-
-		switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
-
-		switch_buffer_write(buf, &code, 3);
-		switch_buffer_write(buf, read_frame->data, read_frame->datalen);
-
-		hdr = read_frame->data;
-
-#if 0
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "read %d %02x %02x %02x %d\n",
-			read_frame->m, *hdr, *(hdr+1), *(hdr+2), read_frame->datalen);
-#endif
-
-		if (!read_frame->m) continue; // continue buffering until we get a marker
-
-		{
-			int nal_type = (*hdr &0x1f);
-			key_frame = (nal_type == 5);
-		}
-
-		// if (oc->coded_frame->pts != AV_NOPTS_VALUE) {
-		// pts = av_rescale_q(read_frame->timestamp, video_st->codec->time_base, video_st->time_base);        	
-		// pkt.pts = read_frame->timestamp;
-
-		pkt.pts = pts++;
-
-		if (key_frame) {
-			pkt.flags |= AV_PKT_FLAG_KEY;
-		} else {
-			pkt.flags &= ~AV_PKT_FLAG_KEY;
-		}
-
-		pkt.stream_index = video_st->index;
-		pkt.size         = switch_buffer_inuse(buf);
-		switch_buffer_peek_zerocopy(buf, (const void **)&pkt.data);
-
-		/* Write the compressed frame to the media file. */
-		
-		switch_mutex_lock(eh->mutex);
-
-		if ((ret = av_write_frame(avctx, &pkt)) != 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to write %d bytes, ret=%d\n", pkt.size, ret);
-			switch_mutex_unlock(eh->mutex);
-			break;
-		}
-
-		switch_mutex_unlock(eh->mutex);
-		switch_buffer_zero(buf);
-
-	}
-
-	if (video_st) {
-		avcodec_close(video_st->codec);
-	}
-
-end:
-
-	if (buf) switch_buffer_destroy(&buf);
-
-	eh->up = 0;
-	return NULL;
-}
-
-SWITCH_STANDARD_APP(record_ffmpeg_function)
-{
-	switch_status_t status;
-	switch_frame_t *read_frame;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	struct record_helper eh = { 0 };
-	switch_thread_t *thread;
-	switch_threadattr_t *thd_attr = NULL;
-	switch_mutex_t *mutex = NULL;
-	switch_codec_t codec;
-	//switch_codec_t *vid_codec;
-	switch_codec_implementation_t read_impl = { 0 };
-	switch_dtmf_t dtmf = { 0 };
-	int count = 0, sanity = 30;
-
-	//ffmpeg
-	AVFormatContext *avctx;
-	AVOutputFormat *fmt=NULL;
-	AVStream *audio_st=NULL;
-	AVCodecContext *audio_codec;
-	AVFrame *avframe=NULL;
-
-	/* Tell the channel to request a fresh vid frame */
-
-	switch_core_session_get_read_impl(session, &read_impl);
-	switch_channel_answer(channel);
-	switch_core_session_refresh_video(session);
-
-	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
-
-	while (switch_channel_up(channel) && !switch_channel_test_flag(channel, CF_VIDEO)) {
-		switch_yield(10000);
-
-		if (count) count--;
-
-		if (count == 0) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s waiting for video.\n", switch_channel_get_name(channel));
-			count = 100;
-			if (!--sanity) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s timeout waiting for video.\n", 
-								  switch_channel_get_name(channel));
-				switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Got timeout while waiting for video");
-				return;
-			}
-		}
-	}
-	
-	if (!switch_channel_ready(channel)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s not ready.\n", switch_channel_get_name(channel));
-		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Channel not ready");
-		return;
-	}
-
-	if (read_impl.ianacode != 70) {
-		if (switch_core_codec_init(&codec,
-								   "L16",
-								   NULL,
-								   8000,
-								   20,
-								   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-								   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
-			switch_core_session_set_read_codec(session, &codec);
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Codec Activation Success\n");
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Codec Activation Fail\n");
-			goto end;
-		}
-	}
-
-	avframe = av_frame_alloc();
-
-	if (!avframe) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "memory error!\n");
-		goto end;
-	}
-
-	av_register_all();
-
-	//avformat_alloc_output_context2(&avctx, NULL, NULL, data);
-	avctx = NULL;
-
-	if (!avctx) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not deduce output format from file extension: using mpeg4.\n");
-		//avformat_alloc_output_context2(&avctx, NULL, "mpeg4", data);
-	}
-
-	if (!avctx) {
-		goto end;
-	}
-
-	fmt = avctx->oformat;
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "audio_codec: 0x%x video_codec: 0x%x\n", fmt->audio_codec, fmt->video_codec);
-
-	if (fmt->audio_codec != AV_CODEC_ID_NONE) {
-		audio_st = add_audio_stream(avctx, fmt->audio_codec);
-	}
-
-	if (switch_channel_test_flag(channel, CF_VIDEO)) {
-
-		if (fmt->video_codec != AV_CODEC_ID_NONE) {
-			eh.video_st = add_video_stream(avctx, fmt->video_codec);
-		}
-
-		if (!eh.video_st) {
-			if (!audio_st) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No audio & video stream!\n");
-				goto end;
-			}
-		}
-	}
-
-	audio_codec = audio_st->codec;
-
-	/* open it */
-	if (avcodec_open2(audio_codec, NULL, NULL) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "could not open audio codec\n");
-		goto end;
-	}
-
-#if 1
-	av_dump_format(avctx, 0, data, 1);
-#endif
-
-	/* open the output file, if needed */
-	if (!(fmt->flags & AVFMT_NOFILE)) {
-		if (avio_open(&avctx->pb, data, AVIO_FLAG_WRITE) < 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open [%s]\n", data);
-			goto end;
-		}
-	}
-
-	/* Write the stream header, if any. */
-	avformat_write_header(avctx, NULL);
-
-	if (switch_channel_test_flag(channel, CF_VIDEO)) {
-		//vid_codec = switch_core_session_get_video_read_codec(session);
-
-		switch_mutex_init(&mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
-		eh.mutex = mutex;
-		eh.avctx = avctx;
-		eh.session = session;
-		switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
-		switch_threadattr_detach_set(thd_attr, 1);
-		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		switch_thread_create(&thread, thd_attr, ffmpeg_record_video_thread, &eh, switch_core_session_get_pool(session));
-	}
-
-	while (switch_channel_ready(channel)) {
-
-		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_SINGLE_READ, 0);
-
-		if (switch_channel_test_flag(channel, CF_BREAK)) {
-			switch_channel_clear_flag(channel, CF_BREAK);
-			eh.up = 0;
-			break;
-		}
-
-		switch_ivr_parse_all_events(session);
-
-		//check for dtmf interrupts
-		if (switch_channel_has_dtmf(channel)) {
-			const char * terminators = switch_channel_get_variable(channel, SWITCH_PLAYBACK_TERMINATORS_VARIABLE);
-			switch_channel_dequeue_dtmf(channel, &dtmf);
-
-			if (terminators && !strcasecmp(terminators, "none"))
-			{
-				terminators = NULL;
-			}
-
-			if (terminators && strchr(terminators, dtmf.digit)) {
-
-				char sbuf[2] = {dtmf.digit, '\0'};
-				switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, sbuf);
-				eh.up = 0;
-				break;
-			}
-		}
-
-		if (!SWITCH_READ_ACCEPTABLE(status)) {
-			eh.up = 0;
-			break;
-		}
-
-		if (switch_test_flag(read_frame, SFF_CNG)) {
-			continue;
-		}
-
-		switch_core_session_write_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
-
-		avframe->nb_samples = 160;
-
-		avcodec_fill_audio_frame(avframe, audio_codec->channels, audio_codec->sample_fmt,
-							(uint8_t *)read_frame->data,
-							read_frame->datalen * audio_codec->channels,
-							1);
-
-		{
-			AVPacket pkt = { 0 };
-			int got_packet;
-
-			av_init_packet(&pkt);
-
-			avcodec_encode_audio2(audio_codec, &pkt, avframe, &got_packet);
-
-			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "got packet %d, size: %d\n", got_packet, pkt.size);
-
-			if (!got_packet || pkt.size < 1) continue;
-
-			pkt.stream_index = audio_st->index;
-
-			/* Write the compressed frame to the media file. */
-			switch_mutex_lock(eh.mutex);
-			if (av_interleaved_write_frame(avctx, &pkt) != 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error while writing audio frame\n");
-				switch_mutex_unlock(eh.mutex);
-				break;
-			}
-			switch_mutex_unlock(eh.mutex);
-
-		}
-	}
-
-	av_write_trailer(avctx);
-
-	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "OK");
-
-end:
-
-	switch_core_session_set_read_codec(session, NULL);
-
-	if (switch_core_codec_ready(&codec)) {
-		switch_core_codec_destroy(&codec);
-	}
-
-	if (eh.up) {
-		while (eh.up) {
-			switch_cond_next();
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "waiting video thread to stop\n");
-		}
-	}
-
-	if (audio_st) avcodec_close(audio_st->codec);
-
-	{
-		int i;
-		for (i = 0; i < avctx->nb_streams; i++) {
-			av_freep(&avctx->streams[i]->codec);
-			av_freep(&avctx->streams[i]);
-		}
-	}
-
-	if (!(fmt->flags & AVFMT_NOFILE)) {
-		/* Close the output file. */
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "closing file [%s]\n", data);
-		avio_close(avctx->pb);
-	}
-
-	if (avctx) av_free(avctx);
-	if (avframe) av_free(avframe);
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "==== done =========  done ==== \n");
-
-}
-
-#define IP "192.168.1.1"
-
-static int write_packet(void *opaque, uint8_t *buf, int size) {
-	struct record_helper *eh = opaque;
-	switch_size_t bytes = size;
-	int i = -1;
-	switch_rtp_hdr_t *hdr;
-	switch_status_t status;
-
-	while (size > 188) {
-		if (size > 188 * 7) {
-			bytes = 188 * 7;
-			size -= 188 * 7;
-			i++;
-		} else {
-			bytes = size;
-			i++;
-			size = 0;
-		}
-
-		hdr = (switch_rtp_hdr_t *)(buf + 188 * 7 * i - 12);
-		memset(hdr, 0, 12);
-
-		hdr->ssrc = 0x1111;
-		hdr->ts = switch_time_now();
-		hdr->ts = htonl(hdr->ts);
-		hdr->version = 0x2;
-		hdr->seq = eh->seq++;
-		hdr->pt = 33;
-
-		if (bytes < 188 * 7) hdr->m = 1;
-
-		bytes += 12;
-
-		status = switch_socket_sendto(eh->sock, eh->sock_addr, 0, (void *)hdr , &bytes);
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "========== sending %ld %d\n", bytes, status);
-
-	}
-
-	return size;
-}
-
-static void *SWITCH_THREAD_FUNC stream_ts_thread(switch_thread_t *thread, void *obj)
-{
-	struct record_helper *eh = obj;
-	switch_core_session_t *session = eh->session;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_status_t status;
-	switch_frame_t *read_frame;
-	switch_buffer_t *buf;
-
-	AVFormatContext *oc;
-	AVOutputFormat *fmt;
-	AVStream *video_st = NULL; // better to be NULL than uninitialised
-	AVPacket pkt;
-	uint8_t *buf_callback = (uint8_t *)av_malloc(BUFFERSIZE);
-	AVIOContext *io; 
-
-	// uint8_t *fragment_type;
-	int key_frame = 0;
-	// int nal_type;
-	uint8_t *hdr;
-	uint64_t pts = 0;
-
-	eh->seq = 0;
-
-	io = avio_alloc_context(buf_callback + 12, BUFFERSIZE, 1, eh, NULL, write_packet, NULL);
-
-	if (io == NULL) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "IO is NULL\n");
-		return NULL;
-	}
-
-	if (switch_socket_create(&eh->sock, AF_INET, SOCK_DGRAM, 0, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Socket Error 1\n");
-		return NULL;
-	}
-
-	if (switch_sockaddr_info_get(&eh->sock_addr, IP, SWITCH_UNSPEC,
-								 11000, 0, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Socket Error 3\n");
-		return NULL;
-	}
-
-	if (switch_buffer_create(switch_core_session_get_pool(eh->session), &buf, 65536) != SWITCH_STATUS_SUCCESS) return NULL;
-
-	av_register_all();
-
-	av_init_packet(&pkt);
-
-
-	fmt = av_guess_format(NULL, "filename.ts", NULL); // CODEC_ID_H264 -> mp4, mov; CODEC_ID_THEORA -> ogg; CODEC_ID_MPEG4 -> mpegts, avi; CODEC_ID_VP8 -> webm
-
-	if (!fmt) {
-		printf("Could not deduce output format from file extension: using MP4.\n");
-		fmt = av_guess_format("mpeg4", NULL, NULL);
-	}
-	if (!fmt) {
-		printf("av_guess_format Error!\n");
-		return NULL;
-	}
-
-
-	oc = avformat_alloc_context();
-
-	if (!oc) {
-		printf("Could not deduce output format from file extension: using MP4.\n");
-
-		return NULL;
-	}
-
-	oc->pb = io;
-	oc->oformat = fmt;
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "x:%d y:%d\n", AV_CODEC_ID_NONE, fmt->video_codec);
-
-	if (fmt->video_codec != AV_CODEC_ID_NONE) {
-		video_st = add_video_stream(oc, fmt->video_codec);
-	}
-
-	// av_dump_format(oc, 0, filename, 1);
-
-	/* open the output file, if needed */
-	// if (!(fmt->flags & AVFMT_NOFILE)) {
-	//     if (avio_open(&oc->pb, filename, AVIO_FLAG_WRITE) < 0) {
-	//         fprintf(stderr, "Could not open '%s'\n", filename);
-	//         return NULL;
-	//     }
-	// }
-
-	/* Write the stream header, if any. */
-	avformat_write_header(oc, NULL);
-
-	eh->up = 1;
-
-
-	while (switch_channel_ready(channel) && eh->up) {
-		int ret;
-		uint8_t code[] = {0, 0, 1};
-
-		status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-
-		if (!SWITCH_READ_ACCEPTABLE(status)) {
-			break;
-		}
-
-		if (switch_test_flag(read_frame, SFF_CNG)) {
-			continue;
-		}
-
-		switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
-
-		switch_buffer_write(buf, &code, 3);
-		switch_buffer_write(buf, read_frame->data, read_frame->datalen);
-
-		hdr = read_frame->data;
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "read %d %02x %02x %02x %d\n",
-			read_frame->m, *hdr, *(hdr+1), *(hdr+2), read_frame->datalen);
-
-		if (!read_frame->m) continue; // continue buffering until we get a marker
-
-		{
-			int nal_type = (*hdr &0x1f);
-			key_frame = (nal_type == 5);
-		}
-
-		// if (oc->coded_frame->pts != AV_NOPTS_VALUE) {
-		// pts = av_rescale_q(read_frame->timestamp, video_st->codec->time_base, video_st->time_base);        	
-		// pkt.pts = read_frame->timestamp;
-
-		pkt.pts = pts;
-		pts+=1;
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "pts %llu\n", (long long unsigned int)pkt.pts);
-		// }
-
-		if (key_frame) {
-			pkt.flags |= AV_PKT_FLAG_KEY;
-		} else {
-			pkt.flags &= ~AV_PKT_FLAG_KEY;
-		}
-
-		pkt.stream_index = video_st->index;
-		pkt.size         = switch_buffer_inuse(buf);
-		switch_buffer_peek_zerocopy(buf, (const void **)&pkt.data);
-
-		/* Write the compressed frame to the media file. */
-		// ret = av_interleaved_write_frame(oc, &pkt);
-		ret = av_write_frame(oc, &pkt);
-
-		switch_buffer_zero(buf);
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "write: %d, ret %d\n", pkt.size, ret);
-
-	}
-
-	av_write_trailer(oc);
-
-	// if (0 && video_st) close_video(oc, video_st);
-
-	{int i;
-	for (i = 0; i < oc->nb_streams; i++) {
-		av_freep(&oc->streams[i]->codec);
-		av_freep(&oc->streams[i]);
-	}}
-
-	if (eh->sock) {
-		switch_socket_close(eh->sock);
-	}
-
-switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "flags %d\n", fmt->flags);
-
- //    if (!(fmt->flags & AVFMT_NOFILE)) {
- //        /* Close the output file. */
- //        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "closing output file\n");
- //        avio_close(oc->pb);
-	// }
-
-	// av_free(oc);
-
-	// av_free(fmt); // fixme? this will be freed with the following IO
-	av_free(io);
-	av_free(buf_callback);
-	switch_buffer_destroy(&buf);
-	eh->up = 0;
-	return NULL;
-}
-
-SWITCH_STANDARD_APP(stream_ts_function)
-{
-	switch_status_t status;
-	switch_frame_t *read_frame;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
-	struct record_helper eh = { 0 };
-	switch_thread_t *thread;
-	switch_threadattr_t *thd_attr = NULL;
-	// int fd;
-	switch_mutex_t *mutex = NULL;
-	//switch_codec_t *vid_codec;
-	switch_codec_implementation_t read_impl = { 0 };
-	switch_dtmf_t dtmf = { 0 };
-	int count = 0, sanity = 30;
-	switch_core_session_message_t msg = { 0 };
-
-	/* Tell the channel to request a fresh vid frame */
-	msg.from = __FILE__;
-	msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
-
-	switch_core_session_get_read_impl(session, &read_impl);
-	switch_channel_answer(channel);
-	switch_core_session_receive_message(session, &msg);
-
-	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
-
-	while (switch_channel_up(channel) && !switch_channel_test_flag(channel, CF_VIDEO)) {
-		switch_yield(10000);
-
-		if (count) count--;
-
-		if (count == 0) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s waiting for video.\n", switch_channel_get_name(channel));
-			count = 100;
-			if (!--sanity) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "%s timeout waiting for video.\n", 
-								  switch_channel_get_name(channel));
-				switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Got timeout while waiting for video");
-				return;
-			}
-		}
-	}
-	
-	if (!switch_channel_ready(channel)) {
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s not ready.\n", switch_channel_get_name(channel));
-		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "Channel not ready");
-		return;
-	}
-
-	if (switch_channel_test_flag(channel, CF_VIDEO)) {
-		//vid_codec = switch_core_session_get_video_read_codec(session);
-
-		switch_mutex_init(&mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
-		eh.mutex = mutex;
-		// eh.fd = fd;
-		eh.session = session;
-		switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
-		switch_threadattr_detach_set(thd_attr, 1);
-		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		switch_thread_create(&thread, thd_attr, stream_ts_thread, &eh, switch_core_session_get_pool(session));
-	}
-
-	while (switch_channel_ready(channel)) {
-
-		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_SINGLE_READ, 0);
-
-		if (switch_channel_test_flag(channel, CF_BREAK)) {
-			switch_channel_clear_flag(channel, CF_BREAK);
-			eh.up = 0;
-			break;
-		}
-
-		switch_ivr_parse_all_events(session);
-
-		//check for dtmf interrupts
-		if (switch_channel_has_dtmf(channel)) {
-			const char * terminators = switch_channel_get_variable(channel, SWITCH_PLAYBACK_TERMINATORS_VARIABLE);
-			switch_channel_dequeue_dtmf(channel, &dtmf);
-
-			if (terminators && !strcasecmp(terminators, "none"))
-			{
-				terminators = NULL;
-			}
-
-			if (terminators && strchr(terminators, dtmf.digit)) {
-
-				char sbuf[2] = {dtmf.digit, '\0'};
-				switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, sbuf);
-				eh.up = 0;
-				break;
-			}
-		}
-
-		if (!SWITCH_READ_ACCEPTABLE(status)) {
-			eh.up = 0;
-			break;
-		}
-
-		if (switch_test_flag(read_frame, SFF_CNG)) {
-			continue;
-		}
-
-		switch_core_session_write_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
-	}
-
-	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "OK");
-
-  // end:
-
-	if (eh.up) {
-		while (eh.up) {
-			switch_cond_next();
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "waiting video thread to be end\n");
-		}
-	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "==== done =========   ts done ==== \n");
-
-}
-
-#endif
 
 /* codec interface */
 
@@ -1266,6 +89,7 @@ typedef struct h264_codec_context_s {
 	switch_size_t last_received_timestamp;
 	switch_bool_t last_received_complete_picture;
 	switch_image_t *img;
+	int need_key_frame;
 
 #ifdef H264_CODEC_USE_LIBX264
 	/*x264*/
@@ -1275,14 +99,11 @@ typedef struct h264_codec_context_s {
 	x264_nal_t *x264_nals;
 	int x264_nal_count;
 	int cur_nalu_index;
-	int need_key_frame;
 #endif
 
 } h264_codec_context_t;
 
 #ifdef H264_CODEC_USE_LIBX264
-
-#define RTP_SLICE_SIZE SWITCH_DEFAULT_VIDEO_SIZE //NALU Slice Size
 
 static switch_status_t init_x264(h264_codec_context_t *context, uint32_t width, uint32_t height)
 {
@@ -1329,7 +150,7 @@ static switch_status_t init_x264(h264_codec_context_t *context, uint32_t width, 
 	xp->i_fps_num  = FPS;
 	xp->i_timebase_den = xp->i_fps_num;
 	xp->i_timebase_num = xp->i_fps_den;
-	xp->i_slice_max_size = RTP_SLICE_SIZE;
+	xp->i_slice_max_size = SLICE_SIZE;
 	//Set Profile 0=baseline other than 1=MainProfile
 	x264_param_apply_profile(xp, x264_profile_names[0]);
 	xh = x264_encoder_open(xp);
@@ -1350,7 +171,6 @@ static switch_status_t nalu_slice(h264_codec_context_t *context, switch_frame_t 
 	x264_nal_t *nal = &context->x264_nals[context->cur_nalu_index];
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	//*flag &= ~SFF_MARKER;
 	frame->m = 0;
 
 	if (context->cur_nalu_index >= context->x264_nal_count) {
@@ -1398,11 +218,6 @@ static void buffer_h264_nalu(h264_codec_context_t *context, switch_frame_t *fram
 	uint8_t sync_bytes[] = {0, 0, 0, 1};
 	switch_buffer_t *buffer = context->nalu_buffer;
 
-	if (!frame) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "no frame in codec!!\n");
-		return;
-	}
-
 	//	nalu_idc = (nalu_hdr & 0x60) >> 5;
 	nalu_type = nalu_hdr & 0x1f;
 
@@ -1426,13 +241,13 @@ static void buffer_h264_nalu(h264_codec_context_t *context, switch_frame_t *fram
 
 #ifndef H264_CODEC_USE_LIBX264
 
-static switch_status_t consume_nalu(h264_codec_context_t *context, void *data, uint32_t *len, uint32_t *flag)
+static switch_status_t consume_nalu(h264_codec_context_t *context, switch_frame_t *frame)
 {
 	our_h264_nalu_t *nalu = &context->nalus[context->nalu_current_index];
 
 	if (!nalu->start) {
-		*len = 0;
-		*flag = 1;
+		frame->datalen = 0;
+		frame->m = 1;
 		if (context->encoder_avpacket.size > 0) av_free_packet(&context->encoder_avpacket);
 		if (context->encoder_avframe->data) av_freep(&context->encoder_avframe->data[0]);
 		context->nalu_current_index = 0;
@@ -1445,25 +260,30 @@ static switch_status_t consume_nalu(h264_codec_context_t *context, void *data, u
 		uint8_t nalu_hdr = *(uint8_t *)(nalu->start);
 		uint8_t nalu_type = nalu_hdr & 0x1f;
 
-		memcpy(data, nalu->start, nalu->len);
-		*len = nalu->len;
-		*flag = (nalu_type == 6 || nalu_type == 7 || nalu_type == 8) ? 0 : 1;
+		memcpy(frame->data, nalu->start, nalu->len);
+		frame->datalen = nalu->len;
 		context->nalu_current_index++;
+		if (nalu_type == 6 || nalu_type == 7 || nalu_type == 8) {
+			frame->m = 0;
+			return SWITCH_STATUS_MORE_DATA;
+		}
+
+		frame->m = 1;
 		return SWITCH_STATUS_SUCCESS;
 	} else {
 		uint8_t nalu_hdr = *(uint8_t *)(nalu->start);
 		uint8_t nri = nalu_hdr & 0x60;
 		uint8_t nalu_type = nalu_hdr & 0x1f;
 		int left = nalu->len - (nalu->eat - nalu->start);
-		uint8_t *p = data;
+		uint8_t *p = frame->data;
 
 		if (left <= (1400 - 2)) {
 			p[0] = nri | 28; // FU-A
 			p[1] = 0x40 | nalu_type;
 			memcpy(p+2, nalu->eat, left);
 			nalu->eat += left;
-			*len = left + 2;
-			*flag = 1;
+			frame->datalen = left + 2;
+			frame->m = 1;
 			context->nalu_current_index++;
 			return SWITCH_STATUS_SUCCESS;
 		} else {
@@ -1474,9 +294,8 @@ static switch_status_t consume_nalu(h264_codec_context_t *context, void *data, u
 			if (start) nalu->eat++;
 			memcpy(p+2, nalu->eat, 1400 - 2);
 			nalu->eat += (1400 - 2);
-			*len = 1400;
-			*flag = 0;
-			return SWITCH_STATUS_SUCCESS;
+			frame->datalen = 1400;
+			return SWITCH_STATUS_MORE_DATA;
 		}
 	}
 }
@@ -1556,8 +375,8 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 			context->encoder_ctx->gop_size = FPS * 3; /* emit one intra frame every 3 seconds */
 			context->encoder_ctx->max_b_frames = 0;
 			context->encoder_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
-			// context->encoder_ctx->thread_count = 1;
-			// context->encoder_ctx->rtp_payload_size = RTP_SLICE_SIZE;
+			context->encoder_ctx->thread_count = switch_core_cpu_count();
+			context->encoder_ctx->rtp_payload_size = SLICE_SIZE;
 			av_opt_set(context->encoder_ctx->priv_data, "preset", "fast", 0);
 		}
 
@@ -1588,17 +407,13 @@ static void __attribute__((unused)) fill_avframe(AVFrame *pict, switch_image_t *
 		memcpy(&pict->data[0][i * pict->linesize[0]], y + i * img->stride[0], pict->width);
 	}
 
-	//U V
+	/* U/V */
 	for(i = 0; i < pict->height / 2; i++) {
 		memcpy(&pict->data[1][i * pict->linesize[1]], u + i * img->stride[1], pict->width / 2);
 		memcpy(&pict->data[2][i * pict->linesize[2]], v + i * img->stride[2], pict->width / 2);
 	}
 
 }
-
-//										  switch_image_t *img,
-//										  void *encoded_data, uint32_t *encoded_data_len,
-//										  unsigned int *flag)
 
 static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t *frame)
 {
@@ -1611,15 +426,15 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 	uint32_t width = 0;
 	uint32_t height = 0;
 	switch_image_t *img = frame->img;
-	void *encoded_data = frame->data;
-	uint32_t *encoded_data_len = frame->datalen;
-	unsigned int *flag = &frame->flags;
 
-	if (*encoded_data_len < SWITCH_DEFAULT_VIDEO_SIZE) return SWITCH_STATUS_FALSE;
+	switch_assert(frame);
+	frame->m = 0;
+
+	if (frame->datalen < SWITCH_DEFAULT_VIDEO_SIZE) return SWITCH_STATUS_FALSE;
 
 	if (frame->flags & SFF_SAME_IMAGE) {
-		// read from buffered
-		return consume_nalu(context, encoded_data, encoded_data_len, flag);
+		// read from nalu buffer
+		return consume_nalu(context, frame);
 	}
 
 	width = img->d_w;
@@ -1660,8 +475,6 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate raw picture buffer\n");
 		goto error;
 	}
-
-	switch_assert(encoded_data);
 
 	if (*got_output) { // Could be more delayed frames
 		ret = avcodec_encode_video2(avctx, pkt, NULL, got_output);
@@ -1714,11 +527,11 @@ process:
 
 		context->nalus[i].len = p - context->nalus[i].start;
 		context->nalu_current_index = 0;
-		return consume_nalu(context, encoded_data, encoded_data_len, flag);
+		return consume_nalu(context, frame);
 	}
 
 error:
-	*encoded_data_len = 0;
+	frame->datalen = 0;
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -1728,9 +541,6 @@ error:
 
 static switch_status_t switch_h264_encode(switch_codec_t *codec,
 										  switch_frame_t *frame)
-										  //switch_image_t *img,
-										  //void *encoded_data, uint32_t *encoded_data_len,
-										  //unsigned int *flag)
 {
 	h264_codec_context_t *context = (h264_codec_context_t *)codec->private_info;
 	uint32_t width = 0;
@@ -2018,12 +828,80 @@ static void print_codecs_for_id(switch_stream_handle_t *stream, enum AVCodecID i
 	stream->write_function(stream, ")");
 }
 
-SWITCH_STANDARD_API(ffmpeg_api_function)
+static int is_device(const AVClass *avclass)
+{
+	if (!avclass) return 0;
+	return  avclass->category == AV_CLASS_CATEGORY_DEVICE_VIDEO_OUTPUT ||
+			avclass->category == AV_CLASS_CATEGORY_DEVICE_VIDEO_INPUT ||
+			avclass->category == AV_CLASS_CATEGORY_DEVICE_AUDIO_OUTPUT ||
+			avclass->category == AV_CLASS_CATEGORY_DEVICE_AUDIO_INPUT ||
+			avclass->category == AV_CLASS_CATEGORY_DEVICE_OUTPUT ||
+			avclass->category == AV_CLASS_CATEGORY_DEVICE_INPUT;
+}
+
+void show_formats(switch_stream_handle_t *stream) {
+	AVInputFormat *ifmt  = NULL;
+	AVOutputFormat *ofmt = NULL;
+	const char *last_name;
+	// int is_dev;
+
+	stream->write_function(stream, "============= File Formats ==============================:\n"
+		   " D. = Demuxing supported\n"
+		   " .M = Muxing supported\n"
+		   "----------------------\n");
+
+	last_name = "000";
+
+	for (;;) {
+		int decode = 0;
+		int encode = 0;
+		int is_dev = 0;
+		const char *name      = NULL;
+		const char *long_name = NULL;
+
+		while ((ofmt = av_oformat_next(ofmt))) {
+			is_dev = is_device(ofmt->priv_class);
+
+			if ((name == NULL || strcmp(ofmt->name, name) < 0) &&
+				strcmp(ofmt->name, last_name) > 0) {
+				name      = ofmt->name;
+				long_name = ofmt->long_name;
+				encode    = 1;
+			}
+		}
+
+		while ((ifmt = av_iformat_next(ifmt))) {
+			is_dev = is_device(ifmt->priv_class);
+
+			if ((name == NULL || strcmp(ifmt->name, name) < 0) &&
+				strcmp(ifmt->name, last_name) > 0) {
+				name      = ifmt->name;
+				long_name = ifmt->long_name;
+				encode    = 0;
+			}
+
+			if (name && strcmp(ifmt->name, name) == 0) decode = 1;
+		}
+
+		if (name == NULL) break;
+
+		last_name = name;
+
+		stream->write_function(stream, "%s%s%s %-15s %s\n",
+			is_dev ? "*" : " ",
+			decode ? "D" : " ",
+			encode ? "M" : " ",
+			name, long_name ? long_name:" ");
+	}
+
+}
+
+void show_codecs(switch_stream_handle_t *stream)
 {
 	const AVCodecDescriptor **codecs = NULL;
 	unsigned i, nb_codecs = get_codecs_sorted(&codecs);
 
-	stream->write_function(stream, "===============================================:\n"
+	stream->write_function(stream, "================ Codecs ===============================:\n"
 		   " V..... = Video\n"
 		   " A..... = Audio\n"
 		   " S..... = Subtitle\n"
@@ -2070,6 +948,24 @@ SWITCH_STANDARD_API(ffmpeg_api_function)
 	}
 
 	av_free(codecs);
+}
+
+SWITCH_STANDARD_API(ffmpeg_api_function)
+{
+	if (zstr(cmd)) {
+		show_codecs(stream);
+		stream->write_function(stream, "\n");
+		show_formats(stream);
+	} else {
+		if (!strcmp(cmd, "show formats")) {
+			show_formats(stream);
+		} else if (!strcmp(cmd, "show codecs")) {
+			show_codecs(stream);
+		} else {
+			stream->write_function(stream, "Usage: ffmpeg show <formats|codecs>");
+		}
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -2097,8 +993,6 @@ static char *supported_formats[SWITCH_MAX_CODECS] = { 0 };
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_ffmpeg_load)
 {
-	// switch_application_interface_t *app_interface;
-	// switch_file_interface_t *file_interface;
 	switch_codec_interface_t *codec_interface;
 	switch_api_interface_t *api_interface;
 
@@ -2111,25 +1005,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_ffmpeg_load)
 	SWITCH_ADD_CODEC(codec_interface, "H264 Video");
 	switch_core_codec_add_video_implementation(pool, codec_interface, 99, "H264", NULL,
 											   switch_h264_init, switch_h264_encode, switch_h264_decode, switch_h264_control, switch_h264_destroy);
-
-#if 0
-	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
-	file_interface->interface_name = modname;
-	file_interface->extens = supported_formats;
-	file_interface->file_open = ffmpeg_open;
-	file_interface->file_close = ffmpeg_close;
-	file_interface->file_truncate = ffmpeg_truncate;
-	file_interface->file_read = ffmpeg_read;
-	file_interface->file_write = ffmpeg_write;
-	file_interface->file_write_video = ffmpeg_write_video;
-	file_interface->file_seek = ffmpeg_seek;
-	file_interface->file_set_string = ffmpeg_set_string;
-	file_interface->file_get_string = ffmpeg_get_string;
-
-	// SWITCH_ADD_APP(app_interface, "play_ffmpeg", "play a video file", "play a video file", play_ffmpeg_function, "<file>", SAF_NONE);
-	SWITCH_ADD_APP(app_interface, "record_ffmpeg", "record a video file", "record a video file", record_ffmpeg_function, "<file>", SAF_NONE);
-	SWITCH_ADD_APP(app_interface, "stream_ts", "stream ts to rtp", "stream ts to rtp", stream_ts_function, "<file>", SAF_NONE);
-#endif
 
 	SWITCH_ADD_API(api_interface, "ffmpeg", "ffmpeg", ffmpeg_api_function, "");
 
