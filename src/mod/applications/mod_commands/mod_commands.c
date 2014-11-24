@@ -3940,15 +3940,11 @@ SWITCH_STANDARD_API(uuid_video_refresh_function)
 	if (argc < 1) {
 		stream->write_function(stream, "-USAGE: %s\n", VIDEO_REFRESH_SYNTAX);
 	} else {
-		switch_core_session_message_t msg = { 0 };
 		switch_core_session_t *lsession = NULL;
 
-		msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
-		msg.string_array_arg[2] = argv[1];
-		msg.from = __FILE__;
-
 		if ((lsession = switch_core_session_locate(argv[0]))) {
-			status = switch_core_session_receive_message(lsession, &msg);
+			switch_core_session_video_reinit(lsession);
+			status = SWITCH_STATUS_SUCCESS;
 			switch_core_session_rwunlock(lsession);
 		}
 	}

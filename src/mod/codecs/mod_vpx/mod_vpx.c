@@ -99,7 +99,7 @@ static switch_status_t init_codec(switch_codec_t *codec)
 	if (context->codec_settings.video.bandwidth) {
 		context->bandwidth = context->codec_settings.video.bandwidth;
 	} else {
-		int x = (context->codec_settings.video.width / 1000) + 1;
+		int x = (context->codec_settings.video.width / 100) + 1;
 		context->bandwidth = context->codec_settings.video.width * context->codec_settings.video.height * x;
 	}
 
