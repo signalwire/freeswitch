@@ -2260,12 +2260,12 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 				switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
 			}
 			/* Tell the channel to request a fresh vid frame */
-			switch_core_session_refresh_video_both_ways(member->session);
+			switch_core_session_video_reinit(member->session);
 
 			if (conference->video_floor_holder) {
 				switch_mutex_lock(conference->mutex);
 				if (conference->video_floor_holder) {
-					switch_core_session_refresh_video_both_ways(conference->video_floor_holder->session);
+					switch_core_session_video_reinit(conference->video_floor_holder->session);
 					// there's already someone hold the floor, tell the core thread start to read video
 					switch_channel_clear_flag(member->channel, CF_VIDEO_PASSIVE);
 				}
@@ -2488,7 +2488,7 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Adding video floor %s\n",
 						  switch_channel_get_name(member->channel));
 		//switch_channel_set_flag(member->channel, CF_VIDEO_PASSIVE);
-		switch_core_session_refresh_video_both_ways(member->session);
+		switch_core_session_video_reinit(member->session);
 		conference->video_floor_holder = member;
 		member_update_status_field(member);
 	} else {
@@ -2514,7 +2514,7 @@ static void conference_set_video_floor_holder(conference_obj_t *conference, conf
 
 		switch_channel_set_flag(imember->channel, CF_VIDEO_BREAK);
 		switch_core_session_kill_channel(imember->session, SWITCH_SIG_BREAK);
-		switch_core_session_refresh_video_both_ways(imember->session);
+		switch_core_session_video_reinit(imember->session);
 	}
 
 	switch_set_flag(conference, CFLAG_FLOOR_CHANGE);
@@ -2880,7 +2880,7 @@ static void *SWITCH_THREAD_FUNC conference_video_bridge_thread_run(switch_thread
 		   switch_channel_ready(channel_a) && switch_channel_ready(channel_b))  {
 
 		if (switch_channel_test_flag(channel_a, CF_VIDEO_REFRESH_REQ)) {
-			switch_core_session_refresh_video_both_ways(session_b);
+			switch_core_session_video_reinit(session_b);
 			switch_channel_clear_flag(channel_a, CF_VIDEO_REFRESH_REQ);
 		}
 
@@ -3027,7 +3027,7 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 		switch_mutex_unlock(conference->mutex);
 
 		if (want_refresh && session) {
-			switch_core_session_refresh_video_both_ways(session);
+			switch_core_session_video_reinit(session);
 			want_refresh = 0;
 		}
 
@@ -4335,7 +4335,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 		if (switch_channel_test_flag(channel, CF_VIDEO) && !switch_test_flag(member, MFLAG_ACK_VIDEO)) {
 			switch_set_flag_locked(member, MFLAG_ACK_VIDEO);
-			switch_core_session_refresh_video_both_ways(member->session);
+			switch_core_session_video_reinit(member->session);
 			conference_set_video_floor_holder(member->conference, member, SWITCH_FALSE);
 		}
 
@@ -5203,7 +5203,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	switch_mutex_lock(conference->mutex);
 	if (!conference->record_fh) conference->record_fh = &fh;
 	if (conference->video_floor_holder) {
-		switch_core_session_refresh_video_both_ways(conference->video_floor_holder->session);
+		switch_core_session_video_reinit(conference->video_floor_holder->session);
 	}
 	switch_mutex_unlock(conference->mutex);
 

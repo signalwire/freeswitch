@@ -6453,7 +6453,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 	switch_rtp_engine_t *a_engine, *v_engine;
 	switch_media_handle_t *smh;
 	ice_t *ice_out;
-	int vp8 = 0;
+	//int vp8 = 0;
 	//int red = 0;
 	payload_map_t *pmap;
 	int is_outbound = switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND;
@@ -7065,9 +7065,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					const char *of;
 					payload_map_t *pmap;
 
-					if (!strcasecmp(v_engine->cur_payload_map->rm_encoding, "VP8")) {
-						vp8 = v_engine->cur_payload_map->pt;
-					}
+					//if (!strcasecmp(v_engine->cur_payload_map->rm_encoding, "VP8")) {
+					//	vp8 = v_engine->cur_payload_map->pt;
+					//}
 
 					//if (!strcasecmp(v_engine->cur_payload_map->rm_encoding, "red")) {
 					//	red = v_engine->cur_payload_map->pt;
@@ -7153,9 +7153,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 					
 						channels = get_channels(imp->iananame, imp->number_of_channels);
 
-						if (!strcasecmp(imp->iananame, "VP8")) {
-							vp8 = ianacode;
-						}
+						//if (!strcasecmp(imp->iananame, "VP8")) {
+						//	vp8 = ianacode;
+						//}
 
 						//if (!strcasecmp(imp->iananame, "red")) {
 						//		red = ianacode;
@@ -7232,26 +7232,30 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				}
 
 				/* DFF nack pli etc */
-				nack = v_engine->nack = 0;//pli = v_engine->pli = 0;
+				nack = v_engine->nack = 0; //pli = v_engine->pli = 0;
 				
-				if (vp8) {
-					
-					if (v_engine->fir || fir) {
-						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
-										"a=rtcp-fb:%d ccm fir\n", vp8);
-					}
-
-					if (v_engine->nack || nack) {
-						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
-										"a=rtcp-fb:%d nack\n", vp8);
-					}
-
-					if (v_engine->pli || pli) {
-						switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
-										"a=rtcp-fb:%d nack pli\n", vp8);
+				for (pmap = v_engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
+					if (!v_engine->codec_negotiated || 
+						(pmap->negotiated && (pmap->pt == v_engine->cur_payload_map->agreed_pt || 
+											  switch_media_handle_test_media_flag(smh, SCMF_MULTI_ANSWER_VIDEO)))) {
+						
+						if (v_engine->fir || fir) {
+							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
+											"a=rtcp-fb:%d ccm fir\n", pmap->pt);
+						}
+						
+						if (v_engine->nack || nack) {
+							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
+											"a=rtcp-fb:%d nack\n", pmap->pt);
+						}
+						
+						if (v_engine->pli || pli) {
+							switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), 
+											"a=rtcp-fb:%d nack pli\n", pmap->pt);
+						}
+						
 					}
 				}
-
 
 				//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "a=ssrc:%u\n", v_engine->ssrc);
 
@@ -9558,6 +9562,24 @@ static switch_status_t raw_write_video(switch_core_session_t *session, switch_fr
 	return status;
 }
 
+SWITCH_DECLARE(void) switch_core_session_video_reinit(switch_core_session_t *session)
+{
+	switch_media_handle_t *smh;
+
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		return;
+	}
+
+	if (switch_channel_down(session->channel)) {
+		return;
+	}
+
+	smh->video_init = 0;
+	smh->video_last_key_time = 0;
+	switch_core_session_refresh_video_both_ways(session);	
+}
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags,
 																	  int stream_id)
@@ -9638,8 +9660,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 			switch_assert((encode_status == SWITCH_STATUS_SUCCESS && frame->m) || !frame->m);
 			
 			if (frame->flags & SFF_PICTURE_RESET) {
-				smh->video_init = 0;
-				smh->video_last_key_time = 0;
+				switch_core_session_video_reinit(session);
 				frame->flags &= ~SFF_PICTURE_RESET;
 			}
 			

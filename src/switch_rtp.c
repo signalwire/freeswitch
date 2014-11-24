@@ -710,6 +710,7 @@ static handle_rfc2833_result_t handle_rfc2833(switch_rtp_t *rtp_session, switch_
 	return RESULT_CONTINUE;
 }
 
+static int rtp_write_ready(switch_rtp_t *rtp_session, uint32_t bytes, int line);
 static int global_init = 0;
 static int rtp_common_write(switch_rtp_t *rtp_session,
 							rtp_msg_t *send_msg, void *data, uint32_t datalen, switch_payload_t payload, uint32_t timestamp, switch_frame_flag_t *flags);
@@ -953,7 +954,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				}
 				
 				if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-					switch_core_media_gen_key_frame(rtp_session->session);
+					switch_core_session_video_reinit(rtp_session->session);
 				}
 				switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 			}
@@ -1104,7 +1105,7 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			if (!ice->ready) {
 				ice->ready = 1;
 				if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-					switch_core_media_gen_key_frame(rtp_session->session);
+					switch_core_session_video_reinit(rtp_session->session);
 				}
 				switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH);
 			}
@@ -4877,6 +4878,10 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		}
 	}
 
+	if (*bytes && !rtp_write_ready(rtp_session, *bytes, __LINE__)) {
+		*bytes = 0;
+		goto more;
+	}
 
 	if (*bytes && rtp_session->flags[SWITCH_RTP_FLAG_DEBUG_RTP_READ]) {
 		const char *tx_host;
@@ -6403,7 +6408,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_sessi
 
 static int rtp_write_ready(switch_rtp_t *rtp_session, uint32_t bytes, int line)
 {
-	if (rtp_session->ice.ice_user && !(rtp_session->ice.rready)) {
+	if (rtp_session->ice.ice_user && !(rtp_session->ice.rready && rtp_session->ice.ready)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Skip sending %s packet %ld bytes (ice not ready @ line %d!)\n", 
 						  rtp_type(rtp_session), (long)bytes, line);
 		return 0;
