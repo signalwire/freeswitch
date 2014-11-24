@@ -50,24 +50,20 @@ struct file_header {
 };
 
 struct record_helper {
-	switch_core_session_t *session;
 	switch_mutex_t *mutex;
 	int fd;
-	int up;
     switch_size_t shared_ts;
 };
 
-static void *SWITCH_THREAD_FUNC record_video_thread(switch_thread_t *thread, void *obj)
+static void record_video_thread(switch_core_session_t *session, void *obj)
 {
 	struct record_helper *eh = obj;
-	switch_core_session_t *session = eh->session;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status;
 	switch_frame_t *read_frame;
 	int bytes;
 
-	eh->up = 1;
-	while (switch_channel_ready(channel) && eh->up) {
+	while (switch_channel_ready(channel)) {
 		status = switch_core_session_read_video_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
@@ -96,8 +92,6 @@ static void *SWITCH_THREAD_FUNC record_video_thread(switch_thread_t *thread, voi
 
 		switch_core_session_write_video_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0);
 	}
-	eh->up = 0;
-	return NULL;
 }
 
 SWITCH_STANDARD_APP(record_fsv_function)
@@ -106,8 +100,6 @@ SWITCH_STANDARD_APP(record_fsv_function)
 	switch_frame_t *read_frame;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	struct record_helper eh = { 0 };
-	switch_thread_t *thread;
-	switch_threadattr_t *thd_attr = NULL;
 	int fd;
 	switch_mutex_t *mutex = NULL;
 	switch_codec_t codec, *vid_codec;
@@ -190,11 +182,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 		switch_mutex_init(&mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 		eh.mutex = mutex;
 		eh.fd = fd;
-		eh.session = session;
-		switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
-		switch_threadattr_detach_set(thd_attr, 1);
-		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-		switch_thread_create(&thread, thd_attr, record_video_thread, &eh, switch_core_session_get_pool(session));
+		switch_core_media_start_video_function(session, record_video_thread, &eh);
 	}
 
 
@@ -204,7 +192,6 @@ SWITCH_STANDARD_APP(record_fsv_function)
 
 		if (switch_channel_test_flag(channel, CF_BREAK)) {
 			switch_channel_clear_flag(channel, CF_BREAK);
-			eh.up = 0;
 			break;
 		}
 
@@ -224,13 +211,11 @@ SWITCH_STANDARD_APP(record_fsv_function)
 
 				char sbuf[2] = {dtmf.digit, '\0'};
 				switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, sbuf);
-				eh.up = 0;
 				break;
 			}
 		}
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
-			eh.up = 0;
 			break;
 		}
 
@@ -267,24 +252,16 @@ SWITCH_STANDARD_APP(record_fsv_function)
 
   end:
 
-	if (eh.up) {
-		while (eh.up) {
-			switch_cond_next();
-		}
-	}
-
 	if (fd > -1) {
 		close(fd);
 	}
 
-
+	switch_core_media_end_video_function(session);
 	switch_core_session_set_read_codec(session, NULL);
 	switch_core_codec_destroy(&codec);
 
  done:
-
-	switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
-
+	switch_core_session_video_reset(session);
 }
 
 SWITCH_STANDARD_APP(play_fsv_function)
