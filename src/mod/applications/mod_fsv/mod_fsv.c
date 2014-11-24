@@ -306,8 +306,6 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	switch_frame_t *read_frame;
 	switch_codec_implementation_t read_impl = { 0 };
 
-	switch_channel_set_flag(channel, CF_VIDEO_PASSIVE);
-
 	switch_core_session_refresh_video(session);
 
 	switch_core_session_get_read_impl(session, &read_impl);
@@ -351,7 +349,8 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	vid_frame.data = vid_buffer + 12;
 	vid_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE - 12;
 	switch_set_flag((&vid_frame), SFF_RAW_RTP);
-	switch_set_flag((&vid_frame), SFF_PROXY_PACKET);
+	// switch_set_flag((&vid_frame), SFF_PROXY_PACKET);
+	switch_set_flag((&vid_frame), SFF_RAW_RTP_PARSE_FRAME);
 
 	if (switch_core_timer_init(&timer, "soft", read_impl.microseconds_per_packet / 1000,
 							   read_impl.samples_per_packet, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
@@ -388,8 +387,6 @@ SWITCH_STANDARD_APP(play_fsv_function)
 		goto end;
 	}
 	switch_core_session_set_read_codec(session, &codec);
-
-	switch_core_service_session_av(session, SWITCH_FALSE, SWITCH_TRUE);
 	
 	while (switch_channel_ready(channel)) {
 
@@ -504,7 +501,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	}
 
  done:
-	switch_channel_clear_flag(channel, CF_VIDEO_PASSIVE);
+	switch_core_session_video_reset(session);
 }
 
 uint8_t art[14][16] = {
