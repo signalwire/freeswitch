@@ -25,7 +25,7 @@
  *
  * Seven Du <dujinfang@gmail.com>
  *
- * mod_ffmpeg -- FS Video File Format
+ * mod_av -- FS Video File Format
  *
  */
 
@@ -47,8 +47,8 @@
 
 #define FPS 15 // frame rate
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_ffmpeg_load);
-SWITCH_MODULE_DEFINITION(mod_ffmpeg, mod_ffmpeg_load, NULL, NULL);
+SWITCH_MODULE_LOAD_FUNCTION(mod_av_load);
+SWITCH_MODULE_DEFINITION(mod_av, mod_av_load, NULL, NULL);
 
 /*  ff_avc_find_startcode is not exposed in the ffmpeg lib but you can use it
 	Either include the avc.h which available in the ffmpeg source, or
@@ -950,7 +950,7 @@ void show_codecs(switch_stream_handle_t *stream)
 	av_free(codecs);
 }
 
-SWITCH_STANDARD_API(ffmpeg_api_function)
+SWITCH_STANDARD_API(av_api_function)
 {
 	if (zstr(cmd)) {
 		show_codecs(stream);
@@ -991,7 +991,7 @@ static void log_callback(void *ptr, int level, const char *fmt, va_list vl)
 
 static char *supported_formats[SWITCH_MAX_CODECS] = { 0 };
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_ffmpeg_load)
+SWITCH_MODULE_LOAD_FUNCTION(mod_av_load)
 {
 	switch_codec_interface_t *codec_interface;
 	switch_api_interface_t *api_interface;
@@ -1006,7 +1006,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_ffmpeg_load)
 	switch_core_codec_add_video_implementation(pool, codec_interface, 99, "H264", NULL,
 											   switch_h264_init, switch_h264_encode, switch_h264_decode, switch_h264_control, switch_h264_destroy);
 
-	SWITCH_ADD_API(api_interface, "ffmpeg", "ffmpeg", ffmpeg_api_function, "");
+	SWITCH_ADD_API(api_interface, "av", "av information", av_api_function, "show <formats|codecs>");
 
 	av_log_set_callback(log_callback);
 	av_log_set_level(AV_LOG_DEBUG);
