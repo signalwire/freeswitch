@@ -830,13 +830,20 @@ static void print_codecs_for_id(switch_stream_handle_t *stream, enum AVCodecID i
 
 static int is_device(const AVClass *avclass)
 {
+#if 0
 	if (!avclass) return 0;
+
+
 	return  avclass->category == AV_CLASS_CATEGORY_DEVICE_VIDEO_OUTPUT ||
 			avclass->category == AV_CLASS_CATEGORY_DEVICE_VIDEO_INPUT ||
 			avclass->category == AV_CLASS_CATEGORY_DEVICE_AUDIO_OUTPUT ||
 			avclass->category == AV_CLASS_CATEGORY_DEVICE_AUDIO_INPUT ||
 			avclass->category == AV_CLASS_CATEGORY_DEVICE_OUTPUT ||
 			avclass->category == AV_CLASS_CATEGORY_DEVICE_INPUT;
+#endif
+
+	return 0;
+
 }
 
 void show_formats(switch_stream_handle_t *stream) {
