@@ -118,6 +118,11 @@
 
     };
 
+    $.verto.prototype.videoParams = function(on) {
+        var verto = this;
+        verto.options.videoParams = on;
+    };
+
     $.verto.prototype.iceServers = function(on) {
         var verto = this;
         verto.options.iceServers = on;

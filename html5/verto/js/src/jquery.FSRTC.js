@@ -94,13 +94,8 @@
         };
 
         this.constraints = {
-            optional: [{
-                'DtlsSrtpKeyAgreement': 'true'
-            }],
-            mandatory: {
-                OfferToReceiveAudio: true,
-                OfferToReceiveVideo: this.options.useVideo ? true : false,
-            }
+            offerToReceiveAudio: true,
+            offerToReceiveVideo: this.options.useVideo ? true : false,
         };
 
         if (self.options.useVideo) {
@@ -116,10 +111,10 @@
 
         if (obj) {
             self.options.useVideo = obj;
-            self.constraints.mandatory.OfferToReceiveVideo = true;
+            self.constraints.offerToReceiveVideo = true;
         } else {
             self.options.useVideo = null;
-            self.constraints.mandatory.OfferToReceiveVideo = false;
+            self.constraints.offerToReceiveVideo = false;
         }
 
         if (self.options.useVideo) {
@@ -321,6 +316,9 @@
             onStreamError(self);
         }
 
+	console.log("Mandatory audio constraints", this.options.audioParams);
+	console.log("Mandatory video constraints", this.options.videoParams);
+
         getUserMedia({
             constraints: {
                 audio: {
@@ -380,6 +378,9 @@
         function onError() {
             onStreamError(self);
         }
+
+	console.log("Mandatory audio constraints", this.options.audioParams);
+	console.log("Mandatory video constraints", this.options.videoParams);
 
         getUserMedia({
             constraints: {
@@ -488,7 +489,7 @@
 		       Booooooooo! This trickle thing is a waste of time...... We'll all have to re-code our engines 
 		       to handle partial setups to maybe save 100m
 		     */
-                    if ((!moz || peer.localDescription.sdp.match(/a=candidate/)) && !x && options.onICESDP) {
+                    if ((!moz || (!options.sentICESDP && peer.localDescription.sdp.match(/a=candidate/)) && !x && options.onICESDP)) {
                         options.onICESDP(peer.localDescription);
                         //x = 1;
                         /*
@@ -549,12 +550,6 @@
         };
 
         var constraints = options.constraints || {
-            optional: [],
-            mandatory: {
-                OfferToReceiveAudio: true,
-                OfferToReceiveVideo: true
-            },
-	    /* spec is changed support both ways at once */
 	    offerToReceiveAudio: true,
 	    offerToReceiveVideo: true   
         };
@@ -568,8 +563,9 @@
                 peer.setLocalDescription(sessionDescription);
                 options.onOfferSDP(sessionDescription);
 		/* old mozilla behaviour the SDP was already great right away */
-                if (moz && options.onICESDP && sessionDescription.match(/a=candidate/)) {
+                if (moz && options.onICESDP && sessionDescription.sdp.match(/a=candidate/)) {
                     options.onICESDP(sessionDescription);
+		    options.sentICESDP = 1;
                 }
             },
             onSdpError, constraints);
