@@ -7065,7 +7065,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 			send_msg->header.version = 2;
 			send_msg->header.m = frame->m;
 			send_msg->header.ts = htonl(frame->timestamp);
-			send_msg->header.ssrc = htonl(rtp_session->ssrc);
+			send_msg->header.ssrc = htonl(frame->ssrc);
 		}
 
 	} else {
