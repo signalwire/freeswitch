@@ -6551,7 +6551,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			}
 		}
 		tech_pvt->mparams.last_sdp_str = NULL;
-	
+		tech_pvt->mparams.last_sdp_response = NULL;
 		
 		if (r_sdp && (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA))) {
 			const char *var;
