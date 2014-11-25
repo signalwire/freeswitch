@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_client_types.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
+ * $Id: mrcp_client_types.h 2251 2014-11-21 02:36:44Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_CLIENT_TYPES_H
@@ -33,8 +33,10 @@ APT_BEGIN_EXTERN_C
 /** Opaque MRCP client declaration */
 typedef struct mrcp_client_t mrcp_client_t;
 
-/** Opaque MRCP profile declaration */
-typedef struct mrcp_profile_t mrcp_profile_t;
+/** Opaque MRCP client profile declaration */
+typedef struct mrcp_client_profile_t mrcp_client_profile_t;
+/** Backward compatible declaration of MRCP profile */
+typedef mrcp_client_profile_t mrcp_profile_t;
 
 /** Opaque MRCP application declaration */
 typedef struct mrcp_application_t mrcp_application_t;

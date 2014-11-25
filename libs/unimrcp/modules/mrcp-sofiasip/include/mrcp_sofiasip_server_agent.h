@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_sofiasip_server_agent.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
+ * $Id: mrcp_sofiasip_server_agent.h 2252 2014-11-21 02:45:15Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_SOFIASIP_SERVER_AGENT_H
@@ -48,7 +48,7 @@ struct mrcp_sofia_server_config_t {
 	char      *origin;
 	/** SIP transport */
 	char      *transport;
-	/** Force destination ip address. Should be used only in case 
+	/** Force destination IP address. Should be used only in case 
 	SDP contains incorrect connection address (local IP address behind NAT) */
 	apt_bool_t force_destination;
 	/** SIP T1 timer */

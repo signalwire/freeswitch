@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_client.c 2234 2014-11-12 01:38:17Z achaloyan@gmail.com $
+ * $Id: mrcp_client.c 2251 2014-11-21 02:36:44Z achaloyan@gmail.com $
  */
 
 #include <apr_thread_cond.h>
@@ -51,7 +51,7 @@ struct mrcp_client_t {
 	apr_hash_t              *cnt_agent_table;
 	/** Table of RTP settings (mpf_rtp_settings_t*) */
 	apr_hash_t              *rtp_settings_table;
-	/** Table of profiles (mrcp_profile_t*) */
+	/** Table of profiles (mrcp_client_profile_t*) */
 	apr_hash_t              *profile_table;
 
 	/** Table of applications (mrcp_application_t*) */
@@ -471,15 +471,15 @@ MRCP_DECLARE(mrcp_connection_agent_t*) mrcp_client_connection_agent_get(const mr
 }
 
 /** Create MRCP profile */
-MRCP_DECLARE(mrcp_profile_t*) mrcp_client_profile_create(
-									mrcp_resource_factory_t *resource_factory,
-									mrcp_sig_agent_t *signaling_agent,
-									mrcp_connection_agent_t *connection_agent,
-									mpf_engine_t *media_engine,
-									mpf_termination_factory_t *rtp_factory,
-									mpf_rtp_settings_t *rtp_settings,
-									mrcp_sig_settings_t *signaling_settings,
-									apr_pool_t *pool)
+MRCP_DECLARE(mrcp_client_profile_t*) mrcp_client_profile_create(
+										mrcp_resource_factory_t *resource_factory,
+										mrcp_sig_agent_t *signaling_agent,
+										mrcp_connection_agent_t *connection_agent,
+										mpf_engine_t *media_engine,
+										mpf_termination_factory_t *rtp_factory,
+										mpf_rtp_settings_t *rtp_settings,
+										mrcp_sig_settings_t *signaling_settings,
+										apr_pool_t *pool)
 {
 	mrcp_sa_factory_t *sa_factory = NULL;
 	mrcp_ca_factory_t *ca_factory = NULL;
@@ -516,18 +516,18 @@ MRCP_DECLARE(mrcp_profile_t*) mrcp_client_profile_create(
 }
 
 /** Create MRCP profile (extended version) */
-MRCP_DECLARE(mrcp_profile_t*) mrcp_client_profile_create_ex(
-									mrcp_version_e mrcp_version,
-									mrcp_resource_factory_t *resource_factory,
-									mrcp_sa_factory_t *sa_factory,
-									mrcp_ca_factory_t *ca_factory,
-									mpf_engine_factory_t *mpf_factory,
-									mpf_termination_factory_t *rtp_factory,
-									mpf_rtp_settings_t *rtp_settings,
-									mrcp_sig_settings_t *signaling_settings,
-									apr_pool_t *pool)
+MRCP_DECLARE(mrcp_client_profile_t*) mrcp_client_profile_create_ex(
+										mrcp_version_e mrcp_version,
+										mrcp_resource_factory_t *resource_factory,
+										mrcp_sa_factory_t *sa_factory,
+										mrcp_ca_factory_t *ca_factory,
+										mpf_engine_factory_t *mpf_factory,
+										mpf_termination_factory_t *rtp_factory,
+										mpf_rtp_settings_t *rtp_settings,
+										mrcp_sig_settings_t *signaling_settings,
+										apr_pool_t *pool)
 {
-	mrcp_profile_t *profile = apr_palloc(pool,sizeof(mrcp_profile_t));
+	mrcp_client_profile_t *profile = apr_palloc(pool,sizeof(mrcp_client_profile_t));
 	profile->name = NULL;
 	profile->tag = NULL;
 	profile->mrcp_version = mrcp_version;
@@ -545,7 +545,7 @@ MRCP_DECLARE(mrcp_profile_t*) mrcp_client_profile_create_ex(
 }
 
 /** Set a tag to the profile */
-MRCP_DECLARE(void) mrcp_client_profile_tag_set(mrcp_profile_t *profile, const char *tag)
+MRCP_DECLARE(void) mrcp_client_profile_tag_set(mrcp_client_profile_t *profile, const char *tag)
 {
 	if(profile) {
 		apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Set Profile Tag [%s]",tag);
@@ -554,7 +554,7 @@ MRCP_DECLARE(void) mrcp_client_profile_tag_set(mrcp_profile_t *profile, const ch
 }
 
 /** Register MRCP profile */
-MRCP_DECLARE(apt_bool_t) mrcp_client_profile_register(mrcp_client_t *client, mrcp_profile_t *profile, const char *name)
+MRCP_DECLARE(apt_bool_t) mrcp_client_profile_register(mrcp_client_t *client, mrcp_client_profile_t *profile, const char *name)
 {
 	if(!profile || !name) {
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Register Profile: no name");
@@ -602,17 +602,17 @@ MRCP_DECLARE(apt_bool_t) mrcp_client_profile_register(mrcp_client_t *client, mrc
 }
 
 /** Get profile by name */
-MRCP_DECLARE(mrcp_profile_t*) mrcp_client_profile_get(const mrcp_client_t *client, const char *name)
+MRCP_DECLARE(mrcp_client_profile_t*) mrcp_client_profile_get(const mrcp_client_t *client, const char *name)
 {
 	return apr_hash_get(client->profile_table,name,APR_HASH_KEY_STRING);
 }
 
 /** Get available profiles */
-MRCP_DECLARE(apt_bool_t) mrcp_client_profiles_get(const mrcp_client_t *client, mrcp_profile_t *profiles[], apr_size_t *count, const char *tag)
+MRCP_DECLARE(apt_bool_t) mrcp_client_profiles_get(const mrcp_client_t *client, mrcp_client_profile_t *profiles[], apr_size_t *count, const char *tag)
 {
 	apr_hash_index_t *it;
 	void *val;
-	mrcp_profile_t *profile;
+	mrcp_client_profile_t *profile;
 	apr_size_t i = 0;
 	apt_bool_t status = TRUE;
 

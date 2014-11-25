@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_server_session.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
+ * $Id: mrcp_server_session.h 2251 2014-11-21 02:36:44Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_SERVER_SESSION_H
@@ -80,7 +80,7 @@ struct mrcp_server_session_t {
 	/** MRCP server */
 	mrcp_server_t              *server;
 	/** MRCP profile */
-	mrcp_profile_t             *profile;
+	mrcp_server_profile_t      *profile;
 
 	/** Media context */
 	mpf_context_t              *context;
@@ -109,8 +109,8 @@ struct mrcp_server_session_t {
 	apr_size_t                  subrequest_count;
 };
 
-/** MRCP profile */
-struct mrcp_profile_t {
+/** MRCP server profile */
+struct mrcp_server_profile_t {
 	/** Identifier of the profile */
 	const char                *id;
 	/** MRCP version */

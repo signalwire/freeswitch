@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_unirtsp_client_agent.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
+ * $Id: mrcp_unirtsp_client_agent.c 2253 2014-11-21 02:57:19Z achaloyan@gmail.com $
  */
 
 #include <apr_general.h>
@@ -42,11 +42,11 @@ struct mrcp_unirtsp_agent_t {
 };
 
 struct mrcp_unirtsp_session_t {
-	mrcp_message_t           *mrcp_message;
-	mrcp_session_t           *mrcp_session;
-	rtsp_client_session_t    *rtsp_session;
-	mrcp_sig_settings_t	     *rtsp_settings;
-	su_home_t                *home;
+	mrcp_message_t            *mrcp_message;
+	mrcp_session_t            *mrcp_session;
+	rtsp_client_session_t     *rtsp_session;
+	const mrcp_sig_settings_t *rtsp_settings;
+	su_home_t                 *home;
 };
 
 
@@ -74,7 +74,7 @@ static const rtsp_client_vtable_t session_response_vtable = {
 	mrcp_unirtsp_on_session_event
 };
 
-static apt_bool_t mrcp_unirtsp_session_create(mrcp_session_t *session, mrcp_sig_settings_t *settings);
+static apt_bool_t mrcp_unirtsp_session_create(mrcp_session_t *session, const mrcp_sig_settings_t *settings);
 static apt_bool_t rtsp_config_validate(mrcp_unirtsp_agent_t *agent, rtsp_client_config_t *config, apr_pool_t *pool);
 static apt_bool_t mrcp_unirtsp_on_resource_discover(mrcp_unirtsp_agent_t *agent, mrcp_unirtsp_session_t *session, rtsp_message_t *request, rtsp_message_t *response);
 
@@ -133,7 +133,7 @@ static APR_INLINE mrcp_unirtsp_agent_t* client_agent_get(apt_task_t *task)
 	return agent;
 }
 
-static apt_bool_t mrcp_unirtsp_session_create(mrcp_session_t *mrcp_session, mrcp_sig_settings_t *settings)
+static apt_bool_t mrcp_unirtsp_session_create(mrcp_session_t *mrcp_session, const mrcp_sig_settings_t *settings)
 {
 	mrcp_unirtsp_agent_t *agent = mrcp_session->signaling_agent->obj;
 	mrcp_unirtsp_session_t *session;

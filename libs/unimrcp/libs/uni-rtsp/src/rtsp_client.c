@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: rtsp_client.c 2220 2014-11-11 02:39:48Z achaloyan@gmail.com $
+ * $Id: rtsp_client.c 2249 2014-11-19 05:26:24Z achaloyan@gmail.com $
  */
 
 #ifdef WIN32
@@ -836,7 +836,7 @@ static apt_bool_t rtsp_client_message_send(rtsp_client_t *client, rtsp_client_co
 			stream->text.length = stream->pos - stream->text.buf;
 			*stream->pos = '\0';
 
-			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Send RTSP Stream %s [%"APR_SIZE_T_FMT" bytes]\n%s",
+			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Send RTSP Data %s [%"APR_SIZE_T_FMT" bytes]\n%s",
 				rtsp_connection->id,
 				stream->text.length,
 				stream->text.buf);
@@ -844,11 +844,11 @@ static apt_bool_t rtsp_client_message_send(rtsp_client_t *client, rtsp_client_co
 				status = TRUE;
 			}
 			else {
-				apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Send RTSP Stream");
+				apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Send RTSP Data");
 			}
 		}
 		else {
-			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Generate RTSP Stream");
+			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Generate RTSP Data");
 		}
 	}
 	while(result == APT_MESSAGE_STATUS_INCOMPLETE);
@@ -934,7 +934,7 @@ static apt_bool_t rtsp_client_poller_signal_process(void *obj, const apr_pollfd_
 	/* calculate actual length of the stream */
 	stream->text.length = offset + length;
 	stream->pos[length] = '\0';
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Receive RTSP Stream %s [%"APR_SIZE_T_FMT" bytes]\n%s",
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Receive RTSP Data %s [%"APR_SIZE_T_FMT" bytes]\n%s",
 		rtsp_connection->id,
 		length,
 		stream->pos);

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_sig_agent.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
+ * $Id: mrcp_sig_agent.h 2253 2014-11-21 02:57:19Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_SIG_AGENT_H
@@ -43,7 +43,7 @@ struct mrcp_sig_settings_t {
 	char        *resource_location;
 	/** Map of the MRCP resource names (v1 only) */
 	apr_table_t *resource_map;
-	/** Force destination ip address. Should be used only in case 
+	/** Force destination IP address. Should be used only in case 
 	SDP contains incorrect connection address (local IP address behind NAT) */
 	apt_bool_t   force_destination;
 	/** Optional feature tags */
@@ -70,7 +70,7 @@ struct mrcp_sig_agent_t {
 	/** Virtual create_server_session */
 	mrcp_session_t* (*create_server_session)(mrcp_sig_agent_t *signaling_agent);
 	/** Virtual create_client_session */
-	apt_bool_t (*create_client_session)(mrcp_session_t *session, mrcp_sig_settings_t *settings);
+	apt_bool_t (*create_client_session)(mrcp_session_t *session, const mrcp_sig_settings_t *settings);
 };
 
 /** Create signaling agent. */

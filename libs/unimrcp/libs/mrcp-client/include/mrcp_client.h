@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_client.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
+ * $Id: mrcp_client.h 2251 2014-11-21 02:36:44Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_CLIENT_H
@@ -133,34 +133,34 @@ MRCP_DECLARE(apt_bool_t) mrcp_client_signaling_settings_register(mrcp_client_t *
 MRCP_DECLARE(apt_bool_t) mrcp_client_connection_agent_register(mrcp_client_t *client, mrcp_connection_agent_t *connection_agent);
 
 /** Create MRCP profile */
-MRCP_DECLARE(mrcp_profile_t*) mrcp_client_profile_create(
-									mrcp_resource_factory_t *resource_factory,
-									mrcp_sig_agent_t *signaling_agent,
-									mrcp_connection_agent_t *connection_agent,
-									mpf_engine_t *media_engine,
-									mpf_termination_factory_t *rtp_factory,
-									mpf_rtp_settings_t *rtp_settings,
-									mrcp_sig_settings_t *signaling_settings,
-									apr_pool_t *pool);
+MRCP_DECLARE(mrcp_client_profile_t*) mrcp_client_profile_create(
+										mrcp_resource_factory_t *resource_factory,
+										mrcp_sig_agent_t *signaling_agent,
+										mrcp_connection_agent_t *connection_agent,
+										mpf_engine_t *media_engine,
+										mpf_termination_factory_t *rtp_factory,
+										mpf_rtp_settings_t *rtp_settings,
+										mrcp_sig_settings_t *signaling_settings,
+										apr_pool_t *pool);
 
 /** Create MRCP profile (extended version) */
-MRCP_DECLARE(mrcp_profile_t*) mrcp_client_profile_create_ex(
-									mrcp_version_e mrcp_version,
-									mrcp_resource_factory_t *resource_factory,
-									mrcp_sa_factory_t *sa_factory,
-									mrcp_ca_factory_t *ca_factory,
-									mpf_engine_factory_t *mpf_factory,
-									mpf_termination_factory_t *rtp_factory,
-									mpf_rtp_settings_t *rtp_settings,
-									mrcp_sig_settings_t *signaling_settings,
-									apr_pool_t *pool);
+MRCP_DECLARE(mrcp_client_profile_t*) mrcp_client_profile_create_ex(
+										mrcp_version_e mrcp_version,
+										mrcp_resource_factory_t *resource_factory,
+										mrcp_sa_factory_t *sa_factory,
+										mrcp_ca_factory_t *ca_factory,
+										mpf_engine_factory_t *mpf_factory,
+										mpf_termination_factory_t *rtp_factory,
+										mpf_rtp_settings_t *rtp_settings,
+										mrcp_sig_settings_t *signaling_settings,
+										apr_pool_t *pool);
 
 /**
  * Set a tag to the profile.
  * @param profile the profile to set a tag for
  * @param tag the tag to set
  */
-MRCP_DECLARE(void) mrcp_client_profile_tag_set(mrcp_profile_t *profile, const char *tag);
+MRCP_DECLARE(void) mrcp_client_profile_tag_set(mrcp_client_profile_t *profile, const char *tag);
 
 /**
  * Register MRCP profile.
@@ -168,7 +168,7 @@ MRCP_DECLARE(void) mrcp_client_profile_tag_set(mrcp_profile_t *profile, const ch
  * @param profile the profile to set
  * @param name the name of the profile
  */
-MRCP_DECLARE(apt_bool_t) mrcp_client_profile_register(mrcp_client_t *client, mrcp_profile_t *profile, const char *name);
+MRCP_DECLARE(apt_bool_t) mrcp_client_profile_register(mrcp_client_t *client, mrcp_client_profile_t *profile, const char *name);
 
 /**
  * Register MRCP application.
@@ -231,7 +231,7 @@ MRCP_DECLARE(mrcp_connection_agent_t*) mrcp_client_connection_agent_get(const mr
  * @param client the MRCP client to get from
  * @param name the name to lookup
  */
-MRCP_DECLARE(mrcp_profile_t*) mrcp_client_profile_get(const mrcp_client_t *client, const char *name);
+MRCP_DECLARE(mrcp_client_profile_t*) mrcp_client_profile_get(const mrcp_client_t *client, const char *name);
 
 /**
  * Get available profiles.
@@ -241,7 +241,7 @@ MRCP_DECLARE(mrcp_profile_t*) mrcp_client_profile_get(const mrcp_client_t *clien
  * @param tag the tag to be used as a filter (no filter is specified if tag is NULL)
  * @return FALSE if the provided max number of profiles is less than the actual number of profiles
  */
-MRCP_DECLARE(apt_bool_t) mrcp_client_profiles_get(const mrcp_client_t *client, mrcp_profile_t *profiles[], apr_size_t *count, const char *tag);
+MRCP_DECLARE(apt_bool_t) mrcp_client_profiles_get(const mrcp_client_t *client, mrcp_client_profile_t *profiles[], apr_size_t *count, const char *tag);
 
 /**
  * Get directory layout.

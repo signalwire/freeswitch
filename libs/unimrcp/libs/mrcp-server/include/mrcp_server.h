@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_server.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
+ * $Id: mrcp_server.h 2251 2014-11-21 02:36:44Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_SERVER_H
@@ -138,16 +138,16 @@ MRCP_DECLARE(apt_bool_t) mrcp_server_connection_agent_register(
 								mrcp_connection_agent_t *connection_agent);
 
 /** Create MRCP profile */
-MRCP_DECLARE(mrcp_profile_t*) mrcp_server_profile_create(
-								const char *id,
-								mrcp_version_e mrcp_version,
-								mrcp_resource_factory_t *resource_factory,
-								mrcp_sig_agent_t *signaling_agent,
-								mrcp_connection_agent_t *connection_agent,
-								mpf_engine_t *media_engine,
-								mpf_termination_factory_t *rtp_factory,
-								mpf_rtp_settings_t *rtp_settings,
-								apr_pool_t *pool);
+MRCP_DECLARE(mrcp_server_profile_t*) mrcp_server_profile_create(
+										const char *id,
+										mrcp_version_e mrcp_version,
+										mrcp_resource_factory_t *resource_factory,
+										mrcp_sig_agent_t *signaling_agent,
+										mrcp_connection_agent_t *connection_agent,
+										mpf_engine_t *media_engine,
+										mpf_termination_factory_t *rtp_factory,
+										mpf_rtp_settings_t *rtp_settings,
+										apr_pool_t *pool);
 
 /**
  * Register MRCP profile.
@@ -157,7 +157,7 @@ MRCP_DECLARE(mrcp_profile_t*) mrcp_server_profile_create(
  */
 MRCP_DECLARE(apt_bool_t) mrcp_server_profile_register(
 									mrcp_server_t *server, 
-									mrcp_profile_t *profile,
+									mrcp_server_profile_t *profile,
 									apr_table_t *plugin_map);
 
 /**
@@ -219,7 +219,7 @@ MRCP_DECLARE(mrcp_connection_agent_t*) mrcp_server_connection_agent_get(const mr
  * @param server the MRCP client to get from
  * @param name the name to lookup
  */
-MRCP_DECLARE(mrcp_profile_t*) mrcp_server_profile_get(const mrcp_server_t *server, const char *name);
+MRCP_DECLARE(mrcp_server_profile_t*) mrcp_server_profile_get(const mrcp_server_t *server, const char *name);
 
 APT_END_EXTERN_C
 

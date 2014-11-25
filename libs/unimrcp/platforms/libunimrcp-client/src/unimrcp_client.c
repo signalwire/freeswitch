@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * $Id: unimrcp_client.c 2231 2014-11-12 01:32:03Z achaloyan@gmail.com $
+ * $Id: unimrcp_client.c 2252 2014-11-21 02:45:15Z achaloyan@gmail.com $
  */
 
 #include <stdlib.h>
@@ -62,14 +62,14 @@ struct unimrcp_client_loader_t {
 	/** Pool to allocate memory from */
 	apr_pool_t    *pool;
 
-	/** Default ip address (named property) */
+	/** Default IP address (named property) */
 	const char    *ip;
-	/** Default external (NAT) ip address (named property) */
+	/** Default external (NAT) IP address (named property) */
 	const char    *ext_ip;
-	/** Default server ip address (named property) */
+	/** Default server IP address (named property) */
 	const char    *server_ip;
 	
-	/** Implicitly detected, cached ip address */
+	/** Implicitly detected, cached IP address */
 	const char    *auto_ip;
 };
 
@@ -271,7 +271,7 @@ static char* unimrcp_client_ip_address_get(unimrcp_client_loader_t *loader, cons
 	}
 
 	if(attr && strcasecmp(attr->value,"auto") == 0) {
-		/* implicitly detect ip address, if not already detected */
+		/* implicitly detect IP address, if not already detected */
 		if(!loader->auto_ip) {
 			char *auto_addr = DEFAULT_IP_ADDRESS;
 			apt_log(APT_LOG_MARK,APT_PRIO_DEBUG,"Detecting IP Address");
@@ -281,7 +281,7 @@ static char* unimrcp_client_ip_address_get(unimrcp_client_loader_t *loader, cons
 		return apr_pstrdup(loader->pool,loader->auto_ip);
 	}
 	else if(attr && strcasecmp(attr->value,"iface") == 0) {
-		/* get ip address by network interface name */
+		/* get IP address by network interface name */
 		char *ip_addr = DEFAULT_IP_ADDRESS;
 		if(is_cdata_valid(elem) == TRUE) {
 			const char *iface_name = cdata_text_get(elem);
@@ -292,11 +292,11 @@ static char* unimrcp_client_ip_address_get(unimrcp_client_loader_t *loader, cons
 	}
 
 	if(is_cdata_valid(elem)) {
-		/* use specified ip address */
+		/* use specified IP address */
 		return cdata_copy(elem,loader->pool);
 	}
 
-	/* use default ip address */
+	/* use default IP address */
 	return apr_pstrdup(loader->pool,loader->ip);
 }
 
@@ -443,11 +443,11 @@ static apt_bool_t unimrcp_client_sip_uac_load(unimrcp_client_loader_t *loader, c
 	}
 
 	if(!config->local_ip) {
-		/* use default ip address if not specified */
+		/* use default IP address if not specified */
 		config->local_ip = apr_pstrdup(loader->pool,loader->ip);
 	}
 	if(!config->ext_ip && loader->ext_ip) {
-		/* use default ext ip address if not specified */
+		/* use default ext IP address if not specified */
 		config->ext_ip = apr_pstrdup(loader->pool,loader->ext_ip);
 	}
 
@@ -942,7 +942,7 @@ static mpf_engine_factory_t* unimrcp_client_mpf_factory_create(unimrcp_client_lo
 static apt_bool_t unimrcp_client_mrcpv2_profile_load(unimrcp_client_loader_t *loader, const apr_xml_elem *root, const char *id, const char *tag)
 {
 	const apr_xml_elem *elem;
-	mrcp_profile_t *profile;
+	mrcp_client_profile_t *profile;
 	mrcp_sa_factory_t *sa_factory = NULL;
 	mrcp_ca_factory_t *ca_factory = NULL;
 	mpf_engine_factory_t *mpf_factory = NULL;
@@ -998,7 +998,7 @@ static apt_bool_t unimrcp_client_mrcpv2_profile_load(unimrcp_client_loader_t *lo
 static apt_bool_t unimrcp_client_mrcpv1_profile_load(unimrcp_client_loader_t *loader, const apr_xml_elem *root, const char *id, const char *tag)
 {
 	const apr_xml_elem *elem;
-	mrcp_profile_t *profile;
+	mrcp_client_profile_t *profile;
 	mrcp_sa_factory_t *sa_factory = NULL;
 	mpf_engine_factory_t *mpf_factory = NULL;
 	mpf_termination_factory_t *rtp_factory = NULL;

@@ -46,11 +46,11 @@ AC_DEFUN([UNIMRCP_CHECK_SOFIA],
         dnl Check for path to Sofia-SIP source/build tree
         for dir in $sofia_path ; do
             sofia_uadir="$dir/libsofia-sip-ua"
-            sofia_srcdir=`(cd $srcdir/$dir && pwd)`
             if test -d "$sofia_uadir"; then
                 found_sofia="yes"
-                UNIMRCP_SOFIA_INCLUDES="-I$sofia_srcdir/$sofia_uadir -I$sofia_srcdir/$sofia_uadir/bnf -I$sofia_srcdir/$sofia_uadir/features -I$sofia_srcdir/$sofia_uadir/http -I$sofia_srcdir/$sofia_uadir/ipt -I$sofia_srcdir/$sofia_uadir/iptsec -I$sofia_srcdir/$sofia_uadir/msg -I$sofia_srcdir/$sofia_uadir/nea -I$sofia_srcdir/$sofia_uadir/nta -I$sofia_srcdir/$sofia_uadir/nth -I$sofia_srcdir/$sofia_uadir/nua -I$sofia_srcdir/$sofia_uadir/sdp -I$sofia_srcdir/$sofia_uadir/sip -I$sofia_srcdir/$sofia_uadir/soa -I$sofia_srcdir/$sofia_uadir/sresolv -I$sofia_srcdir/$sofia_uadir/stun -I$sofia_srcdir/$sofia_uadir/su -I$sofia_srcdir/$sofia_uadir/tport -I$sofia_srcdir/$sofia_uadir/url"
-                UNIMRCP_SOFIA_LIBS="$sofia_srcdir/$sofia_uadir/libsofia-sip-ua.la"
+                sofia_abs_uadir="`cd $sofia_uadir && pwd`"
+                UNIMRCP_SOFIA_INCLUDES="-I$sofia_abs_uadir -I$sofia_abs_uadir/bnf -I$sofia_abs_uadir/features -I$sofia_abs_uadir/http -I$sofia_abs_uadir/ipt -I$sofia_abs_uadir/iptsec -I$sofia_abs_uadir/msg -I$sofia_abs_uadir/nea -I$sofia_abs_uadir/nta -I$sofia_abs_uadir/nth -I$sofia_abs_uadir/nua -I$sofia_abs_uadir/sdp -I$sofia_abs_uadir/sip -I$sofia_abs_uadir/soa -I$sofia_abs_uadir/sresolv -I$sofia_abs_uadir/stun -I$sofia_abs_uadir/su -I$sofia_abs_uadir/tport -I$sofia_abs_uadir/url"
+                UNIMRCP_SOFIA_LIBS="$sofia_abs_uadir/libsofia-sip-ua.la"
                 sofia_version="`sed -n 's/#define SOFIA_SIP_VERSION.* "\(.*\)"/\1/p' $sofia_uadir/features/sofia-sip/sofia_features.h`"
                 break
             fi
