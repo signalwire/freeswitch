@@ -738,7 +738,7 @@ static switch_status_t switch_h264_destroy(switch_codec_t *codec)
 		av_free(context->decoder_ctx);
 	}
 
-	if (context->img) switch_img_free(context->img);
+	switch_img_free(&context->img);
 
 	if (context->encoder_ctx) {
 		if (avcodec_is_open(context->encoder_ctx)) avcodec_close(context->encoder_ctx);

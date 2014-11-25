@@ -64,9 +64,13 @@ SWITCH_DECLARE(void) switch_img_flip(switch_image_t *img)
 	vpx_img_flip((vpx_image_t *)img);
 }
 
-SWITCH_DECLARE(void) switch_img_free(switch_image_t *img)
+SWITCH_DECLARE(void) switch_img_free(switch_image_t **img)
 {
-	vpx_img_free((vpx_image_t *)img);
+	if (img && *img) {
+		vpx_img_free((vpx_image_t *)*img);
+	}
+
+	*img = NULL;
 }
 
 /* For Emacs:
