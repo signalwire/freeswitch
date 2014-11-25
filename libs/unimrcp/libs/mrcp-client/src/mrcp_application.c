@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_application.c 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
+ * $Id: mrcp_application.c 2251 2014-11-21 02:36:44Z achaloyan@gmail.com $
  */
 
 #include "mrcp_application.h"
@@ -72,7 +72,7 @@ MRCP_DECLARE(const apt_dir_layout_t*) mrcp_application_dir_layout_get(const mrcp
 /** Create client session */
 MRCP_DECLARE(mrcp_session_t*) mrcp_application_session_create(mrcp_application_t *application, const char *profile_name, void *obj)
 {
-	mrcp_profile_t *profile;
+	mrcp_client_profile_t *profile;
 	mrcp_client_session_t *session;
 	if(!application || !application->client || !profile_name) {
 		return NULL;
@@ -194,7 +194,7 @@ MRCP_DECLARE(mrcp_channel_t*) mrcp_application_channel_create(
 									void *obj)
 {
 	mrcp_resource_t *resource;
-	mrcp_profile_t *profile;
+	mrcp_client_profile_t *profile;
 	mrcp_client_session_t *client_session = (mrcp_client_session_t*)session;
 	if(!client_session || !client_session->profile) {
 		/* Invalid params */
@@ -317,7 +317,7 @@ MRCP_DECLARE(apt_bool_t) mrcp_application_resource_discover(mrcp_session_t *sess
 MRCP_DECLARE(mrcp_message_t*) mrcp_application_message_create(mrcp_session_t *session, mrcp_channel_t *channel, mrcp_method_id method_id)
 {
 	mrcp_message_t *mrcp_message;
-	mrcp_profile_t *profile;
+	mrcp_client_profile_t *profile;
 	mrcp_client_session_t *client_session = (mrcp_client_session_t*)session;
 	if(!client_session || !channel || !channel->resource) {
 		return NULL;

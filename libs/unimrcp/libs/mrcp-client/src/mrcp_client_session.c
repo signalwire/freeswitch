@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_client_session.c 2237 2014-11-12 01:48:46Z achaloyan@gmail.com $
+ * $Id: mrcp_client_session.c 2251 2014-11-21 02:36:44Z achaloyan@gmail.com $
  */
 
 #include "mrcp_client_session.h"
@@ -684,7 +684,7 @@ static apt_bool_t mrcp_client_channel_add(mrcp_client_session_t *session, mrcp_c
 	mpf_rtp_termination_descriptor_t *rtp_descriptor = NULL;
 	rtp_termination_slot_t *slot;
 	apr_pool_t *pool = session->base.pool;
-	mrcp_profile_t *profile = session->profile;
+	mrcp_client_profile_t *profile = session->profile;
 	if(mrcp_client_channel_find(session,channel,NULL) == TRUE) {
 		/* update */
 		return mrcp_client_channel_modify(session,channel,TRUE);

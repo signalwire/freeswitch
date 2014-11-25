@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: rtsp_server.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
+ * $Id: rtsp_server.h 2252 2014-11-21 02:45:15Z achaloyan@gmail.com $
  */
 
 #ifndef RTSP_SERVER_H
@@ -137,8 +137,8 @@ RTSP_DECLARE(const apt_str_t*) rtsp_server_session_id_get(const rtsp_server_sess
 RTSP_DECLARE(const rtsp_message_t*) rtsp_server_session_request_get(const rtsp_server_session_t *session);
 
 /**
- * Get the session destination (client) ip address.
- * @param session the session to get ip address from
+ * Get the session destination (client) IP address.
+ * @param session the session to get IP address from
  */
 RTSP_DECLARE(const char*) rtsp_server_session_destination_get(const rtsp_server_session_t *session);
 

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_server.c 2178 2014-09-13 02:36:05Z achaloyan@gmail.com $
+ * $Id: mrcp_server.c 2251 2014-11-21 02:36:44Z achaloyan@gmail.com $
  */
 
 #include "mrcp_server.h"
@@ -57,7 +57,7 @@ struct mrcp_server_t {
 	apr_hash_t              *cnt_agent_table;
 	/** Table of RTP settings (mpf_rtp_settings_t*) */
 	apr_hash_t              *rtp_settings_table;
-	/** Table of profiles (mrcp_profile_t*) */
+	/** Table of profiles (mrcp_server_profile_t*) */
 	apr_hash_t              *profile_table;
 
 	/** Table of sessions */
@@ -459,18 +459,18 @@ MRCP_DECLARE(mrcp_connection_agent_t*) mrcp_server_connection_agent_get(const mr
 }
 
 /** Create MRCP profile */
-MRCP_DECLARE(mrcp_profile_t*) mrcp_server_profile_create(
-									const char *id,
-									mrcp_version_e mrcp_version,
-									mrcp_resource_factory_t *resource_factory,
-									mrcp_sig_agent_t *signaling_agent,
-									mrcp_connection_agent_t *connection_agent,
-									mpf_engine_t *media_engine,
-									mpf_termination_factory_t *rtp_factory,
-									mpf_rtp_settings_t *rtp_settings,
-									apr_pool_t *pool)
+MRCP_DECLARE(mrcp_server_profile_t*) mrcp_server_profile_create(
+										const char *id,
+										mrcp_version_e mrcp_version,
+										mrcp_resource_factory_t *resource_factory,
+										mrcp_sig_agent_t *signaling_agent,
+										mrcp_connection_agent_t *connection_agent,
+										mpf_engine_t *media_engine,
+										mpf_termination_factory_t *rtp_factory,
+										mpf_rtp_settings_t *rtp_settings,
+										apr_pool_t *pool)
 {
-	mrcp_profile_t *profile = apr_palloc(pool,sizeof(mrcp_profile_t));
+	mrcp_server_profile_t *profile = apr_palloc(pool,sizeof(mrcp_server_profile_t));
 	profile->id = id;
 	profile->mrcp_version = mrcp_version;
 	profile->resource_factory = resource_factory;
@@ -485,7 +485,7 @@ MRCP_DECLARE(mrcp_profile_t*) mrcp_server_profile_create(
 	return profile;
 }
 
-static apt_bool_t mrcp_server_engine_table_make(mrcp_server_t *server, mrcp_profile_t *profile, apr_table_t *plugin_map)
+static apt_bool_t mrcp_server_engine_table_make(mrcp_server_t *server, mrcp_server_profile_t *profile, apr_table_t *plugin_map)
 {
 	int i;
 	mrcp_resource_t *resource;
@@ -528,7 +528,7 @@ static apt_bool_t mrcp_server_engine_table_make(mrcp_server_t *server, mrcp_prof
 /** Register MRCP profile */
 MRCP_DECLARE(apt_bool_t) mrcp_server_profile_register(
 							mrcp_server_t *server,
-							mrcp_profile_t *profile,
+							mrcp_server_profile_t *profile,
 							apr_table_t *plugin_map)
 {
 	if(!profile || !profile->id) {
@@ -568,7 +568,7 @@ MRCP_DECLARE(apt_bool_t) mrcp_server_profile_register(
 }
 
 /** Get profile by name */
-MRCP_DECLARE(mrcp_profile_t*) mrcp_server_profile_get(const mrcp_server_t *server, const char *name)
+MRCP_DECLARE(mrcp_server_profile_t*) mrcp_server_profile_get(const mrcp_server_t *server, const char *name)
 {
 	return apr_hash_get(server->profile_table,name,APR_HASH_KEY_STRING);
 }
@@ -842,9 +842,9 @@ static apt_bool_t mrcp_server_channel_task_msg_signal(
 	return apt_task_msg_signal(task,task_msg);
 }
 
-static mrcp_profile_t* mrcp_server_profile_get_by_agent(mrcp_server_t *server, mrcp_server_session_t *session, mrcp_sig_agent_t *signaling_agent)
+static mrcp_server_profile_t* mrcp_server_profile_get_by_agent(mrcp_server_t *server, mrcp_server_session_t *session, const mrcp_sig_agent_t *signaling_agent)
 {
-	mrcp_profile_t *profile;
+	mrcp_server_profile_t *profile;
 	apr_hash_index_t *it;
 	void *val;
 	it = apr_hash_first(session->base.pool,server->profile_table);

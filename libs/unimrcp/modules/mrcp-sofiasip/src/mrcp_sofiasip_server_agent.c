@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_sofiasip_server_agent.c 2221 2014-11-11 02:44:03Z achaloyan@gmail.com $
+ * $Id: mrcp_sofiasip_server_agent.c 2250 2014-11-19 05:41:12Z achaloyan@gmail.com $
  */
 
 typedef struct mrcp_sofia_agent_t mrcp_sofia_agent_t;
@@ -182,26 +182,21 @@ static void mrcp_sofia_task_initialize(apt_task_t *task)
 	 * an incoming call, etc, occur. 
 	 */
 	sofia_agent->nua = nua_create(
-					sofia_agent->root,         /* Event loop */
-					mrcp_sofia_event_callback, /* Callback for processing events */
-					sofia_agent,               /* Additional data to pass to callback */
-					NUTAG_URL(sofia_agent->sip_bind_str), /* Address to bind to */
-					TAG_IF(sofia_config->tport_log == TRUE,TPTAG_LOG(1)), /* Print out SIP messages to the console */
-					TAG_IF(sofia_config->tport_dump_file,TPTAG_DUMP(sofia_config->tport_dump_file)), /* Dump SIP messages to the file */
-					TAG_END());                /* Last tag should always finish the sequence */
-	if(sofia_agent->nua) {
-		nua_set_params(
-					sofia_agent->nua,
-					NUTAG_AUTOANSWER(0),
-					NUTAG_APPL_METHOD("OPTIONS"),
-					TAG_IF(sofia_config->sip_t1,NTATAG_SIP_T1(sofia_config->sip_t1)),
-					TAG_IF(sofia_config->sip_t2,NTATAG_SIP_T2(sofia_config->sip_t2)),
-					TAG_IF(sofia_config->sip_t4,NTATAG_SIP_T4(sofia_config->sip_t4)),
-					TAG_IF(sofia_config->sip_t1x64,NTATAG_SIP_T1X64(sofia_config->sip_t1x64)),
-					SIPTAG_USER_AGENT_STR(sofia_config->user_agent_name),
-					TAG_END());
-	}
-	else {
+		sofia_agent->root,         /* Event loop */
+		mrcp_sofia_event_callback, /* Callback for processing events */
+		sofia_agent,               /* Additional data to pass to callback */
+		NUTAG_URL(sofia_agent->sip_bind_str), /* Address to bind to */
+		NUTAG_AUTOANSWER(0),
+		NUTAG_APPL_METHOD("OPTIONS"),
+		TAG_IF(sofia_config->sip_t1,NTATAG_SIP_T1(sofia_config->sip_t1)),
+		TAG_IF(sofia_config->sip_t2,NTATAG_SIP_T2(sofia_config->sip_t2)),
+		TAG_IF(sofia_config->sip_t4,NTATAG_SIP_T4(sofia_config->sip_t4)),
+		TAG_IF(sofia_config->sip_t1x64,NTATAG_SIP_T1X64(sofia_config->sip_t1x64)),
+		SIPTAG_USER_AGENT_STR(sofia_config->user_agent_name),
+		TAG_IF(sofia_config->tport_log == TRUE,TPTAG_LOG(1)), /* Print out SIP messages to the console */
+		TAG_IF(sofia_config->tport_dump_file,TPTAG_DUMP(sofia_config->tport_dump_file)), /* Dump SIP messages to the file */
+		TAG_END());                /* Last tag should always finish the sequence */
+	if(!sofia_agent->nua) {
 		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Create NUA [%s] %s",
 					apt_task_name_get(task),
 					sofia_agent->sip_bind_str);

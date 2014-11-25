@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_client_connection.c 2235 2014-11-12 01:41:51Z achaloyan@gmail.com $
+ * $Id: mrcp_client_connection.c 2249 2014-11-19 05:26:24Z achaloyan@gmail.com $
  */
 
 #include "mrcp_connection.h"
@@ -527,7 +527,7 @@ static apt_bool_t mrcp_client_agent_messsage_send(mrcp_connection_agent_t *agent
 			stream.text.length = stream.pos - stream.text.buf;
 			*stream.pos = '\0';
 
-			apt_obj_log(APT_LOG_MARK,APT_PRIO_INFO,channel->log_obj,"Send MRCPv2 Stream %s [%"APR_SIZE_T_FMT" bytes]\n%.*s",
+			apt_obj_log(APT_LOG_MARK,APT_PRIO_INFO,channel->log_obj,"Send MRCPv2 Data %s [%"APR_SIZE_T_FMT" bytes]\n%.*s",
 				connection->id,
 				stream.text.length,
 				connection->verbose == TRUE ? stream.text.length : 0,
@@ -537,12 +537,12 @@ static apt_bool_t mrcp_client_agent_messsage_send(mrcp_connection_agent_t *agent
 				status = TRUE;
 			}
 			else {
-				apt_obj_log(APT_LOG_MARK,APT_PRIO_WARNING,channel->log_obj,"Failed to Send MRCPv2 Stream %s",
+				apt_obj_log(APT_LOG_MARK,APT_PRIO_WARNING,channel->log_obj,"Failed to Send MRCPv2 Data %s",
 					connection->id);
 			}
 		}
 		else {
-			apt_obj_log(APT_LOG_MARK,APT_PRIO_WARNING,channel->log_obj,"Failed to Generate MRCPv2 Stream %s",
+			apt_obj_log(APT_LOG_MARK,APT_PRIO_WARNING,channel->log_obj,"Failed to Generate MRCPv2 Data %s",
 				connection->id);
 		}
 	}
@@ -632,7 +632,7 @@ static apt_bool_t mrcp_client_poller_signal_process(void *obj, const apr_pollfd_
 	/* calculate actual length of the stream */
 	stream->text.length = offset + length;
 	stream->pos[length] = '\0';
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Receive MRCPv2 Stream %s [%"APR_SIZE_T_FMT" bytes]\n%.*s",
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Receive MRCPv2 Data %s [%"APR_SIZE_T_FMT" bytes]\n%.*s",
 			connection->id,
 			length,
 			connection->verbose == TRUE ? length : 0,

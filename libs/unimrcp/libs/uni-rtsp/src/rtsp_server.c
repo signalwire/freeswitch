@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: rtsp_server.c 2173 2014-09-11 01:42:21Z achaloyan@gmail.com $
+ * $Id: rtsp_server.c 2252 2014-11-21 02:45:15Z achaloyan@gmail.com $
  */
 
 #ifdef WIN32
@@ -271,7 +271,7 @@ RTSP_DECLARE(const rtsp_message_t*) rtsp_server_session_request_get(const rtsp_s
 	return session->active_request;
 }
 
-/** Get the session destination (client) ip address */
+/** Get the session destination (client) IP address */
 RTSP_DECLARE(const char*) rtsp_server_session_destination_get(const rtsp_server_session_t *session)
 {
 	if(session->connection) {
@@ -611,7 +611,7 @@ static apt_bool_t rtsp_server_message_send(rtsp_server_t *server, rtsp_server_co
 			stream->text.length = stream->pos - stream->text.buf;
 			*stream->pos = '\0';
 
-			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Send RTSP Stream %s [%"APR_SIZE_T_FMT" bytes]\n%s",
+			apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Send RTSP Data %s [%"APR_SIZE_T_FMT" bytes]\n%s",
 				rtsp_connection->id,
 				stream->text.length,
 				stream->text.buf);
@@ -619,11 +619,11 @@ static apt_bool_t rtsp_server_message_send(rtsp_server_t *server, rtsp_server_co
 				status = TRUE;
 			}
 			else {
-				apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Send RTSP Stream");
+				apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Send RTSP Data");
 			}
 		}
 		else {
-			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Generate RTSP Stream");
+			apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Generate RTSP Data");
 		}
 	}
 	while(result == APT_MESSAGE_STATUS_INCOMPLETE);
@@ -645,7 +645,7 @@ static apt_bool_t rtsp_server_message_handler(rtsp_server_connection_t *rtsp_con
 	else if(status == APT_MESSAGE_STATUS_INVALID) {
 		/* error case */
 		rtsp_message_t *response;
-		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Parse RTSP Stream");
+		apt_log(APT_LOG_MARK,APT_PRIO_WARNING,"Failed to Parse RTSP Data");
 		if(message) {
 			response = rtsp_response_create(message,RTSP_STATUS_CODE_BAD_REQUEST,
 									RTSP_REASON_PHRASE_BAD_REQUEST,message->pool);
@@ -850,7 +850,7 @@ static apt_bool_t rtsp_server_poller_signal_process(void *obj, const apr_pollfd_
 	/* calculate actual length of the stream */
 	stream->text.length = offset + length;
 	stream->pos[length] = '\0';
-	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Receive RTSP Stream %s [%"APR_SIZE_T_FMT" bytes]\n%s",
+	apt_log(APT_LOG_MARK,APT_PRIO_INFO,"Receive RTSP Data %s [%"APR_SIZE_T_FMT" bytes]\n%s",
 		rtsp_connection->id,
 		length,
 		stream->pos);

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * $Id: mrcp_server_types.h 2136 2014-07-04 06:33:36Z achaloyan@gmail.com $
+ * $Id: mrcp_server_types.h 2251 2014-11-21 02:36:44Z achaloyan@gmail.com $
  */
 
 #ifndef MRCP_SERVER_TYPES_H
@@ -33,8 +33,8 @@ APT_BEGIN_EXTERN_C
 /** Opaque MRCP server declaration */
 typedef struct mrcp_server_t mrcp_server_t;
 
-/** Opaque MRCP profile declaration */
-typedef struct mrcp_profile_t mrcp_profile_t;
+/** Opaque MRCP server profile declaration */
+typedef struct mrcp_server_profile_t mrcp_server_profile_t;
 
 
 APT_END_EXTERN_C
