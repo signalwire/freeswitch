@@ -1272,15 +1272,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(_In_ switch_core_
 SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(_In_ switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags,
 																	 int stream_id);
 /*! 
-  \brief set a callback to be called after each frame of an image is written
-  \param session the session to write to
-  \param callback the function to call
-  \param user_data the user data pointer to pass as an arguement to the callback
-  \return void
-*/
-SWITCH_DECLARE(void) switch_core_session_set_image_write_callback(switch_core_session_t *session, switch_image_write_callback_t callback, void *user_data);
-
-/*! 
   \brief Write a video frame to a session
   \param session the session to write to
   \param frame a pointer to a frame to write

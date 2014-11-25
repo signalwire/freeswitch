@@ -599,7 +599,7 @@ static switch_status_t switch_h264_destroy(switch_codec_t *codec)
 	}
 
 	if (context->decoder) {
-		if (context->img) switch_img_free(context->img);
+		switch_img_free(&context->img);
 		context->decoder->Uninitialize();
 		WelsDestroyDecoder(context->decoder);
 	}

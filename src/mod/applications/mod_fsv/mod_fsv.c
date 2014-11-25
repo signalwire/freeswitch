@@ -667,7 +667,7 @@ SWITCH_STANDARD_APP(play_yuv_function)
 		close(fd);
 	}
 
-	switch_img_free(img);
+	switch_img_free(&img);
 
  done:
 

@@ -9538,12 +9538,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 }
 
 
-SWITCH_DECLARE(void) switch_core_session_set_image_write_callback(switch_core_session_t *session, switch_image_write_callback_t callback, void *user_data)
-{
-	session->image_write_callback = callback;
-	session->image_write_callback_user_data = user_data;
-}
-
 static switch_status_t raw_write_video(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id) 
 {
 	switch_io_event_hook_video_write_frame_t *ptr;
@@ -9665,14 +9659,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 			}
 			
 			switch_set_flag(frame, SFF_RAW_RTP_PARSE_FRAME);
-		
 			status = raw_write_video(session, frame, flags, stream_id);
-
-			if (status == SWITCH_STATUS_SUCCESS && session->image_write_callback) {
-				session->image_write_callback(session, frame, img, session->image_write_callback_user_data);
-			}
 		}
-
+		
 	} while(status == SWITCH_STATUS_SUCCESS && encode_status == SWITCH_STATUS_MORE_DATA);
 
 

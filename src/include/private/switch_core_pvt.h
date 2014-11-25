@@ -188,12 +188,6 @@ struct switch_core_session {
 
 	switch_media_handle_t *media_handle;
 	uint32_t decoder_errors;
-	switch_core_video_thread_callback_func_t *_video_thread_callback;
-	void *_video_thread_user_data;
-	//switch_time_t last_video_write_time;
-
-	switch_image_write_callback_t image_write_callback;
-	void *image_write_callback_user_data;
 	switch_slin_data_t *sdata;
 };
 

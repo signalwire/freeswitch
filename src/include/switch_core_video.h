@@ -216,9 +216,9 @@ SWITCH_DECLARE(void) switch_img_flip(switch_image_t *img);
 *
 * Frees all allocated storage associated with an image descriptor.
 *
-* \param[in]    img       Image descriptor
+* \param[in]    img       pointer to pointer of Image descriptor
 */
-SWITCH_DECLARE(void) switch_img_free(switch_image_t *img);
+SWITCH_DECLARE(void) switch_img_free(switch_image_t **img);
 
 
 /** @} */
