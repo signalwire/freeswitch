@@ -122,10 +122,11 @@ static switch_status_t init_x264(h264_codec_context_t *context, uint32_t width, 
 		return SWITCH_STATUS_FALSE;
 	}
 
-	x264_param_default(xp);
+	// x264_param_default(xp);
+	x264_param_default_preset(xp, "veryfast", "zerolatency");
 	// xp->i_level_idc = 31; // baseline
 	// CPU Flags
-	xp->i_threads  = 1;//X264_SYNC_LOOKAHEAD_AUTO;
+	// xp->i_threads  = 1;//X264_SYNC_LOOKAHEAD_AUTO;
 	// xp->i_lookahead_threads = X264_SYNC_LOOKAHEAD_AUTO;
 	// Video Properties
 	xp->i_width	  = width;
@@ -134,10 +135,10 @@ static switch_status_t init_x264(h264_codec_context_t *context, uint32_t width, 
 	xp->i_keyint_max = FPS * 10;
 	// Bitstream parameters
 	xp->i_bframe	 = 0;
-	xp->i_frame_reference = 0;
+	// xp->i_frame_reference = 0;
 	// xp->b_open_gop	= 0;
 	// xp->i_bframe_pyramid = 0;
-	// xp->i_bframe_adaptive = X264_B_ADAPT_TRELLIS;
+	// xp->i_bframe_adaptive = X264_B_ADAPT_NONE;
 
 	//xp->vui.i_sar_width = 1080;
 	//xp->vui.i_sar_height = 720;
@@ -571,7 +572,7 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec,
 	height = img->d_h;
 
 	if (context->x264_params.i_width != width || context->x264_params.i_height != height) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "picture size changed from %dx%d to %dx%d, reinitializing encoder",
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "picture size changed from %dx%d to %dx%d, reinitializing encoder\n",
 			context->x264_params.i_width, context->x264_params.i_width, width, height);
 		init_x264(context, width, height);
 	}
@@ -609,12 +610,13 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec,
 	if (0) { //debug
 		int i;
 		x264_nal_t *nals = context->x264_nals;
+
 		for (i = 0; i < context->x264_nal_count; i++) {
 			// int start_code_len = 3 + nals[i].b_long_startcode;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "encoded: %d %d %d %d| %d %d %d %x %x %x %x %x %x\n",
 				nals[i].i_type, nals[i].i_ref_idc, nals[i].i_payload, nals[i].b_long_startcode, *(nals[i].p_payload), *(nals[i].p_payload + 1), *(nals[i].p_payload + 2), *(nals[i].p_payload+3), *(nals[i].p_payload + 4), *(nals[i].p_payload + 5), *(nals[i].p_payload + 6), *(nals[i].p_payload + 7), *(nals[i].p_payload + 8));
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "encoder output dts:%ld\n", (long)pic_out.i_dts);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Got ACL count : %d, Encoder output dts:%ld\n", context->x264_nal_count, (long)pic_out.i_dts);
 	}
 
 	context->cur_nalu_index = 0;
