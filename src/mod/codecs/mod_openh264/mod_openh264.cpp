@@ -59,6 +59,7 @@ typedef struct h264_codec_context_s {
 	uint8_t last_nri;
 	int last_nalu_data_pos;
 	int nalu_eat;
+	int nalu_28_start;
 
 	ISVCDecoder *decoder;
 	SDecodingParam decoder_params;
@@ -139,7 +140,7 @@ static switch_size_t buffer_h264_nalu(h264_codec_context_t *context, switch_fram
 	switch_size_t size = 0;
 
 	switch_assert(frame);
-	
+
 	nalu_idc = (nalu_hdr & 0x60) >> 5;
 	nalu_type = nalu_hdr & 0x1f;
 
@@ -150,12 +151,30 @@ static switch_size_t buffer_h264_nalu(h264_codec_context_t *context, switch_fram
 
 	if (!context->got_sps) context->got_sps = 1;
 
-	size = switch_buffer_write(buffer, sync_bytes, sizeof(sync_bytes));
-	size = switch_buffer_write(buffer, frame->data, frame->datalen);
+	/* hack for phones sending sps/pps with frame->m = 1 such as grandstream */
+	if ((nalu_type == 7 || nalu_type == 8) && frame->m) frame->m = SWITCH_FALSE;
 
+	if (nalu_type == 28) { // 0x1c FU-A
+		nalu_type = *(data + 1) & 0x1f;
+
+		if (context->nalu_28_start == 0) {
+			uint8_t nalu_idc = (nalu_hdr & 0x60) >> 5;
+			nalu_type |= (nalu_idc << 5);
+
+			size = switch_buffer_write(buffer, sync_bytes, sizeof(sync_bytes));
+			size = switch_buffer_write(buffer, &nalu_type, 1);
+			context->nalu_28_start = 1;
+		}
+
+		size = switch_buffer_write(buffer, (void *)(data + 2), frame->datalen - 2);
+	} else {
+		size = switch_buffer_write(buffer, sync_bytes, sizeof(sync_bytes));
+		size = switch_buffer_write(buffer, frame->data, frame->datalen);
+		context->nalu_28_start = 0;
+	}
 
 #ifdef DEBUG_H264
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ts: %ld len: %4d %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x mark=%d size=%d\n",
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ts: %ld len: %4d %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x mark=%d size=%" SWITCH_SIZE_T_FMT "\n",
 		(frame)->timestamp, (frame)->datalen,
 		*((uint8_t *)(frame)->data), *((uint8_t *)(frame)->data + 1),
 		*((uint8_t *)(frame)->data + 2), *((uint8_t *)(frame)->data + 3),
@@ -323,7 +342,7 @@ static switch_status_t switch_h264_init(switch_codec_t *codec, switch_codec_flag
 		}
 
 		if (set_decoder_options(context->decoder)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Set Decoder Option Error\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Set Decoder Options Error\n");
 		}
 	}
 
@@ -478,23 +497,19 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 	context->last_received_complete_picture = frame->m ? SWITCH_TRUE : SWITCH_FALSE;
 
 	size = buffer_h264_nalu(context, frame);
-	//printf("READ buf:%ld got_key:%d st:%d m:%d\n", size, context->got_sps, status, frame->m);
-
+	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "READ buf:%ld got_key:%d st:%d m:%d size:%" SWITCH_SIZE_T_FMT "\n", size, context->got_sps, status, frame->m, size);
 
 	if (frame->m && size) {
 		int got_picture = 0;
-		int decoded_len;
 		int i;
 		const void *nalu = NULL;
 		int width, height;
 		SBufferInfo dest_buffer_info;
 		switch_buffer_peek_zerocopy(context->nalu_buffer, &nalu);
 		uint8_t* pData[3] = { 0 };
-		
 
 		frame->m = SWITCH_FALSE;
 		frame->flags = 0;
-
 
 		pData[0] = NULL;
 		pData[1] = NULL;
@@ -507,8 +522,9 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 			width  = dest_buffer_info.UsrData.sSystemBuffer.iWidth;
 			height = dest_buffer_info.UsrData.sSystemBuffer.iHeight;
 
-			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got pic: [%dx%d]\n", width, height);
-
+#ifdef DEBUG_H264
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "got pic: [%dx%d]\n", width, height);
+#endif
 			if (!context->img) {
 				context->img = switch_img_wrap(NULL, SWITCH_IMG_FMT_I420, width, height, 0, pData[0]);
 				assert(context->img);
@@ -548,6 +564,14 @@ end:
 	if (status == SWITCH_STATUS_RESTART) {
 		context->got_sps = 0;
 		switch_buffer_zero(context->nalu_buffer);
+#if 0
+		/* re-initialize decoder, trying to recover from really bad H264 bit streams */
+		if (context->decoder->Initialize(&context->decoder_params)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decoder Initialize failed\n");
+		} else if (set_decoder_options(context->decoder)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Set Decoder Options Error\n");
+		}
+#endif
 	}
 
 	if (!context->got_sps) {

@@ -90,6 +90,7 @@ typedef struct h264_codec_context_s {
 	switch_bool_t last_received_complete_picture;
 	switch_image_t *img;
 	int need_key_frame;
+	switch_bool_t nalu_28_start;
 
 #ifdef H264_CODEC_USE_LIBX264
 	/*x264*/
@@ -212,17 +213,15 @@ static uint8_t ff_input_buffer_padding[FF_INPUT_BUFFER_PADDING_SIZE] = { 0 };
 
 static void buffer_h264_nalu(h264_codec_context_t *context, switch_frame_t *frame)
 {
-	//	uint8_t nalu_idc = 0;
 	uint8_t nalu_type = 0;
 	uint8_t *data = frame->data;
 	uint8_t nalu_hdr = *data;
 	uint8_t sync_bytes[] = {0, 0, 0, 1};
 	switch_buffer_t *buffer = context->nalu_buffer;
 
-	//	nalu_idc = (nalu_hdr & 0x60) >> 5;
 	nalu_type = nalu_hdr & 0x1f;
 
-	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%02x %d\n", nalu_hdr, frame->datalen);
+	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "nalu=%02x mark=%d seq=%d ts=%" SWITCH_SIZE_T_FMT " len=%d\n", nalu_hdr, frame->m, frame->seq, frame->timestamp, frame->datalen);
 
 	if (!context->got_pps && nalu_type != 7) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "waiting pps\n");
@@ -232,8 +231,27 @@ static void buffer_h264_nalu(h264_codec_context_t *context, switch_frame_t *fram
 
 	if (!context->got_pps) context->got_pps = 1;
 
-	switch_buffer_write(buffer, sync_bytes, sizeof(sync_bytes));
-	switch_buffer_write(buffer, frame->data, frame->datalen);
+	/* hack for phones sending sps/pps with frame->m = 1 such as grandstream */
+	if ((nalu_type == 7 || nalu_type == 8) && frame->m) frame->m = SWITCH_FALSE;
+
+	if (nalu_type == 28) { // 0x1c FU-A
+		nalu_type = *(data + 1) & 0x1f;
+
+		if (context->nalu_28_start == 0) {
+			uint8_t nalu_idc = (nalu_hdr & 0x60) >> 5;
+			nalu_type |= (nalu_idc << 5);
+
+			switch_buffer_write(buffer, sync_bytes, sizeof(sync_bytes));
+			switch_buffer_write(buffer, &nalu_type, 1);
+			context->nalu_28_start = 1;
+		}
+
+		switch_buffer_write(buffer, (void *)(data + 2), frame->datalen - 2);
+	} else {
+		switch_buffer_write(buffer, sync_bytes, sizeof(sync_bytes));
+		switch_buffer_write(buffer, frame->data, frame->datalen);
+		context->nalu_28_start = 0;
+	}
 
 	if (frame->m) {
 		switch_buffer_write(buffer, ff_input_buffer_padding, sizeof(ff_input_buffer_padding));
