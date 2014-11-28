@@ -93,10 +93,22 @@
             candidateList: []
         };
 
-        this.constraints = {
-            offerToReceiveAudio: true,
-            offerToReceiveVideo: this.options.useVideo ? true : false,
-        };
+
+	if (moz) {
+            this.constraints = {
+		offerToReceiveAudio: true,
+		offerToReceiveVideo: this.options.useVideo ? true : false,
+            };
+	} else {
+            this.constraints = {
+		optional: [{
+		    'DtlsSrtpKeyAgreement': 'true'
+		}],mandatory: {
+		    OfferToReceiveAudio: true,
+		    OfferToReceiveVideo: this.options.useVideo ? true : false,
+		}
+            };
+	}
 
         if (self.options.useVideo) {
             self.options.useVideo.style.display = 'none';
@@ -111,10 +123,18 @@
 
         if (obj) {
             self.options.useVideo = obj;
-            self.constraints.offerToReceiveVideo = true;
+	    if (moz) {
+		self.constraints.offerToReceiveVideo = true;
+	    } else {
+		self.constraints.mandatory.OfferToReceiveVideo = true;
+	    }
         } else {
             self.options.useVideo = null;
-            self.constraints.offerToReceiveVideo = false;
+            if (moz) {
+		self.constraints.offerToReceiveVideo = false;
+	    } else {
+		self.constraints.mandatory.OfferToReceiveVideo = false;
+	    }
         }
 
         if (self.options.useVideo) {
