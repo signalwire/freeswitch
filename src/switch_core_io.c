@@ -1838,10 +1838,26 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 
 	if (switch_channel_test_flag(session->channel, CF_DROP_DTMF)) {
 		const char *file = switch_channel_get_variable_dup(session->channel, "drop_dtmf_masking_file", SWITCH_FALSE, -1);
+		const char *digits;
 
 		if (!zstr(file)) {
 			switch_ivr_broadcast(switch_core_session_get_uuid(session), file, SMF_ECHO_ALEG);
 		}
+
+		if ((digits = switch_channel_get_variable_dup(session->channel, "drop_dtmf_masking_digits", SWITCH_FALSE, -1)) && !zstr(digits)) {
+			char *p;
+			switch_dtmf_t x_dtmf = { 0, switch_core_default_dtmf_duration(0), DTMF_FLAG_SKIP_PROCESS, 0};
+
+			switch_channel_clear_flag(session->channel, CF_DROP_DTMF);
+			for(p = digits; p && *p; p++) {
+				if (is_dtmf(*p)) {
+					x_dtmf.digit = *p;
+					switch_core_session_send_dtmf(session, &x_dtmf);
+				}
+			}
+			switch_channel_set_flag(session->channel, CF_DROP_DTMF);
+		}
+
 		return SWITCH_STATUS_SUCCESS;
 	}
 
