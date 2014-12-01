@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="css/jquery.mobile.min.css"/>
+  <link rel="stylesheet" type="text/css" href="css/jsontable.css" />
+  <link rel="shortcut icon" href="favicon.ico" />
+    <meta charset="utf-8" />
+    <title>FreeSWITCH Verto&trade; Video Transcoding Demo</title>
+
+    <style type="text/css">
+.pageheader {
+	 font-size: 22px;
+	 font-weight: normal;
+	 height: 27px;
+}
+
+.ctlbtn {
+	 border: 0px;
+	 color: #eeeeee;
+	 background-color: #0000ae;
+	 font-face: arial;
+	 height:18px;
+	 font-size:7pt;
+										}     	      
+
+.vidbtn {
+	font-face: arial;
+        font-size:7pt;
+};
+
+.ctlbtn:hover {
+	 color: #ffffae;
+	 cursor: pointer;
+ }	
+
+#chatwin
+{
+	background-color: #eeeeee;
+	width: 500px;
+	height:150px;
+	overflow-y: scroll;
+	scrolling: auto;
+	text-align: left;
+	border-style:inset;
+	font-size: 10pt;
+	color: #3333ff;
+	resize:both;
+}
+
+.chatuid
+{
+	font-size: 7pt;
+	font-weight: bold;
+	color: #ff3333;
+}
+
+.chatimg
+{
+	max-width:100px;
+}
+
+.l1
+{
+	border:1;
+	background-color:#fefefe;
+	height:1px;
+	opacity:0.4;
+}
+#chatmsg
+{
+	width:400px;
+	max-height:40px;
+}
+
+
+    </style>
+
+  </head>
+  <body>
+    <div data-role="page" id="page-login" align="center">
+      <div data-role="header" class="page-header">
+	FreeSWITCH Verto&trade; Video Transcoding Demo
+      </div>
+
+    </div>
+
+    <div data-role="page" id="page-incall" align="center">
+      <div data-role="header" id="calltitle" class="pageheader">
+	Verto&trade; IN CALL
+      </div>
+
+      <div id="conf">
+	<div style="color:black;font-family: verdana" align="center" id="conf_count"></div>
+	<table width="800" cellspacing="0" cellpadding="0" border="0" align="center" id="conf_list" class="jsDataTable">
+	</table>
+      </div>
+
+      <br>
+      <div id="message" hidden="true">
+	<hr class="l1" width="500"/>
+	<div id="chatwin"></div>
+<!--	<textarea readonly id="chatwin"></textarea>-->
+	<table><tr><td><textarea id="chatmsg"></textarea></td><td><button id="chatsend" style="width:100px;">Send</button></td></tr></table>
+	<hr class="l1" width="500"/><br>
+      </div>
+      
+      <div class="ui-field-contain" id="xferdiv">
+	<input data-mini="true" type="text" id="xferto"><br>
+      <button data-inline="true" id="cancelxferbtn">Cancel Transfer</button>
+      <button data-inline="true" class="startxferbtn">Complete Transfer</button>
+      </div>
+
+
+      	<div id="conf_mod"></div>
+	<div style="color:blue" id="conf_display"></div>
+
+<!--      <button data-inline="true" id="hold">HOLD</button>-->
+      <button data-inline="true" id="hupbtn">End Call</button>
+<!--      <button data-inline="true" class="startxferbtn">Transfer</button>-->
+	<br><br>
+	<img src="img/verto_black_web.gif" width="300"><br><br>
+	<div id="media">	
+	  <video id="webcam" autoplay="autoplay" hidden="true"></video>
+	</div>
+
+
+      <div id=keypad>
+	<button class="dtmf" data-inline="true">1</button>
+	<button class="dtmf" data-inline="true">2</button>
+	<button class="dtmf" data-inline="true">3</button>
+	<br>
+	<button class="dtmf" data-inline="true">4</button>
+	<button class="dtmf" data-inline="true">5</button>
+	<button class="dtmf" data-inline="true">6</button>
+	<br>	
+	<button class="dtmf" data-inline="true">7</button>
+	<button class="dtmf" data-inline="true">8</button>
+	<button class="dtmf" data-inline="true">9</button>
+	<br>
+	<button class="dtmf" data-inline="true">*</button>
+	<button class="dtmf" data-inline="true">0</button>
+	<button class="dtmf" data-inline="true">#</button>
+      </div>
+	<br><br>
+	</div>
+
+
+
+	
+	<div data-role="page" id="page-main" align="center">
+	<div data-role="header" class="pageheader">
+	  FreeSWITCH Verto&trade; Video Transcoding Demo
+	</div>
+	<br>
+      <a target="_CC2104" href="https://www.cluecon.com"><img border="0" width="300" src="img/cc_banner.gif"></a>
+      
+      <div id="offline">
+        <div id="errordisplay" style="font-weight:bold;font-size:18px;color:#ae0000"></div>
+
+      <div class="ui-field-contain">
+	<label for="name">Login</label>
+	<input type="text" size="20" id="login"/>
+      </div>
+
+      <div class="ui-field-contain">
+	<label for="name">Password</label>
+	<input type="password" size="20" id="passwd"/>
+      </div>
+
+      <div class="ui-field-contain">
+	<label for="name">CID Name</label>  
+	<input type="text" size="30" id="name"/>
+      </div>
+
+      <div class="ui-field-contain">
+	<label for="name">CID Number</label>  
+	<input type="text" size="20" id="cid"/>
+      </div>
+
+      <div class="ui-field-contain">
+	<label for="name">Hostname</label>
+	<input type="text" size="20" id="hostName"/>
+      </div>
+
+      <div class="ui-field-contain">
+	<label for="name">Websocket URL</label>
+	<input type="text" size="20" id="wsURL"/>
+      </div>
+
+      <br><br>
+      <img src="img/verto_black_web.gif" width="300">
+      <br><br>
+      <button data-inline="true" id="loginbtn">Log In</button>      
+
+<script>
+function playvid(file)
+{
+	$("#ext").val("vid_" + file);
+	$("#callbtn").click();
+}
+
+function dial(ext)
+{
+	$("#ext").val(ext);
+	$("#callbtn").click();
+}
+
+</script>
+
+
+
+
+      <br><br><br>
+      
+	</div>
+
+      <div id="online" align="center" style="width:75%">
+	<div class="ui-field-contain">
+
+<div style="font-face:arial;font-size:12pt;text-align:left;width:750px">
+Demo of the Work-In-Progress Video work in FreeSWITCH.  Press one of the buttons below.<br>
+This is still under heavy development but this is a little taste what is coming.<br>
+
+Chrome 38.0.2125.122 currently has better results than FireFox 33.1.1 <br>
+So if you have Chrome handy, try it with that too.
+</div>
+
+<br><br>
+
+
+<div class="ui-field-contain">
+  <fieldset data-role="controlgroup" data-type="horizontal">
+    <legend><b>Video Quality</b>:</legend>
+    <input type="radio" name="vqual" id="vqual_qvga" value="qvga">
+    <label for="vqual_qvga">QVGA 320x180</label>
+ 
+    <input type="radio" name="vqual" id="vqual_vga" value="vga">
+    <label for="vqual_vga">VGA 640x360</label>
+ 
+    <input type="radio" name="vqual" id="vqual_hd" value="hd">
+    <label for="vqual_hd">HD 1280x720</label>
+
+    <input type="radio" name="vqual" id="vqual_hhd" value="hhd">
+    <label for="vqual_hhd">HHD 1920x1080</label>
+
+  </fieldset>
+</div>
+<br>
+
+<h2>Video Streaming (USE STEREO HEADPHONES IF POSSIBLE)</h2>
+<div style="text-align:left">
+This may look similar to playing video like you would on YouTube, however, these are mp4 files decoded by mod_vlc then re-encoded to the negotiated video codec and streamed over RTP in real-time to test transcoding.<br><br>
+</div>
+<div style="border-style:outset;border-width:1px;background-color:#eeeeee">
+	<button class="vidbtn" data-inline="true" onclick="playvid('vuc.mp4')">FreeSWITCH Team on VUC (Summer 2014)</button>
+	<button class="vidbtn" data-inline="true" onclick="playvid('briancc.mp4')">Brian West ClueCon Spot (Summer 2010)</button>
+	<button class="vidbtn" data-inline="true" onclick="playvid('bin1.mp4')">Binaural Audio Demo</button>
+	<button class="vidbtn" data-inline="true" onclick="playvid('binrafting.mp4')">Binaural River Rafting</button>
+	<button class="vidbtn" data-inline="true" onclick="playvid('splash.mp4')">Binaural Splash Mountian</button>
+<br>
+	<button class="vidbtn" data-inline="true" onclick="playvid('3d_demo.mp4')">Binaural Spatial Demo</button>
+	<button class="vidbtn" data-inline="true" onclick="playvid('gravity.mp4')">Gravity Movie Trailer(2k)</button>
+	<button class="vidbtn" data-inline="true" onclick="playvid('awesome1.mp4')">Everything is Awesome</button>
+	<button class="vidbtn" data-inline="true" onclick="playvid('awesome2.mp4')">Everything is Awesome 2</button>
+	<button class="vidbtn" data-inline="true" onclick="playvid('sirius.mp4')">Sirius Live</button>
+<br>
+	<button class="vidbtn" data-inline="true" onclick="playvid('swimp.mp4')">Imperial March Live</button>
+	<button class="vidbtn" data-inline="true" onclick="playvid('imphd.mp4')">Imperial March on Floppy Drives</button>
+	<button class="vidbtn" data-inline="true" onclick="playvid('notime.mp4')">Ain't Nobody Got Time</button>
+	<button class="vidbtn" data-inline="true" onclick="playvid('hdtest.mp4')">Video HD Demo</button>
+</div>
+<br>
+<h2>Codec Test and Conference</h2>
+<div style="text-align:left">
+Conference is similar to previous behavior but now it can support differing video codecs.
+There is still a considerable amount of work to do with the codecs and video RTP reliability.  Again, Chrome is way ahead of FireFox so far in this area.
+<br><br>
+FireFox is pretty much stuck on 640x480 for now.  Chrome even when put into the hd mode and above takes some time to kick into gear as it does some kind of step up to full speed and we still are missing the RTCP code to communicate with them.<br><br>
+</div>
+<div style="border-style:outset;border-width:1px;background-color:#eeeeee">
+	<button class="vidbtn" data-inline="true" onclick="dial('decode')">Video from your Webcam decoded then re-encoded w/ MOH</button>
+	<button class="vidbtn" data-inline="true" onclick="dial('3500')">Video Transcoded Conference</button>
+
+</div>
+
+
+<br><br>
+	  <input type="text" id="ext"/><br>
+
+	  <button data-inline="true" id="callbtn">Call</button>
+	  <br><br>
+	  <div style="color:blue" id="main_info">&nbsp;</div><br><br>
+	  <img src="img/verto_black_web.gif" width="300"><br><br>
+	  <button data-inline="true"id="logoutbtn">Log Out</button>
+	</div>
+	<br>
+
+<div style="visibility:hidden">
+	<label><input id="use_vid" type="checkbox" value="foo" > Use Video</label>
+	<label><input id="use_stereo" type="checkbox" value="foo" > Stereo Audio</label>
+	<label><input id="use_stun" type="checkbox" value="foo" > Use STUN</label>
+</div>
+
+	<br>
+<!--
+	<b>TEXT</b><br>To: <input type="text" size="20" id="textto"/> MSG: <input type="text" size="40" id="textmsg"/>
+	<button id="vtxtbtn">Send</button>
+-->
+      </div>
+
+
+
+<table id="directory" width=500 style="font-size:11pt;font-face:arial">
+<tr><td align=center colspan=2><b>FreeSWITCH VERTO&trade; WebRTC Demo Directory<Br><br></td></tr>
+<tr><td width=100><b>Dial</b></td><td><b>Desc</b></td></tr>
+<tr><td align=left colspan=2><hr></td></tr>
+
+<tr><td>3d1</td><td> 3D sound demo #1</td></tr>
+<tr><td>3d2</td><td> 3D sound demo #2</td></tr>
+
+<tr><td>stereo1</td><td> Stereo sound demo #1</td></tr>
+<tr><td>stereo2</td><td> Stereo sound demo #2</td></tr>
+<tr><td>stereo3</td><td> Stereo sound demo #3</td></tr>
+<tr><td>3500</td><td>Local 48k Stereo Conference</td></tr>
+<tr><td>&nbsp;</td></tr>
+<tr><td>cluecon</td><td> ClueCon Hotline</td></tr>
+<tr><td>&lt;number&gt;</td><td>Call a US/Canda Number</td></tr>
+
+<tr><td>vuc</td><td>VoIP Users Conference</td></tr>
+<tr><td>888</td><td>FreeSWITCH Community Conference</td></tr>
+
+<tr><td>3300</td><td>Local 48k Conference</td></tr>
+<tr><td>5000</td><td>Try the Demo IVR</td></tr>
+<tr><td>9664</td><td>Listen to Hold Music</td></tr>
+<tr><td>9386</td><td>Funny Prompts</td></tr>
+<tr><td>9198</td><td>Tetris (tone generator)</td></tr>
+<tr><td colspan=2><Br>
+<center>
+<br><br><br>
+</td></tr>
+</td></tr>
+</table>
+
+
+
+
+    </div><!-- /page -->
+
+    <div data-role="page" id="dialog-logout" data-close-btn="none">
+      <div data-role="header">
+        <h2>Logged Out</h2>
+      </div>
+      <div data-role="content">
+        <p>You have been logged out or disconnected from the server.</p>
+
+	<button onclick="$('#dialog-logout').dialog('close')">OK</button>
+      </div>
+    </div>
+
+    <div data-role="page" id="dialog-login-error" data-close-btn="none">
+      <div data-role="header">
+        <h2>Login Error</h2>
+      </div>
+      <div data-role="content">
+        <p>Error logging in</p>
+
+	<button onclick="$('#dialog-login-error').dialog('close')">OK</button>
+      </div>
+    </div>
+
+    <div data-role="page" id="dialog-hold" data-close-btn="none">
+      <div data-role="header">
+        <h2>Call On hold</h2>
+      </div>
+      <div data-role="content">
+        <p>The call is on hold</p>
+
+	<button onclick="$('#dialog-hold').dialog('close');cur_call.toggleHold();">Resume Call</button>
+      </div>      
+    </div>
+
+    <div data-role="page" id="dialog-incoming-call" data-close-btn="none">
+      <div data-role="header">
+        <h2>Incoming Call</h2>
+      </div>
+      <div data-role="content">
+        <div id="dialog-incoming-call-txt"><p>Incoming Call</p></div>
+	<button id="ansbtn">Answer</button> 
+	<div id="vansdiv"><button id="vansbtn">Answer Video</button></div>
+	<button id="declinebtn">Decline</button>
+      </div>
+      
+    </div>
+
+
+    <script type="text/javascript" src="js/jquery-2.1.1.min.js"></script> 
+    <script type="text/javascript" src="js/jquery.mobile.min.js"></script> 
+    <script type="text/javascript" src="js/jquery.json-2.4.min.js"></script>  
+    <script type="text/javascript" src="js/jquery.cookie.js"></script>
+    <script type="text/javascript" src="js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="js/verto-min.js"></script>
+    <script type="text/javascript" src="verto.js"></script>
+
+  </body>
+</html>
+
