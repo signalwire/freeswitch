@@ -1215,7 +1215,7 @@ PKG_CHECK_MODULES([LDNS], [libldns >= 1.6.6],[
 
 PKG_CHECK_MODULES([VPX], [vpx >= 1.3.0],[
   AM_CONDITIONAL([HAVE_VPX],[true])],[
-  AC_CHECK_LIB([vpx], [vpx_codec_vp9_cx_algo], [VPX_LIBS=-lvpx])
+  AC_CHECK_LIB([vpx], [vpx_img_set_rect], [VPX_LIBS=-lvpx])
   AS_IF([test -z "$VPX_LIBS"],[
     if module_enabled mod_vpx; then
       AC_MSG_ERROR([You need to either install libvpx-dev or disable mod_vpx in modules.conf])
