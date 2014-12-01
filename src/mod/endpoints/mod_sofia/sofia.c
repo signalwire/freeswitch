@@ -6539,12 +6539,12 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			goto done;
 		}
 
-		if (!r_sdp && (status > 100 || switch_channel_test_flag(channel, CF_ANSWERED)) && status < 300) {
-			if (ss_state == nua_callstate_ready) {
+		if (!r_sdp && (status == 100 || status == 200)) {
+			if (ss_state == nua_callstate_completing) {
 				if (tech_pvt->mparams.last_sdp_response) {
 					r_sdp = tech_pvt->mparams.last_sdp_response;
 				}
-			} else {
+			} else if (ss_state == nua_callstate_received) {
 				if (tech_pvt->mparams.last_sdp_str) {
 					r_sdp = tech_pvt->mparams.last_sdp_str;
 				}
