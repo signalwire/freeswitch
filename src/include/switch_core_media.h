@@ -314,6 +314,11 @@ SWITCH_DECLARE(void) switch_core_media_end_video_function(switch_core_session_t 
 SWITCH_DECLARE(switch_status_t) switch_core_session_start_video_thread(switch_core_session_t *session);
 SWITCH_DECLARE(int) switch_core_media_check_video_function(switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_video_reinit(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_core_media_read_lock_unlock(switch_core_session_t *session, switch_media_type_t type, switch_bool_t lock);
+
+#define switch_core_media_read_lock(_s, _t) switch_core_media_read_lock_unlock(_s, _t, SWITCH_TRUE) 
+#define switch_core_media_read_unlock(_s, _t) switch_core_media_read_lock_unlock(_s, _t, SWITCH_FALSE)
+
 
 SWITCH_END_EXTERN_C
 #endif
