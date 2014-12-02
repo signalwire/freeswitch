@@ -46,7 +46,7 @@
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="$(ProjectDir)..\..\build\props\unidebug.props" />
+    <Import Project="$(ProjectDir)..\..\build\props\unidebug.vsprops" />
     <Import Project="$(ProjectDir)..\..\build\props\unibin.props" />
     <Import Project="$(ProjectDir)..\..\build\props\mrcp.props" />
   </ImportGroup>
@@ -58,7 +58,7 @@
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="$(ProjectDir)..\..\build\props\unidebug.props" />
+    <Import Project="$(ProjectDir)..\..\build\props\unidebug.vsprops" />
     <Import Project="$(ProjectDir)..\..\build\props\unibin-x64.props" />
     <Import Project="$(ProjectDir)..\..\build\props\mrcp.props" />
   </ImportGroup>
