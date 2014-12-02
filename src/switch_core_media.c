@@ -1787,6 +1787,50 @@ static void check_jb(switch_core_session_t *session, const char *input)
 }
 
 //?
+SWITCH_DECLARE(switch_status_t) switch_core_media_read_lock_unlock(switch_core_session_t *session, switch_media_type_t type, switch_bool_t lock)
+{
+	switch_rtp_engine_t *engine;
+	switch_media_handle_t *smh;
+
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!smh->media_flags[SCMF_RUNNING]) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	engine = &smh->engines[type];
+
+	if (!engine->read_codec.implementation || !switch_core_codec_ready(&engine->read_codec)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_assert(engine->rtp_session != NULL);
+
+
+	if (!switch_channel_up_nosig(session->channel) || !switch_rtp_ready(engine->rtp_session) || switch_channel_test_flag(session->channel, CF_NOT_READY)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (lock) {
+		if (engine->read_mutex[type] && switch_mutex_trylock(engine->read_mutex[type]) != SWITCH_STATUS_SUCCESS) {
+			/* return CNG, another thread is already reading  */
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG1, "%s is already being read for %s\n", 
+							  switch_channel_get_name(session->channel), type2str(type));
+			return SWITCH_STATUS_INUSE;
+		}
+	} else {
+		switch_mutex_unlock(engine->read_mutex[type]);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+//?
 SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session_t *session, switch_frame_t **frame,
 															 switch_io_flag_t flags, int stream_id, switch_media_type_t type)
 {
@@ -9627,6 +9671,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 
 	write_frame = *frame;
 	frame = &write_frame;
+	frame->img = img;
 
 	if (!switch_test_flag(frame, SFF_USE_VIDEO_TIMESTAMP)) {
 

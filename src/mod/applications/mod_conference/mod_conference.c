@@ -2922,13 +2922,17 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 	int want_refresh = 0;
 	int yield = 0;
 	switch_core_session_t *session;
-	char buf[65536];
+	//char buf[65536];
 	conference_member_t *floor_holder = NULL;
+	int locked = 0;
 
 	conference->video_running = 1;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Video thread started for conference %s\n", conference->name);
 
 	while (conference->video_running == 1 && globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT)) {
+		locked = 0;
+		session = NULL;
+		
 		if (yield) {
 			switch_yield(yield);
 			yield = 0;
@@ -2957,10 +2961,15 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 
 		if ((status = switch_core_session_read_lock(session)) == SWITCH_STATUS_SUCCESS) {
 			switch_mutex_unlock(conference->mutex);
-			if (!switch_channel_ready(switch_core_session_get_channel(session))) {
-				status = SWITCH_STATUS_FALSE;
+			if ((switch_core_media_read_lock(session, SWITCH_MEDIA_TYPE_VIDEO) == SWITCH_STATUS_SUCCESS)) {
+				locked = 1;
+				if (!switch_channel_ready(switch_core_session_get_channel(session))) {
+					status = SWITCH_STATUS_FALSE;
+				} else {
+					status = switch_core_session_read_video_frame(session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
+				}
 			} else {
-				status = switch_core_session_read_video_frame(session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
+				status = SWITCH_STATUS_FALSE;
 			}
 			switch_mutex_lock(conference->mutex);
 			switch_core_session_rwunlock(session);
@@ -2976,7 +2985,7 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 			goto do_continue;
 		}
 
-		memcpy(buf, vid_frame->packet, vid_frame->packetlen);
+		//memcpy(buf, vid_frame->packet, vid_frame->packetlen);
 		
 		switch_mutex_unlock(conference->mutex);
 		switch_mutex_lock(conference->mutex);
@@ -3002,7 +3011,7 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 			}
 
 			if (isession && switch_channel_test_flag(ichannel, CF_VIDEO)) {
-				memcpy(vid_frame->packet, buf, vid_frame->packetlen);
+				//memcpy(vid_frame->packet, buf, vid_frame->packetlen);
 				switch_core_session_write_video_frame(imember->session, vid_frame, SWITCH_IO_FLAG_NONE, 0);
 			}
 
@@ -3032,6 +3041,12 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 		}
 
 	do_continue:
+
+		if (session && locked) {
+			switch_core_media_read_unlock(session, SWITCH_MEDIA_TYPE_VIDEO);
+			locked = 0;
+		}
+
 		switch_mutex_unlock(conference->mutex);
 	}
 
