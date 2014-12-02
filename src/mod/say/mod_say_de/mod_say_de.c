@@ -226,6 +226,8 @@ static switch_status_t de_say_time(switch_core_session_t *session, char *tosay, 
 	switch_time_t target = 0;
 	switch_time_exp_t tm;
 	uint8_t say_date = 0, say_time = 0;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *tz = switch_channel_get_variable(channel, "timezone");
 
 	if (say_args->type == SST_TIME_MEASUREMENT) {
 		int64_t hours = 0;
@@ -314,7 +316,18 @@ static switch_status_t de_say_time(switch_core_session_t *session, char *tosay, 
 	} else {
 		target = switch_micro_time_now();
 	}
-	switch_time_exp_lt(&tm, target);
+
+	if (tz) {
+		int check = atoi(tz);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Timezone is [%s]\n", tz);
+		if (check) {
+			switch_time_exp_tz(&tm, target, check);
+		} else {
+			switch_time_exp_tz_name(tz, &tm, target);
+		}
+	} else {
+		switch_time_exp_lt(&tm, target);
+	}
 
 	switch (say_args->type) {
 	case SST_CURRENT_DATE_TIME:
