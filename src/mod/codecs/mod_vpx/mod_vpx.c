@@ -74,7 +74,6 @@ struct vpx_context {
 	uint8_t decoder_init;
 	switch_buffer_t *vpx_packet_buffer;
 	int got_key_frame;
-	int key_count;
 	switch_size_t last_received_timestamp;
 	switch_bool_t last_received_complete_picture;
 	int need_key_frame;
@@ -480,7 +479,6 @@ static switch_status_t buffer_vpx_packets(vpx_context_t *context, switch_frame_t
 
 		if (is_keyframe && !context->got_key_frame) {
 			context->got_key_frame = 1;
-			context->key_count = 0;
 		}
 	}
 
@@ -586,9 +584,7 @@ end:
 	}
 
 	if (!context->got_key_frame) {
-		if (!(context->key_count++ % 20)) {
-			switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
-		}
+		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
 	}
 
 
