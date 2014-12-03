@@ -611,8 +611,9 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec,
 	pic.i_pts = 0;
 
 	if (context->need_key_frame) {
-		// pic->i_type = X264_TYPE_KEYFRAME;
-		pic.i_type = X264_TYPE_IDR;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "H264 KEYFRAME GENERATED\n");
+		//pic.i_type = X264_TYPE_IDR;
+		pic.i_type = X264_TYPE_KEYFRAME;
 		context->need_key_frame = 0;
 	}
 
