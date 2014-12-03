@@ -156,7 +156,7 @@ typedef struct jsock_s jsock_t;
 struct ips {
 	char local_ip[256];
 	in_addr_t local_ip_addr;
-	int local_port;
+	uint16_t local_port;
 	int secure;
 };
 
