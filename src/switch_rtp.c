@@ -5318,8 +5318,8 @@ static switch_status_t process_rtcp_packet(switch_rtp_t *rtp_session, switch_siz
 			break;
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_CRIT, 
-						  "WTF BYTES %ld REMAIN %ld PACKET TYPE %d LEN %ld\n", *bytes, remain, msg->header.type, len);
+		//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_CRIT, 
+		//"WTF BYTES %ld REMAIN %ld PACKET TYPE %d LEN %ld\n", *bytes, remain, msg->header.type, len);
 
 		if (len > remain) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, 
