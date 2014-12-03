@@ -50,7 +50,7 @@
      <extension name="bug">
        <condition field="destination_number" expression="^decode$|^9952$">
 	 <action application="answer"/>
-	 <action application="set" data="hold_music=local_stream://stereo"/>
+	 <action application="set" data="hold_music=silence_stream://-1"/>
 	 <action application="decode_video"/>
        </condition>
      </extension>
