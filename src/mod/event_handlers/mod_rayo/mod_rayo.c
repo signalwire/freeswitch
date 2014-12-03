@@ -141,6 +141,10 @@ struct rayo_call {
 	switch_event_t *end_event;
 	/** True if ringing event sent to client */
 	int ringing_sent;
+	/** true if rayo app has started */
+	int rayo_app_started;
+	/** delayed delivery of answer event because rayo APP wasn't started yet */
+	switch_event_t *answer_event;
 	/** True if request to create this call failed */
 	int dial_request_failed;
 };
@@ -1167,6 +1171,9 @@ done:
 	if (event) {
 		switch_event_destroy(&event);
 	}
+	if (call->answer_event) {
+		switch_event_destroy(&call->answer_event);
+	}
 	switch_core_hash_destroy(&call->pcps);
 }
 
@@ -1350,6 +1357,8 @@ static struct rayo_call *rayo_call_init(struct rayo_call *call, switch_memory_po
 		call->dial_request_id = NULL;
 		call->end_event = NULL;
 		call->dial_request_failed = 0;
+		call->rayo_app_started = 0;
+		call->answer_event = NULL;
 		switch_core_hash_init(&call->pcps);
 	}
 
@@ -2080,31 +2089,38 @@ static iks *join_call(struct rayo_call *call, switch_core_session_t *session, st
 
 	/* check if joining to rayo call */
 	struct rayo_call *b_call = RAYO_CALL_LOCATE(call_uri);
-	if (!b_call) {
-		/* not a rayo call */
-		response = iks_new_error_detailed(node, STANZA_ERROR_SERVICE_UNAVAILABLE, "b-leg is gone");
-	} else if (!has_call_control(b_call, msg)) {
-		/* not allowed to join to this call */
-		response = iks_new_error(node, STANZA_ERROR_NOT_ALLOWED);
-	} else if (b_call->joined) {
-		/* don't support multiple joined calls */
-		response = iks_new_error_detailed(node, STANZA_ERROR_CONFLICT, "multiple joined calls not supported");
+	if (b_call) {
+		if (!call->rayo_app_started) {
+			/* A-leg not under rayo control yet */
+			response = iks_new_error_detailed(node, STANZA_ERROR_UNEXPECTED_REQUEST, "a-leg is not ready to join");
+		} else if (!b_call->rayo_app_started) {
+			/* B-leg not under rayo control yet */
+			response = iks_new_error_detailed(node, STANZA_ERROR_UNEXPECTED_REQUEST, "b-leg is not ready to join");
+		} else if (!has_call_control(b_call, msg)) {
+			/* not allowed to join to this call */
+			response = iks_new_error(node, STANZA_ERROR_NOT_ALLOWED);
+		} else if (b_call->joined) {
+			/* don't support multiple joined calls */
+			response = iks_new_error_detailed(node, STANZA_ERROR_CONFLICT, "multiple joined calls not supported");
+		} else {
+			/* bridge this call to call-uri */
+			switch_channel_set_variable(switch_core_session_get_channel(session), "bypass_media", bypass);
+			if (switch_false(bypass)) {
+				switch_channel_pre_answer(switch_core_session_get_channel(session));
+			}
+			call->pending_join_request = iks_copy(node);
+			if (switch_ivr_uuid_bridge(rayo_call_get_uuid(call), rayo_call_get_uuid(b_call)) != SWITCH_STATUS_SUCCESS) {
+				iks *request = call->pending_join_request;
+				iks *result = iks_new_error(request, STANZA_ERROR_SERVICE_UNAVAILABLE);
+				call->pending_join_request = NULL;
+				RAYO_SEND_REPLY(call, iks_find_attrib_soft(request, "from"), result);
+				iks_delete(call->pending_join_request);
+			}
+		}
 		RAYO_RELEASE(b_call);
 	} else {
-		/* bridge this call to call-uri */
-		switch_channel_set_variable(switch_core_session_get_channel(session), "bypass_media", bypass);
-		if (switch_false(bypass)) {
-			switch_channel_pre_answer(switch_core_session_get_channel(session));
-		}
-		call->pending_join_request = iks_copy(node);
-		if (switch_ivr_uuid_bridge(rayo_call_get_uuid(call), rayo_call_get_uuid(b_call)) != SWITCH_STATUS_SUCCESS) {
-			iks *request = call->pending_join_request;
-			iks *result = iks_new_error(request, STANZA_ERROR_SERVICE_UNAVAILABLE);
-			call->pending_join_request = NULL;
-			RAYO_SEND_REPLY(call, iks_find_attrib_soft(request, "from"), result);
-			iks_delete(call->pending_join_request);
-		}
-		RAYO_RELEASE(b_call);
+		/* not a rayo call */
+		response = iks_new_error_detailed(node, STANZA_ERROR_SERVICE_UNAVAILABLE, "b-leg is gone");
 	}
 	return response;
 }
@@ -2187,7 +2203,10 @@ static iks *join_mixer(struct rayo_call *call, switch_core_session_t *session, s
 	iks *node = msg->payload;
 	iks *response = NULL;
 
-	if (call->joined_id) {
+	if (!call->rayo_app_started) {
+		/* A-leg not under rayo control yet */
+		response = iks_new_error_detailed(node, STANZA_ERROR_UNEXPECTED_REQUEST, "call is not ready to join");
+	} else if (call->joined_id) {
 		/* adjust join conference params */
 		if (!strcmp("duplex", direction)) {
 			if ((response = exec_conference_api(session, mixer_name, "unmute", node)) ||
@@ -3379,10 +3398,17 @@ static void on_call_answer_event(struct rayo_client *rclient, switch_event_t *ev
 {
 	struct rayo_call *call = RAYO_CALL_LOCATE_BY_ID(switch_event_get_header(event, "Unique-ID"));
 	if (call) {
-		iks *revent = iks_new_presence("answered", RAYO_NS,
-			switch_event_get_header(event, "variable_rayo_call_jid"),
-			switch_event_get_header(event, "variable_rayo_dcp_jid"));
-		RAYO_SEND_MESSAGE(call, RAYO_JID(rclient), revent);
+		switch_mutex_lock(RAYO_ACTOR(call)->mutex);
+		if (call->rayo_app_started) {
+			iks *revent = iks_new_presence("answered", RAYO_NS,
+				switch_event_get_header(event, "variable_rayo_call_jid"),
+				switch_event_get_header(event, "variable_rayo_dcp_jid"));
+			RAYO_SEND_MESSAGE(call, RAYO_JID(rclient), revent);
+		} else if (!call->answer_event) {
+			/* delay sending this event until the rayo APP has started */
+			switch_event_dup(&call->answer_event, event);
+		}
+		switch_mutex_unlock(RAYO_ACTOR(call)->mutex);
 		RAYO_RELEASE(call);
 	}
 }
@@ -3840,6 +3866,13 @@ SWITCH_STANDARD_APP(rayo_app)
 			clients_to_offer_count = switch_separate_string(data_dup, ',', clients_to_offer, sizeof(clients_to_offer) / sizeof(clients_to_offer[0]));
 		}
 
+		/* It is now safe for inbound call to be fully controlled by rayo client */
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) {
+			switch_mutex_lock(RAYO_ACTOR(call)->mutex);
+			call->rayo_app_started = 1;
+			switch_mutex_unlock(RAYO_ACTOR(call)->mutex);
+		}
+
 		/* Offer call to all (or specified) ONLINE clients */
 		/* TODO load balance offers so first session doesn't always get offer first? */
 		switch_mutex_lock(globals.clients_mutex);
@@ -3880,11 +3913,31 @@ done:
 		switch_channel_set_variable(channel, "hold_hangup_xfer_exten", "park:inline:");
 		switch_channel_set_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE, "-1"); /* required so that output mixing works */
 		switch_core_event_hook_add_read_frame(session, rayo_call_on_read_frame);
+
 		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+			/* At this point, this outbound call might already be under control of a rayo client that is waiting for answer before sending
+			  commands.  The answered event might have been sent before we are ready to execute commands, so we delayed sending
+			  those events if the rayo APP hadn't started yet.  This delay would have only been a few milliseconds.
+			*/
+			switch_mutex_lock(RAYO_ACTOR(call)->mutex);
+			call->rayo_app_started = 1;
+			if (call->answer_event) {
+				struct rayo_client *rclient = RAYO_CLIENT(RAYO_LOCATE(rayo_call_get_dcp_jid(call)));
+				if (rclient) {
+					on_call_answer_event(rclient, call->answer_event);
+					switch_event_destroy(&call->answer_event);
+					RAYO_RELEASE(rclient);
+				}
+			}
+			switch_mutex_unlock(RAYO_ACTOR(call)->mutex);
+
+			/* Outbound calls might have a nested join to another call or conference - do that now */
 			if (!zstr(app)) {
 				switch_core_session_execute_application(session, app, app_args);
 			}
 		}
+
+		/* Ready for remote control */
 		switch_ivr_park(session, NULL);
 	}
 }
