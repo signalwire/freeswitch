@@ -48,6 +48,7 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 #define MAX_CODEC_CHECK_FRAMES 50//x:mod_sofia.h
 #define MAX_MISMATCH_FRAMES 5//x:mod_sofia.h
 #define type2str(type) type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio"
+#define VIDEO_REFRESH_FREQ 1000000
 
 typedef enum {
 	SMF_INIT = (1 << 0),
@@ -159,7 +160,6 @@ typedef struct switch_rtp_engine_s {
 	
 } switch_rtp_engine_t;
 
-
 struct switch_media_handle_s {
 	switch_core_session_t *session;
 	switch_channel_t *channel;
@@ -196,6 +196,8 @@ struct switch_media_handle_s {
 	switch_rtp_crypto_key_type_t crypto_suite_order[CRYPTO_INVALID+1];
 	switch_time_t video_last_key_time;
 	switch_time_t video_init;
+	switch_time_t last_codec_refresh;
+	switch_time_t last_video_refresh_req;
 	switch_timer_t video_timer;
 	switch_video_function_t video_function;
 	void *video_user_data;
@@ -9539,6 +9541,48 @@ SWITCH_DECLARE(switch_timer_t *) switch_core_media_get_timer(switch_core_session
 
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_refresh_video(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_media_handle_t *smh = NULL;
+
+	switch_assert(session);
+	
+	if (!(smh = session->media_handle)) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	if (switch_channel_test_flag(channel, CF_VIDEO)) {
+		switch_core_session_message_t msg = { 0 };
+		switch_time_t now = switch_micro_time_now();
+
+		if (smh->last_video_refresh_req && (now - smh->last_video_refresh_req) < VIDEO_REFRESH_FREQ) {
+			return SWITCH_STATUS_BREAK;
+		}
+
+		smh->last_video_refresh_req = now;
+
+		msg.from = __FILE__;
+		msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
+		switch_core_session_receive_message(session, &msg);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_refresh_video_both_ways(switch_core_session_t *session)
+{
+	if (switch_channel_test_flag(session->channel, CF_VIDEO)) {
+		switch_core_session_refresh_video(session);
+		switch_core_media_gen_key_frame(session);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_session_t *session, 
 																switch_media_type_t mtype,
 																switch_io_type_t iotype,
@@ -9575,6 +9619,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_codec_control(switch_core_sess
 	}
 
 	if (codec) {
+		if (cmd == SCC_VIDEO_REFRESH) {
+			switch_time_t now = switch_micro_time_now();
+
+			if (smh->last_codec_refresh && (now - smh->last_codec_refresh) < VIDEO_REFRESH_FREQ) {
+				return SWITCH_STATUS_BREAK;
+			}
+
+			smh->last_codec_refresh = now;
+		}
 		return switch_core_codec_control(codec, cmd, ctype, cmd_data, rtype, ret_data);
 	}
 
@@ -9761,14 +9814,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 	}
 	
 	if (switch_channel_test_flag(session->channel, CF_VIDEO_DEBUG_READ)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "seq: %d ts: %ld len: %4d %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x mark: %d %s\n",
-						  (*frame)->seq, (*frame)->timestamp, (*frame)->datalen,
-						  *((uint8_t *)(*frame)->data), *((uint8_t *)(*frame)->data + 1),
-						  *((uint8_t *)(*frame)->data + 2), *((uint8_t *)(*frame)->data + 3),
-						  *((uint8_t *)(*frame)->data + 4), *((uint8_t *)(*frame)->data + 5),
-						  *((uint8_t *)(*frame)->data + 6), *((uint8_t *)(*frame)->data + 7),
-						  *((uint8_t *)(*frame)->data + 8), *((uint8_t *)(*frame)->data + 9),
-						  *((uint8_t *)(*frame)->data + 10), (*frame)->m, switch_test_flag((*frame), SFF_CNG) ? " CNG" : "");
+		if (switch_test_flag((*frame), SFF_CNG)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "VIDEO: CNG\n");
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, 
+							  "VIDEO: seq: %d ts: %ld len: %4d %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x mark: %d\n",
+							  (*frame)->seq, (*frame)->timestamp, (*frame)->datalen,
+							  *((uint8_t *)(*frame)->data), *((uint8_t *)(*frame)->data + 1),
+							  *((uint8_t *)(*frame)->data + 2), *((uint8_t *)(*frame)->data + 3),
+							  *((uint8_t *)(*frame)->data + 4), *((uint8_t *)(*frame)->data + 5),
+							  *((uint8_t *)(*frame)->data + 6), *((uint8_t *)(*frame)->data + 7),
+							  *((uint8_t *)(*frame)->data + 8), *((uint8_t *)(*frame)->data + 9),
+							  *((uint8_t *)(*frame)->data + 10), (*frame)->m);
+		}
 	}
 
 
