@@ -6,6 +6,10 @@ var ringing = false;
 var autocall = false;
 var chatting_with = false;
 
+var vid_width = 320;
+var vid_height = 180;
+
+
 $( ".selector" ).pagecontainer({ "theme": "a" });
 
 function display(msg) {
@@ -73,28 +77,25 @@ function setupChat() {
 
 function check_vid_res()
 {
-    var width = 320;
-    var height = 180;
-
     if ($("#vqual_qvga").is(':checked')) {
-	width = 320;
-	height = 180;
+	vid_width = 320;
+	vid_height = 180;
     } else if ($("#vqual_vga").is(':checked')) {
-	width = 640;
-	height = 360;
+	vid_width = 640;
+	vid_height = 360;
     } else if ($("#vqual_hd").is(':checked')) {
-	width = 1280;
-	height = 720;
+	vid_width = 1280;
+	vid_height = 720;
     } else if ($("#vqual_hhd").is(':checked')) {
-	width = 1920;
-	height = 1080;
+	vid_width = 1920;
+	vid_height = 1080;
     }
 
-    $("#webcam").width(width);
-    $("#webcam").height(height);
+    $("#webcam").width(vid_width);
+    $("#webcam").height(vid_height);
 
     if (verto) {
-	verto.videoParams({"minWidth": width, "minHeight": height, "minFrameRate": 30});
+	verto.videoParams({"minWidth": vid_width, "minHeight": vid_height, "minFrameRate": 30});
     }
 
 }
@@ -543,8 +544,7 @@ function init() {
 	}
     });
     
-    var width = 320;
-    var height = 180;
+    check_vid_res();
 
     verto = new $.verto({
         login: $("#login").val() + "@" + $("#hostName").val(),
@@ -553,8 +553,8 @@ function init() {
         tag: "webcam",
         ringFile: "sounds/bell_ring2.wav",
         videoParams: {
-            "minWidth": width,
-            "minHeight": height,
+            "minWidth": vid_width,
+            "minHeight": vid_height,
 	    "minFrameRate": 30
         },
 	audioParams: {
