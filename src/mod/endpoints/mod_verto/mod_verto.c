@@ -1518,7 +1518,7 @@ new_req:
 		!strncmp(request.content_type, "application/x-www-form-urlencoded", 33)) {
 
 		char *buffer = NULL;
-		int len = 0, bytes = 0;
+		switch_size_t len = 0, bytes = 0;
 
 		if (request.content_length > 2 * 1024 * 1024 - 1) {
 			char *data = "HTTP/1.1 413 Request Entity Too Large\r\n"
@@ -3737,7 +3737,7 @@ static int start_jsock(verto_profile_t *profile, ws_socket_t sock)
 	return -1;
 }
 
-static ws_socket_t prepare_socket(int ip, int port) 
+static ws_socket_t prepare_socket(int ip, uint16_t port) 
 {
 	ws_socket_t sock = ws_sock_invalid;
 #ifndef WIN32
@@ -3842,7 +3842,7 @@ static int profile_one_loop(verto_profile_t *profile)
 		}
 			
 		if (pfds[x].revents & SWITCH_POLL_READ) {
-			if (profile->mcast_ip && pfds[x].sock == profile->mcast_sub.sock) {
+			if (profile->mcast_ip && pfds[x].sock == (switch_os_socket_t)profile->mcast_sub.sock) {
 				handle_mcast_sub(profile);
 			} else {
 				start_jsock(profile, pfds[x].sock);
@@ -3971,7 +3971,7 @@ static void do_shutdown(void)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Done\n");
 }
 
-static void parse_ip(char *host, int *port, in_addr_t *addr, char *input)
+static void parse_ip(char *host, uint16_t *port, in_addr_t *addr, char *input)
 {
 	char *p;
 	struct hostent *hent;
@@ -3980,7 +3980,7 @@ static void parse_ip(char *host, int *port, in_addr_t *addr, char *input)
 
 	if ((p = strchr(host, ':')) != NULL) {
 		*p++  = '\0';
-		*port = atoi(p);
+		*port = (uint16_t)atoi(p);
 	}
 
 	if ( host[0] < '0' || host[0] > '9' ) {

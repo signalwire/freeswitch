@@ -48,11 +48,12 @@
 #ifndef WIN32
 #include <unistd.h>
 #endif
-#include "mcast.h"
 #ifndef WIN32
 #include <poll.h>
 #endif
 #include <switch_utils.h>
+#include "mcast.h"
+
 
 int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, mcast_flag_t flags)
 {
@@ -68,7 +69,7 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 	handle->send_addr.sin_addr.s_addr = inet_addr(host);
 	handle->send_addr.sin_port = htons(port);
 	
-	if ( setsockopt(handle->sock, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) != 0 ) {
+	if ( setsockopt(handle->sock, SOL_SOCKET, SO_REUSEADDR, (void *)&one, sizeof(one)) != 0 ) {
 		close(handle->sock);
 		return -1;
 	}
@@ -84,7 +85,7 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 		mreq.imr_multiaddr.s_addr = inet_addr(host);
 		mreq.imr_interface.s_addr = htonl(INADDR_ANY);
 
-		if (setsockopt(handle->sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)) < 0) {
+		if (setsockopt(handle->sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, (void *)&mreq, sizeof(mreq)) < 0) {
 			close(handle->sock);
 			handle->sock = -1;
 			return -1;
@@ -125,7 +126,7 @@ int mcast_socket_create(const char *host, int16_t port, mcast_handle_t *handle, 
 		handle->ttl = 255;
 	}
 
-	if ( setsockopt(handle->sock, IPPROTO_IP, IP_MULTICAST_TTL, &handle->ttl, sizeof(handle->ttl)) != 0 ) {
+	if ( setsockopt(handle->sock, IPPROTO_IP, IP_MULTICAST_TTL, (void *)&handle->ttl, sizeof(handle->ttl)) != 0 ) {
 		return -1;
 	}
 
