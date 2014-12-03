@@ -3760,12 +3760,10 @@ static ws_socket_t prepare_socket(int ip, uint16_t port)
 	
     if (bind(sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
 		die("Bind Error!\n");
-		return ws_sock_invalid;
 	}
 
     if (listen(sock, MAXPENDING) < 0) {
 		die("Listen error\n");
-		return ws_sock_invalid;
 	}
 
 	return sock;
