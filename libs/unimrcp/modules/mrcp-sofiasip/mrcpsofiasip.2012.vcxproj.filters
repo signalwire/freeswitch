@@ -31,5 +31,8 @@
     <ClCompile Include="src\mrcp_sofiasip_server_agent.c">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\mrcp_sofiasip_logger.c">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -131,6 +131,7 @@
     <ClCompile Include="src\mpf_dtmf_generator.c" />
     <ClCompile Include="src\mpf_encoder.c" />
     <ClCompile Include="src\mpf_engine.c" />
+    <ClCompile Include="src\mpf_engine_factory.c" />
     <ClCompile Include="src\mpf_file_termination_factory.c" />
     <ClCompile Include="src\mpf_frame_buffer.c" />
     <ClCompile Include="src\mpf_jitter_buffer.c" />
