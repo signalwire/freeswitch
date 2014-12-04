@@ -6,11 +6,17 @@ define list_sessions
 	dont-repeat
 	printf "Listing sessions: \n"
 	set $i = 0
-	set $x=session_manager.session_table->table->first
-	while($x != 0x0)
-		printf "uuid %s is at %p\n", $x->pKey, $x->data
-		set $x = $x->next
-		set $i = $i + 1
+	set $idx = 0
+	set $len = session_manager.session_table->tablelength
+	while($idx < $len)
+	  set $x = session_manager.session_table->table[$idx]
+	  while($x != 0x0)
+	    printf "uuid %s is at %p\n", $x->k, $x->v
+	    set $i = $i + 1
+	    set $x = $x->next
+	  end
+	  set $idx = $idx + 1
+
 	end
 	printf "Found %d sessions.\n", $i
 end
@@ -21,11 +27,16 @@ end
 define hash_it_str
 	dont-repeat
 	set $i = 0
-	set $x=$arg0->table->first
-	while($x != 0x0)
-		printf "key: %s valueptr: %p\n", $x->pKey, $x->data
-		set $x = $x->next
-		set $i = $i + 1
+	set $idx = 0
+	set $len = $arg0->tablelength
+
+	while($idx < $len)
+	  set $x=$arg0->table->[$idx]
+	  while($x != 0x0)
+	    printf "key: %s valueptr: %p\n", $x->k, $x->v
+	    set $x = $x->next
+	    set $i = $i + 1
+	  end
 	end
 end
 document hash_it_str 
@@ -37,14 +48,18 @@ end
 define hash_it_str_x
 	dont-repeat
 	set $i = 0
-	set $x=$arg0->table->first
-	while($x != 0x0)
-		printf "key: %s\n", $x->pKey
-		print (($arg1*)$x->data)->$arg2
-		printf "\n\n"
-		set $x = $x->next
-		set $i = $i + 1
-		end
+	set $idx = 0
+	set $len = $arg0->tablelength
+	while($idx < $len)
+	  set $x=$arg0->table->[$idx]
+	  while($x != 0x0)
+	    printf "key: %s\n", $x->k
+	    print (($arg1*)$x->v)->$arg2
+	    printf "\n\n"
+	    set $x = $x->next
+	    set $i = $i + 1
+	  end
+	end
 end
 document hash_it_str_x
 Usage: hash_it_str_x [hashtable] [value_type] [member]
