@@ -105,7 +105,7 @@ struct vlc_video_context {
 	switch_channel_t *channel;
 	switch_frame_t *aud_frame;
 	switch_frame_t *vid_frame;
-	uint8_t video_packet[1500 + 12];
+	uint8_t video_packet[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	void *raw_yuyv_data;
 	switch_image_t *img;
 	switch_payload_t pt;
@@ -657,7 +657,6 @@ SWITCH_STANDARD_APP(play_video_function)
 	}
 
 	audio_datalen = read_impl.decoded_bytes_per_packet; //codec.implementation->actual_samples_per_second / 1000 * (read_impl.microseconds_per_packet / 1000);
-
 
 	context->session = session;
 	context->channel = channel;
