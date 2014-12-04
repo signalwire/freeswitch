@@ -2000,7 +2000,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_read_frame(switch_core_session
 				snprintf(value, sizeof(value), "%u", rtcp_frame.octect_count);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Octect-Packet-Count", value);
 
-				snprintf(value, sizeof(value), "%" SWITCH_SIZE_T_FMT, engine->read_frame.timestamp);
+				snprintf(value, sizeof(value), "%u", engine->read_frame.timestamp);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Last-RTP-Timestamp", value);
 
 				snprintf(value, sizeof(value), "%u", engine->read_frame.rate);
@@ -9824,7 +9824,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "VIDEO: CNG\n");
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, 
-							  "VIDEO: seq: %d ts: %ld len: %4d %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x mark: %d\n",
+							  "VIDEO: seq: %d ts: %u len: %4d %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x mark: %d\n",
 							  (*frame)->seq, (*frame)->timestamp, (*frame)->datalen,
 							  *((uint8_t *)(*frame)->data), *((uint8_t *)(*frame)->data + 1),
 							  *((uint8_t *)(*frame)->data + 2), *((uint8_t *)(*frame)->data + 3),
