@@ -3587,7 +3587,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		}
 	} else {
 		if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-			if (switch_core_timer_init(&rtp_session->timer, "soft", 10, 900, pool) == SWITCH_STATUS_SUCCESS) {
+			if (switch_core_timer_init(&rtp_session->timer, "soft", 1, 90, pool) == SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Starting video timer.\n");
 			}
 		} else {
