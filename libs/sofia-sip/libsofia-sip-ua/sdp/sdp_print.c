@@ -430,6 +430,7 @@ static void print_bandwidths(sdp_printer_t *p, sdp_bandwidth_t const *b)
     switch (b->b_modifier) {
     case sdp_bw_ct: name = "CT"; break;
     case sdp_bw_as: name = "AS"; break;
+    case sdp_bw_tias: name = "TIAS"; break;
     default:        name = b->b_modifier_name; break;
     }
 

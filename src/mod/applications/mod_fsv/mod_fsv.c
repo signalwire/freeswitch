@@ -111,7 +111,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 
 	switch_core_session_get_read_impl(session, &read_impl);
 	switch_channel_answer(channel);
-	switch_core_session_refresh_video(session);
+	switch_core_session_request_video_refresh(session);
 
 	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "");
 
@@ -283,7 +283,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	switch_frame_t *read_frame;
 	switch_codec_implementation_t read_impl = { 0 };
 
-	switch_core_session_refresh_video(session);
+	switch_core_session_request_video_refresh(session);
 
 	switch_core_session_get_read_impl(session, &read_impl);
 
@@ -758,7 +758,7 @@ SWITCH_STANDARD_APP(decode_video_function)
 	}
 
 	switch_channel_answer(channel);
-	switch_core_session_refresh_video(session);
+	switch_core_session_request_video_refresh(session);
 	switch_core_media_start_video_function(session, decode_video_thread, &max_pictures);
 
 	switch_ivr_play_file(session, NULL, moh, NULL);

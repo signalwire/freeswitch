@@ -2682,7 +2682,7 @@ SWITCH_DECLARE(void) switch_core_session_video_reset(switch_core_session_t *sess
 	switch_channel_clear_flag(session->channel, CF_VIDEO_DECODED_READ);
 	switch_channel_clear_flag(session->channel, CF_VIDEO_DEBUG_READ);
 	switch_channel_clear_flag(session->channel, CF_VIDEO_DEBUG_WRITE);
-	switch_core_session_refresh_video(session);
+	switch_core_session_request_video_refresh(session);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flags(switch_core_session_t *session, const char *app,
@@ -2740,7 +2740,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application_get_flag
 	}
 
 	if (!switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA) && (switch_channel_test_flag(session->channel, CF_VIDEO))) {
-		switch_core_session_refresh_video(session);
+		switch_core_session_request_video_refresh(session);
 	}
 
 	if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) && !switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA)) {
