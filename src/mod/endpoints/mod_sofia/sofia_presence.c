@@ -3882,7 +3882,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	}
 
 	if ((sub_state != nua_substate_terminated)) {
-		sql = switch_mprintf("select call_id from sip_subscriptions where call_id='%q' and profile_name='%q' and hostname='%q'",
+		sql = switch_mprintf("select contact from sip_subscriptions where call_id='%q' and profile_name='%q' and hostname='%q'",
 							 call_id, profile->name, mod_sofia_globals.hostname);
 		sofia_glue_execute_sql2str(profile, profile->dbh_mutex, sql, buf, sizeof(buf));
 
@@ -3900,15 +3900,24 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	}
 
 	if (sub_state == nua_substate_active) {
+		char *contact = contact_str;
 
 		sstr = switch_mprintf("active;expires=%ld", exp_delta);
 		
+		if (strstr(buf, "fs_path=") && !strstr(contact_str, "fs_path=")) {
+			char *e = strchr(buf,';');
+			size_t l = e ? buf-e : strlen(buf);
+			if (strncmp(contact_str,buf,l)) {
+				contact = buf;
+			}
+		}
+
 		sql = switch_mprintf("update sip_subscriptions "
 							 "set expires=%ld, "
-							 "network_ip='%q',network_port='%d',sip_user='%q',sip_host='%q',full_via='%q',full_to='%q',full_from='%q' "
+							 "network_ip='%q',network_port='%d',sip_user='%q',sip_host='%q',full_via='%q',full_to='%q',full_from='%q',contact='%q' "
 							 "where call_id='%q' and profile_name='%q' and hostname='%q'",
 							 (long) switch_epoch_time_now(NULL) + exp_delta, 
-							 np.network_ip, np.network_port, from_user, from_host, full_via, full_to, full_from,
+							 np.network_ip, np.network_port, from_user, from_host, full_via, full_to, full_from, contact,
 							 
 							 call_id, profile->name, mod_sofia_globals.hostname);
 
