@@ -744,9 +744,10 @@ static int stfu_n_find_any_frame(stfu_instance_t *in, stfu_queue_t *queue, stfu_
     if (was_read == queue->real_array_size) {
         if (stfu_log != null_logger && in->debug) {        
             stfu_log(STFU_LOG_EMERG, "%s OUT QUEUE EMPTY, SWAPPING\n", in->name);
-            stfu_n_swap(in);
-            in->ready = 0;
         }
+
+        stfu_n_swap(in);
+        in->ready = 0;
         return 0;
     }
 
