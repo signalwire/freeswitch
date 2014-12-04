@@ -59,8 +59,8 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 	switch_core_session_read_lock(vh->session_a);
 	switch_core_session_read_lock(vh->session_b);
 
-	switch_core_session_refresh_video(vh->session_a);
-	switch_core_session_refresh_video(vh->session_b);
+	switch_core_session_request_video_refresh(vh->session_a);
+	switch_core_session_request_video_refresh(vh->session_b);
 
 	while (switch_channel_up_nosig(channel) && switch_channel_up_nosig(b_channel) && vh->up == 1) {
 
@@ -98,8 +98,8 @@ static void video_bridge_thread(switch_core_session_t *session, void *obj)
 	switch_core_session_kill_channel(vh->session_b, SWITCH_SIG_BREAK);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(vh->session_a), SWITCH_LOG_DEBUG, "%s video thread ended.\n", switch_channel_get_name(channel));
 
-	switch_core_session_refresh_video(vh->session_a);
-	switch_core_session_refresh_video(vh->session_b);
+	switch_core_session_request_video_refresh(vh->session_a);
+	switch_core_session_request_video_refresh(vh->session_b);
 
 	switch_core_session_rwunlock(vh->session_a);
 	switch_core_session_rwunlock(vh->session_b);

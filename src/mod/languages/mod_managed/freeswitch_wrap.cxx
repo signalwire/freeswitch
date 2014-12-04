@@ -15885,13 +15885,13 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_cert_verify(void * jarg1) {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_refresh_video(void * jarg1) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_request_video_refresh(void * jarg1) {
   int jresult ;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
   switch_status_t result;
   
   arg1 = (switch_core_session_t *)jarg1; 
-  result = (switch_status_t)switch_core_session_refresh_video(arg1);
+  result = (switch_status_t)switch_core_session_request_video_refresh(arg1);
   jresult = result; 
   return jresult;
 }

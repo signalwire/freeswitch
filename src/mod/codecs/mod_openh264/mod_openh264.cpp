@@ -550,7 +550,7 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 				switch_goto_status(SWITCH_STATUS_RESTART, end);
 			}
 		}
-
+		//switch_set_flag(frame, SFF_USE_VIDEO_TIMESTAMP);
 		switch_buffer_zero(context->nalu_buffer);
 		status = SWITCH_STATUS_SUCCESS;
 	}

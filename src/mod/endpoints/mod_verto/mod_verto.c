@@ -2188,7 +2188,7 @@ static switch_status_t verto_on_init(switch_core_session_t *session)
 			switch_yield(10000);
 		}
 
-		switch_core_session_refresh_video(session);
+		switch_core_session_request_video_refresh(session);
 		switch_channel_set_flag(tech_pvt->channel, CF_VIDEO_BREAK);
         switch_core_session_kill_channel(tech_pvt->session, SWITCH_SIG_BREAK);
 

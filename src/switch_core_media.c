@@ -48,7 +48,7 @@ static void switch_core_media_set_r_sdp_codec_string(switch_core_session_t *sess
 #define MAX_CODEC_CHECK_FRAMES 50//x:mod_sofia.h
 #define MAX_MISMATCH_FRAMES 5//x:mod_sofia.h
 #define type2str(type) type == SWITCH_MEDIA_TYPE_VIDEO ? "video" : "audio"
-#define VIDEO_REFRESH_FREQ 1000000
+#define VIDEO_REFRESH_FREQ 50000
 
 typedef enum {
 	SMF_INIT = (1 << 0),
@@ -4485,7 +4485,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Video thread started. Echo is %s\n", 
 					  switch_channel_get_name(session->channel), switch_channel_test_flag(channel, CF_VIDEO_ECHO) ? "on" : "off");
-	switch_core_session_refresh_video(session);
+	switch_core_session_request_video_refresh(session);
 
 	while (switch_channel_up_nosig(channel)) {
 		if (!switch_channel_test_flag(channel, CF_VIDEO)) {
@@ -4500,7 +4500,7 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 			switch_thread_cond_wait(mh->cond, mh->cond_mutex);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Video thread resumed  Echo is %s\n", 
 							  switch_channel_get_name(session->channel), switch_channel_test_flag(channel, CF_VIDEO_ECHO) ? "on" : "off");
-			switch_core_session_refresh_video(session);
+			switch_core_session_request_video_refresh(session);
 		}
 
 		if (switch_channel_test_flag(channel, CF_VIDEO_PASSIVE)) {
@@ -4537,11 +4537,6 @@ static void *SWITCH_THREAD_FUNC video_helper_thread(switch_thread_t *thread, voi
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			switch_cond_next();
 			continue;
-		}
-
-		if (switch_channel_test_flag(channel, CF_VIDEO_REFRESH_REQ)) {
-			switch_core_session_refresh_video(session);
-			switch_channel_clear_flag(channel, CF_VIDEO_REFRESH_REQ);
 		}
 
 		if (switch_test_flag(read_frame, SFF_CNG)) {
@@ -5856,6 +5851,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			flags[SWITCH_RTP_FLAG_USE_TIMER] = 0;
 			flags[SWITCH_RTP_FLAG_NOBLOCK] = 0;
 			flags[SWITCH_RTP_FLAG_VIDEO]++;
+			
+			if (v_engine->fir) {
+				flags[SWITCH_RTP_FLAG_FIR]++;
+			}
+
+			if (v_engine->pli) {
+				flags[SWITCH_RTP_FLAG_PLI]++;
+			}
 
 			v_engine->rtp_session = switch_rtp_new(a_engine->local_sdp_ip,
 														 v_engine->local_sdp_port,
@@ -7268,6 +7271,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				
 				if (bw > 0) {
 					switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "b=AS:%d\n", bw);
+					//switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "b=TIAS:%d\n", bw);
 				}
 				
 
@@ -7278,7 +7282,9 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 				}
 
 				/* DFF nack pli etc */
-				nack = v_engine->nack = 0; //pli = v_engine->pli = 0;
+				nack = v_engine->nack = 0;
+				//pli = v_engine->pli = 0;
+				
 				
 				for (pmap = v_engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
 					if (!v_engine->codec_negotiated || 
@@ -9541,7 +9547,7 @@ SWITCH_DECLARE(switch_timer_t *) switch_core_media_get_timer(switch_core_session
 
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_refresh_video(switch_core_session_t *session)
+SWITCH_DECLARE(switch_status_t) switch_core_session_request_video_refresh(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_media_handle_t *smh = NULL;
@@ -9571,10 +9577,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_refresh_video(switch_core_se
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_refresh_video_both_ways(switch_core_session_t *session)
+SWITCH_DECLARE(switch_status_t) switch_core_session_send_and_request_video_refresh(switch_core_session_t *session)
 {
 	if (switch_channel_test_flag(session->channel, CF_VIDEO)) {
-		switch_core_session_refresh_video(session);
+		switch_core_session_request_video_refresh(session);
 		switch_core_media_gen_key_frame(session);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -9669,7 +9675,7 @@ SWITCH_DECLARE(void) switch_core_session_video_reinit(switch_core_session_t *ses
 
 	smh->video_init = 0;
 	smh->video_last_key_time = 0;
-	switch_core_session_refresh_video_both_ways(session);	
+	switch_core_session_send_and_request_video_refresh(session);	
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags,
@@ -9704,7 +9710,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	}
 
 	if (!smh->video_init && smh->mparams->video_key_first && (now - smh->video_last_key_time) > smh->mparams->video_key_first) {
-		switch_core_session_refresh_video_both_ways(smh->session);
+		switch_core_media_gen_key_frame(session);
 
 		if (smh->video_last_key_time) {
 			smh->video_init = 1;
@@ -9887,7 +9893,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 		}
 
 		if (switch_test_flag((*frame), SFF_WAIT_KEY_FRAME)) {
-			switch_core_session_refresh_video(session);
+			switch_core_session_request_video_refresh(session);
 			switch_clear_flag((*frame), SFF_WAIT_KEY_FRAME);
 		}
 

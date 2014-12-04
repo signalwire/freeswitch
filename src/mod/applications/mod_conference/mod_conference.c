@@ -2880,7 +2880,7 @@ static void *SWITCH_THREAD_FUNC conference_video_bridge_thread_run(switch_thread
 		   switch_channel_ready(channel_a) && switch_channel_ready(channel_b))  {
 
 		if (switch_channel_test_flag(channel_a, CF_VIDEO_REFRESH_REQ)) {
-			switch_core_session_video_reinit(session_b);
+			switch_core_session_request_video_refresh(session_b);
 			switch_channel_clear_flag(channel_a, CF_VIDEO_REFRESH_REQ);
 		}
 
@@ -2985,8 +2985,8 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 			goto do_continue;
 		}
 
-		//memcpy(buf, vid_frame->packet, vid_frame->packetlen);
-		
+		//memcpy(buf, vid_frame->packet, vid_frame->packelen);
+
 		switch_mutex_unlock(conference->mutex);
 		switch_mutex_lock(conference->mutex);
 		want_refresh = 0;
@@ -3036,7 +3036,7 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 		switch_mutex_unlock(conference->mutex);
 
 		if (want_refresh && session) {
-			switch_core_session_video_reinit(session);
+			switch_core_session_request_video_refresh(session);
 			want_refresh = 0;
 		}
 

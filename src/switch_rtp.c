@@ -2893,7 +2893,7 @@ static int dtls_state_ready(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 			rtp_session->fir_countdown = FIR_COUNTDOWN;
 			
 			if (rtp_session->session && switch_core_session_get_partner(rtp_session->session, &other_session) == SWITCH_STATUS_SUCCESS) {
-				switch_core_session_refresh_video(other_session);
+				switch_core_session_request_video_refresh(other_session);
 				switch_core_session_rwunlock(other_session);
 			}
 		}
@@ -3587,7 +3587,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		}
 	} else {
 		if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
-			if (switch_core_timer_init(&rtp_session->timer, "soft", 1, 90, pool) == SWITCH_STATUS_SUCCESS) {
+			if (switch_core_timer_init(&rtp_session->timer, "soft", 10, 900, pool) == SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Starting video timer.\n");
 			}
 		} else {
@@ -5216,6 +5216,7 @@ static switch_status_t process_rtcp_report(switch_rtp_t *rtp_session, rtcp_msg_t
 		
 		if ((extp->header.fmt == 4) || (extp->header.fmt == 1)) { /* FIR || PLI */
 			switch_core_media_gen_key_frame(rtp_session->session);
+			switch_channel_set_flag(switch_core_session_get_channel(rtp_session->session), CF_VIDEO_REFRESH_REQ);
 		}
 	} else
 
@@ -6962,6 +6963,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 	uint32_t len, ts = 0;
 	switch_payload_t payload = 0;
 	rtp_msg_t *send_msg = NULL;
+	rtp_msg_t local_send_msg = { {0} };
 
 	if (!switch_rtp_ready(rtp_session) || !rtp_session->remote_addr) {
 		return -1;
@@ -7116,6 +7118,8 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 
 	if (fwd) {
 		send_msg = frame->packet;
+		local_send_msg = *send_msg;
+		send_msg = &local_send_msg;
 		len = frame->packetlen;
 		ts = 0;
 

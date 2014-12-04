@@ -710,7 +710,6 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 				context->img->stride[2] = picture->linesize[2];
 
 				frame->img = context->img;
-
 			}
 
 			av_frame_free(&picture);
@@ -718,6 +717,7 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 		}
 
 		switch_buffer_zero(context->nalu_buffer);
+		//switch_set_flag(frame, SFF_USE_VIDEO_TIMESTAMP);
 		return SWITCH_STATUS_SUCCESS;
 	}
 

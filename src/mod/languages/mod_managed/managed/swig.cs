@@ -3164,8 +3164,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_core_session_refresh_video(SWIGTYPE_p_switch_core_session session) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_refresh_video(SWIGTYPE_p_switch_core_session.getCPtr(session));
+  public static switch_status_t switch_core_session_request_video_refresh(SWIGTYPE_p_switch_core_session session) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_request_video_refresh(SWIGTYPE_p_switch_core_session.getCPtr(session));
     return ret;
   }
 
@@ -11303,8 +11303,8 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_cert_verify")]
   public static extern int switch_core_cert_verify(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_refresh_video")]
-  public static extern int switch_core_session_refresh_video(HandleRef jarg1);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_request_video_refresh")]
+  public static extern int switch_core_session_request_video_refresh(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_stream_system_fork")]
   public static extern int switch_stream_system_fork(string jarg1, HandleRef jarg2);
