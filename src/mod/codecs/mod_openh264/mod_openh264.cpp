@@ -39,7 +39,7 @@
 #include "codec_api.h"
 //#include "inc/logging.h"     // for debug
 
-#define FPS 20.0f // frame rate
+#define FPS 30.0f // frame rate
 #define H264_NALU_BUFFER_SIZE 65536
 #define MAX_NALUS 100
 #define SLICE_SIZE SWITCH_DEFAULT_VIDEO_SIZE //NALU Slice Size
@@ -78,7 +78,7 @@ int FillSpecificParameters(SEncParamExt& param) {
 	param.iPicHeight	        = 720;		 // height of picture in samples
 	param.iTargetBitrate        = 1280 * 720 * 8; // target bitrate desired
 	param.iRCMode               = RC_QUALITY_MODE;         //  rc mode control
-	param.uiMaxNalSize          = SLICE_SIZE * 20;
+	param.uiMaxNalSize          = SLICE_SIZE;
 	param.iTemporalLayerNum     = 1;         // layer number at temporal level
 	param.iSpatialLayerNum      = 1;         // layer number at spatial level
 	param.bEnableDenoise        = 0;         // denoise control
@@ -89,7 +89,7 @@ int FillSpecificParameters(SEncParamExt& param) {
 
 	param.iComplexityMode = MEDIUM_COMPLEXITY;
 	param.uiIntraPeriod		    = FPS * 3;       // period of Intra frame
-	param.bEnableSpsPpsIdAddition = 0;
+	param.bEnableSpsPpsIdAddition = 1;
 	param.bPrefixNalAddingCtrl    = 0;
 
 	int iIndexLayer = 0;
@@ -97,12 +97,22 @@ int FillSpecificParameters(SEncParamExt& param) {
 	param.sSpatialLayers[iIndexLayer].iVideoHeight	= 720;
 	param.sSpatialLayers[iIndexLayer].fFrameRate	= (double) (FPS * 1.0f);
 	// param.sSpatialLayers[iIndexLayer].iQualityLayerNum = 1;
-	param.sSpatialLayers[iIndexLayer].iSpatialBitrate  = 1280 * 720 * 8;
+	param.sSpatialLayers[iIndexLayer].iSpatialBitrate  = 1250000;//1280 * 720 * 8;
+	//param.sSpatialLayers[iIndexLayer].iMaxSpatialBitrate  = 1250000;
+	//param.sSpatialLayers[iIndexLayer].uiLevelIdc = LEVEL_1_3;
+	param.sSpatialLayers[iIndexLayer].uiProfileIdc = PRO_BASELINE;
+
+
+	param.iUsageType = CAMERA_VIDEO_REAL_TIME;
+	param.bEnableFrameCroppingFlag = 1;
+	//param.iMaxBitrate = 1250000;
+	//param.iTargetBitrate = 1250000;
 
 #ifdef MT_ENABLED
 	param.sSpatialLayers[iIndexLayer].sSliceCfg.uiSliceMode = SM_DYN_SLICE;
 	param.sSpatialLayers[iIndexLayer].sSliceCfg.sSliceArgument.uiSliceSizeConstraint = SLICE_SIZE;
-
+#else
+	param.sSpatialLayers[iIndexLayer].sSliceCfg.uiSliceMode = SM_SINGLE_SLICE;
 #endif
 
 	float fMaxFr = param.sSpatialLayers[param.iSpatialLayerNum - 1].fFrameRate;
@@ -231,7 +241,12 @@ static switch_status_t nalu_slice(h264_codec_context_t *context, switch_frame_t 
 
 	switch_assert(nalu_len > 0);
 
-	if (nalu_len <= SLICE_SIZE) {
+	if (nalu_len > SLICE_SIZE) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "LARGE SLICE OVER MTU %d BYTES\n", nalu_len);
+	}
+
+	//DFF The else branch here is not working.  Whatever it's doing is creating corrupt picture.
+	{//if (nalu_len <= SLICE_SIZE) {
 		uint8_t nalu_type;
 
 		context->last_nalu_data_pos += 4;
@@ -442,7 +457,8 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 	pic->iPicHeight = height;
 	pic->iPicWidth = width;
 	pic->iStride[0] = frame->img->stride[0];
-	pic->iStride[1] = frame->img->stride[1]; // = frame->img->stride[2];
+	pic->iStride[1] = frame->img->stride[1];
+	pic->iStride[2] = frame->img->stride[2];
 
 	pic->pData[0] = frame->img->planes[0];
 	pic->pData[1] = frame->img->planes[1];
