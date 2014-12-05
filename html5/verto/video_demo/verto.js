@@ -79,10 +79,10 @@ function check_vid_res()
 {
     if ($("#vqual_qvga").is(':checked')) {
 	vid_width = 320;
-	vid_height = 180;
+	vid_height = 240;
     } else if ($("#vqual_vga").is(':checked')) {
 	vid_width = 640;
-	vid_height = 360;
+	vid_height = 480;
     } else if ($("#vqual_hd").is(':checked')) {
 	vid_width = 1280;
 	vid_height = 720;
@@ -557,7 +557,7 @@ function init() {
             "minHeight": vid_height,
             "maxWidth": vid_width,
             "maxHeight": vid_height,
-	    "minFrameRate": 30
+	    "minFrameRate": 30,
         },
 	audioParams: {
 	    googAutoGainControl: false,
