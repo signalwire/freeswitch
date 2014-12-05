@@ -246,7 +246,7 @@ static switch_status_t nalu_slice(h264_codec_context_t *context, switch_frame_t 
 	}
 
 	//DFF The else branch here is not working.  Whatever it's doing is creating corrupt picture.
-	{//if (nalu_len <= SLICE_SIZE) {
+	if (1||nalu_len <= SLICE_SIZE) {
 		uint8_t nalu_type;
 
 		context->last_nalu_data_pos += 4;
