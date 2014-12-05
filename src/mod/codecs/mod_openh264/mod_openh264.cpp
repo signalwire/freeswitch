@@ -60,6 +60,7 @@ typedef struct h264_codec_context_s {
 	int last_nalu_data_pos;
 	int nalu_eat;
 	int nalu_28_start;
+	SSourcePicture pic;
 
 	ISVCDecoder *decoder;
 	SDecodingParam decoder_params;
@@ -78,18 +79,28 @@ int FillSpecificParameters(SEncParamExt& param) {
 	param.iPicHeight	        = 720;		 // height of picture in samples
 	param.iTargetBitrate        = 1280 * 720 * 8; // target bitrate desired
 	param.iRCMode               = RC_QUALITY_MODE;         //  rc mode control
+#ifdef MT_ENABLED
 	param.uiMaxNalSize          = SLICE_SIZE;
+#endif
 	param.iTemporalLayerNum     = 1;         // layer number at temporal level
 	param.iSpatialLayerNum      = 1;         // layer number at spatial level
 	param.bEnableDenoise        = 0;         // denoise control
 	param.bEnableBackgroundDetection = 1;    // background detection control
+	param.bEnableSceneChangeDetect= 1;
+	//param.bEnableFrameSkip = 1;
+	param.iMultipleThreadIdc= 1;
 	param.bEnableAdaptiveQuant       = 1;    // adaptive quantization control
 	param.bEnableLongTermReference   = 0;    // long term reference control
 	param.iLtrMarkPeriod        = 30;
-
+	param.iLoopFilterAlphaC0Offset= 0;
+	param.iLoopFilterBetaOffset= 0;
 	param.iComplexityMode = MEDIUM_COMPLEXITY;
 	param.uiIntraPeriod		    = FPS * 3;       // period of Intra frame
+#ifdef MT_ENABLED
 	param.bEnableSpsPpsIdAddition = 1;
+#else 
+	param.bEnableSpsPpsIdAddition = 0;
+#endif
 	param.bPrefixNalAddingCtrl    = 0;
 
 	int iIndexLayer = 0;
@@ -246,7 +257,7 @@ static switch_status_t nalu_slice(h264_codec_context_t *context, switch_frame_t 
 	}
 
 	//DFF The else branch here is not working.  Whatever it's doing is creating corrupt picture.
-	if (1||nalu_len <= SLICE_SIZE) {
+	if (nalu_len <= SLICE_SIZE) {
 		uint8_t nalu_type;
 
 		context->last_nalu_data_pos += 4;
@@ -412,7 +423,6 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 	int width = 0;
 	int height = 0;
 	long enc_ret;
-	SSourcePicture* pic = NULL;
 	long result;
 
 	frame->m = SWITCH_FALSE;
@@ -450,21 +460,19 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 		init_encoder(context, width, height);
 	}
 
-	pic = new SSourcePicture;
-	if (pic == NULL) goto error;
+	context->pic.iColorFormat = videoFormatI420;
+	context->pic.iPicHeight = height;
+	context->pic.iPicWidth = width;
+	context->pic.iStride[0] = frame->img->stride[0];
+	context->pic.iStride[1] = frame->img->stride[1];
+	context->pic.iStride[2] = frame->img->stride[2];
 
-	pic->iColorFormat = videoFormatI420;
-	pic->iPicHeight = height;
-	pic->iPicWidth = width;
-	pic->iStride[0] = frame->img->stride[0];
-	pic->iStride[1] = frame->img->stride[1];
-	pic->iStride[2] = frame->img->stride[2];
+	context->pic.pData[0] = frame->img->planes[0];
+	context->pic.pData[1] = frame->img->planes[1];
+	context->pic.pData[2] = frame->img->planes[2];
 
-	pic->pData[0] = frame->img->planes[0];
-	pic->pData[1] = frame->img->planes[1];
-	pic->pData[2] = frame->img->planes[2];
+	result = (EVideoFrameType)context->encoder->EncodeFrame(&context->pic, &context->bit_stream_info);
 
-	result = (EVideoFrameType)context->encoder->EncodeFrame(pic, &context->bit_stream_info);
 	if (result != cmResultSuccess ) {
 	  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "EncodeFrame() failed, result = %ld\n", result);
 	  goto error;
@@ -474,19 +482,9 @@ static switch_status_t switch_h264_encode(switch_codec_t *codec, switch_frame_t 
 	context->cur_nalu_index = 0;
 	context->last_nalu_data_pos = 0;
 
-	if (pic){
-		delete pic;
-		pic = NULL;
-	}
-
 	return nalu_slice(context, frame);
 
 error:
-
-	if(pic){
-		delete pic;
-		pic = NULL;
-	}
 
 	frame->datalen = 0;
 
