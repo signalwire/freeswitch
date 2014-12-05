@@ -2141,6 +2141,8 @@ static switch_status_t verto_on_init(switch_core_session_t *session)
 	if (switch_channel_direction(tech_pvt->channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
 		if ((status = verto_connect(tech_pvt->session, "verto.invite")) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		} else {
+			switch_channel_mark_ring_ready(tech_pvt->channel);
 		}
 	}
 
