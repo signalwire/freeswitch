@@ -1828,11 +1828,13 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		break;
 	case SWITCH_MESSAGE_INDICATE_REDIRECT:
 
+#define MAX_REDIR 128
+
 		if (!zstr(msg->string_arg)) {
 
 			if (!switch_channel_test_flag(channel, CF_ANSWERED) && !sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 				char *dest = (char *) msg->string_arg;
-				char *argv[128] = { 0 };
+				char *argv[MAX_REDIR] = { 0 };
 				char *mydata = NULL, *newdest = NULL;
 				int argc = 0, i;
 				switch_size_t len = 0;
@@ -1846,10 +1848,20 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 					for (i = 0; i < argc; i++) {
 						if (!strchr(argv[i], '<') && !strchr(argv[i], '>')) {
-							if (i == argc - 1) {
-								switch_snprintf(newdest + strlen(newdest), len - strlen(newdest), "\"unknown\" <%s>", argv[i]);
+							if (argc > 1) {
+								if (i == argc - 1) {
+									switch_snprintf(newdest + strlen(newdest), len - strlen(newdest), "\"unknown\" <%s>;q=%1.3f",
+													argv[i], (double)((double)(MAX_REDIR + 1 - i))/1000);
+								} else {
+									switch_snprintf(newdest + strlen(newdest), len - strlen(newdest), "\"unknown\" <%s>;q=%1.3f,",
+													argv[i], (double)((double)(MAX_REDIR + 1 - i))/1000);
+								}
 							} else {
-								switch_snprintf(newdest + strlen(newdest), len - strlen(newdest), "\"unknown\" <%s>,", argv[i]);
+								if (i == argc - 1) {
+									switch_snprintf(newdest + strlen(newdest), len - strlen(newdest), "\"unknown\" <%s>", argv[i]);
+								} else {
+									switch_snprintf(newdest + strlen(newdest), len - strlen(newdest), "\"unknown\" <%s>,", argv[i]);
+								}
 							}
 						} else {
 							if (i == argc - 1) {
