@@ -95,7 +95,14 @@ function check_vid_res()
     $("#webcam").height(vid_height);
 
     if (verto) {
-	verto.videoParams({"minWidth": vid_width, "minHeight": vid_height, "maxWidth": vid_width, "maxHeight": vid_height, "minFrameRate": 30});
+	verto.videoParams({"minWidth": vid_width, 
+			   "minHeight": vid_height,
+			   "maxWidth": vid_width,
+			   "maxHeight": vid_height,
+			   "minFrameRate": 30, 
+			   //chromeMediaSource: 'screen', 
+			   //mediaSource: 'screen'
+			  });
     }
 
 }
@@ -558,6 +565,8 @@ function init() {
             "maxWidth": vid_width,
             "maxHeight": vid_height,
 	    "minFrameRate": 30,
+	    //chromeMediaSource: 'screen',
+	    //mediaSource: 'screen'
         },
 	audioParams: {
 	    googAutoGainControl: false,
