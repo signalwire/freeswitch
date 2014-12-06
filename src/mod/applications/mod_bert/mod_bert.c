@@ -61,15 +61,6 @@ typedef struct {
 	switch_timer_t timer;
 } bert_t;
 
-#define bert_increase_milliwatt_index(index) \
-	do { \
-		if ((index) == (switch_arraylen(ulaw_digital_milliwatt)-1)) { \
-			(index) = 0; \
-		} else { \
-			(index) = ((index) + 1); \
-		} \
-	} while (0);
-
 #define bert_close_debug_streams(bert, session) \
 	do { \
 		int rc = 0; \
@@ -113,11 +104,10 @@ SWITCH_STANDARD_APP(bert_test_function)
 	int32_t interval = 20;
 	int32_t samples = 0;
 	uint8_t *write_samples = NULL;
-	uint8_t *read_samples = NULL;
+	uint8_t *m = NULL;
 	const char *timer_name = NULL;
+	switch_bool_t clean_frame = SWITCH_FALSE;
 	bert_t bert = { 0 };
-
-	memset(&bert, 0, sizeof(bert));
 
 	channel = switch_core_session_get_channel(session);
 
@@ -204,6 +194,21 @@ SWITCH_STANDARD_APP(bert_test_function)
 	switch_channel_set_variable(channel, BERT_STATS_VAR_SYNC_LOST_CNT, "0");
 	switch_channel_set_variable(channel, BERT_STATS_VAR_SYNC_LOST, "false");
 	write_samples = write_frame.data;
+
+	/* Prepare the buffer we'll keep sending over and over */
+	for (i = 0; i < read_impl.samples_per_packet; i += sizeof(ulaw_digital_milliwatt)) {
+		memcpy(&write_samples[i], ulaw_digital_milliwatt, sizeof(ulaw_digital_milliwatt));
+	}
+
+	write_frame.datalen = read_impl.encoded_bytes_per_packet;
+	write_frame.samples = read_impl.samples_per_packet;
+
+	if (timer_name) {
+		write_frame.timestamp = bert.timer.samplecount;
+	} else {
+		/* the playback() app does not set write_frame.timestamp unless a timer is used, what's the catch? does it matter? */
+	}
+
 	for (;;) {
 
 		if (!switch_channel_ready(channel)) {
@@ -219,23 +224,6 @@ SWITCH_STANDARD_APP(bert_test_function)
 			}
 		}
 
-		/* Write our frame before anything else happens */
-		for (i = 0; i < read_impl.samples_per_packet; i++) {
-			/* Calculate our next sequence sample to write */
-			bert.sequence_sample = ulaw_digital_milliwatt[bert.milliwatt_index];
-			//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "[%d] 0x%X\n", bert.milliwatt_index, bert.sequence_sample);
-			bert_increase_milliwatt_index(bert.milliwatt_index);
-			//switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "[%d] 0x%X\n", bert.milliwatt_index, bert.sequence_sample);
-			write_samples[i] = bert.sequence_sample;
-		}
-
-		write_frame.datalen = read_impl.samples_per_packet;
-		write_frame.samples = read_impl.samples_per_packet;
-		if (timer_name) {
-			write_frame.timestamp = bert.timer.samplecount;
-		} else {
-			/* playback() does not set write_frame.timestamp unless a timer is used, what's the catch? */
-		}
 		if (bert.output_debug_f) {
 			fwrite(write_frame.data, write_frame.datalen, 1, bert.output_debug_f);
 		}
@@ -244,8 +232,10 @@ SWITCH_STANDARD_APP(bert_test_function)
 			break;
 		}
 
-		/* Proceed to read and process the read frame ...
-		 * Note core_session_read_frame is a blocking operation, we should probably do reathing in another thread like playback() does using switch_core_service_session()  */
+		/* Proceed to read and process the received frame ...
+		 * Note that switch_core_session_read_frame is a blocking operation, we could do reathing in another thread like the playback() app
+		 * does using switch_core_service_session() but OTOH that would lead to more load/cpu usage, extra threads being launched per call leg 
+		 * and most likely reduce the overall capacity of the test system */
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
@@ -276,11 +266,10 @@ SWITCH_STANDARD_APP(bert_test_function)
 		}
 
 		if (read_frame->samples != read_impl.samples_per_packet || !read_frame->datalen) {
-			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Read %d samples, expected %d!\n", read_frame->samples, read_impl.samples_per_packet);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Read %d samples, expected %d!\n", read_frame->samples, read_impl.samples_per_packet);
 			continue;
 		}
 
-		read_samples = read_frame->data;
 		if (bert.input_debug_f) {
 			size_t ret = fwrite(read_frame->data, read_frame->datalen, 1, bert.input_debug_f);
 			if (ret != 1) {
@@ -288,70 +277,92 @@ SWITCH_STANDARD_APP(bert_test_function)
 			}
 		}
 
-		/* BERT Sync Loop */
-		for (i = 0; i < read_frame->samples; i++) {
-			if (bert.window_samples == bert.processed_samples) {
-				float err = 0.0;
-				/* If the channel is going down, then it is expected we'll have errors, ignore them and bail out */
-				if (!switch_channel_ready(channel)) {
-					bert_close_debug_streams(bert, session);
-					break;
-				}
-				/* Calculate error rate */
-				err = ((float)((float)bert.err_samples / (float)bert.processed_samples) * 100.0);
-				if (err > bert.max_err) {
-					if (bert.in_sync) {
-						bert.in_sync = 0;
-						bert.stats_sync_lost_cnt++;
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "BERT Sync Lost: %f%% loss (count=%u, cng_count=%d, err_samples=%u, session=%s)\n",
-								err, bert.stats_sync_lost_cnt, bert.stats_cng_cnt, bert.err_samples, switch_core_session_get_uuid(session));
-						switch_channel_set_variable_printf(channel, BERT_STATS_VAR_SYNC_LOST_CNT, "%u", bert.stats_sync_lost_cnt);
-						switch_channel_set_variable(channel, BERT_STATS_VAR_SYNC_LOST, "true");
-						if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, BERT_EVENT_LOST_SYNC) == SWITCH_STATUS_SUCCESS) {
-							switch_channel_event_set_basic_data(channel, event);
-							switch_event_fire(&event);
-						}
-						if (bert.hangup_on_error) {
-							switch_channel_hangup(channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
-							bert_close_debug_streams(bert, session);
-						}
-					}
-				} else if (!bert.in_sync) {
-					bert.in_sync = 1;
-					synced = 1;
-					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "BERT Sync Success\n");
-					bert.stats_cng_cnt = 0;
-					bert.timeout = 0;
-					if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, BERT_EVENT_IN_SYNC) == SWITCH_STATUS_SUCCESS) {
+		if (bert.window_samples == bert.processed_samples) {
+			/* BERT err rate calculation */
+			float err = 0.0;
+			/* If the channel is going down, then it is expected we'll have errors, ignore them and bail out */
+			if (!switch_channel_ready(channel)) {
+				bert_close_debug_streams(bert, session);
+				break;
+			}
+			/* Calculate error rate */
+			err = ((float)((float)bert.err_samples / (float)bert.processed_samples) * 100.0);
+			if (err > bert.max_err) {
+				if (bert.in_sync) {
+					bert.in_sync = 0;
+					bert.stats_sync_lost_cnt++;
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "BERT Sync Lost: %f%% loss (count=%u, cng_count=%d, err_samples=%u, session=%s)\n",
+							err, bert.stats_sync_lost_cnt, bert.stats_cng_cnt, bert.err_samples, switch_core_session_get_uuid(session));
+					switch_channel_set_variable_printf(channel, BERT_STATS_VAR_SYNC_LOST_CNT, "%u", bert.stats_sync_lost_cnt);
+					switch_channel_set_variable(channel, BERT_STATS_VAR_SYNC_LOST, "true");
+					if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, BERT_EVENT_LOST_SYNC) == SWITCH_STATUS_SUCCESS) {
 						switch_channel_event_set_basic_data(channel, event);
 						switch_event_fire(&event);
 					}
+					if (bert.hangup_on_error) {
+						switch_channel_hangup(channel, SWITCH_CAUSE_MEDIA_TIMEOUT);
+						bert_close_debug_streams(bert, session);
+					}
 				}
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "Err=%f%% (%u/%u)\n", err, bert.err_samples, bert.processed_samples);
-				if (synced && err > bert.max_err_hit) {
-					bert.max_err_hit = err;
-				}
-				if (err > bert.max_err_ever) {
-					bert.max_err_ever = err;
-				}
-				bert.processed_samples = 0;
-				bert.err_samples = 0;
-			}
-
-			if (bert.predicted_sample != read_samples[i]) {
-				bert.err_samples++;
-				if (!bert.in_sync) {
-					/* If we're not in sync, we must reset the index on error to start the pattern detection again */
-					bert.milliwatt_prediction_index = 0;
+			} else if (!bert.in_sync) {
+				bert.in_sync = 1;
+				synced = 1;
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "BERT Sync Success\n");
+				bert.stats_cng_cnt = 0;
+				bert.timeout = 0;
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, BERT_EVENT_IN_SYNC) == SWITCH_STATUS_SUCCESS) {
+					switch_channel_event_set_basic_data(channel, event);
+					switch_event_fire(&event);
 				}
 			}
-
-			/* Try to guess what the next sample will be in the milliwatt sequence */
-			bert.predicted_sample = ulaw_digital_milliwatt[bert.milliwatt_prediction_index];
-			bert_increase_milliwatt_index(bert.milliwatt_prediction_index);
-
-			bert.processed_samples++;
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10, "Err=%f%% (%u/%u)\n", err, bert.err_samples, bert.processed_samples);
+			if (synced && err > bert.max_err_hit) {
+				bert.max_err_hit = err;
+			}
+			if (err > bert.max_err_ever) {
+				bert.max_err_ever = err;
+			}
+			bert.processed_samples = 0;
+			bert.err_samples = 0;
 		}
+
+		if ((bert.in_sync || clean_frame) &&
+		   !memcmp(read_frame->data, write_frame.data, read_frame->datalen)) {
+			goto sync_check_done;
+		}
+
+		/* We're not in sync, or we might be going out of sync, find the start of the pattern ... */
+		m = memmem(read_frame->data, read_frame->datalen, ulaw_digital_milliwatt, sizeof(ulaw_digital_milliwatt));
+		if (m) {
+			/* At least some bytes matched, let's find out the err sample count (could be zero if we're lucky and the whole frame matches) */
+			uint8_t *end = NULL;
+			size_t left = 0;
+			int cerrs = bert.err_samples;
+			/* Pattern found at least once in the frame, let's check if the rest of the frame also matches */
+			m += sizeof(ulaw_digital_milliwatt);
+			end = (uint8_t *)read_frame->data + read_frame->datalen;
+			left = (size_t)(end - m);
+			if (left && !memcmp(m, write_frame.data, left)) {
+				bert.err_samples += (m - (uint8_t *)read_frame->data - sizeof(ulaw_digital_milliwatt));
+			} else if (left) {
+				int s = 0;
+				bert.err_samples += (m - (uint8_t *)read_frame->data - sizeof(ulaw_digital_milliwatt));
+				/* count error samples */
+				for (s = 0; m != end; m++, s++) {
+					if (ulaw_digital_milliwatt[s%8] != *m) {
+						bert.err_samples++;
+					}
+				}
+			}
+			clean_frame = (cerrs == bert.err_samples) ? SWITCH_TRUE : SWITCH_FALSE;
+		} else {
+			/* the patter was not found in the whole frame, then the whole frame is out of sync */
+			bert.err_samples += read_frame->samples;
+			clean_frame = SWITCH_FALSE;
+		}
+
+sync_check_done:
+		bert.processed_samples += read_frame->samples;
 	}
 
 done:
