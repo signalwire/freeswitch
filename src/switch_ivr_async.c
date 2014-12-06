@@ -1313,12 +1313,13 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 			switch_frame_t frame = { 0 };
 			switch_status_t status;
+			int x = 0;
 
 			frame.data = data;
 			frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
 			for (;;) {
-				status = switch_core_media_bug_read(bug, &frame, SWITCH_FALSE);
+				status = switch_core_media_bug_read(bug, &frame, x++ == 0);
 
 				if (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK) {
 				

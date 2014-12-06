@@ -227,9 +227,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	if (bug->record_frame_size && bug->record_pre_buffer_max && (do_read || do_write) && bug->record_pre_buffer_count < bug->record_pre_buffer_max) {
 		bug->record_pre_buffer_count++;
 		return SWITCH_STATUS_FALSE;
-	}
-
-	if (!bug->record_frame_size) {
+	} else {
 		uint32_t frame_size;
 		switch_codec_implementation_t read_impl = { 0 };
 		//switch_codec_implementation_t other_read_impl = { 0 };
@@ -238,6 +236,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		switch_core_session_get_read_impl(bug->session, &read_impl);
 		frame_size = read_impl.decoded_bytes_per_packet;
 		bug->record_frame_size = frame_size;
+		
 #if 0
 		if (do_read && do_write) {			
 			if (switch_core_session_get_partner(bug->session, &other_session) == SWITCH_STATUS_SUCCESS) {
@@ -255,7 +254,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 				}
 			}
 
-			bug->record_frame_size = frame_size;
+			bug->record_frame_size = bytes = frame_size;
 		}
 #endif
 	}
@@ -278,7 +277,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	fill_read = !do_read;
 	fill_write = !do_write;
 
-	if (fill_read && fill_write) {
+	if ((fill_read && fill_write) || (!fill && fill_read)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
