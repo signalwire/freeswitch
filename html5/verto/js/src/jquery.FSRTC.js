@@ -191,8 +191,8 @@
         return true;
     }
 
-    function onStreamError(self) {
-        console.log('There has been a problem retrieving the streams - did you allow access?');
+    function onStreamError(self, e) {
+        console.log('There has been a problem retrieving the streams - did you allow access?', e);
 
     }
 
@@ -332,19 +332,36 @@
             onStreamSuccess(self);
         }
 
-        function onError() {
-            onStreamError(self);
+        function onError(e) {
+            onStreamError(self, e);
         }
+
+
+	var audio;
+
+	if (this.options.videoParams && this.options.videoParams.chromeMediaSource == 'screen') {
+
+	    this.options.videoParams = {
+		chromeMediaSource: 'screen',
+		maxWidth:screen.width,
+		maxHeight:screen.height
+	    };
+
+	    console.error("SCREEN SHARE");
+	    audio = false;
+	} else {
+	    audio = {
+		mandatory: this.options.audioParams,
+		optional: []
+	    };
+	}
 
 	console.log("Mandatory audio constraints", this.options.audioParams);
 	console.log("Mandatory video constraints", this.options.videoParams);
 
         getUserMedia({
             constraints: {
-                audio: {
-                    mandatory: this.options.audioParams,
-                    optional: []
-                },
+		audio: audio,
                 video: this.options.useVideo ? {
                     mandatory: this.options.videoParams,
                     optional: []
@@ -395,19 +412,37 @@
             onStreamSuccess(self);
         }
 
-        function onError() {
-            onStreamError(self);
+        function onError(e) {
+            onStreamError(self, e);
         }
+
+
+	var audio;
+
+	if (this.options.videoParams && this.options.videoParams.chromeMediaSource == 'screen') {
+
+	    this.options.videoParams = {
+		chromeMediaSource: 'screen',
+		maxWidth:screen.width,
+		maxHeight:screen.height
+	    };
+
+	    console.error("SCREEN SHARE");
+	    audio = false;
+	} else {
+	    audio = {
+		mandatory: this.options.audioParams,
+		optional: []
+	    };
+	}
 
 	console.log("Mandatory audio constraints", this.options.audioParams);
 	console.log("Mandatory video constraints", this.options.videoParams);
 
+
         getUserMedia({
             constraints: {
-                audio: {
-                    mandatory: this.options.audioParams,
-                    optional: []
-                },
+                audio: audio,
                 video: this.options.useVideo ? {
                     mandatory: this.options.videoParams,
                     optional: []
