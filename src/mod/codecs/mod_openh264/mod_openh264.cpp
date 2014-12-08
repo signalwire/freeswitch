@@ -41,7 +41,6 @@
 
 #define FPS 30.0f // frame rate
 #define H264_NALU_BUFFER_SIZE 65536
-#define MAX_NALUS 100
 #define SLICE_SIZE SWITCH_DEFAULT_VIDEO_SIZE //NALU Slice Size
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_openh264_load);
@@ -79,9 +78,6 @@ int FillSpecificParameters(SEncParamExt& param) {
 	param.iPicHeight	        = 720;		 // height of picture in samples
 	param.iTargetBitrate        = 1280 * 720 * 8; // target bitrate desired
 	param.iRCMode               = RC_QUALITY_MODE;         //  rc mode control
-#ifdef MT_ENABLED
-	param.uiMaxNalSize          = SLICE_SIZE;
-#endif
 	param.iTemporalLayerNum     = 1;         // layer number at temporal level
 	param.iSpatialLayerNum      = 1;         // layer number at spatial level
 	param.bEnableDenoise        = 0;         // denoise control
@@ -98,7 +94,7 @@ int FillSpecificParameters(SEncParamExt& param) {
 	param.uiIntraPeriod		    = FPS * 3;       // period of Intra frame
 #ifdef MT_ENABLED
 	param.bEnableSpsPpsIdAddition = 1;
-#else 
+#else
 	param.bEnableSpsPpsIdAddition = 0;
 #endif
 	param.bPrefixNalAddingCtrl    = 0;
@@ -122,6 +118,7 @@ int FillSpecificParameters(SEncParamExt& param) {
 #ifdef MT_ENABLED
 	param.sSpatialLayers[iIndexLayer].sSliceCfg.uiSliceMode = SM_DYN_SLICE;
 	param.sSpatialLayers[iIndexLayer].sSliceCfg.sSliceArgument.uiSliceSizeConstraint = SLICE_SIZE;
+	param.uiMaxNalSize = SLICE_SIZE;
 #else
 	param.sSpatialLayers[iIndexLayer].sSliceCfg.uiSliceMode = SM_SINGLE_SLICE;
 #endif
@@ -252,11 +249,6 @@ static switch_status_t nalu_slice(h264_codec_context_t *context, switch_frame_t 
 
 	switch_assert(nalu_len > 0);
 
-	if (nalu_len > SLICE_SIZE) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "LARGE SLICE OVER MTU %d BYTES\n", nalu_len);
-	}
-
-	//DFF The else branch here is not working.  Whatever it's doing is creating corrupt picture.
 	if (nalu_len <= SLICE_SIZE) {
 		uint8_t nalu_type;
 
@@ -267,7 +259,7 @@ static switch_status_t nalu_slice(h264_codec_context_t *context, switch_frame_t 
 
 		memcpy(frame->data, (buffer + context->last_nalu_data_pos), nalu_len);
 		frame->datalen = nalu_len;
-		// *flag |= (nalu_type == 6 || nalu_type == 7 || nalu_type == 8 || (nalu_type == 0xe && context->last_nalu_type == 8)) ? 0 : SFF_MARKER;
+
 		if ((context->cur_nalu_index == context->bit_stream_info.sLayerInfo[context->cur_layer].iNalCount - 1) &&
 				 (context->cur_layer == context->bit_stream_info.iLayerNum - 1)) {
 			frame->m = SWITCH_TRUE;
@@ -296,7 +288,7 @@ static switch_status_t nalu_slice(h264_codec_context_t *context, switch_frame_t 
 				start_bit = 0x80;
 				context->last_nalu_data_pos += 4;
 				context->last_nalu_type = *(buffer + context->last_nalu_data_pos) & 0x1f;
-				context->last_nri = context->last_nalu_type & 0x60;
+				context->last_nri = *(buffer + context->last_nalu_data_pos) & 0x60;
 				context->last_nalu_data_pos++;
 				context->nalu_eat = 5;
 			}
@@ -325,6 +317,9 @@ static switch_status_t nalu_slice(h264_codec_context_t *context, switch_frame_t 
 	}
 
 end:
+#if 0
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%d mark=%d BYTES datalen:%d %02x %02x\n", nalu_len, frame->m, frame->datalen, *((uint8_t *)frame->data), *((uint8_t *)frame->data + 1));
+#endif
 	return status;
 }
 
