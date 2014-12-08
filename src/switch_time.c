@@ -380,7 +380,7 @@ SWITCH_DECLARE(void) switch_time_set_cond_yield(switch_bool_t enable)
 
 static switch_status_t timer_generic_sync(switch_timer_t *timer)
 {
-	switch_time_t now = time_now(0);
+	switch_time_t now = switch_micro_time_now();
 	int64_t elapsed = (now - timer->start);
 	
 	timer->tick = (elapsed / timer->interval) / 1000;
@@ -451,7 +451,7 @@ static switch_status_t _timerfd_init(switch_timer_t *timer)
 	it = switch_core_alloc(timer->memory_pool, sizeof(*it));
 
 	if ((rc = timerfd_start_interval(it, timer->interval)) == SWITCH_STATUS_SUCCESS) {
-		timer->start = time_now(0);
+		timer->start = switch_micro_time_now();
 		timer->private_info = it;
 	}
 
@@ -681,9 +681,10 @@ static switch_status_t timer_init(switch_timer_t *timer)
 	timer_private_t *private_info;
 	int sanity = 0;
 
-	timer->start = time_now(0);
+	timer->start = switch_micro_time_now();
 
 	if (timer->interval == 1) {
+		runtime.microseconds_per_tick = 10000;
 		switch_mutex_lock(globals.mutex);
 		globals.timer_count++;
 		switch_mutex_unlock(globals.mutex);
