@@ -1713,6 +1713,7 @@ struct early_state {
 	switch_buffer_t *buffer;
 	int ready;
 	ringback_t *ringback;
+	int ttl;
 };
 typedef struct early_state early_state_t;
 
@@ -1723,7 +1724,6 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 	originate_status_t originate_status[MAX_PEERS] = { {0} };
 	int16_t mux_data[SWITCH_RECOMMENDED_BUFFER_SIZE / 2] = { 0 };
 	int32_t sample;
-	switch_core_session_t *session;
 	switch_codec_t read_codecs[MAX_PEERS] = { {0} };
 	int i, x, ready = 0, answered = 0, ring_ready = 0;
 	int16_t *data;
@@ -1732,13 +1732,15 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 	switch_frame_t *read_frame = NULL;
 	switch_codec_implementation_t read_impl = { 0 };
 
+	for (i = 0; i < MAX_PEERS && i < state->ttl; i++) {
+		if (switch_core_session_read_lock(state->originate_status[i].peer_session) == SWITCH_STATUS_SUCCESS) {
+			originate_status[i].peer_session = state->originate_status[i].peer_session;
+			originate_status[i].peer_channel = switch_core_session_get_channel(state->originate_status[i].peer_session);
+		}
+	}
+
 	if (state->oglobals->session) {
 		switch_core_session_get_read_impl(state->oglobals->session, &read_impl);
-	}
-	
-	for (i = 0; i < MAX_PEERS && (session = state->originate_status[i].peer_session); i++) {
-		originate_status[i].peer_session = session;
-		switch_core_session_read_lock(session);
 	}
 
 	while (state->ready) {
@@ -1747,8 +1749,18 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 		ready = 0;
 		answered = 0;
 
-		for (i = 0; i < MAX_PEERS && (session = originate_status[i].peer_session); i++) {
-			switch_channel_t *channel = switch_core_session_get_channel(session);
+		for (i = 0; i < MAX_PEERS && i < state->ttl; i++) {
+			switch_core_session_t *session = originate_status[i].peer_session;
+			switch_channel_t *channel = originate_status[i].peer_channel;
+
+			if (!session) {
+				break;
+			}
+			
+			if (!channel || !switch_channel_up(channel)) {
+				continue;
+			}
+			
 			if (switch_channel_media_ready(channel)) {
 				ready++;
 
@@ -1797,31 +1809,43 @@ static void *SWITCH_THREAD_FUNC early_thread_run(switch_thread_t *thread, void *
 				}
 			}
 		}
-		
-		if (state->ringback->asis && datalen) {
+	
+		if (!ready || answered || ring_ready) {
+			break;
+		}
+	
+		if (!datalen) {
+			continue;
+		}
+
+		if (state->ringback->asis) {
 			uint16_t flen = (uint16_t)datalen;
 			switch_mutex_lock(state->mutex);
 			switch_buffer_write(state->buffer, &flen, sizeof(uint16_t));
 			switch_buffer_write(state->buffer, read_frame->data, datalen);
 			switch_mutex_unlock(state->mutex);
-		} else if (datalen) {
+		} else {
 			switch_mutex_lock(state->mutex);
 			switch_buffer_write(state->buffer, mux_data, datalen);
 			switch_mutex_unlock(state->mutex);
 		}
-
-		if (!ready || answered || ring_ready) {
-			break;
-		}
 	}
 
 
-	for (i = 0; i < MAX_PEERS && (session = originate_status[i].peer_session); i++) {
+	for (i = 0; i < MAX_PEERS && i < state->ttl; i++) {
+		switch_core_session_t *session = originate_status[i].peer_session;
+		switch_channel_t *channel = originate_status[i].peer_channel;
+		
+		if (!session) break;
+
 		if (switch_core_codec_ready((&read_codecs[i]))) {
-			switch_core_session_set_read_codec(session, NULL);
 			switch_core_codec_destroy(&read_codecs[i]);
 		}
-		switch_core_session_reset(session, SWITCH_FALSE, SWITCH_TRUE);
+
+		if (switch_channel_up_nosig(channel)) {
+			switch_core_session_reset(session, SWITCH_FALSE, SWITCH_TRUE);
+		}
+
 		switch_core_session_rwunlock(session);
 	}
 
@@ -3117,6 +3141,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								early_state.originate_status = originate_status;
 								early_state.ready = 1;
 								early_state.ringback = &ringback;
+								early_state.ttl = and_argc;
 								switch_mutex_init(&early_state.mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 								switch_buffer_create_dynamic(&early_state.buffer, 1024, 1024, 0);
 								switch_thread_create(&oglobals.ethread, thd_attr, early_thread_run, &early_state, switch_core_session_get_pool(session));
@@ -3756,6 +3781,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			for (i = 0; i < and_argc; i++) {
 				switch_channel_state_t state;
+				switch_core_session_t *peer_session;
 				char *val;							
 
 				if (!originate_status[i].peer_channel) {
@@ -3788,7 +3814,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 				switch_channel_clear_flag(originate_status[i].peer_channel, CF_ORIGINATING);
 
-				switch_core_session_rwunlock(originate_status[i].peer_session);
+				peer_session = originate_status[i].peer_session;
+				originate_status[i].peer_session = NULL;
+				originate_status[i].peer_channel = NULL;
+				switch_core_session_rwunlock(peer_session);
 			}
 
 			if (status == SWITCH_STATUS_SUCCESS || oglobals.idx == IDX_XFER) {
