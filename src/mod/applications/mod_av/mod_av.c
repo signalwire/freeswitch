@@ -255,6 +255,7 @@ static void buffer_h264_nalu(h264_codec_context_t *context, switch_frame_t *fram
 
 	if (frame->m) {
 		switch_buffer_write(buffer, ff_input_buffer_padding, sizeof(ff_input_buffer_padding));
+		context->nalu_28_start = 0;
 	}
 }
 
@@ -717,6 +718,7 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 		}
 
 		switch_buffer_zero(context->nalu_buffer);
+		context->nalu_28_start = 0;
 		//switch_set_flag(frame, SFF_USE_VIDEO_TIMESTAMP);
 		return SWITCH_STATUS_SUCCESS;
 	}

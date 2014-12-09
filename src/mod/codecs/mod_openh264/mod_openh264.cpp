@@ -34,7 +34,7 @@
 
 #define EPSN (0.000001f) // (1e-6)	// desired float precision
 #define PESN (0.000001f) // (1e-6)	// desired float precision
-#define MT_ENABLED
+//#define MT_ENABLED
 
 #include "codec_api.h"
 //#include "inc/logging.h"     // for debug
@@ -76,7 +76,7 @@ int FillSpecificParameters(SEncParamExt& param) {
 	/* Test for temporal, spatial, SNR scalability */
 	param.iPicWidth		        = 1280;		 // width of picture in samples
 	param.iPicHeight	        = 720;		 // height of picture in samples
-	param.iTargetBitrate        = 1280 * 720 * 8; // target bitrate desired
+	param.iTargetBitrate        = 1250000;//1280 * 720 * 8; // target bitrate desired
 	param.iRCMode               = RC_QUALITY_MODE;         //  rc mode control
 	param.iTemporalLayerNum     = 1;         // layer number at temporal level
 	param.iSpatialLayerNum      = 1;         // layer number at spatial level
@@ -104,8 +104,8 @@ int FillSpecificParameters(SEncParamExt& param) {
 	param.sSpatialLayers[iIndexLayer].iVideoHeight	= 720;
 	param.sSpatialLayers[iIndexLayer].fFrameRate	= (double) (FPS * 1.0f);
 	// param.sSpatialLayers[iIndexLayer].iQualityLayerNum = 1;
-	param.sSpatialLayers[iIndexLayer].iSpatialBitrate  = 1250000;//1280 * 720 * 8;
-	//param.sSpatialLayers[iIndexLayer].iMaxSpatialBitrate  = 1250000;
+	param.sSpatialLayers[iIndexLayer].iSpatialBitrate  = param.iTargetBitrate;
+	//param.sSpatialLayers[iIndexLayer].iMaxSpatialBitrate  = param.iTargetBitrate;
 	//param.sSpatialLayers[iIndexLayer].uiLevelIdc = LEVEL_1_3;
 	param.sSpatialLayers[iIndexLayer].uiProfileIdc = PRO_BASELINE;
 
@@ -163,15 +163,19 @@ static switch_size_t buffer_h264_nalu(h264_codec_context_t *context, switch_fram
 	nalu_type = nalu_hdr & 0x1f;
 
 	if (!context->got_sps && nalu_type != 7) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Waiting SPS/PPS\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Waiting SPS/PPS, Got %d\n", nalu_type);
 		return 0;
 	}
 
-	if (!context->got_sps) context->got_sps = 1;
+	if (!context->got_sps) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found SPS/PPS\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "=========================================================================================\n");
+		context->got_sps = 1;
+	}
 
 	/* hack for phones sending sps/pps with frame->m = 1 such as grandstream */
 	if ((nalu_type == 7 || nalu_type == 8) && frame->m) frame->m = SWITCH_FALSE;
-
+	
 	if (nalu_type == 28) { // 0x1c FU-A
 		nalu_type = *(data + 1) & 0x1f;
 
@@ -190,6 +194,8 @@ static switch_size_t buffer_h264_nalu(h264_codec_context_t *context, switch_fram
 		size = switch_buffer_write(buffer, frame->data, frame->datalen);
 		context->nalu_28_start = 0;
 	}
+
+	if (frame->m) context->nalu_28_start = 0;
 
 #ifdef DEBUG_H264
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ts: %ld len: %4d %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x mark=%d size=%" SWITCH_SIZE_T_FMT "\n",
@@ -396,7 +402,7 @@ static switch_status_t init_encoder(h264_codec_context_t *context, uint32_t widt
 
 	context->encoder_params.iPicWidth = width;
 	context->encoder_params.iPicHeight = height;
-
+	//context->encoder_params.iTargetBitrate = width * height * 8;
 	for (int i=0; i<context->encoder_params.iSpatialLayerNum; i++) {
 		context->encoder_params.sSpatialLayers[i].iVideoWidth = width;
 		context->encoder_params.sSpatialLayers[i].iVideoHeight = height;
@@ -495,7 +501,7 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 
 	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "len: %d ts: %u mark:%d\n", frame->datalen, ntohl(frame->timestamp), frame->m);
 
-	if (0 && context->last_received_timestamp && context->last_received_timestamp != frame->timestamp &&
+	if (context->last_received_timestamp && context->last_received_timestamp != frame->timestamp &&
 		(!frame->m) && (!context->last_received_complete_picture)) {
 		// possible packet loss
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Packet Loss, skip privousely received packets\n");
@@ -561,6 +567,7 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 		}
 		//switch_set_flag(frame, SFF_USE_VIDEO_TIMESTAMP);
 		switch_buffer_zero(context->nalu_buffer);
+		context->nalu_28_start = 0;
 		status = SWITCH_STATUS_SUCCESS;
 	}
 
@@ -573,6 +580,8 @@ end:
 	if (status == SWITCH_STATUS_RESTART) {
 		context->got_sps = 0;
 		switch_buffer_zero(context->nalu_buffer);
+		context->nalu_28_start = 0;
+
 #if 0
 		/* re-initialize decoder, trying to recover from really bad H264 bit streams */
 		if (context->decoder->Initialize(&context->decoder_params)) {
