@@ -3151,7 +3151,7 @@ static void check_ice(switch_media_handle_t *smh, switch_media_type_t type, sdp_
 					if (interval < 100 || interval > 500000) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_ERROR,
 										  "Invalid rtcp interval spec [%d] must be between 100 and 500000\n", interval);
-						interval = 10000;
+						interval = 5000;
 					}
 
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(smh->session), SWITCH_LOG_INFO, "Activating %s RTCP PORT %d\n", type2str(type), remote_rtcp_port);
@@ -3205,8 +3205,8 @@ SWITCH_DECLARE(void) switch_core_session_set_ice(switch_core_session_t *session)
 	switch_channel_set_flag(session->channel, CF_VERBOSE_SDP);
 	switch_channel_set_flag(session->channel, CF_WEBRTC);
 	switch_channel_set_flag(session->channel, CF_ICE);
-	smh->mparams->rtcp_audio_interval_msec = "10000";
-	smh->mparams->rtcp_video_interval_msec = "10000";
+	smh->mparams->rtcp_audio_interval_msec = "5000";
+	smh->mparams->rtcp_video_interval_msec = "1000";
 
 }
 
@@ -4126,13 +4126,13 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 								v_engine->nack++;
 							}
 							
-							smh->mparams->rtcp_video_interval_msec = "10000";
+							smh->mparams->rtcp_video_interval_msec = "1000";
 						}
 					} else if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value && !strcmp(attr->a_value, "1")) {
 						switch_channel_set_variable(session->channel, "rtp_remote_video_rtcp_port", attr->a_value);
 						v_engine->remote_rtcp_port = (switch_port_t)atoi(attr->a_value);
 						if (!smh->mparams->rtcp_video_interval_msec) {
-							smh->mparams->rtcp_video_interval_msec = "5000";
+							smh->mparams->rtcp_video_interval_msec = "1000";
 						}
 					} else if (!got_video_crypto && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) {
 						int crypto_tag;
@@ -5573,7 +5573,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				if (interval < 100 || interval > 500000) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
 									  "Invalid rtcp interval spec [%d] must be between 100 and 500000\n", interval);
-					interval = 10000;
+					interval = 5000;
 				}
 
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating RTCP PORT %d\n", remote_rtcp_port);
@@ -5945,9 +5945,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 						if (interval < 100 || interval > 500000) {
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR,
 											  "Invalid rtcp interval spec [%d] must be between 100 and 500000\n", interval);
+							interval = 5000;
 						}
-						interval = 10000;
-						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating VIDEO RTCP PORT %d mux %d\n", remote_port, v_engine->rtcp_mux);
+						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "Activating VIDEO RTCP PORT %d interval %d mux %d\n", remote_port, interval, v_engine->rtcp_mux);
 						switch_rtp_activate_rtcp(v_engine->rtp_session, interval, remote_port, v_engine->rtcp_mux > 0);
 							
 					}
@@ -6550,7 +6550,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			switch_channel_set_flag(session->channel, CF_WEBRTC);
 			switch_channel_set_flag(session->channel, CF_ICE);
 			smh->mparams->rtcp_audio_interval_msec = "5000";
-			smh->mparams->rtcp_video_interval_msec = "5000";
+			smh->mparams->rtcp_video_interval_msec = "1000";
 		}
 
 		if ( switch_rtp_has_dtls() && dtls_ok(session)) {
