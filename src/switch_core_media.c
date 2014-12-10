@@ -6046,6 +6046,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
  end:
 
+
 	switch_channel_clear_flag(session->channel, CF_REINVITE);
 
 	switch_core_recovery_track(session);
@@ -8009,6 +8010,48 @@ SWITCH_DECLARE(void) switch_core_media_hard_mute(switch_core_session_t *session,
 	switch_core_session_receive_message(session, &msg);
 }
 
+static int check_engine(switch_rtp_engine_t *engine)
+{
+	dtls_state_t dtls_state = switch_rtp_dtls_state(engine->rtp_session, DTLS_TYPE_RTP);
+	int flags = 0;
+	switch_status_t status;
+	
+	if (dtls_state == DS_OFF || dtls_state == DS_READY || dtls_state >= DS_FAIL) return 0;
+
+	status = switch_rtp_zerocopy_read_frame(engine->rtp_session, &engine->read_frame, flags);
+	
+	if (!SWITCH_READ_ACCEPTABLE(status)) {
+		return 0;
+	}
+
+	return 1;
+}
+
+static void check_dtls(switch_core_session_t *session)
+{
+	switch_media_handle_t *smh;
+	switch_rtp_engine_t *a_engine, *v_engine;
+	int audio_checking = 0, video_checking = 0;
+
+	switch_assert(session);
+
+	if (!(smh = session->media_handle)) {
+		return;
+	}
+
+	if (switch_channel_down(session->channel)) {
+		return;
+	}
+
+	a_engine = &smh->engines[SWITCH_MEDIA_TYPE_AUDIO];
+	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
+
+	do {
+		if (a_engine->rtp_session) audio_checking = check_engine(a_engine);
+		if (v_engine->rtp_session) check_engine(v_engine);
+	} while (switch_channel_ready(session->channel) && (audio_checking || video_checking));
+}
+
 
 //?
 SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
@@ -8040,6 +8083,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 		}
 		break;
 
+	case SWITCH_MESSAGE_INDICATE_ANSWER:
+	case SWITCH_MESSAGE_INDICATE_PROGRESS:
+		{
+			check_dtls(session);
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
 		{
 			if (v_engine->rtp_session) {

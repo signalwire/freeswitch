@@ -162,6 +162,7 @@ typedef enum {
 } dtls_type_t;
 
 typedef enum {
+	DS_OFF,
 	DS_HANDSHAKE,
 	DS_SETUP,
 	DS_READY,
