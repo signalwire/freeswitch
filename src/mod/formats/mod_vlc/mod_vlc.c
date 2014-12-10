@@ -618,7 +618,7 @@ SWITCH_STANDARD_APP(play_video_function)
 
 	switch_buffer_create_dynamic(&(context->audio_buffer), VLC_BUFFER_SIZE, VLC_BUFFER_SIZE * 8, 0);
 
-	switch_channel_answer(channel);
+	switch_channel_pre_answer(channel);
 	switch_core_session_get_read_impl(session, &read_impl);
 	switch_core_session_receive_message(session, &msg);
 
