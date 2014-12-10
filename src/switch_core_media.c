@@ -4180,11 +4180,6 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						vmatch = strcasecmp(rm_encoding, imp->iananame) ? 0 : 1;
 					}
 
-					//DFF hack out packetization mode 1 need infrastructure here
-					if (switch_stristr("packetization-mode=1", map->rm_fmtp)) {
-						vmatch = 0;
-					}
-
 					if (vmatch && (map->rm_rate == imp->samples_per_second)) {
 						matches[m_idx].imp = imp;
 						matches[m_idx].map = map;
@@ -9237,6 +9232,7 @@ SWITCH_DECLARE (void) switch_core_media_recover_session(switch_core_session_t *s
 
 		v_engine->cur_payload_map->rm_encoding = (char *) switch_channel_get_variable(session->channel, "rtp_use_video_codec_name");
 		v_engine->cur_payload_map->rm_fmtp = (char *) switch_channel_get_variable(session->channel, "rtp_use_video_codec_fmtp");
+		v_engine->codec_negotiated = 1;
 
 		ip = switch_channel_get_variable(session->channel, SWITCH_LOCAL_VIDEO_IP_VARIABLE);
 		port = switch_channel_get_variable(session->channel, SWITCH_LOCAL_VIDEO_PORT_VARIABLE);
