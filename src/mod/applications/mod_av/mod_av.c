@@ -235,9 +235,25 @@ static void buffer_h264_nalu(h264_codec_context_t *context, switch_frame_t *fram
 	if ((nalu_type == 7 || nalu_type == 8) && frame->m) frame->m = SWITCH_FALSE;
 
 	if (nalu_type == 28) { // 0x1c FU-A
+		int start = *(data + 1) & 0x80;
+		int end = *(data + 1) & 0x40;
+
 		nalu_type = *(data + 1) & 0x1f;
 
-		if (context->nalu_28_start == 0) {
+		if (start && end) return;
+
+		if (start) {
+			if (context->nalu_28_start) {
+				context->nalu_28_start = 0;
+				switch_buffer_zero(buffer);
+			}
+		} else if (end) {
+			context->nalu_28_start = 0;
+		} else if (!context->nalu_28_start) {
+			return;
+		}
+
+		if (start) {
 			uint8_t nalu_idc = (nalu_hdr & 0x60) >> 5;
 			nalu_type |= (nalu_idc << 5);
 
