@@ -270,7 +270,7 @@ static int dtls_state_ready(switch_rtp_t *rtp_session, switch_dtls_t *dtls);
 static int dtls_state_setup(switch_rtp_t *rtp_session, switch_dtls_t *dtls);
 static int dtls_state_fail(switch_rtp_t *rtp_session, switch_dtls_t *dtls);
 
-dtls_state_handler_t dtls_states[DS_INVALID] = {dtls_state_handshake, dtls_state_setup, dtls_state_ready, dtls_state_fail};
+dtls_state_handler_t dtls_states[DS_INVALID] = {NULL, dtls_state_handshake, dtls_state_setup, dtls_state_ready, dtls_state_fail};
 
 typedef struct ts_normalize_s {
 	uint32_t last_ssrc;
@@ -2850,7 +2850,9 @@ static int do_dtls(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "%s DTLS packet read err %d\n", rtp_type(rtp_session), ret);
 	}
 
-	r = dtls_states[dtls->state](rtp_session, dtls);
+	if (dtls_states[dtls->state]) {
+		r = dtls_states[dtls->state](rtp_session, dtls);
+	}
 
 	if ((len = BIO_read(dtls->write_bio, buf, sizeof(buf))) > 0) {
 		bytes = len;
@@ -2902,10 +2904,27 @@ SWITCH_DECLARE(int) switch_rtp_has_dtls(void) {
 #endif
 }
 
+SWITCH_DECLARE(dtls_state_t) switch_rtp_dtls_state(switch_rtp_t *rtp_session, dtls_type_t type)
+{
+	if (!rtp_session || (!rtp_session->dtls && !rtp_session->rtcp_dtls)) {
+		return DS_OFF;
+	}
+
+	if ((type == DTLS_TYPE_RTP) && rtp_session->dtls) {
+		return rtp_session->dtls->state;
+	}
+
+	if ((type == DTLS_TYPE_RTCP) && rtp_session->rtcp_dtls) {
+		return rtp_session->rtcp_dtls->state;
+	}
+
+	return DS_OFF;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_rtp_del_dtls(switch_rtp_t *rtp_session, dtls_type_t type)
 {
 
-	if (!rtp_session->dtls && !rtp_session->rtcp_dtls) {
+	if (!rtp_session || (!rtp_session->dtls && !rtp_session->rtcp_dtls)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -3105,6 +3124,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 	} else {
 		SSL_set_connect_state(dtls->ssl);
 	}
+
+	dtls_set_state(dtls, DS_HANDSHAKE);
 
 	rtp_session->flags[SWITCH_RTP_FLAG_VIDEO_BREAK] = 1;
 	switch_rtp_break(rtp_session);
@@ -4494,7 +4515,6 @@ SWITCH_DECLARE(void) rtp_flush_read_buffer(switch_rtp_t *rtp_session, switch_rtp
 {
 
 	if (rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] ||
-		rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] ||
 		rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
 		return;
 	}
