@@ -167,6 +167,8 @@ static switch_size_t buffer_h264_nalu(h264_codec_context_t *context, switch_fram
 		return 0;
 	}
 
+	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "XXX GOT %d\n", nalu_type);
+
 	if (!context->got_sps) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found SPS/PPS\n");
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "=========================================================================================\n");
@@ -177,12 +179,31 @@ static switch_size_t buffer_h264_nalu(h264_codec_context_t *context, switch_fram
 	if ((nalu_type == 7 || nalu_type == 8) && frame->m) frame->m = SWITCH_FALSE;
 	
 	if (nalu_type == 28) { // 0x1c FU-A
+		int start = *(data + 1) & 0x80;
+		int end = *(data + 1) & 0x40;
+		
 		nalu_type = *(data + 1) & 0x1f;
 
-		if (context->nalu_28_start == 0) {
-			uint8_t nalu_idc = (nalu_hdr & 0x60) >> 5;
-			nalu_type |= (nalu_idc << 5);
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "WTF start:%d end:%d mark:%d\n", start, end, frame->m);
 
+		if (frame->m) end = 1;
+
+		if (start && end) return 1;
+
+		if (start) {
+			if (context->nalu_28_start) {
+				context->nalu_28_start = 0;
+				switch_buffer_zero(buffer);
+			}
+		} else if (end) {
+			context->nalu_28_start = 0;
+		} else if (!context->nalu_28_start) {
+			return 0;
+		}
+
+		if (start) {
+			//uint8_t nalu_idc = (nalu_hdr & 0x60) >> 5;
+			nalu_type |= (nalu_idc << 5);
 			size = switch_buffer_write(buffer, sync_bytes, sizeof(sync_bytes));
 			size = switch_buffer_write(buffer, &nalu_type, 1);
 			context->nalu_28_start = 1;
@@ -513,6 +534,10 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 
 	size = buffer_h264_nalu(context, frame);
 	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "READ buf:%ld got_key:%d st:%d m:%d size:%" SWITCH_SIZE_T_FMT "\n", size, context->got_sps, status, frame->m, size);
+
+	if (size == 1) {
+		switch_goto_status(SWITCH_STATUS_RESTART, end);
+	}
 
 	if (frame->m && size) {
 		int got_picture = 0;
