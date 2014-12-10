@@ -448,12 +448,14 @@ static char *setup_grammars_pocketsphinx(struct input_component *component, swit
 static char *setup_grammars_unimrcp(struct input_component *component, switch_core_session_t *session, iks *input, const struct xmpp_error **stanza_error, const char **error_detail)
 {
 	iks *grammar_tag;
+	switch_asr_handle_t *ah;
 	switch_stream_handle_t grammar_uri_list = { 0 };
 	SWITCH_STANDARD_STREAM(grammar_uri_list);
 
 	/* unlock handler mutex, otherwise deadlock will happen when switch_ivr_detect_speech_init adds a new media bug */
 	switch_mutex_unlock(component->handler->mutex);
-	if (switch_ivr_detect_speech_init(session, component->recognizer, "", NULL) != SWITCH_STATUS_SUCCESS) {
+	ah = switch_core_session_alloc(session, sizeof(*ah));
+	if (switch_ivr_detect_speech_init(session, component->recognizer, "", ah) != SWITCH_STATUS_SUCCESS) {
 		switch_mutex_lock(component->handler->mutex);
 		*stanza_error = STANZA_ERROR_INTERNAL_SERVER_ERROR;
 		*error_detail = "Failed to initialize recognizer";
@@ -461,37 +463,45 @@ static char *setup_grammars_unimrcp(struct input_component *component, switch_co
 	}
 	switch_mutex_lock(component->handler->mutex);
 
-	/* load unimrcp grammars and return uri-list */
-	grammar_uri_list.write_function(&grammar_uri_list, "{start-recognize=true,start-input-timers=%s,confidence-threshold=%f,sensitivity-level=%f",
-							component->start_timers ? "true" : "false",
-							component->min_confidence,
-							component->sensitivity);
+	/* handle input config */
+	switch_core_asr_text_param(ah, "start-input-timers", component->start_timers ? "true" : "false");
+	switch_core_asr_text_param(ah, "confidence-threshold", switch_core_sprintf(RAYO_POOL(component), "%f", component->min_confidence));
+	switch_core_asr_text_param(ah, "sensitivity-level", switch_core_sprintf(RAYO_POOL(component), "%f", component->sensitivity));
 	if (component->initial_timeout > 0) {
-		grammar_uri_list.write_function(&grammar_uri_list, ",no-input-timeout=%d",
-			component->initial_timeout);
+		switch_core_asr_text_param(ah, "no-input-timeout", switch_core_sprintf(RAYO_POOL(component), "%d", component->initial_timeout));
 	}
-
 	if (component->max_silence > 0) {
-		grammar_uri_list.write_function(&grammar_uri_list, ",speech-complete-timeout=%d,speech-incomplete-timeout=%d",
-			component->max_silence,
-			component->max_silence);
+		switch_core_asr_text_param(ah, "speech-complete-timeout", switch_core_sprintf(RAYO_POOL(component), "%d", component->max_silence));
+		switch_core_asr_text_param(ah, "speech-incomplete-timeout", switch_core_sprintf(RAYO_POOL(component), "%d", component->max_silence));
 	}
-
 	if (!zstr(component->language)) {
-		grammar_uri_list.write_function(&grammar_uri_list, ",speech-language=%s", component->language);
+		switch_core_asr_text_param(ah, "speech-language", component->language);
 	}
-
 	if (!strcmp(iks_find_attrib_soft(input, "mode"), "any") || !strcmp(iks_find_attrib_soft(input, "mode"), "dtmf")) {
 		/* set dtmf params */
 		if (component->inter_digit_timeout > 0) {
-			grammar_uri_list.write_function(&grammar_uri_list, ",dtmf-interdigit-timeout=%d", component->inter_digit_timeout);
+			switch_core_asr_text_param(ah, "dtmf-interdigit-timeout", switch_core_sprintf(RAYO_POOL(component), "%d", component->inter_digit_timeout));
 		}
 		if (component->term_digit) {
-			grammar_uri_list.write_function(&grammar_uri_list, ",dtmf-term-char=%c", component->term_digit);
+			switch_core_asr_text_param(ah, "dtmf-term-char", switch_core_sprintf(RAYO_POOL(component), "%c", component->term_digit));
 		}
 	}
-	grammar_uri_list.write_function(&grammar_uri_list, "}");
 
+	/* override input configs w/ custom headers */
+	{
+		iks *header = NULL;
+		for (header = iks_find(input, "header"); header; header = iks_next_tag(header)) {
+			if (!strcmp("header", iks_name(header))) {
+				const char *name = iks_find_attrib_soft(header, "name");
+				const char *value = iks_find_attrib_soft(header, "value");
+				if (!zstr(name) && !zstr(value)) {
+					switch_core_asr_text_param(ah, (char *)name, value);
+				}
+			}
+		}
+	}
+
+	switch_core_asr_text_param(ah, "start-recognize", "false");
 	for (grammar_tag = iks_find(input, "grammar"); grammar_tag; grammar_tag = iks_next_tag(grammar_tag)) {
 		const char *grammar_name;
 		iks *grammar_cdata;
@@ -511,7 +521,7 @@ static char *setup_grammars_unimrcp(struct input_component *component, switch_co
 		}
 
 		/* load the grammar */
-		grammar = switch_core_sprintf(RAYO_POOL(component), "{start-recognize=false}inline:%s", iks_cdata(grammar_cdata));
+		grammar = switch_core_sprintf(RAYO_POOL(component), "inline:%s", iks_cdata(grammar_cdata));
 		grammar_name = switch_core_sprintf(RAYO_POOL(component), "grammar-%d", rayo_actor_seq_next(RAYO_ACTOR(component)));
 		/* unlock handler mutex, otherwise deadlock will happen if switch_ivr_detect_speech_load_grammar removes the media bug */
 		switch_mutex_unlock(component->handler->mutex);
@@ -527,6 +537,7 @@ static char *setup_grammars_unimrcp(struct input_component *component, switch_co
 		/* add grammar to uri-list */
 		grammar_uri_list.write_function(&grammar_uri_list, "session:%s\r\n", grammar_name);
 	}
+	switch_core_asr_text_param(ah, "start-recognize", "true");
 
 	return (char *)grammar_uri_list.data;
 }
