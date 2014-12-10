@@ -51,6 +51,8 @@ struct output_component {
 	int stop;
 	/** output renderer to use */
 	const char *renderer;
+	/** optional headers to pass to renderer */
+	const char *headers;
 };
 
 #define OUTPUT_FINISH "finish", RAYO_OUTPUT_COMPLETE_NS
@@ -77,6 +79,28 @@ static struct rayo_component *create_output_component(struct rayo_actor *actor, 
 		output_component->max_time_ms = iks_find_int_attrib(output, "max-time");
 		output_component->start_paused = iks_find_bool_attrib(output, "start-paused");
 		output_component->renderer = switch_core_strdup(RAYO_POOL(output_component), iks_find_attrib_soft(output, "renderer"));
+		/* get custom headers */
+		{
+			switch_stream_handle_t headers = { 0 };
+			iks *header = NULL;
+			int first = 1;
+			SWITCH_STANDARD_STREAM(headers);
+			for (header = iks_find(output, "header"); header; header = iks_next_tag(header)) {
+				if (!strcmp("header", iks_name(header))) {
+					const char *name = iks_find_attrib_soft(header, "name");
+					const char *value = iks_find_attrib_soft(header, "value");
+					if (!zstr(name) && !zstr(value)) {
+						headers.write_function(&headers, "%s%s=%s", first ? "{" : ",", name, value);
+						first = 0;
+					}
+				}
+			}
+			if (headers.data) {
+				headers.write_function(&headers, "}");
+				output_component->headers = switch_core_strdup(RAYO_POOL(output_component), (char *)headers.data);
+				free(headers.data);
+			}
+		}
 	} else {
 		switch_core_destroy_memory_pool(&pool);
 	}
@@ -438,7 +462,12 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 				context->ssml = switch_mprintf("ssml://%s", ssml_str);
 			} else {
 				/* renderer will parse the SSML */
-				context->ssml = switch_mprintf("tts://%s||%s", output->renderer, ssml_str);
+				if (!zstr(output->headers) && !strncmp("unimrcp", output->renderer, 7)) {
+					/* pass MRCP headers */
+					context->ssml = switch_mprintf("tts://%s||%s%s", output->renderer, output->headers, ssml_str);
+				} else {
+					context->ssml = switch_mprintf("tts://%s||%s", output->renderer, ssml_str);
+				}
 			}
 			iks_free(ssml_str);
 		} else if (iks_has_children(context->cur_doc)) {
@@ -457,7 +486,12 @@ static switch_status_t next_file(switch_file_handle_t *handle)
 				context->ssml = switch_mprintf("ssml://%s", ssml_str);
 			} else {
 				/* renderer will parse the SSML */
-				context->ssml = switch_mprintf("tts://%s||%s", output->renderer, ssml_str);
+				if (!zstr(output->headers) && !strncmp("unimrcp", output->renderer, 7)) {
+					/* pass MRCP headers */
+					context->ssml = switch_mprintf("tts://%s||%s%s", output->renderer, output->headers, ssml_str);
+				} else {
+					context->ssml = switch_mprintf("tts://%s||%s", output->renderer, ssml_str);
+				}
 			}
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Missing <speak>\n");
