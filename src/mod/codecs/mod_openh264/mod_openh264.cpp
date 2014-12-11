@@ -276,6 +276,12 @@ static switch_status_t nalu_slice(h264_codec_context_t *context, switch_frame_t 
 
 	switch_assert(nalu_len > 0);
 
+#ifdef MT_ENABLED
+	if (nalu_len > SLICE_SIZE) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "LARGE SLICE OVER MTU %d BYTES\n", nalu_len);
+	}
+#endif
+
 	if (nalu_len <= SLICE_SIZE) {
 		uint8_t nalu_type;
 
