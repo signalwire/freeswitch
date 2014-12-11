@@ -2676,7 +2676,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 }
 
 
-static const char *dtls_state_names_t[] = {"HANDSHAKE", "SETUP", "READY", "FAIL", "INVALID"};
+static const char *dtls_state_names_t[] = {"OFF", "HANDSHAKE", "SETUP", "READY", "FAIL", "INVALID"};
 static const char *dtls_state_names(dtls_state_t s)
 {
 	if (s > DS_INVALID) {
@@ -2766,7 +2766,6 @@ static int dtls_state_ready(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 	if (dtls->new_state) {
 		if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO]) {
 			switch_core_session_t *other_session;
-			rtp_session->fir_count++;
 			
 			if (rtp_session->session && switch_core_session_get_partner(rtp_session->session, &other_session) == SWITCH_STATUS_SUCCESS) {
 				switch_core_session_request_video_refresh(other_session);
