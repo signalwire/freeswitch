@@ -3210,6 +3210,10 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	check_ice(smh, SWITCH_MEDIA_TYPE_AUDIO, sdp, NULL);
 	check_ice(smh, SWITCH_MEDIA_TYPE_VIDEO, sdp, NULL);
 
+	if ((sdp->sdp_connection && sdp->sdp_connection->c_address && !strcmp(sdp->sdp_connection->c_address, "0.0.0.0"))) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "RFC2543 from March 1999 called; They want their 0.0.0.0 hold method back.....\n");
+		sendonly = 2;			/* global sendonly always wins */
+	}
 
 	for (m = sdp->sdp_media; m; m = m->m_next) {
 		sdp_connection_t *connection;
@@ -3360,11 +3364,13 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			sdp_rtpmap_t *map;
 			int ice = 0;
 
-			if ((m->m_mode == sdp_sendonly || m->m_mode == sdp_inactive || 
-				 (m->m_connections && m->m_connections->c_address && !strcmp(m->m_connections->c_address, "0.0.0.0")))) {
-				sendonly = 2;			/* global sendonly always wins */
+			if (!sendonly && (m->m_mode == sdp_sendonly || m->m_mode == sdp_inactive)) {
+				sendonly = 1;
 			}
 
+			if (!sendonly && m->m_connections && m->m_connections->c_address && !strcmp(m->m_connections->c_address, "0.0.0.0")) {
+				sendonly = 1;
+			}
 
 			for (attr = sdp->sdp_attributes; attr; attr = attr->a_next) {
 				if (zstr(attr->a_name)) {
