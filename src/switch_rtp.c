@@ -3973,6 +3973,11 @@ SWITCH_DECLARE(void) switch_rtp_flush(switch_rtp_t *rtp_session)
 
 SWITCH_DECLARE(void) switch_rtp_video_refresh(switch_rtp_t *rtp_session)
 {
+
+	if (!rtp_write_ready(rtp_session, 0, __LINE__)) {
+		return;
+	}
+
 	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && 
 		(rtp_session->ice.ice_user || rtp_session->flags[SWITCH_RTP_FLAG_FIR])) {
 		rtp_session->fir_count++;
@@ -3982,6 +3987,10 @@ SWITCH_DECLARE(void) switch_rtp_video_refresh(switch_rtp_t *rtp_session)
 
 SWITCH_DECLARE(void) switch_rtp_video_loss(switch_rtp_t *rtp_session)
 {
+	if (!rtp_write_ready(rtp_session, 0, __LINE__)) {
+		return;
+	}
+
 	if (rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && 
 		(rtp_session->ice.ice_user || rtp_session->flags[SWITCH_RTP_FLAG_PLI])) {
 		rtp_session->pli_count++;
@@ -6361,6 +6370,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_sessi
 
 static int rtp_write_ready(switch_rtp_t *rtp_session, uint32_t bytes, int line)
 {
+	if (!rtp_session) return 0;
+	
 	if (rtp_session->ice.ice_user && !(rtp_session->ice.rready && rtp_session->ice.ready)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Skip sending %s packet %ld bytes (ice not ready @ line %d!)\n", 
 						  rtp_type(rtp_session), (long)bytes, line);
