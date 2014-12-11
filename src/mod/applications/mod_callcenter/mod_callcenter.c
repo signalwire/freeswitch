@@ -2227,7 +2227,7 @@ static int members_callback(void *pArg, int argc, char **argv, char **columnName
 	} else {
 
 		if (!strcasecmp(queue->strategy, "longest-idle-agent")) {
-			sql_order_by = switch_mprintf("level, agents.last_offered_call, position");
+			sql_order_by = switch_mprintf("level, agents.last_bridge_end, position");
 		} else if (!strcasecmp(queue_strategy, "agent-with-least-talk-time")) {
 			sql_order_by = switch_mprintf("level, agents.talk_time, position");
 		} else if (!strcasecmp(queue_strategy, "agent-with-fewest-calls")) {
