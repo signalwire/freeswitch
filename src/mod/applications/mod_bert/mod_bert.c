@@ -297,6 +297,10 @@ SWITCH_STANDARD_APP(bert_test_function)
 					switch_channel_set_variable(channel, BERT_STATS_VAR_SYNC_LOST, "true");
 					if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, BERT_EVENT_LOST_SYNC) == SWITCH_STATUS_SUCCESS) {
 						switch_channel_event_set_basic_data(channel, event);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "sync_lost_percent", "%f", err);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "sync_lost_count", "%u", bert.stats_sync_lost_cnt);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "cng_count", "%u", bert.stats_cng_cnt);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "err_samples", "%u", bert.err_samples);
 						switch_event_fire(&event);
 					}
 					if (bert.hangup_on_error) {
