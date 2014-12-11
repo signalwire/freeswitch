@@ -3205,8 +3205,8 @@ SWITCH_DECLARE(void) switch_core_session_set_ice(switch_core_session_t *session)
 	switch_channel_set_flag(session->channel, CF_VERBOSE_SDP);
 	switch_channel_set_flag(session->channel, CF_WEBRTC);
 	switch_channel_set_flag(session->channel, CF_ICE);
-	smh->mparams->rtcp_audio_interval_msec = "5000";
-	smh->mparams->rtcp_video_interval_msec = "1000";
+	smh->mparams->rtcp_audio_interval_msec = SWITCH_RTCP_AUDIO_INTERVAL_MSEC;
+	smh->mparams->rtcp_video_interval_msec = SWITCH_RTCP_VIDEO_INTERVAL_MSEC;
 
 }
 
@@ -3643,7 +3643,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					switch_channel_set_variable(session->channel, "rtp_remote_audio_rtcp_port", attr->a_value);
 					a_engine->remote_rtcp_port = (switch_port_t)atoi(attr->a_value);
 					if (!smh->mparams->rtcp_audio_interval_msec) {
-						smh->mparams->rtcp_audio_interval_msec = "5000";
+						smh->mparams->rtcp_audio_interval_msec = SWITCH_RTCP_AUDIO_INTERVAL_MSEC;
 					}
 				} else if (!strcasecmp(attr->a_name, "ptime") && attr->a_value) {
 					ptime = atoi(attr->a_value);
@@ -4126,13 +4126,13 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 								v_engine->nack++;
 							}
 							
-							smh->mparams->rtcp_video_interval_msec = "1000";
+							smh->mparams->rtcp_video_interval_msec = SWITCH_RTCP_VIDEO_INTERVAL_MSEC;
 						}
 					} else if (!strcasecmp(attr->a_name, "rtcp") && attr->a_value && !strcmp(attr->a_value, "1")) {
 						switch_channel_set_variable(session->channel, "rtp_remote_video_rtcp_port", attr->a_value);
 						v_engine->remote_rtcp_port = (switch_port_t)atoi(attr->a_value);
 						if (!smh->mparams->rtcp_video_interval_msec) {
-							smh->mparams->rtcp_video_interval_msec = "1000";
+							smh->mparams->rtcp_video_interval_msec = SWITCH_RTCP_VIDEO_INTERVAL_MSEC;
 						}
 					} else if (!got_video_crypto && !strcasecmp(attr->a_name, "crypto") && !zstr(attr->a_value)) {
 						int crypto_tag;
@@ -6545,8 +6545,8 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 			switch_true(switch_channel_get_variable(session->channel, "media_webrtc"))) {
 			switch_channel_set_flag(session->channel, CF_WEBRTC);
 			switch_channel_set_flag(session->channel, CF_ICE);
-			smh->mparams->rtcp_audio_interval_msec = "5000";
-			smh->mparams->rtcp_video_interval_msec = "1000";
+			smh->mparams->rtcp_audio_interval_msec = SWITCH_RTCP_AUDIO_INTERVAL_MSEC;
+			smh->mparams->rtcp_video_interval_msec = SWITCH_RTCP_VIDEO_INTERVAL_MSEC;
 		}
 
 		if ( switch_rtp_has_dtls() && dtls_ok(session)) {
