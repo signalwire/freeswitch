@@ -2862,11 +2862,11 @@ static int list_result_callback(void *pArg, int argc, char **argv, char **column
 "\tcallcenter_config queue unload [queue_name] | \n" \
 "\tcallcenter_config queue reload [queue_name] | \n" \
 "\tcallcenter_config queue list | \n" \
-"\tcallcenter_config queue list agents [queue_name] [status] | \n" \
+"\tcallcenter_config queue list agents [queue_name] [status] [state] | \n" \
 "\tcallcenter_config queue list members [queue_name] | \n" \
 "\tcallcenter_config queue list tiers [queue_name] | \n" \
 "\tcallcenter_config queue count | \n" \
-"\tcallcenter_config queue count agents [queue_name] [status] | \n" \
+"\tcallcenter_config queue count agents [queue_name] [status] [state] | \n" \
 "\tcallcenter_config queue count members [queue_name] | \n" \
 "\tcallcenter_config queue count tiers [queue_name]"
 
