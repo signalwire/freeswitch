@@ -284,9 +284,9 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
   \return true or false depending on if there are any more attributes
 */
 
-#define switch_stun_packet_next_attribute(attribute, end) (attribute && (attribute = (switch_stun_packet_attribute_t *) (attribute->value +  switch_stun_attribute_padded_length(attribute))) && ((void *)attribute < end) && attribute->type && ((void *)(attribute +  switch_stun_attribute_padded_length(attribute)) < end))
+#define switch_stun_packet_next_attribute(attribute, end) (attribute && (attribute = (switch_stun_packet_attribute_t *) (attribute->value +  switch_stun_attribute_padded_length(attribute))) && ((void *)attribute < end) && attribute->type && (((switch_byte_t *)attribute +  switch_stun_attribute_padded_length(attribute)) < (switch_byte_t *)end))
 
-#define switch_stun_packet_next_attribute_hbo(attribute, end) (attribute && (attribute = (switch_stun_packet_attribute_t *) (attribute->value +  switch_stun_attribute_padded_length_hbo(attribute))) && ((void *)attribute < end) && attribute->type && ((void *)(attribute +  switch_stun_attribute_padded_length_hbo(attribute)) < end))
+#define switch_stun_packet_next_attribute_hbo(attribute, end) (attribute && (attribute = (switch_stun_packet_attribute_t *) (attribute->value +  switch_stun_attribute_padded_length_hbo(attribute))) && ((void *)attribute < end) && attribute->type && (((switch_byte_t *)attribute +  switch_stun_attribute_padded_length_hbo(attribute)) < (switch_byte_t *)end))
 
 /*!
   \brief Obtain the correct length in bytes of a stun packet

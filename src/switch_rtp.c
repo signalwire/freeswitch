@@ -221,6 +221,7 @@ struct switch_rtp_rfc2833_data {
 typedef struct {
 	char *ice_user;
 	char *user_ice;
+	char *luser_ice;
 	char *pass;
 	char *rpass;
 	switch_sockaddr_t *addr;
@@ -233,7 +234,7 @@ typedef struct {
 	uint8_t ready;
 	uint8_t rready;
 	int missed_count;
-	char last_sent_id[12];
+	char last_sent_id[13];
 } switch_rtp_ice_t;
 
 struct switch_rtp;
@@ -776,6 +777,14 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice)
 	return status;
 }
 
+int icecmp(const char *them, switch_rtp_ice_t *ice)
+{
+	if (strchr(them, ':')) {
+		return strcmp(them, ice->user_ice);
+	}
+
+	return strcmp(them, ice->luser_ice);
+}
 
 static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *data, switch_size_t len)
 {
@@ -827,9 +836,18 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 	rtp_session->last_stun = switch_micro_time_now();
 
 	switch_stun_packet_first_attribute(packet, attr);
-
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "STUN PACKET TYPE: %s\n", 
+					  switch_stun_value_to_name(SWITCH_STUN_TYPE_PACKET_TYPE, packet->header.type));
 	do {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "|---: STUN ATTR %s\n",
+						  switch_stun_value_to_name(SWITCH_STUN_TYPE_ATTRIBUTE, attr->type));
+
 		switch (attr->type) {
+		case SWITCH_STUN_ATTR_USE_CAND:
+			{
+				ice->rready = 1;
+			}
+			break;
 		case SWITCH_STUN_ATTR_ERROR_CODE:
 			{
 				switch_stun_error_code_t *err = (switch_stun_error_code_t *) attr->value;
@@ -859,18 +877,23 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 				char ip[16];
 				uint16_t port;
 				switch_stun_packet_attribute_get_mapped_address(attr, ip, &port);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "|------: %s:%d\n", ip, port);
 			}
 			break;
 		case SWITCH_STUN_ATTR_USERNAME:
 			if (attr->type) {
 				switch_stun_packet_attribute_get_username(attr, username, sizeof(username));
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "|------: %s\n", username);
 			}
 			break;
 			
 		case SWITCH_STUN_ATTR_PRIORITY:
 			{
+				uint32_t priority = 0;
 				pri = (uint32_t *) attr->value;
-				ok = *pri == ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].priority;
+				priority = ntohl(*pri);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG1, "|------: %u\n", priority);
+				ok = priority == ice->ice_params->cands[ice->ice_params->chosen[ice->proto]][ice->proto].priority;
 			}
 			break;
 		}
@@ -878,18 +901,21 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		if (!switch_stun_packet_next_attribute(attr, end_buf)) {
 			break;
 		}
+
 		xlen += 4 + switch_stun_attribute_padded_length(attr);
 	} while (xlen <= packet->header.length);
 
 	if ((ice->type & ICE_GOOGLE_JINGLE) && ok) {
 		ok = !strcmp(ice->user_ice, username);
 	}
+
+	if (packet->header.type != SWITCH_STUN_BINDING_REQUEST && packet->header.type != SWITCH_STUN_BINDING_RESPONSE) {
+		goto end;
+	}
 	
 	if ((ice->type & ICE_VANILLA)) {
 		char foo1[13] = "", foo2[13] = "";
-		if (!ok) ok = !strncmp(packet->header.id, ice->last_sent_id, 12);
-
-
+		if (!ok) ok = !memcmp(packet->header.id, ice->last_sent_id, 12);
 
 		if (packet->header.type == SWITCH_STUN_BINDING_RESPONSE) {
 			ok = 1;
@@ -905,8 +931,8 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 			}
 		}
 
-		strncpy(foo1, packet->header.id, 12);
-		strncpy(foo2, ice->last_sent_id, 12);
+		memcpy(foo1, packet->header.id, 12);
+		memcpy(foo2, ice->last_sent_id, 12);
 
 		if (!ok && ice == &rtp_session->ice && rtp_session->rtcp_ice.ice_params && pri && 
 			*pri == rtp_session->rtcp_ice.ice_params->cands[rtp_session->rtcp_ice.ice_params->chosen[1]][1].priority) {
@@ -915,9 +941,9 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 		}
 
 		if (!zstr(username)) {
-			if (!strcmp(username, ice->user_ice)) {
+			if (!icecmp(username, ice)) {
 				ok = 1;
-			} else if(!zstr(rtp_session->rtcp_ice.user_ice) && !strcmp(username, rtp_session->rtcp_ice.user_ice)) {
+			} else if(!zstr(rtp_session->rtcp_ice.user_ice) && !icecmp(username, &rtp_session->rtcp_ice)) {
 				ice = &rtp_session->rtcp_ice;
 				ok = 1;
 			}
@@ -3905,6 +3931,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 {
 	char ice_user[80];
 	char user_ice[80];
+	char luser_ice[80];
 	switch_rtp_ice_t *ice;
 	char *host = NULL;
 	switch_port_t port = 0;
@@ -3922,6 +3949,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 	if ((type & ICE_VANILLA)) {
 		switch_snprintf(ice_user, sizeof(ice_user), "%s:%s", login, rlogin);
 		switch_snprintf(user_ice, sizeof(user_ice), "%s:%s", rlogin, login);
+		switch_snprintf(luser_ice, sizeof(user_ice), "%s%s", rlogin, login);
 		ice->ready = ice->rready = 0;
 	} else {
 		switch_snprintf(ice_user, sizeof(ice_user), "%s%s", login, rlogin);
@@ -3931,6 +3959,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 
 	ice->ice_user = switch_core_strdup(rtp_session->pool, ice_user);
 	ice->user_ice = switch_core_strdup(rtp_session->pool, user_ice);
+	ice->luser_ice = switch_core_strdup(rtp_session->pool, luser_ice);
 	ice->type = type;
 	ice->ice_params = ice_params;
 	ice->pass = "";
