@@ -402,15 +402,20 @@ static switch_status_t switch_opus_decode(switch_codec_t *codec,
 {
 	struct opus_context *context = codec->private_info;
 	int samples = 0;
-    
+    uint32_t frame_size;
+	uint32_t frame_samples;
+
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
+
+	frame_samples = *decoded_data_len / 2 / codec->implementation->number_of_channels;
+	frame_size = frame_samples - (frame_samples % (codec->implementation->actual_samples_per_second / 400));
 	
-	samples = opus_decode(context->decoder_object, (*flag & SFF_PLC) ? NULL : encoded_data, encoded_data_len, decoded_data, *decoded_data_len, 0);
+	samples = opus_decode(context->decoder_object, (*flag & SFF_PLC) ? NULL : encoded_data, encoded_data_len, decoded_data, frame_size, !!(*flag & SFF_PLC));
 
 	if (samples < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decoder Error: %s!\n", opus_strerror(samples));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Decoder Error: %s fs:%u plc:%d!\n", opus_strerror(samples), frame_size, !!(*flag & SFF_PLC));
 		return SWITCH_STATUS_GENERR;
 	}
 
