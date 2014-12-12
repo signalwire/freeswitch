@@ -384,7 +384,7 @@ static switch_status_t timer_generic_sync(switch_timer_t *timer)
 	int64_t elapsed = (now - timer->start);
 	
 	timer->tick = (elapsed / timer->interval) / 1000;
-	timer->samplecount = timer->tick * timer->samples;
+	timer->samplecount = (uint32_t)(timer->tick * timer->samples);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -717,7 +717,7 @@ static switch_status_t timer_init(switch_timer_t *timer)
 		TIMER_MATRIX[timer->interval].count++;
 		switch_mutex_unlock(globals.mutex);
 		timer->private_info = private_info;
-		private_info->start = private_info->reference = TIMER_MATRIX[timer->interval].tick;
+		private_info->start = (switch_size_t)(private_info->reference = TIMER_MATRIX[timer->interval].tick);
 		private_info->start -= 2; /* switch_core_timer_init sets samplecount to samples, this makes first next() step once */
 		private_info->roll = TIMER_MATRIX[timer->interval].roll;
 		private_info->ready = 1;
@@ -748,7 +748,7 @@ static switch_status_t timer_init(switch_timer_t *timer)
 
 #define check_roll() if (private_info->roll < TIMER_MATRIX[timer->interval].roll) {	\
 		private_info->roll++;											\
-		private_info->reference = private_info->start = TIMER_MATRIX[timer->interval].tick;	\
+		private_info->reference = (switch_size_t)(private_info->start = TIMER_MATRIX[timer->interval].tick);	\
 		private_info->start--; /* Must have a diff */					\
 	}																	\
 
@@ -809,7 +809,7 @@ static switch_status_t timer_sync(switch_timer_t *timer)
 	}
 
 	/* sync the clock */
-	private_info->reference = timer->tick = TIMER_MATRIX[timer->interval].tick;
+	private_info->reference = (switch_size_t)(timer->tick = TIMER_MATRIX[timer->interval].tick);
 
 	/* apply timestamp */
 	timer_step(timer);
@@ -847,7 +847,7 @@ static switch_status_t timer_next(switch_timer_t *timer)
 
 	/* sync up timer if it's not been called for a while otherwise it will return instantly several times until it catches up */
 	if (delta < -1) {
-		private_info->reference = timer->tick = TIMER_MATRIX[timer->interval].tick;
+		private_info->reference = (switch_size_t)(timer->tick = TIMER_MATRIX[timer->interval].tick);
 	}
 	timer_step(timer);
 
@@ -907,7 +907,7 @@ static switch_status_t timer_check(switch_timer_t *timer, switch_bool_t step)
 	timer->tick = TIMER_MATRIX[timer->interval].tick;
 
 	if (timer->tick < private_info->reference) {
-		timer->diff = private_info->reference - timer->tick;
+		timer->diff = (switch_size_t)(private_info->reference - timer->tick);
 	} else {
 		timer->diff = 0;
 	}
