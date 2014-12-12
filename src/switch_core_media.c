@@ -5106,6 +5106,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 			remote_port == a_engine->cur_payload_map->remote_sdp_port) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio params are unchanged for %s.\n",
 							  switch_channel_get_name(session->channel));
+			a_engine->cur_payload_map->negotiated = 1;
 			//XX
 			goto video;
 		} else {
@@ -5495,6 +5496,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 				if (remote_host && remote_port && !strcmp(remote_host, v_engine->cur_payload_map->remote_sdp_ip) && remote_port == v_engine->cur_payload_map->remote_sdp_port) {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Video params are unchanged for %s.\n",
 									  switch_channel_get_name(session->channel));
+					v_engine->cur_payload_map->negotiated = 1;
 					goto video_up;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Video params changed for %s from %s:%d to %s:%d\n",
