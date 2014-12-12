@@ -394,7 +394,7 @@ issize_t sip_header_field_e(char *b, isize_t bsiz, sip_header_t const *h, int fl
 char *sip_header_as_string(su_home_t *home, sip_header_t const *h)
 {
   ssize_t len;
-  char *rv, s[128];
+  char *rv, s[256];
 
   if (h == NULL)
     return NULL;
@@ -412,6 +412,7 @@ char *sip_header_as_string(su_home_t *home, sip_header_t const *h)
   for (rv = su_alloc(home, len);
        rv;
        rv = su_realloc(home, rv, len)) {
+	memset(rv,0,len);
     ssize_t n = sip_header_field_e(rv, len, h, 0);
     if (n > -1 && n + 1 <= len)
       break;
