@@ -717,7 +717,7 @@ static switch_status_t timer_init(switch_timer_t *timer)
 		TIMER_MATRIX[timer->interval].count++;
 		switch_mutex_unlock(globals.mutex);
 		timer->private_info = private_info;
-		private_info->start = (switch_size_t)(private_info->reference = TIMER_MATRIX[timer->interval].tick);
+		private_info->start = private_info->reference = (switch_size_t)TIMER_MATRIX[timer->interval].tick;
 		private_info->start -= 2; /* switch_core_timer_init sets samplecount to samples, this makes first next() step once */
 		private_info->roll = TIMER_MATRIX[timer->interval].roll;
 		private_info->ready = 1;
@@ -748,7 +748,7 @@ static switch_status_t timer_init(switch_timer_t *timer)
 
 #define check_roll() if (private_info->roll < TIMER_MATRIX[timer->interval].roll) {	\
 		private_info->roll++;											\
-		private_info->reference = (switch_size_t)(private_info->start = TIMER_MATRIX[timer->interval].tick);	\
+		private_info->reference = private_info->start = (switch_size_t)TIMER_MATRIX[timer->interval].tick;	\
 		private_info->start--; /* Must have a diff */					\
 	}																	\
 
