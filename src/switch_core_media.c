@@ -7363,6 +7363,7 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 	int bad = 0;
 	switch_media_handle_t *smh;
 	switch_rtp_engine_t *a_engine, *v_engine;
+	payload_map_t *pmap;
 
 	switch_assert(session);
 
@@ -7393,10 +7394,22 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 							  switch_channel_get_name(session->channel));
 			return;
 		}
-		a_engine->cur_payload_map->iananame = switch_core_session_strdup(session, "PROXY");
-		a_engine->cur_payload_map->rm_rate = 8000;
-		a_engine->cur_payload_map->adv_rm_rate = 8000;
-		a_engine->cur_payload_map->codec_ms = 20;
+
+		clear_pmaps(a_engine);
+		
+		pmap = switch_core_media_add_payload_map(session,
+												 SWITCH_MEDIA_TYPE_AUDIO,
+												 "PROXY",
+												 NULL,
+												 SDP_TYPE_RESPONSE,
+												 0,
+												 8000,
+												 8000,
+												 1,
+												 SWITCH_TRUE);
+
+		a_engine->cur_payload_map = pmap;
+
 	}
 
 	new_sdp = switch_core_session_alloc(session, len);
@@ -7539,10 +7552,19 @@ SWITCH_DECLARE(void) switch_core_media_patch_sdp(switch_core_session_t *session)
 		} else if (!strncmp("m=video ", p, 8) && *(p + 8) != '0') {
 			if (!has_video) {
 				switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_VIDEO, 1);
-				v_engine->cur_payload_map->rm_encoding = "PROXY-VID";
-				v_engine->cur_payload_map->rm_rate = 90000;
-				v_engine->cur_payload_map->adv_rm_rate = 90000;
-				v_engine->cur_payload_map->codec_ms = 0;
+				clear_pmaps(v_engine);
+				pmap = switch_core_media_add_payload_map(session,
+														 SWITCH_MEDIA_TYPE_AUDIO,
+														 "PROXY-VID",
+														 NULL,
+														 SDP_TYPE_RESPONSE,
+														 0,
+														 90000,
+														 90000,
+														 1,
+														 SWITCH_TRUE);
+				v_engine->cur_payload_map = pmap;
+
 				switch_snprintf(vport_buf, sizeof(vport_buf), "%u", v_engine->adv_sdp_port);
 				if (switch_channel_media_ready(session->channel) && !switch_rtp_ready(v_engine->rtp_session)) {
 					switch_channel_set_flag(session->channel, CF_VIDEO_POSSIBLE);
@@ -8630,6 +8652,7 @@ SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_
 	switch_rtp_engine_t *a_engine, *v_engine;
 	switch_media_handle_t *smh;
 	const char *r_sdp = NULL;
+	payload_map_t *pmap;
 
 	switch_assert(session);
 
@@ -8647,19 +8670,38 @@ SWITCH_DECLARE(void) switch_core_media_check_outgoing_proxy(switch_core_session_
 	v_engine = &smh->engines[SWITCH_MEDIA_TYPE_VIDEO];
 
 	switch_channel_set_flag(session->channel, CF_PROXY_MEDIA);
-	
-	a_engine->cur_payload_map->iananame = switch_core_session_strdup(session, "PROXY");
-	a_engine->cur_payload_map->rm_rate = 8000;
-	a_engine->cur_payload_map->adv_rm_rate = 8000;
 
-	a_engine->cur_payload_map->codec_ms = 20;
+	clear_pmaps(a_engine);
+	clear_pmaps(v_engine);
 	
+	pmap = switch_core_media_add_payload_map(session,
+											 SWITCH_MEDIA_TYPE_AUDIO,
+											 "PROXY",
+											 NULL,
+											 SDP_TYPE_RESPONSE,
+											 0,
+											 8000,
+											 8000,
+											 1,
+											 SWITCH_TRUE);
+
+	a_engine->cur_payload_map = pmap;
+
 	if (switch_stristr("m=video", r_sdp)) {
 		switch_core_media_choose_port(session, SWITCH_MEDIA_TYPE_VIDEO, 1);
-		v_engine->cur_payload_map->rm_encoding = "PROXY-VID";
-		v_engine->cur_payload_map->rm_rate = 90000;
-		v_engine->cur_payload_map->adv_rm_rate = 90000;
-		v_engine->cur_payload_map->codec_ms = 0;
+		pmap = switch_core_media_add_payload_map(session,
+												 SWITCH_MEDIA_TYPE_AUDIO,
+												 "PROXY-VID",
+												 NULL,
+												 SDP_TYPE_RESPONSE,
+												 0,
+												 90000,
+												 90000,
+												 1,
+												 SWITCH_TRUE);
+		
+		v_engine->cur_payload_map = pmap;
+
 		switch_channel_set_flag(session->channel, CF_VIDEO);
 		switch_channel_set_flag(session->channel, CF_VIDEO_POSSIBLE);
 	}
