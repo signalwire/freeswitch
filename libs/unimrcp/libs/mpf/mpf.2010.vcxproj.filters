@@ -104,7 +104,7 @@
     <ClCompile Include="src\mpf_termination_factory.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\mpf_timer_manager.c">
+    <ClCompile Include="src\mpf_engine_factory.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -227,9 +227,6 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\mpf_termination_factory.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="include\mpf_timer_manager.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\mpf_types.h">
