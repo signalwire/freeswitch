@@ -1893,13 +1893,13 @@ typedef enum {
 SWITCH_STANDARD_API(cond_function)
 {
 	int argc;
-	char *mydata = NULL, *argv[3];
+	char *mydata = NULL, *argv[2];
 	char *expr;
 	char *a, *b;
 	double a_f = 0.0, b_f = 0.0;
 	o_t o = O_NONE;
 	int is_true = 0;
-	char *p;
+	char *p = NULL;
 
 	if (!cmd) {
 		goto error;
@@ -1908,114 +1908,150 @@ SWITCH_STANDARD_API(cond_function)
 	mydata = strdup(cmd);
 	switch_assert(mydata);
 
-	if ((p = strchr(mydata, '?'))) {
-		*p = ':';
-	} else {
-		goto error;
-	}
-
-	argc = switch_separate_string(mydata, ':', argv, (sizeof(argv) / sizeof(argv[0])));
-
-	if (! (argc >= 2 && argc <= 3)) {
-		goto error;
-	}
-
-	a = argv[0];
-	while(*a == ' ' || *a == '\t') a++;
+	a = mydata;
 
 	if (*a == '\'') {
-		if ((expr = switch_find_end_paren(a, '\'', '\''))) {
-			a++;
-			*expr++ = '\0';
-		} else {
-			goto error;
+		for (expr = ++a; expr && *expr; expr++) {
+			if (*expr == '\\') {
+				if (expr + 1 && (*(expr + 1) == '\\' || *(expr + 1) == '\'')) {
+					expr++;
+				}
+			} else if (*expr == '\'') {
+				break;
+			}
+		}
+		if (!expr) {
+			stream->write_function(stream, "-ERR while looking for closing quote near %s \n", a);
+			goto end;
+		}
+		*expr++ = '\0';
+
+		if (expr && *expr != ' ' && *expr != '\t') {
+			stream->write_function(stream, "-ERR, Syntax error near  %s \n", expr);
+			goto end;
 		}
 	} else {
 		if ((expr = strchr(a, ' '))) {
 			*expr++ = '\0';
 		} else {
-			expr = a;
+			stream->write_function(stream, "-ERR, Syntax error near  %s \n", a);
+			goto end;
 		}
 	}
 
-	if (strspn(a, "!<>=")) {
-		expr = a;
+	while (expr && (*expr == ' ' || *expr == '\t')) expr++;
+
+	while (expr && *expr) {
+		switch (*expr) {
+			case '!':
+			case '<':
+			case '>':
+			case '=':
+				goto operator;
+			default:
+				expr++;
+				break;
+		}
 	}
 
-	if (expr == a) {
-		a = "";
-	}
+operator:
 
-	while (*expr == ' ') expr++;
-
-	while(expr && *expr) {
-		switch(*expr) {
+	switch (*expr) {
 		case '!':
-		case '<':
-		case '>':
-		case '=':
-		goto done;
-		default:
-			expr++;
+			*expr++ = '\0';
+			if (*expr == '=') {
+				o = O_NE;
+				*expr++ = '\0';
+			}
 			break;
-		}
+
+		case '>':
+			*expr++ = '\0';
+			if (*expr == '=') {
+				o = O_GE;
+				*expr++ = '\0';
+			} else {
+				o = O_GT;
+			}
+			break;
+
+		case '<':
+			*expr++ = '\0';
+			if (*expr == '=') {
+				o = O_LE;
+				*expr++ = '\0';
+			} else {
+				o = O_LT;
+			}
+			break;
+
+		case '=':
+			*expr++ = '\0';
+			if (*expr == '=') {
+				o = O_EQ;
+				*expr++ = '\0';
+			}
+			break;
+
+		default:
+			stream->write_function(stream, "-ERR, Syntax error near  %s  invalid conditional operator.\n", expr);
+			goto end;
 	}
 
- done:
-
-	switch(*expr) {
-	case '!':
-		*expr++ = '\0';
-		if (*expr == '=') {
-			o = O_NE;
-			*expr++ = '\0';
-		}
-		break;
-
-	case '>':
-		*expr++ = '\0';
-		if (*expr == '=') {
-			o = O_GE;
-			*expr++ = '\0';
-		} else {
-			o = O_GT;
-		}
-		break;
-
-	case '<':
-		*expr++ = '\0';
-		if (*expr == '=') {
-			o = O_LE;
-			*expr++ = '\0';
-		} else {
-			o = O_LT;
-		}
-		break;
-
-	case '=':
-		*expr++ = '\0';
-		if (*expr == '=') {
-			o = O_EQ;
-			*expr++ = '\0';
-		}
-		break;
-
-	default:
-		goto error;
-	}
-
-	
 	if (o) {
 		char *s_a = NULL, *s_b = NULL;
 		int a_is_num, b_is_num;
 
 		expr++;
+		while (expr && (*expr == ' ' || *expr == '\t')) expr++;
+
 		b = expr;
+		if (b && *b == '\'') {
+			for (expr = ++b; expr && *expr; expr++) {
+			if (*expr == '\\') {
+				if (expr + 1 && (*(expr + 1) == '\\' || *(expr + 1) == '\'')) {
+					expr++;
+				}
+			} else if (*expr == '\'') {
+				break;
+			}
+		}
+			if (!expr) {
+				stream->write_function(stream, "-ERR while looking for closing quote near < %s >!\n", b);
+				goto end;
+			}
+			*expr++ = '\0';
 
-		s_a = switch_strip_spaces(a, SWITCH_TRUE);
-		s_b = switch_strip_spaces(b, SWITCH_TRUE);
+			if (expr && *expr != ' ' && *expr != '\t') {
+				stream->write_function(stream, "-ERR, Syntax error near  %s \n", expr);
+				goto end;
+			}
 
+		} else {
+			if ((expr = strchr(b, ' '))) {
+				*expr++ = '\0';
+			} else {
+				stream->write_function(stream, "-ERR, Syntax error near  %s  \n", b);
+				goto end;
+			}
+		}
 
+		if ((p = strchr(expr, '?'))) {
+			expr = ++p;
+			while (expr && (*expr == ' ' || *expr == '\t')) expr++;
+		} else {
+			stream->write_function(stream, "-ERR, Syntax error near  %s , no expression found.\n", expr);
+			goto end;
+		}
+
+		argc = switch_separate_string(expr, ':', argv, (sizeof (argv) / sizeof (argv[0])));
+		if (!(argc >= 2 && argc <= 3)) {
+			stream->write_function(stream, "-ERR, Syntax error near  %s , Invalid expression.\n", expr);
+			goto end;
+		}
+
+		s_a = a;
+		s_b = b;
 		a_is_num = switch_is_number(s_a);
 		b_is_num = switch_is_number(s_b);
 
@@ -2023,49 +2059,47 @@ SWITCH_STANDARD_API(cond_function)
 		b_f = b_is_num ? atof(s_b) : (float) strlen(s_b);
 
 		switch (o) {
-		case O_EQ:
-			if (!a_is_num && !b_is_num) {
-				is_true = !strcmp(s_a, s_b);
-			} else {
-				is_true = a_f == b_f;
-			}
-			break;
-		case O_NE:
-			if (!a_is_num && !b_is_num) {
-				is_true = strcmp(s_a, s_b);
-			} else {
-				is_true = a_f != b_f;
-			}
-			break;
-		case O_GT:
-			is_true = a_f > b_f;
-			break;
-		case O_GE:
-			is_true = a_f >= b_f;
-			break;
-		case O_LT:
-			is_true = a_f < b_f;
-			break;
-		case O_LE:
-			is_true = a_f <= b_f;
-			break;
-		default:
-			break;
+			case O_EQ:
+				if (!a_is_num && !b_is_num) {
+					is_true = !strcmp(s_a, s_b);
+				} else {
+					is_true = a_f == b_f;
+				}
+				break;
+			case O_NE:
+				if (!a_is_num && !b_is_num) {
+					is_true = strcmp(s_a, s_b);
+				} else {
+					is_true = a_f != b_f;
+				}
+				break;
+			case O_GT:
+				is_true = a_f > b_f;
+				break;
+			case O_GE:
+				is_true = a_f >= b_f;
+				break;
+			case O_LT:
+				is_true = a_f < b_f;
+				break;
+			case O_LE:
+				is_true = a_f <= b_f;
+				break;
+			default:
+				break;
 		}
-		switch_safe_free(s_a);
-		switch_safe_free(s_b);
 
-		if ((argc == 2 && !is_true)) {
+		if ((argc == 1 && !is_true)) {
 			stream->write_function(stream, "");
 		} else {
-			stream->write_function(stream, "%s", is_true ? argv[1] : argv[2]);
+			stream->write_function(stream, "%s", is_true ? argv[0] : argv[1]);
 		}
-		goto ok;
+		goto end;
 	}
 
-  error:
+error:
 	stream->write_function(stream, "-ERR");
-  ok:
+end:
 
 	switch_safe_free(mydata);
 	return SWITCH_STATUS_SUCCESS;
