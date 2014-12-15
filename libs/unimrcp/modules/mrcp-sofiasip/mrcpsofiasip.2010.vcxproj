@@ -48,31 +48,31 @@
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="$(ProjectDir)..\..\build\vsprops\unirelease.props" />
-    <Import Project="$(ProjectDir)..\..\build\vsprops\sofiasip.props" />
-    <Import Project="$(ProjectDir)..\..\build\vsprops\mrcpv2transport.props" />
-    <Import Project="$(ProjectDir)..\..\build\vsprops\mrcpsignaling.props" />
+    <Import Project="$(ProjectDir)..\..\build\props\unirelease.props" />
+    <Import Project="$(ProjectDir)..\..\build\props\sofiasip.props" />
+    <Import Project="$(ProjectDir)..\..\build\props\mrcpv2transport.props" />
+    <Import Project="$(ProjectDir)..\..\build\props\mrcpsignaling.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="$(ProjectDir)..\..\build\vsprops\unidebug.vsprops" />
-    <Import Project="$(ProjectDir)..\..\build\vsprops\sofiasip.props" />
-    <Import Project="$(ProjectDir)..\..\build\vsprops\mrcpv2transport.props" />
-    <Import Project="$(ProjectDir)..\..\build\vsprops\mrcpsignaling.props" />
+    <Import Project="$(ProjectDir)..\..\build\props\unidebug.vsprops" />
+    <Import Project="$(ProjectDir)..\..\build\props\sofiasip.props" />
+    <Import Project="$(ProjectDir)..\..\build\props\mrcpv2transport.props" />
+    <Import Project="$(ProjectDir)..\..\build\props\mrcpsignaling.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="$(ProjectDir)..\..\build\vsprops\unirelease.props" />
-    <Import Project="$(ProjectDir)..\..\build\vsprops\sofiasip.props" />
-    <Import Project="$(ProjectDir)..\..\build\vsprops\mrcpv2transport.props" />
-    <Import Project="$(ProjectDir)..\..\build\vsprops\mrcpsignaling.props" />
+    <Import Project="$(ProjectDir)..\..\build\props\unirelease.props" />
+    <Import Project="$(ProjectDir)..\..\build\props\sofiasip.props" />
+    <Import Project="$(ProjectDir)..\..\build\props\mrcpv2transport.props" />
+    <Import Project="$(ProjectDir)..\..\build\props\mrcpsignaling.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="$(ProjectDir)..\..\build\vsprops\unidebug.vsprops" />
-    <Import Project="$(ProjectDir)..\..\build\vsprops\sofiasip.props" />
-    <Import Project="$(ProjectDir)..\..\build\vsprops\mrcpv2transport.props" />
-    <Import Project="$(ProjectDir)..\..\build\vsprops\mrcpsignaling.props" />
+    <Import Project="$(ProjectDir)..\..\build\props\unidebug.vsprops" />
+    <Import Project="$(ProjectDir)..\..\build\props\sofiasip.props" />
+    <Import Project="$(ProjectDir)..\..\build\props\mrcpv2transport.props" />
+    <Import Project="$(ProjectDir)..\..\build\props\mrcpsignaling.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
