@@ -125,6 +125,7 @@
   <ItemGroup>
     <ClCompile Include="src\mrcp_sdp.c" />
     <ClCompile Include="src\mrcp_sofiasip_client_agent.c" />
+    <ClCompile Include="src\mrcp_sofiasip_logger.c" />
     <ClCompile Include="src\mrcp_sofiasip_server_agent.c" />
   </ItemGroup>
   <ItemGroup>
