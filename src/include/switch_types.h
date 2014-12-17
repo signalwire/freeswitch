@@ -2492,6 +2492,9 @@ typedef struct switch_waitlist_s {
 	uint32_t revents;
 } switch_waitlist_t;
 
+struct switch_vb_s;
+typedef struct switch_vb_s switch_vb_t;
+
 
 SWITCH_END_EXTERN_C
 #endif
