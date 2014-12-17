@@ -34,7 +34,7 @@
 
 #define EPSN (0.000001f) // (1e-6)	// desired float precision
 #define PESN (0.000001f) // (1e-6)	// desired float precision
-//#define MT_ENABLED
+#define MT_ENABLED
 
 #include "codec_api.h"
 //#include "inc/logging.h"     // for debug
