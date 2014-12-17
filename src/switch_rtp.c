@@ -3489,8 +3489,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Starting video timer.\n");
 			}
 
-			switch_vb_create(&rtp_session->vb, 5, 30);
-			switch_vb_debug_level(rtp_session->vb, 1);
+			switch_vb_create(&rtp_session->vb, 5, 30, SWITCH_FALSE);
+			switch_vb_debug_level(rtp_session->vb, 10);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Starting video buffer.\n");
 
 		} else {
@@ -5116,15 +5116,23 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	}
 
 	if (rtp_session->vb) {
-		if (switch_vb_get_packet(rtp_session->vb, (switch_rtp_packet_t *) &rtp_session->recv_msg, bytes) == SWITCH_STATUS_MORE_DATA) {
+		switch_status_t vstatus = switch_vb_get_packet(rtp_session->vb, (switch_rtp_packet_t *) &rtp_session->recv_msg, bytes);
+
+		switch(vstatus) {
+		case SWITCH_STATUS_RESTART:
+			switch_core_session_request_video_refresh(rtp_session->session);
+			break;
+		case SWITCH_STATUS_MORE_DATA:
 			status = SWITCH_STATUS_FALSE;
 			*bytes = 0;
-		} else {
+			break;
+		default:
 			status = SWITCH_STATUS_SUCCESS;
 			if (!xcheck_jitter) {
 				check_jitter(rtp_session);
 				xcheck_jitter = *bytes;
 			}
+			break;
 		}
 	}
 
@@ -5572,8 +5580,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				pt = 200000;
 			}
 
-			if (rtp_session->vb && switch_vb_frame_count(rtp_session->vb)) {
-				pt = 10000;
+			if (rtp_session->vb && switch_vb_poll(rtp_session->vb)) {
+				pt = 1000;
 				force = 1;
 			}
 
