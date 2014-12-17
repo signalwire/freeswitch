@@ -54,6 +54,7 @@
 #include <srtp.h>
 #include <srtp_priv.h>
 #include <switch_ssl.h>
+#include <switch_vidderbuffer.h>
 
 #define JITTER_LEAD_FRAMES 10
 #define READ_INC(rtp_session) switch_mutex_lock(rtp_session->read_mutex); rtp_session->reading++
@@ -387,6 +388,7 @@ struct switch_rtp {
 	uint8_t ready;
 	uint8_t cn;
 	stfu_instance_t *jb;
+	switch_vb_t *vb;
 	uint32_t max_missed_packets;
 	uint32_t missed_count;
 	rtp_msg_t write_msg;
@@ -3486,6 +3488,11 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 			if (switch_core_timer_init(&rtp_session->timer, "soft", 1, 90, pool) == SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Starting video timer.\n");
 			}
+
+			switch_vb_create(&rtp_session->vb, 5, 30);
+			switch_vb_debug_level(rtp_session->vb, 1);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Starting video buffer.\n");
+
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG, "Not using a timer\n");
 		}
@@ -4118,6 +4125,10 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 
 	if ((*rtp_session)->jb) {
 		stfu_n_destroy(&(*rtp_session)->jb);
+	}
+
+	if ((*rtp_session)->vb) {
+		switch_vb_destroy(&(*rtp_session)->vb);
 	}
 
 	if ((*rtp_session)->dtls && (*rtp_session)->dtls == (*rtp_session)->rtcp_dtls) {
@@ -5039,37 +5050,45 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 		}
 	}
 
-
-	if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session) && rtp_session->recv_msg.header.version == 2 && *bytes) {
-		uint32_t read_ssrc = ntohl((uint32_t)rtp_session->recv_msg.header.ssrc);
-		if (rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
-			!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && !(rtp_session->rtp_bugs & RTP_BUG_IGNORE_MARK_BIT)) {
-			stfu_n_reset(rtp_session->jb);
-		} else if (rtp_session->last_read_ssrc && rtp_session->last_read_ssrc != read_ssrc) {
-			stfu_n_reset(rtp_session->jb);
-		}
-		rtp_session->last_read_ssrc = read_ssrc;
-
-		if (!rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] && rtp_session->timer.interval) {
-			switch_core_timer_sync(&rtp_session->timer);
-			reset_jitter_seq(rtp_session);
+	if (rtp_session->recv_msg.header.version == 2 && *bytes) {
+	
+		if (rtp_session->vb) {
+			switch_vb_put_packet(rtp_session->vb, (switch_rtp_packet_t *) &rtp_session->recv_msg, *bytes);			
+			status = SWITCH_STATUS_FALSE;
+			*bytes = 0;
 		}
 
-		if (stfu_n_eat(rtp_session->jb, rtp_session->last_read_ts, 
-					   ntohs((uint16_t) rtp_session->recv_msg.header.seq),
-					   rtp_session->recv_msg.header.pt,
-					   RTP_BODY(rtp_session), *bytes - rtp_header_len, rtp_session->timer.samplecount) == STFU_ITS_TOO_LATE) {
+		if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session)) {
+			uint32_t read_ssrc = ntohl((uint32_t)rtp_session->recv_msg.header.ssrc);
+			if (rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->recv_te && 
+				!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && !(rtp_session->rtp_bugs & RTP_BUG_IGNORE_MARK_BIT)) {
+				stfu_n_reset(rtp_session->jb);
+			} else if (rtp_session->last_read_ssrc && rtp_session->last_read_ssrc != read_ssrc) {
+				stfu_n_reset(rtp_session->jb);
+			}
+			rtp_session->last_read_ssrc = read_ssrc;
+
+			if (!rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] && rtp_session->timer.interval) {
+				switch_core_timer_sync(&rtp_session->timer);
+				reset_jitter_seq(rtp_session);
+			}
+
+			if (stfu_n_eat(rtp_session->jb, rtp_session->last_read_ts, 
+						   ntohs((uint16_t) rtp_session->recv_msg.header.seq),
+						   rtp_session->recv_msg.header.pt,
+						   RTP_BODY(rtp_session), *bytes - rtp_header_len, rtp_session->timer.samplecount) == STFU_ITS_TOO_LATE) {
 			
-			goto more;
+				goto more;
+			}
+
+			status = SWITCH_STATUS_FALSE;
+			*bytes = 0;
+
+			if (!return_jb_packet) {
+				return status;
+			}
+
 		}
-
-		status = SWITCH_STATUS_FALSE;
-		*bytes = 0;
-
-		if (!return_jb_packet) {
-			return status;
-		}
-
 	}
 
 	if (rtp_session->jb && !rtp_session->pause_jb && jb_valid(rtp_session)) {
@@ -5093,6 +5112,19 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 				xcheck_jitter = *bytes;
 			}
 
+		}
+	}
+
+	if (rtp_session->vb) {
+		if (switch_vb_get_packet(rtp_session->vb, (switch_rtp_packet_t *) &rtp_session->recv_msg, bytes) == SWITCH_STATUS_MORE_DATA) {
+			status = SWITCH_STATUS_FALSE;
+			*bytes = 0;
+		} else {
+			status = SWITCH_STATUS_SUCCESS;
+			if (!xcheck_jitter) {
+				check_jitter(rtp_session);
+				xcheck_jitter = *bytes;
+			}
 		}
 	}
 
@@ -5522,6 +5554,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		
 		if (!rtp_session->flags[SWITCH_RTP_FLAG_USE_TIMER] && rtp_session->read_pollfd) {
 			int pt = poll_sec * 1000000;
+			int force = 0;
 
 			do_2833(rtp_session);
 
@@ -5539,11 +5572,16 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				pt = 200000;
 			}
 
-			//if (using_ice(rtp_session)) {
-			//	pt = 20000;
-			//}
+			if (rtp_session->vb && switch_vb_frame_count(rtp_session->vb)) {
+				pt = 10000;
+				force = 1;
+			}
 
 			poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, pt);
+
+			if (rtp_session->vb && force) {
+				poll_status = SWITCH_STATUS_SUCCESS;
+			}
 
 			if (!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] && rtp_session->dtmf_data.out_digit_dur > 0) {
 				return_cng_frame();

@@ -49,6 +49,10 @@ SWITCH_BEGIN_EXTERN_C
 //#define SWITCH_RTP_CRYPTO_KEY_32 "AES_CM_128_HMAC_SHA1_32"
 #define SWITCH_RTP_CRYPTO_KEY_80 "AES_CM_128_HMAC_SHA1_80"
 
+typedef struct {
+	switch_rtp_hdr_t header;
+	char body[SWITCH_RTP_MAX_BUF_LEN];
+} switch_rtp_packet_t;
 
 typedef enum {
 	SWITCH_RTP_CRYPTO_SEND,
