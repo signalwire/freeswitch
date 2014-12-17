@@ -736,7 +736,6 @@ static char *create_input_component_id(switch_core_session_t *session, iks *inpu
  */
 static void input_component_cleanup(struct rayo_actor *component)
 {
-	switch_mutex_lock(component->mutex);
 	if (INPUT_COMPONENT(component)->speech_mode) {
 		switch_core_session_t *session = switch_core_session_locate(component->parent->id);
 		if (session) {
@@ -744,7 +743,6 @@ static void input_component_cleanup(struct rayo_actor *component)
 			switch_core_session_rwunlock(session);
 		}
 	}
-	switch_mutex_unlock(component->mutex);
 }
 
 /**
