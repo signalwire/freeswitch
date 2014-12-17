@@ -34,12 +34,12 @@
 #define SWITCH_VIDDERBUFFER_H
 
 SWITCH_BEGIN_EXTERN_C
-
-SWITCH_DECLARE(switch_status_t) switch_vb_create(switch_vb_t **vbp, uint32_t min_frame_len, uint32_t max_frame_len);
+SWITCH_DECLARE(switch_status_t) switch_vb_create(switch_vb_t **vbp, uint32_t min_frame_len, uint32_t max_frame_len, switch_bool_t timer_compensation);
 SWITCH_DECLARE(switch_status_t) switch_vb_destroy(switch_vb_t **vbp);
 SWITCH_DECLARE(void) switch_vb_reset(switch_vb_t *vb, switch_bool_t flush);
 SWITCH_DECLARE(void) switch_vb_debug_level(switch_vb_t *vb, uint8_t level);
 SWITCH_DECLARE(int) switch_vb_frame_count(switch_vb_t *vb);
+SWITCH_DECLARE(int) switch_vb_poll(switch_vb_t *vb);
 SWITCH_DECLARE(switch_status_t) switch_vb_put_packet(switch_vb_t *vb, switch_rtp_packet_t *packet, switch_size_t len);
 SWITCH_DECLARE(switch_status_t) switch_vb_get_packet(switch_vb_t *vb, switch_rtp_packet_t *packet, switch_size_t *len);
 
