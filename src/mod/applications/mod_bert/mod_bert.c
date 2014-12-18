@@ -203,12 +203,6 @@ SWITCH_STANDARD_APP(bert_test_function)
 	write_frame.datalen = read_impl.encoded_bytes_per_packet;
 	write_frame.samples = read_impl.samples_per_packet;
 
-	if (timer_name) {
-		write_frame.timestamp = bert.timer.samplecount;
-	} else {
-		/* the playback() app does not set write_frame.timestamp unless a timer is used, what's the catch? does it matter? */
-	}
-
 	for (;;) {
 
 		if (!switch_channel_ready(channel)) {
@@ -222,6 +216,8 @@ SWITCH_STANDARD_APP(bert_test_function)
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to step on timer!\n");
 				break;
 			}
+			/* the playback() app does not set write_frame.timestamp unless a timer is used, what's the catch? does it matter? */
+			write_frame.timestamp = bert.timer.samplecount;
 		}
 
 		if (bert.output_debug_f) {
