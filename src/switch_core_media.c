@@ -3828,6 +3828,23 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 				switch_channel_set_variable(session->channel, SWITCH_REMOTE_MEDIA_PORT_VARIABLE, tmp);
 
 
+				if (a_engine->cur_payload_map->pt == smh->mparams->te) {
+					switch_payload_t pl = 0;
+					payload_map_t *pmap;
+
+					switch_mutex_lock(smh->sdp_mutex);
+					for (pmap = a_engine->cur_payload_map; pmap && pmap->allocated; pmap = pmap->next) {
+						if (pmap->pt > pl) {
+							pl = pmap->pt;
+						}
+					}
+					switch_mutex_unlock(smh->sdp_mutex);
+					
+					smh->mparams->te  = (switch_payload_t) ++pl;
+				}
+
+
+
 #if 0
 				if (!switch_true(mirror) && 
 					switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND && 
@@ -6360,8 +6377,12 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 						switch_core_session_get_payload_code(orig_session, 
 															 imp->codec_type == SWITCH_CODEC_TYPE_AUDIO ? SWITCH_MEDIA_TYPE_AUDIO : SWITCH_MEDIA_TYPE_VIDEO,
 															 imp->iananame, imp->samples_per_second, &orig_pt, NULL, &orig_fmtp) == SWITCH_STATUS_SUCCESS) {
+						if (orig_pt == smh->mparams->te) {
+							smh->mparams->te  = (switch_payload_t)smh->payload_space++;
+						}
+
 						smh->ianacodes[i] = orig_pt;
-						
+												
 						if (orig_fmtp) {
 							smh->fmtps[i] = switch_core_session_strdup(session, orig_fmtp);
 						}
@@ -6484,10 +6505,7 @@ SWITCH_DECLARE(void) switch_core_media_gen_local_sdp(switch_core_session_t *sess
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), "m=audio %d %s", port, 
 						get_media_profile_name(session, !a_engine->no_crypto && 
 											   (switch_channel_test_flag(session->channel, CF_DTLS) || a_engine->crypto_type != CRYPTO_INVALID)));
-		
-												
-												
-		
+															
 		
 		switch_snprintf(buf + strlen(buf), SDPBUFLEN - strlen(buf), " %d", a_engine->cur_payload_map->pt);
 
